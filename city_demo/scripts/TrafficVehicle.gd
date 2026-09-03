@@ -1104,6 +1104,10 @@ func _update_skid_audio():
 
 var block_wait_timer: float = 0.0
 var is_moving_on_lane: bool = false
+var _lane_motion_speed := 0.0
+var _lane_motion_initialized := false
+var _junction_traffic_controller: Node = null
+var _last_lane_motion_contract: Dictionary = {}
 
 func _process(delta: float) -> void:
 	if is_broken or is_driven_by_player:
@@ -1113,27 +1117,80 @@ func _process(delta: float) -> void:
 func advance_on_lane(delta: float) -> void:
 	is_moving_on_lane = false
 	var lane_follow := get_parent() as PathFollow2D
-	if lane_follow == null: return
+	if lane_follow == null:
+		return
+	var path := lane_follow.get_parent() as Path2D
+	if path == null or path.curve == null:
+		return
+	var controller := _get_junction_traffic_controller()
+	if controller != null and controller.has_method("complete_lane_transition"):
+		if bool(controller.call("complete_lane_transition", self, path, lane_follow)):
+			return
+	if not _lane_motion_initialized:
+		_lane_motion_speed = speed
+		_lane_motion_initialized = true
 
 	var obstruction := _get_lane_obstruction(lane_follow)
 	var hard_blocked: bool = obstruction.hard
 	var yield_blocked: bool = obstruction.yield
+	var target_lane_speed := speed
+	var maximum_advance := INF
+	var spacing := _lane_spacing_motion(lane_follow)
+	target_lane_speed = minf(target_lane_speed, float(spacing.target_speed))
+	maximum_advance = minf(maximum_advance, float(spacing.allowed_advance))
+
+	var requested_advance := maxf(_lane_motion_speed, target_lane_speed) * delta
+	var signal_contract := {}
+	if controller != null and controller.has_method("evaluate_lane_motion"):
+		signal_contract = controller.call(
+			"evaluate_lane_motion",
+			self,
+			path,
+			lane_follow,
+			requested_advance,
+			target_length,
+			_lane_motion_speed,
+			_lane_braking_rate()
+		)
+		if bool(signal_contract.get("controlled", false)):
+			target_lane_speed = minf(target_lane_speed, float(signal_contract.get("target_speed", INF)))
+			maximum_advance = minf(maximum_advance, float(signal_contract.get("allowed_advance", INF)))
+	_last_lane_motion_contract = signal_contract
+
+	# The canonical reservation replaces the old lane-name priority while a
+	# vehicle owns a junction. Physical actors still remain hard blockers.
+	if bool(signal_contract.get("reservation_granted", false)):
+		yield_blocked = false
 	if hard_blocked or yield_blocked:
+		target_lane_speed = 0.0
+	if not bool(signal_contract.get("controlled", false)) and _must_stop_at_managed_signal(lane_follow):
+		target_lane_speed = 0.0
+		maximum_advance = 0.0
+
+	var end_motion := _open_lane_end_motion(path, lane_follow, controller)
+	target_lane_speed = minf(target_lane_speed, float(end_motion.target_speed))
+	maximum_advance = minf(maximum_advance, float(end_motion.allowed_advance))
+
+	var previous_speed := _lane_motion_speed
+	var rate := _lane_acceleration_rate() if target_lane_speed > _lane_motion_speed else _lane_braking_rate()
+	_lane_motion_speed = move_toward(_lane_motion_speed, maxf(0.0, target_lane_speed), rate * delta)
+	var desired_advance := maxf(0.0, (previous_speed + _lane_motion_speed) * 0.5 * delta)
+	var actual_advance := minf(desired_advance, maximum_advance)
+	if actual_advance > 0.001:
+		lane_follow.progress += actual_advance
+		is_moving_on_lane = true
+	if controller != null and controller.has_method("complete_lane_transition"):
+		controller.call("complete_lane_transition", self, path, lane_follow)
+
+	var blocked := not is_moving_on_lane and target_lane_speed <= 0.1
+	if blocked:
 		block_wait_timer += delta
-		if hard_blocked:
-			if block_wait_timer > 0.6 and randf() < 0.04:
-				honk_horn()
-		if visual: visual.position = visual.position.lerp(Vector2.ZERO, 8.0 * delta)
-		return
+		if hard_blocked and block_wait_timer > 0.6 and randf() < 0.04:
+			honk_horn()
 	else:
 		block_wait_timer = maxf(0.0, block_wait_timer - delta * 2.0)
-		if visual: visual.position = visual.position.lerp(Vector2.ZERO, 8.0 * delta)
-
-	if _lane_spacing_blocked(lane_follow) or _must_stop_at_managed_signal(lane_follow):
-		return
-				
-	lane_follow.progress += speed * delta
-	is_moving_on_lane = true
+	if visual:
+		visual.position = visual.position.lerp(Vector2.ZERO, 8.0 * delta)
 
 func _get_lane_obstruction(lane_follow: PathFollow2D) -> Dictionary:
 	# PathFollow traffic already has exact same-lane spacing below. Ray casts are
@@ -1169,13 +1226,16 @@ func _get_lane_obstruction(lane_follow: PathFollow2D) -> Dictionary:
 			yield_blocked = true
 	return {"hard": hard_blocked, "yield": yield_blocked}
 
-func _lane_spacing_blocked(lane_follow: PathFollow2D) -> bool:
+func _lane_spacing_motion(lane_follow: PathFollow2D) -> Dictionary:
 	var path := lane_follow.get_parent() as Path2D
 	if path == null or path.curve == null:
-		return false
+		return {"target_speed": INF, "allowed_advance": INF}
 	var route_length := path.curve.get_baked_length()
 	if route_length <= 1.0:
-		return false
+		return {"target_speed": 0.0, "allowed_advance": 0.0}
+	var lane_loops := bool(path.get_meta("traffic_lane_loop", lane_follow.loop)) and lane_follow.loop
+	var target_speed_limit := INF
+	var advance_limit := INF
 	for sibling in path.get_children():
 		if sibling == lane_follow or not sibling is PathFollow2D:
 			continue
@@ -1185,11 +1245,58 @@ func _lane_spacing_blocked(lane_follow: PathFollow2D) -> bool:
 		var other := other_follow.get_child(0) as DemoTrafficVehicle
 		if other.is_driven_by_player or other.is_broken:
 			continue
-		var gap := fposmod(other_follow.progress - lane_follow.progress, route_length)
-		var safe_gap := maxf(84.0, target_length * 0.72 + other.target_length * 0.72 + 16.0)
-		if gap > 0.5 and gap < safe_gap:
-			return true
-	return false
+		var center_gap := other_follow.progress - lane_follow.progress
+		if lane_loops:
+			center_gap = fposmod(center_gap, route_length)
+		elif center_gap <= 0.0:
+			continue
+		if center_gap <= 0.5:
+			continue
+		var combined_half_lengths := (target_length + other.target_length) * 0.5
+		var bumper_gap := center_gap - combined_half_lengths
+		var minimum_clearance := maxf(14.0, maxf(target_length, other.target_length) * 0.18)
+		var desired_clearance := minimum_clearance + _lane_motion_speed * 0.85
+		advance_limit = minf(advance_limit, maxf(0.0, bumper_gap - minimum_clearance))
+		if bumper_gap < desired_clearance:
+			var follow_ratio := clampf(
+				(bumper_gap - minimum_clearance) / maxf(1.0, desired_clearance - minimum_clearance),
+				0.0,
+				1.0
+			)
+			target_speed_limit = minf(target_speed_limit, other._lane_motion_speed * follow_ratio)
+	return {"target_speed": target_speed_limit, "allowed_advance": advance_limit}
+
+
+func _lane_acceleration_rate() -> float:
+	return minf(acceleration, maxf(80.0, speed * 1.8))
+
+
+func _lane_braking_rate() -> float:
+	return minf(braking, maxf(120.0, speed * 2.8))
+
+
+func _open_lane_end_motion(path: Path2D, lane_follow: PathFollow2D, controller: Node) -> Dictionary:
+	var lane_loops := bool(path.get_meta("traffic_lane_loop", lane_follow.loop)) and lane_follow.loop
+	if lane_loops or bool(path.get_meta("traffic_turn_connector", false)):
+		return {"target_speed": INF, "allowed_advance": INF}
+	if controller != null and controller.has_method("has_lane_transition"):
+		if bool(controller.call("has_lane_transition", path)):
+			return {"target_speed": INF, "allowed_advance": INF}
+	var remaining := maxf(0.0, path.curve.get_baked_length() - lane_follow.progress)
+	return {
+		"target_speed": sqrt(2.0 * _lane_braking_rate() * remaining),
+		"allowed_advance": remaining,
+	}
+
+
+func _get_junction_traffic_controller() -> Node:
+	if is_instance_valid(_junction_traffic_controller):
+		return _junction_traffic_controller
+	for candidate in get_tree().get_nodes_in_group("junction_traffic_controller"):
+		if candidate.has_method("evaluate_lane_motion"):
+			_junction_traffic_controller = candidate
+			return candidate
+	return null
 
 func _must_stop_at_managed_signal(lane_follow: PathFollow2D) -> bool:
 	var path := lane_follow.get_parent() as Path2D

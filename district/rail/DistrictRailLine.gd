@@ -29,7 +29,6 @@ const BALLAST_WIDTH := 54.0
 const SAFETY_FENCE_OFFSET := 39.0
 const SAFETY_FENCE_THICKNESS := 5.0
 const CROSSING_GAP_RADIUS := 104.0
-const CROSSING_ROAD_HALF_WIDTH := 82.0
 const SLEEPER_SPACING := 18.0
 const SLEEPER_LENGTH := 42.0
 const SIGNAL_POSITIONS: Array[Vector2] = [
@@ -261,38 +260,6 @@ func _draw_rail_pair() -> void:
 		draw_polyline(right, Color("#c1c7c9"), 4.0, true)
 		draw_polyline(left, Color("#51595d"), 1.0, true)
 		draw_polyline(right, Color("#51595d"), 1.0, true)
-
-
-func _draw_level_crossing(center: Vector2) -> void:
-	var offset := _nearest_route_offset(center)
-	var tangent := _route_tangent(offset)
-	var normal := tangent.orthogonal()
-	var on_route := _route.sample_baked(offset, true)
-
-	# Placas de borracha entre os trilhos, embutidas na pista.
-	for step in range(-2, 3):
-		var plank_center := on_route + tangent * float(step) * 12.0
-		draw_line(plank_center - normal * 23.0, plank_center + normal * 23.0, Color("#24292d"), 10.0, true)
-
-	# Gates sit beyond the 164 px road ribbon, never in a live lane.  Their arms
-	# point back toward the carriageway and leave the railway itself unobstructed.
-	for side_value in [-1.0, 1.0]:
-		var side: float = side_value
-		var mast: Vector2 = on_route + tangent * side * (CROSSING_ROAD_HALF_WIDTH + 20.0)
-		draw_circle(mast, 8.0, Color("#272c30"))
-		draw_circle(mast, 5.0, Color("#d8d2bb"))
-		draw_circle(mast + normal * 7.0, 3.5, Color("#db3434"))
-		draw_circle(mast - normal * 7.0, 3.5, Color("#7c1515"))
-		var boom_end: Vector2 = mast - tangent * side * 72.0
-		draw_line(mast, boom_end, Color("#ece7d6"), 6.0, true)
-		for stripe in range(4):
-			var a: Vector2 = mast.lerp(boom_end, float(stripe) / 4.0)
-			var b: Vector2 = mast.lerp(boom_end, float(stripe + 1) / 4.0)
-			if stripe % 2 == 0:
-				draw_line(a, b, Color("#cb3434"), 6.0, true)
-		# Cruz de passagem de nível sem texto para manter leitura top-down.
-		draw_line(mast + Vector2(-8, -15), mast + Vector2(8, -1), Color("#ece7d6"), 4.0, true)
-		draw_line(mast + Vector2(8, -15), mast + Vector2(-8, -1), Color("#ece7d6"), 4.0, true)
 
 
 func _draw_rail_signal(signal_position: Vector2) -> void:

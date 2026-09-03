@@ -70,7 +70,8 @@ func _ready() -> void:
 		queue_redraw()
 		return
 	_create_connection_markers()
-	_create_intersection_controls()
+	if not _uses_unified_junction_controls():
+		_create_intersection_controls()
 	# Validation must run regardless of legacy rendering: it is the graph
 	# integrity check, not a visual toggle, and disabling it here previously
 	# let a stale assert (port_service endpoint) go uncaught.
@@ -78,6 +79,17 @@ func _ready() -> void:
 	queue_redraw()
 	add_to_group("bairro1_road_network")
 	print("BAIRRO1_ROAD_NETWORK_READY: coastal arterial, harbor service ring, 2 future borough exits")
+
+func _uses_unified_junction_controls() -> bool:
+	var composition_root := get_parent()
+	if composition_root == null:
+		return false
+	for sibling in composition_root.get_children():
+		if sibling == self:
+			continue
+		if sibling.is_in_group("junction_traffic_controller") or String(sibling.name) in ["UnifiedRoadNetwork", "JunctionTrafficController"]:
+			return true
+	return false
 
 ## The original accessor remains responsible for active ambient traffic.  New
 ## streets are visually and physically connected but remain reservation-only

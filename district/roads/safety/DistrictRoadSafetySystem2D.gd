@@ -188,7 +188,8 @@ func _build_pedestrian_crossings(road_graph: Node2D, graph_data: Dictionary, roa
 			continue
 		var world_position := road_graph.to_global(sampled.position)
 		var world_tangent := road_graph.global_transform.basis_xform(sampled.tangent).normalized()
-		if _is_under_elevated_span(world_position, float(road.width) * 0.5):
+		var crossing_half_depth := float(reference.get("crossing_depth", 30.0)) * 0.5
+		if _is_under_elevated_span(world_position, crossing_half_depth):
 			_validation_errors.append("Pedestrian crossing %s is forbidden under the elevated span" % key)
 			continue
 		var junction_link := _resolve_junction_reference(road_graph, junctions, reference, world_position)
@@ -289,7 +290,7 @@ func _detect_and_build_rail_crossings(road_graph: Node2D, roads: Array, rail_lin
 					"road_tangent": road_points_global[road_segment].direction_to(road_points_global[road_segment + 1]),
 					"rail_tangent": rail_points[rail_segment].direction_to(rail_points[rail_segment + 1]),
 				}
-				if _is_under_elevated_span(position, float(road.width) * 0.25):
+				if _is_under_elevated_span(position):
 					intersection["classification"] = "grade_separated"
 					_grade_separated_intersections.append(intersection)
 				else:
@@ -476,13 +477,10 @@ func _update_level_crossings_from_train() -> void:
 
 func _bind_discovered_signal_controller(crossing: RoadCrossingArea2D) -> void:
 	for controller in get_tree().get_nodes_in_group("junction_traffic_controller"):
-		var controller_id := StringName(String(controller.get_meta("junction_id", "")))
-		if controller.has_method("get_junction_id"):
-			controller_id = StringName(String(controller.call("get_junction_id")))
-		# A controller without a junction id is the district-wide dispatcher.
-		if controller_id == StringName() or controller_id == crossing.junction_id:
-			crossing.set_signal_controller(controller)
-			return
+		# JunctionTrafficController is a district-wide dispatcher. It resolves the
+		# crossing's own junction_id+road_index when synchronizing signal state.
+		crossing.set_signal_controller(controller)
+		return
 
 
 func _on_crossing_pedestrian_request(crossing_id: StringName, junction_id: StringName) -> void:

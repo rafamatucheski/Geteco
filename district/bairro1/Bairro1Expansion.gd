@@ -689,6 +689,8 @@ func get_pedestrian_crossing_definitions() -> Array[Dictionary]:
 	]
 
 func _draw_authored_crossings() -> void:
+	if _has_composed_safety_renderer():
+		return
 	# Crossings are anchored to a point along the REAL baked curve (road id +
 	# fraction of its length), never a hardcoded world Vector2. A fixed
 	# coordinate drifts off the pavement the instant that road's control
@@ -698,6 +700,15 @@ func _draw_authored_crossings() -> void:
 	for crossing in get_pedestrian_crossing_definitions():
 		var placement := _road_point_at(String(crossing.road_id), float(crossing.t))
 		_draw_crosswalk(placement.position, placement.angle)
+
+func _has_composed_safety_renderer() -> bool:
+	var composition_root := get_parent()
+	if composition_root == null:
+		return false
+	for sibling in composition_root.get_children():
+		if sibling != self and (sibling.is_in_group("district_road_safety_system") or String(sibling.name).begins_with("DistrictRoadSafety")):
+			return true
+	return false
 
 func _road_point_at(road_id: String, t: float) -> Dictionary:
 	var road: Dictionary = _roads.get(road_id, {})

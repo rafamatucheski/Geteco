@@ -96,13 +96,9 @@ func _source_control_points() -> PackedVector2Array:
 		var points = expansion.get("gateway_spine_points")
 		if points is PackedVector2Array and points.size() >= 2:
 			return points
-	# Fallback used only when this scene is inspected standalone, outside
-	# DistrictOneComplete, where the shared spine is not reachable.
-	return PackedVector2Array([
-		Vector2(870, 1260), Vector2(870, 1500), Vector2(870, 1740),
-		Vector2(1050, 1980), Vector2(1280, 2200), Vector2(1340, 2500),
-		Vector2(1400, 2800), Vector2(1480, 3500),
-	])
+	# Standalone editor fallback still reads the provider's one declaration.
+	# Never repeat the gateway coordinates in this consumer.
+	return Bairro1Expansion.GATEWAY_SPINE.duplicate()
 
 
 func _catmull_rom(control: PackedVector2Array, subdivisions: int) -> PackedVector2Array:

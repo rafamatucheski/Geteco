@@ -104,13 +104,18 @@ func _add_segment_blocker(from: Vector2, to: Vector2, thickness: float) -> void:
 func _validate_connections() -> void:
 	var exits: Array[Marker2D] = []
 	for node in get_tree().get_nodes_in_group("district_connection"):
-		if node is Marker2D and int(node.get_meta("from_district", -1)) == 1:
+		if node is Marker2D \
+				and int(node.get_meta("from_district", -1)) == 1 \
+				and String(node.get_meta("transport_mode", "road")) != "rail" \
+				and String(node.get_meta("connection_type", "road")) != "rail":
 			exits.append(node as Marker2D)
 	assert(exits.size() == 2, "Bairro 1 must expose exactly two future district exits")
 	var destinations := []
 	for exit_anchor in exits:
 		destinations.append(int(exit_anchor.get_meta("to_district", -1)))
 	assert(destinations.has(2) and destinations.has(3), "Bairro 1 exits must lead to Districts 2 and 3")
+	var rail_handoffs := get_tree().get_nodes_in_group("rail_district_connection")
+	assert(rail_handoffs.size() == 1, "Bairro 1 must expose one independent rail handoff")
 	assert(_centerline[0].distance_to(Vector2(2428, 2140)) < 1.0, "District 3 road must meet EastArc")
 	print("BAIRRO1_CONNECTIONS_READY: District2 viaduct + District3 coastal arterial")
 

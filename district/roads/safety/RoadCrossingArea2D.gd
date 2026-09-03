@@ -244,5 +244,5 @@ func _draw() -> void:
 		draw_rect(Rect2(pad_center - Vector2(crossing_depth * 0.5, 6.0), Vector2(crossing_depth, 12.0)), TACTILE_COLOR)
 	# Stop lines sit before the crossing on both approaches.
 	for side in [-1.0, 1.0]:
-		var stop_x := side * (crossing_depth * 0.5 + 16.0)
+		var stop_x: float = float(side) * (crossing_depth * 0.5 + 16.0)
 		draw_line(Vector2(stop_x, -half_road), Vector2(stop_x, half_road), STOP_LINE_COLOR, 3.0, true)

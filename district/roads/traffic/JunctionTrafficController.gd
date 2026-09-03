@@ -36,6 +36,9 @@ var _sync_elapsed := 0.0
 var _crossing_sync_elapsed := 0.0
 var _lane_projection_cache: Dictionary = {}
 var _signal_visuals: Dictionary = {}
+var _lane_paths_by_id: Dictionary = {}
+var _connections_by_id: Dictionary = {}
+var _connections_from_lane: Dictionary = {}
 var _warned_lanes: Dictionary = {}
 var _waiting_since: Dictionary = {}
 var _deadlock_reported: Dictionary = {}
@@ -73,6 +76,7 @@ func _process(delta: float) -> void:
 	_crossing_sync_elapsed += delta
 	if _crossing_sync_elapsed >= 0.5:
 		_crossing_sync_elapsed = 0.0
+		_refresh_lane_path_index()
 		_refresh_signal_visuals()
 		_synchronize_crossing_consumers()
 
@@ -115,6 +119,7 @@ func _sync_from_graph() -> void:
 			junction.get("radius", 0.0),
 			junction.get("roads", []),
 			junction.get("approaches", []),
+			_connection_signature(junction.get("lane_connections", [])),
 		])
 	var next_signature := str(signature_values)
 	if next_signature == _graph_signature:
@@ -123,6 +128,8 @@ func _sync_from_graph() -> void:
 	_junctions.clear()
 	_junction_id_to_index.clear()
 	_lane_projection_cache.clear()
+	_connections_by_id.clear()
+	_connections_from_lane.clear()
 	for index in source_junctions.size():
 		var junction: Dictionary = (source_junctions[index] as Dictionary).duplicate(true)
 		var junction_id := _canonical_junction_id(index, junction)
@@ -152,11 +159,37 @@ func _sync_from_graph() -> void:
 			"reservation_heartbeat_ms": int(previous.get("reservation_heartbeat_ms", 0)),
 			"reservation_entered": bool(previous.get("reservation_entered", false)),
 		}
+		for connection_value in junction.get("lane_connections", []):
+			var connection := connection_value as Dictionary
+			var connection_id := String(connection.get("connection_id", ""))
+			var from_lane_id := String(connection.get("from_lane_id", ""))
+			if connection_id.is_empty() or from_lane_id.is_empty():
+				continue
+			_connections_by_id[connection_id] = connection
+			var lane_connections: Array = _connections_from_lane.get(from_lane_id, [])
+			lane_connections.append(connection)
+			_connections_from_lane[from_lane_id] = lane_connections
 	for stale_index in _states.keys():
 		if int(stale_index) >= _junctions.size():
 			_states.erase(stale_index)
 	_rebuild_signal_visuals()
+	_refresh_lane_path_index()
 	_synchronize_crossing_consumers()
+
+
+func _connection_signature(connections: Array) -> Array:
+	var result: Array = []
+	for connection_value in connections:
+		var connection := connection_value as Dictionary
+		result.append([
+			connection.get("connection_id", ""),
+			connection.get("from_lane_id", ""),
+			connection.get("to_lane_id", ""),
+			connection.get("movement", ""),
+			connection.get("entry_curve_offset", -1.0),
+			connection.get("exit_curve_offset", -1.0),
+		])
+	return result
 
 
 func _canonical_junction_id(index: int, junction: Dictionary) -> StringName:
@@ -324,6 +357,8 @@ func evaluate_lane_motion(
 	}
 	if vehicle == null or path == null or follow == null or path.curve == null:
 		return unrestricted
+	if path.is_in_group("unified_lane_connector"):
+		return _evaluate_connector_motion(vehicle, path, desired_advance)
 	var road_index := int(path.get_meta("traffic_road_index", -1))
 	var lane_id := StringName(path.get_meta("traffic_lane_id", path.name))
 	if road_index < 0 or not path.is_in_group(LANE_GROUP):
@@ -354,10 +389,10 @@ func evaluate_lane_motion(
 		unrestricted.stop_distance = stop_distance
 		return unrestricted
 
-	var signal := get_signal_state(junction_index, road_index)
+	var signal_state := get_signal_state(junction_index, road_index)
 	var close_enough_to_reserve := stop_distance <= maxf(reservation_request_distance, radius + vehicle_length)
 	var reserved := false
-	if signal == SignalState.GREEN and close_enough_to_reserve:
+	if signal_state == SignalState.GREEN and close_enough_to_reserve:
 		reserved = try_reserve_junction(junction_index, vehicle_id, road_index, lane_id, vehicle)
 	if reserved:
 		unrestricted.controlled = true
@@ -368,7 +403,7 @@ func evaluate_lane_motion(
 		return unrestricted
 
 	var occupied := int(state.reservation_owner) != 0
-	var must_yield := signal != SignalState.GREEN or (close_enough_to_reserve and occupied)
+	var must_yield := signal_state != SignalState.GREEN or (close_enough_to_reserve and occupied)
 	if not must_yield:
 		return unrestricted
 	var safe_stop_distance := maxf(NO_ADVANCE, stop_distance)
@@ -380,7 +415,7 @@ func evaluate_lane_motion(
 		"must_stop": safe_stop_distance <= maxf(braking_distance, reservation_request_distance),
 		"allowed_advance": minf(maxf(NO_ADVANCE, desired_advance), safe_stop_distance),
 		"target_speed": target_speed,
-		"signal_state": signal,
+		"signal_state": signal_state,
 		"reservation_granted": false,
 		"junction_index": junction_index,
 		"junction_id": state.junction_id,
@@ -390,6 +425,42 @@ func evaluate_lane_motion(
 		_telemetry.red_stop_clamps = int(_telemetry.red_stop_clamps) + 1
 	_track_wait(vehicle_id, junction_index, road_index, lane_id)
 	return result
+
+
+func _evaluate_connector_motion(vehicle: Node2D, connector: Path2D, desired_advance: float) -> Dictionary:
+	var junction_index := int(connector.get_meta("traffic_junction_index", -1))
+	var state: Dictionary = _states.get(junction_index, {})
+	var vehicle_id := vehicle.get_instance_id()
+	if state.is_empty() or int(state.reservation_owner) != vehicle_id:
+		traffic_contract_violation.emit(&"connector_without_reservation", {
+			"vehicle_instance_id": vehicle_id,
+			"connector": connector.get_path(),
+			"junction_index": junction_index,
+		})
+		return {
+			"controlled": true,
+			"must_stop": true,
+			"allowed_advance": 0.0,
+			"target_speed": 0.0,
+			"signal_state": SignalState.RED,
+			"reservation_granted": false,
+			"junction_index": junction_index,
+			"junction_id": state.get("junction_id", &""),
+			"stop_distance": 0.0,
+		}
+	state.reservation_heartbeat_ms = Time.get_ticks_msec()
+	state.reservation_entered = true
+	return {
+		"controlled": true,
+		"must_stop": false,
+		"allowed_advance": maxf(0.0, desired_advance),
+		"target_speed": INF,
+		"signal_state": get_signal_state(junction_index, int(state.reservation_road)),
+		"reservation_granted": true,
+		"junction_index": junction_index,
+		"junction_id": state.junction_id,
+		"stop_distance": INF,
+	}
 
 
 func _next_lane_junction(path: Path2D, follow: PathFollow2D, road_index: int) -> Dictionary:
@@ -442,6 +513,164 @@ func _lane_junction_projections(path: Path2D, road_index: int) -> Array:
 	result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.offset) < float(b.offset))
 	_lane_projection_cache[cache_key] = result
 	return result
+
+
+func _refresh_lane_path_index() -> void:
+	_lane_paths_by_id.clear()
+	if not is_inside_tree():
+		return
+	for candidate in get_tree().get_nodes_in_group(LANE_GROUP):
+		if not candidate is Path2D:
+			continue
+		var path := candidate as Path2D
+		if graph_source != null and not graph_source.is_ancestor_of(path):
+			continue
+		var lane_id := String(path.get_meta("traffic_lane_id", ""))
+		if not lane_id.is_empty():
+			_lane_paths_by_id[lane_id] = path
+
+
+func has_lane_transition(path: Path2D) -> bool:
+	if path == null or path.curve == null or not path.is_in_group(LANE_GROUP):
+		return false
+	var lane_id := String(path.get_meta("traffic_lane_id", ""))
+	var road_index := int(path.get_meta("traffic_road_index", -1))
+	var length := path.curve.get_baked_length()
+	for connection_value in _connections_from_lane.get(lane_id, []):
+		var connection := connection_value as Dictionary
+		if not bool(connection.get("requires_connector", false)):
+			continue
+		var junction_index := int(connection.get("junction_index", -1))
+		for projection_value in _lane_junction_projections(path, road_index):
+			var projection := projection_value as Dictionary
+			if int(projection.junction_index) == junction_index and float(projection.offset) >= length - 2.0:
+				return true
+	return false
+
+
+## Moves a PathFollow2D only through connector Path2D objects published in
+## junction.lane_connections. No turn point or curve is generated by the AI.
+func complete_lane_transition(vehicle: Node2D, path: Path2D, follow: PathFollow2D) -> bool:
+	if vehicle == null or path == null or follow == null or path.curve == null:
+		return false
+	if path.is_in_group("unified_lane_connector"):
+		return _finish_connector_transition(path, follow)
+	if not path.is_in_group(LANE_GROUP):
+		return false
+	var connection := _planned_connection(vehicle, path, follow)
+	if connection.is_empty():
+		return false
+	if not bool(connection.get("requires_connector", false)):
+		_clear_passed_straight_plan(path, follow, connection)
+		return false
+	var entry_offset := float(connection.get("entry_curve_offset", -1.0))
+	if entry_offset < 0.0 or follow.progress + 0.01 < entry_offset:
+		return false
+	var junction_index := int(connection.get("junction_index", -1))
+	var state: Dictionary = _states.get(junction_index, {})
+	if state.is_empty() or int(state.reservation_owner) != vehicle.get_instance_id():
+		return false
+	var connector := connection.get("path") as Path2D
+	if connector == null or not is_instance_valid(connector) or connector.curve == null:
+		return false
+	var overshoot := maxf(0.0, follow.progress - entry_offset)
+	follow.reparent(connector, false)
+	follow.loop = false
+	follow.progress = minf(overshoot, connector.curve.get_baked_length())
+	follow.set_meta("traffic_planned_connection_id", String(connection.connection_id))
+	follow.set_meta("traffic_planned_junction_index", junction_index)
+	return true
+
+
+func _planned_connection(vehicle: Node2D, path: Path2D, follow: PathFollow2D) -> Dictionary:
+	var planned_id := String(follow.get_meta("traffic_planned_connection_id", ""))
+	if not planned_id.is_empty() and _connections_by_id.has(planned_id):
+		var existing: Dictionary = _connections_by_id[planned_id]
+		if String(existing.get("from_lane_id", "")) == String(path.get_meta("traffic_lane_id", "")):
+			return existing
+		follow.remove_meta("traffic_planned_connection_id")
+		follow.remove_meta("traffic_planned_junction_index")
+	var road_index := int(path.get_meta("traffic_road_index", -1))
+	var next := _next_lane_junction(path, follow, road_index)
+	if next.is_empty():
+		return {}
+	var junction_index := int(next.junction_index)
+	var lane_id := String(path.get_meta("traffic_lane_id", ""))
+	var candidates: Array[Dictionary] = []
+	for connection_value in _connections_from_lane.get(lane_id, []):
+		var candidate := connection_value as Dictionary
+		if int(candidate.get("junction_index", -1)) != junction_index:
+			continue
+		if bool(candidate.get("requires_connector", false)):
+			var connector := candidate.get("path") as Path2D
+			if connector == null or not is_instance_valid(connector):
+				continue
+		candidates.append(candidate)
+	if candidates.is_empty():
+		return {}
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var first_priority := _movement_priority(String(a.get("movement", "straight")))
+		var second_priority := _movement_priority(String(b.get("movement", "straight")))
+		if first_priority == second_priority:
+			return String(a.get("connection_id", "")) < String(b.get("connection_id", ""))
+		return first_priority < second_priority
+	)
+	var visit_count := int(follow.get_meta("traffic_route_decision_count", 0))
+	var selector := posmod(hash("%s:%s:%d:%d" % [vehicle.name, lane_id, junction_index, visit_count]), candidates.size())
+	var selected: Dictionary = candidates[selector]
+	follow.set_meta("traffic_route_decision_count", visit_count + 1)
+	follow.set_meta("traffic_planned_connection_id", String(selected.connection_id))
+	follow.set_meta("traffic_planned_junction_index", junction_index)
+	return selected
+
+
+func _movement_priority(movement: String) -> int:
+	match movement:
+		"straight":
+			return 0
+		"right":
+			return 1
+		_:
+			return 2
+
+
+func _clear_passed_straight_plan(path: Path2D, follow: PathFollow2D, connection: Dictionary) -> void:
+	var junction_index := int(connection.get("junction_index", -1))
+	var road_index := int(path.get_meta("traffic_road_index", -1))
+	for projection_value in _lane_junction_projections(path, road_index):
+		var projection := projection_value as Dictionary
+		if int(projection.junction_index) != junction_index:
+			continue
+		if follow.progress > float(projection.offset) + float(projection.radius) * 1.2:
+			follow.remove_meta("traffic_planned_connection_id")
+			follow.remove_meta("traffic_planned_junction_index")
+		return
+
+
+func _finish_connector_transition(connector: Path2D, follow: PathFollow2D) -> bool:
+	var connector_length := connector.curve.get_baked_length()
+	if follow.progress < connector_length - 0.01:
+		return false
+	var connection_id := String(connector.get_meta("traffic_connection_id", ""))
+	var connection: Dictionary = _connections_by_id.get(connection_id, {})
+	if connection.is_empty():
+		return false
+	_refresh_lane_path_index()
+	var target_lane_id := String(connection.get("to_lane_id", ""))
+	var target_path := _lane_paths_by_id.get(target_lane_id) as Path2D
+	if target_path == null or not is_instance_valid(target_path) or target_path.curve == null:
+		return false
+	var exit_offset := clampf(
+		float(connection.get("exit_curve_offset", 0.0)),
+		0.0,
+		target_path.curve.get_baked_length()
+	)
+	follow.reparent(target_path, false)
+	follow.loop = bool(target_path.get_meta("traffic_lane_loop", false))
+	follow.progress = exit_offset
+	follow.remove_meta("traffic_planned_connection_id")
+	follow.remove_meta("traffic_planned_junction_index")
+	return true
 
 
 func _release_if_vehicle_cleared(vehicle: Node2D, vehicle_length: float) -> void:
@@ -595,7 +824,7 @@ func _refresh_signal_visuals() -> void:
 
 
 func _synchronize_crossing_consumers() -> void:
-	if get_tree() == null:
+	if not is_inside_tree():
 		return
 	var seen: Dictionary = {}
 	for group_name in [&"road_crossing_area", &"road_crossing", &"traffic_crossing"]:

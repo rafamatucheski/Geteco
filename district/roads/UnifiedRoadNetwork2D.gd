@@ -16,6 +16,7 @@ const DASH_LENGTH := 28.0
 const DASH_GAP := 26.0
 const MIN_POINT_DISTANCE := 2.0
 const GENERATED_LANES_NODE := "GeneratedLanePaths"
+const GENERATED_CONNECTIONS_NODE := "GeneratedLaneConnections"
 const TRAFFIC_DIRECTION_FORWARD := 1
 const TRAFFIC_DIRECTION_REVERSE := -1
 
@@ -38,6 +39,7 @@ const TRAFFIC_DIRECTION_REVERSE := -1
 
 var _roads: Array[Dictionary] = []
 var _junctions: Array[Dictionary] = []
+var _lane_connections: Array[Dictionary] = []
 var _validation_errors: Array[String] = []
 var _source_signature := ""
 
@@ -66,6 +68,7 @@ func _rebuild_graph() -> void:
 		return
 	_roads.clear()
 	_junctions.clear()
+	_lane_connections.clear()
 	_validation_errors.clear()
 	_collect_roads()
 	_snap_endpoints_to_network()
@@ -73,6 +76,7 @@ func _rebuild_graph() -> void:
 	_build_lane_paths()
 	_discover_all_junctions()
 	_build_junction_connections()
+	_build_lane_connections()
 	_validate_graph()
 	_source_signature = _make_source_signature()
 	queue_redraw()
@@ -91,6 +95,7 @@ func _collect_roads() -> void:
 			var has_explicit_lanes := source_lanes is Array and not (source_lanes as Array).is_empty()
 			var lane_definitions := _copy_lane_definitions(source_lanes, width)
 			_roads.append({
+				"road_index": _roads.size(),
 				"id": "%s/%s" % [provider.name, String(definition.get("id", "road"))],
 				"control": local_points,
 				"points": PackedVector2Array(),
@@ -417,6 +422,8 @@ func _build_junction_connections() -> void:
 				"road_index": road_index,
 				"road_id": road_id,
 				"road_progress": float(location.progress),
+				"distance_along": float(location.distance_along),
+				"total_length": float(location.total_length),
 				"position_on_road": location.position,
 				"forward_tangent": location.tangent,
 				"forward_angle": (location.tangent as Vector2).angle(),
@@ -431,6 +438,7 @@ func _build_junction_connections() -> void:
 			})
 			_roads[road_index].junctions = road_junctions
 		junction.index = junction_index
+		junction.id = "junction_%03d_%d_%d" % [junction_index, roundi((junction.position as Vector2).x), roundi((junction.position as Vector2).y)]
 		junction.road_ids = road_ids
 		junction.connections = connections
 		junction.approaches = approaches
@@ -449,6 +457,198 @@ func _build_junction_connections() -> void:
 			var lane := lane_value as Dictionary
 			var path := lane.path as Path2D
 			path.set_meta("traffic_junction_indices", junction_indices)
+
+
+func _build_lane_connections() -> void:
+	var container := get_node_or_null(GENERATED_CONNECTIONS_NODE) as Node2D
+	if container == null:
+		container = Node2D.new()
+		container.name = GENERATED_CONNECTIONS_NODE
+		add_child(container)
+	for child in container.get_children():
+		container.remove_child(child)
+		child.free()
+
+	var lanes_by_id := {}
+	for road_index in range(_roads.size()):
+		for lane_value in _roads[road_index].lanes:
+			var lane := lane_value as Dictionary
+			lane.allowed_exits = []
+			lanes_by_id[String(lane.lane_id)] = lane
+
+	for junction_index in range(_junctions.size()):
+		var junction: Dictionary = _junctions[junction_index]
+		var junction_lane_connections: Array[Dictionary] = []
+		for approach_value in junction.approaches:
+			var approach := approach_value as Dictionary
+			for from_lane_id_value in approach.lane_ids:
+				var from_lane_id := String(from_lane_id_value)
+				var from_lane := lanes_by_id.get(from_lane_id, {}) as Dictionary
+				if from_lane.is_empty():
+					continue
+				for target_value in junction.connections:
+					var target := target_value as Dictionary
+					var to_road_index := int(target.road_index)
+					for to_direction in _exit_directions_at(target):
+						for to_lane_value in _roads[to_road_index].lanes:
+							var to_lane := to_lane_value as Dictionary
+							if int(to_lane.direction) != to_direction:
+								continue
+							var same_road := int(from_lane.road_index) == to_road_index
+							var same_lane := from_lane_id == String(to_lane.lane_id)
+							# A lane continues through an interior junction; changing to the
+							# opposite lane of the same road would be an illegal U-turn.
+							if same_road and not same_lane:
+								continue
+							var outgoing_tangent: Vector2 = (target.forward_tangent as Vector2) * float(to_direction)
+							var turn_angle := wrapf(outgoing_tangent.angle() - float(approach.entry_angle), -PI, PI)
+							if not same_lane and absf(turn_angle) > deg_to_rad(150.0):
+								continue
+							var movement := _movement_name(turn_angle, same_lane)
+							var connection_id := "%d:%s>%s" % [junction_index, from_lane_id, String(to_lane.lane_id)]
+							var connector_data := {
+								"path": null,
+								"curve": null,
+								"path_node_path": NodePath(),
+								"entry_curve_offset": -1.0,
+								"exit_curve_offset": -1.0,
+								"entry_lane_progress": float(approach.road_progress),
+								"exit_lane_progress": float(target.road_progress),
+							}
+							if not same_lane:
+								connector_data = _create_lane_connector_path(
+									container, connection_id, junction, from_lane, to_lane, movement, turn_angle
+								)
+							var connection := {
+								"connection_id": connection_id,
+								"junction_index": junction_index,
+								"from_road_index": int(from_lane.road_index),
+								"from_road_id": String(from_lane.road_id),
+								"from_lane_id": from_lane_id,
+								"from_direction": int(from_lane.direction),
+								"from_road_progress": float(approach.road_progress),
+								"to_road_index": to_road_index,
+								"to_road_id": String(to_lane.road_id),
+								"to_lane_id": String(to_lane.lane_id),
+								"to_direction": int(to_lane.direction),
+								"to_road_progress": float(target.road_progress),
+								"movement": movement,
+								"turn_angle": turn_angle,
+								"requires_connector": not same_lane,
+								"path": connector_data.path,
+								"curve": connector_data.curve,
+								"path_node_path": connector_data.path_node_path,
+								"entry_curve_offset": float(connector_data.entry_curve_offset),
+								"exit_curve_offset": float(connector_data.exit_curve_offset),
+								"entry_lane_progress": float(connector_data.entry_lane_progress),
+								"exit_lane_progress": float(connector_data.exit_lane_progress),
+							}
+							_lane_connections.append(connection)
+							junction_lane_connections.append(connection)
+							var allowed_exits: Array = from_lane.allowed_exits
+							allowed_exits.append({
+								"connection_id": connection_id,
+								"junction_index": junction_index,
+								"to_road_index": to_road_index,
+								"to_road_id": String(to_lane.road_id),
+								"to_lane_id": String(to_lane.lane_id),
+								"movement": movement,
+								"turn_angle": turn_angle,
+								"requires_connector": not same_lane,
+								"connector_path": connector_data.path_node_path,
+							})
+							from_lane.allowed_exits = allowed_exits
+		junction.lane_connections = junction_lane_connections
+		_junctions[junction_index] = junction
+
+	for road in _roads:
+		for lane_value in road.lanes:
+			var lane := lane_value as Dictionary
+			var connection_ids: Array[String] = []
+			for exit_value in lane.allowed_exits:
+				connection_ids.append(String((exit_value as Dictionary).connection_id))
+			var path := lane.path as Path2D
+			path.set_meta("traffic_lane_connection_ids", connection_ids)
+
+
+func _exit_directions_at(location: Dictionary) -> Array[int]:
+	var distance_along := float(location.distance_along)
+	var total_length := float(location.total_length)
+	var endpoint_tolerance := minf(12.0, maxf(MIN_POINT_DISTANCE, total_length * 0.002))
+	if distance_along <= endpoint_tolerance:
+		return [TRAFFIC_DIRECTION_FORWARD]
+	if total_length - distance_along <= endpoint_tolerance:
+		return [TRAFFIC_DIRECTION_REVERSE]
+	return [TRAFFIC_DIRECTION_FORWARD, TRAFFIC_DIRECTION_REVERSE]
+
+
+func _movement_name(turn_angle: float, same_lane: bool) -> String:
+	if same_lane or absf(turn_angle) < deg_to_rad(20.0):
+		return "straight"
+	# Positive rotation is clockwise in Godot's screen coordinate system.
+	return "right" if turn_angle > 0.0 else "left"
+
+
+func _create_lane_connector_path(
+	container: Node2D,
+	connection_id: String,
+	junction: Dictionary,
+	from_lane: Dictionary,
+	to_lane: Dictionary,
+	movement: String,
+	turn_angle: float
+) -> Dictionary:
+	var from_curve := from_lane.curve as Curve2D
+	var to_curve := to_lane.curve as Curve2D
+	var junction_position := junction.position as Vector2
+	var from_closest := from_curve.get_closest_offset(junction_position)
+	var to_closest := to_curve.get_closest_offset(junction_position)
+	var trim_distance := maxf(18.0, float(junction.radius) * 0.72)
+	var entry_offset := maxf(0.0, from_closest - trim_distance)
+	var exit_offset := minf(to_curve.get_baked_length(), to_closest + trim_distance)
+	var entry_point := from_curve.sample_baked(entry_offset, true)
+	var exit_point := to_curve.sample_baked(exit_offset, true)
+	var entry_tangent := _curve_tangent_at(from_curve, entry_offset)
+	var exit_tangent := _curve_tangent_at(to_curve, exit_offset)
+	var handle_length := clampf(entry_point.distance_to(exit_point) * 0.36, 12.0, trim_distance)
+
+	var connector_curve := Curve2D.new()
+	connector_curve.bake_interval = 6.0
+	connector_curve.add_point(entry_point, Vector2.ZERO, entry_tangent * handle_length)
+	connector_curve.add_point(exit_point, -exit_tangent * handle_length, Vector2.ZERO)
+	var connector := Path2D.new()
+	connector.name = _lane_node_name("connector", connection_id)
+	connector.curve = connector_curve
+	connector.set_meta("traffic_connection_id", connection_id)
+	connector.set_meta("traffic_junction_index", int(junction.index))
+	connector.set_meta("traffic_from_road_index", int(from_lane.road_index))
+	connector.set_meta("traffic_from_road_id", String(from_lane.road_id))
+	connector.set_meta("traffic_from_lane_id", String(from_lane.lane_id))
+	connector.set_meta("traffic_to_road_index", int(to_lane.road_index))
+	connector.set_meta("traffic_to_road_id", String(to_lane.road_id))
+	connector.set_meta("traffic_to_lane_id", String(to_lane.lane_id))
+	connector.set_meta("traffic_movement", movement)
+	connector.set_meta("traffic_turn_angle", turn_angle)
+	connector.set_meta("traffic_lane_loop", false)
+	container.add_child(connector)
+	connector.add_to_group("unified_lane_connector")
+	return {
+		"path": connector,
+		"curve": connector_curve,
+		"path_node_path": get_path_to(connector),
+		"entry_curve_offset": entry_offset,
+		"exit_curve_offset": exit_offset,
+		"entry_lane_progress": entry_offset / from_curve.get_baked_length() if from_curve.get_baked_length() > 0.0 else 0.0,
+		"exit_lane_progress": exit_offset / to_curve.get_baked_length() if to_curve.get_baked_length() > 0.0 else 0.0,
+	}
+
+
+func _curve_tangent_at(curve: Curve2D, offset: float) -> Vector2:
+	var length := curve.get_baked_length()
+	var before := curve.sample_baked(maxf(0.0, offset - 2.0), true)
+	var after := curve.sample_baked(minf(length, offset + 2.0), true)
+	var tangent := before.direction_to(after)
+	return tangent if not tangent.is_zero_approx() else Vector2.RIGHT
 
 
 func _entry_directions_at(location: Dictionary) -> Array[int]:
@@ -638,9 +838,35 @@ func _validate_graph() -> void:
 			_validation_errors.append("Junction %d has incomplete road connection metadata" % junction_index)
 		if (junction.approaches as Array).is_empty():
 			_validation_errors.append("Junction %d has no directed approaches" % junction_index)
+		if (junction.lane_connections as Array).is_empty():
+			_validation_errors.append("Junction %d has no navigable lane connections" % junction_index)
 		for road_index in junction.roads:
 			if _distance_to_polyline(junction.position, _roads[int(road_index)].points) > 0.75:
 				_validation_errors.append("Junction %d is not on road %s" % [junction_index, _roads[int(road_index)].id])
+	if _lane_connections.is_empty():
+		_validation_errors.append("Road graph has no navigable lane connections")
+	var connection_ids := {}
+	var lanes_with_exits := {}
+	for connection_value in _lane_connections:
+		var connection := connection_value as Dictionary
+		var connection_id := String(connection.get("connection_id", ""))
+		if connection_id.is_empty() or connection_ids.has(connection_id):
+			_validation_errors.append("Missing or duplicate lane connection id: %s" % connection_id)
+		connection_ids[connection_id] = true
+		lanes_with_exits[String(connection.get("from_lane_id", ""))] = true
+		if not lane_ids.has(String(connection.get("from_lane_id", ""))) or not lane_ids.has(String(connection.get("to_lane_id", ""))):
+			_validation_errors.append("Lane connection %s references an unknown lane" % connection_id)
+		if bool(connection.get("requires_connector", false)):
+			var connector := connection.get("path") as Path2D
+			if connector == null or connector.curve == null or connector.curve.get_point_count() < 2:
+				_validation_errors.append("Lane connection %s has no connector curve" % connection_id)
+			elif not connector.is_in_group("unified_lane_connector"):
+				_validation_errors.append("Lane connection %s is missing unified_lane_connector group" % connection_id)
+	for junction in _junctions:
+		for approach_value in junction.approaches:
+			for lane_id_value in (approach_value as Dictionary).lane_ids:
+				if not lanes_with_exits.has(String(lane_id_value)):
+					_validation_errors.append("Inbound lane %s has no allowed exit" % String(lane_id_value))
 	if not _validation_errors.is_empty():
 		push_warning("Unified road graph validation:\n%s" % "\n".join(_validation_errors))
 
@@ -749,6 +975,7 @@ func get_graph_data() -> Dictionary:
 	return {
 		"roads": _roads.duplicate(true),
 		"lanes": lanes,
+		"lane_connections": _lane_connections.duplicate(true),
 		"junctions": _junctions.duplicate(true),
 		"validation_errors": _validation_errors.duplicate(),
 	}
@@ -767,4 +994,6 @@ func get_validation_summary() -> String:
 	var lane_count := 0
 	for road in _roads:
 		lane_count += (road.lanes as Array).size()
-	return "roads=%d lanes=%d junctions=%d errors=%d" % [_roads.size(), lane_count, _junctions.size(), _validation_errors.size()]
+	return "roads=%d lanes=%d junctions=%d lane_connections=%d errors=%d" % [
+		_roads.size(), lane_count, _junctions.size(), _lane_connections.size(), _validation_errors.size()
+	]

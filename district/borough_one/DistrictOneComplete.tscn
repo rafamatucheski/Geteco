@@ -11,6 +11,8 @@
 [ext_resource type="PackedScene" path="res://district/bairro1/Bairro1ProgressionConnections.tscn" id="9_connections"]
 [ext_resource type="PackedScene" path="res://district/bairro1/Bairro1CivicServices.tscn" id="10_civic"]
 [ext_resource type="Script" path="res://district/roads/UnifiedRoadNetwork2D.gd" id="11_unified_roads"]
+[ext_resource type="Script" path="res://district/roads/traffic/JunctionTrafficController.gd" id="12_junction_traffic"]
+[ext_resource type="Script" path="res://district/roads/safety/DistrictRoadSafetySystem2D.gd" id="13_road_safety"]
 
 [node name="DistrictOneComplete" type="Node2D" unique_id=1897383402]
 script = ExtResource("1_complete")
@@ -167,11 +169,17 @@ metadata/point_index = 5
 z_index = 2
 script = ExtResource("11_unified_roads")
 
+[node name="JunctionTrafficController" type="Node" parent="."]
+script = ExtResource("12_junction_traffic")
+
 [node name="DistrictRailLine" parent="." unique_id=1647519424 instance=ExtResource("3_rail")]
 z_index = 3
 position = Vector2(0, 520)
 
 [node name="District1HighwayExit" parent="." unique_id=1075402988 instance=ExtResource("4_highway")]
+
+[node name="DistrictRoadSafetySystem" type="Node2D" parent="."]
+script = ExtResource("13_road_safety")
 
 [node name="Bairro1ProgressionConnections" parent="." unique_id=1534465425 instance=ExtResource("9_connections")]
 

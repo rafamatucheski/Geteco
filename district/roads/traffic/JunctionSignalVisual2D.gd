@@ -57,14 +57,9 @@ func _draw() -> void:
 
 
 func _approach_tangent(approach: Dictionary) -> Vector2:
-	var tangent: Vector2 = approach.get("tangent", Vector2.ZERO)
+	# UnifiedRoadNetwork already publishes entry_tangent = base_tangent *
+	# direction. Consuming it directly avoids reversing reverse approaches twice.
+	var tangent: Vector2 = approach.get("entry_tangent", approach.get("tangent", Vector2.ZERO))
 	if tangent.is_zero_approx() and approach.has("angle"):
 		tangent = Vector2.RIGHT.rotated(float(approach.angle))
-	var direction = approach.get("direction", 1)
-	if direction is int or direction is float:
-		if int(direction) < 0:
-			tangent = -tangent
-	elif String(direction).to_lower() in ["reverse", "backward", "inbound_reverse"]:
-		tangent = -tangent
 	return tangent.normalized()
-

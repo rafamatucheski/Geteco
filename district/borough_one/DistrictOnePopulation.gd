@@ -77,8 +77,8 @@ func _ensure_junction_controller(graph: Node2D) -> Node:
 			return candidate
 	var controller := JUNCTION_TRAFFIC.new()
 	controller.name = "JunctionTrafficController"
-	controller.configure_graph_source(graph)
 	get_parent().add_child(controller)
+	controller.configure_graph_source(graph)
 	return controller
 
 
