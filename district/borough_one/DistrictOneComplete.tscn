@@ -1,0 +1,185 @@
+[gd_scene format=3 uid="uid://5b5dd3r5q7c8"]
+
+[ext_resource type="Script" uid="uid://hn81pvu51vfk" path="res://district/borough_one/DistrictOneComplete.gd" id="1_complete"]
+[ext_resource type="PackedScene" uid="uid://dnor08vggfuo3" path="res://district/bairro1/Bairro1Expansion.tscn" id="2_expansion"]
+[ext_resource type="PackedScene" path="res://district/rail/DistrictRailLine.tscn" id="3_rail"]
+[ext_resource type="PackedScene" path="res://district/highway/District1HighwayExit.tscn" id="4_highway"]
+[ext_resource type="PackedScene" path="res://district/borough_one/DistrictOnePopulation.tscn" id="5_population"]
+[ext_resource type="PackedScene" path="res://district/borough_one/DistrictOneMissionAnchors.tscn" id="6_anchors"]
+[ext_resource type="PackedScene" path="res://district/bairro1/Bairro1UrbanDensity.tscn" id="7_density"]
+[ext_resource type="PackedScene" path="res://district/bairro1/Bairro1RoadNetwork.tscn" id="8_road_network"]
+[ext_resource type="PackedScene" path="res://district/bairro1/Bairro1ProgressionConnections.tscn" id="9_connections"]
+[ext_resource type="PackedScene" path="res://district/bairro1/Bairro1CivicServices.tscn" id="10_civic"]
+[ext_resource type="Script" path="res://district/roads/UnifiedRoadNetwork2D.gd" id="11_unified_roads"]
+
+[node name="DistrictOneComplete" type="Node2D" unique_id=1897383402]
+script = ExtResource("1_complete")
+
+[node name="Bairro1Expansion" parent="." unique_id=1549420545 instance=ExtResource("2_expansion")]
+render_legacy_roads = false
+gateway_spine_points = PackedVector2Array(870, 1260, 870, 1500, 870, 1740, 1050, 1980, 1280, 2200, 1340, 2500, 1400, 2800, 1480, 3500)
+midtown_cross_points = PackedVector2Array(-30, 1740, 350, 1740, 700, 1800, 1050, 1950, 1400, 2100, 1800, 2140, 2100, 2140, 2450, 2140)
+south_cross_points = PackedVector2Array(-30, 2800, 350, 2750, 700, 2760, 1050, 2880, 1400, 3000, 1800, 3040, 2150, 3040, 2450, 3040)
+east_arc_points = PackedVector2Array(2450, 2140, 2450, 2400, 2460, 2700, 2450, 3040)
+west_local_points = PackedVector2Array(-30, 2360, 250, 2360, 550, 2450, 800, 2620, 1050, 2880)
+north_link_points = PackedVector2Array(870, 1260, 1200, 1260, 1500, 1260, 1780, 1260)
+east_link_points = PackedVector2Array(1750, 1260, 1950, 1450, 2020, 1700, 1980, 1950, 1900, 2140)
+west_link_points = PackedVector2Array(-30, 1740, -30, 2000, -30, 2180, -30, 2360)
+
+[node name="RoadControlPoints2" type="Node2D" parent="Bairro1Expansion" unique_id=1553152704]
+
+[node name="Bairro1RoadNetwork" parent="." unique_id=1433902338 instance=ExtResource("8_road_network")]
+z_index = 1
+render_legacy_roads = false
+coastal_exit_points = PackedVector2Array(2450, 2140, 2700, 2140, 2950, 2180, 3200, 2250, 3450, 2260)
+port_service_points = PackedVector2Array(2450, 2950, 2650, 2900, 2880, 2820, 3020, 2650, 3010, 2420, 2920, 2220)
+southern_ring_points = PackedVector2Array(2450, 3040, 2535, 3230, 2490, 3415, 2320, 3560, 2070, 3650, 1810, 3610, 1600, 3535, 1480, 3500)
+waterfront_service_points = PackedVector2Array(2880, 2820, 3150, 3020, 3420, 2900, 3500, 2620, 3430, 2360, 3280, 2220)
+
+[node name="RoadControlPoints" type="Node2D" parent="Bairro1RoadNetwork" unique_id=1844949065]
+
+[node name="Coastal Exit_01" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1175607967]
+position = Vector2(2450, 2140)
+metadata/road_id = "coastal_exit"
+metadata/point_index = 0
+
+[node name="Coastal Exit_02" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1782198017]
+position = Vector2(2700, 2140)
+metadata/road_id = "coastal_exit"
+metadata/point_index = 1
+
+[node name="Coastal Exit_03" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1523866532]
+position = Vector2(2950, 2180)
+metadata/road_id = "coastal_exit"
+metadata/point_index = 2
+
+[node name="Coastal Exit_04" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=33326299]
+position = Vector2(3200, 2250)
+metadata/road_id = "coastal_exit"
+metadata/point_index = 3
+
+[node name="Coastal Exit_05" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=677525243]
+position = Vector2(3450, 2260)
+metadata/road_id = "coastal_exit"
+metadata/point_index = 4
+
+[node name="Port Service_01" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=170807039]
+position = Vector2(2450, 2950)
+metadata/road_id = "port_service"
+metadata/point_index = 0
+
+[node name="Port Service_02" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=529162525]
+position = Vector2(2650, 2900)
+metadata/road_id = "port_service"
+metadata/point_index = 1
+
+[node name="Port Service_03" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=677381211]
+position = Vector2(2880, 2820)
+metadata/road_id = "port_service"
+metadata/point_index = 2
+
+[node name="Port Service_04" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=937085980]
+position = Vector2(3020, 2650)
+metadata/road_id = "port_service"
+metadata/point_index = 3
+
+[node name="Port Service_05" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1367920204]
+position = Vector2(3010, 2420)
+metadata/road_id = "port_service"
+metadata/point_index = 4
+
+[node name="Port Service_06" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=211007030]
+position = Vector2(2920, 2220)
+metadata/road_id = "port_service"
+metadata/point_index = 5
+
+[node name="Southern Ring_01" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=897329910]
+position = Vector2(2450, 3040)
+metadata/road_id = "southern_ring"
+metadata/point_index = 0
+
+[node name="Southern Ring_02" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1396676545]
+position = Vector2(2535, 3230)
+metadata/road_id = "southern_ring"
+metadata/point_index = 1
+
+[node name="Southern Ring_03" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=977342004]
+position = Vector2(2490, 3415)
+metadata/road_id = "southern_ring"
+metadata/point_index = 2
+
+[node name="Southern Ring_04" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=28180594]
+position = Vector2(2320, 3560)
+metadata/road_id = "southern_ring"
+metadata/point_index = 3
+
+[node name="Southern Ring_05" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=865167444]
+position = Vector2(2070, 3650)
+metadata/road_id = "southern_ring"
+metadata/point_index = 4
+
+[node name="Southern Ring_06" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=35941581]
+position = Vector2(1810, 3610)
+metadata/road_id = "southern_ring"
+metadata/point_index = 5
+
+[node name="Southern Ring_07" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1724030854]
+position = Vector2(1600, 3535)
+metadata/road_id = "southern_ring"
+metadata/point_index = 6
+
+[node name="Southern Ring_08" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=989693086]
+position = Vector2(1480, 3500)
+metadata/road_id = "southern_ring"
+metadata/point_index = 7
+
+[node name="Waterfront Service_01" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1434219056]
+position = Vector2(2880, 2820)
+metadata/road_id = "waterfront_service"
+metadata/point_index = 0
+
+[node name="Waterfront Service_02" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1677219077]
+position = Vector2(3150, 3020)
+metadata/road_id = "waterfront_service"
+metadata/point_index = 1
+
+[node name="Waterfront Service_03" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=2136621550]
+position = Vector2(3420, 2900)
+metadata/road_id = "waterfront_service"
+metadata/point_index = 2
+
+[node name="Waterfront Service_04" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=848451411]
+position = Vector2(3500, 2620)
+metadata/road_id = "waterfront_service"
+metadata/point_index = 3
+
+[node name="Waterfront Service_05" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints" unique_id=1586345450]
+position = Vector2(3430, 2360)
+metadata/road_id = "waterfront_service"
+metadata/point_index = 4
+
+[node name="Waterfront Service_06" type="Marker2D" parent="Bairro1RoadNetwork/RoadControlPoints"]
+position = Vector2(3280, 2220)
+metadata/road_id = "waterfront_service"
+metadata/point_index = 5
+
+[node name="UnifiedRoadNetwork" type="Node2D" parent="."]
+z_index = 2
+script = ExtResource("11_unified_roads")
+
+[node name="DistrictRailLine" parent="." unique_id=1647519424 instance=ExtResource("3_rail")]
+z_index = 3
+position = Vector2(0, 520)
+
+[node name="District1HighwayExit" parent="." unique_id=1075402988 instance=ExtResource("4_highway")]
+
+[node name="Bairro1ProgressionConnections" parent="." unique_id=1534465425 instance=ExtResource("9_connections")]
+
+[node name="DistrictOneMissionAnchors" parent="." unique_id=1403008192 instance=ExtResource("6_anchors")]
+
+[node name="Bairro1UrbanDensity" parent="." unique_id=1287447094 instance=ExtResource("7_density")]
+z_index = 21
+
+[node name="Bairro1CivicServices" parent="." unique_id=1865479926 instance=ExtResource("10_civic")]
+
+[node name="DistrictOnePopulation" parent="." unique_id=1877116191 instance=ExtResource("5_population")]

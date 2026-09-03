@@ -1,0 +1,530 @@
+{
+  "atlasDimensions": {
+    "width": 1672,
+    "height": 3762,
+    "cols": 4,
+    "rows": 6,
+    "cellWidth": 418,
+    "cellHeight": 627,
+    "totalVariants": 24
+  },
+  "buildings": [
+    {
+      "variantId": 0,
+      "filename": "building_00_modern_glass_skyscraper_helipad.png",
+      "title": "Modern Glass Skyscraper",
+      "category": "High-Rise Commercial",
+      "grid": {
+        "col": 0,
+        "row": 0
+      },
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "helipad",
+        "hvac",
+        "antenna",
+        "glass"
+      ]
+    },
+    {
+      "variantId": 1,
+      "filename": "building_01_corporate_plaza_solar_atrium.png",
+      "title": "Corporate Plaza Tower",
+      "category": "High-Rise Commercial",
+      "grid": {
+        "col": 1,
+        "row": 0
+      },
+      "rect": {
+        "x": 418,
+        "y": 0,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "solar_panels",
+        "skylight_atrium",
+        "cooling_towers"
+      ]
+    },
+    {
+      "variantId": 2,
+      "filename": "building_02_telecom_financial_spire.png",
+      "title": "Telecom and Financial Spire",
+      "category": "Telecommunications",
+      "grid": {
+        "col": 2,
+        "row": 0
+      },
+      "rect": {
+        "x": 836,
+        "y": 0,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "satellite_dishes",
+        "comm_mast",
+        "generator"
+      ]
+    },
+    {
+      "variantId": 3,
+      "filename": "building_03_art_deco_luxury_tower.png",
+      "title": "Art Deco Luxury Tower",
+      "category": "High-Rise Commercial",
+      "grid": {
+        "col": 3,
+        "row": 0
+      },
+      "rect": {
+        "x": 1254,
+        "y": 0,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "copper_roof",
+        "stepped_pyramid",
+        "spire"
+      ]
+    },
+    {
+      "variantId": 4,
+      "filename": "building_04_liberty_city_brownstone_water_tower.png",
+      "title": "Liberty City Brownstone",
+      "category": "Residential Multi-Family",
+      "grid": {
+        "col": 0,
+        "row": 1
+      },
+      "rect": {
+        "x": 0,
+        "y": 627,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "water_tower",
+        "fire_escapes",
+        "skylights",
+        "chimneys"
+      ]
+    },
+    {
+      "variantId": 5,
+      "filename": "building_05_queens_tenement_dual_towers.png",
+      "title": "Queens Tenement Block",
+      "category": "Residential Multi-Family",
+      "grid": {
+        "col": 1,
+        "row": 1
+      },
+      "rect": {
+        "x": 418,
+        "y": 627,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "dual_water_towers",
+        "clotheslines",
+        "antennas"
+      ]
+    },
+    {
+      "variantId": 6,
+      "filename": "building_06_uptown_penthouse_garden_terrace.png",
+      "title": "Uptown Penthouse Terrace",
+      "category": "Residential Luxury",
+      "grid": {
+        "col": 2,
+        "row": 1
+      },
+      "rect": {
+        "x": 836,
+        "y": 627,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "garden_terrace",
+        "pergola",
+        "potted_plants",
+        "solarium"
+      ]
+    },
+    {
+      "variantId": 7,
+      "filename": "building_07_brooklyn_walkup_bodega.png",
+      "title": "Brooklyn Walk-Up and Bodega",
+      "category": "Mixed Commercial/Residential",
+      "grid": {
+        "col": 3,
+        "row": 1
+      },
+      "rect": {
+        "x": 1254,
+        "y": 627,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "water_tower",
+        "utility_shed",
+        "graffiti",
+        "exhaust"
+      ]
+    },
+    {
+      "variantId": 8,
+      "filename": "building_08_police_precinct_lcpd_hq.png",
+      "title": "Police Precinct LCPD HQ",
+      "category": "Municipal Emergency",
+      "grid": {
+        "col": 0,
+        "row": 2
+      },
+      "rect": {
+        "x": 0,
+        "y": 1254,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "police_helipad",
+        "emergency_beacons",
+        "secure_penthouse"
+      ]
+    },
+    {
+      "variantId": 9,
+      "filename": "building_09_general_hospital_trauma_helipad.png",
+      "title": "General Hospital Trauma Center",
+      "category": "Municipal Healthcare",
+      "grid": {
+        "col": 1,
+        "row": 2
+      },
+      "rect": {
+        "x": 418,
+        "y": 1254,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "red_cross_helipad",
+        "sterile_hvac",
+        "backup_generator"
+      ]
+    },
+    {
+      "variantId": 10,
+      "filename": "building_10_central_fire_station_fdlc.png",
+      "title": "Central Fire Station FDLC",
+      "category": "Municipal Emergency",
+      "grid": {
+        "col": 2,
+        "row": 2
+      },
+      "rect": {
+        "x": 836,
+        "y": 1254,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "maltese_cross",
+        "hose_tower",
+        "siren",
+        "skylights"
+      ]
+    },
+    {
+      "variantId": 11,
+      "filename": "building_11_city_hall_courthouse_dome.png",
+      "title": "City Hall and Municipal Court",
+      "category": "Government / Civic",
+      "grid": {
+        "col": 3,
+        "row": 2
+      },
+      "rect": {
+        "x": 1254,
+        "y": 1254,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "copper_dome",
+        "classical_cornice",
+        "lantern_skylights"
+      ]
+    },
+    {
+      "variantId": 12,
+      "filename": "building_12_ammu_nation_gun_superstore.png",
+      "title": "Ammu-Nation Gun Store",
+      "category": "Commercial Retail",
+      "grid": {
+        "col": 0,
+        "row": 3
+      },
+      "rect": {
+        "x": 0,
+        "y": 1881,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "target_logo",
+        "hazard_stripes",
+        "ammo_crates"
+      ]
+    },
+    {
+      "variantId": 13,
+      "filename": "building_13_retro_24h_neon_diner.png",
+      "title": "24h Retro Neon Diner",
+      "category": "Commercial Dining",
+      "grid": {
+        "col": 1,
+        "row": 3
+      },
+      "rect": {
+        "x": 418,
+        "y": 1881,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "neon_sign",
+        "checkered_border",
+        "exhaust_hood",
+        "drive_thru"
+      ]
+    },
+    {
+      "variantId": 14,
+      "filename": "building_14_pay_n_spray_8ball_garage.png",
+      "title": "8-Ball Pay N Spray Garage",
+      "category": "Automotive Service",
+      "grid": {
+        "col": 2,
+        "row": 3
+      },
+      "rect": {
+        "x": 836,
+        "y": 1881,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "8ball_logo",
+        "tire_stacks",
+        "oil_drums",
+        "spray_booth"
+      ]
+    },
+    {
+      "variantId": 15,
+      "filename": "building_15_octan_gas_station_mart.png",
+      "title": "Octan Gas Station and 24/7 Mart",
+      "category": "Commercial Fuel and Retail",
+      "grid": {
+        "col": 3,
+        "row": 3
+      },
+      "rect": {
+        "x": 1254,
+        "y": 1881,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "fuel_canopy",
+        "octan_logo",
+        "mart_hvac",
+        "satellite"
+      ]
+    },
+    {
+      "variantId": 16,
+      "filename": "building_16_heavy_industrial_warehouse_zinc.png",
+      "title": "Heavy Industrial Warehouse",
+      "category": "Industrial Storage",
+      "grid": {
+        "col": 0,
+        "row": 4
+      },
+      "rect": {
+        "x": 0,
+        "y": 2508,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "corrugated_zinc",
+        "skylight_strips",
+        "turbine_vents"
+      ]
+    },
+    {
+      "variantId": 17,
+      "filename": "building_17_freight_cargo_depot_rusted.png",
+      "title": "Freight Cargo Depot",
+      "category": "Industrial Logistics",
+      "grid": {
+        "col": 1,
+        "row": 4
+      },
+      "rect": {
+        "x": 418,
+        "y": 2508,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "rusted_tin_roof",
+        "gantry_crane",
+        "exhaust_stacks"
+      ]
+    },
+    {
+      "variantId": 18,
+      "filename": "building_18_chemical_plant_tanks_pipes.png",
+      "title": "Chemical and Refining Plant",
+      "category": "Industrial Manufacturing",
+      "grid": {
+        "col": 2,
+        "row": 4
+      },
+      "rect": {
+        "x": 836,
+        "y": 2508,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "cylindrical_tanks",
+        "pipe_manifold",
+        "catwalks",
+        "hazard_placard"
+      ]
+    },
+    {
+      "variantId": 19,
+      "filename": "building_19_cold_storage_distribution.png",
+      "title": "Cold Storage Distribution",
+      "category": "Industrial Refrigeration",
+      "grid": {
+        "col": 3,
+        "row": 4
+      },
+      "rect": {
+        "x": 1254,
+        "y": 2508,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "compressor_banks",
+        "safety_walkways",
+        "chiller_coils"
+      ]
+    },
+    {
+      "variantId": 20,
+      "filename": "building_20_suburban_terracotta_villa.png",
+      "title": "Suburban Terracotta Villa",
+      "category": "Residential Single-Family",
+      "grid": {
+        "col": 0,
+        "row": 5
+      },
+      "rect": {
+        "x": 0,
+        "y": 3135,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "clay_tiles",
+        "brick_chimney",
+        "garden_lawn",
+        "flowerbeds"
+      ]
+    },
+    {
+      "variantId": 21,
+      "filename": "building_21_modern_suburban_ranch_solar.png",
+      "title": "Modern Suburban Ranch House",
+      "category": "Residential Single-Family",
+      "grid": {
+        "col": 1,
+        "row": 5
+      },
+      "rect": {
+        "x": 418,
+        "y": 3135,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "charcoal_shingles",
+        "solar_panels",
+        "skylight",
+        "garden_deck"
+      ]
+    },
+    {
+      "variantId": 22,
+      "filename": "building_22_public_park_plaza_fountain.png",
+      "title": "Public Park Grand Fountain Plaza",
+      "category": "Public Space / Park",
+      "grid": {
+        "col": 2,
+        "row": 5
+      },
+      "rect": {
+        "x": 836,
+        "y": 3135,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "marble_fountain",
+        "stone_pavers",
+        "park_benches",
+        "flowerbeds"
+      ]
+    },
+    {
+      "variantId": 23,
+      "filename": "building_23_public_park_sports_basketball.png",
+      "title": "Public Park Basketball Complex",
+      "category": "Public Recreation",
+      "grid": {
+        "col": 3,
+        "row": 5
+      },
+      "rect": {
+        "x": 1254,
+        "y": 3135,
+        "width": 418,
+        "height": 627
+      },
+      "features": [
+        "basketball_court",
+        "hoops",
+        "benches",
+        "paved_promenade"
+      ]
+    }
+  ]
+}

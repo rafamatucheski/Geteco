@@ -1,0 +1,13 @@
+# Godot 4 import cache - regenerated automatically, must never be versioned
+.godot/
+
+# Godot editor / OS junk
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+.DS_Store
+Thumbs.db
+
+# Logs and local test scratch
+*.log

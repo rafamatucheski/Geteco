@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="64" viewBox="0 0 384 64">
+  <defs>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="2" seed="19" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0" result="gray"/>
+      <feBlend in="SourceGraphic" in2="gray" mode="soft-light"/>
+    </filter>
+    <pattern id="pavers" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect width="16" height="16" fill="#857f74"/>
+      <path d="M0 0H16V16H0Z M8 0V16 M0 8H16" fill="none" stroke="#6f6a62" stroke-width="1" opacity=".55"/>
+      <path d="M1 1H7V7H1Z M9 9H15V15H9Z" fill="#989186" opacity=".35"/>
+    </pattern>
+  </defs>
+  <!-- 0: lot/ground -->
+  <g transform="translate(0 0)">
+    <rect width="64" height="64" fill="url(#pavers)"/>
+    <rect width="64" height="64" fill="#6f695f" opacity=".16" filter="url(#grain)"/>
+  </g>
+  <!-- 1: horizontal two-way road -->
+  <g transform="translate(64 0)">
+    <rect width="64" height="64" fill="#262d33"/>
+    <rect width="64" height="64" fill="#3b4247" opacity=".18" filter="url(#grain)"/>
+  </g>
+  <!-- 2: vertical two-way road -->
+  <g transform="translate(128 0)">
+    <rect width="64" height="64" fill="#262d33"/>
+    <rect width="64" height="64" fill="#3b4247" opacity=".18" filter="url(#grain)"/>
+  </g>
+  <!-- 3: intersection -->
+  <g transform="translate(192 0)">
+    <rect width="64" height="64" fill="#252c32"/>
+    <rect width="64" height="64" fill="#444a4f" opacity=".14" filter="url(#grain)"/>
+  </g>
+  <!-- 4: sidewalk -->
+  <g transform="translate(256 0)">
+    <rect width="64" height="64" fill="#9b978e"/>
+    <path d="M0 0H64V64H0Z M0 32H64 M32 0V64" fill="none" stroke="#77746d" stroke-width="2"/>
+    <path d="M4 4H28V28H4Z M36 36H60V60H36Z" fill="#aaa69d" opacity=".38"/>
+  </g>
+  <!-- 5: small green/plaza tile -->
+  <g transform="translate(320 0)">
+    <rect width="64" height="64" fill="#3f6844"/>
+    <path d="M0 13C12 8 22 19 34 13S54 8 64 14V64H0Z" fill="#4b7950" opacity=".6"/>
+    <circle cx="14" cy="42" r="2" fill="#79965a"/><circle cx="49" cy="21" r="2" fill="#739154"/>
+  </g>
+</svg>

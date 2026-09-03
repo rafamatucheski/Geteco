@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://mortician_scene_uid_01"]
+
+[ext_resource type="Script" path="res://Mortician.gd" id="1_mortician"]
+
+[node name="Mortician" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_mortician")
