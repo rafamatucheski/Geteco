@@ -60,6 +60,13 @@ const GRASS_BOUNDS_MARGIN := 260.0
 	set(value):
 		signalized_junction_overrides = value.duplicate(true)
 		_rebuild_graph()
+## Local exceptions for junctions whose approach geometry needs a wider gap
+## between generated shoulder walls. Keys accept the same junction id/position
+## forms as signalized_junction_overrides, plus a stable sorted road-id signature.
+@export var guard_rail_junction_clearance_overrides: Dictionary = {}:
+	set(value):
+		guard_rail_junction_clearance_overrides = value.duplicate(true)
+		_rebuild_graph()
 @export var show_junction_debug: bool = false:
 	set(value):
 		show_junction_debug = value
@@ -80,6 +87,7 @@ const GRASS_BOUNDS_MARGIN := 260.0
 		_rebuild_graph()
 
 var _roads: Array[Dictionary] = []
+var _routing_revision: int = 0
 var _junctions: Array[Dictionary] = []
 var _lane_connections: Array[Dictionary] = []
 var _junction_exclusion_ranges: Array[Dictionary] = []
@@ -103,7 +111,7 @@ func _process(_delta: float) -> void:
 
 
 func _make_source_signature() -> String:
-	var values: Array = [snap_distance, curve_subdivisions, signalized_junction_overrides]
+	var values: Array = [snap_distance, curve_subdivisions, signalized_junction_overrides, guard_rail_junction_clearance_overrides]
 	for provider in _get_provider_nodes():
 		values.append([provider.get_path(), provider.call("get_road_graph_definitions")])
 	for corridor_source in _get_elevated_corridor_sources():
@@ -132,6 +140,7 @@ func _rebuild_graph() -> void:
 	_build_lane_connections()
 	_build_guard_rails()
 	_validate_graph()
+	_routing_revision += 1
 	_source_signature = _make_source_signature()
 	queue_redraw()
 
@@ -144,6 +153,16 @@ func _collect_roads() -> void:
 			var local_points := PackedVector2Array()
 			for source_point in definition.get("points", PackedVector2Array()):
 				local_points.append(to_local(provider.to_global(source_point)))
+			var guard_rail_openings: Array[Dictionary] = []
+			for opening_value in definition.get("guard_rail_openings", []):
+				var source_opening := opening_value as Dictionary
+				var source_position: Variant = source_opening.get("position", null)
+				if not source_position is Vector2:
+					continue
+				guard_rail_openings.append({
+					"position": to_local(provider.to_global(source_position as Vector2)),
+					"radius": maxf(0.0, float(source_opening.get("radius", 0.0))),
+				})
 			var width := float(definition.get("width", 120.0))
 			var source_lanes: Variant = definition.get("lanes", [])
 			var has_explicit_lanes := source_lanes is Array and not (source_lanes as Array).is_empty()
@@ -162,6 +181,7 @@ func _collect_roads() -> void:
 				"render": bool(definition.get("render", true)),
 				"open_start": bool(definition.get("open_start", false)),
 				"open_end": bool(definition.get("open_end", false)),
+				"guard_rail_openings": guard_rail_openings,
 				"snap_start": String(definition.get("snap_start", "")),
 				"snap_end": String(definition.get("snap_end", "")),
 				"snap_start_t": float(definition.get("snap_start_t", -1.0)),
@@ -397,6 +417,8 @@ func _add_guard_rail_segments(container: Node2D, edge: PackedVector2Array, road_
 			continue
 		var a := edge[index]
 		var b := edge[index + 1]
+		if _guard_rail_segment_hits_opening(a, b, road_index):
+			continue
 		if _near_junction((a + b) * 0.5):
 			continue
 		_add_segment_blocker(
@@ -408,12 +430,40 @@ func _add_guard_rail_segments(container: Node2D, edge: PackedVector2Array, road_
 		)
 
 
+func _guard_rail_segment_hits_opening(a: Vector2, b: Vector2, road_index: int) -> bool:
+	for opening_value in _roads[road_index].guard_rail_openings:
+		var opening := opening_value as Dictionary
+		var center := opening.position as Vector2
+		var closest := Geometry2D.get_closest_point_to_segment(center, a, b)
+		if closest.distance_to(center) <= float(opening.radius):
+			return true
+	return false
+
+
 func _near_junction(point: Vector2) -> bool:
 	for junction_value in _junctions:
 		var junction := junction_value as Dictionary
-		if point.distance_to(junction.position as Vector2) <= float(junction.radius) + GUARD_RAIL_JUNCTION_CLEARANCE:
+		if point.distance_to(junction.position as Vector2) <= float(junction.radius) + _guard_rail_junction_clearance(junction):
 			return true
 	return false
+
+
+func _guard_rail_junction_clearance(junction: Dictionary) -> float:
+	var road_ids: Array[String] = []
+	for road_id in junction.get("road_ids", []):
+		road_ids.append(String(road_id))
+	road_ids.sort()
+	var position: Vector2 = junction.get("position", Vector2.ZERO)
+	var keys: Array[String] = [
+		String(junction.get("id", "")),
+		"%d,%d" % [roundi(position.x), roundi(position.y)],
+		str(int(junction.get("index", -1))),
+		"|".join(road_ids),
+	]
+	for key in keys:
+		if not key.is_empty() and guard_rail_junction_clearance_overrides.has(key):
+			return maxf(0.0, float(guard_rail_junction_clearance_overrides[key]))
+	return GUARD_RAIL_JUNCTION_CLEARANCE
 
 
 func _add_segment_blocker(parent: Node, from: Vector2, to: Vector2, thickness: float, blocker_name: String) -> void:
@@ -1649,6 +1699,11 @@ func _catmull_rom(control: PackedVector2Array, subdivisions: int) -> PackedVecto
 			sampled.append(0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3))
 	sampled.append(control[-1])
 	return sampled
+
+
+## Consumers can invalidate adjacency/path caches without copying graph data.
+func get_routing_revision() -> int:
+	return _routing_revision
 
 
 func get_graph_data() -> Dictionary:

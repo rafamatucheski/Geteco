@@ -2,6 +2,8 @@ extends CharacterBody2D
 
 const CREW_TRANSITION := preload("res://EmergencyCrewTransition.gd")
 const CREW_DOOR_SCRIPT := preload("res://VehicleDoorVisual.gd")
+const LANE_ROUTER := preload("res://district/roads/EmergencyLaneRouter.gd")
+var _lane_router := LANE_ROUTER.new()
 
 @export_enum("POLICE", "AMBULANCE", "FIRE", "CORONER") var type: int = 0
 
@@ -229,6 +231,7 @@ func _setup_headlight() -> void:
 	add_child(flame_particles)
 
 func activate():
+	_lane_router.reset()
 	current_speed = 0.0
 	velocity = Vector2.ZERO
 	is_broken = false
@@ -298,6 +301,7 @@ func _notify_return_started() -> void:
 		director.begin_vehicle_return(self)
 
 func _deactivate():
+	_lane_router.reset()
 	is_acting = false
 	is_returning_to_base = false
 	current_speed = 0.0
@@ -509,6 +513,10 @@ func _physics_process(delta: float) -> void:
 			_deactivate()
 			return
 		var waypoint = _get_road_guidance_target(base_pos)
+		if waypoint.distance_to(global_position) < 1.0:
+			current_speed = 0.0
+			velocity = Vector2.ZERO
+			return
 		var dist_base = global_position.distance_to(base_pos)
 		var dir_wpt = global_position.direction_to(waypoint)
 		
@@ -599,6 +607,10 @@ func _physics_process(delta: float) -> void:
 		intercept_pos = target.global_position + target.velocity * 0.35
 		
 	var waypoint = _get_road_guidance_target(intercept_pos)
+	if waypoint.distance_to(global_position) < 1.0:
+		current_speed = 0.0
+		velocity = Vector2.ZERO
+		return
 	var dir = global_position.direction_to(waypoint)
 	var dist = global_position.distance_to(target.global_position)
 	
@@ -975,6 +987,11 @@ func on_mortician_embarked(_m: Node2D) -> void:
 			siren_audio.stop()
 
 func _get_road_guidance_target(dest: Vector2) -> Vector2:
+	var routed_target: Vector2 = _lane_router.guidance(self, dest)
+	if is_instance_valid(_lane_router.network):
+		return routed_target
+	# Legacy CentralDistrict loops have no canonical connections. Keep their
+	# existing guidance only in scenes without a routable unified network.
 	var dist = global_position.distance_to(dest)
 	if dist < 96.0:
 		return dest

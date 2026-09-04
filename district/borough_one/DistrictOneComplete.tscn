@@ -159,6 +159,7 @@ metadata/point_index = 5
 z_index = 2
 scale = Vector2(0.9956157, 1)
 script = ExtResource("11_unified_roads")
+guard_rail_junction_clearance_overrides = {"Bairro1Expansion/east_link|Bairro1Expansion/south_cross|Bairro1RoadNetwork/port_service|Bairro1RoadNetwork/southern_ring": 180.0}
 build_guard_rails = false
 
 [node name="JunctionTrafficController" type="Node" parent="." unique_id=2145708168]

@@ -410,7 +410,7 @@ func get_road_graph_definitions() -> Array[Dictionary]:
 	return [
 		{"id": "gateway_spine", "points": gateway_spine_points, "width": main_road_width, "lanes": get_gateway_lane_definitions(), "render": false, "open_start": true, "open_end": true},
 		{"id": "midtown_cross", "points": midtown_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_t": 0.0, "snap_end_mode": "tangent"},
-		{"id": "south_cross", "points": south_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1Expansion/east_link", "snap_end_t": 1.0, "snap_end_mode": "perpendicular"},
+		{"id": "south_cross", "points": south_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1Expansion/east_link", "snap_end_t": 1.0, "snap_end_mode": "perpendicular", "guard_rail_openings": [{"position": Vector2(2130, 2940), "radius": 170.0}]},
 		{"id": "east_arc", "points": east_arc_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1Expansion/north_link", "snap_start_t": 1.0, "snap_start_mode": "perpendicular", "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_t": 0.0, "snap_end_mode": "tangent"},
 		{"id": "west_local", "points": west_local_points, "width": local_road_width, "lanes": local_lanes, "snap_start": "Bairro1Expansion/west_link", "snap_end": "Bairro1Expansion/south_cross"},
 		{"id": "north_link", "points": north_link_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1Expansion/gateway_spine", "snap_start_t": 0.0, "snap_end": "Bairro1Expansion/east_arc", "snap_end_t": 0.0, "snap_end_mode": "perpendicular"},
