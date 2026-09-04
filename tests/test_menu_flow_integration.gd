@@ -1,11 +1,16 @@
 extends SceneTree
 
-## Teste de Integração de Fluxo de Menus (End-to-End Headless)
-## Valida o ciclo completo entre cenas:
-## MainMenu -> Novo Jogo -> Main.tscn -> PauseMenu (ESC, Salvar, Config, Voltar) -> MainMenu -> Configurações -> Carregar Jogo -> Main.tscn restaurado
+## Teste de Integração de Fluxo de Menus & Áudio Procedural (End-to-End Headless)
+## Valida o ciclo completo entre cenas e áudio procedural:
+## 1. Síntese de Áudio (Hover, Click, Music Loop) e Barramentos (SFX, Music)
+## 2. MainMenu -> Novo Jogo (com hook de áudio, parada de música) -> Main.tscn
+## 3. PauseMenu (ESC, Salvar, Config, Voltar, hooks de SFX) -> Retorno ao MainMenu (retomada da música)
+## 4. MainMenu -> Configurações (Empilhamento, volume dinâmico SFX/Music)
+## 5. MainMenu -> Carregar Jogo (Botões dinâmicos com hook de som) -> Main.tscn restaurado
 
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
 const MAIN_GAME_SCENE: String = "res://Main.tscn"
+const MenuAudio = preload("res://ui/MenuAudio.gd")
 
 var failures: Array[String] = []
 var step_results: Dictionary = {}
@@ -23,7 +28,7 @@ func _report_step(step_name: String, success: bool, details: String = "") -> voi
 
 func _run_integration_flow() -> void:
 	print("=================================================================")
-	print("=== TESTE DE INTEGRAÇÃO DE FLUXO DE MENUS (HEADLESS) ===")
+	print("=== TESTE DE FLUXO DE MENUS & ÁUDIO PROCEDURAL (HEADLESS) ===")
 	print("=================================================================")
 
 	var sm = root.get_node_or_null("SaveManager")
@@ -38,11 +43,35 @@ func _run_integration_flow() -> void:
 	_report_step("Autoloads Presentes", true, "SaveManager, SettingsManager, CampaignState e WantedManager ativos")
 
 	# =================================================================
+	# ETAPA 0: Validação de Síntese Procedural e Barramentos de Áudio
+	# =================================================================
+	print("\n--- [ETAPA 0] Validação da Engine de Áudio Procedural (MenuAudio) ---")
+	var hover_stream = MenuAudio.get_hover_stream()
+	var hover_valid: bool = (hover_stream is AudioStreamWAV and hover_stream.data.size() > 0 and hover_stream.mix_rate == 22050)
+	_report_step("Síntese do SFX de Hover", hover_valid, "AudioStreamWAV PCM 16-bit (%d bytes)" % (hover_stream.data.size() if hover_stream else 0))
+
+	var click_stream = MenuAudio.get_click_stream()
+	var click_valid: bool = (click_stream is AudioStreamWAV and click_stream.data.size() > 0 and click_stream.mix_rate == 22050)
+	_report_step("Síntese do SFX de Clique", click_valid, "AudioStreamWAV PCM 16-bit (%d bytes)" % (click_stream.data.size() if click_stream else 0))
+
+	var music_stream = MenuAudio.get_music_stream()
+	var music_valid: bool = (
+		music_stream is AudioStreamWAV
+		and music_stream.data.size() > 0
+		and music_stream.loop_mode == AudioStreamWAV.LOOP_FORWARD
+		and music_stream.loop_end > 0
+	)
+	_report_step("Síntese da Música de Fundo (Loop)", music_valid, "AudioStreamWAV Loop 6s (%d samples)" % (music_stream.loop_end if music_stream else 0))
+
+	var bus_sfx_ok: bool = (MenuAudio.get_sfx_bus_name() == "SFX")
+	var bus_music_ok: bool = (MenuAudio.get_music_bus_name() == "Music")
+	_report_step("Roteamento de Barramentos (SFX & Music)", bus_sfx_ok and bus_music_ok, "SFX=%s, Music=%s" % [MenuAudio.get_sfx_bus_name(), MenuAudio.get_music_bus_name()])
+
+	# =================================================================
 	# ETAPA 1: MainMenu -> "Novo Jogo" -> Transição para Main.tscn
 	# =================================================================
 	print("\n--- [ETAPA 1] MainMenu -> 'Novo Jogo' -> Main.tscn ---")
 	
-	# Simular estado modificado pré-novo-jogo para provar reset
 	campaign.current_stage = "pre_test_stage"
 	wanted.current_stars = 3
 	
@@ -55,21 +84,42 @@ func _run_integration_flow() -> void:
 	var main_menu := menu_scene.instantiate()
 	root.add_child(main_menu)
 	current_scene = main_menu
-	_report_step("Instanciar MainMenu", true, "MainMenu instanciado e adicionado ao root como current_scene")
+	_report_step("Instanciar MainMenu", true, "MainMenu ativo como current_scene")
 	
 	await process_frame
 	await process_frame
-	
+
+	# Validar que a música de fundo iniciou tocando no bus Music
+	var music_player = main_menu.get_node_or_null("MenuMusicPlayer") as AudioStreamPlayer
+	var music_playing_init: bool = (music_player != null and music_player.playing and music_player.bus == "Music")
+	_report_step("Música de Fundo no MainMenu", music_playing_init, "Player ativo no bus '%s', tocando: %s" % [(music_player.bus if music_player else "N/A"), str(music_player.playing if music_player else false)])
+
+	# Validar vinculação de botões
 	var btn_new_game := main_menu.get_node_or_null("%BtnNewGame") as Button
 	if not btn_new_game:
-		_report_step("Botão Novo Jogo", false, "Nó %BtnNewGame não encontrado no MainMenu")
+		_report_step("Botão Novo Jogo", false, "Nó %BtnNewGame ausente")
 		_finish()
 		return
 	
+	var btn_hooked: bool = btn_new_game.has_meta("__menu_audio_hooked")
+	_report_step("Vinculação de Áudio nos Botões (MainMenu)", btn_hooked, "Metadado __menu_audio_hooked ativo")
+
+	# Testar disparo de SFX Hover simulando foco
+	btn_new_game.focus_entered.emit()
+	await process_frame
+	var hover_player = root.get_node_or_null("__MenuHoverPlayer") as AudioStreamPlayer
+	var hover_triggered: bool = (hover_player != null and hover_player.bus == "SFX")
+	_report_step("Disparo de SFX de Hover", hover_triggered, "AudioStreamPlayer '__MenuHoverPlayer' criado no bus SFX")
+
 	print("  Acionando sinal 'pressed' do botão Novo Jogo...")
 	btn_new_game.pressed.emit()
-	
-	# Aguardar transição de cena e frames de física/inicialização
+
+	# Confirmar clique e parada da música ao entrar no jogo
+	var click_player = root.get_node_or_null("__MenuClickPlayer") as AudioStreamPlayer
+	var click_triggered: bool = (click_player != null and click_player.bus == "SFX")
+	_report_step("Disparo de SFX de Clique", click_triggered, "AudioStreamPlayer '__MenuClickPlayer' criado no bus SFX")
+
+	# Aguardar transição de cena e frames de inicialização
 	for i in range(15):
 		await process_frame
 	
@@ -93,10 +143,8 @@ func _run_integration_flow() -> void:
 	# =================================================================
 	print("\n--- [ETAPA 2] PauseMenu In-Game (ESC, Salvar, Config, Voltar ao Menu) ---")
 	
-	# Localizar PauseMenu injetado pelo CityDemo
 	var pause_menu = root.find_child("PauseMenu", true, false)
 	if not pause_menu:
-		# Aguardar mais alguns frames caso deferred ainda esteja pendente
 		for i in range(5):
 			await process_frame
 		pause_menu = root.find_child("PauseMenu", true, false)
@@ -117,6 +165,11 @@ func _run_integration_flow() -> void:
 	var is_paused: bool = paused
 	var pause_visible: bool = pause_menu.visible
 	_report_step("Abertura via ESC (Pausa e Visibilidade)", is_paused and pause_visible, "Paused: %s, Visible: %s" % [str(is_paused), str(pause_visible)])
+
+	# Validar que botões do PauseMenu possuem hooks de áudio
+	var btn_resume := pause_menu.get_node_or_null("%BtnResume") as Button
+	var pause_btn_hooked: bool = (btn_resume != null and btn_resume.has_meta("__menu_audio_hooked"))
+	_report_step("Vinculação de Áudio nos Botões (PauseMenu)", pause_btn_hooked, "Metadado __menu_audio_hooked ativo nos botões de pausa")
 	
 	# 2.2 Testar opção 'Salvar' do PauseMenu
 	var btn_save := pause_menu.get_node_or_null("%BtnSaveGame") as Button
@@ -127,7 +180,6 @@ func _run_integration_flow() -> void:
 		var slots_list = pause_menu.get_node_or_null("%SlotsList")
 		var save_modal_open: bool = slots_modal.visible and (slots_list != null and slots_list.get_child_count() > 0)
 		_report_step("Opção 'Salvar' no PauseMenu", save_modal_open, "Modal de slots aberta com %d slots" % (slots_list.get_child_count() if slots_list else 0))
-		# Fechar modal
 		var btn_close_modal = pause_menu.get_node_or_null("%BtnCloseModal") as Button
 		if btn_close_modal:
 			btn_close_modal.pressed.emit()
@@ -176,12 +228,17 @@ func _run_integration_flow() -> void:
 		_finish()
 		return
 
-	# =================================================================
-	# ETAPA 3: MainMenu -> 'Configurações' (Empilhamento e Persistência)
-	# =================================================================
-	print("\n--- [ETAPA 3] MainMenu -> 'Configurações' (Empilhamento & Persistência) ---")
-	
+	# Validar retomada da música de fundo ao retornar ao menu principal
 	var active_main_menu = current_scene
+	var returned_music_player = active_main_menu.get_node_or_null("MenuMusicPlayer") as AudioStreamPlayer
+	var music_resumed: bool = (returned_music_player != null and returned_music_player.playing)
+	_report_step("Retomada da Música ao Voltar ao Menu", music_resumed, "Música reiniciada e tocando no MainMenu")
+
+	# =================================================================
+	# ETAPA 3: MainMenu -> 'Configurações' (Empilhamento, Persistência e Volumes)
+	# =================================================================
+	print("\n--- [ETAPA 3] MainMenu -> 'Configurações' (Empilhamento, Persistência & Volumes) ---")
+	
 	var btn_settings := active_main_menu.get_node_or_null("%BtnSettings") as Button
 	if not btn_settings:
 		_report_step("Botão Configurações no MainMenu", false, "BtnSettings ausente")
@@ -196,28 +253,59 @@ func _run_integration_flow() -> void:
 	_report_step("SettingsMenu Empilhado sobre MainMenu", settings_stacked, "SettingsMenu adicionado como filho sem descarregar MainMenu")
 	
 	if settings_stacked:
-		# Modificar valor (ex: master volume = 0.42) e salvar
-		var slider_master = settings_inst.get_node_or_null("%SliderMaster") as HSlider
+		# Validar vinculação de áudio nos botões do SettingsMenu
 		var btn_save_settings = settings_inst.get_node_or_null("%BtnSave") as Button
+		var settings_btn_hooked: bool = (btn_save_settings != null and btn_save_settings.has_meta("__menu_audio_hooked"))
+		_report_step("Vinculação de Áudio nos Botões (SettingsMenu)", settings_btn_hooked, "Metadado __menu_audio_hooked ativo no SettingsMenu")
+
+		# Modificar volume Master, SFX e Música para testar barramentos reais
+		var slider_master = settings_inst.get_node_or_null("%SliderMaster") as HSlider
+		var slider_music_ctrl = settings_inst.get_node_or_null("%SliderMusic") as HSlider
+		var slider_sfx_ctrl = settings_inst.get_node_or_null("%SliderSFX") as HSlider
 		
-		if slider_master and btn_save_settings:
+		if slider_master and slider_music_ctrl and slider_sfx_ctrl and btn_save_settings:
 			slider_master.value = 0.42
 			slider_master.value_changed.emit(0.42)
+			
+			slider_music_ctrl.value = 0.55
+			slider_music_ctrl.value_changed.emit(0.55)
+			
+			slider_sfx_ctrl.value = 0.70
+			slider_sfx_ctrl.value_changed.emit(0.70)
 			await process_frame
 			
 			btn_save_settings.pressed.emit()
 			await process_frame
 			
 			var settings_closed: bool = not settings_inst.visible
-			# Verificar persistência no SettingsManager
+			
+			# Verificar persistência no SettingsManager e nos barramentos do AudioServer
 			set_m.master_volume = 0.0
+			set_m.music_volume = 0.0
+			set_m.sfx_volume = 0.0
 			set_m.load_settings()
-			var persisted: bool = absf(set_m.master_volume - 0.42) < 0.01
-			_report_step("Persistência de Configurações (Master Volume)", settings_closed and persisted, "Volume salvo e recarregado: %.2f (esperado 0.42)" % set_m.master_volume)
+			set_m.apply_all_settings()
+			
+			var persisted_master: bool = absf(set_m.master_volume - 0.42) < 0.01
+			var persisted_music: bool = absf(set_m.music_volume - 0.55) < 0.01
+			var persisted_sfx: bool = absf(set_m.sfx_volume - 0.70) < 0.01
+			
+			var bus_music_idx := AudioServer.get_bus_index("Music")
+			var bus_sfx_idx := AudioServer.get_bus_index("SFX")
+			var bus_volume_ok := false
+			if bus_music_idx != -1 and bus_sfx_idx != -1:
+				var music_db = AudioServer.get_bus_volume_db(bus_music_idx)
+				var sfx_db = AudioServer.get_bus_volume_db(bus_sfx_idx)
+				bus_volume_ok = (music_db < 0.0 and sfx_db < 0.0)
+			
+			var all_audio_persisted := settings_closed and persisted_master and persisted_music and persisted_sfx and bus_volume_ok
+			_report_step("Persistência e Aplicação nos Barramentos de Áudio", all_audio_persisted, "Master=%.2f, Music=%.2f, SFX=%.2f, Buses atualizados no AudioServer" % [
+				set_m.master_volume, set_m.music_volume, set_m.sfx_volume
+			])
 		else:
-			_report_step("Controles de SettingsMenu", false, "SliderMaster ou BtnSave ausente")
+			_report_step("Controles de SettingsMenu", false, "Sliders ou BtnSave ausente")
 	else:
-		_report_step("Persistência de Configurações", false, "SettingsMenu não estava aberto")
+		_report_step("Persistência e Aplicação nos Barramentos de Áudio", false, "SettingsMenu não estava aberto")
 
 	# =================================================================
 	# ETAPA 4: MainMenu -> 'Carregar Jogo' -> Slot -> Main.tscn Restaurado
@@ -247,7 +335,8 @@ func _run_integration_flow() -> void:
 			break
 	
 	var slot_01_ready: bool = (slot_01_btn != null and not slot_01_btn.disabled)
-	_report_step("Slot_01 Disponível e Válido", slot_01_ready, "Botão do slot_01 habilitado: %s" % (slot_01_btn.text.strip_edges() if slot_01_btn else "não encontrado"))
+	var dynamic_btn_hooked: bool = (slot_01_ready and slot_01_btn.has_meta("__menu_audio_hooked"))
+	_report_step("Slot_01 Válido com Hook de Áudio Dinâmico", slot_01_ready and dynamic_btn_hooked, "Botão do slot_01 habilitado e com hook de áudio")
 	
 	if slot_01_ready:
 		print("  Selecionando slot_01 para carregamento...")
@@ -280,7 +369,7 @@ func _run_integration_flow() -> void:
 
 func _finish() -> void:
 	print("\n=================================================================")
-	print("=== RESULTADOS FINAIS DA INTEGRAÇÃO DE FLUXO DE MENUS ===")
+	print("=== RESULTADOS FINAIS: INTEGRAÇÃO DE FLUXO & ÁUDIO DE MENUS ===")
 	print("=================================================================")
 	for step in step_results.keys():
 		var status = "PASS" if step_results[step] else "FAIL"
@@ -288,7 +377,7 @@ func _finish() -> void:
 	
 	print("-----------------------------------------------------------------")
 	if failures.is_empty():
-		print("=== SUCESSO COMPLETO: FLUXO DE MENUS 100% FUNCIONAL! (EXIT 0) ===")
+		print("=== SUCESSO COMPLETO: FLUXO E ÁUDIO 100% FUNCIONAIS! (EXIT 0) ===")
 		quit(0)
 	else:
 		printerr("=== FALHAS DETECTADAS (%d) ===" % failures.size())

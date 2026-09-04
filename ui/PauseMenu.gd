@@ -6,6 +6,7 @@ extends CanvasLayer
 
 const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
+const MenuAudio = preload("res://ui/MenuAudio.gd")
 
 @onready var root_control: Control = %RootControl
 @onready var btn_resume: Button = %BtnResume
@@ -34,6 +35,9 @@ func _ready() -> void:
 	btn_settings.pressed.connect(_on_settings_pressed)
 	btn_main_menu.pressed.connect(_on_main_menu_pressed)
 	btn_quit.pressed.connect(_on_quit_pressed)
+	
+	# Efeitos sonoros de botões
+	MenuAudio.hook_buttons(self)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -143,6 +147,7 @@ func _refresh_slots_list() -> void:
 			btn.pressed.connect(func(): _execute_slot_action(slot_id))
 		
 		btn.text = display_text
+		MenuAudio.hook_button(btn, self)
 		slots_list.add_child(btn)
 
 func _execute_slot_action(slot_id: String) -> void:

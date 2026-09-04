@@ -8,14 +8,62 @@ extends Node2D
 @export var footprint := Vector2(180, 150)
 @export var building_kind := "commercial"
 @export var variant_seed := 0
+@export var arcade_depth: float = 0.0
+
+var _fade_tween: Tween = null
+var _overlapping_actors: int = 0
 
 func _ready() -> void:
-	# `LotBuildings` lives above actors so façades can occlude them. A park is
-	# ground art, therefore cancel that inherited elevation and keep actors,
-	# birds and props visibly above its paving.
+	add_to_group("procedural_building")
 	if "park" in building_kind:
 		z_index = -19
 	queue_redraw()
+	_setup_pass_through_area()
+
+func _setup_pass_through_area() -> void:
+	if "park" in building_kind:
+		return
+	var area := Area2D.new()
+	area.name = "PassThroughArea"
+	area.collision_layer = 0
+	area.collision_mask = 1 | 2
+	area.monitorable = false
+	area.monitoring = true
+	
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = footprint
+	col.shape = shape
+	area.add_child(col)
+	
+	area.body_entered.connect(_on_pass_through_body_entered)
+	area.body_exited.connect(_on_pass_through_body_exited)
+	add_child(area)
+
+func _is_player_or_driven_vehicle(body: Node2D) -> bool:
+	if body == null: return false
+	if body.is_in_group("player") or body.name == "Player":
+		return true
+	if body.get("is_driven_by_player") == true or body.is_in_group("player_car"):
+		return true
+	return false
+
+func _on_pass_through_body_entered(body: Node2D) -> void:
+	if _is_player_or_driven_vehicle(body):
+		_overlapping_actors += 1
+		_fade_to(0.35)
+
+func _on_pass_through_body_exited(body: Node2D) -> void:
+	if _is_player_or_driven_vehicle(body):
+		_overlapping_actors = maxi(0, _overlapping_actors - 1)
+		if _overlapping_actors == 0:
+			_fade_to(1.0)
+
+func _fade_to(target_alpha: float) -> void:
+	if _fade_tween and _fade_tween.is_valid():
+		_fade_tween.kill()
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(self, "modulate:a", target_alpha, 0.20)
 
 func _palette() -> Dictionary:
 	# POIs come first because their kind names also contain generic words such
@@ -92,7 +140,11 @@ func _height_px() -> float:
 func get_collision_rect() -> Rect2:
 	# `footprint` is the complete visible bounds.  The roof extrusion is drawn
 	# inside it, keeping collision out of the surrounding sidewalk.
+	# If arcade_depth > 0, the ground level has an open pass-through arcade,
+	# so collision only covers the solid upper structure.
 	var bounds := Rect2(-footprint * 0.5, footprint).grow(-1)
+	if arcade_depth > 0.0:
+		bounds.size.y = maxf(30.0, bounds.size.y - arcade_depth)
 	return Rect2(global_position + bounds.position, bounds.size)
 
 func _draw() -> void:
@@ -114,6 +166,8 @@ func _draw() -> void:
 	# makes each building a volume rather than a flat stamp.
 	draw_rect(Rect2(r.position + Vector2(12, 15), r.size), Color(0.05, 0.07, 0.10, 0.46))
 	draw_rect(r, p.edge)
+	if arcade_depth > 0.0:
+		_draw_arcade_features(bounds, arcade_depth, p)
 	_draw_extruded_facades(r, roof, p)
 	draw_rect(roof, p.roof)
 	_draw_roof_surface(roof, p)
@@ -180,6 +234,28 @@ func _draw_facade_material(facade: Rect2, p: Dictionary) -> void:
 	if not ("garage" in building_kind or "warehouse" in building_kind or "park" in building_kind):
 		var sill_y := facade.end.y - 9
 		draw_line(Vector2(facade.position.x + 4, sill_y), Vector2(facade.end.x - 4, sill_y), p.edge.darkened(0.20), 2.0)
+
+func _draw_arcade_features(bounds: Rect2, depth: float, p: Dictionary) -> void:
+	var arcade_rect := Rect2(bounds.position.x + 4, bounds.end.y - depth, bounds.size.x - 8, depth)
+	# Paved covered walkway under the building
+	draw_rect(arcade_rect, Color("#26292f"))
+	draw_rect(arcade_rect.grow(-2), Color("#32373e"), false, 1.5)
+	
+	# Recessed soffit lighting along the covered corridor
+	var light_y := arcade_rect.position.y + arcade_rect.size.y * 0.45
+	for lx in range(int(arcade_rect.position.x + 24), int(arcade_rect.end.x - 20), 44):
+		draw_circle(Vector2(lx, light_y), 4.0, Color(1.0, 0.96, 0.75, 0.65))
+		draw_circle(Vector2(lx, light_y), 10.0, Color(1.0, 0.85, 0.45, 0.15))
+		
+	# Structural colonnade / pilotis columns along the front opening
+	var col_count := 4
+	var col_step := (arcade_rect.size.x - 28.0) / float(col_count - 1)
+	for c in range(col_count):
+		var cx := arcade_rect.position.x + 14.0 + float(c) * col_step
+		var col_rect := Rect2(cx - 5.0, arcade_rect.end.y - 12.0, 10.0, 10.0)
+		draw_rect(Rect2(col_rect.position + Vector2(2, 2), col_rect.size), Color(0.0, 0.0, 0.0, 0.40))
+		draw_rect(col_rect, p.edge.lightened(0.15))
+		draw_rect(col_rect.grow(-1), p.front)
 
 func _draw_corner_front(facade: Rect2, p: Dictionary) -> void:
 	# A wraparound canopy makes corner buildings distinct from a repeated row.

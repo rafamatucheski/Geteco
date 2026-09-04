@@ -6,6 +6,7 @@ extends Control
 
 const MAIN_GAME_SCENE: String = "res://Main.tscn"
 const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
+const MenuAudio = preload("res://ui/MenuAudio.gd")
 
 @onready var btn_new_game: Button = %BtnNewGame
 @onready var btn_load_game: Button = %BtnLoadGame
@@ -18,6 +19,7 @@ const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
 
 var _selected_slot_id: String = ""
 var _settings_instance: Control = null
+var _music_player: AudioStreamPlayer = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -29,10 +31,31 @@ func _ready() -> void:
 	btn_settings.pressed.connect(_on_btn_settings_pressed)
 	btn_quit.pressed.connect(_on_btn_quit_pressed)
 	
+	# Áudio de interface e música de fundo
+	MenuAudio.hook_buttons(self)
+	_start_bg_music()
+	
 	# Foco inicial para teclado / gamepad
 	btn_new_game.grab_focus()
 
+func _start_bg_music() -> void:
+	if not _music_player or not is_instance_valid(_music_player):
+		_music_player = AudioStreamPlayer.new()
+		_music_player.name = "MenuMusicPlayer"
+		_music_player.bus = MenuAudio.get_music_bus_name()
+		_music_player.stream = MenuAudio.get_music_stream()
+		_music_player.volume_db = -10.0
+		_music_player.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(_music_player)
+	if not _music_player.playing:
+		_music_player.play()
+
+func _stop_bg_music() -> void:
+	if _music_player and is_instance_valid(_music_player) and _music_player.playing:
+		_music_player.stop()
+
 func _on_btn_new_game_pressed() -> void:
+	_stop_bg_music()
 	# 1. Resetar CampaignState
 	var campaign = get_node_or_null("/root/CampaignState")
 	if campaign and campaign.has_method("reset_campaign"):
@@ -106,6 +129,7 @@ func _refresh_load_panel() -> void:
 			panel_btn.pressed.connect(func(): _select_and_load_slot(slot_id))
 		
 		panel_btn.text = text_content
+		MenuAudio.hook_button(panel_btn, self)
 		slot_list_container.add_child(panel_btn)
 	
 	if not any_valid:
@@ -119,6 +143,7 @@ func _select_and_load_slot(slot_id: String) -> void:
 	
 	var res: Dictionary = sm.load_game(slot_id)
 	if res.get("success", false):
+		_stop_bg_music()
 		label_load_status.text = "Carregando %s..." % slot_id
 		get_tree().change_scene_to_file(MAIN_GAME_SCENE)
 	else:

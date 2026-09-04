@@ -6,6 +6,8 @@ extends Control
 
 signal closed()
 
+const MenuAudio = preload("res://ui/MenuAudio.gd")
+
 @onready var slider_master: HSlider = %SliderMaster
 @onready var label_master: Label = %LabelMasterVal
 @onready var slider_music: HSlider = %SliderMusic
@@ -38,6 +40,7 @@ func _ready() -> void:
 	_load_values_from_manager()
 	_populate_controls_list()
 	_select_tab(0)
+	MenuAudio.hook_buttons(self)
 
 func _setup_options() -> void:
 	# Modos de janela
