@@ -79,6 +79,7 @@ func _run_runtime_audit() -> void:
 				var vehicle_name := String((vehicle as Node).name)
 				if not conflicting_vehicle_names.has(vehicle_name):
 					conflicting_vehicle_names.append(vehicle_name)
+					print(_describe_vehicle_conflict(vehicle as Node2D, crossing, data, frame))
 			minimum_vehicle_clearance = minf(
 				minimum_vehicle_clearance,
 				_minimum_vehicle_clearance_to_track(data, crossing_road_id)
@@ -209,6 +210,52 @@ func _vehicles_overlapping_conflict(conflict_polygons: Array) -> Array[Node]:
 	return conflicts
 
 
+func _describe_vehicle_conflict(vehicle: Node2D, crossing: Node, data: Dictionary, frame: int) -> String:
+	var follow := vehicle.get_parent() as PathFollow2D
+	var path := follow.get_parent() as Path2D if follow != null else null
+	var local_position := (crossing as Node2D).to_local(vehicle.global_position)
+	return (
+		"RAIL_LEVEL_CROSSING_RUNTIME: conflict_detail frame=%d vehicle=%s road=%s " +
+		"path=%s unified_lane=%s connector=%s progress=%.2f local=(%.2f, %.2f) " +
+		"lane_speed=%.2f gate_ratio=%.3f stop_at_position=%s motion_contract=%s " +
+		"spacing=%s obstruction=%s safety_zones=%s ray_colliders=%s"
+	) % [
+		frame,
+		vehicle.name,
+		String(vehicle.get_meta("traffic_road_id", "")),
+		String(path.name) if path != null else "<none>",
+		str(path != null and path.is_in_group("unified_traffic_lane")),
+		str(path != null and path.is_in_group("unified_lane_connector")),
+		follow.progress if follow != null else -1.0,
+		local_position.x,
+		local_position.y,
+		float(vehicle.get("_lane_motion_speed")),
+		float(data.get("gate_ratio", 0.0)),
+		str(crossing.call("should_stop_vehicle_at", vehicle.global_position, vehicle)),
+		str(vehicle.get("_last_lane_motion_contract")),
+		str(vehicle.call("_lane_spacing_motion", follow)) if follow != null else "{}",
+		str(vehicle.call("_get_lane_obstruction", follow)) if follow != null else "{}",
+		str(vehicle.call("_traffic_control_zone_motion", path, follow)) if path != null and follow != null else "{}",
+		_describe_ray_colliders(vehicle),
+	]
+
+
+func _describe_ray_colliders(vehicle: Node2D) -> String:
+	var result: Array[String] = []
+	for ray_name in ["FrontRay", "FrontRayL", "FrontRayR"]:
+		var ray := vehicle.get_node_or_null(ray_name) as RayCast2D
+		if ray == null or not ray.is_colliding():
+			continue
+		var collider := ray.get_collider() as Node
+		if collider == null:
+			continue
+		var groups: Array[String] = []
+		for group in collider.get_groups():
+			groups.append(String(group))
+		result.append("%s:%s[%s]" % [ray_name, collider.name, ",".join(groups)])
+	return ";".join(result)
+
+
 func _vehicle_polygon(vehicle: Node2D) -> PackedVector2Array:
 	var collision := vehicle.get_node_or_null("Collision") as CollisionShape2D
 	if collision != null and collision.shape is RectangleShape2D:
@@ -274,8 +321,13 @@ func _minimum_vehicle_clearance_to_track(data: Dictionary, road_id: String) -> f
 
 func _cleanup_and_quit(world: Node, exit_code: int) -> void:
 	if is_instance_valid(world):
-		root.remove_child(world)
-		world.free()
+		world.process_mode = Node.PROCESS_MODE_DISABLED
+		for audio in world.find_children("*", "AudioStreamPlayer", true, false):
+			(audio as AudioStreamPlayer).stop()
+		for audio in world.find_children("*", "AudioStreamPlayer2D", true, false):
+			(audio as AudioStreamPlayer2D).stop()
+	await process_frame
+	await process_frame
 	await process_frame
 	quit(exit_code)
 

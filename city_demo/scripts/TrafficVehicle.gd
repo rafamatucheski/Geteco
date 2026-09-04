@@ -3,6 +3,7 @@ extends CharacterBody2D
 
 const VEHICLE_ATLAS: Texture2D = preload("res://city_demo/art/vehicle-atlas.png")
 const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
+const MAX_LANE_ADVANCE_PER_FRAME := 14.0
 
 @export var vehicle_id: String = "vehicle"
 @export var display_name: String = "Veículo"
@@ -17,10 +18,10 @@ const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
 @export var turn_speed: float = 3.3
 @export var drift_factor: float = 0.9
 
-@onready var visual: Sprite2D = $Visual
-@onready var collision: CollisionShape2D = $Collision
-@onready var camera: Camera2D = $Camera
-@onready var pedestrian_hitbox: Area2D = $PedestrianHitbox
+var visual: Sprite2D
+var collision: CollisionShape2D
+var camera: Camera2D
+var pedestrian_hitbox: Area2D
 
 var is_driven_by_player := false
 var _driver: CharacterBody2D
@@ -82,7 +83,35 @@ var is_siren_on: bool = false
 var _strobe_timer: float = 0.0
 var alarm_audio: AudioStreamPlayer2D
 
+func _ensure_required_nodes() -> void:
+	visual = get_node_or_null("Visual") as Sprite2D
+	if visual == null:
+		visual = Sprite2D.new()
+		visual.name = "Visual"
+		add_child(visual)
+	collision = get_node_or_null("Collision") as CollisionShape2D
+	if collision == null:
+		collision = CollisionShape2D.new()
+		collision.name = "Collision"
+		add_child(collision)
+	camera = get_node_or_null("Camera") as Camera2D
+	if camera == null:
+		camera = Camera2D.new()
+		camera.name = "Camera"
+		camera.enabled = false
+		add_child(camera)
+	pedestrian_hitbox = get_node_or_null("PedestrianHitbox") as Area2D
+	if pedestrian_hitbox == null:
+		pedestrian_hitbox = Area2D.new()
+		pedestrian_hitbox.name = "PedestrianHitbox"
+		add_child(pedestrian_hitbox)
+	if pedestrian_hitbox.get_node_or_null("Collision") == null:
+		var hitbox_collision := CollisionShape2D.new()
+		hitbox_collision.name = "Collision"
+		pedestrian_hitbox.add_child(hitbox_collision)
+
 func _ready() -> void:
+	_ensure_required_nodes()
 	health = 100
 	is_broken = false
 	z_index = 10
@@ -105,8 +134,9 @@ func _ready() -> void:
 	collision.shape = rectangle
 	var hit_shape := RectangleShape2D.new()
 	hit_shape.size = Vector2(target_length * 1.05, maxf(34.0, crop.size.x * uniform_scale * 0.95))
-	$PedestrianHitbox/Collision.shape = hit_shape
-	$PedestrianHitbox.collision_mask = 5
+	var pedestrian_collision := pedestrian_hitbox.get_node("Collision") as CollisionShape2D
+	pedestrian_collision.shape = hit_shape
+	pedestrian_hitbox.collision_mask = 5
 	
 	# Câmera dinâmica
 	var dyn_cam = load("res://DynamicCamera.gd")
@@ -1335,7 +1365,9 @@ func advance_on_lane(delta: float) -> void:
 		_lane_motion_speed = speed
 		_lane_motion_initialized = true
 
-	var obstruction := _get_lane_obstruction(lane_follow)
+	var safety_zone_motion := _traffic_control_zone_motion(path, lane_follow)
+	var must_clear_rail_crossing := bool(safety_zone_motion.get("must_clear_rail_crossing", false))
+	var obstruction := _get_lane_obstruction(lane_follow, must_clear_rail_crossing)
 	var hard_blocked: bool = obstruction.hard
 	var yield_blocked: bool = obstruction.yield
 	var target_lane_speed := speed
@@ -1343,7 +1375,6 @@ func advance_on_lane(delta: float) -> void:
 	var spacing := _lane_spacing_motion(lane_follow)
 	target_lane_speed = minf(target_lane_speed, float(spacing.target_speed))
 	maximum_advance = minf(maximum_advance, float(spacing.allowed_advance))
-	var safety_zone_motion := _traffic_control_zone_motion(path, lane_follow)
 	target_lane_speed = minf(target_lane_speed, float(safety_zone_motion.target_speed))
 	maximum_advance = minf(maximum_advance, float(safety_zone_motion.allowed_advance))
 
@@ -1382,7 +1413,12 @@ func advance_on_lane(delta: float) -> void:
 	var previous_speed := _lane_motion_speed
 	var rate := _lane_acceleration_rate() if target_lane_speed > _lane_motion_speed else _lane_braking_rate()
 	_lane_motion_speed = move_toward(_lane_motion_speed, maxf(0.0, target_lane_speed), rate * delta)
-	var desired_advance := maxf(0.0, (previous_speed + _lane_motion_speed) * 0.5 * delta)
+	# A render hitch must not turn ordinary lane travel into a visible teleport.
+	# Normal 60 FPS motion is far below this cap; it only absorbs long frames.
+	var desired_advance := minf(
+		maxf(0.0, (previous_speed + _lane_motion_speed) * 0.5 * delta),
+		MAX_LANE_ADVANCE_PER_FRAME
+	)
 	var actual_advance := minf(desired_advance, maximum_advance)
 	if actual_advance > 0.001:
 		lane_follow.progress += actual_advance
@@ -1400,7 +1436,7 @@ func advance_on_lane(delta: float) -> void:
 	if visual:
 		visual.position = visual.position.lerp(Vector2.ZERO, 8.0 * delta)
 
-func _get_lane_obstruction(lane_follow: PathFollow2D) -> Dictionary:
+func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: bool = false) -> Dictionary:
 	# PathFollow traffic already has exact same-lane spacing below. Ray casts are
 	# reserved for living actors and deterministic intersection yielding; parked
 	# cars, kerbs and railway fences beside an authored route must not freeze it.
@@ -1414,8 +1450,15 @@ func _get_lane_obstruction(lane_follow: PathFollow2D) -> Dictionary:
 		var collider := ray.get_collider() as Node
 		if collider == null or collider == self:
 			continue
-		if collider.is_in_group("player") or collider.is_in_group("pedestrian") or collider.name == "Player":
+		if collider.is_in_group("player") or collider.name == "Player":
 			hard_blocked = true
+			continue
+		if collider.is_in_group("pedestrian"):
+			# A vehicle already committed between closed railway gates must leave
+			# the track instead of yielding in the conflict zone. Players remain
+			# hard blockers; this exception is only for ambient pedestrian AI.
+			if not must_clear_rail_crossing:
+				hard_blocked = true
 			continue
 		if not collider.is_in_group("vehicle") or collider.is_in_group("parked_vehicle"):
 			continue
@@ -1486,7 +1529,12 @@ func _lane_braking_rate() -> float:
 
 
 func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Dictionary:
-	var unrestricted := {"target_speed": INF, "allowed_advance": INF, "zone_id": &""}
+	var unrestricted := {
+		"target_speed": INF,
+		"allowed_advance": INF,
+		"zone_id": &"",
+		"must_clear_rail_crossing": false,
+	}
 	if path == null or path.curve == null or not path.is_in_group("unified_traffic_lane"):
 		return unrestricted
 	var road_id := String(path.get_meta("traffic_road_id", ""))
@@ -1496,6 +1544,7 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 	var lane_loops := bool(path.get_meta("traffic_lane_loop", lane_follow.loop)) and lane_follow.loop
 	var nearest_stop_distance := INF
 	var nearest_zone_id: StringName = &""
+	var must_clear_rail_crossing := false
 	for zone in get_tree().get_nodes_in_group("traffic_control_zone"):
 		if not zone.has_method("get_crossing_data") or not zone.has_method("should_stop_vehicle"):
 			continue
@@ -1506,10 +1555,17 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 		# must stop, while one which already passed its entry gate must keep its
 		# escape lane and clear the track. Ordinary pedestrian crossings retain
 		# their simpler global stop contract.
-		var stop_required := bool(zone.call("should_stop_vehicle", self))
+		var global_stop_required := bool(zone.call("should_stop_vehicle", self))
+		var stop_required := global_stop_required
 		if zone.has_method("should_stop_vehicle_at"):
 			stop_required = bool(zone.call("should_stop_vehicle_at", global_position, self))
 		if not stop_required:
+			if (
+				global_stop_required
+				and not ((data as Dictionary).get("gate_geometry", {}) as Dictionary).is_empty()
+				and _inside_rail_escape_envelope(data as Dictionary)
+			):
+				must_clear_rail_crossing = true
 			continue
 		var world_position: Vector2 = (data as Dictionary).get("position", Vector2.ZERO)
 		var curve_offset := path.curve.get_closest_offset(path.to_local(world_position))
@@ -1522,17 +1578,45 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 		# on a zebra crossing or railway track is less safe than completing exit.
 		if distance_to_center <= 0.0:
 			continue
-		var stop_distance := distance_to_center - target_length * 0.5 - 18.0
+		# Railway gates sit before the track conflict center. Stopping relative to
+		# the center lets a car cross the entry gate before braking, after which
+		# the escape policy correctly tells it to clear the tracks. Honour the
+		# authored gate offset so an approaching car stops before committing.
+		var gate_geometry: Dictionary = (data as Dictionary).get("gate_geometry", {})
+		var control_offset := float(gate_geometry.get("gate_offset", 0.0))
+		var stop_distance := distance_to_center - control_offset - target_length * 0.5 - 18.0
 		if stop_distance < nearest_stop_distance:
 			nearest_stop_distance = maxf(0.0, stop_distance)
 			nearest_zone_id = StringName((data as Dictionary).get("id", (data as Dictionary).get("crossing_id", &"")))
+	# Clearing an occupied railway conflict zone outranks pedestrian yielding.
+	# The physical/player obstruction contract remains intact in the caller.
+	if must_clear_rail_crossing:
+		unrestricted.must_clear_rail_crossing = true
+		return unrestricted
 	if nearest_stop_distance == INF:
 		return unrestricted
 	return {
 		"target_speed": sqrt(2.0 * _lane_braking_rate() * nearest_stop_distance),
 		"allowed_advance": nearest_stop_distance,
 		"zone_id": nearest_zone_id,
+		"must_clear_rail_crossing": false,
 	}
+
+
+func _inside_rail_escape_envelope(data: Dictionary) -> bool:
+	var center: Vector2 = data.get("position", Vector2.ZERO)
+	var tangent: Vector2 = data.get("road_tangent", Vector2.RIGHT)
+	if tangent.is_zero_approx():
+		tangent = Vector2.RIGHT
+	tangent = tangent.normalized()
+	var relative := global_position - center
+	var along := relative.dot(tangent)
+	var lateral := absf(relative.dot(tangent.orthogonal()))
+	var gate_geometry: Dictionary = data.get("gate_geometry", {})
+	var gate_distance := float(gate_geometry.get("gate_offset", 0.0))
+	var longitudinal_limit := gate_distance + target_length * 0.5 + 18.0
+	var lateral_limit := float(data.get("road_width", 96.0)) * 0.5 + 8.0
+	return absf(along) <= longitudinal_limit and lateral <= lateral_limit
 
 
 func _open_lane_end_motion(path: Path2D, lane_follow: PathFollow2D, controller: Node) -> Dictionary:

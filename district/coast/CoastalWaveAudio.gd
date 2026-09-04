@@ -13,6 +13,9 @@ var _low_noise := 0.0
 
 
 func _ready() -> void:
+	if DisplayServer.get_name() == "headless":
+		set_process(false)
+		return
 	var generator := AudioStreamGenerator.new()
 	generator.mix_rate = MIX_RATE
 	generator.buffer_length = 0.45

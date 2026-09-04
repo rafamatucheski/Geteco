@@ -101,6 +101,8 @@ func _update_freight_poses() -> void:
 
 
 func _setup_train_audio() -> void:
+	if DisplayServer.get_name() == "headless":
+		return
 	if is_instance_valid(_train_audio):
 		return
 	_train_audio = AudioStreamPlayer2D.new()

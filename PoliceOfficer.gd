@@ -666,7 +666,11 @@ func _shoot_at_target(target_pos: Vector2) -> void:
 func _fire_single_bullet(target_pos: Vector2, damage_val: int, bullet_spd: float, spread: float) -> void:
 	var dir: Vector2 = global_position.direction_to(target_pos)
 	var bullet = BULLET_SCENE.instantiate()
-	get_tree().current_scene.add_child(bullet)
+	var scene := get_tree().current_scene
+	if not is_instance_valid(scene):
+		bullet.free()
+		return
+	scene.add_child(bullet)
 	bullet.owner_body = self
 	bullet.damage = damage_val
 	bullet.speed = bullet_spd

@@ -112,12 +112,25 @@ func _run_integration() -> void:
 			maximum_displacement,
 			float(telemetry.get("maximum_wait_seconds", 0.0)),
 		])
-		quit(0)
+		await _cleanup_and_quit(world, 0)
 	else:
 		print("DISTRICT_ONE_TRAFFIC_TELEMETRY: %s" % telemetry)
 		for failure in _failures:
 			push_error("DISTRICT_ONE_TRAFFIC_INTEGRATION: %s" % failure)
-		quit(1)
+		await _cleanup_and_quit(world, 1)
+
+
+func _cleanup_and_quit(world: Node, exit_code: int) -> void:
+	if is_instance_valid(world):
+		world.process_mode = Node.PROCESS_MODE_DISABLED
+		for audio in world.find_children("*", "AudioStreamPlayer", true, false):
+			(audio as AudioStreamPlayer).stop()
+		for audio in world.find_children("*", "AudioStreamPlayer2D", true, false):
+			(audio as AudioStreamPlayer2D).stop()
+	await process_frame
+	await process_frame
+	await process_frame
+	quit(exit_code)
 
 
 func _check(condition: bool, message: String) -> void:
