@@ -1,3 +1,4 @@
+@tool
 class_name CentralDistrict
 extends Node2D
 
@@ -38,9 +39,8 @@ var blocks := [
 		{"kind": "rowhouse", "rect": Rect2(320, 346, 184, 116)}
 	]},
 	{"id": "CLINICA", "rect": Rect2(960, 70, 330, 440), "lots": [
-		{"kind": "hospital", "rect": Rect2(1008, 118, 234, 244), "poi": "HOSPITAL"},
-		{"kind": "morgue", "rect": Rect2(1008, 374, 108, 88), "poi": "IML_CENTRAL"},
-		{"kind": "park", "rect": Rect2(1128, 374, 114, 88)}
+		{"kind": "hospital", "rect": Rect2(1008, 118, 234, 254), "poi": "HOSPITAL"},
+		{"kind": "park", "rect": Rect2(1008, 382, 234, 80)}
 	]},
 	{"id": "CIVICO", "rect": Rect2(1390, 70, 340, 440), "lots": [
 		{"kind": "police", "rect": Rect2(1438, 118, 244, 192), "poi": "DELEGACIA"},
@@ -48,21 +48,32 @@ var blocks := [
 	]},
 	{"id": "DOCAS", "rect": Rect2(70, 690, 710, 520), "lots": [
 		{"kind": "garage", "rect": Rect2(118, 738, 300, 290), "poi": "GARAGEM"},
-		{"kind": "warehouse", "rect": Rect2(430, 738, 254, 160)},
+		{"kind": "morgue", "rect": Rect2(430, 738, 254, 160), "poi": "IML_CENTRAL"},
 		{"kind": "rowhouse", "rect": Rect2(430, 910, 254, 112)}
 	]},
 	{"id": "DISTRITO_MISTO", "rect": Rect2(960, 690, 770, 520), "lots": [
 		{"kind": "fire_station", "rect": Rect2(1008, 738, 270, 280), "poi": "QUARTEL_CENTRAL"},
 		{"kind": "corner_shop", "rect": Rect2(1290, 738, 180, 158)},
 		{"kind": "shop", "rect": Rect2(1482, 738, 200, 158)},
-		{"kind": "brownstone", "rect": Rect2(1290, 908, 180, 254)},
-		{"kind": "rowhouse", "rect": Rect2(1482, 908, 200, 254)}
+		{"kind": "brownstone", "rect": Rect2(1290, 908, 180, 254), "arcade_depth": 74.0},
+		{"kind": "rowhouse", "rect": Rect2(1482, 908, 200, 254), "arcade_depth": 74.0}
 	]}
 ]
 
 func _ready() -> void:
 	z_index = 0
 	queue_redraw()
+	if Engine.is_editor_hint():
+		# Preview apenas: antes deste ajuste o CentralDistrict.gd nao tinha
+		# @tool, entao _ready()/_draw() so rodavam com o jogo em Play e a
+		# cena aparecia totalmente vazia no editor. Agora o _draw() (ruas,
+		# calcadas, quarteiroes, faixas) roda no editor tambem, mas nada
+		# abaixo disso e spawnado aqui: previamente essas chamadas criavam
+		# predios, arvores, trafego, pedestres e managers de gameplay como
+		# nos reais da cena -- em modo editor isso salvaria centenas de nos
+		# procedurais dentro do .tscn e tentaria rodar logica que depende do
+		# jogo estar rodando (autoloads, colisoes, IA).
+		return
 	validate_layout()
 	_create_lot_visuals_and_collisions()
 	_create_trees_and_lamps()
@@ -158,6 +169,8 @@ func _create_lot_visuals_and_collisions() -> void:
 			building.footprint = building_rect.size
 			building.building_kind = String(lot.kind)
 			building.variant_seed = seed
+			if lot.has("arcade_depth"):
+				building.arcade_depth = float(lot.arcade_depth)
 			seed += 1
 			visual_root.add_child(building)
 			# Parks are walkable public space; only real structures block movement.
@@ -215,6 +228,11 @@ func _add_lamp(parent: Node2D, at: Vector2) -> void:
 	lamp.position = at
 	parent.add_child(lamp)
 
+var _traffic_lane_paths: Dictionary = {}
+var _traffic_archetypes: Array = []
+var _traffic_respawn_timer: float = 0.0
+const TARGET_TRAFFIC_COUNT: int = 8
+
 func _create_directed_traffic() -> void:
 	var lanes := {
 		"east": PackedVector2Array([Vector2(30, 556), Vector2(1770, 556), Vector2(1770, 536), Vector2(30, 536)]),
@@ -224,6 +242,7 @@ func _create_directed_traffic() -> void:
 	}
 	var archetypes := ["sedan_classic", "taxi_yellow", "sport_coupe", "station_wagon", "ranch_pickup", "desert_jeep_4x4", "muscle_classic", "beach_cabriolet"]
 	var specs := [["east", 0.0], ["east", 420.0], ["west", 160.0], ["west", 640.0], ["south", 70.0], ["south", 510.0], ["north", 230.0], ["north", 700.0]]
+	_traffic_archetypes = archetypes
 	
 	var traffic_root := Node2D.new()
 	traffic_root.name = "ModernDirectedTraffic"
@@ -239,6 +258,7 @@ func _create_directed_traffic() -> void:
 			MAIN_INTERSECTION_ID,
 			axis
 		)
+	_traffic_lane_paths = lane_paths
 
 	for index in specs.size():
 		var spec_info: Array = specs[index]
@@ -267,6 +287,36 @@ func _process(delta: float) -> void:
 	if _pedestrian_respawn_timer <= 0.0:
 		_pedestrian_respawn_timer = 4.0
 		_maintain_pedestrian_population()
+	_traffic_respawn_timer -= delta
+	if _traffic_respawn_timer <= 0.0:
+		_traffic_respawn_timer = 3.5
+		_maintain_traffic_population()
+
+func _maintain_traffic_population() -> void:
+	if _traffic_lane_paths.is_empty():
+		return
+	var active_cars: Array[Node] = []
+	for node in get_tree().get_nodes_in_group("central_district_traffic"):
+		if is_instance_valid(node) and not node.is_queued_for_deletion():
+			var tv = node as DemoTrafficVehicle
+			if tv and not tv.is_broken and not tv._detached_from_lane:
+				active_cars.append(node)
+	if active_cars.size() < TARGET_TRAFFIC_COUNT:
+		var missing := TARGET_TRAFFIC_COUNT - active_cars.size()
+		var lane_keys := _traffic_lane_paths.keys()
+		for i in range(mini(missing, 2)):
+			var lane_key = lane_keys[randi() % lane_keys.size()]
+			var lane_path: Path2D = _traffic_lane_paths[lane_key]
+			var arch_id: String = _traffic_archetypes[randi() % _traffic_archetypes.size()]
+			var vehicle := MODERN_TRAFFIC.spawn_moving_vehicle(
+				lane_path,
+				"Traffic_Respawn_%d" % randi(),
+				arch_id,
+				randf(),
+				78.0 + float(randi() % 4) * 9.0,
+				randi() % 8
+			)
+			vehicle.add_to_group("central_district_traffic")
 
 func _maintain_pedestrian_population() -> void:
 	var current_peds = get_tree().get_nodes_in_group("central_district_pedestrians")

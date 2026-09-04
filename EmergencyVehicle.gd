@@ -44,8 +44,8 @@ var returned_morticians := 0
 var deployed_officers := 0
 var returned_officers := 0
 
-@onready var visual = $Visual
-@onready var lights = $Lights
+var visual: Sprite2D
+var lights: ColorRect
 
 var engine_audio: AudioStreamPlayer2D
 var siren_audio: AudioStreamPlayer2D
@@ -54,6 +54,7 @@ var smoke_emitter: CPUParticles2D
 var flame_particles: CPUParticles2D
 
 func _ready():
+	_ensure_required_nodes()
 	add_to_group("emergency_vehicle")
 	add_to_group("vehicle")
 	collision_layer = 2
@@ -158,9 +159,24 @@ func _ready():
 	collision_particles.initial_velocity_min = 70.0
 	collision_particles.initial_velocity_max = 140.0
 	collision_particles.color = Color(1, 0.8, 0.2)
+	collision_particles.texture = _get_smooth_particle_texture()
 	add_child(collision_particles)
 	
 	_setup_headlight()
+
+func _ensure_required_nodes() -> void:
+	visual = get_node_or_null("Visual") as Sprite2D
+	if visual == null:
+		visual = Sprite2D.new()
+		visual.name = "Visual"
+		add_child(visual)
+	lights = get_node_or_null("Lights") as ColorRect
+	if lights == null:
+		lights = ColorRect.new()
+		lights.name = "Lights"
+		lights.position = Vector2(-5.0, -2.0)
+		lights.size = Vector2(10.0, 4.0)
+		add_child(lights)
 
 var headlight: PointLight2D
 var is_night_or_storm: bool = false
@@ -351,15 +367,16 @@ func _explode() -> void:
 	fireball.emitting = true
 	fireball.one_shot = true
 	fireball.explosiveness = 0.98
-	fireball.amount = 75
-	fireball.lifetime = 1.3
+	fireball.amount = 45
+	fireball.lifetime = 1.0
 	fireball.spread = 180.0
 	fireball.initial_velocity_min = 160.0
 	fireball.initial_velocity_max = 420.0
 	fireball.gravity = Vector2(0, 120)
-	fireball.scale_amount_min = 6.0
-	fireball.scale_amount_max = 16.0
+	fireball.scale_amount_min = 4.0
+	fireball.scale_amount_max = 10.0
 	fireball.color = Color(1.0, 0.48, 0.08, 0.95)
+	fireball.texture = _get_smooth_particle_texture()
 	get_parent().add_child(fireball)
 	
 	# 3. Estilhaços metálicos incandescentes
@@ -377,18 +394,21 @@ func _explode() -> void:
 	shrapnel.scale_amount_min = 3.0
 	shrapnel.scale_amount_max = 6.0
 	shrapnel.color = Color(1.0, 0.85, 0.3)
+	shrapnel.texture = _get_smooth_particle_texture()
 	get_parent().add_child(shrapnel)
 	
 	# 4. Clarão de Luz Instantâneo
 	var flash_light := PointLight2D.new()
 	flash_light.color = Color(1.0, 0.85, 0.5)
-	flash_light.energy = 4.5
+	flash_light.energy = 1.6 # Reduzido de 4.5: mesmo ajuste feito em PlayerCar.gd,
+	# o valor antigo estourava a tela inteira em branco/laranja (e aqui em roxo,
+	# pois o giroflex da viatura soma cores vermelho/azul/roxo na mesma area).
 	var f_grad = Gradient.new()
 	f_grad.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
 	var f_tex = GradientTexture2D.new()
 	f_tex.gradient = f_grad
-	f_tex.width = 420
-	f_tex.height = 420
+	f_tex.width = 260
+	f_tex.height = 260
 	f_tex.fill = GradientTexture2D.FILL_RADIAL
 	f_tex.fill_from = Vector2(0.5, 0.5)
 	f_tex.fill_to = Vector2(1.0, 0.5)
@@ -413,23 +433,11 @@ func _explode() -> void:
 	scorch.z_index = -15
 	get_parent().add_child(scorch)
 	
-	# 6. ANIMAÇÃO DE SALTO NO AR (A viatura pula do chão em 3D, inclina e cai)
+	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if visual:
 		visual.modulate = Color(0.12, 0.12, 0.12)
-		var orig_scale = visual.scale
-		var blast_tilt = randf_range(-0.35, 0.35)
-		var blast_skew = randf_range(-0.25, 0.25)
-		var jump_offset = Vector2(randf_range(-25.0, 25.0), randf_range(-35.0, -15.0))
-		
-		var hop_tween = create_tween().set_parallel(true)
-		hop_tween.tween_property(visual, "scale", orig_scale * 1.50, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		hop_tween.tween_property(visual, "position", jump_offset, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		hop_tween.tween_property(visual, "rotation", blast_tilt, 0.18)
-		hop_tween.tween_property(visual, "skew", blast_skew, 0.18)
-		
-		var drop_tween = create_tween().set_parallel(true)
-		drop_tween.tween_property(visual, "scale", orig_scale, 0.42).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT).set_delay(0.18)
-		drop_tween.tween_property(visual, "position", Vector2.ZERO, 0.42).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT).set_delay(0.18)
+		visual.position = Vector2.ZERO
+		visual.skew = 0.0
 		
 	# 7. Onda de choque: danifica outros carros e arremessa pedestres
 	var blast_radius = 210.0
@@ -490,13 +498,14 @@ func _physics_process(delta: float) -> void:
 	# === VIAGEM DE RETORNO À BASE (Quartel ou Hospital) ===
 	if is_returning_to_base:
 		_notify_return_started()
+		if siren_audio and siren_audio.playing:
+			siren_audio.stop()
 		var base_pos := home_return_position
 		if base_pos == Vector2.ZERO:
 			var depot_director := get_tree().get_first_node_in_group("emergency_depot_director")
 			if depot_director and depot_director.has_method("get_return_position"):
 				base_pos = depot_director.get_return_position(_service_key())
 		if base_pos == Vector2.ZERO:
-			push_warning("Emergency vehicle has no authored return marker; recycling safely")
 			_deactivate()
 			return
 		var waypoint = _get_road_guidance_target(base_pos)
@@ -577,7 +586,9 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			return
 			
-		# Se não há ocorrência válida ativa, retorna à central imediatamente
+		# Se não há ocorrência válida ativa, desliga sirene e retorna à central imediatamente
+		if siren_audio and siren_audio.playing:
+			siren_audio.stop()
 		is_returning_to_base = true
 		return
 		
@@ -973,7 +984,12 @@ func _get_road_guidance_target(dest: Vector2) -> Vector2:
 	# traffic whenever no building happened to be in the way.
 	var best_lane: Path2D = null
 	var best_score := INF
-	for node in get_tree().get_nodes_in_group("modern_traffic_lane"):
+	var candidate_lanes: Array[Node] = []
+	candidate_lanes.append_array(get_tree().get_nodes_in_group("unified_traffic_lane"))
+	for n in get_tree().get_nodes_in_group("modern_traffic_lane"):
+		if not candidate_lanes.has(n):
+			candidate_lanes.append(n)
+	for node in candidate_lanes:
 		var lane := node as Path2D
 		if lane == null or lane.curve == null or lane.curve.get_point_count() < 2:
 			continue
@@ -1043,21 +1059,12 @@ func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_w
 	var local_norm = transform.basis_xform_inv(impact_normal)
 	var factor = clampf(impact_force / 450.0, 0.05, 0.28)
 	
-	if local_norm.x < -0.20:
-		damage_deformation_scale.x = clampf(damage_deformation_scale.x - factor * 0.80, 0.68, 1.0)
-		damage_deformation_scale.y = clampf(damage_deformation_scale.y + factor * 0.38, 1.0, 1.25)
-		damage_deformation_offset.x -= factor * 24.0
-	elif local_norm.x > 0.20:
-		damage_deformation_scale.x = clampf(damage_deformation_scale.x - factor * 0.70, 0.70, 1.0)
-		damage_deformation_offset.x += factor * 18.0
-	if absf(local_norm.y) > 0.20:
-		damage_deformation_scale.y = clampf(damage_deformation_scale.y - factor * 0.70, 0.70, 1.0)
-		damage_skew = clampf(damage_skew + (0.08 * signf(local_norm.y) * factor * 4.0), -0.24, 0.24)
-		
-	visual.scale = Vector2(visual.scale.x * damage_deformation_scale.x, visual.scale.y * damage_deformation_scale.y)
-	visual.position = damage_deformation_offset
-	visual.skew = damage_skew
-	visual.modulate = visual.modulate.lerp(Color(0.40, 0.40, 0.42), 0.18)
+	# A viatura NUNCA estica nem diminui: preserva proporção e escala rígidas
+	visual.position = Vector2.ZERO
+	visual.skew = 0.0
+
+	# Escurecimento sutil (arranhões e fuligem na lataria)
+	visual.modulate = visual.modulate.lerp(Color(0.60, 0.60, 0.62), 0.06 * (factor / 0.28))
 	
 	if hit_world_pos != Vector2.ZERO and dents_container:
 		var local_hit: Vector2 = to_local(hit_world_pos)
