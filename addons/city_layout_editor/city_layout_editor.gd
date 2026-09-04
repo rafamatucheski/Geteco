@@ -2,6 +2,8 @@
 extends EditorPlugin
 
 const ROAD_SCRIPT := preload("res://city_demo/scripts/roads/CityRoadSegment.gd")
+const ROAD_CURVE_SCRIPT := preload("res://city_demo/scripts/roads/CityRoadCurve.gd")
+const LOT_SCRIPT := preload("res://city_demo/scripts/roads/CityLot.gd")
 const INTERSECTION_SCRIPT := preload("res://city_demo/scripts/roads/CityIntersection.gd")
 const CROSSWALK_SCRIPT := preload("res://city_demo/scripts/roads/CityCrosswalk.gd")
 const LAMP_SCENE := preload("res://StreetLamp.tscn")
@@ -53,20 +55,29 @@ const INTERSECTION_LIBRARY := [
 	{"label": "Rotatória", "type": INTERSECTION_SCRIPT.JunctionType.ROUNDABOUT},
 ]
 
+const LOT_LIBRARY := [
+	{"label": "Lote Edificável", "kind": "buildable"},
+	{"label": "Área Proibida", "kind": "forbidden"},
+]
+
 var toolbar: HBoxContainer
 var building_dropdown: OptionButton
 var tree_dropdown: OptionButton
 var intersection_dropdown: OptionButton
+var lot_dropdown: OptionButton
 
 func _enter_tree() -> void:
 	toolbar = HBoxContainer.new()
 	toolbar.name = "CityLayoutToolbar"
 	_add_button("Ver Cidade Inteira", _frame_entire_city)
 	_add_button("+ Rua", _create_road)
+	_add_button("+ Curva", _create_road_curve)
 	_add_button("Ligar 2 pontos", _connect_selected_points)
 	intersection_dropdown = _add_dropdown(INTERSECTION_LIBRARY)
 	_add_button("+ Cruzamento", _create_intersection)
 	_add_button("+ Faixa", _create_crosswalk)
+	lot_dropdown = _add_dropdown(LOT_LIBRARY)
+	_add_button("+ Lote", _create_lot)
 	building_dropdown = _add_dropdown(BUILDING_LIBRARY)
 	_add_button("+ Prédio", _create_building)
 	tree_dropdown = _add_dropdown(TREE_LIBRARY)
@@ -159,6 +170,15 @@ func _collect_city_bounds(root: Node) -> Rect2:
 						has_point = true
 			continue
 
+		if city_node.has_method("get_bounds"):
+			var lot_bounds: Rect2 = city_node.call("get_bounds")
+			if lot_bounds.size.x > 0.0 and lot_bounds.size.y > 0.0:
+				bounds = _expand_bounds(bounds, city_node.to_global(lot_bounds.position), has_point)
+				has_point = true
+				bounds = _expand_bounds(bounds, city_node.to_global(lot_bounds.end), has_point)
+				has_point = true
+				continue
+
 		var marker_name := String(city_node.name)
 		if marker_name.begins_with("Crossing") or marker_name.begins_with("Road") or marker_name.begins_with("Control") or city_node is Marker2D:
 			bounds = _expand_bounds(bounds, city_node.global_position, has_point)
@@ -244,16 +264,30 @@ func _add_editable_item(item: Node2D, item_name: String) -> void:
 
 func _attach_item(parent: Node2D, item: Node2D) -> void:
 	parent.add_child(item)
-	item.owner = get_editor_interface().get_edited_scene_root()
+	var scene_root: Node = null
+	if get_editor_interface() != null:
+		scene_root = get_editor_interface().get_edited_scene_root()
+	item.owner = scene_root
+	if scene_root != null:
+		_assign_owner_recursive(item, scene_root)
 	if item is CityRoadSegment:
 		(item as CityRoadSegment).render_legacy_road = false
 		_ensure_unified_road_network()
+
+func _assign_owner_recursive(node: Node, scene_root: Node) -> void:
+	for child in node.get_children():
+		child.owner = scene_root
+		_assign_owner_recursive(child, scene_root)
 
 func _create_road() -> void:
 	var road = ROAD_SCRIPT.new()
 	road.length = 360.0
 	road.add_street_lamps = false # postes devem ser nós independentes e arrastáveis
 	_add_editable_item(road, "Rua")
+
+func _create_road_curve() -> void:
+	var curve: Node2D = ROAD_CURVE_SCRIPT.new()
+	_add_editable_item(curve, "CurvaRua")
 
 func _connect_selected_points() -> void:
 	var selected := get_editor_interface().get_selection().get_selected_nodes()
@@ -329,6 +363,25 @@ func _ensure_unified_road_network() -> void:
 
 func _create_crosswalk() -> void:
 	_add_editable_item(CROSSWALK_SCRIPT.new() as Node2D, "Faixa")
+
+func _create_lot() -> void:
+	var index := lot_dropdown.selected if lot_dropdown != null else 0
+	if index < 0:
+		index = 0
+	var entry: Dictionary = LOT_LIBRARY[index]
+	var kind: String = String(entry.get("kind", "buildable"))
+	var lot: Node2D = LOT_SCRIPT.new()
+	lot.set("lot_kind", kind)
+	var half_size := 50.0
+	var default_points := PackedVector2Array([
+		Vector2(-half_size, -half_size),
+		Vector2(half_size, -half_size),
+		Vector2(half_size, half_size),
+		Vector2(-half_size, half_size),
+	])
+	lot.set("points", default_points)
+	var lot_name := "Lote" if kind == "buildable" else "AreaProibida"
+	_add_editable_item(lot, lot_name)
 
 func _create_building() -> void:
 	var index := building_dropdown.selected if building_dropdown != null else 0
