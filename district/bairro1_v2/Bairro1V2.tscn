@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://district/bairro1_v2/Bairro1V2.gd" id="1_root"]
+
+[node name="Bairro1V2" type="Node2D"]
+script = ExtResource("1_root")
+load_contributor_modules = true
+load_landmarks_module = true

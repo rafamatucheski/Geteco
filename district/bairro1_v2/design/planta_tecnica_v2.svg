@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="960" viewBox="0 0 2000 1600">
+  <style>
+    .road{fill:none;stroke:#242d37;stroke-linecap:round;stroke-linejoin:round}.lot{stroke:#e8e0c7;stroke-width:10}.label{font:700 38px sans-serif;fill:#17212b;text-anchor:middle}.small{font:600 25px sans-serif;fill:#e8e0c7;text-anchor:middle}.note{font:500 22px sans-serif;fill:#d8d0bb}.route{fill:none;stroke:#ffcc33;stroke-width:12;stroke-dasharray:28 18}
+  </style>
+  <rect width="2000" height="1600" fill="#294129"/>
+  <rect x="0" y="0" width="2000" height="220" fill="#155265"/>
+  <text x="1000" y="125" class="small">CANAL / PORTO — ÁREA NÃO CONSTRUÍVEL</text>
+  <rect x="0" y="1460" width="2000" height="140" fill="#66564a"/>
+  <text x="1000" y="1548" class="small">FERROVIA — LIMITE SUL</text>
+  <path class="road" stroke-width="164" d="M-60 1220 L160 1120 L420 900 L610 700 L700 640 L1050 640 L1450 650 L1650 680"/>
+  <path class="road" stroke-width="112" d="M1650 680 L1730 440 L1780 220 L1800 90 M700 640 L700 1450 M1050 640 L1050 1450 M1450 650 L1450 1450 M700 1150 L1450 1150"/>
+  <path class="road" stroke-width="56" d="M760 730 L990 730 M1108 850 L1392 850 M1505 1120 L1870 1120"/>
+  <path class="route" d="M250 1080 L610 700 L875 560 L1510 910 L1510 1320 L1800 90"/>
+  <rect class="lot" x="80" y="790" width="360" height="510" fill="#4f8c50"/><text x="260" y="1030" class="label">PARQUE</text>
+  <rect class="lot" x="760" y="270" width="230" height="250" fill="#e3a052"/><text x="875" y="405" class="label">MERCADO</text>
+  <rect class="lot" x="1140" y="250" width="260" height="270" fill="#6caed6"/><text x="1270" y="400" class="label">TERMINAL</text>
+  <rect class="lot" x="420" y="930" width="200" height="180" fill="#c26b7c"/><text x="520" y="1025" class="label">BAR / LAV.</text>
+  <rect class="lot" x="770" y="770" width="200" height="250" fill="#d5d0b4"/><text x="870" y="905" class="label">CENTRO</text>
+  <rect class="lot" x="1130" y="770" width="230" height="250" fill="#c98270"/><text x="1245" y="905" class="label">CASAS</text>
+  <rect class="lot" x="1540" y="800" width="270" height="220" fill="#8b8f9a"/><text x="1675" y="920" class="label">OFICINA</text>
+  <rect class="lot" x="770" y="1220" width="200" height="210" fill="#c98270"/><text x="870" y="1330" class="label">CASAS</text>
+  <rect class="lot" x="1130" y="1220" width="230" height="210" fill="#c98270"/><text x="1245" y="1330" class="label">CASAS</text>
+  <rect class="lot" x="1540" y="1210" width="330" height="220" fill="#8b8f9a"/><text x="1705" y="1330" class="label">GALPÃO</text>
+  <circle cx="250" cy="1080" r="26" fill="#fff" stroke="#17212b" stroke-width="12"/><text x="250" y="1160" class="note">SPAWN</text>
+  <circle cx="1800" cy="90" r="28" fill="#ffcc33" stroke="#17212b" stroke-width="12"/><text x="1715" y="170" class="note">ACESSO AO PORTO</text>
+  <text x="1000" y="1580" class="note">Amarelo tracejado: rota inicial jogável</text>
+</svg>
