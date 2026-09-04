@@ -64,7 +64,7 @@ func list_slots() -> Array[Dictionary]:
 	slots_to_check.append_array(DEFAULT_SLOTS)
 	
 	# Verificar se há outros arquivos .json no diretório
-	var dir := DirAccess.open(SAVE_DIR)
+	var dir := DirAccess.open(_save_dir)
 	if dir:
 		dir.list_dir_begin()
 		var file_name := dir.get_next()

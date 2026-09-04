@@ -301,18 +301,21 @@ theme_override_constants/separation = 12
 alignment = 2
 
 [node name="BtnDefaults" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 38)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "PADRÕES"
 
 [node name="BtnBack" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 38)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "CANCELAR"
 
 [node name="BtnSave" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
