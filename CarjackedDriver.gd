@@ -104,6 +104,21 @@ func _physics_process(delta: float) -> void:
 
 	state_timer += delta
 
+	# BUG REAL CORRIGIDO: speech_bubble/phone_indicator sao filhos deste
+	# CharacterBody2D, entao quando "rotation" muda abaixo (o motorista vira
+	# pra fugir), o balao de fala e o aviso "Ligando pra Policia..." giravam
+	# junto -- um Label vira uma faixa diagonal gigante atravessando a tela.
+	# Cancela a rotacao herdada todo frame para que essas UIs fiquem sempre
+	# na horizontal, na tela, independente de para onde o NPC esta olhando.
+	# NOTA: PanelContainer (Control) nao tem propriedade "global_rotation"
+	# (isso so existe em Node2D) -- por isso setamos a rotacao LOCAL como o
+	# inverso da rotacao global do proprio NPC, que cancela exatamente o
+	# mesmo jeito, sem dar erro de tipo em runtime.
+	if speech_bubble:
+		speech_bubble.rotation = -global_rotation
+	if phone_indicator:
+		phone_indicator.rotation = -global_rotation
+
 	match personality:
 		Personality.SUBMISSIVE:
 			# Foge desesperadamente na direção oposta ao carro
@@ -222,9 +237,50 @@ func _fade_and_despawn() -> void:
 	tw.tween_property(self, "modulate:a", 0.0, 1.5)
 	tw.tween_callback(queue_free)
 
+# Paleta curada de roupas -- antes era RGB 100% aleatorio (cada canal solto
+# entre 0.2 e 0.9), o que gerava combinacoes neon/feias (o "roxo horroroso"
+# reportado). Mesma ideia da paleta de skin_tones/hair_tones que
+# AnimatedPedestrian3D.gd ja usa para as NPCs com rig 3D.
+const DRIVER_SHIRT_COLORS: Array[Color] = [
+	Color("e17055"), Color("0984e3"), Color("00b894"), Color("fdcb6e"),
+	Color("636e72"), Color("6c5ce7"), Color("d63031"), Color("2d3436"),
+	Color("00cec9"), Color("b2bec3"),
+]
+
 func _build_driver_visual() -> void:
-	# Cores aleatórias de roupa
-	shirt_color = Color(randf_range(0.2, 0.9), randf_range(0.2, 0.9), randf_range(0.2, 0.9))
+	shirt_color = DRIVER_SHIRT_COLORS[randi() % DRIVER_SHIRT_COLORS.size()]
+
+	# Bracos e pernas simples -- antes o "corpo" era so um retangulo achatado
+	# (sem membro nenhum), o que junto com a cor aleatoria feia lia como um
+	# borrao qualquer em vez de uma pessoa (bug real reportado: "esse NPC que
+	# sai do carro horroroso").
+	var arm_l = Polygon2D.new()
+	arm_l.color = skin_color
+	arm_l.polygon = PackedVector2Array([
+		Vector2(-12, -10), Vector2(-8, -10), Vector2(-9, 13), Vector2(-13, 13)
+	])
+	visual_root.add_child(arm_l)
+
+	var arm_r = Polygon2D.new()
+	arm_r.color = skin_color
+	arm_r.polygon = PackedVector2Array([
+		Vector2(8, -10), Vector2(12, -10), Vector2(13, 13), Vector2(9, 13)
+	])
+	visual_root.add_child(arm_r)
+
+	var leg_l = Polygon2D.new()
+	leg_l.color = pants_color
+	leg_l.polygon = PackedVector2Array([
+		Vector2(-8, 12), Vector2(-1, 12), Vector2(-1, 20), Vector2(-8, 20)
+	])
+	visual_root.add_child(leg_l)
+
+	var leg_r = Polygon2D.new()
+	leg_r.color = pants_color
+	leg_r.polygon = PackedVector2Array([
+		Vector2(1, 12), Vector2(8, 12), Vector2(8, 20), Vector2(1, 20)
+	])
+	visual_root.add_child(leg_r)
 
 	# Corpo do Pedestre Top-Down
 	var body = Polygon2D.new()

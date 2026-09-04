@@ -37,6 +37,7 @@ func _ready() -> void:
 	_build_parking_bays()
 	_build_ceiling_lights()
 	_build_jager_lounge()
+	_build_mechanic_station()
 	_build_ui_prompts()
 	_build_spawn_and_exit()
 
@@ -150,6 +151,15 @@ func _build_floor_and_lanes() -> void:
 	lane.z_index = 1
 	add_child(lane)
 	
+	# Piso estendido no vão da porta sul (elimina corte preto)
+	var threshold_poly := Polygon2D.new()
+	threshold_poly.color = floor_color_secondary
+	threshold_poly.polygon = PackedVector2Array([
+		Vector2(-65, 238), Vector2(65, 238), Vector2(65, 260), Vector2(-65, 260)
+	])
+	threshold_poly.z_index = 1
+	add_child(threshold_poly)
+	
 	for side in [-1, 1]:
 		var stripe := Line2D.new()
 		stripe.points = PackedVector2Array([Vector2(side * 65, -230), Vector2(side * 65, 230)])
@@ -234,7 +244,7 @@ func _build_ui_prompts() -> void:
 func _build_spawn_and_exit() -> void:
 	spawn_point = Marker2D.new()
 	spawn_point.name = "SpawnPoint"
-	spawn_point.position = Vector2(0, 170)
+	spawn_point.position = Vector2(0, 160)
 	add_child(spawn_point)
 	
 	var exit_scene = load("res://scripts/entrances/BuildingEntrance.tscn")
@@ -246,6 +256,17 @@ func _build_spawn_and_exit() -> void:
 		exit_door.display_name = "SAIR DA GARAGEM"
 		exit_door.destination_id = &"garage_exterior_return"
 		exit_door.panel_slide_distance = 24.0
+		
+		# Reposiciona o sensor para o lado interno (y = -20)
+		# O jogador é detectado no piso da garagem, sem precisar andar pro breu
+		var sensor := exit_door.get_node_or_null("InteractionArea") as Area2D
+		if sensor:
+			sensor.position = Vector2(0, -20)
+			
+		var prompt := exit_door.get_node_or_null("Prompt") as Label
+		if prompt:
+			prompt.position = Vector2(-98, -48)
+			
 		add_child(exit_door)
 
 func _on_bay_body_entered(body: Node2D, bay_index: int) -> void:
@@ -379,7 +400,78 @@ func _build_jager_lounge() -> void:
 	lamp.z_index = 7
 	add_child(lamp)
 
+	# Placa Luminosa de Identificação do Lounge VIP
+	var lounge_sign := Label.new()
+	lounge_sign.text = "★ ESCRITÓRIO VIP · JÄGER 'MACIOTA' ★"
+	lounge_sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lounge_sign.position = lounge_pos + Vector2(-160, -56)
+	lounge_sign.size = Vector2(320, 20)
+	lounge_sign.add_theme_font_size_override("font_size", 11)
+	lounge_sign.add_theme_color_override("font_color", Color("#f1c40f"))
+	lounge_sign.add_theme_color_override("font_shadow_color", Color.BLACK)
+	lounge_sign.add_theme_constant_override("shadow_offset_x", 1)
+	lounge_sign.add_theme_constant_override("shadow_offset_y", 1)
+	lounge_sign.z_index = 8
+	add_child(lounge_sign)
+
 	# Instanciação do NPC Jäger "Maciota"
 	var jager = JAGER_NPC.new()
+	jager.name = "JagerMaciota"
 	jager.position = lounge_pos + Vector2(-15, 0)
 	add_child(jager)
+
+func _build_mechanic_station() -> void:
+	var station_pos := Vector2(280, -180)
+	
+	# Bancada de Ferramentas de Oficina
+	var bench := Polygon2D.new()
+	bench.color = Color("#b33939")
+	bench.polygon = PackedVector2Array([
+		Vector2(-40, -14), Vector2(40, -14), Vector2(40, 14), Vector2(-40, 14)
+	])
+	bench.position = station_pos + Vector2(0, -10)
+	bench.z_index = 4
+	add_child(bench)
+	
+	# Borda da bancada
+	var bench_trim := Line2D.new()
+	bench_trim.points = PackedVector2Array([
+		Vector2(-40, -14), Vector2(40, -14), Vector2(40, 14), Vector2(-40, 14), Vector2(-40, -14)
+	])
+	bench_trim.default_color = Color("#d63031")
+	bench_trim.width = 2.0
+	bench_trim.position = bench.position
+	bench_trim.z_index = 5
+	add_child(bench_trim)
+	
+	# Pilha de Pneus de Competição
+	var tires := Polygon2D.new()
+	tires.color = Color("#1e272e")
+	tires.polygon = PackedVector2Array([
+		Vector2(-14, -14), Vector2(14, -14), Vector2(14, 14), Vector2(-14, 14)
+	])
+	tires.position = station_pos + Vector2(-55, 0)
+	tires.z_index = 4
+	add_child(tires)
+	
+	# Letreiro da Oficina
+	var mech_label := Label.new()
+	mech_label.text = "OFICINA DE PREPARAÇÃO · TITO 'GRAXA'"
+	mech_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mech_label.position = station_pos + Vector2(-140, -56)
+	mech_label.size = Vector2(280, 20)
+	mech_label.add_theme_font_size_override("font_size", 10)
+	mech_label.add_theme_color_override("font_color", Color("#e67e22"))
+	mech_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	mech_label.z_index = 8
+	add_child(mech_label)
+	
+	# Instanciação do Mecânico Tito 'Graxa'
+	var tito := AnimatedPedestrian3D.new()
+	tito.name = "MechanicTito"
+	tito.position = station_pos + Vector2(0, 15)
+	tito.archetype_override = 1
+	tito.shirt_color = Color("#2980b9")
+	tito.pants_color = Color("#1a5276")
+	tito.base_walk_speed = 0.0
+	add_child(tito)

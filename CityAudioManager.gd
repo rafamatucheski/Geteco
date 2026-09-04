@@ -20,6 +20,7 @@ func _ready():
 	ambience_player.name = "CityAmbience"
 	ambience_player.stream = ProceduralAudio.get_city_ambience_stream()
 	ambience_player.volume_db = -24.0
+	ambience_player.bus = "Music"
 	ambience_player.autoplay = true
 	add_child(ambience_player)
 	ambience_player.play()
@@ -28,12 +29,14 @@ func _ready():
 	distant_siren_player = AudioStreamPlayer.new()
 	distant_siren_player.name = "DistantSirens"
 	distant_siren_player.volume_db = -22.0
+	distant_siren_player.bus = "SFX"
 	add_child(distant_siren_player)
 
 	# 3. Rádio comunicador policial distante
 	radio_chatter_player = AudioStreamPlayer.new()
 	radio_chatter_player.name = "PoliceRadioChatter"
 	radio_chatter_player.volume_db = -25.0
+	radio_chatter_player.bus = "SFX"
 	add_child(radio_chatter_player)
 
 	# 4. Ambiente de parque (pássaros e brisa)
@@ -41,6 +44,7 @@ func _ready():
 	park_ambience_player.name = "ParkAmbience"
 	park_ambience_player.stream = ProceduralAudio.get_birds_wind_stream()
 	park_ambience_player.volume_db = -28.0
+	park_ambience_player.bus = "Music"
 	add_child(park_ambience_player)
 
 func _process(delta: float):

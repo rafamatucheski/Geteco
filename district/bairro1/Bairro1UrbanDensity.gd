@@ -51,13 +51,24 @@ func _build_density() -> void:
 	if _expansion == null:
 		push_warning("Bairro1UrbanDensity needs Bairro1Expansion; density skipped")
 		return
+	var rejected: Array[String] = []
 	for candidate in INFILL_CANDIDATES:
 		var lot_rect: Rect2 = candidate.rect
 		if _infill_is_clear(candidate):
 			_safe_infill.append(candidate)
 			_spawn_infill(candidate)
+		else:
+			rejected.append(String(candidate.id))
 	queue_redraw()
 	print("BAIRRO1_URBAN_DENSITY_READY: %d safe infill lots, detailed roofs/courts/plazas" % _safe_infill.size())
+	if not rejected.is_empty():
+		# A rejected lot used to vanish with zero trace, which made "a
+		# building disappeared" impossible to diagnose without opening the
+		# editor and eyeballing every rect against the current road curves.
+		# Authored road points move (markers get dragged, snapped roads get
+		# edited) more often than authored lots do, so a lot that was safe
+		# yesterday can silently start failing today. Surface it instead.
+		push_warning("Bairro1UrbanDensity: %d infill lot(s) skipped as unsafe (too close to a road/lot/rail, or out of bounds): %s" % [rejected.size(), ", ".join(rejected)])
 
 func _infill_is_clear(data: Dictionary) -> bool:
 	var rect: Rect2 = data.rect

@@ -121,8 +121,8 @@ func _on_body_entered(body: Node2D) -> void:
 		var p := AudioStreamPlayer2D.new()
 		p.stream = ProceduralAudio.get_powerup_stream()
 		p.volume_db = -4.0
-		p.max_distance = 500.0
-		get_tree().current_scene.add_child(p)
+		var parent_node: Node = get_tree().current_scene if get_tree().current_scene != null else get_tree().root
+		parent_node.add_child(p)
 		p.global_position = global_position
 		p.play()
 		p.finished.connect(p.queue_free)

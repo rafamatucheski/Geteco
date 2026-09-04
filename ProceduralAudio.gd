@@ -230,8 +230,44 @@ static func get_siren_stream() -> AudioStream:
 	stream.mix_rate = sample_rate
 	stream.stereo = false
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_end = num_samples
 	stream.data = data
 	_cached_siren = stream
+	return stream
+
+static var _cached_police_alarm: AudioStream = null
+
+# ==========================================
+# ALARME DE VIATURA DA PM (POLICE CAR ALARM)
+# ==========================================
+static func get_police_alarm_stream() -> AudioStream:
+	if _cached_police_alarm != null:
+		return _cached_police_alarm
+
+	var sample_rate := 22050
+	var duration := 0.75
+	var num_samples := int(sample_rate * duration)
+	var data := PackedByteArray()
+	data.resize(num_samples * 2)
+
+	# Alarme em 2 tons alternados rápidos (900Hz e 1400Hz) com harmônicos metálicos
+	for i in range(num_samples):
+		var t := float(i) / float(sample_rate)
+		var phase := int(t * 6.0) % 2
+		var freq := 880.0 if phase == 0 else 1380.0
+		var sample := sin(2.0 * PI * freq * t) * 0.40
+		sample += sin(4.0 * PI * freq * t) * 0.15 # 2º harmônico
+		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
+		data.encode_s16(i * 2, int_sample)
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_end = num_samples
+	stream.data = data
+	_cached_police_alarm = stream
 	return stream
 
 # ==========================================
@@ -722,6 +758,86 @@ static var _cached_rpg_launch: AudioStream = null
 static var _cached_flamethrower: AudioStream = null
 static var _cached_grenade: AudioStream = null
 static var _cached_ricochet: AudioStream = null
+
+static var _cached_punch_swing: AudioStream = null
+static var _cached_knife_slash: AudioStream = null
+
+static func get_melee_swing_stream(weapon_id: String = "fists") -> AudioStream:
+	match weapon_id:
+		"knife":
+			return get_knife_slash_stream()
+		_:
+			return get_punch_swing_stream()
+
+# --- PUNHO (Curto whoosh de ar seguido de um thud grave surdo -- sem faisca metalica) ---
+static func get_punch_swing_stream() -> AudioStream:
+	if ResourceLoader.exists("res://audio/punch_swing.wav"):
+		return load("res://audio/punch_swing.wav")
+	if _cached_punch_swing != null:
+		return _cached_punch_swing
+
+	var sample_rate := 22050
+	var duration := 0.22
+	var num_samples := int(sample_rate * duration)
+	var data := PackedByteArray()
+	data.resize(num_samples * 2)
+	var last_noise := 0.0
+	for i in range(num_samples):
+		var t := float(i) / float(sample_rate)
+		# Whoosh: ruido filtrado subindo e caindo rapido, como o braco cortando o ar.
+		var raw_noise := randf_range(-1.0, 1.0)
+		last_noise = last_noise * 0.82 + raw_noise * 0.18
+		var whoosh_env := sin(PI * clampf(t / 0.10, 0.0, 1.0)) * exp(-t * 9.0)
+		var whoosh := last_noise * whoosh_env * 0.55
+		# Thud grave surdo no instante do impacto (~0.09s), sem componente metalica.
+		var impact_t := maxf(0.0, t - 0.09)
+		var thud := sin(2.0 * PI * 92.0 * impact_t) * exp(-impact_t * 40.0) * 0.75
+		var thud_noise := randf_range(-1.0, 1.0) * exp(-impact_t * 70.0) * 0.25
+		var sample := tanh((whoosh + thud + thud_noise) * 1.15) * 0.8
+		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = data
+	_cached_punch_swing = stream
+	return stream
+
+# --- FACA (Whoosh mais agudo/rapido com um "shk" metalico curto na ponta do golpe) ---
+static func get_knife_slash_stream() -> AudioStream:
+	if ResourceLoader.exists("res://audio/knife_slash.wav"):
+		return load("res://audio/knife_slash.wav")
+	if _cached_knife_slash != null:
+		return _cached_knife_slash
+
+	var sample_rate := 22050
+	var duration := 0.20
+	var num_samples := int(sample_rate * duration)
+	var data := PackedByteArray()
+	data.resize(num_samples * 2)
+	var last_noise := 0.0
+	for i in range(num_samples):
+		var t := float(i) / float(sample_rate)
+		var raw_noise := randf_range(-1.0, 1.0)
+		last_noise = last_noise * 0.75 + raw_noise * 0.25
+		var slash_env := sin(PI * clampf(t / 0.075, 0.0, 1.0)) * exp(-t * 15.0)
+		var slash := last_noise * slash_env * 0.6
+		# "shk" metalico curto e agudo no fio da lamina cortando o ar.
+		var ring_t := maxf(0.0, t - 0.05)
+		var metal_ring := (sin(2.0 * PI * 3400.0 * ring_t) + 0.4 * sin(2.0 * PI * 5200.0 * ring_t)) * exp(-ring_t * 90.0) * 0.30
+		var sample := tanh((slash + metal_ring) * 1.2) * 0.78
+		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.stereo = false
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = data
+	_cached_knife_slash = stream
+	return stream
 
 static func get_gunshot_stream(weapon_id: String = "pistol") -> AudioStream:
 	match weapon_id:
@@ -1249,29 +1365,64 @@ static func get_ui_click_stream() -> AudioStream:
 # ==========================================
 # SONS DE PASSOS (FOOTSTEPS POR SUPERFÍCIE)
 # ==========================================
-static var _cached_footstep_concrete: AudioStream = null
-static var _cached_footstep_grass: AudioStream = null
+static var _cached_footstep_concrete: Array[AudioStream] = []
+static var _cached_footstep_wet: Array[AudioStream] = []
+static var _cached_footstep_grass: Array[AudioStream] = []
 static var _cached_footstep_metal: AudioStream = null
 
-static func get_footstep_stream(surface: String = "concrete") -> AudioStream:
-	if surface == "grass":
-		if _cached_footstep_grass != null: return _cached_footstep_grass
-		var sample_rate := 22050
-		var duration := 0.08
-		var num_samples := int(sample_rate * duration)
-		var data := PackedByteArray()
-		data.resize(num_samples * 2)
-		for i in range(num_samples):
-			var t := float(i) / float(sample_rate)
-			var rustle := randf_range(-0.4, 0.4) * exp(-t * 60.0)
-			var thud := sin(2.0 * PI * 110.0 * t) * exp(-t * 80.0) * 0.3
-			data.encode_s16(i * 2, clampi(int((rustle + thud) * 32767.0), -32768, 32767))
-		var s := AudioStreamWAV.new()
-		s.format = AudioStreamWAV.FORMAT_16_BITS
-		s.mix_rate = sample_rate
-		s.data = data
-		_cached_footstep_grass = s
-		return s
+static func get_footstep_stream(surface: String = "concrete", variation: int = 0) -> AudioStream:
+	if surface == "wet" or surface == "rain" or surface == "puddle":
+		if not _cached_footstep_wet.is_empty():
+			return _cached_footstep_wet[posmod(variation, _cached_footstep_wet.size())]
+		for v in range(4):
+			var sample_rate := 22050
+			var duration := 0.085
+			var num_samples := int(sample_rate * duration)
+			var data := PackedByteArray()
+			data.resize(num_samples * 2)
+			var thud_freq := 80.0 + float(v) * 6.0
+			var splash_freq := 1150.0 + float(v) * 160.0
+			for i in range(num_samples):
+				var t := float(i) / float(sample_rate)
+				var attack := minf(1.0, t / 0.003)
+				var thud := sin(2.0 * PI * thud_freq * t) * exp(-t * 65.0) * 0.16
+				var splash_sine := sin(2.0 * PI * splash_freq * t) * exp(-t * 110.0) * 0.09
+				var wet_noise := randf_range(-0.12, 0.12) * exp(-t * 85.0)
+				var suction := 0.0
+				if t > 0.015 and t < 0.045:
+					var ts := t - 0.015
+					suction = sin(2.0 * PI * 380.0 * ts) * exp(-ts * 120.0) * 0.07
+				var sample_val := (thud + splash_sine + wet_noise + suction) * attack
+				data.encode_s16(i * 2, clampi(int(sample_val * 32767.0), -32768, 32767))
+			var s := AudioStreamWAV.new()
+			s.format = AudioStreamWAV.FORMAT_16_BITS
+			s.mix_rate = sample_rate
+			s.data = data
+			_cached_footstep_wet.append(s)
+		return _cached_footstep_wet[posmod(variation, _cached_footstep_wet.size())]
+	elif surface == "grass":
+		if not _cached_footstep_grass.is_empty():
+			return _cached_footstep_grass[posmod(variation, _cached_footstep_grass.size())]
+		for v in range(4):
+			var sample_rate := 22050
+			var duration := 0.08
+			var num_samples := int(sample_rate * duration)
+			var data := PackedByteArray()
+			data.resize(num_samples * 2)
+			var thud_freq := 95.0 + float(v) * 8.0
+			for i in range(num_samples):
+				var t := float(i) / float(sample_rate)
+				var attack := minf(1.0, t / 0.004)
+				var rustle := randf_range(-0.25, 0.25) * exp(-t * 60.0)
+				var thud := sin(2.0 * PI * thud_freq * t) * exp(-t * 80.0) * 0.18
+				var sample_val := (rustle + thud) * attack
+				data.encode_s16(i * 2, clampi(int(sample_val * 32767.0), -32768, 32767))
+			var s := AudioStreamWAV.new()
+			s.format = AudioStreamWAV.FORMAT_16_BITS
+			s.mix_rate = sample_rate
+			s.data = data
+			_cached_footstep_grass.append(s)
+		return _cached_footstep_grass[posmod(variation, _cached_footstep_grass.size())]
 	elif surface == "metal":
 		if _cached_footstep_metal != null: return _cached_footstep_metal
 		var sample_rate := 22050
@@ -1281,9 +1432,10 @@ static func get_footstep_stream(surface: String = "concrete") -> AudioStream:
 		data.resize(num_samples * 2)
 		for i in range(num_samples):
 			var t := float(i) / float(sample_rate)
-			var clink := sin(2.0 * PI * 1450.0 * t) * exp(-t * 95.0) * 0.45
-			var thud := sin(2.0 * PI * 220.0 * t) * exp(-t * 70.0) * 0.30
-			data.encode_s16(i * 2, clampi(int((clink + thud) * 32767.0), -32768, 32767))
+			var attack := minf(1.0, t / 0.003)
+			var clink := sin(2.0 * PI * 1450.0 * t) * exp(-t * 95.0) * 0.30
+			var thud := sin(2.0 * PI * 220.0 * t) * exp(-t * 70.0) * 0.20
+			data.encode_s16(i * 2, clampi(int((clink + thud) * attack * 32767.0), -32768, 32767))
 		var s := AudioStreamWAV.new()
 		s.format = AudioStreamWAV.FORMAT_16_BITS
 		s.mix_rate = sample_rate
@@ -1291,23 +1443,29 @@ static func get_footstep_stream(surface: String = "concrete") -> AudioStream:
 		_cached_footstep_metal = s
 		return s
 	else:
-		if _cached_footstep_concrete != null: return _cached_footstep_concrete
-		var sample_rate := 22050
-		var duration := 0.07
-		var num_samples := int(sample_rate * duration)
-		var data := PackedByteArray()
-		data.resize(num_samples * 2)
-		for i in range(num_samples):
-			var t := float(i) / float(sample_rate)
-			var tap := randf_range(-0.35, 0.35) * exp(-t * 90.0)
-			var pop := sin(2.0 * PI * 180.0 * t) * exp(-t * 110.0) * 0.45
-			data.encode_s16(i * 2, clampi(int((tap + pop) * 32767.0), -32768, 32767))
-		var s := AudioStreamWAV.new()
-		s.format = AudioStreamWAV.FORMAT_16_BITS
-		s.mix_rate = sample_rate
-		s.data = data
-		_cached_footstep_concrete = s
-		return s
+		if not _cached_footstep_concrete.is_empty():
+			return _cached_footstep_concrete[posmod(variation, _cached_footstep_concrete.size())]
+		for v in range(4):
+			var sample_rate := 22050
+			var duration := 0.065
+			var num_samples := int(sample_rate * duration)
+			var data := PackedByteArray()
+			data.resize(num_samples * 2)
+			var thud_freq := 74.0 + float(v) * 8.0
+			var decay_thud := 70.0 + float(v) * 5.0
+			for i in range(num_samples):
+				var t := float(i) / float(sample_rate)
+				var attack := minf(1.0, t / 0.004)
+				var thud := sin(2.0 * PI * thud_freq * t) * exp(-t * decay_thud) * 0.20
+				var noise := randf_range(-0.10, 0.10) * exp(-t * 90.0)
+				var sample_val := (thud + noise) * attack
+				data.encode_s16(i * 2, clampi(int(sample_val * 32767.0), -32768, 32767))
+			var s := AudioStreamWAV.new()
+			s.format = AudioStreamWAV.FORMAT_16_BITS
+			s.mix_rate = sample_rate
+			s.data = data
+			_cached_footstep_concrete.append(s)
+		return _cached_footstep_concrete[posmod(variation, _cached_footstep_concrete.size())]
 
 # ==========================================
 # PORTAS DE CARRO & ROUBO (CAR DOORS & CARJACKING)

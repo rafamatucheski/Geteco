@@ -87,6 +87,31 @@ func _dispatch_police():
 			police.show()
 		police.set_physics_process(true)
 
+func report_police_car_theft() -> void:
+	time_hidden = 0.0
+	# Furto de viatura oficial da PM eleva procurado para pelo menos 2 estrelas
+	if current_stars < 2:
+		current_stars = 2
+		crime_points = maxi(crime_points, 18)
+		stars_changed.emit(current_stars)
+	else:
+		report_crime(20)
+		
+	# Toca rádio policial alertando o furto
+	var chatter = ProceduralAudio.get_police_radio_chatter_stream()
+	if chatter:
+		var p = AudioStreamPlayer.new()
+		p.stream = chatter
+		p.volume_db = 2.0
+		p.bus = "SFX"
+		add_child(p)
+		p.play()
+		p.finished.connect(p.queue_free)
+	
+	# Despacho urgente imediato de viaturas da PM
+	police_spawn_timer = 0.2
+	_dispatch_police()
+
 func report_crime(severity: int):
 	# Reseta o tempo de fuga, já que foi visto cometendo crime
 	time_hidden = 0.0
@@ -137,3 +162,21 @@ func dismiss_all_police():
 # Atalho para cheats ou eventos de missão ("Leavemealone")
 func clear_wanted_level():
 	dismiss_all_police()
+
+func reset():
+	dismiss_all_police()
+
+func serialize() -> Dictionary:
+	return {
+		"current_stars": current_stars,
+		"crime_points": crime_points,
+		"time_hidden": time_hidden
+	}
+
+func restore(data: Dictionary) -> void:
+	if not (data is Dictionary) or data.is_empty():
+		return
+	current_stars = clampi(int(data.get("current_stars", 0)), 0, 6)
+	crime_points = maxi(0, int(data.get("crime_points", 0)))
+	time_hidden = maxf(0.0, float(data.get("time_hidden", 0.0)))
+	stars_changed.emit(current_stars)

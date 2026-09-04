@@ -3,6 +3,8 @@ extends RefCounted
 
 # Catálogo definitivo de armas, estatísticas, munições e atributos de combate
 const ORDER = [
+	"fists",
+	"knife",
 	"pistol",
 	"magnum",
 	"smg",
@@ -16,6 +18,23 @@ const ORDER = [
 ]
 
 const WEAPONS = {
+	"fists": {
+		# Sempre disponivel, sem preco, sem municao (arma corpo a corpo:
+		# magazine_size/starting_reserve = -1 e' o sentinela lido por
+		# buy_weapon()/_reload_active_weapon() como "nao usa municao").
+		"label": "PUNHOS", "short_label": "PUNHO", "price": 0,
+		"damage": 9, "fire_interval": 0.42, "melee_range": 46.0,
+		"magazine_size": -1, "starting_reserve": -1,
+		"is_melee": true, "automatic": false, "stance": "unarmed",
+		"sound_type": "fists", "audio_volume_db": -4.0, "pitch_variance": 0.10
+	},
+	"knife": {
+		"label": "FACA DE COMBATE", "short_label": "FACA", "price": 350,
+		"damage": 22, "fire_interval": 0.50, "melee_range": 54.0,
+		"magazine_size": -1, "starting_reserve": -1,
+		"is_melee": true, "is_knife": true, "automatic": false, "stance": "knife",
+		"sound_type": "knife", "audio_volume_db": -2.0, "pitch_variance": 0.07
+	},
 	"pistol": {
 		"label": "PISTOLA 9MM", "short_label": "9MM", "price": 0,
 		"damage": 12, "fire_interval": 0.26, "projectile_speed": 920.0,

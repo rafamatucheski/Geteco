@@ -66,16 +66,16 @@ depot_id = "central_coroner"
 parking_bay_count = 2
 
 [node name="SpawnPoint" type="Marker2D" parent="CentralCoroner"]
-position = Vector2(982, 380)
-rotation = 3.14159
+position = Vector2(690, 818)
+rotation = 0
 
 [node name="ExitPoint" type="Marker2D" parent="CentralCoroner"]
-position = Vector2(914, 380)
-rotation = 3.14159
+position = Vector2(760, 818)
+rotation = 0
 
 [node name="ReturnPoint" type="Marker2D" parent="CentralCoroner"]
-position = Vector2(982, 380)
-rotation = 0
+position = Vector2(690, 818)
+rotation = 3.14159
 
 [node name="CentralFireStation" type="Node2D" parent="."]
 script = ExtResource("2_depot")

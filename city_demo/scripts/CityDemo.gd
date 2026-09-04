@@ -62,6 +62,11 @@ func _inject_hud():
 		if wanted_mgr:
 			wanted_mgr.stars_changed.connect(hud.update_stars)
 			
+	var pause_scene = load("res://ui/PauseMenu.tscn")
+	if pause_scene:
+		var pause_menu = pause_scene.instantiate()
+		get_parent().call_deferred("add_child", pause_menu)
+			
 	var phone_scene = load("res://PhoneBox.tscn")
 	if phone_scene:
 		var phone = phone_scene.instantiate()

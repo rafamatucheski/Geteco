@@ -17,22 +17,23 @@ auto_bind_scene_entrances = false
 [node name="WorldEntrances" type="Node2D" parent="."]
 
 [node name="AmmuNationEntrance" parent="WorldEntrances" instance=ExtResource("3_entrance")]
+position = Vector2(419, 334)
 entrance_kind = 1
 display_name = "AMMU-NATION"
 destination_id = &"ammu_interior_spawn"
 
 [node name="AmmuNationReturn" type="Marker2D" parent="WorldEntrances"]
-position = Vector2(0, 80)
+position = Vector2(419, 370)
 
 [node name="CommonGarageEntrance" parent="WorldEntrances" instance=ExtResource("3_entrance")]
-position = Vector2(420, 0)
+position = Vector2(268, 1028)
 entrance_kind = 2
 display_name = "GARAGEM CENTRAL"
 destination_id = &"garage_interior_spawn"
 panel_slide_distance = 21.0
 
 [node name="CommonGarageReturn" type="Marker2D" parent="WorldEntrances"]
-position = Vector2(420, 80)
+position = Vector2(268, 1064)
 
 [node name="ClothingStoreEntrance" parent="WorldEntrances" instance=ExtResource("3_entrance")]
 position = Vector2(227, 334)
@@ -41,7 +42,7 @@ display_name = "BOUTIQUE"
 destination_id = &"clothing_interior_spawn"
 
 [node name="ClothingStoreReturn" type="Marker2D" parent="WorldEntrances"]
-position = Vector2(323, 414)
+position = Vector2(227, 370)
 
 [node name="InteriorSpaces" type="Node2D" parent="."]
 

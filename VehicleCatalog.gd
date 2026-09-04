@@ -23,28 +23,40 @@ const VEHICLES := {
 		"target_length": 76.0, "target_width": 32.0, "mass": 1.0,
 		"max_speed": 490.0, "acceleration": 880.0, "braking": 1150.0, "turn_speed": 3.1, "drift_factor": 0.88,
 		"durability": 100, "engine_pitch": 1.0, "roof_prop": "none",
-		"colors": [Color("1e272e"), Color("d2dae2"), Color("1e3799"), Color("485460"), Color("800000"), Color("0c2461")]
+		"crop_index": 0,
+		"colors": [Color.WHITE, Color("f1f2f6"), Color("d2dae2")]
 	},
 	"taxi_yellow": {
 		"id": "taxi_yellow", "label": "Táxi Metropolitano", "district": "city",
 		"target_length": 78.0, "target_width": 33.0, "mass": 1.05,
 		"max_speed": 480.0, "acceleration": 890.0, "braking": 1180.0, "turn_speed": 3.2, "drift_factor": 0.85,
 		"durability": 110, "engine_pitch": 1.02, "roof_prop": "taxi_sign",
-		"colors": [Color("f1c40f")]
+		"crop_index": 1,
+		"colors": [Color.WHITE]
 	},
 	"sport_coupe": {
 		"id": "sport_coupe", "label": "Infernus GT Turbo", "district": "city",
 		"target_length": 72.0, "target_width": 34.0, "mass": 0.85, # Super leve e ágil
 		"max_speed": 620.0, "acceleration": 1180.0, "braking": 1450.0, "turn_speed": 3.65, "drift_factor": 1.15,
 		"durability": 80, "engine_pitch": 1.25, "roof_prop": "spoiler",
-		"colors": [Color("e74c3c"), Color("f39c12"), Color("e67e22"), Color("f5f6fa"), Color("0984e3"), Color("6c5ce7")]
+		"crop_index": 4,
+		"colors": [Color.WHITE]
 	},
 	"station_wagon": {
 		"id": "station_wagon", "label": "Perua Touring Classic", "district": "city",
 		"target_length": 84.0, "target_width": 32.0, "mass": 1.15,
 		"max_speed": 450.0, "acceleration": 780.0, "braking": 1020.0, "turn_speed": 2.85, "drift_factor": 0.80,
 		"durability": 120, "engine_pitch": 0.95, "roof_prop": "roof_rack",
-		"colors": [Color("4b6584"), Color("2c3e50"), Color("786d56"), Color("3d3d3d")]
+		"crop_index": 3,
+		"colors": [Color.WHITE]
+	},
+	"police_cruiser": {
+		"id": "police_cruiser", "label": "Viatura PM Interceptor", "district": "city",
+		"target_length": 82.0, "target_width": 36.0, "mass": 1.25,
+		"max_speed": 600.0, "acceleration": 1100.0, "braking": 1400.0, "turn_speed": 3.40, "drift_factor": 0.95,
+		"durability": 170, "engine_pitch": 1.12, "roof_prop": "police_lightbar",
+		"texture": "res://city_demo/art/police_car.png",
+		"colors": [Color.WHITE]
 	},
 
 	# ==========================================
@@ -55,28 +67,32 @@ const VEHICLES := {
 		"target_length": 86.0, "target_width": 36.0, "mass": 1.50, # Forte e resistente
 		"max_speed": 430.0, "acceleration": 860.0, "braking": 1100.0, "turn_speed": 2.75, "drift_factor": 0.70,
 		"durability": 160, "engine_pitch": 0.92, "roof_prop": "spare_wheel",
-		"colors": [Color("d1ccc0"), Color("4b6584"), Color("d35400"), Color("84817a"), Color("57606f")]
+		"crop_index": 3,
+		"colors": [Color.WHITE, Color("d1ccc0")]
 	},
 	"dune_buggy": {
 		"id": "dune_buggy", "label": "Sandstorm Dune Buggy", "district": "desert",
 		"target_length": 58.0, "target_width": 33.0, "mass": 0.70, # Ultra leve!
 		"max_speed": 510.0, "acceleration": 1050.0, "braking": 1250.0, "turn_speed": 3.80, "drift_factor": 1.28,
 		"durability": 70, "engine_pitch": 1.35, "roof_prop": "roll_cage",
-		"colors": [Color("f1c40f"), Color("e67e22"), Color("00cec9"), Color("e84118")]
+		"crop_index": 4,
+		"colors": [Color.WHITE]
 	},
 	"ranch_pickup": {
 		"id": "ranch_pickup", "label": "Pickup V8 Rancho", "district": "desert",
 		"target_length": 88.0, "target_width": 35.0, "mass": 1.65,
 		"max_speed": 420.0, "acceleration": 820.0, "braking": 960.0, "turn_speed": 2.60, "drift_factor": 0.85,
 		"durability": 175, "engine_pitch": 0.86, "roof_prop": "bed_bars",
-		"colors": [Color("795548"), Color("b71540"), Color("40739e"), Color("535c68")]
+		"crop_index": 5,
+		"colors": [Color.WHITE]
 	},
 	"muscle_classic": {
 		"id": "muscle_classic", "label": "Stallion V8 Hardtop", "district": "desert",
 		"target_length": 82.0, "target_width": 35.0, "mass": 1.30,
 		"max_speed": 560.0, "acceleration": 1020.0, "braking": 1080.0, "turn_speed": 3.05, "drift_factor": 1.25, # Alto torque e drift
 		"durability": 120, "engine_pitch": 0.88, "roof_prop": "hood_scoop",
-		"colors": [Color("111113"), Color("4b1248"), Color("192a56"), Color("b33939")]
+		"crop_index": 2,
+		"colors": [Color.WHITE]
 	},
 
 	# ==========================================

@@ -1,45 +1,82 @@
 class_name EmergencyStandbyPoint
 extends Node2D
 
-## A reserved police car waiting in an alley. It is deliberately not a traffic
-## vehicle, so the generic lane spawner cannot claim or duplicate it.
+## Ponto de Prontidão da Polícia Militar com viatura real autêntica.
+## A viatura é um TrafficVehicle completo no grupo 'vehicle', interativo e dirigível.
+## Se o jogador tentar roubá-la, o alarme anti-furto dispara e a polícia é chamada imediatamente!
 
 @export var standby_id := "alley_unit_01"
 @export var service_key := "police"
 @export var available := true
 @export var restore_after_seconds := 18.0
 
+var parked_car: CharacterBody2D = null
+
 func _ready() -> void:
 	add_to_group("emergency_standby_point")
-	queue_redraw()
+	# Remove o colisor falso herdado da cena anterior para evitar sobreposição
+	var legacy_body := get_node_or_null("Body")
+	if legacy_body:
+		legacy_body.queue_free()
+	call_deferred("_spawn_standby_car")
+
+func _spawn_standby_car() -> void:
+	if not is_inside_tree():
+		return
+	if is_instance_valid(parked_car):
+		parked_car.queue_free()
+		parked_car = null
+		
+	var car_scene := load("res://city_demo/scenes/TrafficVehicle.tscn") as PackedScene
+	if not car_scene:
+		return
+		
+	var car: CharacterBody2D = car_scene.instantiate()
+	car.name = "PM_Cruiser_" + standby_id
+	
+	var target_parent = get_parent() if get_parent() != null else self
+	target_parent.add_child(car)
+	car.global_position = global_position
+	car.global_rotation = global_rotation
+	
+	if car.has_method("apply_archetype"):
+		car.set("_detached_from_lane", true)
+		car.set("is_police_vehicle", true)
+		car.set("is_standby_unit", true)
+		car.set("standby_source", self)
+		car.apply_archetype("police_cruiser")
+		
+	parked_car = car
+	available = true
 
 func claim() -> bool:
 	if not available:
 		return false
+	if is_instance_valid(parked_car):
+		# Se já foi roubada pelo jogador, o despacho da central não pode tomá-la
+		if parked_car.get("is_driven_by_player") == true:
+			return false
+		parked_car.hide()
+		parked_car.set_physics_process(false)
+		for col in parked_car.find_children("", "CollisionShape2D", true, false):
+			col.set_deferred("disabled", true)
 	available = false
-	visible = false
-	var collision := get_node_or_null("Body/CollisionShape2D") as CollisionShape2D
-	if collision:
-		collision.set_deferred("disabled", true)
 	return true
 
 func restore_after_return() -> void:
 	await get_tree().create_timer(restore_after_seconds).timeout
-	available = true
-	visible = true
-	var collision := get_node_or_null("Body/CollisionShape2D") as CollisionShape2D
-	if collision:
-		collision.set_deferred("disabled", false)
-	queue_redraw()
+	if is_instance_valid(parked_car) and parked_car.get("is_driven_by_player") != true:
+		parked_car.show()
+		parked_car.set_physics_process(true)
+		for col in parked_car.find_children("", "CollisionShape2D", true, false):
+			col.set_deferred("disabled", false)
+		available = true
+	else:
+		_spawn_standby_car()
 
-func _draw() -> void:
-	# Compact procedural top-down patrol car; a prop until dispatched.
-	draw_rect(Rect2(-31, -14, 62, 28), Color("#182635"))
-	draw_rect(Rect2(-20, -12, 40, 24), Color("#e4e8eb"))
-	draw_rect(Rect2(-9, -11, 18, 22), Color("#293b52"))
-	draw_rect(Rect2(-4, -15, 8, 4), Color("#2b72d6"))
-	draw_rect(Rect2(4, -15, 8, 4), Color("#d94343"))
-	draw_rect(Rect2(-27, -17, 14, 4), Color("#10151b"))
-	draw_rect(Rect2(13, -17, 14, 4), Color("#10151b"))
-	draw_rect(Rect2(-27, 13, 14, 4), Color("#10151b"))
-	draw_rect(Rect2(13, 13, 14, 4), Color("#10151b"))
+func notify_stolen() -> void:
+	available = false
+	# Respawn de nova viatura na base após o jogador fugir com a viatura roubada
+	await get_tree().create_timer(restore_after_seconds * 2.5).timeout
+	if not available:
+		_spawn_standby_car()

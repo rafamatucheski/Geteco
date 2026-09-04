@@ -8,12 +8,12 @@ signal actor_entered_interior(actor: Node2D, interior_id: StringName)
 signal actor_returned_to_district(actor: Node2D, interior_id: StringName)
 
 @export_group("Posições no mapa fixo")
-@export var ammu_nation_entrance_position := Vector2.ZERO
-@export var common_garage_entrance_position := Vector2(420.0, 0.0)
+@export var ammu_nation_entrance_position := Vector2(419.0, 334.0)
+@export var common_garage_entrance_position := Vector2(268.0, 1028.0)
 @export var clothing_store_entrance_position := Vector2(227.0, 334.0)
-@export var ammu_return_offset := Vector2(96.0, 80.0)
-@export var garage_return_offset := Vector2(70.0, 45.0)
-@export var clothing_return_offset := Vector2(96.0, 80.0)
+@export var ammu_return_offset := Vector2(0.0, 36.0)
+@export var garage_return_offset := Vector2(0.0, 36.0)
+@export var clothing_return_offset := Vector2(0.0, 36.0)
 @export_range(0.1, 1.5, 0.05) var transition_cooldown := 0.35
 
 @onready var router: EntranceRouter = $EntranceRouter

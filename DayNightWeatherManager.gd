@@ -243,6 +243,9 @@ func set_interior_mode(inside: bool) -> void:
 		_update_lighting()
 		set_weather(weather_state)
 
+func is_raining() -> bool:
+	return not is_inside_interior and weather_state in [1, 2] and current_biome != BiomeType.DESERT_BADLANDS
+
 func _process(delta: float) -> void:
 	if is_inside_interior:
 		color = Color(1.0, 1.0, 1.0, 1.0)

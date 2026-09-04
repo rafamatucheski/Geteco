@@ -110,3 +110,25 @@ theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 28
 text = "☆☆☆☆☆☆"
 horizontal_alignment = 2
+
+[node name="VehicleTestPanel" type="VBoxContainer" parent="RootMargin"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 8
+theme_override_constants/separation = 6
+
+[node name="HornTestButton" type="Button" parent="RootMargin/VehicleTestPanel"]
+layout_mode = 2
+text = "Buzina (H)"
+
+[node name="HeadlightTestButton" type="Button" parent="RootMargin/VehicleTestPanel"]
+layout_mode = 2
+text = "Luz (L): OFF"
+
+[node name="MapOverviewButton" type="Button" parent="RootMargin/VehicleTestPanel"]
+layout_mode = 2
+text = "Mapa Inteiro (F9): OFF"
+
+[connection signal="pressed" from="RootMargin/VehicleTestPanel/HornTestButton" to="." method="_on_horn_test_button_pressed"]
+[connection signal="pressed" from="RootMargin/VehicleTestPanel/HeadlightTestButton" to="." method="_on_headlight_test_button_pressed"]
+[connection signal="pressed" from="RootMargin/VehicleTestPanel/MapOverviewButton" to="." method="_on_map_overview_button_pressed"]

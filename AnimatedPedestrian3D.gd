@@ -58,6 +58,7 @@ enum Archetype {
 var archetype: Archetype
 var walk_target: Vector2 = Vector2.ZERO
 var walk_timer: float = 0.0
+var stride_freq_mult: float = 1.0
 var walk_dir: Vector2 = Vector2.RIGHT
 var is_scared: bool = false
 var panic_timer: float = 0.0
@@ -136,6 +137,9 @@ func _ready() -> void:
 	add_to_group("pedestrian")
 	add_to_group("damageable")
 	z_index = 6
+	
+	walk_timer = randf_range(0.0, 50.0)
+	stride_freq_mult = randf_range(0.85, 1.15)
 	
 	collision_layer = 4
 	collision_mask = 1 | 2 # Colide com prédios/paredes (1) e veículos (2)
@@ -786,7 +790,10 @@ func _build_3d_viewport() -> void:
 	left_lower_arm = Node3D.new()
 	left_lower_arm.position = Vector3(0, -0.22, 0)
 	left_upper_arm.add_child(left_lower_arm)
-	left_lower_arm.add_child(_create_limb(0.042, 0.18, mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER, Archetype.CITY_JOGGER] else mat_shirt, Vector3(0, -0.09, 0)))
+	var mat_forearm_l: Material = mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER, Archetype.CITY_JOGGER] else mat_shirt
+	left_lower_arm.add_child(_create_limb(0.042, 0.18, mat_forearm_l, Vector3(0, -0.09, 0)))
+	left_lower_arm.add_child(_create_hand(mat_skin, Vector3(0, -0.19, 0)))
+	left_lower_arm.add_child(_create_joint_cap(0.046, mat_forearm_l, Vector3.ZERO))
 
 	# Detalhe: Câmera Turística no Pescoço
 	if has_camera:
@@ -841,7 +848,10 @@ func _build_3d_viewport() -> void:
 	right_lower_arm = Node3D.new()
 	right_lower_arm.position = Vector3(0, -0.22, 0)
 	right_upper_arm.add_child(right_lower_arm)
-	right_lower_arm.add_child(_create_limb(0.042, 0.18, mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER, Archetype.CITY_JOGGER] else mat_shirt, Vector3(0, -0.09, 0)))
+	var mat_forearm_r: Material = mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER, Archetype.CITY_JOGGER] else mat_shirt
+	right_lower_arm.add_child(_create_limb(0.042, 0.18, mat_forearm_r, Vector3(0, -0.09, 0)))
+	right_lower_arm.add_child(_create_hand(mat_skin, Vector3(0, -0.19, 0)))
+	right_lower_arm.add_child(_create_joint_cap(0.046, mat_forearm_r, Vector3.ZERO))
 
 	if has_briefcase:
 		var briefcase := MeshInstance3D.new()
@@ -899,8 +909,10 @@ func _build_3d_viewport() -> void:
 	left_lower_leg = Node3D.new()
 	left_lower_leg.position = Vector3(0, -0.28, 0)
 	left_upper_leg.add_child(left_lower_leg)
-	left_lower_leg.add_child(_create_limb(0.058, 0.26, mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER] else mat_pants, Vector3(0, -0.13, 0)))
+	var mat_shin_l: Material = mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER] else mat_pants
+	left_lower_leg.add_child(_create_limb(0.058, 0.26, mat_shin_l, Vector3(0, -0.13, 0)))
 	left_lower_leg.add_child(_create_shoe(mat_shoe, Vector3(0, -0.26, -0.02)))
+	left_lower_leg.add_child(_create_joint_cap(0.062, mat_shin_l, Vector3.ZERO))
 	
 	right_upper_leg = Node3D.new()
 	right_upper_leg.position = Vector3(0.11, 0.65, 0.0)
@@ -910,8 +922,10 @@ func _build_3d_viewport() -> void:
 	right_lower_leg = Node3D.new()
 	right_lower_leg.position = Vector3(0, -0.28, 0)
 	right_upper_leg.add_child(right_lower_leg)
-	right_lower_leg.add_child(_create_limb(0.058, 0.26, mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER] else mat_pants, Vector3(0, -0.13, 0)))
+	var mat_shin_r: Material = mat_skin if archetype in [Archetype.BEACH_HAWAIIAN_FLORAL, Archetype.BEACH_SURFER_SUMMER, Archetype.BEACH_FITNESS_RUNNER] else mat_pants
+	right_lower_leg.add_child(_create_limb(0.058, 0.26, mat_shin_r, Vector3(0, -0.13, 0)))
 	right_lower_leg.add_child(_create_shoe(mat_shoe, Vector3(0, -0.26, -0.02)))
+	right_lower_leg.add_child(_create_joint_cap(0.062, mat_shin_r, Vector3.ZERO))
 	
 	# Exibição 2D
 	sprite_3d_display = Sprite2D.new()
@@ -945,6 +959,26 @@ func _create_shoe(mat: Material, offset: Vector3) -> MeshInstance3D:
 	shoe.position = offset
 	return shoe
 
+func _create_hand(mat: Material, offset: Vector3) -> MeshInstance3D:
+	var hand := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = 0.044
+	sph.height = 0.088
+	hand.mesh = sph
+	hand.material_override = mat
+	hand.position = offset
+	return hand
+
+func _create_joint_cap(radius: float, mat: Material, offset: Vector3) -> MeshInstance3D:
+	var cap := MeshInstance3D.new()
+	var sph := SphereMesh.new()
+	sph.radius = radius
+	sph.height = radius * 2.0
+	cap.mesh = sph
+	cap.material_override = mat
+	cap.position = offset
+	return cap
+
 func _physics_process(delta: float) -> void:
 	if is_flying:
 		position += fly_velocity * delta
@@ -959,7 +993,9 @@ func _physics_process(delta: float) -> void:
 		
 	if is_dead: return
 	
-	walk_timer += delta
+	var actual_speed := velocity.length()
+	if actual_speed > 1.0:
+		walk_timer += delta * (actual_speed / maxf(1.0, base_walk_speed)) * stride_freq_mult
 	behavior_timer += delta
 	
 	if is_scared:
@@ -1018,10 +1054,11 @@ func _physics_process(delta: float) -> void:
 	# Animação Articulada fluida com Micro-Comportamentos (Caminhada vs Corrida/Sprint)
 	var is_sprinting := is_scared or (is_gangster and is_instance_valid(combat_target)) or (ambient_running_enabled and (is_jogger or archetype == Archetype.BEACH_FITNESS_RUNNER))
 	var anim_freq: float = 14.5 if is_sprinting else 7.5
-	var step_angle: float = sin(walk_timer * anim_freq) * (0.70 if is_sprinting else 0.45)
-	var arm_angle: float = -step_angle * (0.85 if is_sprinting else 0.55)
-	var bobbing: float = absf(cos(walk_timer * anim_freq)) * (0.040 if is_sprinting else 0.025)
-	var forward_lean: float = -0.16 if is_sprinting else 0.0
+	var is_moving := actual_speed > 1.0
+	var step_angle: float = (sin(walk_timer * anim_freq) * (0.70 if is_sprinting else 0.45)) if is_moving else 0.0
+	var arm_angle: float = (-step_angle * (0.85 if is_sprinting else 0.55)) if is_moving else 0.0
+	var bobbing: float = (absf(cos(walk_timer * anim_freq)) * (0.040 if is_sprinting else 0.025)) if is_moving else 0.0
+	var forward_lean: float = (-0.16 if is_sprinting else 0.0) if is_moving else 0.0
 	
 	# Comportamento Climático: Tremer de frio no inverno
 	var shiver_offset: float = 0.0
@@ -1201,17 +1238,20 @@ func _show_custom_bubble(text: String, border_col: Color) -> void:
 	)
 
 func _drop_cash_loot() -> void:
+	var tree = get_tree()
+	if tree == null: return
+	var parent: Node = tree.current_scene if tree.current_scene != null else tree.root
 	var cash = CashPickup.new()
 	cash.amount = dropped_cash
 	cash.global_position = global_position + Vector2(randf_range(-8, 8), randf_range(-8, 8))
-	get_tree().current_scene.call_deferred("add_child", cash)
+	parent.call_deferred("add_child", cash)
 	
 	if is_gangster:
 		var wp := WeaponPickup.new()
 		wp.weapon_id = &"pistol" if randf() > 0.35 else &"smg"
 		wp.ammo_amount = randi_range(10, 24)
 		wp.global_position = global_position + Vector2(randf_range(-12, 12), randf_range(-12, 12))
-		get_tree().current_scene.call_deferred("add_child", wp)
+		parent.call_deferred("add_child", wp)
 
 func _die() -> void:
 	is_dead = true
@@ -1263,13 +1303,13 @@ func _create_3d_blood_puddle() -> void:
 	tween.tween_property(puddle_root, "scale", Vector2(0.65, 0.65), 0.55)
 	
 	var fade_tween := puddle_root.create_tween()
-	fade_tween.tween_interval(6.0)
-	fade_tween.tween_property(puddle_root, "modulate:a", 0.0, 2.5)
+	fade_tween.tween_interval(30.0) # Era 6.0 -- a poca sumia rapido demais
+	fade_tween.tween_property(puddle_root, "modulate:a", 0.0, 3.0)
 	fade_tween.tween_callback(puddle_root.queue_free)
 
 func _start_decay() -> void:
 	var t := create_tween()
-	t.tween_interval(8.0)
+	t.tween_interval(35.0) # Era 8.0 -- corpo sumia quase instantaneamente
 	t.tween_property(self, "modulate:a", 0.0, 3.0)
 	t.tween_callback(queue_free)
 

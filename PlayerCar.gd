@@ -57,6 +57,7 @@ var neon_underglow_poly: Polygon2D
 var engine_audio: AudioStreamPlayer2D
 var skid_audio: AudioStreamPlayer2D
 var radio_audio: AudioStreamPlayer2D
+var horn_audio: AudioStreamPlayer2D
 var radio_tracks: Array = []
 var radio_index: int = 0
 
@@ -121,6 +122,7 @@ func _ready():
 	smoke_emitter.scale_amount_min = 3.0
 	smoke_emitter.scale_amount_max = 8.0
 	smoke_emitter.color = Color(0.5, 0.5, 0.5, 0.8)
+	smoke_emitter.texture = _make_soft_particle_texture()
 	add_child(smoke_emitter)
 	
 	# Emissor de fogo
@@ -134,6 +136,7 @@ func _ready():
 	flame_particles.scale_amount_min = 4.0
 	flame_particles.scale_amount_max = 8.0
 	flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
+	flame_particles.texture = _make_soft_particle_texture()
 	add_child(flame_particles)
 	
 	# Faíscas
@@ -147,6 +150,7 @@ func _ready():
 	collision_particles.scale_amount_min = 2.0
 	collision_particles.scale_amount_max = 5.0
 	collision_particles.color = Color(0.8, 0.8, 0.8, 1.0)
+	collision_particles.texture = _make_soft_particle_texture()
 	add_child(collision_particles)
 	
 	# Motor com atenuação suave e volume balanceado
@@ -195,6 +199,7 @@ func _ready():
 	nitro_emitter.scale_amount_min = 2.5
 	nitro_emitter.scale_amount_max = 6.0
 	nitro_emitter.color = Color("#00cec9")
+	nitro_emitter.texture = _make_soft_particle_texture()
 	add_child(nitro_emitter)
 	
 	# Purga de Nitro Lateral/Capô (NOS Purge estilo Velozes e Furiosos)
@@ -208,6 +213,7 @@ func _ready():
 	nos_purge_l.initial_velocity_min = 80.0
 	nos_purge_l.initial_velocity_max = 150.0
 	nos_purge_l.color = Color(1.0, 1.0, 1.0, 0.85)
+	nos_purge_l.texture = _make_soft_particle_texture()
 	add_child(nos_purge_l)
 
 	nos_purge_r = CPUParticles2D.new()
@@ -220,6 +226,7 @@ func _ready():
 	nos_purge_r.initial_velocity_min = 80.0
 	nos_purge_r.initial_velocity_max = 150.0
 	nos_purge_r.color = Color(1.0, 1.0, 1.0, 0.85)
+	nos_purge_r.texture = _make_soft_particle_texture()
 	add_child(nos_purge_r)
 
 	# Backfire de Escapamento (Labaredas e estalos nas reduções)
@@ -235,6 +242,7 @@ func _ready():
 	backfire_emitter.scale_amount_min = 3.0
 	backfire_emitter.scale_amount_max = 7.0
 	backfire_emitter.color = Color("#f39c12")
+	backfire_emitter.texture = _make_soft_particle_texture()
 	add_child(backfire_emitter)
 
 	# Faíscas e fumaça de rodas raspando com pneu furado
@@ -247,6 +255,7 @@ func _ready():
 	rim_sparks.initial_velocity_min = 60.0
 	rim_sparks.initial_velocity_max = 140.0
 	rim_sparks.color = Color(1.0, 0.8, 0.2, 0.9)
+	rim_sparks.texture = _make_soft_particle_texture()
 	add_child(rim_sparks)
 
 	flat_smoke = CPUParticles2D.new()
@@ -255,6 +264,7 @@ func _ready():
 	flat_smoke.lifetime = 0.5
 	flat_smoke.gravity = Vector2(0, -60)
 	flat_smoke.color = Color(0.2, 0.2, 0.2, 0.7)
+	flat_smoke.texture = _make_soft_particle_texture()
 	add_child(flat_smoke)
 	
 	# Anexa o script de câmera dinâmica à câmera
@@ -267,14 +277,61 @@ func _ready():
 	if is_driven_by_player:
 		camera.make_current()
 
+	# Buzina do carro
+	horn_audio = AudioStreamPlayer2D.new()
+	horn_audio.stream = ProceduralAudio.get_horn_stream()
+	horn_audio.max_distance = 500.0
+	horn_audio.volume_db = -14.0
+	add_child(horn_audio)
+
 	_setup_headlight()
 
 var is_night_or_storm: bool = false
+var _headlight_override_active := false
+var _headlight_override_state := false
+var _horn_key_was_pressed := false
+var _headlight_key_was_pressed := false
 
 func set_headlights(dark_state: bool) -> void:
 	is_night_or_storm = dark_state
-	if headlight:
-		headlight.visible = (is_night_or_storm or is_driven_by_player) and not is_broken
+	_apply_headlight_state()
+
+func toggle_headlights() -> bool:
+	var previous_state := is_headlight_on()
+	_headlight_override_active = true
+	_headlight_override_state = not previous_state
+	_apply_headlight_state()
+	return _headlight_override_state
+
+func is_headlight_on() -> bool:
+	if headlight == null or is_broken:
+		return false
+	if _headlight_override_active:
+		return _headlight_override_state
+	return is_night_or_storm or is_driven_by_player
+
+func honk_horn():
+	if is_broken or horn_audio == null:
+		return
+	if horn_audio.playing:
+		horn_audio.stop()
+	horn_audio.pitch_scale = randf_range(0.92, 1.08)
+	horn_audio.play()
+
+func _clear_headlight_override() -> void:
+	_headlight_override_active = false
+	_headlight_override_state = false
+
+func _apply_headlight_state() -> void:
+	if headlight == null:
+		return
+	if is_broken:
+		headlight.visible = false
+		return
+	if _headlight_override_active:
+		headlight.visible = _headlight_override_state
+	else:
+		headlight.visible = is_night_or_storm or is_driven_by_player
 
 func _setup_headlight() -> void:
 	if headlight:
@@ -289,7 +346,7 @@ func _setup_headlight() -> void:
 	headlight.texture = HeadlightTextureGenerator.get_conical_headlight_texture()
 	headlight.offset = Vector2(170.0, 0.0) # Projeta feixe cônico suave 340px à frente
 	
-	headlight.visible = (is_night_or_storm or is_driven_by_player) and not is_broken
+	_apply_headlight_state()
 	add_child(headlight)
 
 func _physics_process(delta):
@@ -320,9 +377,23 @@ func _physics_process(delta):
 		# Sincroniza áudio de derrapagem
 		_update_skid_audio()
 
+		# Teclas de validação rápida para veículo
+		var horn_pressed := Input.is_key_pressed(KEY_H)
+		if horn_pressed and not _horn_key_was_pressed:
+			honk_horn()
+		_horn_key_was_pressed = horn_pressed
+
+		var headlights_pressed := Input.is_key_pressed(KEY_L)
+		if headlights_pressed and not _headlight_key_was_pressed:
+			toggle_headlights()
+		_headlight_key_was_pressed = headlights_pressed
+
 		# Verifica input para sair
 		if Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact")):
 			exit_vehicle()
+	else:
+		_horn_key_was_pressed = false
+		_headlight_key_was_pressed = false
 	
 	# === Hit-stop: congela física por N frames ===
 	if _hit_stop_frames > 0:
@@ -440,7 +511,17 @@ func _physics_process(delta):
 			crash_player.play()
 			crash_player.finished.connect(crash_player.queue_free)
 		
-		if impact_speed > 160.0:
+		# A car sliding sideways along a curb/wall reports a fresh slide
+		# collision EVERY physics frame it stays in contact (that is what
+		# move_and_slide is for). Without a cooldown, a single sideways skid
+		# could call take_damage() 20-40 times in under a second -- each
+		# individually below what feels like "a real crash" -- and zero the
+		# car's health almost instantly, reading as an explosion out of
+		# nowhere. Only the first frame of a given contact should count as
+		# a hit; a short cooldown lets the car keep sliding without being
+		# charged damage on every single frame of that same scrape.
+		if impact_speed > 160.0 and Time.get_ticks_msec() - _last_collision_damage_ms > COLLISION_DAMAGE_COOLDOWN_MS:
+			_last_collision_damage_ms = Time.get_ticks_msec()
 			take_damage(int(impact_speed * 0.06))
 			
 		# Atropelar pessoas no slide collision!
@@ -483,22 +564,40 @@ func _activate_bloody_tires() -> void:
 		skid_line.default_color = Color(0.72, 0.05, 0.05, 0.85)
 	_do_screen_shake(0.18)
 
+func _get_safe_exit_position() -> Vector2:
+	var space_state := get_world_2d().direct_space_state
+	var candidates: Array[Vector2] = [
+		global_position - transform.y * 45.0, # Porta do motorista (esquerda)
+		global_position + transform.y * 45.0, # Porta do passageiro (direita)
+		global_position - transform.x * 52.0, # Traseira
+		global_position + transform.x * 52.0  # Dianteira
+	]
+	for pos in candidates:
+		var query := PhysicsPointQueryParameters2D.new()
+		query.position = pos
+		query.collision_mask = 1 # Camada de colisão sólida do cenário
+		var result := space_state.intersect_point(query, 1)
+		if result.is_empty():
+			return pos
+	return candidates[0]
+
 func exit_vehicle():
 	if not is_driven_by_player:
 		return
 	is_driven_by_player = false
+	_clear_headlight_override()
 	velocity = Vector2.ZERO
 	is_boosting = false
 	if engine_audio: engine_audio.stop()
 	if skid_audio: skid_audio.stop()
 	if radio_audio: radio_audio.stop()
-	if headlight: headlight.visible = false
+	_apply_headlight_state()
 	
 	_animate_car_door()
 	
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
-		player.global_position = global_position + transform.y * -48.0
+		player.global_position = _get_safe_exit_position()
 		player.velocity = Vector2.ZERO
 		for col in player.find_children("", "CollisionShape2D", true, false):
 			col.set_deferred("disabled", false)
@@ -512,6 +611,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	if is_driven_by_player or player_body == null or health <= 0:
 		return
 	is_driven_by_player = true
+	_clear_headlight_override()
 	velocity = Vector2.ZERO
 	is_boosting = false
 	
@@ -565,6 +665,9 @@ func take_damage(amount: int, _is_player_attacker: bool = false):
 var is_exploding: bool = false
 var is_exploded: bool = false
 
+const COLLISION_DAMAGE_COOLDOWN_MS := 220
+var _last_collision_damage_ms: int = -999999
+
 func _start_combustion_countdown() -> void:
 	if is_exploding or is_exploded: return
 	is_exploding = true
@@ -573,8 +676,7 @@ func _start_combustion_countdown() -> void:
 		smoke_emitter.emitting = true
 		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
 		smoke_emitter.amount = 65
-	if is_driven_by_player:
-		exit_vehicle()
+	# O jogador NÃO é expulso automaticamente aqui: ele tem 3.2s para saltar com F/Enter!
 		
 	# Contagem para a grande explosão (3.2s)
 	await get_tree().create_timer(3.2).timeout
@@ -586,7 +688,14 @@ func _explode() -> void:
 	is_exploded = true
 	is_exploding = false
 	if flame_particles: flame_particles.emitting = false
-	if headlight: headlight.visible = false
+	_apply_headlight_state()
+	
+	# Se o jogador ainda estiver no veículo na detonação final, ele é ejetado e toma o dano da explosão
+	if is_driven_by_player:
+		var player_node = get_tree().get_first_node_in_group("player")
+		exit_vehicle()
+		if is_instance_valid(player_node) and player_node.has_method("take_damage"):
+			player_node.take_damage(100) # Dano crítico de explosão
 	
 	# 1. Som estrondoso de explosão potente
 	var p = AudioStreamPlayer2D.new()
@@ -604,15 +713,16 @@ func _explode() -> void:
 	fireball.emitting = true
 	fireball.one_shot = true
 	fireball.explosiveness = 0.98
-	fireball.amount = 75
-	fireball.lifetime = 1.3
+	fireball.amount = 45
+	fireball.lifetime = 1.0
 	fireball.spread = 180.0
 	fireball.initial_velocity_min = 160.0
 	fireball.initial_velocity_max = 420.0
 	fireball.gravity = Vector2(0, 120)
-	fireball.scale_amount_min = 6.0
-	fireball.scale_amount_max = 16.0
+	fireball.scale_amount_min = 4.0
+	fireball.scale_amount_max = 10.0
 	fireball.color = Color(1.0, 0.48, 0.08, 0.95)
+	fireball.texture = _make_soft_particle_texture()
 	get_parent().add_child(fireball)
 	
 	# 3. Estilhaços metálicos incandescentes
@@ -630,18 +740,20 @@ func _explode() -> void:
 	shrapnel.scale_amount_min = 3.0
 	shrapnel.scale_amount_max = 6.0
 	shrapnel.color = Color(1.0, 0.85, 0.3)
+	shrapnel.texture = _make_soft_particle_texture()
 	get_parent().add_child(shrapnel)
 	
 	# 4. Clarão de Luz Instantâneo
 	var flash_light := PointLight2D.new()
 	flash_light.color = Color(1.0, 0.85, 0.5)
-	flash_light.energy = 4.5
+	flash_light.energy = 1.6 # Reduzido de 4.5: com a textura de particula nova,
+	# o valor antigo deixava a tela inteira estourada em branco/laranja.
 	var f_grad = Gradient.new()
 	f_grad.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
 	var f_tex = GradientTexture2D.new()
 	f_tex.gradient = f_grad
-	f_tex.width = 420
-	f_tex.height = 420
+	f_tex.width = 260
+	f_tex.height = 260
 	f_tex.fill = GradientTexture2D.FILL_RADIAL
 	f_tex.fill_from = Vector2(0.5, 0.5)
 	f_tex.fill_to = Vector2(1.0, 0.5)
@@ -666,23 +778,12 @@ func _explode() -> void:
 	scorch.z_index = -15
 	get_parent().add_child(scorch)
 	
-	# 6. ANIMAÇÃO DE SALTO NO AR (O carro se levanta do chão, inclina e cai)
+	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if sprite:
 		sprite.modulate = Color(0.12, 0.12, 0.12)
-		var orig_scale = sprite.scale
-		var blast_tilt = randf_range(-0.35, 0.35)
-		var blast_skew = randf_range(-0.25, 0.25)
-		var jump_offset = Vector2(randf_range(-25.0, 25.0), randf_range(-35.0, -15.0))
-		
-		var hop_tween = create_tween().set_parallel(true)
-		hop_tween.tween_property(sprite, "scale", orig_scale * 1.50, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		hop_tween.tween_property(sprite, "position", jump_offset, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		hop_tween.tween_property(sprite, "rotation", blast_tilt, 0.18)
-		hop_tween.tween_property(sprite, "skew", blast_skew, 0.18)
-		
-		var drop_tween = create_tween().set_parallel(true)
-		drop_tween.tween_property(sprite, "scale", orig_scale, 0.42).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT).set_delay(0.18)
-		drop_tween.tween_property(sprite, "position", Vector2.ZERO, 0.42).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT).set_delay(0.18)
+		sprite.scale = Vector2(uniform_scale, uniform_scale)
+		sprite.position = Vector2.ZERO
+		sprite.skew = 0.0
 	
 	# 7. Screen Shake
 	_do_screen_shake(0.70)
@@ -743,24 +844,13 @@ func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_w
 	var local_norm = transform.basis_xform_inv(impact_normal)
 	var factor = clampf(impact_force / 420.0, 0.05, 0.28)
 	
-	# Impacto Frontal (Frente do carro no eixo +X)
-	if local_norm.x < -0.20:
-		damage_deformation_scale.x = clampf(damage_deformation_scale.x - factor * 0.85, 0.66, 1.0)
-		damage_deformation_scale.y = clampf(damage_deformation_scale.y + factor * 0.40, 1.0, 1.25)
-		damage_deformation_offset.x -= factor * 26.0
-	# Impacto Traseiro (-X)
-	elif local_norm.x > 0.20:
-		damage_deformation_scale.x = clampf(damage_deformation_scale.x - factor * 0.70, 0.70, 1.0)
-		damage_deformation_offset.x += factor * 18.0
-	# Impacto Lateral (+/- Y)
-	if absf(local_norm.y) > 0.20:
-		damage_deformation_scale.y = clampf(damage_deformation_scale.y - factor * 0.70, 0.70, 1.0)
-		damage_skew = clampf(damage_skew + (0.09 * signf(local_norm.y) * factor * 4.0), -0.25, 0.25)
-		
-	# Aplica a deformação na lataria
-	sprite.scale = Vector2(uniform_scale * damage_deformation_scale.x, uniform_scale * damage_deformation_scale.y)
-	sprite.position = damage_deformation_offset
-	sprite.skew = damage_skew
+	# O carro NUNCA estica nem diminui: preserva proporção e escala rígidas
+	sprite.scale = Vector2(uniform_scale, uniform_scale)
+	sprite.position = Vector2.ZERO
+	sprite.skew = 0.0
+	
+	# Escurecimento sutil (marcas de arranhão e fuligem na lataria)
+	sprite.modulate = sprite.modulate.lerp(Color(0.60, 0.60, 0.62), 0.06 * (factor / 0.28))
 	
 	# Amassa e arranha a pintura
 	sprite.modulate = sprite.modulate.lerp(Color(0.42, 0.42, 0.45), 0.20)
@@ -850,10 +940,28 @@ func _spawn_flying_debris(pos: Vector2, normal: Vector2) -> void:
 	debris_emitter.scale_amount_min = 2.0
 	debris_emitter.scale_amount_max = 4.5
 	debris_emitter.color = Color(0.85, 0.85, 0.9, 0.9)
+	debris_emitter.texture = _make_soft_particle_texture()
 	get_parent().add_child(debris_emitter)
 	var t = debris_emitter.create_tween()
 	t.tween_interval(1.2)
 	t.tween_callback(debris_emitter.queue_free)
+
+static var _cached_soft_particle_texture: GradientTexture2D = null
+
+static func _make_soft_particle_texture() -> GradientTexture2D:
+	if _cached_soft_particle_texture != null:
+		return _cached_soft_particle_texture
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([Color(1.0, 1.0, 1.0, 1.0), Color(1.0, 1.0, 1.0, 0.0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 64
+	tex.height = 64
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	_cached_soft_particle_texture = tex
+	return tex
 
 func _do_screen_shake(intensity: float):
 	if not camera: return

@@ -119,6 +119,11 @@ func _buy_weapon(id: String) -> void:
 			_play_cash_audio()
 		_refresh(msg)
 
+func _equip_weapon(id: String) -> void:
+	if player != null and player.has_method("equip_weapon"):
+		player.equip_weapon(id)
+		_refresh("EQUIPADO")
+
 func _buy_ammo(id: String, rounds: int, price: int) -> void:
 	if player != null and player.has_method("buy_ammo_amount"):
 		var msg: String = player.buy_ammo_amount(id, rounds, price)
@@ -191,6 +196,16 @@ func _refresh(notice: String = "") -> void:
 		120, 150  # Completa: 120 balas por $150
 	)
 	
+	# Item 3.5: FACA DE COMBATE (corpo a corpo, sem municao pra comprar depois)
+	var knife_owned: bool = (inventory.get("knife", false) == true)
+	_create_melee_card(
+		"🔪 FACA DE COMBATE",
+		"Corpo a Corpo • Silenciosa • Sem Necessidade de Munição",
+		knife_owned,
+		350,
+		"knife"
+	)
+
 	# Item 4: COLETE BALÍSTICO
 	var cur_armor: int = int(player.get("armor"))
 	_create_armor_card(cur_armor)
@@ -253,6 +268,60 @@ func _create_weapon_card(title: String, desc: String, owned: bool, clip: int, re
 		btn_full.pressed.connect(func(): _buy_ammo(weapon_id, f_rounds, f_price))
 		btn_hbox.add_child(btn_full)
 		
+	items_container.add_child(row)
+
+func _create_melee_card(title: String, desc: String, owned: bool, price: int, weapon_id: String) -> void:
+	var row := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.10, 0.13, 0.94)
+	style.border_color = Color(0.25, 0.30, 0.38)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	row.add_theme_stylebox_override("panel", style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	row.add_child(vbox)
+
+	var top_hbox := HBoxContainer.new()
+	vbox.add_child(top_hbox)
+
+	var lbl_title := Label.new()
+	lbl_title.text = title
+	lbl_title.add_theme_font_size_override("font_size", 16)
+	lbl_title.add_theme_color_override("font_color", Color("ffe36b"))
+	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_hbox.add_child(lbl_title)
+
+	var lbl_status := Label.new()
+	lbl_status.text = "EQUIPADA" if owned else "BLOQUEADA"
+	lbl_status.add_theme_font_size_override("font_size", 13)
+	lbl_status.add_theme_color_override("font_color", Color("78dcff") if owned else Color("ff7777"))
+	top_hbox.add_child(lbl_status)
+
+	var lbl_desc := Label.new()
+	lbl_desc.text = desc
+	lbl_desc.add_theme_font_size_override("font_size", 12)
+	lbl_desc.add_theme_color_override("font_color", Color(0.75, 0.8, 0.85))
+	vbox.add_child(lbl_desc)
+
+	var btn_hbox := HBoxContainer.new()
+	btn_hbox.add_theme_constant_override("separation", 10)
+	vbox.add_child(btn_hbox)
+
+	if not owned:
+		var btn_buy := Button.new()
+		btn_buy.text = "🛒 COMPRAR  ($ %d)" % price
+		btn_buy.custom_minimum_size = Vector2(200, 34)
+		btn_buy.pressed.connect(func(): _buy_weapon(weapon_id))
+		btn_hbox.add_child(btn_buy)
+	else:
+		var btn_equip := Button.new()
+		btn_equip.text = "🔪 EQUIPAR"
+		btn_equip.custom_minimum_size = Vector2(140, 34)
+		btn_equip.pressed.connect(func(): _equip_weapon(weapon_id))
+		btn_hbox.add_child(btn_equip)
+
 	items_container.add_child(row)
 
 func _create_armor_card(cur_armor: int) -> void:
