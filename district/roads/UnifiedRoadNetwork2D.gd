@@ -64,14 +64,15 @@ const GRASS_BOUNDS_MARGIN := 260.0
 	set(value):
 		show_junction_debug = value
 		queue_redraw()
-## Off by default until you have driven every parking lot, garage and
-## district-connection entrance along this network at least once. These are
+## Off by default until parking lots, garages and district connections have
+## dedicated openings. These are
 ## generated StaticBody2D walls at the outer edge of each road's sidewalk
 ## (skipped near junctions and near any road end marked open_start/open_end),
 ## meant to stop vehicles from leaving the paved network into the surrounding
 ## grass. They CAN accidentally seal off an entrance this graph does not know
 ## about (e.g. a driveway that is not itself one of the authored roads) --
-## test thoroughly after enabling and widen GUARD_RAIL_JUNCTION_CLEARANCE or
+## Keep new entrances covered by runtime navigation tests; widen
+## GUARD_RAIL_JUNCTION_CLEARANCE or
 ## mark the road open_start/open_end if something gets blocked.
 @export var build_guard_rails: bool = false:
 	set(value):

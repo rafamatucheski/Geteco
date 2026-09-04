@@ -986,9 +986,6 @@ func _get_road_guidance_target(dest: Vector2) -> Vector2:
 	var best_score := INF
 	var candidate_lanes: Array[Node] = []
 	candidate_lanes.append_array(get_tree().get_nodes_in_group("unified_traffic_lane"))
-	for n in get_tree().get_nodes_in_group("modern_traffic_lane"):
-		if not candidate_lanes.has(n):
-			candidate_lanes.append(n)
 	for node in candidate_lanes:
 		var lane := node as Path2D
 		if lane == null or lane.curve == null or lane.curve.get_point_count() < 2:

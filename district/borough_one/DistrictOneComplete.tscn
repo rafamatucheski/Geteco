@@ -159,7 +159,7 @@ metadata/point_index = 5
 z_index = 2
 scale = Vector2(0.9956157, 1)
 script = ExtResource("11_unified_roads")
-build_guard_rails = null
+build_guard_rails = false
 
 [node name="JunctionTrafficController" type="Node" parent="." unique_id=2145708168]
 script = ExtResource("12_junction_traffic")

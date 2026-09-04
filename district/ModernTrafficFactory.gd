@@ -32,7 +32,10 @@ static func create_lane(
 	assert(points.size() >= 2, "%s needs at least two authored points" % lane_name)
 	var path := Path2D.new()
 	path.name = lane_name
-	path.add_to_group("modern_traffic_lane")
+	# All authored traffic paths share one discovery group. Canonical graph
+	# consumers still scope lanes by graph_source before interpreting structural
+	# metadata, while legacy CentralDistrict paths retain their signal metadata.
+	path.add_to_group("unified_traffic_lane")
 	path.set_meta("traffic_lane_id", lane_name)
 	path.set_meta("traffic_intersection_id", intersection_id)
 	path.set_meta("traffic_intersection_axis", intersection_axis)
@@ -67,8 +70,10 @@ static func spawn_moving_vehicle(
 	var vehicle := VEHICLE_SCENE.instantiate() as DemoTrafficVehicle
 	vehicle.name = vehicle_name
 	vehicle.vehicle_id = archetype_id
-	vehicle.crop = VEHICLE_CROPS[posmod(visual_index, VEHICLE_CROPS.size())]
-	vehicle.target_length = float(VehicleCatalog.get_vehicle_spec(archetype_id).get("target_length", 76.0))
+	var spec := VehicleCatalog.get_vehicle_spec(archetype_id)
+	var crop_idx := int(spec.get("crop_index", visual_index if visual_index >= 0 else 0))
+	vehicle.crop = VEHICLE_CROPS[posmod(crop_idx, VEHICLE_CROPS.size())]
+	vehicle.target_length = float(spec.get("target_length", 76.0))
 	vehicle.speed = speed
 	follow.add_child(vehicle)
 	vehicle.apply_archetype(archetype_id, VehicleCatalog.get_random_color(archetype_id))
@@ -93,8 +98,10 @@ static func spawn_parked_vehicle(
 	vehicle.name = vehicle_name
 	vehicle.position = world_position
 	vehicle.rotation = world_rotation
-	vehicle.crop = VEHICLE_CROPS[posmod(visual_index, VEHICLE_CROPS.size())]
-	vehicle.target_length = float(VehicleCatalog.get_vehicle_spec(archetype_id).get("target_length", 76.0))
+	var spec := VehicleCatalog.get_vehicle_spec(archetype_id)
+	var crop_idx := int(spec.get("crop_index", visual_index if visual_index >= 0 else 0))
+	vehicle.crop = VEHICLE_CROPS[posmod(crop_idx, VEHICLE_CROPS.size())]
+	vehicle.target_length = float(spec.get("target_length", 76.0))
 	parent.add_child(vehicle)
 	var chosen_color := custom_color
 	if chosen_color == Color.TRANSPARENT:
