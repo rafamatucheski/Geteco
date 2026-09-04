@@ -25,6 +25,7 @@ const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
 var is_driven_by_player := false
 var _driver: CharacterBody2D
 var _detached_from_lane := false
+var _abandoned_timer: float = 0.0
 var health: int = 100
 var is_broken := false
 var uniform_scale: float = 1.0
@@ -69,6 +70,17 @@ var skid_audio: AudioStreamPlayer2D
 var radio_audio: AudioStreamPlayer2D
 var radio_tracks: Array = []
 var radio_index: int = 0
+
+# Sistema de Viatura Policial & Alarme Anti-Furto
+var is_police_vehicle: bool = false
+var is_standby_unit: bool = false
+var standby_source: Node = null
+var was_stolen_from_police: bool = false
+var is_alarm_active: bool = false
+var alarm_timer: float = 0.0
+var is_siren_on: bool = false
+var _strobe_timer: float = 0.0
+var alarm_audio: AudioStreamPlayer2D
 
 func _ready() -> void:
 	health = 100
@@ -179,9 +191,15 @@ func _ready() -> void:
 	# 2. Sirene (Hook reservado)
 	siren_audio = AudioStreamPlayer2D.new()
 	siren_audio.stream = ProceduralAudio.get_siren_stream()
-	siren_audio.max_distance = 600.0
-	siren_audio.volume_db = -24.0
+	siren_audio.max_distance = 800.0
+	siren_audio.volume_db = -4.0
 	add_child(siren_audio)
+	
+	alarm_audio = AudioStreamPlayer2D.new()
+	alarm_audio.stream = ProceduralAudio.get_police_alarm_stream()
+	alarm_audio.max_distance = 1000.0
+	alarm_audio.volume_db = 2.0
+	add_child(alarm_audio)
 	
 	# 3. Motor (toca apenas quando o jogador assume o volante)
 	engine_audio = AudioStreamPlayer2D.new()
@@ -344,8 +362,7 @@ func _start_combustion_countdown() -> void:
 		smoke_emitter.emitting = true
 		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
 		smoke_emitter.amount = 65
-	if is_driven_by_player:
-		exit_vehicle()
+	# O jogador NÃO é ejetado sumariamente aqui: ele tem 3.2s para reagir e pular com F/Enter!
 		
 	await get_tree().create_timer(3.2).timeout
 	if not is_exploded and health <= 0:
@@ -357,6 +374,13 @@ func _explode() -> void:
 	is_exploding = false
 	if flame_particles: flame_particles.emitting = false
 	if headlight: headlight.visible = false
+	
+	# Se o jogador ainda estiver no veículo na detonação final, ele é ejetado e toma o dano da explosão
+	if is_driven_by_player:
+		var driver_ref = _driver
+		exit_vehicle()
+		if is_instance_valid(driver_ref) and driver_ref.has_method("take_damage"):
+			driver_ref.take_damage(100) # Dano crítico de explosão
 	
 	if get_parent() is PathFollow2D:
 		_detached_from_lane = true
@@ -439,23 +463,12 @@ func _explode() -> void:
 	scorch.z_index = -15
 	get_parent().add_child(scorch)
 	
-	# 6. ANIMAÇÃO DE SALTO NO AR (O carro se levanta do chão, inclina e cai)
+	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if visual:
 		visual.modulate = Color(0.12, 0.12, 0.12)
-		var orig_scale = visual.scale
-		var blast_tilt = randf_range(-0.35, 0.35)
-		var blast_skew = randf_range(-0.25, 0.25)
-		var jump_offset = Vector2(randf_range(-25.0, 25.0), randf_range(-35.0, -15.0))
-		
-		var hop_tween = create_tween().set_parallel(true)
-		hop_tween.tween_property(visual, "scale", orig_scale * 1.50, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		hop_tween.tween_property(visual, "position", jump_offset, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		hop_tween.tween_property(visual, "rotation", blast_tilt, 0.18)
-		hop_tween.tween_property(visual, "skew", blast_skew, 0.18)
-		
-		var drop_tween = create_tween().set_parallel(true)
-		drop_tween.tween_property(visual, "scale", orig_scale, 0.42).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT).set_delay(0.18)
-		drop_tween.tween_property(visual, "position", Vector2.ZERO, 0.42).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT).set_delay(0.18)
+		visual.scale = Vector2(uniform_scale, uniform_scale)
+		visual.position = Vector2.ZERO
+		visual.skew = 0.0
 	
 	# 7. Screen Shake
 	if is_driven_by_player:
@@ -479,14 +492,19 @@ var _fire_truck_dispatched: bool = false
 func _dispatch_fire_truck():
 	if _fire_truck_dispatched:
 		return
-	var pool = get_node_or_null("/root/EmergencyPool")
-	if pool:
-		var fire_truck = pool.get_vehicle("fire")
-		if fire_truck:
-			_fire_truck_dispatched = true
-			fire_truck.type = 2
-			fire_truck.target = self
-			fire_truck.global_position = Vector2(470, -200) # Sai do Quartel dos Bombeiros!
+	var player = get_tree().get_first_node_in_group("player")
+	if not is_instance_valid(player):
+		return
+	var dist_player := global_position.distance_to(player.global_position)
+	# Ignora pequenos acidentes de fundo longe da visão do jogador
+	if not is_driven_by_player and dist_player > 550.0:
+		return
+		
+	var depot_director = get_tree().get_first_node_in_group("emergency_depot_director")
+	if depot_director and depot_director.has_method("request_dispatch"):
+		var dispatched = depot_director.request_dispatch("fire", self, false)
+		_fire_truck_dispatched = dispatched != null
+		return
 
 func extinguish_fire() -> void:
 	_fire_truck_dispatched = false
@@ -538,24 +556,13 @@ func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_w
 	var local_norm = transform.basis_xform_inv(impact_normal)
 	var factor = clampf(impact_force / 420.0, 0.05, 0.28)
 	
-	# Impacto Frontal
-	if local_norm.x < -0.20:
-		damage_deformation_scale.x = clampf(damage_deformation_scale.x - factor * 0.85, 0.66, 1.0)
-		damage_deformation_scale.y = clampf(damage_deformation_scale.y + factor * 0.40, 1.0, 1.25)
-		damage_deformation_offset.x -= factor * 24.0
-	# Impacto Traseiro
-	elif local_norm.x > 0.20:
-		damage_deformation_scale.x = clampf(damage_deformation_scale.x - factor * 0.70, 0.70, 1.0)
-		damage_deformation_offset.x += factor * 18.0
-	# Impacto Lateral
-	if absf(local_norm.y) > 0.20:
-		damage_deformation_scale.y = clampf(damage_deformation_scale.y - factor * 0.70, 0.70, 1.0)
-		damage_skew = clampf(damage_skew + (0.09 * signf(local_norm.y) * factor * 4.0), -0.25, 0.25)
-		
-	visual.scale = Vector2(uniform_scale * damage_deformation_scale.x, uniform_scale * damage_deformation_scale.y)
-	visual.position = damage_deformation_offset
-	visual.skew = damage_skew
-	visual.modulate = visual.modulate.lerp(Color(0.40, 0.40, 0.42), 0.20)
+	# O carro NUNCA estica nem diminui: preserva proporção e escala rígidas
+	visual.scale = Vector2(uniform_scale, uniform_scale)
+	visual.position = Vector2.ZERO
+	visual.skew = 0.0
+	
+	# Escurecimento sutil (marcas de arranhão e fuligem na lataria)
+	visual.modulate = visual.modulate.lerp(Color(0.60, 0.60, 0.62), 0.06 * (factor / 0.28))
 	
 	if hit_world_pos != Vector2.ZERO and dents_container:
 		var local_hit: Vector2 = to_local(hit_world_pos)
@@ -652,21 +659,39 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	max_health = int(spec.get("durability", 100))
 	health = max_health
 	
-	# Cor
-	var chosen_color: Color
-	if custom_color != Color.TRANSPARENT:
-		chosen_color = custom_color
-	else:
-		chosen_color = VehicleCatalog.get_random_color(archetype_id)
-	
-	if visual:
-		visual.modulate = chosen_color
-		uniform_scale = target_length / maxf(1.0, crop.size.y)
+	# Cor e Textura Especial
+	if spec.has("texture") and String(spec["texture"]) != "":
+		visual.texture = load(spec["texture"])
+		visual.region_enabled = false
+		visual.centered = true
+		visual.rotation = PI * 0.5
+		uniform_scale = target_length / 480.0
 		visual.scale = Vector2(uniform_scale, uniform_scale)
+		visual.modulate = Color.WHITE
+		if archetype_id == "police_cruiser":
+			is_police_vehicle = true
+	else:
+		if spec.has("crop_index"):
+			var c_idx: int = int(spec["crop_index"])
+			crop = ModernTrafficFactory.VEHICLE_CROPS[posmod(c_idx, ModernTrafficFactory.VEHICLE_CROPS.size())]
+			if visual and visual.texture is AtlasTexture:
+				(visual.texture as AtlasTexture).region = crop
+
+		var chosen_color: Color
+		if custom_color != Color.TRANSPARENT:
+			chosen_color = custom_color
+		else:
+			chosen_color = VehicleCatalog.get_random_color(archetype_id)
+		
+		if visual:
+			visual.modulate = chosen_color
+			uniform_scale = target_length / maxf(1.0, crop.size.y)
+			visual.scale = Vector2(uniform_scale, uniform_scale)
 		
 	# Atualiza dimensões do colisor
 	var rect_shape := RectangleShape2D.new()
-	rect_shape.size = Vector2(target_length * 0.78, maxf(24.0, crop.size.x * uniform_scale * 0.72))
+	var col_width = 34.0 if spec.has("texture") else maxf(24.0, crop.size.x * uniform_scale * 0.72)
+	rect_shape.size = Vector2(target_length * 0.78, col_width)
 	if collision: collision.shape = rect_shape
 	
 	# Atualiza adereços no teto/lataria (props)
@@ -772,6 +797,42 @@ func _build_roof_prop(prop_type: String) -> void:
 					Vector2(-6, side * 14), Vector2(2, side * 14), Vector2(2, side * 18), Vector2(-6, side * 18)
 				])
 				active_roof_prop_node.add_child(stack)
+		"police_lightbar":
+			# Base metálica do giroflex
+			var bar_base = Polygon2D.new()
+			bar_base.name = "BarBase"
+			bar_base.color = Color(0.12, 0.12, 0.15)
+			bar_base.polygon = PackedVector2Array([
+				Vector2(-4, -15), Vector2(4, -15), Vector2(4, 15), Vector2(-4, 15)
+			])
+			active_roof_prop_node.add_child(bar_base)
+			
+			# Luz Azul (Lado Esquerdo / Motorista)
+			var blue_light = Polygon2D.new()
+			blue_light.name = "LightBlue"
+			blue_light.color = Color(0.15, 0.45, 1.0, 0.95)
+			blue_light.polygon = PackedVector2Array([
+				Vector2(-3, -14), Vector2(3, -14), Vector2(3, -2), Vector2(-3, -2)
+			])
+			active_roof_prop_node.add_child(blue_light)
+			
+			# Luz Vermelha (Lado Direito / Passageiro)
+			var red_light = Polygon2D.new()
+			red_light.name = "LightRed"
+			red_light.color = Color(1.0, 0.15, 0.15, 0.95)
+			red_light.polygon = PackedVector2Array([
+				Vector2(-3, 2), Vector2(3, 2), Vector2(3, 14), Vector2(-3, 14)
+			])
+			active_roof_prop_node.add_child(red_light)
+			
+			# Halo / Brilho Dinâmico
+			var halo = PointLight2D.new()
+			halo.name = "SirenHalo"
+			halo.color = Color(0.2, 0.5, 1.0, 0.9)
+			halo.energy = 0.0 # Começa apagado até ligar alarme ou sirene
+			halo.texture = _get_smooth_particle_texture()
+			halo.texture_scale = 0.65
+			active_roof_prop_node.add_child(halo)
 
 func repaint_vehicle(new_color: Color = Color.TRANSPARENT) -> void:
 	if new_color != Color.TRANSPARENT:
@@ -828,9 +889,11 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		var driver_scene = load("res://CarjackedDriver.tscn")
 		if driver_scene:
 			var ejected_driver = driver_scene.instantiate() as CarjackedDriver
-			get_tree().current_scene.add_child(ejected_driver)
-			var ejection_pos = global_position - transform.y * 36.0 + transform.x * -12.0
-			ejected_driver.setup(self, ejection_pos)
+			var scene_target = get_tree().current_scene if get_tree().current_scene else get_parent()
+			if scene_target:
+				scene_target.add_child(ejected_driver)
+				var ejection_pos = global_position - transform.y * 36.0 + transform.x * -12.0
+				ejected_driver.setup(self, ejection_pos)
 
 	_driver = player_body
 	is_driven_by_player = true
@@ -868,6 +931,91 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		radio_audio.stream = radio_tracks[radio_index]
 		radio_audio.play()
 
+	# Alarme e Alerta Policial se o jogador roubar uma viatura da PM
+	if is_police_vehicle and not was_stolen_from_police:
+		was_stolen_from_police = true
+		_trigger_police_theft()
+
+func _trigger_police_theft() -> void:
+	# 1. Alarme sonoro contínuo
+	is_alarm_active = true
+	alarm_timer = 20.0
+	if alarm_audio:
+		alarm_audio.play()
+	
+	# 2. Chama a polícia no WantedManager (+2 estrelas e despacho de reforço)
+	var wanted = get_node_or_null("/root/WantedManager")
+	if wanted and wanted.has_method("report_police_car_theft"):
+		wanted.report_police_car_theft()
+	elif wanted and wanted.has_method("report_crime"):
+		wanted.report_crime(20)
+		
+	# 3. Notifica o ponto de prontidão da viatura
+	if standby_source and is_instance_valid(standby_source) and standby_source.has_method("notify_stolen"):
+		standby_source.notify_stolen()
+		
+	# 4. Notificação visual de urgência
+	_show_theft_hud_notice("🚨 ALARME DISPARADO! VIATURA DA PM ROUBADA! 🚨")
+
+func _show_theft_hud_notice(msg: String) -> void:
+	if _driver and _driver.has_method("_show_weapon_notice"):
+		_driver._show_weapon_notice(msg)
+	var label = Label.new()
+	label.text = msg
+	label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2))
+	label.add_theme_font_size_override("font_size", 20)
+	label.position = Vector2(-180, -90)
+	label.z_index = 30
+	add_child(label)
+	var tw = create_tween()
+	tw.tween_property(label, "position:y", -140.0, 3.5)
+	tw.parallel().tween_property(label, "modulate:a", 0.0, 3.5).set_delay(1.5)
+	tw.tween_callback(label.queue_free)
+
+func toggle_siren() -> void:
+	is_siren_on = not is_siren_on
+	if is_siren_on:
+		if siren_audio and not siren_audio.playing:
+			siren_audio.play()
+	else:
+		if siren_audio and siren_audio.playing:
+			siren_audio.stop()
+
+func _update_police_strobes(delta: float) -> void:
+	_strobe_timer += delta * 12.0
+	var flash_state := int(_strobe_timer) % 4
+	if active_roof_prop_node:
+		var blue = active_roof_prop_node.get_node_or_null("LightBlue") as Polygon2D
+		var red = active_roof_prop_node.get_node_or_null("LightRed") as Polygon2D
+		var halo = active_roof_prop_node.get_node_or_null("SirenHalo") as PointLight2D
+		if blue and red:
+			if flash_state < 2:
+				blue.color = Color(0.2, 0.7, 1.0, 1.0)
+				red.color = Color(0.4, 0.05, 0.05, 0.4)
+				if halo:
+					halo.color = Color(0.2, 0.6, 1.0, 1.0)
+					halo.energy = 1.4
+					halo.position = Vector2(0, -8)
+			else:
+				blue.color = Color(0.05, 0.15, 0.4, 0.4)
+				red.color = Color(1.0, 0.2, 0.2, 1.0)
+				if halo:
+					halo.color = Color(1.0, 0.2, 0.2, 1.0)
+					halo.energy = 1.4
+					halo.position = Vector2(0, 8)
+					
+	if is_alarm_active and headlight:
+		headlight.visible = (int(_strobe_timer * 0.5) % 2 == 0)
+
+func _turn_off_police_strobes() -> void:
+	if active_roof_prop_node:
+		var blue = active_roof_prop_node.get_node_or_null("LightBlue") as Polygon2D
+		var red = active_roof_prop_node.get_node_or_null("LightRed") as Polygon2D
+		var halo = active_roof_prop_node.get_node_or_null("SirenHalo") as PointLight2D
+		if blue: blue.color = Color(0.15, 0.45, 1.0, 0.95)
+		if red: red.color = Color(1.0, 0.15, 0.15, 0.95)
+		if halo: halo.energy = 0.0
+
 var _door_visual: Node2D = null
 func _animate_car_door() -> void:
 	if _door_visual == null:
@@ -881,6 +1029,23 @@ func _animate_car_door() -> void:
 		add_child(_door_visual)
 	var body_color := visual.modulate if visual != null else Color("#3c6382")
 	_door_visual.play(body_color)
+
+func _get_safe_exit_position() -> Vector2:
+	var space_state := get_world_2d().direct_space_state
+	var candidates: Array[Vector2] = [
+		global_position - transform.y * 45.0, # Porta do motorista (esquerda)
+		global_position + transform.y * 45.0, # Porta do passageiro (direita)
+		global_position - transform.x * 52.0, # Traseira
+		global_position + transform.x * 52.0  # Dianteira
+	]
+	for pos in candidates:
+		var query := PhysicsPointQueryParameters2D.new()
+		query.position = pos
+		query.collision_mask = 1 # Camada de colisão sólida do mapa
+		var result := space_state.intersect_point(query, 1)
+		if result.is_empty():
+			return pos
+	return candidates[0]
 
 func exit_vehicle() -> void:
 	if not is_driven_by_player:
@@ -897,7 +1062,7 @@ func exit_vehicle() -> void:
 	_animate_car_door()
 
 	if is_instance_valid(_driver):
-		_driver.global_position = global_position - transform.y * 45.0
+		_driver.global_position = _get_safe_exit_position()
 		_driver.velocity = Vector2.ZERO
 		for col in _driver.find_children("", "CollisionShape2D", true, false):
 			col.set_deferred("disabled", false)
@@ -909,6 +1074,12 @@ func exit_vehicle() -> void:
 	_driver = null
 
 func _physics_process(delta: float) -> void:
+	# Sempre permite ao jogador sair com F/Enter mesmo que o carro esteja em chamas ou quebrado
+	if is_driven_by_player:
+		if Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact")):
+			exit_vehicle()
+			return
+
 	if is_broken:
 		velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
 		if _detached_from_lane:
@@ -918,11 +1089,45 @@ func _physics_process(delta: float) -> void:
 		if _detached_from_lane:
 			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 			move_and_slide()
+			if not is_in_group("parked_vehicle") and not is_in_group("player_car"):
+				var player_node := get_tree().get_first_node_in_group("player") as Node2D
+				var dist := global_position.distance_to(player_node.global_position) if is_instance_valid(player_node) else 9999.0
+				if dist > 550.0 and velocity.length_squared() < 10.0:
+					_abandoned_timer += delta
+					if _abandoned_timer > 18.0:
+						queue_free()
+				else:
+					_abandoned_timer = 0.0
+		if is_alarm_active:
+			alarm_timer -= delta
+			if alarm_timer <= 0.0:
+				is_alarm_active = false
+				if alarm_audio and alarm_audio.playing:
+					alarm_audio.stop()
+			_update_police_strobes(delta)
+		elif is_siren_on:
+			_update_police_strobes(delta)
+		else:
+			_turn_off_police_strobes()
 		return
+	
+	# Controle de Sirene da PM quando o jogador está dirigindo (Tecla H ou siren_toggle)
+	if is_police_vehicle:
+		if Input.is_key_pressed(KEY_H) or (InputMap.has_action("siren_toggle") and Input.is_action_just_pressed("siren_toggle")):
+			toggle_siren()
 
-	if Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact")):
-		exit_vehicle()
-		return
+	# Atualização do alarme ativo da viatura
+	if is_alarm_active:
+		alarm_timer -= delta
+		if alarm_timer <= 0.0:
+			is_alarm_active = false
+			if alarm_audio and alarm_audio.playing:
+				alarm_audio.stop()
+				
+	if is_alarm_active or is_siren_on:
+		_update_police_strobes(delta)
+	else:
+		_turn_off_police_strobes()
 	
 	# Troca de rádio
 	if Input.is_key_pressed(KEY_R) or (InputMap.has_action("radio_next") and Input.is_action_just_pressed("radio_next")):
@@ -1138,6 +1343,9 @@ func advance_on_lane(delta: float) -> void:
 	var spacing := _lane_spacing_motion(lane_follow)
 	target_lane_speed = minf(target_lane_speed, float(spacing.target_speed))
 	maximum_advance = minf(maximum_advance, float(spacing.allowed_advance))
+	var safety_zone_motion := _traffic_control_zone_motion(path, lane_follow)
+	target_lane_speed = minf(target_lane_speed, float(safety_zone_motion.target_speed))
+	maximum_advance = minf(maximum_advance, float(safety_zone_motion.allowed_advance))
 
 	var requested_advance := maxf(_lane_motion_speed, target_lane_speed) * delta
 	var signal_contract := {}
@@ -1211,11 +1419,12 @@ func _get_lane_obstruction(lane_follow: PathFollow2D) -> Dictionary:
 			continue
 		if not collider.is_in_group("vehicle") or collider.is_in_group("parked_vehicle"):
 			continue
-		if collider.get("is_driven_by_player") == true:
+		if collider.get("is_driven_by_player") == true or collider.get("_detached_from_lane") == true or collider.get("is_broken") == true:
 			hard_blocked = true
 			continue
 		var other_follow := collider.get_parent() as PathFollow2D
 		if other_follow == null:
+			hard_blocked = true
 			continue
 		var other_path := other_follow.get_parent() as Path2D
 		if other_path == null or other_path == current_path:
@@ -1243,7 +1452,7 @@ func _lane_spacing_motion(lane_follow: PathFollow2D) -> Dictionary:
 		if other_follow.get_child_count() == 0 or not other_follow.get_child(0) is DemoTrafficVehicle:
 			continue
 		var other := other_follow.get_child(0) as DemoTrafficVehicle
-		if other.is_driven_by_player or other.is_broken:
+		if other.is_driven_by_player:
 			continue
 		var center_gap := other_follow.progress - lane_follow.progress
 		if lane_loops:
@@ -1263,7 +1472,8 @@ func _lane_spacing_motion(lane_follow: PathFollow2D) -> Dictionary:
 				0.0,
 				1.0
 			)
-			target_speed_limit = minf(target_speed_limit, other._lane_motion_speed * follow_ratio)
+			var other_speed: float = 0.0 if other.is_broken else other._lane_motion_speed
+			target_speed_limit = minf(target_speed_limit, other_speed * follow_ratio)
 	return {"target_speed": target_speed_limit, "allowed_advance": advance_limit}
 
 
@@ -1273,6 +1483,56 @@ func _lane_acceleration_rate() -> float:
 
 func _lane_braking_rate() -> float:
 	return minf(braking, maxf(120.0, speed * 2.8))
+
+
+func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Dictionary:
+	var unrestricted := {"target_speed": INF, "allowed_advance": INF, "zone_id": &""}
+	if path == null or path.curve == null or not path.is_in_group("unified_traffic_lane"):
+		return unrestricted
+	var road_id := String(path.get_meta("traffic_road_id", ""))
+	if road_id.is_empty():
+		return unrestricted
+	var route_length := path.curve.get_baked_length()
+	var lane_loops := bool(path.get_meta("traffic_lane_loop", lane_follow.loop)) and lane_follow.loop
+	var nearest_stop_distance := INF
+	var nearest_zone_id: StringName = &""
+	for zone in get_tree().get_nodes_in_group("traffic_control_zone"):
+		if not zone.has_method("get_crossing_data") or not zone.has_method("should_stop_vehicle"):
+			continue
+		var data = zone.call("get_crossing_data")
+		if not data is Dictionary or String((data as Dictionary).get("road_id", "")) != road_id:
+			continue
+		# Railway crossings expose a position-aware contract: an approaching car
+		# must stop, while one which already passed its entry gate must keep its
+		# escape lane and clear the track. Ordinary pedestrian crossings retain
+		# their simpler global stop contract.
+		var stop_required := bool(zone.call("should_stop_vehicle", self))
+		if zone.has_method("should_stop_vehicle_at"):
+			stop_required = bool(zone.call("should_stop_vehicle_at", global_position, self))
+		if not stop_required:
+			continue
+		var world_position: Vector2 = (data as Dictionary).get("position", Vector2.ZERO)
+		var curve_offset := path.curve.get_closest_offset(path.to_local(world_position))
+		var distance_to_center := curve_offset - lane_follow.progress
+		if lane_loops and distance_to_center < -0.5:
+			distance_to_center += route_length
+		elif not lane_loops and distance_to_center < -target_length * 0.5:
+			continue
+		# Once the vehicle center has entered a crossing it must clear it; stopping
+		# on a zebra crossing or railway track is less safe than completing exit.
+		if distance_to_center <= 0.0:
+			continue
+		var stop_distance := distance_to_center - target_length * 0.5 - 18.0
+		if stop_distance < nearest_stop_distance:
+			nearest_stop_distance = maxf(0.0, stop_distance)
+			nearest_zone_id = StringName((data as Dictionary).get("id", (data as Dictionary).get("crossing_id", &"")))
+	if nearest_stop_distance == INF:
+		return unrestricted
+	return {
+		"target_speed": sqrt(2.0 * _lane_braking_rate() * nearest_stop_distance),
+		"allowed_advance": nearest_stop_distance,
+		"zone_id": nearest_zone_id,
+	}
 
 
 func _open_lane_end_motion(path: Path2D, lane_follow: PathFollow2D, controller: Node) -> Dictionary:

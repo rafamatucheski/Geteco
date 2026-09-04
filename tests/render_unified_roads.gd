@@ -34,8 +34,10 @@ func _render_preview() -> void:
 					(child as CanvasItem).visible = false
 
 	var camera := Camera2D.new()
-	camera.position = Vector2(1600, 2380)
-	camera.zoom = Vector2(0.43, 0.43)
+	# Frame the complete canonical district, including every open endpoint and
+	# the full south viaduct, so the preview cannot hide a disconnected edge.
+	camera.position = Vector2(1600, 2350)
+	camera.zoom = Vector2(0.36, 0.36)
 	camera.enabled = true
 	viewport.add_child(camera)
 

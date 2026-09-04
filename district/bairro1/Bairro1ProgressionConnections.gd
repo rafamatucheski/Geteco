@@ -15,6 +15,7 @@ const LANE_COLOR := Color("#dfc84d")
 const SIGN_GREEN := Color("#214d42")
 const BARRIER_LIGHT := Color("#d5d1c1")
 const BARRIER_ORANGE := Color("#d45b34")
+const DISTRICT3_CONNECTION_STUB_START := Vector2(3450, 2260)
 
 # Continues the existing EastArc at x=2430.  Its end is deliberately outside
 # Bairro 1's authored lots, so future District 3 can attach road-for-road.
@@ -36,6 +37,20 @@ func _ready() -> void:
 	_create_temporary_district3_limit()
 	queue_redraw()
 	call_deferred("_validate_connections")
+
+
+func get_road_graph_definitions() -> Array[Dictionary]:
+	if _centerline.is_empty():
+		return []
+	return [
+		{
+			"id": "district3_connection_stub",
+			"points": PackedVector2Array([DISTRICT3_CONNECTION_STUB_START, _centerline[-1]]),
+			"width": ROAD_HALF_WIDTH * 2.0,
+			"render": false,
+			"open_end": true,
+		},
+	]
 
 
 ## Stable integration data for a future streaming/scene-transition manager.

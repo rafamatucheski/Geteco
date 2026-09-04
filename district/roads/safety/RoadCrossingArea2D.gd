@@ -90,6 +90,11 @@ func set_signal_controller(controller: Node) -> void:
 
 
 func set_signal_state(vehicle_permitted: bool, pedestrian_permitted: bool) -> void:
+	# A road-relative crossing with no nearby junction is intentionally
+	# unsignalized and keeps pedestrian-on-crossing priority semantics.
+	if junction_id == StringName():
+		clear_signal_state()
+		return
 	_has_signal_state = true
 	_vehicle_permitted = vehicle_permitted
 	_pedestrian_permitted = pedestrian_permitted

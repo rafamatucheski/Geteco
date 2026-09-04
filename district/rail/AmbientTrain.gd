@@ -13,6 +13,7 @@ const ENGINE_LENGTH := 76.0
 const WAGON_LENGTH := 52.0
 const COUPLER_GAP := 5.0
 const WAGON_STEP := WAGON_LENGTH + COUPLER_GAP
+const TRAIN_RENDER_Z := 4
 
 var _rail_line: DistrictRailLine
 var _progress := 0.0
@@ -29,8 +30,10 @@ func configure(rail_line: DistrictRailLine, configured_speed: float, configured_
 	freight_car_count = clampi(configured_cars, 2, 7)
 	_route_length = rail_line.get_route_length()
 	_progress = fposmod(start_progress, maxf(_route_length, 1.0))
-	# Above the rail bed, but below the elevated viaduct.
-	z_index = 4
+	# Absolute canvas order prevents the rail root's relative Z from being added
+	# a second time: rail bed (3) < complete train (4) < elevated deck (6).
+	z_as_relative = false
+	z_index = TRAIN_RENDER_Z
 	_rebuild_freight_visuals()
 	_setup_train_audio()
 	_update_pose()
@@ -75,7 +78,8 @@ func _rebuild_freight_visuals() -> void:
 		var visual := TrainFreightCarVisual.new()
 		visual.name = "FreightWagon_%02d" % (index + 1)
 		visual.wagon_index = index
-		visual.z_index = z_index
+		# Wagons inherit the locomotive's absolute order instead of adding 4 again.
+		visual.z_index = 0
 		add_child(visual)
 		_freight_visuals.append(visual)
 

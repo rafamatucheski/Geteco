@@ -18,6 +18,40 @@ const VEHICLE_ARCHETYPES := [
 	"ranch_pickup", "muscle_classic", "beach_cabriolet", "desert_jeep_4x4",
 ]
 var _layout: Node = null
+var _cached_directed_lanes: Array[Path2D] = []
+var _traffic_respawn_timer: float = 0.0
+
+
+func _process(delta: float) -> void:
+	_traffic_respawn_timer -= delta
+	if _traffic_respawn_timer <= 0.0:
+		_traffic_respawn_timer = 4.0
+		_maintain_traffic_population()
+
+
+func _maintain_traffic_population() -> void:
+	if _cached_directed_lanes.is_empty():
+		return
+	var active_cars: Array[Node] = []
+	for node in get_tree().get_nodes_in_group("district_one_traffic"):
+		if is_instance_valid(node) and not node.is_queued_for_deletion():
+			var tv = node as DemoTrafficVehicle
+			if tv and not tv.is_broken and not tv._detached_from_lane:
+				active_cars.append(node)
+	if active_cars.size() < moving_vehicle_count:
+		var missing := mini(moving_vehicle_count - active_cars.size(), 3)
+		for i in range(missing):
+			var lane: Path2D = _cached_directed_lanes[randi() % _cached_directed_lanes.size()]
+			var archetype_id: String = VEHICLE_ARCHETYPES[randi() % VEHICLE_ARCHETYPES.size()]
+			var vehicle := MODERN_TRAFFIC.spawn_moving_vehicle(
+				lane,
+				"BoroughTraffic_Respawn_%d" % randi(),
+				archetype_id,
+				randf(),
+				82.0 + float(randi() % 5) * 7.0,
+				randi() % 8 + 8
+			)
+			vehicle.add_to_group("district_one_traffic")
 
 
 func _ready() -> void:
@@ -46,6 +80,7 @@ func _populate_from_authored_layout() -> void:
 	if directed_lanes.is_empty():
 		push_error("DistrictOnePopulation found no Path2D in group unified_traffic_lane")
 	else:
+		_cached_directed_lanes = directed_lanes
 		_spawn_moving_traffic(directed_lanes)
 	_spawn_pedestrians(_layout.get_pedestrian_routes())
 	if _layout.has_method("get_parking_spots"):

@@ -18,10 +18,12 @@ const CONTROLLER_GROUP: StringName = &"junction_traffic_controller"
 const LANE_GROUP: StringName = &"unified_traffic_lane"
 const NO_ADVANCE := 0.0
 const SIGNAL_VISUAL := preload("res://district/roads/traffic/JunctionSignalVisual2D.gd")
+const MAX_CONNECTOR_ENTRY_OVERSHOOT := 12.0
 
 @export_range(1.0, 60.0, 0.1) var minimum_green_seconds := 7.5
 @export_range(0.5, 10.0, 0.1) var yellow_seconds := 2.2
 @export_range(0.5, 10.0, 0.1) var all_red_seconds := 1.5
+@export_range(1.0, 20.0, 0.1) var pedestrian_clearance_seconds := 6.0
 @export_range(0.0, 80.0, 1.0) var stop_line_margin := 14.0
 @export_range(40.0, 600.0, 1.0) var reservation_request_distance := 220.0
 @export_range(1.0, 20.0, 0.1) var reservation_heartbeat_timeout := 4.0
@@ -42,11 +44,14 @@ var _connections_from_lane: Dictionary = {}
 var _warned_lanes: Dictionary = {}
 var _waiting_since: Dictionary = {}
 var _deadlock_reported: Dictionary = {}
+var _pedestrian_demand: Dictionary = {}
 var _telemetry := {
 	"reservation_grants": 0,
 	"reservation_releases": 0,
 	"reservation_denials": 0,
 	"red_stop_clamps": 0,
+	"connector_entries": 0,
+	"connector_handoffs": 0,
 	"invalid_lane_contracts": 0,
 	"deadlock_limit_exceeded": 0,
 	"maximum_wait_seconds": 0.0,
@@ -117,6 +122,7 @@ func _sync_from_graph() -> void:
 			junction.get("id", ""),
 			junction.get("position", Vector2.ZERO),
 			junction.get("radius", 0.0),
+			junction.get("signalized", (junction.get("approaches", []) as Array).size() >= 3),
 			junction.get("roads", []),
 			junction.get("approaches", []),
 			_connection_signature(junction.get("lane_connections", [])),
@@ -134,24 +140,35 @@ func _sync_from_graph() -> void:
 		var junction: Dictionary = (source_junctions[index] as Dictionary).duplicate(true)
 		var junction_id := _canonical_junction_id(index, junction)
 		junction["id"] = junction_id
+		# `signalized` belongs to the canonical graph. The approach-count fallback
+		# keeps third-party/fake graph implementations backward compatible while
+		# preserving the same >=3 rule.
+		var signalized := bool(junction.get("signalized", (junction.get("approaches", []) as Array).size() >= 3))
+		junction["signalized"] = signalized
 		_junctions.append(junction)
 		_junction_id_to_index[junction_id] = index
 		var previous: Dictionary = _states.get(index, {})
 		var roads := _road_indices(junction)
 		var phases: Array = []
-		# One connected road per phase is conservative by design. Both directed
-		# lanes of that road share the phase; roads that may conflict never do.
-		for road_index in roads:
-			phases.append([road_index])
+		if signalized:
+			# One connected road per phase is conservative by design. Both directed
+			# lanes of that road share the phase; roads that may conflict never do.
+			for road_index in roads:
+				phases.append([road_index])
+		else:
+			# Unsignalized continuations expose every road as freely permitted. The
+			# independent reservation owner below still serializes actual occupancy.
+			phases.append(roads.duplicate())
 		if phases.is_empty():
 			phases.append([])
 		_states[index] = {
 			"junction_id": junction_id,
+			"signalized": signalized,
 			"roads": roads,
 			"phases": phases,
 			"phase_index": mini(int(previous.get("phase_index", index % phases.size())), phases.size() - 1),
-			"stage": int(previous.get("stage", JunctionStage.GREEN)),
-			"elapsed": float(previous.get("elapsed", 0.0)),
+			"stage": int(previous.get("stage", JunctionStage.GREEN)) if signalized else JunctionStage.GREEN,
+			"elapsed": float(previous.get("elapsed", 0.0)) if signalized else 0.0,
 			"reservation_owner": int(previous.get("reservation_owner", 0)),
 			"reservation_road": int(previous.get("reservation_road", -1)),
 			"reservation_lane": StringName(previous.get("reservation_lane", &"")),
@@ -212,7 +229,7 @@ func _road_indices(junction: Dictionary) -> Array[int]:
 
 func _advance_junction(junction_index: int, delta: float) -> void:
 	var state: Dictionary = _states.get(junction_index, {})
-	if state.is_empty():
+	if state.is_empty() or not bool(state.get("signalized", false)):
 		return
 	state.elapsed = float(state.elapsed) + delta
 	match int(state.stage):
@@ -225,7 +242,8 @@ func _advance_junction(junction_index: int, delta: float) -> void:
 		JunctionStage.ALL_RED:
 			# The clearance interval cannot finish while a vehicle that entered
 			# under the previous phase still owns the conflict zone.
-			if float(state.elapsed) >= all_red_seconds and int(state.reservation_owner) == 0:
+			var required_clearance := pedestrian_clearance_seconds if bool(_pedestrian_demand.get(junction_index, false)) else all_red_seconds
+			if float(state.elapsed) >= required_clearance and int(state.reservation_owner) == 0:
 				var phases: Array = state.phases
 				state.phase_index = (int(state.phase_index) + 1) % phases.size()
 				_set_stage(junction_index, JunctionStage.GREEN)
@@ -233,7 +251,7 @@ func _advance_junction(junction_index: int, delta: float) -> void:
 
 func _set_stage(junction_index: int, next_stage: JunctionStage) -> void:
 	var state: Dictionary = _states.get(junction_index, {})
-	if state.is_empty() or int(state.stage) == next_stage:
+	if state.is_empty() or not bool(state.get("signalized", false)) or int(state.stage) == next_stage:
 		return
 	state.stage = next_stage
 	state.elapsed = 0.0
@@ -248,7 +266,11 @@ func _set_stage(junction_index: int, next_stage: JunctionStage) -> void:
 func get_vehicle_permission(junction_ref: Variant, road_index: int, _lane_id: StringName = &"") -> bool:
 	var index := _resolve_junction_index(junction_ref)
 	var state: Dictionary = _states.get(index, {})
-	if state.is_empty() or int(state.stage) != JunctionStage.GREEN:
+	if state.is_empty() or not (state.get("roads", []) as Array).has(road_index):
+		return false
+	if not bool(state.get("signalized", false)):
+		return true
+	if int(state.stage) != JunctionStage.GREEN:
 		return false
 	var active_roads: Array = (state.phases as Array)[int(state.phase_index)]
 	return active_roads.has(road_index)
@@ -259,6 +281,8 @@ func get_signal_state(junction_ref: Variant, road_index: int) -> SignalState:
 	var state: Dictionary = _states.get(index, {})
 	if state.is_empty():
 		return SignalState.RED
+	if not bool(state.get("signalized", false)):
+		return SignalState.GREEN if (state.get("roads", []) as Array).has(road_index) else SignalState.RED
 	if get_vehicle_permission(index, road_index):
 		return SignalState.GREEN
 	if int(state.stage) == JunctionStage.YELLOW:
@@ -272,8 +296,22 @@ func is_pedestrian_phase(junction_ref: Variant, _road_index: int = -1, _crossing
 	var index := _resolve_junction_index(junction_ref)
 	var state: Dictionary = _states.get(index, {})
 	return not state.is_empty() \
+		and bool(state.get("signalized", false)) \
 		and int(state.stage) == JunctionStage.ALL_RED \
 		and int(state.reservation_owner) == 0
+
+
+func notify_crossing_demand(junction_ref: Variant, _crossing_axis: Variant = &"", active: bool = true) -> void:
+	var index := _resolve_junction_index(junction_ref)
+	if index < 0 or not is_junction_signalized(index):
+		return
+	_pedestrian_demand[index] = active
+
+
+func is_junction_signalized(junction_ref: Variant) -> bool:
+	var index := _resolve_junction_index(junction_ref)
+	var state: Dictionary = _states.get(index, {})
+	return not state.is_empty() and bool(state.get("signalized", false))
 
 
 func try_reserve_junction(
@@ -361,10 +399,25 @@ func evaluate_lane_motion(
 		return _evaluate_connector_motion(vehicle, path, desired_advance)
 	var road_index := int(path.get_meta("traffic_road_index", -1))
 	var lane_id := StringName(path.get_meta("traffic_lane_id", path.name))
-	if road_index < 0 or not path.is_in_group(LANE_GROUP):
+	if not path.is_in_group(LANE_GROUP):
+		return unrestricted
+	if road_index < 0:
 		_report_invalid_lane_once(path, road_index)
 		return unrestricted
 	_release_if_vehicle_cleared(vehicle, vehicle_length)
+	var vehicle_id := vehicle.get_instance_id()
+	var owned_junction := _owned_junction_for_vehicle(vehicle_id)
+	if owned_junction >= 0:
+		var owned_state: Dictionary = _states[owned_junction]
+		var owned_radius := float((_junctions[owned_junction] as Dictionary).get("radius", 48.0))
+		owned_state.reservation_heartbeat_ms = Time.get_ticks_msec()
+		if vehicle.global_position.distance_to(_junction_world_position(owned_junction)) <= owned_radius + vehicle_length * 0.5:
+			notify_vehicle_entered(owned_junction, vehicle_id)
+		unrestricted.controlled = true
+		unrestricted.reservation_granted = true
+		unrestricted.junction_index = owned_junction
+		unrestricted.junction_id = owned_state.junction_id
+		return unrestricted
 	var next := _next_lane_junction(path, follow, road_index)
 	if next.is_empty():
 		return unrestricted
@@ -376,7 +429,6 @@ func evaluate_lane_motion(
 	var radius := float((_junctions[junction_index] as Dictionary).get("radius", 48.0))
 	var center_distance := float(next.distance)
 	var stop_distance := center_distance - radius - stop_line_margin - half_length
-	var vehicle_id := vehicle.get_instance_id()
 	var distance_to_world_center := vehicle.global_position.distance_to(_junction_world_position(junction_index))
 	if int(state.reservation_owner) == vehicle_id:
 		state.reservation_heartbeat_ms = Time.get_ticks_msec()
@@ -476,7 +528,7 @@ func _next_lane_junction(path: Path2D, follow: PathFollow2D, road_index: int) ->
 		var distance := float(projection.offset) - follow.progress
 		if loops and distance < -0.5:
 			distance += length
-		if not loops and distance < -float(projection.radius) * 1.5:
+		if not loops and distance < -0.5:
 			continue
 		if distance < best_distance:
 			best_distance = distance
@@ -566,6 +618,10 @@ func complete_lane_transition(vehicle: Node2D, path: Path2D, follow: PathFollow2
 	var entry_offset := float(connection.get("entry_curve_offset", -1.0))
 	if entry_offset < 0.0 or follow.progress + 0.01 < entry_offset:
 		return false
+	if follow.progress - entry_offset > MAX_CONNECTOR_ENTRY_OVERSHOOT:
+		follow.remove_meta("traffic_planned_connection_id")
+		follow.remove_meta("traffic_planned_junction_index")
+		return false
 	var junction_index := int(connection.get("junction_index", -1))
 	var state: Dictionary = _states.get(junction_index, {})
 	if state.is_empty() or int(state.reservation_owner) != vehicle.get_instance_id():
@@ -579,6 +635,7 @@ func complete_lane_transition(vehicle: Node2D, path: Path2D, follow: PathFollow2
 	follow.progress = minf(overshoot, connector.curve.get_baked_length())
 	follow.set_meta("traffic_planned_connection_id", String(connection.connection_id))
 	follow.set_meta("traffic_planned_junction_index", junction_index)
+	_telemetry.connector_entries = int(_telemetry.connector_entries) + 1
 	return true
 
 
@@ -602,6 +659,8 @@ func _planned_connection(vehicle: Node2D, path: Path2D, follow: PathFollow2D) ->
 		if int(candidate.get("junction_index", -1)) != junction_index:
 			continue
 		if bool(candidate.get("requires_connector", false)):
+			if float(candidate.get("entry_curve_offset", -1.0)) < follow.progress - 0.5:
+				continue
 			var connector := candidate.get("path") as Path2D
 			if connector == null or not is_instance_valid(connector):
 				continue
@@ -670,6 +729,7 @@ func _finish_connector_transition(connector: Path2D, follow: PathFollow2D) -> bo
 	follow.progress = exit_offset
 	follow.remove_meta("traffic_planned_connection_id")
 	follow.remove_meta("traffic_planned_junction_index")
+	_telemetry.connector_handoffs = int(_telemetry.connector_handoffs) + 1
 	return true
 
 
@@ -686,6 +746,13 @@ func _release_if_vehicle_cleared(vehicle: Node2D, vehicle_length: float) -> void
 			notify_vehicle_entered(junction_index, vehicle_id)
 		elif bool(state.reservation_entered) and distance > radius + vehicle_length + stop_line_margin:
 			_clear_reservation(junction_index)
+
+
+func _owned_junction_for_vehicle(vehicle_instance_id: int) -> int:
+	for index_value in _states.keys():
+		if int((_states[index_value] as Dictionary).get("reservation_owner", 0)) == vehicle_instance_id:
+			return int(index_value)
+	return -1
 
 
 func _validate_reservation(junction_index: int) -> void:
@@ -708,7 +775,7 @@ func _validate_reservation(junction_index: int) -> void:
 		if (owner as Node2D).global_position.distance_to(_junction_world_position(junction_index)) > radius * 1.5 + stop_line_margin:
 			_clear_reservation(junction_index)
 			return
-	if int(state.stage) != JunctionStage.ALL_RED:
+	if bool(state.get("signalized", false)) and int(state.stage) != JunctionStage.ALL_RED:
 		_set_stage(junction_index, JunctionStage.ALL_RED)
 	traffic_contract_violation.emit(&"stale_reservation_inside_junction", {
 		"junction_id": state.junction_id,
@@ -801,7 +868,7 @@ func _rebuild_signal_visuals() -> void:
 	for junction_index in _junctions.size():
 		var junction: Dictionary = _junctions[junction_index]
 		var approaches: Array = junction.get("approaches", [])
-		if approaches.is_empty():
+		if approaches.is_empty() or not bool(junction.get("signalized", false)):
 			continue
 		var visual := SIGNAL_VISUAL.new()
 		visual.name = "Signals_%s" % String(junction.id)
@@ -837,8 +904,28 @@ func _synchronize_crossing_consumers() -> void:
 			var data = crossing.call("get_crossing_data")
 			if not data is Dictionary:
 				continue
-			var junction_ref: Variant = (data as Dictionary).get("junction_id", -1)
+			var junction_id := StringName((data as Dictionary).get("junction_id", &""))
+			var junction_index := int(crossing.get_meta("junction_index", -1))
+			# A crossing outside a signalized junction keeps its own pedestrian
+			# priority logic; assigning false/false would turn it permanently red.
+			if junction_id.is_empty() and junction_index < 0:
+				continue
+			var junction_ref: Variant = junction_index if junction_index >= 0 else junction_id
+			var resolved_index := _resolve_junction_index(junction_ref)
+			if resolved_index < 0 or not is_junction_signalized(resolved_index):
+				# A crossing attached to a two-approach continuation is deliberately
+				# unsignalized. Restore its pedestrian-priority behavior instead of
+				# feeding it an invisible permanent red/green phase.
+				if crossing.has_method("clear_signal_state"):
+					crossing.call("clear_signal_state")
+				if crossing.has_method("set_signal_controller"):
+					crossing.call("set_signal_controller", null)
+				continue
 			var road_index := int((data as Dictionary).get("road_index", -1))
+			if road_index < 0:
+				continue
+			if crossing.has_method("set_signal_controller"):
+				crossing.call("set_signal_controller", self)
 			var crossing_id := StringName((data as Dictionary).get("crossing_id", &""))
 			crossing.call(
 				"set_signal_state",
@@ -863,6 +950,7 @@ func get_junction_snapshot(junction_ref: Variant) -> Dictionary:
 	return {
 		"junction_index": index,
 		"junction_id": state.junction_id,
+		"signalized": bool(state.get("signalized", false)),
 		"position": _junction_world_position(index),
 		"stage": state.stage,
 		"signal_states": _signal_states_for_junction(index),
@@ -884,11 +972,27 @@ func _signal_states_for_junction(junction_index: int) -> Dictionary:
 func get_telemetry_snapshot() -> Dictionary:
 	var snapshot: Dictionary = _telemetry.duplicate(true)
 	snapshot["junction_count"] = _junctions.size()
+	snapshot["signalized_junction_count"] = 0
+	snapshot["unsignalized_junction_count"] = 0
+	snapshot["signal_visual_count"] = get_signal_visual_count()
 	snapshot["active_reservations"] = 0
 	for state_value in _states.values():
-		if int((state_value as Dictionary).get("reservation_owner", 0)) != 0:
+		var state := state_value as Dictionary
+		if bool(state.get("signalized", false)):
+			snapshot.signalized_junction_count = int(snapshot.signalized_junction_count) + 1
+		else:
+			snapshot.unsignalized_junction_count = int(snapshot.unsignalized_junction_count) + 1
+		if int(state.get("reservation_owner", 0)) != 0:
 			snapshot.active_reservations = int(snapshot.active_reservations) + 1
 	return snapshot
+
+
+func get_signal_visual_count() -> int:
+	var count := 0
+	for visual in _signal_visuals.values():
+		if is_instance_valid(visual) and not (visual as Node).is_queued_for_deletion():
+			count += 1
+	return count
 
 
 func is_lane_spawn_position_safe(path: Path2D, progress: float, vehicle_length: float) -> bool:

@@ -13,6 +13,13 @@ const LOCAL_ROAD_WIDTH := 112.0
 const SIDEWALK_MARGIN := 42.0
 const BUILDING_SETBACK := 12.0
 
+# The gateway is the district's four-lane trunk and the elevated highway is
+# only its rendered/elevated representation. Keep lane centres and painted
+# separators here so graph generation and viaduct drawing cannot drift apart.
+const GATEWAY_MEDIAN_HALF_WIDTH := 7.0
+const GATEWAY_LANE_OFFSETS := [-59.0, -20.0, 20.0, 59.0]
+const GATEWAY_LANE_SEPARATOR_OFFSETS := [-41.0, 41.0]
+
 const ROAD_COLOR := Color("#202932")
 const ROAD_EDGE_COLOR := Color("#151c23")
 const SIDEWALK_COLOR := Color("#aaa9a1")
@@ -56,7 +63,7 @@ static var WEST_LOCAL := PackedVector2Array([
 # circulation loops: traffic can take a turn at each junction and never needs
 # to make a visible U-turn in the middle of a street.
 static var NORTH_LINK := PackedVector2Array([
-	Vector2(870, 1260), Vector2(1200, 1260), Vector2(1500, 1260), Vector2(1780, 1260),
+	Vector2(870, 1260), Vector2(980, 1260), Vector2(1160, 1215), Vector2(1460, 1210), Vector2(1780, 1260),
 ])
 static var EAST_LINK := PackedVector2Array([
 	Vector2(1750, 1260), Vector2(1950, 1450), Vector2(2020, 1700),
@@ -92,14 +99,8 @@ static var WEST_LINK := PackedVector2Array([
 		_build_route_cache(true)
 		queue_redraw()
 
-# Reserved for DistrictRailLine instantiated with integration offset (0, 520).
-# The track agent owns all art and collision inside this 70 px corridor.
-static var RAIL_CORRIDOR := PackedVector2Array([
-	Vector2(-260, 1620), Vector2(80, 1640), Vector2(390, 1645),
-	Vector2(690, 1660), Vector2(910, 1738), Vector2(1190, 1768),
-	Vector2(1490, 1740), Vector2(1760, 1662), Vector2(2020, 1618),
-	Vector2(2300, 1652), Vector2(2630, 1758), Vector2(2920, 1800),
-])
+# DistrictRailLine owns the track geometry. Clearance checks below query its
+# geodata API, so moving the track cannot leave a stale copied corridor here.
 const RAIL_CLEARANCE := 70.0
 const LAMP_ROAD_CLEARANCE := 18.0
 const LAMP_INTERSECTION_CLEARANCE := 112.0
@@ -213,8 +214,8 @@ var lamp_positions := PackedVector2Array([
 ])
 
 var parking_spots: Array[Dictionary] = [
-	{"position": Vector2(735, 1460), "rotation": PI * 0.5, "zone": "PORTA_CENTRAL"},
-	{"position": Vector2(740, 1530), "rotation": PI * 0.5, "zone": "PORTA_CENTRAL"},
+	{"position": Vector2(260, 1910), "rotation": 0.0, "zone": "PORTA_CENTRAL"},
+	{"position": Vector2(360, 1910), "rotation": 0.0, "zone": "PORTA_CENTRAL"},
 	{"position": Vector2(1120, 1810), "rotation": 0.0, "zone": "MIRANTE_LESTE"},
 	{"position": Vector2(1200, 1810), "rotation": 0.0, "zone": "MIRANTE_LESTE"},
 	{"position": Vector2(1940, 1650), "rotation": PI * 0.5, "zone": "MIRANTE_LESTE"},
@@ -240,6 +241,11 @@ var _pedestrian_routes: Array[PackedVector2Array] = []
 func _ready() -> void:
 	z_index = 0
 	add_to_group("district_one_layout")
+	# Persisted Marker2D handles are the authored source whenever this provider
+	# is instanced in a composed district. Instance-level exported-array
+	# overrides may be stale; resolving the handles here makes editor and runtime
+	# consume exactly the same geometry.
+	_sync_road_points_from_markers()
 	_build_route_cache()
 	if Engine.is_editor_hint():
 		# Preview only: the real roads, lots and crossings are drawn below.  Do
@@ -308,22 +314,60 @@ func _process(_delta: float) -> void:
 	if old_intersections != null:
 		old_intersections.queue_free()
 	queue_redraw()
-	var controls := get_node_or_null("RoadControlPoints") as Node2D
-	if controls == null:
-		return
-	var changed := false
-	for marker in controls.get_children():
-		if marker is Marker2D:
-			var road_id := String(marker.get_meta("road_id", ""))
-			var index := int(marker.get_meta("point_index", -1))
-			var points: PackedVector2Array = _editor_road_sets().get(road_id, PackedVector2Array())
-			if index >= 0 and index < points.size() and not points[index].is_equal_approx(marker.position):
-				points[index] = marker.position
-				_set_editor_road_points(road_id, points)
-				changed = true
+	var changed := _sync_road_points_from_markers()
 	if changed:
 		_build_route_cache(true)
 		queue_redraw()
+
+func _sync_road_points_from_markers() -> bool:
+	var controls := get_node_or_null("RoadControlPoints") as Node2D
+	if controls == null:
+		return false
+	var current_sets := _editor_road_sets()
+	var marker_sets := {}
+	for road_id in current_sets:
+		marker_sets[road_id] = {}
+	for child in controls.get_children():
+		if not child is Marker2D:
+			continue
+		var marker := child as Marker2D
+		var road_id := String(marker.get_meta("road_id", ""))
+		var point_index := int(marker.get_meta("point_index", -1))
+		if not marker_sets.has(road_id) or point_index < 0:
+			continue
+		(marker_sets[road_id] as Dictionary)[point_index] = marker.position
+
+	# Never mix half a handle set with half an exported array. A provider with
+	# missing/non-contiguous handles falls back atomically to its exported data.
+	for road_id in current_sets:
+		var indexed_points := marker_sets[road_id] as Dictionary
+		if indexed_points.is_empty():
+			return false
+		var highest_index := -1
+		for point_index in indexed_points:
+			highest_index = maxi(highest_index, int(point_index))
+		if indexed_points.size() != highest_index + 1:
+			return false
+
+	var changed := false
+	for road_id in current_sets:
+		var indexed_points := marker_sets[road_id] as Dictionary
+		var marker_points := PackedVector2Array()
+		for point_index in range(indexed_points.size()):
+			marker_points.append(indexed_points[point_index])
+		var current_points := current_sets[road_id] as PackedVector2Array
+		if not _road_point_arrays_equal(current_points, marker_points):
+			_set_editor_road_points(String(road_id), marker_points)
+			changed = true
+	return changed
+
+func _road_point_arrays_equal(first: PackedVector2Array, second: PackedVector2Array) -> bool:
+	if first.size() != second.size():
+		return false
+	for index in range(first.size()):
+		if not first[index].is_equal_approx(second[index]):
+			return false
+	return true
 
 func _editor_road_sets() -> Dictionary:
 	return {"gateway_spine": gateway_spine_points.duplicate(), "midtown_cross": midtown_cross_points.duplicate(), "south_cross": south_cross_points.duplicate(), "east_arc": east_arc_points.duplicate(), "west_local": west_local_points.duplicate(), "north_link": north_link_points.duplicate(), "east_link": east_link_points.duplicate(), "west_link": west_link_points.duplicate()}
@@ -348,17 +392,29 @@ func _two_way_lane_definitions(road_width: float) -> Array[Dictionary]:
 		{"lane_id": "reverse_01", "offset": -lane_offset, "direction": -1, "direction_name": "reverse"},
 	]
 
+static func get_gateway_lane_definitions() -> Array[Dictionary]:
+	# gateway_spine is authored north -> south. Positive offsets are its
+	# right-hand/southbound carriageway and negative offsets return northbound,
+	# matching every other two-way road provider in the district.
+	return [
+		{"lane_id": "reverse_02", "offset": GATEWAY_LANE_OFFSETS[0], "direction": -1, "direction_name": "reverse"},
+		{"lane_id": "reverse_01", "offset": GATEWAY_LANE_OFFSETS[1], "direction": -1, "direction_name": "reverse"},
+		{"lane_id": "forward_01", "offset": GATEWAY_LANE_OFFSETS[2], "direction": 1, "direction_name": "forward"},
+		{"lane_id": "forward_02", "offset": GATEWAY_LANE_OFFSETS[3], "direction": 1, "direction_name": "forward"},
+	]
+
 func get_road_graph_definitions() -> Array[Dictionary]:
+	_sync_road_points_from_markers()
 	var main_lanes := _two_way_lane_definitions(main_road_width)
 	var local_lanes := _two_way_lane_definitions(local_road_width)
 	return [
-		{"id": "gateway_spine", "points": gateway_spine_points, "width": main_road_width, "lanes": main_lanes, "render": false, "open_start": true, "open_end": true},
-		{"id": "midtown_cross", "points": midtown_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1Expansion/east_arc", "snap_end_mode": "perpendicular"},
-		{"id": "south_cross", "points": south_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1Expansion/east_arc", "snap_end_mode": "perpendicular"},
-		{"id": "east_arc", "points": east_arc_points, "width": main_road_width, "lanes": main_lanes},
+		{"id": "gateway_spine", "points": gateway_spine_points, "width": main_road_width, "lanes": get_gateway_lane_definitions(), "render": false, "open_start": true, "open_end": true},
+		{"id": "midtown_cross", "points": midtown_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_t": 0.0, "snap_end_mode": "tangent"},
+		{"id": "south_cross", "points": south_cross_points, "width": main_road_width, "lanes": main_lanes, "open_start": true, "snap_end": "Bairro1Expansion/east_link", "snap_end_t": 1.0, "snap_end_mode": "perpendicular"},
+		{"id": "east_arc", "points": east_arc_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1Expansion/north_link", "snap_start_t": 1.0, "snap_start_mode": "perpendicular", "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_t": 0.0, "snap_end_mode": "tangent"},
 		{"id": "west_local", "points": west_local_points, "width": local_road_width, "lanes": local_lanes, "snap_start": "Bairro1Expansion/west_link", "snap_end": "Bairro1Expansion/south_cross"},
-		{"id": "north_link", "points": north_link_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1Expansion/gateway_spine", "snap_end": "Bairro1Expansion/east_link", "snap_end_mode": "tangent"},
-		{"id": "east_link", "points": east_link_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1Expansion/north_link", "snap_start_mode": "tangent", "snap_end": "Bairro1Expansion/midtown_cross", "snap_end_mode": "perpendicular"},
+		{"id": "north_link", "points": north_link_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1Expansion/gateway_spine", "snap_start_t": 0.0, "snap_end": "Bairro1Expansion/east_arc", "snap_end_t": 0.0, "snap_end_mode": "perpendicular"},
+		{"id": "east_link", "points": east_link_points, "width": main_road_width, "lanes": main_lanes, "snap_start": "Bairro1RoadNetwork/coastal_exit", "snap_start_t": 0.0, "snap_start_mode": "perpendicular", "snap_end": "Bairro1Expansion/south_cross", "snap_end_t": 1.0, "snap_end_mode": "perpendicular"},
 		{"id": "west_link", "points": west_link_points, "width": local_road_width, "lanes": local_lanes, "snap_start": "Bairro1Expansion/midtown_cross", "snap_end": "Bairro1Expansion/west_local"},
 	]
 ## Public integration API.  Traffic/NPC populators should consume these exact
@@ -375,7 +431,65 @@ func get_pedestrian_routes() -> Array:
 	return result
 
 func get_parking_spots() -> Array:
-	return parking_spots.duplicate(true)
+	return _safe_parking_spots()
+
+
+func _safe_parking_spots() -> Array[Dictionary]:
+	# Parking remains authored (posicao e zona sao decisao de design), mas a
+	# ROTACAO nao e mais confiavel vinda do array -- ela e recalculada aqui a
+	# partir da tangente real da rua mais proxima, toda vez que essa funcao
+	# roda. Antes, "rotation" era um numero digitado a mao por vaga; se a
+	# curva da rua/calcada perto dela mudasse depois (autores editam a rua o
+	# tempo todo), a vaga ficava travada num angulo antigo e o carro nascia
+	# torto, atravessado na pista (bug real reportado: taxi diagonal preso
+	# empurrando pedestre). Mesmo principio ja aplicado em _road_point_at()
+	# para as faixas de pedestre e nas cancelas do cruzamento ferroviario:
+	# fonte unica de verdade em vez de coordenada authored duplicada.
+	#
+	# A canonical railway continua com autoridade final sobre o corredor de
+	# seguranca. Se qualquer um dos dois for editado depois, uma vaga que
+	# chegar no lastro e removida automaticamente do desenho e do spawn, em
+	# vez de deixar um carro estacionado sobre o trilho.
+	_build_route_cache()
+	var result: Array[Dictionary] = []
+	var rail_corridor := _rail_corridor_points()
+	for source in parking_spots:
+		var spot := source as Dictionary
+		var position_value: Vector2 = spot.get("position", Vector2.ZERO)
+		if not rail_corridor.is_empty() and _point_hits_polyline(position_value, rail_corridor, RAIL_CLEARANCE):
+			continue
+		var fixed_spot := spot.duplicate(true)
+		var tangent := _nearest_road_tangent_angle(position_value, main_road_width * 0.5 + 90.0)
+		if tangent.found:
+			fixed_spot["rotation"] = tangent.angle
+		result.append(fixed_spot)
+	return result
+
+## Varre todas as ruas conhecidas (_roads, ja amostradas em curva real via
+## _catmull_rom) e devolve o angulo tangente do ponto mais proximo de
+## "position", desde que esteja a "max_distance" px ou menos. Isso garante
+## que qualquer coisa authorada perto de uma rua (vaga de estacionamento,
+## e no futuro outros props de calcada) sempre acompanha a curva de verdade,
+## em vez de um angulo fixo que pode ficar desatualizado.
+func _nearest_road_tangent_angle(position_value: Vector2, max_distance: float) -> Dictionary:
+	var best_distance := max_distance
+	var best_angle := 0.0
+	var found := false
+	for road_id in _roads:
+		var road: Dictionary = _roads[road_id]
+		var points: PackedVector2Array = road.get("points", PackedVector2Array())
+		for index in range(points.size() - 1):
+			var a := points[index]
+			var b := points[index + 1]
+			var closest := Geometry2D.get_closest_point_to_segment(position_value, a, b)
+			var distance := position_value.distance_to(closest)
+			if distance <= best_distance:
+				best_distance = distance
+				var tangent := a.direction_to(b)
+				if not tangent.is_zero_approx():
+					best_angle = tangent.angle()
+					found = true
+	return {"found": found, "angle": best_angle}
 
 func get_next_district_connection() -> Dictionary:
 	return {
@@ -439,6 +553,7 @@ func _create_authored_intersections() -> void:
 
 func validate_layout() -> void:
 	assert(lots.size() == 35, "Bairro 1 expansion must keep its 35 authored lots")
+	var rail_corridor := _rail_corridor_points()
 	var railway_conflicts: Array[int] = []
 	var road_conflicts: Array[String] = []
 	var lot_conflicts: Array[String] = []
@@ -451,7 +566,7 @@ func validate_layout() -> void:
 			var road: Dictionary = _roads[road_name]
 			if _rect_hits_road(rect, road.points, float(road.width) * 0.5 + 5.0):
 				road_conflicts.append("%d:%s" % [lot_index, road_name])
-		if _rect_hits_road(rect, RAIL_CORRIDOR, RAIL_CLEARANCE):
+		if _rect_hits_road(rect, rail_corridor, RAIL_CLEARANCE):
 			railway_conflicts.append(lot_index)
 	for i in lots.size():
 		for j in range(i + 1, lots.size()):
@@ -483,17 +598,20 @@ func _create_buildings_and_collisions() -> void:
 		building.footprint = building_rect.size
 		building.building_kind = String(lot.kind)
 		building.variant_seed = 100 + index
+		if lot.has("arcade_depth"):
+			building.arcade_depth = float(lot.arcade_depth)
 		visual_root.add_child(building)
 		if String(lot.kind) != "park":
-			_add_rect_collision(building_rect.grow(-1.0), "%s_Blocker" % building.name)
+			_add_rect_collision(building.get_collision_rect(), "%s_Blocker" % building.name)
 
 func _create_decor() -> void:
+	var rail_corridor := _rail_corridor_points()
 	var decor := Node2D.new()
 	decor.name = "FixedStreetDecor"
 	decor.z_index = 7
 	add_child(decor)
 	for index in tree_positions.size():
-		if not _point_hits_polyline(tree_positions[index], RAIL_CORRIDOR, RAIL_CLEARANCE) and not _point_inside_solid_lot(tree_positions[index], 8.0):
+		if not _point_hits_polyline(tree_positions[index], rail_corridor, RAIL_CLEARANCE) and not _point_inside_solid_lot(tree_positions[index], 8.0):
 			_add_tree(decor, tree_positions[index], 0.88 + float(index % 4) * 0.05)
 	for index in additional_tree_positions.size():
 		var tree_position := additional_tree_positions[index]
@@ -562,7 +680,7 @@ func _resolve_lamp_position(candidate: Vector2, lamp_index: int) -> Vector2:
 func _lamp_position_is_clear(point: Vector2) -> bool:
 	if not EXPANSION_BOUNDS.grow(-8.0).has_point(point):
 		return false
-	if _point_hits_polyline(point, RAIL_CORRIDOR, RAIL_CLEARANCE + 12.0):
+	if _point_hits_polyline(point, _rail_corridor_points(), RAIL_CLEARANCE + 12.0):
 		return false
 	if _point_inside_solid_lot(point, 10.0):
 		return false
@@ -680,12 +798,12 @@ func get_pedestrian_crossing_definitions() -> Array[Dictionary]:
 	# Stable road-relative references are the sole source for both drawing and
 	# gameplay Area2D generation. No crossing owns a copied world coordinate.
 	return [
-		{"id": "gateway_north", "road_id": "gateway_spine", "t": 0.05},
-		{"id": "gateway_midtown", "road_id": "gateway_spine", "t": 0.40},
+		{"id": "gateway_north", "road_id": "gateway_spine", "t": 0.0},
+		{"id": "gateway_midtown", "road_id": "gateway_spine", "t": 0.52},
 		{"id": "gateway_south", "road_id": "gateway_spine", "t": 0.65},
 		{"id": "south_cross_central", "road_id": "south_cross", "t": 0.50},
 		{"id": "east_link_upper", "road_id": "east_link", "t": 0.85},
-		{"id": "midtown_cross_west", "road_id": "midtown_cross", "t": 0.35},
+		{"id": "midtown_cross_west", "road_id": "midtown_cross", "t": 0.22},
 	]
 
 func _draw_authored_crossings() -> void:
@@ -731,7 +849,7 @@ func _draw_crosswalk(center: Vector2, angle: float) -> void:
 		draw_line(stripe_center - across * 13.0, stripe_center + across * 13.0, Color("#e9e7de"), 8.0, true)
 
 func _draw_parking_marks() -> void:
-	for spot in parking_spots:
+	for spot in _safe_parking_spots():
 		var center: Vector2 = spot.position
 		var angle: float = spot.rotation
 		var forward := Vector2.RIGHT.rotated(angle)
@@ -798,6 +916,18 @@ func _point_hits_polyline(point: Vector2, points: PackedVector2Array, radius: fl
 			return true
 	return false
 
+
+func _rail_corridor_points() -> PackedVector2Array:
+	var rail_line := get_node_or_null("../DistrictRailLine") as Node2D
+	if rail_line == null or not rail_line.has_method("get_rail_graph_data"):
+		return PackedVector2Array()
+	var rail_data: Dictionary = rail_line.call("get_rail_graph_data")
+	var global_points: PackedVector2Array = rail_data.get("global_points", PackedVector2Array())
+	var local_points := PackedVector2Array()
+	for world_point in global_points:
+		local_points.append(to_local(world_point))
+	return local_points
+
 func _point_inside_solid_lot(point: Vector2, margin: float) -> bool:
 	for lot in lots:
 		if String(lot.kind) != "park" and (lot.rect as Rect2).grow(margin).has_point(point):
@@ -808,7 +938,7 @@ func _point_inside_solid_lot(point: Vector2, margin: float) -> bool:
 func _nature_position_is_clear(point: Vector2, radius: float) -> bool:
 	if not EXPANSION_BOUNDS.grow(-8.0).has_point(point):
 		return false
-	if _point_hits_polyline(point, RAIL_CORRIDOR, RAIL_CLEARANCE + radius):
+	if _point_hits_polyline(point, _rail_corridor_points(), RAIL_CLEARANCE + radius):
 		return false
 	if _point_inside_solid_lot(point, radius):
 		return false

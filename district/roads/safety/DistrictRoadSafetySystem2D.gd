@@ -127,7 +127,7 @@ func should_stop_vehicle_at(world_position: Vector2, vehicle: Node = null) -> bo
 		if is_instance_valid(crossing) and crossing.contains_world_point(world_position) and crossing.should_stop_vehicle(vehicle):
 			return true
 	for crossing in _rail_crossing_nodes:
-		if is_instance_valid(crossing) and crossing.contains_world_point(world_position) and crossing.should_stop_vehicle(vehicle):
+		if is_instance_valid(crossing) and crossing.should_stop_vehicle_at(world_position, vehicle):
 			return true
 	return false
 
@@ -189,7 +189,7 @@ func _build_pedestrian_crossings(road_graph: Node2D, graph_data: Dictionary, roa
 		var world_position := road_graph.to_global(sampled.position)
 		var world_tangent := road_graph.global_transform.basis_xform(sampled.tangent).normalized()
 		var crossing_half_depth := float(reference.get("crossing_depth", 30.0)) * 0.5
-		if _is_under_elevated_span(world_position, crossing_half_depth):
+		if _is_on_elevated_source(road_id, road_t) or _is_under_elevated_span(world_position, crossing_half_depth):
 			_validation_errors.append("Pedestrian crossing %s is forbidden under the elevated span" % key)
 			continue
 		var junction_link := _resolve_junction_reference(road_graph, junctions, reference, world_position)
@@ -230,7 +230,9 @@ func _collect_pedestrian_references(graph_data: Dictionary) -> Array[Dictionary]
 	var composition_root := get_parent()
 	if composition_root != null:
 		var candidates: Array[Node] = [composition_root]
-		candidates.append_array(composition_root.find_children("*", "Node", true, false))
+		# Providers are composition modules/direct siblings of this coordinator.
+		# Do not rescan thousands of spawned cars and pedestrians every rebuild.
+		candidates.append_array(composition_root.get_children())
 		for candidate in candidates:
 			if not candidate.has_method("get_pedestrian_crossing_definitions"):
 				continue
@@ -246,12 +248,24 @@ func _collect_pedestrian_references(graph_data: Dictionary) -> Array[Dictionary]
 func _detect_and_build_rail_crossings(road_graph: Node2D, roads: Array, rail_line: Node2D) -> void:
 	var rail_data: Dictionary = rail_line.call("get_rail_graph_data")
 	var rail_points: PackedVector2Array = rail_data.get("global_points", PackedVector2Array())
+	var rail_ballast_width := float(rail_data.get("ballast_width", 54.0))
+	var track_gauge := float(rail_data.get("track_gauge", 22.0))
 	if rail_points.size() < 2:
 		_validation_errors.append("Canonical rail graph contains fewer than two baked points")
 		return
 	var all_intersections: Array[Dictionary] = []
 	for road_index in range(roads.size()):
 		var road: Dictionary = roads[road_index]
+		var lane_controls: Array[Dictionary] = []
+		for lane_value in road.get("lanes", []):
+			if not lane_value is Dictionary:
+				continue
+			var lane := lane_value as Dictionary
+			lane_controls.append({
+				"lane_id": String(lane.get("lane_id", "")),
+				"offset": float(lane.get("offset", 0.0)),
+				"direction": int(lane.get("direction", 1)),
+			})
 		var road_points_global := PackedVector2Array()
 		var road_points: PackedVector2Array = road.points
 		for point in road_points:
@@ -287,10 +301,13 @@ func _detect_and_build_rail_crossings(road_graph: Node2D, roads: Array, rail_lin
 					"rail_t": rail_distance / maxf(rail_length, 1.0),
 					"rail_offset": rail_distance,
 					"road_width": float(road.width),
+					"rail_ballast_width": rail_ballast_width,
+					"track_gauge": track_gauge,
+					"lane_controls": lane_controls.duplicate(true),
 					"road_tangent": road_points_global[road_segment].direction_to(road_points_global[road_segment + 1]),
 					"rail_tangent": rail_points[rail_segment].direction_to(rail_points[rail_segment + 1]),
 				}
-				if _is_under_elevated_span(position):
+				if _is_on_elevated_source(String(road.id), float(intersection.road_t)) or _is_under_elevated_span(position):
 					intersection["classification"] = "grade_separated"
 					_grade_separated_intersections.append(intersection)
 				else:
@@ -414,6 +431,18 @@ func _is_under_elevated_span(world_position: Vector2, extra_clearance: float = 0
 	return _distance_to_polyline(world_position, points) <= clearance
 
 
+func _is_on_elevated_source(road_id: String, road_t: float) -> bool:
+	var highway := _elevated_highway()
+	if highway == null or not highway.has_method("get_elevated_corridor_data"):
+		return false
+	var data: Dictionary = highway.call("get_elevated_corridor_data")
+	if String(data.get("source_road_id", "")) != road_id:
+		return false
+	var from_t := float(data.get("from_t", -1.0))
+	var to_t := float(data.get("to_t", -1.0))
+	return from_t >= 0.0 and road_t >= minf(from_t, to_t) and road_t <= maxf(from_t, to_t)
+
+
 func _run_elevated_span_audit(road_graph: Node2D, junctions: Array) -> void:
 	var highway := _elevated_highway()
 	if highway == null:
@@ -426,7 +455,10 @@ func _run_elevated_span_audit(road_graph: Node2D, junctions: Array) -> void:
 		var junction: Dictionary = junctions[index]
 		var world_position := road_graph.to_global(junction.position)
 		if _is_under_elevated_span(world_position):
-			_validation_errors.append("Road junction %s is forbidden under the elevated span" % _junction_id(index, junction))
+			_validation_errors.append("Road junction %s (%s) is forbidden under the elevated span" % [
+				_junction_id(index, junction),
+				", ".join(junction.get("road_ids", [])),
+			])
 
 
 func _run_z_order_audit(road_graph: Node2D, rail_line: Node2D) -> void:
@@ -470,7 +502,10 @@ func _update_level_crossings_from_train() -> void:
 		var crossing_offset := crossing.rail_t * route_length
 		var ahead := fposmod(crossing_offset - progress, route_length) if route_length > 0.0 else INF
 		var behind := fposmod(progress - crossing_offset, route_length) if route_length > 0.0 else INF
-		var lookahead := maxf(train_closing_lookahead, speed * 4.5)
+		# The warning distance is derived from the actual skew/ballast geometry.
+		# It covers arm travel plus the worst-case clearance of a vehicle which
+		# has just committed past the entry gate.
+		var lookahead := maxf(train_closing_lookahead, crossing.required_warning_distance(speed))
 		var occupied_tail := consist_length + 44.0
 		crossing.set_train_approaching(train_active and (ahead <= lookahead or behind <= occupied_tail))
 

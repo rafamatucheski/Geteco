@@ -10,13 +10,14 @@ extends Node2D
 @export var district2_unlocked := false
 @export var draw_standalone_verge := false
 
-const ROAD_HALF_WIDTH := 82.0
-const MEDIAN_HALF_WIDTH := 7.0
+const ROAD_HALF_WIDTH := Bairro1Expansion.ROAD_WIDTH * 0.5
+const MEDIAN_HALF_WIDTH := Bairro1Expansion.GATEWAY_MEDIAN_HALF_WIDTH
 const RAIL_THICKNESS := 7.0
 const ELEVATED_FROM := 8
 const ELEVATED_TO := 29
-const RAILWAY_MIN_Y := 1700.0
-const RAILWAY_MAX_Y := 1850.0
+const DECK_Z_INDEX := 6
+const DECK_ACTOR_Z_INDEX := 7
+const ELEVATED_BODY_MASK := 1 | 2
 
 const ROAD_COLOR := Color("#242d37")
 const ROAD_EDGE := Color("#58626a")
@@ -39,6 +40,11 @@ func _ready() -> void:
 	_left_edge = _offset_polyline(_centerline, -ROAD_HALF_WIDTH)
 	_right_edge = _offset_polyline(_centerline, ROAD_HALF_WIDTH)
 	if Engine.is_editor_hint():
+		# The rail is above ground streets, so the elevated slice needs its own
+		# higher-z preview in the editor as well as at runtime. This keeps the
+		# authored 2D view honest: the track visibly passes under the same deck
+		# whose runtime Area2D controls body ordering.
+		_create_elevated_overlay()
 		queue_redraw()
 		return
 	_create_lane_paths()
@@ -69,15 +75,36 @@ func get_elevated_corridor_data() -> Dictionary:
 	var global_points := PackedVector2Array()
 	for point in local_points:
 		global_points.append(to_global(point))
+	var lane_definitions := Bairro1Expansion.get_gateway_lane_definitions()
 	return {
 		"global_points": global_points,
 		"local_points": local_points,
 		"half_width": ROAD_HALF_WIDTH,
+		"road_width": ROAD_HALF_WIDTH * 2.0,
+		"lane_definitions": lane_definitions,
+		"lane_offsets": Bairro1Expansion.GATEWAY_LANE_OFFSETS.duplicate(),
+		"lane_separator_offsets": Bairro1Expansion.GATEWAY_LANE_SEPARATOR_OFFSETS.duplicate(),
 		"safety_margin": 24.0,
-		"deck_z_index": 6,
-		"vehicle_z_index": 7,
+		"deck_z_index": DECK_Z_INDEX,
+		"vehicle_z_index": DECK_ACTOR_Z_INDEX,
+		"body_collision_mask": ELEVATED_BODY_MASK,
 		"source_road_id": "Bairro1Expansion/gateway_spine",
+		"from_t": _centerline_fraction_at_index(ELEVATED_FROM),
+		"to_t": _centerline_fraction_at_index(ELEVATED_TO),
 	}
+
+
+func _centerline_fraction_at_index(target_index: int) -> float:
+	if _centerline.size() < 2:
+		return 0.0
+	var total := 0.0
+	var at_target := 0.0
+	for index in range(_centerline.size() - 1):
+		var segment_length := _centerline[index].distance_to(_centerline[index + 1])
+		total += segment_length
+		if index < target_index:
+			at_target += segment_length
+	return at_target / total if total > 0.001 else 0.0
 
 
 func _build_centerline() -> PackedVector2Array:
@@ -91,11 +118,14 @@ func _build_centerline() -> PackedVector2Array:
 
 
 func _source_control_points() -> PackedVector2Array:
-	var expansion := get_node_or_null("../Bairro1Expansion")
+	var expansion := get_node_or_null("../Bairro1Expansion") as Node2D
 	if expansion != null:
 		var points = expansion.get("gateway_spine_points")
 		if points is PackedVector2Array and points.size() >= 2:
-			return points
+			var local_points := PackedVector2Array()
+			for point in points as PackedVector2Array:
+				local_points.append(to_local(expansion.to_global(point)))
+			return local_points
 	# Standalone editor fallback still reads the provider's one declaration.
 	# Never repeat the gateway coordinates in this consumer.
 	return Bairro1Expansion.GATEWAY_SPINE.duplicate()
@@ -132,16 +162,21 @@ func _create_lane_paths() -> void:
 	var lanes := Node2D.new()
 	lanes.name = "HighwayLanePaths"
 	add_child(lanes)
-	var offsets := [-59.0, -20.0, 20.0, 59.0]
-	for lane_index in offsets.size():
+	var lane_definitions := Bairro1Expansion.get_gateway_lane_definitions()
+	for lane_index in lane_definitions.size():
+		var definition := lane_definitions[lane_index] as Dictionary
+		var direction := int(definition.get("direction", 1))
 		var lane := Path2D.new()
 		lane.name = "District1HighwayLane_%02d" % (lane_index + 1)
 		lane.add_to_group("district_highway_lane")
 		lane.set_meta("lane_index", lane_index)
-		lane.set_meta("direction", "outbound" if lane_index < 2 else "inbound")
+		lane.set_meta("traffic_lane_id", String(definition.get("lane_id", lane.name)))
+		lane.set_meta("traffic_lane_offset", float(definition.get("offset", 0.0)))
+		lane.set_meta("traffic_direction", direction)
+		lane.set_meta("direction", "outbound" if direction > 0 else "inbound")
 		lane.set_meta("district_connection", "District2Connection")
-		var lane_points := _offset_polyline(_centerline, offsets[lane_index])
-		if lane_index >= 2:
+		var lane_points := _offset_polyline(_centerline, float(definition.get("offset", 0.0)))
+		if direction < 0:
 			lane_points.reverse()
 		var curve := Curve2D.new()
 		for point in lane_points:
@@ -174,7 +209,7 @@ func _create_elevated_overlay() -> void:
 	# the deck for the duration of their crossing.
 	var deck := Node2D.new()
 	deck.name = "ElevatedDeckOverlay"
-	deck.z_index = 6
+	deck.z_index = DECK_Z_INDEX
 	add_child(deck)
 	var left_slice := _slice_points(_left_edge, ELEVATED_FROM, ELEVATED_TO)
 	var right_slice := _slice_points(_right_edge, ELEVATED_FROM, ELEVATED_TO)
@@ -190,14 +225,16 @@ func _create_elevated_overlay() -> void:
 	_make_line(deck, "RightGuardRail", right_slice, GUARD_LIGHT, 4.0)
 	for offset in [-MEDIAN_HALF_WIDTH, MEDIAN_HALF_WIDTH]:
 		_make_line(deck, "Median_%s" % str(offset), _slice_points(_offset_polyline(_centerline, offset), ELEVATED_FROM, ELEVATED_TO), MEDIAN_COLOR, 3.0)
-	for offset in [-41.0, 41.0]:
+	for offset_value in Bairro1Expansion.GATEWAY_LANE_SEPARATOR_OFFSETS:
+		var offset := float(offset_value)
 		var lane_points := _slice_points(_offset_polyline(_centerline, offset), ELEVATED_FROM, ELEVATED_TO)
 		for index in range(0, lane_points.size() - 1, 2):
 			_make_line(deck, "DeckDash_%s_%02d" % [str(offset), index], PackedVector2Array([lane_points[index], lane_points[index + 1]]), LANE_COLOR, 3.0)
 	var detector := Area2D.new()
 	detector.name = "ElevatedDeckBodyOrder"
 	detector.collision_layer = 0
-	detector.collision_mask = 1
+	# Player/legacy bodies use layer 1; canonical TrafficVehicle bodies use 2.
+	detector.collision_mask = ELEVATED_BODY_MASK
 	var detector_shape := CollisionPolygon2D.new()
 	detector_shape.polygon = deck_polygon
 	detector.add_child(detector_shape)
@@ -225,12 +262,16 @@ func _slice_points(points: PackedVector2Array, first: int, last: int) -> PackedV
 
 
 func _on_bridge_body_entered(body: Node2D) -> void:
+	if not body is CharacterBody2D:
+		return
 	if not body.has_meta("district1_pre_bridge_z"):
 		body.set_meta("district1_pre_bridge_z", body.z_index)
-	body.z_index = maxi(body.z_index, 7)
+	body.z_index = maxi(body.z_index, DECK_ACTOR_Z_INDEX)
 
 
 func _on_bridge_body_exited(body: Node2D) -> void:
+	if not body is CharacterBody2D:
+		return
 	if body.has_meta("district1_pre_bridge_z"):
 		body.z_index = int(body.get_meta("district1_pre_bridge_z"))
 		body.remove_meta("district1_pre_bridge_z")
@@ -284,15 +325,27 @@ func _validate_geometry() -> void:
 	var expected_size := (_control_points.size() - 1) * 8 + 1
 	assert(_centerline.size() == expected_size, "Highway curve sampling changed unexpectedly")
 	assert(_centerline[0].distance_to(_control_points[0]) < 1.0, "Highway centerline did not sample its own first control point")
-	assert(_control_points[0].distance_to(Vector2(870, 1260)) < 1.0, "Highway no longer starts where gateway_spine meets Bairro 1")
-	var crosses_railway := false
-	for point in _centerline:
-		if point.y >= RAILWAY_MIN_Y and point.y <= RAILWAY_MAX_Y:
-			crosses_railway = true
-			break
-	assert(crosses_railway, "Viaduct must cross the planned railway band")
+	var expansion := get_node_or_null("../Bairro1Expansion") as Node2D
+	if expansion != null:
+		var source_points: PackedVector2Array = expansion.get("gateway_spine_points")
+		assert(_control_points[0].distance_to(to_local(expansion.to_global(source_points[0]))) < 1.0, "Highway must start on the transformed gateway_spine source")
+	var rail_line := get_node_or_null("../DistrictRailLine")
+	if rail_line != null and rail_line.has_method("get_rail_graph_data"):
+		var rail_data: Dictionary = rail_line.call("get_rail_graph_data")
+		var rail_points_global: PackedVector2Array = rail_data.get("global_points", PackedVector2Array())
+		assert(_polylines_intersect_global(_centerline, rail_points_global), "Highway route must cross the canonical railway geometry")
 	assert(get_node_or_null("District2Connection") != null, "Bairro 2 hand-off marker is required")
 	print("DISTRICT1_HIGHWAY_READY: curved 4-lane viaduct, railway crossing and District2Connection")
+
+
+func _polylines_intersect_global(local_points: PackedVector2Array, global_points: PackedVector2Array) -> bool:
+	for first_index in range(local_points.size() - 1):
+		var first_a := to_global(local_points[first_index])
+		var first_b := to_global(local_points[first_index + 1])
+		for second_index in range(global_points.size() - 1):
+			if Geometry2D.segment_intersects_segment(first_a, first_b, global_points[second_index], global_points[second_index + 1]) != null:
+				return true
+	return false
 
 
 func _draw() -> void:
@@ -331,7 +384,12 @@ func _draw_elevated_shadow() -> void:
 func _draw_road_ribbon() -> void:
 	draw_colored_polygon(_ribbon_polygon(_left_edge, _right_edge), ROAD_COLOR)
 	draw_polyline(_left_edge, ROAD_EDGE, 8.0, true)
-	draw_polyline(_right_edge, ROAD_EDGE, 8.0, true)
+	var right_curb := PackedVector2Array()
+	for p in _right_edge:
+		if p.y >= 1345.0:
+			right_curb.append(p)
+	if right_curb.size() >= 2:
+		draw_polyline(right_curb, ROAD_EDGE, 8.0, true)
 	# Subtle seams and patched asphalt keep the large surface from looking flat.
 	for index in range(4, _centerline.size() - 2, 5):
 		var tangent := (_centerline[index + 1] - _centerline[index - 1]).normalized()
@@ -349,8 +407,8 @@ func _draw_lane_markings() -> void:
 	for offset in [-MEDIAN_HALF_WIDTH, MEDIAN_HALF_WIDTH]:
 		draw_polyline(_offset_polyline(_centerline, offset), MEDIAN_COLOR, 3.0, true)
 	# Dashed separators create two lanes in each direction.
-	_draw_dashed_curve(_offset_polyline(_centerline, -41.0), LANE_COLOR, 3.0)
-	_draw_dashed_curve(_offset_polyline(_centerline, 41.0), LANE_COLOR, 3.0)
+	for offset_value in Bairro1Expansion.GATEWAY_LANE_SEPARATOR_OFFSETS:
+		_draw_dashed_curve(_offset_polyline(_centerline, float(offset_value)), LANE_COLOR, 3.0)
 
 
 func _draw_dashed_curve(points: PackedVector2Array, color: Color, width: float) -> void:

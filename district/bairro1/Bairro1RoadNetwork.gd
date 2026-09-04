@@ -64,6 +64,10 @@ var _roads: Dictionary = {}
 func _ready() -> void:
 	name = "Bairro1RoadNetwork"
 	z_index = 1
+	# Marker handles are authoritative in composed scenes. Synchronize before
+	# any spline is baked so editor preview and runtime cannot diverge because
+	# of an older instance-level exported-array override.
+	_sync_road_points_from_markers()
 	_build_roads()
 	if Engine.is_editor_hint():
 		_ensure_editor_road_points()
@@ -142,25 +146,55 @@ func _ensure_editor_road_points() -> void:
 func _process(_delta: float) -> void:
 	if not Engine.is_editor_hint():
 		return
-	var controls := get_node_or_null("RoadControlPoints") as Node2D
-	if controls == null:
-		return
-	var changed := false
-	for marker in controls.get_children():
-		if marker is Marker2D:
-			changed = _apply_editor_point(marker as Marker2D) or changed
+	var changed := _sync_road_points_from_markers()
 	if changed:
 		_build_roads()
 		queue_redraw()
 
-func _apply_editor_point(marker: Marker2D) -> bool:
-	var road_id := String(marker.get_meta("road_id", ""))
-	var point_index := int(marker.get_meta("point_index", -1))
-	var points := _get_edit_points(road_id)
-	if point_index < 0 or point_index >= points.size() or points[point_index].is_equal_approx(marker.position):
+func _sync_road_points_from_markers() -> bool:
+	var controls := get_node_or_null("RoadControlPoints") as Node2D
+	if controls == null:
 		return false
-	points[point_index] = marker.position
-	_set_edit_points(road_id, points)
+	var road_ids := ["coastal_exit", "port_service", "southern_ring", "waterfront_service"]
+	var marker_sets := {}
+	for road_id in road_ids:
+		marker_sets[road_id] = {}
+	for child in controls.get_children():
+		if not child is Marker2D:
+			continue
+		var marker := child as Marker2D
+		var road_id := String(marker.get_meta("road_id", ""))
+		var point_index := int(marker.get_meta("point_index", -1))
+		if not marker_sets.has(road_id) or point_index < 0:
+			continue
+		(marker_sets[road_id] as Dictionary)[point_index] = marker.position
+	for road_id in road_ids:
+		var indexed_points := marker_sets[road_id] as Dictionary
+		if indexed_points.is_empty():
+			return false
+		var highest_index := -1
+		for point_index in indexed_points:
+			highest_index = maxi(highest_index, int(point_index))
+		if indexed_points.size() != highest_index + 1:
+			return false
+
+	var changed := false
+	for road_id in road_ids:
+		var indexed_points := marker_sets[road_id] as Dictionary
+		var marker_points := PackedVector2Array()
+		for point_index in range(indexed_points.size()):
+			marker_points.append(indexed_points[point_index])
+		if not _road_point_arrays_equal(_get_edit_points(road_id), marker_points):
+			_set_edit_points(road_id, marker_points)
+			changed = true
+	return changed
+
+func _road_point_arrays_equal(first: PackedVector2Array, second: PackedVector2Array) -> bool:
+	if first.size() != second.size():
+		return false
+	for index in range(first.size()):
+		if not first[index].is_equal_approx(second[index]):
+			return false
 	return true
 
 func _get_edit_points(road_id: String) -> PackedVector2Array:
@@ -186,12 +220,13 @@ func _two_way_lane_definitions(road_width: float) -> Array[Dictionary]:
 	]
 
 func get_road_graph_definitions() -> Array[Dictionary]:
+	_sync_road_points_from_markers()
 	var arterial_lanes := _two_way_lane_definitions(arterial_width)
 	var service_lanes := _two_way_lane_definitions(service_road_width)
 	return [
-		{"id": "coastal_exit", "points": coastal_exit_points, "width": arterial_width, "lanes": arterial_lanes, "snap_start": "Bairro1Expansion/east_arc", "open_end": true},
-		{"id": "port_service", "points": port_service_points, "width": service_road_width, "lanes": service_lanes, "snap_start": "Bairro1Expansion/east_arc", "snap_start_mode": "perpendicular", "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_mode": "perpendicular"},
-		{"id": "southern_ring", "points": southern_ring_points, "width": arterial_width, "lanes": arterial_lanes, "snap_start": "Bairro1Expansion/east_arc", "snap_end": "Bairro1Expansion/gateway_spine", "snap_end_mode": "tangent"},
+		{"id": "coastal_exit", "points": coastal_exit_points, "width": arterial_width, "lanes": arterial_lanes, "snap_start": "Bairro1Expansion/east_arc", "snap_start_t": 1.0, "open_end": true},
+		{"id": "port_service", "points": port_service_points, "width": service_road_width, "lanes": service_lanes, "snap_start": "Bairro1Expansion/east_link", "snap_start_mode": "perpendicular", "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_mode": "perpendicular"},
+		{"id": "southern_ring", "points": southern_ring_points, "width": arterial_width, "lanes": arterial_lanes, "snap_start": "Bairro1Expansion/east_link", "snap_start_t": 1.0, "snap_start_mode": "perpendicular", "snap_end": "Bairro1Expansion/gateway_spine", "snap_end_t": 1.0, "snap_end_mode": "tangent"},
 		{"id": "waterfront_service", "points": waterfront_service_points, "width": service_road_width, "lanes": service_lanes, "snap_start": "Bairro1RoadNetwork/port_service", "snap_start_mode": "perpendicular", "snap_end": "Bairro1RoadNetwork/coastal_exit", "snap_end_mode": "perpendicular"},
 	]
 

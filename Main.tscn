@@ -3,12 +3,12 @@
 [ext_resource type="Script" uid="uid://1pa03m6mvfin" path="res://city_demo/scripts/CityDemo.gd" id="1_city_demo"]
 [ext_resource type="Script" uid="uid://rxuqmeq3t2af" path="res://PlayerCar.gd" id="2_player_car"]
 [ext_resource type="Script" uid="uid://b0ahvvhi4q6kx" path="res://Player.gd" id="3_player"]
-[ext_resource type="PackedScene" path="res://CentralDistrict.tscn" id="4_central"]
-[ext_resource type="Script" path="res://DynamicCamera.gd" id="5_dynamic_camera"]
+[ext_resource type="PackedScene" uid="uid://cdlmy2bs56263" path="res://CentralDistrict.tscn" id="4_central"]
+[ext_resource type="Script" uid="uid://bvua2m3wet8ep" path="res://DynamicCamera.gd" id="5_dynamic_camera"]
 [ext_resource type="PackedScene" path="res://DistrictInteriorManager.tscn" id="6_interiors"]
 [ext_resource type="PackedScene" path="res://district/coast/CoastalExtension.tscn" id="7_coast"]
 [ext_resource type="PackedScene" path="res://district/EmergencyDepots.tscn" id="8_depots"]
-[ext_resource type="PackedScene" path="res://district/borough_one/DistrictOneComplete.tscn" id="9_borough_one"]
+[ext_resource type="PackedScene" uid="uid://5b5dd3r5q7c8" path="res://district/borough_one/DistrictOneComplete.tscn" id="9_borough_one"]
 [ext_resource type="PackedScene" path="res://DistrictRestrictionFeedback.tscn" id="10_restriction_feedback"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_car"]
@@ -27,25 +27,23 @@ y_sort_enabled = true
 [node name="CityDemo" type="Node2D" parent="." unique_id=1498712971]
 script = ExtResource("1_city_demo")
 
-[node name="CentralDistrict" parent="." instance=ExtResource("4_central")]
+[node name="CentralDistrict" parent="." unique_id=445933161 instance=ExtResource("4_central")]
 
-[node name="EmergencyDepots" parent="." instance=ExtResource("8_depots")]
+[node name="EmergencyDepots" parent="." unique_id=1655812528 instance=ExtResource("8_depots")]
 
-[node name="DistrictInteriors" parent="." instance=ExtResource("6_interiors")]
-ammu_nation_entrance_position = Vector2(419, 334)
-common_garage_entrance_position = Vector2(268, 1028)
-clothing_store_entrance_position = Vector2(227, 334)
+[node name="DistrictInteriors" parent="." unique_id=459859987 instance=ExtResource("6_interiors")]
 
-[node name="CoastalExtension" parent="." instance=ExtResource("7_coast")]
+[node name="CoastalExtension" parent="." unique_id=1265622661 instance=ExtResource("7_coast")]
 position = Vector2(1800, 0)
 
-[node name="DistrictOneComplete" parent="." instance=ExtResource("9_borough_one")]
+[node name="DistrictOneComplete" parent="." unique_id=2034851045 instance=ExtResource("9_borough_one")]
+position = Vector2(-143, 78)
 
-[node name="DistrictRestrictionFeedback" parent="." instance=ExtResource("10_restriction_feedback")]
+[node name="DistrictRestrictionFeedback" parent="." unique_id=1813174009 instance=ExtResource("10_restriction_feedback")]
 
 [node name="PlayerCar" type="CharacterBody2D" parent="." unique_id=90977281]
 position = Vector2(1340, 420)
-collision_mask = 7
+collision_mask = 23
 script = ExtResource("2_player_car")
 
 [node name="Collision" type="CollisionShape2D" parent="PlayerCar" unique_id=1715219874]
@@ -57,7 +55,6 @@ position_smoothing_enabled = true
 position_smoothing_speed = 9.0
 script = ExtResource("5_dynamic_camera")
 zoom_close = 1.55
-zoom_far = 1.22
 max_speed = 520.0
 
 [node name="InteractArea" type="Area2D" parent="PlayerCar" unique_id=245354612]
@@ -79,7 +76,6 @@ zoom = Vector2(1.7, 1.7)
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 script = ExtResource("5_dynamic_camera")
-zoom_close = 1.8
 zoom_far = 1.7
 max_speed = 180.0
 lead_distance = 16.0

@@ -19,6 +19,26 @@ const GENERATED_LANES_NODE := "GeneratedLanePaths"
 const GENERATED_CONNECTIONS_NODE := "GeneratedLaneConnections"
 const TRAFFIC_DIRECTION_FORWARD := 1
 const TRAFFIC_DIRECTION_REVERSE := -1
+## Junction material is restricted to the already discovered conflict core.
+## This small padding hides butt-cap precision seams without letting a shallow
+## approach project asphalt hundreds of pixels into lots or sidewalks.
+const JUNCTION_CORE_PADDING := 8.0
+const JUNCTION_CORE_EDGE_CLEARANCE := 2.0
+const JUNCTION_ARM_MERGE_COSINE := 0.99862953475 # cos(3 degrees)
+const JUNCTION_SURFACE_EPSILON := 0.05
+const GENERATED_GUARD_RAILS_NODE := "GeneratedGuardRails"
+const GUARD_RAIL_THICKNESS := 10.0
+## How close a rail segment may sit to a junction center before it is skipped,
+## so intersections/merges never get sealed off by their own shoulder wall.
+const GUARD_RAIL_JUNCTION_CLEARANCE := 26.0
+## Same dark-GTA vocabulary as the rest of the district: a flat base tone plus
+## small vector tufts, never a raster texture, so it can never render at the
+## wrong scale the way a photo tile did.
+const GROUND_COLOR := Color("#2c3a28")
+const GRASS_TUFT_LIGHT := Color("#4c6a3f")
+const GRASS_TUFT_DARK := Color("#37502f")
+const GRASS_TUFT_SPACING := 46.0
+const GRASS_BOUNDS_MARGIN := 260.0
 
 @export var provider_paths: Array[NodePath] = [
 	NodePath("../Bairro1Expansion"),
@@ -32,16 +52,41 @@ const TRAFFIC_DIRECTION_REVERSE := -1
 	set(value):
 		curve_subdivisions = value
 		_rebuild_graph()
+## Optional explicit exceptions keyed by canonical junction id
+## (`junction_003_1200_900`) or quantized position (`1200,900`). The default
+## is systemic: only junctions with at least three incoming approaches receive
+## traffic lights. Conflict reservations still exist for every junction.
+@export var signalized_junction_overrides: Dictionary = {}:
+	set(value):
+		signalized_junction_overrides = value.duplicate(true)
+		_rebuild_graph()
 @export var show_junction_debug: bool = false:
 	set(value):
 		show_junction_debug = value
 		queue_redraw()
+## Off by default until you have driven every parking lot, garage and
+## district-connection entrance along this network at least once. These are
+## generated StaticBody2D walls at the outer edge of each road's sidewalk
+## (skipped near junctions and near any road end marked open_start/open_end),
+## meant to stop vehicles from leaving the paved network into the surrounding
+## grass. They CAN accidentally seal off an entrance this graph does not know
+## about (e.g. a driveway that is not itself one of the authored roads) --
+## test thoroughly after enabling and widen GUARD_RAIL_JUNCTION_CLEARANCE or
+## mark the road open_start/open_end if something gets blocked.
+@export var build_guard_rails: bool = false:
+	set(value):
+		build_guard_rails = value
+		_rebuild_graph()
 
 var _roads: Array[Dictionary] = []
 var _junctions: Array[Dictionary] = []
 var _lane_connections: Array[Dictionary] = []
+var _junction_exclusion_ranges: Array[Dictionary] = []
+var _grade_separated_crossings: Array[Dictionary] = []
+var _surface_topology_audit: Array[Dictionary] = []
 var _validation_errors: Array[String] = []
 var _source_signature := ""
+var _grass_bounds := Rect2()
 
 
 func _ready() -> void:
@@ -57,9 +102,11 @@ func _process(_delta: float) -> void:
 
 
 func _make_source_signature() -> String:
-	var values: Array = [snap_distance, curve_subdivisions]
+	var values: Array = [snap_distance, curve_subdivisions, signalized_junction_overrides]
 	for provider in _get_provider_nodes():
 		values.append([provider.get_path(), provider.call("get_road_graph_definitions")])
+	for corridor_source in _get_elevated_corridor_sources():
+		values.append([corridor_source.get_path(), corridor_source.call("get_elevated_corridor_data")])
 	return str(values)
 
 
@@ -69,14 +116,20 @@ func _rebuild_graph() -> void:
 	_roads.clear()
 	_junctions.clear()
 	_lane_connections.clear()
+	_junction_exclusion_ranges.clear()
+	_grade_separated_crossings.clear()
+	_surface_topology_audit.clear()
 	_validation_errors.clear()
 	_collect_roads()
 	_snap_endpoints_to_network()
 	_bake_all_curves()
+	_update_grass_bounds()
+	_build_junction_exclusion_ranges()
 	_build_lane_paths()
 	_discover_all_junctions()
 	_build_junction_connections()
 	_build_lane_connections()
+	_build_guard_rails()
 	_validate_graph()
 	_source_signature = _make_source_signature()
 	queue_redraw()
@@ -110,6 +163,8 @@ func _collect_roads() -> void:
 				"open_end": bool(definition.get("open_end", false)),
 				"snap_start": String(definition.get("snap_start", "")),
 				"snap_end": String(definition.get("snap_end", "")),
+				"snap_start_t": float(definition.get("snap_start_t", -1.0)),
+				"snap_end_t": float(definition.get("snap_end_t", -1.0)),
 				"snap_start_mode": String(definition.get("snap_start_mode", "auto")),
 				"snap_end_mode": String(definition.get("snap_end_mode", "auto")),
 			})
@@ -152,6 +207,19 @@ func _get_provider_nodes() -> Array[Node2D]:
 				providers.append(candidate as Node2D)
 				known[candidate.get_instance_id()] = true
 	return providers
+
+
+func _get_elevated_corridor_sources() -> Array[Node2D]:
+	var result: Array[Node2D] = []
+	var composition_root := get_parent()
+	if composition_root == null:
+		return result
+	var candidates: Array[Node] = [composition_root]
+	candidates.append_array(composition_root.find_children("*", "Node2D", true, false))
+	for candidate in candidates:
+		if candidate is Node2D and candidate.has_method("get_elevated_corridor_data"):
+			result.append(candidate as Node2D)
+	return result
 
 
 func _snap_endpoints_to_network() -> void:
@@ -204,8 +272,8 @@ func _snap_endpoints_to_network() -> void:
 		if control.size() < 2:
 			continue
 		for endpoint_data in [
-			{"index": 0, "target": String(_roads[road_index].snap_start), "mode": String(_roads[road_index].snap_start_mode)},
-			{"index": control.size() - 1, "target": String(_roads[road_index].snap_end), "mode": String(_roads[road_index].snap_end_mode)},
+			{"index": 0, "target": String(_roads[road_index].snap_start), "target_t": float(_roads[road_index].snap_start_t), "mode": String(_roads[road_index].snap_start_mode)},
+			{"index": control.size() - 1, "target": String(_roads[road_index].snap_end), "target_t": float(_roads[road_index].snap_end_t), "mode": String(_roads[road_index].snap_end_mode)},
 		]:
 			var target_id := String(endpoint_data.target)
 			if target_id.is_empty():
@@ -216,7 +284,10 @@ func _snap_endpoints_to_network() -> void:
 				continue
 			var target_curve := _catmull_rom(_roads[target_index].control, curve_subdivisions)
 			var endpoint_index := int(endpoint_data.index)
-			var target_info := _closest_point_and_tangent(control[endpoint_index], target_curve)
+			var target_t := float(endpoint_data.target_t)
+			var target_info := _point_and_tangent_at_progress(target_curve, target_t) \
+				if target_t >= 0.0 and target_t <= 1.0 \
+				else _closest_point_and_tangent(control[endpoint_index], target_curve)
 			control[endpoint_index] = target_info.position
 			_align_endpoint_approach(control, endpoint_index, target_info.tangent, String(endpoint_data.mode))
 		_roads[road_index].control = control
@@ -226,6 +297,180 @@ func _bake_all_curves() -> void:
 	for road_index in range(_roads.size()):
 		var control: PackedVector2Array = _roads[road_index].control
 		_roads[road_index].points = _catmull_rom(control, curve_subdivisions)
+
+
+func _update_grass_bounds() -> void:
+	# Bounding box of every road, padded out. Whatever the sidewalk and
+	# asphalt polygons do not paint over -- roadside verges and the pockets
+	# between separate loops of a curvy road -- reads as ground instead of an
+	# empty void, without needing real polygon-subtraction of the gaps.
+	var bounds := Rect2()
+	var has_point := false
+	for road in _roads:
+		for point in (road.points as PackedVector2Array):
+			if not has_point:
+				bounds = Rect2(point, Vector2.ZERO)
+				has_point = true
+			else:
+				bounds = bounds.expand(point)
+	_grass_bounds = bounds.grow(GRASS_BOUNDS_MARGIN) if has_point else Rect2()
+
+
+func _draw_grass_ground() -> void:
+	if _grass_bounds.size.x <= 0.0 or _grass_bounds.size.y <= 0.0:
+		return
+	draw_rect(_grass_bounds, GROUND_COLOR)
+	var spacing := GRASS_TUFT_SPACING
+	var cols := int(_grass_bounds.size.x / spacing) + 1
+	var rows := int(_grass_bounds.size.y / spacing) + 1
+	for row in rows:
+		for col in cols:
+			var cell := Vector2i(col, row)
+			if _tuft_hash(cell, 91.7) < 0.42:
+				continue
+			var jitter := Vector2(
+				(_tuft_hash(cell, 12.9) - 0.5) * spacing * 0.8,
+				(_tuft_hash(cell, 78.2) - 0.5) * spacing * 0.8
+			)
+			var base := _grass_bounds.position + Vector2(float(col), float(row)) * spacing + jitter
+			var tone := GRASS_TUFT_LIGHT if _tuft_hash(cell, 33.3) > 0.5 else GRASS_TUFT_DARK
+			var blade_count := 2 + int(_tuft_hash(cell, 55.1) * 2.0)
+			for blade in blade_count:
+				var angle := (_tuft_hash(cell, 4.0 + float(blade)) - 0.5) * 1.1
+				var blade_length := 6.0 + _tuft_hash(cell, 61.0 + float(blade)) * 5.0
+				var tip := base + Vector2(sin(angle), -cos(angle)) * blade_length
+				draw_line(base, tip, tone, 1.6)
+
+
+func _tuft_hash(cell: Vector2i, seed_offset: float) -> float:
+	# Deterministic per-cell pseudo-random value: same cell always yields the
+	# same tuft, so the field does not reshuffle itself on every queue_redraw.
+	var n := float(cell.x) * 127.1 + float(cell.y) * 311.7 + seed_offset * 78.233
+	return fposmod(sin(n) * 43758.5453, 1.0)
+
+
+func _build_guard_rails() -> void:
+	var container := get_node_or_null(GENERATED_GUARD_RAILS_NODE) as Node2D
+	if container == null:
+		container = Node2D.new()
+		container.name = GENERATED_GUARD_RAILS_NODE
+		add_child(container)
+	for child in container.get_children():
+		container.remove_child(child)
+		child.free()
+	if not build_guard_rails:
+		return
+	for road_index in range(_roads.size()):
+		var road: Dictionary = _roads[road_index]
+		if not bool(road.render):
+			continue
+		var half_width := float(road.width) * 0.5 + SIDEWALK_MARGIN
+		for side in [-1.0, 1.0]:
+			var edge := _offset_polyline_by_normal(road.points, half_width * side)
+			_add_guard_rail_segments(container, edge, road_index, side)
+
+
+func _offset_polyline_by_normal(source: PackedVector2Array, offset: float) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	for index in source.size():
+		var previous := source[maxi(0, index - 1)]
+		var following := source[mini(source.size() - 1, index + 1)]
+		var tangent := (following - previous).normalized()
+		if tangent.is_zero_approx():
+			tangent = Vector2.RIGHT
+		var normal := Vector2(-tangent.y, tangent.x)
+		result.append(source[index] + normal * offset)
+	return result
+
+
+func _add_guard_rail_segments(container: Node2D, edge: PackedVector2Array, road_index: int, side: float) -> void:
+	if edge.size() < 2:
+		return
+	var open_start := bool(_roads[road_index].open_start)
+	var open_end := bool(_roads[road_index].open_end)
+	var last_index := edge.size() - 2
+	for index in range(edge.size() - 1):
+		if index == 0 and open_start:
+			continue
+		if index == last_index and open_end:
+			continue
+		var a := edge[index]
+		var b := edge[index + 1]
+		if _near_junction((a + b) * 0.5):
+			continue
+		_add_segment_blocker(
+			container,
+			a,
+			b,
+			GUARD_RAIL_THICKNESS,
+			"GuardRail_%02d_%s_%03d" % [road_index, ("R" if side > 0.0 else "L"), index]
+		)
+
+
+func _near_junction(point: Vector2) -> bool:
+	for junction_value in _junctions:
+		var junction := junction_value as Dictionary
+		if point.distance_to(junction.position as Vector2) <= float(junction.radius) + GUARD_RAIL_JUNCTION_CLEARANCE:
+			return true
+	return false
+
+
+func _add_segment_blocker(parent: Node, from: Vector2, to: Vector2, thickness: float, blocker_name: String) -> void:
+	var segment := to - from
+	if segment.length() < 0.5:
+		return
+	var body := StaticBody2D.new()
+	body.name = blocker_name
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.position = (from + to) * 0.5
+	body.rotation = segment.angle()
+	var collision := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(segment.length() + 3.0, thickness)
+	collision.shape = shape
+	body.add_child(collision)
+	parent.add_child(body)
+
+
+func _build_junction_exclusion_ranges() -> void:
+	for road_index in range(_roads.size()):
+		_roads[road_index].junction_exclusion_ranges = []
+	for corridor_source in _get_elevated_corridor_sources():
+		var data := corridor_source.call("get_elevated_corridor_data") as Dictionary
+		var road_id := String(data.get("source_road_id", ""))
+		var road_index := _find_road_index(road_id)
+		if road_index < 0:
+			_validation_errors.append("Elevated corridor references unknown road: %s" % road_id)
+			continue
+		var local_points := PackedVector2Array()
+		for global_point in data.get("global_points", PackedVector2Array()):
+			local_points.append(to_local(global_point))
+		if local_points.size() < 2:
+			_validation_errors.append("Elevated corridor for %s has insufficient geometry" % road_id)
+			continue
+		var from_t := clampf(float(data.get("from_t", 0.0)), 0.0, 1.0)
+		var to_t := clampf(float(data.get("to_t", 1.0)), 0.0, 1.0)
+		if from_t > to_t:
+			var swap := from_t
+			from_t = to_t
+			to_t = swap
+		var exclusion := {
+			"id": "elevated_%s_%s" % [String(corridor_source.name).to_snake_case(), road_id.replace("/", "_")],
+			"road_index": road_index,
+			"road_id": road_id,
+			"from_t": from_t,
+			"to_t": to_t,
+			"points": local_points,
+			"half_width": float(data.get("half_width", float(_roads[road_index].width) * 0.5)),
+			"safety_margin": float(data.get("safety_margin", 0.0)),
+			"classification": "grade_separated",
+			"source_path": get_path_to(corridor_source),
+		}
+		_junction_exclusion_ranges.append(exclusion)
+		var road_ranges: Array = _roads[road_index].junction_exclusion_ranges
+		road_ranges.append(exclusion)
+		_roads[road_index].junction_exclusion_ranges = road_ranges
 
 
 func _build_lane_paths() -> void:
@@ -327,6 +572,37 @@ func _offset_lane_centerline(points: PackedVector2Array, amount: float) -> Packe
 	return shifted
 
 
+func _junction_exclusion_at(position: Vector2, first_road: int, second_road: int) -> Dictionary:
+	for exclusion_value in _junction_exclusion_ranges:
+		var exclusion := exclusion_value as Dictionary
+		var protected_road := int(exclusion.road_index)
+		if protected_road != first_road and protected_road != second_road:
+			continue
+		var location := _closest_location_on_polyline(position, _roads[protected_road].points)
+		var progress := float(location.progress)
+		if progress < float(exclusion.from_t) - 0.005 or progress > float(exclusion.to_t) + 0.005:
+			continue
+		var footprint := float(exclusion.half_width) + float(exclusion.safety_margin)
+		if _distance_to_polyline(position, exclusion.points) <= footprint:
+			return exclusion
+	return {}
+
+
+func _record_grade_separated_crossing(position: Vector2, first_road: int, second_road: int, exclusion: Dictionary) -> void:
+	var ordered_roads: Array[int] = [mini(first_road, second_road), maxi(first_road, second_road)]
+	for crossing in _grade_separated_crossings:
+		if crossing.roads == ordered_roads and (crossing.position as Vector2).distance_to(position) <= 10.0:
+			return
+	_grade_separated_crossings.append({
+		"id": "grade_separated_%03d" % _grade_separated_crossings.size(),
+		"position": position,
+		"roads": ordered_roads,
+		"road_ids": [String(_roads[ordered_roads[0]].id), String(_roads[ordered_roads[1]].id)],
+		"exclusion_id": String(exclusion.id),
+		"classification": "grade_separated",
+	})
+
+
 func _discover_all_junctions() -> void:
 	# Discover exact endpoint connections and every at-grade spline crossing.
 	for first_index in range(_roads.size()):
@@ -340,7 +616,12 @@ func _discover_all_junctions() -> void:
 						second_points[second_segment], second_points[second_segment + 1]
 					)
 					if hit != null:
-						_add_junction(hit as Vector2, first_index, second_index)
+						var position := hit as Vector2
+						var exclusion := _junction_exclusion_at(position, first_index, second_index)
+						if exclusion.is_empty():
+							_add_junction(position, first_index, second_index)
+						else:
+							_record_grade_separated_crossing(position, first_index, second_index, exclusion)
 	# Collinear/T connections can touch without producing a stable crossing hit.
 	for road_index in range(_roads.size()):
 		var points: PackedVector2Array = _roads[road_index].points
@@ -349,7 +630,11 @@ func _discover_all_junctions() -> void:
 				if other_index == road_index:
 					continue
 				if _distance_to_polyline(endpoint, _roads[other_index].points) <= 0.75:
-					_add_junction(endpoint, road_index, other_index)
+					var exclusion := _junction_exclusion_at(endpoint, road_index, other_index)
+					if exclusion.is_empty():
+						_add_junction(endpoint, road_index, other_index)
+					else:
+						_record_grade_separated_crossing(endpoint, road_index, other_index, exclusion)
 
 
 func _add_junction(position: Vector2, first_road: int, second_road: int) -> void:
@@ -404,6 +689,7 @@ func _build_junction_connections() -> void:
 					"junction_index": junction_index,
 					"road_index": road_index,
 					"road_id": road_id,
+					"road_width": float(road.width),
 					"direction": direction,
 					"direction_name": "forward" if direction > 0 else "reverse",
 					"lane_ids": lane_ids,
@@ -442,6 +728,9 @@ func _build_junction_connections() -> void:
 		junction.road_ids = road_ids
 		junction.connections = connections
 		junction.approaches = approaches
+		var signalization := _resolve_junction_signalization(junction)
+		junction.signalized = bool(signalization.value)
+		junction.signalization_source = String(signalization.source)
 		_junctions[junction_index] = junction
 
 	for road_index in range(_roads.size()):
@@ -457,6 +746,25 @@ func _build_junction_connections() -> void:
 			var lane := lane_value as Dictionary
 			var path := lane.path as Path2D
 			path.set_meta("traffic_junction_indices", junction_indices)
+
+
+func _resolve_junction_signalization(junction: Dictionary) -> Dictionary:
+	# A geometric continuation has one incoming approach from each joined road
+	# (two total). It still needs exclusive conflict reservation for traffic AI,
+	# but must not manufacture an invisible red phase or roadside signal heads.
+	var default_value := (junction.get("approaches", []) as Array).size() >= 3
+	if junction.has("signalized_override"):
+		return {"value": bool(junction.signalized_override), "source": "junction_override"}
+	var position: Vector2 = junction.get("position", Vector2.ZERO)
+	var keys: Array[String] = [
+		String(junction.get("id", "")),
+		"%d,%d" % [roundi(position.x), roundi(position.y)],
+		str(int(junction.get("index", -1))),
+	]
+	for key in keys:
+		if not key.is_empty() and signalized_junction_overrides.has(key):
+			return {"value": bool(signalized_junction_overrides[key]), "source": "explicit_override"}
+	return {"value": default_value, "source": "approach_count"}
 
 
 func _build_lane_connections() -> void:
@@ -701,6 +1009,11 @@ func _closest_location_on_polyline(point: Vector2, points: PackedVector2Array) -
 func _draw() -> void:
 	if _roads.is_empty():
 		return
+	# Ground layer first: flat color plus small vector tufts fill the whole
+	# network's bounding box, then every paved layer below is painted on top
+	# in the same order as before. Anything the paved passes do not cover
+	# keeps reading as grass -- at the correct, resolution-independent scale.
+	_draw_grass_ground()
 	# Material passes are global. Sidewalks can never be painted over finished
 	# asphalt because all outer layers are completed before any inner layer.
 	_draw_road_pass(SIDEWALK_COLOR, SIDEWALK_MARGIN * 2.0)
@@ -728,6 +1041,168 @@ func _draw_road_pass(color: Color, extra_width: float) -> void:
 				var polygon := surface as PackedVector2Array
 				if polygon.size() >= 3 and not Geometry2D.is_polygon_clockwise(polygon):
 					draw_colored_polygon(polygon, color)
+	# Every material layer receives the same topological junction envelope.
+	# Drawing this after all independent ribbons removes their butt-cap seams;
+	# the progressively narrower passes then cover the inner sidewalk/curb
+	# wedges without changing the authored centerlines or traffic graph.
+	for junction in _junctions:
+		var geometry := _build_junction_surface_geometry(junction, extra_width)
+		var patch := geometry.polygon as PackedVector2Array
+		if patch.size() >= 3 and not Geometry2D.triangulate_polygon(patch).is_empty():
+			draw_colored_polygon(patch, color)
+
+
+func _build_junction_surface_geometry(junction: Dictionary, extra_width: float) -> Dictionary:
+	var arms := _junction_surface_arms(junction, extra_width)
+	if arms.size() < 2:
+		return {
+			"polygon": PackedVector2Array(),
+			"arms": arms,
+			"extent_limit": 0.0,
+			"beveled_sector_count": 0,
+			"component_count": 0,
+			"construction": "suppressed",
+		}
+
+	var center := junction.position as Vector2
+	var largest_outer_half := 0.0
+	for arm_value in arms:
+		largest_outer_half = maxf(largest_outer_half, float((arm_value as Dictionary).outer_half_width))
+	var junction_core_limit := maxf(
+		float(junction.radius) + JUNCTION_CORE_PADDING,
+		largest_outer_half + JUNCTION_CORE_EDGE_CLEARANCE
+	)
+	var extent_limit := 0.0
+	for arm_index in range(arms.size()):
+		var arm := arms[arm_index] as Dictionary
+		var is_hidden_arm: bool = (arm.rendered_road_indices as Array).is_empty()
+		var half_width := minf(float(arm.half_width), junction_core_limit)
+		var radial_cutback_limit := sqrt(maxf(
+			0.0,
+			junction_core_limit * junction_core_limit - half_width * half_width
+		))
+		# Both cap corners lie exactly on (or inside) the bounded core envelope.
+		# The per-layer half-width also caps longitudinal reach, keeping asphalt
+		# naturally smaller than the sidewalk while the ribbons cover each arm.
+		arm.cutback = 0.0 if is_hidden_arm else minf(half_width + JUNCTION_CORE_PADDING, radial_cutback_limit)
+		extent_limit = maxf(
+			extent_limit,
+			sqrt(float(arm.cutback) * float(arm.cutback) + half_width * half_width)
+		)
+		arms[arm_index] = arm
+
+	# The hull uses only the two nearby cut corners of each physical arm plus
+	# the node itself. It is the smallest deterministic one-piece bevel for the
+	# core and, unlike the previous offset-line intersection, cannot escape the
+	# junction envelope at shallow angles.
+	var polygon := _junction_cap_convex_hull(arms, center)
+	return {
+		"polygon": polygon,
+		"arms": arms,
+		"extent_limit": extent_limit,
+		"junction_core_limit": junction_core_limit,
+		"beveled_sector_count": arms.size(),
+		"component_count": 1 if polygon.size() >= 3 else 0,
+		"construction": "local_cap_hull",
+	}
+
+
+func _junction_surface_arms(junction: Dictionary, extra_width: float) -> Array[Dictionary]:
+	var arms: Array[Dictionary] = []
+	var rendered_connection_count := 0
+	for connection_value in junction.connections:
+		var road_index := int((connection_value as Dictionary).road_index)
+		if road_index >= 0 and road_index < _roads.size() and bool(_roads[road_index].render):
+			rendered_connection_count += 1
+	if rendered_connection_count < 1 or (junction.connections as Array).size() < 2:
+		return arms
+	for connection_value in junction.connections:
+		var connection := connection_value as Dictionary
+		var road_index := int(connection.road_index)
+		if road_index < 0 or road_index >= _roads.size():
+			continue
+		var road := _roads[road_index] as Dictionary
+		var road_is_rendered := bool(road.render)
+		var tangent := (connection.forward_tangent as Vector2).normalized()
+		if tangent.is_zero_approx():
+			continue
+		var distance_along := float(connection.distance_along)
+		var total_length := float(connection.total_length)
+		var endpoint_tolerance := minf(12.0, maxf(MIN_POINT_DISTANCE, total_length * 0.002))
+		var directions: Array[Vector2] = []
+		if distance_along <= endpoint_tolerance:
+			directions.append(tangent)
+		elif total_length - distance_along <= endpoint_tolerance:
+			directions.append(-tangent)
+		else:
+			directions.append(tangent)
+			directions.append(-tangent)
+		for direction in directions:
+			var arm_extra: float = extra_width if road_is_rendered else 0.0
+			var half_width := (float(road.width) + arm_extra) * 0.5
+			var outer_half_width := float(road.width) * 0.5 + (SIDEWALK_MARGIN if road_is_rendered else 0.0)
+			var merged_index := -1
+			for existing_index in range(arms.size()):
+				if (arms[existing_index].direction as Vector2).dot(direction) >= JUNCTION_ARM_MERGE_COSINE:
+					merged_index = existing_index
+					break
+			if merged_index < 0:
+				arms.append({
+					"direction": direction,
+					"angle": direction.angle(),
+					"half_width": half_width,
+					"outer_half_width": outer_half_width,
+					"road_indices": [road_index],
+					"rendered_road_indices": [road_index] if road_is_rendered else [],
+					"hidden_road_indices": [] if road_is_rendered else [road_index],
+					"cutback": 0.0,
+				})
+				continue
+			var merged := arms[merged_index] as Dictionary
+			var combined_direction := (merged.direction as Vector2) + direction
+			if not combined_direction.is_zero_approx():
+				merged.direction = combined_direction.normalized()
+				merged.angle = (merged.direction as Vector2).angle()
+			merged.half_width = maxf(float(merged.half_width), half_width)
+			merged.outer_half_width = maxf(float(merged.outer_half_width), outer_half_width)
+			var road_indices := merged.road_indices as Array
+			if not road_indices.has(road_index):
+				road_indices.append(road_index)
+			merged.road_indices = road_indices
+			var visibility_key := "rendered_road_indices" if road_is_rendered else "hidden_road_indices"
+			var visibility_indices := merged[visibility_key] as Array
+			if not visibility_indices.has(road_index):
+				visibility_indices.append(road_index)
+			merged[visibility_key] = visibility_indices
+			arms[merged_index] = merged
+	arms.sort_custom(func(first: Dictionary, second: Dictionary) -> bool:
+		return float(first.angle) < float(second.angle)
+	)
+	return arms
+
+
+func _junction_cap_convex_hull(arms: Array[Dictionary], center: Vector2) -> PackedVector2Array:
+	var cap_points := PackedVector2Array([center])
+	for arm_value in arms:
+		var arm := arm_value as Dictionary
+		var direction := arm.direction as Vector2
+		var normal := Vector2(-direction.y, direction.x)
+		var cap_center := center + direction * float(arm.cutback)
+		cap_points.append(cap_center - normal * float(arm.half_width))
+		cap_points.append(cap_center + normal * float(arm.half_width))
+	var hull := Geometry2D.convex_hull(cap_points)
+	if hull.size() > 1 and hull[0].distance_to(hull[-1]) <= JUNCTION_SURFACE_EPSILON:
+		hull.resize(hull.size() - 1)
+	return _counter_clockwise_polygon(hull)
+
+
+func _counter_clockwise_polygon(points: PackedVector2Array) -> PackedVector2Array:
+	if points.size() < 3 or not Geometry2D.is_polygon_clockwise(points):
+		return points
+	var reversed := PackedVector2Array()
+	for index in range(points.size() - 1, -1, -1):
+		reversed.append(points[index])
+	return reversed
 
 
 func _draw_lane_markings(points: PackedVector2Array) -> void:
@@ -830,6 +1305,25 @@ func _validate_graph() -> void:
 		endpoint_pairs[pair_key] = road_id
 		_validate_endpoint(road_index, 0, bool(road.open_start))
 		_validate_endpoint(road_index, control.size() - 1, bool(road.open_end))
+	var exclusion_ids := {}
+	for exclusion_value in _junction_exclusion_ranges:
+		var exclusion := exclusion_value as Dictionary
+		var exclusion_id := String(exclusion.get("id", ""))
+		if exclusion_id.is_empty() or exclusion_ids.has(exclusion_id):
+			_validation_errors.append("Missing or duplicate junction exclusion id: %s" % exclusion_id)
+		exclusion_ids[exclusion_id] = true
+		var protected_road := int(exclusion.get("road_index", -1))
+		if protected_road < 0 or protected_road >= _roads.size():
+			_validation_errors.append("Junction exclusion %s references an unknown road" % exclusion_id)
+			continue
+		if String(exclusion.get("road_id", "")) != String(_roads[protected_road].id):
+			_validation_errors.append("Junction exclusion %s has inconsistent road ownership" % exclusion_id)
+		var from_t := float(exclusion.get("from_t", -1.0))
+		var to_t := float(exclusion.get("to_t", -1.0))
+		if from_t < 0.0 or to_t > 1.0 or from_t >= to_t:
+			_validation_errors.append("Junction exclusion %s has an invalid road-relative range" % exclusion_id)
+		if (exclusion.get("points", PackedVector2Array()) as PackedVector2Array).size() < 2:
+			_validation_errors.append("Junction exclusion %s has no corridor geometry" % exclusion_id)
 	for junction_index in range(_junctions.size()):
 		var junction: Dictionary = _junctions[junction_index]
 		if (junction.roads as Array).size() < 2:
@@ -838,11 +1332,28 @@ func _validate_graph() -> void:
 			_validation_errors.append("Junction %d has incomplete road connection metadata" % junction_index)
 		if (junction.approaches as Array).is_empty():
 			_validation_errors.append("Junction %d has no directed approaches" % junction_index)
+		if not junction.has("signalized"):
+			_validation_errors.append("Junction %d does not publish signalized classification" % junction_index)
+		for approach_value in junction.approaches:
+			var approach := approach_value as Dictionary
+			if float(approach.get("road_width", 0.0)) <= 0.0:
+				_validation_errors.append("Junction %d approach %s has no road_width" % [junction_index, String(approach.get("approach_id", ""))])
 		if (junction.lane_connections as Array).is_empty():
 			_validation_errors.append("Junction %d has no navigable lane connections" % junction_index)
 		for road_index in junction.roads:
 			if _distance_to_polyline(junction.position, _roads[int(road_index)].points) > 0.75:
 				_validation_errors.append("Junction %d is not on road %s" % [junction_index, _roads[int(road_index)].id])
+		var junction_roads := junction.roads as Array
+		for first_road_offset in range(junction_roads.size()):
+			for second_road_offset in range(first_road_offset + 1, junction_roads.size()):
+				var exclusion := _junction_exclusion_at(
+					junction.position,
+					int(junction_roads[first_road_offset]),
+					int(junction_roads[second_road_offset])
+				)
+				if not exclusion.is_empty():
+					_validation_errors.append("Junction %d exists inside grade-separated corridor %s" % [junction_index, String(exclusion.id)])
+		_audit_junction_surface(junction)
 	if _lane_connections.is_empty():
 		_validation_errors.append("Road graph has no navigable lane connections")
 	var connection_ids := {}
@@ -871,13 +1382,164 @@ func _validate_graph() -> void:
 		push_warning("Unified road graph validation:\n%s" % "\n".join(_validation_errors))
 
 
+func _audit_junction_surface(junction: Dictionary) -> void:
+	var rendered_road_ids: Array[String] = []
+	var hidden_road_ids: Array[String] = []
+	for road_index_value in junction.roads:
+		var road_index := int(road_index_value)
+		if road_index < 0 or road_index >= _roads.size():
+			continue
+		var road_id := String(_roads[road_index].id)
+		if bool(_roads[road_index].render):
+			rendered_road_ids.append(road_id)
+		else:
+			hidden_road_ids.append(road_id)
+
+	var layers := [
+		{"id": "sidewalk", "extra_width": SIDEWALK_MARGIN * 2.0},
+		{"id": "curb", "extra_width": 10.0},
+		{"id": "road_edge", "extra_width": 4.0},
+		{"id": "asphalt", "extra_width": 0.0},
+	]
+	var layer_audit := {}
+	var reference_geometry := _build_junction_surface_geometry(junction, 0.0)
+	var physical_arm_count := (reference_geometry.arms as Array).size()
+	var patch_required := physical_arm_count >= 2
+	for layer_value in layers:
+		var layer := layer_value as Dictionary
+		var geometry := _build_junction_surface_geometry(junction, float(layer.extra_width))
+		var polygon := geometry.polygon as PackedVector2Array
+		var layer_id := String(layer.id)
+		var layer_errors: Array[String] = []
+		if patch_required and polygon.size() < 3:
+			layer_errors.append("missing polygon")
+		elif not patch_required and not polygon.is_empty():
+			layer_errors.append("orphan polygon")
+		if patch_required and int(geometry.component_count) != 1:
+			layer_errors.append("surface has %d components" % int(geometry.component_count))
+		if polygon.size() >= 3:
+			if Geometry2D.is_polygon_clockwise(polygon):
+				layer_errors.append("clockwise winding")
+			if not _surface_polygon_is_simple(polygon):
+				layer_errors.append("self intersection")
+			if Geometry2D.triangulate_polygon(polygon).is_empty():
+				layer_errors.append("not triangulable")
+			if absf(_surface_polygon_area(polygon)) <= 1.0:
+				layer_errors.append("zero area")
+			var maximum_extent := 0.0
+			for point in polygon:
+				maximum_extent = maxf(maximum_extent, (point as Vector2).distance_to(junction.position))
+			if maximum_extent > float(geometry.extent_limit) + 0.5:
+				layer_errors.append("miter envelope exceeded")
+
+		var overlap_road_ids: Array[String] = []
+		if polygon.size() >= 3 and layer_errors.is_empty():
+			for road_index_value in junction.roads:
+				var road_index := int(road_index_value)
+				if road_index < 0 or road_index >= _roads.size() or not bool(_roads[road_index].render):
+					continue
+				if _junction_patch_overlap_area(polygon, _roads[road_index], float(layer.extra_width)) > 1.0:
+					overlap_road_ids.append(String(_roads[road_index].id))
+				else:
+					layer_errors.append("does not overlap %s" % String(_roads[road_index].id))
+		for layer_error in layer_errors:
+			_validation_errors.append(
+				"Junction surface %s/%s: %s" % [String(junction.id), layer_id, layer_error]
+			)
+		layer_audit[layer_id] = {
+			"point_count": polygon.size(),
+			"area": absf(_surface_polygon_area(polygon)),
+			"triangle_count": Geometry2D.triangulate_polygon(polygon).size() / 3 if polygon.size() >= 3 else 0,
+			"component_count": int(geometry.component_count),
+			"beveled_sector_count": int(geometry.beveled_sector_count),
+			"construction": String(geometry.construction),
+			"maximum_extent": _surface_polygon_maximum_extent(polygon, junction.position),
+			"extent_limit": float(geometry.extent_limit),
+			"overlap_road_ids": overlap_road_ids,
+			"errors": layer_errors,
+		}
+
+	_surface_topology_audit.append({
+		"junction_id": String(junction.id),
+		"position": junction.position,
+		"road_ids": (junction.road_ids as Array).duplicate(),
+		"rendered_road_ids": rendered_road_ids,
+		"hidden_road_ids": hidden_road_ids,
+		"physical_arm_count": physical_arm_count,
+		"patch_required": patch_required,
+		"layers": layer_audit,
+	})
+
+
+func _junction_patch_overlap_area(patch: PackedVector2Array, road: Dictionary, extra_width: float) -> float:
+	var overlap_area := 0.0
+	var surfaces := Geometry2D.offset_polyline(
+		road.points,
+		(float(road.width) + extra_width) * 0.5,
+		Geometry2D.JOIN_ROUND,
+		Geometry2D.END_BUTT
+	)
+	for surface_value in surfaces:
+		var surface := _counter_clockwise_polygon(surface_value as PackedVector2Array)
+		for overlap_value in Geometry2D.intersect_polygons(patch, surface):
+			overlap_area += absf(_surface_polygon_area(overlap_value as PackedVector2Array))
+	return overlap_area
+
+
+func _surface_polygon_area(polygon: PackedVector2Array) -> float:
+	var twice_area := 0.0
+	for index in range(polygon.size()):
+		var point := polygon[index]
+		var next := polygon[(index + 1) % polygon.size()]
+		twice_area += point.cross(next)
+	return twice_area * 0.5
+
+
+func _surface_polygon_maximum_extent(polygon: PackedVector2Array, center: Vector2) -> float:
+	var maximum_extent := 0.0
+	for point in polygon:
+		maximum_extent = maxf(maximum_extent, (point as Vector2).distance_to(center))
+	return maximum_extent
+
+
+func _surface_polygon_is_simple(polygon: PackedVector2Array) -> bool:
+	var edge_count := polygon.size()
+	for first_index in range(edge_count):
+		var first_next := (first_index + 1) % edge_count
+		for second_index in range(first_index + 1, edge_count):
+			var second_next := (second_index + 1) % edge_count
+			if (
+				first_index == second_index
+				or first_next == second_index
+				or second_next == first_index
+			):
+				continue
+			var intersection = Geometry2D.segment_intersects_segment(
+				polygon[first_index], polygon[first_next],
+				polygon[second_index], polygon[second_next]
+			)
+			if intersection != null:
+				var hit := intersection as Vector2
+				if (
+					hit.distance_to(polygon[first_index]) <= JUNCTION_SURFACE_EPSILON
+					or hit.distance_to(polygon[first_next]) <= JUNCTION_SURFACE_EPSILON
+					or hit.distance_to(polygon[second_index]) <= JUNCTION_SURFACE_EPSILON
+					or hit.distance_to(polygon[second_next]) <= JUNCTION_SURFACE_EPSILON
+				):
+					continue
+				return false
+	return true
+
+
 func _validate_endpoint(road_index: int, endpoint_index: int, explicitly_open: bool) -> void:
 	if explicitly_open:
 		return
 	var control: PackedVector2Array = _roads[road_index].control
 	var endpoint := control[endpoint_index]
 	for other_index in range(_roads.size()):
-		if other_index != road_index and _distance_to_polyline(endpoint, _roads[other_index].points) <= 0.75:
+		if other_index == road_index or _distance_to_polyline(endpoint, _roads[other_index].points) > 0.75:
+			continue
+		if _junction_exclusion_at(endpoint, road_index, other_index).is_empty():
 			return
 	_validation_errors.append("Disconnected endpoint: %s at %s" % [_roads[road_index].id, endpoint])
 
@@ -920,6 +1582,27 @@ func _closest_point_and_tangent(point: Vector2, points: PackedVector2Array) -> D
 			result = closest
 			tangent = points[index].direction_to(points[index + 1])
 	return {"position": result, "tangent": tangent}
+
+
+func _point_and_tangent_at_progress(points: PackedVector2Array, progress: float) -> Dictionary:
+	if points.size() < 2:
+		return {"position": points[0] if not points.is_empty() else Vector2.ZERO, "tangent": Vector2.RIGHT}
+	var total_length := 0.0
+	for index in range(points.size() - 1):
+		total_length += points[index].distance_to(points[index + 1])
+	var target_distance := clampf(progress, 0.0, 1.0) * total_length
+	var travelled := 0.0
+	for index in range(points.size() - 1):
+		var a := points[index]
+		var b := points[index + 1]
+		var segment_length := a.distance_to(b)
+		if segment_length < MIN_POINT_DISTANCE:
+			continue
+		if travelled + segment_length >= target_distance:
+			var local_t := clampf((target_distance - travelled) / segment_length, 0.0, 1.0)
+			return {"position": a.lerp(b, local_t), "tangent": a.direction_to(b)}
+		travelled += segment_length
+	return {"position": points[-1], "tangent": points[-2].direction_to(points[-1])}
 
 
 func _align_endpoint_approach(control: PackedVector2Array, endpoint_index: int, target_tangent: Vector2, mode: String) -> void:
@@ -977,7 +1660,33 @@ func get_graph_data() -> Dictionary:
 		"lanes": lanes,
 		"lane_connections": _lane_connections.duplicate(true),
 		"junctions": _junctions.duplicate(true),
+		"junction_exclusion_ranges": _junction_exclusion_ranges.duplicate(true),
+		"grade_separated_crossings": _grade_separated_crossings.duplicate(true),
+		"surface_topology_audit": _surface_topology_audit.duplicate(true),
 		"validation_errors": _validation_errors.duplicate(),
+	}
+
+
+func get_validation_errors() -> Array[String]:
+	return _validation_errors.duplicate()
+
+
+func get_surface_topology_audit() -> Dictionary:
+	var surface_errors: Array[String] = []
+	for validation_error in _validation_errors:
+		if validation_error.begins_with("Junction surface "):
+			surface_errors.append(validation_error)
+	return {
+		"junctions": _surface_topology_audit.duplicate(true),
+		"errors": surface_errors,
+		"render_policy": {
+			"hidden_roads_contribute": "only_at_mixed_visibility_junctions",
+			"all_hidden_junctions_suppressed": true,
+			"minimum_physical_arms": 2,
+			"end_cap": "butt",
+			"junction_join": "local_cap_bevel",
+			"core_padding": JUNCTION_CORE_PADDING,
+		},
 	}
 
 
@@ -994,6 +1703,7 @@ func get_validation_summary() -> String:
 	var lane_count := 0
 	for road in _roads:
 		lane_count += (road.lanes as Array).size()
-	return "roads=%d lanes=%d junctions=%d lane_connections=%d errors=%d" % [
-		_roads.size(), lane_count, _junctions.size(), _lane_connections.size(), _validation_errors.size()
+	return "roads=%d lanes=%d junctions=%d lane_connections=%d grade_separated=%d errors=%d" % [
+		_roads.size(), lane_count, _junctions.size(), _lane_connections.size(),
+		_grade_separated_crossings.size(), _validation_errors.size()
 	]

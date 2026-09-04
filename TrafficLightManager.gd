@@ -72,13 +72,15 @@ func is_safe_for_pedestrian_crossing(crossing_axis: String) -> bool:
 
 ## Registra um unico conjunto visual. Repetir a chamada atualiza o conjunto,
 ## em vez de empilhar novos managers/postes no mesmo cruzamento.
-func register_intersection(intersection_id: StringName, world_center: Vector2, road_width: float) -> void:
+func register_intersection(intersection_id: StringName, world_center: Vector2, road_width: float, create_visual_posts: bool = true) -> void:
 	var safe_width := maxf(road_width, 32.0)
 	_intersections[intersection_id] = {
 		"center": world_center,
 		"road_width": safe_width,
+		"create_visual_posts": create_visual_posts,
 	}
-	_rebuild_visual_set(intersection_id)
+	if create_visual_posts:
+		_rebuild_visual_set(intersection_id)
 
 func unregister_intersection(intersection_id: StringName) -> void:
 	_intersections.erase(intersection_id)
