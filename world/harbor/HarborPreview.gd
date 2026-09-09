@@ -35,9 +35,7 @@ func _ready() -> void:
 	call_deferred("_start_review")
 
 func _start_review() -> void:
-	# Let the scene settle before creating optional encounter actors. Without
-	# this yield, their 3D presentation is charged to the first playable frame.
-	await get_tree().process_frame
+	# A campanha consulta o território no mesmo ciclo de inicialização.
 	_setup_cobras()
 	await get_tree().process_frame
 	_setup_emergency_services()

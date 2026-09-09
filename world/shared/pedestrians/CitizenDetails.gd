@@ -21,6 +21,9 @@ static func piece(parent: Node3D, size: Vector3, point: Vector3, color: Color, r
 	return part
 
 static func dress(actor: AnimatedPedestrian3D, variant: int) -> void:
+	if actor.viewport == null:
+		actor.presentation_ready.connect(func(): dress(actor, variant), CONNECT_ONE_SHOT)
+		return
 	var head := actor.head_node
 	for side in [-1,1]:
 		piece(head,Vector3(.045,.065,.04),Vector3(side*.17,-.015,0),actor.skin_color,true)

@@ -90,6 +90,19 @@ const BODY_PROPORTIONS := [
 
 # SubViewport 3D
 var viewport: SubViewport
+signal presentation_ready
+var defer_presentation := false
+var _presentation_fallback: Polygon2D
+
+func ensure_presentation() -> void:
+	if viewport != null:
+		return
+	_build_3d_viewport()
+	if is_instance_valid(_presentation_fallback):
+		_presentation_fallback.queue_free()
+	if is_dead or is_incapacitated:
+		model_root.rotation.x = PI * 0.45
+	presentation_ready.emit()
 var sprite_3d_display: Sprite2D
 
 # The 3D rig render pass is expensive (own_world_3d + full scene submission)
@@ -181,7 +194,15 @@ func _ready() -> void:
 		add_child(c)
 	
 	_setup_district_and_archetype()
-	_build_3d_viewport()
+	if defer_presentation:
+		# A silhueta mantém o cidadão visível enquanto o detalhe aguarda orçamento.
+		_presentation_fallback = Polygon2D.new()
+		_presentation_fallback.polygon = PackedVector2Array([Vector2(-5, 0), Vector2(-5, -16), Vector2(0, -22), Vector2(5, -16), Vector2(5, 0)])
+		_presentation_fallback.color = shirt_color
+		add_child(_presentation_fallback)
+		get_node("/root/PresentationBudget").request(self)
+	else:
+		_build_3d_viewport()
 	_pick_new_sidewalk_target()
 	# Stagger the first check across instances so 39+ pedestrians don't all
 	# query the active camera on the same frame.

@@ -1,4 +1,4 @@
-LOAD_PROFILE load_ms=1978 instantiate_ms=0 add_child_ms=1256 first180frames_ms=13313 total_ms=16547
-LOAD_PROFILE_SPIKES frame0=8672ms frame1=667ms frame3=157ms
-LOAD_PROFILE_NODES total=14964 MeshInstance3D=6421 Node3D=1751 CollisionShape2D=972 Polygon2D=654 CPUParticles2D=632 AudioStreamPlayer2D=484 Area2D=369 Sprite2D=329 StaticBody2D=302 Node2D=297 Path2D=262 DirectionalLight3D=260 SubViewport=249 Camera3D=249 PointLight2D=241 RayCast2D=198 Label=168 Line2D=168
-LOAD_PROFILE_MONITORS nodes=15827 orphans=0 draw_calls=16089 video_mem_mb=1292.7 static_mem_mb=629.4
+LOAD_PROFILE load_ms=2016 instantiate_ms=1 add_child_ms=1261 first180frames_ms=11887 total_ms=15165
+LOAD_PROFILE_SPIKES frame0=8075ms frame1=583ms frame2=186ms
+LOAD_PROFILE_NODES total=11696 MeshInstance3D=4113 Node3D=1047 CollisionShape2D=972 Polygon2D=718 CPUParticles2D=632 AudioStreamPlayer2D=484 Area2D=369 StaticBody2D=302 Node2D=297 Sprite2D=265 Path2D=262 PointLight2D=241 RayCast2D=198 DirectionalLight3D=196 SubViewport=185 Camera3D=185 Label=168 Line2D=168
+LOAD_PROFILE_MONITORS nodes=12560 orphans=0 draw_calls=13782 video_mem_mb=1014.9 static_mem_mb=533.3

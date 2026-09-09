@@ -21,6 +21,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+PresentationBudget="*res://PresentationBudget.gd"
+
 Localization="*res://Localization.gd"
 SettingsManager="*res://SettingsManager.gd"
 WantedManager="*res://WantedManager.gd"
