@@ -17,7 +17,7 @@ func run() -> void:
 	create_timer(90).timeout.connect(func(): quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met",&"harbor_delivery_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag,true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	await frames(30)
 	var world := current_scene
 	var player: Node2D = world.get_node("Player")
@@ -96,7 +96,7 @@ func run() -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("D:/geteco/minimap-paynspray-review.png")
 	# A second ordinary car keeps the normal repaint service.
-	var other := preload("res://district/mountain_pass/MountainSUV.gd").new()
+	var other := preload("res://world/mountain_pass/MountainSUV.gd").new()
 	world.add_child(other)
 	other.global_position = service.global_position+Vector2(0,15)
 	other.rotation = -PI/2

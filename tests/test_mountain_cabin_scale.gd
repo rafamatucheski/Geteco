@@ -12,7 +12,7 @@ func settle() -> void:
 func run() -> void:
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
-	var scene = load("res://district/mountain_pass/MountainPass.tscn").instantiate()
+	var scene = load("res://world/mountain_pass/MountainPass.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	await settle()

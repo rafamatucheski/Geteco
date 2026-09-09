@@ -28,13 +28,13 @@ func _run() -> void:
 	player.add_child(shape)
 	scene.add_child(player)
 	player.set_physics_process(false)
-	var bear = load("res://district/mountain_pass/MountainBear.gd").new()
+	var bear = load("res://world/mountain_pass/MountainBear.gd").new()
 	bear.position = Vector2(500,300)
 	region.add_child(bear)
 	bear.set_physics_process(false)
 	var cubs: Array[Node2D] = []
 	for offset in [Vector2(-45,40),Vector2(45,40)]:
-		var cub = load("res://district/mountain_pass/MountainBear.gd").new()
+		var cub = load("res://world/mountain_pass/MountainBear.gd").new()
 		cub.is_cub = true
 		cub.family_guardian = bear
 		cub.family_offset = offset

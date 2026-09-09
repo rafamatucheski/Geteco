@@ -3,7 +3,7 @@ extends SceneTree
 ## Captures Quadra 1 (Westgate Core) under Day, Night, and Rain.
 ## Run with Godot console executable (not --headless) for actual texture rendering.
 
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 const WEATHER_SCRIPT := preload("res://DayNightWeatherManager.gd")
 
 func _init() -> void:

@@ -32,7 +32,7 @@ func _run_flow() -> void:
 	print("=== INICIANDO FLUXO COMPLETO DE 10 ETAPAS EM HARBORGAME REAL ===")
 	print("=================================================================")
 
-	var game_scene := load("res://district/harbor_preview/HarborGame.tscn")
+	var game_scene := load("res://world/harbor/HarborGame.tscn")
 	if not game_scene:
 		print("FATAL: Não foi possível carregar HarborGame.tscn")
 		quit(1)

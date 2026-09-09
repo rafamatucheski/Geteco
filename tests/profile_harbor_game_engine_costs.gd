@@ -7,7 +7,7 @@ extends SceneTree
 ## never manually invokes _process/_physics_process. Diagnostic only, does
 ## not change any behavior or leave anything disabled.
 
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 
 var character_viewports: Array[SubViewport] = []
 

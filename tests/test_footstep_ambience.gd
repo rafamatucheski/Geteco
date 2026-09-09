@@ -11,7 +11,7 @@ func run() -> void:
 	root.get_node("CampaignState").reset_campaign()
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_arrival_seen", true)
 	root.get_node("SaveManager").clear_pending_save()
-	var world: Node2D = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world: Node2D = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	for i in 20: await process_frame

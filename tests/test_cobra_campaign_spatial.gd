@@ -2,8 +2,8 @@ extends SceneTree
 
 ## Production terrain, buildings, parked cars and ambient cast are present.
 ## Invoke real controller interactions to inspect the actual spawned opponents.
-const CONTROLLER := preload("res://district/harbor_preview/campaign/CobraCampaignController.gd")
-const STATE := preload("res://district/harbor_preview/campaign/CobraCampaignState.gd")
+const CONTROLLER := preload("res://world/harbor/campaign/CobraCampaignController.gd")
+const STATE := preload("res://world/harbor/campaign/CobraCampaignState.gd")
 var failures := 0
 var actor_count := 0
 
@@ -16,7 +16,7 @@ func check(value: bool, message: String) -> void:
 		push_error(message)
 
 func run() -> void:
-	var scene := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var scene := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
 	for i in 8:

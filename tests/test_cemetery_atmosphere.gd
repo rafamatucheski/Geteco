@@ -7,7 +7,7 @@ func run() -> void:
 	var player := Node2D.new()
 	player.add_to_group("player")
 	lot.add_child(player)
-	var teller := preload("res://district/harbor_preview/events/CemeteryStoryteller.gd").new()
+	var teller := preload("res://world/harbor/events/CemeteryStoryteller.gd").new()
 	lot.add_child(teller)
 	teller.set_physics_process(false)
 	teller.set_route(PackedVector2Array())
@@ -16,7 +16,7 @@ func run() -> void:
 	assert(not teller.speech.text.is_empty(), "Story plays beside a grave")
 	teller._physics_process(19)
 	assert(teller.stop_index == 1 and not teller.finished, "Moves to next grave")
-	var atmosphere := preload("res://district/harbor_preview/events/CemeteryAtmosphere.gd").new()
+	var atmosphere := preload("res://world/harbor/events/CemeteryAtmosphere.gd").new()
 	lot.add_child(atmosphere)
 	atmosphere.set_process(false)
 	await process_frame

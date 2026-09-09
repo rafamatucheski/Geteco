@@ -16,7 +16,7 @@ func capture(path: String) -> void:
 	await RenderingServer.frame_post_draw
 	print("HARBOR_COUPЕ_CAPTURE %s result=%d" % [path,root.get_texture().get_image().save_png(path)])
 func run() -> void:
-	var scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 15: await physics_frame

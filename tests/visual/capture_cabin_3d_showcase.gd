@@ -15,7 +15,7 @@ func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	root.content_scale_size = root.size
 
-	var cabin_3d := preload("res://district/mountain_pass/MountainCabin3D.gd").new()
+	var cabin_3d := preload("res://world/mountain_pass/MountainCabin3D.gd").new()
 	root.add_child(cabin_3d)
 
 	var camera := Camera3D.new()

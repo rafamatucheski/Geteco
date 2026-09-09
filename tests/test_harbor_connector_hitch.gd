@@ -1,9 +1,9 @@
 extends SceneTree
 
-const LAYOUT := preload("res://district/harbor_preview/HarborRoadLayout.gd")
-const NETWORK := preload("res://district/harbor_preview/HarborRoadNetwork.gd")
-const LIFE := preload("res://district/harbor_preview/HarborLife.gd")
-const FACTORY := preload("res://district/ModernTrafficFactory.gd")
+const LAYOUT := preload("res://world/harbor/HarborRoadLayout.gd")
+const NETWORK := preload("res://world/harbor/HarborRoadNetwork.gd")
+const LIFE := preload("res://world/harbor/HarborLife.gd")
+const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 
 
 func _initialize() -> void:

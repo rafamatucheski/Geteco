@@ -16,7 +16,7 @@ func _run() -> void:
 	for i in 5: await process_frame
 	check(root.get_node_or_null("__MenuHoverPlayer") != null, "initial menu focus creates its audio player safely")
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete", true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 15: await physics_frame
 	var director = get_first_node_in_group("emergency_depot_director")
 	var player = get_first_node_in_group("player")

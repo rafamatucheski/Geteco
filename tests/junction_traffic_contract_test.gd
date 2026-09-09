@@ -1,6 +1,6 @@
 extends SceneTree
 
-const CONTROLLER_SCRIPT := preload("res://district/roads/traffic/JunctionTrafficController.gd")
+const CONTROLLER_SCRIPT := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
 const VEHICLE_SCENE := preload("res://city_demo/scenes/TrafficVehicle.tscn")
 
 class FakeUnifiedGraph:

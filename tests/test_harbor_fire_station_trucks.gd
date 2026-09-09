@@ -11,7 +11,7 @@ extends SceneTree
 ## public request_interaction()/try_enter_vehicle() a real keypress would
 ## invoke, matching the convention already used by tests/test_harbor_bridge.gd.
 
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 
 var _failures: Array[String] = []
 

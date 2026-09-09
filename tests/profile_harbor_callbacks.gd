@@ -13,7 +13,7 @@ func collect(node: Node) -> void:
 		node.set_process(false)
 	for child in node.get_children(): collect(child)
 func run() -> void:
-	var scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 20: await physics_frame

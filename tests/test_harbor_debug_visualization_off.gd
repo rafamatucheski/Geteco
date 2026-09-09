@@ -11,7 +11,7 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	var packed := load("res://district/harbor_preview/HarborPreview.tscn") as PackedScene
+	var packed := load("res://world/harbor/HarborPreview.tscn") as PackedScene
 	var scene := packed.instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene

@@ -13,7 +13,7 @@ incluindo a auditoria cruzada de um no trabalho do outro.
   carro em 2D/3D, débitos técnicos e roadmap.
 - **Descoberta importante**: `Main.tscn` é a árvore **legada**, só carregada
   para restaurar saves antigos (`HarborSceneRoute.gd`). O botão "Novo Jogo" do
-  `ui/MainMenu.gd` carrega `district/harbor_preview/HarborGame.tscn`, um mundo
+  `ui/MainMenu.gd` carrega `world/harbor/HarborGame.tscn`, um mundo
   completamente separado (Player, PlayerCar e distritos próprios, escala de
   coordenadas na casa dos milhares). Essa descoberta mudou onde tudo abaixo
   precisou ser colocado.
@@ -92,7 +92,7 @@ estrelas de procurado), desbloqueio automático central em
 
 Depois de descobrir que tudo do item 2 tinha sido plantado em `Main.tscn`
 (legado), os seguintes sistemas foram portados para o mundo real
-(`district/harbor_preview/HarborGame.gd`, método `_spawn_world_extras()`),
+(`world/harbor/HarborGame.gd`, método `_spawn_world_extras()`),
 com coordenadas ancoradas em constantes reais do próprio código do harbor
 (`HarborDistrict.LAND_BOUNDS`, `HarborWaterfront.SHIP_BOUNDS`/`GANGWAY_BOUNDS`,
 `CobraNeighborhood.CENTER`/`LAND`):
@@ -112,7 +112,7 @@ legada. Pendente se o usuário quiser.
 
 ## 4. Mapa 2 — Mountain Pass (Antigravity)
 
-Implementado em `district/mountain_pass/`, em duas entregas:
+Implementado em `world/mountain_pass/`, em duas entregas:
 
 **Entrega 1**: Summit SUV 4x4 (`SummitSUVModel.gd` em
 `prototypes/living_cast/models/`, veículo jogável `MountainSUV.gd`), túnel com

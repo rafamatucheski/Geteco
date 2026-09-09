@@ -9,7 +9,7 @@ func run() -> void:
 	create_timer(80).timeout.connect(func(): quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 40: await process_frame
 	var art = current_scene.get_node("District/HarborStorageArt")
 	var player = current_scene.get_node("Player")

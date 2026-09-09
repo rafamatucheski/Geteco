@@ -13,9 +13,9 @@ func _run() -> void:
 	fixture.position = Vector2(4300, -4960)
 	root.add_child(fixture)
 	current_scene = fixture
-	fixture.road = preload("res://district/mountain_pass/MountainPassRoad.gd").new()
+	fixture.road = preload("res://world/mountain_pass/MountainPassRoad.gd").new()
 	fixture.add_child(fixture.road)
-	var traffic := preload("res://district/mountain_pass/MountainTraffic.gd").new()
+	var traffic := preload("res://world/mountain_pass/MountainTraffic.gd").new()
 	fixture.add_child(traffic)
 	for car in traffic.vehicles: car.queue_free()
 	var actor := CharacterBody2D.new()

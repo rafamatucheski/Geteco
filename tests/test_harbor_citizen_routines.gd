@@ -4,11 +4,11 @@ func run() -> void:
  root.size=Vector2i(1280,720)
  root.get_node("CampaignState").set_campaign_flag(&"harbor_arrival_seen",true)
  root.get_node("CampaignState").set_campaign_flag(&"harbor_call_complete",true)
- var world=load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+ var world=load("res://world/harbor/HarborGame.tscn").instantiate()
  root.add_child(world)
  current_scene=world
  while not world.gameplay_ready: await process_frame
- var routes=preload("res://district/harbor_preview/HarborPedestrianRoutes.gd")
+ var routes=preload("res://world/harbor/HarborPedestrianRoutes.gd")
  var connected=routes.connected_routes(self)
  print("CONNECTED_ROUTES ",connected.size())
  assert(connected.size()>0)
@@ -51,7 +51,7 @@ func run() -> void:
  assert(not officer.alerted,"Wall blocks witnessing a crime")
  root.get_node("WantedManager").reset_crime()
  wall.queue_free()
- var crossing=preload("res://district/roads/safety/RoadCrossingArea2D.gd").new()
+ var crossing=preload("res://world/shared/roads/safety/RoadCrossingArea2D.gd").new()
  crossing.configure({"id":"test","junction_id":"test_junction","position":Vector2(-4000,-4000),"road_width":120.0})
  world.add_child(crossing)
  walker.global_position=crossing.to_global(Vector2(0,-82))

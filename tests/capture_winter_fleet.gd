@@ -18,7 +18,7 @@ func _run() -> void:
 		model.rotation.y = PI
 		world.add_child(model)
 		model.paint.albedo_color = [Color("376d80"),Color("e3e4d4"),Color("994c39")][i]
-		var human := preload("res://district/mountain_pass/WinterResidentModel.gd").new()
+		var human := preload("res://world/mountain_pass/WinterResidentModel.gd").new()
 		human.position = Vector3((i-1)*5-1.65,0,2.0)
 		world.add_child(human)
 	var camera := Camera3D.new()

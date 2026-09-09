@@ -4,7 +4,7 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	var mission = load("res://district/harbor_preview/campaign/HarborArrivalMission.gd").new()
+	var mission = load("res://world/harbor/campaign/HarborArrivalMission.gd").new()
 	root.add_child(mission)
 	mission.set_process(false)
 	paused = true
@@ -17,7 +17,7 @@ func _run() -> void:
 	mission.queue_free()
 	var forest_parent := Node2D.new()
 	root.add_child(forest_parent)
-	load("res://district/mountain_pass/MountainSceneryBuilder.gd").build_dense_pine_forest(forest_parent, null, true)
+	load("res://world/mountain_pass/MountainSceneryBuilder.gd").build_dense_pine_forest(forest_parent, null, true)
 	forest_parent.free()
 	await process_frame
 	await process_frame

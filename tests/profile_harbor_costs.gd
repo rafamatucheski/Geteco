@@ -47,7 +47,7 @@ func run() -> void:
 	root.grab_focus()
 	print("PROFILE_CONTEXT focused=%s low_processor=%s" % [root.has_focus(),OS.low_processor_usage_mode])
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(),true)
-	scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 30: await physics_frame
@@ -121,7 +121,7 @@ func run() -> void:
 	lights.clear()
 	disabled_views = false
 	disabled_lights = false
-	scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 30: await physics_frame

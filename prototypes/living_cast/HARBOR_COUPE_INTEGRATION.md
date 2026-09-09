@@ -1,6 +1,6 @@
 # Cupê no HarborPreview
 
-O `PlayerCar` de `district/harbor_preview/HarborPreview.tscn` agora usa
+O `PlayerCar` de `world/harbor/HarborPreview.tscn` agora usa
 `HarborCoupe.gd`, que herda PlayerCar sem alterar o controlador global.
 O botão **Dirigir** seleciona esse carro; E conserva entrada/saída e garagem.
 

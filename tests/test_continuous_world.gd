@@ -9,7 +9,7 @@ func _run() -> void:
 	root.content_scale_size = root.size
 	create_timer(90).timeout.connect(func(): printerr("CONTINUOUS WORLD TIMEOUT"); quit(2))
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete", true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 25: await process_frame
 	var world := current_scene
 	var stream := world.get_node("ContinuousWorld")
@@ -45,7 +45,7 @@ func _run() -> void:
 	check(stream.current_region=="mountain", "region weather changes geographically")
 	var snapshot: Dictionary = root.get_node("RegionTravel").snapshot_world()
 	check(snapshot.region=="mountain" and snapshot.coordinates_version==2,"save uses continuous world coordinates")
-	check(load("res://district/harbor_preview/HarborSceneRoute.gd").for_save({"world":snapshot}).ends_with("HarborGame.tscn"),"mountain save opens unified world")
+	check(load("res://world/harbor/HarborSceneRoute.gd").for_save({"world":snapshot}).ends_with("HarborGame.tscn"),"mountain save opens unified world")
 	car.velocity = Vector2.ZERO
 	car.global_position = Vector2(7540,-4591)
 	car.rotation = PI

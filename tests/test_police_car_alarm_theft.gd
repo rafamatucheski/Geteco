@@ -26,9 +26,9 @@ func _run_police_test() -> void:
 		
 	# 2. Instanciar EmergencyDepots.tscn (que contém DocksAlleyUnit e WarehouseAlleyUnit da foto do usuário)
 	print("\n[PASSO 2] Instanciando cena de viaturas de prontidão (EmergencyDepots.tscn)...")
-	var depots_scene = load("res://district/EmergencyDepots.tscn") as PackedScene
+	var depots_scene = load("res://world/shared/emergency/EmergencyDepots.tscn") as PackedScene
 	if not depots_scene:
-		printerr("Falha ao carregar res://district/EmergencyDepots.tscn")
+		printerr("Falha ao carregar res://world/shared/emergency/EmergencyDepots.tscn")
 		quit(1)
 		return
 		

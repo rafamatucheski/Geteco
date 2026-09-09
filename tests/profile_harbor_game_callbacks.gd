@@ -41,7 +41,7 @@ func run() -> void:
 	campaign.reset_campaign()
 	for flag in ["harbor_arrival_seen", "harbor_arrival_call_complete", "harbor_maciota_met", "harbor_delivery_complete"]:
 		campaign.set_campaign_flag(StringName(flag), true)
-	var world = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	for i in 90: await process_frame

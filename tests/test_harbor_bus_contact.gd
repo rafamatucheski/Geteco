@@ -25,7 +25,7 @@ func run() -> void:
 	lane.add_child(follow)
 	follow.progress = 500
 	var bus = SCENE.instantiate()
-	bus.set_script(preload("res://district/harbor_preview/HarborTransitBus.gd"))
+	bus.set_script(preload("res://world/harbor/HarborTransitBus.gd"))
 	follow.add_child(bus)
 	bus.set_process(false)
 	bus.set_physics_process(false)

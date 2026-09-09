@@ -7,7 +7,7 @@ func _run() -> void:
 	root.size = Vector2i(1400, 900)
 	root.content_scale_size = root.size
 
-	var scene := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var scene := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
 
@@ -67,7 +67,7 @@ func _run() -> void:
 		elif key == "firehouse" and interior.captain_npc != null:
 			interior.captain_npc._close_dialogue()
 
-	var ammu = load("res://district/harbor_preview/interiors/HarborAmmunationInterior.gd").new()
+	var ammu = load("res://world/harbor/interiors/HarborAmmunationInterior.gd").new()
 	ammu.global_position = Vector2(30000, 20000)
 	root.add_child(ammu)
 	camera.global_position = ammu.global_position
@@ -79,7 +79,7 @@ func _run() -> void:
 	print("INTERIOR_CAPTURE Ammu-Nation (Vance) -> D:/geteco/harbor_interior_ammunation.png")
 	ammu.queue_free()
 
-	var morgue = load("res://district/harbor_preview/interiors/HarborMorgueInterior.gd").new()
+	var morgue = load("res://world/harbor/interiors/HarborMorgueInterior.gd").new()
 	morgue.global_position = Vector2(32000, 20000)
 	root.add_child(morgue)
 	camera.global_position = morgue.global_position

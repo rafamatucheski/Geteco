@@ -13,7 +13,7 @@ extends SceneTree
 ##
 ## Uso: Godot..._console.exe --path D:/geteco/game --script res://tests/profile_load_time_0909.gd
 
-const GAME_SCENE := "res://district/harbor_preview/HarborGame.tscn"
+const GAME_SCENE := "res://world/harbor/HarborGame.tscn"
 
 var _log_lines: PackedStringArray = []
 

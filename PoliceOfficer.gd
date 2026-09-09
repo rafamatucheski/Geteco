@@ -75,7 +75,7 @@ func _ready() -> void:
 	z_index = 6
 	
 	_build_3d_viewport()
-	preload("res://district/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
+	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()

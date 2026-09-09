@@ -11,7 +11,7 @@ func _run() -> void:
 	var test_directory := "user://qa_mountain_%d/" % OS.get_process_id()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(test_directory))
 	saves._save_dir = test_directory
-	change_scene_to_file("res://district/mountain_pass/MountainPass.tscn")
+	change_scene_to_file("res://world/mountain_pass/MountainPass.tscn")
 	for i in 10: await physics_frame
 	var scene := current_scene
 	var player: Node2D = scene.player_instance
@@ -30,7 +30,7 @@ func _run() -> void:
 	check(saves.save_game("mountain_room_qa").success,"real save file written in isolated test directory")
 	var loaded: Dictionary = saves.load_game("mountain_room_qa")
 	check(loaded.success,"real save file parsed")
-	change_scene_to_file(load("res://district/harbor_preview/HarborSceneRoute.gd").for_save(loaded.data))
+	change_scene_to_file(load("res://world/harbor/HarborSceneRoute.gd").for_save(loaded.data))
 	for i in 20: await physics_frame
 	scene = current_scene
 	player = scene.player_instance

@@ -2,7 +2,7 @@ extends SceneTree
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete", true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 90: await process_frame
 	var costs := {}
 	for sample in 10:

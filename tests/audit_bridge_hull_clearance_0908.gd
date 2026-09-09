@@ -8,7 +8,7 @@ func run() -> void:
 	create_timer(60).timeout.connect(func(): print("BRIDGE_HULL_AUDIT TIMEOUT"); quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met", &"harbor_delivery_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 20: await process_frame
 	var world := current_scene
 	var stream: Node = world.get_node("ContinuousWorld")

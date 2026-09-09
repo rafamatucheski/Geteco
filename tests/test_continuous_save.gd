@@ -7,7 +7,7 @@ func check(ok: bool,label: String) -> void:
 func _run() -> void:
 	create_timer(90).timeout.connect(func(): quit(2))
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete",true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 25: await process_frame
 	var world := current_scene
 	var stream := world.get_node("ContinuousWorld")

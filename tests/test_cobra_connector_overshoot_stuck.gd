@@ -22,7 +22,7 @@ extends SceneTree
 ## EXACT real connector a live vehicle takes, not a synthetic progress
 ## assignment, so it stays honest about what actually happens in production.
 
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 const DEST_LANE_META_ID := "CobraNeighborhood/cobra_court_southwest/forward_01"
 const CONNECTOR_NAME := "connector__39_CobraNeighborhood__cobra_approach__forward_01>CobraNeighborhood__cobra_court_southwest__forward_01"
 

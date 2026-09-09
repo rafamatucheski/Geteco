@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Real physics ticks, collision LOS, actual resident damage and project bullets.
-const TERRITORY := preload("res://district/harbor_preview/cobras/CobraTerritory.gd")
+const TERRITORY := preload("res://world/harbor/cobras/CobraTerritory.gd")
 class Subject extends CharacterBody2D:
 	var is_in_dialogue := false
 	var is_control_disabled := false
@@ -144,7 +144,7 @@ func run() -> void:
 	vehicle.position = Vector2(1600, 200)
 	await seconds(2.4)
 	check(territory.state == "calm", "Driving away de-escalates")
-	var resident = load("res://district/harbor_preview/cobras/CobraResident.gd").new()
+	var resident = load("res://world/harbor/cobras/CobraResident.gd").new()
 	resident.patrol = PackedVector2Array([Vector2(10, 10), Vector2(10, 100), Vector2(100, 100)])
 	var actual_targets: Array[Vector2] = []
 	for step in 6:

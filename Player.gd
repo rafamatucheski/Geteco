@@ -49,7 +49,7 @@ var weapon_inventory: Dictionary = {"fists": true, "knife": false, "pistol": tru
 var personal_car_state: Dictionary = {}
 var personal_loadout_enabled := false
 var personal_loadout: Dictionary = {}
-const PERSONAL_LOADOUT := preload("res://district/harbor_preview/monaliza/PersonalLoadout.gd")
+const PERSONAL_LOADOUT := preload("res://world/harbor/monaliza/PersonalLoadout.gd")
 
 func can_carry_weapon(id: String) -> bool:
 	return weapon_inventory.get(id,false) == true and (not personal_loadout_enabled or id == "fists" or id in personal_loadout.values())
@@ -1060,7 +1060,6 @@ func _shoot_towards(target: Vector2) -> void:
 		effects.spawn_muzzle_flash(global_position + direction * 24.0, direction, data)
 		if not is_explosive and not is_flame:
 			effects.spawn_shell(global_position + direction * 20.0, direction, data)
-	_alert_nearby_pedestrians()
 	_refresh_weapon_ui()
 
 func _alert_nearby_pedestrians() -> void:

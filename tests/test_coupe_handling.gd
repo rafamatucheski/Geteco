@@ -13,7 +13,7 @@ func run() -> void:
 	check(is_equal_approx(ordinary.rotation, ordinary.turn_speed * 0.1), "Ordinary cars must retain legacy steering")
 	check(ordinary.velocity == Vector2(200,0), "Legacy steering must not modify ordinary car velocity")
 	ordinary.free()
-	var scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 6: await physics_frame

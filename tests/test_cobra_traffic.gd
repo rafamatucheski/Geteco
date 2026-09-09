@@ -1,7 +1,7 @@
 extends SceneTree
 ## Production-authored network; only destination choices and initial spawn are fixtures.
-const FACTORY := preload("res://district/ModernTrafficFactory.gd")
-const LIFE := preload("res://district/harbor_preview/HarborLife.gd")
+const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const LIFE := preload("res://world/harbor/HarborLife.gd")
 var failures: Array[String] = []
 
 func _initialize() -> void:
@@ -16,7 +16,7 @@ func run() -> void:
 	seed(75211)
 	# Extract the actual saved providers/network, keeping their authored settings.
 	# No unrelated campaign actors or ambient queues are injected into this trip.
-	var packed: Node = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var packed: Node = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	var fixture := Node2D.new()
 	root.add_child(fixture)
 	current_scene = fixture

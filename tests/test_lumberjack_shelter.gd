@@ -10,7 +10,7 @@ func _run() -> void:
 	var world := StreamedRegion.new()
 	root.add_child(world)
 	current_scene = world
-	var manager := preload("res://district/mountain_pass/MountainInteriorManager.gd").new()
+	var manager := preload("res://world/mountain_pass/MountainInteriorManager.gd").new()
 	world.add_child(manager)
 	check(not manager.region_ready,"streaming does not construct all rooms in one frame")
 	var frames := 0
@@ -43,7 +43,7 @@ func _run() -> void:
 	if DisplayServer.get_name()!="headless":
 		player.global_position = room.to_global(room.project_floor(Vector2(0,2.5)))
 		room.set_npc_rendering_active(true)
-		var helper := preload("res://district/mountain_pass/MountainInteriorActorScale.gd").new()
+		var helper := preload("res://world/mountain_pass/MountainInteriorActorScale.gd").new()
 		world.add_child(helper)
 		helper.configure(player,room.camera_3d,room.sprite_3d)
 		var review := Camera2D.new()

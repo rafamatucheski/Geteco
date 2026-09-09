@@ -37,7 +37,7 @@ extends SceneTree
 ##     this test, only observed -- drives itself off the dead-end lane and
 ##     onto the turn connector within a normal amount of simulated time.
 
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 const DEADEND_LANE_PATH := "RoadNetwork/GeneratedLanePaths/RoadLayout__westgate_drive__forward_01"
 const ORIGINAL_REQUESTED_RATIO := 0.68 # matches HarborLife._spawn_traffic's index=27 formula
 const LIVE_VEHICLE_NAME := "HarborTraffic_27"

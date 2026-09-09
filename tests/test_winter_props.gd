@@ -1,12 +1,12 @@
 @tool
 extends SceneTree
 
-const HUMAN_SCRIPT := preload("res://district/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
-const CABIN_SCRIPT := preload("res://district/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
-const SHELTER_SCRIPT := preload("res://district/mountain_pass/art/winter_props/PatrolShelter3D.gd")
-const WOODPILE_SCRIPT := preload("res://district/mountain_pass/art/winter_props/CoveredWoodpile3D.gd")
-const SIGN_BENCH_SCRIPT := preload("res://district/mountain_pass/art/winter_props/TrailSignAndBench3D.gd")
-const SHOWCASE_SCRIPT := preload("res://district/mountain_pass/art/winter_props/WinterPropsShowcase.gd")
+const HUMAN_SCRIPT := preload("res://world/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
+const CABIN_SCRIPT := preload("res://world/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
+const SHELTER_SCRIPT := preload("res://world/mountain_pass/art/winter_props/PatrolShelter3D.gd")
+const WOODPILE_SCRIPT := preload("res://world/mountain_pass/art/winter_props/CoveredWoodpile3D.gd")
+const SIGN_BENCH_SCRIPT := preload("res://world/mountain_pass/art/winter_props/TrailSignAndBench3D.gd")
+const SHOWCASE_SCRIPT := preload("res://world/mountain_pass/art/winter_props/WinterPropsShowcase.gd")
 
 var failures: Array[String] = []
 

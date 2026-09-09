@@ -1,6 +1,6 @@
 extends SceneTree
 
-const LEDGER = preload("res://district/harbor_preview/campaign/CobraCampaignState.gd")
+const LEDGER = preload("res://world/harbor/campaign/CobraCampaignState.gd")
 const CAMPAIGN = preload("res://CampaignState.gd")
 var failures := 0
 

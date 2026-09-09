@@ -8,7 +8,7 @@ extends SceneTree
 ## engine monitors and drives via the same real Input action; never manually
 ## invokes _process/_physics_process.
 
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 
 var character_viewports: Array[SubViewport] = []
 

@@ -2,8 +2,8 @@
 
 ## Contratos de instalação
 
-- Avião: `preload("res://district/mountain_pass/MountainCargoPlane.gd").new()` como filho do `SecretMountainLake`, posição local zero, sem rotação adicional. Substitui o antigo `SmugglerPlaneWreck` 2D. Escala de 16 px por metro; reservar clareira/lago de pelo menos 560 × 500 px. O modelo tem cerca de 28 m de envergadura.
-- Loja: `preload("res://district/mountain_pass/MountainGunShopFacade.gd").new()` na posição local da montanha `(7750, -220)`. Depois de `add_child`, chamar `facade.install_entrance(interior_mgr)`. Retirar a fachada e a porta antigas para não duplicar geometria ou interação.
+- Avião: `preload("res://world/mountain_pass/MountainCargoPlane.gd").new()` como filho do `SecretMountainLake`, posição local zero, sem rotação adicional. Substitui o antigo `SmugglerPlaneWreck` 2D. Escala de 16 px por metro; reservar clareira/lago de pelo menos 560 × 500 px. O modelo tem cerca de 28 m de envergadura.
+- Loja: `preload("res://world/mountain_pass/MountainGunShopFacade.gd").new()` na posição local da montanha `(7750, -220)`. Depois de `add_child`, chamar `facade.install_entrance(interior_mgr)`. Retirar a fachada e a porta antigas para não duplicar geometria ou interação.
 - A constante `AMMUNATION_SCRIPT` de `MountainInteriorManager.gd` aponta para `MountainGunShopInterior.gd`. Nenhuma alteração em `HarborAmmunationInterior.gd`; a versão da montanha herda os contratos existentes.
 - `MountainCargoPlane` aplica `mountain_shelter` ao jogador enquanto está dentro. A raiz da montanha deve considerar essa flag junto do abrigo de interiores e túneis. Não usa `mountain_interior_id`: o avião é explorado no próprio mapa, sem teleporte ou troca de cena.
 

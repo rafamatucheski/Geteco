@@ -93,7 +93,7 @@ func _run() -> void:
 
 	settings.set_language("pt_BR")
 
-	var world: Node2D = (load("res://district/harbor_preview/HarborGame.tscn") as PackedScene).instantiate()
+	var world: Node2D = (load("res://world/harbor/HarborGame.tscn") as PackedScene).instantiate()
 	root.add_child(world)
 	current_scene = world
 	await _frames(20)

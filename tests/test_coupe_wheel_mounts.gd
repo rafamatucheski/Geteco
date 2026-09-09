@@ -7,7 +7,7 @@ func check(ok: bool, message: String) -> void:
 		failures += 1
 		push_error(message)
 func run() -> void:
-	var scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 5: await physics_frame

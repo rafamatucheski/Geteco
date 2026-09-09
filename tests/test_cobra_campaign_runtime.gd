@@ -1,8 +1,8 @@
 extends SceneTree
 ## Controller integration, actual finite encounter actors and production rival.
 ## Subject is a collision fixture, NOT a claim of manual PlayerCar playtesting.
-const CONTROLLER = preload("res://district/harbor_preview/campaign/CobraCampaignController.gd")
-const STATE = preload("res://district/harbor_preview/campaign/CobraCampaignState.gd")
+const CONTROLLER = preload("res://world/harbor/campaign/CobraCampaignController.gd")
+const STATE = preload("res://world/harbor/campaign/CobraCampaignState.gd")
 class Subject extends CharacterBody2D:
 	var is_dead := false
 	var is_in_dialogue := false
@@ -25,14 +25,14 @@ func _run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var packed: Node = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var packed: Node = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	for id in ["RoadLayout", "CobraNeighborhood", "RoadNetwork"]:
 		var node: Node = packed.get_node(id)
 		packed.remove_child(node)
 		node.owner = null
 		world.add_child(node)
 	packed.free()
-	var traffic = load("res://district/harbor_preview/HarborLife.gd").HarborController.new()
+	var traffic = load("res://world/harbor/HarborLife.gd").HarborController.new()
 	traffic.graph_source = world.get_node("RoadNetwork")
 	world.add_child(traffic)
 	await physics_frame
@@ -45,7 +45,7 @@ func _run() -> void:
 	state.data.completed["primeiro_giro"] = true
 	var controller = CONTROLLER.new()
 	world.add_child(controller)
-	var territory = load("res://district/harbor_preview/cobras/CobraTerritory.gd").new()
+	var territory = load("res://world/harbor/cobras/CobraTerritory.gd").new()
 	territory.configure(Rect2(6510,960,2010,1450),PackedVector2Array([Vector2(7220,1580),Vector2(7330,1350),Vector2(8150,1760)]))
 	world.add_child(territory)
 	controller.configure(player, state, territory)

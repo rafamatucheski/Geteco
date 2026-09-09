@@ -1,6 +1,6 @@
 extends SceneTree
 
-const READOUT := preload("res://district/harbor_preview/HarborWeatherReadout.gd")
+const READOUT := preload("res://world/harbor/HarborWeatherReadout.gd")
 var failures := 0
 func _initialize() -> void:
 	call_deferred("run")
@@ -17,7 +17,7 @@ func run() -> void:
 	root.get_node("SaveManager").clear_pending_save()
 	for flag in ["harbor_arrival_seen","harbor_arrival_call_complete","harbor_maciota_met"]:
 		campaign.set_campaign_flag(StringName(flag),true)
-	var scene := load("res://district/harbor_preview/HarborGame.tscn").instantiate() as Node2D
+	var scene := load("res://world/harbor/HarborGame.tscn").instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
 	await frames(10)

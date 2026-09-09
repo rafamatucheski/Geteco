@@ -2,8 +2,8 @@
 extends SceneTree
 
 const TRAFFIC_VEHICLE := preload("res://city_demo/scripts/TrafficVehicle.gd")
-const HARBOR_LIFE := preload("res://district/harbor_preview/HarborLife.gd")
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const HARBOR_LIFE := preload("res://world/harbor/HarborLife.gd")
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 
 var failures: Array[String] = []
 
@@ -112,7 +112,7 @@ func _run() -> void:
 
 	# --- 5. VALIDAÇÃO DIRETA NA CENA HARBORGAME.TSCN ---
 	print("\n--- 5. Validação Direta da Cena Principal HarborGame.tscn ---")
-	var game_packed := load("res://district/harbor_preview/HarborGame.tscn") as PackedScene
+	var game_packed := load("res://world/harbor/HarborGame.tscn") as PackedScene
 	var game_scene := game_packed.instantiate() as Node2D
 	root.add_child(game_scene)
 	current_scene = game_scene

@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Shared harness for tests/claude_gameplay_audit/*.
-## Boots the real production world (res://district/harbor_preview/HarborGame.tscn)
+## Boots the real production world (res://world/harbor/HarborGame.tscn)
 ## with isolated save/settings paths so no test ever touches a player's real
 ## user://saves/ slot, and gives every concrete audit test the same small set
 ## of helpers (check/log/screenshot/finish) so results are easy to compare.
@@ -13,7 +13,7 @@ extends SceneTree
 ## and friends: 0 = all checks passed, 1 = at least one check failed,
 ## 2 = watchdog fired (the test hung and never reached its own quit()).
 
-const HARBOR_SCENE := "res://district/harbor_preview/HarborGame.tscn"
+const HARBOR_SCENE := "res://world/harbor/HarborGame.tscn"
 const AUDIT_DIR := "res://tests/claude_gameplay_audit/"
 
 var failures: Array[String] = []

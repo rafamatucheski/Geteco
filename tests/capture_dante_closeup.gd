@@ -1,6 +1,6 @@
 extends SceneTree
 
-const HARBOR_SCENE: PackedScene = preload("res://district/harbor_preview/HarborGame.tscn")
+const HARBOR_SCENE: PackedScene = preload("res://world/harbor/HarborGame.tscn")
 
 func _init() -> void:
 	call_deferred("_run")

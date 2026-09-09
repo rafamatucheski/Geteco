@@ -23,7 +23,7 @@ func run() -> void:
 	var failures: int = 0
 	
 	# 1. Instanciação da Cena
-	var scene_resource = load("res://district/mountain_pass/MountainPass.tscn")
+	var scene_resource = load("res://world/mountain_pass/MountainPass.tscn")
 	if scene_resource == null:
 		print("FALHA: Não foi possível carregar MountainPass.tscn")
 		quit(1)
@@ -176,7 +176,7 @@ func run() -> void:
 			log_msg.call("SUCESSO: Traje térmico reduziu a perda de calor (%.1f%%)" % temp_after_suit)
 
 	# 7. Validação do Veículo 3D Summit SUV
-	var suv_script = load("res://district/mountain_pass/MountainSUV.gd")
+	var suv_script = load("res://world/mountain_pass/MountainSUV.gd")
 	if suv_script == null:
 		log_msg.call("FALHA: Não foi possível carregar MountainSUV.gd")
 		failures += 1

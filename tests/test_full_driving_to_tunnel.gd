@@ -15,7 +15,7 @@ func run() -> void:
 	print("--- TESTE COMPLETO: FLUXO DE DIREÇÃO PONTE -> TÚNEL -> SERRA ---")
 	var failures: int = 0
 	
-	var scene_resource = load("res://district/mountain_pass/MountainPass.tscn")
+	var scene_resource = load("res://world/mountain_pass/MountainPass.tscn")
 	var mountain_pass = scene_resource.instantiate()
 	root.add_child(mountain_pass)
 	current_scene = mountain_pass

@@ -9,7 +9,7 @@ func _run() -> void:
 	state.set_campaign_flag(&"harbor_arrival_seen", true)
 	state.set_campaign_flag(&"harbor_call_complete", true)
 	
-	var world = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	

@@ -14,7 +14,7 @@ func _run() -> void:
 	var state = root.get_node("CampaignState")
 	for flag in ["harbor_arrival_seen", "harbor_arrival_call_complete", "harbor_maciota_met", "harbor_delivery_complete"]:
 		state.set_campaign_flag(StringName(flag), true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 5: await process_frame
 	print("CAPTURE world loaded")
 	var world = current_scene

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://hn81pvu51vfk" path="res://district/borough_one/DistrictOneComplete.gd" id="1_complete"]
 [ext_resource type="PackedScene" uid="uid://dnor08vggfuo3" path="res://district/bairro1/Bairro1Expansion.tscn" id="2_expansion"]
-[ext_resource type="PackedScene" path="res://district/rail/DistrictRailLine.tscn" id="3_rail"]
+[ext_resource type="PackedScene" path="res://world/shared/rail/DistrictRailLine.tscn" id="3_rail"]
 [ext_resource type="PackedScene" path="res://district/highway/District1HighwayExit.tscn" id="4_highway"]
 [ext_resource type="PackedScene" path="res://district/borough_one/DistrictOnePopulation.tscn" id="5_population"]
 [ext_resource type="PackedScene" path="res://district/borough_one/DistrictOneMissionAnchors.tscn" id="6_anchors"]
@@ -10,9 +10,9 @@
 [ext_resource type="PackedScene" path="res://district/bairro1/Bairro1RoadNetwork.tscn" id="8_road_network"]
 [ext_resource type="PackedScene" path="res://district/bairro1/Bairro1ProgressionConnections.tscn" id="9_connections"]
 [ext_resource type="PackedScene" path="res://district/bairro1/Bairro1CivicServices.tscn" id="10_civic"]
-[ext_resource type="Script" uid="uid://wcy3c8fp1jaj" path="res://district/roads/UnifiedRoadNetwork2D.gd" id="11_unified_roads"]
-[ext_resource type="Script" uid="uid://brbb27p6kswrt" path="res://district/roads/traffic/JunctionTrafficController.gd" id="12_junction_traffic"]
-[ext_resource type="Script" uid="uid://bbppyg7qy1r0d" path="res://district/roads/safety/DistrictRoadSafetySystem2D.gd" id="13_road_safety"]
+[ext_resource type="Script" uid="uid://wcy3c8fp1jaj" path="res://world/shared/roads/UnifiedRoadNetwork2D.gd" id="11_unified_roads"]
+[ext_resource type="Script" uid="uid://brbb27p6kswrt" path="res://world/shared/roads/traffic/JunctionTrafficController.gd" id="12_junction_traffic"]
+[ext_resource type="Script" uid="uid://bbppyg7qy1r0d" path="res://world/shared/roads/safety/DistrictRoadSafetySystem2D.gd" id="13_road_safety"]
 
 [node name="DistrictOneComplete" type="Node2D" unique_id=1897383402]
 script = ExtResource("1_complete")

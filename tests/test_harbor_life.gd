@@ -1,14 +1,14 @@
 extends SceneTree
 
-const LAYOUT := preload("res://district/harbor_preview/HarborRoadLayout.gd")
-const NETWORK := preload("res://district/harbor_preview/HarborRoadNetwork.gd")
-const LIFE := preload("res://district/harbor_preview/HarborLife.gd")
-const RAIL := preload("res://district/harbor_preview/HarborRailLine.gd")
-const DISTRICT := preload("res://district/harbor_preview/HarborDistrict.gd")
-const SAFETY := preload("res://district/harbor_preview/HarborSafety.gd")
-const EAST := preload("res://district/harbor_preview/HarborEastDistrict.gd")
-const NORTH := preload("res://district/harbor_preview/HarborNorthDistrict.gd")
-const FACTORY := preload("res://district/ModernTrafficFactory.gd")
+const LAYOUT := preload("res://world/harbor/HarborRoadLayout.gd")
+const NETWORK := preload("res://world/harbor/HarborRoadNetwork.gd")
+const LIFE := preload("res://world/harbor/HarborLife.gd")
+const RAIL := preload("res://world/harbor/HarborRailLine.gd")
+const DISTRICT := preload("res://world/harbor/HarborDistrict.gd")
+const SAFETY := preload("res://world/harbor/HarborSafety.gd")
+const EAST := preload("res://world/harbor/HarborEastDistrict.gd")
+const NORTH := preload("res://world/harbor/HarborNorthDistrict.gd")
+const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 
 var failures: Array[String] = []
 

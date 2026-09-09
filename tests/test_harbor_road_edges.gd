@@ -1,7 +1,7 @@
 extends SceneTree
 
-const PREVIEW := preload("res://district/harbor_preview/HarborPreview.tscn")
-const NETWORK := preload("res://district/harbor_preview/HarborRoadNetwork.gd")
+const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
+const NETWORK := preload("res://world/harbor/HarborRoadNetwork.gd")
 var failures: Array[String] = []
 var boundary_segments := 0
 var closed_contours := 0

@@ -110,13 +110,13 @@ func restart() -> void:
 		_studio_audio.queue_free()
 	_studio_elapsed = 0.0
 	if show_studio_intro:
-		preload("res://district/harbor_preview/HarborAudioBank.gd").sound("water")
+		preload("res://world/harbor/HarborAudioBank.gd").sound("water")
 		_studio_card = preload("res://cutscenes/opening/scripts/rcm_studio_card.gd").new()
 		add_child(_studio_card)
 		_studio_audio = AudioStreamPlayer.new()
 		_studio_audio.bus = "SFX"
 		_studio_audio.volume_db = -12.0
-		_studio_audio.stream = preload("res://district/harbor_preview/HarborAudioBank.gd").sound("logo")
+		_studio_audio.stream = preload("res://world/harbor/HarborAudioBank.gd").sound("logo")
 		add_child(_studio_audio)
 		_studio_audio.play()
 	else:
@@ -179,8 +179,8 @@ func _process(delta: float) -> void:
 		_studio_elapsed += delta * playback_speed
 		_studio_card.elapsed = _studio_elapsed
 		_studio_card.queue_redraw()
-		if _studio_elapsed >= 3.7 and _studio_audio.stream != preload("res://district/harbor_preview/HarborAudioBank.gd").sound("water"):
-			_studio_audio.stream = preload("res://district/harbor_preview/HarborAudioBank.gd").sound("water")
+		if _studio_elapsed >= 3.7 and _studio_audio.stream != preload("res://world/harbor/HarborAudioBank.gd").sound("water"):
+			_studio_audio.stream = preload("res://world/harbor/HarborAudioBank.gd").sound("water")
 			_studio_audio.volume_db = -22.0
 			_studio_audio.play()
 		if _studio_elapsed >= 6.5:

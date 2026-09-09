@@ -51,7 +51,7 @@ func _body_clear_at(position: Vector2) -> bool:
 
 
 func _load_world() -> bool:
-	var packed := load("res://district/harbor_preview/HarborGame.tscn") as PackedScene
+	var packed := load("res://world/harbor/HarborGame.tscn") as PackedScene
 	if packed == null:
 		_check(false, "Production HarborGame scene must load")
 		return false
@@ -236,8 +236,8 @@ func _run() -> void:
 		_check(_body_clear_at(player.global_position), "Hospital respawn fits the actual player capsule")
 	var saved_position := player.global_position
 	var snapshot := {"campaign": campaign.to_save_data(), "player": player.serialize()}
-	var route := load("res://district/harbor_preview/HarborSceneRoute.gd")
-	_check(route.for_save(snapshot) == "res://district/harbor_preview/HarborGame.tscn", "Harbor saves route back to the new map")
+	var route := load("res://world/harbor/HarborSceneRoute.gd")
+	_check(route.for_save(snapshot) == "res://world/harbor/HarborGame.tscn", "Harbor saves route back to the new map")
 	_check(route.for_save({"campaign": {"campaign_flags": {}}}) == "res://Main.tscn", "Legacy saves retain their original map")
 	world.queue_free()
 	await _frames(4)

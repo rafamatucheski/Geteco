@@ -20,7 +20,7 @@ func _run() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
-	var preview := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var preview := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(preview)
 	current_scene = preview
 	for i in WARMUP_FRAMES:

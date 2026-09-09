@@ -19,7 +19,7 @@ func run() -> void:
 	await shot("D:/geteco/rcm-harbor-card.png")
 	await create_timer(3.0).timeout
 	await shot("D:/geteco/rcm-cgi-transition.png")
-	preload("res://district/harbor_preview/HarborAudioBank.gd").sound("logo").save_to_wav("D:/geteco/rcm-studios-signature.wav")
+	preload("res://world/harbor/HarborAudioBank.gd").sound("logo").save_to_wav("D:/geteco/rcm-studios-signature.wav")
 	opening.queue_free()
 	await process_frame
 	quit()

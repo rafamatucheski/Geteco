@@ -10,7 +10,7 @@ func _run() -> void:
 	root.get_node("SaveManager").clear_pending_save()
 	for flag in ["harbor_arrival_seen", "harbor_arrival_call_complete", "harbor_maciota_met", "harbor_delivery_complete"]:
 		campaign.set_campaign_flag(StringName(flag), true)
-	var world = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	await create_timer(2.0).timeout

@@ -62,6 +62,8 @@ var stride_freq_mult: float = 1.0
 var walk_dir: Vector2 = Vector2.RIGHT
 var is_scared: bool = false
 var panic_timer: float = 0.0
+var danger_response := preload("res://PedestrianDanger.gd").new()
+var panic_recovery := 0.0
 @export var max_health: int = 40
 var health: int = 40
 var is_dead: bool = false
@@ -1100,6 +1102,9 @@ func _physics_process(delta: float) -> void:
 		panic_timer -= delta
 		if panic_timer <= 0.0:
 			is_scared = false
+			panic_recovery = randf_range(2.0, 4.0)
+			_resume_after_panic()
+	panic_recovery = maxf(0.0, panic_recovery - delta)
 	
 	# Velocidade adaptativa conforme o bioma
 	# Velocidade adaptativa conforme o bioma e arquétipo
@@ -1133,8 +1138,11 @@ func _physics_process(delta: float) -> void:
 		var combat_speed = base_walk_speed * 1.2
 		var dest = combat_target.global_position + (global_position - combat_target.global_position).normalized() * 180.0
 		velocity = _navigate_towards(dest, combat_speed, delta)
+	elif is_scared:
+		velocity = danger_response.movement(self, delta, base_walk_speed * 2.4)
+		walk_dir = velocity.normalized()
 	else:
-		var cur_speed: float = base_walk_speed * biome_speed_mult * (2.2 if is_scared else 1.0)
+		var cur_speed: float = base_walk_speed * biome_speed_mult * (0.75 if panic_recovery > 0.0 else 1.0)
 		var dist: float = global_position.distance_to(walk_target)
 		
 		if dist < 16.0 or dist > 1400.0 or stuck_timer > 2.5:
@@ -1315,11 +1323,25 @@ func _show_gangster_bubble() -> void:
 	var phrases = ["MEXEU COM O BONDE ERRADO!", "DERRUBA ELE!", "PEGA O CARA!", "FOGO NELE!"]
 	_show_custom_bubble(phrases[randi() % phrases.size()], Color(0.9, 0.2, 0.2))
 
-func panic() -> void:
-	if is_dead or is_incapacitated or is_scared: return
-	is_scared = true
-	panic_timer = 5.0
+func hear_gunfire(origin: Vector2, end: Vector2) -> void:
+	if is_dead or is_incapacitated or is_gangster: return
+	danger_response.remember(origin, end)
+	panic()
+
+func _resume_after_panic() -> void:
+	danger_response.threats.clear()
 	_pick_new_sidewalk_target()
+
+func panic() -> void:
+	if is_dead or is_incapacitated: return
+	panic_timer = randf_range(9.0, 12.0)
+	if is_scared: return
+	if danger_response.threats.is_empty():
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		var origin := player.global_position if player else global_position - Vector2(30, 0)
+		danger_response.remember(origin, origin)
+	is_scared = true
+	behavior_action = 0
 	_play_audio(ProceduralAudio.get_pedestrian_scream_stream(), -6.0)
 	var phrases = ["SOCORRO!", "ELE TÁ ARMADO!", "CORRE!", "CUIDADO!"]
 	_show_custom_bubble(phrases[randi() % phrases.size()], Color(0.9, 0.6, 0.2))

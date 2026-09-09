@@ -5,8 +5,8 @@ extends SceneTree
 ## Valida contratos de engenharia, animação da dobradiça, reatividade aos slots
 ## da Astra ("curta", "longa", "corpo") e renderiza capturas reais com o manequim de 1,80 m.
 
-const TRUNK_SCRIPT := preload("res://district/mountain_pass/art/loadout_preview/SummitSUVLoadoutTrunk3D.gd")
-const HUMAN_SCRIPT := preload("res://district/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
+const TRUNK_SCRIPT := preload("res://world/mountain_pass/art/loadout_preview/SummitSUVLoadoutTrunk3D.gd")
+const HUMAN_SCRIPT := preload("res://world/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
 
 var failures: Array[String] = []
 var mesh_count: int = 0

@@ -3,7 +3,7 @@ extends SceneTree
 ## Production-game checkpoint benchmark, not a campaign-completion test.
 ## Same 1920x1080 route and 600-frame sample as sustained-driving preview QA.
 ## --post-boss measures the settled epilogue/reward checkpoint in memory only.
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 
 func _initialize() -> void:
 	call_deferred("_run")

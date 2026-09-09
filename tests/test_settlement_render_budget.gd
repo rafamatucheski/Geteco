@@ -21,7 +21,7 @@ func _run() -> void:
 	var camera := Camera2D.new()
 	scene.add_child(camera)
 	camera.make_current()
-	var settlement = load("res://district/mountain_pass/MountainSettlement.gd").new()
+	var settlement = load("res://world/mountain_pass/MountainSettlement.gd").new()
 	scene.add_child(settlement)
 	var frame_count := 0
 	while not settlement.region_ready:

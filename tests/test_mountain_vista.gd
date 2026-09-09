@@ -2,7 +2,7 @@ extends SceneTree
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:
 	root.size = Vector2i(1280,720)
-	change_scene_to_file("res://district/mountain_pass/MountainPass.tscn")
+	change_scene_to_file("res://world/mountain_pass/MountainPass.tscn")
 	for i in 10: await physics_frame
 	var vista: Node2D = current_scene.get_node("MountainExpedition/SummitVista")
 	var player: Node2D = current_scene.player_instance

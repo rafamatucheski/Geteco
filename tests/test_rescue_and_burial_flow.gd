@@ -58,7 +58,7 @@ func run() -> void:
 	Engine.time_scale = 5.0
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	await frames(30)
 	paused = false
 	var world := current_scene

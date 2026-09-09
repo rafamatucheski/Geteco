@@ -1,13 +1,13 @@
 extends "res://tests/claude_gameplay_audit/AuditCommon.gd"
 
 ## AUDIT 09 — Transição entre porto (Harbor) e montanha (Mountain Pass)
-## Real production streaming (district/harbor_preview/ContinuousWorld.gd):
+## Real production streaming (world/harbor/ContinuousWorld.gd):
 ## since a documented refactor, port<->mountain is NOT a scene swap — both
 ## regions live as siblings under the same running HarborGame scene, and
 ## ContinuousWorld toggles visibility/process_mode/region flags as the
 ## player's exterior position crosses the seam (SEAM_X=7300, y<-2000).
 ## tests/test_harbor_mountain_drive.gd asserts the OPPOSITE — that
-## current_scene stops being res://district/mountain_pass/MountainPass.tscn —
+## current_scene stops being res://world/mountain_pass/MountainPass.tscn —
 ## which reads as leftover pre-refactor logic; this audit instead verifies the
 ## actual current contract (current_region + current_scene identity) directly,
 ## with a real driven vehicle, crossing back and forth twice.

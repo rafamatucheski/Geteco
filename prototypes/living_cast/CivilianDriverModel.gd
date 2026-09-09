@@ -1,4 +1,4 @@
-extends "res://district/mountain_pass/WinterResidentModel.gd"
+extends "res://world/mountain_pass/WinterResidentModel.gd"
 ## Casual civilian, same human scale as Dante: green overshirt, jeans,
 ## sneakers, hair, ears and facial features. No independent NPC physics.
 func _ready() -> void:

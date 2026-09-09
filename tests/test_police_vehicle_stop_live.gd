@@ -8,7 +8,7 @@ func run() -> void:
 	create_timer(100).timeout.connect(func(): quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_delivery_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 35: await process_frame
 	var player = current_scene.get_node("Player")
 	var car = current_scene.get_node("PersonalCarManager").car

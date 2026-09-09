@@ -3,7 +3,7 @@ extends SceneTree
 ## Gera capturas de showcase do Dante CGI v2 em gameplay real:
 ## Frente, Costas, Perfil, Mirando Pistola 1H e Fuzil 2H.
 
-const HARBOR_SCENE: PackedScene = preload("res://district/harbor_preview/HarborGame.tscn")
+const HARBOR_SCENE: PackedScene = preload("res://world/harbor/HarborGame.tscn")
 
 func _init() -> void:
 	call_deferred("_run")

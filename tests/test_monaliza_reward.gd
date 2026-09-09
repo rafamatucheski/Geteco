@@ -28,7 +28,7 @@ func _run() -> void:
 	create_timer(100).timeout.connect(func(): quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met",&"harbor_delivery_started",&"harbor_delivery_picked_up"]:
 		root.get_node("CampaignState").set_campaign_flag(flag,true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 30: await process_frame
 	var world := current_scene
 	var manager: Node = world.get_node("PersonalCarManager")
@@ -195,7 +195,7 @@ func _run() -> void:
 	Input.action_release("ui_up")
 	for i in 2: await physics_frame
 	check(car.release.playing,"turbo release plays after accelerating out of the garage")
-	check(car.engine_audio.stream == preload("res://district/harbor_preview/monaliza/MonalizaAudio.gd").stream("engine"),"shared RPM controller retains exclusive Monaliza engine while driving")
+	check(car.engine_audio.stream == preload("res://world/harbor/monaliza/MonalizaAudio.gd").stream("engine"),"shared RPM controller retains exclusive Monaliza engine while driving")
 	check(car.global_position.distance_to(garage.global_position)>1500,"actual driving input exits showroom gate to Harbor")
 	car.exit_vehicle()
 	player.set_physics_process(false)
@@ -225,7 +225,7 @@ func _run() -> void:
 	car.repaint_vehicle(Color("355bb0"))
 	var saved: Dictionary = player.serialize()
 	root.get_node("SaveManager")._pending_save_data = {"player": JSON.parse_string(JSON.stringify(saved)),"world":{}}
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 35: await process_frame
 	var restored_manager: Node = current_scene.get_node("PersonalCarManager")
 	var restored_player: Node = current_scene.get_node("Player")

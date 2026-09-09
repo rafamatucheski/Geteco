@@ -16,7 +16,7 @@ func run() -> void:
 	root.content_scale_size = root.size
 	root.get_node("CampaignState").reset_campaign()
 	root.get_node("SaveManager").clear_pending_save()
-	var scene = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	await frames(12)

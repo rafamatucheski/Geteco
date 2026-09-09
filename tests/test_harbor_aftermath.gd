@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Segmented post-victory checkpoint QA, not a claim of a complete human campaign run.
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 var failures: Array[String] = []
 var world: Node2D
 var player: CharacterBody2D

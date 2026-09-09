@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Physical bridge crossing, driven for real (car.move_and_collide against the
 ## actual road/bridge geometry) in both directions. Updated to check the
-## current streaming-region contract (district/harbor_preview/ContinuousWorld.gd):
+## current streaming-region contract (world/harbor/ContinuousWorld.gd):
 ## since the port<->mountain refactor, the two regions coexist as siblings
 ## under the same running HarborGame scene — current_scene never changes —
 ## so success is measured via ContinuousWorld.current_region instead of a
@@ -31,19 +31,19 @@ func _run() -> void:
 	# preparing, misreporting a real timeout as a hang.
 	create_timer(240).timeout.connect(func(): quit(2))
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete",true)
-	change_scene_to_file("res://district/harbor_preview/HarborGame.tscn")
+	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 12: await physics_frame
 	var harbor := current_scene
 	var stream := harbor.get_node("ContinuousWorld")
 	for vehicle in get_nodes_in_group("modern_traffic"):
 		vehicle.collision_layer = 0
 		vehicle.set_physics_process(false)
-	var car := preload("res://district/mountain_pass/MountainSUV.gd").new()
+	var car := preload("res://world/mountain_pass/MountainSUV.gd").new()
 	car.position = Vector2(6120,-4100)
 	harbor.add_child(car)
 	car.enter_vehicle(harbor.get_node("Player"))
 	car.set_physics_process(false)
-	var points: PackedVector2Array = preload("res://district/harbor_preview/HarborMountainConnector.gd").road_definitions()[0].points
+	var points: PackedVector2Array = preload("res://world/harbor/HarborMountainConnector.gd").road_definitions()[0].points
 	for destination in points:
 		while car.global_position.distance_to(destination)>4 and current_scene==harbor:
 			var direction: Vector2 = car.global_position.direction_to(destination)
@@ -91,7 +91,7 @@ func _run() -> void:
 				if vehicle == car: continue
 				vehicle.collision_layer = 0
 				vehicle.set_physics_process(false)
-			var inbound: PackedVector2Array = preload("res://district/harbor_preview/HarborMountainConnector.gd").road_definitions()[1].points
+			var inbound: PackedVector2Array = preload("res://world/harbor/HarborMountainConnector.gd").road_definitions()[1].points
 			inbound.remove_at(0)
 			inbound.append(Vector2(5880,-4000))
 			for target in inbound:

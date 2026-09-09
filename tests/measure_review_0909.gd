@@ -23,7 +23,7 @@ extends SceneTree
 ## Ambos os caminhos chamam SettingsManager.apply_display_settings() --
 ## o mesmo código usado pelo jogo real em SettingsMenu, não uma cópia paralela.
 
-const GAME_SCENE := "res://district/harbor_preview/HarborGame.tscn"
+const GAME_SCENE := "res://world/harbor/HarborGame.tscn"
 const WARMUP_FRAMES := 90
 const STABILIZE_SECONDS := 3.0
 const SAMPLE_SECONDS := 60.0
@@ -109,7 +109,7 @@ func _parse_args() -> void:
 
 func _setup_scenario() -> void:
 	# Região delegacia/hospital: PatrolAccess (1080,2085) / ClinicAccess
-	# (1910,1705) em district/harbor_preview/HarborDistrict.gd. Ponto
+	# (1910,1705) em world/harbor/HarborDistrict.gd. Ponto
 	# intermediário mantém as duas em alcance durante a amostra.
 	var car := game.get_node("PlayerCar") as CharacterBody2D
 	var player := game.get_node("Player") as CharacterBody2D

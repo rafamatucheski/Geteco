@@ -12,6 +12,7 @@ const IMPACT_AUDIO := preload("res://audio/combat/CombatImpactAudio.gd")
 var direction: Vector2 = Vector2.RIGHT
 var owner_body: CollisionObject2D
 var _spent := false
+var _danger_reported := false
 
 func _ready():
 	if has_node("Tracer"):
@@ -24,6 +25,9 @@ func _ready():
 func _physics_process(delta):
 	if _spent:
 		return
+	if not _danger_reported:
+		_danger_reported = true
+		preload("res://PedestrianDanger.gd").report(self, global_position, direction, owner_body)
 	var from = global_position
 	var to = from + direction.normalized() * speed * delta
 	var query = PhysicsRayQueryParameters2D.create(from, to, collision_mask)

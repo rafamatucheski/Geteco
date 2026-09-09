@@ -3,10 +3,10 @@
 Data: 2026-09-08 (auditoria inicial + duas rodadas de aprofundamento na mesma sessão)
 Escopo desta rodada: `tests/claude_gameplay_audit/` (11 testes + harness),
 mais três arquivos compartilhados especificamente autorizados por esta
-tarefa: `district/mountain_pass/MountainGunShopFacade.gd` (correção local do
+tarefa: `world/mountain_pass/MountainGunShopFacade.gd` (correção local do
 sensor da porta) e `tests/test_harbor_mountain_drive.gd` (contrato de região
 atualizado). Nenhum outro arquivo fora desse escopo foi alterado.
-Mundo auditado: `res://district/harbor_preview/HarborGame.tscn` (entrada real
+Mundo auditado: `res://world/harbor/HarborGame.tscn` (entrada real
 de "Novo Jogo"; `Main.tscn` é legado, usado só por saves antigos)
 Motor: Godot 4.7.2 (`Godot_v4.7.2-stable_win64_console.exe`)
 
@@ -22,7 +22,7 @@ Este projeto tem outras sessões trabalhando em paralelo no mesmo repositório
 (peer sessions). Ao longo desta auditoria (auditoria original + duas rodadas
 de aprofundamento), dois arquivos compartilhados relevantes para o tema
 "Ammu-Nation" foram alterados **por outra sessão, não por mim**:
-- `district/harbor_preview/interiors/HarborAmmunationInterior.gd` foi
+- `world/harbor/interiors/HarborAmmunationInterior.gd` foi
   totalmente reescrito (nova UI com catálogo/preview 3D giratório, sem
   Area2D de balcão nem NPC de diálogo separado — ver achado nº 4 revisado).
 - Uma entrada real de Ammu-Nation apareceu no Porto, em
@@ -36,7 +36,7 @@ decisões**, especialmente qualquer coisa relacionada a "Ammu-Nation"/lojas.
 
 ## Mudanças aplicadas nesta rodada (resumo)
 
-1. **`district/mountain_pass/MountainGunShopFacade.gd`** — correção local de
+1. **`world/mountain_pass/MountainGunShopFacade.gd`** — correção local de
    1 linha: `entrance.get_node("InteractionArea").collision_mask = 4` logo
    após instanciar a porta da loja da montanha, em `install_entrance()`.
    Nenhuma outra porta, nem a cena padrão `BuildingEntrance.tscn`, nem
@@ -75,7 +75,7 @@ decisões**, especialmente qualquer coisa relacionada a "Ammu-Nation"/lojas.
    `tests/test_harbor_mountain_drive.gd`, que não pode depender deste
    harness por estar fora de `tests/claude_gameplay_audit/`).
 
-`district/harbor_preview/HarborDistrict.gd` (onde vive a integração com
+`world/harbor/HarborDistrict.gd` (onde vive a integração com
 `HarborStorageArt.gd`) **não foi tocado**; a integração permanece exatamente
 como estava.
 
@@ -136,7 +136,7 @@ sobreposição física era possível, em nenhuma distância. As portas do Porto
 funcionavam porque `HarborEntrance.gd` corrige isso; a montanha instanciava a
 porta sem essa correção.
 
-**Correção aplicada** (`district/mountain_pass/MountainGunShopFacade.gd`,
+**Correção aplicada** (`world/mountain_pass/MountainGunShopFacade.gd`,
 função `install_entrance()`):
 ```gdscript
 entrance.get_node("InteractionArea").collision_mask = 4
@@ -199,8 +199,8 @@ indicador discreto de carregamento seria uma boa adição de UX para
 hardware mais fraco, já que a transição não tem tela de carregamento por
 design.
 
-**Arquivo:** `district/harbor_preview/ContinuousWorld.gd::ensure_mountain()`
-e `district/mountain_pass/MountainPass.gd::_setup_environment()`.
+**Arquivo:** `world/harbor/ContinuousWorld.gd::ensure_mountain()`
+e `world/mountain_pass/MountainPass.gd::_setup_environment()`.
 
 ---
 
@@ -324,7 +324,7 @@ falha/recuperação.
 - `logs/`, `captures/` — evidências.
 
 **Fora de `tests/claude_gameplay_audit/`, autorizados por esta tarefa:**
-- `district/mountain_pass/MountainGunShopFacade.gd` — correção local de 1 linha (achado nº 1).
+- `world/mountain_pass/MountainGunShopFacade.gd` — correção local de 1 linha (achado nº 1).
 - `tests/test_harbor_mountain_drive.gd` — contrato de região atualizado (achado nº 5).
 
 Nenhum outro arquivo compartilhado, save do jogador, ou a pasta do

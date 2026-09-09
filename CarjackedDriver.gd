@@ -58,7 +58,7 @@ func _ready() -> void:
 func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 	stolen_vehicle = vehicle
 	if is_instance_valid(driver_model) and "taxi" in String(vehicle.get("vehicle_id")):
-		var detail := preload("res://district/pedestrians/CitizenDetails.gd")
+		var detail := preload("res://world/shared/pedestrians/CitizenDetails.gd")
 		detail.piece(driver_model,Vector3(.36,.11,.31),Vector3(0,1.79,0),Color("b59855"),true)
 		detail.piece(driver_model,Vector3(.27,.025,.15),Vector3(0,1.75,.16),Color("b59855"))
 		detail.piece(driver_model,Vector3(.08,.10,.03),Vector3(.12,1.24,.18),Color("e6dfc8"))

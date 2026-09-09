@@ -11,7 +11,7 @@ extends SceneTree
 ## bisecção, não como atalho de "melhoria". Nada é removido permanentemente;
 ## roda uma única invocação do processo e reporta todas as fases.
 
-const GAME_SCENE := "res://district/harbor_preview/HarborGame.tscn"
+const GAME_SCENE := "res://world/harbor/HarborGame.tscn"
 const WARMUP_FRAMES := 90
 const PHASE_SECONDS := 20.0
 

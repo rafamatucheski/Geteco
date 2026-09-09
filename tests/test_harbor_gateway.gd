@@ -1,7 +1,7 @@
 extends SceneTree
 
-const PREVIEW := preload("res://district/harbor_preview/HarborPreview.tscn")
-const FACTORY := preload("res://district/ModernTrafficFactory.gd")
+const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
+const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 var excluded: Array[RID] = []
 

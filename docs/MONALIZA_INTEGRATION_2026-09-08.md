@@ -14,7 +14,7 @@ Integração no Harbor oficial em 08/09/2026. O cupê azul e laranja fica expost
 
 ## Modelo, cenário e áudio
 
-`district/harbor_preview/monaliza/MonalizaModel.gd`: carroceria facetada original inspirada na referência, azul repintável com faixa laranja fixa, intercooler, faróis com projetores, rodas de seis raios, saias, escape e aerofólio. Tampa e aerofólio abrem juntos em uma dobradiça própria. Escala aproximadamente 4,46 m de comprimento, compatível com Dante e com a vaga de 3,5 × 6 m.
+`world/harbor/monaliza/MonalizaModel.gd`: carroceria facetada original inspirada na referência, azul repintável com faixa laranja fixa, intercooler, faróis com projetores, rodas de seis raios, saias, escape e aerofólio. Tampa e aerofólio abrem juntos em uma dobradiça própria. Escala aproximadamente 4,46 m de comprimento, compatível com Dante e com a vaga de 3,5 × 6 m.
 
 A garagem foi ampliada e recebeu o kit 3D do Antigravity (`art/monaliza_workshop/MonalizaWorkshopProps3D.gd`), com bancada, ferramentas e iluminação. Os 11 obstáculos declarados pelo kit viram colisões projetadas no mesmo sistema visual. O cenário usa um viewport estático; as peças antigas da oficina tiveram escala reduzida e o elevador foi deslocado para liberar a circulação. A oficina ainda combina esse cenário 3D com elementos anteriores em 2D; não é uma conversão integral de todo o interior.
 

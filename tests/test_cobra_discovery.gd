@@ -1,9 +1,9 @@
 extends SceneTree
 
-const VEHICLES = preload("res://district/harbor_preview/cobras/CobraVehicles.gd")
-const LEDGER = preload("res://district/harbor_preview/campaign/CobraCampaignState.gd")
-const DISCOVERY = preload("res://district/harbor_preview/campaign/CobraDiscovery.gd")
-const GARAGE = preload("res://district/harbor_preview/interiors/HarborGarageInterior.gd")
+const VEHICLES = preload("res://world/harbor/cobras/CobraVehicles.gd")
+const LEDGER = preload("res://world/harbor/campaign/CobraCampaignState.gd")
+const DISCOVERY = preload("res://world/harbor/campaign/CobraDiscovery.gd")
+const GARAGE = preload("res://world/harbor/interiors/HarborGarageInterior.gd")
 var failures := 0
 
 func _initialize() -> void:

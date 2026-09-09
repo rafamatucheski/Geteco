@@ -7,7 +7,7 @@ func check(ok: bool, message: String) -> void:
 func _run() -> void:
 	create_timer(60).timeout.connect(func(): quit(2))
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete",true)
-	change_scene_to_file("res://district/mountain_pass/MountainPass.tscn")
+	change_scene_to_file("res://world/mountain_pass/MountainPass.tscn")
 	for i in 12: await physics_frame
 	var scene := current_scene
 	var traffic: Node = scene.get_node("MountainTraffic")

@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Independent full-scene audit: authored setbacks plus actual physics geometry
 ## and a real PlayerCar departure, not only the provider's dictionary contract.
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 
 var _failures: Array[String] = []
 var _dynamic_exclusions: Array[RID] = []

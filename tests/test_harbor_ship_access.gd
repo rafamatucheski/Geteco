@@ -3,7 +3,7 @@ extends SceneTree
 ## Full-scene boarding proof. Only the existing review shortcut positions the
 ## player initially on land; every subsequent position is reached by input or
 ## CharacterBody2D.move_and_collide, including the return to the quay.
-const PREVIEW := preload("res://district/harbor_preview/HarborPreview.tscn")
+const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
 var failures: Array[String] = []
 var excluded: Array[RID] = []
 var samples := 0

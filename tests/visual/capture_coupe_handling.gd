@@ -3,7 +3,7 @@ func _init() -> void: call_deferred("run")
 func run() -> void:
 	root.size = Vector2i(1000,700)
 	root.content_scale_size = root.size
-	var scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 8: await physics_frame

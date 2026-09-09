@@ -22,7 +22,7 @@ A expansão Mountain Pass é um divisor de águas técnico no projeto:
 
 ## 2. MAPA ESTRUTURAL DE ARQUIVOS CRIADOS E INTEGRADOS
 
-Abaixo está o inventário completo de arquivos adicionados e sincronizados na árvore `district/mountain_pass/`, `prototypes/`, e na raiz do projeto:
+Abaixo está o inventário completo de arquivos adicionados e sincronizados na árvore `world/mountain_pass/`, `prototypes/`, e na raiz do projeto:
 
 ```
 d:\geteco\game\
@@ -141,7 +141,7 @@ Todas as entidades operam no sistema global de coordenadas 2D de Godot (`x`: hor
     - **NPC Silas Vance 3D:** Boneco 3D modelado posicionado atrás da mesa de operações de montanha, com jaqueta de frio azul marinho, calça cáqui, botas e gorro ushanka tradicional.
 
 ### 4.4. `MountainCabinInterior.gd` — Integração 2D/3D & Armas Lendárias
-- **Herança:** `HarborInteriorBase.gd` (`district/harbor_preview/interiors/HarborInteriorBase.gd`)
+- **Herança:** `HarborInteriorBase.gd` (`world/harbor/interiors/HarborInteriorBase.gd`)
 - **Projeção Câmera 3D:**
   - Cria um `SubViewport` (`Vector2i(720, 500)`) contendo o nó `MountainCabin3D`.
   - A `Camera3D` está posicionada em ângulo cinematográfico elevado (`position = Vector3(0.0, 5.2, 5.8)`, `rotation_degrees = Vector3(-42.0, 0.0, 0.0)`), com `fov = 48.0`.

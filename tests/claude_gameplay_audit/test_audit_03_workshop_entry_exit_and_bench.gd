@@ -1,7 +1,7 @@
 extends "res://tests/claude_gameplay_audit/AuditCommon.gd"
 
 ## AUDIT 03 — Entrada e saída da oficina (Northgate Auto) + bancada
-## Real production interior (district/harbor_preview/interiors/HarborWorkshopInterior.gd)
+## Real production interior (world/harbor/interiors/HarborWorkshopInterior.gd)
 ## reached through the real exterior door (scripts/entrances/BuildingEntrance.gd,
 ## via its own Area2D proximity sensor — not a manager-internal shortcut) and
 ## its real "bancada de preparação" (tuning bench). Covers repeated

@@ -4,7 +4,7 @@ func run():
  root.size=Vector2i(1280,720)
  root.get_node("CampaignState").set_campaign_flag(&"harbor_arrival_seen",true)
  root.get_node("CampaignState").set_campaign_flag(&"harbor_call_complete",true)
- var world=load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+ var world=load("res://world/harbor/HarborGame.tscn").instantiate()
  root.add_child(world)
  current_scene=world
  while not world.gameplay_ready: await process_frame

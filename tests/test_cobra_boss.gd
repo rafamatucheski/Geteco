@@ -1,6 +1,6 @@
 extends SceneTree
-const ENCOUNTER := preload("res://district/harbor_preview/cobras/CobraEncounter.gd")
-const BOSS := preload("res://district/harbor_preview/cobras/CobraBoss.gd")
+const ENCOUNTER := preload("res://world/harbor/cobras/CobraEncounter.gd")
+const BOSS := preload("res://world/harbor/cobras/CobraBoss.gd")
 const BULLET := preload("res://Bullet.tscn")
 var failures := 0
 var completions := 0

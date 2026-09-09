@@ -4,7 +4,7 @@ extends SceneTree
 ## Exercises all 7 authored doors + 2 reusable templates with real Player input,
 ## NPC dialogue advance/cancel, useful contextual interactions, camera bounds, and OutsideReturn points.
 
-const PREVIEW_SCENE: PackedScene = preload("res://district/harbor_preview/HarborPreview.tscn")
+const PREVIEW_SCENE: PackedScene = preload("res://world/harbor/HarborPreview.tscn")
 
 var failures: Array[String] = []
 var tested_cycles := 0
@@ -250,7 +250,7 @@ func _run_test() -> void:
 
 	# 6. TESTAR TEMPLATES REUTILIZÁVEIS (AMMU-NATION & MORGUE/IML)
 	print("\n--- TESTANDO TEMPLATES REUTILIZÁVEIS (AMMU-NATION & IML) ---")
-	var ammu = load("res://district/harbor_preview/interiors/HarborAmmunationInterior.gd").new()
+	var ammu = load("res://world/harbor/interiors/HarborAmmunationInterior.gd").new()
 	root.add_child(ammu)
 	await create_timer(0.1).timeout
 	_check(ammu.gunsmith_npc != null, "Template Ammu-Nation deve instanciar Armeiro Vance")
@@ -263,7 +263,7 @@ func _run_test() -> void:
 	completed_interactions += 1
 	ammu.queue_free()
 
-	var morgue = load("res://district/harbor_preview/interiors/HarborMorgueInterior.gd").new()
+	var morgue = load("res://world/harbor/interiors/HarborMorgueInterior.gd").new()
 	root.add_child(morgue)
 	await create_timer(0.1).timeout
 	_check(morgue.pathologist_npc != null, "Template Morgue deve instanciar Dr. Silveira")

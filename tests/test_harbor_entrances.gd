@@ -3,8 +3,8 @@ extends SceneTree
 ## Exterior doors are animated interaction affordances, not invented interiors.
 ## Each scenario starts outside its building; all approach/retreat is native
 ## Player input, and crossing the facade is attempted by the real body sweep.
-const PREVIEW := preload("res://district/harbor_preview/HarborPreview.tscn")
-const BUILDING := preload("res://district/harbor_preview/HarborBuilding.gd")
+const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
+const BUILDING := preload("res://world/harbor/HarborBuilding.gd")
 const SITES := {
 	"District/Garage": {"count": 1, "outward": Vector2.DOWN, "width": 120.0, "role": "garage"},
 	"District/Police": {"count": 1, "outward": Vector2.DOWN, "width": 54.0, "role": "police"},

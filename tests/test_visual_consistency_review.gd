@@ -126,7 +126,7 @@ func run() -> void:
 	# 3. VALIDAR E CAPTURAR MONALIZA COUPE (FMIC, SPOILER, LIVERY)
 	# -------------------------------------------------------------
 	print("\n--- 2. VERIFICANDO MODELO 3D DA MONALIZA ---")
-	var monaliza_class = load("res://district/harbor_preview/monaliza/MonalizaModel.gd")
+	var monaliza_class = load("res://world/harbor/monaliza/MonalizaModel.gd")
 	var car: Node3D = monaliza_class.new()
 	world.add_child(car)
 

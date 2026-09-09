@@ -6,7 +6,7 @@ func _initialize() -> void:
 func run() -> void:
 	root.get_node("CampaignState").reset_campaign()
 	root.get_node("SaveManager").clear_pending_save()
-	var world = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	for i in 12:

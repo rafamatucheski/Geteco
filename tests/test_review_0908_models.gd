@@ -9,12 +9,12 @@ extends SceneTree
 ## - MountainPineTree (pinheiro 2D low-poly com tronco visível e galhos naturais)
 ## Executa com o manequim métrico de 1,80 m ao lado de cada modelo para comprovação de escala.
 
-const GUN_SHOP_EXT_SCRIPT := preload("res://district/mountain_pass/art/review_0908/MountainGunShop3D.gd")
-const GUN_SHOP_INT_SCRIPT := preload("res://district/mountain_pass/art/review_0908/MountainGunShopInterior3D.gd")
-const CARGO_PLANE_SCRIPT  := preload("res://district/mountain_pass/art/review_0908/CrashedCargoPlane3D.gd")
-const CABIN_SCRIPT        := preload("res://district/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
-const HUMAN_SCRIPT        := preload("res://district/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
-const PINE_SCRIPT         := preload("res://district/mountain_pass/MountainPineTree.gd")
+const GUN_SHOP_EXT_SCRIPT := preload("res://world/mountain_pass/art/review_0908/MountainGunShop3D.gd")
+const GUN_SHOP_INT_SCRIPT := preload("res://world/mountain_pass/art/review_0908/MountainGunShopInterior3D.gd")
+const CARGO_PLANE_SCRIPT  := preload("res://world/mountain_pass/art/review_0908/CrashedCargoPlane3D.gd")
+const CABIN_SCRIPT        := preload("res://world/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
+const HUMAN_SCRIPT        := preload("res://world/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
+const PINE_SCRIPT         := preload("res://world/mountain_pass/MountainPineTree.gd")
 
 var failures: Array[String] = []
 var model_mesh_counts: Dictionary = {}

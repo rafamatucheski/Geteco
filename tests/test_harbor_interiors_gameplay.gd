@@ -6,7 +6,7 @@ extends SceneTree
 ## camera limits, 3 cycles per building, 9 cycles for fire station (3 per bay),
 ## vehicle garage boarding/entering/exiting, and zero unsolicited rewards.
 
-const PREVIEW_SCENE: PackedScene = preload("res://district/harbor_preview/HarborPreview.tscn")
+const PREVIEW_SCENE: PackedScene = preload("res://world/harbor/HarborPreview.tscn")
 
 var failures: Array[String] = []
 var completed_cycles := 0
@@ -624,7 +624,7 @@ func _run_test() -> void:
 	await process_frame
 	await physics_frame
 
-	var preview_res := load("res://district/harbor_preview/HarborPreview.tscn") as PackedScene
+	var preview_res := load("res://world/harbor/HarborPreview.tscn") as PackedScene
 	_check(preview_res != null, "HarborPreview.tscn deve carregar para o teste integrado")
 	var live_scene = preview_res.instantiate()
 	root.add_child(live_scene)

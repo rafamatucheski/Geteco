@@ -3,7 +3,7 @@ extends SceneTree
 ## Explicit, opt-in REAL-DISK test. Never uses autosave or the user's slots.
 ## Run rendered with -- --authorize-isolated-save after reviewing permission.
 ## Headless/fallback are refused: they cannot prove the real user save folder.
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 var failures: Array[String] = []
 var world: Node2D
 var slot_id := ""

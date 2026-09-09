@@ -4,7 +4,7 @@ extends SceneTree
 ## Comprova que o visual do Dante CGI v2 está totalmente integrado no Player real,
 ## preservando física, câmera, combate, armas, dano, morte, veículos e trajes.
 
-const HARBOR_SCENE: PackedScene = preload("res://district/harbor_preview/HarborGame.tscn")
+const HARBOR_SCENE: PackedScene = preload("res://world/harbor/HarborGame.tscn")
 
 var failures: Array[String] = []
 

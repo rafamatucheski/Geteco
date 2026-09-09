@@ -18,7 +18,7 @@ func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	root.content_scale_size = root.size
 	
-	var scene := load("res://district/mountain_pass/MountainPass.tscn").instantiate() as Node2D
+	var scene := load("res://world/mountain_pass/MountainPass.tscn").instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
 	

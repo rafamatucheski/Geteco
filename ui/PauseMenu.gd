@@ -6,7 +6,7 @@ extends CanvasLayer
 
 const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
-const SCENE_ROUTE = preload("res://district/harbor_preview/HarborSceneRoute.gd")
+const SCENE_ROUTE = preload("res://world/harbor/HarborSceneRoute.gd")
 const MenuAudio = preload("res://ui/MenuAudio.gd")
 const ACHIEVEMENT_CATALOG := preload("res://AchievementCatalog.gd")
 const COLLECTIBLE_CATALOG := preload("res://CollectibleCatalog.gd")

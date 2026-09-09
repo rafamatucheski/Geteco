@@ -6,7 +6,7 @@ func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message)
 func _run() -> void:
 	create_timer(60).timeout.connect(func(): quit(2))
-	change_scene_to_file("res://district/mountain_pass/MountainPass.tscn")
+	change_scene_to_file("res://world/mountain_pass/MountainPass.tscn")
 	for i in 10: await physics_frame
 	var scene := current_scene
 	var player: Node2D = scene.player_instance

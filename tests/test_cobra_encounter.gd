@@ -1,7 +1,7 @@
 extends SceneTree
 
-const ENCOUNTER := preload("res://district/harbor_preview/cobras/CobraEncounter.gd")
-const TERRITORY := preload("res://district/harbor_preview/cobras/CobraTerritory.gd")
+const ENCOUNTER := preload("res://world/harbor/cobras/CobraEncounter.gd")
+const TERRITORY := preload("res://world/harbor/cobras/CobraTerritory.gd")
 var failures := 0
 var completions := 0
 
@@ -93,7 +93,7 @@ func _run() -> void:
 	territory.set_defeated(true)
 	territory.report_aggression()
 	check(territory.get_status().defeated and territory.get_status().living_guards==1,"Defeat persists local peace without deleting population")
-	var neighbor := preload("res://district/harbor_preview/cobras/CobraResident.gd").new()
+	var neighbor := preload("res://world/harbor/cobras/CobraResident.gd").new()
 	neighbor.guard = false
 	neighbor.profile = 1
 	neighbor.position = Vector2(400,400)

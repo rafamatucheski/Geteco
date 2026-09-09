@@ -36,7 +36,7 @@ func run() -> void:
 	saves.clear_pending_save()
 	settings.set_language("pt_BR")
 
-	var world = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	await frames(12)

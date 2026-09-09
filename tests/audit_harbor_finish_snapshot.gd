@@ -6,7 +6,7 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
-	var scene := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var scene := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
 	for i in 8:

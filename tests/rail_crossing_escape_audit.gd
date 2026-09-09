@@ -3,7 +3,7 @@ extends SceneTree
 ## Component-level safety proof. No vehicle or train actor is spawned or moved;
 ## the test inspects the geometry and state contract of one derived crossing.
 
-const CROSSING_SCRIPT := preload("res://district/roads/safety/RailLevelCrossing2D.gd")
+const CROSSING_SCRIPT := preload("res://world/shared/roads/safety/RailLevelCrossing2D.gd")
 
 var _failures: Array[String] = []
 

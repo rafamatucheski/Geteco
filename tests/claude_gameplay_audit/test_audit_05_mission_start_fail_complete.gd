@@ -1,7 +1,7 @@
 extends "res://tests/claude_gameplay_audit/AuditCommon.gd"
 
 ## AUDIT 05 — Início, falha e conclusão de missão
-## Real production controller (district/harbor_preview/campaign/CobraCampaignController.gd)
+## Real production controller (world/harbor/campaign/CobraCampaignController.gd)
 ## driven through its real adapter (CobraCampaignBridge.gd), inside HarborGame.tscn.
 ## Existing tests/test_cobra_campaign_gameplay.gd already covers the happy path
 ## of cobra_contact -> cobra_race extensively, but never drives a mission all

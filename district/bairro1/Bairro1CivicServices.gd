@@ -4,8 +4,8 @@ extends Node2D
 ## Functional civic anchors for the first borough.  Their buildings are drawn
 ## by Bairro1Expansion; this companion owns only spawns, gates and dispatch.
 
-const DEPOT_MARKER := preload("res://district/EmergencyDepotMarker.gd")
-const DEPOT_GATE := preload("res://district/DepotGate.gd")
+const DEPOT_MARKER := preload("res://world/shared/emergency/EmergencyDepotMarker.gd")
+const DEPOT_GATE := preload("res://world/shared/emergency/DepotGate.gd")
 
 func _ready() -> void:
 	add_to_group("bairro1_civic_services")

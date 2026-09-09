@@ -41,7 +41,7 @@ func _run() -> void:
 		check(player.torso_node.rotation.x < 0,"sprint leans forward: "+outfit)
 	player.current_outfit_id = "dante_classic"
 	player._rebuild_dante_costume()
-	var cabin = load("res://district/mountain_pass/MountainCabinInterior.gd").new()
+	var cabin = load("res://world/mountain_pass/MountainCabinInterior.gd").new()
 	scene.add_child(cabin)
 	cabin.set_npc_rendering_active(true)
 	check(cabin.cabin_3d_world.get_node_or_null("SilasVance3D") == null,"unwanted cabin NPC removed")

@@ -4,7 +4,7 @@ extends SceneTree
 ## recording ("long strip coming out of the car" around 2:32-2:36):
 ## CobraBossReward.gd reassigns reward_car.global_transform to teleport the
 ## boss's car into its garage bay, then immediately calls repair_vehicle()
-## (see district/harbor_preview/campaign/CobraBossReward.gd, both the
+## (see world/harbor/campaign/CobraBossReward.gd, both the
 ## restore-on-load and claim-in-garage paths). TrafficVehicle.skid_line is
 ## top_level (its points are plain world-space coordinates), and
 ## repair_vehicle() reset every other damage-visual property (deformation,

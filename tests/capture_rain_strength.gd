@@ -3,7 +3,7 @@ func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
 	root.size = Vector2i(1280, 720)
-	var world := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var world := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(world)
 	current_scene = world
 	for i in 20: await process_frame

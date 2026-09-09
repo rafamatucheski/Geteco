@@ -307,7 +307,7 @@ static func get_vehicle_spec(archetype_id: String) -> Dictionary:
 	var spec: Dictionary = VEHICLES.get(archetype_id, VEHICLES["sedan_classic"]).duplicate(true)
 	if not spec.has("model_class"):
 		spec["model_class"] = LEGACY_MODELS.get(archetype_id,"res://prototypes/living_cast/models/UnionSedanModel.gd")
-	if archetype_id == "monaliza": spec["model_class"] = "res://district/harbor_preview/monaliza/MonalizaModel.gd"
+	if archetype_id == "monaliza": spec["model_class"] = "res://world/harbor/monaliza/MonalizaModel.gd"
 	_resolved_specs[archetype_id] = spec
 	return spec
 

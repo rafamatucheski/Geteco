@@ -26,7 +26,7 @@ extends SceneTree
 ## the pool -- the exact condition that hid this bug from a quick, static
 ## check), and counts genuinely simultaneous, visible, distinct cruisers.
 
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 
 func _initialize() -> void:
 	call_deferred("_run")

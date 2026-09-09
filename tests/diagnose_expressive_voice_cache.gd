@@ -7,7 +7,7 @@ extends SceneTree
 ## PHONE_LINES pre-warm, which is what test_harbor_terminal.gd's "4 ObjectDB
 ## instances remained" warning traced back to. Does not change any behavior.
 
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 const VOICE := preload("res://ExpressiveVoice.gd")
 
 func _initialize() -> void: call_deferred("run")

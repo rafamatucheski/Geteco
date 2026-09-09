@@ -1,7 +1,7 @@
 extends SceneTree
 
-const PREVIEW := preload("res://district/harbor_preview/HarborPreview.tscn")
-const ADAPTER := preload("res://district/harbor_preview/HarborEmergencyDirector.gd")
+const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
+const ADAPTER := preload("res://world/harbor/HarborEmergencyDirector.gd")
 var failures: Array[String] = []
 var foreign_units: Array[Node] = []
 var foreign_target: Node2D

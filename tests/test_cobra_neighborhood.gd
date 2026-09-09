@@ -10,7 +10,7 @@ func _initialize() -> void:
 
 func run() -> void:
 	seed(90210)
-	var scene := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var scene := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
 	for frame in 8:

@@ -4,8 +4,8 @@ extends Control
 ## Entrypoint declarado em project.godot (run/main_scene="res://ui/MainMenu.tscn")
 ## Suporta: Novo Jogo, Carregar Jogo (com auditoria de slots), Configurações e Sair.
 
-const MAIN_GAME_SCENE: String = "res://district/harbor_preview/HarborGame.tscn"
-const SCENE_ROUTE = preload("res://district/harbor_preview/HarborSceneRoute.gd")
+const MAIN_GAME_SCENE: String = "res://world/harbor/HarborGame.tscn"
+const SCENE_ROUTE = preload("res://world/harbor/HarborSceneRoute.gd")
 const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
 const MenuAudio = preload("res://ui/MenuAudio.gd")
 

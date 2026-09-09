@@ -1,8 +1,8 @@
 extends SceneTree
 
-const SCENE := preload("res://district/harbor_preview/HarborPreview.tscn")
-const SAFETY := preload("res://district/harbor_preview/HarborSafety.gd")
-const FACTORY := preload("res://district/ModernTrafficFactory.gd")
+const SCENE := preload("res://world/harbor/HarborPreview.tscn")
+const SAFETY := preload("res://world/harbor/HarborSafety.gd")
+const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 
 

@@ -4,7 +4,7 @@ func _run() -> void:
 	var state=root.get_node("CampaignState")
 	state.set_campaign_flag(&"harbor_arrival_seen",true)
 	state.set_campaign_flag(&"harbor_call_complete",true)
-	var world=load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world=load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene=world
 	while not world.gameplay_ready: await process_frame

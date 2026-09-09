@@ -1,7 +1,7 @@
 extends SceneTree
 
 class CountingController:
-	extends "res://district/roads/traffic/JunctionTrafficController.gd"
+	extends "res://world/shared/roads/traffic/JunctionTrafficController.gd"
 	var visual_publications := 0
 	var crossing_publications := 0
 	var published_stages: Array[int] = []

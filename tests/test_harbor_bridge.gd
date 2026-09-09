@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Exercises the real driveable vehicle across both bridge lanes, with water
 ## collision still enabled. Graph reachability lives in the road contract test.
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 
 var _failures: Array[String] = []
 var _exclusions: Array[RID] = []

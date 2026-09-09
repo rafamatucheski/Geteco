@@ -7,8 +7,8 @@ extends SceneTree
 ## get_obstacle_bounds(), get_interaction_points() e renderiza capturas no Vulkan Forward+
 ## com manequim de 1,80 m e caixa métrica de reserva do carro.
 
-const WORKSHOP_SCRIPT := preload("res://district/harbor_preview/art/monaliza_workshop/MonalizaWorkshopProps3D.gd")
-const HUMAN_SCRIPT    := preload("res://district/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
+const WORKSHOP_SCRIPT := preload("res://world/harbor/art/monaliza_workshop/MonalizaWorkshopProps3D.gd")
+const HUMAN_SCRIPT    := preload("res://world/mountain_pass/art/winter_props/HumanScaleReference3D.gd")
 
 var failures: Array[String] = []
 var mesh_count: int = 0

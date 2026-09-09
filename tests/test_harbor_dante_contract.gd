@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Explicit post-arrival QA checkpoint, NOT an intro/story-flow test. Uses the
 ## production Player, capsule, controller, weapons and vehicle interaction.
-const GAME := preload("res://district/harbor_preview/HarborGame.tscn")
+const GAME := preload("res://world/harbor/HarborGame.tscn")
 var failures: Array[String] = []
 var world: Node2D
 var player: CharacterBody2D

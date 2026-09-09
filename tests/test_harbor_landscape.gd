@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Spatial render bounds + production capsule sweeps; no collision exemptions.
-const PREVIEW := preload("res://district/harbor_preview/HarborPreview.tscn")
+const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
 var failures: Array[String] = []
 var world: Node2D
 var protected_polygons: Array[Dictionary] = []

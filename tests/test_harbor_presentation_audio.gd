@@ -1,5 +1,5 @@
 extends SceneTree
-const BANK := preload("res://district/harbor_preview/HarborAudioBank.gd")
+const BANK := preload("res://world/harbor/HarborAudioBank.gd")
 const OPENING := preload("res://cutscenes/opening/OpeningCutscene.tscn")
 var failures: Array[String] = []
 var completed := 0
@@ -57,7 +57,7 @@ func run() -> void:
 	root.get_node("CampaignState").reset_campaign()
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_arrival_seen", true)
 	root.get_node("SaveManager").clear_pending_save()
-	var world: Node2D = load("res://district/harbor_preview/HarborGame.tscn").instantiate()
+	var world: Node2D = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	for i in 15: await process_frame

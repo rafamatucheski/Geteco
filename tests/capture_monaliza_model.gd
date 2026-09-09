@@ -4,7 +4,7 @@ func run() -> void:
 	root.size = Vector2i(1280,800)
 	var world := Node3D.new()
 	root.add_child(world)
-	var car := preload("res://district/harbor_preview/monaliza/MonalizaModel.gd").new()
+	var car := preload("res://world/harbor/monaliza/MonalizaModel.gd").new()
 	world.add_child(car)
 	var floor_mesh := MeshInstance3D.new()
 	floor_mesh.mesh = PlaneMesh.new()

@@ -7,7 +7,7 @@ func check(value: bool, text: String) -> void:
 	if not value:
 		failures += 1
 func run() -> void:
-	var scene = load("res://district/mountain_pass/MountainPass.tscn").instantiate()
+	var scene = load("res://world/mountain_pass/MountainPass.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	await physics_frame

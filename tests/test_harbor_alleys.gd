@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Full-scene spatial and physical regression: the actual player's capsule must
 ## traverse both alleys in both directions, including beneath the rail viaduct.
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 var _failures: Array[String] = []
 var _exclusions: Array[RID] = []
 var _samples := 0

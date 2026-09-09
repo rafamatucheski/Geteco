@@ -7,7 +7,7 @@ func _init() -> void:
 func _capture() -> void:
 	root.size = Vector2i(2000, 1100)
 	root.content_scale_size = Vector2i(2000, 1100)
-	var preview := load("res://district/harbor_preview/HarborPreview.tscn").instantiate() as Node2D
+	var preview := load("res://world/harbor/HarborPreview.tscn").instantiate() as Node2D
 	root.add_child(preview)
 	current_scene = preview
 	for frame in 60:

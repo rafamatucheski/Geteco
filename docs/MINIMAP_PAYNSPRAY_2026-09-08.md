@@ -20,7 +20,7 @@ Durante o movimento automático, colisões/controle do veículo são suspensos e
 ## Arquivos principais
 
 - `ui/HarborMinimap.gd`: desenho vetorial, marcadores, distâncias e projeção de interiores.
-- `district/harbor_preview/HarborAutoService.gd`: entrada, persiana, espera, reparo, preço e saída.
+- `world/harbor/HarborAutoService.gd`: entrada, persiana, espera, reparo, preço e saída.
 - `HarborGame.gd`: instalação dos dois sistemas no mundo oficial.
 - `RegionTravel.gd` e `PersonalCarManager.gd`: posição segura nos snapshots durante o serviço.
 

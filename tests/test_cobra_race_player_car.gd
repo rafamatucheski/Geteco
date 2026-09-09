@@ -1,7 +1,7 @@
 extends SceneTree
 ## Real Harbor PlayerCar, unchanged controller, only Input actions after staging.
-const CONTROLLER = preload("res://district/harbor_preview/campaign/CobraCampaignController.gd")
-const STATE = preload("res://district/harbor_preview/campaign/CobraCampaignState.gd")
+const CONTROLLER = preload("res://world/harbor/campaign/CobraCampaignController.gd")
+const STATE = preload("res://world/harbor/campaign/CobraCampaignState.gd")
 var failures: Array[String] = []
 func _initialize() -> void:
 	call_deferred("run")
@@ -11,7 +11,7 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 func run() -> void:
 	seed(63421)
-	var scene = load("res://district/harbor_preview/HarborPreview.tscn").instantiate()
+	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 12:

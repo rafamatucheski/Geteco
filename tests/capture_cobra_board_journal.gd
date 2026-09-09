@@ -36,7 +36,7 @@ func run() -> void:
 
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
-	var world: Node2D = (load("res://district/harbor_preview/HarborGame.tscn") as PackedScene).instantiate()
+	var world: Node2D = (load("res://world/harbor/HarborGame.tscn") as PackedScene).instantiate()
 	root.add_child(world)
 	current_scene = world
 	await frames(20)

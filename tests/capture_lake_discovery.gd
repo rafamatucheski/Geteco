@@ -7,7 +7,7 @@ func run() -> void:
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	create_timer(90).timeout.connect(func(): quit(2))
-	change_scene_to_file("res://district/mountain_pass/MountainPass.tscn")
+	change_scene_to_file("res://world/mountain_pass/MountainPass.tscn")
 	for i in 10: await process_frame
 	var world = current_scene
 	while not world.region_ready: await process_frame

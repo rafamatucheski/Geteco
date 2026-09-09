@@ -12,7 +12,7 @@ Leia os arquivos antes de editar. Pode alterar scripts/cenas da UI e a apresenta
 
 ## Anti Gravity — oficina 3D do Maciota
 
-Trabalhe em `D:/geteco/game`, exclusivamente no cenário 3D da oficina. Inspecione primeiro `district/harbor_preview/art/monaliza_workshop/` e o interior atual. Desenvolva nesse diretório, com demonstração independente para Astra integrar.
+Trabalhe em `D:/geteco/game`, exclusivamente no cenário 3D da oficina. Inspecione primeiro `world/harbor/art/monaliza_workshop/` e o interior atual. Desenvolva nesse diretório, com demonstração independente para Astra integrar.
 
 A oficina precisa ter volume e escala coerentes com Dante e a Monaliza: ferramentas, bancada, elevador e iluminação discreta. Crie sala própria do Maciota, acessível a pé, com mesa, cadeira e objetos que deem personalidade. Preserve espaço para caminhar, conversar e entrar no carro. Modele portas/acessos compatíveis com as colisões, sem objetos gigantescos.
 

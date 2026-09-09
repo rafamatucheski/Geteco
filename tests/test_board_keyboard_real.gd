@@ -49,7 +49,7 @@ func _run() -> void:
 	campaign.set_campaign_flag(&"harbor_arrival_seen", true)
 	campaign.set_campaign_flag(&"harbor_arrival_call_complete", true)
 
-	var world: Node2D = (load("res://district/harbor_preview/HarborGame.tscn") as PackedScene).instantiate()
+	var world: Node2D = (load("res://world/harbor/HarborGame.tscn") as PackedScene).instantiate()
 	root.add_child(world)
 	current_scene = world
 	await _frames(20)

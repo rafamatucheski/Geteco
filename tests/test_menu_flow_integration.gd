@@ -9,7 +9,7 @@ extends SceneTree
 ## 5. MainMenu -> Carregar Jogo (Botões dinâmicos com hook de som) -> Main.tscn restaurado
 
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
-const MAIN_GAME_SCENE: String = "res://district/harbor_preview/HarborGame.tscn"
+const MAIN_GAME_SCENE: String = "res://world/harbor/HarborGame.tscn"
 const MenuAudio = preload("res://ui/MenuAudio.gd")
 
 var failures: Array[String] = []

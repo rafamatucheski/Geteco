@@ -13,7 +13,7 @@ extends SceneTree
 ##
 ## Uso: Godot..._console.exe --path D:/geteco/game --script res://tests/reproduce_review_0909_stage2.gd
 
-const GAME_SCENE := "res://district/harbor_preview/HarborGame.tscn"
+const GAME_SCENE := "res://world/harbor/HarborGame.tscn"
 const WARMUP_FRAMES := 90
 const OBSERVE_SECONDS := 45.0
 

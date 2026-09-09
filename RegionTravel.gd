@@ -1,15 +1,15 @@
 extends Node
 ## Owns a driven vehicle while its source scene is unloaded. Disk saves use
 ## an allowlisted snapshot; live travel retains the actual instance.
-const HARBOR := "res://district/harbor_preview/HarborGame.tscn"
-const MOUNTAIN := "res://district/mountain_pass/MountainPass.tscn"
+const HARBOR := "res://world/harbor/HarborGame.tscn"
+const MOUNTAIN := "res://world/mountain_pass/MountainPass.tscn"
 const VEHICLE_SCRIPTS := [
 	"res://PlayerCar.gd", "res://prototypes/living_cast/HarborCoupe.gd",
-	"res://district/mountain_pass/MountainSUV.gd",
-	"res://district/mountain_pass/ArcticJeep.gd",
-	"res://district/mountain_pass/MountainPickup.gd",
+	"res://world/mountain_pass/MountainSUV.gd",
+	"res://world/mountain_pass/ArcticJeep.gd",
+	"res://world/mountain_pass/MountainPickup.gd",
 	"res://city_demo/scripts/TrafficVehicle.gd",
-	"res://district/harbor_preview/monaliza/MonalizaCar.gd",
+	"res://world/harbor/monaliza/MonalizaCar.gd",
 ]
 const CAR_FIELDS := ["health", "max_health", "max_speed", "acceleration", "braking", "friction", "turn_speed", "drift_factor", "has_nitro", "nitro_amount", "nitro_max", "has_puncture_proof_tires", "has_punctured_tires", "is_broken", "radio_index"]
 var destination := ""
@@ -177,7 +177,7 @@ func _restore_saved_vehicle(scene: Node, player: Node) -> void:
 		push_warning("Unrecognized saved vehicle; restoring player on foot.")
 		return
 	var car: Node2D
-	var personal := script == "res://district/harbor_preview/monaliza/MonalizaCar.gd"
+	var personal := script == "res://world/harbor/monaliza/MonalizaCar.gd"
 	if personal:
 		car = get_tree().get_first_node_in_group("personal_vehicle")
 		if car == null: return
@@ -216,7 +216,7 @@ func sanitize_saved_coordinates(data: Dictionary) -> Array[String]:
 	elif region == "mountain":
 		fallback = Vector2(3240,430) # Same authored entry as finish_arrival.
 		if int(world.get("coordinates_version",1)) >= 2:
-			fallback += preload("res://district/harbor_preview/ContinuousWorld.gd").MOUNTAIN_OFFSET
+			fallback += preload("res://world/harbor/ContinuousWorld.gd").MOUNTAIN_OFFSET
 	var player_data: Dictionary = data.get("player", {}) if data.get("player", {}) is Dictionary else {}
 	if player_data.has("position") and not valid_saved_point(player_data.position):
 		if fallback.is_finite(): player_data.position = [fallback.x,fallback.y]

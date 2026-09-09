@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 const CREW_TRANSITION := preload("res://EmergencyCrewTransition.gd")
 const CREW_DOOR_SCRIPT := preload("res://VehicleDoorVisual.gd")
-const LANE_ROUTER := preload("res://district/roads/EmergencyLaneRouter.gd")
+const LANE_ROUTER := preload("res://world/shared/roads/EmergencyLaneRouter.gd")
 var _lane_router := LANE_ROUTER.new()
 
 @export_enum("POLICE", "AMBULANCE", "FIRE", "CORONER") var type: int = 0

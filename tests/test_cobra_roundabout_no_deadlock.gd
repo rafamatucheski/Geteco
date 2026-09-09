@@ -38,7 +38,7 @@ extends SceneTree
 ## notes for this bug; that second case is a known, reproduced, understood,
 ## but currently unfixed limitation, not something this test claims to cover.
 
-const PREVIEW_PATH := "res://district/harbor_preview/HarborPreview.tscn"
+const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 const JUNCTION_39_POSITION := Vector2(7400.0, 1700.0)
 const WATCH_RADIUS := 260.0
 

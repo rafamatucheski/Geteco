@@ -1,8 +1,8 @@
 extends "res://tests/claude_gameplay_audit/AuditCommon.gd"
 
 ## AUDIT 01 — Chegada inicial e liberação do controle
-## Real production entry point (res://district/harbor_preview/HarborGame.tscn),
-## real controller (district/harbor_preview/campaign/HarborArrivalMission.gd),
+## Real production entry point (res://world/harbor/HarborGame.tscn),
+## real controller (world/harbor/campaign/HarborArrivalMission.gd),
 ## no campaign flags pre-set: exercises the actual first-boot path a fresh
 ## player experiences (arrival CGI -> disembark -> free-roam window -> phone
 ## call -> control released for real gameplay).

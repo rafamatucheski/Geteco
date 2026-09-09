@@ -166,7 +166,7 @@ mantidas só dentro de `capture_audio_comparison.gd` (não existem mais em
 
 Confirmado por leitura de todos os consumidores antes de editar
 (`EmergencyVehicle.gd`, `city_demo/scripts/TrafficVehicle.gd`,
-`district/harbor_preview/interiors/HarborFireStationInterior.gd`,
+`world/harbor/interiors/HarborFireStationInterior.gd`,
 `CityAudioManager.gd`, `HUD.gd`, `NightRaceController.gd`,
 `MissionManager.gd`) — nenhum deles lê `.get_length()` da stream nem
 depende da duração exata; todos apenas atribuem `.stream = ProceduralAudio.get_X_stream()`

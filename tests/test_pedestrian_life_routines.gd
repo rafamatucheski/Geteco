@@ -8,7 +8,7 @@ func _run_test() -> void:
 	print("=== TESTE: ROTINAS DE VIDA DOS PEDESTRES & ANTI-AGLOMERACAO =====")
 	print("=================================================================")
 
-	var ped_script = load("res://district/pedestrians/AuthoredSidewalkPedestrian.gd")
+	var ped_script = load("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd")
 	var building_script = load("res://ProceduralBuilding.gd")
 
 	# 1. Testar desincronizacao de passos e offsets laterais
