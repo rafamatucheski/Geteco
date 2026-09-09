@@ -17,7 +17,10 @@ var walkers: Array[Node2D] = []
 var _traffic_lanes: Array[Path2D] = []
 var _traffic_target := 0
 var _population_clock := 0.0
+var _budget_clock := 0.0
 var _spawn_serial := 1000
+var _sleeping_vehicles: Dictionary = {}
+var _sleeping_walkers: Dictionary = {}
 
 
 class HarborController extends JunctionTrafficController:
@@ -298,9 +301,45 @@ func get_population_snapshot() -> Dictionary:
 	}
 
 
+func _budget_population(focus: Vector2) -> void:
+	for car in vehicles:
+		if not is_instance_valid(car): continue
+		var distant: bool = car.global_position.distance_to(focus) > 1600.0 and car.get("is_driven_by_player") != true and not car.get("is_exploding")
+		if distant and not _sleeping_vehicles.has(car) and (car.is_processing() or car.is_physics_processing()):
+			_sleeping_vehicles[car] = {"physics": car.is_physics_processing(), "idle": car.is_processing()}
+			car.set_physics_process(false)
+			car.set_process(false)
+		elif not distant and _sleeping_vehicles.has(car):
+			car.set_physics_process(_sleeping_vehicles[car].physics)
+			car.set_process(_sleeping_vehicles[car].idle)
+			_sleeping_vehicles.erase(car)
+	for car in _sleeping_vehicles.keys():
+		if not is_instance_valid(car): _sleeping_vehicles.erase(car)
+
+	for walker in walkers:
+		if not is_instance_valid(walker): continue
+		var distant_walker: bool = walker.global_position.distance_to(focus) > 1600.0 and not walker.get("is_scared") and not walker.get("is_flying")
+		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
+			_sleeping_walkers[walker] = true
+			walker.set_physics_process(false)
+		elif not distant_walker and _sleeping_walkers.has(walker):
+			walker.set_physics_process(true)
+			_sleeping_walkers.erase(walker)
+	for walker in _sleeping_walkers.keys():
+		if not is_instance_valid(walker): _sleeping_walkers.erase(walker)
+
 func _process(delta: float) -> void:
 	if not _configured or _traffic_lanes.is_empty():
 		return
+	_budget_clock += delta
+	if _budget_clock >= 0.2:
+		_budget_clock = 0.0
+		var subject := get_tree().get_first_node_in_group("player") as Node2D
+		var focus := subject.global_position if subject != null else Vector2(1620, 900)
+		for car in get_tree().get_nodes_in_group("modern_traffic"):
+			if car.get("is_driven_by_player") == true:
+				focus = car.global_position
+		_budget_population(focus)
 	_population_clock += delta
 	if _population_clock < 3.0:
 		return

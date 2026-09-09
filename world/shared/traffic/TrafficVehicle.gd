@@ -362,10 +362,27 @@ func _ready() -> void:
 
 var is_night_or_storm: bool = false
 
+func _is_near_screen(margin: float = 260.0) -> bool:
+	if not is_inside_tree():
+		return false
+	var vp := get_viewport()
+	if vp == null:
+		return false
+	var screen_pos := get_canvas_transform() * global_position
+	return vp.get_visible_rect().grow(margin).has_point(screen_pos)
+
+func _update_headlight_state() -> void:
+	if headlight == null:
+		return
+	var on_screen := is_driven_by_player or _is_near_screen(260.0)
+	var active := (is_night_or_storm or is_driven_by_player) and not is_broken and on_screen
+	headlight.visible = active
+	if second_headlight:
+		second_headlight.visible = active
+
 func set_headlights(dark_state: bool) -> void:
 	is_night_or_storm = dark_state
-	if headlight:
-		headlight.visible = (is_night_or_storm or is_driven_by_player) and not is_broken
+	_update_headlight_state()
 
 func _setup_headlight() -> void:
 	if headlight != null:
@@ -378,7 +395,7 @@ func _setup_headlight() -> void:
 	headlight.position = Vector2(target_length * 0.45, 0.0)
 	headlight.texture = HeadlightTextureGenerator.get_conical_headlight_texture()
 	headlight.offset = Vector2(170.0, 0.0) # Projeta 340px para a frente do carro
-	headlight.visible = (is_night_or_storm or is_driven_by_player) and not is_broken
+	headlight.visible = (is_night_or_storm or is_driven_by_player) and not is_broken and (is_driven_by_player or _is_near_screen(260.0))
 	add_child(headlight)
 
 func honk_horn():
@@ -869,10 +886,16 @@ func _update_3d_orientation(delta: float) -> void:
 	if not visible_now:
 		body_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_body_render_visible = false
+		if not is_driven_by_player:
+			if headlight and headlight.visible: headlight.visible = false
+			if second_headlight and second_headlight.visible: second_headlight.visible = false
 		return
 	body_model.rotation.y = -global_rotation - PI * 0.5
 	if visual:
 		visual.global_rotation = 0.0
+	if not is_driven_by_player and is_night_or_storm and not is_broken:
+		if headlight and not headlight.visible: headlight.visible = true
+		if second_headlight and not second_headlight.visible: second_headlight.visible = true
 	if second_headlight != null and _lamp_mounts.size() >= 2:
 		var view := body_viewport.get_camera_3d()
 		if view:
@@ -1552,6 +1575,13 @@ func _process(delta: float) -> void:
 	# Accumulated delta preserves travel speed and every remote step still
 	# applies the same stop-distance, spacing and reservation contracts.
 	var on_screen := get_viewport().get_visible_rect().grow(260).has_point(get_canvas_transform() * global_position)
+	if not is_driven_by_player and headlight:
+		var light_active := on_screen and is_night_or_storm and not is_broken
+		if headlight.visible != light_active:
+			headlight.visible = light_active
+			if second_headlight: second_headlight.visible = light_active
+	if smoke_emitter and smoke_emitter.emitting != (health < 50 and on_screen):
+		smoke_emitter.emitting = health < 50 and on_screen
 	_remote_lane_elapsed += delta
 	var interval := minf(0.1, MAX_LANE_ADVANCE_PER_FRAME * 0.8 / maxf(speed, 1.0))
 	if not on_screen and _remote_lane_elapsed < interval:

@@ -313,7 +313,9 @@ func _process(delta: float) -> void:
 		var pos = cam.global_position
 		# Keep the bounded particle budget around the visible play area at any zoom.
 		var view_size: Vector2 = get_viewport().get_visible_rect().size / cam.zoom.abs().max(Vector2(0.05, 0.05))
-		rain_particles.emission_rect_extents = view_size * 0.5 + Vector2(220, 260)
+		view_size.x = minf(view_size.x, 2400.0)
+		view_size.y = minf(view_size.y, 1600.0)
+		rain_particles.emission_rect_extents = view_size * 0.5 + Vector2(160, 200)
 		splash_particles.emission_rect_extents = view_size * 0.5 + Vector2(30, 30)
 		if rain_particles: rain_particles.global_position = pos
 		if splash_particles: splash_particles.global_position = pos
@@ -422,7 +424,7 @@ func _update_rain_particles() -> void:
 	var outside := strength > 0.0 and not is_inside_interior
 	if rain_particles:
 		rain_particles.emitting = outside
-		var drop_count := int(lerpf(100.0, 620.0, strength))
+		var drop_count := int(lerpf(60.0, 180.0, strength))
 		if rain_particles.amount != drop_count:
 			rain_particles.amount = drop_count
 		rain_particles.initial_velocity_min = lerpf(400.0, 740.0, strength)
@@ -432,7 +434,7 @@ func _update_rain_particles() -> void:
 		rain_particles.color.a = lerpf(0.18, 0.70, strength)
 	if splash_particles:
 		splash_particles.emitting = outside
-		var splash_count := int(lerpf(25.0, 180.0, strength))
+		var splash_count := int(lerpf(15.0, 50.0, strength))
 		if splash_particles.amount != splash_count:
 			splash_particles.amount = splash_count
 		splash_particles.color.a = lerpf(0.12, 0.45, strength)

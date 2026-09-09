@@ -135,7 +135,14 @@ func _process(delta: float) -> void:
 	if not on_screen:
 		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_was_visible = false
+		if vehicle.headlight and vehicle.headlight.visible: vehicle.headlight.visible = false
+		if second_headlight and second_headlight.visible: second_headlight.visible = false
 		return
+	if vehicle.headlight:
+		var lights_on: bool = vehicle.is_night_or_storm and not vehicle.is_broken and vehicle.visible
+		if vehicle.headlight.visible != lights_on:
+			vehicle.headlight.visible = lights_on
+			if second_headlight: second_headlight.visible = lights_on
 	var flash := int(Time.get_ticks_msec() / 240) % 2 if vehicle.lights.visible else -1
 	var changed := not _was_visible or absf(angle_difference(_last_heading, vehicle.global_rotation)) > 0.005 or _door_motion > 0.0 or flash != _last_flash
 	if changed and _clock >= 1.0 / 30.0:

@@ -65,9 +65,9 @@ func _process(delta: float) -> void:
 	var pending: Dictionary = get_node("/root/RegionTravel").pending_world
 	if not ready_for_crossing and not building and (point.y < -1000 or pending.get("region", "") == "mountain"):
 		ensure_mountain()
+	_budget_traffic(point)
 	if not ready_for_crossing: return
 	_update_region()
-	_budget_traffic(point)
 	_transfer_bridge_traffic()
 
 func _update_region() -> void:
@@ -92,12 +92,14 @@ func _update_region() -> void:
 		var camera := get_viewport().get_camera_2d()
 		if camera and camera.has_meta("mountain_zoom"): camera.remove_meta("mountain_zoom")
 
+var _sleeping_walkers: Dictionary = {}
+
 func _budget_traffic(point: Vector2) -> void:
 	# Keep parked/driven cars and live pursuit state. Distant ambient followers
 	# stop simulation, retaining their instances and damage rather than respawning.
 	for car in get_tree().get_nodes_in_group("modern_traffic"):
 		if not is_instance_valid(car): continue
-		var distant: bool = car.global_position.distance_to(point) > 3400 and car.get("is_driven_by_player") != true
+		var distant: bool = car.global_position.distance_to(point) > 1600.0 and car.get("is_driven_by_player") != true and not car.get("is_exploding")
 		if distant and not _sleeping_traffic.has(car) and (car.is_processing() or car.is_physics_processing()):
 			_sleeping_traffic[car] = {"physics":car.is_physics_processing(),"idle":car.is_processing()}
 			car.set_physics_process(false)
@@ -108,6 +110,18 @@ func _budget_traffic(point: Vector2) -> void:
 			_sleeping_traffic.erase(car)
 	for car in _sleeping_traffic.keys():
 		if not is_instance_valid(car): _sleeping_traffic.erase(car)
+
+	for walker in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
+		if not is_instance_valid(walker): continue
+		var distant_walker: bool = walker.global_position.distance_to(point) > 1600.0 and not walker.get("is_scared") and not walker.get("is_flying")
+		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
+			_sleeping_walkers[walker] = true
+			walker.set_physics_process(false)
+		elif not distant_walker and _sleeping_walkers.has(walker):
+			walker.set_physics_process(true)
+			_sleeping_walkers.erase(walker)
+	for walker in _sleeping_walkers.keys():
+		if not is_instance_valid(walker): _sleeping_walkers.erase(walker)
 
 func _transfer_bridge_traffic() -> void:
 	var traffic := mountain.get_node("MountainTraffic")
@@ -145,3 +159,4 @@ func get_streaming_stats() -> Dictionary:
 
 func _exit_tree() -> void:
 	_sleeping_traffic.clear()
+	_sleeping_walkers.clear()

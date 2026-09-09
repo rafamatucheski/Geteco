@@ -17,7 +17,10 @@ var _head_pixel := Vector2.ZERO
 
 var lamp_light: PointLight2D
 var light_glow_sprite: Sprite2D
+var lamp_sprite: Sprite2D
 var is_lit: bool = false
+var _has_private_model := false
+static var _shared_cache: Dictionary = {}
 
 func _ready() -> void:
 	z_index = 8 # Fica acima das calçadas
@@ -51,61 +54,136 @@ func _setup_collision() -> void:
 	col.position = Vector2.ZERO
 	add_child(col)
 
-func _build_lamp_post() -> void:
-	view=SubViewport.new()
-	view.size=Vector2i(160,160)
-	view.own_world_3d=true
-	view.transparent_bg=true
-	view.render_target_update_mode=SubViewport.UPDATE_ONCE
+static func _get_shared_lamp_data(facing_south: bool, tree: SceneTree, light_col: Color) -> Dictionary:
+	var key := "south" if facing_south else "north"
+	if _shared_cache.has(key) and is_instance_valid(_shared_cache[key].get("view")):
+		return _shared_cache[key]
+
+	var vp := SubViewport.new()
+	vp.name = "SharedStreetLampView_" + key
+	vp.size = Vector2i(160, 160)
+	vp.own_world_3d = true
+	vp.transparent_bg = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	tree.root.add_child(vp)
+
+	var m := Node3D.new()
+	vp.add_child(m)
+	var steel := StandardMaterial3D.new()
+	steel.albedo_color = Color("414952")
+	steel.metallic = 0.7
+	steel.roughness = 0.45
+	var b := StandardMaterial3D.new()
+	b.albedo_color = Color("ddd5b5")
+	b.emission = light_col
+	var pole := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = 0.06
+	cylinder.bottom_radius = 0.10
+	cylinder.height = 3.8
+	cylinder.radial_segments = 8
+	pole.mesh = cylinder
+	pole.material_override = steel
+	pole.position.y = 1.9
+	m.add_child(pole)
+	var sign_z := 1.0 if facing_south else -1.0
+	for part in [[Vector3(0, 0.08, 0), Vector3(0.36, 0.16, 0.36), steel], [Vector3(0, 3.75, sign_z * 0.45), Vector3(0.09, 0.10, 0.9), steel], [Vector3(0, 3.68, sign_z * 0.95), Vector3(0.42, 0.16, 0.65), steel], [Vector3(0, 3.58, sign_z * 0.95), Vector3(0.32, 0.045, 0.50), b]]:
+		var mesh := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = part[1]
+		mesh.mesh = box
+		mesh.position = part[0]
+		mesh.material_override = part[2]
+		m.add_child(mesh)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-40, -25, 0)
+	vp.add_child(sun)
+	var camera := Camera3D.new()
+	vp.add_child(camera)
+	camera.position = Vector3(0, 8, 6)
+	camera.look_at(Vector3(0, 1.6, 0))
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 8
+	var sprite_pos := (Vector2(80, 80) - camera.unproject_position(Vector3.ZERO)) * 0.8
+	var head_px := (camera.unproject_position(Vector3(0, 3.7, sign_z * 0.95)) - camera.unproject_position(Vector3.ZERO)) * 0.8
+
+	var data := {
+		"view": vp,
+		"model": m,
+		"bulb": b,
+		"sprite_pos": sprite_pos,
+		"head_pixel": head_px,
+		"texture": vp.get_texture()
+	}
+	_shared_cache[key] = data
+	return data
+
+func _ensure_private_model() -> void:
+	if _has_private_model: return
+	_has_private_model = true
+	view = SubViewport.new()
+	view.size = Vector2i(160, 160)
+	view.own_world_3d = true
+	view.transparent_bg = true
+	view.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(view)
-	model=Node3D.new()
+	model = Node3D.new()
 	view.add_child(model)
-	var steel:=StandardMaterial3D.new()
-	steel.albedo_color=Color("414952")
-	steel.metallic=.7
-	steel.roughness=.45
-	bulb=StandardMaterial3D.new()
-	bulb.albedo_color=Color("ddd5b5")
-	bulb.emission=light_color
-	var pole:=MeshInstance3D.new()
-	var cylinder:=CylinderMesh.new()
-	cylinder.top_radius=.06
-	cylinder.bottom_radius=.10
-	cylinder.height=3.8
-	cylinder.radial_segments=8
-	pole.mesh=cylinder
-	pole.material_override=steel
-	pole.position.y=1.9
+	var steel := StandardMaterial3D.new()
+	steel.albedo_color = Color("414952")
+	steel.metallic = 0.7
+	steel.roughness = 0.45
+	bulb = StandardMaterial3D.new()
+	bulb.albedo_color = Color("ddd5b5")
+	bulb.emission = light_color
+	bulb.emission_enabled = is_lit and not broken
+	var pole := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new()
+	cylinder.top_radius = 0.06
+	cylinder.bottom_radius = 0.10
+	cylinder.height = 3.8
+	cylinder.radial_segments = 8
+	pole.mesh = cylinder
+	pole.material_override = steel
+	pole.position.y = 1.9
 	model.add_child(pole)
-	var sign_z:=1.0 if is_facing_south else -1.0
-	for part in [[Vector3(0,.08,0),Vector3(.36,.16,.36),steel],[Vector3(0,3.75,sign_z*.45),Vector3(.09,.10,.9),steel],[Vector3(0,3.68,sign_z*.95),Vector3(.42,.16,.65),steel],[Vector3(0,3.58,sign_z*.95),Vector3(.32,.045,.50),bulb]]:
-		var mesh:=MeshInstance3D.new()
-		var box:=BoxMesh.new()
-		box.size=part[1]
-		mesh.mesh=box
-		mesh.position=part[0]
-		mesh.material_override=part[2]
+	var sign_z := 1.0 if is_facing_south else -1.0
+	for part in [[Vector3(0, 0.08, 0), Vector3(0.36, 0.16, 0.36), steel], [Vector3(0, 3.75, sign_z * 0.45), Vector3(0.09, 0.10, 0.9), steel], [Vector3(0, 3.68, sign_z * 0.95), Vector3(0.42, 0.16, 0.65), steel], [Vector3(0, 3.58, sign_z * 0.95), Vector3(0.32, 0.045, 0.50), bulb]]:
+		var mesh := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = part[1]
+		mesh.mesh = box
+		mesh.position = part[0]
+		mesh.material_override = part[2]
 		model.add_child(mesh)
-	var sun:=DirectionalLight3D.new()
-	sun.rotation_degrees=Vector3(-40,-25,0)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-40, -25, 0)
 	view.add_child(sun)
-	var camera:=Camera3D.new()
+	var camera := Camera3D.new()
 	view.add_child(camera)
-	camera.position=Vector3(0,8,6)
-	camera.look_at(Vector3(0,1.6,0))
-	camera.projection=Camera3D.PROJECTION_ORTHOGONAL
-	camera.size=8
-	var sprite:=Sprite2D.new()
-	sprite.texture=view.get_texture()
-	sprite.scale=Vector2(.8,.8)
-	sprite.position=(Vector2(80,80)-camera.unproject_position(Vector3.ZERO))*.8
-	_head_pixel=(camera.unproject_position(Vector3(0,3.7,sign_z*.95))-camera.unproject_position(Vector3.ZERO))*.8
-	add_child(sprite)
-	var notifier:=VisibleOnScreenNotifier2D.new()
-	notifier.rect=Rect2(-180,-180,360,360)
+	camera.position = Vector3(0, 8, 6)
+	camera.look_at(Vector3(0, 1.6, 0))
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 8
+	if lamp_sprite:
+		lamp_sprite.texture = view.get_texture()
+
+func _build_lamp_post() -> void:
+	var data := _get_shared_lamp_data(is_facing_south, get_tree(), light_color)
+	view = data["view"]
+	model = data["model"]
+	bulb = data["bulb"]
+	_head_pixel = data["head_pixel"]
+	lamp_sprite = Sprite2D.new()
+	lamp_sprite.texture = data["texture"]
+	lamp_sprite.scale = Vector2(0.8, 0.8)
+	lamp_sprite.position = data["sprite_pos"]
+	add_child(lamp_sprite)
+	var notifier := VisibleOnScreenNotifier2D.new()
+	notifier.rect = Rect2(-180, -180, 360, 360)
 	add_child(notifier)
-	notifier.screen_entered.connect(func(): _near_view=true; set_lit(is_lit))
-	notifier.screen_exited.connect(func(): _near_view=false; set_lit(is_lit))
+	notifier.screen_entered.connect(func(): _near_view = true; set_lit(is_lit))
+	notifier.screen_exited.connect(func(): _near_view = false; set_lit(is_lit))
 
 func _setup_light() -> void:
 	var arm_offset = Vector2(0, 24) if is_facing_south else Vector2(0, -24)
@@ -152,21 +230,23 @@ func set_lit(lit: bool) -> void:
 		lamp_light.visible = is_lit and not broken and _near_view
 	if light_glow_sprite:
 		light_glow_sprite.visible = is_lit and not broken and _near_view
-	if bulb:
-		bulb.emission_enabled = is_lit and not broken
-		view.render_target_update_mode=SubViewport.UPDATE_ONCE
+	if bulb and is_instance_valid(bulb) and is_instance_valid(view):
+		if bulb.emission_enabled != (is_lit and not broken):
+			bulb.emission_enabled = is_lit and not broken
+			view.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 # Bullet damage does not count as a vehicle impulse.
 func take_damage(_amount: int, _is_player: bool = false) -> void:
 	pass
 
 func _process(delta: float) -> void:
-	_impact_cooldown=maxf(0.0,_impact_cooldown-delta)
+	_impact_cooldown = maxf(0.0, _impact_cooldown - delta)
 
 func receive_vehicle_impact(speed: float, direction: Vector2) -> void:
-	if broken or _falling or _impact_cooldown>0 or speed<35: return
-	_impact_cooldown=.65
-	var axis:=Vector3(direction.y,0,-direction.x).normalized()
+	if broken or _falling or _impact_cooldown > 0 or speed < 35: return
+	_impact_cooldown = 0.65
+	_ensure_private_model()
+	var axis := Vector3(direction.y, 0, -direction.x).normalized()
 	if axis.is_zero_approx(): axis=Vector3.FORWARD
 	var tween:=create_tween()
 	if speed>=170:
