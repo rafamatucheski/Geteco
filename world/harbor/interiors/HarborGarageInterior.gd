@@ -142,6 +142,14 @@ func restore_legacy_visitor(player: Node2D) -> void:
 		player.global_position = spawn_point.global_position
 		player.velocity = Vector2.ZERO
 
+## Abre o portão do bay da Monaliza na parede sul para que o carro possa
+## sair fisicamente sem bater na parede. O HarborInteriorBase usa esses
+## gaps para dividir a parede sólida em segmentos com uma abertura no meio.
+## Coordenadas no espaço local do interior: x=150 é o centro do showroom
+## (bay), largura 110 px garante passagem da Monaliza (colisão 86×40 em PI/2).
+func _get_south_wall_gaps() -> Array:
+	return [Vector2(150.0, 110.0)]
+
 func is_vehicle_at_exit(world_point: Vector2) -> bool:
 	var ground: Vector2 = showroom.unproject_floor(world_point)
 	return absf(ground.x) < 1.8 and ground.y > 5.2 and ground.y < 12.0
