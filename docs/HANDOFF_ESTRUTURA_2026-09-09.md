@@ -1,22 +1,22 @@
-# Handoff — reestruturação de pastas (2026-09-09)
+# Atualização de estrutura — 2026-09-09
 
-**Para: Codex Astra.** Leia antes de tocar no repositório. A estrutura de pastas mudou
-bastante hoje, e caminhos que você conhecia não existem mais. Nenhum comportamento do jogo
-foi alterado — só a organização e a documentação.
+**Para: Antigravity e Astra.** Leiam antes de continuar. A estrutura de pastas do projeto
+mudou hoje e caminhos que vocês conheciam não existem mais. **Nenhum comportamento do jogo
+foi alterado** — só organização, nomes e documentação.
 
-Ponto de partida: `5ce5fd0`. Quatro commits de reestruturação, 2.165 arquivos tocados.
+O trabalho de vocês está intacto: nada em `prototypes/gameplay_repair_art_0909/` foi
+editado, e o sistema de reação de civis a tiroteio entregue em paralelo hoje
+(`PedestrianDanger.gd` + integração em `Bullet.gd` e `AnimatedPedestrian3D.gd`) foi
+commitado e passa na verificação.
 
-Os dados brutos que sustentam todo número citado aqui estão em
-[measurements/review-0909/](measurements/review-0909/), versionados junto com as
-evidências originais do usuário.
+Cinco commits, a partir de `5ce5fd0`. Documentação de referência: [ARCHITECTURE.md](ARCHITECTURE.md).
+Dados brutos de tudo que é afirmado aqui: [measurements/review-0909/](measurements/review-0909/).
 
 ---
 
-## 1. O que mudou de lugar
+## 1. De-para de caminhos
 
-### Antes → depois
-
-| antes | depois |
+| antes | agora |
 |---|---|
 | `district/harbor_preview/` | **`world/harbor/`** |
 | `district/mountain_pass/` | **`world/mountain_pass/`** |
@@ -24,87 +24,92 @@ evidências originais do usuário.
 | `district/pedestrians/` | `world/shared/pedestrians/` |
 | `district/nature/`, `district/rail/` | `world/shared/nature/`, `world/shared/rail/` |
 | `district/Emergency*`, `DepotGate`, `DocksParking`, `EmergencyVehicleYard`, `ModernTrafficFactory` | `world/shared/emergency/` |
-| `city_demo/scripts/TrafficVehicle.gd`, `city_demo/scenes/TrafficVehicle.tscn` | `world/shared/traffic/` |
+| `city_demo/scripts/TrafficVehicle.gd` (+ `.tscn`) | `world/shared/traffic/` |
 | `city_demo/scripts/WeaponEffects.gd` | `world/shared/combat/` |
 | `city_demo/scripts/roads/CityIntersection.gd` | `world/shared/roads/` |
 | `city_demo/scenes/pickups/PoliceLoot.{gd,tscn}` | `world/shared/pickups/` |
 | `city_demo/art/` | **`assets/art/`** |
 | `Main.tscn` | **`legacy/Main.tscn`** |
 | `CentralDistrict.*`, `DistrictInteriorManager.*`, `DistrictRestrictionFeedback.*` | `legacy/` |
-| `district/` (bairro1, bairro1_v2, borough_one, coast, highway) | `legacy/district/` |
+| `district/{bairro1,bairro1_v2,borough_one,coast,highway}` | `legacy/district/` |
 | `city_demo/` (o que sobrou) | `legacy/city_demo/` |
 
-**A pasta `district/` não existe mais.** O nome misturava região viva, malha viária e
-protótipos mortos. E `harbor_preview` não era preview nenhum: era o jogo principal — foi o
-nome mais enganoso do repositório.
-
-### Estrutura de hoje
+**`district/` não existe mais.** O nome misturava região viva, malha viária e protótipos
+mortos. E `harbor_preview` não era preview nenhum — era o jogo principal. Foi o nome mais
+enganoso do repositório e custou tempo real.
 
 ```
-world/          349 arq   o jogo que roda
-  harbor/       184       jogo principal (HarborGame.tscn)
-  mountain_pass/105       segunda região, por streaming
-  shared/        59       roads, pedestrians, traffic, emergency, combat, pickups, nature, rail
-ui/              33       MainMenu.tscn = entrypoint declarado no project.godot
-legacy/         109       geração anterior — AINDA CARREGA, ver seção 3
-OLD/             46       arquivo morto, tem .gdignore
-tools/            2       check_references.py, move_folder_refactor.py
-docs/                     estrutural na raiz, medições em docs/measurements/,
-                          sessões antigas em docs/history/
-raiz             72 .gd   sistemas globais (Player, PlayerCar, WantedManager, HUD, catálogos)
+world/     o jogo que roda    harbor/ (principal), mountain_pass/, shared/
+ui/        MainMenu.tscn = entrypoint declarado no project.godot
+legacy/    geração anterior — AINDA CARREGA em runtime, ver seção 4
+OLD/       arquivo morto, tem .gdignore
+raiz       72 .gd de sistemas globais (Player, PlayerCar, WantedManager, HUD, catálogos)
+tools/     check_references.py, move_folder_refactor.py
+docs/      estrutural na raiz; measurements/, history/
 ```
 
-Os 72 scripts soltos na raiz **não** foram reorganizados. Ficou como fase separada,
-adiada de propósito: são alvo de ~1.556 caminhos hardcoded e dos 10 autoloads, e não valia
-juntar esse risco com o resto.
+Os 72 scripts da raiz **não** foram reorganizados — adiado de propósito (seção 6).
 
 ---
 
-## 2. A armadilha que você precisa conhecer
+## 2. Para o Antigravity
 
-O projeto referencia recursos por **string de caminho**, não por UID: 653 `preload("res://…")`
-e 903 `load("res://…")`, e quase nenhum `path=` de `.tscn` tem `uid=` como companheiro.
-Mover arquivo quebra referência de verdade.
+**Sua pasta não foi tocada.** `prototypes/gameplay_repair_art_0909/` está exatamente como
+você deixou: `Casket3D`, `FuneralSequenceController`, `GraveSiteVisual`,
+`EliasStorytellerModel`, `ShovelTool3D`, `PoliceDriverExtraction`,
+`ExtractionDemoRigFactory`, as capturas, os três vídeos e o `INTEGRATION_CONTRACT.md`.
 
-Pior: **corrigir todas as strings não basta.** O registro global de `class_name` do Godot
-(`.godot/global_script_class_cache.cfg`) continua apontando para os caminhos antigos e
-quebra a resolução de classes mesmo com tudo certo no código. Isso me custou um ciclo de
-depuração hoje: o verificador dizia 0 quebras e o jogo não carregava.
+Duas coisas que te afetam:
 
-Procedimento obrigatório ao mover arquivo:
+**Os alvos de integração do seu contrato mudaram de lugar.** O `INTEGRATION_CONTRACT.md`
+nomeia os arquivos onde a Astra deve integrar. Onde eles estão agora:
 
-```bash
-GODOT="D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe"
+| no contrato | caminho atual |
+|---|---|
+| `PoliceOfficer.gd` | raiz — inalterado |
+| `PoliceVehicleStop.gd` | raiz — inalterado |
+| `HarborCemetery.gd` | **`world/harbor/HarborCemetery.gd`** |
+| `HarborWorldEvents.gd` | **`world/harbor/events/HarborWorldEvents.gd`** |
+| `scripts/player/DanteVisualAdapter.gd` | inalterado (seu `ExtractionDemoRigFactory.gd` o referencia) |
 
-# 1. git mv (leve junto os .uid e .import)
-# 2. substituir res://<antigo> por res://<novo> em .gd/.tscn/.tres/.cfg/project.godot
-python tools/check_references.py     # 3. tem que dar 0 quebras novas
-"$GODOT" --path . --import           # 4. RECONSTRUIR o cache de class_name
-"$GODOT" --path . --script res://tests/profile_load_time_0909.gd   # 5. carregar de verdade
-```
+**Um `.tscn` seu não carrega.** `prototypes/living_cast/FleetShowcasePhase2.tscn` começa
+com BOM UTF-8 e o parser do Godot recusa (`Expected '['`). É defeito **pré-existente**, não
+do refactor — não mexi para não misturar com mudança estrutural. O mesmo vale para
+`legacy/district/bairro1_v2/landmarks/LandmarksV2.tscn`. Arquivos `.gd` com BOM (30 no
+projeto, incluindo vários seus) o Godot aceita normalmente; só `.tscn` quebra.
 
-Pular o passo 4 produz erro que parece do seu código e não é.
-
-### As duas ferramentas em `tools/`
-
-`move_folder_refactor.py` faz o move + reescrita de referências com `--dry-run`. Foi o que
-rodou nas Fases 2 e 3 (306 e 105 arquivos) e está pronto para a Fase 4 — basta preencher a
-lista `MOVES`. O docstring traz o procedimento completo.
-
-### `tools/check_references.py`
-
-Ferramenta nova. Valida que toda referência `res://` aponta para arquivo existente, e
-distingue por contexto (não por lista fixa):
-
-- **sondagem opcional** — caminho dentro de `ResourceLoader.exists(...)`, tem fallback
-- **destino de escrita** — caminho passado a `save_png()`/`ResourceSaver.save()`, é saída
-
-Sai com código 1 só em quebra **nova**. Uma quebra real pré-existente está registrada em
-`KNOWN_BROKEN` para ficar visível sem travar o portão — ver seção 5.
+Se for referenciar o mundo compartilhado de dentro de `prototypes/`, use os caminhos novos.
+Hoje há só duas referências para fora: `res://scripts/player/DanteVisualAdapter.gd` e
+`res://world/mountain_pass/WinterResidentModel.gd` (esta já atualizada).
 
 ---
 
-## 3. `legacy/` não é código morto
+## 3. Para a Astra
+
+Seu escopo pelo contrato do Antigravity é IA, física, rotas, performance, ativação de
+regiões por proximidade e integração final. Tudo isso mudou de endereço:
+
+- Roteamento e malha viária: `world/shared/roads/` (inclui `EmergencyLaneRouter.gd`)
+- Despacho de emergência: `world/shared/emergency/` (classe base `EmergencyDepotDirector`)
+  e `world/harbor/HarborEmergencyDirector.gd`
+- Streaming e ativação por proximidade: `world/harbor/ContinuousWorld.gd`
+- `WantedManager.gd`, `PoliceOfficer.gd`, `EmergencyVehicle.gd`, `Paramedic.gd`,
+  `Mortician.gd`: continuam na raiz, inalterados
+
+### Sobre "ativação de regiões por proximidade"
+
+Já existe e funciona — não comece do zero. `ContinuousWorld.gd` mantém as duas regiões na
+mesma árvore e desliga a distante: `process_mode = PROCESS_MODE_DISABLED` e
+`visible = false`. Tráfego a mais de 3.400 px do jogador tem `_process`/`_physics_process`
+desligados preservando instância e estado (`_budget_traffic`), e veículos que cruzam a
+ponte são transferidos de faixa sem respawn (`_transfer_bridge_traffic`).
+
+Ou seja: quando você está no porto, a montanha **não simula nem renderiza**. Ela continua
+ocupando memória, e isso é o que falta atacar — não a simulação.
+
+---
+
+## 4. `legacy/` não é código morto
 
 Não confunda com `OLD/`. **`legacy/` não tem `.gdignore` e é carregada em runtime.**
 
@@ -116,106 +121,85 @@ const LEGACY := "res://legacy/Main.tscn"
 ```
 
 Save **sem** a flag `harbor_campaign_active` carrega `legacy/Main.tscn`. Quem começou a
-jogar antes da campanha do porto continua na primeira geração do mapa. Apagar a pasta, ou
-colocar `.gdignore` nela, quebra o save dessas pessoas.
+jogar antes da campanha do porto continua na primeira geração do mapa. Apagar a pasta ou
+colocar `.gdignore` nela quebra o save dessas pessoas.
 
-`tests/test_legacy_save_route.gd` (novo) guarda esse contrato: instancia a cena legada de
-verdade, não só confere a string. Rode-o se mexer em qualquer coisa dessa árvore.
-
-As duas gerações **compartilham** `Player.gd`, `PlayerCar.gd`, `DynamicCamera.gd` e
-`world/shared/emergency/EmergencyDepots.tscn`. Só o mapa difere.
+`tests/test_legacy_save_route.gd` guarda esse contrato — instancia a cena legada de
+verdade, não só confere a string. As duas gerações compartilham `Player.gd`, `PlayerCar.gd`,
+`DynamicCamera.gd` e `world/shared/emergency/EmergencyDepots.tscn`; só o mapa difere.
 
 ---
 
-## 4. Documentação criada
+## 5. Duas armadilhas que custaram tempo hoje
 
-Não existia `README.md` na raiz nem `CLAUDE.md`, e os 81 `.md` eram quase todos relatórios
-de sessão datados.
+**Corrigir todas as strings de caminho não basta.** O projeto referencia recursos por
+string, não por UID (653 `preload` + 903 `load`, e quase nenhum `path=` de `.tscn` tem
+`uid=`). Mas mesmo com tudo certo no código, o registro global de `class_name`
+(`.godot/global_script_class_cache.cfg`) continua apontando para os caminhos antigos e
+quebra a resolução de classes. O verificador dizia 0 quebras e o jogo não carregava.
 
-| arquivo | conteúdo |
-|---|---|
-| `README.md` | o que é o projeto, como rodar, como rodar testes, mapa de pastas |
-| `CLAUDE.md` | convenções para agentes: territórios, procedimento de move, suíte de verificação |
-| `docs/ARCHITECTURE.md` | **comece por aqui** — cadeia de entrada, autoloads, física 2D com apresentação 3D, perfil de carregamento, streaming, cadeia de despacho de emergência |
-| `world/`, `legacy/`, `tests/`, `docs/`, `prototypes/` | README por pasta |
-| `docs/history/` | 21 relatórios de sessão anteriores |
+Procedimento ao mover arquivo — o passo 4 não é opcional:
 
-Cuidado ao ler `docs/history/`: descreve estado de uma data específica e usa os caminhos
-antigos. Confira contra o código antes de agir.
+```bash
+GODOT="D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe"
+# 1-2. tools/move_folder_refactor.py  (git mv + reescrita de referências, tem --dry-run)
+python tools/check_references.py                                   # 3. 0 quebras novas
+"$GODOT" --path . --import                                         # 4. reconstrói o cache
+"$GODOT" --path . --script res://tests/profile_load_time_0909.gd   # 5. carrega de verdade
+```
+
+**A cutscene de chegada pausa a árvore inteira.** `HarborArrivalMission._begin_arrival()`
+faz `get_tree().paused = true`, e `request_dispatch()` checa `can_process()`. Teste que
+carrega `HarborGame.tscn` e não chama `campaign_controller.skip_cinematic()` vê **todo**
+despacho de emergência retornar `null` — parece sistema quebrado e é só o teste. Isso já
+me fez perseguir um bug inexistente por um ciclo inteiro.
+
+### `tools/`
+
+- `check_references.py` — valida toda referência `res://`. Distingue por contexto:
+  sondagem opcional (`ResourceLoader.exists`) e destino de escrita (`save_png`) não contam
+  como quebra. Falha só em quebra **nova**.
+- `move_folder_refactor.py` — fez as duas movimentações de hoje (306 e 105 arquivos).
+  Tem `--dry-run` e o procedimento completo no docstring. Pronto para a próxima.
 
 ---
 
-## 5. Pendências — o que continua aberto
+## 6. O que continua aberto
 
 Em ordem de impacto.
 
-### 5.1 Congelamento de ~9,2 s no carregamento
+**Congelamento de ~9,2 s no carregamento.** É o que se sente ao abrir o jogo.
+`HarborPreview._ready()` faz `call_deferred("_start_review")` e `_start_review()` constrói o
+mundo inteiro — distritos, emergência, frota, auditorias — **em um único frame**. Perfil
+completo em `docs/measurements/review-0909/load_profile.txt`. A correção é fatiar o
+trabalho entre frames.
 
-O maior item, e o que se sente ao abrir o jogo. Perfil medido com renderização real:
+**`RegionTravel.gd:190` — crash latente.** `load("res://PlayerCar.tscn").instantiate()`, e
+`PlayerCar.tscn` não existe em lugar nenhum: `load()` devolve null e `.instantiate()`
+estoura. É autoload, no caminho que reconstrói veículo a partir do save. Não corrigi porque
+não sei qual era a cena pretendida — precisa de quem conhece o histórico.
 
-| fase | tempo |
-|---|---|
-| `load()` do `.tscn` | ~1,9 s |
-| `add_child()` (`_ready()` síncrono) | ~1,2 s |
-| **primeiro frame depois** | **~9,2 s** |
-| até estabilizar | ~4 s |
+**Circulação de emergência, investigação parada no meio.** Em 45 s de perseguição real, três
+viaturas de quatro andam normal; a quarta deu **15 ciclos de ré** (~1 a cada 3 s) e mesmo
+assim progrediu — taxa anormal com causa **não isolada**. As duas ambulâncias do pool nunca
+saíram do estacionamento apesar de um atropelamento real perto do hospital, e junto apareceu
+erro reproduzível: `Paramedic.gd:368` chama `rescue_from_emergency()` em
+`AnimatedPedestrian3D.gd:1424`, que reconecta o sinal `arrived_at_depot` já conectado.
+Reprodução: `tests/reproduce_review_0909_stage2.gd`; log em
+`docs/measurements/review-0909/review0909_stage2.txt`; a folha de contato da viatura girando
+em `docs/measurements/review-0909/evidencias/video2-sheet0.jpg`.
 
-Causa: `HarborPreview._ready()` faz `call_deferred("_start_review")`, e `_start_review()`
-constrói o mundo inteiro — distritos, emergência, frota, auditorias — **em um único frame**.
-É congelamento, não carregamento progressivo. A correção é fatiar esse trabalho entre
-frames.
+**Reorganizar os 72 scripts da raiz.** Adiado de propósito: são alvo de ~1.556 caminhos
+hardcoded e dos 10 autoloads de uma vez. `tools/move_folder_refactor.py` está pronto —
+basta preencher a lista `MOVES`.
 
-### 5.2 `RegionTravel.gd:190` — crash latente
+**`.tscn` com BOM** — os dois citados na seção 2.
 
-```gdscript
-car = load("res://PlayerCar.tscn").instantiate()
-```
+---
 
-`PlayerCar.tscn` **não existe em lugar nenhum do projeto**. `load()` devolve null e
-`.instantiate()` estoura. É autoload, no caminho que reconstrói veículo a partir do save.
-Encontrado pela ferramenta nova, registrado em `KNOWN_BROKEN`. Não corrigi porque não sei
-qual era a cena pretendida — precisa de decisão de quem conhece o histórico.
+## 7. Sobre a performance — o que foi descartado e o que não foi
 
-### 5.3 Circulação de emergência (investigação parada no meio)
-
-Reprodução com dados reais, 45 s de perseguição:
-
-| viatura | ciclos de ré | deslocamento líquido |
-|---|---|---|
-| #1 | 0 | 65 (ficou na base) |
-| #2 | 0 | 12.014 |
-| #3 | 2 | 11.940 |
-| #4 | **15** | 12.070 |
-
-Três das quatro andam normal. A quarta deu 15 ciclos de ré em 45 s (~1 a cada 3 s) e
-mesmo assim progrediu — não é travamento permanente, é uma taxa de recuperação anormal
-cuja causa **não foi isolada**.
-
-Ambulância: as duas do pool nunca saíram da posição de estacionamento nos 45 s, apesar de
-um atropelamento sobrevivível real perto do hospital. Junto apareceu erro reproduzível —
-`Paramedic.gd:368` chama `rescue_from_emergency()` em `AnimatedPedestrian3D.gd:1424`, que
-tenta reconectar o sinal `arrived_at_depot` já conectado.
-
-Script de reprodução: `tests/reproduce_review_0909_stage2.gd`; log bruto em
-`docs/measurements/review-0909/review0909_stage2.txt`. A folha de contato que mostra a
-viatura girando está em `docs/measurements/review-0909/evidencias/video2-sheet0.jpg`.
-
-**Armadilha que já produziu um "bug" que era só o teste:** `HarborGame.tscn` toca uma
-cutscene de chegada que faz `get_tree().paused = true`, e `request_dispatch()` checa
-`can_process()`. Teste que não chama `campaign_controller.skip_cinematic()` vê **todo**
-despacho retornar null e parece que o sistema está quebrado.
-
-### 5.4 `.tscn` com BOM não carrega
-
-Dois arquivos começam com byte order mark UTF-8 e o parser do Godot recusa
-(`Expected '['`): `legacy/district/bairro1_v2/landmarks/LandmarksV2.tscn` e
-`prototypes/living_cast/FleetShowcasePhase2.tscn`. Nenhum está no jogo vivo. Os 30 `.gd`
-com BOM o Godot aceita normalmente. Pré-existente; não corrigi para não misturar com
-refactor estrutural.
-
-### 5.5 Performance em partida — o que foi descartado e o que não foi
-
-Medição de 3 amostras de 60 s em cada resolução, renderização real:
+Três amostras de 60 s em cada resolução, renderização real:
 
 | | 720p | 1080p |
 |---|---|---|
@@ -224,35 +208,35 @@ Medição de 3 amostras de 60 s em cada resolução, renderização real:
 | p99 | ~124 ms | ~140 ms |
 | draw calls | ~16.050 | ~16.420 |
 
-**A resolução não explica a queda percebida** — 1080p renderiza 2,25× mais pixels e o
-frame time mediano é praticamente o mesmo. O que aparece nas duas é stutter forte na
-cauda (p95/p99), não framerate baixo constante.
+**A resolução não explica a queda percebida.** 1080p renderiza 2,25× mais pixels com frame
+time mediano praticamente igual. O que aparece nas duas é stutter forte na cauda, não
+framerate baixo constante.
 
 Uma bisecção pausando os 249 `SubViewport` não mostrou efeito — eles já usam
 `UPDATE_ONCE`/`UPDATE_DISABLED`, então custam pouco por frame (mas caro na construção e
-~1,3 GB de VRAM). **Atenção:** isso é ausência de evidência numa rodada confundida, não
-prova de que SubViewport e resolução estão descartados. A hipótese mais sustentada pelos
-dados é custo crescente ligado à duração da perseguição, e ela **não** foi confirmada com
-medição isolada.
+~1,3 GB de VRAM).
 
-Reporte percentis em **milissegundos**, não convertidos para FPS: percentilar uma métrica
+**Cuidado ao citar isso:** a bisecção rodou em fases sequenciais com o estado do mundo
+crescendo ao longo dela, então é ausência de evidência numa rodada confundida — **não**
+prova de que resolução e SubViewport estão descartados. A hipótese mais sustentada é custo
+crescente ligado à duração da perseguição, e ela não foi confirmada com medição isolada.
+
+Reportem percentis em **milissegundos**, não convertidos para FPS: percentilar uma métrica
 invertida distorce a cauda.
 
 ---
 
-## 6. Territórios
+## 8. Territórios e higiene
 
-- `prototypes/gameplay_repair_art_0909/` é do Antigravity. Não editar.
-- `OLD/` é arquivo morto com `.gdignore`. Só entra arquivo verificado sem referência
-  **por caminho e por UID** — a varredura só por nome já produziu conclusão errada aqui
-  (`car.png` parecia sem uso e é usado por `EmergencyVehicle.gd`, `PlayerCar.gd` e
-  `VehicleCatalog.gd`).
-- Outra sessão trabalhou em paralelo hoje e entregou o sistema de reação de civis a
-  tiroteio (`PedestrianDanger.gd`, integrado em `Bullet.gd` e `AnimatedPedestrian3D.gd`,
-  com `tests/test_civilian_gunfire_response.gd`). Está commitado e passa na verificação.
+- `prototypes/gameplay_repair_art_0909/` é do Antigravity. Astra não edita.
+- `OLD/` é arquivo morto com `.gdignore`. Só entra arquivo verificado sem referência **por
+  caminho e por UID** — a varredura só por nome já produziu conclusão errada aqui: `car.png`
+  parecia sem uso e é usado por `EmergencyVehicle.gd`, `PlayerCar.gd` e `VehicleCatalog.gd`.
+- Antes de mover ou apagar, confira se outra sessão está com o repositório aberto. Arquivo
+  novo com timestamp recente que você não criou é o sinal.
+- Script que gera arquivo grava **dentro do projeto**. Saída que não é versionada não é
+  encontrada por quem clona.
 
-## 7. Nota sobre verificação
-
-Suíte verde não prova que o jogo está correto — prova que aqueles casos passaram. Vários
+**Suíte verde não prova que o jogo está correto** — prova que aqueles casos passaram. Vários
 defeitos reais desta base apareceram em partida de verdade com a suíte aprovada. Ao
-reportar, diga o que foi medido **e o que não foi**.
+reportar, digam o que foi medido **e o que não foi**.
