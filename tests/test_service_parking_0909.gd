@@ -20,6 +20,19 @@ func run() -> void:
 		check(audit[service].spawn_clear, service + " bay is physically clear")
 	var target := CharacterBody2D.new()
 	current_scene.add_child(target)
+	# Verifica a baia livre antes que ocorrências ambientes ocupem a saída.
+	target.set_meta("ambient_crime", true)
+	target.global_position = Vector2(1800, 2200)
+	var police = director.request_dispatch("police", target, false)
+	check(police != null, "Police dispatched from parking bay")
+	if police != null:
+		var police_start: Vector2 = police.global_position
+		var police_deadline := Time.get_ticks_msec() + 20000
+		while bool(police.get_meta("depot_departure_pending")) and Time.get_ticks_msec() < police_deadline:
+			await physics_frame
+		check(not bool(police.get_meta("depot_departure_pending")), "Police physically reaches street from bay")
+		check(police.global_position.distance_to(police_start) > 50, "Police drives out rather than spawning on street")
+		root.get_node("EmergencyPool").return_vehicle(police)
 	target.global_position = Vector2(2200, 900)
 	var unit = director.request_dispatch("ambulance", target, false)
 	check(unit != null, "Ambulance dispatched from parking")
@@ -40,17 +53,6 @@ func run() -> void:
 	while unit.visible and Time.get_ticks_msec() < deadline:
 		await physics_frame
 	check(not unit.visible, "Ambulance returns through driveway and releases pool assignment")
-	target.global_position = Vector2(1800, 2200)
-	var police = director.request_dispatch("police", target, false)
-	check(police != null, "Police dispatched from parking bay")
-	if police != null:
-		start = police.global_position
-		deadline = Time.get_ticks_msec() + 20000
-		while bool(police.get_meta("depot_departure_pending")) and Time.get_ticks_msec() < deadline:
-			await physics_frame
-		check(not bool(police.get_meta("depot_departure_pending")), "Police physically reaches street from bay")
-		check(police.global_position.distance_to(start) > 50, "Police drives out rather than spawning on street")
-		root.get_node("EmergencyPool").return_vehicle(police)
 	if DisplayServer.get_name() != "headless":
 		var camera := root.get_camera_2d()
 		camera.global_position = Vector2(2030, 1550)
@@ -58,6 +60,6 @@ func run() -> void:
 		camera.reset_smoothing()
 		await process_frame
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("D:/geteco/medical-parking-0909.png")
+		root.get_texture().get_image().save_png("res://docs/measurements/review-0909/medical-parking-0909.png")
 	print("SERVICE PARKING failures=", failures)
 	quit(0 if failures.is_empty() else 1)

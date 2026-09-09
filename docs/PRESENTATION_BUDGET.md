@@ -23,10 +23,17 @@ Carros específicos derivados de PlayerCar e cenários ainda usam seu fluxo orig
 
 Extensão: perfil Vulkan registrou pico de 5047 ms, 118 viewports, VRAM 745,3 MB
 e memória estática 425,2 MB. Ainda há congelamento inicial. Testes específicos
-de streaming e chefe passaram, assim como o LOD de tráfego. Os testes amplos
-do cupê e estacionamento ainda falharam respectivamente no embarque do cupê
-e despacho policial; a ambulância saiu e retornou corretamente. Não se afirma
-que essas falhas são anteriores ao patch sem uma reprodução comparativa.
+de streaming e chefe passaram, assim como o LOD de tráfego.
+
+As falhas dos testes de cupê e estacionamento foram reproduzidas e corrigidas
+nos testes: o primeiro verificava invisibilidade e acelerava antes de finalizar
+VehicleBoarding; o segundo solicitava uma viatura depois que uma ocorrência
+ambiente já havia ocupado a baia policial. Agora o cupê aguarda o embarque com
+prazo máximo e libera o acelerador; a saída policial é verificada antes da longa
+ocorrência médica, com alvo de ocorrência ambiente explícito. Ambos concluíram
+com código zero: cupê percorreu 24,8 px, polícia e ambulância saíram fisicamente,
+ambulância retornou ao depósito. A proteção contra spawn sobreposto foi preservada.
+O teste de estacionamento ainda informa duas instâncias ObjectDB ao encerrar.
 
 Validação: teste novo test_presentation_budget, pedestrian_render_lod,
 pedestrian_life_routines, opening_cutscene_runtime e menu_flow_integration

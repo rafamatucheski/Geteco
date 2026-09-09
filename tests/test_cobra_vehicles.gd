@@ -33,6 +33,13 @@ func run() -> void:
 	for i in 3:
 		await physics_frame
 	car.enter_vehicle(player)
+	# O embarque mantém o ator visível até concluir aproximação e fechamento da porta.
+	var boarding_deadline := Time.get_ticks_msec() + 5000
+	while car.get_meta("vehicle_boarding", false) and Time.get_ticks_msec() < boarding_deadline:
+		await physics_frame
+	check(not car.get_meta("vehicle_boarding", false), "Embarque conclui dentro do prazo")
+	# Acelerador precisa voltar ao neutro após a animação para armar a condução.
+	for i in 3: await physics_frame
 	check(car.is_driven_by_player and not player.visible, "Discovery car can be entered")
 	check(car.camera.is_current(), "Boarding transfers the camera to the secret car")
 	car.rotation = 0.0
