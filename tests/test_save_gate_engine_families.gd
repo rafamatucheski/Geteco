@@ -64,7 +64,16 @@ func run() -> void:
 			var sample := stream.data.decode_s16(i * 2)
 			check(absi(sample) < 32767, "no clipping " + id)
 			max_delta = maxi(max_delta, absi(sample - stream.data.decode_s16((i - 1) * 2)))
-		check(absi(stream.data.decode_s16(0) - stream.data.decode_s16(stream.data.size()-2)) <= max_delta, "loop seam " + id)
+		# A emenda real está em loop_end, não no fim do buffer: depois de loop_end
+		# existem amostras de guarda que só alimentam a interpolação do resampler
+		# (sem elas ele lia o padding de zeros e estalava a cada volta do laço).
+		var frames := stream.data.size() / 2
+		check(frames > stream.loop_end, "guard samples after loop " + id)
+		var seam_delta := absi(stream.data.decode_s16(0) - stream.data.decode_s16((stream.loop_end - 1) * 2))
+		check(seam_delta <= max_delta, "loop seam " + id)
+		# A guarda tem que reproduzir o começo do laço, senão a interpolação da
+		# emenda continua produzindo um degrau artificial.
+		check(stream.data.decode_s16(stream.loop_end * 2) == stream.data.decode_s16(0), "guard continues loop " + id)
 	var upgrades := VehicleUpgradeManager.new()
 	upgrades.active_customization["neon_equipped"] = false
 	upgrades.active_customization["turbo_equipped"] = false

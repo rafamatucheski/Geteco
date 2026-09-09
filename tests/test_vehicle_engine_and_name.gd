@@ -25,9 +25,12 @@ func _run() -> void:
 	for i in 60:
 		engine.update(audio, 0, 500, 0, 1.0 / 60.0, "sedan_classic")
 	check(absf(audio.pitch_scale - idle_pitch) < 0.02, "Releasing throttle settles back to idle")
+	# Primeira marcha agora estica ate 30% da maxima (150 de 500), nao 22%.
 	engine.update(audio, 130, 500, 1, 0.1, "sedan_classic")
+	check(engine.gear == 1, "First gear stretches past a quarter of top speed")
+	engine.update(audio, 165, 500, 1, 0.1, "sedan_classic")
 	check(engine.gear == 2, "Acceleration shifts into second gear")
-	engine.update(audio, 108, 500, 1, 0.1, "sedan_classic")
+	engine.update(audio, 140, 500, 1, 0.1, "sedan_classic")
 	check(engine.gear == 2, "Gear hysteresis avoids chatter near threshold")
 	var road_engine := ENGINE.new()
 	var road_speed := 0.0
@@ -43,7 +46,22 @@ func _run() -> void:
 			check(road_engine.shift_remaining > 0.0, "Upshift creates a torque and RPM interruption")
 		last_gear = road_engine.gear
 	check(changes == 4, "Acceleration passes through five gears")
-	check(first_shift_time > 0.25, "First gear lasts long enough to be heard")
+	check(first_shift_time > 0.38, "First gear lasts long enough to be heard (%.2fs)" % first_shift_time)
+	# O ponto do pedido: o topo da primeira marcha nao pode soar como velocidade
+	# maxima. Antes chegava a 97% do pitch maximo, o que fazia o motor "estourar"
+	# logo na largada e as marchas seguintes repetirem o mesmo som.
+	var ladder_engine := ENGINE.new()
+	var ladder: Array = []
+	for gear_top in [0.30, 0.48, 0.64, 0.80, 1.0]:
+		for i in 120:
+			ladder_engine.update(audio, 400.0 * gear_top, 400.0, 1.0, 1.0 / 60.0, "sedan_classic")
+		ladder.append(audio.pitch_scale)
+	var rising := true
+	for i in range(1, ladder.size()):
+		if ladder[i] <= ladder[i - 1] + 0.03:
+			rising = false
+	check(rising, "Each gear tops out higher than the one before: %s" % str(ladder))
+	check(ladder[0] < ladder[ladder.size() - 1] * 0.85, "First gear tops well below top speed pitch: %s" % str(ladder))
 	check(road_speed <= 400.0, "Road top speed is reduced by twenty percent")
 	check(ENGINE.get_stream("street") == ENGINE.get_stream("street"), "Engine loops share cached resources")
 	check(ENGINE.get_stream("street").data != ENGINE.get_stream("sport").data, "Sport engines have distinct timbre")
