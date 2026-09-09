@@ -74,6 +74,31 @@ python tools/check_references.py
 `test_menu_flow_integration` é o mais valioso depois de mover arquivos: ele exercita
 save/load e troca de cena, que é onde caminho quebrado aparece.
 
+## Git — cada agente commita o próprio trabalho
+
+Mais de um agente escreve neste repositório ao mesmo tempo. Trabalho não commitado no fim
+de uma sessão vira problema de quem chegar depois: em 2026-09-09 uma reestruturação teve
+que varrer para dentro do commit o sistema de reação de civis a tiroteio de outra sessão,
+porque ele já estava entrelaçado em `Bullet.gd` e `AnimatedPedestrian3D.gd` e separar
+exigiria staging parcial de hunks que não eram meus.
+
+Regras:
+
+1. **Commite antes de encerrar.** Não deixe seu trabalho pendente para o próximo agente
+   decidir o que fazer com ele.
+2. **Stage explícito, nunca `git add -A` às cegas.** Adicione os arquivos que você mexeu.
+   Se `git status` mostrar arquivo que você não criou e com timestamp recente, é outra
+   sessão trabalhando — deixe fora do seu commit.
+3. **Rode a verificação antes** (seção acima). Commit que não carrega o jogo custa mais
+   caro do que commit atrasado.
+4. **Mensagem descritiva, em português, explicando o porquê.** Este repositório usa
+   mensagens longas: o que mudou, por que mudou, e o que foi verificado. Veja
+   `git log` para o padrão.
+5. **Ninguém dá push sem o usuário pedir.** O remoto `origin` existe mas está vazio — a
+   primeira publicação é decisão dele, não de agente.
+6. **Nunca** `git reset --hard`, `push --force`, `checkout .` ou `clean -f` sem pedido
+   explícito. Se precisar desfazer algo, prefira mover para o lado a destruir.
+
 ## Saída de script
 
 Script que gera arquivo grava **dentro do projeto**, não em pasta absoluta fora dele:
