@@ -15,6 +15,16 @@ extends SceneTree
 ##  - Desligar o PresentationBudget (`-- nopb`) reduziu os hitches de 32 para 27,
 ##    dentro da variancia entre execucoes (27 a 37): ele participa mas nao e a
 ##    causa principal. Existem outros caminhos de spawn furando o orcamento.
+##  - Consequencia para a direcao de otimizacao: o desenho custa ~1.4ms de um
+##    orcamento de 16.7ms. Culling de luzes, batching e SubViewports mexem na parte
+##    que NAO e o gargalo. Esta base e limitada por CPU, nao por GPU.
+##  - A fila do PresentationBudget fica parada em ~100 atores pendentes durante
+##    toda a amostragem: com max_builds_per_frame=1 e budget_usec=2000 ela nunca
+##    esvazia.
+##  - As razoes de 15x a 606x foram reproduzidas em quatro execucoes seguidas. Ja a
+##    contagem absoluta de hitches NAO e estavel (27 a 37 entre execucoes), porque
+##    a rota diverge com colisoes e trafego -- comparacoes de antes/depois tem que
+##    usar as razoes, nunca a contagem.
 ##  - Descartados por medicao: fisica (7-10ms, igual nos rapidos e nos lentos),
 ##    navegacao (0.0ms), draw calls (1690 vs 1740) e os ciclos de 0.2s de
 ##    ContinuousWorld e HarborLife (16.3ms nos frames do ciclo contra 16.1ms nos
