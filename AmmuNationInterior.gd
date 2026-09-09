@@ -9,6 +9,7 @@ var time := 0.0
 var room: Control
 var wallet: Label
 var notice: Label
+var loadout_button: Button
 
 func _ready() -> void:
 	layer = 60
@@ -51,6 +52,10 @@ func _refresh(text: String) -> void:
 	if wallet and shopper:
 		wallet.text = "$ %08d" % int(shopper.get("money"))
 	if notice: notice.text = text
+	if loadout_button and shopper:
+		var quote: Dictionary = shopper.car_loadout_ammo_quote()
+		loadout_button.text = "RECARREGAR LOADOUT\nDO CARRO — $%d" % int(quote.price)
+		loadout_button.disabled = quote.rounds.is_empty() or shopper.money < int(quote.price)
 
 func _build() -> void:
 	room = InteriorArt.new()
@@ -65,6 +70,12 @@ func _build() -> void:
 	_add_button("SMG\nCOMPRAR  $1200", Vector2(430, 500), func(): _buy("smg"))
 	_add_button("ESCOPETA\nCOMPRAR  $1800", Vector2(730, 500), func(): _buy("shotgun"))
 	_add_button("[E] SAIR DA LOJA", Vector2(1010, 570), close_store)
+	loadout_button = Button.new()
+	loadout_button.position = Vector2(1010, 480)
+	loadout_button.size = Vector2(230, 76)
+	loadout_button.pressed.connect(func():
+		if active and is_instance_valid(shopper): _refresh(shopper.buy_car_loadout_ammo()))
+	room.add_child(loadout_button)
 
 func _add_button(text: String, pos: Vector2, action: Callable) -> void:
 	var button := Button.new(); button.text = text; button.position = pos; button.size = Vector2(190, 76); button.add_theme_font_size_override("font_size", 15); button.pressed.connect(action); room.add_child(button)

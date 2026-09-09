@@ -1,4 +1,5 @@
 extends Area2D
+const IMPACT_AUDIO := preload("res://audio/combat/CombatImpactAudio.gd")
 
 @export var speed: float = 950.0
 @export var damage: int = 15
@@ -52,22 +53,18 @@ func _hit(target, hit_position: Vector2, hit_normal: Vector2) -> void:
 		return
 		
 	var is_metal = target != null and (target.is_in_group("vehicle") or target.is_in_group("ambient_traffic") or target.is_in_group("emergency_vehicle") or target.is_in_group("metal_prop"))
-	var is_flesh = target != null and (target.is_in_group("city_pedestrian") or target.is_in_group("pedestrian") or target.is_in_group("police_officer") or target.is_in_group("player"))
+	var is_flesh = target != null and (target.is_in_group("city_pedestrian") or target.is_in_group("pedestrian") or target.is_in_group("police_officer") or target.is_in_group("player") or target.is_in_group("gang_member"))
 	
 	if target != null and target.has_method("take_damage"):
 		var is_player = owner_body != null and owner_body.is_in_group("player")
 		target.take_damage(damage, is_player)
 	
-	if is_metal:
-		var audio := AudioStreamPlayer2D.new()
-		audio.stream = ProceduralAudio.get_bullet_metal_hit_stream()
-		audio.pitch_scale = randf_range(0.92, 1.12)
-		audio.volume_db = -1.0
-		audio.max_distance = 800.0
-		get_parent().add_child(audio)
-		audio.global_position = hit_position
-		audio.play()
-		audio.finished.connect(audio.queue_free)
+	var material: StringName = &"flesh" if is_flesh else (&"metal" if is_metal else &"concrete")
+	if target != null and not is_flesh and not is_metal:
+		var authored := StringName(target.get_meta("impact_material", "concrete"))
+		if authored in [&"wood", &"glass", &"metal", &"concrete"]:
+			material = authored
+	IMPACT_AUDIO.play_hit(self, hit_position, material)
 		
 	var effects := get_tree().get_first_node_in_group("weapon_effects")
 	if effects:
@@ -81,6 +78,7 @@ func _hit(target, hit_position: Vector2, hit_normal: Vector2) -> void:
 
 func _trigger_explosion(pos: Vector2) -> void:
 	var audio := AudioStreamPlayer2D.new()
+	audio.bus = &"SFX"
 	audio.stream = ProceduralAudio.get_explosion_stream()
 	audio.volume_db = 3.0
 	audio.max_distance = 1600.0

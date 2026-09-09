@@ -263,7 +263,9 @@ func _detect_and_build_rail_crossings(road_graph: Node2D, roads: Array, rail_lin
 			var lane := lane_value as Dictionary
 			lane_controls.append({
 				"lane_id": String(lane.get("lane_id", "")),
-				"offset": float(lane.get("offset", 0.0)),
+				# Canonical lanes use tangent.orthogonal() (local -Y).
+				# The rotated crossing uses local +Y for its lane controls.
+				"offset": -float(lane.get("offset", 0.0)),
 				"direction": int(lane.get("direction", 1)),
 			})
 		var road_points_global := PackedVector2Array()

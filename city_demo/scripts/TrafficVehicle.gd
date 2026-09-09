@@ -38,13 +38,14 @@ var smoke_emitter: CPUParticles2D
 var collision_particles: CPUParticles2D
 var headlight: PointLight2D
 var _hit_stop_frames: int = 0
+var _last_collision_damage_ms := -999999
 var bloody_tires_timer: float = 0.0
 var flame_particles: CPUParticles2D
 
 # === Upgrades & Tuning (Fast & Furious Style) ===
-var has_nitro: bool = true
-var nitro_amount: float = 100.0
-var nitro_max: float = 100.0
+var has_nitro: bool = false
+var nitro_amount: float = 0.0
+var nitro_max: float = 0.0
 var is_boosting: bool = false
 var nitro_emitter: CPUParticles2D
 var nitro_audio: AudioStreamPlayer2D
@@ -67,6 +68,9 @@ var neon_underglow_poly: Polygon2D
 var horn_audio: AudioStreamPlayer2D
 var siren_audio: AudioStreamPlayer2D
 var engine_audio: AudioStreamPlayer2D
+var _engine_sound := preload("res://audio/VehicleEngineSound.gd").new()
+var second_headlight: PointLight2D
+var _lamp_mounts: Array[Vector3] = []
 var skid_audio: AudioStreamPlayer2D
 var radio_audio: AudioStreamPlayer2D
 var radio_tracks: Array = []
@@ -82,6 +86,13 @@ var alarm_timer: float = 0.0
 var is_siren_on: bool = false
 var _strobe_timer: float = 0.0
 var alarm_audio: AudioStreamPlayer2D
+
+# Suporte a Modelos 3D Procedurais (Frota Fase 2)
+var is_3d_vehicle: bool = false
+var body_viewport: SubViewport = null
+var body_model: Node3D = null
+var wheels: Array[Node3D] = []
+var spinners: Array[Node3D] = []
 
 func _ensure_required_nodes() -> void:
 	visual = get_node_or_null("Visual") as Sprite2D
@@ -111,6 +122,8 @@ func _ensure_required_nodes() -> void:
 		pedestrian_hitbox.add_child(hitbox_collision)
 
 func _ready() -> void:
+	preload("res://VehicleMotionSafety.gd").configure(self)
+	collision_mask |= 2
 	_ensure_required_nodes()
 	health = 100
 	is_broken = false
@@ -178,8 +191,9 @@ func _ready() -> void:
 	smoke_emitter.amount = 30
 	smoke_emitter.lifetime = 1.0
 	smoke_emitter.gravity = Vector2(0, -98)
-	smoke_emitter.scale_amount_min = 4.0
-	smoke_emitter.scale_amount_max = 10.0
+	smoke_emitter.texture = _soft_damage_particle()
+	smoke_emitter.scale_amount_min = 10.0 / 32.0
+	smoke_emitter.scale_amount_max = 22.0 / 32.0
 	smoke_emitter.color = Color(0.2, 0.2, 0.2, 0.8)
 	add_child(smoke_emitter)
 	
@@ -579,69 +593,44 @@ func _ensure_dents_container() -> void:
 		dents_container.z_index = 2
 		add_child(dents_container)
 
+var _last_crash_visual_ms := -999999
+
 func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO) -> void:
-	if visual == null: return
-	_ensure_dents_container()
-	
-	var local_norm = transform.basis_xform_inv(impact_normal)
-	var factor = clampf(impact_force / 420.0, 0.05, 0.28)
-	
-	# O carro NUNCA estica nem diminui: preserva proporção e escala rígidas
-	visual.scale = Vector2(uniform_scale, uniform_scale)
-	visual.position = Vector2.ZERO
-	visual.skew = 0.0
-	
-	# Escurecimento sutil (marcas de arranhão e fuligem na lataria)
-	visual.modulate = visual.modulate.lerp(Color(0.60, 0.60, 0.62), 0.06 * (factor / 0.28))
-	
-	if hit_world_pos != Vector2.ZERO and dents_container:
-		var local_hit: Vector2 = to_local(hit_world_pos)
-		local_hit.x = clampf(local_hit.x, -36.0, 36.0)
-		local_hit.y = clampf(local_hit.y, -16.0, 16.0)
-		_spawn_dent_decal(local_hit, -local_norm, factor)
-		
-	var crumple_player = AudioStreamPlayer2D.new()
+	if visual == null or impact_force < 80.0 or not hit_world_pos.is_finite(): return
+	var now := Time.get_ticks_msec()
+	if now - _last_crash_visual_ms < 500: return
+	_last_crash_visual_ms = now
+	# The native vehicle receives a bounded dent in its own mesh. Flat decals
+	# cannot follow its projected sides and must never be layered on top.
+	if is_3d_vehicle and is_instance_valid(body_model):
+		var ppm := 74.0 / 4.46
+		var hit := to_local(hit_world_pos) / ppm
+		var inward := global_transform.basis_xform_inv(impact_normal)
+		body_model.apply_impact(Vector3(hit.y,0.81,-hit.x),Vector3(inward.y,0,-inward.x),impact_force/ppm)
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	else:
+		_ensure_dents_container()
+		_spawn_dent_decal(to_local(hit_world_pos),global_transform.basis_xform_inv(impact_normal),clampf(impact_force/420.0,0,1))
+	visual.modulate = visual.modulate.lerp(Color(0.80,0.80,0.81),0.08)
+	var crumple_player := AudioStreamPlayer2D.new()
 	crumple_player.stream = ProceduralAudio.get_metal_crumple_stream()
-	crumple_player.volume_db = -10.0
-	crumple_player.pitch_scale = randf_range(0.85, 1.15)
+	crumple_player.volume_db = -15.0
+	crumple_player.bus = &"SFX"
 	crumple_player.max_distance = 500.0
 	add_child(crumple_player)
 	crumple_player.play()
 	crumple_player.finished.connect(crumple_player.queue_free)
-	
-	_spawn_flying_debris(global_position, impact_normal)
 
 func _spawn_dent_decal(local_pos: Vector2, dir: Vector2, strength: float) -> void:
-	if dents_container == null: return
-	if dents_container.get_child_count() > 8:
-		dents_container.get_child(0).queue_free()
-		
-	var dent := Polygon2D.new()
-	var w: float = randf_range(8.0, 16.0) * (1.0 + strength)
-	var h: float = randf_range(4.0, 10.0) * (1.0 + strength)
-	dent.polygon = PackedVector2Array([
-		Vector2(-w * 0.5, -h * 0.3),
-		Vector2(0, -h * 0.6),
-		Vector2(w * 0.5, -h * 0.2),
-		Vector2(w * 0.4, h * 0.4),
-		Vector2(-w * 0.3, h * 0.5)
-	])
-	dent.color = Color(0.12, 0.12, 0.16, 0.85)
-	dent.position = local_pos
-	dent.rotation = dir.angle() + randf_range(-0.3, 0.3)
-	
-	var scratch := Line2D.new()
-	scratch.points = PackedVector2Array([
-		Vector2(-w * 0.4, randf_range(-2, 2)),
-		Vector2(w * 0.4, randf_range(-2, 2))
-	])
-	scratch.width = 1.8
-	scratch.default_color = Color(0.85, 0.85, 0.90, 0.85)
-	dent.add_child(scratch)
-	
-	dents_container.add_child(dent)
+	if dents_container == null or is_3d_vehicle: return
+	var footprint := Vector2(54,24)
+	if collision and collision.shape is RectangleShape2D: footprint = collision.shape.size
+	preload("res://VehicleSurfaceWear2D.gd").add_scrape(dents_container,local_pos,dir,footprint,strength)
 
 func _clear_all_dents() -> void:
+	if is_3d_vehicle and is_instance_valid(body_model):
+		body_model.repair()
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	if dents_container:
 		for child in dents_container.get_children():
 			child.queue_free()
@@ -689,8 +678,11 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	max_health = int(spec.get("durability", 100))
 	health = max_health
 	
+	is_police_vehicle = String(spec.get("roof_prop", "")) == "police_lightbar"
 	# Cor e Textura Especial
-	if spec.has("texture") and String(spec["texture"]) != "":
+	if spec.has("model_class") and String(spec["model_class"]) != "":
+		_setup_3d_model(spec, custom_color)
+	elif spec.has("texture") and String(spec["texture"]) != "":
 		visual.texture = load(spec["texture"])
 		visual.region_enabled = false
 		visual.centered = true
@@ -700,6 +692,9 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 		visual.modulate = Color.WHITE
 		if archetype_id == "police_cruiser":
 			is_police_vehicle = true
+		var rect_shape := RectangleShape2D.new()
+		rect_shape.size = Vector2(target_length * 0.78, 34.0)
+		if collision: collision.shape = rect_shape
 	else:
 		if spec.has("crop_index"):
 			var c_idx: int = int(spec["crop_index"])
@@ -718,14 +713,161 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 			uniform_scale = target_length / maxf(1.0, crop.size.y)
 			visual.scale = Vector2(uniform_scale, uniform_scale)
 		
-	# Atualiza dimensões do colisor
-	var rect_shape := RectangleShape2D.new()
-	var col_width = 34.0 if spec.has("texture") else maxf(24.0, crop.size.x * uniform_scale * 0.72)
-	rect_shape.size = Vector2(target_length * 0.78, col_width)
-	if collision: collision.shape = rect_shape
+		var rect_shape := RectangleShape2D.new()
+		rect_shape.size = Vector2(target_length * 0.78, maxf(24.0, crop.size.x * uniform_scale * 0.72))
+		if collision: collision.shape = rect_shape
 	
 	# Atualiza adereços no teto/lataria (props)
 	_build_roof_prop(String(spec.get("roof_prop", "none")))
+
+func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) -> void:
+	is_3d_vehicle = true
+	var model_path: String = String(spec.get("model_class", ""))
+	var model_res = load(model_path)
+	if not model_res:
+		return
+
+	var t_len: float = float(spec.get("target_length", 82.0))
+	var t_wid: float = float(spec.get("target_width", 34.0))
+	var ppm: float = 74.0 / 4.46
+	var cam_size: float = maxf(6.0, (t_len / ppm) * 1.25)
+	var v_size := 192
+	if t_len > 100.0:
+		v_size = 256
+
+	if body_viewport == null:
+		body_viewport = SubViewport.new()
+		body_viewport.name = "Vehicle3DRender"
+		body_viewport.size = Vector2i(v_size, v_size)
+		body_viewport.transparent_bg = true
+		body_viewport.own_world_3d = true
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		add_child(body_viewport)
+
+		body_model = model_res.new() as Node3D
+		body_viewport.add_child(body_model)
+
+		# Use actual authored wheel hubs, not approximate dimensions from the catalog.
+		var centers: Array[Vector3] = []
+		for node in body_model.get_children():
+			if node.has_meta("wheel_center"):
+				var center: Vector3 = node.get_meta("wheel_center")
+				if not centers.has(center): centers.append(center)
+		for center in centers:
+			var pivot := Node3D.new()
+			pivot.position = center
+			body_model.add_child(pivot)
+			var spin := Node3D.new()
+			pivot.add_child(spin)
+			for node in body_model.get_children():
+				if node is MeshInstance3D and node.get_meta("wheel_center",Vector3.INF)==center:
+					node.reparent(spin if node.get_meta("wheel_spins",false) else pivot,true)
+			wheels.append(pivot)
+			spinners.append(spin)
+
+		var lens := body_model.materials.get("headlight") as Material
+		for mesh in body_model.get_children():
+			if mesh is MeshInstance3D and mesh.material_override == lens and lens != null:
+				_lamp_mounts.append(mesh.position)
+		_lamp_mounts.sort_custom(func(a: Vector3,b: Vector3): return a.x < b.x)
+		if _lamp_mounts.size() >= 2:
+			_lamp_mounts = [_lamp_mounts[0], _lamp_mounts[-1]]
+			second_headlight = headlight.duplicate()
+			second_headlight.name = "RightHeadlight"
+			add_child(second_headlight)
+		for light in [headlight,second_headlight]:
+			if light != null:
+				light.offset = Vector2(100,0)
+				light.texture_scale = 0.6
+				light.energy = 0.75
+		preload("res://VehicleMeshBatcher.gd").batch_model(body_model)
+		body_model.rotation.y = -PI * 0.5
+
+		var view := Camera3D.new()
+		body_viewport.add_child(view)
+		view.position = Vector3(0, 8, 4)
+		view.look_at(Vector3(0, 0.45, 0))
+		view.projection = Camera3D.PROJECTION_ORTHOGONAL
+		view.size = cam_size
+
+		var environment := WorldEnvironment.new()
+		environment.environment = Environment.new()
+		environment.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		environment.environment.ambient_light_color = Color.WHITE
+		environment.environment.ambient_light_energy = 0.7
+		body_viewport.add_child(environment)
+
+		var sun := DirectionalLight3D.new()
+		sun.rotation_degrees = Vector3(-55, -30, 0)
+		sun.light_energy = 1.0
+		body_viewport.add_child(sun)
+	else:
+		body_viewport.size = Vector2i(v_size, v_size)
+
+	var chosen_color: Color = custom_color
+	if chosen_color == Color.TRANSPARENT:
+		chosen_color = VehicleCatalog.get_random_color(active_archetype_id)
+	if body_model and "paint" in body_model and body_model.paint:
+		body_model.paint.albedo_color = chosen_color
+
+	if visual:
+		visual.texture = body_viewport.get_texture()
+		visual.region_enabled = false
+		visual.centered = true
+		uniform_scale = ppm * cam_size / float(v_size)
+		visual.scale = Vector2(uniform_scale, uniform_scale)
+		visual.rotation = 0.0
+		visual.modulate = Color.WHITE
+
+	var rect_shape := RectangleShape2D.new()
+	rect_shape.size = Vector2(t_len * 0.82, maxf(28.0, t_wid * 0.88))
+	if collision: collision.shape = rect_shape
+	if pedestrian_hitbox and pedestrian_hitbox.has_node("Collision"):
+		var p_col = pedestrian_hitbox.get_node("Collision") as CollisionShape2D
+		if p_col and p_col.shape is RectangleShape2D:
+			(p_col.shape as RectangleShape2D).size = Vector2(t_len * 1.02, maxf(34.0, t_wid * 1.02))
+
+var _body_render_clock := 0.0
+var _body_render_visible := false
+var body_render_requests := 0
+var _last_render_heading := INF
+
+func _update_3d_orientation(delta: float) -> void:
+	if not is_3d_vehicle or body_model == null:
+		return
+	# Every car has its own 3D world. Submit only visible cars, while leaving
+	# lane simulation and physical collisions running outside the camera.
+	var screen_position := get_canvas_transform() * global_position
+	var visible_now := is_visible_in_tree() and get_viewport().get_visible_rect().grow(140).has_point(screen_position)
+	_body_render_clock += delta
+	if not visible_now:
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		_body_render_visible = false
+		return
+	body_model.rotation.y = -global_rotation - PI * 0.5
+	if visual:
+		visual.global_rotation = 0.0
+	if second_headlight != null and _lamp_mounts.size() >= 2:
+		var view := body_viewport.get_camera_3d()
+		if view:
+			for i in 2:
+				var light: PointLight2D = headlight if i == 0 else second_headlight
+				var pixel := view.unproject_position(body_model.to_global(_lamp_mounts[i]))
+				light.global_position = visual.to_global(pixel-Vector2(body_viewport.size)*0.5)
+		second_headlight.visible = headlight.visible
+	var signed_speed := velocity.dot(global_transform.x) if is_driven_by_player else (_lane_motion_speed if is_moving_on_lane else 0.0)
+	var ppm := 74.0 / 4.46
+	for i in spinners.size():
+		spinners[i].rotation.x -= signed_speed / ppm / 0.355 * delta
+	var interval := 1.0 / (60.0 if is_driven_by_player else 30.0)
+	var moving_pose := absf(signed_speed)>0.1 or not is_equal_approx(_last_render_heading,global_rotation)
+	if not _body_render_visible or (moving_pose and _body_render_clock >= interval):
+		_body_render_clock = fmod(_body_render_clock, interval)
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		body_render_requests += 1
+		_last_render_heading = global_rotation
+	_body_render_visible = true
+
 
 static var _cached_particle_tex: Texture2D = null
 static func _get_smooth_particle_texture() -> Texture2D:
@@ -865,10 +1007,13 @@ func _build_roof_prop(prop_type: String) -> void:
 			active_roof_prop_node.add_child(halo)
 
 func repaint_vehicle(new_color: Color = Color.TRANSPARENT) -> void:
-	if new_color != Color.TRANSPARENT:
-		if visual: visual.modulate = new_color
-	else:
-		if visual: visual.modulate = VehicleCatalog.get_random_color(active_archetype_id)
+	var color := VehicleCatalog.get_random_color(active_archetype_id) if new_color == Color.TRANSPARENT else new_color
+	if is_3d_vehicle and is_instance_valid(body_model) and body_model.get("paint") != null:
+		body_model.paint.albedo_color = color
+		if visual: visual.modulate = Color.WHITE
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	elif visual:
+		visual.modulate = color
 
 func repair_and_repaint(new_color: Color = Color.TRANSPARENT) -> void:
 	repair_vehicle()
@@ -909,6 +1054,10 @@ func configure_as_parked() -> void:
 		camera.set_physics_process(false)
 	add_to_group("parked_vehicle")
 
+var _entry_input_released := true
+var _drive_input_armed := true
+var _siren_key_down := false
+
 func enter_vehicle(player_body: CharacterBody2D) -> void:
 	if is_broken or is_driven_by_player or player_body == null:
 		return
@@ -926,7 +1075,20 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 				ejected_driver.setup(self, ejection_pos)
 
 	_driver = player_body
+	var approach := player_body.global_position
+	var entry_side := -1.0 if to_local(approach).y <= 0 else 1.0
+	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
+	_entry_input_released = false
+	_drive_input_armed = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down").is_zero_approx()
+	add_collision_exception_with(player_body)
+	player_body.add_collision_exception_with(self)
+	_remote_lane_elapsed = 0.0
+	_lane_motion_speed = 0.0
+	_hit_stop_frames = 0
+	is_skidding = false
+	is_boosting = false
+	if skid_line: skid_line.clear_points()
 	velocity = Vector2.ZERO
 	speed = 0.0
 	
@@ -936,7 +1098,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	player_body.velocity = Vector2.ZERO
 	player_body.global_position = global_position
 	
-	_animate_car_door()
+	_animate_car_door(entry_side, 0.95 if entry_side > 0 else 0.6)
 	
 	var lane_follow := get_parent() as PathFollow2D
 	if lane_follow != null:
@@ -951,7 +1113,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	camera.enabled = true
 	camera.set_process(true)
 	camera.set_physics_process(true)
-	camera.make_current()
+	preload("res://DynamicCamera.gd").handoff(camera, camera_view)
 
 	if headlight: headlight.visible = true
 	if engine_audio:
@@ -965,6 +1127,10 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	if is_police_vehicle and not was_stolen_from_police:
 		was_stolen_from_police = true
 		_trigger_police_theft()
+
+	_boarding = preload("res://VehicleBoarding.gd").new()
+	add_child(_boarding)
+	_boarding.begin(self, player_body, approach, entry_side)
 
 func _trigger_police_theft() -> void:
 	# 1. Alarme sonoro contínuo
@@ -1047,7 +1213,19 @@ func _turn_off_police_strobes() -> void:
 		if halo: halo.energy = 0.0
 
 var _door_visual: Node2D = null
-func _animate_car_door() -> void:
+var _door_3d: Node3D
+var _side_doors := {}
+func _animate_car_door(side: float = -1.0, hold_seconds: float = 0.42) -> void:
+	if is_3d_vehicle and is_instance_valid(body_model):
+		_door_3d = _side_doors.get(side)
+		if not is_instance_valid(_door_3d):
+			_door_3d = preload("res://prototypes/living_cast/VehicleDoor3D.gd").new()
+			body_model.add_child(_door_3d)
+			_door_3d.configure(body_model, side)
+			_side_doors[side] = _door_3d
+		_door_3d.play(hold_seconds)
+		_play_3d_door_sound()
+		return
 	if _door_visual == null:
 		_door_visual = VEHICLE_DOOR_VISUAL.new()
 		_door_visual.name = "ProceduralVehicleDoor"
@@ -1058,7 +1236,16 @@ func _animate_car_door() -> void:
 		)
 		add_child(_door_visual)
 	var body_color := visual.modulate if visual != null else Color("#3c6382")
-	_door_visual.play(body_color)
+	_door_visual.play(body_color, side, hold_seconds)
+
+func _play_3d_door_sound() -> void:
+	var audio := AudioStreamPlayer2D.new()
+	audio.stream = ProceduralAudio.get_car_door_open_stream()
+	audio.bus = &"SFX"
+	audio.max_distance = 500
+	add_child(audio)
+	audio.play()
+	audio.finished.connect(audio.queue_free)
 
 func _get_safe_exit_position() -> Vector2:
 	var space_state := get_world_2d().direct_space_state
@@ -1077,9 +1264,13 @@ func _get_safe_exit_position() -> Vector2:
 			return pos
 	return candidates[0]
 
+var _boarding: Node
+
 func exit_vehicle() -> void:
 	if not is_driven_by_player:
 		return
+	if is_instance_valid(_boarding): _boarding.cancel()
+	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	velocity = Vector2.ZERO
 	speed = 0.0
@@ -1089,10 +1280,13 @@ func exit_vehicle() -> void:
 	if radio_audio: radio_audio.stop()
 	if skid_audio: skid_audio.stop()
 
-	_animate_car_door()
+	var exit_position := _get_safe_exit_position()
+	_animate_car_door(-1.0 if to_local(exit_position).y <= 0 else 1.0)
 
 	if is_instance_valid(_driver):
-		_driver.global_position = _get_safe_exit_position()
+		remove_collision_exception_with(_driver)
+		_driver.remove_collision_exception_with(self)
+		_driver.global_position = exit_position
 		_driver.velocity = Vector2.ZERO
 		for col in _driver.find_children("", "CollisionShape2D", true, false):
 			col.set_deferred("disabled", false)
@@ -1100,25 +1294,37 @@ func exit_vehicle() -> void:
 		_driver.set_physics_process(true)
 		var player_camera := _driver.get_node_or_null("Camera") as Camera2D
 		if player_camera != null:
-			player_camera.make_current()
+			preload("res://DynamicCamera.gd").handoff(player_camera, camera_view)
 	_driver = null
 
 func _physics_process(delta: float) -> void:
+	preload("res://VehicleMotionSafety.gd").sanitize(self)
+	has_nitro = false
+	is_boosting = false
+	if is_instance_valid(_boarding) and _boarding.active:
+		velocity = Vector2.ZERO
+		return
+	if is_3d_vehicle and not is_processing():
+		_update_3d_orientation(delta)
+
 	# Sempre permite ao jogador sair com F/Enter mesmo que o carro esteja em chamas ou quebrado
 	if is_driven_by_player:
-		if Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact")):
+		if is_instance_valid(_driver): _driver.global_position = global_position
+		var exit_pressed := Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or Input.is_action_pressed("interact")
+		if not exit_pressed: _entry_input_released = true
+		if _entry_input_released and exit_pressed:
 			exit_vehicle()
 			return
 
 	if is_broken:
 		velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
 		if _detached_from_lane:
-			move_and_slide()
+			preload("res://VehicleMotionSafety.gd").move(self)
 		return
 	if not is_driven_by_player:
 		if _detached_from_lane:
 			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
-			move_and_slide()
+			preload("res://VehicleMotionSafety.gd").move(self)
 			if not is_in_group("parked_vehicle") and not is_in_group("player_car"):
 				var player_node := get_tree().get_first_node_in_group("player") as Node2D
 				var dist := global_position.distance_to(player_node.global_position) if is_instance_valid(player_node) else 9999.0
@@ -1143,8 +1349,10 @@ func _physics_process(delta: float) -> void:
 	
 	# Controle de Sirene da PM quando o jogador está dirigindo (Tecla H ou siren_toggle)
 	if is_police_vehicle:
-		if Input.is_key_pressed(KEY_H) or (InputMap.has_action("siren_toggle") and Input.is_action_just_pressed("siren_toggle")):
+		var siren_pressed := Input.is_key_pressed(KEY_H) or (InputMap.has_action("siren_toggle") and Input.is_action_pressed("siren_toggle"))
+		if siren_pressed and not _siren_key_down:
 			toggle_siren()
+		_siren_key_down = siren_pressed
 
 	# Atualização do alarme ativo da viatura
 	if is_alarm_active:
@@ -1173,6 +1381,10 @@ func _physics_process(delta: float) -> void:
 
 	var throttle := Input.get_axis("ui_down", "ui_up")
 	var steering := Input.get_axis("ui_left", "ui_right")
+	if not _drive_input_armed:
+		_drive_input_armed = is_zero_approx(throttle) and is_zero_approx(steering)
+		throttle = 0.0
+		steering = 0.0
 	
 	# Derrapagem e Drift
 	var lateral_velocity = velocity.project(transform.y)
@@ -1184,7 +1396,6 @@ func _physics_process(delta: float) -> void:
 			skid_line.add_point(global_position)
 		if skid_line.get_point_count() > 30:
 			skid_line.remove_point(0)
-		velocity = velocity.lerp(velocity.project(transform.x), 1.0 - drift_factor)
 	else:
 		is_skidding = false
 		if skid_line.get_point_count() > 0 and bloody_tires_timer <= 0.0:
@@ -1192,79 +1403,34 @@ func _physics_process(delta: float) -> void:
 			
 	_update_skid_audio()
 
-	if velocity.length() > 8.0:
-		var current_turn := steering * turn_speed * delta
-		if velocity.dot(transform.x) < 0.0:
-			current_turn *= -1.0
-		rotation += current_turn
+	var handbrake := Input.is_key_pressed(KEY_SPACE) or (InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"))
+	velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor, delta, 0.0, handbrake)
+	if handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.45*delta)
+	var longitudinal := velocity.dot(transform.x)
+	rotation += steering * turn_speed * clampf(longitudinal/150.0,-1.0,1.0) * delta
 	var forward := transform.x
-	var wants_nitro := (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SPACE) or (InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"))) and throttle > 0.0
-	
-	if has_nitro and wants_nitro and nitro_amount > 0.0:
-		if not is_boosting:
-			is_boosting = true
-			if nitro_emitter: nitro_emitter.emitting = true
-			if not nitro_audio.playing: nitro_audio.play()
-			_do_screen_shake(0.08)
-			
-		nitro_amount = maxf(0.0, nitro_amount - 28.0 * delta)
-		var nitro_accel: float = acceleration * 1.65
-		var nitro_max_spd: float = max_speed * 1.35
-		velocity = (velocity + forward * throttle * nitro_accel * delta).limit_length(nitro_max_spd)
-		
-		# Habilidade Especial do Carro do Don Hector (Cobra V8): Lança-chamas lateral de escapamento
-		if String(active_archetype_id) == "cobra_v8":
-			_trigger_side_exhaust_burn(delta)
+	if not is_zero_approx(throttle):
+		if (throttle > 0.0 and velocity.dot(forward) < -8.0) or (throttle < 0.0 and velocity.dot(forward) > 8.0):
+			velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
+		else:
+			velocity = (velocity + forward * throttle * acceleration * _engine_sound.drive_force(velocity.length(), max_speed) * delta).limit_length(_engine_sound.road_top_speed(max_speed))
 	else:
-		if is_boosting:
-			is_boosting = false
-			if nitro_emitter: nitro_emitter.emitting = false
-			if nitro_audio.playing: nitro_audio.stop()
-			
-			# Válvula de Alívio Turbo Blow-off (Tchuu-stututu)
-			var blowoff_p := AudioStreamPlayer2D.new()
-			blowoff_p.stream = ProceduralAudio.get_turbo_blowoff_stream()
-			blowoff_p.volume_db = -8.0
-			blowoff_p.max_distance = 500.0
-			add_child(blowoff_p)
-			blowoff_p.play()
-			blowoff_p.finished.connect(blowoff_p.queue_free)
-			
-		nitro_amount = minf(nitro_max, nitro_amount + 6.0 * delta)
-		
-		if not is_zero_approx(throttle):
-			if (throttle > 0.0 and velocity.dot(forward) < -8.0) or (throttle < 0.0 and velocity.dot(forward) > 8.0):
-				velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
-			else:
-				velocity = (velocity + forward * throttle * acceleration * delta).limit_length(max_speed)
-		else:
-			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
-	
+		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+
 	var prev_velocity = velocity
-	move_and_slide()
+	preload("res://VehicleMotionSafety.gd").move(self)
 	
-	# Pitch dinâmico do motor
-	if engine_audio and engine_audio.stream:
-		if not is_broken:
-			var speed_ratio = clampf(velocity.length() / maxf(1.0, max_speed), 0.0, 1.0)
-			engine_audio.pitch_scale = lerp(0.82, 1.65, speed_ratio)
-			if is_driven_by_player:
-				engine_audio.volume_db = lerp(-17.0, -11.0, speed_ratio)
-				engine_audio.max_distance = 600.0
-			else:
-				engine_audio.volume_db = lerp(-22.0, -16.0, speed_ratio)
-				engine_audio.max_distance = 450.0
-			if not engine_audio.playing:
-				engine_audio.play()
-		else:
-			if engine_audio.playing:
-				engine_audio.stop()
-			
+	# Same cached family/RPM controller as personal cars; large vehicles keep diesel timbre.
+	if engine_audio and not is_broken:
+		_engine_sound.update(engine_audio, velocity.length(), _engine_sound.road_top_speed(max_speed), throttle, delta, active_archetype_id)
+	elif engine_audio:
+		engine_audio.stop()
+
 	# Colisões e impactos
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
 		var body = col.get_collider()
-		var normal_impact = absf(prev_velocity.dot(col.get_normal()))
+		var normal_impact = maxf(0.0, -prev_velocity.dot(col.get_normal()))
 		var impact_speed = maxf(prev_velocity.length() - velocity.length(), normal_impact)
 		
 		# Atropelar pessoas no slide collision!
@@ -1300,7 +1466,8 @@ func _physics_process(delta: float) -> void:
 			crash_player.play()
 			crash_player.finished.connect(crash_player.queue_free)
 			
-		if impact_speed > 160.0:
+		if impact_speed > 160.0 and Time.get_ticks_msec()-_last_collision_damage_ms > 650:
+			_last_collision_damage_ms = Time.get_ticks_msec()
 			take_damage(int(impact_speed * 0.06))
 
 	# Gerencia marcas de pneu sangrentas
@@ -1343,11 +1510,28 @@ var _lane_motion_speed := 0.0
 var _lane_motion_initialized := false
 var _junction_traffic_controller: Node = null
 var _last_lane_motion_contract: Dictionary = {}
+var _remote_lane_elapsed := 0.0
+var remote_lane_steps := 0
 
 func _process(delta: float) -> void:
+	if is_3d_vehicle:
+		_update_3d_orientation(delta)
 	if is_broken or is_driven_by_player:
+		_remote_lane_elapsed = 0.0
 		return
-	advance_on_lane(delta)
+	# Keep remote traffic alive at 10 Hz. Nearby cars still use every frame;
+	# rendering, player driving and physics contacts have their own cadence.
+	# Accumulated delta preserves travel speed and every remote step still
+	# applies the same stop-distance, spacing and reservation contracts.
+	var on_screen := get_viewport().get_visible_rect().grow(260).has_point(get_canvas_transform() * global_position)
+	_remote_lane_elapsed += delta
+	var interval := minf(0.1, MAX_LANE_ADVANCE_PER_FRAME * 0.8 / maxf(speed, 1.0))
+	if not on_screen and _remote_lane_elapsed < interval:
+		return
+	var motion_delta := _remote_lane_elapsed
+	_remote_lane_elapsed = 0.0
+	if not on_screen: remote_lane_steps += 1
+	advance_on_lane(motion_delta)
 
 func advance_on_lane(delta: float) -> void:
 	is_moving_on_lane = false
@@ -1358,6 +1542,12 @@ func advance_on_lane(delta: float) -> void:
 	if path == null or path.curve == null:
 		return
 	var controller := _get_junction_traffic_controller()
+	# The two regional lane ends are close enough for the city graph to infer
+	# a U-turn. They are a continuous border, so the world owns this handoff.
+	if bool(path.get_meta("continuous_border_end",false)) and lane_follow.progress > path.curve.get_baked_length()-180:
+		controller = null
+	if bool(path.get_meta("continuous_border_start",false)) and lane_follow.progress < 180:
+		controller = null
 	if controller != null and controller.has_method("complete_lane_transition"):
 		if bool(controller.call("complete_lane_transition", self, path, lane_follow)):
 			return
@@ -1411,6 +1601,8 @@ func advance_on_lane(delta: float) -> void:
 	maximum_advance = minf(maximum_advance, float(end_motion.allowed_advance))
 
 	var previous_speed := _lane_motion_speed
+	# Calmer ambient traffic, preserving stop lines and collision reservations.
+	target_lane_speed *= 0.85
 	var rate := _lane_acceleration_rate() if target_lane_speed > _lane_motion_speed else _lane_braking_rate()
 	_lane_motion_speed = move_toward(_lane_motion_speed, maxf(0.0, target_lane_speed), rate * delta)
 	# A render hitch must not turn ordinary lane travel into a visible teleport.
@@ -1420,6 +1612,29 @@ func advance_on_lane(delta: float) -> void:
 		MAX_LANE_ADVANCE_PER_FRAME
 	)
 	var actual_advance := minf(desired_advance, maximum_advance)
+	if actual_advance > 0.001:
+		var next_offset := lane_follow.progress+actual_advance
+		if lane_follow.loop: next_offset = fposmod(next_offset,path.curve.get_baked_length())
+		var next_point := path.to_global(path.curve.sample_baked(next_offset, lane_follow.cubic_interp))
+		var motion := next_point-global_position
+		# Sweep the entire hull against vehicles before advancing the PathFollow.
+		# Keep the existing kinematic test for map walls and walking actors.
+		var sweep := PhysicsShapeQueryParameters2D.new()
+		sweep.shape = collision.shape
+		sweep.transform = collision.global_transform
+		sweep.motion = motion
+		sweep.margin = 0.1
+		sweep.collision_mask = collision_mask & 2
+		sweep.exclude = [get_rid()]
+		var fractions := get_world_2d().direct_space_state.cast_motion(sweep)
+		var contact := KinematicCollision2D.new()
+		if fractions[0] < 1.0 or test_move(global_transform,motion,contact):
+			# Recovery can point backwards at contact. Its absolute length must
+			# never become forward lane progress, or queues creep through bodies.
+			actual_advance *= fractions[0] if fractions[0] < 1.0 else 0.0
+			_lane_motion_speed = 0.0
+			hard_blocked = true
+			target_lane_speed = 0.0
 	if actual_advance > 0.001:
 		lane_follow.progress += actual_advance
 		is_moving_on_lane = true
@@ -1460,7 +1675,7 @@ func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: 
 			if not must_clear_rail_crossing:
 				hard_blocked = true
 			continue
-		if not collider.is_in_group("vehicle") or collider.is_in_group("parked_vehicle"):
+		if not collider.is_in_group("vehicle"):
 			continue
 		if collider.get("is_driven_by_player") == true or collider.get("_detached_from_lane") == true or collider.get("is_broken") == true:
 			hard_blocked = true
@@ -1528,6 +1743,36 @@ func _lane_braking_rate() -> float:
 	return minf(braking, maxf(120.0, speed * 2.8))
 
 
+static var _control_index_frame := -1
+static var _control_index_tree := 0
+static var _control_index_nodes: Array[Node] = []
+static var _control_index_roads: Dictionary = {}
+static var _custom_control_zones: Array[Node] = []
+
+func _road_control_zones(road_id: String) -> Array:
+	var tree := get_tree()
+	var nodes := tree.get_nodes_in_group("traffic_control_zone")
+	var frame := Engine.get_process_frames()
+	# Share discovery across the whole fleet. Stop permissions remain live;
+	# only membership is indexed. A scene/zone replacement invalidates even
+	# within the current frame, before another vehicle can use the old nodes.
+	if _control_index_frame != frame or _control_index_tree != tree.get_instance_id() or nodes != _control_index_nodes:
+		_control_index_frame = frame
+		_control_index_tree = tree.get_instance_id()
+		_control_index_nodes = nodes
+		_control_index_roads.clear()
+		_custom_control_zones.clear()
+		for zone in nodes:
+			if zone is RoadCrossingArea2D or zone is RailLevelCrossing2D:
+				var key := String(zone.road_id)
+				if not _control_index_roads.has(key): _control_index_roads[key] = []
+				_control_index_roads[key].append(zone)
+			else:
+				_custom_control_zones.append(zone)
+	var result: Array = _control_index_roads.get(road_id, [])
+	if _custom_control_zones.is_empty(): return result
+	return result + _custom_control_zones
+
 func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Dictionary:
 	var unrestricted := {
 		"target_speed": INF,
@@ -1545,7 +1790,13 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 	var nearest_stop_distance := INF
 	var nearest_zone_id: StringName = &""
 	var must_clear_rail_crossing := false
-	for zone in get_tree().get_nodes_in_group("traffic_control_zone"):
+	for zone in _road_control_zones(road_id):
+		# Reject unrelated authored roads before constructing a full crossing
+		# snapshot (which also evaluates signals, occupants and railway gates).
+		# Keep the dictionary contract for third-party/custom control zones.
+		if zone is RoadCrossingArea2D or zone is RailLevelCrossing2D:
+			if String(zone.road_id) != road_id:
+				continue
 		if not zone.has_method("get_crossing_data") or not zone.has_method("should_stop_vehicle"):
 			continue
 		var data = zone.call("get_crossing_data")
@@ -1568,7 +1819,7 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 				must_clear_rail_crossing = true
 			continue
 		var world_position: Vector2 = (data as Dictionary).get("position", Vector2.ZERO)
-		var curve_offset := path.curve.get_closest_offset(path.to_local(world_position))
+		var curve_offset := _control_zone_curve_offset(path, zone, world_position)
 		var distance_to_center := curve_offset - lane_follow.progress
 		if lane_loops and distance_to_center < -0.5:
 			distance_to_center += route_length
@@ -1602,6 +1853,27 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 		"must_clear_rail_crossing": false,
 	}
 
+
+func _control_zone_curve_offset(path: Path2D, zone: Node, world_position: Vector2) -> float:
+	# Project static crossings onto a lane once, shared by all its vehicles.
+	# Long avenues contain thousands of baked curve segments; scanning each
+	# one for every car on every frame dominated traffic CPU time.
+	var cache: Dictionary = path.get_meta("traffic_control_projections", {})
+	var curve_id := path.curve.get_instance_id()
+	if int(cache.get("curve_id", 0)) != curve_id:
+		var entries := {}
+		cache = {"curve_id": curve_id, "transform": path.global_transform, "entries": entries}
+		path.curve.changed.connect(func(): entries.clear())
+		path.set_meta("traffic_control_projections", cache)
+	if cache.transform != path.global_transform:
+		cache.entries.clear()
+		cache.transform = path.global_transform
+	var key := zone.get_instance_id()
+	var entry: Dictionary = cache.entries.get(key, {})
+	if entry.is_empty() or entry.position != world_position:
+		entry = {"position": world_position, "offset": path.curve.get_closest_offset(path.to_local(world_position))}
+		cache.entries[key] = entry
+	return float(entry.offset)
 
 func _inside_rail_escape_envelope(data: Dictionary) -> bool:
 	var center: Vector2 = data.get("position", Vector2.ZERO)
@@ -1751,3 +2023,15 @@ func _trigger_side_exhaust_burn(_delta: float) -> void:
 				if absf(local_pos.y) > 14.0 and absf(local_pos.x) < 28.0:
 					if body.has_method("take_damage"):
 						body.take_damage(2)
+
+static var _damage_particle: Texture2D
+static func _soft_damage_particle() -> Texture2D:
+	if _damage_particle != null: return _damage_particle
+	var image := Image.create(32,32,false,Image.FORMAT_RGBA8)
+	for y in 32:
+		for x in 32:
+			var radius := Vector2(x-15.5,y-15.5).length()/15.5
+			image.set_pixel(x,y,Color(1,1,1,pow(maxf(0,1-radius),2)))
+	_damage_particle = ImageTexture.create_from_image(image)
+	return _damage_particle
+

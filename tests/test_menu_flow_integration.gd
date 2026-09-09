@@ -9,7 +9,7 @@ extends SceneTree
 ## 5. MainMenu -> Carregar Jogo (Botões dinâmicos com hook de som) -> Main.tscn restaurado
 
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
-const MAIN_GAME_SCENE: String = "res://Main.tscn"
+const MAIN_GAME_SCENE: String = "res://district/harbor_preview/HarborGame.tscn"
 const MenuAudio = preload("res://ui/MenuAudio.gd")
 
 var failures: Array[String] = []
@@ -41,6 +41,10 @@ func _run_integration_flow() -> void:
 		_finish()
 		return
 	_report_step("Autoloads Presentes", true, "SaveManager, SettingsManager, CampaignState e WantedManager ativos")
+	# Never replace the player's real slot_01 when exercising the menu.
+	sm.set("_save_dir", OS.get_temp_dir().path_join("harbor_menu_test_%d" % Time.get_ticks_usec()) + "/")
+	sm.set("_save_directory_ready", false)
+	set_m.set("_settings_path", OS.get_temp_dir().path_join("harbor_menu_settings_%d.cfg" % Time.get_ticks_usec()))
 
 	# =================================================================
 	# ETAPA 0: Validação de Síntese Procedural e Barramentos de Áudio
@@ -113,13 +117,19 @@ func _run_integration_flow() -> void:
 
 	print("  Acionando sinal 'pressed' do botão Novo Jogo...")
 	btn_new_game.pressed.emit()
+	# MenuAudio defers root insertion and playback to avoid busy-tree errors.
+	await process_frame
+	await process_frame
 
 	# Confirmar clique e parada da música ao entrar no jogo
 	var click_player = root.get_node_or_null("__MenuClickPlayer") as AudioStreamPlayer
 	var click_triggered: bool = (click_player != null and click_player.bus == "SFX")
 	_report_step("Disparo de SFX de Clique", click_triggered, "AudioStreamPlayer '__MenuClickPlayer' criado no bus SFX")
 
-	# Aguardar transição de cena e frames de inicialização
+	# A transição agora inclui um fade real; frames headless não medem duração.
+	var transition_deadline := Time.get_ticks_msec() + 5000
+	while current_scene == main_menu and Time.get_ticks_msec() < transition_deadline:
+		await process_frame
 	for i in range(15):
 		await process_frame
 	
@@ -127,6 +137,16 @@ func _run_integration_flow() -> void:
 	_report_step("Transição de Cena para Main.tscn", in_main_scene, "Cena atual: %s" % (current_scene.scene_file_path if current_scene else "null"))
 	
 	var campaign_reset: bool = (campaign.current_stage != "pre_test_stage")
+	# Finish the modal onboarding before testing the gameplay pause shortcut.
+	var arrival := current_scene.get_node_or_null("ArrivalMission")
+	if arrival != null:
+		arrival.skip_cinematic()
+		var skip_deadline := Time.get_ticks_msec() + 20000
+		while arrival.phase in ["arrival", "disembark", "arrival_wait"] and Time.get_ticks_msec() < skip_deadline:
+			await process_frame
+		arrival.answer_phone()
+		for line in 4:
+			arrival.advance_dialogue()
 	var wanted_reset: bool = (wanted.current_stars == 0)
 	_report_step("Reset de Estado (CampaignState & Wanted)", campaign_reset and wanted_reset, "Stage: %s, Stars: %d" % [campaign.current_stage, wanted.current_stars])
 	

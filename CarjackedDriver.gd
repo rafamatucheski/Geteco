@@ -35,7 +35,7 @@ func _ready() -> void:
 
 	var col = CollisionShape2D.new()
 	var shape = CircleShape2D.new()
-	shape.radius = 12.0
+	shape.radius = 8.0
 	col.shape = shape
 	add_child(col)
 
@@ -57,6 +57,12 @@ func _ready() -> void:
 
 func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 	stolen_vehicle = vehicle
+	if is_instance_valid(driver_model) and "taxi" in String(vehicle.get("vehicle_id")):
+		var detail := preload("res://district/pedestrians/CitizenDetails.gd")
+		detail.piece(driver_model,Vector3(.36,.11,.31),Vector3(0,1.79,0),Color("b59855"),true)
+		detail.piece(driver_model,Vector3(.27,.025,.15),Vector3(0,1.75,.16),Color("b59855"))
+		detail.piece(driver_model,Vector3(.08,.10,.03),Vector3(.12,1.24,.18),Color("e6dfc8"))
+		driver_viewport.render_target_update_mode=SubViewport.UPDATE_ONCE
 	global_position = spawn_pos
 	
 	# Sorteia a personalidade
@@ -103,6 +109,11 @@ func _physics_process(delta: float) -> void:
 		return
 
 	state_timer += delta
+	_age += delta
+	if _age > 12 and not civilian_routine: _begin_civilian_routine()
+	if civilian_routine:
+		_update_civilian_routine(delta)
+		return
 
 	# BUG REAL CORRIGIDO: speech_bubble/phone_indicator sao filhos deste
 	# CharacterBody2D, entao quando "rotation" muda abaixo (o motorista vira
@@ -221,8 +232,10 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 		is_dead = true
 		if phone_indicator: phone_indicator.visible = false
 		show_speech("Aaaagh!", 1.0)
+		var effects := get_tree().get_first_node_in_group("weapon_effects")
+		if effects: effects.spawn_blood(global_position,Vector2.UP,amount)
 		var t = create_tween()
-		t.tween_property(visual_root, "rotation", PI * 0.5, 0.2)
+		t.tween_property(driver_model, "rotation:z", PI * 0.5, 0.2)
 		t.tween_property(self, "modulate:a", 0.0, 3.0)
 		t.tween_callback(queue_free)
 
@@ -232,10 +245,7 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	move_and_slide()
 
 func _fade_and_despawn() -> void:
-	var tw = create_tween()
-	tw.tween_interval(2.0)
-	tw.tween_property(self, "modulate:a", 0.0, 1.5)
-	tw.tween_callback(queue_free)
+	_begin_civilian_routine()
 
 # Paleta curada de roupas -- antes era RGB 100% aleatorio (cada canal solto
 # entre 0.2 e 0.9), o que gerava combinacoes neon/feias (o "roxo horroroso"
@@ -247,90 +257,119 @@ const DRIVER_SHIRT_COLORS: Array[Color] = [
 	Color("00cec9"), Color("b2bec3"),
 ]
 
+var driver_viewport: SubViewport
+var driver_model: Node3D
+var _render_clock := 0.0
+var civilian_routine := false
+var _routine_points: Array[Vector2] = []
+var _routine_index := 0
+var _routine_wait := 0.0
+var _age := 0.0
+
 func _build_driver_visual() -> void:
-	shirt_color = DRIVER_SHIRT_COLORS[randi() % DRIVER_SHIRT_COLORS.size()]
+	shirt_color = Color("39835a")
+	driver_viewport = SubViewport.new()
+	driver_viewport.name = "Driver3DRender"
+	driver_viewport.size = Vector2i(128,128)
+	driver_viewport.own_world_3d = true
+	driver_viewport.transparent_bg = true
+	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	add_child(driver_viewport)
+	driver_model = preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
+	driver_viewport.add_child(driver_model)
+	driver_model.set_process(false)
+	var camera := Camera3D.new()
+	driver_viewport.add_child(camera)
+	camera.position = Vector3(0,4,3)
+	camera.look_at(Vector3(0,0.9,0))
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 2.6
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-45,-25,0)
+	sun.light_energy = 1.5
+	driver_viewport.add_child(sun)
+	var sprite := Sprite2D.new()
+	sprite.texture = driver_viewport.get_texture()
+	sprite.scale = Vector2.ONE*(15.0*2.6/128.0)
+	sprite.position = (Vector2(64,64)-camera.unproject_position(Vector3.ZERO))*sprite.scale
+	visual_root.add_child(sprite)
 
-	# Bracos e pernas simples -- antes o "corpo" era so um retangulo achatado
-	# (sem membro nenhum), o que junto com a cor aleatoria feia lia como um
-	# borrao qualquer em vez de uma pessoa (bug real reportado: "esse NPC que
-	# sai do carro horroroso").
-	var arm_l = Polygon2D.new()
-	arm_l.color = skin_color
-	arm_l.polygon = PackedVector2Array([
-		Vector2(-12, -10), Vector2(-8, -10), Vector2(-9, 13), Vector2(-13, 13)
-	])
-	visual_root.add_child(arm_l)
+func _process(delta: float) -> void:
+	if not is_instance_valid(driver_model): return
+	visual_root.global_rotation = 0
+	if speech_bubble: speech_bubble.rotation = -global_rotation
+	if phone_indicator: phone_indicator.rotation = -global_rotation
+	var visible_now := get_viewport().get_visible_rect().grow(100).has_point(get_canvas_transform()*global_position)
+	if not visible_now:
+		driver_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		return
+	_render_clock += delta
+	if _render_clock < 1.0/20.0: return
+	driver_model.walking = not is_dead and velocity.length()>2
+	if not is_dead: driver_model.rotation.y = -global_rotation + PI*0.5
+	driver_model._process(_render_clock)
+	_render_clock = 0
+	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
-	var arm_r = Polygon2D.new()
-	arm_r.color = skin_color
-	arm_r.polygon = PackedVector2Array([
-		Vector2(8, -10), Vector2(12, -10), Vector2(13, 13), Vector2(9, 13)
-	])
-	visual_root.add_child(arm_r)
+func _begin_civilian_routine() -> void:
+	if civilian_routine or is_dead: return
+	civilian_routine = true
+	if phone_indicator: phone_indicator.hide()
+	var nearest := INF
+	var entry := global_position
+	for resident in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
+		for i in range(resident.route_points.size()-1):
+			var a: Vector2 = resident.get_parent().to_global(resident.route_points[i])
+			var b: Vector2 = resident.get_parent().to_global(resident.route_points[i+1])
+			var point := Geometry2D.get_closest_point_to_segment(global_position,a,b)
+			var distance := global_position.distance_squared_to(point)
+			if distance < nearest and distance < 800*800:
+				nearest = distance
+				entry = point
+				_routine_points = [a,b]
+	if _routine_points.is_empty(): _routine_points = [global_position+Vector2(-40,0),global_position+Vector2(40,0)]
+	_routine_points.push_front(entry)
+	_routine_index = 0
+	show_speech("Preciso sair daqui e pedir ajuda.",3.0)
 
-	var leg_l = Polygon2D.new()
-	leg_l.color = pants_color
-	leg_l.polygon = PackedVector2Array([
-		Vector2(-8, 12), Vector2(-1, 12), Vector2(-1, 20), Vector2(-8, 20)
-	])
-	visual_root.add_child(leg_l)
-
-	var leg_r = Polygon2D.new()
-	leg_r.color = pants_color
-	leg_r.polygon = PackedVector2Array([
-		Vector2(1, 12), Vector2(8, 12), Vector2(8, 20), Vector2(1, 20)
-	])
-	visual_root.add_child(leg_r)
-
-	# Corpo do Pedestre Top-Down
-	var body = Polygon2D.new()
-	body.color = shirt_color
-	body.polygon = PackedVector2Array([
-		Vector2(-9, -14), Vector2(9, -14), Vector2(10, 14), Vector2(-10, 14)
-	])
-	visual_root.add_child(body)
-
-	# Cabeça
-	var head = Polygon2D.new()
-	head.color = skin_color
-	var head_pts = PackedVector2Array()
-	for i in 12:
-		var a = i * TAU / 12.0
-		head_pts.append(Vector2(cos(a) * 7.5, sin(a) * 7.5))
-	head.polygon = head_pts
-	visual_root.add_child(head)
-
-	# Cabelo
-	var hair = Polygon2D.new()
-	hair.color = Color(0.1, 0.08, 0.06)
-	var hair_pts = PackedVector2Array()
-	for i in 8:
-		var a = (i + 2) * TAU / 12.0
-		hair_pts.append(Vector2(cos(a) * 8.0, sin(a) * 8.0))
-	hair.polygon = hair_pts
-	visual_root.add_child(hair)
+func _update_civilian_routine(delta: float) -> void:
+	_routine_wait = maxf(0,_routine_wait-delta)
+	if _routine_wait>0:
+		velocity = Vector2.ZERO
+		return
+	var point := _routine_points[_routine_index]
+	if global_position.distance_to(point)<8:
+		_routine_index = 1 if _routine_index==2 else _routine_index+1
+		_routine_wait = randf_range(1.0,3.0)
+		return
+	velocity = global_position.direction_to(point)*42
+	rotation = velocity.angle()
+	move_and_slide()
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if _age>60 and is_instance_valid(player) and player.global_position.distance_to(global_position)>1800:
+		queue_free()
 
 func _setup_speech_bubble() -> void:
 	speech_bubble = PanelContainer.new()
-	speech_bubble.position = Vector2(-90, -58)
-	speech_bubble.custom_minimum_size = Vector2(180, 26)
+	speech_bubble.position = Vector2(-115, -68)
+	speech_bubble.custom_minimum_size = Vector2(230, 36)
 	speech_bubble.visible = false
 	speech_bubble.z_index = 25
 	
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.1, 0.12, 0.16, 0.92)
+	style.bg_color = Color(0.08, 0.10, 0.14, 0.95)
 	style.border_color = Color(0.95, 0.75, 0.20)
-	style.set_border_width_all(1)
+	style.set_border_width_all(2)
 	style.set_corner_radius_all(6)
-	style.content_margin_left = 6
-	style.content_margin_right = 6
-	style.content_margin_top = 3
-	style.content_margin_bottom = 3
+	style.content_margin_left = 10
+	style.content_margin_right = 10
+	style.content_margin_top = 5
+	style.content_margin_bottom = 5
 	speech_bubble.add_theme_stylebox_override("panel", style)
 	
 	speech_label = Label.new()
 	speech_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	speech_label.add_theme_font_size_override("font_size", 10)
+	speech_label.add_theme_font_size_override("font_size", 13)
 	speech_label.add_theme_color_override("font_color", Color.WHITE)
 	speech_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	speech_bubble.add_child(speech_label)

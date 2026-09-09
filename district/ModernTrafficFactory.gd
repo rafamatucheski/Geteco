@@ -116,12 +116,55 @@ static func _find_clear_ratio(path: Path2D, requested_ratio: float) -> float:
 	var lane_loops := bool(path.get_meta("traffic_lane_loop", _curve_is_closed(path.curve)))
 	var ratio := fposmod(requested_ratio, 1.0) if lane_loops else clampf(requested_ratio, 0.03, 0.97)
 	var curve_length := maxf(1.0, path.curve.get_baked_length())
+	# Occupancy (another car momentarily nearby) is benign and self-resolves as
+	# traffic moves; a junction-unsafe ratio (inside a dead end's exclusion
+	# zone, unable to plan or take its only exit -- see has_lane_transition())
+	# is what actually strands a vehicle forever. If the full search below
+	# never finds a position clear on both counts, prefer the best
+	# junction-safe ratio seen over blindly returning wherever the walk
+	# happened to stop.
+	var best_junction_safe_ratio := -1.0
 	for attempt in 12:
 		var candidate := path.to_global(path.curve.sample_baked(ratio * curve_length, true))
-		if _position_is_clear(path.get_tree(), candidate) and _junction_spawn_is_clear(path, ratio, curve_length):
+		var junction_safe := _junction_spawn_is_clear(path, ratio, curve_length)
+		if junction_safe and best_junction_safe_ratio < 0.0:
+			best_junction_safe_ratio = ratio
+		if _position_is_clear(path.get_tree(), candidate) and junction_safe:
 			return ratio
 		var step := 0.071 + float(attempt % 3) * 0.013
 		ratio = fposmod(ratio + step, 1.0) if lane_loops else clampf(ratio + step, 0.03, 0.97)
+	# The forward search above only ever walks toward 1.0 (or wraps on a loop),
+	# so on an open lane it can exhaust its budget pinned at the 0.97 clamp --
+	# which, on a dead-end lane whose only exit is a turn connector shortly
+	# before the physical end (e.g. westgate_drive/forward_01, junction at
+	# curve_length with no room to spare), is itself inside the junction's own
+	# exclusion zone and therefore never actually safe. Returning that ratio
+	# anyway used to spawn a vehicle already stuck at the road's hard end, with
+	# no way to plan or take the only turn off it (see
+	# JunctionTrafficController._planned_connection, which requires
+	# entry_curve_offset >= progress) -- a real reproduced bug, not a
+	# hypothetical: HarborTraffic_27 in HarborPreview.tscn. Before giving up,
+	# search backward from the original request for a position the forward
+	# walk could never reach.
+	if not lane_loops and not (_position_is_clear(path.get_tree(), path.to_global(path.curve.sample_baked(ratio * curve_length, true))) and _junction_spawn_is_clear(path, ratio, curve_length)):
+		var back_ratio := clampf(requested_ratio, 0.03, 0.97)
+		for attempt in 12:
+			var candidate := path.to_global(path.curve.sample_baked(back_ratio * curve_length, true))
+			var junction_safe := _junction_spawn_is_clear(path, back_ratio, curve_length)
+			if junction_safe and best_junction_safe_ratio < 0.0:
+				best_junction_safe_ratio = back_ratio
+			if _position_is_clear(path.get_tree(), candidate) and junction_safe:
+				return back_ratio
+			var step := 0.071 + float(attempt % 3) * 0.013
+			back_ratio = clampf(back_ratio - step, 0.03, 0.97)
+	# Nothing was ever clear of both a neighbour and the junction's exclusion
+	# zone (a genuinely saturated lane). A ratio that at least never straps a
+	# vehicle to a dead end -- even if another car was standing there a
+	# moment ago -- is strictly safer than the raw fallback: the next few
+	# frames of normal spacing/yield logic resolve mere occupancy on their
+	# own, but there is no recovery from an unreachable connector.
+	if best_junction_safe_ratio >= 0.0:
+		return best_junction_safe_ratio
 	return ratio
 
 
@@ -141,6 +184,10 @@ static func _junction_spawn_is_clear(path: Path2D, ratio: float, curve_length: f
 static func _position_is_clear(tree: SceneTree, candidate: Vector2) -> bool:
 	if DISTRICT_ONE_RAIL_SPAWN_EXCLUSION.has_point(candidate):
 		return false
+	for exclusion in tree.get_nodes_in_group("traffic_spawn_exclusion"):
+		var bounds: Rect2 = exclusion.get_meta("traffic_spawn_exclusion_rect", Rect2())
+		if bounds.has_point(candidate):
+			return false
 	for node in tree.get_nodes_in_group("modern_traffic"):
 		if node is Node2D and (node as Node2D).global_position.distance_to(candidate) < MINIMUM_SPAWN_CLEARANCE:
 			return false

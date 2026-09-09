@@ -22,6 +22,9 @@ var window_mode: int = 0  # 0: Janela, 1: Tela Cheia, 2: Tela Cheia Exclusiva
 var resolution: Vector2i = Vector2i(1280, 720)
 var vsync: bool = true
 
+var language: String = "pt_BR"
+signal language_changed(locale: String)
+
 func _enter_tree() -> void:
 	_setup_audio_buses()
 
@@ -83,7 +86,10 @@ func load_settings() -> bool:
 	var res_h: int = int(config.get_value("display", "resolution_height", 720))
 	resolution = Vector2i(maxi(640, res_w), maxi(480, res_h))
 	vsync = bool(config.get_value("display", "vsync", true))
-	
+
+	var loaded_language := String(config.get_value("locale", "language", "pt_BR"))
+	language = loaded_language if Localization.is_supported(loaded_language) else "pt_BR"
+
 	return true
 
 func save_settings() -> bool:
@@ -97,7 +103,9 @@ func save_settings() -> bool:
 	config.set_value("display", "resolution_width", resolution.x)
 	config.set_value("display", "resolution_height", resolution.y)
 	config.set_value("display", "vsync", vsync)
-	
+
+	config.set_value("locale", "language", language)
+
 	var err := config.save(_settings_path)
 	if err == OK:
 		settings_saved.emit()
@@ -108,6 +116,17 @@ func save_settings() -> bool:
 func apply_all_settings() -> void:
 	apply_audio_settings()
 	apply_display_settings()
+	apply_language_settings()
+
+func apply_language_settings() -> void:
+	TranslationServer.set_locale(language)
+	language_changed.emit(language)
+
+func set_language(locale: String) -> void:
+	if not Localization.is_supported(locale):
+		return
+	language = locale
+	apply_language_settings()
 
 func apply_audio_settings() -> void:
 	_apply_bus_volume("Master", master_volume)
@@ -126,6 +145,11 @@ func _apply_bus_volume(bus_name: String, linear: float) -> void:
 		AudioServer.set_bus_volume_db(idx, linear_to_db(linear))
 
 func apply_display_settings() -> void:
+	# Fullscreen keeps the monitor's native mode, but renders at the chosen
+	# resolution. Windowed mode retains the existing responsive canvas scaling.
+	var window := get_tree().root
+	window.content_scale_size = resolution if window_mode != 0 else Vector2i(1280, 720)
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT if window_mode != 0 else Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	# Não aplicar modos gráficos agressivos se estiver em ambiente headless
 	if DisplayServer.get_name() == "headless":
 		return
@@ -177,13 +201,13 @@ func set_vsync(enabled: bool) -> void:
 func get_controls_mapping() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var actions: Array[Dictionary] = [
-		{"action": &"ui_up", "label": "Mover para Cima / Acelerar"},
-		{"action": &"ui_down", "label": "Mover para Baixo / Ré"},
-		{"action": &"ui_left", "label": "Mover para Esquerda / Virar"},
-		{"action": &"ui_right", "label": "Mover para Direita / Virar"},
-		{"action": &"sprint", "label": "Correr (Sprint)"},
-		{"action": &"interact", "label": "Interagir / Entrar no Veículo"},
-		{"action": &"radio_next", "label": "Próxima Estação de Rádio"},
+		{"action": &"ui_up", "label": tr("CONTROL_MOVE_UP")},
+		{"action": &"ui_down", "label": tr("CONTROL_MOVE_DOWN")},
+		{"action": &"ui_left", "label": tr("CONTROL_MOVE_LEFT")},
+		{"action": &"ui_right", "label": tr("CONTROL_MOVE_RIGHT")},
+		{"action": &"sprint", "label": tr("CONTROL_SPRINT")},
+		{"action": &"interact", "label": tr("CONTROL_INTERACT")},
+		{"action": &"radio_next", "label": tr("CONTROL_RADIO_NEXT")},
 	]
 	
 	for entry in actions:
@@ -200,20 +224,20 @@ func get_controls_mapping() -> Array[Dictionary]:
 				elif event is InputEventMouseButton:
 					var btn := (event as InputEventMouseButton).button_index
 					var btn_str := "Mouse %d" % btn
-					if btn == MOUSE_BUTTON_LEFT: btn_str = "Clique Esquerdo"
-					elif btn == MOUSE_BUTTON_RIGHT: btn_str = "Clique Direito"
-					elif btn == MOUSE_BUTTON_MIDDLE: btn_str = "Clique do Meio"
+					if btn == MOUSE_BUTTON_LEFT: btn_str = tr("CONTROL_KEY_LEFT_CLICK")
+					elif btn == MOUSE_BUTTON_RIGHT: btn_str = tr("CONTROL_KEY_RIGHT_CLICK")
+					elif btn == MOUSE_BUTTON_MIDDLE: btn_str = tr("CONTROL_KEY_MIDDLE_CLICK")
 					if not keys.has(btn_str):
 						keys.append(btn_str)
 		result.append({
 			"action": act,
 			"label": entry["label"],
-			"keys": " / ".join(keys) if not keys.is_empty() else "Nenhuma"
+			"keys": " / ".join(keys) if not keys.is_empty() else tr("CONTROL_KEY_NONE")
 		})
 	
 	# Adicionar ações globais fixas documentadas
-	result.append({"action": &"fire", "label": "Atirar / Disparar Arma", "keys": "Clique Esquerdo"})
-	result.append({"action": &"weapon_wheel", "label": "Roda de Armas", "keys": "Q / Roda do Mouse"})
-	result.append({"action": &"pause", "label": "Menu de Pausa", "keys": "ESC"})
+	result.append({"action": &"fire", "label": tr("CONTROL_FIRE"), "keys": tr("CONTROL_KEY_LEFT_CLICK")})
+	result.append({"action": &"weapon_wheel", "label": tr("CONTROL_WEAPON_WHEEL"), "keys": "Q / " + tr("CONTROL_KEY_MOUSE_WHEEL")})
+	result.append({"action": &"pause", "label": tr("CONTROL_PAUSE"), "keys": "ESC"})
 	
 	return result

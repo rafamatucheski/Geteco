@@ -23,6 +23,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_update_vehicle_test_panel()
+	_layout_achievement()
 
 func update_money(amount: int) -> void:
 	current_money += amount
@@ -143,3 +144,152 @@ func _on_map_overview_button_pressed() -> void:
 	var camera = get_viewport().get_camera_2d()
 	if is_instance_valid(camera) and camera.has_method("set_overview_mode") and camera.has_method("is_overview_mode"):
 		camera.set_overview_mode(not camera.is_overview_mode())
+
+
+var vehicle_name_label: Label
+var _vehicle_name_tween: Tween
+
+func show_vehicle_name(vehicle_name: String) -> void:
+	if vehicle_name_label == null:
+		vehicle_name_label = Label.new()
+		vehicle_name_label.name = "VehicleName"
+		vehicle_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vehicle_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		vehicle_name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var font := SystemFont.new()
+		font.font_names = PackedStringArray(["Georgia", "serif"])
+		font.font_italic = true
+		vehicle_name_label.add_theme_font_override("font", font)
+		vehicle_name_label.add_theme_font_size_override("font_size", 34)
+		vehicle_name_label.add_theme_color_override("font_color", Color("e8ce88"))
+		vehicle_name_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.95))
+		vehicle_name_label.add_theme_constant_override("outline_size", 6)
+		add_child(vehicle_name_label)
+		vehicle_name_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+		vehicle_name_label.offset_left = -620
+		vehicle_name_label.offset_right = -42
+		vehicle_name_label.offset_top = -138
+		vehicle_name_label.offset_bottom = -42
+	if _vehicle_name_tween != null and _vehicle_name_tween.is_valid():
+		_vehicle_name_tween.kill()
+	vehicle_name_label.text = vehicle_name
+	vehicle_name_label.modulate.a = 0.0
+	vehicle_name_label.show()
+	_vehicle_name_tween = create_tween()
+	_vehicle_name_tween.tween_property(vehicle_name_label, "modulate:a", 1.0, 0.2)
+	_vehicle_name_tween.tween_interval(3.2)
+	_vehicle_name_tween.tween_property(vehicle_name_label, "modulate:a", 0.0, 0.8)
+	_vehicle_name_tween.tween_callback(vehicle_name_label.hide)
+
+
+var notice_label: Label
+var _notice_tween: Tween
+
+## Aviso central curto e genérico (achados, corridas, marcos) — some sozinho.
+func show_notice(text: String, color: Color = Color("#ffffff")) -> void:
+	if notice_label == null:
+		notice_label = Label.new()
+		notice_label.name = "NoticeLabel"
+		notice_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		notice_label.add_theme_font_size_override("font_size", 20)
+		notice_label.add_theme_color_override("font_outline_color", Color(0.02, 0.02, 0.02, 0.95))
+		notice_label.add_theme_constant_override("outline_size", 5)
+		add_child(notice_label)
+		notice_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		notice_label.offset_left = -280
+		notice_label.offset_right = 280
+		notice_label.offset_top = 54
+		notice_label.offset_bottom = 86
+	if _notice_tween != null and _notice_tween.is_valid():
+		_notice_tween.kill()
+	notice_label.text = text
+	notice_label.add_theme_color_override("font_color", color)
+	notice_label.modulate.a = 0.0
+	notice_label.show()
+	_notice_tween = create_tween()
+	_notice_tween.tween_property(notice_label, "modulate:a", 1.0, 0.18)
+	_notice_tween.tween_interval(2.3)
+	_notice_tween.tween_property(notice_label, "modulate:a", 0.0, 0.7)
+	_notice_tween.tween_callback(notice_label.hide)
+
+
+var achievement_panel: PanelContainer
+var achievement_title_label: Label
+var achievement_desc_label: Label
+var _achievement_tween: Tween
+var _achievement_audio: AudioStreamPlayer
+
+## Below the money, stars and weather stack, including after window resizing.
+func _layout_achievement() -> void:
+	if not is_instance_valid(achievement_panel): return
+	var top := $RootMargin/TopRightPanel as Control
+	var bottom := top.get_global_rect().end.y + 12.0
+	achievement_panel.offset_top = bottom
+	achievement_panel.offset_bottom = bottom + maxf(achievement_panel.get_combined_minimum_size().y, 80.0)
+
+func show_achievement(title: String, desc: String) -> void:
+	if achievement_panel == null:
+		achievement_panel = PanelContainer.new()
+		achievement_panel.name = "AchievementPanel"
+		achievement_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.08, 0.07, 0.03, 0.92)
+		style.border_color = Color("#f6c445")
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(8)
+		style.content_margin_left = 14
+		style.content_margin_right = 14
+		style.content_margin_top = 8
+		style.content_margin_bottom = 8
+		achievement_panel.add_theme_stylebox_override("panel", style)
+		add_child(achievement_panel)
+		achievement_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		achievement_panel.offset_left = -340
+		achievement_panel.offset_right = -20
+		achievement_panel.offset_top = 20
+		achievement_panel.offset_bottom = 80
+
+		var vbox := VBoxContainer.new()
+		achievement_panel.add_child(vbox)
+
+		var header := Label.new()
+		header.text = "CONQUISTA DESBLOQUEADA"
+		header.add_theme_font_size_override("font_size", 10)
+		header.add_theme_color_override("font_color", Color("#f6c445"))
+		vbox.add_child(header)
+
+		achievement_title_label = Label.new()
+		achievement_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		achievement_title_label.add_theme_font_size_override("font_size", 15)
+		achievement_title_label.add_theme_color_override("font_color", Color("#ffffff"))
+		vbox.add_child(achievement_title_label)
+
+		achievement_desc_label = Label.new()
+		achievement_desc_label.add_theme_font_size_override("font_size", 10)
+		achievement_desc_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
+		achievement_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vbox.add_child(achievement_desc_label)
+
+		_achievement_audio = AudioStreamPlayer.new()
+		_achievement_audio.bus = &"SFX"
+		add_child(_achievement_audio)
+
+	achievement_title_label.text = title
+	achievement_desc_label.text = desc
+	_layout_achievement()
+	if _achievement_tween != null and _achievement_tween.is_valid():
+		_achievement_tween.kill()
+	achievement_panel.modulate.a = 0.0
+	achievement_panel.show()
+
+	_achievement_audio.stream = ProceduralAudio.get_mission_passed_stream()
+	_achievement_audio.pitch_scale = 1.15
+	_achievement_audio.volume_db = -6.0
+	_achievement_audio.play()
+
+	_achievement_tween = create_tween()
+	_achievement_tween.tween_property(achievement_panel, "modulate:a", 1.0, 0.25)
+	_achievement_tween.tween_interval(3.4)
+	_achievement_tween.tween_property(achievement_panel, "modulate:a", 0.0, 0.6)
+	_achievement_tween.tween_callback(achievement_panel.hide)

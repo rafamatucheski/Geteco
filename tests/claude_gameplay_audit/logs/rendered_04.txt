@@ -1,0 +1,52 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=46 issues=0
+  [PASS] Fluxo real chega em 'meet_maciota' antes desta auditoria começar
+
+[ETAPA 1] Conversa completa e real com Maciota (tecla E + Espaço até o fim)
+  [PASS] Tecla E abre a conversa real com Maciota
+  [CAPTURE] res://tests/claude_gameplay_audit/captures/04_maciota_conversation_open.png (err=OK)
+  [PASS] A conversa termina sozinha após um número finito de falas (7 avanços)
+  [PASS] Conversa completa avança a campanha para a fase 'board'
+  [PASS] Quadro de missões desbloqueia de verdade após a conversa completa
+  [PASS] harbor_maciota_met é setada pela conversa real
+
+[ETAPA 2] Repetição: reabordar Maciota depois de desbloqueado, 3 vezes seguidas
+  [PASS] Ciclo 0: Maciota ainda responde normalmente depois de já concluído
+  [PASS] Ciclo 0: a conversa de acompanhamento também termina sozinha
+  [PASS] Ciclo 0: repetir a conversa não relockeia o quadro de missões
+  [PASS] Ciclo 1: Maciota ainda responde normalmente depois de já concluído
+  [PASS] Ciclo 1: a conversa de acompanhamento também termina sozinha
+  [PASS] Ciclo 1: repetir a conversa não relockeia o quadro de missões
+  [PASS] Ciclo 2: Maciota ainda responde normalmente depois de já concluído
+  [PASS] Ciclo 2: a conversa de acompanhamento também termina sozinha
+  [PASS] Ciclo 2: repetir a conversa não relockeia o quadro de missões
+
+[ETAPA 3] Lousa: abrir/fechar repetidamente com tecla real (E), 3x
+  [PASS] Ciclo 0: tecla E abre a lousa (já desbloqueada)
+  [CAPTURE] res://tests/claude_gameplay_audit/captures/04_mission_board_open.png (err=OK)
+  [PASS] Ciclo 0: ESC fecha a lousa de novo
+  [PASS] Ciclo 1: tecla E abre a lousa (já desbloqueada)
+  [PASS] Ciclo 1: ESC fecha a lousa de novo
+  [PASS] Ciclo 2: tecla E abre a lousa (já desbloqueada)
+  [PASS] Ciclo 2: ESC fecha a lousa de novo
+
+[ETAPA 4] Contrato 'primeiro_giro' completo: aceitar -> buscar -> entregar -> recompensa
+  [PASS] Lousa aberta para aceitar o contrato
+  [PASS] accept_mission('primeiro_giro') funciona a partir da fase 'board'
+  [PASS] Aceitar o contrato avança para 'delivery_pickup'
+  [PASS] Interagir no ponto de coleta recolhe a encomenda
+  [PASS] Coleta avança para 'delivery_return'
+  [PASS] Entregar a Maciota conclui o contrato
+  [PASS] Recompensa de $150 é paga exatamente uma vez
+  [PASS] harbor_delivery_complete é setada pela entrega real
+
+[ETAPA 5] Idempotência: interagir de novo após a conclusão não deve pagar de novo nem travar
+  [PASS] interact_with_objective() depois de completo retorna falso (idempotente)
+  [PASS] Nenhum pagamento duplicado ocorre ao repetir a interação
+=================================================================
+=== 04_maciota_and_chalkboard: APROVADO (31/31 verificações) ===
+WARNING: 1 ObjectDB instance was leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

@@ -161,6 +161,12 @@ func save_game(slot_id: String = "slot_01", custom_summary_note: String = "") ->
 		save_completed.emit(slot_id, false, err_msg)
 		return {"success": false, "error": err_msg}
 	
+	# One central gate covers manual, quick and automatic saves before snapshots/writes.
+	if wanted and int(wanted.get("current_stars")) > 0:
+		var err_msg := "Não é possível salvar durante uma perseguição. Despiste a polícia primeiro."
+		save_completed.emit(slot_id, false, err_msg)
+		return {"success": false, "error": err_msg, "reason": "wanted"}
+
 	# Obter dados de cada subsistema sem duplicar fontes de verdade
 	var player_data: Dictionary = player.serialize() if player.has_method("serialize") else {}
 	var wanted_data: Dictionary = wanted.serialize() if wanted and wanted.has_method("serialize") else {}
@@ -191,6 +197,7 @@ func save_game(slot_id: String = "slot_01", custom_summary_note: String = "") ->
 		},
 		"campaign": campaign_data,
 		"player": player_data,
+		"world": get_node("/root/RegionTravel").snapshot_world(),
 		"wanted": wanted_data
 	}
 	
@@ -274,9 +281,16 @@ func load_game(slot_id: String = "slot_01") -> Dictionary:
 		load_completed.emit(slot_id, false, err_msg)
 		return {"success": false, "error": err_msg}
 	
+	# Old saves may contain a pursuit captured by the former manual-save path.
+	# Migrate only the loaded copy; never rewrite or delete the player's file.
+	data["wanted"] = {"current_stars": 0, "crime_points": 0, "time_hidden": 0.0}
+	if data.get("summary") is Dictionary:
+		data["summary"]["current_stars"] = 0
+	var coordinate_warnings: Array[String] = get_node("/root/RegionTravel").sanitize_saved_coordinates(data)
+	for warning in coordinate_warnings: push_warning(warning)
 	_pending_save_data = data
 	load_completed.emit(slot_id, true, "Save carregado com sucesso")
-	return {"success": true, "data": data}
+	return {"success": true, "data": data, "warnings": coordinate_warnings}
 
 func has_pending_save() -> bool:
 	return not _pending_save_data.is_empty()
@@ -289,7 +303,8 @@ func apply_pending_save(tree: SceneTree) -> bool:
 	if _pending_save_data.is_empty():
 		return false
 	
-	var data := _pending_save_data
+	var data := _pending_save_data.duplicate(true)
+	for warning in get_node("/root/RegionTravel").sanitize_saved_coordinates(data): push_warning(warning)
 	_pending_save_data = {} # Consumido
 	
 	# 1. Restaurar CampaignState
@@ -307,5 +322,6 @@ func apply_pending_save(tree: SceneTree) -> bool:
 	if player and data.has("player") and data["player"] is Dictionary:
 		player.restore(data["player"])
 	
+	get_node("/root/RegionTravel").pending_world = data.get("world", {})
 	print("SaveManager: Save aplicado com sucesso no mundo!")
 	return true

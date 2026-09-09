@@ -9,6 +9,13 @@ const ROAD_TILE: Texture2D = preload("res://city_demo/art/road_tiles.svg")
 const BUILDING_SCENE: PackedScene = preload("res://city_demo/scenes/CityBuilding.tscn")
 const VEHICLE_SCENE: PackedScene = preload("res://city_demo/scenes/TrafficVehicle.tscn")
 const PEDESTRIAN_SCENE: PackedScene = preload("res://city_demo/scenes/Pedestrian.tscn")
+const COLLECTIBLE_SCRIPT := preload("res://Collectible.gd")
+const PUDDLE_SCRIPT := preload("res://Puddle.gd")
+const NIGHT_RACE_SCRIPT := preload("res://NightRaceController.gd")
+const RACE_CATALOG_SCRIPT := preload("res://RaceCatalog.gd")
+const DRIFT_ZONE_SCRIPT := preload("res://DriftChallengeZone.gd")
+const DRIFT_ZONE_CATALOG_SCRIPT := preload("res://DriftZoneCatalog.gd")
+const CHOP_SHOP_SCRIPT := preload("res://ChopShopZone.gd")
 
 const VEHICLE_CROPS: Array[Rect2] = [
 	Rect2(52, 106, 218, 392), Rect2(350, 49, 235, 462),
@@ -39,11 +46,11 @@ func _ready() -> void:
 		_create_tile_district()
 		_create_buildings()
 		_create_decor()
-	
+
 	if Engine.is_editor_hint():
 		queue_redraw()
 		return
-		
+
 	if enable_legacy_runtime:
 		_create_navigation()
 		_load_vehicle_registry()
@@ -51,6 +58,7 @@ func _ready() -> void:
 		_create_pedestrians()
 		_create_status_panel()
 	_inject_hud()
+	call_deferred("_spawn_world_extras")
 	queue_redraw()
 
 func _inject_hud():
@@ -58,21 +66,22 @@ func _inject_hud():
 	if hud_scene:
 		var hud = hud_scene.instantiate()
 		get_parent().call_deferred("add_child", hud)
+
 		var wanted_mgr = get_node_or_null("/root/WantedManager")
 		if wanted_mgr:
 			wanted_mgr.stars_changed.connect(hud.update_stars)
-			
+
 	var pause_scene = load("res://ui/PauseMenu.tscn")
 	if pause_scene:
 		var pause_menu = pause_scene.instantiate()
 		get_parent().call_deferred("add_child", pause_menu)
-			
+
 	var phone_scene = load("res://PhoneBox.tscn")
 	if phone_scene:
 		var phone = phone_scene.instantiate()
 		phone.position = Vector2(0, -100)
 		get_parent().call_deferred("add_child", phone)
-		
+
 	var garage_scene = load("res://GarageTrigger.tscn")
 	if garage_scene:
 		var garage = garage_scene.instantiate()
@@ -95,6 +104,105 @@ func _inject_hud():
 		var weather = weather_script.new()
 		get_parent().call_deferred("add_child", weather)
 
+## Achados de exploração, poças com respingo e a corrida clandestina noturna.
+## Posições em coordenadas de mundo escolhidas a partir dos pontos conhecidos
+## do mapa (Cobras, hospital, extensão costeira, extremidades do distrito
+## central) — ajuste no editor se algum ficar em cima de geometria.
+func _spawn_world_extras() -> void:
+	var world := get_parent()
+	if world == null or not is_instance_valid(world):
+		return
+
+	var manifest := [
+		{"id": "col_cobras_01", "pos": Vector2(580, 245), "label": "PISTA — COVIL DOS COBRAS"},
+		{"id": "col_norte_01", "pos": Vector2(850, 210), "label": "ACHADO — LIMITE NORTE"},
+		{"id": "col_sul_01", "pos": Vector2(850, 1080), "label": "ACHADO — LIMITE SUL"},
+		{"id": "col_oeste_01", "pos": Vector2(-203, 118), "label": "ACHADO — LIMITE OESTE"},
+		{"id": "col_doca_01", "pos": Vector2(1850, 90), "label": "ACHADO — BEIRA-MAR"},
+		{"id": "col_navio_01", "pos": Vector2(2140, 250), "label": "PISTA — CONVÉS DO CARGUEIRO"},
+	]
+	for entry in manifest:
+		var item: Area2D = COLLECTIBLE_SCRIPT.new()
+		item.collectible_id = entry["id"]
+		item.flavor_label = entry["label"]
+		item.position = entry["pos"]
+		world.add_child(item)
+
+	for puddle_pos in [Vector2(1080, 430), Vector2(700, 220), Vector2(1950, 320)]:
+		var puddle: Area2D = PUDDLE_SCRIPT.new()
+		puddle.position = puddle_pos
+		world.add_child(puddle)
+
+	_spawn_cargo_ship(world, Vector2(2000, 250))
+
+	for race_def in RACE_CATALOG_SCRIPT.get_all():
+		var race: Node2D = NIGHT_RACE_SCRIPT.new()
+		race.name = "NightRace_%s" % String(race_def.get("id", "race"))
+		race.setup(race_def)
+		world.add_child(race)
+
+	for zone_def in DRIFT_ZONE_CATALOG_SCRIPT.get_all():
+		var zone: Node2D = DRIFT_ZONE_SCRIPT.new()
+		zone.name = "DriftZone_%s" % String(zone_def.get("id", "zone"))
+		zone.setup(zone_def)
+		zone.position = zone_def.get("pos", Vector2.ZERO)
+		world.add_child(zone)
+
+	var chop_shop: Node2D = CHOP_SHOP_SCRIPT.new()
+	chop_shop.name = "ChopShopZone"
+	chop_shop.position = Vector2(900, 330) # Perto do covil dos Cobras (610, 205)
+	world.add_child(chop_shop)
+
+## Cargueiro decorativo na beira-mar (variação compacta do que já existia em
+## CentralDocksHarbor.gd, que não estava carregado no mundo atual) — serve de
+## marco visual pro achado "no navio".
+func _spawn_cargo_ship(world: Node, pos: Vector2) -> void:
+	var ship := Node2D.new()
+	ship.name = "CargoShipLandmark"
+	ship.position = pos
+	ship.z_index = 1
+
+	var hull := Polygon2D.new()
+	hull.color = Color("#2f3640")
+	hull.polygon = PackedVector2Array([
+		Vector2(-180, -40), Vector2(180, -40), Vector2(180, 30),
+		Vector2(150, 55), Vector2(-150, 55), Vector2(-180, 30)
+	])
+	ship.add_child(hull)
+
+	var deck := Polygon2D.new()
+	deck.color = Color("#57606f")
+	deck.polygon = PackedVector2Array([Vector2(-170, -40), Vector2(170, -40), Vector2(170, -22), Vector2(-170, -22)])
+	ship.add_child(deck)
+
+	var bridge := Polygon2D.new()
+	bridge.color = Color("#dfe4ea")
+	bridge.polygon = PackedVector2Array([Vector2(-190, -60), Vector2(-140, -60), Vector2(-140, -40), Vector2(-190, -40)])
+	ship.add_child(bridge)
+
+	var container_colors := [Color("#0984e3"), Color("#e17055"), Color("#00b894"), Color("#fdcb6e")]
+	for i in range(container_colors.size()):
+		var crate := Polygon2D.new()
+		crate.color = container_colors[i]
+		var x0 := -90.0 + i * 50.0
+		crate.polygon = PackedVector2Array([
+			Vector2(x0, -22), Vector2(x0 + 40, -22), Vector2(x0 + 40, -2), Vector2(x0, -2)
+		])
+		ship.add_child(crate)
+
+	var blocker := StaticBody2D.new()
+	blocker.collision_layer = 1
+	blocker.collision_mask = 0
+	var b_shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(360, 95)
+	b_shape.shape = rect
+	b_shape.position = Vector2(0, -5)
+	blocker.add_child(b_shape)
+	ship.add_child(blocker)
+
+	world.add_child(ship)
+
 func _draw() -> void:
 	if not enable_legacy_district:
 		return
@@ -104,13 +212,13 @@ func _draw() -> void:
 	_draw_dashed_line(Vector2(-32, -768), Vector2(-32, 768), Color("dbc85c"))
 	_draw_dashed_line(Vector2(32, -768), Vector2(32, 768), Color("dbc85c"))
 	_draw_rectangular_lane(Rect2(-864, -672, 1728, 1344), Color(0.88, 0.88, 0.82, 0.65))
-	
+
 	# Faixas de Pedestre (Zebra) no Cruzamento Central
 	_draw_zebra_crosswalk(Vector2(-60, -72), Vector2(60, -72), true)  # Norte
 	_draw_zebra_crosswalk(Vector2(-60, 72), Vector2(60, 72), true)    # Sul
 	_draw_zebra_crosswalk(Vector2(-72, -60), Vector2(-72, 60), false) # Oeste
 	_draw_zebra_crosswalk(Vector2(72, -60), Vector2(72, 60), false)  # Leste
-	
+
 	# Linhas de Retenção Brancas (Stop Lines)
 	draw_line(Vector2(0, -92), Vector2(64, -92), Color(0.95, 0.95, 0.95), 3.5)   # Pista Sul
 	draw_line(Vector2(-64, 92), Vector2(0, 92), Color(0.95, 0.95, 0.95), 3.5)    # Pista Norte
@@ -252,7 +360,7 @@ func _create_buildings() -> void:
 	add_child(container)
 	if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 		container.owner = get_tree().edited_scene_root
-		
+
 	var placements := [
 		# Quadra Central Norte (Apartamentos Médios e Serviços Públicos)
 		[-690, -230, 0, 166, "", DemoCityBuilding.Archetype.MEDIUM_APARTMENT],
@@ -358,7 +466,7 @@ func _create_decor() -> void:
 		add_child(sprite)
 		if Engine.is_editor_hint() and get_tree() and get_tree().edited_scene_root:
 			sprite.owner = get_tree().edited_scene_root
-		
+
 	# Instancia pedestres com modelo humanoide 3D em tempo real nas calçadas
 	var anim_3d_script = load("res://AnimatedPedestrian3D.gd")
 	if anim_3d_script and not Engine.is_editor_hint():

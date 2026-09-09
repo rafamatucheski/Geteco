@@ -48,6 +48,16 @@ func _ready():
 	add_child(park_ambience_player)
 
 func _process(delta: float):
+	# Harbor owns regional beds. Do not layer global music-bed/fake sirens over
+	# its opening or interiors. Other districts retain the legacy soundscape.
+	var scene := get_tree().current_scene
+	if scene != null and scene.has_node("HarborSoundscape"):
+		ambience_player.volume_db = -80.0
+		park_ambience_player.stop()
+		distant_siren_player.stop()
+		radio_chatter_player.stop()
+		return
+	ambience_player.volume_db = -24.0
 	# 1. Buzinas ocasionais de tráfego
 	horn_timer -= delta
 	if horn_timer <= 0.0:

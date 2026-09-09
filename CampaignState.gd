@@ -19,6 +19,8 @@ var unlocked_regions: Array[StringName] = []
 var unlocked_territories: Array[StringName] = []
 var campaign_flags: Dictionary = {}
 var completed_beats: Array[StringName] = []
+## Isolated Harbor arc namespace, serialized by the existing campaign adapter.
+var cobra_campaign: Dictionary = {}
 
 
 func _ready() -> void:
@@ -40,6 +42,7 @@ func load_campaign_data() -> bool:
 
 
 func reset_campaign() -> void:
+	cobra_campaign.clear()
 	current_stage = INITIAL_STAGE
 	completed_beats.clear()
 	campaign_flags.clear()
@@ -160,6 +163,7 @@ func to_save_data() -> Dictionary:
 		"unlocked_regions": unlocked_regions.map(func(value): return String(value)),
 		"unlocked_territories": unlocked_territories.map(func(value): return String(value)),
 		"campaign_flags": campaign_flags.duplicate(true),
+		"cobra_campaign": cobra_campaign.duplicate(true),
 	}
 
 
@@ -170,6 +174,8 @@ func restore_from_save(save_data: Dictionary) -> bool:
 	if get_beat(restored_stage).is_empty():
 		return false
 	current_stage = restored_stage
+	var restored_cobra: Variant = save_data.get("cobra_campaign", {})
+	cobra_campaign = restored_cobra.duplicate(true) if restored_cobra is Dictionary else {}
 	completed_beats.clear()
 	for beat_id in save_data.get("completed_beats", []):
 		if not get_beat(StringName(beat_id)).is_empty():

@@ -38,6 +38,7 @@ var left_lower_leg: Node3D
 var right_upper_leg: Node3D
 var right_lower_leg: Node3D
 var mat_uniform: StandardMaterial3D
+var stretcher_mesh: MeshInstance3D = null
 
 func _ready() -> void:
 	add_to_group("paramedic")
@@ -46,6 +47,7 @@ func _ready() -> void:
 	z_index = 6
 	
 	_build_3d_viewport()
+	preload("res://district/pedestrians/ServiceUniformDetails.gd").apply(self,"medic")
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()
@@ -214,6 +216,11 @@ func _build_3d_viewport() -> void:
 	right_lower_leg.add_child(_create_limb(0.058, 0.26, mat_pants, Vector3(0, -0.13, 0)))
 	right_lower_leg.add_child(_create_shoe(mat_black, Vector3(0, -0.26, -0.02)))
 
+	# Maca retrátil (se for o paramédico carregador) -- mesmo padrão de
+	# Mortician.gd._build_stretcher(), lençol claro em vez de saco preto.
+	if is_stretcher_bearer:
+		_build_stretcher()
+
 	# Exibição 2D
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport_3d.get_texture()
@@ -245,6 +252,27 @@ func _create_shoe(mat: Material, offset: Vector3) -> MeshInstance3D:
 	shoe.material_override = mat
 	shoe.position = offset
 	return shoe
+
+func _build_stretcher() -> void:
+	var mat_metal := _make_mat(Color(0.65, 0.68, 0.72), 0.8)
+	stretcher_mesh = MeshInstance3D.new()
+	var box_s := BoxMesh.new()
+	box_s.size = Vector3(0.42, 0.06, 0.85)
+	stretcher_mesh.mesh = box_s
+	stretcher_mesh.material_override = mat_metal
+	stretcher_mesh.position = Vector3(0.0, 0.55, -0.55)
+	model_root.add_child(stretcher_mesh)
+
+	# Lençol/cobertor claro sobre a maca -- a mesma peça que em Mortician.gd
+	# aparece como saco de cadáver preto, aqui é o paciente sendo salvo.
+	var mat_blanket := _make_mat(Color(0.88, 0.90, 0.94), 0.6)
+	var blanket := MeshInstance3D.new()
+	var box_b := BoxMesh.new()
+	box_b.size = Vector3(0.36, 0.10, 0.78)
+	blanket.mesh = box_b
+	blanket.material_override = mat_blanket
+	blanket.position = Vector3(0.0, 0.08, 0.0)
+	stretcher_mesh.add_child(blanket)
 
 func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> void:
 	if is_dead: return
@@ -320,7 +348,7 @@ func _physics_process(delta: float) -> void:
 			var dir: Vector2 = global_position.direction_to(target.global_position)
 			dir_to_look = dir
 			
-			if dist > 42.0 and stuck_timer < 2.0:
+			if dist > 42.0:
 				velocity = _navigate_towards(target.global_position, speed, delta)
 				is_moving = true
 			else:
@@ -331,13 +359,19 @@ func _physics_process(delta: float) -> void:
 				
 		State.TREAT_LOAD:
 			velocity = Vector2.ZERO
+			if not is_instance_valid(target):
+				_start_return_to_ambulance()
+				return
+			if global_position.distance_to(target.global_position) > 42.0:
+				state = State.APPROACH
+				return
 			if is_instance_valid(target):
 				dir_to_look = global_position.direction_to(target.global_position)
 			treat_timer -= delta
 			if treat_timer <= 0.0:
 				if is_instance_valid(target):
 					if target.has_method("rescue_from_emergency"):
-						target.rescue_from_emergency()
+						target.rescue_from_emergency(ambulance)
 					else:
 						target.queue_free()
 				_start_return_to_ambulance()

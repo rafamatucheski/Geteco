@@ -51,7 +51,7 @@ func get_vehicle(type: String) -> Node:
 				get_tree().get_root().call_deferred("add_child", obj)
 				_pool[type][i] = obj
 				
-		if is_instance_valid(obj) and not obj.visible:
+		if is_instance_valid(obj) and obj.is_node_ready() and not obj.visible:
 			obj.show()
 			obj.process_mode = Node.PROCESS_MODE_INHERIT
 			# Pooling must run the vehicle's complete reset.  Merely showing a
@@ -68,6 +68,7 @@ func get_vehicle(type: String) -> Node:
 
 func return_vehicle(obj: Node, _type: String = ""):
 	if is_instance_valid(obj):
+		if obj.has_method("_clear_tactical_doors"): obj._clear_tactical_doors()
 		obj.hide()
 		obj.process_mode = Node.PROCESS_MODE_DISABLED
 		obj.position = Vector2(9999, 9999)
@@ -75,3 +76,6 @@ func return_vehicle(obj: Node, _type: String = ""):
 		obj.collision_mask = 0
 		if "velocity" in obj: obj.velocity = Vector2.ZERO
 		if "target" in obj: obj.target = null
+		for audio_key in ["siren_audio", "engine_audio"]:
+			var audio = obj.get(audio_key)
+			if is_instance_valid(audio): audio.stop()

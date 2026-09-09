@@ -11,8 +11,61 @@ var time_hidden: float = 0.0
 
 # Avisa o HUD e os carros da Polícia sempre que o nível de estrelas mudar
 signal stars_changed(new_level)
+signal crime_reported(severity: int)
 
 var police_spawn_timer: float = 0.0
+var _exterior_target: Node2D
+
+func get_pursuit_target() -> Node2D:
+	var actor := get_tree().get_first_node_in_group("player") as Node2D
+	if actor and actor.has_meta("police_exterior_position"):
+		if not is_instance_valid(_exterior_target):
+			_exterior_target = Node2D.new()
+			_exterior_target.name = "PoliceLastKnownExterior"
+			add_child(_exterior_target)
+		_exterior_target.global_position = actor.get_meta("police_exterior_position")
+		_exterior_target.set_meta("police_search_position", true)
+		return _exterior_target
+	for vehicle in get_tree().get_nodes_in_group("vehicle"):
+		if is_instance_valid(vehicle) and vehicle.get("is_driven_by_player") == true and vehicle.is_visible_in_tree():
+			return vehicle
+	return actor
+
+func _find_lane_spawn(target_node: Node2D) -> Dictionary:
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(90, 42)
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = shape
+	query.collision_mask = 1 | 2 | 4
+	var candidates: Array[Dictionary] = []
+	var camera := target_node.get_viewport().get_camera_2d()
+	var view_rect := Rect2()
+	if camera:
+		var size := target_node.get_viewport_rect().size / camera.zoom
+		view_rect = Rect2(camera.get_screen_center_position() - size * 0.5, size).grow(90)
+	for node in get_tree().get_nodes_in_group("unified_traffic_lane"):
+		var lane := node as Path2D
+		if lane == null or lane.curve == null or lane.curve.point_count < 2 or not lane.can_process(): continue
+		var length := lane.curve.get_baked_length()
+		var goal_offset := lane.curve.get_closest_offset(lane.to_local(target_node.global_position))
+		var closed := bool(lane.get_meta("traffic_lane_loop", false))
+		closed = closed or lane.curve.get_point_position(0).distance_to(lane.curve.get_point_position(lane.curve.point_count - 1)) < 5.0
+		for index in range(1, int(length / 160.0)):
+			var offset := float(index) * 160.0
+			var ahead := goal_offset - offset
+			if closed: ahead = fposmod(ahead, length)
+			elif ahead < 60.0: continue
+			var point := lane.to_global(lane.curve.sample_baked(offset, true))
+			var distance := point.distance_to(target_node.global_position)
+			if distance < 520.0 or distance > 1800.0 or view_rect.has_point(point): continue
+			var forward := lane.to_global(lane.curve.sample_baked(minf(length, offset + 8.0), true)) - point
+			query.transform = Transform2D(forward.angle(), point)
+			if target_node.get_world_2d().direct_space_state.intersect_shape(query, 1).is_empty():
+				candidates.append({"position": point, "rotation": forward.angle(), "distance": distance, "route_score": distance + ahead * 0.4})
+	if candidates.is_empty(): return {}
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary): return a.route_score < b.route_score)
+	return candidates[0]
+
 
 func _process(delta):
 	# Lógica de fugir da polícia
@@ -29,17 +82,9 @@ func _process(delta):
 			police_spawn_timer = maxf(3.0, 15.0 - (current_stars * 2.5))
 
 func _dispatch_police():
-	var target_node = null
-	for v in get_tree().get_nodes_in_group("vehicle"):
-		if v.get("is_driven_by_player") == true and is_instance_valid(v) and v.visible:
-			target_node = v
-			break
-			
-	if not target_node:
-		target_node = get_tree().get_first_node_in_group("player")
-		
-	if not target_node or not is_instance_valid(target_node):
-		return
+	if current_stars <= 0: return
+	var target_node := get_pursuit_target()
+	if not is_instance_valid(target_node): return
 
 	# Conta viaturas policiais ativas no momento
 	var active_police_count: int = 0
@@ -53,16 +98,21 @@ func _dispatch_police():
 
 	# 1. Tenta despacho oficial da Delegacia de Bairro / Central
 	var depot_director = get_tree().get_first_node_in_group("emergency_depot_director")
-	if depot_director and depot_director.has_method("request_dispatch"):
+	if depot_director and depot_director.can_process() and depot_director.has_method("request_dispatch"):
 		var dispatched = depot_director.request_dispatch("police", target_node, true)
 		if dispatched != null:
+			dispatched.set_meta("police_player_pursuit", true)
 			return
+
+	var lane_spawn := _find_lane_spawn(target_node)
+	if lane_spawn.is_empty(): return
 
 	# 2. Despacho dinâmico offscreen inteligente (Spawn na malha viária próxima ao jogador)
 	var pool = get_node_or_null("/root/EmergencyPool")
 	var police: Node = null
 	if pool and pool.has_method("get_vehicle"):
 		police = pool.get_vehicle("police")
+		if police == null: return # The finite pool includes units returning from a search.
 	if police == null:
 		var em_scene = load("res://EmergencyVehicle.tscn") as PackedScene
 		if em_scene:
@@ -70,19 +120,15 @@ func _dispatch_police():
 			get_tree().current_scene.add_child(police)
 			
 	if is_instance_valid(police):
+		police.set_meta("police_player_pursuit", true)
 		police.set("type", 0)
 		police.set("target", target_node)
 		police.set("is_acting", false)
 		police.set("is_returning_to_base", false)
 		
-		# Posição de interceptação dinâmica nas vias principais (550px a 750px de distância)
-		var spawn_angles := [0.0, PI * 0.5, PI, PI * 1.5, PI * 0.25, -PI * 0.25]
-		var pick_ang = spawn_angles[randi() % spawn_angles.size()]
-		var offset_vec = Vector2.RIGHT.rotated(pick_ang) * randf_range(520.0, 720.0)
-		var spawn_pos = target_node.global_position + offset_vec
-		
-		police.global_position = spawn_pos
-		police.rotation = (target_node.global_position - spawn_pos).angle()
+		police.global_position = lane_spawn.position
+		police.rotation = lane_spawn.rotation
+		police.configure_depot_assignment("regional_patrol", lane_spawn.position, lane_spawn.position)
 		if police.has_method("show"):
 			police.show()
 		police.set_physics_process(true)
@@ -130,6 +176,8 @@ func report_crime(severity: int):
 	if calc_stars != current_stars:
 		current_stars = calc_stars
 		stars_changed.emit(current_stars)
+
+	crime_reported.emit(severity)
 
 func decrease_stars(amount: int):
 	current_stars = maxi(0, current_stars - amount)

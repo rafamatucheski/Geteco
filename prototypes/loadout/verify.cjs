@@ -1,0 +1,28 @@
+const {chromium}=require('C:/Users/rafae/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({channel:'chrome',headless:true});
+ const page=await browser.newPage({viewport:{width:1280,height:1050}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('file:///D:/geteco/game/prototypes/loadout/index.html');
+ await page.locator('[data-weapon="shotgun"]').click();
+ assert.match(await page.locator('#notice').innerText(),/Rifle de caça guardada/);
+ assert.match(await page.locator('[data-group="longa"]').innerText(),/Escopeta/);
+ assert.equal(await page.locator('.slot').count(),3);
+ await page.locator('#confirm').click();
+ assert.equal(await page.locator('#travel').innerText(),'Pronto para seguir');
+ await page.locator('[data-hint="cold"]').click();
+ await page.locator('#dismiss').click();
+ await page.locator('[data-hint="cold"]').click();
+ assert.match(await page.locator('#hint').innerText(),/Dica já vista/);
+ await page.locator('#pickup').click();
+ assert.match(await page.locator('[data-group="longa"]').innerText(),/Escopeta/);
+ await page.locator('#reset').click();
+ await page.screenshot({path:'D:/geteco/loadout-preview-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:'D:/geteco/loadout-preview-mobile.png',fullPage:true});
+ assert.deepEqual(errors,[]);
+ console.log('PASS loadout swaps, capacity, close, pickup preservation, hint dismissal/deduplication, reset, mobile layout, no JS errors');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

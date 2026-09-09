@@ -119,6 +119,7 @@ func _on_body_entered(body: Node2D) -> void:
 			
 		# Áudio de cura médica (Powerup)
 		var p := AudioStreamPlayer2D.new()
+		p.bus = &"SFX"
 		p.stream = ProceduralAudio.get_powerup_stream()
 		p.volume_db = -4.0
 		var parent_node: Node = get_tree().current_scene if get_tree().current_scene != null else get_tree().root

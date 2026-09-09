@@ -65,14 +65,41 @@ var panic_timer: float = 0.0
 @export var max_health: int = 40
 var health: int = 40
 var is_dead: bool = false
+## Knocked down but alive (survivable vehicle impact, see get_run_over()) --
+## frozen on the ground waiting for an ambulance, distinct from is_dead
+## (which is fatal and dispatches the coroner instead). See
+## rescue_from_emergency() / _on_ambulance_arrived_at_hospital().
+var is_incapacitated: bool = false
 
 # Escala e Porte Físico Únicos (Silhuetas reais variadas)
 var body_height_scale: float = 1.0
 var body_width_scale: float = 1.0
+enum BodyType { AVERAGE, SLIM, HEAVY, TALL, SHORT }
+@export var body_type_override: int = -1
+var body_type: BodyType = BodyType.AVERAGE
+# Height, torso width, torso depth, limb thickness. Clothing is independent.
+const BODY_PROPORTIONS := [
+	Vector4(1.0, 1.0, 1.0, 1.0),
+	Vector4(1.02, 0.72, 0.78, 0.72),
+	Vector4(1.0, 1.85, 1.65, 1.40),
+	Vector4(1.22, 0.88, 0.90, 0.90),
+	Vector4(0.78, 1.08, 1.05, 1.05),
+]
 
 # SubViewport 3D
 var viewport: SubViewport
 var sprite_3d_display: Sprite2D
+
+# The 3D rig render pass is expensive (own_world_3d + full scene submission)
+# and was previously always-on regardless of camera distance. Only characters
+# actually near the active camera need it updated every frame.
+const VIEWPORT_CULL_CHECK_INTERVAL := 0.3
+const VIEWPORT_CULL_MARGIN := 220.0
+var _viewport_cull_timer: float = 0.0
+var _viewport_render_active: bool = true
+var _viewport_frame_timer: float = 0.0
+var _viewport_frame_interval: float = 1.0 / 60.0
+var viewport_render_requests: int = 0
 
 # Rig 3D
 var model_root: Node3D
@@ -154,6 +181,10 @@ func _ready() -> void:
 	_setup_district_and_archetype()
 	_build_3d_viewport()
 	_pick_new_sidewalk_target()
+	# Stagger the first check across instances so 39+ pedestrians don't all
+	# query the active camera on the same frame.
+	_viewport_cull_timer = randf_range(0.0, VIEWPORT_CULL_CHECK_INTERVAL)
+	_viewport_frame_timer = randf_range(0.0, 1.0 / 30.0)
 
 func _setup_district_and_archetype() -> void:
 	# Variação de Altura e Largura Corporal (Portes Físicos Distintos)
@@ -451,6 +482,8 @@ func _setup_district_and_archetype() -> void:
 			has_cap = randf() < 0.40
 
 func _build_3d_viewport() -> void:
+	body_type = (posmod(body_type_override, BODY_PROPORTIONS.size()) if body_type_override >= 0 else randi_range(0, BODY_PROPORTIONS.size() - 1)) as BodyType
+	body_height_scale = BODY_PROPORTIONS[body_type].x
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(96, 96)
 	viewport.transparent_bg = true
@@ -461,7 +494,7 @@ func _build_3d_viewport() -> void:
 	
 	var cam := Camera3D.new()
 	cam.position = Vector3(0.0, 3.2, 1.4)
-	cam.fov = 30.0
+	cam.fov = 36.0
 	viewport.add_child(cam)
 	cam.look_at(Vector3(0.0, 0.65, 0.0), Vector3.UP)
 	
@@ -480,7 +513,7 @@ func _build_3d_viewport() -> void:
 	viewport.add_child(env)
 	
 	model_root = Node3D.new()
-	model_root.scale = Vector3(body_width_scale, body_height_scale, body_width_scale)
+	model_root.scale = Vector3(1.0, body_height_scale, 1.0)
 	viewport.add_child(model_root)
 	
 	# Sombra Projetada 3D nos pés
@@ -687,8 +720,8 @@ func _build_3d_viewport() -> void:
 
 		var fur_rim := MeshInstance3D.new()
 		var torus_fr := TorusMesh.new()
-		torus_fr.inner_radius = 0.18
-		torus_fr.outer_radius = 0.24
+		torus_fr.inner_radius = 0.165
+		torus_fr.outer_radius = 0.205
 		fur_rim.mesh = torus_fr
 		fur_rim.material_override = mat_fur
 		fur_rim.rotation_degrees = Vector3(90, 0, 0)
@@ -927,11 +960,36 @@ func _build_3d_viewport() -> void:
 	right_lower_leg.add_child(_create_shoe(mat_shoe, Vector3(0, -0.26, -0.02)))
 	right_lower_leg.add_child(_create_joint_cap(0.062, mat_shin_r, Vector3.ZERO))
 	
+	_apply_body_proportions()
 	# Exibição 2D
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport.get_texture()
 	sprite_3d_display.scale = Vector2(0.38, 0.38)
 	add_child(sprite_3d_display)
+
+func _apply_body_proportions() -> void:
+	var proportions: Vector4 = BODY_PROPORTIONS[body_type]
+	# Preserve clothing bulk, without inflating the head and hands with the torso.
+	var clothing_bulk := maxf(1.0, body_width_scale)
+	torso_node.scale = Vector3(proportions.y * clothing_bulk, 1.0, proportions.z * clothing_bulk)
+	head_node.scale = Vector3(1.0, 1.0 / sqrt(body_height_scale), 1.0)
+	for arm in [left_upper_arm, right_upper_arm]:
+		arm.position.x = signf(arm.position.x) * (0.17 * proportions.y * clothing_bulk + 0.07 * proportions.w)
+		arm.scale = Vector3(proportions.w, 1.0, proportions.w)
+	for leg in [left_upper_leg, right_upper_leg]:
+		leg.position.x = signf(leg.position.x) * 0.11 * maxf(0.85, proportions.y * 0.85)
+		leg.scale = Vector3(proportions.w, 1.0, proportions.w)
+	if body_type == BodyType.HEAVY:
+		var belly := MeshInstance3D.new()
+		belly.name = "Belly"
+		var shape := SphereMesh.new()
+		shape.radius = 0.18
+		shape.height = 0.36
+		belly.mesh = shape
+		belly.scale = Vector3(1.0, 0.9, 1.0)
+		belly.position = Vector3(0, -0.075, -0.045)
+		belly.material_override = _make_mat(shirt_color, 0.6)
+		torso_node.add_child(belly)
 
 func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
@@ -979,7 +1037,47 @@ func _create_joint_cap(radius: float, mat: Material, offset: Vector3) -> MeshIns
 	cap.position = offset
 	return cap
 
+func _update_viewport_render_state(delta: float) -> void:
+	if viewport == null:
+		return
+	_viewport_cull_timer -= delta
+	if _viewport_cull_timer <= 0.0:
+		_viewport_cull_timer = VIEWPORT_CULL_CHECK_INTERVAL
+		# Canvas transform includes camera smoothing, offset, rotation and zoom.
+		var canvas := get_canvas_transform()
+		var screen_position := canvas * global_position
+		var projected_scale := maxf(canvas.x.length(), canvas.y.length())
+		var should_render := screen_position.is_finite() and is_finite(projected_scale)
+		should_render = should_render and get_viewport().get_visible_rect().grow(VIEWPORT_CULL_MARGIN).has_point(screen_position)
+		if should_render and not _viewport_render_active:
+			_viewport_frame_timer = 0.0
+		_viewport_render_active = should_render
+		# Close-up rigs must follow the physics pose every tick, rather than
+		# visibly stepping at 30Hz while the camera and body move at 60Hz.
+		# Keep cheaper rendering for small representations in the overview.
+		var projected_height := projected_scale * 36.0
+		var render_hz := 60.0 if projected_height >= 36.0 else (15.0 if projected_height < 18.0 else 30.0)
+		_viewport_frame_interval = 1.0 / render_hz
+	if not _viewport_render_active or not is_visible_in_tree():
+		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		return
+	# Only render submission is throttled. Navigation, collision, attack timers,
+	# run-over movement and the articulated pose below still run every tick.
+	_viewport_frame_timer -= delta
+	if _viewport_frame_timer <= 0.000001:
+		# Retain the fractional remainder; resetting to a full interval loses
+		# time and makes the cadence drift at non-divisor physics tick rates.
+		# Submit at most once per tick even after a long stall.
+		_viewport_frame_timer = fposmod(_viewport_frame_timer, _viewport_frame_interval)
+		if _viewport_frame_timer <= 0.000001:
+			_viewport_frame_timer = _viewport_frame_interval
+		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		viewport_render_requests += 1
+	elif viewport.render_target_update_mode == SubViewport.UPDATE_ALWAYS:
+		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+
 func _physics_process(delta: float) -> void:
+	_update_viewport_render_state(delta)
 	if is_flying:
 		position += fly_velocity * delta
 		fly_velocity = fly_velocity.move_toward(Vector2.ZERO, 950.0 * delta)
@@ -990,9 +1088,9 @@ func _physics_process(delta: float) -> void:
 			if model_root:
 				model_root.rotation.x = PI * 0.45
 		return
-		
-	if is_dead: return
-	
+
+	if is_dead or is_incapacitated: return
+
 	var actual_speed := velocity.length()
 	if actual_speed > 1.0:
 		walk_timer += delta * (actual_speed / maxf(1.0, base_walk_speed)) * stride_freq_mult
@@ -1046,49 +1144,57 @@ func _physics_process(delta: float) -> void:
 		velocity = _navigate_towards(walk_target, cur_speed, delta)
 		walk_dir = velocity.normalized() if velocity.length_squared() > 1.0 else global_position.direction_to(walk_target)
 	
-	# Rotação 3D com orientação precisa
-	if model_root and walk_dir.length_squared() > 0.01:
-		var target_angle_3d: float = -atan2(walk_dir.y, walk_dir.x) - PI * 0.5
-		model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, 10.0 * delta)
-	
-	# Animação Articulada fluida com Micro-Comportamentos (Caminhada vs Corrida/Sprint)
-	var is_sprinting := is_scared or (is_gangster and is_instance_valid(combat_target)) or (ambient_running_enabled and (is_jogger or archetype == Archetype.BEACH_FITNESS_RUNNER))
-	var anim_freq: float = 14.5 if is_sprinting else 7.5
-	var is_moving := actual_speed > 1.0
-	var step_angle: float = (sin(walk_timer * anim_freq) * (0.70 if is_sprinting else 0.45)) if is_moving else 0.0
-	var arm_angle: float = (-step_angle * (0.85 if is_sprinting else 0.55)) if is_moving else 0.0
-	var bobbing: float = (absf(cos(walk_timer * anim_freq)) * (0.040 if is_sprinting else 0.025)) if is_moving else 0.0
-	var forward_lean: float = (-0.16 if is_sprinting else 0.0) if is_moving else 0.0
-	
-	# Comportamento Climático: Tremer de frio no inverno
-	var shiver_offset: float = 0.0
-	if archetype in [Archetype.WINTER_PARKA_FUR, Archetype.WINTER_BEANIE_SCARF, Archetype.WINTER_SKI_PUFFER]:
-		shiver_offset = sin(walk_timer * 32.0) * 0.015
-	
-	if left_upper_leg and right_upper_leg:
-		left_upper_leg.rotation.x = step_angle
-		right_upper_leg.rotation.x = -step_angle
-		if left_lower_leg and right_lower_leg:
-			left_lower_leg.rotation.x = maxf(0.0, -step_angle * (0.85 if is_sprinting else 0.65))
-			right_lower_leg.rotation.x = maxf(0.0, step_angle * (0.85 if is_sprinting else 0.65))
-		
-	if left_upper_arm and right_upper_arm:
-		left_upper_arm.rotation = Vector3(arm_angle, 0.0, 0.0)
-		if not (is_gangster and is_instance_valid(combat_target)):
-			right_upper_arm.rotation = Vector3(-arm_angle, 0.0, 0.0)
-			if right_lower_arm:
-				right_lower_arm.rotation = Vector3(0.15 + absf(arm_angle) * 0.25, 0.0, 0.0)
-		if left_lower_arm:
-			left_lower_arm.rotation = Vector3(0.15 + absf(arm_angle) * 0.25, 0.0, 0.0)
-		
-	if torso_node and head_node:
-		torso_node.position.y = 0.85 + bobbing
-		torso_node.position.x = shiver_offset
-		torso_node.rotation.x = forward_lean
-		head_node.position.y = 1.25 + bobbing
-		head_node.position.x = shiver_offset
-		head_node.rotation.x = forward_lean * 0.5
-			
+	# The 3D rig orientation/walk-cycle pose below is pure presentation: nothing
+	# else in the codebase reads model_root/limb rotations, and the collision
+	# shape driving move_and_slide() below is rotation-independent. When the
+	# character's SubViewport isn't being submitted for render (off-screen —
+	# see _update_viewport_render_state above), skip recomputing and writing
+	# it; walk_timer keeps advancing so the cycle resumes in-phase the moment
+	# it's back in view. Navigation/collision/move_and_slide are unaffected.
+	if _viewport_render_active:
+		# Rotação 3D com orientação precisa
+		if model_root and walk_dir.length_squared() > 0.01:
+			var target_angle_3d: float = -atan2(walk_dir.y, walk_dir.x) - PI * 0.5
+			model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, 10.0 * delta)
+
+		# Animação Articulada fluida com Micro-Comportamentos (Caminhada vs Corrida/Sprint)
+		var is_sprinting := is_scared or (is_gangster and is_instance_valid(combat_target)) or (ambient_running_enabled and (is_jogger or archetype == Archetype.BEACH_FITNESS_RUNNER))
+		var anim_freq: float = 14.5 if is_sprinting else 7.5
+		var is_moving := actual_speed > 1.0
+		var step_angle: float = (sin(walk_timer * anim_freq) * (0.70 if is_sprinting else 0.45)) if is_moving else 0.0
+		var arm_angle: float = (-step_angle * (0.85 if is_sprinting else 0.55)) if is_moving else 0.0
+		var bobbing: float = (absf(cos(walk_timer * anim_freq)) * (0.040 if is_sprinting else 0.025)) if is_moving else 0.0
+		var forward_lean: float = (-0.16 if is_sprinting else 0.0) if is_moving else 0.0
+
+		# Comportamento Climático: Tremer de frio no inverno
+		var shiver_offset: float = 0.0
+		if archetype in [Archetype.WINTER_PARKA_FUR, Archetype.WINTER_BEANIE_SCARF, Archetype.WINTER_SKI_PUFFER]:
+			shiver_offset = sin(walk_timer * 32.0) * 0.015
+
+		if left_upper_leg and right_upper_leg:
+			left_upper_leg.rotation.x = step_angle
+			right_upper_leg.rotation.x = -step_angle
+			if left_lower_leg and right_lower_leg:
+				left_lower_leg.rotation.x = maxf(0.0, -step_angle * (0.85 if is_sprinting else 0.65))
+				right_lower_leg.rotation.x = maxf(0.0, step_angle * (0.85 if is_sprinting else 0.65))
+
+		if left_upper_arm and right_upper_arm:
+			left_upper_arm.rotation = Vector3(arm_angle, 0.0, 0.0)
+			if not (is_gangster and is_instance_valid(combat_target)):
+				right_upper_arm.rotation = Vector3(-arm_angle, 0.0, 0.0)
+				if right_lower_arm:
+					right_lower_arm.rotation = Vector3(0.15 + absf(arm_angle) * 0.25, 0.0, 0.0)
+			if left_lower_arm:
+				left_lower_arm.rotation = Vector3(0.15 + absf(arm_angle) * 0.25, 0.0, 0.0)
+
+		if torso_node and head_node:
+			torso_node.position.y = 0.85 + bobbing
+			torso_node.position.x = shiver_offset
+			torso_node.rotation.x = forward_lean
+			head_node.position.y = 1.25 + bobbing
+			head_node.position.x = shiver_offset
+			head_node.rotation.x = forward_lean * 0.5
+
 	move_and_slide()
 
 func _gangster_shoot_target(target_pos: Vector2) -> void:
@@ -1157,25 +1263,41 @@ func _pick_new_sidewalk_target() -> void:
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 
+## Below this impact speed (px/s) a pedestrian survives a vehicle hit --
+## knocked down but alive, waiting for an ambulance. At or above it, the
+## hit is fatal and the IML is dispatched instead. Not everyone can be
+## saved; a light bump and a full-speed hit read very differently.
+const LETHAL_IMPACT_SPEED := 200.0
+
 func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> void:
-	if is_dead: return
-	is_dead = true
+	if is_dead or is_incapacitated: return
 	is_flying = true
 	fly_velocity = impact_velocity.limit_length(600.0) * 0.85
-	health = 0
 	var col = get_node_or_null("CollisionShape2D")
 	if col: col.set_deferred("disabled", true)
-	_drop_cash_loot()
-	_create_3d_blood_puddle()
-	_play_audio(ProceduralAudio.get_squish_stream(), -3.0)
-	_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
-	
 	var wm = get_node_or_null("/root/WantedManager")
-	if wm: wm.report_crime(20)
-	_start_decay()
+	if impact_velocity.length() < LETHAL_IMPACT_SPEED:
+		# Survivable: knocked down, not killed. get_run_over() itself only
+		# starts the ragdoll fall (handled in _physics_process); is_dead
+		# stays false so this branch, not _die()'s, owns the outcome.
+		is_incapacitated = true
+		health = 1
+		_play_audio(ProceduralAudio.get_scream_stream(), -5.0)
+		if wm: wm.report_crime(6)
+		_dispatch_emergency_ambulance()
+	else:
+		is_dead = true
+		health = 0
+		_drop_cash_loot()
+		_create_3d_blood_puddle()
+		_play_audio(ProceduralAudio.get_squish_stream(), -3.0)
+		_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
+		if wm: wm.report_crime(20)
+		_dispatch_emergency_coroner()
+		_start_decay()
 
 func take_damage(amount: int, is_player_attacker: bool = false) -> void:
-	if is_dead: return
+	if is_dead or is_incapacitated: return
 	health = maxi(0, health - amount)
 	
 	if is_gangster:
@@ -1194,7 +1316,7 @@ func _show_gangster_bubble() -> void:
 	_show_custom_bubble(phrases[randi() % phrases.size()], Color(0.9, 0.2, 0.2))
 
 func panic() -> void:
-	if is_dead or is_scared: return
+	if is_dead or is_incapacitated or is_scared: return
 	is_scared = true
 	panic_timer = 5.0
 	_pick_new_sidewalk_target()
@@ -1278,11 +1400,101 @@ func _dispatch_emergency_coroner() -> void:
 				director.request_dispatch("coroner", self)
 		)
 
+func _dispatch_emergency_ambulance() -> void:
+	var director := get_tree().get_first_node_in_group("emergency_depot_director")
+	if director and director.has_method("request_dispatch"):
+		get_tree().create_timer(1.2).timeout.connect(func():
+			if is_instance_valid(self) and is_incapacitated and not is_dead:
+				director.request_dispatch("ambulance", self)
+		)
+
+## Called by Paramedic.gd once it finishes treating this pedestrian on
+## scene. Instead of vanishing, the pedestrian "rides along" (hidden,
+## physics off) until the same ambulance reports back at its depot
+## (EmergencyVehicle.arrived_at_depot, already emitted for every service
+## type), then reappears near the hospital to simulate the visit.
+var emergency_rescue_in_progress := false
+
+func rescue_from_emergency(ambulance: Node2D) -> void:
+	if is_dead or not is_incapacitated or emergency_rescue_in_progress:
+		return
+	# Both crew members finish treatment independently. Boarding belongs to
+	# the patient and must happen once, including while hospital care runs.
+	emergency_rescue_in_progress = true
+	hide()
+	set_physics_process(false)
+	var col = get_node_or_null("CollisionShape2D")
+	if col: col.set_deferred("disabled", true)
+	if is_instance_valid(ambulance) and ambulance.has_signal("arrived_at_depot"):
+		ambulance.arrived_at_depot.connect(_on_ambulance_arrived_at_hospital, CONNECT_ONE_SHOT)
+	else:
+		# The ambulance reference is already gone -- still complete the
+		# rescue instead of leaving the pedestrian stuck hidden forever.
+		get_tree().create_timer(6.0).timeout.connect(func(): _on_ambulance_arrived_at_hospital(null, ""))
+
+func _nearest_hospital_spawn() -> Node2D:
+	var nearest: Node2D = null
+	var best_distance := INF
+	for node in get_tree().get_nodes_in_group("hospital_spawn"):
+		var spawn := node as Node2D
+		if not is_instance_valid(spawn):
+			continue
+		var distance := global_position.distance_squared_to(spawn.global_position)
+		if nearest == null or distance < best_distance:
+			nearest = spawn
+			best_distance = distance
+	return nearest
+
+func _on_ambulance_arrived_at_hospital(_vehicle: Node = null, _depot_id: String = "") -> void:
+	if not is_instance_valid(self):
+		return
+	var spawn := _nearest_hospital_spawn()
+	if spawn:
+		# Offset well clear of the marker itself: hospital_spawn also doubles
+		# as the ambulance/coroner depot's own spawn/exit point
+		# (HarborEmergencyDirector's "ambulance"/"coroner" apron, a ~100x46
+		# footprint checked by _spawn_clear()), and a pedestrian standing on
+		# or near it would block the next real dispatch's clearance check.
+		global_position = spawn.global_position + Vector2(80.0, 70.0)
+	if model_root:
+		model_root.rotation = Vector3.ZERO
+	modulate.a = 0.0
+	show()
+	var enter_tween := create_tween()
+	enter_tween.tween_property(self, "modulate:a", 1.0, 0.3)
+	await enter_tween.finished
+	await get_tree().create_timer(1.0).timeout
+	if not is_instance_valid(self):
+		return
+	# Walks into the building: a short step toward the door, then fades out.
+	var door_step := global_position + Vector2(randf_range(-16.0, 16.0), 26.0)
+	var walk_tween := create_tween()
+	walk_tween.tween_property(self, "global_position", door_step, 0.8)
+	walk_tween.parallel().tween_property(self, "modulate:a", 0.0, 0.9)
+	await walk_tween.finished
+	await get_tree().create_timer(randf_range(8.0, 14.0)).timeout
+	if not is_instance_valid(self):
+		return
+	show()
+	var exit_tween := create_tween()
+	exit_tween.tween_property(self, "modulate:a", 1.0, 0.6)
+	health = max_health
+	is_dead = false
+	is_incapacitated = false
+	emergency_rescue_in_progress = false
+	var col = get_node_or_null("CollisionShape2D")
+	if col: col.set_deferred("disabled", false)
+	# Forces an immediate fresh pick on the next physics frame instead of
+	# leaving a stale (possibly very far) walk_target from before the ride.
+	walk_target = global_position
+	set_physics_process(true)
+
 func _create_3d_blood_puddle() -> void:
 	var puddle_root := Node2D.new()
 	puddle_root.name = "3DBloodPuddle"
 	puddle_root.global_position = global_position
-	puddle_root.z_index = -1
+	puddle_root.z_as_relative = false
+	puddle_root.z_index = 3
 	
 	var poly := Polygon2D.new()
 	poly.polygon = PackedVector2Array([
@@ -1298,6 +1510,7 @@ func _create_3d_blood_puddle() -> void:
 	else:
 		get_tree().current_scene.add_child(puddle_root)
 		
+	puddle_root.global_position = global_position
 	puddle_root.scale = Vector2(0.1, 0.1)
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(puddle_root, "scale", Vector2(0.65, 0.65), 0.55)
@@ -1315,6 +1528,7 @@ func _start_decay() -> void:
 
 func _play_audio(stream: AudioStream, volume_db: float = -6.0, pitch_scale: float = 1.0) -> void:
 	var player := AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = volume_db
 	player.pitch_scale = pitch_scale

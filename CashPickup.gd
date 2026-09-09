@@ -17,7 +17,7 @@ var label: Label
 func _ready() -> void:
 	z_index = 8
 	collision_layer = 0
-	collision_mask = 1 # Detecta o Player
+	collision_mask = 4 # Player/pedestrians; group check below accepts only Player.
 	
 	var col := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
@@ -100,6 +100,7 @@ func _on_body_entered(body: Node2D) -> void:
 		
 		# Som satisfatório de caixa registradora (Cha-Ching!)
 		var p := AudioStreamPlayer2D.new()
+		p.bus = &"SFX"
 		p.stream = ProceduralAudio.get_cash_register_stream()
 		p.volume_db = -3.0
 		p.max_distance = 500.0

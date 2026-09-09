@@ -14,7 +14,8 @@ const ORDER = [
 	"m4a1",
 	"rpg",
 	"flamethrower",
-	"grenade"
+	"grenade",
+	"hunting_rifle"
 ]
 
 const WEAPONS = {
@@ -50,6 +51,7 @@ const WEAPONS = {
 		"sound_type": "magnum", "audio_volume_db": 2.0, "pitch_variance": 0.04
 	},
 	"smg": {
+		"discovery_pickup": "mountain_cargo_plane_smg_01", "discovery_hint": "Encontre a SMG dentro do avião no lago.",
 		"label": "SUBMETRALHADORA MP5", "short_label": "SMG", "price": 1200,
 		"damage": 8, "fire_interval": 0.11, "projectile_speed": 960.0,
 		"pellets": 1, "spread": 0.035, "magazine_size": 30, "starting_reserve": 150,
@@ -104,6 +106,14 @@ const WEAPONS = {
 		"pellets": 1, "spread": 0.0, "magazine_size": 1, "starting_reserve": 10,
 		"automatic": false, "tracer_color": Color("2ed573"), "is_grenade": true, "stance": "grenade",
 		"sound_type": "grenade", "audio_volume_db": 0.5, "pitch_variance": 0.05
+	},
+	"hunting_rifle": {
+		"discovery_pickup": "mountain_cabin_hunting_rifle", "discovery_hint": "Encontre o rifle na cabana dos caçadores.",
+		"label": "FUZIL DE CAÇA LENDÁRIO", "short_label": "PRESA DO INVERNO", "price": 4800,
+		"damage": 120, "fire_interval": 0.95, "projectile_speed": 1600.0,
+		"pellets": 1, "spread": 0.004, "magazine_size": 5, "starting_reserve": 35,
+		"automatic": false, "tracer_color": Color("f1c40f"), "stance": "rifle",
+		"sound_type": "magnum", "audio_volume_db": 2.8, "pitch_variance": 0.03
 	}
 }
 
@@ -112,6 +122,10 @@ static func get_order() -> Array:
 
 static func get_weapon(id: String) -> Dictionary:
 	return WEAPONS.get(id, {})
+
+static func is_shop_unlocked(id: String, collected_pickups: Array) -> bool:
+	var required := String(get_weapon(id).get("discovery_pickup", ""))
+	return required.is_empty() or collected_pickups.has(required)
 
 static func get_weapon_id_at(index: int) -> String:
 	return ORDER[posmod(index, ORDER.size())]

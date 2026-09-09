@@ -34,8 +34,12 @@ var _junctions: Array[Dictionary] = []
 var _states: Dictionary = {}
 var _junction_id_to_index: Dictionary = {}
 var _graph_signature := ""
+var _synced_graph_source_id: int = 0
+var _synced_routing_revision: int = -1
 var _sync_elapsed := 0.0
 var _crossing_sync_elapsed := 0.0
+var _batching_stage_publication := false
+var _stage_publication_pending := false
 var _lane_projection_cache: Dictionary = {}
 var _signal_visuals: Dictionary = {}
 var _lane_paths_by_id: Dictionary = {}
@@ -44,6 +48,15 @@ var _connections_from_lane: Dictionary = {}
 var _warned_lanes: Dictionary = {}
 var _waiting_since: Dictionary = {}
 var _deadlock_reported: Dictionary = {}
+# Reverse index (vehicle_instance_id -> junction_index) mirroring
+# state.reservation_owner, kept in sync at its only two mutation sites
+# (try_reserve_junction / _clear_reservation). Every ambient vehicle in the
+# scene calls evaluate_lane_motion() every frame, which previously scanned
+# every junction in the district (_owned_junction_for_vehicle /
+# _release_if_vehicle_cleared) just to answer "do I already own one?" — an
+# O(vehicles x junctions) cost regardless of camera/visibility. This turns
+# that lookup into O(1) instead of changing what it computes.
+var _vehicle_owned_junction: Dictionary = {}
 var _pedestrian_demand: Dictionary = {}
 var _telemetry := {
 	"reservation_grants": 0,
@@ -73,15 +86,20 @@ func _process(delta: float) -> void:
 	if _sync_elapsed >= 0.5:
 		_sync_elapsed = 0.0
 		_sync_from_graph()
+	_batching_stage_publication = true
 	for index_value in _states.keys():
 		var junction_index := int(index_value)
 		_validate_reservation(junction_index)
 		_advance_junction(junction_index, delta)
+	_batching_stage_publication = false
 	_update_wait_telemetry()
 	_crossing_sync_elapsed += delta
 	if _crossing_sync_elapsed >= 0.5:
 		_crossing_sync_elapsed = 0.0
 		_refresh_lane_path_index()
+		_stage_publication_pending = true
+	if _stage_publication_pending:
+		_stage_publication_pending = false
 		_refresh_signal_visuals()
 		_synchronize_crossing_consumers()
 
@@ -89,6 +107,8 @@ func _process(delta: float) -> void:
 func configure_graph_source(source: Node2D) -> void:
 	graph_source = source
 	_graph_signature = ""
+	_synced_graph_source_id = 0
+	_synced_routing_revision = -1
 	_sync_from_graph()
 
 
@@ -109,6 +129,13 @@ func _discover_graph_source() -> Node2D:
 func _sync_from_graph() -> void:
 	if graph_source == null or not is_instance_valid(graph_source) or not graph_source.has_method("get_graph_data"):
 		return
+	var source_id := graph_source.get_instance_id()
+	var has_revision := graph_source.has_method("get_routing_revision")
+	var routing_revision: int = int(graph_source.call("get_routing_revision")) if has_revision else -1
+	# Unified increments its revision after a complete rebuild. Avoid deep-copying
+	# the entire graph and serializing junctions on every half-second poll.
+	if has_revision and source_id == _synced_graph_source_id and routing_revision == _synced_routing_revision:
+		return
 	var graph_data = graph_source.call("get_graph_data")
 	if not graph_data is Dictionary:
 		return
@@ -128,8 +155,13 @@ func _sync_from_graph() -> void:
 			_connection_signature(junction.get("lane_connections", [])),
 		])
 	var next_signature := str(signature_values)
-	if next_signature == _graph_signature:
+	# A rebuild can replace Path2D references without changing geometry. Revision
+	# changes must refresh connections too; unversioned providers keep the old
+	# signature fallback (including detection of in-place geometry edits).
+	if not has_revision and source_id == _synced_graph_source_id and next_signature == _graph_signature:
 		return
+	_synced_graph_source_id = source_id
+	_synced_routing_revision = routing_revision
 	_graph_signature = next_signature
 	_junctions.clear()
 	_junction_id_to_index.clear()
@@ -259,6 +291,12 @@ func _set_stage(junction_index: int, next_stage: JunctionStage) -> void:
 	if next_stage != JunctionStage.ALL_RED:
 		active_roads = (state.phases as Array)[int(state.phase_index)].duplicate()
 	junction_stage_changed.emit(StringName(state.junction_id), next_stage, active_roads)
+	# Multiple junctions commonly change phase on the same tick. Keep all logical
+	# changes/signals immediate, then publish their final states once before this
+	# _process returns. External/manual stage changes still publish immediately.
+	if _batching_stage_publication:
+		_stage_publication_pending = true
+		return
 	_refresh_signal_visuals()
 	_synchronize_crossing_consumers()
 
@@ -338,6 +376,7 @@ func try_reserve_junction(
 	state.reservation_ref = weakref(vehicle) if vehicle != null else null
 	state.reservation_heartbeat_ms = Time.get_ticks_msec()
 	state.reservation_entered = false
+	_vehicle_owned_junction[vehicle_instance_id] = index
 	_waiting_since.erase(vehicle_instance_id)
 	_deadlock_reported.erase(vehicle_instance_id)
 	_telemetry.reservation_grants = int(_telemetry.reservation_grants) + 1
@@ -407,6 +446,16 @@ func evaluate_lane_motion(
 	_release_if_vehicle_cleared(vehicle, vehicle_length)
 	var vehicle_id := vehicle.get_instance_id()
 	var owned_junction := _owned_junction_for_vehicle(vehicle_id)
+	# A long render frame must stop at the authored turn entry, not skip it
+	# and discard the plan as an excessive connector overshoot. The normal
+	# post-movement handoff still requires the junction reservation below.
+	var planned_id := String(follow.get_meta("traffic_planned_connection_id", ""))
+	var planned: Dictionary = _connections_by_id.get(planned_id, {})
+	if bool(planned.get("requires_connector", false)) and String(planned.get("from_lane_id", "")) == String(lane_id) and (owned_junction < 0 or int(planned.get("junction_index", -1)) == owned_junction):
+		var entry_distance := float(planned.get("entry_curve_offset", -1.0)) - follow.progress
+		if entry_distance >= 0.0 and entry_distance < float(unrestricted.allowed_advance):
+			unrestricted.allowed_advance = entry_distance
+			unrestricted.controlled = true
 	if owned_junction >= 0:
 		var owned_state: Dictionary = _states[owned_junction]
 		var owned_radius := float((_junctions[owned_junction] as Dictionary).get("radius", 48.0))
@@ -465,7 +514,7 @@ func evaluate_lane_motion(
 	var result := {
 		"controlled": true,
 		"must_stop": safe_stop_distance <= maxf(braking_distance, reservation_request_distance),
-		"allowed_advance": minf(maxf(NO_ADVANCE, desired_advance), safe_stop_distance),
+		"allowed_advance": minf(float(unrestricted.allowed_advance), safe_stop_distance),
 		"target_speed": target_speed,
 		"signal_state": signal_state,
 		"reservation_granted": false,
@@ -539,7 +588,9 @@ func _next_lane_junction(path: Path2D, follow: PathFollow2D, road_index: int) ->
 
 func _lane_junction_projections(path: Path2D, road_index: int) -> Array:
 	var curve_length := path.curve.get_baked_length()
-	var cache_key := "%d:%d:%.3f:%s" % [path.get_instance_id(), road_index, curve_length, _graph_signature]
+	# _sync_from_graph clears this cache whenever the graph signature changes.
+	# Do not copy/hash the entire graph signature for every vehicle query.
+	var cache_key := "%d:%d:%.3f" % [path.get_instance_id(), road_index, curve_length]
 	if _lane_projection_cache.has(cache_key):
 		return _lane_projection_cache[cache_key]
 	var result: Array = []
@@ -582,7 +633,20 @@ func _refresh_lane_path_index() -> void:
 			_lane_paths_by_id[lane_id] = path
 
 
-func has_lane_transition(path: Path2D) -> bool:
+## progress lets a caller ask "is there still a reachable transition ahead of
+## where this vehicle actually is", not just "does one exist somewhere on this
+## lane". A vehicle can spawn (ambient traffic is scattered across each lane's
+## progress range at load time) past a connector's entry_curve_offset -- the
+## only way off a dead-end lane segment like westgate_drive's southern end,
+## 190px from the harbor seawall. Ignoring progress here made
+## _open_lane_end_motion report "a transition exists" and skip end-of-lane
+## braking for that vehicle forever, even though _planned_connection() would
+## always reject the same connector as already passed (entry_curve_offset <
+## progress). The vehicle then cruised at full speed to the curve's hard
+## clamp and sat there indefinitely, revving with nowhere left to go -- easy
+## for a player to carjack with zero reaction room before the wall. Default
+## -1.0 preserves the old "exists anywhere" answer for other callers.
+func has_lane_transition(path: Path2D, progress: float = -1.0) -> bool:
 	if path == null or path.curve == null or not path.is_in_group(LANE_GROUP):
 		return false
 	var lane_id := String(path.get_meta("traffic_lane_id", ""))
@@ -591,6 +655,8 @@ func has_lane_transition(path: Path2D) -> bool:
 	for connection_value in _connections_from_lane.get(lane_id, []):
 		var connection := connection_value as Dictionary
 		if not bool(connection.get("requires_connector", false)):
+			continue
+		if progress >= 0.0 and float(connection.get("entry_curve_offset", -1.0)) < progress - 0.5:
 			continue
 		var junction_index := int(connection.get("junction_index", -1))
 		for projection_value in _lane_junction_projections(path, road_index):
@@ -618,11 +684,17 @@ func complete_lane_transition(vehicle: Node2D, path: Path2D, follow: PathFollow2
 	var entry_offset := float(connection.get("entry_curve_offset", -1.0))
 	if entry_offset < 0.0 or follow.progress + 0.01 < entry_offset:
 		return false
-	if follow.progress - entry_offset > MAX_CONNECTOR_ENTRY_OVERSHOOT:
+	var junction_index := int(connection.get("junction_index", -1))
+	# _planned_connection() only ever hands back a connection that needed
+	# the relaxed, per-connection landing_overshoot_allowance when its own
+	# strict pass (the original, unwidened MAX_CONNECTOR_ENTRY_OVERSHOOT)
+	# found nothing else at all -- so honouring that same allowance here
+	# just executes the plan it already made; it can never let a connection
+	# through that strict planning would otherwise have skipped.
+	if follow.progress - entry_offset > _connector_entry_overshoot_limit(connection):
 		follow.remove_meta("traffic_planned_connection_id")
 		follow.remove_meta("traffic_planned_junction_index")
 		return false
-	var junction_index := int(connection.get("junction_index", -1))
 	var state: Dictionary = _states.get(junction_index, {})
 	if state.is_empty() or int(state.reservation_owner) != vehicle.get_instance_id():
 		return false
@@ -639,6 +711,32 @@ func complete_lane_transition(vehicle: Node2D, path: Path2D, follow: PathFollow2
 	return true
 
 
+## A vehicle overshoots its planned turn's entry_curve_offset two different
+## ways: driving too fast to react (the original, narrow reason
+## MAX_CONNECTOR_ENTRY_OVERSHOOT exists -- "you missed it, live with it"), or
+## simply materializing past it because a PRIOR connector's own
+## exit_curve_offset landed it there directly, with no chance to react at
+## all. The second case is not a missed turn and needs a bigger allowance,
+## but ONLY for the exact connections where it structurally happens --
+## a junction-radius formula applied to every connection at a junction was
+## tried and reverted: it also widened the tolerance for ordinary
+## drove-past-it-too-fast overshoot on OTHER, unrelated connections sharing
+## that junction, including ones on Bairro1's rail level crossing approach,
+## and that caused a real vehicle/train collision
+## (rail_level_crossing_runtime_test). UnifiedRoadNetwork2D._build_lane_connections
+## now computes, once per connection at graph-build time, the *exact* extra
+## allowance a specific connection needs (0.0 for the overwhelming majority)
+## by checking whether its own exit_curve_offset already lands past the
+## destination lane's own outgoing entry_curve_offset at the same junction --
+## precisely the structural case (a short lane whose relevant end IS the
+## junction) that stranded HarborTraffic_00 arriving at
+## junction_039_7400_1700 via the cobra_approach connector. Every other
+## connection's allowance is 0.0, so this cannot change behaviour anywhere
+## else, including the rail crossing.
+func _connector_entry_overshoot_limit(connection: Dictionary) -> float:
+	return maxf(MAX_CONNECTOR_ENTRY_OVERSHOOT, float(connection.get("landing_overshoot_allowance", 0.0)))
+
+
 func _planned_connection(vehicle: Node2D, path: Path2D, follow: PathFollow2D) -> Dictionary:
 	var planned_id := String(follow.get_meta("traffic_planned_connection_id", ""))
 	if not planned_id.is_empty() and _connections_by_id.has(planned_id):
@@ -653,18 +751,25 @@ func _planned_connection(vehicle: Node2D, path: Path2D, follow: PathFollow2D) ->
 		return {}
 	var junction_index := int(next.junction_index)
 	var lane_id := String(path.get_meta("traffic_lane_id", ""))
-	var candidates: Array[Dictionary] = []
-	for connection_value in _connections_from_lane.get(lane_id, []):
-		var candidate := connection_value as Dictionary
-		if int(candidate.get("junction_index", -1)) != junction_index:
-			continue
-		if bool(candidate.get("requires_connector", false)):
-			if float(candidate.get("entry_curve_offset", -1.0)) < follow.progress - 0.5:
-				continue
-			var connector := candidate.get("path") as Path2D
-			if connector == null or not is_instance_valid(connector):
-				continue
-		candidates.append(candidate)
+	# Two passes: strict first (the original, unwidened MAX_CONNECTOR_ENTRY_
+	# OVERSHOOT tolerance), and only if that finds nothing at all, a second,
+	# relaxed pass using each candidate's precomputed landing_overshoot_
+	# allowance (0.0 for the overwhelming majority of connections; see
+	# UnifiedRoadNetwork2D._build_lane_connections). This is a *last resort*,
+	# not a proactive allowance: a wider tolerance was tried unconditionally
+	# instead and, even scoped per-connection, changed a vehicle's timing
+	# through Bairro1Expansion's midtown_cross/east_arc junction -- which
+	# structurally has the same "arrival lands past this junction's own
+	# exit" pattern as the Cobra roundabout, but where the strict pass
+	# already always succeeds in practice -- shifting exactly when it
+	# reached the adjacent rail crossing and causing a real vehicle/train
+	# collision. Only falling back when strict planning would otherwise
+	# leave the vehicle with zero candidates (the genuine "permanently
+	# stuck" case, as arriving via the cobra_approach connector did) keeps
+	# every junction that already works unaffected.
+	var candidates: Array[Dictionary] = _collect_planning_candidates(lane_id, junction_index, follow.progress, false)
+	if candidates.is_empty():
+		candidates = _collect_planning_candidates(lane_id, junction_index, follow.progress, true)
 	if candidates.is_empty():
 		return {}
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -681,6 +786,39 @@ func _planned_connection(vehicle: Node2D, path: Path2D, follow: PathFollow2D) ->
 	follow.set_meta("traffic_planned_connection_id", String(selected.connection_id))
 	follow.set_meta("traffic_planned_junction_index", junction_index)
 	return selected
+
+
+func _collect_planning_candidates(lane_id: String, junction_index: int, progress: float, allow_landing_overshoot: bool) -> Array[Dictionary]:
+	var candidates: Array[Dictionary] = []
+	for connection_value in _connections_from_lane.get(lane_id, []):
+		var candidate := connection_value as Dictionary
+		if int(candidate.get("junction_index", -1)) != junction_index:
+			continue
+		if bool(candidate.get("requires_connector", false)):
+			var limit := _connector_entry_overshoot_limit(candidate) if allow_landing_overshoot else MAX_CONNECTOR_ENTRY_OVERSHOOT
+			if float(candidate.get("entry_curve_offset", -1.0)) < progress - limit:
+				continue
+			var connector := candidate.get("path") as Path2D
+			if connector == null or not is_instance_valid(connector):
+				continue
+		elif String(candidate.get("to_lane_id", "")) == lane_id and is_equal_approx(float(candidate.get("to_road_progress", -1.0)), float(candidate.get("from_road_progress", -2.0))):
+			# A genuine "continue straight through this junction on the same
+			# lane, no connector needed" entry always advances road_progress
+			# (the junction sits partway along a longer, unbroken lane). One
+			# whose from/to road_progress are identical on its OWN lane is a
+			# graph artefact: both ends of a tight quarter-arc road (e.g. the
+			# Ashbend/Cobra roundabout's cobra_court_southwest) can register
+			# against the same junction, and the connection builder pairs the
+			# lane with itself as if traffic could just keep going. There is
+			# nowhere left to go -- this vehicle is already at progress ==
+			# curve length. Picking this candidate (previously equally likely
+			# to be hash-selected as the two real, connector-requiring exits
+			# here) permanently stranded HarborTraffic_05 at the Cobra
+			# roundabout entrance: reservation granted, signal green, engine
+			# desiring to move, and nowhere the game would ever let it go.
+			continue
+		candidates.append(candidate)
+	return candidates
 
 
 func _movement_priority(movement: String) -> int:
@@ -735,20 +873,40 @@ func _finish_connector_transition(connector: Path2D, follow: PathFollow2D) -> bo
 
 func _release_if_vehicle_cleared(vehicle: Node2D, vehicle_length: float) -> void:
 	var vehicle_id := vehicle.get_instance_id()
-	for index_value in _states.keys():
-		var junction_index := int(index_value)
-		var state: Dictionary = _states[junction_index]
-		if int(state.reservation_owner) != vehicle_id:
-			continue
-		var radius := float((_junctions[junction_index] as Dictionary).get("radius", 48.0))
-		var distance := vehicle.global_position.distance_to(_junction_world_position(junction_index))
-		if distance <= radius + vehicle_length * 0.5:
-			notify_vehicle_entered(junction_index, vehicle_id)
-		elif bool(state.reservation_entered) and distance > radius + vehicle_length + stop_line_margin:
-			_clear_reservation(junction_index)
+	var junction_index := _owned_junction_for_vehicle(vehicle_id)
+	if junction_index < 0:
+		return
+	var state: Dictionary = _states.get(junction_index, {})
+	if state.is_empty() or int(state.reservation_owner) != vehicle_id:
+		return
+	var radius := float((_junctions[junction_index] as Dictionary).get("radius", 48.0))
+	var distance := vehicle.global_position.distance_to(_junction_world_position(junction_index))
+	var body_radius := vehicle_length * 0.5
+	var collision := vehicle.get_node_or_null("Collision") as CollisionShape2D
+	if collision != null and collision.shape is RectangleShape2D:
+		var half_size := (collision.shape as RectangleShape2D).size * 0.5
+		for corner in [Vector2(-half_size.x, -half_size.y), Vector2(half_size.x, -half_size.y), half_size, Vector2(-half_size.x, half_size.y)]:
+			body_radius = maxf(body_radius, vehicle.global_position.distance_to(collision.to_global(corner)))
+	if distance <= radius + vehicle_length * 0.5:
+		notify_vehicle_entered(junction_index, vehicle_id)
+	# Clear only after the whole collision rectangle (including lateral corners)
+	# is outside the conflict radius plus margin. Using a FULL vehicle length
+	# retained a cleared junction until after the next short-block turn entry.
+	elif bool(state.reservation_entered) and distance > radius + body_radius + stop_line_margin:
+		_clear_reservation(junction_index)
 
 
 func _owned_junction_for_vehicle(vehicle_instance_id: int) -> int:
+	# O(1) common path via the reverse index kept by try_reserve_junction() /
+	# _clear_reservation(); falls back to the full scan only if the cache and
+	# the authoritative per-junction state ever disagree, so a missed update
+	# site would degrade to the old behavior instead of returning a wrong answer.
+	var cached := int(_vehicle_owned_junction.get(vehicle_instance_id, -1))
+	if cached >= 0:
+		var cached_state: Dictionary = _states.get(cached, {})
+		if not cached_state.is_empty() and int(cached_state.reservation_owner) == vehicle_instance_id:
+			return cached
+		_vehicle_owned_junction.erase(vehicle_instance_id)
 	for index_value in _states.keys():
 		if int((_states[index_value] as Dictionary).get("reservation_owner", 0)) == vehicle_instance_id:
 			return int(index_value)
@@ -793,6 +951,8 @@ func _clear_reservation(junction_index: int) -> void:
 	state.reservation_road = -1
 	state.reservation_lane = &""
 	state.reservation_ref = null
+	if int(_vehicle_owned_junction.get(previous_owner, -1)) == junction_index:
+		_vehicle_owned_junction.erase(previous_owner)
 	state.reservation_heartbeat_ms = 0
 	state.reservation_entered = false
 	if previous_owner != 0:
@@ -899,12 +1059,24 @@ func _synchronize_crossing_consumers() -> void:
 			if seen.has(crossing.get_instance_id()):
 				continue
 			seen[crossing.get_instance_id()] = true
-			if not crossing.has_method("get_crossing_data") or not crossing.has_method("set_signal_state"):
+			if not crossing.has_method("set_signal_state"):
 				continue
-			var data = crossing.call("get_crossing_data")
-			if not data is Dictionary:
-				continue
-			var junction_id := StringName((data as Dictionary).get("junction_id", &""))
+			var junction_id: StringName
+			var road_index: int
+			var crossing_id: StringName
+			if "junction_id" in crossing and "road_index" in crossing and "crossing_id" in crossing:
+				junction_id = StringName(crossing.junction_id)
+				road_index = int(crossing.road_index)
+				crossing_id = StringName(crossing.crossing_id)
+			else:
+				if not crossing.has_method("get_crossing_data"):
+					continue
+				var data = crossing.call("get_crossing_data")
+				if not data is Dictionary:
+					continue
+				junction_id = StringName((data as Dictionary).get("junction_id", &""))
+				road_index = int((data as Dictionary).get("road_index", -1))
+				crossing_id = StringName((data as Dictionary).get("crossing_id", &""))
 			var junction_index := int(crossing.get_meta("junction_index", -1))
 			# A crossing outside a signalized junction keeps its own pedestrian
 			# priority logic; assigning false/false would turn it permanently red.
@@ -921,12 +1093,10 @@ func _synchronize_crossing_consumers() -> void:
 				if crossing.has_method("set_signal_controller"):
 					crossing.call("set_signal_controller", null)
 				continue
-			var road_index := int((data as Dictionary).get("road_index", -1))
 			if road_index < 0:
 				continue
 			if crossing.has_method("set_signal_controller"):
 				crossing.call("set_signal_controller", self)
-			var crossing_id := StringName((data as Dictionary).get("crossing_id", &""))
 			crossing.call(
 				"set_signal_state",
 				get_vehicle_permission(junction_ref, road_index),

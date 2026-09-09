@@ -89,6 +89,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 
 [node name="Title" type="Label" parent="RootControl/CenterPanel/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
@@ -132,6 +133,28 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "CARREGAR JOGO"
+alignment = 0
+
+[node name="BtnAchievements" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "CONQUISTAS"
+alignment = 0
+
+[node name="BtnCollectibles" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "COLECIONÁVEIS"
 alignment = 0
 
 [node name="BtnSettings" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -226,9 +249,144 @@ layout_mode = 2
 alignment = 2
 
 [node name="BtnCloseModal" type="Button" parent="RootControl/SlotsModal/Margin/VBox/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "VOLTAR"
+
+[node name="AchievementsModal" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(640, 480)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -240.0
+offset_right = 320.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/AchievementsModal"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/AchievementsModal/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="AchievementsModalTitle" type="Label" parent="RootControl/AchievementsModal/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 20
+text = "CONQUISTAS"
+horizontal_alignment = 1
+
+[node name="AchievementsProgressLabel" type="Label" parent="RootControl/AchievementsModal/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "0 de 12 desbloqueadas"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="RootControl/AchievementsModal/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AchievementsList" type="VBoxContainer" parent="RootControl/AchievementsModal/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Actions2" type="HBoxContainer" parent="RootControl/AchievementsModal/Margin/VBox"]
+layout_mode = 2
+alignment = 2
+
+[node name="BtnCloseAchievements" type="Button" parent="RootControl/AchievementsModal/Margin/VBox/Actions2"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "VOLTAR"
+
+[node name="CollectiblesModal" type="PanelContainer" parent="RootControl"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(640, 480)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -240.0
+offset_right = 320.0
+offset_bottom = 240.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="RootControl/CollectiblesModal"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/CollectiblesModal/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="CollectiblesModalTitle" type="Label" parent="RootControl/CollectiblesModal/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 20
+text = "COLECIONÁVEIS"
+horizontal_alignment = 1
+
+[node name="CollectiblesProgressLabel" type="Label" parent="RootControl/CollectiblesModal/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+text = "0 de 6 encontrados"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="RootControl/CollectiblesModal/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CollectiblesList" type="VBoxContainer" parent="RootControl/CollectiblesModal/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Actions3" type="HBoxContainer" parent="RootControl/CollectiblesModal/Margin/VBox"]
+layout_mode = 2
+alignment = 2
+
+[node name="BtnCloseCollectibles" type="Button" parent="RootControl/CollectiblesModal/Margin/VBox/Actions3"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "VOLTAR"
 
 [connection signal="pressed" from="RootControl/SlotsModal/Margin/VBox/Actions/BtnCloseModal" to="." method="_on_close_modal_pressed"]
+[connection signal="pressed" from="RootControl/AchievementsModal/Margin/VBox/Actions2/BtnCloseAchievements" to="." method="_on_close_achievements_pressed"]
+[connection signal="pressed" from="RootControl/CollectiblesModal/Margin/VBox/Actions3/BtnCloseCollectibles" to="." method="_on_close_collectibles_pressed"]

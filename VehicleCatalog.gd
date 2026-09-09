@@ -5,16 +5,25 @@ extends RefCounted
 # Contém especificações físicas reais (massa, aceleração, velocidade, durabilidade, drift) e paletas de cores.
 
 const DISTRICT_VEHICLES := {
-	"city": ["sedan_classic", "taxi_yellow", "sport_coupe", "station_wagon", "cobra_v8"],
-	"desert": ["desert_jeep_4x4", "dune_buggy", "ranch_pickup", "muscle_classic"],
+	"city": ["sedan_classic", "taxi_yellow", "sport_coupe", "station_wagon", "cobra_v8", "union_sedan", "metro_hatch", "courier_van", "route_city"],
+	"desert": ["desert_jeep_4x4", "dune_buggy", "ranch_pickup", "muscle_classic", "ranch_single"],
 	"winter": ["winter_suv_heavy", "snow_plow_truck", "polar_van"],
 	"beach": ["beach_cabriolet", "surf_woody_wagon", "beach_buggy"],
-	"industrial": ["cargo_flatbed_truck", "lumber_pickup_4x4", "dock_delivery_van"],
-	"forest": ["lumber_pickup_4x4", "desert_jeep_4x4", "station_wagon"],
+	"industrial": ["cargo_flatbed_truck", "lumber_pickup_4x4", "dock_delivery_van", "boxrunner", "towmaster", "ranch_single"],
+	"forest": ["lumber_pickup_4x4", "desert_jeep_4x4", "station_wagon", "ranch_single"],
+	"emergency": ["rescue_pumper", "medic_box", "towmaster"],
 	"gang_specials": ["cobra_v8"]
 }
 
 const VEHICLES := {
+	"monaliza": {
+		"id":"monaliza", "label":"Monaliza GT Turbo", "district":"personal",
+		"target_length":74.0, "target_width":33.0, "mass":0.95,
+		"max_speed":560.0, "acceleration":460.0, "braking":1250.0,
+		"turn_speed":3.1, "drift_factor":0.88, "durability":180,
+		"engine_pitch":1.1, "roof_prop":"none", "crop_index":4,
+		"colors":[Color("183b91")]
+	},
 	# ==========================================
 	# 1. CENTRO URBANO (CITY DOWNTOWN)
 	# ==========================================
@@ -171,11 +180,136 @@ const VEHICLES := {
 		"max_speed": 610.0, "acceleration": 1150.0, "braking": 1300.0, "turn_speed": 3.45, "drift_factor": 1.20,
 		"durability": 140, "engine_pitch": 0.85, "roof_prop": "hood_scoop",
 		"colors": [Color("1a0505"), Color("0f0f12"), Color("380b0b"), Color("2c0808")]
+	},
+
+	# ==========================================
+	# 7. FASE 2: FROTA CIVIL 3D EXPANDIDA
+	# ==========================================
+	"union_sedan": {
+		"id": "union_sedan", "label": "Union Sedan Premier", "district": "city",
+		"target_length": 82.0, "target_width": 34.0, "mass": 1.10,
+		"max_speed": 490.0, "acceleration": 870.0, "braking": 1120.0, "turn_speed": 3.10, "drift_factor": 0.85,
+		"durability": 110, "engine_pitch": 1.0, "roof_prop": "none",
+		"model_class": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+		"colors": [Color("#2c3e50"), Color("#7f8c8d"), Color("#1e272e"), Color("#34495e"), Color("#c0392b")]
+	},
+	"metro_hatch": {
+		"id": "metro_hatch", "label": "Metro Hatchback Sport", "district": "city",
+		"target_length": 68.0, "target_width": 32.0, "mass": 0.85,
+		"max_speed": 520.0, "acceleration": 1020.0, "braking": 1280.0, "turn_speed": 3.65, "drift_factor": 1.10,
+		"durability": 85, "engine_pitch": 1.22, "roof_prop": "spoiler",
+		"model_class": "res://prototypes/living_cast/models/MetroHatchModel.gd",
+		"colors": [Color("#e74c3c"), Color("#f1c40f"), Color("#3498db"), Color("#2ecc71"), Color("#ecf0f1")]
+	},
+	"courier_van": {
+		"id": "courier_van", "label": "Courier Van Express", "district": "city",
+		"target_length": 84.0, "target_width": 36.0, "mass": 1.50,
+		"max_speed": 430.0, "acceleration": 760.0, "braking": 990.0, "turn_speed": 2.65, "drift_factor": 0.72,
+		"durability": 140, "engine_pitch": 0.92, "roof_prop": "roof_rack",
+		"model_class": "res://prototypes/living_cast/models/CourierVanModel.gd",
+		"colors": [Color("#ffffff"), Color("#f39c12"), Color("#2980b9"), Color("#bdc3c7")]
+	},
+	"summit_suv": {
+		"id": "summit_suv", "label": "Summit SUV 4x4", "district": "forest",
+		"target_length": 84.0, "target_width": 38.0, "mass": 1.8,
+		"max_speed": 480.0, "acceleration": 440.0, "braking": 950.0, "turn_speed": 2.8, "drift_factor": 0.88,
+		"durability": 200, "engine_pitch": 0.85, "roof_prop": "",
+		"model_class": "res://prototypes/living_cast/models/SummitSUVModel.gd",
+		"colors": [Color("315b6b"),Color("dce3df"),Color("6b7055"),Color("934c39")]
+	},
+	"arctic_jeep": {
+		"id": "arctic_jeep", "label": "Arctic Trail 4x4", "district": "forest",
+		"target_length": 84.0, "target_width": 38.0, "mass": 1.8,
+		"max_speed": 480.0, "acceleration": 440.0, "braking": 950.0, "turn_speed": 2.8, "drift_factor": 0.88,
+		"durability": 200, "engine_pitch": 0.85, "roof_prop": "",
+		"model_class": "res://prototypes/living_cast/models/ArcticJeepModel.gd",
+		"colors": [Color("315b6b"),Color("dce3df"),Color("6b7055"),Color("934c39")]
+	},
+	"ranch_single": {
+		"id": "ranch_single", "label": "Ranch Single V8 4x4", "district": "desert",
+		"target_length": 88.0, "target_width": 36.0, "mass": 1.65,
+		"max_speed": 450.0, "acceleration": 850.0, "braking": 980.0, "turn_speed": 2.60, "drift_factor": 0.88,
+		"durability": 180, "engine_pitch": 0.85, "roof_prop": "bed_bars",
+		"model_class": "res://prototypes/living_cast/models/RanchSingleModel.gd",
+		"colors": [Color("#8e44ad"), Color("#2c3e50"), Color("#b53471"), Color("#30336b"), Color("#dff9fb")]
+	},
+	"route_city": {
+		"id": "route_city", "label": "Route City Ônibus Urbano", "district": "city",
+		"target_length": 132.0, "target_width": 42.0, "mass": 4.20,
+		"max_speed": 340.0, "acceleration": 520.0, "braking": 780.0, "turn_speed": 1.95, "drift_factor": 0.40,
+		"durability": 300, "engine_pitch": 0.70, "roof_prop": "ac_unit",
+		"model_class": "res://prototypes/living_cast/models/RouteCityModel.gd",
+		"colors": [Color("#2980b9"), Color("#27ae60"), Color("#d35400"), Color("#8e44ad")]
+	},
+
+	# ==========================================
+	# 8. FASE 2: FROTA DE SERVIÇO & EMERGÊNCIA 3D
+	# ==========================================
+	"rescue_pumper": {
+		"id": "rescue_pumper", "label": "Rescue Pumper (Corpo de Bombeiros)", "district": "emergency",
+		"target_length": 128.0, "target_width": 42.0, "mass": 4.80,
+		"max_speed": 380.0, "acceleration": 680.0, "braking": 920.0, "turn_speed": 2.10, "drift_factor": 0.45,
+		"durability": 320, "engine_pitch": 0.74, "roof_prop": "fire_lightbar",
+		"model_class": "res://prototypes/living_cast/models/RescuePumperModel.gd",
+		"colors": [Color("#c0392b"), Color("#d63031")]
+	},
+	"medic_box": {
+		"id": "medic_box", "label": "Medic Box Ambulância SAMU", "district": "emergency",
+		"target_length": 92.0, "target_width": 38.0, "mass": 1.95,
+		"max_speed": 510.0, "acceleration": 920.0, "braking": 1150.0, "turn_speed": 2.80, "drift_factor": 0.65,
+		"durability": 160, "engine_pitch": 1.05, "roof_prop": "ambulance_lightbar",
+		"model_class": "res://prototypes/living_cast/models/MedicBoxModel.gd",
+		"colors": [Color("#f5f6fa"), Color("#ffffff")]
+	},
+	"towmaster": {
+		"id": "towmaster", "label": "Towmaster Guincho Plataforma", "district": "industrial",
+		"target_length": 116.0, "target_width": 40.0, "mass": 2.80,
+		"max_speed": 400.0, "acceleration": 650.0, "braking": 890.0, "turn_speed": 2.25, "drift_factor": 0.55,
+		"durability": 220, "engine_pitch": 0.80, "roof_prop": "amber_beacon",
+		"model_class": "res://prototypes/living_cast/models/TowmasterModel.gd",
+		"colors": [Color("#f39c12"), Color("#f1c40f"), Color("#e67e22")]
+	},
+	"boxrunner": {
+		"id": "boxrunner", "label": "Boxrunner Caminhão Baú Urbano", "district": "industrial",
+		"target_length": 110.0, "target_width": 39.0, "mass": 2.40,
+		"max_speed": 410.0, "acceleration": 690.0, "braking": 920.0, "turn_speed": 2.35, "drift_factor": 0.60,
+		"durability": 200, "engine_pitch": 0.82, "roof_prop": "cab_deflector",
+		"model_class": "res://prototypes/living_cast/models/BoxrunnerModel.gd",
+		"colors": [Color("#ffffff"), Color("#34495e"), Color("#2c3e50"), Color("#7f8c8d")]
 	}
 }
 
+# Legacy save/mission IDs keep their identity and physics while using the 3D fleet.
+const LEGACY_MODELS := {
+	"sedan_classic": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+	"taxi_yellow": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+	"sport_coupe": "res://prototypes/living_cast/CoupeDamageModel.gd",
+	"station_wagon": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+	"police_cruiser": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+	"desert_jeep_4x4": "res://prototypes/living_cast/models/ArcticJeepModel.gd",
+	"dune_buggy": "res://prototypes/living_cast/models/ArcticJeepModel.gd",
+	"ranch_pickup": "res://prototypes/living_cast/models/RanchSingleModel.gd",
+	"muscle_classic": "res://prototypes/living_cast/BossMuscleModel.gd",
+	"winter_suv_heavy": "res://prototypes/living_cast/models/SummitSUVModel.gd",
+	"snow_plow_truck": "res://prototypes/living_cast/models/TowmasterModel.gd",
+	"polar_van": "res://prototypes/living_cast/models/CourierVanModel.gd",
+	"beach_cabriolet": "res://prototypes/living_cast/CoupeDamageModel.gd",
+	"surf_woody_wagon": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+	"beach_buggy": "res://prototypes/living_cast/models/ArcticJeepModel.gd",
+	"cargo_flatbed_truck": "res://prototypes/living_cast/models/BoxrunnerModel.gd",
+	"lumber_pickup_4x4": "res://prototypes/living_cast/models/RanchSingleModel.gd",
+	"dock_delivery_van": "res://prototypes/living_cast/models/CourierVanModel.gd",
+	"cobra_v8": "res://prototypes/living_cast/BossMuscleModel.gd",
+}
+static var _resolved_specs := {}
 static func get_vehicle_spec(archetype_id: String) -> Dictionary:
-	return VEHICLES.get(archetype_id, VEHICLES.get("sedan_classic", {}))
+	if _resolved_specs.has(archetype_id): return _resolved_specs[archetype_id]
+	var spec: Dictionary = VEHICLES.get(archetype_id, VEHICLES["sedan_classic"]).duplicate(true)
+	if not spec.has("model_class"):
+		spec["model_class"] = LEGACY_MODELS.get(archetype_id,"res://prototypes/living_cast/models/UnionSedanModel.gd")
+	if archetype_id == "monaliza": spec["model_class"] = "res://district/harbor_preview/monaliza/MonalizaModel.gd"
+	_resolved_specs[archetype_id] = spec
+	return spec
 
 static func get_random_spec_for_district(district_id: String = "city") -> Dictionary:
 	var list: Array = DISTRICT_VEHICLES.get(district_id, DISTRICT_VEHICLES["city"])
@@ -183,7 +317,9 @@ static func get_random_spec_for_district(district_id: String = "city") -> Dictio
 	return get_vehicle_spec(chosen_id)
 
 static func get_all_specs() -> Array:
-	return VEHICLES.values()
+	var result: Array = []
+	for id in VEHICLES: result.append(get_vehicle_spec(id))
+	return result
 
 static func get_random_color(archetype_id: String) -> Color:
 	var spec := get_vehicle_spec(archetype_id)

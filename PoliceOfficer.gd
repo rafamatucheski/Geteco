@@ -17,12 +17,17 @@ enum UnitTier {
 @export var dropped_weapon: StringName = &"pistol"
 
 var target: Node2D = null
+var local_security := false
+var security_alert := 0
 var health: int = 50
 var is_dead: bool = false
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 var fire_cooldown: float = 0.0
 var arrest_timer: float = 0.0
+var arrest_warning_elapsed := 0.0
+var arrest_warning_given := false
+var response_aggression := 0.0
 var walk_clock: float = 0.0
 var service_vehicle: Node2D = null
 var crew_side := 1.0
@@ -30,6 +35,10 @@ var crew_longitudinal := -8.0
 var service_disembark_active := false
 var returning_to_service_vehicle := false
 var boarding_service_vehicle := false
+var vehicle_stop := preload("res://PoliceVehicleStop.gd").new()
+
+func _exit_tree() -> void:
+	vehicle_stop.cancel()
 
 var collision_shape: CollisionShape2D
 var police_loot: PoliceLoot
@@ -52,7 +61,12 @@ var muzzle_flash_3d: MeshInstance3D
 var mat_uniform: StandardMaterial3D
 
 func _ready() -> void:
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
 	add_to_group("police_officer")
+	if is_instance_valid(service_vehicle):
+		add_collision_exception_with(service_vehicle)
 	add_to_group("damageable")
 	
 	_configure_tier()
@@ -61,6 +75,7 @@ func _ready() -> void:
 	z_index = 6
 	
 	_build_3d_viewport()
+	preload("res://district/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()
@@ -77,7 +92,8 @@ func _ready() -> void:
 	police_loot.armor_drop_chance = 0.35 if tier >= UnitTier.SWAT else 0.12
 	add_child(police_loot)
 	
-	_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
+	if not get_meta("quiet_patrol",false):
+		_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
 
 func _configure_tier() -> void:
 	var wm = get_node_or_null("/root/WantedManager")
@@ -406,11 +422,16 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
 	
 	var wm = get_node_or_null("/root/WantedManager")
-	if wm: wm.report_crime(30)
+	if wm and not local_security: wm.report_crime(30)
 	_start_decay()
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if is_dead: return
+	if boarding_service_vehicle:
+		velocity = Vector2.ZERO
+		return
+	if _is_player_attacker:
+		response_aggression = 12.0
 	health = maxi(0, health - amount)
 	if mat_uniform:
 		mat_uniform.albedo_color = Color(1.0, 0.3, 0.3)
@@ -422,6 +443,8 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 		_die()
 
 func _die() -> void:
+	if is_instance_valid(service_vehicle) and service_vehicle.has_method("close_crew_cover_door"):
+		service_vehicle.close_crew_cover_door(crew_side)
 	is_dead = true
 	_drop_loot()
 	velocity = Vector2.ZERO
@@ -433,7 +456,7 @@ func _die() -> void:
 	_play_audio(ProceduralAudio.get_scream_stream(), -5.0)
 	
 	var wm = get_node_or_null("/root/WantedManager")
-	if wm: wm.report_crime(30)
+	if wm and not local_security: wm.report_crime(30)
 	_dispatch_emergency_coroner()
 	_start_decay()
 
@@ -450,6 +473,9 @@ func _drop_loot() -> void:
 		police_loot.drop_now()
 
 func _physics_process(delta: float) -> void:
+	if vehicle_stop.phase != "idle":
+		vehicle_stop.tick(self, delta)
+		return
 	if is_flying:
 		position += fly_velocity * delta
 		fly_velocity = fly_velocity.move_toward(Vector2.ZERO, 950.0 * delta)
@@ -495,8 +521,20 @@ func _physics_process(delta: float) -> void:
 				return
 			velocity = Vector2.ZERO
 			service_disembark_active = false
+			remove_collision_exception_with(service_vehicle)
 	
+	var pursuit_manager := get_node_or_null("/root/WantedManager")
+	if not local_security and pursuit_manager and pursuit_manager.has_method("get_pursuit_target") and ((is_instance_valid(service_vehicle) and service_vehicle.get_meta("police_player_pursuit", false)) or (is_instance_valid(target) and (target.is_in_group("player") or target.get("is_driven_by_player") != null))):
+		target = pursuit_manager.get_pursuit_target()
+	if is_instance_valid(target) and target.get_meta("police_search_position", false):
+		_reset_arrest_warning()
+		velocity = _navigate_towards(target.global_position, speed, delta) if global_position.distance_to(target.global_position) > 110.0 else Vector2.ZERO
+		move_and_slide()
+		return
 	if not is_instance_valid(target):
+		if is_instance_valid(service_vehicle) and service_vehicle.get_meta("ambient_response",false):
+			return_to_service_vehicle()
+			return
 		target = get_tree().get_first_node_in_group("player")
 		if not target: return
 		
@@ -504,29 +542,53 @@ func _physics_process(delta: float) -> void:
 	var dir: Vector2 = global_position.direction_to(target.global_position)
 	
 	var wm = get_node_or_null("/root/WantedManager")
-	var stars: int = wm.current_stars if wm else 0
+	var stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wm.current_stars if wm else 0)
+	if local_security: stars = security_alert
 	
 	fire_cooldown = maxf(0.0, fire_cooldown - delta)
 	var is_moving: bool = false
 	
+	response_aggression = maxf(0.0, response_aggression - delta)
+	# Aiming peeks over the assigned door; the muzzle starts beyond its panel.
+	# Arrest checks below still require a completely unobstructed body-to-body ray.
+	var visible_target := _has_target_sight(true)
+	if visible_target and target.is_in_group("player") and target.get("fire_cooldown") != null and float(target.get("fire_cooldown")) > 0.0:
+		response_aggression = 12.0
 	if stars == 0:
+		_reset_arrest_warning()
 		velocity = Vector2.ZERO
-	elif stars <= 2:
+	elif target.is_in_group("vehicle") or target.get("is_driven_by_player") == true:
+		_reset_arrest_warning()
+		vehicle_stop.approach(self, target, delta)
+		is_moving = velocity.length_squared() > 1.0
+	elif response_aggression <= 0.0:
 		var tactical_spd: float = speed * 0.75
+		if visible_target and dist < 220.0:
+			if not arrest_warning_given:
+				arrest_warning_given = true
+				_play_audio(ProceduralAudio.get_police_radio_chatter_stream(), -12.0)
+				if target.has_method("_show_weapon_notice"):
+					target._show_weapon_notice("POLÍCIA: Pare e fique imóvel para se render!" if TranslationServer.get_locale().begins_with("pt") else "POLICE: Stop and stand still to surrender!")
+			arrest_warning_elapsed += delta
+		else:
+			_reset_arrest_warning()
 		if dist > 34.0:
 			velocity = _navigate_towards(target.global_position, tactical_spd, delta)
 			is_moving = true
 			arrest_timer = 0.0
-			if dist > 140.0 and fire_cooldown <= 0.0:
-				_shoot_at_target(target.global_position)
 		else:
 			velocity = Vector2.ZERO
-			arrest_timer += delta
-			if arrest_timer >= 1.4:
+			arrest_timer = arrest_timer + delta if _can_arrest_target() else 0.0
+			if arrest_timer >= 2.0:
 				_arrest_player()
 				return
 	else:
-		if dist > 180.0:
+		_reset_arrest_warning()
+		if is_instance_valid(service_vehicle) and dist < 320.0:
+			var cover_point := service_vehicle.get_crew_cover_point(crew_side, crew_longitudinal, target.global_position) as Vector2
+			velocity = _navigate_towards(cover_point, speed, delta) if global_position.distance_to(cover_point) > 8.0 else Vector2.ZERO
+			is_moving = velocity.length_squared() > 1.0
+		elif dist > 180.0:
 			velocity = _navigate_towards(target.global_position, speed, delta)
 			is_moving = true
 		elif dist < 100.0:
@@ -535,7 +597,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			velocity = Vector2.ZERO
 			
-		if dist <= 320.0 and fire_cooldown <= 0.0:
+		if visible_target and dist <= 320.0 and fire_cooldown <= 0.0:
 			_shoot_at_target(target.global_position)
 			
 	move_and_slide()
@@ -614,6 +676,7 @@ func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) 
 
 func return_to_service_vehicle() -> void:
 	if not is_dead and is_instance_valid(service_vehicle):
+		add_collision_exception_with(service_vehicle)
 		service_disembark_active = false
 		returning_to_service_vehicle = true
 
@@ -684,11 +747,40 @@ func _fire_single_bullet(target_pos: Vector2, damage_val: int, bullet_spd: float
 		t.tween_callback(func(): if muzzle_flash_3d: muzzle_flash_3d.visible = false)
 
 func _arrest_player() -> void:
-	if not is_instance_valid(target): return
+	if not _can_arrest_target() or arrest_timer < 2.0: return
 	arrest_timer = 0.0
-	var player := get_tree().get_first_node_in_group("player")
-	if is_instance_valid(player) and player.has_method("arrest_and_respawn"):
-		player.arrest_and_respawn()
+	if is_instance_valid(target) and target.has_method("arrest_and_respawn"):
+		target.arrest_and_respawn()
+
+func _reset_arrest_warning() -> void:
+	arrest_timer = 0.0
+	arrest_warning_elapsed = 0.0
+	arrest_warning_given = false
+
+func _has_target_sight(peek_over_cover := false) -> bool:
+	if not is_instance_valid(target) or target.get_meta("police_search_position", false): return false
+	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 1 | 2)
+	query.exclude = [get_rid()]
+	if peek_over_cover and is_instance_valid(service_vehicle):
+		var door: Node2D = service_vehicle._tactical_doors.get(crew_side)
+		if is_instance_valid(door):
+			var cover := door.get_node_or_null("BallisticCover") as StaticBody2D
+			if cover:
+				var excluded := query.exclude
+				excluded.append(cover.get_rid())
+				query.exclude = excluded
+	var hit := get_world_2d().direct_space_state.intersect_ray(query)
+	return hit.is_empty() or hit.collider == target
+
+func _can_arrest_target() -> bool:
+	if not is_instance_valid(target) or not (target.is_in_group("player") or target.get_meta("ambient_crime",false)): return false
+	if target.has_meta("police_exterior_position") or target.get("is_dead") == true or target.get("is_control_disabled") == true: return false
+	if not arrest_warning_given or arrest_warning_elapsed < 3.0 or response_aggression > 0.0: return false
+	if global_position.distance_to(target.global_position) > 34.0: return false
+	if target.get("velocity") != null and (target.get("velocity") as Vector2).length() > 10.0: return false
+	for car in get_tree().get_nodes_in_group("vehicle"):
+		if target.is_in_group("player") and is_instance_valid(car) and car.get("is_driven_by_player") == true: return false
+	return _has_target_sight()
 
 func _spawn_blood_burst(dir: Vector2) -> void:
 	var blood_particles := CPUParticles2D.new()
@@ -711,7 +803,8 @@ func _create_3d_blood_puddle() -> void:
 	var puddle_root := Node2D.new()
 	puddle_root.name = "3DBloodPuddle"
 	puddle_root.global_position = global_position
-	puddle_root.z_index = -1
+	puddle_root.z_as_relative = false
+	puddle_root.z_index = 3
 	
 	var base_poly := Polygon2D.new()
 	base_poly.polygon = PackedVector2Array([
@@ -735,6 +828,7 @@ func _create_3d_blood_puddle() -> void:
 		get_parent().add_child(puddle_root)
 	else:
 		get_tree().current_scene.add_child(puddle_root)
+	puddle_root.global_position = global_position
 		
 	puddle_root.scale = Vector2(0.1, 0.1)
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -754,6 +848,7 @@ func _start_decay() -> void:
 func _play_audio(stream: AudioStream, volume_db: float = -6.0, pitch_scale: float = 1.0) -> void:
 	if stream == null: return
 	var player := AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = volume_db
 	player.pitch_scale = pitch_scale

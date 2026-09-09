@@ -4,20 +4,20 @@ extends RefCounted
 const OUTFITS = {
 	"dante_classic": {
 		"id": "dante_classic",
-		"name": "STREETWEAR URBANO",
+		"name": "DANTE RIBEIRO (CANÔNICO)",
 		"district": "Centro Urbano",
 		"price": 0,
-		"description": "O clássico visual do Dante: jaqueta preta bomber com capuz, calça cargo, boné preto estruturado e tênis de cano alto.",
-		"jacket_color": Color("121214"),
-		"pants_color": Color("18181b"),
-		"skin_color": Color(0.86, 0.70, 0.56),
-		"hair_color": Color(0.08, 0.08, 0.10),
-		"headwear_type": "cap",
-		"headwear_color": Color("1a1a1e"),
-		"accessory_type": "shades",
-		"shoes_color": Color(0.06, 0.06, 0.08),
-		"shirt_style": "hoodie",
-		"trim_color": Color(0.85, 0.88, 0.92)
+		"description": "O visual canônico do Dante: jaqueta flanela xadrez carvão e ardósia, camiseta henley vinho com botões metálicos, jeans azul escuro e botas de trabalho pesadas.",
+		"jacket_color": Color("1a2028"),
+		"pants_color": Color("24384d"),
+		"skin_color": Color(0.87, 0.66, 0.51),
+		"hair_color": Color(0.07, 0.07, 0.09),
+		"headwear_type": "hair_only",
+		"headwear_color": Color(0.07, 0.07, 0.09),
+		"accessory_type": "henley_plaid",
+		"shoes_color": Color("1f1915"),
+		"shirt_style": "henley",
+		"trim_color": Color("6e1b27")
 	},
 	"dante_suit": {
 		"id": "dante_suit",
@@ -205,3 +205,7 @@ static func get_districts() -> Array[String]:
 		"Bosque dos Pinheiros",
 		"Orla Costeira / Praia"
 	]
+
+## Fraction of exposure prevented, used by both the shop and survival system.
+static func cold_protection(id: String) -> float:
+	return float({"dante_arctic":0.8,"dante_trench":0.6,"dante_lumberjack":0.35,"dante_classic":0.15,"dante_suit":0.1,"dante_cowboy":0.1,"dante_madmax":0.1,"dante_ghillie":0.25}.get(id,0.0))

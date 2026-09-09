@@ -15,7 +15,11 @@ const WEAPON_WHEEL_SCRIPT = preload("res://WeaponWheel.gd")
 var health: int
 var armor: int = 0
 var fire_cooldown: float = 0.0
+signal weapon_fired
+var weapon_aim_active := false
 var walk_clock: float = 0.0
+var _move_weight: float = 0.0
+var _sprint_weight: float = 0.0
 var is_recovering: bool = false
 var _respawn_grace_active: bool = false # Janela de protecao apos respawn: impede
 # que o jogador reapareca e seja morto de novo instantaneamente por gangsters
@@ -23,9 +27,37 @@ var _respawn_grace_active: bool = false # Janela de protecao apos respawn: imped
 # e os caras continuam me atacando").
 var is_dead: bool = false
 var is_arrested: bool = false
+var is_in_dialogue: bool = false
+var is_control_disabled: bool = false
 var money: int = 0
+var world_pickups_collected: Array = []
+var mountain_thermal_coat := false
+var collectibles_found: Array[String] = []
+var secret_car_leads: int = 0
+signal collectible_progress_changed(total_found: int, milestone: String)
+var races_finished: int = 0
+var races_best_time_count: int = 0
+var best_drift_score: int = 0
+var drift_challenges_completed: int = 0
+var chop_shop_deliveries: int = 0
+var chop_shop_total_scrap: int = 0
+var unlocked_achievements: Array[String] = []
+signal achievement_unlocked(id: String, title: String)
+const ACHIEVEMENT_CATALOG := preload("res://AchievementCatalog.gd")
 var active_weapon_id: String = "pistol"
 var weapon_inventory: Dictionary = {"fists": true, "knife": false, "pistol": true, "smg": false, "shotgun": false}
+var personal_car_state: Dictionary = {}
+var personal_loadout_enabled := false
+var personal_loadout: Dictionary = {}
+const PERSONAL_LOADOUT := preload("res://district/harbor_preview/monaliza/PersonalLoadout.gd")
+
+func can_carry_weapon(id: String) -> bool:
+	return weapon_inventory.get(id,false) == true and (not personal_loadout_enabled or id == "fists" or id in personal_loadout.values())
+
+func carried_weapon_inventory() -> Dictionary:
+	var carried := weapon_inventory.duplicate()
+	for id in carried: carried[id] = can_carry_weapon(id)
+	return carried
 var weapon_ammo: Dictionary = {
 	"pistol": {"clip": 12, "reserve": 60},
 	"smg": {"clip": 0, "reserve": 0},
@@ -35,6 +67,16 @@ var weapon_wheel: WeaponWheel
 var primary_fire_was_pressed: bool = false
 const MELEE_SWING_DURATION := 0.22
 var _melee_swing_timer: float = 0.0
+var combat_pose := preload("res://PlayerCombatPose.gd").new()
+const DanteVisualAdapter := preload("res://scripts/player/DanteVisualAdapter.gd")
+var _muzzle_flash_epoch := 0
+
+func set_dialogue_active(active: bool) -> void:
+	is_in_dialogue = active
+	is_control_disabled = active
+	if active:
+		velocity = Vector2.ZERO
+
 
 # --- 3D DANTE RIG & VIEWPORT ---
 var viewport_3d: SubViewport
@@ -74,6 +116,8 @@ func _ready() -> void:
 			child.hide()
 
 	_build_dante_3d_viewport()
+	visibility_changed.connect(_sync_3d_render_visibility)
+	_sync_3d_render_visibility()
 	_setup_weapons()
 
 	var dyn_cam = load("res://DynamicCamera.gd")
@@ -87,6 +131,13 @@ func _ready() -> void:
 	if save_mgr and save_mgr.has_method("has_pending_save") and save_mgr.has_pending_save():
 		call_deferred("_apply_pending_save_deferred")
 
+func _sync_3d_render_visibility() -> void:
+	# Boarding hides the 2D player but does not automatically stop its separate
+	# 3D viewport. Keep this signal-driven so death/arrest tweens still render
+	# after show(), even while physics processing is disabled.
+	if is_instance_valid(viewport_3d):
+		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if is_visible_in_tree() else SubViewport.UPDATE_DISABLED
+
 func _apply_pending_save_deferred() -> void:
 	var save_mgr = get_node_or_null("/root/SaveManager")
 	if save_mgr and save_mgr.has_method("apply_pending_save"):
@@ -94,7 +145,7 @@ func _apply_pending_save_deferred() -> void:
 
 func _build_dante_3d_viewport() -> void:
 	viewport_3d = SubViewport.new()
-	viewport_3d.size = Vector2i(96, 96)
+	viewport_3d.size = Vector2i(128, 128)
 	viewport_3d.transparent_bg = true
 	viewport_3d.own_world_3d = true
 	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -107,16 +158,23 @@ func _build_dante_3d_viewport() -> void:
 	cam.look_at(Vector3(0.0, 0.65, 0.0), Vector3.UP)
 
 	var light = DirectionalLight3D.new()
-	light.rotation_degrees = Vector3(-60.0, 35.0, 0.0)
-	light.light_energy = 1.40
+	light.rotation_degrees = Vector3(-55.0, 35.0, 0.0)
+	light.light_energy = 1.65
+	light.light_color = Color(1.0, 0.98, 0.94)
 	viewport_3d.add_child(light)
+
+	var fill = DirectionalLight3D.new()
+	fill.rotation_degrees = Vector3(-25.0, -145.0, 0.0)
+	fill.light_energy = 0.85
+	fill.light_color = Color(0.82, 0.88, 1.0)
+	viewport_3d.add_child(fill)
 
 	var env = WorldEnvironment.new()
 	var env_res = Environment.new()
 	env_res.background_mode = Environment.BG_COLOR
 	env_res.background_color = Color(0, 0, 0, 0)
 	env_res.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env_res.ambient_light_color = Color(0.72, 0.72, 0.82)
+	env_res.ambient_light_color = Color(0.76, 0.79, 0.86)
 	env.environment = env_res
 	viewport_3d.add_child(env)
 
@@ -141,15 +199,16 @@ func _build_dante_3d_viewport() -> void:
 
 	_rebuild_dante_costume()
 
-	# ExibiÃƒÂ§ÃƒÂ£o 2D do Sprite na Escala Exata dos Pedestres
+	# Exibição 2D do Sprite na Escala Exata dos Pedestres e Proporção Real com os Carros
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport_3d.get_texture()
-	sprite_3d_display.scale = Vector2(0.38, 0.38)
+	sprite_3d_display.scale = Vector2(0.24, 0.24)
 	sprite_3d_display.position = Vector2(0.0, 0.0)
 	add_child(sprite_3d_display)
 
 func apply_outfit(outfit_id: String) -> void:
 	current_outfit_id = outfit_id
+	mountain_thermal_coat = OutfitCatalog.cold_protection(outfit_id)>=0.8
 	owned_outfits[outfit_id] = true
 	_rebuild_dante_costume()
 
@@ -162,1186 +221,21 @@ func open_clothing_store() -> void:
 func _rebuild_dante_costume() -> void:
 	if not model_root:
 		return
-	
-	# Preservar a sombra (primeiro filho) e limpar nÃƒÂ³s anteriores do corpo
-	var children := model_root.get_children()
-	for i in range(1, children.size()):
-		children[i].queue_free()
-
-	var data := OutfitCatalog.get_outfit(current_outfit_id)
-	var col_jacket: Color = data.get("jacket_color", Color("121214"))
-	var col_pants: Color = data.get("pants_color", Color("18181b"))
-	var col_skin: Color = data.get("skin_color", Color(0.86, 0.70, 0.56))
-	var col_hair: Color = data.get("hair_color", Color(0.08, 0.08, 0.10))
-	var col_head: Color = data.get("headwear_color", Color("1a1a1e"))
-	var col_shoes: Color = data.get("shoes_color", Color(0.06, 0.06, 0.08))
-	var col_trim: Color = data.get("trim_color", Color.WHITE)
-	var headwear_type: String = data.get("headwear_type", "cap")
-	var accessory_type: String = data.get("accessory_type", "shades")
-
-	mat_black_jacket = _make_mat(col_jacket, 0.5)
-	var mat_pants = _make_mat(col_pants, 0.6)
-	var mat_skin = _make_mat(col_skin, 0.5)
-	var mat_hair = _make_mat(col_hair, 0.8)
-	var mat_head = _make_mat(col_head, 0.4)
-	var mat_shoes = _make_mat(col_shoes, 0.3)
-	var mat_trim = _make_mat(col_trim, 0.2)
-	var mat_dark_shades = _make_mat(Color(0.05, 0.05, 0.07), 0.1)
-	var mat_gold = _make_mat(Color(0.95, 0.80, 0.25), 0.2)
-	var mat_silver = _make_mat(Color(0.85, 0.88, 0.92), 0.2)
-	var mat_watch = _make_mat(Color(0.08, 0.10, 0.12), 0.18)
-	var mat_white = _make_mat(Color(0.98, 0.98, 1.0), 0.3)
-	var mat_pupil = _make_mat(Color(0.05, 0.05, 0.05), 0.1)
-	var mat_lips = _make_mat(col_skin.darkened(0.20), 0.6)
-
-	# --- PESCOÃƒâ€¡O & TORSO ---
-	torso_node = Node3D.new()
-	torso_node.position = Vector3(0.0, 0.85, 0.0)
-	model_root.add_child(torso_node)
-
-	var neck = MeshInstance3D.new()
-	var cyl_nk = CylinderMesh.new()
-	cyl_nk.top_radius = 0.09
-	cyl_nk.bottom_radius = 0.10
-	cyl_nk.height = 0.14
-	neck.mesh = cyl_nk
-	neck.material_override = mat_skin
-	neck.position = Vector3(0.0, 0.26, 0.0)
-	torso_node.add_child(neck)
-
-	var torso_mesh = MeshInstance3D.new()
-	var cap_torso = CapsuleMesh.new()
-	cap_torso.radius = 0.175
-	cap_torso.height = 0.48
-	torso_mesh.mesh = cap_torso
-	torso_mesh.material_override = mat_black_jacket
-	torso_node.add_child(torso_mesh)
-
-	# Lapelas / Abertura da Roupa
-	var lapel_l = MeshInstance3D.new()
-	var box_ll = BoxMesh.new()
-	box_ll.size = Vector3(0.045, 0.28, 0.02)
-	lapel_l.mesh = box_ll
-	lapel_l.material_override = mat_black_jacket
-	lapel_l.position = Vector3(-0.06, 0.05, -0.175)
-	lapel_l.rotation_degrees = Vector3(0, 0, -8)
-	torso_node.add_child(lapel_l)
-
-	var lapel_r = MeshInstance3D.new()
-	var box_lr = BoxMesh.new()
-	box_lr.size = Vector3(0.045, 0.28, 0.02)
-	lapel_r.mesh = box_lr
-	lapel_r.material_override = mat_black_jacket
-	lapel_r.position = Vector3(0.06, 0.05, -0.175)
-	lapel_r.rotation_degrees = Vector3(0, 0, 8)
-	torso_node.add_child(lapel_r)
-
-	if accessory_type == "tie_red":
-		var shirt = MeshInstance3D.new()
-		var box_sh = BoxMesh.new()
-		box_sh.size = Vector3(0.08, 0.26, 0.015)
-		shirt.mesh = box_sh
-		shirt.material_override = mat_white
-		shirt.position = Vector3(0.0, 0.06, -0.172)
-		torso_node.add_child(shirt)
-
-		var tie_knot = MeshInstance3D.new()
-		var box_tk = BoxMesh.new()
-		box_tk.size = Vector3(0.04, 0.04, 0.02)
-		tie_knot.mesh = box_tk
-		tie_knot.material_override = mat_trim
-		tie_knot.position = Vector3(0.0, 0.17, -0.18)
-		torso_node.add_child(tie_knot)
-
-		var tie = MeshInstance3D.new()
-		var box_tie = BoxMesh.new()
-		box_tie.size = Vector3(0.038, 0.26, 0.016)
-		tie.mesh = box_tie
-		tie.material_override = mat_trim
-		tie.position = Vector3(0.0, 0.03, -0.182)
-		torso_node.add_child(tie)
-
-	elif accessory_type == "scarf_red":
-		var scarf_collar = MeshInstance3D.new()
-		var cyl_sc = CylinderMesh.new()
-		cyl_sc.top_radius = 0.17
-		cyl_sc.bottom_radius = 0.19
-		cyl_sc.height = 0.08
-		scarf_collar.mesh = cyl_sc
-		scarf_collar.material_override = mat_trim
-		scarf_collar.position = Vector3(0.0, 0.20, 0.0)
-		torso_node.add_child(scarf_collar)
-
-		var scarf_knot = MeshInstance3D.new()
-		var box_sk = BoxMesh.new()
-		box_sk.size = Vector3(0.07, 0.08, 0.05)
-		scarf_knot.mesh = box_sk
-		scarf_knot.material_override = mat_trim
-		scarf_knot.position = Vector3(0.03, 0.16, -0.18)
-		torso_node.add_child(scarf_knot)
-
-		var scarf_tail = MeshInstance3D.new()
-		var box_st = BoxMesh.new()
-		box_st.size = Vector3(0.06, 0.26, 0.025)
-		scarf_tail.mesh = box_st
-		scarf_tail.material_override = mat_trim
-		scarf_tail.position = Vector3(0.03, 0.02, -0.185)
-		scarf_tail.rotation_degrees = Vector3(-4, 0, -2)
-		torso_node.add_child(scarf_tail)
-
-	elif accessory_type == "fur_hood":
-		var fur = MeshInstance3D.new()
-		var cyl_fur = CylinderMesh.new()
-		cyl_fur.top_radius = 0.21
-		cyl_fur.bottom_radius = 0.23
-		cyl_fur.height = 0.09
-		fur.mesh = cyl_fur
-		fur.material_override = mat_trim
-		fur.position = Vector3(0.0, 0.20, 0.0)
-		torso_node.add_child(fur)
-
-	elif accessory_type == "bandana":
-		var bandana = MeshInstance3D.new()
-		var box_bn = BoxMesh.new()
-		box_bn.size = Vector3(0.12, 0.14, 0.03)
-		bandana.mesh = box_bn
-		bandana.material_override = mat_trim
-		bandana.position = Vector3(0.0, 0.16, -0.16)
-		bandana.rotation_degrees = Vector3(-16, 0, 0)
-		torso_node.add_child(bandana)
-
-	elif accessory_type == "shoulder_pad":
-		var pad = MeshInstance3D.new()
-		var sph_p = SphereMesh.new()
-		sph_p.radius = 0.09
-		pad.mesh = sph_p
-		pad.material_override = mat_silver
-		pad.scale = Vector3(0.9, 0.6, 1.2)
-		pad.position = Vector3(-0.24, 0.20, 0.0)
-		torso_node.add_child(pad)
-
-		var strap = MeshInstance3D.new()
-		var box_str = BoxMesh.new()
-		box_str.size = Vector3(0.04, 0.36, 0.015)
-		strap.mesh = box_str
-		strap.material_override = _make_mat(Color("2d3436"), 0.4)
-		strap.position = Vector3(-0.04, 0.05, -0.176)
-		strap.rotation_degrees = Vector3(0, 0, -38)
-		torso_node.add_child(strap)
-
-	else:
-		var zipper = MeshInstance3D.new()
-		var box_z = BoxMesh.new()
-		box_z.size = Vector3(0.02, 0.34, 0.02)
-		zipper.mesh = box_z
-		zipper.material_override = mat_silver
-		zipper.position = Vector3(0.0, 0.05, -0.175)
-		torso_node.add_child(zipper)
-
-	var belt = MeshInstance3D.new()
-	var box_b = BoxMesh.new()
-	box_b.size = Vector3(0.35, 0.045, 0.33)
-	belt.mesh = box_b
-	belt.material_override = _make_mat(Color("0d0d10"), 0.4)
-	belt.position = Vector3(0.0, -0.18, 0.0)
-	torso_node.add_child(belt)
-
-	var buckle = MeshInstance3D.new()
-	var box_bk = BoxMesh.new()
-	box_bk.size = Vector3(0.06, 0.05, 0.025)
-	buckle.mesh = box_bk
-	buckle.material_override = mat_silver if accessory_type != "tie_red" else mat_gold
-	buckle.position = Vector3(0.0, -0.18, -0.172)
-	torso_node.add_child(buckle)
-
-	# --- CABEÃƒâ€¡A & ROSTO HIPER-DETALHADO DO DANTE ---
-	head_node = Node3D.new()
-	head_node.position = Vector3(0.0, 1.25, 0.0)
-	model_root.add_child(head_node)
-
-	var head_mesh = MeshInstance3D.new()
-	var sph_h = SphereMesh.new()
-	sph_h.radius = 0.17
-	sph_h.height = 0.32
-	head_mesh.mesh = sph_h
-	head_mesh.material_override = mat_skin
-	head_node.add_child(head_mesh)
-
-	var jaw = MeshInstance3D.new()
-	var box_jaw = BoxMesh.new()
-	box_jaw.size = Vector3(0.18, 0.09, 0.14)
-	jaw.mesh = box_jaw
-	jaw.material_override = mat_skin
-	jaw.position = Vector3(0.0, -0.10, -0.06)
-	jaw.rotation_degrees = Vector3(-16, 0, 0)
-	head_node.add_child(jaw)
-
-	# Orelhas 3D
-	var ear_l = MeshInstance3D.new()
-	var box_el = BoxMesh.new()
-	box_el.size = Vector3(0.02, 0.06, 0.04)
-	ear_l.mesh = box_el
-	ear_l.material_override = mat_skin
-	ear_l.position = Vector3(-0.175, 0.0, 0.0)
-	head_node.add_child(ear_l)
-
-	var ear_r = MeshInstance3D.new()
-	var box_er = BoxMesh.new()
-	box_er.size = Vector3(0.02, 0.06, 0.04)
-	ear_r.mesh = box_er
-	ear_r.material_override = mat_skin
-	ear_r.position = Vector3(0.175, 0.0, 0.0)
-	head_node.add_child(ear_r)
-
-	# Olhos Expressivos (Esclera Branca + ÃƒÂris Escura + Destaque Frontal)
-	var eye_l = MeshInstance3D.new()
-	var box_eyl = BoxMesh.new()
-	box_eyl.size = Vector3(0.046, 0.026, 0.018)
-	eye_l.mesh = box_eyl
-	eye_l.material_override = mat_white
-	eye_l.position = Vector3(-0.060, 0.038, -0.170)
-	head_node.add_child(eye_l)
-
-	var pupil_l = MeshInstance3D.new()
-	var box_pl = BoxMesh.new()
-	box_pl.size = Vector3(0.022, 0.022, 0.015)
-	pupil_l.mesh = box_pl
-	pupil_l.material_override = mat_pupil
-	pupil_l.position = Vector3(-0.060, 0.038, -0.178)
-	head_node.add_child(pupil_l)
-
-	var eye_r = MeshInstance3D.new()
-	var box_eyr = BoxMesh.new()
-	box_eyr.size = Vector3(0.046, 0.026, 0.018)
-	eye_r.mesh = box_eyr
-	eye_r.material_override = mat_white
-	eye_r.position = Vector3(0.060, 0.038, -0.170)
-	head_node.add_child(eye_r)
-
-	var pupil_r = MeshInstance3D.new()
-	var box_pr = BoxMesh.new()
-	box_pr.size = Vector3(0.022, 0.022, 0.015)
-	pupil_r.mesh = box_pr
-	pupil_r.material_override = mat_pupil
-	pupil_r.position = Vector3(0.060, 0.038, -0.178)
-	head_node.add_child(pupil_r)
-
-	# Sobrancelhas Estilizadas & Expressivas
-	var brow_l = MeshInstance3D.new()
-	var box_brl = BoxMesh.new()
-	box_brl.size = Vector3(0.052, 0.014, 0.016)
-	brow_l.mesh = box_brl
-	brow_l.material_override = mat_hair
-	brow_l.position = Vector3(-0.060, 0.065, -0.172)
-	brow_l.rotation_degrees = Vector3(0, 0, 8)
-	head_node.add_child(brow_l)
-
-	var brow_r = MeshInstance3D.new()
-	var box_brr = BoxMesh.new()
-	box_brr.size = Vector3(0.052, 0.014, 0.016)
-	brow_r.mesh = box_brr
-	brow_r.material_override = mat_hair
-	brow_r.position = Vector3(0.060, 0.065, -0.172)
-	brow_r.rotation_degrees = Vector3(0, 0, -8)
-	head_node.add_child(brow_r)
-
-	# Nariz Esculpido em 3D
-	var nose_bridge = MeshInstance3D.new()
-	var box_nb = BoxMesh.new()
-	box_nb.size = Vector3(0.022, 0.050, 0.026)
-	nose_bridge.mesh = box_nb
-	nose_bridge.material_override = mat_skin
-	nose_bridge.position = Vector3(0.0, 0.022, -0.176)
-	nose_bridge.rotation_degrees = Vector3(-12, 0, 0)
-	head_node.add_child(nose_bridge)
-
-	var nose_tip = MeshInstance3D.new()
-	var box_nt = BoxMesh.new()
-	box_nt.size = Vector3(0.034, 0.024, 0.028)
-	nose_tip.mesh = box_nt
-	nose_tip.material_override = mat_skin
-	nose_tip.position = Vector3(0.0, -0.008, -0.188)
-	head_node.add_child(nose_tip)
-
-	# Boca e LÃƒÂ¡bios Definidos
-	var lips = MeshInstance3D.new()
-	var box_lp = BoxMesh.new()
-	box_lp.size = Vector3(0.054, 0.014, 0.016)
-	lips.mesh = box_lp
-	lips.material_override = mat_lips
-	lips.position = Vector3(0.0, -0.060, -0.168)
-	head_node.add_child(lips)
-
-	# Ãƒâ€œculos Escuros Elegantes (Apenas quando o traje solicitar shades!)
-	if accessory_type == "shades":
-		var lens_l = MeshInstance3D.new()
-		var box_llens = BoxMesh.new()
-		box_llens.size = Vector3(0.048, 0.028, 0.012)
-		lens_l.mesh = box_llens
-		lens_l.material_override = mat_dark_shades
-		lens_l.position = Vector3(-0.060, 0.038, -0.182)
-		head_node.add_child(lens_l)
-
-		var lens_r = MeshInstance3D.new()
-		var box_rlens = BoxMesh.new()
-		box_rlens.size = Vector3(0.048, 0.028, 0.012)
-		lens_r.mesh = box_rlens
-		lens_r.material_override = mat_dark_shades
-		lens_r.position = Vector3(0.060, 0.038, -0.182)
-		head_node.add_child(lens_r)
-
-		var glasses_bridge = MeshInstance3D.new()
-		var box_gbr = BoxMesh.new()
-		box_gbr.size = Vector3(0.035, 0.006, 0.010)
-		glasses_bridge.mesh = box_gbr
-		glasses_bridge.material_override = mat_silver
-		glasses_bridge.position = Vector3(0.0, 0.042, -0.184)
-		head_node.add_child(glasses_bridge)
-
-		var temple_l = MeshInstance3D.new()
-		var box_tmpl = BoxMesh.new()
-		box_tmpl.size = Vector3(0.008, 0.008, 0.16)
-		temple_l.mesh = box_tmpl
-		temple_l.material_override = mat_silver
-		temple_l.position = Vector3(-0.115, 0.038, -0.08)
-		head_node.add_child(temple_l)
-
-		var temple_r = MeshInstance3D.new()
-		var box_tmpr = BoxMesh.new()
-		box_tmpr.size = Vector3(0.008, 0.008, 0.16)
-		temple_r.mesh = box_tmpr
-		temple_r.material_override = mat_silver
-		temple_r.position = Vector3(0.115, 0.038, -0.08)
-		head_node.add_child(temple_r)
-
-	# ChapÃƒÂ©us, BonÃƒÂ©s e Cabelos Estilizados
-	if headwear_type == "cowboy_hat":
-		var hat_crown = MeshInstance3D.new()
-		var cyl_c = CylinderMesh.new()
-		cyl_c.top_radius = 0.16
-		cyl_c.bottom_radius = 0.18
-		cyl_c.height = 0.16
-		hat_crown.mesh = cyl_c
-		hat_crown.material_override = mat_head
-		hat_crown.position = Vector3(0.0, 0.18, -0.01)
-		head_node.add_child(hat_crown)
-
-		var hat_band = MeshInstance3D.new()
-		var cyl_bnd = CylinderMesh.new()
-		cyl_bnd.top_radius = 0.182
-		cyl_bnd.bottom_radius = 0.182
-		cyl_bnd.height = 0.025
-		hat_band.mesh = cyl_bnd
-		hat_band.material_override = mat_trim
-		hat_band.position = Vector3(0.0, 0.11, -0.01)
-		head_node.add_child(hat_band)
-
-		var hat_brim = MeshInstance3D.new()
-		var cyl_br = CylinderMesh.new()
-		cyl_br.top_radius = 0.32
-		cyl_br.bottom_radius = 0.32
-		cyl_br.height = 0.02
-		hat_brim.mesh = cyl_br
-		hat_brim.material_override = mat_head
-		hat_brim.position = Vector3(0.0, 0.10, -0.01)
-		head_node.add_child(hat_brim)
-
-	elif headwear_type == "beanie":
-		var beanie = MeshInstance3D.new()
-		var sph_bn = SphereMesh.new()
-		sph_bn.radius = 0.185
-		sph_bn.height = 0.24
-		beanie.mesh = sph_bn
-		beanie.material_override = mat_head
-		beanie.position = Vector3(0.0, 0.09, 0.0)
-		head_node.add_child(beanie)
-
-	elif headwear_type == "cap":
-		var cap_body = MeshInstance3D.new()
-		var sph_cp = SphereMesh.new()
-		sph_cp.radius = 0.185
-		sph_cp.height = 0.22
-		cap_body.mesh = sph_cp
-		cap_body.material_override = mat_head
-		cap_body.position = Vector3(0.0, 0.08, -0.01)
-		head_node.add_child(cap_body)
-
-		var cap_brim = MeshInstance3D.new()
-		var box_br = BoxMesh.new()
-		box_br.size = Vector3(0.24, 0.020, 0.16)
-		cap_brim.mesh = box_br
-		cap_brim.material_override = mat_head
-		cap_brim.position = Vector3(0.0, 0.07, -0.19)
-		cap_brim.rotation_degrees = Vector3(12, 0, 0)
-		head_node.add_child(cap_brim)
-
-		var logo = MeshInstance3D.new()
-		var box_lg = BoxMesh.new()
-		box_lg.size = Vector3(0.06, 0.05, 0.01)
-		logo.mesh = box_lg
-		logo.material_override = mat_white
-		logo.position = Vector3(0.0, 0.11, -0.16)
-		head_node.add_child(logo)
-
-	elif headwear_type == "cap_backwards":
-		var cap_b = MeshInstance3D.new()
-		var sph_cpb = SphereMesh.new()
-		sph_cpb.radius = 0.185
-		sph_cpb.height = 0.22
-		cap_b.mesh = sph_cpb
-		cap_b.material_override = mat_head
-		cap_b.position = Vector3(0.0, 0.08, -0.01)
-		head_node.add_child(cap_b)
-
-		var brim_b = MeshInstance3D.new()
-		var box_brb = BoxMesh.new()
-		box_brb.size = Vector3(0.22, 0.020, 0.14)
-		brim_b.mesh = box_brb
-		brim_b.material_override = mat_head
-		brim_b.position = Vector3(0.0, 0.07, 0.16)
-		brim_b.rotation_degrees = Vector3(-12, 0, 0)
-		head_node.add_child(brim_b)
-
-	elif headwear_type == "tactical_helmet":
-		var helmet = MeshInstance3D.new()
-		var sph_hl = SphereMesh.new()
-		sph_hl.radius = 0.195
-		sph_hl.height = 0.24
-		helmet.mesh = sph_hl
-		helmet.material_override = mat_head
-		helmet.position = Vector3(0.0, 0.09, 0.0)
-		head_node.add_child(helmet)
-
-	elif headwear_type == "goggles":
-		var gog = MeshInstance3D.new()
-		var box_gg = BoxMesh.new()
-		box_gg.size = Vector3(0.24, 0.06, 0.06)
-		gog.mesh = box_gg
-		gog.material_override = mat_head
-		gog.position = Vector3(0.0, 0.04, -0.16)
-		head_node.add_child(gog)
-
-	# Cabelo do Dante (Mechas e Caimento Natural)
-	if headwear_type in ["hair_only", "goggles", "cowboy_hat"]:
-		var hair_top = MeshInstance3D.new()
-		var sph_ht = SphereMesh.new()
-		sph_ht.radius = 0.180
-		sph_ht.height = 0.20
-		hair_top.mesh = sph_ht
-		hair_top.material_override = mat_hair
-		hair_top.position = Vector3(0.0, 0.09, 0.01)
-		head_node.add_child(hair_top)
-
-	var hair_back = MeshInstance3D.new()
-	var box_hb = BoxMesh.new()
-	box_hb.size = Vector3(0.24, 0.30, 0.10)
-	hair_back.mesh = box_hb
-	hair_back.material_override = mat_hair
-	hair_back.position = Vector3(0.0, -0.06, 0.12)
-	head_node.add_child(hair_back)
-
-	var hair_l = MeshInstance3D.new()
-	var box_hl = BoxMesh.new()
-	box_hl.size = Vector3(0.06, 0.24, 0.08)
-	hair_l.mesh = box_hl
-	hair_l.material_override = mat_hair
-	hair_l.position = Vector3(-0.155, -0.05, 0.02)
-	head_node.add_child(hair_l)
-
-	var hair_r = MeshInstance3D.new()
-	var box_hr = BoxMesh.new()
-	box_hr.size = Vector3(0.06, 0.24, 0.08)
-	hair_r.mesh = box_hr
-	hair_r.material_override = mat_hair
-	hair_r.position = Vector3(0.155, -0.05, 0.02)
-	head_node.add_child(hair_r)
-
-	# 3. BRAÃƒâ€¡O ESQUERDO
-	left_upper_arm = Node3D.new()
-	left_upper_arm.position = Vector3(-0.24, 1.05, 0.0)
-	model_root.add_child(left_upper_arm)
-	left_upper_arm.add_child(_create_limb_mesh(0.050, 0.22, mat_black_jacket, Vector3(0, -0.11, 0)))
-
-	left_lower_arm = Node3D.new()
-	left_lower_arm.position = Vector3(0, -0.22, 0)
-	left_upper_arm.add_child(left_lower_arm)
-	left_lower_arm.add_child(_create_limb_mesh(0.042, 0.18, mat_black_jacket, Vector3(0, -0.09, 0)))
-
-	var watch = MeshInstance3D.new()
-	var box_w = BoxMesh.new()
-	box_w.size = Vector3(0.05, 0.04, 0.05)
-	watch.mesh = box_w
-	watch.material_override = mat_watch
-	watch.position = Vector3(-0.02, -0.14, 0.0)
-	left_lower_arm.add_child(watch)
-
-	var glove_l = MeshInstance3D.new()
-	var box_glv_l = BoxMesh.new()
-	box_glv_l.size = Vector3(0.05, 0.06, 0.06)
-	glove_l.mesh = box_glv_l
-	glove_l.material_override = mat_head
-	glove_l.position = Vector3(0.0, -0.17, 0.0)
-	left_lower_arm.add_child(glove_l)
-
-	# 4. BRAÃƒâ€¡O DIREITO
-	right_upper_arm = Node3D.new()
-	right_upper_arm.position = Vector3(0.24, 1.05, 0.0)
-	model_root.add_child(right_upper_arm)
-	right_upper_arm.add_child(_create_limb_mesh(0.050, 0.22, mat_black_jacket, Vector3(0, -0.11, 0)))
-
-	right_lower_arm = Node3D.new()
-	right_lower_arm.position = Vector3(0, -0.22, 0)
-	right_upper_arm.add_child(right_lower_arm)
-	right_lower_arm.add_child(_create_limb_mesh(0.042, 0.18, mat_black_jacket, Vector3(0, -0.09, 0)))
-
-	var glove_r = MeshInstance3D.new()
-	var box_glv_r = BoxMesh.new()
-	box_glv_r.size = Vector3(0.05, 0.06, 0.06)
-	glove_r.mesh = box_glv_r
-	glove_r.material_override = mat_head
-	glove_r.position = Vector3(0.0, -0.17, 0.0)
-	right_lower_arm.add_child(glove_r)
-
-	weapon_mount_node = Node3D.new()
-	weapon_mount_node.position = Vector3(0.0, -0.18, -0.08)
-	right_lower_arm.add_child(weapon_mount_node)
-	_update_equipped_weapon_3d_mesh()
-
-	# 5. PERNA ESQUERDA
-	left_upper_leg = Node3D.new()
-	left_upper_leg.position = Vector3(-0.11, 0.65, 0.0)
-	model_root.add_child(left_upper_leg)
-	left_upper_leg.add_child(_create_limb_mesh(0.068, 0.28, mat_pants, Vector3(0, -0.14, 0)))
-
-	var cargo_pocket_l = MeshInstance3D.new()
-	var box_p_l = BoxMesh.new()
-	box_p_l.size = Vector3(0.03, 0.10, 0.08)
-	cargo_pocket_l.mesh = box_p_l
-	cargo_pocket_l.material_override = mat_pants
-	cargo_pocket_l.position = Vector3(-0.06, -0.14, 0.0)
-	left_upper_leg.add_child(cargo_pocket_l)
-
-	left_lower_leg = Node3D.new()
-	left_lower_leg.position = Vector3(0, -0.28, 0)
-	left_upper_leg.add_child(left_lower_leg)
-	left_lower_leg.add_child(_create_limb_mesh(0.058, 0.26, mat_pants, Vector3(0, -0.13, 0)))
-	left_lower_leg.add_child(_create_shoe_mesh(mat_shoes, Vector3(0, -0.26, -0.02)))
-
-	# 6. PERNA DIREITA
-	right_upper_leg = Node3D.new()
-	right_upper_leg.position = Vector3(0.11, 0.65, 0.0)
-	model_root.add_child(right_upper_leg)
-	right_upper_leg.add_child(_create_limb_mesh(0.068, 0.28, mat_pants, Vector3(0, -0.14, 0)))
-
-	var cargo_pocket_r = MeshInstance3D.new()
-	var box_p_r = BoxMesh.new()
-	box_p_r.size = Vector3(0.03, 0.10, 0.08)
-	cargo_pocket_r.mesh = box_p_r
-	cargo_pocket_r.material_override = mat_pants
-	cargo_pocket_r.position = Vector3(0.06, -0.14, 0.0)
-	right_upper_leg.add_child(cargo_pocket_r)
-
-	right_lower_leg = Node3D.new()
-	right_lower_leg.position = Vector3(0, -0.28, 0)
-	right_upper_leg.add_child(right_lower_leg)
-	right_lower_leg.add_child(_create_limb_mesh(0.058, 0.26, mat_pants, Vector3(0, -0.13, 0)))
-	right_lower_leg.add_child(_create_shoe_mesh(mat_shoes, Vector3(0, -0.26, -0.02)))
+	DanteVisualAdapter.build_dante_rig(self, current_outfit_id)
 
 func _update_equipped_weapon_3d_mesh() -> void:
+	_muzzle_flash_epoch += 1
 	if not weapon_mount_node:
 		return
 	for child in weapon_mount_node.get_children():
+		child.visible = false
 		child.queue_free()
 
 	current_gun_mesh = Node3D.new()
+	current_gun_mesh.position = -combat_pose.GRIPS.get(active_weapon_id, Vector3.ZERO)
 	weapon_mount_node.add_child(current_gun_mesh)
 
-	var mat_chrome := StandardMaterial3D.new()
-	mat_chrome.albedo_color = Color(0.84, 0.86, 0.90)
-	mat_chrome.metallic = 0.92
-	mat_chrome.roughness = 0.18
-
-	var mat_gunmetal := StandardMaterial3D.new()
-	mat_gunmetal.albedo_color = Color(0.18, 0.20, 0.24)
-	mat_gunmetal.metallic = 0.85
-	mat_gunmetal.roughness = 0.35
-
-	var mat_polymer := StandardMaterial3D.new()
-	mat_polymer.albedo_color = Color(0.08, 0.08, 0.10)
-	mat_polymer.roughness = 0.70
-
-	var mat_wood := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.55, 0.28, 0.14)
-	mat_wood.roughness = 0.55
-
-	var mat_brass := StandardMaterial3D.new()
-	mat_brass.albedo_color = Color(0.92, 0.78, 0.22)
-	mat_brass.metallic = 0.88
-	mat_brass.roughness = 0.25
-
-	var flash_pos := Vector3(0.0, 0.0, -0.15)
-
-	match active_weapon_id:
-		"shotgun":
-			# 1. Cano Principal Superior de AÃƒÂ§o
-			var barrel = MeshInstance3D.new()
-			var cyl_b = CylinderMesh.new()
-			cyl_b.top_radius = 0.020
-			cyl_b.bottom_radius = 0.020
-			cyl_b.height = 0.44
-			barrel.mesh = cyl_b
-			barrel.material_override = mat_chrome
-			barrel.rotation_degrees = Vector3(90, 0, 0)
-			barrel.position = Vector3(0.0, 0.03, -0.18)
-			current_gun_mesh.add_child(barrel)
-
-			# 2. Tubo do Carregador Inferior
-			var mag_tube = MeshInstance3D.new()
-			var cyl_mt = CylinderMesh.new()
-			cyl_mt.top_radius = 0.016
-			cyl_mt.bottom_radius = 0.016
-			cyl_mt.height = 0.32
-			mag_tube.mesh = cyl_mt
-			mag_tube.material_override = mat_gunmetal
-			mag_tube.rotation_degrees = Vector3(90, 0, 0)
-			mag_tube.position = Vector3(0.0, -0.01, -0.12)
-			current_gun_mesh.add_child(mag_tube)
-
-			# 3. AbraÃƒÂ§adeira do Cano / Mira de Esfera Dourada
-			var band = MeshInstance3D.new()
-			var box_bd = BoxMesh.new()
-			box_bd.size = Vector3(0.045, 0.065, 0.02)
-			band.mesh = box_bd
-			band.material_override = mat_gunmetal
-			band.position = Vector3(0.0, 0.01, -0.34)
-			current_gun_mesh.add_child(band)
-
-			var front_bead = MeshInstance3D.new()
-			var sph_bd = SphereMesh.new()
-			sph_bd.radius = 0.012
-			sph_bd.height = 0.024
-			front_bead.mesh = sph_bd
-			front_bead.material_override = mat_brass
-			front_bead.position = Vector3(0.0, 0.055, -0.38)
-			current_gun_mesh.add_child(front_bead)
-
-			# 4. Telha de Bombeamento Estriada de Madeira
-			var pump = MeshInstance3D.new()
-			var box_p = BoxMesh.new()
-			box_p.size = Vector3(0.052, 0.052, 0.14)
-			pump.mesh = box_p
-			pump.material_override = mat_wood
-			pump.position = Vector3(0.0, -0.01, -0.16)
-			current_gun_mesh.add_child(pump)
-
-			# 5. Caixa da Culatra (Receptor) com Janela de EjeÃƒÂ§ÃƒÂ£o
-			var receiver = MeshInstance3D.new()
-			var box_rc = BoxMesh.new()
-			box_rc.size = Vector3(0.048, 0.075, 0.16)
-			receiver.mesh = box_rc
-			receiver.material_override = mat_gunmetal
-			receiver.position = Vector3(0.0, 0.01, 0.0)
-			current_gun_mesh.add_child(receiver)
-
-			# 6. Coronha ClÃƒÂ¡ssica de Madeira com Soleira
-			var stock = MeshInstance3D.new()
-			var box_s = BoxMesh.new()
-			box_s.size = Vector3(0.042, 0.085, 0.20)
-			stock.mesh = box_s
-			stock.material_override = mat_wood
-			stock.position = Vector3(0.0, -0.04, 0.16)
-			current_gun_mesh.add_child(stock)
-
-			var pad = MeshInstance3D.new()
-			var box_pd = BoxMesh.new()
-			box_pd.size = Vector3(0.044, 0.090, 0.02)
-			pad.mesh = box_pd
-			pad.material_override = mat_polymer
-			pad.position = Vector3(0.0, -0.04, 0.26)
-			current_gun_mesh.add_child(pad)
-
-			flash_pos = Vector3(0.0, 0.03, -0.42)
-
-		"sawed_off":
-			# Cano Duplo Curto Serrado (Side-by-side)
-			var barrel_l = MeshInstance3D.new()
-			var cyl_bl = CylinderMesh.new()
-			cyl_bl.top_radius = 0.018
-			cyl_bl.bottom_radius = 0.018
-			cyl_bl.height = 0.22
-			barrel_l.mesh = cyl_bl
-			barrel_l.material_override = mat_chrome
-			barrel_l.rotation_degrees = Vector3(90, 0, 0)
-			barrel_l.position = Vector3(-0.018, 0.02, -0.10)
-			current_gun_mesh.add_child(barrel_l)
-
-			var barrel_r = MeshInstance3D.new()
-			var cyl_br = CylinderMesh.new()
-			cyl_br.top_radius = 0.018
-			cyl_br.bottom_radius = 0.018
-			cyl_br.height = 0.22
-			barrel_r.mesh = cyl_br
-			barrel_r.material_override = mat_chrome
-			barrel_r.rotation_degrees = Vector3(90, 0, 0)
-			barrel_r.position = Vector3(0.018, 0.02, -0.10)
-			current_gun_mesh.add_child(barrel_r)
-
-			# Receptor Basculante
-			var receiver_so = MeshInstance3D.new()
-			var box_rso = BoxMesh.new()
-			box_rso.size = Vector3(0.062, 0.065, 0.12)
-			receiver_so.mesh = box_rso
-			receiver_so.material_override = mat_gunmetal
-			receiver_so.position = Vector3(0.0, 0.01, 0.01)
-			current_gun_mesh.add_child(receiver_so)
-
-			# Cabo Pistola Serrado de Madeira
-			var grip_so = MeshInstance3D.new()
-			var box_gso = BoxMesh.new()
-			box_gso.size = Vector3(0.038, 0.10, 0.06)
-			grip_so.mesh = box_gso
-			grip_so.material_override = mat_wood
-			grip_so.position = Vector3(0.0, -0.05, 0.05)
-			grip_so.rotation_degrees = Vector3(-20, 0, 0)
-			current_gun_mesh.add_child(grip_so)
-
-			flash_pos = Vector3(0.0, 0.02, -0.23)
-
-		"magnum":
-			# RevÃƒÂ³lver Magnum .44 com cano longo de 8", nervura superior e tambor
-			var barrel_mg = MeshInstance3D.new()
-			var box_bmg = BoxMesh.new()
-			box_bmg.size = Vector3(0.032, 0.045, 0.22)
-			barrel_mg.mesh = box_bmg
-			barrel_mg.material_override = mat_chrome
-			barrel_mg.position = Vector3(0.0, 0.03, -0.11)
-			current_gun_mesh.add_child(barrel_mg)
-
-			var front_sight_mg = MeshInstance3D.new()
-			var box_fsm = BoxMesh.new()
-			box_fsm.size = Vector3(0.012, 0.018, 0.018)
-			front_sight_mg.mesh = box_fsm
-			front_sight_mg.material_override = mat_brass
-			front_sight_mg.position = Vector3(0.0, 0.06, -0.21)
-			current_gun_mesh.add_child(front_sight_mg)
-
-			# Tambor GiratÃƒÂ³rio
-			var cylinder_mg = MeshInstance3D.new()
-			var cyl_mg = CylinderMesh.new()
-			cyl_mg.top_radius = 0.028
-			cyl_mg.bottom_radius = 0.028
-			cyl_mg.height = 0.08
-			cylinder_mg.mesh = cyl_mg
-			cylinder_mg.material_override = mat_gunmetal
-			cylinder_mg.rotation_degrees = Vector3(90, 0, 0)
-			cylinder_mg.position = Vector3(0.0, 0.01, 0.0)
-			current_gun_mesh.add_child(cylinder_mg)
-
-			# Cabo de Madeira Nobre
-			var grip_mg = MeshInstance3D.new()
-			var box_gmg = BoxMesh.new()
-			box_gmg.size = Vector3(0.034, 0.10, 0.055)
-			grip_mg.mesh = box_gmg
-			grip_mg.material_override = mat_wood
-			grip_mg.position = Vector3(0.0, -0.05, 0.03)
-			grip_mg.rotation_degrees = Vector3(-18, 0, 0)
-			current_gun_mesh.add_child(grip_mg)
-
-			flash_pos = Vector3(0.0, 0.03, -0.24)
-
-		"ak47":
-			# Fuzil AK-47 com madeira clÃƒÂ¡ssica, quebra-chamas e carregador curvo
-			var barrel_ak = MeshInstance3D.new()
-			var cyl_ak = CylinderMesh.new()
-			cyl_ak.top_radius = 0.015
-			cyl_ak.bottom_radius = 0.015
-			cyl_ak.height = 0.36
-			barrel_ak.mesh = cyl_ak
-			barrel_ak.material_override = mat_chrome
-			barrel_ak.rotation_degrees = Vector3(90, 0, 0)
-			barrel_ak.position = Vector3(0.0, 0.02, -0.22)
-			current_gun_mesh.add_child(barrel_ak)
-
-			# Guarda-mÃƒÂ£o de Madeira
-			var hguard_ak = MeshInstance3D.new()
-			var box_hg = BoxMesh.new()
-			box_hg.size = Vector3(0.048, 0.060, 0.16)
-			hguard_ak.mesh = box_hg
-			hguard_ak.material_override = mat_wood
-			hguard_ak.position = Vector3(0.0, 0.01, -0.15)
-			current_gun_mesh.add_child(hguard_ak)
-
-			# Receptor de AÃƒÂ§o Estampado
-			var receiver_ak = MeshInstance3D.new()
-			var box_rak = BoxMesh.new()
-			box_rak.size = Vector3(0.046, 0.075, 0.20)
-			receiver_ak.mesh = box_rak
-			receiver_ak.material_override = mat_gunmetal
-			receiver_ak.position = Vector3(0.0, 0.01, 0.0)
-			current_gun_mesh.add_child(receiver_ak)
-
-			# Carregador Banana Curvo
-			var mag_ak = MeshInstance3D.new()
-			var box_mak = BoxMesh.new()
-			box_mak.size = Vector3(0.028, 0.18, 0.06)
-			mag_ak.mesh = box_mak
-			mag_ak.material_override = mat_gunmetal
-			mag_ak.position = Vector3(0.0, -0.11, -0.05)
-			mag_ak.rotation_degrees = Vector3(22, 0, 0)
-			current_gun_mesh.add_child(mag_ak)
-
-			# Coronha de Madeira ClÃƒÂ¡ssica
-			var stock_ak = MeshInstance3D.new()
-			var box_sak = BoxMesh.new()
-			box_sak.size = Vector3(0.040, 0.080, 0.22)
-			stock_ak.mesh = box_sak
-			stock_ak.material_override = mat_wood
-			stock_ak.position = Vector3(0.0, -0.02, 0.18)
-			current_gun_mesh.add_child(stock_ak)
-
-			flash_pos = Vector3(0.0, 0.02, -0.42)
-
-		"m4a1":
-			# Fuzil M4A1 TÃƒÂ¡tico Militar com Mira HologrÃƒÂ¡fica
-			var barrel_m4 = MeshInstance3D.new()
-			var cyl_m4 = CylinderMesh.new()
-			cyl_m4.top_radius = 0.015
-			cyl_m4.bottom_radius = 0.015
-			cyl_m4.height = 0.34
-			barrel_m4.mesh = cyl_m4
-			barrel_m4.material_override = mat_chrome
-			barrel_m4.rotation_degrees = Vector3(90, 0, 0)
-			barrel_m4.position = Vector3(0.0, 0.02, -0.22)
-			current_gun_mesh.add_child(barrel_m4)
-
-			# Guarda-mÃƒÂ£o Quad-Rail Preto
-			var rail_m4 = MeshInstance3D.new()
-			var box_rm4 = BoxMesh.new()
-			box_rm4.size = Vector3(0.046, 0.055, 0.16)
-			rail_m4.mesh = box_rm4
-			rail_m4.material_override = mat_polymer
-			rail_m4.position = Vector3(0.0, 0.015, -0.15)
-			current_gun_mesh.add_child(rail_m4)
-
-			# Receptor Preto com Mira HologrÃƒÂ¡fica
-			var receiver_m4 = MeshInstance3D.new()
-			var box_rcm4 = BoxMesh.new()
-			box_rcm4.size = Vector3(0.046, 0.075, 0.20)
-			receiver_m4.mesh = box_rcm4
-			receiver_m4.material_override = mat_gunmetal
-			receiver_m4.position = Vector3(0.0, 0.01, 0.0)
-			current_gun_mesh.add_child(receiver_m4)
-
-			var holo_sight = MeshInstance3D.new()
-			var box_hs = BoxMesh.new()
-			box_hs.size = Vector3(0.035, 0.035, 0.07)
-			holo_sight.mesh = box_hs
-			holo_sight.material_override = mat_polymer
-			holo_sight.position = Vector3(0.0, 0.065, -0.02)
-			current_gun_mesh.add_child(holo_sight)
-
-			# Carregador STANAG 30 Tiros
-			var mag_m4 = MeshInstance3D.new()
-			var box_mm4 = BoxMesh.new()
-			box_mm4.size = Vector3(0.026, 0.16, 0.055)
-			mag_m4.mesh = box_mm4
-			mag_m4.material_override = mat_polymer
-			mag_m4.position = Vector3(0.0, -0.10, -0.04)
-			mag_m4.rotation_degrees = Vector3(10, 0, 0)
-			current_gun_mesh.add_child(mag_m4)
-
-			# Coronha TÃƒÂ¡tica RetrÃƒÂ¡til Crane
-			var stock_m4 = MeshInstance3D.new()
-			var box_sm4 = BoxMesh.new()
-			box_sm4.size = Vector3(0.038, 0.080, 0.18)
-			stock_m4.mesh = box_sm4
-			stock_m4.material_override = mat_polymer
-			stock_m4.position = Vector3(0.0, 0.0, 0.16)
-			current_gun_mesh.add_child(stock_m4)
-
-			flash_pos = Vector3(0.0, 0.02, -0.40)
-
-		"rpg":
-			# LanÃƒÂ§a-Foguetes RPG-7 apoiado diretamente sobre o ombro direito
-			var launcher_tube = MeshInstance3D.new()
-			var cyl_tube = CylinderMesh.new()
-			cyl_tube.top_radius = 0.034
-			cyl_tube.bottom_radius = 0.034
-			cyl_tube.height = 0.74
-			launcher_tube.mesh = cyl_tube
-			launcher_tube.material_override = _make_mat(Color(0.22, 0.28, 0.18), 0.4)
-			launcher_tube.rotation_degrees = Vector3(90, 0, 0)
-			launcher_tube.position = Vector3(0.0, 0.08, 0.05)
-			current_gun_mesh.add_child(launcher_tube)
-
-			# Cone Exaustor Traseiro
-			var exhaust = MeshInstance3D.new()
-			var cyl_ex = CylinderMesh.new()
-			cyl_ex.top_radius = 0.048
-			cyl_ex.bottom_radius = 0.034
-			cyl_ex.height = 0.12
-			exhaust.mesh = cyl_ex
-			exhaust.material_override = mat_gunmetal
-			exhaust.rotation_degrees = Vector3(90, 0, 0)
-			exhaust.position = Vector3(0.0, 0.08, 0.44)
-			current_gun_mesh.add_child(exhaust)
-
-			# Ogiva CÃƒÂ´nica RPG Frontal
-			var warhead = MeshInstance3D.new()
-			var cyl_wh = CylinderMesh.new()
-			cyl_wh.top_radius = 0.008
-			cyl_wh.bottom_radius = 0.056
-			cyl_wh.height = 0.18
-			warhead.mesh = cyl_wh
-			warhead.material_override = _make_mat(Color(0.32, 0.42, 0.20), 0.3)
-			warhead.rotation_degrees = Vector3(90, 0, 0)
-			warhead.position = Vector3(0.0, 0.08, -0.40)
-			current_gun_mesh.add_child(warhead)
-
-			# Escudo TÃƒÂ©rmico de Madeira
-			var shield_rpg = MeshInstance3D.new()
-			var cyl_sh = CylinderMesh.new()
-			cyl_sh.top_radius = 0.042
-			cyl_sh.bottom_radius = 0.042
-			cyl_sh.height = 0.24
-			shield_rpg.mesh = cyl_sh
-			shield_rpg.material_override = mat_wood
-			shield_rpg.rotation_degrees = Vector3(90, 0, 0)
-			shield_rpg.position = Vector3(0.0, 0.08, 0.0)
-			current_gun_mesh.add_child(shield_rpg)
-
-			# Empunhadura e Gatilho do RPG
-			var grip_rpg = MeshInstance3D.new()
-			var box_grpg = BoxMesh.new()
-			box_grpg.size = Vector3(0.032, 0.09, 0.045)
-			grip_rpg.mesh = box_grpg
-			grip_rpg.material_override = mat_gunmetal
-			grip_rpg.position = Vector3(0.0, 0.0, -0.10)
-			current_gun_mesh.add_child(grip_rpg)
-
-			flash_pos = Vector3(0.0, 0.08, -0.50)
-
-		"flamethrower":
-			# LanÃƒÂ§a-Chamas com Bico LanÃƒÂ§a-Jato e Garrafa de CombustÃƒÂ­vel
-			var flame_tube = MeshInstance3D.new()
-			var cyl_ft = CylinderMesh.new()
-			cyl_ft.top_radius = 0.024
-			cyl_ft.bottom_radius = 0.024
-			cyl_ft.height = 0.42
-			flame_tube.mesh = cyl_ft
-			flame_tube.material_override = mat_gunmetal
-			flame_tube.rotation_degrees = Vector3(90, 0, 0)
-			flame_tube.position = Vector3(0.0, 0.02, -0.16)
-			current_gun_mesh.add_child(flame_tube)
-
-			# BotijÃƒÂ£o de CombustÃƒÂ­vel Vermelho no Corpo da Arma
-			var fuel_tank = MeshInstance3D.new()
-			var cyl_tk = CylinderMesh.new()
-			cyl_tk.top_radius = 0.045
-			cyl_tk.bottom_radius = 0.045
-			cyl_tk.height = 0.16
-			fuel_tank.mesh = cyl_tk
-			fuel_tank.material_override = _make_mat(Color(0.85, 0.15, 0.12), 0.3)
-			fuel_tank.rotation_degrees = Vector3(90, 0, 0)
-			fuel_tank.position = Vector3(0.0, -0.05, -0.12)
-			current_gun_mesh.add_child(fuel_tank)
-
-			flash_pos = Vector3(0.0, 0.02, -0.38)
-
-		"grenade":
-			# Granada de MÃƒÂ£o de FragmentaÃƒÂ§ÃƒÂ£o Tipo Abacaxi
-			var grenade_body = MeshInstance3D.new()
-			var sph_gn = SphereMesh.new()
-			sph_gn.radius = 0.045
-			sph_gn.height = 0.09
-			grenade_body.mesh = sph_gn
-			grenade_body.material_override = _make_mat(Color(0.25, 0.35, 0.18), 0.4)
-			grenade_body.position = Vector3(0.0, 0.0, -0.10)
-			current_gun_mesh.add_child(grenade_body)
-
-			var pin = MeshInstance3D.new()
-			var cyl_pn = CylinderMesh.new()
-			cyl_pn.top_radius = 0.015
-			cyl_pn.bottom_radius = 0.015
-			cyl_pn.height = 0.03
-			pin.mesh = cyl_pn
-			pin.material_override = mat_brass
-			pin.position = Vector3(0.0, 0.055, -0.10)
-			current_gun_mesh.add_child(pin)
-
-			flash_pos = Vector3(0.0, 0.0, -0.12)
-
-		"smg", "micro_smg":
-			# 1. Receptor TÃƒÂ¡tico com Trilho Superior
-			var receiver = MeshInstance3D.new()
-			var box_r = BoxMesh.new()
-			box_r.size = Vector3(0.046, 0.072, 0.24)
-			receiver.mesh = box_r
-			receiver.material_override = mat_gunmetal
-			receiver.position = Vector3(0.0, 0.01, -0.06)
-			current_gun_mesh.add_child(receiver)
-
-			var rail = MeshInstance3D.new()
-			var box_rl = BoxMesh.new()
-			box_rl.size = Vector3(0.035, 0.015, 0.18)
-			rail.mesh = box_rl
-			rail.material_override = mat_polymer
-			rail.position = Vector3(0.0, 0.052, -0.06)
-			current_gun_mesh.add_child(rail)
-
-			# 2. Cano com Quebra-Chamas / Compensador TÃƒÂ¡tico
-			var barrel = MeshInstance3D.new()
-			var cyl_smg = CylinderMesh.new()
-			cyl_smg.top_radius = 0.016
-			cyl_smg.bottom_radius = 0.016
-			cyl_smg.height = 0.16
-			barrel.mesh = cyl_smg
-			barrel.material_override = mat_chrome
-			barrel.rotation_degrees = Vector3(90, 0, 0)
-			barrel.position = Vector3(0.0, 0.01, -0.24)
-			current_gun_mesh.add_child(barrel)
-
-			var comp = MeshInstance3D.new()
-			var cyl_cp = CylinderMesh.new()
-			cyl_cp.top_radius = 0.022
-			cyl_cp.bottom_radius = 0.022
-			cyl_cp.height = 0.05
-			comp.mesh = cyl_cp
-			comp.material_override = mat_gunmetal
-			comp.rotation_degrees = Vector3(90, 0, 0)
-			comp.position = Vector3(0.0, 0.01, -0.32)
-			current_gun_mesh.add_child(comp)
-
-			# 3. Carregador Curvo Banana de 30 Tiros
-			var mag = MeshInstance3D.new()
-			var box_m = BoxMesh.new()
-			box_m.size = Vector3(0.028, 0.16, 0.05)
-			mag.mesh = box_m
-			mag.material_override = mat_polymer
-			mag.position = Vector3(0.0, -0.10, -0.07)
-			mag.rotation_degrees = Vector3(18, 0, 0)
-			current_gun_mesh.add_child(mag)
-
-			# 4. Empunhadura e Coronha TÃƒÂ¡tica RebatÃƒÂ­vel Dobrada
-			var grip = MeshInstance3D.new()
-			var box_gp = BoxMesh.new()
-			box_gp.size = Vector3(0.034, 0.09, 0.05)
-			grip.mesh = box_gp
-			grip.material_override = mat_polymer
-			grip.position = Vector3(0.0, -0.05, 0.03)
-			grip.rotation_degrees = Vector3(-12, 0, 0)
-			current_gun_mesh.add_child(grip)
-
-			var wire_stock = MeshInstance3D.new()
-			var box_ws = BoxMesh.new()
-			box_ws.size = Vector3(0.038, 0.03, 0.14)
-			wire_stock.mesh = box_ws
-			wire_stock.material_override = mat_chrome
-			wire_stock.position = Vector3(0.0, 0.03, 0.12)
-			current_gun_mesh.add_child(wire_stock)
-
-			flash_pos = Vector3(0.0, 0.01, -0.36)
-
-		"fists":
-			# Maos livres: nao adiciona nenhuma peca ao suporte da arma. current_gun_mesh
-			# ja e' um Node3D vazio criado acima, entao o jogador simplesmente nao
-			# segura nada -- isso e' o que resolve "so tem arma equipada, sumiu o soco".
-			pass
-
-		"knife":
-			# Faca de combate: cabo de polimero + lamina curta cromada, na mesma escala
-			# das outras armas (~0.03-0.17m em torno da origem do suporte da mao).
-			var knife_handle = MeshInstance3D.new()
-			var box_kh = BoxMesh.new()
-			box_kh.size = Vector3(0.026, 0.026, 0.09)
-			knife_handle.mesh = box_kh
-			knife_handle.material_override = mat_polymer
-			knife_handle.position = Vector3(0.0, 0.0, 0.03)
-			current_gun_mesh.add_child(knife_handle)
-
-			var knife_guard = MeshInstance3D.new()
-			var box_kg = BoxMesh.new()
-			box_kg.size = Vector3(0.05, 0.012, 0.012)
-			knife_guard.mesh = box_kg
-			knife_guard.material_override = mat_brass
-			knife_guard.position = Vector3(0.0, 0.0, -0.015)
-			current_gun_mesh.add_child(knife_guard)
-
-			var knife_blade = MeshInstance3D.new()
-			var box_kb = BoxMesh.new()
-			box_kb.size = Vector3(0.014, 0.004, 0.14)
-			knife_blade.mesh = box_kb
-			knife_blade.material_override = mat_chrome
-			knife_blade.position = Vector3(0.0, 0.0, -0.09)
-			current_gun_mesh.add_child(knife_blade)
-
-			flash_pos = Vector3(0.0, 0.0, -0.16)
-
-		_: # "pistol" (9mm Beretta / Glock)
-			# 1. Ferrolho de AÃƒÂ§o Usinado Cromado com Ranhuras
-			var slide = MeshInstance3D.new()
-			var box_g = BoxMesh.new()
-			box_g.size = Vector3(0.038, 0.055, 0.17)
-			slide.mesh = box_g
-			slide.material_override = mat_chrome
-			slide.position = Vector3(0.0, 0.03, -0.05)
-			current_gun_mesh.add_child(slide)
-
-			# Miras Dianteira e Traseira
-			var front_sight = MeshInstance3D.new()
-			var box_fs = BoxMesh.new()
-			box_fs.size = Vector3(0.012, 0.015, 0.015)
-			front_sight.mesh = box_fs
-			front_sight.material_override = mat_gunmetal
-			front_sight.position = Vector3(0.0, 0.062, -0.12)
-			current_gun_mesh.add_child(front_sight)
-
-			var rear_sight = MeshInstance3D.new()
-			var box_rs = BoxMesh.new()
-			box_rs.size = Vector3(0.024, 0.015, 0.015)
-			rear_sight.mesh = box_rs
-			rear_sight.material_override = mat_gunmetal
-			rear_sight.position = Vector3(0.0, 0.062, 0.025)
-			current_gun_mesh.add_child(rear_sight)
-
-			# 2. ArmaÃƒÂ§ÃƒÂ£o e Empunhadura de PolÃƒÂ­mero Preto
-			var frame = MeshInstance3D.new()
-			var box_fr = BoxMesh.new()
-			box_fr.size = Vector3(0.036, 0.035, 0.15)
-			frame.mesh = box_fr
-			frame.material_override = mat_gunmetal
-			frame.position = Vector3(0.0, 0.0, -0.04)
-			current_gun_mesh.add_child(frame)
-
-			var grip = MeshInstance3D.new()
-			var box_grp = BoxMesh.new()
-			box_grp.size = Vector3(0.034, 0.09, 0.05)
-			grip.mesh = box_grp
-			grip.material_override = mat_polymer
-			grip.position = Vector3(0.0, -0.04, 0.01)
-			grip.rotation_degrees = Vector3(-16, 0, 0)
-			current_gun_mesh.add_child(grip)
-
-			# 3. Base do Carregador Alargada
-			var mag_base = MeshInstance3D.new()
-			var box_mb = BoxMesh.new()
-			box_mb.size = Vector3(0.038, 0.015, 0.058)
-			mag_base.mesh = box_mb
-			mag_base.material_override = mat_gunmetal
-			mag_base.position = Vector3(0.0, -0.09, 0.02)
-			mag_base.rotation_degrees = Vector3(-16, 0, 0)
-			current_gun_mesh.add_child(mag_base)
-
-			# 4. Gatilho Dourado / LatÃƒÂ£o
-			var trigger = MeshInstance3D.new()
-			var box_tr = BoxMesh.new()
-			box_tr.size = Vector3(0.01, 0.025, 0.015)
-			trigger.mesh = box_tr
-			trigger.material_override = mat_brass
-			trigger.position = Vector3(0.0, -0.01, -0.02)
-			current_gun_mesh.add_child(trigger)
-
-			flash_pos = Vector3(0.0, 0.03, -0.16)
+	var flash_pos: Vector3 = preload("res://scripts/player/ArsenalWeapon3D.gd").build(current_gun_mesh, active_weapon_id)
 
 	muzzle_flash_3d = MeshInstance3D.new()
 	var sph_f = SphereMesh.new()
@@ -1396,129 +290,125 @@ func _create_shoe_mesh(mat: Material, offset: Vector3) -> MeshInstance3D:
 func _physics_process(delta: float) -> void:
 	fire_cooldown = maxf(0.0, fire_cooldown - delta)
 	_melee_swing_timer = maxf(0.0, _melee_swing_timer - delta)
-	var input_vector: Vector2 = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	var is_sprinting: bool = Input.is_action_pressed("sprint") or Input.is_key_pressed(KEY_SHIFT)
+	var input_vector: Vector2 = Vector2.ZERO if (is_control_disabled or is_in_dialogue) else Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	var is_sprinting: bool = false if (is_control_disabled or is_in_dialogue) else (Input.is_action_pressed("sprint") or Input.is_key_pressed(KEY_SHIFT))
 	var current_speed: float = speed * 1.50 if is_sprinting else speed
 
 	var is_moving: bool = input_vector != Vector2.ZERO
 	if is_moving:
 		velocity = input_vector * current_speed
-		walk_clock += delta * (8.0 if is_sprinting else 4.8)
-		_handle_footsteps(true, is_sprinting)
+		walk_clock += delta * (8.5 if is_sprinting else 4.8) * speed / 125.0
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, 900.0 * delta)
 		walk_clock += delta * 1.8
 
 	rotation = 0.0
 	move_and_slide()
+	_handle_footsteps(is_moving and get_position_delta().length_squared() > 0.01, is_sprinting)
 
-	# --- ROTAÃƒâ€¡ÃƒÆ’O 3D E ANIMAÃƒâ€¡ÃƒÆ’O ARTICULADA DO DANTE ---
+	# --- ROTAÇÃO 3D E ANIMAÇÃO ARTICULADA DO DANTE ---
 	var mouse_pos: Vector2 = get_global_mouse_position()
 	var is_aiming: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+	weapon_aim_active = Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and active_weapon_id not in ["fists","knife","grenade"] and not is_control_disabled and not is_in_dialogue
 	var aim_dir: Vector2 = (mouse_pos - global_position).normalized() if is_aiming else (input_vector.normalized() if is_moving else (mouse_pos - global_position).normalized())
 
 	if model_root and aim_dir.length_squared() > 0.01:
 		var target_angle_3d: float = -atan2(aim_dir.y, aim_dir.x) - PI * 0.5
 		model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, 15.0 * delta)
 
-	# Ciclo de Passos & ArticulaÃƒÂ§ÃƒÂµes com CadÃƒÂªncia Suave
-	var step_angle: float = (sin(walk_clock) * (0.50 if is_sprinting else 0.36)) if is_moving else 0.0
-	var arm_swing: float = -step_angle * 0.65
-	var bobbing: float = (absf(cos(walk_clock)) * (0.022 if is_sprinting else 0.012)) if is_moving else (sin(walk_clock) * 0.005)
+	# Pesos de interpolação contínua (elimina estalos ao parar, iniciar ou alternar sprint)
+	_move_weight = move_toward(_move_weight, 1.0 if is_moving else 0.0, delta * 8.0)
+	_sprint_weight = move_toward(_sprint_weight, 1.0 if (is_moving and is_sprinting) else 0.0, delta * 6.0)
+
+	# Ângulos de passada: caminhada suave vs corrida atlética de grande amplitude
+	var step_angle_walk: float = sin(walk_clock) * 0.36
+	var step_angle_run: float = sin(walk_clock) * 0.62
+	var step_angle: float = lerpf(step_angle_walk, step_angle_run, _sprint_weight) * _move_weight
+
+	# Articulação anatômica dos joelhos:
+	# - Caminhada: flexão suave apenas na perna traseira
+	var knee_walk_l: float = maxf(0.0, -step_angle_walk * 0.70)
+	var knee_walk_r: float = maxf(0.0, step_angle_walk * 0.70)
+
+	# - Corrida:
+	#   1. Perna traseira (impulso): flexão profunda do joelho elevando o calcanhar (~1.15 rad / ~66°)
+	#   2. Perna dianteira (avanço atlético): elevação do joelho antes da aterrissagem
+	var knee_run_l: float = maxf(0.0, -step_angle_run * 1.85) + maxf(0.0, cos(walk_clock)) * 0.45 * maxf(0.0, sin(walk_clock))
+	var knee_run_r: float = maxf(0.0, step_angle_run * 1.85) + maxf(0.0, -cos(walk_clock)) * 0.45 * maxf(0.0, -sin(walk_clock))
+
+	var lower_leg_l: float = lerpf(knee_walk_l, knee_run_l, _sprint_weight) * _move_weight
+	var lower_leg_r: float = lerpf(knee_walk_r, knee_run_r, _sprint_weight) * _move_weight
 
 	if left_upper_leg and right_upper_leg:
 		left_upper_leg.rotation.x = step_angle
 		right_upper_leg.rotation.x = -step_angle
 		if left_lower_leg and right_lower_leg:
-			left_lower_leg.rotation.x = maxf(0.0, -step_angle * 0.70)
-			right_lower_leg.rotation.x = maxf(0.0, step_angle * 0.70)
+			left_lower_leg.rotation.x = lower_leg_l
+			right_lower_leg.rotation.x = lower_leg_r
 
-	# Posturas de BraÃƒÂ§o 3D Differentiated de acordo com a Arma e Stance
-	var wdata := WEAPON_CATALOG.get_weapon(active_weapon_id)
-	var stance: String = String(wdata.get("stance", "pistol"))
+	# Postura dinâmica:
+	# - Inclinação atlética para a frente na corrida (Pitch): projeta o corpo no movimento
+	var forward_lean: float = -(0.02 + 0.18 * _sprint_weight) * _move_weight
+	# - Torção da cintura/ombros (Yaw) e inclinação lateral (Roll)
+	var torso_twist_yaw: float = sin(walk_clock) * (0.08 * _sprint_weight + 0.02 * (1.0 - _sprint_weight)) * _move_weight
+	var torso_twist_roll: float = cos(walk_clock) * (0.035 * _sprint_weight + 0.012 * (1.0 - _sprint_weight)) * _move_weight
 
-	if right_upper_arm and left_upper_arm:
-		match stance:
-			"shoulder_rpg":
-				# Bazuca / RPG apoiado diretamente sobre o ombro direito em postura firme
-				var breath := sin(walk_clock * 0.5) * (0.04 if is_moving else 0.015)
-				right_upper_arm.rotation = Vector3(1.18 + breath, -0.22, 0.08)
-				right_lower_arm.rotation = Vector3(0.35, -0.08, 0.0)
-				left_upper_arm.rotation = Vector3(1.08 + breath, 0.42, -0.26)
-				left_lower_arm.rotation = Vector3(0.62, 0.18, 0.0)
-			"rifle":
-				# Fuzil AK-47 / M4A1 / SMG / Escopeta 12G com Pegada TÃƒÂ¡tica de DUAS MÃƒÆ’OS
-				var recoil_bob := sin(walk_clock * 0.8) * (0.04 if is_moving else 0.015)
-				right_upper_arm.rotation = Vector3(1.42 + recoil_bob, -0.12, 0.0)
-				right_lower_arm.rotation = Vector3(0.08, -0.05, 0.0)
-				left_upper_arm.rotation = Vector3(1.24 + recoil_bob, 0.46, -0.24)
-				left_lower_arm.rotation = Vector3(0.48, 0.14, 0.0)
-			"hip_heavy":
-				# LanÃƒÂ§a-chamas com empunhadura dupla pesada no quadril
-				var flame_bob := sin(walk_clock * 0.8) * (0.03 if is_moving else 0.012)
-				right_upper_arm.rotation = Vector3(0.92 + flame_bob, -0.18, 0.0)
-				right_lower_arm.rotation = Vector3(0.38, 0.0, 0.0)
-				left_upper_arm.rotation = Vector3(1.15 + flame_bob, 0.36, -0.16)
-				left_lower_arm.rotation = Vector3(0.35, 0.10, 0.0)
-			"grenade":
-				# Granada erguida na mÃƒÂ£o direita pronta para o arremesso
-				right_upper_arm.rotation = Vector3(0.85, 0.15, 0.28)
-				right_lower_arm.rotation = Vector3(0.65, 0.0, 0.0)
-				left_upper_arm.rotation = Vector3(-arm_swing * 0.4, 0.0, 0.0)
-				left_lower_arm.rotation = Vector3(0.12, 0.0, 0.0)
-			"unarmed":
-				# Maos livres: braco solto, balanco natural de caminhada (nada
-				# erguido). Durante um soco, o timer sobrepoe com um jab curto.
-				if _melee_swing_timer > 0.0:
-					var swing_progress := 1.0 - (_melee_swing_timer / MELEE_SWING_DURATION)
-					var punch_curve := sin(swing_progress * PI)
-					right_upper_arm.rotation = Vector3(1.35 * punch_curve, -0.05, 0.10 * punch_curve)
-					right_lower_arm.rotation = Vector3(0.10 + 0.55 * punch_curve, 0.0, 0.0)
-				else:
-					right_upper_arm.rotation = Vector3(arm_swing * 0.5, 0.0, 0.0)
-					right_lower_arm.rotation = Vector3(0.10, 0.0, 0.0)
-				left_upper_arm.rotation = Vector3(-arm_swing * 0.5, 0.0, 0.0)
-				left_lower_arm.rotation = Vector3(0.10, 0.0, 0.0)
-			"knife":
-				# Guarda baixa de faca (uma mao a frente); golpe sobrepoe com
-				# um corte curto quando o timer de swing estiver ativo.
-				var knife_bob := sin(walk_clock * 0.7) * (0.03 if is_moving else 0.01)
-				if _melee_swing_timer > 0.0:
-					var slash_progress := 1.0 - (_melee_swing_timer / MELEE_SWING_DURATION)
-					var slash_curve := sin(slash_progress * PI)
-					right_upper_arm.rotation = Vector3(1.05 + knife_bob, -0.10 + 0.55 * slash_curve, 0.10)
-					right_lower_arm.rotation = Vector3(0.45 + 0.30 * slash_curve, 0.0, 0.0)
-				else:
-					right_upper_arm.rotation = Vector3(0.85 + knife_bob, -0.10, 0.10)
-					right_lower_arm.rotation = Vector3(0.45, 0.0, 0.0)
-				left_upper_arm.rotation = Vector3(-arm_swing * 0.4, 0.0, 0.0)
-				left_lower_arm.rotation = Vector3(0.12, 0.0, 0.0)
-			_:
-				# Pistola 9mm / Magnum .44 / Sawed-Off de empunhadura frontal firme
-				var hand_sw := sin(walk_clock * 0.6) * (0.025 if is_moving else 0.01)
-				right_upper_arm.rotation = Vector3(1.40 + hand_sw, -0.05, 0.0)
-				right_lower_arm.rotation = Vector3(0.05, 0.0, 0.0)
-				left_upper_arm.rotation = Vector3(-arm_swing * 0.4, 0.0, 0.0)
-				left_lower_arm.rotation = Vector3(0.12, 0.0, 0.0)
+	# Bobbing vertical com impacto e impulso elástico de corrida
+	var bobbing: float = (absf(cos(walk_clock)) * (0.024 if _sprint_weight > 0.5 else 0.012)) if is_moving else (sin(walk_clock) * 0.005)
 
-	if torso_node and head_node:
+	# Atualização do tronco mantendo ancoragem física perfeita:
+	if torso_node:
 		torso_node.position.y = 0.85 + bobbing
-		head_node.position.y = 1.25 + bobbing
+		torso_node.position.z = 0.0
+		torso_node.rotation.x = forward_lean
+		torso_node.rotation.y = torso_twist_yaw
+		torso_node.rotation.z = torso_twist_roll
 
-	_handle_weapon_fire()
-	if Input.is_action_just_pressed("interact"):
-		if get_tree().get_nodes_in_group("weapon_store_open").is_empty():
-			try_enter_vehicle()
+	_sync_upper_body_anchors(forward_lean)
+
+	# Balanço de braços amplificado e sincronizado com a cadência
+	var arm_swing: float = -step_angle * (1.10 if _sprint_weight > 0.5 else 0.65)
+	combat_pose.update(self, delta, is_aiming, is_sprinting, arm_swing)
+
+	if not is_control_disabled and not is_in_dialogue:
+		_handle_weapon_fire()
+		if Input.is_action_just_pressed("interact"):
+			if get_tree().get_nodes_in_group("weapon_store_open").is_empty():
+				try_enter_vehicle()
+
+func _sync_upper_body_anchors(forward_lean: float) -> void:
+	# Use the actual torso transform, including yaw and roll. Reconstructing only
+	# pitch with the opposite sine detached both the neck and shoulders in sprint.
+	if not torso_node:
+		return
+	if head_node:
+		head_node.position = torso_node.transform * Vector3(0, 0.40, 0)
+		head_node.rotation = Vector3(forward_lean * 0.35, torso_node.rotation.y * 0.35, torso_node.rotation.z * 0.35)
+	if left_upper_arm and right_upper_arm:
+		left_upper_arm.position = torso_node.transform * Vector3(-0.185, 0.20, 0)
+		right_upper_arm.position = torso_node.transform * Vector3(0.185, 0.20, 0)
 
 func _trigger_muzzle_flash_3d() -> void:
+	weapon_fired.emit()
+	# A thrown grenade has no muzzle; keep firearm effects on firearms only.
+	if active_weapon_id == "grenade":
+		return
 	if muzzle_flash_3d and muzzle_light_3d:
+		_muzzle_flash_epoch += 1
+		var epoch := _muzzle_flash_epoch
+		var heavy := active_weapon_id in ["magnum", "shotgun", "sawed_off", "rpg"]
+		muzzle_flash_3d.scale = Vector3.ONE * (1.35 if heavy else 0.8)
 		muzzle_flash_3d.visible = true
 		muzzle_light_3d.visible = true
 		var t = create_tween()
-		t.tween_callback(func():
-			if muzzle_flash_3d: muzzle_flash_3d.visible = false
-			if muzzle_light_3d: muzzle_light_3d.visible = false
-		)
+		t.tween_interval(0.065 if heavy else 0.035)
+		t.tween_callback(_finish_muzzle_flash.bind(epoch))
+
+func _finish_muzzle_flash(epoch: int) -> void:
+	if epoch != _muzzle_flash_epoch:
+		return
+	if is_instance_valid(muzzle_flash_3d): muzzle_flash_3d.hide()
+	if is_instance_valid(muzzle_light_3d): muzzle_light_3d.hide()
 
 var _last_step_side: int = 0
 var _step_variation_index: int = 0
@@ -1537,20 +427,28 @@ func _is_raining_outside() -> bool:
 		return dnm.is_raining()
 	return false
 
+var _footstep_voices: Array[AudioStreamPlayer2D] = []
+
 func _play_footstep(is_sprinting: bool) -> void:
-	var footstep_player := AudioStreamPlayer2D.new()
-	var is_wet := _is_raining_outside()
-	var surface := "wet" if is_wet else "concrete"
+	if _footstep_voices.is_empty():
+		for i in 2:
+			var voice := AudioStreamPlayer2D.new()
+			voice.name = "Footstep%d" % i
+			voice.bus = &"SFX"
+			voice.volume_db = -80.0
+			voice.max_distance = 350.0
+			add_child(voice)
+			_footstep_voices.append(voice)
+	var surface: String = preload("res://audio/footsteps/FootstepSurfaceResolver.gd").resolve(self, _is_raining_outside())
+	for water in get_tree().get_nodes_in_group("water_surface"):
+		water.actor_step(self, is_sprinting)
+	var footstep_player := _footstep_voices[_step_variation_index % 2]
 	footstep_player.stream = ProceduralAudio.get_footstep_stream(surface, _step_variation_index)
 	_step_variation_index = (_step_variation_index + 1) % 4
-	
-	# Som mais sutil (calibrado para -29.0 dB caminhando e -25.0 dB correndo)
-	footstep_player.volume_db = -29.0 if not is_sprinting else -25.0
+	footstep_player.volume_db = -25.0 if is_sprinting else -29.0
+	if surface == "water": footstep_player.volume_db += 5.0
 	footstep_player.pitch_scale = randf_range(0.95, 1.05)
-	footstep_player.max_distance = 350.0
-	add_child(footstep_player)
 	footstep_player.play()
-	footstep_player.finished.connect(footstep_player.queue_free)
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if is_dead or is_arrested or _respawn_grace_active:
@@ -1589,7 +487,98 @@ func add_armor(amount: int) -> void:
 	_refresh_weapon_ui()
 	_show_weapon_notice("COLETE %d%%" % armor)
 
-func add_weapon_loot(id: StringName, ammo_amount: int) -> bool:
+## Achados de exploração espalhados pelo mapa (extremidades, território dos
+## Cobras, docas). A cada 10 achados distintos: grana pra comprar arma em uma
+## rodada, pista de carro secreto na próxima — alternando.
+func add_collectible(collectible_id: String, _label: String = "") -> bool:
+	if collectible_id.is_empty() or collectibles_found.has(collectible_id):
+		return false
+	collectibles_found.append(collectible_id)
+	var total := collectibles_found.size()
+	var hud := get_tree().get_first_node_in_group("hud")
+	var milestone := ""
+	if total % 10 == 0:
+		var milestone_index := total / 10
+		if milestone_index % 2 == 1:
+			var bonus := 250
+			money += bonus
+			milestone = "cash"
+			if hud and hud.has_method("show_notice"):
+				hud.show_notice("%d ACHADOS! +$%d PRA COMPRAR ARMA" % [total, bonus], Color("#2ed573"))
+		else:
+			secret_car_leads += 1
+			milestone = "lead"
+			if hud and hud.has_method("show_notice"):
+				hud.show_notice("%d ACHADOS! NOVA PISTA DE CARRO SECRETO (%d)" % [total, secret_car_leads], Color("#a29bfe"))
+	elif hud and hud.has_method("show_notice"):
+		hud.show_notice("ACHADO %d/10" % (total - ((total / 10) * 10)), Color("#74b9ff"))
+	_refresh_weapon_ui()
+	collectible_progress_changed.emit(total, milestone)
+	return true
+
+## Chamado por NightRaceController ao cruzar a chegada de qualquer corrida.
+func report_race_finished(is_new_best: bool) -> void:
+	races_finished += 1
+	if is_new_best:
+		races_best_time_count += 1
+	_check_achievements()
+
+## Chamado por DriftChallengeZone ao terminar (saiu da zona ou tempo esgotou).
+func report_drift_score(score: int, is_new_best: bool) -> void:
+	if score > 0:
+		drift_challenges_completed += 1
+	if is_new_best:
+		best_drift_score = maxi(best_drift_score, score)
+	_check_achievements()
+
+## Chamado por ChopShopZone ao terminar de esmagar um carro entregue.
+func report_chop_shop_delivery(reward: int) -> void:
+	chop_shop_deliveries += 1
+	chop_shop_total_scrap += maxi(0, reward)
+	_check_achievements()
+
+func _achievement_stats() -> Dictionary:
+	var weapon_count := 0
+	for owned in weapon_inventory.values():
+		if owned == true:
+			weapon_count += 1
+	var wanted := get_node_or_null("/root/WantedManager")
+	var wanted_stars := int(wanted.current_stars) if wanted else 0
+	return {
+		"collectibles": collectibles_found.size(),
+		"leads": secret_car_leads,
+		"races": races_finished,
+		"bests": races_best_time_count,
+		"drift_zones": drift_challenges_completed,
+		"best_drift_score": best_drift_score,
+		"chop_shop_deliveries": chop_shop_deliveries,
+		"money": money,
+		"weapons": weapon_count,
+		"armor": armor,
+		"wanted_stars": wanted_stars,
+	}
+
+## Confere o catálogo inteiro contra as stats atuais e desbloqueia o que
+## bateu critério. Chamado a cada _refresh_weapon_ui() (cobre grana, armas,
+## colete, achados) e a cada corrida terminada.
+func _check_achievements() -> void:
+	var stats := _achievement_stats()
+	for achievement_id in ACHIEVEMENT_CATALOG.ACHIEVEMENTS.keys():
+		if unlocked_achievements.has(achievement_id):
+			continue
+		if ACHIEVEMENT_CATALOG.evaluate(stats, achievement_id):
+			_unlock_achievement(achievement_id)
+
+func _unlock_achievement(achievement_id: String) -> void:
+	unlocked_achievements.append(achievement_id)
+	var entry: Dictionary = ACHIEVEMENT_CATALOG.ACHIEVEMENTS.get(achievement_id, {})
+	var title := String(entry.get("name", achievement_id))
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("show_achievement"):
+		hud.show_achievement(title, String(entry.get("desc", "")))
+	achievement_unlocked.emit(achievement_id, title)
+
+func add_weapon_loot(id: StringName, ammo_amount: int, show_notice: bool = true) -> bool:
 	var weapon_id := String(id)
 	var data := WEAPON_CATALOG.get_weapon(weapon_id)
 	if data.is_empty():
@@ -1600,10 +589,16 @@ func add_weapon_loot(id: StringName, ammo_amount: int) -> bool:
 	var ammo: Dictionary = weapon_ammo.get(weapon_id, {"clip": 0, "reserve": 0})
 	ammo["reserve"] = int(ammo.get("reserve", 0)) + maxi(0, ammo_amount)
 	weapon_ammo[weapon_id] = ammo
-	active_weapon_id = weapon_id
+	if personal_loadout_enabled:
+		var slot := PERSONAL_LOADOUT.slot_for(weapon_id)
+		if slot != "" and String(personal_loadout.get(slot,"")) == "": personal_loadout[slot] = weapon_id
+	if can_carry_weapon(weapon_id): active_weapon_id = weapon_id
 	_update_equipped_weapon_3d_mesh()
 	_refresh_weapon_ui()
-	_show_weapon_notice("PEGOU " + String(data.get("label", weapon_id)))
+	var suffix := ""
+	if personal_loadout_enabled and not can_carry_weapon(weapon_id):
+		suffix = " / GUARDADA NO ARSENAL" if not TranslationServer.get_locale().begins_with("en") else " / STORED IN ARSENAL"
+	if show_notice: _show_weapon_notice("PEGOU " + String(data.get("label", weapon_id)) + suffix)
 	return true
 
 static var _cached_soft_particle_texture: GradientTexture2D = null
@@ -1646,7 +641,8 @@ func _create_3d_blood_puddle() -> void:
 	var puddle_root := Node2D.new()
 	puddle_root.name = "3DBloodPuddle"
 	puddle_root.global_position = global_position
-	puddle_root.z_index = -1
+	puddle_root.z_as_relative = false
+	puddle_root.z_index = 3
 	
 	var base_poly := Polygon2D.new()
 	base_poly.polygon = PackedVector2Array([
@@ -1689,6 +685,7 @@ func _create_3d_blood_puddle() -> void:
 	else:
 		get_tree().current_scene.add_child(puddle_root)
 		
+	puddle_root.global_position = global_position
 	puddle_root.scale = Vector2(0.1, 0.1)
 	var tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(puddle_root, "scale", Vector2(0.7, 0.7), 0.55)
@@ -1819,7 +816,7 @@ func _release_controlled_vehicle() -> void:
 func _respawn_at_hospital() -> void:
 	health = max_health
 	velocity = Vector2.ZERO
-	var hospital := _get_nearest_hospital_spawn()
+	var hospital := _get_arrest_spawn() if is_arrested else _get_nearest_hospital_spawn()
 	if hospital:
 		global_position = hospital.global_position
 	else:
@@ -1829,7 +826,9 @@ func _respawn_at_hospital() -> void:
 	show()
 	set_physics_process(true)
 	if camera:
+		camera.remove_meta("compact_interior")
 		camera.make_current()
+		camera.reset_smoothing()
 	_refresh_weapon_ui()
 
 	# Limpa a mira de qualquer gangster que ainda estivesse com "combat_target"
@@ -1851,6 +850,17 @@ func _respawn_at_hospital() -> void:
 	)
 
 
+func _get_arrest_spawn() -> Node2D:
+	# Arrest always returns to the city's station, never the nearest clinic.
+	var scene := get_tree().current_scene
+	if scene:
+		var entrance := scene.get_node_or_null("District/Police/Entrance") as Node2D
+		if entrance:
+			var outside := entrance.get_node_or_null("OutsideReturn") as Node2D
+			return outside if outside else entrance
+	return get_tree().get_first_node_in_group("police_spawn") as Node2D
+
+
 func _get_nearest_hospital_spawn() -> Node2D:
 	var nearest: Node2D = null
 	var best_distance := INF
@@ -1866,6 +876,7 @@ func _get_nearest_hospital_spawn() -> Node2D:
 
 func _play_audio(stream: AudioStream, volume_db: float = -6.0) -> void:
 	var player = AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = volume_db
 	player.max_distance = 600.0
@@ -1905,15 +916,19 @@ func _setup_weapons() -> void:
 		"grenade": {"clip": 0, "reserve": 0}
 	}
 	weapon_wheel = WEAPON_WHEEL_SCRIPT.new()
+	var weapon_notice_layer := CanvasLayer.new()
+	weapon_notice_layer.name = "WeaponNotices"
+	weapon_notice_layer.layer = 40
+	weapon_notice_layer.add_child(weapon_wheel)
 	var ui_parent: Node = get_tree().current_scene
 	if ui_parent == null:
 		ui_parent = get_tree().root
-	ui_parent.call_deferred("add_child", weapon_wheel)
+	ui_parent.call_deferred("add_child", weapon_notice_layer)
 	_update_equipped_weapon_3d_mesh()
 	call_deferred("_refresh_weapon_ui")
 
 func _input(event: InputEvent) -> void:
-	if not visible or get_tree().get_nodes_in_group("weapon_store_open").size() > 0:
+	if not visible or is_control_disabled or is_in_dialogue or get_tree().get_nodes_in_group("weapon_store_open").size() > 0:
 		return
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -1937,7 +952,7 @@ func _input(event: InputEvent) -> void:
 		}
 		if key_map.has(event.keycode):
 			var target_weapon: String = key_map[event.keycode]
-			if weapon_inventory.get(target_weapon, false) == true:
+			if can_carry_weapon(target_weapon):
 				active_weapon_id = target_weapon
 				_update_equipped_weapon_3d_mesh()
 				_show_weapon_notice(String(WEAPON_CATALOG.get_weapon(target_weapon).get("label", target_weapon)))
@@ -1982,6 +997,7 @@ func _shoot_towards(target: Vector2) -> void:
 	ammo["clip"] = int(ammo.get("clip", 0)) - 1
 	weapon_ammo[active_weapon_id] = ammo
 	fire_cooldown = float(data.get("fire_interval", fire_interval))
+	combat_pose.on_attack(active_weapon_id)
 
 	# Disparo Especial: Granada de FragmentaÃƒÂ§ÃƒÂ£o FÃƒÂ­sica com Quique e FusÃƒÂ­vel
 	if (data.get("is_grenade", false) == true) or active_weapon_id == "grenade":
@@ -2059,7 +1075,7 @@ func _cycle_weapon(step: int) -> void:
 	var current := order.find(active_weapon_id)
 	for offset in range(1, order.size() + 1):
 		var candidate := WEAPON_CATALOG.get_weapon_id_at(current + step * offset)
-		if weapon_inventory.get(candidate, false) == true:
+		if can_carry_weapon(candidate):
 			active_weapon_id = candidate
 			_update_equipped_weapon_3d_mesh()
 			_show_weapon_notice(String(WEAPON_CATALOG.get_weapon(candidate).get("label", candidate)))
@@ -2067,6 +1083,7 @@ func _cycle_weapon(step: int) -> void:
 			return
 
 func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
+	combat_pose.on_attack(active_weapon_id)
 	# Corpo a corpo nao usa Bullet.tscn: e' um cone curto na frente do jogador,
 	# igual ao raio de dano em area que Bullet.gd ja usa pra explosao (grupo
 	# "damageable", que pedestres, policiais e veiculos ja compartilham) --
@@ -2107,7 +1124,7 @@ func _reload_active_weapon() -> void:
 func equip_weapon(id: String) -> void:
 	# Mesmo caminho usado pelas teclas numericas/roda de armas: so troca se o
 	# jogador realmente possui a arma.
-	if weapon_inventory.get(id, false) != true:
+	if not can_carry_weapon(id):
 		return
 	active_weapon_id = id
 	_update_equipped_weapon_3d_mesh()
@@ -2115,6 +1132,8 @@ func equip_weapon(id: String) -> void:
 	_refresh_weapon_ui()
 
 func buy_weapon(id: String) -> String:
+	if not is_weapon_shop_unlocked(id):
+		return String(WEAPON_CATALOG.get_weapon(id).get("discovery_hint", "ARMA BLOQUEADA"))
 	var data := WEAPON_CATALOG.get_weapon(id)
 	if data.is_empty():
 		return "ARMA INDISPONÃƒÂVEL"
@@ -2126,11 +1145,16 @@ func buy_weapon(id: String) -> String:
 	money -= price
 	weapon_inventory[id] = true
 	weapon_ammo[id] = {"clip": int(data.get("magazine_size", 0)), "reserve": int(data.get("starting_reserve", 0))}
-	active_weapon_id = id
+	if not personal_loadout_enabled or String(personal_loadout.get(PERSONAL_LOADOUT.slot_for(id),"")) == "":
+		if personal_loadout_enabled: personal_loadout[PERSONAL_LOADOUT.slot_for(id)] = id
+		active_weapon_id = id
 	_update_equipped_weapon_3d_mesh()
 	_refresh_weapon_ui()
 	_show_weapon_notice("COMPROU " + String(data.get("label", id)))
 	return "COMPRA REALIZADA"
+
+func is_weapon_shop_unlocked(id: String) -> bool:
+	return WEAPON_CATALOG.is_shop_unlocked(id, world_pickups_collected)
 
 func buy_ammo(price: int) -> String:
 	return buy_ammo_for_weapon(active_weapon_id, price)
@@ -2158,6 +1182,35 @@ func buy_ammo_amount(id: String, rounds: int, price: int) -> String:
 	_show_weapon_notice("+%d BALAS (%s)" % [rounds, String(data.get("short_label", id))])
 	return "MUNIÇÃO COMPRADA"
 
+func car_loadout_ammo_quote() -> Dictionary:
+	var rounds := {}
+	var total := 0
+	if personal_loadout_enabled:
+		for id in personal_loadout.values():
+			if not weapon_inventory.get(id, false) or rounds.has(id): continue
+			var capacity := int(WEAPON_CATALOG.get_weapon(id).get("magazine_size", 0))
+			if capacity <= 0: continue
+			var ammo: Dictionary = weapon_ammo.get(id, {})
+			var missing := maxi(0, capacity * 5 - int(ammo.get("reserve", 0)))
+			if missing == 0: continue
+			rounds[id] = missing
+			# Match the store's pistol rate: $40 per 24 rounds, rounded up.
+			total += ceili(missing * 40.0 / 24.0)
+	return {"rounds": rounds, "price": total}
+
+func buy_car_loadout_ammo() -> String:
+	var quote := car_loadout_ammo_quote()
+	if quote.rounds.is_empty(): return "LOADOUT COMPLETO OU SEM ARMAS DE FOGO"
+	if money < int(quote.price): return "DINHEIRO INSUFICIENTE"
+	# Validate the complete basket before charging or changing any ammunition.
+	money -= int(quote.price)
+	for id in quote.rounds:
+		var ammo: Dictionary = weapon_ammo.get(id, {"clip": 0, "reserve": 0})
+		ammo["reserve"] = int(ammo.get("reserve", 0)) + int(quote.rounds[id])
+		weapon_ammo[id] = ammo
+	_refresh_weapon_ui()
+	return "LOADOUT DO CARRO RECARREGADO"
+
 func buy_armor_amount(amount: int, price: int) -> String:
 	if money < price:
 		return "DINHEIRO INSUFICIENTE"
@@ -2177,16 +1230,24 @@ func _refresh_weapon_ui() -> void:
 		hud.set_weapon_info(active_weapon_id, weapon_ammo.get(active_weapon_id, {}))
 		hud.set_armor(armor, max_armor)
 	if weapon_wheel:
-		weapon_wheel.show_state(active_weapon_id, weapon_inventory, weapon_ammo)
+		weapon_wheel.show_state(active_weapon_id, carried_weapon_inventory(), weapon_ammo)
+	_check_achievements()
 
 func _show_weapon_notice(message: String) -> void:
 	if weapon_wheel:
 		weapon_wheel.show_notice(message)
 
 func try_enter_vehicle() -> void:
+	for entrance in get_tree().get_nodes_in_group("harbor_entrance"):
+		if is_instance_valid(entrance) and entrance.has_method("is_actor_in_range") and entrance.is_actor_in_range(self):
+			return
+	for exit_door in get_tree().get_nodes_in_group("harbor_interior_exit"):
+		if is_instance_valid(exit_door) and exit_door.has_method("is_actor_in_range") and exit_door.is_actor_in_range(self):
+			return
+
 	var cars = get_tree().get_nodes_in_group("vehicle")
 	var closest_car = null
-	var min_dist = 100.0
+	var min_dist = 80.0
 	for car in cars:
 		if not car.has_method("enter_vehicle"):
 			continue
@@ -2198,6 +1259,8 @@ func try_enter_vehicle() -> void:
 		closest_car.enter_vehicle(self)
 
 func serialize() -> Dictionary:
+	var personal := get_tree().get_first_node_in_group("personal_car_manager")
+	if personal != null: personal.capture_state()
 	var save_pos := global_position
 	for vehicle in get_tree().get_nodes_in_group("vehicle"):
 		if is_instance_valid(vehicle) and vehicle.get("is_driven_by_player") == true:
@@ -2212,9 +1275,23 @@ func serialize() -> Dictionary:
 		"money": money,
 		"active_weapon_id": active_weapon_id,
 		"weapon_inventory": weapon_inventory.duplicate(true),
+		"personal_car_state": personal_car_state.duplicate(true),
+		"personal_loadout_enabled": personal_loadout_enabled,
+		"personal_loadout": personal_loadout.duplicate(true),
+		"mountain_thermal_coat": mountain_thermal_coat,
+		"world_pickups_collected": world_pickups_collected.duplicate(),
 		"weapon_ammo": weapon_ammo.duplicate(true),
 		"current_outfit_id": current_outfit_id,
 		"owned_outfits": owned_outfits.duplicate(true),
+		"collectibles_found": collectibles_found.duplicate(),
+		"secret_car_leads": secret_car_leads,
+		"races_finished": races_finished,
+		"races_best_time_count": races_best_time_count,
+		"best_drift_score": best_drift_score,
+		"drift_challenges_completed": drift_challenges_completed,
+		"chop_shop_deliveries": chop_shop_deliveries,
+		"chop_shop_total_scrap": chop_shop_total_scrap,
+		"unlocked_achievements": unlocked_achievements.duplicate(),
 	}
 
 func restore(data: Dictionary) -> void:
@@ -2231,19 +1308,47 @@ func restore(data: Dictionary) -> void:
 		health = clampi(int(data["health"]), 1, max_health)
 	if data.has("armor"):
 		armor = clampi(int(data["armor"]), 0, max_armor)
+	world_pickups_collected = data.get("world_pickups_collected", []).duplicate()
+	mountain_thermal_coat = bool(data.get("mountain_thermal_coat", false))
 	if data.has("money"):
 		money = maxi(0, int(data["money"]))
 	if data.has("active_weapon_id"):
 		active_weapon_id = String(data["active_weapon_id"])
 	if data.has("weapon_inventory") and data["weapon_inventory"] is Dictionary:
 		weapon_inventory = (data["weapon_inventory"] as Dictionary).duplicate(true)
+	personal_car_state = data.get("personal_car_state",{}).duplicate(true)
+	personal_loadout_enabled = bool(data.get("personal_loadout_enabled",false))
+	personal_loadout = PERSONAL_LOADOUT.normalize(data.get("personal_loadout",{}),weapon_inventory)
+	if not can_carry_weapon(active_weapon_id): active_weapon_id = "fists"
 	if data.has("weapon_ammo") and data["weapon_ammo"] is Dictionary:
 		weapon_ammo = (data["weapon_ammo"] as Dictionary).duplicate(true)
 	if data.has("current_outfit_id"):
 		current_outfit_id = String(data["current_outfit_id"])
 	if data.has("owned_outfits") and data["owned_outfits"] is Dictionary:
 		owned_outfits = (data["owned_outfits"] as Dictionary).duplicate(true)
-	
+	if data.has("collectibles_found") and data["collectibles_found"] is Array:
+		collectibles_found.clear()
+		for collectible_id in data["collectibles_found"]:
+			collectibles_found.append(String(collectible_id))
+	if data.has("secret_car_leads"):
+		secret_car_leads = maxi(0, int(data["secret_car_leads"]))
+	if data.has("races_finished"):
+		races_finished = maxi(0, int(data["races_finished"]))
+	if data.has("races_best_time_count"):
+		races_best_time_count = maxi(0, int(data["races_best_time_count"]))
+	if data.has("best_drift_score"):
+		best_drift_score = maxi(0, int(data["best_drift_score"]))
+	if data.has("drift_challenges_completed"):
+		drift_challenges_completed = maxi(0, int(data["drift_challenges_completed"]))
+	if data.has("chop_shop_deliveries"):
+		chop_shop_deliveries = maxi(0, int(data["chop_shop_deliveries"]))
+	if data.has("chop_shop_total_scrap"):
+		chop_shop_total_scrap = maxi(0, int(data["chop_shop_total_scrap"]))
+	if data.has("unlocked_achievements") and data["unlocked_achievements"] is Array:
+		unlocked_achievements.clear()
+		for achievement_id in data["unlocked_achievements"]:
+			unlocked_achievements.append(String(achievement_id))
+
 	velocity = Vector2.ZERO
 	is_dead = false
 	is_arrested = false
@@ -2255,3 +1360,14 @@ func restore(data: Dictionary) -> void:
 	_rebuild_dante_costume()
 	_update_equipped_weapon_3d_mesh()
 	call_deferred("_refresh_weapon_ui")
+	var personal := get_tree().get_first_node_in_group("personal_car_manager")
+	if personal != null:
+		personal.restore_from_player()
+
+func take_environment_damage(amount: int) -> void:
+	if is_dead or is_arrested or _respawn_grace_active:
+		return
+	health = maxi(0, health - maxi(0, amount))
+	_refresh_weapon_ui()
+	if health <= 0:
+		_wasted()

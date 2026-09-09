@@ -61,7 +61,7 @@ func _select_outfit(outfit_id: String) -> void:
 	if district_label:
 		district_label.text = "📍 DISTRITO: " + data.get("district", "")
 	if desc_label:
-		desc_label.text = data.get("description", "")
+		desc_label.text = data.get("description", "") + "\n\nPROTEÇÃO CONTRA O FRIO: %d%%\nReduz a perda de temperatura. Não recupera calor." % roundi(OutfitCatalog.cold_protection(outfit_id)*100)
 	
 	var price: int = int(data.get("price", 0))
 	var is_owned: bool = _is_outfit_owned(outfit_id)

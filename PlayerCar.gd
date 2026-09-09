@@ -14,6 +14,7 @@ const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
 
 var skid_line: Line2D
 var is_skidding: bool = false
+var lateral_speed: float = 0.0 # px/s de derrapada — lido por DriftChallengeZone
 var target_length: float = 74.0
 var uniform_scale: float = 1.0
 var headlight: PointLight2D
@@ -27,15 +28,21 @@ var sprite: Sprite2D
 
 # Juice / Game Feel
 var _hit_stop_frames: int = 0
+var _entry_input_released := true
+var _drive_input_armed := true
 var collision_particles: CPUParticles2D
 
 # Upgrades & Tuning (Fast & Furious Style)
-var has_nitro: bool = true
-var nitro_amount: float = 100.0
-var nitro_max: float = 100.0
+var has_nitro: bool = false
+var nitro_amount: float = 0.0
+var nitro_max: float = 0.0
 var is_boosting: bool = false
 var nitro_emitter: CPUParticles2D
 var nitro_audio: AudioStreamPlayer2D
+
+# Chuva, freio de mão (derrapagem) e respingo de poça
+var water_spray_emitter: CPUParticles2D
+var _weather_manager_cache: Node = null
 
 # Efeitos de Escapamento e Purga de Nitro
 var nos_purge_l: CPUParticles2D
@@ -54,6 +61,7 @@ var neon_color: Color = Color("#00cec9")
 var neon_underglow_poly: Polygon2D
 
 # Áudio
+var _engine_sound := preload("res://audio/VehicleEngineSound.gd").new()
 var engine_audio: AudioStreamPlayer2D
 var skid_audio: AudioStreamPlayer2D
 var radio_audio: AudioStreamPlayer2D
@@ -65,6 +73,11 @@ var radio_index: int = 0
 @onready var interact_area = $InteractArea
 
 func _ready():
+	preload("res://VehicleMotionSafety.gd").configure(self)
+	collision_mask |= 2
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
 	add_to_group("vehicle")
 	
 	# Prepara a linha de derrapagem (Skidmarks)
@@ -119,8 +132,8 @@ func _ready():
 	smoke_emitter.amount = 30
 	smoke_emitter.lifetime = 1.0
 	smoke_emitter.gravity = Vector2(0, -98)
-	smoke_emitter.scale_amount_min = 3.0
-	smoke_emitter.scale_amount_max = 8.0
+	smoke_emitter.scale_amount_min = 12.0 / 64.0
+	smoke_emitter.scale_amount_max = 32.0 / 64.0
 	smoke_emitter.color = Color(0.5, 0.5, 0.5, 0.8)
 	smoke_emitter.texture = _make_soft_particle_texture()
 	add_child(smoke_emitter)
@@ -133,8 +146,8 @@ func _ready():
 	flame_particles.gravity = Vector2(0, -140)
 	flame_particles.initial_velocity_min = 40.0
 	flame_particles.initial_velocity_max = 90.0
-	flame_particles.scale_amount_min = 4.0
-	flame_particles.scale_amount_max = 8.0
+	flame_particles.scale_amount_min = 8.0 / 64.0
+	flame_particles.scale_amount_max = 24.0 / 64.0
 	flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
 	flame_particles.texture = _make_soft_particle_texture()
 	add_child(flame_particles)
@@ -147,15 +160,15 @@ func _ready():
 	collision_particles.lifetime = 0.5
 	collision_particles.initial_velocity_min = 60.0
 	collision_particles.initial_velocity_max = 120.0
-	collision_particles.scale_amount_min = 2.0
-	collision_particles.scale_amount_max = 5.0
+	collision_particles.scale_amount_min = 2.0 / 64.0
+	collision_particles.scale_amount_max = 5.0 / 64.0
 	collision_particles.color = Color(0.8, 0.8, 0.8, 1.0)
 	collision_particles.texture = _make_soft_particle_texture()
 	add_child(collision_particles)
 	
 	# Motor com atenuação suave e volume balanceado
 	engine_audio = AudioStreamPlayer2D.new()
-	engine_audio.stream = ProceduralAudio.get_engine_stream()
+	engine_audio.stream = _engine_sound.get_stream("street", active_archetype_id)
 	engine_audio.max_distance = 420.0
 	engine_audio.attenuation = 2.2
 	engine_audio.volume_db = -16.0
@@ -165,7 +178,7 @@ func _ready():
 	
 	# Derrapagem
 	skid_audio = AudioStreamPlayer2D.new()
-	skid_audio.stream = ProceduralAudio.get_skid_stream()
+	skid_audio.stream = ProceduralAudio.get_skid_stream(active_archetype_id)
 	skid_audio.max_distance = 500.0
 	skid_audio.volume_db = -16.0
 	add_child(skid_audio)
@@ -196,12 +209,29 @@ func _ready():
 	nitro_emitter.gravity = Vector2.ZERO
 	nitro_emitter.initial_velocity_min = 100.0
 	nitro_emitter.initial_velocity_max = 190.0
-	nitro_emitter.scale_amount_min = 2.5
-	nitro_emitter.scale_amount_max = 6.0
+	nitro_emitter.scale_amount_min = 4.0 / 64.0
+	nitro_emitter.scale_amount_max = 10.0 / 64.0
 	nitro_emitter.color = Color("#00cec9")
 	nitro_emitter.texture = _make_soft_particle_texture()
 	add_child(nitro_emitter)
-	
+
+	# Respingo de água lateral (derrapagem na chuva/poça)
+	water_spray_emitter = CPUParticles2D.new()
+	water_spray_emitter.emitting = false
+	water_spray_emitter.amount = 22
+	water_spray_emitter.lifetime = 0.45
+	water_spray_emitter.explosiveness = 0.0
+	water_spray_emitter.direction = Vector2(0, -1)
+	water_spray_emitter.spread = 35.0
+	water_spray_emitter.gravity = Vector2(0, 260.0)
+	water_spray_emitter.initial_velocity_min = 60.0
+	water_spray_emitter.initial_velocity_max = 150.0
+	water_spray_emitter.scale_amount_min = 3.0 / 64.0
+	water_spray_emitter.scale_amount_max = 7.0 / 64.0
+	water_spray_emitter.color = Color(0.75, 0.86, 1.0, 0.65)
+	water_spray_emitter.texture = _make_soft_particle_texture()
+	add_child(water_spray_emitter)
+
 	# Purga de Nitro Lateral/Capô (NOS Purge estilo Velozes e Furiosos)
 	nos_purge_l = CPUParticles2D.new()
 	nos_purge_l.emitting = false
@@ -214,6 +244,8 @@ func _ready():
 	nos_purge_l.initial_velocity_max = 150.0
 	nos_purge_l.color = Color(1.0, 1.0, 1.0, 0.85)
 	nos_purge_l.texture = _make_soft_particle_texture()
+	nos_purge_l.scale_amount_min = 4.0 / 64.0
+	nos_purge_l.scale_amount_max = 10.0 / 64.0
 	add_child(nos_purge_l)
 
 	nos_purge_r = CPUParticles2D.new()
@@ -227,6 +259,8 @@ func _ready():
 	nos_purge_r.initial_velocity_max = 150.0
 	nos_purge_r.color = Color(1.0, 1.0, 1.0, 0.85)
 	nos_purge_r.texture = _make_soft_particle_texture()
+	nos_purge_r.scale_amount_min = 4.0 / 64.0
+	nos_purge_r.scale_amount_max = 10.0 / 64.0
 	add_child(nos_purge_r)
 
 	# Backfire de Escapamento (Labaredas e estalos nas reduções)
@@ -239,8 +273,8 @@ func _ready():
 	backfire_emitter.spread = 25.0
 	backfire_emitter.initial_velocity_min = 50.0
 	backfire_emitter.initial_velocity_max = 110.0
-	backfire_emitter.scale_amount_min = 3.0
-	backfire_emitter.scale_amount_max = 7.0
+	backfire_emitter.scale_amount_min = 3.0 / 64.0
+	backfire_emitter.scale_amount_max = 9.0 / 64.0
 	backfire_emitter.color = Color("#f39c12")
 	backfire_emitter.texture = _make_soft_particle_texture()
 	add_child(backfire_emitter)
@@ -256,6 +290,8 @@ func _ready():
 	rim_sparks.initial_velocity_max = 140.0
 	rim_sparks.color = Color(1.0, 0.8, 0.2, 0.9)
 	rim_sparks.texture = _make_soft_particle_texture()
+	rim_sparks.scale_amount_min = 2.0 / 64.0
+	rim_sparks.scale_amount_max = 4.0 / 64.0
 	add_child(rim_sparks)
 
 	flat_smoke = CPUParticles2D.new()
@@ -265,6 +301,8 @@ func _ready():
 	flat_smoke.gravity = Vector2(0, -60)
 	flat_smoke.color = Color(0.2, 0.2, 0.2, 0.7)
 	flat_smoke.texture = _make_soft_particle_texture()
+	flat_smoke.scale_amount_min = 8.0 / 64.0
+	flat_smoke.scale_amount_max = 18.0 / 64.0
 	add_child(flat_smoke)
 	
 	# Anexa o script de câmera dinâmica à câmera
@@ -279,7 +317,7 @@ func _ready():
 
 	# Buzina do carro
 	horn_audio = AudioStreamPlayer2D.new()
-	horn_audio.stream = ProceduralAudio.get_horn_stream()
+	horn_audio.stream = ProceduralAudio.get_horn_stream(active_archetype_id)
 	horn_audio.max_distance = 500.0
 	horn_audio.volume_db = -14.0
 	add_child(horn_audio)
@@ -349,18 +387,47 @@ func _setup_headlight() -> void:
 	_apply_headlight_state()
 	add_child(headlight)
 
+func _get_weather_manager() -> Node:
+	if _weather_manager_cache == null or not is_instance_valid(_weather_manager_cache):
+		_weather_manager_cache = get_tree().get_first_node_in_group("day_night_manager")
+	return _weather_manager_cache
+
 func _physics_process(delta):
+	preload("res://VehicleMotionSafety.gd").sanitize(self)
+	has_nitro = false
+	is_boosting = false
+	if is_instance_valid(_boarding) and _boarding.active:
+		velocity = Vector2.ZERO
+		return
 	var input_dir = 0.0
 	var turn_dir = 0.0
-	
+
 	# Só processa os inputs se o jogador estiver no volante
 	if is_driven_by_player:
 		input_dir = Input.get_axis("ui_down", "ui_up")
 		turn_dir = Input.get_axis("ui_left", "ui_right")
-		
+		if not _drive_input_armed:
+			_drive_input_armed = is_zero_approx(input_dir) and is_zero_approx(turn_dir)
+			input_dir = 0.0
+			turn_dir = 0.0
+
+		# Espaço = freio de mão / derrapagem manual. Shift = nitro (ver mais abaixo).
+		var wants_handbrake := Input.is_key_pressed(KEY_SPACE)
+		var weather := _get_weather_manager()
+		var rain_intensity: float = float(weather.get_rain_intensity()) if weather and weather.has_method("get_rain_intensity") else 0.0
+
+		# Chuva reduz o grip: derrapa mais fácil e corrige menos a traseira.
+		var skid_threshold: float = lerpf(90.0, 50.0, rain_intensity)
+
+		# Puxão de traseira ao puxar o freio de mão em curva, tipo GTA clássico.
+		if wants_handbrake and turn_dir != 0.0 and velocity.length() > 60.0:
+			velocity += transform.y * sign(turn_dir) * 130.0 * delta * clampf(velocity.length() / max_speed, 0.35, 1.0)
+
 		# Lógica de Drift e Skidmarks
 		var lateral_velocity = velocity.project(transform.y)
-		if lateral_velocity.length() > 90.0:
+		lateral_speed = lateral_velocity.length()
+		var is_actively_drifting := lateral_speed > skid_threshold or (wants_handbrake and velocity.length() > 60.0)
+		if is_actively_drifting:
 			if not is_skidding:
 				is_skidding = true
 				skid_line.clear_points()
@@ -368,12 +435,23 @@ func _physics_process(delta):
 				skid_line.add_point(global_position)
 			if skid_line.get_point_count() > 30:
 				skid_line.remove_point(0)
-			velocity = velocity.lerp(velocity.project(transform.x), 1.0 - drift_factor)
 		else:
 			is_skidding = false
 			if skid_line.get_point_count() > 0 and bloody_tires_timer <= 0.0:
 				skid_line.clear_points()
-		
+
+		velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor, delta, rain_intensity, wants_handbrake)
+		if wants_handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.45*delta)
+
+		# Respingo de água lateral: só quando derrapando com chuva de verdade caindo.
+		if water_spray_emitter:
+			var should_spray: bool = is_actively_drifting and rain_intensity > 0.05
+			water_spray_emitter.emitting = should_spray
+			if should_spray:
+				var kick_side: float = -sign(lateral_velocity.dot(transform.y)) if lateral_velocity.length() > 1.0 else -sign(turn_dir)
+				water_spray_emitter.direction = (transform.y * kick_side - transform.x * 0.35).normalized()
+				water_spray_emitter.amount = int(lerpf(12.0, 26.0, rain_intensity))
+
 		# Sincroniza áudio de derrapagem
 		_update_skid_audio()
 
@@ -389,82 +467,56 @@ func _physics_process(delta):
 		_headlight_key_was_pressed = headlights_pressed
 
 		# Verifica input para sair
-		if Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact")):
+		var exit_pressed := Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_pressed("interact"))
+		if not exit_pressed:
+			_entry_input_released = true
+		if _entry_input_released and exit_pressed and not _is_near_building_entrance():
 			exit_vehicle()
 	else:
 		_horn_key_was_pressed = false
 		_headlight_key_was_pressed = false
+		lateral_speed = 0.0
+		if water_spray_emitter and water_spray_emitter.emitting:
+			water_spray_emitter.emitting = false
 	
 	# === Hit-stop: congela física por N frames ===
 	if _hit_stop_frames > 0:
 		_hit_stop_frames -= 1
 		return  # Pula o restante do physics_process por esse frame
 
-	if velocity.length() > 10:
-		var current_turn = turn_dir * turn_speed * delta
-		if velocity.dot(transform.x) < 0:
-			current_turn *= -1
-		rotation += current_turn
+	_apply_steering_motion(turn_dir, delta)
 	
 	var forward_vec = transform.x
-	var wants_nitro := (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SPACE) or (InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"))) and input_dir > 0
+	# Backfire pop se soltar o acelerador em alta velocidade
+	if _prev_throttle > 0.5 and input_dir <= 0.0 and velocity.length() > 220.0:
+		if randf() > 0.4:
+			_trigger_backfire()
+			
+	_prev_throttle = input_dir
 	
-	if has_nitro and wants_nitro and nitro_amount > 0.0:
-		if not is_boosting:
-			is_boosting = true
-			if nitro_emitter: nitro_emitter.emitting = true
-			if not nitro_audio.playing: nitro_audio.play()
-			_trigger_nos_purge()
-			_do_screen_shake(0.08)
-			
-		nitro_amount = maxf(0.0, nitro_amount - 28.0 * delta)
-		var nitro_accel: float = acceleration * 1.65
-		var nitro_max_spd: float = max_speed * 1.35
-		velocity = (velocity + forward_vec * input_dir * nitro_accel * delta).limit_length(nitro_max_spd)
-	else:
-		if is_boosting:
-			is_boosting = false
-			if nitro_emitter: nitro_emitter.emitting = false
-			if nitro_audio.playing: nitro_audio.stop()
-			
-			var blowoff_p := AudioStreamPlayer2D.new()
-			blowoff_p.stream = ProceduralAudio.get_turbo_blowoff_stream()
-			blowoff_p.volume_db = -8.0
-			blowoff_p.max_distance = 500.0
-			add_child(blowoff_p)
-			blowoff_p.play()
-			blowoff_p.finished.connect(blowoff_p.queue_free)
-			
-		nitro_amount = minf(nitro_max, nitro_amount + 6.0 * delta)
-		
-		# Backfire pop se soltar o acelerador em alta velocidade
-		if _prev_throttle > 0.5 and input_dir <= 0.0 and velocity.length() > 220.0:
-			if randf() > 0.4:
-				_trigger_backfire()
-				
-		_prev_throttle = input_dir
-		
-		if input_dir != 0:
-			if (input_dir > 0 and velocity.dot(forward_vec) < -10) or (input_dir < 0 and velocity.dot(forward_vec) > 10):
-				velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
-			else:
-				velocity += forward_vec * input_dir * acceleration * delta
-				velocity = velocity.limit_length(max_speed)
+	if input_dir != 0:
+		if (input_dir > 0 and velocity.dot(forward_vec) < -10) or (input_dir < 0 and velocity.dot(forward_vec) > 10):
+			velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
 		else:
-			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
-	
+			velocity += forward_vec * input_dir * acceleration * _engine_sound.drive_force(velocity.length(), max_speed) * delta
+			velocity = velocity.limit_length(_engine_sound.road_top_speed(max_speed))
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+
 	var prev_velocity = velocity
-	move_and_slide()
+	preload("res://VehicleMotionSafety.gd").move(self)
 	
+	# Mantém a posição do Dante perfeitamente sincronizada com o veículo enquanto dirige
+	if is_driven_by_player:
+		var current_driver := get_tree().get_first_node_in_group("player") as Node2D
+		if current_driver and is_instance_valid(current_driver):
+			current_driver.global_position = global_position
+
 	# === Motor Dinâmico (Pitch por Velocidade) ===
 	if is_driven_by_player:
 		if engine_audio and engine_audio.stream:
 			if health > 0:
-				var speed_ratio = clampf(velocity.length() / maxf(1.0, max_speed), 0.0, 1.0)
-				engine_audio.pitch_scale = lerp(0.82, 1.65, speed_ratio)
-				engine_audio.volume_db = lerp(-17.0, -11.0, speed_ratio)
-				if not engine_audio.playing:
-					engine_audio.play()
+				_engine_sound.update(engine_audio, velocity.length(), _engine_sound.road_top_speed(max_speed), input_dir, delta, active_archetype_id, is_boosting)
 			else:
 				if engine_audio.playing:
 					engine_audio.stop()
@@ -484,8 +536,12 @@ func _physics_process(delta):
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
 		var body = col.get_collider()
-		var normal_impact = absf(prev_velocity.dot(col.get_normal()))
-		var impact_speed = maxf(prev_velocity.length() - velocity.length(), normal_impact)
+		# get_normal() aponta da parede pra fora (pro lado do carro). Só conta
+		# como impacto quando a velocidade vai CONTRA essa normal (carro
+		# entrando na parede) — não quando ela se afasta (saindo de ré), senão
+		# um contato residual de 1-2 frames continua batendo mesmo recuando.
+		var closing_speed = maxf(0.0, -prev_velocity.dot(col.get_normal()))
+		var impact_speed = maxf(prev_velocity.length() - velocity.length(), closing_speed)
 		
 		if impact_speed > 35.0:
 			# Deforma a lataria (amassa parachoque, capô, portas ou traseira no ponto exato)
@@ -503,7 +559,7 @@ func _physics_process(delta):
 			
 			# Som de batida dinâmico
 			var crash_player = AudioStreamPlayer2D.new()
-			crash_player.stream = ProceduralAudio.get_crash_stream()
+			crash_player.stream = ProceduralAudio.get_crash_stream(active_archetype_id)
 			crash_player.pitch_scale = randf_range(0.85, 1.15)
 			crash_player.volume_db = clampf(lerp(-18.0, -6.0, impact_speed / 500.0), -22.0, -4.0)
 			crash_player.max_distance = 600.0
@@ -558,6 +614,15 @@ func _on_bumper_hitbox_entered(body: Node2D) -> void:
 		elif body.has_method("take_damage"):
 			body.take_damage(100, true)
 
+func _apply_steering_motion(turn_input: float, delta: float) -> void:
+	# Preserve existing handling for ordinary cars; specialized vehicles can
+	# supply their own steering geometry without duplicating collision/gameplay.
+	if velocity.length() > 10:
+		var current_turn: float = turn_input * turn_speed * delta
+		if velocity.dot(transform.x) < 0:
+			current_turn *= -1
+		rotation += current_turn
+
 func _activate_bloody_tires() -> void:
 	bloody_tires_timer = 4.0
 	if skid_line:
@@ -581,9 +646,22 @@ func _get_safe_exit_position() -> Vector2:
 			return pos
 	return candidates[0]
 
+func _is_near_building_entrance() -> bool:
+	for node in get_tree().get_nodes_in_group("harbor_entrance"):
+		if node.has_method("is_actor_in_range") and node.is_actor_in_range(self):
+			return true
+	for node in get_tree().get_nodes_in_group("harbor_interior_exit"):
+		if node.has_method("is_actor_in_range") and node.is_actor_in_range(self):
+			return true
+	return false
+
+var _boarding: Node
+
 func exit_vehicle():
 	if not is_driven_by_player:
 		return
+	if is_instance_valid(_boarding): _boarding.cancel()
+	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	_clear_headlight_override()
 	velocity = Vector2.ZERO
@@ -593,24 +671,38 @@ func exit_vehicle():
 	if radio_audio: radio_audio.stop()
 	_apply_headlight_state()
 	
-	_animate_car_door()
+	var exit_position := _get_safe_exit_position()
+	_animate_car_door(-1.0 if to_local(exit_position).y <= 0 else 1.0)
 	
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
-		player.global_position = _get_safe_exit_position()
+		player.global_position = exit_position
 		player.velocity = Vector2.ZERO
 		for col in player.find_children("", "CollisionShape2D", true, false):
 			col.set_deferred("disabled", false)
 		player.show()
 		player.set_physics_process(true)
+		remove_collision_exception_with(player)
+		player.remove_collision_exception_with(self)
 		var p_cam = player.get_node_or_null("Camera") as Camera2D
 		if p_cam:
-			p_cam.make_current()
+			preload("res://DynamicCamera.gd").handoff(p_cam, camera_view)
 
 func enter_vehicle(player_body: CharacterBody2D) -> void:
 	if is_driven_by_player or player_body == null or health <= 0:
 		return
+	var approach := player_body.global_position
+	var entry_side := -1.0 if to_local(approach).y <= 0 else 1.0
+	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
+	_entry_input_released = false
+	_drive_input_armed = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down").is_zero_approx()
+	_last_collision_damage_ms = Time.get_ticks_msec()
+	add_collision_exception_with(player_body)
+	player_body.add_collision_exception_with(self)
+	_hit_stop_frames = 0
+	is_skidding = false
+	if skid_line: skid_line.clear_points()
 	_clear_headlight_override()
 	velocity = Vector2.ZERO
 	is_boosting = false
@@ -622,25 +714,32 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	player_body.global_position = global_position
 	
 	# Animação visual da porta abrindo e batendo
-	_animate_car_door()
+	_animate_car_door(entry_side, 0.95 if entry_side > 0 else 0.6)
 	
 	player_body.hide()
 	player_body.set_physics_process(false)
-	camera.make_current()
+	for hud in get_tree().get_nodes_in_group("hud"):
+		if hud.has_method("show_vehicle_name"):
+			hud.show_vehicle_name(String(VehicleCatalog.get_vehicle_spec(active_archetype_id).get("label", "Veículo")))
+	preload("res://DynamicCamera.gd").handoff(camera, camera_view)
 	if engine_audio:
 		engine_audio.play()
 	if radio_audio and not radio_tracks.is_empty():
 		radio_audio.stream = radio_tracks[radio_index]
 		radio_audio.play()
 
-func _animate_car_door() -> void:
+	_boarding = preload("res://VehicleBoarding.gd").new()
+	add_child(_boarding)
+	_boarding.begin(self, player_body, approach, entry_side)
+
+func _animate_car_door(side: float = -1.0, hold_seconds: float = 0.42) -> void:
 	if _door_visual == null:
 		_door_visual = VEHICLE_DOOR_VISUAL.new()
 		_door_visual.name = "ProceduralVehicleDoor"
 		_door_visual.configure(Vector2(13.0, -15.0), 32.0)
 		add_child(_door_visual)
 	var body_color := sprite.modulate if sprite != null else Color("#d94141")
-	_door_visual.play(body_color)
+	_door_visual.play(body_color, side, hold_seconds)
 
 func take_damage(amount: int, _is_player_attacker: bool = false):
 	health -= amount
@@ -665,7 +764,7 @@ func take_damage(amount: int, _is_player_attacker: bool = false):
 var is_exploding: bool = false
 var is_exploded: bool = false
 
-const COLLISION_DAMAGE_COOLDOWN_MS := 220
+const COLLISION_DAMAGE_COOLDOWN_MS := 650
 var _last_collision_damage_ms: int = -999999
 
 func _start_combustion_countdown() -> void:
@@ -719,8 +818,8 @@ func _explode() -> void:
 	fireball.initial_velocity_min = 160.0
 	fireball.initial_velocity_max = 420.0
 	fireball.gravity = Vector2(0, 120)
-	fireball.scale_amount_min = 4.0
-	fireball.scale_amount_max = 10.0
+	fireball.scale_amount_min = 50.0 / 64.0
+	fireball.scale_amount_max = 120.0 / 64.0
 	fireball.color = Color(1.0, 0.48, 0.08, 0.95)
 	fireball.texture = _make_soft_particle_texture()
 	get_parent().add_child(fireball)
@@ -737,8 +836,8 @@ func _explode() -> void:
 	shrapnel.initial_velocity_min = 200.0
 	shrapnel.initial_velocity_max = 500.0
 	shrapnel.gravity = Vector2(0, 350)
-	shrapnel.scale_amount_min = 3.0
-	shrapnel.scale_amount_max = 6.0
+	shrapnel.scale_amount_min = 2.0 / 64.0
+	shrapnel.scale_amount_max = 5.0 / 64.0
 	shrapnel.color = Color(1.0, 0.85, 0.3)
 	shrapnel.texture = _make_soft_particle_texture()
 	get_parent().add_child(shrapnel)
@@ -837,77 +936,28 @@ func _ensure_dents_container() -> void:
 		dents_container.z_index = 2
 		add_child(dents_container)
 
-func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO) -> void:
-	if sprite == null: return
-	_ensure_dents_container()
-	
-	var local_norm = transform.basis_xform_inv(impact_normal)
-	var factor = clampf(impact_force / 420.0, 0.05, 0.28)
-	
-	# O carro NUNCA estica nem diminui: preserva proporção e escala rígidas
-	sprite.scale = Vector2(uniform_scale, uniform_scale)
-	sprite.position = Vector2.ZERO
-	sprite.skew = 0.0
-	
-	# Escurecimento sutil (marcas de arranhão e fuligem na lataria)
-	sprite.modulate = sprite.modulate.lerp(Color(0.60, 0.60, 0.62), 0.06 * (factor / 0.28))
-	
-	# Amassa e arranha a pintura
-	sprite.modulate = sprite.modulate.lerp(Color(0.42, 0.42, 0.45), 0.20)
-	
-	# Decalque visual de amassado e arranhão no ponto de choque
-	if hit_world_pos != Vector2.ZERO and dents_container:
-		var local_hit: Vector2 = to_local(hit_world_pos)
-		local_hit.x = clampf(local_hit.x, -36.0, 36.0)
-		local_hit.y = clampf(local_hit.y, -16.0, 16.0)
-		_spawn_dent_decal(local_hit, -local_norm, factor)
-		
-		# Se bateu a frente com violência, faróis falham/piscam
-		if local_hit.x > 14.0 and impact_force > 100.0 and headlight:
-			_flicker_and_damage_headlight()
-	
-	# Efeito sonoro de metal retorcendo
-	var crumple_player = AudioStreamPlayer2D.new()
-	crumple_player.stream = ProceduralAudio.get_metal_crumple_stream()
-	crumple_player.volume_db = -9.0
-	crumple_player.pitch_scale = randf_range(0.85, 1.15)
-	crumple_player.max_distance = 600.0
-	add_child(crumple_player)
-	crumple_player.play()
-	crumple_player.finished.connect(crumple_player.queue_free)
-	
-	# Destroços voando
-	_spawn_flying_debris(global_position, impact_normal)
+var _last_crash_visual_ms := -999999
+
+func _apply_crash_deformation(_impact_normal: Vector2, impact_force: float, _hit_world_pos: Vector2 = Vector2.ZERO) -> void:
+	if sprite == null or impact_force < 80.0:
+		return
+	var now := Time.get_ticks_msec()
+	if now - _last_crash_visual_ms < 650:
+		return
+	_last_crash_visual_ms = now
+	# Preserve the authored body; generic polygon dents protrude beyond its silhouette.
+	sprite.modulate = sprite.modulate.lerp(Color(0.72, 0.72, 0.74), 0.08)
+	if not "body_model" in self:
+		_ensure_dents_container()
+		_spawn_dent_decal(to_local(_hit_world_pos),global_transform.basis_xform_inv(_impact_normal),clampf(impact_force/420.0,0,1))
+
 
 func _spawn_dent_decal(local_pos: Vector2, dir: Vector2, strength: float) -> void:
 	if dents_container == null: return
-	if dents_container.get_child_count() > 8:
-		dents_container.get_child(0).queue_free()
-		
-	var dent := Polygon2D.new()
-	var w: float = randf_range(8.0, 16.0) * (1.0 + strength)
-	var h: float = randf_range(4.0, 10.0) * (1.0 + strength)
-	dent.polygon = PackedVector2Array([
-		Vector2(-w * 0.5, -h * 0.3),
-		Vector2(0, -h * 0.6),
-		Vector2(w * 0.5, -h * 0.2),
-		Vector2(w * 0.4, h * 0.4),
-		Vector2(-w * 0.3, h * 0.5)
-	])
-	dent.color = Color(0.12, 0.12, 0.16, 0.85)
-	dent.position = local_pos
-	dent.rotation = dir.angle() + randf_range(-0.3, 0.3)
-	
-	var scratch := Line2D.new()
-	scratch.points = PackedVector2Array([
-		Vector2(-w * 0.4, randf_range(-2, 2)),
-		Vector2(w * 0.4, randf_range(-2, 2))
-	])
-	scratch.width = 1.8
-	scratch.default_color = Color(0.85, 0.85, 0.90, 0.85)
-	dent.add_child(scratch)
-	
-	dents_container.add_child(dent)
+	var footprint := Vector2(54,24)
+	var shape := get_node_or_null("Collision") as CollisionShape2D
+	if shape and shape.shape is RectangleShape2D: footprint = shape.shape.size
+	preload("res://VehicleSurfaceWear2D.gd").add_scrape(dents_container,local_pos,dir,footprint,strength)
 
 func _flicker_and_damage_headlight() -> void:
 	if headlight == null: return
@@ -937,8 +987,8 @@ func _spawn_flying_debris(pos: Vector2, normal: Vector2) -> void:
 	debris_emitter.initial_velocity_min = 90.0
 	debris_emitter.initial_velocity_max = 220.0
 	debris_emitter.gravity = Vector2(0, 220)
-	debris_emitter.scale_amount_min = 2.0
-	debris_emitter.scale_amount_max = 4.5
+	debris_emitter.scale_amount_min = 2.0 / 64.0
+	debris_emitter.scale_amount_max = 4.5 / 64.0
 	debris_emitter.color = Color(0.85, 0.85, 0.9, 0.9)
 	debris_emitter.texture = _make_soft_particle_texture()
 	get_parent().add_child(debris_emitter)
@@ -949,6 +999,8 @@ func _spawn_flying_debris(pos: Vector2, normal: Vector2) -> void:
 static var _cached_soft_particle_texture: GradientTexture2D = null
 
 static func _make_soft_particle_texture() -> GradientTexture2D:
+	# Particle scales are multipliers of this 64px texture, NOT pixel sizes.
+	# Emitters above specify their world-pixel diameter divided by 64.
 	if _cached_soft_particle_texture != null:
 		return _cached_soft_particle_texture
 	var grad := Gradient.new()
@@ -1031,6 +1083,21 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 		sprite.modulate = chosen_color
 		
 	_build_roof_prop(String(spec.get("roof_prop", "none")))
+	_refresh_vehicle_sound_sets()
+
+
+func _refresh_vehicle_sound_sets() -> void:
+	if engine_audio:
+		var was_engine_playing := engine_audio.playing
+		engine_audio.stream = _engine_sound.get_stream("street", active_archetype_id)
+		if was_engine_playing:
+			engine_audio.play()
+
+	if skid_audio:
+		skid_audio.stream = ProceduralAudio.get_skid_stream(active_archetype_id)
+
+	if horn_audio:
+		horn_audio.stream = ProceduralAudio.get_horn_stream(active_archetype_id)
 
 func _build_roof_prop(prop_type: String) -> void:
 	if active_roof_prop_node and is_instance_valid(active_roof_prop_node):

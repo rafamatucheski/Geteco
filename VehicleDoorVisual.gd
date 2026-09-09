@@ -32,9 +32,11 @@ func _ready() -> void:
 	_rebuild_geometry()
 
 
-func play(body_color: Color) -> void:
+func play(body_color: Color, side: float = -1.0, hold_seconds: float = 0.42) -> void:
 	if _active_tween != null and _active_tween.is_running():
 		_active_tween.kill()
+	position.y = absf(position.y)*side
+	scale.y = -side
 	_apply_palette(body_color)
 	visible = true
 	rotation = 0.0
@@ -43,9 +45,9 @@ func play(body_color: Color) -> void:
 	# The configured hinge is on the upper/passenger side of vehicles. Positive
 	# rotation swings the long edge outward (towards -Y), never across the roof.
 	_active_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_active_tween.tween_property(self, "rotation", OPEN_ANGLE, 0.28)
-	_active_tween.tween_property(self, "rotation", OPEN_ANGLE - deg_to_rad(3.0), 0.06)
-	_active_tween.tween_interval(0.42)
+	_active_tween.tween_property(self, "rotation", OPEN_ANGLE * -side, 0.28)
+	_active_tween.tween_property(self, "rotation", (OPEN_ANGLE - deg_to_rad(3.0)) * -side, 0.06)
+	_active_tween.tween_interval(hold_seconds)
 	_active_tween.set_ease(Tween.EASE_IN)
 	_active_tween.tween_property(self, "rotation", 0.0, 0.26)
 	_active_tween.tween_callback(_finish_close)

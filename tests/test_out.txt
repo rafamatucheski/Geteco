@@ -1,0 +1,22 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+--- INICIANDO TESTE DE INTEGRAÇÃO: MOUNTAIN PASS ---
+SUCESSO: Conexão com HarborBridge integrada na entrada da montanha!
+SUCESSO: Parallax de altitude ativo com 12 nuvens volumétricas
+SUCESSO: Teto do túnel inicializado opaco (alpha = 1.0)
+SUCESSO: Mecânica cutaway revelou o interior do túnel (alpha = 0.000000)
+SUCESSO: Teto do túnel fechou com sucesso após saída
+SUCESSO: Chuva de gelo (granizo) ativa com 300 partículas
+SUCESSO: Nevasca polar ativa com 260 partículas
+SUCESSO: Frio polar drenou temperatura corporal para 96.5%
+SUCESSO: Aquecedor veicular recuperou temperatura para 100.0%
+SUCESSO: Fogueira da madeireira aqueceu rapidamente para 85.0%
+SUCESSO: Traje térmico manteve o calor estável (89.0%)
+SUCESSO: MountainSUV 3D instanciado e renderizado com sucesso!
+SUCESSO: Todos os setpieces (Madeireira, Ponte Pedestre, Caverna, Mirante e Bunker) validados!
+SUCESSO: Rede de estradinhas de terra da serra validada!
+SUCESSO: Chalés alpinos com varandas e lareiras validados (3 chalés)!
+SUCESSO: Ammu-Nation da montanha com estande de tiro e porta interativa validada!
+SUCESSO: Lago Secreto validado com avião dos contrabandistas e cofre da ilha!
+SUCESSO: Interiores jogáveis de Chalé (lareira) e Ammu-Nation (Vance) ativos e roteados!
+--- RESULTADO DO TESTE MOUNTAIN PASS: 0 FALHAS ---

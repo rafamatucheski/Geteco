@@ -83,16 +83,18 @@ func _spawn_speech_bubble(text_msg: String, text_color: Color) -> void:
 	var label = Label.new()
 	label.text = text_msg
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.position = Vector2(-75, -55)
-	label.size = Vector2(150, 20)
-	label.add_theme_font_size_override("font_size", 10)
+	label.position = Vector2(-110, -62)
+	label.size = Vector2(220, 26)
+	label.add_theme_font_size_override("font_size", 13)
 	label.add_theme_color_override("font_color", text_color)
+	label.add_theme_color_override("font_outline_color", Color(0.05, 0.05, 0.08, 0.95))
+	label.add_theme_constant_override("outline_size", 3)
 	label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	label.add_theme_constant_override("shadow_offset_x", 1)
 	label.add_theme_constant_override("shadow_offset_y", 1)
 	add_child(label)
 	
 	var tw = create_tween()
-	tw.tween_property(label, "position:y", -72.0, 2.2)
-	tw.parallel().tween_property(label, "modulate:a", 0.0, 2.2)
+	tw.tween_property(label, "position:y", -80.0, 2.4)
+	tw.parallel().tween_property(label, "modulate:a", 0.0, 2.4)
 	tw.tween_callback(label.queue_free)

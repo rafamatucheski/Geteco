@@ -34,6 +34,12 @@ var spray_particles: CPUParticles2D
 var rain_audio: AudioStreamPlayer
 var thunder_audio: AudioStreamPlayer
 var biome_audio: AudioStreamPlayer
+const WEATHER_AUDIO := preload("res://audio/weather/WeatherAudioMixer.gd")
+const RAIN_VISUALS := preload("res://audio/weather/RainVisualPalette.gd")
+var weather_audio: Node
+var rain_intensity := 0.55
+var _flash_tween: Tween
+var _thunder_tween: Tween
 
 # Paleta de Cores
 const COLOR_DAY = Color(1.0, 1.0, 1.0, 1.0)
@@ -55,9 +61,21 @@ func _ready() -> void:
 	_update_lighting()
 	call_deferred("_notify_headlights", is_dark)
 
+func _exit_tree() -> void:
+	if _flash_tween and _flash_tween.is_valid():
+		_flash_tween.kill()
+	if _thunder_tween and _thunder_tween.is_valid():
+		_thunder_tween.kill()
+	if is_instance_valid(biome_audio):
+		biome_audio.stop()
+		biome_audio.stream = null
+
 func _setup_weather_effects() -> void:
 	# 1. Chuva Slanted
 	rain_particles = CPUParticles2D.new()
+	rain_particles.texture = RAIN_VISUALS.streak()
+	rain_particles.particle_flag_align_y = true
+	rain_particles.gravity = Vector2.ZERO
 	rain_particles.emitting = false
 	rain_particles.amount = 180
 	rain_particles.lifetime = 0.65
@@ -67,14 +85,22 @@ func _setup_weather_effects() -> void:
 	rain_particles.spread = 4.0
 	rain_particles.initial_velocity_min = 600.0
 	rain_particles.initial_velocity_max = 800.0
-	rain_particles.scale_amount_min = 1.6
-	rain_particles.scale_amount_max = 2.8
+	rain_particles.scale_amount_min = 0.45
+	rain_particles.scale_amount_max = 0.85
 	rain_particles.color = Color(0.80, 0.90, 1.0, 0.55)
 	rain_particles.z_index = 30
 	add_child(rain_particles)
 	
 	# 2. Respingos no Asfalto
 	splash_particles = CPUParticles2D.new()
+	splash_particles.texture = RAIN_VISUALS.splash()
+	splash_particles.gravity = Vector2.ZERO
+	splash_particles.scale_amount_min = 0.3
+	splash_particles.scale_amount_max = 0.65
+	var splash_fade := Gradient.new()
+	splash_fade.set_color(0, Color.WHITE)
+	splash_fade.set_color(1, Color(1, 1, 1, 0))
+	splash_particles.color_ramp = splash_fade
 	splash_particles.emitting = false
 	splash_particles.amount = 70
 	splash_particles.lifetime = 0.25
@@ -157,17 +183,15 @@ func _setup_weather_effects() -> void:
 	add_child(spray_particles)
 	
 	# Áudio Players
-	rain_audio = AudioStreamPlayer.new()
-	rain_audio.stream = ProceduralAudio.get_rain_stream()
-	rain_audio.volume_db = -60.0
-	add_child(rain_audio)
-	
-	thunder_audio = AudioStreamPlayer.new()
-	thunder_audio.stream = ProceduralAudio.get_thunder_stream()
-	thunder_audio.volume_db = -8.0
-	add_child(thunder_audio)
+	weather_audio = WEATHER_AUDIO.new()
+	weather_audio.name = "WeatherAudio"
+	add_child(weather_audio)
+	# Keep the public player references used by scene diagnostics.
+	rain_audio = weather_audio.layers[0]
+	thunder_audio = weather_audio.thunder
 	
 	biome_audio = AudioStreamPlayer.new()
+	biome_audio.bus = &"SFX"
 	biome_audio.volume_db = -12.0
 	add_child(biome_audio)
 
@@ -221,6 +245,10 @@ func set_biome(type: BiomeType) -> void:
 			_fade_rain(false)
 			biome_changed.emit("Sunset Coast")
 			
+	_sync_rain_audio()
+	_update_rain_particles()
+	if is_inside_interior:
+		set_interior_mode(true)
 	_update_lighting()
 
 var is_inside_interior: bool = false
@@ -228,6 +256,8 @@ var is_inside_interior: bool = false
 func set_interior_mode(inside: bool) -> void:
 	is_inside_interior = inside
 	if inside:
+		if _flash_tween and _flash_tween.is_valid():
+			_flash_tween.kill()
 		color = Color(1.0, 1.0, 1.0, 1.0) # Iluminação neutra e clara de interior fechado
 		if rain_particles: rain_particles.emitting = false
 		if splash_particles: splash_particles.emitting = false
@@ -235,16 +265,18 @@ func set_interior_mode(inside: bool) -> void:
 		if sand_particles: sand_particles.emitting = false
 		if leaf_particles: leaf_particles.emitting = false
 		if spray_particles: spray_particles.emitting = false
-		_fade_rain(false)
+		_sync_rain_audio()
 		if biome_audio and biome_audio.playing:
 			biome_audio.volume_db = -35.0
 	else:
 		if biome_audio: biome_audio.volume_db = -10.0
 		_update_lighting()
-		set_weather(weather_state)
+		# Restore the existing state without manufacturing another lightning strike.
+		_sync_rain_audio()
+		_update_rain_particles()
 
 func is_raining() -> bool:
-	return not is_inside_interior and weather_state in [1, 2] and current_biome != BiomeType.DESERT_BADLANDS
+	return not is_inside_interior and get_rain_intensity() > 0.0
 
 func _process(delta: float) -> void:
 	if is_inside_interior:
@@ -264,6 +296,7 @@ func _process(delta: float) -> void:
 			if r < 0.55:
 				set_weather(0)
 			elif r < 0.85:
+				rain_intensity = randf_range(0.22, 0.65)
 				set_weather(1)
 			else:
 				set_weather(2)
@@ -278,6 +311,10 @@ func _process(delta: float) -> void:
 	var cam = get_viewport().get_camera_2d()
 	if cam:
 		var pos = cam.global_position
+		# Keep the bounded particle budget around the visible play area at any zoom.
+		var view_size: Vector2 = get_viewport().get_visible_rect().size / cam.zoom.abs().max(Vector2(0.05, 0.05))
+		rain_particles.emission_rect_extents = view_size * 0.5 + Vector2(220, 260)
+		splash_particles.emission_rect_extents = view_size * 0.5 + Vector2(30, 30)
 		if rain_particles: rain_particles.global_position = pos
 		if splash_particles: splash_particles.global_position = pos
 		if snow_particles: snow_particles.global_position = pos
@@ -286,6 +323,9 @@ func _process(delta: float) -> void:
 		if spray_particles: spray_particles.global_position = pos
 
 func _update_lighting() -> void:
+	if is_inside_interior:
+		color = Color.WHITE
+		return
 	var target_color = COLOR_DAY
 	
 	if time_of_day < 0.20:
@@ -323,7 +363,8 @@ func _update_lighting() -> void:
 			elif weather_state == 1:
 				target_color = target_color.lerp(COLOR_STORM, 0.40)
 			
-	color = target_color
+	if not (_flash_tween and _flash_tween.is_running()):
+		color = target_color
 	
 	var new_is_dark = (time_of_day > 0.78 or time_of_day < 0.28 or weather_state == 2)
 	if new_is_dark != is_dark:
@@ -342,46 +383,75 @@ func _notify_headlights(dark: bool) -> void:
 func set_weather(state: int) -> void:
 	if current_biome == BiomeType.DESERT_BADLANDS:
 		state = 0 # No deserto não há chuva
-	weather_state = state
-	
-	if weather_state == 0:
-		if rain_particles: rain_particles.emitting = false
-		if splash_particles: splash_particles.emitting = false
-		_fade_rain(false)
-	elif weather_state == 1:
-		if rain_particles: rain_particles.emitting = true
-		if splash_particles: splash_particles.emitting = true
-		_fade_rain(true, -12.0)
-	elif weather_state == 2:
-		if rain_particles: rain_particles.emitting = true
-		if splash_particles: splash_particles.emitting = true
-		_fade_rain(true, -6.0)
+	var previous := weather_state
+	weather_state = clampi(state, 0, 2)
+	_sync_rain_audio()
+	_update_rain_particles()
+	if weather_state != 2:
+		if _flash_tween and _flash_tween.is_valid():
+			_flash_tween.kill()
+		if _thunder_tween and _thunder_tween.is_valid():
+			_thunder_tween.kill()
+	elif previous != 2:
 		_trigger_lightning()
 		
 	_update_lighting()
 
 func _fade_rain(enable: bool, target_db: float = -12.0) -> void:
-	if rain_audio == null: return
-	var t := create_tween()
-	if enable:
-		if not rain_audio.playing: rain_audio.play()
-		t.tween_property(rain_audio, "volume_db", target_db, 2.5)
-	else:
-		t.tween_property(rain_audio, "volume_db", -60.0, 2.0)
-		t.tween_callback(rain_audio.stop)
+	# Legacy biome callers retain this API; no competing fade/stop callbacks.
+	if weather_audio:
+		weather_audio.set_conditions((1.0 if target_db >= -6.0 else rain_intensity) if enable else 0.0, is_inside_interior)
+
+func get_rain_intensity() -> float:
+	if current_biome not in [BiomeType.CITY_METROPOLIS, BiomeType.FOREST_WOODS]:
+		return 0.0
+	return 1.0 if weather_state == 2 else (rain_intensity if weather_state == 1 else 0.0)
+
+func set_rain_intensity(amount: float) -> void:
+	# Preserve serialized weather IDs: 0 clear, 1 rain (light/moderate), 2 storm.
+	rain_intensity = clampf(amount, 0.0, 1.0)
+	_sync_rain_audio()
+	_update_rain_particles()
+
+func _sync_rain_audio() -> void:
+	if weather_audio:
+		weather_audio.set_conditions(get_rain_intensity(), is_inside_interior)
+
+func _update_rain_particles() -> void:
+	var strength := get_rain_intensity()
+	var outside := strength > 0.0 and not is_inside_interior
+	if rain_particles:
+		rain_particles.emitting = outside
+		var drop_count := int(lerpf(100.0, 620.0, strength))
+		if rain_particles.amount != drop_count:
+			rain_particles.amount = drop_count
+		rain_particles.initial_velocity_min = lerpf(400.0, 740.0, strength)
+		rain_particles.initial_velocity_max = lerpf(560.0, 980.0, strength)
+		rain_particles.scale_amount_min = lerpf(0.35, 0.65, strength)
+		rain_particles.scale_amount_max = lerpf(0.5, 1.3, strength)
+		rain_particles.color.a = lerpf(0.18, 0.70, strength)
+	if splash_particles:
+		splash_particles.emitting = outside
+		var splash_count := int(lerpf(25.0, 180.0, strength))
+		if splash_particles.amount != splash_count:
+			splash_particles.amount = splash_count
+		splash_particles.color.a = lerpf(0.12, 0.45, strength)
 
 func _trigger_lightning() -> void:
-	if weather_state != 2: return
-	var flash_t := create_tween()
+	if weather_state != 2 or is_inside_interior or get_rain_intensity() <= 0.0: return
+	if _thunder_tween and _thunder_tween.is_running(): return
+	_flash_tween = create_tween()
+	var flash_t := _flash_tween
 	flash_t.tween_property(self, "color", Color(2.0, 2.0, 2.2), 0.05)
 	flash_t.tween_property(self, "color", Color(0.2, 0.22, 0.3), 0.08)
 	flash_t.tween_property(self, "color", Color(1.8, 1.8, 2.0), 0.04)
 	flash_t.tween_property(self, "color", COLOR_STORM, 0.4)
+	flash_t.finished.connect(_update_lighting)
 	
-	var thunder_t := create_tween()
-	thunder_t.tween_interval(0.25)
+	_thunder_tween = create_tween()
+	var thunder_t := _thunder_tween
+	thunder_t.tween_interval(randf_range(0.8, 3.2))
 	thunder_t.tween_callback(func():
-		if thunder_audio:
-			thunder_audio.pitch_scale = randf_range(0.85, 1.15)
-			thunder_audio.play()
+		if weather_audio and weather_state == 2 and get_rain_intensity() > 0.0:
+			weather_audio.play_thunder()
 	)

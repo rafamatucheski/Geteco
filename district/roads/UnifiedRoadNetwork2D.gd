@@ -7,6 +7,7 @@ extends Node2D
 ## junction discovery, lane markings and validation.
 
 const ROAD_COLOR := Color("#202932")
+const BRIDGE_SURFACE = preload("res://district/roads/BridgeSurfaceStyle.gd")
 const ROAD_EDGE_COLOR := Color("#151c23")
 const SIDEWALK_COLOR := Color("#aaa9a1")
 const CURB_COLOR := Color("#70767a")
@@ -179,8 +180,10 @@ func _collect_roads() -> void:
 				"lane_count_by_direction": {},
 				"junctions": [],
 				"render": bool(definition.get("render", true)),
+				"bridge_surface": bool(definition.get("bridge_surface", false)),
 				"open_start": bool(definition.get("open_start", false)),
 				"open_end": bool(definition.get("open_end", false)),
+				"preserve_open_endpoints": bool(definition.get("preserve_open_endpoints", false)),
 				"guard_rail_openings": guard_rail_openings,
 				"snap_start": String(definition.get("snap_start", "")),
 				"snap_end": String(definition.get("snap_end", "")),
@@ -243,6 +246,10 @@ func _get_elevated_corridor_sources() -> Array[Node2D]:
 	return result
 
 
+func _fixed_open_endpoint(road: Dictionary, index: int) -> bool:
+	if not bool(road.get("preserve_open_endpoints", false)): return false
+	return bool(road.open_start) if index == 0 else bool(road.open_end)
+
 func _snap_endpoints_to_network() -> void:
 	# Endpoint-to-endpoint snapping is deterministic: the earlier provider is
 	# the anchor, so a manually edited main street does not drift toward a spur.
@@ -255,7 +262,9 @@ func _snap_endpoints_to_network() -> void:
 			if second_control.size() < 2:
 				continue
 			for first_endpoint in [0, first_control.size() - 1]:
+				if _fixed_open_endpoint(_roads[first_index], first_endpoint): continue
 				for second_endpoint in [0, second_control.size() - 1]:
+					if _fixed_open_endpoint(_roads[second_index], second_endpoint): continue
 					if first_control[first_endpoint].distance_to(second_control[second_endpoint]) <= snap_distance:
 						second_control[second_endpoint] = first_control[first_endpoint]
 			_roads[first_index].control = first_control
@@ -268,6 +277,7 @@ func _snap_endpoints_to_network() -> void:
 		if control.size() < 2:
 			continue
 		for endpoint_index in [0, control.size() - 1]:
+			if _fixed_open_endpoint(_roads[road_index], endpoint_index): continue
 			var endpoint := control[endpoint_index]
 			var best_point := endpoint
 			var best_distance := snap_distance + 0.001
@@ -920,6 +930,74 @@ func _build_lane_connections() -> void:
 		junction.lane_connections = junction_lane_connections
 		_junctions[junction_index] = junction
 
+	# A connector's exit_curve_offset can land a vehicle past the SAME
+	# destination lane's own outgoing entry_curve_offset at the same
+	# junction -- a short lane whose relevant end IS the junction (a tight
+	# quarter-arc road, not a long unbroken one). That vehicle would have no
+	# room left to plan its own next move: JunctionTrafficController's
+	# entry_curve_offset filters reject any candidate already behind
+	# progress, and this junction never offers a "continue on the current
+	# lane, no connector needed" fallback because there IS no more current
+	# lane left. Reproduced live: junction_039_7400_1700's cobra_approach ->
+	# cobra_court_southwest connector (Ashbend/Cobra roundabout) landed a
+	# vehicle 51px past its own only two real exits, stranding it forever --
+	# reservation granted, signal green, nowhere the game would ever let it
+	# go. Compute, once here, exactly how much extra allowance each
+	# INDIVIDUALLY AFFECTED connection needs (0.0 for the overwhelming
+	# majority) so the controller can grant it only where structurally
+	# required. A per-junction blanket relaxation was tried instead and
+	# reverted: it also loosened ordinary drove-past-it-too-fast overshoot
+	# for unrelated connections sharing the same junction radius, including
+	# ones on Bairro1's rail level crossing approach, and caused a real
+	# vehicle/train collision (rail_level_crossing_runtime_test). This
+	# per-connection value cannot affect any connection it is not computed
+	# for -- every other connection's allowance stays 0.0.
+	# Group every connector-requiring connection by the lane it ARRIVES ON,
+	# so each OUTGOING connection (the one that actually gets filtered by
+	# entry_curve_offset in JunctionTrafficController) can look up whatever
+	# might have landed a vehicle on its own from_lane_id past its own
+	# entry point.
+	var incoming_by_lane: Dictionary = {}
+	for connection in _lane_connections:
+		if not bool(connection.requires_connector):
+			continue
+		var to_lane_id := String(connection.to_lane_id)
+		var bucket: Array = incoming_by_lane.get(to_lane_id, [])
+		bucket.append(connection)
+		incoming_by_lane[to_lane_id] = bucket
+	for connection in _lane_connections:
+		if not bool(connection.requires_connector):
+			continue
+		var from_lane_id := String(connection.from_lane_id)
+		var entry_offset := float(connection.entry_curve_offset)
+		var junction_index := int(connection.junction_index)
+		var worst_needed := 0.0
+		for incoming_value in (incoming_by_lane.get(from_lane_id, []) as Array):
+			var incoming := incoming_value as Dictionary
+			# Both ends of the same short lane can register against the same
+			# junction (the Cobra roundabout pattern this exists for); a long,
+			# unbroken lane threading through several DIFFERENT junctions
+			# must not have an arrival at one distant junction treated as
+			# overshooting THIS junction's unrelated exit -- only an
+			# incoming connector landing at the SAME junction this outgoing
+			# connection departs from is structurally the same "nowhere left
+			# to plan" case. Missing this scoped to junction_index inflated
+			# allowances up to 1115px on Bairro1Expansion/midtown_cross and
+			# east_arc (long roads spanning several junctions including the
+			# rail crossing) and reintroduced the vehicle/train collision.
+			if int(incoming.get("junction_index", -1)) != junction_index:
+				continue
+			var incoming_exit := float(incoming.get("exit_curve_offset", -1.0))
+			if incoming_exit < 0.0:
+				continue
+			worst_needed = maxf(worst_needed, incoming_exit - entry_offset)
+		if worst_needed > 0.0:
+			# +1.0 covers get_closest_offset's sampling resolution: the
+			# entry/exit trims are meant to mirror each other exactly but
+			# can miss by a few thousandths of a pixel, which would
+			# otherwise reject the very overshoot this exists to cover.
+			connection.landing_overshoot_allowance = worst_needed + 1.0
+
 	for road in _roads:
 		for lane_value in road.lanes:
 			var lane := lane_value as Dictionary
@@ -1073,7 +1151,10 @@ func _draw() -> void:
 	_draw_road_pass(ROAD_COLOR, 0.0)
 	for road in _roads:
 		if bool(road.render):
-			_draw_lane_markings(road.points)
+			if bool(road.get("bridge_surface", false)):
+				_draw_bridge_lane(road)
+			else:
+				_draw_lane_markings(road.points)
 	if show_junction_debug:
 		for junction in _junctions:
 			draw_circle(junction.position, 9.0, Color(0.15, 0.9, 0.55, 0.85))
@@ -1082,6 +1163,9 @@ func _draw() -> void:
 func _draw_road_pass(color: Color, extra_width: float) -> void:
 	for road in _roads:
 		if bool(road.render):
+			var surface_color := color
+			if bool(road.get("bridge_surface", false)):
+				surface_color = BRIDGE_SURFACE.ASPHALT if extra_width == 0 else (BRIDGE_SURFACE.SHOULDER if extra_width > 10 else BRIDGE_SURFACE.CURB)
 			var surfaces := Geometry2D.offset_polyline(
 				road.points,
 				(float(road.width) + extra_width) * 0.5,
@@ -1091,7 +1175,7 @@ func _draw_road_pass(color: Color, extra_width: float) -> void:
 			for surface in surfaces:
 				var polygon := surface as PackedVector2Array
 				if polygon.size() >= 3 and not Geometry2D.is_polygon_clockwise(polygon):
-					draw_colored_polygon(polygon, color)
+					draw_colored_polygon(polygon, surface_color)
 	# Every material layer receives the same topological junction envelope.
 	# Drawing this after all independent ribbons removes their butt-cap seams;
 	# the progressively narrower passes then cover the inner sidewalk/curb
@@ -1102,6 +1186,18 @@ func _draw_road_pass(color: Color, extra_width: float) -> void:
 		if patch.size() >= 3 and not Geometry2D.triangulate_polygon(patch).is_empty():
 			draw_colored_polygon(patch, color)
 
+
+func _draw_bridge_lane(road: Dictionary) -> void:
+	# Each separated carriageway has exactly one lane: no central divider.
+	var points: PackedVector2Array = road.points
+	draw_polyline(points, BRIDGE_SURFACE.WEAR, 18.0, true)
+	for side in [-1.0, 1.0]:
+		var edge := PackedVector2Array()
+		for i in points.size():
+			var tangent := (points[mini(i+1,points.size()-1)]-points[maxi(i-1,0)]).normalized()
+			edge.append(points[i]+Vector2(-tangent.y,tangent.x)*(float(road.width)*0.5-8)*side)
+		if edge.size() > 1:
+			draw_polyline(edge, BRIDGE_SURFACE.EDGE, 3.0, true)
 
 func _build_junction_surface_geometry(junction: Dictionary, extra_width: float) -> Dictionary:
 	var arms := _junction_surface_arms(junction, extra_width)
@@ -1257,6 +1353,7 @@ func _counter_clockwise_polygon(points: PackedVector2Array) -> PackedVector2Arra
 
 
 func _draw_lane_markings(points: PackedVector2Array) -> void:
+	var dash_segments := PackedVector2Array()
 	var travelled := 0.0
 	var cycle_length := DASH_LENGTH + DASH_GAP
 	for index in range(points.size() - 1):
@@ -1276,9 +1373,12 @@ func _draw_lane_markings(points: PackedVector2Array) -> void:
 				var from := a + direction * walked
 				var to := a + direction * (walked + step)
 				if not _marking_hits_junction((from + to) * 0.5):
-					draw_line(from, to, LANE_COLOR, 3.0, true)
+					dash_segments.append(from)
+					dash_segments.append(to)
 			walked += maxf(step, 0.5)
 		travelled += segment_length
+	if not dash_segments.is_empty():
+		draw_multiline(dash_segments, LANE_COLOR, 3.0, true)
 
 
 func _marking_hits_junction(point: Vector2) -> bool:

@@ -46,7 +46,7 @@ static func get_hover_stream() -> AudioStreamWAV:
 		# Decaimento exponencial rápido
 		var env := attack * exp(-t * 90.0)
 		# Tom suave em 580 Hz com leve chirp ascendente (+60 Hz)
-		var freq := 580.0 + 60.0 * (t / duration)
+		var freq := 240.0 - 40.0 * (t / duration)
 		var sample := sin(2.0 * PI * freq * t) * env * 0.28
 		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
 		data.encode_s16(i * 2, int_sample)
@@ -66,7 +66,7 @@ static func get_click_stream() -> AudioStreamWAV:
 		return _cached_click
 
 	var sample_rate := 22050
-	var duration := 0.065 # 65ms (snappy e satisfatório)
+	var duration := 0.14 # 65ms (snappy e satisfatório)
 	var num_samples := int(sample_rate * duration)
 	var data := PackedByteArray()
 	data.resize(num_samples * 2)
@@ -74,9 +74,9 @@ static func get_click_stream() -> AudioStreamWAV:
 	for i in range(num_samples):
 		var t := float(i) / float(sample_rate)
 		var attack := clampf(t / 0.0015, 0.0, 1.0)
-		var env := attack * exp(-t * 55.0)
+		var env := attack * exp(-t * 28.0)
 		# Transiente descendente de 840 Hz para 420 Hz
-		var pitch := 420.0 + 420.0 * exp(-t * 80.0)
+		var pitch := 120.0 + 110.0 * exp(-t * 35.0)
 		var tone_fund := sin(2.0 * PI * pitch * t)
 		var tone_harm := sin(2.0 * PI * (pitch * 2.0) * t) * 0.20
 		var sample := (tone_fund + tone_harm) * env * 0.40
@@ -96,85 +96,14 @@ static func get_click_stream() -> AudioStreamWAV:
 # SÍNTESE DE MÚSICA DE FUNDO (AMBIENT SYNTH LOOP)
 # ==============================================================================
 
-## Retorna stream em loop contínuo de 6 segundos com progressão de acordes ambiente
+## Original urban suspense instrumental, pre-rendered to avoid synthesis on menu open.
 static func get_music_stream() -> AudioStreamWAV:
-	if _cached_music != null:
-		return _cached_music
-
-	var sample_rate := 22050
-	var duration := 6.0 # 6 segundos loopable
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	# Frequências dos 4 acordes (Dm -> Bb -> C -> Am), 1.5s cada
-	var chords := [
-		[146.83, 174.61, 220.00, 261.63], # Dm: D3, F3, A3, C4
-		[116.54, 174.61, 233.08, 293.66], # Bb: Bb2, F3, Bb3, D4
-		[130.81, 164.81, 196.00, 261.63], # C: C3, E3, G3, C4
-		[110.00, 164.81, 220.00, 261.63]  # Am: A2, E3, A3, C4
-	]
-
-	# Arpeggio sutil em cima (16 passos de 0.375s)
-	var arp_notes := [
-		440.0, 349.23, 293.66, 349.23,
-		466.16, 349.23, 293.66, 349.23,
-		523.25, 392.00, 329.63, 392.00,
-		440.0, 329.63, 261.63, 329.63
-	]
-
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		
-		# Determinar acorde atual e próximo com interpolação suave
-		var chord_idx := int(t / 1.5) % 4
-		var next_chord_idx := (chord_idx + 1) % 4
-		var chord_phase := fmod(t, 1.5) / 1.5
-		
-		# Peso de transição entre acordes (curva cosseno suave)
-		var blend := 0.5 - 0.5 * cos(chord_phase * PI)
-		
-		# Somar notas do acorde atual
-		var c1 = chords[chord_idx]
-		var pad1 := 0.0
-		for f in c1:
-			# Mistura de onda senoidal suave com segundo harmônico sutil
-			pad1 += sin(2.0 * PI * f * t) * 0.18 + sin(4.0 * PI * f * t) * 0.05
-		
-		# Somar notas do próximo acorde
-		var c2 = chords[next_chord_idx]
-		var pad2 := 0.0
-		for f in c2:
-			pad2 += sin(2.0 * PI * f * t) * 0.18 + sin(4.0 * PI * f * t) * 0.05
-		
-		var pad_mix := lerpf(pad1, pad2, blend)
-		
-		# LFO de tremolo sutil (0.5 Hz)
-		var lfo := 0.88 + 0.12 * sin(2.0 * PI * 0.5 * t)
-		pad_mix *= lfo
-		
-		# Arpeggio agudo (plucky)
-		var arp_step := int(t / 0.375) % 16
-		var arp_freq = arp_notes[arp_step]
-		var arp_time := fmod(t, 0.375)
-		var arp_env := exp(-arp_time * 9.0)
-		var arp_sample := sin(2.0 * PI * arp_freq * t) * arp_env * 0.09
-		
-		# Mixagem final com ganho seguro para não clipar
-		var total := (pad_mix * 0.45 + arp_sample) * 0.85
-		var int_sample := clampi(int(total * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-	stream.loop_begin = 0
-	stream.loop_end = num_samples
-	stream.data = data
-	_cached_music = stream
-	return stream
+	if _cached_music == null:
+		_cached_music = load("res://audio/menu/harbor_night_menu.wav").duplicate() as AudioStreamWAV
+		_cached_music.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		_cached_music.loop_begin = 0
+		_cached_music.loop_end = _cached_music.data.size() / 4
+	return _cached_music
 
 # ==============================================================================
 # REPRODUÇÃO E VINCULAÇÃO DE BOTÕES (HOOKS)
@@ -204,11 +133,20 @@ static func _play_sfx(context_node: Node, player_name: String, stream: AudioStre
 		player.name = player_name
 		player.bus = get_sfx_bus_name()
 		player.process_mode = Node.PROCESS_MODE_ALWAYS
-		tree.root.add_child(player)
+		# Initial focus may fire while the root is adding the menu scene.
+		# Queue insertion and playback in that order; reuse the pending player
+		# when several focus events arrive in the same frame.
+		var pending: Variant = tree.root.get_meta(player_name) if tree.root.has_meta(player_name) else null
+		if is_instance_valid(pending):
+			player.free()
+			player = pending
+		else:
+			tree.root.set_meta(player_name, player)
+			tree.root.add_child.call_deferred(player)
 
 	player.stream = stream
 	player.volume_db = volume_db
-	player.play()
+	player.play.call_deferred()
 
 ## Vincula sinais focus_entered, mouse_entered e pressed em um botão individual
 static func hook_button(btn: BaseButton, host_node: Node) -> void:
@@ -219,8 +157,12 @@ static func hook_button(btn: BaseButton, host_node: Node) -> void:
 	btn.set_meta("__menu_audio_hooked", true)
 
 	btn.focus_entered.connect(func(): play_hover(host_node))
-	btn.mouse_entered.connect(func(): play_hover(host_node))
+	btn.mouse_entered.connect(func():
+		if not btn.disabled: btn.grab_focus())
 	btn.pressed.connect(func(): play_click(host_node))
+	if btn is OptionButton:
+		btn.get_popup().id_focused.connect(func(_id): play_hover(host_node))
+		btn.item_selected.connect(func(_id): play_click(host_node))
 
 ## Vincula recursivamente todos os BaseButtons filhos de container ao host_node
 static func hook_buttons(container: Node, host_node: Node = null) -> void:

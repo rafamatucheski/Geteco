@@ -15,8 +15,14 @@ O jogo carrega esses arquivos automaticamente em runtime — não precisa reimpo
 | Arquivo | Uso | Onde Baixar (Royalty-Free) |
 |---|---|---|
 | `engine_loop.wav` | Loop de motor do carro | freesound.org: "car engine idle loop" |
+| `engine_street.wav`, `engine_sport.wav`, `engine_diesel.wav` (opcional) | Loops de família para carros leves/esportivos/caminhões | freesound.org: "car engine loop" |
+| `vehicle/<id>_street.wav`, `vehicle/<id>_sport.wav`, `vehicle/<id>_diesel.wav` (opcional) | Loop por veículo+família (ex.: `vehicle/sport_coupe_diesel.wav`) | Use os mesmos bancos de busca acima |
 | `skid.wav` | Derrapagem de pneu | freesound.org: "tire screeching" |
+| `vehicle/<id>_skid.wav` | Derrapagem de pneu por veículo (opcional) | Use os mesmos bancos de busca acima |
+| `horn.wav` | Buzina | freesound.org: "car horn" |
+| `vehicle/<id>_horn.wav` | Buzina por veículo (opcional) | Use os mesmos bancos de busca acima |
 | `crash.wav` | Batida de metal | freesound.org: "car crash metal" |
+| `vehicle/<id>_crash.wav` | Batida de metal por veículo (opcional) | Use os mesmos bancos de busca acima |
 
 ### Rádio (pasta: `audio/radio/`)
 | Arquivo | Uso |

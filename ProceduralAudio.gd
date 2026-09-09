@@ -1,10 +1,12 @@
 class_name ProceduralAudio
 extends RefCounted
 
+const COMBAT_AUDIO := preload("res://audio/combat/CombatAudioBank.gd")
+
 static var _cached_engine: AudioStream = null
-static var _cached_skid: AudioStream = null
-static var _cached_crash: AudioStream = null
-static var _cached_horn: AudioStream = null
+static var _cached_skid: Dictionary = {}
+static var _cached_crash: Dictionary = {}
+static var _cached_horn: Dictionary = {}
 static var _cached_ambience: AudioStream = null
 static var _cached_siren: AudioStream = null
 static var _cached_squish: AudioStream = null
@@ -54,16 +56,50 @@ static func get_engine_stream() -> AudioStream:
 	return stream
 
 # ==========================================
+# HELPERS DE ÁUDIO POR VEÍCULO / FAMÍLIA
+# ==========================================
+static func _cache_key(vehicle_id: String, sound_name: String) -> String:
+	var normalized_id := vehicle_id.strip_edges()
+	if normalized_id.is_empty():
+		return "global::" + sound_name
+	return normalized_id + "::" + sound_name
+
+static func _candidate_sound_paths(vehicle_id: String, sound_name: String) -> Array[String]:
+	var id := vehicle_id.strip_edges()
+	var extensions: Array[String] = [".wav", ".ogg", ".mp3"]
+	var result: Array[String] = []
+	for ext in extensions:
+		if not id.is_empty():
+			result.append("res://audio/vehicle/%s_%s%s" % [id, sound_name, ext])
+			result.append("res://audio/vehicle/%s%s" % [id, ext])
+			result.append("res://audio/%s_%s%s" % [id, sound_name, ext])
+			result.append("res://audio/%s%s" % [id, ext])
+		result.append("res://audio/%s%s" % [sound_name, ext])
+	return result
+
+static func _resolve_vehicle_sound_stream(vehicle_id: String, sound_name: String) -> AudioStream:
+	for path in _candidate_sound_paths(vehicle_id, sound_name):
+		if ResourceLoader.exists(path):
+			var stream := load(path)
+			if stream is AudioStream:
+				return stream
+	return null
+
+# ==========================================
 # DERRAPAGEM (SKID / TIRE SCREECH)
 # ==========================================
-static func get_skid_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/skid.wav"):
-		return load("res://audio/skid.wav")
-	if ResourceLoader.exists("res://audio/skid.ogg"):
-		return load("res://audio/skid.ogg")
-	if _cached_skid != null:
-		return _cached_skid
+static func get_skid_stream(vehicle_id: String = "") -> AudioStream:
+	var key := _cache_key(vehicle_id, "skid")
+	if _cached_skid.has(key):
+		return _cached_skid[key]
 
+	var stream := _resolve_vehicle_sound_stream(vehicle_id, "skid")
+	if stream == null:
+		stream = _generate_skid_stream()
+	_cached_skid[key] = stream
+	return stream
+
+static func _generate_skid_stream() -> AudioStream:
 	var sample_rate := 22050
 	var duration := 0.8
 	var num_samples := int(sample_rate * duration)
@@ -86,20 +122,23 @@ static func get_skid_stream() -> AudioStream:
 	stream.stereo = false
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	stream.data = data
-	_cached_skid = stream
 	return stream
 
 # ==========================================
 # COLISÃO (CRASH / IMPACT)
 # ==========================================
-static func get_crash_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/crash.wav"):
-		return load("res://audio/crash.wav")
-	if ResourceLoader.exists("res://audio/crash.ogg"):
-		return load("res://audio/crash.ogg")
-	if _cached_crash != null:
-		return _cached_crash
+static func get_crash_stream(vehicle_id: String = "") -> AudioStream:
+	var key := _cache_key(vehicle_id, "crash")
+	if _cached_crash.has(key):
+		return _cached_crash[key]
 
+	var stream := _resolve_vehicle_sound_stream(vehicle_id, "crash")
+	if stream == null:
+		stream = _generate_crash_stream()
+	_cached_crash[key] = stream
+	return stream
+
+static func _generate_crash_stream() -> AudioStream:
 	var sample_rate := 22050
 	var duration := 0.6
 	var num_samples := int(sample_rate * duration)
@@ -122,20 +161,23 @@ static func get_crash_stream() -> AudioStream:
 	stream.stereo = false
 	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
 	stream.data = data
-	_cached_crash = stream
 	return stream
 
 # ==========================================
 # BUZINA (HORN)
 # ==========================================
-static func get_horn_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/horn.wav"):
-		return load("res://audio/horn.wav")
-	if ResourceLoader.exists("res://audio/horn.ogg"):
-		return load("res://audio/horn.ogg")
-	if _cached_horn != null:
-		return _cached_horn
+static func get_horn_stream(vehicle_id: String = "") -> AudioStream:
+	var key := _cache_key(vehicle_id, "horn")
+	if _cached_horn.has(key):
+		return _cached_horn[key]
 
+	var stream := _resolve_vehicle_sound_stream(vehicle_id, "horn")
+	if stream == null:
+		stream = _generate_horn_stream()
+	_cached_horn[key] = stream
+	return stream
+
+static func _generate_horn_stream() -> AudioStream:
 	var sample_rate := 22050
 	var duration := 0.4
 	var num_samples := int(sample_rate * duration)
@@ -160,7 +202,6 @@ static func get_horn_stream() -> AudioStream:
 	stream.stereo = false
 	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
 	stream.data = data
-	_cached_horn = stream
 	return stream
 
 # ==========================================
@@ -210,18 +251,44 @@ static func get_siren_stream() -> AudioStream:
 		return load("res://audio/siren.ogg")
 	if _cached_siren != null:
 		return _cached_siren
+	_cached_siren = _generate_siren_stream()
+	return _cached_siren
 
+static func _generate_siren_stream() -> AudioStream:
 	var sample_rate := 22050
-	var duration := 1.2
+	# 3.0s wail cycle (650Hz <-> 1150Hz, average 900Hz). 900 * 3.0 = 2700 whole
+	# cycles, so the accumulated phase lands back on a multiple of 2*PI at the
+	# loop point with the same instantaneous frequency it started with --
+	# the waveform wraps with matching value AND slope, so LOOP_FORWARD is a
+	# genuinely seamless loop instead of clicking at the seam.
+	var duration := 3.0
 	var num_samples := int(sample_rate * duration)
 	var data := PackedByteArray()
 	data.resize(num_samples * 2)
 
+	var freq_lo := 650.0
+	var freq_hi := 1150.0
+	var phase := 0.0
 	for i in range(num_samples):
 		var t := float(i) / float(sample_rate)
-		# Sweep de frequência 650Hz até 1150Hz
-		var freq := 650.0 + (sin(2.0 * PI * (1.0 / duration) * t) + 1.0) * 0.5 * 500.0
-		var sample := sin(2.0 * PI * freq * t) * 0.35
+		# Raised-cosine sweep: zero slope at both ends of the cycle, so the
+		# pitch itself glides smoothly through the wrap instead of jumping --
+		# this is what reads as a recognizable, continuous "wail" alternation
+		# rather than an abrupt siren toggle.
+		var lfo := 0.5 - 0.5 * cos(2.0 * PI * t / duration)
+		var freq := freq_lo + (freq_hi - freq_lo) * lfo
+		# Sample using the phase accumulated so far (phase starts at exactly 0
+		# for sample 0), THEN advance it -- so sample[0] == sin(0) and the
+		# last sample lands one small increment short of sample[0]'s phase
+		# (mod 2*PI), i.e. exactly what a continuously running oscillator
+		# would produce next. Incrementing before sampling would shift the
+		# whole buffer by one step and reintroduce a seam-edge jump.
+		var tone := sin(phase)
+		var warmth := sin(phase * 2.0) * 0.10 + sin(phase * 3.0) * 0.04
+		phase += 2.0 * PI * freq / float(sample_rate)
+		# Soft-clip (tanh) instead of hard clamp: keeps the top of the wail
+		# rounded instead of harsh/painful, with headroom so nothing clips.
+		var sample := tanh((tone + warmth) * 0.75) * 0.55
 		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
 		data.encode_s16(i * 2, int_sample)
 
@@ -230,9 +297,9 @@ static func get_siren_stream() -> AudioStream:
 	stream.mix_rate = sample_rate
 	stream.stereo = false
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
 	stream.loop_end = num_samples
 	stream.data = data
-	_cached_siren = stream
 	return stream
 
 static var _cached_police_alarm: AudioStream = null
@@ -243,20 +310,40 @@ static var _cached_police_alarm: AudioStream = null
 static func get_police_alarm_stream() -> AudioStream:
 	if _cached_police_alarm != null:
 		return _cached_police_alarm
+	_cached_police_alarm = _generate_police_alarm_stream()
+	return _cached_police_alarm
 
+static func _generate_police_alarm_stream() -> AudioStream:
 	var sample_rate := 22050
-	var duration := 0.75
+	# 0.8s = exactly two hi/lo pairs at a 0.4s period, and both carrier
+	# frequencies complete a whole number of cycles across that span
+	# (880*0.8=704, 1320*0.8=1056) -- both the crossfade envelope and the
+	# tones themselves close cleanly on the loop boundary.
+	var duration := 0.8
+	var period := 0.4
 	var num_samples := int(sample_rate * duration)
 	var data := PackedByteArray()
 	data.resize(num_samples * 2)
 
-	# Alarme em 2 tons alternados rápidos (900Hz e 1400Hz) com harmônicos metálicos
+	var freq_a := 880.0
+	var freq_b := 1320.0
+	var phase_a := 0.0
+	var phase_b := 0.0
 	for i in range(num_samples):
 		var t := float(i) / float(sample_rate)
-		var phase := int(t * 6.0) % 2
-		var freq := 880.0 if phase == 0 else 1380.0
-		var sample := sin(2.0 * PI * freq * t) * 0.40
-		sample += sin(4.0 * PI * freq * t) * 0.15 # 2º harmônico
+		# Sample on the phase accumulated so far (starts at 0 for sample 0),
+		# then advance -- see the matching note in _generate_siren_stream()
+		# for why the order matters for a click-free loop seam.
+		var tone_a := sin(phase_a) + sin(phase_a * 2.0) * 0.08
+		var tone_b := sin(phase_b) + sin(phase_b * 2.0) * 0.08
+		phase_a += 2.0 * PI * freq_a / float(sample_rate)
+		phase_b += 2.0 * PI * freq_b / float(sample_rate)
+		# Smoothed square wave (tanh of a sine) crossfades between the two
+		# tones with a short, click-free glide instead of an instant
+		# frequency jump -- the previous int(t*6)%2 switch caused a phase
+		# discontinuity every ~0.17s, which is what read as "estalos".
+		var m := 0.5 + 0.5 * tanh(12.0 * sin(2.0 * PI * t / period))
+		var sample := (tone_a * m + tone_b * (1.0 - m)) * 0.38
 		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
 		data.encode_s16(i * 2, int_sample)
 
@@ -265,9 +352,9 @@ static func get_police_alarm_stream() -> AudioStream:
 	stream.mix_rate = sample_rate
 	stream.stereo = false
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
 	stream.loop_end = num_samples
 	stream.data = data
-	_cached_police_alarm = stream
 	return stream
 
 # ==========================================
@@ -864,231 +951,66 @@ static func get_gunshot_stream(weapon_id: String = "pistol") -> AudioStream:
 
 # --- PISTOLA 9MM (Snappy, punchy 9mm gunshot with crisp transient, gunpowder explosion, and slide recoil) ---
 static func get_gunshot_pistol_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/gunshot_pistol.wav"):
-		return load("res://audio/gunshot_pistol.wav")
-	if ResourceLoader.exists("res://audio/gunshot_pistol.ogg"):
-		return load("res://audio/gunshot_pistol.ogg")
-	if _cached_gunshot_pistol != null:
-		return _cached_gunshot_pistol
-
-	var sample_rate := 22050
-	var duration := 0.32
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var crack_env := exp(-t * 260.0)
-		var crack := (sin(2.0 * PI * 2400.0 * t) + 0.5 * sin(2.0 * PI * 3800.0 * t)) * crack_env * 0.95
-		var f_blast := 72.0 + 310.0 * exp(-t * 65.0)
-		var blast_tone := sin(2.0 * PI * f_blast * t) * exp(-t * 34.0) * 0.85
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.6 + raw_noise * 0.4
-		var noise_blast := last_noise * exp(-t * 26.0) * 0.70
-		var slide_back := sin(2.0 * PI * 1850.0 * t) * exp(-absf(t - 0.028) * 160.0) * 0.35
-		var slide_fwd := sin(2.0 * PI * 2300.0 * t) * exp(-absf(t - 0.068) * 170.0) * 0.28
-		var sub_body := sin(2.0 * PI * 58.0 * t) * exp(-t * 14.0) * 0.35
-		var tail_noise := last_noise * exp(-t * 11.0) * 0.20
-		var raw := crack + blast_tone + noise_blast + slide_back + slide_fwd + sub_body + tail_noise
-		var sample := tanh(raw * 1.30) * 0.88
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_pistol = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_pistol." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("pistol")
 
 # --- SUBMETRALHADORA SMG (Aggressive, rapid-fire submachinegun with high-velocity crack and tight bass punch) ---
 static func get_gunshot_smg_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/gunshot_smg.wav"):
-		return load("res://audio/gunshot_smg.wav")
-	if ResourceLoader.exists("res://audio/gunshot_smg.ogg"):
-		return load("res://audio/gunshot_smg.ogg")
-	if _cached_gunshot_smg != null:
-		return _cached_gunshot_smg
-
-	var sample_rate := 22050
-	var duration := 0.18
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var snap := (sin(2.0 * PI * 3200.0 * t) + 0.6 * sin(2.0 * PI * 4800.0 * t)) * exp(-t * 340.0) * 1.10
-		var f_smg := 105.0 + 415.0 * exp(-t * 95.0)
-		var punch_tone := sin(2.0 * PI * f_smg * t) * exp(-t * 44.0) * 0.82
-		var raw_noise := randf_range(-1.0, 1.0)
-		var noise_diff := raw_noise - last_noise
-		last_noise = raw_noise
-		var noise_grit := noise_diff * exp(-t * 38.0) * 0.55
-		var bolt := sin(2.0 * PI * 2900.0 * t) * exp(-absf(t - 0.018) * 220.0) * 0.38
-		var sub_punch := sin(2.0 * PI * 82.0 * t) * exp(-t * 28.0) * 0.40
-		var tail := last_noise * exp(-t * 22.0) * 0.18
-		var raw := snap + punch_tone + noise_grit + bolt + sub_punch + tail
-		var sample := tanh(raw * 1.45) * 0.88
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_smg = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_smg." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("smg")
 
 # --- ESCOPETA 12-GAUGE PUMP (Thunderous, heavy 12-gauge blast with deep sub-bass thump) ---
 static func get_gunshot_shotgun_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/gunshot_shotgun.wav"):
-		return load("res://audio/gunshot_shotgun.wav")
-	if ResourceLoader.exists("res://audio/gunshot_shotgun.ogg"):
-		return load("res://audio/gunshot_shotgun.ogg")
-	if _cached_gunshot_shotgun != null:
-		return _cached_gunshot_shotgun
-
-	var sample_rate := 22050
-	var duration := 0.58
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var crack := (sin(2.0 * PI * 920.0 * t) + 0.5 * sin(2.0 * PI * 1840.0 * t)) * exp(-t * 110.0) * 0.90
-		var f_sub := 48.0 + 97.0 * exp(-t * 26.0)
-		var sub_thump := sin(2.0 * PI * f_sub * t) * exp(-t * 8.5) * 1.15
-		var sub_body_58 := sin(2.0 * PI * 58.0 * t) * exp(-t * 11.0) * 0.65
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.78 + raw_noise * 0.22
-		var roar := last_noise * exp(-t * 14.0) * 0.95
-		var pump_back := sin(2.0 * PI * 1150.0 * t) * exp(-absf(t - 0.19) * 65.0) * 0.30
-		var pump_fwd := sin(2.0 * PI * 1580.0 * t) * exp(-absf(t - 0.27) * 75.0) * 0.35
-		var pump_clack := randf_range(-0.3, 0.3) * (exp(-absf(t - 0.19) * 70.0) + exp(-absf(t - 0.27) * 80.0))
-		var room_tail := (last_noise * 0.6 + sin(2.0 * PI * 38.0 * t) * 0.4) * exp(-t * 5.2) * 0.35
-		var raw := crack + sub_thump + sub_body_58 + roar + pump_back + pump_fwd + pump_clack + room_tail
-		var sample := tanh(raw * 1.40) * 0.92
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_shotgun = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_shotgun." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("shotgun")
 
 # --- REVÓLVER MAGNUM .44 (Canhão de mão estrondoso com estalo de pólvora pesada e sub-bass maciço) ---
 static func get_gunshot_magnum_stream() -> AudioStream:
-	if _cached_gunshot_magnum != null: return _cached_gunshot_magnum
-	var sample_rate := 22050
-	var duration := 0.48
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var crack := (sin(2.0 * PI * 1800.0 * t) + 0.6 * sin(2.0 * PI * 3100.0 * t)) * exp(-t * 180.0) * 0.95
-		var sub_thump := sin(2.0 * PI * 48.0 * t) * exp(-t * 22.0) * 0.95
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.65 + raw_noise * 0.35
-		var roar := last_noise * exp(-t * 12.0) * 0.85
-		var ring := sin(2.0 * PI * 1450.0 * t) * exp(-t * 16.0) * 0.25
-		var sample := tanh((crack + sub_thump + roar + ring) * 1.35) * 0.94
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_magnum = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_magnum." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("magnum")
 
 # --- FUZIL AK-47 (7.62mm soviético pesado, seco, rítmico e metálico) ---
 static func get_gunshot_ak47_stream() -> AudioStream:
-	if _cached_gunshot_ak47 != null: return _cached_gunshot_ak47
-	var sample_rate := 22050
-	var duration := 0.34
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var crack := (sin(2.0 * PI * 2200.0 * t) + 0.5 * sin(2.0 * PI * 4100.0 * t)) * exp(-t * 210.0) * 0.95
-		var sub_punch := sin(2.0 * PI * 65.0 * t) * exp(-t * 30.0) * 0.90
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.70 + raw_noise * 0.30
-		var metal_bolt := sin(2.0 * PI * 980.0 * t) * exp(-absf(t - 0.05) * 85.0) * 0.40
-		var roar := last_noise * exp(-t * 18.0) * 0.80
-		var sample := tanh((crack + sub_punch + metal_bolt + roar) * 1.30) * 0.92
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_ak47 = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_ak47." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("ak47")
 
 # --- FUZIL M4A1 (5.56mm militar de alta velocidade, estalo cortante e cadência estalada) ---
 static func get_gunshot_m4a1_stream() -> AudioStream:
-	if _cached_gunshot_m4a1 != null: return _cached_gunshot_m4a1
-	var sample_rate := 22050
-	var duration := 0.28
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var crack := (sin(2.0 * PI * 2800.0 * t) + 0.6 * sin(2.0 * PI * 5200.0 * t)) * exp(-t * 260.0) * 0.95
-		var sub_punch := sin(2.0 * PI * 82.0 * t) * exp(-t * 35.0) * 0.85
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.60 + raw_noise * 0.40
-		var roar := last_noise * exp(-t * 22.0) * 0.75
-		var sample := tanh((crack + sub_punch + roar) * 1.30) * 0.90
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_m4a1 = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_m4a1." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("m4a1")
 
 # --- ESCOPETA CANO SERRADO (Dois canos disparados em estrondo brutal de 12 gauge) ---
 static func get_gunshot_sawed_off_stream() -> AudioStream:
-	if _cached_gunshot_sawed_off != null: return _cached_gunshot_sawed_off
-	var sample_rate := 22050
-	var duration := 0.44
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var crack := (sin(2.0 * PI * 1400.0 * t) + sin(2.0 * PI * 2400.0 * t)) * exp(-t * 140.0) * 0.95
-		var sub_boom := sin(2.0 * PI * 42.0 * t) * exp(-t * 18.0) * 0.98
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.75 + raw_noise * 0.25
-		var roar := last_noise * exp(-t * 10.0) * 0.90
-		var sample := tanh((crack + sub_boom + roar) * 1.45) * 0.96
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_gunshot_sawed_off = stream
-	return stream
+	# Preserve optional externally supplied overrides.
+	for extension in ["wav", "ogg"]:
+		var path: String = "res://audio/gunshot_sawed_off." + extension
+		if ResourceLoader.exists(path):
+			return load(path)
+	return COMBAT_AUDIO.sound("sawed_off")
 
 # --- LANÇA-MÍSSEIS RPG (Disparo do foguete com propulsão sibilante) ---
 static func get_rpg_launch_stream() -> AudioStream:
@@ -1172,58 +1094,7 @@ static func get_ricochet_stream() -> AudioStream:
 		return load("res://audio/ricochet.wav")
 	if ResourceLoader.exists("res://audio/ricochet.ogg"):
 		return load("res://audio/ricochet.ogg")
-	if _cached_ricochet != null:
-		return _cached_ricochet
-
-	var sample_rate := 22050
-	var duration := 0.36
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	var phase := 0.0
-	var last_noise := 0.0
-	var dt := 1.0 / float(sample_rate)
-
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-
-		# 1. Clang Metálico Inicial e Faíscas de Impacto (0-6ms)
-		var ping_env := exp(-t * 190.0)
-		var impact_thud := sin(2.0 * PI * 320.0 * t) * exp(-t * 90.0) * 0.85
-		var impact_ping := (sin(2.0 * PI * 2850.0 * t) + 0.4 * sin(2.0 * PI * 4200.0 * t)) * ping_env * 0.90
-
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.5 + raw_noise * 0.5
-		var spark := last_noise * exp(-t * 140.0) * 0.50
-
-		# 2. Assobio Icônico Descendente Doppler ("PEEOWWW" / "TWANG" - 4200Hz -> 640Hz)
-		var freq := 640.0 + 3560.0 * exp(-t * 18.5)
-		phase += 2.0 * PI * freq * dt
-
-		# Modulação de turbilhonamento do projétil girando no ar (Flutter a 95 Hz)
-		var flutter := 1.0 + 0.40 * sin(2.0 * PI * 95.0 * t)
-		var whistle_env := exp(-t * 10.5)
-		var whistle := sin(phase) * flutter * whistle_env * 0.85
-
-		# Ressonância de carrilhão harmônico e campânula metálica
-		var overtone1 := sin(phase * 1.78) * exp(-t * 15.0) * 0.32
-		var ring_metal := sin(2.0 * PI * 1750.0 * t) * exp(-t * 24.0) * 0.28
-
-		# 3. Mixagem e Limiter Suave
-		var raw := impact_thud + impact_ping + spark + whistle + overtone1 + ring_metal
-		var sample := tanh(raw * 1.25) * 0.86
-		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_ricochet = stream
-	return stream
+	return COMBAT_AUDIO.sound("metal")
 
 # ==========================================
 # AMBIÊNCIA CLIMÁTICA POR BIOMA (LOOPS)
@@ -1371,101 +1242,8 @@ static var _cached_footstep_grass: Array[AudioStream] = []
 static var _cached_footstep_metal: AudioStream = null
 
 static func get_footstep_stream(surface: String = "concrete", variation: int = 0) -> AudioStream:
-	if surface == "wet" or surface == "rain" or surface == "puddle":
-		if not _cached_footstep_wet.is_empty():
-			return _cached_footstep_wet[posmod(variation, _cached_footstep_wet.size())]
-		for v in range(4):
-			var sample_rate := 22050
-			var duration := 0.085
-			var num_samples := int(sample_rate * duration)
-			var data := PackedByteArray()
-			data.resize(num_samples * 2)
-			var thud_freq := 80.0 + float(v) * 6.0
-			var splash_freq := 1150.0 + float(v) * 160.0
-			for i in range(num_samples):
-				var t := float(i) / float(sample_rate)
-				var attack := minf(1.0, t / 0.003)
-				var thud := sin(2.0 * PI * thud_freq * t) * exp(-t * 65.0) * 0.16
-				var splash_sine := sin(2.0 * PI * splash_freq * t) * exp(-t * 110.0) * 0.09
-				var wet_noise := randf_range(-0.12, 0.12) * exp(-t * 85.0)
-				var suction := 0.0
-				if t > 0.015 and t < 0.045:
-					var ts := t - 0.015
-					suction = sin(2.0 * PI * 380.0 * ts) * exp(-ts * 120.0) * 0.07
-				var sample_val := (thud + splash_sine + wet_noise + suction) * attack
-				data.encode_s16(i * 2, clampi(int(sample_val * 32767.0), -32768, 32767))
-			var s := AudioStreamWAV.new()
-			s.format = AudioStreamWAV.FORMAT_16_BITS
-			s.mix_rate = sample_rate
-			s.data = data
-			_cached_footstep_wet.append(s)
-		return _cached_footstep_wet[posmod(variation, _cached_footstep_wet.size())]
-	elif surface == "grass":
-		if not _cached_footstep_grass.is_empty():
-			return _cached_footstep_grass[posmod(variation, _cached_footstep_grass.size())]
-		for v in range(4):
-			var sample_rate := 22050
-			var duration := 0.08
-			var num_samples := int(sample_rate * duration)
-			var data := PackedByteArray()
-			data.resize(num_samples * 2)
-			var thud_freq := 95.0 + float(v) * 8.0
-			for i in range(num_samples):
-				var t := float(i) / float(sample_rate)
-				var attack := minf(1.0, t / 0.004)
-				var rustle := randf_range(-0.25, 0.25) * exp(-t * 60.0)
-				var thud := sin(2.0 * PI * thud_freq * t) * exp(-t * 80.0) * 0.18
-				var sample_val := (rustle + thud) * attack
-				data.encode_s16(i * 2, clampi(int(sample_val * 32767.0), -32768, 32767))
-			var s := AudioStreamWAV.new()
-			s.format = AudioStreamWAV.FORMAT_16_BITS
-			s.mix_rate = sample_rate
-			s.data = data
-			_cached_footstep_grass.append(s)
-		return _cached_footstep_grass[posmod(variation, _cached_footstep_grass.size())]
-	elif surface == "metal":
-		if _cached_footstep_metal != null: return _cached_footstep_metal
-		var sample_rate := 22050
-		var duration := 0.09
-		var num_samples := int(sample_rate * duration)
-		var data := PackedByteArray()
-		data.resize(num_samples * 2)
-		for i in range(num_samples):
-			var t := float(i) / float(sample_rate)
-			var attack := minf(1.0, t / 0.003)
-			var clink := sin(2.0 * PI * 1450.0 * t) * exp(-t * 95.0) * 0.30
-			var thud := sin(2.0 * PI * 220.0 * t) * exp(-t * 70.0) * 0.20
-			data.encode_s16(i * 2, clampi(int((clink + thud) * attack * 32767.0), -32768, 32767))
-		var s := AudioStreamWAV.new()
-		s.format = AudioStreamWAV.FORMAT_16_BITS
-		s.mix_rate = sample_rate
-		s.data = data
-		_cached_footstep_metal = s
-		return s
-	else:
-		if not _cached_footstep_concrete.is_empty():
-			return _cached_footstep_concrete[posmod(variation, _cached_footstep_concrete.size())]
-		for v in range(4):
-			var sample_rate := 22050
-			var duration := 0.065
-			var num_samples := int(sample_rate * duration)
-			var data := PackedByteArray()
-			data.resize(num_samples * 2)
-			var thud_freq := 74.0 + float(v) * 8.0
-			var decay_thud := 70.0 + float(v) * 5.0
-			for i in range(num_samples):
-				var t := float(i) / float(sample_rate)
-				var attack := minf(1.0, t / 0.004)
-				var thud := sin(2.0 * PI * thud_freq * t) * exp(-t * decay_thud) * 0.20
-				var noise := randf_range(-0.10, 0.10) * exp(-t * 90.0)
-				var sample_val := (thud + noise) * attack
-				data.encode_s16(i * 2, clampi(int(sample_val * 32767.0), -32768, 32767))
-			var s := AudioStreamWAV.new()
-			s.format = AudioStreamWAV.FORMAT_16_BITS
-			s.mix_rate = sample_rate
-			s.data = data
-			_cached_footstep_concrete.append(s)
-		return _cached_footstep_concrete[posmod(variation, _cached_footstep_concrete.size())]
+	return preload("res://audio/footsteps/FootstepAudioBank.gd").sound(surface, variation)
+
 
 # ==========================================
 # PORTAS DE CARRO & ROUBO (CAR DOORS & CARJACKING)
@@ -1733,27 +1511,52 @@ static func get_mission_start_stream() -> AudioStream:
 static var _cached_mission_passed: AudioStream = null
 static func get_mission_passed_stream() -> AudioStream:
 	if _cached_mission_passed != null: return _cached_mission_passed
+	_cached_mission_passed = _generate_mission_passed_stream()
+	return _cached_mission_passed
+
+static func _generate_mission_passed_stream() -> AudioStream:
 	var sample_rate := 22050
 	var duration := 2.4
 	var num_samples := int(sample_rate * duration)
 	var data := PackedByteArray()
 	data.resize(num_samples * 2)
+
+	# Fanfarra triunfal curta: Dó4, Mi4, Sol4, Dó5. Each note has its own
+	# linear-attack / exponential-decay envelope, evaluated on the note's
+	# own local clock (not truncated at the next note's start), so a note
+	# never gets cut off mid-decay -- that hard cutoff was the source of the
+	# click at each note boundary in the previous version.
+	var notes := [
+		{"freq": 261.63, "start": 0.0},
+		{"freq": 329.63, "start": 0.35},
+		{"freq": 392.00, "start": 0.70},
+		{"freq": 523.25, "start": 1.05},
+	]
+	var attack := 0.012
+	var decay_rate := 4.6
 	for i in range(num_samples):
 		var t := float(i) / float(sample_rate)
-		# Fanfarra triunfal: Notas Dó4, Mi4, Sol4, Dó5
-		var freq := 261.63 # C4
-		if t >= 0.35 and t < 0.70: freq = 329.63 # E4
-		elif t >= 0.70 and t < 1.05: freq = 392.00 # G4
-		elif t >= 1.05: freq = 523.25 # C5
-		var env := exp(-fmod(t, 0.35) * 4.0) if t < 1.05 else exp(-(t - 1.05) * 1.5)
-		var brass := (sin(2.0 * PI * freq * t) + 0.5 * sin(4.0 * PI * freq * t) + 0.25 * sin(6.0 * PI * freq * t)) * 0.35 * env
-		var bass := sin(2.0 * PI * (freq * 0.5) * t) * 0.25 * env
-		data.encode_s16(i * 2, clampi(int((brass + bass) * 32767.0), -32768, 32767))
+		var sample := 0.0
+		for note in notes:
+			var local_t: float = t - float(note["start"])
+			if local_t < 0.0:
+				continue
+			var freq: float = note["freq"]
+			var env: float = (local_t / attack) if local_t < attack else exp(-(local_t - attack) * decay_rate)
+			var brass := sin(2.0 * PI * freq * local_t) + 0.5 * sin(4.0 * PI * freq * local_t) + 0.22 * sin(6.0 * PI * freq * local_t)
+			var bass := sin(2.0 * PI * (freq * 0.5) * local_t) * 0.35
+			sample += (brass * 0.28 + bass * 0.20) * env
+		# Soft-clip keeps overlapping note tails from ever hard-clipping
+		# while staying volume-coherent with the other one-shot SFX streams.
+		var final_sample := tanh(sample * 0.9) * 0.75
+		data.encode_s16(i * 2, clampi(int(final_sample * 32767.0), -32768, 32767))
+
 	var s := AudioStreamWAV.new()
 	s.format = AudioStreamWAV.FORMAT_16_BITS
 	s.mix_rate = sample_rate
+	s.stereo = false
+	s.loop_mode = AudioStreamWAV.LOOP_DISABLED
 	s.data = data
-	_cached_mission_passed = s
 	return s
 
 static var _cached_nitro: AudioStream = null

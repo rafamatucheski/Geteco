@@ -22,7 +22,7 @@ func _ready() -> void:
 	monitoring = true
 	monitorable = true
 	collision_layer = 0
-	collision_mask = 1 # Camada do Player
+	collision_mask = 4 # Camada do Player
 	z_index = 8
 	
 	_base_y = position.y
@@ -250,6 +250,7 @@ func _take(player: Node) -> void:
 	
 	# Som de recarga/equipamento
 	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
 	p.stream = ProceduralAudio.get_gunshot_pistol_stream()
 	p.pitch_scale = 1.6
 	p.volume_db = -10.0

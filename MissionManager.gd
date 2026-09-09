@@ -301,7 +301,7 @@ func _start_boss_duel() -> void:
 		target_car.rotation = PI * 0.5
 		target_car.set("archetype_id", "cobra_v8")
 		target_car.set("vehicle_color", Color("#0f0f12"))
-		target_car.set("has_nitro", true)
+		target_car.set("has_nitro", false)
 		target_car.set("has_neon", true)
 		target_car.set("neon_color", Color("#ff4757"))
 		target_car.set("health", 250) # Boss HP elevado

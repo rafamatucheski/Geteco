@@ -13,6 +13,11 @@ enum State { DISEMBARK, APPROACH, BAG_AND_LIFT, RETURN_HEARSE, EMBARKING, EMBARK
 var target: Node2D = null
 var hearse: Node2D = null
 var state: State = State.APPROACH
+## Second leg of a coroner run: the body was already picked up (target is
+## gone), this legist just needs to walk to burial_position and place a
+## marker there. See EmergencyVehicle.gd's _deploy_morticians_for_burial().
+var is_burial_trip: bool = false
+var burial_position: Vector2 = Vector2.ZERO
 
 var health: int = 60
 var is_dead: bool = false
@@ -262,26 +267,41 @@ func _physics_process(delta: float) -> void:
 					velocity = Vector2.ZERO
 					state = State.APPROACH
 		State.APPROACH:
-			if not is_instance_valid(target):
+			if is_burial_trip:
+				var dist_b: float = global_position.distance_to(burial_position)
+				dir_to_look = global_position.direction_to(burial_position)
+				if dist_b > 20.0:
+					velocity = _navigate_towards(burial_position, speed, delta)
+					is_moving = true
+				else:
+					velocity = Vector2.ZERO
+					state = State.BAG_AND_LIFT
+					bag_timer = 1.5
+			elif not is_instance_valid(target):
 				_start_return_to_hearse()
 				return
-			var dist: float = global_position.distance_to(target.global_position)
-			dir_to_look = global_position.direction_to(target.global_position)
-			if dist > 26.0:
-				velocity = _navigate_towards(target.global_position, speed, delta)
-				is_moving = true
 			else:
-				velocity = Vector2.ZERO
-				state = State.BAG_AND_LIFT
-				bag_timer = 2.0
+				var dist: float = global_position.distance_to(target.global_position)
+				dir_to_look = global_position.direction_to(target.global_position)
+				if dist > 26.0:
+					velocity = _navigate_towards(target.global_position, speed, delta)
+					is_moving = true
+				else:
+					velocity = Vector2.ZERO
+					state = State.BAG_AND_LIFT
+					bag_timer = 2.0
 
 		State.BAG_AND_LIFT:
 			velocity = Vector2.ZERO
-			if is_instance_valid(target):
+			if is_burial_trip:
+				dir_to_look = global_position.direction_to(burial_position)
+			elif is_instance_valid(target):
 				dir_to_look = global_position.direction_to(target.global_position)
 			bag_timer -= delta
 			if bag_timer <= 0.0:
-				if is_instance_valid(target):
+				if is_burial_trip:
+					_place_grave_marker()
+				elif is_instance_valid(target):
 					# Desaparece com o corpo e poça de sangue
 					target.queue_free()
 				if body_bag_mesh:
@@ -364,6 +384,41 @@ func _start_return_to_hearse() -> void:
 	state = State.RETURN_HEARSE
 	if not is_instance_valid(hearse):
 		queue_free()
+
+## Leaves a permanent grave marker at burial_position -- a simple cross on
+## a small dirt mound, same low-poly Polygon2D style used by the other
+## props in this file. Registers with the HarborCemetery node if present.
+func _place_grave_marker() -> void:
+	var grave := Node2D.new()
+	grave.name = "GraveMarker"
+	grave.global_position = burial_position
+	grave.z_index = -1
+
+	var mound := Polygon2D.new()
+	mound.polygon = PackedVector2Array([
+		Vector2(-11, 6), Vector2(-7, 2), Vector2(0, 0),
+		Vector2(7, 2), Vector2(11, 6), Vector2(0, 9)
+	])
+	mound.color = Color(0.32, 0.24, 0.16, 0.95)
+	grave.add_child(mound)
+
+	var upright := Polygon2D.new()
+	upright.polygon = PackedVector2Array([Vector2(-2, -14), Vector2(2, -14), Vector2(2, 6), Vector2(-2, 6)])
+	upright.color = Color(0.55, 0.52, 0.47)
+	grave.add_child(upright)
+
+	var crossbar := Polygon2D.new()
+	crossbar.polygon = PackedVector2Array([Vector2(-8, -8), Vector2(8, -8), Vector2(8, -4), Vector2(-8, -4)])
+	crossbar.color = Color(0.55, 0.52, 0.47)
+	grave.add_child(crossbar)
+
+	var parent := get_parent() if get_parent() != null else get_tree().current_scene
+	if parent:
+		parent.add_child(grave)
+
+	var cemetery := get_tree().get_first_node_in_group("cemetery")
+	if cemetery and cemetery.has_method("register_grave"):
+		cemetery.register_grave(grave, burial_position)
 
 
 func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) -> void:

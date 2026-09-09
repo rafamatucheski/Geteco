@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+Localization="*res://Localization.gd"
 SettingsManager="*res://SettingsManager.gd"
 WantedManager="*res://WantedManager.gd"
 EmergencyPool="*res://EmergencyPool.gd"
@@ -29,6 +30,7 @@ TrafficLightManager="*res://TrafficLightManager.gd"
 CampaignState="*res://CampaignState.gd"
 DistrictRestriction="*res://DistrictRestrictionManager.gd"
 SaveManager="*res://SaveManager.gd"
+RegionTravel="*res://RegionTravel.gd"
 
 [display]
 

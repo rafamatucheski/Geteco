@@ -32,6 +32,10 @@ enum EntranceKind {
 	set(value):
 		display_name = value
 		_refresh_prompt()
+@export var custom_prompt_text: String = "":
+	set(value):
+		custom_prompt_text = value
+		_refresh_prompt()
 
 @export_group("Destination API")
 @export var destination_id: StringName = &""
@@ -180,8 +184,11 @@ func _refresh_prompt() -> void:
 	if not is_node_ready() or _prompt == null:
 		return
 	_prompt.visible = enabled and not _busy and not _nearby_actors.is_empty()
-	var verb := "ENTRAR"
-	if entrance_kind == EntranceKind.GARAGE:
-		verb = "USAR GARAGEM"
-	_prompt.text = "[E] %s · %s" % [verb, display_name.to_upper()]
+	if not custom_prompt_text.is_empty():
+		_prompt.text = custom_prompt_text
+	else:
+		var verb := "ENTRAR"
+		if entrance_kind == EntranceKind.GARAGE:
+			verb = "USAR GARAGEM"
+		_prompt.text = "[E] %s · %s" % [verb, display_name.to_upper()]
 

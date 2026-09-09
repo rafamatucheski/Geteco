@@ -170,6 +170,12 @@ func _refresh(notice: String = "") -> void:
 	)
 	
 	# Item 2: ESCOPETA 12G
+	var rifle_ammo: Dictionary = ammo_dict.get("hunting_rifle", {})
+	_create_weapon_card("PRESA DO INVERNO", "Rifle de caça encontrado na cabana", inventory.get("hunting_rifle", false) == true,
+		int(rifle_ammo.get("clip", 0)), int(rifle_ammo.get("reserve", 0)), int(WeaponCatalog.get_weapon("hunting_rifle").price),
+		"hunting_rifle", 10, 160, 35, 480)
+
+	# Item 2: ESCOPETA 12G
 	var shot_owned: bool = (inventory.get("shotgun", false) == true)
 	var shot_ammo: Dictionary = ammo_dict.get("shotgun", {})
 	_create_weapon_card(
@@ -252,6 +258,9 @@ func _create_weapon_card(title: String, desc: String, owned: bool, clip: int, re
 	if not owned:
 		var btn_buy := Button.new()
 		btn_buy.text = "🛒 COMPRAR ARMA  ($ %d)" % weapon_price
+		if not player.is_weapon_shop_unlocked(weapon_id):
+			btn_buy.disabled = true
+			btn_buy.text = String(WeaponCatalog.get_weapon(weapon_id).get("discovery_hint", "BLOQUEADA"))
 		btn_buy.custom_minimum_size = Vector2(200, 34)
 		btn_buy.pressed.connect(func(): _buy_weapon(weapon_id))
 		btn_hbox.add_child(btn_buy)

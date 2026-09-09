@@ -53,6 +53,17 @@ func _run() -> void:
 	router.guidance(car, Vector2(250, 24))
 	_check(router.revision > previous_revision, "rebuild must invalidate cached paths")
 	_check(not is_same(first_cache, graph.get_meta(ROUTER.CACHE_KEY)), "rebuild must replace adjacency cache")
+	# Reaching a roadside suspect must not extend the route over bridge edges.
+	var final_path := router.legs.back().path as Path2D
+	var final_offset: float = router.legs.back().end
+	var roadside := final_path.to_global(final_path.curve.sample_baked(final_offset, true))
+	car.global_position = roadside
+	router.destination = roadside + Vector2(0, 200)
+	router.next_plan_ms = Time.get_ticks_msec() + 10000
+	router.leg_index = router.legs.size() - 1
+	var safe_stop := router.guidance(car, router.destination)
+	_check(safe_stop.distance_to(roadside) < 1.0, "off-road pursuit ends on its lane instead of crossing a bridge edge")
+
 	router.reset()
 	_check(router.legs.is_empty() and router.network == null, "pool reset must discard old route")
 	for failure in failures:

@@ -1,0 +1,54 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=46 issues=0
+
+[ETAPA 1] Preparando a região da montanha e localizando a loja real no mundo
+  [PASS] Região da montanha termina de preparar
+  [PASS] A fachada real 'MountainAmmuNation' existe no mundo (MountainSceneryBuilder.build_mountain_ammunation)
+  [PASS] A fachada tem uma porta real instalada (install_entrance -> register_exterior_entrance)
+  [PASS] MountainInteriorManager expõe um ammunation_interior real e válido
+
+[ETAPA 2] Entrada real pela porta física (sensor de proximidade)
+  [FAIL] Sensor de proximidade real da porta detecta o jogador
+  [ACHADO] entrance InteractionArea: collision_layer=0 collision_mask=3 (esperado incluir bit 4, camada do jogador) — player.collision_layer=4. Sobreposição física real: []
+  [PASS] Confirmação: request_interaction() também recusa (is_actor_in_range depende do mesmo sensor quebrado) — a porta é fisicamente impossível de abrir andando até ela
+  (bypass documentado: simulando o que MountainInteriorManager._on_entrance_requested faria, para seguir auditando o restante do percurso real dentro da loja)
+  [PASS] Após o teleporte (real, via manager), o jogador fica dentro do interior real da loja
+  [PASS] Meta 'mountain_interior' é setada corretamente (mesmo efeito colateral que a entrada real produziria)
+
+[ETAPA 3] Conversa real com o armeiro Vance (tecla F, balcão real)
+  [PASS] Área real do balcão detecta o jogador
+  [PASS] Tecla F abre a conversa real com o armeiro Vance
+  [CAPTURE] res://tests/claude_gameplay_audit/captures/10_vance_conversation_open.png (err=OK)
+  [PASS] Diálogo cíclico do Vance continua aberto após dar a volta completa nas falas (repetição real, sem travar)
+  [PASS] ESC encerra a conversa com Vance de verdade
+
+[ETAPA 4] Compra real pelo balcão (mesmos botões clicáveis da UI de produção)
+  [PASS] Tecla E abre o catálogo real de compra no balcão
+  [CAPTURE] res://tests/claude_gameplay_audit/captures/10_purchase_catalog_open.png (err=OK)
+  [PASS] Botão real de compra da escopeta está habilitado
+  [PASS] Compra pelo botão real debita o preço correto da escopeta
+  [PASS] Escopeta comprada pelo balcão real consta no inventário do jogador
+
+[ETAPA 5] Recompra pelo mesmo botão deve recusar (produção: já possuída)
+  [PASS] Clicar de novo no botão da mesma arma não debita dinheiro outra vez
+
+[ETAPA 6] Reposição de munição pelo balcão real
+  [PASS] Botão real de reposição de munição existe no balcão
+  [PASS] Reposição de munição pelo botão real debita $120
+  [PASS] ESC fecha o catálogo de compra
+
+[ETAPA 7] Seleção real de arma com tecla numérica, dentro da própria loja
+  [PASS] Tecla 4 seleciona a escopeta recém-comprada, dentro da loja
+
+[ETAPA 8] Saída real pela porta do interior
+  [PASS] Interior tem uma porta de saída real
+  [PASS] Sensor da porta de saída detecta o jogador
+  [PASS] request_interaction() aceita a saída real pela porta
+  [PASS] Meta 'mountain_interior' é removida pela saída real
+  [PASS] Jogador retorna fisicamente para fora da loja
+=================================================================
+=== 10_mountain_ammunation_full_path: FALHOU (1/26 verificações falharam) ===
+  - Sensor de proximidade real da porta detecta o jogador

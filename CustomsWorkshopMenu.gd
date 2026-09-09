@@ -14,7 +14,6 @@ var preview_color: Color = Color("#1e272e")
 var preview_neon_color: Color = Color("#00cec9")
 var is_neon_enabled: bool = true
 
-var selected_nitro_stage: int = 1
 var selected_turbo_stage: int = 1
 var selected_armor_stage: int = 0
 
@@ -107,9 +106,6 @@ func _build_ui() -> void:
 
 	# Categoria 2: Neon Underglow
 	_build_neon_section(left_vbox)
-
-	# Categoria 3: Nitro NOS
-	_build_nitro_section(left_vbox)
 
 	# Categoria 4: Motor Turbo & Blow-Off
 	_build_turbo_section(left_vbox)
@@ -223,39 +219,6 @@ func _build_neon_section(parent: VBoxContainer) -> void:
 		grid.add_child(btn)
 
 	parent.add_child(grid)
-	parent.add_child(HSeparator.new())
-
-func _build_nitro_section(parent: VBoxContainer) -> void:
-	var sec_title = Label.new()
-	sec_title.text = "💨 SISTEMA DE NITRO (NOS)"
-	sec_title.add_theme_font_size_override("font_size", 11)
-	sec_title.add_theme_color_override("font_color", Color("#0984e3"))
-	parent.add_child(sec_title)
-
-	var opt1 = Button.new()
-	opt1.text = "✔ Estágio 1: Garrafa NOS 100% [EQUIPADO]"
-	opt1.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	opt1.add_theme_font_size_override("font_size", 9)
-	parent.add_child(opt1)
-
-	var opt2 = Button.new()
-	opt2.text = "🔒 Estágio 2: NOS Duplo 150% [BLOQUEADO]"
-	opt2.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	opt2.add_theme_font_size_override("font_size", 9)
-	opt2.pressed.connect(func():
-		_otto_speak("🔒 Esse Nitro de alta pressão tá trancado! Vença Viktor Frost (Lobos de Gelo - Distrito de Neve) para liberar!")
-	)
-	parent.add_child(opt2)
-
-	var opt3 = Button.new()
-	opt3.text = "🔒 Estágio 3: Injeção Quádrupla 200% [BLOQUEADO]"
-	opt3.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	opt3.add_theme_font_size_override("font_size", 9)
-	opt3.pressed.connect(func():
-		_otto_speak("🔒 Tecnologia militar! Só liberada quando você derrotar o Chefão Supremo da Blacklist #1!")
-	)
-	parent.add_child(opt3)
-
 	parent.add_child(HSeparator.new())
 
 func _build_turbo_section(parent: VBoxContainer) -> void:
@@ -444,7 +407,7 @@ func _build_mechanic_npc(parent: VBoxContainer) -> void:
 	parent.add_child(dialog_panel)
 
 	mechanic_dialog_label = Label.new()
-	mechanic_dialog_label.text = "E aí Dante! O que manda hoje? Pintura nova ou quer estalar um Nitro brabo?"
+	mechanic_dialog_label.text = "E aí Dante! O que manda hoje? Pintura nova ou uma revisao no motor?"
 	mechanic_dialog_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	mechanic_dialog_label.add_theme_font_size_override("font_size", 9)
 	mechanic_dialog_label.add_theme_color_override("font_color", Color("#ecf0f1"))

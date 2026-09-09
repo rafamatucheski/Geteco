@@ -73,6 +73,7 @@ func _ensure_art() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if _is_player(body):
 		_nearby_player = body
+		_take(body)
 
 func _on_body_exited(body: Node2D) -> void:
 	if body == _nearby_player:
@@ -87,6 +88,21 @@ func _take(player: Node) -> void:
 	_consumed = true
 	player.add_armor(armor_amount)
 	picked_up.emit(player, armor_amount)
-	queue_free()
+
+	var p := AudioStreamPlayer2D.new()
+	p.bus = &"SFX"
+	p.stream = ProceduralAudio.get_powerup_stream()
+	p.pitch_scale = 0.85
+	p.volume_db = -5.0
+	p.max_distance = 480.0
+	get_tree().current_scene.add_child(p)
+	p.global_position = global_position
+	p.play()
+	p.finished.connect(p.queue_free)
+
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(self, "scale", Vector2(1.4, 1.4), 0.18)
+	tw.tween_property(self, "modulate:a", 0.0, 0.28)
+	tw.chain().tween_callback(queue_free)
 
 signal picked_up(player: Node, amount: int)

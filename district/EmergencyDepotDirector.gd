@@ -53,6 +53,8 @@ func request_dispatch(service_key: String, target: Node2D, prefer_standby := tru
 	vehicle.set("target", target)
 	vehicle.global_position = departure_position
 	vehicle.global_rotation = departure_rotation
+	vehicle.set_meta("depot_road_gate", depot.get_exit_position())
+	vehicle.set_meta("depot_departure_pending", standby == null)
 	# EmergencyPool.get_vehicle() already resets and activates pooled instances.
 	# Calling EmergencyVehicle.activate() here would duplicate that work and would
 	# also rely on its legacy dynamically-created collision node name.

@@ -15,6 +15,7 @@ var _route_direction := 1
 var _route_target_ready := false
 var _normal_walk_speed := 48.0
 var _spawn_distance := 0.0
+var route_loop := false
 
 # --- Rotinas Ambientais de Vida (Restaurantes, Lojas, Vitrines) ---
 var visit_cooldown: float = 20.0
@@ -23,9 +24,21 @@ var _visiting_timer: float = 0.0
 var _visiting_door_pos: Vector2 = Vector2.ZERO
 var _window_shop_pause: float = 0.0
 
+# `_sidewalk_avoidance_offset()` and `_spacing_speed_factor()` each used to
+# independently call get_tree().get_nodes_in_group() once per pedestrian per
+# physics frame (2x redundant O(n) scans x every pedestrian). Cached once per
+# frame instead; the candidate set considered is unchanged. The refresh itself
+# is further throttled (every 3rd physics frame) since a couple of frames of
+# staleness in a soft avoidance/spacing heuristic is imperceptible, and this
+# is the single biggest per-pedestrian recurring cost besides its 3D viewport.
+var _cached_neighbors: Array = []
+var _neighbor_refresh_counter: int = 0
+const NEIGHBOR_REFRESH_STRIDE := 3
+
 
 func configure_authored_route(points: PackedVector2Array, id: String, spawn_distance: float = 0.0) -> void:
 	route_points = points.duplicate()
+	route_loop = points.size()>3 and points[0].is_equal_approx(points[points.size()-1])
 	route_id = id
 	_spawn_distance = maxf(0.0, spawn_distance)
 
@@ -53,6 +66,10 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_neighbor_refresh_counter += 1
+	if _neighbor_refresh_counter >= NEIGHBOR_REFRESH_STRIDE or _cached_neighbors.is_empty():
+		_neighbor_refresh_counter = 0
+		_cached_neighbors = get_tree().get_nodes_in_group("authored_sidewalk_pedestrian")
 	_update_ambient_life(delta)
 	
 	if _window_shop_pause > 0.0 or (is_visiting and _visiting_timer > 0.0):
@@ -173,6 +190,11 @@ func _pick_new_sidewalk_target() -> void:
 		_route_target_ready = true
 	else:
 		_route_segment += _route_direction
+		if route_loop:
+			_route_segment = posmod(_route_segment,route_points.size()-1)
+			_route_direction = 1
+			walk_target = route_points[_route_segment+1]
+			return
 		if _route_segment <= 0:
 			_route_segment = 0
 			_route_direction = 1
@@ -254,7 +276,7 @@ func _sidewalk_avoidance_offset(travel_dir: Vector2) -> Vector2:
 	var push := Vector2.ZERO
 	if travel_dir.length_squared() < 0.0001:
 		return push
-	for candidate in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
+	for candidate in _cached_neighbors:
 		if candidate == self or not is_instance_valid(candidate):
 			continue
 		var to_other: Vector2 = candidate.global_position - global_position
@@ -275,7 +297,7 @@ func _spacing_speed_factor() -> float:
 	if is_scared or (is_gangster and is_instance_valid(combat_target)):
 		return 1.0
 	var direction := global_position.direction_to(walk_target)
-	for candidate in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
+	for candidate in _cached_neighbors:
 		if candidate == self or not is_instance_valid(candidate):
 			continue
 		if String(candidate.get("route_id")) != route_id:

@@ -11,9 +11,13 @@ var network: Node2D
 var revision := -1
 var plans := 0
 var avoidance_target := Vector2.INF
+var linked_lane: Path2D
+var _linked_entry_pending := false
 
 
 func reset() -> void:
+	linked_lane = null
+	_linked_entry_pending = false
 	legs.clear()
 	leg_index = 0
 	destination = Vector2.INF
@@ -24,19 +28,23 @@ func reset() -> void:
 
 
 func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
+	if is_instance_valid(linked_lane):
+		return _guide_linked_lane(vehicle, target)
 	var now := Time.get_ticks_msec()
 	var invalid := is_instance_valid(network) and revision != int(network.call("get_routing_revision"))
 	var moved := destination.distance_to(target) > 120.0
 	if invalid or (now >= next_plan_ms and (moved or legs.is_empty())):
 		_plan(vehicle, target)
 		next_plan_ms = now + 1500
+	if is_instance_valid(linked_lane):
+		return _guide_linked_lane(vehicle, target)
 	if legs.is_empty():
 		# An unavailable route must not create a diagonal shortcut through walls.
 		return vehicle.global_position
 	while leg_index < legs.size():
 		var leg := legs[leg_index]
 		var path := leg.path as Path2D
-		if not is_instance_valid(path):
+		if not is_instance_valid(path) or not path.can_process() or path.curve == null or path.curve.point_count < 2:
 			legs.clear()
 			next_plan_ms = 0
 			return vehicle.global_position
@@ -51,7 +59,21 @@ func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
 		if vehicle.global_position.distance_to(on_path) > 54.0:
 			return _steer_clear(vehicle, on_path)
 		return _steer_clear(vehicle, path.to_global(curve.sample_baked(minf(end, offset + 70.0), true)))
-	# Final short approach from the destination lane to a depot/incident apron.
+	# Finish at the road shoulder when the suspect is beyond drivable pavement.
+	# A building entrance or a pedestrian on a bridge must not drag a cruiser
+	# diagonally off its lane into the water or through the shop front.
+	if not legs.is_empty():
+		var last: Dictionary = legs.back()
+		var path := last.path as Path2D
+		if not is_instance_valid(path) or path.curve == null or path.curve.point_count < 2:
+			legs.clear()
+			return vehicle.global_position
+		var endpoint := path.to_global(path.curve.sample_baked(float(last.end), true))
+		if endpoint.distance_to(target) > 42.0:
+			if float(last.end) >= path.curve.get_baked_length() - 30.0 and vehicle.global_position.distance_to(endpoint) < 32.0:
+				if _link_adjacent_lane(vehicle, path):
+					return _guide_linked_lane(vehicle, target)
+			return endpoint
 	return target
 
 
@@ -83,6 +105,7 @@ func _plan(vehicle: Node2D, target: Vector2) -> void:
 	network = null
 	var graphs: Array[Node2D] = []
 	for lane in vehicle.get_tree().get_nodes_in_group("unified_traffic_lane"):
+		if not lane.can_process(): continue
 		var parent := lane.get_parent()
 		var graph := parent.get_parent() if parent != null else null
 		if graph is Node2D and graph.has_method("get_routing_revision") and not graphs.has(graph):
@@ -92,12 +115,23 @@ func _plan(vehicle: Node2D, target: Vector2) -> void:
 		var cache := _cache(graph)
 		for path_value in cache.lanes.values():
 			var path := path_value as Path2D
+			if not is_instance_valid(path) or path.curve == null or path.curve.point_count < 2: continue
 			var point := path.to_global(path.curve.get_closest_point(path.to_local(vehicle.global_position)))
 			var distance := point.distance_to(vehicle.global_position)
 			if distance < nearest:
 				nearest = distance
 				network = graph
+	if nearest > 180.0:
+		network = null
 	if not is_instance_valid(network):
+		var nearest_path_distance := 180.0
+		for node in vehicle.get_tree().get_nodes_in_group("unified_traffic_lane"):
+			var path := node as Path2D
+			if path == null or not path.can_process() or path.curve == null or path.curve.point_count < 2: continue
+			var point := path.to_global(path.curve.get_closest_point(path.to_local(vehicle.global_position)))
+			if point.distance_to(vehicle.global_position) < nearest_path_distance:
+				nearest_path_distance = point.distance_to(vehicle.global_position)
+				linked_lane = path
 		return
 	var cache := _cache(network)
 	revision = int(cache.revision)
@@ -153,6 +187,7 @@ func _nearest_lanes(lanes: Dictionary, position: Vector2) -> Array[Dictionary]:
 	var nearest := INF
 	for id in lanes:
 		var path := lanes[id] as Path2D
+		if not is_instance_valid(path) or path.curve == null or path.curve.point_count < 2: continue
 		var offset := path.curve.get_closest_offset(path.to_local(position))
 		var distance := position.distance_to(path.to_global(path.curve.sample_baked(offset, true)))
 		nearest = minf(nearest, distance)
@@ -223,3 +258,67 @@ func _clear_motion(vehicle: Node2D, point: Vector2) -> bool:
 	query.motion = point - vehicle.global_position
 	var fractions := vehicle.get_world_2d().direct_space_state.cast_motion(query)
 	return fractions[0] >= 0.99
+
+
+func _link_adjacent_lane(vehicle: Node2D, from_path: Path2D) -> bool:
+	var length := from_path.curve.get_baked_length()
+	var end := from_path.to_global(from_path.curve.sample_baked(length, true))
+	var outgoing := (end - from_path.to_global(from_path.curve.sample_baked(maxf(0, length - 12), true))).normalized()
+	var best := 50.01
+	var candidate: Path2D
+	for node in vehicle.get_tree().get_nodes_in_group("unified_traffic_lane"):
+		var path := node as Path2D
+		if path == null or path == from_path or not path.can_process() or path.curve == null or path.curve.point_count < 2: continue
+		var start := path.to_global(path.curve.sample_baked(0, true))
+		var gap := start.distance_to(end)
+		if gap > 50.0 or gap >= best: continue
+		var incoming := (path.to_global(path.curve.sample_baked(12, true)) - start).normalized()
+		if incoming.dot(outgoing) < 0.8: continue
+		best = gap
+		candidate = path
+	if candidate == null: return false
+	linked_lane = candidate
+	_linked_entry_pending = true
+	legs.clear()
+	network = null
+	return true
+
+
+func _guide_linked_lane(vehicle: Node2D, target: Vector2) -> Vector2:
+	if not is_instance_valid(linked_lane) or not linked_lane.can_process() or linked_lane.curve == null or linked_lane.curve.point_count < 2:
+		linked_lane = null
+		return vehicle.global_position
+	# Move beyond the seam before replanning: nearby opposite lane endpoints
+	# must not immediately hand the same stationary car back across the seam.
+	if _linked_entry_pending:
+		var entry_offset := linked_lane.curve.get_closest_offset(linked_lane.to_local(vehicle.global_position))
+		if entry_offset < minf(45.0, linked_lane.curve.get_baked_length() * 0.5):
+			return linked_lane.to_global(linked_lane.curve.sample_baked(60.0, true))
+		_linked_entry_pending = false
+	# Once back on a canonical city lane, resume its junction graph normally.
+	var parent := linked_lane.get_parent()
+	var graph := parent.get_parent() if parent != null else null
+	if graph is Node2D and graph.has_method("get_routing_revision"):
+		linked_lane = null
+		next_plan_ms = 0
+		_plan(vehicle, target)
+		# Resume on the next physics tick. Re-entering guidance synchronously can
+		# recurse forever if a streamed seam replans to the same linked lane.
+		return vehicle.global_position
+	var path := linked_lane
+	var curve := path.curve
+	var length := curve.get_baked_length()
+	var offset := curve.get_closest_offset(path.to_local(vehicle.global_position))
+	var point := path.to_global(curve.sample_baked(offset, true))
+	if point.distance_to(vehicle.global_position) > 54.0: return point
+	var goal := curve.get_closest_offset(path.to_local(target))
+	var goal_point := path.to_global(curve.sample_baked(goal, true))
+	if goal_point.distance_to(vehicle.global_position) < 28.0 and goal_point.distance_to(target) < 160.0:
+		return target if goal_point.distance_to(target) <= 32.0 else vehicle.global_position
+	var end := path.to_global(curve.sample_baked(length, true))
+	if offset >= length - 50.0 and end.distance_to(vehicle.global_position) < 28.0:
+		if _link_adjacent_lane(vehicle, path): return _guide_linked_lane(vehicle, target)
+		if bool(path.get_meta("traffic_lane_loop", false)) or end.distance_to(path.to_global(curve.sample_baked(0, true))) < 5.0:
+			return path.to_global(curve.sample_baked(60.0, true))
+		return vehicle.global_position
+	return path.to_global(curve.sample_baked(minf(length, offset + 65.0), true))

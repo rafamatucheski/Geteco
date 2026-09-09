@@ -8,14 +8,14 @@ signal upgrade_purchased(upgrade_id: String, level: int)
 signal custom_neon_changed(new_color: Color)
 
 var unlocked_upgrades := {
-	"nitro_stage": 1,     # Estágio 1 desbloqueado na Zona 1
+	"nitro_stage": 0,     # NOS desativado em todas as zonas
 	"neon_underglow": 1,  # Neon desbloqueado na Zona 1
 	"turbo_stage": 1,     # Turbo desbloqueado na Zona 1
 	"armor_plating": 0    # Desbloqueado após derrotar o Don Hector
 }
 
 var active_customization := {
-	"nitro_equipped": true,
+	"nitro_equipped": false,
 	"neon_equipped": true,
 	"neon_color": Color("#00cec9"), # Ciano vibrante
 	"turbo_equipped": true,
@@ -28,11 +28,14 @@ func _ready() -> void:
 func apply_upgrades_to_vehicle(vehicle: Node2D) -> void:
 	if not is_instance_valid(vehicle): return
 	
-	if active_customization["nitro_equipped"] and unlocked_upgrades["nitro_stage"] > 0:
-		vehicle.set("has_nitro", true)
-		vehicle.set("nitro_max", 100.0 * float(unlocked_upgrades["nitro_stage"]))
-		vehicle.set("nitro_amount", 100.0 * float(unlocked_upgrades["nitro_stage"]))
-		
+	# Legacy customization must never re-enable NOS on any vehicle.
+	active_customization["nitro_equipped"] = false
+	unlocked_upgrades["nitro_stage"] = 0
+	for property in ["has_nitro", "is_nitro_active"]:
+		if property in vehicle: vehicle.set(property, false)
+	for property in ["nitro_amount", "nitro_max"]:
+		if property in vehicle: vehicle.set(property, 0.0)
+
 	if active_customization["neon_equipped"] and unlocked_upgrades["neon_underglow"] > 0:
 		vehicle.set("has_neon", true)
 		vehicle.set("neon_color", active_customization["neon_color"])
@@ -53,5 +56,5 @@ func set_neon_color(color: Color) -> void:
 func unlock_next_zone_upgrades(zone_index: int) -> void:
 	if zone_index >= 1:
 		unlocked_upgrades["armor_plating"] = 1
-		unlocked_upgrades["nitro_stage"] = 2
+		unlocked_upgrades["nitro_stage"] = 0
 		unlocked_upgrades["turbo_stage"] = 2
