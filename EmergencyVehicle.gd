@@ -186,6 +186,13 @@ func _ready():
 	add_child(collision_particles)
 	
 	_setup_headlight()
+	# Unidades no pool só precisam do modelo quando forem despachadas.
+	if visible:
+		ensure_presentation()
+
+func ensure_presentation() -> void:
+	if visual_3d != null:
+		return
 	visual_3d = preload("res://EmergencyVehicleVisual3D.gd").new()
 	add_child(visual_3d)
 	visual_3d.configure(self, type)
@@ -258,6 +265,8 @@ func _setup_headlight() -> void:
 	add_child(flame_particles)
 
 func activate():
+	# A geometria define colisão e portas: finalizar antes de sair do depósito.
+	ensure_presentation()
 	_clear_tactical_doors()
 	modulate = Color.WHITE
 	if visual: visual.show()

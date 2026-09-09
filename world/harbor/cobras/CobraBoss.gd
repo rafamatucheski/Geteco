@@ -23,6 +23,9 @@ func _setup_district_and_archetype() -> void:
 func _ready() -> void:
 	super._ready()
 	add_to_group("cobra_boss")
+	presentation_ready.connect(_build_boss_details, CONNECT_ONE_SHOT)
+
+func _build_boss_details() -> void:
 	# Panels follow the torso; shoulder caps follow arms, boots follow shins.
 	_detail(torso_node,"LeatherLeft",Vector3(.10,.30,.025),Vector3(-.075,0,-.145),Color("29272a"))
 	_detail(torso_node,"LeatherRight",Vector3(.10,.30,.025),Vector3(.075,0,-.145),Color("29272a"))

@@ -89,6 +89,16 @@ var alarm_audio: AudioStreamPlayer2D
 
 # Suporte a Modelos 3D Procedurais (Frota Fase 2)
 var is_3d_vehicle: bool = false
+var defer_presentation := false
+var _pending_spec: Dictionary = {}
+var _pending_color := Color.WHITE
+
+func ensure_presentation() -> void:
+	if _pending_spec.is_empty():
+		return
+	var spec := _pending_spec
+	_pending_spec = {}
+	_setup_3d_model(spec, _pending_color)
 var body_viewport: SubViewport = null
 var body_model: Node3D = null
 var wheels: Array[Node3D] = []
@@ -597,6 +607,7 @@ var _last_crash_visual_ms := -999999
 
 func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO) -> void:
 	if visual == null or impact_force < 80.0 or not hit_world_pos.is_finite(): return
+	ensure_presentation()
 	var now := Time.get_ticks_msec()
 	if now - _last_crash_visual_ms < 500: return
 	_last_crash_visual_ms = now
@@ -662,6 +673,7 @@ var active_archetype_id: String = "sedan_classic"
 var active_roof_prop_node: Node2D = null
 
 func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARENT) -> void:
+	_pending_spec = {}
 	active_archetype_id = archetype_id
 	var spec: Dictionary = VehicleCatalog.get_vehicle_spec(archetype_id)
 	if spec.is_empty(): return
@@ -681,7 +693,21 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	is_police_vehicle = String(spec.get("roof_prop", "")) == "police_lightbar"
 	# Cor e Textura Especial
 	if spec.has("model_class") and String(spec["model_class"]) != "":
-		_setup_3d_model(spec, custom_color)
+		if defer_presentation and body_viewport == null:
+			_pending_spec = spec.duplicate(true)
+			_pending_color = VehicleCatalog.get_random_color(archetype_id) if custom_color == Color.TRANSPARENT else custom_color
+			visual.modulate = _pending_color
+			# O tamanho físico independe do momento em que a câmera solicita detalhe.
+			var length := float(spec.get("target_length", 82.0))
+			var width := float(spec.get("target_width", 34.0))
+			var shape := RectangleShape2D.new()
+			shape.size = Vector2(length * 0.82, maxf(28.0, width * 0.88))
+			collision.shape = shape
+			var hit := pedestrian_hitbox.get_node("Collision") as CollisionShape2D
+			(hit.shape as RectangleShape2D).size = Vector2(length * 1.02, maxf(34.0, width * 1.02))
+			get_node("/root/PresentationBudget").request(self)
+		else:
+			_setup_3d_model(spec, custom_color)
 	elif spec.has("texture") and String(spec["texture"]) != "":
 		visual.texture = load(spec["texture"])
 		visual.region_enabled = false
@@ -1008,6 +1034,7 @@ func _build_roof_prop(prop_type: String) -> void:
 
 func repaint_vehicle(new_color: Color = Color.TRANSPARENT) -> void:
 	var color := VehicleCatalog.get_random_color(active_archetype_id) if new_color == Color.TRANSPARENT else new_color
+	_pending_color = color
 	if is_3d_vehicle and is_instance_valid(body_model) and body_model.get("paint") != null:
 		body_model.paint.albedo_color = color
 		if visual: visual.modulate = Color.WHITE
@@ -1059,6 +1086,7 @@ var _drive_input_armed := true
 var _siren_key_down := false
 
 func enter_vehicle(player_body: CharacterBody2D) -> void:
+	ensure_presentation()
 	if is_broken or is_driven_by_player or player_body == null:
 		return
 		
@@ -2034,4 +2062,3 @@ static func _soft_damage_particle() -> Texture2D:
 			image.set_pixel(x,y,Color(1,1,1,pow(maxf(0,1-radius),2)))
 	_damage_particle = ImageTexture.create_from_image(image)
 	return _damage_particle
-

@@ -42,12 +42,13 @@ func _setup_district_and_archetype() -> void:
 	health = max_health
 
 func _ready() -> void:
+	defer_presentation = true
 	super._ready()
 	add_to_group("cobra_local")
 	if guard:
 		add_to_group("iron_cobras")
 		add_to_group("gang_member")
-		_build_role_weapon()
+		presentation_ready.connect(_build_role_weapon, CONNECT_ONE_SHOT)
 
 func _build_role_weapon() -> void:
 	if not is_instance_valid(right_lower_arm):

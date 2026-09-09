@@ -68,6 +68,7 @@ static func spawn_moving_vehicle(
 	follow.progress_ratio = _find_clear_ratio(path, requested_ratio)
 
 	var vehicle := VEHICLE_SCENE.instantiate() as DemoTrafficVehicle
+	vehicle.defer_presentation = true
 	vehicle.name = vehicle_name
 	vehicle.vehicle_id = archetype_id
 	var spec := VehicleCatalog.get_vehicle_spec(archetype_id)
@@ -95,6 +96,7 @@ static func spawn_parked_vehicle(
 	custom_color: Color = Color.TRANSPARENT
 ) -> DemoTrafficVehicle:
 	var vehicle := VEHICLE_SCENE.instantiate() as DemoTrafficVehicle
+	vehicle.defer_presentation = true
 	vehicle.name = vehicle_name
 	vehicle.position = world_position
 	vehicle.rotation = world_rotation

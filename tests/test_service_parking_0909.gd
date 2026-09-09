@@ -11,7 +11,7 @@ func check(ok: bool, label: String) -> void:
 func run() -> void:
 	create_timer(90).timeout.connect(func(): print("PARKING TIMEOUT"); quit(2))
 	change_scene_to_file("res://world/harbor/HarborPreview.tscn")
-	for i in 8: await physics_frame
+	for i in 60: await process_frame
 	var director = get_first_node_in_group("emergency_depot_director")
 	var audit: Dictionary = director.get_harbor_depot_audit()
 	check(audit.ambulance.spawn.x > 2040, "Ambulance starts beside clinic, away from main door")

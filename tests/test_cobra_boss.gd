@@ -30,6 +30,8 @@ func _run() -> void:
 		encounter.set_physics_process(false)
 		for actor in encounter.actors: actor.set_physics_process(false)
 		var boss = encounter.actors[0]
+		# Asserções de geometria exigem concluir a apresentação sob demanda.
+		boss.ensure_presentation()
 		check(boss is BOSS and not encounter.actors[1] is BOSS,"Only leader receives new identity")
 		check(boss.max_health==110 and boss.health==110 and boss.weapon_id=="smg","No health or weapon buff")
 		check(boss.torso_node.has_node("CopperZip") and boss.left_upper_arm.has_node("ShoulderCap"),"Details attach to articulated bones")

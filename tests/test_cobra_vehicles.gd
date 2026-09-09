@@ -11,8 +11,8 @@ func run() -> void:
 	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
-	for i in 12:
-		await physics_frame
+	for i in 60:
+		await process_frame
 	var cars = scene.get_node("CobraVehicles")
 	var car = cars.secret_car
 	var player = scene.get_node("Player")
