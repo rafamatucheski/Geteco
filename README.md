@@ -69,11 +69,19 @@ a lista está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ### Legado — geração anterior, ainda carregável
 
-`legacy/` guarda a primeira geração do jogo: `Main.tscn` e os distritos que ela usava.
+A primeira geração do jogo é `Main.tscn` (na raiz) mais o que restou em `district/`:
+`bairro1/`, `bairro1_v2/`, `borough_one/`, `coast/` e `highway/`. Boa parte de
+`city_demo/` pertence à mesma geração.
 
 **Não é código morto.** `HarborSceneRoute.for_save()` ainda carrega `Main.tscn` em runtime
 para saves antigos que não têm a flag `harbor_campaign_active`. Apagar ou tornar
 inacessível quebra save de jogador.
+
+`city_demo/` é a origem do protótipo e está quase toda parada, mas quatro scripts
+continuam sendo usados pelo jogo vivo — `TrafficVehicle.gd`, `WeaponEffects.gd`,
+`roads/CityIntersection.gd`, `scenes/pickups/PoliceLoot.gd` — além de vários sprites
+(`car.png`, ícones de arma, `police_car.png`, `ambulance.png`). Por isso a pasta não pode
+ser removida em bloco.
 
 ### Apoio
 

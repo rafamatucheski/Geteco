@@ -2,7 +2,7 @@
 
 Sons originais e isolados para o primeiro carro pessoal do Dante: a
 Monaliza, um cupê turbo de quatro cilindros preparado, azul e laranja
-(ver `docs/PROMPT_ANTIGRAVITY_MONALIZA_WORKSHOP.md` para o contexto visual
+(ver `docs/history/PROMPT_ANTIGRAVITY_MONALIZA_WORKSHOP.md` para o contexto visual
 do carro, feito por outro agente). **Nada aqui integra com o jogo** —
 `VehicleEngineSound.gd`, `ProceduralAudio.gd`, `PlayerCar`, scripts de
 carro, `Player` e saves não foram tocados. A Astra decide como (e quando)

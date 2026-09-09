@@ -2,7 +2,7 @@
 
 > Histórico da etapa isolada. Em 08/09 a conexão oficial foi implementada e
 > `connect_to_harbor` passou a ser verdadeiro. Veja
-> [a entrega e validação atuais](MOUNTAIN_PASS_HARBOR_INTEGRATION_2026-09-08.md).
+> [a entrega e validação atuais](history/MOUNTAIN_PASS_HARBOR_INTEGRATION_2026-09-08.md).
 
 A região permanece isolada. `connect_to_harbor` é falso por padrão.
 Os relatórios anexados são contexto histórico: havia divergências de coordenadas,

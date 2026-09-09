@@ -4,7 +4,7 @@ extends "res://tests/claude_gameplay_audit/AuditCommon.gd"
 ## A loja de armas real e jogável "Timber Ridge Guns & Ammo"
 ## (world/mountain_pass/MountainGunShopFacade.gd, instalada por
 ## MountainSceneryBuilder.build_mountain_ammunation(), documentada em
-## docs/MOUNTAIN_PLANE_SHOP_2026-09-08.md).
+## docs/history/MOUNTAIN_PLANE_SHOP_2026-09-08.md).
 ##
 ## Esta versão NÃO usa nenhum atalho/bypass: o jogador caminha de verdade
 ## (walk_to, entrada real via Input.action_press) desde uma posição próxima
