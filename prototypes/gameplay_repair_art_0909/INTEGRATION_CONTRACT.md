@@ -1,10 +1,10 @@
-﻿# Contrato de Integração — Arte e Animações (Antigravity & Astra)
+# Contrato de Integração — Arte e Animações (Antigravity & Astra)
 
 Este contrato especifica as interfaces, nós, sinais, propriedades e fluxos de animação dos componentes entregues em D:/geteco/game/prototypes/gameplay_repair_art_0909/.
 
 **Divisão de Responsabilidades**:
 - **Antigravity**: Modelos visuais 3D, controladores de animação desacoplados, rigs, poses e validação isolada.
-- **Astra**: IA, física, rotas, performance, ativação de regiões por proximidade e integração final no mundo compartilhado (PoliceVehicleStop.gd, PoliceOfficer.gd, HarborCemetery.gd, HarborWorldEvents.gd, etc.).
+- **Astra**: IA, física, rotas, performance, ativação de regiões por proximidade e integração final no mundo compartilhado (PoliceVehicleStop.gd, PoliceOfficer.gd, world/harbor/HarborCemetery.gd, world/harbor/events/HarborWorldEvents.gd, etc.).
 
 ---
 
@@ -101,7 +101,7 @@ Componentes em:
   - FILLING: Terra sobe encobrindo o caixão, consumindo o monte lateral.
   - COMPLETED: Montículo fechado com cruz de madeira e 5 rosas vermelhas com fita memorial.
 
-### 2.2 Métodos de Funeral para a Astra Conectar ao HarborWorldEvents.gd
+### 2.2 Métodos de Funeral para a Astra Conectar ao world/harbor/events/HarborWorldEvents.gd
 `gdscript
 var funeral_ctrl: FuneralSequenceController = ...
 
@@ -159,7 +159,7 @@ funeral_ctrl.cancel_sequence() # Cancela com segurança e limpa atores temporár
   - Pá 3D com poses HOLD, CARRY (sem penetração no terreno) e DIG.
   - Vídeos de demonstração em velocidade normal: ideo_funeral_cycle.mp4 e ideo_shovel_and_elias.mp4.
 - **Depende da Integração da Astra**:
-  - Alocar as coordenadas dos lotes em HarborCemetery.gd.
-  - Acionar o início do evento fúnebre através de HarborWorldEvents.gd.
-  - Integrar Elias ao sistema de diálogo existente (CemeteryStoryteller.gd).
+  - Alocar as coordenadas dos lotes em `world/harbor/HarborCemetery.gd`.
+  - Acionar o início do evento fúnebre através de `world/harbor/events/HarborWorldEvents.gd`.
+  - Integrar Elias ao sistema de diálogo existente (`CemeteryStoryteller.gd`).
   - Ativar/desativar a renderização do cemitério conforme a proximidade da câmera do jogador.
