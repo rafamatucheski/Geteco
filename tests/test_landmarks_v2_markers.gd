@@ -33,7 +33,7 @@ func _run() -> void:
 		m.position = markers_data[m_name]
 		layout.add_child(m)
 		
-	var scene = load("res://district/bairro1_v2/landmarks/LandmarksV2.tscn")
+	var scene = load("res://legacy/district/bairro1_v2/landmarks/LandmarksV2.tscn")
 	var landmarks = scene.instantiate()
 	bairro_root.add_child(landmarks)
 	

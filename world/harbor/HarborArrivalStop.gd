@@ -54,7 +54,7 @@ func _setup_service() -> void:
 	follow.loop = false
 	lane.add_child(follow)
 	follow.progress = lane.curve.get_closest_offset(lane.to_local(Vector2(1700, 1250)))
-	bus = preload("res://city_demo/scenes/TrafficVehicle.tscn").instantiate()
+	bus = preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
 	bus.set_script(BUS)
 	bus.name = "HarborLocalBus"
 	bus.station = self

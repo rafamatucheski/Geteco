@@ -49,7 +49,7 @@ func _run() -> void:
 		tested += 1
 	check(tested >= 38, "Test a broad sample of real world cars")
 	# Repeated real wall contacts during one scrape must not exhaust the car.
-	var crash_car = load("res://city_demo/scenes/TrafficVehicle.tscn").instantiate()
+	var crash_car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
 	world.add_child(crash_car)
 	crash_car.configure_as_parked()
 	crash_car.global_position = Vector2(12000, 10000)

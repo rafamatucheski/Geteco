@@ -47,7 +47,7 @@ var main_camera: Camera2D
 
 func _ready() -> void:
 	if not streamed_region:
-		var combat_effects := preload("res://city_demo/scripts/WeaponEffects.gd").new()
+		var combat_effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
 		combat_effects.name = "WeaponEffects"
 		add_child(combat_effects)
 	var travel := get_node("/root/RegionTravel")

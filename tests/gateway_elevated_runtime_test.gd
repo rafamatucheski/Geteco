@@ -4,7 +4,7 @@ extends SceneTree
 ## The test loads the real Main scene and only observes actors spawned by the
 ## game. It never creates, repositions or advances a vehicle/train manually.
 
-const MAIN_SCENE := preload("res://Main.tscn")
+const MAIN_SCENE := preload("res://legacy/Main.tscn")
 const GATEWAY_ROAD_ID := "Bairro1Expansion/gateway_spine"
 const SAMPLE_PHYSICS_FRAMES := 180
 const MIN_CENTERLINE_CLEARANCE := 1.0

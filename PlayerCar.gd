@@ -95,7 +95,7 @@ func _ready():
 	# Cria o sprite bonito usando o Atlas do Codex (Carro Esportivo Muscle do Dante)
 	sprite = Sprite2D.new()
 	var tex = AtlasTexture.new()
-	tex.atlas = load("res://city_demo/art/vehicle-atlas.png")
+	tex.atlas = load("res://assets/art/vehicle-atlas.png")
 	tex.region = Rect2(58, 48, 234, 475) # Esportivo Cupê Vermelho/Vinho
 	sprite.texture = tex
 	

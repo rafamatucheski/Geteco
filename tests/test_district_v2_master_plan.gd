@@ -1,6 +1,6 @@
 extends SceneTree
 
-const PLAN := preload("res://district/bairro1_v2/design/DistrictV2MasterPlan.gd")
+const PLAN := preload("res://legacy/district/bairro1_v2/design/DistrictV2MasterPlan.gd")
 
 func _init() -> void:
 	var plan = PLAN.new()

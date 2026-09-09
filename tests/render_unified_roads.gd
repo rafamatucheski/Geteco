@@ -16,7 +16,7 @@ func _render_preview() -> void:
 
 	var preview_root := Node2D.new()
 	viewport.add_child(preview_root)
-	var district_scene := load("res://district/borough_one/DistrictOneComplete.tscn") as PackedScene
+	var district_scene := load("res://legacy/district/borough_one/DistrictOneComplete.tscn") as PackedScene
 	var district := district_scene.instantiate()
 	preview_root.add_child(district)
 	for child_name in [

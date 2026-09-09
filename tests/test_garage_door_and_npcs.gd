@@ -8,7 +8,7 @@ func _run_test() -> void:
 	print("=== TESTE: PORTA DA GARAGEM, FIM DO BLACKOUT E NPCS =============")
 	print("=================================================================")
 
-	var main_scene = load("res://Main.tscn")
+	var main_scene = load("res://legacy/Main.tscn")
 	var main = main_scene.instantiate()
 	root.add_child(main)
 	await process_frame

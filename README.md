@@ -59,7 +59,7 @@ python tools/check_references.py
 | `ui/` | Menus. `MainMenu.tscn` é o entrypoint do projeto |
 | `world/harbor/` | **O jogo principal.** `HarborGame.tscn` e tudo do distrito portuário: campanha, interiores, gangue das Cobras, eventos |
 | `world/mountain_pass/` | Segunda região, carregada por streaming quando o jogador se aproxima |
-| `world/shared/` | Infraestrutura compartilhada entre regiões: malha viária, pedestres, natureza, ferrovia, depósitos de emergência |
+| `world/shared/` | Infraestrutura compartilhada entre regiões: malha viária, pedestres, tráfego, combate, coletas, natureza, ferrovia e depósitos de emergência |
 | raiz (`*.gd`) | Sistemas globais: `Player`, `PlayerCar`, `WantedManager`, `EmergencyVehicle`, `PoliceOfficer`, `HUD`, `SaveManager` e os catálogos de armas/veículos/roupas |
 | `audio/`, `cutscenes/`, `data/` | Som, cutscene de abertura, dados de campanha |
 | `interiors/`, `missions/`, `scenes/`, `scripts/`, `assets/` | Peças menores usadas pelo jogo vivo |
@@ -69,19 +69,13 @@ a lista está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ### Legado — geração anterior, ainda carregável
 
-A primeira geração do jogo é `Main.tscn` (na raiz) mais o que restou em `district/`:
-`bairro1/`, `bairro1_v2/`, `borough_one/`, `coast/` e `highway/`. Boa parte de
-`city_demo/` pertence à mesma geração.
+Tudo em `legacy/`: `Main.tscn`, os distritos antigos (`legacy/district/`) e o protótipo de
+origem (`legacy/city_demo/`).
 
-**Não é código morto.** `HarborSceneRoute.for_save()` ainda carrega `Main.tscn` em runtime
-para saves antigos que não têm a flag `harbor_campaign_active`. Apagar ou tornar
-inacessível quebra save de jogador.
-
-`city_demo/` é a origem do protótipo e está quase toda parada, mas quatro scripts
-continuam sendo usados pelo jogo vivo — `TrafficVehicle.gd`, `WeaponEffects.gd`,
-`roads/CityIntersection.gd`, `scenes/pickups/PoliceLoot.gd` — além de vários sprites
-(`car.png`, ícones de arma, `police_car.png`, `ambulance.png`). Por isso a pasta não pode
-ser removida em bloco.
+**Não é código morto, e `legacy/` não tem `.gdignore`.**
+`HarborSceneRoute.for_save()` ainda carrega `legacy/Main.tscn` em runtime para saves
+antigos que não têm a flag `harbor_campaign_active`. Apagar ou tornar inacessível quebra
+save de jogador. `tests/test_legacy_save_route.gd` existe para garantir isso.
 
 ### Apoio
 

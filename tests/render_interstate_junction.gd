@@ -7,7 +7,7 @@ func _render_interstate_junction() -> void:
 	var viewport = root.get_viewport()
 	viewport.size = Vector2i(1024, 768)
 	
-	var main_scene = load("res://Main.tscn") as PackedScene
+	var main_scene = load("res://legacy/Main.tscn") as PackedScene
 	var main_node = main_scene.instantiate()
 	root.add_child(main_node)
 	

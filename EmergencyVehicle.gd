@@ -84,7 +84,7 @@ func _ready():
 	var uniform_scale = 1.0
 	
 	if type == 0: # POLICE (Interceptor)
-		visual.texture = load("res://city_demo/art/police_car.png")
+		visual.texture = load("res://assets/art/police_car.png")
 		visual.region_enabled = false
 		target_length = 82.0
 		uniform_scale = target_length / 480.0
@@ -92,7 +92,7 @@ func _ready():
 		max_target_speed = 240.0
 		acceleration = 160.0
 	elif type == 1: # AMBULANCE (Resgate)
-		visual.texture = load("res://city_demo/art/ambulance.png")
+		visual.texture = load("res://assets/art/ambulance.png")
 		visual.region_enabled = false
 		target_length = 88.0
 		uniform_scale = target_length / 520.0
@@ -100,7 +100,7 @@ func _ready():
 		max_target_speed = 210.0
 		acceleration = 130.0
 	elif type == 2: # FIRE (Caminhão de Bombeiro - Pesado e Progressivo)
-		visual.texture = load("res://city_demo/art/firetruck.png")
+		visual.texture = load("res://assets/art/firetruck.png")
 		visual.region_enabled = false
 		target_length = 102.0
 		uniform_scale = target_length / 580.0
@@ -108,7 +108,7 @@ func _ready():
 		max_target_speed = 175.0
 		acceleration = 100.0
 	elif type == 3: # CORONER (Rabecão do IML / Necrotério)
-		visual.texture = load("res://city_demo/art/ambulance.png")
+		visual.texture = load("res://assets/art/ambulance.png")
 		visual.region_enabled = false
 		target_length = 88.0
 		uniform_scale = target_length / 520.0

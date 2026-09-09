@@ -16,8 +16,14 @@ quem chegava.
 |---|---|
 | `roads/` | Malha viária: `UnifiedRoadNetwork2D`, junções, semáforos, segurança de travessia e o `EmergencyLaneRouter` que planeja rota de veículo de emergência sobre o grafo de faixas |
 | `pedestrians/` | Agentes de calçada com rota autorada |
+| `traffic/` | Veículo de tráfego ambiente (`TrafficVehicle`) |
 | `emergency/` | Depósitos de serviço: `EmergencyDepotDirector` (classe base de despacho), marcadores de depósito, portões, pátio de veículos e a fábrica de tráfego moderno |
+| `combat/` | Efeitos de combate (`WeaponEffects`) |
+| `pickups/` | Coleta largada por policial (`PoliceLoot`) |
 | `nature/`, `rail/` | Vegetação e ferrovia |
+
+`traffic/`, `combat/` e `pickups/` vieram de `city_demo/` em 2026-09-09: eram as peças do
+protótipo original que o jogo atual ainda usa, extraídas antes do resto virar `legacy/`.
 
 ## Regiões dormentes, não descarregadas
 

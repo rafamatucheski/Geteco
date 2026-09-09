@@ -9,7 +9,7 @@ func _run() -> void:
 	print("=================================================================")
 	
 	# Instanciar Bairro1V2 integrado com LayoutV2 e LandmarksV2
-	var scene = load("res://district/bairro1_v2/Bairro1V2.tscn")
+	var scene = load("res://legacy/district/bairro1_v2/Bairro1V2.tscn")
 	assert(scene != null, "Bairro1V2 deve carregar")
 	var b1 = scene.instantiate() as Bairro1V2
 	b1.load_contributor_modules = true

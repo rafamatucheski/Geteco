@@ -5,7 +5,7 @@ extends RefCounted
 ## Authored road geometry remains owned by each district; this factory only
 ## turns those exact lane centre-lines into Path2D traffic and parked cars.
 
-const VEHICLE_SCENE: PackedScene = preload("res://city_demo/scenes/TrafficVehicle.tscn")
+const VEHICLE_SCENE: PackedScene = preload("res://world/shared/traffic/TrafficVehicle.tscn")
 
 const VEHICLE_CROPS: Array[Rect2] = [
 	# The retired green panel van was visually inconsistent with the current

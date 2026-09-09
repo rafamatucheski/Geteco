@@ -206,7 +206,7 @@ func _start_cobra_mission(player: Node2D) -> void:
 	_spawn_cobra_guards()
 
 func _spawn_target_car() -> void:
-	var car_scene = load("res://city_demo/scenes/TrafficVehicle.tscn")
+	var car_scene = load("res://world/shared/traffic/TrafficVehicle.tscn")
 	if car_scene:
 		target_car = car_scene.instantiate()
 	else:
@@ -294,7 +294,7 @@ func _start_boss_duel() -> void:
 	
 	# Spawna o Don Hector e seu carro de racha no centro da avenida
 	var boss_spawn_pos := Vector2(870, 280)
-	var car_scene = load("res://city_demo/scenes/TrafficVehicle.tscn")
+	var car_scene = load("res://world/shared/traffic/TrafficVehicle.tscn")
 	if car_scene:
 		target_car = car_scene.instantiate()
 		target_car.global_position = boss_spawn_pos

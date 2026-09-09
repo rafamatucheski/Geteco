@@ -8,7 +8,7 @@ const VEHICLE_SCRIPTS := [
 	"res://world/mountain_pass/MountainSUV.gd",
 	"res://world/mountain_pass/ArcticJeep.gd",
 	"res://world/mountain_pass/MountainPickup.gd",
-	"res://city_demo/scripts/TrafficVehicle.gd",
+	"res://world/shared/traffic/TrafficVehicle.gd",
 	"res://world/harbor/monaliza/MonalizaCar.gd",
 ]
 const CAR_FIELDS := ["health", "max_health", "max_speed", "acceleration", "braking", "friction", "turn_speed", "drift_factor", "has_nitro", "nitro_amount", "nitro_max", "has_puncture_proof_tires", "has_punctured_tires", "is_broken", "radio_index"]
@@ -182,8 +182,8 @@ func _restore_saved_vehicle(scene: Node, player: Node) -> void:
 		car = get_tree().get_first_node_in_group("personal_vehicle")
 		if car == null: return
 		car.unlocked = get_node("/root/CampaignState").has_campaign_flag(&"harbor_delivery_complete")
-	elif script == "res://city_demo/scripts/TrafficVehicle.gd":
-		car = load("res://city_demo/scenes/TrafficVehicle.tscn").instantiate()
+	elif script == "res://world/shared/traffic/TrafficVehicle.gd":
+		car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
 	elif script.contains("mountain_pass"):
 		car = load(script).new()
 	else:

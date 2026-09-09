@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://cdlmy2bs56263"]
+
+[ext_resource type="Script" uid="uid://u15kuew01nnj" path="res://legacy/CentralDistrict.gd" id="1_central"]
+
+[node name="CentralDistrict" type="Node2D" unique_id=1001202527]
+position = Vector2(4, 0)
+script = ExtResource("1_central")

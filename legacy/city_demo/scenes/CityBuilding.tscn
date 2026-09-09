@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://legacy/city_demo/scripts/CityBuilding.gd" id="1_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_placeholder"]
+size = Vector2(142, 78)
+
+[node name="CityBuilding" type="StaticBody2D"]
+script = ExtResource("1_script")
+
+[node name="Visual" type="Sprite2D" parent="."]
+
+[node name="Collision" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_placeholder")
+

@@ -9,16 +9,16 @@ func _ready() -> void:
 
 func _load_textures() -> void:
 	var paths := {
-		"pistol": "res://city_demo/art/weapons/icon_pistol.png",
-		"magnum": "res://city_demo/art/weapons/icon_magnum.png",
-		"smg": "res://city_demo/art/weapons/icon_smg.png",
-		"shotgun": "res://city_demo/art/weapons/icon_shotgun.png",
-		"sawed_off": "res://city_demo/art/weapons/icon_sawed_off.png",
-		"ak47": "res://city_demo/art/weapons/icon_ak47.png",
-		"m4a1": "res://city_demo/art/weapons/icon_m4a1.png",
-		"rpg": "res://city_demo/art/weapons/icon_rpg.png",
-		"flamethrower": "res://city_demo/art/weapons/icon_flamethrower.png",
-		"grenade": "res://city_demo/art/weapons/icon_grenade.png"
+		"pistol": "res://assets/art/weapons/icon_pistol.png",
+		"magnum": "res://assets/art/weapons/icon_magnum.png",
+		"smg": "res://assets/art/weapons/icon_smg.png",
+		"shotgun": "res://assets/art/weapons/icon_shotgun.png",
+		"sawed_off": "res://assets/art/weapons/icon_sawed_off.png",
+		"ak47": "res://assets/art/weapons/icon_ak47.png",
+		"m4a1": "res://assets/art/weapons/icon_m4a1.png",
+		"rpg": "res://assets/art/weapons/icon_rpg.png",
+		"flamethrower": "res://assets/art/weapons/icon_flamethrower.png",
+		"grenade": "res://assets/art/weapons/icon_grenade.png"
 	}
 	for id in paths:
 		if ResourceLoader.exists(paths[id]):

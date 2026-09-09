@@ -18,9 +18,9 @@ func _initialize() -> void:
 
 func _capture() -> void:
 	DisplayServer.window_set_size(Vector2i(1600, 1000))
-	var packed_main := load("res://Main.tscn") as PackedScene
+	var packed_main := load("res://legacy/Main.tscn") as PackedScene
 	if packed_main == null:
-		push_error("VISUAL_ROAD_QA: could not load res://Main.tscn")
+		push_error("VISUAL_ROAD_QA: could not load res://legacy/Main.tscn")
 		quit(2)
 		return
 	var world := packed_main.instantiate()

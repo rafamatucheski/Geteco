@@ -1,11 +1,11 @@
 @tool
 extends EditorPlugin
 
-const ROAD_SCRIPT := preload("res://city_demo/scripts/roads/CityRoadSegment.gd")
-const ROAD_CURVE_SCRIPT := preload("res://city_demo/scripts/roads/CityRoadCurve.gd")
-const LOT_SCRIPT := preload("res://city_demo/scripts/roads/CityLot.gd")
-const INTERSECTION_SCRIPT := preload("res://city_demo/scripts/roads/CityIntersection.gd")
-const CROSSWALK_SCRIPT := preload("res://city_demo/scripts/roads/CityCrosswalk.gd")
+const ROAD_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityRoadSegment.gd")
+const ROAD_CURVE_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityRoadCurve.gd")
+const LOT_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityLot.gd")
+const INTERSECTION_SCRIPT := preload("res://world/shared/roads/CityIntersection.gd")
+const CROSSWALK_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityCrosswalk.gd")
 const LAMP_SCENE := preload("res://StreetLamp.tscn")
 const UNIFIED_ROAD_NETWORK_SCRIPT := preload("res://world/shared/roads/UnifiedRoadNetwork2D.gd")
 

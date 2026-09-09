@@ -9,7 +9,7 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var scene := load("res://district/bairro1_v2/Bairro1V2.tscn") as PackedScene
+	var scene := load("res://legacy/district/bairro1_v2/Bairro1V2.tscn") as PackedScene
 	assert(scene != null, "Bairro1V2 must load")
 	var district := scene.instantiate()
 	root.add_child(district)

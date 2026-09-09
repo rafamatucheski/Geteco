@@ -25,9 +25,9 @@ func _run_lifecycle_test() -> void:
 	await process_frame
 	await process_frame
 	
-	var main_scene := load("res://Main.tscn") as PackedScene
+	var main_scene := load("res://legacy/Main.tscn") as PackedScene
 	if not main_scene:
-		_fail("Falha ao carregar res://Main.tscn")
+		_fail("Falha ao carregar res://legacy/Main.tscn")
 		return
 	
 	var world := main_scene.instantiate()

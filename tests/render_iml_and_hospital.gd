@@ -4,7 +4,7 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	var main_scene = load("res://Main.tscn")
+	var main_scene = load("res://legacy/Main.tscn")
 	var main = main_scene.instantiate()
 	root.add_child(main)
 	

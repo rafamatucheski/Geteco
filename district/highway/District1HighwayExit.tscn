@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://district/highway/District1HighwayExit.gd" id="1_highway"]
-
-[node name="District1HighwayExit" type="Node2D"]
-z_index = 0
-script = ExtResource("1_highway")

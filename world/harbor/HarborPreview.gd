@@ -22,7 +22,7 @@ var _show_perf_hud := false
 var _perf_hud: Label
 
 func _ready() -> void:
-	var combat_effects := preload("res://city_demo/scripts/WeaponEffects.gd").new()
+	var combat_effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
 	combat_effects.name = "WeaponEffects"
 	add_child(combat_effects)
 	weather = WEATHER_MANAGER.new()

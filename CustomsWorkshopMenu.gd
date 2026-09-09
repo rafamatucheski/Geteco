@@ -305,7 +305,7 @@ func _build_car_stage(viewport: SubViewport) -> void:
 	# 3. Sprite do Veículo em Alta Definição
 	car_preview_sprite = Sprite2D.new()
 	var tex = AtlasTexture.new()
-	tex.atlas = load("res://city_demo/art/vehicle-atlas.png")
+	tex.atlas = load("res://assets/art/vehicle-atlas.png")
 	
 	if is_instance_valid(current_vehicle) and current_vehicle.get("visual") is Sprite2D:
 		var orig_tex = current_vehicle.visual.texture as AtlasTexture

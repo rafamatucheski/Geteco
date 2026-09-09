@@ -16,8 +16,9 @@ estende `HarborPreview.gd`. A camada `HarborPreview` monta o distrito; a camada
 `HarborGame` acrescenta campanha, missões e HUD de jogo.
 
 Existe uma segunda rota: `HarborSceneRoute.for_save()` decide entre `HarborGame.tscn` e
-`Main.tscn` conforme o save. Saves sem a flag `harbor_campaign_active` vão para
-`Main.tscn` — a primeira geração do jogo, que continua carregável por isso.
+`legacy/Main.tscn` conforme o save. Saves sem a flag `harbor_campaign_active` vão para
+`legacy/Main.tscn` — a primeira geração do jogo, que continua carregável por isso.
+`tests/test_legacy_save_route.gd` guarda esse contrato.
 
 ## Autoloads
 
@@ -54,7 +55,7 @@ Números medidos numa partida real carregada (2026-09-09):
 | RAM estática | ~630 MB |
 
 Os `SubViewport` usam majoritariamente `UPDATE_ONCE` / `UPDATE_DISABLED` (ver
-`Collectible.gd`, `city_demo/scripts/TrafficVehicle.gd`, `AnimatedPedestrian3D.gd`): eles
+`Collectible.gd`, `world/shared/traffic/TrafficVehicle.gd`, `AnimatedPedestrian3D.gd`): eles
 renderizam uma vez e ficam em cache. Ou seja, **custam pouco por frame, mas caro na
 construção e em memória**. Pausar a atualização deles não muda FPS mensuravelmente.
 
@@ -119,5 +120,8 @@ Pontos que já causaram confusão e valem conhecer:
   `tools/check_references.py` (`KNOWN_BROKEN`).
 - **Circulação de emergência**: uma viatura observada com 15 ciclos de ré em 45 s sem
   causa isolada; ambulância que não sai do pool para uma ocorrência junto ao hospital.
-- **Legado não isolado**: `Main.tscn` e `district/{bairro1,bairro1_v2,borough_one,coast,
-  highway}` convivem com o jogo vivo sem sinalização de pasta.
+- **`.tscn` com BOM não carrega**: dois arquivos começam com byte order mark UTF-8 e o
+  parser do Godot recusa (`Expected '['`) --
+  `legacy/district/bairro1_v2/landmarks/LandmarksV2.tscn` e
+  `prototypes/living_cast/FleetShowcasePhase2.tscn`. Nenhum está no jogo vivo. Os `.gd`
+  com BOM (30 arquivos) o Godot aceita normalmente.

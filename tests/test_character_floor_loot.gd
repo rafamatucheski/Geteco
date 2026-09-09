@@ -74,7 +74,7 @@ func _run() -> void:
 		var ammo_before: Dictionary = player.weapon_ammo.duplicate(true)
 		station._collect(player)
 		check(ammo_before == player.weapon_ammo,"no duplicated ammo after reentry: "+station.weapon_id)
-	var dropped = load("res://city_demo/scenes/pickups/WeaponPickup.gd").new()
+	var dropped = load("res://legacy/city_demo/scenes/pickups/WeaponPickup.gd").new()
 	dropped.weapon_id = &"shotgun"
 	dropped.position = player.position + Vector2(100,0)
 	scene.add_child(dropped)

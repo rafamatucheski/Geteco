@@ -14,7 +14,7 @@ func _run() -> void:
 	road.polygon = PackedVector2Array([Vector2(-1000,-1000),Vector2(4000,-1000),Vector2(4000,1000),Vector2(-1000,1000)])
 	road.color = Color("394144")
 	world.add_child(road)
-	var effects := preload("res://city_demo/scripts/WeaponEffects.gd").new()
+	var effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
 	world.add_child(effects)
 	var player = preload("res://Player.gd").new()
 	player.collision_layer = 4

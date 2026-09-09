@@ -8,7 +8,7 @@ func _run() -> void:
 	print("=== TESTE: LANDMARKS V2 - MARCOS URBANOS & IDENTIDADE VISUAL ====")
 	print("=================================================================")
 	
-	var scene = load("res://district/bairro1_v2/landmarks/LandmarksV2.tscn")
+	var scene = load("res://legacy/district/bairro1_v2/landmarks/LandmarksV2.tscn")
 	assert(scene != null, "LandmarksV2.tscn deve carregar com sucesso!")
 	
 	var landmarks = scene.instantiate()

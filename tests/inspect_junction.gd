@@ -4,7 +4,7 @@ func _init() -> void:
 	call_deferred("_run_inspect")
 
 func _run_inspect() -> void:
-	var d = load("res://district/borough_one/DistrictOneComplete.tscn").instantiate()
+	var d = load("res://legacy/district/borough_one/DistrictOneComplete.tscn").instantiate()
 	root.add_child(d)
 	await process_frame
 	await process_frame

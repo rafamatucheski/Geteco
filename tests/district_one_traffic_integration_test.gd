@@ -11,7 +11,7 @@ func _initialize() -> void:
 
 
 func _run_integration() -> void:
-	var main_scene := load("res://Main.tscn") as PackedScene
+	var main_scene := load("res://legacy/Main.tscn") as PackedScene
 	var world := main_scene.instantiate()
 	var district := world.get_node("DistrictOneComplete")
 	var graph := district.get_node("UnifiedRoadNetwork") as Node2D

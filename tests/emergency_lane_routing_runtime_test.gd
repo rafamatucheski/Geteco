@@ -7,7 +7,7 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	var world := (load("res://Main.tscn") as PackedScene).instantiate()
+	var world := (load("res://legacy/Main.tscn") as PackedScene).instantiate()
 	var graph := world.get_node("DistrictOneComplete/UnifiedRoadNetwork")
 	var rail_mode := OS.get_environment("TEST_GUARD_RAILS")
 	if rail_mode in ["true", "false"]:

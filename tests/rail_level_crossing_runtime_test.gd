@@ -4,7 +4,7 @@ extends SceneTree
 ## Main.tscn and observes the actors created by the game itself: it never adds,
 ## teleports, accelerates or otherwise drives a train or road vehicle.
 
-const MAIN_SCENE: PackedScene = preload("res://Main.tscn")
+const MAIN_SCENE: PackedScene = preload("res://legacy/Main.tscn")
 const MAX_OBSERVATION_FRAMES := 4800
 const STARTUP_FRAMES := 30
 const FIXED_FPS := 60.0
@@ -19,7 +19,7 @@ func _initialize() -> void:
 func _run_runtime_audit() -> void:
 	var world := MAIN_SCENE.instantiate()
 	if world == null:
-		_fail("could not instantiate res://Main.tscn")
+		_fail("could not instantiate res://legacy/Main.tscn")
 		return
 	root.add_child(world)
 	current_scene = world

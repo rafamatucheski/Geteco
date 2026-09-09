@@ -12,8 +12,10 @@ Leia primeiro o [README.md](README.md) para a estrutura de pastas, e
 - **`prototypes/gameplay_repair_art_0909/`** é território do Antigravity. Não editar.
 - **`OLD/`** é arquivo morto: tem `.gdignore`, o Godot ignora a pasta inteira. Nada ali é
   carregado pelo jogo. Só entra arquivo verificado como sem referência.
-- **`Main.tscn` e o legado em `district/`** ainda são carregados em runtime para saves
-  antigos (`HarborSceneRoute.for_save()`). Não são código morto.
+- **`legacy/`** é a geração anterior do jogo e **não tem `.gdignore`**:
+  `legacy/Main.tscn` ainda é carregado em runtime para saves antigos
+  (`HarborSceneRoute.for_save()`). Não é código morto. Ao mexer ali, rode
+  `tests/test_legacy_save_route.gd`, que instancia a cena legada de verdade.
 
 Antes de mover ou apagar qualquer coisa, confira se outra sessão está com o repositório
 aberto — arquivos novos com timestamp recente que você não criou são sinal disso.

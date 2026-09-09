@@ -1,6 +1,6 @@
 extends SceneTree
 
-const CONTRACT := preload("res://district/bairro1_v2/design/AlleyStealthContract.gd")
+const CONTRACT := preload("res://legacy/district/bairro1_v2/design/AlleyStealthContract.gd")
 
 func _init() -> void:
 	var contract = CONTRACT.new()

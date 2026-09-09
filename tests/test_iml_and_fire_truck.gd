@@ -8,7 +8,7 @@ func _run_test() -> void:
 	print("=== TESTE: PREDIO PROPRIO DO IML E CONTROLE DE BOMBEIROS =======")
 	print("=================================================================")
 
-	var central_script = load("res://CentralDistrict.gd")
+	var central_script = load("res://legacy/CentralDistrict.gd")
 	var central = central_script.new()
 
 	# 1. Verificar lote da CLINICA (Hospital)
@@ -46,7 +46,7 @@ func _run_test() -> void:
 
 	# 3. Testar controle de despacho de bombeiros
 	print("[PASSO 3] Testando filtro de despacho de bombeiros...")
-	var traffic_script = load("res://city_demo/scripts/TrafficVehicle.gd")
+	var traffic_script = load("res://world/shared/traffic/TrafficVehicle.gd")
 	var car = traffic_script.new()
 	root.add_child(car)
 	await process_frame

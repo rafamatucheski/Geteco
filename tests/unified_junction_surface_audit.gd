@@ -1,6 +1,6 @@
 extends SceneTree
 
-const DISTRICT_SCENE := preload("res://district/borough_one/DistrictOneComplete.tscn")
+const DISTRICT_SCENE := preload("res://legacy/district/borough_one/DistrictOneComplete.tscn")
 const MATERIAL_LAYERS := ["sidewalk", "curb", "road_edge", "asphalt"]
 const CRITICAL_HUB_ROADS := [
 	["midtown_cross", "west_link"],

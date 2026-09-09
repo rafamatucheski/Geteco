@@ -1,4 +1,4 @@
-extends "res://city_demo/scripts/TrafficVehicle.gd"
+extends "res://world/shared/traffic/TrafficVehicle.gd"
 ## A local midi-bus using the SAME spacing, junction reservations and connectors
 ## as civil traffic. Only route choice and the station stop differ.
 var station: Node2D

@@ -17,7 +17,7 @@ func _init() -> void:
 
 
 func _run() -> void:
-	var scene: PackedScene = load("res://district/bairro1_v2/layout/LayoutV2.tscn") as PackedScene
+	var scene: PackedScene = load("res://legacy/district/bairro1_v2/layout/LayoutV2.tscn") as PackedScene
 	if scene == null:
 		_fail("LayoutV2.tscn não carregou")
 		quit(_exit_code)

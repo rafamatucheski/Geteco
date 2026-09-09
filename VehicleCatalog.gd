@@ -64,7 +64,7 @@ const VEHICLES := {
 		"target_length": 82.0, "target_width": 36.0, "mass": 1.25,
 		"max_speed": 600.0, "acceleration": 1100.0, "braking": 1400.0, "turn_speed": 3.40, "drift_factor": 0.95,
 		"durability": 170, "engine_pitch": 1.12, "roof_prop": "police_lightbar",
-		"texture": "res://city_demo/art/police_car.png",
+		"texture": "res://assets/art/police_car.png",
 		"colors": [Color.WHITE]
 	},
 

@@ -1,6 +1,6 @@
 extends SceneTree
 
-const DISTRICT_SCENE := preload("res://district/borough_one/DistrictOneComplete.tscn")
+const DISTRICT_SCENE := preload("res://legacy/district/borough_one/DistrictOneComplete.tscn")
 const SAFETY_SCRIPT := preload("res://world/shared/roads/safety/DistrictRoadSafetySystem2D.gd")
 
 

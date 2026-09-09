@@ -8,7 +8,7 @@ func _run() -> void:
 	print("=== TESTE: PORTO VISIVEL & CIDADE VIVA POS-MORTE DO JOGADOR =====")
 	print("=================================================================")
 	
-	var main_scene = load("res://Main.tscn")
+	var main_scene = load("res://legacy/Main.tscn")
 	var main = main_scene.instantiate()
 	root.add_child(main)
 	

@@ -49,7 +49,7 @@ O QA reproduziu em execução fria o alerta
 podia encerrar com código 0. A causa era
 `run/main_scene="uid://cy8k5f4n8g7e"` em `project.godot`.
 
-O entrypoint agora é `run/main_scene="res://Main.tscn"`. Assim, a cena inicial não
+O entrypoint agora é `run/main_scene="res://legacy/Main.tscn"`. Assim, a cena inicial não
 depende do mapeamento de UID em `.godot`. A alteração não troca a cena nem muda
 gameplay.
 
@@ -66,13 +66,13 @@ Hash final de `StreetLamp.tscn`:
 
 Origem da evidência:
 `D:\geteco\qa_audit_snapshot_20260902\MissionManager.gd`, que usa a cena real
-`res://city_demo/scenes/TrafficVehicle.tscn`.
+`res://world/shared/traffic/TrafficVehicle.tscn`.
 
 Alterações mínimas em `MissionManager.gd`:
 
 - duas referências incorretas a
-  `res://city_demo/scripts/TrafficVehicle.tscn` passaram para
-  `res://city_demo/scenes/TrafficVehicle.tscn`;
+  `res://legacy/city_demo/scripts/TrafficVehicle.tscn` passaram para
+  `res://world/shared/traffic/TrafficVehicle.tscn`;
 - o fallback para `res://PlayerCar.tscn`, que não existe, foi substituído por
   erro explícito e retorno. Com a estrutura válida, esse ramo não é executado.
 

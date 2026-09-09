@@ -14,7 +14,7 @@ func _run() -> void:
 	var region := Node2D.new()
 	region.position = Vector2(4300,-4960)
 	scene.add_child(region)
-	var effects = load("res://city_demo/scripts/WeaponEffects.gd").new()
+	var effects = load("res://world/shared/combat/WeaponEffects.gd").new()
 	scene.add_child(effects)
 	var player = load("res://Player.gd").new()
 	player.name = "Player"

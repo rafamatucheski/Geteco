@@ -27,7 +27,7 @@ func _spawn_standby_car() -> void:
 		parked_car.queue_free()
 		parked_car = null
 		
-	var car_scene := load("res://city_demo/scenes/TrafficVehicle.tscn") as PackedScene
+	var car_scene := load("res://world/shared/traffic/TrafficVehicle.tscn") as PackedScene
 	if not car_scene:
 		return
 		

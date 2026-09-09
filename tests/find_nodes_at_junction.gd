@@ -4,7 +4,7 @@ func _init() -> void:
 	call_deferred("_find_nodes")
 
 func _find_nodes() -> void:
-	var main_scene = load("res://Main.tscn") as PackedScene
+	var main_scene = load("res://legacy/Main.tscn") as PackedScene
 	var main_node = main_scene.instantiate()
 	root.add_child(main_node)
 	

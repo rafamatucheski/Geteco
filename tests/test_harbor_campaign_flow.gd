@@ -238,7 +238,7 @@ func _run() -> void:
 	var snapshot := {"campaign": campaign.to_save_data(), "player": player.serialize()}
 	var route := load("res://world/harbor/HarborSceneRoute.gd")
 	_check(route.for_save(snapshot) == "res://world/harbor/HarborGame.tscn", "Harbor saves route back to the new map")
-	_check(route.for_save({"campaign": {"campaign_flags": {}}}) == "res://Main.tscn", "Legacy saves retain their original map")
+	_check(route.for_save({"campaign": {"campaign_flags": {}}}) == "res://legacy/Main.tscn", "Legacy saves retain their original map")
 	world.queue_free()
 	await _frames(4)
 	campaign.reset_campaign()

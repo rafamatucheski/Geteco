@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 const BULLET_SCENE: PackedScene = preload("res://Bullet.tscn")
-const POLICE_LOOT_SCRIPT = preload("res://city_demo/scenes/pickups/PoliceLoot.gd")
+const POLICE_LOOT_SCRIPT = preload("res://world/shared/pickups/PoliceLoot.gd")
 
 enum UnitTier {
 	PATROL,       # 1-2 Estrelas: Polícia Regular (Pistola 9mm)

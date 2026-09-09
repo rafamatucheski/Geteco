@@ -7,7 +7,7 @@ func check(ok: bool, msg: String):
 		failures += 1
 		push_error(msg)
 func run():
-	var world = load("res://Main.tscn").instantiate()
+	var world = load("res://legacy/Main.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
 	for i in 30: await physics_frame
@@ -20,7 +20,7 @@ func run():
 		if String(path.get_meta("traffic_road_id", "")) != String(crossing.road_id): continue
 		lanes_checked += 1
 		var center: float = path.curve.get_closest_offset(path.to_local(crossing.global_position))
-		var probe = load("res://city_demo/scripts/TrafficVehicle.gd").new()
+		var probe = load("res://world/shared/traffic/TrafficVehicle.gd").new()
 		var follow = PathFollow2D.new()
 		follow.loop = false
 		path.add_child(follow)

@@ -1,0 +1,74 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://legacy/DistrictInteriorManager.gd" id="1_manager"]
+[ext_resource type="Script" path="res://scripts/entrances/EntranceRouter.gd" id="2_router"]
+[ext_resource type="PackedScene" path="res://scripts/entrances/BuildingEntrance.tscn" id="3_entrance"]
+[ext_resource type="PackedScene" path="res://interiors/ShopInterior.tscn" id="4_interior"]
+[ext_resource type="Script" path="res://interiors/CentralGarageInterior.gd" id="4_garage_script"]
+[ext_resource type="PackedScene" path="res://interiors/ClothingStoreInterior.tscn" id="5_clothing"]
+
+[node name="DistrictInteriorManager" type="Node2D"]
+script = ExtResource("1_manager")
+
+[node name="EntranceRouter" type="Node" parent="."]
+script = ExtResource("2_router")
+auto_bind_scene_entrances = false
+
+[node name="WorldEntrances" type="Node2D" parent="."]
+
+[node name="AmmuNationEntrance" parent="WorldEntrances" instance=ExtResource("3_entrance")]
+position = Vector2(419, 334)
+entrance_kind = 1
+display_name = "AMMU-NATION"
+destination_id = &"ammu_interior_spawn"
+
+[node name="AmmuNationReturn" type="Marker2D" parent="WorldEntrances"]
+position = Vector2(419, 370)
+
+[node name="CommonGarageEntrance" parent="WorldEntrances" instance=ExtResource("3_entrance")]
+position = Vector2(268, 1028)
+entrance_kind = 2
+display_name = "GARAGEM CENTRAL"
+destination_id = &"garage_interior_spawn"
+panel_slide_distance = 21.0
+
+[node name="CommonGarageReturn" type="Marker2D" parent="WorldEntrances"]
+position = Vector2(268, 1064)
+
+[node name="ClothingStoreEntrance" parent="WorldEntrances" instance=ExtResource("3_entrance")]
+position = Vector2(227, 334)
+entrance_kind = 1
+display_name = "BOUTIQUE"
+destination_id = &"clothing_interior_spawn"
+
+[node name="ClothingStoreReturn" type="Marker2D" parent="WorldEntrances"]
+position = Vector2(227, 370)
+
+[node name="InteriorSpaces" type="Node2D" parent="."]
+
+[node name="AmmuNationInterior" parent="InteriorSpaces" instance=ExtResource("4_interior")]
+position = Vector2(-12000, -12000)
+shop_name = "AMMU-NATION"
+accent_color = Color(0.847059, 0.294118, 0.243137, 1)
+floor_color_primary = Color(0.145098, 0.164706, 0.188235, 1)
+floor_color_secondary = Color(0.117647, 0.137255, 0.160784, 1)
+wall_color = Color(0.0862745, 0.0980392, 0.117647, 1)
+
+[node name="InteriorExit" parent="InteriorSpaces/AmmuNationInterior" instance=ExtResource("3_entrance")]
+position = Vector2(0, 176)
+display_name = "SAIR"
+destination_id = &"ammu_exterior_return"
+panel_slide_distance = 18.0
+
+[node name="CommonGarageInterior" type="Node2D" parent="InteriorSpaces"]
+position = Vector2(-11000, -12000)
+script = ExtResource("4_garage_script")
+
+[node name="ClothingStoreInterior" parent="InteriorSpaces" instance=ExtResource("5_clothing")]
+position = Vector2(0, -2000)
+
+[node name="InteriorExit" parent="InteriorSpaces/ClothingStoreInterior/ShopInterior" instance=ExtResource("3_entrance")]
+position = Vector2(0, 176)
+display_name = "SAIR DA BOUTIQUE"
+destination_id = &"clothing_exterior_return"
+panel_slide_distance = 18.0

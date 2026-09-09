@@ -4,7 +4,7 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	var scene = load("res://district/bairro1_v2/Bairro1V2.tscn")
+	var scene = load("res://legacy/district/bairro1_v2/Bairro1V2.tscn")
 	var b1 = scene.instantiate() as Bairro1V2
 	b1.load_contributor_modules = true
 	root.add_child(b1)
