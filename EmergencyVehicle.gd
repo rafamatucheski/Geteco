@@ -519,10 +519,13 @@ var last_tracked_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var is_reversing: bool = false
 var reverse_timer: float = 0.0
+var reverse_cooldown: float = 0.0
+var reverse_attempts: int = 0
 
 func _physics_process(delta: float) -> void:
 	preload("res://VehicleMotionSafety.gd").sanitize(self)
 	_ram_damage_cooldown = maxf(0.0, _ram_damage_cooldown - delta)
+	reverse_cooldown = maxf(0.0, reverse_cooldown - delta)
 	if type == 0 and not is_returning_to_base:
 		var wanted := get_node_or_null("/root/WantedManager")
 		if wanted and wanted.current_stars <= 0 and not (is_instance_valid(target) and target.get_meta("ambient_crime",false)):
@@ -544,6 +547,7 @@ func _physics_process(delta: float) -> void:
 		preload("res://VehicleMotionSafety.gd").move(self)
 		if reverse_timer <= 0.0:
 			is_reversing = false
+			reverse_cooldown = 1.5
 		return
 		
 	# Auto-Despawn e reciclagem se ficar travado no mapa por mais de 5 segundos
@@ -866,10 +870,16 @@ func _physics_process(delta: float) -> void:
 	# Detecta travamento contra prédios ou barreiras e executa manobra ágil de ré e curva
 	if (current_speed > 30.0 and velocity.length() < 16.0) or (obstacle_ahead and current_speed < 15.0 and not is_acting):
 		stuck_timer += delta
-		if stuck_timer > 0.45:
+		if stuck_timer > 0.45 and reverse_cooldown <= 0.0:
 			is_reversing = true
-			reverse_timer = 0.65
+			reverse_timer = 0.45
+			reverse_attempts += 1
 			stuck_timer = 0.0
+			# Repeated backing-up is an oscillation, not recovery. Force a
+			# fresh lane plan after two attempts instead of reversing forever.
+			if reverse_attempts >= 2:
+				_lane_router.reset()
+				reverse_attempts = 0
 	else:
 		stuck_timer = maxf(0.0, stuck_timer - delta * 0.5)
 

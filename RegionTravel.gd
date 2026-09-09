@@ -187,8 +187,14 @@ func _restore_saved_vehicle(scene: Node, player: Node) -> void:
 	elif script.contains("mountain_pass"):
 		car = load(script).new()
 	else:
-		car = load("res://PlayerCar.tscn").instantiate()
-		car.set_script(load(script))
+		# PlayerCar.tscn belonged to the pre-refactor layout and no longer
+		# exists.  Restore the allowlisted script directly; this also keeps
+		# malformed/old saves from turning a missing resource into a crash.
+		var car_script := load(script) as Script
+		if car_script == null:
+			push_warning("Saved vehicle script could not be loaded; restoring player on foot.")
+			return
+		car = car_script.new()
 	car.name = String(data.get("name", "TravelVehicle"))
 	car.position = Vector2(float(data.get("x", player.global_position.x)), float(data.get("y", player.global_position.y)))
 	car.rotation = float(data.get("rotation", 0.0))

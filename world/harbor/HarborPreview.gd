@@ -36,13 +36,17 @@ func _ready() -> void:
 
 func _start_review() -> void:
 	_setup_cobras()
+	await get_tree().process_frame
 	_setup_emergency_services()
+	await get_tree().process_frame
 	_setup_thematic_fleet()
+	await get_tree().process_frame
 	# Exterior-only reviews intentionally do not create interior rooms.
 	if review_mode and $Interiors.enabled:
 		var paint_bay := preload("res://prototypes/living_cast/HarborPaintBay.gd").new()
 		paint_bay.name = "PaintAndSpray"
 		$Interiors.garage_interior.add_child(paint_bay)
+		await get_tree().process_frame
 	# Local pacing preset, applied after PlayerCar has loaded its catalog stats.
 	$PlayerCar.max_speed *= 0.75
 	$PlayerCar.acceleration *= 0.75
@@ -55,6 +59,7 @@ func _start_review() -> void:
 	var access_count := 0
 	for district in [$District, $EastDistrict, $NorthDistrict]:
 		errors.append_array(district.get_spatial_audit())
+		await get_tree().process_frame
 		building_count += district.sites.size()
 		access_count += district.accesses.size()
 	errors.append_array($RoadNetwork.get_validation_errors())

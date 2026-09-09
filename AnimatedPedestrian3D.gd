@@ -1448,7 +1448,8 @@ func rescue_from_emergency(ambulance: Node2D) -> void:
 	var col = get_node_or_null("CollisionShape2D")
 	if col: col.set_deferred("disabled", true)
 	if is_instance_valid(ambulance) and ambulance.has_signal("arrived_at_depot"):
-		ambulance.arrived_at_depot.connect(_on_ambulance_arrived_at_hospital, CONNECT_ONE_SHOT)
+		if not ambulance.arrived_at_depot.is_connected(_on_ambulance_arrived_at_hospital):
+			ambulance.arrived_at_depot.connect(_on_ambulance_arrived_at_hospital, CONNECT_ONE_SHOT)
 	else:
 		# The ambulance reference is already gone -- still complete the
 		# rescue instead of leaving the pedestrian stuck hidden forever.

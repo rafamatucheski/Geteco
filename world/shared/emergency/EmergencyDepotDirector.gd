@@ -66,16 +66,16 @@ func request_dispatch(service_key: String, target: Node2D, prefer_standby := tru
 
 func begin_vehicle_return(vehicle: Node) -> void:
 	var assignment: Dictionary = _vehicle_assignments.get(vehicle.get_instance_id(), {})
-	var depot := assignment.get("depot") as EmergencyDepotMarker
-	if depot:
+	var depot = assignment.get("depot")
+	if is_instance_valid(depot) and depot is EmergencyDepotMarker:
 		depot.request_gate_open()
 
 func complete_vehicle_return(vehicle: Node) -> void:
 	var assignment: Dictionary = _vehicle_assignments.get(vehicle.get_instance_id(), {})
-	var depot := assignment.get("depot") as EmergencyDepotMarker
-	var standby := assignment.get("standby") as EmergencyStandbyPoint
+	var depot = assignment.get("depot")
+	var standby = assignment.get("standby")
 	var service_key := String(assignment.get("service", ""))
-	if depot:
+	if is_instance_valid(depot) and depot is EmergencyDepotMarker:
 		depot.request_gate_close()
 		vehicle_returned.emit(vehicle, service_key, depot.depot_id)
 	if standby:
