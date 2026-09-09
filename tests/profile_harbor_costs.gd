@@ -47,7 +47,8 @@ func run() -> void:
 	root.grab_focus()
 	print("PROFILE_CONTEXT focused=%s low_processor=%s" % [root.has_focus(),OS.low_processor_usage_mode])
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(),true)
-	scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
+	var scene_path := "res://world/harbor/HarborGame.tscn" if "game" in OS.get_cmdline_user_args() else "res://world/harbor/HarborPreview.tscn"
+	scene = load(scene_path).instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	for i in 30: await physics_frame

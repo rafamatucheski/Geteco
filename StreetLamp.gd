@@ -12,7 +12,7 @@ var view: SubViewport
 var bulb: StandardMaterial3D
 var _impact_cooldown := 0.0
 var _falling := false
-var _near_view := true
+var _near_view := false
 var _head_pixel := Vector2.ZERO
 
 var lamp_light: PointLight2D
@@ -43,6 +43,7 @@ func _ready() -> void:
 		set_lit(mgr.get("is_dark") == true)
 	else:
 		set_lit(false)
+	set_process(false)
 
 
 func _setup_collision() -> void:
@@ -65,7 +66,7 @@ static func _get_shared_lamp_data(facing_south: bool, tree: SceneTree, light_col
 	vp.own_world_3d = true
 	vp.transparent_bg = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-	tree.root.add_child(vp)
+	tree.root.call_deferred("add_child", vp)
 
 	var m := Node3D.new()
 	vp.add_child(m)
@@ -100,12 +101,11 @@ static func _get_shared_lamp_data(facing_south: bool, tree: SceneTree, light_col
 	vp.add_child(sun)
 	var camera := Camera3D.new()
 	vp.add_child(camera)
-	camera.position = Vector3(0, 8, 6)
-	camera.look_at(Vector3(0, 1.6, 0))
+	camera.look_at_from_position(Vector3(0, 8, 6), Vector3(0, 1.6, 0))
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 8
-	var sprite_pos := (Vector2(80, 80) - camera.unproject_position(Vector3.ZERO)) * 0.8
-	var head_px := (camera.unproject_position(Vector3(0, 3.7, sign_z * 0.95)) - camera.unproject_position(Vector3.ZERO)) * 0.8
+	var sprite_pos := Vector2(0.0, -17.5089)
+	var head_px := Vector2(0.0, -29.40035 if facing_south else -51.57829)
 
 	var data := {
 		"view": vp,
@@ -184,6 +184,7 @@ func _build_lamp_post() -> void:
 	add_child(notifier)
 	notifier.screen_entered.connect(func(): _near_view = true; set_lit(is_lit))
 	notifier.screen_exited.connect(func(): _near_view = false; set_lit(is_lit))
+	_near_view = notifier.is_on_screen()
 
 func _setup_light() -> void:
 	var arm_offset = Vector2(0, 24) if is_facing_south else Vector2(0, -24)
@@ -241,10 +242,13 @@ func take_damage(_amount: int, _is_player: bool = false) -> void:
 
 func _process(delta: float) -> void:
 	_impact_cooldown = maxf(0.0, _impact_cooldown - delta)
+	if _impact_cooldown <= 0.0:
+		set_process(false)
 
 func receive_vehicle_impact(speed: float, direction: Vector2) -> void:
 	if broken or _falling or _impact_cooldown > 0 or speed < 35: return
 	_impact_cooldown = 0.65
+	set_process(true)
 	_ensure_private_model()
 	var axis := Vector3(direction.y, 0, -direction.x).normalized()
 	if axis.is_zero_approx(): axis=Vector3.FORWARD

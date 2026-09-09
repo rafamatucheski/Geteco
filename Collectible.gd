@@ -32,7 +32,7 @@ func _ready() -> void:
 
 	z_index = 8
 	collision_layer = 0
-	collision_mask = 1 # Detecta o Player
+	collision_mask = 4 # Camada de personagens; o grupo player filtra os NPCs.
 
 	var col := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
@@ -207,10 +207,9 @@ func _draw() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if _is_collected: return
 	if not body.is_in_group("player"): return
+	if not body.has_method("add_collectible"): return
+	if not body.add_collectible(collectible_id, flavor_label): return
 	_is_collected = true
-
-	if body.has_method("add_collectible"):
-		body.add_collectible(collectible_id, flavor_label)
 
 	var p := AudioStreamPlayer2D.new()
 	p.bus = &"SFX"
@@ -233,4 +232,3 @@ func _on_body_entered(body: Node2D) -> void:
 	tw.tween_property(label, "position:y", label.position.y - 22.0, 0.5)
 	tw.tween_property(label, "modulate:a", 0.0, 0.5)
 	tw.chain().tween_callback(queue_free)
-

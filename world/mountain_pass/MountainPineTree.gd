@@ -36,7 +36,8 @@ func _ready() -> void:
 		var col := CollisionShape2D.new()
 		col.name = "TrunkCol"
 		var circ := CircleShape2D.new()
-		circ.radius = 10.0 * tree_scale
+		# Só o tronco deve bloquear o jogador; a copa não é uma parede.
+		circ.radius = 5.5 * tree_scale
 		col.shape = circ
 		col.position = Vector2(0, 3) * tree_scale
 		add_child(col)

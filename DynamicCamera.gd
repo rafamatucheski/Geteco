@@ -58,9 +58,10 @@ static func handoff(target: Camera2D, state: Dictionary) -> void:
 	target.force_update_scroll()
 
 func _ready() -> void:
-	_setup_neon_vignette()
+	pass
 
 func _setup_neon_vignette() -> void:
+	if _neon_overlay: return
 	_neon_overlay = CanvasLayer.new()
 	_neon_overlay.layer = 15
 	add_child(_neon_overlay)
@@ -114,6 +115,10 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	if not enabled or not is_current():
+		if _neon_overlay and _neon_overlay.visible:
+			_neon_overlay.visible = false
+		return
 	# Long frames must interpolate, never extrapolate through zero zoom. Reject
 	# non-finite inputs before division/lerp: clamping alone cannot repair NaN.
 	delta = maxf(delta, 0.0) if is_finite(delta) else 0.0
@@ -191,12 +196,14 @@ func _process(delta: float) -> void:
 			position = position.lerp(local_lead, blend)
 		
 	# Efeito de Vinheta de Neon pulsante na tela
-	if _neon_vignette:
-		if has_neon and (current_speed > 40.0 or is_boosting):
-			var alpha_pulse = 0.08 + (0.12 if is_boosting else 0.05) * (0.8 + 0.2 * sin(Time.get_ticks_msec() * 0.008))
-			_neon_vignette.color = Color(neon_col.r, neon_col.g, neon_col.b, alpha_pulse)
-		else:
-			_neon_vignette.color = _neon_vignette.color.lerp(Color(0, 0, 0, 0), 1.0 - exp(-4.0 * delta))
+	if has_neon and (current_speed > 40.0 or is_boosting):
+		if not _neon_overlay:
+			_setup_neon_vignette()
+		_neon_overlay.visible = true
+		var alpha_pulse = 0.08 + (0.12 if is_boosting else 0.05) * (0.8 + 0.2 * sin(Time.get_ticks_msec() * 0.008))
+		_neon_vignette.color = Color(neon_col.r, neon_col.g, neon_col.b, alpha_pulse)
+	elif _neon_vignette and _neon_overlay and _neon_overlay.visible:
+		_neon_vignette.color = _neon_vignette.color.lerp(Color(0, 0, 0, 0), 1.0 - exp(-4.0 * delta))
 			
 	# Screen Shake
 	if _shake_amount > 0.0:

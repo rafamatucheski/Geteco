@@ -1,6 +1,7 @@
 extends Node
 
 const DOOR := preload("res://prototypes/living_cast/VehicleDoor3D.gd")
+const WHEEL_RIG := preload("res://prototypes/living_cast/VehicleWheelRig.gd")
 const PPM := 74.0 / 4.46
 var model: Node3D
 var viewport: SubViewport
@@ -16,6 +17,8 @@ var _lamps: Array[StandardMaterial3D] = []
 var render_requests := 0
 var _lamp_mounts: Array[Vector3] = []
 var second_headlight: PointLight2D
+var wheel_rig := WHEEL_RIG.new()
+var _last_render_steer := INF
 
 func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	vehicle = owner_vehicle
@@ -54,6 +57,10 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 			var lens: StandardMaterial3D = model.mat("police_beacon_%s" % side, "e83c42" if side < 0 else "3689ef", 0.1, 0.2, 0.4)
 			_lamps.append(lens)
 			model.box(Vector3(side * 0.32, 1.52, 0.05), Vector3(0.48, 0.12, 0.22), lens)
+	# Viatura usa os mesmos modelos do catálogo civil, mas até aqui nunca extraía
+	# as rodas: pneu ficava soldado na lataria, sem giro e sem esterço. Montar
+	# depois da AABB e dos faróis (que varrem os filhos) e antes do batcher.
+	wheel_rig.mount(model)
 	preload("res://VehicleMeshBatcher.gd").batch_model(model)
 	for side in [-1.0, 1.0]:
 		var door := DOOR.new()
@@ -121,6 +128,10 @@ func reset_doors() -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(vehicle) or model == null: return
 	model.rotation.y = -vehicle.global_rotation - PI * 0.5
+	# A IA de emergência persegue o alvo por lerp_angle sobre `rotation`, sem
+	# volante: o esterço vem da guinada. Atualizado mesmo fora de tela para o
+	# rig não deduzir uma curva falsa do salto de proa ao reaparecer.
+	wheel_rig.update(delta, vehicle.velocity.dot(vehicle.global_transform.x) / PPM, vehicle.global_rotation)
 	vehicle.visual.global_rotation = 0.0
 	if vehicle.headlight and second_headlight:
 		for i in 2:
@@ -144,13 +155,14 @@ func _process(delta: float) -> void:
 			vehicle.headlight.visible = lights_on
 			if second_headlight: second_headlight.visible = lights_on
 	var flash := int(Time.get_ticks_msec() / 240) % 2 if vehicle.lights.visible else -1
-	var changed := not _was_visible or absf(angle_difference(_last_heading, vehicle.global_rotation)) > 0.005 or _door_motion > 0.0 or flash != _last_flash
+	var changed := not _was_visible or absf(angle_difference(_last_heading, vehicle.global_rotation)) > 0.005 or _door_motion > 0.0 or flash != _last_flash or absf(wheel_rig.steering_angle - _last_render_steer) > 0.004
 	if changed and _clock >= 1.0 / 30.0:
 		for i in _lamps.size():
 			_lamps[i].emission_enabled = flash == i
 			_lamps[i].emission_energy_multiplier = 1.4
 		_last_flash = flash
 		_last_heading = vehicle.global_rotation
+		_last_render_steer = wheel_rig.steering_angle
 		_clock = 0.0
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		render_requests += 1

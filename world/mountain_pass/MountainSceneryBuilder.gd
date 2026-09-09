@@ -647,7 +647,8 @@ static func build_mountain_chalets(parent: Node2D, setpieces: Node2D, interior_m
 	# Chale 1: Pine Crest Cabin
 	_build_single_chalet(
 		chalets_root,
-		Vector2(7350, 620),
+		# Recuado para dentro da mata, mantendo a estrada como acesso.
+		Vector2(7480, 760),
 		Vector2(150, 110),
 		"PineCrestCabin",
 		"CHALE DOS PINHAIS",
@@ -787,7 +788,8 @@ static func _build_single_chalet(parent: Node2D, pos: Vector2, size: Vector2, id
 	if ENTRANCE_SCENE:
 		var door: BuildingEntrance = ENTRANCE_SCENE.instantiate() as BuildingEntrance
 		door.name = "Door"
-		door.position = Vector2(0, size.y * 0.72)
+		# Centro da porta alinhado ao centro do alpendre; o sensor fica para fora.
+		door.position = Vector2(0, size.y * 0.60)
 		door.display_name = title
 		door.destination_id = &"mountain_cabin"
 		door.custom_prompt_text = "[E] APERTE E PARA ENTRAR NO CHALÉ"
@@ -954,7 +956,7 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 				continue
 			if lake_bounds.has_point(pos) or secret_lake_bounds.has_point(pos) or bunker_bounds.has_point(pos) or ammu_bounds.has_point(pos) or pos.distance_to(Vector2(6500, -2660)) < 165.0:
 				continue
-			if pos.distance_to(Vector2(7350, 620)) < 90.0 or pos.distance_to(Vector2(8350, 480)) < 140.0 or pos.distance_to(Vector2(8450, 490)) < 85.0 or pos.distance_to(Vector2(6050, 780)) < 80.0:
+			if pos.distance_to(Vector2(7480, 760)) < 125.0 or pos.distance_to(Vector2(8350, 480)) < 140.0 or pos.distance_to(Vector2(8450, 490)) < 85.0 or pos.distance_to(Vector2(6050, 780)) < 80.0:
 				continue
 
 			var pine = PINE_SCRIPT.new()

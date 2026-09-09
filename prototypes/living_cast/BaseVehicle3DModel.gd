@@ -69,6 +69,9 @@ func add_wheel(
 		var part := get_child(idx)
 		part.set_meta("wheel_center", center)
 		part.set_meta("wheel_spins", part != caliper)
+		# O rig precisa do raio real para rolar o pneu na velocidade certa: um
+		# caminhão de 0.50 m girava com a cadência de um sedã de 0.355 m.
+		part.set_meta("wheel_radius", tire_radius)
 
 func add_lightbar(
 	y_pos: float,

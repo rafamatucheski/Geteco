@@ -32,7 +32,7 @@ var _redraw_elapsed: float = 0.0
 # driving across town nowhere near the quay. Skipping it when far away is
 # invisible (nobody could see the ripple animate anyway) and measurably
 # removed a recurring stutter in a sustained real-renderer driving sample.
-const REDRAW_CAMERA_RADIUS := 2400.0
+const REDRAW_CAMERA_RADIUS := 1400.0
 const WATERFRONT_REFERENCE_POINT := Vector2(3570.0, 1400.0)
 
 

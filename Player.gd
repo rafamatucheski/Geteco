@@ -955,7 +955,6 @@ func _input(event: InputEvent) -> void:
 			if can_carry_weapon(target_weapon):
 				active_weapon_id = target_weapon
 				_update_equipped_weapon_3d_mesh()
-				_show_weapon_notice(String(WEAPON_CATALOG.get_weapon(target_weapon).get("label", target_weapon)))
 				_refresh_weapon_ui()
 				get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_X:
@@ -963,7 +962,6 @@ func _input(event: InputEvent) -> void:
 			if weapon_inventory.get("fists", false) == true:
 				active_weapon_id = "fists"
 				_update_equipped_weapon_3d_mesh()
-				_show_weapon_notice("PUNHOS")
 				_refresh_weapon_ui()
 				get_viewport().set_input_as_handled()
 
@@ -1077,7 +1075,6 @@ func _cycle_weapon(step: int) -> void:
 		if can_carry_weapon(candidate):
 			active_weapon_id = candidate
 			_update_equipped_weapon_3d_mesh()
-			_show_weapon_notice(String(WEAPON_CATALOG.get_weapon(candidate).get("label", candidate)))
 			_refresh_weapon_ui()
 			return
 
@@ -1127,7 +1124,6 @@ func equip_weapon(id: String) -> void:
 		return
 	active_weapon_id = id
 	_update_equipped_weapon_3d_mesh()
-	_show_weapon_notice(String(WEAPON_CATALOG.get_weapon(id).get("label", id)))
 	_refresh_weapon_ui()
 
 func buy_weapon(id: String) -> String:

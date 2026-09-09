@@ -101,6 +101,7 @@ func ensure_presentation() -> void:
 	_setup_3d_model(spec, _pending_color)
 var body_viewport: SubViewport = null
 var body_model: Node3D = null
+var wheel_rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 var wheels: Array[Node3D] = []
 var spinners: Array[Node3D] = []
 
@@ -161,11 +162,13 @@ func _ready() -> void:
 	pedestrian_collision.shape = hit_shape
 	pedestrian_hitbox.collision_mask = 5
 	
-	# Câmera dinâmica
+	# Câmera dinâmica (desativada por padrão em carros de tráfego ambiente)
 	var dyn_cam = load("res://DynamicCamera.gd")
 	if dyn_cam and camera:
 		camera.set_script(dyn_cam)
-		camera.set_process(true)
+		camera.enabled = false
+		camera.set_process(false)
+		camera.set_physics_process(false)
 		
 	# RayCasts anticolisão IA (detecta veículos, jogador e pedestres à frente)
 	var front_ray := RayCast2D.new()
@@ -188,177 +191,215 @@ func _ready() -> void:
 	front_ray_r.collision_mask = 15
 	add_child(front_ray_r)
 	
-	# === VFX: Marcas de Derrapagem ===
-	skid_line = Line2D.new()
-	skid_line.width = 4.0
-	skid_line.default_color = Color(0.1, 0.1, 0.1, 0.5)
-	skid_line.top_level = true
-	add_child(skid_line)
-	
-	# === VFX: Fumaça de Dano ===
-	smoke_emitter = CPUParticles2D.new()
-	smoke_emitter.emitting = false
-	smoke_emitter.amount = 30
-	smoke_emitter.lifetime = 1.0
-	smoke_emitter.gravity = Vector2(0, -98)
-	smoke_emitter.texture = _soft_damage_particle()
-	smoke_emitter.scale_amount_min = 10.0 / 32.0
-	smoke_emitter.scale_amount_max = 22.0 / 32.0
-	smoke_emitter.color = Color(0.2, 0.2, 0.2, 0.8)
-	add_child(smoke_emitter)
-	
-	# === VFX: Faíscas de Batida ===
-	collision_particles = CPUParticles2D.new()
-	collision_particles.emitting = false
-	collision_particles.one_shot = true
-	collision_particles.amount = 20
-	collision_particles.lifetime = 0.6
-	collision_particles.initial_velocity_min = 80.0
-	collision_particles.initial_velocity_max = 250.0
-	collision_particles.gravity = Vector2(0, 200)
-	collision_particles.scale_amount_min = 2.0
-	collision_particles.scale_amount_max = 5.0
-	collision_particles.color = Color(0.85, 0.85, 0.85, 1.0)
-	add_child(collision_particles)
-	
-	# === VFX: Chamas / Fogo ===
-	flame_particles = CPUParticles2D.new()
-	flame_particles.emitting = false
-	flame_particles.amount = 35
-	flame_particles.lifetime = 0.5
-	flame_particles.gravity = Vector2(0, -140)
-	flame_particles.initial_velocity_min = 40.0
-	flame_particles.initial_velocity_max = 90.0
-	flame_particles.scale_amount_min = 4.0
-	flame_particles.scale_amount_max = 8.0
-	flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
-	add_child(flame_particles)
-	
-	# === Setup de Áudio ===
-	# 1. Buzina
-	horn_audio = AudioStreamPlayer2D.new()
-	horn_audio.stream = ProceduralAudio.get_horn_stream()
-	horn_audio.max_distance = 500.0
-	horn_audio.volume_db = -20.0
-	add_child(horn_audio)
-	
-	# 2. Sirene (Hook reservado)
-	siren_audio = AudioStreamPlayer2D.new()
-	siren_audio.stream = ProceduralAudio.get_siren_stream()
-	siren_audio.max_distance = 800.0
-	siren_audio.volume_db = -4.0
-	add_child(siren_audio)
-	
-	alarm_audio = AudioStreamPlayer2D.new()
-	alarm_audio.stream = ProceduralAudio.get_police_alarm_stream()
-	alarm_audio.max_distance = 1000.0
-	alarm_audio.volume_db = 2.0
-	add_child(alarm_audio)
-	
-	# 3. Motor (toca apenas quando o jogador assume o volante)
-	engine_audio = AudioStreamPlayer2D.new()
-	engine_audio.stream = ProceduralAudio.get_engine_stream()
-	engine_audio.max_distance = 600.0
-	engine_audio.attenuation = 1.8
-	engine_audio.volume_db = -16.0
-	add_child(engine_audio)
-	
-	# 4. Derrapagem
-	skid_audio = AudioStreamPlayer2D.new()
-	skid_audio.stream = ProceduralAudio.get_skid_stream()
-	skid_audio.max_distance = 500.0
-	skid_audio.volume_db = -16.0
-	add_child(skid_audio)
-	
-	# 5. Rádio
-	radio_audio = AudioStreamPlayer2D.new()
-	radio_audio.max_distance = 500.0
-	radio_audio.volume_db = -18.0
-	add_child(radio_audio)
-	radio_tracks = ProceduralAudio.get_radio_stations()
-	
-	# 6. Nitro (NOS)
-	nitro_audio = AudioStreamPlayer2D.new()
-	nitro_audio.stream = ProceduralAudio.get_nitro_stream()
-	nitro_audio.max_distance = 550.0
-	nitro_audio.volume_db = -10.0
-	add_child(nitro_audio)
-	
-	nitro_emitter = CPUParticles2D.new()
-	nitro_emitter.emitting = false
-	nitro_emitter.amount = 35
-	nitro_emitter.lifetime = 0.30
-	nitro_emitter.direction = Vector2(-1, 0)
-	nitro_emitter.spread = 12.0
-	nitro_emitter.gravity = Vector2.ZERO
-	nitro_emitter.initial_velocity_min = 100.0
-	nitro_emitter.initial_velocity_max = 190.0
-	nitro_emitter.scale_amount_min = 2.5
-	nitro_emitter.scale_amount_max = 6.0
-	nitro_emitter.color = Color("#00cec9") # Chamas azuis de Nitro NOS
-	add_child(nitro_emitter)
-	
-	# Purga de Nitro Lateral/Capô (NOS Purge)
-	nos_purge_l = CPUParticles2D.new()
-	nos_purge_l.emitting = false
-	nos_purge_l.one_shot = true
-	nos_purge_l.amount = 20
-	nos_purge_l.lifetime = 0.4
-	nos_purge_l.direction = Vector2(-0.4, -1.0)
-	nos_purge_l.spread = 20.0
-	nos_purge_l.initial_velocity_min = 80.0
-	nos_purge_l.initial_velocity_max = 150.0
-	nos_purge_l.color = Color(1.0, 1.0, 1.0, 0.85)
-	add_child(nos_purge_l)
-
-	nos_purge_r = CPUParticles2D.new()
-	nos_purge_r.emitting = false
-	nos_purge_r.one_shot = true
-	nos_purge_r.amount = 20
-	nos_purge_r.lifetime = 0.4
-	nos_purge_r.direction = Vector2(-0.4, 1.0)
-	nos_purge_r.spread = 20.0
-	nos_purge_r.initial_velocity_min = 80.0
-	nos_purge_r.initial_velocity_max = 150.0
-	nos_purge_r.color = Color(1.0, 1.0, 1.0, 0.85)
-	add_child(nos_purge_r)
-
-	# Backfire de Escapamento
-	backfire_emitter = CPUParticles2D.new()
-	backfire_emitter.emitting = false
-	backfire_emitter.one_shot = true
-	backfire_emitter.amount = 15
-	backfire_emitter.lifetime = 0.20
-	backfire_emitter.direction = Vector2(-1, 0)
-	backfire_emitter.spread = 25.0
-	backfire_emitter.initial_velocity_min = 50.0
-	backfire_emitter.initial_velocity_max = 110.0
-	backfire_emitter.scale_amount_min = 3.0
-	backfire_emitter.scale_amount_max = 7.0
-	backfire_emitter.color = Color("#f39c12")
-	add_child(backfire_emitter)
-
-	# Faíscas e fumaça de pneu furado
-	rim_sparks = CPUParticles2D.new()
-	rim_sparks.emitting = false
-	rim_sparks.amount = 25
-	rim_sparks.lifetime = 0.35
-	rim_sparks.direction = Vector2(-1, 0)
-	rim_sparks.spread = 45.0
-	rim_sparks.initial_velocity_min = 60.0
-	rim_sparks.initial_velocity_max = 140.0
-	rim_sparks.color = Color(1.0, 0.8, 0.2, 0.9)
-	add_child(rim_sparks)
-
-	flat_smoke = CPUParticles2D.new()
-	flat_smoke.emitting = false
-	flat_smoke.amount = 20
-	flat_smoke.lifetime = 0.5
-	flat_smoke.gravity = Vector2(0, -60)
-	flat_smoke.color = Color(0.2, 0.2, 0.2, 0.7)
-	add_child(flat_smoke)
-	
+	# VFX e Audio sao instanciados sob demanda (lazy) para reduzir carga no renderer e audio server
 	_setup_headlight()
+
+func _ensure_camera() -> Camera2D:
+	if camera == null:
+		camera = get_node_or_null("Camera") as Camera2D
+		if camera == null:
+			camera = Camera2D.new()
+			camera.name = "Camera"
+			add_child(camera)
+		var dyn_cam = load("res://DynamicCamera.gd")
+		if dyn_cam:
+			camera.set_script(dyn_cam)
+	return camera
+
+func _ensure_smoke_emitter() -> CPUParticles2D:
+	if smoke_emitter == null:
+		smoke_emitter = CPUParticles2D.new()
+		smoke_emitter.emitting = false
+		smoke_emitter.amount = 30
+		smoke_emitter.lifetime = 1.0
+		smoke_emitter.gravity = Vector2(0, -98)
+		smoke_emitter.texture = _soft_damage_particle()
+		smoke_emitter.scale_amount_min = 10.0 / 32.0
+		smoke_emitter.scale_amount_max = 22.0 / 32.0
+		smoke_emitter.color = Color(0.2, 0.2, 0.2, 0.8)
+		add_child(smoke_emitter)
+	return smoke_emitter
+
+func _ensure_collision_particles() -> CPUParticles2D:
+	if collision_particles == null:
+		collision_particles = CPUParticles2D.new()
+		collision_particles.emitting = false
+		collision_particles.one_shot = true
+		collision_particles.amount = 20
+		collision_particles.lifetime = 0.6
+		collision_particles.initial_velocity_min = 80.0
+		collision_particles.initial_velocity_max = 250.0
+		collision_particles.gravity = Vector2(0, 200)
+		collision_particles.scale_amount_min = 2.0
+		collision_particles.scale_amount_max = 5.0
+		collision_particles.color = Color(0.85, 0.85, 0.85, 1.0)
+		add_child(collision_particles)
+	return collision_particles
+
+func _ensure_flame_particles() -> CPUParticles2D:
+	if flame_particles == null:
+		flame_particles = CPUParticles2D.new()
+		flame_particles.emitting = false
+		flame_particles.amount = 35
+		flame_particles.lifetime = 0.5
+		flame_particles.gravity = Vector2(0, -140)
+		flame_particles.initial_velocity_min = 40.0
+		flame_particles.initial_velocity_max = 90.0
+		flame_particles.scale_amount_min = 4.0
+		flame_particles.scale_amount_max = 8.0
+		flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
+		add_child(flame_particles)
+	return flame_particles
+
+func _ensure_puncture_vfx() -> void:
+	if rim_sparks == null:
+		rim_sparks = CPUParticles2D.new()
+		rim_sparks.emitting = false
+		rim_sparks.amount = 25
+		rim_sparks.lifetime = 0.35
+		rim_sparks.direction = Vector2(-1, 0)
+		rim_sparks.spread = 45.0
+		rim_sparks.initial_velocity_min = 60.0
+		rim_sparks.initial_velocity_max = 140.0
+		rim_sparks.color = Color(1.0, 0.8, 0.2, 0.9)
+		add_child(rim_sparks)
+	if flat_smoke == null:
+		flat_smoke = CPUParticles2D.new()
+		flat_smoke.emitting = false
+		flat_smoke.amount = 20
+		flat_smoke.lifetime = 0.5
+		flat_smoke.gravity = Vector2(0, -60)
+		flat_smoke.color = Color(0.2, 0.2, 0.2, 0.7)
+		add_child(flat_smoke)
+
+func _ensure_nos_purge() -> void:
+	if nos_purge_l == null:
+		nos_purge_l = CPUParticles2D.new()
+		nos_purge_l.emitting = false
+		nos_purge_l.one_shot = true
+		nos_purge_l.amount = 20
+		nos_purge_l.lifetime = 0.4
+		nos_purge_l.direction = Vector2(-0.4, -1.0)
+		nos_purge_l.spread = 20.0
+		nos_purge_l.initial_velocity_min = 80.0
+		nos_purge_l.initial_velocity_max = 150.0
+		nos_purge_l.color = Color(1.0, 1.0, 1.0, 0.85)
+		add_child(nos_purge_l)
+	if nos_purge_r == null:
+		nos_purge_r = CPUParticles2D.new()
+		nos_purge_r.emitting = false
+		nos_purge_r.one_shot = true
+		nos_purge_r.amount = 20
+		nos_purge_r.lifetime = 0.4
+		nos_purge_r.direction = Vector2(-0.4, 1.0)
+		nos_purge_r.spread = 20.0
+		nos_purge_r.initial_velocity_min = 80.0
+		nos_purge_r.initial_velocity_max = 150.0
+		nos_purge_r.color = Color(1.0, 1.0, 1.0, 0.85)
+		add_child(nos_purge_r)
+
+func _ensure_backfire() -> CPUParticles2D:
+	if backfire_emitter == null:
+		backfire_emitter = CPUParticles2D.new()
+		backfire_emitter.emitting = false
+		backfire_emitter.one_shot = true
+		backfire_emitter.amount = 15
+		backfire_emitter.lifetime = 0.20
+		backfire_emitter.direction = Vector2(-1, 0)
+		backfire_emitter.spread = 25.0
+		backfire_emitter.initial_velocity_min = 50.0
+		backfire_emitter.initial_velocity_max = 110.0
+		backfire_emitter.scale_amount_min = 3.0
+		backfire_emitter.scale_amount_max = 7.0
+		backfire_emitter.color = Color("#f39c12")
+		add_child(backfire_emitter)
+	return backfire_emitter
+
+func _ensure_nitro() -> void:
+	if nitro_audio == null:
+		nitro_audio = AudioStreamPlayer2D.new()
+		nitro_audio.stream = ProceduralAudio.get_nitro_stream()
+		nitro_audio.max_distance = 550.0
+		nitro_audio.volume_db = -10.0
+		add_child(nitro_audio)
+	if nitro_emitter == null:
+		nitro_emitter = CPUParticles2D.new()
+		nitro_emitter.emitting = false
+		nitro_emitter.amount = 35
+		nitro_emitter.lifetime = 0.30
+		nitro_emitter.direction = Vector2(-1, 0)
+		nitro_emitter.spread = 12.0
+		nitro_emitter.gravity = Vector2.ZERO
+		nitro_emitter.initial_velocity_min = 100.0
+		nitro_emitter.initial_velocity_max = 190.0
+		nitro_emitter.scale_amount_min = 2.5
+		nitro_emitter.scale_amount_max = 6.0
+		nitro_emitter.color = Color("#00cec9")
+		add_child(nitro_emitter)
+
+func _ensure_skid_line() -> Line2D:
+	if skid_line == null:
+		skid_line = Line2D.new()
+		skid_line.width = 4.0
+		skid_line.default_color = Color(0.1, 0.1, 0.1, 0.5)
+		skid_line.top_level = true
+		add_child(skid_line)
+	return skid_line
+
+func _ensure_horn_audio() -> AudioStreamPlayer2D:
+	if horn_audio == null:
+		horn_audio = AudioStreamPlayer2D.new()
+		horn_audio.stream = ProceduralAudio.get_horn_stream()
+		horn_audio.max_distance = 500.0
+		horn_audio.volume_db = -20.0
+		add_child(horn_audio)
+	return horn_audio
+
+func _ensure_siren_audio() -> AudioStreamPlayer2D:
+	if siren_audio == null:
+		siren_audio = AudioStreamPlayer2D.new()
+		siren_audio.stream = ProceduralAudio.get_siren_stream()
+		siren_audio.max_distance = 800.0
+		siren_audio.volume_db = -4.0
+		add_child(siren_audio)
+	return siren_audio
+
+func _ensure_alarm_audio() -> AudioStreamPlayer2D:
+	if alarm_audio == null:
+		alarm_audio = AudioStreamPlayer2D.new()
+		alarm_audio.stream = ProceduralAudio.get_police_alarm_stream()
+		alarm_audio.max_distance = 1000.0
+		alarm_audio.volume_db = 2.0
+		add_child(alarm_audio)
+	return alarm_audio
+
+func _ensure_engine_audio() -> AudioStreamPlayer2D:
+	if engine_audio == null:
+		engine_audio = AudioStreamPlayer2D.new()
+		engine_audio.stream = ProceduralAudio.get_engine_stream()
+		engine_audio.max_distance = 600.0
+		engine_audio.attenuation = 1.8
+		engine_audio.volume_db = -16.0
+		add_child(engine_audio)
+	return engine_audio
+
+func _ensure_skid_audio() -> AudioStreamPlayer2D:
+	if skid_audio == null:
+		skid_audio = AudioStreamPlayer2D.new()
+		skid_audio.stream = ProceduralAudio.get_skid_stream()
+		skid_audio.max_distance = 500.0
+		skid_audio.volume_db = -16.0
+		add_child(skid_audio)
+	return skid_audio
+
+func _ensure_radio_audio() -> AudioStreamPlayer2D:
+	if radio_audio == null:
+		radio_audio = AudioStreamPlayer2D.new()
+		radio_audio.max_distance = 500.0
+		radio_audio.volume_db = -18.0
+		add_child(radio_audio)
+		radio_tracks = ProceduralAudio.get_radio_stations()
+	return radio_audio
 
 var is_night_or_storm: bool = false
 
@@ -400,6 +441,7 @@ func _setup_headlight() -> void:
 
 func honk_horn():
 	if is_broken: return
+	_ensure_horn_audio()
 	if horn_audio and not horn_audio.playing:
 		horn_audio.pitch_scale = randf_range(0.92, 1.08)
 		horn_audio.play()
@@ -409,12 +451,14 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if health < 75:
 		visual.modulate = visual.modulate.lerp(Color(0.65, 0.65, 0.65), 0.4)
 	if health < 50:
+		_ensure_smoke_emitter()
 		smoke_emitter.emitting = true
 		smoke_emitter.color = Color(0.5, 0.5, 0.5, 0.8)
 	if health <= 25:
 		visual.modulate = Color(0.3, 0.3, 0.3)
-		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
-		smoke_emitter.amount = 60
+		if smoke_emitter:
+			smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
+			smoke_emitter.amount = 60
 	if health == 0 and not is_broken:
 		is_broken = true
 		max_speed = 0.0
@@ -428,7 +472,9 @@ var is_exploded: bool = false
 func _start_combustion_countdown() -> void:
 	if is_exploding or is_exploded: return
 	is_exploding = true
+	_ensure_flame_particles()
 	if flame_particles: flame_particles.emitting = true
+	_ensure_smoke_emitter()
 	if smoke_emitter:
 		smoke_emitter.emitting = true
 		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
@@ -791,22 +837,9 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 		body_viewport.add_child(body_model)
 
 		# Use actual authored wheel hubs, not approximate dimensions from the catalog.
-		var centers: Array[Vector3] = []
-		for node in body_model.get_children():
-			if node.has_meta("wheel_center"):
-				var center: Vector3 = node.get_meta("wheel_center")
-				if not centers.has(center): centers.append(center)
-		for center in centers:
-			var pivot := Node3D.new()
-			pivot.position = center
-			body_model.add_child(pivot)
-			var spin := Node3D.new()
-			pivot.add_child(spin)
-			for node in body_model.get_children():
-				if node is MeshInstance3D and node.get_meta("wheel_center",Vector3.INF)==center:
-					node.reparent(spin if node.get_meta("wheel_spins",false) else pivot,true)
-			wheels.append(pivot)
-			spinners.append(spin)
+		wheel_rig.mount(body_model)
+		wheels = wheel_rig.pivots
+		spinners = wheel_rig.spinners
 
 		var lens := body_model.materials.get("headlight") as Material
 		for mesh in body_model.get_children():
@@ -874,6 +907,7 @@ var _body_render_clock := 0.0
 var _body_render_visible := false
 var body_render_requests := 0
 var _last_render_heading := INF
+var _last_render_steer := INF
 
 func _update_3d_orientation(delta: float) -> void:
 	if not is_3d_vehicle or body_model == null:
@@ -906,15 +940,19 @@ func _update_3d_orientation(delta: float) -> void:
 		second_headlight.visible = headlight.visible
 	var signed_speed := velocity.dot(global_transform.x) if is_driven_by_player else (_lane_motion_speed if is_moving_on_lane else 0.0)
 	var ppm := 74.0 / 4.46
-	for i in spinners.size():
-		spinners[i].rotation.x -= signed_speed / ppm / 0.355 * delta
+	# Nem a faixa nem o jogador ao volante deste carro passam por um ângulo de
+	# esterço: os dois giram `rotation` direto. O ângulo das rodas dianteiras sai
+	# então da guinada real da carroceria, pelo modelo de bicicleta invertido.
+	wheel_rig.update(delta, signed_speed / ppm, global_rotation)
 	var interval := 1.0 / (60.0 if is_driven_by_player else 30.0)
-	var moving_pose := absf(signed_speed)>0.1 or not is_equal_approx(_last_render_heading,global_rotation)
+	var steer_moved := absf(wheel_rig.steering_angle - _last_render_steer) > 0.004
+	var moving_pose := absf(signed_speed)>0.1 or steer_moved or not is_equal_approx(_last_render_heading,global_rotation)
 	if not _body_render_visible or (moving_pose and _body_render_clock >= interval):
 		_body_render_clock = fmod(_body_render_clock, interval)
 		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		body_render_requests += 1
 		_last_render_heading = global_rotation
+		_last_render_steer = wheel_rig.steering_angle
 	_body_render_visible = true
 
 
@@ -1161,15 +1199,18 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	velocity = Vector2.ZERO
 	_driver.hide()
 	_driver.set_physics_process(false)
+	_ensure_camera()
 	camera.enabled = true
 	camera.set_process(true)
 	camera.set_physics_process(true)
 	preload("res://DynamicCamera.gd").handoff(camera, camera_view)
 
 	if headlight: headlight.visible = true
+	_ensure_engine_audio()
 	if engine_audio:
 		engine_audio.volume_db = -12.0
 		engine_audio.play()
+	_ensure_radio_audio()
 	if radio_audio and not radio_tracks.is_empty():
 		radio_audio.stream = radio_tracks[radio_index]
 		radio_audio.play()
@@ -1187,6 +1228,7 @@ func _trigger_police_theft() -> void:
 	# 1. Alarme sonoro contínuo
 	is_alarm_active = true
 	alarm_timer = 20.0
+	_ensure_alarm_audio()
 	if alarm_audio:
 		alarm_audio.play()
 	
@@ -1222,6 +1264,7 @@ func _show_theft_hud_notice(msg: String) -> void:
 func toggle_siren() -> void:
 	is_siren_on = not is_siren_on
 	if is_siren_on:
+		_ensure_siren_audio()
 		if siren_audio and not siren_audio.playing:
 			siren_audio.play()
 	else:
@@ -1330,6 +1373,10 @@ func exit_vehicle() -> void:
 		engine_audio.volume_db = -22.0
 	if radio_audio: radio_audio.stop()
 	if skid_audio: skid_audio.stop()
+	if camera:
+		camera.enabled = false
+		camera.set_process(false)
+		camera.set_physics_process(false)
 
 	var exit_position := _get_safe_exit_position()
 	_animate_car_door(-1.0 if to_local(exit_position).y <= 0 else 1.0)
@@ -1440,6 +1487,7 @@ func _physics_process(delta: float) -> void:
 	# Derrapagem e Drift
 	var lateral_velocity = velocity.project(transform.y)
 	if lateral_velocity.length() > 90.0:
+		_ensure_skid_line()
 		if not is_skidding:
 			is_skidding = true
 			skid_line.clear_points()
@@ -1449,7 +1497,7 @@ func _physics_process(delta: float) -> void:
 			skid_line.remove_point(0)
 	else:
 		is_skidding = false
-		if skid_line.get_point_count() > 0 and bloody_tires_timer <= 0.0:
+		if skid_line and skid_line.get_point_count() > 0 and bloody_tires_timer <= 0.0:
 			skid_line.clear_points()
 			
 	_update_skid_audio()
@@ -1505,6 +1553,7 @@ func _physics_process(delta: float) -> void:
 			if is_driven_by_player:
 				_do_screen_shake(clampf(impact_speed / 500.0, 0.05, 0.4))
 				_hit_stop_frames = 3 if impact_speed > 250 else 2
+			_ensure_collision_particles()
 			collision_particles.global_position = col.get_position()
 			collision_particles.restart()
 			
@@ -1525,10 +1574,11 @@ func _physics_process(delta: float) -> void:
 	if bloody_tires_timer > 0.0:
 		bloody_tires_timer -= delta
 		if velocity.length() > 40.0:
+			_ensure_skid_line()
 			skid_line.add_point(global_position)
 			if skid_line.get_point_count() > 60:
 				skid_line.remove_point(0)
-		if bloody_tires_timer <= 0.0:
+		if bloody_tires_timer <= 0.0 and skid_line:
 			skid_line.default_color = Color(0.1, 0.1, 0.1, 0.5)
 
 func _activate_bloody_tires() -> void:
@@ -1549,10 +1599,11 @@ func _do_screen_shake(intensity: float):
 	tween.tween_property(camera, "offset", Vector2.ZERO, duration)
 
 func _update_skid_audio():
-	if not skid_audio or not skid_audio.stream: return
-	if is_skidding and not skid_audio.playing:
-		skid_audio.play()
-	elif not is_skidding and skid_audio.playing:
+	if is_skidding:
+		_ensure_skid_audio()
+		if skid_audio and not skid_audio.playing:
+			skid_audio.play()
+	elif not is_skidding and skid_audio and skid_audio.playing:
 		skid_audio.stop()
 
 var block_wait_timer: float = 0.0
@@ -2043,6 +2094,7 @@ func _setup_neon_underglow() -> void:
 func puncture_tires() -> void:
 	if has_puncture_proof_tires or has_punctured_tires: return
 	has_punctured_tires = true
+	_ensure_puncture_vfx()
 	if rim_sparks: rim_sparks.emitting = true
 	if flat_smoke: flat_smoke.emitting = true
 	max_speed *= 0.45
@@ -2051,6 +2103,7 @@ func puncture_tires() -> void:
 	drift_factor = 0.40
 
 func _trigger_nos_purge() -> void:
+	_ensure_nos_purge()
 	if nos_purge_l: nos_purge_l.restart()
 	if nos_purge_r: nos_purge_r.restart()
 	var p := AudioStreamPlayer2D.new()
@@ -2062,6 +2115,7 @@ func _trigger_nos_purge() -> void:
 	p.finished.connect(p.queue_free)
 
 func _trigger_backfire() -> void:
+	_ensure_backfire()
 	if backfire_emitter: backfire_emitter.restart()
 	var p := AudioStreamPlayer2D.new()
 	p.stream = ProceduralAudio.get_exhaust_backfire_stream()

@@ -3,6 +3,7 @@ extends "res://PlayerCar.gd"
 ## Same 2D controller and interaction contract as every PlayerCar.
 ## 3D renders only when appearance changes, not once per frame/per vehicle.
 const MODEL := preload("res://prototypes/living_cast/CoupeDamageModel.gd")
+const WHEEL_RIG := preload("res://prototypes/living_cast/VehicleWheelRig.gd")
 const PALETTE := [Color("b83632"),Color("263f73"),Color("35604a"),Color("d5d1c5"),Color("24272c"),Color("b3b9bd"),Color("d6a335"),Color("814862")]
 const PIXELS_PER_METRE := 74.0 / 4.46
 const WHEELBASE := 2.50 * PIXELS_PER_METRE
@@ -16,6 +17,7 @@ var paint_color := Color("b83632")
 var second_headlight: PointLight2D
 var appearance_updates := 0
 var _visual_damage_cooldown := 0.0
+var wheel_rig := WHEEL_RIG.new()
 var wheels: Array[Node3D] = []
 var spinners: Array[Node3D] = []
 var animation_clock := 0.0
@@ -56,18 +58,17 @@ func _ready() -> void:
 	add_child(body_viewport)
 	body_model = _create_body_model()
 	body_viewport.add_child(body_model)
+	# Os cubos vêm do metadado autoral do modelo. A geometria declarada aqui em
+	# baixo só cobre modelo sem metadado: quando ela era a fonte principal, todo
+	# modelo que montava a roda fora de y=0.36 (a picape em 0.44, o furgão em
+	# 0.38) ficava sem pivô e com a roda soldada na lataria.
+	var fallback_centers: Array[Vector3] = []
 	for side in [-1.0,1.0]:
 		for wheel_z in _wheel_axles():
-			var pivot := Node3D.new()
-			pivot.position = Vector3(side*_wheel_track(),0.36,wheel_z)
-			body_model.add_child(pivot)
-			var spin := Node3D.new()
-			pivot.add_child(spin)
-			for node in body_model.get_children():
-				if node is MeshInstance3D and node.get_meta("wheel_center", Vector3.INF) == pivot.position:
-					node.reparent(spin if node.get_meta("wheel_spins", false) else pivot, true)
-			wheels.append(pivot)
-			spinners.append(spin)
+			fallback_centers.append(Vector3(side*_wheel_track(),0.36,wheel_z))
+	wheel_rig.mount(body_model, fallback_centers)
+	wheels = wheel_rig.pivots
+	spinners = wheel_rig.spinners
 	body_model.rotation.y = -PI/2
 	var view := Camera3D.new()
 	body_viewport.add_child(view)
@@ -190,20 +191,19 @@ func _physics_process(delta: float) -> void:
 	var braking_now := is_driven_by_player and Input.get_axis("ui_down","ui_up") * signed_speed < -10
 	for glow in brake_glows:
 		glow.modulate.a = 0.85 if braking_now else (0.22 if is_headlight_on() else 0.0)
-	for i in spinners.size():
-		spinners[i].rotation.x -= signed_speed / PIXELS_PER_METRE / 0.355 * delta
-		if i % 2 == 0:
-			wheels[i].rotation.y = -steering_angle
+	# Dirigido pelo jogador existe ângulo de volante de verdade; sob IA (Cobras,
+	# empurrão, reboque) o esterço é deduzido da guinada da própria carroceria.
+	wheel_rig.update(delta, signed_speed / PIXELS_PER_METRE, global_rotation, steering_angle if is_driven_by_player else INF)
 	# Keep the driven car's steering/body pose in step with 60Hz physics.
 	# Preserve fractional time instead of dropping it on every render request.
 	var visual_interval := 1.0 / (60.0 if is_driven_by_player else 30.0)
 	animation_clock = minf(animation_clock + delta, visual_interval * 2.0)
 	var camera_2d := get_viewport().get_camera_2d()
 	var near := camera_2d == null or global_position.distance_to(camera_2d.get_screen_center_position()) < 1000
-	if near and is_visible_in_tree() and animation_clock + 0.000001 >= visual_interval and (moving or not is_equal_approx(last_heading,global_rotation) or not is_equal_approx(last_visual_steering, steering_angle)):
+	if near and is_visible_in_tree() and animation_clock + 0.000001 >= visual_interval and (moving or not is_equal_approx(last_heading,global_rotation) or not is_equal_approx(last_visual_steering, wheel_rig.steering_angle)):
 		animation_clock = fposmod(animation_clock + 0.000001, visual_interval)
 		last_heading = global_rotation
-		last_visual_steering = steering_angle
+		last_visual_steering = wheel_rig.steering_angle
 		request_appearance_update()
 
 func _apply_headlight_state() -> void:
