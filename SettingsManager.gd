@@ -171,6 +171,31 @@ func apply_display_settings() -> void:
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 	else:
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+
+	# Mantém o teto de FPS casado com o tick de física, inclusive depois de o
+	# jogador trocar de modo de janela ou de resolução. Render mais rápido que a
+	# física não deixa o movimento mais suave: os frames que não pegam tick nenhum
+	# redesenham o mundo na mesma posição e o seguinte anda o dobro, o que se vê
+	# como o carro vibrando para frente e para trás. Derivado de
+	# physics_ticks_per_second em vez de escrito 60 na mão, para não descolar se o
+	# tick rate mudar.
+	#
+	# Esta é a metade em runtime de um par de ajustes; a outra metade vive em
+	# project.godot (`run/max_fps`, `physics/common/physics_interpolation=true` e
+	# `physics/common/physics_jitter_fix=0.0`). O porquê está registrado AQUI e no
+	# histórico do git porque o Godot reescreve project.godot a cada --import e
+	# descarta os comentários daquele arquivo.
+	#
+	# Medido em tests/measure_motion_judder_isolated.gd (jerk relativo do avanço
+	# aparente na tela; 0 é uniforme, ~2 é alternar parado/dobro):
+	#   FPS livre (160Hz), sem interpolação ... jerk 2.007  (62% dos frames sem tick)
+	#   64 FPS, sem interpolação ............. jerk 0.132
+	#   60 FPS, sem interpolação ............. jerk 0.000
+	#   64 FPS, com interpolação ............. jerk 0.004
+	# O teto sozinho basta enquanto o jogo sustenta 60; a interpolação é o que
+	# cobre as quedas de FPS, que nesta base existem (ver
+	# tests/diagnose_frame_hitches.gd).
+	Engine.max_fps = Engine.physics_ticks_per_second
 	
 	display_settings_changed.emit()
 

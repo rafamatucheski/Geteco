@@ -821,6 +821,9 @@ func _respawn_at_hospital() -> void:
 		global_position = hospital.global_position
 	else:
 		global_position = Vector2(1125, 375)
+	# Respawn e teleporte: sem isso o jogador seria desenhado deslizando do lugar
+	# onde morreu/foi preso ate o hospital.
+	reset_physics_interpolation()
 	for col in find_children("", "CollisionShape2D", true, false):
 		col.set_deferred("disabled", false)
 	show()

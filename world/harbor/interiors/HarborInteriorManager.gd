@@ -241,10 +241,14 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 		if player and is_instance_valid(player):
 			player.global_position = spawn_marker.global_position
 			player.velocity = Vector2.ZERO
+			player.reset_physics_interpolation()
 			_actor_origin_entrances[player] = entrance
 			_frame_interior_camera(player, interior.get_camera_rect())
 
 	effective_actor.global_position = spawn_marker.global_position
+	# Entrar num interior e um corte de cena, nao um deslocamento: descarta o
+	# transform anterior para nao desenhar o ator atravessando a parede.
+	effective_actor.reset_physics_interpolation()
 	if "velocity" in effective_actor:
 		effective_actor.velocity = Vector2.ZERO
 
@@ -302,9 +306,11 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 		if player and is_instance_valid(player):
 			player.global_position = return_pos
 			player.velocity = Vector2.ZERO
+			player.reset_physics_interpolation()
 			_reset_exterior_camera(player)
 
 	effective_actor.global_position = return_pos
+	effective_actor.reset_physics_interpolation()
 	if player:
 		player.remove_meta("police_exterior_position")
 		player.remove_meta("harbor_interior")

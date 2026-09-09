@@ -24,6 +24,12 @@ func begin(vehicle: CharacterBody2D, pedestrian: CharacterBody2D, approach: Vect
 	actor.show()
 	actor.global_position = approach
 	actor.global_rotation = car.global_rotation
+	# O ator e reposicionado em _process (ver abaixo), nao pela fisica. A
+	# interpolacao de fisica interpola entre transforms de TICK e brigaria com
+	# isso, atrasando o corpo em relacao a porta -- fica desligada no ator
+	# durante o embarque e volta ao normal em _finish/cancel.
+	actor.reset_physics_interpolation()
+	actor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var half_width := 18.0
 	var collider := car.get_node_or_null("Collision") as CollisionShape2D
 	if collider != null and collider.shape is RectangleShape2D:
@@ -56,6 +62,8 @@ func _finish() -> void:
 	if "is_control_disabled" in actor: actor.is_control_disabled = control_was_disabled
 	actor.modulate = original_color
 	actor.global_position = car.global_position
+	actor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_INHERIT
+	actor.reset_physics_interpolation()
 	queue_free()
 
 func cancel() -> void:
@@ -64,6 +72,10 @@ func cancel() -> void:
 	if is_instance_valid(car): car.remove_meta("vehicle_boarding")
 	if is_instance_valid(actor):
 		actor.modulate = original_color
+		# Restaura a interpolacao desligada em begin(), senao um embarque cancelado
+		# deixa o jogador fora da interpolacao pelo resto da partida.
+		actor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_INHERIT
+		actor.reset_physics_interpolation()
 		if "is_control_disabled" in actor: actor.is_control_disabled = control_was_disabled
 	queue_free()
 

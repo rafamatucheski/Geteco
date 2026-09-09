@@ -18,6 +18,9 @@ static func sanitize(body: CharacterBody2D) -> void:
 	if not valid_position(body.global_position):
 		body.global_position = body.get_meta("vehicle_safe_position", Vector2.ZERO)
 		body.velocity = Vector2.ZERO
+		# Recolocacao e teleporte: sem descartar o transform anterior a interpolacao
+		# de fisica desenharia o carro deslizando da posicao invalida ate a segura.
+		body.reset_physics_interpolation()
 		body.set_meta("motion_recoveries", int(body.get_meta("motion_recoveries",0))+1)
 	if not is_finite(body.rotation): body.rotation = 0.0
 	if not body.velocity.is_finite(): body.velocity = Vector2.ZERO
@@ -47,6 +50,7 @@ static func move(body: CharacterBody2D) -> void:
 	if not valid_position(body.global_position) or body.global_position.distance_to(before) > maximum_step:
 		body.global_position = before
 		body.velocity = Vector2.ZERO
+		body.reset_physics_interpolation()
 		body.set_meta("motion_recoveries", int(body.get_meta("motion_recoveries",0))+1)
 	sanitize(body)
 	body.set_meta("vehicle_safe_position", body.global_position)

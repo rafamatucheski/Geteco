@@ -106,10 +106,13 @@ func finish_arrival(scene: Node) -> void:
 	player.global_position = point
 	player.velocity = Vector2.ZERO
 	player.rotation = heading
+	# Chegada em outra regiao: descarta o transform da regiao de origem.
+	player.reset_physics_interpolation()
 	if is_instance_valid(carried_car):
 		carried_car.reparent(scene, true)
 		carried_car.global_position = point
 		carried_car.rotation = heading
+		carried_car.reset_physics_interpolation()
 		carried_car.show()
 		carried_car.process_mode = Node.PROCESS_MODE_INHERIT
 		carried_car.enter_vehicle(player)

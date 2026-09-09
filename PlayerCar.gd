@@ -678,6 +678,7 @@ func exit_vehicle():
 	if player:
 		player.global_position = exit_position
 		player.velocity = Vector2.ZERO
+		player.reset_physics_interpolation()
 		for col in player.find_children("", "CollisionShape2D", true, false):
 			col.set_deferred("disabled", false)
 		player.show()
@@ -712,6 +713,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		col.set_deferred("disabled", true)
 	player_body.velocity = Vector2.ZERO
 	player_body.global_position = global_position
+	player_body.reset_physics_interpolation()
 	
 	# Animação visual da porta abrindo e batendo
 	_animate_car_door(entry_side, 0.95 if entry_side > 0 else 0.6)

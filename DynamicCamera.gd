@@ -48,6 +48,9 @@ static func handoff(target: Camera2D, state: Dictionary) -> void:
 		if not center.is_finite() or center.distance_to(actor.global_position) > 240.0:
 			center = actor.global_position
 		target.global_position = center
+		# Trocar de camera e um salto, nao uma panoramica: descarta o transform
+		# anterior para a interpolacao de fisica nao deslizar ate o novo centro.
+		target.reset_physics_interpolation()
 	var previous_zoom: Vector2 = state.get("zoom", target.zoom)
 	if previous_zoom.is_finite() and previous_zoom.x > 0.0 and previous_zoom.y > 0.0:
 		target.zoom = previous_zoom

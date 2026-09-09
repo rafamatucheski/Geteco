@@ -10,7 +10,7 @@ extends SceneTree
 ## tick e exatamente constante, entao toda variacao no avanco APARENTE na tela e
 ## judder, e nada mais.
 ##
-## Uso: --script res://tests/measure_motion_judder_isolated.gd -- [interp]
+## Uso: --script res://tests/measure_motion_judder_isolated.gd -- [no_interp]
 const SPEED := 240.0
 const FRAMES := 300
 
@@ -98,10 +98,12 @@ func _measure(fps_cap: int) -> void:
 
 func _run() -> void:
 	var args := OS.get_cmdline_user_args()
-	_use_interpolation = args.has("interp") or args.has("--interp")
-	if _use_interpolation:
-		physics_interpolation = true
-		Engine.physics_jitter_fix = 0.0
+	# O projeto agora liga physics_interpolation por padrao. O argumento serve para
+	# DESLIGAR e reproduzir o baseline de antes da correcao.
+	if args.has("no_interp") or args.has("--no_interp"):
+		physics_interpolation = false
+		Engine.physics_jitter_fix = 0.5
+	_use_interpolation = physics_interpolation
 	root.size = Vector2i(1280, 720)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
 	print("SETUP interp=%s refresh=%.1fHz physics_ticks=%d jitter=%.2f" % [
