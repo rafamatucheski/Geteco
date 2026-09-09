@@ -35,6 +35,9 @@ func _ready() -> void:
 	call_deferred("_start_review")
 
 func _start_review() -> void:
+	# Let the scene settle before creating optional encounter actors. Without
+	# this yield, their 3D presentation is charged to the first playable frame.
+	await get_tree().process_frame
 	_setup_cobras()
 	await get_tree().process_frame
 	_setup_emergency_services()
@@ -118,7 +121,11 @@ func _setup_cobras() -> void:
 	var vehicles := preload("res://world/harbor/cobras/CobraVehicles.gd").new()
 	vehicles.name = "CobraVehicles"
 	vehicles.parking_positions = neighborhood.get_parking_positions()
-	add_child(vehicles)
+	call_deferred("_finish_cobra_vehicles", vehicles)
+
+func _finish_cobra_vehicles(vehicles: Node2D) -> void:
+	if is_instance_valid(vehicles) and not has_node("CobraVehicles"):
+		add_child(vehicles)
 
 func _full_map_zoom() -> float:
 	var viewport_size := get_viewport_rect().size
