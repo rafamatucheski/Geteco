@@ -163,3 +163,83 @@ funeral_ctrl.cancel_sequence() # Cancela com segurança e limpa atores temporár
   - Acionar o início do evento fúnebre através de `world/harbor/events/HarborWorldEvents.gd`.
   - Integrar Elias ao sistema de diálogo existente (`CemeteryStoryteller.gd`).
   - Ativar/desativar a renderização do cemitério conforme a proximidade da câmera do jogador.
+
+---
+
+# 3. Apresentação Visual Sob Demanda (Presentation Streaming & Budget)
+
+Componentes entregues em:
+- [ArtPresentationCache.gd](file:///d:/geteco/game/prototypes/gameplay_repair_art_0909/ArtPresentationCache.gd)
+- [StreamableActorPresentation.gd](file:///d:/geteco/game/prototypes/gameplay_repair_art_0909/StreamableActorPresentation.gd)
+- [StreamableMournerModel.gd](file:///d:/geteco/game/prototypes/gameplay_repair_art_0909/StreamableMournerModel.gd)
+- [StreamableWorkerModel.gd](file:///d:/geteco/game/prototypes/gameplay_repair_art_0909/StreamableWorkerModel.gd)
+- [StreamableEliasModel.gd](file:///d:/geteco/game/prototypes/gameplay_repair_art_0909/StreamableEliasModel.gd)
+- [BENCHMARK_REPORT.md](file:///d:/geteco/game/prototypes/gameplay_repair_art_0909/BENCHMARK_REPORT.md)
+
+### 3.1 Ciclo de Vida e Compatibilidade com PresentationBudget
+- **Modo Diferido (`defer_presentation = true`)**:
+  - No momento do spawn (fora da tela ou no carregamento inicial do mundo), o ator instancia apenas um proxy de silhueta ultra-leve (`_presentation_fallback`) com a cor e escala aproximadas do personagem.
+  - **Custo no frame 0**: ~0.08 ms por entidade (redução de ~90% em relação à montagem síncrona de 18 ms).
+- **Construção sob Demanda (`ensure_presentation()`)**:
+  - Acionado pelo `PresentationBudget` por proximidade da câmera (com margem de 220 px de tela) ou por gatilho de missão.
+  - Constrói o rig 3D dentro do orçamento de 2000 µs (medido em ~0.15 ms a 0.40 ms por rig em Vulkan real).
+  - Emite o sinal `presentation_ready`.
+- **Despacho e Buffering Automático**:
+  - Poses, danos, repinturas ou acessórios solicitados enquanto `is_presentation_ready == false` são retidos em buffers internos e aplicados imediatamente na chamada de `ensure_presentation()`.
+
+### 3.2 O que Exige o Rig Pronto vs. O que Opera Sem o Rig
+
+| Operação | Funciona Sem Rig? (`defer_presentation = true`) | Exige Rig Pronto? (`is_presentation_ready = true`) | Comportamento se Solicitado sem Rig |
+|---|:---:|:---:|---|
+| **Física e Colisão 2D** (`CharacterBody2D`, `CollisionShape2D`) | **SIM** | Não | Totalmente funcional no frame 0. |
+| **Navegação e Rotas** (`walk_target`, caminhos, waypoints) | **SIM** | Não | Move o nó 2D normalmente pelo mapa. |
+| **Estados de Combate / Dano Lógico** (`health`, `take_damage`) | **SIM** | Não | Vida deduzida; morte/incapacitação registrada. |
+| **Definição de Papel / Paleta** (`role`, `variant_index`) | **SIM** | Não | Armazena índice e reflete na silhueta 2D/3D. |
+| **Solicitação de Pose** (`set_pose`, `set_worker_pose`) | **SIM** | Não | Armazena em `_buffered_pose`; aplica no `presentation_ready`. |
+| **Dano Visual** (`apply_damage("blood", 1.0)`) | **SIM** | Não | Armazena em `_buffered_damage`; gera material isolado ao montar. |
+| **Ancoragem de Ferramenta** (`ShovelTool3D`, armas de mão) | Não | **SIM** | Exige `right_hand_mount`; aplica no `presentation_ready`. |
+| **Articulação de Membros / Rotações** (`arm.rotation`) | Não | **SIM** | Exige nós esqueléticos 3D do rig montado. |
+| **Extração Policial** (`PoliceDriverExtraction.bind_actors`) | Não | **SIM** | Exige os membros `torso_node`, braços e pernas mapeados. |
+| **Renderização 3D em SubViewport** | Não | **SIM** | Viewport só ativa após rig concluído. |
+
+### 3.3 Compartilhamento de Geometrias e Materiais Imutáveis (`ArtPresentationCache`)
+- **Meshes Primitivas Compartilhadas**:
+  - `BoxMesh`, `SphereMesh` e `CylinderMesh` unitários são alocados uma única vez e compartilhados via escala (`scale`). Reduz drasticamente alocações de buffers de vértice e RIDs no RenderingServer.
+- **Paletas Imutáveis Compartilhadas**:
+  - Paletas de terno (`SUIT_PALETTES`), pele (`SKIN_PALETTES`), cabelo, sapatos e tecidos exclusivos (sobretudo de Elias, casaco do coveiro, caixão de mogno) são reutilizados como instâncias únicas de `StandardMaterial3D`.
+
+### 3.4 Regra de Ouro: Isolamento de Danos e Tintas (Zero Vazamento)
+- Qualquer alteração individual de aparência (dano de tiro, manchas de sangue, fuligem de explosão, terra da pá ou repintura personalizada de veículo) **NUNCA** altera os materiais do cache compartilhado.
+- O método `ArtPresentationCache.create_damage_material()` ou `actor.apply_damage()` cria um `.duplicate()` isolado exclusivamente para a malha afetada (`material_override`).
+- **Validação**: Testado e aprovado com 100% de isolamento entre o Ator 0 (danificado) e o Ator 3 (mesma paleta, mantido imaculado).
+
+### 3.5 Reciclagem e Reutilização de Rigs em Pools (`recycle_presentation`)
+- Ao despachar um ator de volta para o pool ou reiniciar uma cena:
+  1. As rotações de todos os nós anatômicos retornam exatamente às coordenadas de repouso salvas em `_rest_rotations`.
+  2. Os materiais voltam a apontar para os materiais imutáveis compartilhados do cache, descartando qualquer duplicata com dano.
+  3. Ferramentas ou acessórios anexados são limpos ou retornados ao estado neutro.
+  4. Emite o sinal `presentation_recycled`.
+
+### 3.6 Métodos e Sinais para a Integração da Astra / Codex
+```gdscript
+# 1. Instanciação diferida em background
+var mourner: StreamableMournerModel = StreamableMournerModel.new(role, variant_index, true)
+add_child(mourner)
+
+# 2. Configurações e comandos que funcionam imediatamente (sem esperar o rig):
+mourner.set_respect_pose()
+mourner.apply_damage("blood", 0.8, "torso")
+mourner.set_custom_tint(Color.WHITE)
+
+# 3. Disparo de montagem visual (manual ou via PresentationBudget):
+mourner.ensure_presentation()
+
+# 4. Conexão com ciclo de vida:
+mourner.presentation_ready.connect(func():
+    print("Rig 3D concluído em %.2f ms!" % mourner.build_duration_ms)
+)
+
+# 5. Reciclagem limpa (devolução ao pool):
+mourner.recycle_presentation()
+```
+
