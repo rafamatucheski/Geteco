@@ -11,7 +11,7 @@ extends SceneTree
 ## false->true), deslocamento líquido, e se o roteador linkou rede/lane ou
 ## caiu sem rota nenhuma. Nada é teleportado; nenhuma colisão é desligada.
 ##
-## Uso: Godot..._console.exe --path D:/geteco/game --script res://tests/reproduce_review_0909_stage2.gd
+## Uso: Godot..._console.exe --path . --script res://tests/reproduce_review_0909_stage2.gd
 
 const GAME_SCENE := "res://world/harbor/HarborGame.tscn"
 const WARMUP_FRAMES := 90
@@ -176,8 +176,19 @@ func _log(line: String) -> void:
 	print(line)
 	_log_lines.append(line)
 
+## Saida vai para docs/measurements/review-0909/ dentro do projeto, como o
+## resto dos scripts de captura deste repositorio ja faz -- e nao para uma
+## pasta absoluta fora dele, que nao seria versionada nem encontrada por
+## quem clonasse o projeto.
+const DEFAULT_OUT_DIR := "res://docs/measurements/review-0909"
+
+## Resolve res:// para caminho de sistema; DirAccess/FileAccess de escrita
+## precisam do caminho absoluto.
+static func _resolve_out_dir(dir: String) -> String:
+	return ProjectSettings.globalize_path(dir) if dir.begins_with("res://") else dir
+
 func _write_report() -> void:
-	var out_dir := "D:/geteco/perf-review-0909"
+	var out_dir := _resolve_out_dir(DEFAULT_OUT_DIR)
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	var path := out_dir.path_join("review0909_stage2.txt")
 	var f := FileAccess.open(path, FileAccess.WRITE)

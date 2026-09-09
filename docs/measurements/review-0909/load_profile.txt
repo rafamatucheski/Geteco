@@ -1,0 +1,4 @@
+LOAD_PROFILE load_ms=2050 instantiate_ms=0 add_child_ms=1407 first180frames_ms=13669 total_ms=17126
+LOAD_PROFILE_SPIKES frame0=9232ms frame1=563ms
+LOAD_PROFILE_NODES total=14963 MeshInstance3D=6420 Node3D=1751 CollisionShape2D=972 Polygon2D=654 CPUParticles2D=632 AudioStreamPlayer2D=484 Area2D=369 Sprite2D=329 StaticBody2D=302 Node2D=297 Path2D=262 DirectionalLight3D=260 SubViewport=249 Camera3D=249 PointLight2D=241 RayCast2D=198 Label=168 Line2D=168
+LOAD_PROFILE_MONITORS nodes=15826 orphans=0 draw_calls=16088 video_mem_mb=1301.0 static_mem_mb=630.3

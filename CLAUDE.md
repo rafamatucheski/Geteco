@@ -48,6 +48,9 @@ Procedimento obrigatório:
    `.import` (assets).
 2. Substituir o caminho antigo pelo novo em todo `.gd`, `.tscn`, `.tres`, `.cfg` e
    `project.godot`.
+
+   Os passos 1 e 2 estão automatizados em `tools/move_folder_refactor.py` (tem
+   `--dry-run`); foi o que fez as movimentações de 2026-09-09.
 3. `python tools/check_references.py` — tem que voltar **0 quebras novas**.
 4. **`"$GODOT" --path . --import`** — o registro global de `class_name`
    (`.godot/global_script_class_cache.cfg`) fica obsoleto depois de um move e quebra a
@@ -70,6 +73,12 @@ python tools/check_references.py
 
 `test_menu_flow_integration` é o mais valioso depois de mover arquivos: ele exercita
 save/load e troca de cena, que é onde caminho quebrado aparece.
+
+## Saída de script
+
+Script que gera arquivo grava **dentro do projeto**, não em pasta absoluta fora dele:
+saída que não é versionada não é encontrada por quem clona o repositório. Ver
+`tests/profile_load_time_0909.gd` para o padrão (`res://` + `ProjectSettings.globalize_path`).
 
 ## Estilo
 

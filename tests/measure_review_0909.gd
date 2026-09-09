@@ -17,7 +17,7 @@ extends SceneTree
 ## pilotar a janela nativa do Godot com mouse/teclado real nesta sessão.
 ##
 ## Uma amostra por invocação (isola carregamento e estado entre amostras):
-##   Godot..._console.exe --path D:/geteco/game --script res://tests/measure_review_0909.gd -- res=720 sample=1 out_dir=D:/geteco/perf-review-0909
+##   Godot..._console.exe --path . --script res://tests/measure_review_0909.gd -- res=720 sample=1
 ##   res=720  -> janela 1280x720, content_scale_mode=CANVAS_ITEMS (== modo "Janela" real do jogo)
 ##   res=1080 -> tela cheia sem bordas 1920x1080, content_scale_mode=VIEWPORT (== modo "Tela Cheia" real do jogo)
 ## Ambos os caminhos chamam SettingsManager.apply_display_settings() --
@@ -28,7 +28,7 @@ const WARMUP_FRAMES := 90
 const STABILIZE_SECONDS := 3.0
 const SAMPLE_SECONDS := 60.0
 
-var _out_dir := "D:/geteco/perf-review-0909"
+var _out_dir := DEFAULT_OUT_DIR
 var _res := 720
 var _sample := 1
 var _duration_s := SAMPLE_SECONDS
@@ -223,9 +223,21 @@ func _log(line: String) -> void:
 	print(line)
 	_log_lines.append(line)
 
+## Saida vai para docs/measurements/review-0909/ dentro do projeto, como o
+## resto dos scripts de captura deste repositorio ja faz -- e nao para uma
+## pasta absoluta fora dele, que nao seria versionada nem encontrada por
+## quem clonasse o projeto.
+const DEFAULT_OUT_DIR := "res://docs/measurements/review-0909"
+
+## Resolve res:// para caminho de sistema; DirAccess/FileAccess de escrita
+## precisam do caminho absoluto.
+static func _resolve_out_dir(dir: String) -> String:
+	return ProjectSettings.globalize_path(dir) if dir.begins_with("res://") else dir
+
 func _write_report() -> void:
-	DirAccess.make_dir_recursive_absolute(_out_dir)
-	var path := _out_dir.path_join("review0909_res%d_sample%d.txt" % [_res, _sample])
+	var out_dir := _resolve_out_dir(_out_dir)
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	var path := out_dir.path_join("review0909_res%d_sample%d.txt" % [_res, _sample])
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f:
 		f.store_string("\n".join(_log_lines))

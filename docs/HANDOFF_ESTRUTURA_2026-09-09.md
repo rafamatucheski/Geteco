@@ -4,8 +4,11 @@
 bastante hoje, e caminhos que você conhecia não existem mais. Nenhum comportamento do jogo
 foi alterado — só a organização e a documentação.
 
-Ponto de partida: `5ce5fd0`. Estado atual: `61dfdd3`. Quatro commits, 2.165 arquivos
-tocados.
+Ponto de partida: `5ce5fd0`. Quatro commits de reestruturação, 2.165 arquivos tocados.
+
+Os dados brutos que sustentam todo número citado aqui estão em
+[measurements/review-0909/](measurements/review-0909/), versionados junto com as
+evidências originais do usuário.
 
 ---
 
@@ -45,8 +48,9 @@ world/          349 arq   o jogo que roda
 ui/              33       MainMenu.tscn = entrypoint declarado no project.godot
 legacy/         109       geração anterior — AINDA CARREGA, ver seção 3
 OLD/             46       arquivo morto, tem .gdignore
-tools/            1       check_references.py
-docs/            35       estrutural na raiz, sessões antigas em docs/history/
+tools/            2       check_references.py, move_folder_refactor.py
+docs/                     estrutural na raiz, medições em docs/measurements/,
+                          sessões antigas em docs/history/
 raiz             72 .gd   sistemas globais (Player, PlayerCar, WantedManager, HUD, catálogos)
 ```
 
@@ -80,6 +84,12 @@ python tools/check_references.py     # 3. tem que dar 0 quebras novas
 ```
 
 Pular o passo 4 produz erro que parece do seu código e não é.
+
+### As duas ferramentas em `tools/`
+
+`move_folder_refactor.py` faz o move + reescrita de referências com `--dry-run`. Foi o que
+rodou nas Fases 2 e 3 (306 e 105 arquivos) e está pronto para a Fase 4 — basta preencher a
+lista `MOVES`. O docstring traz o procedimento completo.
 
 ### `tools/check_references.py`
 
@@ -186,7 +196,9 @@ um atropelamento sobrevivível real perto do hospital. Junto apareceu erro repro
 `Paramedic.gd:368` chama `rescue_from_emergency()` em `AnimatedPedestrian3D.gd:1424`, que
 tenta reconectar o sinal `arrived_at_depot` já conectado.
 
-Script de reprodução: `tests/reproduce_review_0909_stage2.gd`.
+Script de reprodução: `tests/reproduce_review_0909_stage2.gd`; log bruto em
+`docs/measurements/review-0909/review0909_stage2.txt`. A folha de contato que mostra a
+viatura girando está em `docs/measurements/review-0909/evidencias/video2-sheet0.jpg`.
 
 **Armadilha que já produziu um "bug" que era só o teste:** `HarborGame.tscn` toca uma
 cutscene de chegada que faz `get_tree().paused = true`, e `request_dispatch()` checa

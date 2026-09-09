@@ -11,7 +11,7 @@ extends SceneTree
 ## Também conta nós, SubViewports e nós por classe, para mostrar o que a
 ## construção procedural realmente cria.
 ##
-## Uso: Godot..._console.exe --path D:/geteco/game --script res://tests/profile_load_time_0909.gd
+## Uso: Godot..._console.exe --path . --script res://tests/profile_load_time_0909.gd
 
 const GAME_SCENE := "res://world/harbor/HarborGame.tscn"
 
@@ -99,8 +99,19 @@ func _log(line: String) -> void:
 	print(line)
 	_log_lines.append(line)
 
+## Saida vai para docs/measurements/review-0909/ dentro do projeto, como o
+## resto dos scripts de captura deste repositorio ja faz -- e nao para uma
+## pasta absoluta fora dele, que nao seria versionada nem encontrada por
+## quem clonasse o projeto.
+const DEFAULT_OUT_DIR := "res://docs/measurements/review-0909"
+
+## Resolve res:// para caminho de sistema; DirAccess/FileAccess de escrita
+## precisam do caminho absoluto.
+static func _resolve_out_dir(dir: String) -> String:
+	return ProjectSettings.globalize_path(dir) if dir.begins_with("res://") else dir
+
 func _write_report() -> void:
-	var out_dir := "D:/geteco/perf-review-0909"
+	var out_dir := _resolve_out_dir(DEFAULT_OUT_DIR)
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	var f := FileAccess.open(out_dir.path_join("load_profile.txt"), FileAccess.WRITE)
 	if f:
