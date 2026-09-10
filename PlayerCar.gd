@@ -190,6 +190,7 @@ func _ready():
 	radio_audio.max_distance = 450.0
 	radio_audio.volume_db = -18.0
 	add_child(radio_audio)
+	preload("res://audio/living_city/VehicleRadioReceiver.gd").attach(radio_audio)
 	radio_tracks = ProceduralAudio.get_radio_stations()
 	if is_driven_by_player and not radio_tracks.is_empty():
 		radio_audio.stream = radio_tracks[radio_index]

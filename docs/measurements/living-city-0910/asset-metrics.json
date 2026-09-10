@@ -1,0 +1,128 @@
+[
+  {
+    "file": "cafe_0.ogg",
+    "seconds": 29.0,
+    "peak_db": -11.06,
+    "rms_db": -26.05
+  },
+  {
+    "file": "cafe_1.ogg",
+    "seconds": 37.0,
+    "peak_db": -11.54,
+    "rms_db": -26.06
+  },
+  {
+    "file": "workshop_0.ogg",
+    "seconds": 29.0,
+    "peak_db": -9.9,
+    "rms_db": -26.11
+  },
+  {
+    "file": "workshop_1.ogg",
+    "seconds": 37.0,
+    "peak_db": -7.71,
+    "rms_db": -26.08
+  },
+  {
+    "file": "birds_0.ogg",
+    "seconds": 29.0,
+    "peak_db": -10.79,
+    "rms_db": -26.27
+  },
+  {
+    "file": "birds_1.ogg",
+    "seconds": 37.0,
+    "peak_db": -10.57,
+    "rms_db": -26.26
+  },
+  {
+    "file": "water_0.ogg",
+    "seconds": 29.0,
+    "peak_db": -10.43,
+    "rms_db": -26.13
+  },
+  {
+    "file": "water_1.ogg",
+    "seconds": 37.0,
+    "peak_db": -11.05,
+    "rms_db": -26.12
+  },
+  {
+    "file": "street_0.ogg",
+    "seconds": 29.0,
+    "peak_db": -12.09,
+    "rms_db": -26.07
+  },
+  {
+    "file": "street_1.ogg",
+    "seconds": 37.0,
+    "peak_db": -12.31,
+    "rms_db": -26.07
+  },
+  {
+    "file": "gull_detail_0.wav",
+    "seconds": 4.5,
+    "peak_db": -8.01,
+    "rms_db": -27.77
+  },
+  {
+    "file": "gull_detail_1.wav",
+    "seconds": 4.5,
+    "peak_db": -8.01,
+    "rms_db": -27.27
+  },
+  {
+    "file": "gull_detail_2.wav",
+    "seconds": 4.5,
+    "peak_db": -8.01,
+    "rms_db": -26.69
+  },
+  {
+    "file": "birds_detail_0.wav",
+    "seconds": 5.0,
+    "peak_db": -10.37,
+    "rms_db": -26.12
+  },
+  {
+    "file": "birds_detail_1.wav",
+    "seconds": 5.0,
+    "peak_db": -10.44,
+    "rms_db": -26.22
+  },
+  {
+    "file": "birds_detail_2.wav",
+    "seconds": 5.0,
+    "peak_db": -9.29,
+    "rms_db": -26.11
+  },
+  {
+    "file": "workshop_detail_0.wav",
+    "seconds": 3.0,
+    "peak_db": -13.36,
+    "rms_db": -26.19
+  },
+  {
+    "file": "workshop_detail_1.wav",
+    "seconds": 3.0,
+    "peak_db": -15.44,
+    "rms_db": -26.41
+  },
+  {
+    "file": "workshop_detail_2.wav",
+    "seconds": 3.0,
+    "peak_db": -14.01,
+    "rms_db": -26.81
+  },
+  {
+    "file": "porto_fm.ogg",
+    "seconds": 140.808,
+    "peak_db": -3.79,
+    "rms_db": -19.01
+  },
+  {
+    "file": "porto_noite.ogg",
+    "seconds": 246.388,
+    "peak_db": -3.06,
+    "rms_db": -20.09
+  }
+]

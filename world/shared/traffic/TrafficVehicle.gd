@@ -399,6 +399,7 @@ func _ensure_radio_audio() -> AudioStreamPlayer2D:
 		radio_audio.max_distance = 500.0
 		radio_audio.volume_db = -18.0
 		add_child(radio_audio)
+		preload("res://audio/living_city/VehicleRadioReceiver.gd").attach(radio_audio)
 		radio_tracks = ProceduralAudio.get_radio_stations()
 	return radio_audio
 
@@ -1470,7 +1471,7 @@ func _physics_process(delta: float) -> void:
 		_turn_off_police_strobes()
 	
 	# Troca de rádio
-	if Input.is_key_pressed(KEY_R) or (InputMap.has_action("radio_next") and Input.is_action_just_pressed("radio_next")):
+	if InputMap.has_action("radio_next") and Input.is_action_just_pressed("radio_next"):
 		if not radio_tracks.is_empty():
 			radio_index = (radio_index + 1) % radio_tracks.size()
 			radio_audio.stream = radio_tracks[radio_index]

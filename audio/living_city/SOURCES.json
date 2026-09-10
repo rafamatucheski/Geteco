@@ -1,0 +1,210 @@
+{
+  "sources": {
+    "cafe": {
+      "author": "alistair.i.macdonald",
+      "page": "https://freesound.org/people/alistair.i.macdonald/sounds/156909/",
+      "download": "https://cdn.freesound.org/previews/156/156909_1356126-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "5d1cbd35775391f21f32907a93e94552456c9b11aed33103a421e0425d500c42"
+    },
+    "workshop": {
+      "author": "Walter_Odington",
+      "page": "https://freesound.org/people/Walter_Odington/sounds/26802/",
+      "download": "https://cdn.freesound.org/previews/26/26802_48671-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "ccdfd1625ec70e055b2577f9a81a3b365054d8cc11d472b0d8771b018b3a0515"
+    },
+    "birds": {
+      "author": "patchytherat",
+      "page": "https://freesound.org/people/patchytherat/sounds/532146/",
+      "download": "https://cdn.freesound.org/previews/532/532146_5911297-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "580bc1ee46f61c6f02e0107e04976fb386d2198ec112c2e60b1101cef62ec48b"
+    },
+    "water": {
+      "author": "Noted451",
+      "page": "https://freesound.org/people/Noted451/sounds/531015/",
+      "download": "https://cdn.freesound.org/previews/531/531015_9818404-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "e8d86b3255af21600ab35254b2f362fe2a52bc5e9aaa9fbbea3d56d19aaab078"
+    },
+    "street": {
+      "author": "florianreichelt",
+      "page": "https://freesound.org/people/florianreichelt/sounds/451734/",
+      "download": "https://cdn.freesound.org/previews/451/451734_6253486-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "0a642924126ffc2ce219568b3ac665dc93adac0684889d7965ef8b3c789f22fb"
+    },
+    "gull": {
+      "author": "DaveGould",
+      "page": "https://freesound.org/people/DaveGould/sounds/32930/",
+      "download": "https://cdn.freesound.org/previews/32/32930_250170-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "6b211fcdda82358f0663bc00406fc85c9734674015c57c5df317e6430736695f"
+    },
+    "porto_fm": {
+      "author": "Zane Little Music",
+      "page": "https://opengameart.org/content/empty-stretch",
+      "download": "https://opengameart.org/sites/default/files/empty_stretch_1.mp3",
+      "license": "CC0-1.0",
+      "sha256": "ec9a3b660a412cc6a8aec43031f26b633320de95217769b0261093036b441238"
+    },
+    "porto_noite": {
+      "author": "Julie Damsgaard / Spring Spring",
+      "page": "https://opengameart.org/content/basically-not-fusion-jazz",
+      "download": "https://opengameart.org/sites/default/files/fusion%20jazz_0.ogg",
+      "license": "CC0-1.0",
+      "sha256": "645f7cd6ef7a56b22fe394ff006dae17348cf70c72aa9e2a9b4d7f70b2804af4"
+    }
+  },
+  "processing": "32000 Hz; ambiente mono filtrado 110–6500 Hz, RMS/peak normalizados, loops com crossfade de 2 s; músicas completas estéreo; detalhes com fades de 150 ms.",
+  "outputs": [
+    {
+      "file": "cafe_0.ogg",
+      "seconds": 29.0,
+      "rms_db": -23.0,
+      "peak_db": -9.25,
+      "loop": true
+    },
+    {
+      "file": "cafe_1.ogg",
+      "seconds": 37.0,
+      "rms_db": -23.0,
+      "peak_db": -9.39,
+      "loop": true
+    },
+    {
+      "file": "workshop_0.ogg",
+      "seconds": 29.0,
+      "rms_db": -23.0,
+      "peak_db": -7.51,
+      "loop": true
+    },
+    {
+      "file": "workshop_1.ogg",
+      "seconds": 37.0,
+      "rms_db": -23.0,
+      "peak_db": -6.02,
+      "loop": true
+    },
+    {
+      "file": "birds_0.ogg",
+      "seconds": 29.0,
+      "rms_db": -23.0,
+      "peak_db": -9.3,
+      "loop": true
+    },
+    {
+      "file": "birds_1.ogg",
+      "seconds": 37.0,
+      "rms_db": -23.0,
+      "peak_db": -9.13,
+      "loop": true
+    },
+    {
+      "file": "water_0.ogg",
+      "seconds": 29.0,
+      "rms_db": -23.0,
+      "peak_db": -8.83,
+      "loop": true
+    },
+    {
+      "file": "water_1.ogg",
+      "seconds": 37.0,
+      "rms_db": -23.0,
+      "peak_db": -9.09,
+      "loop": true
+    },
+    {
+      "file": "street_0.ogg",
+      "seconds": 29.0,
+      "rms_db": -23.0,
+      "peak_db": -9.55,
+      "loop": true
+    },
+    {
+      "file": "street_1.ogg",
+      "seconds": 37.0,
+      "rms_db": -23.0,
+      "peak_db": -9.51,
+      "loop": true
+    },
+    {
+      "file": "gull_detail_0.wav",
+      "seconds": 4.5,
+      "rms_db": -24.76,
+      "peak_db": -5.0,
+      "loop": false
+    },
+    {
+      "file": "gull_detail_1.wav",
+      "seconds": 4.5,
+      "rms_db": -24.26,
+      "peak_db": -5.0,
+      "loop": false
+    },
+    {
+      "file": "gull_detail_2.wav",
+      "seconds": 4.5,
+      "rms_db": -23.68,
+      "peak_db": -5.0,
+      "loop": false
+    },
+    {
+      "file": "birds_detail_0.wav",
+      "seconds": 5.0,
+      "rms_db": -23.11,
+      "peak_db": -7.36,
+      "loop": false
+    },
+    {
+      "file": "birds_detail_1.wav",
+      "seconds": 5.0,
+      "rms_db": -23.21,
+      "peak_db": -7.43,
+      "loop": false
+    },
+    {
+      "file": "birds_detail_2.wav",
+      "seconds": 5.0,
+      "rms_db": -23.1,
+      "peak_db": -6.28,
+      "loop": false
+    },
+    {
+      "file": "workshop_detail_0.wav",
+      "seconds": 3.0,
+      "rms_db": -23.18,
+      "peak_db": -10.35,
+      "loop": false
+    },
+    {
+      "file": "workshop_detail_1.wav",
+      "seconds": 3.0,
+      "rms_db": -23.4,
+      "peak_db": -12.43,
+      "loop": false
+    },
+    {
+      "file": "workshop_detail_2.wav",
+      "seconds": 3.0,
+      "rms_db": -23.8,
+      "peak_db": -11.0,
+      "loop": false
+    },
+    {
+      "file": "porto_fm.ogg",
+      "seconds": 140.808,
+      "rms_db": -19.0,
+      "peak_db": -4.12,
+      "loop": true
+    },
+    {
+      "file": "porto_noite.ogg",
+      "seconds": 246.388,
+      "rms_db": -20.09,
+      "peak_db": -3.0,
+      "loop": true
+    }
+  ]
+}

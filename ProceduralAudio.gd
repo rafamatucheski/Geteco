@@ -361,6 +361,9 @@ static func _generate_police_alarm_stream() -> AudioStream:
 # ESTAÇÕES DE RÁDIO (RADIO CHANNELS)
 # ==========================================
 static func get_radio_stations() -> Array:
+	# Programas gravados completos; o fallback antigo só serve projetos sem o banco.
+	if ResourceLoader.exists("res://audio/living_city/porto_fm.ogg"):
+		return preload("res://audio/living_city/LivingCityAudio.gd").stations()
 	var list: Array = []
 	# 1. Checa se existem músicas no diretório
 	var dir := DirAccess.open("res://audio/radio/") if DirAccess.dir_exists_absolute("res://audio/radio/") else null

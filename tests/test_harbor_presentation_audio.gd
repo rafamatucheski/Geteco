@@ -63,7 +63,7 @@ func run() -> void:
 	for i in 15: await process_frame
 	var soundscape = world.get_node("HarborSoundscape")
 	check(not paused, "Seen intro does not replay on resume")
-	check(soundscape.get_child_count() == 5, "Bounded audio voices")
+	check(soundscape.get_child_count() == 6 and soundscape.quarter.sources.size() == 7, "Bounded audio voices and authored quarter")
 	world.get_node("Player").global_position = Vector2(1700, 1130)
 	await create_timer(2.0).timeout
 	check(soundscape.weights.terminal > 0.8 and soundscape.weights.water < 0.01, "Terminal bed local")
@@ -83,7 +83,7 @@ func run() -> void:
 	check(soundscape.weights.terminal <= 0.51 and soundscape.weights.workshop < 0.01, "Night is quieter and leaving garage restores exterior")
 	for bed in soundscape.beds.values():
 		check(bed.bus == &"SFX", "Environment follows SFX settings")
-	check(soundscape.get_child_count() == 5, "No per-frame audio allocations")
+	check(soundscape.get_child_count() == 6 and soundscape.quarter.sources.size() == 7, "No per-frame audio allocations")
 	world.queue_free()
 	await process_frame
 	print("HARBOR_PRESENTATION_AUDIO: %d failures" % failures.size())
