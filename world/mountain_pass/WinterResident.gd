@@ -17,6 +17,9 @@ var speech_until := 0.0
 var render_clock := 0.0
 var danger_response := preload("res://PedestrianDanger.gd").new()
 var panic_timer := 0.0
+var appearance_variant := -1
+var _routine_pause := 0.0
+var _navigation := preload("res://ResponderNavigation.gd").new()
 
 func hear_gunfire(origin: Vector2, end: Vector2) -> void:
 	if is_dead: return
@@ -56,9 +59,16 @@ func _ready() -> void:
 	viewport.transparent_bg = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(viewport)
+	preload("res://world/shared/pedestrians/WinterWardrobe.gd").light_viewport(viewport)
 	model = _create_model()
 	model.coat_color = coat_color
 	model.role = role
+	if appearance_variant < 0: appearance_variant = posmod(resident_name.hash(),120)
+	model.appearance_variant = appearance_variant
+	var first_name := resident_name.get_slice("/",0).strip_edges().to_upper()
+	model.appearance_female = first_name in ["NORA","MARA","LIA","INÊS","HELENA","RUTE","ÍRIS","DORA","ANA","MILA","LUÍSA","CECÍLIA"]
+	_navigation.search_budget = 32
+	_navigation.retry_delay = 2.0
 	viewport.add_child(model)
 	model.set_process(false)
 	var camera := Camera3D.new()
@@ -106,7 +116,9 @@ func _physics_process(delta: float) -> void:
 	if elapsed > speech_until: speech.text = ""
 	if global_position.distance_to(destination) < 5:
 		destination = home + Vector2(-35 if destination.x > home.x else 35, 0)
-	velocity = Vector2.ZERO if nearby else global_position.direction_to(destination)*18
+		_routine_pause = 1.5 + appearance_variant%4
+	_routine_pause = maxf(0,_routine_pause-delta)
+	velocity = Vector2.ZERO if nearby or _routine_pause > 0 else _navigation.movement(self,destination,18,delta)
 	move_and_slide()
 	if velocity.length() > 1: model.rotation.y = -velocity.angle() + PI*0.5
 	model.walking = velocity.length() > 1

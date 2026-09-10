@@ -87,6 +87,12 @@ func equip(id: String) -> void:
 func attack() -> void:
 	combat_pose.on_attack(active_weapon_id)
 
+func is_reloading() -> bool:
+	return actor.has_method("is_reloading") and actor.is_reloading()
+
+func get_reload_progress() -> float:
+	return float(actor.get_reload_progress()) if actor.has_method("get_reload_progress") else 0.0
+
 func _physics_process(delta: float) -> void:
 	if actor.get("is_dead") == true or actor.get("is_flying") == true or actor.get("is_incapacitated") == true: return
 	if actor.get("_viewport_render_active") == false: return

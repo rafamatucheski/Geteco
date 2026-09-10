@@ -58,6 +58,22 @@ func _ready() -> void:
 
 func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 	stolen_vehicle = vehicle
+	var professional := preload("res://world/shared/pedestrians/ProfessionalDriverModel.gd")
+	var driver_role := professional.role_for(vehicle)
+	if not driver_role.is_empty():
+		if is_instance_valid(driver_model): driver_model.free()
+		driver_model = professional.new()
+		driver_model.role = driver_role
+		driver_model.winter_outfit = professional.is_winter(vehicle)
+		var identity: int = int(vehicle.get_meta("driver_appearance_seed",-1))
+		if identity < 0:
+			identity = randi_range(0,119)
+			vehicle.set_meta("driver_appearance_seed",identity)
+		driver_model.appearance_variant = identity
+		driver_model.appearance_female = identity%2==1
+		driver_viewport.add_child(driver_model)
+		driver_model.set_process(false)
+		driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	if is_instance_valid(driver_model) and "taxi" in String(vehicle.get("vehicle_id")):
 		var detail := preload("res://world/shared/pedestrians/CitizenDetails.gd")
 		detail.piece(driver_model,Vector3(.36,.11,.31),Vector3(0,1.79,0),Color("b59855"),true)
@@ -278,6 +294,7 @@ func _build_driver_visual() -> void:
 	driver_viewport.transparent_bg = true
 	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(driver_viewport)
+	preload("res://world/shared/pedestrians/WinterWardrobe.gd").light_viewport(driver_viewport)
 	driver_model = preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
 	driver_viewport.add_child(driver_model)
 	driver_model.set_process(false)

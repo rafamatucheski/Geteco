@@ -13,6 +13,16 @@ const RESIDENTS := [
 	[Vector2(7090,-1460),"RUTE","ranger",Color("8b4e55")],
 	[Vector2(7160,-1450),"NOÉ","logger",Color("60816a")],
 	[Vector2(6900,-2695),"ÍRIS","ranger",Color("5f719e")],
+	[Vector2(5870,755),"DORA","visitor",Color("985b71")],
+	[Vector2(6225,730),"FELIPE","truck_driver",Color("aa703e")],
+	[Vector2(7540,885),"ANA","visitor",Color("527b88")],
+	[Vector2(8405,850),"RUI","logger",Color("7c7750")],
+	[Vector2(7820,-135),"MILA","visitor",Color("8c6d9c")],
+	[Vector2(6650,-1885),"PEDRO","bus_driver",Color("456781")],
+	[Vector2(6660,-1810),"LUÍSA","visitor",Color("ab6545")],
+	[Vector2(7200,-1560),"BRUNO","truck_driver",Color("957338")],
+	[Vector2(7140,-1420),"CECÍLIA","visitor",Color("688959")],
+	[Vector2(6830,-2710),"SÉRGIO","logger",Color("5c7177")],
 ]
 const PARKING := [
 	[Vector2(6470,-1910),"polar_van",PI*0.5],
