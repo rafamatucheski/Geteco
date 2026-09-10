@@ -59,7 +59,10 @@ func _finish() -> void:
 	car.remove_meta("vehicle_boarding")
 	car._drive_input_armed = false
 	actor.hide()
-	if "is_control_disabled" in actor: actor.is_control_disabled = control_was_disabled
+	# Ao sair do carro, sempre libera o controle do jogador. Se uma cinemática/
+	# missão ainda precisa manter o controle travado, ela vai re-travar quando
+	# notar que o jogador saiu do carro (se necessário).
+	if "is_control_disabled" in actor: actor.is_control_disabled = false
 	actor.modulate = original_color
 	actor.global_position = car.global_position
 	actor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_INHERIT
@@ -76,13 +79,18 @@ func cancel() -> void:
 		# deixa o jogador fora da interpolacao pelo resto da partida.
 		actor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_INHERIT
 		actor.reset_physics_interpolation()
-		if "is_control_disabled" in actor: actor.is_control_disabled = control_was_disabled
+		# Sempre libera o controle ao cancelar a entrada do carro
+		if "is_control_disabled" in actor: actor.is_control_disabled = false
 	queue_free()
 
 func _exit_tree() -> void:
-	if not active or not is_instance_valid(actor): return
+	if not is_instance_valid(actor): return
+	if not active:
+		# Se já finalizou ou foi cancelado, o estado foi restaurado pelo cancel()/_finish()
+		return
+	# Fallback: se saiu da árvore enquanto ainda ativo por algum motivo inesperado
 	actor.modulate = original_color
-	if "is_control_disabled" in actor: actor.is_control_disabled = control_was_disabled
+	if "is_control_disabled" in actor: actor.is_control_disabled = false
 	actor.show()
 	actor.set_physics_process(true)
 	for shape in actor.find_children("", "CollisionShape2D", true, false):
