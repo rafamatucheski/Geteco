@@ -38,6 +38,26 @@ func _build() -> void:
 		door.destination_id=id
 		door.destination_requested.connect(manager._on_exterior_destination_requested.bind(room,room.spawn_point))
 		manager._bind_exit_door(room.exit_door,id,room)
+		if index == 0:
+			_open_bank_threshold(building, door)
+			var passage := preload("res://world/harbor/interiors/BankPassage.gd").new()
+			passage.name = "BankPassage"
+			passage.room = room
+			room.add_child(passage)
+
+func _open_bank_threshold(building: Node2D, door: Node2D) -> void:
+	# Preserva o prédio sólido e recorta apenas o vão central da porta.
+	var body := building.get_node("BuildingSolid")
+	for child in body.get_children(): child.free()
+	var bounds: Rect2 = building.get_solid_rects()[0]
+	var back := door.position.y - 28.0
+	for rect in [Rect2(bounds.position, Vector2(bounds.size.x, back - bounds.position.y)), Rect2(Vector2(bounds.position.x, back), Vector2(-24.0 - bounds.position.x, bounds.end.y - back)), Rect2(Vector2(24, back), Vector2(bounds.end.x - 24.0, bounds.end.y - back))]:
+		var shape := CollisionShape2D.new()
+		shape.shape = RectangleShape2D.new()
+		shape.shape.size = rect.size
+		shape.position = rect.get_center()
+		body.add_child(shape)
+
 func _bind_ammunation() -> void:
 	var building=get_parent().get_node("District/NorthFrontage2")
 	building.business_name="AMMU-NATION / ARMAS"

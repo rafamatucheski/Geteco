@@ -300,15 +300,15 @@ func _bind_exterior_entrances() -> void:
 			if not entrance.destination_requested.is_connected(_on_exterior_destination_requested):
 				entrance.destination_requested.connect(_on_exterior_destination_requested.bind(cfg.interior, cfg.spawn))
 
-## A porta avisa quando comeca a abrir; e o quadro certo para comecar a escurecer,
-## porque BuildingEntrance so pede a troca depois de open_duration.
+## Abrir por proximidade não implica entrar. Só a passagem confirmada deve
+## escurecer a tela, inclusive quando a porta já estava aberta.
 func _bind_curtain(door: BuildingEntrance) -> void:
-	if door != null and not door.door_state_changed.is_connected(_on_curtain_door_state):
-		door.door_state_changed.connect(_on_curtain_door_state)
+	if door != null and not door.transition_started.is_connected(_on_curtain_transition_started):
+		door.transition_started.connect(_on_curtain_transition_started)
 
-func _on_curtain_door_state(door: BuildingEntrance, is_open: bool) -> void:
-	if is_open:
-		_fade_out(door.open_duration)
+func _on_curtain_transition_started(door: BuildingEntrance, _actor: Node2D) -> void:
+	_fade_busy = true
+	_fade_out(door.open_duration)
 
 func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2D, _dest_id: StringName, _scene: PackedScene, _spawn_name: StringName, interior: Node2D, spawn_marker: Marker2D) -> void:
 	if not is_instance_valid(actor) or interior == null or spawn_marker == null:

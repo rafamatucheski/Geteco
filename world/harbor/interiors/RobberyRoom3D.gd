@@ -58,6 +58,9 @@ func _setup_interior_content() -> void:
 	view.size=Vector2i(1440,1000) if is_bank else Vector2i(800,600)
 	view.transparent_bg=true
 	view.own_world_3d=true
+	# Este cenário é uma imagem em cache. Interpolar a câmera a partir da
+	# origem pode congelar para sempre uma vista frontal no primeiro quadro.
+	view.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
 	view.render_target_update_mode=SubViewport.UPDATE_ONCE
 	add_child(view)
 	var model := Node3D.new()
@@ -106,6 +109,7 @@ func _setup_interior_content() -> void:
 		interior_id = &"bank"
 		display_name = "BANCO NORTH PIER"
 		_install_finished_bank(model)
+		preload("res://world/harbor/interiors/BankLobbyDetails.gd").build(model)
 	var cam := Camera3D.new()
 	view.add_child(cam)
 	cam.position=Vector3(0,13,9)
@@ -117,6 +121,8 @@ func _setup_interior_content() -> void:
 		# Projeção paralela mantém portas, colisões e atores na mesma escala.
 		cam.size=14.8
 		cam.look_at_from_position(Vector3(0,14,10),Vector3(0,0,0))
+	cam.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
+	cam.reset_physics_interpolation()
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees=Vector3(-65,-20,0)
 	sun.light_energy=1.3
@@ -144,11 +150,14 @@ func _setup_interior_content() -> void:
 	if is_bank: _project_bank_layout()
 	exit_door.custom_prompt_text="[E] SAIR"
 	exit_door.get_node("Facade").hide()
+	if is_bank:
+		exit_door.get_node("Prompt").modulate.a=0.0
 	status=Label.new()
-	status.position=Vector2(-330,-225) if is_bank else Vector2(-205,-155)
+	status.position=Vector2(-285,-218) if is_bank else Vector2(-205,-155)
 	status.z_index=12
-	status.size=Vector2(660,54) if is_bank else Vector2(410,50)
+	status.size=Vector2(570,54) if is_bank else Vector2(410,50)
 	status.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	if is_bank: status.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size",14)
 	status.add_theme_color_override("font_color",Color("eedca7"))
 	add_child(status)
@@ -354,18 +363,20 @@ func _projected_solid(rect: Rect2) -> StaticBody2D:
 	return body
 
 func _project_bank_layout() -> void:
-	room_size=Vector2(720,500)
+	room_size=Vector2(660,470)
 	for child in get_children():
 		if child is StaticBody2D:
 			remove_child(child)
 			child.queue_free()
 	for box in [Rect2(-7,-5,14,.18),Rect2(-7,-5,.18,10),Rect2(6.82,-5,.18,10),Rect2(-7,4.8,14,.18),Rect2(-7,-3.3,5.9,.22),Rect2(1.1,-3.3,5.9,.22),Rect2(-5.8,-1.6,2.6,1.2),Rect2(3.2,-1.6,2.6,1.2),Rect2(-6,2.5,2,.6),Rect2(4,2.5,2,.6)]:
 		_projected_solid(box)
+	for box in [Rect2(-6.65,.15,.7,1.25), Rect2(5.95,.15,.7,1.25), Rect2(-6.7,3.8,.6,.6), Rect2(6.1,3.8,.6,.6)]:
+		_projected_solid(box)
 	vault_body=_projected_solid(Rect2(-1.1,-3.3,2.2,.22))
 	vault_position=project_floor(Vector2(0,-2.5))
 	for i in 3: loot_positions[i]=project_floor(Vector2(-3+i*3,-4.2))
 	spawn_point.position=project_floor(Vector2(0,3))
-	exit_door.position=project_floor(Vector2(0,4.15))
+	exit_door.position=project_floor(Vector2(0,4.3))
 	for i in guards.size():
 		guards[i].position=project_floor(Vector2(-5 if i==0 else 5,.5))
 		_scale_npc(guards[i],guards[i].viewport_3d,guards[i].sprite_3d_display,Vector2(-5 if i==0 else 5,.5),1.45)
@@ -379,11 +390,17 @@ func _project_bank_layout() -> void:
 func _scale_npc(_person: Node2D, render: SubViewport, sprite: Sprite2D, point: Vector2, height: float) -> void:
 	render.size=Vector2i(256,256)
 	var camera := render.get_camera_3d()
+	camera.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera.projection=Camera3D.PROJECTION_ORTHOGONAL
+	camera.size=2.8
+	camera.look_at_from_position(Vector3(0,14,10)+Vector3.UP*height*.5,Vector3.UP*height*.5)
+	camera.reset_physics_interpolation()
 	var floor_point := Vector3(point.x,0,point.y)
 	var pixels := room_camera.unproject_position(floor_point+Vector3.UP*1.8).distance_to(room_camera.unproject_position(floor_point))*room_display.scale.y
 	var rig_pixels := camera.unproject_position(Vector3.UP*height).distance_to(camera.unproject_position(Vector3.ZERO))
 	sprite.scale=Vector2.ONE*clampf(pixels/maxf(1,rig_pixels),0.12,0.75)
 	sprite.position=-(camera.unproject_position(Vector3.ZERO)-Vector2(render.size)*.5)*sprite.scale
+	_person.reset_physics_interpolation()
 	render.render_target_update_mode=SubViewport.UPDATE_ONCE
 
 func _sync_actor_scale() -> void:
@@ -416,6 +433,8 @@ func on_actor_entered(visitor: Node2D) -> void:
 	interaction_released=false
 	was_inside=true
 	visitor.set_meta("robbery_room",self)
+	# Revalida a imagem após o carregamento e cada retorno ao salão.
+	view.render_target_update_mode=SubViewport.UPDATE_ONCE
 	# O mesmo E usado na porta nunca inicia uma interação dentro do banco.
 	if lockpick and lockpick.active: lockpick.finish(false)
 
@@ -445,7 +464,7 @@ func _update_heist_phase() -> void:
 	else: phase=HeistPhase.WARNING if armed_warning else HeistPhase.LOBBY
 
 func _update_bank_status() -> void:
-	var instruction := "BANCO NORTH PIER — atendimento normal • [E] sair pela entrada"
+	var instruction := "Para sair, caminhe até a porta"
 	match phase:
 		HeistPhase.WARNING: instruction="SEGURANÇA: Pare! Guarde a arma e se renda. Ninguém precisa se ferir."
 		HeistPhase.COMBAT: instruction="ASSALTO — neutralize a segurança • Use os balcões como cobertura"

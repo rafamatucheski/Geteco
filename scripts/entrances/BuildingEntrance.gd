@@ -16,6 +16,7 @@ signal destination_requested(
 	destination_spawn: StringName
 )
 signal door_state_changed(entrance: BuildingEntrance, is_open: bool)
+signal transition_started(entrance: BuildingEntrance, actor: Node2D)
 
 enum EntranceKind {
 	BUILDING,
@@ -130,6 +131,7 @@ func close_door() -> void:
 func _begin_transition(actor: Node2D) -> void:
 	_busy = true
 	_refresh_prompt()
+	transition_started.emit(self, actor)
 	_set_door_open(true)
 	await get_tree().create_timer(open_duration).timeout
 	if is_instance_valid(actor):
