@@ -941,6 +941,11 @@ func _input(event: InputEvent) -> void:
 			_cycle_weapon(-1)
 			get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_R or event.physical_keycode == KEY_R:
+			if not is_dead and not is_arrested and not is_recovering:
+				_reload_active_weapon()
+				get_viewport().set_input_as_handled()
+			return
 		var key_map := {
 			KEY_1: "pistol",
 			KEY_2: "magnum",
@@ -1119,6 +1124,7 @@ func _reload_active_weapon() -> void:
 		ammo["reserve"] = int(ammo.get("reserve", 0)) - moved
 		weapon_ammo[active_weapon_id] = ammo
 		_show_weapon_notice("RECARREGOU")
+		_refresh_weapon_ui()
 
 func equip_weapon(id: String) -> void:
 	# Mesmo caminho usado pelas teclas numericas/roda de armas: so troca se o

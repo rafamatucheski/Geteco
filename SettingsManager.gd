@@ -262,6 +262,7 @@ func get_controls_mapping() -> Array[Dictionary]:
 	
 	# Adicionar ações globais fixas documentadas
 	result.append({"action": &"fire", "label": tr("CONTROL_FIRE"), "keys": tr("CONTROL_KEY_LEFT_CLICK")})
+	result.append({"action": &"reload", "label": tr("CONTROL_RELOAD"), "keys": "R"})
 	result.append({"action": &"weapon_wheel", "label": tr("CONTROL_WEAPON_WHEEL"), "keys": "Q / " + tr("CONTROL_KEY_MOUSE_WHEEL")})
 	result.append({"action": &"pause", "label": tr("CONTROL_PAUSE"), "keys": "ESC"})
 	
