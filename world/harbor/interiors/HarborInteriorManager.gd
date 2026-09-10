@@ -313,6 +313,7 @@ func _on_curtain_transition_started(door: BuildingEntrance, _actor: Node2D) -> v
 func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2D, _dest_id: StringName, _scene: PackedScene, _spawn_name: StringName, interior: Node2D, spawn_marker: Marker2D) -> void:
 	if not is_instance_valid(actor) or interior == null or spawn_marker == null:
 		return
+	if interior.has_method("can_enter") and not interior.can_enter(): return
 
 	# Record origin entrance for return routing
 	_actor_origin_entrances[actor] = entrance

@@ -139,7 +139,7 @@ func _run() -> void:
 	manager._on_exterior_destination_requested(room.entrance,player,room.entrance.destination_id,null,&"",room,room.spawn_point)
 	player.set_physics_process(false)
 	room._process(0.1)
-	check(room.vault_open and room._taken("cash0") and not room.lockpick.active,"Reentrar preserva cofre e pilhas coletadas sem repetir lockpick")
+	check(not room.actor_inside() and not room.can_enter() and room._taken("cash0"),"Interdição bloqueia reentrada e preserva o dinheiro já coletado")
 	manager._on_exit_door_requested(room.exit_door,player,&"",null,&"",room.entrance.destination_id)
 	player.global_position=room.entrance.global_position+Vector2(1200,0)
 	blockade._physics_process(0.1)

@@ -21,6 +21,18 @@ var campaign_flags: Dictionary = {}
 var completed_beats: Array[StringName] = []
 ## Isolated Harbor arc namespace, serialized by the existing campaign adapter.
 var cobra_campaign: Dictionary = {}
+var bank_incident: Dictionary = {}
+
+func _process(delta: float) -> void:
+	if bank_incident.get("phase","")!="closed" or get_tree().paused: return
+	if get_tree().get_first_node_in_group("player")==null: return
+	var clock := get_tree().get_first_node_in_group("day_night_manager")
+	var length := float(clock.day_length_seconds) if clock else 180.0
+	advance_bank_days(delta/maxf(1.0,length))
+
+func advance_bank_days(days: float) -> void:
+	if bank_incident.get("phase","")!="closed" or not is_finite(days) or days<0: return
+	bank_incident["elapsed_days"]=minf(4.0,float(bank_incident.get("elapsed_days",0.0))+days)
 
 
 func _ready() -> void:
@@ -42,6 +54,7 @@ func load_campaign_data() -> bool:
 
 
 func reset_campaign() -> void:
+	bank_incident.clear()
 	cobra_campaign.clear()
 	current_stage = INITIAL_STAGE
 	completed_beats.clear()
@@ -164,6 +177,7 @@ func to_save_data() -> Dictionary:
 		"unlocked_territories": unlocked_territories.map(func(value): return String(value)),
 		"campaign_flags": campaign_flags.duplicate(true),
 		"cobra_campaign": cobra_campaign.duplicate(true),
+		"bank_incident": bank_incident.duplicate(true),
 	}
 
 
@@ -174,6 +188,8 @@ func restore_from_save(save_data: Dictionary) -> bool:
 	if get_beat(restored_stage).is_empty():
 		return false
 	current_stage = restored_stage
+	var restored_bank: Variant=save_data.get("bank_incident",{})
+	bank_incident=restored_bank.duplicate(true) if restored_bank is Dictionary else {}
 	var restored_cobra: Variant = save_data.get("cobra_campaign", {})
 	cobra_campaign = restored_cobra.duplicate(true) if restored_cobra is Dictionary else {}
 	completed_beats.clear()

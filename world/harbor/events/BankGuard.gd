@@ -150,3 +150,9 @@ func _create_3d_blood_puddle() -> void:
 	var pool := preload("res://world/harbor/events/BankGuardBloodPool.gd").new()
 	pool.guard=self
 	get_parent().add_child(pool)
+
+func _start_fall(impact := Vector2.ZERO) -> void:
+	fall_presentation=preload("res://world/harbor/events/BankFloorFall.gd").new()
+	fall_presentation.start(self,model_root,viewport_3d,impact)
+	# Deita atravessado na circulação; nunca em direção ao tampo do balcão.
+	fall_presentation.yaw=PI*.5 if uses_shotgun else -PI*.5

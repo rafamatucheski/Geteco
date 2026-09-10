@@ -43,6 +43,7 @@ const LOOT_AMOUNTS := [4000, 3000, 3000]
 var loot_meshes: Array[Node3D] = []
 var vault_partitions: Array[GeometryInstance3D] = []
 var loot_positions := [Vector2(-95,-105),Vector2(0,-105),Vector2(95,-105)]
+var aftermath: Node
 
 func _init() -> void:
 	room_size=Vector2(460,330)
@@ -150,6 +151,10 @@ func _setup_interior_content() -> void:
 		add_child(person)
 		civilians.append(person)
 	if is_bank: _project_bank_layout()
+	if is_bank:
+		aftermath=preload("res://world/harbor/events/BankAftermath.gd").new()
+		aftermath.room=self
+		add_child(aftermath)
 	exit_door.custom_prompt_text="[E] SAIR"
 	exit_door.get_node("Facade").hide()
 	if is_bank:
@@ -225,7 +230,9 @@ func _on_shot() -> void:
 func start_alarm() -> void:
 	if alarm_started: return
 	alarm_started=true
-	for person in civilians: person.frighten()
+	if is_bank and is_instance_valid(aftermath): aftermath.report_robbery()
+	for person in civilians:
+		if is_instance_valid(person): person.frighten()
 	var sound := AudioStreamPlayer2D.new()
 	sound.stream=ProceduralAudio.get_police_alarm_stream()
 	sound.volume_db=-20
@@ -249,6 +256,9 @@ func _process(delta: float) -> void:
 		intimidation=0
 		return
 	armed_warning=is_bank and armed()
+	if armed_warning and actor.weapon_aim_active:
+		for person in civilians:
+			if is_instance_valid(person): person.frighten()
 
 	if armed_warning and not alarm_started:
 		status.text="SEGURANÇA: Largue a arma! Fique parado!"
@@ -398,15 +408,67 @@ func _project_bank_layout() -> void:
 	for i in 3: loot_positions[i]=project_floor(Vector2(-3+i*3,-4.2))
 	spawn_point.position=project_floor(Vector2(0,3))
 	exit_door.position=project_floor(Vector2(0,4.3))
+	_position_bank_npcs()
+
+func _position_bank_npcs() -> void:
 	for i in guards.size():
 		guards[i].position=project_floor(Vector2(-5 if i==0 else 5,.5))
 		_scale_npc(guards[i],guards[i].viewport_3d,guards[i].sprite_3d_display,Vector2(-5 if i==0 else 5,.5),1.45)
+		guards[i].sprite_3d_display.scale*=.9
+		guards[i].sprite_3d_display.position*=.9
 	for i in civilians.size():
 		civilians[i].position=project_floor(Vector2(-2.65 if i==0 else 2.65,-1.9))
 		var sprite: Sprite2D
 		for child in civilians[i].get_children():
 			if child is Sprite2D: sprite=child
 		_scale_npc(civilians[i],civilians[i].viewport,sprite,Vector2(-2.65 if i==0 else 2.65,-1.9),1.8)
+
+func can_enter() -> bool:
+	if not is_bank: return true
+	var incident: Dictionary=get_node("/root/CampaignState").bank_incident
+	return incident.get("phase","")!="closed" or float(incident.get("elapsed_days",0))>=4.0
+
+func reset_after_investigation() -> void:
+	if lockpick and lockpick.active: lockpick.finish(false)
+	for person in guards+civilians:
+		if is_instance_valid(person): person.queue_free()
+	guards.clear()
+	civilians.clear()
+	for i in 2:
+		var guard := preload("res://world/harbor/events/BankGuard.gd").new()
+		guard.room=self
+		guard.uses_shotgun=i==0
+		add_child(guard)
+		guards.append(guard)
+		var civilian := preload("res://world/harbor/events/RobberyCivilian.gd").new()
+		civilian.room=self
+		civilian.resident_name="HELENA" if i==0 else "MARCOS"
+		civilian.reaction="flee"
+		add_child(civilian)
+		civilians.append(civilian)
+	_position_bank_npcs()
+	alarm_started=false
+	shots_fired=false
+	armed_warning=false
+	dispatched=false
+	alarm_time=30.0
+	vault_open=false
+	opening_time=0
+	keycard_taken=false
+	keycard_available=false
+	if is_instance_valid(keycard_visual): keycard_visual.queue_free()
+	hold_time=0
+	hold_target=""
+	phase=HeistPhase.LOBBY
+	vault.rotation.y=0
+	vault_body.collision_layer=1
+	for partition in vault_partitions: partition.scale.y=1
+	var signs := view.find_child("VaultFrontSigns",true,false) as Node3D
+	if signs: signs.show()
+	for i in 3: get_node("/root/CampaignState").set_campaign_flag(_flag("cash%d"%i),false)
+	_refresh_loot()
+	status.text=""
+	set_npc_rendering_active(actor_inside())
 
 func get_gameplay_camera_bounds() -> Rect2:
 	var corner := project_floor(Vector2(-6.7,-4.8)) + Vector2(0,-45)
