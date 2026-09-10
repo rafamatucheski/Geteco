@@ -19,6 +19,10 @@ var _visible_end := 0.0
 var _ramp_start := 0.0
 var _pillar_bounds: Array[Rect2] = []
 var _ground_barriers: Array[Rect2] = []
+var _underpass_material: ShaderMaterial
+var _reveal_amount := 0.0
+var _reveal_position := Vector2.ZERO
+var _reveal_radius := 76.0
 
 
 class PortalCover extends Node2D:
@@ -59,6 +63,8 @@ class RampDeck extends Node2D:
 
 
 func _ready() -> void:
+	get_underpass_material()
+	material = _underpass_material
 	if not Engine.is_editor_hint() and get_node_or_null("AmbientTrain") == null:
 		var train := TRAIN_SCRIPT.new()
 		train.name = "AmbientTrain"
@@ -77,6 +83,36 @@ func _ready() -> void:
 	ramp.z_index = 3
 	add_child(ramp)
 	_create_portals()
+	set_process(not Engine.is_editor_hint())
+
+
+func get_underpass_material() -> ShaderMaterial:
+	if _underpass_material == null:
+		_underpass_material = ShaderMaterial.new()
+		_underpass_material.shader = preload("res://world/shared/rail/RailUnderpassReveal.gdshader")
+	return _underpass_material
+
+
+func _process(delta: float) -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var target := player
+	var travel := get_node_or_null("/root/RegionTravel")
+	if travel != null:
+		var car: Node2D = travel.controlled_car()
+		if is_instance_valid(car): target = car
+	var active := false
+	if is_instance_valid(target) and is_instance_valid(player):
+		var outside := not bool(player.get_meta("harbor_interior", false)) and not bool(player.get_meta("mountain_interior", false))
+		var point := to_local(target.global_position)
+		var offset := _route.get_closest_offset(point)
+		var state := get_track_state_at_offset(offset)
+		active = outside and bool(state.above_ground) and float(state.elevation) >= 48.0 and point.distance_to(_route.sample_baked(offset, true)) < 70.0
+		_reveal_position = target.global_position
+		_reveal_radius = 96.0 if target != player else 76.0
+	_reveal_amount = move_toward(_reveal_amount, 1.0 if active else 0.0, delta * 5.0)
+	_underpass_material.set_shader_parameter("reveal_position", _reveal_position)
+	_underpass_material.set_shader_parameter("reveal_amount", _reveal_amount)
+	_underpass_material.set_shader_parameter("reveal_radius", _reveal_radius)
 
 
 func build_route() -> void:
@@ -259,6 +295,19 @@ func draw_track(target: Node2D, from_distance: float, to_distance: float) -> voi
 		distance += SLEEPER_SPACING
 	target.draw_polyline(left, Color("#d8dfdc"), 3.0, true)
 	target.draw_polyline(right, Color("#d8dfdc"), 3.0, true)
+	# A borda inferior escura e o corrimão deixam a espessura do viaduto legível.
+	if from_distance < _ramp_start:
+		var edge := PackedVector2Array()
+		var rail_top := PackedVector2Array()
+		distance = from_distance
+		while distance <= to_distance:
+			var point := _route.sample_baked(distance, true)
+			var normal := _route_tangent(distance).orthogonal()
+			edge.append(point + normal * (DECK_WIDTH * 0.5 - 1.0) + Vector2(0, 4))
+			rail_top.append(point - normal * (DECK_WIDTH * 0.5 - 2.0))
+			distance += 6.0
+		target.draw_polyline(edge, Color("#333e43"), 4.0, true)
+		target.draw_polyline(rail_top, Color("#c7c5b7"), 2.0, true)
 	if from_distance >= _ramp_start:
 		for rect in _ground_barriers:
 			target.draw_rect(rect, Color("#505e62"))

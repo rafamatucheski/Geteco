@@ -18,7 +18,7 @@ const TRAIN_RENDER_Z := 4
 var _rail_line: DistrictRailLine
 var _progress := 0.0
 var _route_length := 0.0
-var _freight_visuals: Array[TrainFreightCarVisual] = []
+var _freight_visuals: Array[Node2D] = []
 var _train_audio: AudioStreamPlayer2D
 var _audio_playback: AudioStreamGeneratorPlayback
 var _audio_clock := 0.0
