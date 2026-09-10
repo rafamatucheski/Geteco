@@ -26,8 +26,11 @@ func _natural_max_step(stream: AudioStreamWAV) -> float:
 		previous = sample
 	return worst
 
-func _check_family(family: String) -> void:
-	var stream: AudioStreamWAV = ENGINE.get_stream(family)
+## Verifica a emenda de UMA camada. Cada família tem três, e a de alto giro é a
+## que mais carrega ruído de admissão — justamente onde uma emenda mal fechada
+## teria mais chance de passar despercebida numa inspeção só do buffer.
+func _check_family(family: String, layer: int = 0) -> void:
+	var stream: AudioStreamWAV = ENGINE.get_layer_streams(family)[layer]
 	var natural := _natural_max_step(stream)
 
 	var capture := AudioEffectCapture.new()
@@ -51,7 +54,7 @@ func _check_family(family: String) -> void:
 	AudioServer.remove_bus_effect(0, 0)
 
 	if buffer.size() < 4096:
-		print("ENGINE_LOOP_SEAM %s inconclusive: mixer nao entregou audio (frames=%d)" % [family, buffer.size()])
+		print("ENGINE_LOOP_SEAM %s camada %d inconclusive: mixer nao entregou audio (frames=%d)" % [family, layer, buffer.size()])
 		inconclusive += 1
 		return
 
@@ -70,15 +73,18 @@ func _check_family(family: String) -> void:
 			spikes += 1
 		previous = current
 
-	print("ENGINE_LOOP_SEAM %-12s frames=%d natural_step=%.4f mixed_worst=%.4f threshold=%.4f spikes=%d" % [
-		family, buffer.size(), natural, worst_step, threshold, spikes,
+	print("ENGINE_LOOP_SEAM %-12s camada=%d frames=%d natural_step=%.4f mixed_worst=%.4f threshold=%.4f spikes=%d" % [
+		family, layer, buffer.size(), natural, worst_step, threshold, spikes,
 	])
 	if spikes > 0:
 		failures += 1
-		push_error("Estalo no ponto de laco do motor '%s': %d degraus acima do natural" % [family, spikes])
+		push_error("Estalo no ponto de laco do motor '%s' camada %d: %d degraus acima do natural" % [family, layer, spikes])
 
 func _run() -> void:
-	for family in ["street", "sport", "diesel", "bus", "truck", "fire_diesel", "ambulance", "police"]:
+	for family in ["street", "sport", "muscle", "suv", "diesel", "bus", "truck", "fire_diesel", "ambulance", "police"]:
 		await _check_family(family)
+	# A camada de alto giro e a que mais tem ruido: a emenda dela e a mais dificil.
+	for family in ["street", "truck", "sport"]:
+		await _check_family(family, 2)
 	print("ENGINE_LOOP_SEAM failures=%d inconclusive=%d" % [failures, inconclusive])
 	quit(1 if failures else 0)

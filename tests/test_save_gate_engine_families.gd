@@ -49,7 +49,9 @@ func run() -> void:
 	DirAccess.remove_absolute(sm._save_dir)
 	sm._save_dir = old_dir
 	sm._save_directory_ready = false
-	var expected := {"route_city": "bus", "boxrunner": "truck", "rescue_pumper": "fire_diesel", "medic_box": "ambulance"}
+	# Cobre as familias que o pedido nomeou (caminhao, onibus, SUV, esportivo)
+	# alem das de emergencia: cada uma tem que resolver para o proprio timbre.
+	var expected := {"route_city": "bus", "boxrunner": "truck", "rescue_pumper": "fire_diesel", "medic_box": "ambulance", "winter_suv_heavy": "suv", "sport_coupe": "sport", "cobra_v8": "muscle", "sedan_classic": "street", "courier_van": "diesel"}
 	var fingerprints: Array[int] = []
 	for id in expected:
 		var family: String = EngineSound.family_for_vehicle(id)

@@ -376,11 +376,12 @@ func _ensure_alarm_audio() -> AudioStreamPlayer2D:
 func _ensure_engine_audio() -> AudioStreamPlayer2D:
 	if engine_audio == null:
 		engine_audio = AudioStreamPlayer2D.new()
-		engine_audio.stream = ProceduralAudio.get_engine_stream()
 		engine_audio.max_distance = 600.0
 		engine_audio.attenuation = 1.8
 		engine_audio.volume_db = -16.0
 		add_child(engine_audio)
+		# Familia e camadas do arquetipo, prontas antes do primeiro quadro ao volante.
+		_engine_sound.bind(engine_audio, active_archetype_id)
 	return engine_audio
 
 func _ensure_skid_audio() -> AudioStreamPlayer2D:
@@ -463,6 +464,7 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 		is_broken = true
 		max_speed = 0.0
 		if engine_audio: engine_audio.stop()
+		_engine_sound.stop()
 		_start_combustion_countdown()
 		_dispatch_fire_truck()
 
@@ -1370,7 +1372,9 @@ func exit_vehicle() -> void:
 	speed = 0.0
 	if headlight: headlight.visible = false
 	if engine_audio:
+		engine_audio.stop()
 		engine_audio.volume_db = -22.0
+	_engine_sound.stop()
 	if radio_audio: radio_audio.stop()
 	if skid_audio: skid_audio.stop()
 	if camera:
@@ -1524,6 +1528,7 @@ func _physics_process(delta: float) -> void:
 		_engine_sound.update(engine_audio, velocity.length(), _engine_sound.road_top_speed(max_speed), throttle, delta, active_archetype_id)
 	elif engine_audio:
 		engine_audio.stop()
+		_engine_sound.stop()
 
 	# Colisões e impactos
 	for i in get_slide_collision_count():

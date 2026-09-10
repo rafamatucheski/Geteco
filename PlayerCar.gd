@@ -168,11 +168,13 @@ func _ready():
 	
 	# Motor com atenuação suave e volume balanceado
 	engine_audio = AudioStreamPlayer2D.new()
-	engine_audio.stream = _engine_sound.get_stream("street", active_archetype_id)
 	engine_audio.max_distance = 420.0
 	engine_audio.attenuation = 2.2
 	engine_audio.volume_db = -16.0
 	add_child(engine_audio)
+	# bind() escolhe a familia do arquetipo e ja constroi as camadas. Sintetizar
+	# na hora de dirigir custaria um engasgo no primeiro quadro.
+	_engine_sound.bind(engine_audio, active_archetype_id)
 	if is_driven_by_player:
 		engine_audio.play()
 	
@@ -520,6 +522,7 @@ func _physics_process(delta):
 			else:
 				if engine_audio.playing:
 					engine_audio.stop()
+				_engine_sound.stop()
 		
 		# === Rádio (Tecla R ou Input radio_next) ===
 		if Input.is_key_pressed(KEY_R) or (InputMap.has_action("radio_next") and Input.is_action_just_pressed("radio_next")):
@@ -527,6 +530,7 @@ func _physics_process(delta):
 	else:
 		if engine_audio and engine_audio.playing:
 			engine_audio.stop()
+		_engine_sound.stop()
 		if radio_audio and radio_audio.playing:
 			radio_audio.stop()
 		if skid_audio and skid_audio.playing:
@@ -667,6 +671,7 @@ func exit_vehicle():
 	velocity = Vector2.ZERO
 	is_boosting = false
 	if engine_audio: engine_audio.stop()
+	_engine_sound.stop()
 	if skid_audio: skid_audio.stop()
 	if radio_audio: radio_audio.stop()
 	_apply_headlight_state()
@@ -1091,7 +1096,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 func _refresh_vehicle_sound_sets() -> void:
 	if engine_audio:
 		var was_engine_playing := engine_audio.playing
-		engine_audio.stream = _engine_sound.get_stream("street", active_archetype_id)
+		_engine_sound.bind(engine_audio, active_archetype_id)
 		if was_engine_playing:
 			engine_audio.play()
 

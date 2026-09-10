@@ -14,3 +14,8 @@ Thumbs.db
 
 # Erros de execucao de teste (mesma natureza de *.log, que ja e ignorado)
 *.err
+
+# WAVs soltos das camadas de motor: saida de tests/measure_engine_families.gd,
+# regeneravel em segundos e pesada (30 arquivos de ~44 KB). O relatorio de texto
+# ao lado deles fica versionado.
+docs/measurements/engine_layers/
