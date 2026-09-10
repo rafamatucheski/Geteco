@@ -20,6 +20,7 @@ var _dark := false
 var _district_gain := 1.0
 var _detail_variant := 0
 var _detail_room: Node2D
+var regional: Node
 
 func _ready() -> void:
 	_rng.randomize()
@@ -43,6 +44,9 @@ func _ready() -> void:
 	quarter = preload("res://world/harbor/HarborLivingQuarter.gd").new()
 	quarter.name = "LivingQuarter"
 	add_child(quarter)
+	regional = preload("res://audio/regional/RegionalSoundscape.gd").new()
+	regional.name = "RegionalSoundscape"
+	add_child(regional)
 
 func _process(delta: float) -> void:
 	_clock += delta
@@ -53,6 +57,9 @@ func _process(delta: float) -> void:
 	focus_gain = move_toward(focus_gain, 0.35 if dialogue_focused else 1.0, delta / (0.2 if dialogue_focused else 0.8))
 	detail.volume_db = -7.0 + linear_to_db(focus_gain)
 	quarter.update_context(_listener_position, _room, _dark, focus_gain, _district_gain, delta)
+	var actor := get_parent().get_node("Player")
+	var indoors := is_instance_valid(_room) or bool(actor.get_meta("mountain_interior", false)) or bool(actor.get_meta("harbor_interior", false))
+	regional.update_context(_listener_position, indoors, _dark, focus_gain, delta)
 	for kind in weights:
 		weights[kind] = move_toward(float(weights[kind]), float(targets[kind]), delta * 0.6)
 		var audio: AudioStreamPlayer = beds[kind]

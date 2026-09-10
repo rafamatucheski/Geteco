@@ -70,7 +70,6 @@ func _process(_delta: float) -> void:
 
 	if dynamic_weather:
 		advance_weather(_delta)
-	_update_wind_audio()
 
 static func get_hail_texture() -> Texture2D:
 	if _hail_tex == null:
@@ -199,25 +198,12 @@ func _setup_particles() -> void:
 	frost_mist_particles.color = Color(0.88, 0.94, 1.0, 0.35)
 	add_child(frost_mist_particles)
 
-## Reaproveita o gerador de vento polar já existente (o mesmo usado pelo
-## bioma WINTER_SNOW de DayNightWeatherManager) em vez de sintetizar áudio
-## em tempo real do zero — mesma técnica de stream cacheado do resto do jogo.
+## Brisa, nevasca e rajadas com abafamento próprio e suspensão fora da serra.
 func _setup_audio() -> void:
-	wind_player = AudioStreamPlayer.new()
-	wind_player.name = "PolarWindPlayer"
-	wind_player.bus = &"SFX"
-	wind_player.stream = ProceduralAudio.get_snow_wind_stream()
-	wind_player.volume_db = -16.0
-	add_child(wind_player)
-	wind_player.play()
-
-func _update_wind_audio() -> void:
-	if not wind_player:
-		return
-	var hail_activity := 1.0 if current_state == StormState.ICE_RAIN_HAIL else (0.55 if current_state == StormState.HEAVY_BLIZZARD else 0.2)
-	var strength := clampf(storm_intensity * hail_activity, 0.0, 1.5)
-	wind_player.volume_db = (-22.0 if sheltered else 0.0) + lerpf(-24.0, -6.0, clampf(strength / 1.5, 0.0, 1.0))
-	wind_player.pitch_scale = lerpf(0.85, 1.3, clampf(strength / 1.5, 0.0, 1.0))
+	var mixer := preload("res://audio/regional/SnowWindAudio.gd").new()
+	mixer.name = "SnowWindAudio"
+	add_child(mixer)
+	wind_player = mixer.bed
 
 func set_storm_state(state: StormState) -> void:
 	current_state = state

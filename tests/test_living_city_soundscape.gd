@@ -54,7 +54,7 @@ func run() -> void:
 	soundscape = world.get_node("HarborSoundscape")
 	var quarter = soundscape.quarter
 	var count := soundscape.find_children("*", "AudioStreamPlayer2D", true, false).size()
-	check(count == 9, "Nove emissores espaciais fixos, sem depender da população")
+	check(count == 10, "Dez emissores espaciais fixos, incluindo o pátio de sucata")
 	var stations := AUDIO.stations()
 	check(stations.size() == 3 and stations[0].get_length() > 120 and stations[1].get_length() > 200, "Duas músicas completas e opção desligado")
 	check(stations[2].data.size() == 16000 and stations[2].data.count(0) == 16000, "Estação desligada contém apenas silêncio")
