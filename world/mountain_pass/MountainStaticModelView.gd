@@ -21,6 +21,15 @@ func build_view(script: Script, metres_in_view: float, pixels_per_metre: float, 
 	camera_3d.size = metres_in_view
 	camera_3d.position = target + view_direction
 	camera_3d.look_at(target)
+	# Camera fixa: nunca se move depois daqui. Com physics_interpolation ligada no
+	# projeto, unproject_position()/project_ray_* usam o transform INTERPOLADO --
+	# que no quadro em que a camera nasce ainda e o transform anterior (sem o
+	# look_at). Todo o resto deste arquivo projeta geometria de colisao, pontos de
+	# interacao e o offset do sprite AQUI, no mesmo quadro, e sairia calculado com
+	# uma camera sem orientacao (o chao inteiro colapsando numa faixa horizontal).
+	# Sem interpolacao nesta camera, a projecao le o transform de verdade.
+	camera_3d.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera_3d.reset_physics_interpolation()
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55,-24,0)
 	sun.light_energy = 1.0

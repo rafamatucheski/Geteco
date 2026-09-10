@@ -153,7 +153,7 @@ func _restore_room_presentation() -> void:
 	$Interiors.garage_interior.restore_legacy_visitor($Player)
 	var room: Node2D = null
 	for candidate in $Interiors/InteriorSpaces.get_children():
-		if candidate.has_method("get_camera_rect") and candidate.get_camera_rect().has_point($Player.global_position):
+		if candidate.has_method("contains_point") and candidate.contains_point($Player.global_position):
 			room = candidate
 			break
 	if room == _last_room:

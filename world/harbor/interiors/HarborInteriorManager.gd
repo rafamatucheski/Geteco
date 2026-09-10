@@ -11,6 +11,18 @@ signal actor_returned_to_exterior(actor: Node2D, interior_id: StringName)
 @export var enabled: bool = true
 @export var transition_cooldown: float = 0.35
 
+## Duracao das duas metades da cortina preta que cobre a troca de mundo.
+## O fade-out do pedestre roda DENTRO da animacao da porta (BuildingEntrance
+## espera open_duration antes de emitir destination_requested), entao a troca
+## continua sincrona com o sinal e nenhum chamador precisou virar assincrono.
+const FADE_OUT := 0.16
+const FADE_IN := 0.26
+
+var _fade: ColorRect
+var _fade_busy: bool = false
+var _fade_token: int = 0
+var _curtain_tween: Tween
+
 const GARAGE_SCRIPT := preload("res://world/harbor/interiors/HarborGarageInterior.gd")
 const POLICE_SCRIPT := preload("res://world/harbor/interiors/HarborPoliceInterior.gd")
 const CLINIC_SCRIPT := preload("res://world/harbor/interiors/HarborClinicInterior.gd")
@@ -42,7 +54,73 @@ func _ready() -> void:
 	if not enabled:
 		return
 	_build_all_interiors()
+	_build_fade_curtain()
 	call_deferred("_bind_exterior_entrances")
+
+func _build_fade_curtain() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "InteriorFade"
+	# Acima do HUD e dos paineis do carro pessoal (camada 70), senao a cortina
+	# escurece o mundo mas deixa a interface piscando por cima dela.
+	layer.layer = 200
+	add_child(layer)
+	_fade = ColorRect.new()
+	_fade.name = "Curtain"
+	_fade.color = Color(0, 0, 0, 0)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_fade)
+	_fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+## Uma cortina, um tween: dois tweens vivos sobre a mesma propriedade brigam e
+## o mais velho continua escrevendo por cima do mais novo.
+func _new_curtain_tween() -> Tween:
+	if _curtain_tween != null and _curtain_tween.is_valid():
+		_curtain_tween.kill()
+	_curtain_tween = create_tween()
+	return _curtain_tween
+
+## Escurece a tela. Chamado quando a porta comeca a abrir, para que o corte de
+## posicao aconteca com a tela ja preta em vez de trocar o mundo num quadro so.
+func _fade_out(duration: float) -> void:
+	if not is_instance_valid(_fade):
+		return
+	_fade_token += 1
+	var token := _fade_token
+	var curtain := _new_curtain_tween()
+	curtain.tween_property(_fade, "color:a", 1.0, maxf(duration, 0.05))
+	# Rede de seguranca: se a troca nao vier (ator invalidado no meio da
+	# animacao da porta), a cortina nao pode ficar presa no preto.
+	curtain.tween_interval(0.9)
+	curtain.tween_callback(func() -> void:
+		if token == _fade_token:
+			_fade_in())
+
+func _fade_in() -> void:
+	if not is_instance_valid(_fade):
+		return
+	_fade_token += 1
+	var curtain := _new_curtain_tween()
+	_fade.color.a = 1.0
+	curtain.tween_property(_fade, "color:a", 0.0, FADE_IN)
+	curtain.tween_callback(func() -> void: _fade_busy = false)
+
+## Caminho de quem nao tem porta animada para esconder o corte: a Monaliza
+## saindo dirigida pelo portao. Aqui a cortina precisa vir ANTES da troca, e a
+## troca vai para dentro do tween.
+func request_transition(swap: Callable) -> void:
+	if _fade_busy:
+		return
+	if not is_instance_valid(_fade):
+		swap.call()
+		return
+	_fade_busy = true
+	_fade_token += 1
+	var curtain := _new_curtain_tween()
+	curtain.tween_property(_fade, "color:a", 1.0, FADE_OUT)
+	curtain.tween_callback(swap)
+
+func is_transitioning() -> bool:
+	return _fade_busy
 
 func _build_all_interiors() -> void:
 	var spaces_root := Node2D.new()
@@ -132,6 +210,7 @@ func _register_interior_exits() -> void:
 
 func _bind_exit_door(door: BuildingEntrance, default_exterior_door_id: StringName, interior: Node2D) -> void:
 	_exit_door_interior[door] = interior
+	_bind_curtain(door)
 	if not door.destination_requested.is_connected(_on_exit_door_requested):
 		door.destination_requested.connect(_on_exit_door_requested.bind(default_exterior_door_id))
 
@@ -217,8 +296,19 @@ func _bind_exterior_entrances() -> void:
 			var cfg = _door_configs[path]
 			entrance.destination_id = cfg.id
 			entrance.set("interior_available", true)
+			_bind_curtain(entrance)
 			if not entrance.destination_requested.is_connected(_on_exterior_destination_requested):
 				entrance.destination_requested.connect(_on_exterior_destination_requested.bind(cfg.interior, cfg.spawn))
+
+## A porta avisa quando comeca a abrir; e o quadro certo para comecar a escurecer,
+## porque BuildingEntrance so pede a troca depois de open_duration.
+func _bind_curtain(door: BuildingEntrance) -> void:
+	if door != null and not door.door_state_changed.is_connected(_on_curtain_door_state):
+		door.door_state_changed.connect(_on_curtain_door_state)
+
+func _on_curtain_door_state(door: BuildingEntrance, is_open: bool) -> void:
+	if is_open:
+		_fade_out(door.open_duration)
 
 func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2D, _dest_id: StringName, _scene: PackedScene, _spawn_name: StringName, interior: Node2D, spawn_marker: Marker2D) -> void:
 	if not is_instance_valid(actor) or interior == null or spawn_marker == null:
@@ -267,6 +357,7 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 	var weather := get_tree().get_first_node_in_group("day_night_manager")
 	if weather and weather.has_method("set_interior_mode"):
 		weather.set_interior_mode(true)
+	_fade_in()
 	actor_entered_interior.emit(effective_actor, interior.interior_id)
 
 func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _dest_id: StringName, _scene: PackedScene, _spawn_name: StringName, default_exterior_door_id: StringName) -> void:
@@ -335,6 +426,7 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 	if weather and weather.has_method("set_interior_mode"):
 		weather.set_interior_mode(false)
 
+	_fade_in()
 	actor_returned_to_exterior.emit(effective_actor, default_exterior_door_id)
 
 func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:

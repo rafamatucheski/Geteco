@@ -78,9 +78,18 @@ func _process(delta: float) -> void:
 	else: prompt.hide()
 	if panel.visible and (player.is_dead or player.health < _panel_health or not player.visible or car.velocity.length()>3 or (not near_rear and not near_bay)): close_panel()
 	# Drive straight out through the dedicated showroom gate using the existing interior return contract.
-	if car.is_driven_by_player and garage.is_vehicle_at_exit(car.global_position):
-		get_parent().get_node("Interiors")._on_exit_door_requested(garage.exit_door,car,&"",null,&"",&"harbor/District/Garage/Entrance")
-		car.rotation = PI/2
+	# Passa pela cortina do gerenciador: o corte para a rua acontece com a tela
+	# preta, e enquanto ela esta no ar is_transitioning() impede um segundo
+	# disparo (este _process roda a cada 0.15 s e o carro continua rolando).
+	# `player.has_meta("harbor_interior")` e o unico sinal de que o carro esta
+	# mesmo la dentro: fora da garagem a projecao da oficina devolve metros sem
+	# sentido e a faixa do portao pode dar positivo por acidente.
+	if car.is_driven_by_player and player.has_meta("harbor_interior") and garage.is_vehicle_at_exit(car.global_position):
+		var interiors: Node = get_parent().get_node("Interiors")
+		if not interiors.is_transitioning():
+			interiors.request_transition(func() -> void:
+				interiors._on_exit_door_requested(garage.exit_door,car,&"",null,&"",&"harbor/District/Garage/Entrance")
+				car.rotation = PI/2)
 	capture_state()
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo: return

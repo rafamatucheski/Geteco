@@ -233,6 +233,13 @@ func _create_spawn_and_exit(spawn_pos: Vector2, exit_pos: Vector2, exit_dest_id:
 func get_camera_rect() -> Rect2:
 	return Rect2(global_position - room_size * 0.5, room_size)
 
+## "Este ator esta dentro deste comodo?" — pergunta de pertencimento, separada
+## do enquadramento da camera. Por padrao sao a mesma coisa; um interior com
+## area jogavel fora do quadro (a pista do portao da garagem) sobrescreve so
+## esta, sem mexer no zoom.
+func contains_point(point: Vector2) -> bool:
+	return get_camera_rect().has_point(point)
+
 ## Every interior NPC that composites a 3D rig into a Sprite2D (JagerNPC,
 ## HarborConversationalNPC) exposes its render target as `viewport_3d`. This
 ## interior is always instantiated far away in world space but never removed,

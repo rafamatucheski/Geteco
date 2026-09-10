@@ -142,24 +142,31 @@ func restore_legacy_visitor(player: Node2D) -> void:
 		player.global_position = spawn_point.global_position
 		player.velocity = Vector2.ZERO
 
-## Abre o portão do bay da Monaliza na parede sul para que o carro possa
-## sair fisicamente sem bater na parede. O HarborInteriorBase usa esses
-## gaps para dividir a parede sólida em segmentos com uma abertura no meio.
-## Coordenadas no espaço local do interior: x=150 é o centro do showroom
-## (bay), largura 110 px garante passagem da Monaliza (colisão 86×40 em PI/2).
-func _get_south_wall_gaps() -> Array:
-	return [Vector2(150.0, 110.0)]
-
 func is_vehicle_at_exit(world_point: Vector2) -> bool:
 	var ground: Vector2 = showroom.unproject_floor(world_point)
 	return absf(ground.x) < 1.8 and ground.y > 5.2 and ground.y < 12.0
 
+## A pista do portao fica ABAIXO do enquadramento: dirigindo para fora, o carro
+## cruza a borda do retangulo da camera antes de alcancar o gatilho de saida. Se
+## a garagem deixasse de conter o jogador ali, HarborGame._restore_room_presentation()
+## limparia o estado de interior no meio da manobra e a saida nunca dispararia.
+func contains_point(point: Vector2) -> bool:
+	if super.contains_point(point):
+		return true
+	var ground: Vector2 = showroom.unproject_floor(point)
+	return absf(ground.x) < 3.0 and ground.y > 0.0 and ground.y < 12.0
+
 func get_camera_rect() -> Rect2:
-	var frame := Rect2(to_global(Vector2(9, -125)), room_size)
+	# O centro sai da propria arte: (1.2, 0.3) em metros e o meio da oficina, o
+	# mesmo alvo que a camera 3D usa. Era um offset fixo em pixels, escrito
+	# quando a projecao estava quebrada e desenhava tudo numa faixa achatada --
+	# com a projecao certa aquele centro deixava o portao fora do quadro, e o
+	# carro sumia da tela antes de disparar a saida.
+	var centre := to_global(workshop_point(Vector3(1.2, 0, 0.3)))
 	# Tighten only the workshop framing: both camera entry and steady-state
 	# fitting use this rectangle, preserving the same center at 20% more zoom.
-	var framed_size := frame.size / 1.20
-	return Rect2(frame.get_center() - framed_size * 0.5, framed_size)
+	var framed_size := room_size / 1.20
+	return Rect2(centre - framed_size * 0.5, framed_size)
 
 func set_npc_rendering_active(active: bool) -> void:
 	super.set_npc_rendering_active(active)
