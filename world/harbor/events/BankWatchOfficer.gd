@@ -13,7 +13,14 @@ func _ready() -> void:
 	local_security=true
 	set_meta("quiet_patrol",true)
 	super._ready()
+	viewport_3d.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
+	viewport_3d.size=Vector2i(128,128)
 	var camera := viewport_3d.get_camera_3d()
+	camera.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera.projection=Camera3D.PROJECTION_ORTHOGONAL
+	camera.size=2.6
+	camera.look_at_from_position(Vector3(0,4,3),Vector3(0,.725,0))
+	camera.reset_physics_interpolation()
 	var pixels := camera.unproject_position(Vector3.UP*1.45).distance_to(camera.unproject_position(Vector3.ZERO))
 	sprite_3d_display.scale=Vector2.ONE*(20.0/maxf(1.0,pixels))
 	sprite_3d_display.position=-(camera.unproject_position(Vector3.ZERO)-Vector2(viewport_3d.size)*.5)*sprite_3d_display.scale
