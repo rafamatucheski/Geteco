@@ -1,6 +1,8 @@
 extends "res://PoliceOfficer.gd"
 var room: Node2D
 var uses_shotgun := false
+var eyes: Array[MeshInstance3D] = []
+var death_presented := false
 const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
 func _configure_tier() -> void:
 	tier=UnitTier.PATROL
@@ -38,7 +40,7 @@ func _rebuild_uniform() -> void:
 	PART.piece(head_node,Vector3(.29,.30,.27),Vector3(0,-.025,0),skin,true)
 	PART.piece(head_node,Vector3(.055,.07,.06),Vector3(0,-.03,-.14),skin)
 	for side in [-1,1]:
-		PART.piece(head_node,Vector3(.035,.018,.02),Vector3(side*.065,.005,-.13),Color("22252b"))
+		eyes.append(PART.piece(head_node,Vector3(.035,.018,.02),Vector3(side*.065,.005,-.13),Color("22252b")))
 		PART.piece(head_node,Vector3(.045,.07,.05),Vector3(side*.145,-.025,0),skin,true)
 	# Solid crown covers the scalp; the brim is entirely above the face.
 	var crown := PART.piece(head_node,Vector3.ONE,Vector3(0,.145,0),cloth)
@@ -116,3 +118,35 @@ func _dispatch_emergency_coroner() -> void:
 	# A área interna fica isolada da malha viária. Não mandar o rabecão
 	# perseguir as coordenadas técnicas do corpo durante o assalto.
 	pass
+
+func _drop_loot() -> void:
+	if death_presented: return
+	death_presented=true
+	var rig := get_node("NPCCombatRig")
+	var camera := viewport_3d.get_camera_3d()
+	var hand_pixel := camera.unproject_position(rig.weapon_mount_node.global_position)-Vector2(viewport_3d.size)*.5
+	var hand_point := sprite_3d_display.to_global(hand_pixel)
+	rig.current_gun_mesh.hide()
+	muzzle_flash_3d.hide()
+	for eye in eyes:
+		eye.mesh=eye.mesh.duplicate()
+		eye.mesh.size=Vector3(.052,.006,.012)
+		eye.position.z=-.146
+	viewport_3d.render_target_update_mode=SubViewport.UPDATE_ONCE
+	var pickup := preload("res://world/harbor/events/BankGuardWeaponPickup.gd").new()
+	pickup.weapon_id=dropped_weapon
+	pickup.ammo_amount=8 if uses_shotgun else 12
+	# Aterrissa na circulação, separado do corpo e do cartão de segurança.
+	var landing := global_position+Vector2(44 if uses_shotgun else -44,26)
+	pickup.position=get_parent().to_local(landing)
+	pickup.drop_origin=hand_point
+	get_parent().call_deferred("add_child",pickup)
+	# Mantém a chance de colete; a arma já foi solta exatamente uma vez.
+	police_loot.weapon_drop_chance=0.0
+	police_loot.weapon_pickup_scene=null
+	super._drop_loot()
+
+func _create_3d_blood_puddle() -> void:
+	var pool := preload("res://world/harbor/events/BankGuardBloodPool.gd").new()
+	pool.guard=self
+	get_parent().add_child(pool)
