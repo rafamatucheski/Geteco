@@ -516,7 +516,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				alarm_dialog.visible = false
 				modal_closed.emit()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_ESCAPE and alarm_dialog.visible:
+		elif event.is_action_pressed("ui_cancel") and alarm_dialog.visible:
 			alarm_dialog.visible = false
 			modal_closed.emit()
 			get_viewport().set_input_as_handled()

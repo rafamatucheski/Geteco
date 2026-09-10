@@ -315,7 +315,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				diagnostic_dialog.visible = false
 				modal_closed.emit()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_ESCAPE and diagnostic_dialog.visible:
+		elif event.is_action_pressed("ui_cancel") and diagnostic_dialog.visible:
 			diagnostic_dialog.visible = false
 			modal_closed.emit()
 			get_viewport().set_input_as_handled()

@@ -1,5 +1,11 @@
 extends Node2D
 
+var camera: Camera3D
+var sprite: Sprite2D
+
+func project_floor(point: Vector2) -> Vector2:
+	return (camera.unproject_position(Vector3(point.x,0,point.y))-camera.unproject_position(Vector3.ZERO))*sprite.scale
+
 func _ready() -> void:
 	var viewport := SubViewport.new()
 	viewport.size = Vector2i(768, 640)
@@ -47,12 +53,14 @@ func _ready() -> void:
 		for side in [-1.0, 1.0]:
 			_mesh(world, Vector3(x + side * 0.23, 0.9, 1.55), Vector3(0.14, 0.48, 0.2), coat)
 	_mesh(world, Vector3(-1.65, 1.4, 1.55), Vector3(1.85, 0.06, 0.06), dark)
-	var camera := Camera3D.new()
+	camera = Camera3D.new()
 	viewport.add_child(camera)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 8.0
-	camera.position = Vector3(3.0, 7.8, 9.0)
+	camera.position = Vector3(0, 8, 5)
 	camera.look_at(Vector3(0, 1.3, 0))
+	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera.reset_physics_interpolation()
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -25, 0)
 	sun.light_energy = 1.1
@@ -64,10 +72,11 @@ func _ready() -> void:
 	environment.environment.ambient_light_color = Color("b2c5d4")
 	environment.environment.ambient_light_energy = 0.65
 	viewport.add_child(environment)
-	var sprite := Sprite2D.new()
+	sprite = Sprite2D.new()
 	sprite.texture = viewport.get_texture()
-	sprite.scale = Vector2.ONE * 0.38
-	sprite.position = Vector2(0, -30)
+	var pixels_per_metre := camera.unproject_position(Vector3.RIGHT).distance_to(camera.unproject_position(Vector3.ZERO))
+	sprite.scale = Vector2.ONE * 18.0 / pixels_per_metre
+	sprite.position = (Vector2(viewport.size)*0.5-camera.unproject_position(Vector3.ZERO))*sprite.scale
 	add_child(sprite)
 	# Render the static shop only when approached, instead of compiling and drawing
 	# an offscreen viewport during the streaming batch.

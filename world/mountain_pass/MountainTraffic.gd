@@ -4,6 +4,8 @@ extends Node2D
 var lane: Path2D
 var vehicles: Array = []
 var region_ready := false
+const FLEET := ["summit_suv", "arctic_jeep", "lumber_pickup_4x4", "polar_van", "winter_suv_heavy", "ranch_single", "snow_plow_truck", "polar_van"]
+const WINTER_PAINTS := [Color("d5dcd7"),Color("536f79"),Color("755744"),Color("d1d8d9"),Color("525f6d"),Color("796846"),Color("bd8745"),Color("758994")]
 func _ready() -> void:
 	var road: Node2D = get_parent().road
 	var center: PackedVector2Array = road.smooth_points
@@ -31,8 +33,10 @@ func _ready() -> void:
 		route.append(up[0])
 	lane = ModernTrafficFactory.create_lane(self,"MountainThroughTraffic",route)
 	lane.set_meta("traffic_lane_loop",not get_parent().streamed_region)
+	lane.set_meta("mountain_traffic", true)
 	for i in 8:
-		var car := ModernTrafficFactory.spawn_moving_vehicle(lane,"MountainTraffic%d"%i,["summit_suv","arctic_jeep","ranch_single"][i%3],float(i)/8.0,85,0)
+		var car := ModernTrafficFactory.spawn_moving_vehicle(lane,"MountainTraffic%d"%i,FLEET[i],(float(i)+0.35)/8.0,85,0)
+		car.repaint_vehicle(WINTER_PAINTS[i])
 		vehicles.append(car)
 		if get_parent().streamed_region: await get_tree().process_frame
 	region_ready = true

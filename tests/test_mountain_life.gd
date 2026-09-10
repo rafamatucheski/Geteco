@@ -23,7 +23,7 @@ func _run() -> void:
 	check(not weather.hail_particles.emitting and not weather.snow_blizzard_particles.emitting and not weather.visible, "changing front cannot emit inside shelter")
 	weather.advance_weather(100)
 	check(weather.storm_intensity == 0, "front fades back to calm")
-	check(get_nodes_in_group("winter_resident").size() == 5, "five winter residents present")
+	check(get_nodes_in_group("winter_resident").size() == 15, "fifteen winter residents present across the valley and snow stops")
 	check(get_nodes_in_group("mountain_wildlife").size() == 4, "two adults and two cubs in remote forest")
 	var bear: Node2D = get_nodes_in_group("mountain_wildlife")[0]
 	player.global_position = bear.global_position + Vector2(20,0)

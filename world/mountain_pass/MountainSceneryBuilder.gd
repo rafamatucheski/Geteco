@@ -14,7 +14,7 @@ extends RefCounted
 ## - Mirante da serra com balcao de pedra, binoculo panoramico e vista da cidade
 ## - Base militar no cume: rotatoria asfaltada, bunker, heliponto [H], torre e radar
 
-const PINE_SCRIPT := preload("res://world/mountain_pass/MountainPineTree.gd")
+const PINE_SCRIPT := preload("res://world/mountain_pass/MountainPine3D.gd")
 const ROCK_SCRIPT := preload("res://world/shared/nature/ProceduralUrbanRock.gd")
 const ENTRANCE_SCENE: PackedScene = preload("res://scripts/entrances/BuildingEntrance.tscn")
 const PICKUP_SCRIPT := preload("res://world/mountain_pass/MountainPickup.gd")
@@ -659,7 +659,7 @@ static func build_mountain_chalets(parent: Node2D, setpieces: Node2D, interior_m
 	# Chale 2: Timberline Chalet
 	_build_single_chalet(
 		chalets_root,
-		Vector2(8350, 480),
+		Vector2(8350, 730),
 		Vector2(170, 120),
 		"TimberlineChalet",
 		"CHALE DA ENCOSTA",
@@ -678,207 +678,42 @@ static func build_mountain_chalets(parent: Node2D, setpieces: Node2D, interior_m
 		false
 	)
 
-static func _build_single_chalet(parent: Node2D, pos: Vector2, size: Vector2, id: String, title: String, interior_mgr: Node2D, has_vehicle: bool) -> void:
-	var chalet := Node2D.new()
+static func _build_single_chalet(parent: Node2D, pos: Vector2, _size: Vector2, id: String, title: String, interior_mgr: Node2D, has_vehicle: bool) -> void:
+	var chalet := preload("res://world/mountain_pass/MountainProp.gd").new()
 	chalet.name = id
 	chalet.position = pos
+	chalet.model_script = preload("res://world/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
+	chalet.paint = Color("68503c") if id != "RangerStation" else Color("45616a")
 	parent.add_child(chalet)
-
 	var yard := Polygon2D.new()
-	yard.color = Color("#382e22")
-	yard.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.75, -size.y * 0.7), Vector2(size.x * 0.75, -size.y * 0.7),
-		Vector2(size.x * 0.85, size.y * 0.85), Vector2(-size.x * 0.85, size.y * 0.85)
-	])
+	yard.name = "ChaletYard"
+	yard.z_index = -1
+	yard.color = Color("3d382e")
+	yard.polygon = PackedVector2Array([Vector2(-70,-40),Vector2(70,-40),Vector2(85,75),Vector2(-80,75)])
 	chalet.add_child(yard)
-
-	var fence := Line2D.new()
-	fence.width = 3.0
-	fence.default_color = Color("#59402b")
-	fence.points = PackedVector2Array([
-		Vector2(-size.x * 0.75, size.y * 0.85), Vector2(-size.x * 0.75, -size.y * 0.7),
-		Vector2(size.x * 0.75, -size.y * 0.7), Vector2(size.x * 0.75, size.y * 0.85)
-	])
-	chalet.add_child(fence)
-
-	var shadow := Polygon2D.new()
-	shadow.color = Color(0.02, 0.03, 0.04, 0.4)
-	shadow.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.55, -size.y * 0.55), Vector2(size.x * 0.55, -size.y * 0.55),
-		Vector2(size.x * 0.65, size.y * 0.65), Vector2(-size.x * 0.45, size.y * 0.65)
-	])
-	chalet.add_child(shadow)
-
-	var body := Polygon2D.new()
-	body.color = Color("#4b3624")
-	body.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.5, -size.y * 0.5), Vector2(size.x * 0.5, -size.y * 0.5),
-		Vector2(size.x * 0.5, size.y * 0.5), Vector2(-size.x * 0.5, size.y * 0.5)
-	])
-	chalet.add_child(body)
-
-	var roof := Polygon2D.new()
-	roof.color = Color("#5e422a")
-	roof.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.54, -size.y * 0.54), Vector2(size.x * 0.54, -size.y * 0.54),
-		Vector2(size.x * 0.54, size.y * 0.1), Vector2(-size.x * 0.54, size.y * 0.1)
-	])
-	chalet.add_child(roof)
-
-	var ridge := Line2D.new()
-	ridge.width = 4.0
-	ridge.default_color = Color("#785638")
-	ridge.points = PackedVector2Array([Vector2(-size.x * 0.54, size.y * 0.1), Vector2(size.x * 0.54, size.y * 0.1)])
-	chalet.add_child(ridge)
-
-	var chimney := Polygon2D.new()
-	chimney.color = Color("#3e3d3b")
-	chimney.polygon = PackedVector2Array([
-		Vector2(size.x * 0.28, -size.y * 0.48), Vector2(size.x * 0.42, -size.y * 0.48),
-		Vector2(size.x * 0.42, -size.y * 0.28), Vector2(size.x * 0.28, -size.y * 0.28)
-	])
-	chalet.add_child(chimney)
-
-	var smoke := PointLight2D.new()
-	smoke.position = Vector2(size.x * 0.35, -size.y * 0.38)
-	smoke.color = Color(1.0, 0.7, 0.3)
-	smoke.energy = 0.8
-	smoke.texture_scale = 1.0
-	var simg := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-	for ly in 32:
-		for lx in 32:
-			var d: float = Vector2(lx - 15.5, ly - 15.5).length()
-			var a: float = clampf(1.0 - d / 15.5, 0.0, 1.0)
-			simg.set_pixel(lx, ly, Color(1, 1, 1, a * a))
-	smoke.texture = ImageTexture.create_from_image(simg)
-	chalet.add_child(smoke)
-
-	var porch := Polygon2D.new()
-	porch.color = Color("#6c4e33")
-	porch.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.35, size.y * 0.5), Vector2(size.x * 0.35, size.y * 0.5),
-		Vector2(size.x * 0.35, size.y * 0.75), Vector2(-size.x * 0.35, size.y * 0.75)
-	])
-	chalet.add_child(porch)
-
-	for wx in [-size.x * 0.3, size.x * 0.3]:
-		var win := Polygon2D.new()
-		win.color = Color(1.0, 0.8, 0.35, 0.85)
-		win.polygon = PackedVector2Array([
-			Vector2(wx - 12, size.y * 0.25), Vector2(wx + 12, size.y * 0.25),
-			Vector2(wx + 12, size.y * 0.45), Vector2(wx - 12, size.y * 0.45)
-		])
-		chalet.add_child(win)
-
-	var wood := Polygon2D.new()
-	wood.color = Color("#3e2b1b")
-	wood.polygon = PackedVector2Array([
-		Vector2(-size.x * 0.6, size.y * 0.2), Vector2(-size.x * 0.45, size.y * 0.2),
-		Vector2(-size.x * 0.45, size.y * 0.6), Vector2(-size.x * 0.6, size.y * 0.6)
-	])
-	chalet.add_child(wood)
-
+	var door: BuildingEntrance = ENTRANCE_SCENE.instantiate()
+	door.name = "Door"
+	door.position = chalet.project(chalet.model.entrance_local_position)+Vector2(0,12)
+	door.display_name = title
+	door.destination_id = &"mountain_cabin"
+	door.custom_prompt_text = "E"
+	chalet.add_child(door)
+	door.get_node("Facade").hide()
+	interior_mgr.register_exterior_entrance(door,&"mountain_cabin",door.global_position+Vector2(0,26))
 	if has_vehicle:
 		var pickup = PICKUP_SCRIPT.new()
 		pickup.name = "ChaletRanchPickup3D"
-		pickup.position = Vector2(size.x * 0.72, size.y * 0.45)
+		pickup.position = Vector2(110,30)
 		pickup.rotation = 0.08
 		chalet.add_child(pickup)
-
-	if ENTRANCE_SCENE:
-		var door: BuildingEntrance = ENTRANCE_SCENE.instantiate() as BuildingEntrance
-		door.name = "Door"
-		# Centro da porta alinhado ao centro do alpendre; o sensor fica para fora.
-		door.position = Vector2(0, size.y * 0.60)
-		door.display_name = title
-		door.destination_id = &"mountain_cabin"
-		door.custom_prompt_text = "[E] APERTE E PARA ENTRAR NO CHALÉ"
-		chalet.add_child(door)
-
-		# Tapete de entrada no alpendre
-		var mat := Polygon2D.new()
-		mat.name = "PorchMat"
-		mat.color = Color("#8a1e1e")
-		mat.polygon = PackedVector2Array([
-			Vector2(-24, size.y * 0.72 - 6), Vector2(24, size.y * 0.72 - 6),
-			Vector2(26, size.y * 0.72 + 16), Vector2(-26, size.y * 0.72 + 16)
-		])
-		mat.z_index = 1
-		chalet.add_child(mat)
-
-		# Lanterna alpina rústica sobre a porta com luz quente
-		var lantern_glow := PointLight2D.new()
-		lantern_glow.name = "PorchLantern"
-		lantern_glow.position = Vector2(0, size.y * 0.52)
-		lantern_glow.color = Color(1.0, 0.75, 0.35)
-		lantern_glow.energy = 1.15
-		lantern_glow.texture_scale = 1.2
-		var limg := Image.create(48, 48, false, Image.FORMAT_RGBA8)
-		for ly in 48:
-			for lx in 48:
-				var d: float = Vector2(lx - 23.5, ly - 23.5).length()
-				var a: float = clampf(1.0 - d / 23.5, 0.0, 1.0)
-				limg.set_pixel(lx, ly, Color(1, 1, 1, a * a))
-		lantern_glow.texture = ImageTexture.create_from_image(limg)
-		chalet.add_child(lantern_glow)
-
-		# Botão Visual de Interação no Alpendre: "[E] APERTE E PARA ENTRAR"
-		var sign_badge := Node2D.new()
-		sign_badge.name = "EntranceSignBadge"
-		sign_badge.position = Vector2(0, size.y * 0.48)
-		sign_badge.z_index = 20
-
-		var badge_bg := Polygon2D.new()
-		badge_bg.color = Color(0.08, 0.07, 0.06, 0.94)
-		badge_bg.polygon = PackedVector2Array([
-			Vector2(-108, -13), Vector2(108, -13),
-			Vector2(108, 13), Vector2(-108, 13)
-		])
-		sign_badge.add_child(badge_bg)
-
-		var badge_border := Line2D.new()
-		badge_border.width = 1.8
-		badge_border.default_color = Color(0.95, 0.75, 0.25, 0.95)
-		badge_border.points = PackedVector2Array([
-			Vector2(-108, -13), Vector2(108, -13),
-			Vector2(108, 13), Vector2(-108, 13), Vector2(-108, -13)
-		])
-		sign_badge.add_child(badge_border)
-
-		var badge_key := Polygon2D.new()
-		badge_key.color = Color(0.25, 0.22, 0.18, 1.0)
-		badge_key.polygon = PackedVector2Array([
-			Vector2(-98, -9), Vector2(-74, -9),
-			Vector2(-74, 9), Vector2(-98, 9)
-		])
-		sign_badge.add_child(badge_key)
-
-		var key_label := Label.new()
-		key_label.text = "E"
-		key_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		key_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		key_label.position = Vector2(-98, -11)
-		key_label.size = Vector2(24, 20)
-		key_label.add_theme_font_size_override("font_size", 12)
-		key_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.4))
-		sign_badge.add_child(key_label)
-
-		var badge_label := Label.new()
-		badge_label.text = "APERTE E PARA ENTRAR"
-		badge_label.position = Vector2(-70, -11)
-		badge_label.size = Vector2(175, 20)
-		badge_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		badge_label.add_theme_font_size_override("font_size", 10)
-		badge_label.add_theme_color_override("font_color", Color(0.98, 0.96, 0.92))
-		badge_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
-		badge_label.add_theme_constant_override("shadow_offset_x", 1)
-		badge_label.add_theme_constant_override("shadow_offset_y", 1)
-		sign_badge.add_child(badge_label)
-
-		chalet.add_child(sign_badge)
-
-		if interior_mgr and interior_mgr.has_method("register_exterior_entrance"):
-			interior_mgr.register_exterior_entrance(door, &"mountain_cabin", chalet.global_position + Vector2(0, size.y * 0.95))
+	var access := Line2D.new()
+	access.name = "CabinFootpath"
+	access.z_index = -1
+	access.width = 22
+	access.default_color = Color("494333")
+	# Acesso lateral: deixa a estrada de terra e a porta livres da construção.
+	access.points = PackedVector2Array([Vector2(-95,-180),Vector2(-95,55),door.position+Vector2(0,25)])
+	chalet.add_child(access)
 
 # 5. Loja Ammu-Nation da Montanha (Timber Ridge Guns & Ammo)
 static func build_mountain_ammunation(parent: Node2D, _setpieces: Node2D, interior_mgr: Node2D) -> void:
@@ -945,10 +780,11 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 			var pos := center + Vector2(cos(angle), sin(angle)) * dist
 
 			var reserved := false
+			if preload("res://world/mountain_pass/MountainVillageLayout.gd").is_reserved(pos): continue
 			for site in [Vector2(7940,850),Vector2(8610,700),Vector2(7660,-730),Vector2(6610,-1250),Vector2(6710,-1280)]:
 				if Rect2(site-Vector2(105,80),Vector2(230,160)).has_point(pos): reserved = true
 			if reserved: continue
-			if Rect2(5780, 415, 400, 325).has_point(pos) or Rect2(6750, -3170, 430, 380).has_point(pos):
+			if Rect2(5800, 440, 420, 460).has_point(pos) or Rect2(6750, -3170, 430, 380).has_point(pos):
 				continue
 			if road and road.is_point_on_road(pos, 95.0):
 				continue
@@ -956,7 +792,7 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 				continue
 			if lake_bounds.has_point(pos) or secret_lake_bounds.has_point(pos) or bunker_bounds.has_point(pos) or ammu_bounds.has_point(pos) or pos.distance_to(Vector2(6500, -2660)) < 165.0:
 				continue
-			if pos.distance_to(Vector2(7480, 760)) < 125.0 or pos.distance_to(Vector2(8350, 480)) < 140.0 or pos.distance_to(Vector2(8450, 490)) < 85.0 or pos.distance_to(Vector2(6050, 780)) < 80.0:
+			if pos.distance_to(Vector2(7480, 760)) < 125.0 or pos.distance_to(Vector2(8350, 730)) < 145.0 or pos.distance_to(Vector2(8460, 760)) < 95.0 or pos.distance_to(Vector2(6050, 780)) < 80.0:
 				continue
 
 			var pine = PINE_SCRIPT.new()
@@ -999,53 +835,15 @@ static func build_detailed_sawmill(sawmill_node: Node2D) -> void:
 	])
 	sawmill_node.add_child(driveway)
 
-	var shed := Node2D.new()
-	shed.position = Vector2(0, 0)
+	var shed := preload("res://world/mountain_pass/MountainProp.gd").new()
+	shed.name = "SawmillShed3D"
+	shed.model_script = preload("res://world/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
 	sawmill_node.add_child(shed)
-
-	var sh_shadow := Polygon2D.new()
-	sh_shadow.color = Color(0.02, 0.03, 0.04, 0.45)
-	sh_shadow.polygon = PackedVector2Array([Vector2(-95, -60), Vector2(95, -60), Vector2(105, 65), Vector2(-85, 65)])
-	shed.add_child(sh_shadow)
-
-	var sh_walls := Polygon2D.new()
-	sh_walls.color = Color("#422f20")
-	sh_walls.polygon = PackedVector2Array([Vector2(-90, -55), Vector2(90, -55), Vector2(90, 55), Vector2(-90, 55)])
-	shed.add_child(sh_walls)
-
-	var sh_roof := Polygon2D.new()
-	sh_roof.color = Color("#59402c")
-	sh_roof.polygon = PackedVector2Array([Vector2(-95, -60), Vector2(95, -60), Vector2(95, 15), Vector2(-95, 15)])
-	shed.add_child(sh_roof)
-
-	var ridge := Line2D.new()
-	ridge.width = 4.0
-	ridge.default_color = Color("#75553b")
-	ridge.points = PackedVector2Array([Vector2(-95, 15), Vector2(95, 15)])
-	shed.add_child(ridge)
-
-	for ppos in [Vector2(-125, 45), Vector2(125, 40)]:
-		var pile := Node2D.new()
-		pile.position = ppos
-		sawmill_node.add_child(pile)
-
-		for r in 3:
-			for c in 3:
-				var lx: float = (c - 1) * 22.0
-				var ly: float = (r - 1) * 16.0
-				var log_body := Polygon2D.new()
-				log_body.color = Color("#4b3624")
-				log_body.polygon = PackedVector2Array([
-					Vector2(lx - 10, ly - 7), Vector2(lx + 10, ly - 7),
-					Vector2(lx + 10, ly + 7), Vector2(lx - 10, ly + 7)
-				])
-				pile.add_child(log_body)
-				var ring := Line2D.new()
-				ring.width = 2.0
-				ring.default_color = Color("#8c6742")
-				ring.points = PackedVector2Array([Vector2(lx + 8, ly - 5), Vector2(lx + 8, ly + 5)])
-				pile.add_child(ring)
-
+	for point in [Vector2(-95,5),Vector2(-95,55)]:
+		var stack := preload("res://world/mountain_pass/MountainProp.gd").new()
+		stack.model_script = preload("res://world/mountain_pass/art/winter_props/CoveredWoodpile3D.gd")
+		stack.position = point
+		sawmill_node.add_child(stack)
 	var lumber := Node2D.new()
 	lumber.position = Vector2(40, 85)
 	sawmill_node.add_child(lumber)

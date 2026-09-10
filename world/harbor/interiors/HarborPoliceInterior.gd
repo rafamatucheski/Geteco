@@ -273,7 +273,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				terminal_dialog.visible = false
 				modal_closed.emit()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_ESCAPE and terminal_dialog.visible:
+		elif event.is_action_pressed("ui_cancel") and terminal_dialog.visible:
 			terminal_dialog.visible = false
 			modal_closed.emit()
 			get_viewport().set_input_as_handled()

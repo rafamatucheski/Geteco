@@ -74,7 +74,8 @@ func run() -> void:
 	actor._respawn_at_hospital()
 	actor.set_physics_process(false)
 	await settle()
-	check(actor.global_position.distance_to(Vector2(5980, 635)) < 1, "mountain recovery stays inside isolated region")
+	var recovery: Node2D = scene.get_node("MountainExpedition/SnowOutfitters/MountainRecoverySpawn")
+	check(actor.global_position.distance_to(recovery.global_position) < 1, "mountain recovery stays at the relocated shelter inside isolated region")
 	check(not actor.has_meta("mountain_interior") and actor.viewport_3d.size == Vector2i(128, 128), "respawn restores exterior presentation")
 	scene.queue_free()
 	await process_frame

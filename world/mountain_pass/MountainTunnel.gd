@@ -222,6 +222,14 @@ func _build_walls() -> void:
 		box.size = Vector2(tunnel_length + 32.0, 32.0)
 		shape.shape = box
 		wall.add_child(shape)
+		# O teto desaparece ao atravessar o túnel, mas as paredes continuam
+		# sólidas. A tampa visível acompanha exatamente a colisão na grama.
+		var cap := Polygon2D.new()
+		cap.z_index = 5
+		cap.color = Color("65716e")
+		var half := box.size*0.5
+		cap.polygon = PackedVector2Array([Vector2(-half.x,-half.y),Vector2(half.x,-half.y),half,Vector2(-half.x,half.y)])
+		wall.add_child(cap)
 		add_child(wall)
 
 func contains_actor(actor: Node2D) -> bool:

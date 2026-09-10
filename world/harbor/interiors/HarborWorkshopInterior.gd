@@ -225,7 +225,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				bench_dialog.visible = false
 				modal_closed.emit()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_ESCAPE and bench_dialog.visible:
+		elif event.is_action_pressed("ui_cancel") and bench_dialog.visible:
 			bench_dialog.visible = false
 			modal_closed.emit()
 			get_viewport().set_input_as_handled()

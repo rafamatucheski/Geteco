@@ -61,10 +61,24 @@ func _build_interiors() -> void:
 	lumberjack_interior.position = Vector2(29500,20000)
 	spaces_root.add_child(lumberjack_interior)
 	_interiors[&"lumberjack_shelter"] = lumberjack_interior
+	await _interior_budget_pause()
+	var outfitters := preload("res://world/harbor/interiors/ClothingRoom3D.gd").new()
+	outfitters.name = "MountainOutfittersInterior"
+	outfitters.winter_stock = true
+	outfitters.position = Vector2(33000, 20000)
+	spaces_root.add_child(outfitters)
+	_interiors[&"mountain_outfitters"] = outfitters
+	outfitters.modal_opened.connect(_set_outfitters_modal.bind(true))
+	outfitters.modal_closed.connect(_set_outfitters_modal.bind(false))
 
 	# Conecta portas de saida dos interiores
 	call_deferred("_bind_interior_exits")
 	region_ready = true
+
+func _set_outfitters_modal(active: bool) -> void:
+	var actor := get_tree().get_first_node_in_group("player")
+	if actor != null and actor.has_method("set_dialogue_active"):
+		actor.set_dialogue_active(active)
 
 func _interior_budget_pause() -> void:
 	# One room per idle frame during world streaming; isolated scenes preserve
@@ -79,6 +93,7 @@ func _bind_interior_exits() -> void:
 		if exit_door == null:
 			exit_door = interior.get_node_or_null("InteriorExit") as BuildingEntrance
 		if exit_door:
+			exit_door.get_node("InteractionArea").collision_mask = 4
 			var callback := _on_exit_requested.bind(id)
 			if not exit_door.destination_requested.is_connected(callback):
 				exit_door.destination_requested.connect(callback)
@@ -86,6 +101,9 @@ func _bind_interior_exits() -> void:
 func register_exterior_entrance(entrance: BuildingEntrance, interior_id: StringName, return_pos: Vector2) -> void:
 	if entrance == null:
 		return
+	# No mundo contínuo Dante usa a camada 4; a cena isolada também usava 1,
+	# mascarando a falha de detecção das portas na partida vinda do porto.
+	entrance.get_node("InteractionArea").collision_mask = 4
 	_exterior_doors[entrance] = {
 		"interior_id": interior_id,
 		"return_pos": return_pos

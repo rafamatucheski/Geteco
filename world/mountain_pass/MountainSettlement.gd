@@ -1,11 +1,18 @@
 extends Node2D
 const PROPS := "res://world/mountain_pass/art/winter_props/"
 const SITES := [Vector2(7940,850),Vector2(8610,700),Vector2(7660,-730)]
+const VILLAGE := preload("res://world/mountain_pass/MountainVillageLayout.gd")
 var region_ready := false
 var _streamed := false
 
 func _ready() -> void:
 	_streamed = bool(get_parent().get("streamed_region"))
+	var driveway := Line2D.new()
+	driveway.width = 52
+	driveway.z_index = 1
+	driveway.default_color = Color("48443a")
+	driveway.points = PackedVector2Array(VILLAGE.ACCESS_PATHS[0])
+	add_child(driveway)
 	for trail in [PackedVector2Array([Vector2(7850,580),Vector2(7890,760),Vector2(7940,885)]), PackedVector2Array([Vector2(8700,460),Vector2(8750,670),Vector2(8610,735)]), PackedVector2Array([Vector2(7750,-220),Vector2(7720,-490),Vector2(7660,-695)])]:
 		var track := Line2D.new()
 		track.z_index = -2
@@ -71,7 +78,40 @@ func _ready() -> void:
 				add_child(cub)
 				await _budget_pause()
 
+	await _build_winter_stops()
 	region_ready = true
+
+func _build_winter_stops() -> void:
+	var road: Node2D = get_parent().road
+	for pocket in VILLAGE.POCKETS:
+		var apron := Polygon2D.new()
+		apron.z_index = 1
+		apron.color = Color("a3adb0")
+		apron.position = pocket
+		apron.polygon = PackedVector2Array([Vector2(-170,-110),Vector2(130,-110),Vector2(145,100),Vector2(-180,100)])
+		add_child(apron)
+		var access := Line2D.new()
+		access.z_index = 1
+		access.width = 64
+		access.default_color = Color("84918f")
+		access.points = PackedVector2Array([road.curve.get_closest_point(pocket),pocket])
+		add_child(access)
+		_prop("PatrolShelter3D",pocket+Vector2(0,-15),Color("455b65"),true)
+		await _budget_pause()
+		_prop("TrailSignAndBench3D",pocket+Vector2(90,35),Color("746049"))
+		await _budget_pause()
+	for entry in VILLAGE.RESIDENTS:
+		var resident := preload("res://world/mountain_pass/WinterResident.gd").new()
+		resident.position = entry[0]
+		resident.resident_name = entry[1]
+		resident.role = entry[2]
+		resident.coat_color = entry[3]
+		resident.lines = ["Pode se aquecer no abrigo. A nevasca chega sem aviso.","O pessoal do porto sobe por aqui todos os dias."]
+		add_child(resident)
+		await _budget_pause()
+	for entry in VILLAGE.PARKING:
+		ModernTrafficFactory.spawn_parked_vehicle(self,"WinterParking%d"%get_child_count(),entry[0],entry[2],entry[1],0,Color("c8d1d3") if entry[1] == "polar_van" else Color("697b7d"))
+		await _budget_pause()
 
 func _budget_pause() -> void:
 	if _streamed: await get_tree().process_frame

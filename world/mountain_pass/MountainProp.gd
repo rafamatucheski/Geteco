@@ -24,6 +24,8 @@ func _ready() -> void:
 	viewport.add_child(camera)
 	camera.position = Vector3(0, 8, 5)
 	camera.look_at(Vector3(0,1,0))
+	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera.reset_physics_interpolation()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 7
 	var environment := WorldEnvironment.new()

@@ -18,7 +18,7 @@ var message_time := 0.0
 var previous_altitude := 0.0
 var _was_indoors := false
 var tutorial_seen: Dictionary = {}
-var shop_position := Vector2(5980, 530)
+var shop_position := Vector2(5980, 650)
 
 func _ready() -> void:
 	mountain = get_parent()
@@ -135,7 +135,7 @@ func _process(delta: float) -> void:
 	if message_time == 0.0:
 		prompt.text = ""
 	if message_time == 0.0:
-		if not indoors and actor.visible and local_actor.distance_to(shop_position) < 105.0:
+		if not indoors and actor.visible and local_actor.distance_to(shop_position) < 65.0:
 			prompt.text = "[E] ENTRAR / ROUPAS DE FRIO"
 		elif not indoors and local_actor.y < -1450 and not tutorial_seen.has("cold"):
 			_notice("cold", "FRIO: temperatura zerada causa dano contínuo à vida.
@@ -212,17 +212,24 @@ func _build_shop() -> void:
 	add_child(shop)
 	var model := preload("res://world/mountain_pass/MountainOutfitters3D.gd").new()
 	shop.add_child(model)
-	_sign(shop, Vector2(-110, -150), "ÚLTIMO ABRIGO / ROUPAS DE NEVE")
-	_sign(shop, Vector2(-72, 75), "ROUPAS  [E]")
+	_sign(shop, Vector2(-90, -105), "ÚLTIMO ABRIGO / ROUPAS DE NEVE")
 	var wall := StaticBody2D.new()
+	wall.name = "OutfittersStructure"
 	wall.collision_layer = 1
-	var collision := CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(190, 90)
-	collision.position.y = -20
-	collision.shape = shape
+	wall.collision_mask = 0
+	var collision := CollisionPolygon2D.new()
+	collision.polygon = PackedVector2Array([model.project_floor(Vector2(-3,-1.8)),model.project_floor(Vector2(3,-1.8)),model.project_floor(Vector2(3,0.9)),model.project_floor(Vector2(-3,0.9))])
 	wall.add_child(collision)
 	shop.add_child(wall)
+	var door := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate() as BuildingEntrance
+	door.name = "OutfittersEntrance"
+	door.position = model.project_floor(Vector2(0,2.2))
+	door.display_name = "ÚLTIMO ABRIGO"
+	door.destination_id = &"mountain_outfitters"
+	door.custom_prompt_text = "E"
+	shop.add_child(door)
+	door.get_node("Facade").hide()
+	mountain.interior_manager.register_exterior_entrance(door,&"mountain_outfitters",door.global_position+Vector2(0,30))
 	# A warm service counter provides a safe first stop.
 	var heater := Node2D.new()
 	heater.position = Vector2(0, 65)
@@ -248,7 +255,7 @@ func _build_summit() -> void:
 		_box(summit, Rect2(side * 105 + 8, -145, 35, 23), Color("9f3f35"))
 	var car = preload("res://world/mountain_pass/ArcticJeep.gd").new()
 	car.name = "WhiteoutSpecial"
-	car.position = Vector2(230, 100)
+	car.position = Vector2(300, -30)
 	car.paint_color = Color("d6ad58")
 	car.max_speed = 580.0
 	car.acceleration = 480.0
@@ -280,7 +287,7 @@ func _build_summit() -> void:
 
 func _build_residents() -> void:
 	var people := [
-		[Vector2(6065, 615), "Mara / Último Abrigo", Color("bf744b"), [
+		[Vector2(6045, 680), "Mara / Último Abrigo", Color("53778e"), [
 			"Sou Mara. Casaco no balcão, por $650. Na serra, roupa boa compra tempo; abrigo salva a vida.",
 			"Ouvi o rádio do porto. Os Cobras perderam o controle, mas os carregamentos continuam subindo para cá.",
 			"Os Lobos de Gelo ocupam a antiga estação no cume. Quem controla aquela passagem cobra de todos.",

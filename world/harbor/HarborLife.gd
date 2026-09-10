@@ -185,6 +185,11 @@ func _spawn_traffic(network: Node2D) -> void:
 		if candidate.is_in_group("unified_traffic_lane") and not bool(candidate.get_meta("is_lane_connector", false)):
 			lanes.append(candidate as Path2D)
 	lanes.sort_custom(func(a: Path2D, b: Path2D) -> bool: return String(a.name) < String(b.name))
+	for lane in lanes:
+		var road_id := String(lane.get_meta("traffic_road_id", ""))
+		if "mountain_bridge" in road_id: lane.set_meta("mountain_traffic", true)
+		if road_id.ends_with("mountain_bridge_outbound"): lane.set_meta("continuous_border_end", true)
+		if road_id.ends_with("mountain_bridge_inbound"): lane.set_meta("continuous_border_start", true)
 	var target_population := 60 if lanes.size() >= 38 else (36 if lanes.size() >= 24 else 18)
 	var population := mini(target_population, lanes.size())
 	_traffic_lanes = lanes

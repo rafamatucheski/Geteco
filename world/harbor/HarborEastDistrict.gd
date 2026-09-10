@@ -4,6 +4,9 @@ extends "res://world/harbor/HarborDistrict.gd"
 ## Northbank: a second developed shore, joined to Breakwater by Foundry Bridge.
 ## Reuses the same physical building/access audit; no second road renderer.
 const EAST_LAND := Rect2(4380, -100, 2380, 2700)
+# A montanha contínua começa em (4300,-4960); sua costa fica em x=4650
+# local. O antigo oceano de Northbank não pode continuar sólido sob essa terra.
+const MOUNTAIN_LAND := Rect2(8950, -9960, 7350, 6400)
 @export var cobra_connection_enabled := false
 const NATURE := [
 	[Vector2(4860,1123),1,0.95,"426451"],[Vector2(4925,1122),3,0.75,"65775a"],[Vector2(5340,1120),2,0.85,"354f49"],
@@ -89,8 +92,12 @@ func _build_boundaries() -> void:
 		# Its own perimeter is closed by CobraNeighborhood, not an invisible gate
 		# across the new public street and pedestrian approaches.
 		boundaries = [Rect2(6760, -5000, 8000, 268), Rect2(6760, -4387, 8000, 5347), Rect2(6760, 2410, 8000, 7590), Rect2(4380, 2600, 2380, 7000)]
-	for rect in boundaries:
+	var water_only: Array[Rect2] = []
+	for boundary in boundaries:
+		water_only.append_array(_subtract_land(boundary, MOUNTAIN_LAND))
+	for rect in water_only:
 		var body := StaticBody2D.new()
+		body.name = "EastWaterBoundary%d" % get_child_count()
 		body.collision_layer = 1
 		body.collision_mask = 0
 		body.position = rect.get_center()
@@ -100,6 +107,19 @@ func _build_boundaries() -> void:
 		collision.shape = shape
 		body.add_child(collision)
 		add_child(body)
+
+static func _subtract_land(water: Rect2, land: Rect2) -> Array[Rect2]:
+	var overlap := water.intersection(land)
+	if not overlap.has_area(): return [water]
+	var result: Array[Rect2] = []
+	for piece in [
+		Rect2(water.position,Vector2(overlap.position.x-water.position.x,water.size.y)),
+		Rect2(Vector2(overlap.end.x,water.position.y),Vector2(water.end.x-overlap.end.x,water.size.y)),
+		Rect2(Vector2(overlap.position.x,water.position.y),Vector2(overlap.size.x,overlap.position.y-water.position.y)),
+		Rect2(Vector2(overlap.position.x,overlap.end.y),Vector2(overlap.size.x,water.end.y-overlap.end.y)),
+	]:
+		if piece.has_area(): result.append(piece)
+	return result
 
 func get_sidewalk_routes() -> Array[PackedVector2Array]:
 	return [

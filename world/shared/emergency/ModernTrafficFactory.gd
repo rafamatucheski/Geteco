@@ -178,6 +178,12 @@ static func _curve_is_closed(curve: Curve2D) -> bool:
 
 static func _junction_spawn_is_clear(path: Path2D, ratio: float, curve_length: float) -> bool:
 	for controller in path.get_tree().get_nodes_in_group("junction_traffic_controller"):
+		# Uma pista da serra não pertence ao grafo de cruzamentos do porto.
+		# O controlador rejeita road_index=-1; aplicar isso a outra região fazia
+		# todas as tentativas terminarem no mesmo ponto de fallback da pista.
+		var source = controller.get("graph_source")
+		if source is Node and not source.is_ancestor_of(path):
+			continue
 		if controller.has_method("is_lane_spawn_position_safe"):
 			return bool(controller.call("is_lane_spawn_position_safe", path, ratio * curve_length, 96.0))
 	return true
@@ -190,7 +196,7 @@ static func _position_is_clear(tree: SceneTree, candidate: Vector2) -> bool:
 		var bounds: Rect2 = exclusion.get_meta("traffic_spawn_exclusion_rect", Rect2())
 		if bounds.has_point(candidate):
 			return false
-	for node in tree.get_nodes_in_group("modern_traffic"):
+	for node in tree.get_nodes_in_group("vehicle"):
 		if node is Node2D and (node as Node2D).global_position.distance_to(candidate) < MINIMUM_SPAWN_CLEARANCE:
 			return false
 	for node in tree.get_nodes_in_group("modern_parked_vehicle"):

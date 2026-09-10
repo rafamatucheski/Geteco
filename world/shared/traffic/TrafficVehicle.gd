@@ -1656,6 +1656,10 @@ func advance_on_lane(delta: float) -> void:
 	if path == null or path.curve == null:
 		return
 	var controller := _get_junction_traffic_controller()
+	if controller != null:
+		var graph = controller.get("graph_source")
+		if graph is Node and not graph.is_ancestor_of(path) and not controller.is_ancestor_of(path):
+			controller = null
 	# The two regional lane ends are close enough for the city graph to infer
 	# a U-turn. They are a continuous border, so the world owns this handoff.
 	if bool(path.get_meta("continuous_border_end",false)) and lane_follow.progress > path.curve.get_baked_length()-180:
@@ -1675,6 +1679,12 @@ func advance_on_lane(delta: float) -> void:
 	var hard_blocked: bool = obstruction.hard
 	var yield_blocked: bool = obstruction.yield
 	var target_lane_speed := speed
+	if bool(path.get_meta("mountain_traffic", false)):
+		var probe := minf(lane_follow.progress + target_length, path.curve.get_baked_length())
+		var ahead := path.curve.sample_baked_with_rotation(probe, true)
+		var turn := absf(wrapf(ahead.get_rotation()-lane_follow.rotation,-PI,PI))
+		# Antecipar a curva evita entrar no hairpin com a velocidade da reta.
+		target_lane_speed = minf(target_lane_speed, sqrt(55.0 * target_length / maxf(turn,0.01)))
 	var maximum_advance := INF
 	var spacing := _lane_spacing_motion(lane_follow)
 	target_lane_speed = minf(target_lane_speed, float(spacing.target_speed))
@@ -1731,6 +1741,12 @@ func advance_on_lane(delta: float) -> void:
 		if lane_follow.loop: next_offset = fposmod(next_offset,path.curve.get_baked_length())
 		var next_point := path.to_global(path.curve.sample_baked(next_offset, lane_follow.cubic_interp))
 		var motion := next_point-global_position
+		if bool(path.get_meta("mountain_traffic", false)) and not _mountain_hull_is_clear(path, next_offset):
+			actual_advance = 0.0
+			motion = Vector2.ZERO
+			_lane_motion_speed = 0.0
+			hard_blocked = true
+			target_lane_speed = 0.0
 		# Sweep the entire hull against vehicles before advancing the PathFollow.
 		# Keep the existing kinematic test for map walls and walking actors.
 		var sweep := PhysicsShapeQueryParameters2D.new()
@@ -1764,6 +1780,26 @@ func advance_on_lane(delta: float) -> void:
 		block_wait_timer = maxf(0.0, block_wait_timer - delta * 2.0)
 	if visual:
 		visual.position = visual.position.lerp(Vector2.ZERO, 8.0 * delta)
+
+func _mountain_hull_is_clear(path: Path2D, offset: float) -> bool:
+	if not collision.shape is RectangleShape2D: return true
+	var pose := path.global_transform * path.curve.sample_baked_with_rotation(offset, true)
+	var half: Vector2 = collision.shape.size*0.5 + Vector2.ONE*2.0
+	var hull := PackedVector2Array()
+	for corner in [Vector2(-half.x,-half.y),Vector2(half.x,-half.y),half,Vector2(-half.x,half.y)]:
+		hull.append(pose * (collision.transform * corner))
+	# PathFollow é atualizado em idle. O servidor físico ainda pode estar no
+	# tick anterior; comparar as poses vivas impede atravessar outra carroceria.
+	for other in get_tree().get_nodes_in_group("vehicle"):
+		if other == self or not other is Node2D or other.global_position.distance_to(pose.origin) > 180: continue
+		var shape := other.get_node_or_null("Collision") as CollisionShape2D
+		if shape == null or shape.disabled or not shape.shape is RectangleShape2D: continue
+		var other_half: Vector2 = shape.shape.size*0.5
+		var other_hull := PackedVector2Array()
+		for corner in [Vector2(-other_half.x,-other_half.y),Vector2(other_half.x,-other_half.y),other_half,Vector2(-other_half.x,other_half.y)]:
+			other_hull.append(shape.global_transform * corner)
+		if not Geometry2D.intersect_polygons(hull,other_hull).is_empty(): return false
+	return true
 
 func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: bool = false) -> Dictionary:
 	# PathFollow traffic already has exact same-lane spacing below. Ray casts are

@@ -227,7 +227,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				registry_dialog.visible = false
 				modal_closed.emit()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_ESCAPE and registry_dialog.visible:
+		elif event.is_action_pressed("ui_cancel") and registry_dialog.visible:
 			registry_dialog.visible = false
 			modal_closed.emit()
 			get_viewport().set_input_as_handled()

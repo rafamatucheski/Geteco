@@ -126,7 +126,7 @@ func _budget_traffic(point: Vector2) -> void:
 func _transfer_bridge_traffic() -> void:
 	var traffic := mountain.get_node("MountainTraffic")
 	for car in get_tree().get_nodes_in_group("modern_traffic"):
-		if car.get("is_driven_by_player") == true: continue
+		if car.get("is_driven_by_player") == true or car.get("is_broken") == true: continue
 		var follower := car.get_parent() as PathFollow2D
 		if follower == null: continue
 		var lane := follower.get_parent() as Path2D
@@ -140,11 +140,24 @@ func _transfer_bridge_traffic() -> void:
 					_handoff(follower, target)
 					break
 
-func _handoff(follower: PathFollow2D, target: Path2D) -> void:
+func _handoff(follower: PathFollow2D, target: Path2D) -> bool:
 	var point := follower.global_position
+	var offset := target.curve.get_closest_offset(target.to_local(point))
+	var destination := target.to_global(target.curve.sample_baked(offset, true))
+	# O veículo permanece na origem até caber na fila de destino. A checagem
+	# usa posições vivas, inclusive outra transferência feita neste mesmo frame.
+	for other in get_tree().get_nodes_in_group("vehicle"):
+		if other.get_parent() == follower or not other is Node2D: continue
+		if other.global_position.distance_to(destination) < 110.0:
+			var along := target.global_transform.x.normalized()
+			var pose := target.curve.sample_baked_with_rotation(offset, true)
+			along = target.global_transform.basis_xform(pose.x).normalized()
+			if absf((other.global_position-destination).cross(along)) < 45.0:
+				return false
 	follower.reparent(target, false)
 	follower.loop = bool(target.get_meta("traffic_lane_loop", false))
-	follower.progress = target.curve.get_closest_offset(target.to_local(point))
+	follower.progress = offset
+	follower.reset_physics_interpolation()
 	handoff_max_displacement = maxf(handoff_max_displacement,point.distance_to(follower.global_position))
 	for car in follower.get_children():
 		if car is Node2D:
@@ -152,6 +165,7 @@ func _handoff(follower: PathFollow2D, target: Path2D) -> void:
 			car.rotation = 0.0
 			car.set_meta("traffic_lane_id", target.get_meta("traffic_lane_id", target.name))
 			car.set_meta("traffic_road_id", target.get_meta("traffic_road_id", ""))
+	return true
 
 func get_streaming_stats() -> Dictionary:
 	return {"ready": ready_for_crossing, "region": current_region, "resident_regions": 2 if ready_for_crossing else 1,

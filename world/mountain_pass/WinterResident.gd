@@ -65,6 +65,8 @@ func _ready() -> void:
 	viewport.add_child(camera)
 	camera.position = Vector3(0,4,3)
 	camera.look_at(Vector3(0,0.9,0))
+	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera.reset_physics_interpolation()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 2.6
 	var sun := DirectionalLight3D.new()

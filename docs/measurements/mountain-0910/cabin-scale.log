@@ -1,0 +1,30 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _setup_interior_content (res://world/mountain_pass/MountainBunkerInterior.gd:84)
+       [1] _ready (res://world/harbor/interiors/HarborInteriorBase.gd:38)
+       [2] _build_interiors (res://world/mountain_pass/MountainInteriorManager.gd:56)
+       [3] _ready (res://world/mountain_pass/MountainInteriorManager.gd:30)
+       [4] _setup_environment (res://world/mountain_pass/MountainPass.gd:99)
+       [5] _ready (res://world/mountain_pass/MountainPass.gd:56)
+       [6] run (res://tests/test_mountain_cabin_scale.gd:16)
+PASS cabin exterior found
+PASS real cabin entrance accepts player
+PASS projected cabin spawn
+PASS cabin human scale calibrated
+PASS occupied cabin animates effects
+PASS subtle fire and wisps animate
+PASS coffee table has projected collision
+PASS cabin circulation segment 1
+PASS cabin circulation segment 2
+PASS cabin circulation segment 3
+PASS real cabin exit works
+PASS exterior scale and shelter restored
+PASS empty cabin stops rendering
+PASS empty cabin suspends effects
+PASS cabin reentry accepts player
+PASS mountain recovery stays at the relocated shelter inside isolated region
+PASS respawn restores exterior presentation
+CABIN SCALE FAILURES: 0
