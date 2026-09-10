@@ -79,6 +79,7 @@ func _ready() -> void:
 	
 	_build_3d_viewport()
 	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
+	preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, String(dropped_weapon))
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()
@@ -270,10 +271,11 @@ func _build_3d_viewport() -> void:
 		var helmet := MeshInstance3D.new()
 		var sph_hl := SphereMesh.new()
 		sph_hl.radius = 0.195
-		sph_hl.height = 0.24
+		sph_hl.height = 0.32
 		helmet.mesh = sph_hl
 		helmet.material_override = mat_vest if tier == UnitTier.SWAT else _make_mat(Color(0.20, 0.28, 0.18), 0.4)
-		helmet.position = Vector3(0.0, 0.09, 0.0)
+		helmet.position = Vector3(0.0, 0.08, 0.0)
+		helmet.name = "CoveredCrown"
 		head_node.add_child(helmet)
 		
 		if tier == UnitTier.SWAT:
@@ -287,11 +289,15 @@ func _build_3d_viewport() -> void:
 	else:
 		# Quepe Policial Clássico com Aba
 		var cap_hat := MeshInstance3D.new()
-		var box_cp := BoxMesh.new()
-		box_cp.size = Vector3(0.30, 0.07, 0.30)
+		var box_cp := CylinderMesh.new()
+		box_cp.top_radius = 0.185
+		box_cp.bottom_radius = 0.17
+		box_cp.height = 0.11
+		box_cp.radial_segments = 12
 		cap_hat.mesh = box_cp
 		cap_hat.material_override = mat_uniform
-		cap_hat.position = Vector3(0.0, 0.12, 0.0)
+		cap_hat.position = Vector3(0.0, 0.15, 0.0)
+		cap_hat.name = "CoveredCrown"
 		head_node.add_child(cap_hat)
 
 		var visor := MeshInstance3D.new()
@@ -323,23 +329,7 @@ func _build_3d_viewport() -> void:
 	right_upper_arm.add_child(right_lower_arm)
 	right_lower_arm.add_child(_create_limb(0.042, 0.18, mat_skin if tier < UnitTier.SWAT else mat_black, Vector3(0, -0.09, 0)))
 
-	# Arma 3D na Mão Direita de Acordo com o Escalão
-	var gun_body := MeshInstance3D.new()
-	var box_gn := BoxMesh.new()
-	if tier == UnitTier.ARMY or tier == UnitTier.FBI:
-		box_gn.size = Vector3(0.045, 0.08, 0.38) # Fuzil M4A1
-	elif tier == UnitTier.SWAT:
-		box_gn.size = Vector3(0.042, 0.07, 0.28) # Submetralhadora MP5
-	elif tier == UnitTier.DETECTIVE:
-		box_gn.size = Vector3(0.038, 0.065, 0.20) # Revólver Magnum .44
-	else:
-		box_gn.size = Vector3(0.038, 0.06, 0.16) # Pistola 9mm
-		
-	gun_body.mesh = box_gn
-	gun_body.material_override = mat_gun
-	gun_body.position = Vector3(0.0, -0.18, -0.10)
-	right_lower_arm.add_child(gun_body)
-
+	# Weapon geometry is supplied by NPCCombatRig after the articulated rig.
 	muzzle_flash_3d = MeshInstance3D.new()
 	var sph_f := SphereMesh.new()
 	sph_f.radius = 0.07
@@ -637,15 +627,7 @@ func _physics_process(delta: float) -> void:
 			left_lower_leg.rotation.x = maxf(0.0, -step_angle * 0.70)
 			right_lower_leg.rotation.x = maxf(0.0, step_angle * 0.70)
 
-	if right_upper_arm and left_upper_arm:
-		if stars >= 3:
-			right_upper_arm.rotation = Vector3(1.40, -0.05, 0.0)
-			right_lower_arm.rotation = Vector3(0.05, 0.0, 0.0)
-			left_upper_arm.rotation = Vector3(step_angle * 0.3, 0.0, 0.0)
-			left_lower_arm.rotation = Vector3(0.12, 0.0, 0.0)
-		else:
-			right_upper_arm.rotation = Vector3(-step_angle * 0.6, 0.0, 0.0)
-			left_upper_arm.rotation = Vector3(step_angle * 0.6, 0.0, 0.0)
+	# NPCCombatRig applies Dante's arm poses after locomotion.
 
 var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
@@ -723,6 +705,7 @@ func _shoot_at_target(target_pos: Vector2) -> void:
 			_play_audio(ProceduralAudio.get_gunshot_pistol_stream(), -3.0, randf_range(0.94, 1.06))
 
 func _fire_single_bullet(target_pos: Vector2, damage_val: int, bullet_spd: float, spread: float) -> void:
+	get_node("NPCCombatRig").attack()
 	var dir: Vector2 = global_position.direction_to(target_pos)
 	var bullet = BULLET_SCENE.instantiate()
 	var scene := get_tree().current_scene

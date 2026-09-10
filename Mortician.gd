@@ -60,6 +60,7 @@ func _ready() -> void:
 	z_index = 6
 	
 	_build_3d_viewport()
+	preload("res://world/shared/pedestrians/CitizenDetails.gd").finish_rig(self, "mortician")
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()

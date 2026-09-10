@@ -21,7 +21,9 @@ func run_test() -> void:
 	budget._process(0.016)
 	assert(actor.viewport != null)
 	assert(actor.head_node.get_child_count() > 2, "Acessórios devem aguardar o rig")
-	assert(actor.model_root.rotation.x > 1.0, "Estado anterior à criação deve ser preservado")
+	# Presentation starts an animated fall; it must settle after simulation ticks.
+	for frame in 60: actor._physics_process(1.0 / 60.0)
+	assert(actor.is_incapacitated and actor.model_root.rotation.x > 1.0, "Estado anterior à criação deve ser preservado")
 	var count = actor.get_child_count()
 	actor.ensure_presentation()
 	assert(actor.get_child_count() == count)

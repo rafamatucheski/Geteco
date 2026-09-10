@@ -29,6 +29,13 @@ func _ready() -> void:
 		part(self,Vector3(side*0.17,1.62,0),Vector3(0.07,0.11,0.08),skin)
 		part(self,Vector3(side*0.065,1.65,0.139),Vector3(0.035,0.026,0.02),Color("25272a"))
 	part(self,Vector3(0,1.59,0.16),Vector3(0.06,0.07,0.07),skin.lightened(0.1))
+	for side in [-1,1]:
+		part(self,Vector3(side*.07,1.685,.137),Vector3(.065,.017,.025),Color("48352b"))
+		part(self,Vector3(side*.065,1.41,.145),Vector3(.10,.12,.05),coat_color.lightened(.2))
+		part(limbs[1 if side<0 else 3],Vector3(0,-.30,0),Vector3(.19,.045,.205),coat_color.darkened(.20))
+	part(self,Vector3(0,1.55,.143),Vector3(.065,.017,.02),skin.darkened(.35))
+	part(self,Vector3(0,.84,.165),Vector3(.075,.045,.035),Color("bab39f"))
+	for y in [1.05,1.17,1.29]: part(self,Vector3(0,y,.186),Vector3(.025,.025,.012),Color("bdbdaf"))
 
 func _process(delta: float) -> void:
 	clock += delta

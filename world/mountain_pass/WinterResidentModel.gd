@@ -45,6 +45,11 @@ func _ready() -> void:
 		part(self,Vector3(-0.19,1.43,0.22),Vector3(0.015,0.16,0.018),boots)
 	breath = part(self,Vector3(0,1.48,0.42),Vector3(0.12,0.08,0.18),Color(0.8,0.9,1,0.14))
 	breath.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	for side in [-1,1]:
+		part(self,Vector3(side*.125,1.12,-.19),Vector3(.055,.57,.055),boots)
+		part(self,Vector3(side*.18,.91,.241),Vector3(.095,.028,.025),Color("bec6be"))
+		part(limbs[0 if side<0 else 2],Vector3(0,-.56,.08),Vector3(.18,.045,.18),Color("5b615e"))
+	part(self,Vector3(-.13,1.31,.20),Vector3(.09,.055,.025),Color("d7c48b"))
 
 func part(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()

@@ -53,34 +53,15 @@ func _ready() -> void:
 func _build_role_weapon() -> void:
 	if not is_instance_valid(right_lower_arm):
 		return
-	var weapon := Node3D.new()
-	weapon.name = "CobraWeapon_" + weapon_id
-	weapon.position = Vector3(0,-0.19,-0.07)
-	right_lower_arm.add_child(weapon)
-	var length := float({"pistol":0.14,"shotgun":0.42,"smg":0.25}[weapon_id])
-	_weapon_box(weapon,Vector3(0.042,0.047,length),Vector3(0,0,-length*0.35),Color("282d2c"))
-	_weapon_box(weapon,Vector3(0.035,0.09,0.04),Vector3(0,-0.045,0.015),Color("594938"))
-	if weapon_id != "pistol":
-		_weapon_box(weapon,Vector3(0.052,0.045,0.095),Vector3(0,-0.014,-length*0.58),Color("846343"))
-		_weapon_box(weapon,Vector3(0.04,0.06,0.10),Vector3(0,0,0.10),Color("393a31"))
 	muzzle_flash_3d = MeshInstance3D.new()
 	var flash := SphereMesh.new()
 	flash.radius = 0.055
 	flash.height = 0.08
 	muzzle_flash_3d.mesh = flash
 	muzzle_flash_3d.material_override = _make_mat(Color("ffca75"),0.0)
-	muzzle_flash_3d.position = Vector3(0,0,-length*0.9)
 	muzzle_flash_3d.visible = false
-	weapon.add_child(muzzle_flash_3d)
-
-func _weapon_box(parent: Node3D, dimensions: Vector3, at: Vector3, color: Color) -> void:
-	var piece := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = dimensions
-	piece.mesh = mesh
-	piece.position = at
-	piece.material_override = _make_mat(color,0.25)
-	parent.add_child(piece)
+	right_lower_arm.add_child(muzzle_flash_3d)
+	preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, weapon_id)
 
 func _pick_new_sidewalk_target() -> void:
 	if patrol.is_empty():
@@ -106,9 +87,6 @@ func _physics_process(delta: float) -> void:
 	if guard and is_instance_valid(territory):
 		combat_target = territory.combat_target_for(self)
 	super._physics_process(delta)
-	if guard and not is_dead and weapon_id != "pistol" and is_instance_valid(combat_target) and is_instance_valid(left_upper_arm):
-		left_upper_arm.rotation = Vector3(1.2,0.2,-0.25)
-		left_lower_arm.rotation = Vector3(0.4,0,0.3)
 
 func _navigate_towards(dest: Vector2, speed: float, delta: float) -> Vector2:
 	if guard and is_instance_valid(territory) and territory.has_method("get_tactical_destination"):
@@ -128,6 +106,8 @@ func _gangster_shoot_target(target_pos: Vector2) -> void:
 			bullet.position = global_position + direction*16
 			bullet.tracer_color = data.tracer_color
 			get_tree().current_scene.add_child(bullet)
+		var rig := get_node_or_null("NPCCombatRig")
+		if rig: rig.attack()
 		shots_fired += 1
 		if weapon_id == "smg":
 			_burst_remaining = (_burst_remaining+1)%3

@@ -936,14 +936,6 @@ func _build_3d_viewport() -> void:
 
 	# Detalhe: Pistola 3D na mão do Gangster
 	if has_handgun:
-		var gun_mesh := MeshInstance3D.new()
-		var box_g := BoxMesh.new()
-		box_g.size = Vector3(0.035, 0.055, 0.14)
-		gun_mesh.mesh = box_g
-		gun_mesh.material_override = _make_mat(Color(0.18, 0.20, 0.22), 0.2)
-		gun_mesh.position = Vector3(0.0, -0.18, -0.08)
-		right_lower_arm.add_child(gun_mesh)
-
 		muzzle_flash_3d = MeshInstance3D.new()
 		var sph_mf := SphereMesh.new()
 		sph_mf.radius = 0.06
@@ -988,6 +980,9 @@ func _build_3d_viewport() -> void:
 	right_lower_leg.add_child(_create_joint_cap(0.062, mat_shin_r, Vector3.ZERO))
 	
 	_apply_body_proportions()
+	preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(self, int(archetype))
+	if has_handgun:
+		preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, "pistol")
 	# Exibição 2D
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport.get_texture()
@@ -1233,6 +1228,8 @@ func _ambient_walk_paused() -> bool:
 	return false
 
 func _gangster_shoot_target(target_pos: Vector2) -> void:
+	var rig := get_node_or_null("NPCCombatRig")
+	if rig: rig.attack()
 	var bullet_scene = load("res://Bullet.tscn")
 	if bullet_scene:
 		var dir: Vector2 = global_position.direction_to(target_pos)

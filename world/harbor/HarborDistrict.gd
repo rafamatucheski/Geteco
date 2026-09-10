@@ -52,7 +52,9 @@ func get_street_lamp_points() -> Array[Dictionary]:
 	]
 	for x in [650,1000,1550,1900,2450,2800]:
 		for y in [315,515,1165,1335,2285]:
-			points.append({"pos":Vector2(x,y),"south":y in [315,1165]})
+			# Keep the bank entrance axis clear; the lamp belongs beside the frontage.
+			var lamp_point := Vector2(790,285) if x == 650 and y == 315 else Vector2(x,y)
+			points.append({"pos":lamp_point,"south":y in [315,1165]})
 	for x in [315,485,1215,1385,2115,2285]:
 		for y in [850,1650,1950]:
 			points.append({"pos":Vector2(x,y),"south":true})

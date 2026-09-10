@@ -45,6 +45,7 @@ var right_lower_arm: Node3D
 func _ready() -> void:
 	z_index = 8
 	_build_3d_viewport()
+	preload("res://world/shared/pedestrians/CitizenDetails.gd").finish_rig(self, "clerk")
 	_setup_interaction()
 	_build_dialogue_canvas()
 	var settings := get_node_or_null("/root/SettingsManager")
