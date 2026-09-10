@@ -145,6 +145,7 @@ func _setup_interior_content() -> void:
 		person.position=Vector2(-70+i*70,40) if is_bank else Vector2(0,-100)
 		person.reaction=["cower","flee","call"][i] if is_bank else "cower"
 		person.room=self
+		if is_bank: person.resident_name="HELENA" if i==0 else "MARCOS"
 		add_child(person)
 		civilians.append(person)
 	if is_bank: _project_bank_layout()
@@ -160,7 +161,19 @@ func _setup_interior_content() -> void:
 	if is_bank: status.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size",14)
 	status.add_theme_color_override("font_color",Color("eedca7"))
-	add_child(status)
+	if is_bank:
+		var status_layer := CanvasLayer.new()
+		status_layer.layer=20
+		add_child(status_layer)
+		status_layer.add_child(status)
+		status.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		status.offset_left=-285
+		status.offset_right=285
+		status.offset_top=72
+		status.offset_bottom=126
+		status.visible=false
+	else:
+		add_child(status)
 	if actor: actor.weapon_fired.connect(_on_shot)
 	_refresh_loot()
 	if is_bank:
@@ -225,6 +238,7 @@ func _process(delta: float) -> void:
 		alarm_time=maxf(0,alarm_time-delta)
 		if alarm_time<=0: dispatch_response()
 	var inside := actor_inside()
+	if is_bank: status.visible=inside
 	if inside and not was_inside: on_actor_entered(actor)
 	was_inside=inside
 	if not inside:
@@ -381,11 +395,16 @@ func _project_bank_layout() -> void:
 		guards[i].position=project_floor(Vector2(-5 if i==0 else 5,.5))
 		_scale_npc(guards[i],guards[i].viewport_3d,guards[i].sprite_3d_display,Vector2(-5 if i==0 else 5,.5),1.45)
 	for i in civilians.size():
-		civilians[i].position=project_floor(Vector2(-4.5 if i==0 else 4.5,-2.2))
+		civilians[i].position=project_floor(Vector2(-4.5 if i==0 else 4.5,-1.9))
 		var sprite: Sprite2D
 		for child in civilians[i].get_children():
 			if child is Sprite2D: sprite=child
-		_scale_npc(civilians[i],civilians[i].viewport,sprite,Vector2(-4.5 if i==0 else 4.5,-2.2),1.8)
+		_scale_npc(civilians[i],civilians[i].viewport,sprite,Vector2(-4.5 if i==0 else 4.5,-1.9),1.8)
+
+func get_gameplay_camera_bounds() -> Rect2:
+	var corner := project_floor(Vector2(-6.7,-4.8)) + Vector2(0,-45)
+	var end := project_floor(Vector2(6.7,4.65))
+	return Rect2(to_global(corner), end-corner)
 
 func _scale_npc(_person: Node2D, render: SubViewport, sprite: Sprite2D, point: Vector2, height: float) -> void:
 	render.size=Vector2i(256,256)
@@ -464,7 +483,7 @@ func _update_heist_phase() -> void:
 	else: phase=HeistPhase.WARNING if armed_warning else HeistPhase.LOBBY
 
 func _update_bank_status() -> void:
-	var instruction := "Para sair, caminhe até a porta"
+	var instruction := ""
 	match phase:
 		HeistPhase.WARNING: instruction="SEGURANÇA: Pare! Guarde a arma e se renda. Ninguém precisa se ferir."
 		HeistPhase.COMBAT: instruction="ASSALTO — neutralize a segurança • Use os balcões como cobertura"

@@ -436,7 +436,13 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:
 	var cam := actor.get_node_or_null("Camera") as Camera2D
 	if cam:
-		if rect.size.x < 500 or actor.get_meta("interior_camera_overview",false):
+		cam.remove_meta("interior_follow_bounds")
+		# Também atende a restauração de save, que passa somente o retângulo.
+		for interior in get_node("InteriorSpaces").get_children():
+			if interior.has_method("get_gameplay_camera_bounds") and interior.get_camera_rect() == rect and interior.is_bank:
+				cam.set_meta("interior_follow_bounds", interior.get_gameplay_camera_bounds())
+				break
+		if rect.size.x < 500 or actor.get_meta("interior_camera_overview",false) or cam.has_meta("interior_follow_bounds"):
 			cam.set_meta("compact_interior", rect)
 			cam.global_position = rect.get_center()
 			var screen := cam.get_viewport_rect().size
@@ -445,6 +451,8 @@ func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:
 			cam.limit_top = -10000000
 			cam.limit_right = 10000000
 			cam.limit_bottom = 10000000
+			if cam.has_meta("interior_follow_bounds") and cam.has_method("frame_interior_follow"):
+				cam.frame_interior_follow()
 			cam.reset_physics_interpolation()
 			cam.reset_smoothing()
 			cam.force_update_scroll()
@@ -462,6 +470,7 @@ func _reset_exterior_camera(actor: Node2D) -> void:
 	var cam := actor.get_node_or_null("Camera") as Camera2D
 	if cam:
 		cam.remove_meta("compact_interior")
+		cam.remove_meta("interior_follow_bounds")
 		cam.position = Vector2.ZERO
 		cam.limit_left = -10000000
 		cam.limit_top = -10000000

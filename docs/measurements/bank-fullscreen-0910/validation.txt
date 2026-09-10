@@ -1,0 +1,217 @@
+FULLSCREEN-FINAL
+PASS: 22
+ERROR: The InputMap action "aim" doesn't exist.
+ERROR: The InputMap action "exit_vehicle" doesn't exist.
+ERROR: The InputMap action "fire" doesn't exist.
+ERROR: The InputMap action "handbrake" doesn't exist.
+ERROR: The InputMap action "headlights" doesn't exist.
+ERROR: The InputMap action "horn" doesn't exist.
+ERROR: The InputMap action "journal" doesn't exist.
+ERROR: The InputMap action "move_down" doesn't exist. Did you mean "ui_down"?
+ERROR: The InputMap action "move_left" doesn't exist. Did you mean "ui_left"?
+ERROR: The InputMap action "move_right" doesn't exist. Did you mean "ui_right"?
+ERROR: The InputMap action "move_up" doesn't exist. Did you mean "ui_up"?
+ERROR: The InputMap action "reload" doesn't exist.
+ERROR: The InputMap action "trunk" doesn't exist.
+ERROR: The InputMap action "unarmed" doesn't exist.
+ERROR: The InputMap action "weapon_next" doesn't exist. Did you mean "radio_next"?
+ERROR: The InputMap action "weapon_previous" doesn't exist.
+ERROR: The InputMap action "weapon_slot_1" doesn't exist.
+ERROR: The InputMap action "weapon_slot_10" doesn't exist.
+ERROR: The InputMap action "weapon_slot_2" doesn't exist.
+ERROR: The InputMap action "weapon_slot_3" doesn't exist.
+ERROR: The InputMap action "weapon_slot_4" doesn't exist.
+ERROR: The InputMap action "weapon_slot_5" doesn't exist.
+ERROR: The InputMap action "weapon_slot_6" doesn't exist.
+ERROR: The InputMap action "weapon_slot_7" doesn't exist.
+ERROR: The InputMap action "weapon_slot_8" doesn't exist.
+ERROR: The InputMap action "weapon_slot_9" doesn't exist.
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+PASS Atendimento normal sem texto de orientação
+PASS Uma atendente mulher e um atendente homem
+PASS Corpos completos com articulações preservadas
+PASS Entrada 16:9: cenário cobre o quadro inteiro
+PASS Entrada 16:9: personagem permanece visível
+PASS Entrada 16:9: quatro cantos têm arquitetura renderizada, sem moldura preta
+PASS Câmera percorre o salão com o movimento real do personagem
+PASS Atendimento 16:9: cenário cobre o quadro inteiro
+PASS Atendimento 16:9: personagem permanece visível
+PASS Atendimento 16:9: quatro cantos têm arquitetura renderizada, sem moldura preta
+PASS Advertência permanece legível e dentro da tela com a câmera em movimento
+BANK_VIEWPORT window=(1024, 768) logical=(1280.0, 960.0)
+PASS Janela (1024, 768): cenário cobre o quadro inteiro
+PASS Janela (1024, 768): personagem permanece visível
+PASS Janela (1024, 768): quatro cantos têm arquitetura renderizada, sem moldura preta
+BANK_VIEWPORT window=(1920, 810) logical=(1706.0, 720.0)
+PASS Janela (1920, 810): cenário cobre o quadro inteiro
+PASS Janela (1920, 810): personagem permanece visível
+PASS Janela (1920, 810): quatro cantos têm arquitetura renderizada, sem moldura preta
+PASS Restauração do interior recupera câmera fullscreen
+PASS Balcão encobre a parte inferior do corpo sem amputar o modelo
+PASS Ao sair do balcão o corpo inteiro reaparece
+PASS Saída remove enquadramento interno e devolve câmera externa
+PASS Mensagens do banco não permanecem sobre a rua
+BANK_FULLSCREEN: []
+
+WALK
+PASS: 38
+ERROR: The InputMap action "aim" doesn't exist.
+ERROR: The InputMap action "exit_vehicle" doesn't exist.
+ERROR: The InputMap action "fire" doesn't exist.
+ERROR: The InputMap action "handbrake" doesn't exist.
+ERROR: The InputMap action "headlights" doesn't exist.
+ERROR: The InputMap action "horn" doesn't exist.
+ERROR: The InputMap action "journal" doesn't exist.
+ERROR: The InputMap action "move_down" doesn't exist. Did you mean "ui_down"?
+ERROR: The InputMap action "move_left" doesn't exist. Did you mean "ui_left"?
+ERROR: The InputMap action "move_right" doesn't exist. Did you mean "ui_right"?
+ERROR: The InputMap action "move_up" doesn't exist. Did you mean "ui_up"?
+ERROR: The InputMap action "reload" doesn't exist.
+ERROR: The InputMap action "trunk" doesn't exist.
+ERROR: The InputMap action "unarmed" doesn't exist.
+ERROR: The InputMap action "weapon_next" doesn't exist. Did you mean "radio_next"?
+ERROR: The InputMap action "weapon_previous" doesn't exist.
+ERROR: The InputMap action "weapon_slot_1" doesn't exist.
+ERROR: The InputMap action "weapon_slot_10" doesn't exist.
+ERROR: The InputMap action "weapon_slot_2" doesn't exist.
+ERROR: The InputMap action "weapon_slot_3" doesn't exist.
+ERROR: The InputMap action "weapon_slot_4" doesn't exist.
+ERROR: The InputMap action "weapon_slot_5" doesn't exist.
+ERROR: The InputMap action "weapon_slot_6" doesn't exist.
+ERROR: The InputMap action "weapon_slot_7" doesn't exist.
+ERROR: The InputMap action "weapon_slot_8" doesn't exist.
+ERROR: The InputMap action "weapon_slot_9" doesn't exist.
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+PASS Proximidade abre a porta sem fade e sem entrar
+PASS Folhas abertas ao se aproximar
+PASS Parado diante da soleira continua no exterior, sem piscar
+PASS Passar ao lado da entrada não troca de ambiente
+PASS Atravessar a porta andando entra no banco, ciclo 0
+PASS Spawn interno não aciona saída involuntária
+PASS Cortina termina e libera o salão
+PASS Enquadramento interno acompanha a entrada física
+PASS Piso renderizado coincide com projeção física, sem vista frontal congelada
+PASS Circulação no salão entre passadeira e banco de espera
+PASS Chegar à saída andando retorna à rua, ciclo 0
+PASS Retorno à calçada não reentra sozinho
+PASS Saída restaura estado e câmera externa
+PASS Escala do personagem restaurada no exterior
+PASS Atravessar a porta andando entra no banco, ciclo 1
+PASS Chegar à saída andando retorna à rua, ciclo 1
+PASS Atravessar a porta andando entra no banco, ciclo 2
+PASS Chegar à saída andando retorna à rua, ciclo 2
+PASS Entrada para testar reversão rápida
+PASS Voltar imediatamente à saída funciona durante cooldown
+PASS Reentrar imediatamente não perde a passagem durante cooldown
+PASS Segunda reversão rápida retorna corretamente à rua
+PASS Passagens confirmadas usam a cortina de transição
+PASS Porta do posto também abre por proximidade sem fade falso
+PASS Interação explícita aceita ator no sensor do posto
+PASS Interação com porta já aberta transfere e encerra a cortina
+BANK_WALK: []
+
+HEIST
+PASS: 31
+ERROR: The InputMap action "aim" doesn't exist.
+ERROR: The InputMap action "exit_vehicle" doesn't exist.
+ERROR: The InputMap action "fire" doesn't exist.
+ERROR: The InputMap action "handbrake" doesn't exist.
+ERROR: The InputMap action "headlights" doesn't exist.
+ERROR: The InputMap action "horn" doesn't exist.
+ERROR: The InputMap action "journal" doesn't exist.
+ERROR: The InputMap action "move_down" doesn't exist. Did you mean "ui_down"?
+ERROR: The InputMap action "move_left" doesn't exist. Did you mean "ui_left"?
+ERROR: The InputMap action "move_right" doesn't exist. Did you mean "ui_right"?
+ERROR: The InputMap action "move_up" doesn't exist. Did you mean "ui_up"?
+ERROR: The InputMap action "reload" doesn't exist.
+ERROR: The InputMap action "trunk" doesn't exist.
+ERROR: The InputMap action "unarmed" doesn't exist.
+ERROR: The InputMap action "weapon_next" doesn't exist. Did you mean "radio_next"?
+ERROR: The InputMap action "weapon_previous" doesn't exist.
+ERROR: The InputMap action "weapon_slot_1" doesn't exist.
+ERROR: The InputMap action "weapon_slot_10" doesn't exist.
+ERROR: The InputMap action "weapon_slot_2" doesn't exist.
+ERROR: The InputMap action "weapon_slot_3" doesn't exist.
+ERROR: The InputMap action "weapon_slot_4" doesn't exist.
+ERROR: The InputMap action "weapon_slot_5" doesn't exist.
+ERROR: The InputMap action "weapon_slot_6" doesn't exist.
+ERROR: The InputMap action "weapon_slot_7" doesn't exist.
+ERROR: The InputMap action "weapon_slot_8" doesn't exist.
+ERROR: The InputMap action "weapon_slot_9" doesn't exist.
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+PASS Entrada chega ao salão, longe do cofre
+PASS E da entrada não abre lockpick nem dispara alarme
+PASS Câmera enquadra o banco inteiro sem varrer o mapa
+PASS Minimapa mantém o banco como localização exterior
+PASS Sacar e mirar provocam advertência sem tiros ou alarme automático
+PASS Guarda mantém posto durante advertência
+PASS Guardar arma encerra advertência pacificamente
+PASS Primeiro tiro inicia combate e contagem da polícia
+PASS Segurança revida com projéteis reais
+PASS Porta fechada bloqueia fisicamente a sala do dinheiro
+PASS Cofre não ignora os guardas vivos
+PASS Segurança neutralizada deixa cartão coletável
+PASS Cartão exige coleta junto ao guarda
+PASS Cartão e interação deliberada iniciam o cofre
+PASS Relógio da polícia continua durante lockpick
+PASS Cancelar devolve controle sem abrir cofre
+PASS Cancelar exige soltar E antes de tentar novamente
+PASS Erro na fechadura não abre o cofre
+PASS Porta pesada abre gradualmente após destravar
+PASS Cofre aberto libera passagem física
+PASS Porta destravada permite atravessar até o dinheiro
+PASS Dinheiro recompensa uma vez por pilha
+PASS Fim da contagem inicia cerco externo
+PASS Viatura parte da cidade, sem surgir na porta
+PASS Três viaturas despachadas em sequência
+PASS Três viaturas chegam fisicamente e formam cerco
+BANK_UNIT (515.8208, 380.7107) target=(540.0, 385.0) acting=true
+BANK_UNIT (732.3266, 424.5632) target=(755.0, 425.0) acting=true
+BANK_UNIT (683.2405, 362.3753) target=(675.0, 345.0) acting=true
+PASS Saída retorna à mesma porta e restaura coordenadas externas
+PASS Duplas cobrem a saída e enfrentam o assaltante
+PASS Reentrar preserva cofre e pilhas coletadas sem repetir lockpick
+PASS Sair do quarteirão encerra o cerco e libera a perseguição normal
+PASS Posto preserva intimidação e pagamento único do caixa
+BANK_HEIST: []
+
+CAMERA
+PASS: 0
+ERROR: The InputMap action "aim" doesn't exist.
+ERROR: The InputMap action "exit_vehicle" doesn't exist.
+ERROR: The InputMap action "fire" doesn't exist.
+ERROR: The InputMap action "handbrake" doesn't exist.
+ERROR: The InputMap action "headlights" doesn't exist.
+ERROR: The InputMap action "horn" doesn't exist.
+ERROR: The InputMap action "journal" doesn't exist.
+ERROR: The InputMap action "move_down" doesn't exist. Did you mean "ui_down"?
+ERROR: The InputMap action "move_left" doesn't exist. Did you mean "ui_left"?
+ERROR: The InputMap action "move_right" doesn't exist. Did you mean "ui_right"?
+ERROR: The InputMap action "move_up" doesn't exist. Did you mean "ui_up"?
+ERROR: The InputMap action "reload" doesn't exist.
+ERROR: The InputMap action "trunk" doesn't exist.
+ERROR: The InputMap action "unarmed" doesn't exist.
+ERROR: The InputMap action "weapon_next" doesn't exist. Did you mean "radio_next"?
+ERROR: The InputMap action "weapon_previous" doesn't exist.
+ERROR: The InputMap action "weapon_slot_1" doesn't exist.
+ERROR: The InputMap action "weapon_slot_10" doesn't exist.
+ERROR: The InputMap action "weapon_slot_2" doesn't exist.
+ERROR: The InputMap action "weapon_slot_3" doesn't exist.
+ERROR: The InputMap action "weapon_slot_4" doesn't exist.
+ERROR: The InputMap action "weapon_slot_5" doesn't exist.
+ERROR: The InputMap action "weapon_slot_6" doesn't exist.
+ERROR: The InputMap action "weapon_slot_7" doesn't exist.
+ERROR: The InputMap action "weapon_slot_8" doesn't exist.
+ERROR: The InputMap action "weapon_slot_9" doesn't exist.
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+DYNAMIC_CAMERA_FINITE_RESULT failures=0
+
+REFERENCES
+PASS: 0
+referencias res:// distintas : 676
+sondagens opcionais (ok)     : 22
+destinos de escrita (ok)     : 6
+quebras conhecidas (a corrigir): 0
+QUEBRADAS NOVAS              : 0
+
+OK: nenhuma referencia quebrada nova.

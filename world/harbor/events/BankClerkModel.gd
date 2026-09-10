@@ -1,44 +1,106 @@
-extends "res://prototypes/living_cast/CivilianDriverModel.gd"
-const DETAIL=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+extends "res://world/mountain_pass/WinterResidentModel.gd"
+## Atendentes adultos: silhueta contínua, braços articulados e roupa social.
+const DETAIL = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+var forearms: Array[Node3D] = []
+var behind_counter := true
+var _clipping_materials: Array[ShaderMaterial] = []
+
 func _ready() -> void:
-	super._ready()
-	var suit=Color("293443")
-	for item in find_children("*","MeshInstance3D",true,false):
-		if item.material_override.albedo_color.is_equal_approx(coat_color): item.material_override.albedo_color=suit
-		if item.get_parent()!=self and item.position.y<-.6: item.material_override.albedo_color=Color("202125")
-		if item.get_parent()!=self and item.position.y==-.32: item.material_override.albedo_color=suit
-	DETAIL.piece(self,Vector3(.15,.28,.025),Vector3(0,1.31,.167),Color("e6e6de"))
-	DETAIL.piece(self,Vector3(.045,.21,.025),Vector3(0,1.29,.188),Color("773e40"))
-	DETAIL.piece(self,Vector3(.055,.045,.025),Vector3(0,1.42,.188),Color("773e40"))
+	scale = Vector3.ONE
+	var skin := Color("c38e70") if appearance_female else Color("b88c70")
+	var suit := Color("345a60") if appearance_female else Color("344254")
+	var shirt := Color("e4dfd0")
+	var hair := Color("493027") if appearance_female else Color("302925")
+	var shoulders := .205 if appearance_female else .23
 	for side in [-1,1]:
-		var lapel=DETAIL.piece(self,Vector3(.065,.26,.04),Vector3(side*.10,1.30,.177),suit.lightened(.08))
-		lapel.rotation.z=side*.27
-func part(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
-	if parent==self and point.y>1.5 and point.y<1.85:
-		return super.part(parent,point,size,color)
-	var item=DETAIL.piece(parent,size,point,color)
-	if size.y>.30:
-		var surface=SurfaceTool.new()
-		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		var profile=[Vector2(-.36,-.5),Vector2(.36,-.5),Vector2(.5,-.32),Vector2(.5,.32),Vector2(.36,.5),Vector2(-.36,.5),Vector2(-.5,.32),Vector2(-.5,-.32)]
-		var rings=[]
-		for level in 3:
-			var ring=[]
-			var width=[.84,1.0,.92][level]
-			for point2 in profile: ring.append(Vector3(point2.x*size.x*width,(level*.5-.5)*size.y,point2.y*size.z))
-			rings.append(ring)
-		for level in 2:
-			for i in 8:
-				var j=(i+1)%8
-				for vertex in [rings[level][i],rings[level+1][i],rings[level+1][j],rings[level][i],rings[level+1][j],rings[level][j]]: surface.add_vertex(vertex)
-		for i in range(1,7):
-			for vertex in [rings[0][0],rings[0][i+1],rings[0][i],rings[2][0],rings[2][i],rings[2][i+1]]: surface.add_vertex(vertex)
-		surface.generate_normals()
-		item.mesh=surface.commit()
-	return item
+		var leg := Node3D.new()
+		leg.position=Vector3(side*.105,.87,0)
+		add_child(leg)
+		limbs.append(leg)
+		_shape(leg,Vector3(.15,.73,.18),Vector3(0,-.365,0),suit.darkened(.18))
+		_shape(leg,Vector3(.16,.10,.27),Vector3(0,-.815,.04),Color("282a2c"))
+		var arm := Node3D.new()
+		arm.position=Vector3(side*shoulders,1.40,0)
+		add_child(arm)
+		limbs.append(arm)
+		_garment(arm,Vector3(.125,.29,.15),Vector3(0,-.13,0),suit)
+		var forearm := Node3D.new()
+		forearm.position=Vector3(0,-.27,0)
+		arm.add_child(forearm)
+		forearms.append(forearm)
+		_garment(forearm,Vector3(.105,.23,.12),Vector3(0,-.105,0),suit)
+		_shape(forearm,Vector3(.108,.042,.125),Vector3(0,-.21,0),shirt)
+		_shape(forearm,Vector3(.09,.115,.055),Vector3(0,-.285,.015),skin)
+	# Ombros e cintura suaves evitam o tronco cúbico do antigo motorista.
+	_garment(self,Vector3(.38 if appearance_female else .43,.55,.25),Vector3(0,1.15,0),suit)
+	_shape(self,Vector3(.34,.16,.24),Vector3(0,.88,0),suit.darkened(.1))
+	_shape(self,Vector3(.12,.13,.13),Vector3(0,1.47,0),skin)
+	DETAIL.piece(self,Vector3(.14,.32,.018),Vector3(0,1.26,.128),shirt)
+	for side in [-1,1]:
+		var lapel := DETAIL.piece(self,Vector3(.065,.27,.025),Vector3(side*.087,1.29,.14),suit.lightened(.15))
+		lapel.rotation.z=side*.20
+	DETAIL.piece(self,Vector3(.075,.047,.015),Vector3(-.12,1.31,.145),Color("c3b78f"))
+	if not appearance_female:
+		DETAIL.piece(self,Vector3(.035,.23,.014),Vector3(0,1.23,.15),Color("784951"))
+	else:
+		DETAIL.piece(self,Vector3(.10,.035,.021),Vector3(0,1.41,.145),Color("aa795d"))
+	# Cabeça com cerca de 1/7 da altura; nariz discreto e rente ao rosto.
+	_shape(self,Vector3(.225,.285,.225),Vector3(0,1.635,0),skin)
+	_shape(self,Vector3(.24,.105,.235),Vector3(0,1.748,-.013),hair)
+	_shape(self,Vector3(.228,.17,.09),Vector3(0,1.66,-.088),hair)
+	for side in [-1,1]:
+		_shape(self,Vector3(.035,.065,.044),Vector3(side*.115,1.625,0),skin)
+		_shape(self,Vector3(.026,.012,.014),Vector3(side*.047,1.65,.106),Color("302b2a"))
+		DETAIL.piece(self,Vector3(.035,.010,.008),Vector3(side*.047,1.677,.103),hair)
+	_shape(self,Vector3(.034,.046,.035),Vector3(0,1.615,.115),skin)
+	_shape(self,Vector3(.04,.01,.01),Vector3(0,1.565,.102),skin.darkened(.28))
+	if appearance_female:
+		_shape(self,Vector3(.17,.17,.15),Vector3(0,1.65,-.18),hair)
+		for side in [-1,1]:
+			_shape(self,Vector3(.05,.15,.13),Vector3(side*.104,1.70,-.025),hair)
+			_shape(self,Vector3(.018,.025,.018),Vector3(side*.128,1.60,.015),Color("c7a466"))
+	var shader := Shader.new()
+	shader.code="shader_type spatial; uniform vec4 tint : source_color; uniform bool behind_counter = true; varying float height; void vertex(){ height=(MODEL_MATRIX*vec4(VERTEX,1.0)).y; } void fragment(){ if(behind_counter && height<1.12){discard;} ALBEDO=tint.rgb; ROUGHNESS=0.85; }"
+	for item in find_children("*","MeshInstance3D",true,false):
+		var material := ShaderMaterial.new()
+		material.shader=shader
+		material.set_shader_parameter("tint",item.material_override.albedo_color)
+		item.material_override=material
+		_clipping_materials.append(material)
+	_process(0.0)
+
+func _shape(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> MeshInstance3D:
+	var piece := DETAIL.piece(parent,size,point,color,true)
+	var mesh := piece.mesh as SphereMesh
+	mesh.radial_segments=16
+	mesh.rings=8
+	return piece
 
 func set_behind_counter(behind: bool) -> void:
-	for index in [0,2]:
-		if limbs.size()>index: limbs[index].visible=not behind
-	for item in get_children():
-		if item is MeshInstance3D and item.position.y<1.0: item.visible=not behind
+	if behind_counter==behind: return
+	behind_counter=behind
+	# Oculta o corpo abaixo do tampo em 3D; mãos e antebraços continuam
+	# visíveis sobre a mesa. Fora do caixa, o mesmo rig reaparece inteiro.
+	for material in _clipping_materials:
+		material.set_shader_parameter("behind_counter",behind)
+
+func _garment(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> void:
+	var piece := DETAIL.piece(parent,Vector3.ONE,point,color)
+	var mesh := CylinderMesh.new()
+	mesh.top_radius=.5
+	mesh.bottom_radius=.42
+	mesh.height=1.0
+	mesh.radial_segments=16
+	piece.mesh=mesh
+	piece.scale=size
+
+func _process(delta: float) -> void:
+	clock+=delta
+	for i in limbs.size():
+		if i%2==0:
+			limbs[i].rotation.x=sin(clock*7.0+(PI if i==0 else 0.0))*(.33 if walking else .0)
+		else:
+			var side := -1.0 if i==1 else 1.0
+			limbs[i].rotation=Vector3(-.65+sin(clock*1.5)*.018,0,side*.05) if behind_counter and not walking else Vector3(sin(clock*7.0+(PI if i==3 else 0.0))*(.25 if walking else .012),0,side*.045)
+	for forearm in forearms:
+		forearm.rotation.x=-.80 if behind_counter and not walking else -.10

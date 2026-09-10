@@ -63,6 +63,21 @@ static func handoff(target: Camera2D, state: Dictionary) -> void:
 func _ready() -> void:
 	pass
 
+func frame_interior_follow() -> void:
+	var bounds: Rect2 = get_meta("interior_follow_bounds")
+	var screen := get_viewport_rect().size
+	# O zoom cobre a tela em qualquer proporção. As bordas do cenário nunca
+	# entram no quadro, e a câmera percorre o salão junto com o personagem.
+	var factor := maxf(maxf(screen.x / bounds.size.x, screen.y / bounds.size.y), screen.y / 235.0)
+	zoom = Vector2.ONE * factor
+	var half := screen / (factor * 2.0)
+	var focus: Vector2 = get_parent().global_position + Vector2(0,-20)
+	global_position = Vector2(clampf(focus.x, bounds.position.x+half.x, bounds.end.x-half.x), clampf(focus.y, bounds.position.y+half.y, bounds.end.y-half.y))
+	# Smoothing e shake poderiam revelar o vazio além do piso nos limites.
+	offset = Vector2.ZERO
+	_shake_amount = 0.0
+	reset_smoothing()
+
 func _setup_neon_vignette() -> void:
 	if _neon_overlay: return
 	_neon_overlay = CanvasLayer.new()
@@ -121,6 +136,9 @@ func _process(delta: float) -> void:
 	if not enabled or not is_current():
 		if _neon_overlay and _neon_overlay.visible:
 			_neon_overlay.visible = false
+		return
+	if has_meta("compact_interior") and has_meta("interior_follow_bounds") and not _is_overview_mode:
+		frame_interior_follow()
 		return
 	# Long frames must interpolate, never extrapolate through zero zoom. Reject
 	# non-finite inputs before division/lerp: clamping alone cannot repair NaN.
