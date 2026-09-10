@@ -1,7 +1,7 @@
 extends SceneTree
 var failures: Array[String] = []
 var capture := false
-const OUTPUT := "res://docs/measurements/dock-crew-0910/"
+const OUTPUT := "res://docs/measurements/dock-circuit-0910/"
 
 func _initialize() -> void: run.call_deferred()
 
@@ -10,7 +10,7 @@ func check(ok: bool, label: String) -> void:
 	if not ok: failures.append(label)
 
 func run() -> void:
-	create_timer(90).timeout.connect(func(): quit(2))
+	create_timer(180).timeout.connect(func(): quit(2))
 	capture = "--capture" in OS.get_cmdline_user_args()
 	var state := root.get_node("CampaignState")
 	state.reset_campaign()
@@ -38,8 +38,8 @@ func run() -> void:
 		var camera := Camera2D.new()
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
 		world.add_child(camera)
-		camera.global_position = Vector2(3550,1620)
-		camera.zoom = Vector2.ONE*1.7
+		camera.global_position = Vector2(3580,1735)
+		camera.zoom = Vector2.ONE*3.0
 		camera.make_current()
 	var recorder := AudioEffectRecord.new()
 	var slot := AudioServer.get_bus_effect_count(0)
@@ -51,6 +51,9 @@ func run() -> void:
 	var conserved := true
 	var saw_carried := false
 	var heard_gulls := false
+	var hands_aligned := true
+	var walked_forward := true
+	var saw_empty_return := false
 	var prior := []
 	for worker in crew.workers:
 		prior.append(worker.global_position)
@@ -58,7 +61,7 @@ func run() -> void:
 	var max_step := 0.0
 	var start := Time.get_ticks_msec()
 	var saved_carry := false
-	while Time.get_ticks_msec()-start < 15000:
+	while Time.get_ticks_msec()-start < 25000:
 		await physics_frame
 		for i in crew.workers.size():
 			var worker = crew.workers[i]
@@ -67,6 +70,14 @@ func run() -> void:
 				clear_cargo = clear_cargo and not obstacle.grow(10).has_point(worker.global_position)
 			conserved = conserved and worker.crate_total() == 3
 			saw_carried = saw_carried or (worker.carrying and worker.carried_box.visible)
+			saw_empty_return = saw_empty_return or (worker.phase == "return" and not worker.carrying and worker.velocity.length() > 1)
+			if worker.carrying and worker.phase == "carry" and worker._viewport_render_active:
+				var left: Vector3 = worker.model_root.to_local(worker.left_crate_grip.global_position)
+				var right: Vector3 = worker.model_root.to_local(worker.right_crate_grip.global_position)
+				hands_aligned = hands_aligned and left.z < -.25 and right.z < -.25 and worker.carried_box.position.distance_to((left+right)*.5) < .06
+				if worker.velocity.length() > 1:
+					var forward: Vector3 = -worker.model_root.transform.basis.z
+					walked_forward = walked_forward and Vector2(forward.x,forward.z).normalized().dot(worker.velocity.normalized()) > .95
 			max_step = maxf(max_step,worker.global_position.distance_to(prior[i]))
 			prior[i] = worker.global_position
 		heard_gulls = heard_gulls or crew.gull.playing
@@ -83,9 +94,14 @@ func run() -> void:
 	check(valid_deck and clear_cargo, "Operadores ficam no convés e fora dos contêineres")
 	check(max_step < 10, "Movimento contínuo, sem teletransporte")
 	check(conserved and saw_carried, "Caixas visíveis nas mãos e estoque conservado")
+	check(hands_aligned, "Caixa apoiada entre as duas luvas, à frente do corpo")
+	check(walked_forward, "Operadores giram antes de caminhar, sem transportar de costas")
+	check(saw_empty_return, "Depois de entregar, operadores retornam sem carga")
 	var delivered := true
 	for worker in crew.workers: delivered = delivered and worker.deliveries >= 1
 	check(delivered, "Cada operador concluiu pelo menos uma entrega")
+	for worker in crew.workers:
+		check(worker.completed_circuits >= 1, "Circuito fechado completo: " + worker.name)
 	check(heard_gulls and crew.gull.bus == &"SFX", "Gaivotas espaciais tocam na aproximação")
 	# Percorre o circuito autoral usando a cápsula e as colisões reais do jogador.
 	var passage_clear := true

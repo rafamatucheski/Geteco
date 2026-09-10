@@ -3,10 +3,11 @@ extends Node2D
 const WORKER := preload("res://world/harbor/HarborDockWorker.gd")
 const AUDIO := preload("res://audio/living_city/LivingCityAudio.gd")
 var ROUTES := [
-	PackedVector2Array([Vector2(3515,1708),Vector2(3515,1498)]),
-	PackedVector2Array([Vector2(3625,1678),Vector2(3625,1386)]),
-	# O corredor lateral x=3738 faz parte do circuito de exploração do jogador.
-	PackedVector2Array([Vector2(3442,1715),Vector2(3660,1715)]),
+	# Circuitos separados na área de triagem, entre contêineres e alojamento.
+	# Os corredores laterais e a passarela permanecem livres para o jogador.
+	PackedVector2Array([Vector2(3442,1702),Vector2(3498,1702),Vector2(3498,1768),Vector2(3442,1768)]),
+	PackedVector2Array([Vector2(3552,1702),Vector2(3608,1702),Vector2(3608,1768),Vector2(3552,1768)]),
+	PackedVector2Array([Vector2(3662,1702),Vector2(3718,1702),Vector2(3718,1768),Vector2(3662,1768)]),
 ]
 var workers: Array[Node2D] = []
 var gull: AudioStreamPlayer2D
@@ -26,7 +27,9 @@ func _ready() -> void:
 		var worker := WORKER.new()
 		worker.name = "DockOperator%d" % (i+1)
 		worker.worker_index = i
-		for point in ROUTES[i]: worker.work_points.append(to_global(point))
+		for point in ROUTES[i]: worker.work_route.append(to_global(point))
+		worker.work_points = PackedVector2Array([worker.work_route[0], worker.work_route[2]])
+		worker.station_points = PackedVector2Array([worker.work_points[0]+Vector2(0,-12), worker.work_points[1]+Vector2(0,12)])
 		add_child(worker)
 		worker.crate_handled.connect(_on_crate_handled)
 		workers.append(worker)
@@ -99,7 +102,7 @@ func _on_crate_handled(point: Vector2) -> void:
 func _draw() -> void:
 	for worker in workers:
 		for i in 2:
-			var point := to_local(worker.work_points[i]) + (Vector2(0,-30) if worker.worker_index == 2 else Vector2(-30,0))
+			var point := to_local(worker.station_points[i])
 			draw_rect(Rect2(point-Vector2(13,9),Vector2(26,18)),Color("615140"))
 			for count in worker.crate_stock[i]:
 				_draw_crate(point+Vector2(0,-count*5))
