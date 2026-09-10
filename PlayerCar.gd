@@ -406,15 +406,15 @@ func _physics_process(delta):
 
 	# Só processa os inputs se o jogador estiver no volante
 	if is_driven_by_player:
-		input_dir = Input.get_axis("ui_down", "ui_up")
-		turn_dir = Input.get_axis("ui_left", "ui_right")
+		input_dir = -get_node("/root/GameInput").movement().y
+		turn_dir = get_node("/root/GameInput").movement().x
 		if not _drive_input_armed:
 			_drive_input_armed = is_zero_approx(input_dir) and is_zero_approx(turn_dir)
 			input_dir = 0.0
 			turn_dir = 0.0
 
 		# Espaço = freio de mão / derrapagem manual. Shift = nitro (ver mais abaixo).
-		var wants_handbrake := Input.is_key_pressed(KEY_SPACE)
+		var wants_handbrake := Input.is_action_pressed("handbrake")
 		var weather := _get_weather_manager()
 		var rain_intensity: float = float(weather.get_rain_intensity()) if weather and weather.has_method("get_rain_intensity") else 0.0
 
@@ -458,18 +458,18 @@ func _physics_process(delta):
 		_update_skid_audio()
 
 		# Teclas de validação rápida para veículo
-		var horn_pressed := Input.is_key_pressed(KEY_H)
+		var horn_pressed := Input.is_action_pressed("horn")
 		if horn_pressed and not _horn_key_was_pressed:
 			honk_horn()
 		_horn_key_was_pressed = horn_pressed
 
-		var headlights_pressed := Input.is_key_pressed(KEY_L)
+		var headlights_pressed := Input.is_action_pressed("headlights")
 		if headlights_pressed and not _headlight_key_was_pressed:
 			toggle_headlights()
 		_headlight_key_was_pressed = headlights_pressed
 
 		# Verifica input para sair
-		var exit_pressed := Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or (InputMap.has_action("interact") and Input.is_action_pressed("interact"))
+		var exit_pressed := Input.is_action_pressed("exit_vehicle") or (InputMap.has_action("interact") and Input.is_action_pressed("interact"))
 		if not exit_pressed:
 			_entry_input_released = true
 		if _entry_input_released and exit_pressed and not _is_near_building_entrance():
@@ -525,7 +525,7 @@ func _physics_process(delta):
 				_engine_sound.stop()
 		
 		# === Rádio (Tecla R ou Input radio_next) ===
-		if Input.is_key_pressed(KEY_R) or (InputMap.has_action("radio_next") and Input.is_action_just_pressed("radio_next")):
+		if Input.is_action_just_pressed("radio_next"):
 			_next_radio_track()
 	else:
 		if engine_audio and engine_audio.playing:
@@ -702,7 +702,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
 	_entry_input_released = false
-	_drive_input_armed = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down").is_zero_approx()
+	_drive_input_armed = get_node("/root/GameInput").movement().is_zero_approx()
 	_last_collision_damage_ms = Time.get_ticks_msec()
 	add_collision_exception_with(player_body)
 	player_body.add_collision_exception_with(self)

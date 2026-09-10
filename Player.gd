@@ -290,8 +290,8 @@ func _create_shoe_mesh(mat: Material, offset: Vector3) -> MeshInstance3D:
 func _physics_process(delta: float) -> void:
 	fire_cooldown = maxf(0.0, fire_cooldown - delta)
 	_melee_swing_timer = maxf(0.0, _melee_swing_timer - delta)
-	var input_vector: Vector2 = Vector2.ZERO if (is_control_disabled or is_in_dialogue) else Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	var is_sprinting: bool = false if (is_control_disabled or is_in_dialogue) else (Input.is_action_pressed("sprint") or Input.is_key_pressed(KEY_SHIFT))
+	var input_vector: Vector2 = Vector2.ZERO if (is_control_disabled or is_in_dialogue) else get_node("/root/GameInput").movement()
+	var is_sprinting: bool = false if (is_control_disabled or is_in_dialogue) else Input.is_action_pressed("sprint")
 	var current_speed: float = speed * 1.50 if is_sprinting else speed
 
 	var is_moving: bool = input_vector != Vector2.ZERO
@@ -307,9 +307,9 @@ func _physics_process(delta: float) -> void:
 	_handle_footsteps(is_moving and get_position_delta().length_squared() > 0.01, is_sprinting)
 
 	# --- ROTAÇÃO 3D E ANIMAÇÃO ARTICULADA DO DANTE ---
-	var mouse_pos: Vector2 = get_global_mouse_position()
-	var is_aiming: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
-	weapon_aim_active = Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and active_weapon_id not in ["fists","knife","grenade"] and not is_control_disabled and not is_in_dialogue
+	var mouse_pos: Vector2 = get_node("/root/GameInput").aim_target(self)
+	var is_aiming: bool = Input.is_action_pressed("fire") or Input.is_action_pressed("aim")
+	weapon_aim_active = Input.is_action_pressed("aim") and active_weapon_id not in ["fists","knife","grenade"] and not is_control_disabled and not is_in_dialogue
 	var aim_dir: Vector2 = (mouse_pos - global_position).normalized() if is_aiming else (input_vector.normalized() if is_moving else (mouse_pos - global_position).normalized())
 
 	if model_root and aim_dir.length_squared() > 0.01:
@@ -933,56 +933,38 @@ func _setup_weapons() -> void:
 func _input(event: InputEvent) -> void:
 	if not visible or is_control_disabled or is_in_dialogue or get_tree().get_nodes_in_group("weapon_store_open").size() > 0:
 		return
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_cycle_weapon(1)
+	if event.is_action_pressed("weapon_next"):
+		_cycle_weapon(1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("weapon_previous"):
+		_cycle_weapon(-1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("reload"):
+		if not is_dead and not is_arrested and not is_recovering:
+			_reload_active_weapon()
 			get_viewport().set_input_as_handled()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_cycle_weapon(-1)
-			get_viewport().set_input_as_handled()
-	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_R or event.physical_keycode == KEY_R:
-			if not is_dead and not is_arrested and not is_recovering:
-				_reload_active_weapon()
+	elif event.is_action_pressed("unarmed"):
+		if weapon_inventory.get("fists",false): equip_weapon("fists")
+		get_viewport().set_input_as_handled()
+	elif event.is_pressed() and not event.is_echo():
+		var weapons := ["pistol","magnum","smg","shotgun","sawed_off","ak47","m4a1","rpg","flamethrower","grenade"]
+		for i in weapons.size():
+			if event.is_action_pressed("weapon_slot_%d" % (i+1)) and can_carry_weapon(weapons[i]):
+				equip_weapon(weapons[i])
 				get_viewport().set_input_as_handled()
-			return
-		var key_map := {
-			KEY_1: "pistol",
-			KEY_2: "magnum",
-			KEY_3: "smg",
-			KEY_4: "shotgun",
-			KEY_5: "sawed_off",
-			KEY_6: "ak47",
-			KEY_7: "m4a1",
-			KEY_8: "rpg",
-			KEY_9: "flamethrower",
-			KEY_0: "grenade"
-		}
-		if key_map.has(event.keycode):
-			var target_weapon: String = key_map[event.keycode]
-			if can_carry_weapon(target_weapon):
-				active_weapon_id = target_weapon
-				_update_equipped_weapon_3d_mesh()
-				_refresh_weapon_ui()
-				get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_X:
-			# Maos livres na hora, sem precisar dar a volta na roda de armas.
-			if weapon_inventory.get("fists", false) == true:
-				active_weapon_id = "fists"
-				_update_equipped_weapon_3d_mesh()
-				_refresh_weapon_ui()
-				get_viewport().set_input_as_handled()
+				break
+
 
 func _handle_weapon_fire() -> void:
 	var data := WEAPON_CATALOG.get_weapon(active_weapon_id)
 	if data.is_empty():
 		return
-	var primary_pressed: bool = Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	var primary_pressed: bool = Input.is_action_pressed("fire")
 	if _flamethrower_audio and _flamethrower_audio.playing and (not primary_pressed or active_weapon_id != "flamethrower"):
 		_flamethrower_audio.stop()
 	var wants_to_fire: bool = primary_pressed if (data.get("automatic", false) == true) else primary_pressed and not primary_fire_was_pressed
 	if wants_to_fire and fire_cooldown <= 0.0:
-		_shoot_towards(get_global_mouse_position())
+		_shoot_towards(get_node("/root/GameInput").aim_target(self))
 	primary_fire_was_pressed = primary_pressed
 
 func _shoot_towards(target: Vector2) -> void:

@@ -217,8 +217,8 @@ func _build_tuning_bench() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_near_bench:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_E:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("interact"):
 			if not bench_dialog.visible:
 				_run_tuning()
 			else:

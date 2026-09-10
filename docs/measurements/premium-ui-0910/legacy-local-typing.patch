@@ -1,0 +1,20 @@
+--- a/MissionManager.gd
++++ b/MissionManager.gd
+@@ -197,7 +197,7 @@
+ 	if collectible_quest_markers.size() >= MAX_COLLECTIBLE_QUESTS:
+ 		_complete_collectible_mission(collectible_quest_markers.size() - 1, false)
+ 	var marker := Node2D.new()
+-	marker.name = "CollectibleQuest_%s" % String(collectible_quest_markers.size())
++	marker.name = "CollectibleQuest_%s" % str(collectible_quest_markers.size())
+ 	marker.position = position
+ 	marker.add_to_group("collectible_quest_marker")
+ 	add_child(marker)
+@@ -241,7 +241,7 @@
+ 	var quest := collectible_quest_markers[index]
+ 	var reward_money := int(quest.get("reward_money", 0))
+ 	var suffix := String(quest.get("suffix", ""))
+-	var marker := quest.get("marker", null)
++	var marker: Node = quest.get("marker", null)
+ 	if marker != null and is_instance_valid(marker):
+ 		marker.queue_free()
+ 	collectible_quest_markers.remove_at(index)

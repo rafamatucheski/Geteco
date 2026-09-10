@@ -508,8 +508,8 @@ func _refresh_heal_badge(player: Node) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_near_alarm:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_E:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("interact"):
 			if not alarm_dialog.visible:
 				_sound_alarm_and_equip()
 			else:

@@ -91,12 +91,12 @@ func _process(delta: float) -> void:
 				interiors._on_exit_door_requested(garage.exit_door,car,&"",null,&"",&"harbor/District/Garage/Entrance")
 				car.rotation = PI/2)
 	capture_state()
-func _unhandled_key_input(event: InputEvent) -> void:
-	if not event is InputEventKey or not event.pressed or event.echo: return
-	if panel.visible and event.physical_keycode == KEY_ESCAPE:
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_pressed() or event.is_echo(): return
+	if panel.visible and event.is_action_pressed("ui_cancel"):
 		close_panel()
 		get_viewport().set_input_as_handled()
-	elif event.physical_keycode == KEY_T and prompt.visible and car.unlocked:
+	elif event.is_action_pressed("trunk") and prompt.visible and car.unlocked:
 		open_panel()
 		get_viewport().set_input_as_handled()
 func open_panel() -> void:
@@ -215,8 +215,8 @@ func _build_ui() -> void:
 	layer.add_child(panel)
 	panel.visibility_changed.connect(func(): dim.visible = panel.visible)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	panel.offset_left = -300
-	panel.offset_right = 300
+	panel.offset_left = -440
+	panel.offset_right = 440
 	panel.offset_top = 18
 	panel.offset_bottom = 18
 	panel.grow_vertical = Control.GROW_DIRECTION_END
@@ -248,7 +248,8 @@ func _build_ui() -> void:
 	layout.add_child(weapon_stats)
 	weapon_stats.hide()
 	save_button = Button.new()
-	save_button.text = _text("Salvar", "Save")
+	save_button.text = _text("EQUIPAR", "EQUIP")
+	save_button.set_meta("primary_action",true)
 	save_button.pressed.connect(save_loadout)
 	heading.add_child(save_button)
 	var close := Button.new()
@@ -260,8 +261,19 @@ func _refresh_rows(near: bool) -> void:
 	for child in rows.get_children(): rows.remove_child(child); child.queue_free()
 	if near:
 		for slot in RULES.GROUPS:
+			var card := PanelContainer.new()
+			rows.add_child(card)
 			var line := HBoxContainer.new()
-			rows.add_child(line)
+			line.add_theme_constant_override("separation",14)
+			card.add_child(line)
+			var icon := TextureRect.new()
+			icon.custom_minimum_size = Vector2(56,40)
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			var selected_id := String(pending_loadout.get(slot,""))
+			var icon_path := "res://assets/art/weapons/icon_"+selected_id+".png"
+			if ResourceLoader.exists(icon_path): icon.texture = load(icon_path)
+			line.add_child(icon)
 			var label := Label.new()
 			label.text = {"curta":_text("CURTA","SIDEARM"),"longa":_text("LONGA","LONG GUN"),"corpo":_text("CORPO A CORPO","MELEE"),"granada":_text("GRANADA","GRENADE")}[slot]
 			label.custom_minimum_size.x = 110
@@ -289,3 +301,5 @@ func _refresh_rows(near: bool) -> void:
 		service.disabled = player.money<250 or car.is_driven_by_player
 		service.pressed.connect(recover)
 		rows.add_child(service)
+	preload("res://ui/GameStyle.gd").apply(panel,get_node("/root/SettingsManager").text_scale)
+	preload("res://ui/GameStyle.gd").trap_focus.call_deferred(panel)

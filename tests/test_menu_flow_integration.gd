@@ -127,8 +127,8 @@ func _run_integration_flow() -> void:
 	_report_step("Disparo de SFX de Clique", click_triggered, "AudioStreamPlayer '__MenuClickPlayer' criado no bus SFX")
 
 	# A transição agora inclui um fade real; frames headless não medem duração.
-	var transition_deadline := Time.get_ticks_msec() + 5000
-	while current_scene == main_menu and Time.get_ticks_msec() < transition_deadline:
+	var transition_deadline := Time.get_ticks_msec() + 120000
+	while root.get_node("GameLoading").active and Time.get_ticks_msec() < transition_deadline:
 		await process_frame
 	for i in range(15):
 		await process_frame
@@ -350,7 +350,7 @@ func _run_integration_flow() -> void:
 	# Encontrar botão do slot_01 na lista gerada
 	var slot_01_btn: Button = null
 	for child in slot_list_container.get_children():
-		if child is Button and "SLOT_01" in child.text:
+		if child is Button and child.get_meta("save_slot","") == "slot_01":
 			slot_01_btn = child
 			break
 	
@@ -363,6 +363,9 @@ func _run_integration_flow() -> void:
 		slot_01_btn.pressed.emit()
 		
 		# Aguardar troca de cena para Main.tscn e restauração do save
+		var load_deadline := Time.get_ticks_msec()+120000
+		while root.get_node("GameLoading").active and Time.get_ticks_msec()<load_deadline:
+			await process_frame
 		for i in range(15):
 			await process_frame
 		

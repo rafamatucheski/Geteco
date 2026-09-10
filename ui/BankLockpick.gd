@@ -57,11 +57,11 @@ func _process(delta: float) -> void:
 	dial.queue_redraw()
 func _input(event: InputEvent) -> void:
 	if not active: return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode==KEY_ESCAPE:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("ui_cancel"):
 			finish(false)
 			get_viewport().set_input_as_handled()
-		elif event.keycode==KEY_SPACE:
+		elif event.is_action_pressed("ui_accept"):
 			attempt()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:

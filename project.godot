@@ -33,6 +33,8 @@ CampaignState="*res://CampaignState.gd"
 DistrictRestriction="*res://DistrictRestrictionManager.gd"
 SaveManager="*res://SaveManager.gd"
 RegionTravel="*res://RegionTravel.gd"
+GameInput="*res://ui/GameInput.gd"
+GameLoading="*res://ui/GameLoading.gd"
 
 [display]
 

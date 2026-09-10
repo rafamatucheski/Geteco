@@ -10,6 +10,12 @@ var _roads: Array[Dictionary] = []
 var _buildings: Array[Rect2] = []
 var _mountain_cached := false
 var _tick := 0.0
+var objective_target := Vector2.ZERO
+var objective_marker := Vector2.ZERO
+var route_points := PackedVector2Array()
+var _route_clock := 0.0
+var _route_graph = preload("res://ui/StreetRoute.gd").new()
+var _route_road_count := 0
 var center := Vector2.ZERO
 var car_map_position := Vector2.ZERO
 var car_marker := Vector2.ZERO
@@ -119,7 +125,23 @@ func refresh() -> void:
 		for point: Vector2 in stream.mountain.road.smooth_points: points.append(stream.mountain.road.to_global(point))
 		_roads.append({"points":points,"width":140.0})
 		_mountain_cached = true
-	panel.visible = not player.is_dead
+	var campaign: Node = world.get_node_or_null("CobraCampaign")
+	var arrival: Node = world.get_node_or_null("ArrivalMission")
+	objective_target = Vector2.ZERO
+	if campaign != null and get_node("/root/CampaignState").has_campaign_flag(&"harbor_delivery_complete"):
+		objective_target = campaign.navigation_target
+	elif arrival != null:
+		objective_target = arrival.navigation_target
+	objective_marker = edge_marker(objective_target)
+	_route_clock += 0.1
+	if _route_clock >= 0.75:
+		_route_clock = 0
+		if _route_road_count != _roads.size():
+			_route_graph.build(_roads)
+			_route_road_count = _roads.size()
+		route_points = _route_graph.route(center,objective_target) if objective_target != Vector2.ZERO else PackedVector2Array()
+	if objective_target != Vector2.ZERO: caption.text = ("DESTINO / " if not TranslationServer.get_locale().begins_with("en") else "DESTINATION / ")+str(roundi(center.distance_to(objective_target)/16.6))+" m"
+	panel.visible = not get_tree().paused and not player.is_dead and not player.is_in_dialogue and not player.is_control_disabled and map_world_position(player).distance_to(player.global_position)<500
 	canvas.queue_redraw()
 func _process(delta: float) -> void:
 	_tick += delta
@@ -134,6 +156,13 @@ func _draw_map() -> void:
 		var points := PackedVector2Array()
 		for point: Vector2 in road.points: points.append(project(point))
 		if points.size()>1: canvas.draw_polyline(points,Color("a8b4b0"),maxf(2,road.width*SCALE*0.45),true)
+	if get_node("/root/SettingsManager").route_visible and objective_target != Vector2.ZERO:
+		var line := PackedVector2Array()
+		for point in route_points: line.append(project(point))
+		if line.size()>1: canvas.draw_polyline(line,Color("ff914d"),3.0,true)
+		var p := objective_marker
+		canvas.draw_circle(p,10,Color("101820"))
+		canvas.draw_colored_polygon(PackedVector2Array([p+Vector2(0,-7),p+Vector2(7,0),p+Vector2(0,7),p+Vector2(-7,0)]),Color("ff914d"))
 	# Small aerosol silhouette: body, shoulder, nozzle and three spray rays.
 	for shop in get_tree().get_nodes_in_group("clothing_shop"):
 		var p := project(shop.global_position)

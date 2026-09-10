@@ -219,7 +219,7 @@ var _door_configs: Dictionary = {}
 func _unhandled_input(event: InputEvent) -> void:
 	if not enabled:
 		return
-	if event.is_action_pressed("interact") or (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E):
+	if event.is_action_pressed("interact"):
 		var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
 		var active_actor: Node2D = player
 		for v in get_tree().get_nodes_in_group("vehicle"):

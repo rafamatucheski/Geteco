@@ -134,7 +134,7 @@ func _build_ui() -> void:
 ## temporários): topo livre logo abaixo do painel de temperatura/proteção
 ## térmica, já com uma margem de respiro.
 func get_stack_bottom_offset() -> float:
-	return BLOCK_TOP + 96.0
+	return maxf(BLOCK_TOP+96.0,_panel.position.y+maxf(96,_panel.size.y)) if is_instance_valid(_panel) else BLOCK_TOP+96.0
 
 ## A CGI de abertura (cutscenes/opening/) roda numa CanvasLayer própria em
 ## layer=100 (HarborArrivalMission.gd:_opening_layer); nosso `layer=105`
@@ -232,3 +232,6 @@ func _draw_frost_vignette() -> void:
 	_frost_panel.draw_rect(Rect2(0, 0, border_w, vp_size.y), col)
 	# Direita
 	_frost_panel.draw_rect(Rect2(vp_size.x - border_w, 0, border_w, vp_size.y), col)
+
+func set_stack_top(value: float) -> void:
+	if is_instance_valid(_panel): _panel.position.y = maxf(BLOCK_TOP,value)

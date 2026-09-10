@@ -89,6 +89,9 @@ func _start_gameplay() -> void:
 	minimap.name = "Minimap"
 	add_child(minimap)
 	get_node("/root/RegionTravel").finish_arrival(self)
+	var presentation := preload("res://ui/GameplayPresentation.gd").new()
+	presentation.name = "GameplayPresentation"
+	add_child(presentation)
 
 ## Desmanche, colecionáveis e zonas de drift — esta é a árvore que "Novo
 ## Jogo" realmente carrega (Main.tscn é legado, só usado por saves antigos).

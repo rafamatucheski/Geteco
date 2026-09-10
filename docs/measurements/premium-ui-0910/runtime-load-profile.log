@@ -1,0 +1,13 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/profile_load_time_0909.gd:32)
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=48 issues=0
+LOAD_PROFILE load_ms=2084 instantiate_ms=1 add_child_ms=1957 first180frames_ms=7455 total_ms=11497
+LOAD_PROFILE_SPIKES frame0=5523ms frame1=355ms
+LOAD_PROFILE_NODES total=8062 MeshInstance3D=2733 CollisionShape2D=975 Polygon2D=693 Node3D=412 Area2D=371 StaticBody2D=308 Node2D=287 Sprite2D=264 Path2D=262 RayCast2D=198 PointLight2D=179 Label=170 CharacterBody2D=161 Line2D=107 Marker2D=96 VisibleOnScreenNotifier2D=81 CollisionPolygon2D=73 Camera2D=71
+LOAD_PROFILE_MONITORS nodes=8242 orphans=0 draw_calls=1094 video_mem_mb=584.0 static_mem_mb=305.7

@@ -23,6 +23,7 @@ var phase := "idle"
 var dialogue_index := 0
 var objective := ""
 var target := Vector2.ZERO
+var navigation_target := Vector2.ZERO
 var world: Node2D
 var player: Node2D
 var garage: Node2D
@@ -110,6 +111,9 @@ func start_or_resume() -> void:
 	garage.call("set_campaign_contact_enabled", not _flag("harbor_maciota_met"))
 	garage.call("set_mission_board_unlocked", _flag("harbor_maciota_met"))
 	_refresh_board()
+	var loading := get_node_or_null("/root/GameLoading")
+	if loading != null and loading.active:
+		await loading.finished
 	if _flag("harbor_delivery_complete"):
 		_set_phase("complete", tr("OBJ_COMPLETE_RESUME"), Vector2.ZERO)
 	elif _flag("harbor_delivery_picked_up"):
@@ -347,7 +351,7 @@ func _pickup_position() -> Vector2:
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_ENTER, KEY_SPACE] and phase in ["arrival", "phone"]:
+	if event.is_action_pressed("ui_accept") and not event.is_echo() and phase in ["arrival", "phone"]:
 		advance_dialogue()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("interact") and phase in ["delivery_pickup", "delivery_return"]:
@@ -400,6 +404,7 @@ func _refresh_objective() -> void:
 			destination = (garage.get("mission_board") as Node2D).global_position
 		elif phase == "delivery_pickup":
 			destination = (garage.get("exit_door") as Node2D).global_position
+	navigation_target = destination if phase not in ["idle","phone","arrival","disembark","arrival_wait"] else Vector2.ZERO
 	var suffix := ""
 	if destination != Vector2.ZERO and phase not in ["phone", "arrival", "delivery_pickup"]:
 		var map_position: Vector2=player.get_meta("police_exterior_position",player.global_position)

@@ -26,15 +26,30 @@ var _selected_slot_id: String = ""
 var _settings_instance: Control = null
 var _music_player: AudioStreamPlayer = null
 var _starting_game := false
+var btn_continue: Button
+var _latest_slot := ""
+var latest_save: Dictionary = {}
+const SAVE_TEXT = preload("res://ui/SavePresentation.gd")
+var _load_shade: ColorRect
+const STYLE = preload("res://ui/GameStyle.gd")
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	load_panel.visible = false
+	_setup_continue()
 	_apply_static_text()
 	var presentation := preload("res://ui/SunsetMenuPresentation.gd").new()
 	add_child(presentation)
 	move_child(presentation, get_node("LoadPanel").get_index())
 	presentation.install(self)
+	_load_shade = ColorRect.new()
+	_load_shade.color = Color(0.02,0.03,0.04,0.75)
+	_load_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_load_shade)
+	move_child(_load_shade,load_panel.get_index())
+	_load_shade.hide()
+	STYLE.apply(load_panel)
+	get_node("/root/GameLoading").failed.connect(_on_loading_failed)
 
 	# Conexões dos botões principais
 	btn_new_game.pressed.connect(_on_btn_new_game_pressed)
@@ -47,7 +62,7 @@ func _ready() -> void:
 	_start_bg_music()
 
 	# Foco inicial para teclado / gamepad
-	btn_new_game.grab_focus()
+	(btn_continue if not _latest_slot.is_empty() else btn_new_game).grab_focus()
 
 	var sm = get_node_or_null("/root/SettingsManager")
 	if sm and not sm.language_changed.is_connected(_on_language_changed):
@@ -61,6 +76,7 @@ func _apply_static_text() -> void:
 	btn_quit.text = tr("MENU_QUIT")
 	load_panel_title.text = tr("MENU_LOAD_TITLE")
 	btn_close_load.text = tr("COMMON_CLOSE")
+	if btn_continue != null: btn_continue.text = _text("CONTINUAR", "CONTINUE")
 
 func _on_language_changed(_locale: String) -> void:
 	_apply_static_text()
@@ -84,43 +100,16 @@ func _stop_bg_music() -> void:
 		_music_player.stop()
 
 func _on_btn_new_game_pressed() -> void:
-	if _starting_game:
-		return
-	_starting_game = true
-	var fade_layer := CanvasLayer.new()
-	fade_layer.layer = 120
-	add_child(fade_layer)
-	var black := ColorRect.new()
-	black.color = Color(0, 0, 0, 0)
-	black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	fade_layer.add_child(black)
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(black, "color:a", 1.0, 0.45)
-	if is_instance_valid(_music_player):
-		tween.tween_property(_music_player, "volume_db", -60.0, 0.45)
-	await tween.finished
-	_stop_bg_music()
-	# 1. Resetar CampaignState
-	var campaign = get_node_or_null("/root/CampaignState")
-	if campaign and campaign.has_method("reset_campaign"):
-		campaign.reset_campaign()
-	
-	# 2. Resetar WantedManager
-	var wanted = get_node_or_null("/root/WantedManager")
-	if wanted and wanted.has_method("reset"):
-		wanted.reset()
-	
-	# 3. Limpar qualquer save pendente
-	var sm = get_node_or_null("/root/SaveManager")
-	if sm and sm.has_method("clear_pending_save"):
-		sm.clear_pending_save()
-	
-	# 4. Carregar cena principal
-	get_tree().change_scene_to_file(MAIN_GAME_SCENE)
+	if _starting_game: return
+	_starting_game = get_node("/root/GameLoading").begin(MAIN_GAME_SCENE,true)
 
 func _on_btn_load_game_pressed() -> void:
+	if _starting_game: return
 	_refresh_load_panel()
 	load_panel.visible = true
+	_load_shade.show()
+	_set_main_buttons_disabled(true)
+	STYLE.trap_focus.call_deferred(load_panel)
 
 func _refresh_load_panel() -> void:
 	for child in slot_list_container.get_children():
@@ -147,32 +136,34 @@ func _refresh_load_panel() -> void:
 		var summary: Dictionary = info.get("summary", {})
 		
 		var panel_btn := Button.new()
+		panel_btn.set_meta("save_slot",slot_id)
 		panel_btn.custom_minimum_size = Vector2(0, 52)
 		panel_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		
 		var text_content := ""
 		if not exists:
-			text_content = tr("MENU_SLOT_EMPTY") % slot_id.to_upper()
+			text_content = tr("MENU_SLOT_EMPTY") % SAVE_TEXT.slot_name(slot_id)
 			panel_btn.disabled = true
 		elif not valid:
-			text_content = tr("MENU_SLOT_INCOMPATIBLE") % [slot_id.to_upper(), err_text]
+			text_content = tr("MENU_SLOT_INCOMPATIBLE") % [SAVE_TEXT.slot_name(slot_id), err_text]
 			panel_btn.disabled = true
 			panel_btn.add_theme_color_override("font_disabled_color", Color("#e74c3c"))
 		else:
 			any_valid = true
 			var money: int = int(summary.get("money", 0))
-			var stage: String = String(summary.get("current_stage", "início"))
+			var stage: String = SAVE_TEXT.stage_name(String(summary.get("current_stage", "")),get_node("/root/CampaignState"))
 			var stars: int = int(summary.get("current_stars", 0))
 			var stars_str := ""
 			for s in range(stars): stars_str += "★"
 			
-			text_content = "  [%s]  %s  |  $%07d  |  %s  %s" % [
-				slot_id.to_upper(), date_str, money, stage, stars_str
+			text_content = "%s · %s · $%d\n%s  %s" % [
+				SAVE_TEXT.slot_name(slot_id), date_str, money, stage, stars_str
 			]
 			panel_btn.add_theme_color_override("font_color", Color("#f1c40f"))
 			panel_btn.pressed.connect(func(): _select_and_load_slot(slot_id))
 		
 		panel_btn.text = text_content
+		STYLE.apply(panel_btn)
 		MenuAudio.hook_button(panel_btn, self)
 		slot_list_container.add_child(panel_btn)
 	
@@ -180,6 +171,7 @@ func _refresh_load_panel() -> void:
 		label_load_status.text = tr("MENU_NO_VALID_SAVES")
 
 func _select_and_load_slot(slot_id: String) -> void:
+	if _starting_game: return
 	var sm = get_node_or_null("/root/SaveManager")
 	if not sm:
 		label_load_status.text = tr("MENU_ERROR_NO_SAVEMANAGER")
@@ -189,13 +181,15 @@ func _select_and_load_slot(slot_id: String) -> void:
 	if res.get("success", false):
 		_stop_bg_music()
 		label_load_status.text = tr("MENU_LOADING") % slot_id
-		get_tree().change_scene_to_file(SCENE_ROUTE.for_save(res.get("data", {})))
+		_starting_game = get_node("/root/GameLoading").begin(SCENE_ROUTE.for_save(res.get("data", {})))
 	else:
 		label_load_status.text = tr("MENU_LOAD_FAILED") % res.get("error", tr("COMMON_UNKNOWN_ERROR"))
 		label_load_status.add_theme_color_override("font_color", Color("#e74c3c"))
 
 func _on_close_load_panel_pressed() -> void:
 	load_panel.visible = false
+	_load_shade.hide()
+	_set_main_buttons_disabled(false)
 	btn_load_game.grab_focus()
 
 func _on_btn_settings_pressed() -> void:
@@ -204,11 +198,45 @@ func _on_btn_settings_pressed() -> void:
 		_settings_instance.closed.connect(_on_settings_closed)
 		add_child(_settings_instance)
 	_settings_instance.visible = true
+	_set_main_buttons_disabled(true)
 
 func _on_settings_closed() -> void:
+	_set_main_buttons_disabled(false)
 	btn_settings.grab_focus()
 
 func _on_btn_quit_pressed() -> void:
 	btn_quit.disabled = true
 	await get_tree().create_timer(0.18).timeout
 	get_tree().quit()
+
+func _setup_continue() -> void:
+	var latest := 0
+	for slot in get_node("/root/SaveManager").list_slots():
+		if slot.valid and int(slot.timestamp) >= latest:
+			latest = int(slot.timestamp)
+			_latest_slot = slot.slot_id
+			latest_save = slot
+	btn_continue = Button.new()
+	btn_continue.name = "BtnContinue"
+	btn_continue.visible = not _latest_slot.is_empty()
+	add_child(btn_continue)
+	btn_continue.pressed.connect(func(): _select_and_load_slot(_latest_slot))
+	MenuAudio.hook_button(btn_continue,self)
+
+func _set_main_buttons_disabled(value: bool) -> void:
+	for button in [btn_continue,btn_new_game,btn_load_game,btn_settings,btn_quit]:
+		button.disabled = value
+
+func _unhandled_input(event: InputEvent) -> void:
+	if load_panel.visible and event.is_action_pressed("ui_cancel"):
+		_on_close_load_panel_pressed()
+		get_viewport().set_input_as_handled()
+
+func _on_loading_failed(_message: String) -> void:
+	_starting_game = false
+	_set_main_buttons_disabled(load_panel.visible)
+	if load_panel.visible: STYLE.trap_focus(load_panel)
+	_start_bg_music()
+
+func _text(pt: String,en: String) -> String:
+	return en if TranslationServer.get_locale().begins_with("en") else pt

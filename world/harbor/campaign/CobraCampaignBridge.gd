@@ -35,6 +35,8 @@ var _locked_vehicle: Node2D
 var _vehicle_physics_enabled := false
 var _previous_paused := false
 
+var navigation_target := Vector2.ZERO
+
 func configure(scene: Node2D) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	world = scene
@@ -143,6 +145,9 @@ func _refresh() -> void:
 		if player.global_position.distance_to(garage.global_position) < 900.0:
 			target = garage.exit_door.global_position
 		description += " · %.0f m" % [player.global_position.distance_to(target) / 16.6]
+	if target == Vector2.ZERO and not bool(ledger.data.defeated):
+		target = garage.mission_board.global_position if player.global_position.distance_to(garage.global_position)<900 else world.get_node("District/Garage/Entrance").global_position
+	navigation_target = target
 	_objective.text = _text("DIA ", "DAY ") + str(ledger.data.day) + "  ·  " + description
 	if is_instance_valid(_objective_tag):
 		_objective_tag.text = _text("🎯 OBJETIVO ATUAL", "🎯 CURRENT OBJECTIVE")
@@ -152,10 +157,11 @@ func _refresh() -> void:
 		var maciota_talking: bool = bool(maciota.get("is_talking")) if is_instance_valid(maciota) else false
 		var terminal_open: bool = _is_any_interior_modal_open()
 		var modal_open: bool = _journal.visible or _dialog.visible or board_open or maciota_talking or terminal_open or _locked
-		_objective_card.visible = enabled and not modal_open
+		_objective_card.visible = enabled and not modal_open and not get_tree().paused
+		_journal_button.visible = enabled and not modal_open and not get_tree().paused
 	_update_marker(target)
 	_journal_button.text = _text("Diário [J]", "Journal [J]")
-	_rest_button.text = _text("Descansar até amanhã", "Rest until tomorrow")
+	_rest_button.text = _text("Descansar até amanhã · opcional", "Rest until tomorrow · optional")
 	_close_button.text = _text("Voltar ao jogo [J / Esc]", "Back to game [J / Esc]")
 	_rest_button.disabled = not can_rest()
 	var reason := _rest_block_reason()
@@ -163,15 +169,21 @@ func _refresh() -> void:
 	_rest_reason.visible = not reason.is_empty()
 	if _journal.visible:
 		var lines := "[font_size=26]" + _text("HARBOR / O PRIMEIRO CAPÍTULO", "HARBOR / CHAPTER ONE") + "[/font_size]\n\n"
-		lines += _text("Um dia passa em 10 minutos de jogo ativo. Descansar é opcional.\nO próximo serviço libera assim que você termina o anterior. Aceite no quadro.\n\n", "A day takes 10 active play minutes. Resting is optional.\nThe next job unlocks as soon as you finish the previous one. Accept it on the board.\n\n")
-		for row in board.campaign_missions:
+		lines += "[color=#ff914d]" + _text("AGORA", "NOW") + "[/color]\n" + description + "\n\n"
+		lines += "[color=#ff914d]" + _text("SEUS SERVIÇOS", "YOUR JOBS") + "[/color]\n\n"
+		var ordered: Array = board.campaign_missions.duplicate()
+		ordered.sort_custom(func(a,b): return (2 if a.completed else (0 if a.enabled else 1)) < (2 if b.completed else (0 if b.enabled else 1)))
+		for row in ordered:
 			var title := String(row.title)
-			lines += ("[s]" + title + "[/s]" if bool(row.completed) else title) + "\n"
+			var status_label := _text("Concluído", "Completed") if row.completed else (_text("Disponível", "Available") if row.enabled else _text("Bloqueado", "Locked"))
+			lines += ("[s]" + title + "[/s]" if bool(row.completed) else title) + " · " + status_label + "\n"
 			if bool(row.completed):
 				var clue: String = runtime.get_brother_clue(str(row.id))
 				if not clue.is_empty():
 					lines += "[color=#e8b44f]" + clue + "[/color]\n"
-			lines += "[color=#b8b4a6]" + String(row.get("requirement", "")) + "[/color]\n\n"
+			var requirement := String(row.get("requirement", ""))
+			if not requirement.is_empty(): lines += "[color=#b8b4a6]" + requirement + "[/color]\n"
+			lines += "\n"
 		lines += _text("Moradores: ", "Residents: ") + str(ledger.data.civilian_reputation)
 		lines += _text("  ·  Acesso Cobra: ", "  ·  Cobra access: ") + str(ledger.data.cobra_access)
 		if ledger.data.secret_owned.has("ashbend_coupe"):
@@ -195,7 +207,7 @@ func _refresh_board() -> void:
 			"prerequisite": requirement = _text("Conclua o serviço anterior.", "Finish the previous job.")
 			"active": requirement = _text("Há uma missão em andamento.", "A mission is already in progress.")
 		var titles = LEDGER.TITLES_EN if TranslationServer.get_locale().begins_with("en") else LEDGER.TITLES_PT
-		rows.append({"id": id, "title": titles[index], "description": _text("Serviço autorado · $%d", "Authored job · $%d") % LEDGER.REWARDS[index], "enabled": bool(state.available), "completed": bool(ledger.data.completed.get(id, false)), "requirement": requirement})
+		rows.append({"id": id, "title": titles[index], "description": _text("Serviço para os contatos do Maciota · Recompensa $%d", "A job for Maciota’s contacts · Reward $%d") % LEDGER.REWARDS[index], "enabled": bool(state.available), "completed": bool(ledger.data.completed.get(id, false)), "requirement": requirement})
 	if board.campaign_missions != rows:
 		garage.configure_mission_board(rows)
 
@@ -266,14 +278,14 @@ func rest() -> bool:
 func _input(event: InputEvent) -> void:
 	if not is_instance_valid(player) or not _onboarding_done() or (get_tree().paused and not _locked):
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if _dialog.visible and event.physical_keycode in [KEY_ENTER, KEY_SPACE]:
+	if event.is_pressed() and not event.is_echo():
+		if _dialog.visible and event.is_action_pressed("ui_accept"):
 			_next_message()
 			get_viewport().set_input_as_handled()
-		elif event.physical_keycode == KEY_J or (event.physical_keycode == KEY_ESCAPE and _journal.visible):
+		elif event.is_action_pressed("journal") or (event.is_action_pressed("ui_cancel") and _journal.visible):
 			_toggle_journal()
 			get_viewport().set_input_as_handled()
-		elif not _locked and event.physical_keycode == KEY_R and runtime.active_id == "cobra_race":
+		elif not _locked and event.is_action_pressed("radio_next") and runtime.active_id == "cobra_race":
 			if runtime.interact():
 				get_viewport().set_input_as_handled()
 	# E belongs to vehicle exit in PlayerCar's physics polling, independent of
@@ -292,7 +304,7 @@ func _toggle_journal() -> void:
 		_lock()
 		_journal.show()
 		_refresh()
-		(_rest_button if not _rest_button.disabled else _close_button).grab_focus()
+		_close_button.grab_focus()
 	_refresh()
 
 func _lock() -> void:
@@ -441,7 +453,8 @@ func _build_ui() -> void:
 	column.add_child(_rest_reason)
 
 	_close_button = Button.new()
-	_close_button.custom_minimum_size = Vector2(0, 36)
+	_close_button.custom_minimum_size = Vector2(0, 44)
+	_close_button.set_meta("primary_action",true)
 	_close_button.add_theme_font_size_override("font_size", 14)
 	_close_button.pressed.connect(_toggle_journal)
 	column.add_child(_close_button)

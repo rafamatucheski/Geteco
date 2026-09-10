@@ -109,6 +109,9 @@ func _is_cgi_playing() -> bool:
 	return opening_layer != null and is_instance_valid(opening_layer)
 
 func _process(delta: float) -> void:
+	if is_instance_valid(_readout_panel) and mountain.cold_hud != null:
+		_readout_panel.position.y = mountain.cold_hud.get_stack_bottom_offset()
+		if is_instance_valid(_prompt_panel): _prompt_panel.position.y = _readout_panel.position.y+maxf(40,_readout_panel.size.y+6)
 	var cgi_playing := _is_cgi_playing()
 	if is_instance_valid(_readout_panel):
 		_readout_panel.visible = not cgi_playing

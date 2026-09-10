@@ -307,8 +307,8 @@ func _on_diagnostic_exited(body: Node2D) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not diagnostic_active:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_E:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("interact"):
 			if not diagnostic_dialog.visible:
 				_run_diagnostic()
 			else:

@@ -22,6 +22,12 @@ var window_mode: int = 0  # 0: Janela, 1: Tela Cheia, 2: Tela Cheia Exclusiva
 var resolution: Vector2i = Vector2i(1280, 720)
 var vsync: bool = true
 
+var text_scale := 1.0
+var reduce_motion := false
+var route_visible := true
+var tutorial_hints := true
+signal interface_changed
+
 var language: String = "pt_BR"
 signal language_changed(locale: String)
 
@@ -90,6 +96,13 @@ func load_settings() -> bool:
 	var loaded_language := String(config.get_value("locale", "language", "pt_BR"))
 	language = loaded_language if Localization.is_supported(loaded_language) else "pt_BR"
 
+	text_scale = clampf(float(config.get_value("interface","text_scale",1.0)),1.0,1.25)
+	reduce_motion = bool(config.get_value("interface","reduce_motion",false))
+	route_visible = bool(config.get_value("interface","route_visible",true))
+	tutorial_hints = bool(config.get_value("interface","tutorial_hints",true))
+	var controls := get_node_or_null("/root/GameInput")
+	if controls != null: controls.import_bindings(config.get_value("controls","bindings",{}))
+
 	return true
 
 func save_settings() -> bool:
@@ -106,6 +119,12 @@ func save_settings() -> bool:
 
 	config.set_value("locale", "language", language)
 
+	config.set_value("interface","text_scale",text_scale)
+	config.set_value("interface","reduce_motion",reduce_motion)
+	config.set_value("interface","route_visible",route_visible)
+	config.set_value("interface","tutorial_hints",tutorial_hints)
+	var controls := get_node_or_null("/root/GameInput")
+	if controls != null: config.set_value("controls","bindings",controls.export_bindings())
 	var err := config.save(_settings_path)
 	if err == OK:
 		settings_saved.emit()
@@ -117,6 +136,7 @@ func apply_all_settings() -> void:
 	apply_audio_settings()
 	apply_display_settings()
 	apply_language_settings()
+	interface_changed.emit()
 
 func apply_language_settings() -> void:
 	TranslationServer.set_locale(language)
@@ -224,46 +244,22 @@ func set_vsync(enabled: bool) -> void:
 	apply_display_settings()
 
 func get_controls_mapping() -> Array[Dictionary]:
+	var controls := get_node_or_null("/root/GameInput")
 	var result: Array[Dictionary] = []
-	var actions: Array[Dictionary] = [
-		{"action": &"ui_up", "label": tr("CONTROL_MOVE_UP")},
-		{"action": &"ui_down", "label": tr("CONTROL_MOVE_DOWN")},
-		{"action": &"ui_left", "label": tr("CONTROL_MOVE_LEFT")},
-		{"action": &"ui_right", "label": tr("CONTROL_MOVE_RIGHT")},
-		{"action": &"sprint", "label": tr("CONTROL_SPRINT")},
-		{"action": &"interact", "label": tr("CONTROL_INTERACT")},
-		{"action": &"radio_next", "label": tr("CONTROL_RADIO_NEXT")},
-	]
-	
-	for entry in actions:
-		var act: StringName = entry["action"]
-		var keys: Array[String] = []
-		if InputMap.has_action(act):
-			for event in InputMap.action_get_events(act):
-				if event is InputEventKey:
-					var key_str := OS.get_keycode_string((event as InputEventKey).physical_keycode)
-					if key_str.is_empty():
-						key_str = OS.get_keycode_string((event as InputEventKey).keycode)
-					if not key_str.is_empty() and not keys.has(key_str):
-						keys.append(key_str)
-				elif event is InputEventMouseButton:
-					var btn := (event as InputEventMouseButton).button_index
-					var btn_str := "Mouse %d" % btn
-					if btn == MOUSE_BUTTON_LEFT: btn_str = tr("CONTROL_KEY_LEFT_CLICK")
-					elif btn == MOUSE_BUTTON_RIGHT: btn_str = tr("CONTROL_KEY_RIGHT_CLICK")
-					elif btn == MOUSE_BUTTON_MIDDLE: btn_str = tr("CONTROL_KEY_MIDDLE_CLICK")
-					if not keys.has(btn_str):
-						keys.append(btn_str)
-		result.append({
-			"action": act,
-			"label": entry["label"],
-			"keys": " / ".join(keys) if not keys.is_empty() else tr("CONTROL_KEY_NONE")
-		})
-	
-	# Adicionar ações globais fixas documentadas
-	result.append({"action": &"fire", "label": tr("CONTROL_FIRE"), "keys": tr("CONTROL_KEY_LEFT_CLICK")})
-	result.append({"action": &"reload", "label": tr("CONTROL_RELOAD"), "keys": "R"})
-	result.append({"action": &"weapon_wheel", "label": tr("CONTROL_WEAPON_WHEEL"), "keys": "Q / " + tr("CONTROL_KEY_MOUSE_WHEEL")})
-	result.append({"action": &"pause", "label": tr("CONTROL_PAUSE"), "keys": "ESC"})
-	
+	if controls != null:
+		for action in controls.KEYS:
+			result.append({"action":action,"label":controls.label(action),"keys":controls.hint(action,true)})
 	return result
+
+func interface_snapshot() -> Dictionary:
+	var data := {}
+	for key in ["master_volume","music_volume","sfx_volume","window_mode","resolution","vsync","language","text_scale","reduce_motion","route_visible","tutorial_hints"]:
+		data[key] = get(key)
+	data["bindings"] = get_node("/root/GameInput").export_bindings()
+	return data
+
+func restore_snapshot(data: Dictionary) -> void:
+	for key in data:
+		if key != "bindings": set(key,data[key])
+	get_node("/root/GameInput").import_bindings(data.get("bindings",{}))
+	apply_all_settings()

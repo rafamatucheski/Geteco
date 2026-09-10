@@ -265,8 +265,8 @@ func _build_incident_terminal() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_near_terminal:
 		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_E:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("interact"):
 			if not terminal_dialog.visible:
 				_open_terminal()
 			else:

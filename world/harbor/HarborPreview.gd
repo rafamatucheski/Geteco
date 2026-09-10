@@ -4,6 +4,7 @@ extends Node2D
 const WEATHER_MANAGER := preload("res://DayNightWeatherManager.gd")
 @export var review_mode := true
 
+var world_build_ready := false
 var _overview := true
 var _dragging := false
 var _follow_train := false
@@ -71,6 +72,8 @@ func _start_review() -> void:
 	if has_node("CobraNeighborhood"):
 		for issue in $CobraNeighborhood.get_spatial_audit():
 			push_error("Ashbend Court: " + issue)
+
+	world_build_ready = true
 
 func _setup_emergency_services() -> void:
 	if has_node("HarborEmergencyDirector"):

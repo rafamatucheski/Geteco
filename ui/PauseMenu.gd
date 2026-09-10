@@ -4,6 +4,9 @@ extends CanvasLayer
 ## Controla congelamento total da simulação (get_tree().paused = true) evitando gasto de CPU.
 ## Permite salvar em slots manuais, carregar, configurar e voltar ao menu inicial.
 
+const SAVE_TEXT = preload("res://ui/SavePresentation.gd")
+const STYLE = preload("res://ui/GameStyle.gd")
+
 const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
 const SCENE_ROUTE = preload("res://world/harbor/HarborSceneRoute.gd")
@@ -50,6 +53,8 @@ func _ready() -> void:
 	achievements_modal.visible = false
 	collectibles_modal.visible = false
 	_apply_static_text()
+	btn_resume.set_meta("primary_action",true)
+	STYLE.apply(root_control)
 
 	btn_resume.pressed.connect(resume_game)
 	btn_save_game.pressed.connect(_on_save_game_pressed)
@@ -95,8 +100,8 @@ func _on_language_changed(_locale: String) -> void:
 		_refresh_collectibles_list()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_ESCAPE:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
 			# In-world modal dialogue owns Escape first (NPC, mission board,
 			# phone). Pausing here would freeze its gesture/close animation.
 			var player := get_tree().get_first_node_in_group("player")
@@ -104,25 +109,22 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 			# Se sub-janelas estiverem abertas, fechar primeiro a sub-janela
 			if _settings_instance and is_instance_valid(_settings_instance) and _settings_instance.visible:
-				_settings_instance.visible = false
+				_settings_instance._on_btn_back_pressed()
 				get_viewport().set_input_as_handled()
 				return
 			
 			if slots_modal.visible:
-				slots_modal.visible = false
-				btn_save_game.grab_focus()
+				_on_close_modal_pressed()
 				get_viewport().set_input_as_handled()
 				return
 
 			if achievements_modal.visible:
-				achievements_modal.visible = false
-				btn_achievements.grab_focus()
+				_on_close_achievements_pressed()
 				get_viewport().set_input_as_handled()
 				return
 
 			if collectibles_modal.visible:
-				collectibles_modal.visible = false
-				btn_collectibles.grab_focus()
+				_on_close_collectibles_pressed()
 				get_viewport().set_input_as_handled()
 				return
 
@@ -134,6 +136,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 func pause_game() -> void:
+	_set_actions_disabled(false)
 	visible = true
 	get_tree().paused = true
 	slots_modal.visible = false
@@ -142,6 +145,7 @@ func pause_game() -> void:
 	btn_resume.grab_focus()
 
 func resume_game() -> void:
+	_set_actions_disabled(false)
 	visible = false
 	slots_modal.visible = false
 	achievements_modal.visible = false
@@ -151,16 +155,20 @@ func resume_game() -> void:
 	get_tree().paused = false
 
 func _on_save_game_pressed() -> void:
+	_set_actions_disabled(true)
 	_modal_mode = "save"
 	slots_modal_title.text = tr("PAUSE_SAVE_MODAL_TITLE")
 	_refresh_slots_list()
 	slots_modal.visible = true
+	STYLE.trap_focus.call_deferred(slots_modal)
 
 func _on_load_game_pressed() -> void:
+	_set_actions_disabled(true)
 	_modal_mode = "load"
 	slots_modal_title.text = tr("MENU_LOAD_GAME")
 	_refresh_slots_list()
 	slots_modal.visible = true
+	STYLE.trap_focus.call_deferred(slots_modal)
 
 func _refresh_slots_list() -> void:
 	for child in slots_list.get_children():
@@ -189,19 +197,20 @@ func _refresh_slots_list() -> void:
 		var summary: Dictionary = info.get("summary", {})
 		
 		var btn := Button.new()
+		btn.set_meta("save_slot",slot_id)
 		btn.custom_minimum_size = Vector2(0, 48)
 		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		
 		var display_text := ""
 		if not exists:
-			display_text = tr("MENU_SLOT_EMPTY") % slot_id.to_upper()
+			display_text = tr("MENU_SLOT_EMPTY") % SAVE_TEXT.slot_name(slot_id)
 			if _modal_mode == "load":
 				btn.disabled = true
 			else:
 				btn.add_theme_color_override("font_color", Color("#a4b0be"))
 				btn.pressed.connect(func(): _execute_slot_action(slot_id))
 		elif not valid:
-			display_text = tr("PAUSE_SLOT_INCOMPATIBLE") % [slot_id.to_upper(), err_text]
+			display_text = tr("PAUSE_SLOT_INCOMPATIBLE") % [SAVE_TEXT.slot_name(slot_id), err_text]
 			if _modal_mode == "load":
 				btn.disabled = true
 				btn.add_theme_color_override("font_disabled_color", Color("#e74c3c"))
@@ -211,31 +220,33 @@ func _refresh_slots_list() -> void:
 				btn.pressed.connect(func(): _execute_slot_action(slot_id))
 		else:
 			var money: int = int(summary.get("money", 0))
-			var stage: String = String(summary.get("current_stage", "início"))
+			var stage: String = SAVE_TEXT.stage_name(String(summary.get("current_stage", "")),get_node("/root/CampaignState"))
 			var stars: int = int(summary.get("current_stars", 0))
 			var stars_str := ""
 			for s in range(stars): stars_str += "★"
 			
-			display_text = "  [%s]  %s  |  $%07d  |  %s  %s" % [
-				slot_id.to_upper(), date_str, money, stage, stars_str
+			display_text = "%s · %s · $%d\n%s  %s" % [
+				SAVE_TEXT.slot_name(slot_id), date_str, money, stage, stars_str
 			]
 			btn.add_theme_color_override("font_color", Color("#f1c40f"))
 			btn.pressed.connect(func(): _execute_slot_action(slot_id))
 		
 		btn.text = display_text
+		STYLE.apply(btn)
 		MenuAudio.hook_button(btn, self)
 		slots_list.add_child(btn)
 
 func _execute_slot_action(slot_id: String) -> void:
+	if get_node("/root/GameLoading").active: return
 	var sm = get_node_or_null("/root/SaveManager")
 	if not sm: return
 
 	if _modal_mode == "save":
 		var res: Dictionary = sm.save_game(slot_id, "Save Manual")
 		if res.get("success", false):
-			slots_status_label.text = tr("PAUSE_SAVED_OK") % slot_id.to_upper()
-			slots_status_label.add_theme_color_override("font_color", Color("#2ecc71"))
 			_refresh_slots_list()
+			slots_status_label.text = tr("PAUSE_SAVED_OK") % SAVE_TEXT.slot_name(slot_id)
+			slots_status_label.add_theme_color_override("font_color", Color("#2ecc71"))
 		else:
 			slots_status_label.text = tr("PAUSE_SAVE_ERROR") % res.get("error", "")
 			slots_status_label.add_theme_color_override("font_color", Color("#e74c3c"))
@@ -243,22 +254,25 @@ func _execute_slot_action(slot_id: String) -> void:
 		var res: Dictionary = sm.load_game(slot_id)
 		if res.get("success", false):
 			slots_status_label.text = tr("PAUSE_LOADING")
-			resume_game()
-			# Recreate scene-local mission/interior state as well as the Player.
-			get_tree().change_scene_to_file(SCENE_ROUTE.for_save(res.get("data", {})))
+			get_node("/root/GameLoading").begin(SCENE_ROUTE.for_save(res.get("data", {})))
 		else:
 			slots_status_label.text = tr("PAUSE_LOAD_ERROR") % res.get("error", "")
 			slots_status_label.add_theme_color_override("font_color", Color("#e74c3c"))
 
 func _on_close_modal_pressed() -> void:
+	_set_actions_disabled(false)
 	slots_modal.visible = false
-	btn_save_game.grab_focus()
+	(btn_save_game if _modal_mode == "save" else btn_load_game).grab_focus()
 
 func _on_achievements_pressed() -> void:
+	_set_actions_disabled(true)
 	_refresh_achievements_list()
 	achievements_modal.visible = true
+	STYLE.apply(achievements_modal,get_node("/root/SettingsManager").text_scale)
+	STYLE.trap_focus(achievements_modal)
 
 func _on_close_achievements_pressed() -> void:
+	_set_actions_disabled(false)
 	achievements_modal.visible = false
 	btn_achievements.grab_focus()
 
@@ -322,11 +336,15 @@ func _refresh_achievements_list() -> void:
 		hbox.add_child(status_label)
 
 func _on_collectibles_pressed() -> void:
+	_set_actions_disabled(true)
 	_refresh_collectibles_list()
 	collectibles_modal.visible = true
+	STYLE.apply(collectibles_modal,get_node("/root/SettingsManager").text_scale)
+	STYLE.trap_focus(collectibles_modal,false)
 	btn_close_collectibles.grab_focus()
 
 func _on_close_collectibles_pressed() -> void:
+	_set_actions_disabled(false)
 	collectibles_modal.visible = false
 	btn_collectibles.grab_focus()
 
@@ -418,6 +436,7 @@ func _add_collectible_row(title: String, subtitle: String, is_found: bool) -> vo
 	hbox.add_child(status_label)
 
 func _on_settings_pressed() -> void:
+	_set_actions_disabled(true)
 	if not _settings_instance or not is_instance_valid(_settings_instance):
 		_settings_instance = SETTINGS_SCENE.instantiate()
 		_settings_instance.closed.connect(_on_settings_closed)
@@ -425,6 +444,7 @@ func _on_settings_pressed() -> void:
 	_settings_instance.visible = true
 
 func _on_settings_closed() -> void:
+	_set_actions_disabled(false)
 	btn_settings.grab_focus()
 
 func _on_main_menu_pressed() -> void:
@@ -434,3 +454,6 @@ func _on_main_menu_pressed() -> void:
 func _on_quit_pressed() -> void:
 	resume_game()
 	get_tree().quit()
+
+func _set_actions_disabled(value: bool) -> void:
+	for button in [btn_resume,btn_save_game,btn_load_game,btn_achievements,btn_collectibles,btn_settings,btn_main_menu,btn_quit]: button.disabled = value

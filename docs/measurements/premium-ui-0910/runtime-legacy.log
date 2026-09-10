@@ -1,0 +1,23 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_legacy_save_route.gd:50)
+CENTRAL_DISTRICT_READY: 5 authored blocks, local street, service alley, 8 current lane vehicles, 28 current sidewalk pedestrians
+DOCKS_PARKING_VALID: 2 static cars, bays aligned, alley clear
+BAIRRO1_EXPANSION_READY: 4 subareas, 35 fixed lots, curved roads and Bairro 2 gateway
+BAIRRO1_ROAD_NETWORK_READY: coastal arterial, harbor service ring, 2 future borough exits
+DISTRICT1_HIGHWAY_READY: curved 4-lane viaduct, railway crossing and District2Connection
+DISTRICT_ROAD_SAFETY: crosswalks=6 rail_level=1 rail_grade_separated=1 errors=0 warnings=0
+BAIRRO1_CONNECTIONS_READY: District2 viaduct + District3 coastal arterial
+BAIRRO1_URBAN_DENSITY_READY: 1 safe infill lots, detailed roofs/courts/plazas
+WARNING: Bairro1UrbanDensity: 9 infill lot(s) skipped as unsafe (too close to a road/lot/rail, or out of bounds): CornerKiosk, LedgerHouse, TinWorks, CanalGarage, HarborOffice, DockMarket, ShedRow, SouthKiosk, HarborPavilion
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _build_density (res://legacy/district/bairro1/Bairro1UrbanDensity.gd:71)
+BAIRRO1_CIVIC_READY|hospital=1|police_precincts=2|firehouse=1
+DISTRICT_ONE_POPULATED: 24 traffic, 20 pedestrians, 18 parked
+DISTRICT_ONE_COMPLETE: Bairro 1 complete with exactly two prepared exits (Bairro 2 and Bairro 3) and PortMarkedCarSet
+LEGACY_SAVE_ROUTE cena legada carregada com 36 filhos diretos
+LEGACY_SAVE_ROUTE_RESULT failures=0; rota legada e rota atual OK

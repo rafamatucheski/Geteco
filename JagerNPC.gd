@@ -631,17 +631,17 @@ func _on_body_exited(body: Node2D) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_player_nearby: return
 	
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_E:
+	if event.is_pressed() and not event.is_echo():
+		if event.is_action_pressed("interact"):
 			if not is_talking:
 				_open_dialogue()
 			else:
 				_advance_dialogue()
 			get_viewport().set_input_as_handled()
-		elif (event.keycode == KEY_SPACE or event.keycode == KEY_ENTER) and is_talking:
+		elif event.is_action_pressed("ui_accept") and is_talking:
 			_advance_dialogue()
 			get_viewport().set_input_as_handled()
-		elif event.keycode == KEY_ESCAPE and is_talking:
+		elif event.is_action_pressed("ui_cancel") and is_talking:
 			_close_dialogue()
 			get_viewport().set_input_as_handled()
 

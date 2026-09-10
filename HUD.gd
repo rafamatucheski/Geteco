@@ -28,12 +28,12 @@ func _process(_delta: float) -> void:
 func update_money(amount: int) -> void:
 	current_money += amount
 	if money_label:
-		money_label.text = "$ %08d" % current_money
+		money_label.text = "$ %d" % current_money
 
 func set_money(amount: int) -> void:
 	current_money = maxi(0, amount)
 	if money_label:
-		money_label.text = "$ %08d" % current_money
+		money_label.text = "$ %d" % current_money
 
 func set_weapon_info(weapon_id: String, ammo: Dictionary) -> void:
 	if ammo_label:
@@ -41,7 +41,7 @@ func set_weapon_info(weapon_id: String, ammo: Dictionary) -> void:
 		if clip < 0:
 			# Sentinela de arma corpo a corpo (fists/knife): sem carregador nem
 			# reserva, nunca mostra "-1 / -1" pro jogador.
-			ammo_label.text = "CORPO A CORPO"
+			ammo_label.text = "MELEE" if TranslationServer.get_locale().begins_with("en") else "CORPO A CORPO"
 		else:
 			ammo_label.text = "%d / %d" % [clip, int(ammo.get("reserve", 0))]
 	if weapon_icon:
