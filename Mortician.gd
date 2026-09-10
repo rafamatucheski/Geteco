@@ -21,6 +21,7 @@ var burial_position: Vector2 = Vector2.ZERO
 
 var health: int = 60
 var is_dead: bool = false
+var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 var walk_clock: float = 0.0
@@ -251,8 +252,10 @@ func _make_mat(color: Color, roughness: float) -> StandardMaterial3D:
 	return m
 
 func _physics_process(delta: float) -> void:
-	if is_dead or state == State.EMBARKED:
+	if is_dead:
+		fall_presentation.update(delta)
 		return
+	if state == State.EMBARKED: return
 		
 	var is_moving := false
 	var dir_to_look := Vector2.ZERO
@@ -441,5 +444,8 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 		is_dead = true
 		velocity = Vector2.ZERO
 		if collision_shape: collision_shape.set_deferred("disabled", true)
-		if model_root: model_root.rotation.x = PI * 0.45
+		_start_fall()
 		create_tween().tween_interval(10.0).finished.connect(queue_free)
+
+func _start_fall(impact := Vector2.ZERO) -> void:
+	fall_presentation.start(self, model_root, viewport_3d, impact)

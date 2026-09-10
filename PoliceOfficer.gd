@@ -21,6 +21,7 @@ var local_security := false
 var security_alert := 0
 var health: int = 50
 var is_dead: bool = false
+var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 var fire_cooldown: float = 0.0
@@ -178,7 +179,9 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.mesh = cyl_shadow
 	shadow_mesh.material_override = shadow_mat
 	shadow_mesh.position = Vector3(0.0, 0.01, 0.0)
-	model_root.add_child(shadow_mesh)
+	shadow_mesh.name = "GroundShadow"
+	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	viewport_3d.add_child(shadow_mesh)
 
 	# Cores e Fardas de Acordo com o Escalão Tático (Tier)
 	var uniform_col := Color(0.11, 0.15, 0.24) # Azul Polícia Regular
@@ -413,6 +416,7 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	is_dead = true
 	is_flying = true
 	fly_velocity = impact_velocity.limit_length(600.0) * 0.85
+	_start_fall(impact_velocity)
 	health = 0
 	_drop_loot()
 	if collision_shape:
@@ -452,8 +456,7 @@ func _die() -> void:
 	velocity = Vector2.ZERO
 	if collision_shape:
 		collision_shape.set_deferred("disabled", true)
-	if model_root:
-		model_root.rotation.x = PI * 0.45
+	_start_fall()
 	_create_3d_blood_puddle()
 	_play_audio(ProceduralAudio.get_scream_stream(), -5.0)
 	
@@ -481,15 +484,11 @@ func _physics_process(delta: float) -> void:
 	if is_flying:
 		position += fly_velocity * delta
 		fly_velocity = fly_velocity.move_toward(Vector2.ZERO, 950.0 * delta)
-		if model_root:
-			model_root.rotation.y += 12.0 * delta
-		if fly_velocity.length() < 12.0:
-			is_flying = false
-			if model_root:
-				model_root.rotation.x = PI * 0.45
-		return
+		if fly_velocity.length() < 12.0: is_flying = false
 		
-	if is_dead: return
+	if is_dead:
+		fall_presentation.update(delta)
+		return
 	if returning_to_service_vehicle:
 		if not is_instance_valid(service_vehicle):
 			returning_to_service_vehicle = false
@@ -848,3 +847,6 @@ func _play_audio(stream: AudioStream, volume_db: float = -6.0, pitch_scale: floa
 	add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)
+
+func _start_fall(impact := Vector2.ZERO) -> void:
+	fall_presentation.start(self, model_root, viewport_3d, impact)

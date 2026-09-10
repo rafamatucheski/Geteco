@@ -8,6 +8,7 @@ enum Personality { SUBMISSIVE, CALL_POLICE, FIGHTER }
 var stolen_vehicle: Node2D = null
 var health: int = 50
 var is_dead: bool = false
+var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
 var state_timer: float = 0.0
 var phone_call_duration: float = 6.0
 var phone_call_progress: float = 0.0
@@ -106,6 +107,7 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		velocity = Vector2.ZERO
+		fall_presentation.update(delta)
 		return
 
 	state_timer += delta
@@ -235,7 +237,8 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 		var effects := get_tree().get_first_node_in_group("weapon_effects")
 		if effects: effects.spawn_blood(global_position,Vector2.UP,amount)
 		var t = create_tween()
-		t.tween_property(driver_model, "rotation:z", PI * 0.5, 0.2)
+		fall_presentation.start(self, driver_model, driver_viewport)
+		t.tween_interval(2.0)
 		t.tween_property(self, "modulate:a", 0.0, 3.0)
 		t.tween_callback(queue_free)
 
@@ -307,7 +310,7 @@ func _process(delta: float) -> void:
 	if _render_clock < 1.0/20.0: return
 	driver_model.walking = not is_dead and velocity.length()>2
 	if not is_dead: driver_model.rotation.y = -global_rotation + PI*0.5
-	driver_model._process(_render_clock)
+	if not is_dead: driver_model._process(_render_clock)
 	_render_clock = 0
 	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 

@@ -51,6 +51,8 @@ func _run() -> void:
 		await physics_frame
 		if patient.visible and not patient.is_incapacitated: break
 	check(patient.visible and not patient.is_incapacitated and patient.health == patient.max_health, "Vítima retorna recuperada após chegar ao hospital")
+	check(not patient.fall_presentation.started and absf(patient.model_root.rotation.x) < 0.01, "Alta restaura postura de pé após a animação de queda")
+	check(patient.fall_presentation.shadow.scale.is_equal_approx(Vector3.ONE) and is_equal_approx(patient.viewport.get_camera_3d().fov, 36.0), "Alta restaura sombra e enquadramento normal")
 	check(ambulance.returned_paramedics == 2, "Os dois paramédicos voltam à ambulância")
 	Engine.time_scale = 1.0
 	print("AMBULANCE_HOSPITAL: ", failures)

@@ -7,6 +7,7 @@ var home := Vector2.ZERO
 var destination := Vector2.ZERO
 var health := 80
 var is_dead := false
+var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
 var viewport: SubViewport
 var model: Node3D
 var speech: Label
@@ -87,6 +88,9 @@ func _ready() -> void:
 	add_child(speech)
 
 func _physics_process(delta: float) -> void:
+	if is_dead:
+		fall_presentation.update(delta)
+		return
 	if _process_danger(delta): return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null or player.global_position.distance_to(global_position) > 750 or is_dead:
@@ -115,7 +119,8 @@ func take_damage(amount: int, _source: Variant = null) -> void:
 	health -= amount
 	if health <= 0:
 		is_dead = true
-		model.rotation.z = PI*0.5
+		velocity = Vector2.ZERO
+		fall_presentation.start(self, model, viewport)
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		speech.text = ""
 		collision_layer = 0
