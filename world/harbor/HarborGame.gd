@@ -112,13 +112,15 @@ func _spawn_world_extras() -> void:
 	# Main.tscn/CityDemo.gd (a árvore legada) — mesmo Player.collectibles_found
 	# sendo uma lista só, sem essa separação os dois mundos podiam achar que um
 	# achado já tinha sido pego no outro.
+	# Esconderijos acessíveis: corredor de carga, fundos das casas e dos
+	# prédios. Fora das vias, entradas e limites fechados; IDs preservam saves.
 	var collectibles := [
-		{"id": "harbor_col_navio_01", "pos": Vector2(3450, 1760), "label": "PISTA — CONVÉS DO CARGUEIRO"},
-		{"id": "harbor_col_cobras_01", "pos": Vector2(7550, 1550), "label": "PISTA — COVIL DOS COBRAS"},
-		{"id": "harbor_col_oeste_01", "pos": Vector2(-60, 1200), "label": "ACHADO — LIMITE OESTE"},
-		{"id": "harbor_col_leste_01", "pos": Vector2(8480, 1700), "label": "ACHADO — LIMITE LESTE"},
-		{"id": "harbor_col_norte_01", "pos": Vector2(1500, -60), "label": "ACHADO — LIMITE NORTE"},
-		{"id": "harbor_col_sul_01", "pos": Vector2(1500, 2450), "label": "ACHADO — LIMITE SUL"},
+		{"id": "harbor_col_navio_01", "pos": Vector2(3515, 1545), "label": "PISTA — CONVÉS DO CARGUEIRO"},
+		{"id": "harbor_col_cobras_01", "pos": Vector2(7440, 1035), "label": "PISTA — COVIL DOS COBRAS"},
+		{"id": "harbor_col_oeste_01", "pos": Vector2(555, 932), "label": "ACHADO — LIMITE OESTE"},
+		{"id": "harbor_col_leste_01", "pos": Vector2(8480, 1440), "label": "ACHADO — LIMITE LESTE"},
+		{"id": "harbor_col_norte_01", "pos": Vector2(1455, 22), "label": "ACHADO — LIMITE NORTE"},
+		{"id": "harbor_col_sul_01", "pos": Vector2(2705, 1768), "label": "ACHADO — LIMITE SUL"},
 	]
 	for entry in collectibles:
 		var item: Area2D = COLLECTIBLE_SCRIPT.new()

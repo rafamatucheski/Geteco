@@ -20,6 +20,7 @@ var model_3d: Node3D
 var sprite_3d: Sprite2D
 var screen_visible: bool = false
 var _use_3d: bool = true
+var _presentation_rendered := false
 
 func _ready() -> void:
 	if collectible_id.is_empty():
@@ -30,7 +31,8 @@ func _ready() -> void:
 		queue_free()
 		return
 
-	z_index = 8
+	# Objetos de exploração ficam sob fachadas e vegetação, como os demais props.
+	z_index = 3
 	collision_layer = 0
 	collision_mask = 4 # Camada de personagens; o grupo player filtra os NPCs.
 
@@ -107,13 +109,8 @@ func _build_3d_viewport() -> void:
 	for sx in [-1.0, 1.0]:
 		for sz in [-1.0, 1.0]:
 			_add_box(model_3d, Vector3(sx * 0.56, 0, sz * 0.37), Vector3(0.10, 0.36, 0.10), Color("#414b54"), 0.40, 0.60)
-	# Amber status diode (discrete glow)
-	var led := _add_box(model_3d, Vector3(0, 0.18, 0), Vector3(0.14, 0.02, 0.14), Color("#e67e22"), 0.20, 0.30)
-	if led.material_override is StandardMaterial3D:
-		var mat := led.material_override as StandardMaterial3D
-		mat.emission_enabled = true
-		mat.emission = Color("#f39c12")
-		mat.emission_energy_multiplier = 1.6
+	# Lacre discreto, sem emissão que denuncie o esconderijo.
+	_add_box(model_3d, Vector3(0, 0.18, 0), Vector3(0.14, 0.02, 0.14), Color("#9b855b"), 0.80, 0.10)
 
 	var camera := Camera3D.new()
 	viewport.add_child(camera)
@@ -135,7 +132,8 @@ func _build_3d_viewport() -> void:
 	sprite_3d = Sprite2D.new()
 	sprite_3d.texture = viewport.get_texture()
 	sprite_3d.scale = Vector2.ONE * 0.28
-	sprite_3d.position.y = -8
+	sprite_3d.position.y = -3
+	model_3d.rotation.y = -0.35
 	add_child(sprite_3d)
 
 	var notifier := VisibleOnScreenNotifier2D.new()
@@ -178,11 +176,10 @@ func _process(delta: float) -> void:
 		if gem_poly.visible: gem_poly.visible = false
 		if glow_circle.visible: glow_circle.visible = false
 		sprite_3d.visible = true
-		model_3d.rotation.y += delta * 0.95
-		sprite_3d.position.y = -8.0 + sin(_clock * 1.5) * 1.8
-		if screen_visible and is_instance_valid(viewport):
+		# Maleta apoiada no chão: pose fixa e uma única renderização.
+		if screen_visible and not _presentation_rendered and is_instance_valid(viewport):
 			viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-		queue_redraw()
+			_presentation_rendered = true
 	else:
 		if is_instance_valid(sprite_3d): sprite_3d.visible = false
 		if is_instance_valid(viewport): viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
@@ -197,12 +194,8 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if not _use_3d or _is_collected:
 		return
-	var pulse := 0.45 + 0.18 * sin(_clock * 2.2)
-	# Subtle contact shadow on floor
+	# Só sombra de contato; sem aro ou halo visível da rua.
 	draw_circle(Vector2(0, 3), 9.0, Color(0.02, 0.04, 0.06, 0.28))
-	# Discrete warm amber exploration glow (no giant purple halo)
-	draw_circle(Vector2(0, 3), 15.0, Color(0.95, 0.76, 0.35, 0.08))
-	draw_arc(Vector2(0, 3), 13.0, 0, TAU, 32, Color(1.0, 0.82, 0.42, pulse), 1.5, true)
 
 func _on_body_entered(body: Node2D) -> void:
 	if _is_collected: return
