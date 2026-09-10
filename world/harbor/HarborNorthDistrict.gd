@@ -9,6 +9,9 @@ const HIGHWAY_LAND := Rect2(5700, -4470, 600, 2120)
 const FIRE_APRON := Rect2(5725, -1260, 310, 160)
 const WATER_COLOR := Color("#204754")
 
+func _build_animated_water() -> void:
+	preload("res://world/shared/nature/WaterPresentation.gd").rectangle(self, Rect2(4380, -10000, 2380, 9900), WATER_COLOR)
+
 func get_street_lamp_points() -> Array[Dictionary]:
 	return [{"pos":Vector2(5000,-1920),"south":true},{"pos":Vector2(6100,-1920),"south":true},{"pos":Vector2(5000,-1030),"south":true},{"pos":Vector2(6100,-1030),"south":true},{"pos":Vector2(5050,-285),"south":true},{"pos":Vector2(6050,-285),"south":true}]
 const TREE_POINTS: Array[Vector2] = [
@@ -143,7 +146,6 @@ func get_sidewalk_routes() -> Array[PackedVector2Array]:
 
 func _draw() -> void:
 	# Water surrounds the narrow engineered causeway; no oversized green slab.
-	draw_rect(Rect2(4380, -10000, 2380, 9900), WATER_COLOR)
 	draw_rect(NORTH_LAND, Color("#999789"))
 	draw_rect(HIGHWAY_LAND, Color("#82887d"))
 	_draw_northern_shore()

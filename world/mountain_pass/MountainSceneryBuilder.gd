@@ -127,15 +127,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 		Vector2(4650, -5000), Vector2(-4000, -5000)
 	])
 	base.add_child(ocean)
-
-	for oy in range(-4000, 4500, 450):
-		var wave := Line2D.new()
-		wave.width = 3.0
-		wave.default_color = Color(0.18, 0.32, 0.40, 0.45)
-		wave.points = PackedVector2Array([
-			Vector2(1200, oy), Vector2(2500, oy + 40), Vector2(4400, oy - 20)
-		])
-		base.add_child(wave)
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(ocean)
 
 	var beach := Polygon2D.new()
 	beach.color = Color("#2c2720")
@@ -153,6 +145,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 		Vector2(4615, 0), Vector2(4640, -2000), Vector2(4630, -5000)
 	])
 	base.add_child(foam)
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(foam, "foam")
 
 	# B. Chao da Floresta
 	var forest_floor := Polygon2D.new()
@@ -310,6 +303,8 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7190, -270), Vector2(6960, -90), Vector2(6760, 130)
 	])
 	water_system.add_child(shallow_water)
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(shallow_water, "lake")
+	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(shallow_water, "lake")
 
 	var deep_water := Polygon2D.new()
 	deep_water.color = Color("#133c4a")
@@ -318,6 +313,7 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7130, -210), Vector2(6980, -60), Vector2(6840, 110)
 	])
 	water_system.add_child(deep_water)
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(deep_water, "lake")
 
 	var stream := Line2D.new()
 	stream.width = 44.0
@@ -326,6 +322,8 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7380, -260), Vector2(7120, -40), Vector2(6890, 160), Vector2(6760, 270)
 	])
 	water_system.add_child(stream)
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(stream, "stream")
+	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(stream, "stream")
 
 	var rapids := Line2D.new()
 	rapids.width = 13.0
@@ -334,6 +332,7 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7220, -130), Vector2(7050, 40), Vector2(6920, 150)
 	])
 	water_system.add_child(rapids)
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(rapids, "foam")
 
 # 3B. Lago Secreto dos Contrabandistas (Secret Glacial Tarn) com Segredo Submerso e Cofre
 static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> void:
@@ -513,6 +512,7 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 	water_effects.polygon = shallow.polygon
 	water_effects.plane = plane_wreck
 	secret_lake.add_child(water_effects)
+	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(shallow, "lake")
 	water_effects.animate_surface(shallow)
 	water_effects.animate_surface(deep)
 
@@ -581,6 +581,7 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 		ripple.points = r_pts
 		ripple.position = step_pos
 		secret_lake.add_child(ripple)
+		preload("res://world/shared/nature/WaterPresentation.gd").apply(ripple, "foam")
 
 		var stone := Polygon2D.new()
 		stone.color = Color("#574f44")

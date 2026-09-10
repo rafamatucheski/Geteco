@@ -12,12 +12,17 @@ var sites: Array[Dictionary] = []
 var accesses: Array[Dictionary] = []
 
 func _ready() -> void:
+	_build_animated_water()
 	_build_sites()
 	_build_trees()
 	_build_site_solids()
 	_build_boundaries()
 	_build_street_lamps()
 	queue_redraw()
+
+func _build_animated_water() -> void:
+	preload("res://world/shared/nature/WaterPresentation.gd").rectangle(self, Rect2(-5000, 2480, 8200, 10000), Color("204754"))
+	preload("res://world/shared/nature/WaterPresentation.gd").fountain(self)
 
 func _build_street_lamps() -> void:
 	const LAMP_SCRIPT := preload("res://StreetLamp.gd")
@@ -247,7 +252,6 @@ func get_spatial_audit() -> Array[String]:
 func _draw() -> void:
 	# The descent to the tunnel follows a narrow built embankment, not a larger
 	# rectangular lawn. The return railway is underground beyond the portal.
-	draw_rect(Rect2(-5000, 2480, 8200, 10000), Color("#204754"))
 	draw_rect(LAND_BOUNDS, Color("#6b7067"))
 	draw_rect(Rect2(-1450,1070,1850,1320), Color("#52674e"))
 	draw_colored_polygon(PackedVector2Array([Vector2(2850, 2410), Vector2(3200, 2410), Vector2(3200, 3500), Vector2(3010, 3500), Vector2(2890, 3330)]), Color("#747a69"))

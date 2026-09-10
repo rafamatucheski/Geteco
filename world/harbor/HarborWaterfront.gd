@@ -24,37 +24,28 @@ const CONTAINER_COLORS: Array[Color] = [
 ]
 
 @export var animate_water: bool = true
-var _water_clock: float = 0.0
-var _redraw_elapsed: float = 0.0
-# The full waterfront redraw (water ripples, ship, cranes, containers) used to
-# fire unconditionally every 0.1s regardless of where the player/camera
-# actually was, costing a real frame-time spike ten times a second even while
-# driving across town nowhere near the quay. Skipping it when far away is
-# invisible (nobody could see the ripple animate anyway) and measurably
-# removed a recurring stutter in a sustained real-renderer driving sample.
-const REDRAW_CAMERA_RADIUS := 1400.0
-const WATERFRONT_REFERENCE_POINT := Vector2(3570.0, 1400.0)
 
 
 func _ready() -> void:
+	_build_water_surfaces()
 	_build_collisions()
 	_build_ship_markers()
 	if not Engine.is_editor_hint():
 		var crew := preload("res://world/harbor/HarborDockCrew.gd").new()
 		crew.name = "DockCrew"
 		add_child(crew)
-	set_process(animate_water and not Engine.is_editor_hint())
+	set_process(false)
 	queue_redraw()
 
 
-func _process(delta: float) -> void:
-	_water_clock += delta
-	_redraw_elapsed += delta
-	if _redraw_elapsed >= 0.1:
-		_redraw_elapsed = 0.0
-		var cam := get_viewport().get_camera_2d()
-		if cam == null or cam.global_position.distance_to(WATERFRONT_REFERENCE_POINT) <= REDRAW_CAMERA_RADIUS:
-			queue_redraw()
+func _build_water_surfaces() -> void:
+	var water = preload("res://world/shared/nature/WaterPresentation.gd")
+	# Filhos atrás do desenho estático mantêm navio, cais e terra sobre a água.
+	water.rectangle(self, Rect2(WATER_BOUNDS.position, Vector2(MOUNTAIN_COAST_X - WATER_BOUNDS.position.x, WATER_BOUNDS.size.y)), Color("204754"), animate_water)
+	water.rectangle(self, Rect2(Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y), WATER_BOUNDS.end - Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y)), Color("204754"), animate_water)
+	water.rectangle(self, Rect2(3200, -5000, 32, 15000), Color("326a72"), animate_water)
+	water.rectangle(self, Rect2(3232, -5000, 65, 15000), Color("2b5965"), animate_water)
+	water.rectangle(self, Rect2(3297, -5000, 110, 15000), Color("264e5d"), animate_water)
 
 
 func _build_collisions() -> void:
@@ -235,34 +226,6 @@ func _draw() -> void:
 
 
 func _draw_water() -> void:
-	# The harbor water is drawn above the mountain's base terrain. Keep its
-	# rectangle off the mainland so the forest floor and trails remain visible.
-	draw_rect(Rect2(WATER_BOUNDS.position, Vector2(MOUNTAIN_COAST_X - WATER_BOUNDS.position.x, WATER_BOUNDS.size.y)), Color("204754"))
-	draw_rect(Rect2(Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y), WATER_BOUNDS.end - Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y)), Color("204754"))
-	# Narrow tide bands identify the real shoreline, not another green map slab.
-	draw_rect(Rect2(3200, -5000, 32, 15000), Color("326a72"))
-	draw_rect(Rect2(3232, -5000, 65, 15000), Color("2b5965"))
-	draw_rect(Rect2(3297, -5000, 110, 15000), Color("264e5d"))
-	# One color per segment (two endpoints). Separate widths preserve the
-	# original ripple appearance while replacing 1,280 individual commands.
-	var main_points := PackedVector2Array()
-	var fine_points := PackedVector2Array()
-	var main_colors := PackedColorArray()
-	var fine_colors := PackedColorArray()
-	for row in range(-5, 35):
-		for column in range(16):
-			var x := 3240.0 + column * 109.0 + fmod(row * 43.0, 89.0)
-			var y := row * 88.0 + sin(column * 1.7 + row) * 22.0
-			var sway := sin(_water_clock * 0.45 + column + row * 0.2) * 6.0
-			var alpha := 0.075 + (sin(row * 7.0 + column * 3.0) + 1.0) * 0.035
-			main_points.append(Vector2(x + sway, y))
-			main_points.append(Vector2(x + 25.0 + sway, y - 2.0))
-			main_colors.append(Color(0.68, 0.84, 0.83, alpha))
-			fine_points.append(Vector2(x + 6.0 + sway, y + 6.0))
-			fine_points.append(Vector2(x + 18.0 + sway, y + 5.0))
-			fine_colors.append(Color(0.68, 0.84, 0.83, alpha * 0.55))
-	draw_multiline_colors(main_points, main_colors, 1.5, true)
-	draw_multiline_colors(fine_points, fine_colors, 1.0, true)
 	# Harbor navigation buoys occupy the shipping channel, never a road.
 	for y in [650.0, 2250.0, 2530.0]:
 		var buoy := Vector2(4050.0, y)

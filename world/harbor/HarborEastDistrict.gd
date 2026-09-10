@@ -18,6 +18,10 @@ const ROCKS := [Vector2(4990,1697),Vector2(5011,1694),Vector2(5880,1935),Vector2
 const PROMENADE_GARDENS := [Rect2(4525,2365,125,65),Rect2(5110,2360,155,62),Rect2(5940,2370,95,58),Rect2(6480,2355,130,72)]
 const PROMENADE_BENCHES := [Vector2(4665,2400),Vector2(5290,2405),Vector2(6080,2400),Vector2(6380,2400)]
 
+func _build_animated_water() -> void:
+	# O mar desta margem pertence ao Waterfront; não duplicar a fonte da praça.
+	pass
+
 func get_street_lamp_points() -> Array[Dictionary]:
 	return [{"pos":Vector2(5080,1060),"south":true},{"pos":Vector2(6100,1330),"south":true},{"pos":Vector2(5050,1330),"south":true},{"pos":Vector2(6100,2280),"south":false},{"pos":Vector2(5050,2280),"south":false},{"pos":Vector2(6020,480),"south":true}]
 

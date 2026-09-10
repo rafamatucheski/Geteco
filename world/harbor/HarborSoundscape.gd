@@ -20,6 +20,7 @@ var _dark := false
 var _district_gain := 1.0
 var _detail_variant := 0
 var _detail_room: Node2D
+var water_details: Node
 var regional: Node
 
 func _ready() -> void:
@@ -44,6 +45,9 @@ func _ready() -> void:
 	quarter = preload("res://world/harbor/HarborLivingQuarter.gd").new()
 	quarter.name = "LivingQuarter"
 	add_child(quarter)
+	water_details = preload("res://audio/WaterSoundscape.gd").new()
+	water_details.name = "WaterDetails"
+	add_child(water_details)
 	regional = preload("res://audio/regional/RegionalSoundscape.gd").new()
 	regional.name = "RegionalSoundscape"
 	add_child(regional)
@@ -60,6 +64,7 @@ func _process(delta: float) -> void:
 	var actor := get_parent().get_node("Player")
 	var indoors := is_instance_valid(_room) or bool(actor.get_meta("mountain_interior", false)) or bool(actor.get_meta("harbor_interior", false))
 	regional.update_context(_listener_position, indoors, _dark, focus_gain, delta)
+	water_details.update_context(_listener_position, indoors, focus_gain, delta)
 	for kind in weights:
 		weights[kind] = move_toward(float(weights[kind]), float(targets[kind]), delta * 0.6)
 		var audio: AudioStreamPlayer = beds[kind]
@@ -92,13 +97,13 @@ func _update_zones() -> void:
 	# O porto deixa de tocar ao seguir para a montanha, inclusive no mundo contínuo.
 	_district_gain = clampf((pos.y + 1800.0) / 1300.0, 0.0, 1.0) if not inside else 1.0
 	targets.city = 0.03 if inside else (0.22 if dark else 0.42)
-	targets.water = 0.0 if inside else clampf(1.0 - absf(pos.x - 3500.0) / 950.0, 0.0, 1.0) * clampf(1.0 - maxf(absf(pos.y - 1400.0) - 1400.0, 0.0) / 600.0, 0.0, 1.0)
+	targets.water = 0.0 if inside or actor.get_meta("mountain_interior", false) or actor.get_meta("harbor_interior", false) else preload("res://audio/WaterSoundscape.gd").coast_weight(pos)
 	targets.terminal = 0.0 if inside else clampf(1.0 - pos.distance_to(Vector2(1700, 1130)) / 550.0, 0.0, 1.0)
 	if dark:
 		targets.terminal *= 0.5
 	targets.workshop = 1.0 if inside and room == interiors.get("garage_interior") else 0.0
 	for kind in targets:
-		targets[kind] *= _district_gain
+		if kind != "water": targets[kind] *= _district_gain
 	if _detail_room != room or _district_gain < 0.1:
 		detail.stop()
 	var terminal := world.get_node("ArrivalStop")

@@ -12,19 +12,7 @@ func _ready() -> void:
 	set_process(false)
 
 func animate_surface(surface: Polygon2D) -> void:
-	var shader := Shader.new()
-	shader.code = """shader_type canvas_item;
-varying vec2 lake_position;
-void vertex() { lake_position = VERTEX; }
-void fragment() {
-    float wave = sin(lake_position.y * 0.15 + lake_position.x * 0.025 + sin(lake_position.x * 0.037 + TIME * 0.35) * 1.8 + TIME * 1.4);
-    float broken_crest = smoothstep(0.0, 0.8, sin(lake_position.x * 0.045 - lake_position.y * 0.032 - TIME * 0.6));
-    float glint = pow(max(0.0, wave), 16.0) * broken_crest;
-    COLOR.rgb += vec3(0.035, 0.07, 0.08) * glint + vec3(0.006, 0.014, 0.018) * wave;
-}"""
-	var material := ShaderMaterial.new()
-	material.shader = shader
-	surface.material = material
+	preload("res://world/shared/nature/WaterPresentation.gd").apply(surface, "lake")
 
 func is_deck_at(actor: Node2D) -> bool:
 	return is_instance_valid(plane) and plane.contains_actor(actor)

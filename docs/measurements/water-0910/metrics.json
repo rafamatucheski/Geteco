@@ -1,0 +1,8 @@
+{
+  "water_changed_pixel_fraction": 0.33958843159065627,
+  "water_mean_rgb_change": 1.9955654430849092,
+  "flow_duration_seconds": 26.0,
+  "flow_peak": 0.63214111328125,
+  "flow_rms": 0.10324846809476446,
+  "loop_boundary_jump": 0.067901611328125
+}
