@@ -57,6 +57,13 @@ func _ready() -> void:
 	if streamed_region: await get_tree().process_frame
 	_setup_bridge()
 	_setup_setpieces()
+	if not streamed_region:
+		# Na cena avulsa usamos o mesmo circuito em coordenadas da serra.
+		# No mundo contínuo a ferrovia já pertence ao porto: não criar outro trem.
+		var rail := preload("res://world/harbor/HarborRailLine.gd").new()
+		rail.name = "RegionalFreightRail"
+		rail.position = -preload("res://world/shared/rail/HarborMountainRailRoute.gd").MOUNTAIN_OFFSET
+		add_child(rail)
 	if streamed_region:
 		await MOUNTAIN_SCENERY_BUILDER.build_streamed_scenery(self)
 	else:

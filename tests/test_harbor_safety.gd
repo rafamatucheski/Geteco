@@ -26,7 +26,9 @@ func _run() -> void:
 	_check(data.rail_level_crossings.is_empty(), "Elevated railway must not create ground-level barriers")
 	_check(data.grade_separated_rail_crossings.size() >= 4, "City viaduct must cross four actual streets")
 	for intersection in data.grade_separated_rail_crossings:
-		_check(String(intersection.classification) == "rail_elevated" and float(intersection.rail_elevation) >= 48.0, "Road crossing requires explicit rail elevation clearance")
+		var elevated := String(intersection.classification) == "rail_elevated" and float(intersection.rail_elevation) >= 48.0
+		var underground := String(intersection.classification) == "rail_underground" and float(intersection.rail_elevation) <= -12.0
+		_check(elevated or underground, "Rua exige separação vertical explícita: viaduto acima ou túnel abaixo")
 		var at: Vector2 = intersection.position
 		var ray := PhysicsRayQueryParameters2D.create(at + Vector2(0, -80), at + Vector2(0, 80), 1)
 		var collision: Dictionary = scene.get_world_2d().direct_space_state.intersect_ray(ray)

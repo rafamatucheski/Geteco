@@ -1,19 +1,14 @@
 @tool
 extends "res://world/shared/rail/DistrictRailLine.gd"
 
-## Single-track viaduct; closed return is underground. Streets beneath retain
-## their ground-level collision/navigation. Supports have audited footprints.
+## Circuito único porto–serra. A cidade mantém seu viaduto e sua descida;
+## túneis unem os trechos visíveis sem reiniciar nem duplicar a composição.
 const TRAIN_SCRIPT := preload("res://world/harbor/HarborTrain.gd")
+const REGIONAL_ROUTE := preload("res://world/shared/rail/HarborMountainRailRoute.gd")
 const DECK_WIDTH := 48.0
 const DECK_ELEVATION := 64.0
 const WEST_PORTAL := Vector2(0, 892)
 const EAST_PORTAL := Vector2(3114, 3320)
-const HARBOR_ROUTE := [
-	Vector2(-700, 892), WEST_PORTAL, Vector2(2814, 892),
-	Vector2(3114, 1192), Vector2(3114, 2240), EAST_PORTAL,
-	Vector2(3114, 3850), Vector2(-700, 3850), Vector2(-900, 3000),
-	Vector2(-900, 1100), Vector2(-700, 892),
-]
 var _visible_start := 0.0
 var _visible_end := 0.0
 var _ramp_start := 0.0
@@ -23,12 +18,15 @@ var _underpass_material: ShaderMaterial
 var _reveal_amount := 0.0
 var _reveal_position := Vector2.ZERO
 var _reveal_radius := 76.0
+var regional_route: RefCounted
+var _regional_scenery: Node2D
 
 
 class PortalCover extends Node2D:
 	var east := false
+	var snowy := false
 	func _draw() -> void:
-		draw_rect(Rect2(-25, -41, 123, 82), Color("#59655c"))
+		draw_rect(Rect2(-25, -41, 123, 82), Color("#9aabb5") if snowy else Color("#59655c"))
 		# A recessed mouth and covered roof read as a tunnel, not a track bumper.
 		draw_rect(Rect2(-22, -28, 54, 56), Color("#111c24"))
 		draw_rect(Rect2(13, -28, 19, 56), Color("#080f14"))
@@ -40,6 +38,9 @@ class PortalCover extends Node2D:
 		# Architectural keystone and masonry relief replacing painted text
 		draw_rect(Rect2(-14, -46, 28, 8), Color("#828678"))
 		draw_rect(Rect2(-9, -48, 18, 3), Color("#a2a696"))
+		if snowy:
+			draw_line(Vector2(-25,-42),Vector2(96,-42),Color("e5eef3"),7.0,true)
+			draw_line(Vector2(33,-34),Vector2(92,-34),Color("d5e4ed"),5.0,true)
 
 
 
@@ -83,6 +84,15 @@ func _ready() -> void:
 	ramp.z_index = 3
 	add_child(ramp)
 	_create_portals()
+	_regional_scenery = preload("res://world/shared/rail/RegionalRailScenery.gd").new()
+	_regional_scenery.name = "HarborMountainRailScenery"
+	add_child(_regional_scenery)
+	_regional_scenery.build(self)
+	if not Engine.is_editor_hint():
+		add_to_group("regional_railway")
+		var map_overlay := preload("res://world/shared/rail/RailMinimapOverlay.gd").new()
+		map_overlay.rail = self
+		add_child(map_overlay)
 	set_process(not Engine.is_editor_hint())
 
 
@@ -116,11 +126,8 @@ func _process(delta: float) -> void:
 
 
 func build_route() -> void:
-	_route = Curve2D.new()
-	_route.bake_interval = 6.0
-	var handles := [Vector2(140, 0), Vector2(180, 0), Vector2(165, 0), Vector2(0, 165), Vector2(0, 100), Vector2(0, 100), Vector2(-180, 180), Vector2(-180, -40), Vector2(0, -170), Vector2(0, -120), Vector2(140, 0)]
-	for index in HARBOR_ROUTE.size():
-		_route.add_point(HARBOR_ROUTE[index], -handles[index], handles[index])
+	regional_route = REGIONAL_ROUTE.new()
+	_route = regional_route.curve
 	_baked_points = _route.get_baked_points()
 	_visible_start = _route.get_closest_offset(WEST_PORTAL)
 	_visible_end = _route.get_closest_offset(EAST_PORTAL)
@@ -129,6 +136,10 @@ func build_route() -> void:
 
 func get_track_state_at_offset(offset: float) -> Dictionary:
 	var progress := fposmod(offset, maxf(1.0, get_route_length()))
+	var section: Dictionary = regional_route.section_at(progress)
+	if not section.is_empty() and String(section.id) != "harbor":
+		var alpha := minf(clampf((progress - float(section.start)) / 28.0, 0.0, 1.0), clampf((float(section.end) - progress) / 28.0, 0.0, 1.0))
+		return {"above_ground": true, "elevation": DECK_ELEVATION, "opacity": alpha, "z_index": 15, "section": section.id, "region": "mountain" if String(section.id) == "mountain" else "connection"}
 	var above_ground := progress >= _visible_start and progress <= _visible_end
 	var elevation := DECK_ELEVATION
 	if progress > _ramp_start:
@@ -138,19 +149,41 @@ func get_track_state_at_offset(offset: float) -> Dictionary:
 	var opacity := 0.0
 	if above_ground:
 		opacity = minf(clampf((progress - _visible_start) / 18.0, 0, 1), clampf((_visible_end - progress) / 18.0, 0, 1))
-	return {"above_ground": above_ground, "elevation": elevation, "opacity": opacity, "z_index": 15 if elevation >= 16.0 else 4}
+	return {"above_ground": above_ground, "elevation": elevation, "opacity": opacity, "z_index": 15 if elevation >= 16.0 else 4, "section": "harbor" if above_ground else "tunnel", "region": "harbor" if above_ground else "transit"}
+
+
+func get_regional_route_data() -> Dictionary:
+	var data: Dictionary = regional_route.get_route_data()
+	for section in data.sections:
+		var transformed := PackedVector2Array()
+		for point in section.points: transformed.append(to_global(point))
+		section.points = transformed
+	for landmark in data.landmarks: landmark.position = to_global(landmark.position)
+	return data
+
+
+func get_cruise_speed_at_offset(offset: float) -> float:
+	var section: Dictionary = regional_route.section_at(offset)
+	if not section.is_empty(): return 105.0 if String(section.id) == "harbor" else 118.0
+	# Acelera apenas depois que o último vagão entrou e freia antes do portal.
+	var length := get_route_length()
+	for visible_section in regional_route.sections:
+		if fposmod(offset - float(visible_section.end), length) < 560.0 or fposmod(float(visible_section.start) - offset, length) < 1000.0:
+			return 105.0
+	return 280.0
 
 
 func get_rail_graph_data() -> Dictionary:
 	var result := super.get_rail_graph_data()
-	result["id"] = "harbor_elevated_freight_corridor"
-	result["control_points_local"] = PackedVector2Array(HARBOR_ROUTE)
-	result["handoffs"] = []
+	result["id"] = "harbor_mountain_freight_corridor"
+	result["control_points_local"] = PackedVector2Array(regional_route.points)
+	result["handoffs"] = get_rail_handoffs()
 	result["ballast_width"] = DECK_WIDTH
 	result["visible_start"] = _visible_start
 	result["visible_end"] = _visible_end
 	result["elevated_end"] = _ramp_start
-	result["closed_underground_return"] = true
+	result["closed_underground_return"] = false
+	result["regional_route"] = get_regional_route_data()
 	return result
 
 
@@ -164,7 +197,9 @@ func get_elevated_crossing_data(world_position: Vector2) -> Dictionary:
 
 
 func get_pillar_bounds() -> Array[Rect2]:
-	return _pillar_bounds.duplicate()
+	var result := _pillar_bounds.duplicate()
+	if is_instance_valid(_regional_scenery): result.append_array(_regional_scenery.supports)
+	return result
 
 
 func get_ground_barrier_bounds() -> Array[Rect2]:
@@ -172,7 +207,7 @@ func get_ground_barrier_bounds() -> Array[Rect2]:
 
 
 func get_rail_handoffs() -> Array[Dictionary]:
-	return []
+	return [{"id": "HarborMountainRailConnection", "position": to_global(Vector2(7300,-4920)), "from_region": "harbor", "to_region": "mountain", "connection_type": "rail", "continuous": true}]
 
 
 func _ensure_connection_marker() -> void:
@@ -253,13 +288,20 @@ func _pillar_is_clear(rect: Rect2) -> bool:
 
 
 func _create_portals() -> void:
-	for entry in [["WestPortal", WEST_PORTAL, false, PI], ["EastPortal", EAST_PORTAL, true, PI * 0.5]]:
+	var entries := [["WestPortal", WEST_PORTAL, false, PI], ["EastPortal", EAST_PORTAL, true, PI * 0.5]]
+	for section in regional_route.sections:
+		if String(section.id) == "harbor": continue
+		for edge in ["start", "end"]:
+			var offset: float = section[edge]
+			entries.append(["%s_%s_portal" % [section.id,edge], _route.sample_baked(offset,true), edge == "end", _route_tangent(offset).angle() + (PI if edge == "start" else 0.0)])
+	for entry in entries:
 		if get_node_or_null(entry[0]) != null:
 			continue
 		var portal := PortalCover.new()
 		portal.name = entry[0]
 		portal.position = entry[1]
 		portal.east = entry[2]
+		portal.snowy = portal.position.y < -6460.0
 		portal.rotation = entry[3]
 		portal.z_as_relative = false
 		portal.z_index = 16
@@ -296,7 +338,7 @@ func draw_track(target: Node2D, from_distance: float, to_distance: float) -> voi
 	target.draw_polyline(left, Color("#d8dfdc"), 3.0, true)
 	target.draw_polyline(right, Color("#d8dfdc"), 3.0, true)
 	# A borda inferior escura e o corrimão deixam a espessura do viaduto legível.
-	if from_distance < _ramp_start:
+	if from_distance < _ramp_start or from_distance > _visible_end:
 		var edge := PackedVector2Array()
 		var rail_top := PackedVector2Array()
 		distance = from_distance
@@ -308,7 +350,7 @@ func draw_track(target: Node2D, from_distance: float, to_distance: float) -> voi
 			distance += 6.0
 		target.draw_polyline(edge, Color("#333e43"), 4.0, true)
 		target.draw_polyline(rail_top, Color("#c7c5b7"), 2.0, true)
-	if from_distance >= _ramp_start:
+	if is_equal_approx(from_distance, _ramp_start):
 		for rect in _ground_barriers:
 			target.draw_rect(rect, Color("#505e62"))
 			target.draw_line(rect.position + Vector2(3, 0), rect.end - Vector2(3, 0), Color("#c5c3ac"), 2.0)

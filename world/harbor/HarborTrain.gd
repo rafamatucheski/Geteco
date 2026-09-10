@@ -12,6 +12,11 @@ var _last_surface := false
 var _sound_initialized := false
 var _audio_bank := AUDIO.new()
 
+func _process(delta: float) -> void:
+	if is_instance_valid(_rail_line) and speed > 0.0:
+		speed = move_toward(speed, _rail_line.get_cruise_speed_at_offset(_progress), delta * 45.0)
+	super._process(delta)
+
 func _rebuild_freight_visuals() -> void:
 	for visual in _freight_visuals:
 		if is_instance_valid(visual): visual.queue_free()

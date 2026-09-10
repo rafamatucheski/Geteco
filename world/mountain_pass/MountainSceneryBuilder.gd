@@ -726,6 +726,7 @@ static func build_mountain_ammunation(parent: Node2D, _setpieces: Node2D, interi
 
 # 6. Floresta Densa de Pinheiros (MountainPineTree)
 static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, streamed := false) -> void:
+	var rail_reservation := preload("res://world/shared/rail/HarborMountainRailRoute.gd").new()
 	var chunk_started := Time.get_ticks_usec()
 	var chunk_trees := 0
 	var forest := Node2D.new()
@@ -782,6 +783,7 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 
 			var reserved := false
 			if preload("res://world/mountain_pass/MountainVillageLayout.gd").is_reserved(pos): continue
+			if rail_reservation.is_mountain_reserved(pos): continue
 			for site in [Vector2(7940,850),Vector2(8610,700),Vector2(7660,-730),Vector2(6610,-1250),Vector2(6710,-1280)]:
 				if Rect2(site-Vector2(105,80),Vector2(230,160)).has_point(pos): reserved = true
 			if reserved: continue
