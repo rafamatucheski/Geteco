@@ -87,10 +87,10 @@ func _run() -> void:
 	manager._frame_interior_camera(player,room.get_camera_rect())
 	check(camera.has_meta("interior_follow_bounds"),"Restauração do interior recupera câmera fullscreen")
 	var clerk=room.civilians[1]
-	check(clerk.model.behind_counter,"Balcão encobre a parte inferior do corpo sem amputar o modelo")
+	check(clerk.model.limbs[0].is_visible_in_tree(),"Pernas presentes no atendimento")
 	clerk.global_position=room.to_global(room.project_floor(Vector2(2.3,.5)))
 	await settle()
-	check(not clerk.model.behind_counter,"Ao sair do balcão o corpo inteiro reaparece")
+	check(clerk.model.limbs[2].is_visible_in_tree(),"Pernas presentes ao caminhar")
 	await capture("04_atendente_corpo_inteiro")
 	manager._on_exit_door_requested(room.exit_door,player,&"",null,&"",room.entrance.destination_id)
 	await settle()

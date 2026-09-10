@@ -39,6 +39,7 @@ var status: Label
 var cashier_resists := false
 var cash_paid := false
 var intimidation := 0.0
+const LOOT_AMOUNTS := [4000, 3000, 3000]
 var loot_meshes: Array[Node3D] = []
 var vault_partitions: Array[GeometryInstance3D] = []
 var loot_positions := [Vector2(-95,-105),Vector2(0,-105),Vector2(95,-105)]
@@ -81,7 +82,7 @@ func _setup_interior_content() -> void:
 			builder.piece(model,Vector3(2.6,1.1,1.2),Vector3(x,.55,-1),Color("514b3c"))
 			_solid(Vector2(x*32,-40),Vector2(90,40))
 		for i in 3:
-			loot_meshes.append(builder.piece(model,Vector3(.6,.18,.4),Vector3(-3+i*3,.1,-4.2),Color("81986c")))
+			loot_meshes.append(preload("res://world/harbor/interiors/BankVaultTreasure.gd").build(model,Vector3(-3+i*3,0,-4.2),i))
 		for x in [-170,170]:
 			var guard := preload("res://world/harbor/events/BankGuard.gd").new()
 			guard.position=Vector2(x,25)
@@ -296,7 +297,7 @@ func _tick_vault(delta: float, holding: bool) -> void:
 	if not keycard_taken:
 		if keycard_available and actor.global_position.distance_to(keycard_position)<48: target_id="card"
 	elif local_actor.distance_to(vault_position)<42 and not vault_open: target_id="vault"
-	if vault_open:
+	if vault_open and local_actor.y<project_floor(Vector2(0,-3.45)).y:
 		for i in 3:
 			if local_actor.distance_to(loot_positions[i])<40 and not _taken("cash%d"%i): target_id="cash%d"%i
 	if not holding or target_id.is_empty():
@@ -317,9 +318,15 @@ func _tick_vault(delta: float, holding: bool) -> void:
 		lockpick.begin()
 		hold_time=0
 	elif target_id.begins_with("cash") and hold_time>=1.2:
-		_pay(target_id,400)
+		_pay(target_id,LOOT_AMOUNTS[int(target_id.trim_prefix("cash"))])
 		_refresh_loot()
 		hold_time=0
+
+func remaining_loot() -> int:
+	var amount := 0
+	for i in LOOT_AMOUNTS.size():
+		if not _taken("cash%d"%i): amount+=LOOT_AMOUNTS[i]
+	return amount
 
 func _refresh_loot() -> void:
 	for i in loot_meshes.size(): loot_meshes[i].visible=not _taken("cash%d"%i)
@@ -395,11 +402,11 @@ func _project_bank_layout() -> void:
 		guards[i].position=project_floor(Vector2(-5 if i==0 else 5,.5))
 		_scale_npc(guards[i],guards[i].viewport_3d,guards[i].sprite_3d_display,Vector2(-5 if i==0 else 5,.5),1.45)
 	for i in civilians.size():
-		civilians[i].position=project_floor(Vector2(-4.5 if i==0 else 4.5,-1.9))
+		civilians[i].position=project_floor(Vector2(-2.65 if i==0 else 2.65,-1.9))
 		var sprite: Sprite2D
 		for child in civilians[i].get_children():
 			if child is Sprite2D: sprite=child
-		_scale_npc(civilians[i],civilians[i].viewport,sprite,Vector2(-4.5 if i==0 else 4.5,-1.9),1.8)
+		_scale_npc(civilians[i],civilians[i].viewport,sprite,Vector2(-2.65 if i==0 else 2.65,-1.9),1.8)
 
 func get_gameplay_camera_bounds() -> Rect2:
 	var corner := project_floor(Vector2(-6.7,-4.8)) + Vector2(0,-45)
@@ -439,7 +446,10 @@ func _unlock_vault() -> void:
 	# A fechadura destrava, mas a porta pesada leva três segundos para abrir.
 	# O corte visual revela as pilhas atrás da divisória; colisões continuam
 	# sólidas e o único acesso físico permanece sendo a porta do cofre.
-	for partition in vault_partitions: partition.transparency=0.78
+	for partition in vault_partitions:
+		partition.scale.y=.12 if str(partition.name).begins_with("VaultPartition") else .38
+	var signs := view.find_child("VaultFrontSigns",true,false) as Node3D
+	if signs: signs.hide()
 	opening_time=3.0
 	phase=HeistPhase.OPENING
 	actor.set_dialogue_active(false)
@@ -490,7 +500,7 @@ func _update_bank_status() -> void:
 		HeistPhase.KEYCARD: instruction="CARTÃO DE SEGURANÇA — segure [E] junto ao guarda de escopeta"
 		HeistPhase.VAULT: instruction="CARTÃO OBTIDO — vá ao cofre e segure [E] para destravar"
 		HeistPhase.OPENING: instruction="COFRE ABRINDO — %.1f s" % opening_time
-		HeistPhase.LOOT: instruction="COFRE ABERTO — segure [E] nas pilhas ($400 cada). Saia quando quiser."
+		HeistPhase.LOOT: instruction="COFRE ABERTO - segure [E] para recolher | $%d restantes" % remaining_loot()
 		HeistPhase.ESCAPE: instruction="DINHEIRO RECOLHIDO — volte à entrada e sobreviva à fuga"
 	if hold_time>0: instruction+=" • %d%%" % mini(100,int(hold_time/1.2*100))
 	if alarm_started:

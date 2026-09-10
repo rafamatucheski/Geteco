@@ -8,7 +8,6 @@ func _ready() -> void:
 	coat_color=[Color("65515c"),Color("5b7073"),Color("7d7057")].pick_random()
 	super._ready()
 	add_to_group("damageable")
-	if model.has_method("set_behind_counter"): model.set_behind_counter(true)
 func _create_model() -> Node3D:
 	if is_instance_valid(room) and room.is_bank: return preload("res://world/harbor/events/BankClerkModel.gd").new()
 	return preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
@@ -27,10 +26,6 @@ func _physics_process(delta: float) -> void:
 		fall_presentation.update(delta)
 		return
 	super._physics_process(delta)
-	if is_instance_valid(room) and room.is_bank and model.has_method("set_behind_counter"):
-		var station=room.project_floor(Vector2(-4.5 if room.to_local(global_position).x<0 else 4.5,-1.9))
-		var behind: bool = room.to_local(global_position).distance_to(station)<12
-		model.set_behind_counter(behind)
 	if not frightened or is_dead: return
 	if reaction=="call":
 		call_progress+=delta
@@ -45,4 +40,3 @@ func _physics_process(delta: float) -> void:
 func take_damage(amount: int, source: Variant = null) -> void:
 	if amount>0 and is_instance_valid(room) and room.actor_inside(): room._on_shot()
 	super.take_damage(amount,source)
-	if is_dead and model.has_method("set_behind_counter"): model.set_behind_counter(false)

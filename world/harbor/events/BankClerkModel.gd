@@ -2,8 +2,6 @@ extends "res://world/mountain_pass/WinterResidentModel.gd"
 ## Atendentes adultos: silhueta contínua, braços articulados e roupa social.
 const DETAIL = preload("res://world/shared/pedestrians/CitizenDetails.gd")
 var forearms: Array[Node3D] = []
-var behind_counter := true
-var _clipping_materials: Array[ShaderMaterial] = []
 
 func _ready() -> void:
 	scale = Vector3.ONE
@@ -59,14 +57,6 @@ func _ready() -> void:
 		for side in [-1,1]:
 			_shape(self,Vector3(.05,.15,.13),Vector3(side*.104,1.70,-.025),hair)
 			_shape(self,Vector3(.018,.025,.018),Vector3(side*.128,1.60,.015),Color("c7a466"))
-	var shader := Shader.new()
-	shader.code="shader_type spatial; uniform vec4 tint : source_color; uniform bool behind_counter = true; varying float height; void vertex(){ height=(MODEL_MATRIX*vec4(VERTEX,1.0)).y; } void fragment(){ if(behind_counter && height<1.12){discard;} ALBEDO=tint.rgb; ROUGHNESS=0.85; }"
-	for item in find_children("*","MeshInstance3D",true,false):
-		var material := ShaderMaterial.new()
-		material.shader=shader
-		material.set_shader_parameter("tint",item.material_override.albedo_color)
-		item.material_override=material
-		_clipping_materials.append(material)
 	_process(0.0)
 
 func _shape(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> MeshInstance3D:
@@ -75,14 +65,6 @@ func _shape(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> Mesh
 	mesh.radial_segments=16
 	mesh.rings=8
 	return piece
-
-func set_behind_counter(behind: bool) -> void:
-	if behind_counter==behind: return
-	behind_counter=behind
-	# Oculta o corpo abaixo do tampo em 3D; mãos e antebraços continuam
-	# visíveis sobre a mesa. Fora do caixa, o mesmo rig reaparece inteiro.
-	for material in _clipping_materials:
-		material.set_shader_parameter("behind_counter",behind)
 
 func _garment(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> void:
 	var piece := DETAIL.piece(parent,Vector3.ONE,point,color)
@@ -101,6 +83,6 @@ func _process(delta: float) -> void:
 			limbs[i].rotation.x=sin(clock*7.0+(PI if i==0 else 0.0))*(.33 if walking else .0)
 		else:
 			var side := -1.0 if i==1 else 1.0
-			limbs[i].rotation=Vector3(-.65+sin(clock*1.5)*.018,0,side*.05) if behind_counter and not walking else Vector3(sin(clock*7.0+(PI if i==3 else 0.0))*(.25 if walking else .012),0,side*.045)
+			limbs[i].rotation=Vector3(sin(clock*7.0+(PI if i==3 else 0.0))*(.25 if walking else .012),0,side*.045)
 	for forearm in forearms:
-		forearm.rotation.x=-.80 if behind_counter and not walking else -.10
+		forearm.rotation.x=-.10

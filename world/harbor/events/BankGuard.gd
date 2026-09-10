@@ -14,6 +14,9 @@ func _ready() -> void:
 	remove_from_group("police_officer")
 	add_to_group("bank_security")
 	_rebuild_uniform()
+	var rig := get_node("NPCCombatRig")
+	rig.combat_pose=preload("res://world/harbor/events/BankGuardCombatPose.gd").new()
+	rig.combat_pose.update(rig,1.0,false,false,0.0)
 	collision_layer=4
 	collision_mask=3
 func _clear_parts(parent: Node3D) -> void:
@@ -58,6 +61,17 @@ func _rebuild_uniform() -> void:
 		for part in limb.get_children():
 			if part is MeshInstance3D:
 				part.material_override = _make_mat(cloth, .8)
+	# Antebraços contínuos até as mãos; pele igual à do rosto em ambos os lados.
+	for limb in [left_lower_arm,right_lower_arm]:
+		for part in limb.get_children():
+			if part is MeshInstance3D and part!=muzzle_flash_3d:
+				part.material_override=_make_mat(skin,.8)
+				if part.mesh is CylinderMesh:
+					part.mesh=part.mesh.duplicate()
+					part.mesh.height=.20
+					part.mesh.top_radius=.052
+					part.mesh.bottom_radius=.045
+					part.position.y=-.10
 	model_root.rotation.y = PI
 	_pose(false)
 func _pose(aiming: bool) -> void:

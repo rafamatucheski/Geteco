@@ -99,11 +99,12 @@ func _run() -> void:
 	check(room.vault_open and room.vault_body.collision_layer==0,"Cofre aberto libera passagem física")
 	await physics_frame
 	check(player.get_world_2d().direct_space_state.intersect_ray(vault_ray).is_empty(),"Porta destravada permite atravessar até o dinheiro")
+	await capture("03b_cofre_aberto")
 	var wallet: int=player.money
 	player.global_position=room.to_global(room.loot_positions[0])
 	room._tick_vault(1.3,true)
 	room._tick_vault(2,true)
-	check(player.money==wallet+400,"Dinheiro recompensa uma vez por pilha")
+	check(player.money==wallet+4000,"Dinheiro recompensa uma vez por pilha")
 	room._process(0.1)
 	await capture("04_coleta")
 	room.alarm_time=0.1

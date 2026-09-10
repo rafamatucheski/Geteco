@@ -16,10 +16,12 @@ static func build(model: Node3D) -> void:
 	var welcome := _label(decor,"NORTH PIER",Vector3(0,.058,2.5),48,.009,Color("d6c5a4"))
 	welcome.rotation_degrees.x=-90
 	# Identidade e orientação colocadas na própria arquitetura.
+	var signs := Node3D.new()
+	signs.name="VaultFrontSigns"
+	decor.add_child(signs)
 	for x in [-4.05,4.05]:
-		PART.piece(decor,Vector3(3.6,.63,.05),Vector3(x,2.03,-3.055),INK)
-		_label(decor,"NORTH PIER" if x<0 else "ATENDIMENTO",Vector3(x,2.05,-3.01),42,.008,Color("eadcbf"))
-		_label(decor,"01  /  CAIXA" if x<0 else "02  /  CAIXA",Vector3(x,1.58,-3.01),30,.006,INK)
+		PART.piece(signs,Vector3(3.6,.63,.05),Vector3(x,2.03,-3.055),INK)
+		_label(signs,"NORTH PIER" if x<0 else "ATENDIMENTO",Vector3(x,2.05,-3.01),42,.008,Color("eadcbf"))
 	for x in [-4.5,4.5]:
 		PART.piece(decor,Vector3(.5,.012,.34),Vector3(x+.8,1.192,-.85),Color("e1dbc9"))
 		PART.piece(decor,Vector3(.33,.025,.25),Vector3(x-.85,1.20,-.78),INK)
