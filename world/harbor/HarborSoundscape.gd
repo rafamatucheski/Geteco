@@ -102,7 +102,9 @@ func _update_zones() -> void:
 			_play_detail("air", terminal.bus.global_position)
 	if _detail_clock <= 0.0:
 		_detail_clock = _rng.randf_range(13.0, 27.0)
-		if targets.water > 0.25 and not dark:
+		# O navio tem gaivotas próprias, para não sobrepor os dois agendamentos.
+		var crew := world.get_node_or_null("Waterfront/DockCrew")
+		if targets.water > 0.25 and not dark and not (crew != null and crew.active):
 			_play_detail("gull", Vector2(clampf(pos.x, 3250, 3900), pos.y + _rng.randf_range(-180, 180)))
 		elif targets.workshop > 0.5:
 			_play_detail("metal", quarter.sources.indoor_radio.global_position)

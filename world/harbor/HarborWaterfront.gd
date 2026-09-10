@@ -39,6 +39,10 @@ const WATERFRONT_REFERENCE_POINT := Vector2(3570.0, 1400.0)
 func _ready() -> void:
 	_build_collisions()
 	_build_ship_markers()
+	if not Engine.is_editor_hint():
+		var crew := preload("res://world/harbor/HarborDockCrew.gd").new()
+		crew.name = "DockCrew"
+		add_child(crew)
 	set_process(animate_water and not Engine.is_editor_hint())
 	queue_redraw()
 
