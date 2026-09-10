@@ -34,6 +34,7 @@ func _build() -> void:
 		var path := String(get_parent().get_path_to(door))
 		var id := StringName("harbor/"+path)
 		manager._door_configs[path]={"interior":room,"spawn":room.spawn_point,"id":id}
+		manager._bind_curtain(door)
 		door.destination_id=id
 		door.destination_requested.connect(manager._on_exterior_destination_requested.bind(room,room.spawn_point))
 		manager._bind_exit_door(room.exit_door,id,room)

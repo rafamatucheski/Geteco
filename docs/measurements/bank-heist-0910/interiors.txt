@@ -1,0 +1,62 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+=================================================================
+=== INICIANDO TESTE DE CONTRATO: INTERIORES VIVOS BREAKWATER ===
+=================================================================
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run_test (res://tests/test_harbor_interiors.gd:27)
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=48 issues=0
+
+--- TESTANDO GARAGEM (JÄGER MACIOTA & TITO) ---
+ERROR: TEST_FAILURE: Mecânico Tito deve estar presente na bancada
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _check (res://tests/test_harbor_interiors.gd:20)
+       [1] _run_test (res://tests/test_harbor_interiors.gd:59)
+  [Garagem] Ciclo 1/3...
+ERROR: TEST_FAILURE: Camera limits devem estar ajustados ao interior
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _check (res://tests/test_harbor_interiors.gd:20)
+       [1] _run_test (res://tests/test_harbor_interiors.gd:71)
+  [Garagem] Ciclo 2/3...
+ERROR: TEST_FAILURE: Camera limits devem estar ajustados ao interior
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _check (res://tests/test_harbor_interiors.gd:20)
+       [1] _run_test (res://tests/test_harbor_interiors.gd:71)
+  [Garagem] Ciclo 3/3...
+ERROR: TEST_FAILURE: Camera limits devem estar ajustados ao interior
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _check (res://tests/test_harbor_interiors.gd:20)
+       [1] _run_test (res://tests/test_harbor_interiors.gd:71)
+
+--- TESTANDO POLÍCIA (SARGENTO MORALES) ---
+  [Polícia] Ciclo 1/3...
+  [Polícia] Ciclo 2/3...
+  [Polícia] Ciclo 3/3...
+
+--- TESTANDO CLÍNICA (ENFERMEIRA CLARA - ENTRADA NORTE) ---
+  [Clínica] Ciclo 1/3...
+  [Clínica] Ciclo 2/3...
+  [Clínica] Ciclo 3/3...
+
+--- TESTANDO OFICINA MECÂNICA (MESTRE ARNALDO) ---
+  [Oficina] Ciclo 1/3...
+  [Oficina] Ciclo 2/3...
+  [Oficina] Ciclo 3/3...
+
+--- TESTANDO CORPO DE BOMBEIROS (CAPITÃO ROCHA & 3 BAIAS) ---
+  [Bombeiros] Baia 0...
+  [Bombeiros] Baia 1...
+  [Bombeiros] Baia 2...
+
+--- TESTANDO TEMPLATES REUTILIZÁVEIS (AMMU-NATION & IML) ---
+SCRIPT ERROR: Invalid access to property or key 'gunsmith_npc' on a base object of type 'Node2D (HarborAmmunationInterior)'.
+   at: _run_test (res://tests/test_harbor_interiors.gd:256)
+   GDScript backtrace (most recent call first):
+       [0] _run_test (res://tests/test_harbor_interiors.gd:256)

@@ -1,0 +1,46 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_bank_heist_flow.gd:24)
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=48 issues=0
+PASS Entrada chega ao salão, longe do cofre
+PASS E da entrada não abre lockpick nem dispara alarme
+PASS Câmera enquadra o banco inteiro sem varrer o mapa
+PASS Minimapa mantém o banco como localização exterior
+PASS Sacar e mirar provocam advertência sem tiros ou alarme automático
+PASS Guarda mantém posto durante advertência
+PASS Guardar arma encerra advertência pacificamente
+PASS Primeiro tiro inicia combate e contagem da polícia
+PASS Segurança revida com projéteis reais
+PASS Porta fechada bloqueia fisicamente a sala do dinheiro
+PASS Cofre não ignora os guardas vivos
+PASS Segurança neutralizada deixa cartão coletável
+PASS Cartão exige coleta junto ao guarda
+PASS Cartão e interação deliberada iniciam o cofre
+PASS Relógio da polícia continua durante lockpick
+PASS Cancelar devolve controle sem abrir cofre
+PASS Cancelar exige soltar E antes de tentar novamente
+PASS Erro na fechadura não abre o cofre
+PASS Porta pesada abre gradualmente após destravar
+PASS Cofre aberto libera passagem física
+PASS Porta destravada permite atravessar até o dinheiro
+PASS Dinheiro recompensa uma vez por pilha
+PASS Fim da contagem inicia cerco externo
+PASS Viatura parte da cidade, sem surgir na porta
+PASS Três viaturas despachadas em sequência
+PASS Três viaturas chegam fisicamente e formam cerco
+BANK_UNIT (515.8208, 380.7107) target=(540.0, 385.0) acting=true
+BANK_UNIT (732.3266, 424.5632) target=(755.0, 425.0) acting=true
+BANK_UNIT (668.8779, 369.0797) target=(675.0, 345.0) acting=true
+PASS Saída retorna à mesma porta e restaura coordenadas externas
+PASS Duplas cobrem a saída e enfrentam o assaltante
+PASS Reentrar preserva cofre e pilhas coletadas sem repetir lockpick
+PASS Sair do quarteirão encerra o cerco e libera a perseguição normal
+PASS Posto preserva intimidação e pagamento único do caixa
+BANK_HEIST: []
+WARNING: 1 ObjectDB instance was leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

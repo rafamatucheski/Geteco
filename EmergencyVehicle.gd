@@ -750,7 +750,7 @@ func _physics_process(delta: float) -> void:
 		return
 		
 	var is_target_in_car: bool = target.is_in_group("vehicle") or target.get("is_driven_by_player") == true
-	var arrival_radius := 140.0 if type == 0 else (120.0 if type == 2 else 75.0)
+	var arrival_radius := float(target.get_meta("police_stop_distance",140.0)) if type == 0 else (120.0 if type == 2 else 75.0)
 	var may_stop := type != 0 or not is_target_in_car or _target_stopped_time >= 0.6
 	if may_stop and global_position.distance_to(target.global_position) <= arrival_radius:
 		# Frear antes de orientar para outro waypoint evita rodar parado ao lado
@@ -849,7 +849,8 @@ func _physics_process(delta: float) -> void:
 					get_tree().current_scene.add_child(spike)
 		else:
 			# === ALVO PARADO/ACUADO OU A PÉ: BLOQUEIO TÁTICO E DESEMBARQUE DA DUPLA ===
-			if dist <= 140.0:
+			var stop_distance := float(target.get_meta("police_stop_distance",140.0)) if is_instance_valid(target) else 140.0
+			if dist <= stop_distance:
 				current_speed = move_toward(current_speed, 0.0, 520.0 * delta)
 				velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
 				if velocity.length() < 30.0:
@@ -1322,6 +1323,15 @@ func on_mortician_embarked(_m: Node2D) -> void:
 	is_returning_to_base = true
 
 func _get_road_guidance_target(dest: Vector2) -> Vector2:
+	if type==0 and is_instance_valid(target) and target.get_meta("bank_blockade",false) and global_position.distance_to(dest)<300:
+		# A última manobra do cerco sai da faixa até a vaga, sem atravessar sólidos.
+		var maneuver: Vector2=dest
+		if target.has_meta("bank_approach_position"):
+			var approach: Vector2=target.get_meta("bank_approach_position")
+			if global_position.x>approach.x+10: maneuver=approach
+		var ray:=PhysicsRayQueryParameters2D.create(global_position,maneuver,1|2)
+		ray.exclude=[get_rid()]
+		if get_world_2d().direct_space_state.intersect_ray(ray).is_empty(): return maneuver
 	if has_meta("depot_road_gate"):
 		var gate: Vector2 = get_meta("depot_road_gate")
 		if is_returning_to_base:

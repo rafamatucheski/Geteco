@@ -386,6 +386,9 @@ func _is_any_interior_modal_open() -> bool:
 	return false
 
 func _refresh_objective() -> void:
+	if is_instance_valid(player) and (player.has_meta("robbery_room") or player.has_meta("bank_heist_active")):
+		if _obj_card: _obj_card.hide()
+		return
 	if _objective_label == null:
 		return
 	var destination := target
@@ -399,8 +402,9 @@ func _refresh_objective() -> void:
 			destination = (garage.get("exit_door") as Node2D).global_position
 	var suffix := ""
 	if destination != Vector2.ZERO and phase not in ["phone", "arrival", "delivery_pickup"]:
-		var distance := player.global_position.distance_to(destination)
-		var direction := destination - player.global_position
+		var map_position: Vector2=player.get_meta("police_exterior_position",player.global_position)
+		var distance := map_position.distance_to(destination)
+		var direction := destination - map_position
 		var compass: Array[String] = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"]
 		suffix = "  ·  %s / %.0f m" % [compass[posmod(int(round(direction.angle() / (PI / 4.0))), 8)], distance / 16.6]
 	_objective_label.text = objective + suffix

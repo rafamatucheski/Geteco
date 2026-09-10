@@ -536,7 +536,12 @@ func _physics_process(delta: float) -> void:
 		target = pursuit_manager.get_pursuit_target()
 	if is_instance_valid(target) and target.get_meta("police_search_position", false):
 		_reset_arrest_warning()
-		velocity = _navigate_towards(target.global_position, speed, delta) if global_position.distance_to(target.global_position) > 110.0 else Vector2.ZERO
+		if target.get_meta("bank_blockade",false) and is_instance_valid(service_vehicle):
+			service_vehicle.open_crew_cover_door(crew_side,crew_longitudinal)
+			var point: Vector2=service_vehicle.get_crew_cover_point(crew_side,crew_longitudinal,target.global_position-Vector2(0,160))
+			velocity=_navigate_towards(point,speed,delta) if global_position.distance_to(point)>8 else Vector2.ZERO
+		else:
+			velocity = _navigate_towards(target.global_position, speed, delta) if global_position.distance_to(target.global_position) > 110.0 else Vector2.ZERO
 		move_and_slide()
 		return
 	if not is_instance_valid(target):

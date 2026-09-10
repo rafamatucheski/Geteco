@@ -326,6 +326,7 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 	if player:
 		player.set_meta("police_exterior_position", entrance.global_position)
 		player.set_meta("harbor_interior", true)
+		player.set_meta("interior_camera_overview",interior.get_meta("fixed_camera",false))
 	if actor.is_in_group("vehicle") and actor.get("is_driven_by_player") == true:
 		effective_actor = actor
 		if player and is_instance_valid(player):
@@ -353,6 +354,7 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 	if interior.exit_door:
 		_arm_cooldown(interior.exit_door)
 
+	if interior.has_method("on_actor_entered"): interior.on_actor_entered(effective_actor)
 	interior.set_npc_rendering_active(true)
 	var weather := get_tree().get_first_node_in_group("day_night_manager")
 	if weather and weather.has_method("set_interior_mode"):
@@ -405,6 +407,8 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 	if player:
 		player.remove_meta("police_exterior_position")
 		player.remove_meta("harbor_interior")
+		player.remove_meta("interior_camera_overview")
+		player.remove_meta("robbery_room")
 	if "velocity" in effective_actor:
 		effective_actor.velocity = Vector2.ZERO
 
@@ -432,7 +436,7 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:
 	var cam := actor.get_node_or_null("Camera") as Camera2D
 	if cam:
-		if rect.size.x < 500:
+		if rect.size.x < 500 or actor.get_meta("interior_camera_overview",false):
 			cam.set_meta("compact_interior", rect)
 			cam.global_position = rect.get_center()
 			var screen := cam.get_viewport_rect().size
@@ -441,7 +445,9 @@ func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:
 			cam.limit_top = -10000000
 			cam.limit_right = 10000000
 			cam.limit_bottom = 10000000
+			cam.reset_physics_interpolation()
 			cam.reset_smoothing()
+			cam.force_update_scroll()
 			return
 		else:
 			cam.remove_meta("compact_interior")

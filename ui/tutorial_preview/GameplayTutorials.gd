@@ -54,7 +54,7 @@ func _refresh_context() -> void:
 	presenter.set_locale("en" if TranslationServer.get_locale().begins_with("en") else "pt")
 	if modal: return
 	var wanted := get_node("/root/WantedManager")
-	if player.has_meta("police_exterior_position") and wanted.current_stars > 0:
+	if player.has_meta("police_exterior_position") and not player.has_meta("bank_heist_active") and wanted.current_stars > 0:
 		presenter.request_hint("police_search")
 	var stream := get_parent().get_node_or_null("ContinuousWorld")
 	if stream == null or not stream.ready_for_crossing or stream.current_region != "mountain": return

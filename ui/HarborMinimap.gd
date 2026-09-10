@@ -64,13 +64,14 @@ func _ready() -> void:
 			_buildings.append(Rect2(district.to_global(site.bounds.position),site.bounds.size))
 	refresh()
 func map_world_position(actor: Node2D) -> Vector2:
+	# A porta de origem prevalece sobre qualquer retângulo de sala isolada.
+	if actor.has_meta("police_exterior_position"): return actor.get_meta("police_exterior_position")
 	if actor.has_meta("service_safe_position"): return actor.get_meta("service_safe_position")
 	var interiors: Node = world.get_node("Interiors")
 	for path in interiors._door_configs:
 		var room: Node = interiors._door_configs[path].interior
 		if room.get_camera_rect().has_point(actor.global_position):
 			return world.get_node(String(path)+"/OutsideReturn").global_position
-	if actor.has_meta("police_exterior_position"): return actor.get_meta("police_exterior_position")
 	return actor.global_position
 func project(point: Vector2) -> Vector2: return MAP_SIZE*0.5+(point-center)*SCALE
 func edge_marker(point: Vector2) -> Vector2:

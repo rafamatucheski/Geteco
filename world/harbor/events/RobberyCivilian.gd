@@ -23,6 +23,9 @@ func frighten() -> void:
 		model.scale.y*=.6
 		model.rotation.x=.3
 func _physics_process(delta: float) -> void:
+	if is_dead:
+		fall_presentation.update(delta)
+		return
 	super._physics_process(delta)
 	if is_instance_valid(room) and room.is_bank and model.has_method("set_behind_counter"):
 		var station=room.project_floor(Vector2(-4.5 if room.to_local(global_position).x<0 else 4.5,-2.2))
@@ -38,3 +41,6 @@ func _physics_process(delta: float) -> void:
 		collision_layer=0
 		set_physics_process(false)
 
+func take_damage(amount: int, source: Variant = null) -> void:
+	if amount>0 and is_instance_valid(room) and room.actor_inside(): room._on_shot()
+	super.take_damage(amount,source)

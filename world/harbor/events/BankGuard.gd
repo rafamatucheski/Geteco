@@ -100,9 +100,27 @@ func _physics_process(delta: float) -> void:
 		_pose(false)
 		return
 	target=room.actor
-	security_alert=1 if room.armed_warning or room.alarm_started else 0
-	if room.shots_fired: response_aggression=12
+	# Exibir uma arma provoca advertência, sem perseguição/prisão automática.
+	if not room.shots_fired:
+		velocity=Vector2.ZERO
+		security_alert=0
+		response_aggression=0
+		if room.armed_warning:
+			var direction := global_position.direction_to(target.global_position)
+			model_root.rotation.y=lerp_angle(model_root.rotation.y,-direction.angle()-PI*.5,minf(1,delta*10))
+		_pose(room.armed_warning)
+		return
+	security_alert=3
+	response_aggression=12
 	super._physics_process(delta)
-	if security_alert==0: model_root.rotation.y=PI
-	_pose(security_alert>0)
+	_pose(true)
 
+func take_damage(amount: int, is_player_attacker: bool = false) -> void:
+	if amount>0 and not is_dead and is_player_attacker and is_instance_valid(room): room._on_shot()
+	super.take_damage(amount,is_player_attacker)
+	if is_dead and is_instance_valid(room): room.on_guard_down(self)
+
+func _dispatch_emergency_coroner() -> void:
+	# A área interna fica isolada da malha viária. Não mandar o rabecão
+	# perseguir as coordenadas técnicas do corpo durante o assalto.
+	pass
