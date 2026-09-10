@@ -23,12 +23,17 @@ func _setup_district_and_archetype() -> void:
 	body_height_scale = [1.08, 0.94, 1.02][profile % 3]
 	body_width_scale = [0.94, 1.22, 1.08][profile % 3]
 	skin_color = [Color("b88766"), Color("704d3b"), Color("d5aa83")][profile % 3]
-	shirt_color = [Color("302c30"), Color("633b40"), Color("4a3035")][profile % 3]
+	var identity := posmod(profile,8)
+	appearance_seed = 200 + identity
+	appearance_gender = 2 if identity%4 == 1 else 1
+	hair_style_override = [4,2,5,3,0,6,7,1][identity%8]
+	set_meta("character_name", ["Ren", "Haruka", "Daichi", "Ryo", "Kenji", "Aiko", "Sora", "Akira"][identity%8])
+	shirt_color = [Color("28543b"), Color("377455"), Color("4b6240")][identity % 3]
 	pants_color = Color("29333c")
 	shoe_color = Color("242224")
 	hair_color = Color("251e1b")
-	hat_color = Color("682e38")
-	accessory_color = Color("987247")
+	hat_color = Color("28523b")
+	accessory_color = Color("396147")
 	if not guard:
 		shirt_color = [Color("a59b80"),Color("627985"),Color("979b85")][profile%3]
 		pants_color = Color("535b60")
@@ -36,8 +41,8 @@ func _setup_district_and_archetype() -> void:
 		accessory_color = Color("716557")
 	has_bandana = guard and profile == 0
 	has_vest = guard and profile == 1
-	has_beanie = profile == 2
-	has_beard = guard and profile == 1
+	has_beanie = false
+	has_beard = false
 	max_health = (110 if combat_role == "leader" else 80) if guard else 40
 	health = max_health
 

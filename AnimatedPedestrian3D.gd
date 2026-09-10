@@ -79,14 +79,17 @@ var body_height_scale: float = 1.0
 var body_width_scale: float = 1.0
 enum BodyType { AVERAGE, SLIM, HEAVY, TALL, SHORT }
 @export var body_type_override: int = -1
+@export_enum("Aleatório", "Homem", "Mulher") var appearance_gender := 0
+@export var appearance_seed := -1
+@export var hair_style_override := -1
 var body_type: BodyType = BodyType.AVERAGE
 # Height, torso width, torso depth, limb thickness. Clothing is independent.
 const BODY_PROPORTIONS := [
 	Vector4(1.0, 1.0, 1.0, 1.0),
 	Vector4(1.02, 0.72, 0.78, 0.72),
-	Vector4(1.0, 1.85, 1.65, 1.40),
+	Vector4(1.0, 1.35, 1.24, 1.16),
 	Vector4(1.22, 0.88, 0.90, 0.90),
-	Vector4(0.78, 1.08, 1.05, 1.05),
+	Vector4(0.86, 1.03, 1.0, 1.0),
 ]
 
 # SubViewport 3D
@@ -196,6 +199,7 @@ func _ready() -> void:
 		add_child(c)
 	
 	_setup_district_and_archetype()
+	preload("res://world/shared/pedestrians/CitizenAppearance.gd").prepare(self)
 	if defer_presentation:
 		# A silhueta mantém o cidadão visível enquanto o detalhe aguarda orçamento.
 		_presentation_fallback = Polygon2D.new()
@@ -579,6 +583,7 @@ func _build_3d_viewport() -> void:
 	model_root.add_child(torso_node)
 	
 	var torso_mesh := MeshInstance3D.new()
+	torso_mesh.name = "BodyShell"
 	var cap_torso := CapsuleMesh.new()
 	cap_torso.radius = 0.17
 	cap_torso.height = 0.48
@@ -676,6 +681,7 @@ func _build_3d_viewport() -> void:
 	head_node.add_child(head_mesh)
 
 	var hair_mesh := MeshInstance3D.new()
+	hair_mesh.name = "BaseHair"
 	var sphere_hair := SphereMesh.new()
 	sphere_hair.radius = 0.175
 	sphere_hair.height = 0.28
@@ -1001,17 +1007,6 @@ func _apply_body_proportions() -> void:
 	for leg in [left_upper_leg, right_upper_leg]:
 		leg.position.x = signf(leg.position.x) * 0.11 * maxf(0.85, proportions.y * 0.85)
 		leg.scale = Vector3(proportions.w, 1.0, proportions.w)
-	if body_type == BodyType.HEAVY:
-		var belly := MeshInstance3D.new()
-		belly.name = "Belly"
-		var shape := SphereMesh.new()
-		shape.radius = 0.18
-		shape.height = 0.36
-		belly.mesh = shape
-		belly.scale = Vector3(1.0, 0.9, 1.0)
-		belly.position = Vector3(0, -0.075, -0.045)
-		belly.material_override = _make_mat(shirt_color, 0.6)
-		torso_node.add_child(belly)
 
 func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()

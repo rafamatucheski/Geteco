@@ -171,10 +171,10 @@ func capture_gallery(file: String, closeup: bool) -> void:
 			viewport.size = Vector2i(size,size)
 			var camera := viewport.get_camera_3d()
 			camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-			camera.size = 1.95
+			camera.size = 2.25
 			camera.position = Vector3(0,1.75,-3)
 			actor.model_root.rotation.y = PI if actor.has_meta("faces_positive_z") else 0
-			camera.look_at(Vector3(0,.75,0),Vector3.UP)
+			camera.look_at(Vector3(0,.85,0),Vector3.UP)
 			if actor.has_meta("faces_positive_z"):
 				camera.size = 2.2
 				camera.look_at(Vector3(0,.90,0),Vector3.UP)
@@ -193,4 +193,7 @@ func capture_gallery(file: String, closeup: bool) -> void:
 		var img := viewport.get_texture().get_image()
 		img.resize(size,size,Image.INTERPOLATE_NEAREST)
 		atlas.blend_rect(img,Rect2i(0,0,size,size),Vector2i((i%5)*size,(i/5)*(size+30)))
-	atlas.save_png(OUTPUT + file + ".png")
+	atlas.save_png(get_output_directory() + file + ".png")
+
+func get_output_directory() -> String:
+	return OUTPUT

@@ -22,7 +22,7 @@ static func piece(parent: Node3D, size: Vector3, point: Vector3, color: Color, r
 	parent.add_child(part)
 	return part
 
-static func dress(actor: AnimatedPedestrian3D, variant: int) -> void:
+static func dress(actor: Node, variant: int) -> void:
 	if actor.viewport == null:
 		actor.set_meta("citizen_detail_variant", variant)
 		actor.presentation_ready.connect(func(): dress(actor, variant), CONNECT_ONE_SHOT)
@@ -30,25 +30,18 @@ static func dress(actor: AnimatedPedestrian3D, variant: int) -> void:
 	if actor.has_meta("citizen_dressed"): return
 	variant = int(actor.get_meta("citizen_detail_variant", variant))
 	actor.set_meta("citizen_dressed", true)
-	var head := actor.head_node
+	load("res://world/shared/pedestrians/CitizenAppearance.gd").apply(actor)
+	var head: Node3D = actor.head_node
+	var face := int(actor.get_meta("appearance_variant",variant))
 	for side in [-1,1]:
 		piece(head,Vector3(.045,.065,.04),Vector3(side*.17,-.015,0),actor.skin_color,true)
-		piece(head,Vector3(.035,.019,.015),Vector3(side*.065,.005,-.157),Color("292a2b"))
-	piece(head,Vector3(.045,.05,.055),Vector3(0,-.025,-.17),actor.skin_color,true)
-	if variant%4==0:
-		# Tied-back hair, visible from the gameplay camera.
-		piece(head,Vector3(.18,.19,.18),Vector3(0,.02,.18),actor.hair_color,true)
-	elif variant%4==1:
-		for i in 5:
-			piece(head,Vector3(.10,.10,.10),Vector3((i-2)*.06,.15,.015),actor.hair_color,true)
-	elif variant%4==2:
-		for side in [-1,1]:
-			piece(head,Vector3(.065,.23,.18),Vector3(side*.145,-.015,.05),actor.hair_color,true)
-	var shirt := actor.shirt_color
-	for side in [-1,1]:
-		piece(actor.torso_node,Vector3(.10,.07,.025),Vector3(side*.09,.035,-.17),shirt.darkened(.22))
-	for i in 3:
-		piece(actor.torso_node,Vector3(.016,.016,.02),Vector3(0,.08-i*.065,-.183),Color("b8b6a6"))
+		piece(head,Vector3(.031,.017+(face%3)*.003,.015),Vector3(side*(.058+(face%3)*.005),.008,-.157),Color("292a2b"))
+	piece(head,Vector3(.034+(face%4)*.006,.05,.05),Vector3(0,-.025,-.17),actor.skin_color,true)
+	var shirt: Color = actor.shirt_color
+	if face%4 in [0,2]:
+		piece(actor.torso_node,Vector3(.085,.07,.025),Vector3(-.10,.035,-.17),shirt.darkened(.22))
+		for i in 3:
+			piece(actor.torso_node,Vector3(.016,.016,.02),Vector3(0,.08-i*.065,-.183),Color("b8b6a6"))
 	if variant%3==0:
 		piece(actor.torso_node,Vector3(.04,.38,.025),Vector3(.10,0,-.19),Color("514433")).rotation.z=-.4
 		piece(actor.torso_node,Vector3(.19,.19,.13),Vector3(-.19,-.15,-.02),Color("71563e"))
@@ -84,7 +77,8 @@ static func finish_rig(actor: Node, role: String) -> void:
 		piece(head, Vector3(.054,.012,.012), Vector3(0,-.074,-radius*.89), skin.darkened(.42))
 	for side in [-1,1]:
 		# Collar, shoulder seam, rolled sleeve cuff and tailored trouser seam.
-		piece(torso,Vector3(.095,.095,.025),Vector3(side*.065,.17,-.165),cloth.lightened(.18)).rotation.z=side*.35
+		if role != "civilian" or int(actor.get_meta("appearance_variant",0))%4 != 1:
+			piece(torso,Vector3(.075,.075,.025),Vector3(side*.06,.18,-.14),cloth.lightened(.18)).rotation.z=side*.35
 		var upper: Node3D = actor.left_upper_arm if side<0 else actor.right_upper_arm
 		piece(upper,Vector3(.112,.025,.115),Vector3(0,-.185,0),cloth.darkened(.20))
 		var lower: Node3D = actor.left_lower_arm if side<0 else actor.right_lower_arm

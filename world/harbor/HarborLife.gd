@@ -107,6 +107,8 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 		district_theme = DistrictTheme.CITY_DOWNTOWN
 		defer_presentation = true
 		archetype_override = [0,1,2,4,6,7][appearance_variant%6]
+		appearance_seed = appearance_variant
+		appearance_gender = 1 + appearance_variant % 2
 		super._ready()
 		preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(self,appearance_variant)
 

@@ -8,17 +8,21 @@ func _init() -> void:
 func _setup_district_and_archetype() -> void:
 	super._setup_district_and_archetype()
 	body_height_scale = 1.10
-	body_width_scale = 1.30
-	shirt_color = Color("472730")
+	body_width_scale = 1.08
+	shirt_color = Color("214d35")
+	appearance_gender = 1
+	appearance_seed = 208
+	hair_style_override = 5
+	set_meta("character_name", "Takeshi")
 	pants_color = Color("26282d")
 	shoe_color = Color("211d1c")
 	skin_color = Color("a8795d")
 	hair_color = Color("25201f")
-	accessory_color = Color("302b30") # Vest leather, not a large copper armor block.
+	accessory_color = Color("254735")
 	has_bandana = false
 	has_beanie = false
 	has_vest = false
-	has_beard = true
+	has_beard = false
 
 func _ready() -> void:
 	super._ready()
@@ -27,11 +31,11 @@ func _ready() -> void:
 
 func _build_boss_details() -> void:
 	# Panels follow the torso; shoulder caps follow arms, boots follow shins.
-	_detail(torso_node,"LeatherLeft",Vector3(.10,.30,.025),Vector3(-.075,0,-.145),Color("29272a"))
-	_detail(torso_node,"LeatherRight",Vector3(.10,.30,.025),Vector3(.075,0,-.145),Color("29272a"))
+	_detail(torso_node,"LeatherLeft",Vector3(.10,.30,.025),Vector3(-.075,0,-.145),Color("29543b"))
+	_detail(torso_node,"LeatherRight",Vector3(.10,.30,.025),Vector3(.075,0,-.145),Color("29543b"))
 	_detail(torso_node,"CopperZip",Vector3(.009,.29,.009),Vector3(0,0,-.171),Color("9b704c"))
 	for side in [-1,1]:
-		var lapel := _detail(torso_node,"Lapel%d" % side,Vector3(.035,.13,.018),Vector3(side*.055,.10,-.169),Color("633740"))
+		var lapel := _detail(torso_node,"Lapel%d" % side,Vector3(.035,.13,.018),Vector3(side*.055,.10,-.169),Color("638464"))
 		lapel.rotation.z = side*.22
 		var arm: Node3D = left_upper_arm if side == -1 else right_upper_arm
 		var shoulder := SphereMesh.new()
