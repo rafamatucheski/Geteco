@@ -271,6 +271,15 @@ func activate():
 	modulate = Color.WHITE
 	if visual: visual.show()
 	_lane_router.reset()
+	_response_crew.clear()
+	_target_stopped_time = 0.0
+	is_reversing = false
+	reverse_timer = 0.0
+	reverse_cooldown = 0.0
+	reverse_attempts = 0
+	stuck_timer = 0.0
+	stuck_despawn_timer = 0.0
+	last_tracked_pos = global_position
 	_ram_damage_cooldown = 0.0
 	set_meta("police_player_pursuit", false)
 	set_meta("ambient_response", false)
@@ -530,6 +539,9 @@ var is_reversing: bool = false
 var reverse_timer: float = 0.0
 var reverse_cooldown: float = 0.0
 var reverse_attempts: int = 0
+var _target_stopped_time := 0.0
+var _response_crew: Array[Node2D] = []
+var _missing_crew_time := 0.0
 
 func _physics_process(delta: float) -> void:
 	preload("res://VehicleMotionSafety.gd").sanitize(self)
@@ -542,6 +554,10 @@ func _physics_process(delta: float) -> void:
 		elif wanted and wanted.has_method("get_pursuit_target") and (get_meta("police_player_pursuit", false) or (is_instance_valid(target) and target.is_in_group("player"))):
 			target = wanted.get_pursuit_target()
 	_update_response_audio()
+	if is_instance_valid(target) and target.get("is_driven_by_player") == true:
+		_target_stopped_time = _target_stopped_time + delta if target.velocity.length() <= 12.0 else 0.0
+	else:
+		_target_stopped_time = 0.0
 	if is_broken:
 		current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
@@ -591,7 +607,7 @@ func _physics_process(delta: float) -> void:
 		var dist_cem = global_position.distance_to(_cemetery_target_position)
 		var dir_cem = global_position.direction_to(_cemetery_target_position)
 		var cem_angle_diff = absf(wrapf(dir_cem.angle() - rotation, -PI, PI))
-		rotation = lerp_angle(rotation, dir_cem.angle(), 4.5 * delta)
+		rotation = lerp_angle(rotation, dir_cem.angle(), minf(1.0, 4.5 * delta))
 		var cem_cruise = max_target_speed * 0.55
 		if cem_angle_diff > 0.4:
 			cem_cruise *= 0.5
@@ -641,7 +657,7 @@ func _physics_process(delta: float) -> void:
 		var dir_wpt = global_position.direction_to(waypoint)
 		
 		var angle_diff = absf(wrapf(dir_wpt.angle() - rotation, -PI, PI))
-		rotation = lerp_angle(rotation, dir_wpt.angle(), 4.5 * delta)
+		rotation = lerp_angle(rotation, dir_wpt.angle(), minf(1.0, 4.5 * delta))
 		
 		var target_cruise = max_target_speed * 0.75
 		if angle_diff > 0.4:
@@ -669,7 +685,7 @@ func _physics_process(delta: float) -> void:
 			var wm = get_node_or_null("/root/WantedManager")
 			var stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wm.current_stars if wm else 0)
 			var dist_to_target = global_position.distance_to(target.global_position) if is_instance_valid(target) else 9999.0
-			var fleeing_car: bool = is_instance_valid(target) and target.get("is_driven_by_player") == true and target.get("velocity") is Vector2 and (target.get("velocity") as Vector2).length() > 80.0
+			var fleeing_car: bool = is_instance_valid(target) and target.get("is_driven_by_player") == true and target.get("velocity") is Vector2 and (target.get("velocity") as Vector2).length() > 12.0
 			if stars == 0 or dist_to_target > 600.0 or not is_instance_valid(target) or fleeing_car or scene_timeout >= 1.5:
 				scene_timeout += delta
 				# Ask deployed officers to walk back to their assigned doors first.
@@ -689,11 +705,19 @@ func _physics_process(delta: float) -> void:
 				scene_timeout = 0.0
 		else:
 			scene_timeout += delta
-			if scene_timeout >= 7.0: # Máximo 7 segundos prestando socorro no local
-				scene_timeout = 0.0
+			# Atendimento acaba com o embarque, não com um relógio que abandona
+			# a equipe. Se ninguém sobreviveu, libera o veículo para a central.
+			_response_crew = _response_crew.filter(func(crew): return is_instance_valid(crew) and not crew.is_queued_for_deletion() and crew.get("is_dead") != true)
+			var awaiting_boarding := (type == 1 and returned_paramedics < deployed_paramedics) or (type == 2 and returned_firefighters < deployed_firefighters) or (type == 3 and returned_morticians < deployed_morticians)
+			_missing_crew_time = _missing_crew_time + delta if _response_crew.is_empty() and awaiting_boarding else 0.0
+			if _missing_crew_time >= 2.0:
 				is_acting = false
 				is_returning_to_base = true
 				if siren_audio: siren_audio.stop()
+			elif scene_timeout >= 30.0:
+				for crew in _response_crew:
+					if type == 1: crew._start_return_to_ambulance()
+					elif type == 2: crew._start_return_to_truck()
 			
 		current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
@@ -726,6 +750,16 @@ func _physics_process(delta: float) -> void:
 		return
 		
 	var is_target_in_car: bool = target.is_in_group("vehicle") or target.get("is_driven_by_player") == true
+	var arrival_radius := 140.0 if type == 0 else (120.0 if type == 2 else 75.0)
+	var may_stop := type != 0 or not is_target_in_car or _target_stopped_time >= 0.6
+	if may_stop and global_position.distance_to(target.global_position) <= arrival_radius:
+		# Frear antes de orientar para outro waypoint evita rodar parado ao lado
+		# da ocorrência e impede desembarque com a viatura ainda em movimento.
+		current_speed = move_toward(current_speed, 0.0, 520.0 * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
+		preload("res://VehicleMotionSafety.gd").move(self)
+		if velocity.length() <= 12.0 and current_speed <= 12.0: _begin_response()
+		return
 	var intercept_pos := target.global_position
 	if is_target_in_car and "velocity" in target and target.velocity.length() > 30.0:
 		# Antecipa a trajetória do veículo do jogador para interceptação
@@ -735,11 +769,10 @@ func _physics_process(delta: float) -> void:
 	if waypoint.distance_to(global_position) < 1.0:
 		current_speed = 0.0
 		velocity = Vector2.ZERO
-		if type == 0 and (not is_target_in_car or target.velocity.length() <= 12.0) and global_position.distance_to(target.global_position) <= 160.0:
-			is_acting = true
-			if not officer_deployed:
-				officer_deployed = true
-				_deploy_officers_duo()
+		# A faixa termina no meio-fio: socorristas percorrem o trecho a pé.
+		if global_position.distance_to(target.global_position) <= 360.0:
+			if type != 0 or not is_target_in_car or _target_stopped_time >= 0.6:
+				_begin_response()
 		return
 	var dir = global_position.direction_to(waypoint)
 	var dist = global_position.distance_to(target.global_position)
@@ -773,7 +806,7 @@ func _physics_process(delta: float) -> void:
 	var target_angle = (dir.rotated(steer_avoid_angle)).angle()
 	var angle_diff = absf(wrapf(target_angle - rotation, -PI, PI))
 	var steer_rate = 6.0 if type == 0 else 4.5
-	rotation = lerp_angle(rotation, target_angle, steer_rate * delta)
+	rotation = lerp_angle(rotation, target_angle, minf(1.0, steer_rate * delta))
 	
 	var desired_speed = police_top_speed if type == 0 else max_target_speed
 	if angle_diff > 0.50:
@@ -790,7 +823,7 @@ func _physics_process(delta: float) -> void:
 	if type == 0: # POLÍCIA
 		var target_moving := false
 		if is_instance_valid(target) and "velocity" in target:
-			target_moving = (target.velocity as Vector2).length() > 50.0
+			target_moving = (target.velocity as Vector2).length() > 12.0 or _target_stopped_time < 0.6
 			
 		if is_target_in_car and target_moving:
 			# === PERSEGUIÇÃO VEICULAR DINÂMICA (Acompanhamento e tentativa de emparelhar/cortar) ===
@@ -880,6 +913,11 @@ func _physics_process(delta: float) -> void:
 	if (current_speed > 30.0 and velocity.length() < 16.0) or (obstacle_ahead and current_speed < 15.0 and not is_acting):
 		stuck_timer += delta
 		if stuck_timer > 0.45 and reverse_cooldown <= 0.0:
+			# Um congestionamento perto da ocorrência não exige repetir ré:
+			# estacionar aqui permite que a equipe conclua o acesso a pé.
+			if dist <= 360.0 and may_stop:
+				_begin_response()
+				return
 			is_reversing = true
 			reverse_timer = 0.45
 			reverse_attempts += 1
@@ -891,6 +929,25 @@ func _physics_process(delta: float) -> void:
 				reverse_attempts = 0
 	else:
 		stuck_timer = maxf(0.0, stuck_timer - delta * 0.5)
+
+func _begin_response() -> void:
+	_missing_crew_time = 0.0
+	current_speed = 0.0
+	velocity = Vector2.ZERO
+	is_reversing = false
+	scene_timeout = 0.0
+	is_acting = true
+	match type:
+		0:
+			if not officer_deployed:
+				officer_deployed = true
+				_deploy_officers_duo()
+		1:
+			if deployed_paramedics == 0: _deploy_paramedics()
+		2:
+			if deployed_firefighters == 0: _deploy_firefighters()
+		3:
+			if deployed_morticians == 0: _deploy_morticians()
 
 func _get_obstacle_avoidance_angle() -> float:
 	var space_state = get_world_2d().direct_space_state
@@ -1020,7 +1077,9 @@ func close_crew_cover_door(side: float) -> void:
 	if not is_instance_valid(door): return
 	if door._active_tween != null: door._active_tween.kill()
 	var body := door.get_node_or_null("BallisticCover") as StaticBody2D
-	if body: body.set_deferred("collision_layer", 0)
+	if body:
+		_release_cover_exceptions(body)
+		body.set_deferred("collision_layer", 0)
 	var closing := door.create_tween()
 	closing.tween_property(door, "rotation", 0.0, 0.26)
 	closing.tween_callback(door._finish_close)
@@ -1040,9 +1099,18 @@ func _clear_tactical_doors() -> void:
 		if is_instance_valid(door):
 			door.hide()
 			var body := door.get_node_or_null("BallisticCover") as StaticBody2D
-			if body: body.set_deferred("collision_layer", 0)
+			if body:
+				_release_cover_exceptions(body)
+				body.set_deferred("collision_layer", 0)
 			door.queue_free()
 	_tactical_doors.clear()
+
+func _release_cover_exceptions(cover: StaticBody2D) -> void:
+	# Uma exceção que ainda aponta para o RID da porta destruída quebra consultas
+	# físicas posteriores; removê-la faz parte do fechamento da porta.
+	for officer in get_tree().get_nodes_in_group("police_officer"):
+		if officer.get("service_vehicle") == self:
+			officer.remove_collision_exception_with(cover)
 
 func _deploy_officers_duo() -> void:
 	var officer_scene = load("res://PoliceOfficer.tscn")
@@ -1065,6 +1133,10 @@ func _deploy_officers_duo() -> void:
 		if off2.has_method("begin_service_disembark"):
 			off2.begin_service_disembark(self, 1.0, -8.0)
 		get_parent().add_child(off2)
+		off1.add_collision_exception_with(off2)
+		off2.add_collision_exception_with(off1)
+		off1.crew_partner = off2
+		off2.crew_partner = off1
 		open_crew_cover_door(1.0, -8.0)
 
 func _deploy_officer() -> void:
@@ -1095,6 +1167,7 @@ func _deploy_paramedics() -> void:
 		if p1.has_method("begin_service_disembark"):
 			p1.begin_service_disembark(self, -1.0, 8.0)
 		get_parent().add_child(p1)
+		_response_crew.append(p1)
 		play_crew_door(-1.0, 8.0)
 		
 		# Paramédico 2 (Apoio / Médico)
@@ -1106,6 +1179,7 @@ func _deploy_paramedics() -> void:
 		if p2.has_method("begin_service_disembark"):
 			p2.begin_service_disembark(self, 1.0, 8.0)
 		get_parent().add_child(p2)
+		_response_crew.append(p2)
 		play_crew_door(1.0, 8.0)
 
 func on_paramedic_embarked(_p: Node2D) -> void:
@@ -1129,6 +1203,7 @@ func _deploy_firefighters() -> void:
 		if ff1.has_method("begin_service_disembark"):
 			ff1.begin_service_disembark(self, -1.0, 22.0)
 		get_parent().add_child(ff1)
+		_response_crew.append(ff1)
 		play_crew_door(-1.0, 22.0)
 		
 		var ff2 = ff_scene.instantiate()
@@ -1138,6 +1213,7 @@ func _deploy_firefighters() -> void:
 		if ff2.has_method("begin_service_disembark"):
 			ff2.begin_service_disembark(self, 1.0, 22.0)
 		get_parent().add_child(ff2)
+		_response_crew.append(ff2)
 		play_crew_door(1.0, 22.0)
 
 func on_firefighter_embarked(_ff: Node2D) -> void:
@@ -1167,6 +1243,7 @@ func _deploy_morticians() -> void:
 		if m1.has_method("begin_service_disembark"):
 			m1.begin_service_disembark(self, -1.0, 22.0)
 		get_parent().add_child(m1)
+		_response_crew.append(m1)
 		play_crew_door(-1.0, 22.0)
 		
 		# Agente 2 (Apoio / Perito IML)
@@ -1178,6 +1255,7 @@ func _deploy_morticians() -> void:
 		if m2.has_method("begin_service_disembark"):
 			m2.begin_service_disembark(self, 1.0, 22.0)
 		get_parent().add_child(m2)
+		_response_crew.append(m2)
 		play_crew_door(1.0, 22.0)
 
 ## One legist, sent to bury the body already loaded from the pickup leg
@@ -1197,6 +1275,7 @@ func _deploy_morticians_for_burial() -> void:
 		if m1.has_method("begin_service_disembark"):
 			m1.begin_service_disembark(self, -1.0, 22.0)
 		get_parent().add_child(m1)
+		_response_crew.append(m1)
 		play_crew_door(-1.0, 22.0)
 
 func on_mortician_embarked(_m: Node2D) -> void:

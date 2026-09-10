@@ -1,0 +1,12 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] spawn_moving_vehicle (res://world/shared/emergency/ModernTrafficFactory.gd:79)
+       [1] _ready (res://world/mountain_pass/MountainTraffic.gd:35)
+       [2] _run (res://tests/test_police_mountain_lanes.gd:19)
+MOUNTAIN_POLICE_METRICS|start=529.942932128906|end=91.3123168945313|visible=true|max_axis_distance=33.8519592285156
+POLICE_MOUNTAIN_LANES|PASS|worst_pavement_distance=33.8519592285156
+WARNING: 7 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

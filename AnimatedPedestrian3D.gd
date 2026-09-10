@@ -176,6 +176,9 @@ var behavior_timer: float = 0.0
 var behavior_action: int = 0 # 0 = Normal, 1 = Tremer de frio, 2 = Limpar suor, 3 = Olhar natureza, 4 = Celular
 
 func _ready() -> void:
+	# Multidões repartem buscas; os agentes de emergência usam o orçamento maior.
+	movement_navigation.search_budget = 48
+	movement_navigation.retry_delay = 2.5
 	add_to_group("pedestrian")
 	add_to_group("damageable")
 	z_index = 6
@@ -1162,6 +1165,8 @@ func _physics_process(delta: float) -> void:
 	elif is_scared:
 		velocity = danger_response.movement(self, delta, base_walk_speed * 2.4)
 		walk_dir = velocity.normalized()
+	elif _ambient_walk_paused():
+		velocity = Vector2.ZERO
 	else:
 		var cur_speed: float = base_walk_speed * biome_speed_mult * (0.75 if panic_recovery > 0.0 else 1.0)
 		var dist: float = global_position.distance_to(walk_target)
@@ -1226,6 +1231,9 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+func _ambient_walk_paused() -> bool:
+	return false
+
 func _gangster_shoot_target(target_pos: Vector2) -> void:
 	var bullet_scene = load("res://Bullet.tscn")
 	if bullet_scene:
@@ -1250,35 +1258,13 @@ var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var unstuck_dir_sign: float = 1.0
 
+var movement_navigation := preload("res://ResponderNavigation.gd").new()
+
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
-	var dir: Vector2 = global_position.direction_to(dest)
-	if dir.length_squared() < 0.001:
-		return Vector2.ZERO
-		
-	if global_position.distance_to(last_pos) < 2.0:
-		stuck_timer += delta
-	else:
-		stuck_timer = maxf(0.0, stuck_timer - delta * 1.5)
-		last_pos = global_position
-		
-	var slide_dir: Vector2 = dir
-	for i in get_slide_collision_count():
-		var col = get_slide_collision(i)
-		var n: Vector2 = col.get_normal()
-		if n.dot(dir) < -0.2:
-			var tangent := Vector2(-n.y, n.x)
-			if tangent.dot(dir) < 0:
-				tangent = -tangent
-			slide_dir = tangent
-			break
-			
-	if stuck_timer > 0.35:
-		if stuck_timer > 1.8 and randf() < 0.04:
-			unstuck_dir_sign = -unstuck_dir_sign
-		var side_step: Vector2 = dir.rotated(PI * 0.45 * unstuck_dir_sign)
-		return (side_step * 0.85 + slide_dir * 0.15).normalized() * move_speed
-		
-	return slide_dir.normalized() * move_speed
+	var result: Vector2 = movement_navigation.movement(self, dest, move_speed, delta)
+	stuck_timer = movement_navigation.stuck_time
+	return result
+
 
 func _pick_new_sidewalk_target() -> void:
 	var side_tracks: Array = [

@@ -23,6 +23,8 @@ var is_visiting: bool = false
 var _visiting_timer: float = 0.0
 var _visiting_door_pos: Vector2 = Vector2.ZERO
 var _window_shop_pause: float = 0.0
+var _visit_approach_elapsed := 0.0
+var _visit_fade: Tween
 
 # `_sidewalk_avoidance_offset()` and `_spacing_speed_factor()` each used to
 # independently call get_tree().get_nodes_in_group() once per pedestrian per
@@ -83,6 +85,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _update_ambient_life(delta: float) -> void:
+	if is_dead or is_incapacitated or is_flying: return
 	if is_scared or (is_gangster and is_instance_valid(combat_target)):
 		_window_shop_pause = 0.0
 		if is_visiting:
@@ -126,6 +129,7 @@ func _try_start_poi_visit() -> void:
 			door.y -= best_building.arcade_depth * 0.45
 			
 		is_visiting = true
+		_visit_approach_elapsed = 0.0
 		_visiting_door_pos = door
 		walk_target = door
 		_visiting_timer = 0.0
@@ -134,6 +138,10 @@ func _try_start_poi_visit() -> void:
 func _process_visiting_state(delta: float) -> void:
 	var dist_to_door := global_position.distance_to(_visiting_door_pos)
 	if dist_to_door > 22.0 and _visiting_timer == 0.0:
+		_visit_approach_elapsed += delta
+		if _visit_approach_elapsed > 12.0:
+			_abort_visit()
+			return
 		walk_target = _visiting_door_pos
 		return
 		
@@ -150,8 +158,9 @@ func _process_visiting_state(delta: float) -> void:
 		_show_custom_bubble(phrases[randi() % phrases.size()], Color(0.3, 0.85, 0.45))
 		
 		# Entra no restaurante/loja: fade out suave e desativa colisão física
-		var tw := create_tween()
-		tw.tween_property(self, "modulate:a", 0.0, 0.40)
+		if _visit_fade: _visit_fade.kill()
+		_visit_fade = create_tween()
+		_visit_fade.tween_property(self, "modulate:a", 0.0, 0.40)
 		collision_layer = 0
 		velocity = Vector2.ZERO
 		return
@@ -163,8 +172,9 @@ func _process_visiting_state(delta: float) -> void:
 		# Sai do estabelecimento após comer/comprar!
 		is_visiting = false
 		collision_layer = 4
-		var tw := create_tween()
-		tw.tween_property(self, "modulate:a", 1.0, 0.40)
+		if _visit_fade: _visit_fade.kill()
+		_visit_fade = create_tween()
+		_visit_fade.tween_property(self, "modulate:a", 1.0, 0.40)
 		
 		var exit_phrases := ["Muito bom! 👍", "Revigorado! ✨", "Satisfeito! 😊", "Bora continuar 🚶"]
 		_show_custom_bubble(exit_phrases[randi() % exit_phrases.size()], Color(0.2, 0.7, 0.95))
@@ -176,6 +186,8 @@ func _process_visiting_state(delta: float) -> void:
 
 
 func _abort_visit() -> void:
+	if _visit_fade: _visit_fade.kill()
+	visit_cooldown = randf_range(25.0, 50.0)
 	is_visiting = false
 	_visiting_timer = 0.0
 	collision_layer = 4
@@ -254,23 +266,20 @@ func _enforce_sidewalk_guardrail() -> void:
 
 
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
-	var base_dir := global_position.direction_to(dest)
+	var planned := super._navigate_towards(dest, move_speed, delta)
+	if planned.is_zero_approx(): return Vector2.ZERO
+	var base_dir := planned.normalized()
 	var avoidance := _sidewalk_avoidance_offset(base_dir)
 	var combined := base_dir + avoidance
 	var steered := combined.normalized() if combined.length_squared() > 0.0001 else base_dir
 	
-	# Anti-stuck inteligente: evita congelar em postes de luz, árvores ou esquinas
-	if velocity.length_squared() < 4.0 and not is_visiting:
-		stuck_timer += delta
-		if stuck_timer > 1.2:
-			# Nudge lateral para contornar o obstáculo e avançar
-			lateral_offset = -lateral_offset + randf_range(-6.0, 6.0)
-			_pick_new_sidewalk_target()
-			stuck_timer = 0.0
-	else:
-		stuck_timer = maxf(0.0, stuck_timer - delta * 2.0)
-		
+	# Espaçamento social não pode empurrar o pedestre para dentro de um poste.
+	if not movement_navigation.clear_segment(self, global_position, global_position + steered * 20.0):
+		return planned
 	return steered * move_speed
+
+func _ambient_walk_paused() -> bool:
+	return _window_shop_pause > 0.0 or (is_visiting and _visiting_timer > 0.0)
 
 
 func _sidewalk_avoidance_offset(travel_dir: Vector2) -> Vector2:

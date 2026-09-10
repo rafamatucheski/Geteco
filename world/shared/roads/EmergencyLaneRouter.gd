@@ -73,6 +73,10 @@ func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
 			if float(last.end) >= path.curve.get_baked_length() - 30.0 and vehicle.global_position.distance_to(endpoint) < 32.0:
 				if _link_adjacent_lane(vehicle, path):
 					return _guide_linked_lane(vehicle, target)
+			# O trecho terminou: devolver o ponto atrás do para-choque fazia
+			# o veículo circular em torno dele sem autorizar a equipe a sair.
+			if vehicle.global_position.distance_to(endpoint) < 32.0:
+				return vehicle.global_position
 			return endpoint
 	return target
 

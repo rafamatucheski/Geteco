@@ -12,11 +12,23 @@ static func report(projectile: Node2D, origin: Vector2, direction: Vector2, shoo
 		if now < int(shooter.get_meta("civilian_alert_after", 0)): return
 		shooter.set_meta("civilian_alert_after", now + 200)
 	var end := origin + direction.normalized() * 850.0
+	# A trajetória percebida termina na primeira parede/carro; tiros não
+	# ameaçam uma rua inteira do outro lado de uma quadra fechada.
+	var excluded: Array[RID] = []
+	if shooter is CollisionObject2D: excluded.append(shooter.get_rid())
+	var shot_query := PhysicsRayQueryParameters2D.create(origin, end, 3, excluded)
+	var obstruction := projectile.get_world_2d().direct_space_state.intersect_ray(shot_query)
+	if not obstruction.is_empty(): end = obstruction.position
 	for person in projectile.get_tree().get_nodes_in_group("pedestrian"):
-		if person == shooter or not is_instance_valid(person) or not person.is_visible_in_tree(): continue
+		if person == shooter or not is_instance_valid(person) or not person.is_visible_in_tree() or person.modulate.a < 0.1: continue
 		if not person.has_method("hear_gunfire") or person.get_world_2d() != projectile.get_world_2d(): continue
 		var near_line := Geometry2D.get_closest_point_to_segment(person.global_position, origin, end)
-		if person.global_position.distance_to(origin) < 650.0 or person.global_position.distance_to(near_line) < 100.0:
+		var distance: float = person.global_position.distance_to(origin)
+		var sight_query := PhysicsRayQueryParameters2D.create(origin, person.global_position, 3, excluded)
+		var audible: bool = distance < 400.0
+		if audible and distance > 140.0:
+			audible = projectile.get_world_2d().direct_space_state.intersect_ray(sight_query).is_empty()
+		if audible or person.global_position.distance_to(near_line) < 100.0:
 			person.hear_gunfire(origin, end)
 
 func remember(origin: Vector2, end: Vector2) -> void:

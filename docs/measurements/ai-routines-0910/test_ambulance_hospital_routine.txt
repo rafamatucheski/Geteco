@@ -1,0 +1,17 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_ambulance_hospital_routine.gd:17)
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=48 issues=0
+PASS Impacto leve produz vítima resgatável
+PASS Hospital despacha ambulância para a vítima
+PASS Ambulância se desloca fisicamente até o atendimento
+PASS Socorristas atendem e embarcam a vítima
+PASS Vítima retorna recuperada após chegar ao hospital
+PASS Os dois paramédicos voltam à ambulância
+AMBULANCE_HOSPITAL: []
+WARNING: 1 ObjectDB instance was leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

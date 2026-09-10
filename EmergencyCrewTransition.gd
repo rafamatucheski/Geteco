@@ -13,7 +13,13 @@ static func get_door_point(vehicle: Node2D, side: float, longitudinal: float = -
 
 
 static func get_exit_point(vehicle: Node2D, side: float, longitudinal: float = -8.0) -> Vector2:
-	return vehicle.global_position + vehicle.transform.x * longitudinal + vehicle.transform.y * side * EXIT_LATERAL_DISTANCE
+	# A frota 3D tem larguras diferentes. A equipe precisa sair inteiramente da
+	# carroceria antes de restaurar colisão com o veículo.
+	var lateral := EXIT_LATERAL_DISTANCE
+	var collision := vehicle.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collision and collision.shape is RectangleShape2D:
+		lateral = maxf(lateral, collision.shape.size.y * 0.5 + 16.0)
+	return vehicle.global_position + vehicle.transform.x * longitudinal + vehicle.transform.y * side * lateral
 
 
 static func get_spawn_point(vehicle: Node2D, side: float, longitudinal: float = -8.0) -> Vector2:

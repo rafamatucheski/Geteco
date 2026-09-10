@@ -36,8 +36,10 @@ var service_disembark_active := false
 var returning_to_service_vehicle := false
 var boarding_service_vehicle := false
 var vehicle_stop := preload("res://PoliceVehicleStop.gd").new()
+var crew_partner: CharacterBody2D
 
 func _exit_tree() -> void:
+	if is_instance_valid(crew_partner): crew_partner.remove_collision_exception_with(self)
 	vehicle_stop.cancel()
 
 var collision_shape: CollisionShape2D
@@ -498,7 +500,7 @@ func _physics_process(delta: float) -> void:
 				velocity = _navigate_towards(door_point, speed, delta)
 				move_and_slide()
 				if model_root and door_dir.length_squared() > 0.01:
-					model_root.rotation.y = lerp_angle(model_root.rotation.y, -atan2(door_dir.y, door_dir.x) - PI * 0.5, 14.0 * delta)
+					model_root.rotation.y = lerp_angle(model_root.rotation.y, -atan2(door_dir.y, door_dir.x) - PI * 0.5, minf(1.0, 14.0 * delta))
 				return
 			_board_service_vehicle()
 		return
@@ -510,18 +512,25 @@ func _physics_process(delta: float) -> void:
 		if not is_instance_valid(service_vehicle):
 			service_disembark_active = false
 		else:
+			# O painel protege contra tiros, mas não pode aprisionar quem está
+			# atravessando a própria porta durante o desembarque.
+			var door: Node2D = service_vehicle._tactical_doors.get(crew_side)
+			if is_instance_valid(door):
+				var cover := door.get_node_or_null("BallisticCover") as StaticBody2D
+				if cover: add_collision_exception_with(cover)
 			var exit_point: Vector2 = service_vehicle.get_crew_exit_point(crew_side, crew_longitudinal) if service_vehicle.has_method("get_crew_exit_point") else service_vehicle.global_position
 			var exit_dir := global_position.direction_to(exit_point)
 			if global_position.distance_to(exit_point) > 5.0:
 				velocity = _navigate_towards(exit_point, speed * 0.72, delta)
 				move_and_slide()
 				if model_root and exit_dir.length_squared() > 0.01:
-					model_root.rotation.y = lerp_angle(model_root.rotation.y, -atan2(exit_dir.y, exit_dir.x) - PI * 0.5, 14.0 * delta)
+					model_root.rotation.y = lerp_angle(model_root.rotation.y, -atan2(exit_dir.y, exit_dir.x) - PI * 0.5, minf(1.0, 14.0 * delta))
 				walk_clock += delta * 6.0
 				return
 			velocity = Vector2.ZERO
 			service_disembark_active = false
 			remove_collision_exception_with(service_vehicle)
+			service_vehicle.close_crew_cover_door(crew_side)
 	
 	var pursuit_manager := get_node_or_null("/root/WantedManager")
 	if not local_security and pursuit_manager and pursuit_manager.has_method("get_pursuit_target") and ((is_instance_valid(service_vehicle) and service_vehicle.get_meta("police_player_pursuit", false)) or (is_instance_valid(target) and (target.is_in_group("player") or target.get("is_driven_by_player") != null))):
@@ -562,6 +571,8 @@ func _physics_process(delta: float) -> void:
 		vehicle_stop.approach(self, target, delta)
 		is_moving = velocity.length_squared() > 1.0
 	elif response_aggression <= 0.0:
+		if is_instance_valid(service_vehicle) and service_vehicle._tactical_doors.has(crew_side):
+			service_vehicle.close_crew_cover_door(crew_side)
 		var tactical_spd: float = speed * 0.75
 		if visible_target and dist < 220.0:
 			if not arrest_warning_given:
@@ -572,7 +583,7 @@ func _physics_process(delta: float) -> void:
 			arrest_warning_elapsed += delta
 		else:
 			_reset_arrest_warning()
-		if dist > 34.0:
+		if dist > 34.0 or not _has_target_sight():
 			velocity = _navigate_towards(target.global_position, tactical_spd, delta)
 			is_moving = true
 			arrest_timer = 0.0
@@ -584,11 +595,12 @@ func _physics_process(delta: float) -> void:
 				return
 	else:
 		_reset_arrest_warning()
-		if is_instance_valid(service_vehicle) and dist < 320.0:
+		if is_instance_valid(service_vehicle) and dist < 320.0 and visible_target:
+			service_vehicle.open_crew_cover_door(crew_side, crew_longitudinal)
 			var cover_point := service_vehicle.get_crew_cover_point(crew_side, crew_longitudinal, target.global_position) as Vector2
 			velocity = _navigate_towards(cover_point, speed, delta) if global_position.distance_to(cover_point) > 8.0 else Vector2.ZERO
 			is_moving = velocity.length_squared() > 1.0
-		elif dist > 180.0:
+		elif not visible_target or dist > 180.0:
 			velocity = _navigate_towards(target.global_position, speed, delta)
 			is_moving = true
 		elif dist < 100.0:
@@ -601,11 +613,12 @@ func _physics_process(delta: float) -> void:
 			_shoot_at_target(target.global_position)
 			
 	move_and_slide()
+	is_moving = velocity.length_squared() > 1.0
 
 	# Animação e Rotação 3D
 	if model_root and dir.length_squared() > 0.01:
 		var target_angle_3d: float = -atan2(dir.y, dir.x) - PI * 0.5
-		model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, 14.0 * delta)
+		model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, minf(1.0, 14.0 * delta))
 
 	if is_moving:
 		walk_clock += delta * 6.0
@@ -634,35 +647,12 @@ var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var unstuck_dir_sign: float = 1.0
 
+var movement_navigation := preload("res://ResponderNavigation.gd").new()
+
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
-	var dir: Vector2 = global_position.direction_to(dest)
-	if dir.length_squared() < 0.001:
-		return Vector2.ZERO
-		
-	if global_position.distance_to(last_pos) < 2.0:
-		stuck_timer += delta
-	else:
-		stuck_timer = maxf(0.0, stuck_timer - delta * 1.5)
-		last_pos = global_position
-		
-	var slide_dir: Vector2 = dir
-	for i in get_slide_collision_count():
-		var col = get_slide_collision(i)
-		var n: Vector2 = col.get_normal()
-		if n.dot(dir) < -0.2:
-			var tangent := Vector2(-n.y, n.x)
-			if tangent.dot(dir) < 0:
-				tangent = -tangent
-			slide_dir = tangent
-			break
-			
-	if stuck_timer > 0.35:
-		if stuck_timer > 1.8 and randf() < 0.04:
-			unstuck_dir_sign = -unstuck_dir_sign
-		var side_step: Vector2 = dir.rotated(PI * 0.45 * unstuck_dir_sign)
-		return (side_step * 0.85 + slide_dir * 0.15).normalized() * move_speed
-		
-	return slide_dir.normalized() * move_speed
+	var result: Vector2 = movement_navigation.movement(self, dest, move_speed, delta)
+	stuck_timer = movement_navigation.stuck_time
+	return result
 
 
 func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) -> void:
@@ -676,6 +666,8 @@ func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) 
 
 func return_to_service_vehicle() -> void:
 	if not is_dead and is_instance_valid(service_vehicle):
+		vehicle_stop.cancel()
+		service_vehicle.close_crew_cover_door(crew_side)
 		add_collision_exception_with(service_vehicle)
 		service_disembark_active = false
 		returning_to_service_vehicle = true

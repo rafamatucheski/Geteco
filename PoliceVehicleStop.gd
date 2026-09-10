@@ -8,6 +8,7 @@ var exit_point := Vector2.ZERO
 var seat_point := Vector2.ZERO
 var control_before := false
 var poses: Dictionary = {}
+var approaching_car: CharacterBody2D
 
 func cancel() -> void:
 	if is_instance_valid(car): car.remove_meta("police_stop_owner")
@@ -22,6 +23,7 @@ func cancel() -> void:
 	actor = null
 	phase = "idle"
 	elapsed = 0.0
+	approaching_car = null
 
 func corridor_clear(officer: CharacterBody2D, vehicle: CharacterBody2D, point: Vector2) -> bool:
 	var query := PhysicsRayQueryParameters2D.create(officer.global_position, point, 1 | 2)
@@ -87,6 +89,9 @@ func tick(officer: CharacterBody2D, delta: float) -> void:
 		suspect.arrest_and_respawn()
 
 func approach(officer: CharacterBody2D, vehicle: CharacterBody2D, delta: float) -> void:
+	if approaching_car != vehicle:
+		elapsed = 0.0
+		approaching_car = vehicle
 	if vehicle.get("is_driven_by_player") != true or not vehicle.has_method("exit_vehicle"):
 		officer.velocity = Vector2.ZERO
 		return

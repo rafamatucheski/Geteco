@@ -1,0 +1,23 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tests/test_rescue_and_burial_flow.gd:61)
+DISTRICT_ROAD_SAFETY: crosswalks=100 rail_level=0 rail_grade_separated=6 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=50 access_routes=48 issues=0
+PASS Harbor emergency director present
+PASS Coroner depot is now registered in the Harbor emergency director (was completely missing before this fix)
+PASS HarborCemetery is instantiated in the world
+PASS Cemetery exposes get_open_plot_position()
+PASS Soft impact leaves the pedestrian incapacitated, not dead
+PASS A real ambulance is dispatched for a survivable hit
+PASS Ambulance physically drives to the scene under real physics (traveled=72.9 px, not a teleport)
+PASS Pedestrian is picked up (hidden, riding the ambulance) once treated
+PASS Rescued pedestrian reappears near the hospital, healed, and resumes normal life
+PASS Rescued pedestrian is fully healed on return
+PASS Hard impact is fatal
+PASS A real coroner (IML) is dispatched for a fatal hit -- this used to always fail silently
+PASS Hearse physically arrives at the incident and starts the pickup
+WARNING: 1 ObjectDB instance was leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

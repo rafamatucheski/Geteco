@@ -41,6 +41,10 @@ var right_lower_leg: Node3D
 var mat_uniform: StandardMaterial3D
 
 func _ready() -> void:
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
+	if is_instance_valid(fire_truck): add_collision_exception_with(fire_truck)
 	add_to_group("firefighter")
 	add_to_group("damageable")
 	health = max_health
@@ -345,6 +349,7 @@ func _physics_process(delta: float) -> void:
 				else:
 					velocity = Vector2.ZERO
 					state = State.APPROACH
+					remove_collision_exception_with(fire_truck)
 		State.APPROACH:
 			if not is_instance_valid(target):
 				_start_return_to_truck()
@@ -353,8 +358,8 @@ func _physics_process(delta: float) -> void:
 			var dir: Vector2 = global_position.direction_to(target.global_position)
 			dir_to_look = dir
 			
-			if dist > 60.0 and stuck_timer < 2.0:
-				velocity = _navigate_towards(target.global_position, speed, delta)
+			if dist > 60.0 or not _can_reach_fire():
+				velocity = _navigate_towards(movement_navigation.service_position(self, target, 50.0, delta), speed, delta)
 				is_moving = true
 			else:
 				velocity = Vector2.ZERO
@@ -366,6 +371,14 @@ func _physics_process(delta: float) -> void:
 				
 		State.EXTINGUISH:
 			velocity = Vector2.ZERO
+			if not is_instance_valid(target):
+				_start_return_to_truck()
+				return
+			if global_position.distance_to(target.global_position) > 70.0 or not _can_reach_fire():
+				water_hose.emitting = false
+				water_audio.stop()
+				state = State.APPROACH
+				return
 			if is_instance_valid(target):
 				dir_to_look = global_position.direction_to(target.global_position)
 				water_hose.direction = dir_to_look
@@ -395,11 +408,12 @@ func _physics_process(delta: float) -> void:
 				_board_fire_truck()
 
 	move_and_slide()
+	is_moving = velocity.length_squared() > 1.0
 
 	# Animação e Rotação 3D
 	if model_root and dir_to_look.length_squared() > 0.01:
 		var target_angle_3d: float = -atan2(dir_to_look.y, dir_to_look.x) - PI * 0.5
-		model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, 14.0 * delta)
+		model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, minf(1.0, 14.0 * delta))
 
 	if is_moving:
 		walk_clock += delta * 6.0
@@ -428,40 +442,28 @@ var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var unstuck_dir_sign: float = 1.0
 
+var movement_navigation := preload("res://ResponderNavigation.gd").new()
+
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
-	var dir: Vector2 = global_position.direction_to(dest)
-	if dir.length_squared() < 0.001:
-		return Vector2.ZERO
-		
-	if global_position.distance_to(last_pos) < 2.0:
-		stuck_timer += delta
-	else:
-		stuck_timer = maxf(0.0, stuck_timer - delta * 1.5)
-		last_pos = global_position
-		
-	var slide_dir: Vector2 = dir
-	for i in get_slide_collision_count():
-		var col = get_slide_collision(i)
-		var n: Vector2 = col.get_normal()
-		if n.dot(dir) < -0.2:
-			var tangent := Vector2(-n.y, n.x)
-			if tangent.dot(dir) < 0:
-				tangent = -tangent
-			slide_dir = tangent
-			break
-			
-	if stuck_timer > 0.35:
-		if stuck_timer > 1.8 and randf() < 0.04:
-			unstuck_dir_sign = -unstuck_dir_sign
-		var side_step: Vector2 = dir.rotated(PI * 0.45 * unstuck_dir_sign)
-		return (side_step * 0.85 + slide_dir * 0.15).normalized() * move_speed
-		
-	return slide_dir.normalized() * move_speed
+	var result: Vector2 = movement_navigation.movement(self, dest, move_speed, delta)
+	stuck_timer = movement_navigation.stuck_time
+	return result
+
 
 func _start_return_to_truck() -> void:
+	if boarding_started: return
+	water_hose.emitting = false
+	water_audio.stop()
+	if is_instance_valid(fire_truck): add_collision_exception_with(fire_truck)
 	state = State.RETURN
 	if not is_instance_valid(fire_truck):
 		_disperse_on_foot()
+
+func _can_reach_fire() -> bool:
+	if not is_instance_valid(target): return false
+	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 3, [get_rid()])
+	var hit := get_world_2d().direct_space_state.intersect_ray(query)
+	return hit.is_empty() or hit.collider == target
 
 
 func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) -> void:
@@ -490,6 +492,8 @@ func _board_fire_truck() -> void:
 	queue_free()
 
 func _disperse_on_foot() -> void:
+	velocity = Vector2.ZERO
+	set_physics_process(false)
 	var t := create_tween()
 	t.tween_interval(5.0)
 	t.tween_property(self, "modulate:a", 0.0, 2.0)
