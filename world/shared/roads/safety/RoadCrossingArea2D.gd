@@ -127,6 +127,11 @@ func contains_world_point(world_point: Vector2, include_approach: bool = true) -
 	return Rect2(Vector2(-half_x, -half_y), Vector2(half_x * 2.0, half_y * 2.0)).has_point(local_point)
 
 
+func get_traffic_geometry() -> Dictionary:
+	# O tráfego consulta a permissão com o veículo; não montar telemetria nem
+	# consultar uma segunda vez a permissão genérica sem dono da reserva.
+	return {"id":crossing_id,"road_id":road_id,"position":global_position}
+
 func get_crossing_data() -> Dictionary:
 	return {
 		"id": crossing_id,

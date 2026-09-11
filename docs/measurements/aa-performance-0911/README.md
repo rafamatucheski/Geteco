@@ -1,3 +1,5 @@
+> Estado atualizado: [relatório da integração e matrizes de cenas](optimization-report.md). Os resultados abaixo são o histórico da primeira etapa.
+
 # Anti-aliasing e investigação de FPS — 2026-09-11
 
 Meta confirmada pelo usuário: mínimo de 60 FPS em todas as cenas, com boa imagem

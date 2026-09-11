@@ -81,16 +81,27 @@ class HarborController extends JunctionTrafficController:
 		_clear_reservation(owned)
 
 
+	var _demand_index_frame := -1
+	var _demand_crossings: Dictionary = {}
+
 	func notify_crossing_demand(junction_ref: Variant, crossing_axis: Variant = &"", active: bool = true) -> void:
 		# Several arms share one intersection phase. An empty arm must not erase
 		# the request of a person waiting on another arm during signal sync.
 		var demanded := active
 		var junction_index := _resolve_junction_index(junction_ref)
-		if is_inside_tree():
+		if not active and is_inside_tree() and _demand_index_frame != Engine.get_physics_frames():
+			_demand_index_frame = Engine.get_physics_frames()
+			_demand_crossings.clear()
 			for crossing in get_tree().get_nodes_in_group("road_crossing_area"):
 				var coordinator := crossing.get_parent().get_parent()
 				var same_graph: bool = coordinator.has_method("_road_graph") and coordinator.call("_road_graph") == graph_source
-				if same_graph and int(crossing.get_meta("junction_index", -2)) == junction_index and crossing.has_method("get_crossing_data"):
+				if same_graph and crossing.has_method("get_crossing_data"):
+					var index: int = int(crossing.get_meta("junction_index", -2))
+					if not _demand_crossings.has(index): _demand_crossings[index] = []
+					_demand_crossings[index].append(crossing)
+		if not active:
+			for crossing in _demand_crossings.get(junction_index, []):
+				if is_instance_valid(crossing):
 					var data: Dictionary = crossing.get_crossing_data()
 					demanded = demanded or int(data.get("pedestrians_inside", 0)) > 0
 		super.notify_crossing_demand(junction_ref, crossing_axis, demanded)
@@ -309,9 +320,11 @@ func get_population_snapshot() -> Dictionary:
 
 
 func _budget_population(focus: Vector2) -> void:
+	var area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(self,focus)
+	var walk_area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(self,focus,preload("res://world/shared/traffic/CameraSimulationArea.gd").PEDESTRIAN_MARGIN)
 	for car in vehicles:
 		if not is_instance_valid(car): continue
-		var distant: bool = car.global_position.distance_to(focus) > 1600.0 and car.get("is_driven_by_player") != true and not car.get("is_exploding")
+		var distant: bool = not area.has_point(car.global_position) and car.get("is_driven_by_player") != true and not car.get("is_exploding")
 		if distant and not _sleeping_vehicles.has(car) and (car.is_processing() or car.is_physics_processing()):
 			_sleeping_vehicles[car] = {"physics": car.is_physics_processing(), "idle": car.is_processing()}
 			car.set_physics_process(false)
@@ -325,7 +338,7 @@ func _budget_population(focus: Vector2) -> void:
 
 	for walker in walkers:
 		if not is_instance_valid(walker): continue
-		var distant_walker: bool = walker.global_position.distance_to(focus) > 1600.0 and not walker.get("is_scared") and not walker.get("is_flying")
+		var distant_walker: bool = not walk_area.has_point(walker.global_position) and not walker.get("is_scared") and not walker.get("is_flying")
 		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
 			_sleeping_walkers[walker] = true
 			walker.set_physics_process(false)

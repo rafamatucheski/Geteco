@@ -75,7 +75,7 @@ func _build_3d_viewport() -> void:
 	viewport_3d.size = Vector2i(96, 96)
 	viewport_3d.transparent_bg = true
 	viewport_3d.own_world_3d = true
-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	viewport_3d.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
 
 	var world_3d := World3D.new()

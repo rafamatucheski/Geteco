@@ -25,7 +25,7 @@ func _ready() -> void:
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(520, 360)
 	viewport.own_world_3d = true
-	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	viewport.transparent_bg = false
 	add_child(viewport)
 

@@ -16,6 +16,7 @@ var route_points := PackedVector2Array()
 var _route_clock := 0.0
 var _route_graph = preload("res://ui/StreetRoute.gd").new()
 var _route_road_count := 0
+var _route_building := false
 var center := Vector2.ZERO
 var car_map_position := Vector2.ZERO
 var car_marker := Vector2.ZERO
@@ -136,13 +137,21 @@ func refresh() -> void:
 	_route_clock += 0.1
 	if _route_clock >= 0.75:
 		_route_clock = 0
-		if _route_road_count != _roads.size():
-			_route_graph.build(_roads)
-			_route_road_count = _roads.size()
+		if _route_road_count != _roads.size() and not _route_building:
+			_build_route_graph()
 		route_points = _route_graph.route(center,objective_target) if objective_target != Vector2.ZERO else PackedVector2Array()
 	if objective_target != Vector2.ZERO: caption.text = ("DESTINO / " if not TranslationServer.get_locale().begins_with("en") else "DESTINATION / ")+str(roundi(center.distance_to(objective_target)/16.6))+" m"
 	panel.visible = not get_tree().paused and not player.is_dead and not player.is_in_dialogue and not player.is_control_disabled and map_world_position(player).distance_to(player.global_position)<500
 	canvas.queue_redraw()
+func _build_route_graph() -> void:
+	_route_building = true
+	var road_count := _roads.size()
+	var pending := preload("res://ui/StreetRoute.gd").new()
+	await pending.build(_roads.duplicate(true), get_tree())
+	_route_graph = pending
+	_route_road_count = road_count
+	_route_building = false
+
 func _process(delta: float) -> void:
 	_tick += delta
 	if _tick < 0.1: return
@@ -150,9 +159,18 @@ func _process(delta: float) -> void:
 	refresh()
 func _draw_map() -> void:
 	canvas.draw_rect(Rect2(Vector2.ZERO,MAP_SIZE),Color("263940"))
+	var map_area := Rect2(center-MAP_SIZE/(2.0*SCALE),MAP_SIZE/SCALE)
 	for rect in _buildings:
+		if not map_area.intersects(rect): continue
 		canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("46595c"))
 	for road in _roads:
+		if not road.has("minimap_bounds"):
+			var bounds := Rect2()
+			if not road.points.is_empty():
+				bounds = Rect2(road.points[0],Vector2.ZERO)
+				for point: Vector2 in road.points: bounds = bounds.expand(point)
+			road.minimap_bounds = bounds.grow(maxf(2.0/SCALE,float(road.width)))
+		if not map_area.intersects(road.minimap_bounds): continue
 		var points := PackedVector2Array()
 		for point: Vector2 in road.points: points.append(project(point))
 		if points.size()>1: canvas.draw_polyline(points,Color("a8b4b0"),maxf(2,road.width*SCALE*0.45),true)

@@ -193,7 +193,7 @@ func take_damage(amount: int, _source: Variant = null) -> void:
 	tween.finished.connect(func():
 		model.set_process(false)
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE)
-	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 
 func _blood(amount: int) -> void:
 	var effects := get_tree().get_first_node_in_group("weapon_effects")

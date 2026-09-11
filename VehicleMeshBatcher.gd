@@ -1,4 +1,6 @@
 extends RefCounted
+static var _mesh_cache: Dictionary = {}
+static var cache_hits := 0
 ## Batch only static, compatible sibling surfaces. Call once after extracting wheels
 ## and reading lamp mounts. Never combine independently animated transforms.
 static func batch_model(model: Node3D) -> int:
@@ -16,6 +18,7 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 	for child in parent.get_children():
 		if not child is MeshInstance3D: continue
 		var node := child as MeshInstance3D
+		if node.has_meta("independent_motion"): continue
 		if node.mesh == null or node.mesh.get_surface_count() != 1 or not node.visible: continue
 		if node.get_script() != null or node.material_overlay != null or node.skin != null: continue
 		if node.mesh is ArrayMesh and node.mesh.surface_get_primitive_type(0) != Mesh.PRIMITIVE_TRIANGLES: continue
@@ -35,11 +38,22 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 		var sources: Array = groups[key]
 		if sources.size() < 2: continue
 		var first: MeshInstance3D = sources[0]
-		var surface := SurfaceTool.new()
-		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var parts: Array = []
 		for source in sources:
-			surface.append_from(source.mesh, 0, source.transform)
-		var mesh := surface.commit()
+			parts.append([source.mesh.get_rid().get_id(),source.transform])
+		var geometry_key := var_to_bytes(parts).hex_encode()
+		var mesh: ArrayMesh = _mesh_cache.get(geometry_key)
+		if mesh == null:
+			var surface := SurfaceTool.new()
+			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+			for source in sources: surface.append_from(source.mesh, 0, source.transform)
+			mesh = surface.commit()
+			if _mesh_cache.size() >= 256: _mesh_cache.erase(_mesh_cache.keys()[0])
+			_mesh_cache[geometry_key] = mesh
+			for source in sources:
+				if not source.mesh.changed.is_connected(_invalidate_cache): source.mesh.changed.connect(_invalidate_cache)
+		else:
+			cache_hits += 1
 		if mesh == null: continue
 		var batch := MeshInstance3D.new()
 		batch.name = "BatchedVehicleSurface"
@@ -60,6 +74,9 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 		if tracked: model.originals[batch] = mesh
 		removed += sources.size()-1
 	return removed
+
+static func _invalidate_cache() -> void:
+	_mesh_cache.clear()
 
 static func _surface_format(mesh: Mesh) -> int:
 	var arrays := mesh.surface_get_arrays(0)

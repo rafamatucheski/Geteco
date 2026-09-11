@@ -1,0 +1,37 @@
+{
+  "motion": [
+    "SETUP interp=true refresh=160.0Hz physics_ticks=60 jitter=0.00",
+    "ISOLATED interp=true  max_fps=0    fps_real=159.8  step mean= 1.50 sd= 0.27 cv=0.178  JERK=0.097  frames_sem_tick=187/300",
+    "ISOLATED interp=true  max_fps=64   fps_real= 64.0  step mean= 3.75 sd= 0.01 cv=0.003  JERK=0.002  frames_sem_tick=18/300",
+    "ISOLATED interp=true  max_fps=60   fps_real= 60.0  step mean= 4.00 sd= 0.00 cv=0.001  JERK=0.000  frames_sem_tick=0/300",
+    "ISOLATED interp=true  max_fps=53   fps_real= 53.0  step mean= 4.53 sd= 0.01 cv=0.003  JERK=0.001  frames_sem_tick=0/300"
+  ],
+  "load": [
+    "DISTRICT_ROAD_SAFETY: crosswalks=103 rail_level=0 rail_grade_separated=8 errors=0 warnings=0",
+    "BREAKWATER_AUDIT buildings=50 access_routes=49 issues=0",
+    "LOAD_PROFILE load_ms=3107 instantiate_ms=0 add_child_ms=5639 first180frames_ms=11379 total_ms=20125",
+    "LOAD_PROFILE_SPIKES frame0=8323ms frame1=804ms frame4=184ms frame5=370ms frame9=467ms frame10=108ms frame11=130ms",
+    "LOAD_PROFILE_NODES total=26733 MeshInstance3D=13415 CollisionShape2D=3428 Node3D=2309 StaticBody2D=1023 Sprite2D=942 Polygon2D=677 Node2D=519 Area2D=412 Path2D=299 CharacterBody2D=276 DirectionalLight3D=271 SubViewport=259 Camera3D=258 PointLight2D=243 RayCast2D=240 WorldEnvironment=238 CollisionPolygon2D=238 Label=217",
+    "LOAD_PROFILE_MONITORS nodes=26978 orphans=0 draw_calls=522 video_mem_mb=1818.8 static_mem_mb=747.6"
+  ],
+  "functional_passed": [
+    "test_render_quality",
+    "test_camera_simulation_area",
+    "test_reserved_traffic_budget",
+    "test_spatial_route_build (300 bounded nearest-edge queries, 20 routes, equal graph)",
+    "test_crossing_neighborhood (750 probes)",
+    "test_static_canvas_geometry (Vulkan, inherited shader)",
+    "test_vehicle_geometry_cache (including cache invalidation and warmup)",
+    "test_vehicle_mesh_batcher (doors, wheels, damage, repair)",
+    "test_opening_cutscene_runtime",
+    "test_pedestrian_life_routines",
+    "test_pedestrian_render_lod",
+    "test_menu_flow_integration (standalone final repeat: new game, pause, settings, save and load)"
+  ],
+  "known_failures_reproduced_before_changes": [
+    "rail_level_crossing_runtime_test: BoroughTraffic_11 blocked by RailSafetyBoundaries",
+    "test_vehicle_presentation_streaming: assertions passed, but deferred NPCMedicalCare._register fails after fixture is destroyed"
+  ],
+  "intermittent_failure": "One final suite run timed out after 120 seconds loading from the menu; BuildingEntrance/Bullet resource errors appeared on shutdown. An immediate standalone repeat completed the entire flow in about 35 seconds. The loading timeout is recorded as unresolved, not erased by the passing repeat.",
+  "editor_import": "New resource UIDs generated, but editor layout reopen returned Parse Error: Busy for CarjackedDriver.tscn; resource-reference audit remains zero broken references. Runtime full-world load and standalone menu flow passed separately."
+}

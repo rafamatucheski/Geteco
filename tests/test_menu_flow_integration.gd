@@ -224,7 +224,9 @@ func _run_integration_flow() -> void:
 	player.money = 77777
 	player.health = 80
 	player.armor = 45
-	player.global_position = Vector2(1600.0, 900.0)
+	# Ponto auditado livre. O antigo (1600,900) fica dentro de um banco do
+	# terminal, então a própria física deslocava o personagem após restaurar.
+	player.global_position = Vector2(715.0, 1800.0)
 	var save_res = sm.save_game("slot_01", "Save para Teste de Carregamento")
 	_report_step("Criação de Save de Teste em slot_01", save_res.get("success", false), "Dinheiro=$77777, HP=80, Armor=45")
 	
@@ -378,7 +380,7 @@ func _run_integration_flow() -> void:
 			var money_match: bool = (int(restored_player.get("money")) == 77777)
 			var hp_match: bool = (int(restored_player.get("health")) == 80)
 			var armor_match: bool = (int(restored_player.get("armor")) == 45)
-			var pos_match: bool = (restored_player.global_position.distance_to(Vector2(1600.0, 900.0)) < 10.0)
+			var pos_match: bool = (restored_player.global_position.distance_to(Vector2(715.0, 1800.0)) < 10.0)
 			player_restored = money_match and hp_match and armor_match and pos_match
 			_report_step("Estado do Jogador Restaurado pelo Save", player_restored, "Money=$%d (esp 77777), HP=%d (esp 80), Armor=%d (esp 45), Pos=%s" % [
 				restored_player.money, restored_player.health, restored_player.armor, str(restored_player.global_position)

@@ -1950,7 +1950,7 @@ func _traffic_control_zone_motion(path: Path2D, lane_follow: PathFollow2D) -> Di
 				continue
 		if not zone.has_method("get_crossing_data") or not zone.has_method("should_stop_vehicle"):
 			continue
-		var data = zone.call("get_crossing_data")
+		var data = zone.get_traffic_geometry() if zone is RoadCrossingArea2D else zone.call("get_crossing_data")
 		if not data is Dictionary or String((data as Dictionary).get("road_id", "")) != road_id:
 			continue
 		# Railway crossings expose a position-aware contract: an approaching car

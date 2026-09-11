@@ -10,8 +10,7 @@ class HarborCrossing extends RoadCrossingArea2D:
 		# pedestrians wait for the car, while the car waits for pedestrians.
 		# This exemption belongs to one vehicle ID, never the whole road phase.
 		if not _pedestrian_permitted and is_instance_valid(vehicle) and is_instance_valid(_signal_controller):
-			var state: Dictionary = _signal_controller.get_junction_snapshot(junction_id)
-			if int(state.get("reservation_owner", 0)) == vehicle.get_instance_id():
+			if _signal_controller.is_reservation_owner(junction_id,vehicle):
 				return false
 		return super.should_stop_vehicle(vehicle)
 

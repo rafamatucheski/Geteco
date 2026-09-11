@@ -95,11 +95,13 @@ func _update_region() -> void:
 var _sleeping_walkers: Dictionary = {}
 
 func _budget_traffic(point: Vector2) -> void:
+	var area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(get_parent(),point)
+	var walk_area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(get_parent(),point,preload("res://world/shared/traffic/CameraSimulationArea.gd").PEDESTRIAN_MARGIN)
 	# Keep parked/driven cars and live pursuit state. Distant ambient followers
 	# stop simulation, retaining their instances and damage rather than respawning.
 	for car in get_tree().get_nodes_in_group("modern_traffic"):
 		if not is_instance_valid(car): continue
-		var distant: bool = car.global_position.distance_to(point) > 1600.0 and car.get("is_driven_by_player") != true and not car.get("is_exploding")
+		var distant: bool = not area.has_point(car.global_position) and car.get("is_driven_by_player") != true and not car.get("is_exploding")
 		if distant and not _sleeping_traffic.has(car) and (car.is_processing() or car.is_physics_processing()):
 			_sleeping_traffic[car] = {"physics":car.is_physics_processing(),"idle":car.is_processing()}
 			car.set_physics_process(false)
@@ -113,7 +115,7 @@ func _budget_traffic(point: Vector2) -> void:
 
 	for walker in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
 		if not is_instance_valid(walker): continue
-		var distant_walker: bool = walker.global_position.distance_to(point) > 1600.0 and not walker.get("is_scared") and not walker.get("is_flying")
+		var distant_walker: bool = not walk_area.has_point(walker.global_position) and not walker.get("is_scared") and not walker.get("is_flying")
 		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
 			_sleeping_walkers[walker] = true
 			walker.set_physics_process(false)

@@ -38,7 +38,8 @@ static func connected_routes(tree: SceneTree) -> Array[PackedVector2Array]:
 	return result
 
 static func crossing_wait(actor: CharacterBody2D, destination: Vector2) -> bool:
-	for crossing in actor.get_tree().get_nodes_in_group("road_crossing_area"):
+	for crossing in preload("res://world/harbor/CrossingNeighborhood.gd").near(actor):
+		if not is_instance_valid(crossing): continue
 		var p: Vector2 = crossing.to_local(actor.global_position)
 		var goal: Vector2 = crossing.to_local(destination)
 		if absf(p.x)>18 or absf(goal.x)>18 or p.y*goal.y>=0: continue

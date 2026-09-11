@@ -136,7 +136,7 @@ func _sync_3d_render_visibility() -> void:
 	# 3D viewport. Keep this signal-driven so death/arrest tweens still render
 	# after show(), even while physics processing is disabled.
 	if is_instance_valid(viewport_3d):
-		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if is_visible_in_tree() else SubViewport.UPDATE_DISABLED
+		viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if is_visible_in_tree() else SubViewport.UPDATE_DISABLED
 
 func _apply_pending_save_deferred() -> void:
 	var save_mgr = get_node_or_null("/root/SaveManager")
@@ -148,7 +148,7 @@ func _build_dante_3d_viewport() -> void:
 	viewport_3d.size = Vector2i(128, 128)
 	viewport_3d.transparent_bg = true
 	viewport_3d.own_world_3d = true
-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	add_child(viewport_3d)
 
 	var cam = Camera3D.new()

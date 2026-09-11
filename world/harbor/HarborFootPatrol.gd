@@ -38,7 +38,7 @@ func _physics_process(delta: float) -> void:
 			target=null
 			_reset_arrest_warning()
 		else:
-			viewport_3d.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+			viewport_3d.render_target_update_mode=SubViewport.UPDATE_WHEN_VISIBLE
 			super._physics_process(delta)
 			return
 	if patrol_route.size()<2: return
@@ -55,4 +55,4 @@ func _physics_process(delta: float) -> void:
 	left_upper_leg.rotation.x=sin(walk_clock)*.3 if velocity.length()>1 else 0.0
 	right_upper_leg.rotation.x=-left_upper_leg.rotation.x
 	var viewer := get_tree().get_first_node_in_group("player") as Node2D
-	viewport_3d.render_target_update_mode=SubViewport.UPDATE_ALWAYS if viewer and viewer.global_position.distance_to(global_position)<900 else SubViewport.UPDATE_DISABLED
+	viewport_3d.render_target_update_mode=SubViewport.UPDATE_WHEN_VISIBLE if viewer and viewer.global_position.distance_to(global_position)<900 else SubViewport.UPDATE_DISABLED

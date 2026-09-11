@@ -8,7 +8,9 @@ var vehicle_id: String = ""
 
 func _init() -> void:
 	if get_child_count() == 0:
-		build()
+		if not preload("res://VehicleGeometryCache.gd").restore(self):
+			build()
+			preload("res://VehicleGeometryCache.gd").capture(self)
 
 func _enter_tree() -> void:
 	if get_child_count() == 0:

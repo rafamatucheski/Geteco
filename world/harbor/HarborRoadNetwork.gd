@@ -131,7 +131,7 @@ func _draw() -> void:
 			lines.append(segment[0])
 			lines.append(segment[1])
 		if not lines.is_empty():
-			draw_multiline(lines, color, width, true)
+			static_canvas.draw_multiline(lines, color, width, true)
 
 
 func _ensure_edge_cache() -> void:

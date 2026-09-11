@@ -350,7 +350,7 @@ func _update_grass_bounds() -> void:
 func _draw_grass_ground() -> void:
 	if _grass_bounds.size.x <= 0.0 or _grass_bounds.size.y <= 0.0:
 		return
-	draw_rect(_grass_bounds, GROUND_COLOR)
+	static_canvas.draw_rect(_grass_bounds, GROUND_COLOR)
 	var spacing := GRASS_TUFT_SPACING
 	var cols := int(_grass_bounds.size.x / spacing) + 1
 	var rows := int(_grass_bounds.size.y / spacing) + 1
@@ -370,7 +370,7 @@ func _draw_grass_ground() -> void:
 				var angle := (_tuft_hash(cell, 4.0 + float(blade)) - 0.5) * 1.1
 				var blade_length := 6.0 + _tuft_hash(cell, 61.0 + float(blade)) * 5.0
 				var tip := base + Vector2(sin(angle), -cos(angle)) * blade_length
-				draw_line(base, tip, tone, 1.6)
+				static_canvas.draw_line(base, tip, tone, 1.6)
 
 
 func _tuft_hash(cell: Vector2i, seed_offset: float) -> float:
@@ -1135,7 +1135,10 @@ func _closest_location_on_polyline(point: Vector2, points: PackedVector2Array) -
 	}
 
 
+var static_canvas := preload("res://world/shared/roads/StaticCanvasGeometry.gd").new(self)
+
 func _draw() -> void:
+	static_canvas.begin()
 	if _roads.is_empty():
 		return
 	# Ground layer first: flat color plus small vector tufts fill the whole
@@ -1157,7 +1160,7 @@ func _draw() -> void:
 				_draw_lane_markings(road.points)
 	if show_junction_debug:
 		for junction in _junctions:
-			draw_circle(junction.position, 9.0, Color(0.15, 0.9, 0.55, 0.85))
+			static_canvas.draw_circle(junction.position, 9.0, Color(0.15, 0.9, 0.55, 0.85))
 
 
 func _draw_road_pass(color: Color, extra_width: float) -> void:
@@ -1175,7 +1178,7 @@ func _draw_road_pass(color: Color, extra_width: float) -> void:
 			for surface in surfaces:
 				var polygon := surface as PackedVector2Array
 				if polygon.size() >= 3 and not Geometry2D.is_polygon_clockwise(polygon):
-					draw_colored_polygon(polygon, surface_color)
+					static_canvas.draw_colored_polygon(polygon, surface_color)
 	# Every material layer receives the same topological junction envelope.
 	# Drawing this after all independent ribbons removes their butt-cap seams;
 	# the progressively narrower passes then cover the inner sidewalk/curb
@@ -1184,20 +1187,20 @@ func _draw_road_pass(color: Color, extra_width: float) -> void:
 		var geometry := _build_junction_surface_geometry(junction, extra_width)
 		var patch := geometry.polygon as PackedVector2Array
 		if patch.size() >= 3 and not Geometry2D.triangulate_polygon(patch).is_empty():
-			draw_colored_polygon(patch, color)
+			static_canvas.draw_colored_polygon(patch, color)
 
 
 func _draw_bridge_lane(road: Dictionary) -> void:
 	# Each separated carriageway has exactly one lane: no central divider.
 	var points: PackedVector2Array = road.points
-	draw_polyline(points, BRIDGE_SURFACE.WEAR, 18.0, true)
+	static_canvas.draw_polyline(points, BRIDGE_SURFACE.WEAR, 18.0, true)
 	for side in [-1.0, 1.0]:
 		var edge := PackedVector2Array()
 		for i in points.size():
 			var tangent := (points[mini(i+1,points.size()-1)]-points[maxi(i-1,0)]).normalized()
 			edge.append(points[i]+Vector2(-tangent.y,tangent.x)*(float(road.width)*0.5-8)*side)
 		if edge.size() > 1:
-			draw_polyline(edge, BRIDGE_SURFACE.EDGE, 3.0, true)
+			static_canvas.draw_polyline(edge, BRIDGE_SURFACE.EDGE, 3.0, true)
 
 func _build_junction_surface_geometry(junction: Dictionary, extra_width: float) -> Dictionary:
 	var arms := _junction_surface_arms(junction, extra_width)
@@ -1378,7 +1381,7 @@ func _draw_lane_markings(points: PackedVector2Array) -> void:
 			walked += maxf(step, 0.5)
 		travelled += segment_length
 	if not dash_segments.is_empty():
-		draw_multiline(dash_segments, LANE_COLOR, 3.0, true)
+		static_canvas.draw_multiline(dash_segments, LANE_COLOR, 3.0, true)
 
 
 func _marking_hits_junction(point: Vector2) -> bool:

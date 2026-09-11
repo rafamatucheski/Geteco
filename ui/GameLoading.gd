@@ -74,6 +74,7 @@ func _run(path: String, new_game: bool) -> void:
 		await get_tree().process_frame
 	# Um frame completo de apresentação antes de liberar os controles/abertura.
 	screen.set_stage(0.96,_text("Finalizando a entrada…","Finishing up…"))
+	await preload("res://VehicleGeometryCache.gd").prepare_common_models(get_tree())
 	for i in 4: await _draw_frame()
 	screen.set_stage(1.0,_text("Tudo pronto","Ready"))
 	while screen.shown_progress < 1.0: await get_tree().process_frame

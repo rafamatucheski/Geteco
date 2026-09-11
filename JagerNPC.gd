@@ -106,14 +106,14 @@ func _ready() -> void:
 
 func _sync_model_visibility() -> void:
 	if viewport_3d != null:
-		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if is_visible_in_tree() else SubViewport.UPDATE_DISABLED
+		viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if is_visible_in_tree() else SubViewport.UPDATE_DISABLED
 
 func _build_3d_viewport() -> void:
 	viewport_3d = SubViewport.new()
 	viewport_3d.size = Vector2i(112, 112)
 	viewport_3d.transparent_bg = true
 	viewport_3d.own_world_3d = true
-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	viewport_3d.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
 	add_child(viewport_3d)
 

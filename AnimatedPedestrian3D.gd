@@ -517,7 +517,7 @@ func _build_3d_viewport() -> void:
 	viewport.size = Vector2i(96, 96)
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
-	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ALWAYS
 	add_child(viewport)
 	
@@ -1090,7 +1090,7 @@ func _update_viewport_render_state(delta: float) -> void:
 			_viewport_frame_timer = _viewport_frame_interval
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		viewport_render_requests += 1
-	elif viewport.render_target_update_mode == SubViewport.UPDATE_ALWAYS:
+	elif viewport.render_target_update_mode == SubViewport.UPDATE_WHEN_VISIBLE:
 		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 func _physics_process(delta: float) -> void:

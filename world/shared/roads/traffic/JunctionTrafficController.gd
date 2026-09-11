@@ -1112,6 +1112,11 @@ func get_junction_id(junction_index: int) -> StringName:
 	return StringName(state.get("junction_id", &""))
 
 
+func is_reservation_owner(junction_ref: Variant, vehicle: Node) -> bool:
+	if not is_instance_valid(vehicle): return false
+	var state: Dictionary = _states.get(_resolve_junction_index(junction_ref), {})
+	return int(state.get("reservation_owner",0)) == vehicle.get_instance_id()
+
 func get_junction_snapshot(junction_ref: Variant) -> Dictionary:
 	var index := _resolve_junction_index(junction_ref)
 	var state: Dictionary = _states.get(index, {})

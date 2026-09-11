@@ -1,0 +1,207 @@
+--- a/world/harbor/HarborLife.gd
++++ b/world/harbor/HarborLife.gd
+@@ -328,7 +328,7 @@
+ 		var distant: bool = car.global_position.distance_to(focus) > 1600.0 and car.get("is_driven_by_player") != true and not car.get("is_exploding")
+ 		distant = distant and not conflicts.has(car.get_instance_id())
+ 		for regional in get_tree().get_nodes_in_group("regional_coach"):
+-			if regional.global_position.distance_squared_to(car.global_position) < 2560000.0:
++			if regional.global_position.distance_squared_to(car.global_position) < pow(preload("res://world/shared/traffic/CameraSimulationArea.gd").REGIONAL_ACTIVITY_RADIUS,2):
+ 				distant = false
+ 		if distant and not _sleeping_vehicles.has(car) and (car.is_processing() or car.is_physics_processing()):
+ 			_sleeping_vehicles[car] = {"physics": car.is_physics_processing(), "idle": car.is_processing()}
+@@ -346,7 +346,7 @@
+ 		var distant_walker: bool = walker.global_position.distance_to(focus) > 1600.0 and not walker.get("is_scared") and not walker.get("is_flying")
+ 		distant_walker = distant_walker and not conflicts.has(walker.get_instance_id())
+ 		for regional in get_tree().get_nodes_in_group("regional_coach"):
+-			if regional.global_position.distance_squared_to(walker.global_position) < 2560000.0:
++			if regional.global_position.distance_squared_to(walker.global_position) < pow(preload("res://world/shared/traffic/CameraSimulationArea.gd").REGIONAL_PEDESTRIAN_RADIUS,2):
+ 				distant_walker = false
+ 		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
+ 			_sleeping_walkers[walker] = true
+--- a/world/harbor/HarborRoadNetwork.gd
++++ b/world/harbor/HarborRoadNetwork.gd
+@@ -32,9 +32,9 @@
+ 		var margin := extra_width * (48.0/84.0) if extra_width > 10 else extra_width
+ 		var tint := Color("92998e") if extra_width > 10 else Color("e1dfca") if extra_width > 0 else ROAD_COLOR
+ 		for polygon in Geometry2D.offset_polyline(mouth,(96.0+margin)*0.5,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT):
+-			draw_colored_polygon(polygon,tint)
++			static_canvas.draw_colored_polygon(polygon,tint)
+ 	for polygon in _north_flare_surfaces(extra_width):
+-		draw_colored_polygon(polygon,color if extra_width > 0 else ROAD_COLOR)
++		static_canvas.draw_colored_polygon(polygon,color if extra_width > 0 else ROAD_COLOR)
+ 
+ 
+ func _north_flare_surfaces(extra_width: float) -> Array[PackedVector2Array]:
+--- a/world/harbor/terminal/HarborTerminalModel3D.gd
++++ b/world/harbor/terminal/HarborTerminalModel3D.gd
+@@ -18,6 +18,11 @@
+ 	_build_platforms()
+ 	_build_coaches()
+ 	_build_guardhouse()
++	# Arquitetura e ônibus estacionados compartilham superfícies por material.
++	# O ônibus em circulação e os passageiros são acrescentados depois.
++	for coach in parked_coaches:
++		preload("res://VehicleMeshBatcher.gd").batch_model(coach)
++	preload("res://VehicleMeshBatcher.gd").batch_model(self)
+ 
+ static func floor_from_local(point: Vector2) -> Vector3:
+ 	return Vector3(point.x / PPM, 0, point.y / (PPM * FLOOR_Y))
+--- a/world/harbor/terminal/HarborTerminalMovingCoachModel.gd
++++ b/world/harbor/terminal/HarborTerminalMovingCoachModel.gd
+@@ -8,10 +8,13 @@
+ 	for child in get_children():
+ 		if child is MeshInstance3D and child.mesh is CylinderMesh:
+ 			rolling_wheels.append(child)
++			child.set_meta("independent_motion",true)
+ 	var glazing := _mat(Color("537482"), 0.22)
+ 	for side in [-1.0, 1.0]:
+ 		var leaf := _box(Vector3(-1.40, 1.52, DOOR_Z + side * 0.28), Vector3(0.045, 2.03, 0.53), glazing)
+ 		door_leaves.append(leaf)
++		leaf.set_meta("independent_motion",true)
++	preload("res://VehicleMeshBatcher.gd").batch_model(self)
+ 
+ func update_motion(distance_m: float, doors: float) -> void:
+ 	for wheel in rolling_wheels:
+--- a/world/harbor/terminal/HarborTerminalView.gd
++++ b/world/harbor/terminal/HarborTerminalView.gd
+@@ -2,7 +2,7 @@
+ ## One real 3D scene projects architecture, parked and circulating coaches alike.
+ const TERMINAL_MODEL := preload("res://world/harbor/terminal/HarborTerminalModel3D.gd")
+ var _animation_active := false
+-var _on_screen := true
++var _on_screen := false
+ 
+ func _ready() -> void:
+ 	build_view(TERMINAL_MODEL, 40.0, 18.0, Vector3(5.5, 0, -5), Vector3(0, 24, 20))
+@@ -59,4 +59,4 @@
+ 	if not _on_screen:
+ 		viewport_3d.render_target_update_mode = SubViewport.UPDATE_DISABLED
+ 	else:
+-		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if _animation_active else SubViewport.UPDATE_ONCE
++		viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if _animation_active else SubViewport.UPDATE_ONCE
+--- a/world/harbor/urban_transit/UrbanStationView.gd
++++ b/world/harbor/urban_transit/UrbanStationView.gd
+@@ -2,7 +2,7 @@
+ var orientation := 0.0
+ var terminal := false
+ var animated_people := 0
+-var on_screen := true
++var on_screen := false
+ func _ready() -> void:
+ 	build_view(preload("res://world/harbor/urban_transit/UrbanStationModel3D.gd"),29.0,18.0,Vector3(0,1,0))
+ 	viewport_3d.size = Vector2i(1440,1200)
+@@ -26,7 +26,7 @@
+ 	add_child(visibility)
+ 
+ func request_redraw() -> void:
+-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_DISABLED if not on_screen else (SubViewport.UPDATE_ALWAYS if animated_people>0 else SubViewport.UPDATE_ONCE)
++	viewport_3d.render_target_update_mode = SubViewport.UPDATE_DISABLED if not on_screen else (SubViewport.UPDATE_WHEN_VISIBLE if animated_people>0 else SubViewport.UPDATE_ONCE)
+ 
+ func set_service(active: bool) -> void:
+ 	model.set_service(active)
+--- a/world/harbor/urban_transit/UrbanPassenger.gd
++++ b/world/harbor/urban_transit/UrbanPassenger.gd
+@@ -13,7 +13,7 @@
+ 
+ func _update_viewport_render_state(delta: float) -> void:
+ 	if is_instance_valid(native_station):
+-		_viewport_render_active = true
++		_viewport_render_active = native_station.view.on_screen
+ 		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+ 	else:
+ 		super._update_viewport_render_state(delta)
+@@ -48,7 +48,7 @@
+ 			viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+ 			native_station.view.animated_people += 1
+ 			native_station.view.request_redraw()
+-	if is_instance_valid(native_station):
++	if is_instance_valid(native_station) and native_station.view.on_screen:
+ 		model_root.position = native_station.view.model.floor_point(native_station.to_local(global_position),0.20)
+ 
+ func _exit_tree() -> void:
+--- a/world/harbor/cemetery/CemeteryKeeperHome.gd
++++ b/world/harbor/cemetery/CemeteryKeeperHome.gd
+@@ -44,7 +44,7 @@
+ 	_build_home.call_deferred()
+ 
+ func _refresh_door_render() -> void:
+-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
++	viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+ 	if _door_tween and _door_tween.is_valid(): _door_tween.kill()
+ 	_door_tween = create_tween()
+ 	_door_tween.tween_interval(.5)
+--- a/world/shared/salvage/Neco.gd
++++ b/world/shared/salvage/Neco.gd
+@@ -63,7 +63,7 @@
+ 	left_upper_arm.rotation.z=.10
+ 	var player:=get_tree().get_first_node_in_group("player") as Node2D
+ 	var near:=player!=null and player.global_position.distance_to(global_position)<1100
+-	viewport_3d.render_target_update_mode=SubViewport.UPDATE_ALWAYS if near else SubViewport.UPDATE_DISABLED
++	viewport_3d.render_target_update_mode=SubViewport.UPDATE_WHEN_VISIBLE if near else SubViewport.UPDATE_DISABLED
+ 
+ func _unhandled_input(_event: InputEvent) -> void:
+ 	pass
+--- a/world/mountain_pass/transit/MountainTransitVillage.gd
++++ b/world/mountain_pass/transit/MountainTransitVillage.gd
+@@ -63,13 +63,13 @@
+ 	var rendered_metre: float = fire_view.camera_3d.unproject_position(Vector3.RIGHT).distance_to(fire_view.camera_3d.unproject_position(Vector3.ZERO))
+ 	fire_view.sprite_3d.scale = Vector2.ONE * 18.0 / rendered_metre
+ 	fire_view.sprite_3d.position = -(fire_view.camera_3d.unproject_position(Vector3.ZERO)-Vector2(fire_view.viewport_3d.size)*0.5)*fire_view.sprite_3d.scale
+-	fire_view.viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
++	fire_view.viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+ 	fire_view.add_solid(Rect2(-0.63,-0.63,1.26,1.26),"BrazierBody")
+ 	fire_view.add_to_group("heat_source")
+ 	heat_source = fire_view
+ 	var visible := VisibleOnScreenNotifier2D.new()
+ 	visible.rect = Rect2(-65,-85,130,130)
+-	visible.screen_entered.connect(func(): fire_view.viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS)
++	visible.screen_entered.connect(func(): fire_view.viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE)
+ 	visible.screen_exited.connect(func(): fire_view.viewport_3d.render_target_update_mode = SubViewport.UPDATE_DISABLED)
+ 	fire_view.add_child(visible)
+ 
+--- a/world/harbor/ContinuousWorld.gd
++++ b/world/harbor/ContinuousWorld.gd
+@@ -117,7 +117,7 @@
+ 		var distant: bool = car.global_position.distance_to(point) > 1600.0 and car.get("is_driven_by_player") != true and not car.get("is_exploding")
+ 		distant = distant and not conflicts.has(car.get_instance_id())
+ 		for regional in get_tree().get_nodes_in_group("regional_coach"):
+-			if regional.global_position.distance_squared_to(car.global_position) < 2560000.0:
++			if regional.global_position.distance_squared_to(car.global_position) < pow(preload("res://world/shared/traffic/CameraSimulationArea.gd").REGIONAL_ACTIVITY_RADIUS,2):
+ 				distant = false
+ 		if distant and not _sleeping_traffic.has(car) and (car.is_processing() or car.is_physics_processing()):
+ 			_sleeping_traffic[car] = {"physics":car.is_physics_processing(),"idle":car.is_processing()}
+@@ -135,7 +135,7 @@
+ 		var distant_walker: bool = walker.global_position.distance_to(point) > 1600.0 and not walker.get("is_scared") and not walker.get("is_flying")
+ 		distant_walker = distant_walker and not conflicts.has(walker.get_instance_id())
+ 		for regional in get_tree().get_nodes_in_group("regional_coach"):
+-			if regional.global_position.distance_squared_to(walker.global_position) < 2560000.0:
++			if regional.global_position.distance_squared_to(walker.global_position) < pow(preload("res://world/shared/traffic/CameraSimulationArea.gd").REGIONAL_PEDESTRIAN_RADIUS,2):
+ 				distant_walker = false
+ 		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
+ 			_sleeping_walkers[walker] = true
+--- a/world/harbor/HarborLaunchRoutine.gd
++++ b/world/harbor/HarborLaunchRoutine.gd
+@@ -17,6 +17,7 @@
+ 		worker.work_route = PackedVector2Array([worker.work_points[0],Vector2(6200,berth.y),worker.work_points[1],Vector2(6200,berth.y+18)])
+ 		worker.crate_stock = [30,0]
+ 		add_child(worker)
++		worker.crate_handled.connect(func(_point: Vector2): queue_redraw())
+ 		boats.append({view=view,worker=worker,berth=berth,load=0,phase="loading",clock=0.0})
+ func game_day_seconds() -> float:
+ 	if get_tree().get_first_node_in_group("medical_campaign_clock") != null: return 600.0
+@@ -60,7 +61,6 @@
+ 			if view.position.distance_to(boat.berth) < 1 and not worker.carrying:
+ 				boat.phase = "loading"
+ 				_configure_work(worker,boat.berth,true)
+-	queue_redraw()
+ func _configure_work(worker: Node2D, berth: Vector2, loading: bool) -> void:
+ 	worker.station_points = PackedVector2Array([Vector2(6120,berth.y),Vector2(6315 if loading else 6180,berth.y)])
+ 	worker.work_route = PackedVector2Array([worker.station_points[0],Vector2(6160,berth.y),worker.station_points[1],Vector2(6160,berth.y+18)])
+@@ -69,6 +69,7 @@
+ 	worker.route_cursor = 0
+ 	worker._set_phase("return")
+ 	worker._pick_new_sidewalk_target()
++	queue_redraw()
+ func _draw() -> void:
+ 	for boat in boats:
+ 		var worker = boat.worker
