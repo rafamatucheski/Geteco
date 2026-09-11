@@ -1,3 +1,5 @@
+Revisao atual: mais tres [reacoes na ligacao](PHONE_REACTIONS.md), totalizando nove imagens adicionais.
+
 # Ampliação da arte original — 11/09/2026
 
 Seis imagens novas geradas pela ferramenta nativa `image_gen`, tomando como referência direta as imagens existentes da primeira CGI. Prompts completos e referências em `expanded_prompts.json`.

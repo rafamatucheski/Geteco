@@ -32,7 +32,7 @@ func _create() -> Control:
 
 
 func _run() -> void:
-	_check(TIMELINE.SHOTS.size() == 25, "25 fotografias")
+	_check(TIMELINE.SHOTS.size() == 28, "28 planos")
 	_check(TIMELINE.SHOTS[0].id == &"morning_coffee" and TIMELINE.SHOTS[3].id == &"family_photos", "Routine and family precede the call")
 	var timing: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://cutscenes/opening/v3/audio/voice_timing.json"))
 	_check(timing.pt[0].text.contains("saiu da prisão"), "Soltura explícita, irmão vivo")

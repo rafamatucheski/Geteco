@@ -22,6 +22,11 @@ func run() -> void:
 		opening.seek(end-.05); opening.pause_playback()
 		check(opening._still.texture==texture and opening._still.scale==Vector2.ONE,"Imagem %d fica parada até o corte" % i)
 	check(is_equal_approx(end,Timeline.TOTAL_DURATION_SECONDS),"Montagem completa")
+	for cue in [[26.2,"surprise"],[33.0,"sadness"],[36.5,"reply"]]:
+		opening.seek(float(cue[0])); opening.pause_playback()
+		check(opening._still.texture.resource_path.ends_with("frame_phone_"+String(cue[1])+".png"),"Reação corresponde à fala: "+String(cue[1]))
+	opening.seek(37.4); opening.pause_playback()
+	check(not opening._still.texture.resource_path.ends_with("frame_phone_reply.png"),"Pose de fala termina junto da resposta")
 	TranslationServer.set_locale("pt_BR"); opening.seek(20); opening.pause_playback()
 	check(opening._subtitle.text.contains("Você não me conhece"),"Ligação anônima em português brasileiro")
 	TranslationServer.set_locale("en"); opening.seek(20); opening.pause_playback()
