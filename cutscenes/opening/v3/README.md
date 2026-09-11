@@ -29,7 +29,7 @@ As vozes e legendas acompanham português/inglês. O áudio é offline em três 
 
 ## Assets e origem
 
-- `assets/brothers_photo.png`: imagem criada com a ferramenta ImageGen nesta tarefa. Direção do prompt: fotografia familiar natural de Dante adulto com o irmão sete anos mais velho, juntos após consertar uma bicicleta diante de uma garagem, luz quente e aparência de lembrança impressa. É uma imagem gerada, não fotografia de pessoas reais. A mesma imagem é usada em todos os planos.
+- `assets/brothers_photo.png`: retrato renderizado dentro do Godot com `DantePreviewRig.gd` / `DanteVisualAdapter.gd`. Dante e o irmão posam juntos diante de uma garagem; o irmão usa uma variação terrosa do mesmo figurino e cabelo discretamente grisalho. Ambos preservam geometria, proporções e materiais do elenco do jogo. Esta versão substitui a imagem de aparência realista a pedido do usuário. A mesma textura é usada em todos os planos. Recriação: Godot `--path . --script res://tests/visual/render_opening_family_photo.gd`.
 - Dante: rig e visual já existentes no projeto (`DantePreviewRig.gd` / `DanteVisualAdapter.gd`), com ajustes de pose e expressão limitados à cena.
 - Ônibus: modelo de produção `HarborTransitBusModel.gd`; rodas e porta animadas na cena.
 - Vozes sintetizadas: Microsoft Edge TTS via [edge-tts](https://github.com/rany2/edge-tts). PT: FranciscaNeural e AntonioNeural; EN: JennyNeural e GuyNeural. São vozes sintéticas, não gravações de atores. As seis fontes estão em `production/sources/`.

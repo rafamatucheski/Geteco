@@ -1,5 +1,9 @@
 # Verificação da abertura — 11/09/2026
 
+## Correção de direção artística
+
+A fotografia de aparência realista foi substituída por um retrato renderizado no Godot, usando o construtor de personagens de produção. Conferidos visualmente o asset, o quadro na casa e a fotografia nas mãos de Dante no ônibus. A captura dos planos passou; `test_opening_stage_v3.gd` passou nas verificações de identidade da textura, poses e idioma. Essa execução headless reportou recursos de áudio ainda em uso no encerramento; não se considera esse aviso resolvido por esta alteração de arte. A importação geral também reportou `CarjackedDriver.tscn: Busy`; o carregamento e a captura da abertura concluíram. Verificador de referências: 0 quebras novas. Prévia completa atualizada com a fotografia estilizada.
+
 Godot 4.7.2, Windows. Captura real: Vulkan / Forward Mobile / RTX 4060 Laptop. Testes headless foram usados para comportamento, nunca para alegar desempenho gráfico.
 
 | Verificação | Resultado |
