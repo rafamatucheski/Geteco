@@ -1,5 +1,5 @@
 extends RefCounted
-## Fotografias fixas: o palco 3D serve somente para produzir os arquivos offline.
+## Arte gerada original ampliada. Nenhuma captura do palco 3D na montagem.
 const VoiceTiming=preload("res://cutscenes/opening/v3/voice_timing.gd")
 const E := VoiceTiming.CALL_EXTENSION_SECONDS
 const TOTAL_DURATION_SECONDS := 77.0+E
@@ -47,8 +47,35 @@ static func shot_at(time: float) -> int:
 	for i in range(SHOTS.size()-1,-1,-1):
 		if time>=float(SHOTS[i].start): return i
 	return 0
+const IMAGES := [
+	"res://cutscenes/opening/frames/frame_v2_morning_coffee.png",
+	"res://cutscenes/opening/frames/frame_v2_morning_coffee.png",
+	"res://cutscenes/opening/frames/frame_v2_morning_coffee.png",
+	"res://cutscenes/opening/frames/frame_v2_family_photos.png",
+	"res://cutscenes/opening/frames/frame_v2_family_photos.png",
+	"res://cutscenes/opening/frames/frame_v2_phone.png",
+	"res://cutscenes/opening/frames/frame_v2_phone.png",
+	"res://cutscenes/opening/frames/frame_v2_call.png",
+	"res://cutscenes/opening/frames/frame_expanded_call_close.png",
+	"res://cutscenes/opening/frames/frame_v2_call.png",
+	"res://cutscenes/opening/frames/frame_expanded_call_close.png",
+	"res://cutscenes/opening/frames/frame_expanded_reflection.png",
+	"res://cutscenes/opening/frames/frame_expanded_reflection.png",
+	"res://cutscenes/opening/frames/frame_expanded_reflection.png",
+	"res://cutscenes/opening/frames/frame_v2_family_photos.png",
+	"res://cutscenes/opening/frames/frame_expanded_home_gallery.png",
+	"res://cutscenes/opening/frames/frame_expanded_home_gallery.png",
+	"res://cutscenes/opening/frames/frame_06_backpack_departure.png",
+	"res://cutscenes/opening/frames/frame_expanded_empty_kitchen.png",
+	"res://cutscenes/opening/frames/frame_08_bus_highway.png",
+	"res://cutscenes/opening/frames/frame_08_bus_highway.png",
+	"res://cutscenes/opening/frames/frame_expanded_bus_gallery.png",
+	"res://cutscenes/opening/frames/frame_expanded_bus_window.png",
+	"res://cutscenes/opening/frames/frame_10_bus_terminal_arrival.png",
+	"res://cutscenes/opening/frames/frame_10_bus_terminal_arrival.png",
+]
 static func image_path(index: int) -> String:
-	return "res://cutscenes/opening/v3/assets/stills/%02d_%s.jpg" % [index+1,SHOTS[index].id]
+	return IMAGES[index]
 static func stage_time(time: float) -> float:
 	var acting:=time if time<27 else (27.0 if time<29 else time-2)
 	return acting if acting<33.0 else (33.0 if acting<42.0 else acting-9.0)

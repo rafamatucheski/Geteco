@@ -1,0 +1,53 @@
+{
+  "tool": "built-in image_gen",
+  "references": "Original generated opening artwork, not native 3D stills",
+  "assets": [
+    {
+      "id": "call_close",
+      "prompt": "Create ONE new full-frame 16:9 cinematic still for the same game opening as the reference images. These are STYLE AND CHARACTER REFERENCES, not an edit target. Match EXACTLY their illustrated low-poly faceted/painterly look, dense angular painted textures, realistic adult proportions but visibly stylized illustrated skin, earthy worn surfaces, cinematic lighting. Same Dante: tousled short black spiky hair, dark stubble beard, charcoal plaid overshirt, burgundy shirt. No photorealistic live actors, no smooth toy/cartoon 3D, no screenshots of a game engine, no collage, no panels, no lettering or subtitles. Keep all important composition inside a 16:9 frame. A new tight close-up of Dante listening to an anonymous caller in the original worn daytime kitchen. Three quarter view from window side, dark phone naturally held at his right ear, face quietly stunned and worried, eyes focused into distance, lips closed. Natural hand with five fingers wrapping the phone. Shallow illustrated depth of field, faded beige kitchen behind, soft grey daylight across face. Convey unsettling news, not anger.",
+      "refs": [
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_call.png",
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_morning_coffee.png"
+      ]
+    },
+    {
+      "id": "reflection",
+      "prompt": "Create ONE new full-frame 16:9 cinematic still for the same game opening as the reference images. These are STYLE AND CHARACTER REFERENCES, not an edit target. Match EXACTLY their illustrated low-poly faceted/painterly look, dense angular painted textures, realistic adult proportions but visibly stylized illustrated skin, earthy worn surfaces, cinematic lighting. Same Dante: tousled short black spiky hair, dark stubble beard, charcoal plaid overshirt, burgundy shirt. No photorealistic live actors, no smooth toy/cartoon 3D, no screenshots of a game engine, no collage, no panels, no lettering or subtitles. Keep all important composition inside a 16:9 frame. A new medium cinematic still AFTER the call in the SAME old beige kitchen from reference. Dante seated at wooden table, elbows naturally resting on tabletop, hands loosely together, head slightly lowered, distant troubled gaze. Phone lies face down on table beside untouched grey coffee mug. He is taking time to absorb the news before deciding to leave. No paper or photograph in his hands, no backpack in his hands. Quiet daylight, strong restrained emotional composition.",
+      "refs": [
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_call.png",
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_morning_coffee.png"
+      ]
+    },
+    {
+      "id": "home_gallery",
+      "prompt": "Create ONE new full-frame 16:9 cinematic still for the same game opening as the reference images. These are STYLE AND CHARACTER REFERENCES, not an edit target. Match EXACTLY their illustrated low-poly faceted/painterly look, dense angular painted textures, realistic adult proportions but visibly stylized illustrated skin, earthy worn surfaces, cinematic lighting. Same Dante: tousled short black spiky hair, dark stubble beard, charcoal plaid overshirt, burgundy shirt. No photorealistic live actors, no smooth toy/cartoon 3D, no screenshots of a game engine, no collage, no panels, no lettering or subtitles. Keep all important composition inside a 16:9 frame. A new over-the-shoulder still in the SAME worn kitchen. Dante seated viewing a photograph ALREADY STORED ON THE SCREEN of a small black smartphone held naturally in one hand above the wood table, thumb on side bezel below the image, other fingers behind phone; hand must not obscure or penetrate the screen. Screen clearly shows a casual photo of Dante beside his adult younger brother: brother clean-shaven, shorter brown hair, olive shirt, visibly different face. Both in exactly same faceted illustrated art style. Grey coffee mug out of focus to side, beige old kitchen. No loose paper anywhere, no floating photo, no text on screen. Phone and photo are focal point, Dante's dark hair/shoulder visible at left.",
+      "refs": [
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_morning_coffee.png",
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_decision.png"
+      ]
+    },
+    {
+      "id": "bus_gallery",
+      "prompt": "Generate ONE new 16:9 cinematic illustration matching these original game opening images EXACTLY: low-poly faceted painterly textures on everything, angular stylized adult faces, dark charcoal plaid overshirt and burgundy shirt, short spiky black hair and dark stubble on SAME Dante. These are style/character references. Not a live action photograph, not a smooth cartoon, not a game-engine screenshot. Single full-frame shot, no collage, no lettering/subtitles. Same rainy night bus interior, dark blue patterned seats and old brown backpack beside Dante. New medium shot from aisle: Dante is looking down at a small black smartphone naturally supported by his right hand. On its screen is a stored photo of himself with his clearly different younger adult brother (clean-shaven, short brown hair, olive shirt), both stylized. No paper photograph anywhere. Fingers behind phone and thumb at bezel, screen unobstructed. Quiet vulnerability, cool blue rainlight and subtle amber cabin light. Preserve gritty faceted brushwork and character proportions.",
+      "refs": [
+        "D:/geteco/game/cutscenes/opening/frames/frame_09_dante_bus_interior.png",
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_call.png"
+      ]
+    },
+    {
+      "id": "bus_window",
+      "prompt": "Generate ONE new 16:9 cinematic illustration matching these original game opening images EXACTLY: low-poly faceted painterly textures on everything, angular stylized adult faces, dark charcoal plaid overshirt and burgundy shirt, short spiky black hair and dark stubble on SAME Dante. These are style/character references. Not a live action photograph, not a smooth cartoon, not a game-engine screenshot. Single full-frame shot, no collage, no lettering/subtitles. Same rainy night bus interior from first reference. New closer three-quarter portrait of Dante seated by the rain-streaked window, looking outside pensively. Hands resting naturally in lap below the crop, no photo held. Brown backpack on adjacent dark blue seat, faint reflected amber streetlights on glass, distant city forms. Strong cinematic composition and emotional pause, rugged angular painterly face, same recognizable character.",
+      "refs": [
+        "D:/geteco/game/cutscenes/opening/frames/frame_09_dante_bus_interior.png",
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_call.png"
+      ]
+    },
+    {
+      "id": "empty_kitchen",
+      "prompt": "Generate ONE new 16:9 cinematic illustration matching these original game opening images EXACTLY: low-poly faceted painterly textures on everything, angular stylized adult faces, dark charcoal plaid overshirt and burgundy shirt, short spiky black hair and dark stubble on SAME Dante. These are style/character references. Not a live action photograph, not a smooth cartoon, not a game-engine screenshot. Single full-frame shot, no collage, no lettering/subtitles. An evening establishing shot of the SAME worn kitchen as reference, now empty after Dante has left. Same beige old refrigerator on right, stove, faded wood cabinets, window on left, wooden table foreground. Grey coffee mug with unfinished coffee, glass coffee carafe put down safely. Dusk cool blue light from window and a restrained warm light from adjoining hallway. A small framed photograph remains on sideboard; no loose paper. No person. Tell departure through absence and the unfinished coffee, richly textured faceted painterly illustration.",
+      "refs": [
+        "D:/geteco/game/cutscenes/opening/frames/frame_v2_morning_coffee.png"
+      ]
+    }
+  ]
+}

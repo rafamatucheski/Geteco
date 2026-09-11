@@ -10,13 +10,15 @@ func run() -> void:
 	opening.auto_start=false; root.add_child(opening); await process_frame
 	check(opening.get_node_or_null("CinematicSurface")==null,"Runtime usa imagens, sem palco 3D")
 	var end:=0.0
+	for path in Timeline.IMAGES:
+		check(String(path).begins_with("res://cutscenes/opening/frames/"),"Arte gerada original; nenhuma captura 3D")
 	for i in Timeline.SHOTS.size():
 		var shot: Dictionary=Timeline.SHOTS[i]
 		check(is_equal_approx(float(shot.start),end) and float(shot.duration)>0,"Plano %d tem continuidade e duração positiva" % i)
 		end=float(shot.start)+float(shot.duration)
 		opening.seek(float(shot.start)+.3); opening.pause_playback()
 		var texture: Texture2D=opening._still.texture
-		check(texture!=null and texture.get_size()==Vector2(1920,1080),"Fotografia %d em Full HD" % i)
+		check(texture!=null and texture.get_width()>=1600 and absf(texture.get_width()/float(texture.get_height())-16.0/9.0)<.02,"Fotografia %d no formato panoramico original" % i)
 		opening.seek(end-.05); opening.pause_playback()
 		check(opening._still.texture==texture and opening._still.scale==Vector2.ONE,"Imagem %d fica parada até o corte" % i)
 	check(is_equal_approx(end,Timeline.TOTAL_DURATION_SECONDS),"Montagem completa")

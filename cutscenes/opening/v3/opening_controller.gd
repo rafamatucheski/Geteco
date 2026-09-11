@@ -34,8 +34,6 @@ var _skip_button: Button
 var _skip_dialog: ConfirmationDialog
 var _still: TextureRect
 var _textures: Array[Texture2D]=[]
-var _phone_en: Texture2D
-var _phone_pt: Texture2D
 var _timing: Dictionary
 var _captions: Array=[]
 var _fired: Dictionary={}
@@ -53,8 +51,6 @@ func _ready() -> void:
 	for index in Timeline.SHOTS.size():
 		_textures.append(load(Timeline.image_path(index)) as Texture2D)
 	_still.texture=_textures[0]
-	_phone_pt=_textures[6]
-	_phone_en=load(Timeline.image_path(6).replace(".jpg","_en.jpg")) as Texture2D
 	var grade:=ColorRect.new(); grade.name="FilmGrade"
 	grade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); grade.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	var shader:=Shader.new()
@@ -107,7 +103,6 @@ func restart() -> void:
 	if is_instance_valid(_studio_audio): _studio_audio.queue_free(); _studio_audio=null
 	var lang:="en" if TranslationServer.get_locale().begins_with("en") else "pt"
 	_captions=_timing[lang]
-	_textures[6]=_phone_en if lang=="en" else _phone_pt
 	_procedural_audio.configure(lang,playback_speed)
 	_still.texture=_textures[0]
 	if show_studio_intro:
@@ -185,7 +180,6 @@ func seek(time: float) -> void:
 	_procedural_audio.configure(TranslationServer.get_locale(),playback_speed)
 	var lang:="en" if TranslationServer.get_locale().begins_with("en") else "pt"
 	_captions=_timing[lang]
-	_textures[6]=_phone_en if lang=="en" else _phone_pt
 	_procedural_audio.play_from(_total_elapsed); _show_time(_total_elapsed)
 
 func pause_playback() -> void:

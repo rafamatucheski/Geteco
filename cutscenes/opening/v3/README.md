@@ -1,3 +1,9 @@
+# Direcao atual: imagens geradas da primeira CGI
+
+A montagem usa sete imagens originais de `../frames/` e seis imagens novas geradas no mesmo estilo. Nenhuma captura de `assets/stills/` e usada. Consulte [a ampliacao](../frames/GENERATED_EXPANSION.md) e [a previa atual](review/opening_generated.mp4). O audio e os controles de reproducao foram preservados.
+
+## Historico da tentativa anterior, substituida a pedido do usuario
+
 # Abertura em fotografias — GETECO
 
 A apresentação atual usa **25 imagens fixas, em 1920×1080, durante 86 segundos**. A pedido do usuário, a animação contínua foi substituída por montagem fotográfica. Os personagens preservam os modelos e materiais do jogo. Não há pessoas reais, interpolação de poses, movimento de câmera ou lip-sync durante a reprodução. Cortes, duas elipses em preto, vozes, efeitos e música conduzem a história.
