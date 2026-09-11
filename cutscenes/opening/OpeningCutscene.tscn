@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://cutscenes/opening/scripts/opening_cutscene.gd" id="1_script"]
-[ext_resource type="Script" path="res://cutscenes/opening/scripts/opening_cutscene_audio.gd" id="2_audio"]
+[ext_resource type="Script" path="res://cutscenes/opening/v3/opening_controller.gd" id="1_script"]
+[ext_resource type="Script" path="res://cutscenes/opening/v3/opening_audio.gd" id="2_audio"]
 
 [node name="OpeningCutscene" type="Control"]
 layout_mode = 3

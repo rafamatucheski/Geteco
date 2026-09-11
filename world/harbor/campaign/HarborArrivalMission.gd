@@ -178,6 +178,8 @@ func _on_opening_finished(destination: StringName) -> void:
 		fade.tween_callback(_opening_layer.queue_free)
 	_opening = null
 	_restore_opening_pause()
+	# A madrugada da CGI continua no desembarque; só a primeira chegada passa aqui.
+	world.weather.time_of_day = 0.18
 	world.weather.set_weather(2)
 	world.weather.weather_timer = 90.0
 	var camera := player.get_node_or_null("Camera") as Camera2D

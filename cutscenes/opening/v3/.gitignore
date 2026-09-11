@@ -1,0 +1,10 @@
+audio/*.wav
+audio/*.wav.import
+production/__pycache__/
+production/masters/
+review/*.avi
+review/*.wav
+review/*console.txt
+review/leaks*
+review/test_saves/
+production/sources/*.import

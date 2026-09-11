@@ -31,26 +31,26 @@ func run() -> void:
 	root.add_child(opening)
 	paused = true
 	check(opening._shot_index == -1 and is_instance_valid(opening._studio_card), "RCM before CGI")
-	await create_timer(4.6).timeout
-	check(opening._studio_elapsed >= 3.7 and opening._shot_index == -1, "City card before CGI")
-	await create_timer(2.3).timeout
+	await create_timer(1.8).timeout
+	check(opening._studio_elapsed < 2.8 and opening._shot_index == -1, "RCM breve antes da narrativa")
+	await create_timer(1.3).timeout
 	check(opening._shot_index == 0 and not is_instance_valid(opening._studio_card), "Natural fade into first CGI frame")
 	var start := Time.get_ticks_msec()
-	while completed == 0 and Time.get_ticks_msec() - start < 46000:
+	while completed == 0 and Time.get_ticks_msec() - start < 74000:
 		await process_frame
 	check(completed == 1, "Whole opening finishes naturally once while paused")
 	opening.queue_free()
 	await process_frame
-	# Skip from the city card also retains exactly-once destination behavior.
+	# Skip from the studio card also retains exactly-once destination behavior.
 	opening = OPENING.instantiate()
 	opening.show_studio_intro = true
 	opening.skipped.connect(func(_destination): completed += 1)
 	root.add_child(opening)
-	await create_timer(4.0).timeout
+	await create_timer(1.0).timeout
 	opening.skip()
 	opening.skip()
 	await create_timer(0.35).timeout
-	check(completed == 2, "Skip city card exactly once")
+	check(completed == 2, "Skip studio card exactly once")
 	opening.queue_free()
 	paused = false
 	await process_frame
