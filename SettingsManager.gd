@@ -36,6 +36,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(preload("res://RenderQuality.gd").new())
 	_setup_audio_buses()
 	_resolve_settings_path()
 	load_settings()
@@ -101,7 +102,9 @@ func load_settings() -> bool:
 	route_visible = bool(config.get_value("interface","route_visible",true))
 	tutorial_hints = bool(config.get_value("interface","tutorial_hints",true))
 	var controls := get_node_or_null("/root/GameInput")
-	if controls != null: controls.import_bindings(config.get_value("controls","bindings",{}))
+	# Na inicialização o GameInput ainda não registrou suas ações. Ele importa
+	# as teclas no próprio _ready; recarregamentos posteriores podem aplicar aqui.
+	if controls != null and controls.is_node_ready(): controls.import_bindings(config.get_value("controls","bindings",{}))
 
 	return true
 

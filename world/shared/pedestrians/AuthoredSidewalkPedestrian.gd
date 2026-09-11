@@ -26,13 +26,8 @@ var _window_shop_pause: float = 0.0
 var _visit_approach_elapsed := 0.0
 var _visit_fade: Tween
 
-# `_sidewalk_avoidance_offset()` and `_spacing_speed_factor()` each used to
-# independently call get_tree().get_nodes_in_group() once per pedestrian per
-# physics frame (2x redundant O(n) scans x every pedestrian). Cached once per
-# frame instead; the candidate set considered is unchanged. The refresh itself
-# is further throttled (every 3rd physics frame) since a couple of frames of
-# staleness in a soft avoidance/spacing heuristic is imperceptible, and this
-# is the single biggest per-pedestrian recurring cost besides its 3D viewport.
+# Compartilha a busca espacial; os filtros de distância/direção continuam locais.
+const NEIGHBORHOOD := preload("res://world/shared/pedestrians/PedestrianNeighborhood.gd")
 var _cached_neighbors: Array = []
 var _neighbor_refresh_counter: int = 0
 const NEIGHBOR_REFRESH_STRIDE := 3
@@ -71,7 +66,7 @@ func _physics_process(delta: float) -> void:
 	_neighbor_refresh_counter += 1
 	if _neighbor_refresh_counter >= NEIGHBOR_REFRESH_STRIDE or _cached_neighbors.is_empty():
 		_neighbor_refresh_counter = 0
-		_cached_neighbors = get_tree().get_nodes_in_group("authored_sidewalk_pedestrian")
+		_cached_neighbors = NEIGHBORHOOD.neighbors(self, personal_space)
 	_update_ambient_life(delta)
 	
 	if _window_shop_pause > 0.0 or (is_visiting and _visiting_timer > 0.0):
@@ -270,6 +265,9 @@ func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector
 	if planned.is_zero_approx(): return Vector2.ZERO
 	var base_dir := planned.normalized()
 	var avoidance := _sidewalk_avoidance_offset(base_dir)
+	# A navegação já validou esse segmento. Só testar outra vez quando o
+	# desvio social realmente altera a direção; move_and_slide mantém a colisão.
+	if avoidance.is_zero_approx(): return planned
 	var combined := base_dir + avoidance
 	var steered := combined.normalized() if combined.length_squared() > 0.0001 else base_dir
 	

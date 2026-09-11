@@ -1,0 +1,30 @@
+[
+	{
+		"distance": 0.0,
+		"fps": 26.9226254513578,
+		"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+		"mean_ms": 37.14348,
+		"msaa_2d": 1,
+		"p50_ms": 29.103,
+		"p90_ms": 38.953,
+		"p99_ms": 194.286,
+		"physics_ms": 14.4511966666667,
+		"renderer": "mobile",
+		"resolution": "(1280, 720)",
+		"scenario": "stationary"
+	},
+	{
+		"distance": 2268.3330078125,
+		"fps": 29.5798565909393,
+		"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+		"mean_ms": 33.80679,
+		"msaa_2d": 1,
+		"p50_ms": 30.509,
+		"p90_ms": 42.448,
+		"p99_ms": 68.643,
+		"physics_ms": 14.72733,
+		"renderer": "mobile",
+		"resolution": "(1280, 720)",
+		"scenario": "driving"
+	}
+]
