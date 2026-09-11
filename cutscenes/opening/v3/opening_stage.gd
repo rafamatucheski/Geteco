@@ -18,9 +18,11 @@ var practical: OmniLight3D
 var passing: OmniLight3D
 var mug: Node3D
 var pot: Node3D
-var pour: MeshInstance3D
+var pour: Node3D
+var coffee: RefCounted
 var steam: Array[MeshInstance3D] = []
 var phone: Node3D
+var phone_gallery: MeshInstance3D
 var screen: StandardMaterial3D
 var phone_label: Label3D
 var frame_photo: MeshInstance3D
@@ -147,7 +149,10 @@ func _build_room() -> void:
 	box(room,Vector3(0,-.055,0),Vector3(6,.10,7),_wood)
 	for x in 24:
 		box(room,Vector3(-2.95+x*.25,.001,0),Vector3(.008,.006,7),mat("342e29"))
-	box(room,Vector3(0,1.5,1.4),Vector3(6,3,.12),plaster)
+	# Vão real da saída, com corredor atrás; o ator não atravessa a parede.
+	box(room,Vector3(-.76,1.5,1.4),Vector3(4.48,3,.12),plaster)
+	box(room,Vector3(2.63,1.5,1.4),Vector3(.74,3,.12),plaster)
+	box(room,Vector3(1.87,2.5,1.4),Vector3(.78,1,.12),plaster)
 	box(room,Vector3(2.8,1.5,-.7),Vector3(.12,3,4.3),plaster)
 	box(room,Vector3(-2.35,.37,-.2),Vector3(.12,.74,3.3),plaster)
 	box(room,Vector3(-2.35,2.6,-.2),Vector3(.12,.8,3.3),plaster)
@@ -181,10 +186,10 @@ func _build_room() -> void:
 	var frame := Node3D.new(); frame.position=Vector3(-.29,.66,-.32); room.add_child(frame)
 	photo_frame=frame
 	var brass := mat("9c8060",.5,.2)
-	box(frame,Vector3(0,.118,0),Vector3(.345,.243,.022),brass)
-	box(frame,Vector3(0,.118,-.014),Vector3(.316,.215,.009),mat("857764"))
+	box(frame,Vector3(0,.118,0),Vector3(.280,.203,.022),brass)
+	box(frame,Vector3(0,.118,-.014),Vector3(.254,.179,.009),mat("857764"))
 	loose_photo=Node3D.new(); add_child(loose_photo)
-	frame_photo=quad(loose_photo,Vector3.ZERO,Vector2(.291,.194),_photo_material())
+	frame_photo=quad(loose_photo,Vector3.ZERO,Vector2(.230,.153),_photo_material())
 	# Caixa: a farda é guardada, a foto fica fora.
 	var cardboard:=mat("756653")
 	box(room,Vector3(-.62,.73,-.25),Vector3(.36,.16,.24),cardboard)
@@ -199,7 +204,7 @@ func _build_room() -> void:
 	cylinder(room,Vector3(1.35,.38,.5),.05,.76,_metal)
 	cylinder(room,Vector3(1.35,.85,.5),.22,.30,mat("d6b77c",.85),.13)
 	# Porta de saída vista no plano do porta-retrato vazio.
-	box(room,Vector3(1.88,1.0,1.30),Vector3(.84,2.0,.08),_dark)
+	box(room,Vector3(1.88,1.0,2.6),Vector3(1.1,2.0,.08),_dark)
 	door=Node3D.new(); door.position=Vector3(1.48,0,1.20); room.add_child(door)
 	box(door,Vector3(.39,1,0),Vector3(.78,2,.045),mat("534532"))
 	sphere(door,Vector3(.68,1,-.05),Vector3(.055,.035,.055),brass)
@@ -214,11 +219,7 @@ func _build_cup() -> void:
 	handle.mesh=torus; handle.material_override=ceramic
 	handle.rotation.x=PI/2; handle.position=Vector3(.046,.064,0); mug.add_child(handle)
 	pot=Node3D.new(); room.add_child(pot)
-	cylinder(pot,Vector3.ZERO,.063,.145,mat("757477",.28,.8),.048)
-	box(pot,Vector3(.066,.01,0),Vector3(.025,.10,.025),_dark)
-	var spout:=cylinder(pot,Vector3(-.07,.03,0),.013,.09,_metal,.007)
-	spout.rotation.z=-.9
-	pour=cylinder(room,Vector3.ZERO,.0035,.12,mat("38281a",.25))
+	coffee=preload("res://cutscenes/opening/v3/opening_coffee.gd").new(self)
 	var vapor_shader:=Shader.new()
 	vapor_shader.code="""shader_type spatial;
 render_mode unshaded, cull_disabled, depth_draw_never, blend_mix;
@@ -231,6 +232,13 @@ func _build_phone() -> void:
 	box(phone,Vector3.ZERO,Vector3(.060,.123,.018),mat("171c23",.32))
 	screen=mat("a1b7b0",.55,0,.4)
 	quad(phone,Vector3(0,.024,-.010),Vector2(.049,.052),screen)
+	phone_gallery=quad(phone,Vector3(0,.024,-.0115),Vector2(.047,.0313),_photo_material())
+	phone_gallery.hide()
+	# Base inclinada mantém o telefone ao alcance e espaço para a pegada lateral.
+	box(room,Vector3(.34,.660,-.20),Vector3(.095,.014,.075),_dark)
+	cylinder(room,Vector3(.34,.697,-.188),.008,.073,_metal)
+	var cradle:=box(room,Vector3(.34,.743,-.180),Vector3(.066,.100,.010),_dark)
+	cradle.rotation.x=PI/3
 	for y in 4:
 		for x in 3: box(phone,Vector3((x-1)*.015,-.018-y*.016,-.010),Vector3(.012,.009,.003),mat("63696a",.6))
 	phone_label=Label3D.new(); phone_label.font_size=32; phone_label.pixel_size=.00022
@@ -278,6 +286,11 @@ func _build_actor() -> void:
 				part.mesh=_rounded_panel(size)
 	for lower in [host.left_lower_arm,host.right_lower_arm]:
 		var palm: Node3D=lower.get_node("Palm")
+		# Antebraço e carpo com comprimento suficiente para dobrar sob o ombro.
+		for part in lower.get_children():
+			if part is MeshInstance3D:
+				part.position.y*=1.2; part.scale.y*=1.2
+		palm.position.y=-.24
 		var skin: StandardMaterial3D=palm.get_child(0).material_override
 		for child in palm.get_children(): child.hide()
 		var hand:=preload("res://cutscenes/opening/v3/opening_hand.gd").new()
@@ -398,13 +411,13 @@ func _build_rain() -> void:
 func blend(t: float, from: float, to: float) -> float:
 	return smoothstep(from,to,t)
 
-func _arm(upper: Node3D, lower: Node3D, target: Vector3, hint: Vector3) -> void:
+func _arm(upper: Node3D, lower: Node3D, target: Vector3, hint: Vector3, forearm := .20) -> void:
 	# IK em espaço do ator: mantém cotovelo, punho e objeto unidos durante a ação.
 	var origin:=upper.position
-	var delta:=target-origin; var dist:=clampf(delta.length(),.025,.415)
+	var delta:=target-origin; var dist:=clampf(delta.length(),absf(.22-forearm)+.002,.22+forearm-.003)
 	var direction:=delta.normalized()
 	var bend:=(hint-direction*hint.dot(direction)).normalized()
-	var along:=(.22*.22-.20*.20+dist*dist)/(2*dist)
+	var along:=(.22*.22-forearm*forearm+dist*dist)/(2*dist)
 	var elbow:=origin+direction*along+bend*sqrt(maxf(0,.22*.22-along*along))
 	upper.basis=Basis(Quaternion(Vector3.DOWN,(elbow-origin).normalized()))
 	lower.basis=upper.basis.inverse()*Basis(Quaternion(Vector3.DOWN,(target-elbow).normalized()))
@@ -414,6 +427,7 @@ func _camera(pos: Vector3, target: Vector3, fov: float) -> void:
 
 func set_time(t: float, mouth := 0.0) -> void:
 	clock_time=t; voice_envelope=mouth
+	t=preload("res://cutscenes/opening/v3/opening_timeline.gd").stage_time(t)
 	room.visible=t<46; road.visible=t>=46 and t<53
 	cabin.visible=t>=53 and t<61; terminal.visible=t>=61
 	actor.visible=t<42 or (t>=53 and t<61)
@@ -427,33 +441,25 @@ func set_time(t: float, mouth := 0.0) -> void:
 	environment.background_color=Color("141e30")
 	passing.light_energy=0
 	rain.position=Vector3(0,-fmod(t*7,10),0)
-	var breathe:=sin(t*1.6)*.003
+	var breathe:=sin(clock_time*1.6)*.003
 	actor.position=Vector3(0,-.14,0); actor.rotation=Vector3.ZERO
 	host.torso_node.rotation=Vector3(.02+breathe,0,0)
 	host.head_node.rotation=Vector3(-.07,0,0)
 	host.left_upper_leg.rotation=Vector3(1.30,0,0); host.right_upper_leg.rotation=Vector3(1.30,0,0)
 	host.left_lower_leg.rotation=Vector3(-1.30,0,0); host.right_lower_leg.rotation=Vector3(-1.30,0,0)
-	mug.position=Vector3(.20,.657,-.35)
+	mug.position=Vector3(.17,.657,-.35)
 	phone_label.text="IRMÃO" if lang=="pt" else "BROTHER"
 	screen.emission_energy_multiplier=.35 if t>=13 else .02
 	lid.rotation.x=-.9*(1-blend(t,10.4,11.1))
 	door.rotation.y=-.65*(blend(t,42,43)-blend(t,43.8,44.5))
-	pour.visible=t>1.3 and t<3.5
-	var pour_weight:=blend(t,.5,1.3)*(1-blend(t,3.4,4.1))
-	pot.position=Vector3(.35,.74,-.33).lerp(Vector3(.27,.96,-.35),pour_weight)
-	pot.rotation.z=lerpf(0,-.65,pour_weight)
-	var pour_from:=pot.to_global(Vector3(-.10,.03,0))
-	var pour_to:=mug.position+Vector3(0,.118,0)
-	pour.position=(pour_from+pour_to)*.5
-	pour.basis=Basis(Quaternion(Vector3.UP,(pour_from-pour_to).normalized()))
-	pour.scale.y=pour_from.distance_to(pour_to)/.12
+	coffee.apply(t)
 	for i in steam.size():
 		var age:=fmod(t*.35+i*.11,1.0)
 		steam[i].position=mug.position+Vector3(sin(age*5+i)*.012,.12+age*.15,cos(age*4+i)*.012)
 		steam[i].scale=Vector3(.025+age*.02,.08,1)
 		steam[i].visible=t<18
 	# Olhos, sobrancelhas e lábio têm movimentos limitados e motivados.
-	var blink:=maxf(0,1-absf(fmod(t+1.9,4.7)-2.1)/.09)
+	var blink:=maxf(0,1-absf(fmod(clock_time+1.9,4.7)-2.1)/.09)
 	for eye in eyes: eye.scale.y=Vector3(eye_scales[eye]).y*(1-.92*blink)
 	for brow in brows:
 		var side:=signf(brow.position.x)

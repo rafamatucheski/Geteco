@@ -1,0 +1,6 @@
+# Apenas para recriar a voz local; nenhuma dependência de IA no jogo.
+qwen-tts==0.1.1
+torch==2.11.0
+torchaudio==2.11.0
+faster-whisper
+soundfile

@@ -36,7 +36,7 @@ func run() -> void:
 	await create_timer(1.3).timeout
 	check(opening._shot_index == 0 and not is_instance_valid(opening._studio_card), "Natural fade into first CGI frame")
 	var start := Time.get_ticks_msec()
-	while completed == 0 and Time.get_ticks_msec() - start < 74000:
+	while completed == 0 and Time.get_ticks_msec() - start < 88000:
 		await process_frame
 	check(completed == 1, "Whole opening finishes naturally once while paused")
 	opening.queue_free()

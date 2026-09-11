@@ -1,49 +1,44 @@
-# Abertura V3 — a fotografia que viaja
+# Abertura em fotografias — GETECO
 
-Implementada em 11/09/2026. A cena de produção `cutscenes/opening/OpeningCutscene.tscn` usa esta versão. Filme de 68 segundos, precedido por 2,8 segundos de identidade RCM quando iniciado pela campanha.
+A apresentação atual usa **25 imagens fixas, em 1920×1080, durante 86 segundos**. A pedido do usuário, a animação contínua foi substituída por montagem fotográfica. Os personagens preservam os modelos e materiais do jogo. Não há pessoas reais, interpolação de poses, movimento de câmera ou lip-sync durante a reprodução. Cortes, duas elipses em preto, vozes, efeitos e música conduzem a história.
 
-## Direção e narrativa
+## Montagem
 
-A rotina de Dante é interrompida por uma notícia: o irmão saiu da prisão, foi visto em Harbor e desapareceu do contato. Dante retira a fotografia dos dois, guarda na mochila e a tira de lá no ônibus. O quadro vazio encerra a casa. A porta do ônibus abre e o jogo continua no desembarque, ainda de madrugada, com chuva. O irmão está vivo; a motivação é procurá-lo.
+| Tempo | Imagens e função |
+|---|---|
+| 0–13 s | Casa, café, retrato dos irmãos e Dante: rotina e vínculo |
+| 13–18,2 s | Telefone no apoio e chamada desconhecida |
+| 18,2–38,45 s | Escuta, notícia da soltura, pista da rodoviária e pergunta de Dante |
+| 38,45–42 s | Linha desligada e telefone pousado |
+| 42–51,2 s | Duas reações silenciosas: absorver a notícia e considerar a decisão |
+| 51,2–56 s | Dante consulta uma foto dos irmãos na galeria do celular |
+| 56–64 s | Saída pronta e apartamento vazio; a foto permanece no porta-retrato |
+| 64–79 s | Dois planos de estrada, celular no ônibus e Dante olhando pela janela |
+| 79–86 s | Rodoviária, freio e porta aberta: passagem para o gameplay |
 
-| Tempo | Ação | Função dramática |
-|---|---|---|
-| 0–6 s | Café, louça, vapor | Estabelecer uma rotina silenciosa |
-| 6–13 s | Fotografia e caixa do antigo uniforme | Apresentar vínculo e passado |
-| 13–18 s | Telefone e hesitação | Interromper a rotina |
-| 18–31 s | Ligação, reação, pergunta e desconexão | Dar uma pista concreta e deixar uma dúvida |
-| 31–38 s | Dante retira a fotografia | Tornar a decisão visível |
-| 38–42 s | Mochila | Preparar a partida |
-| 42–46 s | Quadro vazio, passos e porta | Encerrar o espaço doméstico |
-| 46–53 s | Ônibus na estrada, à noite | Comunicar tempo e deslocamento |
-| 53–61 s | Fotografia nas mãos, interior do ônibus | Manter o motivo emocional |
-| 61–68 s | Terminal, freio pneumático e porta | Entregar a ação ao gameplay |
+## Reprodução
 
-## Implementação
+A cena continua sendo `../OpeningCutscene.tscn`, integrada ao Novo Jogo. `opening_controller.gd` exibe as texturas em `assets/stills/`; o palco 3D não é instanciado no runtime. Os controles de pausa, seek, replay, confirmação de pulo, sinais `finished`/`skipped` e destino `bus_terminal_arrival` continuam disponíveis. O mundo fica pausado durante a abertura.
 
-`opening_stage.gd` constrói os cenários 3D e anima câmera, rig de Dante, olhos, boca, rodas e portas. `opening_performance.gd` determina o percurso dos objetos e os contatos por IK; `opening_hand.gd` constrói a palma, quatro dedos com três segmentos e o polegar oposto. Os punhos se orientam pela pegada. A foto é um único objeto, que sai do quadro e fica oculto fisicamente pelas paredes da mochila. Não existe troca de visibilidade do papel durante esses planos. Gola e painéis da roupa receberam contornos mais suaves, preservando o personagem do jogo. São cenários e animação procedural em estética estilizada do jogo; não é um filme fotorrealista nem captura de movimento.
+`opening_timeline.gd` contém os 25 planos, durações e poses de autoria. `opening_stage.gd`, `opening_performance.gd`, `opening_hand.gd` e `opening_coffee.gd` são ferramentas de produção das imagens. O relógio de poses dessas ferramentas é independente da montagem final. Não reintroduzir o transporte da fotografia física: ela fica no quadro; a galeria do telefone usa a mesma textura.
 
-`opening_timeline.gd` centraliza os dez planos e eventos. `opening_controller.gd` conserva os sinais `finished`/`skipped`, destino `bus_terminal_arrival`, preparo sem autoplay, pausa, seek, replay e confirmação de pulo. O fim só é emitido uma vez, após o fade. O relógio começa após o primeiro quadro desenhado, fora da tela de carregamento. O mundo permanece pausado durante a apresentação.
+Para regenerar as fotografias, execute Godot com `--path . --script res://tests/visual/render_opening_stills.gd`, seguido de importação. O plano de chamada possui uma variante em inglês. Para a prévia, use MovieWriter com `tests/visual/render_opening_v3.gd`. A prévia atual é [review/opening_stills.mp4](review/opening_stills.mp4); [review/storyboard_stills.jpg](review/storyboard_stills.jpg) reúne os 25 enquadramentos. Vídeos `opening_v3` e imagens `contact_`/`refined_` são revisões históricas da tentativa animada.
 
-As vozes e legendas acompanham português/inglês. O áudio é offline em três camadas: efeitos/ambiente, música e diálogo, respeitando os buses SFX/Music do jogo. Os arquivos de revisão e produção têm `.gdignore` e não são conteúdo do runtime.
+## Voz e som
 
-## Assets e origem
+O interlocutor é anônimo, masculino, dirigido como brasileiro de aproximadamente 65 anos, com rouquidão leve e preocupação contida. A fala atual é:
 
-- `assets/brothers_photo.png`: retrato renderizado dentro do Godot com `DantePreviewRig.gd` / `DanteVisualAdapter.gd`. Dante e o irmão posam juntos diante de uma garagem; o irmão usa uma variação terrosa do mesmo figurino e cabelo discretamente grisalho. Ambos preservam geometria, proporções e materiais do elenco do jogo. Esta versão substitui a imagem de aparência realista a pedido do usuário. A mesma textura é usada em todos os planos. Recriação: Godot `--path . --script res://tests/visual/render_opening_family_photo.gd`.
-- Dante: rig e visual já existentes no projeto (`DantePreviewRig.gd` / `DanteVisualAdapter.gd`), com ajustes de pose e expressão limitados à cena.
-- Ônibus: modelo de produção `HarborTransitBusModel.gd`; rodas e porta animadas na cena.
-- Vozes sintetizadas: Microsoft Edge TTS via [edge-tts](https://github.com/rany2/edge-tts). A pessoa que liga em PT usa ThalitaMultilingualNeural, sem alteração de pitch, substituindo FranciscaNeural. Dante usa AntonioNeural; EN usa JennyNeural e GuyNeural. O filtro da ligação preserva uma parcela do sinal original e mais frequências da fala. A segunda fala PT é “Viram ele em Harbor. Não tive mais notícias.”, de 22,7 a 26,094 s; legendas e duração são geradas do mesmo manifesto. São vozes sintéticas, não gravações de atores. As fontes atuais e anteriores ficam em `production/sources/`.
-- Música e efeitos pontuais: composição e síntese originais em `production/build_audio.py`, incluindo café, papel, tecido, telefone, passos, porta e ônibus.
-- Base urbana: `audio/living_city/street_0.ogg`, do banco do projeto. Fonte declarada CC0: Florian Reichelt, [Street ambience](https://freesound.org/people/florianreichelt/sounds/451734/), conforme `audio/living_city/SOURCES.json`.
+> Dante? Você não me conhece, mas escuta. Seu irmão saiu da prisão. Viram ele em Harbor, perto da rodoviária. Desde então, ele não atende o telefone.
 
-O pico do mix de revisão PT é −7,47 dBFS; não há clipping no mix gerado. Isso não substitui aprovação auditiva em diferentes sistemas. O desenho sonoro usa síntese e ambiente de biblioteca, sem alegação de foley integralmente gravado em estúdio.
+Dante responde: “Quem tá falando?”. O interlocutor desliga. A voz é **sintética e ainda sujeita à avaliação artística do usuário**; a amostra anterior foi rejeitada como artificial. A versão atual foi produzida em uma tomada contínua, sem acelerar, engrossar o pitch ou adicionar distorção para simular idade.
 
-## Reprodução e manutenção
+- Interlocutor PT-BR: Qwen3-TTS VoiceDesign, modelo `Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign`, direção e seed em `production/sources/caller_direction_v2.json`. Fonte e documentação: https://github.com/QwenLM/Qwen3-TTS. Não é clonagem de uma pessoa real.
+- `production/design_caller.py` gera a fonte; `align_caller.py` registra transcrição e tempos com faster-whisper. O reconhecimento confirmou o texto; Harbor foi transcrito foneticamente como “arbor”. Isso verifica conteúdo, não naturalidade.
+- Dante PT: AntonioNeural; EN: AndrewMultilingualNeural e GuyNeural via edge-tts, sem mudança de pitch.
+- `production/build_audio.py` produz os stems OGG e o manifesto de legendas a partir das fontes. A duração acompanha a fala integral. O runtime funciona offline, sem modelos de IA ou rede.
+- Foley e música: síntese e composição originais. Ambiente urbano: `audio/living_city/street_0.ogg`, fonte CC0 declarada no banco do projeto (Florian Reichelt, Street ambience).
+- Mix PT gerado: pico −7,44 dBFS. Música e efeitos respeitam os buses e configurações de volume do jogo.
 
-Abra `OpeningCutscene.tscn` para assistir isoladamente, ou inicie Novo Jogo para ver a sequência integrada. `review/opening_v3.mp4` é uma captura da reprodução natural no Godot, em 1280×720 a 30 fps, com som. Não é uma montagem de screenshots. Na conversão, o áudio recebeu +14 dB para compensar a atenuação das configurações locais capturadas (pico antes: −21,5 dBFS). O jogo continua respeitando os volumes escolhidos pelo jogador.
+O irmão recebeu cabelo curto, rosto sem barba e roupa oliva/azul para se distinguir de Dante. O retrato é produzido por `tests/visual/render_opening_family_photo.gd`, com o construtor de personagens do jogo.
 
-Para reconstruir áudio: Python com `numpy`, `scipy`, `imageio-ffmpeg` e `edge-tts`; execute `python cutscenes/opening/v3/production/build_audio.py` a partir da pasta do jogo. As fontes MP3 existentes são reaproveitadas; gerar novas falas requer rede. O script escreve OGG de runtime, masters WAV locais, métricas e o manifesto `voice_timing.gd` incluído por preload no jogo.
-
-Para capturar vídeo, use o Godot com `--path . --resolution 1280x720 --fixed-fps 30 --write-movie cutscenes/opening/v3/review/opening_v3.avi --script res://tests/visual/render_opening_v3.gd`. Converta o AVI com áudio integrado para H.264/AAC. O teste visual por planos está em `tests/visual/capture_opening_v3.gd`.
-
-Resultados da verificação em [review/VALIDATION.md](review/VALIDATION.md).
+Verificação e limitações em [review/VALIDATION.md](review/VALIDATION.md).

@@ -1,0 +1,22 @@
+{
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+  "direction": "Native Brazilian Portuguese. An elderly man, 68 years old, with a low, naturally gravelly baritone and a little breath in his voice. He is speaking quietly to someone he cares about, worried and reluctant to deliver difficult news. Restrained emotion, intimate conversational delivery, natural varied intonation and phrasing. Clearly spoken at an ordinary conversational pace. No announcer voice, no exaggerated old-man caricature. Clean dry audio.",
+  "takes": [
+    {
+      "id": "release",
+      "text": "Seu irmão saiu da prisão.",
+      "file": "pt_release_qwen_v1.wav",
+      "seconds": 2.4,
+      "sample_rate": 24000,
+      "seed": 2911
+    },
+    {
+      "id": "harbor",
+      "text": "Viram ele em Harbor. Não tive mais notícias.",
+      "file": "pt_harbor_qwen_v1.wav",
+      "seconds": 5.44,
+      "sample_rate": 24000,
+      "seed": 2911
+    }
+  ]
+}

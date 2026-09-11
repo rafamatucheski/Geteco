@@ -22,7 +22,7 @@ func run() -> void:
 	if not is_instance_valid(arrival._opening): quit(1); return
 	check(arrival._opening.get_script().resource_path.ends_with("v3/opening_controller.gd"),"Campanha usa a V3")
 	check(paused,"Simulação da cidade pausada durante o filme")
-	arrival._opening.seek(66)
+	arrival._opening.seek(arrival._opening.Timeline.TOTAL_DURATION_SECONDS-2)
 	# Seek é intencional neste teste da ponte; término vem do relógio, nunca de skip.
 	deadline=Time.get_ticks_msec()+18000
 	while arrival.phase in ["arrival","disembark","arrival_wait"] and Time.get_ticks_msec()<deadline: await process_frame

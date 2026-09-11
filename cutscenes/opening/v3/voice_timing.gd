@@ -1,50 +1,52 @@
 extends RefCounted
-# Gerado por production/build_audio.py; incluído automaticamente no export.
+# Gerado por production/build_audio.py.
+const CALL_EXTENSION_SECONDS := 9.0
+const CALLER_HARBOR_START := 27.58
 const LINES := {
   "pt": [
     {
       "id": "release",
-      "text": "Seu irmão saiu da prisão.",
-      "voice": "pt-BR-ThalitaMultilingualNeural",
+      "text": "Dante? Você não me conhece, mas escuta. Seu irmão saiu da prisão.",
       "start": 19.0,
-      "end": 20.946
+      "end": 26.9,
+      "voice": "Qwen3-TTS-VoiceDesign/caller-v2"
     },
     {
       "id": "harbor",
-      "text": "Viram ele em Harbor. Não tive mais notícias.",
-      "voice": "pt-BR-ThalitaMultilingualNeural",
-      "start": 22.7,
-      "end": 26.094
+      "text": "Viram ele em Harbor, perto da rodoviária. Desde então, ele não atende o telefone.",
+      "start": 27.58,
+      "end": 33.84,
+      "voice": "Qwen3-TTS-VoiceDesign/caller-v2"
     },
     {
       "id": "dante",
-      "text": "Ele falou com você?",
+      "text": "Quem tá falando?",
       "voice": "pt-BR-AntonioNeural",
-      "start": 27.0,
-      "end": 28.539
+      "start": 36.0,
+      "end": 37.094
     }
   ],
   "en": [
     {
       "id": "release",
-      "text": "Your brother was released from prison.",
-      "voice": "en-US-JennyNeural",
+      "text": "Dante? You don't know me, but listen. Your brother was released from prison.",
+      "voice": "en-US-AndrewMultilingualNeural",
       "start": 19.0,
-      "end": 20.998
+      "end": 23.383
     },
     {
       "id": "harbor",
-      "text": "He was seen in Harbor. Nothing since then.",
-      "voice": "en-US-JennyNeural",
-      "start": 23.0,
-      "end": 26.274
+      "text": "He was seen in Harbor, near the bus station. Since then he hasn't been answering his phone.",
+      "voice": "en-US-AndrewMultilingualNeural",
+      "start": 24.03285714285714,
+      "end": 28.973
     },
     {
       "id": "dante",
-      "text": "Did he talk to you?",
+      "text": "Who's speaking?",
       "voice": "en-US-GuyNeural",
-      "start": 27.0,
-      "end": 28.243
+      "start": 36.0,
+      "end": 36.933
     }
   ]
 }

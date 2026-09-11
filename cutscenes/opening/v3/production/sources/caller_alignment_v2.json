@@ -1,0 +1,149 @@
+{
+  "captions": [
+    {
+      "id": "release",
+      "text": "Dante? Você não me conhece, mas escuta. Seu irmão saiu da prisão.",
+      "start": 0.0,
+      "end": 7.9
+    },
+    {
+      "id": "harbor",
+      "text": "Viram ele em Harbor, perto da rodoviária. Desde então, ele não atende o telefone.",
+      "start": 8.58,
+      "end": 14.84
+    }
+  ],
+  "recognized": "Dante? Você não me conhece, mas escuta. Seu irmão saiu da prisão. Viram ele em arbor, perto da rodoviária. Desde então, ele não atende o telefone.",
+  "words": [
+    {
+      "word": " Dante?",
+      "start": 0.0,
+      "end": 1.16
+    },
+    {
+      "word": " Você",
+      "start": 2.84,
+      "end": 3.54
+    },
+    {
+      "word": " não",
+      "start": 3.54,
+      "end": 3.74
+    },
+    {
+      "word": " me",
+      "start": 3.74,
+      "end": 3.86
+    },
+    {
+      "word": " conhece,",
+      "start": 3.86,
+      "end": 4.42
+    },
+    {
+      "word": " mas",
+      "start": 4.68,
+      "end": 4.82
+    },
+    {
+      "word": " escuta.",
+      "start": 4.82,
+      "end": 5.32
+    },
+    {
+      "word": " Seu",
+      "start": 6.24,
+      "end": 6.7
+    },
+    {
+      "word": " irmão",
+      "start": 6.7,
+      "end": 6.98
+    },
+    {
+      "word": " saiu",
+      "start": 6.98,
+      "end": 7.36
+    },
+    {
+      "word": " da",
+      "start": 7.36,
+      "end": 7.46
+    },
+    {
+      "word": " prisão.",
+      "start": 7.46,
+      "end": 7.9
+    },
+    {
+      "word": " Viram",
+      "start": 8.58,
+      "end": 8.9
+    },
+    {
+      "word": " ele",
+      "start": 8.9,
+      "end": 9.06
+    },
+    {
+      "word": " em",
+      "start": 9.06,
+      "end": 9.18
+    },
+    {
+      "word": " arbor,",
+      "start": 9.18,
+      "end": 9.5
+    },
+    {
+      "word": " perto",
+      "start": 9.88,
+      "end": 10.18
+    },
+    {
+      "word": " da",
+      "start": 10.18,
+      "end": 10.42
+    },
+    {
+      "word": " rodoviária.",
+      "start": 10.42,
+      "end": 11.02
+    },
+    {
+      "word": " Desde",
+      "start": 11.86,
+      "end": 12.14
+    },
+    {
+      "word": " então,",
+      "start": 12.14,
+      "end": 12.52
+    },
+    {
+      "word": " ele",
+      "start": 13.58,
+      "end": 13.8
+    },
+    {
+      "word": " não",
+      "start": 13.8,
+      "end": 13.96
+    },
+    {
+      "word": " atende",
+      "start": 13.96,
+      "end": 14.28
+    },
+    {
+      "word": " o",
+      "start": 14.28,
+      "end": 14.4
+    },
+    {
+      "word": " telefone.",
+      "start": 14.4,
+      "end": 14.84
+    }
+  ]
+}

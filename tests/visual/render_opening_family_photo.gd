@@ -15,19 +15,38 @@ func person(parent: Node3D, x: float, older: bool) -> CharacterBody2D:
 	rig.model_root.position.x=x
 	rig.model_root.rotation.y=.08 if older else -.08
 	if older:
-		# Variação familiar do mesmo elenco: tecido terroso, têmporas discretamente grisalhas.
-		rig.model_root.scale=Vector3(1.035,1.025,1.035)
+		# Cabelo curto, rosto sem barba e silhueta própria no mesmo estilo do jogo.
+		rig.model_root.scale=Vector3(.94,1.045,.97)
 		rig.mat_black_jacket.albedo_texture=null
-		rig.mat_black_jacket.albedo_color=Color("69523b")
-		for node in rig.head_node.get_children():
+		rig.mat_black_jacket.albedo_color=Color("59604b")
+		for node in rig.torso_node.get_children():
 			if node is MeshInstance3D and node.material_override is StandardMaterial3D:
-				var material: StandardMaterial3D=node.material_override
-				if material.albedo_color.r<.13 and node.position.y!=.019:
-					var changed: StandardMaterial3D=material.duplicate()
-					changed.albedo_color=Color("3e3730")
-					node.material_override=changed
+				if node.material_override.albedo_color.is_equal_approx(Color("5e1924")):
+					var shirt: StandardMaterial3D=node.material_override.duplicate()
+					shirt.albedo_color=Color("435e76"); node.material_override=shirt
+		var head: Node3D=rig.head_node
+		head.scale=Vector3(.91,.98,.93)
+		for node in head.get_children():
+			var lock: bool=node is MeshInstance3D and node.material_override is StandardMaterial3D and node.material_override.albedo_color.is_equal_approx(Color("101013"))
+			if lock or node.name.begins_with("Hair") or node.name=="ShortBeard" or absf(node.position.y+.049)<.001 or absf(node.position.y+.046)<.001:
+				node.hide()
+			elif node.name=="Face": node.scale=Vector3(.94,1.03,1)
+			elif absf(node.position.y-.039)<.001:
+				node.scale.y*=.65; node.rotation.z*=.25
+		var hair: StandardMaterial3D=geometry.mat("463e33",1)
+		var cropped:=Geometry.Adapter._make_loft([
+			Vector4(.071,.099,.081,.007),Vector4(.107,.096,.078,.010),
+			Vector4(.145,.070,.060,.014),Vector4(.155,.012,.020,.014)],hair,20)
+		cropped.name="BrotherCroppedHair"; head.add_child(cropped)
+		for side in [-1,1]:
+			geometry.sphere(head,Vector3(side*.096,.051,.022),Vector3(.016,.062,.105),hair)
+		var temple: StandardMaterial3D=geometry.mat("84755e",1)
+		for side in [-1,1]: geometry.sphere(head,Vector3(side*.099,.048,-.012),Vector3(.009,.035,.032),temple)
 	else:
 		rig.mat_black_jacket.albedo_color=Color(.9,.9,.9)
+	for node in rig.head_node.get_children():
+		if absf(node.position.y-.019)<.001: node.scale.y*=.65
+		if absf(node.position.y-.020)<.001: node.scale.y*=.55
 	rig.head_node.rotation=Vector3(-.015,-.025 if older else .025,.035 if older else -.035)
 	hosts.append(rig)
 	return rig

@@ -6,7 +6,8 @@ func run() -> void:
 	var opening: Control=load("res://cutscenes/opening/OpeningCutscene.tscn").instantiate()
 	opening.auto_start=false; root.add_child(opening)
 	await process_frame
-	for at in [2.4,7.8,14.5,21.0,27.6,35.0,39.5,43.0,49.0,57.0,63.0,67.0]:
+	for shot in opening.Timeline.SHOTS:
+		var at: float=float(shot.start)+float(shot.duration)/2
 		opening.seek(at); opening.pause_playback()
 		for i in 3: await process_frame
 		await RenderingServer.frame_post_draw

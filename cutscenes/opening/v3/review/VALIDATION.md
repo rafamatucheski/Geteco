@@ -1,3 +1,29 @@
+# Verificação — montagem fotográfica, 11/09/2026
+
+A apresentação vigente é `opening_stills.mp4`: 25 fotografias, 86 segundos de montagem. As seções antigas abaixo documentam versões animadas e não descrevem o resultado atual.
+
+- `test_opening_stills.gd`: PASS. Todas as imagens Full HD carregam, os tempos são contíguos, cada textura permanece fixa até o próximo corte, nenhum palco 3D é criado no runtime, vozes e legendas PT/EN acompanham o idioma.
+- `test_opening_cutscene_runtime.gd`: PASS. Reprodução natural de 86 s, todos os 25 planos visitados, pausa/retomada, áudio, seek, pulo e sinal de conclusão emitido uma única vez.
+- `test_opening_contacts_v3.gd`: PASS nas poses escolhidas. Distância do polegar ao contato abaixo de 0,1 mm; cotovelo 18,8 cm abaixo do ombro na ligação. Amostras de antebraço fora de tronco e mochila; café começa no bico e termina na caneca. Estas verificações não certificam toda interseção possível entre malhas.
+- `test_opening_photo_surface.gd`: PASS. Quatro poses de galeria na casa/ônibus; nenhuma aresta das malhas dos dedos cruza o retângulo da imagem do celular. O teste atual não avalia trajetórias, pois o runtime não as reproduz.
+- `test_opening_campaign_v3.gd`: PASS em Vulkan. Instancia a missão real e avança para os dois segundos finais da abertura; conclusão natural grava a flag, devolve a pausa, preserva madrugada/chuva, executa desembarque e libera a ligação de Maciota e o primeiro objetivo. O filme inteiro é exercitado separadamente pelo teste runtime.
+- MovieWriter: PASS, 2607 quadros a 30 fps, 86,9 s incluindo fade final. Sem erros no log. Inspecionadas imagens de contato e quadros do vídeo na ligação, galeria e ônibus.
+- Referências: 0 quebras novas. A importação global ainda registra `CarjackedDriver.tscn: Busy` e aviso de dois objetos no encerramento do editor, fora da abertura. Captura, runtime e campanha da abertura concluíram.
+- Fonte vocal V2: uma tomada PT-BR de 15,92 s. Transcrição verificou as frases e a referência à rodoviária; Harbor foi reconhecido como “arbor”. Isso não demonstra naturalidade da atuação. A amostra V1 foi rejeitada pelo usuário; V2 ainda não teve aprovação artística.
+- Mix PT offline: pico −7,44 dBFS. A gravação MovieWriter teve pico −22,4 dBFS antes da conversão; a prévia recebeu +14 dB para compensar os volumes locais capturados. As configurações de áudio do jogador não foram alteradas.
+
+Godot 4.7.2 / Windows / Vulkan Forward Mobile / RTX 4060 Laptop para produção visual e campanha. Headless foi usado somente nos testes de comportamento. Não se faz alegação de desempenho do jogo a partir desses testes.
+
+## Verificações gerais do repositório nesta revisão
+
+- Carregamento real em Vulkan concluiu, com auditorias de vias e quebra-mar sem erros. Esta rodada não é um benchmark comparativo da abertura.
+- Rotinas ambientais dos pedestres: PASS. LOD dos pedestres: PASS, zero falhas.
+- Menu em headless: falhou na transição após o limite de 120 segundos; o carregamento encadeado reportou erros em HarborGame/HarborPreview/Bullet. A campanha carregada diretamente passou. A falha geral não foi atribuída à montagem de fotos.
+
+- Menu em Vulkan: Novo Jogo, pausa, configurações, criação de save e volta ao menu passaram. Restaram duas falhas no botão do slot de carregamento e na transição pós-load; 24 objetos foram reportados no encerramento. Não se considera a suíte geral de menus aprovada.
+
+## Histórico de verificações anteriores
+
 # Verificação da abertura — 11/09/2026
 
 ## Refinamento de mãos, objetos e ligação

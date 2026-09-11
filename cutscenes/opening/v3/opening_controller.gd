@@ -3,7 +3,7 @@ signal finished(destination_beat: StringName)
 signal skipped(destination_beat: StringName)
 signal cue_requested(cue_id: StringName, payload: Dictionary)
 const Timeline=preload("res://cutscenes/opening/v3/opening_timeline.gd")
-const Stage=preload("res://cutscenes/opening/v3/opening_stage.gd")
+
 @export var auto_start:=true
 @export var show_studio_intro:=false
 @export var allow_skip:=true
@@ -32,8 +32,10 @@ var _studio_card: Control
 var _studio_audio: AudioStreamPlayer
 var _skip_button: Button
 var _skip_dialog: ConfirmationDialog
-var _view: SubViewport
-var stage: Node3D
+var _still: TextureRect
+var _textures: Array[Texture2D]=[]
+var _phone_en: Texture2D
+var _phone_pt: Texture2D
 var _timing: Dictionary
 var _captions: Array=[]
 var _fired: Dictionary={}
@@ -45,15 +47,14 @@ var _generation:=0
 
 func _ready() -> void:
 	process_mode=Node.PROCESS_MODE_ALWAYS
-	%FrameA.hide(); %FrameB.hide()
-	var surface:=SubViewportContainer.new(); surface.name="CinematicSurface"
-	surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	surface.stretch=true; surface.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	add_child(surface); move_child(surface,2)
-	_view=SubViewport.new(); _view.name="CinematicWorld"; _view.own_world_3d=true
-	_view.size=Vector2i(1280,720); _view.msaa_3d=Viewport.MSAA_2X
-	_view.render_target_update_mode=SubViewport.UPDATE_ALWAYS
-	surface.add_child(_view); stage=Stage.new(); _view.add_child(stage)
+	%FrameB.hide()
+	_still=%FrameA; _still.show()
+	_still.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	for index in Timeline.SHOTS.size():
+		_textures.append(load(Timeline.image_path(index)) as Texture2D)
+	_still.texture=_textures[0]
+	_phone_pt=_textures[6]
+	_phone_en=load(Timeline.image_path(6).replace(".jpg","_en.jpg")) as Texture2D
 	var grade:=ColorRect.new(); grade.name="FilmGrade"
 	grade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); grade.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	var shader:=Shader.new()
@@ -105,9 +106,10 @@ func restart() -> void:
 	if is_instance_valid(_studio_card): _studio_card.queue_free(); _studio_card=null
 	if is_instance_valid(_studio_audio): _studio_audio.queue_free(); _studio_audio=null
 	var lang:="en" if TranslationServer.get_locale().begins_with("en") else "pt"
-	_captions=_timing[lang]; stage.lang=lang
+	_captions=_timing[lang]
+	_textures[6]=_phone_en if lang=="en" else _phone_pt
 	_procedural_audio.configure(lang,playback_speed)
-	stage.set_time(0)
+	_still.texture=_textures[0]
 	if show_studio_intro:
 		_studio_card=preload("res://cutscenes/opening/scripts/rcm_studio_card.gd").new()
 		add_child(_studio_card); _studio_card.elapsed=.04
@@ -146,24 +148,22 @@ func _process(delta: float) -> void:
 			_studio_card.queue_free(); _studio_card=null; _studio_audio.stop()
 			_procedural_audio.play_from(0); _shot_index=0
 		return
-	_total_elapsed=minf(68,_total_elapsed+delta*playback_speed)
+	_total_elapsed=minf(Timeline.TOTAL_DURATION_SECONDS,_total_elapsed+delta*playback_speed)
 	_show_time(_total_elapsed)
-	if _total_elapsed>=68: _finish(false,.18)
+	if _total_elapsed>=Timeline.TOTAL_DURATION_SECONDS: _finish(false,.8)
 
 func _show_time(time: float) -> void:
 	_shot_index=Timeline.shot_at(time)
 	_shot_elapsed=time-float(_shots[_shot_index].start)
 	_black.color.a=1-smoothstep(0,.7,time)
-	# Uma breve elipse na luz; os demais cortes pertencem a uma mesma ação.
-	if time>41.85 and time<42.15: _black.color.a=1-absf(time-42)/.15
-	var mouth:=0.0
+	# Elipses entre espacos; as fotografias permanecem imoveis.
+	for cut in [47.0+Timeline.E,55.0+Timeline.E]:
+		if absf(time-cut)<.18: _black.color.a=1-absf(time-cut)/.18
 	_subtitle.hide()
 	for caption in _captions:
 		if time>=float(caption.start)-.08 and time<float(caption.end)+.28:
 			_subtitle.text=String(caption.text); _subtitle.show()
-			if caption.id=="dante" and time<float(caption.end):
-				mouth=(.5+.5*sin((time-float(caption.start))*23))*sin(clampf((time-float(caption.start))/.12,0,1)*PI/2)
-	stage.set_time(time,mouth)
+	_still.texture=_textures[_shot_index]
 	_progress.value=time
 	_shot_label.text="%02d · %s" % [_shot_index+1,_shots[_shot_index].id]
 	for cue in Timeline.CUES:
@@ -177,14 +177,15 @@ func seek(time: float) -> void:
 	_generation+=1; _starting=false; _studio_waiting_for_draw=false
 	if is_instance_valid(_studio_card): _studio_card.queue_free(); _studio_card=null
 	if is_instance_valid(_studio_audio): _studio_audio.stop()
-	_total_elapsed=clampf(time,0,67.999); _fired.clear()
+	_total_elapsed=clampf(time,0,Timeline.TOTAL_DURATION_SECONDS-.001); _fired.clear()
 	for cue in Timeline.CUES:
 		if float(cue[0])<_total_elapsed: _fired[cue[1]]=true
 	_finishing=false; _completion_emitted=false; _running=true; _paused=false
 	_end_card.hide(); _skip_button.visible=allow_skip
 	_procedural_audio.configure(TranslationServer.get_locale(),playback_speed)
 	var lang:="en" if TranslationServer.get_locale().begins_with("en") else "pt"
-	_captions=_timing[lang]; stage.lang=lang
+	_captions=_timing[lang]
+	_textures[6]=_phone_en if lang=="en" else _phone_pt
 	_procedural_audio.play_from(_total_elapsed); _show_time(_total_elapsed)
 
 func pause_playback() -> void:

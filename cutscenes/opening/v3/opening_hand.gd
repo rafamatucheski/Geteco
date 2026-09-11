@@ -38,19 +38,23 @@ func build(hand_side: float, skin: StandardMaterial3D) -> void:
 	thumb_tip.name="ThumbContact"; add_child(thumb_tip)
 	set_grip(0)
 
-func set_grip(amount: float) -> void:
+func set_grip(amount: float, phone_grip := false) -> void:
 	var grip:=clampf(amount,0,1)
 	for i in fingers.size():
 		var joint: Node3D=fingers[i]
-		joint.rotation=Vector3(-lerpf(.13,.58,grip),0,(float(i)-1.5)*lerpf(.05,.012,grip))
+		joint.rotation=Vector3(lerpf(.13,.20 if phone_grip else .58,grip),0,(float(i)-1.5)*lerpf(.05,.012,grip))
 		joint=joint.get_child(1)
-		joint.rotation.x=-lerpf(.16,1.05,grip)
+		joint.rotation.x=lerpf(.16,.38 if phone_grip else 1.05,grip)
 		joint=joint.get_child(1)
-		joint.rotation.x=-lerpf(.08,.70,grip)
+		joint.rotation.x=lerpf(.08,.33 if phone_grip else .70,grip)
 	var a:=Vector3(side*.026,-.012,0)
 	var b:=Vector3(side*lerpf(.047,.034,grip),-.035,lerpf(-.002,-.041,grip))
+	if phone_grip:
+		# Polegar contorna a lateral; os outros dedos apoiam a traseira.
+		b=b.lerp(Vector3(-side*.025,-.030,-.050),grip)
 	var c:=Vector3(side*.041,-.061,-.003).lerp(contact_local,grip)
 	thumb_tip.position=c
+	thumb_tip.scale.z=.011*(1+(.5*grip if phone_grip else 0.0))
 	for i in 2:
 		var from: Vector3=a if i==0 else b
 		var to: Vector3=b if i==0 else c
