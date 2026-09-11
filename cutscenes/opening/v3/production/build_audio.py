@@ -21,8 +21,8 @@ RATE, LENGTH = 44100, 68
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
 RNG = np.random.default_rng(110926)
 LINES = {
- 'pt': [('release', 'Seu irmão saiu da prisão.', 'pt-BR-FranciscaNeural', '-8%', '-8Hz', 19.0),
-        ('harbor', 'Viram ele em Harbor. Depois, ninguém soube mais.', 'pt-BR-FranciscaNeural', '-4%', '-8Hz', 23.0),
+ 'pt': [('release', 'Seu irmão saiu da prisão.', 'pt-BR-ThalitaMultilingualNeural', '+0%', '+0Hz', 19.0),
+        ('harbor', 'Viram ele em Harbor. Não tive mais notícias.', 'pt-BR-ThalitaMultilingualNeural', '-2%', '+0Hz', 22.7),
         ('dante', 'Ele falou com você?', 'pt-BR-AntonioNeural', '-12%', '-12Hz', 27.0)],
  'en': [('release', 'Your brother was released from prison.', 'en-US-JennyNeural', '-5%', '-8Hz', 19.0),
         ('harbor', 'He was seen in Harbor. Nothing since then.', 'en-US-JennyNeural', '-2%', '-8Hz', 23.0),
@@ -75,6 +75,7 @@ async def main():
         stem=np.zeros((LENGTH*RATE,2)); manifest[lang]=[]
         for key,text,voice,rate,pitch,at in lines:
             path=SOURCES/f'{lang}_{key}.mp3'
+            if lang=='pt' and key!='dante': path=SOURCES/f'{lang}_{key}_thalita_v2.mp3'
             if not path.exists() or path.stat().st_size<100:
                 await edge_tts.Communicate(text,voice,rate=rate,pitch=pitch).save(str(path))
             x=read(path)
@@ -92,7 +93,9 @@ async def main():
                 env=np.max(np.abs(x),axis=1); active=np.flatnonzero(env>.004)
                 if len(active): x=x[max(0,active[0]-int(.02*RATE)):active[-1]+int(.07*RATE)]
             if key!='dante':
-                x=np.column_stack([filt(x[:,0],260,3500),filt(x[:,1],260,3500)])
+                # Coloração telefônica leve mantém consoantes e o timbre natural.
+                phone=np.column_stack([filt(x[:,0],180,4800),filt(x[:,1],180,4800)])
+                x=.82*phone+.18*x
             x=fade(x,.01,.04)
             x*=.42/max(np.max(np.abs(x)),.01)
             put(stem,x,at)
@@ -112,9 +115,9 @@ async def main():
     # Café: fluxo borbulhante e impacto cerâmico ao pousar.
     t=clock(2.2); pour=noise(2.2,180,4200)*(.12+.07*np.sin(t*37))
     put(foley,fade(pour,.25,.3),1.3,.45,-.15)
-    for at,f,g in [(4.1,840,.13),(8.4,220,.10),(11.1,110,.22),(30.4,170,.12),(37.3,130,.15),(40.3,920,.08),(44.5,95,.36)]:
+    for at,f,g in [(4.1,840,.13),(8.4,220,.10),(11.1,110,.22),(32.1,170,.12),(37.7,130,.15),(41.65,920,.08),(44.5,95,.36)]:
         put(foley,impact(f),at,g)
-    for at,d,g in [(6.8,.6,.18),(10.6,.5,.16),(33.7,.8,.3),(36.0,1.2,.23),(38.4,1.1,.24),(40.1,.8,.17),(54.2,.75,.22)]:
+    for at,d,g in [(6.8,.6,.18),(10.6,.5,.16),(33.7,.8,.3),(36.2,1.2,.23),(38.0,1.1,.24),(41.55,.45,.17),(53.25,1.2,.22)]:
         put(foley,rustle(d),at,g,-.10)
     # Toque curto e vibração encostada em madeira.
     for at in [16.0,16.65,17.3]:

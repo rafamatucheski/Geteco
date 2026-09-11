@@ -4,7 +4,7 @@ Implementada em 11/09/2026. A cena de produção `cutscenes/opening/OpeningCutsc
 
 ## Direção e narrativa
 
-A rotina de Dante é interrompida por uma notícia: o irmão saiu da prisão, foi visto em Harbor e desapareceu do contato. Dante leva a fotografia dos dois. O quadro vazio encerra a casa; a mesma fotografia reaparece no ônibus. A porta do ônibus abre e o jogo continua no desembarque, ainda de madrugada, com chuva. O irmão está vivo; a motivação é procurá-lo.
+A rotina de Dante é interrompida por uma notícia: o irmão saiu da prisão, foi visto em Harbor e desapareceu do contato. Dante retira a fotografia dos dois, guarda na mochila e a tira de lá no ônibus. O quadro vazio encerra a casa. A porta do ônibus abre e o jogo continua no desembarque, ainda de madrugada, com chuva. O irmão está vivo; a motivação é procurá-lo.
 
 | Tempo | Ação | Função dramática |
 |---|---|---|
@@ -21,7 +21,7 @@ A rotina de Dante é interrompida por uma notícia: o irmão saiu da prisão, fo
 
 ## Implementação
 
-`opening_stage.gd` constrói os cenários 3D e anima câmera, rig de Dante, braços por IK, olhos, boca, objetos, rodas e portas. A foto é uma textura compartilhada pelo quadro e pelo papel nas mãos. São cenários e animação procedural em estética estilizada do jogo; não é um filme fotorrealista nem captura de movimento.
+`opening_stage.gd` constrói os cenários 3D e anima câmera, rig de Dante, olhos, boca, rodas e portas. `opening_performance.gd` determina o percurso dos objetos e os contatos por IK; `opening_hand.gd` constrói a palma, quatro dedos com três segmentos e o polegar oposto. Os punhos se orientam pela pegada. A foto é um único objeto, que sai do quadro e fica oculto fisicamente pelas paredes da mochila. Não existe troca de visibilidade do papel durante esses planos. Gola e painéis da roupa receberam contornos mais suaves, preservando o personagem do jogo. São cenários e animação procedural em estética estilizada do jogo; não é um filme fotorrealista nem captura de movimento.
 
 `opening_timeline.gd` centraliza os dez planos e eventos. `opening_controller.gd` conserva os sinais `finished`/`skipped`, destino `bus_terminal_arrival`, preparo sem autoplay, pausa, seek, replay e confirmação de pulo. O fim só é emitido uma vez, após o fade. O relógio começa após o primeiro quadro desenhado, fora da tela de carregamento. O mundo permanece pausado durante a apresentação.
 
@@ -32,7 +32,7 @@ As vozes e legendas acompanham português/inglês. O áudio é offline em três 
 - `assets/brothers_photo.png`: retrato renderizado dentro do Godot com `DantePreviewRig.gd` / `DanteVisualAdapter.gd`. Dante e o irmão posam juntos diante de uma garagem; o irmão usa uma variação terrosa do mesmo figurino e cabelo discretamente grisalho. Ambos preservam geometria, proporções e materiais do elenco do jogo. Esta versão substitui a imagem de aparência realista a pedido do usuário. A mesma textura é usada em todos os planos. Recriação: Godot `--path . --script res://tests/visual/render_opening_family_photo.gd`.
 - Dante: rig e visual já existentes no projeto (`DantePreviewRig.gd` / `DanteVisualAdapter.gd`), com ajustes de pose e expressão limitados à cena.
 - Ônibus: modelo de produção `HarborTransitBusModel.gd`; rodas e porta animadas na cena.
-- Vozes sintetizadas: Microsoft Edge TTS via [edge-tts](https://github.com/rany2/edge-tts). PT: FranciscaNeural e AntonioNeural; EN: JennyNeural e GuyNeural. São vozes sintéticas, não gravações de atores. As seis fontes estão em `production/sources/`.
+- Vozes sintetizadas: Microsoft Edge TTS via [edge-tts](https://github.com/rany2/edge-tts). A pessoa que liga em PT usa ThalitaMultilingualNeural, sem alteração de pitch, substituindo FranciscaNeural. Dante usa AntonioNeural; EN usa JennyNeural e GuyNeural. O filtro da ligação preserva uma parcela do sinal original e mais frequências da fala. A segunda fala PT é “Viram ele em Harbor. Não tive mais notícias.”, de 22,7 a 26,094 s; legendas e duração são geradas do mesmo manifesto. São vozes sintéticas, não gravações de atores. As fontes atuais e anteriores ficam em `production/sources/`.
 - Música e efeitos pontuais: composição e síntese originais em `production/build_audio.py`, incluindo café, papel, tecido, telefone, passos, porta e ônibus.
 - Base urbana: `audio/living_city/street_0.ogg`, do banco do projeto. Fonte declarada CC0: Florian Reichelt, [Street ambience](https://freesound.org/people/florianreichelt/sounds/451734/), conforme `audio/living_city/SOURCES.json`.
 

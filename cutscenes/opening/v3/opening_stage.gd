@@ -49,6 +49,10 @@ var eye_scales: Dictionary={}
 var lip_scale:=Vector3.ONE
 var road_wheels: RefCounted
 var terminal_wheels: RefCounted
+var photo_frame: Node3D
+var hands: Array[Node3D] = []
+var palms: Array[Node3D] = []
+var performance: RefCounted
 
 func _ready() -> void:
 	physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -69,6 +73,7 @@ func _ready() -> void:
 	terminal = Node3D.new(); add_child(terminal)
 	_build_room()
 	_build_actor()
+	performance=preload("res://cutscenes/opening/v3/opening_performance.gd").new(self)
 	_build_road()
 	_build_cabin()
 	_build_terminal()
@@ -173,13 +178,13 @@ func _build_room() -> void:
 	for x in [-.17,.17]:
 		for z in [-.08,.23]: box(room,Vector3(x,.2,z),Vector3(.035,.4,.035),_wood)
 	# Porta-retrato: moldura física, vidro discreto e uma só fotografia.
-	var frame := Node3D.new(); frame.position=Vector3(-.49,.66,-.48); room.add_child(frame)
+	var frame := Node3D.new(); frame.position=Vector3(-.29,.66,-.32); room.add_child(frame)
+	photo_frame=frame
 	var brass := mat("9c8060",.5,.2)
 	box(frame,Vector3(0,.118,0),Vector3(.345,.243,.022),brass)
 	box(frame,Vector3(0,.118,-.014),Vector3(.316,.215,.009),mat("857764"))
-	frame_photo=quad(frame,Vector3(0,.118,-.020),Vector2(.291,.194),_photo_material())
 	loose_photo=Node3D.new(); add_child(loose_photo)
-	quad(loose_photo,Vector3.ZERO,Vector2(.291,.194),_photo_material())
+	frame_photo=quad(loose_photo,Vector3.ZERO,Vector2(.291,.194),_photo_material())
 	# Caixa: a farda é guardada, a foto fica fora.
 	var cardboard:=mat("756653")
 	box(room,Vector3(-.62,.73,-.25),Vector3(.36,.16,.24),cardboard)
@@ -235,13 +240,24 @@ func _build_phone() -> void:
 func _build_bag() -> void:
 	backpack=Node3D.new(); add_child(backpack)
 	var canvas:=mat("635640",.96)
-	sphere(backpack,Vector3(0,.19,0),Vector3(.28,.38,.17),canvas)
-	box(backpack,Vector3(0,.105,-.094),Vector3(.22,.15,.035),canvas)
+	# Interior aberto: o papel entra e fica oculto pelas paredes, sem hide() por tempo.
+	var front:=box(backpack,Vector3(0,.175,-.083),Vector3(.36,.35,.026),canvas)
+	front.mesh=_rounded_panel(Vector3(.36,.35,.026))
+	var back:=box(backpack,Vector3(0,.175,.083),Vector3(.36,.35,.026),canvas)
+	back.mesh=_rounded_panel(Vector3(.36,.35,.026))
+	for side in [-1,1]:
+		sphere(backpack,Vector3(side*.17,.17,0),Vector3(.035,.35,.17),canvas)
+	box(backpack,Vector3(0,.015,0),Vector3(.34,.03,.17),canvas)
+	box(backpack,Vector3(0,.105,-.109),Vector3(.27,.15,.028),canvas)
+	var handle:=MeshInstance3D.new(); var loop:=TorusMesh.new()
+	loop.inner_radius=.030; loop.outer_radius=.042; handle.mesh=loop
+	handle.material_override=canvas; handle.rotation.x=PI/2
+	handle.position=Vector3(0,.355,.038); backpack.add_child(handle)
 	for s in [-1,1]:
 		box(backpack,Vector3(s*.08,.23,.10),Vector3(.035,.31,.025),mat("302a21"))
 		box(backpack,Vector3(s*.065,.10,-.123),Vector3(.017,.035,.008),_metal)
 	flap=Node3D.new(); flap.position=Vector3(0,.36,.055); backpack.add_child(flap)
-	sphere(flap,Vector3(0,-.035,-.07),Vector3(.29,.075,.20),canvas)
+	sphere(flap,Vector3(0,-.015,-.055),Vector3(.38,.045,.20),canvas)
 
 func _build_actor() -> void:
 	actor=Node3D.new(); add_child(actor)
@@ -249,13 +265,24 @@ func _build_actor() -> void:
 	actor.add_child(Node3D.new())
 	host.build("dante_classic")
 	host.mat_black_jacket.albedo_color=Color(.72,.72,.72)
+	# Gola em V e cantos suaves evitam blocos aparentes nos planos próximos.
+	for part in host.torso_node.get_children():
+		if part is MeshInstance3D and part.mesh is BoxMesh:
+			var size: Vector3=part.mesh.size
+			if size.is_equal_approx(Vector3(.040,.060,.02)):
+				var surface:=SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+				for point in [Vector3(-.020,.030,-.011),Vector3(0,-.024,-.011),Vector3(.020,.030,-.011)]:
+					surface.set_normal(Vector3.FORWARD); surface.add_vertex(point)
+				part.mesh=surface.commit()
+			else:
+				part.mesh=_rounded_panel(size)
 	for lower in [host.left_lower_arm,host.right_lower_arm]:
 		var palm: Node3D=lower.get_node("Palm")
-		var fingers: MeshInstance3D=palm.get_child(2)
-		fingers.hide()
-		for i in 4:
-			var finger:=sphere(palm,Vector3((i-1.5)*.011,-.027,-.013),Vector3(.010,.031,.016),fingers.material_override)
-			finger.name="Finger%d" % i
+		var skin: StandardMaterial3D=palm.get_child(0).material_override
+		for child in palm.get_children(): child.hide()
+		var hand:=preload("res://cutscenes/opening/v3/opening_hand.gd").new()
+		palm.add_child(hand); hand.build(-1.0 if lower==host.left_lower_arm else 1.0,skin)
+		hands.append(hand); palms.append(palm)
 	for child in host.head_node.get_children():
 		if child is MeshInstance3D:
 			if absf(child.position.y-.019)<.001:
@@ -270,6 +297,17 @@ func _build_actor() -> void:
 				if child.position.z<-.093: pupils.append(child)
 			if absf(child.position.y-.039)<.001: brows.append(child)
 			if absf(child.position.y+.065)<.001: lip=child; lip_scale=child.scale
+
+func _rounded_panel(size: Vector3) -> ArrayMesh:
+	var surface:=SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var x:=size.x*.5; var y:=size.y*.5; var z:=size.z*.5
+	var bevel:=minf(x,y)*.17
+	var outline: Array[Vector2]=[Vector2(-x+bevel,-y),Vector2(x-bevel,-y),Vector2(x,-y+bevel),Vector2(x,y-bevel),Vector2(x-bevel,y),Vector2(-x+bevel,y),Vector2(-x,y-bevel),Vector2(-x,-y+bevel)]
+	for i in outline.size():
+		var a:=outline[i]; var b:=outline[(i+1)%outline.size()]
+		for point in [Vector3(0,0,-z),Vector3(a.x,a.y,-z),Vector3(b.x,b.y,-z),Vector3(0,0,z),Vector3(b.x,b.y,z),Vector3(a.x,a.y,z),Vector3(a.x,a.y,-z),Vector3(b.x,b.y,z),Vector3(b.x,b.y,-z),Vector3(a.x,a.y,-z),Vector3(a.x,a.y,z),Vector3(b.x,b.y,z)]:
+			surface.set_uv(Vector2(point.x/size.x+.5,.5-point.y/size.y)); surface.add_vertex(point)
+	surface.generate_normals(); return surface.commit()
 
 func _build_road() -> void:
 	var asphalt:=mat("1b2635",.24,.15)
@@ -380,9 +418,6 @@ func set_time(t: float, mouth := 0.0) -> void:
 	cabin.visible=t>=53 and t<61; terminal.visible=t>=61
 	actor.visible=t<42 or (t>=53 and t<61)
 	rain.visible=t>=46 and not cabin.visible
-	phone.visible=t<38; backpack.visible=t>=31 and t<61
-	loose_photo.visible=(t>=34 and t<37.5) or (t>=54 and t<60.4)
-	frame_photo.visible=t<34
 	var night:=blend(t,38,43)
 	key.light_energy=lerpf(.85,.16,night); fill.light_energy=lerpf(.28,.18,night)
 	key.light_color=Color("ffdbac").lerp(Color("98b6d7"),night)
@@ -398,14 +433,9 @@ func set_time(t: float, mouth := 0.0) -> void:
 	host.head_node.rotation=Vector3(-.07,0,0)
 	host.left_upper_leg.rotation=Vector3(1.30,0,0); host.right_upper_leg.rotation=Vector3(1.30,0,0)
 	host.left_lower_leg.rotation=Vector3(-1.30,0,0); host.right_lower_leg.rotation=Vector3(-1.30,0,0)
-	var left:=Vector3(-.21,.85,-.33); var right:=Vector3(.25,.84,-.32)
 	mug.position=Vector3(.20,.657,-.35)
-	pot.position=Vector3(.31,.97,-.51); pot.rotation=Vector3(0,0,.12)
-	phone.position=Vector3(.02,.67,-.32); phone.rotation=Vector3(PI/2,0,.1)
 	phone_label.text="IRMÃO" if lang=="pt" else "BROTHER"
 	screen.emission_energy_multiplier=.35 if t>=13 else .02
-	backpack.position=Vector3(.70,.30,.12); backpack.rotation=Vector3(0,-.15,-.12)
-	flap.rotation.x=-.7*(1-blend(t,38.4,39.4))
 	lid.rotation.x=-.9*(1-blend(t,10.4,11.1))
 	door.rotation.y=-.65*(blend(t,42,43)-blend(t,43.8,44.5))
 	pour.visible=t>1.3 and t<3.5
@@ -432,55 +462,27 @@ func set_time(t: float, mouth := 0.0) -> void:
 	if is_instance_valid(lip): lip.scale.y=lip_scale.y*(1+mouth*1.8)
 	for pupil in pupils: pupil.position.x=signf(pupil.position.x)*.043+sin(t*.7)*.001
 	if t<6:
-		right=actor.to_local(pot.position+Vector3(.056,.01,0))
-		left=Vector3(-.23,.83,-.25)
 		host.head_node.rotation.x=-.15
 		_camera(Vector3(-.55,1.23,-1.68).lerp(Vector3(-.40,1.17,-1.52),t/6),Vector3(.05,.85,-.30),35)
 	elif t<13:
-		var touch:=blend(t,6.4,7.3)*(1-blend(t,8.4,9.5))
-		left=left.lerp(Vector3(-.35,.96,-.20),touch)
-		left=left.lerp(Vector3(-.43,.97,-.02),blend(t,10,10.7)*(1-blend(t,11.1,12)))
 		host.head_node.rotation=Vector3(-.10,-.15,0)
 		_camera(Vector3(-.69,1.06,-1.31).lerp(Vector3(-.63,.96,-1.14),(t-6)/7),Vector3(-.49,.79,-.32),31)
 	elif t<18:
-		var reach:=blend(t,13,14.2)
-		right=right.lerp(Vector3(.02,.94,-.21),reach*(1-blend(t,15.0,15.7)))
-		phone.position.x+=sin(t*85)*.0009*float(t>=16)
 		if t>=16: phone_label.text="CHAMADA" if lang=="pt" else "CALL"
 		if t>15 and t<16: screen.emission_energy_multiplier=0
 		_camera(Vector3(-.13,1.20,-.86),Vector3(.02,.68,-.32),29)
 	elif t<31:
-		var answer:=blend(t,18,19)
-		var phone_target:=Vector3(.156,1.16,-.016)
-		right=right.lerp(phone_target,answer)
-		phone.position=Vector3(.02,.67,-.32).lerp(actor.position+phone_target,answer)
-		phone.rotation=Vector3(PI/2,0,.1).lerp(Vector3(0,.30,-.14),answer)
 		host.head_node.rotation=Vector3(-.015-blend(t,22,26)*.025,-.05+blend(t,25,28)*.08,0)
-		left.y-=blend(t,21,23)*.045
 		if t<26.6:
 			_camera(Vector3(-.57,1.16,-1.38).lerp(Vector3(-.44,1.13,-1.17),(t-18)/8.6),Vector3(0,1.03,-.015),31)
 		else:
 			_camera(Vector3(-.25,1.11,-.90),Vector3(0,1.055,-.02),30)
 	elif t<38:
 		phone_label.text=("CHAMANDO" if lang=="pt" else "DIALING") if t<33 else ("SEM RESPOSTA" if lang=="pt" else "NO ANSWER")
-		var lower:=blend(t,31,32.2)
-		phone.position=(actor.position+Vector3(.156,1.16,-.016)).lerp(Vector3(.02,.67,-.32),lower)
-		phone.rotation=Vector3(0,.30,-.14).lerp(Vector3(PI/2,0,.1),lower)
-		right=Vector3(.156,1.16,-.016).lerp(Vector3(.26,.84,-.32),lower)
-		var take:=blend(t,33.2,34.4)
-		left=left.lerp(Vector3(-.31,.97,-.23),take)
-		loose_photo.position=Vector3(-.49,.778,-.50).lerp(Vector3(-.12,.84,-.30),blend(t,34,35))
-		loose_photo.position=loose_photo.position.lerp(Vector3(-.08,.88,-.10),blend(t,36,37.5))
-		loose_photo.rotation=Vector3(-.2,0,-.03)
-		if t>=34:
-			left=actor.to_local(loose_photo.position+Vector3(-.13,-.04,0))
-			right=actor.to_local(loose_photo.position+Vector3(.13,-.04,0))
 		host.head_node.rotation=Vector3(-.20,-.12,0)
 		_camera(Vector3(-.50,1.12,-1.50),Vector3(-.08,.89,-.14),37)
 	elif t<42:
 		host.head_node.rotation.x=-.18
-		right=Vector3(.35,.91,.02); left=Vector3(.24,.90,-.09)
-		backpack.position=Vector3(.39,.61,-.20); backpack.rotation=Vector3.ZERO
 		_camera(Vector3(.86,1.26,-1.02),Vector3(.34,.85,-.14),36)
 	elif t<46:
 		_camera(Vector3(-.76,.97,-1.31),Vector3(-.38,.79,-.32),36)
@@ -494,10 +496,6 @@ func set_time(t: float, mouth := 0.0) -> void:
 	elif t<61:
 		var age:=t-53
 		actor.position=Vector3(-.58,-.14+sin(age*6)*.002,.12)
-		backpack.position=Vector3(.03,.45,.14); backpack.rotation=Vector3(0,.12,-.09)
-		left=Vector3(-.18,.91,-.30); right=Vector3(.18,.91,-.30)
-		loose_photo.position=actor.position+Vector3(0,.88,-.32)
-		loose_photo.rotation=Vector3(-.35,0,0)
 		host.head_node.rotation=Vector3(-.20,0,0).lerp(Vector3(-.02,-.45,0),blend(t,57.2,60))
 		passing.position=Vector3(-1.65,1.20,-.8+fmod(age*1.3,3))
 		passing.light_energy=.45*pow(maxf(0,sin(age*1.8)),3)
@@ -515,5 +513,4 @@ func set_time(t: float, mouth := 0.0) -> void:
 		for wheel in terminal_wheels.spinners: wheel.rotation.x=-stop*10/.5
 		if t<65.8: _camera(Vector3(10,4.7,-12),Vector3(-.6,1.2,1.2),41)
 		else: _camera(Vector3(-3.2,1.6,-7.5),Vector3(-1.15,1.35,-4.05),40)
-	_arm(host.left_upper_arm,host.left_lower_arm,left,Vector3(-.8,-1,0))
-	_arm(host.right_upper_arm,host.right_lower_arm,right,Vector3(1,-.7,-.1))
+	performance.apply(t)

@@ -17,7 +17,7 @@ const SHOTS := [
 const CUES := [
 	[1.3, &"coffee_pour"], [8.4, &"photo_frame"], [11.1, &"uniform_box"],
 	[16.0, &"phone_ring_old"], [18.2, &"phone_answer_click"],
-	[19.0, &"voice_caller_release"], [23.0, &"voice_caller_harbor"],
+	[19.0, &"voice_caller_release"], [22.7, &"voice_caller_harbor"],
 	[27.0, &"voice_dante_who_are_you"], [29.45, &"phone_disconnect"],
 	[33.7, &"photo_paper"], [36.0, &"jacket_fabric"], [38.0, &"music_travel"],
 	[38.4, &"backpack_buckle"], [42.2, &"floor_steps"], [44.5, &"door_close"],

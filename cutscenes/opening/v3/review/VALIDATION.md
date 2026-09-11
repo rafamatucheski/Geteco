@@ -1,5 +1,14 @@
 # Verificação da abertura — 11/09/2026
 
+## Refinamento de mãos, objetos e ligação
+
+- Palma e dedos modelados no estilo do jogo; polegar em oposição e articulações para a pegada. Punhos orientados pela foto, telefone e alça da cafeteira.
+- Foto única: contato antes da retirada, transporte até a mochila, inserção pela abertura e retirada no ônibus. O papel é ocultado pela geometria da mochila, sem desaparecer por marcação de tempo. O telefone sai da mesa após o contato e retorna ao apoio antes da mão soltá-lo; depois é recolhido e guardado junto da foto.
+- Voz PT da ligação substituída por ThalitaMultilingualNeural com pitch original, texto mais curto e filtro menos restritivo. Continua sendo TTS; a preferência pela interpretação deve ser julgada na prévia. Mix PT gerado com pico −7,47 dBFS.
+- `test_opening_contacts_v3.gd`: PASS, amostragem a 60 Hz nas ações. Maior distância entre polegar e contato durante a pegada: aproximadamente 0,1 mm. Maior deslocamento de foto/telefone entre amostras dentro dos intervalos: 23,0 mm. Verifica também seek regressivo e permanência do mesmo papel nos momentos que antes acionavam hide/show. Isso verifica pontos de contato e continuidade, não certifica ausência de qualquer interpenetração entre todas as malhas.
+- `test_opening_stage_v3.gd`: PASS, contatos, foto, portas e idioma. `test_opening_cutscene_runtime.gd`: PASS, reprodução natural completa de 68 s, pausa, retomada e conclusão única. Referências: 0 quebras novas. Inspeção visual das etapas em `contact_*.png` e prévia completa atualizadas.
+- A importação geral ainda reportou `CarjackedDriver.tscn: Busy`; o carregamento e a captura da abertura passaram. As falhas gerais de save/load e áudio urbano listadas abaixo não foram reavaliadas nesta alteração de atuação.
+
 ## Correção de direção artística
 
 A fotografia de aparência realista foi substituída por um retrato renderizado no Godot, usando o construtor de personagens de produção. Conferidos visualmente o asset, o quadro na casa e a fotografia nas mãos de Dante no ônibus. A captura dos planos passou; `test_opening_stage_v3.gd` passou nas verificações de identidade da textura, poses e idioma. Essa execução headless reportou recursos de áudio ainda em uso no encerramento; não se considera esse aviso resolvido por esta alteração de arte. A importação geral também reportou `CarjackedDriver.tscn: Busy`; o carregamento e a captura da abertura concluíram. Verificador de referências: 0 quebras novas. Prévia completa atualizada com a fotografia estilizada.

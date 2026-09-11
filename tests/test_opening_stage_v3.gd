@@ -10,16 +10,17 @@ func run() -> void:
 	await process_frame
 	var stage: Node3D=opening.stage
 	stage.set_time(2.4)
-	var coffee_hand: Vector3=stage.host.right_lower_arm.get_node("Palm").global_position
-	check(coffee_hand.distance_to(stage.pot.position+Vector3(.056,.01,0))<.03,"Mão permanece no recipiente durante o café")
+	var coffee_hand: Vector3=stage.hands[1].thumb_tip.global_position
+	check(coffee_hand.distance_to(stage.pot.to_global(Vector3(.077,0,-.012)))<.008,"Dedos permanecem na alça durante o café")
 	stage.set_time(21)
-	var phone_hand: Vector3=stage.host.right_lower_arm.get_node("Palm").global_position
-	check(phone_hand.distance_to(stage.phone.position)<.03,"Mão acompanha o telefone no ouvido")
+	var phone_hand: Vector3=stage.hands[1].thumb_tip.global_position
+	check(phone_hand.distance_to(stage.phone.to_global(Vector3(-.014,-.020,-.011)))<.008,"Dedos acompanham o telefone no ouvido")
 	for eye in stage.eyes: check(eye.scale.y<.03,"Animação de piscar preserva a anatomia")
 	stage.set_time(35)
 	var photo: Texture2D=stage.frame_photo.material_override.albedo_texture
 	check(photo==stage.loose_photo.get_child(0).material_override.albedo_texture,"Fotografia idêntica no quadro e nas mãos")
-	check(not stage.frame_photo.visible and stage.loose_photo.visible,"Foto sai do quadro quando Dante a pega")
+	var frame_origin: Vector3=stage.photo_frame.to_global(Vector3(0,.118,-.020))
+	check(stage.loose_photo.visible and stage.loose_photo.position.distance_to(frame_origin)>.15,"O mesmo papel se afasta fisicamente do quadro")
 	stage.set_time(57)
 	check(stage.loose_photo.visible and stage.cabin.visible and not stage.room.visible,"Foto acompanha Dante no ônibus")
 	stage.set_time(67.8)

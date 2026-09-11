@@ -1,20 +1,20 @@
 extends RefCounted
-# Gerado por production/build_audio.py
+# Gerado por production/build_audio.py; incluído automaticamente no export.
 const LINES := {
   "pt": [
     {
       "id": "release",
       "text": "Seu irmão saiu da prisão.",
-      "voice": "pt-BR-FranciscaNeural",
+      "voice": "pt-BR-ThalitaMultilingualNeural",
       "start": 19.0,
-      "end": 20.904
+      "end": 20.946
     },
     {
       "id": "harbor",
-      "text": "Viram ele em Harbor. Depois, ninguém soube mais.",
-      "voice": "pt-BR-FranciscaNeural",
-      "start": 23.0,
-      "end": 26.627
+      "text": "Viram ele em Harbor. Não tive mais notícias.",
+      "voice": "pt-BR-ThalitaMultilingualNeural",
+      "start": 22.7,
+      "end": 26.094
     },
     {
       "id": "dante",
