@@ -26,6 +26,8 @@ const GUARD := 8
 static var _streams: Dictionary = {}
 static var _layer_sets: Dictionary = {}
 static var _road_stream: AudioStreamWAV = null
+static var _turbo_shift_streams: Array = []
+static var _air_brake_stream: AudioStream = null
 
 var rpm := 0.0
 var load_amount := 0.0
@@ -46,6 +48,11 @@ var _family := ""
 var _stream_cache_key := ""
 var _layer_players: Array = []
 var _road_player: AudioStreamPlayer2D = null
+var _shift_player: AudioStreamPlayer2D = null
+var _air_player: AudioStreamPlayer2D = null
+var _previous_throttle := 0.0
+var _was_moving_fast := false
+var _shift_variation := 0
 var _assigned_stream: AudioStream = null
 var _limiter_phase := 0.0
 var _idle_phase := 0.0
@@ -153,7 +160,7 @@ const _PROFILES := {
 		# volta e o diesel vira um zumbido liso (batida medida caiu a 0.04).
 		"res": [[62.0, 7.0, 1.35], [150.0, 5.0, 0.62], [1900.0, 6.0, 0.30]],
 		"knock": [0.55, 1950.0], "intake": [0.13, 1250.0, 1.3],
-		"whine": [26.0, 0.075], "drive": [1.2, 1.5, 1.9],
+		"whine": [98.0, 0.095], "drive": [1.2, 1.5, 1.9],
 		"pattern_amp": [1.0, 0.9, 1.08, 0.93, 1.04, 0.88],
 	},
 	"bus": {
@@ -164,7 +171,7 @@ const _PROFILES := {
 		# constante, que é o que separa ônibus de caminhão para o ouvido.
 		"res": [[46.0, 8.0, 1.4], [128.0, 6.0, 0.7], [300.0, 5.0, 0.34]],
 		"knock": [0.30, 1500.0], "intake": [0.11, 820.0, 1.6],
-		"whine": [21.0, 0.115], "drive": [1.1, 1.35, 1.7],
+		"whine": [92.0, 0.105], "drive": [1.1, 1.35, 1.7],
 		"pattern_amp": [1.0, 0.93, 1.05, 0.95, 1.02, 0.9],
 	},
 	"fire_diesel": {
@@ -172,7 +179,7 @@ const _PROFILES := {
 		"decay": [4.6, 3.9, 3.4], "sub": 0.46,
 		"res": [[50.0, 7.0, 1.4], [162.0, 5.0, 0.68], [1750.0, 5.5, 0.32]],
 		"knock": [0.50, 1850.0], "intake": [0.15, 1400.0, 1.2],
-		"whine": [24.0, 0.06], "drive": [1.25, 1.6, 2.1],
+		"whine": [95.0, 0.085], "drive": [1.25, 1.6, 2.1],
 		"pattern_amp": [1.0, 0.91, 1.07, 0.94, 1.03, 0.89],
 	},
 	"ambulance": {
@@ -334,6 +341,17 @@ static func get_stream(family: String, vehicle_id: String = "") -> AudioStream:
 static func prewarm(vehicle_id: String) -> void:
 	get_layer_streams(family_for_vehicle(vehicle_id), vehicle_id)
 	get_road_stream()
+	get_turbo_shift_stream(0)
+	get_air_brake_stream()
+
+static func prepare_catalog(tree: SceneTree) -> void:
+	for spec in VehicleCatalog.get_all_specs():
+		var vehicle_id := String(spec.id)
+		if _layer_sets.has(_cache_key(vehicle_id, family_for_vehicle(vehicle_id))):
+			continue
+		if tree != null:
+			await tree.process_frame
+		prewarm(vehicle_id)
 
 # ---------------------------------------------------------------------------
 # Síntese
@@ -545,6 +563,141 @@ static func get_road_stream() -> AudioStreamWAV:
 	_road_stream = stream
 	return stream
 
+## Assobio característico de alívio da turbina em caminhões e ônibus ("tipiuuuuuu" /
+## "pente na turbina"). Três variações acústicas orgânicas (ataque estridente,
+## flutter longo de palheta e descarga com sopro pneumático).
+static func get_turbo_shift_stream(variation: int = 0) -> AudioStream:
+	var idx := posmod(variation, 3)
+	while _turbo_shift_streams.size() < 3:
+		_turbo_shift_streams.append(null)
+	if _turbo_shift_streams[idx] != null:
+		return _turbo_shift_streams[idx]
+
+	for path in [
+		"%s/turbo_shift_%d.wav" % [_VEHICLE_AUDIO_DIR, idx],
+		"%s/turbo_shift.wav" % _VEHICLE_AUDIO_DIR,
+		"%s/turbo_shift_%d.wav" % [_AUDIO_DIR, idx],
+		"%s/turbo_shift.wav" % _AUDIO_DIR,
+		"%s/pente_turbina.wav" % _AUDIO_DIR
+	]:
+		if ResourceLoader.exists(path):
+			var authored := load(path)
+			if authored is AudioStream:
+				_turbo_shift_streams[idx] = authored
+				return authored
+
+	var duration: float = [0.65, 0.58, 0.75][idx]
+	var frames := int(RATE * duration)
+	var samples := PackedFloat32Array()
+	samples.resize(frames)
+
+	var start_freq: float = [3150.0, 3450.0, 2850.0][idx]
+	var end_freq: float = [1480.0, 1680.0, 1220.0][idx]
+	var flutter_rate: float = [32.0, 36.0, 28.0][idx]
+	var flutter_depth: float = [115.0, 140.0, 90.0][idx]
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 12345 + idx * 987
+
+	var phase := 0.0
+	for i in frames:
+		var t := float(i) / float(RATE)
+		var progress := t / duration
+
+		var f_curve: float = exp(-progress * 3.8)
+		var base_freq: float = lerpf(end_freq, start_freq, f_curve)
+		var flutter := sin(TAU * flutter_rate * t) * flutter_depth * (1.0 - progress * 0.45)
+		var current_freq: float = maxf(base_freq + flutter, 200.0)
+
+		phase += TAU * current_freq / float(RATE)
+
+		var whistle := sin(phase) * 0.70 + sin(phase * 2.0) * 0.22 + sin(phase * 3.0) * 0.08
+		var attack: float = clampf(t / 0.025, 0.0, 1.0)
+		var decay: float = exp(-t * (4.2 if idx != 2 else 3.6))
+		var tremolo := 1.0 + 0.25 * sin(TAU * flutter_rate * t)
+		var whistle_amp: float = attack * decay * tremolo
+
+		var noise := rng.randf_range(-1.0, 1.0)
+		var air_decay: float = exp(-t * 6.5)
+		var air_amp: float = attack * air_decay * 0.35
+
+		var transient: float = 0.0
+		if t < 0.04:
+			var tr_env := sin(PI * t / 0.04)
+			transient = rng.randf_range(-1.0, 1.0) * tr_env * 0.45
+
+		samples[i] = whistle * whistle_amp + noise * air_amp + transient
+
+	var peak := 0.0001
+	for i in frames:
+		peak = maxf(peak, absf(samples[i]))
+	var scale: float = 0.85 / peak
+
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	for i in frames:
+		var s := clampf(samples[i] * scale, -0.999, 0.999)
+		data.encode_s16(i * 2, int(s * 32767.0))
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = RATE
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = data
+	_turbo_shift_streams[idx] = stream
+	return stream
+
+## Alívio pneumático de freio a ar de veículos pesados ("TCHÚÚÚ-ssss").
+static func get_air_brake_stream() -> AudioStream:
+	if _air_brake_stream != null:
+		return _air_brake_stream
+
+	for path in [
+		"%s/air_brake.wav" % _VEHICLE_AUDIO_DIR,
+		"%s/air_brake.wav" % _AUDIO_DIR,
+		"%s/freio_ar.wav" % _AUDIO_DIR
+	]:
+		if ResourceLoader.exists(path):
+			var authored := load(path)
+			if authored is AudioStream:
+				_air_brake_stream = authored
+				return authored
+
+	var duration := 0.70
+	var frames := int(RATE * duration)
+	var samples := PackedFloat32Array()
+	samples.resize(frames)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 998877
+
+	for i in frames:
+		var t := float(i) / float(RATE)
+		var attack := clampf(t / 0.02, 0.0, 1.0)
+		var puff := exp(-t * 14.0) * 0.80
+		var hiss := exp(-t * 3.5) * 0.45
+		var noise := rng.randf_range(-1.0, 1.0)
+		var thud := sin(TAU * 120.0 * t) * exp(-t * 22.0) * 0.35
+		samples[i] = (noise * (puff + hiss) + thud) * attack
+
+	var peak := 0.0001
+	for i in frames:
+		peak = maxf(peak, absf(samples[i]))
+	var scale: float = 0.80 / peak
+
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	for i in frames:
+		var s := clampf(samples[i] * scale, -0.999, 0.999)
+		data.encode_s16(i * 2, int(s * 32767.0))
+
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = RATE
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = data
+	_air_brake_stream = stream
+	return stream
+
 # ---------------------------------------------------------------------------
 # Reprodução
 # ---------------------------------------------------------------------------
@@ -576,6 +729,45 @@ func _sync_layer_players(audio: AudioStreamPlayer2D, layers: Array) -> void:
 			player.stop()
 			player.stream = null
 
+func _ensure_sub_player(audio: AudioStreamPlayer2D, existing: AudioStreamPlayer2D) -> AudioStreamPlayer2D:
+	if is_instance_valid(existing):
+		return existing
+	var player := AudioStreamPlayer2D.new()
+	player.bus = audio.bus
+	player.max_distance = audio.max_distance
+	player.attenuation = audio.attenuation
+	player.panning_strength = audio.panning_strength
+	player.volume_db = -60.0
+	audio.add_child(player)
+	return player
+
+func _play_turbo_shift(audio: AudioStreamPlayer2D, load: float, current_rpm: float) -> void:
+	if audio == null or not audio.is_inside_tree():
+		return
+	_shift_player = _ensure_sub_player(audio, _shift_player)
+	_shift_variation = (_shift_variation + 1) % 3
+	var stream := get_turbo_shift_stream(_shift_variation)
+	if stream == null:
+		return
+	_shift_player.stream = stream
+	var load_factor: float = clampf(load, 0.25, 1.0)
+	var rpm_factor: float = clampf(current_rpm, 0.35, 1.0)
+	_shift_player.volume_db = clampf(-7.0 + load_factor * 6.0 + rpm_factor * 3.0, -14.0, 2.0)
+	_shift_player.pitch_scale = clampf(0.96 + (rpm_factor - 0.5) * 0.16 + (load_factor - 0.5) * 0.10, 0.85, 1.25)
+	_shift_player.play()
+
+func _play_air_brake(audio: AudioStreamPlayer2D) -> void:
+	if audio == null or not audio.is_inside_tree():
+		return
+	_air_player = _ensure_sub_player(audio, _air_player)
+	var stream := get_air_brake_stream()
+	if stream == null:
+		return
+	_air_player.stream = stream
+	_air_player.volume_db = -6.0
+	_air_player.pitch_scale = randf_range(0.96, 1.04)
+	_air_player.play()
+
 ## Liga o controlador ao player do veículo já com a família certa. Os
 ## controladores chamavam `get_stream("street", id)` na criação e na troca de
 ## carro; com camadas isso plantava o timbre errado no player principal e o
@@ -592,6 +784,15 @@ func bind(audio: AudioStreamPlayer2D, vehicle_id: String) -> void:
 	_sync_layer_players(audio, layers)
 	rpm = 0.0
 	gear = 1
+	shift_remaining = 0.0
+	shift_cooldown = 0.0
+	load_amount = 0.0
+	_was_moving_fast = false
+	_previous_throttle = 0.0
+	if is_instance_valid(_shift_player) and _shift_player.playing:
+		_shift_player.stop()
+	if is_instance_valid(_air_player) and _air_player.playing:
+		_air_player.stop()
 	get_road_stream()
 
 ## Os controladores param o motor pelo player deles; as camadas extras são
@@ -602,6 +803,10 @@ func stop() -> void:
 			player.stop()
 	if is_instance_valid(_road_player):
 		_road_player.stop()
+	if is_instance_valid(_shift_player) and _shift_player.playing:
+		_shift_player.stop()
+	if is_instance_valid(_air_player) and _air_player.playing:
+		_air_player.stop()
 
 func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle: float, delta: float, vehicle_id: String, boosting: bool = false) -> void:
 	if audio == null:
@@ -617,6 +822,12 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 		_assigned_stream = layers[0]
 		rpm = 0.0
 		gear = 1
+		_was_moving_fast = false
+		_previous_throttle = 0.0
+		if is_instance_valid(_shift_player) and _shift_player.playing:
+			_shift_player.stop()
+		if is_instance_valid(_air_player) and _air_player.playing:
+			_air_player.stop()
 	_sync_layer_players(audio, layers)
 	# Carros com gravação exclusiva (Monaliza) trocam o stream por fora. Nesse
 	# caso não há camadas para cruzar: modula só o player do dono.
@@ -634,11 +845,27 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 		gear += 1
 	elif shift_cooldown <= 0.0 and gear > 1 and ratio < _gear_bottom(gear) - _DOWNSHIFT_MARGIN:
 		gear -= 1
+	var is_heavy: bool = _family in ["truck", "bus", "fire_diesel"]
 	if gear != previous_gear:
 		shift_remaining = float(_shift_spec()[0])
 		# A histerese de _DOWNSHIFT_MARGIN é o que impede chatter; o cooldown só
 		# precisa cobrir o corte de torque mais uma folga curta.
 		shift_cooldown = shift_remaining + 0.16
+		if gear > previous_gear and is_heavy and (load_amount > 0.20 or rpm > 0.30):
+			_play_turbo_shift(audio, load_amount, rpm)
+
+	if is_heavy and shift_remaining <= 0.0 and shift_cooldown <= 0.0:
+		if _previous_throttle > 0.65 and absf(throttle) < 0.15 and rpm > 0.42:
+			_play_turbo_shift(audio, 0.75, rpm)
+			shift_cooldown = 0.45
+
+	if is_heavy:
+		if speed > 20.0:
+			_was_moving_fast = true
+		elif _was_moving_fast and speed < 6.0 and absf(throttle) < 0.1:
+			_was_moving_fast = false
+			_play_air_brake(audio)
+	_previous_throttle = absf(throttle)
 
 	var blend := 1.0 - exp(-step * 9.0)
 	load_amount = lerpf(load_amount, clampf(absf(throttle), 0.0, 1.0), blend)
