@@ -445,6 +445,16 @@ apagar — preserva histórico e segue a convenção já estabelecida no projeto
   `legacy/CentralDistrict.gd` e por `tests/test_save_gate_engine_families.gd` (que
   existe justamente para garantir que o upgrade legado continua desativado). Não é
   código morto, é cobertura de compatibilidade com saves antigos.
+- **`MissionManager.gd`, `IronCobraMember.gd`, `IronCobraCulDeSac.gd`** (raiz):
+  encontrados ao ler o conteúdo desses arquivos para resolver o plano de reorganização
+  ([docs/PLANO_REORGANIZACAO_PASTAS.md](PLANO_REORGANIZACAO_PASTAS.md)) — mesma
+  categoria dos dois itens acima. `MissionManager.gd` só é instanciado por
+  `legacy/CentralDistrict.gd` (a menção em `CampaignState.gd` é um comentário dizendo o
+  oposto: que `CampaignState` não o chama). `IronCobraCulDeSac.gd`/`IronCobraMember.gd`
+  são uma implementação antiga da gangue/território Cobra (cul-de-sac estilo Grove
+  Street) usada só através do `MissionManager.gd` legado — o sistema de gangue Cobra
+  **vivo** é outro, em `world/harbor/cobras/`. Os dois coexistem no repositório sem
+  nenhum aviso de que um deles é o remanescente.
 - **`ChopShopCrusher3D.gd`/`ChopShopZone.gd`** (raiz): ao contrário do que os documentos
   de backlog sugerem ("área de desmanche de carros" listada como não implementada em
   `MAP1_EXPANSION_BACKLOG.md`), esses dois scripts **são usados por

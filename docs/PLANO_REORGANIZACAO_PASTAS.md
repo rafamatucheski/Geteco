@@ -16,8 +16,9 @@ Duas decisões já tomadas (2026-09-15):
    **continuam existindo como estão** — são as duas regiões jogáveis do mapa, não
    sistemas, e misturar o conteúdo das duas dentro de `/Police` ou `/Cars` dissolveria
    essa organização por região sem necessidade. O que entra neste plano é: os **82
-   scripts soltos na raiz do projeto** e os **~166 scripts de `world/shared/`** (14
-   subpastas + 6 arquivos soltos na própria raiz de `world/shared/`) — o material que
+   scripts soltos na raiz do projeto** (6 deles são só do jogo legado, vão para
+   `legacy/`, não para um domínio — ver adiante) e os **160 scripts de `world/shared/`**
+   (14 subpastas + 6 arquivos soltos na própria raiz de `world/shared/`) — o material que
    hoje não tem nenhum dono de região, ou está solto sem categoria nenhuma.
 2. **Timing**: só planejar agora. Execução fica para quando `EmergencyVehicle.gd` e
    `PoliceOfficer.gd` — sendo editados por outra sessão no momento deste plano — forem
@@ -28,16 +29,21 @@ Duas decisões já tomadas (2026-09-15):
 Pastas novas na **raiz do projeto** (nome em minúsculo, para bater com a convenção já
 usada em `ui/`, `world/`, `audio/`, `assets/`):
 
-| pasta | conteúdo | origem | arquivos (~) |
+Contagem exata (recontada arquivo por arquivo depois de resolver os casos ambíguos):
+
+| pasta | conteúdo | origem | arquivos |
 |---|---|---|---|
-| `cars/` | veículos, motos, ferro-velho/garagem, corrida | raiz + `world/shared/traffic,motorcycles,salvage` | ~44 |
-| `guns/` | armas, projéteis, efeitos de combate/dano | raiz + `world/shared/combat,ammunation` | ~35 |
-| `police/` | polícia, procurado, apreensão | raiz + `world/shared/pickups` | ~7 |
-| `emergency/` | ambulância, bombeiro, coroner, despacho | raiz + `world/shared/emergency` | ~44 |
-| `characters/` | jogador (a pé e de carro), pedestres, NPCs, gangues, roupas | raiz + `world/shared/pedestrians` | ~29 |
-| `geodata/` | malha viária, ferrovia, natureza, trânsito intermunicipal, props de mundo | raiz + `world/shared/roads,rail,nature,transit` + soltos | ~32 |
-| `economy/` | coletáveis, dinheiro, loja, conquistas | raiz | ~7 |
-| `systems/` | autoloads genéricos, apresentação/render, manutenção de mundo | raiz + `world/shared/atmosphere,interiors` + soltos de `world/shared/` | ~16 |
+| `cars/` | veículos, motos, ferro-velho/garagem, corrida | raiz (19) + `world/shared/traffic,motorcycles,salvage` (33) | 52 |
+| `guns/` | armas, projéteis, efeitos de combate/dano | raiz (8) + `world/shared/combat,ammunation` + solto (28) | 36 |
+| `police/` | polícia, procurado, apreensão | raiz (4) + `world/shared/pickups,emergency(Police*)` (6) | 10 |
+| `emergency/` | ambulância, bombeiro, coroner, despacho | raiz (8) + `world/shared/emergency` restante (33) | 41 |
+| `characters/` | jogador (a pé e de carro), pedestres, NPCs, gangues, roupas | raiz (12) + `world/shared/pedestrians` (15) | 27 |
+| `geodata/` | malha viária, ferrovia, natureza, trânsito intermunicipal, props de mundo | raiz (5) + `world/shared/roads,rail,nature,transit` + soltos (34) | 39 |
+| `economy/` | coletáveis, dinheiro, loja, conquistas | raiz (5) | 5 |
+| `systems/` | autoloads genéricos, apresentação/render, manutenção de mundo | raiz (11) + `world/shared/atmosphere,interiors,traffic(PopulationActivity)` + soltos (11) | 22 |
+
+Total: 232 arquivos (72 da raiz + 160 de `world/shared/`), fora os 6 que vão para
+`legacy/` e os 4 que vão para `ui/`/`audio/`.
 
 `world/shared/` fica **retirado** ao final (todo o conteúdo redistribuído); `world/harbor/`
 e `world/mountain_pass/` continuam apontando para esses domínios pelos novos caminhos
@@ -57,14 +63,10 @@ Dois casos **não** viram pasta de domínio nova, por já terem endereço melhor
 | raiz | `VehicleCatalog.gd`, `VehicleDoorVisual.gd`, `VehicleDrivetrain.gd`, `VehicleGeometryCache.gd`, `VehicleLaunchControl.gd`, `VehicleMeshBatcher.gd`, `VehicleMotionSafety.gd`, `VehicleSkidMarks.gd`, `VehicleSurfaceWear2D.gd`, `VehicleTireTrail.gd`, `VehicleBoarding.gd` |
 | raiz | `RaceCatalog.gd`, `DriftZoneCatalog.gd`, `DriftChallengeZone.gd`, `NightRaceController.gd` |
 | raiz | `ChopShopCrusher3D.gd`, `ChopShopZone.gd`, `CarChalkboard.gd`, `CustomsWorkshopMenu.gd` |
-| `world/shared/traffic/` | todos os 15: `CameraSimulationArea`, `EmergencyRoadManeuver`, `LanePedestrianCorridor`, `ParkedVehicleSpawn`, `PopulationActivity`\*, `TaxiDestinations`, `TaxiRoute`, `TaxiService`, `TrafficBodySweep`, `TrafficEmergencyYield`, `TrafficFlowModel`, `TrafficHorn`, `TrafficSimulationBudget`, `TrafficSirenManeuver`, `TrafficVehicle` |
+| `world/shared/traffic/` | 14 (todos exceto `PopulationActivity`, que vai para `systems/` — ver abaixo): `CameraSimulationArea`, `EmergencyRoadManeuver`, `LanePedestrianCorridor`, `ParkedVehicleSpawn`, `TaxiDestinations`, `TaxiRoute`, `TaxiService`, `TrafficBodySweep`, `TrafficEmergencyYield`, `TrafficFlowModel`, `TrafficHorn`, `TrafficSimulationBudget`, `TrafficSirenManeuver`, `TrafficVehicle` |
 | `world/shared/motorcycles/` | todos os 7: `CruiserMotorcycle`, `DanteMotorcycleRider`, `MotorcycleCatalog`, `MotorcycleModel`, `MotorcycleSilhouette`, `SportMotorcycle`, `UrbanMotorcycle` |
 | `world/shared/salvage/` | todos os 12: `Neco`, `SalvageAudio`, `SalvageBayMarker`, `SalvageFloodlights`, `SalvageLedger`, `SalvageLocation`, `SalvageLocator`, `SalvageSign`, `SalvageTargetMarker`, `SalvageYard3D`, `TowJobs`, `TowService` |
 | raiz (legado, não vivo) | `VehicleUpgradeManager.gd` — **não vai para `cars/`**, vai para `legacy/` (ver seção de legado abaixo) |
-
-\* `PopulationActivity.gd` orçamenta pedestres **e** veículos juntos — poderia ir para
-`characters/` também. Ficou em `cars/` por conveniência de já estar ao lado do resto de
-`traffic/`; ajuste se preferir.
 
 ### `guns/`
 
@@ -104,7 +106,7 @@ no `project.godot` muda.
 
 | origem | arquivo |
 |---|---|
-| raiz | `Player.gd`, `PlayerCar.gd`, `PlayerCombatPose.gd`, `AnimatedPedestrian3D.gd`, `PedestrianDanger.gd`, `JagerNPC.gd`, `CarjackedDriver.gd`, `GangManager.gd`, `IronCobraMember.gd`, `CharacterFallPresentation.gd`, `CharacterPreview3D.gd`, `OutfitCatalog.gd`, `ClothingStore.gd` |
+| raiz | `Player.gd`, `PlayerCar.gd`, `PlayerCombatPose.gd`, `AnimatedPedestrian3D.gd`, `PedestrianDanger.gd`, `JagerNPC.gd`, `CarjackedDriver.gd`, `GangManager.gd`, `CharacterFallPresentation.gd`, `CharacterPreview3D.gd`, `OutfitCatalog.gd`, `ClothingStore.gd` |
 | `world/shared/pedestrians/` | todos os 15: `AuthoredSidewalkPedestrian`, `CitizenAppearance`, `CitizenDetails`, `CitizenFace`, `CitizenGait`, `CitizenGeometry`, `CitizenMorphology`, `CitizenSculpt`, `NPCCombatRig`, `PedestrianNeighborhood`, `PedestrianWalkSpace`, `PersonMotion`, `ProfessionalDriverModel`, `ServiceUniformDetails`, `WinterWardrobe` |
 
 ### `geodata/`
@@ -131,10 +133,11 @@ tudo o resto (recompensa/progressão do jogador, não um sistema de simulação)
 
 | origem | arquivo |
 |---|---|
-| raiz (autoloads genéricos) | `SaveManager.gd`, `SettingsManager.gd`, `Localization.gd`, `CampaignState.gd`, `DistrictRestrictionManager.gd`, `RegionTravel.gd`, `PresentationBudget.gd`, `MissionManager.gd` |
+| raiz (autoloads genéricos) | `SaveManager.gd`, `SettingsManager.gd`, `Localization.gd`, `CampaignState.gd`, `DistrictRestrictionManager.gd`, `RegionTravel.gd`, `PresentationBudget.gd` |
 | raiz (apresentação/render) | `DynamicCamera.gd`, `RenderQuality.gd`, `ContactShadow.gd`, `DayNightWeatherManager.gd` |
 | `world/shared/atmosphere/` | todos os 3: `AtmospherePalette`, `AtmosphereProfile`, `RegionalAtmosphere` |
 | `world/shared/interiors/` | todos os 4: `ExteriorOcclusion`, `InteriorActorPresentation`, `InteriorSolidProjection`, `InteriorVehiclePresentation` |
+| `world/shared/traffic/` | `PopulationActivity.gd` — lido a fundo: liga/desliga simulação (`_process`, colisão, SubViewport) de veículos **e** pedestres por proximidade da câmera, para economia de frame. Não é sobre carro, é orçamento de simulação genérico — por isso saiu de `cars/` e veio pra cá. |
 | `world/shared/` (soltos) | `WorldRenewal.gd`, `LivePoseShadow.gd`, `StaticGroundShadow.gd` |
 
 \* `PhysicalCargo.gd` é sobre carga física carregável (provavelmente ligado a caminhões
@@ -154,28 +157,39 @@ lar óbvio; é o caso mais fraco deste mapeamento, ajuste se souber o uso real.
 |---|---|---|
 | raiz | `GarageMenu.gd`, `GarageMenu.tscn`, `GarageTrigger.gd`, `GarageTrigger.tscn` | só referenciados por `legacy/city_demo/scripts/CityDemo.gd` |
 | raiz | `VehicleUpgradeManager.gd` | só referenciado por `legacy/CentralDistrict.gd` e por um teste de compatibilidade |
+| raiz | `MissionManager.gd` | só instanciado por `legacy/CentralDistrict.gd`. A menção em `CampaignState.gd` é só um comentário dizendo o oposto — que `CampaignState` **não** chama `MissionManager`. Não confundir com o sistema de missão vivo, que é `world/harbor/campaign/` (Cobra) + `MissionVoiceMixer.gd`, que já fica em `audio/`. |
+| raiz | `IronCobraMember.gd`, `IronCobraCulDeSac.gd` | implementação antiga da gangue/território "Cobra de Ferro" (cul-de-sac estilo Grove Street, brasão, barris de fogo), usada só por `MissionManager.gd` → `legacy/CentralDistrict.gd`. O sistema de gangue Cobra **vivo** é outro, em `world/harbor/cobras/` (`CobraTerritory.gd` e afins) — os dois coexistem no repositório, só um está no jogo atual. |
 
-Esse é o único grupo que já tinha entrado no [levantamento anterior](ESTADO_DO_PROJETO.md#arquivos-não-utilizados-varredura-verificada)
-como recomendação de baixo risco — continua valendo independente do resto deste plano
-maior.
+Esses 5 arquivos legado-only já estavam no [levantamento de arquivos não utilizados](ESTADO_DO_PROJETO.md#arquivos-não-utilizados-varredura-verificada)
+como recomendação de baixo risco (os 3 originais); `MissionManager.gd` e `IronCobra*.gd`
+foram identificados como o mesmo caso ao ler o conteúdo pra resolver os itens ambíguos
+deste plano — vale atualizar aquele levantamento também.
 
-## Casos ambíguos — peço uma palavra sua antes de executar
+## Casos que estavam ambíguos — todos lidos e resolvidos
 
-1. `PopulationActivity.gd` — orçamenta pedestres e veículos juntos. Proposto em `cars/`
-   (fica com o resto de `traffic/`), mas é igualmente sobre `characters/`.
-2. `IronCobraCulDeSac.gd` — não abri o conteúdo a fundo; pelo nome pode ser layout físico
-   do território Cobra (→ `geodata/`) ou identidade da gangue (→ `characters/`). Proposto
-   em `characters/` por consistência com os outros arquivos `IronCobra*`.
-3. `ClothingStore.gd`/`OutfitCatalog.gd` — propostos em `characters/` (aparência), mas
-   têm cara de `economy/` (loja/compra). Ajuste se preferir agrupar toda loja junto.
+Todos os itens que restavam foram abertos e lidos por inteiro para decidir o destino em
+vez de chutar pelo nome:
 
-Nenhum desses casos trava o plano — são pequenos o bastante para mover de novo depois se
-a primeira escolha não ficar boa.
-
-**Resolvidos nesta rodada**: `PlayerCar.gd` → `characters/` (decisão do usuário, não
-`cars/`); `PhysicalCargo.gd` → `geodata/`, ao lado de `BreakableProp.gd` (mesma função —
-física de objeto de mundo empurrável/quebrável, só usado por `HarborStorageArt.gd` e pelo
-teste do `WorldRenewal`).
+- **`PlayerCar.gd`** → `characters/` (decisão do usuário, não `cars/`).
+- **`PhysicalCargo.gd`** → `geodata/`, ao lado de `BreakableProp.gd`: lido por inteiro,
+  é física de objeto de mundo empurrável/quebrável (caixote/carga, dano por impacto de
+  veículo, debris ao quebrar), só usado por `world/harbor/HarborStorageArt.gd` e pelo
+  teste do `WorldRenewal` — mesma função do irmão, não tem nada de "logística de
+  caminhão" como o nome sugeria.
+- **`PopulationActivity.gd`** → `systems/`, não `cars/`: lido por inteiro, liga/desliga
+  simulação de veículos **e** pedestres pela mesma lógica de proximidade da câmera, é
+  orçamento de performance genérico, não comportamento de carro.
+- **`IronCobraCulDeSac.gd`/`IronCobraMember.gd`** → **não são domínio nenhum, são
+  legado**: lidos por inteiro, só `legacy/CentralDistrict.gd` (via `MissionManager.gd`)
+  os usa. É uma implementação antiga da gangue Cobra (cul-de-sac estilo Grove Street) que
+  ficou para trás quando o sistema vivo migrou para `world/harbor/cobras/`. Movidos para
+  a tabela de legado abaixo, junto com o `MissionManager.gd` que os instancia.
+- **`ClothingStore.gd`/`OutfitCatalog.gd`** → confirmados em `characters/`: lidos por
+  inteiro, são a loja de roupas (`ClothingStore.gd`, `CanvasLayer` usado por
+  `Player.gd` e `world/harbor/interiors/ClothingRoom3D.gd`) e o catálogo de 10 roupas do
+  Dante com proteção contra frio (`OutfitCatalog.gd`). Ficam junto do personagem pelo
+  mesmo motivo de `WeaponStore.gd` ficar em `guns/` — catálogo+loja de um domínio moram
+  no domínio, não em `economy/`, que fica reservado a recompensa/pickup genérico.
 
 ## O que fica de fora desta rodada, e por quê
 
