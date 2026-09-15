@@ -1,7 +1,7 @@
 extends Area2D
 ## Repaint cached scenery only over actors whose feet are behind its ground edge.
 ## Physics is supplied separately by the visual geometry's projected footprint.
-const MASK = preload("res://world/shared/interiors/ExteriorOcclusion.gdshader")
+const MASK = preload("res://systems/interiors/ExteriorOcclusion.gdshader")
 var source: Sprite2D
 var overlay: CanvasItem
 var front_y := 0.0
@@ -13,7 +13,7 @@ var drawn_rect := Rect2()
 var bodies: Array[Node2D] = []
 
 static func attach(sprite: Sprite2D, floor_edge: float, zone_margin := 200.0) -> Area2D:
- var zone = load("res://world/shared/interiors/ExteriorOcclusion.gd").new()
+ var zone = load("res://systems/interiors/ExteriorOcclusion.gd").new()
  zone.source = sprite
  zone.front_y = floor_edge
  zone.margin = zone_margin
@@ -23,7 +23,7 @@ static func attach(sprite: Sprite2D, floor_edge: float, zone_margin := 200.0) ->
 ## `rect` e `floor_edge` estão no espaço local de `owner`; `paint` recebe o
 ## CanvasItem onde desenhar e deve repetir só a parte em pé (sem sombra/chão).
 static func attach_drawn(owner: Node2D, rect: Rect2, floor_edge: float, paint: Callable, zone_margin := 80.0) -> Area2D:
- var zone = load("res://world/shared/interiors/ExteriorOcclusion.gd").new()
+ var zone = load("res://systems/interiors/ExteriorOcclusion.gd").new()
  zone.painter = paint
  zone.drawn_rect = rect
  zone.front_y = floor_edge

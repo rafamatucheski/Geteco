@@ -100,7 +100,7 @@ func _ready() -> void:
 		var canopy := Node2D.new()
 		canopy.name = "TreeCanopyOcclusion"
 		add_child(canopy)
-		preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach_drawn(canopy, feature.bounds, p.y, func(canvas: CanvasItem): _draw_landscape(feature, canvas))
+		preload("res://systems/interiors/ExteriorOcclusion.gd").attach_drawn(canopy, feature.bounds, p.y, func(canvas: CanvasItem): _draw_landscape(feature, canvas))
 	for p in [Vector2(6890,1635),Vector2(7170,1765),Vector2(7450,1450),Vector2(7980,1450),Vector2(8010,1920),Vector2(7450,1960)]:
 		var lamp := LAMP.new()
 		lamp.position = p

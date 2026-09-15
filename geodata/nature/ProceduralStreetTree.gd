@@ -5,7 +5,7 @@ extends StaticBody2D
 ## by Godot drawing primitives, so it stays crisp and consistent with the
 ## procedural buildings instead of looking like a pasted photograph.
 
-const OCCLUSION := preload("res://world/shared/interiors/ExteriorOcclusion.gd")
+const OCCLUSION := preload("res://systems/interiors/ExteriorOcclusion.gd")
 
 enum TreeStyle { STREET, BROADLEAF, PINE, COASTAL }
 

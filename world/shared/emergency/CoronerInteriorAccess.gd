@@ -71,7 +71,7 @@ func collection_position(worker: Node2D) -> Vector2:
 		worker.global_position = spawn
 		worker.velocity = Vector2.ZERO
 		worker.reset_physics_interpolation()
-		var presentation := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		var presentation := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		worker.add_child(presentation)
 		presentation.configure(worker,camera,display)
 		visitors[id] = weakref(presentation)

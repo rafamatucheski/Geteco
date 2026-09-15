@@ -159,7 +159,7 @@ func _ready() -> void:
 	add_child(ski_controller)
 	ski_controller.configure(self)
 
-	var dyn_cam = load("res://DynamicCamera.gd")
+	var dyn_cam = load("res://systems/DynamicCamera.gd")
 	if dyn_cam and camera:
 		camera.set_script(dyn_cam)
 		camera.set_process(true)
@@ -248,7 +248,7 @@ func _build_dante_3d_viewport() -> void:
 	shadow_mesh.material_override = shadow_mat
 	shadow_mesh.position = Vector3(0.0, 0.01, 0.0)
 	model_root.add_child(shadow_mesh)
-	preload("res://ContactShadow.gd").soften(shadow_mesh)
+	preload("res://systems/ContactShadow.gd").soften(shadow_mesh)
 
 	_rebuild_dante_costume()
 

@@ -72,7 +72,7 @@ func run() -> void:
 	check(entrance.request_interaction(actor), "Real lodge entry")
 	await create_timer(.4).timeout
 	check(actor.global_position.distance_to(room.spawn_point.global_position)<1, "Entry places full body at clear spawn")
-	var bounds := preload("res://world/shared/interiors/InteriorSolidProjection.gd").mesh_bounds(room.room_view.model)
+	var bounds := preload("res://systems/interiors/InteriorSolidProjection.gd").mesh_bounds(room.room_view.model)
 	for id in ["RentalCounter","RentalShelf","ChangingRooms","SkiRack","BootBench","Fireplace","LoungeBench"]:
 		check(bounds.has(StringName(id)), "Furniture inventory has mesh-derived solid: "+id)
 	for node in room.room_view.model.find_children("*","MeshInstance3D",true,false):
@@ -80,7 +80,7 @@ func run() -> void:
 	var visitor = load("res://AnimatedPedestrian3D.gd").new()
 	scene.add_child(visitor)
 	visitor.set_physics_process(false)
-	var presentation := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+	var presentation := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 	scene.add_child(presentation)
 	visitor.global_position = room.spawn_point.global_position
 	presentation.configure(visitor,room.camera_3d,room.sprite_3d)

@@ -37,7 +37,7 @@ func _ready() -> void:
 	collision_layer = 1
 	collision_mask = 0
 	_build_drum()
-	preload("res://ContactShadow.gd").add_2d(self, Vector2(15, 11), 0.35)
+	preload("res://systems/ContactShadow.gd").add_2d(self, Vector2(15, 11), 0.35)
 	var col := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = 9.0
@@ -117,7 +117,7 @@ func _build_drum() -> void:
 	sprite.texture = data["texture"]
 	sprite.position = Vector2(0, -22)
 	add_child(sprite)
-	_occlusion = preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(sprite, DRUM_H * 0.5)
+	_occlusion = preload("res://systems/interiors/ExteriorOcclusion.gd").attach(sprite, DRUM_H * 0.5)
 
 func _ensure_private_model() -> void:
 	if _has_private_model:

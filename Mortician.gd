@@ -112,7 +112,7 @@ func _build_3d_viewport() -> void:
 	key_light.light_color = Color(1.0, 0.98, 0.94)
 	key_light.light_energy = 1.35
 	viewport_3d.add_child(key_light)
-	preload("res://ContactShadow.gd").add_person(viewport_3d)
+	preload("res://systems/ContactShadow.gd").add_person(viewport_3d)
 
 	_build_mortician_rig()
 

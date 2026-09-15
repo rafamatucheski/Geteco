@@ -3,7 +3,7 @@ extends "res://prototypes/living_cast/HarborCoupe.gd"
 ## Standalone reward vehicle. Geometry/audio vary; interaction, rendering LOD,
 ## damage, garage paint and road handling remain the proven PlayerCar contract.
 const BOSS_MODEL := preload("res://prototypes/living_cast/BossMuscleModel.gd")
-const BOSS_CAMERA := preload("res://DynamicCamera.gd")
+const BOSS_CAMERA := preload("res://systems/DynamicCamera.gd")
 static var _v8_stream: AudioStreamWAV
 static var v8_stream_builds := 0
 
@@ -82,7 +82,7 @@ func _ready() -> void:
 	has_nitro = false
 	$Collision.shape.size = Vector2(82,35)
 	$BumperHitbox.get_child(0).shape.size = Vector2(84,37)
-	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(84,37))
+	preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(84,37))
 	headlight.position = Vector2(39,-12)
 	second_headlight.position = Vector2(39,12)
 	for index in brake_glows.size():

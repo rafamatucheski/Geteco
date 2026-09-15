@@ -40,7 +40,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(preload("res://RenderQuality.gd").new())
+	add_child(preload("res://systems/RenderQuality.gd").new())
 	_setup_audio_buses()
 	_resolve_settings_path()
 	load_settings()

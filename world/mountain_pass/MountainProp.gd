@@ -54,7 +54,7 @@ func _ready() -> void:
 	add_child(notifier)
 	var footprint: Vector2 = model.footprint_size
 	var shadow_size := Vector2(project(Vector3(footprint.x,0,0)).length(), project(Vector3(0,0,footprint.y)).length())
-	preload("res://ContactShadow.gd").add_box(self, shadow_size * 1.05, 0.44)
+	preload("res://systems/ContactShadow.gd").add_box(self, shadow_size * 1.05, 0.44)
 	if open_front:
 		_solid(Rect2(-footprint*0.5, Vector2(footprint.x,0.15)))
 		_solid(Rect2(-footprint*0.5, Vector2(0.15,footprint.y)))

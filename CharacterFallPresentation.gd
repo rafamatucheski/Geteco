@@ -86,7 +86,7 @@ func start(actor: Node, model: Node3D, render: SubViewport, impact := Vector2.ZE
 		shadow.material_override = material
 		shadow.position.y = 0.008
 		viewport.add_child(shadow)
-		preload("res://ContactShadow.gd").soften(shadow)
+		preload("res://systems/ContactShadow.gd").soften(shadow)
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	initial_shadow = shadow.transform
 	initial_alpha = shadow.material_override.albedo_color.a

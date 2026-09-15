@@ -191,7 +191,7 @@ func _ready() -> void:
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = Vector2(target_length * 0.78, maxf(24.0, crop.size.x * uniform_scale * 0.72))
 	collision.shape = rectangle
-	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, maxf(28.0, crop.size.x * uniform_scale * 1.08)))
+	preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, maxf(28.0, crop.size.x * uniform_scale * 1.08)))
 	var hit_shape := RectangleShape2D.new()
 	hit_shape.size = Vector2(target_length * 1.05, maxf(34.0, crop.size.x * uniform_scale * 0.95))
 	var pedestrian_collision := pedestrian_hitbox.get_node("Collision") as CollisionShape2D
@@ -199,7 +199,7 @@ func _ready() -> void:
 	pedestrian_hitbox.collision_mask = 5
 	
 	# Câmera dinâmica (desativada por padrão em carros de tráfego ambiente)
-	var dyn_cam = load("res://DynamicCamera.gd")
+	var dyn_cam = load("res://systems/DynamicCamera.gd")
 	if dyn_cam and camera:
 		camera.set_script(dyn_cam)
 		camera.enabled = false
@@ -237,7 +237,7 @@ func _ensure_camera() -> Camera2D:
 			camera = Camera2D.new()
 			camera.name = "Camera"
 			add_child(camera)
-		var dyn_cam = load("res://DynamicCamera.gd")
+		var dyn_cam = load("res://systems/DynamicCamera.gd")
 		if dyn_cam:
 			camera.set_script(dyn_cam)
 	return camera
@@ -783,7 +783,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	vehicle_id = archetype_id
 	display_name = spec.get("label", "Veículo")
 	target_length = float(spec.get("target_length", 76.0))
-	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, float(spec.get("target_width",34.0)) * 1.08))
+	preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, float(spec.get("target_width",34.0)) * 1.08))
 	vehicle_mass = float(spec.get("mass", 1.0))
 	max_speed = float(spec.get("max_speed", 490.0))
 	acceleration = float(spec.get("acceleration", 880.0))
@@ -981,7 +981,7 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 		visual.scale = Vector2(uniform_scale, uniform_scale)
 		visual.rotation = 0.0
 		visual.modulate = Color.WHITE
-		preload("res://ContactShadow.gd").add_vehicle(self, Vector2(t_len, t_wid))
+		preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(t_len, t_wid))
 
 	var rect_shape := RectangleShape2D.new()
 	rect_shape.size = Vector2(t_len * 0.82, maxf(10.0 if is_motorcycle else 28.0, t_wid * 0.88))
@@ -1343,7 +1343,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 	var approach := player_body.global_position
 	var entry_side := -1.0 if to_local(approach).y <= 0 else 1.0
 	if taxi_passenger: entry_side = 1.0
-	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
+	var camera_view := preload("res://systems/DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
 	player_entered.emit(self)
 	# A vehicle taken by the player remains parked when they walk away or
@@ -1386,7 +1386,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 	camera.enabled = true
 	camera.set_process(true)
 	camera.set_physics_process(true)
-	preload("res://DynamicCamera.gd").handoff(camera, camera_view)
+	preload("res://systems/DynamicCamera.gd").handoff(camera, camera_view)
 
 	if headlight: headlight.visible = true
 	_ensure_engine_audio()
@@ -1610,7 +1610,7 @@ func _complete_exit_vehicle(exit_position: Vector2) -> void:
 	if is_motorcycle and is_instance_valid(_driver) and _driver.has_method("ensure_motorcycle_helmet"):
 		_driver.ensure_motorcycle_helmet().dismount()
 	preload("res://cars/VehicleBoarding.gd").clear_occupant(self)
-	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
+	var camera_view := preload("res://systems/DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	velocity = Vector2.ZERO
 	speed = 0.0
@@ -1639,7 +1639,7 @@ func _complete_exit_vehicle(exit_position: Vector2) -> void:
 		_driver.set_physics_process(true)
 		var player_camera := _driver.get_node_or_null("Camera") as Camera2D
 		if player_camera != null:
-			preload("res://DynamicCamera.gd").handoff(player_camera, camera_view)
+			preload("res://systems/DynamicCamera.gd").handoff(player_camera, camera_view)
 	_driver = null
 	if taxi_passenger and is_instance_valid(_taxi_service): _taxi_service.finish_exit()
 	taxi_passenger = false

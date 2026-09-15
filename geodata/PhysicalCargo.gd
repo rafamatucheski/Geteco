@@ -14,7 +14,7 @@ var _undamaged_model := Transform3D.IDENTITY
 var _model_damage_captured := false
 
 func _ready() -> void:
-	preload("res://ContactShadow.gd").add_box(self, extent * 1.05, 0.48)
+	preload("res://systems/ContactShadow.gd").add_box(self, extent * 1.05, 0.48)
 	motion_mode = MOTION_MODE_FLOATING
 	platform_floor_layers = 0
 	platform_wall_layers = 0

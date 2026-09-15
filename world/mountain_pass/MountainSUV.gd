@@ -5,7 +5,7 @@ extends "res://prototypes/living_cast/HarborCoupe.gd"
 ## física para subida de serra, barra de LED e resistência off-road.
 
 const SUV_MODEL := preload("res://prototypes/living_cast/models/SummitSUVModel.gd")
-const SUV_CAMERA := preload("res://DynamicCamera.gd")
+const SUV_CAMERA := preload("res://systems/DynamicCamera.gd")
 
 func _init() -> void:
 	active_archetype_id = "summit_suv"

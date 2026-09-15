@@ -261,7 +261,7 @@ func set_npc_rendering_active(active: bool) -> void:
 			var rig = resident.get("model_root")
 			if rig == null: rig = resident.get("model")
 			if not rig is Node3D: continue
-			var presentation := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+			var presentation := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 			add_child(presentation)
 			presentation.configure(resident, get("camera_3d"), get("sprite_3d"))
 			_resident_presentations[resident] = presentation

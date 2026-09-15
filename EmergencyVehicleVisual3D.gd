@@ -90,7 +90,7 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	vehicle.visual.scale = Vector2.ONE * (PPM * camera.size / float(viewport.size.x))
 	vehicle.visual.global_rotation = 0.0
 	vehicle.visual.modulate = Color.WHITE
-	preload("res://ContactShadow.gd").add_vehicle(vehicle, Vector2(40,20) if motorcycle else Vector2(bounds.size.z, bounds.size.x) * PPM * 1.06)
+	preload("res://systems/ContactShadow.gd").add_vehicle(vehicle, Vector2(40,20) if motorcycle else Vector2(bounds.size.z, bounds.size.x) * PPM * 1.06)
 	_lamp_mounts.sort_custom(func(a: Vector3, b: Vector3): return a.x < b.x)
 	if vehicle.headlight and _lamp_mounts.size() >= 2:
 		_lamp_mounts = [_lamp_mounts[0], _lamp_mounts[-1]]

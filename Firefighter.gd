@@ -139,7 +139,7 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.name = "GroundShadow"
 	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	viewport_3d.add_child(shadow_mesh)
-	preload("res://ContactShadow.gd").soften(shadow_mesh)
+	preload("res://systems/ContactShadow.gd").soften(shadow_mesh)
 
 	# Uniforme Amarelo Mostarda de Resgate
 	mat_uniform = _make_mat(Color(0.85, 0.68, 0.10), 0.6)

@@ -1,8 +1,8 @@
 extends Node2D
 ## The port's existing props, with each collider derived from its visible meshes.
 const VIEW := preload("res://world/mountain_pass/MountainStaticModelView.gd")
-const PROJECTION := preload("res://world/shared/interiors/InteriorSolidProjection.gd")
-const OCCLUSION := preload("res://world/shared/interiors/ExteriorOcclusion.gd")
+const PROJECTION := preload("res://systems/interiors/InteriorSolidProjection.gd")
+const OCCLUSION := preload("res://systems/interiors/ExteriorOcclusion.gd")
 const PALLETS := preload("res://prototypes/harbor_art_pack/props/PortPalletStack3D.gd")
 const DRUMS := preload("res://prototypes/harbor_art_pack/props/PortDrumClusterPallet3D.gd")
 

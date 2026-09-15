@@ -52,7 +52,7 @@ func _run_test() -> void:
 
 	# 4. Testar Player na chuva (DayNightWeatherManager)
 	print("[PASSO 4] Ativando chuva no DayNightWeatherManager e testando passos molhados...")
-	var dnm_script = load("res://DayNightWeatherManager.gd")
+	var dnm_script = load("res://systems/DayNightWeatherManager.gd")
 	var dnm = CanvasModulate.new()
 	dnm.set_script(dnm_script)
 	root.add_child(dnm)

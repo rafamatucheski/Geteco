@@ -375,13 +375,13 @@ func _build_driver_visual() -> void:
 	sun.rotation_degrees = Vector3(-45,-25,0)
 	sun.light_energy = 1.5
 	driver_viewport.add_child(sun)
-	preload("res://ContactShadow.gd").add_person(driver_viewport)
+	preload("res://systems/ContactShadow.gd").add_person(driver_viewport)
 	var sprite := Sprite2D.new()
 	sprite.texture = driver_viewport.get_texture()
 	sprite.scale = Vector2.ONE*(15.0*2.6/128.0)
 	sprite.position = (Vector2(64,64)-camera.unproject_position(Vector3.ZERO))*sprite.scale
 	visual_root.add_child(sprite)
-	preload("res://ContactShadow.gd").add_silhouette(sprite,driver_viewport)
+	preload("res://systems/ContactShadow.gd").add_silhouette(sprite,driver_viewport)
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(driver_model): return

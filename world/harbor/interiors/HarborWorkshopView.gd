@@ -46,7 +46,7 @@ func build_workshop() -> void:
 			display_car.add_wheel(side, .34, axle, .34, .23, .23, 6)
 	for mesh in display_car.find_children("*", "MeshInstance3D", true, false):
 		mesh.set_meta("interior_solid_id", &"DisplayCar")
-	var car_bounds := preload("res://world/shared/interiors/InteriorSolidProjection.gd").mesh_bounds(display_car)
+	var car_bounds := preload("res://systems/interiors/InteriorSolidProjection.gd").mesh_bounds(display_car)
 	var car_rect: Rect2 = car_bounds[&"DisplayCar"]
 	display_car_body = add_solid(Rect2(-car_rect.end,car_rect.size), "MonalizaDisplayBody")
 	# Separate body follows the display car's visibility lifecycle.
@@ -67,7 +67,7 @@ func build_workshop() -> void:
 	mesh_body.collision_layer = 1
 	mesh_body.collision_mask = 0
 	add_child(mesh_body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(model,mesh_body,project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(model,mesh_body,project_floor)
 
 func _process(_delta: float) -> void:
 	_sync_display_car()

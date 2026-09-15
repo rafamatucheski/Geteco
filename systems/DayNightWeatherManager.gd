@@ -55,7 +55,7 @@ var regional_rain_exposure := 1.0
 
 func enable_regional_atmosphere() -> void:
 	if is_instance_valid(atmosphere): return
-	atmosphere = preload("res://world/shared/atmosphere/RegionalAtmosphere.gd").new()
+	atmosphere = preload("res://systems/atmosphere/RegionalAtmosphere.gd").new()
 	add_child(atmosphere)
 
 func set_regional_rain_exposure(value: float) -> void:

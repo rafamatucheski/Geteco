@@ -163,7 +163,7 @@ func _on_entrance_requested(entrance_self: BuildingEntrance, actor: Node2D, _des
 		if _actor_scale_helpers.has(actor):
 			_actor_scale_helpers[actor].restore()
 			_actor_scale_helpers[actor].queue_free()
-		var helper := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		var helper := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		add_child(helper)
 		helper.configure(actor, interior.camera_3d, interior.sprite_3d)
 		_actor_scale_helpers[actor] = helper

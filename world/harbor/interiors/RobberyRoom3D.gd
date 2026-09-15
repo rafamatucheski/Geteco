@@ -500,7 +500,7 @@ func _scale_npc(_person: Node2D, render: SubViewport, sprite: Sprite2D, point: V
 func _sync_actor_scale() -> void:
 	if not is_bank: return
 	if actor_present() and not is_instance_valid(actor_scale):
-		actor_scale=preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		actor_scale=preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		add_child(actor_scale)
 		actor_scale.configure(actor,room_camera,room_display)
 	elif not actor_present() and is_instance_valid(actor_scale):
@@ -527,7 +527,7 @@ func _sync_bank_people(active: bool) -> void:
 	if not active: return
 	for person in guards + civilians:
 		if not is_instance_valid(person) or person.get_parent() != self or _bank_presentations.has(person): continue
-		var adapter := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		var adapter := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		add_child(adapter)
 		adapter.configure(person, room_camera, room_display)
 		_bank_presentations[person] = adapter

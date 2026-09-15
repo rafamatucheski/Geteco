@@ -103,7 +103,7 @@ func _build_3d_viewport() -> void:
 	viewport_3d.add_child(light)
 
 	_build_model()
-	preload("res://ContactShadow.gd").add_person(viewport_3d)
+	preload("res://systems/ContactShadow.gd").add_person(viewport_3d)
 
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport_3d.get_texture()

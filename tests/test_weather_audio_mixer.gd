@@ -1,5 +1,5 @@
 extends SceneTree
-const WEATHER := preload("res://DayNightWeatherManager.gd")
+const WEATHER := preload("res://systems/DayNightWeatherManager.gd")
 var failures := 0
 
 func _initialize() -> void:

@@ -60,7 +60,7 @@ func setup(model_kind: String, rect: Rect2, variant: int) -> void:
 			var bounds := Rect2(polygon[0], Vector2.ZERO)
 			for point in polygon: bounds = bounds.expand(point)
 			body.set_meta("solid_rects_local", [bounds])
-		preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(sprite_3d, rect.size.y * .5)
+		preload("res://systems/interiors/ExteriorOcclusion.gd").attach(sprite_3d, rect.size.y * .5)
 
 	# Retain one rendered image per object, with no continuous 3D simulation.
 	set_process(false)

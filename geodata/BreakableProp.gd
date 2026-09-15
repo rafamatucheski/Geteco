@@ -6,9 +6,9 @@ var broken := false
 
 func _ready() -> void:
 	if debris_material in ["trash", "wood"]:
-		preload("res://ContactShadow.gd").add_box(self, extent * 1.05, 0.48)
+		preload("res://systems/ContactShadow.gd").add_box(self, extent * 1.05, 0.48)
 	else:
-		preload("res://ContactShadow.gd").add_2d(self, extent * 1.18, 0.36)
+		preload("res://systems/ContactShadow.gd").add_2d(self, extent * 1.18, 0.36)
 
 func receive_vehicle_impact(speed: float, direction: Vector2) -> void:
 	if broken or speed < (65.0 if debris_material == "wood" else 35.0): return

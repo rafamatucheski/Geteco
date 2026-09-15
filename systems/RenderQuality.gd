@@ -70,7 +70,7 @@ func _configure_display(display) -> void:
 	elif host.get("sprite_3d") == display and host.has_method("project_floor"):
 		viewport = host.get("viewport_3d") as SubViewport
 		if viewport != null and host.get("model") is Node3D:
-			preload("res://world/shared/StaticGroundShadow.gd").build(host,host.model,viewport)
+			preload("res://systems/StaticGroundShadow.gd").build(host,host.model,viewport)
 		return
 	if viewport == null or not viewport.transparent_bg: return
-	preload("res://ContactShadow.gd").add_silhouette(display,viewport)
+	preload("res://systems/ContactShadow.gd").add_silhouette(display,viewport)

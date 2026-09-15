@@ -15,7 +15,7 @@ func install_projected_solids() -> void:
 	solid_body.collision_layer = 1
 	solid_body.collision_mask = 0
 	add_child(solid_body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(model,solid_body,project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(model,solid_body,project_floor)
 	set_process(true)
 
 func _process(delta: float) -> void:
@@ -30,7 +30,7 @@ func _process(delta: float) -> void:
 	for actor in get_tree().get_nodes_in_group("player") + get_tree().get_nodes_in_group("winter_resident"):
 		if _actors.has(actor) or not actor.is_visible_in_tree() or actor.has_meta("interior_actor_presentation") or actor.has_meta("mountain_interior") or actor.has_meta("mountain_lift_riding") or actor.has_meta("mountain_falling"): continue
 		if not _contains_actor(actor): continue
-		var helper := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		var helper := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		add_child(helper)
 		helper.configure(actor,camera_3d,sprite_3d)
 		_actors[actor] = helper

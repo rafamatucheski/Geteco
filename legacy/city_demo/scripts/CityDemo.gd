@@ -99,7 +99,7 @@ func _inject_hud():
 		var effects = effects_script.new()
 		get_parent().call_deferred("add_child", effects)
 
-	var weather_script = load("res://DayNightWeatherManager.gd")
+	var weather_script = load("res://systems/DayNightWeatherManager.gd")
 	if weather_script:
 		var weather = weather_script.new()
 		get_parent().call_deferred("add_child", weather)

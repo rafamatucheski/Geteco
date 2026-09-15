@@ -29,7 +29,7 @@ func _ready() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	add_child(body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(view.model, body, func(point: Vector2): return to_local(view.to_global(view.project_floor(point))))
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(view.model, body, func(point: Vector2): return to_local(view.to_global(view.project_floor(point))))
 	gate_shape = body.get_node("BoardingGate")
 	spawn_point = Marker2D.new()
 	spawn_point.name = "SpawnPoint"

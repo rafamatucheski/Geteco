@@ -1,6 +1,6 @@
 extends SceneTree
 ## Actual SFX-bus recording: quieter storm bed + public weapon audio APIs.
-const WEATHER := preload("res://DayNightWeatherManager.gd")
+const WEATHER := preload("res://systems/DayNightWeatherManager.gd")
 const BANK := preload("res://audio/combat/CombatAudioBank.gd")
 func _initialize() -> void:
 	call_deferred("run")

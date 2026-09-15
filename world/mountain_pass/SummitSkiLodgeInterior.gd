@@ -148,7 +148,7 @@ func _build_projected_solids() -> void:
 	walls_body.collision_layer = 1
 	walls_body.collision_mask = 0
 	add_child(walls_body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(room_view.model,walls_body,room_view.project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(room_view.model,walls_body,room_view.project_floor)
 
 func set_npc_rendering_active(active: bool) -> void:
 	super.set_npc_rendering_active(active)

@@ -3,7 +3,7 @@ var failures: Array[String] = []
 var checks := 0
 var world: Node2D
 var player: CharacterBody2D
-const SOLIDS = preload("res://world/shared/interiors/InteriorSolidProjection.gd")
+const SOLIDS = preload("res://systems/interiors/InteriorSolidProjection.gd")
 func _init(): call_deferred("run")
 func check(ok: bool, label: String):
  checks += 1

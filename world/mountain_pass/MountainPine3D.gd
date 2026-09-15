@@ -29,7 +29,7 @@ func _ready() -> void:
 	# passa atrás do tronco, o ator (z 10) aparecia em pé em cima da árvore.
 	# Margem curta: na floresta densa a área encosta em muitos troncos vizinhos.
 	if enable_collision:
-		preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(sprite, 3.0 * tree_scale, 80.0)
+		preload("res://systems/interiors/ExteriorOcclusion.gd").attach(sprite, 3.0 * tree_scale, 80.0)
 	set_meta("forest_species",["pine","fir","young_pine","birch","rowan","bare_tree","old_pine","leaning_fir"][variant])
 	if posmod(variant_seed,3)==0 or variant==4:
 		var details := preload("res://world/mountain_pass/ForestFloorDetails.gd").new()

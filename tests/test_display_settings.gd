@@ -70,7 +70,7 @@ func _run() -> void:
 	check(menu.visible and menu._video_seconds == 0, "confirmed Apply stays in Settings")
 	check(menu.status_label.text.contains("salvas"), "Apply visibly reports saved preferences")
 	await capture("settings-fullscreen-0911")
-	var reload = load("res://SettingsManager.gd").new()
+	var reload = load("res://systems/SettingsManager.gd").new()
 	reload._settings_path = temp
 	root.add_child(reload)
 	check(reload.load_settings() and reload.window_mode == 1 and reload.resolution == initial_resolution, "fresh manager reloads fullscreen and remembered window size")

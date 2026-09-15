@@ -63,7 +63,7 @@ func run() -> void:
 	var room = home.room
 	var original_id: int = keeper.get_instance_id()
 	check(get_nodes_in_group("cemetery_keeper").size() == 1, "Exactly one resident owns the cottage")
-	var population := preload("res://cars/traffic/PopulationActivity.gd").new()
+	var population := preload("res://systems/PopulationActivity.gd").new()
 	check(population._pinned(keeper, Rect2(-100,-100,200,200)), "Remote cottage resident remains simulated outside the camera area")
 	check(keeper.sleeping and keeper.get_parent() == room, "After midnight the keeper starts in his bed")
 	check(keeper.model.shovel.get_parent() == keeper.model.right_hand_mount, "Real 3D shovel is attached to the hand")

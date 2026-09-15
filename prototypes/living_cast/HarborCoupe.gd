@@ -100,7 +100,7 @@ func _ready() -> void:
 	sprite.rotation = 0
 	sprite.modulate = Color.WHITE
 	# Ground contact follows the physical footprint, not the elevated roof.
-	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(78, 35))
+	preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(78, 35))
 	# Full physical footprint inside the visible body (not the old atlas crop).
 	$Collision.shape.size = Vector2(72,31)
 	$BumperHitbox.get_child(0).shape.size = Vector2(74,33)

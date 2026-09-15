@@ -1,7 +1,7 @@
 extends "res://tests/test_interior_player_movement.gd"
 ## Rendered A/B: reproduce the old ambient policy, then restore the fixed policy.
 class LegacyActivity:
-	extends "res://cars/traffic/PopulationActivity.gd"
+	extends "res://systems/PopulationActivity.gd"
 	func _pinned(actor: Node2D, area: Rect2) -> bool:
 		if actor.is_in_group("player"): return false
 		return super._pinned(actor,area)
@@ -18,7 +18,7 @@ func after_checks(world):
 	await create_timer(5).timeout
 	await sample("legacy_frozen",player)
 	stream.population_activity.restore_all()
-	stream.population_activity=load("res://cars/traffic/PopulationActivity.gd").new()
+	stream.population_activity=load("res://systems/PopulationActivity.gd").new()
 	await create_timer(5).timeout
 	await sample("fixed_active",player)
 func sample(label,player):

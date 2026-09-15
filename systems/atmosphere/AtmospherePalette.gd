@@ -1,9 +1,9 @@
 extends RefCounted
-const HARBOR := preload("res://world/shared/atmosphere/profiles/harbor.tres")
-const FOREST := preload("res://world/shared/atmosphere/profiles/forest.tres")
-const WINTER := preload("res://world/shared/atmosphere/profiles/winter.tres")
-const DESERT := preload("res://world/shared/atmosphere/profiles/desert.tres")
-const COAST := preload("res://world/shared/atmosphere/profiles/coast.tres")
+const HARBOR := preload("res://systems/atmosphere/profiles/harbor.tres")
+const FOREST := preload("res://systems/atmosphere/profiles/forest.tres")
+const WINTER := preload("res://systems/atmosphere/profiles/winter.tres")
+const DESERT := preload("res://systems/atmosphere/profiles/desert.tres")
+const COAST := preload("res://systems/atmosphere/profiles/coast.tres")
 
 static func blend(a: Dictionary, b: Dictionary, weight: float) -> Dictionary:
 	var result := {}

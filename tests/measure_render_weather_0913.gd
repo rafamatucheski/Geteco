@@ -25,7 +25,7 @@ func _run() -> void:
 	root.size = settings.resolution
 	if output == "disable-aa":
 		for child in root.get_node("SettingsManager").get_children():
-			if child.get_script() == preload("res://RenderQuality.gd"): child.free()
+			if child.get_script() == preload("res://systems/RenderQuality.gd"): child.free()
 		root.msaa_2d = Viewport.MSAA_DISABLED
 	root.content_scale_size = root.size
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)

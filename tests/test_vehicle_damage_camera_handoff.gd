@@ -11,7 +11,7 @@ func _run() -> void:
 	current_scene = world
 	var player := CharacterBody2D.new()
 	player.add_to_group("player")
-	var player_cam := preload("res://DynamicCamera.gd").new()
+	var player_cam := preload("res://systems/DynamicCamera.gd").new()
 	player_cam.name = "Camera"
 	player_cam.position_smoothing_enabled = true
 	player.add_child(player_cam)

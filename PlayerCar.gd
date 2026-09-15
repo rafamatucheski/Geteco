@@ -112,7 +112,7 @@ func _ready():
 	sprite.rotation = PI/2 # Vira pra direita
 	sprite.modulate = Color(0.9, 0.25, 0.25) # Vermelho esportivo do Dante
 	add_child(sprite)
-	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, 38))
+	preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, 38))
 	
 	# Ajusta a colisão dinamicamente para o mesmo tamanho
 	var new_shape = RectangleShape2D.new()
@@ -319,7 +319,7 @@ func _ready():
 	add_child(flat_smoke)
 	
 	# Anexa o script de câmera dinâmica à câmera
-	var dyn_cam = load("res://DynamicCamera.gd")
+	var dyn_cam = load("res://systems/DynamicCamera.gd")
 	if dyn_cam and camera:
 		camera.set_script(dyn_cam)
 		camera.set_process(true)
@@ -677,7 +677,7 @@ func _complete_exit_vehicle(exit_position: Vector2) -> void:
 	if not is_driven_by_player:
 		return
 	preload("res://cars/VehicleBoarding.gd").clear_occupant(self)
-	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
+	var camera_view := preload("res://systems/DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	if camera: camera.enabled = false
 	_clear_headlight_override()
@@ -704,14 +704,14 @@ func _complete_exit_vehicle(exit_position: Vector2) -> void:
 		player.remove_collision_exception_with(self)
 		var p_cam = player.get_node_or_null("Camera") as Camera2D
 		if p_cam:
-			preload("res://DynamicCamera.gd").handoff(p_cam, camera_view)
+			preload("res://systems/DynamicCamera.gd").handoff(p_cam, camera_view)
 
 func enter_vehicle(player_body: CharacterBody2D) -> void:
 	if is_driven_by_player or player_body == null or health <= 0:
 		return
 	var approach := player_body.global_position
 	var entry_side := -1.0 if to_local(approach).y <= 0 else 1.0
-	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
+	var camera_view := preload("res://systems/DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
 	_entry_input_released = false
 	_drive_input_armed = get_node("/root/GameInput").movement().is_zero_approx()
@@ -740,7 +740,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	for hud in get_tree().get_nodes_in_group("hud"):
 		if hud.has_method("show_vehicle_name"):
 			hud.show_vehicle_name(String(VehicleCatalog.get_vehicle_spec(active_archetype_id).get("label", "Veículo")))
-	preload("res://DynamicCamera.gd").handoff(camera, camera_view)
+	preload("res://systems/DynamicCamera.gd").handoff(camera, camera_view)
 	if engine_audio:
 		engine_audio.play()
 	if radio_audio and not radio_tracks.is_empty():

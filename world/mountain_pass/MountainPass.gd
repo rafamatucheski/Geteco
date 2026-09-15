@@ -47,7 +47,7 @@ var main_camera: Camera2D
 
 func _ready() -> void:
 	if not streamed_region:
-		var weather := preload("res://DayNightWeatherManager.gd").new()
+		var weather := preload("res://systems/DayNightWeatherManager.gd").new()
 		weather.name = "DayNightWeather"
 		weather.day_length_seconds = 1440.0
 		weather.time_of_day = 0.45
@@ -393,7 +393,7 @@ func restore_region_interior(actor: Node2D, data: Dictionary) -> void:
 	actor.set_meta("mountain_interior_id", id)
 	room.set_npc_rendering_active(true)
 	if room.get("camera_3d") is Camera3D and room.get("sprite_3d") is Sprite2D:
-		var helper := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		var helper := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		interior_manager.add_child(helper)
 		helper.configure(actor,room.camera_3d,room.sprite_3d)
 		interior_manager._actor_scale_helpers[actor] = helper

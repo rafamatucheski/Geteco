@@ -1,4 +1,4 @@
-extends "res://world/shared/interiors/InteriorActorPresentation.gd"
+extends "res://systems/interiors/InteriorActorPresentation.gd"
 ## Outdoor calibration stays continuous while the original rig shares station depth.
 var station: Node2D
 var street_rig_scale := 1.0

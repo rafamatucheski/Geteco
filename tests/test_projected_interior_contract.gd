@@ -1,6 +1,6 @@
 extends SceneTree
 
-const PRESENTATION := preload("res://world/shared/interiors/InteriorActorPresentation.gd")
+const PRESENTATION := preload("res://systems/interiors/InteriorActorPresentation.gd")
 var failures := 0
 var world: Node2D
 var cabin: Node2D

@@ -202,7 +202,7 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.name = "GroundShadow"
 	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	viewport_3d.add_child(shadow_mesh)
-	preload("res://ContactShadow.gd").soften(shadow_mesh)
+	preload("res://systems/ContactShadow.gd").soften(shadow_mesh)
 
 	# Cores e Fardas de Acordo com o Escalão Tático (Tier)
 	var uniform_col := Color(0.11, 0.15, 0.24) # Azul Polícia Regular

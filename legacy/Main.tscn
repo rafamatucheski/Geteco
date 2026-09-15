@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://rxuqmeq3t2af" path="res://PlayerCar.gd" id="2_player_car"]
 [ext_resource type="Script" uid="uid://b0ahvvhi4q6kx" path="res://Player.gd" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://cdlmy2bs56263" path="res://legacy/CentralDistrict.tscn" id="4_central"]
-[ext_resource type="Script" uid="uid://bvua2m3wet8ep" path="res://DynamicCamera.gd" id="5_dynamic_camera"]
+[ext_resource type="Script" uid="uid://bvua2m3wet8ep" path="res://systems/DynamicCamera.gd" id="5_dynamic_camera"]
 [ext_resource type="PackedScene" path="res://legacy/DistrictInteriorManager.tscn" id="6_interiors"]
 [ext_resource type="PackedScene" path="res://legacy/district/coast/CoastalExtension.tscn" id="7_coast"]
 [ext_resource type="PackedScene" path="res://world/shared/emergency/EmergencyDepots.tscn" id="8_depots"]

@@ -7,7 +7,7 @@ extends "res://prototypes/living_cast/HarborCoupe.gd"
 ## Spawna no acampamento do Lago Secreto pronto para ser roubado pelo jogador.
 
 const JEEP_MODEL := preload("res://prototypes/living_cast/models/ArcticJeepModel.gd")
-const JEEP_CAMERA := preload("res://DynamicCamera.gd")
+const JEEP_CAMERA := preload("res://systems/DynamicCamera.gd")
 
 func _init() -> void:
 	active_archetype_id = "arctic_jeep"

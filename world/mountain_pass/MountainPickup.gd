@@ -6,7 +6,7 @@ extends "res://prototypes/living_cast/HarborCoupe.gd"
 ## estepe off-road na caçamba, quebra-mato e tração para estradas de terra e serra.
 
 const PICKUP_MODEL := preload("res://prototypes/living_cast/models/RanchSingleModel.gd")
-const PICKUP_CAMERA := preload("res://DynamicCamera.gd")
+const PICKUP_CAMERA := preload("res://systems/DynamicCamera.gd")
 
 func _init() -> void:
 	active_archetype_id = "ranch_single"

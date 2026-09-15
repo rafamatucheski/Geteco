@@ -234,7 +234,7 @@ func set_npc_rendering_active(active: bool) -> void:
 func on_actor_entered(actor: Node2D) -> void:
 	if not actor.is_in_group("player") or is_instance_valid(actor_scale):
 		return
-	actor_scale = preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+	actor_scale = preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 	add_child(actor_scale)
 	actor_scale.configure(actor, showroom.camera_3d, showroom.sprite_3d)
 

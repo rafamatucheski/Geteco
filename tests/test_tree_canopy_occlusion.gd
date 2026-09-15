@@ -6,7 +6,7 @@ extends SceneTree
 const OUT := "res://docs/measurements/tree-occlusion-0914/"
 const STREET_TREE := preload("res://geodata/nature/ProceduralStreetTree.gd")
 const PINE_3D := preload("res://world/mountain_pass/MountainPine3D.gd")
-const OCCLUSION := preload("res://world/shared/interiors/ExteriorOcclusion.gd")
+const OCCLUSION := preload("res://systems/interiors/ExteriorOcclusion.gd")
 const ACTOR_COLOR := Color(1, 0, 1)
 var failures: Array[String] = []
 var world: Node2D

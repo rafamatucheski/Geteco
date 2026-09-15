@@ -51,21 +51,26 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
-# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio geodata/.
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio systems/. PopulationActivity
+# ja esta em cars/traffic/ (movido no commit anterior de cars/).
 MOVES: list[tuple[str, str]] = [
-    ("TrafficLightManager.gd", "geodata/TrafficLightManager.gd"),
-    ("ProceduralBuilding.gd", "geodata/ProceduralBuilding.gd"),
-    ("StreetLamp.gd", "geodata/StreetLamp.gd"),
-    ("StreetLamp.tscn", "geodata/StreetLamp.tscn"),
-    ("Puddle.gd", "geodata/Puddle.gd"),
-    ("PhoneBox.gd", "geodata/PhoneBox.gd"),
-    ("PhoneBox.tscn", "geodata/PhoneBox.tscn"),
-    ("world/shared/roads", "geodata/roads"),
-    ("world/shared/rail", "geodata/rail"),
-    ("world/shared/nature", "geodata/nature"),
-    ("world/shared/transit", "geodata/transit"),
-    ("world/shared/BreakableProp.gd", "geodata/BreakableProp.gd"),
-    ("world/shared/PhysicalCargo.gd", "geodata/PhysicalCargo.gd"),
+    ("SaveManager.gd", "systems/SaveManager.gd"),
+    ("SettingsManager.gd", "systems/SettingsManager.gd"),
+    ("Localization.gd", "systems/Localization.gd"),
+    ("CampaignState.gd", "systems/CampaignState.gd"),
+    ("DistrictRestrictionManager.gd", "systems/DistrictRestrictionManager.gd"),
+    ("RegionTravel.gd", "systems/RegionTravel.gd"),
+    ("PresentationBudget.gd", "systems/PresentationBudget.gd"),
+    ("DynamicCamera.gd", "systems/DynamicCamera.gd"),
+    ("RenderQuality.gd", "systems/RenderQuality.gd"),
+    ("ContactShadow.gd", "systems/ContactShadow.gd"),
+    ("DayNightWeatherManager.gd", "systems/DayNightWeatherManager.gd"),
+    ("world/shared/atmosphere", "systems/atmosphere"),
+    ("world/shared/interiors", "systems/interiors"),
+    ("cars/traffic/PopulationActivity.gd", "systems/PopulationActivity.gd"),
+    ("world/shared/WorldRenewal.gd", "systems/WorldRenewal.gd"),
+    ("world/shared/LivePoseShadow.gd", "systems/LivePoseShadow.gd"),
+    ("world/shared/StaticGroundShadow.gd", "systems/StaticGroundShadow.gd"),
 ]
 
 

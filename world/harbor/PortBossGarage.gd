@@ -1,7 +1,7 @@
 extends Node2D
 const VIEW = preload("res://world/mountain_pass/MountainStaticModelView.gd")
-const VEHICLE_VIEW = preload("res://world/shared/interiors/InteriorVehiclePresentation.gd")
-const ACTOR_VIEW = preload("res://world/shared/interiors/InteriorActorPresentation.gd")
+const VEHICLE_VIEW = preload("res://systems/interiors/InteriorVehiclePresentation.gd")
+const ACTOR_VIEW = preload("res://systems/interiors/InteriorActorPresentation.gd")
 const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 const SECURITY = preload("res://world/harbor/HarborPortSecurity.gd")
 const EXTERIOR := Vector2(5515,5870)
@@ -54,9 +54,9 @@ func _ready() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	portal.add_child(body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(portal.model,body,portal.project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(portal.model,body,portal.project_floor)
 	shutter_shape = body.get_node("Shutter")
-	preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(portal.sprite_3d,portal.project_floor(Vector2(0,3)).y)
+	preload("res://systems/interiors/ExteriorOcclusion.gd").attach(portal.sprite_3d,portal.project_floor(Vector2(0,3)).y)
 	var hud := CanvasLayer.new()
 	hud.layer = 23
 	add_child(hud)
@@ -83,7 +83,7 @@ func build_interior() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	showroom.add_child(body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(showroom.model,body,showroom.project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(showroom.model,body,showroom.project_floor)
 	spawn_point = Marker2D.new()
 	spawn_point.position = showroom.project_floor(Vector2(0,6))
 	add_child(spawn_point)

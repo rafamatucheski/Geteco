@@ -12,7 +12,7 @@ func check_camera(camera: Camera2D, label: String) -> void:
 
 func run() -> void:
 	var body := CharacterBody2D.new()
-	var camera = load("res://DynamicCamera.gd").new()
+	var camera = load("res://systems/DynamicCamera.gd").new()
 	body.add_child(camera)
 	root.add_child(body)
 	camera.set_process(false)

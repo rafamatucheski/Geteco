@@ -4,7 +4,7 @@ extends SceneTree
 ## Run with Godot console executable (not --headless) for actual texture rendering.
 
 const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
-const WEATHER_SCRIPT := preload("res://DayNightWeatherManager.gd")
+const WEATHER_SCRIPT := preload("res://systems/DayNightWeatherManager.gd")
 
 func _init() -> void:
 	call_deferred("_capture")

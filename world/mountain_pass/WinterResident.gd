@@ -122,7 +122,7 @@ func _ready() -> void:
 	sun.rotation_degrees = Vector3(-45,-25,0)
 	sun.light_energy = 1.5
 	viewport.add_child(sun)
-	preload("res://ContactShadow.gd").add_person(viewport)
+	preload("res://systems/ContactShadow.gd").add_person(viewport)
 	var sprite := Sprite2D.new()
 	presentation_sprite=sprite
 	sprite.texture = viewport.get_texture()

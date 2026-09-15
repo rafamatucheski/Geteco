@@ -1,5 +1,5 @@
 extends "res://tests/test_reserved_traffic_budget.gd"
-const ACTIVITY := preload("res://cars/traffic/PopulationActivity.gd")
+const ACTIVITY := preload("res://systems/PopulationActivity.gd")
 class Counter:
 	extends Node
 	var ticks := 0

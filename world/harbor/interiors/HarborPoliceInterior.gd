@@ -10,7 +10,7 @@ extends "res://world/harbor/interiors/HarborInteriorBase.gd"
 
 const STATION_3D_SCENE := preload("res://world/harbor/interiors/HarborPoliceStation3D.gd")
 const NPC_SCRIPT := preload("res://world/harbor/interiors/HarborConversationalNPC.gd")
-const ACTOR_SCALE_SCRIPT := preload("res://world/shared/interiors/InteriorActorPresentation.gd")
+const ACTOR_SCALE_SCRIPT := preload("res://systems/interiors/InteriorActorPresentation.gd")
 
 var view: SubViewport
 var room_camera: Camera3D
@@ -136,7 +136,7 @@ func _project_station_colliders() -> void:
 	walls_body.collision_layer = 1
 	walls_body.collision_mask = 0
 	add_child(walls_body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(station_3d, walls_body, project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(station_3d, walls_body, project_floor)
 
 # ==============================================================================
 # 3. NPCS DA DELEGACIA

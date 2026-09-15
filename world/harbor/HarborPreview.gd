@@ -1,7 +1,7 @@
 extends Node2D
 
 ## Standalone playable review. No main-menu, save, district or mission rewiring.
-const WEATHER_MANAGER := preload("res://DayNightWeatherManager.gd")
+const WEATHER_MANAGER := preload("res://systems/DayNightWeatherManager.gd")
 @export var review_mode := true
 
 var world_build_ready := false

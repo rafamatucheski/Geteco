@@ -39,7 +39,7 @@ func run() -> void:
 			world.add_child(prop)
 			prop.set_process(false)
 			for actor in [player,npc]:
-				var helper := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+				var helper := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 				world.add_child(helper)
 				actor.global_position = prop.project_floor(Vector2(0,4.5))
 				helper.configure(actor,prop.camera_3d,prop.sprite_3d)

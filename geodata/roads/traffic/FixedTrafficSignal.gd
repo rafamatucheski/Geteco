@@ -34,7 +34,7 @@ func _ready() -> void:
 	sprite.name = "Signal3D"
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_child(sprite)
-	preload("res://ContactShadow.gd").add_2d(self, Vector2(16, 12), 0.38)
+	preload("res://systems/ContactShadow.gd").add_2d(self, Vector2(16, 12), 0.38)
 	var notifier := VisibleOnScreenNotifier2D.new()
 	notifier.rect = Rect2(-65, -110, 130, 140)
 	add_child(notifier)
@@ -64,7 +64,7 @@ func ensure_presentation() -> void:
 	sprite.texture = data.texture
 	sprite.scale = Vector2.ONE * data.scale
 	sprite.position = data.offset
-	preload("res://ContactShadow.gd").add_silhouette(sprite, render_view)
+	preload("res://systems/ContactShadow.gd").add_silhouette(sprite, render_view)
 
 func _build_render(angle_step: int, state: int, falling: bool = false) -> Dictionary:
 	var viewport := SubViewport.new()

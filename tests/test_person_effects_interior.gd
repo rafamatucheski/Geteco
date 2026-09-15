@@ -67,7 +67,7 @@ func run() -> void:
 	actor.set_physics_process(false)
 	actor.health = 1000
 	actor.global_position = room.to_global(room.project_floor(Vector2(0, .4)))
-	helper = load("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+	helper = load("res://systems/interiors/InteriorActorPresentation.gd").new()
 	world.add_child(helper)
 	helper.configure(actor, room.camera_3d, room.sprite_3d)
 	var fire = load("res://guns/combat/PersonBurning.gd").ignite(actor)

@@ -540,14 +540,14 @@ func _build_garage_exterior() -> void:
 	body.add_to_group("building_blocker")
 	body.add_to_group("building_geodata")
 	exterior.add_child(body)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(exterior.model,body,exterior.project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(exterior.model,body,exterior.project_floor)
 	var bounds: Array[Rect2] = []
 	for shape in body.get_children():
 		var rect := Rect2(shape.polygon[0],Vector2.ZERO)
 		for point in shape.polygon: rect = rect.expand(point)
 		bounds.append(rect)
 	body.set_meta("solid_rects_local",bounds)
-	preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(exterior.sprite_3d,footprint.y*.5)
+	preload("res://systems/interiors/ExteriorOcclusion.gd").attach(exterior.sprite_3d,footprint.y*.5)
 	var sign := Label.new()
 	sign.text = business_name
 	sign.position = exterior.project_point(Vector3(-4.5,3.9,7.85))

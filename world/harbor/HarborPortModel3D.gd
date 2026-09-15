@@ -22,7 +22,7 @@ func build(kind: String, width: float, depth: float, variant: int) -> void:
 		"floodlight": _floodlight()
 		"ship_cargo": _ship_cargo(width,depth)
 		"crane": _crane(width,depth)
-	solid_floor_bounds = preload("res://world/shared/interiors/InteriorSolidProjection.gd").mesh_bounds(self)
+	solid_floor_bounds = preload("res://systems/interiors/InteriorSolidProjection.gd").mesh_bounds(self)
 	mesh_stats = preload("res://prototypes/harbor_art_pack/PortMeshOptimizer.gd").optimize_hierarchy(self)
 	# Recompute face normals after the container's nonuniform scale and rotation.
 	for batch in get_node("BatchedStaticGeometry").get_children():

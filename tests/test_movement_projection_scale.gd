@@ -36,7 +36,7 @@ func run() -> void:
 		var cam: Camera3D = player.viewport_3d.get_camera_3d()
 		var axis := Vector3(direction.x, 0, direction.y) * .01
 		native_pixels.append(cam.unproject_position(axis).distance_to(cam.unproject_position(-axis)) * player.sprite_3d_display.scale.x / .02)
-	for script in ["res://world/shared/interiors/InteriorActorPresentation.gd", "res://world/mountain_pass/MountainInteriorActorScale.gd"]:
+	for script in ["res://systems/interiors/InteriorActorPresentation.gd", "res://world/mountain_pass/MountainInteriorActorScale.gd"]:
 		var helper = load(script).new()
 		world.add_child(helper)
 		helper.configure(player, cabin.camera_3d, cabin.sprite_3d)

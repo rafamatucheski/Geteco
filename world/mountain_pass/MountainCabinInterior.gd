@@ -146,7 +146,7 @@ func _build_projected_furniture() -> void:
 		shape.name = id
 		shape.polygon = PackedVector2Array([project_floor(rect.position), project_floor(Vector2(rect.end.x, rect.position.y)), project_floor(rect.end), project_floor(Vector2(rect.position.x, rect.end.y))])
 		walls_body.add_child(shape)
-	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(cabin_3d_world, walls_body, project_floor)
+	preload("res://systems/interiors/InteriorSolidProjection.gd").build(cabin_3d_world, walls_body, project_floor)
 	# The perspective floor extends beyond the displayed texture at the front.
 	# Its clipped edge must also be solid; the exit sensor remains inside it.
 	var half := Vector2(viewport_3d.size) * sprite_3d.scale * 0.5

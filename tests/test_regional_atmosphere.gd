@@ -1,6 +1,6 @@
 extends SceneTree
-const WEATHER := preload("res://DayNightWeatherManager.gd")
-const PALETTE := preload("res://world/shared/atmosphere/AtmospherePalette.gd")
+const WEATHER := preload("res://systems/DayNightWeatherManager.gd")
+const PALETTE := preload("res://systems/atmosphere/AtmospherePalette.gd")
 var failures := 0
 
 func _initialize() -> void: _run.call_deferred()

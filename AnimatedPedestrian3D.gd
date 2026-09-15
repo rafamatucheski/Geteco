@@ -582,7 +582,7 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.name = "GroundShadow"
 	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	viewport.add_child(shadow_mesh)
-	preload("res://ContactShadow.gd").soften(shadow_mesh, Vector2(0.86 * body_width_scale, 0.72))
+	preload("res://systems/ContactShadow.gd").soften(shadow_mesh, Vector2(0.86 * body_width_scale, 0.72))
 	
 	# Materiais 3D
 	var mat_shirt := _make_mat(shirt_color, 0.6)

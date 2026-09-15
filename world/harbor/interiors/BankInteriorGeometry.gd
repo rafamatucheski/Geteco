@@ -1,6 +1,6 @@
 extends RefCounted
 ## Classify the actual rendered furniture before projecting physical footprints.
-const PROJECTION := preload("res://world/shared/interiors/InteriorSolidProjection.gd")
+const PROJECTION := preload("res://systems/interiors/InteriorSolidProjection.gd")
 static func classify(model: Node3D, door: Node3D) -> void:
 	for mesh in model.find_children("*", "MeshInstance3D", true, false):
 		if mesh.has_meta("interior_surface"): continue

@@ -1,7 +1,7 @@
 extends SceneTree
 
 const LEDGER = preload("res://world/harbor/campaign/CobraCampaignState.gd")
-const CAMPAIGN = preload("res://CampaignState.gd")
+const CAMPAIGN = preload("res://systems/CampaignState.gd")
 var failures := 0
 
 func _initialize() -> void:

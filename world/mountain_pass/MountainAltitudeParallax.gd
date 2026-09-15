@@ -16,7 +16,7 @@ var _air_material: ShaderMaterial
 func _ready() -> void:
 	z_index = -20 # Bem abaixo do piso e da estrada jogável
 	_air_material = ShaderMaterial.new()
-	_air_material.shader = preload("res://world/shared/atmosphere/distant_atmosphere.gdshader")
+	_air_material.shader = preload("res://systems/atmosphere/distant_atmosphere.gdshader")
 	material = _air_material
 	_generate_clouds()
 

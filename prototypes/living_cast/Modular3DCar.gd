@@ -19,7 +19,7 @@ func _enter_tree() -> void:
 		add_child(collider)
 	if not has_node("Camera"):
 		var camera_node := Camera2D.new()
-		camera_node.set_script(preload("res://DynamicCamera.gd"))
+		camera_node.set_script(preload("res://systems/DynamicCamera.gd"))
 		camera_node.name = "Camera"
 		camera_node.enabled = false
 		camera_node.ignore_rotation = true
@@ -109,4 +109,4 @@ func _ready() -> void:
 			sprite.scale = Vector2.ONE * uniform_scale
 
 	# Ajustar sombra de contato
-	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(t_len, t_wid))
+	preload("res://systems/ContactShadow.gd").add_vehicle(self, Vector2(t_len, t_wid))

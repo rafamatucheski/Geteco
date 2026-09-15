@@ -90,7 +90,7 @@ func run() -> void:
 	expect(schedule_script != null, "MountainSkiSchedule script exists")
 
 	# Teste do relógio de dia/noite
-	var dummy_clock := preload("res://DayNightWeatherManager.gd").new()
+	var dummy_clock := preload("res://systems/DayNightWeatherManager.gd").new()
 	dummy_clock.name = "DummyClock"
 	dummy_clock.set("time_of_day", 0.50) # 12:00 meio-dia
 	mountain.add_child(dummy_clock)

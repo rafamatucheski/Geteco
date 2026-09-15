@@ -44,7 +44,7 @@ func _ready() -> void:
 	collision_mask = 0
 	
 	_build_lamp_post()
-	preload("res://ContactShadow.gd").add_2d(self, Vector2(19,13), 0.32)
+	preload("res://systems/ContactShadow.gd").add_2d(self, Vector2(19,13), 0.32)
 	_setup_collision()
 	_setup_light()
 	
@@ -193,7 +193,7 @@ func _build_lamp_post() -> void:
 	lamp_sprite.scale = Vector2(0.8, 0.8)
 	lamp_sprite.position = data["sprite_pos"]
 	add_child(lamp_sprite)
-	_occlusion = preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(lamp_sprite, 0.0)
+	_occlusion = preload("res://systems/interiors/ExteriorOcclusion.gd").attach(lamp_sprite, 0.0)
 	var notifier := VisibleOnScreenNotifier2D.new()
 	# Keep illumination active while its pool still intersects the screen.
 	var visibility_extent := maxf(180.0, float(light_radius) * 0.5 + (road_target.length() if road_target.is_finite() else 24.0))

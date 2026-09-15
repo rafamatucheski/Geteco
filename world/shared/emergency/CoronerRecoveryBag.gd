@@ -36,7 +36,7 @@ func _bag_style() -> StyleBoxFlat:
 func configure_room(room: Node2D) -> bool:
 	for pair in [["camera_3d","sprite_3d"],["room_camera","room_display"]]:
 		if not room.get(pair[0]) is Camera3D or not room.get(pair[1]) is Sprite2D: continue
-		projection = preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		projection = preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		projection.room_camera = room.get(pair[0])
 		projection.room_display = room.get(pair[1])
 		add_child(projection)

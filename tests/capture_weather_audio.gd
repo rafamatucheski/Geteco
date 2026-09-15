@@ -1,6 +1,6 @@
 extends SceneTree
 ## Records the actual Godot bus after its indoor filter. No microphone required.
-const WEATHER := preload("res://DayNightWeatherManager.gd")
+const WEATHER := preload("res://systems/DayNightWeatherManager.gd")
 var failures := 0
 
 func _initialize() -> void:

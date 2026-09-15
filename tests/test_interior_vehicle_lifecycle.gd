@@ -12,7 +12,7 @@ func run() -> void:
 	world.add_child(view)
 	view.build_view(preload("res://world/harbor/PortBossGarageArt.gd"),28,22)
 	var factory=preload("res://world/shared/emergency/ModernTrafficFactory.gd")
-	var adapter_script=preload("res://world/shared/interiors/InteriorVehiclePresentation.gd")
+	var adapter_script=preload("res://systems/interiors/InteriorVehiclePresentation.gd")
 	var car=factory.spawn_parked_vehicle(world,"RemovedCar",Vector2.ZERO,0,"porto_rosso",2)
 	car.ensure_presentation()
 	var adapter=adapter_script.new()

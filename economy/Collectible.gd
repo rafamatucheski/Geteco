@@ -135,7 +135,7 @@ func _build_3d_viewport() -> void:
 	sprite_3d.position.y = -3
 	model_3d.rotation.y = -0.35
 	add_child(sprite_3d)
-	preload("res://ContactShadow.gd").add_box(self, Vector2(18, 11), 0.45)
+	preload("res://systems/ContactShadow.gd").add_box(self, Vector2(18, 11), 0.45)
 
 	var notifier := VisibleOnScreenNotifier2D.new()
 	notifier.rect = Rect2(-32, -40, 64, 64)

@@ -516,7 +516,7 @@ func _draw_container(rect: Rect2, color: Color) -> void:
 		draw_line(Vector2(x, rect.position.y + 4), Vector2(x, rect.end.y - 4), color.darkened(0.2), 2)
 
 func _draw_bench(point: Vector2) -> void:
-	draw_texture_rect(preload("res://ContactShadow.gd").texture(), Rect2(point + Vector2(-4, -1), Vector2(77, 27)), false, Color(0.025,0.03,0.045,0.40))
+	draw_texture_rect(preload("res://systems/ContactShadow.gd").texture(), Rect2(point + Vector2(-4, -1), Vector2(77, 27)), false, Color(0.025,0.03,0.045,0.40))
 	draw_rect(Rect2(point, Vector2(65, 19)), Color("#594e42"))
 	for y in [3, 8, 13]:
 		draw_line(point + Vector2(3, y), point + Vector2(62, y), Color("#bd9b69"), 3)

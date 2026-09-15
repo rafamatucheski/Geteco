@@ -1,8 +1,8 @@
 extends CanvasLayer
 ## One composition pass for terrain and projected 3D. No per-actor material copies
 ## or extra SubViewports. UI is drawn afterwards, starting at canvas layer 2.
-const PALETTE := preload("res://world/shared/atmosphere/AtmospherePalette.gd")
-const EFFECT := preload("res://world/shared/atmosphere/regional_atmosphere.gdshader")
+const PALETTE := preload("res://systems/atmosphere/AtmospherePalette.gd")
+const EFFECT := preload("res://systems/atmosphere/regional_atmosphere.gdshader")
 var weather: CanvasModulate
 var screen: ColorRect
 var copy: BackBufferCopy

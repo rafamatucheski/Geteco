@@ -188,7 +188,7 @@ static func add_silhouette(display: Sprite2D, viewport: SubViewport) -> void:
 	if display.has_node("PoseShadow"): return
 	var camera := viewport.get_camera_3d()
 	if camera == null: return
-	var shadow := preload("res://world/shared/LivePoseShadow.gd").new()
+	var shadow := preload("res://systems/LivePoseShadow.gd").new()
 	shadow.source_display = display
 	shadow.source_viewport = viewport
 	shadow.name = "PoseShadow"

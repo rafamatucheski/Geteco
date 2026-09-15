@@ -174,7 +174,7 @@ func _build_jager_model() -> void:
 	shadow.material_override = shadow_material
 	shadow.position.y = 0.01
 	model_root.add_child(shadow)
-	preload("res://ContactShadow.gd").soften(shadow)
+	preload("res://systems/ContactShadow.gd").soften(shadow)
 
 	# Paleta de Cores Estilo "A Pimp Named Slickback" / Maciota
 	var mat_purple_suit := _make_mat(Color("#6c3483"), 0.70) # Tecido roxo, sem reflexo plástico
