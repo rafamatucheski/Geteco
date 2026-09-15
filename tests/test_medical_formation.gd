@@ -55,7 +55,7 @@ func run() -> void:
 	camera.zoom = Vector2.ONE*2
 	world.add_child(camera)
 	camera.position = Vector2(90,0)
-	var post := preload("res://world/shared/roads/traffic/FixedTrafficSignal.gd").new()
+	var post := preload("res://geodata/roads/traffic/FixedTrafficSignal.gd").new()
 	post.position = Vector2(25,22)
 	world.add_child(post)
 	await physics_frame

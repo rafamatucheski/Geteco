@@ -1,11 +1,11 @@
 @tool
-extends "res://world/shared/rail/DistrictRailLine.gd"
+extends "res://geodata/rail/DistrictRailLine.gd"
 
 ## Circuito único porto–serra. A cidade mantém seu viaduto e sua descida;
 ## túneis unem os trechos visíveis sem reiniciar nem duplicar a composição.
 const TRAIN_SCRIPT := preload("res://world/harbor/HarborTrain.gd")
-const REGIONAL_ROUTE := preload("res://world/shared/rail/HarborMountainRailRoute.gd")
-const STRUCTURE_3D := preload("res://world/shared/rail/RailStructure3D.gd")
+const REGIONAL_ROUTE := preload("res://geodata/rail/HarborMountainRailRoute.gd")
+const STRUCTURE_3D := preload("res://geodata/rail/RailStructure3D.gd")
 const DECK_WIDTH := 48.0
 const DECK_ELEVATION := 64.0
 const WEST_PORTAL := Vector2(0, 892)
@@ -27,7 +27,7 @@ class PortalCover extends Node2D:
 	var east := false
 	var snowy := false
 	func _ready() -> void:
-		var model = load("res://world/shared/rail/RailStructure3D.gd").new()
+		var model = load("res://geodata/rail/RailStructure3D.gd").new()
 		add_child(model)
 		# Geometry rotates in 3D; the orthographic camera stays aligned to the world.
 		var heading := rotation
@@ -81,13 +81,13 @@ func _ready() -> void:
 	STRUCTURE_3D.track(ramp, self, _ramp_start, _visible_end)
 	STRUCTURE_3D.barriers(ramp, _ground_barriers)
 	_create_portals()
-	_regional_scenery = preload("res://world/shared/rail/RegionalRailScenery.gd").new()
+	_regional_scenery = preload("res://geodata/rail/RegionalRailScenery.gd").new()
 	_regional_scenery.name = "HarborMountainRailScenery"
 	add_child(_regional_scenery)
 	_regional_scenery.build(self)
 	if not Engine.is_editor_hint():
 		add_to_group("regional_railway")
-		var map_overlay := preload("res://world/shared/rail/RailMinimapOverlay.gd").new()
+		var map_overlay := preload("res://geodata/rail/RailMinimapOverlay.gd").new()
 		map_overlay.rail = self
 		add_child(map_overlay)
 	set_process(not Engine.is_editor_hint())
@@ -96,7 +96,7 @@ func _ready() -> void:
 func get_underpass_material() -> ShaderMaterial:
 	if _underpass_material == null:
 		_underpass_material = ShaderMaterial.new()
-		_underpass_material.shader = preload("res://world/shared/rail/RailUnderpassReveal.gdshader")
+		_underpass_material.shader = preload("res://geodata/rail/RailUnderpassReveal.gdshader")
 	return _underpass_material
 
 

@@ -41,7 +41,7 @@ func _ready() -> void:
 
 
 func _build_water_surfaces() -> void:
-	var water = preload("res://world/shared/nature/WaterPresentation.gd")
+	var water = preload("res://geodata/nature/WaterPresentation.gd")
 	# Filhos atrás do desenho estático mantêm navio, cais e terra sobre a água.
 	var surfaces: Array[Polygon2D] = [
 		water.rectangle(self, Rect2(WATER_BOUNDS.position, Vector2(MOUNTAIN_COAST_X - WATER_BOUNDS.position.x, WATER_BOUNDS.size.y)), Color("204754"), animate_water),

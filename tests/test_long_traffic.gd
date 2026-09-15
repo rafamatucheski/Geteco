@@ -3,7 +3,7 @@ const Flow := preload("res://cars/traffic/TrafficFlowModel.gd")
 const Sweep := preload("res://cars/traffic/TrafficBodySweep.gd")
 const Factory := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 const Bus := preload("res://world/harbor/urban_transit/UrbanBus.gd")
-const Controller := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
+const Controller := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 class Graph:
 	extends Node2D
 	var junctions: Array = []

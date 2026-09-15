@@ -1,5 +1,5 @@
 extends SceneTree
-const ROUTER = preload("res://world/shared/roads/EmergencyLaneRouter.gd")
+const ROUTER = preload("res://geodata/roads/EmergencyLaneRouter.gd")
 class Ambulance extends CharacterBody2D:
 	var type := 1
 	var is_returning_to_base := true

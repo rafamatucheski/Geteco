@@ -1,5 +1,5 @@
 extends SceneTree
-const GEOMETRY := preload("res://world/shared/roads/StaticCanvasGeometry.gd")
+const GEOMETRY := preload("res://geodata/roads/StaticCanvasGeometry.gd")
 var failures := 0
 func _initialize() -> void: call_deferred("_run")
 func _art(canvas: Variant) -> void:

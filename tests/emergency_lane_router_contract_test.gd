@@ -1,7 +1,7 @@
 extends SceneTree
 
-const ROUTER := preload("res://world/shared/roads/EmergencyLaneRouter.gd")
-const NETWORK := preload("res://world/shared/roads/UnifiedRoadNetwork2D.gd")
+const ROUTER := preload("res://geodata/roads/EmergencyLaneRouter.gd")
+const NETWORK := preload("res://geodata/roads/UnifiedRoadNetwork2D.gd")
 
 class Roads:
 	extends Node2D

@@ -20,7 +20,7 @@ func run() -> void:
 	var services := get_nodes_in_group("regional_coach_service")
 	var service: Node2D
 	if services.is_empty():
-		service = preload("res://world/shared/transit/HarborMountainCoachService.gd").new()
+		service = preload("res://geodata/transit/HarborMountainCoachService.gd").new()
 		world.add_child(service)
 		service.configure(world, world.get_node("ContinuousWorld"))
 	else:
@@ -54,7 +54,7 @@ func run() -> void:
 	var return_probe := CharacterBody2D.new()
 	return_probe.position = service.inbound_lane.to_global(service.inbound_lane.curve.sample_baked(0.0, true))
 	world.add_child(return_probe)
-	var return_planner := preload("res://world/shared/transit/RegionalCoachLanePlanner.gd").new()
+	var return_planner := preload("res://geodata/transit/RegionalCoachLanePlanner.gd").new()
 	return_planner.start_lane = service.inbound_lane
 	return_planner.goal_lane = service.harbor_lane
 	var return_legs: Array = return_planner.plan(return_probe, service.harbor_lane.to_global(service.harbor_lane.curve.sample_baked(service.harbor_offset, true)))

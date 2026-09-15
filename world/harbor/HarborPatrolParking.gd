@@ -25,4 +25,4 @@ func _draw() -> void:
 		]), Color("#b7bcb5"), 1.5, true)
 		draw_rect(Rect2(center.x - 19, center.y - 50, 38, 4), Color("#969f9f"))
 	# Match the shared street paving; RoadNetwork owns the sidewalk and curb.
-	draw_rect(Rect2(46, -10, 190, 63), preload("res://world/shared/roads/UnifiedRoadNetwork2D.gd").SIDEWALK_COLOR)
+	draw_rect(Rect2(46, -10, 190, 63), preload("res://geodata/roads/UnifiedRoadNetwork2D.gd").SIDEWALK_COLOR)

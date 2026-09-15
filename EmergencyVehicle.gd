@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 const CREW_TRANSITION := preload("res://EmergencyCrewTransition.gd")
 const CREW_DOOR_SCRIPT := preload("res://cars/VehicleDoorVisual.gd")
-const LANE_ROUTER := preload("res://world/shared/roads/EmergencyLaneRouter.gd")
+const LANE_ROUTER := preload("res://geodata/roads/EmergencyLaneRouter.gd")
 var _lane_router := LANE_ROUTER.new()
 var _hospital_arrival := preload("res://world/shared/emergency/HospitalArrival.gd").new()
 var _ambulance_approach := preload("res://world/shared/emergency/AmbulanceApproach.gd").new()

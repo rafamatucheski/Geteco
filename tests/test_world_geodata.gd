@@ -23,7 +23,7 @@ func _run() -> void:
 	var mountain_offset := Vector2(4300, -4960)
 	for point in [Vector2(11000, 0), Vector2(6500, 3500), Vector2(11000, -4000)]:
 		_check(not perimeter.contains_point(point + mountain_offset), "Trimmed mountain land remains walkable: %s" % point)
-	for point in preload("res://world/shared/rail/HarborMountainRailRoute.gd").MOUNTAIN_POINTS:
+	for point in preload("res://geodata/rail/HarborMountainRailRoute.gd").MOUNTAIN_POINTS:
 		_check(perimeter.contains_point(point + mountain_offset), "Mountain trim cuts railway: %s" % point)
 	var actor_shape := CollisionShape2D.new()
 	actor_shape.shape = CircleShape2D.new()

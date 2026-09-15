@@ -194,7 +194,7 @@ static func _clear_pocket(polygon: PackedVector2Array, settlement: Node2D, index
 
 static func _clear_region(polygon: PackedVector2Array, settlement: Node2D) -> bool:
 	var road: Node2D = settlement.get_parent().road
-	var railway := preload("res://world/shared/rail/HarborMountainRailRoute.gd").new()
+	var railway := preload("res://geodata/rail/HarborMountainRailRoute.gd").new()
 	for point in polygon:
 		if road.is_point_on_road(point,road.road_width*.5+35): return false
 		if POCKET.is_reserved(point) or railway.is_mountain_reserved(point): return false

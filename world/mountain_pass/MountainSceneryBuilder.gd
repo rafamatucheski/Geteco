@@ -15,7 +15,7 @@ extends RefCounted
 ## - Base militar no cume: rotatoria asfaltada, bunker, heliponto [H], torre e radar
 
 const PINE_SCRIPT := preload("res://world/mountain_pass/MountainPine3D.gd")
-const ROCK_SCRIPT := preload("res://world/shared/nature/ProceduralUrbanRock.gd")
+const ROCK_SCRIPT := preload("res://geodata/nature/ProceduralUrbanRock.gd")
 const ENTRANCE_SCENE: PackedScene = preload("res://scripts/entrances/BuildingEntrance.tscn")
 const PICKUP_SCRIPT := preload("res://world/mountain_pass/MountainPickup.gd")
 const ARCTIC_JEEP_SCRIPT := preload("res://world/mountain_pass/ArcticJeep.gd")
@@ -129,7 +129,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 		Vector2(12000, -5000), Vector2(-4000, -5000)
 	])
 	base.add_child(ocean)
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(ocean)
+	preload("res://geodata/nature/WaterPresentation.gd").apply(ocean)
 
 	var beach := Polygon2D.new()
 	beach.color = Color("#2c2720")
@@ -147,7 +147,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 		Vector2(4615, 0), Vector2(4640, -2000), Vector2(4630, -5000)
 	])
 	base.add_child(foam)
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(foam, "foam")
+	preload("res://geodata/nature/WaterPresentation.gd").apply(foam, "foam")
 
 	# B. Chao da Floresta
 	var forest_floor := Polygon2D.new()
@@ -277,7 +277,7 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 	])
 	water_system.add_child(shallow_water)
 	WATER_BANKS.water(shallow_water,18.0)
-	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(shallow_water, "lake")
+	preload("res://geodata/nature/WaterPresentation.gd").sound_zone(shallow_water, "lake")
 
 	var deep_water := Polygon2D.new()
 	deep_water.color = Color("#133c4a")
@@ -299,9 +299,9 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 	# across the deep-water surface.
 	water_system.move_child(stream,1)
 	WATER_BANKS.stream(stream)
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(stream, "stream")
+	preload("res://geodata/nature/WaterPresentation.gd").apply(stream, "stream")
 	WATER_BANKS.stream_banks(stream)
-	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(stream, "stream")
+	preload("res://geodata/nature/WaterPresentation.gd").sound_zone(stream, "stream")
 
 	var rapids := Line2D.new()
 	rapids.width = 4.5
@@ -311,7 +311,7 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 	])
 	water_system.add_child(rapids)
 	WATER_BANKS.stream(rapids)
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(rapids, "foam")
+	preload("res://geodata/nature/WaterPresentation.gd").apply(rapids, "foam")
 
 # 3B. Lago Secreto dos Contrabandistas (Secret Glacial Tarn) com Segredo Submerso e Cofre
 static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> void:
@@ -495,7 +495,7 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 	water_effects.polygon = shallow.polygon
 	water_effects.plane = plane_wreck
 	secret_lake.add_child(water_effects)
-	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(shallow, "lake")
+	preload("res://geodata/nature/WaterPresentation.gd").sound_zone(shallow, "lake")
 	water_effects.animate_surface(shallow)
 	water_effects.animate_surface(deep)
 
@@ -564,7 +564,7 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 		ripple.points = r_pts
 		ripple.position = step_pos
 		secret_lake.add_child(ripple)
-		preload("res://world/shared/nature/WaterPresentation.gd").apply(ripple, "foam")
+		preload("res://geodata/nature/WaterPresentation.gd").apply(ripple, "foam")
 
 		var stone := Polygon2D.new()
 		stone.color = Color("#574f44")
@@ -711,7 +711,7 @@ static func build_mountain_ammunation(parent: Node2D, _setpieces: Node2D, interi
 
 # 6. Floresta Densa de Pinheiros (MountainPineTree)
 static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, streamed := false) -> void:
-	var rail_reservation := preload("res://world/shared/rail/HarborMountainRailRoute.gd").new()
+	var rail_reservation := preload("res://geodata/rail/HarborMountainRailRoute.gd").new()
 	var chunk_started := Time.get_ticks_usec()
 	var chunk_trees := 0
 	var forest := Node2D.new()

@@ -1,5 +1,5 @@
 extends SceneTree
-const Controller := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
+const Controller := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 const Flow := preload("res://cars/traffic/TrafficFlowModel.gd")
 class Graph:
 	extends Node2D

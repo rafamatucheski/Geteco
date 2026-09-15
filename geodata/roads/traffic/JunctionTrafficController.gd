@@ -21,7 +21,7 @@ enum JunctionStage { GREEN, YELLOW, ALL_RED }
 const CONTROLLER_GROUP: StringName = &"junction_traffic_controller"
 const LANE_GROUP: StringName = &"unified_traffic_lane"
 const NO_ADVANCE := 0.0
-const SIGNAL_VISUAL := preload("res://world/shared/roads/traffic/JunctionSignalVisual2D.gd")
+const SIGNAL_VISUAL := preload("res://geodata/roads/traffic/JunctionSignalVisual2D.gd")
 const MAX_CONNECTOR_ENTRY_OVERSHOOT := 12.0
 const FLOW := preload("res://cars/traffic/TrafficFlowModel.gd")
 

@@ -132,7 +132,7 @@ func depth(room: Node, actor: CharacterBody2D, camera: Camera3D, viewport: SubVi
  box.queue_free()
  paused=false
 func exterior():
- var lamp=load("res://StreetLamp.gd").new()
+ var lamp=load("res://geodata/StreetLamp.gd").new()
  world.add_child(lamp)
  var building=load("res://world/harbor/HarborBuilding.gd").new()
  building.name="Garage"

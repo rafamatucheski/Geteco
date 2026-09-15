@@ -10,7 +10,7 @@ extends Node2D
 ## independentes sem editar esta raiz.
 
 const PORT_SCENE_PATH := "res://missions/district_one/PortMarkedCarSet.tscn"
-const RAIL_SCENE_PATH := "res://world/shared/rail/DistrictRailLine.tscn"
+const RAIL_SCENE_PATH := "res://geodata/rail/DistrictRailLine.tscn"
 const HIGHWAY_SCENE_PATH := "res://legacy/district/highway/District1HighwayExit.tscn"
 const PORT_POSITION := Vector2(3340, 2150)
 ## Entrada oeste do porto, no mesmo Y da guarita. O LayoutV2 mantém suas

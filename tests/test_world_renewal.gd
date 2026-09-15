@@ -91,14 +91,14 @@ func run() -> void:
 	tick(60)
 	check(is_instance_valid(bear) and not bear.is_dead and not bear.model.dead, "Wildlife returns alive with its model reset")
 	check(bear.health == bear_health and bear.collision_layer == 4, "Bear health and collision restored")
-	var lamp = load("res://StreetLamp.gd").new()
+	var lamp = load("res://geodata/StreetLamp.gd").new()
 	lamp.position = Vector2(5000,3000)
 	world.add_child(lamp)
-	var prop = load("res://world/shared/BreakableProp.gd").new()
+	var prop = load("res://geodata/BreakableProp.gd").new()
 	prop.position = Vector2(5200,3000)
 	prop.collision_layer = 1
 	world.add_child(prop)
-	var cargo = load("res://world/shared/PhysicalCargo.gd").new()
+	var cargo = load("res://geodata/PhysicalCargo.gd").new()
 	cargo.position = Vector2(5400,3000)
 	world.add_child(cargo)
 	var debris = load("res://guns/ImpactDebris.gd").spawn(world, Vector2(5600,3000), Vector2.RIGHT, 100, "wood")
@@ -154,7 +154,7 @@ func run() -> void:
 	car.is_driven_by_player = false
 	car.repair_vehicle()
 	# Returning a prop within view must wait for the player to leave.
-	var visible_prop = load("res://world/shared/BreakableProp.gd").new()
+	var visible_prop = load("res://geodata/BreakableProp.gd").new()
 	visible_prop.position = Vector2(200,200)
 	visible_prop.collision_layer = 1
 	world.add_child(visible_prop)

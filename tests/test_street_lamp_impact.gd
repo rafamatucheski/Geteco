@@ -1,12 +1,12 @@
 extends SceneTree
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:
-	var lamp=load("res://StreetLamp.gd").new()
+	var lamp=load("res://geodata/StreetLamp.gd").new()
 	root.add_child(lamp)
 	lamp.set_lit(true)
 	assert(lamp.model is Node3D and lamp.view is SubViewport)
 	var intact_parts: int = lamp.model.get_child_count()
-	var neighbour=load("res://StreetLamp.gd").new()
+	var neighbour=load("res://geodata/StreetLamp.gd").new()
 	neighbour.position=Vector2(300,0)
 	root.add_child(neighbour)
 	lamp.receive_vehicle_impact(25,Vector2.RIGHT)
@@ -46,7 +46,7 @@ func _run() -> void:
 	assert(not lamp.broken and lamp.z_index==8 and lamp._occlusion.monitoring,"Repair cancels a pending fall completion")
 	# Authored overlaps must be corrected and stay corrected after world renewal.
 	neighbour.position = lamp.position
-	var lighting = load("res://world/shared/roads/RoadLighting.gd").new()
+	var lighting = load("res://geodata/roads/RoadLighting.gd").new()
 	root.add_child(lighting)
 	lighting._clear_authored_poles()
 	assert(lamp.global_position.distance_to(neighbour.global_position) >= 40.0, "Authored duplicate poles are separated")

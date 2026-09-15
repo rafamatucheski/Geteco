@@ -39,7 +39,7 @@ func run() -> void:
 		while not world.region_ready:await process_frame
 		road=world.get_node("MountainPassRoad")
 		shelter=world.get_node("MountainSettlement/WinterShelter1")
-		var service:=preload("res://world/shared/transit/HarborMountainCoachService.gd").new()
+		var service:=preload("res://geodata/transit/HarborMountainCoachService.gd").new()
 		service.set_process(false)
 		var stream:=StreamFixture.new()
 		stream.mountain=world

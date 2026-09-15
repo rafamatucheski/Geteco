@@ -10,8 +10,8 @@ const PROMENADE_RECT := Rect2(202.0, 0.0, 92.0, 1280.0)
 const ROAD_RECT := Rect2(0.0, 510.0, 202.0, 180.0)
 const PIGEON_SCRIPT := preload("res://legacy/district/coast/CoastalPigeon.gd")
 const WAVE_AUDIO_SCRIPT := preload("res://legacy/district/coast/CoastalWaveAudio.gd")
-const PROCEDURAL_TREE := preload("res://world/shared/nature/ProceduralStreetTree.gd")
-const PROCEDURAL_ROCK := preload("res://world/shared/nature/ProceduralUrbanRock.gd")
+const PROCEDURAL_TREE := preload("res://geodata/nature/ProceduralStreetTree.gd")
+const PROCEDURAL_ROCK := preload("res://geodata/nature/ProceduralUrbanRock.gd")
 
 const ROCKS := [
 	{"at": Vector2(302, 76), "size": Vector2(20, 15), "tone": Color("#4d5558")},

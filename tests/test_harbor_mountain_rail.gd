@@ -1,6 +1,6 @@
 extends SceneTree
 const RAIL := preload("res://world/harbor/HarborRailLine.gd")
-const ROUTE := preload("res://world/shared/rail/HarborMountainRailRoute.gd")
+const ROUTE := preload("res://geodata/rail/HarborMountainRailRoute.gd")
 var failures := 0
 var checks := 0
 

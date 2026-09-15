@@ -50,7 +50,7 @@ func build(owner_rail: Node2D) -> void:
 			deck.z_index = 14
 			deck.material = rail.get_underpass_material()
 			add_child(deck)
-			preload("res://world/shared/rail/RailStructure3D.gd").track(deck, rail, deck.from_offset, deck.to_offset, deck.bridge)
+			preload("res://geodata/rail/RailStructure3D.gd").track(deck, rail, deck.from_offset, deck.to_offset, deck.bridge)
 			from = deck.to_offset
 		var offset: float = section.start + 180.0
 		while offset < float(section.end) - 140.0:
@@ -66,4 +66,4 @@ func build(owner_rail: Node2D) -> void:
 			offset += 300.0
 	piers.supports = supports
 	piers.queue_redraw()
-	preload("res://world/shared/rail/RailStructure3D.gd").supports(piers, supports)
+	preload("res://geodata/rail/RailStructure3D.gd").supports(piers, supports)

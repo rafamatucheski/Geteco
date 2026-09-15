@@ -36,7 +36,7 @@ static func prepare_common_models(tree: SceneTree) -> void:
 		preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 		model.free()
 		_prepared[path] = true
-	for path in ["res://world/shared/transit/RegionalIntercityCoachModel.gd"]:
+	for path in ["res://geodata/transit/RegionalIntercityCoachModel.gd"]:
 		if _prepared.has(path): continue
 		await batch.checkpoint(tree)
 		var res = load(path)

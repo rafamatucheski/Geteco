@@ -67,7 +67,7 @@ func _build_interior() -> void:
 	var current_x: float = 90.0
 	while current_x < tunnel_length:
 		for side in [-1,1]:
-			var lamp := preload("res://world/shared/roads/RoadLuminaire3D.gd").new()
+			var lamp := preload("res://geodata/roads/RoadLuminaire3D.gd").new()
 			lamp.name = "TunnelBatten_%d_%d" % [int(current_x),side]
 			lamp.fixture_kind = "strip"
 			lamp.position = Vector2(current_x,side*(tunnel_width*.5-10))

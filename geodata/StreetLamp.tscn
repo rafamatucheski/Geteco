@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dwy1d8y2onddo"]
 
-[ext_resource type="Script" uid="uid://dpexv0kdelf08" path="res://StreetLamp.gd" id="1_lamp"]
+[ext_resource type="Script" uid="uid://dpexv0kdelf08" path="res://geodata/StreetLamp.gd" id="1_lamp"]
 
 [node name="StreetLamp" type="StaticBody2D"]
 script = ExtResource("1_lamp")

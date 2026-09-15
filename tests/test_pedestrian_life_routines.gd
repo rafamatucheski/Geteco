@@ -9,7 +9,7 @@ func _run_test() -> void:
 	print("=================================================================")
 
 	var ped_script = load("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd")
-	var building_script = load("res://ProceduralBuilding.gd")
+	var building_script = load("res://geodata/ProceduralBuilding.gd")
 
 	# 1. Testar desincronizacao de passos e offsets laterais
 	print("[PASSO 1] Testando desincronizacao de strides e espalhamento lateral...")

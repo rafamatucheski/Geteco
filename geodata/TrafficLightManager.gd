@@ -140,7 +140,7 @@ func _rebuild_visual_set(intersection_id: StringName) -> void:
 	_update_visuals()
 
 func _add_signal_post(parent: Node2D, world_position: Vector2, axis: String, mirrored: bool) -> void:
-	var post := preload("res://world/shared/roads/TrafficSignalPost.gd").new()
+	var post := preload("res://geodata/roads/TrafficSignalPost.gd").new()
 	post.name = "Signal_%02d" % (parent.get_child_count() + 1)
 	post.position = world_position
 	post.set_meta("axis", axis)

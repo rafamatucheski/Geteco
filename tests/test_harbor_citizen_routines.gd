@@ -51,7 +51,7 @@ func run() -> void:
  assert(not officer.alerted,"Wall blocks witnessing a crime")
  root.get_node("WantedManager").reset_crime()
  wall.queue_free()
- var crossing=preload("res://world/shared/roads/safety/RoadCrossingArea2D.gd").new()
+ var crossing=preload("res://geodata/roads/safety/RoadCrossingArea2D.gd").new()
  crossing.configure({"id":"test","junction_id":"test_junction","position":Vector2(-4000,-4000),"road_width":120.0})
  world.add_child(crossing)
  walker.global_position=crossing.to_global(Vector2(0,-82))

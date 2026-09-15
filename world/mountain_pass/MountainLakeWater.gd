@@ -12,7 +12,7 @@ func _ready() -> void:
 	set_process(false)
 
 func animate_surface(surface: Polygon2D) -> void:
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(surface, "lake")
+	preload("res://geodata/nature/WaterPresentation.gd").apply(surface, "lake")
 
 func is_deck_at(actor: Node2D) -> bool:
 	return is_instance_valid(plane) and plane.contains_actor(actor)

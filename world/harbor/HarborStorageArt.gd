@@ -20,7 +20,7 @@ func _ready() -> void:
 					prop.position = origin - support.origin
 					break
 			if prop.get_parent() != model: continue
-		var body := preload("res://world/shared/PhysicalCargo.gd").new()
+		var body := preload("res://geodata/PhysicalCargo.gd").new()
 		var cargo_material := "metal"
 		if prop is PortPalletStack3D or prop is PortWoodenPallet3D or prop is PortLongCrate3D or prop is PortCargoCrate3D: cargo_material = "wood"
 		elif prop is PortPlasticTote3D: cargo_material = "plastic"

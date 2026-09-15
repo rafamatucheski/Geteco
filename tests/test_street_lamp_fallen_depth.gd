@@ -36,7 +36,7 @@ func _run() -> void:
 	camera.zoom = Vector2.ONE*4
 	camera.position = Vector2(25,-10)
 	camera.make_current()
-	var lamp = load("res://StreetLamp.gd").new()
+	var lamp = load("res://geodata/StreetLamp.gd").new()
 	var baseline := "before" in OS.get_cmdline_user_args()
 	if baseline:
 		lamp.free()

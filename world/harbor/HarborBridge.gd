@@ -28,7 +28,7 @@ func _build_lighting() -> void:
 	var lighting := Node2D.new()
 	lighting.name = "BridgeLighting"
 	add_child(lighting)
-	const FIXTURE = preload("res://world/shared/roads/RoadLuminaire3D.gd")
+	const FIXTURE = preload("res://geodata/roads/RoadLuminaire3D.gd")
 	for x in range(3240,4380,140):
 		for north in [true,false]:
 			var strip := FIXTURE.new()

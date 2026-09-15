@@ -64,18 +64,18 @@ func run() -> void:
 	world.add_child(label_tr)
 
 	# 5. Props: Trash Dumpster & Wood Crate
-	var dumpster = preload("res://world/shared/BreakableProp.gd").new()
+	var dumpster = preload("res://geodata/BreakableProp.gd").new()
 	dumpster.position = Vector2(200, 410)
 	dumpster.debris_material = "trash"
 	world.add_child(dumpster)
 
-	var crate = preload("res://world/shared/BreakableProp.gd").new()
+	var crate = preload("res://geodata/BreakableProp.gd").new()
 	crate.position = Vector2(600, 410)
 	crate.debris_material = "wood"
 	world.add_child(crate)
 
 	# 6. Street lamp with full pole shadow
-	var lamp = preload("res://StreetLamp.gd").new()
+	var lamp = preload("res://geodata/StreetLamp.gd").new()
 	lamp.position = Vector2(780, 410)
 	world.add_child(lamp)
 
@@ -96,7 +96,7 @@ func run() -> void:
 	world.add_child(label_col)
 
 	# 8. Fixed Traffic Signal
-	var sig = preload("res://world/shared/roads/traffic/FixedTrafficSignal.gd").new()
+	var sig = preload("res://geodata/roads/traffic/FixedTrafficSignal.gd").new()
 	sig.position = Vector2(920, 410)
 	world.add_child(sig)
 	sig.ensure_presentation()

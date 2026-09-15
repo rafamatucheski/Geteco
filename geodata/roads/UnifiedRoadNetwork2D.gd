@@ -7,7 +7,7 @@ extends Node2D
 ## junction discovery, lane markings and validation.
 
 const ROAD_COLOR := Color("#202932")
-const BRIDGE_SURFACE = preload("res://world/shared/roads/BridgeSurfaceStyle.gd")
+const BRIDGE_SURFACE = preload("res://geodata/roads/BridgeSurfaceStyle.gd")
 const ROAD_EDGE_COLOR := Color("#151c23")
 const SIDEWALK_COLOR := Color("#aaa9a1")
 const CURB_COLOR := Color("#70767a")
@@ -1137,7 +1137,7 @@ func _closest_location_on_polyline(point: Vector2, points: PackedVector2Array) -
 	}
 
 
-var static_canvas := preload("res://world/shared/roads/StaticCanvasGeometry.gd").new(self)
+var static_canvas := preload("res://geodata/roads/StaticCanvasGeometry.gd").new(self)
 
 func _draw() -> void:
 	static_canvas.begin()

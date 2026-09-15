@@ -86,7 +86,7 @@ func _start_gameplay() -> void:
 	var stream := preload("res://world/harbor/ContinuousWorld.gd").new()
 	stream.name = "ContinuousWorld"
 	add_child(stream)
-	var regional_coach := preload("res://world/shared/transit/HarborMountainCoachService.gd").new()
+	var regional_coach := preload("res://geodata/transit/HarborMountainCoachService.gd").new()
 	regional_coach.name = "HarborMountainCoachService"
 	add_child(regional_coach)
 	regional_coach.configure(self, stream)

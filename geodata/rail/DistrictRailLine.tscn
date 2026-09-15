@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://world/shared/rail/DistrictRailLine.gd" id="1_rail"]
-[ext_resource type="Script" path="res://world/shared/rail/AmbientTrain.gd" id="2_train"]
+[ext_resource type="Script" path="res://geodata/rail/DistrictRailLine.gd" id="1_rail"]
+[ext_resource type="Script" path="res://geodata/rail/AmbientTrain.gd" id="2_train"]
 
 [node name="DistrictRailLine" type="Node2D"]
 script = ExtResource("1_rail")

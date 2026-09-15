@@ -8,7 +8,7 @@ func _run_test() -> void:
 	print("=== TESTE: PASSAGEM LIVRE SOB OS PREDIOS E FADE DE TRANSPARENCIA =")
 	print("=================================================================")
 
-	var b_script = load("res://ProceduralBuilding.gd")
+	var b_script = load("res://geodata/ProceduralBuilding.gd")
 	var building: ProceduralBuilding = b_script.new()
 	building.footprint = Vector2(180, 254)
 	building.position = Vector2(1380, 1035)

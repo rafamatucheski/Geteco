@@ -5,7 +5,7 @@ const SURFACE := preload("res://world/harbor/UrbanGround.gd")
 ## A separate authored district, not a replacement for DistrictOneComplete.
 ## Ground, lots and accesses share the same world coordinates as RoadLayout.
 const BUILDING := preload("res://world/harbor/HarborBuilding.gd")
-const TREE := preload("res://world/shared/nature/ProceduralStreetTree.gd")
+const TREE := preload("res://geodata/nature/ProceduralStreetTree.gd")
 const MEDICAL_PARKING := preload("res://world/harbor/HarborMedicalParking.gd")
 const LOCAL_STREETS := preload("res://world/harbor/HarborLocalStreets.gd")
 const LAND_BOUNDS := Rect2(-100, -100, 3300, 2580)
@@ -26,8 +26,8 @@ func _ready() -> void:
 	queue_redraw()
 
 func _build_animated_water() -> void:
-	preload("res://world/shared/nature/WaterPresentation.gd").rectangle(self, Rect2(-5000, 2480, 8200, 10000), Color("204754"))
-	preload("res://world/shared/nature/WaterPresentation.gd").fountain(self, FOUNTAIN_POSITION)
+	preload("res://geodata/nature/WaterPresentation.gd").rectangle(self, Rect2(-5000, 2480, 8200, 10000), Color("204754"))
+	preload("res://geodata/nature/WaterPresentation.gd").fountain(self, FOUNTAIN_POSITION)
 
 func _has_terminal() -> bool:
 	return get_parent() != null and get_parent().has_node("ArrivalStop")
@@ -39,7 +39,7 @@ func _bench_points() -> Array[Vector2]:
 	return points
 
 func _build_street_lamps() -> void:
-	const LAMP_SCRIPT := preload("res://StreetLamp.gd")
+	const LAMP_SCRIPT := preload("res://geodata/StreetLamp.gd")
 	for p in get_street_lamp_points():
 		if name == "District" and LOCAL_STREETS.reserves(p.pos, 12.0): continue
 		var blocked:=false
@@ -320,10 +320,10 @@ func _draw() -> void:
 	SURFACE.paint(self,Rect2(515, -45, 2390, 310), Color("#9b9787"),"concrete")
 	for x in [650, 990, 1550, 1890, 2460, 2780]:
 		SURFACE.paint(self,Rect2(x - 135, -35, 270, 65), Color("#4f6658"),"grass")
-		preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(x - 130, -30, 260, 55), x)
+		preload("res://geodata/nature/GrassDetail.gd").paint(self, Rect2(x - 130, -30, 260, 55), x)
 		draw_line(Vector2(x - 135, -35), Vector2(x + 135, -35), Color("#b1ac97"), 3)
 	SURFACE.paint(self,Rect2(10, 500, 225, 1670), Color("#536b5b"),"grass")
-	preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(10, 500, 225, 1670), 71)
+	preload("res://geodata/nature/GrassDetail.gd").paint(self, Rect2(10, 500, 225, 1670), 71)
 	SURFACE.paint(self,Rect2(93, 500, 45, 1670), Color("#b4aa95"),"stone")
 	for y in range(560, 2140, 180):
 		if y >= 1070: continue # Memorial buffer now uses solid 3D trees.
@@ -400,7 +400,7 @@ func _draw_quadra1_urban_spaces() -> void:
 	# Lush garden pocket
 	SURFACE.paint(self,Rect2(545, 770, 220, 70), Color("#4d6655"),"grass")
 	SURFACE.paint(self,Rect2(545, 770, 220, 70).grow(-2), Color("#445d4b"),"grass")
-	preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(549, 774, 212, 62), 105)
+	preload("res://geodata/nature/GrassDetail.gd").paint(self, Rect2(549, 774, 212, 62), 105)
 	SURFACE.garden_edge(self,Rect2(549,774,212,62),105)
 	draw_rect(Rect2(545, 770, 220, 70), Color("#8e8a7b"), false, 2.0)
 	# Garden footpath

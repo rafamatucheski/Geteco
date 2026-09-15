@@ -1,7 +1,7 @@
 extends Node2D
 ## One persistent coach physically links Harbor's terminal and a mountain village.
-const COACH := preload("res://world/shared/transit/HarborMountainCoach.gd")
-const PLANNER := preload("res://world/shared/transit/RegionalCoachLanePlanner.gd")
+const COACH := preload("res://geodata/transit/HarborMountainCoach.gd")
+const PLANNER := preload("res://geodata/transit/RegionalCoachLanePlanner.gd")
 const HARBOR_BERTH := Vector2(1930, 1220)
 const MOUNTAIN_BERTH := Vector2(7500, -1760)
 const STATION_DWELL := 12.0
@@ -180,7 +180,7 @@ func _build_access() -> void:
 	paved.name = "VillageCoachPavement"
 	paved.points = access_lane.curve.get_baked_points()
 	paved.width = 88.0
-	paved.default_color = preload("res://world/shared/roads/BridgeSurfaceStyle.gd").ASPHALT
+	paved.default_color = preload("res://geodata/roads/BridgeSurfaceStyle.gd").ASPHALT
 	paved.joint_mode = Line2D.LINE_JOINT_ROUND
 	paved.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	paved.end_cap_mode = Line2D.LINE_CAP_ROUND

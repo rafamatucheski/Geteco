@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
 ## Materiais compartilhados: o movimento acontece na GPU sem redesenhar o cenário.
-const SHADER := preload("res://world/shared/nature/WaterSurface.gdshader")
+const SHADER := preload("res://geodata/nature/WaterSurface.gdshader")
 static var _materials: Dictionary = {}
 
 static func apply(surface: CanvasItem, kind: String = "sea", animated: bool = true) -> void:

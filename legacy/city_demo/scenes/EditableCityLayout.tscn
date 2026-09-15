@@ -1,10 +1,10 @@
 [gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://legacy/city_demo/scripts/roads/CityRoadSegment.gd" id="1_road"]
-[ext_resource type="Script" path="res://world/shared/roads/CityIntersection.gd" id="2_intersection"]
+[ext_resource type="Script" path="res://geodata/roads/CityIntersection.gd" id="2_intersection"]
 [ext_resource type="Script" path="res://legacy/city_demo/scripts/roads/CityCrosswalk.gd" id="3_crosswalk"]
 [ext_resource type="PackedScene" path="res://legacy/city_demo/scenes/CityBuilding.tscn" id="4_building"]
-[ext_resource type="PackedScene" path="res://StreetLamp.tscn" id="5_lamp"]
+[ext_resource type="PackedScene" path="res://geodata/StreetLamp.tscn" id="5_lamp"]
 
 [node name="CidadeEditavel" type="Node2D"]
 

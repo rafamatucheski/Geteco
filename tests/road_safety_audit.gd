@@ -1,7 +1,7 @@
 extends SceneTree
 
 const DISTRICT_SCENE := preload("res://legacy/district/borough_one/DistrictOneComplete.tscn")
-const SAFETY_SCRIPT := preload("res://world/shared/roads/safety/DistrictRoadSafetySystem2D.gd")
+const SAFETY_SCRIPT := preload("res://geodata/roads/safety/DistrictRoadSafetySystem2D.gd")
 
 
 func _initialize() -> void:

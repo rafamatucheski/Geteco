@@ -8,8 +8,8 @@ extends Node2D
 signal safety_graph_rebuilt(summary: Dictionary)
 signal crossing_pedestrian_request(crossing_id: StringName, junction_id: StringName)
 
-const CROSSWALK_SCRIPT := preload("res://world/shared/roads/safety/RoadCrossingArea2D.gd")
-const RAIL_CROSSING_SCRIPT := preload("res://world/shared/roads/safety/RailLevelCrossing2D.gd")
+const CROSSWALK_SCRIPT := preload("res://geodata/roads/safety/RoadCrossingArea2D.gd")
+const RAIL_CROSSING_SCRIPT := preload("res://geodata/roads/safety/RailLevelCrossing2D.gd")
 const MERGE_INTERSECTION_DISTANCE := 12.0
 const DEFAULT_SIDEWALK_REACH := 42.0
 

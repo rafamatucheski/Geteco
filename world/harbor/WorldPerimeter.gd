@@ -4,7 +4,7 @@ extends Node2D
 const SOUTH := preload("res://world/harbor/HarborSouthPortLayout.gd")
 const NORTH_ACCESS := preload("res://world/harbor/HarborNorthAccess.gd")
 const SALVAGE := preload("res://cars/salvage/SalvageLocation.gd")
-const WATER := preload("res://world/shared/nature/WaterPresentation.gd")
+const WATER := preload("res://geodata/nature/WaterPresentation.gd")
 const WALL_WIDTH := 12.0
 const FALLBACK := Vector2(715, 1800)
 var contours: Array[PackedVector2Array] = []
@@ -38,7 +38,7 @@ static func build_contours() -> Array[PackedVector2Array]:
 		Rect2(6480, -4732, 2475, 345),
 	]: surfaces.append(SOUTH.rect_polygon(land))
 	var mountain_outline := preload("res://world/mountain_pass/MountainLandGeometry.gd").outline()
-	var mountain_offset := preload("res://world/shared/rail/HarborMountainRailRoute.gd").MOUNTAIN_OFFSET
+	var mountain_offset := preload("res://geodata/rail/HarborMountainRailRoute.gd").MOUNTAIN_OFFSET
 	surfaces.append(Transform2D(0.0, mountain_offset) * mountain_outline)
 	surfaces.append_array(SOUTH.surfaces())
 	surfaces.append_array(NORTH_ACCESS.water_cutouts())

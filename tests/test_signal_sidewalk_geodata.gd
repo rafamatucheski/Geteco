@@ -17,7 +17,7 @@ func _run() -> void:
 	var moved := 0
 	for data in graph.junctions:
 		if not data.get("signalized", false): continue
-		var visual = load("res://world/shared/roads/traffic/JunctionSignalVisual2D.gd").new()
+		var visual = load("res://geodata/roads/traffic/JunctionSignalVisual2D.gd").new()
 		scene.add_child(visual)
 		visual.global_position = network.to_global(data.position)
 		visual.configure(StringName(data.id), data.radius, data.approaches)

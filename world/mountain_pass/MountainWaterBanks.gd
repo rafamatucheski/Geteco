@@ -1,6 +1,6 @@
 extends RefCounted
 const GROUND := preload("res://world/mountain_pass/ForestGroundBlend.gd")
-const WATER := preload("res://world/shared/nature/WaterPresentation.gd")
+const WATER := preload("res://geodata/nature/WaterPresentation.gd")
 
 static func round_bank(points: PackedVector2Array) -> PackedVector2Array:
 	var result := points.duplicate()

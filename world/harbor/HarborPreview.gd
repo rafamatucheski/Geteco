@@ -33,7 +33,7 @@ func _ready() -> void:
 	weather.time_of_day = 0.45
 	add_child(weather)
 	weather.enable_regional_atmosphere()
-	var road_lighting := preload("res://world/shared/roads/RoadLighting.gd").new()
+	var road_lighting := preload("res://geodata/roads/RoadLighting.gd").new()
 	road_lighting.name = "RoadLighting"
 	add_child(road_lighting)
 	if review_mode:

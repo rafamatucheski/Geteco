@@ -1,7 +1,7 @@
 extends SceneTree
 
 const CITY_ROAD_CURVE_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityRoadCurve.gd")
-const UNIFIED_ROAD_NETWORK_SCRIPT := preload("res://world/shared/roads/UnifiedRoadNetwork2D.gd")
+const UNIFIED_ROAD_NETWORK_SCRIPT := preload("res://geodata/roads/UnifiedRoadNetwork2D.gd")
 
 var _failures: Array[String] = []
 

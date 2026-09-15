@@ -6,7 +6,7 @@ extends Node2D
 const FINISH := preload("res://world/harbor/ExteriorFinish.gd")
 const SURFACE := preload("res://world/harbor/UrbanGround.gd")
 const HOUSE := preload("res://world/harbor/cobras/CobraResidence.gd")
-const LAMP := preload("res://StreetLamp.gd")
+const LAMP := preload("res://geodata/StreetLamp.gd")
 const BARREL := preload("res://world/harbor/cobras/CobraBurningBarrel.gd")
 const BARRICADE := preload("res://world/harbor/cobras/CobraBarricade.gd")
 const CENTER := Vector2(7700, 1700)

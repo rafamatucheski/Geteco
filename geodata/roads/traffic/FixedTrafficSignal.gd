@@ -1,6 +1,6 @@
 extends StaticBody2D
 ## Solid foundation until a vehicle knocks the signal down.
-const MODEL := preload("res://world/shared/roads/traffic/TrafficSignalModel3D.gd")
+const MODEL := preload("res://geodata/roads/traffic/TrafficSignalModel3D.gd")
 const BASE_RADIUS := 5.5
 const PIXELS_PER_METRE := 16.0
 const ANGLE_STEPS := 16

@@ -5,7 +5,7 @@ func _run() -> void:
 	var manager := root.get_node("TrafficLightManager")
 	manager.register_intersection(&"fragile_test", Vector2(4000,4000), 100)
 	var signal_post = manager._visual_sets[&"fragile_test"].get_child(0)
-	var lamp = load("res://StreetLamp.gd").new()
+	var lamp = load("res://geodata/StreetLamp.gd").new()
 	lamp.position = Vector2(4300,4000)
 	root.add_child(lamp)
 	for post in [lamp, signal_post]:

@@ -2,7 +2,7 @@ extends SceneTree
 
 const LAYOUT_SCRIPT := preload("res://world/harbor/HarborRoadLayout.gd")
 const NETWORK_SCRIPT := preload("res://world/harbor/HarborRoadNetwork.gd")
-const ROUTER_SCRIPT := preload("res://world/shared/roads/EmergencyLaneRouter.gd")
+const ROUTER_SCRIPT := preload("res://geodata/roads/EmergencyLaneRouter.gd")
 
 var _failures: Array[String] = []
 

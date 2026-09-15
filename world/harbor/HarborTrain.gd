@@ -1,7 +1,7 @@
-extends "res://world/shared/rail/AmbientTrain.gd"
+extends "res://geodata/rail/AmbientTrain.gd"
 
-const PIECE_3D := preload("res://world/shared/rail/TrainPiece3D.gd")
-const AUDIO := preload("res://world/shared/rail/TrainAudioBank.gd")
+const PIECE_3D := preload("res://geodata/rail/TrainPiece3D.gd")
+const AUDIO := preload("res://geodata/rail/TrainAudioBank.gd")
 var locomotive: Node2D
 var _rail_sounds: Array[AudioStreamPlayer2D] = []
 var _bridge_sound: AudioStreamPlayer2D

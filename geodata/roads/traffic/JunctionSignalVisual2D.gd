@@ -4,10 +4,10 @@ extends Node2D
 ## Fixed 3D signal heads anchored exclusively to a canonical junction and its
 ## graph-provided approaches. No world coordinate is authored in this class.
 
-const SIGNAL := preload("res://world/shared/roads/traffic/FixedTrafficSignal.gd")
+const SIGNAL := preload("res://geodata/roads/traffic/FixedTrafficSignal.gd")
 const SIDEWALK_CLEARANCE := 10.0
 const POLE_ARM_LENGTH := 12.0
-const SPACING := preload("res://world/shared/roads/RoadPostSpacing.gd")
+const SPACING := preload("res://geodata/roads/RoadPostSpacing.gd")
 
 var junction_id: StringName = &""
 var junction_radius := 48.0

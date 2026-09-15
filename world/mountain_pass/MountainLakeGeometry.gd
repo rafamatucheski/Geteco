@@ -39,7 +39,7 @@ func _ready() -> void:
 	material.shader = preload("res://world/mountain_pass/MountainLakeSurface.gdshader")
 	surface.material = material
 	surface.add_to_group("animated_water_visual")
-	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(surface, "lake")
+	preload("res://geodata/nature/WaterPresentation.gd").sound_zone(surface, "lake")
 	var current := Line2D.new()
 	current.points = PackedVector2Array([Vector2(0,0), Vector2(90,-70)])
 	current.width = 4.0
@@ -47,7 +47,7 @@ func _ready() -> void:
 	current.name = "LakeCurrentSound"
 	current.position = Vector2(7050, 40)
 	add_child(current)
-	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(current, "stream")
+	preload("res://geodata/nature/WaterPresentation.gd").sound_zone(current, "stream")
 	var body := StaticBody2D.new()
 	body.name = "LakeWaterBoundary"
 	body.collision_layer = 1

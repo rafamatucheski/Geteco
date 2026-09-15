@@ -383,7 +383,7 @@ func _update_gate(focus: Vector2) -> void:
 
 func _build_lights() -> void:
 	for point in [Vector2(3640,3800),Vector2(5600,3850),Vector2(5600,4630),Vector2(3630,4870),Vector2(5600,5790),Vector2(3700,3280),Vector2(5700,3280),Vector2(3470,3320)]:
-		var lamp := preload("res://StreetLamp.gd").new()
+		var lamp := preload("res://geodata/StreetLamp.gd").new()
 		lamp.position = point
 		lamp.light_radius = 400
 		lamp.light_energy = 1.1

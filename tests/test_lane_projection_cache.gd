@@ -1,6 +1,6 @@
 extends SceneTree
 
-const CONTROLLER := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
+const CONTROLLER := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 
 class FakeGraph:
 	extends Node2D

@@ -2,7 +2,7 @@
 extends RefCounted
 ## Static exterior surfacing. Stones here are flush aggregate, never solid props.
 const SURFACE := preload("res://world/harbor/UrbanGround.gd")
-const TREE := preload("res://world/shared/nature/ProceduralStreetTree.gd")
+const TREE := preload("res://geodata/nature/ProceduralStreetTree.gd")
 
 static func surface_polygon(canvas: CanvasItem, points: PackedVector2Array, tint: Color, kind: String) -> void:
 	var uv := PackedVector2Array()
@@ -53,7 +53,7 @@ static func tree(parent: Node2D, point: Vector2, seed_value: int, scale_value :=
 	parent.add_child(plant)
 
 static func rock(parent: Node2D, point: Vector2, seed_value: int) -> void:
-	var stone := preload("res://world/shared/nature/ProceduralUrbanRock.gd").new()
+	var stone := preload("res://geodata/nature/ProceduralUrbanRock.gd").new()
 	stone.name = "ExteriorRock%d" % seed_value
 	stone.position = point
 	stone.rock_size = Vector2(38,28)

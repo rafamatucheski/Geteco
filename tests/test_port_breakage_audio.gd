@@ -18,7 +18,7 @@ func run() -> void:
 	var count := world.get_child_count()
 	crate.receive_vehicle_impact(200,Vector2.RIGHT)
 	check(world.get_child_count() == count,"Repeated contact does not duplicate debris")
-	var bin := preload("res://world/shared/BreakableProp.gd").new()
+	var bin := preload("res://geodata/BreakableProp.gd").new()
 	bin.debris_material = "trash"
 	world.add_child(bin)
 	bin.receive_vehicle_impact(90,Vector2.DOWN)

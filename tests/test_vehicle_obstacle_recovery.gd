@@ -32,7 +32,7 @@ func run() -> void:
 	var obstacle := block(Vector2(90, 0), Vector2(40, 26), 2)
 	await physics_frame
 	await physics_frame
-	var router := preload("res://world/shared/roads/EmergencyLaneRouter.gd").new()
+	var router := preload("res://geodata/roads/EmergencyLaneRouter.gd").new()
 	check(not router._clear_motion(ambulance, Vector2(140, 0)), "A parked vehicle blocks the ambulance's hull sweep")
 	var detour := router._steer_clear(ambulance, Vector2(70, 0))
 	check(absf(detour.y) > 20 and router._clear_motion(ambulance, detour), "Ambulance chooses a physically clear detour around the parked car")

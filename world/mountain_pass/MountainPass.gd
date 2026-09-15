@@ -69,7 +69,7 @@ func _ready() -> void:
 		# No mundo contínuo a ferrovia já pertence ao porto: não criar outro trem.
 		var rail := preload("res://world/harbor/HarborRailLine.gd").new()
 		rail.name = "RegionalFreightRail"
-		rail.position = -preload("res://world/shared/rail/HarborMountainRailRoute.gd").MOUNTAIN_OFFSET
+		rail.position = -preload("res://geodata/rail/HarborMountainRailRoute.gd").MOUNTAIN_OFFSET
 		add_child(rail)
 	if streamed_region:
 		await MOUNTAIN_SCENERY_BUILDER.build_streamed_scenery(self)
@@ -115,7 +115,7 @@ func _ready() -> void:
 		hud.get_node("RootMargin/VehicleTestPanel").hide()
 		add_child(preload("res://ui/PauseMenu.tscn").instantiate())
 		call_deferred("_finish_region_arrival")
-	var road_lighting := preload("res://world/shared/roads/RoadLighting.gd").new()
+	var road_lighting := preload("res://geodata/roads/RoadLighting.gd").new()
 	road_lighting.name = "RoadLighting"
 	road_lighting.mountain_road = road
 	add_child(road_lighting)

@@ -3,7 +3,7 @@ extends Node2D
 ## Runtime population uses the same generated lane paths and junction authority
 ## as the live game. No cosmetic cars are translated independently of the graph.
 const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
-const CONTROLLER := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
+const CONTROLLER := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 const RAIL := preload("res://world/harbor/HarborRailLine.gd")
 const CAR_TYPES := ["orbita_micro", "sport_estate", "sedan_classic", "metro_hatch", "aurora_executive", "union_sedan", "vale_crossover", "metro_hatch", "nordic_estate", "sport_coupe", "nimbus_minivan", "courier_van", "station_wagon", "cobra_v8", "taxi_yellow", "vertice_midengine", "metro_hatch", "summit_suv", "bravio_crew", "courier_van", "sedan_classic", "union_sedan", "station_wagon"]
 const MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]

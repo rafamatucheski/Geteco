@@ -41,7 +41,7 @@ func _ready() -> void:
 	add_child(storyteller)
 	add_child(preload("res://world/harbor/events/CemeteryAtmosphere.gd").new())
 	for point in [Vector2(-35,-340),Vector2(35,-340),Vector2(-40,50),Vector2(40,280)]:
-		var lamp:=preload("res://StreetLamp.gd").new()
+		var lamp:=preload("res://geodata/StreetLamp.gd").new()
 		lamp.position=point
 		lamp.light_energy=0.65
 		lamp.light_radius=220
@@ -59,7 +59,7 @@ func _build_ground() -> void:
 	ground.add_to_group("audio_ground")
 	ground.set_meta("footstep_surface", "grass")
 	add_child(ground)
-	var grass := preload("res://world/shared/nature/GrassDetail.gd").new()
+	var grass := preload("res://geodata/nature/GrassDetail.gd").new()
 	grass.dark = true
 	add_child(grass)
 

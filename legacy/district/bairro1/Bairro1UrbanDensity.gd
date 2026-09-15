@@ -7,7 +7,7 @@ extends Node2D
 ## pedestrian paths.  Every solid addition is screened against the expansion's
 ## road ribbons, rail corridor and existing lots before it is instantiated.
 
-const BUILDING_SCRIPT := preload("res://ProceduralBuilding.gd")
+const BUILDING_SCRIPT := preload("res://geodata/ProceduralBuilding.gd")
 const DISTRICT_BOUNDS := Rect2(0, 1280, 2400, 2200)
 static var RAIL_CORRIDOR := PackedVector2Array([
 	Vector2(-260, 1620), Vector2(80, 1640), Vector2(390, 1645),

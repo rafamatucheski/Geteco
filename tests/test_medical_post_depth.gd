@@ -32,7 +32,7 @@ func run() -> void:
 	world.add_child(camera)
 	camera.zoom = Vector2.ONE*4
 	camera.position = Vector2(0,-15)
-	post = preload("res://world/shared/roads/traffic/FixedTrafficSignal.gd").new()
+	post = preload("res://geodata/roads/traffic/FixedTrafficSignal.gd").new()
 	post.z_index = 32
 	world.add_child(post)
 	post.ensure_presentation()

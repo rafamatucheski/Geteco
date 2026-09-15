@@ -3,7 +3,7 @@ extends Node2D
 ## Structural second bridge. Asphalt and traffic are supplied by RoadLayout.
 const OUTLET := Vector2(7300, -4529)
 const INLET := Vector2(7300, -4591)
-const SURFACE_STYLE = preload("res://world/shared/roads/BridgeSurfaceStyle.gd")
+const SURFACE_STYLE = preload("res://geodata/roads/BridgeSurfaceStyle.gd")
 
 static func road_definitions() -> Array[Dictionary]:
 	var outbound := PackedVector2Array()
@@ -61,7 +61,7 @@ func _ready() -> void:
 
 func _build_lighting() -> void:
 	if Engine.is_editor_hint(): return
-	const FIXTURE = preload("res://world/shared/roads/RoadLuminaire3D.gd")
+	const FIXTURE = preload("res://geodata/roads/RoadLuminaire3D.gd")
 	for definition in road_definitions():
 		var curve := Curve2D.new()
 		for point in definition.points: curve.add_point(point)

@@ -17,7 +17,7 @@ func _run() -> void:
 	camera.zoom = Vector2.ONE * 4.0
 	camera.make_current()
 	for index in 3:
-		var post = load("res://world/shared/roads/traffic/FixedTrafficSignal.gd").new()
+		var post = load("res://geodata/roads/traffic/FixedTrafficSignal.gd").new()
 		post.position = Vector2(430 + index * 70, 380)
 		post.entry_tangent = Vector2.UP.rotated(-0.3)
 		post.signal_state = index

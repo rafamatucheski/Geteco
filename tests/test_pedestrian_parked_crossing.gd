@@ -4,7 +4,7 @@ func run() -> void:
 	create_timer(25.0).timeout.connect(func(): quit(2))
 	seed(917)
 	root.get_node("WantedManager").set_process(false)
-	var crossing := preload("res://world/shared/roads/safety/RoadCrossingArea2D.gd").new()
+	var crossing := preload("res://geodata/roads/safety/RoadCrossingArea2D.gd").new()
 	crossing.configure({"id":"parked_crossing", "junction_id":"test", "position":Vector2.ZERO, "road_width":120.0})
 	root.add_child(crossing)
 	crossing.set_signal_state(false, true)

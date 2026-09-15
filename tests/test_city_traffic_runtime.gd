@@ -2,7 +2,7 @@ extends SceneTree
 ## Integration fixture: production cars and controller run through their normal
 ## callbacks. After spawn, this test only reads them; it never advances their AI.
 const Factory := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
-const Controller := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
+const Controller := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 class Graph:
 	extends Node2D
 	func get_graph_data() -> Dictionary:

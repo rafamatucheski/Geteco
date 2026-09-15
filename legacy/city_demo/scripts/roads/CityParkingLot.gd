@@ -15,7 +15,7 @@ enum BayAngle {
 }
 
 const VEHICLE_ATLAS: Texture2D = preload("res://assets/art/vehicle-atlas.png")
-const LAMP_SCENE: PackedScene = preload("res://StreetLamp.tscn")
+const LAMP_SCENE: PackedScene = preload("res://geodata/StreetLamp.tscn")
 
 @export var parking_layout: ParkingLayout = ParkingLayout.DOUBLE_ROW_FACING:
 	set(pl):

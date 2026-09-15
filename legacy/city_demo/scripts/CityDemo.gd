@@ -10,7 +10,7 @@ const BUILDING_SCENE: PackedScene = preload("res://legacy/city_demo/scenes/CityB
 const VEHICLE_SCENE: PackedScene = preload("res://cars/traffic/TrafficVehicle.tscn")
 const PEDESTRIAN_SCENE: PackedScene = preload("res://legacy/city_demo/scenes/Pedestrian.tscn")
 const COLLECTIBLE_SCRIPT := preload("res://economy/Collectible.gd")
-const PUDDLE_SCRIPT := preload("res://Puddle.gd")
+const PUDDLE_SCRIPT := preload("res://geodata/Puddle.gd")
 const NIGHT_RACE_SCRIPT := preload("res://cars/NightRaceController.gd")
 const RACE_CATALOG_SCRIPT := preload("res://cars/RaceCatalog.gd")
 const DRIFT_ZONE_SCRIPT := preload("res://cars/DriftChallengeZone.gd")
@@ -76,7 +76,7 @@ func _inject_hud():
 		var pause_menu = pause_scene.instantiate()
 		get_parent().call_deferred("add_child", pause_menu)
 
-	var phone_scene = load("res://PhoneBox.tscn")
+	var phone_scene = load("res://geodata/PhoneBox.tscn")
 	if phone_scene:
 		var phone = phone_scene.instantiate()
 		phone.position = Vector2(0, -100)
@@ -481,7 +481,7 @@ func _create_decor() -> void:
 			add_child(ped)
 
 	# Instancia Postes de Luz Noturnos com iluminação âmbar nas calçadas (somente se enable_legacy_district estiver ativo)
-	var lamp_script = load("res://StreetLamp.gd")
+	var lamp_script = load("res://geodata/StreetLamp.gd")
 	if lamp_script and enable_legacy_district:
 		var lamp_positions := [
 			[Vector2(-420, -78), true], [Vector2(-180, -78), true],

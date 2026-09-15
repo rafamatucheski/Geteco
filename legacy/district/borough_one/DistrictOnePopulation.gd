@@ -7,7 +7,7 @@ extends Node2D
 
 const MODERN_TRAFFIC := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 const AUTHORED_PEDESTRIAN := preload("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd")
-const JUNCTION_TRAFFIC := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
+const JUNCTION_TRAFFIC := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 
 @export_range(0, 32) var moving_vehicle_count := 24
 @export_range(0, 48) var pedestrian_count := 36

@@ -14,7 +14,7 @@ func _run() -> void:
 	var stage := Node2D.new()
 	root.add_child(stage)
 	current_scene = stage
-	var junction = load("res://world/shared/roads/traffic/JunctionSignalVisual2D.gd").new()
+	var junction = load("res://geodata/roads/traffic/JunctionSignalVisual2D.gd").new()
 	stage.add_child(junction)
 	junction.position = Vector2(400, 300)
 	junction.configure(&"fixed_signal_test", 48, [

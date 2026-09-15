@@ -1,6 +1,6 @@
 extends SceneTree
-const CONTROLLER = preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
-const CROSSING = preload("res://world/shared/roads/safety/RoadCrossingArea2D.gd")
+const CONTROLLER = preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
+const CROSSING = preload("res://geodata/roads/safety/RoadCrossingArea2D.gd")
 class Graph:
 	extends Node2D
 	var junctions: Array = []

@@ -2,11 +2,11 @@ extends Node2D
 ## Fill gaps using the actual road graph, then measure both traffic lanes.
 ## Pole placement respects all road surfaces, authored access corridors and
 ## static physics, including entrances added by other scene components.
-const LAMP := preload("res://StreetLamp.gd")
-const FIXTURE := preload("res://world/shared/roads/RoadLuminaire3D.gd")
+const LAMP := preload("res://geodata/StreetLamp.gd")
+const FIXTURE := preload("res://geodata/roads/RoadLuminaire3D.gd")
 const SPACING := 170.0
 const MIN_WASH := 0.18
-const POST_SPACING := preload("res://world/shared/roads/RoadPostSpacing.gd")
+const POST_SPACING := preload("res://geodata/roads/RoadPostSpacing.gd")
 # Sidewalk strips swept by the tail of route 510 at its two tight outside
 # corners. Dynamic infill poles must obey the same clearance as authored ones.
 const ARTICULATED_TURN_CLEARANCES: Array[Rect2] = [

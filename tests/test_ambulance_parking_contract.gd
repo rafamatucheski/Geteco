@@ -38,7 +38,7 @@ func run() -> void:
 	var planner := APPROACH.new()
 	await physics_frame
 	check(planner.service_clear(unit,patient,Transform2D(0,Vector2(280,0))),"Open lane has full unloading and walking clearance")
-	var pole := preload("res://world/shared/roads/traffic/FixedTrafficSignal.gd").new()
+	var pole := preload("res://geodata/roads/traffic/FixedTrafficSignal.gd").new()
 	pole.position = Vector2(202,0)
 	world.add_child(pole)
 	await physics_frame

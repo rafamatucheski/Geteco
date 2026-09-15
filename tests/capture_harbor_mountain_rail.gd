@@ -1,6 +1,6 @@
 extends SceneTree
 const OUTPUT := "res://docs/measurements/rail-route-0910"
-const ROUTE := preload("res://world/shared/rail/HarborMountainRailRoute.gd")
+const ROUTE := preload("res://geodata/rail/HarborMountainRailRoute.gd")
 var failures := 0
 
 func _initialize() -> void: _run.call_deferred()
@@ -75,7 +75,7 @@ func _run() -> void:
 	check(train.get_instance_id() == original_train, "O trem permanece o mesmo após todas as transições")
 	var map = get_first_node_in_group("minimap")
 	check(map != null, "Minimapa presente na cena real")
-	var overlay := rail.get_children().filter(func(node: Node): return node.get_script() == load("res://world/shared/rail/RailMinimapOverlay.gd"))
+	var overlay := rail.get_children().filter(func(node: Node): return node.get_script() == load("res://geodata/rail/RailMinimapOverlay.gd"))
 	check(overlay.size() == 1 and overlay[0].minimap != null, "Traçado ferroviário conectado ao minimapa")
 	print("HARBOR_MOUNTAIN_RAIL_RENDER failures=%d" % failures)
 	scene.queue_free()

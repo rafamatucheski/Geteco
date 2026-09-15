@@ -1,6 +1,6 @@
 extends Node2D
 ## A bounded pool gets a fresh road-edge layout for each rainfall.
-const PUDDLE := preload("res://Puddle.gd")
+const PUDDLE := preload("res://geodata/Puddle.gd")
 const MAX_PUDDLES := 96
 const DRY_RATE := 0.6
 const FILL_RATE := 1.0 / 45.0

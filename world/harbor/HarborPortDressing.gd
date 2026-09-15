@@ -21,7 +21,7 @@ static func build(port: Node2D) -> void:
 		port.add_child(light)
 
 static func _breakable(port: Node2D, rect: Rect2, label: String, debris_material: String, model: Node2D) -> void:
-	var body := preload("res://world/shared/BreakableProp.gd").new()
+	var body := preload("res://geodata/BreakableProp.gd").new()
 	body.name = label
 	body.position = rect.get_center()
 	body.extent = rect.size

@@ -1,5 +1,5 @@
 @tool
-extends "res://world/shared/PhysicalCargo.gd"
+extends "res://geodata/PhysicalCargo.gd"
 class_name CobraBarricade
 ## Pilha de pneus do território hostil. Reaproveita o contrato físico de
 ## PhysicalCargo por inteiro: empurrão, impacto de veículo, dano, desmonte em

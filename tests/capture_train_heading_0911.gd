@@ -8,7 +8,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var piece = preload("res://world/shared/rail/TrainPiece3D.gd").new()
+	var piece = preload("res://geodata/rail/TrainPiece3D.gd").new()
 	world.add_child(piece)
 	piece.position = Vector2(450, 240)
 	piece.scale = Vector2.ONE * 4.0

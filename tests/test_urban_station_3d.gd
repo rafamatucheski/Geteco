@@ -19,7 +19,7 @@ func run() -> void:
 			check(absf(local_cleared.y - 24) < 0.01,"signal stays on the same sidewalk")
 			check((cleared-original).dot(outward)>0,"signal moves away from the junction")
 			check(station.clear_signal_position(cleared,outward).distance_to(cleared)<0.01,"signal clearance is stable on rebuild")
-		var junction := preload("res://world/shared/roads/traffic/JunctionSignalVisual2D.gd").new()
+		var junction := preload("res://geodata/roads/traffic/JunctionSignalVisual2D.gd").new()
 		var tangent := Vector2.RIGHT.rotated(angle)
 		junction.configure(&"station_clearance",48,[{"road_index":0,"entry_tangent":tangent,"road_width":100}])
 		junction.position = station.to_global(Vector2(20,24)) - junction.get_signal_layout()[0].pole_base

@@ -10,7 +10,7 @@ const FIRE_APRON := Rect2(5725, -1260, 310, 160)
 const WATER_COLOR := Color("#204754")
 
 func _build_animated_water() -> void:
-	preload("res://world/shared/nature/WaterPresentation.gd").rectangle(self, Rect2(4380, -10000, 2380, 9900), WATER_COLOR)
+	preload("res://geodata/nature/WaterPresentation.gd").rectangle(self, Rect2(4380, -10000, 2380, 9900), WATER_COLOR)
 
 func get_street_lamp_points() -> Array[Dictionary]:
 	return [{"pos":Vector2(5000,-1920),"south":true},{"pos":Vector2(6100,-1920),"south":true},{"pos":Vector2(5000,-1030),"south":true},{"pos":Vector2(6100,-1030),"south":true},{"pos":Vector2(5050,-285),"south":true},{"pos":Vector2(6050,-285),"south":true}]

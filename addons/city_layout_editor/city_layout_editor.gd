@@ -4,19 +4,19 @@ extends EditorPlugin
 const ROAD_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityRoadSegment.gd")
 const ROAD_CURVE_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityRoadCurve.gd")
 const LOT_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityLot.gd")
-const INTERSECTION_SCRIPT := preload("res://world/shared/roads/CityIntersection.gd")
+const INTERSECTION_SCRIPT := preload("res://geodata/roads/CityIntersection.gd")
 const CROSSWALK_SCRIPT := preload("res://legacy/city_demo/scripts/roads/CityCrosswalk.gd")
-const LAMP_SCENE := preload("res://StreetLamp.tscn")
-const UNIFIED_ROAD_NETWORK_SCRIPT := preload("res://world/shared/roads/UnifiedRoadNetwork2D.gd")
+const LAMP_SCENE := preload("res://geodata/StreetLamp.tscn")
+const UNIFIED_ROAD_NETWORK_SCRIPT := preload("res://geodata/roads/UnifiedRoadNetwork2D.gd")
 
 # Predio "de verdade": o mesmo script (ProceduralBuilding.gd) usado pelo
 # CentralDistrict e pelo Bairro1, desenhado por codigo (sem sprite fixo) e
 # com uma variedade grande de "building_kind" ja prontos -- por isso o menu
 # de biblioteca abaixo usa ele em vez da CityBuilding.tscn antiga (um
 # placeholder simples, visualmente diferente do resto do mapa).
-const PROCEDURAL_BUILDING_SCRIPT := preload("res://ProceduralBuilding.gd")
-const PROCEDURAL_TREE_SCRIPT := preload("res://world/shared/nature/ProceduralStreetTree.gd")
-const PROCEDURAL_ROCK_SCRIPT := preload("res://world/shared/nature/ProceduralUrbanRock.gd")
+const PROCEDURAL_BUILDING_SCRIPT := preload("res://geodata/ProceduralBuilding.gd")
+const PROCEDURAL_TREE_SCRIPT := preload("res://geodata/nature/ProceduralStreetTree.gd")
+const PROCEDURAL_ROCK_SCRIPT := preload("res://geodata/nature/ProceduralUrbanRock.gd")
 
 # Biblioteca de prédios: rótulo em português -> (building_kind, footprint
 # padrão). "building_kind" é lido por ProceduralBuilding._draw() e por

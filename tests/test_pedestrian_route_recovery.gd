@@ -152,7 +152,7 @@ func curb_case(space: RefCounted) -> void:
 	await frames(2)
 
 func crossing_case() -> void:
-	var crossing := preload("res://world/shared/roads/safety/RoadCrossingArea2D.gd").new()
+	var crossing := preload("res://geodata/roads/safety/RoadCrossingArea2D.gd").new()
 	crossing.configure({"id":"recovery_crossing", "junction_id":"test", "position":Vector2(1000,1000), "road_width":120.0})
 	root.add_child(crossing)
 	crossing.set_signal_state(true, false)

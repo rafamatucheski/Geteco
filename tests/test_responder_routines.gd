@@ -53,7 +53,7 @@ func _run() -> void:
 	var probe := CharacterBody2D.new()
 	scene.add_child(probe)
 	probe.position = Vector2(100, 0)
-	var router := preload("res://world/shared/roads/EmergencyLaneRouter.gd").new()
+	var router := preload("res://geodata/roads/EmergencyLaneRouter.gd").new()
 	router.destination = Vector2(100, 200)
 	router.next_plan_ms = Time.get_ticks_msec() + 10000
 	router.legs.append({"path": lane, "start": 0.0, "end": 100.0})

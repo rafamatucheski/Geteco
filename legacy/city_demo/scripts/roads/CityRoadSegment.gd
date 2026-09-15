@@ -17,7 +17,7 @@ enum Orientation {
 }
 
 const TREE_TEXTURE: Texture2D = preload("res://assets/art/tree-street-small.png")
-const LAMP_SCENE: PackedScene = preload("res://StreetLamp.tscn")
+const LAMP_SCENE: PackedScene = preload("res://geodata/StreetLamp.tscn")
 
 # --- ROAD DIMENSIONS & CONFIG ---
 @export var road_type: int = RoadType.TWO_LANE:

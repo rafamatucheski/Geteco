@@ -311,7 +311,7 @@ func _build_lower_road_visuals() -> void:
 	var surfaces := Node2D.new()
 	surfaces.name = "LowerRoadSurfaces"
 	add_child(surfaces)
-	_lower_geometry = preload("res://world/shared/roads/StaticCanvasGeometry.gd").new(surfaces)
+	_lower_geometry = preload("res://geodata/roads/StaticCanvasGeometry.gd").new(surfaces)
 	_lower_geometry.begin()
 	for route in _routes:
 		var points := route.get_baked_points()

@@ -65,7 +65,7 @@ func _run() -> void:
 	var transit := preload("res://world/harbor/urban_transit/UrbanTransit.gd").new()
 	transit.name = "UrbanTransit"
 	world.add_child(transit)
-	var road_lighting := preload("res://world/shared/roads/RoadLighting.gd").new()
+	var road_lighting := preload("res://geodata/roads/RoadLighting.gd").new()
 	road_lighting.name = "RoadLighting"
 	world.add_child(road_lighting)
 

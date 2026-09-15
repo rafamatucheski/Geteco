@@ -1,6 +1,6 @@
 class_name MountainPassRoad
 extends Node2D
-const BRIDGE_SURFACE = preload("res://world/shared/roads/BridgeSurfaceStyle.gd")
+const BRIDGE_SURFACE = preload("res://geodata/roads/BridgeSurfaceStyle.gd")
 
 ## Renderizador de Estradas e Curvas da Montanha:
 ## Utiliza Curve2D com interpolacao suave (spline) para tracado continuo e organico,

@@ -91,7 +91,7 @@ func _build() -> void:
 static func track(parent: Node2D, rail: Node2D, from: float, to: float, bridge := false) -> void:
 	var offset := from
 	while offset < to:
-		var chunk = load("res://world/shared/rail/RailStructure3D.gd").new()
+		var chunk = load("res://geodata/rail/RailStructure3D.gd").new()
 		chunk.name = "Track3D_%d" % int(offset)
 		chunk.material = parent.material
 		parent.add_child(chunk)
@@ -144,7 +144,7 @@ static func track(parent: Node2D, rail: Node2D, from: float, to: float, bridge :
 
 static func supports(parent: Node2D, footprints: Array[Rect2]) -> void:
 	for rect in footprints:
-		var pier = load("res://world/shared/rail/RailStructure3D.gd").new()
+		var pier = load("res://geodata/rail/RailStructure3D.gd").new()
 		parent.add_child(pier)
 		pier.box(rect.get_center(),Vector3(rect.size.x,2,rect.size.y),1,0,"707a72")
 		pier.box(rect.get_center(),Vector3(rect.size.x-2,42,rect.size.y-2),22,0,"a6aea0")
@@ -157,7 +157,7 @@ static func barriers(parent: Node2D, footprints: Array[Rect2]) -> void:
 		var y := rect.position.y
 		while y < rect.end.y:
 			var length := minf(240,rect.end.y-y)
-			var chunk = load("res://world/shared/rail/RailStructure3D.gd").new()
+			var chunk = load("res://geodata/rail/RailStructure3D.gd").new()
 			parent.add_child(chunk)
 			var center := Vector2(rect.get_center().x,y+length*0.5)
 			chunk.box(center,Vector3(rect.size.x,8,length),4,0,"505e62")

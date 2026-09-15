@@ -1,5 +1,5 @@
 @tool
-extends "res://world/shared/roads/safety/DistrictRoadSafetySystem2D.gd"
+extends "res://geodata/roads/safety/DistrictRoadSafetySystem2D.gd"
 
 ## Crosswalks belong to actual incoming junction arms, never a second painted
 ## coordinate map. Reuses the live game's detection, signals and vehicle yield.

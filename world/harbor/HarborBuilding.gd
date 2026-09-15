@@ -1,5 +1,5 @@
 @tool
-extends "res://ProceduralBuilding.gd"
+extends "res://geodata/ProceduralBuilding.gd"
 
 ## Reuses the game's building vocabulary with real, footprint-bounded solids.
 @export var business_name := ""

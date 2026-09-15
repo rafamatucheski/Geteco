@@ -1,4 +1,4 @@
-extends "res://world/shared/roads/EmergencyLaneRouter.gd"
+extends "res://geodata/roads/EmergencyLaneRouter.gd"
 ## Keep the cab on its actual initial lane, never jump to oncoming traffic.
 var start_lane: Path2D
 var _start_query := true

@@ -28,11 +28,11 @@ const LOT_GROUND_COLOR := Color("#555952")
 const LANE_COLOR := Color("#dfc84d")
 const ALLEY_COLOR := Color("#3d4345")
 
-const PROCEDURAL_TREE := preload("res://world/shared/nature/ProceduralStreetTree.gd")
-const PROCEDURAL_ROCK := preload("res://world/shared/nature/ProceduralUrbanRock.gd")
-const LAMP_SCRIPT := preload("res://StreetLamp.gd")
-const BUILDING_SCRIPT := preload("res://ProceduralBuilding.gd")
-const INTERSECTION_SCRIPT := preload("res://world/shared/roads/CityIntersection.gd")
+const PROCEDURAL_TREE := preload("res://geodata/nature/ProceduralStreetTree.gd")
+const PROCEDURAL_ROCK := preload("res://geodata/nature/ProceduralUrbanRock.gd")
+const LAMP_SCRIPT := preload("res://geodata/StreetLamp.gd")
+const BUILDING_SCRIPT := preload("res://geodata/ProceduralBuilding.gd")
+const INTERSECTION_SCRIPT := preload("res://geodata/roads/CityIntersection.gd")
 
 # Main north/south connection from CentralDistrict to Bairro 2.  These are
 # control points; Catmull-Rom sampling below turns them into real curves.

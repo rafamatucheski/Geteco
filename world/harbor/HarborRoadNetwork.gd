@@ -1,5 +1,5 @@
 @tool
-extends "res://world/shared/roads/UnifiedRoadNetwork2D.gd"
+extends "res://geodata/roads/UnifiedRoadNetwork2D.gd"
 
 ## Streets retain the shared renderer, lane graph and validation unchanged.
 ## The harbor's authored terrain supplies land, quays and water instead of the
