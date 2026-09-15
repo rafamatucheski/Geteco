@@ -197,7 +197,7 @@ static func add_silhouette(display: Sprite2D, viewport: SubViewport) -> void:
 	shadow.offset = display.offset
 	shadow.show_behind_parent = true
 	var mat := ShaderMaterial.new()
-	mat.shader = preload("res://world/shared/ProjectedSilhouette.gdshader")
+	mat.shader = preload("res://systems/ProjectedSilhouette.gdshader")
 	var foot := camera.unproject_position(Vector3.ZERO)
 	if display.centered: foot -= Vector2(viewport.size)*.5
 	mat.set_shader_parameter("foot",foot+display.offset)
