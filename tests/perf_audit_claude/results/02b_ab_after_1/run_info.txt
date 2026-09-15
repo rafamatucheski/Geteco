@@ -1,0 +1,2 @@
+﻿tree=D:/geteco/game head=9bd10e0 start=2026-09-15T19:57:15.6999500-03:00
+exit=0 wall_s=174.6432298

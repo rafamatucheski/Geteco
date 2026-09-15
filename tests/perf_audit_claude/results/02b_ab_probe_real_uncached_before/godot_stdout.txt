@@ -1,0 +1,31 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Godot_v4.7.2-stable_win64_console.exe : SCRIPT ERROR: Parse Error: Cannot find member "format_cache_hits" in base 
+"res://cars/VehicleMeshBatcher.gd".
+No linha:13 caractere:3
++   & $godot --path $side.path --script res://tests/perf_audit_claude/p ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (SCRIPT ERROR: P...eshBatcher.gd".:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:107)
+SCRIPT ERROR: Parse Error: Cannot find member "_format_cache" in base "res://cars/VehicleMeshBatcher.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:107)
+SCRIPT ERROR: Parse Error: Cannot find member "mesh_cache_evictions" in base "res://cars/VehicleMeshBatcher.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:108)
+SCRIPT ERROR: Parse Error: Cannot find member "mesh_cache_misses" in base "res://cars/VehicleMeshBatcher.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:108)
+SCRIPT ERROR: Parse Error: Cannot find member "cache_invalidations" in base "res://cars/VehicleMeshBatcher.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:109)
+SCRIPT ERROR: Parse Error: Cannot find member "content_key_invalidations" in base 
+"res://prototypes/living_cast/VehicleWheelClearance.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:109)
+SCRIPT ERROR: Parse Error: Cannot find member "content_key_hits" in base 
+"res://prototypes/living_cast/VehicleWheelClearance.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:110)
+SCRIPT ERROR: Parse Error: Cannot find member "_content_keys" in base 
+"res://prototypes/living_cast/VehicleWheelClearance.gd".
+   at: GDScript::reload (res://tests/perf_audit_claude/probe_vehicle_build_02b.gd:110)
+ERROR: Failed to load script "res://tests/perf_audit_claude/probe_vehicle_build_02b.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)

@@ -70,6 +70,87 @@ func _junction_stage_changed() -> bool:
 	_last_stage_signature = signature
 	return changed
 
+# Latência da fila por classe de relevância, observada de fora (a cada 3 quadros):
+# visible = origem dentro da viewport; near = dentro da margem de 220 px usada pelo
+# PresentationBudget; far = fora. A classe registrada é a mais relevante já vista.
+var _queue_seen := {}
+var queue_done: Array = []
+var queue_oldest := {"visible": 0.0, "near": 0.0, "far": 0.0}
+const CLASS_RANK := {"far": 0, "near": 1, "visible": 2}
+
+func _queue_class(actor: Node2D) -> String:
+	var screen: Vector2 = actor.get_global_transform_with_canvas().origin
+	var rect: Rect2 = actor.get_viewport_rect()
+	if actor.is_visible_in_tree() and rect.has_point(screen): return "visible"
+	if actor.is_visible_in_tree() and rect.grow(220).has_point(screen): return "near"
+	return "far"
+
+func _sample_queue() -> void:
+	if not is_instance_valid(budget): return
+	var now := _now_ms()
+	var present := {}
+	for actor in budget.pending:
+		if not is_instance_valid(actor): continue
+		var id: int = actor.get_instance_id()
+		present[id] = true
+		var kind := _queue_class(actor)
+		if not _queue_seen.has(id):
+			_queue_seen[id] = {"since": now, "class": kind, "ref": weakref(actor), "phase": phases[phase_id], "relevant_since": -1.0}
+		elif CLASS_RANK[kind] > CLASS_RANK[_queue_seen[id].class]:
+			_queue_seen[id].class = kind
+		# Mesma definição do PresentationBudget 02B, mas medida de fora, para comparar
+		# árvores com e sem o patch: relógio começa quando o ator entra na margem.
+		if kind != "far" and float(_queue_seen[id].relevant_since) < 0.0:
+			_queue_seen[id].relevant_since = now
+		var age: float = now - float(_queue_seen[id].since)
+		queue_oldest[kind] = maxf(queue_oldest[kind], age)
+	for id in _queue_seen.keys():
+		if present.has(id): continue
+		var entry: Dictionary = _queue_seen[id]
+		var actor = entry.ref.get_ref()
+		var built := is_instance_valid(actor) and (actor.get("body_viewport") != null or actor.get("viewport") != null or actor.get("render_view") != null)
+		var relevant_wait: float = now - float(entry.relevant_since) if float(entry.relevant_since) >= 0.0 else -1.0
+		queue_done.append({"class": entry.class, "latency_ms_lower_bound": now - float(entry.since), "wait_since_relevant_ms": relevant_wait, "outcome": "built" if built else "removed", "script": String(actor.get_script().resource_path).get_file() if is_instance_valid(actor) and actor.get_script() != null else "", "phase": entry.phase})
+		_queue_seen.erase(id)
+
+func _queue_latency_summary() -> Dictionary:
+	var result := {"oldest_pending_age_ms_by_class": queue_oldest.duplicate(), "completed": {}}
+	for kind in ["visible", "near", "far"]:
+		var values: Array[float] = []
+		for item in queue_done:
+			if item.class == kind and item.outcome == "built": values.append(float(item.latency_ms_lower_bound))
+		values.sort()
+		result.completed[kind] = {"built": values.size(), "p50_ms": _pct(values, 0.5) if not values.is_empty() else null, "p95_ms": _pct(values, 0.95) if not values.is_empty() else null, "max_ms": values[-1] if not values.is_empty() else null}
+		var relevant: Array[float] = []
+		for item in queue_done:
+			if item.class == kind and item.outcome == "built" and float(item.get("wait_since_relevant_ms", -1.0)) >= 0.0: relevant.append(float(item.wait_since_relevant_ms))
+		relevant.sort()
+		result.completed[kind]["since_relevant"] = {"samples": relevant.size(), "p50_ms": _pct(relevant, 0.5) if not relevant.is_empty() else null, "p95_ms": _pct(relevant, 0.95) if not relevant.is_empty() else null, "max_ms": relevant[-1] if not relevant.is_empty() else null}
+	var still := {"visible": 0, "near": 0, "far": 0}
+	for id in _queue_seen: still[_queue_seen[id].class] += 1
+	result["pending_by_class_now"] = still
+	return result
+
+func _vehicle_cache_counters() -> Dictionary:
+	# Os contadores do 02B não existem na árvore "antes" do A/B: ler por Script.get(),
+	# que devolve null quando o membro falta, mantém o mesmo coletor nos dois lados.
+	const BATCHER := preload("res://cars/VehicleMeshBatcher.gd")
+	const CLEARANCE := preload("res://prototypes/living_cast/VehicleWheelClearance.gd")
+	var batcher: Script = BATCHER
+	var clearance: Script = CLEARANCE
+	var result := {"batcher_mesh_cache": BATCHER._mesh_cache.size(), "batcher_mesh_hits": BATCHER.cache_hits,
+		"clearance_cut_cache": CLEARANCE._cache.size()}
+	for entry in [["batcher_format_cache_hits", batcher, "format_cache_hits"], ["batcher_primitive_format_hits", batcher, "primitive_format_hits"],
+			["batcher_mesh_cache_evictions", batcher, "mesh_cache_evictions"], ["batcher_mesh_cache_misses", batcher, "mesh_cache_misses"],
+			["batcher_cache_invalidations", batcher, "cache_invalidations"], ["clearance_content_key_hits", clearance, "content_key_hits"],
+			["clearance_content_key_invalidations", clearance, "content_key_invalidations"]]:
+		var value = (entry[1] as Script).get(String(entry[2]))
+		result[entry[0]] = value if value != null else "indisponível"
+	for entry in [["batcher_format_entries", batcher, "_format_cache"], ["clearance_content_key_entries", clearance, "_content_keys"]]:
+		var value = (entry[1] as Script).get(String(entry[2]))
+		result[entry[0]] = (value as Dictionary).size() if value is Dictionary else "indisponível"
+	return result
+
 func _car_state() -> Array:
 	if not is_instance_valid(spike_car): return [0.0, 0.0, 0.0]
 	return [spike_car.global_position.x, spike_car.global_position.y, (spike_car as CharacterBody2D).velocity.length()]
@@ -317,6 +398,7 @@ func _on_frame() -> void:
 	_frame_build_us = 0
 	_periodic += 1
 	if _periodic % 15 == 0: _sample_periodic()
+	if _periodic % 3 == 0: _sample_queue()
 	if budget_timing and is_instance_valid(budget): _budget_tick()
 	_prev_us = Time.get_ticks_usec()
 
@@ -454,9 +536,13 @@ func _snapshot(label: String) -> void:
 		counts[group] = get_nodes_in_group(group).size()
 	var stream = world.get_node_or_null("ContinuousWorld") if is_instance_valid(world) else null
 	var viewports := root.find_children("*", "SubViewport", true, false)
-	var active_viewports := 0
+	# Errata 02A: UPDATE_ONCE continua valendo 1 depois de renderizar; contar por modo.
+	# Enum confirmado em runtime (Godot 4.7.2): DISABLED=0 ONCE=1 WHEN_VISIBLE=2
+	# WHEN_PARENT_VISIBLE=3 ALWAYS=4. Mapear por constante, nunca por posição.
+	var mode_names := {SubViewport.UPDATE_DISABLED: "disabled", SubViewport.UPDATE_ONCE: "once", SubViewport.UPDATE_WHEN_VISIBLE: "when_visible", SubViewport.UPDATE_WHEN_PARENT_VISIBLE: "when_parent_visible", SubViewport.UPDATE_ALWAYS: "always"}
+	var by_mode := {"disabled": 0, "once": 0, "when_visible": 0, "when_parent_visible": 0, "always": 0, "unknown": 0}
 	for view in viewports:
-		if view.render_target_update_mode != SubViewport.UPDATE_DISABLED and view.is_inside_tree() and view.can_process(): active_viewports += 1
+		by_mode[mode_names.get(view.render_target_update_mode, "unknown")] += 1
 	snapshots.append({
 		"label": label, "t_ms": _now_ms(),
 		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
@@ -466,7 +552,10 @@ func _snapshot(label: String) -> void:
 		"video_memory_mib": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0,
 		"presentation_pending": budget.pending.size(),
 		"presentation_builds_total": build_count,
-		"subviewports": viewports.size(), "subviewports_not_disabled": active_viewports,
+		"subviewports": viewports.size(), "subviewports_by_update_mode": by_mode,
+		"presentation_budget_stats": budget.get_stats() if budget.has_method("get_stats") else "indisponível nesta revisão",
+		"queue_latency": _queue_latency_summary(),
+		"vehicle_caches": _vehicle_cache_counters(),
 		"groups": counts,
 		"streaming": stream.get_streaming_stats() if stream != null else {},
 	})
@@ -534,6 +623,9 @@ func _write_outputs(status: String) -> void:
 			worst.append({"phase": phases[f_phase[i]], "t_ms": f_t[i], "ms": f_ms[i], "process_ms": f_proc[i], "physics_ms": f_phys[i], "builds": f_builds[i], "build_ms": f_build_ms[i], "pending": f_pending[i]})
 	report["frames_over_50ms"] = worst
 	report["spikes_over_250ms"] = spikes
+	report["queue_latency_final"] = _queue_latency_summary()
+	report["queue_completed_samples"] = queue_done.slice(0, 400)
+	report["presentation_budget_stats_final"] = budget.get_stats() if is_instance_valid(budget) and budget.has_method("get_stats") else "indisponível nesta revisão"
 	var stage_frames := {}
 	for i in f_ms.size():
 		var key := phases[f_phase[i]]

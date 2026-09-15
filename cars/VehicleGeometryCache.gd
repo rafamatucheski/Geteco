@@ -48,6 +48,25 @@ static func prepare_common_models(tree: SceneTree) -> void:
 			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 			model.free()
 			_prepared[path] = true
+	# Modelos dos veículos que existem no mundo carregado e ficaram fora da lista
+	# fixa acima: o AmericanTanker custava ~155 ms no primeiro exemplar já em
+	# gameplay (GETECO-PERF-02B). Limite natural: só classes presentes na árvore;
+	# a região da montanha, carregada depois por streaming, não entra aqui.
+	for group in ["modern_traffic", "modern_parked_vehicle", "regional_coach"]:
+		for vehicle in tree.get_nodes_in_group(group):
+			if not is_instance_valid(vehicle): continue
+			var spec = vehicle.get("_pending_spec")
+			if not spec is Dictionary or spec.is_empty(): continue
+			var path := String(spec.get("model_class", ""))
+			if path.is_empty() or _prepared.has(path) or not ResourceLoader.exists(path): continue
+			await batch.checkpoint(tree)
+			var model: Node3D = load(path).new()
+			staging.add_child(model)
+			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
+			rig.mount(model)
+			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
+			model.free()
+			_prepared[path] = true
 	staging.free()
 
 static func prepare_resident_presentations(tree: SceneTree) -> int:

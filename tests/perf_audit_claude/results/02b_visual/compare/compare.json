@@ -1,0 +1,93 @@
+[
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "american_tanker_truck_clean.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 65536
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "american_tanker_truck_damaged.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 65536
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "american_tanker_truck_repaired.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 65536
+	},
+	{
+		"differing_over_2_of_255": 1,
+		"differing_ratio": 0.0000271267361111111,
+		"file": "emergency_police_clean.png",
+		"max_channel_delta_0_255": 2.99999982118607,
+		"pixels": 36864
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "police_suv_clean.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 36864
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "police_suv_damaged.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 36864
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "police_suv_repaired.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 36864
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "route_city_clean.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 65536
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "route_city_damaged.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 65536
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "route_city_repaired.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 65536
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "union_sedan_clean.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 36864
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "union_sedan_damaged.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 36864
+	},
+	{
+		"differing_over_2_of_255": 0,
+		"differing_ratio": 0.0,
+		"file": "union_sedan_repaired.png",
+		"max_channel_delta_0_255": 0.0,
+		"pixels": 36864
+	}
+]

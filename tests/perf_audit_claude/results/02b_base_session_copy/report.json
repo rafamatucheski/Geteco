@@ -1,0 +1,6534 @@
+{
+	"crossing": {
+		"cycles": [
+			{
+				"cycle": 0,
+				"handoff_max_displacement": 0.00109183008316904,
+				"mountain_ready_after_teleport_ms": 17340.312,
+				"ready_for_crossing": true,
+				"region_on_mountain": "mountain",
+				"region_on_return": "harbor"
+			},
+			{
+				"cycle": 1,
+				"handoff_max_displacement": 0.00109183008316904,
+				"mountain_ready_after_teleport_ms": 6021.23000000001,
+				"ready_for_crossing": true,
+				"region_on_mountain": "mountain",
+				"region_on_return": "harbor"
+			}
+		]
+	},
+	"environment": {
+		"adapter": "NVIDIA GeForce RTX 4060 Laptop GPU",
+		"adapter_api": "1.4.341",
+		"adapter_vendor": "NVIDIA",
+		"args": [
+			"run=02b_base_session_copy"
+		],
+		"budget_timing_copy": true,
+		"cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+		"cpu_threads": 20,
+		"debug_build": true,
+		"display_server": "Windows",
+		"editor_hint": false,
+		"engine": {
+			"build": "official",
+			"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+			"hex": 263938,
+			"major": 4,
+			"minor": 7,
+			"patch": 2,
+			"status": "stable",
+			"string": "4.7.2-stable (official)",
+			"timestamp": 0
+		},
+		"executable": "D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64.exe",
+		"max_fps": 60,
+		"max_physics_steps_per_frame": 8,
+		"physics_interpolation": true,
+		"physics_ticks_per_second": 60,
+		"renderer_method": "mobile",
+		"rendering_driver": "vulkan",
+		"root_size": "(1280, 720)",
+		"screen_refresh_hz": 159.962005615234,
+		"screen_size": "(3440, 1440)",
+		"user_data_dir": "D:/geteco/game/tests/perf_audit_claude/results/02b_base_session_copy/appdata/Godot/app_userdata/Geteco",
+		"vsync_mode": 1,
+		"window_size": "(1280, 720)"
+	},
+	"frames_over_50ms": [
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.8769989013672,
+			"pending": 0,
+			"phase": "loading",
+			"physics_ms": 93.3850021362305,
+			"process_ms": 69.5559997558594,
+			"t_ms": 162.826995849609
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 25107.890625,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.109999999403954,
+			"process_ms": 0.580999970436096,
+			"t_ms": 30486.939453125
+		},
+		{
+			"build_ms": 98.677001953125,
+			"builds": 1,
+			"ms": 367.251007080078,
+			"pending": 139,
+			"phase": "loading",
+			"physics_ms": 23.132999420166,
+			"process_ms": 25081.65234375,
+			"t_ms": 30953.71484375
+		},
+		{
+			"build_ms": 68.1179962158203,
+			"builds": 1,
+			"ms": 80.7020034790039,
+			"pending": 134,
+			"phase": "loading",
+			"physics_ms": 8.0649995803833,
+			"process_ms": 21.488000869751,
+			"t_ms": 31293.2890625
+		},
+		{
+			"build_ms": 123.554000854492,
+			"builds": 1,
+			"ms": 186.082992553711,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 8.0649995803833,
+			"process_ms": 21.488000869751,
+			"t_ms": 31603.400390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 179.72200012207,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 8.0649995803833,
+			"process_ms": 21.488000869751,
+			"t_ms": 31783.37109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 88.8759994506836,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 8.0649995803833,
+			"process_ms": 21.488000869751,
+			"t_ms": 31872.470703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.083000183105,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 8.0649995803833,
+			"process_ms": 21.488000869751,
+			"t_ms": 31977.01171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 87.9020004272461,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32065.142578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 87.818000793457,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32153.18359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.0859985351563,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32212.802734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 112.564002990723,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32325.64453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 106.08699798584,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32432.02734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 77.7089996337891,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32554.43359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 159.345993041992,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32714.033203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 169.04899597168,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 32883.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 843.734985351563,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.160999998450279,
+			"process_ms": 309.779998779297,
+			"t_ms": 33727.4453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 187.727996826172,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0520000010728836,
+			"process_ms": 843.85400390625,
+			"t_ms": 33915.4140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 206.695999145508,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34122.5390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 159.11799621582,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34281.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 194.063003540039,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34476.203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 159.522994995117,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34636.1640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 86.3889999389648,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34722.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 137.300994873047,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34860.34765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.681999206543,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0500000007450581,
+			"process_ms": 207.016998291016,
+			"t_ms": 34958.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 65.6760025024414,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35024.37109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 118.389999389648,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35142.9921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 71.0019989013672,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35214.4609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.7449989318848,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35278.44921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 125.852996826172,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35404.53515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.274993896484,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35545.2109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 135.585998535156,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35681.02734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 129.358993530273,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35810.6328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 94.8659973144531,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.149000003933907,
+			"process_ms": 194.195999145508,
+			"t_ms": 35905.953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 95.9309997558594,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0640000030398369,
+			"process_ms": 140.552993774414,
+			"t_ms": 36002.12109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 221.503997802734,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.11599999666214,
+			"process_ms": 47.1689987182617,
+			"t_ms": 38798.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.668998718262,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.11599999666214,
+			"process_ms": 47.1689987182617,
+			"t_ms": 38903.06640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.0220031738281,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39000.515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 119.779998779297,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39120.53125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 122.920997619629,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39243.671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.706001281738,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39348.7890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 95.1569976806641,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39444.1640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 112.25700378418,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39556.66796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 98.1370010375977,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39655.203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 98.734001159668,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39754.18359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 123.535003662109,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.127000004053116,
+			"process_ms": 221.587005615234,
+			"t_ms": 39889.60546875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 120.138999938965,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 123.870002746582,
+			"t_ms": 40009.98046875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 121.540000915527,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 123.870002746582,
+			"t_ms": 40131.75
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.4090003967285,
+			"pending": 133,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 123.870002746582,
+			"t_ms": 40588.3515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 331.795989990234,
+			"pending": 138,
+			"phase": "settle",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 123.870002746582,
+			"t_ms": 40920.41015625
+		},
+		{
+			"build_ms": 0.100000001490116,
+			"builds": 1,
+			"ms": 109.462997436523,
+			"pending": 139,
+			"phase": "settle",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 123.870002746582,
+			"t_ms": 41030.50390625
+		},
+		{
+			"build_ms": 90.8330001831055,
+			"builds": 1,
+			"ms": 122.083000183105,
+			"pending": 138,
+			"phase": "settle",
+			"physics_ms": 129.373001098633,
+			"process_ms": 171.067001342773,
+			"t_ms": 41243.671875
+		},
+		{
+			"build_ms": 83.2440032958984,
+			"builds": 1,
+			"ms": 52.6230010986328,
+			"pending": 136,
+			"phase": "settle",
+			"physics_ms": 129.373001098633,
+			"process_ms": 171.067001342773,
+			"t_ms": 41426.2578125
+		},
+		{
+			"build_ms": 74.4440002441406,
+			"builds": 1,
+			"ms": 71.0350036621094,
+			"pending": 135,
+			"phase": "settle",
+			"physics_ms": 129.373001098633,
+			"process_ms": 171.067001342773,
+			"t_ms": 41571.9609375
+		},
+		{
+			"build_ms": 79.1370010375977,
+			"builds": 1,
+			"ms": 79.1650009155273,
+			"pending": 134,
+			"phase": "settle",
+			"physics_ms": 129.373001098633,
+			"process_ms": 171.067001342773,
+			"t_ms": 41730.4765625
+		},
+		{
+			"build_ms": 75.6419982910156,
+			"builds": 1,
+			"ms": 70.245002746582,
+			"pending": 133,
+			"phase": "settle",
+			"physics_ms": 129.373001098633,
+			"process_ms": 171.067001342773,
+			"t_ms": 41876.83203125
+		},
+		{
+			"build_ms": 78.8679962158203,
+			"builds": 1,
+			"ms": 80.9209976196289,
+			"pending": 132,
+			"phase": "settle",
+			"physics_ms": 129.373001098633,
+			"process_ms": 171.067001342773,
+			"t_ms": 42036.84375
+		},
+		{
+			"build_ms": 0.0900000035762787,
+			"builds": 1,
+			"ms": 57.0699996948242,
+			"pending": 131,
+			"phase": "settle",
+			"physics_ms": 9.17199993133545,
+			"process_ms": 111.587997436523,
+			"t_ms": 42094.19921875
+		},
+		{
+			"build_ms": 0.0199999995529652,
+			"builds": 1,
+			"ms": 64.8759994506836,
+			"pending": 134,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 7.83099985122681,
+			"process_ms": 80.552001953125,
+			"t_ms": 43712.91796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.7400016784668,
+			"pending": 134,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 7.83099985122681,
+			"process_ms": 80.552001953125,
+			"t_ms": 43771.88671875
+		},
+		{
+			"build_ms": 90.3830032348633,
+			"builds": 1,
+			"ms": 53.9329986572266,
+			"pending": 133,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 7.83099985122681,
+			"process_ms": 80.552001953125,
+			"t_ms": 43956.12109375
+		},
+		{
+			"build_ms": 75.8669967651367,
+			"builds": 1,
+			"ms": 62.5890007019043,
+			"pending": 132,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 8.07100009918213,
+			"process_ms": 103.650001525879,
+			"t_ms": 44094.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.2360000610352,
+			"pending": 132,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 8.07100009918213,
+			"process_ms": 103.650001525879,
+			"t_ms": 44147.578125
+		},
+		{
+			"build_ms": 118.421997070313,
+			"builds": 1,
+			"ms": 56.0139999389648,
+			"pending": 131,
+			"phase": "drive",
+			"physics_ms": 7.41300010681152,
+			"process_ms": 19.8729991912842,
+			"t_ms": 49059.859375
+		},
+		{
+			"build_ms": 90.1920013427734,
+			"builds": 1,
+			"ms": 52.9729995727539,
+			"pending": 130,
+			"phase": "drive",
+			"physics_ms": 7.19999980926514,
+			"process_ms": 131.177001953125,
+			"t_ms": 49366.52734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 255.080993652344,
+			"pending": 128,
+			"phase": "drive",
+			"physics_ms": 7.75400018692017,
+			"process_ms": 104.53099822998,
+			"t_ms": 50791.296875
+		},
+		{
+			"build_ms": 112.439002990723,
+			"builds": 1,
+			"ms": 60.6879997253418,
+			"pending": 126,
+			"phase": "drive",
+			"physics_ms": 7.18200016021729,
+			"process_ms": 92.3720016479492,
+			"t_ms": 52914.40234375
+		},
+		{
+			"build_ms": 77.5869979858398,
+			"builds": 1,
+			"ms": 62.810001373291,
+			"pending": 125,
+			"phase": "drive",
+			"physics_ms": 7.18200016021729,
+			"process_ms": 92.3720016479492,
+			"t_ms": 53055.02734375
+		},
+		{
+			"build_ms": 64.9390029907227,
+			"builds": 1,
+			"ms": 66.1699981689453,
+			"pending": 124,
+			"phase": "drive",
+			"physics_ms": 7.67000007629395,
+			"process_ms": 129.720001220703,
+			"t_ms": 53186.64453125
+		},
+		{
+			"build_ms": 76.3310012817383,
+			"builds": 1,
+			"ms": 52.9550018310547,
+			"pending": 122,
+			"phase": "drive",
+			"physics_ms": 7.67000007629395,
+			"process_ms": 129.720001220703,
+			"t_ms": 53362.0703125
+		},
+		{
+			"build_ms": 64.3889999389648,
+			"builds": 1,
+			"ms": 61.0480003356934,
+			"pending": 121,
+			"phase": "drive",
+			"physics_ms": 7.67000007629395,
+			"process_ms": 129.720001220703,
+			"t_ms": 53487.92578125
+		},
+		{
+			"build_ms": 76.8359985351563,
+			"builds": 1,
+			"ms": 53.9729995727539,
+			"pending": 120,
+			"phase": "drive",
+			"physics_ms": 7.67000007629395,
+			"process_ms": 129.720001220703,
+			"t_ms": 53663.56640625
+		},
+		{
+			"build_ms": 215.309997558594,
+			"builds": 1,
+			"ms": 59.4169998168945,
+			"pending": 119,
+			"phase": "drive",
+			"physics_ms": 7.73799991607666,
+			"process_ms": 90.9810028076172,
+			"t_ms": 54765.66015625
+		},
+		{
+			"build_ms": 120.003997802734,
+			"builds": 1,
+			"ms": 56.2150001525879,
+			"pending": 116,
+			"phase": "drive",
+			"physics_ms": 7.19700002670288,
+			"process_ms": 77.3570022583008,
+			"t_ms": 59480.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 75.4309997558594,
+			"pending": 116,
+			"phase": "drive",
+			"physics_ms": 7.20300006866455,
+			"process_ms": 17.7290000915527,
+			"t_ms": 62854.01953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.0750007629395,
+			"pending": 115,
+			"phase": "pursuit",
+			"physics_ms": 7.16099977493286,
+			"process_ms": 24.3169994354248,
+			"t_ms": 83195.8125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.3160018920898,
+			"pending": 115,
+			"phase": "pursuit",
+			"physics_ms": 8.05700016021729,
+			"process_ms": 23.0879993438721,
+			"t_ms": 87414.9921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.4850006103516,
+			"pending": 115,
+			"phase": "pursuit",
+			"physics_ms": 33.6720008850098,
+			"process_ms": 20.9979991912842,
+			"t_ms": 88376.1875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 165.052993774414,
+			"pending": 115,
+			"phase": "micro",
+			"physics_ms": 9.39099979400635,
+			"process_ms": 22.488000869751,
+			"t_ms": 110839.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 93.9059982299805,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.39099979400635,
+			"process_ms": 22.488000869751,
+			"t_ms": 110933.3828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 267.238006591797,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 13.9300003051758,
+			"process_ms": 232.733001708984,
+			"t_ms": 111201.046875
+		},
+		{
+			"build_ms": 35.2929992675781,
+			"builds": 1,
+			"ms": 115.458999633789,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 13.9300003051758,
+			"process_ms": 232.733001708984,
+			"t_ms": 111352.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 122.196998596191,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 13.9300003051758,
+			"process_ms": 232.733001708984,
+			"t_ms": 111474.40625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 168.272003173828,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 13.9300003051758,
+			"process_ms": 232.733001708984,
+			"t_ms": 111643.0625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.0059967041016,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 13.9300003051758,
+			"process_ms": 232.733001708984,
+			"t_ms": 111707.2578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 239.518997192383,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 13.9300003051758,
+			"process_ms": 232.733001708984,
+			"t_ms": 111946.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 818.515014648438,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.64200019836426,
+			"process_ms": 781.671997070313,
+			"t_ms": 112765.8359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 205.904998779297,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.64200019836426,
+			"process_ms": 781.671997070313,
+			"t_ms": 112971.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 191.968994140625,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.81500005722046,
+			"process_ms": 171.033996582031,
+			"t_ms": 113164.1015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 279.680999755859,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.81500005722046,
+			"process_ms": 171.033996582031,
+			"t_ms": 113505.6015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 183.595001220703,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.81500005722046,
+			"process_ms": 171.033996582031,
+			"t_ms": 113689.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 246.307006835938,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.81500005722046,
+			"process_ms": 171.033996582031,
+			"t_ms": 113936.125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.1290016174316,
+			"pending": 114,
+			"phase": "seam_0",
+			"physics_ms": 5.9980001449585,
+			"process_ms": 243.45100402832,
+			"t_ms": 113990.4296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.0690002441406,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 5.9980001449585,
+			"process_ms": 243.45100402832,
+			"t_ms": 114293.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 135.761993408203,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.68499994277954,
+			"process_ms": 23.1889991760254,
+			"t_ms": 121210.6015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 195.563003540039,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.68499994277954,
+			"process_ms": 23.1889991760254,
+			"t_ms": 121444.09375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 102.22200012207,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.68499994277954,
+			"process_ms": 23.1889991760254,
+			"t_ms": 121590.3828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.7480010986328,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.68499994277954,
+			"process_ms": 23.1889991760254,
+			"t_ms": 121643.3203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.1240005493164,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.68499994277954,
+			"process_ms": 23.1889991760254,
+			"t_ms": 121847.0546875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 77.3850021362305,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.13399982452393,
+			"process_ms": 156.966995239258,
+			"t_ms": 122300.125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.7439994812012,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.13399982452393,
+			"process_ms": 156.966995239258,
+			"t_ms": 122361.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.1300010681152,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.13399982452393,
+			"process_ms": 156.966995239258,
+			"t_ms": 122466.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 182.389999389648,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.13399982452393,
+			"process_ms": 156.966995239258,
+			"t_ms": 122648.7265625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 465.869995117188,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 6.13399982452393,
+			"process_ms": 156.966995239258,
+			"t_ms": 123227.875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.1759986877441,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 5.86899995803833,
+			"process_ms": 426.85400390625,
+			"t_ms": 123366.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.7919998168945,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 5.86899995803833,
+			"process_ms": 426.85400390625,
+			"t_ms": 123579.578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.2859992980957,
+			"pending": 113,
+			"phase": "seam_0",
+			"physics_ms": 5.86899995803833,
+			"process_ms": 426.85400390625,
+			"t_ms": 123863.21875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 3252.51196289063,
+			"pending": 117,
+			"phase": "seam_0",
+			"physics_ms": 6.29699993133545,
+			"process_ms": 40.992000579834,
+			"t_ms": 127423.3515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.2590026855469,
+			"pending": 118,
+			"phase": "seam_0",
+			"physics_ms": 35.0439987182617,
+			"process_ms": 3178.15405273438,
+			"t_ms": 127495.921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 503.947998046875,
+			"pending": 124,
+			"phase": "seam_0",
+			"physics_ms": 35.0439987182617,
+			"process_ms": 3178.15405273438,
+			"t_ms": 128180.0
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 70.0019989013672,
+			"pending": 124,
+			"phase": "mountain_0",
+			"physics_ms": 6.36999988555908,
+			"process_ms": 466.483001708984,
+			"t_ms": 128250.3828125
+		},
+		{
+			"build_ms": 48.2080001831055,
+			"builds": 1,
+			"ms": 50.5449981689453,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 6.36999988555908,
+			"process_ms": 466.483001708984,
+			"t_ms": 128377.9296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.0870018005371,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 9.625,
+			"process_ms": 31.3560009002686,
+			"t_ms": 133970.328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.984001159668,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 9.625,
+			"process_ms": 31.3560009002686,
+			"t_ms": 134073.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.9020004272461,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 9.625,
+			"process_ms": 31.3560009002686,
+			"t_ms": 134131.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 86.7480010986328,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 9.625,
+			"process_ms": 31.3560009002686,
+			"t_ms": 134218.265625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 2894.43188476563,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 9.625,
+			"process_ms": 31.3560009002686,
+			"t_ms": 137113.015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 75.7089996337891,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 10.1680002212524,
+			"process_ms": 2834.8369140625,
+			"t_ms": 137189.375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.640998840332,
+			"pending": 123,
+			"phase": "mountain_0",
+			"physics_ms": 10.1680002212524,
+			"process_ms": 2834.8369140625,
+			"t_ms": 137242.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 80.5039978027344,
+			"pending": 123,
+			"phase": "harbor_return_0",
+			"physics_ms": 8.23099994659424,
+			"process_ms": 29.4009990692139,
+			"t_ms": 138288.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 74.3270034790039,
+			"pending": 123,
+			"phase": "harbor_return_0",
+			"physics_ms": 8.23099994659424,
+			"process_ms": 29.4009990692139,
+			"t_ms": 138457.984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.8009986877441,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 6.51100015640259,
+			"process_ms": 26.068000793457,
+			"t_ms": 148312.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 379.957000732422,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 6.51100015640259,
+			"process_ms": 26.068000793457,
+			"t_ms": 148785.203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.0379981994629,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 6.51100015640259,
+			"process_ms": 26.068000793457,
+			"t_ms": 148841.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.2969970703125,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 6.63000011444092,
+			"process_ms": 26.4699993133545,
+			"t_ms": 152110.328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.1699981689453,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 6.63000011444092,
+			"process_ms": 26.4699993133545,
+			"t_ms": 152204.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.5460014343262,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 6.63000011444092,
+			"process_ms": 26.4699993133545,
+			"t_ms": 152787.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.5330009460449,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 9.3430004119873,
+			"process_ms": 41.8660011291504,
+			"t_ms": 153145.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.4140014648438,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 9.3430004119873,
+			"process_ms": 41.8660011291504,
+			"t_ms": 153531.4375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 74.0780029296875,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 9.3430004119873,
+			"process_ms": 41.8660011291504,
+			"t_ms": 153605.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.6849975585938,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 9.3430004119873,
+			"process_ms": 41.8660011291504,
+			"t_ms": 153670.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.181999206543,
+			"pending": 123,
+			"phase": "seam_1",
+			"physics_ms": 9.3430004119873,
+			"process_ms": 41.8660011291504,
+			"t_ms": 153726.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.6559982299805,
+			"pending": 123,
+			"phase": "mountain_1",
+			"physics_ms": 9.40900039672852,
+			"process_ms": 30.3610000610352,
+			"t_ms": 155623.390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.6780014038086,
+			"pending": 123,
+			"phase": "mountain_1",
+			"physics_ms": 9.40900039672852,
+			"process_ms": 30.3610000610352,
+			"t_ms": 155749.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.951000213623,
+			"pending": 123,
+			"phase": "mountain_1",
+			"physics_ms": 7.82299995422363,
+			"process_ms": 27.6590003967285,
+			"t_ms": 157462.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.8660011291504,
+			"pending": 123,
+			"phase": "harbor_return_1",
+			"physics_ms": 7.45499992370605,
+			"process_ms": 25.1909999847412,
+			"t_ms": 164400.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.8250007629395,
+			"pending": 123,
+			"phase": "harbor_return_1",
+			"physics_ms": 7.45499992370605,
+			"process_ms": 25.1909999847412,
+			"t_ms": 164517.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.7099990844727,
+			"pending": 123,
+			"phase": "save_load",
+			"physics_ms": 5.80499982833862,
+			"process_ms": 18.6350002288818,
+			"t_ms": 174430.53125
+		}
+	],
+	"frames_with_junction_stage_change": {
+		"drive": 32,
+		"drive_warmup_idle": 2,
+		"harbor_return_0": 26,
+		"harbor_return_1": 27,
+		"loading": 0,
+		"micro": 0,
+		"mountain_0": 15,
+		"mountain_1": 28,
+		"pursuit": 61,
+		"pursuit_reset": 0,
+		"save_load": 4,
+		"seam_0": 30,
+		"seam_1": 12,
+		"settle": 0
+	},
+	"loading": {
+		"begin_ms": 1.181,
+		"finished_ms": 40588.691,
+		"pending_presentations_at_finish": 133,
+		"phase_times_ms": {
+			"audio": 1517.069,
+			"before_resources": 161.253,
+			"emergency": 3977.223,
+			"resident_vehicles": 20.788,
+			"resources": 5183.321,
+			"scene_ready": 11505.989,
+			"total": 40534.675,
+			"vehicle_models": 3405.899,
+			"world_build": 14360.919
+		},
+		"total_ms": 40587.511
+	},
+	"markers": [
+		{
+			"name": "phase:loading",
+			"t_ms": 1.179
+		},
+		{
+			"children": 24,
+			"name": "world_enter_tree",
+			"t_ms": 5379.238
+		},
+		{
+			"name": "child_ready:OceanBackdrop",
+			"t_ms": 5379.733
+		},
+		{
+			"name": "child_ready:District",
+			"t_ms": 5797.09
+		},
+		{
+			"name": "child_ready:Waterfront",
+			"t_ms": 6119.054
+		},
+		{
+			"name": "child_ready:EastDistrict",
+			"t_ms": 6130.397
+		},
+		{
+			"name": "child_ready:NorthDistrict",
+			"t_ms": 6150.719
+		},
+		{
+			"name": "child_ready:Gateway",
+			"t_ms": 6258.461
+		},
+		{
+			"name": "child_ready:Bridge",
+			"t_ms": 6259.711
+		},
+		{
+			"name": "child_ready:Alleys",
+			"t_ms": 6260.409
+		},
+		{
+			"name": "child_ready:SouthPort",
+			"t_ms": 12626.846
+		},
+		{
+			"name": "child_ready:RoadLayout",
+			"t_ms": 12626.851
+		},
+		{
+			"name": "child_ready:CobraNeighborhood",
+			"t_ms": 12631.089
+		},
+		{
+			"name": "child_ready:RoadNetwork",
+			"t_ms": 13011.246
+		},
+		{
+			"name": "child_ready:FreightRail",
+			"t_ms": 13490.623
+		},
+		{
+			"name": "child_ready:RoadSafety",
+			"t_ms": 13490.634
+		},
+		{
+			"name": "child_ready:Life",
+			"t_ms": 13490.638
+		},
+		{
+			"name": "child_ready:PlayerCar",
+			"t_ms": 14172.941
+		},
+		{
+			"name": "child_ready:Player",
+			"t_ms": 14419.236
+		},
+		{
+			"name": "child_ready:OverviewCamera",
+			"t_ms": 14419.245
+		},
+		{
+			"name": "child_ready:Interiors",
+			"t_ms": 15231.277
+		},
+		{
+			"name": "child_ready:HarborWeatherReadout",
+			"t_ms": 15231.469
+		},
+		{
+			"name": "child_ready:ArrivalSpawn",
+			"t_ms": 15231.473
+		},
+		{
+			"name": "child_ready:ArrivalStop",
+			"t_ms": 16815.083
+		},
+		{
+			"name": "child_ready:FirstDeliveryPickup",
+			"t_ms": 16815.09
+		},
+		{
+			"name": "child_ready:HospitalSpawn",
+			"t_ms": 16815.093
+		},
+		{
+			"name": "world_ready",
+			"t_ms": 16851.687
+		},
+		{
+			"name": "deferred_child_added:WeaponNotices",
+			"t_ms": 21734.679
+		},
+		{
+			"name": "deferred_child_added:HarborGangReputation",
+			"t_ms": 23027.931
+		},
+		{
+			"name": "deferred_child_added:CobraTerritory",
+			"t_ms": 23027.972
+		},
+		{
+			"name": "deferred_child_added:ArrivalMission",
+			"t_ms": 23141.943
+		},
+		{
+			"name": "deferred_child_added:FirstDeliveryParcel",
+			"t_ms": 23146.196
+		},
+		{
+			"name": "deferred_child_added:GameplayTutorials",
+			"t_ms": 23368.966
+		},
+		{
+			"name": "deferred_child_added:CobraCampaign",
+			"t_ms": 23369.668
+		},
+		{
+			"name": "deferred_child_added:CobraCampaignController",
+			"t_ms": 23371.855
+		},
+		{
+			"name": "deferred_child_added:CobraObjectiveMarker",
+			"t_ms": 23380.804
+		},
+		{
+			"name": "deferred_child_added:CobraBossReward",
+			"t_ms": 23381.202
+		},
+		{
+			"name": "deferred_child_added:CobraAftermath",
+			"t_ms": 23381.671
+		},
+		{
+			"name": "deferred_child_added:ChopShopZone",
+			"t_ms": 23383.206
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24348",
+			"t_ms": 23471.079
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24374",
+			"t_ms": 23471.854
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24400",
+			"t_ms": 23472.547
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24426",
+			"t_ms": 23473.536
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24452",
+			"t_ms": 23474.167
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24478",
+			"t_ms": 23474.857
+		},
+		{
+			"name": "deferred_child_added:DriftZone_PÁTIO_WESTGATE",
+			"t_ms": 23475.462
+		},
+		{
+			"name": "deferred_child_added:DriftZone_PÁTIO_DOS_ARMAZÉNS",
+			"t_ms": 23475.861
+		},
+		{
+			"name": "deferred_child_added:@Node2D@24546",
+			"t_ms": 23508.655
+		},
+		{
+			"name": "deferred_child_added:@Node2D@24547",
+			"t_ms": 23508.689
+		},
+		{
+			"name": "deferred_child_added:@Node2D@24565",
+			"t_ms": 23509.465
+		},
+		{
+			"name": "deferred_child_added:@CanvasLayer@24583",
+			"t_ms": 23510.07
+		},
+		{
+			"name": "deferred_child_added:PersonalCarManager",
+			"t_ms": 23510.305
+		},
+		{
+			"name": "deferred_child_added:Monaliza",
+			"t_ms": 23510.529
+		},
+		{
+			"name": "deferred_child_added:ResidencePrototype",
+			"t_ms": 24771.107
+		},
+		{
+			"name": "deferred_child_added:Residence_westgate_garden",
+			"t_ms": 24771.187
+		},
+		{
+			"name": "deferred_child_added:Residence_quayside_house",
+			"t_ms": 24778.276
+		},
+		{
+			"name": "deferred_child_added:Residence_canal_north",
+			"t_ms": 24784.486
+		},
+		{
+			"name": "deferred_child_added:ContinuousWorld",
+			"t_ms": 24791.862
+		},
+		{
+			"name": "deferred_child_added:HarborMountainCoachService",
+			"t_ms": 24791.885
+		},
+		{
+			"name": "deferred_child_added:PayNSpray",
+			"t_ms": 24791.906
+		},
+		{
+			"name": "deferred_child_added:Cemetery",
+			"t_ms": 24792.035
+		},
+		{
+			"name": "deferred_child_added:WorldEvents",
+			"t_ms": 24902.256
+		},
+		{
+			"name": "deferred_child_added:@Node2D@26781",
+			"t_ms": 24902.272
+		},
+		{
+			"name": "deferred_child_added:Robberies",
+			"t_ms": 24902.69
+		},
+		{
+			"name": "deferred_child_added:ClothingShops",
+			"t_ms": 24902.698
+		},
+		{
+			"name": "deferred_child_added:UrbanTransit",
+			"t_ms": 24902.713
+		},
+		{
+			"name": "deferred_child_added:Minimap",
+			"t_ms": 24902.759
+		},
+		{
+			"name": "deferred_child_added:GameplayPresentation",
+			"t_ms": 24904.707
+		},
+		{
+			"name": "deferred_child_added:CobraVehicles",
+			"t_ms": 24918.485
+		},
+		{
+			"name": "gameplay_ready",
+			"t_ms": 30586.527
+		},
+		{
+			"name": "deferred_child_added:HarborEmergencyDirector",
+			"t_ms": 30588.778
+		},
+		{
+			"name": "deferred_child_added:PatrolParking",
+			"t_ms": 30589.899
+		},
+		{
+			"name": "deferred_child_added:ThematicFleet",
+			"t_ms": 30954.401
+		},
+		{
+			"name": "world_build_ready",
+			"t_ms": 31212.643
+		},
+		{
+			"name": "deferred_child_added:CombatImpactAudio",
+			"t_ms": 40133.527
+		},
+		{
+			"name": "phase:settle",
+			"t_ms": 40600.037
+		},
+		{
+			"name": "deferred_child_added:NecoTowTruck",
+			"t_ms": 40603.404
+		},
+		{
+			"name": "deferred_child_added:NecoTowTruckSpawn",
+			"t_ms": 40603.687
+		},
+		{
+			"name": "phase:drive_warmup_idle",
+			"t_ms": 43613.199
+		},
+		{
+			"name": "phase:drive",
+			"t_ms": 48628.713
+		},
+		{
+			"name": "deferred_child_added:@Node2D@44891",
+			"t_ms": 59651.067
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@44892",
+			"t_ms": 59679.012
+		},
+		{
+			"name": "deferred_child_added:@Polygon2D@44895",
+			"t_ms": 66693.05
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@44896",
+			"t_ms": 66693.123
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@44989",
+			"t_ms": 66717.392
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45082",
+			"t_ms": 66743.349
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45175",
+			"t_ms": 66777.892
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45268",
+			"t_ms": 66808.053
+		},
+		{
+			"name": "phase:pursuit_reset",
+			"t_ms": 78652.543
+		},
+		{
+			"name": "teleport",
+			"position": [
+				700.0,
+				425.0
+			],
+			"t_ms": 78652.686
+		},
+		{
+			"name": "phase:pursuit",
+			"t_ms": 80656.421
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 81302.467
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45384",
+			"t_ms": 83166.677
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45385",
+			"t_ms": 83191.808
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45419",
+			"t_ms": 87404.424
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45420",
+			"t_ms": 87404.502
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45428",
+			"t_ms": 88371.882
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45429",
+			"t_ms": 88371.967
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 102890.196
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45513",
+			"t_ms": 102975.462
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 104409.525
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45571",
+			"t_ms": 104476.142
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 104809.093
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45574",
+			"t_ms": 104886.054
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 105280.64
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45577",
+			"t_ms": 105340.115
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 107613.224
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45582",
+			"t_ms": 107675.051
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 108042.249
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45620",
+			"t_ms": 108105.771
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 108566.551
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45625",
+			"t_ms": 108627.44
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 108957.355
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45628",
+			"t_ms": 109082.511
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 109762.614
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45631",
+			"t_ms": 109864.918
+		},
+		{
+			"name": "phase:micro",
+			"t_ms": 110687.527
+		},
+		{
+			"name": "phase:seam_0",
+			"t_ms": 110839.98
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7150.056640625,
+				-4525.373046875
+			],
+			"t_ms": 110840.074
+		},
+		{
+			"name": "deferred_child_added:MountainRegion",
+			"t_ms": 110933.89
+		},
+		{
+			"name": "phase:mountain_0",
+			"t_ms": 128180.403
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7899.99951171875,
+				-4529.0
+			],
+			"t_ms": 128180.491
+		},
+		{
+			"name": "phase:harbor_return_0",
+			"t_ms": 138234.571
+		},
+		{
+			"name": "teleport",
+			"position": [
+				700.0,
+				425.0
+			],
+			"t_ms": 138234.723
+		},
+		{
+			"name": "phase:seam_1",
+			"t_ms": 148276.538
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7150.056640625,
+				-4525.373046875
+			],
+			"t_ms": 148276.685
+		},
+		{
+			"name": "phase:mountain_1",
+			"t_ms": 154297.943
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7899.99951171875,
+				-4529.0
+			],
+			"t_ms": 154298.101
+		},
+		{
+			"name": "phase:harbor_return_1",
+			"t_ms": 164358.542
+		},
+		{
+			"name": "teleport",
+			"position": [
+				700.0,
+				425.0
+			],
+			"t_ms": 164358.671
+		},
+		{
+			"name": "phase:save_load",
+			"t_ms": 174393.074
+		}
+	],
+	"micro": {
+		"active_conflict_actors": {
+			"max_us": 249.0,
+			"median_us": 217.0,
+			"min_us": 212.0,
+			"repeats": 5
+		},
+		"continuous_world_budget_traffic": {
+			"max_us": 1418.0,
+			"median_us": 1144.0,
+			"min_us": 1103.0,
+			"repeats": 10
+		},
+		"emergency_lane_router_plan": {
+			"max_us": 671.0,
+			"median_us": 586.0,
+			"min_us": 575.0,
+			"repeats": 3
+		},
+		"emergency_lane_router_unit": "/root/EmergencyVehicle",
+		"emergency_responders_with_priority": 2,
+		"find_lane_spawn": {
+			"max_us": 454.0,
+			"median_us": 383.0,
+			"min_us": 351.0,
+			"repeats": 5
+		},
+		"junction_controllers": [
+			{
+				"get_graph_data_deep_copy": {
+					"max_us": 6325.0,
+					"median_us": 5502.0,
+					"min_us": 5393.0,
+					"repeats": 3
+				},
+				"graph_revision": 1,
+				"junctions": 55,
+				"lanes_indexed": 74,
+				"legacy_signature_chars": 143556,
+				"legacy_signature_str": {
+					"max_us": 10635.0,
+					"median_us": 10490.0,
+					"min_us": 10312.0,
+					"repeats": 3
+				},
+				"path": "/root/HarborGame/Life/JunctionTrafficController",
+				"projection_cache": 59,
+				"refresh_lane_path_index": {
+					"max_us": 62.0,
+					"median_us": 30.0,
+					"min_us": 29.0,
+					"repeats": 10
+				},
+				"refresh_signal_visuals": {
+					"max_us": 380.0,
+					"median_us": 226.0,
+					"min_us": 209.0,
+					"repeats": 10
+				},
+				"sync_from_graph_fast_path": {
+					"max_us": 3.0,
+					"median_us": 1.0,
+					"min_us": 0.0,
+					"repeats": 20
+				},
+				"synced_revision": 1,
+				"synchronize_crossing_consumers": {
+					"max_us": 2258.0,
+					"median_us": 1852.0,
+					"min_us": 1765.0,
+					"repeats": 10
+				},
+				"telemetry": {
+					"active_reservations": 3,
+					"blocked_exit_yields": 508,
+					"connector_entries": 45,
+					"connector_handoffs": 45,
+					"deadlock_limit_exceeded": 0,
+					"fairness_yields": 3,
+					"invalid_lane_contracts": 0,
+					"junction_count": 55,
+					"maximum_wait_seconds": 18.721,
+					"queue_yields": 2,
+					"red_stop_clamps": 5083,
+					"reservation_denials": 1092,
+					"reservation_grants": 56,
+					"reservation_releases": 53,
+					"signal_visual_count": 35,
+					"signalized_junction_count": 35,
+					"unsignalized_junction_count": 20
+				}
+			}
+		],
+		"population_inputs": {
+			"authored_sidewalk_pedestrian": 66,
+			"modern_traffic": 61,
+			"pedestrian": 164,
+			"vehicle": 97
+		},
+		"unified_traffic_lane_count": 75,
+		"walkers_has_dedup_only": {
+			"max_us": 92.0,
+			"median_us": 84.0,
+			"min_us": 84.0,
+			"repeats": 10
+		},
+		"wanted_stars": 6
+	},
+	"periodic_emergency_samples": [
+		[
+			"drive",
+			48724.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			49205.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			49945.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			50274.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			50891.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			51418.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			51772.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			52109.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			52454.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			53055.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			53907.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			54255.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			54945.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			55306.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			55686.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			56044.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			56437.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			56785.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			57137.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			57480.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			57871.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			58174.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			58572.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			58889.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			59276.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			59820.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			60136.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			60424.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			60723.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61026.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61328.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61644.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61951.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62252.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62550.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62895.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63190.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63484.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63784.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64084.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64370.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64669.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64942.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65222.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65506.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65806.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			66126.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			66425.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			66742.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67069.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67367.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67685.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67993.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			68292.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			68590.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			68919.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			69206.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			69492.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			69789.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70088.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70403.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70710.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71034.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71333.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71617.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71919.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72192.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72508.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72829.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			73141.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			73460.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			73778.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74077.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74368.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74666.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74978.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			75267.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			75558.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			75862.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			76159.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			76471.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			76790.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			77094.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			77388.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			77676.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			78007.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			78320.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			78640.1,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			80911.9,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			81402.3,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			81745.7,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			82102.1,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			82467.3,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			82819.8,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			83228.3,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			83608.0,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			83961.4,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			84302.3,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			84646.1,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			85002.9,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			85344.6,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			85698.2,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			86109.7,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			86492.8,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			86891.6,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			87290.0,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			87694.6,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			88078.2,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			88544.8,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			88979.4,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			89392.3,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			89807.8,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			90205.4,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			90578.3,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			90961.6,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			91391.3,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			91810.4,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			92223.8,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			92590.5,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			92973.6,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			93360.4,
+			3,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			93787.0,
+			4,
+			0,
+			4
+		],
+		[
+			"pursuit",
+			94195.3,
+			4,
+			1,
+			5
+		],
+		[
+			"pursuit",
+			94591.4,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			95003.8,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			95379.3,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			95795.4,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			96175.5,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			96554.9,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			96921.6,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			97269.6,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			97627.0,
+			4,
+			0,
+			5
+		],
+		[
+			"pursuit",
+			98039.9,
+			5,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			98437.8,
+			5,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			98840.3,
+			5,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			99221.5,
+			5,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			99575.0,
+			5,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			99943.4,
+			5,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			100327.4,
+			5,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			100709.8,
+			5,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			101123.8,
+			5,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			101503.6,
+			5,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			101878.7,
+			5,
+			1,
+			9
+		],
+		[
+			"pursuit",
+			102246.2,
+			5,
+			1,
+			9
+		],
+		[
+			"pursuit",
+			102612.4,
+			5,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			103004.8,
+			5,
+			0,
+			10
+		],
+		[
+			"pursuit",
+			103373.2,
+			5,
+			0,
+			10
+		],
+		[
+			"pursuit",
+			103739.8,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			104127.1,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			104527.7,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			104959.3,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			105342.2,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			105729.1,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			106125.5,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			106507.3,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			106886.7,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			107258.2,
+			5,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			107677.9,
+			5,
+			1,
+			12
+		],
+		[
+			"pursuit",
+			108075.5,
+			5,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			108460.5,
+			5,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			108879.3,
+			5,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			109309.0,
+			5,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			109722.3,
+			5,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			110145.2,
+			5,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			110645.9,
+			5,
+			0,
+			12
+		],
+		[
+			"mountain_0",
+			128378.0,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			128806.8,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			129204.7,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			129607.8,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			130020.0,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			130393.3,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			130760.0,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			131117.7,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			131478.5,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			131828.2,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			132191.9,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			132553.8,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			132889.2,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			133233.8,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			133578.1,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			134073.5,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			137609.3,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_0",
+			138142.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			138708.2,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			139108.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			139411.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			139721.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			140084.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			140436.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			140757.0,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			141137.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			141493.7,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			141867.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			142221.9,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			142573.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			142954.0,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			143319.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			143687.7,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			144058.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			144406.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			144761.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			145156.8,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			145542.0,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			145902.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			146258.7,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			146721.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			147141.7,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			147539.0,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_0",
+			147938.6,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			154735.5,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			155210.1,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			155698.2,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			156227.4,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			156701.3,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			157218.7,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			157745.2,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			158263.1,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			158741.3,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			159173.1,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			159659.8,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			160167.6,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			160625.0,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			161088.7,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			161490.0,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			161892.3,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			162308.2,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			162678.3,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			163137.4,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			163517.8,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			163874.4,
+			0,
+			0,
+			0
+		],
+		[
+			"mountain_1",
+			164224.2,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			164669.6,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			165003.6,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			165318.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			165634.2,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			166041.6,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			166410.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			166719.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			167027.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			167334.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			167642.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			167969.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			168276.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			168602.2,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			168892.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			169207.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			169508.7,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			169808.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			170115.6,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			170417.0,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			170719.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			171034.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			171333.5,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			171634.0,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			171934.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			172241.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			172550.4,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			172852.3,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			173168.1,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			173483.6,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			173791.7,
+			0,
+			0,
+			0
+		],
+		[
+			"harbor_return_1",
+			174104.7,
+			0,
+			0,
+			0
+		]
+	],
+	"phases": {
+		"drive": {
+			"frames": 1310,
+			"max_ms": 255.080993652344,
+			"mean_fps": 46.4047988093411,
+			"monitor_physics_max_ms": 34.5839996337891,
+			"monitor_physics_p50_ms": 7.03499984741211,
+			"monitor_physics_p99_ms": 34.5839996337891,
+			"monitor_process_max_ms": 230.147994995117,
+			"monitor_process_p50_ms": 20.6840000152588,
+			"monitor_process_p99_ms": 230.147994995117,
+			"over_100": 1,
+			"over_16_67": 1256,
+			"over_20": 571,
+			"over_33_33": 38,
+			"over_50": 12,
+			"p50_ms": 18.9689998626709,
+			"p95_ms": 29.94700050354,
+			"p99_ms": 47.1699981689453,
+			"presentation_build_ms_max_frame": 215.309997558594,
+			"presentation_build_ms_total": 1437.43400010839,
+			"presentation_builds": 39,
+			"seconds": 28.2298390169144
+		},
+		"drive_warmup_idle": {
+			"frames": 220,
+			"max_ms": 64.8759994506836,
+			"mean_fps": 45.8895097727649,
+			"monitor_physics_max_ms": 8.07100009918213,
+			"monitor_physics_p50_ms": 7.94799995422363,
+			"monitor_physics_p99_ms": 8.07100009918213,
+			"monitor_process_max_ms": 103.650001525879,
+			"monitor_process_p50_ms": 22.6879997253418,
+			"monitor_process_p99_ms": 103.650001525879,
+			"over_100": 0,
+			"over_16_67": 217,
+			"over_20": 87,
+			"over_33_33": 8,
+			"over_50": 5,
+			"p50_ms": 18.9500007629395,
+			"p95_ms": 30.0370006561279,
+			"p99_ms": 58.7400016784668,
+			"presentation_build_ms_max_frame": 90.3830032348633,
+			"presentation_build_ms_total": 166.269999999553,
+			"presentation_builds": 3,
+			"seconds": 4.79412399673462
+		},
+		"harbor_return_0": {
+			"frames": 401,
+			"max_ms": 80.5039978027344,
+			"mean_fps": 40.3915828402619,
+			"monitor_physics_max_ms": 11.5139999389648,
+			"monitor_physics_p50_ms": 7.33300018310547,
+			"monitor_physics_p99_ms": 11.5139999389648,
+			"monitor_process_max_ms": 49.435001373291,
+			"monitor_process_p50_ms": 24.8910007476807,
+			"monitor_process_p99_ms": 49.435001373291,
+			"over_100": 0,
+			"over_16_67": 400,
+			"over_20": 286,
+			"over_33_33": 21,
+			"over_50": 2,
+			"p50_ms": 24.1480007171631,
+			"p95_ms": 33.5670013427734,
+			"p99_ms": 42.7270011901855,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 9.92781098937988
+		},
+		"harbor_return_1": {
+			"frames": 475,
+			"max_ms": 62.8660011291504,
+			"mean_fps": 47.9417207748399,
+			"monitor_physics_max_ms": 10.4680004119873,
+			"monitor_physics_p50_ms": 6.46600008010864,
+			"monitor_physics_p99_ms": 10.4680004119873,
+			"monitor_process_max_ms": 45.181999206543,
+			"monitor_process_p50_ms": 19.3339996337891,
+			"monitor_process_p99_ms": 45.181999206543,
+			"over_100": 0,
+			"over_16_67": 474,
+			"over_20": 204,
+			"over_33_33": 5,
+			"over_50": 2,
+			"p50_ms": 18.8169994354248,
+			"p95_ms": 28.7070007324219,
+			"p99_ms": 33.5180015563965,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 9.90786297035217
+		},
+		"loading": {
+			"frames": 463,
+			"max_ms": 25107.890625,
+			"mean_fps": 11.5601245529949,
+			"monitor_physics_max_ms": 93.3850021362305,
+			"monitor_physics_p50_ms": 0.0640000030398369,
+			"monitor_physics_p99_ms": 93.3850021362305,
+			"monitor_process_max_ms": 25081.65234375,
+			"monitor_process_p50_ms": 0.654999971389771,
+			"monitor_process_p99_ms": 309.779998779297,
+			"over_100": 30,
+			"over_16_67": 137,
+			"over_20": 119,
+			"over_33_33": 107,
+			"over_50": 49,
+			"p50_ms": 16.6420001983643,
+			"p95_ms": 118.389999389648,
+			"p99_ms": 206.695999145508,
+			"presentation_build_ms_max_frame": 123.554000854492,
+			"presentation_build_ms_total": 389.217002132558,
+			"presentation_builds": 8,
+			"seconds": 40.0514715803862
+		},
+		"micro": {
+			"frames": 1,
+			"max_ms": 165.052993774414,
+			"mean_fps": 6.05866017411807,
+			"monitor_physics_max_ms": 9.39099979400635,
+			"monitor_physics_p50_ms": 9.39099979400635,
+			"monitor_physics_p99_ms": 9.39099979400635,
+			"monitor_process_max_ms": 22.488000869751,
+			"monitor_process_p50_ms": 22.488000869751,
+			"monitor_process_p99_ms": 22.488000869751,
+			"over_100": 1,
+			"over_16_67": 1,
+			"over_20": 1,
+			"over_33_33": 1,
+			"over_50": 1,
+			"p50_ms": 165.052993774414,
+			"p95_ms": 165.052993774414,
+			"p99_ms": 165.052993774414,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 0.165052993774414
+		},
+		"mountain_0": {
+			"frames": 260,
+			"max_ms": 2894.43188476563,
+			"mean_fps": 26.2454768653797,
+			"monitor_physics_max_ms": 10.1680002212524,
+			"monitor_physics_p50_ms": 6.19500017166138,
+			"monitor_physics_p99_ms": 10.1680002212524,
+			"monitor_process_max_ms": 2834.8369140625,
+			"monitor_process_p50_ms": 26.1140003204346,
+			"monitor_process_p99_ms": 2834.8369140625,
+			"over_100": 1,
+			"over_16_67": 260,
+			"over_20": 213,
+			"over_33_33": 36,
+			"over_50": 9,
+			"p50_ms": 24.9139995574951,
+			"p95_ms": 45.6910018920898,
+			"p99_ms": 75.7089996337891,
+			"presentation_build_ms_max_frame": 48.2080001831055,
+			"presentation_build_ms_total": 48.2080001831055,
+			"presentation_builds": 1,
+			"seconds": 9.9064688873291
+		},
+		"mountain_1": {
+			"frames": 334,
+			"max_ms": 52.6559982299805,
+			"mean_fps": 33.6159014754284,
+			"monitor_physics_max_ms": 11.3190002441406,
+			"monitor_physics_p50_ms": 8.17399978637695,
+			"monitor_physics_p99_ms": 11.3190002441406,
+			"monitor_process_max_ms": 35.0099983215332,
+			"monitor_process_p50_ms": 27.6590003967285,
+			"monitor_process_p99_ms": 35.0099983215332,
+			"over_100": 0,
+			"over_16_67": 334,
+			"over_20": 318,
+			"over_33_33": 92,
+			"over_50": 3,
+			"p50_ms": 29.6580009460449,
+			"p95_ms": 40.359001159668,
+			"p99_ms": 48.9620018005371,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 9.93577400398254
+		},
+		"pursuit": {
+			"frames": 1152,
+			"max_ms": 58.3160018920898,
+			"mean_fps": 38.8491414198559,
+			"monitor_physics_max_ms": 36.3930015563965,
+			"monitor_physics_p50_ms": 8.15100002288818,
+			"monitor_physics_p99_ms": 36.3930015563965,
+			"monitor_process_max_ms": 83.7040023803711,
+			"monitor_process_p50_ms": 21.3299999237061,
+			"monitor_process_p99_ms": 83.7040023803711,
+			"over_100": 0,
+			"over_16_67": 1152,
+			"over_20": 1002,
+			"over_33_33": 71,
+			"over_50": 3,
+			"p50_ms": 25.8959999084473,
+			"p95_ms": 33.6380004882813,
+			"p99_ms": 36.8219985961914,
+			"presentation_build_ms_max_frame": 66.3119964599609,
+			"presentation_build_ms_total": 66.674996462767,
+			"presentation_builds": 19,
+			"seconds": 29.6531649837494
+		},
+		"pursuit_reset": {
+			"frames": 94,
+			"max_ms": 33.6230010986328,
+			"mean_fps": 47.2247898755051,
+			"monitor_physics_max_ms": 7.07600021362305,
+			"monitor_physics_p50_ms": 6.60799980163574,
+			"monitor_physics_p99_ms": 7.07600021362305,
+			"monitor_process_max_ms": 24.0809993743896,
+			"monitor_process_p50_ms": 22.8369998931885,
+			"monitor_process_p99_ms": 24.0809993743896,
+			"over_100": 0,
+			"over_16_67": 94,
+			"over_20": 40,
+			"over_33_33": 2,
+			"over_50": 0,
+			"p50_ms": 18.9939994812012,
+			"p95_ms": 28.3899993896484,
+			"p99_ms": 33.6230010986328,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 1.99048000526428
+		},
+		"save_load": {
+			"frames": 99,
+			"max_ms": 56.7099990844727,
+			"mean_fps": 48.9651779540019,
+			"monitor_physics_max_ms": 5.80499982833862,
+			"monitor_physics_p50_ms": 5.49700021743774,
+			"monitor_physics_p99_ms": 5.80499982833862,
+			"monitor_process_max_ms": 43.5719985961914,
+			"monitor_process_p50_ms": 43.5719985961914,
+			"monitor_process_p99_ms": 43.5719985961914,
+			"over_100": 0,
+			"over_16_67": 99,
+			"over_20": 40,
+			"over_33_33": 1,
+			"over_50": 1,
+			"p50_ms": 18.548999786377,
+			"p95_ms": 27.3309993743896,
+			"p99_ms": 56.7099990844727,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 2.02184499549866
+		},
+		"seam_0": {
+			"frames": 370,
+			"max_ms": 3252.51196289063,
+			"mean_fps": 21.5964542814691,
+			"monitor_physics_max_ms": 35.0439987182617,
+			"monitor_physics_p50_ms": 5.9980001449585,
+			"monitor_physics_p99_ms": 35.0439987182617,
+			"monitor_process_max_ms": 3178.15405273438,
+			"monitor_process_p50_ms": 26.0900001525879,
+			"monitor_process_p99_ms": 3178.15405273438,
+			"over_100": 18,
+			"over_16_67": 370,
+			"over_20": 272,
+			"over_33_33": 74,
+			"over_50": 31,
+			"p50_ms": 24.6200008392334,
+			"p95_ms": 93.9059982299805,
+			"p99_ms": 465.869995117188,
+			"presentation_build_ms_max_frame": 79.4879989624023,
+			"presentation_build_ms_total": 114.78099822998,
+			"presentation_builds": 2,
+			"seconds": 17.1324419822693
+		},
+		"seam_1": {
+			"frames": 182,
+			"max_ms": 379.957000732422,
+			"mean_fps": 30.4018540296454,
+			"monitor_physics_max_ms": 11.3190002441406,
+			"monitor_physics_p50_ms": 7.13399982452393,
+			"monitor_physics_p99_ms": 11.3190002441406,
+			"monitor_process_max_ms": 333.295989990234,
+			"monitor_process_p50_ms": 27.3519992828369,
+			"monitor_process_p99_ms": 333.295989990234,
+			"over_100": 1,
+			"over_16_67": 182,
+			"over_20": 180,
+			"over_33_33": 53,
+			"over_50": 11,
+			"p50_ms": 29.6079998016357,
+			"p95_ms": 54.5460014343262,
+			"p99_ms": 74.0780029296875,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 5.98647700309753
+		},
+		"settle": {
+			"frames": 61,
+			"max_ms": 331.795989990234,
+			"mean_fps": 24.8833947802063,
+			"monitor_physics_max_ms": 129.373001098633,
+			"monitor_physics_p50_ms": 9.17199993133545,
+			"monitor_physics_p99_ms": 129.373001098633,
+			"monitor_process_max_ms": 171.067001342773,
+			"monitor_process_p50_ms": 111.587997436523,
+			"monitor_process_p99_ms": 171.067001342773,
+			"over_100": 3,
+			"over_16_67": 61,
+			"over_20": 60,
+			"over_33_33": 23,
+			"over_50": 9,
+			"p50_ms": 28.3589992523193,
+			"p95_ms": 80.9209976196289,
+			"p99_ms": 331.795989990234,
+			"presentation_build_ms_max_frame": 90.8330001831055,
+			"presentation_build_ms_total": 547.638998970389,
+			"presentation_builds": 10,
+			"seconds": 2.45143400001526
+		}
+	},
+	"presentation_budget_stats_final": "indisponível nesta revisão",
+	"presentation_builds": {
+		"by_script": {
+			"": {
+				"count": 20,
+				"max_us": 112439,
+				"max_wait_ms_lower_bound": 21273.617,
+				"over_2ms": 20,
+				"total_us": 1586906
+			},
+			"FixedTrafficSignal.gd": {
+				"count": 47,
+				"max_us": 1754,
+				"max_wait_ms_lower_bound": 53035.892,
+				"over_2ms": 0,
+				"total_us": 10186
+			},
+			"TrafficVehicle.gd": {
+				"count": 15,
+				"max_us": 215310,
+				"max_wait_ms_lower_bound": 82047.837,
+				"over_2ms": 13,
+				"total_us": 1173132
+			}
+		},
+		"logged": 82,
+		"slow_builds_over_2ms": [
+			{
+				"loop_us": 98898,
+				"pending_after": 135,
+				"phase": "loading",
+				"queued_wait_ms_lower_bound": 0.0,
+				"script": "",
+				"t_ms": 30586.457,
+				"us": 98677
+			},
+			{
+				"loop_us": 95866,
+				"pending_after": 138,
+				"phase": "loading",
+				"queued_wait_ms_lower_bound": 0.0,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 31071.258,
+				"us": 95675
+			},
+			{
+				"loop_us": 68301,
+				"pending_after": 134,
+				"phase": "loading",
+				"queued_wait_ms_lower_bound": 0.0,
+				"script": "",
+				"t_ms": 31212.582,
+				"us": 68118
+			},
+			{
+				"loop_us": 123694,
+				"pending_after": 133,
+				"phase": "loading",
+				"queued_wait_ms_lower_bound": 0.0,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 31417.306,
+				"us": 123554
+			},
+			{
+				"loop_us": 91020,
+				"pending_after": 138,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 8968.331,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 41121.582,
+				"us": 90833
+			},
+			{
+				"loop_us": 83465,
+				"pending_after": 136,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 9220.378,
+				"script": "",
+				"t_ms": 41373.629,
+				"us": 83244
+			},
+			{
+				"loop_us": 74600,
+				"pending_after": 135,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 9347.666,
+				"script": "",
+				"t_ms": 41500.917,
+				"us": 74444
+			},
+			{
+				"loop_us": 79284,
+				"pending_after": 134,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 9498.054,
+				"script": "",
+				"t_ms": 41651.305,
+				"us": 79137
+			},
+			{
+				"loop_us": 75761,
+				"pending_after": 133,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 9653.328,
+				"script": "",
+				"t_ms": 41806.579,
+				"us": 75642
+			},
+			{
+				"loop_us": 79024,
+				"pending_after": 132,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 9802.663,
+				"script": "",
+				"t_ms": 41955.915,
+				"us": 78868
+			},
+			{
+				"loop_us": 65342,
+				"pending_after": 130,
+				"phase": "settle",
+				"queued_wait_ms_lower_bound": 10218.886,
+				"script": "",
+				"t_ms": 42372.138,
+				"us": 65195
+			},
+			{
+				"loop_us": 90536,
+				"pending_after": 133,
+				"phase": "drive_warmup_idle",
+				"queued_wait_ms_lower_bound": 11748.93,
+				"script": "",
+				"t_ms": 43902.181,
+				"us": 90383
+			},
+			{
+				"loop_us": 76011,
+				"pending_after": 132,
+				"phase": "drive_warmup_idle",
+				"queued_wait_ms_lower_bound": 11878.949,
+				"script": "",
+				"t_ms": 44032.2,
+				"us": 75867
+			},
+			{
+				"loop_us": 118655,
+				"pending_after": 131,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 16850.587,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 49003.839,
+				"us": 118422
+			},
+			{
+				"loop_us": 90333,
+				"pending_after": 130,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 17160.298,
+				"script": "",
+				"t_ms": 49313.549,
+				"us": 90192
+			},
+			{
+				"loop_us": 91509,
+				"pending_after": 129,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 17490.596,
+				"script": "",
+				"t_ms": 49643.847,
+				"us": 91400
+			},
+			{
+				"loop_us": 72014,
+				"pending_after": 128,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 17657.197,
+				"script": "",
+				"t_ms": 49810.448,
+				"us": 71829
+			},
+			{
+				"loop_us": 80024,
+				"pending_after": 127,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 19067.419,
+				"script": "",
+				"t_ms": 51220.67,
+				"us": 79919
+			},
+			{
+				"loop_us": 68445,
+				"pending_after": 126,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 19218.941,
+				"script": "",
+				"t_ms": 51372.192,
+				"us": 68306
+			},
+			{
+				"loop_us": 112582,
+				"pending_after": 126,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 20700.455,
+				"script": "",
+				"t_ms": 52853.707,
+				"us": 112439
+			},
+			{
+				"loop_us": 77747,
+				"pending_after": 125,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 20838.957,
+				"script": "",
+				"t_ms": 52992.208,
+				"us": 77587
+			},
+			{
+				"loop_us": 65054,
+				"pending_after": 124,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 20967.216,
+				"script": "",
+				"t_ms": 53120.463,
+				"us": 64939
+			},
+			{
+				"loop_us": 76457,
+				"pending_after": 122,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 21155.857,
+				"script": "",
+				"t_ms": 53309.108,
+				"us": 76331
+			},
+			{
+				"loop_us": 64494,
+				"pending_after": 121,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 21273.617,
+				"script": "",
+				"t_ms": 53426.868,
+				"us": 64389
+			},
+			{
+				"loop_us": 76956,
+				"pending_after": 120,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 21456.338,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 53609.589,
+				"us": 76836
+			},
+			{
+				"loop_us": 215408,
+				"pending_after": 119,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 22552.985,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 54706.236,
+				"us": 215310
+			},
+			{
+				"loop_us": 65604,
+				"pending_after": 118,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 26133.663,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 58286.914,
+				"us": 65469
+			},
+			{
+				"loop_us": 37848,
+				"pending_after": 117,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 26888.022,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 59041.273,
+				"us": 37725
+			},
+			{
+				"loop_us": 120154,
+				"pending_after": 116,
+				"phase": "drive",
+				"queued_wait_ms_lower_bound": 27271.229,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 59424.48,
+				"us": 120004
+			},
+			{
+				"loop_us": 66443,
+				"pending_after": 115,
+				"phase": "pursuit",
+				"queued_wait_ms_lower_bound": 48849.647,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 81002.898,
+				"us": 66312
+			},
+			{
+				"loop_us": 35412,
+				"pending_after": 114,
+				"phase": "seam_0",
+				"queued_wait_ms_lower_bound": 79083.313,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 111236.564,
+				"us": 35293
+			},
+			{
+				"loop_us": 79612,
+				"pending_after": 113,
+				"phase": "seam_0",
+				"queued_wait_ms_lower_bound": 82047.837,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 114201.088,
+				"us": 79488
+			},
+			{
+				"loop_us": 48336,
+				"pending_after": 123,
+				"phase": "mountain_0",
+				"queued_wait_ms_lower_bound": 0.0,
+				"script": "TrafficVehicle.gd",
+				"t_ms": 128327.371,
+				"us": 48208
+			}
+		],
+		"total": 82
+	},
+	"queue_completed_samples": [
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 152.026999999998,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 152.026999999998,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 339.524999999998,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 339.524999999998,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 339.524999999998,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 918.702999999998,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 10336.037,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 369.294999999998,
+			"outcome": "built",
+			"phase": "settle",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 10776.709,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 10776.709,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 10776.709,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 11140.42,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 11140.42,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 804.383000000002,
+			"outcome": "built",
+			"phase": "settle",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 11511.366,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 13141.036,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 13141.036,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 18106.093,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 18450.498,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 18902.27,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 18902.27,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 65.5070000000051,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 20465.02,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 20465.02,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22101.35,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22101.35,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22408.302,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 22408.302,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 306.951999999998,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 22709.803,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 22709.803,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 87.5040000000008,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 23896.968,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 64.6080000000002,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 27371.058,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 28116.493,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 28565.192,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 56.8329999999987,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 54.3850000000093,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 55.1159999999945,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 50120.589,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 162.460000000006,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 79.8240000000078,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 79.8240000000078,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 80.4939999999915,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 67.3550000000105,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 67.3550000000105,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 82.5819999999949,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 78.7569999999978,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 84.1639999999898,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 80520.644,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 83339.794,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 834.085000000006,
+			"outcome": "built",
+			"phase": "seam_0",
+			"script": "TrafficVehicle.gd"
+		}
+	],
+	"queue_latency_final": {
+		"completed": {
+			"far": {
+				"built": 13,
+				"max_ms": 83339.794,
+				"p50_ms": 20465.02,
+				"p95_ms": 83339.794
+			},
+			"near": {
+				"built": 21,
+				"max_ms": 50120.589,
+				"p50_ms": 10776.709,
+				"p95_ms": 23896.968
+			},
+			"visible": {
+				"built": 19,
+				"max_ms": 22709.803,
+				"p50_ms": 152.026999999998,
+				"p95_ms": 22709.803
+			}
+		},
+		"oldest_pending_age_ms_by_class": {
+			"far": 145420.83,
+			"near": 49958.129,
+			"visible": 22408.302
+		},
+		"pending_by_class_now": {
+			"far": 118,
+			"near": 4,
+			"visible": 1
+		}
+	},
+	"save_load": {
+		"load_game_parse_ms": 8.801,
+		"load_success": true,
+		"note": "load_game só lê/valida o JSON; a troca de cena de um load não foi executada aqui",
+		"save_game_ms": 2.373,
+		"save_path": "D:/geteco/game/tests/perf_audit_claude/results/02b_base_session_copy/saves/perf_audit_claude.json",
+		"save_success": true
+	},
+	"snapshots": [
+		{
+			"groups": {
+				"authored_sidewalk_pedestrian": 66,
+				"damageable": 178,
+				"emergency_vehicle": 13,
+				"ground_blood": 0,
+				"modern_traffic": 60,
+				"pedestrian": 159,
+				"police_officer": 2,
+				"unified_traffic_lane": 75,
+				"vehicle": 95
+			},
+			"label": "after_loading",
+			"nodes": 31089.0,
+			"objects": 85394.0,
+			"orphan_nodes": 5762.0,
+			"presentation_budget_stats": "indisponível nesta revisão",
+			"presentation_builds_total": 8,
+			"presentation_pending": 133,
+			"queue_latency": {
+				"completed": {
+					"far": {
+						"built": 0,
+						"max_ms": null,
+						"p50_ms": null,
+						"p95_ms": null
+					},
+					"near": {
+						"built": 2,
+						"max_ms": 918.702999999998,
+						"p50_ms": 152.026999999998,
+						"p95_ms": 918.702999999998
+					},
+					"visible": {
+						"built": 4,
+						"max_ms": 339.524999999998,
+						"p50_ms": 339.524999999998,
+						"p95_ms": 339.524999999998
+					}
+				},
+				"oldest_pending_age_ms_by_class": {
+					"far": 9561.282,
+					"near": 339.524999999998,
+					"visible": 152.026999999998
+				},
+				"pending_by_class_now": {
+					"far": 133,
+					"near": 0,
+					"visible": 0
+				}
+			},
+			"static_memory_mib": 962.898344993591,
+			"streaming": {
+				"memory_bytes": 1009676459,
+				"population": {},
+				"ready": false,
+				"region": "harbor",
+				"resident_regions": 1,
+				"sleeping_traffic": 0
+			},
+			"subviewports": 354,
+			"subviewports_by_update_mode": {
+				"always": 0,
+				"disabled": 69,
+				"once": 243,
+				"when_visible": 42
+			},
+			"t_ms": 40599.944,
+			"video_memory_mib": 2267.47659301758
+		},
+		{
+			"groups": {
+				"authored_sidewalk_pedestrian": 66,
+				"damageable": 183,
+				"emergency_vehicle": 13,
+				"ground_blood": 0,
+				"modern_traffic": 61,
+				"pedestrian": 164,
+				"police_officer": 2,
+				"unified_traffic_lane": 75,
+				"vehicle": 97
+			},
+			"label": "after_drive",
+			"nodes": 33342.0,
+			"objects": 90303.0,
+			"orphan_nodes": 5762.0,
+			"presentation_budget_stats": "indisponível nesta revisão",
+			"presentation_builds_total": 60,
+			"presentation_pending": 116,
+			"queue_latency": {
+				"completed": {
+					"far": {
+						"built": 10,
+						"max_ms": 28565.192,
+						"p50_ms": 18902.27,
+						"p95_ms": 28565.192
+					},
+					"near": {
+						"built": 15,
+						"max_ms": 23896.968,
+						"p50_ms": 11140.42,
+						"p95_ms": 23896.968
+					},
+					"visible": {
+						"built": 15,
+						"max_ms": 22709.803,
+						"p50_ms": 339.524999999998,
+						"p95_ms": 22709.803
+					}
+				},
+				"oldest_pending_age_ms_by_class": {
+					"far": 47686.338,
+					"near": 23536.792,
+					"visible": 22408.302
+				},
+				"pending_by_class_now": {
+					"far": 111,
+					"near": 4,
+					"visible": 1
+				}
+			},
+			"static_memory_mib": 1016.0284948349,
+			"streaming": {
+				"memory_bytes": 1065387459,
+				"population": {
+					"active_pedestrians": 53,
+					"active_traffic": 12,
+					"sleeping_pedestrians": 111,
+					"sleeping_traffic": 49
+				},
+				"ready": false,
+				"region": "harbor",
+				"resident_regions": 1,
+				"sleeping_traffic": 49
+			},
+			"subviewports": 418,
+			"subviewports_by_update_mode": {
+				"always": 0,
+				"disabled": 182,
+				"once": 233,
+				"when_visible": 3
+			},
+			"t_ms": 78652.343,
+			"video_memory_mib": 2527.4068145752
+		},
+		{
+			"groups": {
+				"authored_sidewalk_pedestrian": 66,
+				"damageable": 189,
+				"emergency_vehicle": 13,
+				"ground_blood": 0,
+				"modern_traffic": 61,
+				"pedestrian": 164,
+				"police_officer": 8,
+				"unified_traffic_lane": 75,
+				"vehicle": 97
+			},
+			"label": "after_pursuit",
+			"nodes": 33964.0,
+			"objects": 89856.0,
+			"orphan_nodes": 4951.0,
+			"presentation_budget_stats": "indisponível nesta revisão",
+			"presentation_builds_total": 79,
+			"presentation_pending": 115,
+			"queue_latency": {
+				"completed": {
+					"far": {
+						"built": 10,
+						"max_ms": 28565.192,
+						"p50_ms": 18902.27,
+						"p95_ms": 28565.192
+					},
+					"near": {
+						"built": 21,
+						"max_ms": 50120.589,
+						"p50_ms": 10776.709,
+						"p95_ms": 23896.968
+					},
+					"visible": {
+						"built": 19,
+						"max_ms": 22709.803,
+						"p50_ms": 152.026999999998,
+						"p95_ms": 22709.803
+					}
+				},
+				"oldest_pending_age_ms_by_class": {
+					"far": 79692.155,
+					"near": 49958.129,
+					"visible": 22408.302
+				},
+				"pending_by_class_now": {
+					"far": 110,
+					"near": 4,
+					"visible": 1
+				}
+			},
+			"static_memory_mib": 1018.16454029083,
+			"streaming": {
+				"memory_bytes": 1067627265,
+				"population": {
+					"active_pedestrians": 60,
+					"active_traffic": 10,
+					"sleeping_pedestrians": 104,
+					"sleeping_traffic": 51
+				},
+				"ready": false,
+				"region": "harbor",
+				"resident_regions": 1,
+				"sleeping_traffic": 51
+			},
+			"subviewports": 427,
+			"subviewports_by_update_mode": {
+				"always": 0,
+				"disabled": 181,
+				"once": 235,
+				"when_visible": 11
+			},
+			"t_ms": 110687.367,
+			"video_memory_mib": 2533.60723876953
+		}
+	],
+	"spikes_over_250ms": [
+		{
+			"added_first_names": [
+				"HarborGame<Node2D>@root",
+				"OceanBackdrop<CanvasLayer>@HarborGame",
+				"Sea<ColorRect>@OceanBackdrop",
+				"District<Node2D>@HarborGame",
+				"Waterfront<Node2D>@HarborGame",
+				"EastDistrict<Node2D>@HarborGame",
+				"NorthDistrict<Node2D>@HarborGame",
+				"Gateway<Node2D>@HarborGame",
+				"Bridge<Node2D>@HarborGame",
+				"Alleys<Node2D>@HarborGame",
+				"SouthPort<Node2D>@HarborGame",
+				"RoadLayout<Node2D>@HarborGame",
+				"CobraNeighborhood<Node2D>@HarborGame",
+				"RoadNetwork<Node2D>@HarborGame",
+				"FreightRail<Node2D>@HarborGame",
+				"RoadSafety<Node2D>@HarborGame",
+				"Life<Node2D>@HarborGame",
+				"PlayerCar<CharacterBody2D>@HarborGame",
+				"Collision<CollisionShape2D>@PlayerCar",
+				"Camera<Camera2D>@PlayerCar",
+				"InteractArea<Area2D>@PlayerCar",
+				"CollisionShape2D<CollisionShape2D>@InteractArea",
+				"Player<CharacterBody2D>@HarborGame",
+				"Camera<Camera2D>@Player",
+				"Collision<CollisionShape2D>@Player",
+				"OverviewCamera<Camera2D>@HarborGame",
+				"Interiors<Node2D>@HarborGame",
+				"HarborWeatherReadout<CanvasLayer>@HarborGame",
+				"ArrivalSpawn<Marker2D>@HarborGame",
+				"ArrivalStop<Node2D>@HarborGame",
+				"FirstDeliveryPickup<Marker2D>@HarborGame",
+				"HospitalSpawn<Marker2D>@HarborGame",
+				"AnimatedWater<Polygon2D>@District",
+				"FountainWater<Polygon2D>@District",
+				"@Polygon2D@93<Polygon2D>@FountainWater",
+				"NorthFrontage0<Node2D>@District",
+				"BuildingSolid<StaticBody2D>@NorthFrontage0",
+				"@CollisionShape2D@94<CollisionShape2D>@BuildingSolid",
+				"NorthEntry0<Marker2D>@District",
+				"NorthFrontage1<Node2D>@District"
+			],
+			"added_kinds_top": [
+				[
+					26179,
+					"MeshInstance3D"
+				],
+				[
+					4360,
+					"CollisionShape2D"
+				],
+				[
+					2647,
+					"Sprite2D"
+				],
+				[
+					2370,
+					"Node3D"
+				],
+				[
+					1088,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					817,
+					"FixedTrafficSignal.gd"
+				],
+				[
+					667,
+					"StaticBody2D"
+				],
+				[
+					590,
+					"Polygon2D"
+				],
+				[
+					521,
+					"CollisionPolygon2D"
+				],
+				[
+					472,
+					"Area2D"
+				],
+				[
+					326,
+					"DirectionalLight3D"
+				],
+				[
+					323,
+					"SubViewport"
+				],
+				[
+					322,
+					"Camera3D"
+				],
+				[
+					319,
+					"Path2D"
+				],
+				[
+					314,
+					"Node2D"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 25107.891,
+			"nodes_added_during_frame": 45405,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 30486.939
+		},
+		{
+			"added_first_names": [
+				"@SubViewport@30807<SubViewport>@HarborResident_3_2",
+				"@Camera3D@30808<Camera3D>@@SubViewport@30807",
+				"@DirectionalLight3D@30809<DirectionalLight3D>@@SubViewport@30807",
+				"@WorldEnvironment@30810<WorldEnvironment>@@SubViewport@30807",
+				"@Node3D@30811<Node3D>@@SubViewport@30807",
+				"GroundShadow<MeshInstance3D>@@SubViewport@30807",
+				"@Node3D@30812<Node3D>@@Node3D@30811",
+				"BodyShell<MeshInstance3D>@@Node3D@30812",
+				"@MeshInstance3D@30813<MeshInstance3D>@@Node3D@30812",
+				"@Node3D@30814<Node3D>@@Node3D@30811",
+				"@MeshInstance3D@30815<MeshInstance3D>@@Node3D@30814",
+				"BaseHair<MeshInstance3D>@@Node3D@30814",
+				"@MeshInstance3D@30816<MeshInstance3D>@@Node3D@30814",
+				"@Node3D@30817<Node3D>@@Node3D@30811",
+				"@MeshInstance3D@30818<MeshInstance3D>@@Node3D@30817",
+				"@Node3D@30819<Node3D>@@Node3D@30817",
+				"@MeshInstance3D@30820<MeshInstance3D>@@Node3D@30819",
+				"@MeshInstance3D@30821<MeshInstance3D>@@Node3D@30819",
+				"@MeshInstance3D@30822<MeshInstance3D>@@Node3D@30819",
+				"@MeshInstance3D@30823<MeshInstance3D>@@Node3D@30819",
+				"@Node3D@30824<Node3D>@@Node3D@30811",
+				"@MeshInstance3D@30825<MeshInstance3D>@@Node3D@30824",
+				"@Node3D@30826<Node3D>@@Node3D@30824",
+				"@MeshInstance3D@30827<MeshInstance3D>@@Node3D@30826",
+				"@MeshInstance3D@30828<MeshInstance3D>@@Node3D@30826",
+				"@MeshInstance3D@30829<MeshInstance3D>@@Node3D@30826",
+				"@Node3D@30830<Node3D>@@Node3D@30811",
+				"@MeshInstance3D@30831<MeshInstance3D>@@Node3D@30830",
+				"@Node3D@30832<Node3D>@@Node3D@30830",
+				"@MeshInstance3D@30833<MeshInstance3D>@@Node3D@30832",
+				"@MeshInstance3D@30834<MeshInstance3D>@@Node3D@30832",
+				"@MeshInstance3D@30835<MeshInstance3D>@@Node3D@30832",
+				"@Node3D@30836<Node3D>@@Node3D@30811",
+				"@MeshInstance3D@30837<MeshInstance3D>@@Node3D@30836",
+				"@Node3D@30838<Node3D>@@Node3D@30836",
+				"@MeshInstance3D@30839<MeshInstance3D>@@Node3D@30838",
+				"@MeshInstance3D@30840<MeshInstance3D>@@Node3D@30838",
+				"@MeshInstance3D@30841<MeshInstance3D>@@Node3D@30838",
+				"CitizenFace<MeshInstance3D>@@Node3D@30814",
+				"FacialHair<MeshInstance3D>@@Node3D@30814"
+			],
+			"added_kinds_top": [
+				[
+					342,
+					"MeshInstance3D"
+				],
+				[
+					92,
+					"Sprite2D"
+				],
+				[
+					54,
+					"PointLight2D"
+				],
+				[
+					48,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					44,
+					"Polygon2D"
+				],
+				[
+					38,
+					"RoadLuminaire3D.gd"
+				],
+				[
+					30,
+					"Node3D"
+				],
+				[
+					26,
+					"CollisionShape2D"
+				],
+				[
+					13,
+					"LivePoseShadow.gd"
+				],
+				[
+					12,
+					"Marker2D"
+				],
+				[
+					10,
+					"ExteriorOcclusion.gd"
+				],
+				[
+					10,
+					"StreetLamp.gd"
+				],
+				[
+					6,
+					"RayCast2D"
+				],
+				[
+					4,
+					"SubViewport"
+				],
+				[
+					4,
+					"Camera3D"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 367.251,
+			"nodes_added_during_frame": 766,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 30953.715
+		},
+		{
+			"added_first_names": [
+				"@Node3D@34886<Node3D>@VehicleGeometryPreparation",
+				"SculptedBodyShell<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34736<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34737<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34738<MeshInstance3D>@@Node3D@34886",
+				"CurvedCabinRoof<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34740<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34741<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34742<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34743<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34744<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34745<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34746<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34747<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34748<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34749<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34750<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34751<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34752<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34753<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34754<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34755<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34756<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34757<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34758<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34759<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34760<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34761<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34762<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34763<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34764<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34765<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34766<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34767<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34768<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34769<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34770<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34771<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34772<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34773<MeshInstance3D>@@Node3D@34886"
+			],
+			"added_kinds_top": [
+				[
+					221,
+					"MeshInstance3D"
+				],
+				[
+					8,
+					"Node3D"
+				],
+				[
+					1,
+					"ValeCrossoverModel.gd"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 843.735,
+			"nodes_added_during_frame": 230,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 33727.447
+		},
+		{
+			"added_first_names": [
+				"NecoTowTruck<CharacterBody2D>@HarborGame",
+				"Visual<Sprite2D>@NecoTowTruck",
+				"Collision<CollisionShape2D>@NecoTowTruck",
+				"PedestrianHitbox<Area2D>@NecoTowTruck",
+				"Collision<CollisionShape2D>@PedestrianHitbox",
+				"Camera<Camera2D>@NecoTowTruck",
+				"ContactShadow<Sprite2D>@NecoTowTruck",
+				"FrontRay<RayCast2D>@NecoTowTruck",
+				"FrontRayL<RayCast2D>@NecoTowTruck",
+				"FrontRayR<RayCast2D>@NecoTowTruck",
+				"Headlight<PointLight2D>@NecoTowTruck",
+				"RoofProp<Node2D>@NecoTowTruck",
+				"NecoTowTruckSpawn<Node>@HarborGame",
+				"Vehicle3DRender<SubViewport>@NecoTowTruck",
+				"@Node3D@42751<Node3D>@Vehicle3DRender",
+				"_MeshInstance3D_31526<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31527<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31528<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31529<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31530<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31531<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31532<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31533<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31534<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31535<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31536<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31537<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31538<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31539<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31540<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31541<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31542<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31543<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31544<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31545<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31546<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31547<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31548<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31549<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31550<MeshInstance3D>@@Node3D@42751"
+			],
+			"added_kinds_top": [
+				[
+					585,
+					"MeshInstance3D"
+				],
+				[
+					348,
+					"Node3D"
+				],
+				[
+					26,
+					"CollisionShape2D"
+				],
+				[
+					25,
+					"Area2D"
+				],
+				[
+					24,
+					"UrbanStationActorPresentation.gd"
+				],
+				[
+					6,
+					"MultiMeshInstance3D"
+				],
+				[
+					4,
+					"Sprite2D"
+				],
+				[
+					3,
+					"DirectionalLight3D"
+				],
+				[
+					3,
+					"WorldEnvironment"
+				],
+				[
+					3,
+					"Camera3D"
+				],
+				[
+					3,
+					"SubViewport"
+				],
+				[
+					3,
+					"RayCast2D"
+				],
+				[
+					2,
+					"PointLight2D"
+				],
+				[
+					1,
+					"TowmasterModel.gd"
+				],
+				[
+					1,
+					"ParkedVehicleSpawn.gd"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 331.796,
+			"nodes_added_during_frame": 1041,
+			"phase": "settle",
+			"player_health": 100,
+			"t_ms": 40920.411
+		},
+		{
+			"added_first_names": [
+				"RegionalCoachFollow<PathFollow2D>@RoadLayout__market_street__forward_01",
+				"TrafficVehicle<CharacterBody2D>@RegionalCoachFollow",
+				"Visual<Sprite2D>@TrafficVehicle",
+				"Collision<CollisionShape2D>@TrafficVehicle",
+				"PedestrianHitbox<Area2D>@TrafficVehicle",
+				"Collision<CollisionShape2D>@PedestrianHitbox",
+				"Camera<Camera2D>@TrafficVehicle",
+				"ContactShadow<Sprite2D>@TrafficVehicle",
+				"FrontRay<RayCast2D>@TrafficVehicle",
+				"FrontRayL<RayCast2D>@TrafficVehicle",
+				"FrontRayR<RayCast2D>@TrafficVehicle",
+				"Headlight<PointLight2D>@TrafficVehicle",
+				"Vehicle3DRender<SubViewport>@TrafficVehicle",
+				"@Node3D@43956<Node3D>@Vehicle3DRender",
+				"@MeshInstance3D@43849<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43850<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43851<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43852<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43853<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43854<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43855<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43856<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43857<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43858<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43859<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43860<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43861<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43862<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43863<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43864<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43865<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43866<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43867<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43868<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43869<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43870<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43871<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43872<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43873<MeshInstance3D>@@Node3D@43956",
+				"@MeshInstance3D@43874<MeshInstance3D>@@Node3D@43956"
+			],
+			"added_kinds_top": [
+				[
+					398,
+					"MeshInstance3D"
+				],
+				[
+					26,
+					"Node3D"
+				],
+				[
+					3,
+					"Label3D"
+				],
+				[
+					3,
+					"RayCast2D"
+				],
+				[
+					3,
+					"PointLight2D"
+				],
+				[
+					2,
+					"Sprite2D"
+				],
+				[
+					2,
+					"CollisionShape2D"
+				],
+				[
+					2,
+					"DirectionalLight3D"
+				],
+				[
+					2,
+					"SubViewport"
+				],
+				[
+					2,
+					"WorldEnvironment"
+				],
+				[
+					2,
+					"Camera3D"
+				],
+				[
+					1,
+					"RegionalIntercityCoachModel.gd"
+				],
+				[
+					1,
+					"LivePoseShadow.gd"
+				],
+				[
+					1,
+					"HarborTransitBusModel.gd"
+				],
+				[
+					1,
+					"Camera2D"
+				]
+			],
+			"car": [
+				1074.30187988281,
+				425.0,
+				299.917572021484
+			],
+			"health": 100,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 255.081,
+			"nodes_added_during_frame": 452,
+			"phase": "drive",
+			"player_health": 100,
+			"t_ms": 50791.297
+		},
+		{
+			"added_first_names": [
+				"MountainRegion<Node2D>@HarborGame",
+				"MountainInteriorManager<Node2D>@MountainRegion",
+				"MountainInteriorSpaces<Node2D>@MountainInteriorManager",
+				"MountainAmmunationInterior<Node2D>@MountainInteriorSpaces",
+				"Blackout<Polygon2D>@MountainAmmunationInterior",
+				"@SubViewport@46585<SubViewport>@MountainAmmunationInterior",
+				"@Node3D@46586<Node3D>@@SubViewport@46585",
+				"@MeshInstance3D@46587<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46588<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46589<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46590<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46591<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46592<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46593<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46594<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46595<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46596<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46597<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46598<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46599<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46600<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46601<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46602<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46603<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46604<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46605<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46606<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46607<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46608<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46609<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46610<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46611<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46612<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46613<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46614<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46615<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46616<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46617<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46618<MeshInstance3D>@@Node3D@46586",
+				"@MeshInstance3D@46619<MeshInstance3D>@@Node3D@46586"
+			],
+			"added_kinds_top": [
+				[
+					845,
+					"MeshInstance3D"
+				],
+				[
+					19,
+					"Node3D"
+				],
+				[
+					13,
+					"Label3D"
+				],
+				[
+					10,
+					"Button"
+				],
+				[
+					10,
+					"CollisionPolygon2D"
+				],
+				[
+					10,
+					"StaticBody2D"
+				],
+				[
+					5,
+					"Label"
+				],
+				[
+					5,
+					"Polygon2D"
+				],
+				[
+					3,
+					"DirectionalLight3D"
+				],
+				[
+					2,
+					"Camera3D"
+				],
+				[
+					2,
+					"SubViewport"
+				],
+				[
+					2,
+					"WorldEnvironment"
+				],
+				[
+					2,
+					"HBoxContainer"
+				],
+				[
+					2,
+					"Node2D"
+				],
+				[
+					2,
+					"Line2D"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 267.238,
+			"nodes_added_during_frame": 946,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 111201.046
+		},
+		{
+			"added_first_names": [
+				"MountainMysteryCaveInterior<Node2D>@MountainInteriorSpaces",
+				"Blackout<Polygon2D>@MountainMysteryCaveInterior",
+				"MysteryCaveRoomView<Node2D>@MountainMysteryCaveInterior",
+				"ModelViewport3D<SubViewport>@MysteryCaveRoomView",
+				"@Node3D@48867<Node3D>@ModelViewport3D",
+				"@MeshInstance3D@48868<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48869<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48870<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48871<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48872<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48873<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48874<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48875<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48876<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48877<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48878<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48879<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48880<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48881<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48882<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48883<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48884<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48885<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48886<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48887<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48888<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48889<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48890<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48891<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48892<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48893<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48894<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48895<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48896<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48897<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48898<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48899<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48900<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48901<MeshInstance3D>@@Node3D@48867",
+				"@MeshInstance3D@48902<MeshInstance3D>@@Node3D@48867"
+			],
+			"added_kinds_top": [
+				[
+					243,
+					"MeshInstance3D"
+				],
+				[
+					121,
+					"CollisionShape2D"
+				],
+				[
+					63,
+					"CollisionPolygon2D"
+				],
+				[
+					33,
+					"Polygon2D"
+				],
+				[
+					15,
+					"Sprite2D"
+				],
+				[
+					12,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					12,
+					"PointLight2D"
+				],
+				[
+					12,
+					"RoadLuminaire3D.gd"
+				],
+				[
+					12,
+					"StaticBody2D"
+				],
+				[
+					7,
+					"Line2D"
+				],
+				[
+					4,
+					"Area2D"
+				],
+				[
+					4,
+					"Node2D"
+				],
+				[
+					4,
+					"Node3D"
+				],
+				[
+					4,
+					"Label"
+				],
+				[
+					3,
+					"DirectionalLight3D"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 818.515,
+			"nodes_added_during_frame": 570,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 112765.837
+		},
+		{
+			"added_first_names": [
+				"SecretMountainLake<Node2D>@MountainSceneryDetailed",
+				"SmugglerCampsite<Node2D>@SecretMountainLake",
+				"@Polygon2D@49469<Polygon2D>@SmugglerCampsite",
+				"SoilTransition<MeshInstance2D>@@Polygon2D@49469",
+				"@Line2D@49470<Line2D>@SmugglerCampsite",
+				"@Line2D@49471<Line2D>@SmugglerCampsite",
+				"@Line2D@49472<Line2D>@SmugglerCampsite",
+				"@Node2D@49473<Node2D>@SmugglerCampsite",
+				"@Line2D@49474<Line2D>@@Node2D@49473",
+				"AnimatedCampfire<Node2D>@@Node2D@49473",
+				"CampHeatSource<Area2D>@@Node2D@49473",
+				"@CollisionShape2D@49475<CollisionShape2D>@CampHeatSource",
+				"@PointLight2D@49476<PointLight2D>@@Node2D@49473",
+				"@Polygon2D@49477<Polygon2D>@SmugglerCampsite",
+				"@Polygon2D@49478<Polygon2D>@SmugglerCampsite",
+				"Collision<CollisionShape2D>@SmugglerArcticJeep3D",
+				"Camera<Camera2D>@SmugglerArcticJeep3D",
+				"InteractArea<Area2D>@SmugglerArcticJeep3D",
+				"@CollisionShape2D@49479<CollisionShape2D>@InteractArea",
+				"SmugglerArcticJeep3D<CharacterBody2D>@SmugglerCampsite",
+				"@Line2D@49480<Line2D>@SmugglerArcticJeep3D",
+				"@Sprite2D@49481<Sprite2D>@SmugglerArcticJeep3D",
+				"ContactShadow<Sprite2D>@SmugglerArcticJeep3D",
+				"BumperHitbox<Area2D>@SmugglerArcticJeep3D",
+				"@CollisionShape2D@49482<CollisionShape2D>@BumperHitbox",
+				"@CPUParticles2D@49483<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49484<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49485<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49486<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49487<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49488<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49489<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49490<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"RadioReceiver<Node>@@AudioStreamPlayer2D@49490",
+				"@AudioStreamPlayer2D@49491<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49492<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49493<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49494<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49495<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49496<CPUParticles2D>@SmugglerArcticJeep3D"
+			],
+			"added_kinds_top": [
+				[
+					451,
+					"MeshInstance3D"
+				],
+				[
+					18,
+					"Polygon2D"
+				],
+				[
+					18,
+					"Line2D"
+				],
+				[
+					16,
+					"Node3D"
+				],
+				[
+					11,
+					"CollisionPolygon2D"
+				],
+				[
+					11,
+					"StaticBody2D"
+				],
+				[
+					10,
+					"CPUParticles2D"
+				],
+				[
+					7,
+					"MountainLakeIce.gd"
+				],
+				[
+					7,
+					"CollisionShape2D"
+				],
+				[
+					7,
+					"AudioStreamPlayer2D"
+				],
+				[
+					7,
+					"Sprite2D"
+				],
+				[
+					5,
+					"Node2D"
+				],
+				[
+					4,
+					"PointLight2D"
+				],
+				[
+					4,
+					"MeshInstance2D"
+				],
+				[
+					3,
+					"SubViewport"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 279.681,
+			"nodes_added_during_frame": 606,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 113505.598
+		},
+		{
+			"added_first_names": [
+				"WinterStopApron2<Polygon2D>@MountainSettlement",
+				"WheelRuts<Node2D>@WinterStopApron2",
+				"WinterStopAccess2<Line2D>@MountainSettlement",
+				"@Node2D@57789<Node2D>@MountainSettlement",
+				"ModelViewport3D<SubViewport>@SummitSkiLodge",
+				"@Node3D@57790<Node3D>@ModelViewport3D",
+				"Foundation<MeshInstance3D>@@Node3D@57790",
+				"MainHall<MeshInstance3D>@@Node3D@57790",
+				"Roof<MeshInstance3D>@@Node3D@57790",
+				"RoofSnow<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57791<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57792<MeshInstance3D>@@Node3D@57790",
+				"CornerTimber<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57793<MeshInstance3D>@@Node3D@57790",
+				"WindowFrame<MeshInstance3D>@@Node3D@57790",
+				"WindowGlass<MeshInstance3D>@@Node3D@57790",
+				"WindowWarmth<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57794<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57795<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57796<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57797<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57798<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57799<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57800<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57801<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57802<MeshInstance3D>@@Node3D@57790",
+				"Door<MeshInstance3D>@@Node3D@57790",
+				"DoorWindow<MeshInstance3D>@@Node3D@57790",
+				"Porch<MeshInstance3D>@@Node3D@57790",
+				"PorchPost<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57803<MeshInstance3D>@@Node3D@57790",
+				"PorchCanopy<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57804<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57805<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57806<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57807<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57808<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57809<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57810<MeshInstance3D>@@Node3D@57790",
+				"@MeshInstance3D@57811<MeshInstance3D>@@Node3D@57790"
+			],
+			"added_kinds_top": [
+				[
+					484,
+					"MeshInstance3D"
+				],
+				[
+					57,
+					"Node3D"
+				],
+				[
+					24,
+					"Polygon2D"
+				],
+				[
+					20,
+					"CollisionPolygon2D"
+				],
+				[
+					15,
+					"Line2D"
+				],
+				[
+					11,
+					"Node2D"
+				],
+				[
+					10,
+					"Sprite2D"
+				],
+				[
+					10,
+					"WorldEnvironment"
+				],
+				[
+					10,
+					"DirectionalLight3D"
+				],
+				[
+					10,
+					"Camera3D"
+				],
+				[
+					10,
+					"SubViewport"
+				],
+				[
+					9,
+					"StaticBody2D"
+				],
+				[
+					7,
+					"ResortPromenadeProp.gd"
+				],
+				[
+					7,
+					"ResortPromenadeProp3D.gd"
+				],
+				[
+					4,
+					"Label"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 465.87,
+			"nodes_added_during_frame": 714,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 123227.876
+		},
+		{
+			"added_first_names": [
+				"WinterDressingPocket0<Node2D>@MountainSettlement",
+				"ModelViewport3D<SubViewport>@WinterDressingPocket0",
+				"@Node3D@60095<Node3D>@ModelViewport3D",
+				"@Camera3D@60096<Camera3D>@ModelViewport3D",
+				"@DirectionalLight3D@60097<DirectionalLight3D>@ModelViewport3D",
+				"@WorldEnvironment@60098<WorldEnvironment>@ModelViewport3D",
+				"GroundAnchoredModel<Sprite2D>@WinterDressingPocket0",
+				"WinterNaturalDressing3D<Node3D>@@Node3D@60095",
+				"Pine00<Node3D>@WinterNaturalDressing3D",
+				"@MeshInstance3D@60099<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60100<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60101<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60102<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60103<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60104<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60105<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60106<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60107<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60108<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60109<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60110<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60111<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60112<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60113<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60114<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60115<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60116<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60117<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60118<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60119<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60120<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60121<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60122<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60123<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60124<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60125<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60126<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60127<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60128<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60129<MeshInstance3D>@Pine00"
+			],
+			"added_kinds_top": [
+				[
+					7794,
+					"MeshInstance3D"
+				],
+				[
+					490,
+					"Node3D"
+				],
+				[
+					299,
+					"Polygon2D"
+				],
+				[
+					145,
+					"StaticBody2D"
+				],
+				[
+					125,
+					"CollisionPolygon2D"
+				],
+				[
+					103,
+					"Sprite2D"
+				],
+				[
+					68,
+					"CollisionShape2D"
+				],
+				[
+					57,
+					"DirectionalLight3D"
+				],
+				[
+					57,
+					"Camera3D"
+				],
+				[
+					57,
+					"SubViewport"
+				],
+				[
+					56,
+					"WorldEnvironment"
+				],
+				[
+					41,
+					"Node2D"
+				],
+				[
+					26,
+					"MountainPine3D.gd"
+				],
+				[
+					26,
+					"ExteriorOcclusion.gd"
+				],
+				[
+					22,
+					"Label"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 3252.512,
+			"nodes_added_during_frame": 9582,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 127423.353
+		},
+		{
+			"added_first_names": [
+				"RoadLighting<Node2D>@MountainRegion",
+				"MountainVillageCoachAccess<Path2D>@MountainRegion",
+				"VillageCoachPavement<Line2D>@MountainRegion",
+				"@Line2D@68077<Line2D>@MountainRegion",
+				"CliffGuardRails<StaticBody2D>@MountainPassRoad",
+				"@CollisionShape2D@68078<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68079<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68080<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68081<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68082<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68083<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68084<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68085<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68086<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68087<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68088<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68089<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68090<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68091<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68092<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68093<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68094<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68095<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68096<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68097<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68098<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68099<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68100<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68101<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68102<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68103<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68104<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68105<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68106<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68107<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68108<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68109<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68110<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68111<CollisionShape2D>@CliffGuardRails",
+				"@CollisionShape2D@68112<CollisionShape2D>@CliffGuardRails"
+			],
+			"added_kinds_top": [
+				[
+					148,
+					"CollisionShape2D"
+				],
+				[
+					55,
+					"CollisionPolygon2D"
+				],
+				[
+					2,
+					"Line2D"
+				],
+				[
+					1,
+					"RoadLighting.gd"
+				],
+				[
+					1,
+					"Path2D"
+				],
+				[
+					1,
+					"StaticBody2D"
+				],
+				[
+					1,
+					"MountainCliffEdges.gd"
+				],
+				[
+					1,
+					"Area2D"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 503.948,
+			"nodes_added_during_frame": 210,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 128179.999
+		},
+		{
+			"added_first_names": [
+				"@Timer@68542<Timer>@@CanvasLayer@23555"
+			],
+			"added_kinds_top": [
+				[
+					1,
+					"Timer"
+				]
+			],
+			"car": [
+				7899.99951171875,
+				-4529.0,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 2894.432,
+			"nodes_added_during_frame": 1,
+			"phase": "mountain_0",
+			"player_health": 100,
+			"t_ms": 137113.023
+		},
+		{
+			"added_first_names": [],
+			"added_kinds_top": [],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 25,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 379.957,
+			"nodes_added_during_frame": 0,
+			"phase": "seam_1",
+			"player_health": 100,
+			"t_ms": 148785.207
+		}
+	],
+	"status": "complete"
+}

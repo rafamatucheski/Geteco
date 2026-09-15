@@ -1,0 +1,146 @@
+﻿[
+    {
+        "test":  "test_vehicle_geometry_cache",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  5.7
+    },
+    {
+        "test":  "test_vehicle_mesh_batcher",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  3.2
+    },
+    {
+        "test":  "test_presentation_budget",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  2.6
+    },
+    {
+        "test":  "test_vehicle_presentation_streaming",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  4.8
+    },
+    {
+        "test":  "test_resident_vehicle_preparation",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  4.4
+    },
+    {
+        "test":  "test_traffic_render_budget",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  4.9
+    },
+    {
+        "test":  "test_emergency_pool_preparation",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  5.5
+    },
+    {
+        "test":  "test_prepared_police_vehicle",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  5.5
+    },
+    {
+        "test":  "test_sculpted_vehicle_fleet",
+        "exit":  1,
+        "error_lines":  3,
+        "seconds":  12.6
+    },
+    {
+        "test":  "test_wheel_body_clearance",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  21.7
+    },
+    {
+        "test":  "test_vehicle_wheel_steering",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  50.6
+    },
+    {
+        "test":  "test_native_vehicle_doors",
+        "exit":  1,
+        "error_lines":  0,
+        "seconds":  4.9
+    },
+    {
+        "test":  "test_coupe_crash_lab",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  5.5
+    },
+    {
+        "test":  "test_traffic_vehicle_repair_clears_skid",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  4.1
+    },
+    {
+        "test":  "test_emergency_lightbars",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  5.8
+    },
+    {
+        "test":  "test_vehicle_entry_exit",
+        "exit":  1,
+        "error_lines":  0,
+        "seconds":  2.3
+    },
+    {
+        "test":  "test_motorcycle_geometry",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  2.7
+    },
+    {
+        "test":  "test_vehicle_lamp_origins",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  13.2
+    },
+    {
+        "test":  "test_vehicle_crash_and_explosion",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  5.3
+    },
+    {
+        "test":  "test_in_game_fleet_integration",
+        "exit":  1,
+        "error_lines":  0,
+        "seconds":  76.5
+    },
+    {
+        "test":  "test_region_travel",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  53.2
+    },
+    {
+        "test":  "test_continuous_save",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  55.1
+    },
+    {
+        "test":  "test_menu_flow_integration",
+        "exit":  0,
+        "error_lines":  0,
+        "seconds":  76.8
+    },
+    {
+        "test":  "tools/check_references.py",
+        "exit":  1,
+        "error_lines":  0,
+        "seconds":  0
+    }
+]

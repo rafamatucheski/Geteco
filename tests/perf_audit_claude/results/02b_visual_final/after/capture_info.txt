@@ -1,0 +1,2 @@
+engine=4.7.2-stable (official) renderer=mobile adapter=NVIDIA GeForce RTX 4060 Laptop GPU debug=true
+project=D:/geteco/game/

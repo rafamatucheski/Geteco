@@ -1,6 +1,32 @@
 extends RefCounted
 static var _mesh_cache: Dictionary = {}
 static var cache_hits := 0
+# Formato de superfície por identidade da malha. surface_get_arrays() copia todos
+# os arrays da malha só para montar a chave do grupo; em veículos restaurados do
+# VehicleGeometryCache as ~100 malhas são os mesmos recursos compartilhados, então
+# essa cópia repetida chegava a 20-57 ms por construção (GETECO-PERF-02B).
+# A entrada cai quando a malha emite `changed`; o limite só evita crescimento
+# com malhas descartadas (ids de instância não são reutilizados).
+static var _format_cache: Dictionary = {}
+# Medido após o loading do Harbor: ~2.900 malhas distintas já passaram por aqui.
+const FORMAT_CACHE_LIMIT := 16384
+static var format_cache_hits := 0
+# Modelos sem VehicleGeometryCache (motos, BossMuscle) criam PrimitiveMesh novas a
+# cada construção, então o cache por identidade nunca acerta e o batch voltava a
+# custar 24-58 ms. A presença de arrays de uma PrimitiveMesh depende só da classe
+# e de add_uv2; test_02b_vehicle_presentation_contracts confere essa equivalência.
+static var _primitive_formats: Dictionary = {}
+static var primitive_format_hits := 0
+# Ocupação/descartes do cache de malhas fundidas, para decidir o limite com dado
+# medido em vez de palpite (a frota inteira pode passar de 256 grupos no loading).
+static var mesh_cache_evictions := 0
+# O limite antigo (256) era menor que a frota: só o loading gerava 782 misses e
+# 526 descartes, e o primeiro veículo de cada modelo descartado refazia as fusões
+# (route_city 57 ms, tanker 133 ms). Memória medida no relatório GETECO-PERF-02B.
+const MESH_CACHE_LIMIT := 1024
+static var mesh_cache_misses := 0
+# Quantas vezes algum `changed` apagou os dois caches inteiros.
+static var cache_invalidations := 0
 ## Batch only static, compatible sibling surfaces. Call once after extracting wheels
 ## and reading lamp mounts. Never combine independently animated transforms.
 static func batch_model(model: Node3D) -> int:
@@ -49,7 +75,10 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 			for source in sources: surface.append_from(source.mesh, 0, source.transform)
 			mesh = surface.commit()
-			if _mesh_cache.size() >= 256: _mesh_cache.erase(_mesh_cache.keys()[0])
+			mesh_cache_misses += 1
+			if _mesh_cache.size() >= MESH_CACHE_LIMIT:
+				_mesh_cache.erase(_mesh_cache.keys()[0])
+				mesh_cache_evictions += 1
 			_mesh_cache[geometry_key] = mesh
 			for source in sources:
 				if not source.mesh.changed.is_connected(_invalidate_cache): source.mesh.changed.connect(_invalidate_cache)
@@ -77,9 +106,31 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 	return removed
 
 static func _invalidate_cache() -> void:
+	cache_invalidations += 1
 	_mesh_cache.clear()
+	_format_cache.clear()
 
 static func _surface_format(mesh: Mesh) -> int:
+	var id := mesh.get_instance_id()
+	if _format_cache.has(id):
+		format_cache_hits += 1
+		return _format_cache[id]
+	var primitive_key := ""
+	if mesh is PrimitiveMesh:
+		primitive_key = "%s:%s" % [mesh.get_class(), (mesh as PrimitiveMesh).add_uv2]
+		if _primitive_formats.has(primitive_key):
+			primitive_format_hits += 1
+			return _primitive_formats[primitive_key]
+	var format := _format_from_arrays(mesh)
+	if not primitive_key.is_empty():
+		_primitive_formats[primitive_key] = format
+		return format
+	if _format_cache.size() >= FORMAT_CACHE_LIMIT: _format_cache.clear()
+	_format_cache[id] = format
+	if not mesh.changed.is_connected(_invalidate_cache): mesh.changed.connect(_invalidate_cache)
+	return format
+
+static func _format_from_arrays(mesh: Mesh) -> int:
 	var arrays := mesh.surface_get_arrays(0)
 	var format := 0
 	for i in Mesh.ARRAY_MAX:

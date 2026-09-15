@@ -4,6 +4,15 @@ extends RefCounted
 ## instances cheap; materials, wheel centres and steering angles stay authored.
 const SIDES := 16
 static var _cache: Dictionary = {}
+# Chave de conteúdo por identidade da malha-fonte. A chave de _cache hasheia os
+# arrays completos da malha (surface_get_arrays copia tudo) e isso se repetia em
+# cada veículo, embora os restaurados do VehicleGeometryCache usem as mesmas
+# malhas. O memo aponta para a MESMA chave de conteúdo, então a partilha entre
+# malhas idênticas continua; ele cai inteiro quando qualquer fonte emite `changed`.
+static var _content_keys: Dictionary = {}
+const CONTENT_KEY_LIMIT := 4096
+static var content_key_hits := 0
+static var content_key_invalidations := 0
 
 static func carve(model: Node3D, wells: Array[Dictionary]) -> void:
 	for part in model.get_children():
@@ -22,9 +31,7 @@ static func carve(model: Node3D, wells: Array[Dictionary]) -> void:
 			relevant.append(well)
 		if relevant.is_empty(): continue
 		var source: Mesh = part.mesh
-		var key := str(part.transform, relevant)
-		for surface in source.get_surface_count():
-			key += str(hash(source.surface_get_arrays(surface)))
+		var key := _content_key(source, part.transform, relevant)
 		if not _cache.has(key):
 			_cache[key] = _cut_mesh(source, part.transform, relevant)
 		part.mesh = _cache[key]
@@ -35,6 +42,24 @@ static func carve(model: Node3D, wells: Array[Dictionary]) -> void:
 		# Damage/repair must use the carved geometry, or repairs close the wells.
 		if model.get("originals") is Dictionary and model.originals.has(part):
 			model.originals[part] = part.mesh
+
+static func _content_key(source: Mesh, transform: Transform3D, relevant: Array[Dictionary]) -> String:
+	var prefix := str(transform, relevant)
+	var identity := "%d|%s" % [source.get_instance_id(), prefix]
+	if _content_keys.has(identity):
+		content_key_hits += 1
+		return _content_keys[identity]
+	var key := prefix
+	for surface in source.get_surface_count():
+		key += str(hash(source.surface_get_arrays(surface)))
+	if _content_keys.size() >= CONTENT_KEY_LIMIT: _content_keys.clear()
+	_content_keys[identity] = key
+	if not source.changed.is_connected(_forget_content_keys): source.changed.connect(_forget_content_keys)
+	return key
+
+static func _forget_content_keys() -> void:
+	content_key_invalidations += 1
+	_content_keys.clear()
 
 static func _planes(well: Dictionary) -> Array[Plane]:
 	var center: Vector3 = well.center

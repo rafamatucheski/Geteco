@@ -1,0 +1,5 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+AUDIO_PREPARATION cold_bike_us=108103
+AUDIO_PREPARATION PASS vehicles=47 warm_peak_us=4

@@ -1,0 +1,9247 @@
+{
+	"crossing": {
+		"cycles": [
+			{
+				"cycle": 0,
+				"handoff_max_displacement": 1.14113092422485,
+				"mountain_ready_after_teleport_ms": 66808.789,
+				"ready_for_crossing": true,
+				"region_on_mountain": "harbor",
+				"region_on_return": "harbor"
+			},
+			{
+				"cycle": 1,
+				"handoff_max_displacement": 1.14113092422485,
+				"mountain_ready_after_teleport_ms": 6001.734,
+				"ready_for_crossing": true,
+				"region_on_mountain": "harbor",
+				"region_on_return": "harbor"
+			}
+		]
+	},
+	"environment": {
+		"adapter": "NVIDIA GeForce RTX 4060 Laptop GPU",
+		"adapter_api": "1.4.341",
+		"adapter_vendor": "NVIDIA",
+		"args": [
+			"run=02b_base_session_prod",
+			"--no-budget-timing"
+		],
+		"budget_timing_copy": false,
+		"cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+		"cpu_threads": 20,
+		"debug_build": true,
+		"display_server": "Windows",
+		"editor_hint": false,
+		"engine": {
+			"build": "official",
+			"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+			"hex": 263938,
+			"major": 4,
+			"minor": 7,
+			"patch": 2,
+			"status": "stable",
+			"string": "4.7.2-stable (official)",
+			"timestamp": 0
+		},
+		"executable": "D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64.exe",
+		"max_fps": 60,
+		"max_physics_steps_per_frame": 8,
+		"physics_interpolation": true,
+		"physics_ticks_per_second": 60,
+		"renderer_method": "mobile",
+		"rendering_driver": "vulkan",
+		"root_size": "(1280, 720)",
+		"screen_refresh_hz": 159.962005615234,
+		"screen_size": "(3440, 1440)",
+		"user_data_dir": "D:/geteco/game/tests/perf_audit_claude/results/02b_base_session_prod/appdata/Godot/app_userdata/Geteco",
+		"vsync_mode": 1,
+		"window_size": "(1280, 720)"
+	},
+	"frames_over_50ms": [
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.0490036010742,
+			"pending": 0,
+			"phase": "loading",
+			"physics_ms": 100.001998901367,
+			"process_ms": 63.6860008239746,
+			"t_ms": 163.671997070313
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 24368.626953125,
+			"pending": 139,
+			"phase": "loading",
+			"physics_ms": 0.0299999993294477,
+			"process_ms": 0.746999979019165,
+			"t_ms": 29798.482421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 364.209991455078,
+			"pending": 142,
+			"phase": "loading",
+			"physics_ms": 25.3880004882813,
+			"process_ms": 24340.134765625,
+			"t_ms": 30163.216796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 114.233001708984,
+			"pending": 142,
+			"phase": "loading",
+			"physics_ms": 8.22000026702881,
+			"process_ms": 114.494003295898,
+			"t_ms": 30277.87109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 89.6829986572266,
+			"pending": 141,
+			"phase": "loading",
+			"physics_ms": 8.22000026702881,
+			"process_ms": 114.494003295898,
+			"t_ms": 30367.611328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 143.274993896484,
+			"pending": 137,
+			"phase": "loading",
+			"physics_ms": 8.22000026702881,
+			"process_ms": 114.494003295898,
+			"t_ms": 30571.787109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 310.316986083984,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 8.22000026702881,
+			"process_ms": 114.494003295898,
+			"t_ms": 30882.43359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 177.675003051758,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31060.189453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 92.3730010986328,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31152.6171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.994003295898,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31257.96484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 91.2600021362305,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31349.279296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 92.2870025634766,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31441.619140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.898998260498,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31500.80859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 100.253997802734,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31601.126953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.2040023803711,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31698.392578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 76.8369979858398,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31817.8046875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 167.617004394531,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.111000001430511,
+			"process_ms": 310.52099609375,
+			"t_ms": 31985.4765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 172.841995239258,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 173.050994873047,
+			"t_ms": 32158.630859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 824.632019042969,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 173.050994873047,
+			"t_ms": 32983.3203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 174.860992431641,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.046000000089407,
+			"process_ms": 824.591979980469,
+			"t_ms": 33158.26171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 189.955993652344,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.046000000089407,
+			"process_ms": 824.591979980469,
+			"t_ms": 33348.48828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 141.826995849609,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.046000000089407,
+			"process_ms": 824.591979980469,
+			"t_ms": 33490.3671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 183.703002929688,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.046000000089407,
+			"process_ms": 824.591979980469,
+			"t_ms": 33674.12109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 165.960006713867,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.046000000089407,
+			"process_ms": 824.591979980469,
+			"t_ms": 33840.40234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 100.769996643066,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.046000000089407,
+			"process_ms": 824.591979980469,
+			"t_ms": 33941.23046875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 130.294998168945,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34071.58203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.1589965820313,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34140.0625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 78.1890029907227,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34218.30859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 121.496002197266,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34339.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.1859970092773,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34409.33984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.2109985351563,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34468.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 135.677993774414,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34604.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 147.667007446289,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34752.30859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 133.410003662109,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 190.117004394531,
+			"t_ms": 34885.77734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 132.251998901367,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 147.830993652344,
+			"t_ms": 35018.09375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 100.071998596191,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 147.830993652344,
+			"t_ms": 35118.4609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.4410018920898,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0579999983310699,
+			"process_ms": 147.830993652344,
+			"t_ms": 35215.96484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 213.947006225586,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.168999999761581,
+			"process_ms": 42.2109985351563,
+			"t_ms": 37982.67578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 102.88200378418,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38085.61328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 95.7610015869141,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38181.66796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 120.65599822998,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38302.375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 121.843002319336,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38424.2734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.393997192383,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38528.9609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 99.806999206543,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38628.83203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 113.231002807617,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38742.12109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 96.9459991455078,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38839.3984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.5830001831055,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.136000007390976,
+			"process_ms": 213.856002807617,
+			"t_ms": 38937.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 120.087997436523,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 121.793998718262,
+			"t_ms": 39068.5703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 119.741996765137,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 121.793998718262,
+			"t_ms": 39188.36328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 118.269996643066,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 121.793998718262,
+			"t_ms": 39306.6875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.7449989318848,
+			"pending": 136,
+			"phase": "loading",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 121.793998718262,
+			"t_ms": 39766.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 297.097991943359,
+			"pending": 140,
+			"phase": "settle",
+			"physics_ms": 0.0570000000298023,
+			"process_ms": 121.793998718262,
+			"t_ms": 40063.62109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 101.463996887207,
+			"pending": 141,
+			"phase": "settle",
+			"physics_ms": 122.611999511719,
+			"process_ms": 122.384002685547,
+			"t_ms": 40165.4375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 195.994995117188,
+			"pending": 140,
+			"phase": "settle",
+			"physics_ms": 122.611999511719,
+			"process_ms": 122.384002685547,
+			"t_ms": 40361.49609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 145.218002319336,
+			"pending": 138,
+			"phase": "settle",
+			"physics_ms": 122.611999511719,
+			"process_ms": 122.384002685547,
+			"t_ms": 40550.43359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 152.701995849609,
+			"pending": 137,
+			"phase": "settle",
+			"physics_ms": 122.611999511719,
+			"process_ms": 122.384002685547,
+			"t_ms": 40703.19140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 151.957992553711,
+			"pending": 136,
+			"phase": "settle",
+			"physics_ms": 122.611999511719,
+			"process_ms": 122.384002685547,
+			"t_ms": 40855.20703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 136.100997924805,
+			"pending": 135,
+			"phase": "settle",
+			"physics_ms": 122.611999511719,
+			"process_ms": 122.384002685547,
+			"t_ms": 40991.6640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.070007324219,
+			"pending": 134,
+			"phase": "settle",
+			"physics_ms": 9.00500011444092,
+			"process_ms": 155.858993530273,
+			"t_ms": 41131.80078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.9189987182617,
+			"pending": 133,
+			"phase": "settle",
+			"physics_ms": 9.00500011444092,
+			"process_ms": 155.858993530273,
+			"t_ms": 41192.77734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 112.356002807617,
+			"pending": 132,
+			"phase": "settle",
+			"physics_ms": 9.00500011444092,
+			"process_ms": 155.858993530273,
+			"t_ms": 41492.9140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.7949981689453,
+			"pending": 135,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 8.29899978637695,
+			"process_ms": 84.2360000610352,
+			"t_ms": 42879.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 161.199005126953,
+			"pending": 134,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 8.4709997177124,
+			"process_ms": 119.426002502441,
+			"t_ms": 43041.07421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 151.009994506836,
+			"pending": 133,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 8.4709997177124,
+			"process_ms": 119.426002502441,
+			"t_ms": 43192.14453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.5320014953613,
+			"pending": 133,
+			"phase": "drive_warmup_idle",
+			"physics_ms": 8.4709997177124,
+			"process_ms": 119.426002502441,
+			"t_ms": 43245.74609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 145.561004638672,
+			"pending": 132,
+			"phase": "drive",
+			"physics_ms": 6.84299993515015,
+			"process_ms": 19.0499992370605,
+			"t_ms": 48215.1015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 100.661003112793,
+			"pending": 131,
+			"phase": "drive",
+			"physics_ms": 6.84299993515015,
+			"process_ms": 19.0499992370605,
+			"t_ms": 48487.05859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 128.098007202148,
+			"pending": 130,
+			"phase": "drive",
+			"physics_ms": 6.84299993515015,
+			"process_ms": 19.0499992370605,
+			"t_ms": 48859.0625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 111.86799621582,
+			"pending": 129,
+			"phase": "drive",
+			"physics_ms": 7.0,
+			"process_ms": 112.527000427246,
+			"t_ms": 49011.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 231.606994628906,
+			"pending": 129,
+			"phase": "drive",
+			"physics_ms": 7.0,
+			"process_ms": 112.527000427246,
+			"t_ms": 49582.44921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.859001159668,
+			"pending": 129,
+			"phase": "drive",
+			"physics_ms": 7.0,
+			"process_ms": 112.527000427246,
+			"t_ms": 49635.37109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 136.869003295898,
+			"pending": 128,
+			"phase": "drive",
+			"physics_ms": 7.28999996185303,
+			"process_ms": 190.591995239258,
+			"t_ms": 50437.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 121.630996704102,
+			"pending": 127,
+			"phase": "drive",
+			"physics_ms": 7.28999996185303,
+			"process_ms": 190.591995239258,
+			"t_ms": 50593.42578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 138.473999023438,
+			"pending": 127,
+			"phase": "drive",
+			"physics_ms": 7.03700017929077,
+			"process_ms": 102.149002075195,
+			"t_ms": 51908.01953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 125.930999755859,
+			"pending": 126,
+			"phase": "drive",
+			"physics_ms": 7.06699991226196,
+			"process_ms": 102.358001708984,
+			"t_ms": 52072.0234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 114.47200012207,
+			"pending": 124,
+			"phase": "drive",
+			"physics_ms": 7.06699991226196,
+			"process_ms": 102.358001708984,
+			"t_ms": 52228.02734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.158004760742,
+			"pending": 123,
+			"phase": "drive",
+			"physics_ms": 7.06699991226196,
+			"process_ms": 102.358001708984,
+			"t_ms": 52368.4921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 131.188003540039,
+			"pending": 122,
+			"phase": "drive",
+			"physics_ms": 7.06699991226196,
+			"process_ms": 102.358001708984,
+			"t_ms": 52499.7421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 137.466995239258,
+			"pending": 121,
+			"phase": "drive",
+			"physics_ms": 7.06699991226196,
+			"process_ms": 102.358001708984,
+			"t_ms": 52710.81640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 255.514007568359,
+			"pending": 120,
+			"phase": "drive",
+			"physics_ms": 7.22399997711182,
+			"process_ms": 99.4309997558594,
+			"t_ms": 53884.80078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 87.1240005493164,
+			"pending": 119,
+			"phase": "drive",
+			"physics_ms": 6.27899980545044,
+			"process_ms": 21.0669994354248,
+			"t_ms": 57440.6171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.9229965209961,
+			"pending": 118,
+			"phase": "drive",
+			"physics_ms": 6.36199998855591,
+			"process_ms": 63.5379981994629,
+			"t_ms": 58199.05078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 207.738006591797,
+			"pending": 117,
+			"phase": "drive",
+			"physics_ms": 6.36199998855591,
+			"process_ms": 63.5379981994629,
+			"t_ms": 58590.15234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.3499984741211,
+			"pending": 117,
+			"phase": "drive",
+			"physics_ms": 6.36199998855591,
+			"process_ms": 63.5379981994629,
+			"t_ms": 58848.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.2330017089844,
+			"pending": 117,
+			"phase": "drive",
+			"physics_ms": 6.33500003814697,
+			"process_ms": 21.056999206543,
+			"t_ms": 61708.3515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 110.228996276855,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 6.40799999237061,
+			"process_ms": 18.201000213623,
+			"t_ms": 80199.0546875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.015998840332,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 7.36299991607666,
+			"process_ms": 21.4389991760254,
+			"t_ms": 82368.1328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.4070014953613,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 6.83300018310547,
+			"process_ms": 22.1219997406006,
+			"t_ms": 84697.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.8720016479492,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 37.2700004577637,
+			"process_ms": 24.2409992218018,
+			"t_ms": 85450.2578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.0610008239746,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 32.1100006103516,
+			"process_ms": 24.9139995574951,
+			"t_ms": 85941.4609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.2319984436035,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 32.1100006103516,
+			"process_ms": 24.9139995574951,
+			"t_ms": 86434.4375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.0219993591309,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 35.9059982299805,
+			"process_ms": 21.6450004577637,
+			"t_ms": 87918.4921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.0480003356934,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 35.9059982299805,
+			"process_ms": 21.6450004577637,
+			"t_ms": 88835.6328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.8160018920898,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 35.9739990234375,
+			"process_ms": 21.1609992980957,
+			"t_ms": 92062.671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.4500007629395,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 35.9739990234375,
+			"process_ms": 21.1609992980957,
+			"t_ms": 92820.9765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.7130012512207,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 38.3889999389648,
+			"process_ms": 22.1229991912842,
+			"t_ms": 93629.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 61.7179985046387,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 34.5130004882813,
+			"process_ms": 20.8449993133545,
+			"t_ms": 95203.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.9339981079102,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 34.5130004882813,
+			"process_ms": 20.8449993133545,
+			"t_ms": 95726.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 171.22200012207,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 9.80900001525879,
+			"process_ms": 22.5200004577637,
+			"t_ms": 105498.1875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 93.390998840332,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 9.80900001525879,
+			"process_ms": 22.5200004577637,
+			"t_ms": 105591.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.6460037231445,
+			"pending": 116,
+			"phase": "pursuit",
+			"physics_ms": 9.80900001525879,
+			"process_ms": 22.5200004577637,
+			"t_ms": 105656.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 153.727005004883,
+			"pending": 116,
+			"phase": "micro",
+			"physics_ms": 9.22299957275391,
+			"process_ms": 25.1679992675781,
+			"t_ms": 109988.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.7070007324219,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 8.10599994659424,
+			"process_ms": 115.77799987793,
+			"t_ms": 110052.4921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.8689994812012,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 7.10300016403198,
+			"process_ms": 21.9580001831055,
+			"t_ms": 120655.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 206.921997070313,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 8.41499996185303,
+			"process_ms": 25.0790004730225,
+			"t_ms": 133875.828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 74.8460006713867,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 8.41499996185303,
+			"process_ms": 25.0790004730225,
+			"t_ms": 133950.75
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 151.531005859375,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 29.5769996643066,
+			"process_ms": 123.582000732422,
+			"t_ms": 134854.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.1510009765625,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 29.5769996643066,
+			"process_ms": 123.582000732422,
+			"t_ms": 134911.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.3409996032715,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 7.95900011062622,
+			"process_ms": 22.7590007781982,
+			"t_ms": 137701.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.6609992980957,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 7.95900011062622,
+			"process_ms": 22.7590007781982,
+			"t_ms": 137823.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.6310005187988,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.3889999389648,
+			"process_ms": 24.8859996795654,
+			"t_ms": 138829.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.1139984130859,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 12.9759998321533,
+			"process_ms": 23.1749992370605,
+			"t_ms": 139601.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.6920013427734,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 12.9759998321533,
+			"process_ms": 23.1749992370605,
+			"t_ms": 139652.53125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.318000793457,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 12.9759998321533,
+			"process_ms": 23.1749992370605,
+			"t_ms": 139711.140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.5740013122559,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 12.9759998321533,
+			"process_ms": 23.1749992370605,
+			"t_ms": 139762.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.1269989013672,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 12.9759998321533,
+			"process_ms": 23.1749992370605,
+			"t_ms": 139859.546875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.1279983520508,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 12.9759998321533,
+			"process_ms": 23.1749992370605,
+			"t_ms": 139913.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.4389991760254,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 20.2639999389648,
+			"process_ms": 25.0410003662109,
+			"t_ms": 140817.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.5690002441406,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 140956.53125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.8520011901855,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141057.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.6510009765625,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141153.1875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.7669982910156,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141423.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.4970016479492,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141474.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.0460014343262,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141529.25
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.265998840332,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141580.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 66.9000015258789,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141647.75
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.6889991760254,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141698.5
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 65.9059982299805,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141764.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.7369995117188,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141865.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.8950004577637,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 11.9670000076294,
+			"process_ms": 26.628999710083,
+			"t_ms": 141916.640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 61.1629981994629,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 141977.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.7490005493164,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142030.65625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.1149978637695,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142103.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.4850006103516,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142464.9375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.0180015563965,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142519.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.3089981079102,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142591.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 71.318000793457,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142662.984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.9000015258789,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142723.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.8919982910156,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142796.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 70.5920028686523,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142866.75
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 88.2610015869141,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 13.4270000457764,
+			"process_ms": 23.4689998626709,
+			"t_ms": 142955.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 79.5839996337891,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143034.984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 74.463996887207,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143109.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.4940032958984,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143178.4375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 295.717987060547,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143474.328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 109.496002197266,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143583.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 107.746002197266,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143691.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.1999969482422,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143789.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 110.513999938965,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143899.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 86.3130035400391,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5679998397827,
+			"process_ms": 23.3950004577637,
+			"t_ms": 143986.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 74.4000015258789,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144060.875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.1430015563965,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144118.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.6710014343262,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144182.015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.8759994506836,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144279.9375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.8800010681152,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144340.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.0459976196289,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144404.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.9900016784668,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144465.28125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 67.6470031738281,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144533.21875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.4259986877441,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144587.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 67.1119995117188,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144654.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.6600036621094,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144728.828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.9799995422363,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144791.875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.5940017700195,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144864.515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 88.1060028076172,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 14.2639999389648,
+			"process_ms": 198.929000854492,
+			"t_ms": 144952.984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.1119995117188,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145022.171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 76.1480026245117,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145098.375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.7600021362305,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145171.390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 66.3600006103516,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145237.8125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.0530014038086,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145299.921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 70.1210021972656,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145370.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.390998840332,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145438.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 77.5940017700195,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145516.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 79.5019989013672,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145596.25
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 96.3629989624023,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145692.671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 92.1210021972656,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145784.84375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.754997253418,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 145889.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 134.968002319336,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 15.5920000076294,
+			"process_ms": 20.0259990692139,
+			"t_ms": 146024.9375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 124.693000793457,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146149.6875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 118.349998474121,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146268.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 124.301002502441,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146392.71875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 113.569999694824,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146506.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 143.623001098633,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146650.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 137.320999145508,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146787.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.919006347656,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 146928.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 133.164993286133,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.0300006866455,
+			"process_ms": 26.7560005187988,
+			"t_ms": 147062.046875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 119.919998168945,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147182.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 95.3300018310547,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147277.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 96.0039978027344,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147373.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 94.3679962158203,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147468.140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 108.796997070313,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147577.0
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.240997314453,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147681.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 97.8359985351563,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147779.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 93.0350036621094,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 17.2950000762939,
+			"process_ms": 27.2409992218018,
+			"t_ms": 147872.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.5579986572266,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.56599998474121,
+			"process_ms": 23.9130001068115,
+			"t_ms": 151504.71875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 212.738006591797,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.03299999237061,
+			"process_ms": 28.2670001983643,
+			"t_ms": 155279.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 138.251007080078,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.03299999237061,
+			"process_ms": 28.2670001983643,
+			"t_ms": 155418.015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 161.343002319336,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 8.03299999237061,
+			"process_ms": 28.2670001983643,
+			"t_ms": 155579.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 187.867004394531,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.03299999237061,
+			"process_ms": 28.2670001983643,
+			"t_ms": 155767.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 80.5380020141602,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.03299999237061,
+			"process_ms": 28.2670001983643,
+			"t_ms": 155848.3125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 265.084014892578,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.03299999237061,
+			"process_ms": 28.2670001983643,
+			"t_ms": 156113.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 772.419982910156,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.33399963378906,
+			"process_ms": 717.836975097656,
+			"t_ms": 156886.140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 235.134994506836,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.33399963378906,
+			"process_ms": 717.836975097656,
+			"t_ms": 157121.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 213.001998901367,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.66900014877319,
+			"process_ms": 183.796005249023,
+			"t_ms": 157334.765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.4780006408691,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.66900014877319,
+			"process_ms": 183.796005249023,
+			"t_ms": 157385.296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 346.690002441406,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.66900014877319,
+			"process_ms": 183.796005249023,
+			"t_ms": 157770.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 182.669006347656,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.66900014877319,
+			"process_ms": 183.796005249023,
+			"t_ms": 157953.265625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 257.808013916016,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.80399990081787,
+			"process_ms": 293.10400390625,
+			"t_ms": 158211.328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 71.0849990844727,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.80399990081787,
+			"process_ms": 293.10400390625,
+			"t_ms": 158282.515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.6259994506836,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.80399990081787,
+			"process_ms": 293.10400390625,
+			"t_ms": 158338.203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.7369995117188,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.80399990081787,
+			"process_ms": 293.10400390625,
+			"t_ms": 158399.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.0810012817383,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.80399990081787,
+			"process_ms": 293.10400390625,
+			"t_ms": 158494.84375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.5960006713867,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.80399990081787,
+			"process_ms": 293.10400390625,
+			"t_ms": 158622.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.3479995727539,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.4370002746582,
+			"process_ms": 27.5650005340576,
+			"t_ms": 160958.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.9599990844727,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.67599964141846,
+			"process_ms": 30.0060005187988,
+			"t_ms": 162627.828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.507999420166,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.34099960327148,
+			"process_ms": 31.4820003509521,
+			"t_ms": 162928.65625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.9389991760254,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.42199993133545,
+			"process_ms": 26.6720008850098,
+			"t_ms": 164095.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.3289985656738,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.42199993133545,
+			"process_ms": 26.6720008850098,
+			"t_ms": 164146.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.1689987182617,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.94799995422363,
+			"process_ms": 33.0009994506836,
+			"t_ms": 165059.4375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.6629981994629,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.94799995422363,
+			"process_ms": 33.0009994506836,
+			"t_ms": 165589.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.1580009460449,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169193.28125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 171.86799621582,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169394.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.8930015563965,
+			"pending": 116,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169450.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 201.684997558594,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169652.671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.9850006103516,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169712.828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 126.339996337891,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169839.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 67.2360000610352,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 9.27099990844727,
+			"process_ms": 26.5170001983643,
+			"t_ms": 169906.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 65.9000015258789,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170128.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.2480010986328,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170179.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.9910011291504,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170231.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.3390007019043,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170281.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.1559982299805,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170331.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.3610000610352,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170469.21875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.0859985351563,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170565.1875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 89.9990005493164,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170750.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 82.6159973144531,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170833.390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.5039978027344,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.80500030517578,
+			"process_ms": 147.257995605469,
+			"t_ms": 170901.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.0270004272461,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.29399967193604,
+			"process_ms": 58.734001159668,
+			"t_ms": 170975.0625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 201.300003051758,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.29399967193604,
+			"process_ms": 58.734001159668,
+			"t_ms": 171176.640625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.0900001525879,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.29399967193604,
+			"process_ms": 58.734001159668,
+			"t_ms": 171234.8125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 532.747009277344,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.29399967193604,
+			"process_ms": 58.734001159668,
+			"t_ms": 171857.9375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.5229988098145,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 8.29399967193604,
+			"process_ms": 58.734001159668,
+			"t_ms": 171918.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.556999206543,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172034.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.7459983825684,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172095.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.4329986572266,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172146.125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.9339981079102,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172296.265625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.2760009765625,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172396.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.3030014038086,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172632.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.8450012207031,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172824.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.1839981079102,
+			"pending": 115,
+			"phase": "seam_0",
+			"physics_ms": 7.89499998092651,
+			"process_ms": 484.18701171875,
+			"t_ms": 172878.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 3251.29809570313,
+			"pending": 119,
+			"phase": "seam_0",
+			"physics_ms": 8.21599960327148,
+			"process_ms": 43.3849983215332,
+			"t_ms": 176272.203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 85.4100036621094,
+			"pending": 120,
+			"phase": "seam_0",
+			"physics_ms": 37.4819984436035,
+			"process_ms": 3159.7919921875,
+			"t_ms": 176358.015625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.2639999389648,
+			"pending": 121,
+			"phase": "seam_0",
+			"physics_ms": 37.4819984436035,
+			"process_ms": 3159.7919921875,
+			"t_ms": 176431.328125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.979995727539,
+			"pending": 126,
+			"phase": "seam_0",
+			"physics_ms": 37.4819984436035,
+			"process_ms": 3159.7919921875,
+			"t_ms": 176797.71875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 181.595001220703,
+			"pending": 126,
+			"phase": "mountain_0",
+			"physics_ms": 37.4819984436035,
+			"process_ms": 3159.7919921875,
+			"t_ms": 176979.375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 60.2680015563965,
+			"pending": 126,
+			"phase": "mountain_0",
+			"physics_ms": 8.59700012207031,
+			"process_ms": 131.111999511719,
+			"t_ms": 177039.921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.5960006713867,
+			"pending": 126,
+			"phase": "mountain_0",
+			"physics_ms": 8.54599952697754,
+			"process_ms": 24.8910007476807,
+			"t_ms": 179072.390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.2070007324219,
+			"pending": 126,
+			"phase": "harbor_return_0",
+			"physics_ms": 8.10999965667725,
+			"process_ms": 26.173999786377,
+			"t_ms": 186890.71875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.8610000610352,
+			"pending": 126,
+			"phase": "seam_1",
+			"physics_ms": 7.20800018310547,
+			"process_ms": 33.8860015869141,
+			"t_ms": 196954.09375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.0070037841797,
+			"pending": 126,
+			"phase": "seam_1",
+			"physics_ms": 8.61299991607666,
+			"process_ms": 25.9710006713867,
+			"t_ms": 200505.6875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.7400016784668,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 10.2309999465942,
+			"process_ms": 25.1949996948242,
+			"t_ms": 205754.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.9980010986328,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 11.7089996337891,
+			"process_ms": 25.6040000915527,
+			"t_ms": 206365.921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.1380004882813,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 11.7089996337891,
+			"process_ms": 25.6040000915527,
+			"t_ms": 206733.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.4669990539551,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207273.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.1959991455078,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207325.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.0779991149902,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207375.875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.5349998474121,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207430.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.6240005493164,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207623.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.4420013427734,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207679.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 56.2859992980957,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207735.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.2089996337891,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207805.125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.1579971313477,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207878.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 67.3330001831055,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.8050003051758,
+			"process_ms": 25.3360004425049,
+			"t_ms": 207945.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 66.8199996948242,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208012.859375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 65.1449966430664,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208078.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.1110000610352,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208146.515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.9899978637695,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208216.5625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.5480003356934,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208279.171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 66.9909973144531,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208346.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 83.2220001220703,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208429.75
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.6829986572266,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208499.5
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.9570007324219,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208562.765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 81.4700012207031,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208644.28125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 71.7030029296875,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208716.0625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.6589965820313,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208790.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.9940032958984,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208855.09375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 67.4649963378906,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.3229999542236,
+			"process_ms": 24.6800003051758,
+			"t_ms": 208922.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.7430000305176,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 208985.765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.8270034790039,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209054.65625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.5029983520508,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209114.21875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 72.0469970703125,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209186.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.0089988708496,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209248.671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.8919982910156,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209306.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 67.3949966430664,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209374.3125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 95.5220031738281,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209469.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 75.8209991455078,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209545.765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 68.4359970092773,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209614.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.5340003967285,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209677.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.185001373291,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 14.6780004501343,
+			"process_ms": 27.7530002593994,
+			"t_ms": 209914.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.0110015869141,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 17.1620006561279,
+			"process_ms": 28.1609992980957,
+			"t_ms": 210414.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.1609992980957,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 11.2679996490479,
+			"process_ms": 20.8950004577637,
+			"t_ms": 211454.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.5449981689453,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 11.9790000915527,
+			"process_ms": 24.5319995880127,
+			"t_ms": 212485.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.181999206543,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 11.9790000915527,
+			"process_ms": 24.5319995880127,
+			"t_ms": 212619.5
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.0,
+			"pending": 125,
+			"phase": "mountain_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 212972.46875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 104.750999450684,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213077.265625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 85.5780029296875,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213162.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.4420013427734,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213220.65625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 62.5849990844727,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213283.296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.3779983520508,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213379.09375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.4469985961914,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213430.71875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.9280014038086,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213539.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.2729988098145,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213641.296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.6230010986328,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 12.2229995727539,
+			"process_ms": 26.2409992218018,
+			"t_ms": 213873.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.3199996948242,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 213975.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.060001373291,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214025.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.4220008850098,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214078.203125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.8680000305176,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214134.546875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.1450004577637,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214354.296875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 55.8790016174316,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214493.28125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.8759994506836,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214604.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.4500007629395,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214661.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.6860008239746,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214766.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 66.1100006103516,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214832.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.1459999084473,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 26.9500007629395,
+			"process_ms": 40.9710006713867,
+			"t_ms": 214891.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 63.2109985351563,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215114.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 51.2490005493164,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215165.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 61.4290008544922,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215227.390625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.7220001220703,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215281.171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 58.3050003051758,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215339.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 52.3059997558594,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215392.140625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 57.326000213623,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215607.65625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.7389984130859,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.1230001449585,
+			"process_ms": 23.8050003051758,
+			"t_ms": 215872.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.7700004577637,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 215969.65625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.8279991149902,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 216203.546875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.5309982299805,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 216335.53125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.2120018005371,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 216576.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 53.023998260498,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 216629.53125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 64.5920028686523,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 216694.421875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 50.1800003051758,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.6840000152588,
+			"process_ms": 26.6700000762939,
+			"t_ms": 216838.234375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 59.2290000915527,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217102.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 54.3219985961914,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217157.109375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 69.0279998779297,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217226.1875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 73.3600006103516,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217299.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 61.9370002746582,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217361.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 91.3349990844727,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217453.28125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 82.3939971923828,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217535.953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 91.1380004882813,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217627.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 81.2799987792969,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217708.5
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 112.388999938965,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217821.171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 93.0830001831055,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 217914.3125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 98.3339996337891,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 14.4849996566772,
+			"process_ms": 22.1189994812012,
+			"t_ms": 218012.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 90.8460006713867,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218103.953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 101.51000213623,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218205.515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 100.21199798584,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218305.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 119.828002929688,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218425.953125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 114.439002990723,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218540.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 120.888000488281,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218661.40625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 120.90299987793,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218782.578125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 134.156997680664,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 218916.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 137.945999145508,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.0799999237061,
+			"process_ms": 28.4300003051758,
+			"t_ms": 219054.796875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 135.662002563477,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219190.765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 130.52099609375,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219321.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 128.509002685547,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219449.90625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 150.47900390625,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219600.71875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 134.582992553711,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219735.359375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 139.64599609375,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219875.0625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 116.999000549316,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.7430000305176,
+			"process_ms": 30.1509990692139,
+			"t_ms": 219992.515625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 124.611999511719,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220117.1875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 127.356002807617,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220244.609375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 130.733993530273,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220375.671875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 147.598007202148,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220523.34375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 132.22200012207,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220655.625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 143.884994506836,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220799.8125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 138.871994018555,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 220938.734375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 137.136001586914,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 16.617000579834,
+			"process_ms": 25.9810009002686,
+			"t_ms": 221075.921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.330993652344,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 221216.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 143.417007446289,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 221360.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 130.462997436523,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 221490.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 136.817993164063,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 221627.703125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 142.126998901367,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 221769.875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 139.365005493164,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 221909.3125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 118.531997680664,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 17.82200050354,
+			"process_ms": 29.132999420166,
+			"t_ms": 222028.171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 134.731002807617,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 222162.96875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 143.869995117188,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 222306.890625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 168.264999389648,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 222475.59375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 140.507995605469,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 222616.171875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 151.602996826172,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 222767.828125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 142.274993896484,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 222910.40625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 162.783004760742,
+			"pending": 125,
+			"phase": "harbor_return_1",
+			"physics_ms": 18.0650005340576,
+			"process_ms": 28.5300006866455,
+			"t_ms": 223073.25
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 152.654006958008,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223226.03125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 102.011001586914,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223328.453125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 105.936996459961,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223434.4375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 112.384002685547,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223546.875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 127.80899810791,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223674.984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 122.768997192383,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223797.8125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 165.904998779297,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 223963.78125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 148.764999389648,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 19.6259994506836,
+			"process_ms": 45.1539993286133,
+			"t_ms": 224112.984375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 147.714004516602,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 224260.765625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 134.658004760742,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 224395.484375
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 122.255996704102,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 224518.078125
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 137.360992431641,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 224655.5
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 155.602996826172,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 224811.15625
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 142.460998535156,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 224953.921875
+		},
+		{
+			"build_ms": 0.0,
+			"builds": 0,
+			"ms": 157.561004638672,
+			"pending": 125,
+			"phase": "save_load",
+			"physics_ms": 31.9650001525879,
+			"process_ms": 27.8740005493164,
+			"t_ms": 225111.546875
+		}
+	],
+	"frames_with_junction_stage_change": {
+		"drive": 34,
+		"drive_warmup_idle": 2,
+		"harbor_return_0": 33,
+		"harbor_return_1": 22,
+		"loading": 0,
+		"micro": 0,
+		"mountain_0": 34,
+		"mountain_1": 34,
+		"pursuit": 74,
+		"pursuit_reset": 0,
+		"save_load": 4,
+		"seam_0": 190,
+		"seam_1": 22,
+		"settle": 0
+	},
+	"loading": {
+		"begin_ms": 0.721,
+		"finished_ms": 39766.595,
+		"pending_presentations_at_finish": 136,
+		"phase_times_ms": {
+			"audio": 1506.139,
+			"before_resources": 162.517,
+			"emergency": 3961.622,
+			"resident_vehicles": 21.021,
+			"resources": 5233.321,
+			"scene_ready": 11164.309,
+			"total": 39709.61,
+			"vehicle_models": 3391.032,
+			"world_build": 13867.715
+		},
+		"total_ms": 39765.875
+	},
+	"markers": [
+		{
+			"name": "phase:loading",
+			"t_ms": 0.72
+		},
+		{
+			"children": 24,
+			"name": "world_enter_tree",
+			"t_ms": 5430.053
+		},
+		{
+			"name": "child_ready:OceanBackdrop",
+			"t_ms": 5430.497
+		},
+		{
+			"name": "child_ready:District",
+			"t_ms": 5818.717
+		},
+		{
+			"name": "child_ready:Waterfront",
+			"t_ms": 6121.138
+		},
+		{
+			"name": "child_ready:EastDistrict",
+			"t_ms": 6132.073
+		},
+		{
+			"name": "child_ready:NorthDistrict",
+			"t_ms": 6151.291
+		},
+		{
+			"name": "child_ready:Gateway",
+			"t_ms": 6235.657
+		},
+		{
+			"name": "child_ready:Bridge",
+			"t_ms": 6237.009
+		},
+		{
+			"name": "child_ready:Alleys",
+			"t_ms": 6237.648
+		},
+		{
+			"name": "child_ready:SouthPort",
+			"t_ms": 12428.35
+		},
+		{
+			"name": "child_ready:RoadLayout",
+			"t_ms": 12428.356
+		},
+		{
+			"name": "child_ready:CobraNeighborhood",
+			"t_ms": 12432.454
+		},
+		{
+			"name": "child_ready:RoadNetwork",
+			"t_ms": 12814.368
+		},
+		{
+			"name": "child_ready:FreightRail",
+			"t_ms": 13293.5
+		},
+		{
+			"name": "child_ready:RoadSafety",
+			"t_ms": 13293.511
+		},
+		{
+			"name": "child_ready:Life",
+			"t_ms": 13293.516
+		},
+		{
+			"name": "child_ready:PlayerCar",
+			"t_ms": 14000.212
+		},
+		{
+			"name": "child_ready:Player",
+			"t_ms": 14254.953
+		},
+		{
+			"name": "child_ready:OverviewCamera",
+			"t_ms": 14254.959
+		},
+		{
+			"name": "child_ready:Interiors",
+			"t_ms": 14984.957
+		},
+		{
+			"name": "child_ready:HarborWeatherReadout",
+			"t_ms": 14985.125
+		},
+		{
+			"name": "child_ready:ArrivalSpawn",
+			"t_ms": 14985.128
+		},
+		{
+			"name": "child_ready:ArrivalStop",
+			"t_ms": 16515.232
+		},
+		{
+			"name": "child_ready:FirstDeliveryPickup",
+			"t_ms": 16515.238
+		},
+		{
+			"name": "child_ready:HospitalSpawn",
+			"t_ms": 16515.24
+		},
+		{
+			"name": "world_ready",
+			"t_ms": 16560.804
+		},
+		{
+			"name": "deferred_child_added:WeaponNotices",
+			"t_ms": 21294.284
+		},
+		{
+			"name": "deferred_child_added:HarborGangReputation",
+			"t_ms": 22483.477
+		},
+		{
+			"name": "deferred_child_added:CobraTerritory",
+			"t_ms": 22483.515
+		},
+		{
+			"name": "deferred_child_added:ArrivalMission",
+			"t_ms": 22599.498
+		},
+		{
+			"name": "deferred_child_added:FirstDeliveryParcel",
+			"t_ms": 22603.806
+		},
+		{
+			"name": "deferred_child_added:GameplayTutorials",
+			"t_ms": 22821.721
+		},
+		{
+			"name": "deferred_child_added:CobraCampaign",
+			"t_ms": 22822.367
+		},
+		{
+			"name": "deferred_child_added:CobraCampaignController",
+			"t_ms": 22824.43
+		},
+		{
+			"name": "deferred_child_added:CobraObjectiveMarker",
+			"t_ms": 22833.227
+		},
+		{
+			"name": "deferred_child_added:CobraBossReward",
+			"t_ms": 22833.681
+		},
+		{
+			"name": "deferred_child_added:CobraAftermath",
+			"t_ms": 22834.117
+		},
+		{
+			"name": "deferred_child_added:ChopShopZone",
+			"t_ms": 22835.649
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24348",
+			"t_ms": 22922.994
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24374",
+			"t_ms": 22923.741
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24400",
+			"t_ms": 22924.434
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24426",
+			"t_ms": 22925.363
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24452",
+			"t_ms": 22926.04
+		},
+		{
+			"name": "deferred_child_added:@Area2D@24478",
+			"t_ms": 22926.783
+		},
+		{
+			"name": "deferred_child_added:DriftZone_PÁTIO_WESTGATE",
+			"t_ms": 22927.382
+		},
+		{
+			"name": "deferred_child_added:DriftZone_PÁTIO_DOS_ARMAZÉNS",
+			"t_ms": 22927.769
+		},
+		{
+			"name": "deferred_child_added:@Node2D@24546",
+			"t_ms": 22960.62
+		},
+		{
+			"name": "deferred_child_added:@Node2D@24547",
+			"t_ms": 22960.65
+		},
+		{
+			"name": "deferred_child_added:@Node2D@24565",
+			"t_ms": 22961.367
+		},
+		{
+			"name": "deferred_child_added:@CanvasLayer@24583",
+			"t_ms": 22961.936
+		},
+		{
+			"name": "deferred_child_added:PersonalCarManager",
+			"t_ms": 22962.04
+		},
+		{
+			"name": "deferred_child_added:Monaliza",
+			"t_ms": 22962.257
+		},
+		{
+			"name": "deferred_child_added:ResidencePrototype",
+			"t_ms": 24225.628
+		},
+		{
+			"name": "deferred_child_added:Residence_westgate_garden",
+			"t_ms": 24225.711
+		},
+		{
+			"name": "deferred_child_added:Residence_quayside_house",
+			"t_ms": 24232.967
+		},
+		{
+			"name": "deferred_child_added:Residence_canal_north",
+			"t_ms": 24238.967
+		},
+		{
+			"name": "deferred_child_added:ContinuousWorld",
+			"t_ms": 24245.911
+		},
+		{
+			"name": "deferred_child_added:HarborMountainCoachService",
+			"t_ms": 24245.93
+		},
+		{
+			"name": "deferred_child_added:PayNSpray",
+			"t_ms": 24245.949
+		},
+		{
+			"name": "deferred_child_added:Cemetery",
+			"t_ms": 24246.066
+		},
+		{
+			"name": "deferred_child_added:WorldEvents",
+			"t_ms": 24359.071
+		},
+		{
+			"name": "deferred_child_added:@Node2D@26781",
+			"t_ms": 24359.093
+		},
+		{
+			"name": "deferred_child_added:Robberies",
+			"t_ms": 24359.51
+		},
+		{
+			"name": "deferred_child_added:ClothingShops",
+			"t_ms": 24359.518
+		},
+		{
+			"name": "deferred_child_added:UrbanTransit",
+			"t_ms": 24359.534
+		},
+		{
+			"name": "deferred_child_added:Minimap",
+			"t_ms": 24359.573
+		},
+		{
+			"name": "deferred_child_added:GameplayPresentation",
+			"t_ms": 24362.08
+		},
+		{
+			"name": "deferred_child_added:CobraVehicles",
+			"t_ms": 24376.003
+		},
+		{
+			"name": "gameplay_ready",
+			"t_ms": 29799.057
+		},
+		{
+			"name": "deferred_child_added:HarborEmergencyDirector",
+			"t_ms": 29801.547
+		},
+		{
+			"name": "deferred_child_added:PatrolParking",
+			"t_ms": 29802.558
+		},
+		{
+			"name": "deferred_child_added:ThematicFleet",
+			"t_ms": 30163.763
+		},
+		{
+			"name": "world_build_ready",
+			"t_ms": 30428.562
+		},
+		{
+			"name": "deferred_child_added:CombatImpactAudio",
+			"t_ms": 39308.293
+		},
+		{
+			"name": "phase:settle",
+			"t_ms": 39778.658
+		},
+		{
+			"name": "deferred_child_added:NecoTowTruck",
+			"t_ms": 39782.024
+		},
+		{
+			"name": "deferred_child_added:NecoTowTruckSpawn",
+			"t_ms": 39782.336
+		},
+		{
+			"name": "phase:drive_warmup_idle",
+			"t_ms": 42789.418
+		},
+		{
+			"name": "phase:drive",
+			"t_ms": 47798.156
+		},
+		{
+			"name": "deferred_child_added:@Node2D@44892",
+			"t_ms": 58811.821
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@44893",
+			"t_ms": 58844.118
+		},
+		{
+			"name": "phase:pursuit_reset",
+			"t_ms": 77811.049
+		},
+		{
+			"name": "teleport",
+			"position": [
+				700.0,
+				425.0
+			],
+			"t_ms": 77811.172
+		},
+		{
+			"name": "phase:pursuit",
+			"t_ms": 79813.45
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 80467.904
+		},
+		{
+			"name": "deferred_child_added:@Polygon2D@44918",
+			"t_ms": 80708.657
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@44919",
+			"t_ms": 80708.728
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45012",
+			"t_ms": 80737.24
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45105",
+			"t_ms": 80771.109
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45198",
+			"t_ms": 80808.229
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45200",
+			"t_ms": 80818.038
+		},
+		{
+			"name": "deferred_child_added:@CharacterBody2D@45294",
+			"t_ms": 80853.41
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45388",
+			"t_ms": 82335.246
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45389",
+			"t_ms": 82364.027
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45390",
+			"t_ms": 84348.745
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45391",
+			"t_ms": 84694.395
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45392",
+			"t_ms": 85082.921
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45396",
+			"t_ms": 85439.542
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45397",
+			"t_ms": 85937.69
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45398",
+			"t_ms": 86425.43
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45399",
+			"t_ms": 86821.029
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45400",
+			"t_ms": 87282.504
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45401",
+			"t_ms": 87310.358
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45402",
+			"t_ms": 87914.598
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45403",
+			"t_ms": 88800.954
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45404",
+			"t_ms": 88831.674
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45406",
+			"t_ms": 89680.296
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45407",
+			"t_ms": 89706.73
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 89788.793
+		},
+		{
+			"name": "deferred_child_added:WorldSpeechLayout",
+			"t_ms": 89806.416
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45415",
+			"t_ms": 89880.689
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45417",
+			"t_ms": 90450.311
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45418",
+			"t_ms": 90476.631
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 90574.056
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45423",
+			"t_ms": 90655.69
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45425",
+			"t_ms": 91247.369
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45426",
+			"t_ms": 91276.339
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45427",
+			"t_ms": 92018.896
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45428",
+			"t_ms": 92051.543
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45429",
+			"t_ms": 92792.751
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45430",
+			"t_ms": 92817.124
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45431",
+			"t_ms": 93592.726
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45432",
+			"t_ms": 93620.286
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 93623.98
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45434",
+			"t_ms": 93721.249
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45436",
+			"t_ms": 94384.07
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45437",
+			"t_ms": 94411.796
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 94430.83
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45439",
+			"t_ms": 94529.407
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45447",
+			"t_ms": 94960.553
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45450",
+			"t_ms": 95164.953
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45451",
+			"t_ms": 95193.815
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45452",
+			"t_ms": 95716.76
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 96052.016
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45454",
+			"t_ms": 96113.207
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 97669.956
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45594",
+			"t_ms": 97699.908
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 97855.802
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45597",
+			"t_ms": 97950.593
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 97981.846
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45600",
+			"t_ms": 98029.493
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45602",
+			"t_ms": 98037.091
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45604",
+			"t_ms": 98087.793
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 98495.889
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45643",
+			"t_ms": 98496.463
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45645",
+			"t_ms": 98503.67
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45653",
+			"t_ms": 98597.871
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 98726.233
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45656",
+			"t_ms": 98846.775
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45658",
+			"t_ms": 98879.932
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45660",
+			"t_ms": 98880.023
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 100617.531
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45705",
+			"t_ms": 100648.089
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45707",
+			"t_ms": 100675.042
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45709",
+			"t_ms": 100772.596
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 101106.64
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45713",
+			"t_ms": 101115.252
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 101172.057
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45716",
+			"t_ms": 101201.032
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 101569.692
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45719",
+			"t_ms": 101607.034
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45721",
+			"t_ms": 101631.563
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45723",
+			"t_ms": 101669.54
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45725",
+			"t_ms": 101691.598
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45728",
+			"t_ms": 101733.734
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 101999.101
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45731",
+			"t_ms": 102087.531
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45735",
+			"t_ms": 102115.977
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45741",
+			"t_ms": 102116.624
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 102518.865
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45748",
+			"t_ms": 102543.758
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 103041.822
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45755",
+			"t_ms": 103064.436
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 103401.112
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45759",
+			"t_ms": 103545.732
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 103815.566
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45762",
+			"t_ms": 103890.012
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 103948.691
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45765",
+			"t_ms": 104013.5
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 104236.777
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45769",
+			"t_ms": 104330.479
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 104340.402
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45772",
+			"t_ms": 104415.21
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45774",
+			"t_ms": 104415.605
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45793",
+			"t_ms": 104553.576
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 104734.32
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45796",
+			"t_ms": 104761.102
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45798",
+			"t_ms": 104803.611
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45800",
+			"t_ms": 104827.693
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45802",
+			"t_ms": 104827.799
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45808",
+			"t_ms": 104828.497
+		},
+		{
+			"name": "deferred_child_added:Bullet",
+			"t_ms": 105115.55
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45811",
+			"t_ms": 105254.751
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45817",
+			"t_ms": 105286.858
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45819",
+			"t_ms": 105316.316
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45827",
+			"t_ms": 105339.385
+		},
+		{
+			"name": "deferred_child_added:@AudioStreamPlayer2D@45834",
+			"t_ms": 105358.368
+		},
+		{
+			"name": "deferred_child_added:@Node2D@45835",
+			"t_ms": 105358.401
+		},
+		{
+			"name": "deferred_child_added:@Polygon2D@45837",
+			"t_ms": 105358.557
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45958",
+			"t_ms": 105378.344
+		},
+		{
+			"name": "deferred_child_added:@Area2D@45965",
+			"t_ms": 105378.851
+		},
+		{
+			"name": "deferred_child_added:RewardAudioVoices",
+			"t_ms": 105444.704
+		},
+		{
+			"name": "phase:micro",
+			"t_ms": 109847.298
+		},
+		{
+			"name": "phase:seam_0",
+			"t_ms": 109988.954
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7150.056640625,
+				-4525.373046875
+			],
+			"t_ms": 109988.993
+		},
+		{
+			"name": "deferred_child_added:MountainRegion",
+			"t_ms": 155066.83
+		},
+		{
+			"name": "phase:mountain_0",
+			"t_ms": 176797.805
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7899.99951171875,
+				-4529.0
+			],
+			"t_ms": 176797.849
+		},
+		{
+			"name": "phase:harbor_return_0",
+			"t_ms": 186858.764
+		},
+		{
+			"name": "teleport",
+			"position": [
+				700.0,
+				425.0
+			],
+			"t_ms": 186858.83
+		},
+		{
+			"name": "phase:seam_1",
+			"t_ms": 196915.98
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7150.056640625,
+				-4525.373046875
+			],
+			"t_ms": 196916.036
+		},
+		{
+			"name": "phase:mountain_1",
+			"t_ms": 202917.789
+		},
+		{
+			"name": "teleport",
+			"position": [
+				7899.99951171875,
+				-4529.0
+			],
+			"t_ms": 202917.831
+		},
+		{
+			"name": "phase:harbor_return_1",
+			"t_ms": 212992.965
+		},
+		{
+			"name": "teleport",
+			"position": [
+				700.0,
+				425.0
+			],
+			"t_ms": 212993.024
+		},
+		{
+			"name": "phase:save_load",
+			"t_ms": 223092.599
+		}
+	],
+	"micro": {
+		"active_conflict_actors": {
+			"max_us": 329.0,
+			"median_us": 309.0,
+			"min_us": 301.0,
+			"repeats": 5
+		},
+		"continuous_world_budget_traffic": {
+			"max_us": 1444.0,
+			"median_us": 1183.0,
+			"min_us": 1125.0,
+			"repeats": 10
+		},
+		"emergency_lane_router_plan": {
+			"max_us": 3231.0,
+			"median_us": 3187.0,
+			"min_us": 3095.0,
+			"repeats": 3
+		},
+		"emergency_lane_router_unit": "/root/@CharacterBody2D@57",
+		"emergency_responders_with_priority": 2,
+		"find_lane_spawn": {
+			"max_us": 453.0,
+			"median_us": 350.0,
+			"min_us": 344.0,
+			"repeats": 5
+		},
+		"junction_controllers": [
+			{
+				"get_graph_data_deep_copy": {
+					"max_us": 6419.0,
+					"median_us": 4856.0,
+					"min_us": 4667.0,
+					"repeats": 3
+				},
+				"graph_revision": 1,
+				"junctions": 55,
+				"lanes_indexed": 74,
+				"legacy_signature_chars": 143556,
+				"legacy_signature_str": {
+					"max_us": 9602.0,
+					"median_us": 9577.0,
+					"min_us": 9491.0,
+					"repeats": 3
+				},
+				"path": "/root/HarborGame/Life/JunctionTrafficController",
+				"projection_cache": 61,
+				"refresh_lane_path_index": {
+					"max_us": 56.0,
+					"median_us": 29.0,
+					"min_us": 28.0,
+					"repeats": 10
+				},
+				"refresh_signal_visuals": {
+					"max_us": 382.0,
+					"median_us": 224.0,
+					"min_us": 218.0,
+					"repeats": 10
+				},
+				"sync_from_graph_fast_path": {
+					"max_us": 3.0,
+					"median_us": 1.0,
+					"min_us": 0.0,
+					"repeats": 20
+				},
+				"synced_revision": 1,
+				"synchronize_crossing_consumers": {
+					"max_us": 2107.0,
+					"median_us": 1748.0,
+					"min_us": 1697.0,
+					"repeats": 10
+				},
+				"telemetry": {
+					"active_reservations": 3,
+					"blocked_exit_yields": 439,
+					"connector_entries": 45,
+					"connector_handoffs": 43,
+					"deadlock_limit_exceeded": 0,
+					"fairness_yields": 3,
+					"invalid_lane_contracts": 0,
+					"junction_count": 55,
+					"maximum_wait_seconds": 18.898,
+					"queue_yields": 185,
+					"red_stop_clamps": 4282,
+					"reservation_denials": 1093,
+					"reservation_grants": 57,
+					"reservation_releases": 54,
+					"signal_visual_count": 35,
+					"signalized_junction_count": 35,
+					"unsignalized_junction_count": 20
+				}
+			}
+		],
+		"population_inputs": {
+			"authored_sidewalk_pedestrian": 66,
+			"modern_traffic": 61,
+			"pedestrian": 164,
+			"vehicle": 97
+		},
+		"unified_traffic_lane_count": 75,
+		"walkers_has_dedup_only": {
+			"max_us": 83.0,
+			"median_us": 80.0,
+			"min_us": 80.0,
+			"repeats": 10
+		},
+		"wanted_stars": 0
+	},
+	"periodic_emergency_samples": [
+		[
+			"drive",
+			48012.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			48549.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			49089.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			49635.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			49963.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			50266.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			50802.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			51137.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			51470.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			51945.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			52895.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			53227.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			53568.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			54215.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			54551.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			54897.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			55238.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			55581.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			55914.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			56237.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			56562.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			56852.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			57149.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			57519.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			57804.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			58086.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			58662.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			59003.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			59285.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			59595.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			59897.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			60199.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			60499.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			60798.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61098.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61366.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			61708.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62000.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62269.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62578.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			62855.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63147.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63417.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63682.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			63960.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64229.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64518.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			64796.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65096.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65370.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65650.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			65925.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			66211.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			66518.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			66848.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67153.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67435.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67717.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			67985.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			68265.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			68571.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			68867.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			69179.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			69467.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			69750.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70028.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70301.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70594.7,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			70894.1,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71184.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71484.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			71785.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72063.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72347.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72643.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			72947.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			73265.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			73571.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			73878.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74169.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74445.0,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74725.9,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			74999.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			75300.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			75614.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			75933.2,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			76243.5,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			76550.6,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			76855.4,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			77146.3,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			77434.8,
+			0,
+			0,
+			0
+		],
+		[
+			"drive",
+			77729.7,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			79902.3,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			80319.8,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			80684.6,
+			0,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			81088.6,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			81445.3,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			81804.3,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			82148.2,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			82535.7,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			82870.5,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			83188.8,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			83522.0,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			83880.2,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			84232.8,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			84571.5,
+			1,
+			0,
+			0
+		],
+		[
+			"pursuit",
+			84996.9,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			85353.8,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			85788.0,
+			2,
+			0,
+			1
+		],
+		[
+			"pursuit",
+			86199.9,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			86635.2,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			87000.8,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			87439.9,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			87836.6,
+			2,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			88286.4,
+			2,
+			0,
+			3
+		],
+		[
+			"pursuit",
+			88679.7,
+			2,
+			0,
+			4
+		],
+		[
+			"pursuit",
+			89151.4,
+			3,
+			0,
+			6
+		],
+		[
+			"pursuit",
+			89522.3,
+			3,
+			0,
+			7
+		],
+		[
+			"pursuit",
+			89953.8,
+			3,
+			0,
+			8
+		],
+		[
+			"pursuit",
+			90335.2,
+			3,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			90765.8,
+			3,
+			0,
+			9
+		],
+		[
+			"pursuit",
+			91153.9,
+			3,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			91580.6,
+			3,
+			0,
+			11
+		],
+		[
+			"pursuit",
+			91935.3,
+			3,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			92351.2,
+			3,
+			0,
+			12
+		],
+		[
+			"pursuit",
+			92717.5,
+			3,
+			0,
+			14
+		],
+		[
+			"pursuit",
+			93151.9,
+			4,
+			0,
+			15
+		],
+		[
+			"pursuit",
+			93518.5,
+			4,
+			0,
+			16
+		],
+		[
+			"pursuit",
+			93966.8,
+			4,
+			0,
+			16
+		],
+		[
+			"pursuit",
+			94366.8,
+			4,
+			0,
+			19
+		],
+		[
+			"pursuit",
+			94787.8,
+			4,
+			0,
+			19
+		],
+		[
+			"pursuit",
+			95245.6,
+			4,
+			0,
+			22
+		],
+		[
+			"pursuit",
+			95669.9,
+			4,
+			0,
+			22
+		],
+		[
+			"pursuit",
+			96115.4,
+			4,
+			0,
+			22
+		],
+		[
+			"pursuit",
+			96505.7,
+			4,
+			0,
+			22
+		],
+		[
+			"pursuit",
+			96918.5,
+			5,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			97337.4,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			97735.7,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			98155.1,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			98607.5,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			99035.9,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			99455.3,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			99891.4,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			100323.0,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			100775.8,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			101204.5,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			101643.4,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			102090.5,
+			6,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			102554.8,
+			7,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			103044.4,
+			7,
+			0,
+			23
+		],
+		[
+			"pursuit",
+			103555.2,
+			7,
+			1,
+			25
+		],
+		[
+			"pursuit",
+			104024.1,
+			7,
+			0,
+			25
+		],
+		[
+			"pursuit",
+			104528.7,
+			7,
+			0,
+			25
+		],
+		[
+			"pursuit",
+			105055.4,
+			7,
+			0,
+			25
+		],
+		[
+			"pursuit",
+			105801.8,
+			8,
+			0,
+			30
+		],
+		[
+			"pursuit",
+			106270.2,
+			8,
+			0,
+			30
+		],
+		[
+			"pursuit",
+			106703.2,
+			8,
+			0,
+			30
+		],
+		[
+			"pursuit",
+			107104.4,
+			8,
+			0,
+			30
+		],
+		[
+			"pursuit",
+			107480.3,
+			8,
+			0,
+			30
+		],
+		[
+			"pursuit",
+			107883.3,
+			3,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			108217.0,
+			3,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			108531.6,
+			3,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			108866.9,
+			3,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			109195.9,
+			3,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			109513.3,
+			3,
+			0,
+			2
+		],
+		[
+			"pursuit",
+			109834.8,
+			3,
+			0,
+			2
+		],
+		[
+			"mountain_0",
+			177205.7,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			177719.5,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			178223.8,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			178701.3,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			179199.1,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			179643.0,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			180084.2,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			180499.1,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			180948.7,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			181388.4,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			181800.8,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			182202.1,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			182565.6,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			182951.0,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			183348.3,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			183751.3,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			184154.2,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			184505.8,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			184865.6,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			185234.9,
+			4,
+			0,
+			10
+		],
+		[
+			"mountain_0",
+			185585.3,
+			4,
+			0,
+			11
+		],
+		[
+			"mountain_0",
+			185945.1,
+			4,
+			1,
+			12
+		],
+		[
+			"mountain_0",
+			186287.5,
+			4,
+			1,
+			12
+		],
+		[
+			"mountain_0",
+			186630.9,
+			4,
+			0,
+			12
+		],
+		[
+			"harbor_return_0",
+			187050.1,
+			4,
+			0,
+			13
+		],
+		[
+			"harbor_return_0",
+			187429.0,
+			4,
+			0,
+			13
+		],
+		[
+			"harbor_return_0",
+			187800.2,
+			4,
+			0,
+			13
+		],
+		[
+			"harbor_return_0",
+			188135.1,
+			4,
+			0,
+			13
+		],
+		[
+			"harbor_return_0",
+			188494.0,
+			4,
+			0,
+			14
+		],
+		[
+			"harbor_return_0",
+			188851.9,
+			4,
+			0,
+			14
+		],
+		[
+			"harbor_return_0",
+			189200.7,
+			4,
+			0,
+			14
+		],
+		[
+			"harbor_return_0",
+			189551.9,
+			4,
+			0,
+			14
+		],
+		[
+			"harbor_return_0",
+			189936.3,
+			4,
+			0,
+			15
+		],
+		[
+			"harbor_return_0",
+			190299.6,
+			4,
+			0,
+			15
+		],
+		[
+			"harbor_return_0",
+			190664.7,
+			4,
+			0,
+			15
+		],
+		[
+			"harbor_return_0",
+			191048.5,
+			4,
+			0,
+			15
+		],
+		[
+			"harbor_return_0",
+			191414.1,
+			4,
+			0,
+			16
+		],
+		[
+			"harbor_return_0",
+			191763.3,
+			4,
+			1,
+			17
+		],
+		[
+			"harbor_return_0",
+			192133.0,
+			4,
+			0,
+			17
+		],
+		[
+			"harbor_return_0",
+			192469.5,
+			4,
+			0,
+			17
+		],
+		[
+			"harbor_return_0",
+			192780.8,
+			4,
+			0,
+			17
+		],
+		[
+			"harbor_return_0",
+			193137.5,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			193471.0,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			193796.9,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			194129.7,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			194455.0,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			194781.4,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			195102.4,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			195433.4,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			195768.4,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			196129.1,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			196468.3,
+			4,
+			0,
+			19
+		],
+		[
+			"harbor_return_0",
+			196813.5,
+			4,
+			0,
+			19
+		],
+		[
+			"mountain_1",
+			203187.9,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			203642.8,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			204058.8,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			204539.1,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			205009.8,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			205492.2,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			206084.0,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			206643.8,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			207216.7,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			208078.1,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			209114.3,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			209946.2,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			210482.6,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			211011.5,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			211523.9,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			212032.0,
+			4,
+			0,
+			22
+		],
+		[
+			"mountain_1",
+			212569.0,
+			4,
+			0,
+			22
+		],
+		[
+			"harbor_return_1",
+			213327.4,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			214078.3,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			214832.7,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			215549.9,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			216244.4,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			216911.4,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			218012.8,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			219875.1,
+			4,
+			0,
+			23
+		],
+		[
+			"harbor_return_1",
+			221909.4,
+			4,
+			0,
+			23
+		]
+	],
+	"phases": {
+		"drive": {
+			"frames": 1381,
+			"max_ms": 255.514007568359,
+			"mean_fps": 46.324666093991,
+			"monitor_physics_max_ms": 37.3629989624023,
+			"monitor_physics_p50_ms": 6.6100001335144,
+			"monitor_physics_p99_ms": 37.3629989624023,
+			"monitor_process_max_ms": 215.029006958008,
+			"monitor_process_p50_ms": 19.9090003967285,
+			"monitor_process_p99_ms": 215.029006958008,
+			"over_100": 15,
+			"over_16_67": 1258,
+			"over_20": 495,
+			"over_33_33": 30,
+			"over_50": 20,
+			"p50_ms": 18.4699993133545,
+			"p95_ms": 28.6809997558594,
+			"p99_ms": 111.86799621582,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 29.81133198452
+		},
+		"drive_warmup_idle": {
+			"frames": 236,
+			"max_ms": 161.199005126953,
+			"mean_fps": 47.3734341634353,
+			"monitor_physics_max_ms": 8.4709997177124,
+			"monitor_physics_p50_ms": 7.6399998664856,
+			"monitor_physics_p99_ms": 8.4709997177124,
+			"monitor_process_max_ms": 119.426002502441,
+			"monitor_process_p50_ms": 18.7509994506836,
+			"monitor_process_p99_ms": 119.426002502441,
+			"over_100": 2,
+			"over_16_67": 202,
+			"over_20": 71,
+			"over_33_33": 5,
+			"over_50": 4,
+			"p50_ms": 18.0830001831055,
+			"p95_ms": 28.992000579834,
+			"p99_ms": 56.7949981689453,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 4.98169499778748
+		},
+		"harbor_return_0": {
+			"frames": 430,
+			"max_ms": 52.2070007324219,
+			"mean_fps": 43.0125123333402,
+			"monitor_physics_max_ms": 22.5709991455078,
+			"monitor_physics_p50_ms": 7.99499988555908,
+			"monitor_physics_p99_ms": 22.5709991455078,
+			"monitor_process_max_ms": 33.6160011291504,
+			"monitor_process_p50_ms": 24.6800003051758,
+			"monitor_process_p99_ms": 33.6160011291504,
+			"over_100": 0,
+			"over_16_67": 430,
+			"over_20": 244,
+			"over_33_33": 18,
+			"over_50": 1,
+			"p50_ms": 21.0900001525879,
+			"p95_ms": 33.1599998474121,
+			"p99_ms": 38.0050010681152,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 9.99709100151062
+		},
+		"harbor_return_1": {
+			"frames": 133,
+			"max_ms": 168.264999389648,
+			"mean_fps": 13.1931474285,
+			"monitor_physics_max_ms": 26.9500007629395,
+			"monitor_physics_p50_ms": 14.6840000152588,
+			"monitor_physics_p99_ms": 26.9500007629395,
+			"monitor_process_max_ms": 40.9710006713867,
+			"monitor_process_p50_ms": 26.6700000762939,
+			"monitor_process_p99_ms": 40.9710006713867,
+			"over_100": 39,
+			"over_16_67": 133,
+			"over_20": 133,
+			"over_33_33": 130,
+			"over_50": 85,
+			"p50_ms": 55.8680000305176,
+			"p95_ms": 143.869995117188,
+			"p99_ms": 162.783004760742,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 10.0809909629822
+		},
+		"loading": {
+			"frames": 466,
+			"max_ms": 24368.626953125,
+			"mean_fps": 11.7563298567997,
+			"monitor_physics_max_ms": 100.001998901367,
+			"monitor_physics_p50_ms": 0.0570000000298023,
+			"monitor_physics_p99_ms": 100.001998901367,
+			"monitor_process_max_ms": 24340.134765625,
+			"monitor_process_p50_ms": 0.59799998998642,
+			"monitor_process_p99_ms": 824.591979980469,
+			"over_100": 33,
+			"over_16_67": 146,
+			"over_20": 121,
+			"over_33_33": 111,
+			"over_50": 51,
+			"p50_ms": 16.6469993591309,
+			"p95_ms": 119.741996765137,
+			"p99_ms": 213.947006225586,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 39.6382209138572
+		},
+		"micro": {
+			"frames": 1,
+			"max_ms": 153.727005004883,
+			"mean_fps": 6.50503794026454,
+			"monitor_physics_max_ms": 9.22299957275391,
+			"monitor_physics_p50_ms": 9.22299957275391,
+			"monitor_physics_p99_ms": 9.22299957275391,
+			"monitor_process_max_ms": 25.1679992675781,
+			"monitor_process_p50_ms": 25.1679992675781,
+			"monitor_process_p99_ms": 25.1679992675781,
+			"over_100": 1,
+			"over_16_67": 1,
+			"over_20": 1,
+			"over_33_33": 1,
+			"over_50": 1,
+			"p50_ms": 153.727005004883,
+			"p95_ms": 153.727005004883,
+			"p99_ms": 153.727005004883,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 0.153727005004883
+		},
+		"mountain_0": {
+			"frames": 360,
+			"max_ms": 181.595001220703,
+			"mean_fps": 36.0363209064455,
+			"monitor_physics_max_ms": 37.4819984436035,
+			"monitor_physics_p50_ms": 8.53299999237061,
+			"monitor_physics_p99_ms": 8.8100004196167,
+			"monitor_process_max_ms": 3159.7919921875,
+			"monitor_process_p50_ms": 24.8910007476807,
+			"monitor_process_p99_ms": 131.111999511719,
+			"over_100": 1,
+			"over_16_67": 360,
+			"over_20": 293,
+			"over_33_33": 65,
+			"over_50": 3,
+			"p50_ms": 27.8360004425049,
+			"p95_ms": 37.8160018920898,
+			"p99_ms": 47.7540016174316,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 9.98992102813721
+		},
+		"mountain_1": {
+			"frames": 257,
+			"max_ms": 95.5220031738281,
+			"mean_fps": 25.6554647491676,
+			"monitor_physics_max_ms": 28.4820003509521,
+			"monitor_physics_p50_ms": 11.9790000915527,
+			"monitor_physics_p99_ms": 28.4820003509521,
+			"monitor_process_max_ms": 28.1609992980957,
+			"monitor_process_p50_ms": 24.7700004577637,
+			"monitor_process_p99_ms": 28.1609992980957,
+			"over_100": 0,
+			"over_16_67": 257,
+			"over_20": 257,
+			"over_33_33": 144,
+			"over_50": 44,
+			"p50_ms": 34.3440017700195,
+			"p95_ms": 68.4359970092773,
+			"p99_ms": 81.4700012207031,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 10.0173589725494
+		},
+		"pursuit": {
+			"frames": 1099,
+			"max_ms": 171.22200012207,
+			"mean_fps": 36.7880996559002,
+			"monitor_physics_max_ms": 38.423999786377,
+			"monitor_physics_p50_ms": 11.0,
+			"monitor_physics_p99_ms": 38.423999786377,
+			"monitor_process_max_ms": 107.607002258301,
+			"monitor_process_p50_ms": 23.0699996948242,
+			"monitor_process_p99_ms": 107.607002258301,
+			"over_100": 2,
+			"over_16_67": 1095,
+			"over_20": 915,
+			"over_33_33": 152,
+			"over_50": 16,
+			"p50_ms": 26.6119995117188,
+			"p95_ms": 37.492000579834,
+			"p99_ms": 53.4500007629395,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 29.8737909889221
+		},
+		"pursuit_reset": {
+			"frames": 97,
+			"max_ms": 33.1920013427734,
+			"mean_fps": 48.4777970676024,
+			"monitor_physics_max_ms": 6.68599987030029,
+			"monitor_physics_p50_ms": 6.65100002288818,
+			"monitor_physics_p99_ms": 6.68599987030029,
+			"monitor_process_max_ms": 23.5480003356934,
+			"monitor_process_p50_ms": 18.992000579834,
+			"monitor_process_p99_ms": 23.5480003356934,
+			"over_100": 0,
+			"over_16_67": 97,
+			"over_20": 38,
+			"over_33_33": 0,
+			"over_50": 0,
+			"p50_ms": 19.1429996490479,
+			"p95_ms": 27.6499996185303,
+			"p99_ms": 33.1920013427734,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 2.00091600418091
+		},
+		"save_load": {
+			"frames": 15,
+			"max_ms": 165.904998779297,
+			"mean_fps": 7.3679370970465,
+			"monitor_physics_max_ms": 31.9650001525879,
+			"monitor_physics_p50_ms": 19.6259994506836,
+			"monitor_physics_p99_ms": 31.9650001525879,
+			"monitor_process_max_ms": 45.1539993286133,
+			"monitor_process_p50_ms": 45.1539993286133,
+			"monitor_process_p99_ms": 45.1539993286133,
+			"over_100": 15,
+			"over_16_67": 15,
+			"over_20": 15,
+			"over_33_33": 15,
+			"over_50": 15,
+			"p50_ms": 137.360992431641,
+			"p95_ms": 165.904998779297,
+			"p99_ms": 165.904998779297,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 2.03584799957275
+		},
+		"seam_0": {
+			"frames": 2002,
+			"max_ms": 3251.29809570313,
+			"mean_fps": 30.0889395318922,
+			"monitor_physics_max_ms": 55.8709983825684,
+			"monitor_physics_p50_ms": 8.29399967193604,
+			"monitor_physics_p99_ms": 55.8709983825684,
+			"monitor_process_max_ms": 3159.7919921875,
+			"monitor_process_p50_ms": 24.7689990997314,
+			"monitor_process_p99_ms": 484.18701171875,
+			"over_100": 37,
+			"over_16_67": 1985,
+			"over_20": 1379,
+			"over_33_33": 500,
+			"over_50": 151,
+			"p50_ms": 26.2350006103516,
+			"p95_ms": 58.3030014038086,
+			"p99_ms": 140.919006347656,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 66.5360770816803
+		},
+		"seam_1": {
+			"frames": 230,
+			"max_ms": 68.0070037841797,
+			"mean_fps": 38.4029065433528,
+			"monitor_physics_max_ms": 28.9109992980957,
+			"monitor_physics_p50_ms": 8.61299991607666,
+			"monitor_physics_p99_ms": 28.9109992980957,
+			"monitor_process_max_ms": 33.8860015869141,
+			"monitor_process_p50_ms": 25.9710006713867,
+			"monitor_process_p99_ms": 33.8860015869141,
+			"over_100": 0,
+			"over_16_67": 230,
+			"over_20": 186,
+			"over_33_33": 22,
+			"over_50": 2,
+			"p50_ms": 25.673999786377,
+			"p95_ms": 36.1469993591309,
+			"p99_ms": 40.1720008850098,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 5.98913000869751
+		},
+		"settle": {
+			"frames": 65,
+			"max_ms": 297.097991943359,
+			"mean_fps": 21.6184289773745,
+			"monitor_physics_max_ms": 122.611999511719,
+			"monitor_physics_p50_ms": 8.29899978637695,
+			"monitor_physics_p99_ms": 122.611999511719,
+			"monitor_process_max_ms": 155.858993530273,
+			"monitor_process_p50_ms": 84.2360000610352,
+			"monitor_process_p99_ms": 155.858993530273,
+			"over_100": 9,
+			"over_16_67": 65,
+			"over_20": 61,
+			"over_33_33": 17,
+			"over_50": 10,
+			"p50_ms": 28.3939990997314,
+			"p95_ms": 151.957992553711,
+			"p99_ms": 297.097991943359,
+			"presentation_build_ms_max_frame": 0.0,
+			"presentation_build_ms_total": 0.0,
+			"presentation_builds": 0,
+			"seconds": 3.00669396781921
+		}
+	},
+	"presentation_budget_stats_final": "indisponível nesta revisão",
+	"presentation_builds": {
+		"by_script": {},
+		"logged": 0,
+		"slow_builds_over_2ms": [],
+		"total": 0
+	},
+	"queue_completed_samples": [
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 227.695,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 227.695,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 408.52,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 408.52,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 408.52,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 989.431,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 10241.609,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 341.225999999995,
+			"outcome": "built",
+			"phase": "settle",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 10691.94,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 10691.94,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 10691.94,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 11029.503,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 11029.503,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 787.894,
+			"outcome": "built",
+			"phase": "settle",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 11405.982,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 13082.48,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 13082.48,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 18103.536,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 18386.427,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 18848.345,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 18848.345,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 20274.163,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 20462.129,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 21782.519,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22064.764,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22064.764,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 282.244999999995,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22383.501,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 22383.501,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 22583.319,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 68.510000000002,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 23721.555,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 67.9409999999989,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 64.1039999999994,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 27300.449,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 28035.787,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 28426.889,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 53.1730000000025,
+			"outcome": "built",
+			"phase": "drive",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 50089.558,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 68.346000000005,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 80.2069999999949,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 90.1810000000114,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 90.1810000000114,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "visible",
+			"latency_ms_lower_bound": 95.0650000000023,
+			"outcome": "built",
+			"phase": "pursuit",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 54.5160000000033,
+			"outcome": "built",
+			"phase": "seam_0",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "far",
+			"latency_ms_lower_bound": 113420.655,
+			"outcome": "built",
+			"phase": "loading",
+			"script": "TrafficVehicle.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 388.505999999994,
+			"outcome": "built",
+			"phase": "seam_0",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 103.597999999998,
+			"outcome": "built",
+			"phase": "mountain_0",
+			"script": "FixedTrafficSignal.gd"
+		},
+		{
+			"class": "near",
+			"latency_ms_lower_bound": 170960.228,
+			"outcome": "built",
+			"phase": "loading",
+			"script": ""
+		}
+	],
+	"queue_latency_final": {
+		"completed": {
+			"far": {
+				"built": 10,
+				"max_ms": 113420.655,
+				"p50_ms": 22583.319,
+				"p95_ms": 113420.655
+			},
+			"near": {
+				"built": 24,
+				"max_ms": 170960.228,
+				"p50_ms": 11029.503,
+				"p95_ms": 50089.558
+			},
+			"visible": {
+				"built": 15,
+				"max_ms": 13082.48,
+				"p50_ms": 227.695,
+				"p95_ms": 13082.48
+			}
+		},
+		"oldest_pending_age_ms_by_class": {
+			"far": 194647.894,
+			"near": 170885.961,
+			"visible": 12716.303
+		},
+		"pending_by_class_now": {
+			"far": 121,
+			"near": 3,
+			"visible": 1
+		}
+	},
+	"save_load": {
+		"load_game_parse_ms": 5.047,
+		"load_success": true,
+		"note": "load_game só lê/valida o JSON; a troca de cena de um load não foi executada aqui",
+		"save_game_ms": 1.945,
+		"save_path": "D:/geteco/game/tests/perf_audit_claude/results/02b_base_session_prod/saves/perf_audit_claude.json",
+		"save_success": true
+	},
+	"snapshots": [
+		{
+			"groups": {
+				"authored_sidewalk_pedestrian": 66,
+				"damageable": 178,
+				"emergency_vehicle": 13,
+				"ground_blood": 0,
+				"modern_traffic": 60,
+				"pedestrian": 159,
+				"police_officer": 2,
+				"unified_traffic_lane": 75,
+				"vehicle": 95
+			},
+			"label": "after_loading",
+			"nodes": 31089.0,
+			"objects": 85397.0,
+			"orphan_nodes": 5762.0,
+			"presentation_budget_stats": "indisponível nesta revisão",
+			"presentation_builds_total": 0,
+			"presentation_pending": 136,
+			"queue_latency": {
+				"completed": {
+					"far": {
+						"built": 0,
+						"max_ms": null,
+						"p50_ms": null,
+						"p95_ms": null
+					},
+					"near": {
+						"built": 2,
+						"max_ms": 989.431,
+						"p50_ms": 227.695,
+						"p95_ms": 989.431
+					},
+					"visible": {
+						"built": 4,
+						"max_ms": 408.52,
+						"p50_ms": 408.52,
+						"p95_ms": 408.52
+					}
+				},
+				"oldest_pending_age_ms_by_class": {
+					"far": 9526.791,
+					"near": 408.52,
+					"visible": 227.695
+				},
+				"pending_by_class_now": {
+					"far": 136,
+					"near": 0,
+					"visible": 0
+				}
+			},
+			"static_memory_mib": 962.731504440308,
+			"streaming": {
+				"memory_bytes": 1009501514,
+				"population": {},
+				"ready": false,
+				"region": "harbor",
+				"resident_regions": 1,
+				"sleeping_traffic": 0
+			},
+			"subviewports": 354,
+			"subviewports_by_update_mode": {
+				"always": 0,
+				"disabled": 69,
+				"once": 243,
+				"when_visible": 42
+			},
+			"t_ms": 39778.548,
+			"video_memory_mib": 2267.47659301758
+		},
+		{
+			"groups": {
+				"authored_sidewalk_pedestrian": 66,
+				"damageable": 178,
+				"emergency_vehicle": 13,
+				"ground_blood": 0,
+				"modern_traffic": 61,
+				"pedestrian": 159,
+				"police_officer": 2,
+				"unified_traffic_lane": 75,
+				"vehicle": 97
+			},
+			"label": "after_drive",
+			"nodes": 32922.0,
+			"objects": 89327.0,
+			"orphan_nodes": 5762.0,
+			"presentation_budget_stats": "indisponível nesta revisão",
+			"presentation_builds_total": 0,
+			"presentation_pending": 117,
+			"queue_latency": {
+				"completed": {
+					"far": {
+						"built": 9,
+						"max_ms": 28426.889,
+						"p50_ms": 22583.319,
+						"p95_ms": 28426.889
+					},
+					"near": {
+						"built": 18,
+						"max_ms": 22383.501,
+						"p50_ms": 11029.503,
+						"p95_ms": 22383.501
+					},
+					"visible": {
+						"built": 11,
+						"max_ms": 13082.48,
+						"p50_ms": 408.52,
+						"p95_ms": 13082.48
+					}
+				},
+				"oldest_pending_age_ms_by_class": {
+					"far": 47618.4,
+					"near": 22064.764,
+					"visible": 12716.303
+				},
+				"pending_by_class_now": {
+					"far": 113,
+					"near": 3,
+					"visible": 1
+				}
+			},
+			"static_memory_mib": 1008.26795768738,
+			"streaming": {
+				"memory_bytes": 1057249946,
+				"population": {
+					"active_pedestrians": 53,
+					"active_traffic": 12,
+					"sleeping_pedestrians": 106,
+					"sleeping_traffic": 49
+				},
+				"ready": false,
+				"region": "harbor",
+				"resident_regions": 1,
+				"sleeping_traffic": 49
+			},
+			"subviewports": 413,
+			"subviewports_by_update_mode": {
+				"always": 0,
+				"disabled": 177,
+				"once": 233,
+				"when_visible": 3
+			},
+			"t_ms": 77810.9,
+			"video_memory_mib": 2524.8430480957
+		},
+		{
+			"groups": {
+				"authored_sidewalk_pedestrian": 66,
+				"damageable": 181,
+				"emergency_vehicle": 13,
+				"ground_blood": 9,
+				"modern_traffic": 61,
+				"pedestrian": 164,
+				"police_officer": 0,
+				"unified_traffic_lane": 75,
+				"vehicle": 97
+			},
+			"label": "after_pursuit",
+			"nodes": 33261.0,
+			"objects": 88901.0,
+			"orphan_nodes": 5109.0,
+			"presentation_budget_stats": "indisponível nesta revisão",
+			"presentation_builds_total": 0,
+			"presentation_pending": 116,
+			"queue_latency": {
+				"completed": {
+					"far": {
+						"built": 9,
+						"max_ms": 28426.889,
+						"p50_ms": 22583.319,
+						"p95_ms": 28426.889
+					},
+					"near": {
+						"built": 20,
+						"max_ms": 50089.558,
+						"p50_ms": 11029.503,
+						"p95_ms": 22383.501
+					},
+					"visible": {
+						"built": 15,
+						"max_ms": 13082.48,
+						"p50_ms": 227.695,
+						"p95_ms": 13082.48
+					}
+				},
+				"oldest_pending_age_ms_by_class": {
+					"far": 79671.506,
+					"near": 49925.289,
+					"visible": 12716.303
+				},
+				"pending_by_class_now": {
+					"far": 112,
+					"near": 3,
+					"visible": 1
+				}
+			},
+			"static_memory_mib": 1012.11623382568,
+			"streaming": {
+				"memory_bytes": 1061285156,
+				"population": {
+					"active_pedestrians": 66,
+					"active_traffic": 13,
+					"sleeping_pedestrians": 98,
+					"sleeping_traffic": 48
+				},
+				"ready": false,
+				"region": "harbor",
+				"resident_regions": 1,
+				"sleeping_traffic": 48
+			},
+			"subviewports": 418,
+			"subviewports_by_update_mode": {
+				"always": 0,
+				"disabled": 183,
+				"once": 230,
+				"when_visible": 5
+			},
+			"t_ms": 109847.164,
+			"video_memory_mib": 2526.15287780762
+		}
+	],
+	"spikes_over_250ms": [
+		{
+			"added_first_names": [
+				"HarborGame<Node2D>@root",
+				"OceanBackdrop<CanvasLayer>@HarborGame",
+				"Sea<ColorRect>@OceanBackdrop",
+				"District<Node2D>@HarborGame",
+				"Waterfront<Node2D>@HarborGame",
+				"EastDistrict<Node2D>@HarborGame",
+				"NorthDistrict<Node2D>@HarborGame",
+				"Gateway<Node2D>@HarborGame",
+				"Bridge<Node2D>@HarborGame",
+				"Alleys<Node2D>@HarborGame",
+				"SouthPort<Node2D>@HarborGame",
+				"RoadLayout<Node2D>@HarborGame",
+				"CobraNeighborhood<Node2D>@HarborGame",
+				"RoadNetwork<Node2D>@HarborGame",
+				"FreightRail<Node2D>@HarborGame",
+				"RoadSafety<Node2D>@HarborGame",
+				"Life<Node2D>@HarborGame",
+				"PlayerCar<CharacterBody2D>@HarborGame",
+				"Collision<CollisionShape2D>@PlayerCar",
+				"Camera<Camera2D>@PlayerCar",
+				"InteractArea<Area2D>@PlayerCar",
+				"CollisionShape2D<CollisionShape2D>@InteractArea",
+				"Player<CharacterBody2D>@HarborGame",
+				"Camera<Camera2D>@Player",
+				"Collision<CollisionShape2D>@Player",
+				"OverviewCamera<Camera2D>@HarborGame",
+				"Interiors<Node2D>@HarborGame",
+				"HarborWeatherReadout<CanvasLayer>@HarborGame",
+				"ArrivalSpawn<Marker2D>@HarborGame",
+				"ArrivalStop<Node2D>@HarborGame",
+				"FirstDeliveryPickup<Marker2D>@HarborGame",
+				"HospitalSpawn<Marker2D>@HarborGame",
+				"AnimatedWater<Polygon2D>@District",
+				"FountainWater<Polygon2D>@District",
+				"@Polygon2D@93<Polygon2D>@FountainWater",
+				"NorthFrontage0<Node2D>@District",
+				"BuildingSolid<StaticBody2D>@NorthFrontage0",
+				"@CollisionShape2D@94<CollisionShape2D>@BuildingSolid",
+				"NorthEntry0<Marker2D>@District",
+				"NorthFrontage1<Node2D>@District"
+			],
+			"added_kinds_top": [
+				[
+					26179,
+					"MeshInstance3D"
+				],
+				[
+					4360,
+					"CollisionShape2D"
+				],
+				[
+					2647,
+					"Sprite2D"
+				],
+				[
+					2370,
+					"Node3D"
+				],
+				[
+					1088,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					817,
+					"FixedTrafficSignal.gd"
+				],
+				[
+					667,
+					"StaticBody2D"
+				],
+				[
+					590,
+					"Polygon2D"
+				],
+				[
+					521,
+					"CollisionPolygon2D"
+				],
+				[
+					472,
+					"Area2D"
+				],
+				[
+					326,
+					"DirectionalLight3D"
+				],
+				[
+					323,
+					"SubViewport"
+				],
+				[
+					322,
+					"Camera3D"
+				],
+				[
+					319,
+					"Path2D"
+				],
+				[
+					314,
+					"Node2D"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 24368.626,
+			"nodes_added_during_frame": 45405,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 29798.482
+		},
+		{
+			"added_first_names": [
+				"@MeshInstance2D@30807<MeshInstance2D>@@Node2D@22578",
+				"@MeshInstance2D@30808<MeshInstance2D>@@Node2D@22578",
+				"@MeshInstance2D@30809<MeshInstance2D>@@Node2D@22578",
+				"@MeshInstance2D@30810<MeshInstance2D>@@Node2D@22578",
+				"UpperDeck<Node2D>@Works",
+				"@Sprite2D@30811<Sprite2D>@UpperDeck",
+				"@Sprite2D@30812<Sprite2D>@UpperDeck",
+				"@Sprite2D@30813<Sprite2D>@UpperDeck",
+				"@Sprite2D@30814<Sprite2D>@UpperDeck",
+				"@Sprite2D@30815<Sprite2D>@UpperDeck",
+				"@Sprite2D@30816<Sprite2D>@UpperDeck",
+				"@Sprite2D@30817<Sprite2D>@UpperDeck",
+				"@Sprite2D@30818<Sprite2D>@UpperDeck",
+				"@Sprite2D@30819<Sprite2D>@UpperDeck",
+				"HarborEmergencyDirector<Node2D>@HarborGame",
+				"MedicalParking<Node2D>@District",
+				"@StaticBody2D@30821<StaticBody2D>@MedicalParking",
+				"@CollisionShape2D@30820<CollisionShape2D>@@StaticBody2D@30821",
+				"@StaticBody2D@30823<StaticBody2D>@MedicalParking",
+				"@CollisionShape2D@30822<CollisionShape2D>@@StaticBody2D@30823",
+				"harbor_north_fire<Node2D>@HarborEmergencyDirector",
+				"SpawnPoint<Marker2D>@harbor_north_fire",
+				"ReturnPoint<Marker2D>@harbor_north_fire",
+				"ExitPoint<Marker2D>@harbor_north_fire",
+				"PatrolParking<Node2D>@HarborGame",
+				"PatrolParked1<CharacterBody2D>@PatrolParking",
+				"Visual<Sprite2D>@PatrolParked1",
+				"Collision<CollisionShape2D>@PatrolParked1",
+				"PedestrianHitbox<Area2D>@PatrolParked1",
+				"Collision<CollisionShape2D>@PedestrianHitbox",
+				"Camera<Camera2D>@PatrolParked1",
+				"ContactShadow<Sprite2D>@PatrolParked1",
+				"FrontRay<RayCast2D>@PatrolParked1",
+				"FrontRayL<RayCast2D>@PatrolParked1",
+				"FrontRayR<RayCast2D>@PatrolParked1",
+				"Headlight<PointLight2D>@PatrolParked1",
+				"RoofProp<Node2D>@PatrolParked1",
+				"BarBase<Polygon2D>@RoofProp",
+				"LightBlue<Polygon2D>@RoofProp",
+				"LightRed<Polygon2D>@RoofProp"
+			],
+			"added_kinds_top": [
+				[
+					303,
+					"MeshInstance3D"
+				],
+				[
+					91,
+					"Sprite2D"
+				],
+				[
+					54,
+					"PointLight2D"
+				],
+				[
+					48,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					44,
+					"Polygon2D"
+				],
+				[
+					38,
+					"RoadLuminaire3D.gd"
+				],
+				[
+					26,
+					"CollisionShape2D"
+				],
+				[
+					17,
+					"Node3D"
+				],
+				[
+					12,
+					"LivePoseShadow.gd"
+				],
+				[
+					12,
+					"Marker2D"
+				],
+				[
+					10,
+					"ExteriorOcclusion.gd"
+				],
+				[
+					10,
+					"StreetLamp.gd"
+				],
+				[
+					6,
+					"RayCast2D"
+				],
+				[
+					4,
+					"MeshInstance2D"
+				],
+				[
+					4,
+					"EmergencyDepotMarker.gd"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 364.21,
+			"nodes_added_during_frame": 708,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 30163.217
+		},
+		{
+			"added_first_names": [
+				"@Node3D@32749<Node3D>@VehicleGeometryPreparation",
+				"EstateShell<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32642<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32643<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32644<MeshInstance3D>@@Node3D@32749",
+				"LongEstateRoof<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32646<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32647<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32648<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32649<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32650<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32651<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32652<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32653<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32654<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32655<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32656<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32657<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32658<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32659<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32660<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32661<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32662<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32663<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32664<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32665<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32666<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32667<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32668<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32669<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32670<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32671<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32672<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32673<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32674<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32675<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32676<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32677<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32678<MeshInstance3D>@@Node3D@32749",
+				"@MeshInstance3D@32679<MeshInstance3D>@@Node3D@32749"
+			],
+			"added_kinds_top": [
+				[
+					510,
+					"MeshInstance3D"
+				],
+				[
+					92,
+					"Sprite2D"
+				],
+				[
+					46,
+					"CollisionShape2D"
+				],
+				[
+					30,
+					"Node3D"
+				],
+				[
+					24,
+					"PointLight2D"
+				],
+				[
+					23,
+					"StreetLamp.gd"
+				],
+				[
+					23,
+					"ExteriorOcclusion.gd"
+				],
+				[
+					23,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					23,
+					"LivePoseShadow.gd"
+				],
+				[
+					1,
+					"SportEstateModel.gd"
+				],
+				[
+					1,
+					"SubViewport"
+				],
+				[
+					1,
+					"SportMotorcycle.gd"
+				],
+				[
+					1,
+					"Camera3D"
+				],
+				[
+					1,
+					"WorldEnvironment"
+				],
+				[
+					1,
+					"DirectionalLight3D"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 310.317,
+			"nodes_added_during_frame": 800,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 30882.433
+		},
+		{
+			"added_first_names": [
+				"@Node3D@34886<Node3D>@VehicleGeometryPreparation",
+				"SculptedBodyShell<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34736<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34737<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34738<MeshInstance3D>@@Node3D@34886",
+				"CurvedCabinRoof<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34740<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34741<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34742<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34743<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34744<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34745<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34746<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34747<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34748<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34749<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34750<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34751<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34752<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34753<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34754<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34755<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34756<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34757<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34758<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34759<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34760<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34761<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34762<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34763<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34764<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34765<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34766<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34767<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34768<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34769<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34770<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34771<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34772<MeshInstance3D>@@Node3D@34886",
+				"@MeshInstance3D@34773<MeshInstance3D>@@Node3D@34886"
+			],
+			"added_kinds_top": [
+				[
+					221,
+					"MeshInstance3D"
+				],
+				[
+					8,
+					"Node3D"
+				],
+				[
+					1,
+					"ValeCrossoverModel.gd"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 824.632,
+			"nodes_added_during_frame": 230,
+			"phase": "loading",
+			"player_health": 100,
+			"t_ms": 32983.322
+		},
+		{
+			"added_first_names": [
+				"NecoTowTruck<CharacterBody2D>@HarborGame",
+				"Visual<Sprite2D>@NecoTowTruck",
+				"Collision<CollisionShape2D>@NecoTowTruck",
+				"PedestrianHitbox<Area2D>@NecoTowTruck",
+				"Collision<CollisionShape2D>@PedestrianHitbox",
+				"Camera<Camera2D>@NecoTowTruck",
+				"ContactShadow<Sprite2D>@NecoTowTruck",
+				"FrontRay<RayCast2D>@NecoTowTruck",
+				"FrontRayL<RayCast2D>@NecoTowTruck",
+				"FrontRayR<RayCast2D>@NecoTowTruck",
+				"Headlight<PointLight2D>@NecoTowTruck",
+				"RoofProp<Node2D>@NecoTowTruck",
+				"NecoTowTruckSpawn<Node>@HarborGame",
+				"Vehicle3DRender<SubViewport>@NecoTowTruck",
+				"@Node3D@42751<Node3D>@Vehicle3DRender",
+				"_MeshInstance3D_31490<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31491<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31492<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31493<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31494<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31495<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31496<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31497<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31498<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31499<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31500<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31501<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31502<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31503<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31504<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31505<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31506<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31507<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31508<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31509<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31510<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31511<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31512<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31513<MeshInstance3D>@@Node3D@42751",
+				"_MeshInstance3D_31514<MeshInstance3D>@@Node3D@42751"
+			],
+			"added_kinds_top": [
+				[
+					585,
+					"MeshInstance3D"
+				],
+				[
+					344,
+					"Node3D"
+				],
+				[
+					26,
+					"CollisionShape2D"
+				],
+				[
+					25,
+					"Area2D"
+				],
+				[
+					24,
+					"UrbanStationActorPresentation.gd"
+				],
+				[
+					3,
+					"RayCast2D"
+				],
+				[
+					2,
+					"Sprite2D"
+				],
+				[
+					2,
+					"PointLight2D"
+				],
+				[
+					1,
+					"LivePoseShadow.gd"
+				],
+				[
+					1,
+					"DirectionalLight3D"
+				],
+				[
+					1,
+					"WorldEnvironment"
+				],
+				[
+					1,
+					"Camera3D"
+				],
+				[
+					1,
+					"TowmasterModel.gd"
+				],
+				[
+					1,
+					"SubViewport"
+				],
+				[
+					1,
+					"ParkedVehicleSpawn.gd"
+				]
+			],
+			"car": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"ms": 297.098,
+			"nodes_added_during_frame": 1021,
+			"phase": "settle",
+			"player_health": 100,
+			"t_ms": 40063.623
+		},
+		{
+			"added_first_names": [
+				"Vehicle3DRender<SubViewport>@HarborTraffic_48",
+				"@Node3D@44446<Node3D>@Vehicle3DRender",
+				"@MeshInstance3D@44447<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44448<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44449<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44450<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44451<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44452<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44453<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44454<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44455<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44456<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44457<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44458<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44459<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44460<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44461<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44462<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44463<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44464<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44465<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44466<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44467<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44468<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44469<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44470<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44471<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44472<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44473<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44474<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44475<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44476<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44477<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44478<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44479<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44480<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44481<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44482<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44483<MeshInstance3D>@@Node3D@44446",
+				"@MeshInstance3D@44484<MeshInstance3D>@@Node3D@44446"
+			],
+			"added_kinds_top": [
+				[
+					135,
+					"MeshInstance3D"
+				],
+				[
+					8,
+					"Node3D"
+				],
+				[
+					1,
+					"SubViewport"
+				],
+				[
+					1,
+					"BossMuscleModel.gd"
+				],
+				[
+					1,
+					"PointLight2D"
+				],
+				[
+					1,
+					"Camera3D"
+				],
+				[
+					1,
+					"WorldEnvironment"
+				],
+				[
+					1,
+					"DirectionalLight3D"
+				],
+				[
+					1,
+					"LivePoseShadow.gd"
+				]
+			],
+			"car": [
+				2423.71142578125,
+				425.0,
+				360.0
+			],
+			"health": 100,
+			"is_broken": false,
+			"is_driven_by_player": true,
+			"is_exploding": false,
+			"ms": 255.514,
+			"nodes_added_during_frame": 150,
+			"phase": "drive",
+			"player_health": 100,
+			"t_ms": 53884.799
+		},
+		{
+			"added_first_names": [
+				"Vehicle3DRender<SubViewport>@HarborTraffic_12",
+				"@Node3D@46309<Node3D>@Vehicle3DRender",
+				"@MeshInstance3D@46310<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46311<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46312<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46313<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46314<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46315<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46316<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46317<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46318<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46319<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46320<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46321<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46322<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46323<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46324<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46325<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46326<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46327<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46328<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46329<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46330<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46331<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46332<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46333<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46334<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46335<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46336<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46337<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46338<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46339<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46340<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46341<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46342<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46343<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46344<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46345<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46346<MeshInstance3D>@@Node3D@46309",
+				"@MeshInstance3D@46347<MeshInstance3D>@@Node3D@46309"
+			],
+			"added_kinds_top": [
+				[
+					248,
+					"MeshInstance3D"
+				],
+				[
+					8,
+					"Node3D"
+				],
+				[
+					3,
+					"CharacterBody2D"
+				],
+				[
+					3,
+					"CollisionShape2D"
+				],
+				[
+					1,
+					"SubViewport"
+				],
+				[
+					1,
+					"CoupeDamageModel.gd"
+				],
+				[
+					1,
+					"PointLight2D"
+				],
+				[
+					1,
+					"Camera3D"
+				],
+				[
+					1,
+					"WorldEnvironment"
+				],
+				[
+					1,
+					"DirectionalLight3D"
+				],
+				[
+					1,
+					"LivePoseShadow.gd"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 295.718,
+			"nodes_added_during_frame": 269,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 143474.325
+		},
+		{
+			"added_first_names": [
+				"SummitSkiLodgeInterior<Node2D>@MountainInteriorSpaces",
+				"Blackout<Polygon2D>@SummitSkiLodgeInterior",
+				"SkiLodgeRoomView<Node2D>@SummitSkiLodgeInterior",
+				"ModelViewport3D<SubViewport>@SkiLodgeRoomView",
+				"@Node3D@48448<Node3D>@ModelViewport3D",
+				"FloorFoundation<MeshInstance3D>@@Node3D@48448",
+				"OakFloorboard<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48449<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48450<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48451<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48452<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48453<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48454<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48455<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48456<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48457<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48458<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48459<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48460<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48461<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48462<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48463<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48464<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48465<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48466<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48467<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48468<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48469<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48470<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48471<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48472<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48473<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48474<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48475<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48476<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48477<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48478<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48479<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48480<MeshInstance3D>@@Node3D@48448",
+				"@MeshInstance3D@48481<MeshInstance3D>@@Node3D@48448"
+			],
+			"added_kinds_top": [
+				[
+					683,
+					"MeshInstance3D"
+				],
+				[
+					57,
+					"Node3D"
+				],
+				[
+					19,
+					"CollisionPolygon2D"
+				],
+				[
+					11,
+					"Polygon2D"
+				],
+				[
+					10,
+					"Label"
+				],
+				[
+					6,
+					"CollisionShape2D"
+				],
+				[
+					4,
+					"Line2D"
+				],
+				[
+					4,
+					"Sprite2D"
+				],
+				[
+					4,
+					"WorldEnvironment"
+				],
+				[
+					4,
+					"DirectionalLight3D"
+				],
+				[
+					4,
+					"Camera3D"
+				],
+				[
+					4,
+					"SubViewport"
+				],
+				[
+					3,
+					"WinterResident.gd"
+				],
+				[
+					3,
+					"WinterResidentModel.gd"
+				],
+				[
+					3,
+					"PanelContainer"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 265.084,
+			"nodes_added_during_frame": 841,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 156113.473
+		},
+		{
+			"added_first_names": [
+				"MountainMysteryCaveInterior<Node2D>@MountainInteriorSpaces",
+				"Blackout<Polygon2D>@MountainMysteryCaveInterior",
+				"MysteryCaveRoomView<Node2D>@MountainMysteryCaveInterior",
+				"ModelViewport3D<SubViewport>@MysteryCaveRoomView",
+				"@Node3D@49005<Node3D>@ModelViewport3D",
+				"@MeshInstance3D@49006<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49007<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49008<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49009<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49010<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49011<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49012<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49013<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49014<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49015<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49016<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49017<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49018<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49019<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49020<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49021<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49022<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49023<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49024<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49025<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49026<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49027<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49028<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49029<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49030<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49031<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49032<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49033<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49034<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49035<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49036<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49037<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49038<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49039<MeshInstance3D>@@Node3D@49005",
+				"@MeshInstance3D@49040<MeshInstance3D>@@Node3D@49005"
+			],
+			"added_kinds_top": [
+				[
+					244,
+					"MeshInstance3D"
+				],
+				[
+					121,
+					"CollisionShape2D"
+				],
+				[
+					63,
+					"CollisionPolygon2D"
+				],
+				[
+					33,
+					"Polygon2D"
+				],
+				[
+					15,
+					"Sprite2D"
+				],
+				[
+					12,
+					"VisibleOnScreenNotifier2D"
+				],
+				[
+					12,
+					"PointLight2D"
+				],
+				[
+					12,
+					"RoadLuminaire3D.gd"
+				],
+				[
+					12,
+					"StaticBody2D"
+				],
+				[
+					7,
+					"Line2D"
+				],
+				[
+					4,
+					"Node2D"
+				],
+				[
+					4,
+					"Node3D"
+				],
+				[
+					4,
+					"Label"
+				],
+				[
+					4,
+					"Area2D"
+				],
+				[
+					3,
+					"DirectionalLight3D"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 772.42,
+			"nodes_added_during_frame": 572,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 156886.147
+		},
+		{
+			"added_first_names": [
+				"SecretMountainLake<Node2D>@MountainSceneryDetailed",
+				"SmugglerCampsite<Node2D>@SecretMountainLake",
+				"@Polygon2D@49609<Polygon2D>@SmugglerCampsite",
+				"SoilTransition<MeshInstance2D>@@Polygon2D@49609",
+				"@Line2D@49610<Line2D>@SmugglerCampsite",
+				"@Line2D@49611<Line2D>@SmugglerCampsite",
+				"@Line2D@49612<Line2D>@SmugglerCampsite",
+				"@Node2D@49613<Node2D>@SmugglerCampsite",
+				"@Line2D@49614<Line2D>@@Node2D@49613",
+				"AnimatedCampfire<Node2D>@@Node2D@49613",
+				"CampHeatSource<Area2D>@@Node2D@49613",
+				"@CollisionShape2D@49615<CollisionShape2D>@CampHeatSource",
+				"@PointLight2D@49616<PointLight2D>@@Node2D@49613",
+				"@Polygon2D@49617<Polygon2D>@SmugglerCampsite",
+				"@Polygon2D@49618<Polygon2D>@SmugglerCampsite",
+				"Collision<CollisionShape2D>@SmugglerArcticJeep3D",
+				"Camera<Camera2D>@SmugglerArcticJeep3D",
+				"InteractArea<Area2D>@SmugglerArcticJeep3D",
+				"@CollisionShape2D@49619<CollisionShape2D>@InteractArea",
+				"SmugglerArcticJeep3D<CharacterBody2D>@SmugglerCampsite",
+				"@Line2D@49620<Line2D>@SmugglerArcticJeep3D",
+				"@Sprite2D@49621<Sprite2D>@SmugglerArcticJeep3D",
+				"ContactShadow<Sprite2D>@SmugglerArcticJeep3D",
+				"BumperHitbox<Area2D>@SmugglerArcticJeep3D",
+				"@CollisionShape2D@49622<CollisionShape2D>@BumperHitbox",
+				"@CPUParticles2D@49623<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49624<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49625<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49626<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49627<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49628<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49629<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@AudioStreamPlayer2D@49630<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"RadioReceiver<Node>@@AudioStreamPlayer2D@49630",
+				"@AudioStreamPlayer2D@49631<AudioStreamPlayer2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49632<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49633<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49634<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49635<CPUParticles2D>@SmugglerArcticJeep3D",
+				"@CPUParticles2D@49636<CPUParticles2D>@SmugglerArcticJeep3D"
+			],
+			"added_kinds_top": [
+				[
+					496,
+					"MeshInstance3D"
+				],
+				[
+					26,
+					"Node3D"
+				],
+				[
+					18,
+					"Polygon2D"
+				],
+				[
+					18,
+					"Line2D"
+				],
+				[
+					11,
+					"CollisionPolygon2D"
+				],
+				[
+					11,
+					"CollisionShape2D"
+				],
+				[
+					11,
+					"StaticBody2D"
+				],
+				[
+					11,
+					"Sprite2D"
+				],
+				[
+					10,
+					"CPUParticles2D"
+				],
+				[
+					9,
+					"AudioStreamPlayer2D"
+				],
+				[
+					7,
+					"MountainLakeIce.gd"
+				],
+				[
+					7,
+					"PointLight2D"
+				],
+				[
+					6,
+					"RayCast2D"
+				],
+				[
+					5,
+					"Area2D"
+				],
+				[
+					5,
+					"Node2D"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 346.69,
+			"nodes_added_during_frame": 695,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 157770.472
+		},
+		{
+			"added_first_names": [
+				"MountainAmmuNation<Node2D>@MountainSceneryDetailed",
+				"ModelViewport3D<SubViewport>@MountainAmmuNation",
+				"@Node3D@50680<Node3D>@ModelViewport3D",
+				"@MeshInstance3D@50681<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50682<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50683<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50684<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50685<MeshInstance3D>@@Node3D@50680",
+				"@Node3D@50686<Node3D>@@Node3D@50680",
+				"@MeshInstance3D@50687<MeshInstance3D>@@Node3D@50686",
+				"@MeshInstance3D@50688<MeshInstance3D>@@Node3D@50686",
+				"@MeshInstance3D@50689<MeshInstance3D>@@Node3D@50686",
+				"@MeshInstance3D@50690<MeshInstance3D>@@Node3D@50686",
+				"@MeshInstance3D@50691<MeshInstance3D>@@Node3D@50686",
+				"@Label3D@50692<Label3D>@@Node3D@50686",
+				"@MeshInstance3D@50693<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50694<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50695<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50696<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50697<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50698<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50699<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50700<MeshInstance3D>@@Node3D@50680",
+				"@Label3D@50701<Label3D>@@Node3D@50680",
+				"@MeshInstance3D@50702<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50703<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50704<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50705<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50706<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50707<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50708<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50709<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50710<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50711<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50712<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50713<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50714<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50715<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50716<MeshInstance3D>@@Node3D@50680",
+				"@MeshInstance3D@50717<MeshInstance3D>@@Node3D@50680"
+			],
+			"added_kinds_top": [
+				[
+					62,
+					"MeshInstance3D"
+				],
+				[
+					10,
+					"Polygon2D"
+				],
+				[
+					7,
+					"Line2D"
+				],
+				[
+					3,
+					"Node3D"
+				],
+				[
+					3,
+					"CollisionPolygon2D"
+				],
+				[
+					3,
+					"StaticBody2D"
+				],
+				[
+					3,
+					"Node2D"
+				],
+				[
+					2,
+					"Label3D"
+				],
+				[
+					1,
+					"AmmunationPassage.gd"
+				],
+				[
+					1,
+					"Label"
+				],
+				[
+					1,
+					"CollisionShape2D"
+				],
+				[
+					1,
+					"Area2D"
+				],
+				[
+					1,
+					"BuildingEntrance.gd"
+				],
+				[
+					1,
+					"Sprite2D"
+				],
+				[
+					1,
+					"WorldEnvironment"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 257.808,
+			"nodes_added_during_frame": 105,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 158211.334
+		},
+		{
+			"added_first_names": [
+				"WinterStopApron2<Polygon2D>@MountainSettlement",
+				"WheelRuts<Node2D>@WinterStopApron2",
+				"WinterStopAccess2<Line2D>@MountainSettlement",
+				"@Node2D@58062<Node2D>@MountainSettlement",
+				"ModelViewport3D<SubViewport>@SummitSkiLodge",
+				"@Node3D@58063<Node3D>@ModelViewport3D",
+				"Foundation<MeshInstance3D>@@Node3D@58063",
+				"MainHall<MeshInstance3D>@@Node3D@58063",
+				"Roof<MeshInstance3D>@@Node3D@58063",
+				"RoofSnow<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58064<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58065<MeshInstance3D>@@Node3D@58063",
+				"CornerTimber<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58066<MeshInstance3D>@@Node3D@58063",
+				"WindowFrame<MeshInstance3D>@@Node3D@58063",
+				"WindowGlass<MeshInstance3D>@@Node3D@58063",
+				"WindowWarmth<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58067<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58068<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58069<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58070<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58071<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58072<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58073<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58074<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58075<MeshInstance3D>@@Node3D@58063",
+				"Door<MeshInstance3D>@@Node3D@58063",
+				"DoorWindow<MeshInstance3D>@@Node3D@58063",
+				"Porch<MeshInstance3D>@@Node3D@58063",
+				"PorchPost<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58076<MeshInstance3D>@@Node3D@58063",
+				"PorchCanopy<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58077<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58078<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58079<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58080<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58081<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58082<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58083<MeshInstance3D>@@Node3D@58063",
+				"@MeshInstance3D@58084<MeshInstance3D>@@Node3D@58063"
+			],
+			"added_kinds_top": [
+				[
+					485,
+					"MeshInstance3D"
+				],
+				[
+					57,
+					"Node3D"
+				],
+				[
+					24,
+					"Polygon2D"
+				],
+				[
+					20,
+					"CollisionPolygon2D"
+				],
+				[
+					15,
+					"Line2D"
+				],
+				[
+					11,
+					"Node2D"
+				],
+				[
+					10,
+					"Sprite2D"
+				],
+				[
+					10,
+					"WorldEnvironment"
+				],
+				[
+					10,
+					"DirectionalLight3D"
+				],
+				[
+					10,
+					"Camera3D"
+				],
+				[
+					10,
+					"SubViewport"
+				],
+				[
+					9,
+					"StaticBody2D"
+				],
+				[
+					7,
+					"ResortPromenadeProp.gd"
+				],
+				[
+					7,
+					"ResortPromenadeProp3D.gd"
+				],
+				[
+					4,
+					"Label"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 532.747,
+			"nodes_added_during_frame": 716,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 171857.943
+		},
+		{
+			"added_first_names": [
+				"WinterDressingPocket0<Node2D>@MountainSettlement",
+				"ModelViewport3D<SubViewport>@WinterDressingPocket0",
+				"@Node3D@60385<Node3D>@ModelViewport3D",
+				"@Camera3D@60386<Camera3D>@ModelViewport3D",
+				"@DirectionalLight3D@60387<DirectionalLight3D>@ModelViewport3D",
+				"@WorldEnvironment@60388<WorldEnvironment>@ModelViewport3D",
+				"GroundAnchoredModel<Sprite2D>@WinterDressingPocket0",
+				"WinterNaturalDressing3D<Node3D>@@Node3D@60385",
+				"Pine00<Node3D>@WinterNaturalDressing3D",
+				"@MeshInstance3D@60389<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60390<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60391<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60392<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60393<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60394<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60395<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60396<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60397<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60398<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60399<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60400<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60401<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60402<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60403<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60404<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60405<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60406<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60407<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60408<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60409<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60410<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60411<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60412<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60413<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60414<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60415<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60416<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60417<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60418<MeshInstance3D>@Pine00",
+				"@MeshInstance3D@60419<MeshInstance3D>@Pine00"
+			],
+			"added_kinds_top": [
+				[
+					7794,
+					"MeshInstance3D"
+				],
+				[
+					490,
+					"Node3D"
+				],
+				[
+					299,
+					"Polygon2D"
+				],
+				[
+					145,
+					"StaticBody2D"
+				],
+				[
+					125,
+					"CollisionPolygon2D"
+				],
+				[
+					103,
+					"Sprite2D"
+				],
+				[
+					68,
+					"CollisionShape2D"
+				],
+				[
+					57,
+					"DirectionalLight3D"
+				],
+				[
+					57,
+					"Camera3D"
+				],
+				[
+					57,
+					"SubViewport"
+				],
+				[
+					56,
+					"WorldEnvironment"
+				],
+				[
+					41,
+					"Node2D"
+				],
+				[
+					26,
+					"MountainPine3D.gd"
+				],
+				[
+					26,
+					"ExteriorOcclusion.gd"
+				],
+				[
+					22,
+					"Label"
+				]
+			],
+			"car": [
+				7150.056640625,
+				-4525.373046875,
+				0.0
+			],
+			"health": 0,
+			"is_broken": true,
+			"is_driven_by_player": false,
+			"is_exploding": false,
+			"ms": 3251.298,
+			"nodes_added_during_frame": 9582,
+			"phase": "seam_0",
+			"player_health": 100,
+			"t_ms": 176272.196
+		}
+	],
+	"status": "complete"
+}

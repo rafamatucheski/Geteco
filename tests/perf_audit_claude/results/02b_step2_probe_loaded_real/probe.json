@@ -1,0 +1,384 @@
+{
+	"adapter": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"caches_after": {
+		"batcher_format_entries": 6458,
+		"batcher_format_hits": 2550,
+		"batcher_hits": 343,
+		"batcher_invalidations": 0,
+		"batcher_mesh_evictions": 0,
+		"batcher_mesh_misses": 755,
+		"batcher_meshes": 755,
+		"clearance_key_entries": 411,
+		"clearance_key_hits": 141,
+		"clearance_key_invalidations": 0,
+		"clearance_meshes": 292,
+		"geometry_hits": 27,
+		"geometry_models": 22,
+		"geometry_prepared": 26,
+		"static_memory_mib": 971.363115310669
+	},
+	"caches_before": {
+		"batcher_format_entries": 6143,
+		"batcher_format_hits": 1056,
+		"batcher_hits": 148,
+		"batcher_invalidations": 0,
+		"batcher_mesh_evictions": 0,
+		"batcher_mesh_misses": 714,
+		"batcher_meshes": 714,
+		"clearance_key_entries": 380,
+		"clearance_key_hits": 56,
+		"clearance_key_invalidations": 0,
+		"clearance_meshes": 279,
+		"geometry_hits": 11,
+		"geometry_models": 21,
+		"geometry_prepared": 26,
+		"static_memory_mib": 966.791488647461
+	},
+	"debug_build": true,
+	"emergency": [
+		{
+			"draw": {
+				"first_frame_ms": 15.637,
+				"update_mode_after": 1,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 24.827,
+			"geometry_cache_hit": true,
+			"nodes_in_viewport": 54,
+			"service": "police",
+			"static_memory_delta_mib": 0.54534912109375
+		},
+		{
+			"draw": {
+				"first_frame_ms": 17.816,
+				"update_mode_after": 1,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 85.276,
+			"geometry_cache_hit": false,
+			"nodes_in_viewport": 66,
+			"service": "ambulance",
+			"static_memory_delta_mib": 0.809276580810547
+		},
+		{
+			"draw": {
+				"first_frame_ms": 19.159,
+				"update_mode_after": 1,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 26.399,
+			"geometry_cache_hit": true,
+			"nodes_in_viewport": 54,
+			"service": "police",
+			"static_memory_delta_mib": 0.534675598144531
+		},
+		{
+			"draw": {
+				"first_frame_ms": 13.832,
+				"update_mode_after": 1,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 81.979,
+			"geometry_cache_hit": false,
+			"nodes_in_viewport": 66,
+			"service": "ambulance",
+			"static_memory_delta_mib": 0.809276580810547
+		}
+	],
+	"engine": "4.7.2-stable (official)",
+	"mode": "loaded",
+	"pending_ignored": 131,
+	"renderer": "mobile",
+	"traffic": [
+		{
+			"archetype": "union_sedan",
+			"batcher_hits_delta": 15,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 15.21,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.743,
+			"exemplar": 1,
+			"geometry_cache_hit": true,
+			"model": "UnionSedanModel.gd",
+			"nodes_in_viewport": 45,
+			"spawn_parked_ms": 0.44,
+			"static_memory_delta_mib": 0.690784454345703,
+			"was_deferred": true
+		},
+		{
+			"archetype": "union_sedan",
+			"batcher_hits_delta": 15,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 20.071,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.755,
+			"exemplar": 2,
+			"geometry_cache_hit": true,
+			"model": "UnionSedanModel.gd",
+			"nodes_in_viewport": 45,
+			"spawn_parked_ms": 0.455,
+			"static_memory_delta_mib": 0.563819885253906,
+			"was_deferred": true
+		},
+		{
+			"archetype": "union_sedan",
+			"batcher_hits_delta": 15,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 15.441,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.815,
+			"exemplar": 3,
+			"geometry_cache_hit": true,
+			"model": "UnionSedanModel.gd",
+			"nodes_in_viewport": 45,
+			"spawn_parked_ms": 0.465,
+			"static_memory_delta_mib": 0.561378479003906,
+			"was_deferred": true
+		},
+		{
+			"archetype": "courier_van",
+			"batcher_hits_delta": 14,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 23.708,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.743,
+			"exemplar": 1,
+			"geometry_cache_hit": true,
+			"model": "CourierVanModel.gd",
+			"nodes_in_viewport": 44,
+			"spawn_parked_ms": 0.435,
+			"static_memory_delta_mib": 0.554389953613281,
+			"was_deferred": true
+		},
+		{
+			"archetype": "courier_van",
+			"batcher_hits_delta": 14,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 13.703,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.728,
+			"exemplar": 2,
+			"geometry_cache_hit": true,
+			"model": "CourierVanModel.gd",
+			"nodes_in_viewport": 44,
+			"spawn_parked_ms": 0.419,
+			"static_memory_delta_mib": 0.553310394287109,
+			"was_deferred": true
+		},
+		{
+			"archetype": "courier_van",
+			"batcher_hits_delta": 14,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 15.684,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.686,
+			"exemplar": 3,
+			"geometry_cache_hit": true,
+			"model": "CourierVanModel.gd",
+			"nodes_in_viewport": 44,
+			"spawn_parked_ms": 0.471,
+			"static_memory_delta_mib": 0.550930023193359,
+			"was_deferred": true
+		},
+		{
+			"archetype": "route_city",
+			"batcher_hits_delta": 13,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 19.766,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.901,
+			"exemplar": 1,
+			"geometry_cache_hit": true,
+			"model": "RouteCityModel.gd",
+			"nodes_in_viewport": 53,
+			"spawn_parked_ms": 0.488,
+			"static_memory_delta_mib": 0.607353210449219,
+			"was_deferred": true
+		},
+		{
+			"archetype": "route_city",
+			"batcher_hits_delta": 13,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 13.929,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.992,
+			"exemplar": 2,
+			"geometry_cache_hit": true,
+			"model": "RouteCityModel.gd",
+			"nodes_in_viewport": 53,
+			"spawn_parked_ms": 0.461,
+			"static_memory_delta_mib": 0.605991363525391,
+			"was_deferred": true
+		},
+		{
+			"archetype": "route_city",
+			"batcher_hits_delta": 13,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 15.985,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 5.185,
+			"exemplar": 3,
+			"geometry_cache_hit": true,
+			"model": "RouteCityModel.gd",
+			"nodes_in_viewport": 53,
+			"spawn_parked_ms": 0.393,
+			"static_memory_delta_mib": 0.604076385498047,
+			"was_deferred": true
+		},
+		{
+			"archetype": "american_tanker_truck",
+			"batcher_hits_delta": 0,
+			"clearance_meshes_added": 13,
+			"draw": {
+				"first_frame_ms": 19.334,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 151.51,
+			"exemplar": 1,
+			"geometry_cache_hit": false,
+			"model": "AmericanTankerModel.gd",
+			"nodes_in_viewport": 56,
+			"spawn_parked_ms": 0.497,
+			"static_memory_delta_mib": 1.5993709564209,
+			"was_deferred": true
+		},
+		{
+			"archetype": "american_tanker_truck",
+			"batcher_hits_delta": 11,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 13.08,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 5.776,
+			"exemplar": 2,
+			"geometry_cache_hit": true,
+			"model": "AmericanTankerModel.gd",
+			"nodes_in_viewport": 56,
+			"spawn_parked_ms": 0.441,
+			"static_memory_delta_mib": 0.588581085205078,
+			"was_deferred": true
+		},
+		{
+			"archetype": "american_tanker_truck",
+			"batcher_hits_delta": 11,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 13.779,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 5.629,
+			"exemplar": 3,
+			"geometry_cache_hit": true,
+			"model": "AmericanTankerModel.gd",
+			"nodes_in_viewport": 56,
+			"spawn_parked_ms": 0.594,
+			"static_memory_delta_mib": 0.586696624755859,
+			"was_deferred": true
+		},
+		{
+			"archetype": "police_suv",
+			"batcher_hits_delta": 9,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 21.692,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.614,
+			"exemplar": 1,
+			"geometry_cache_hit": true,
+			"model": "PoliceSUVModel.gd",
+			"nodes_in_viewport": 46,
+			"spawn_parked_ms": 0.45,
+			"static_memory_delta_mib": 0.595714569091797,
+			"was_deferred": true
+		},
+		{
+			"archetype": "police_suv",
+			"batcher_hits_delta": 9,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 13.551,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.326,
+			"exemplar": 2,
+			"geometry_cache_hit": true,
+			"model": "PoliceSUVModel.gd",
+			"nodes_in_viewport": 46,
+			"spawn_parked_ms": 0.487,
+			"static_memory_delta_mib": 0.596839904785156,
+			"was_deferred": true
+		},
+		{
+			"archetype": "police_suv",
+			"batcher_hits_delta": 9,
+			"clearance_meshes_added": 0,
+			"draw": {
+				"first_frame_ms": 13.496,
+				"update_mode_after": 0,
+				"viewport_render_cpu_ms": 0.0,
+				"viewport_render_gpu_ms": 0.0
+			},
+			"ensure_presentation_ms": 4.323,
+			"exemplar": 3,
+			"geometry_cache_hit": true,
+			"model": "PoliceSUVModel.gd",
+			"nodes_in_viewport": 46,
+			"spawn_parked_ms": 0.485,
+			"static_memory_delta_mib": 0.592185974121094,
+			"was_deferred": true
+		}
+	],
+	"variant": "real"
+}

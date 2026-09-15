@@ -1,0 +1,2 @@
+engine=4.7.2-stable (official) renderer=mobile adapter=NVIDIA GeForce RTX 4060 Laptop GPU debug=true
+project=C:/Users/rafae/AppData/Local/Temp/claude/D--geteco-game/1cf66dc9-cbb9-44ba-8a22-c22916568c5b/scratchpad/wt_02a_9bd10e0/

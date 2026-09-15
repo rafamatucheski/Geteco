@@ -1,0 +1,546 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+PASS CruiserMotorcycle.gd: rodas extraídas do metadado autoral
+PASS CruiserMotorcycle.gd: cubos correspondem ao tipo de veículo (obteve 2)
+PASS CruiserMotorcycle.gd: eixo dianteiro e traseiro distintos
+PASS CruiserMotorcycle.gd: todo cubo giratório recebeu peças de roda
+PASS CruiserMotorcycle.gd: curva à direita produz esterço à direita (0.085 rad)
+PASS CruiserMotorcycle.gd: eixo direcional 0 acompanha curva à direita
+PASS CruiserMotorcycle.gd: eixo fixo 1 não esterça
+PASS CruiserMotorcycle.gd: curva à esquerda produz esterço à esquerda (-0.085 rad)
+PASS CruiserMotorcycle.gd: eixo direcional 0 acompanha curva à esquerda
+PASS CruiserMotorcycle.gd: pneus giram com o deslocamento
+PASS SportMotorcycle.gd: rodas extraídas do metadado autoral
+PASS SportMotorcycle.gd: cubos correspondem ao tipo de veículo (obteve 2)
+PASS SportMotorcycle.gd: eixo dianteiro e traseiro distintos
+PASS SportMotorcycle.gd: todo cubo giratório recebeu peças de roda
+PASS SportMotorcycle.gd: curva à direita produz esterço à direita (0.075 rad)
+PASS SportMotorcycle.gd: eixo direcional 0 acompanha curva à direita
+PASS SportMotorcycle.gd: eixo fixo 1 não esterça
+PASS SportMotorcycle.gd: curva à esquerda produz esterço à esquerda (-0.075 rad)
+PASS SportMotorcycle.gd: eixo direcional 0 acompanha curva à esquerda
+PASS SportMotorcycle.gd: pneus giram com o deslocamento
+PASS UrbanMotorcycle.gd: rodas extraídas do metadado autoral
+PASS UrbanMotorcycle.gd: cubos correspondem ao tipo de veículo (obteve 2)
+PASS UrbanMotorcycle.gd: eixo dianteiro e traseiro distintos
+PASS UrbanMotorcycle.gd: todo cubo giratório recebeu peças de roda
+PASS UrbanMotorcycle.gd: curva à direita produz esterço à direita (0.068 rad)
+PASS UrbanMotorcycle.gd: eixo direcional 0 acompanha curva à direita
+PASS UrbanMotorcycle.gd: eixo fixo 1 não esterça
+PASS UrbanMotorcycle.gd: curva à esquerda produz esterço à esquerda (-0.068 rad)
+PASS UrbanMotorcycle.gd: eixo direcional 0 acompanha curva à esquerda
+PASS UrbanMotorcycle.gd: pneus giram com o deslocamento
+PASS BossMuscleModel.gd: rodas extraídas do metadado autoral
+PASS BossMuscleModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS BossMuscleModel.gd: eixo dianteiro e traseiro distintos
+PASS BossMuscleModel.gd: todo cubo giratório recebeu peças de roda
+PASS BossMuscleModel.gd: curva à direita produz esterço à direita (0.130 rad)
+PASS BossMuscleModel.gd: eixo direcional 0 acompanha curva à direita
+PASS BossMuscleModel.gd: eixo direcional 2 acompanha curva à direita
+PASS BossMuscleModel.gd: eixo fixo 1 não esterça
+PASS BossMuscleModel.gd: eixo fixo 3 não esterça
+PASS BossMuscleModel.gd: curva à esquerda produz esterço à esquerda (-0.130 rad)
+PASS BossMuscleModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS BossMuscleModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS BossMuscleModel.gd: pneus giram com o deslocamento
+PASS CabrioletModel.gd: rodas extraídas do metadado autoral
+PASS CabrioletModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS CabrioletModel.gd: eixo dianteiro e traseiro distintos
+PASS CabrioletModel.gd: todo cubo giratório recebeu peças de roda
+PASS CabrioletModel.gd: curva à direita produz esterço à direita (0.114 rad)
+PASS CabrioletModel.gd: eixo direcional 0 acompanha curva à direita
+PASS CabrioletModel.gd: eixo direcional 2 acompanha curva à direita
+PASS CabrioletModel.gd: eixo fixo 1 não esterça
+PASS CabrioletModel.gd: eixo fixo 3 não esterça
+PASS CabrioletModel.gd: curva à esquerda produz esterço à esquerda (-0.114 rad)
+PASS CabrioletModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS CabrioletModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS CabrioletModel.gd: pneus giram com o deslocamento
+PASS CoupeDamageModel.gd: rodas extraídas do metadado autoral
+PASS CoupeDamageModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS CoupeDamageModel.gd: eixo dianteiro e traseiro distintos
+PASS CoupeDamageModel.gd: todo cubo giratório recebeu peças de roda
+PASS CoupeDamageModel.gd: curva à direita produz esterço à direita (0.114 rad)
+PASS CoupeDamageModel.gd: eixo direcional 0 acompanha curva à direita
+PASS CoupeDamageModel.gd: eixo direcional 2 acompanha curva à direita
+PASS CoupeDamageModel.gd: eixo fixo 1 não esterça
+PASS CoupeDamageModel.gd: eixo fixo 3 não esterça
+PASS CoupeDamageModel.gd: curva à esquerda produz esterço à esquerda (-0.114 rad)
+PASS CoupeDamageModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS CoupeDamageModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS CoupeDamageModel.gd: pneus giram com o deslocamento
+PASS AmericanDumpModel.gd: rodas extraídas do metadado autoral
+PASS AmericanDumpModel.gd: cubos correspondem ao tipo de veículo (obteve 6)
+PASS AmericanDumpModel.gd: eixo dianteiro e traseiro distintos
+PASS AmericanDumpModel.gd: todo cubo giratório recebeu peças de roda
+PASS AmericanDumpModel.gd: curva à direita produz esterço à direita (0.279 rad)
+PASS AmericanDumpModel.gd: eixo direcional 0 acompanha curva à direita
+PASS AmericanDumpModel.gd: eixo direcional 3 acompanha curva à direita
+PASS AmericanDumpModel.gd: eixo fixo 1 não esterça
+PASS AmericanDumpModel.gd: eixo fixo 2 não esterça
+PASS AmericanDumpModel.gd: eixo fixo 4 não esterça
+PASS AmericanDumpModel.gd: eixo fixo 5 não esterça
+PASS AmericanDumpModel.gd: curva à esquerda produz esterço à esquerda (-0.279 rad)
+PASS AmericanDumpModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS AmericanDumpModel.gd: eixo direcional 3 acompanha curva à esquerda
+PASS AmericanDumpModel.gd: pneus giram com o deslocamento
+PASS AmericanFlatbedModel.gd: rodas extraídas do metadado autoral
+PASS AmericanFlatbedModel.gd: cubos correspondem ao tipo de veículo (obteve 6)
+PASS AmericanFlatbedModel.gd: eixo dianteiro e traseiro distintos
+PASS AmericanFlatbedModel.gd: todo cubo giratório recebeu peças de roda
+PASS AmericanFlatbedModel.gd: curva à direita produz esterço à direita (0.279 rad)
+PASS AmericanFlatbedModel.gd: eixo direcional 0 acompanha curva à direita
+PASS AmericanFlatbedModel.gd: eixo direcional 3 acompanha curva à direita
+PASS AmericanFlatbedModel.gd: eixo fixo 1 não esterça
+PASS AmericanFlatbedModel.gd: eixo fixo 2 não esterça
+PASS AmericanFlatbedModel.gd: eixo fixo 4 não esterça
+PASS AmericanFlatbedModel.gd: eixo fixo 5 não esterça
+PASS AmericanFlatbedModel.gd: curva à esquerda produz esterço à esquerda (-0.279 rad)
+PASS AmericanFlatbedModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS AmericanFlatbedModel.gd: eixo direcional 3 acompanha curva à esquerda
+PASS AmericanFlatbedModel.gd: pneus giram com o deslocamento
+PASS AmericanTankerModel.gd: rodas extraídas do metadado autoral
+PASS AmericanTankerModel.gd: cubos correspondem ao tipo de veículo (obteve 6)
+PASS AmericanTankerModel.gd: eixo dianteiro e traseiro distintos
+PASS AmericanTankerModel.gd: todo cubo giratório recebeu peças de roda
+PASS AmericanTankerModel.gd: curva à direita produz esterço à direita (0.279 rad)
+PASS AmericanTankerModel.gd: eixo direcional 0 acompanha curva à direita
+PASS AmericanTankerModel.gd: eixo direcional 3 acompanha curva à direita
+PASS AmericanTankerModel.gd: eixo fixo 1 não esterça
+PASS AmericanTankerModel.gd: eixo fixo 2 não esterça
+PASS AmericanTankerModel.gd: eixo fixo 4 não esterça
+PASS AmericanTankerModel.gd: eixo fixo 5 não esterça
+PASS AmericanTankerModel.gd: curva à esquerda produz esterço à esquerda (-0.279 rad)
+PASS AmericanTankerModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS AmericanTankerModel.gd: eixo direcional 3 acompanha curva à esquerda
+PASS AmericanTankerModel.gd: pneus giram com o deslocamento
+PASS ArcticJeepModel.gd: rodas extraídas do metadado autoral
+PASS ArcticJeepModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS ArcticJeepModel.gd: eixo dianteiro e traseiro distintos
+PASS ArcticJeepModel.gd: todo cubo giratório recebeu peças de roda
+PASS ArcticJeepModel.gd: curva à direita produz esterço à direita (0.132 rad)
+PASS ArcticJeepModel.gd: eixo direcional 0 acompanha curva à direita
+PASS ArcticJeepModel.gd: eixo direcional 2 acompanha curva à direita
+PASS ArcticJeepModel.gd: eixo fixo 1 não esterça
+PASS ArcticJeepModel.gd: eixo fixo 3 não esterça
+PASS ArcticJeepModel.gd: curva à esquerda produz esterço à esquerda (-0.132 rad)
+PASS ArcticJeepModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS ArcticJeepModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS ArcticJeepModel.gd: pneus giram com o deslocamento
+PASS AuroraExecutiveModel.gd: rodas extraídas do metadado autoral
+PASS AuroraExecutiveModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS AuroraExecutiveModel.gd: eixo dianteiro e traseiro distintos
+PASS AuroraExecutiveModel.gd: todo cubo giratório recebeu peças de roda
+PASS AuroraExecutiveModel.gd: curva à direita produz esterço à direita (0.140 rad)
+PASS AuroraExecutiveModel.gd: eixo direcional 0 acompanha curva à direita
+PASS AuroraExecutiveModel.gd: eixo direcional 2 acompanha curva à direita
+PASS AuroraExecutiveModel.gd: eixo fixo 1 não esterça
+PASS AuroraExecutiveModel.gd: eixo fixo 3 não esterça
+PASS AuroraExecutiveModel.gd: curva à esquerda produz esterço à esquerda (-0.140 rad)
+PASS AuroraExecutiveModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS AuroraExecutiveModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS AuroraExecutiveModel.gd: pneus giram com o deslocamento
+PASS BeachBuggyModel.gd: rodas extraídas do metadado autoral
+PASS BeachBuggyModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS BeachBuggyModel.gd: eixo dianteiro e traseiro distintos
+PASS BeachBuggyModel.gd: todo cubo giratório recebeu peças de roda
+PASS BeachBuggyModel.gd: curva à direita produz esterço à direita (0.090 rad)
+PASS BeachBuggyModel.gd: eixo direcional 0 acompanha curva à direita
+PASS BeachBuggyModel.gd: eixo direcional 2 acompanha curva à direita
+PASS BeachBuggyModel.gd: eixo fixo 1 não esterça
+PASS BeachBuggyModel.gd: eixo fixo 3 não esterça
+PASS BeachBuggyModel.gd: curva à esquerda produz esterço à esquerda (-0.090 rad)
+PASS BeachBuggyModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS BeachBuggyModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS BeachBuggyModel.gd: pneus giram com o deslocamento
+PASS BoxrunnerModel.gd: rodas extraídas do metadado autoral
+PASS BoxrunnerModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS BoxrunnerModel.gd: eixo dianteiro e traseiro distintos
+PASS BoxrunnerModel.gd: todo cubo giratório recebeu peças de roda
+PASS BoxrunnerModel.gd: curva à direita produz esterço à direita (0.177 rad)
+PASS BoxrunnerModel.gd: eixo direcional 0 acompanha curva à direita
+PASS BoxrunnerModel.gd: eixo direcional 2 acompanha curva à direita
+PASS BoxrunnerModel.gd: eixo fixo 1 não esterça
+PASS BoxrunnerModel.gd: eixo fixo 3 não esterça
+PASS BoxrunnerModel.gd: curva à esquerda produz esterço à esquerda (-0.177 rad)
+PASS BoxrunnerModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS BoxrunnerModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS BoxrunnerModel.gd: pneus giram com o deslocamento
+PASS BravioCrewModel.gd: rodas extraídas do metadado autoral
+PASS BravioCrewModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS BravioCrewModel.gd: eixo dianteiro e traseiro distintos
+PASS BravioCrewModel.gd: todo cubo giratório recebeu peças de roda
+PASS BravioCrewModel.gd: curva à direita produz esterço à direita (0.155 rad)
+PASS BravioCrewModel.gd: eixo direcional 0 acompanha curva à direita
+PASS BravioCrewModel.gd: eixo direcional 2 acompanha curva à direita
+PASS BravioCrewModel.gd: eixo fixo 1 não esterça
+PASS BravioCrewModel.gd: eixo fixo 3 não esterça
+PASS BravioCrewModel.gd: curva à esquerda produz esterço à esquerda (-0.155 rad)
+PASS BravioCrewModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS BravioCrewModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS BravioCrewModel.gd: pneus giram com o deslocamento
+PASS CourierVanModel.gd: rodas extraídas do metadado autoral
+PASS CourierVanModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS CourierVanModel.gd: eixo dianteiro e traseiro distintos
+PASS CourierVanModel.gd: todo cubo giratório recebeu peças de roda
+PASS CourierVanModel.gd: curva à direita produz esterço à direita (0.132 rad)
+PASS CourierVanModel.gd: eixo direcional 0 acompanha curva à direita
+PASS CourierVanModel.gd: eixo direcional 2 acompanha curva à direita
+PASS CourierVanModel.gd: eixo fixo 1 não esterça
+PASS CourierVanModel.gd: eixo fixo 3 não esterça
+PASS CourierVanModel.gd: curva à esquerda produz esterço à esquerda (-0.132 rad)
+PASS CourierVanModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS CourierVanModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS CourierVanModel.gd: pneus giram com o deslocamento
+PASS DockDeliveryVanModel.gd: rodas extraídas do metadado autoral
+PASS DockDeliveryVanModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS DockDeliveryVanModel.gd: eixo dianteiro e traseiro distintos
+PASS DockDeliveryVanModel.gd: todo cubo giratório recebeu peças de roda
+PASS DockDeliveryVanModel.gd: curva à direita produz esterço à direita (0.143 rad)
+PASS DockDeliveryVanModel.gd: eixo direcional 0 acompanha curva à direita
+PASS DockDeliveryVanModel.gd: eixo direcional 2 acompanha curva à direita
+PASS DockDeliveryVanModel.gd: eixo fixo 1 não esterça
+PASS DockDeliveryVanModel.gd: eixo fixo 3 não esterça
+PASS DockDeliveryVanModel.gd: curva à esquerda produz esterço à esquerda (-0.143 rad)
+PASS DockDeliveryVanModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS DockDeliveryVanModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS DockDeliveryVanModel.gd: pneus giram com o deslocamento
+PASS DuneBuggyModel.gd: rodas extraídas do metadado autoral
+PASS DuneBuggyModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS DuneBuggyModel.gd: eixo dianteiro e traseiro distintos
+PASS DuneBuggyModel.gd: todo cubo giratório recebeu peças de roda
+PASS DuneBuggyModel.gd: curva à direita produz esterço à direita (0.090 rad)
+PASS DuneBuggyModel.gd: eixo direcional 0 acompanha curva à direita
+PASS DuneBuggyModel.gd: eixo direcional 2 acompanha curva à direita
+PASS DuneBuggyModel.gd: eixo fixo 1 não esterça
+PASS DuneBuggyModel.gd: eixo fixo 3 não esterça
+PASS DuneBuggyModel.gd: curva à esquerda produz esterço à esquerda (-0.090 rad)
+PASS DuneBuggyModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS DuneBuggyModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS DuneBuggyModel.gd: pneus giram com o deslocamento
+PASS MedicBoxModel.gd: rodas extraídas do metadado autoral
+PASS MedicBoxModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS MedicBoxModel.gd: eixo dianteiro e traseiro distintos
+PASS MedicBoxModel.gd: todo cubo giratório recebeu peças de roda
+PASS MedicBoxModel.gd: curva à direita produz esterço à direita (0.146 rad)
+PASS MedicBoxModel.gd: eixo direcional 0 acompanha curva à direita
+PASS MedicBoxModel.gd: eixo direcional 2 acompanha curva à direita
+PASS MedicBoxModel.gd: eixo fixo 1 não esterça
+PASS MedicBoxModel.gd: eixo fixo 3 não esterça
+PASS MedicBoxModel.gd: curva à esquerda produz esterço à esquerda (-0.146 rad)
+PASS MedicBoxModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS MedicBoxModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS MedicBoxModel.gd: pneus giram com o deslocamento
+PASS MetroHatchModel.gd: rodas extraídas do metadado autoral
+PASS MetroHatchModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS MetroHatchModel.gd: eixo dianteiro e traseiro distintos
+PASS MetroHatchModel.gd: todo cubo giratório recebeu peças de roda
+PASS MetroHatchModel.gd: curva à direita produz esterço à direita (0.105 rad)
+PASS MetroHatchModel.gd: eixo direcional 0 acompanha curva à direita
+PASS MetroHatchModel.gd: eixo direcional 2 acompanha curva à direita
+PASS MetroHatchModel.gd: eixo fixo 1 não esterça
+PASS MetroHatchModel.gd: eixo fixo 3 não esterça
+PASS MetroHatchModel.gd: curva à esquerda produz esterço à esquerda (-0.105 rad)
+PASS MetroHatchModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS MetroHatchModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS MetroHatchModel.gd: pneus giram com o deslocamento
+PASS NimbusMinivanModel.gd: rodas extraídas do metadado autoral
+PASS NimbusMinivanModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS NimbusMinivanModel.gd: eixo dianteiro e traseiro distintos
+PASS NimbusMinivanModel.gd: todo cubo giratório recebeu peças de roda
+PASS NimbusMinivanModel.gd: curva à direita produz esterço à direita (0.138 rad)
+PASS NimbusMinivanModel.gd: eixo direcional 0 acompanha curva à direita
+PASS NimbusMinivanModel.gd: eixo direcional 2 acompanha curva à direita
+PASS NimbusMinivanModel.gd: eixo fixo 1 não esterça
+PASS NimbusMinivanModel.gd: eixo fixo 3 não esterça
+PASS NimbusMinivanModel.gd: curva à esquerda produz esterço à esquerda (-0.138 rad)
+PASS NimbusMinivanModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS NimbusMinivanModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS NimbusMinivanModel.gd: pneus giram com o deslocamento
+PASS NordicEstateModel.gd: rodas extraídas do metadado autoral
+PASS NordicEstateModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS NordicEstateModel.gd: eixo dianteiro e traseiro distintos
+PASS NordicEstateModel.gd: todo cubo giratório recebeu peças de roda
+PASS NordicEstateModel.gd: curva à direita produz esterço à direita (0.133 rad)
+PASS NordicEstateModel.gd: eixo direcional 0 acompanha curva à direita
+PASS NordicEstateModel.gd: eixo direcional 2 acompanha curva à direita
+PASS NordicEstateModel.gd: eixo fixo 1 não esterça
+PASS NordicEstateModel.gd: eixo fixo 3 não esterça
+PASS NordicEstateModel.gd: curva à esquerda produz esterço à esquerda (-0.133 rad)
+PASS NordicEstateModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS NordicEstateModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS NordicEstateModel.gd: pneus giram com o deslocamento
+PASS OrbitaMicroModel.gd: rodas extraídas do metadado autoral
+PASS OrbitaMicroModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS OrbitaMicroModel.gd: eixo dianteiro e traseiro distintos
+PASS OrbitaMicroModel.gd: todo cubo giratório recebeu peças de roda
+PASS OrbitaMicroModel.gd: curva à direita produz esterço à direita (0.096 rad)
+PASS OrbitaMicroModel.gd: eixo direcional 0 acompanha curva à direita
+PASS OrbitaMicroModel.gd: eixo direcional 2 acompanha curva à direita
+PASS OrbitaMicroModel.gd: eixo fixo 1 não esterça
+PASS OrbitaMicroModel.gd: eixo fixo 3 não esterça
+PASS OrbitaMicroModel.gd: curva à esquerda produz esterço à esquerda (-0.096 rad)
+PASS OrbitaMicroModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS OrbitaMicroModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS OrbitaMicroModel.gd: pneus giram com o deslocamento
+PASS PoliceCruiserModel.gd: rodas extraídas do metadado autoral
+PASS PoliceCruiserModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS PoliceCruiserModel.gd: eixo dianteiro e traseiro distintos
+PASS PoliceCruiserModel.gd: todo cubo giratório recebeu peças de roda
+PASS PoliceCruiserModel.gd: curva à direita produz esterço à direita (0.123 rad)
+PASS PoliceCruiserModel.gd: eixo direcional 0 acompanha curva à direita
+PASS PoliceCruiserModel.gd: eixo direcional 2 acompanha curva à direita
+PASS PoliceCruiserModel.gd: eixo fixo 1 não esterça
+PASS PoliceCruiserModel.gd: eixo fixo 3 não esterça
+PASS PoliceCruiserModel.gd: curva à esquerda produz esterço à esquerda (-0.123 rad)
+PASS PoliceCruiserModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS PoliceCruiserModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS PoliceCruiserModel.gd: pneus giram com o deslocamento
+PASS PoliceSUVModel.gd: rodas extraídas do metadado autoral
+PASS PoliceSUVModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS PoliceSUVModel.gd: eixo dianteiro e traseiro distintos
+PASS PoliceSUVModel.gd: todo cubo giratório recebeu peças de roda
+PASS PoliceSUVModel.gd: curva à direita produz esterço à direita (0.141 rad)
+PASS PoliceSUVModel.gd: eixo direcional 0 acompanha curva à direita
+PASS PoliceSUVModel.gd: eixo direcional 2 acompanha curva à direita
+PASS PoliceSUVModel.gd: eixo fixo 1 não esterça
+PASS PoliceSUVModel.gd: eixo fixo 3 não esterça
+PASS PoliceSUVModel.gd: curva à esquerda produz esterço à esquerda (-0.141 rad)
+PASS PoliceSUVModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS PoliceSUVModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS PoliceSUVModel.gd: pneus giram com o deslocamento
+PASS RanchSingleModel.gd: rodas extraídas do metadado autoral
+PASS RanchSingleModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS RanchSingleModel.gd: eixo dianteiro e traseiro distintos
+PASS RanchSingleModel.gd: todo cubo giratório recebeu peças de roda
+PASS RanchSingleModel.gd: curva à direita produz esterço à direita (0.132 rad)
+PASS RanchSingleModel.gd: eixo direcional 0 acompanha curva à direita
+PASS RanchSingleModel.gd: eixo direcional 2 acompanha curva à direita
+PASS RanchSingleModel.gd: eixo fixo 1 não esterça
+PASS RanchSingleModel.gd: eixo fixo 3 não esterça
+PASS RanchSingleModel.gd: curva à esquerda produz esterço à esquerda (-0.132 rad)
+PASS RanchSingleModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS RanchSingleModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS RanchSingleModel.gd: pneus giram com o deslocamento
+PASS RescuePumperModel.gd: rodas extraídas do metadado autoral
+PASS RescuePumperModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS RescuePumperModel.gd: eixo dianteiro e traseiro distintos
+PASS RescuePumperModel.gd: todo cubo giratório recebeu peças de roda
+PASS RescuePumperModel.gd: curva à direita produz esterço à direita (0.208 rad)
+PASS RescuePumperModel.gd: eixo direcional 0 acompanha curva à direita
+PASS RescuePumperModel.gd: eixo direcional 2 acompanha curva à direita
+PASS RescuePumperModel.gd: eixo fixo 1 não esterça
+PASS RescuePumperModel.gd: eixo fixo 3 não esterça
+PASS RescuePumperModel.gd: curva à esquerda produz esterço à esquerda (-0.208 rad)
+PASS RescuePumperModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS RescuePumperModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS RescuePumperModel.gd: pneus giram com o deslocamento
+PASS RouteCityModel.gd: rodas extraídas do metadado autoral
+PASS RouteCityModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS RouteCityModel.gd: eixo dianteiro e traseiro distintos
+PASS RouteCityModel.gd: todo cubo giratório recebeu peças de roda
+PASS RouteCityModel.gd: curva à direita produz esterço à direita (0.243 rad)
+PASS RouteCityModel.gd: eixo direcional 0 acompanha curva à direita
+PASS RouteCityModel.gd: eixo direcional 2 acompanha curva à direita
+PASS RouteCityModel.gd: eixo fixo 1 não esterça
+PASS RouteCityModel.gd: eixo fixo 3 não esterça
+PASS RouteCityModel.gd: curva à esquerda produz esterço à esquerda (-0.243 rad)
+PASS RouteCityModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS RouteCityModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS RouteCityModel.gd: pneus giram com o deslocamento
+PASS SnowPlowModel.gd: rodas extraídas do metadado autoral
+PASS SnowPlowModel.gd: cubos correspondem ao tipo de veículo (obteve 6)
+PASS SnowPlowModel.gd: eixo dianteiro e traseiro distintos
+PASS SnowPlowModel.gd: todo cubo giratório recebeu peças de roda
+PASS SnowPlowModel.gd: curva à direita produz esterço à direita (0.202 rad)
+PASS SnowPlowModel.gd: eixo direcional 0 acompanha curva à direita
+PASS SnowPlowModel.gd: eixo direcional 3 acompanha curva à direita
+PASS SnowPlowModel.gd: eixo fixo 1 não esterça
+PASS SnowPlowModel.gd: eixo fixo 2 não esterça
+PASS SnowPlowModel.gd: eixo fixo 4 não esterça
+PASS SnowPlowModel.gd: eixo fixo 5 não esterça
+PASS SnowPlowModel.gd: curva à esquerda produz esterço à esquerda (-0.202 rad)
+PASS SnowPlowModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS SnowPlowModel.gd: eixo direcional 3 acompanha curva à esquerda
+PASS SnowPlowModel.gd: pneus giram com o deslocamento
+PASS SportEstateModel.gd: rodas extraídas do metadado autoral
+PASS SportEstateModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS SportEstateModel.gd: eixo dianteiro e traseiro distintos
+PASS SportEstateModel.gd: todo cubo giratório recebeu peças de roda
+PASS SportEstateModel.gd: curva à direita produz esterço à direita (0.133 rad)
+PASS SportEstateModel.gd: eixo direcional 0 acompanha curva à direita
+PASS SportEstateModel.gd: eixo direcional 2 acompanha curva à direita
+PASS SportEstateModel.gd: eixo fixo 1 não esterça
+PASS SportEstateModel.gd: eixo fixo 3 não esterça
+PASS SportEstateModel.gd: curva à esquerda produz esterço à esquerda (-0.133 rad)
+PASS SportEstateModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS SportEstateModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS SportEstateModel.gd: pneus giram com o deslocamento
+PASS SummitSUVModel.gd: rodas extraídas do metadado autoral
+PASS SummitSUVModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS SummitSUVModel.gd: eixo dianteiro e traseiro distintos
+PASS SummitSUVModel.gd: todo cubo giratório recebeu peças de roda
+PASS SummitSUVModel.gd: curva à direita produz esterço à direita (0.132 rad)
+PASS SummitSUVModel.gd: eixo direcional 0 acompanha curva à direita
+PASS SummitSUVModel.gd: eixo direcional 2 acompanha curva à direita
+PASS SummitSUVModel.gd: eixo fixo 1 não esterça
+PASS SummitSUVModel.gd: eixo fixo 3 não esterça
+PASS SummitSUVModel.gd: curva à esquerda produz esterço à esquerda (-0.132 rad)
+PASS SummitSUVModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS SummitSUVModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS SummitSUVModel.gd: pneus giram com o deslocamento
+PASS TowmasterModel.gd: rodas extraídas do metadado autoral
+PASS TowmasterModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS TowmasterModel.gd: eixo dianteiro e traseiro distintos
+PASS TowmasterModel.gd: todo cubo giratório recebeu peças de roda
+PASS TowmasterModel.gd: curva à direita produz esterço à direita (0.181 rad)
+PASS TowmasterModel.gd: eixo direcional 0 acompanha curva à direita
+PASS TowmasterModel.gd: eixo direcional 2 acompanha curva à direita
+PASS TowmasterModel.gd: eixo fixo 1 não esterça
+PASS TowmasterModel.gd: eixo fixo 3 não esterça
+PASS TowmasterModel.gd: curva à esquerda produz esterço à esquerda (-0.181 rad)
+PASS TowmasterModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS TowmasterModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS TowmasterModel.gd: pneus giram com o deslocamento
+PASS UnionSedanModel.gd: rodas extraídas do metadado autoral
+PASS UnionSedanModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS UnionSedanModel.gd: eixo dianteiro e traseiro distintos
+PASS UnionSedanModel.gd: todo cubo giratório recebeu peças de roda
+PASS UnionSedanModel.gd: curva à direita produz esterço à direita (0.123 rad)
+PASS UnionSedanModel.gd: eixo direcional 0 acompanha curva à direita
+PASS UnionSedanModel.gd: eixo direcional 2 acompanha curva à direita
+PASS UnionSedanModel.gd: eixo fixo 1 não esterça
+PASS UnionSedanModel.gd: eixo fixo 3 não esterça
+PASS UnionSedanModel.gd: curva à esquerda produz esterço à esquerda (-0.123 rad)
+PASS UnionSedanModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS UnionSedanModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS UnionSedanModel.gd: pneus giram com o deslocamento
+PASS ValeCrossoverModel.gd: rodas extraídas do metadado autoral
+PASS ValeCrossoverModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS ValeCrossoverModel.gd: eixo dianteiro e traseiro distintos
+PASS ValeCrossoverModel.gd: todo cubo giratório recebeu peças de roda
+PASS ValeCrossoverModel.gd: curva à direita produz esterço à direita (0.118 rad)
+PASS ValeCrossoverModel.gd: eixo direcional 0 acompanha curva à direita
+PASS ValeCrossoverModel.gd: eixo direcional 2 acompanha curva à direita
+PASS ValeCrossoverModel.gd: eixo fixo 1 não esterça
+PASS ValeCrossoverModel.gd: eixo fixo 3 não esterça
+PASS ValeCrossoverModel.gd: curva à esquerda produz esterço à esquerda (-0.118 rad)
+PASS ValeCrossoverModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS ValeCrossoverModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS ValeCrossoverModel.gd: pneus giram com o deslocamento
+PASS VerticeMidEngineModel.gd: rodas extraídas do metadado autoral
+PASS VerticeMidEngineModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS VerticeMidEngineModel.gd: eixo dianteiro e traseiro distintos
+PASS VerticeMidEngineModel.gd: todo cubo giratório recebeu peças de roda
+PASS VerticeMidEngineModel.gd: curva à direita produz esterço à direita (0.122 rad)
+PASS VerticeMidEngineModel.gd: eixo direcional 0 acompanha curva à direita
+PASS VerticeMidEngineModel.gd: eixo direcional 2 acompanha curva à direita
+PASS VerticeMidEngineModel.gd: eixo fixo 1 não esterça
+PASS VerticeMidEngineModel.gd: eixo fixo 3 não esterça
+PASS VerticeMidEngineModel.gd: curva à esquerda produz esterço à esquerda (-0.122 rad)
+PASS VerticeMidEngineModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS VerticeMidEngineModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS VerticeMidEngineModel.gd: pneus giram com o deslocamento
+PASS WoodyWagonModel.gd: rodas extraídas do metadado autoral
+PASS WoodyWagonModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS WoodyWagonModel.gd: eixo dianteiro e traseiro distintos
+PASS WoodyWagonModel.gd: todo cubo giratório recebeu peças de roda
+PASS WoodyWagonModel.gd: curva à direita produz esterço à direita (0.130 rad)
+PASS WoodyWagonModel.gd: eixo direcional 0 acompanha curva à direita
+PASS WoodyWagonModel.gd: eixo direcional 2 acompanha curva à direita
+PASS WoodyWagonModel.gd: eixo fixo 1 não esterça
+PASS WoodyWagonModel.gd: eixo fixo 3 não esterça
+PASS WoodyWagonModel.gd: curva à esquerda produz esterço à esquerda (-0.130 rad)
+PASS WoodyWagonModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS WoodyWagonModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS WoodyWagonModel.gd: pneus giram com o deslocamento
+PASS YellowCabModel.gd: rodas extraídas do metadado autoral
+PASS YellowCabModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS YellowCabModel.gd: eixo dianteiro e traseiro distintos
+PASS YellowCabModel.gd: todo cubo giratório recebeu peças de roda
+PASS YellowCabModel.gd: curva à direita produz esterço à direita (0.123 rad)
+PASS YellowCabModel.gd: eixo direcional 0 acompanha curva à direita
+PASS YellowCabModel.gd: eixo direcional 2 acompanha curva à direita
+PASS YellowCabModel.gd: eixo fixo 1 não esterça
+PASS YellowCabModel.gd: eixo fixo 3 não esterça
+PASS YellowCabModel.gd: curva à esquerda produz esterço à esquerda (-0.123 rad)
+PASS YellowCabModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS YellowCabModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS YellowCabModel.gd: pneus giram com o deslocamento
+PASS PortBossRoadsterModel.gd: rodas extraídas do metadado autoral
+PASS PortBossRoadsterModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS PortBossRoadsterModel.gd: eixo dianteiro e traseiro distintos
+PASS PortBossRoadsterModel.gd: todo cubo giratório recebeu peças de roda
+PASS PortBossRoadsterModel.gd: curva à direita produz esterço à direita (0.125 rad)
+PASS PortBossRoadsterModel.gd: eixo direcional 0 acompanha curva à direita
+PASS PortBossRoadsterModel.gd: eixo direcional 2 acompanha curva à direita
+PASS PortBossRoadsterModel.gd: eixo fixo 1 não esterça
+PASS PortBossRoadsterModel.gd: eixo fixo 3 não esterça
+PASS PortBossRoadsterModel.gd: curva à esquerda produz esterço à esquerda (-0.125 rad)
+PASS PortBossRoadsterModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS PortBossRoadsterModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS PortBossRoadsterModel.gd: pneus giram com o deslocamento
+PASS PortForkliftModel.gd: rodas extraídas do metadado autoral
+PASS PortForkliftModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS PortForkliftModel.gd: eixo dianteiro e traseiro distintos
+PASS PortForkliftModel.gd: todo cubo giratório recebeu peças de roda
+PASS PortForkliftModel.gd: curva à direita produz esterço à direita (0.073 rad)
+PASS PortForkliftModel.gd: eixo direcional 2 acompanha curva à direita
+PASS PortForkliftModel.gd: eixo direcional 3 acompanha curva à direita
+PASS PortForkliftModel.gd: eixo fixo 0 não esterça
+PASS PortForkliftModel.gd: eixo fixo 1 não esterça
+PASS PortForkliftModel.gd: curva à esquerda produz esterço à esquerda (-0.073 rad)
+PASS PortForkliftModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS PortForkliftModel.gd: eixo direcional 3 acompanha curva à esquerda
+PASS PortForkliftModel.gd: pneus giram com o deslocamento
+PASS MonalizaModel.gd: rodas extraídas do metadado autoral
+PASS MonalizaModel.gd: cubos correspondem ao tipo de veículo (obteve 4)
+PASS MonalizaModel.gd: eixo dianteiro e traseiro distintos
+PASS MonalizaModel.gd: todo cubo giratório recebeu peças de roda
+PASS MonalizaModel.gd: curva à direita produz esterço à direita (0.114 rad)
+PASS MonalizaModel.gd: eixo direcional 0 acompanha curva à direita
+PASS MonalizaModel.gd: eixo direcional 2 acompanha curva à direita
+PASS MonalizaModel.gd: eixo fixo 1 não esterça
+PASS MonalizaModel.gd: eixo fixo 3 não esterça
+PASS MonalizaModel.gd: curva à esquerda produz esterço à esquerda (-0.114 rad)
+PASS MonalizaModel.gd: eixo direcional 0 acompanha curva à esquerda
+PASS MonalizaModel.gd: eixo direcional 2 acompanha curva à esquerda
+PASS MonalizaModel.gd: pneus giram com o deslocamento
+PASS proa 0.0 rad: pneu aponta 0.300 rad ao lado do carro, esterço pedido 0.300
+PASS proa 0.0 rad: pneu aponta -0.300 rad ao lado do carro, esterço pedido -0.300
+PASS proa 2.0 rad: pneu aponta 0.300 rad ao lado do carro, esterço pedido 0.300
+PASS proa 2.0 rad: pneu aponta -0.300 rad ao lado do carro, esterço pedido -0.300
+PASS proa -1.2 rad: pneu aponta 0.300 rad ao lado do carro, esterço pedido 0.300
+PASS proa -1.2 rad: pneu aponta -0.300 rad ao lado do carro, esterço pedido -0.300
+Godot_v4.7.2-stable_win64_console.exe : WARNING: Camera2D overridden to physics process mode due to use of physics 
+interpolation.
+No D:\geteco\game\tests\perf_audit_claude\run_02b_regressions.ps1:24 caractere:3
++   & $godot --path D:/geteco/game --script "res://tests/$t.gd" 2>&1 |  ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Camera... interpolation.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tests/test_vehicle_wheel_steering.gd:135)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+PASS PlayerCar monta quatro rodas articuladas
+PASS volante à direita chega ao batente com o carro parado
+PASS roda dianteira 0 acompanha o volante parado
+PASS roda dianteira 2 acompanha o volante parado
+PASS roda traseira 1 permanece reta
+PASS roda traseira 3 permanece reta
+PASS roda dianteira 0 recentraliza ao soltar o volante
+PASS roda dianteira 2 recentraliza ao soltar o volante
+  [trânsito] progresso=1743.4 rodas=4 esterço=0.042 renders=604
+PASS trânsito na curva à direita monta quatro rodas
+PASS trânsito na curva à direita esterça conforme o entre-eixos (0.042 rad)
+PASS trânsito: cubo dianteiro acompanha a curva à direita (-0.042)
+PASS trânsito na curva à direita: eixo traseiro reto
+  [trânsito] progresso=1743.4 rodas=4 esterço=-0.042 renders=601
+PASS trânsito na curva à esquerda monta quatro rodas
+PASS trânsito na curva à esquerda esterça conforme o entre-eixos (-0.042 rad)
+PASS trânsito: cubo dianteiro acompanha a curva à esquerda (0.042)
+PASS trânsito na curva à esquerda: eixo traseiro reto
+VEHICLE_WHEEL_STEERING failures=0
