@@ -169,6 +169,7 @@ func _run(path: String, new_game: bool) -> void:
 	_mark_phase("emergency")
 	screen.set_stage(0.93,_text("Preparando áudio…","Preparing audio…"))
 	await preload("res://audio/VehicleEngineSound.gd").prepare_catalog(get_tree())
+	preload("res://audio/combat/CombatImpactAudio.gd").prepare(world)
 	_mark_phase("audio")
 	screen.set_stage(0.98,_text("Finalizando a entrada…","Finishing up…"))
 	for i in 4: await _draw_frame()

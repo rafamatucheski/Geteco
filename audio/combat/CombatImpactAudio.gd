@@ -11,20 +11,34 @@ static func play_hurt(actor: Node2D, damage: float) -> void:
 	if damage <= 0.0: return
 	play_hit(actor, actor.global_position, &"flesh", damage, actor.get_instance_id())
 
-static func play_hit(context: Node, pos: Vector2, material: StringName, damage: float = 15.0, subject_id: int = 0) -> void:
+static func ensure_pool(context: Node) -> Node:
+	if not is_instance_valid(context):
+		return null
 	var world := preload("res://guns/combat/CombatWorld.gd").scene_for(context)
 	if world == null:
-		world = context.get_parent()
+		world = context if (context is Node2D and not (context is Window)) else context.get_parent()
+	if world == null:
+		return null
 	var pool := world.get_node_or_null("CombatImpactAudio")
 	if pool == null:
-		pool = load("res://audio/combat/CombatImpactAudio.gd").new()
+		var script: Script = preload("res://audio/combat/CombatImpactAudio.gd")
+		pool = script.new()
 		pool.name = "CombatImpactAudio"
 		world.add_child(pool)
-	pool.play_impact(pos, material, damage, subject_id)
+	return pool
+
+static func prepare(context: Node = null) -> void:
+	BANK.prepare_impact_palette()
+	if is_instance_valid(context):
+		ensure_pool(context)
+
+static func play_hit(context: Node, pos: Vector2, material: StringName, damage: float = 15.0, subject_id: int = 0) -> void:
+	var pool := ensure_pool(context)
+	if pool != null:
+		pool.play_impact(pos, material, damage, subject_id)
 
 func _ready() -> void:
-	for material in ["metal", "concrete", "flesh", "wood", "glass"]:
-		BANK.sound(material)
+	BANK.prepare_impact_palette()
 	for i in MAX_VOICES:
 		var player := AudioStreamPlayer2D.new()
 		player.bus = &"SFX"
