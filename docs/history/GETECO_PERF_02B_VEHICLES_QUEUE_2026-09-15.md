@@ -431,6 +431,13 @@ powershell -File tests/perf_audit_claude/run_02b_ab_sessions.ps1 -Worktree <work
 As worktrees temporárias foram removidas ao final; a árvore de trabalho do usuário nunca
 foi tocada.
 
+### Commit
+
+`0dd0be1` — `perf(vehicles): reduzir custo de construção da apresentação e tornar a fila
+verificável (GETECO-PERF-02B)`, sobre `9bd10e0`. Contém apenas os 4 arquivos de produção,
+este relatório, os meus scripts de diagnóstico e as evidências (298 arquivos, 4,52 MiB).
+As alterações locais das outras sessões ficaram de fora e intactas. **Sem push.**
+
 ---
 
 ## HANDOFF PARA REVISÃO
