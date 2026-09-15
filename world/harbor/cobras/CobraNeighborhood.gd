@@ -7,6 +7,8 @@ const FINISH := preload("res://world/harbor/ExteriorFinish.gd")
 const SURFACE := preload("res://world/harbor/UrbanGround.gd")
 const HOUSE := preload("res://world/harbor/cobras/CobraResidence.gd")
 const LAMP := preload("res://StreetLamp.gd")
+const BARREL := preload("res://world/harbor/cobras/CobraBurningBarrel.gd")
+const BARRICADE := preload("res://world/harbor/cobras/CobraBarricade.gd")
 const CENTER := Vector2(7700, 1700)
 const RADIUS := 300.0
 const WIDTH := 84.0
@@ -103,6 +105,17 @@ func _ready() -> void:
 		var lamp := LAMP.new()
 		lamp.position = p
 		add_child(lamp)
+	# Território hostil: barris de fogo nos três postos de guarda reais
+	# (mesmos pontos consumidos por CobraTerritory.get_spawn_points()) e
+	# barricada de pneu flanqueando a única via de acesso ao bairro.
+	for p in [Vector2(7185, 1615), Vector2(7375, 1400), Vector2(8185, 1730)]:
+		var barrel := BARREL.new()
+		barrel.position = p
+		add_child(barrel)
+	for p in [Vector2(7300, 1625), Vector2(7300, 1775)]:
+		var barricade := BARRICADE.new()
+		barricade.position = p
+		add_child(barricade)
 	_solid_line("EasternCoast", Vector2(8520,960), Vector2(8520,2410), 24.0)
 	for fence in FENCES:
 		_solid_line("YardFence",fence[0],fence[1],5.0)
@@ -255,6 +268,7 @@ func _draw() -> void:
 		var a := float(i)*2.39996
 		var p := CENTER+Vector2(cos(a),sin(a))*sqrt(float(i)/220.0)*190
 		draw_line(p,p+Vector2(1,-4),Color("819260"),1.3)
+	_draw_cobra_emblem()
 	# North opening matches the authored footpath; the rest of the rim stays closed.
 	draw_arc(CENTER,198,-PI/2+.09,3*PI/2-.09,64,Color("938674"),5,true)
 	for garden_path in get_garden_paths():
@@ -272,6 +286,28 @@ func _draw() -> void:
 	draw_rect(Rect2(6930,2220,270,145),Color("7b735e"))
 	for i in 5:
 		draw_circle(Vector2(8430+i%2*14,1690+i*20),9,Color("292e2b"))
+
+## Marca de gangue pintada no chão da praça central — herda a composição do
+## brasão do território legado (IronCobraCulDeSac.gd), com a paleta terrosa
+## que o resto do bairro já usa em vez do vermelho saturado do original.
+func _draw_cobra_emblem() -> void:
+	var origin := CENTER + Vector2(0, -30)
+	var scale_factor := 1.6
+	draw_circle(origin, 34.0 * scale_factor, Color(0.30, 0.05, 0.05, 0.55))
+	draw_arc(origin, 34.0 * scale_factor, 0, TAU, 32, Color("6b1414"), 3.0)
+	var snake_body := PackedVector2Array([
+		Vector2(0, -22), Vector2(12, -14), Vector2(14, -2), Vector2(4, 8),
+		Vector2(-12, 14), Vector2(-10, 22), Vector2(0, 24), Vector2(8, 20)
+	])
+	for i in snake_body.size():
+		snake_body[i] = origin + snake_body[i] * scale_factor
+	draw_polyline(snake_body, Color("8c3226"), 6.0 * scale_factor)
+	var head := origin + Vector2(0, -22) * scale_factor
+	draw_circle(head, 8.0 * scale_factor, Color("a83c2e"))
+	draw_line(head + Vector2(-3, 2) * scale_factor, head + Vector2(-3, 9) * scale_factor, Color("d8cbb0"), 2.0)
+	draw_line(head + Vector2(3, 2) * scale_factor, head + Vector2(3, 9) * scale_factor, Color("d8cbb0"), 2.0)
+	draw_circle(head + Vector2(-3, -2) * scale_factor, 2.0, Color("c9a13a"))
+	draw_circle(head + Vector2(3, -2) * scale_factor, 2.0, Color("c9a13a"))
 
 func get_garden_paths() -> Array[PackedVector2Array]:
 	# Stop 2px beyond the south asphalt edge, accounting for its curved profile.

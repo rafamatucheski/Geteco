@@ -77,9 +77,9 @@ func run() -> void:
 	states.clear()
 	subject.position = Vector2(250, 200)
 	await seconds(2.8)
-	check(states == ["watch", "warning", "confrontation", "combat"], "Escalation order is visible and deterministic: %s" % [states])
+	check(states == ["watch", "warning", "confrontation"], "Escalation stalls at confrontation without player aggression: %s" % [states])
 	await seconds(1.2)
-	check(subject.damage_received > 0, "Hostile guards fire real project bullets which reach subject")
+	check(subject.damage_received == 0, "Lingering alone never draws real fire; only player aggression does")
 	await retreat()
 	var old_damage := subject.damage_received
 	await seconds(0.8)

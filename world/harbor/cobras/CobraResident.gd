@@ -138,6 +138,10 @@ func take_damage(amount: int, is_player_attacker: bool = false) -> void:
 	is_gangster = false
 	super.take_damage(amount, is_player_attacker)
 	is_gangster = old_gangster
+	# A bystander (non-guard) provokes the gang too, but only on a kill, not
+	# a graze — "shoot them or kill someone" from the player's side.
+	if is_player_attacker and not guard and is_dead and is_instance_valid(territory):
+		territory.report_aggression()
 	if guard:
 		is_scared = false
 		combat_target = null
@@ -145,7 +149,10 @@ func take_damage(amount: int, is_player_attacker: bool = false) -> void:
 func get_run_over(impact_velocity: Vector2, is_player_driver: bool = false) -> void:
 	if guard and is_player_driver and not is_dead and is_instance_valid(territory):
 		territory.report_aggression()
+	var was_dead := is_dead
 	super.get_run_over(impact_velocity, is_player_driver)
+	if not guard and is_player_driver and not was_dead and is_dead and is_instance_valid(territory):
+		territory.report_aggression()
 
 func panic() -> void:
 	if guard or is_dead:

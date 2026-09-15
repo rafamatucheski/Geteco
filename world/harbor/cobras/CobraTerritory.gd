@@ -162,7 +162,11 @@ func _physics_process(delta: float) -> void:
 		_set_state("calm")
 		return
 	_exposure += elapsed
-	if _aggressor or _exposure >= notice_seconds + warning_seconds + confrontation_seconds:
+	# Lingering alone never draws real fire: the ambient ceiling is
+	# "confrontation". Only report_aggression() (the player shot, ran over,
+	# or killed someone here) sets _aggressor and earns "combat" — this is
+	# what lets a mission occupy this block without accidental crossfire.
+	if _aggressor:
 		_set_state("combat")
 	elif _exposure >= notice_seconds + warning_seconds:
 		_set_state("confrontation")
