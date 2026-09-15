@@ -1,0 +1,65 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Godot_v4.7.2-stable_win64_console.exe : WARNING: Camera2D overridden to physics process mode due to use of physics 
+interpolation.
+No linha:1 caractere:542
++ ... tdout.txt"; & 'D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godo ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Camera... interpolation.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://ui/GameLoading.gd:143)
+       [1] _draw_frame (res://ui/GameLoading.gd:110)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+PERF_AUDIT_STATUS complete
+PERF_AUDIT_PHASES {"drive":{"frames":1008,"max_ms":1762.85900878906,"mean_fps":33.663156558799,"monitor_physics_max_ms":953.2509765625,"monitor_physics_p50_ms":7.24900007247925,"monitor_physics_p99_ms":953.2509765625,"monitor_process_max_ms":1714.30004882813,"monitor_process_p50_ms":22.8729991912842,"monitor_process_p99_ms":237.615005493164,"over_100":17,"over_16_67":985,"over_20":567,"over_33_33":152,"over_50":51,"p50_ms":21.8139991760254,"p95_ms":50.4210014343262,"p99_ms":138.779006958008,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":29.9437160100937},"drive_warmup_idle":{"frames":247,"max_ms":130.141998291016,"mean_fps":49.4078459626971,"monitor_physics_max_ms":8.57100009918213,"monitor_physics_p50_ms":7.52099990844727,"monitor_physics_p99_ms":8.57100009918213,"monitor_process_max_ms":93.7529983520508,"monitor_process_p50_ms":19.1049995422363,"monitor_process_p99_ms":93.7529983520508,"over_100":2,"over_16_67":198,"over_20":64,"over_33_33":6,"over_50":3,"p50_ms":17.4860000610352,"p95_ms":28.4769992828369,"p99_ms":60.5180015563965,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":4.99920600032806},"harbor_return_0":{"frames":418,"max_ms":62.2849998474121,"mean_fps":41.7189275976868,"monitor_physics_max_ms":11.7740001678467,"monitor_physics_p50_ms":7.12200021743774,"monitor_physics_p99_ms":11.7740001678467,"monitor_process_max_ms":39.2669982910156,"monitor_process_p50_ms":21.7280006408691,"monitor_process_p99_ms":39.2669982910156,"over_100":0,"over_16_67":418,"over_20":311,"over_33_33":10,"over_50":2,"p50_ms":22.7929992675781,"p95_ms":31.7229995727539,"p99_ms":35.4329986572266,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":10.0194330024719},"harbor_return_1":{"frames":515,"max_ms":54.1539993286133,"mean_fps":51.4216334122409,"monitor_physics_max_ms":9.3149995803833,"monitor_physics_p50_ms":8.43200016021729,"monitor_physics_p99_ms":9.3149995803833,"monitor_process_max_ms":37.6769981384277,"monitor_process_p50_ms":20.3840007781982,"monitor_process_p99_ms":37.6769981384277,"over_100":0,"over_16_67":445,"over_20":154,"over_33_33":2,"over_50":2,"p50_ms":17.9340000152588,"p95_ms":26.7310009002686,"p99_ms":28.9559993743896,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":10.0152400035858},"loading":{"frames":457,"max_ms":23411.650390625,"mean_fps":12.2356453395024,"monitor_physics_max_ms":101.123001098633,"monitor_physics_p50_ms":0.128999993205071,"monitor_physics_p99_ms":101.123001098633,"monitor_process_max_ms":23379.19921875,"monitor_process_p50_ms":0.890999972820282,"monitor_process_p99_ms":257.93798828125,"over_100":25,"over_16_67":184,"over_20":131,"over_33_33":62,"over_50":50,"p50_ms":16.6480007171631,"p95_ms":104.837997436523,"p99_ms":207.095001220703,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":37.3498893862665},"micro":{"frames":1,"max_ms":175.27799987793,"mean_fps":5.70522256470543,"monitor_physics_max_ms":8.74100017547607,"monitor_physics_p50_ms":8.74100017547607,"monitor_physics_p99_ms":8.74100017547607,"monitor_process_max_ms":23.753999710083,"monitor_process_p50_ms":23.753999710083,"monitor_process_p99_ms":23.753999710083,"over_100":1,"over_16_67":1,"over_20":1,"over_33_33":1,"over_50":1,"p50_ms":175.27799987793,"p95_ms":175.27799987793,"p99_ms":175.27799987793,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":0.17527799987793},"mountain_0":{"frames":367,"max_ms":99.8850021362305,"mean_fps":36.6155572567198,"monitor_physics_max_ms":8.48200035095215,"monitor_physics_p50_ms":7.23199987411499,"monitor_physics_p99_ms":8.48200035095215,"monitor_process_max_ms":464.6669921875,"monitor_process_p50_ms":25.4640007019043,"monitor_process_p99_ms":464.6669921875,"over_100":0,"over_16_67":367,"over_20":356,"over_33_33":45,"over_50":2,"p50_ms":26.7840003967285,"p95_ms":35.5499992370605,"p99_ms":42.6860008239746,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":10.0230619850159},"mountain_1":{"frames":438,"max_ms":35.8139991760254,"mean_fps":43.7501555494541,"monitor_physics_max_ms":9.98600006103516,"monitor_physics_p50_ms":7.34499979019165,"monitor_physics_p99_ms":9.98600006103516,"monitor_process_max_ms":25.4850006103516,"monitor_process_p50_ms":22.8920001983643,"monitor_process_p99_ms":25.4850006103516,"over_100":0,"over_16_67":438,"over_20":290,"over_33_33":6,"over_50":0,"p50_ms":21.4780006408691,"p95_ms":29.8449993133545,"p99_ms":33.9469985961914,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":10.0113929767609},"pursuit":{"frames":1045,"max_ms":738.515014648438,"mean_fps":34.8930446011997,"monitor_physics_max_ms":705.361022949219,"monitor_physics_p50_ms":9.00300025939941,"monitor_physics_p99_ms":705.361022949219,"monitor_process_max_ms":102.774002075195,"monitor_process_p50_ms":22.6429996490479,"monitor_process_p99_ms":102.774002075195,"over_100":5,"over_16_67":1045,"over_20":972,"over_33_33":124,"over_50":15,"p50_ms":27.548999786377,"p95_ms":36.5779991149902,"p99_ms":65.5459976196289,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":29.9486620311737},"pursuit_reset":{"frames":76,"max_ms":40.8110008239746,"mean_fps":37.5418022703519,"monitor_physics_max_ms":12.460000038147,"monitor_physics_p50_ms":8.37800025939941,"monitor_physics_p99_ms":12.460000038147,"monitor_process_max_ms":30.048999786377,"monitor_process_p50_ms":29.1490001678467,"monitor_process_p99_ms":30.048999786377,"over_100":0,"over_16_67":76,"over_20":65,"over_33_33":9,"over_50":0,"p50_ms":26.6840000152588,"p95_ms":36.5060005187988,"p99_ms":40.8110008239746,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":2.02441000175476},"save_load":{"frames":99,"max_ms":58.5789985656738,"mean_fps":48.5546887255646,"monitor_physics_max_ms":10.0780000686646,"monitor_physics_p50_ms":6.67399978637695,"monitor_physics_p99_ms":10.0780000686646,"monitor_process_max_ms":43.6969985961914,"monitor_process_p50_ms":43.6969985961914,"monitor_process_p99_ms":43.6969985961914,"over_100":0,"over_16_67":98,"over_20":39,"over_33_33":1,"over_50":1,"p50_ms":18.5699996948242,"p95_ms":27.1989994049072,"p99_ms":58.5789985656738,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":2.03893800163269},"seam_0":{"frames":377,"max_ms":3222.5830078125,"mean_fps":20.2433018683813,"monitor_physics_max_ms":36.4669990539551,"monitor_physics_p50_ms":7.16800022125244,"monitor_physics_p99_ms":36.4669990539551,"monitor_process_max_ms":3127.1220703125,"monitor_process_p50_ms":30.673999786377,"monitor_process_p99_ms":3127.1220703125,"over_100":19,"over_16_67":377,"over_20":369,"over_33_33":126,"over_50":38,"p50_ms":30.0639991760254,"p95_ms":103.430999755859,"p99_ms":399.625,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":18.6234440631866},"seam_1":{"frames":221,"max_ms":370.545989990234,"mean_fps":36.7572764666114,"monitor_physics_max_ms":10.8020000457764,"monitor_physics_p50_ms":6.93300008773804,"monitor_physics_p99_ms":10.8020000457764,"monitor_process_max_ms":331.048004150391,"monitor_process_p50_ms":24.1359996795654,"monitor_process_p99_ms":331.048004150391,"over_100":1,"over_16_67":221,"over_20":209,"over_33_33":12,"over_50":2,"p50_ms":25.6480007171631,"p95_ms":33.4990005493164,"p99_ms":45.5769996643066,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":6.01241498947144},"settle":{"frames":73,"max_ms":255.386993408203,"mean_fps":24.231415890012,"monitor_physics_max_ms":114.299003601074,"monitor_physics_p50_ms":8.42399978637695,"monitor_physics_p99_ms":114.299003601074,"monitor_process_max_ms":122.831001281738,"monitor_process_p50_ms":97.1579971313477,"monitor_process_p99_ms":122.831001281738,"over_100":8,"over_16_67":73,"over_20":66,"over_33_33":20,"over_50":10,"p50_ms":26.8209991455078,"p95_ms":142.57600402832,"p99_ms":255.386993408203,"presentation_build_ms_max_frame":0.0,"presentation_build_ms_total":0.0,"presentation_builds":0,"seconds":3.01261801338196}}
+PERF_AUDIT_LOADING {"begin_ms":0.75,"finished_ms":37467.227,"pending_presentations_at_finish":134,"phase_times_ms":{"audio":1512.12,"before_resources":169.67,"emergency":3152.398,"resident_vehicles":20.966,"resources":5146.778,"scene_ready":10382.017,"total":37413.399,"vehicle_models":3003.2,"world_build":13623.89},"total_ms":37466.477}
+WARNING: 27 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 45 RIDs of type "Texture" were leaked.
+   at: finalize (servers/rendering/rendering_device.cpp:8900)
+WARNING: 226 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 12 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+ERROR: 2 RID allocations of type 'P11GodotBody2D' were leaked at exit.
+ERROR: 1 RID allocations of type 'P11GodotArea2D' were leaked at exit.
+ERROR: 2 RID allocations of type 'P12GodotShape2D' were leaked at exit.
+ERROR: 16 RID allocations of type 'N10RendererRD11MeshStorage4MeshE' were leaked at exit.
+ERROR: 45 RID allocations of type 'N10RendererRD14TextureStorage7TextureE' were leaked at exit.
+ERROR: 41 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.

@@ -1,0 +1,27 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Godot_v4.7.2-stable_win64_console.exe : WARNING: Camera2D overridden to physics process mode due to use of physics 
+interpolation.
+No linha:1 caractere:489
++ ... e/appdata"; & 'D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godo ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Camera... interpolation.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/measure_game_frame_stability.gd:43)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+FRAME_STABILITY {"args":["--normal-cap","out_dir=D:/geteco/game/tests/perf_audit_claude/results/control_frame_stability"],"debug_build":true,"engine":{"build":"official","hash":"ed1daf0bf001b61586d9930840f2f1394092c079","hex":263938,"major":4,"minor":7,"patch":2,"status":"stable","string":"4.7.2-stable (official)","timestamp":0},"executable":"D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64.exe","fps":43.2226573768898,"frames":433,"gpu":"NVIDIA GeForce RTX 4060 Laptop GPU","is_dark":false,"max_fps":60,"max_ms":254.364,"over_33ms":17,"over_66ms":6,"p50_ms":19.319,"p95_ms":32.455,"p99_ms":119.833,"police_peak":0,"renderer":"mobile","resolution":"(1280, 720)","scenario":"warmup","seconds":10.017894,"streaming":{"memory_bytes":1037025877,"population":{"active_pedestrians":60,"active_traffic":7,"sleeping_pedestrians":99,"sleeping_traffic":54},"ready":false,"region":"harbor","resident_regions":1,"sleeping_traffic":54},"time_of_day_max":0.450199923333333,"time_of_day_min":0.450004247916667,"vsync":1,"weather_states":[0]}
+FRAME_STABILITY {"args":["--normal-cap","out_dir=D:/geteco/game/tests/perf_audit_claude/results/control_frame_stability"],"debug_build":true,"engine":{"build":"official","hash":"ed1daf0bf001b61586d9930840f2f1394092c079","hex":263938,"major":4,"minor":7,"patch":2,"status":"stable","string":"4.7.2-stable (official)","timestamp":0},"executable":"D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64.exe","fps":43.5439149710943,"frames":1307,"gpu":"NVIDIA GeForce RTX 4060 Laptop GPU","is_dark":false,"max_fps":60,"max_ms":244.063,"over_33ms":43,"over_66ms":16,"p50_ms":19.833,"p95_ms":30.592,"p99_ms":80.307,"police_peak":0,"renderer":"mobile","resolution":"(1280, 720)","scenario":"driving","seconds":30.015675,"streaming":{"memory_bytes":1064721660,"population":{"active_pedestrians":53,"active_traffic":12,"sleeping_pedestrians":111,"sleeping_traffic":49},"ready":false,"region":"harbor","resident_regions":1,"sleeping_traffic":49},"time_of_day_max":0.450219062222222,"time_of_day_min":0.450026171666667,"vsync":1,"weather_states":[0]}
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

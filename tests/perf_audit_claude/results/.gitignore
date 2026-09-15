@@ -1,0 +1,4 @@
+# Dados de usuário isolados de cada run (APPDATA do processo de teste, cache de
+# shaders, settings.cfg) e saves descartáveis: não pertencem ao repositório.
+*/appdata/
+*/saves/
