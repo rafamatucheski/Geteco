@@ -1,8 +1,21 @@
-# Plano de reorganização de pastas por domínio (proposta, não executada)
+# Plano de reorganização de pastas por domínio
 
-> Status: **planejamento**, nada foi movido ainda. Ver decisões tomadas em
-> [Organização de pastas](ESTADO_DO_PROJETO.md#organização-de-pastas--análise-e-recomendação)
-> em [ESTADO_DO_PROJETO.md](ESTADO_DO_PROJETO.md).
+> Status (2026-09-15): **5 de 8 domínios executados e commitados** —
+> `economy/`, `guns/`, `cars/`, `geodata/`, `systems/`. Cada um foi movido via
+> `tools/move_folder_refactor.py`, verificado com `check_references.py` +
+> `--import` + carregamento real do jogo (`test_menu_flow_integration.gd` e um teste
+> focado por domínio), e commitado separadamente — ver `git log` para as mensagens
+> detalhadas de cada um.
+>
+> **`police/`, `emergency/` e `characters/` ficam pendentes de propósito**: os três
+> exigem mover `PoliceOfficer.gd`, `WantedManager.gd`, `EmergencyVehicle.gd` ou
+> `Player.gd` — os próprios arquivos, não só referências dentro deles — e esses quatro
+> têm trabalho não commitado de outra sessão (Antigravity) por dentro. Assim que esse
+> trabalho for commitado (ou descartado), esses três últimos domínios seguem o mesmo
+> procedimento dos outros cinco.
+>
+> `world/shared/` hoje só tem `emergency/`, `pedestrians/` e `pickups/` — exatamente os
+> três domínios adiados.
 
 ## Objetivo e escopo decidido
 
