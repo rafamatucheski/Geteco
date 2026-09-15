@@ -50,7 +50,7 @@ func run() -> void:
 	# -------------------------------------------------------------
 	print("\n--- 1. VERIFICANDO MODELO 3D DO DANTE (CGI) ---")
 	var dummy_player := CharacterBody2D.new()
-	dummy_player.set_script(load("res://Player.gd"))
+	dummy_player.set_script(load("res://characters/Player.gd"))
 	var dante_root := Node3D.new()
 	dante_root.name = "DanteRoot"
 	dummy_player.model_root = dante_root

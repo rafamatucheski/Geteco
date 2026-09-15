@@ -29,7 +29,7 @@ func _setup_interior_content() -> void:
 	add_child(view)
 	var room := Node3D.new()
 	view.add_child(room)
-	var build := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var build := preload("res://characters/pedestrians/CitizenDetails.gd")
 	build.piece(room,Vector3(14,.15,10),Vector3(0,-.1,0),Color("51483e"))
 	for x in range(-6,7):
 		build.piece(room,Vector3(.018,.012,10),Vector3(x,0,0),Color("645747"))

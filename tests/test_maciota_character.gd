@@ -1,6 +1,6 @@
 extends SceneTree
 
-const MACIOTA := preload("res://JagerNPC.gd")
+const MACIOTA := preload("res://characters/JagerNPC.gd")
 var failures: int = 0
 
 func _initialize() -> void:

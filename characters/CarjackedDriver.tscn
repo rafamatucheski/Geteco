@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://driver_uid_101"]
 
-[ext_resource type="Script" path="res://CarjackedDriver.gd" id="1_script"]
+[ext_resource type="Script" path="res://characters/CarjackedDriver.gd" id="1_script"]
 
 [node name="CarjackedDriver" type="CharacterBody2D"]
 script = ExtResource("1_script")

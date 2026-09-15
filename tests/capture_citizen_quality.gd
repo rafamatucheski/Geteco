@@ -21,7 +21,7 @@ func run() -> void:
 			actor.archetype_override=[1,0,7][i]
 			actor.defer_presentation=true
 		else:
-			actor=load("res://Player.gd").new()
+			actor=load("res://characters/Player.gd").new()
 			var cam=Camera2D.new()
 			cam.name="Camera"
 			actor.add_child(cam)

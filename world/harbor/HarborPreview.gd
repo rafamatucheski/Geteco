@@ -115,7 +115,7 @@ func _setup_cobras() -> void:
 				weather.time_changed.connect(lamp.set_lit)
 			lamp.set_lit(weather.is_dark)
 	if get_tree().get_first_node_in_group("gang_manager") == null:
-		var gangs := preload("res://GangManager.gd").new()
+		var gangs := preload("res://characters/GangManager.gd").new()
 		gangs.name = "HarborGangReputation"
 		add_child(gangs)
 	var territory := preload("res://world/harbor/cobras/CobraTerritory.gd").new()

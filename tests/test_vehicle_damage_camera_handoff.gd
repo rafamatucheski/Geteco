@@ -57,7 +57,7 @@ func _run() -> void:
 				for point in mark.points: check(absf(point.x)<25 and absf(point.y)<14,id+" scratches within body")
 		car.queue_free()
 		await process_frame
-	for script_path in ["res://PlayerCar.gd","res://prototypes/living_cast/HarborCoupe.gd"]:
+	for script_path in ["res://characters/PlayerCar.gd","res://prototypes/living_cast/HarborCoupe.gd"]:
 		var owned = load(script_path).new()
 		var owned_camera := Camera2D.new()
 		owned_camera.name = "Camera"

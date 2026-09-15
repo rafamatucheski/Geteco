@@ -1,6 +1,6 @@
 extends SceneTree
 
-const DANGER := preload("res://PedestrianDanger.gd")
+const DANGER := preload("res://characters/PedestrianDanger.gd")
 var failures := 0
 
 class Witness extends Node2D:

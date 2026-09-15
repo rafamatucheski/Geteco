@@ -82,7 +82,7 @@ func _run() -> void:
 	await process_frame
 	check(relocated.damage==0 and relocated.process_mode==Node.PROCESS_MODE_INHERIT and relocated.visible and not relocated.has_meta("mountain_falling"),"external relocation cancels fall and releases controls")
 	relocated.queue_free()
-	var player = preload("res://Player.gd").new()
+	var player = preload("res://characters/Player.gd").new()
 	player.position = Vector2(0,300)
 	player.collision_layer = 4
 	player.collision_mask = 1

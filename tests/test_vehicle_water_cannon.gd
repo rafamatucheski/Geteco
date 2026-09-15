@@ -49,7 +49,7 @@ func _run() -> void:
 	check(cannon.firing and cannon._audio.playing, "Holding fire produces continuous water and audio")
 	check(cannon._muzzle.distance_to(cannon.impact_position) <= cannon.REACH + 0.1, "Finite stream range")
 	var direction: Vector2 = cannon._muzzle.direction_to(cannon.impact_position)
-	var person = load("res://AnimatedPedestrian3D.gd").new()
+	var person = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(person)
 	person.set_physics_process(false)
 	person.global_position = cannon._muzzle + direction * 160

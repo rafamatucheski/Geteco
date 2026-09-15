@@ -1,7 +1,7 @@
 extends RefCounted
 ## Reserve the next step against live actor positions before the physics slide.
 ## Moving kinematic bodies can otherwise penetrate by one frame of travel.
-const NEIGHBORHOOD := preload("res://world/shared/pedestrians/PedestrianNeighborhood.gd")
+const NEIGHBORHOOD := preload("res://characters/pedestrians/PedestrianNeighborhood.gd")
 const CLEARANCE := 24.0
 
 static func move_actor(actor: CharacterBody2D) -> void:

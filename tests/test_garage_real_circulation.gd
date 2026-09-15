@@ -238,7 +238,7 @@ func _create_production_car() -> CharacterBody2D:
 	return car
 
 func _create_production_player() -> CharacterBody2D:
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	var player = CharacterBody2D.new()
 	player.name = "Player"
 	player.collision_layer = 4

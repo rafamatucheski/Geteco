@@ -1,5 +1,5 @@
 extends RefCounted
-const CROSSING_HALF_WIDTH := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH
+const CROSSING_HALF_WIDTH := preload("res://characters/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH
 ## Sidewalk centers follow the width of each bordering road.
 const BLOCKS := [Rect2(477,482,736,686),Rect2(1387,482,736,686),Rect2(2277,482,641,686),Rect2(477,1332,736,786),Rect2(1387,1332,736,786),Rect2(2277,1332,641,786)]
 

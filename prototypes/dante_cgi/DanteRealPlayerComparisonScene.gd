@@ -2,7 +2,7 @@ class_name DanteRealPlayerComparisonScene
 extends Node2D
 
 ## Cena de Comparação do Protótipo Dante CGI v2 com a Instância REAL do Player de Produção.
-## NÃO usa réplicas: instancia diretamente load("res://Player.gd").new() sem alterar Player.gd.
+## NÃO usa réplicas: instancia diretamente load("res://characters/Player.gd").new() sem alterar Player.gd.
 ## Comprova paridade em escala real de gameplay (1:1), turnaround 360° e estados de animação.
 
 var real_player_gameplay: CharacterBody2D
@@ -45,7 +45,7 @@ func _build_background() -> void:
 		add_child(line)
 
 func _create_real_player(parent: Node2D, pos: Vector2, scale_2d: Vector2) -> CharacterBody2D:
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	var p: CharacterBody2D = player_script.new()
 	p.name = "RealPlayerInstance"
 	p.position = pos

@@ -1,4 +1,4 @@
-extends "res://CharacterFallPresentation.gd"
+extends "res://characters/CharacterFallPresentation.gd"
 ## No banco, a projeção dos atores precisa continuar igual à do piso.
 func update(delta: float) -> void:
 	super.update(delta)

@@ -23,7 +23,7 @@ func _initialize() -> void:
 				assert(rear.force_scale > 0 and rear.force_scale <= 1, "Traction cannot add engine energy")
 	rear.update("rwd", 200, -1, 1, 1)
 	assert(rear.drift_bias == 0 and rear.steer_scale == 1, "Service braking must not trigger power oversteer")
-	var car = load("res://PlayerCar.gd").new()
+	var car = load("res://characters/PlayerCar.gd").new()
 	car.velocity = Vector2(200,0)
 	car._drivetrain.update("fwd", 200, 1, 1, 0)
 	car._apply_steering_motion(1, 0.1)

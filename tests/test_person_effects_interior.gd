@@ -61,7 +61,7 @@ func run() -> void:
 	current_scene = world
 	room = load("res://world/mountain_pass/MountainCabinInterior.gd").new()
 	world.add_child(room)
-	var actor = load("res://AnimatedPedestrian3D.gd").new()
+	var actor = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(actor)
 	actor.ensure_presentation()
 	actor.set_physics_process(false)

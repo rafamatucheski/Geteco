@@ -16,7 +16,7 @@ signal player_exited_door(body: Node2D)
 
 var spawn_point: Marker2D
 var exit_door: BuildingEntrance
-const JAGER_NPC := preload("res://JagerNPC.gd")
+const JAGER_NPC := preload("res://characters/JagerNPC.gd")
 
 var parking_bays: Array[Dictionary] = [
 	{"id": 1, "name": "Vaga #1 (Básica)", "price": 500, "pos": Vector2(-220, -120), "is_owned": false, "slot_node": null},

@@ -1,7 +1,7 @@
 extends Node2D
 ## The same weapon meshes, grip solver and action profiles used by Dante.
 ## This child runs after AI/gait so an idle/walk branch cannot overwrite aiming.
-const POSE = preload("res://PlayerCombatPose.gd")
+const POSE = preload("res://characters/PlayerCombatPose.gd")
 const ARSENAL = preload("res://scripts/player/ArsenalWeapon3D.gd")
 var combat_pose := POSE.new()
 var actor: Node2D
@@ -19,7 +19,7 @@ var clock := 0.0
 static func attach(body: Node2D, id: String) -> Node2D:
 	var existing := body.get_node_or_null("NPCCombatRig")
 	if existing: return existing
-	var rig = load("res://world/shared/pedestrians/NPCCombatRig.gd").new()
+	var rig = load("res://characters/pedestrians/NPCCombatRig.gd").new()
 	rig.name = "NPCCombatRig"
 	rig.actor = body
 	rig.active_weapon_id = id

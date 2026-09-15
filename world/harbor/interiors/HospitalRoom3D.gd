@@ -1,6 +1,6 @@
 extends Node3D
 ## Cached architectural model. Dimensions are metres; collision uses its floor projection.
-const B = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const B = preload("res://characters/pedestrians/CitizenDetails.gd")
 const WHITE = Color("e5ece8")
 const TEAL = Color("438c91")
 const STEEL = Color("a7b7bc")

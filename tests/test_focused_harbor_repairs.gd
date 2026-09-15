@@ -11,7 +11,7 @@ func check(ok: bool, label: String):
   failures.append(label)
   push_error(label)
 func make_player() -> CharacterBody2D:
- var p = load("res://Player.gd").new()
+ var p = load("res://characters/Player.gd").new()
  p.name = "Player"
  p.collision_layer = 4
  p.collision_mask = 7

@@ -1,7 +1,7 @@
 extends SceneTree
 
 # Keep the real startup, save restoration and achievement logic; omit 3D art.
-class TestPlayer extends "res://Player.gd":
+class TestPlayer extends "res://characters/Player.gd":
 	func _build_dante_3d_viewport() -> void: pass
 	func _rebuild_dante_costume() -> void: pass
 	func _update_equipped_weapon_3d_mesh() -> void: pass

@@ -22,7 +22,7 @@ var local_security := false
 var security_alert := 0
 var health: int = 50
 var is_dead: bool = false
-var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
+var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 var fire_cooldown: float = 0.0
@@ -96,9 +96,9 @@ func _ready() -> void:
 		return
 	
 	_build_3d_viewport()
-	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
+	preload("res://characters/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
 	preload("res://police/PoliceAppearance.gd").apply(self)
-	preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, String(dropped_weapon))
+	preload("res://characters/pedestrians/NPCCombatRig.gd").attach(self, String(dropped_weapon))
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()

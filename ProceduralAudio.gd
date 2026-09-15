@@ -1286,23 +1286,10 @@ static func get_distant_siren_stream() -> AudioStream:
 
 static func get_police_radio_chatter_stream() -> AudioStream:
 	if _cached_radio_chatter != null: return _cached_radio_chatter
-	var sample_rate := 22050
-	var duration := 0.75
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		# Bip inicial de walkie-talkie (squelch)
-		var squelch := randf_range(-0.4, 0.4) * (1.0 if t < 0.08 or t > 0.68 else 0.08)
-		# Modulação vocal de rádio AM abafado
-		var voice := sin(2.0 * PI * 440.0 * t) * sin(2.0 * PI * 880.0 * t) * sin(2.0 * PI * 180.0 * t) * 0.35
-		var sample := (squelch + voice) * 0.65
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
 	var s := AudioStreamWAV.new()
 	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = sample_rate
-	s.data = data
+	s.mix_rate = 22050
+	s.data = PackedByteArray()
 	_cached_radio_chatter = s
 	return s
 

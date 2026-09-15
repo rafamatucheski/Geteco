@@ -16,7 +16,7 @@ func _run() -> void:
 	scene.add_child(region)
 	var effects = load("res://guns/combat/WeaponEffects.gd").new()
 	scene.add_child(effects)
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.collision_layer = 4
 	var camera := Camera2D.new()

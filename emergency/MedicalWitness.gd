@@ -115,7 +115,7 @@ func _physics_process(delta: float) -> void:
 			if absf(turn) > 0.18:
 				next = center + Vector2.from_angle(radial.angle() + clampf(turn, -0.25, 0.25)) * (RING_RADIUS + PERSONAL_SPACE + 8.0)
 			actor.velocity = navigation.movement(actor, next, 55, delta)
-			preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(actor)
+			preload("res://characters/pedestrians/PersonMotion.gd").move_actor(actor)
 			for key in ["left_upper_leg", "right_upper_leg"]:
 				if key in actor and is_instance_valid(actor.get(key)): actor.get(key).rotation.x = sin(elapsed*7)*.3*(1 if key.begins_with("left") else -1)
 		else:

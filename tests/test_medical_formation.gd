@@ -36,7 +36,7 @@ func run() -> void:
 	seq.set_physics_process(false)
 	seq.ambulance = Node2D.new()
 	world.add_child(seq.ambulance)
-	seq.patient = preload("res://AnimatedPedestrian3D.gd").new()
+	seq.patient = preload("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(seq.patient)
 	seq.patient.set_physics_process(false)
 	seq.patient.position = Vector2(-1000,-1000)

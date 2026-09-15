@@ -12,7 +12,7 @@ func _run() -> void:
 	for index in 11:
 		var actor: Node2D
 		if index == 0:
-			actor = load("res://Player.gd").new()
+			actor = load("res://characters/Player.gd").new()
 			var camera := Camera2D.new()
 			camera.name = "Camera"
 			actor.add_child(camera)

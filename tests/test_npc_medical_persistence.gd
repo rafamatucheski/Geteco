@@ -28,7 +28,7 @@ func run() -> void:
 	var worker := Unit.new()
 	worker.hearse = unit
 	world.add_child(worker)
-	for resource in ["res://AnimatedPedestrian3D.gd", "res://world/harbor/HarborDockWorker.gd", "res://world/mountain_pass/WinterResident.gd", "res://world/harbor/cemetery/CemeteryKeeper.gd", "res://police/PoliceOfficer.tscn", "res://emergency/Firefighter.tscn", "res://emergency/Paramedic.tscn", "res://emergency/Mortician.tscn", "res://CarjackedDriver.tscn"]:
+	for resource in ["res://characters/AnimatedPedestrian3D.gd", "res://world/harbor/HarborDockWorker.gd", "res://world/mountain_pass/WinterResident.gd", "res://world/harbor/cemetery/CemeteryKeeper.gd", "res://police/PoliceOfficer.tscn", "res://emergency/Firefighter.tscn", "res://emergency/Paramedic.tscn", "res://emergency/Mortician.tscn", "res://characters/CarjackedDriver.tscn"]:
 		var loaded = load(resource)
 		var actor = loaded.instantiate() if loaded is PackedScene else loaded.new()
 		actor.name = "Resident_" + str(resource.hash())
@@ -60,7 +60,7 @@ func run() -> void:
 		actor.queue_free()
 		await process_frame
 	# Hospital state survives unloading and re-creating an authored resident.
-	var first = load("res://AnimatedPedestrian3D.gd").new()
+	var first = load("res://characters/AnimatedPedestrian3D.gd").new()
 	first.name = "PersistentCitizen"
 	world.add_child(first)
 	first.set_physics_process(false)
@@ -74,7 +74,7 @@ func run() -> void:
 	care.advance_days(.4)
 	first.queue_free()
 	await process_frame
-	var replacement = load("res://AnimatedPedestrian3D.gd").new()
+	var replacement = load("res://characters/AnimatedPedestrian3D.gd").new()
 	replacement.name = "PersistentCitizen"
 	world.add_child(replacement)
 	care._register(replacement)
@@ -98,7 +98,7 @@ func run() -> void:
 	await process_frame
 	care.advance_days(2.01)
 	check(care.records()[id].phase == "discharged", "Discharge remains pending while region is unloaded")
-	var discharged = load("res://AnimatedPedestrian3D.gd").new()
+	var discharged = load("res://characters/AnimatedPedestrian3D.gd").new()
 	discharged.name = "PersistentCitizen"
 	world.add_child(discharged)
 	care._register(discharged)

@@ -22,7 +22,7 @@ func run() -> void:
 	root.add_child(world)
 	current_scene = world
 	for i in 2:
-		var victim := preload("res://AnimatedPedestrian3D.gd").new()
+		var victim := preload("res://characters/AnimatedPedestrian3D.gd").new()
 		victim.name = "Casualty%d"%i
 		victim.position = Vector2(i*220,130)
 		world.add_child(victim)

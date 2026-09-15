@@ -17,7 +17,7 @@ func _ready() -> void:
 	camera.look_at_from_position(Vector3(0,1.4,3),Vector3.ZERO)
 	cross_3d=Node3D.new()
 	viewport_3d.add_child(cross_3d)
-	var detail=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var detail=preload("res://characters/pedestrians/CitizenDetails.gd")
 	for size in [Vector3(.9,.28,.24),Vector3(.28,.9,.24)]:
 		var part=detail.piece(cross_3d,size,Vector3.ZERO,Color("ef647d"))
 		part.material_override.emission_enabled=true

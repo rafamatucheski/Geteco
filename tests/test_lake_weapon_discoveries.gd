@@ -2,7 +2,7 @@ extends SceneTree
 
 var failures: Array[String] = []
 
-class NoticePlayer extends "res://Player.gd":
+class NoticePlayer extends "res://characters/Player.gd":
 	var notices: Array[String] = []
 	func _show_weapon_notice(message: String) -> void:
 		notices.append(message)

@@ -8,7 +8,7 @@ func _run() -> void:
 	root.add_child(scene)
 
 	print("Instantiating REAL Player.gd...")
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	if not player_script:
 		print("ERROR: Could not load Player.gd")
 		quit(1)

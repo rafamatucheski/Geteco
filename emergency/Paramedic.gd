@@ -13,7 +13,7 @@ var state: State = State.APPROACH
 
 var health: int = 60
 var is_dead: bool = false
-var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
+var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 var walk_clock: float = 0.0
@@ -23,7 +23,7 @@ var treat_timer: float = 0.0
 var crew_side := 1.0
 var crew_longitudinal := 8.0
 var boarding_started := false
-var danger_response := preload("res://PedestrianDanger.gd").new()
+var danger_response := preload("res://characters/PedestrianDanger.gd").new()
 
 func hear_gunfire(origin: Vector2, end: Vector2) -> void:
 	if is_dead or state == State.EMBARKED or not visible: return
@@ -85,12 +85,12 @@ func _ready() -> void:
 	
 	_build_3d_viewport()
 	set_meta("appearance_variant", 1 if crew_side < 0 else 2)
-	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"medic")
+	preload("res://characters/pedestrians/ServiceUniformDetails.gd").apply(self,"medic")
 	# Adult proportions match the production Dante silhouette.
 	head_node.scale = Vector3(.62, .72, .62)
 	head_node.position.y = 1.23
 	model_root.scale = Vector3.ONE
-	var details = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var details = preload("res://characters/pedestrians/CitizenDetails.gd")
 	details.piece(head_node, Vector3(.30,.12,.29), Vector3(0,.12,.015), Color("302b29") if crew_side < 0 else Color("584033"), true)
 	details.piece(model_root, Vector3(.09,.12,.09), Vector3(0,1.10,0), Color("c38f71"), true)
 	

@@ -51,21 +51,22 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
-# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio emergency/.
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio characters/, ultimo dos 8.
 MOVES: list[tuple[str, str]] = [
-    ("EmergencyPool.gd", "emergency/EmergencyPool.gd"),
-    ("EmergencyVehicle.gd", "emergency/EmergencyVehicle.gd"),
-    ("EmergencyVehicle.tscn", "emergency/EmergencyVehicle.tscn"),
-    ("EmergencyVehicleVisual3D.gd", "emergency/EmergencyVehicleVisual3D.gd"),
-    ("EmergencyCrewTransition.gd", "emergency/EmergencyCrewTransition.gd"),
-    ("Firefighter.gd", "emergency/Firefighter.gd"),
-    ("Firefighter.tscn", "emergency/Firefighter.tscn"),
-    ("Paramedic.gd", "emergency/Paramedic.gd"),
-    ("Paramedic.tscn", "emergency/Paramedic.tscn"),
-    ("Mortician.gd", "emergency/Mortician.gd"),
-    ("Mortician.tscn", "emergency/Mortician.tscn"),
-    ("ResponderNavigation.gd", "emergency/ResponderNavigation.gd"),
-    ("world/shared/emergency", "emergency"),
+    ("Player.gd", "characters/Player.gd"),
+    ("PlayerCar.gd", "characters/PlayerCar.gd"),
+    ("PlayerCombatPose.gd", "characters/PlayerCombatPose.gd"),
+    ("AnimatedPedestrian3D.gd", "characters/AnimatedPedestrian3D.gd"),
+    ("PedestrianDanger.gd", "characters/PedestrianDanger.gd"),
+    ("JagerNPC.gd", "characters/JagerNPC.gd"),
+    ("CarjackedDriver.gd", "characters/CarjackedDriver.gd"),
+    ("CarjackedDriver.tscn", "characters/CarjackedDriver.tscn"),
+    ("GangManager.gd", "characters/GangManager.gd"),
+    ("CharacterFallPresentation.gd", "characters/CharacterFallPresentation.gd"),
+    ("CharacterPreview3D.gd", "characters/CharacterPreview3D.gd"),
+    ("OutfitCatalog.gd", "characters/OutfitCatalog.gd"),
+    ("ClothingStore.gd", "characters/ClothingStore.gd"),
+    ("world/shared/pedestrians", "characters/pedestrians"),
 ]
 
 

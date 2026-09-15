@@ -679,7 +679,7 @@ func _finish_rider_fall(direction: Vector2, force: float) -> void:
 	var scene := get_tree().current_scene
 	if scene == null: scene = get_parent().get_parent()
 	ensure_presentation()
-	var fallen := preload("res://CarjackedDriver.tscn").instantiate() as CarjackedDriver
+	var fallen := preload("res://characters/CarjackedDriver.tscn").instantiate() as CarjackedDriver
 	scene.add_child(fallen)
 	fallen.global_position = global_position
 	fallen.global_rotation = global_rotation
@@ -1317,7 +1317,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 	if is_motorcycle:
 		was_occupied = was_occupied and not _rider_fallen and is_instance_valid(body_model) and is_instance_valid(body_model.rider) and body_model.rider.visible
 	if was_occupied and not taxi_passenger:
-		var driver_scene = load("res://CarjackedDriver.tscn")
+		var driver_scene = load("res://characters/CarjackedDriver.tscn")
 		if driver_scene:
 			var ejected_driver = driver_scene.instantiate() as CarjackedDriver
 			var scene_target = get_tree().current_scene if get_tree().current_scene else get_parent()

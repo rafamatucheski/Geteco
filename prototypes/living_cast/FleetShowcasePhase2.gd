@@ -66,7 +66,7 @@ func _ready() -> void:
 		add_child(label)
 
 	# 4. Instanciar o Dante (Player) com Câmera e Controles
-	player = load("res://Player.gd").new()
+	player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.position = Vector2(160, 620)
 	player.collision_layer = 4

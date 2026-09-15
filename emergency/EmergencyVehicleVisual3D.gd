@@ -34,7 +34,7 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	viewport.own_world_3d = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(viewport)
-	model = preload("res://emergency/PoliceMotorcycleModel.gd").new() if motorcycle else load(spec.model_class).new()
+	model = preload("res://police/PoliceMotorcycleModel.gd").new() if motorcycle else load(spec.model_class).new()
 	viewport.add_child(model)
 	var bounds := AABB()
 	var first := true

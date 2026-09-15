@@ -16,7 +16,7 @@ var state: State = State.APPROACH
 
 var health: int = 60
 var is_dead: bool = false
-var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
+var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 var is_flying: bool = false
 var fly_velocity: Vector2 = Vector2.ZERO
 var walk_clock: float = 0.0
@@ -60,7 +60,7 @@ func _ready() -> void:
 	z_index = 6
 	
 	_build_3d_viewport()
-	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"fire")
+	preload("res://characters/pedestrians/ServiceUniformDetails.gd").apply(self,"fire")
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()

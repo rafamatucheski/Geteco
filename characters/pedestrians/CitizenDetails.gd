@@ -28,7 +28,7 @@ static func dress(actor: Node, variant: int) -> void:
 		actor.presentation_ready.connect(func(): dress(actor, variant), CONNECT_ONE_SHOT)
 		return
 	if actor.has_meta("citizen_dressed"): return
-	preload("res://world/shared/pedestrians/CitizenSculpt.gd").build(actor)
+	preload("res://characters/pedestrians/CitizenSculpt.gd").build(actor)
 
 static func finish_rig(actor: Node, role: String) -> void:
 	if actor.has_meta("rig_tailored"): return
@@ -47,7 +47,7 @@ static func finish_rig(actor: Node, role: String) -> void:
 			cloth = part.material_override.albedo_color
 			break
 	if role != "mortician":
-		preload("res://world/shared/pedestrians/CitizenFace.gd").build(head,radius,skin,int(actor.get_meta("appearance_variant",0)))
+		preload("res://characters/pedestrians/CitizenFace.gd").build(head,radius,skin,int(actor.get_meta("appearance_variant",0)))
 	if role in ["clerk", "mortician"]:
 		piece(head,Vector3(radius*2.04,.10,radius*1.95),Vector3(0,radius*.77,.012),Color("47362f"),true)
 	for side in [-1,1]:

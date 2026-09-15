@@ -1,4 +1,4 @@
-extends "res://AnimatedPedestrian3D.gd"
+extends "res://characters/AnimatedPedestrian3D.gd"
 
 ## Opt-in prototype. Inherits current viewport culling and movement contracts.
 const BUILDER := preload("res://prototypes/living_cast/CivilRigBuilder.gd")

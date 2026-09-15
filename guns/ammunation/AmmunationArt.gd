@@ -1,6 +1,6 @@
 extends RefCounted
 ## Shared visual kit: shop displays and product viewer use the same geometry.
-const P = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const P = preload("res://characters/pedestrians/CitizenDetails.gd")
 const ARSENAL = preload("res://scripts/player/ArsenalWeapon3D.gd")
 const RED = Color("a3322d")
 const INK = Color("222b2d")

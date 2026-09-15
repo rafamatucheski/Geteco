@@ -10,7 +10,7 @@ func check(ok: bool, message: String) -> void:
 func run() -> void:
 	root.get_node("SaveManager")._save_dir = "D:/geteco/artifacts/mountain-review-0913/saves/"
 	root.get_node("SaveManager")._save_directory_ready = false
-	var player := preload("res://Player.gd").new()
+	var player := preload("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

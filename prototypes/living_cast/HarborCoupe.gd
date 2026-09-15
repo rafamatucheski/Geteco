@@ -1,4 +1,4 @@
-extends "res://PlayerCar.gd"
+extends "res://characters/PlayerCar.gd"
 
 ## Same 2D controller and interaction contract as every PlayerCar.
 ## 3D renders only when appearance changes, not once per frame/per vehicle.

@@ -3,7 +3,7 @@ extends "res://world/mountain_pass/WinterResidentModel.gd"
 var winter_outfit := true
 
 func _ready() -> void:
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").build(self, winter_outfit)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").build(self, winter_outfit)
 	prepare_seated_rig()
 
 func put_on_winter_clothes() -> void:
@@ -14,5 +14,5 @@ func put_on_winter_clothes() -> void:
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").build(self, true)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").build(self, true)
 	prepare_seated_rig()

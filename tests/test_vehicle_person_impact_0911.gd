@@ -81,7 +81,7 @@ func run() -> void:
 		lethal._physics_process(1.0/60.0)
 		stain._process(1.0/60.0)
 	check(stain.global_position.distance_to(lethal.global_position + Vector2(0,3)) < 1.0, "death blood settles with landing body")
-	var driver = preload("res://CarjackedDriver.tscn").instantiate()
+	var driver = preload("res://characters/CarjackedDriver.tscn").instantiate()
 	world.add_child(driver)
 	driver.set_physics_process(false)
 	driver.get_run_over(Vector2(120,0))

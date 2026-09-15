@@ -42,7 +42,7 @@ func run() -> void:
 	var director = get_first_node_in_group("emergency_depot_director")
 	var care := root.get_node("NPCMedicalCare")
 	for i in 2:
-		var patient = load("res://AnimatedPedestrian3D.gd").new()
+		var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 		patient.position = Vector2(1900,1800+i*50)
 		world.add_child(patient)
 		patient.is_gangster = false

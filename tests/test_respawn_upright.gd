@@ -18,7 +18,7 @@ func _run() -> void:
 	spawn.position = Vector2(500, 500)
 	spawn.add_to_group("hospital_spawn")
 	scene.add_child(spawn)
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

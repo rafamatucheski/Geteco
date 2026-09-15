@@ -58,7 +58,7 @@ Não alegue que estão acessíveis pela cidade enquanto não houver entrada auto
 ## Garagem: reutilize o Maciota correto
 
 O personagem roxo já criado é **Jäger “Maciota”**, classe `JagerNPC`, em
-`res://JagerNPC.gd`. É um rig procedural 3D em SubViewport, com traje roxo,
+`res://characters/JagerNPC.gd`. É um rig procedural 3D em SubViewport, com traje roxo,
 fedora, óculos, corrente e bengala. Reutilize esse personagem/visual/animações;
 não substitua por um NPC genérico, outra cor, retrato ou asset gerado do zero.
 

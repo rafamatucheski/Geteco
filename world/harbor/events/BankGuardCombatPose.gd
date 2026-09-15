@@ -1,4 +1,4 @@
-extends "res://PlayerCombatPose.gd"
+extends "res://characters/PlayerCombatPose.gd"
 ## Pistola centralizada, com a mão de apoio envolvendo a empunhadura.
 ## Escopeta, recarga e recuo continuam usando as poses compartilhadas.
 var _bank_hand := Vector3(.04,.91,-.30)

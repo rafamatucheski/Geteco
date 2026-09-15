@@ -1,5 +1,5 @@
 extends RefCounted
-const GEO := preload("res://world/shared/pedestrians/CitizenGeometry.gd")
+const GEO := preload("res://characters/pedestrians/CitizenGeometry.gd")
 
 static func build(actor: Node) -> void:
 	var identity := int(actor.get_meta("appearance_variant",0))
@@ -89,7 +89,7 @@ static func build(actor: Node) -> void:
 	pelvis.loft([Vector4(-.228,.16,.123,0),Vector4(-.202,.158,.123,0)],Color("3b3430"))
 	pelvis.box(Vector3(.039,.027,.013),Vector3(0,-.214,-.127),Color("9b9380"))
 	pelvis.finish(actor.torso_node,"Waist")
-	preload("res://world/shared/pedestrians/CitizenMorphology.gd").deform_torso(actor.torso_node,int(actor.body_type))
+	preload("res://characters/pedestrians/CitizenMorphology.gd").deform_torso(actor.torso_node,int(actor.body_type))
 	for side in 2:
 		var upper: Node3D = actor.left_upper_arm if side == 0 else actor.right_upper_arm
 		var lower: Node3D = actor.left_lower_arm if side == 0 else actor.right_lower_arm

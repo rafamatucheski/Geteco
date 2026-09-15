@@ -15,7 +15,7 @@ const PROCEDURAL_TREE := preload("res://geodata/nature/ProceduralStreetTree.gd")
 const LAMP_SCRIPT := preload("res://geodata/StreetLamp.gd")
 const ProceduralBuildingScene := preload("res://geodata/ProceduralBuilding.gd")
 const MODERN_TRAFFIC := preload("res://emergency/ModernTrafficFactory.gd")
-const AuthoredPedestrian := preload("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd")
+const AuthoredPedestrian := preload("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd")
 const DocksParkingScene := preload("res://emergency/DocksParking.tscn")
 const EmergencyVehicleYardScene := preload("res://emergency/EmergencyVehicleYard.gd")
 

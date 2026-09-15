@@ -16,7 +16,7 @@ func _run() -> void:
 	world.add_child(road)
 	var effects := preload("res://guns/combat/WeaponEffects.gd").new()
 	world.add_child(effects)
-	var player = preload("res://Player.gd").new()
+	var player = preload("res://characters/Player.gd").new()
 	player.collision_layer = 4
 	var player_camera := Camera2D.new()
 	player_camera.name = "Camera"
@@ -70,7 +70,7 @@ func _run() -> void:
 		if id=="summit_suv": reviewed_car=car
 		else: car.queue_free()
 		for i in 4: await physics_frame
-	var driver := preload("res://CarjackedDriver.tscn").instantiate()
+	var driver := preload("res://characters/CarjackedDriver.tscn").instantiate()
 	world.add_child(driver)
 	driver.setup(reviewed_car,Vector2(0,60))
 	driver._begin_civilian_routine()

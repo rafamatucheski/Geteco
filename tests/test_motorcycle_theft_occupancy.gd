@@ -16,7 +16,7 @@ func run() -> void:
 	root.get_node("PresentationBudget").set_process(false)
 	for scenario in ["occupied", "parked", "hidden", "fallen"]:
 		var aboard := 1 if scenario == "occupied" else 0
-		var player = load("res://Player.gd").new()
+		var player = load("res://characters/Player.gd").new()
 		var camera := Camera2D.new()
 		camera.name = "Camera"
 		player.add_child(camera)

@@ -6,7 +6,7 @@ func run() -> void:
 	root.add_child(world)
 	current_scene = world
 	var care := root.get_node("CoronerCare")
-	var victim := preload("res://AnimatedPedestrian3D.gd").new()
+	var victim := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(victim)
 	victim._die()
 	var key: String = care.identity(victim)

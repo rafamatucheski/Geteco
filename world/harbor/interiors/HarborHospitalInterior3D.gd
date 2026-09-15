@@ -99,7 +99,7 @@ func _build_staff() -> void:
 		camera.force_update_transform()
 		person.sprite_3d_display.scale=Vector2.ONE*.34
 		person.sprite_3d_display.position=-(camera.unproject_position(Vector3.ZERO)-Vector2(person.viewport_3d.size)*.5)*.34
-		var detail=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+		var detail=preload("res://characters/pedestrians/CitizenDetails.gd")
 		detail.piece(person.torso_node,Vector3(.075,.11,.025),Vector3(-.09,.035,-.155),Color("f0f5ee"))
 		detail.piece(person.torso_node,Vector3(.05,.025,.03),Vector3(-.09,.055,-.17),Color("438c91"))
 		for side in [-1,1]:

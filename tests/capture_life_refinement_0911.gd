@@ -40,7 +40,7 @@ func run() -> void:
 	world.weather.weather_state = 0
 	world.weather.set_rain_intensity(0.0)
 	world.weather._update_lighting()
-	var patient = load("res://AnimatedPedestrian3D.gd").new()
+	var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.name = "RefinementPatient"
 	patient.position = Vector2(1740, 1110)
 	world.add_child(patient)

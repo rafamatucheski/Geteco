@@ -11,7 +11,7 @@ func _run() -> void:
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.collision_layer = 4
 	var camera := Camera2D.new()

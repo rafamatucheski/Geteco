@@ -1,6 +1,6 @@
 extends RefCounted
-const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
-const APPEARANCE = preload("res://world/shared/pedestrians/CitizenAppearance.gd")
+const PART = preload("res://characters/pedestrians/CitizenDetails.gd")
+const APPEARANCE = preload("res://characters/pedestrians/CitizenAppearance.gd")
 const SKINS := [Color("d2a180"),Color("936448"),Color("edc1a2"),Color("b88160")]
 const HAIRS := [Color("302824"),Color("695044"),Color("9c784a"),Color("99948a")]
 

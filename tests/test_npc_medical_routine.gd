@@ -52,12 +52,12 @@ func run() -> void:
 		depot.add_child(marker)
 	director.add_child(depot)
 	world.add_child(director)
-	var patient = load("res://AnimatedPedestrian3D.gd").new()
+	var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.name = "ReturningResident"
 	patient.position = Vector2(180,30)
 	world.add_child(patient)
 	patient.set_physics_process(false)
-	var witness = load("res://AnimatedPedestrian3D.gd").new()
+	var witness = load("res://characters/AnimatedPedestrian3D.gd").new()
 	witness.name = "RegionalColleague"
 	witness.position = Vector2(240,90)
 	world.add_child(witness)

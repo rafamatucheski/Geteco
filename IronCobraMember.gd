@@ -36,7 +36,7 @@ func _ready() -> void:
 	
 	super._ready()
 	if not melee_weapon.is_empty():
-		preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, melee_weapon)
+		preload("res://characters/pedestrians/NPCCombatRig.gd").attach(self, melee_weapon)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:

@@ -78,11 +78,6 @@ func _process(delta: float):
 		_play_distant_siren()
 		distant_siren_timer = _rng.randf_range(25.0, 55.0)
 
-	# 3. Chiados de rádio policial da central
-	radio_chatter_timer -= delta
-	if radio_chatter_timer <= 0.0:
-		_play_radio_chatter()
-		radio_chatter_timer = _rng.randf_range(35.0, 75.0)
 
 func set_active(enabled: bool) -> void:
 	_set_ambient_enabled(enabled)
@@ -123,10 +118,7 @@ func _play_distant_siren():
 		distant_siren_player.play()
 
 func _play_radio_chatter():
-	if radio_chatter_player:
-		radio_chatter_player.stream = ProceduralAudio.get_police_radio_chatter_stream()
-		radio_chatter_player.pitch_scale = _rng.randf_range(0.95, 1.05)
-		radio_chatter_player.play()
+	pass
 
 func play_pedestrian_panic(pos: Vector2) -> void:
 	var p = AudioStreamPlayer2D.new()

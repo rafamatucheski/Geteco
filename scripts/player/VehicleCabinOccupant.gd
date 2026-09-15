@@ -15,7 +15,7 @@ var _final_render_frames := 0
 var motorcycle := false
 var _rider_pose: Array[Dictionary] = []
 var _legs := preload("res://scripts/player/VehicleBoardingPose.gd").new()
-var _arms := preload("res://PlayerCombatPose.gd").new()
+var _arms := preload("res://characters/PlayerCombatPose.gd").new()
 
 func setup(car: CharacterBody2D, actor: CharacterBody2D, door: Node3D) -> void:
 	vehicle = car

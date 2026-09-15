@@ -59,7 +59,7 @@ func run() -> void:
 	var care := root.get_node("NPCMedicalCare")
 	if parked_teams: care.set_process(false)
 	for position in [Vector2(2070,2330), Vector2(2180,2330)]:
-		var actor = load("res://AnimatedPedestrian3D.gd").new()
+		var actor = load("res://characters/AnimatedPedestrian3D.gd").new()
 		actor.position = position
 		world.add_child(actor)
 		actor.is_gangster = false

@@ -27,7 +27,7 @@ func run() -> void:
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.use_meshy_dante = true
 	var camera := Camera2D.new()
 	camera.name = "Camera"

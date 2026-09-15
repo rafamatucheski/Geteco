@@ -8,7 +8,7 @@ func _ready() -> void:
 	super._ready()
 	for knee in knees: STRIDE.ankle(knee, .34)
 	var head := pose_root.get_node("Head")
-	var parts = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var parts = preload("res://characters/pedestrians/CitizenDetails.gd")
 	for side in [-1, 1]:
 		parts.piece(head, Vector3(.036,.018,.014), Vector3(side*.06,.01,-.155), Color("b6a08a"), true)
 		parts.piece(head, Vector3(.014,.014,.01), Vector3(side*.06,.01,-.164), Color("292b2e"), true)

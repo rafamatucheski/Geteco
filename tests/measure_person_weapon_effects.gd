@@ -7,7 +7,7 @@ func _report_render() -> void:
 	super._report_render()
 	if not _tracking or Time.get_ticks_msec() < next_hit: return
 	next_hit = Time.get_ticks_msec() + 3000
-	var person = load("res://AnimatedPedestrian3D.gd").new()
+	var person = load("res://characters/AnimatedPedestrian3D.gd").new()
 	person.position = _subject.global_position + Vector2(90, 35)
 	current_scene.add_child(person)
 	person.ensure_presentation()

@@ -25,7 +25,7 @@ func run() -> void:
 	door.position = Vector2(300,100)
 	world.add_child(door)
 	manager._door_configs["ExteriorDoor"] = {"interior":room,"spawn":room.spawn_point}
-	var victim := preload("res://AnimatedPedestrian3D.gd").new()
+	var victim := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	room.add_child(victim)
 	victim.position = room.project_floor(Vector2(.8,2.0))
 	await physics_frame

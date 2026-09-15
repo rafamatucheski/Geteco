@@ -58,7 +58,7 @@ func _run() -> void:
 	check(director._claim_standby("police","police_cruiser") == null and standby.available, "Sedan cannot consume a parked SUV")
 	check(director._claim_standby("police","police_suv") == standby, "SUV dispatch claims a matching standby body")
 	director.remove_from_group("emergency_depot_director")
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

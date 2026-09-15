@@ -91,7 +91,7 @@ func _physics_process(delta):
 		_rocket_exhaust.scale = Vector2(1.0 + sin(_flight_age * 73.0) * 0.18, 0.85 + sin(_flight_age * 91.0) * 0.15)
 	if not _danger_reported:
 		_danger_reported = true
-		preload("res://PedestrianDanger.gd").report(self, global_position, direction, owner_body)
+		preload("res://characters/PedestrianDanger.gd").report(self, global_position, direction, owner_body)
 	var from = global_position
 	var step := minf(speed * delta, maxf(0.0, max_range - distance_travelled))
 	var to = from + direction.normalized() * step

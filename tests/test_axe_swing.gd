@@ -14,7 +14,7 @@ func run() -> void:
 	current_scene = scene
 	var effects := preload("res://guns/combat/WeaponEffects.gd").new()
 	scene.add_child(effects)
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

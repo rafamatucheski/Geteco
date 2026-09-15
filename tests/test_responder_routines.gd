@@ -158,7 +158,7 @@ func _run() -> void:
 	fire.queue_free()
 	obstacle.queue_free()
 	await physics_frame
-	var ped = load("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd").new()
+	var ped = load("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd").new()
 	ped.configure_authored_route(PackedVector2Array([Vector2(0, 300), Vector2(500, 300)]), "routine")
 	scene.add_child(ped)
 	ped.set_physics_process(false)
@@ -186,10 +186,10 @@ func _run() -> void:
 	witness.position = Vector2(500, 0)
 	obstacle = wall(Vector2(200, 0), Vector2(20, 200))
 	await physics_frame
-	preload("res://PedestrianDanger.gd").report(scene, Vector2.ZERO, Vector2.RIGHT, null)
+	preload("res://characters/PedestrianDanger.gd").report(scene, Vector2.ZERO, Vector2.RIGHT, null)
 	check(witness.alerts == 0, "Tiro bloqueado não causa pânico em outra rua")
 	witness.position = Vector2(100, 30)
-	preload("res://PedestrianDanger.gd").report(scene, Vector2.ZERO, Vector2.RIGHT, null)
+	preload("res://characters/PedestrianDanger.gd").report(scene, Vector2.ZERO, Vector2.RIGHT, null)
 	check(witness.alerts == 1, "Testemunha próxima reage ao tiro")
 	scene.queue_free()
 	await process_frame

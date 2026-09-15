@@ -11,7 +11,7 @@ func _ensure_art() -> void:
 	add_child(_art_root)
 	visual=Node3D.new()
 	visual.name="DroppedBallisticVest"
-	var part=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var part=preload("res://characters/pedestrians/CitizenDetails.gd")
 	var fabric:=Color("3e4845")
 	part.piece(visual,Vector3(.40,.065,.43),Vector3.ZERO,fabric)
 	part.piece(visual,Vector3(.31,.025,.29),Vector3(0,.043,-.025),Color("525d56"))

@@ -1,5 +1,5 @@
 extends Node3D
-const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PART = preload("res://characters/pedestrians/CitizenDetails.gd")
 var crates: Array[Node3D] = []
 func _ready() -> void:
 	PART.piece(self,Vector3(4.2,.65,10),Vector3(0,.1,0),Color("344e59"))

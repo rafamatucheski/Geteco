@@ -88,7 +88,7 @@ func run() -> void:
 	for voice in pool.voices:
 		check(voice.bus == &"SFX", "Impact audio respects SFX settings")
 	# Exercise the production Player shooting path, not just the bank in isolation.
-	var player: Node = load("res://Player.gd").new()
+	var player: Node = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

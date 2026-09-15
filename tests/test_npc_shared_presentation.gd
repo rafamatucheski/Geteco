@@ -86,10 +86,10 @@ func _run() -> void:
 		check(not actor.has_node("NPCCombatRig"), "%s retains service work animation" % data[0])
 	add_actor("res://world/harbor/interiors/HarborConversationalNPC.gd", "Atendente")
 	for archetype in [0,2,4,7]:
-		var person = add_actor("res://AnimatedPedestrian3D.gd", "Civil %s" % archetype, {"archetype_override": archetype})
+		var person = add_actor("res://characters/AnimatedPedestrian3D.gd", "Civil %s" % archetype, {"archetype_override": archetype})
 		check(person.has_meta("citizen_dressed"), "Base pedestrians receive details %s" % archetype)
 		var count: int = person.head_node.get_child_count()
-		preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(person, archetype)
+		preload("res://characters/pedestrians/CitizenDetails.gd").dress(person, archetype)
 		check(person.head_node.get_child_count() == count, "Deferred/Harbor callbacks do not duplicate details")
 	for role in ["lookout", "enforcer", "leader"]:
 		var cobra = add_actor("res://world/harbor/cobras/CobraResident.gd", "Cobra " + role, {"combat_role": role})

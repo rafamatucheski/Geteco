@@ -104,7 +104,7 @@ func run() -> void:
 	check(car.body_panels[0].polygon == original, "Repair restores original panel geometry")
 	# Actual driving input into a physical wall must call the same deformation path.
 	target.remove_from_group("player")
-	var driver = load("res://Player.gd").new()
+	var driver = load("res://characters/Player.gd").new()
 	driver.position = car.position + Vector2(0, 35)
 	var driver_camera := Camera2D.new()
 	driver_camera.name = "Camera"

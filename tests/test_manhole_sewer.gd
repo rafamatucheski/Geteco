@@ -1,6 +1,6 @@
 extends SceneTree
 
-const PLAYER_SCRIPT := preload("res://Player.gd")
+const PLAYER_SCRIPT := preload("res://characters/Player.gd")
 const SEWER_SCRIPT := preload("res://world/harbor/sewer/HarborManholeSewer.gd")
 
 var failures: Array[String] = []

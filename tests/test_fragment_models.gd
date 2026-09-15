@@ -32,7 +32,7 @@ func run() -> void:
 	var patterns := {}
 	var trajectories := {}
 	for i in 10:
-		var actor: Node2D = load("res://AnimatedPedestrian3D.gd").new()
+		var actor: Node2D = load("res://characters/AnimatedPedestrian3D.gd").new()
 		actor.position = Vector2(i*350, 0)
 		world.add_child(actor)
 		actor.ensure_presentation()
@@ -70,8 +70,8 @@ func run() -> void:
 		trajectories[str(remains.pieces[0].velocity)] = true
 	check(patterns.size() >= 3, "Repeated explosions use at least three anatomical layouts")
 	check(trajectories.size() == 10, "Launch direction and energy vary between casualties")
-	for script in ["res://CarjackedDriver.gd", "res://world/mountain_pass/WinterResident.gd"]:
-		var alternate: Node2D = load("res://CarjackedDriver.tscn").instantiate() if script.contains("Carjacked") else load(script).new()
+	for script in ["res://characters/CarjackedDriver.gd", "res://world/mountain_pass/WinterResident.gd"]:
+		var alternate: Node2D = load("res://characters/CarjackedDriver.tscn").instantiate() if script.contains("Carjacked") else load(script).new()
 		alternate.position = Vector2(-900, 0)
 		world.add_child(alternate)
 		alternate.set_physics_process(false)

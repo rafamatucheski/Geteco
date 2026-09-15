@@ -1,4 +1,4 @@
-extends "res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd"
+extends "res://characters/pedestrians/AuthoredSidewalkPedestrian.gd"
 ## Clientes circulam na frente do diner e fazem pausas nas mesas existentes.
 var social_pause := 20.0
 var gesture_clock := 0.0

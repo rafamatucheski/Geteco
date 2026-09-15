@@ -469,7 +469,7 @@ func _create_decor() -> void:
 			sprite.owner = get_tree().edited_scene_root
 
 	# Instancia pedestres com modelo humanoide 3D em tempo real nas calçadas
-	var anim_3d_script = load("res://AnimatedPedestrian3D.gd")
+	var anim_3d_script = load("res://characters/AnimatedPedestrian3D.gd")
 	if anim_3d_script and not Engine.is_editor_hint():
 		var ped_spawns := [
 			Vector2(-280, -75), Vector2(280, -75), Vector2(-350, 75), Vector2(350, 75),

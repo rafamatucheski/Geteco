@@ -19,7 +19,7 @@ func run() -> void:
 	for scenario in [[2, false], [1, false], [0, false], [1, true], [0, true]]:
 		wanted.reset_crime()
 		var aboard: int = scenario[0]
-		var player = load("res://Player.gd").new()
+		var player = load("res://characters/Player.gd").new()
 		var camera := Camera2D.new()
 		camera.name = "Camera"
 		player.add_child(camera)

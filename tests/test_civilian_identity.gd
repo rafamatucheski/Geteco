@@ -22,7 +22,7 @@ func _run() -> void:
 		["Homem · grisalho",1,4,7,1,10],
 	]
 	for data in variants:
-		var actor = add_actor("res://AnimatedPedestrian3D.gd", data[0], {"district_theme":1,"appearance_gender":data[1],"body_type_override":data[2],"archetype_override":data[3],"hair_style_override":data[4],"appearance_seed":data[5]})
+		var actor = add_actor("res://characters/AnimatedPedestrian3D.gd", data[0], {"district_theme":1,"appearance_gender":data[1],"body_type_override":data[2],"archetype_override":data[3],"hair_style_override":data[4],"appearance_seed":data[5]})
 		check(actor.get_meta("appearance_female") == (data[1]==2), "Gênero configurado: " + data[0])
 		check(actor.head_node.has_node("HairStyle"), "Cabelo autoral: " + data[0])
 		check(not actor.torso_node.has_node("Belly"), "Sem barriga esférica sobreposta: " + data[0])
@@ -45,7 +45,7 @@ func _run() -> void:
 	for profile in 6:
 		var role: String = ["lookout","enforcer","leader"][profile%3]
 		var cobra = add_actor("res://world/harbor/cobras/CobraResident.gd", "Cobra", {"profile":profile,"combat_role":role,"body_type_override":profile%5})
-		labels[labels.size()-1] = "%s · %s" % [cobra.get_meta("character_name"),preload("res://world/shared/pedestrians/CitizenAppearance.gd").HAIR_NAMES[cobra.get_meta("hair_style")]]
+		labels[labels.size()-1] = "%s · %s" % [cobra.get_meta("character_name"),preload("res://characters/pedestrians/CitizenAppearance.gd").HAIR_NAMES[cobra.get_meta("hair_style")]]
 		check(cobra.shirt_color.g > cobra.shirt_color.r and cobra.shirt_color.g > cobra.shirt_color.b, "Cobra usa verde: %s" % profile)
 		var rig = cobra.get_node("NPCCombatRig")
 		for frame in 100: rig.combat_pose.update(rig,1.0/60,true,false,0)

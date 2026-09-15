@@ -2,8 +2,8 @@ extends SceneTree
 const HANDLING := preload("res://cars/VehicleMotionSafety.gd")
 
 func _initialize() -> void:
-	var light = load("res://PlayerCar.gd").new()
-	var heavy = load("res://PlayerCar.gd").new()
+	var light = load("res://characters/PlayerCar.gd").new()
+	var heavy = load("res://characters/PlayerCar.gd").new()
 	light.vehicle_mass = 0.85
 	heavy.vehicle_mass = 4.8
 	light.velocity = Vector2(200, 0)

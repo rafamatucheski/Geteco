@@ -16,7 +16,7 @@ func run() -> void:
 	var car := FakeCar.new()
 	world.add_child(car)
 	car.position = Vector2(300,300)
-	var driver := preload("res://CarjackedDriver.tscn").instantiate()
+	var driver := preload("res://characters/CarjackedDriver.tscn").instantiate()
 	world.add_child(driver)
 	driver.set_physics_process(false)
 	driver.stolen_vehicle = car

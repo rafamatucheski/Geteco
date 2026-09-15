@@ -31,7 +31,7 @@ func run() -> void:
 		for identity in range(-1, 5):
 			var actor: CharacterBody2D
 			if identity == -1:
-				actor = load("res://Player.gd").new()
+				actor = load("res://characters/Player.gd").new()
 				var camera := Camera2D.new()
 				camera.name = "Camera"
 				actor.add_child(camera)

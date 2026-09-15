@@ -75,7 +75,7 @@ func _run() -> void:
 	await step(12)
 	for i in actors.size():
 		check(actors[i].fall_presentation.rig.transform.is_equal_approx(poses[i]), "Corpo permanece estável após a queda")
-	var injured = load("res://AnimatedPedestrian3D.gd").new()
+	var injured = load("res://characters/AnimatedPedestrian3D.gd").new()
 	injured.defer_presentation = true
 	scene.add_child(injured)
 	injured.set_physics_process(false)

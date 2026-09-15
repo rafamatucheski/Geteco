@@ -65,14 +65,14 @@ var _gait_position_valid := false
 var walk_dir: Vector2 = Vector2.RIGHT
 var is_scared: bool = false
 var panic_timer: float = 0.0
-var danger_response := preload("res://PedestrianDanger.gd").new()
+var danger_response := preload("res://characters/PedestrianDanger.gd").new()
 var _horn_escape_target := Vector2.ZERO
 var _horn_escape_time := 0.0
 var panic_recovery := 0.0
 @export var max_health: int = 40
 var health: int = 40
 var is_dead: bool = false
-var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
+var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 ## Knocked down but alive (survivable vehicle impact, see get_run_over()) --
 ## frozen on the ground waiting for an ambulance. Shared medical care gives
 ## nonfatal injuries one hospital day and critical injuries two days.
@@ -215,7 +215,7 @@ func _ready() -> void:
 		add_child(c)
 	
 	_setup_district_and_archetype()
-	preload("res://world/shared/pedestrians/CitizenAppearance.gd").prepare(self)
+	preload("res://characters/pedestrians/CitizenAppearance.gd").prepare(self)
 	if defer_presentation:
 		# A silhueta mantÃ©m o cidadÃ£o visÃ­vel enquanto o detalhe aguarda orÃ§amento.
 		_presentation_fallback = Polygon2D.new()
@@ -1007,9 +1007,9 @@ func _build_3d_viewport() -> void:
 	right_lower_leg.add_child(_create_joint_cap(0.062, mat_shin_r, Vector3.ZERO))
 	
 	_apply_body_proportions()
-	preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(self, int(archetype))
+	preload("res://characters/pedestrians/CitizenDetails.gd").dress(self, int(archetype))
 	if has_handgun:
-		preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, "pistol")
+		preload("res://characters/pedestrians/NPCCombatRig.gd").attach(self, "pistol")
 	# ExibiÃ§Ã£o 2D
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport.get_texture()
@@ -1017,7 +1017,7 @@ func _build_3d_viewport() -> void:
 	add_child(sprite_3d_display)
 	# Deferred citizens keep walking before PresentationBudget builds the rig.
 	# Install the gait only after every articulated limb exists.
-	var built_gait := preload("res://world/shared/pedestrians/CitizenGait.gd").new()
+	var built_gait := preload("res://characters/pedestrians/CitizenGait.gd").new()
 	if built_gait.configure(self, int(get_meta("appearance_variant", 0))):
 		gait = built_gait
 
@@ -1239,7 +1239,7 @@ func _physics_process(delta: float) -> void:
 		if gait != null:
 			gait.apply_pose()
 
-	preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+	preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 
 func _advance_gait(delta: float) -> void:
 	# move_actor can skip move_and_slide when stopped; get_position_delta would

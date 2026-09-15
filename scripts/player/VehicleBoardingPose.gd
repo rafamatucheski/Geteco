@@ -5,7 +5,7 @@ var _weapon: Node3D
 var _weapon_visible := true
 var _yaw := 0.0
 var _ready := false
-var _arms := preload("res://PlayerCombatPose.gd").new()
+var _arms := preload("res://characters/PlayerCombatPose.gd").new()
 
 func setup(actor: CharacterBody2D) -> void:
 	if not "model_root" in actor or not is_instance_valid(actor.model_root): return

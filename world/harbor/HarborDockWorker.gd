@@ -1,7 +1,7 @@
-extends "res://AnimatedPedestrian3D.gd"
+extends "res://characters/AnimatedPedestrian3D.gd"
 ## Carga local com estoque conservado; combate e socorro seguem o pedestre comum.
 signal crate_handled(point: Vector2)
-const PART := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PART := preload("res://characters/pedestrians/CitizenDetails.gd")
 var work_points := PackedVector2Array()
 var work_route := PackedVector2Array()
 var station_points := PackedVector2Array()

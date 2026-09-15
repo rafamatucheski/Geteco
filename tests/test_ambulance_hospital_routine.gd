@@ -21,7 +21,7 @@ func _run() -> void:
 	var wanted := root.get_node("WantedManager")
 	wanted.clear_wanted_level()
 	wanted.set_process(false)
-	var patient = load("res://AnimatedPedestrian3D.gd").new()
+	var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.position = Vector2(1920, 1760)
 	current_scene.add_child(patient)
 	await physics_frame

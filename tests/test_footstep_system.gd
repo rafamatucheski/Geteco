@@ -28,7 +28,7 @@ func _run_test() -> void:
 
 	# 3. Testar Player com tempo seco
 	print("[PASSO 3] Testando integracao no Player (Tempo Seco)...")
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	var player = CharacterBody2D.new()
 	player.set_script(player_script)
 	root.add_child(player)

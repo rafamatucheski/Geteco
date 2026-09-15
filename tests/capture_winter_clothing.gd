@@ -19,7 +19,7 @@ func _run() -> void:
 	var camera := Camera2D.new()
 	world.add_child(camera)
 	camera.zoom = Vector2.ONE * 1.2
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var collision := CollisionShape2D.new()
 	collision.name = "Collision"
 	var capsule := CapsuleShape2D.new()

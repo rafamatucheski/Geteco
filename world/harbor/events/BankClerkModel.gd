@@ -1,6 +1,6 @@
 extends "res://world/mountain_pass/WinterResidentModel.gd"
 ## Atendentes adultos: silhueta contínua, braços articulados e roupa social.
-const DETAIL = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const DETAIL = preload("res://characters/pedestrians/CitizenDetails.gd")
 var forearms: Array[Node3D] = []
 
 func _ready() -> void:

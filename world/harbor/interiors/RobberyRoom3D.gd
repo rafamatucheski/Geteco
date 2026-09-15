@@ -70,7 +70,7 @@ func _setup_interior_content() -> void:
 	var model := Node3D.new()
 	bank_model = model
 	view.add_child(model)
-	var builder := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var builder := preload("res://characters/pedestrians/CitizenDetails.gd")
 	builder.piece(model,Vector3(14,.15,10),Vector3(0,-.1,0),floor_color)
 	for x in range(-6,7): builder.piece(model,Vector3(.025,.012,10),Vector3(x,0,0),Color("646b68"))
 	builder.piece(model,Vector3(14,2.5,.18),Vector3(0,1.2,-5),Color("a29c88"))
@@ -590,7 +590,7 @@ func on_guard_down(guard: Node2D) -> void:
 	var ray := room_camera.project_ray_normal(pixel)
 	keycard_visual.position=origin+ray*(-origin.y/ray.y)+Vector3(0,.035,0)
 	keycard_visual.rotation.y=.35
-	var part=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var part=preload("res://characters/pedestrians/CitizenDetails.gd")
 	part.piece(keycard_visual,Vector3(.24,.018,.15),Vector3.ZERO,Color("ddd9c7"))
 	part.piece(keycard_visual,Vector3(.23,.004,.035),Vector3(0,.011,-.04),Color("273b48"))
 	part.piece(keycard_visual,Vector3(.048,.004,.045),Vector3(-.065,.013,.025),Color("c6a24c"))

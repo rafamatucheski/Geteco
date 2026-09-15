@@ -12,7 +12,7 @@ var owner_model: Node3D
 
 func configure(model: Node3D) -> void:
 	owner_model = model
-	var parts = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var parts = preload("res://characters/pedestrians/CitizenDetails.gd")
 	for side in [-1,1]:
 		for size in [Vector3(.17,.29,.19),Vector3(.145,.29,.17),Vector3(.13,.13,.145)]:
 			arms.append(parts.piece(self,size,Vector3.ZERO,model.coat_color if size.y > .2 else Color("2c3036")))

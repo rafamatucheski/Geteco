@@ -98,7 +98,7 @@ func run() -> void:
 	# ==========================================
 	# CENÁRIO A: atropelamento leve -- sobrevive, ambulância resgata
 	# ==========================================
-	var ped_script := load("res://AnimatedPedestrian3D.gd")
+	var ped_script := load("res://characters/AnimatedPedestrian3D.gd")
 	var survivor: CharacterBody2D = ped_script.new()
 	# Deliberately close to the clinic apron (District/ClinicAccess at
 	# (1910,1705)): a farther incident (tried (1100,2230), matching an

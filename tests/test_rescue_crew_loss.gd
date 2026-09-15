@@ -16,7 +16,7 @@ func run() -> void:
 	vehicle.position = Vector2(250,0)
 	world.add_child(vehicle)
 	vehicle.set_physics_process(false)
-	var patient = preload("res://AnimatedPedestrian3D.gd").new()
+	var patient = preload("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.name = "CrewLossPatient"
 	world.add_child(patient)
 	await process_frame

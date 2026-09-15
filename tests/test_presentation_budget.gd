@@ -6,12 +6,12 @@ func _init() -> void:
 func run_test() -> void:
 	var budget = root.get_node("PresentationBudget")
 	budget.set_process(false)
-	var actor = load("res://AnimatedPedestrian3D.gd").new()
+	var actor = load("res://characters/AnimatedPedestrian3D.gd").new()
 	actor.defer_presentation = true
 	actor.position = Vector2(100000, 100000)
 	root.add_child(actor)
 	actor.set_physics_process(false)
-	preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(actor, 0)
+	preload("res://characters/pedestrians/CitizenDetails.gd").dress(actor, 0)
 	assert(actor.viewport == null)
 	assert(actor.has_node("CollisionShape2D"))
 	budget._process(0.016)

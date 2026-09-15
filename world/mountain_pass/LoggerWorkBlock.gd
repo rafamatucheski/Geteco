@@ -3,7 +3,7 @@ var split_count := 0
 var log_piece: MeshInstance3D
 
 func _ready() -> void:
-	var parts = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var parts = preload("res://characters/pedestrians/CitizenDetails.gd")
 	var stump := MeshInstance3D.new()
 	var cylinder := CylinderMesh.new()
 	cylinder.top_radius = .24
@@ -29,7 +29,7 @@ func chop() -> void:
 		var chip_name := "SplitWood%d" % i
 		var chip := get_node_or_null(chip_name) as MeshInstance3D
 		if chip == null:
-			chip = preload("res://world/shared/pedestrians/CitizenDetails.gd").piece(self,Vector3(.035,.025,.12),Vector3.ZERO,Color("d0a371"))
+			chip = preload("res://characters/pedestrians/CitizenDetails.gd").piece(self,Vector3(.035,.025,.12),Vector3.ZERO,Color("d0a371"))
 			chip.name = chip_name
 		chip.position = Vector3(-.3 + i * .18, .03, .18 + .08 * (split_count % 3))
 		chip.rotation.y = split_count * .8 + i

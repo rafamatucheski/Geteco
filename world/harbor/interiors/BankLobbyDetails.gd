@@ -1,6 +1,6 @@
 extends RefCounted
 ## Acabamento do salão; coordenadas em metros, compartilhadas com a planta física.
-const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PART = preload("res://characters/pedestrians/CitizenDetails.gd")
 const INK = Color("263f43")
 const BRASS = Color("b7975d")
 

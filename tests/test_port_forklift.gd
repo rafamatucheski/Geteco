@@ -23,7 +23,7 @@ func run() -> void:
 	root.get_node("WantedManager").set_process(false)
 	var forklift = parked("port_forklift",Vector2(300,300))
 	var lift = forklift.get_node("ForkliftLift")
-	var actor = load("res://Player.gd").new()
+	var actor = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	actor.add_child(camera)
@@ -95,7 +95,7 @@ func run() -> void:
 	check(forklift.velocity.length() > 60 and forklift.velocity.length() <= 90.1, "Unloaded machine remains very slow")
 	Input.action_release("move_up")
 	await frames(30)
-	var person = load("res://AnimatedPedestrian3D.gd").new()
+	var person = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(person)
 	person.position = forklift.position + Vector2(70,0)
 	person.set_physics_process(false)

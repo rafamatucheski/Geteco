@@ -36,7 +36,7 @@ func _run() -> void:
 	var hud := ReloadHUD.new()
 	hud.add_to_group("hud")
 	world.add_child(hud)
-	var player = preload("res://Player.gd").new()
+	var player = preload("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

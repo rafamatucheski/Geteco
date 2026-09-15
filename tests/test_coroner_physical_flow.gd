@@ -40,7 +40,7 @@ func run() -> void:
 	depot.position = Vector2(100,100)
 	director.add_child(depot)
 	director.register_depot(depot)
-	var person := preload("res://AnimatedPedestrian3D.gd").new()
+	var person := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	person.name = "PhysicalVictim"
 	person.position = Vector2(400,100)
 	world.add_child(person)
@@ -52,7 +52,7 @@ func run() -> void:
 	var key: String = care.identity(person)
 	var second_key := ""
 	if OS.get_cmdline_user_args().has("multiple"):
-		var second := preload("res://AnimatedPedestrian3D.gd").new()
+		var second := preload("res://characters/AnimatedPedestrian3D.gd").new()
 		second.name = "SecondVictim"
 		second.position = Vector2(460,125)
 		world.add_child(second)

@@ -11,7 +11,7 @@ func run() -> void:
 	background.polygon=PackedVector2Array([Vector2.ZERO,Vector2(1000,0),Vector2(1000,600),Vector2(0,600)])
 	background.color=Color("b7b9b4")
 	world.add_child(background)
-	var actor=load("res://Player.gd").new()
+	var actor=load("res://characters/Player.gd").new()
 	var actor_camera:=Camera2D.new()
 	actor_camera.name="Camera"
 	actor.add_child(actor_camera)

@@ -11,7 +11,7 @@ func _run() -> void:
 	var saves = root.get_node("SaveManager")
 	saves.set("_save_dir", "D:/geteco/artifacts/station-npcs-review/portraits/saves/")
 	saves.clear_pending_save()
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

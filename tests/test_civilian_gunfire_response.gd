@@ -19,11 +19,11 @@ func run() -> void:
 	scene.add_child(officer)
 	officer.set_physics_process(false)
 	officer.position = Vector2(100, 300)
-	var person = load("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd").new()
+	var person = load("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd").new()
 	person.configure_authored_route(PackedVector2Array([Vector2(240, 380), Vector2(240, 900)]), "test")
 	scene.add_child(person)
 	person.is_gangster = false
-	var distant = load("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd").new()
+	var distant = load("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd").new()
 	distant.configure_authored_route(PackedVector2Array([Vector2(2200, 1600), Vector2(2500, 1600)]), "far")
 	scene.add_child(distant)
 	distant.is_gangster = false
@@ -31,7 +31,7 @@ func run() -> void:
 	resident.position = Vector2(180, 200)
 	scene.add_child(resident)
 	resident.speech.text = "routine dialogue"
-	var sheltered = load("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd").new()
+	var sheltered = load("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd").new()
 	sheltered.configure_authored_route(PackedVector2Array([Vector2(500, -100), Vector2(550, -100)]), "cover")
 	scene.add_child(sheltered)
 	sheltered.is_gangster = false

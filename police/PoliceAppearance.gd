@@ -67,7 +67,7 @@ static func apply(actor: Node) -> void:
 			if child is MeshInstance3D: child.scale *= thickness
 	var index: int = actor.appearance_model
 	actor.head_node.scale.x *= 0.95 + (index % 4) * 0.035
-	var detail := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var detail := preload("res://characters/pedestrians/CitizenDetails.gd")
 	var head: Node3D = actor.head_node
 	var hair := Color(profile.hair)
 	if profile.get("woman", false):

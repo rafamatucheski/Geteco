@@ -21,7 +21,7 @@ const ColdSurvivalControllerScript = preload("res://world/mountain_pass/ColdSurv
 const ColdStatusHUDScript = preload("res://world/mountain_pass/ColdStatusHUD.gd")
 const HARBOR_BRIDGE_SCRIPT = preload("res://world/harbor/HarborBridge.gd")
 const MOUNTAIN_SUV_SCRIPT = preload("res://world/mountain_pass/MountainSUV.gd")
-const PLAYER_SCRIPT := preload("res://Player.gd")
+const PLAYER_SCRIPT := preload("res://characters/Player.gd")
 const MOUNTAIN_SCENERY_BUILDER := preload("res://world/mountain_pass/MountainSceneryBuilder.gd")
 const MOUNTAIN_INTERIOR_MGR_SCRIPT := preload("res://world/mountain_pass/MountainInteriorManager.gd")
 

@@ -100,7 +100,7 @@ func run():
  grenade._physics_process(.1)
  check(grenade.global_position.length() <= 320.01 and grenade.velocity.is_zero_approx(),"grenade travel capped while fuse remains active")
  grenade.queue_free()
- var player = load("res://Player.gd").new()
+ var player = load("res://characters/Player.gd").new()
  var camera := Camera2D.new()
  camera.name = "Camera"
  player.add_child(camera)

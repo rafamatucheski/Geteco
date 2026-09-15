@@ -14,7 +14,7 @@ func _run() -> void:
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	# Regressão do rig procedural original; o Dante Meshy (padrão desde 14/09)
 	# tem cobertura própria em test_meshy_dante e test_meshy_outfits.
 	player.use_meshy_dante = false

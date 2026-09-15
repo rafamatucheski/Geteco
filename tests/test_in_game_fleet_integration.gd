@@ -24,7 +24,7 @@ func _run() -> void:
 
 	# --- 1. PROPORÇÃO & ESCALA ANATÔMICA DO DANTE ---
 	print("--- 1. Proporção e Escala do Dante ---")
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	var player = CharacterBody2D.new()
 	player.set_script(player_script)
 	var cam = Camera2D.new()

@@ -6,7 +6,7 @@ extends Node2D
 ## pedestrian and parking authored data remain owned by the district layout.
 
 const MODERN_TRAFFIC := preload("res://emergency/ModernTrafficFactory.gd")
-const AUTHORED_PEDESTRIAN := preload("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd")
+const AUTHORED_PEDESTRIAN := preload("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd")
 const JUNCTION_TRAFFIC := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 
 @export_range(0, 32) var moving_vehicle_count := 24

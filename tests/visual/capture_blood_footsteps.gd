@@ -16,7 +16,7 @@ func run() -> void:
 	camera.zoom = Vector2.ONE * 1.7
 	world.add_child(camera)
 	for index in speeds.size():
-		var actor := preload("res://AnimatedPedestrian3D.gd").new()
+		var actor := preload("res://characters/AnimatedPedestrian3D.gd").new()
 		actor.position = Vector2(20, 30 + index * 42)
 		world.add_child(actor)
 		actor.set_physics_process(false)

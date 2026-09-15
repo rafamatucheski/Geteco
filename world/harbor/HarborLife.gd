@@ -22,7 +22,7 @@ var _population_clock := 0.0
 var _budget_clock := 0.0
 var _spawn_serial := 1000
 var _population_activity := preload("res://systems/PopulationActivity.gd").new()
-var walk_space := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").new()
+var walk_space := preload("res://characters/pedestrians/PedestrianWalkSpace.gd").new()
 
 
 class HarborController extends JunctionTrafficController:
@@ -105,7 +105,7 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 		appearance_seed = appearance_variant
 		appearance_gender = 1 + appearance_variant % 2
 		super._ready()
-		preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(self,appearance_variant)
+		preload("res://characters/pedestrians/CitizenDetails.gd").dress(self,appearance_variant)
 
 	# Existing generic shop visits target an approximate facade position. Until
 	# preview buildings expose verified entrances, remain on audited promenades.

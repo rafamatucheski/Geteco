@@ -29,7 +29,7 @@ var work_time := 0.0
 var chop_pose: Node3D
 
 func _ready() -> void:
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").build(self)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").build(self)
 	prepare_seated_rig()
 	if role == "logger":
 		chop_pose = preload("res://world/mountain_pass/LoggerChopPose.gd").new()
@@ -49,7 +49,7 @@ func prepare_seated_rig() -> void:
 		for child in leg.get_children():
 			leg.remove_child(child)
 			child.queue_free()
-		var parts = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+		var parts = preload("res://characters/pedestrians/CitizenDetails.gd")
 		parts.piece(leg,Vector3(.185,.36,.21),Vector3(0,-.17,0),Color("344353"))
 		var knee := Node3D.new()
 		knee.name="Knee"
@@ -63,7 +63,7 @@ func prepare_seated_rig() -> void:
 	_build_activity_props()
 
 func _build_activity_props() -> void:
-	var parts = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var parts = preload("res://characters/pedestrians/CitizenDetails.gd")
 	mug = Node3D.new()
 	mug.name = "HotDrink"
 	limbs[3].add_child(mug)

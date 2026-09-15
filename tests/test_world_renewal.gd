@@ -23,7 +23,7 @@ func run() -> void:
 	care.set_process(false)
 	renewal.set_process(false)
 	root.get_node("WantedManager").set_process(false)
-	var citizen = load("res://AnimatedPedestrian3D.gd").new()
+	var citizen = load("res://characters/AnimatedPedestrian3D.gd").new()
 	citizen.name = "RenewableResident"
 	citizen.position = Vector2(3000, 3000)
 	world.add_child(citizen)
@@ -174,7 +174,7 @@ func run() -> void:
 	var remaining: float = care.records()[key].remaining_seconds
 	citizen.queue_free()
 	await process_frame
-	var replacement = load("res://AnimatedPedestrian3D.gd").new()
+	var replacement = load("res://characters/AnimatedPedestrian3D.gd").new()
 	replacement.name = "RenewableResident"
 	replacement.position = Vector2(3000,3000)
 	world.add_child(replacement)

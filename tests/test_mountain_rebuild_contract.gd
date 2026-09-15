@@ -17,7 +17,7 @@ func run() -> void:
 	npc.is_stationary = true
 	world.add_child(npc)
 	npc.set_physics_process(false)
-	var player := preload("res://Player.gd").new()
+	var player := preload("res://characters/Player.gd").new()
 	var collision := CollisionShape2D.new()
 	collision.name = "Collision"
 	collision.shape = CircleShape2D.new()

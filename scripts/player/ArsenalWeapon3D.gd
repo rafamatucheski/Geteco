@@ -1,6 +1,6 @@
 extends RefCounted
 ## Shared geometry for equipped weapons and the trunk arsenal.
-const POSE = preload("res://PlayerCombatPose.gd")
+const POSE = preload("res://characters/PlayerCombatPose.gd")
 
 static func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()

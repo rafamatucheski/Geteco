@@ -18,7 +18,7 @@ func run() -> void:
 	var actor := CharacterBody2D.new()
 	# Production motorcycle boarding reparents Dante's rig and accesses his
 	# body nodes; a bare CharacterBody2D is not a valid rider fixture.
-	actor.set_script(load("res://Player.gd"))
+	actor.set_script(load("res://characters/Player.gd"))
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	actor.add_child(camera)

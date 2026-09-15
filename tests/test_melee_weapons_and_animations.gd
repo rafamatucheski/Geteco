@@ -60,7 +60,7 @@ func _run() -> void:
 	root.add_child(scene)
 	current_scene = scene
 
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	var camera := Camera2D.new()
 	camera.name = "Camera"
@@ -128,10 +128,10 @@ func _run() -> void:
 	check("PortMaintenanceAxePickup" in port_src and '&"axe"' in port_src, "Harbor South Port defines maintenance axe pickup")
 
 	# 6. NPC Melee Rig and Gangster Attack Verification
-	var ped = load("res://AnimatedPedestrian3D.gd").new()
+	var ped = load("res://characters/AnimatedPedestrian3D.gd").new()
 	scene.add_child(ped)
 	ped.ensure_presentation()
-	var rig_script = load("res://world/shared/pedestrians/NPCCombatRig.gd")
+	var rig_script = load("res://characters/pedestrians/NPCCombatRig.gd")
 	var rig = rig_script.attach(ped, "knuckles")
 	check(rig.active_weapon_id == "knuckles", "NPC rig equips knuckles")
 	rig.attack()

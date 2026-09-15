@@ -1,5 +1,5 @@
 extends SceneTree
-const INDEX := preload("res://world/shared/pedestrians/PedestrianNeighborhood.gd")
+const INDEX := preload("res://characters/pedestrians/PedestrianNeighborhood.gd")
 var failures := 0
 
 func _initialize() -> void:
@@ -37,7 +37,7 @@ func _run() -> void:
 	# Um objeto pode sair da árvore entre duas consultas do mesmo tick.
 	var removed: Node2D = actors.pop_back()
 	removed.free()
-	var pedestrian := preload("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd").new()
+	var pedestrian := preload("res://characters/pedestrians/AuthoredSidewalkPedestrian.gd").new()
 	check(not pedestrian._social_neighbor(removed), "Vizinho em cache já liberado deve ser rejeitado sem erro de argumento.")
 	pedestrian.free()
 	check(not INDEX.neighbors(actors[-1], 64.0).has(removed), "Consulta não deve devolver objeto removido.")

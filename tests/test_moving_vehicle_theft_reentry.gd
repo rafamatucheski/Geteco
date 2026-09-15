@@ -6,7 +6,7 @@ func run() -> void:
 	root.add_child(world)
 	current_scene = world
 	root.get_node("PresentationBudget").set_process(false)
-	player = load("res://Player.gd").new()
+	player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

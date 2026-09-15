@@ -22,7 +22,7 @@ func frames(count: int) -> void:
 	for i in count: await physics_frame
 
 func person_at(point: Vector2) -> Node2D:
-	var person = load("res://AnimatedPedestrian3D.gd").new()
+	var person = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(person)
 	person.position = point
 	person.set_physics_process(false)

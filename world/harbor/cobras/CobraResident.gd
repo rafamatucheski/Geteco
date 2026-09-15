@@ -66,7 +66,7 @@ func _build_role_weapon() -> void:
 	muzzle_flash_3d.material_override = _make_mat(Color("ffca75"),0.0)
 	muzzle_flash_3d.visible = false
 	right_lower_arm.add_child(muzzle_flash_3d)
-	preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, weapon_id)
+	preload("res://characters/pedestrians/NPCCombatRig.gd").attach(self, weapon_id)
 
 func _pick_new_sidewalk_target() -> void:
 	if patrol.is_empty():

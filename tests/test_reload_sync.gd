@@ -14,7 +14,7 @@ func run() -> void:
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
-	var player := preload("res://Player.gd").new()
+	var player := preload("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

@@ -15,7 +15,7 @@ func run() -> void:
 	root.add_child(stage)
 	current_scene = stage
 	var player := CharacterBody2D.new()
-	player.set_script(load("res://Player.gd"))
+	player.set_script(load("res://characters/Player.gd"))
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

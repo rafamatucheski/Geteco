@@ -9,7 +9,7 @@ func _run() -> void:
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)
@@ -106,7 +106,7 @@ func _run() -> void:
 	load("res://scripts/player/ArsenalWeapon3D.gd").build(mesh,"axe")
 	check(mesh.has_node("AshHandle") and mesh.has_node("SteelHead"), "equipped axe uses axe geometry")
 	mesh.free()
-	var city_person = load("res://AnimatedPedestrian3D.gd").new()
+	var city_person = load("res://characters/AnimatedPedestrian3D.gd").new()
 	city_person.position = Vector2(35,0)
 	scene.add_child(city_person)
 	city_person.set_physics_process(false)

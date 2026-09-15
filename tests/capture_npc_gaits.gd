@@ -20,7 +20,7 @@ func run() -> void:
 			actor.shirt_color=Color("65adae")
 			actor.pants_color=Color("34767e")
 		else:
-			actor=load("res://Player.gd").new()
+			actor=load("res://characters/Player.gd").new()
 			var cam=Camera2D.new()
 			cam.name="Camera"
 			actor.add_child(cam)
@@ -50,7 +50,7 @@ func run() -> void:
 			world.environment.ambient_light_color=Color("a4b2c4")
 		actors.append(actor)
 		if i<4:
-			var gait=load("res://world/shared/pedestrians/CitizenGait.gd").new()
+			var gait=load("res://characters/pedestrians/CitizenGait.gd").new()
 			gait.configure(actor,i)
 			gaits.append(gait)
 		var title=Label.new()

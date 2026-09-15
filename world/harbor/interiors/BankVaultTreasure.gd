@@ -1,6 +1,6 @@
 extends RefCounted
 ## Cada conjunto é uma coleta única: notas com cintas e barras guardadas em bandejas.
-const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PART = preload("res://characters/pedestrians/CitizenDetails.gd")
 
 static func build(parent: Node3D, point: Vector3, variant: int) -> Node3D:
 	var pile := Node3D.new()

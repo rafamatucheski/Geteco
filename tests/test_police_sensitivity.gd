@@ -118,7 +118,7 @@ func run() -> void:
 	check(patrol.alerted, "Nearby foot patrol responds to repeated incidents in sight")
 	patrol.free()
 	actor.free()
-	for scene_path in ["res://PlayerCar.gd", "res://cars/traffic/TrafficVehicle.tscn", "res://emergency/EmergencyVehicle.tscn"]:
+	for scene_path in ["res://characters/PlayerCar.gd", "res://cars/traffic/TrafficVehicle.tscn", "res://emergency/EmergencyVehicle.tscn"]:
 		for player_caused in [false, true]:
 			wanted.reset_crime()
 			var car: Node2D

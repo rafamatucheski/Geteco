@@ -21,7 +21,7 @@ func _run() -> void:
 		line.width = 0.3
 		line.default_color = Color("495963")
 		world.add_child(line)
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var cam := Camera2D.new()
 	cam.name = "Camera"
 	cam.zoom = Vector2.ONE * 6

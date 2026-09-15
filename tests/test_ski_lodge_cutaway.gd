@@ -77,7 +77,7 @@ func run() -> void:
 		check(bounds.has(StringName(id)), "Furniture inventory has mesh-derived solid: "+id)
 	for node in room.room_view.model.find_children("*","MeshInstance3D",true,false):
 		check(node.has_meta("interior_solid_id") or node.get_parent().name == "LivingHearth", "Mesh classified: "+node.name)
-	var visitor = load("res://AnimatedPedestrian3D.gd").new()
+	var visitor = load("res://characters/AnimatedPedestrian3D.gd").new()
 	scene.add_child(visitor)
 	visitor.set_physics_process(false)
 	var presentation := preload("res://systems/interiors/InteriorActorPresentation.gd").new()

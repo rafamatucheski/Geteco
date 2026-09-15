@@ -49,7 +49,7 @@ func run() -> void:
 	camera = Camera2D.new()
 	world.add_child(camera)
 	camera.make_current()
-	patient = preload("res://AnimatedPedestrian3D.gd").new()
+	patient = preload("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(patient)
 	patient.set_physics_process(false)
 	patient.set_process(false)
@@ -72,7 +72,7 @@ func run() -> void:
 		medic.right_upper_arm.rotation.x = -.8
 		medic.model_root.rotation.y = PI * .5 if i == 0 else -PI * .5
 		crew.append(medic)
-	var outside := preload("res://AnimatedPedestrian3D.gd").new()
+	var outside := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	outside.position = Vector2(-55, 145)
 	world.add_child(outside)
 	outside.set_physics_process(false)

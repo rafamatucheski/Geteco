@@ -2,7 +2,7 @@ extends SceneTree
 
 const LIFE := preload("res://world/harbor/HarborLife.gd")
 const COBRA := preload("res://world/harbor/cobras/CobraResident.gd")
-const GAIT := preload("res://world/shared/pedestrians/CitizenGait.gd")
+const GAIT := preload("res://characters/pedestrians/CitizenGait.gd")
 var failures := 0
 
 func _initialize() -> void: run.call_deferred()

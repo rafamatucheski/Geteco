@@ -41,12 +41,12 @@ func run() -> void:
 	camera.reset_smoothing()
 	await root.get_node("EmergencyPool").prepare_presentations()
 	await create_timer(10).timeout
-	var patient = load("res://AnimatedPedestrian3D.gd").new()
+	var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.position = point
 	world.add_child(patient)
 	patient.is_gangster = false
 	patient.set_physics_process(false)
-	var witness = load("res://AnimatedPedestrian3D.gd").new()
+	var witness = load("res://characters/AnimatedPedestrian3D.gd").new()
 	witness.position = point+Vector2(55,30)
 	world.add_child(witness)
 	witness.is_gangster = false

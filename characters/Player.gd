@@ -86,7 +86,7 @@ var weapon_wheel: WeaponWheel
 var primary_fire_was_pressed: bool = false
 const MELEE_SWING_DURATION := 0.22
 var _melee_swing_timer: float = 0.0
-var combat_pose := preload("res://PlayerCombatPose.gd").new()
+var combat_pose := preload("res://characters/PlayerCombatPose.gd").new()
 const DanteVisualAdapter := preload("res://scripts/player/DanteVisualAdapter.gd")
 ## Estado do capacete de moto. Sumiu do Player entre 12 e 14/09 e o MotorcycleModel
 ## só liga o capacete se este método existir (has_method), então o recurso inteiro

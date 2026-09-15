@@ -116,13 +116,13 @@ func run() -> void:
 		parked_main.set_physics_process(false)
 		parked_main.set_meta("harbor_director_id", director.get_instance_id())
 		director._medical_slots[parked_main.get_instance_id()] = parked_main.global_position
-	var patient = load("res://AnimatedPedestrian3D.gd").new()
+	var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.name = "ReturningResident"
 	patient.position = Vector2(180,30)
 	world.add_child(patient)
 	patient.is_gangster = false
 	patient.set_physics_process(false)
-	var witness = load("res://AnimatedPedestrian3D.gd").new()
+	var witness = load("res://characters/AnimatedPedestrian3D.gd").new()
 	witness.name = "RegionalColleague"
 	witness.position = Vector2(240,90)
 	world.add_child(witness)

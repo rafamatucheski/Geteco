@@ -24,7 +24,7 @@ var _shot_cooldown := 1.0
 var shots_fired := 0
 var pixels_per_metre := 20.0
 var impact_velocity := Vector2.ZERO
-var fall := preload("res://CharacterFallPresentation.gd").new()
+var fall := preload("res://characters/CharacterFallPresentation.gd").new()
 var burial_identity := ""
 var burial_work := 0.0
 var _burial_point := Vector2.ZERO
@@ -98,7 +98,7 @@ func _ready() -> void:
 	weapon = Node3D.new()
 	weapon.name = "KeeperShotgun"
 	model.right_hand_mount.add_child(weapon)
-	var parts := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var parts := preload("res://characters/pedestrians/CitizenDetails.gd")
 	parts.piece(weapon, Vector3(.07, .07, .5), Vector3(0, 0, -.23), Color("373e38"))
 	parts.piece(weapon, Vector3(.09, .11, .23), Vector3(0, -.03, .09), Color("896444"))
 	parts.piece(weapon, Vector3(.09, .08, .18), Vector3(0, -.05, -.22), Color("896444"))

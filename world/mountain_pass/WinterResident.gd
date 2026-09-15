@@ -9,7 +9,7 @@ var home := Vector2.ZERO
 var destination := Vector2.ZERO
 var health := 80
 var is_dead := false
-var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
+var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 var viewport: SubViewport
 var model: Node3D
 var speech: Label
@@ -24,7 +24,7 @@ var elapsed := 0.0
 var next_line := 4.0
 var speech_until := 0.0
 var render_clock := 0.0
-var danger_response := preload("res://PedestrianDanger.gd").new()
+var danger_response := preload("res://characters/PedestrianDanger.gd").new()
 var panic_timer := 0.0
 var appearance_variant := -1
 var _routine_pause := 0.0
@@ -64,7 +64,7 @@ func _process_danger(delta: float) -> bool:
 	activity_left = 2.0
 	speech.text = ""
 	velocity = danger_response.movement(self, delta, 95.0)
-	preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+	preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 	model.walking = velocity.length() > 1.0
 	if model.walking: model.rotation.y = lerp_angle(model.rotation.y, -velocity.angle() + PI * 0.5, minf(1.0, delta * 9.0))
 	model.motion_speed = velocity.length()
@@ -97,7 +97,7 @@ func _ready() -> void:
 	viewport.transparent_bg = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(viewport)
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").light_viewport(viewport)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").light_viewport(viewport)
 	model = _create_model()
 	model.coat_color = coat_color
 	model.role = role
@@ -270,7 +270,7 @@ func _physics_process(delta: float) -> void:
 		travel_time += delta
 		var distance := global_position.distance_to(destination)
 		velocity = _navigation.movement(self,destination,minf(20.0 + appearance_variant % 8, distance * 1.8),delta)
-		preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 		if distance < .4 and role == "logger" and _return_to_work:
 			activity = "work"
 			_return_to_work = false
@@ -416,7 +416,7 @@ func _process_retaliation(delta: float) -> bool:
 		model.attack_age = 0.0
 	else:
 		if distance > 30.0: velocity = _navigation.movement(self, retaliation_target.global_position, 105.0, delta)
-		preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 	model.walking = velocity.length() > 1.0
 	model.motion_speed = velocity.length()
 	_refresh_resident_visual(delta)

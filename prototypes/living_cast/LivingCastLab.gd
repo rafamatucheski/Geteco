@@ -26,7 +26,7 @@ func _ready() -> void:
 		add_child(car)
 		cars.append(car)
 	# Actual Player controls and damage contract, isolated from the city scene.
-	player = load("res://Player.gd").new()
+	player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.position = Vector2(400, 310)
 	player.collision_layer = 4

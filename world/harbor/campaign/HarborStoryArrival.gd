@@ -183,7 +183,7 @@ func _spawn_encounter() -> void:
 	car.arrived.connect(_arrived)
 	car.obstructed.connect(func() -> void:
 		mission._text.text = say("Maciota: O caminho está bloqueado. Vamos esperar. [Esc] Descer","Maciota: The road is blocked. Let's wait. [Esc] Get out"))
-	maciota = preload("res://JagerNPC.gd").new()
+	maciota = preload("res://characters/JagerNPC.gd").new()
 	# The garage contact normally stands still and only has an interaction
 	# area. The walking tour actor also needs a real physical body.
 	var npc_collision := CollisionShape2D.new()

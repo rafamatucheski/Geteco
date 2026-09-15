@@ -8,7 +8,7 @@ extends SceneTree
 ## 5. NPCs do Resort Estacionários e com Diálogo Interativo ([E])
 ## 6. Conformidade com AGENTS.md (nomes próprios limpos, manequins proporcionais)
 
-const PlayerScript = preload("res://Player.gd")
+const PlayerScript = preload("res://characters/Player.gd")
 const WinterResidentScript = preload("res://world/mountain_pass/WinterResident.gd")
 
 func _initialize() -> void:

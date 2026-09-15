@@ -57,7 +57,7 @@ func _ready() -> void:
 	body_shape.shape = capsule
 	add_child(body_shape)
 	_build_3d_viewport()
-	preload("res://world/shared/pedestrians/CitizenDetails.gd").finish_rig(self, "clerk")
+	preload("res://characters/pedestrians/CitizenDetails.gd").finish_rig(self, "clerk")
 	_setup_interaction()
 	_build_dialogue_canvas()
 	var settings := get_node_or_null("/root/SettingsManager")
@@ -134,7 +134,7 @@ func configure_room_presentation(camera: Camera3D, display: Sprite2D) -> void:
 		if part is MeshInstance3D and part.mesh is SphereMesh and part.position.y > 0.05:
 			part.hide()
 	var hair_color := Color("88817c") if is_female else Color("302921")
-	preload("res://world/shared/pedestrians/CitizenAppearance.gd").build_hair(head_node, 3 if is_female else 1, hair_color, has_hat)
+	preload("res://characters/pedestrians/CitizenAppearance.gd").build_hair(head_node, 3 if is_female else 1, hair_color, has_hat)
 	head_node.get_node("HairStyle").scale = Vector3.ONE * 0.82
 	if is_female:
 		var tail := head_node.get_node("HairStyle")
@@ -142,7 +142,7 @@ func configure_room_presentation(camera: Camera3D, display: Sprite2D) -> void:
 		for part in tail.get_children():
 			if part.position.y < 0.04:
 				part.hide()
-		preload("res://world/shared/pedestrians/CitizenDetails.gd").piece(tail, Vector3(.15, .14, .14), Vector3(0, .06, .19), hair_color, true)
+		preload("res://characters/pedestrians/CitizenDetails.gd").piece(tail, Vector3(.15, .14, .14), Vector3(0, .06, .19), hair_color, true)
 	resting_facing_y = PI
 	model_root.rotation.y = resting_facing_y
 	viewport_3d.find_world_3d().environment.ambient_light_energy = 0.65
@@ -186,7 +186,7 @@ func _build_model() -> void:
 	var cap_t := CapsuleMesh.new()
 	cap_t.radius = 0.16
 	cap_t.height = 0.46
-	torso_mesh.mesh = load("res://world/shared/pedestrians/CitizenAppearance.gd").tailored_body(is_female, false)
+	torso_mesh.mesh = load("res://characters/pedestrians/CitizenAppearance.gd").tailored_body(is_female, false)
 	torso_mesh.material_override = mat_shirt
 	torso_node.add_child(torso_mesh)
 
@@ -203,7 +203,7 @@ func _build_model() -> void:
 	head_mesh.material_override = mat_skin
 	head_node.add_child(head_mesh)
 	head_node.scale=Vector3.ONE*.85
-	var detail=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var detail=preload("res://characters/pedestrians/CitizenDetails.gd")
 	detail.piece(torso_node,Vector3(.11,.20,.115),Vector3(0,.285,.01),skin_color,true)
 	detail.piece(torso_node,Vector3(.27,.13,.23),Vector3(0,-.25,0),pants_color)
 
@@ -253,7 +253,7 @@ func _build_model() -> void:
 		leg.position = Vector3(side, 0.50, 0.0)
 		model_root.add_child(leg)
 		leg.add_child(_create_limb(0.050, 0.44, mat_pants, Vector3(0, -0.22, 0)))
-		preload("res://world/shared/pedestrians/CitizenDetails.gd").piece(leg,Vector3(.11,.08,.20),Vector3(0,-.46,-.04),Color("34414a"),true)
+		preload("res://characters/pedestrians/CitizenDetails.gd").piece(leg,Vector3(.11,.08,.20),Vector3(0,-.46,-.04),Color("34414a"),true)
 
 func _create_limb(radius: float, height: float, mat: Material, offset: Vector3) -> MeshInstance3D:
 	var m := MeshInstance3D.new()

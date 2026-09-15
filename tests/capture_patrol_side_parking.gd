@@ -17,7 +17,7 @@ func _run() -> void:
 	var player = world.get_node("Player")
 	player.set_physics_process(false)
 	player.global_position = Vector2(1055, 2065)
-	var pedestrian = load("res://AnimatedPedestrian3D.gd").new()
+	var pedestrian = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(pedestrian)
 	pedestrian.set_physics_process(false)
 	pedestrian.global_position = Vector2(1090, 2065)

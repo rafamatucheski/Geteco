@@ -9,7 +9,7 @@ func check(ok: bool, message: String) -> void:
 func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
-	var npc := preload("res://JagerNPC.gd").new()
+	var npc := preload("res://characters/JagerNPC.gd").new()
 	root.add_child(npc)
 	var visitor := Visitor.new()
 	root.add_child(visitor)

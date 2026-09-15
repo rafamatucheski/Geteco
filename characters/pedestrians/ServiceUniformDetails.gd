@@ -2,7 +2,7 @@ extends RefCounted
 static func apply(actor: Node, role: String) -> void:
 	if actor.has_meta("uniform_detailed"): return
 	actor.set_meta("uniform_detailed", true)
-	var build := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var build := preload("res://characters/pedestrians/CitizenDetails.gd")
 	var root: Node3D=actor.model_root
 	var torso: Node3D=actor.torso_node
 	var head: Node3D=actor.head_node

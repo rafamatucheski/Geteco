@@ -1,7 +1,7 @@
 extends RefCounted
 ## Broad phase por tick; a regra exata de travessia continua no chamador.
 const CELL_SIZE := 256.0
-const CROSSING_HALF_WIDTH := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH
+const CROSSING_HALF_WIDTH := preload("res://characters/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH
 static var _tree: WeakRef
 static var _frame := -1
 static var _cells: Dictionary = {}

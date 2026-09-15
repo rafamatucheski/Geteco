@@ -4,7 +4,7 @@ var winter_outfit := false
 func _ready() -> void:
 	coat_color = Color("577995") if role=="bus_driver" else Color("ac6737")
 	if winter_outfit: coat_color = coat_color.darkened(.15)
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").build(self,winter_outfit)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").build(self,winter_outfit)
 
 static func role_for(vehicle: Node2D) -> String:
 	var id := String(vehicle.get("vehicle_id"))

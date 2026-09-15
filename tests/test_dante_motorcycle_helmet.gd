@@ -10,7 +10,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var actor = load("res://Player.gd").new()
+	var actor = load("res://characters/Player.gd").new()
 	# Contrato do capacete sobre o rig procedural (rosto e cabelo próprios). Com o
 	# Dante Meshy, padrão desde 14/09, essas malhas ficam ocultas por design; o
 	# encaixe do capacete sobre o cabelo do Meshy ainda não tem teste próprio.

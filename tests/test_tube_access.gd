@@ -12,7 +12,7 @@ func run() -> void:
 	world = Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.collision_layer = 4
 	player.collision_mask = 7

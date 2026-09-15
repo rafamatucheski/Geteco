@@ -47,7 +47,7 @@ func run() -> void:
 	root.add_child(world)
 	current_scene = world
 	world.hide()
-	var actor = load("res://Player.gd").new()
+	var actor = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	actor.add_child(camera)

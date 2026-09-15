@@ -35,7 +35,7 @@ func run() -> void:
 	camera.position = station.position
 	camera.make_current()
 	for identity in [-1,0]:
-		var actor = load("res://Player.gd").new() if identity == -1 else load("res://world/harbor/urban_transit/UrbanPassenger.gd").new()
+		var actor = load("res://characters/Player.gd").new() if identity == -1 else load("res://world/harbor/urban_transit/UrbanPassenger.gd").new()
 		if identity == -1:
 			var follow := Camera2D.new()
 			follow.name = "Camera"

@@ -123,7 +123,7 @@ func _run_all_tests() -> void:
 	print("  ✓ Slot vazio inspecionado corretamente")
 	
 	# 3.2 Criar um player mock para testar save_game
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	var player_node: CharacterBody2D = null
 	if player_script:
 		player_node = CharacterBody2D.new()

@@ -29,7 +29,7 @@ func _run_test() -> void:
 	# 2. Testar deteccao e fade de transparencia quando o Player passa por baixo
 	print("[PASSO 2] Testando passagem do Player por baixo do predio...")
 	var player = CharacterBody2D.new()
-	player.set_script(load("res://Player.gd"))
+	player.set_script(load("res://characters/Player.gd"))
 	player.position = Vector2(1380, 1130) # Exatamente embaixo do predio na calcada/rua
 	root.add_child(player)
 	await process_frame

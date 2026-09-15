@@ -31,7 +31,7 @@ func _register_id(actor_id: int) -> void:
 
 func _register(actor: Node) -> void:
 	if not is_instance_valid(actor) or not actor.is_inside_tree() or not "is_dead" in actor or not "health" in actor: return
-	if actor.is_in_group("player") or actor.get_script().resource_path == "res://Player.gd": return
+	if actor.is_in_group("player") or actor.get_script().resource_path == "res://characters/Player.gd": return
 	if not actor.is_node_ready(): await actor.ready
 	if not is_instance_valid(actor): return
 	var scene := get_tree().current_scene
@@ -331,7 +331,7 @@ func defer_inaccessible(patient: Node, unit: Node, reason: String) -> void:
 
 func begin_carry(patient: Node, unit: Node, carrier: Node) -> bool:
 	if is_instance_valid(patient) and patient.get("is_dead") == true: return false
-	if not is_instance_valid(patient) or patient.is_in_group("player") or (patient.get_script() != null and patient.get_script().resource_path == "res://Player.gd"): return false
+	if not is_instance_valid(patient) or patient.is_in_group("player") or (patient.get_script() != null and patient.get_script().resource_path == "res://characters/Player.gd"): return false
 	report_injury(patient)
 	var key: String = patient.get_meta("medical_identity", "")
 	if not incidents.has(key) or incidents[key].phase in ["carrying", "transport", "fading"]: return false

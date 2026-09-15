@@ -21,7 +21,7 @@ func run() -> void:
 	world.add_child(camera)
 
 	# 1. Dante (Player)
-	var player = preload("res://Player.gd").new()
+	var player = preload("res://characters/Player.gd").new()
 	player.position = Vector2(200, 260)
 	world.add_child(player)
 

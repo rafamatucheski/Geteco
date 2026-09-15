@@ -1,7 +1,7 @@
 extends Node3D
 ## A full 3D terrace table: joinery, crockery, cutlery, food, articulated guests
 ## and a folding eight-panel parasol. All motion is advanced by the nearby view.
-const PARTS := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PARTS := preload("res://characters/pedestrians/CitizenDetails.gd")
 const GUEST := preload("res://world/harbor/restaurants/RestaurantGuest3D.gd")
 var guests: Array[Node3D] = []
 var place_settings: Array[Node3D] = []

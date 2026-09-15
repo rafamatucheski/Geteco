@@ -11,7 +11,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var patient := preload("res://AnimatedPedestrian3D.gd").new()
+	var patient := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.position = Vector2(200,130)
 	world.add_child(patient)
 	patient.set_physics_process(false)

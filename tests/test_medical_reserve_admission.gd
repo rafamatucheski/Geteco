@@ -49,7 +49,7 @@ func run() -> void:
 	director.release_medical_admission(main)
 	check(director.is_medical_bay_owner(reserve), "Next crew acquires admission when the first finishes")
 	check(main.global_position.distance_to(hospital.get_ambulance_stop_position()) < .01, "Releasing admission does not move the parked ambulance")
-	var patient = load("res://AnimatedPedestrian3D.gd").new()
+	var patient = load("res://characters/AnimatedPedestrian3D.gd").new()
 	patient.name = "ReservePatient"
 	patient.position = reserve.global_position
 	world.add_child(patient)

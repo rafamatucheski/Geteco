@@ -1,6 +1,6 @@
 extends Node3D
 ## Articulated café patron. One metre matches the street citizen scale.
-const PARTS := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PARTS := preload("res://characters/pedestrians/CitizenDetails.gd")
 var variant := 0
 var body: Node3D
 var head: Node3D

@@ -9,7 +9,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var person = preload("res://AnimatedPedestrian3D.gd").new()
+	var person = preload("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(person)
 	person.set_physics_process(false)
 	var initial_health: int = person.health

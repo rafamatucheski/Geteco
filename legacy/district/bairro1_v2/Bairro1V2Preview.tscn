@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://legacy/district/bairro1_v2/Bairro1V2Preview.gd" id="1_preview"]
 [ext_resource type="PackedScene" path="res://legacy/district/bairro1_v2/Bairro1V2.tscn" id="2_district"]
-[ext_resource type="Script" path="res://Player.gd" id="3_player"]
+[ext_resource type="Script" path="res://characters/Player.gd" id="3_player"]
 [ext_resource type="Script" path="res://systems/DynamicCamera.gd" id="4_camera"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player"]

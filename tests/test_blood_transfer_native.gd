@@ -14,7 +14,7 @@ func run() -> void:
 	car.position = Vector2(80, 100)
 	world.add_child(car)
 	var bike := FACTORY.spawn_parked_vehicle(world, "BloodyMotorcycle", Vector2(80, 250), 0.0, "bike_urban", 0)
-	var person := preload("res://AnimatedPedestrian3D.gd").new()
+	var person := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	person.position = Vector2(80, 400)
 	world.add_child(person)
 	var medic := load("res://emergency/Paramedic.tscn").instantiate() as Node2D

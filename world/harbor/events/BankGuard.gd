@@ -3,7 +3,7 @@ var room: Node2D
 var uses_shotgun := false
 var eyes: Array[MeshInstance3D] = []
 var death_presented := false
-const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PART = preload("res://characters/pedestrians/CitizenDetails.gd")
 func _configure_tier() -> void:
 	tier=UnitTier.PATROL
 	max_health=50

@@ -1,6 +1,6 @@
 extends RefCounted
 ## Identidade visual independente da rotina e do papel de combate.
-const PART = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+const PART = preload("res://characters/pedestrians/CitizenDetails.gd")
 const HAIR_NAMES := ["curto", "franja lateral", "chanel", "rabo de cavalo", "moicano", "raspado lateral", "comprido", "cacheado"]
 
 static func prepare(actor: Node) -> void:

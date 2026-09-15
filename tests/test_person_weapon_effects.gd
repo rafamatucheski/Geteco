@@ -14,7 +14,7 @@ func frames(count: int) -> void:
 	for i in count: await physics_frame
 
 func person(point: Vector2) -> Node2D:
-	var body = load("res://AnimatedPedestrian3D.gd").new()
+	var body = load("res://characters/AnimatedPedestrian3D.gd").new()
 	body.position = point
 	world.add_child(body)
 	body.ensure_presentation()
@@ -134,7 +134,7 @@ func run() -> void:
 	var isolated := SubViewport.new()
 	isolated.world_2d = World2D.new()
 	world.add_child(isolated)
-	var remote = load("res://AnimatedPedestrian3D.gd").new()
+	var remote = load("res://characters/AnimatedPedestrian3D.gd").new()
 	remote.position = overlap_victim.position
 	isolated.add_child(remote)
 	remote.set_physics_process(false)

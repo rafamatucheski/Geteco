@@ -11,7 +11,7 @@ var is_dead: bool = false
 var is_incapacitated := false
 var is_flying := false
 var fly_velocity := Vector2.ZERO
-var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
+var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 var state_timer: float = 0.0
 var motorcycle_fall_timer := 0.0
 var exit_reaction_timer := 0.0
@@ -68,7 +68,7 @@ func _ready() -> void:
 
 func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 	stolen_vehicle = vehicle
-	var professional := preload("res://world/shared/pedestrians/ProfessionalDriverModel.gd")
+	var professional := preload("res://characters/pedestrians/ProfessionalDriverModel.gd")
 	var driver_role := professional.role_for(vehicle)
 	if not driver_role.is_empty():
 		if is_instance_valid(driver_model): driver_model.free()
@@ -85,7 +85,7 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 		driver_model.set_process(false)
 		driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	if is_instance_valid(driver_model) and "taxi" in String(vehicle.get("vehicle_id")):
-		var detail := preload("res://world/shared/pedestrians/CitizenDetails.gd")
+		var detail := preload("res://characters/pedestrians/CitizenDetails.gd")
 		detail.piece(driver_model,Vector3(.36,.11,.31),Vector3(0,1.79,0),Color("b59855"),true)
 		detail.piece(driver_model,Vector3(.27,.025,.15),Vector3(0,1.75,.16),Color("b59855"))
 		detail.piece(driver_model,Vector3(.08,.10,.03),Vector3(.12,1.24,.18),Color("e6dfc8"))
@@ -203,7 +203,7 @@ func _physics_process(delta: float) -> void:
 				var flee_dir = stolen_vehicle.global_position.direction_to(global_position).normalized()
 				velocity = flee_dir * 140.0
 				rotation = flee_dir.angle()
-			preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+			preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 			
 			if state_timer >= 5.0:
 				_fade_and_despawn()
@@ -228,7 +228,7 @@ func _physics_process(delta: float) -> void:
 					_fade_and_despawn()
 					return
 
-			preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+			preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 
 			# Contagem regressiva da ligação
 			if not has_called_police and phone_call_progress > 0.0:
@@ -274,7 +274,7 @@ func _update_defense(delta: float) -> void:
 	rotation = direction.angle()
 	if distance > 12.0:
 		velocity = velocity.move_toward(direction * minf(115.0, distance * 4.0), 420.0 * delta)
-		preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 		return
 	velocity = Vector2.ZERO
 	if state_timer >= 1.1:
@@ -361,7 +361,7 @@ func _build_driver_visual() -> void:
 	driver_viewport.transparent_bg = true
 	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(driver_viewport)
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").light_viewport(driver_viewport)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").light_viewport(driver_viewport)
 	driver_model = preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
 	driver_viewport.add_child(driver_model)
 	driver_model.set_process(false)
@@ -442,7 +442,7 @@ func _update_civilian_routine(delta: float) -> void:
 		return
 	velocity = global_position.direction_to(point)*42
 	rotation = velocity.angle()
-	preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+	preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if _age>60 and is_instance_valid(player) and player.global_position.distance_to(global_position)>1800:
 		queue_free()

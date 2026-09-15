@@ -23,7 +23,7 @@ func run() -> void:
 	road.color = Color("394144")
 	road.z_index = 2
 	world.add_child(road)
-	var player = preload("res://Player.gd").new()
+	var player = preload("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	camera.zoom = Vector2.ONE * 3

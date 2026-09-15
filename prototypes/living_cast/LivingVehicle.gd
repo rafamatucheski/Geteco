@@ -1,4 +1,4 @@
-extends "res://PlayerCar.gd"
+extends "res://characters/PlayerCar.gd"
 
 ## Opt-in bodies over the existing drivable/crash/door system. No catalog edits.
 const SPECS := ["sedan_classic", "station_wagon", "dock_delivery_van", "ranch_pickup", "sport_coupe", "taxi_yellow"]

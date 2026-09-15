@@ -34,7 +34,7 @@ var _visit_approach_elapsed := 0.0
 var _visit_fade: Tween
 
 # Compartilha a busca espacial; os filtros de distância/direção continuam locais.
-const NEIGHBORHOOD := preload("res://world/shared/pedestrians/PedestrianNeighborhood.gd")
+const NEIGHBORHOOD := preload("res://characters/pedestrians/PedestrianNeighborhood.gd")
 var _cached_neighbors: Array = []
 var _neighbor_refresh_counter: int = 0
 const NEIGHBOR_REFRESH_STRIDE := 3
@@ -106,14 +106,14 @@ func _validate_initial_spawn() -> void:
 	query.exclude = [get_rid()]
 	query.margin = safe_margin
 	var space := get_world_2d().direct_space_state
-	if space.intersect_shape(query, 1).is_empty() and preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").allows(global_position, _nearby_roads): return
+	if space.intersect_shape(query, 1).is_empty() and preload("res://characters/pedestrians/PedestrianWalkSpace.gd").allows(global_position, _nearby_roads): return
 	var axis := _corridor_start.direction_to(_corridor_end)
 	var along := (global_position - _corridor_start).dot(axis)
 	for shift in [0.0, 24.0, -24.0, 48.0, -48.0, 72.0, -72.0]:
 		for lateral in [0.0, 8.0, -8.0]:
 			var point: Vector2 = _corridor_start + axis * clampf(along + shift, 0.0, _corridor_start.distance_to(_corridor_end)) + axis.orthogonal() * lateral
 			if not _navigation_point_allowed(point): continue
-			if not preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").allows(point, _nearby_roads): continue
+			if not preload("res://characters/pedestrians/PedestrianWalkSpace.gd").allows(point, _nearby_roads): continue
 			query.transform.origin = point
 			if not space.intersect_shape(query, 1).is_empty(): continue
 			global_position = point
@@ -212,7 +212,7 @@ func _configure_navigation_corridor() -> void:
 			if road.get("crossing", false):
 				# Leave room to pass a parked motorcycle with the full body.
 				# Signal checks use this same bounded crossing envelope.
-				_corridor_width = minf(preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH, sidewalk_half_width)
+				_corridor_width = minf(preload("res://characters/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH, sidewalk_half_width)
 
 
 func _navigation_point_allowed(point: Vector2) -> bool:
@@ -225,7 +225,7 @@ func _navigation_point_allowed(point: Vector2) -> bool:
 	var origin := global_position - _corridor_start
 	if offset.dot(axis) < minf(-3.0, origin.dot(axis)) - 0.001 or offset.dot(axis) > maxf(length + 3.0, origin.dot(axis)) + 0.001: return false
 	if absf(offset.dot(axis.orthogonal())) > maxf(_corridor_width, absf(origin.dot(axis.orthogonal()))) + 0.001: return false
-	return preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").allows(point, _nearby_roads, global_position)
+	return preload("res://characters/pedestrians/PedestrianWalkSpace.gd").allows(point, _nearby_roads, global_position)
 
 func _next_route_index() -> int:
 	if route_loop: return posmod(_route_segment + _route_direction, route_points.size() - 1)
@@ -630,7 +630,7 @@ func validation_state() -> Dictionary:
 		"sidewalk_only": true,
 		"random_world_targets": false,
 		"route_deviation": deviation,
-		"within_sidewalk": deviation <= _corridor_width + 0.1 and preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").allows(global_position, _nearby_roads),
+		"within_sidewalk": deviation <= _corridor_width + 0.1 and preload("res://characters/pedestrians/PedestrianWalkSpace.gd").allows(global_position, _nearby_roads),
 		"locomotion_state": String(locomotion_state),
 		"recovery_count": recovery_count,
 		"no_progress_seconds": stuck_timer,

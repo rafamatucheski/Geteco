@@ -20,7 +20,7 @@ func run() -> void:
 		actor.set_physics_process(false)
 		var speed=actor.base_walk_speed
 		var collision=actor.get_node("CollisionShape2D").shape
-		var gait=load("res://world/shared/pedestrians/CitizenGait.gd").new()
+		var gait=load("res://characters/pedestrians/CitizenGait.gd").new()
 		gait.configure(actor,variant)
 		actor.gait=gait
 		check(actor.head_node.has_node("CitizenFace"),"City faces are installed")

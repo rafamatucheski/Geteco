@@ -1346,6 +1346,23 @@ func _request_officers_return() -> void:
 			officer.return_to_service_vehicle()
 
 
+func stand_down() -> void:
+	if type != 0: return
+	set_meta("police_player_pursuit", false)
+	target = null
+	if siren_audio and siren_audio.playing:
+		siren_audio.stop()
+	if lights:
+		lights.visible = false
+	_police_recall_requested = true
+	_request_officers_return()
+	if not is_acting or deployed_officers == 0:
+		is_acting = false
+		_police_crew_on_foot = false
+		_clear_tactical_doors()
+		is_returning_to_base = true
+
+
 func on_officer_embarked(officer: Node2D) -> void:
 	if not is_instance_valid(officer) or not _police_crew.has(officer): return
 	if officer.service_vehicle != self or officer.is_dead or not officer.boarding_service_vehicle or officer.visible: return

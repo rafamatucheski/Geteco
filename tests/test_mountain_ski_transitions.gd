@@ -94,7 +94,7 @@ func run() -> void:
 	await process_frame
 	check(not lift._travelling and not rider.is_control_disabled and not rider.has_meta("mountain_lift_riding"), "Death releases the lift input lock for subsequent hospital recovery")
 	# Exercise the production rig as well as the logic-only rider above.
-	var dante := preload("res://Player.gd").new()
+	var dante := preload("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	dante.add_child(camera)

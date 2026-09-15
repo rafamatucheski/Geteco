@@ -30,11 +30,11 @@ func run() -> void:
 	for index in 2:
 		var actor: CharacterBody2D
 		if index == 0:
-			actor = preload("res://Player.gd").new()
+			actor = preload("res://characters/Player.gd").new()
 			var camera := Camera2D.new()
 			camera.name = "Camera"
 			actor.add_child(camera)
-		else: actor = preload("res://JagerNPC.gd").new()
+		else: actor = preload("res://characters/JagerNPC.gd").new()
 		stage.add_child(actor)
 		actor.set_physics_process(false)
 		actor.global_position = car.seat(1-index)

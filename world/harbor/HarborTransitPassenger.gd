@@ -1,4 +1,4 @@
-extends "res://AnimatedPedestrian3D.gd"
+extends "res://characters/AnimatedPedestrian3D.gd"
 ## Bounded terminal population. Reuse the articulated civilian model and physics.
 var transit_state := "waiting"
 var destination := Vector2.ZERO

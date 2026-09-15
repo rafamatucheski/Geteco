@@ -7,7 +7,7 @@ func check(ok: bool, message: String) -> void:
 		failures += 1
 		push_error(message)
 func run() -> void:
-	var ordinary = load("res://PlayerCar.gd").new()
+	var ordinary = load("res://characters/PlayerCar.gd").new()
 	ordinary.velocity = Vector2(200,0)
 	ordinary._apply_steering_motion(1.0,0.1)
 	check(ordinary.rotation > 0.0 and ordinary.rotation < ordinary.turn_speed * 0.1, "Ordinary cars build yaw progressively with speed-dependent steering")

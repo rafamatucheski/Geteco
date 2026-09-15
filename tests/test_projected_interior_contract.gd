@@ -31,7 +31,7 @@ func run() -> void:
 	cabin = load("res://world/mountain_pass/MountainCabinInterior.gd").new()
 	cabin.position = Vector2(22500, 20000)
 	world.add_child(cabin)
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.collision_layer = 4
 	player.collision_mask = 7
@@ -46,7 +46,7 @@ func run() -> void:
 	camera.name = "Camera"
 	player.add_child(camera)
 	world.add_child(player)
-	var npc = load("res://emergency/Mortician.tscn").instantiate() if coroner else load("res://AnimatedPedestrian3D.gd").new()
+	var npc = load("res://emergency/Mortician.tscn").instantiate() if coroner else load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(npc)
 	for actor in [player, npc]:
 		actor.set_physics_process(false)
@@ -205,7 +205,7 @@ func run() -> void:
 		check(room.viewport_3d.render_target_update_mode == SubViewport.UPDATE_ALWAYS, "Occupied room renders its moving actor in " + script)
 		if script == "SummitSkiLodgeInterior":
 			# Lighting changes must preserve full-body collision and depth for guests.
-			var visitor = load("res://AnimatedPedestrian3D.gd").new()
+			var visitor = load("res://characters/AnimatedPedestrian3D.gd").new()
 			world.add_child(visitor)
 			visitor.set_physics_process(false)
 			var visitor_helper := PRESENTATION.new()

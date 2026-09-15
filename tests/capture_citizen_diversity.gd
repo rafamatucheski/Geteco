@@ -22,7 +22,7 @@ func run() -> void:
 			actor.beard_style_override=[0,5,3,2,4,0][i]
 			actor.defer_presentation=true
 		else:
-			actor=load("res://Player.gd").new()
+			actor=load("res://characters/Player.gd").new()
 			var cam=Camera2D.new()
 			cam.name="Camera"
 			actor.add_child(cam)

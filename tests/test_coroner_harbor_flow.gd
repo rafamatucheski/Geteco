@@ -17,7 +17,7 @@ func run() -> void:
 	world.weather.time_of_day = .45
 	world.weather.set_weather(0)
 	world.weather.is_dynamic_time = false
-	var victim := preload("res://AnimatedPedestrian3D.gd").new()
+	var victim := preload("res://characters/AnimatedPedestrian3D.gd").new()
 	victim.name = "CoronerHarborVictim"
 	victim.position = Vector2(1800,1760)
 	world.add_child(victim)

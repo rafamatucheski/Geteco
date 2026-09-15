@@ -7,7 +7,7 @@ var torso_node: Node3D
 var source_head_id := 0
 var arms: Array[Dictionary] = []
 var legs: Array[Dictionary] = []
-var arm_solver := preload("res://PlayerCombatPose.gd").new()
+var arm_solver := preload("res://characters/PlayerCombatPose.gd").new()
 
 func setup(actor: CharacterBody2D) -> void:
 	for child in get_children(): child.free()

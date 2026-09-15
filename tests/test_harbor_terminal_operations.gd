@@ -168,7 +168,7 @@ func trace_blockage(start: Node2D) -> void:
 					var contact := KinematicCollision2D.new()
 					var blocked: bool = person.test_move(person.global_transform, person.global_position.direction_to(person.walk_target) * 4.0, contact)
 					var neighbors := []
-					for other in preload("res://world/shared/pedestrians/PedestrianNeighborhood.gd").neighbors(person, 60.0):
+					for other in preload("res://characters/pedestrians/PedestrianNeighborhood.gd").neighbors(person, 60.0):
 						if other != person and other.global_position.distance_to(person.global_position) < 60.0: neighbors.append([str(other.get_path()), other.global_position, other.collision_layer])
 					print("TERMINAL_CROSSING_OCCUPANT crossing=", crossing.get_path(), " person=", person.get_path(), " position=", person.global_position, " layer=", person.collision_layer, " visible=", person.is_visible_in_tree(), " processing=", person.can_process(), " dead=", person.get("is_dead"), " transit=", person.get("transit_state"), " target=", person.get("walk_target"), " velocity=", person.get("velocity"), " blocker=", contact.get_collider().get_path() if blocked else "", " neighbors=", neighbors, " navigation=", person.validation_state() if person.has_method("validation_state") else {})
 			var owner = instance_from_id(int(junction.get("reservation_owner", 0)))

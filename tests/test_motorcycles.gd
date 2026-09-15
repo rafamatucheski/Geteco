@@ -52,7 +52,7 @@ func run() -> void:
 		check(bike.body_model.impact_count == 1, id+" damage works")
 		bike.body_model.repair()
 		check(bike.body_model.impact_count == 0, id+" repair works")
-		var actor = load("res://Player.gd").new()
+		var actor = load("res://characters/Player.gd").new()
 		var actor_camera := Camera2D.new()
 		actor_camera.name = "Camera"
 		actor.add_child(actor_camera)
@@ -94,7 +94,7 @@ func run() -> void:
 	for id in ["union_sedan", "cargo_flatbed_truck"]:
 		var vehicle = FACTORY.spawn_parked_vehicle(world, "RadioTest", Vector2(200, 200), 0, id, 0)
 		vehicle.has_theft_alarm = false
-		var actor = load("res://Player.gd").new()
+		var actor = load("res://characters/Player.gd").new()
 		var actor_camera := Camera2D.new()
 		actor_camera.name = "Camera"
 		actor.add_child(actor_camera)

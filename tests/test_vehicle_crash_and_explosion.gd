@@ -52,7 +52,7 @@ func _run_crash_test() -> void:
 	
 	# 3. Simular jogador entrando e o carro pegando fogo (combustão)
 	print("\n[PASSO 3] Simulando jogador a bordo e motor pegando fogo...")
-	var player_script = load("res://Player.gd")
+	var player_script = load("res://characters/Player.gd")
 	var player = CharacterBody2D.new()
 	player.set_script(player_script)
 	var player_camera := Camera2D.new()

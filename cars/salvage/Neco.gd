@@ -8,7 +8,7 @@ func _ready() -> void:
 	has_hat = true
 	z_index = 8
 	_build_3d_viewport()
-	preload("res://world/shared/pedestrians/CitizenDetails.gd").finish_rig(self,"clerk")
+	preload("res://characters/pedestrians/CitizenDetails.gd").finish_rig(self,"clerk")
 	_tailor_neco()
 	viewport_3d.size=Vector2i(160,160)
 	var camera: Camera3D=viewport_3d.get_camera_3d()
@@ -27,7 +27,7 @@ func _ready() -> void:
 	queue_redraw()
 
 func _tailor_neco() -> void:
-	var detail:=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	var detail:=preload("res://characters/pedestrians/CitizenDetails.gd")
 	# Heavy leather apron, shoulder straps, patched pocket and a brass buckle.
 	detail.piece(torso_node,Vector3(.32,.44,.06),Vector3(0,-.05,-.18),Color("34534c"))
 	for side in [-1,1]:

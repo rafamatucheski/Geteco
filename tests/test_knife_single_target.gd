@@ -11,7 +11,7 @@ func run():
  var scene := Node2D.new()
  root.add_child(scene)
  current_scene = scene
- var player = load("res://Player.gd").new()
+ var player = load("res://characters/Player.gd").new()
  var camera := Camera2D.new()
  camera.name = "Camera"
  player.add_child(camera)
@@ -50,7 +50,7 @@ func run():
  await physics_frame
  player._perform_melee_attack(Vector2.RIGHT, data)
  check(targets[2].health == 100, "wall blocks knife")
- var pose = load("res://PlayerCombatPose.gd").new()
+ var pose = load("res://characters/PlayerCombatPose.gd").new()
  for i in 6:
   pose.on_attack("knife")
   check(pose.knife_variant == i % 3, "three motions cycle")

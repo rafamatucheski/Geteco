@@ -36,7 +36,7 @@ var _surface_art: ManholeSurfaceArt
 var _lid_audio: AudioStreamPlayer2D
 var _reward_collected := false
 var _shaft_material: ShaderMaterial
-var _arm_solver := preload("res://PlayerCombatPose.gd").new()
+var _arm_solver := preload("res://characters/PlayerCombatPose.gd").new()
 var _isolation: RefCounted
 var _transition_step := "surface":
 	set(value):

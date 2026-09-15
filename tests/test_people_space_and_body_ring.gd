@@ -35,7 +35,7 @@ func run() -> void:
 	var people: Array[AnimatedPedestrian3D] = []
 	for i in 12:
 		people.append(pedestrian(Vector2.from_angle(TAU * i / 12.0) * 145.0))
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.position = Vector2(500, 0)
 	player.collision_layer = 4
@@ -143,7 +143,7 @@ func run() -> void:
 		for frame in 45:
 			await physics_frame
 			mover.velocity = direction * 130.0
-			preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(mover)
+			preload("res://characters/pedestrians/PersonMotion.gd").move_actor(mover)
 			max_drift = maxf(max_drift, player.position.distance_to(stationary))
 		check(mover.position.distance_to(player.position) >= 21.8, "NPC stops at Dante's collision boundary")
 	check(max_drift < 0.001, "NPC contact never moves a stationary Dante")
@@ -155,8 +155,8 @@ func run() -> void:
 		await physics_frame
 		left.velocity = Vector2(130, 0)
 		right.velocity = Vector2(-130, 0)
-		preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(left)
-		preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(right)
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(left)
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(right)
 		separation = minf(separation, left.position.distance_to(right.position))
 	check(separation >= 21.8, "Opposing pedestrians cannot pass through each other")
 	print("PEOPLE_SPACE_AND_BODY_RING failures=", failures.size(), " ring_min_distance=", min_distance, " player_drift=", max_drift, " opposing_gap=", separation)

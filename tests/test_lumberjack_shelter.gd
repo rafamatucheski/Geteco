@@ -25,7 +25,7 @@ func _run() -> void:
 	check(room.cabin_3d_world.find_child("LoggingWorkbench",true,false)!=null,"shelter has its logging workbench")
 	check(room.viewport_3d.render_target_update_mode==SubViewport.UPDATE_DISABLED,"empty shelter is not rendered")
 	check(room.spawn_point!=null and room.exit_door!=null,"shelter keeps real entry and return")
-	var player := preload("res://Player.gd").new()
+	var player := preload("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)

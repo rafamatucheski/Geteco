@@ -28,14 +28,14 @@ func run() -> void:
 		line.width = .6
 		line.z_index = -9
 		world.add_child(line)
-	person = preload("res://AnimatedPedestrian3D.gd").new()
+	person = preload("res://characters/AnimatedPedestrian3D.gd").new()
 	person.district_theme = 0
 	person.archetype_override = 1
 	world.add_child(person)
 	person.is_gangster = false
 	person.set_physics_process(false)
 	person.model_root.rotation.y = -.5
-	var player = preload("res://Player.gd").new()
+	var player = preload("res://characters/Player.gd").new()
 	var player_camera := Camera2D.new()
 	player_camera.name = "Camera"
 	player.add_child(player_camera)

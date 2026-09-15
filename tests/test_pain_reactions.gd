@@ -21,7 +21,7 @@ func run() -> void:
 	var listener := AudioListener2D.new()
 	world.add_child(listener)
 	listener.make_current()
-	var player = load("res://Player.gd").new()
+	var player = load("res://characters/Player.gd").new()
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	player.add_child(camera)
@@ -67,7 +67,7 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	check(not voice.playing and not PAIN.react(player, 15, 0), "Death stops hurt voice and prevents another")
-	var npc = load("res://AnimatedPedestrian3D.gd").new()
+	var npc = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(npc)
 	npc.set_physics_process(false)
 	npc.health = 1000

@@ -19,7 +19,7 @@ var fell_this_lap := false
 var health := 80
 var is_dead := false
 var panic_timer := 0.0
-var danger_response := preload("res://PedestrianDanger.gd").new()
+var danger_response := preload("res://characters/PedestrianDanger.gd").new()
 
 func configure(points: PackedVector2Array, speed: float, color: Color, variant: int, falls := false) -> void:
 	course_points = points
@@ -48,7 +48,7 @@ func _ready() -> void:
 	viewport_3d.transparent_bg = true
 	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(viewport_3d)
-	preload("res://world/shared/pedestrians/WinterWardrobe.gd").light_viewport(viewport_3d)
+	preload("res://characters/pedestrians/WinterWardrobe.gd").light_viewport(viewport_3d)
 	var key := DirectionalLight3D.new()
 	key.rotation_degrees = Vector3(-55,-24,0)
 	key.light_energy = .8
