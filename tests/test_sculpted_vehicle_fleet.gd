@@ -2,7 +2,7 @@ extends SceneTree
 
 const HARBOR_LIFE := preload("res://world/harbor/HarborLife.gd")
 const RIG := preload("res://prototypes/living_cast/VehicleWheelRig.gd")
-const BATCHER := preload("res://VehicleMeshBatcher.gd")
+const BATCHER := preload("res://cars/VehicleMeshBatcher.gd")
 const DOOR := preload("res://prototypes/living_cast/VehicleDoor3D.gd")
 const ENGINE_SOUND := preload("res://audio/VehicleEngineSound.gd")
 
@@ -110,7 +110,7 @@ func _run() -> void:
 	check(VehicleCatalog.get_vehicle_spec("dock_delivery_van").mass > 1.5, "Dock Delivery Van tem massa deliberada de utilitário")
 
 	# Exercise the same scene/factory-facing integration used by ambient traffic.
-	var traffic_scene := load("res://world/shared/traffic/TrafficVehicle.tscn") as PackedScene
+	var traffic_scene := load("res://cars/traffic/TrafficVehicle.tscn") as PackedScene
 	for id in EXPECTED_MODELS:
 		var spec := VehicleCatalog.get_vehicle_spec(id)
 		var vehicle := traffic_scene.instantiate()

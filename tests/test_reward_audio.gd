@@ -48,7 +48,7 @@ func run() -> void:
 	for kind in ["cash", "weapon", "collectible", "checkpoint", "complete"]:
 		BANK.play(world, kind)
 	check(pool.get_child_count() == BANK.VOICES, "Mixed reward bursts use a bounded voice pool")
-	var race = load("res://NightRaceController.gd").new()
+	var race = load("res://cars/NightRaceController.gd").new()
 	race.setup({"checkpoints": [Vector2(200, 0), Vector2(400, 0)]})
 	world.add_child(race)
 	race.set_process(false)

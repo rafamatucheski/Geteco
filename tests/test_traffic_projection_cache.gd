@@ -1,5 +1,5 @@
 extends SceneTree
-const FLOW := preload("res://world/shared/traffic/TrafficFlowModel.gd")
+const FLOW := preload("res://cars/traffic/TrafficFlowModel.gd")
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:
 	var curve := Curve2D.new()

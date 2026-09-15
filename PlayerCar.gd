@@ -1,11 +1,11 @@
 extends CharacterBody2D
 
 var _handling_yaw_rate: float = 0.0
-var _drivetrain = preload("res://VehicleDrivetrain.gd").new()
-var _launch = preload("res://VehicleLaunchControl.gd").new()
-var _tire_trail = preload("res://VehicleTireTrail.gd").new()
+var _drivetrain = preload("res://cars/VehicleDrivetrain.gd").new()
+var _launch = preload("res://cars/VehicleLaunchControl.gd").new()
+var _tire_trail = preload("res://cars/VehicleTireTrail.gd").new()
 
-const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
+const VEHICLE_DOOR_VISUAL := preload("res://cars/VehicleDoorVisual.gd")
 
 @export var max_speed = 600.0
 @export var acceleration = 1200.0
@@ -79,7 +79,7 @@ var radio_index: int = 0
 @onready var interact_area = $InteractArea
 
 func _ready():
-	preload("res://VehicleMotionSafety.gd").configure(self)
+	preload("res://cars/VehicleMotionSafety.gd").configure(self)
 	collision_mask |= 2
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	platform_floor_layers = 0
@@ -411,7 +411,7 @@ func _physics_process(delta):
 	if not is_driven_by_player or is_broken:
 		_launch.reset()
 		_tire_trail.reset()
-	preload("res://VehicleMotionSafety.gd").sanitize(self)
+	preload("res://cars/VehicleMotionSafety.gd").sanitize(self)
 	has_nitro = false
 	is_boosting = false
 	if is_instance_valid(_boarding) and _boarding.active:
@@ -450,8 +450,8 @@ func _physics_process(delta):
 		if skid_line: skid_line.clear_points()
 
 		_drivetrain.update(str(VehicleCatalog.get_vehicle_spec(active_archetype_id).get("drivetrain", "rwd")), velocity.dot(transform.x), input_dir, turn_dir, rain_intensity)
-		velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor + _drivetrain.drift_bias, delta, rain_intensity, handbrake_slide > 0.0, vehicle_mass)
-		if wants_handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.10*preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass)*delta)
+		velocity = preload("res://cars/VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor + _drivetrain.drift_bias, delta, rain_intensity, handbrake_slide > 0.0, vehicle_mass)
+		if wants_handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.10*preload("res://cars/VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass)*delta)
 
 		# Respingo de água lateral: só quando derrapando com chuva de verdade caindo.
 		if water_spray_emitter:
@@ -506,19 +506,19 @@ func _physics_process(delta):
 	
 	if input_dir != 0:
 		if (input_dir > 0 and velocity.dot(forward_vec) < -10) or (input_dir < 0 and velocity.dot(forward_vec) > 10):
-			velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
+			velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://cars/VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
 		else:
-			velocity += forward_vec * input_dir * acceleration * preload("res://VehicleMotionSafety.gd").drive_mass_scale(vehicle_mass) * _drivetrain.force_scale * _launch.force_scale * _engine_sound.drive_force(velocity.length(), max_speed) * delta
+			velocity += forward_vec * input_dir * acceleration * preload("res://cars/VehicleMotionSafety.gd").drive_mass_scale(vehicle_mass) * _drivetrain.force_scale * _launch.force_scale * _engine_sound.drive_force(velocity.length(), max_speed) * delta
 			velocity = velocity.limit_length(_engine_sound.road_top_speed(max_speed))
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://cars/VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
 
 	if _launch.holding: velocity = Vector2.ZERO
 	is_skidding = is_skidding or _launch.wheelspin > 0.12
 	_tire_trail.update(self, delta, is_driven_by_player and not is_broken and is_skidding, 0.38 + _launch.wheelspin * 0.25)
 	if is_driven_by_player: _update_skid_audio()
 	var prev_velocity = velocity
-	preload("res://VehicleMotionSafety.gd").move(self)
+	preload("res://cars/VehicleMotionSafety.gd").move(self)
 	
 	# Mantém a posição do Dante perfeitamente sincronizada com o veículo enquanto dirige
 	if is_driven_by_player:
@@ -606,7 +606,7 @@ func _physics_process(delta):
 		# charged damage on every single frame of that same scrape.
 		if impact_speed > 180.0 and Time.get_ticks_msec() - _last_collision_damage_ms > COLLISION_DAMAGE_COOLDOWN_MS:
 			_last_collision_damage_ms = Time.get_ticks_msec()
-			take_damage(preload("res://VehicleMotionSafety.gd").collision_damage(impact_speed), is_driven_by_player)
+			take_damage(preload("res://cars/VehicleMotionSafety.gd").collision_damage(impact_speed), is_driven_by_player)
 			
 
 	# Ground-contact residue is rendered separately from braking skid marks.
@@ -624,8 +624,8 @@ func _on_bumper_hitbox_entered(body: Node2D) -> void:
 
 func _apply_steering_motion(turn_input: float, delta: float) -> void:
 	var slide_steer := lerpf(1.0, 1.65, clampf(handbrake_slide / 0.35, 0.0, 1.0))
-	_handling_yaw_rate = preload("res://VehicleMotionSafety.gd").steering_rate(_handling_yaw_rate, turn_input, velocity.dot(transform.x), turn_speed * _drivetrain.steer_scale * slide_steer, vehicle_mass, delta)
-	preload("res://VehicleMotionSafety.gd").rotate_clear(self, rotation + _handling_yaw_rate * delta)
+	_handling_yaw_rate = preload("res://cars/VehicleMotionSafety.gd").steering_rate(_handling_yaw_rate, turn_input, velocity.dot(transform.x), turn_speed * _drivetrain.steer_scale * slide_steer, vehicle_mass, delta)
+	preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, rotation + _handling_yaw_rate * delta)
 
 
 func _activate_bloody_tires() -> void:
@@ -665,7 +665,7 @@ func exit_vehicle() -> void:
 	_launch.reset()
 	_tire_trail.reset()
 	if not is_driven_by_player: return
-	preload("res://VehicleBoarding.gd").start_exit(self, get_tree().get_first_node_in_group("player"))
+	preload("res://cars/VehicleBoarding.gd").start_exit(self, get_tree().get_first_node_in_group("player"))
 
 func force_exit_vehicle() -> void:
 	# Lifecycle cleanup (death/scene travel) cannot leave a pending animation.
@@ -676,7 +676,7 @@ func force_exit_vehicle() -> void:
 func _complete_exit_vehicle(exit_position: Vector2) -> void:
 	if not is_driven_by_player:
 		return
-	preload("res://VehicleBoarding.gd").clear_occupant(self)
+	preload("res://cars/VehicleBoarding.gd").clear_occupant(self)
 	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	if camera: camera.enabled = false
@@ -733,7 +733,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	player_body.reset_physics_interpolation()
 	
 	# Animação visual da porta abrindo e batendo
-	_animate_car_door(entry_side, preload("res://VehicleBoarding.gd").duration_for(self, entry_side) - 0.60)
+	_animate_car_door(entry_side, preload("res://cars/VehicleBoarding.gd").duration_for(self, entry_side) - 0.60)
 	
 	player_body.hide()
 	player_body.set_physics_process(false)
@@ -747,7 +747,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		radio_audio.stream = radio_tracks[radio_index]
 		radio_audio.play()
 
-	_boarding = preload("res://VehicleBoarding.gd").new()
+	_boarding = preload("res://cars/VehicleBoarding.gd").new()
 	add_child(_boarding)
 	_boarding.begin(self, player_body, approach, entry_side)
 
@@ -924,7 +924,7 @@ func _spawn_dent_decal(local_pos: Vector2, dir: Vector2, strength: float) -> voi
 	var footprint := Vector2(54,24)
 	var shape := get_node_or_null("Collision") as CollisionShape2D
 	if shape and shape.shape is RectangleShape2D: footprint = shape.shape.size
-	preload("res://VehicleSurfaceWear2D.gd").add_scrape(dents_container,local_pos,dir,footprint,strength)
+	preload("res://cars/VehicleSurfaceWear2D.gd").add_scrape(dents_container,local_pos,dir,footprint,strength)
 
 func _flicker_and_damage_headlight() -> void:
 	if headlight == null: return

@@ -1,7 +1,7 @@
 extends RefCounted
 ## One owner controls ambient simulation. Sleeping retains identity, route and damage.
-const AREA := preload("res://world/shared/traffic/CameraSimulationArea.gd")
-const CONFLICTS := preload("res://world/shared/traffic/TrafficSimulationBudget.gd")
+const AREA := preload("res://cars/traffic/CameraSimulationArea.gd")
+const CONFLICTS := preload("res://cars/traffic/TrafficSimulationBudget.gd")
 const BLOOD_TRANSFER := preload("res://guns/combat/BloodTransferSystem.gd")
 const HYSTERESIS := 240.0
 var sleeping: Dictionary = {}

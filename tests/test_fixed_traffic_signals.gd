@@ -48,7 +48,7 @@ func _run() -> void:
 	post.ensure_presentation()
 	check(post.sprite.texture == initial_texture, "unchanged orientation/aspect reuses shared 3D render")
 	# Real production vehicle collision must damage the car and break the signal.
-	var car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var car = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	stage.add_child(car)
 	car.apply_archetype("sedan_classic")
 	car.configure_as_parked()

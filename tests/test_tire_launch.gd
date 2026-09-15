@@ -78,8 +78,8 @@ func run() -> void:
 	world.add_child(personal)
 	await physics_frame
 	await exercise(personal)
-	var slow = preload("res://VehicleLaunchControl.gd").new()
-	var fast = preload("res://VehicleLaunchControl.gd").new()
+	var slow = preload("res://cars/VehicleLaunchControl.gd").new()
+	var fast = preload("res://cars/VehicleLaunchControl.gd").new()
 	for launch in [slow, fast]:
 		var top := 350.0 if launch == slow else 700.0
 		launch.update(1.5, 0, 1, true, top, true)

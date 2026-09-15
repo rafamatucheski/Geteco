@@ -32,7 +32,7 @@ func _approach_rescue() -> void:
 		var follow := PathFollow2D.new()
 		follow.loop = false
 		lane.add_child(follow)
-		approaching_bus = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+		approaching_bus = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 		approaching_bus.set_script(preload("res://world/harbor/HarborTransitBus.gd"))
 		follow.add_child(approaching_bus)
 		approaching_bus.dwelling = false

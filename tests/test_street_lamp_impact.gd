@@ -23,11 +23,11 @@ func _run() -> void:
 	col.shape.radius=10
 	car.add_child(col)
 	root.add_child(car)
-	preload("res://VehicleMotionSafety.gd").configure(car)
+	preload("res://cars/VehicleMotionSafety.gd").configure(car)
 	for i in 40:
 		await physics_frame
 		car.velocity=Vector2(40,0)
-		preload("res://VehicleMotionSafety.gd").move(car)
+		preload("res://cars/VehicleMotionSafety.gd").move(car)
 	assert(lamp.broken,"Real moving vehicle knocks pole down")
 	assert(not lamp.lamp_light.visible and lamp.collision_layer==0)
 	lamp.set_lit(true)

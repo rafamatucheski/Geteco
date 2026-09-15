@@ -33,7 +33,7 @@ static func prepare_common_models(tree: SceneTree) -> void:
 		staging.add_child(model)
 		var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 		rig.mount(model)
-		preload("res://VehicleMeshBatcher.gd").batch_model(model)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 		model.free()
 		_prepared[path] = true
 	for path in ["res://world/shared/transit/RegionalIntercityCoachModel.gd"]:
@@ -45,7 +45,7 @@ static func prepare_common_models(tree: SceneTree) -> void:
 			staging.add_child(model)
 			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 			rig.mount(model)
-			preload("res://VehicleMeshBatcher.gd").batch_model(model)
+			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 			model.free()
 			_prepared[path] = true
 	staging.free()

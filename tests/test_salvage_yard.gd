@@ -1,6 +1,6 @@
 extends SceneTree
-const LEDGER := preload("res://world/shared/salvage/SalvageLedger.gd")
-const LOCATION := preload("res://world/shared/salvage/SalvageLocation.gd")
+const LEDGER := preload("res://cars/salvage/SalvageLedger.gd")
+const LOCATION := preload("res://cars/salvage/SalvageLocation.gd")
 var failures: Array[String]=[]
 var checks:=0
 var captures:=false

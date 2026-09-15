@@ -60,7 +60,7 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	# as rodas: pneu ficava soldado na lataria, sem giro e sem esterço. Montar
 	# depois da AABB e dos faróis (que varrem os filhos) e antes do batcher.
 	wheel_rig.mount(model)
-	preload("res://VehicleMeshBatcher.gd").batch_model(model)
+	preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 	for side in [-1.0, 1.0]:
 		if motorcycle: continue
 		var door := DOOR.new()

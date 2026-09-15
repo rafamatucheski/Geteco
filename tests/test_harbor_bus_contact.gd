@@ -1,7 +1,7 @@
 extends SceneTree
 
 var failures: Array[String] = []
-const SCENE := preload("res://world/shared/traffic/TrafficVehicle.tscn")
+const SCENE := preload("res://cars/traffic/TrafficVehicle.tscn")
 
 func _initialize() -> void:
 	call_deferred("run")

@@ -10,7 +10,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var car := load("res://world/shared/traffic/SavedPlayerCar.tscn").instantiate() as Node2D
+	var car := load("res://cars/traffic/SavedPlayerCar.tscn").instantiate() as Node2D
 	car.position = Vector2(80, 100)
 	world.add_child(car)
 	var bike := FACTORY.spawn_parked_vehicle(world, "BloodyMotorcycle", Vector2(80, 250), 0.0, "bike_urban", 0)

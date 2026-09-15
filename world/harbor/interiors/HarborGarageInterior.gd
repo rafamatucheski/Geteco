@@ -5,7 +5,7 @@ extends "res://world/harbor/interiors/HarborInteriorBase.gd"
 ## One metric 3D workshop, with playable office, reward bay and diagnostic bench.
 
 const JAGER_NPC := preload("res://JagerNPC.gd")
-const CHALKBOARD := preload("res://CarChalkboard.gd")
+const CHALKBOARD := preload("res://cars/CarChalkboard.gd")
 const WORKSHOP_VIEW := preload("res://world/harbor/interiors/HarborWorkshopView.gd")
 var showroom: Node2D
 var actor_scale: Node

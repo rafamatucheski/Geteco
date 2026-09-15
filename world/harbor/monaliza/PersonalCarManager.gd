@@ -67,7 +67,7 @@ func impound_if_driven() -> void:
 func is_car_in_garage() -> bool:
 	return car.visible and garage.contains_point(car.global_position)
 func can_recover(include_parked := false) -> bool:
-	return car.unlocked and not car.is_driven_by_player and not car.has_meta("vehicle_boarding") and (impounded or car.is_broken or car.is_exploded or not preload("res://VehicleMotionSafety.gd").valid_position(car.global_position) or (include_parked and not is_car_in_garage()))
+	return car.unlocked and not car.is_driven_by_player and not car.has_meta("vehicle_boarding") and (impounded or car.is_broken or car.is_exploded or not preload("res://cars/VehicleMotionSafety.gd").valid_position(car.global_position) or (include_parked and not is_car_in_garage()))
 
 func can_repair() -> bool:
 	return car.unlocked and not delivery_in_progress and not impounded and is_car_in_garage() and not car.is_driven_by_player and not car.has_meta("vehicle_boarding") and (car.health < car.max_health or car.is_broken or car.is_exploded or car.is_exploding or car.has_punctured_tires)

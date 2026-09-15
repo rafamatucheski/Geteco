@@ -1,6 +1,6 @@
 extends SceneTree
 
-const VEHICLE := preload("res://world/shared/traffic/TrafficVehicle.tscn")
+const VEHICLE := preload("res://cars/traffic/TrafficVehicle.tscn")
 var failures := 0
 
 class Driver extends CharacterBody2D:

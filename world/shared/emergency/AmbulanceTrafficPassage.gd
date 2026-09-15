@@ -1,7 +1,7 @@
 extends RefCounted
 ## A temporary, swept lane departure and merge. The road router retains the
 ## original destination; traffic is never removed, shoved or teleported.
-const ROUTE := preload("res://world/shared/traffic/EmergencyRoadManeuver.gd")
+const ROUTE := preload("res://cars/traffic/EmergencyRoadManeuver.gd")
 var route: RefCounted
 var lane: Path2D
 var retry := 0.0

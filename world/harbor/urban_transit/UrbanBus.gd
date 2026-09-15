@@ -1,4 +1,4 @@
-extends "res://world/shared/traffic/TrafficVehicle.gd"
+extends "res://cars/traffic/TrafficVehicle.gd"
 const TURNS := {"dock_street":["westgate_drive",-1],"westgate_drive":["foundry_avenue",1],"foundry_avenue":["quay_boulevard",1],"quay_boulevard":["dock_street",-1]}
 var system: Node2D
 var sections: Array[CharacterBody2D] = []
@@ -41,7 +41,7 @@ func _ready() -> void:
 	_lane_motion_initialized = true
 	_lane_motion_speed = 0
 	for i in 1:
-		var part := preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
+		var part := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
 		part.set_script(preload("res://world/harbor/urban_transit/UrbanBusTrailer.gd"))
 		part.name = "ArticulatedSection%d" % (i+2)
 		part.lead_bus = self

@@ -20,7 +20,7 @@ func run():
 		if String(path.get_meta("traffic_road_id", "")) != String(crossing.road_id): continue
 		lanes_checked += 1
 		var center: float = path.curve.get_closest_offset(path.to_local(crossing.global_position))
-		var probe = load("res://world/shared/traffic/TrafficVehicle.gd").new()
+		var probe = load("res://cars/traffic/TrafficVehicle.gd").new()
 		var follow = PathFollow2D.new()
 		follow.loop = false
 		path.add_child(follow)

@@ -4,7 +4,7 @@ extends RefCounted
 const REWARD_AUDIO := preload("res://audio/rewards/RewardAudioBank.gd")
 
 const COMBAT_AUDIO := preload("res://audio/combat/CombatAudioBank.gd")
-const VEHICLE_CATALOG := preload("res://VehicleCatalog.gd")
+const VEHICLE_CATALOG := preload("res://cars/VehicleCatalog.gd")
 
 static var _cached_engine: AudioStream = null
 static var _cached_skid: Dictionary = {}

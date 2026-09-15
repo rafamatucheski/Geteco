@@ -1,5 +1,5 @@
 extends SceneTree
-const BUDGET := preload("res://world/shared/traffic/CameraSimulationArea.gd")
+const BUDGET := preload("res://cars/traffic/CameraSimulationArea.gd")
 func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	root.size = Vector2i(1920,1080)

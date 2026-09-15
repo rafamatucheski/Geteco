@@ -1,4 +1,4 @@
-extends "res://world/shared/motorcycles/UrbanMotorcycle.gd"
+extends "res://cars/motorcycles/UrbanMotorcycle.gd"
 
 func build() -> void:
 	super.build()

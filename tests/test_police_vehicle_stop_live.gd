@@ -85,7 +85,7 @@ func run() -> void:
 	for i in 120:
 		walker.velocity = Vector2(0,100)
 		walker.move_and_slide()
-		preload("res://VehicleMotionSafety.gd").move(cruiser)
+		preload("res://cars/VehicleMotionSafety.gd").move(cruiser)
 		await physics_frame
 	check(cruiser.global_position.distance_to(before) < 0.1, "Pedestrian contact does not push stationary cruiser")
 	check(walker.global_position.y < before.y, "Pedestrian still blocked by cruiser")

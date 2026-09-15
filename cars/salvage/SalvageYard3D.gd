@@ -61,12 +61,12 @@ func _ready() -> void:
 	_build()
 	_update_crane()
 	_build_overhead()
-	var floodlights:=preload("res://world/shared/salvage/SalvageFloodlights.gd").new()
+	var floodlights:=preload("res://cars/salvage/SalvageFloodlights.gd").new()
 	floodlights.name="IndustrialFloodlights"
 	floodlights.art=self
 	add_child(floodlights)
 	_motor=AudioStreamPlayer2D.new()
-	_motor.stream=preload("res://world/shared/salvage/SalvageAudio.gd").hydraulics()
+	_motor.stream=preload("res://cars/salvage/SalvageAudio.gd").hydraulics()
 	_motor.bus=&"SFX"
 	_motor.volume_db=-12
 	_motor.max_distance=1000

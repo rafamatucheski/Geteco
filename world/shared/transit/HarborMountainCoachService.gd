@@ -96,7 +96,7 @@ func _initialize_service() -> void:
 	follow.loop = false
 	harbor_lane.add_child(follow)
 	follow.progress = harbor_offset
-	coach = preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	coach = preload("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	coach.set_script(COACH)
 	coach.station = self
 	coach.stop_lane = harbor_lane

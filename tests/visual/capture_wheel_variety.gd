@@ -31,7 +31,7 @@ func run() -> void:
 					center = candidate
 		var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 		rig.mount(model)
-		preload("res://VehicleMeshBatcher.gd").batch_model(model)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 		var camera := Camera3D.new()
 		world.add_child(camera)
 		camera.projection = Camera3D.PROJECTION_ORTHOGONAL

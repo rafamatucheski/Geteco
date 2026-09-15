@@ -128,7 +128,7 @@ func run() -> void:
 	# Moto: DanteMotorcycleRider duplica as âncoras e prende o capacete na cópia
 	# da cabeça. O teste do capacete de moto está desatualizado (chama
 	# ensure_motorcycle_helmet, que não existe nem no HEAD), então a checagem fica aqui.
-	var rider := preload("res://world/shared/motorcycles/DanteMotorcycleRider.gd").new()
+	var rider := preload("res://cars/motorcycles/DanteMotorcycleRider.gd").new()
 	player.viewport_3d.add_child(rider)
 	rider.position = Vector3(-3, 0, 0)
 	rider.setup(player)

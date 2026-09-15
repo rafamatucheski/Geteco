@@ -10,7 +10,7 @@ func run() -> void:
 	var follow := PathFollow2D.new()
 	lane.add_child(follow)
 	follow.progress = 100
-	var bus = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var bus = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	bus.set_script(preload("res://world/harbor/HarborTransitBus.gd"))
 	follow.add_child(bus)
 	bus.set_physics_process(false)

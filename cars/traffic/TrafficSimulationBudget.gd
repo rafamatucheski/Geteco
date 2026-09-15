@@ -4,7 +4,7 @@ extends RefCounted
 static func active_conflict_actors(tree: SceneTree, activity_area := Rect2()) -> Dictionary:
 	var active := {}
 	var pending: Array[Node2D] = []
-	var emergency := preload("res://world/shared/traffic/TrafficEmergencyYield.gd")
+	var emergency := preload("res://cars/traffic/TrafficEmergencyYield.gd")
 	var units := emergency.responders(tree)
 	if not units.is_empty():
 		for group in ["vehicle", "authored_sidewalk_pedestrian"]:

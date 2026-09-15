@@ -1,7 +1,7 @@
 @tool
 extends SceneTree
 
-const TRAFFIC_VEHICLE := preload("res://world/shared/traffic/TrafficVehicle.gd")
+const TRAFFIC_VEHICLE := preload("res://cars/traffic/TrafficVehicle.gd")
 const HARBOR_LIFE := preload("res://world/harbor/HarborLife.gd")
 const PREVIEW_PATH := "res://world/harbor/HarborPreview.tscn"
 

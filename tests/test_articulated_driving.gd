@@ -13,7 +13,7 @@ func run() -> void:
 	current_scene = world
 	var fleet := TestTransit.new()
 	world.add_child(fleet)
-	var bus := preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
+	var bus := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
 	bus.set_script(preload("res://world/harbor/urban_transit/UrbanBus.gd"))
 	bus.system = fleet
 	world.add_child(bus)
@@ -43,7 +43,7 @@ func run() -> void:
 	check(bus.sections[0].global_position.distance_to(bus.global_position)<145,"reverse retains coupled sections")
 	var hulls: Array[PackedVector2Array] = []
 	for body in bus.get_traffic_bodies():
-		var hull := preload("res://world/shared/traffic/TrafficBodySweep.gd").rectangle(body,body.global_transform)
+		var hull := preload("res://cars/traffic/TrafficBodySweep.gd").rectangle(body,body.global_transform)
 		for other in hulls:
 			check(Geometry2D.intersect_polygons(hull,other).is_empty(),"reverse cannot fold sections through each other")
 		hulls.append(hull)

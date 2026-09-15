@@ -189,7 +189,7 @@ func _diagnose_bus_step(bus: CharacterBody2D, advance: float) -> void:
 	for item in poses:
 		var body := item.body as CharacterBody2D
 		var pose := item.pose as Transform2D
-		var polygon := preload("res://world/shared/traffic/TrafficBodySweep.gd").rectangle(body, pose)
+		var polygon := preload("res://cars/traffic/TrafficBodySweep.gd").rectangle(body, pose)
 		for previous_index in polygons.size():
 			var previous := polygons[previous_index]
 			if not Geometry2D.intersect_polygons(polygon, previous).is_empty():

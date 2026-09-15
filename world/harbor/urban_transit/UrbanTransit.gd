@@ -109,7 +109,7 @@ func _setup() -> void:
 		follow.loop = false
 		stop.lane.add_child(follow)
 		follow.progress = stop.offset
-		var bus := preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
+		var bus := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
 		bus.set_script(preload("res://world/harbor/urban_transit/UrbanBus.gd"))
 		bus.name = "UrbanExpress%d"%initial_stop
 		bus.system = self

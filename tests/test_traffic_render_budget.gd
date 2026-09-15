@@ -20,7 +20,7 @@ func _run() -> void:
 	world.add_child(path)
 	var follow := PathFollow2D.new()
 	path.add_child(follow)
-	var car = preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var car = preload("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	follow.add_child(car)
 	car.apply_archetype("summit_suv", Color.BLUE)
 	for i in 10: await process_frame

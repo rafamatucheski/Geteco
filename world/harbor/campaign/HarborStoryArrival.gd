@@ -1,7 +1,7 @@
 extends Node
 ## First arrival, saved at narrative boundaries. M00 precedes Primeiro giro.
 const CAR := preload("res://world/harbor/campaign/MaciotaTourCar.gd")
-const YARD := preload("res://world/shared/salvage/SalvageLocation.gd")
+const YARD := preload("res://cars/salvage/SalvageLocation.gd")
 const PARK := YARD.HARBOR_CENTER + Vector2(0,380)
 const CAR_SEAT_OFFSET := 35.0
 var mission: Node
@@ -216,7 +216,7 @@ func build_route() -> PackedVector2Array:
 	var probe := CharacterBody2D.new()
 	world.add_child(probe)
 	probe.global_position = points[-1]
-	var router := preload("res://world/shared/traffic/TaxiRoute.gd").new()
+	var router := preload("res://cars/traffic/TaxiRoute.gd").new()
 	# Approach the current garage from its service road. The former Dock
 	# Street destination required a tight reversal beside articulated buses.
 	var road_arrival: Vector2 = mission.entrance.global_position + Vector2(-250,120)
@@ -238,7 +238,7 @@ func build_route() -> PackedVector2Array:
 	# A shallow lane change keeps the existing heading. Two tight right-angle
 	# corners could not fit between this lane and the facade with the full car.
 	var final_heading := (points[-1]-points[-2]).angle()
-	var parking_poses := preload("res://world/shared/traffic/EmergencyRoadManeuver.gd").connection(Transform2D(final_heading,points[-1]),Transform2D(final_heading,garage_approach),30.0)
+	var parking_poses := preload("res://cars/traffic/EmergencyRoadManeuver.gd").connection(Transform2D(final_heading,points[-1]),Transform2D(final_heading,garage_approach),30.0)
 	if parking_poses.is_empty(): return PackedVector2Array()
 	for pose in parking_poses.slice(1): points.append(pose.origin)
 	# Include the public approaches touched by the complete authored route. Their

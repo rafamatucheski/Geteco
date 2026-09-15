@@ -53,7 +53,7 @@ func run() -> void:
 	world.add_child(label_c2)
 
 	# 4. Traffic vehicle
-	var traffic = preload("res://world/shared/traffic/TrafficVehicle.gd").new()
+	var traffic = preload("res://cars/traffic/TrafficVehicle.gd").new()
 	traffic.position = Vector2(400, 420)
 	traffic.rotation = PI
 	world.add_child(traffic)

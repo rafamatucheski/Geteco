@@ -38,7 +38,7 @@ func run() -> void:
 	var deferred_traffic := 0
 	for vehicle in get_nodes_in_group("modern_traffic"):
 		if vehicle.get("_pending_spec") == null: continue
-		if preload("res://VehicleGeometryCache.gd").is_startup_relevant(vehicle):
+		if preload("res://cars/VehicleGeometryCache.gd").is_startup_relevant(vehicle):
 			assert(vehicle._pending_spec.is_empty())
 		elif not vehicle._pending_spec.is_empty():
 			deferred_traffic += 1

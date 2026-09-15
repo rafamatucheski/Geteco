@@ -123,7 +123,7 @@ func _show_destinations() -> void:
 	_clear()
 	_title("NYC TAXI  /  ESCOLHA O DESTINO", "Motorista: Para onde vamos? Escolha um lugar no mapa.")
 	var world := get_tree().current_scene
-	destinations = preload("res://world/shared/traffic/TaxiDestinations.gd").collect(world)
+	destinations = preload("res://cars/traffic/TaxiDestinations.gd").collect(world)
 	var minimap := get_tree().get_first_node_in_group("minimap")
 	roads = minimap._roads.duplicate() if minimap else []
 	buildings = minimap._buildings.duplicate() if minimap else []
@@ -165,7 +165,7 @@ func _select(index: int) -> void:
 		place_buttons[i].modulate = Color("ffc526") if i == index else Color.WHITE
 	destination = destinations[index].position
 	destination_name = destinations[index].label
-	var planner := preload("res://world/shared/traffic/TaxiRoute.gd").new()
+	var planner := preload("res://cars/traffic/TaxiRoute.gd").new()
 	planner.start_lane = source_lane
 	route = planner.plan(car,destination).duplicate()
 	# A destination must end at a nearby curb, never across the city or indoors.

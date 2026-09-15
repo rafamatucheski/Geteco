@@ -1,5 +1,5 @@
 extends SceneTree
-const MOTION := preload("res://VehicleMotionSafety.gd")
+const MOTION := preload("res://cars/VehicleMotionSafety.gd")
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:
 	var manager := root.get_node("TrafficLightManager")

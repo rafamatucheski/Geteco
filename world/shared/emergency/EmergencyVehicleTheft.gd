@@ -24,7 +24,7 @@ static func enter(source: CharacterBody2D, actor: CharacterBody2D) -> void:
 		var aboard: int = 2 if source.deployed_paramedics == 0 else maxi(source.returned_paramedics, medics.size())
 		exits = medical_exit_positions(source, aboard, actor)
 		if exits.size() != aboard: return
-	var vehicle := (load("res://world/shared/traffic/TrafficVehicle.tscn") as PackedScene).instantiate() as CharacterBody2D
+	var vehicle := (load("res://cars/traffic/TrafficVehicle.tscn") as PackedScene).instantiate() as CharacterBody2D
 	world.add_child(vehicle)
 	var motorcycle: bool = source.type == 0 and source.police_variant == "motorcycle"
 	var archetype: String = "bike_urban" if motorcycle else ["police_cruiser","medic_box","rescue_pumper","courier_van"][source.type]

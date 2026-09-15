@@ -35,7 +35,7 @@ var pass_side := 0
 # The sedan is wider than the previous coupe. Keep the first sidewalk option
 # inside the authored pavement while leaving larger offsets for open shoulders.
 const PASS_OFFSETS := [44.0, -40.0, 72.0, -72.0, 100.0, -100.0]
-const MANEUVER := preload("res://world/shared/traffic/EmergencyRoadManeuver.gd")
+const MANEUVER := preload("res://cars/traffic/EmergencyRoadManeuver.gd")
 const SEAT_OFFSET := 35.0
 
 func _ready() -> void:

@@ -195,7 +195,7 @@ func _traffic_corner(corner: Vector2) -> Dictionary:
 	world.add_child(path)
 	var follow := PathFollow2D.new()
 	path.add_child(follow)
-	var car = preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var car = preload("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	follow.add_child(car)
 	car.apply_archetype("union_sedan", Color.BLUE)
 	# A cadência de pose é assumida aqui: o objetivo é medir o rig sobre uma proa

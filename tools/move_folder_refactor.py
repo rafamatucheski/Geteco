@@ -51,23 +51,31 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
-# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio guns/.
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio cars/. Nao inclui
+# PlayerCar/Player (isso e characters/, adiado - tem WIP de outra sessao dentro).
 MOVES: list[tuple[str, str]] = [
-    ("WeaponCatalog.gd", "guns/WeaponCatalog.gd"),
-    ("WeaponStore.gd", "guns/WeaponStore.gd"),
-    ("WeaponStore.tscn", "guns/WeaponStore.tscn"),
-    ("WeaponWheel.gd", "guns/WeaponWheel.gd"),
-    ("WeaponIcon3D.gd", "guns/WeaponIcon3D.gd"),
-    ("Bullet.gd", "guns/Bullet.gd"),
-    ("Bullet.tscn", "guns/Bullet.tscn"),
-    ("GrenadeProjectile.gd", "guns/GrenadeProjectile.gd"),
-    ("GrenadeProjectile.tscn", "guns/GrenadeProjectile.tscn"),
-    ("FlameJet.gd", "guns/FlameJet.gd"),
-    ("FlameJet.tscn", "guns/FlameJet.tscn"),
-    ("AmmuNationInterior.gd", "guns/AmmuNationInterior.gd"),
-    ("world/shared/combat", "guns/combat"),
-    ("world/shared/ammunation", "guns/ammunation"),
-    ("world/shared/ImpactDebris.gd", "guns/ImpactDebris.gd"),
+    ("VehicleCatalog.gd", "cars/VehicleCatalog.gd"),
+    ("VehicleDoorVisual.gd", "cars/VehicleDoorVisual.gd"),
+    ("VehicleDrivetrain.gd", "cars/VehicleDrivetrain.gd"),
+    ("VehicleGeometryCache.gd", "cars/VehicleGeometryCache.gd"),
+    ("VehicleLaunchControl.gd", "cars/VehicleLaunchControl.gd"),
+    ("VehicleMeshBatcher.gd", "cars/VehicleMeshBatcher.gd"),
+    ("VehicleMotionSafety.gd", "cars/VehicleMotionSafety.gd"),
+    ("VehicleSkidMarks.gd", "cars/VehicleSkidMarks.gd"),
+    ("VehicleSurfaceWear2D.gd", "cars/VehicleSurfaceWear2D.gd"),
+    ("VehicleTireTrail.gd", "cars/VehicleTireTrail.gd"),
+    ("VehicleBoarding.gd", "cars/VehicleBoarding.gd"),
+    ("RaceCatalog.gd", "cars/RaceCatalog.gd"),
+    ("DriftZoneCatalog.gd", "cars/DriftZoneCatalog.gd"),
+    ("DriftChallengeZone.gd", "cars/DriftChallengeZone.gd"),
+    ("NightRaceController.gd", "cars/NightRaceController.gd"),
+    ("ChopShopCrusher3D.gd", "cars/ChopShopCrusher3D.gd"),
+    ("ChopShopZone.gd", "cars/ChopShopZone.gd"),
+    ("CarChalkboard.gd", "cars/CarChalkboard.gd"),
+    ("CustomsWorkshopMenu.gd", "cars/CustomsWorkshopMenu.gd"),
+    ("world/shared/traffic", "cars/traffic"),
+    ("world/shared/motorcycles", "cars/motorcycles"),
+    ("world/shared/salvage", "cars/salvage"),
 ]
 
 

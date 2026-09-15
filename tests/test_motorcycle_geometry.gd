@@ -39,7 +39,7 @@ func run() -> void:
 									penetrations += 1
 			print("MOTO_CLEARANCE ",id," steer=",angle," paint/tire intersections=",penetrations)
 			if penetrations: failures += 1
-		preload("res://VehicleMeshBatcher.gd").batch_model(model)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 		model.update_riding_pose(1.0,0.0,0.0,true)
 		assert(model._leg_parts[0].boot.position.y < .12,"Stopped rider reaches the ground")
 		for angle in [-.58,.58]:

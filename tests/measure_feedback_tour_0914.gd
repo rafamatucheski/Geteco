@@ -30,8 +30,8 @@ func run() -> void:
 	while not current_scene.get_node("RoadLighting").ready_for_audit: await process_frame
 	# Match production loading before measuring playable frames.
 	paused = true
-	await preload("res://VehicleGeometryCache.gd").prepare_common_models(self)
-	await preload("res://VehicleGeometryCache.gd").prepare_resident_presentations(self)
+	await preload("res://cars/VehicleGeometryCache.gd").prepare_common_models(self)
+	await preload("res://cars/VehicleGeometryCache.gd").prepare_resident_presentations(self)
 	await root.get_node("EmergencyPool").prepare_presentations()
 	await preload("res://audio/VehicleEngineSound.gd").prepare_catalog(self)
 	paused = false

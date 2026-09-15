@@ -1,7 +1,7 @@
 extends RefCounted
 ## Validate the same proposed poses that will be committed, for the whole convoy.
 ## Rotation is subdivided by corner travel, not merely by movement of the centre.
-const FLOW := preload("res://world/shared/traffic/TrafficFlowModel.gd")
+const FLOW := preload("res://cars/traffic/TrafficFlowModel.gd")
 const MAX_CORNER_STEP := 2.0
 
 static func rectangle(body: Node2D, pose: Transform2D, margin := 0.0) -> PackedVector2Array:

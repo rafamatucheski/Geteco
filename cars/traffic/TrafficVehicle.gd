@@ -4,15 +4,15 @@ extends CharacterBody2D
 signal player_entered(vehicle: CharacterBody2D)
 
 var _handling_yaw_rate: float = 0.0
-var _drivetrain = preload("res://VehicleDrivetrain.gd").new()
-var _launch = preload("res://VehicleLaunchControl.gd").new()
-var _tire_trail = preload("res://VehicleTireTrail.gd").new()
+var _drivetrain = preload("res://cars/VehicleDrivetrain.gd").new()
+var _launch = preload("res://cars/VehicleLaunchControl.gd").new()
+var _tire_trail = preload("res://cars/VehicleTireTrail.gd").new()
 
 const VEHICLE_ATLAS: Texture2D = preload("res://assets/art/vehicle-atlas.png")
-const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
+const VEHICLE_DOOR_VISUAL := preload("res://cars/VehicleDoorVisual.gd")
 const MAX_LANE_ADVANCE_PER_FRAME := 14.0
-const TRAFFIC_FLOW := preload("res://world/shared/traffic/TrafficFlowModel.gd")
-const TRAFFIC_SWEEP := preload("res://world/shared/traffic/TrafficBodySweep.gd")
+const TRAFFIC_FLOW := preload("res://cars/traffic/TrafficFlowModel.gd")
+const TRAFFIC_SWEEP := preload("res://cars/traffic/TrafficBodySweep.gd")
 
 @export var vehicle_id: String = "vehicle"
 @export var display_name: String = "Veículo"
@@ -48,7 +48,7 @@ const PERSON_WARNING_GRACE := 3.0
 var _avoidance_hold := 0.0
 var _lane_sweep_blocked := false
 var _emergency_yield_active := false
-var _siren_maneuver := preload("res://world/shared/traffic/TrafficSirenManeuver.gd").new()
+var _siren_maneuver := preload("res://cars/traffic/TrafficSirenManeuver.gd").new()
 var _driver: CharacterBody2D
 var taxi_passenger := false
 var _taxi_service: CanvasLayer
@@ -168,7 +168,7 @@ func _ensure_required_nodes() -> void:
 		pedestrian_hitbox.add_child(hitbox_collision)
 
 func _ready() -> void:
-	preload("res://VehicleMotionSafety.gd").configure(self)
+	preload("res://cars/VehicleMotionSafety.gd").configure(self)
 	collision_mask |= 2
 	_ensure_required_nodes()
 	health = 100
@@ -487,7 +487,7 @@ func _setup_headlight() -> void:
 
 func honk_horn():
 	if is_broken: return
-	preload("res://world/shared/traffic/TrafficHorn.gd").report(self)
+	preload("res://cars/traffic/TrafficHorn.gd").report(self)
 	_ensure_horn_audio()
 	if horn_audio and not horn_audio.playing:
 		horn_audio.pitch_scale = randf_range(0.92, 1.08)
@@ -732,7 +732,7 @@ func _spawn_dent_decal(local_pos: Vector2, dir: Vector2, strength: float) -> voi
 	if dents_container == null or is_3d_vehicle: return
 	var footprint := Vector2(54,24)
 	if collision and collision.shape is RectangleShape2D: footprint = collision.shape.size
-	preload("res://VehicleSurfaceWear2D.gd").add_scrape(dents_container,local_pos,dir,footprint,strength)
+	preload("res://cars/VehicleSurfaceWear2D.gd").add_scrape(dents_container,local_pos,dir,footprint,strength)
 
 func _clear_all_dents() -> void:
 	if is_3d_vehicle and is_instance_valid(body_model):
@@ -810,7 +810,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 			_pending_color = VehicleCatalog.get_random_color(archetype_id) if custom_color == Color.TRANSPARENT else custom_color
 			visual.modulate = _pending_color
 			if is_motorcycle:
-				visual.texture = preload("res://world/shared/motorcycles/MotorcycleSilhouette.gd").texture()
+				visual.texture = preload("res://cars/motorcycles/MotorcycleSilhouette.gd").texture()
 				visual.region_enabled = false
 				visual.rotation = 0.0
 				visual.scale = Vector2.ONE * target_length / 64.0
@@ -934,7 +934,7 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 				light.offset = Vector2(100,0)
 				light.texture_scale = 0.6
 				light.energy = 0.75
-		preload("res://VehicleMeshBatcher.gd").batch_model(body_model)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(body_model)
 		body_model.rotation.y = -PI * 0.5
 
 		var view := Camera3D.new()
@@ -1299,7 +1299,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 	var taxi_occupied: bool = active_archetype_id == "taxi_yellow" and (not _detached_from_lane or (is_instance_valid(_taxi_service) and _taxi_service.driver_available))
 	if taxi_occupied and not as_taxi_passenger and not steal_taxi:
 		if not is_instance_valid(_taxi_service):
-			_taxi_service = preload("res://world/shared/traffic/TaxiService.gd").new()
+			_taxi_service = preload("res://cars/traffic/TaxiService.gd").new()
 			add_child(_taxi_service)
 		_taxi_service.offer(self,player_body)
 		return
@@ -1325,7 +1325,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 				scene_target.add_child(ejected_driver)
 				var exit_side := -1.0 if to_local(_get_safe_exit_position()).y <= 0 else 1.0
 				_animate_car_door(exit_side)
-				var ejection_pos := preload("res://VehicleBoarding.gd").driver_exit_position(self, ejected_driver, exit_side)
+				var ejection_pos := preload("res://cars/VehicleBoarding.gd").driver_exit_position(self, ejected_driver, exit_side)
 				if not ejection_pos.is_finite():
 					# Sem vão livre para o motorista sair (ônibus encostado na plataforma,
 					# carro contra parede): não o jogamos dentro de um sólido, mas o roubo
@@ -1370,7 +1370,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 	player_body.velocity = Vector2.ZERO
 	player_body.global_position = global_position
 	
-	_animate_car_door(entry_side, preload("res://VehicleBoarding.gd").duration_for(self, entry_side) - 0.60)
+	_animate_car_door(entry_side, preload("res://cars/VehicleBoarding.gd").duration_for(self, entry_side) - 0.60)
 	
 	var lane_follow := get_parent() as PathFollow2D
 	if lane_follow != null:
@@ -1412,7 +1412,7 @@ func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger :=
 		if has_theft_alarm and not theft_from_traffic and not was_occupied:
 			start_theft_alarm()
 
-	_boarding = preload("res://VehicleBoarding.gd").new()
+	_boarding = preload("res://cars/VehicleBoarding.gd").new()
 	add_child(_boarding)
 	_boarding.begin(self, player_body, approach, entry_side)
 	if is_motorcycle and player_body.has_method("ensure_motorcycle_helmet"):
@@ -1595,7 +1595,7 @@ func exit_vehicle() -> void:
 	_tire_trail.reset()
 	if not is_driven_by_player: return
 	if taxi_passenger and is_instance_valid(_taxi_service): _taxi_service.stop_ride()
-	preload("res://VehicleBoarding.gd").start_exit(self, _driver)
+	preload("res://cars/VehicleBoarding.gd").start_exit(self, _driver)
 
 func force_exit_vehicle() -> void:
 	# Lifecycle cleanup (death/scene travel) cannot leave a pending animation.
@@ -1609,7 +1609,7 @@ func _complete_exit_vehicle(exit_position: Vector2) -> void:
 		return
 	if is_motorcycle and is_instance_valid(_driver) and _driver.has_method("ensure_motorcycle_helmet"):
 		_driver.ensure_motorcycle_helmet().dismount()
-	preload("res://VehicleBoarding.gd").clear_occupant(self)
+	preload("res://cars/VehicleBoarding.gd").clear_occupant(self)
 	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	velocity = Vector2.ZERO
@@ -1649,7 +1649,7 @@ func _physics_process(delta: float) -> void:
 	if not is_driven_by_player or is_broken:
 		_launch.reset()
 		_tire_trail.reset()
-	preload("res://VehicleMotionSafety.gd").sanitize(self)
+	preload("res://cars/VehicleMotionSafety.gd").sanitize(self)
 	has_nitro = false
 	is_boosting = false
 	if is_instance_valid(_boarding) and _boarding.active:
@@ -1674,16 +1674,16 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if is_broken:
-		velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://cars/VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
 		if _detached_from_lane:
-			preload("res://VehicleMotionSafety.gd").move(self)
+			preload("res://cars/VehicleMotionSafety.gd").move(self)
 		return
 	if not is_driven_by_player:
 		handbrake_slide = 0.0
 		lateral_speed = 0.0
 		if _detached_from_lane:
-			velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
-			preload("res://VehicleMotionSafety.gd").move(self)
+			velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://cars/VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
+			preload("res://cars/VehicleMotionSafety.gd").move(self)
 			if not is_in_group("parked_vehicle") and not is_in_group("player_car"):
 				var player_node := get_tree().get_first_node_in_group("player") as Node2D
 				var dist := global_position.distance_to(player_node.global_position) if is_instance_valid(player_node) else 9999.0
@@ -1744,24 +1744,24 @@ func _physics_process(delta: float) -> void:
 
 
 	_drivetrain.update(str(VehicleCatalog.get_vehicle_spec(active_archetype_id).get("drivetrain", "rwd")), velocity.dot(transform.x), throttle, steering, wetness)
-	velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor + _drivetrain.drift_bias, delta, wetness, handbrake_slide > 0.0, vehicle_mass)
-	if handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.10*preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass)*delta)
+	velocity = preload("res://cars/VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor + _drivetrain.drift_bias, delta, wetness, handbrake_slide > 0.0, vehicle_mass)
+	if handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.10*preload("res://cars/VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass)*delta)
 	var longitudinal := velocity.dot(transform.x)
 	var slide_steer := lerpf(1.0, 1.65, clampf(handbrake_slide / 0.35, 0.0, 1.0))
-	_handling_yaw_rate = preload("res://VehicleMotionSafety.gd").steering_rate(_handling_yaw_rate, steering, longitudinal, turn_speed * _drivetrain.steer_scale * slide_steer, vehicle_mass, delta)
+	_handling_yaw_rate = preload("res://cars/VehicleMotionSafety.gd").steering_rate(_handling_yaw_rate, steering, longitudinal, turn_speed * _drivetrain.steer_scale * slide_steer, vehicle_mass, delta)
 	var proposed_rotation := rotation + _handling_yaw_rate * delta
 	var forklift := get_node_or_null("ForkliftLift")
-	preload("res://VehicleMotionSafety.gd").rotate_clear(self, forklift.safe_rotation(proposed_rotation) if forklift else proposed_rotation)
+	preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, forklift.safe_rotation(proposed_rotation) if forklift else proposed_rotation)
 	var forward := transform.x
 	if not is_zero_approx(throttle):
 		if (throttle > 0.0 and velocity.dot(forward) < -8.0) or (throttle < 0.0 and velocity.dot(forward) > 8.0):
-			velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
+			velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://cars/VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
 		elif forklift:
 			velocity = (velocity + forward * throttle * acceleration * delta).limit_length(forklift.speed_limit())
 		else:
-			velocity = (velocity + forward * throttle * acceleration * preload("res://VehicleMotionSafety.gd").drive_mass_scale(vehicle_mass) * _drivetrain.force_scale * _launch.force_scale * _engine_sound.drive_force(velocity.length(), max_speed) * delta).limit_length(_engine_sound.road_top_speed(max_speed))
+			velocity = (velocity + forward * throttle * acceleration * preload("res://cars/VehicleMotionSafety.gd").drive_mass_scale(vehicle_mass) * _drivetrain.force_scale * _launch.force_scale * _engine_sound.drive_force(velocity.length(), max_speed) * delta).limit_length(_engine_sound.road_top_speed(max_speed))
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://cars/VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
 
 	if forklift: velocity = velocity.limit_length(forklift.speed_limit())
 	if _launch.holding: velocity = Vector2.ZERO
@@ -1769,7 +1769,7 @@ func _physics_process(delta: float) -> void:
 	_tire_trail.update(self, delta, is_driven_by_player and not is_broken and is_skidding, 0.38 + _launch.wheelspin * 0.25)
 	if is_driven_by_player: _update_skid_audio()
 	var prev_velocity = velocity
-	preload("res://VehicleMotionSafety.gd").move(self)
+	preload("res://cars/VehicleMotionSafety.gd").move(self)
 	
 	# Same cached family/RPM controller as personal cars; large vehicles keep diesel timbre.
 	if engine_audio and not is_broken:
@@ -1822,7 +1822,7 @@ func _physics_process(delta: float) -> void:
 			
 		if impact_speed > 180.0 and Time.get_ticks_msec()-_last_collision_damage_ms > 650:
 			_last_collision_damage_ms = Time.get_ticks_msec()
-			take_damage(preload("res://VehicleMotionSafety.gd").collision_damage(impact_speed), is_driven_by_player)
+			take_damage(preload("res://cars/VehicleMotionSafety.gd").collision_damage(impact_speed), is_driven_by_player)
 
 	# Ground-contact residue is rendered separately from braking skid marks.
 	bloody_tires_timer = maxf(0.0, bloody_tires_timer - delta)
@@ -2138,7 +2138,7 @@ func _lane_contact_crash(contact: KinematicCollision2D, incoming: Vector2) -> vo
 		body._apply_crash_deformation(-contact.get_normal(), force, contact.get_position())
 	preload("res://audio/VehicleCrashAudio.gd").play(self, body, contact.get_position(), force)
 	if force > 180.0:
-		take_damage(preload("res://VehicleMotionSafety.gd").collision_damage(force), false)
+		take_damage(preload("res://cars/VehicleMotionSafety.gd").collision_damage(force), false)
 
 func _traffic_sweep_clear(motion: Vector2, displacement: Vector2 = Vector2.ZERO) -> bool:
 	var query := PhysicsShapeQueryParameters2D.new()
@@ -2418,7 +2418,7 @@ func _lane_pedestrian_blocks(follow: PathFollow2D, pedestrian: Node, must_clear_
 	if must_clear_rail_crossing:
 		return false
 	if bool(follow.get_parent().get_meta("curved_pedestrian_corridor", false)):
-		return preload("res://world/shared/traffic/LanePedestrianCorridor.gd").blocks(self, follow, pedestrian)
+		return preload("res://cars/traffic/LanePedestrianCorridor.gd").blocks(self, follow, pedestrian)
 	return true
 
 func _lane_spacing_motion(lane_follow: PathFollow2D) -> Dictionary:

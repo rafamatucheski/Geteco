@@ -1,6 +1,6 @@
 extends SceneTree
 const Controller := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
-const Flow := preload("res://world/shared/traffic/TrafficFlowModel.gd")
+const Flow := preload("res://cars/traffic/TrafficFlowModel.gd")
 class Graph:
 	extends Node2D
 	func get_graph_data() -> Dictionary:

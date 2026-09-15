@@ -1,6 +1,6 @@
 extends SceneTree
-const Flow := preload("res://world/shared/traffic/TrafficFlowModel.gd")
-const Sweep := preload("res://world/shared/traffic/TrafficBodySweep.gd")
+const Flow := preload("res://cars/traffic/TrafficFlowModel.gd")
+const Sweep := preload("res://cars/traffic/TrafficBodySweep.gd")
 const Factory := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 const Bus := preload("res://world/harbor/urban_transit/UrbanBus.gd")
 const Controller := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
@@ -170,7 +170,7 @@ func mixed_curve(archetype: String) -> void:
 	follow.loop = false
 	path.add_child(follow)
 	follow.progress = 1200
-	var bus := load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
+	var bus := load("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
 	bus.set_script(Bus)
 	bus.system = service
 	follow.add_child(bus)

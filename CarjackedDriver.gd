@@ -34,7 +34,7 @@ var pants_color: Color = Color(0.15, 0.15, 0.2)
 var skin_color: Color = Color(0.85, 0.68, 0.55)
 
 func _ready() -> void:
-	preload("res://VehicleMotionSafety.gd").configure(self)
+	preload("res://cars/VehicleMotionSafety.gd").configure(self)
 	add_to_group("damageable")
 	add_to_group("pedestrian")
 	z_index = 10

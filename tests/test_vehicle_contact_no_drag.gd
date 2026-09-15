@@ -16,11 +16,11 @@ func body_at(world: Node, point: Vector2) -> CharacterBody2D:
 	body.add_child(hull)
 	world.add_child(body)
 	body.position = point
-	preload("res://VehicleMotionSafety.gd").configure(body)
+	preload("res://cars/VehicleMotionSafety.gd").configure(body)
 	return body
 
 func run() -> void:
-	var safety = load("D:/geteco/artifacts/combat-vehicles-0913/before/VehicleMotionSafety.gd") if "--before" in OS.get_cmdline_user_args() else preload("res://VehicleMotionSafety.gd")
+	var safety = load("D:/geteco/artifacts/combat-vehicles-0913/before/VehicleMotionSafety.gd") if "--before" in OS.get_cmdline_user_args() else preload("res://cars/VehicleMotionSafety.gd")
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world

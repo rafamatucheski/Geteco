@@ -18,7 +18,7 @@ extends SceneTree
 ## explicitly rules that out as a fix) -- it only proves repair_vehicle() now
 ## clears stale trail history instead of dragging it across a teleport.
 
-const VEHICLE_SCENE := preload("res://world/shared/traffic/TrafficVehicle.tscn")
+const VEHICLE_SCENE := preload("res://cars/traffic/TrafficVehicle.tscn")
 
 func _initialize() -> void:
 	call_deferred("_run")

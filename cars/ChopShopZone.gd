@@ -2,9 +2,9 @@ class_name ChopShopZone
 extends Node2D
 ## Explicit deliveries only: loading and area overlaps never start the crane.
 const FINISH := preload("res://world/harbor/ExteriorFinish.gd")
-const LOCATION := preload("res://world/shared/salvage/SalvageLocation.gd")
-const LEDGER := preload("res://world/shared/salvage/SalvageLedger.gd")
-const ART := preload("res://world/shared/salvage/SalvageYard3D.gd")
+const LOCATION := preload("res://cars/salvage/SalvageLocation.gd")
+const LEDGER := preload("res://cars/salvage/SalvageLedger.gd")
+const ART := preload("res://cars/salvage/SalvageYard3D.gd")
 var legacy := false
 var art: Node2D
 var npc: Node2D
@@ -38,24 +38,24 @@ func _ready() -> void:
 	add_child(art)
 	dock=art.dock_point()
 	art.crushed.connect(_finish_delivery)
-	npc=preload("res://world/shared/salvage/Neco.gd").new()
+	npc=preload("res://cars/salvage/Neco.gd").new()
 	npc.name="Neco"
 	npc.position=art.npc_point()
 	add_child(npc)
 	_build_collisions()
 	_build_hud()
-	tow_service=preload("res://world/shared/salvage/TowService.gd").new()
+	tow_service=preload("res://cars/salvage/TowService.gd").new()
 	tow_service.name="TowService"
 	add_child(tow_service)
-	var locator:=preload("res://world/shared/salvage/SalvageLocator.gd").new()
+	var locator:=preload("res://cars/salvage/SalvageLocator.gd").new()
 	locator.yard=self
 	_hud.add_child(locator)
 	for entry in [{"kind":"gate","point":Vector3(6.5,0,12.3)}]:
-		var sign:=preload("res://world/shared/salvage/SalvageSign.gd").new()
+		var sign:=preload("res://cars/salvage/SalvageSign.gd").new()
 		sign.kind=entry.kind
 		sign.position=art.projected(entry.point)
 		add_child(sign)
-	_bay_marker=preload("res://world/shared/salvage/SalvageBayMarker.gd").new()
+	_bay_marker=preload("res://cars/salvage/SalvageBayMarker.gd").new()
 	_bay_marker.name="DeliveryGlow"
 	_bay_marker.position=dock
 	add_child(_bay_marker)
@@ -411,7 +411,7 @@ func _ensure_contract_target() -> void:
 
 func _mark_target() -> void:
 	if not is_instance_valid(_target) or _target.has_node("NecoOrderMarker"): return
-	var marker:=preload("res://world/shared/salvage/SalvageTargetMarker.gd").new()
+	var marker:=preload("res://cars/salvage/SalvageTargetMarker.gd").new()
 	marker.name="NecoOrderMarker"
 	marker.token=_last_token
 	_target.add_child(marker)

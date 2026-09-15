@@ -1,5 +1,5 @@
 extends SceneTree
-const SAFETY := preload("res://VehicleMotionSafety.gd")
+const SAFETY := preload("res://cars/VehicleMotionSafety.gd")
 var failures: Array[String] = []
 var capture_dir := "D:/geteco/artifacts/drift-events-0910/"
 func _initialize() -> void: run.call_deferred()

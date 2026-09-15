@@ -1,5 +1,5 @@
 extends SceneTree
-const SAFETY := preload("res://VehicleMotionSafety.gd")
+const SAFETY := preload("res://cars/VehicleMotionSafety.gd")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func check(value: bool, description: String) -> void:

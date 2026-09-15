@@ -7,15 +7,15 @@ const MIN_CELL = Vector2i(-15, -12)
 const MAX_CELL = Vector2i(15, 12)
 const ROAD_TILE: Texture2D = preload("res://assets/art/road_tiles.svg")
 const BUILDING_SCENE: PackedScene = preload("res://legacy/city_demo/scenes/CityBuilding.tscn")
-const VEHICLE_SCENE: PackedScene = preload("res://world/shared/traffic/TrafficVehicle.tscn")
+const VEHICLE_SCENE: PackedScene = preload("res://cars/traffic/TrafficVehicle.tscn")
 const PEDESTRIAN_SCENE: PackedScene = preload("res://legacy/city_demo/scenes/Pedestrian.tscn")
 const COLLECTIBLE_SCRIPT := preload("res://economy/Collectible.gd")
 const PUDDLE_SCRIPT := preload("res://Puddle.gd")
-const NIGHT_RACE_SCRIPT := preload("res://NightRaceController.gd")
-const RACE_CATALOG_SCRIPT := preload("res://RaceCatalog.gd")
-const DRIFT_ZONE_SCRIPT := preload("res://DriftChallengeZone.gd")
-const DRIFT_ZONE_CATALOG_SCRIPT := preload("res://DriftZoneCatalog.gd")
-const CHOP_SHOP_SCRIPT := preload("res://ChopShopZone.gd")
+const NIGHT_RACE_SCRIPT := preload("res://cars/NightRaceController.gd")
+const RACE_CATALOG_SCRIPT := preload("res://cars/RaceCatalog.gd")
+const DRIFT_ZONE_SCRIPT := preload("res://cars/DriftChallengeZone.gd")
+const DRIFT_ZONE_CATALOG_SCRIPT := preload("res://cars/DriftZoneCatalog.gd")
+const CHOP_SHOP_SCRIPT := preload("res://cars/ChopShopZone.gd")
 
 const VEHICLE_CROPS: Array[Rect2] = [
 	Rect2(52, 106, 218, 392), Rect2(350, 49, 235, 462),
@@ -151,7 +151,7 @@ func _spawn_world_extras() -> void:
 	var chop_shop: Node2D = CHOP_SHOP_SCRIPT.new()
 	chop_shop.name = "ChopShopZone"
 	chop_shop.legacy = true
-	chop_shop.position = preload("res://world/shared/salvage/SalvageLocation.gd").LEGACY_CENTER
+	chop_shop.position = preload("res://cars/salvage/SalvageLocation.gd").LEGACY_CENTER
 	world.add_child(chop_shop)
 
 ## Cargueiro decorativo na beira-mar (variação compacta do que já existia em

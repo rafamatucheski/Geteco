@@ -102,7 +102,7 @@ func run() -> void:
 	cargo.position = Vector2(5400,3000)
 	world.add_child(cargo)
 	var debris = load("res://guns/ImpactDebris.gd").spawn(world, Vector2(5600,3000), Vector2.RIGHT, 100, "wood")
-	var car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var car = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	car.position = Vector2(6000,3000)
 	world.add_child(car)
 	car.configure_as_parked()
@@ -114,7 +114,7 @@ func run() -> void:
 	world.add_child(lane)
 	var follower := PathFollow2D.new()
 	lane.add_child(follower)
-	var traffic = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var traffic = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	traffic.speed = 90
 	follower.add_child(traffic)
 	await process_frame

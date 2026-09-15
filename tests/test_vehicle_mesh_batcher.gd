@@ -1,5 +1,5 @@
 extends SceneTree
-const Batcher = preload("res://VehicleMeshBatcher.gd")
+const Batcher = preload("res://cars/VehicleMeshBatcher.gd")
 const Door = preload("res://prototypes/living_cast/VehicleDoor3D.gd")
 var failures: Array[String] = []
 func check(ok: bool, label: String) -> void:

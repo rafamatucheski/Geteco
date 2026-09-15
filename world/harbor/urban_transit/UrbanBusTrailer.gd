@@ -1,4 +1,4 @@
-extends "res://world/shared/traffic/TrafficVehicle.gd"
+extends "res://cars/traffic/TrafficVehicle.gd"
 var lead_bus: CharacterBody2D
 ## A real collision body; its pose is owned by the leading bus's travelled path.
 func _ready() -> void:

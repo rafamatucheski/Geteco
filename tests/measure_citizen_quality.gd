@@ -62,9 +62,9 @@ func _run() -> void:
 		return
 	# Match the normal loading screen's geometry preparation.
 	paused = true
-	await preload("res://VehicleGeometryCache.gd").prepare_common_models(self)
+	await preload("res://cars/VehicleGeometryCache.gd").prepare_common_models(self)
 	if not args.has("--skip-resident-preparation"):
-		await preload("res://VehicleGeometryCache.gd").prepare_resident_presentations(self)
+		await preload("res://cars/VehicleGeometryCache.gd").prepare_resident_presentations(self)
 	await root.get_node("EmergencyPool").prepare_presentations()
 	await preload("res://audio/VehicleEngineSound.gd").prepare_catalog(self)
 	paused = false

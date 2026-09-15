@@ -34,7 +34,7 @@ func run() -> void:
 			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 			rig.mount(model)
 			rig.update(1.0,5,0,.16 if row == 1 else 0.0)
-			preload("res://VehicleMeshBatcher.gd").batch_model(model)
+			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 			model.update_riding_pose(1.0,5,.08,row == 1)
 			var floor_mesh := MeshInstance3D.new()
 			floor_mesh.mesh = PlaneMesh.new()

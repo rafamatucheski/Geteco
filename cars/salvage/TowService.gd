@@ -1,6 +1,6 @@
 extends Node
 ## Mantém veículo, carga e encomenda no mesmo mundo e no save da campanha.
-const JOBS := preload("res://world/shared/salvage/TowJobs.gd")
+const JOBS := preload("res://cars/salvage/TowJobs.gd")
 const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 var yard: Node2D
 var truck: Node2D
@@ -204,7 +204,7 @@ func _mount(car: Node2D, report: bool) -> void:
 		payload.paint.albedo_color = car.body_model.paint.albedo_color
 	if report:
 		var motor := AudioStreamPlayer2D.new()
-		motor.stream = preload("res://world/shared/salvage/SalvageAudio.gd").hydraulics()
+		motor.stream = preload("res://cars/salvage/SalvageAudio.gd").hydraulics()
 		motor.bus = &"SFX"
 		motor.volume_db = -16
 		truck.add_child(motor)

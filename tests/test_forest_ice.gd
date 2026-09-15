@@ -1,6 +1,6 @@
 extends SceneTree
 const TREE = preload("res://world/mountain_pass/MountainPine3D.gd")
-const MOTION = preload("res://VehicleMotionSafety.gd")
+const MOTION = preload("res://cars/VehicleMotionSafety.gd")
 var failures := 0
 func _initialize() -> void: _run.call_deferred()
 func check(ok: bool, label: String) -> void:

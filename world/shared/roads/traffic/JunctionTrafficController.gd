@@ -23,7 +23,7 @@ const LANE_GROUP: StringName = &"unified_traffic_lane"
 const NO_ADVANCE := 0.0
 const SIGNAL_VISUAL := preload("res://world/shared/roads/traffic/JunctionSignalVisual2D.gd")
 const MAX_CONNECTOR_ENTRY_OVERSHOOT := 12.0
-const FLOW := preload("res://world/shared/traffic/TrafficFlowModel.gd")
+const FLOW := preload("res://cars/traffic/TrafficFlowModel.gd")
 
 @export_range(1.0, 60.0, 0.1) var minimum_green_seconds := 5.0
 @export_range(0.5, 10.0, 0.1) var yellow_seconds := 2.2

@@ -1,6 +1,6 @@
 extends SceneTree
-const JOBS := preload("res://world/shared/salvage/TowJobs.gd")
-const LEDGER := preload("res://world/shared/salvage/SalvageLedger.gd")
+const JOBS := preload("res://cars/salvage/TowJobs.gd")
+const LEDGER := preload("res://cars/salvage/SalvageLedger.gd")
 const OUT := "res://docs/measurements/towing-0910/"
 var checks := 0
 var failures: Array[String] = []

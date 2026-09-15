@@ -4,7 +4,7 @@ extends RefCounted
 # Catálogo Completo de Veículos por Zonas e Biomas
 # Contém especificações físicas reais (massa, aceleração, velocidade, durabilidade, drift) e paletas de cores.
 
-const MOTORCYCLES = preload("res://world/shared/motorcycles/MotorcycleCatalog.gd")
+const MOTORCYCLES = preload("res://cars/motorcycles/MotorcycleCatalog.gd")
 
 # Shared atlas data must not depend on the factory that instantiates vehicles.
 const VEHICLE_CROPS: Array[Rect2] = [

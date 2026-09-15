@@ -21,7 +21,7 @@ var _traffic_target := 0
 var _population_clock := 0.0
 var _budget_clock := 0.0
 var _spawn_serial := 1000
-var _population_activity := preload("res://world/shared/traffic/PopulationActivity.gd").new()
+var _population_activity := preload("res://cars/traffic/PopulationActivity.gd").new()
 var walk_space := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").new()
 
 

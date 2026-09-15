@@ -1,6 +1,6 @@
 extends SceneTree
 const ENGINE := preload("res://audio/VehicleEngineSound.gd")
-const SAFETY := preload("res://VehicleMotionSafety.gd")
+const SAFETY := preload("res://cars/VehicleMotionSafety.gd")
 const BLAST := preload("res://guns/combat/ExplosionVisual.gd")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()

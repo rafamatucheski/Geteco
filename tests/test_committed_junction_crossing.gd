@@ -53,7 +53,7 @@ func run() -> void:
 	follow.loop = false
 	lane.add_child(follow)
 	follow.progress = 360
-	var car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var car = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	follow.add_child(car)
 	car.target_length = 120
 	car.set_process(false)

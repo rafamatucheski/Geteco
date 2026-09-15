@@ -1,5 +1,5 @@
 extends SceneTree
-const CACHE := preload("res://VehicleGeometryCache.gd")
+const CACHE := preload("res://cars/VehicleGeometryCache.gd")
 func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	var total_first := 0
@@ -30,9 +30,9 @@ func _run() -> void:
 				assert(a.get_meta("wheel_center",Vector3.INF) == b.get_meta("wheel_center",Vector3.INF))
 		preload("res://prototypes/living_cast/VehicleWheelRig.gd").new().mount(first)
 		preload("res://prototypes/living_cast/VehicleWheelRig.gd").new().mount(second)
-		preload("res://VehicleMeshBatcher.gd").batch_model(first)
-		preload("res://VehicleMeshBatcher.gd").batch_model(second)
-		assert(preload("res://VehicleMeshBatcher.gd").cache_hits > 0)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(first)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(second)
+		assert(preload("res://cars/VehicleMeshBatcher.gd").cache_hits > 0)
 		assert(first.originals.size() == second.originals.size())
 		first.apply_impact(Vector3(0.8,0.8,-1.5),Vector3.LEFT,15.0)
 		assert(second.damaged_vertices.is_empty())
@@ -72,5 +72,5 @@ func _batch_boxes(mesh: Mesh) -> Node3D:
 		part.material_override = material
 		part.position.x = i*2.0
 		model.add_child(part)
-	preload("res://VehicleMeshBatcher.gd").batch_model(model)
+	preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
 	return model

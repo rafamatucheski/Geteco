@@ -384,7 +384,7 @@ suíte focada, não a suíte inteira do repositório):
 
 - `docs/ARCHITECTURE.md` lista `RegionTravel.gd:190` carregando `res://PlayerCar.tscn`
   (cena inexistente) como crash latente. **Isso já não é verdade**: o código atual
-  (linha ~205) carrega `res://world/shared/traffic/SavedPlayerCar.tscn`, que existe —
+  (linha ~205) carrega `res://cars/traffic/SavedPlayerCar.tscn`, que existe —
   confirmado tanto por leitura do arquivo quanto por `python tools/check_references.py`
   (0 quebras conhecidas, 0 novas). A entrada correspondente em
   `tools/check_references.py::KNOWN_BROKEN` também ficou obsoleta e pode ser removida.

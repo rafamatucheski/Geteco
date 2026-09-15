@@ -66,13 +66,13 @@ Hash final de `StreetLamp.tscn`:
 
 Origem da evidência:
 `D:\geteco\qa_audit_snapshot_20260902\MissionManager.gd`, que usa a cena real
-`res://world/shared/traffic/TrafficVehicle.tscn`.
+`res://cars/traffic/TrafficVehicle.tscn`.
 
 Alterações mínimas em `MissionManager.gd`:
 
 - duas referências incorretas a
   `res://legacy/city_demo/scripts/TrafficVehicle.tscn` passaram para
-  `res://world/shared/traffic/TrafficVehicle.tscn`;
+  `res://cars/traffic/TrafficVehicle.tscn`;
 - o fallback para `res://PlayerCar.tscn`, que não existe, foi substituído por
   erro explícito e retorno. Com a estrutura válida, esse ramo não é executado.
 

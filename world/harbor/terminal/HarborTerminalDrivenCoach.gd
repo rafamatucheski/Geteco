@@ -1,4 +1,4 @@
-extends "res://world/shared/traffic/TrafficVehicle.gd"
+extends "res://cars/traffic/TrafficVehicle.gd"
 ## Retain the terminal's authored coach, livery and projection while driving.
 var service: Node2D
 var _native_heading := INF

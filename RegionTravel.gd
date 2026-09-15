@@ -8,7 +8,7 @@ const VEHICLE_SCRIPTS := [
 	"res://world/mountain_pass/MountainSUV.gd",
 	"res://world/mountain_pass/ArcticJeep.gd",
 	"res://world/mountain_pass/MountainPickup.gd",
-	"res://world/shared/traffic/TrafficVehicle.gd",
+	"res://cars/traffic/TrafficVehicle.gd",
 	"res://world/harbor/monaliza/MonalizaCar.gd",
 ]
 const CAR_FIELDS := ["health", "max_health", "max_speed", "acceleration", "braking", "friction", "turn_speed", "drift_factor", "has_nitro", "nitro_amount", "nitro_max", "has_puncture_proof_tires", "has_punctured_tires", "is_broken", "radio_index"]
@@ -191,8 +191,8 @@ func _restore_saved_vehicle(scene: Node, player: Node) -> void:
 		car = get_tree().get_first_node_in_group("personal_vehicle")
 		if car == null: return
 		car.unlocked = get_node("/root/CampaignState").has_campaign_flag(&"harbor_delivery_complete")
-	elif script == "res://world/shared/traffic/TrafficVehicle.gd":
-		car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	elif script == "res://cars/traffic/TrafficVehicle.gd":
+		car = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	elif script.contains("mountain_pass"):
 		car = load(script).new()
 	else:
@@ -202,7 +202,7 @@ func _restore_saved_vehicle(scene: Node, player: Node) -> void:
 		if car_script == null:
 			push_warning("Saved vehicle script could not be loaded; restoring player on foot.")
 			return
-		car = load("res://world/shared/traffic/SavedPlayerCar.tscn").instantiate()
+		car = load("res://cars/traffic/SavedPlayerCar.tscn").instantiate()
 		car.set_script(car_script)
 	car.name = String(data.get("name", "TravelVehicle"))
 	car.set_meta("north_access_lower",bool(data.get("north_access_lower",false)))
@@ -237,7 +237,7 @@ func sanitize_saved_coordinates(data: Dictionary) -> Array[String]:
 			fallback += preload("res://world/harbor/ContinuousWorld.gd").MOUNTAIN_OFFSET
 	var player_data: Dictionary = data.get("player", {}) if data.get("player", {}) is Dictionary else {}
 	if region in ["legacy", "harbor"]:
-		const YARD_LOCATION = preload("res://world/shared/salvage/SalvageLocation.gd")
+		const YARD_LOCATION = preload("res://cars/salvage/SalvageLocation.gd")
 		if valid_saved_point(player_data.get("position", [])):
 			var old_point := Vector2(float(player_data.position[0]),float(player_data.position[1]))
 			var safe_point := YARD_LOCATION.safe_load_position(old_point,region=="legacy")
@@ -281,4 +281,4 @@ static func _valid_saved_number(value: Variant) -> bool:
 static func valid_saved_point(value: Variant) -> bool:
 	if not value is Array or value.size() < 2: return false
 	if not _valid_saved_number(value[0]) or not _valid_saved_number(value[1]): return false
-	return preload("res://VehicleMotionSafety.gd").valid_position(Vector2(float(value[0]),float(value[1])))
+	return preload("res://cars/VehicleMotionSafety.gd").valid_position(Vector2(float(value[0]),float(value[1])))

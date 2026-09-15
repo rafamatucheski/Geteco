@@ -24,7 +24,7 @@ func run() -> void:
 	print("STALL_START paused=", paused, " phase=", world.campaign_controller.phase,
 		" player=", player.global_position, " focus=", stream.exterior_position(),
 		" camera=", camera.get_screen_center_position() if camera else Vector2.INF,
-		" area=", preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(world, stream.exterior_position(), 80.0),
+		" area=", preload("res://cars/traffic/CameraSimulationArea.gd").visible_area(world, stream.exterior_position(), 80.0),
 		" terminal=", terminal.get_service_status())
 	var probes: Array[Node2D] = []
 	for actor in get_nodes_in_group("authored_sidewalk_pedestrian"):

@@ -61,7 +61,7 @@ func run() -> void:
 		car.queue_free()
 		await process_frame
 	for path in ["res://prototypes/living_cast/HarborCoupe.gd", "res://world/harbor/monaliza/MonalizaCar.gd", "res://world/mountain_pass/MountainPickup.gd", "res://world/mountain_pass/MountainSUV.gd", "res://world/mountain_pass/ArcticJeep.gd"]:
-		var car = load("res://world/shared/traffic/SavedPlayerCar.tscn").instantiate()
+		var car = load("res://cars/traffic/SavedPlayerCar.tscn").instantiate()
 		car.set_script(load(path))
 		car.active_archetype_id = "sport_coupe"
 		world.add_child(car)

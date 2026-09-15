@@ -1,7 +1,7 @@
 extends RefCounted
 ## Narrative recovery uses Neco's real flatbed and collision-checked winch.
 ## No salvage contract, press operation, bonus payment or duplicate vehicle.
-const JOBS := preload("res://world/shared/salvage/TowJobs.gd")
+const JOBS := preload("res://cars/salvage/TowJobs.gd")
 var controller: Node2D
 var service: Node
 var yard: Node2D

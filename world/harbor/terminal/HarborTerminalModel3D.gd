@@ -44,8 +44,8 @@ func _ready() -> void:
 	# Arquitetura e ônibus estacionados compartilham superfícies por material.
 	# O ônibus em circulação e os passageiros são acrescentados depois.
 	for coach in parked_coaches:
-		preload("res://VehicleMeshBatcher.gd").batch_model(coach)
-	preload("res://VehicleMeshBatcher.gd").batch_model(self)
+		preload("res://cars/VehicleMeshBatcher.gd").batch_model(coach)
+	preload("res://cars/VehicleMeshBatcher.gd").batch_model(self)
 
 static func floor_from_local(point: Vector2) -> Vector3:
 	return Vector3(point.x / PPM, 0, point.y / (PPM * FLOOR_Y))

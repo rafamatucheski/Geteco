@@ -96,7 +96,7 @@ func _lane_case(archetype: String) -> void:
 		var follow := PathFollow2D.new()
 		follow.loop = false
 		lane.add_child(follow)
-		vehicle = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+		vehicle = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 		vehicle.set_script(preload("res://world/harbor/HarborTransitBus.gd"))
 		vehicle.speed = 180
 		follow.add_child(vehicle)
@@ -166,25 +166,25 @@ func _player_case(bike: bool) -> void:
 	var car: CharacterBody2D
 	if bike: car = FACTORY.spawn_parked_vehicle(world, "PlayerMotorcycle", Vector2.ZERO, 0, "bike_urban", 0)
 	else:
-		car = load("res://world/shared/traffic/SavedPlayerCar.tscn").instantiate()
+		car = load("res://cars/traffic/SavedPlayerCar.tscn").instantiate()
 		world.add_child(car)
 	car.set_process(false)
 	car.set_physics_process(false)
 	var collision := car.get_node("Collision") as CollisionShape2D
 	car.position = Vector2(450, 57 + collision.shape.get_rect().size.y * 0.5 + 8)
-	preload("res://VehicleMotionSafety.gd").configure(car)
+	preload("res://cars/VehicleMotionSafety.gd").configure(car)
 	var before_turn := car.position
 	car.rotation = PI / 2
 	car.velocity = Vector2.ZERO
-	preload("res://VehicleMotionSafety.gd").move(car)
+	preload("res://cars/VehicleMotionSafety.gd").move(car)
 	check(not ZONE.blocks_hull(car, collision.shape, collision.global_transform) and car.position.distance_to(before_turn) < .001, "Stationary steering cannot swing a vehicle's side into the medical team")
 	car.position = Vector2.ZERO
 	car.rotation = 0
-	preload("res://VehicleMotionSafety.gd").configure(car)
+	preload("res://cars/VehicleMotionSafety.gd").configure(car)
 	var clear := true
 	for frame in 180:
 		car.velocity = Vector2(900, 0)
-		preload("res://VehicleMotionSafety.gd").move(car)
+		preload("res://cars/VehicleMotionSafety.gd").move(car)
 		clear = clear and not ZONE.blocks_hull(car, collision.shape, collision.global_transform)
 		await physics_frame
 	var stopped := car.position
@@ -192,12 +192,12 @@ func _player_case(bike: bool) -> void:
 	# Activation around an already stopped car must not invoke solver recovery.
 	_place(car.position)
 	car.velocity = Vector2(900, 0)
-	preload("res://VehicleMotionSafety.gd").move(car)
+	preload("res://cars/VehicleMotionSafety.gd").move(car)
 	check(car.position.distance_to(stopped) < .001, "New work clearance never shoves an overlapping vehicle")
 	_board_team()
 	for frame in 30:
 		car.velocity = Vector2(100, 0)
-		preload("res://VehicleMotionSafety.gd").move(car)
+		preload("res://cars/VehicleMotionSafety.gd").move(car)
 		await physics_frame
 	check(car.position.x > stopped.x + 20, "Player vehicle resumes after medical work ends")
 	car.queue_free()

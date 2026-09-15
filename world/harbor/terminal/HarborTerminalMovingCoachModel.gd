@@ -14,7 +14,7 @@ func _ready() -> void:
 		var leaf := _box(Vector3(-1.40, 1.52, DOOR_Z + side * 0.28), Vector3(0.045, 2.03, 0.53), glazing)
 		door_leaves.append(leaf)
 		leaf.set_meta("independent_motion",true)
-	preload("res://VehicleMeshBatcher.gd").batch_model(self)
+	preload("res://cars/VehicleMeshBatcher.gd").batch_model(self)
 
 func update_motion(distance_m: float, doors: float) -> void:
 	for wheel in rolling_wheels:

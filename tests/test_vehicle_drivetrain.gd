@@ -1,5 +1,5 @@
 extends SceneTree
-const DRIVE := preload("res://VehicleDrivetrain.gd")
+const DRIVE := preload("res://cars/VehicleDrivetrain.gd")
 
 func _initialize() -> void:
 	for spec in VehicleCatalog.get_all_specs():

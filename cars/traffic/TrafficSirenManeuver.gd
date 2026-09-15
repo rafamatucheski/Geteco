@@ -1,6 +1,6 @@
 extends RefCounted
-const RULES := preload("res://world/shared/traffic/TrafficEmergencyYield.gd")
-const ROUTE := preload("res://world/shared/traffic/EmergencyRoadManeuver.gd")
+const RULES := preload("res://cars/traffic/TrafficEmergencyYield.gd")
+const ROUTE := preload("res://cars/traffic/EmergencyRoadManeuver.gd")
 var state := "idle"
 var probe := 0.0
 var retry := 0.0

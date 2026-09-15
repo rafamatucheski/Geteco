@@ -3,7 +3,7 @@ extends Node2D
 ## the remaining coast owns both the visible seawall and its physical body.
 const SOUTH := preload("res://world/harbor/HarborSouthPortLayout.gd")
 const NORTH_ACCESS := preload("res://world/harbor/HarborNorthAccess.gd")
-const SALVAGE := preload("res://world/shared/salvage/SalvageLocation.gd")
+const SALVAGE := preload("res://cars/salvage/SalvageLocation.gd")
 const WATER := preload("res://world/shared/nature/WaterPresentation.gd")
 const WALL_WIDTH := 12.0
 const FALLBACK := Vector2(715, 1800)

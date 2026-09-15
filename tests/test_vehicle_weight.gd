@@ -1,5 +1,5 @@
 extends SceneTree
-const HANDLING := preload("res://VehicleMotionSafety.gd")
+const HANDLING := preload("res://cars/VehicleMotionSafety.gd")
 
 func _initialize() -> void:
 	var light = load("res://PlayerCar.gd").new()

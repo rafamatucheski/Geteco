@@ -5,7 +5,7 @@ func _initialize() -> void:
 
 func run() -> void:
 	root.size = Vector2i(1280, 720)
-	var board = load("res://CarChalkboard.gd").new()
+	var board = load("res://cars/CarChalkboard.gd").new()
 	board.use_legacy_position = false
 	root.add_child(board)
 	var missions: Array[Dictionary] = [

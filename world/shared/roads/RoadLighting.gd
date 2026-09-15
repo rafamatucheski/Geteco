@@ -44,7 +44,7 @@ func _build() -> void:
 		_roads.assign(network.get_graph_data().roads)
 		# Neko's driveway is authored outside the street graph. Reserve it before
 		# planting poles at Memorial North, including during staged yard loading.
-		var yard_access := preload("res://world/shared/salvage/SalvageLocation.gd").access(false)
+		var yard_access := preload("res://cars/salvage/SalvageLocation.gd").access(false)
 		for segment in range(1,yard_access.size()):
 			_reserved.append(Rect2(yard_access[segment-1],Vector2.ZERO).expand(yard_access[segment]).grow(64))
 		var access := preload("res://world/harbor/HarborNorthAccess.gd")

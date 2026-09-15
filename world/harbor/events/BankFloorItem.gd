@@ -9,7 +9,7 @@ static func floor_position(room: Node2D, point: Vector2) -> Vector3:
 static func place(room: Node2D, visual: Node3D, point: Vector2) -> void:
 	# Loot is rigid: reuse the production static-surface batcher instead of
 	# submitting every strap, pouch and weapon part as a separate draw.
-	preload("res://VehicleMeshBatcher.gd").batch_model(visual)
+	preload("res://cars/VehicleMeshBatcher.gd").batch_model(visual)
 	room.view.add_child(visual)
 	visual.position=floor_position(room,point)
 	var bottom:=INF

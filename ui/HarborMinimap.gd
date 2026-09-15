@@ -352,7 +352,7 @@ func _draw_map() -> void:
 	for yard in get_tree().get_nodes_in_group("chop_shop"):
 		var marker:=edge_marker(yard.global_position)
 		canvas.draw_circle(marker,13,Color("172c2a"))
-		preload("res://world/shared/salvage/SalvageSign.gd").icon(canvas,marker,.85,Color("f5c86d"))
+		preload("res://cars/salvage/SalvageSign.gd").icon(canvas,marker,.85,Color("f5c86d"))
 	canvas.draw_rect(Rect2(service_marker+Vector2(-5,-2),Vector2(7,10)),Color("edf4ee"))
 	canvas.draw_line(service_marker+Vector2(-4,-3),service_marker+Vector2(1,-3),Color("edf4ee"),2)
 	canvas.draw_rect(Rect2(service_marker+Vector2(-3,-6),Vector2(4,3)),Color("edf4ee"))

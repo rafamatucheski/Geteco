@@ -323,7 +323,7 @@ func set_dante_rider(actor: CharacterBody2D) -> void:
 	# The seated body is required even when the actor has no helmet controller.
 	dante_helmet_state = actor.ensure_motorcycle_helmet() if actor.has_method("ensure_motorcycle_helmet") else null
 	if not is_instance_valid(dante_rider):
-		dante_rider = preload("res://world/shared/motorcycles/DanteMotorcycleRider.gd").new()
+		dante_rider = preload("res://cars/motorcycles/DanteMotorcycleRider.gd").new()
 		dante_rider.name = "DanteRider"
 		rider.add_child(dante_rider)
 	if dante_rider.source_head_id != actor.head_node.get_instance_id():

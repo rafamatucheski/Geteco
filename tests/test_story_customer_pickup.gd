@@ -89,7 +89,7 @@ func run() -> void:
 	await create_timer(.7).timeout
 	check(not is_instance_valid(target) and service._customer_pickups.is_empty(), "normal service processing collects unwitnessed empty car after mission completion")
 	check(player.money == money+120, "customer pickup grants no sale or salvage reward")
-	service._offer = service.choose_target(preload("res://world/shared/salvage/TowJobs.gd").next_job(yard.ledger().data))
+	service._offer = service.choose_target(preload("res://cars/salvage/TowJobs.gd").next_job(yard.ledger().data))
 	service.accept_job()
 	var next_car: Node2D = yard._target
 	check(is_instance_valid(next_car) and not yard.ledger().data.contract.is_empty(), "next normal tow service accepts another car")

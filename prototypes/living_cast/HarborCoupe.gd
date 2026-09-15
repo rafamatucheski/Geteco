@@ -131,7 +131,7 @@ func _ready() -> void:
 		glow.material = unshaded
 		add_child(glow)
 		brake_glows.append(glow)
-	preload("res://VehicleMeshBatcher.gd").batch_model(body_model)
+	preload("res://cars/VehicleMeshBatcher.gd").batch_model(body_model)
 	repaint_vehicle(paint_color)
 	_prepare_native_door()
 
@@ -181,7 +181,7 @@ func _apply_steering_motion(turn_input: float, delta: float) -> void:
 	var incoming := velocity
 	var slide := clampf(handbrake_slide / 0.35, 0.0, 1.0)
 	var heading: float = rotation + longitudinal / _steering_wheelbase() * tan(steering_angle) * _drivetrain.steer_scale * delta * lerpf(1.0, 2.25, slide)
-	preload("res://VehicleMotionSafety.gd").rotate_clear(self, heading)
+	preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, heading)
 	var rolling := global_transform.x * longitudinal + global_transform.y * lateral * exp(-8.0 / (1.0 + maxf(0.0, _drivetrain.drift_bias) * 5.0) * delta)
 	# Locked rear wheels preserve world momentum; grip returns progressively.
 	velocity = rolling.lerp(incoming, slide)

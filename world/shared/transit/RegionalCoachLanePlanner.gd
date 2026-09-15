@@ -1,4 +1,4 @@
-extends "res://world/shared/traffic/TaxiRoute.gd"
+extends "res://cars/traffic/TaxiRoute.gd"
 ## Both ends are pinned to directed lanes; an opposite carriageway is not a goal.
 var goal_lane: Path2D
 

@@ -39,7 +39,7 @@ func run() -> void:
 			car.queue_free()
 			continue
 		var landing := driver.global_position
-		var probe = load("res://VehicleBoarding.gd").new()
+		var probe = load("res://cars/VehicleBoarding.gd").new()
 		probe.car = car
 		probe.actor = driver
 		var anchor: Vector2

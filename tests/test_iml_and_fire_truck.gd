@@ -46,7 +46,7 @@ func _run_test() -> void:
 
 	# 3. Testar controle de despacho de bombeiros
 	print("[PASSO 3] Testando filtro de despacho de bombeiros...")
-	var traffic_script = load("res://world/shared/traffic/TrafficVehicle.gd")
+	var traffic_script = load("res://cars/traffic/TrafficVehicle.gd")
 	var car = traffic_script.new()
 	root.add_child(car)
 	await process_frame

@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 const CREW_TRANSITION := preload("res://EmergencyCrewTransition.gd")
-const CREW_DOOR_SCRIPT := preload("res://VehicleDoorVisual.gd")
+const CREW_DOOR_SCRIPT := preload("res://cars/VehicleDoorVisual.gd")
 const LANE_ROUTER := preload("res://world/shared/roads/EmergencyLaneRouter.gd")
 var _lane_router := LANE_ROUTER.new()
 var _hospital_arrival := preload("res://world/shared/emergency/HospitalArrival.gd").new()
@@ -132,7 +132,7 @@ var smoke_emitter: CPUParticles2D
 var flame_particles: CPUParticles2D
 
 func _ready():
-	preload("res://VehicleMotionSafety.gd").configure(self)
+	preload("res://cars/VehicleMotionSafety.gd").configure(self)
 	z_as_relative = false
 	z_index = 8
 	_ensure_required_nodes()
@@ -585,7 +585,7 @@ func _physics_process(delta: float) -> void:
 		current_speed = 0.0
 		velocity = Vector2.ZERO
 		stuck_despawn_timer = 0.0
-	preload("res://VehicleMotionSafety.gd").sanitize(self)
+	preload("res://cars/VehicleMotionSafety.gd").sanitize(self)
 	_ram_damage_cooldown = maxf(0.0, _ram_damage_cooldown - delta)
 	reverse_cooldown = maxf(0.0, reverse_cooldown - delta)
 	if type == 0 and not is_returning_to_base:
@@ -604,7 +604,7 @@ func _physics_process(delta: float) -> void:
 		if type == 0 and _police_crew_on_foot: return
 		current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 		return
 	if bool(get_meta("hospital_available", false)) or bool(get_meta("hospital_unloading", false)):
 		current_speed = 0.0
@@ -638,7 +638,7 @@ func _physics_process(delta: float) -> void:
 		reverse_timer -= delta
 		velocity = -transform.x * 120.0
 		# Back up on the current heading; do not spin long vehicles across a bridge.
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 		if reverse_timer <= 0.0:
 			is_reversing = false
 			reverse_cooldown = 1.5
@@ -683,7 +683,7 @@ func _physics_process(delta: float) -> void:
 			dist_cem = 0.0
 		var dir_cem = global_position.direction_to(waypoint)
 		var cem_angle_diff = absf(wrapf(dir_cem.angle() - rotation, -PI, PI))
-		preload("res://VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_cem.angle(), minf(1.0, 4.5 * delta)))
+		preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_cem.angle(), minf(1.0, 4.5 * delta)))
 		var cem_cruise = max_target_speed * 0.55
 		if cem_angle_diff > 0.4:
 			cem_cruise *= 0.5
@@ -709,7 +709,7 @@ func _physics_process(delta: float) -> void:
 					if deployed_morticians == 0:
 						_deploy_morticians_for_burial()
 				return
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 		return
 
 	# === VIAGEM DE RETORNO À BASE (Quartel ou Hospital) ===
@@ -772,7 +772,7 @@ func _physics_process(delta: float) -> void:
 		var dir_wpt = global_position.direction_to(waypoint)
 		
 		var angle_diff = absf(wrapf(dir_wpt.angle() - rotation, -PI, PI))
-		preload("res://VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_wpt.angle(), minf(1.0, 4.5 * delta)))
+		preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_wpt.angle(), minf(1.0, 4.5 * delta)))
 		
 		var target_cruise = max_target_speed * 0.75
 		if angle_diff > 0.4:
@@ -796,7 +796,7 @@ func _physics_process(delta: float) -> void:
 					depot_director.complete_vehicle_return(self)
 				_deactivate()
 				return
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 		return
 		
 	if is_acting:
@@ -853,7 +853,7 @@ func _physics_process(delta: float) -> void:
 		current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
 		if type == 0 and _police_crew_on_foot: return
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 		return
 	else:
 		scene_timeout = 0.0
@@ -862,17 +862,17 @@ func _physics_process(delta: float) -> void:
 		if type == 2 and deployed_firefighters > 0 and returned_firefighters < deployed_firefighters:
 			current_speed = 0.0
 			velocity = Vector2.ZERO
-			preload("res://VehicleMotionSafety.gd").move(self)
+			preload("res://cars/VehicleMotionSafety.gd").move(self)
 			return
 		if type == 1 and deployed_paramedics > 0 and returned_paramedics < deployed_paramedics:
 			current_speed = 0.0
 			velocity = Vector2.ZERO
-			preload("res://VehicleMotionSafety.gd").move(self)
+			preload("res://cars/VehicleMotionSafety.gd").move(self)
 			return
 		if type == 3 and deployed_morticians > 0 and returned_morticians < deployed_morticians:
 			current_speed = 0.0
 			velocity = Vector2.ZERO
-			preload("res://VehicleMotionSafety.gd").move(self)
+			preload("res://cars/VehicleMotionSafety.gd").move(self)
 			return
 			
 		if type in [2, 3] and _advance_service_target(): return
@@ -891,7 +891,7 @@ func _physics_process(delta: float) -> void:
 		# da ocorrência e impede desembarque com a viatura ainda em movimento.
 		current_speed = move_toward(current_speed, 0.0, 520.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 		if velocity.length() <= 12.0 and current_speed <= 12.0: _begin_response()
 		return
 	var intercept_pos := target.global_position
@@ -929,8 +929,8 @@ func _physics_process(delta: float) -> void:
 			if global_position.distance_to(roadblock_pos) < 60.0:
 				current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 				velocity = velocity.move_toward(Vector2.ZERO, 700.0 * delta)
-				preload("res://VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, PI, 3.0 * delta)) # Aponta viatura para o beco montando cerco
-				preload("res://VehicleMotionSafety.gd").move(self)
+				preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, PI, 3.0 * delta)) # Aponta viatura para o beco montando cerco
+				preload("res://cars/VehicleMotionSafety.gd").move(self)
 				return
 			else:
 				waypoint = roadblock_pos
@@ -940,7 +940,7 @@ func _physics_process(delta: float) -> void:
 	var angle_diff = absf(wrapf(target_angle - rotation, -PI, PI))
 	var steer_rate = 6.0 if type == 0 else 4.5
 	var next_heading: float = rotate_toward(rotation, target_angle, current_speed * delta / 70.0) if type == 1 else lerp_angle(rotation, target_angle, minf(1.0, steer_rate * delta))
-	if type != 1: preload("res://VehicleMotionSafety.gd").rotate_clear(self, next_heading)
+	if type != 1: preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, next_heading)
 	
 	var desired_speed = police_top_speed if type == 0 else max_target_speed
 	if angle_diff > 1.20:
@@ -1043,7 +1043,7 @@ func _physics_process(delta: float) -> void:
 			current_speed = 0
 			velocity = Vector2.ZERO
 	else:
-		preload("res://VehicleMotionSafety.gd").move(self)
+		preload("res://cars/VehicleMotionSafety.gd").move(self)
 	
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)

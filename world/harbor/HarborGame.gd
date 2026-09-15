@@ -126,14 +126,14 @@ func _start_gameplay() -> void:
 ## (3350,650,440,1500) + GANGWAY_BOUNDS (3130,1742,288,40), e
 ## CobraNeighborhood.CENTER/LAND (7700,1700) / (6510,960,2010,1450).
 func _spawn_world_extras() -> void:
-	const CHOP_SHOP_SCRIPT := preload("res://ChopShopZone.gd")
+	const CHOP_SHOP_SCRIPT := preload("res://cars/ChopShopZone.gd")
 	const COLLECTIBLE_SCRIPT := preload("res://economy/Collectible.gd")
-	const DRIFT_ZONE_SCRIPT := preload("res://DriftChallengeZone.gd")
+	const DRIFT_ZONE_SCRIPT := preload("res://cars/DriftChallengeZone.gd")
 
 	var chop_shop: Node2D = CHOP_SHOP_SCRIPT.new()
 	chop_shop.name = "ChopShopZone"
 	# Dedicated rural yard with its own gravel access off Memorial North.
-	chop_shop.position = preload("res://world/shared/salvage/SalvageLocation.gd").HARBOR_CENTER
+	chop_shop.position = preload("res://cars/salvage/SalvageLocation.gd").HARBOR_CENTER
 	add_child(chop_shop)
 
 	# Prefixo "harbor_" pra nunca colidir com os IDs equivalentes plantados em
@@ -220,6 +220,6 @@ func _spawn_motorsport_weather() -> void:
 		{"id":"harbor_docks", "name":"VOLTA DO PORTO", "length_label":"CURTA", "start":Vector2(1100,2200), "checkpoints":[Vector2(2200,2130),Vector2(2270,1250),Vector2(3000,1320),Vector2(2930,2200)], "reward":400, "best_time_bonus":200},
 		{"id":"harbor_foundry", "name":"CIRCUITO FOUNDRY", "length_label":"MÉDIA", "start":Vector2(400,1050), "checkpoints":[Vector2(470,400),Vector2(2200,470),Vector2(2130,1250),Vector2(400,1180)], "reward":650, "best_time_bonus":300}
 	]:
-		var race := preload("res://NightRaceController.gd").new()
+		var race := preload("res://cars/NightRaceController.gd").new()
 		race.setup(def)
 		add_child(race)

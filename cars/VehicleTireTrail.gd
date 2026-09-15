@@ -44,6 +44,6 @@ func update(car: Node2D, delta: float, slipping: bool, intensity: float) -> void
 				contacts.append(display.global_position + projected * display.global_scale)
 	if previous.size() == contacts.size():
 		if previous[0].distance_squared_to(contacts[0]) < 4.0: return
-		if not is_instance_valid(ink): ink = preload("res://VehicleSkidMarks.gd").ensure(car)
+		if not is_instance_valid(ink): ink = preload("res://cars/VehicleSkidMarks.gd").ensure(car)
 		for i in contacts.size(): ink.add_segment(previous[i], contacts[i], intensity)
 	previous = contacts

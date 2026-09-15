@@ -7,7 +7,7 @@ extends RefCounted
 
 # Resolve the scene after scripts finish loading. Preloading it here while
 # referring to DemoTrafficVehicle can attach an incomplete script in a worker.
-const VEHICLE_SCENE_PATH := "res://world/shared/traffic/TrafficVehicle.tscn"
+const VEHICLE_SCENE_PATH := "res://cars/traffic/TrafficVehicle.tscn"
 
 # Compatibility alias; vehicles read the catalog directly to avoid the cycle
 # factory -> vehicle scene -> vehicle script -> factory during threaded loads.
@@ -110,7 +110,7 @@ static func spawn_parked_vehicle(
 	vehicle.configure_as_parked()
 	vehicle.add_to_group("modern_parked_vehicle")
 	if replenish and parent is Node2D:
-		var slot: Node = load("res://world/shared/traffic/ParkedVehicleSpawn.gd").new()
+		var slot: Node = load("res://cars/traffic/ParkedVehicleSpawn.gd").new()
 		slot.name = vehicle_name+"Spawn"
 		parent.add_child(slot)
 		slot.configure(parent,vehicle,world_position,world_rotation,archetype_id,visual_index,chosen_color)

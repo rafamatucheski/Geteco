@@ -135,7 +135,7 @@ func _set_route(next: Curve2D) -> void:
 func steal_coach(actor: CharacterBody2D) -> void:
 	if state == "stolen" or not is_instance_valid(actor) or actor.get("is_control_disabled") == true: return
 	var original := coach
-	var driven := preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
+	var driven := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
 	driven.set_script(preload("res://world/harbor/terminal/HarborTerminalDrivenCoach.gd"))
 	driven.service = self
 	driven.position = original.position

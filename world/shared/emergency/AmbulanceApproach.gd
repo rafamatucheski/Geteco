@@ -1,7 +1,7 @@
 extends RefCounted
 ## Local, forward-only terminal maneuver. Lane geometry supplies parking poses;
 ## live physics supplies the hull, door/cot clearance and the walking corridor.
-const SAFETY = preload("res://VehicleMotionSafety.gd")
+const SAFETY = preload("res://cars/VehicleMotionSafety.gd")
 const TURN_RADIUS := 70.0
 const TEAM_RADIUS := 34.0 # 25px handle offset + 8px adult capsule extent + margin.
 

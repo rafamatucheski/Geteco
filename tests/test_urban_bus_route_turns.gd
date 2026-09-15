@@ -246,7 +246,7 @@ func _diagnose_bus_step(bus: CharacterBody2D, advance: float) -> void:
 		var pose := item.pose as Transform2D
 		print("BUS_STEP_BODY name=", body.name, " current=", body.global_transform,
 			" proposed=", pose, " degrees=", rad_to_deg(pose.get_rotation()))
-		var polygon := preload("res://world/shared/traffic/TrafficBodySweep.gd").rectangle(body, pose)
+		var polygon := preload("res://cars/traffic/TrafficBodySweep.gd").rectangle(body, pose)
 		for previous_index in polygons.size():
 			if not Geometry2D.intersect_polygons(polygon, polygons[previous_index]).is_empty():
 				print("BUS_STEP_BLOCKER own_body_overlap body=", body.name,

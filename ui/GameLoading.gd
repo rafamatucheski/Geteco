@@ -159,10 +159,10 @@ func _run(path: String, new_game: bool) -> void:
 	# Um frame completo de apresentação antes de liberar os controles/abertura.
 	_mark_phase("world_build")
 	screen.set_stage(0.65,_text("Preparando veículos…","Preparing vehicles…"))
-	await preload("res://VehicleGeometryCache.gd").prepare_common_models(get_tree())
+	await preload("res://cars/VehicleGeometryCache.gd").prepare_common_models(get_tree())
 	_mark_phase("vehicle_models")
 	screen.set_stage(0.75,_text("Preparando o trânsito…","Preparing traffic…"))
-	await preload("res://VehicleGeometryCache.gd").prepare_resident_presentations(get_tree())
+	await preload("res://cars/VehicleGeometryCache.gd").prepare_resident_presentations(get_tree())
 	_mark_phase("resident_vehicles")
 	screen.set_stage(0.85,_text("Preparando equipes de emergência…","Preparing emergency crews…"))
 	await get_node("/root/EmergencyPool").prepare_presentations()

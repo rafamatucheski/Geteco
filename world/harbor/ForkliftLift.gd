@@ -42,7 +42,7 @@ func _ready() -> void:
 	load_shape.disabled = true
 	vehicle.add_child.call_deferred(load_shape)
 	_hydraulics = AudioStreamPlayer2D.new()
-	_hydraulics.stream = preload("res://world/shared/salvage/SalvageAudio.gd").hydraulics()
+	_hydraulics.stream = preload("res://cars/salvage/SalvageAudio.gd").hydraulics()
 	_hydraulics.bus = &"SFX"
 	_hydraulics.volume_db = -19
 	_hydraulics.max_distance = 450

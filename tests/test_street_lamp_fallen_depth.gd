@@ -25,7 +25,7 @@ func _run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var car = load("res://world/shared/traffic/SavedPlayerCar.tscn").instantiate()
+	var car = load("res://cars/traffic/SavedPlayerCar.tscn").instantiate()
 	car.set_script(load("res://prototypes/living_cast/HarborCoupe.gd"))
 	world.add_child(car)
 	car.set_physics_process(false)

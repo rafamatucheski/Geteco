@@ -16,7 +16,7 @@ func run() -> void:
 	current_scene = world
 	var fleet := Fleet.new()
 	world.add_child(fleet)
-	var bus = preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var bus = preload("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	bus.set_script(preload("res://world/harbor/urban_transit/UrbanBus.gd"))
 	bus.system = fleet
 	world.add_child(bus)
@@ -50,7 +50,7 @@ func run() -> void:
 				for frame in 32:
 					await physics_frame
 					car.velocity = -direction * 900
-					preload("res://VehicleMotionSafety.gd").move(car)
+					preload("res://cars/VehicleMotionSafety.gd").move(car)
 					contacted = contacted or car.get_slide_collision_count() > 0
 				check(contacted, "Swept car blocks against convoy: %s %s" % [heading,direction])
 				check((car.global_position-body.global_position).dot(direction)>30, "Car remains on approach side")
@@ -77,7 +77,7 @@ func run() -> void:
 	# Repeat the visual contact with a real traffic pickup, like the report.
 	car.queue_free()
 	await process_frame
-	car = preload("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	car = preload("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	world.add_child(car)
 	car.apply_archetype("ranch_pickup",Color("702222"))
 	car.set_process(false)
@@ -97,7 +97,7 @@ func run() -> void:
 		for frame in 24:
 			await physics_frame
 			car.velocity = -direction * 600
-			preload("res://VehicleMotionSafety.gd").move(car)
+			preload("res://cars/VehicleMotionSafety.gd").move(car)
 			contact = contact or car.get_slide_collision_count() > 0
 		check(contact, "Traffic pickup physically contacts bus: " + str(direction))
 		car.velocity = Vector2.ZERO

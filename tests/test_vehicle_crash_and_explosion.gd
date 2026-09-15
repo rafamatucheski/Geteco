@@ -11,7 +11,7 @@ func _run_crash_test() -> void:
 	var failures: Array[String] = []
 	
 	# 1. Instanciar TrafficVehicle (Carro usado na foto do jogador)
-	var vehicle_scene = load("res://world/shared/traffic/TrafficVehicle.tscn")
+	var vehicle_scene = load("res://cars/traffic/TrafficVehicle.tscn")
 	if not vehicle_scene:
 		printerr("Falha ao carregar TrafficVehicle.tscn")
 		quit(1)

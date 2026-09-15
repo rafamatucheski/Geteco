@@ -50,7 +50,7 @@ static func duration_for(vehicle: Node, entry_side: float) -> float:
 
 static func driver_exit_position(vehicle: CharacterBody2D, pedestrian: CharacterBody2D, exit_side: float) -> Vector2:
 	# NPC drivers use the same authored opening and body-clearance rule.
-	var probe = load("res://VehicleBoarding.gd").new()
+	var probe = load("res://cars/VehicleBoarding.gd").new()
 	probe.car = vehicle
 	probe.actor = pedestrian
 	probe.side = exit_side
@@ -159,7 +159,7 @@ static func start_exit(vehicle: CharacterBody2D, pedestrian: CharacterBody2D) ->
 		var preferred := -1.0 if vehicle.to_local(destination).y <= 0 else 1.0
 		for exit_side in [preferred, -preferred]:
 			vehicle._animate_car_door(exit_side, duration_for(vehicle, exit_side) - 0.25)
-			transition = load("res://VehicleBoarding.gd").new()
+			transition = load("res://cars/VehicleBoarding.gd").new()
 			vehicle.add_child(transition)
 			vehicle._boarding = transition
 			transition.begin(vehicle, pedestrian, destination, exit_side, true)

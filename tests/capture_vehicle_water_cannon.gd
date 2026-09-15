@@ -32,7 +32,7 @@ func _run() -> void:
 	camera.zoom = Vector2.ONE * 1.7
 	camera.make_current()
 	await frames(15)
-	var car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	var car = load("res://cars/traffic/TrafficVehicle.tscn").instantiate()
 	scene.add_child(car)
 	car.apply_archetype("sedan_classic", Color("ce9d48"))
 	car.configure_as_parked()

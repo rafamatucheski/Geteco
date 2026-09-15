@@ -7,7 +7,7 @@ extends "res://world/harbor/interiors/HarborInteriorBase.gd"
 ## and interactive alarm siren test / protective fire gear locker.
 
 const NPC_SCRIPT := preload("res://world/harbor/interiors/HarborConversationalNPC.gd")
-const TRAFFIC_VEHICLE_SCRIPT := preload("res://world/shared/traffic/TrafficVehicle.gd")
+const TRAFFIC_VEHICLE_SCRIPT := preload("res://cars/traffic/TrafficVehicle.gd")
 const FIRETRUCK_TEXTURE := preload("res://assets/art/firetruck.png")
 var captain_npc: CharacterBody2D
 var alarm_area: Area2D

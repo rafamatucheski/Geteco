@@ -1,7 +1,7 @@
 extends SceneTree
 
-const RULES := preload("res://world/shared/traffic/TrafficEmergencyYield.gd")
-const BUDGET := preload("res://world/shared/traffic/TrafficSimulationBudget.gd")
+const RULES := preload("res://cars/traffic/TrafficEmergencyYield.gd")
+const BUDGET := preload("res://cars/traffic/TrafficSimulationBudget.gd")
 const LIFE := preload("res://world/harbor/HarborLife.gd")
 class Responder extends Node2D:
 	var responding := true
