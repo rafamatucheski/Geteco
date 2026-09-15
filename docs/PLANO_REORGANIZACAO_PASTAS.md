@@ -1,21 +1,33 @@
 # Plano de reorganização de pastas por domínio
 
-> Status (2026-09-15): **5 de 8 domínios executados e commitados** —
-> `economy/`, `guns/`, `cars/`, `geodata/`, `systems/`. Cada um foi movido via
-> `tools/move_folder_refactor.py`, verificado com `check_references.py` +
+> Status (2026-09-15): **✅ completo — os 8 domínios executados e commitados**:
+> `economy/`, `guns/`, `cars/`, `geodata/`, `systems/`, `police/`, `emergency/`,
+> `characters/`. `world/shared/` não existe mais — todo o conteúdo foi redistribuído.
+> A raiz do projeto não tem mais os ~72 scripts soltos originais. Cada domínio foi
+> movido via `tools/move_folder_refactor.py`, verificado com `check_references.py` +
 > `--import` + carregamento real do jogo (`test_menu_flow_integration.gd` e um teste
 > focado por domínio), e commitado separadamente — ver `git log` para as mensagens
-> detalhadas de cada um.
+> detalhadas de cada um (9 commits ao todo, de `c056954` a `f417cf7`).
 >
-> **`police/`, `emergency/` e `characters/` ficam pendentes de propósito**: os três
-> exigem mover `PoliceOfficer.gd`, `WantedManager.gd`, `EmergencyVehicle.gd` ou
-> `Player.gd` — os próprios arquivos, não só referências dentro deles — e esses quatro
-> têm trabalho não commitado de outra sessão (Antigravity) por dentro. Assim que esse
-> trabalho for commitado (ou descartado), esses três últimos domínios seguem o mesmo
-> procedimento dos outros cinco.
+> Os três últimos (`police/`, `emergency/`, `characters/`) precisaram mover
+> `PoliceOfficer.gd`, `WantedManager.gd`, `EmergencyVehicle.gd`,
+> `EmergencyVehicleVisual3D.gd` e `Player.gd` — arquivos que tinham trabalho não
+> commitado de outra sessão (Antigravity) por dentro. Cada um desses foi reconstruído
+> cirurgicamente (conteúdo limpo do último commit + só a reescrita de caminho desta
+> reorganização, sem nenhuma linha do trabalho alheio) e staged direto no caminho
+> novo via `git hash-object`/`update-index`. O trabalho do Antigravity em si
+> (`RegionTravel.gd`, `ExteriorOcclusion.gd`, `HarborArrivalStop.gd`, `HarborGame.gd`,
+> `HarborArrivalMission.gd`, e o resto do que ele mexeu nos 4 arquivos centrais)
+> continua intocado e não commitado — não é decisão desta reorganização commitá-lo.
 >
-> `world/shared/` hoje só tem `emergency/`, `pedestrians/` e `pickups/` — exatamente os
-> três domínios adiados.
+> **Bug de ferramenta encontrado e corrigido durante `emergency/`**: `git mv` de um
+> diretório inteiro para um destino que já existe (porque um move anterior na mesma
+> lista já criou aquela pasta) aninha em vez de mesclar, igual ao `mv` do Unix.
+> Aconteceu com `world/shared/emergency` → `emergency` (que já existia, criada pelos
+> arquivos soltos da raiz movidos antes na mesma rodada). Detectado por
+> `check_references.py` reportando quebras de verdade, corrigido subindo os arquivos
+> um nível manualmente. Vale lembrar disso se `tools/move_folder_refactor.py` for
+> reaproveitado no futuro para outra reorganização.
 
 ## Objetivo e escopo decidido
 
