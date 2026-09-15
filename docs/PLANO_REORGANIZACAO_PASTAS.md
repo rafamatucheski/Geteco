@@ -30,14 +30,14 @@ usada em `ui/`, `world/`, `audio/`, `assets/`):
 
 | pasta | conteúdo | origem | arquivos (~) |
 |---|---|---|---|
-| `cars/` | veículos, motos, ferro-velho/garagem, corrida | raiz + `world/shared/traffic,motorcycles,salvage` | ~45 |
+| `cars/` | veículos, motos, ferro-velho/garagem, corrida | raiz + `world/shared/traffic,motorcycles,salvage` | ~44 |
 | `guns/` | armas, projéteis, efeitos de combate/dano | raiz + `world/shared/combat,ammunation` | ~35 |
 | `police/` | polícia, procurado, apreensão | raiz + `world/shared/pickups` | ~7 |
 | `emergency/` | ambulância, bombeiro, coroner, despacho | raiz + `world/shared/emergency` | ~44 |
-| `characters/` | jogador, pedestres, NPCs, gangues, roupas | raiz + `world/shared/pedestrians` | ~28 |
-| `geodata/` | malha viária, ferrovia, natureza, trânsito intermunicipal | raiz + `world/shared/roads,rail,nature,transit` | ~30 |
+| `characters/` | jogador (a pé e de carro), pedestres, NPCs, gangues, roupas | raiz + `world/shared/pedestrians` | ~29 |
+| `geodata/` | malha viária, ferrovia, natureza, trânsito intermunicipal, props de mundo | raiz + `world/shared/roads,rail,nature,transit` + soltos | ~32 |
 | `economy/` | coletáveis, dinheiro, loja, conquistas | raiz | ~7 |
-| `systems/` | autoloads genéricos, apresentação/render, manutenção de mundo | raiz + `world/shared/atmosphere,interiors` + soltos de `world/shared/` | ~18 |
+| `systems/` | autoloads genéricos, apresentação/render, manutenção de mundo | raiz + `world/shared/atmosphere,interiors` + soltos de `world/shared/` | ~16 |
 
 `world/shared/` fica **retirado** ao final (todo o conteúdo redistribuído); `world/harbor/`
 e `world/mountain_pass/` continuam apontando para esses domínios pelos novos caminhos
@@ -54,7 +54,7 @@ Dois casos **não** viram pasta de domínio nova, por já terem endereço melhor
 
 | origem | arquivo |
 |---|---|
-| raiz | `VehicleCatalog.gd`, `VehicleDoorVisual.gd`, `VehicleDrivetrain.gd`, `VehicleGeometryCache.gd`, `VehicleLaunchControl.gd`, `VehicleMeshBatcher.gd`, `VehicleMotionSafety.gd`, `VehicleSkidMarks.gd`, `VehicleSurfaceWear2D.gd`, `VehicleTireTrail.gd`, `VehicleBoarding.gd`, `PlayerCar.gd` |
+| raiz | `VehicleCatalog.gd`, `VehicleDoorVisual.gd`, `VehicleDrivetrain.gd`, `VehicleGeometryCache.gd`, `VehicleLaunchControl.gd`, `VehicleMeshBatcher.gd`, `VehicleMotionSafety.gd`, `VehicleSkidMarks.gd`, `VehicleSurfaceWear2D.gd`, `VehicleTireTrail.gd`, `VehicleBoarding.gd` |
 | raiz | `RaceCatalog.gd`, `DriftZoneCatalog.gd`, `DriftChallengeZone.gd`, `NightRaceController.gd` |
 | raiz | `ChopShopCrusher3D.gd`, `ChopShopZone.gd`, `CarChalkboard.gd`, `CustomsWorkshopMenu.gd` |
 | `world/shared/traffic/` | todos os 15: `CameraSimulationArea`, `EmergencyRoadManeuver`, `LanePedestrianCorridor`, `ParkedVehicleSpawn`, `PopulationActivity`\*, `TaxiDestinations`, `TaxiRoute`, `TaxiService`, `TrafficBodySweep`, `TrafficEmergencyYield`, `TrafficFlowModel`, `TrafficHorn`, `TrafficSimulationBudget`, `TrafficSirenManeuver`, `TrafficVehicle` |
@@ -104,7 +104,7 @@ no `project.godot` muda.
 
 | origem | arquivo |
 |---|---|
-| raiz | `Player.gd`, `PlayerCombatPose.gd`, `AnimatedPedestrian3D.gd`, `PedestrianDanger.gd`, `JagerNPC.gd`, `CarjackedDriver.gd`, `GangManager.gd`, `IronCobraMember.gd`, `CharacterFallPresentation.gd`, `CharacterPreview3D.gd`, `OutfitCatalog.gd`, `ClothingStore.gd` |
+| raiz | `Player.gd`, `PlayerCar.gd`, `PlayerCombatPose.gd`, `AnimatedPedestrian3D.gd`, `PedestrianDanger.gd`, `JagerNPC.gd`, `CarjackedDriver.gd`, `GangManager.gd`, `IronCobraMember.gd`, `CharacterFallPresentation.gd`, `CharacterPreview3D.gd`, `OutfitCatalog.gd`, `ClothingStore.gd` |
 | `world/shared/pedestrians/` | todos os 15: `AuthoredSidewalkPedestrian`, `CitizenAppearance`, `CitizenDetails`, `CitizenFace`, `CitizenGait`, `CitizenGeometry`, `CitizenMorphology`, `CitizenSculpt`, `NPCCombatRig`, `PedestrianNeighborhood`, `PedestrianWalkSpace`, `PersonMotion`, `ProfessionalDriverModel`, `ServiceUniformDetails`, `WinterWardrobe` |
 
 ### `geodata/`
@@ -116,7 +116,7 @@ no `project.godot` muda.
 | `world/shared/rail/` | todos os 8: `AmbientTrain`, `DistrictRailLine`, `HarborMountainRailRoute`, `RailMinimapOverlay`, `RailStructure3D`, `RegionalRailScenery`, `TrainAudioBank`, `TrainPiece3D` |
 | `world/shared/nature/` | todos os 4: `GrassDetail`, `ProceduralStreetTree`, `ProceduralUrbanRock`, `WaterPresentation` |
 | `world/shared/transit/` | todos os 4: `HarborMountainCoach`, `HarborMountainCoachService`, `RegionalCoachLanePlanner`, `RegionalIntercityCoachModel` |
-| `world/shared/` (solto) | `BreakableProp.gd` |
+| `world/shared/` (soltos) | `BreakableProp.gd`, `PhysicalCargo.gd` — os dois são a mesma coisa: física de objeto de mundo empurrável/quebrável (caixote, carga), com dano por impacto de veículo e debris ao quebrar. Só usado por `world/harbor/HarborStorageArt.gd` (caixotes do armazém do porto) e pelo teste do `WorldRenewal`. |
 
 ### `economy/`
 
@@ -135,7 +135,7 @@ tudo o resto (recompensa/progressão do jogador, não um sistema de simulação)
 | raiz (apresentação/render) | `DynamicCamera.gd`, `RenderQuality.gd`, `ContactShadow.gd`, `DayNightWeatherManager.gd` |
 | `world/shared/atmosphere/` | todos os 3: `AtmospherePalette`, `AtmosphereProfile`, `RegionalAtmosphere` |
 | `world/shared/interiors/` | todos os 4: `ExteriorOcclusion`, `InteriorActorPresentation`, `InteriorSolidProjection`, `InteriorVehiclePresentation` |
-| `world/shared/` (soltos) | `WorldRenewal.gd`, `LivePoseShadow.gd`, `StaticGroundShadow.gd`, `PhysicalCargo.gd`\* |
+| `world/shared/` (soltos) | `WorldRenewal.gd`, `LivePoseShadow.gd`, `StaticGroundShadow.gd` |
 
 \* `PhysicalCargo.gd` é sobre carga física carregável (provavelmente ligado a caminhões
 do porto) — poderia ir para `cars/` ou até `geodata/`. Ficou em `systems/` por falta de um
@@ -163,19 +163,19 @@ maior.
 
 1. `PopulationActivity.gd` — orçamenta pedestres e veículos juntos. Proposto em `cars/`
    (fica com o resto de `traffic/`), mas é igualmente sobre `characters/`.
-2. `PhysicalCargo.gd` — proposto em `systems/` por eliminação; pode fazer mais sentido em
-   `cars/` (carga de caminhão) ou `geodata/` (objeto do mundo).
-3. `PlayerCar.gd` — é ao mesmo tempo "o carro" (→ `cars/`) e "o Player dirigindo" (→
-   `characters/`). Proposto em `cars/` porque o conteúdo é física de veículo, não
-   personagem.
-4. `IronCobraCulDeSac.gd` — não abri o conteúdo a fundo; pelo nome pode ser layout físico
+2. `IronCobraCulDeSac.gd` — não abri o conteúdo a fundo; pelo nome pode ser layout físico
    do território Cobra (→ `geodata/`) ou identidade da gangue (→ `characters/`). Proposto
    em `characters/` por consistência com os outros arquivos `IronCobra*`.
-5. `ClothingStore.gd`/`OutfitCatalog.gd` — propostos em `characters/` (aparência), mas
+3. `ClothingStore.gd`/`OutfitCatalog.gd` — propostos em `characters/` (aparência), mas
    têm cara de `economy/` (loja/compra). Ajuste se preferir agrupar toda loja junto.
 
 Nenhum desses casos trava o plano — são pequenos o bastante para mover de novo depois se
 a primeira escolha não ficar boa.
+
+**Resolvidos nesta rodada**: `PlayerCar.gd` → `characters/` (decisão do usuário, não
+`cars/`); `PhysicalCargo.gd` → `geodata/`, ao lado de `BreakableProp.gd` (mesma função —
+física de objeto de mundo empurrável/quebrável, só usado por `HarborStorageArt.gd` e pelo
+teste do `WorldRenewal`).
 
 ## O que fica de fora desta rodada, e por quê
 
