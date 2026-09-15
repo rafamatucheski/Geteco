@@ -25,7 +25,7 @@ func configure(unit: CharacterBody2D, goal: Vector2, heading: float) -> void:
 	_query.shape = _hull.shape
 	_query.exclude = [unit.get_rid()]
 	_query.collision_mask = unit.collision_mask
-	_query.margin = preload("res://world/shared/emergency/AmbulanceApproach.gd")._hull_margin(unit)+.2
+	_query.margin = preload("res://emergency/AmbulanceApproach.gd")._hull_margin(unit)+.2
 	_space = unit.get_world_2d().direct_space_state
 	var start := Vector3(unit.global_position.x,unit.global_position.y,unit.global_rotation)
 	nodes.append({"pose":start,"cost":0.0,"score":_heuristic(start),"parent":-1,"direction":0})

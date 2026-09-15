@@ -185,7 +185,7 @@ func restore_burials() -> void:
 		if _graves.any(func(grave): return is_instance_valid(grave) and grave.get_meta("burial_identity", "") == key): continue
 		var point := reserve_plot(key)
 		if point == Vector2.INF: continue
-		var marker := preload("res://world/shared/emergency/CoronerGrave.gd").new()
+		var marker := preload("res://emergency/CoronerGrave.gd").new()
 		marker.set_meta("burial_identity", key)
 		marker.set_meta("deceased_name", record.name)
 		add_child(marker)

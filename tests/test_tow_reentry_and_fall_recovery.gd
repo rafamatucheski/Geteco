@@ -21,7 +21,7 @@ func run() -> void:
 	player.add_child(camera)
 	world.add_child(player)
 	# Cargo deliberately precedes the truck in the vehicle group.
-	var factory = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+	var factory = preload("res://emergency/ModernTrafficFactory.gd")
 	var cargo = factory.spawn_parked_vehicle(world, "Cargo", Vector2.ZERO, 0, "sport_coupe", 0)
 	cargo.set_meta("tow_carried", true)
 	cargo.hide()

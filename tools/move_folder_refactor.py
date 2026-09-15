@@ -51,19 +51,21 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
-# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio police/.
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio emergency/.
 MOVES: list[tuple[str, str]] = [
-    ("PoliceOfficer.gd", "police/PoliceOfficer.gd"),
-    ("PoliceOfficer.tscn", "police/PoliceOfficer.tscn"),
-    ("WantedManager.gd", "police/WantedManager.gd"),
-    ("PoliceVehicleStop.gd", "police/PoliceVehicleStop.gd"),
-    ("SpikeStrip.gd", "police/SpikeStrip.gd"),
-    ("world/shared/pickups/PoliceLoot.gd", "police/PoliceLoot.gd"),
-    ("world/shared/emergency/PoliceAppearance.gd", "police/PoliceAppearance.gd"),
-    ("world/shared/emergency/PoliceFootNavigation.gd", "police/PoliceFootNavigation.gd"),
-    ("world/shared/emergency/PoliceMotorcycleCrew.gd", "police/PoliceMotorcycleCrew.gd"),
-    ("world/shared/emergency/PoliceMotorcycleModel.gd", "police/PoliceMotorcycleModel.gd"),
-    ("world/shared/emergency/PoliceVehicleCombat.gd", "police/PoliceVehicleCombat.gd"),
+    ("EmergencyPool.gd", "emergency/EmergencyPool.gd"),
+    ("EmergencyVehicle.gd", "emergency/EmergencyVehicle.gd"),
+    ("EmergencyVehicle.tscn", "emergency/EmergencyVehicle.tscn"),
+    ("EmergencyVehicleVisual3D.gd", "emergency/EmergencyVehicleVisual3D.gd"),
+    ("EmergencyCrewTransition.gd", "emergency/EmergencyCrewTransition.gd"),
+    ("Firefighter.gd", "emergency/Firefighter.gd"),
+    ("Firefighter.tscn", "emergency/Firefighter.tscn"),
+    ("Paramedic.gd", "emergency/Paramedic.gd"),
+    ("Paramedic.tscn", "emergency/Paramedic.tscn"),
+    ("Mortician.gd", "emergency/Mortician.gd"),
+    ("Mortician.tscn", "emergency/Mortician.tscn"),
+    ("ResponderNavigation.gd", "emergency/ResponderNavigation.gd"),
+    ("world/shared/emergency", "emergency"),
 ]
 
 

@@ -166,7 +166,7 @@ func run() -> void:
 		weather.is_dynamic_time=false
 		truck.global_position=yard.to_global(Vector2(170,440))
 		truck.global_rotation=0
-		var factory=load("res://world/shared/emergency/ModernTrafficFactory.gd")
+		var factory=load("res://emergency/ModernTrafficFactory.gd")
 		var patrol: Node2D=factory.spawn_parked_vehicle(world,"TowPoliceTest",truck.position+Vector2(-115,0),0,"police_cruiser",0)
 		patrol.ensure_presentation()
 		await physics_frame

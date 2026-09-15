@@ -58,7 +58,7 @@ func _run_test() -> void:
 
 	# 4. Testar sirene do caminhao de bombeiros ao perder alvo
 	print("[PASSO 4] Testando desligamento de sirene de bombeiros sem ocorrencia...")
-	var em_script = load("res://EmergencyVehicle.gd")
+	var em_script = load("res://emergency/EmergencyVehicle.gd")
 	var em_truck = em_script.new()
 	em_truck.type = 2 # FIRE
 	root.add_child(em_truck)

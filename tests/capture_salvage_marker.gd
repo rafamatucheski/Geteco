@@ -31,7 +31,7 @@ func capture_marker(label: String) -> void:
 
 func audit_access() -> void:
 	await super.audit_access()
-	var factory:=load("res://world/shared/emergency/ModernTrafficFactory.gd")
+	var factory:=load("res://emergency/ModernTrafficFactory.gd")
 	var car: Node2D=factory.spawn_parked_vehicle(world,"DirectBayDelivery",yard.to_global(yard.dock),PI*.5,"union_sedan",0)
 	player.global_position=car.global_position+Vector2(58,10)
 	for i in 4: await physics_frame

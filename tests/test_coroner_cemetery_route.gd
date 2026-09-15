@@ -9,7 +9,7 @@ func run() -> void:
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 120: await physics_frame
 	paused = false
-	var unit := preload("res://EmergencyVehicle.tscn").instantiate()
+	var unit := preload("res://emergency/EmergencyVehicle.tscn").instantiate()
 	unit.type = 3
 	unit.position = Vector2(1880,1962)
 	unit.rotation = PI

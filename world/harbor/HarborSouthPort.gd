@@ -2,7 +2,7 @@ extends Node2D
 ## South of Northstar: a traversable terminal with bounded logistics simulation.
 const L := preload("res://world/harbor/HarborSouthPortLayout.gd")
 const WORKER := preload("res://world/harbor/HarborDockWorker.gd")
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 const MODEL_VIEW := preload("res://world/harbor/HarborPortModelView.gd")
 const COLORS := [Color("ae5946"),Color("447f91"),Color("c09b52"),Color("658374"),Color("c5c6b0")]
 var workers: Array[Node2D] = []

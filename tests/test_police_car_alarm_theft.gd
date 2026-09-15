@@ -90,7 +90,7 @@ func run() -> void:
 	check(car._vehicle_lockpick == null and wanted.current_stars == 1, "Reentering stolen cruiser does not repeat lock or crime")
 	await leave(car)
 
-	var standby = load("res://world/shared/emergency/EmergencyStandbyPoint.gd").new()
+	var standby = load("res://emergency/EmergencyStandbyPoint.gd").new()
 	standby.position = Vector2(500, 500)
 	world.add_child(standby)
 	await process_frame

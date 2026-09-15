@@ -404,7 +404,7 @@ func _ensure_contract_target() -> void:
 			_last_token=token
 			_mark_target()
 			return
-	_target=preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(get_parent(),"NecoOrder",point,float(contract.rotation),String(contract.vehicle_id),0)
+	_target=preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(get_parent(),"NecoOrder",point,float(contract.rotation),String(contract.vehicle_id),0)
 	_target.set_meta("salvage_token",token)
 	_last_token=token
 	_mark_target()

@@ -3,8 +3,8 @@ extends Node2D
 const REACH := 420.0
 const DAMAGE := 3
 const HIT_INTERVAL := 0.20
-const WASH := preload("res://world/shared/emergency/VehicleWaterWash.gd")
-const SUPPRESSION := preload("res://world/shared/emergency/FireSuppression.gd")
+const WASH := preload("res://emergency/VehicleWaterWash.gd")
+const SUPPRESSION := preload("res://emergency/FireSuppression.gd")
 const MATERIAL := preload("res://audio/combat/ImpactMaterial.gd")
 
 var vehicle: CharacterBody2D
@@ -28,7 +28,7 @@ static func sync_vehicle(body: CharacterBody2D, enabled: bool) -> void:
 			existing.queue_free()
 		return
 	if existing: return
-	var cannon := load("res://world/shared/emergency/VehicleWaterCannon.gd").new() as Node2D
+	var cannon := load("res://emergency/VehicleWaterCannon.gd").new() as Node2D
 	cannon.name = "WaterCannon"
 	cannon.vehicle = body
 	body.add_child(cannon)

@@ -40,8 +40,8 @@ func run() -> void:
 	lane.curve.add_point(Vector2(-500,0))
 	lane.add_to_group("unified_traffic_lane")
 	world.add_child(lane)
-	var director := preload("res://world/shared/emergency/EmergencyDepotDirector.gd").new()
-	var depot := preload("res://world/shared/emergency/EmergencyDepotMarker.gd").new()
+	var director := preload("res://emergency/EmergencyDepotDirector.gd").new()
+	var depot := preload("res://emergency/EmergencyDepotMarker.gd").new()
 	depot.service_key = "ambulance"
 	depot.depot_id = "test_hospital"
 	depot.position = Vector2(-250,0)

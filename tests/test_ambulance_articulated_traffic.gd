@@ -128,7 +128,7 @@ func _run() -> void:
 	target.position = Vector2(3310, 2780)
 	target.set_meta("medical_pending", true)
 	world.add_child(target)
-	var ambulance := preload("res://EmergencyVehicle.tscn").instantiate() as CharacterBody2D
+	var ambulance := preload("res://emergency/EmergencyVehicle.tscn").instantiate() as CharacterBody2D
 	ambulance.type = 1
 	ambulance.target = target
 	ambulance.position = Vector2(3030, 1280)

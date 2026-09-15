@@ -8,7 +8,7 @@ const DISTRICT := preload("res://world/harbor/HarborDistrict.gd")
 const SAFETY := preload("res://world/harbor/HarborSafety.gd")
 const EAST := preload("res://world/harbor/HarborEastDistrict.gd")
 const NORTH := preload("res://world/harbor/HarborNorthDistrict.gd")
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 
 var failures: Array[String] = []
 

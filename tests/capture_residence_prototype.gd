@@ -76,7 +76,7 @@ func _run() -> void:
 	manager.exit_home("canal_north")
 	while world.get_node("Interiors").is_transitioning(): await process_frame
 	var home: ResidenceProperty = manager.properties.canal_north
-	preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"ParkedAtHome",home.extra_vehicle_position(),0.0,"sedan_classic",0,Color("a8463b"))
+	preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"ParkedAtHome",home.extra_vehicle_position(),0.0,"sedan_classic",0,Color("a8463b"))
 	manager.capture_parking_for_save()
 	saves.save_game("residence_visual_parking")
 	camera.global_position = home.global_position+Vector2(0,65)

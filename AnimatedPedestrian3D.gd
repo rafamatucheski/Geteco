@@ -1302,7 +1302,7 @@ var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var unstuck_dir_sign: float = 1.0
 
-var movement_navigation := preload("res://ResponderNavigation.gd").new()
+var movement_navigation := preload("res://emergency/ResponderNavigation.gd").new()
 
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
 	var result: Vector2 = movement_navigation.movement(self, dest, move_speed, delta)

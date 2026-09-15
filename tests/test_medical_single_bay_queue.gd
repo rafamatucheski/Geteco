@@ -26,7 +26,7 @@ func run() -> void:
 	var director := preload("res://world/harbor/HarborEmergencyDirector.gd").new()
 	world.add_child(director)
 	director._world = world
-	var depot := preload("res://world/shared/emergency/EmergencyDepotMarker.gd").new()
+	var depot := preload("res://emergency/EmergencyDepotMarker.gd").new()
 	depot.service_key = "ambulance"
 	depot.depot_id = "single_bay_queue_test"
 	for entry in [["SpawnPoint",Vector2.ZERO],["ReturnPoint",Vector2.ZERO],["ExitPoint",Vector2(150,0)]]:
@@ -78,7 +78,7 @@ func run() -> void:
 	var parked_position: Vector2 = unit.global_position
 	var hospital := HospitalDoor.new()
 	world.add_child(hospital)
-	var sequence := preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+	var sequence := preload("res://emergency/MedicalRescueSequence.gd").new()
 	unit.add_child(sequence)
 	sequence.set_physics_process(false)
 	sequence.ambulance = unit

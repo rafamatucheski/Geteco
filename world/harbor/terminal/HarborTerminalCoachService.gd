@@ -280,7 +280,7 @@ func _advance(delta: float) -> void:
 		_route_finished()
 
 func _rescue_clearance(speed: float) -> float:
-	var guard := preload("res://world/shared/emergency/MedicalRescueWorkZone.gd")
+	var guard := preload("res://emergency/MedicalRescueWorkZone.gd")
 	if not guard.has_zones(coach): return INF
 	var distance := 0.0
 	while distance <= speed * speed / 44.0 + 20.0:

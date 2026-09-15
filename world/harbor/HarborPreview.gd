@@ -95,7 +95,7 @@ func _setup_thematic_fleet() -> void:
 	fleet_root.name = "ThematicFleet"
 	add_child(fleet_root)
 
-	var factory := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+	var factory := preload("res://emergency/ModernTrafficFactory.gd")
 	# 1. Ambulância 3D na baia médica da clínica
 	# Keep the clinic dispatch apron clear for the actual service ambulance.
 	# Side service bay: keep the garage door and its approach clear.

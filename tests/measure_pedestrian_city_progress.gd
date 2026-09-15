@@ -56,7 +56,7 @@ func _report_render() -> void:
 			if OS.get_cmdline_user_args().has("--inspect"):
 				row.search = {"pending":person.movement_navigation._search_pending, "open":person.movement_navigation._open.size(), "closed":person.movement_navigation._closed.size(), "step":person.movement_navigation.grid_step, "retry":person.movement_navigation.retry}
 				var edges: Array = []
-				var raw_nav := preload("res://ResponderNavigation.gd").new()
+				var raw_nav := preload("res://emergency/ResponderNavigation.gd").new()
 				for direction in [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]:
 					var point: Vector2 = person.global_position + direction * 3.0
 					edges.append({"point":point, "allowed":person._navigation_point_allowed(point), "nav_clear":person.movement_navigation.clear_segment(person,person.global_position,point), "raw_clear":raw_nav.clear_segment(person,person.global_position,point)})

@@ -31,7 +31,7 @@ func run() -> void:
 	world = Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	seq = preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+	seq = preload("res://emergency/MedicalRescueSequence.gd").new()
 	world.add_child(seq)
 	seq.set_physics_process(false)
 	seq.ambulance = Node2D.new()
@@ -40,10 +40,10 @@ func run() -> void:
 	world.add_child(seq.patient)
 	seq.patient.set_physics_process(false)
 	seq.patient.position = Vector2(-1000,-1000)
-	seq.stretcher = preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+	seq.stretcher = preload("res://emergency/MedicalStretcher.gd").new()
 	world.add_child(seq.stretcher)
 	for i in 2:
-		var medic := preload("res://Paramedic.tscn").instantiate()
+		var medic := preload("res://emergency/Paramedic.tscn").instantiate()
 		world.add_child(medic)
 		medic.set_physics_process(false)
 		medic.position = Vector2(25 if i==0 else -25,0)

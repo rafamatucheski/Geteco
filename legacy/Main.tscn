@@ -7,7 +7,7 @@
 [ext_resource type="Script" uid="uid://bvua2m3wet8ep" path="res://systems/DynamicCamera.gd" id="5_dynamic_camera"]
 [ext_resource type="PackedScene" path="res://legacy/DistrictInteriorManager.tscn" id="6_interiors"]
 [ext_resource type="PackedScene" path="res://legacy/district/coast/CoastalExtension.tscn" id="7_coast"]
-[ext_resource type="PackedScene" path="res://world/shared/emergency/EmergencyDepots.tscn" id="8_depots"]
+[ext_resource type="PackedScene" path="res://emergency/EmergencyDepots.tscn" id="8_depots"]
 [ext_resource type="PackedScene" uid="uid://5b5dd3r5q7c8" path="res://legacy/district/borough_one/DistrictOneComplete.tscn" id="9_borough_one"]
 [ext_resource type="PackedScene" path="res://legacy/DistrictRestrictionFeedback.tscn" id="10_restriction_feedback"]
 

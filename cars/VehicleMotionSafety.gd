@@ -64,7 +64,7 @@ static func sanitize(body: CharacterBody2D) -> void:
 
 static func move(body: CharacterBody2D) -> void:
 	sanitize(body)
-	preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").limit_player_motion(body)
+	preload("res://emergency/MedicalRescueWorkZone.gd").limit_player_motion(body)
 	var before := body.global_position
 	var incoming := body.velocity
 	# A parked kinematic car must not run penetration recovery against walking

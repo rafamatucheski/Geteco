@@ -1,5 +1,5 @@
 extends SceneTree
-class NavigationProbe extends "res://ResponderNavigation.gd":
+class NavigationProbe extends "res://emergency/ResponderNavigation.gd":
 	var sweeps := 0
 	func movement(_body: CharacterBody2D, _goal: Vector2, _speed: float, _delta: float) -> Vector2:
 		return Vector2(40, 0)

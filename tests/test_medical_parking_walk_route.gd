@@ -39,7 +39,7 @@ func run() -> void:
 	solid(Vector2(160,230),Vector2(130,10))
 	await physics_frame
 	await physics_frame
-	var planner := preload("res://world/shared/emergency/AmbulanceApproach.gd").new()
+	var planner := preload("res://emergency/AmbulanceApproach.gd").new()
 	var accepted := false
 	var yielded := false
 	for frame in 600:

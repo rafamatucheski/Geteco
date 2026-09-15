@@ -44,7 +44,7 @@ func run() -> void:
 	player.set_physics_process(false)
 	player.model_root.rotation.y = -.5
 	player.get_node("Camera").enabled = false
-	var ambulance = preload("res://EmergencyVehicle.gd").new()
+	var ambulance = preload("res://emergency/EmergencyVehicle.gd").new()
 	ambulance.type = 1
 	ambulance.position = Vector2(70,65)
 	world.add_child(ambulance)

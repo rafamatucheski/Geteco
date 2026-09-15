@@ -69,7 +69,7 @@ func _ready():
 	# Low-level patrols can also get an SUV, without rebuilding cars on dispatch.
 	_police_suv_slots.shuffle()
 	_police_suv_slots.resize(2)
-	var em_scene = load("res://EmergencyVehicle.tscn")
+	var em_scene = load("res://emergency/EmergencyVehicle.tscn")
 	if not em_scene:
 		return
 	
@@ -117,7 +117,7 @@ func get_vehicle(type: String) -> Node:
 		var wanted := get_node_or_null("/root/WantedManager")
 		if type == "police" and i in [1, 4] and wanted and wanted.current_stars >= 3: continue
 		if not is_instance_valid(obj):
-			var em_scene = load("res://EmergencyVehicle.tscn")
+			var em_scene = load("res://emergency/EmergencyVehicle.tscn")
 			if em_scene:
 				obj = em_scene.instantiate()
 				obj.type = 0 if type == "police" else (1 if type == "ambulance" else (2 if type == "fire" else 3))

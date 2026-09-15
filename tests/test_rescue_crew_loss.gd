@@ -11,7 +11,7 @@ func run() -> void:
 	var care := root.get_node("NPCMedicalCare")
 	care.set_process(false)
 	root.get_node("WantedManager").set_process(false)
-	var vehicle = preload("res://EmergencyVehicle.gd").new()
+	var vehicle = preload("res://emergency/EmergencyVehicle.gd").new()
 	vehicle.type = 1
 	vehicle.position = Vector2(250,0)
 	world.add_child(vehicle)
@@ -26,17 +26,17 @@ func run() -> void:
 	for i in 90: await physics_frame
 	var crew: Array = []
 	for i in 2:
-		var medic = preload("res://Paramedic.gd").new()
+		var medic = preload("res://emergency/Paramedic.gd").new()
 		medic.name = "CrewLossMedic%d" % i
 		medic.ambulance = vehicle
 		medic.position = Vector2(-25+i*50,0)
 		world.add_child(medic)
 		crew.append(medic)
-	var sequence = preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+	var sequence = preload("res://emergency/MedicalRescueSequence.gd").new()
 	world.add_child(sequence)
 	sequence.setup(vehicle,patient,crew)
 	check(care.begin_carry(patient,vehicle,sequence),"real care service accepts the patient claim")
-	var cot = preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+	var cot = preload("res://emergency/MedicalStretcher.gd").new()
 	world.add_child(cot)
 	sequence.stretcher = cot
 	cot.load_patient(patient)

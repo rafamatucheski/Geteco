@@ -36,7 +36,7 @@ func _run() -> void:
 		root.get_texture().get_image().save_png("D:/geteco/artifacts/forest-ground-0913/tree-varieties.png")
 	var tree = trees[8]
 	# A real production vehicle drives through the native motion/collision pipeline.
-	var factory = load("res://world/shared/emergency/ModernTrafficFactory.gd")
+	var factory = load("res://emergency/ModernTrafficFactory.gd")
 	var car = factory.spawn_parked_vehicle(world,"IceTestCar",tree.position+Vector2(-90,3),0,"sedan_classic",0,Color("465861"))
 	car.set_process(false)
 	car.set_physics_process(false)

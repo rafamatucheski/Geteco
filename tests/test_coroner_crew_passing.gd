@@ -10,21 +10,21 @@ func run() -> void:
 	world.add_child(victim)
 	victim._die()
 	var key: String = care.identity(victim)
-	var unit := preload("res://EmergencyVehicle.tscn").instantiate()
+	var unit := preload("res://emergency/EmergencyVehicle.tscn").instantiate()
 	unit.type = 3
 	unit.position = Vector2(0,500)
 	world.add_child(unit)
 	unit.activate()
 	unit.set_physics_process(false)
 	unit.deployed_morticians = 2
-	var bearer := preload("res://Mortician.tscn").instantiate()
+	var bearer := preload("res://emergency/Mortician.tscn").instantiate()
 	bearer.hearse = unit
 	bearer.target = victim
 	bearer.is_stretcher_bearer = true
 	bearer.position = Vector2(0,38)
 	world.add_child(bearer)
 	bearer._access_route.assign([Vector2(0,28)])
-	var support := preload("res://Mortician.tscn").instantiate()
+	var support := preload("res://emergency/Mortician.tscn").instantiate()
 	support.hearse = unit
 	support.target = victim
 	support.position = Vector2(0,22)

@@ -9,7 +9,7 @@ var phase_time := 0.0
 var stretcher: CharacterBody2D
 var carrying := false
 var delivered := false
-var nav := preload("res://ResponderNavigation.gd").new()
+var nav := preload("res://emergency/ResponderNavigation.gd").new()
 var _entry_start := Vector2.ZERO
 var _boarded := [false, false]
 var hospital: Node2D
@@ -17,7 +17,7 @@ var hospital_delivery := false
 var admitted := false
 var _return_waypoint := [0, 0]
 var work_zone: StaticBody2D
-var formation := preload("res://world/shared/emergency/MedicalFormationNavigation.gd").new()
+var formation := preload("res://emergency/MedicalFormationNavigation.gd").new()
 var _service_goals: Array[Vector3] = []
 var _service_index := 0
 var _no_progress := 0.0
@@ -26,7 +26,7 @@ var _retreating := false
 var _owns_patient := false
 var _parking_route: Array[Vector2] = []
 var _parking_route_index := 1
-var danger := preload("res://world/shared/emergency/RescueDanger.gd").new()
+var danger := preload("res://emergency/RescueDanger.gd").new()
 
 func hear_gunfire(origin: Vector2, end: Vector2) -> void:
 	danger.hear(self, origin, end)
@@ -52,10 +52,10 @@ func setup(unit: Node2D, target: CharacterBody2D, medics: Array) -> void:
 		if medic.stretcher_mesh: medic.stretcher_mesh.hide()
 		if medic.medical_kit: medic.medical_kit.hide()
 		if unit.visual_3d: unit.visual_3d.open_door(medic.crew_side)
-	work_zone = preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").new()
+	work_zone = preload("res://emergency/MedicalRescueWorkZone.gd").new()
 	unit.get_parent().add_child(work_zone)
 	work_zone.sync(self)
-	var depth := preload("res://world/shared/emergency/MedicalOutdoorDepth.gd").new()
+	var depth := preload("res://emergency/MedicalOutdoorDepth.gd").new()
 	depth.sequence = self
 	add_child(depth)
 	if not _owns_patient: _abort.call_deferred("patient_claim_failed")
@@ -64,7 +64,7 @@ func rear_point() -> Vector2:
 	# Offset parking must not shorten extraction and trap the front handle
 	# against the bumper. Reserve parking supplies the extra facade clearance.
 	var distance := 78.0
-	if not hospital_delivery: distance = preload("res://world/shared/emergency/AmbulanceApproach.gd").rear_distance(ambulance)
+	if not hospital_delivery: distance = preload("res://emergency/AmbulanceApproach.gd").rear_distance(ambulance)
 	return ambulance.to_global(Vector2(-distance, 0))
 
 func _set_phase(next: String) -> void:
@@ -136,7 +136,7 @@ func _physics_process(delta: float) -> void:
 				var owner_node := ambulance.get_parent()
 				var start := ambulance.to_global(Vector2(-22, 0))
 				if not is_instance_valid(stretcher):
-					stretcher = preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+					stretcher = preload("res://emergency/MedicalStretcher.gd").new()
 					stretcher.position = owner_node.to_local(start) if owner_node is Node2D else start
 					owner_node.add_child(stretcher)
 				stretcher.global_position = start

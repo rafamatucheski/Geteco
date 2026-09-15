@@ -1,5 +1,5 @@
 extends SceneTree
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 const CACHE := preload("res://cars/VehicleGeometryCache.gd")
 func _initialize() -> void: _run.call_deferred()
 func _run() -> void:

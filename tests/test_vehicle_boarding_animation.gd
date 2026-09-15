@@ -1,5 +1,5 @@
 extends SceneTree
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY = preload("res://emergency/ModernTrafficFactory.gd")
 const OUTPUT := "D:/geteco/artifacts/vehicle-exit-0914/"
 var failures: Array[String] = []
 var render := false

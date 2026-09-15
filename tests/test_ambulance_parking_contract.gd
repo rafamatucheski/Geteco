@@ -1,5 +1,5 @@
 extends SceneTree
-const APPROACH = preload("res://world/shared/emergency/AmbulanceApproach.gd")
+const APPROACH = preload("res://emergency/AmbulanceApproach.gd")
 class Unit extends CharacterBody2D:
 	var current_speed := 0.0
 	var stuck_despawn_timer := 0.0
@@ -81,17 +81,17 @@ func run() -> void:
 	planner.road_surfaces.append_array(Geometry2D.offset_polyline(PackedVector2Array([Vector2(0,0),Vector2(0,400)]),60))
 	check(not planner._build_trajectory_with_lead(unit,Transform2D(PI*.5,Vector2(0,240)),0),"Long direct curve correctly rejects cutting outside an L junction")
 	check(planner._build_trajectory(unit,Transform2D(PI*.5,Vector2(0,240))),"Approach remains on the entry street before turning through the junction")
-	var priority := preload("res://world/shared/emergency/AmbulanceManeuverReservation.gd").new()
+	var priority := preload("res://emergency/AmbulanceManeuverReservation.gd").new()
 	world.add_child(priority)
 	priority.configure(unit)
 	priority.follow(planner.trajectory,planner.headings,1)
 	var traffic := CharacterBody2D.new()
 	world.add_child(traffic)
 	var ahead := Transform2D(planner.headings[15],planner.trajectory[15])
-	check(preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").blocks_hull(traffic,hull.shape,ahead),"Crossing traffic sees the reserved upcoming maneuver before entering it")
+	check(preload("res://emergency/MedicalRescueWorkZone.gd").blocks_hull(traffic,hull.shape,ahead),"Crossing traffic sees the reserved upcoming maneuver before entering it")
 	priority.cancel()
-	check(not preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").blocks_hull(traffic,hull.shape,ahead),"Cancelling a maneuver releases its traffic reservation immediately")
-	var hospital_priority := preload("res://world/shared/emergency/AmbulanceManeuverReservation.gd").new()
+	check(not preload("res://emergency/MedicalRescueWorkZone.gd").blocks_hull(traffic,hull.shape,ahead),"Cancelling a maneuver releases its traffic reservation immediately")
+	var hospital_priority := preload("res://emergency/AmbulanceManeuverReservation.gd").new()
 	world.add_child(hospital_priority)
 	hospital_priority.allow_hospital_return = true
 	hospital_priority.configure(unit)
@@ -105,7 +105,7 @@ func run() -> void:
 	unit.remove_meta("hospital_available")
 	unit.position = Vector2(-350,0)
 	unit.rotation = 0
-	var arrival := preload("res://world/shared/emergency/HospitalArrival.gd").new()
+	var arrival := preload("res://emergency/HospitalArrival.gd").new()
 	arrival.tick(unit,Vector2(-100,0),0,1.0/60)
 	var pedestrian := StaticBody2D.new()
 	pedestrian.collision_layer = 4

@@ -61,6 +61,9 @@ var _stance_yaw := 0.0
 var weapon_id := ""
 var recoil := 0.0
 var action_age := 10.0
+# Exposed for MeshyDanteRig: idle pistols hang one-handed, the off-hand only
+# comes up to support the grip while aiming/firing.
+var is_engaged := false
 var equip_blend := 0.0
 var punch_left := false
 var knife_variant := -1
@@ -99,6 +102,7 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	action_age += delta
 	recoil *= exp(-float(p[3]) * delta)
 	var engaged := aiming or action_age < 0.45
+	is_engaged = engaged
 	# A bladed shoulder stance gives the support arm room to reach the
 	# fore-end while the stock actually meets the firing shoulder.
 	var shouldered := STOCK_ENDS.has(id) or id == "rpg"
@@ -112,6 +116,9 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	var hand: Vector3 = p[0]
 	var support: Vector3 = SUPPORT_GRIPS.get(id, Vector3.ZERO) - GRIPS.get(id, Vector3.ZERO) if SUPPORT_GRIPS.has(id) else Vector3.ZERO
 	if skinned and id == "axe": support = Vector3(0,0,-0.12)
+	# A holstered pistol/magnum hangs from one hand; the off-hand only comes
+	# up to brace the grip once the player is actually aiming or firing.
+	if id in ["pistol", "magnum"] and not engaged: support = Vector3.ZERO
 	var pitch := 0.0
 	# Low ready, aimed fire and sprint carry have separate silhouettes.
 	if not engaged:
@@ -283,7 +290,10 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		if id in SKIN_HANDGUNS and not reloading:
 			hand = Vector3(0.035, 1.08, -0.375) if engaged else Vector3(0.26, 0.80, -0.15)
 			hand.z += recoil * 0.22
-			left_target = hand + gun_basis * support
+			# Idle carry stays one-handed; the off-hand only joins the grip
+			# once the player actually aims or fires (support is zero until then).
+			if engaged:
+				left_target = hand + gun_basis * support
 		else:
 			if id in SKIN_LONG_GUNS and not engaged and not reloading:
 				var carry_height: float = (player.right_upper_arm.position.y + player.left_upper_arm.position.y) * 0.5 - 0.17
@@ -490,7 +500,11 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 		"rpg":
 			hand = Vector3(0.17, 0.91, -0.07)
 			tilt = Vector3(0.58, 0.0, -0.28)
-			left = belt.lerp(Vector3(-0.03, 0.96, -0.26), smoothstep(0.16, 0.68, t))
+			# Seat the rocket at the muzzle, then bring the support hand back to
+			# a normal grip on the tube instead of leaving it pinned at the tip.
+			var seat := smoothstep(0.16, 0.42, t) * (1.0 - smoothstep(0.58, 0.78, t))
+			var regrip := smoothstep(0.58, 0.78, t)
+			left = belt.lerp(Vector3(-0.03, 0.96, -0.26), seat).lerp(Vector3(-0.02, 0.90, -0.14), regrip)
 		"flamethrower":
 			tilt = Vector3(-0.18, 0.0, -0.43)
 			left = Vector3(-0.06, 0.83, -0.17) + Vector3(sin(t * TAU * 2.0) * 0.035, cos(t * TAU * 2.0) * 0.025, 0)

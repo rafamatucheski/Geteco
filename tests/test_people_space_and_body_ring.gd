@@ -93,7 +93,7 @@ func run() -> void:
 	var same_side: Array = []
 	for i in 12:
 		var person := pedestrian(Vector2.from_angle(-1.05 + 2.1 * i / 11.0) * 180.0)
-		var response := preload("res://world/shared/emergency/MedicalWitness.gd").new()
+		var response := preload("res://emergency/MedicalWitness.gd").new()
 		response.actor = person
 		response.patient = patient
 		response.calls_for_help = false
@@ -101,7 +101,7 @@ func run() -> void:
 		person.add_child(response)
 		same_side.append(response)
 	var extra := pedestrian(Vector2(0, -200))
-	var overflow := preload("res://world/shared/emergency/MedicalWitness.gd").new()
+	var overflow := preload("res://emergency/MedicalWitness.gd").new()
 	overflow.actor = extra
 	overflow.patient = patient
 	overflow.calls_for_help = false

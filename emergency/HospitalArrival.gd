@@ -6,7 +6,7 @@ var angles := PackedFloat32Array()
 var cursor := 1
 var retry := 0.0
 var blocked := 0.0
-var planner := preload("res://world/shared/emergency/AmbulanceApproach.gd").new()
+var planner := preload("res://emergency/AmbulanceApproach.gd").new()
 var search: RefCounted
 var reservation: Node
 var arc_path := false
@@ -60,7 +60,7 @@ func tick(unit: CharacterBody2D, stop: Vector2, heading: float, delta: float) ->
 				if _curve(unit,unit.global_position,unit.global_rotation,end,heading,reverse): break
 			if not path.is_empty(): break
 		if path.is_empty():
-			search = preload("res://world/shared/emergency/HospitalParkingSearch.gd").new()
+			search = preload("res://emergency/HospitalParkingSearch.gd").new()
 			search.configure(unit,stop,heading)
 	if search != null:
 		search.advance()
@@ -78,7 +78,7 @@ func tick(unit: CharacterBody2D, stop: Vector2, heading: float, delta: float) ->
 		unit.set_meta("hospital_dock_waiting",true)
 		return false
 	if not is_instance_valid(reservation):
-		reservation = preload("res://world/shared/emergency/AmbulanceManeuverReservation.gd").new()
+		reservation = preload("res://emergency/AmbulanceManeuverReservation.gd").new()
 		reservation.allow_hospital_return = true
 		unit.get_parent().add_child(reservation)
 		reservation.configure(unit)

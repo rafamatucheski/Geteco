@@ -13,7 +13,7 @@ var _door_motion := 0.0
 var _last_heading := INF
 var _was_visible := false
 var _last_flash := -1
-var lightbar := preload("res://world/shared/emergency/EmergencyLightbar3D.gd").new()
+var lightbar := preload("res://emergency/EmergencyLightbar3D.gd").new()
 var render_requests := 0
 var _lamp_mounts: Array[Vector3] = []
 var second_headlight: PointLight2D
@@ -34,7 +34,7 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	viewport.own_world_3d = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(viewport)
-	model = preload("res://world/shared/emergency/PoliceMotorcycleModel.gd").new() if motorcycle else load(spec.model_class).new()
+	model = preload("res://emergency/PoliceMotorcycleModel.gd").new() if motorcycle else load(spec.model_class).new()
 	viewport.add_child(model)
 	var bounds := AABB()
 	var first := true

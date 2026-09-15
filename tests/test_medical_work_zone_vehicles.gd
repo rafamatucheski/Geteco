@@ -1,6 +1,6 @@
 extends SceneTree
-const ZONE := preload("res://world/shared/emergency/MedicalRescueWorkZone.gd")
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const ZONE := preload("res://emergency/MedicalRescueWorkZone.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 var world: Node2D
 var source: Rescue
@@ -52,11 +52,11 @@ func run() -> void:
 	source.ambulance.position = Vector2(-500, -500)
 	source.patient = CharacterBody2D.new()
 	world.add_child(source.patient)
-	source.stretcher = preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+	source.stretcher = preload("res://emergency/MedicalStretcher.gd").new()
 	world.add_child(source.stretcher)
 	source.stretcher.set_physics_process(false)
 	for i in 2:
-		var medic := load("res://Paramedic.tscn").instantiate() as CharacterBody2D
+		var medic := load("res://emergency/Paramedic.tscn").instantiate() as CharacterBody2D
 		world.add_child(medic)
 		medic.set_physics_process(false)
 		source.crew.append(medic)

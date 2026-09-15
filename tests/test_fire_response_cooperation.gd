@@ -1,6 +1,6 @@
 extends SceneTree
 
-const SUPPRESSION := preload("res://world/shared/emergency/FireSuppression.gd")
+const SUPPRESSION := preload("res://emergency/FireSuppression.gd")
 var failures: Array[String] = []
 var scene: Node2D
 
@@ -67,7 +67,7 @@ func _run() -> void:
 	fire = Fire.new()
 	fire.position = Vector2(50, 0)
 	scene.add_child(fire)
-	var firefighter = load("res://Firefighter.tscn").instantiate()
+	var firefighter = load("res://emergency/Firefighter.tscn").instantiate()
 	scene.add_child(firefighter)
 	firefighter.set_physics_process(false)
 	firefighter.target = fire
@@ -103,7 +103,7 @@ func _run() -> void:
 	truck.position = Vector2(380, 0)
 	scene.add_child(truck)
 	for side in [-1.0, 1.0]:
-		var member = load("res://Firefighter.tscn").instantiate()
+		var member = load("res://emergency/Firefighter.tscn").instantiate()
 		member.target = fire
 		member.crew_side = side
 		member.position = Vector2(440, side * 25)
@@ -128,7 +128,7 @@ func _run() -> void:
 	var director := Director.new()
 	director.truck = truck
 	scene.add_child(director)
-	var queue := preload("res://world/shared/emergency/ServiceIncidents.gd").new()
+	var queue := preload("res://emergency/ServiceIncidents.gd").new()
 	queue.director = director
 	scene.add_child(queue)
 	queue.set_process(false)
@@ -157,10 +157,10 @@ func _run() -> void:
 	check(world_fire.get_meta("service_complete", false) and not world_fire.flames.emitting, "World fire closes incident and disables flames")
 	var wreck := Wreck.new()
 	scene.add_child(wreck)
-	var residual_script := preload("res://world/shared/emergency/VehicleResidualFire.gd")
+	var residual_script := preload("res://emergency/VehicleResidualFire.gd")
 	residual_script.start(wreck)
 	check(SUPPRESSION.is_active(wreck) and wreck.flame_particles.emitting, "Explosion wreck stays available for firefighter response")
-	var cannon := preload("res://world/shared/emergency/VehicleWaterCannon.gd").new()
+	var cannon := preload("res://emergency/VehicleWaterCannon.gd").new()
 	for pulse in 6: cannon._apply_hit(wreck)
 	check(is_equal_approx(float(wreck.get_meta(SUPPRESSION.PROGRESS_META, 0.0)), 0.25), "Player water cannon cools the same shared incident")
 	SUPPRESSION.apply_water(wreck, 3.7)

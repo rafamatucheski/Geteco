@@ -1,5 +1,5 @@
 extends SceneTree
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY = preload("res://emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 var world: Node2D
 

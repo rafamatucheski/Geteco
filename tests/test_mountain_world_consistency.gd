@@ -1,7 +1,7 @@
 extends SceneTree
 
 var failures: Array[String] = []
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 const OFFSET := Vector2(4300,-4960)
 
 func _initialize() -> void: _run.call_deferred()

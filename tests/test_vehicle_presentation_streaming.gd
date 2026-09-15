@@ -19,7 +19,7 @@ func run_test() -> void:
 		var again = pool.get_vehicle(service)
 		assert(again == unit)
 		pool.return_vehicle(again)
-	var car = preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world, "Teste", Vector2(100000, 100000), 0, "summit_suv", 0, Color.BLUE)
+	var car = preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world, "Teste", Vector2(100000, 100000), 0, "summit_suv", 0, Color.BLUE)
 	assert(car.body_viewport == null)
 	var size: Vector2 = car.collision.shape.size
 	car.repaint_vehicle(Color.RED)

@@ -2,7 +2,7 @@ extends Node
 ## Local 2.5D post compositing, independent of physical collision. One masked
 ## foreground sprite reuses each actor's texture; no rig copies or SubViewports.
 ## The support line follows the cot's floor projection rather than its sprite top.
-const MASK := preload("res://world/shared/emergency/MedicalPostForeground.gdshader")
+const MASK := preload("res://emergency/MedicalPostForeground.gdshader")
 var sequence: Node
 var layers := {}
 var posts: Array = []

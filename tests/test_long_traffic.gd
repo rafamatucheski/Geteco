@@ -1,7 +1,7 @@
 extends SceneTree
 const Flow := preload("res://cars/traffic/TrafficFlowModel.gd")
 const Sweep := preload("res://cars/traffic/TrafficBodySweep.gd")
-const Factory := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const Factory := preload("res://emergency/ModernTrafficFactory.gd")
 const Bus := preload("res://world/harbor/urban_transit/UrbanBus.gd")
 const Controller := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 class Graph:

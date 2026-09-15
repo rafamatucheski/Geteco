@@ -80,7 +80,7 @@ func run() -> void:
 	var unit := Unit.new()
 	world.add_child(unit)
 	unit.target = patient
-	var sequence := preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+	var sequence := preload("res://emergency/MedicalRescueSequence.gd").new()
 	unit.add_child(sequence)
 	sequence.set_physics_process(false)
 	sequence.ambulance = unit

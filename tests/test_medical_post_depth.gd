@@ -36,15 +36,15 @@ func run() -> void:
 	post.z_index = 32
 	world.add_child(post)
 	post.ensure_presentation()
-	medic = preload("res://Paramedic.tscn").instantiate()
+	medic = preload("res://emergency/Paramedic.tscn").instantiate()
 	world.add_child(medic)
 	medic.set_physics_process(false)
 	medic.model_root.rotation.y = 0
-	var sequence := preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+	var sequence := preload("res://emergency/MedicalRescueSequence.gd").new()
 	world.add_child(sequence)
 	sequence.set_physics_process(false)
 	sequence.crew = [medic]
-	depth = preload("res://world/shared/emergency/MedicalOutdoorDepth.gd").new()
+	depth = preload("res://emergency/MedicalOutdoorDepth.gd").new()
 	depth.sequence = sequence
 	sequence.add_child(depth)
 	await create_timer(.3).timeout
@@ -88,7 +88,7 @@ func run() -> void:
 		combined.save_png("D:/geteco/artifacts/rescue-0913/depth-"+("front" if front else "behind")+".png")
 	medic.hide()
 	sequence.crew = []
-	var cot := preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+	var cot := preload("res://emergency/MedicalStretcher.gd").new()
 	world.add_child(cot)
 	sequence.stretcher = cot
 	for front in [false,true]:

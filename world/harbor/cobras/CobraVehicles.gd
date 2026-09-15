@@ -1,6 +1,6 @@
 extends Node2D
 ## Two reusable production vehicles, not static scenery. No ambient respawn.
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 const COUPE := preload("res://prototypes/living_cast/HarborCoupe.gd")
 const CAMERA := preload("res://systems/DynamicCamera.gd")
 var parking_positions: Dictionary = {}

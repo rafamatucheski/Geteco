@@ -10,7 +10,7 @@ const PERSONAL_SPACE := 32.0
 const CALL_DURATION := 5.0
 var ring_offset := Vector2.INF
 var calls_for_help := true
-var navigation := preload("res://ResponderNavigation.gd").new()
+var navigation := preload("res://emergency/ResponderNavigation.gd").new()
 var _physics := true
 var _phone: MeshInstance3D
 var _arm: Node3D

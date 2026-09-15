@@ -16,7 +16,7 @@ func run() -> void:
 	var player := CharacterBody2D.new()
 	player.add_to_group("player")
 	world.add_child(player)
-	var bike = preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world, "EscapeBike", Vector2(0, 100), 0, "bike_sport", 0)
+	var bike = preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world, "EscapeBike", Vector2(0, 100), 0, "bike_sport", 0)
 	bike.set_physics_process(false)
 	bike.is_driven_by_player = true
 	check(wanted.get_suspect_actor() == bike, "Pursuit tracks the production motorcycle while ridden")

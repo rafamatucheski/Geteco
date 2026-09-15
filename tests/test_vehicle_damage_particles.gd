@@ -33,7 +33,7 @@ func run() -> void:
 	var player_car = load("res://cars/traffic/SavedPlayerCar.tscn").instantiate()
 	world.add_child(player_car)
 	player_car.position = Vector2(320,220)
-	var police = load("res://EmergencyVehicle.tscn").instantiate()
+	var police = load("res://emergency/EmergencyVehicle.tscn").instantiate()
 	world.add_child(police)
 	police.position = Vector2(470,220)
 	for car in [traffic, player_car, police]:

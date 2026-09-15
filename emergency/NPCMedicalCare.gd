@@ -261,7 +261,7 @@ func _can_observe(candidate: CharacterBody2D, patient: Node2D) -> bool:
 	return candidate.get_world_2d().direct_space_state.intersect_ray(sight).is_empty()
 
 func _add_observer(candidate: CharacterBody2D, patient: CharacterBody2D, incident: Dictionary, caller: bool) -> Node:
-	var response := preload("res://world/shared/emergency/MedicalWitness.gd").new()
+	var response := preload("res://emergency/MedicalWitness.gd").new()
 	response.actor = candidate
 	response.patient = patient
 	response.calls_for_help = caller
@@ -286,7 +286,7 @@ func _gather_observers(patient: CharacterBody2D, incident: Dictionary) -> void:
 func _nearest_director(patient: Node2D) -> Node:
 	var address := patient
 	if patient.get("is_dead") == true:
-		address = preload("res://world/shared/emergency/CoronerInteriorAccess.gd").target_for(patient)
+		address = preload("res://emergency/CoronerInteriorAccess.gd").target_for(patient)
 		if address == null: return null
 	var best: Node
 	var distance := INF

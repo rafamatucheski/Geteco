@@ -6,7 +6,7 @@ const PROPERTY_SCRIPT := preload("res://world/harbor/residences/ResidencePropert
 const INTERIOR_SCRIPT := preload("res://world/harbor/residences/ResidenceInterior.gd")
 const MENU_SCRIPT := preload("res://world/harbor/residences/ResidenceMenu.gd")
 const LOADOUT := preload("res://world/harbor/monaliza/PersonalLoadout.gd")
-const VEHICLE_FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const VEHICLE_FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 
 # As duas primeiras coordenadas correspondem às áreas marcadas pelo usuário no
 # mapa do Porto; a terceira aproveita a frente residencial já autorada ao norte.

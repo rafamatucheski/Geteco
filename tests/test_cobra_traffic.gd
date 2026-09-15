@@ -1,6 +1,6 @@
 extends SceneTree
 ## Production-authored network; only destination choices and initial spawn are fixtures.
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 const LIFE := preload("res://world/harbor/HarborLife.gd")
 var failures: Array[String] = []
 

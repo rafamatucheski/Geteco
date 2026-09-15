@@ -260,7 +260,7 @@ func _recover_cargo(key: String) -> void:
 	if record.has("room_path"):
 		parent = scene.get_node_or_null(record.room_path)
 		if parent == null: return
-	var bag := preload("res://world/shared/emergency/CoronerRecoveryBag.gd").new()
+	var bag := preload("res://emergency/CoronerRecoveryBag.gd").new()
 	bag.set_meta("coroner_identity", key)
 	bag.hide()
 	parent.add_child(bag)

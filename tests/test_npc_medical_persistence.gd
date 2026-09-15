@@ -28,7 +28,7 @@ func run() -> void:
 	var worker := Unit.new()
 	worker.hearse = unit
 	world.add_child(worker)
-	for resource in ["res://AnimatedPedestrian3D.gd", "res://world/harbor/HarborDockWorker.gd", "res://world/mountain_pass/WinterResident.gd", "res://world/harbor/cemetery/CemeteryKeeper.gd", "res://police/PoliceOfficer.tscn", "res://Firefighter.tscn", "res://Paramedic.tscn", "res://Mortician.tscn", "res://CarjackedDriver.tscn"]:
+	for resource in ["res://AnimatedPedestrian3D.gd", "res://world/harbor/HarborDockWorker.gd", "res://world/mountain_pass/WinterResident.gd", "res://world/harbor/cemetery/CemeteryKeeper.gd", "res://police/PoliceOfficer.tscn", "res://emergency/Firefighter.tscn", "res://emergency/Paramedic.tscn", "res://emergency/Mortician.tscn", "res://CarjackedDriver.tscn"]:
 		var loaded = load(resource)
 		var actor = loaded.instantiate() if loaded is PackedScene else loaded.new()
 		actor.name = "Resident_" + str(resource.hash())

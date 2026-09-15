@@ -1,4 +1,4 @@
-extends "res://ResponderNavigation.gd"
+extends "res://emergency/ResponderNavigation.gd"
 ## Time-sliced full-team clearance used before choosing a parking pose.
 ## The probe never renders or collides; the future ambulance is an analytic
 ## solid in every swept edge, while all other solids come from live physics.

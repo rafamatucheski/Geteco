@@ -29,7 +29,7 @@ func run() -> void:
 	if OS.get_cmdline_user_args().has("--emergency-only"):
 		buses.clear()
 		for kind in 5:
-			var emergency := preload("res://EmergencyVehicle.tscn").instantiate() as CharacterBody2D
+			var emergency := preload("res://emergency/EmergencyVehicle.tscn").instantiate() as CharacterBody2D
 			emergency.type = mini(kind,3)
 			if kind == 4:
 				emergency.type = 0

@@ -23,11 +23,11 @@ func run() -> void:
 	root.add_child(world)
 	current_scene = world
 	root.get_node("WantedManager").set_process(false)
-	var medic = preload("res://Paramedic.gd").new()
+	var medic = preload("res://emergency/Paramedic.gd").new()
 	medic.position = Vector2(100, 0)
 	world.add_child(medic)
 	medic.set_physics_process(false)
-	var zone := preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").new()
+	var zone := preload("res://emergency/MedicalRescueWorkZone.gd").new()
 	world.add_child(zone)
 	zone.set_physics_process(false)
 	zone.collision_layer = 2

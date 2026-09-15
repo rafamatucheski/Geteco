@@ -1,7 +1,7 @@
 class_name AuthoredDocksParking
 extends Node2D
 
-const MODERN_TRAFFIC := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const MODERN_TRAFFIC := preload("res://emergency/ModernTrafficFactory.gd")
 const PARKING_BOUNDS := Rect2(132, 1084, 272, 78)
 const ALLEY_BOUNDS := Rect2(118, 1028, 566, 44)
 const CAR_SIZE_AFTER_ROTATION := Vector2(34, 76)

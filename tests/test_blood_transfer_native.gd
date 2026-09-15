@@ -1,5 +1,5 @@
 extends SceneTree
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func check(value: bool, message: String) -> void:
@@ -17,7 +17,7 @@ func run() -> void:
 	var person := preload("res://AnimatedPedestrian3D.gd").new()
 	person.position = Vector2(80, 400)
 	world.add_child(person)
-	var medic := load("res://Paramedic.tscn").instantiate() as Node2D
+	var medic := load("res://emergency/Paramedic.tscn").instantiate() as Node2D
 	medic.position = Vector2(80, 550)
 	world.add_child(medic)
 	var actors: Array[Node2D] = [car, bike, person, medic]

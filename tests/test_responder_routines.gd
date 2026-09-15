@@ -137,7 +137,7 @@ func _run() -> void:
 		incident.queue_free()
 		await physics_frame
 	# O bloqueio não pode contar como atendimento à distância.
-	var fireman = load("res://Firefighter.tscn").instantiate()
+	var fireman = load("res://emergency/Firefighter.tscn").instantiate()
 	scene.add_child(fireman)
 	fireman.set_physics_process(false)
 	var fire := Incident.new()

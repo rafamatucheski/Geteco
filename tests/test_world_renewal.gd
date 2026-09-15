@@ -47,7 +47,7 @@ func run() -> void:
 	check(citizen.global_position == Vector2(3000,3000), "Replacement uses an offscreen authored location")
 	check(not care.records().has(key), "Completed cleanup removes persistent casualty")
 	# A dispatched unit cannot reserve a body forever after the crew dies.
-	var unit = load("res://EmergencyVehicle.tscn").instantiate()
+	var unit = load("res://emergency/EmergencyVehicle.tscn").instantiate()
 	world.add_child(unit)
 	unit.activate()
 	unit.set_physics_process(false)

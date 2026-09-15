@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://world/shared/emergency/EmergencyDepotDirector.gd" id="1_director"]
-[ext_resource type="Script" path="res://world/shared/emergency/EmergencyDepotMarker.gd" id="2_depot"]
-[ext_resource type="Script" path="res://world/shared/emergency/DepotGate.gd" id="3_gate"]
-[ext_resource type="Script" path="res://world/shared/emergency/EmergencyStandbyPoint.gd" id="4_standby"]
+[ext_resource type="Script" path="res://emergency/EmergencyDepotDirector.gd" id="1_director"]
+[ext_resource type="Script" path="res://emergency/EmergencyDepotMarker.gd" id="2_depot"]
+[ext_resource type="Script" path="res://emergency/DepotGate.gd" id="3_gate"]
+[ext_resource type="Script" path="res://emergency/EmergencyStandbyPoint.gd" id="4_standby"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_standby"]
 size = Vector2(62, 28)

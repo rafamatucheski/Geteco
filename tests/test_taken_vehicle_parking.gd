@@ -1,6 +1,6 @@
 extends SceneTree
 
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY = preload("res://emergency/ModernTrafficFactory.gd")
 var failures := 0
 
 func _initialize() -> void: run.call_deferred()

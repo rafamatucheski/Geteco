@@ -45,7 +45,7 @@ func _approach_rescue() -> void:
 	if not is_instance_valid(approaching_bus): return
 	approaching_bus.advance_on_lane(Engine.time_scale / Engine.physics_ticks_per_second)
 	approaching_bus._update_3d_orientation(Engine.time_scale / Engine.physics_ticks_per_second)
-	var overlapping := preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").blocks_hull(approaching_bus, approaching_bus.collision.shape, approaching_bus.collision.global_transform)
+	var overlapping := preload("res://emergency/MedicalRescueWorkZone.gd").blocks_hull(approaching_bus, approaching_bus.collision.shape, approaching_bus.collision.global_transform)
 	bus_clear = bus_clear and not overlapping
 	if not sequence.hospital_delivery and sequence.phase != "transport" and approaching_bus.global_position.x < 500 and approaching_bus._lane_motion_speed < 2:
 		bus_stopped = true

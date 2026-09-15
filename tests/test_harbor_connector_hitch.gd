@@ -3,7 +3,7 @@ extends SceneTree
 const LAYOUT := preload("res://world/harbor/HarborRoadLayout.gd")
 const NETWORK := preload("res://world/harbor/HarborRoadNetwork.gd")
 const LIFE := preload("res://world/harbor/HarborLife.gd")
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 
 
 func _initialize() -> void:

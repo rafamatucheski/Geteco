@@ -61,7 +61,7 @@ func run() -> void:
 		var sequence: Node = unit.get_meta("medical_sequence")
 		sequence.set_physics_process(false)
 		check(care.begin_carry(patient,unit,sequence),"Patient enters real transport ownership")
-		sequence.stretcher = load("res://world/shared/emergency/MedicalStretcher.gd").new()
+		sequence.stretcher = load("res://emergency/MedicalStretcher.gd").new()
 		world.add_child(sequence.stretcher)
 		sequence.stretcher.load_patient(patient)
 		sequence.stretcher.hide()

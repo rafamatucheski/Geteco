@@ -57,7 +57,7 @@ func run() -> void:
 	actor._update_equipped_weapon_3d_mesh()
 	var state = actor.ensure_motorcycle_helmet()
 	state.set_process(false)
-	var bike = preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"Moto",Vector2.ZERO,0,"bike_sport",0,Color("2165d9"))
+	var bike = preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"Moto",Vector2.ZERO,0,"bike_sport",0,Color("2165d9"))
 	bike.ensure_presentation()
 	bike.set_physics_process(false)
 	bike.enter_vehicle(actor)

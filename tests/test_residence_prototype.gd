@@ -1,6 +1,6 @@
 extends SceneTree
 
-const VEHICLE_FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const VEHICLE_FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 
 

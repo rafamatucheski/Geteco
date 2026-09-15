@@ -67,5 +67,5 @@ func tick(delta: float) -> void:
 		stock.append(weakref(vehicle))
 		# Keep the authored node name for its replacement, without losing the car.
 		vehicle.name = slot_name+"_Taken_"+str(vehicle.get_instance_id())
-	vehicle = preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(parent,slot_name,position,rotation,archetype,visual_index,paint,false)
+	vehicle = preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(parent,slot_name,position,rotation,archetype,visual_index,paint,false)
 	elapsed = 0

@@ -141,7 +141,7 @@ func tick(unit: CharacterBody2D, patient: Node2D, delta: float) -> bool:
 			unit.set_meta("ambulance_parking_exceptional", candidate.exceptional)
 			if not stationary:
 				if is_instance_valid(reservation): reservation.cancel()
-				reservation = preload("res://world/shared/emergency/AmbulanceManeuverReservation.gd").new()
+				reservation = preload("res://emergency/AmbulanceManeuverReservation.gd").new()
 				unit.get_parent().add_child(reservation)
 				reservation.configure(unit)
 				reservation.follow(trajectory,headings,cursor)
@@ -297,7 +297,7 @@ func _walking_route(unit: CharacterBody2D, patient: Node2D, pose: Transform2D, s
 			_clear_walk_search()
 			return route
 		if not _walk_search:
-			_walk_search = preload("res://world/shared/emergency/MedicalParkingRouteSearch.gd").new()
+			_walk_search = preload("res://emergency/MedicalParkingRouteSearch.gd").new()
 			_walk_search.configure(unit,patient,pose,start,_team_radius(unit),_half_size(unit))
 		var path: Array[Vector2] = _walk_search.route(goal)
 		_walk_pending = _walk_search._search_pending

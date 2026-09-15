@@ -1,19 +1,19 @@
 extends CharacterBody2D
 
-const CREW_TRANSITION := preload("res://EmergencyCrewTransition.gd")
+const CREW_TRANSITION := preload("res://emergency/EmergencyCrewTransition.gd")
 const CREW_DOOR_SCRIPT := preload("res://cars/VehicleDoorVisual.gd")
 const LANE_ROUTER := preload("res://geodata/roads/EmergencyLaneRouter.gd")
 var _lane_router := LANE_ROUTER.new()
-var _hospital_arrival := preload("res://world/shared/emergency/HospitalArrival.gd").new()
-var _ambulance_approach := preload("res://world/shared/emergency/AmbulanceApproach.gd").new()
-var _traffic_passage := preload("res://world/shared/emergency/AmbulanceTrafficPassage.gd").new()
-var _depot_driveway := preload("res://world/shared/emergency/DepotDriveway.gd").new()
+var _hospital_arrival := preload("res://emergency/HospitalArrival.gd").new()
+var _ambulance_approach := preload("res://emergency/AmbulanceApproach.gd").new()
+var _traffic_passage := preload("res://emergency/AmbulanceTrafficPassage.gd").new()
+var _depot_driveway := preload("res://emergency/DepotDriveway.gd").new()
 var service_targets: Array[Node2D] = []
 var _coroner_stage := ""
 var _coroner_wait := 0.0
 
 func enter_vehicle(actor: CharacterBody2D) -> void:
-	preload("res://world/shared/emergency/EmergencyVehicleTheft.gd").enter(self,actor)
+	preload("res://emergency/EmergencyVehicleTheft.gd").enter(self,actor)
 
 func add_service_target(subject: Node2D) -> void:
 	if is_instance_valid(subject) and not service_targets.has(subject):
@@ -254,7 +254,7 @@ func _ready():
 func ensure_presentation() -> void:
 	if visual_3d != null:
 		return
-	visual_3d = preload("res://EmergencyVehicleVisual3D.gd").new()
+	visual_3d = preload("res://emergency/EmergencyVehicleVisual3D.gd").new()
 	add_child(visual_3d)
 	visual_3d.configure(self, type)
 	body_model = visual_3d.model
@@ -543,7 +543,7 @@ func _explode() -> void:
 		
 	# 7. Onda de choque: danifica outros carros e arremessa pedestres
 	preload("res://guns/combat/VehicleBlast.gd").apply(self)
-	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
+	preload("res://emergency/VehicleResidualFire.gd").start(self)
 					
 	# WorldRenewal returns the wreck to the pool even in sleeping regions.
 
@@ -1355,7 +1355,7 @@ func on_officer_embarked(officer: Node2D) -> void:
 	returned_officers += 1
 
 func _deploy_paramedics() -> void:
-	var p_scene = load("res://Paramedic.tscn")
+	var p_scene = load("res://emergency/Paramedic.tscn")
 	if p_scene:
 		deployed_paramedics = 2
 		returned_paramedics = 0
@@ -1384,7 +1384,7 @@ func _deploy_paramedics() -> void:
 		_response_crew.append(p2)
 		play_crew_door(1.0, 8.0)
 		if is_instance_valid(target) and target is CharacterBody2D and get_node_or_null("/root/NPCMedicalCare"):
-			var sequence := preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+			var sequence := preload("res://emergency/MedicalRescueSequence.gd").new()
 			add_child(sequence)
 			sequence.setup(self,target,[p1,p2])
 
@@ -1399,7 +1399,7 @@ func on_paramedic_embarked(_p: Node2D) -> void:
 		_update_response_audio()
 
 func _deploy_firefighters() -> void:
-	var ff_scene = load("res://Firefighter.tscn")
+	var ff_scene = load("res://emergency/Firefighter.tscn")
 	if ff_scene:
 		deployed_firefighters = 2
 		returned_firefighters = 0
@@ -1438,7 +1438,7 @@ func on_firefighter_embarked(_ff: Node2D) -> void:
 			siren_audio.stop()
 
 func _deploy_morticians() -> void:
-	var m_scene = load("res://Mortician.tscn")
+	var m_scene = load("res://emergency/Mortician.tscn")
 	if m_scene:
 		deployed_morticians = 2
 		returned_morticians = 0
@@ -1471,7 +1471,7 @@ func _deploy_morticians() -> void:
 ## (target is null here on purpose -- there is no living victim on this
 ## trip, only the cemetery plot; see Mortician.gd's is_burial_trip).
 func _deploy_morticians_for_burial() -> void:
-	var m_scene = load("res://Mortician.tscn")
+	var m_scene = load("res://emergency/Mortician.tscn")
 	if m_scene:
 		deployed_morticians = 1
 		returned_morticians = 0

@@ -158,6 +158,10 @@ func sync_knuckles() -> void:
 func _is_gripping(side: String) -> bool:
 	if player.active_weapon_id == "knuckles": return true
 	if side == "Right" and player.active_weapon_id == "grenade" and not player.current_gun_mesh.visible: return false
+	# A holstered pistol/magnum is one-handed; the off-hand only closes into
+	# a grip once it actually joins the gun while aiming or firing.
+	if side == "Left" and player.active_weapon_id in ["pistol", "magnum"]:
+		return player.combat_pose.is_engaged
 	return player.active_weapon_id != "fists" and (side == "Right" or (not player.is_reloading() and player.combat_pose.SUPPORT_GRIPS.has(player.active_weapon_id)))
 
 func _cross_grip(side: String) -> bool:

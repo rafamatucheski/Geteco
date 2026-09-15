@@ -2,7 +2,7 @@ extends Node2D
 const VIEW = preload("res://world/mountain_pass/MountainStaticModelView.gd")
 const VEHICLE_VIEW = preload("res://systems/interiors/InteriorVehiclePresentation.gd")
 const ACTOR_VIEW = preload("res://systems/interiors/InteriorActorPresentation.gd")
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY = preload("res://emergency/ModernTrafficFactory.gd")
 const SECURITY = preload("res://world/harbor/HarborPortSecurity.gd")
 const EXTERIOR := Vector2(5515,5870)
 const ORIGIN := Vector2(30600,20000)

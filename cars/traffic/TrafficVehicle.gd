@@ -135,7 +135,7 @@ func ensure_presentation() -> void:
 	_setup_3d_model(spec, _pending_color)
 var body_viewport: SubViewport = null
 var body_model: Node3D = null
-var lightbar_3d := preload("res://world/shared/emergency/EmergencyLightbar3D.gd").new()
+var lightbar_3d := preload("res://emergency/EmergencyLightbar3D.gd").new()
 var wheel_rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 var wheels: Array[Node3D] = []
 var spinners: Array[Node3D] = []
@@ -587,7 +587,7 @@ func _explode() -> void:
 		
 	# 8. Onda de choque
 	preload("res://guns/combat/VehicleBlast.gd").apply(self)
-	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
+	preload("res://emergency/VehicleResidualFire.gd").start(self)
 	_start_decay()
 
 var _fire_truck_dispatched: bool = false
@@ -772,7 +772,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	_pending_spec = {}
 	active_archetype_id = archetype_id
 	if collision: collision.position = Vector2.ZERO
-	preload("res://world/shared/emergency/VehicleWaterCannon.gd").sync_vehicle(self, archetype_id == "rescue_pumper")
+	preload("res://emergency/VehicleWaterCannon.gd").sync_vehicle(self, archetype_id == "rescue_pumper")
 	var spec: Dictionary = VehicleCatalog.get_vehicle_spec(archetype_id)
 	if spec.is_empty(): return
 	is_motorcycle = spec.get("vehicle_kind", "car") == "motorcycle"
@@ -1975,7 +1975,7 @@ func advance_on_lane(delta: float) -> void:
 		# Antecipar a curva evita entrar no hairpin com a velocidade da reta.
 		target_lane_speed = minf(target_lane_speed, sqrt(55.0 * target_length / maxf(turn,0.01)))
 	var maximum_advance := INF
-	var rescue_clearance := preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").lane_clearance(self, path, lane_follow, _lane_braking_rate(), maxf(speed, _lane_motion_speed))
+	var rescue_clearance := preload("res://emergency/MedicalRescueWorkZone.gd").lane_clearance(self, path, lane_follow, _lane_braking_rate(), maxf(speed, _lane_motion_speed))
 	maximum_advance = minf(maximum_advance, rescue_clearance)
 	target_lane_speed = minf(target_lane_speed, sqrt(2.0 * _lane_braking_rate() * rescue_clearance))
 	# Authored loading bays can hold traffic at an exact offset on its own lane.

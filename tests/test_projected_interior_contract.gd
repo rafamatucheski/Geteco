@@ -46,7 +46,7 @@ func run() -> void:
 	camera.name = "Camera"
 	player.add_child(camera)
 	world.add_child(player)
-	var npc = load("res://Mortician.tscn").instantiate() if coroner else load("res://AnimatedPedestrian3D.gd").new()
+	var npc = load("res://emergency/Mortician.tscn").instantiate() if coroner else load("res://AnimatedPedestrian3D.gd").new()
 	world.add_child(npc)
 	for actor in [player, npc]:
 		actor.set_physics_process(false)
@@ -65,7 +65,7 @@ func run() -> void:
 	await physics_frame
 	await physics_frame
 	if coroner:
-		var bag := preload("res://world/shared/emergency/CoronerRecoveryBag.gd").new()
+		var bag := preload("res://emergency/CoronerRecoveryBag.gd").new()
 		bag.name = "CoronerRecoveryBag"
 		cabin.add_child(bag)
 		bag.place(cabin.to_global(cabin.project_floor(Vector2(0,.4))))

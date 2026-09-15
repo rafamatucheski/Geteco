@@ -34,7 +34,7 @@ func run() -> void:
 	medical.witness_called(victim)
 	var care := root.get_node("CoronerCare")
 	var key: String = care.identity(victim)
-	var address: Node2D = preload("res://world/shared/emergency/CoronerInteriorAccess.gd").target_for(victim)
+	var address: Node2D = preload("res://emergency/CoronerInteriorAccess.gd").target_for(victim)
 	check(address!=null and address.global_position.distance_to(door.global_position)<50,"Service address is the exterior door, not the remote interior")
 	var director := EmergencyDepotDirector.new()
 	world.add_child(director)

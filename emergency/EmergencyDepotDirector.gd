@@ -29,7 +29,7 @@ func request_dispatch(service_key: String, target: Node2D, prefer_standby := tru
 	if not is_instance_valid(target) or not is_inside_tree() or not can_process(): return null
 	if service_key in ["fire", "coroner"]:
 		if not is_instance_valid(_service_incidents):
-			_service_incidents = preload("res://world/shared/emergency/ServiceIncidents.gd").new()
+			_service_incidents = preload("res://emergency/ServiceIncidents.gd").new()
 			_service_incidents.director = self
 			add_child(_service_incidents)
 		return _service_incidents.request(service_key, target)

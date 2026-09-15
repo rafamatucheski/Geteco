@@ -258,7 +258,7 @@ func _dispatch_police():
 		police = pool.get_vehicle("police")
 		if police == null: return # The finite pool includes units returning from a search.
 	if police == null:
-		var em_scene = load("res://EmergencyVehicle.tscn") as PackedScene
+		var em_scene = load("res://emergency/EmergencyVehicle.tscn") as PackedScene
 		if em_scene:
 			police = em_scene.instantiate()
 			get_tree().current_scene.add_child(police)
@@ -343,6 +343,27 @@ func reset_crime():
 	_contact_age = CONTACT_GRACE + 1.0
 	_has_known_position = false
 	stars_changed.emit(0)
+
+func stand_down_police() -> void:
+	reset_crime()
+	# Policiais a pé cessam fogo e iniciam retorno à viatura
+	for officer in get_tree().get_nodes_in_group("police_officer"):
+		if is_instance_valid(officer) and not officer.is_dead:
+			if officer.has_method("stand_down"):
+				officer.stand_down()
+			else:
+				officer.target = null
+				officer.velocity = Vector2.ZERO
+
+	# Viaturas de polícia desligam sirenes e iniciam retorno
+	for em in get_tree().get_nodes_in_group("emergency_vehicle"):
+		if is_instance_valid(em) and em.get("type") == 0:
+			if em.has_method("stand_down"):
+				em.stand_down()
+			else:
+				em.target = null
+				em.set("is_returning_to_base", true)
+
 
 func dismiss_all_police():
 	reset_crime()

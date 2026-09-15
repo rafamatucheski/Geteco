@@ -169,7 +169,7 @@ func exterior():
   check(not body.test_move(body.global_transform,Vector2(0,-40)),"Garage entry apron stays free")
   body.global_position=Vector2(1450,65)
   check(body.test_move(body.global_transform,Vector2(800,0)),"Port warehouse swept crossing blocked")
- var car=preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"PortGarageApproach",portal.global_position+Vector2(220,0),PI,"porto_rosso",0)
+ var car=preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"PortGarageApproach",portal.global_position+Vector2(220,0),PI,"porto_rosso",0)
  car.ensure_presentation()
  car.set_physics_process(false)
  for i in 2: await physics_frame

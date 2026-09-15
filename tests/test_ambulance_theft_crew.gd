@@ -21,7 +21,7 @@ func run() -> void:
 		player.add_child(camera)
 		world.add_child(player)
 		player.set_physics_process(false)
-		var unit = load("res://EmergencyVehicle.tscn").instantiate()
+		var unit = load("res://emergency/EmergencyVehicle.tscn").instantiate()
 		unit.type = 1
 		unit.position = Vector2(2000 * aboard, 0)
 		world.add_child(unit)

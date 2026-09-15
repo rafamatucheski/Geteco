@@ -23,7 +23,7 @@ func run() -> void:
 	var state = actor.ensure_motorcycle_helmet()
 	state.set_process(false)
 	for id in ["bike_sport","bike_cruiser","bike_urban"]:
-		var bike = preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,id,Vector2(100,100),0,id,0)
+		var bike = preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,id,Vector2(100,100),0,id,0)
 		bike.set_physics_process(false)
 		bike.ensure_presentation()
 		state.worn = false

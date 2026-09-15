@@ -47,13 +47,13 @@ func _run() -> void:
 	var parking = load("res://world/harbor/HarborPatrolParking.gd").new()
 	world.add_child(parking)
 	check(parking.get_node("PatrolParked1").active_archetype_id == "police_cruiser" and parking.get_node("PatrolParked2").active_archetype_id == "police_suv", "Precinct has one sedan and one SUV in its two existing bays")
-	var standby = load("res://world/shared/emergency/EmergencyStandbyPoint.gd").new()
+	var standby = load("res://emergency/EmergencyStandbyPoint.gd").new()
 	for i in 20:
 		standby.standby_id = "suv_test_%d" % i
 		if posmod(standby.standby_id.hash(),3) == 0: break
 	world.add_child(standby)
 	await process_frame
-	var director = load("res://world/shared/emergency/EmergencyDepotDirector.gd").new()
+	var director = load("res://emergency/EmergencyDepotDirector.gd").new()
 	world.add_child(director)
 	check(director._claim_standby("police","police_cruiser") == null and standby.available, "Sedan cannot consume a parked SUV")
 	check(director._claim_standby("police","police_suv") == standby, "SUV dispatch claims a matching standby body")

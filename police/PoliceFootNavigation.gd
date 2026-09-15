@@ -1,4 +1,4 @@
-extends "res://ResponderNavigation.gd"
+extends "res://emergency/ResponderNavigation.gd"
 ## Follow pedestrian passage corners before asking the bounded local planner
 ## to avoid cars/props. Never treat the straight line through a block as a road.
 var passage: Array[Vector2] = []

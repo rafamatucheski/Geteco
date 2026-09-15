@@ -1,5 +1,5 @@
 extends SceneTree
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY = preload("res://emergency/ModernTrafficFactory.gd")
 const IDS = ["cargo_flatbed_truck", "american_dump_truck", "american_tanker_truck", "boxrunner"]
 var failures := 0
 

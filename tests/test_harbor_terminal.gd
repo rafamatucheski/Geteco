@@ -25,7 +25,7 @@ func run() -> void:
 		quit(1)
 		return
 	check(terminal.bus.is_3d_vehicle and terminal.bus.visual.visible, "Terminal bus uses the native 3D renderer")
-	check(not preload("res://world/shared/emergency/ModernTrafficFactory.gd")._position_is_clear(self, terminal.bus.global_position), "Terminal berth must be reserved during traffic spawning")
+	check(not preload("res://emergency/ModernTrafficFactory.gd")._position_is_clear(self, terminal.bus.global_position), "Terminal berth must be reserved during traffic spawning")
 	var initial_hull := PhysicsShapeQueryParameters2D.new()
 	initial_hull.shape = terminal.bus.collision.shape
 	initial_hull.transform = terminal.bus.collision.global_transform

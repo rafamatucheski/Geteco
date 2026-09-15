@@ -2,7 +2,7 @@ extends Node
 ## A finite queue of local incidents; the pool remains the hard fleet limit.
 const RADIUS := 550.0
 const MAX_INCIDENTS := 24
-const SUPPRESSION := preload("res://world/shared/emergency/FireSuppression.gd")
+const SUPPRESSION := preload("res://emergency/FireSuppression.gd")
 var incidents: Array[Dictionary] = []
 var director: Node
 var elapsed := 0.0
@@ -13,7 +13,7 @@ func request(service: String, target: Node2D) -> Node:
 	if service == "coroner" and target is CharacterBody2D:
 		get_node("/root/NPCMedicalCare").report_injury(target)
 	if service == "coroner":
-		target = preload("res://world/shared/emergency/CoronerInteriorAccess.gd").target_for(target)
+		target = preload("res://emergency/CoronerInteriorAccess.gd").target_for(target)
 		if target == null: return null
 	if target.has_meta("explosion_remains"):
 		target = target.get_meta("explosion_remains") as Node2D

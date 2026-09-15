@@ -1,5 +1,5 @@
 extends SceneTree
-const NAV := preload("res://ResponderNavigation.gd")
+const NAV := preload("res://emergency/ResponderNavigation.gd")
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	var actor := CharacterBody2D.new()

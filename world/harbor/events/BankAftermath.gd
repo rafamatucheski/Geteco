@@ -85,7 +85,7 @@ func _post_patrol() -> void:
 			available=true
 			break
 	if not available: return
-	patrol=load("res://EmergencyVehicle.tscn").instantiate()
+	patrol=load("res://emergency/EmergencyVehicle.tscn").instantiate()
 	patrol.type=0
 	patrol.position=parking
 	get_tree().current_scene.add_child(patrol)

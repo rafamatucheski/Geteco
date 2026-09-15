@@ -23,7 +23,7 @@ func run() -> void:
 	camera.position = Vector2(450,250)
 	camera.zoom = Vector2.ONE * 2.0
 	camera.make_current()
-	var factory = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+	var factory = preload("res://emergency/ModernTrafficFactory.gd")
 	var bike = factory.spawn_parked_vehicle(world,"Bike",Vector2(295,255),0,"bike_cruiser",0,Color("d97925"))
 	bike.ensure_presentation()
 	bike.set_process(false)

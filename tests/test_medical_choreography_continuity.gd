@@ -88,8 +88,8 @@ func run() -> void:
 		for point in [Vector2(-250,0), Vector2(-180,-60), Vector2(-180,-200), Vector2(500,-200), Vector2(600,-100), Vector2(500,0), Vector2(-250,0)]:
 			lane.curve.add_point(point)
 	world.add_child(lane)
-	var director: Node2D = preload("res://world/harbor/HarborEmergencyDirector.gd").new() if reserve_bay else preload("res://world/shared/emergency/EmergencyDepotDirector.gd").new()
-	var depot := preload("res://world/shared/emergency/EmergencyDepotMarker.gd").new()
+	var director: Node2D = preload("res://world/harbor/HarborEmergencyDirector.gd").new() if reserve_bay else preload("res://emergency/EmergencyDepotDirector.gd").new()
+	var depot := preload("res://emergency/EmergencyDepotMarker.gd").new()
 	depot.service_key = "ambulance"
 	depot.depot_id = "test_hospital"
 	depot.position = Vector2(-250,0)
@@ -194,7 +194,7 @@ func run() -> void:
 	check(phases.has("hospital_inside") and phases.has("parked"), "Crew wheels the patient inside and concludes the hospital handoff")
 	var rail := RailGate.new()
 	world.add_child(rail)
-	var rail_sequence = preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+	var rail_sequence = preload("res://emergency/MedicalRescueSequence.gd").new()
 	world.add_child(rail_sequence)
 	rail_sequence.set_physics_process(false)
 	rail_sequence.stretcher = CharacterBody2D.new()

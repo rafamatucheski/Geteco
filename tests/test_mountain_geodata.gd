@@ -97,7 +97,7 @@ func run() -> void:
 	walker_body.collision_layer = 0
 	walker_body.collision_mask = 3
 	world.add_child(walker_body)
-	var navigation := preload("res://ResponderNavigation.gd").new()
+	var navigation := preload("res://emergency/ResponderNavigation.gd").new()
 	for route_index in routes.size():
 		var route: Array = Array(routes[route_index])
 		for segment in range(route.size()-1):

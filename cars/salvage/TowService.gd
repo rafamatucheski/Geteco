@@ -1,7 +1,7 @@
 extends Node
 ## Mantém veículo, carga e encomenda no mesmo mundo e no save da campanha.
 const JOBS := preload("res://cars/salvage/TowJobs.gd")
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 var yard: Node2D
 var truck: Node2D
 var cargo: Node2D

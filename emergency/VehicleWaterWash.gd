@@ -14,7 +14,7 @@ static func apply(vehicle: Node) -> void:
 			skid.default_color = Color(0.1, 0.1, 0.1, 0.5)
 	var wet := vehicle.get_node_or_null("WaterWash")
 	if wet == null:
-		wet = load("res://world/shared/emergency/VehicleWaterWash.gd").new()
+		wet = load("res://emergency/VehicleWaterWash.gd").new()
 		wet.name = "WaterWash"
 		vehicle.add_child(wet)
 	wet.wetness = 1.0

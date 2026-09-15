@@ -62,7 +62,7 @@ func run() -> void:
 	reserve.target = patient
 	reserve._deploy_paramedics()
 	var sequence: Node = reserve.get_meta("medical_sequence")
-	sequence.stretcher = preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+	sequence.stretcher = preload("res://emergency/MedicalStretcher.gd").new()
 	world.add_child(sequence.stretcher)
 	sequence.stretcher.global_position = reserve.to_global(Vector2(-18, 0))
 	sequence.stretcher.heading = 0.0

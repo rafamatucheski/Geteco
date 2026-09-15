@@ -68,7 +68,7 @@ func run() -> void:
 	camera.zoom=Vector2.ONE*.88
 	camera.make_current()
 	await process_frame
-	var factory=load("res://world/shared/emergency/ModernTrafficFactory.gd")
+	var factory=load("res://emergency/ModernTrafficFactory.gd")
 	var car: Node2D=factory.spawn_parked_vehicle(world,"SalvageDelivery",yard.to_global(yard.dock),PI*.5,"union_sedan",0,Color("aa4035"))
 	car.ensure_presentation()
 	var balance: int=player.money

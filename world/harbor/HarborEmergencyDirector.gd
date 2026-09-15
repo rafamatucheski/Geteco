@@ -1,4 +1,4 @@
-extends "res://world/shared/emergency/EmergencyDepotDirector.gd"
+extends "res://emergency/EmergencyDepotDirector.gd"
 
 ## Harbor adapter for the existing finite emergency pool. Interior fire trucks
 ## remain independently playable; dispatch never creates or borrows those trucks.
@@ -208,7 +208,7 @@ func get_medical_return_position(unit: Node2D) -> Vector2:
 	# fixed, but release an obstructed destination before asking for another bay.
 	if _medical_slots.has(unit_id) and not bool(unit.get_meta("hospital_arrived",false)):
 		var assigned: Vector2 = _medical_slots[unit_id]
-		if not preload("res://world/shared/emergency/HospitalArrival.gd").clear_pose(unit,Transform2D(global_rotation,assigned)):
+		if not preload("res://emergency/HospitalArrival.gd").clear_pose(unit,Transform2D(global_rotation,assigned)):
 			_medical_slots.erase(unit_id)
 	if not _medical_slots.has(unit_id):
 		var assignment: Dictionary = _vehicle_assignments.get(unit_id, {})
@@ -221,7 +221,7 @@ func get_medical_return_position(unit: Node2D) -> Vector2:
 		# parked. Releasing admission never sends another car onto that body.
 		for candidate in [origin, origin+reserve_offset]:
 			if _medical_slots.values().has(candidate): continue
-			if not preload("res://world/shared/emergency/HospitalArrival.gd").clear_pose(unit,Transform2D(global_rotation,candidate)): continue
+			if not preload("res://emergency/HospitalArrival.gd").clear_pose(unit,Transform2D(global_rotation,candidate)): continue
 			_medical_slots[unit_id] = candidate
 			break
 		if not _medical_slots.has(unit_id): return Vector2.INF

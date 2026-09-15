@@ -28,7 +28,7 @@ var fall := preload("res://CharacterFallPresentation.gd").new()
 var burial_identity := ""
 var burial_work := 0.0
 var _burial_point := Vector2.ZERO
-var _burial_navigation := preload("res://ResponderNavigation.gd").new()
+var _burial_navigation := preload("res://emergency/ResponderNavigation.gd").new()
 
 func request_burial(identity: String, point: Vector2) -> bool:
 	if is_dead or sleeping or hostile or not burial_identity.is_empty(): return false

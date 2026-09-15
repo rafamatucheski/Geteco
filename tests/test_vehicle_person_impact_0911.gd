@@ -1,6 +1,6 @@
 extends SceneTree
 const IMPACT = preload("res://guns/combat/VehiclePersonImpact.gd")
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY = preload("res://emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 
 func _initialize() -> void: run.call_deferred()

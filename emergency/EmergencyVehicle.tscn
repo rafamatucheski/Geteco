@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://emergency_uid_1012"]
 
-[ext_resource type="Script" path="res://EmergencyVehicle.gd" id="1_script"]
+[ext_resource type="Script" path="res://emergency/EmergencyVehicle.gd" id="1_script"]
 
 [node name="EmergencyVehicle" type="CharacterBody2D"]
 collision_layer = 2

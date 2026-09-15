@@ -55,14 +55,14 @@ func run() -> void:
 	patient.set_process(false)
 	patient.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	patient.is_gangster = false
-	cot = preload("res://world/shared/emergency/MedicalStretcher.gd").new()
+	cot = preload("res://emergency/MedicalStretcher.gd").new()
 	world.add_child(cot)
 	cot.z_index = 6
 	cot.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	cot.heading = 0.0
 	cot.orient(Vector2.RIGHT)
 	for i in 2:
-		var medic := load("res://Paramedic.tscn").instantiate() as CharacterBody2D
+		var medic := load("res://emergency/Paramedic.tscn").instantiate() as CharacterBody2D
 		world.add_child(medic)
 		medic.set_physics_process(false)
 		medic.set_process(false)

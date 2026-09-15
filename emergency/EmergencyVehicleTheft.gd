@@ -34,7 +34,7 @@ static func enter(source: CharacterBody2D, actor: CharacterBody2D) -> void:
 		paint = source.body_model.paint.albedo_color
 	vehicle.apply_archetype(archetype,paint)
 	if motorcycle:
-		vehicle._setup_3d_model({"model_class":"res://world/shared/emergency/PoliceMotorcycleModel.gd","target_length":42.0,"target_width":22.0},paint)
+		vehicle._setup_3d_model({"model_class":"res://emergency/PoliceMotorcycleModel.gd","target_length":42.0,"target_width":22.0},paint)
 		vehicle.is_police_vehicle = true
 		vehicle.display_name = "Moto da PM"
 	elif source.type == 3:
@@ -70,7 +70,7 @@ static func enter(source: CharacterBody2D, actor: CharacterBody2D) -> void:
 		officer.collision_shape.set_deferred("disabled", false)
 		officer.reset_physics_interpolation()
 	for i in exits.size():
-		var medic: Node2D = medics[i] if i < medics.size() else (load("res://Paramedic.tscn") as PackedScene).instantiate()
+		var medic: Node2D = medics[i] if i < medics.size() else (load("res://emergency/Paramedic.tscn") as PackedScene).instantiate()
 		if not medic.is_inside_tree():
 			medic.crew_side = -1.0 if i == 0 else 1.0
 			world.add_child(medic)

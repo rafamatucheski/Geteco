@@ -3,7 +3,7 @@ extends CharacterBody2D
 
 enum State { DISEMBARK, APPROACH, EXTINGUISH, RETURN, EMBARKING, EMBARKED }
 
-const SUPPRESSION := preload("res://world/shared/emergency/FireSuppression.gd")
+const SUPPRESSION := preload("res://emergency/FireSuppression.gd")
 const POST_REACH := 52.0
 const APPROACH_TIMEOUT := 35.0
 
@@ -357,7 +357,7 @@ func _physics_process(delta: float) -> void:
 					is_moving = true
 				else:
 					velocity = Vector2.ZERO
-					if not preload("res://EmergencyCrewTransition.gd").finish_exit(self, fire_truck, crew_side, delta): return
+					if not preload("res://emergency/EmergencyCrewTransition.gd").finish_exit(self, fire_truck, crew_side, delta): return
 					state = State.APPROACH
 					remove_collision_exception_with(fire_truck)
 		State.APPROACH:
@@ -457,7 +457,7 @@ var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var unstuck_dir_sign: float = 1.0
 
-var movement_navigation := preload("res://ResponderNavigation.gd").new()
+var movement_navigation := preload("res://emergency/ResponderNavigation.gd").new()
 
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
 	var result: Vector2 = movement_navigation.movement(self, dest, move_speed, delta)

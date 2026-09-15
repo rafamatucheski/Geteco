@@ -24,7 +24,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var ambulance := preload("res://EmergencyVehicle.gd").new()
+	var ambulance := preload("res://emergency/EmergencyVehicle.gd").new()
 	ambulance.type = 1
 	world.add_child(ambulance)
 	ambulance.set_physics_process(false)

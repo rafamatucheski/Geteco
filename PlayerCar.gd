@@ -860,7 +860,7 @@ func _explode() -> void:
 		
 	# 8. Onda de choque
 	preload("res://guns/combat/VehicleBlast.gd").apply(self)
-	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
+	preload("res://emergency/VehicleResidualFire.gd").start(self)
 
 var _fire_truck_dispatched: bool = false
 

@@ -40,7 +40,7 @@ var activity_left := 0.0
 var routine_cycle := 0
 var conversation_partner: Node2D
 var travel_time := 0.0
-var _navigation := preload("res://ResponderNavigation.gd").new()
+var _navigation := preload("res://emergency/ResponderNavigation.gd").new()
 var _bench_rest := preload("res://world/mountain_pass/MountainBenchRest.gd").new()
 
 func hear_gunfire(origin: Vector2, end: Vector2) -> void:

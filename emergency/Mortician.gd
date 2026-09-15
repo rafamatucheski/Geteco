@@ -285,7 +285,7 @@ func _physics_process(delta: float) -> void:
 					is_moving = true
 				else:
 					velocity = Vector2.ZERO
-					if not preload("res://EmergencyCrewTransition.gd").finish_exit(self, hearse, crew_side, delta): return
+					if not preload("res://emergency/EmergencyCrewTransition.gd").finish_exit(self, hearse, crew_side, delta): return
 					state = State.APPROACH
 					remove_collision_exception_with(hearse)
 		State.APPROACH:
@@ -431,7 +431,7 @@ func _physics_process(delta: float) -> void:
 var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 
-var movement_navigation := preload("res://ResponderNavigation.gd").new()
+var movement_navigation := preload("res://emergency/ResponderNavigation.gd").new()
 
 func _pickup_obstacle_owned(obstacle: Node) -> bool:
 	if not is_instance_valid(target): return false

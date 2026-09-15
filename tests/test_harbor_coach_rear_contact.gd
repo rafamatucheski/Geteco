@@ -17,7 +17,7 @@ func run() -> void:
 	service.route_progress = service.route.get_closest_offset(service.coach.position)
 	service.heading = Vector2.RIGHT
 	service.coach_shape.shape = service._shape_for_heading(Vector2.RIGHT)
-	var car := preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"RearContact",Vector2(1341.673,1202.239),0.9297818,"route_city",20)
+	var car := preload("res://emergency/ModernTrafficFactory.gd").spawn_parked_vehicle(world,"RearContact",Vector2(1341.673,1202.239),0.9297818,"route_city",20)
 	car.set_process(false)
 	car.set_physics_process(false)
 	await physics_frame

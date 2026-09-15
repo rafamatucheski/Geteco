@@ -6,7 +6,7 @@ func run() -> void:
 	current_scene = world
 	var failures := 0
 	for kind in [0,1,2,3]:
-		var unit := preload("res://EmergencyVehicle.tscn").instantiate()
+		var unit := preload("res://emergency/EmergencyVehicle.tscn").instantiate()
 		unit.type = kind
 		world.add_child(unit)
 		unit.activate()

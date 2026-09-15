@@ -554,7 +554,7 @@ func _physics_process(delta: float) -> void:
 				_animate_walk(delta)
 				return
 			velocity = Vector2.ZERO
-			if not preload("res://EmergencyCrewTransition.gd").finish_exit(self, service_vehicle, crew_side, delta): return
+			if not preload("res://emergency/EmergencyCrewTransition.gd").finish_exit(self, service_vehicle, crew_side, delta): return
 			service_disembark_active = false
 			remove_collision_exception_with(service_vehicle)
 	
@@ -767,6 +767,21 @@ func return_to_service_vehicle() -> void:
 		add_collision_exception_with(service_vehicle)
 		service_disembark_active = false
 		returning_to_service_vehicle = true
+
+
+func stand_down() -> void:
+	if is_dead: return
+	target = null
+	_reset_arrest_warning()
+	if vehicle_stop: vehicle_stop.cancel()
+	response_aggression = 0.0
+	visible_aim_time = 0.0
+	fire_cooldown = 999.0
+	burst_pause = 999.0
+	if is_instance_valid(service_vehicle):
+		return_to_service_vehicle()
+	else:
+		velocity = Vector2.ZERO
 
 
 func _board_service_vehicle() -> void:

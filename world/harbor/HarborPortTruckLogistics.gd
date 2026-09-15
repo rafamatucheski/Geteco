@@ -1,6 +1,6 @@
 extends RefCounted
 ## One physical carrier per crane. Cargo stays aboard until a future delivery system.
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 var port: Node2D
 var states: Array[Dictionary] = []
 var bay_offsets: Array[float] = []

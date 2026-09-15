@@ -7,7 +7,7 @@ func _render_alley_police() -> void:
 	var viewport = root.get_viewport()
 	viewport.size = Vector2i(1024, 768)
 	
-	var depots_scene = load("res://world/shared/emergency/EmergencyDepots.tscn") as PackedScene
+	var depots_scene = load("res://emergency/EmergencyDepots.tscn") as PackedScene
 	var depots = depots_scene.instantiate()
 	root.add_child(depots)
 	

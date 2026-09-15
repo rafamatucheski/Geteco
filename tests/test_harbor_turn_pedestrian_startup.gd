@@ -39,7 +39,7 @@ func run() -> void:
 	if turn == null:
 		quit(1)
 		return
-	var car := preload("res://world/shared/emergency/ModernTrafficFactory.gd").spawn_moving_vehicle(turn, "HarborTraffic_53", "route_city", 0.0, 89.6, 53)
+	var car := preload("res://emergency/ModernTrafficFactory.gd").spawn_moving_vehicle(turn, "HarborTraffic_53", "route_city", 0.0, 89.6, 53)
 	car.set_process(false)
 	car.set_physics_process(false)
 	var follow: PathFollow2D = car.get_parent()

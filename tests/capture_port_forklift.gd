@@ -1,5 +1,5 @@
 extends SceneTree
-const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
+const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 func _initialize() -> void: run.call_deferred()
 func frames(count: int) -> void:
 	for i in count: await physics_frame

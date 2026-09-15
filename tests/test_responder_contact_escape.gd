@@ -1,6 +1,6 @@
 extends SceneTree
 
-const NAV := preload("res://ResponderNavigation.gd")
+const NAV := preload("res://emergency/ResponderNavigation.gd")
 var failures := 0
 
 func _initialize() -> void:

@@ -1,7 +1,7 @@
 extends SceneTree
 
 const LIFE := preload("res://world/harbor/HarborLife.gd")
-const NAV := preload("res://ResponderNavigation.gd")
+const NAV := preload("res://emergency/ResponderNavigation.gd")
 const WALK_SPACE := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd")
 var failures := 0
 

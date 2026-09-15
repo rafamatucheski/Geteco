@@ -67,7 +67,7 @@ func run() -> void:
 			prop.queue_free()
 			await process_frame
 	# A referenced target can be freed between emergency queue ticks.
-	var incidents := preload("res://world/shared/emergency/ServiceIncidents.gd").new()
+	var incidents := preload("res://emergency/ServiceIncidents.gd").new()
 	world.add_child(incidents)
 	var target := Node2D.new()
 	world.add_child(target)
