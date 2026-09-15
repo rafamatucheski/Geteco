@@ -37,6 +37,10 @@
 16. [Ferramentas de manutenção (tools/)](#ferramentas-de-manutenção-tools)
 17. [Convenções de processo multi-agente](#convenções-de-processo-multi-agente)
 
+> Plano de reorganização por domínio (Cars/Guns/Police/Systems/Geodata/Characters/Economy),
+> decidido nesta sessão mas ainda não executado:
+> [docs/PLANO_REORGANIZACAO_PASTAS.md](PLANO_REORGANIZACAO_PASTAS.md).
+
 ---
 
 ## O que é o GETECO
@@ -492,7 +496,25 @@ três camadas — é que alguns arquivos *exclusivos* do legado (`GarageMenu.gd`
 `GarageTrigger.gd`, `VehicleUpgradeManager.gd`) ficaram fisicamente fora dessa separação,
 na raiz junto com o jogo vivo.
 
-### Recomendação: não vale a pena reorganizar agora, com uma exceção pequena e barata
+### Atualização (2026-09-15, mesma sessão): decisão tomada de reorganizar por domínio
+
+O usuário confirmou o objetivo: pastas por domínio de sistema (`/Cars`, `/Guns`,
+`/Police`, `/Systems`, `/Geodata`, `/Assets`, `/Characters`) para que a árvore de pastas
+já diga o que é o quê, em vez da pilha atual. Duas decisões:
+
+- **Escopo**: só o material global/compartilhado (raiz do projeto + `world/shared/`).
+  `world/harbor/` e `world/mountain_pass/` continuam como pastas de região.
+- **Timing**: planejar agora, executar depois — só quando `EmergencyVehicle.gd`/
+  `PoliceOfficer.gd` (em edição por outra sessão no momento deste documento) estiverem
+  commitados.
+
+O mapeamento completo, domínio por domínio, arquivo por arquivo, está em
+[docs/PLANO_REORGANIZACAO_PASTAS.md](PLANO_REORGANIZACAO_PASTAS.md) — inclui os 5 casos
+ambíguos que ainda precisam de uma palavra do usuário e o procedimento de execução por
+fases seguindo o `CLAUDE.md`. A análise abaixo (escrita antes dessa decisão) continua
+valendo como registro do raciocínio de custo × benefício que levou à abordagem faseada.
+
+### Recomendação original desta análise (mantida como contexto, ver decisão acima)
 
 O motivo é custo × benefício, não teoria de arquitetura:
 
