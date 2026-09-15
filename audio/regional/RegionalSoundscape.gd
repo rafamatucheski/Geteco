@@ -16,13 +16,13 @@ func _ready() -> void:
 	_rng.randomize()
 	sea = AudioStreamPlayer.new()
 	sea.name = "CoastalHighwaySea"
-	sea.bus = &"SFX"
+	sea.bus = &"Ambient"
 	sea.stream = CITY.bed("water", 1)
 	sea.volume_db = -80
 	add_child(sea)
 	metal = AudioStreamPlayer2D.new()
 	metal.name = "SalvageMetal"
-	metal.bus = &"SFX"
+	metal.bus = &"Ambient"
 	metal.max_distance = 1000
 	metal.attenuation = 1.2
 	add_child(metal)

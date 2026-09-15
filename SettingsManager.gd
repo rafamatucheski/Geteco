@@ -17,10 +17,14 @@ signal display_settings_changed()
 var master_volume: float = 1.0
 var music_volume: float = 0.8
 var sfx_volume: float = 1.0
+# Ambiente (chuva, mar, cidade, pássaros) tem canal próprio: antes ele dividia o
+# controle com a música ou com os efeitos, e baixar a trilha calava a cidade.
+var ambient_volume: float = 1.0
 
 var window_mode: int = 0  # 0: Janela, 1: Tela Cheia, 2: Tela Cheia Exclusiva
 var resolution: Vector2i = Vector2i(1280, 720)
 var vsync: bool = true
+var msaa_3d: int = Viewport.MSAA_2X
 
 var text_scale := 1.0
 var reduce_motion := false
@@ -62,20 +66,15 @@ func _directory_is_writable(absolute_directory: String) -> bool:
 	return true
 
 func _setup_audio_buses() -> void:
-	# Garante que os barramentos 'Music' e 'SFX' existam no AudioServer
-	var bus_music_idx := AudioServer.get_bus_index("Music")
-	if bus_music_idx == -1:
-		AudioServer.add_bus()
-		var new_idx := AudioServer.get_bus_count() - 1
-		AudioServer.set_bus_name(new_idx, "Music")
-		AudioServer.set_bus_send(new_idx, "Master")
-	
-	var bus_sfx_idx := AudioServer.get_bus_index("SFX")
-	if bus_sfx_idx == -1:
-		AudioServer.add_bus()
-		var new_idx := AudioServer.get_bus_count() - 1
-		AudioServer.set_bus_name(new_idx, "SFX")
-		AudioServer.set_bus_send(new_idx, "Master")
+	# Garante que os barramentos 'Music', 'SFX' e 'Ambient' existam no AudioServer.
+	# Criados aqui, no _enter_tree do autoload, ficam antes dos barramentos privados
+	# de chuva e vento, que precisam enviar para um barramento anterior na mixagem.
+	for bus_name in ["Music", "SFX", "Ambient"]:
+		if AudioServer.get_bus_index(bus_name) == -1:
+			AudioServer.add_bus()
+			var new_idx := AudioServer.get_bus_count() - 1
+			AudioServer.set_bus_name(new_idx, bus_name)
+			AudioServer.set_bus_send(new_idx, "Master")
 
 func load_settings() -> bool:
 	var config := ConfigFile.new()
@@ -87,12 +86,14 @@ func load_settings() -> bool:
 	master_volume = clampf(config.get_value("audio", "master_volume", 1.0), 0.0, 1.0)
 	music_volume = clampf(config.get_value("audio", "music_volume", 0.8), 0.0, 1.0)
 	sfx_volume = clampf(config.get_value("audio", "sfx_volume", 1.0), 0.0, 1.0)
-	
+	ambient_volume = clampf(config.get_value("audio", "ambient_volume", 1.0), 0.0, 1.0)
+
 	window_mode = clampi(int(config.get_value("display", "window_mode", 0)), 0, 2)
 	var res_w: int = int(config.get_value("display", "resolution_width", 1280))
 	var res_h: int = int(config.get_value("display", "resolution_height", 720))
 	resolution = Vector2i(maxi(640, res_w), maxi(480, res_h))
 	vsync = bool(config.get_value("display", "vsync", true))
+	msaa_3d = clampi(int(config.get_value("display", "msaa_3d", Viewport.MSAA_2X)), 0, 3)
 
 	var loaded_language := String(config.get_value("locale", "language", "pt_BR"))
 	language = loaded_language if Localization.is_supported(loaded_language) else "pt_BR"
@@ -114,11 +115,13 @@ func save_settings() -> bool:
 	config.set_value("audio", "master_volume", master_volume)
 	config.set_value("audio", "music_volume", music_volume)
 	config.set_value("audio", "sfx_volume", sfx_volume)
-	
+	config.set_value("audio", "ambient_volume", ambient_volume)
+
 	config.set_value("display", "window_mode", window_mode)
 	config.set_value("display", "resolution_width", resolution.x)
 	config.set_value("display", "resolution_height", resolution.y)
 	config.set_value("display", "vsync", vsync)
+	config.set_value("display", "msaa_3d", msaa_3d)
 
 	config.set_value("locale", "language", language)
 
@@ -155,6 +158,8 @@ func apply_audio_settings() -> void:
 	_apply_bus_volume("Master", master_volume)
 	_apply_bus_volume("Music", music_volume)
 	_apply_bus_volume("SFX", sfx_volume)
+	_apply_bus_volume("Ambient", ambient_volume)
+	_apply_bus_volume("Dialogue", sfx_volume)
 	audio_settings_changed.emit()
 
 func _apply_bus_volume(bus_name: String, linear: float) -> void:
@@ -168,22 +173,28 @@ func _apply_bus_volume(bus_name: String, linear: float) -> void:
 		AudioServer.set_bus_volume_db(idx, linear_to_db(linear))
 
 func apply_display_settings() -> void:
-	# Fullscreen keeps the monitor's native mode, but renders at the chosen
-	# resolution. Windowed mode retains the existing responsive canvas scaling.
+	# Resolution is the remembered window size. Fullscreen uses native output;
+	# keep the same logical canvas so switching modes cannot change UI/game zoom.
 	var window := get_tree().root
-	window.content_scale_size = resolution if window_mode != 0 else Vector2i(1280, 720)
-	window.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT if window_mode != 0 else Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	window.content_scale_size = Vector2i(1280, 720)
+	window.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	# Não aplicar modos gráficos agressivos se estiver em ambiente headless
 	if DisplayServer.get_name() == "headless":
+		Engine.max_fps = Engine.physics_ticks_per_second
+		display_settings_changed.emit()
 		return
 	
+	var screen := DisplayServer.window_get_current_screen()
 	match window_mode:
 		0: # Janela
+			resolution = fit_window_resolution(resolution)
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
 			DisplayServer.window_set_size(resolution)
-			# Centralizar janela na tela principal se possível
-			var screen_size := DisplayServer.screen_get_size()
-			var win_pos := (screen_size - resolution) / 2
+			# Respect the current monitor's origin and taskbar, including monitors
+			# positioned to the left of the primary display.
+			var usable := DisplayServer.screen_get_usable_rect(screen)
+			var win_pos := usable.position + (usable.size - resolution) / 2
 			DisplayServer.window_set_position(win_pos)
 		1: # Tela Cheia (Janela sem bordas / borderless)
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
@@ -222,6 +233,17 @@ func apply_display_settings() -> void:
 	
 	display_settings_changed.emit()
 
+func fit_window_resolution(requested: Vector2i) -> Vector2i:
+	var valid := Vector2i(maxi(640, requested.x), maxi(480, requested.y))
+	if DisplayServer.get_name() == "headless":
+		return valid
+	var usable := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
+	# Leave room for window decorations; a monitor-sized window can be promoted
+	# back to fullscreen by Windows when leaving exclusive fullscreen.
+	var available := Vector2i(maxi(1, usable.size.x - 32), maxi(1, usable.size.y - 64))
+	var scale := minf(1.0, minf(float(available.x) / valid.x, float(available.y) / valid.y))
+	return Vector2i(Vector2(valid) * scale)
+
 func set_master_volume(val: float) -> void:
 	master_volume = clampf(val, 0.0, 1.0)
 	_apply_bus_volume("Master", master_volume)
@@ -233,6 +255,11 @@ func set_music_volume(val: float) -> void:
 func set_sfx_volume(val: float) -> void:
 	sfx_volume = clampf(val, 0.0, 1.0)
 	_apply_bus_volume("SFX", sfx_volume)
+	_apply_bus_volume("Dialogue", sfx_volume)
+
+func set_ambient_volume(val: float) -> void:
+	ambient_volume = clampf(val, 0.0, 1.0)
+	_apply_bus_volume("Ambient", ambient_volume)
 
 func set_window_mode(mode: int) -> void:
 	window_mode = clampi(mode, 0, 2)
@@ -256,7 +283,7 @@ func get_controls_mapping() -> Array[Dictionary]:
 
 func interface_snapshot() -> Dictionary:
 	var data := {}
-	for key in ["master_volume","music_volume","sfx_volume","window_mode","resolution","vsync","language","text_scale","reduce_motion","route_visible","tutorial_hints"]:
+	for key in ["master_volume","music_volume","sfx_volume","ambient_volume","window_mode","resolution","vsync","msaa_3d","language","text_scale","reduce_motion","route_visible","tutorial_hints"]:
 		data[key] = get(key)
 	data["bindings"] = get_node("/root/GameInput").export_bindings()
 	return data

@@ -176,7 +176,7 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
 theme_override_font_sizes/font_size = 15
-text = "Música & Ambiente:"
+text = "Música:"
 
 [node name="SliderMusic" type="HSlider" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MusicRow"]
 unique_name_in_owner = true
@@ -194,6 +194,35 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
 theme_override_font_sizes/font_size = 14
 text = "80%"
+horizontal_alignment = 2
+
+[node name="AmbientRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
+layout_mode = 2
+
+[node name="LabelAmbientRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Ambiente:"
+
+[node name="SliderAmbient" type="HSlider" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="LabelAmbientVal" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(55, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 14
+text = "100%"
 horizontal_alignment = 2
 
 [node name="SFXRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
@@ -319,6 +348,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
+[node name="SettingsStatus" type="Label" parent="MainPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
 [node name="BottomActions" type="HBoxContainer" parent="MainPanel/Margin/VBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
@@ -338,6 +372,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "CANCELAR"
 
+[node name="BtnApply" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "APLICAR"
+
 [node name="BtnSave" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 38)
@@ -352,6 +393,7 @@ text = "SALVAR E VOLTAR"
 [connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MasterRow/SliderMaster" to="." method="_on_slider_master_value_changed"]
 [connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MusicRow/SliderMusic" to="." method="_on_slider_music_value_changed"]
 [connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/SFXRow/SliderSFX" to="." method="_on_slider_sfx_value_changed"]
+[connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow/SliderAmbient" to="." method="_on_slider_ambient_value_changed"]
 [connection signal="item_selected" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/LanguageRow/OptLanguage" to="." method="_on_opt_language_item_selected"]
 [connection signal="item_selected" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ModeRow/OptWindowMode" to="." method="_on_opt_window_mode_item_selected"]
 [connection signal="item_selected" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ResRow/OptResolution" to="." method="_on_opt_resolution_item_selected"]
@@ -359,3 +401,4 @@ text = "SALVAR E VOLTAR"
 [connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnDefaults" to="." method="_on_btn_defaults_pressed"]
 [connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnBack" to="." method="_on_btn_back_pressed"]
 [connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnSave" to="." method="_on_btn_save_pressed"]
+[connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnApply" to="." method="_on_btn_apply_pressed"]

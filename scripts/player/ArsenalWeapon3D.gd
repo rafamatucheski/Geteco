@@ -10,9 +10,9 @@ static func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 
 static func build(root: Node3D, id: String) -> Vector3:
 	var mat_chrome := StandardMaterial3D.new()
-	mat_chrome.albedo_color = Color(0.84, 0.86, 0.90)
+	mat_chrome.albedo_color = Color(0.56, 0.60, 0.65)
 	mat_chrome.metallic = 0.92
-	mat_chrome.roughness = 0.18
+	mat_chrome.roughness = 0.30
 
 	var mat_gunmetal := StandardMaterial3D.new()
 	mat_gunmetal.albedo_color = Color(0.18, 0.20, 0.24)
@@ -24,7 +24,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 	mat_polymer.roughness = 0.70
 
 	var mat_wood := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.55, 0.28, 0.14)
+	mat_wood.albedo_color = Color(0.36, 0.19, 0.10)
 	mat_wood.roughness = 0.55
 
 	var mat_brass := StandardMaterial3D.new()
@@ -181,6 +181,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 			# Tambor GiratÃƒÂ³rio
 			var cylinder_mg = MeshInstance3D.new()
+			cylinder_mg.name = "ReloadCylinder"
 			var cyl_mg = CylinderMesh.new()
 			cyl_mg.top_radius = 0.028
 			cyl_mg.bottom_radius = 0.028
@@ -235,23 +236,10 @@ static func build(root: Node3D, id: String) -> Vector3:
 			root.add_child(receiver_ak)
 
 			# Carregador Banana Curvo
-			var mag_ak = MeshInstance3D.new()
-			var box_mak = BoxMesh.new()
-			box_mak.size = Vector3(0.028, 0.18, 0.06)
-			mag_ak.mesh = box_mak
-			mag_ak.material_override = mat_gunmetal
-			mag_ak.position = Vector3(0.0, -0.11, -0.05)
-			mag_ak.rotation_degrees = Vector3(22, 0, 0)
-			root.add_child(mag_ak)
+			preload("res://scripts/player/WeaponPresentation3D.gd")._profile(root,"CurvedMagazine",PackedVector2Array([Vector2(-0.083,-0.025),Vector2(-0.025,-0.025),Vector2(-0.022,-0.080),Vector2(-0.032,-0.13),Vector2(-0.065,-0.185),Vector2(-0.115,-0.165),Vector2(-0.084,-0.115),Vector2(-0.078,-0.070)]),0.028,mat_gunmetal)
 
 			# Coronha de Madeira ClÃƒÂ¡ssica
-			var stock_ak = MeshInstance3D.new()
-			var box_sak = BoxMesh.new()
-			box_sak.size = Vector3(0.040, 0.080, 0.22)
-			stock_ak.mesh = box_sak
-			stock_ak.material_override = mat_wood
-			stock_ak.position = Vector3(0.0, -0.02, 0.18)
-			root.add_child(stock_ak)
+			preload("res://scripts/player/WeaponPresentation3D.gd")._profile(root,"ShapedStock",PackedVector2Array([Vector2(0.07,0.016),Vector2(0.15,0.015),Vector2(0.29,0.02),Vector2(0.29,-0.06),Vector2(0.23,-0.056),Vector2(0.14,-0.024),Vector2(0.07,-0.02)]),0.040,mat_wood)
 
 			flash_pos = Vector3(0.0, 0.02, -0.42)
 
@@ -346,13 +334,14 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 			# Ogiva CÃƒÂ´nica RPG Frontal
 			var warhead = MeshInstance3D.new()
+			warhead.name = "LoadedRocket"
 			var cyl_wh = CylinderMesh.new()
 			cyl_wh.top_radius = 0.008
 			cyl_wh.bottom_radius = 0.056
 			cyl_wh.height = 0.18
 			warhead.mesh = cyl_wh
 			warhead.material_override = _make_mat(Color(0.32, 0.42, 0.20), 0.3)
-			warhead.rotation_degrees = Vector3(90, 0, 0)
+			warhead.rotation_degrees = Vector3(-90, 0, 0)
 			warhead.position = Vector3(0.0, 0.08, -0.40)
 			root.add_child(warhead)
 
@@ -376,6 +365,14 @@ static func build(root: Node3D, id: String) -> Vector3:
 			grip_rpg.material_override = mat_gunmetal
 			grip_rpg.position = Vector3(0.0, 0.0, -0.10)
 			root.add_child(grip_rpg)
+			var support_handle := MeshInstance3D.new()
+			support_handle.name = "SupportHandle"
+			var support_box := BoxMesh.new()
+			support_box.size = Vector3(0.032, 0.09, 0.04)
+			support_handle.mesh = support_box
+			support_handle.position = Vector3(0, 0, -0.22)
+			support_handle.material_override = mat_wood
+			root.add_child(support_handle)
 
 			flash_pos = Vector3(0.0, 0.08, -0.50)
 
@@ -401,10 +398,18 @@ static func build(root: Node3D, id: String) -> Vector3:
 			fuel_tank.mesh = cyl_tk
 			fuel_tank.material_override = _make_mat(Color(0.85, 0.15, 0.12), 0.3)
 			fuel_tank.rotation_degrees = Vector3(90, 0, 0)
-			fuel_tank.position = Vector3(0.0, -0.05, -0.12)
+			fuel_tank.position = Vector3(0.075, -0.045, -0.06)
 			root.add_child(fuel_tank)
+			var geometry := preload("res://scripts/player/WeaponPresentation3D.gd")
+			geometry._box(root, "TankBracket", Vector3(0.037, -0.03, -0.06), Vector3(0.08, 0.022, 0.06), mat_gunmetal)
+			geometry._cylinder(root, "FuelValve", Vector3(0.075, -0.045, -0.155), 0.017, 0.035, mat_brass, Vector3(90,0,0))
+			geometry._box(root, "SupportHandle", Vector3(0, -0.055, -0.14), Vector3(0.032, 0.105, 0.04), mat_polymer)
+			geometry._cylinder(root, "NozzleShroud", Vector3(0, 0.02, -0.35), 0.034, 0.085, mat_gunmetal, Vector3(90,0,0))
+			geometry._cylinder(root, "NozzleBore", Vector3(0, 0.02, -0.394), 0.020, 0.003, mat_polymer, Vector3(90,0,0))
+			geometry._cylinder(root, "Igniter", Vector3(0, -0.018, -0.36), 0.008, 0.075, mat_brass, Vector3(90,0,0))
+			geometry._trigger_guard(root, Vector3(0, -0.02, -0.015), mat_gunmetal)
 
-			flash_pos = Vector3(0.0, 0.02, -0.38)
+			flash_pos = Vector3(0.0, 0.02, -0.40)
 
 		"grenade":
 			# Granada de MÃƒÂ£o de FragmentaÃƒÂ§ÃƒÂ£o Tipo Abacaxi
@@ -506,8 +511,8 @@ static func build(root: Node3D, id: String) -> Vector3:
 			# segura nada -- isso e' o que resolve "so tem arma equipada, sumiu o soco".
 			pass
 
-		"knife":
-			preload("res://scripts/player/WeaponPresentation3D.gd").build(root, "knife")
+		"knife", "axe", "knuckles", "bat":
+			preload("res://scripts/player/WeaponPresentation3D.gd").build(root, id)
 			flash_pos = Vector3(0, 0, -0.235)
 
 		_: # pistol
@@ -525,4 +530,5 @@ static func build(root: Node3D, id: String) -> Vector3:
 		handle.material_override = mat_polymer
 		root.add_child(handle)
 
+	preload("res://scripts/player/WeaponFinish3D.gd").apply(root, id, flash_pos)
 	return flash_pos

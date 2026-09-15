@@ -9,6 +9,8 @@ func _ready() -> void:
 	coat_color=[Color("65515c"),Color("5b7073"),Color("7d7057")].pick_random()
 	super._ready()
 	add_to_group("damageable")
+	if room.is_bank:
+		_navigation.grid_step=12.0
 func _create_model() -> Node3D:
 	if is_instance_valid(room) and room.is_bank: return preload("res://world/harbor/events/BankClerkModel.gd").new()
 	return preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
@@ -18,7 +20,18 @@ func frighten() -> void:
 	if room.is_bank: reaction="flee"
 	if reaction=="flee":
 		travel_speed=65
-		set_route(PackedVector2Array([room.global_position+room.project_floor(Vector2(-2.3 if position.x<0 else 2.3,-2.2)),room.global_position+room.project_floor(Vector2(0,2.5)),room.exit_door.global_position]))
+		# Clear the inner edge of the counter before turning toward the exit.
+		var side := -1.0 if position.x<0 else 1.0
+		set_route(PackedVector2Array([room.to_global(room.project_floor(Vector2(side*1.65,-1.9))),room.to_global(room.project_floor(Vector2(side*1.65,.6))),room.to_global(room.project_floor(Vector2(side*.7,4.3)))]))
+		if room.is_bank:
+			var voice := AudioStreamPlayer2D.new()
+			voice.name="HelpVoice"
+			voice.stream=load("res://audio/reactions/bank_help_female.wav" if resident_name=="HELENA" else "res://audio/reactions/bank_help_male.wav")
+			voice.bus=&"SFX"
+			voice.volume_db=-4
+			add_child(voice)
+			voice.play()
+			voice.finished.connect(voice.queue_free)
 	elif reaction=="call": speech.text="Está acontecendo um assalto!"
 	else:
 		model.scale.y*=.6
@@ -43,6 +56,8 @@ func _physics_process(delta: float) -> void:
 			queue_free()
 
 func _leave_bank() -> void:
+	if has_meta("interior_actor_presentation"):
+		get_meta("interior_actor_presentation").restore()
 	outside_bank=true
 	var side := -1.0 if resident_name=="HELENA" else 1.0
 	reparent(get_tree().current_scene)
@@ -56,5 +71,10 @@ func _leave_bank() -> void:
 	set_route(PackedVector2Array([room.entrance.global_position+Vector2(side*70,90),room.entrance.global_position+Vector2(side*360,100)]))
 
 func take_damage(amount: int, source: Variant = null) -> void:
+	var was_dead:=is_dead
 	if amount>0 and is_instance_valid(room) and room.actor_inside(): room._on_shot()
 	super.take_damage(amount,source)
+	if is_dead and not was_dead and is_instance_valid(room) and room.is_bank and not outside_bank:
+		var pool:=preload("res://world/harbor/events/BankFloorBlood.gd").new()
+		pool.guard=self
+		room.add_child(pool)

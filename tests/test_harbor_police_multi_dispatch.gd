@@ -2,9 +2,8 @@ extends SceneTree
 
 ## Regression for a real bug found reproducing the 2026-09-06 gameplay
 ## recording ("resposta policial real com wanted alto"): at high wanted
-## levels, WantedManager._dispatch_police() intends up to
-## min(current_stars, 4) simultaneous cruisers (EmergencyPool.POOL_SIZE_POLICE
-## == 4) and calls HarborEmergencyDirector.request_dispatch("police", ...)
+## levels, WantedManager._dispatch_police() intends up to five simultaneous
+## cruisers and calls HarborEmergencyDirector.request_dispatch("police", ...)
 ## again every ~3s while under that cap to bring in backup. But
 ## request_dispatch deduplicated by "service:target_instance_id" alone and
 ## always handed back the first cruiser it ever dispatched for that target,
@@ -42,11 +41,18 @@ func _run() -> void:
 	var scene := packed.instantiate() as Node2D
 	root.add_child(scene)
 	current_scene = scene
-	for i in 90:
+	var build_deadline := Time.get_ticks_msec() + 60000
+	while not scene.world_build_ready and Time.get_ticks_msec() < build_deadline:
 		await process_frame
+	if not scene.world_build_ready:
+		printerr("Harbor preview did not finish building")
+		quit(2)
+		return
 
 	var wanted = root.get_node("WantedManager")
 	wanted.reset_crime()
+	# Advance wanted time explicitly: headless process FPS is not fixed at 60.
+	wanted.set_process(false)
 	var player: CharacterBody2D = scene.get_node("Player")
 	var car: CharacterBody2D = scene.get_node("PlayerCar")
 	player.global_position = car.global_position + Vector2(-48, 0)
@@ -54,12 +60,13 @@ func _run() -> void:
 	for i in 5:
 		await process_frame
 
-	wanted.report_crime(210) # straight to 6 stars: cap allows 4 simultaneous cruisers
+	wanted.report_crime(240) # straight to 6 stars: cap allows 5 simultaneous cruisers
 
 	var distinct_cruisers := {}
 	var max_simultaneous := 0
-	for i in 1500: # 25s: real dispatch cadence is ~3s per attempt while under cap
+	for i in 1500: # 25 simulated seconds: four-second dispatch cadence at six stars.
 		Input.action_press("ui_up") # keep the target fleeing and valid
+		wanted._process(1.0 / 60.0)
 		await process_frame
 		var active := 0
 		for em in get_nodes_in_group("emergency_vehicle"):
@@ -69,26 +76,19 @@ func _run() -> void:
 		max_simultaneous = maxi(max_simultaneous, active)
 	Input.action_release("ui_up")
 
-	print("HARBOR_POLICE_MULTI_DISPATCH max_simultaneous=%d distinct_seen=%d (pool cap=4)" % [
+	print("HARBOR_POLICE_MULTI_DISPATCH max_simultaneous=%d distinct_seen=%d (pursuit cap=5)" % [
 		max_simultaneous, distinct_cruisers.size()
 	])
-	if max_simultaneous < 3:
+	if max_simultaneous != 5:
 		failures.append(
-			"Only %d cruiser(s) were ever simultaneously active during a sustained 6-star pursuit -- backup never properly escalates even though the pool allows up to 4" % max_simultaneous
+			"Expected the five-vehicle ceiling during a sustained 6-star pursuit, observed %d" % max_simultaneous
 		)
 
-	# Fire/ambulance/coroner must still dedup to a single unit per target --
-	# this fix must not weaken that contract (test_harbor_emergency_dispatch.gd
-	# covers this fully; this is a quick, local double-check on this fix).
-	var director := get_first_node_in_group("emergency_depot_director")
-	var fire_target := Node2D.new()
-	fire_target.position = Vector2(1200, 2100)
-	scene.add_child(fire_target)
-	var fire_a = director.request_dispatch("fire", fire_target, false)
-	var fire_b = director.request_dispatch("fire", fire_target, false)
-	if fire_a == null or fire_a != fire_b:
-		failures.append("fire dispatch no longer deduplicates to one engine per target -- this fix must not touch that contract")
-
+	# Autoload pool units outlive this scene; stop their callbacks before
+	# destroying their pursuit target and road network during test teardown.
+	wanted.set_process(false)
+	for vehicle in get_nodes_in_group("emergency_vehicle"):
+		vehicle.set_physics_process(false)
 	scene.queue_free()
 	await process_frame
 	if failures.is_empty():

@@ -8,6 +8,19 @@ extends RefCounted
 const EXIT_LATERAL_DISTANCE := 31.0
 const DOOR_LATERAL_DISTANCE := 18.0
 
+static func finish_exit(actor: CharacterBody2D, vehicle: Node2D, side: float, delta: float) -> bool:
+	# Stay at the doorway until the panel has shut, then resume the route.
+	var elapsed := float(actor.get_meta("crew_close_elapsed", 0.0))
+	if elapsed == 0.0:
+		vehicle.close_crew_cover_door(side)
+	actor.velocity = Vector2.ZERO
+	elapsed += delta
+	if elapsed < 0.45:
+		actor.set_meta("crew_close_elapsed", elapsed)
+		return false
+	actor.remove_meta("crew_close_elapsed")
+	return true
+
 static func get_door_point(vehicle: Node2D, side: float, longitudinal: float = -8.0) -> Vector2:
 	return vehicle.global_position + vehicle.transform.x * longitudinal + vehicle.transform.y * side * DOOR_LATERAL_DISTANCE
 

@@ -19,18 +19,19 @@ func _ready() -> void:
 	_garage = world.get_node("Interiors").garage_interior
 	_add_source("cafe", Vector2(621, 1132), AUDIO.bed("cafe"), 290, -3)
 	_add_source("market", Vector2(1750, 805), AUDIO.bed("street", 1), 390, -9)
-	_add_source("tools", Vector2(790, 1690), AUDIO.bed("workshop", 1), 310, -3)
+	_add_source("tools", preload("res://world/harbor/HarborLocalStreets.gd").GARAGE_POSITION + Vector2(0, 120), AUDIO.bed("workshop", 1), 310, -3)
 	_add_source("courtyard", Vector2(855, 875), AUDIO.bed("birds", 1), 320, -7)
 	var stations := AUDIO.stations()
-	_add_source("garage_radio", Vector2(790, 1690), stations[0], 290, -12, true)
-	_add_source("cafe_radio", Vector2(685, 1132), stations[1], 190, -20, true)
+	_add_source("garage_radio", preload("res://world/harbor/HarborLocalStreets.gd").GARAGE_POSITION + Vector2(48, 112), stations[0], 290, -12, true)
+	# Rádio pequeno no peitoril, livre da cadeira e do prato do cliente.
+	_add_source("cafe_radio", Vector2(707, 1108), stations[1], 190, -20, true)
 	var bench: Vector2 = _garage.to_global(_garage.workshop_point(Vector3(-1.1, 1.04, -3.65)))
 	_add_source("indoor_radio", bench, stations[0], 800, -12, true)
 	for key in ["garage_radio", "cafe_radio", "indoor_radio"]:
 		var prop := RADIO_PROP.new()
 		prop.name = key.to_pascal_case() + "Prop"
 		prop.position = sources[key].position
-		prop.scale = Vector2.ONE * (0.32 if key == "indoor_radio" else 0.65)
+		prop.scale = Vector2.ONE * (0.32 if key == "indoor_radio" else (0.35 if key == "cafe_radio" else 0.65))
 		prop.z_index = 10
 		add_child(prop)
 		_props.append(prop)
@@ -50,7 +51,7 @@ func _ready() -> void:
 	_bird = AudioStreamPlayer2D.new()
 	_bird.name = "CourtyardBird"
 	_bird.position = Vector2(855, 850)
-	_bird.bus = &"SFX"
+	_bird.bus = &"Ambient"
 	_bird.max_distance = 400
 	_bird.volume_db = -6
 	add_child(_bird)
@@ -60,7 +61,8 @@ func _add_source(key: String, point: Vector2, stream: AudioStream, radius: float
 	source.name = key.to_pascal_case()
 	source.position = point
 	source.stream = stream
-	source.bus = &"Music" if radio else &"SFX"
+	# Rádio é música diegética; café, feira, oficina e pássaros são ambiente.
+	source.bus = &"Music" if radio else &"Ambient"
 	source.max_distance = radius
 	source.attenuation = 1.35
 	source.volume_db = -80
@@ -72,6 +74,13 @@ func _add_source(key: String, point: Vector2, stream: AudioStream, radius: float
 
 func update_context(pos: Vector2, room: Node2D, dark: bool, focus: float, district: float, delta: float) -> void:
 	var inside := is_instance_valid(room)
+	var cafe_occupied := true
+	var restaurants := get_parent().get_parent().get_node_or_null("RestaurantLife")
+	if is_instance_valid(restaurants):
+		cafe_occupied = false
+		for table in restaurants.terraces:
+			if table.venue_id == "anchor" and int(table.get_status().guests) > 0:
+				cafe_occupied = true
 	var panic := false
 	for person in neighbors:
 		if is_instance_valid(person) and (person.is_scared or person.is_dead or person.is_incapacitated):
@@ -83,14 +92,17 @@ func update_context(pos: Vector2, room: Node2D, dark: bool, focus: float, distri
 		"courtyard": 0.0 if dark else 1.0,
 		"garage_radio": 0.35 if dark else 1.0,
 		"cafe_radio": 1.0,
-		"indoor_radio": 1.0,
+		"indoor_radio": 0.0,
 	}
+	if not cafe_occupied:
+		active["cafe"] = 0.0
+		active["cafe_radio"] = 0.0
 	for key in sources:
 		var source: AudioStreamPlayer2D = sources[key]
 		var allowed := room == _garage if key == "indoor_radio" else not inside
 		var near := source.global_position.distance_to(pos) < source.max_distance + 40
 		var target := float(active[key]) * focus * district if allowed and near else 0.0
-		_gains[key] = move_toward(float(_gains[key]), target, delta * 1.5)
+		_gains[key] = 0.0 if room == _garage else move_toward(float(_gains[key]), target, delta * 1.5)
 		var gain := float(_gains[key])
 		source.volume_db = float(source.get_meta("base_db")) + linear_to_db(maxf(gain, 0.0001))
 		if gain > 0.001 and not source.playing:
@@ -99,7 +111,7 @@ func update_context(pos: Vector2, room: Node2D, dark: bool, focus: float, distri
 			source.set_meta("resume", source.get_playback_position())
 			source.stop()
 	_props[0].powered = true
-	_props[1].powered = true
+	_props[1].powered = cafe_occupied
 	_props[2].visible = room == _garage
 	_next_bird -= delta
 	if inside or dark or focus < 0.9 or district < 0.1:

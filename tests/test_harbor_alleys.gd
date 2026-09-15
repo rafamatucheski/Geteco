@@ -34,7 +34,8 @@ func _run() -> void:
 		return
 	var definitions: Array = alleys.get_alley_definitions()
 	_check(definitions.size() == 2, "Expected the two authored residential passages")
-	_check(alleys.find_children("*", "CollisionObject2D", true, false).is_empty(), "Alley paving must not create blocking collision objects")
+	# Pickup Area2Ds detect interaction but cannot block the walking body.
+	_check(alleys.find_children("*", "PhysicsBody2D", true, false).is_empty(), "Alley paving must not create blocking physics bodies")
 	var player_collision := player.get_node_or_null("Collision") as CollisionShape2D
 	_check(player_collision != null and player_collision.shape != null, "Actual player capsule must exist")
 	if player_collision == null or player_collision.shape == null:

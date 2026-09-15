@@ -1,9 +1,18 @@
 class_name DemoTrafficVehicle
 extends CharacterBody2D
 
+signal player_entered(vehicle: CharacterBody2D)
+
+var _handling_yaw_rate: float = 0.0
+var _drivetrain = preload("res://VehicleDrivetrain.gd").new()
+var _launch = preload("res://VehicleLaunchControl.gd").new()
+var _tire_trail = preload("res://VehicleTireTrail.gd").new()
+
 const VEHICLE_ATLAS: Texture2D = preload("res://assets/art/vehicle-atlas.png")
 const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
 const MAX_LANE_ADVANCE_PER_FRAME := 14.0
+const TRAFFIC_FLOW := preload("res://world/shared/traffic/TrafficFlowModel.gd")
+const TRAFFIC_SWEEP := preload("res://world/shared/traffic/TrafficBodySweep.gd")
 
 @export var vehicle_id: String = "vehicle"
 @export var display_name: String = "Veículo"
@@ -16,6 +25,9 @@ const MAX_LANE_ADVANCE_PER_FRAME := 14.0
 @export var braking: float = 1250.0
 @export var friction: float = 550.0
 @export var turn_speed: float = 3.3
+var lateral_speed: float = 0.0
+var handbrake_slide: float = 0.0
+var _drift_weather: Node
 @export var drift_factor: float = 0.9
 
 var visual: Sprite2D
@@ -24,7 +36,22 @@ var camera: Camera2D
 var pedestrian_hitbox: Area2D
 
 var is_driven_by_player := false
+var is_motorcycle := false
+var _rider_fallen := false
+var _traffic_horn_cooldown := 0.0
+var _waiting_person: WeakRef
+var _person_wait := 0.0
+var _person_warned := false
+var _person_push_time := 0.0
+const PERSON_HORN_DELAY := 1.2
+const PERSON_WARNING_GRACE := 3.0
+var _avoidance_hold := 0.0
+var _lane_sweep_blocked := false
+var _emergency_yield_active := false
+var _siren_maneuver := preload("res://world/shared/traffic/TrafficSirenManeuver.gd").new()
 var _driver: CharacterBody2D
+var taxi_passenger := false
+var _taxi_service: CanvasLayer
 var _detached_from_lane := false
 var _abandoned_timer: float = 0.0
 var health: int = 100
@@ -82,7 +109,14 @@ var is_standby_unit: bool = false
 var standby_source: Node = null
 var was_stolen_from_police: bool = false
 var is_alarm_active: bool = false
-var alarm_timer: float = 0.0
+var alarm_timer: float:
+	get: return _alarm_timeout.time_left if is_instance_valid(_alarm_timeout) else 0.0
+var _alarm_timeout: Timer
+var has_theft_alarm := false
+var _parked_security_configured := false
+var _parked_theft_attempted := false
+var _police_lock_unlocked := false
+var _vehicle_lockpick: CanvasLayer
 var is_siren_on: bool = false
 var _strobe_timer: float = 0.0
 var alarm_audio: AudioStreamPlayer2D
@@ -101,6 +135,7 @@ func ensure_presentation() -> void:
 	_setup_3d_model(spec, _pending_color)
 var body_viewport: SubViewport = null
 var body_model: Node3D = null
+var lightbar_3d := preload("res://world/shared/emergency/EmergencyLightbar3D.gd").new()
 var wheel_rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 var wheels: Array[Node3D] = []
 var spinners: Array[Node3D] = []
@@ -156,6 +191,7 @@ func _ready() -> void:
 	var rectangle := RectangleShape2D.new()
 	rectangle.size = Vector2(target_length * 0.78, maxf(24.0, crop.size.x * uniform_scale * 0.72))
 	collision.shape = rectangle
+	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, maxf(28.0, crop.size.x * uniform_scale * 1.08)))
 	var hit_shape := RectangleShape2D.new()
 	hit_shape.size = Vector2(target_length * 1.05, maxf(34.0, crop.size.x * uniform_scale * 0.95))
 	var pedestrian_collision := pedestrian_hitbox.get_node("Collision") as CollisionShape2D
@@ -210,13 +246,14 @@ func _ensure_smoke_emitter() -> CPUParticles2D:
 	if smoke_emitter == null:
 		smoke_emitter = CPUParticles2D.new()
 		smoke_emitter.emitting = false
-		smoke_emitter.amount = 30
+		smoke_emitter.amount = 20
 		smoke_emitter.lifetime = 1.0
 		smoke_emitter.gravity = Vector2(0, -98)
 		smoke_emitter.texture = _soft_damage_particle()
 		smoke_emitter.scale_amount_min = 10.0 / 32.0
 		smoke_emitter.scale_amount_max = 22.0 / 32.0
 		smoke_emitter.color = Color(0.2, 0.2, 0.2, 0.8)
+		preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
 		add_child(smoke_emitter)
 	return smoke_emitter
 
@@ -225,14 +262,16 @@ func _ensure_collision_particles() -> CPUParticles2D:
 		collision_particles = CPUParticles2D.new()
 		collision_particles.emitting = false
 		collision_particles.one_shot = true
-		collision_particles.amount = 20
-		collision_particles.lifetime = 0.6
-		collision_particles.initial_velocity_min = 80.0
-		collision_particles.initial_velocity_max = 250.0
-		collision_particles.gravity = Vector2(0, 200)
-		collision_particles.scale_amount_min = 2.0
-		collision_particles.scale_amount_max = 5.0
-		collision_particles.color = Color(0.85, 0.85, 0.85, 1.0)
+		collision_particles.local_coords = false
+		collision_particles.amount = 10
+		collision_particles.lifetime = 0.24
+		collision_particles.initial_velocity_min = 40.0
+		collision_particles.initial_velocity_max = 90.0
+		collision_particles.gravity = Vector2.ZERO
+		collision_particles.scale_amount_min = 1.5 / 64.0
+		collision_particles.scale_amount_max = 3.5 / 64.0
+		collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
+		collision_particles.texture = preload("res://world/shared/combat/VehicleDamageParticles.gd").texture()
 		add_child(collision_particles)
 	return collision_particles
 
@@ -248,6 +287,7 @@ func _ensure_flame_particles() -> CPUParticles2D:
 		flame_particles.scale_amount_min = 4.0
 		flame_particles.scale_amount_max = 8.0
 		flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
+		preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
 		add_child(flame_particles)
 	return flame_particles
 
@@ -370,12 +410,14 @@ func _ensure_alarm_audio() -> AudioStreamPlayer2D:
 		alarm_audio.stream = ProceduralAudio.get_police_alarm_stream()
 		alarm_audio.max_distance = 1000.0
 		alarm_audio.volume_db = 2.0
+		alarm_audio.bus = "SFX"
 		add_child(alarm_audio)
 	return alarm_audio
 
 func _ensure_engine_audio() -> AudioStreamPlayer2D:
 	if engine_audio == null:
 		engine_audio = AudioStreamPlayer2D.new()
+		engine_audio.bus = &"SFX"
 		engine_audio.max_distance = 600.0
 		engine_audio.attenuation = 1.8
 		engine_audio.volume_db = -16.0
@@ -419,9 +461,9 @@ func _update_headlight_state() -> void:
 		return
 	var on_screen := is_driven_by_player or _is_near_screen(260.0)
 	var active := (is_night_or_storm or is_driven_by_player) and not is_broken and on_screen
-	headlight.visible = active
+	headlight.visible = active and (not is_instance_valid(body_model) or not body_model.broken_lamps[0])
 	if second_headlight:
-		second_headlight.visible = active
+		second_headlight.visible = active and (not is_instance_valid(body_model) or not body_model.broken_lamps[1])
 
 func set_headlights(dark_state: bool) -> void:
 	is_night_or_storm = dark_state
@@ -435,6 +477,8 @@ func _setup_headlight() -> void:
 	headlight.color = Color(1.0, 0.98, 0.90, 1.0)
 	headlight.energy = 1.35
 	headlight.shadow_enabled = false
+	# Ground beams must pass beneath vehicle bodies (drawn at z = 8 or above).
+	headlight.range_z_max = 7
 	headlight.position = Vector2(target_length * 0.45, 0.0)
 	headlight.texture = HeadlightTextureGenerator.get_conical_headlight_texture()
 	headlight.offset = Vector2(170.0, 0.0) # Projeta 340px para a frente do carro
@@ -443,12 +487,14 @@ func _setup_headlight() -> void:
 
 func honk_horn():
 	if is_broken: return
+	preload("res://world/shared/traffic/TrafficHorn.gd").report(self)
 	_ensure_horn_audio()
 	if horn_audio and not horn_audio.playing:
 		horn_audio.pitch_scale = randf_range(0.92, 1.08)
 		horn_audio.play()
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
+	if is_exploded or amount <= 0: return
 	health = maxi(0, health - amount)
 	if health < 75:
 		visual.modulate = visual.modulate.lerp(Color(0.65, 0.65, 0.65), 0.4)
@@ -459,10 +505,12 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if health <= 25:
 		visual.modulate = Color(0.3, 0.3, 0.3)
 		if smoke_emitter:
-			smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
-			smoke_emitter.amount = 60
+			smoke_emitter.color = Color(0.65, 0.65, 0.68, 0.85)
+			smoke_emitter.amount = 20
 	if health == 0 and not is_broken:
+		set_meta("explosion_player_caused", _is_player_attacker)
 		is_broken = true
+		if max_speed > 0.0: set_meta("speed_before_destruction",max_speed)
 		max_speed = 0.0
 		if engine_audio: engine_audio.stop()
 		_engine_sound.stop()
@@ -471,21 +519,25 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 
 var is_exploding: bool = false
 var is_exploded: bool = false
+var _combustion_epoch := 0
 
 func _start_combustion_countdown() -> void:
 	if is_exploding or is_exploded: return
+	set_meta("service_complete", false)
+	_combustion_epoch += 1
+	var epoch := _combustion_epoch
 	is_exploding = true
 	_ensure_flame_particles()
 	if flame_particles: flame_particles.emitting = true
 	_ensure_smoke_emitter()
 	if smoke_emitter:
 		smoke_emitter.emitting = true
-		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
-		smoke_emitter.amount = 65
+		smoke_emitter.color = Color(0.65, 0.65, 0.68, 0.85)
+		smoke_emitter.amount = 20
 	# O jogador NÃO é ejetado sumariamente aqui: ele tem 3.2s para reagir e pular com F/Enter!
 		
 	await get_tree().create_timer(3.2).timeout
-	if not is_exploded and health <= 0:
+	if epoch == _combustion_epoch and is_exploding and not is_exploded and health <= 0:
 		_explode()
 
 func _explode() -> void:
@@ -494,11 +546,12 @@ func _explode() -> void:
 	is_exploding = false
 	if flame_particles: flame_particles.emitting = false
 	if headlight: headlight.visible = false
+	if second_headlight: second_headlight.visible = false
 	
 	# Se o jogador ainda estiver no veículo na detonação final, ele é ejetado e toma o dano da explosão
 	if is_driven_by_player:
 		var driver_ref = _driver
-		exit_vehicle()
+		force_exit_vehicle()
 		if is_instance_valid(driver_ref) and driver_ref.has_method("take_damage"):
 			driver_ref.take_damage(100) # Dano crítico de explosão
 	
@@ -515,73 +568,7 @@ func _explode() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 	
-	# 2. Bola de fogo densa e expansiva
-	var fireball := CPUParticles2D.new()
-	fireball.global_position = global_position
-	fireball.emitting = true
-	fireball.one_shot = true
-	fireball.explosiveness = 0.98
-	fireball.amount = 75
-	fireball.lifetime = 1.3
-	fireball.spread = 180.0
-	fireball.initial_velocity_min = 160.0
-	fireball.initial_velocity_max = 420.0
-	fireball.gravity = Vector2(0, 120)
-	fireball.scale_amount_min = 6.0
-	fireball.scale_amount_max = 16.0
-	fireball.color = Color(1.0, 0.48, 0.08, 0.95)
-	get_parent().add_child(fireball)
-	
-	# 3. Estilhaços metálicos incandescentes
-	var shrapnel := CPUParticles2D.new()
-	shrapnel.global_position = global_position
-	shrapnel.emitting = true
-	shrapnel.one_shot = true
-	shrapnel.explosiveness = 0.95
-	shrapnel.amount = 30
-	shrapnel.lifetime = 0.9
-	shrapnel.spread = 180.0
-	shrapnel.initial_velocity_min = 200.0
-	shrapnel.initial_velocity_max = 500.0
-	shrapnel.gravity = Vector2(0, 350)
-	shrapnel.scale_amount_min = 3.0
-	shrapnel.scale_amount_max = 6.0
-	shrapnel.color = Color(1.0, 0.85, 0.3)
-	get_parent().add_child(shrapnel)
-	
-	# 4. Clarão de Luz Instantâneo
-	var flash_light := PointLight2D.new()
-	flash_light.color = Color(1.0, 0.85, 0.5)
-	flash_light.energy = 4.5
-	var f_grad = Gradient.new()
-	f_grad.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
-	var f_tex = GradientTexture2D.new()
-	f_tex.gradient = f_grad
-	f_tex.width = 420
-	f_tex.height = 420
-	f_tex.fill = GradientTexture2D.FILL_RADIAL
-	f_tex.fill_from = Vector2(0.5, 0.5)
-	f_tex.fill_to = Vector2(1.0, 0.5)
-	flash_light.texture = f_tex
-	flash_light.global_position = global_position
-	get_parent().add_child(flash_light)
-	var fl_tween = flash_light.create_tween()
-	fl_tween.tween_property(flash_light, "energy", 0.0, 0.45)
-	fl_tween.tween_callback(flash_light.queue_free)
-	
-	# 5. Marca de Asfalto Queimado no Solo
-	var scorch := Polygon2D.new()
-	var sc_pts = PackedVector2Array()
-	var sc_count = 14
-	for k in sc_count:
-		var ang = k * TAU / sc_count
-		var rad = randf_range(34.0, 52.0)
-		sc_pts.append(Vector2(cos(ang), sin(ang)) * rad)
-	scorch.polygon = sc_pts
-	scorch.color = Color(0.04, 0.04, 0.05, 0.85)
-	scorch.global_position = global_position
-	scorch.z_index = -15
-	get_parent().add_child(scorch)
+	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 180.0, true)
 	
 	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if visual:
@@ -589,22 +576,18 @@ func _explode() -> void:
 		visual.scale = Vector2(uniform_scale, uniform_scale)
 		visual.position = Vector2.ZERO
 		visual.skew = 0.0
+	if is_3d_vehicle and is_instance_valid(body_model):
+		body_model.char_body()
+		visual.modulate = Color.WHITE
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	
 	# 7. Screen Shake
 	if is_driven_by_player:
 		_do_screen_shake(0.70)
 		
 	# 8. Onda de choque
-	var blast_radius = 210.0
-	for body in get_tree().get_nodes_in_group("damageable"):
-		if body != self and is_instance_valid(body):
-			var d = global_position.distance_to(body.global_position)
-			if d < blast_radius:
-				var blast_dir = global_position.direction_to(body.global_position)
-				if body.has_method("get_run_over"):
-					body.get_run_over(blast_dir * 550.0)
-				elif body.has_method("take_damage"):
-					body.take_damage(int(lerp(120.0, 35.0, d / blast_radius)))
+	preload("res://world/shared/combat/VehicleBlast.gd").apply(self)
+	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
 	_start_decay()
 
 var _fire_truck_dispatched: bool = false
@@ -627,34 +610,20 @@ func _dispatch_fire_truck():
 		return
 
 func extinguish_fire() -> void:
+	if get_meta("service_complete", false): return
+	set_meta("service_complete", true)
+	_combustion_epoch += 1
 	_fire_truck_dispatched = false
 	is_exploding = false
 	if flame_particles: flame_particles.emitting = false
 	if smoke_emitter:
 		smoke_emitter.color = Color(0.9, 0.9, 0.9, 0.5)
-		smoke_emitter.amount = 35
-	var tween = create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 1.8)
-	tween.tween_callback(func():
-		var parent = get_parent()
-		if parent is PathFollow2D:
-			parent.queue_free()
-		else:
-			queue_free()
-	)
+		smoke_emitter.amount = 20
+	# WorldRenewal owns the bounded fade and reuses this fleet slot.
 
 func _start_decay():
-	await get_tree().create_timer(14.0).timeout
-	if is_broken:
-		var tween = create_tween()
-		tween.tween_property(self, "modulate:a", 0.0, 2.0)
-		tween.tween_callback(func():
-			var parent = get_parent()
-			if parent is PathFollow2D:
-				parent.queue_free()
-			else:
-				queue_free()
-		)
+	# Also handles wrecks restored from saves and sleeping lanes.
+	pass
 
 var damage_deformation_scale := Vector2(1.0, 1.0)
 var damage_deformation_offset := Vector2.ZERO
@@ -671,27 +640,88 @@ func _ensure_dents_container() -> void:
 
 var _last_crash_visual_ms := -999999
 
-func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO) -> void:
-	if visual == null or impact_force < 80.0 or not hit_world_pos.is_finite(): return
+func receive_bullet_impact(direction: Vector2, amount: int) -> void:
+	if not is_motorcycle or amount <= 0 or is_exploded or _rider_fallen: return
+	var incoming := global_transform.x * maxf(_lane_motion_speed, velocity.length()) + direction.normalized() * clampf(amount * 5.0, 100.0, 280.0)
+	if incoming.length() < 100.0: incoming = direction.normalized() * 100.0
+	if is_driven_by_player:
+		_rider_fallen = true
+		_finish_player_bullet_fall.call_deferred(incoming)
+	elif not _detached_from_lane:
+		receive_vehicle_impact(incoming.length(), incoming.normalized())
+	else:
+		_rider_fallen = true
+		ensure_presentation()
+		if is_instance_valid(body_model):
+			body_model.set_meta("fallen_motorcycle", true)
+			create_tween().tween_property(body_model, "rotation:z", 1.25, 0.35)
+
+func _finish_player_bullet_fall(incoming: Vector2) -> void:
+	var rider := _driver
+	force_exit_vehicle()
+	if is_instance_valid(rider) and rider.has_method("get_run_over"):
+		rider.get_run_over(incoming.limit_length(280.0))
+	if is_instance_valid(body_model):
+		body_model.set_meta("fallen_motorcycle", true)
+		create_tween().tween_property(body_model, "rotation:z", 1.25, 0.35)
+
+func receive_vehicle_impact(force: float, direction: Vector2) -> void:
+	if not is_motorcycle or _rider_fallen or _detached_from_lane or is_driven_by_player:
+		return
+	if not is_finite(force) or force < 65.0 or not direction.is_finite(): return
+	_rider_fallen = true
+	_finish_rider_fall.call_deferred(direction.normalized(), force)
+
+func _finish_rider_fall(direction: Vector2, force: float) -> void:
+	if is_driven_by_player or _detached_from_lane:
+		_rider_fallen = false
+		return
+	var scene := get_tree().current_scene
+	if scene == null: scene = get_parent().get_parent()
+	ensure_presentation()
+	var fallen := preload("res://CarjackedDriver.tscn").instantiate() as CarjackedDriver
+	scene.add_child(fallen)
+	fallen.global_position = global_position
+	fallen.global_rotation = global_rotation
+	fallen.fall_from_motorcycle(self, direction, force)
+	reparent(scene, true)
+	# A traffic crash does not arm a parked theft alarm on the dropped bike.
+	_parked_security_configured = true
+	has_theft_alarm = false
+	configure_as_parked()
+	set_process(true)
+	velocity = direction * clampf(force * 0.12, 8.0, 42.0)
+	if is_instance_valid(body_model):
+		body_model.set_meta("fallen_motorcycle", true)
+		var fall := create_tween()
+		fall.tween_property(body_model, "rotation:z", 1.25, 0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_apply_crash_deformation(-direction, maxf(80.0, force), global_position)
+
+func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO, is_post: bool = false) -> void:
+	receive_vehicle_impact(impact_force, -impact_normal)
+	if visual == null or impact_force < (40.0 if is_post else 80.0) or not hit_world_pos.is_finite(): return
 	ensure_presentation()
 	var now := Time.get_ticks_msec()
-	if now - _last_crash_visual_ms < 500: return
+	if now - _last_crash_visual_ms < (350 if is_post else 500): return
 	_last_crash_visual_ms = now
+	# Poste tem efeito próprio (spawn_post_impact), disparado na colisão.
+	if not is_post: preload("res://world/shared/combat/WeaponEffects.gd").spawn_crash(get_parent(), hit_world_pos, impact_normal, impact_force)
 	# The native vehicle receives a bounded dent in its own mesh. Flat decals
 	# cannot follow its projected sides and must never be layered on top.
 	if is_3d_vehicle and is_instance_valid(body_model):
 		var ppm := 74.0 / 4.46
 		var hit := to_local(hit_world_pos) / ppm
 		var inward := global_transform.basis_xform_inv(impact_normal)
-		body_model.apply_impact(Vector3(hit.y,0.81,-hit.x),Vector3(inward.y,0,-inward.x),impact_force/ppm)
+		body_model.apply_impact(Vector3(hit.y,0.81,-hit.x),Vector3(inward.y,0,-inward.x),(impact_force * 0.5 if is_post else impact_force)/ppm)
+		_update_headlight_state()
 		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	else:
+	elif not is_post:
 		_ensure_dents_container()
 		_spawn_dent_decal(to_local(hit_world_pos),global_transform.basis_xform_inv(impact_normal),clampf(impact_force/420.0,0,1))
 	visual.modulate = visual.modulate.lerp(Color(0.80,0.80,0.81),0.08)
 	var crumple_player := AudioStreamPlayer2D.new()
 	crumple_player.stream = ProceduralAudio.get_metal_crumple_stream()
-	crumple_player.volume_db = -15.0
+	crumple_player.volume_db = -20.0 if is_post else -15.0
 	crumple_player.bus = &"SFX"
 	crumple_player.max_distance = 500.0
 	add_child(crumple_player)
@@ -741,12 +771,19 @@ var active_roof_prop_node: Node2D = null
 func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARENT) -> void:
 	_pending_spec = {}
 	active_archetype_id = archetype_id
+	if collision: collision.position = Vector2.ZERO
+	preload("res://world/shared/emergency/VehicleWaterCannon.gd").sync_vehicle(self, archetype_id == "rescue_pumper")
 	var spec: Dictionary = VehicleCatalog.get_vehicle_spec(archetype_id)
 	if spec.is_empty(): return
+	is_motorcycle = spec.get("vehicle_kind", "car") == "motorcycle"
+	set_meta("vehicle_kind", "motorcycle" if is_motorcycle else "car")
+	if is_motorcycle: add_to_group("motorcycle")
+	else: remove_from_group("motorcycle")
 	
 	vehicle_id = archetype_id
 	display_name = spec.get("label", "Veículo")
 	target_length = float(spec.get("target_length", 76.0))
+	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, float(spec.get("target_width",34.0)) * 1.08))
 	vehicle_mass = float(spec.get("mass", 1.0))
 	max_speed = float(spec.get("max_speed", 490.0))
 	acceleration = float(spec.get("acceleration", 880.0))
@@ -755,6 +792,15 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	drift_factor = float(spec.get("drift_factor", 0.88))
 	max_health = int(spec.get("durability", 100))
 	health = max_health
+	for ray_name in ["FrontRayL", "FrontRayR"]:
+		var ray := get_node_or_null(ray_name) as RayCast2D
+		if ray:
+			var half_width := float(spec.get("target_width",34))*.45 if is_motorcycle else 18.0
+			ray.position = Vector2(target_length*.4, half_width * (-1 if ray_name == "FrontRayL" else 1))
+	if engine_audio:
+		engine_audio.stop()
+		_engine_sound.stop()
+		_engine_sound.bind(engine_audio, active_archetype_id)
 	
 	is_police_vehicle = String(spec.get("roof_prop", "")) == "police_lightbar"
 	# Cor e Textura Especial
@@ -763,14 +809,26 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 			_pending_spec = spec.duplicate(true)
 			_pending_color = VehicleCatalog.get_random_color(archetype_id) if custom_color == Color.TRANSPARENT else custom_color
 			visual.modulate = _pending_color
+			if is_motorcycle:
+				visual.texture = preload("res://world/shared/motorcycles/MotorcycleSilhouette.gd").texture()
+				visual.region_enabled = false
+				visual.rotation = 0.0
+				visual.scale = Vector2.ONE * target_length / 64.0
+			else:
+				var placeholder := AtlasTexture.new()
+				placeholder.atlas = VEHICLE_ATLAS
+				placeholder.region = VehicleCatalog.VEHICLE_CROPS[posmod(int(spec.get("crop_index",0)),VehicleCatalog.VEHICLE_CROPS.size())]
+				visual.texture = placeholder
+				visual.rotation = PI*.5
+				visual.scale = Vector2.ONE * target_length / maxf(1.0,placeholder.region.size.y)
 			# O tamanho físico independe do momento em que a câmera solicita detalhe.
 			var length := float(spec.get("target_length", 82.0))
 			var width := float(spec.get("target_width", 34.0))
 			var shape := RectangleShape2D.new()
-			shape.size = Vector2(length * 0.82, maxf(28.0, width * 0.88))
+			shape.size = Vector2(length * 0.82, maxf(10.0 if is_motorcycle else 28.0, width * 0.88))
 			collision.shape = shape
 			var hit := pedestrian_hitbox.get_node("Collision") as CollisionShape2D
-			(hit.shape as RectangleShape2D).size = Vector2(length * 1.02, maxf(34.0, width * 1.02))
+			(hit.shape as RectangleShape2D).size = Vector2(length * 1.02, maxf(12.0 if is_motorcycle else 34.0, width * 1.02))
 			get_node("/root/PresentationBudget").request(self)
 		else:
 			_setup_3d_model(spec, custom_color)
@@ -790,7 +848,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	else:
 		if spec.has("crop_index"):
 			var c_idx: int = int(spec["crop_index"])
-			crop = ModernTrafficFactory.VEHICLE_CROPS[posmod(c_idx, ModernTrafficFactory.VEHICLE_CROPS.size())]
+			crop = VehicleCatalog.VEHICLE_CROPS[posmod(c_idx, VehicleCatalog.VEHICLE_CROPS.size())]
 			if visual and visual.texture is AtlasTexture:
 				(visual.texture as AtlasTexture).region = crop
 
@@ -811,6 +869,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	
 	# Atualiza adereços no teto/lataria (props)
 	_build_roof_prop(String(spec.get("roof_prop", "none")))
+	preload("res://world/harbor/ForkliftLift.gd").sync_vehicle(self, archetype_id == "port_forklift")
 
 func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) -> void:
 	is_3d_vehicle = true
@@ -818,11 +877,27 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 	var model_res = load(model_path)
 	if not model_res:
 		return
+	# Recycled vehicles must rebuild when their authored class changes.
+	if body_model != null and body_model.get_script() != model_res:
+		body_viewport.free()
+		body_viewport = null
+		body_model = null
+		wheel_rig = preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
+		wheels = []
+		spinners = []
+		_lamp_mounts.clear()
+		_side_doors.clear()
+		_door_3d = null
+		if second_headlight: second_headlight.free()
+		second_headlight = null
+		_body_render_visible = false
 
 	var t_len: float = float(spec.get("target_length", 82.0))
 	var t_wid: float = float(spec.get("target_width", 34.0))
 	var ppm: float = 74.0 / 4.46
-	var cam_size: float = maxf(6.0, (t_len / ppm) * 1.25)
+	# Bikes occupied less than half of the car framing. Fit their silhouette
+	# into the same render target, preserving world size via uniform_scale.
+	var cam_size: float = maxf(3.8 if is_motorcycle else 6.0, (t_len / ppm) * 1.25)
 	var v_size := 192
 	if t_len > 100.0:
 		v_size = 256
@@ -863,6 +938,7 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 		body_model.rotation.y = -PI * 0.5
 
 		var view := Camera3D.new()
+		view.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		body_viewport.add_child(view)
 		view.position = Vector3(0, 8, 4)
 		view.look_at(Vector3(0, 0.45, 0))
@@ -888,23 +964,43 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 		chosen_color = VehicleCatalog.get_random_color(active_archetype_id)
 	if body_model and "paint" in body_model and body_model.paint:
 		body_model.paint.albedo_color = chosen_color
+	refresh_motorcycle_rider()
+	lightbar_3d.bind(body_model)
+	if is_police_vehicle and active_roof_prop_node and not lightbar_3d.lamps.is_empty():
+		active_roof_prop_node.hide()
 
 	if visual:
 		visual.texture = body_viewport.get_texture()
+		visual.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if is_motorcycle else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 		visual.region_enabled = false
 		visual.centered = true
+		var ground_camera := body_viewport.get_camera_3d()
+		ground_camera.force_update_transform()
+		visual.offset = Vector2(body_viewport.size) * .5 - ground_camera.unproject_position(Vector3.ZERO)
 		uniform_scale = ppm * cam_size / float(v_size)
 		visual.scale = Vector2(uniform_scale, uniform_scale)
 		visual.rotation = 0.0
 		visual.modulate = Color.WHITE
+		preload("res://ContactShadow.gd").add_vehicle(self, Vector2(t_len, t_wid))
 
 	var rect_shape := RectangleShape2D.new()
-	rect_shape.size = Vector2(t_len * 0.82, maxf(28.0, t_wid * 0.88))
+	rect_shape.size = Vector2(t_len * 0.82, maxf(10.0 if is_motorcycle else 28.0, t_wid * 0.88))
 	if collision: collision.shape = rect_shape
 	if pedestrian_hitbox and pedestrian_hitbox.has_node("Collision"):
 		var p_col = pedestrian_hitbox.get_node("Collision") as CollisionShape2D
 		if p_col and p_col.shape is RectangleShape2D:
-			(p_col.shape as RectangleShape2D).size = Vector2(t_len * 1.02, maxf(34.0, t_wid * 1.02))
+			(p_col.shape as RectangleShape2D).size = Vector2(t_len * 1.02, maxf(12.0 if is_motorcycle else 34.0, t_wid * 1.02))
+	var lift := get_node_or_null("ForkliftLift")
+	if lift and active_archetype_id == "port_forklift": lift.configure_hull()
+
+func refresh_motorcycle_rider() -> void:
+	if not is_motorcycle or not is_instance_valid(body_model): return
+	if is_driven_by_player: _rider_fallen = false
+	var occupied := (is_driven_by_player or not _detached_from_lane) and not has_meta("vehicle_boarding") and not is_exploded
+	if is_driven_by_player and is_instance_valid(_driver): body_model.set_dante_rider(_driver)
+	body_model.set_rider_state(occupied, is_driven_by_player)
+	_body_render_visible = false
+	body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 var _body_render_clock := 0.0
 var _body_render_visible := false
@@ -914,6 +1010,10 @@ var _last_render_steer := INF
 
 func _update_3d_orientation(delta: float) -> void:
 	if not is_3d_vehicle or body_model == null:
+		return
+	if has_meta("interior_vehicle_presentation"):
+		wheel_rig.update(delta,velocity.dot(global_transform.x)/22.0,global_rotation)
+		get_meta("interior_vehicle_presentation").sync()
 		return
 	# Every car has its own 3D world. Submit only visible cars, while leaving
 	# lane simulation and physical collisions running outside the camera.
@@ -930,27 +1030,34 @@ func _update_3d_orientation(delta: float) -> void:
 	body_model.rotation.y = -global_rotation - PI * 0.5
 	if visual:
 		visual.global_rotation = 0.0
+		preload("res://world/harbor/urban_transit/UrbanVehicleDepth.gd").update(self, visual)
 	if not is_driven_by_player and is_night_or_storm and not is_broken:
 		if headlight and not headlight.visible: headlight.visible = true
 		if second_headlight and not second_headlight.visible: second_headlight.visible = true
-	if second_headlight != null and _lamp_mounts.size() >= 2:
+	if headlight != null and not _lamp_mounts.is_empty():
 		var view := body_viewport.get_camera_3d()
 		if view:
-			for i in 2:
+			for i in mini(2, _lamp_mounts.size()):
 				var light: PointLight2D = headlight if i == 0 else second_headlight
 				var pixel := view.unproject_position(body_model.to_global(_lamp_mounts[i]))
 				light.global_position = visual.to_global(pixel-Vector2(body_viewport.size)*0.5)
-		second_headlight.visible = headlight.visible
+		var lamps_active := (is_night_or_storm or is_driven_by_player) and not is_broken and not is_exploded
+		headlight.visible = lamps_active and not body_model.broken_lamps[0]
+		if second_headlight: second_headlight.visible = lamps_active and not body_model.broken_lamps[1]
 	var signed_speed := velocity.dot(global_transform.x) if is_driven_by_player else (_lane_motion_speed if is_moving_on_lane else 0.0)
 	var ppm := 74.0 / 4.46
 	# Nem a faixa nem o jogador ao volante deste carro passam por um ângulo de
 	# esterço: os dois giram `rotation` direto. O ângulo das rodas dianteiras sai
 	# então da guinada real da carroceria, pelo modelo de bicicleta invertido.
 	wheel_rig.update(delta, signed_speed / ppm, global_rotation)
+	var rider_moved := false
+	if is_motorcycle:
+		rider_moved = body_model.update_riding_pose(delta, signed_speed / ppm, wheel_rig.steering_angle, body_model.rider.visible)
 	var interval := 1.0 / (60.0 if is_driven_by_player else 30.0)
 	var steer_moved := absf(wheel_rig.steering_angle - _last_render_steer) > 0.004
-	var moving_pose := absf(signed_speed)>0.1 or steer_moved or not is_equal_approx(_last_render_heading,global_rotation)
-	if not _body_render_visible or (moving_pose and _body_render_clock >= interval):
+	var beacon_changed := lightbar_3d.update((is_siren_on or is_alarm_active) and not is_broken and not is_exploded, Time.get_ticks_msec())
+	var moving_pose := absf(signed_speed)>0.1 or steer_moved or rider_moved or not is_equal_approx(_last_render_heading,global_rotation)
+	if not _body_render_visible or beacon_changed or (moving_pose and _body_render_clock >= interval):
 		_body_render_clock = fmod(_body_render_clock, interval)
 		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		body_render_requests += 1
@@ -982,6 +1089,8 @@ func _build_roof_prop(prop_type: String) -> void:
 		active_roof_prop_node = null
 		
 	if prop_type == "none": return
+	if prop_type == "taxi_sign" and is_3d_vehicle: return
+	if prop_type == "police_lightbar" and is_3d_vehicle and not lightbar_3d.lamps.is_empty(): return
 	
 	active_roof_prop_node = Node2D.new()
 	active_roof_prop_node.name = "RoofProp"
@@ -1111,8 +1220,24 @@ func repair_and_repaint(new_color: Color = Color.TRANSPARENT) -> void:
 	repaint_vehicle(new_color)
 
 func repair_vehicle() -> void:
+	_launch.reset()
+	_tire_trail.reset()
+	remove_meta("service_complete")
+	remove_meta("fire_response_assigned")
+	_combustion_epoch += 1
 	health = max_health
+	if max_speed <= 0.0:
+		max_speed = float(get_meta("speed_before_destruction",VehicleCatalog.get_vehicle_spec(active_archetype_id).get("max_speed",490.0)))
 	is_broken = false
+	is_exploded = false
+	is_exploding = false
+	_fire_truck_dispatched = false
+	_clear_all_dents()
+	bloody_tires_timer = 0.0
+	is_skidding = false
+	if skid_line:
+		skid_line.clear_points()
+		skid_line.default_color = Color(0.1,0.1,0.1,0.5)
 	damage_deformation_scale = Vector2(1.0, 1.0)
 	damage_deformation_offset = Vector2.ZERO
 	damage_skew = 0.0
@@ -1122,7 +1247,7 @@ func repair_vehicle() -> void:
 		visual.skew = 0.0
 	if smoke_emitter:
 		smoke_emitter.emitting = false
-		smoke_emitter.amount = 30
+		smoke_emitter.amount = 20
 	if flame_particles:
 		flame_particles.emitting = false
 	if rim_sparks:
@@ -1130,12 +1255,16 @@ func repair_vehicle() -> void:
 	if flat_smoke:
 		flat_smoke.emitting = false
 	has_punctured_tires = false
+	if visual: visual.modulate = Color.WHITE if is_3d_vehicle else _pending_color
+	_update_headlight_state()
 
 func configure_as_parked() -> void:
 	## A parked catalog vehicle keeps the current art, damage and enter/drive
 	## systems, but has no imaginary driver and never searches for a PathFollow.
 	_detached_from_lane = true
 	is_driven_by_player = false
+	is_moving_on_lane = false
+	_lane_motion_speed = 0.0
 	speed = 0.0
 	velocity = Vector2.ZERO
 	set_process(false)
@@ -1144,33 +1273,84 @@ func configure_as_parked() -> void:
 		camera.set_process(false)
 		camera.set_physics_process(false)
 	add_to_group("parked_vehicle")
+	if not _parked_security_configured:
+		# Stable selection across region streaming; applies to cars and motorcycles.
+		var security_key := "%s:%s:%s" % [name, position, active_archetype_id]
+		has_theft_alarm = is_police_vehicle or posmod(security_key.hash(), 100) < 35
+		_parked_security_configured = true
+	refresh_motorcycle_rider()
+	if engine_audio: engine_audio.stop()
+	_engine_sound.stop()
 
 var _entry_input_released := true
 var _drive_input_armed := true
 var _siren_key_down := false
 
 func enter_vehicle(player_body: CharacterBody2D) -> void:
+	_enter_vehicle_with_role(player_body)
+
+func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger := false, steal_taxi := false) -> void:
+	if has_meta("forklift_carried"): return
 	ensure_presentation()
 	if is_broken or is_driven_by_player or player_body == null:
 		return
+	if not is_visible_in_tree() or player_body.get("is_control_disabled") == true:
+		return
+	var taxi_occupied: bool = active_archetype_id == "taxi_yellow" and (not _detached_from_lane or (is_instance_valid(_taxi_service) and _taxi_service.driver_available))
+	if taxi_occupied and not as_taxi_passenger and not steal_taxi:
+		if not is_instance_valid(_taxi_service):
+			_taxi_service = preload("res://world/shared/traffic/TaxiService.gd").new()
+			add_child(_taxi_service)
+		_taxi_service.offer(self,player_body)
+		return
+	if as_taxi_passenger and (not taxi_occupied or not is_instance_valid(_taxi_service)): return
+	taxi_passenger = as_taxi_passenger
+	if is_police_vehicle and _detached_from_lane and not was_stolen_from_police and not _police_lock_unlocked:
+		_begin_vehicle_lockpick(player_body)
+		return
 		
+	# Capture security state before ejection/boarding can detach or hide a rider.
+	var theft_from_traffic := not _detached_from_lane or velocity.length() > 8.0 or _lane_motion_speed > 8.0
 	# Ejeção dinâmica do motorista anterior se o carro estava em trânsito
-	var was_occupied: bool = not _detached_from_lane
-	if was_occupied:
+	var was_occupied: bool = not _detached_from_lane or taxi_occupied
+	if get_meta("service_crew_owned", false): was_occupied = false
+	if is_motorcycle:
+		was_occupied = was_occupied and not _rider_fallen and is_instance_valid(body_model) and is_instance_valid(body_model.rider) and body_model.rider.visible
+	if was_occupied and not taxi_passenger:
 		var driver_scene = load("res://CarjackedDriver.tscn")
 		if driver_scene:
 			var ejected_driver = driver_scene.instantiate() as CarjackedDriver
 			var scene_target = get_tree().current_scene if get_tree().current_scene else get_parent()
 			if scene_target:
 				scene_target.add_child(ejected_driver)
-				var ejection_pos = global_position - transform.y * 36.0 + transform.x * -12.0
-				ejected_driver.setup(self, ejection_pos)
+				var exit_side := -1.0 if to_local(_get_safe_exit_position()).y <= 0 else 1.0
+				_animate_car_door(exit_side)
+				var ejection_pos := preload("res://VehicleBoarding.gd").driver_exit_position(self, ejected_driver, exit_side)
+				if not ejection_pos.is_finite():
+					# Sem vão livre para o motorista sair (ônibus encostado na plataforma,
+					# carro contra parede): não o jogamos dentro de um sólido, mas o roubo
+					# continua. Cancelar aqui deixava o veículo impossível de roubar.
+					ejected_driver.queue_free()
+				else:
+					ejected_driver.setup(self, ejection_pos)
+		if taxi_occupied and is_instance_valid(_taxi_service):
+			_taxi_service.driver_available = false
+	if active_archetype_id == "taxi_yellow" and is_instance_valid(body_model):
+		var cab_driver := body_model.get_node_or_null("TaxiDriver")
+		if cab_driver != null: cab_driver.visible = taxi_passenger
 
 	_driver = player_body
 	var approach := player_body.global_position
 	var entry_side := -1.0 if to_local(approach).y <= 0 else 1.0
+	if taxi_passenger: entry_side = 1.0
 	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
+	player_entered.emit(self)
+	# A vehicle taken by the player remains parked when they walk away or
+	# enter an interior. Only untouched ambient wrecks use abandoned cleanup.
+	if not taxi_passenger:
+		add_to_group("parked_vehicle")
+		_abandoned_timer = 0.0
 	_entry_input_released = false
 	_drive_input_armed = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down").is_zero_approx()
 	add_collision_exception_with(player_body)
@@ -1190,7 +1370,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	player_body.velocity = Vector2.ZERO
 	player_body.global_position = global_position
 	
-	_animate_car_door(entry_side, 0.95 if entry_side > 0 else 0.6)
+	_animate_car_door(entry_side, preload("res://VehicleBoarding.gd").duration_for(self, entry_side) - 0.60)
 	
 	var lane_follow := get_parent() as PathFollow2D
 	if lane_follow != null:
@@ -1219,35 +1399,78 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		radio_audio.play()
 
 	# Alarme e Alerta Policial se o jogador roubar uma viatura da PM
+	if was_occupied and not taxi_passenger:
+		# Taking the keys from a driver also disarms later re-entry.
+		_parked_theft_attempted = true
+		stop_theft_alarm()
 	if is_police_vehicle and not was_stolen_from_police:
 		was_stolen_from_police = true
+		_parked_theft_attempted = true
 		_trigger_police_theft()
+	elif not taxi_passenger and not _parked_theft_attempted:
+		_parked_theft_attempted = true
+		if has_theft_alarm and not theft_from_traffic and not was_occupied:
+			start_theft_alarm()
 
 	_boarding = preload("res://VehicleBoarding.gd").new()
 	add_child(_boarding)
 	_boarding.begin(self, player_body, approach, entry_side)
+	if is_motorcycle and player_body.has_method("ensure_motorcycle_helmet"):
+		player_body.ensure_motorcycle_helmet().mount(self)
+	refresh_motorcycle_rider()
 
-func _trigger_police_theft() -> void:
-	# 1. Alarme sonoro contínuo
+func _begin_vehicle_lockpick(player_body: CharacterBody2D) -> void:
+	if is_instance_valid(_vehicle_lockpick): return
+	_vehicle_lockpick = preload("res://ui/VehicleLockpick.gd").new()
+	add_child(_vehicle_lockpick)
+	_vehicle_lockpick.unlocked.connect(_finish_vehicle_lockpick.bind(true, player_body))
+	_vehicle_lockpick.cancelled.connect(_finish_vehicle_lockpick.bind(false, player_body))
+	_vehicle_lockpick.begin_for(player_body, self)
+
+func _finish_vehicle_lockpick(success: bool, player_body: CharacterBody2D) -> void:
+	_vehicle_lockpick = null
+	if success:
+		_police_lock_unlocked = true
+		stop_theft_alarm()
+		enter_vehicle(player_body)
+	else:
+		start_theft_alarm()
+		_show_theft_hud_notice("LOCKPICK FALHOU")
+
+func start_theft_alarm() -> void:
+	# The child timer also expires while boarding, broken or traffic physics sleeps.
+	# Repeated failures do not extend an already sounding alarm.
+	if is_alarm_active: return
 	is_alarm_active = true
-	alarm_timer = 20.0
+	if not is_instance_valid(_alarm_timeout):
+		_alarm_timeout = Timer.new()
+		_alarm_timeout.one_shot = true
+		add_child(_alarm_timeout)
+		_alarm_timeout.timeout.connect(stop_theft_alarm)
+	_alarm_timeout.start(randf_range(10.0, 15.0))
 	_ensure_alarm_audio()
 	if alarm_audio:
 		alarm_audio.play()
-	
-	# 2. Chama a polícia no WantedManager (+2 estrelas e despacho de reforço)
+
+func stop_theft_alarm() -> void:
+	is_alarm_active = false
+	if is_instance_valid(_alarm_timeout): _alarm_timeout.stop()
+	if is_instance_valid(alarm_audio): alarm_audio.stop()
+	if not is_siren_on: _turn_off_police_strobes()
+	_update_headlight_state()
+
+func _trigger_police_theft() -> void:
+	# Successful lockpicking starts a one-star pursuit without sounding the alarm.
 	var wanted = get_node_or_null("/root/WantedManager")
 	if wanted and wanted.has_method("report_police_car_theft"):
 		wanted.report_police_car_theft()
 	elif wanted and wanted.has_method("report_crime"):
-		wanted.report_crime(20)
+		wanted.report_crime(12)
 		
 	# 3. Notifica o ponto de prontidão da viatura
 	if standby_source and is_instance_valid(standby_source) and standby_source.has_method("notify_stolen"):
 		standby_source.notify_stolen()
 		
-	# 4. Notificação visual de urgência
-	_show_theft_hud_notice("🚨 ALARME DISPARADO! VIATURA DA PM ROUBADA! 🚨")
 
 func _show_theft_hud_notice(msg: String) -> void:
 	if _driver and _driver.has_method("_show_weapon_notice"):
@@ -1313,6 +1536,7 @@ var _door_visual: Node2D = null
 var _door_3d: Node3D
 var _side_doors := {}
 func _animate_car_door(side: float = -1.0, hold_seconds: float = 0.42) -> void:
+	if is_motorcycle: return
 	if is_3d_vehicle and is_instance_valid(body_model):
 		_door_3d = _side_doors.get(side)
 		if not is_instance_valid(_door_3d):
@@ -1352,6 +1576,9 @@ func _get_safe_exit_position() -> Vector2:
 		global_position - transform.x * 52.0, # Traseira
 		global_position + transform.x * 52.0  # Dianteira
 	]
+	if taxi_passenger:
+		candidates[0] = global_position + transform.y * 45.0
+		candidates[1] = global_position - transform.y * 45.0
 	for pos in candidates:
 		var query := PhysicsPointQueryParameters2D.new()
 		query.position = pos
@@ -1364,9 +1591,25 @@ func _get_safe_exit_position() -> Vector2:
 var _boarding: Node
 
 func exit_vehicle() -> void:
+	_launch.reset()
+	_tire_trail.reset()
+	if not is_driven_by_player: return
+	if taxi_passenger and is_instance_valid(_taxi_service): _taxi_service.stop_ride()
+	preload("res://VehicleBoarding.gd").start_exit(self, _driver)
+
+func force_exit_vehicle() -> void:
+	# Lifecycle cleanup (death/scene travel) cannot leave a pending animation.
+	if not is_driven_by_player: return
+	if taxi_passenger and is_instance_valid(_taxi_service): _taxi_service.stop_ride()
+	if is_instance_valid(_boarding): _boarding.cancel()
+	_complete_exit_vehicle(_get_safe_exit_position())
+
+func _complete_exit_vehicle(exit_position: Vector2) -> void:
 	if not is_driven_by_player:
 		return
-	if is_instance_valid(_boarding): _boarding.cancel()
+	if is_motorcycle and is_instance_valid(_driver) and _driver.has_method("ensure_motorcycle_helmet"):
+		_driver.ensure_motorcycle_helmet().dismount()
+	preload("res://VehicleBoarding.gd").clear_occupant(self)
 	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
 	velocity = Vector2.ZERO
@@ -1383,14 +1626,13 @@ func exit_vehicle() -> void:
 		camera.set_process(false)
 		camera.set_physics_process(false)
 
-	var exit_position := _get_safe_exit_position()
-	_animate_car_door(-1.0 if to_local(exit_position).y <= 0 else 1.0)
 
 	if is_instance_valid(_driver):
 		remove_collision_exception_with(_driver)
 		_driver.remove_collision_exception_with(self)
 		_driver.global_position = exit_position
 		_driver.velocity = Vector2.ZERO
+		_driver.reset_physics_interpolation()
 		for col in _driver.find_children("", "CollisionShape2D", true, false):
 			col.set_deferred("disabled", false)
 		_driver.show()
@@ -1399,8 +1641,14 @@ func exit_vehicle() -> void:
 		if player_camera != null:
 			preload("res://DynamicCamera.gd").handoff(player_camera, camera_view)
 	_driver = null
+	if taxi_passenger and is_instance_valid(_taxi_service): _taxi_service.finish_exit()
+	taxi_passenger = false
+	refresh_motorcycle_rider()
 
 func _physics_process(delta: float) -> void:
+	if not is_driven_by_player or is_broken:
+		_launch.reset()
+		_tire_trail.reset()
 	preload("res://VehicleMotionSafety.gd").sanitize(self)
 	has_nitro = false
 	is_boosting = false
@@ -1409,24 +1657,32 @@ func _physics_process(delta: float) -> void:
 		return
 	if is_3d_vehicle and not is_processing():
 		_update_3d_orientation(delta)
+	if is_instance_valid(_taxi_service) and _taxi_service.is_modal():
+		velocity = Vector2.ZERO
+		return
 
 	# Sempre permite ao jogador sair com F/Enter mesmo que o carro esteja em chamas ou quebrado
 	if is_driven_by_player:
 		if is_instance_valid(_driver): _driver.global_position = global_position
-		var exit_pressed := Input.is_key_pressed(KEY_F) or Input.is_key_pressed(KEY_ENTER) or Input.is_action_pressed("interact")
+		var exit_pressed := Input.is_action_pressed("exit_vehicle")
 		if not exit_pressed: _entry_input_released = true
 		if _entry_input_released and exit_pressed:
 			exit_vehicle()
 			return
+	if taxi_passenger and is_instance_valid(_taxi_service):
+		_taxi_service.physics_tick(delta)
+		return
 
 	if is_broken:
-		velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
 		if _detached_from_lane:
 			preload("res://VehicleMotionSafety.gd").move(self)
 		return
 	if not is_driven_by_player:
+		handbrake_slide = 0.0
+		lateral_speed = 0.0
 		if _detached_from_lane:
-			velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+			velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
 			preload("res://VehicleMotionSafety.gd").move(self)
 			if not is_in_group("parked_vehicle") and not is_in_group("player_car"):
 				var player_node := get_tree().get_first_node_in_group("player") as Node2D
@@ -1438,11 +1694,6 @@ func _physics_process(delta: float) -> void:
 				else:
 					_abandoned_timer = 0.0
 		if is_alarm_active:
-			alarm_timer -= delta
-			if alarm_timer <= 0.0:
-				is_alarm_active = false
-				if alarm_audio and alarm_audio.playing:
-					alarm_audio.stop()
 			_update_police_strobes(delta)
 		elif is_siren_on:
 			_update_police_strobes(delta)
@@ -1457,14 +1708,6 @@ func _physics_process(delta: float) -> void:
 			toggle_siren()
 		_siren_key_down = siren_pressed
 
-	# Atualização do alarme ativo da viatura
-	if is_alarm_active:
-		alarm_timer -= delta
-		if alarm_timer <= 0.0:
-			is_alarm_active = false
-			if alarm_audio and alarm_audio.playing:
-				alarm_audio.stop()
-				
 	if is_alarm_active or is_siren_on:
 		_update_police_strobes(delta)
 	else:
@@ -1482,51 +1725,55 @@ func _physics_process(delta: float) -> void:
 		_hit_stop_frames -= 1
 		return
 
-	var throttle := Input.get_axis("ui_down", "ui_up")
-	var steering := Input.get_axis("ui_left", "ui_right")
+	var throttle: float = -get_node("/root/GameInput").movement().y
+	var steering: float = get_node("/root/GameInput").movement().x
 	if not _drive_input_armed:
 		_drive_input_armed = is_zero_approx(throttle) and is_zero_approx(steering)
 		throttle = 0.0
 		steering = 0.0
 	
-	# Derrapagem e Drift
+	var handbrake := Input.is_action_pressed("handbrake")
+	_launch.update(delta, velocity.length(), throttle, handbrake, max_speed, not is_broken)
+	handbrake_slide = 0.7 if handbrake and velocity.length() > 55.0 else maxf(0.0, handbrake_slide - delta)
+	if not is_instance_valid(_drift_weather): _drift_weather = get_tree().get_first_node_in_group("day_night_manager")
+	var wetness: float = _drift_weather.get_rain_intensity() if is_instance_valid(_drift_weather) else 0.0
 	var lateral_velocity = velocity.project(transform.y)
-	if lateral_velocity.length() > 90.0:
-		_ensure_skid_line()
-		if not is_skidding:
-			is_skidding = true
-			skid_line.clear_points()
-		if skid_line.get_point_count() == 0 or skid_line.get_point_position(skid_line.get_point_count() - 1).distance_to(global_position) > 6.0:
-			skid_line.add_point(global_position)
-		if skid_line.get_point_count() > 30:
-			skid_line.remove_point(0)
-	else:
-		is_skidding = false
-		if skid_line and skid_line.get_point_count() > 0 and bloody_tires_timer <= 0.0:
-			skid_line.clear_points()
-			
-	_update_skid_audio()
+	lateral_speed = lateral_velocity.length()
+	is_skidding = lateral_speed > lerpf(70.0, 45.0, wetness) or (handbrake and velocity.length() > 60.0)
+	if skid_line: skid_line.clear_points()
 
-	var handbrake := Input.is_key_pressed(KEY_SPACE) or (InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"))
-	velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor, delta, 0.0, handbrake)
-	if handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.45*delta)
+
+	_drivetrain.update(str(VehicleCatalog.get_vehicle_spec(active_archetype_id).get("drivetrain", "rwd")), velocity.dot(transform.x), throttle, steering, wetness)
+	velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor + _drivetrain.drift_bias, delta, wetness, handbrake_slide > 0.0, vehicle_mass)
+	if handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.10*preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass)*delta)
 	var longitudinal := velocity.dot(transform.x)
-	rotation += steering * turn_speed * clampf(longitudinal/150.0,-1.0,1.0) * delta
+	var slide_steer := lerpf(1.0, 1.65, clampf(handbrake_slide / 0.35, 0.0, 1.0))
+	_handling_yaw_rate = preload("res://VehicleMotionSafety.gd").steering_rate(_handling_yaw_rate, steering, longitudinal, turn_speed * _drivetrain.steer_scale * slide_steer, vehicle_mass, delta)
+	var proposed_rotation := rotation + _handling_yaw_rate * delta
+	var forklift := get_node_or_null("ForkliftLift")
+	preload("res://VehicleMotionSafety.gd").rotate_clear(self, forklift.safe_rotation(proposed_rotation) if forklift else proposed_rotation)
 	var forward := transform.x
 	if not is_zero_approx(throttle):
 		if (throttle > 0.0 and velocity.dot(forward) < -8.0) or (throttle < 0.0 and velocity.dot(forward) > 8.0):
-			velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
+			velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
+		elif forklift:
+			velocity = (velocity + forward * throttle * acceleration * delta).limit_length(forklift.speed_limit())
 		else:
-			velocity = (velocity + forward * throttle * acceleration * _engine_sound.drive_force(velocity.length(), max_speed) * delta).limit_length(_engine_sound.road_top_speed(max_speed))
+			velocity = (velocity + forward * throttle * acceleration * preload("res://VehicleMotionSafety.gd").drive_mass_scale(vehicle_mass) * _drivetrain.force_scale * _launch.force_scale * _engine_sound.drive_force(velocity.length(), max_speed) * delta).limit_length(_engine_sound.road_top_speed(max_speed))
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
 
+	if forklift: velocity = velocity.limit_length(forklift.speed_limit())
+	if _launch.holding: velocity = Vector2.ZERO
+	is_skidding = is_skidding or _launch.wheelspin > 0.12
+	_tire_trail.update(self, delta, is_driven_by_player and not is_broken and is_skidding, 0.38 + _launch.wheelspin * 0.25)
+	if is_driven_by_player: _update_skid_audio()
 	var prev_velocity = velocity
 	preload("res://VehicleMotionSafety.gd").move(self)
 	
 	# Same cached family/RPM controller as personal cars; large vehicles keep diesel timbre.
 	if engine_audio and not is_broken:
-		_engine_sound.update(engine_audio, velocity.length(), _engine_sound.road_top_speed(max_speed), throttle, delta, active_archetype_id)
+		_engine_sound.update(engine_audio, velocity.length(), forklift.speed_limit() if forklift else _engine_sound.road_top_speed(max_speed), throttle, delta, active_archetype_id, false, _launch.charge * _launch.strength)
 	elif engine_audio:
 		engine_audio.stop()
 		_engine_sound.stop()
@@ -1535,19 +1782,13 @@ func _physics_process(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
 		var body = col.get_collider()
+		if preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body):
+			preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, prev_velocity)
+			continue
 		var normal_impact = maxf(0.0, -prev_velocity.dot(col.get_normal()))
-		var impact_speed = maxf(prev_velocity.length() - velocity.length(), normal_impact)
-		
-		# Atropelar pessoas no slide collision!
-		if is_instance_valid(body) and body != self:
-			if not (is_driven_by_player and body.is_in_group("player")) and body != _driver and not body.is_in_group("ambient_traffic") and not body.is_in_group("vehicle"):
-				if prev_velocity.length() > 30.0:
-					if body.has_method("get_run_over"):
-						body.get_run_over(prev_velocity, is_driven_by_player)
-						if is_driven_by_player:
-							_activate_bloody_tires()
-					elif body.has_method("take_damage"):
-						body.take_damage(100, is_driven_by_player)
+		var impact_speed = normal_impact
+		if impact_speed > (35.0 if active_archetype_id == "port_forklift" else 85.0) and is_instance_valid(body) and body != _driver and not body.is_in_group("ambient_traffic") and not body.is_in_group("vehicle") and body.has_method("take_damage"):
+			body.take_damage(100, is_driven_by_player)
 		
 		# Se colidiu com outro carro, deforma o outro carro também!
 		if is_instance_valid(body) and body != self and impact_speed > 35.0:
@@ -1555,42 +1796,40 @@ func _physics_process(delta: float) -> void:
 				body._apply_crash_deformation(-col.get_normal(), impact_speed, col.get_position())
 		
 		if impact_speed > 35.0:
-			_apply_crash_deformation(col.get_normal(), impact_speed, col.get_position())
+			var is_post: bool = is_instance_valid(body) and (body.is_in_group("fragile_road_post") or body.is_in_group("street_lamp"))
+			_apply_crash_deformation(col.get_normal(), impact_speed, col.get_position(), is_post)
 			if is_driven_by_player:
-				_do_screen_shake(clampf(impact_speed / 500.0, 0.05, 0.4))
-				_hit_stop_frames = 3 if impact_speed > 250 else 2
+				_do_screen_shake(clampf(impact_speed / 1200.0, 0.02, 0.06) if is_post else clampf(impact_speed / 500.0, 0.05, 0.4))
+				_hit_stop_frames = 0 if is_post else (3 if impact_speed > 250 else 2)
 			_ensure_collision_particles()
 			collision_particles.global_position = col.get_position()
+			if is_post:
+				collision_particles.direction = col.get_normal()
+				collision_particles.spread = 45.0
+				collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
+				collision_particles.initial_velocity_min = 35.0
+				collision_particles.initial_velocity_max = 75.0
+				preload("res://world/shared/combat/WeaponEffects.gd").spawn_post_impact(get_parent(), col.get_position(), col.get_normal(), impact_speed)
+			else:
+				collision_particles.direction = col.get_normal()
+				collision_particles.spread = 60.0
+				collision_particles.color = Color(0.85, 0.85, 0.85, 1.0)
+				collision_particles.initial_velocity_min = 50.0
+				collision_particles.initial_velocity_max = 100.0
 			collision_particles.restart()
 			
-			var crash_player = AudioStreamPlayer2D.new()
-			crash_player.stream = ProceduralAudio.get_crash_stream()
-			crash_player.pitch_scale = randf_range(0.85, 1.15)
-			crash_player.volume_db = clampf(lerp(-18.0, -6.0, impact_speed / 500.0), -22.0, -4.0)
-			crash_player.max_distance = 600.0
-			add_child(crash_player)
-			crash_player.play()
-			crash_player.finished.connect(crash_player.queue_free)
+			preload("res://audio/VehicleCrashAudio.gd").play(self, body, col.get_position(), impact_speed)
 			
-		if impact_speed > 160.0 and Time.get_ticks_msec()-_last_collision_damage_ms > 650:
+		if impact_speed > 180.0 and Time.get_ticks_msec()-_last_collision_damage_ms > 650:
 			_last_collision_damage_ms = Time.get_ticks_msec()
-			take_damage(int(impact_speed * 0.06))
+			take_damage(preload("res://VehicleMotionSafety.gd").collision_damage(impact_speed), is_driven_by_player)
 
-	# Gerencia marcas de pneu sangrentas
-	if bloody_tires_timer > 0.0:
-		bloody_tires_timer -= delta
-		if velocity.length() > 40.0:
-			_ensure_skid_line()
-			skid_line.add_point(global_position)
-			if skid_line.get_point_count() > 60:
-				skid_line.remove_point(0)
-		if bloody_tires_timer <= 0.0 and skid_line:
-			skid_line.default_color = Color(0.1, 0.1, 0.1, 0.5)
+	# Ground-contact residue is rendered separately from braking skid marks.
+	bloody_tires_timer = maxf(0.0, bloody_tires_timer - delta)
 
 func _activate_bloody_tires() -> void:
 	bloody_tires_timer = 4.0
-	if skid_line:
-		skid_line.default_color = Color(0.72, 0.05, 0.05, 0.85)
+	preload("res://world/shared/combat/BloodTransferSystem.gd").splash(self)
 	if is_driven_by_player:
 		_do_screen_shake(0.18)
 
@@ -1613,6 +1852,11 @@ func _update_skid_audio():
 		skid_audio.stop()
 
 var block_wait_timer: float = 0.0
+var _clearance_retreat := 0.0
+var _clearance_hold := 0.0
+var _clearance_requester: WeakRef
+var _clearance_last_requester := 0
+var _avoidance_probe_timer := 0.0
 var is_moving_on_lane: bool = false
 var _lane_motion_speed := 0.0
 var _lane_motion_initialized := false
@@ -1622,8 +1866,11 @@ var _remote_lane_elapsed := 0.0
 var remote_lane_steps := 0
 
 func _process(delta: float) -> void:
+	if is_motorcycle and not is_driven_by_player:
+		_update_motorcycle_traffic_audio(delta)
 	if is_3d_vehicle:
 		_update_3d_orientation(delta)
+	if is_instance_valid(_taxi_service) and _taxi_service.state != "idle": return
 	if is_broken or is_driven_by_player:
 		_remote_lane_elapsed = 0.0
 		return
@@ -1634,27 +1881,45 @@ func _process(delta: float) -> void:
 	var on_screen := get_viewport().get_visible_rect().grow(260).has_point(get_canvas_transform() * global_position)
 	if not is_driven_by_player and headlight:
 		var light_active := on_screen and is_night_or_storm and not is_broken
-		if headlight.visible != light_active:
-			headlight.visible = light_active
-			if second_headlight: second_headlight.visible = light_active
+		headlight.visible = light_active and (not is_instance_valid(body_model) or not body_model.broken_lamps[0])
+		if second_headlight:
+			second_headlight.visible = light_active and (not is_instance_valid(body_model) or not body_model.broken_lamps[1])
 	if smoke_emitter and smoke_emitter.emitting != (health < 50 and on_screen):
 		smoke_emitter.emitting = health < 50 and on_screen
 	_remote_lane_elapsed += delta
 	var interval := minf(0.1, MAX_LANE_ADVANCE_PER_FRAME * 0.8 / maxf(speed, 1.0))
-	if not on_screen and _remote_lane_elapsed < interval:
+	if not on_screen and not _emergency_yield_active and _remote_lane_elapsed < interval:
 		return
 	var motion_delta := _remote_lane_elapsed
 	_remote_lane_elapsed = 0.0
 	if not on_screen: remote_lane_steps += 1
 	advance_on_lane(motion_delta)
 
+func _update_motorcycle_traffic_audio(delta: float) -> void:
+	var listener := get_viewport().get_camera_2d()
+	var audible := listener != null and global_position.distance_squared_to(listener.get_screen_center_position()) < 420.0*420.0
+	if not audible or is_broken or _detached_from_lane:
+		if engine_audio: engine_audio.stop()
+		_engine_sound.stop()
+		return
+	_ensure_engine_audio()
+	_engine_sound.update(engine_audio, _lane_motion_speed, _engine_sound.road_top_speed(max_speed), .35 if is_moving_on_lane else 0.0, delta, active_archetype_id)
+	engine_audio.volume_db -= 8.0
+	for layer in _engine_sound._layer_players: layer.volume_db -= 8.0
+	if is_instance_valid(_engine_sound._road_player): _engine_sound._road_player.volume_db -= 10.0
+
 func advance_on_lane(delta: float) -> void:
 	is_moving_on_lane = false
+	if _rider_fallen: return
+	_traffic_horn_cooldown = maxf(0.0, _traffic_horn_cooldown - delta)
 	var lane_follow := get_parent() as PathFollow2D
 	if lane_follow == null:
 		return
 	var path := lane_follow.get_parent() as Path2D
 	if path == null or path.curve == null:
+		return
+	if _siren_maneuver.tick(self,path,lane_follow,delta): return
+	if _advance_clearance_retreat(delta, path, lane_follow):
 		return
 	var controller := _get_junction_traffic_controller()
 	if controller != null:
@@ -1667,7 +1932,7 @@ func advance_on_lane(delta: float) -> void:
 		controller = null
 	if bool(path.get_meta("continuous_border_start",false)) and lane_follow.progress < 180:
 		controller = null
-	if controller != null and controller.has_method("complete_lane_transition"):
+	if not has_meta("taxi_route_end") and controller != null and controller.has_method("complete_lane_transition"):
 		if bool(controller.call("complete_lane_transition", self, path, lane_follow)):
 			return
 	if not _lane_motion_initialized:
@@ -1677,9 +1942,32 @@ func advance_on_lane(delta: float) -> void:
 	var safety_zone_motion := _traffic_control_zone_motion(path, lane_follow)
 	var must_clear_rail_crossing := bool(safety_zone_motion.get("must_clear_rail_crossing", false))
 	var obstruction := _get_lane_obstruction(lane_follow, must_clear_rail_crossing)
+	_update_person_wait(obstruction.get("person"), delta)
+	if _person_warned and _person_wait >= PERSON_HORN_DELAY + PERSON_WARNING_GRACE:
+		obstruction = _get_lane_obstruction(lane_follow, must_clear_rail_crossing)
+	var ray_hard_blocked: bool = obstruction.hard
+	var observed_pose := global_transform
+	# Physical hull contacts (including roadside props) must also trigger
+	# recovery; the actor rays intentionally ignore these static obstacles.
+	obstruction.hard = bool(obstruction.hard) or _lane_sweep_blocked
+	_update_traffic_avoidance(delta, lane_follow, obstruction, safety_zone_motion)
+	_lane_sweep_blocked = false
+	# Avoidance is synchronous. Only a lateral move refreshes the rays and
+	# changes the lane geometry; otherwise reuse the same observation, removing
+	# the previous sweep flag exactly as the second query used to do.
+	if global_transform != observed_pose:
+		obstruction = _get_lane_obstruction(lane_follow, must_clear_rail_crossing)
+	else:
+		obstruction.hard = ray_hard_blocked
 	var hard_blocked: bool = obstruction.hard
 	var yield_blocked: bool = obstruction.yield
 	var target_lane_speed := speed
+	if get_traffic_storage_length() >= 110.0:
+		var curve_probe := minf(lane_follow.progress + minf(target_length, 140.0), path.curve.get_baked_length())
+		var curve_pose := path.global_transform * path.curve.sample_baked_with_rotation(curve_probe, true)
+		var curve_angle := absf(angle_difference(global_rotation, curve_pose.get_rotation()))
+		if curve_angle > 0.02:
+			target_lane_speed = minf(target_lane_speed, sqrt(45.0 * maxf(1.0, curve_probe - lane_follow.progress) / curve_angle))
 	if bool(path.get_meta("mountain_traffic", false)):
 		var probe := minf(lane_follow.progress + target_length, path.curve.get_baked_length())
 		var ahead := path.curve.sample_baked_with_rotation(probe, true)
@@ -1687,6 +1975,14 @@ func advance_on_lane(delta: float) -> void:
 		# Antecipar a curva evita entrar no hairpin com a velocidade da reta.
 		target_lane_speed = minf(target_lane_speed, sqrt(55.0 * target_length / maxf(turn,0.01)))
 	var maximum_advance := INF
+	var rescue_clearance := preload("res://world/shared/emergency/MedicalRescueWorkZone.gd").lane_clearance(self, path, lane_follow, _lane_braking_rate(), maxf(speed, _lane_motion_speed))
+	maximum_advance = minf(maximum_advance, rescue_clearance)
+	target_lane_speed = minf(target_lane_speed, sqrt(2.0 * _lane_braking_rate() * rescue_clearance))
+	# Authored loading bays can hold traffic at an exact offset on its own lane.
+	if has_meta("traffic_stop_offset"):
+		var stop_distance := maxf(0.0,float(get_meta("traffic_stop_offset"))-lane_follow.progress)
+		maximum_advance = minf(maximum_advance, stop_distance)
+		target_lane_speed = minf(target_lane_speed,sqrt(2.0*_lane_braking_rate()*stop_distance))
 	var spacing := _lane_spacing_motion(lane_follow)
 	target_lane_speed = minf(target_lane_speed, float(spacing.target_speed))
 	maximum_advance = minf(maximum_advance, float(spacing.allowed_advance))
@@ -1721,7 +2017,7 @@ func advance_on_lane(delta: float) -> void:
 		target_lane_speed = 0.0
 		maximum_advance = 0.0
 
-	var end_motion := _open_lane_end_motion(path, lane_follow, controller)
+	var end_motion := {"target_speed": speed, "allowed_advance": maxf(0.0,float(get_meta("taxi_route_end",0.0))-lane_follow.progress)} if has_meta("taxi_route_end") else _open_lane_end_motion(path, lane_follow, controller)
 	target_lane_speed = minf(target_lane_speed, float(end_motion.target_speed))
 	maximum_advance = minf(maximum_advance, float(end_motion.allowed_advance))
 
@@ -1737,10 +2033,34 @@ func advance_on_lane(delta: float) -> void:
 		MAX_LANE_ADVANCE_PER_FRAME
 	)
 	var actual_advance := minf(desired_advance, maximum_advance)
+	# A newly intruding car can already be inside this frame's braking travel.
+	# Queue spacing still clamps position, but must not erase the collision.
+	if maximum_advance < desired_advance and previous_speed >= 80.0:
+		var sudden_contact := KinematicCollision2D.new()
+		var braking_motion := global_transform.x.normalized() * desired_advance
+		if test_move(global_transform, braking_motion, sudden_contact):
+			_lane_contact_crash(sudden_contact, global_transform.x.normalized() * previous_speed)
+	var person_bypass: Array[PhysicsBody2D] = []
+	if actual_advance > 0.001:
+		var proposed := _lane_proposed_pose(path, lane_follow, actual_advance)
+		var incoming := global_position.direction_to(proposed.origin) * maxf(previous_speed, _lane_motion_speed)
+		person_bypass = preload("res://world/shared/combat/VehiclePersonImpact.gd").prepare_motion(self, incoming, proposed.origin - global_position)
+	if actual_advance > 0.001 and not _lane_step_is_clear(path, lane_follow, actual_advance):
+		if _person_warned:
+			# Long hulls reserve a small corner margin before kinematic contact.
+			var bumper_contact := KinematicCollision2D.new()
+			if test_move(global_transform, global_transform.x.normalized() * maxf(3.0, actual_advance), bumper_contact):
+				_press_blocking_person(bumper_contact, delta)
+		actual_advance = 0.0
+		_lane_motion_speed = 0.0
+		_lane_sweep_blocked = true
+		hard_blocked = true
+		target_lane_speed = 0.0
 	if actual_advance > 0.001:
 		var next_offset := lane_follow.progress+actual_advance
 		if lane_follow.loop: next_offset = fposmod(next_offset,path.curve.get_baked_length())
-		var next_point := path.to_global(path.curve.sample_baked(next_offset, lane_follow.cubic_interp))
+		var next_pose := path.global_transform * path.curve.sample_baked_with_rotation(next_offset, lane_follow.cubic_interp)
+		var next_point := next_pose.origin + next_pose.y * position.y
 		var motion := next_point-global_position
 		if bool(path.get_meta("mountain_traffic", false)) and not _mountain_hull_is_clear(path, next_offset):
 			actual_advance = 0.0
@@ -1756,10 +2076,18 @@ func advance_on_lane(delta: float) -> void:
 		sweep.motion = motion
 		sweep.margin = 0.1
 		sweep.collision_mask = collision_mask & 2
-		sweep.exclude = [get_rid()]
+		var sweep_exclusions: Array[RID] = [get_rid()]
+		for body in get_traffic_bodies():
+			if body != self and body is CollisionObject2D: sweep_exclusions.append(body.get_rid())
+		sweep.exclude = sweep_exclusions
 		var fractions := get_world_2d().direct_space_state.cast_motion(sweep)
 		var contact := KinematicCollision2D.new()
-		if fractions[0] < 1.0 or test_move(global_transform,motion,contact):
+		var body_contact := test_move(global_transform,motion,contact)
+		if body_contact:
+			_press_blocking_person(contact, delta)
+			_lane_contact_crash(contact, motion.normalized() * maxf(previous_speed, _lane_motion_speed))
+		if fractions[0] < 1.0 or body_contact:
+			_lane_sweep_blocked = true
 			# Recovery can point backwards at contact. Its absolute length must
 			# never become forward lane progress, or queues creep through bodies.
 			actual_advance *= fractions[0] if fractions[0] < 1.0 else 0.0
@@ -1769,18 +2097,206 @@ func advance_on_lane(delta: float) -> void:
 	if actual_advance > 0.001:
 		lane_follow.progress += actual_advance
 		is_moving_on_lane = true
-	if controller != null and controller.has_method("complete_lane_transition"):
+	for person in person_bypass:
+		if is_instance_valid(person): remove_collision_exception_with(person)
+	if not has_meta("taxi_route_end") and controller != null and controller.has_method("complete_lane_transition"):
 		controller.call("complete_lane_transition", self, path, lane_follow)
 
-	var blocked := not is_moving_on_lane and target_lane_speed <= 0.1
+	# Following converges smoothly to its standstill gap. Sub-pixel creeping
+	# must count as waiting, otherwise a blocked junction delays recovery until
+	# the asymptote happens to fall below the movement epsilon.
+	var blocked := actual_advance <= delta and target_lane_speed <= 1.0
 	if blocked:
 		block_wait_timer += delta
-		if hard_blocked and block_wait_timer > 0.6 and randf() < 0.04:
+		if block_wait_timer > 2.0 and bool(signal_contract.get("reservation_granted", false)):
+			_request_junction_clearance(path, lane_follow)
+		if hard_blocked and obstruction.get("person") == null and block_wait_timer > 0.6 and _traffic_horn_cooldown <= 0.0:
 			honk_horn()
+			_traffic_horn_cooldown = 2.5 + float(get_instance_id() % 5) * 0.2
 	else:
 		block_wait_timer = maxf(0.0, block_wait_timer - delta * 2.0)
 	if visual:
 		visual.position = visual.position.lerp(Vector2.ZERO, 8.0 * delta)
+
+func _press_blocking_person(contact: KinematicCollision2D, delta: float) -> void:
+	# At bumper distance there is no room to build speed. Sustained throttle
+	# after the warning produces a low-speed knockdown, never cruise damage.
+	var person := contact.get_collider() as Node
+	if person == null or not _person_patience_expired(person): return
+	_person_push_time += delta
+	if _person_push_time >= 0.6:
+		preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, person, global_transform.x.normalized() * preload("res://world/shared/combat/VehiclePersonImpact.gd").MIN_SPEED)
+
+func _lane_contact_crash(contact: KinematicCollision2D, incoming: Vector2) -> void:
+	var body := contact.get_collider() as Node
+	if body == null or preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body): return
+	var force := maxf(0.0, -incoming.dot(contact.get_normal()))
+	if force < 80.0 or Time.get_ticks_msec() - _last_collision_damage_ms < 650: return
+	_last_collision_damage_ms = Time.get_ticks_msec()
+	_apply_crash_deformation(contact.get_normal(), force, contact.get_position())
+	if body.has_method("_apply_crash_deformation"):
+		body._apply_crash_deformation(-contact.get_normal(), force, contact.get_position())
+	preload("res://audio/VehicleCrashAudio.gd").play(self, body, contact.get_position(), force)
+	if force > 180.0:
+		take_damage(preload("res://VehicleMotionSafety.gd").collision_damage(force), false)
+
+func _traffic_sweep_clear(motion: Vector2, displacement: Vector2 = Vector2.ZERO) -> bool:
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collision.shape
+	query.transform = collision.global_transform
+	query.transform.origin += displacement
+	query.motion = motion
+	query.margin = 0.1
+	query.collision_mask = 15
+	query.exclude = [get_rid()]
+	var space := get_world_2d().direct_space_state
+	if not space.intersect_shape(query, 1).is_empty(): return false
+	return space.cast_motion(query)[0] >= 1.0
+
+func get_traffic_bodies() -> Array:
+	return [self]
+
+func get_traffic_storage_length() -> float:
+	var sizes := TRAFFIC_FLOW.extent(self, global_transform.x.normalized())
+	return sizes.x + sizes.y
+
+func occupies_junction(center: Vector2, radius: float) -> bool:
+	return TRAFFIC_FLOW.occupies_junction(self, center, radius)
+
+func _lane_proposed_pose(path: Path2D, follow: PathFollow2D, advance: float) -> Transform2D:
+	var offset := follow.progress + advance
+	if follow.loop: offset = fposmod(offset, path.curve.get_baked_length())
+	return path.global_transform * path.curve.sample_baked_with_rotation(offset, follow.cubic_interp) * transform
+
+func _lane_step_is_clear(path: Path2D, follow: PathFollow2D, advance: float) -> bool:
+	var pose := _lane_proposed_pose(path, follow, advance)
+	return can_apply_lane_pose(pose)
+
+func can_apply_lane_pose(pose: Transform2D) -> bool:
+	# Straight short cars retain the existing translation sweep. Long hulls and
+	# rotating cars also need their corner arcs tested before updating the lane.
+	if target_length < 110.0 and absf(angle_difference(global_rotation, pose.get_rotation())) < 0.01: return true
+	return TRAFFIC_SWEEP.clear(self, [{"body": self, "pose": pose}])
+
+func _clearance_pose(path: Path2D, offset: float, lateral: float) -> Transform2D:
+	var pose := path.global_transform * path.curve.sample_baked_with_rotation(offset, true)
+	pose.origin += pose.y * lateral
+	return pose * Transform2D(rotation, Vector2(position.x, 0.0)) * collision.transform
+
+func _clearance_route_clear(path: Path2D, start: float, finish: float, lateral: float) -> bool:
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collision.shape
+	query.collision_mask = 15
+	query.exclude = [get_rid()]
+	query.margin = 0.1
+	var space := get_world_2d().direct_space_state
+	var steps := maxi(1, ceili(absf(finish - start) / 2.0))
+	for index in range(steps + 1):
+		query.transform = _clearance_pose(path, lerpf(start, finish, float(index) / steps), lateral)
+		query.motion = Vector2.ZERO
+		if not space.intersect_shape(query, 1).is_empty(): return false
+		if index < steps:
+			var next := _clearance_pose(path, lerpf(start, finish, float(index + 1) / steps), lateral)
+			query.motion = next.origin - query.transform.origin
+			if space.cast_motion(query)[0] < 1.0: return false
+	return true
+
+func _request_junction_clearance(path: Path2D, follow: PathFollow2D) -> void:
+	# Only the reservation owner asks for space, so conflicting streams cannot
+	# order each other forwards. Probe the actual turn, not its tangent ray.
+	if _clearance_hold > 0.0: return
+	_clearance_hold = 0.5
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collision.shape
+	query.collision_mask = 2
+	query.exclude = [get_rid()]
+	query.margin = 3.0
+	for distance in range(4, 65, 4):
+		query.transform = _clearance_pose(path, minf(follow.progress + distance, path.curve.get_baked_length()), position.y)
+		for hit in get_world_2d().direct_space_state.intersect_shape(query, 8):
+			var other := hit.collider as DemoTrafficVehicle
+			if other != null and other != self and other.get_parent().get_parent() != path:
+				other._accept_clearance_request(self)
+
+func _accept_clearance_request(requester: DemoTrafficVehicle) -> bool:
+	# Reversing a convoy needs a separate articulated manoeuvre planner.
+	if get_traffic_bodies().size() > 1: return false
+	if is_broken or is_driven_by_player or _detached_from_lane or _lane_motion_speed > 1.0: return false
+	if _clearance_retreat > 0.0 or _clearance_requester != null: return false
+	if _clearance_last_requester == requester.get_instance_id(): return false
+	if bool(_last_lane_motion_contract.get("reservation_granted", false)): return false
+	if not bool(requester._last_lane_motion_contract.get("reservation_granted", false)): return false
+	var follow := get_parent() as PathFollow2D
+	if follow == null: return false
+	var path := follow.get_parent() as Path2D
+	if path == null or path.curve == null or path.is_in_group("unified_lane_connector") or path.get_meta("mountain_traffic", false): return false
+	if is_instance_valid(_taxi_service) and _taxi_service.state != "idle": return false
+	var zone := _traffic_control_zone_motion(path, follow)
+	if bool(zone.get("must_clear_rail_crossing", false)): return false
+	var retreat := minf(48.0, follow.progress)
+	if retreat < 8.0 or not _clearance_route_clear(path, follow.progress, follow.progress - retreat, position.y): return false
+	_clearance_retreat = retreat
+	_clearance_hold = 3.0
+	_clearance_requester = weakref(requester)
+	_clearance_last_requester = requester.get_instance_id()
+	return true
+
+func _advance_clearance_retreat(delta: float, path: Path2D, follow: PathFollow2D) -> bool:
+	if _clearance_requester == null:
+		_clearance_hold = maxf(0.0, _clearance_hold - delta)
+		return false
+	var requester := _clearance_requester.get_ref() as DemoTrafficVehicle
+	if requester == null or not bool(requester._last_lane_motion_contract.get("reservation_granted", false)):
+		_clearance_retreat = 0.0
+		_clearance_hold = 0.0
+	if _clearance_retreat > 0.0:
+		var step := minf(minf(18.0 * delta, MAX_LANE_ADVANCE_PER_FRAME), minf(_clearance_retreat, follow.progress))
+		if step > 0.001 and _clearance_route_clear(path, follow.progress, follow.progress - step, position.y):
+			follow.progress -= step
+			_clearance_retreat -= step
+			is_moving_on_lane = true
+		else:
+			_clearance_retreat = 0.0
+	else:
+		_clearance_hold = maxf(0.0, _clearance_hold - delta)
+	_lane_motion_speed = 0.0
+	if _clearance_hold <= 0.0:
+		_clearance_requester = null
+	return true
+
+func _update_traffic_avoidance(delta: float, follow: PathFollow2D, obstruction: Dictionary, zone: Dictionary) -> void:
+	if _emergency_yield_active: return
+	if get_traffic_storage_length() >= 110.0: return
+	var path := follow.get_parent() as Path2D
+	_avoidance_hold = maxf(0.0, _avoidance_hold - delta)
+	_avoidance_probe_timer = maxf(0.0, _avoidance_probe_timer - delta)
+	# Stay on authored narrow roads and outside junction/rail reservations.
+	if path.get_meta("mountain_traffic", false) or bool(zone.get("must_clear_rail_crossing", false)):
+		return
+	if _get_junction_traffic_controller() != null and bool(_last_lane_motion_contract.get("controlled", false)) and not bool(_last_lane_motion_contract.get("reservation_granted", false)):
+		return
+	var owns_junction := bool(_last_lane_motion_contract.get("reservation_granted", false))
+	if not owns_junction and (follow.progress < target_length or follow.progress > path.curve.get_baked_length() - target_length * 2.0):
+		return
+	var target_offset := position.y if _avoidance_hold > 0.0 else 0.0
+	if obstruction.hard and block_wait_timer > 0.8 and _avoidance_probe_timer <= 0.0:
+		_avoidance_probe_timer = 0.4
+		# A small in-lane correction, tested over the full vehicle hull. Never
+		# jump to another road or squeeze through a pedestrian/vehicle.
+		for side in [-1.0, 1.0]:
+			var candidate: float = side * (22.0 if is_motorcycle else 16.0)
+			var lateral: Vector2 = global_transform.y * (candidate - position.y)
+			var finish := minf(path.curve.get_baked_length(), follow.progress + target_length + 40.0)
+			if _traffic_sweep_clear(lateral) and _clearance_route_clear(path, follow.progress, finish, candidate):
+				target_offset = candidate
+				_avoidance_hold = 2.0
+				break
+	var shift := move_toward(position.y, target_offset, delta * 18.0) - position.y
+	if absf(shift) > 0.001 and _traffic_sweep_clear(global_transform.y * shift):
+		position.y += shift
+		for ray_name in ["FrontRay", "FrontRayL", "FrontRayR"]:
+			var ray := get_node_or_null(ray_name) as RayCast2D
+			if ray: ray.force_raycast_update()
 
 func _mountain_hull_is_clear(path: Path2D, offset: float) -> bool:
 	if not collision.shape is RectangleShape2D: return true
@@ -1809,6 +2325,7 @@ func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: 
 	var current_path := lane_follow.get_parent() as Path2D
 	var hard_blocked := false
 	var yield_blocked := false
+	var person: Node = null
 	for ray_name in ["FrontRay", "FrontRayL", "FrontRayR"]:
 		var ray := get_node_or_null(ray_name) as RayCast2D
 		if ray == null or not ray.is_colliding():
@@ -1817,16 +2334,32 @@ func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: 
 		if collider == null or collider == self:
 			continue
 		if collider.is_in_group("player") or collider.name == "Player":
-			hard_blocked = true
+			if person == null or global_position.distance_squared_to(collider.global_position) < global_position.distance_squared_to(person.global_position): person = collider
+			hard_blocked = hard_blocked or not _person_patience_expired(collider)
 			continue
 		if collider.is_in_group("pedestrian"):
+			if person == null or global_position.distance_squared_to(collider.global_position) < global_position.distance_squared_to(person.global_position): person = collider
 			# A vehicle already committed between closed railway gates must leave
 			# the track instead of yielding in the conflict zone. Players remain
 			# hard blockers; this exception is only for ambient pedestrian AI.
-			if not must_clear_rail_crossing:
+			if _lane_pedestrian_blocks(lane_follow, collider, must_clear_rail_crossing):
 				hard_blocked = true
 			continue
 		if not collider.is_in_group("vehicle"):
+			continue
+		# A responder waiting on its driveway must let the lane empty before
+		# merging. The swept hull below still prevents physical overlap.
+		if collider.is_in_group("emergency_vehicle") and collider.get_meta("depot_departure_pending", false):
+			continue
+		# A terminal coach still on its driveway yields to this lane; its swept
+		# collision query waits for a real gap before crossing the sidewalk.
+		if collider.is_in_group("harbor_terminal_coach") and collider.get_meta("terminal_yielding_to_lane", false):
+			continue
+		if collider.is_in_group("harbor_terminal_coach"):
+			# A long tangent ray can see a queued coach beyond the junction.
+			# Approach it along the real lane until braking is needed, so a car
+			# holding the junction can clear its turn before joining that queue.
+			hard_blocked = hard_blocked or _lane_terminal_coach_blocks(lane_follow, collider)
 			continue
 		if collider.get("is_driven_by_player") == true or collider.get("_detached_from_lane") == true or collider.get("is_broken") == true:
 			hard_blocked = true
@@ -1842,48 +2375,54 @@ func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: 
 		# of two side rays making both streams wait forever.
 		if String(current_path.name) > String(other_path.name):
 			yield_blocked = true
-	return {"hard": hard_blocked, "yield": yield_blocked}
+	return {"hard": hard_blocked, "yield": yield_blocked, "person": person}
+
+func _person_patience_expired(person: Node) -> bool:
+	return _waiting_person != null and _waiting_person.get_ref() == person and _person_warned and _person_wait >= PERSON_HORN_DELAY + PERSON_WARNING_GRACE and not person.get_meta("medical_vehicle_protected", false) and preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(person)
+
+func _update_person_wait(person: Node, delta: float) -> void:
+	if person == null or _waiting_person == null or _waiting_person.get_ref() != person:
+		_waiting_person = weakref(person) if person != null else null
+		_person_wait = 0.0
+		_person_warned = false
+		_person_push_time = 0.0
+	if person == null: return
+	if _lane_motion_speed < 5.0 or _person_wait > 0.0:
+		_person_wait += delta
+	if _person_wait >= PERSON_HORN_DELAY and not _person_warned:
+		honk_horn()
+		_person_warned = true
+		_traffic_horn_cooldown = PERSON_WARNING_GRACE
+
+func _lane_terminal_coach_blocks(follow: PathFollow2D, coach: Node) -> bool:
+	var path := follow.get_parent() as Path2D
+	if path == null or path.curve == null or collision.shape == null:
+		return true
+	var braking_distance := _lane_motion_speed * _lane_motion_speed / (2.0 * _lane_braking_rate())
+	var finish := minf(path.curve.get_baked_length(), follow.progress + braking_distance + 14.0)
+	var samples := maxi(1, ceili((finish - follow.progress) / 4.0))
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = collision.shape
+	query.collision_mask = 2
+	query.margin = 2.0
+	query.exclude = [get_rid()]
+	for index in range(samples + 1):
+		var pose := path.global_transform * path.curve.sample_baked_with_rotation(lerpf(follow.progress, finish, float(index) / samples), true)
+		query.transform = pose * transform * collision.transform
+		for hit in get_world_2d().direct_space_state.intersect_shape(query):
+			if hit.collider == coach: return true
+	return false
+
+func _lane_pedestrian_blocks(follow: PathFollow2D, pedestrian: Node, must_clear_rail_crossing: bool) -> bool:
+	if _person_patience_expired(pedestrian): return false
+	if must_clear_rail_crossing:
+		return false
+	if bool(follow.get_parent().get_meta("curved_pedestrian_corridor", false)):
+		return preload("res://world/shared/traffic/LanePedestrianCorridor.gd").blocks(self, follow, pedestrian)
+	return true
 
 func _lane_spacing_motion(lane_follow: PathFollow2D) -> Dictionary:
-	var path := lane_follow.get_parent() as Path2D
-	if path == null or path.curve == null:
-		return {"target_speed": INF, "allowed_advance": INF}
-	var route_length := path.curve.get_baked_length()
-	if route_length <= 1.0:
-		return {"target_speed": 0.0, "allowed_advance": 0.0}
-	var lane_loops := bool(path.get_meta("traffic_lane_loop", lane_follow.loop)) and lane_follow.loop
-	var target_speed_limit := INF
-	var advance_limit := INF
-	for sibling in path.get_children():
-		if sibling == lane_follow or not sibling is PathFollow2D:
-			continue
-		var other_follow := sibling as PathFollow2D
-		if other_follow.get_child_count() == 0 or not other_follow.get_child(0) is DemoTrafficVehicle:
-			continue
-		var other := other_follow.get_child(0) as DemoTrafficVehicle
-		if other.is_driven_by_player:
-			continue
-		var center_gap := other_follow.progress - lane_follow.progress
-		if lane_loops:
-			center_gap = fposmod(center_gap, route_length)
-		elif center_gap <= 0.0:
-			continue
-		if center_gap <= 0.5:
-			continue
-		var combined_half_lengths := (target_length + other.target_length) * 0.5
-		var bumper_gap := center_gap - combined_half_lengths
-		var minimum_clearance := maxf(14.0, maxf(target_length, other.target_length) * 0.18)
-		var desired_clearance := minimum_clearance + _lane_motion_speed * 0.85
-		advance_limit = minf(advance_limit, maxf(0.0, bumper_gap - minimum_clearance))
-		if bumper_gap < desired_clearance:
-			var follow_ratio := clampf(
-				(bumper_gap - minimum_clearance) / maxf(1.0, desired_clearance - minimum_clearance),
-				0.0,
-				1.0
-			)
-			var other_speed: float = 0.0 if other.is_broken else other._lane_motion_speed
-			target_speed_limit = minf(target_speed_limit, other_speed * follow_ratio)
-	return {"target_speed": target_speed_limit, "allowed_advance": advance_limit}
+	return TRAFFIC_FLOW.lane_motion(self, lane_follow, _lane_motion_speed, _lane_braking_rate())
 
 
 func _lane_acceleration_rate() -> float:
@@ -2096,18 +2635,15 @@ func _on_pedestrian_hitbox_body_entered(body: Node) -> void:
 		if is_driven_by_player or _detached_from_lane:
 			cur_speed = velocity.length()
 		elif is_moving_on_lane:
-			cur_speed = speed
+			cur_speed = _lane_motion_speed
 		else:
 			cur_speed = 0.0
 			
-		if cur_speed > 25.0: # Atropelamento responsivo com impacto
-			var impact_vel = velocity if velocity.length() > 10.0 else global_transform.x * maxf(120.0, cur_speed)
-			if body.has_method("get_run_over"):
-				body.get_run_over(impact_vel, is_driven_by_player)
-				if is_driven_by_player:
-					_activate_bloody_tires()
-			elif body.has_method("take_damage"):
-				body.take_damage(100, is_driven_by_player)
+		var impact_vel = velocity if velocity.length() > 10.0 else global_transform.x * cur_speed
+		preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, impact_vel)
+		if not preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body) and cur_speed > (35.0 if active_archetype_id == "port_forklift" else 85.0) and body.has_method("take_damage"):
+			body.take_damage(100, is_driven_by_player)
+
 
 func _setup_neon_underglow() -> void:
 	if not has_neon:

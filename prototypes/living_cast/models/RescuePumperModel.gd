@@ -3,6 +3,9 @@
 ## Rescue Pumper: Caminhão pesado de combate a incêndio do Corpo de Bombeiros.
 ## Identidade: Vermelho bombeiro, giroflex estroboscópico, canhão d'água no teto, carretéis de mangueira e escadas.
 
+var water_turret: Node3D
+var water_muzzle: Marker3D
+
 func build() -> void:
 	paint = mat("paint", "c0392b", 0.35, 0.25)
 	var white := mat("white_stripe", "f5f6fa", 0.2, 0.35)
@@ -62,11 +65,25 @@ func build() -> void:
 			box(Vector3(s * 1.19, 1.35, z_comp), Vector3(0.03, 1.20, 0.95), diamond_plate)
 
 	# 5. Identidade Visual 2: Canhão Monitor de Água no Teto da Cabine (Deck Gun)
-	var gun_base := cylinder(Vector3(0.0, 2.22, -1.55), 0.16, 0.20, red_metal_mat())
-	var gun_barrel := cylinder(Vector3(0.0, 2.42, -1.80), 0.07, 0.65, chrome)
-	gun_barrel.rotation.x = deg_to_rad(30.0)
-	var gun_nozzle := cylinder(Vector3(0.0, 2.58, -2.08), 0.05, 0.15, chrome)
-	gun_nozzle.rotation.x = deg_to_rad(30.0)
+	cylinder(Vector3(0.0, 2.32, -1.55), 0.20, 0.20, red_metal_mat())
+	water_turret = Node3D.new()
+	water_turret.name = "WaterTurret"
+	water_turret.position = Vector3(0.0, 2.48, -1.55)
+	add_child(water_turret)
+	var gun_barrel := cylinder(Vector3.ZERO, 0.085, 0.76, chrome)
+	remove_child(gun_barrel)
+	water_turret.add_child(gun_barrel)
+	gun_barrel.position = Vector3(0, 0, -0.30)
+	gun_barrel.rotation.x = PI * 0.5
+	var gun_nozzle := cylinder(Vector3.ZERO, 0.11, 0.18, black)
+	remove_child(gun_nozzle)
+	water_turret.add_child(gun_nozzle)
+	gun_nozzle.position = Vector3(0, 0, -0.72)
+	gun_nozzle.rotation.x = PI * 0.5
+	water_muzzle = Marker3D.new()
+	water_muzzle.name = "WaterMuzzle"
+	water_muzzle.position = Vector3(0, 0, -0.82)
+	water_turret.add_child(water_muzzle)
 
 	# 6. Identidade Visual 3: Escadas de Resgate em Alumínio no Teto
 	for s in [-0.75, 0.75]:

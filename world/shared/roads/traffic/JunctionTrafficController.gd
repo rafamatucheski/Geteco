@@ -9,6 +9,10 @@ extends Node
 
 signal junction_stage_changed(junction_id: StringName, stage: int, active_roads: Array)
 signal reservation_changed(junction_id: StringName, vehicle_instance_id: int, occupied: bool)
+
+# A long vehicle can span two nearby conflict zones. The previous zone stays
+# reserved until the rear clears while the next zone is acquired normally.
+var _retained_junctions: Dictionary = {}
 signal traffic_contract_violation(kind: StringName, details: Dictionary)
 
 enum SignalState { RED, YELLOW, GREEN }
@@ -19,11 +23,13 @@ const LANE_GROUP: StringName = &"unified_traffic_lane"
 const NO_ADVANCE := 0.0
 const SIGNAL_VISUAL := preload("res://world/shared/roads/traffic/JunctionSignalVisual2D.gd")
 const MAX_CONNECTOR_ENTRY_OVERSHOOT := 12.0
+const FLOW := preload("res://world/shared/traffic/TrafficFlowModel.gd")
 
-@export_range(1.0, 60.0, 0.1) var minimum_green_seconds := 7.5
+@export_range(1.0, 60.0, 0.1) var minimum_green_seconds := 5.0
 @export_range(0.5, 10.0, 0.1) var yellow_seconds := 2.2
 @export_range(0.5, 10.0, 0.1) var all_red_seconds := 1.5
 @export_range(1.0, 20.0, 0.1) var pedestrian_clearance_seconds := 6.0
+@export_range(0.5, 10.0, 0.1) var pedestrian_walk_seconds := 2.5
 @export_range(0.0, 80.0, 1.0) var stop_line_margin := 14.0
 @export_range(40.0, 600.0, 1.0) var reservation_request_distance := 220.0
 @export_range(1.0, 20.0, 0.1) var reservation_heartbeat_timeout := 4.0
@@ -58,6 +64,11 @@ var _deadlock_reported: Dictionary = {}
 # that lookup into O(1) instead of changing what it computes.
 var _vehicle_owned_junction: Dictionary = {}
 var _pedestrian_demand: Dictionary = {}
+var _crossings_by_junction: Dictionary = {}
+var _admission_blockers: Dictionary = {}
+var _actor_index_frame := -1
+var _traffic_actors: Array[Node] = []
+var _simulation_seconds := 0.0
 var _telemetry := {
 	"reservation_grants": 0,
 	"reservation_releases": 0,
@@ -68,6 +79,9 @@ var _telemetry := {
 	"invalid_lane_contracts": 0,
 	"deadlock_limit_exceeded": 0,
 	"maximum_wait_seconds": 0.0,
+	"queue_yields": 0,
+	"blocked_exit_yields": 0,
+	"fairness_yields": 0,
 }
 
 
@@ -80,6 +94,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if get_tree().paused: return
+	_simulation_seconds += delta
 	if graph_source == null or not is_instance_valid(graph_source):
 		graph_source = _discover_graph_source()
 	_sync_elapsed += delta
@@ -110,6 +126,12 @@ func configure_graph_source(source: Node2D) -> void:
 	_synced_graph_source_id = 0
 	_synced_routing_revision = -1
 	_sync_from_graph()
+
+
+func _traffic_now_ms() -> int:
+	# Reservations, queue age and signal stages share simulation time. Frame
+	# rate, test acceleration and a paused game must not create fake deadlocks.
+	return int(_simulation_seconds * 1000.0)
 
 
 func _discover_graph_source() -> Node2D:
@@ -275,10 +297,33 @@ func _advance_junction(junction_index: int, delta: float) -> void:
 			# The clearance interval cannot finish while a vehicle that entered
 			# under the previous phase still owns the conflict zone.
 			var required_clearance := pedestrian_clearance_seconds if bool(_pedestrian_demand.get(junction_index, false)) else all_red_seconds
-			if float(state.elapsed) >= required_clearance and int(state.reservation_owner) == 0:
-				var phases: Array = state.phases
-				state.phase_index = (int(state.phase_index) + 1) % phases.size()
+			if float(state.elapsed) >= required_clearance and int(state.reservation_owner) == 0 and not _pedestrian_roadway_busy(junction_index):
+				state.phase_index = _next_requested_phase(junction_index)
 				_set_stage(junction_index, JunctionStage.GREEN)
+
+
+func _next_requested_phase(junction_index: int) -> int:
+	var state: Dictionary = _states[junction_index]
+	var phases: Array = state.phases
+	var current := int(state.phase_index)
+	var chosen := -1
+	var oldest := 9223372036854775807
+	# Serve actual demand on other approaches before repeating this one. Empty
+	# approaches need no green interval, but yellow and pedestrian clearance
+	# are always completed before this selection runs.
+	for step in range(1, phases.size() + 1):
+		var candidate := (current + step) % phases.size()
+		if candidate == current and chosen >= 0: break
+		for request in _waiting_since.values():
+			if int(request.junction_index) != junction_index or not phases[candidate].has(int(request.road_index)): continue
+			if _traffic_now_ms() - int(request.last_seen_ms) > int(reservation_heartbeat_timeout * 1000): continue
+			var reference = request.get("vehicle_ref")
+			var actor: Node2D = reference.get_ref() as Node2D if reference is WeakRef else null
+			if not is_instance_valid(actor) or int(request.started_ms) >= oldest: continue
+			if not _admission_ready(actor, junction_index): continue
+			chosen = candidate
+			oldest = int(request.started_ms)
+	return chosen if chosen >= 0 else (current + 1) % phases.size()
 
 
 func _set_stage(junction_index: int, next_stage: JunctionStage) -> void:
@@ -314,6 +359,60 @@ func get_vehicle_permission(junction_ref: Variant, road_index: int, _lane_id: St
 	return active_roads.has(road_index)
 
 
+func can_clear_crossing(vehicle: Node, junction_ref: Variant, crossing: Node2D = null) -> bool:
+	# Crossing lights stop new arrivals; they must not trap a vehicle already
+	# committed to this same conflict zone while all-red waits for its exit.
+	if not is_instance_valid(vehicle):
+		return false
+	var junction_index := _resolve_junction_index(junction_ref)
+	var state: Dictionary = _states.get(junction_index, {})
+	if state.is_empty() or not bool(state.get("signalized", false)):
+		return false
+	if int(state.get("reservation_owner", 0)) == vehicle.get_instance_id() and bool(state.get("reservation_entered", false)):
+		return true
+	# A car may have spawned on the exit or released its reservation already.
+	# Its canonical lane must put the junction behind and this zebra ahead,
+	# with its body still clearing the conflict envelope, never approaching it.
+	if crossing == null or not vehicle is Node2D:
+		return false
+	var follow := vehicle.get_parent() as PathFollow2D
+	if follow == null:
+		return false
+	var path := follow.get_parent() as Path2D
+	if path == null or path.curve == null or not path.is_in_group(LANE_GROUP):
+		return false
+	var road_index := int(path.get_meta("traffic_road_index", -1))
+	# Use the same live property as signal synchronization; configure-time
+	# metadata need not follow later road association changes.
+	var crossing_road_index := int(crossing.road_index) if "road_index" in crossing else -1
+	if road_index < 0 or road_index != crossing_road_index:
+		return false
+	var center := _junction_world_position(junction_index)
+	var actor := vehicle as Node2D
+	var body_radius := 0.0
+	var collision := vehicle.get_node_or_null("Collision") as CollisionShape2D
+	if collision == null or not collision.shape is RectangleShape2D:
+		return false
+	var half_size := (collision.shape as RectangleShape2D).size * 0.5
+	for corner in [Vector2(-half_size.x,-half_size.y),Vector2(half_size.x,-half_size.y),half_size,Vector2(-half_size.x,half_size.y)]:
+		body_radius = maxf(body_radius,actor.global_position.distance_to(collision.to_global(corner)))
+	var radius := float((_junctions[junction_index] as Dictionary).get("radius",48.0))
+	if actor.global_position.distance_to(center) > radius + body_radius + stop_line_margin:
+		return false
+	var progress := path.curve.get_closest_offset(path.to_local(actor.global_position))
+	var crossing_offset := path.curve.get_closest_offset(path.to_local(crossing.global_position))
+	if crossing_offset <= progress + 0.5:
+		return false
+	var length := path.curve.get_baked_length()
+	var forward := path.to_global(path.curve.sample_baked(minf(length,progress+2.0))) - path.to_global(path.curve.sample_baked(maxf(0.0,progress-2.0)))
+	if forward.is_zero_approx() or (actor.global_position-center).dot(forward.normalized()) <= 0.5:
+		return false
+	for projection in _lane_junction_projections(path,road_index):
+		if int(projection.junction_index) == junction_index:
+			return progress > float(projection.offset) + 0.5
+	return false
+
+
 func get_signal_state(junction_ref: Variant, road_index: int) -> SignalState:
 	var index := _resolve_junction_index(junction_ref)
 	var state: Dictionary = _states.get(index, {})
@@ -336,7 +435,15 @@ func is_pedestrian_phase(junction_ref: Variant, _road_index: int = -1, _crossing
 	return not state.is_empty() \
 		and bool(state.get("signalized", false)) \
 		and int(state.stage) == JunctionStage.ALL_RED \
-		and int(state.reservation_owner) == 0
+		and int(state.reservation_owner) == 0 \
+		and float(state.elapsed) < pedestrian_walk_seconds
+
+
+func _pedestrian_roadway_busy(junction_index: int) -> bool:
+	for crossing in _crossings_by_junction.get(junction_index, []):
+		if is_instance_valid(crossing) and crossing.has_method("has_pedestrian_on_roadway") and crossing.has_pedestrian_on_roadway():
+			return true
+	return false
 
 
 func notify_crossing_demand(junction_ref: Variant, _crossing_axis: Variant = &"", active: bool = true) -> void:
@@ -364,17 +471,38 @@ func try_reserve_junction(
 	if state.is_empty() or vehicle_instance_id == 0:
 		return false
 	if int(state.reservation_owner) == vehicle_instance_id:
-		state.reservation_heartbeat_ms = Time.get_ticks_msec()
+		state.reservation_heartbeat_ms = _traffic_now_ms()
 		return true
+	_track_wait(vehicle_instance_id, index, road_index, lane_id)
+	_waiting_since[vehicle_instance_id]["vehicle_ref"] = weakref(vehicle) if vehicle != null else null
 	if not get_vehicle_permission(index, road_index, lane_id) or int(state.reservation_owner) != 0:
 		_telemetry.reservation_denials = int(_telemetry.reservation_denials) + 1
 		_track_wait(vehicle_instance_id, index, road_index, lane_id)
 		return false
+	if vehicle is Node2D and not _admission_ready(vehicle, index):
+		_telemetry.reservation_denials += 1
+		return false
+	# Oldest eligible head of queue goes first. A red approach, vanished actor,
+	# blocked exit or follower cannot hold up a different usable entrance.
+	var request: Dictionary = _waiting_since[vehicle_instance_id]
+	for other_id in _waiting_since:
+		if int(other_id) == vehicle_instance_id: continue
+		var other: Dictionary = _waiting_since[other_id]
+		if int(other.junction_index) != index: continue
+		if int(other.started_ms) > int(request.started_ms): continue
+		if int(other.started_ms) == int(request.started_ms) and int(other_id) > vehicle_instance_id: continue
+		if _traffic_now_ms() - int(other.get("last_seen_ms", 0)) > int(reservation_heartbeat_timeout * 1000): continue
+		if not get_vehicle_permission(index, int(other.road_index), StringName(other.lane_id)): continue
+		var reference = other.get("vehicle_ref")
+		var actor: Node2D = reference.get_ref() as Node2D if reference is WeakRef else null
+		if is_instance_valid(actor) and _admission_ready(actor, index):
+			_telemetry.fairness_yields += 1
+			return false
 	state.reservation_owner = vehicle_instance_id
 	state.reservation_road = road_index
 	state.reservation_lane = lane_id
 	state.reservation_ref = weakref(vehicle) if vehicle != null else null
-	state.reservation_heartbeat_ms = Time.get_ticks_msec()
+	state.reservation_heartbeat_ms = _traffic_now_ms()
 	state.reservation_entered = false
 	_vehicle_owned_junction[vehicle_instance_id] = index
 	_waiting_since.erase(vehicle_instance_id)
@@ -384,12 +512,86 @@ func try_reserve_junction(
 	return true
 
 
+func _admission_ready(vehicle: Node2D, junction_index: int) -> bool:
+	if _pedestrian_roadway_busy(junction_index): return false
+	var follow := vehicle.get_parent() as PathFollow2D
+	var path := follow.get_parent() as Path2D if follow != null else null
+	if path == null or path.curve == null or not path.is_in_group(LANE_GROUP): return true
+	var next := _next_lane_junction(path, follow, int(path.get_meta("traffic_road_index", -1)))
+	if next.is_empty() or int(next.junction_index) != junction_index: return false
+	var leader := FLOW.lane_leader(vehicle, path, follow, float(next.distance))
+	if leader != null:
+		_admission_blockers[vehicle.get_instance_id()] = weakref(leader)
+		_telemetry.queue_yields += 1
+		return false
+	var connection := _planned_connection(vehicle, path, follow)
+	var outgoing := path
+	var center_offset := float(next.offset)
+	var start := center_offset + float(next.radius)
+	if bool(connection.get("requires_connector", false)):
+		outgoing = _lane_paths_by_id.get(String(connection.get("to_lane_id", ""))) as Path2D
+		if not is_instance_valid(outgoing) or outgoing.curve == null: return false
+		center_offset = outgoing.curve.get_closest_offset(outgoing.to_local(_junction_world_position(junction_index)))
+		start = maxf(float(connection.get("exit_curve_offset", 0.0)), center_offset + float(next.radius))
+	var extent := FLOW.extent(vehicle, vehicle.global_transform.x.normalized())
+	if not _tour_admits(path, outgoing): return false
+	# Articulation can shorten the projected hull during a bend; reserve the
+	# full road length, so a bus never budgets only its leading section.
+	var body_length := extent.x + extent.y
+	if vehicle.has_method("get_traffic_storage_length"):
+		body_length = maxf(body_length, float(vehicle.get_traffic_storage_length()))
+	if _actor_index_frame != Engine.get_process_frames():
+		_actor_index_frame = Engine.get_process_frames()
+		_traffic_actors = get_tree().get_nodes_in_group("vehicle")
+	var blocker := FLOW.exit_blocker(vehicle, outgoing, start, start + body_length + stop_line_margin + FLOW.STANDSTILL_GAP, _traffic_actors)
+	if blocker != null:
+		_admission_blockers[vehicle.get_instance_id()] = weakref(blocker)
+		_telemetry.blocked_exit_yields += 1
+		if _try_queue_detour(vehicle, path, follow, next, connection, body_length):
+			_admission_blockers.erase(vehicle.get_instance_id())
+			return true
+		return false
+	_admission_blockers.erase(vehicle.get_instance_id())
+	return true
+
+
+func _try_queue_detour(vehicle: Node2D, path: Path2D, follow: PathFollow2D, next: Dictionary, original: Dictionary, body_length: float) -> bool:
+	# Rethink the next legal turn after a real queue delay. Never reroute an
+	# occupied connector or a mission/taxi route, and never bypass exit storage.
+	if not "block_wait_timer" in vehicle or float(vehicle.block_wait_timer) < 6.0: return false
+	if vehicle.has_meta("taxi_route_end") or path.is_in_group("unified_lane_connector"): return false
+	var owned := _owned_junction_for_vehicle(vehicle.get_instance_id())
+	if owned >= 0 and bool(_states[owned].reservation_entered): return false
+	var now := _traffic_now_ms()
+	if now < int(follow.get_meta("traffic_detour_after_ms", 0)): return false
+	follow.set_meta("traffic_detour_after_ms", now + 3000)
+	var lane_id := String(path.get_meta("traffic_lane_id", ""))
+	var candidates := _collect_planning_candidates(lane_id, int(next.junction_index), follow.progress, false)
+	for candidate in candidates:
+		if String(candidate.get("connection_id", "")) == String(original.get("connection_id", "")): continue
+		# A late decision may not reverse back to an already-passed turn entry.
+		if bool(candidate.get("requires_connector", false)) and float(candidate.get("entry_curve_offset", -1.0)) < follow.progress: continue
+		var outgoing := path
+		var start := float(next.offset) + float(next.radius)
+		if bool(candidate.get("requires_connector", false)):
+			outgoing = _lane_paths_by_id.get(String(candidate.get("to_lane_id", ""))) as Path2D
+			if not is_instance_valid(outgoing) or outgoing.curve == null: continue
+			var center := outgoing.curve.get_closest_offset(outgoing.to_local(_junction_world_position(int(next.junction_index))))
+			start = maxf(float(candidate.get("exit_curve_offset", 0.0)), center + float(next.radius))
+		if FLOW.exit_blocker(vehicle, outgoing, start, start + body_length + stop_line_margin + FLOW.STANDSTILL_GAP, _traffic_actors) != null: continue
+		follow.set_meta("traffic_planned_connection_id", String(candidate.connection_id))
+		follow.set_meta("traffic_planned_junction_index", int(next.junction_index))
+		vehicle.set_meta("traffic_queue_detours", int(vehicle.get_meta("traffic_queue_detours", 0)) + 1)
+		return true
+	return false
+
+
 func notify_vehicle_entered(junction_ref: Variant, vehicle_instance_id: int) -> void:
 	var index := _resolve_junction_index(junction_ref)
 	var state: Dictionary = _states.get(index, {})
 	if not state.is_empty() and int(state.reservation_owner) == vehicle_instance_id:
 		state.reservation_entered = true
-		state.reservation_heartbeat_ms = Time.get_ticks_msec()
+		state.reservation_heartbeat_ms = _traffic_now_ms()
 
 
 func release_junction(junction_ref: Variant, vehicle_instance_id: int) -> void:
@@ -407,6 +609,7 @@ func release_vehicle(vehicle_instance_id: int) -> void:
 			_clear_reservation(int(index_value))
 	_waiting_since.erase(vehicle_instance_id)
 	_deadlock_reported.erase(vehicle_instance_id)
+	_admission_blockers.erase(vehicle_instance_id)
 
 
 ## Returns a hard movement contract. `allowed_advance` is the maximum number
@@ -435,6 +638,7 @@ func evaluate_lane_motion(
 	if vehicle == null or path == null or follow == null or path.curve == null:
 		return unrestricted
 	if path.is_in_group("unified_lane_connector"):
+		_refresh_retained_junctions(vehicle, vehicle_length)
 		return _evaluate_connector_motion(vehicle, path, desired_advance)
 	var road_index := int(path.get_meta("traffic_road_index", -1))
 	var lane_id := StringName(path.get_meta("traffic_lane_id", path.name))
@@ -446,20 +650,32 @@ func evaluate_lane_motion(
 	_release_if_vehicle_cleared(vehicle, vehicle_length)
 	var vehicle_id := vehicle.get_instance_id()
 	var owned_junction := _owned_junction_for_vehicle(vehicle_id)
+	if owned_junction >= 0:
+		var held: Dictionary = _states[owned_junction]
+		# Permission to approach is revocable until entry. A waiting car cannot
+		# keep an obsolete green or an exit that has filled since its request.
+		if not bool(held.reservation_entered) and (not get_vehicle_permission(owned_junction, road_index, lane_id) or not _admission_ready(vehicle, owned_junction)):
+			_clear_reservation(owned_junction)
+			owned_junction = -1
 	# A long render frame must stop at the authored turn entry, not skip it
 	# and discard the plan as an excessive connector overshoot. The normal
 	# post-movement handoff still requires the junction reservation below.
 	var planned_id := String(follow.get_meta("traffic_planned_connection_id", ""))
 	var planned: Dictionary = _connections_by_id.get(planned_id, {})
-	if bool(planned.get("requires_connector", false)) and String(planned.get("from_lane_id", "")) == String(lane_id) and (owned_junction < 0 or int(planned.get("junction_index", -1)) == owned_junction):
+	var compound_link := bool(path.get_meta("compound_junction_reservations", false)) or (vehicle.has_method("get_traffic_storage_length") and float(vehicle.get_traffic_storage_length()) >= 110.0)
+	if bool(planned.get("requires_connector", false)) and String(planned.get("from_lane_id", "")) == String(lane_id) and (compound_link or owned_junction < 0 or int(planned.get("junction_index", -1)) == owned_junction):
 		var entry_distance := float(planned.get("entry_curve_offset", -1.0)) - follow.progress
 		if entry_distance >= 0.0 and entry_distance < float(unrestricted.allowed_advance):
 			unrestricted.allowed_advance = entry_distance
 			unrestricted.controlled = true
-	if owned_junction >= 0:
+	var next: Dictionary = {}
+	if compound_link and owned_junction >= 0:
+		next = _next_lane_junction(path, follow, road_index)
+	var adjoining_transition := compound_link and owned_junction >= 0 and not next.is_empty() and int(next.junction_index) != owned_junction and int(planned.get("junction_index", -1)) == int(next.junction_index) and String(planned.get("from_lane_id", "")) == String(lane_id)
+	if owned_junction >= 0 and not adjoining_transition:
 		var owned_state: Dictionary = _states[owned_junction]
 		var owned_radius := float((_junctions[owned_junction] as Dictionary).get("radius", 48.0))
-		owned_state.reservation_heartbeat_ms = Time.get_ticks_msec()
+		owned_state.reservation_heartbeat_ms = _traffic_now_ms()
 		if vehicle.global_position.distance_to(_junction_world_position(owned_junction)) <= owned_radius + vehicle_length * 0.5:
 			notify_vehicle_entered(owned_junction, vehicle_id)
 		unrestricted.controlled = true
@@ -467,7 +683,8 @@ func evaluate_lane_motion(
 		unrestricted.junction_index = owned_junction
 		unrestricted.junction_id = owned_state.junction_id
 		return unrestricted
-	var next := _next_lane_junction(path, follow, road_index)
+	if next.is_empty():
+		next = _next_lane_junction(path, follow, road_index)
 	if next.is_empty():
 		return unrestricted
 	var junction_index := int(next.junction_index)
@@ -480,7 +697,7 @@ func evaluate_lane_motion(
 	var stop_distance := center_distance - radius - stop_line_margin - half_length
 	var distance_to_world_center := vehicle.global_position.distance_to(_junction_world_position(junction_index))
 	if int(state.reservation_owner) == vehicle_id:
-		state.reservation_heartbeat_ms = Time.get_ticks_msec()
+		state.reservation_heartbeat_ms = _traffic_now_ms()
 		if distance_to_world_center <= radius + half_length:
 			notify_vehicle_entered(junction_index, vehicle_id)
 		unrestricted.controlled = true
@@ -496,6 +713,11 @@ func evaluate_lane_motion(
 	if signal_state == SignalState.GREEN and close_enough_to_reserve:
 		reserved = try_reserve_junction(junction_index, vehicle_id, road_index, lane_id, vehicle)
 	if reserved:
+		if adjoining_transition:
+			var retained: Array = _retained_junctions.get(vehicle_id, [])
+			if not retained.has(owned_junction):
+				retained.append(owned_junction)
+			_retained_junctions[vehicle_id] = retained
 		unrestricted.controlled = true
 		unrestricted.reservation_granted = true
 		unrestricted.junction_index = junction_index
@@ -503,8 +725,7 @@ func evaluate_lane_motion(
 		unrestricted.stop_distance = stop_distance
 		return unrestricted
 
-	var occupied := int(state.reservation_owner) != 0
-	var must_yield := signal_state != SignalState.GREEN or (close_enough_to_reserve and occupied)
+	var must_yield := signal_state != SignalState.GREEN or (close_enough_to_reserve and not reserved)
 	if not must_yield:
 		return unrestricted
 	var safe_stop_distance := maxf(NO_ADVANCE, stop_distance)
@@ -524,7 +745,8 @@ func evaluate_lane_motion(
 	}
 	if safe_stop_distance <= desired_advance + 0.001:
 		_telemetry.red_stop_clamps = int(_telemetry.red_stop_clamps) + 1
-	_track_wait(vehicle_id, junction_index, road_index, lane_id)
+	if bool(result.must_stop):
+		_track_wait(vehicle_id, junction_index, road_index, lane_id)
 	return result
 
 
@@ -549,7 +771,7 @@ func _evaluate_connector_motion(vehicle: Node2D, connector: Path2D, desired_adva
 			"junction_id": state.get("junction_id", &""),
 			"stop_distance": 0.0,
 		}
-	state.reservation_heartbeat_ms = Time.get_ticks_msec()
+	state.reservation_heartbeat_ms = _traffic_now_ms()
 	state.reservation_entered = true
 	return {
 		"controlled": true,
@@ -702,6 +924,9 @@ func complete_lane_transition(vehicle: Node2D, path: Path2D, follow: PathFollow2
 	if connector == null or not is_instance_valid(connector) or connector.curve == null:
 		return false
 	var overshoot := maxf(0.0, follow.progress - entry_offset)
+	if vehicle.has_method("can_apply_lane_pose"):
+		var pose := connector.global_transform * connector.curve.sample_baked_with_rotation(minf(overshoot, connector.curve.get_baked_length()), follow.cubic_interp) * vehicle.transform
+		if not vehicle.can_apply_lane_pose(pose): return false
 	follow.reparent(connector, false)
 	follow.loop = false
 	follow.progress = minf(overshoot, connector.curve.get_baked_length())
@@ -741,7 +966,8 @@ func _planned_connection(vehicle: Node2D, path: Path2D, follow: PathFollow2D) ->
 	var planned_id := String(follow.get_meta("traffic_planned_connection_id", ""))
 	if not planned_id.is_empty() and _connections_by_id.has(planned_id):
 		var existing: Dictionary = _connections_by_id[planned_id]
-		if String(existing.get("from_lane_id", "")) == String(path.get_meta("traffic_lane_id", "")):
+		var destination := _lane_paths_by_id.get(String(existing.get("to_lane_id", ""))) as Path2D
+		if String(existing.get("from_lane_id", "")) == String(path.get_meta("traffic_lane_id", "")) and _tour_admits(path, destination):
 			return existing
 		follow.remove_meta("traffic_planned_connection_id")
 		follow.remove_meta("traffic_planned_junction_index")
@@ -794,6 +1020,8 @@ func _collect_planning_candidates(lane_id: String, junction_index: int, progress
 		var candidate := connection_value as Dictionary
 		if int(candidate.get("junction_index", -1)) != junction_index:
 			continue
+		if not _tour_admits(_lane_paths_by_id.get(lane_id) as Path2D, _lane_paths_by_id.get(String(candidate.get("to_lane_id", ""))) as Path2D):
+			continue
 		if bool(candidate.get("requires_connector", false)):
 			var limit := _connector_entry_overshoot_limit(candidate) if allow_landing_overshoot else MAX_CONNECTOR_ENTRY_OVERSHOOT
 			if float(candidate.get("entry_curve_offset", -1.0)) < progress - limit:
@@ -830,6 +1058,10 @@ func _movement_priority(movement: String) -> int:
 		_:
 			return 2
 
+func _tour_admits(origin: Path2D, destination: Path2D) -> bool:
+	const RESERVATION = preload("res://world/harbor/campaign/TourTrafficReservation.gd")
+	return not RESERVATION.reserved(destination) or RESERVATION.reserved(origin)
+
 
 func _clear_passed_straight_plan(path: Path2D, follow: PathFollow2D, connection: Dictionary) -> void:
 	var junction_index := int(connection.get("junction_index", -1))
@@ -862,6 +1094,10 @@ func _finish_connector_transition(connector: Path2D, follow: PathFollow2D) -> bo
 		0.0,
 		target_path.curve.get_baked_length()
 	)
+	for actor in follow.get_children():
+		if actor is Node2D and actor.has_method("can_apply_lane_pose"):
+			var pose: Transform2D = target_path.global_transform * target_path.curve.sample_baked_with_rotation(exit_offset, follow.cubic_interp) * actor.transform
+			if not actor.can_apply_lane_pose(pose): return false
 	follow.reparent(target_path, false)
 	follow.loop = bool(target_path.get_meta("traffic_lane_loop", false))
 	follow.progress = exit_offset
@@ -872,10 +1108,23 @@ func _finish_connector_transition(connector: Path2D, follow: PathFollow2D) -> bo
 
 
 func _release_if_vehicle_cleared(vehicle: Node2D, vehicle_length: float) -> void:
+	_refresh_retained_junctions(vehicle, vehicle_length)
 	var vehicle_id := vehicle.get_instance_id()
 	var junction_index := _owned_junction_for_vehicle(vehicle_id)
 	if junction_index < 0:
 		return
+	_release_one_if_cleared(vehicle, vehicle_length, junction_index)
+
+func _refresh_retained_junctions(vehicle: Node2D, vehicle_length: float) -> void:
+	var retained: Array = _retained_junctions.get(vehicle.get_instance_id(), [])
+	for junction_index in retained.duplicate():
+		var state: Dictionary = _states.get(int(junction_index), {})
+		if int(state.get("reservation_owner", 0)) == vehicle.get_instance_id():
+			state.reservation_heartbeat_ms = _traffic_now_ms()
+		_release_one_if_cleared(vehicle, vehicle_length, int(junction_index))
+
+func _release_one_if_cleared(vehicle: Node2D, vehicle_length: float, junction_index: int) -> void:
+	var vehicle_id := vehicle.get_instance_id()
 	var state: Dictionary = _states.get(junction_index, {})
 	if state.is_empty() or int(state.reservation_owner) != vehicle_id:
 		return
@@ -893,6 +1142,8 @@ func _release_if_vehicle_cleared(vehicle: Node2D, vehicle_length: float) -> void
 	# is outside the conflict radius plus margin. Using a FULL vehicle length
 	# retained a cleared junction until after the next short-block turn entry.
 	elif bool(state.reservation_entered) and distance > radius + body_radius + stop_line_margin:
+		if vehicle.has_method("occupies_junction") and vehicle.occupies_junction(_junction_world_position(junction_index),radius+stop_line_margin):
+			return
 		_clear_reservation(junction_index)
 
 
@@ -922,7 +1173,7 @@ func _validate_reservation(junction_index: int) -> void:
 	if owner_ref is WeakRef and not is_instance_valid(owner):
 		_clear_reservation(junction_index)
 		return
-	var heartbeat_age := float(Time.get_ticks_msec() - int(state.reservation_heartbeat_ms)) / 1000.0
+	var heartbeat_age := float(_traffic_now_ms() - int(state.reservation_heartbeat_ms)) / 1000.0
 	if heartbeat_age <= reservation_heartbeat_timeout:
 		return
 	# A stale owner outside the conflict zone can be recovered safely. A stale
@@ -930,7 +1181,11 @@ func _validate_reservation(junction_index: int) -> void:
 	# visible queue for a collision. Active lane AI heartbeats every frame.
 	if owner is Node2D:
 		var radius := float((_junctions[junction_index] as Dictionary).get("radius", 48.0))
-		if (owner as Node2D).global_position.distance_to(_junction_world_position(junction_index)) > radius * 1.5 + stop_line_margin:
+		var center := _junction_world_position(junction_index)
+		var outside := (owner as Node2D).global_position.distance_to(center) > radius * 1.5 + stop_line_margin
+		if outside and owner.has_method("occupies_junction"):
+			outside = not bool(owner.call("occupies_junction",center,radius+stop_line_margin))
+		if outside:
 			_clear_reservation(junction_index)
 			return
 	if bool(state.get("signalized", false)) and int(state.stage) != JunctionStage.ALL_RED:
@@ -947,6 +1202,11 @@ func _clear_reservation(junction_index: int) -> void:
 	if state.is_empty():
 		return
 	var previous_owner := int(state.reservation_owner)
+	if _retained_junctions.has(previous_owner):
+		var retained: Array = _retained_junctions[previous_owner]
+		retained.erase(junction_index)
+		if retained.is_empty():
+			_retained_junctions.erase(previous_owner)
 	state.reservation_owner = 0
 	state.reservation_road = -1
 	state.reservation_lane = &""
@@ -963,20 +1223,27 @@ func _clear_reservation(junction_index: int) -> void:
 
 
 func _track_wait(vehicle_id: int, junction_index: int, road_index: int, lane_id: StringName) -> void:
-	if not _waiting_since.has(vehicle_id):
+	if not _waiting_since.has(vehicle_id) or int(_waiting_since[vehicle_id].junction_index) != junction_index:
 		_waiting_since[vehicle_id] = {
-			"started_ms": Time.get_ticks_msec(),
+			"started_ms": _traffic_now_ms(),
 			"junction_index": junction_index,
 			"road_index": road_index,
 			"lane_id": lane_id,
+			"vehicle_ref": weakref(instance_from_id(vehicle_id)) if is_instance_id_valid(vehicle_id) else null,
 		}
+	_waiting_since[vehicle_id]["last_seen_ms"] = _traffic_now_ms()
 
 
 func _update_wait_telemetry() -> void:
-	var now := Time.get_ticks_msec()
+	var now := _traffic_now_ms()
 	for vehicle_value in _waiting_since.keys():
 		var vehicle_id := int(vehicle_value)
 		var wait: Dictionary = _waiting_since[vehicle_id]
+		if now - int(wait.get("last_seen_ms", now)) > int(reservation_heartbeat_timeout * 1000):
+			_waiting_since.erase(vehicle_id)
+			_admission_blockers.erase(vehicle_id)
+			_deadlock_reported.erase(vehicle_id)
+			continue
 		var seconds := float(now - int(wait.started_ms)) / 1000.0
 		_telemetry.maximum_wait_seconds = maxf(float(_telemetry.maximum_wait_seconds), seconds)
 		if seconds > deadlock_telemetry_limit and not _deadlock_reported.has(vehicle_id):
@@ -1025,6 +1292,11 @@ func _rebuild_signal_visuals() -> void:
 		if is_instance_valid(previous):
 			previous.queue_free()
 	_signal_visuals.clear()
+	var curb_surfaces: Array = []
+	var sidewalk_surfaces: Array = []
+	if is_instance_valid(graph_source) and graph_source.has_method("get_signal_ground_surfaces"):
+		curb_surfaces = graph_source.get_signal_ground_surfaces(10.0)
+		sidewalk_surfaces = graph_source.get_signal_ground_surfaces(84.0)
 	for junction_index in _junctions.size():
 		var junction: Dictionary = _junctions[junction_index]
 		var approaches: Array = junction.get("approaches", [])
@@ -1033,6 +1305,9 @@ func _rebuild_signal_visuals() -> void:
 		var visual := SIGNAL_VISUAL.new()
 		visual.name = "Signals_%s" % String(junction.id)
 		visual.z_index = 32
+		visual.ground_source = graph_source
+		visual.curb_surfaces = curb_surfaces
+		visual.sidewalk_surfaces = sidewalk_surfaces
 		add_child(visual)
 		visual.global_position = _junction_world_position(junction_index)
 		visual.configure(StringName(junction.id), float(junction.get("radius", 48.0)), approaches)
@@ -1053,6 +1328,7 @@ func _refresh_signal_visuals() -> void:
 func _synchronize_crossing_consumers() -> void:
 	if not is_inside_tree():
 		return
+	_crossings_by_junction.clear()
 	var seen: Dictionary = {}
 	for group_name in [&"road_crossing_area", &"road_crossing", &"traffic_crossing"]:
 		for crossing in get_tree().get_nodes_in_group(group_name):
@@ -1060,6 +1336,9 @@ func _synchronize_crossing_consumers() -> void:
 				continue
 			seen[crossing.get_instance_id()] = true
 			if not crossing.has_method("set_signal_state"):
+				continue
+			var coordinator := crossing.get_parent().get_parent() if crossing.get_parent() != null else null
+			if is_instance_valid(coordinator) and coordinator.has_method("_road_graph") and coordinator.call("_road_graph") != graph_source:
 				continue
 			var junction_id: StringName
 			var road_index: int
@@ -1082,8 +1361,13 @@ func _synchronize_crossing_consumers() -> void:
 			# priority logic; assigning false/false would turn it permanently red.
 			if junction_id.is_empty() and junction_index < 0:
 				continue
-			var junction_ref: Variant = junction_index if junction_index >= 0 else junction_id
+			# Stable ids disambiguate local indices when several districts coexist.
+			if not junction_id.is_empty() and not _junction_id_to_index.has(junction_id): continue
+			var junction_ref: Variant = junction_id if not junction_id.is_empty() else junction_index
 			var resolved_index := _resolve_junction_index(junction_ref)
+			if resolved_index >= 0:
+				if not _crossings_by_junction.has(resolved_index): _crossings_by_junction[resolved_index] = []
+				_crossings_by_junction[resolved_index].append(crossing)
 			if resolved_index < 0 or not is_junction_signalized(resolved_index):
 				# A crossing attached to a two-approach continuation is deliberately
 				# unsignalized. Restore its pedestrian-priority behavior instead of
@@ -1110,6 +1394,31 @@ func _synchronize_crossing_consumers() -> void:
 func get_junction_id(junction_index: int) -> StringName:
 	var state: Dictionary = _states.get(junction_index, {})
 	return StringName(state.get("junction_id", &""))
+
+
+func get_reserved_vehicles() -> Array[Node2D]:
+	# Simulation budgets must let committed vehicles finish their crossing.
+	var result: Array[Node2D] = []
+	for state_value in _states.values():
+		var owner_id := int(state_value.get("reservation_owner", 0))
+		if owner_id == 0:
+			continue
+		var owner = instance_from_id(owner_id)
+		if is_instance_valid(owner) and owner is Node2D and not result.has(owner):
+			result.append(owner)
+	return result
+
+
+func get_waiting_traffic_actors() -> Array[Node2D]:
+	var result: Array[Node2D] = []
+	for vehicle_id in _admission_blockers:
+		if not _waiting_since.has(vehicle_id): continue
+		var wait: Dictionary = _waiting_since[vehicle_id]
+		if _traffic_now_ms() - int(wait.get("last_seen_ms", 0)) > int(reservation_heartbeat_timeout * 1000): continue
+		for reference in [wait.get("vehicle_ref"), _admission_blockers[vehicle_id]]:
+			var actor: Node2D = reference.get_ref() as Node2D if reference is WeakRef else null
+			if is_instance_valid(actor) and not result.has(actor): result.append(actor)
+	return result
 
 
 func is_reservation_owner(junction_ref: Variant, vehicle: Node) -> bool:

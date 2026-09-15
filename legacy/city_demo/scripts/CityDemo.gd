@@ -150,7 +150,8 @@ func _spawn_world_extras() -> void:
 
 	var chop_shop: Node2D = CHOP_SHOP_SCRIPT.new()
 	chop_shop.name = "ChopShopZone"
-	chop_shop.position = Vector2(900, 330) # Perto do covil dos Cobras (610, 205)
+	chop_shop.legacy = true
+	chop_shop.position = preload("res://world/shared/salvage/SalvageLocation.gd").LEGACY_CENTER
 	world.add_child(chop_shop)
 
 ## Cargueiro decorativo na beira-mar (variação compacta do que já existia em

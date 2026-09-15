@@ -8,6 +8,8 @@ static func sound(surface: String, variation: int) -> AudioStreamWAV:
 		if not _cache.has(key): _cache[key] = _water_step(posmod(variation, 4))
 		return _cache[key]
 	if surface in ["rain", "puddle"]: surface = "wet"
+	if surface not in MATERIALS and surface in ["asphalt", "asphalt_wet", "dirt", "dirt_wet", "gravel", "gravel_wet", "snow", "snow_wet", "wood_wet", "tile_wet"]:
+		return preload("res://audio/SurfaceContactAudio.gd").sound(surface, false, variation)
 	if surface not in MATERIALS: surface = "concrete"
 	var key := "%s_%d" % [surface, posmod(variation, 4)]
 	if not _cache.has(key):

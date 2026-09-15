@@ -36,7 +36,7 @@ func _ready() -> void:
 		worker.set_physics_process(false)
 	gull = AudioStreamPlayer2D.new()
 	gull.name = "ShipGulls"
-	gull.bus = &"SFX"
+	gull.bus = &"Ambient"
 	gull.max_distance = 1050
 	gull.volume_db = -5
 	add_child(gull)
@@ -91,7 +91,8 @@ func _update_presence() -> void:
 		gull.stop()
 		handling.stop()
 	for worker in workers:
-		worker.set_physics_process(active or worker.is_scared or worker.is_flying)
+		if not worker.has_meta("medical_witness") and not (worker.has_meta("medical_pending") and not worker.visible):
+			worker.set_physics_process(active or worker.is_scared or worker.is_flying)
 
 func _on_crate_handled(point: Vector2) -> void:
 	queue_redraw()
@@ -109,6 +110,4 @@ func _draw() -> void:
 		for point in worker.dropped_crates: _draw_crate(to_local(point))
 
 func _draw_crate(point: Vector2) -> void:
-	draw_rect(Rect2(point-Vector2(9,9),Vector2(18,14)),Color("aa7949"))
-	draw_rect(Rect2(point-Vector2(9,9),Vector2(18,14)),Color("d4b178"),false,1.5)
-	draw_line(point+Vector2(-7,-7),point+Vector2(7,3),Color("d4b178"),2)
+	preload("res://world/harbor/DockCrateDrawing.gd").draw_crate(self,point)

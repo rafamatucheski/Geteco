@@ -1,4 +1,4 @@
-﻿@tool
+@tool
 class_name CityCrosswalk
 extends Node2D
 

@@ -4,6 +4,7 @@ const DETAIL = preload("res://world/shared/pedestrians/CitizenDetails.gd")
 var forearms: Array[Node3D] = []
 
 func _ready() -> void:
+	set_meta("standing_rig_height", 1.8)
 	scale = Vector3.ONE
 	var skin := Color("c38e70") if appearance_female else Color("b88c70")
 	var suit := Color("345a60") if appearance_female else Color("344254")

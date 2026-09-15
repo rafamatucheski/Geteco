@@ -20,7 +20,33 @@ func _ready() -> void:
 	# Under the shared road renderer (z=2); no opaque structural shape covers asphalt.
 	z_index = 1
 	_build_rails()
+	_build_lighting()
 	queue_redraw()
+
+func _build_lighting() -> void:
+	if Engine.is_editor_hint() or has_node("BridgeLighting"): return
+	var lighting := Node2D.new()
+	lighting.name = "BridgeLighting"
+	add_child(lighting)
+	const FIXTURE = preload("res://world/shared/roads/RoadLuminaire3D.gd")
+	for x in range(3240,4380,140):
+		for north in [true,false]:
+			var strip := FIXTURE.new()
+			strip.fixture_kind = "strip"
+			strip.position = Vector2(x,RAIL_BOUNDS[0 if north else 1].get_center().y)
+			strip.target_offset = Vector2(x,400)-strip.position
+			strip.emits_ground_light = north
+			lighting.add_child(strip)
+			# Paired rail housings share a broad wash, keeping each road sector
+			# below the engine's per-CanvasItem light limit.
+			strip.pool.scale = Vector2(1.35,1.5)
+	for x in range(3320,4380,340):
+		for north in [true,false]:
+			var flood := FIXTURE.new()
+			flood.position = Vector2(x,RAIL_BOUNDS[0 if north else 1].get_center().y)
+			flood.target_offset = Vector2(x,400)-flood.position
+			flood.emits_ground_light = north
+			lighting.add_child(flood)
 
 
 func _build_rails() -> void:
@@ -78,11 +104,6 @@ func _draw() -> void:
 	for x in [3208.0, 3495.0, 4055.0, 4372.0]:
 		for y in [292.0, 503.0]:
 			draw_line(Vector2(x, y), Vector2(x, y + 5), Color("445459"), 3.0)
-	# Small repeating luminaires give the span a recognizable nighttime silhouette.
-	for x in range(3260, 4340, 150):
-		for y in [279.0, 521.0]:
-			draw_circle(Vector2(x, y), 4.0, Color("ead8a3"))
-			draw_circle(Vector2(x, y), 9.0, Color(0.91, 0.78, 0.47, 0.1))
 
 
 func _draw_pylon_pair(x: float) -> void:

@@ -178,7 +178,7 @@ func _build_alarm_and_lockers() -> void:
 	)
 
 	alarm_badge = Label.new()
-	alarm_badge.text = "[ E ] TESTE DE SIRENE & PRONTIDÃO DE RESGATE"
+	alarm_badge.text = "E"
 	alarm_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	alarm_badge.position = alarm_pos + Vector2(-160, -60)
 	alarm_badge.size = Vector2(320, 20)

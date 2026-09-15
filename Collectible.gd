@@ -2,8 +2,8 @@ class_name Collectible
 extends Area2D
 
 ## Achado de exploração espalhado pelo mapa (extremidades, território dos
-## Cobras, docas). A cada 10 achados distintos o jogador ganha grana ou uma
-## pista de carro secreto — ver Player.add_collectible().
+## Cobras, docas). Cada achado paga grana; marcos de coleção dão bônus.
+## Player.add_collectible() owns rewards and audio, including duplicate checks.
 
 @export var collectible_id: String = ""
 @export var flavor_label: String = "ACHADO"
@@ -135,6 +135,7 @@ func _build_3d_viewport() -> void:
 	sprite_3d.position.y = -3
 	model_3d.rotation.y = -0.35
 	add_child(sprite_3d)
+	preload("res://ContactShadow.gd").add_box(self, Vector2(18, 11), 0.45)
 
 	var notifier := VisibleOnScreenNotifier2D.new()
 	notifier.rect = Rect2(-32, -40, 64, 64)
@@ -201,19 +202,9 @@ func _on_body_entered(body: Node2D) -> void:
 	if _is_collected: return
 	if not body.is_in_group("player"): return
 	if not body.has_method("add_collectible"): return
-	if not body.add_collectible(collectible_id, flavor_label): return
+	if not body.add_collectible(collectible_id, flavor_label, global_position): return
 	_is_collected = true
 
-	var p := AudioStreamPlayer2D.new()
-	p.bus = &"SFX"
-	p.stream = ProceduralAudio.get_powerup_stream()
-	p.pitch_scale = 1.35
-	p.volume_db = -4.0
-	p.max_distance = 500.0
-	get_tree().current_scene.add_child(p)
-	p.global_position = global_position
-	p.play()
-	p.finished.connect(p.queue_free)
 
 	if gem_poly: gem_poly.visible = false
 	if glow_circle: glow_circle.visible = false

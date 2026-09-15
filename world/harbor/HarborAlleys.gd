@@ -36,8 +36,29 @@ const ALLEYS := [
 
 
 func _ready() -> void:
+	add_to_group("pedestrian_passages")
 	z_index = 1
 	queue_redraw()
+	_spawn_alley_pickups()
+
+func _spawn_alley_pickups() -> void:
+	# Soqueira no Beco Oeste (Foundry Court West)
+	var wp_knuckles := WeaponPickup.new()
+	wp_knuckles.name = "AlleyKnucklesPickup"
+	wp_knuckles.weapon_id = &"knuckles"
+	wp_knuckles.ammo_amount = 0
+	wp_knuckles.persistent_loot = true
+	wp_knuckles.position = Vector2(468, 705)
+	add_child(wp_knuckles)
+
+	# Taco de beisebol no Beco Leste (Foundry Court East)
+	var wp_bat := WeaponPickup.new()
+	wp_bat.name = "AlleyBatPickup"
+	wp_bat.weapon_id = &"bat"
+	wp_bat.ammo_amount = 0
+	wp_bat.persistent_loot = true
+	wp_bat.position = Vector2(1080, 930)
+	add_child(wp_bat)
 
 
 func get_alley_definitions() -> Array[Dictionary]:

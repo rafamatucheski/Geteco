@@ -9,6 +9,7 @@ signal vehicle_returned(vehicle: Node, service_key: String, depot_id: String)
 
 var _depots: Dictionary = {}
 var _vehicle_assignments: Dictionary = {}
+var _service_incidents: Node
 
 func _ready() -> void:
 	add_to_group("emergency_depot_director")
@@ -25,23 +26,49 @@ func register_depot(depot: EmergencyDepotMarker) -> void:
 		service_depots.append(depot)
 
 func request_dispatch(service_key: String, target: Node2D, prefer_standby := true) -> Node:
+	if not is_instance_valid(target) or not is_inside_tree() or not can_process(): return null
+	if service_key in ["fire", "coroner"]:
+		if not is_instance_valid(_service_incidents):
+			_service_incidents = preload("res://world/shared/emergency/ServiceIncidents.gd").new()
+			_service_incidents.director = self
+			add_child(_service_incidents)
+		return _service_incidents.request(service_key, target)
+	return _dispatch_unbatched(service_key, target, prefer_standby)
+
+func _dispatch_unbatched(service_key: String, target: Node2D, prefer_standby := true) -> Node:
 	if not is_instance_valid(target):
 		return null
 	var depot := _choose_depot(service_key, target.global_position)
 	if depot == null:
 		push_warning("No authored depot registered for service '%s'" % service_key)
 		return null
+	if service_key == "coroner":
+		# A new crew waits while the physical departure bay is occupied.
+		# Reusing the pool must not stack a second van over a collecting unit.
+		for occupied in get_tree().get_nodes_in_group("emergency_vehicle"):
+			if occupied.visible and occupied.global_position.distance_to(depot.get_spawn_position()) < 110:
+				return null
 
-	var standby := _claim_standby(service_key) if prefer_standby else null
 	var vehicle := _take_pooled_vehicle(service_key)
-	if vehicle == null:
-		if standby:
-			standby.available = true
-			standby.visible = true
-		return null
+	if vehicle == null: return null
+	# Claim only a matching parked body: a departing SUV cannot replace a sedan
+	# (nor can a motorcycle replace a parked four-wheel cruiser).
+	var body_filter := ""
+	if service_key == "police":
+		body_filter = "motorcycle" if vehicle.police_variant == "motorcycle" else vehicle.police_archetype
+	var standby := _claim_standby(service_key, body_filter) if prefer_standby else null
 
 	var departure_position := standby.global_position if standby else depot.get_spawn_position()
 	var departure_rotation := standby.global_rotation if standby else depot.get_departure_rotation()
+	if vehicle.has_meta("hospital_departure_position"):
+		departure_position = vehicle.get_meta("hospital_departure_position")
+		departure_rotation = vehicle.get_meta("hospital_departure_rotation")
+		vehicle.remove_meta("hospital_departure_position")
+		vehicle.remove_meta("hospital_departure_rotation")
+		if standby:
+			standby.available = true
+			standby.visible = true
+			standby = null
 	if vehicle.has_method("configure_depot_assignment"):
 		vehicle.configure_depot_assignment(
 			depot.depot_id,
@@ -101,9 +128,11 @@ func _choose_depot(service_key: String, near_position: Vector2) -> EmergencyDepo
 			best_distance = distance
 	return chosen
 
-func _claim_standby(service_key: String) -> EmergencyStandbyPoint:
+func _claim_standby(service_key: String, body_filter := "") -> EmergencyStandbyPoint:
 	for node in get_tree().get_nodes_in_group("emergency_standby_point"):
 		var point := node as EmergencyStandbyPoint
+		if point and not body_filter.is_empty():
+			if not is_instance_valid(point.parked_car) or point.parked_car.active_archetype_id != body_filter: continue
 		if point and point.service_key == service_key and point.claim():
 			return point
 	return null
@@ -112,11 +141,6 @@ func _take_pooled_vehicle(service_key: String) -> Node:
 	var pool := get_node_or_null("/root/EmergencyPool")
 	if pool and pool.has_method("get_vehicle"):
 		return pool.get_vehicle(service_key)
-	var scene := load("res://EmergencyVehicle.tscn") as PackedScene
-	if scene:
-		var vehicle := scene.instantiate()
-		get_tree().current_scene.add_child(vehicle)
-		return vehicle
 	return null
 
 func _close_gate_later(depot: EmergencyDepotMarker) -> void:

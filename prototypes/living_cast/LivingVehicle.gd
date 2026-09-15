@@ -89,9 +89,9 @@ func _build_body() -> void:
 		rectangle(Rect2(half - 5, y, 3, 4), Color("eee0b9"))
 		rectangle(Rect2(-half + 1, y, 2, 4), Color("ad3932"))
 
-func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO) -> void:
-	super._apply_crash_deformation(impact_normal, impact_force, hit_world_pos)
-	if body_panels.is_empty() or impact_force < 35: return
+func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_world_pos: Vector2 = Vector2.ZERO, is_post: bool = false) -> void:
+	super._apply_crash_deformation(impact_normal, impact_force, hit_world_pos, is_post)
+	if is_post or body_panels.is_empty() or impact_force < 35: return
 	collision_animations += 1
 	if _dent_tween and _dent_tween.is_valid(): _dent_tween.kill()
 	var local_hit := to_local(hit_world_pos)

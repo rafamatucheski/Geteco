@@ -14,6 +14,7 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	create_timer(30.0).timeout.connect(func(): printerr("POLICE_FAIR_ARREST TIMEOUT"); quit(2))
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
@@ -58,6 +59,9 @@ func _run() -> void:
 	officer._arrest_player()
 	assert(actor.arrests == 0, "A nearby car must never arrest a remote player")
 	officer.target = actor
+	actor.fire_cooldown = 0.2
+	assert(not officer._can_arrest_target(), "Shooting blocks arrest even before the officer's next AI update")
+	actor.fire_cooldown = 0.0
 	assert(officer._can_arrest_target(), "Warned stationary suspect in reach may surrender")
 	officer._arrest_player()
 	assert(actor.arrests == 1)
@@ -76,6 +80,7 @@ func _run() -> void:
 	escape.add_to_group("vehicle")
 	escape.position = Vector2(100, 0)
 	scene.add_child(escape)
+	root.get_node("WantedManager").report_visual_contact(cruiser)
 	cruiser._physics_process(0.3)
 	for crew in get_nodes_in_group("police_officer"):
 		if crew.service_vehicle == cruiser:

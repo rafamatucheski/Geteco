@@ -101,12 +101,10 @@ func _run() -> void:
 			"Guincho towmaster deve estar estacionado na oficina")
 
 		var courier = thematic_fleet.get_node_or_null("FreightCourierVan")
-		_check(courier != null and courier.get("active_archetype_id") == "courier_van",
-			"Furgão courier_van deve estar estacionado no depósito de cargas")
+		_check(courier == null, "Calçada da Dock Street deve ficar livre do furgão de exposição")
 
 		var ranch = thematic_fleet.get_node_or_null("PortRanchPickup")
-		_check(ranch != null and ranch.get("active_archetype_id") == "ranch_single",
-			"Pickup ranch_single deve estar estacionada nas docas")
+		_check(ranch == null, "Calçada da Dock Street deve ficar livre da pickup de exposição")
 
 	scene.queue_free()
 
@@ -131,8 +129,8 @@ func _run() -> void:
 	if game_fleet:
 		_check(game_fleet.has_node("ClinicAmbulance"), "HarborGame deve conter ClinicAmbulance (medic_box)")
 		_check(game_fleet.has_node("WorkshopTowTruck"), "HarborGame deve conter WorkshopTowTruck (towmaster)")
-		_check(game_fleet.has_node("FreightCourierVan"), "HarborGame deve conter FreightCourierVan (courier_van)")
-		_check(game_fleet.has_node("PortRanchPickup"), "HarborGame deve conter PortRanchPickup (ranch_single)")
+		_check(not game_fleet.has_node("FreightCourierVan"), "HarborGame deve manter a calçada livre do furgão")
+		_check(not game_fleet.has_node("PortRanchPickup"), "HarborGame deve manter a calçada livre da pickup")
 
 	var game_interiors = game_scene.get_node_or_null("Interiors")
 	var game_fire = game_interiors.get("fire_station_interior") if game_interiors else null

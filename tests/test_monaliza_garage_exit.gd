@@ -32,6 +32,7 @@ func ground_of(node: Node2D) -> Vector2:
 
 func run() -> void:
 	create_timer(180).timeout.connect(func(): quit(2))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://../artifacts/garage-exit-0910"))
 	var state := root.get_node("CampaignState")
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_delivery_complete"]:
 		state.set_campaign_flag(flag, true)
@@ -42,6 +43,9 @@ func run() -> void:
 	garage = interiors.garage_interior
 	player = world.get_node("Player")
 	car = get_first_node_in_group("personal_car_manager").car
+	# O primeiro embarque abre a apresentação da Monaliza, que pausa o jogo até o
+	# jogador fechar o painel. Este teste mede a saída da garagem, não o painel.
+	get_first_node_in_group("personal_car_manager").introduction_seen = true
 	check(car != null and car.unlocked, "Monaliza existe e esta liberada")
 
 	var entrance: Node = world.get_node("District/Garage/Entrance")
@@ -52,7 +56,9 @@ func run() -> void:
 	# marcadores e pontos de interacao da oficina inteira.
 	var exit_ground := ground_of(garage.exit_door)
 	print("  saida em metros=", exit_ground, " vaga=", ground_of(car), " spawn=", garage.showroom.unproject_floor(garage.spawn_point.global_position))
-	check(exit_ground.y > 5.0 and absf(exit_ground.x) < 0.5, "Porta de saida fica no portao, nao ao lado do carro")
+	# O portão e o sensor ficam em 4,3 m desde o novo enquadramento da oficina
+	# (is_vehicle_at_exit usa ground.y > 4.3); a vaga continua na origem.
+	check(exit_ground.y > 4.0 and absf(exit_ground.x) < 0.5, "Porta de saida fica no portao, nao ao lado do carro")
 	check(ground_of(car).length() < 0.1, "Vaga da Monaliza projeta na origem da oficina")
 
 	# Estacionada, a Monaliza nao pode estar dentro de nenhum solido: e isso que
@@ -75,7 +81,7 @@ func run() -> void:
 	if DisplayServer.get_name() != "headless":
 		for i in 8: await process_frame
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://tests/monaliza_garage_bay.png"))
+		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://../artifacts/garage-exit-0910/monaliza_garage_bay.png"))
 
 	# Dante entra pela porta do motorista com E, como em partida.
 	player.global_position = garage.to_global(garage.workshop_point(Vector3(-1.35, 0, 0.0)))
@@ -106,7 +112,7 @@ func run() -> void:
 	var start := ground_of(car)
 	var curtain: ColorRect = interiors.get_node("InteriorFade/Curtain")
 	var darkest := 0.0
-	Input.action_press("ui_up", 1.0)
+	Input.action_press("move_up", 1.0)
 	var exited_frame := -1
 	var moved := 0.0
 	for i in 420:
@@ -116,9 +122,9 @@ func run() -> void:
 			moved = ground_of(car).distance_to(start)
 		elif exited_frame < 0:
 			exited_frame = i
-			Input.action_release("ui_up")
+			Input.action_release("move_up")
 			print("  saiu da garagem no quadro ", i, " depois de andar %.2f m" % moved)
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	check(moved > 2.0, "Monaliza acelera dentro da garagem (andou %.2f m)" % moved)
 	check(exited_frame >= 0, "Monaliza sai sozinha ao alcancar o portao")
 	# A amostragem e por quadro de fisica e o tween corre no quadro de render:
@@ -127,9 +133,61 @@ func run() -> void:
 	check(is_zero_approx(curtain.color.a), "Cortina volta a transparente depois do fade-in")
 	check(player.global_position.distance_to(garage.global_position) > 1500, "Carro e motorista voltam para o Harbor")
 
+	# The exterior used to spawn a tow truck and coupe across the exit lane.
+	# Check their real collision shapes in the new side bays, then drive out.
+	for parked in [world.get_node("PlayerCar"), world.get_node("ThematicFleet/WorkshopTowTruck")]:
+		var parking_shape: CollisionShape2D = parked.get_node("Collision")
+		var parking_query := PhysicsShapeQueryParameters2D.new()
+		parking_query.shape = parking_shape.shape
+		parking_query.transform = parking_shape.global_transform
+		parking_query.collision_mask = 3
+		parking_query.exclude = [parked.get_rid()]
+		var parking_hits: Array = parked.get_world_2d().direct_space_state.intersect_shape(parking_query)
+		check(parking_hits.is_empty(), "%s estaciona sem sobrepor outros solidos" % parked.name)
+	var lane_shape := RectangleShape2D.new()
+	lane_shape.size = Vector2(120, 400)
+	var lane_query := PhysicsShapeQueryParameters2D.new()
+	lane_query.shape = lane_shape
+	lane_query.transform = Transform2D(0.0, Vector2(750, 1950))
+	lane_query.collision_mask = 3
+	lane_query.exclude = [car.get_rid()]
+	var lane_hits := car.get_world_2d().direct_space_state.intersect_shape(lane_query)
+	check(lane_hits.is_empty(), "Corredor de manobra de 120 px livre entre portao e rua")
+	if DisplayServer.get_name() != "headless":
+		var driving_camera := root.get_camera_2d()
+		var overview := Camera2D.new()
+		overview.position = Vector2(750, 1800)
+		overview.zoom = Vector2.ONE * 1.25
+		world.add_child(overview)
+		overview.make_current()
+		await create_timer(0.6).timeout
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://../artifacts/garage-exit-0910/entrada-livre.png"))
+		driving_camera.make_current()
+		overview.queue_free()
+	Input.action_press("move_up", 1.0)
+	for i in 360:
+		await physics_frame
+		if car.global_position.y >= 2140.0:
+			break
+	Input.action_release("move_up")
+	check(car.global_position.y >= 2140.0 and absf(car.global_position.x - 750.0) < 60.0,
+		"Monaliza segue do portao ate a rua sem desviar de carros estacionados: " + str(car.global_position))
+
 	if DisplayServer.get_name() != "headless":
 		for i in 20: await process_frame
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://tests/monaliza_garage_street.png"))
+		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://../artifacts/garage-exit-0910/monaliza_garage_street.png"))
+	# A reentrada roda depois da saída até a rua: executada antes, deixava o carro
+	# de volta na baia e a checagem do trajeto portão→rua nunca podia passar.
+	# Reentrada dirigindo usa a baia, nunca o spawn de pedestre encostado no
+	# sensor de saida. Tambem descarta a orientacao arbitraria que veio da rua.
+	car.rotation = -0.37
+	interiors._on_exterior_destination_requested(entrance, car, &"", null, &"", garage, garage.spawn_point)
+	for i in 12: await physics_frame
+	check(player.has_meta("harbor_interior"), "Monaliza permanece na oficina depois de entrar dirigindo")
+	check(ground_of(car).length() < 0.1, "Monaliza entra no centro livre da baia, longe do sensor")
+	check(is_equal_approx(car.rotation, PI / 2.0), "Monaliza nasce alinhada com o portao da oficina")
+	check(not garage.is_vehicle_at_exit(car.global_position), "Spawn de veiculo nao aciona a saida automatica")
 	print("MONALIZA_EXIT failures=", failures)
 	quit(0 if failures.is_empty() else 1)

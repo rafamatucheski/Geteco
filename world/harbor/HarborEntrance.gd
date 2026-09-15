@@ -77,6 +77,8 @@ func _process(delta: float) -> void:
 func _accepts_actor(body: Node2D) -> bool:
 	if not is_instance_valid(body):
 		return false
+	if body.has_meta("pay_n_spray_busy"):
+		return false
 	if body.is_in_group(actor_group):
 		return true
 	if not (body.is_in_group("vehicle") and body.get("is_driven_by_player") == true):

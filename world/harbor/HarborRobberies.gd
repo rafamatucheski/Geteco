@@ -11,6 +11,8 @@ func _build() -> void:
 		door.position=Vector2(0,85)
 		door.door_width=48
 		door.interior_available=true
+		if index == 0:
+			door.accent_color = Color("a49666")
 		building.add_child(door)
 		door.add_to_group("bank_entrance" if index==0 else "fuel_entrance")
 		if index==1:
@@ -70,12 +72,25 @@ func _bind_ammunation() -> void:
 	door.interior_available=true
 	building.add_child(door)
 	door.add_to_group("weapon_shop")
+	# All branches use the same model and projected physical footprint.
+	building.self_modulate.a = 0.0
+	var old_solid = building.get_node_or_null("BuildingSolid")
+	if old_solid: old_solid.queue_free()
+	var facade = preload("res://world/shared/ammunation/AmmunationBranchView.gd").new()
+	facade.name = "AmmunationBranchFacade"
+	building.add_child(facade)
+	facade.build_view(preload("res://world/shared/ammunation/AmmunationFacade3D.gd"),12.0,25.0,Vector3(0,1.8,0))
+	facade.position = door.position-facade.project_floor(Vector2(0,2.9))
+	facade.add_solid(Rect2(-4.2,-2.2,8.4,4.4),"GunShopStructure")
+	door.get_node("Facade").hide()
+	door.self_modulate.a = 0.0
 	var manager=get_parent().get_node("Interiors")
 	var room=manager.ammunation_interior
+	manager._bind_curtain(door)
 	var path=String(get_parent().get_path_to(door))
 	var id=StringName("harbor/"+path)
 	manager._door_configs[path]={"interior":room,"spawn":room.spawn_point,"id":id}
 	door.destination_id=id
 	door.destination_requested.connect(manager._on_exterior_destination_requested.bind(room,room.spawn_point))
 	manager._bind_exit_door(room.exit_door,id,room)
-
+	facade.bind_entrance(door,room)

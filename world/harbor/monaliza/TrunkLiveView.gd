@@ -392,6 +392,12 @@ func _rebuild_cutout(slot: String, weapon: Node3D) -> void:
 	shadow.albedo_color = Color("0c1113")
 	shadow.roughness = 1.0
 	# Flatten the actual mesh into the foam, retaining each weapon's outline.
+	# Empty spaces retain a recessed outline, without displaying an owned gun.
+	var placeholder: Node3D
+	if String(weapon.get_meta("weapon_id", "")).is_empty():
+		placeholder = Node3D.new()
+		weapon.add_child(placeholder)
+		WEAPON.build(placeholder, {"curta":"pistol","longa":"shotgun","corpo":"knife","granada":"grenade"}[slot])
 	inset.scale = Vector3(1.10, 0.025, 1.10)
 	for part in weapon.find_children("*", "MeshInstance3D", true, false):
 		var silhouette := MeshInstance3D.new()
@@ -399,6 +405,7 @@ func _rebuild_cutout(slot: String, weapon: Node3D) -> void:
 		silhouette.material_override = shadow
 		silhouette.transform = Transform3D(weapon.basis, Vector3.ZERO) * (weapon.global_transform.affine_inverse() * part.global_transform)
 		inset.add_child(silhouette)
+	if placeholder != null: placeholder.free()
 	cutouts[slot] = inset
 
 func _detail_mat(color: String) -> StandardMaterial3D:

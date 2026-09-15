@@ -11,17 +11,17 @@ const ACHIEVEMENTS := {
 		"name": "PRIMEIRO ACHADO", "check": "collectibles>=1",
 		"desc": "Encontre seu primeiro achado escondido pelo mapa.",
 	},
+	"secret_lead": {
+		"name": "NA TRILHA", "check": "collectibles>=3",
+		"desc": "Encontre 3 achados escondidos pelo mapa.",
+	},
 	"lead_hunter": {
 		"name": "CAÇADOR DE PISTAS", "check": "collectibles>=5",
 		"desc": "Encontre 5 achados escondidos.",
 	},
 	"map_explorer": {
-		"name": "EXPLORADOR COMPLETO", "check": "collectibles>=6",
-		"desc": "Encontre todos os achados conhecidos do mapa atual.",
-	},
-	"secret_lead": {
-		"name": "PISTA QUENTE", "check": "leads>=1",
-		"desc": "Descubra sua primeira pista de carro secreto.",
+		"name": "EXPLORADOR COMPLETO", "check": "collectibles>=10",
+		"desc": "Encontre os 10 achados conhecidos do mapa atual.",
 	},
 	"first_race": {
 		"name": "PÉ NA TÁBUA", "check": "races>=1",
@@ -34,6 +34,18 @@ const ACHIEVEMENTS := {
 	"personal_best": {
 		"name": "RECORDE PESSOAL", "check": "bests>=1",
 		"desc": "Bata seu próprio recorde numa corrida clandestina.",
+	},
+	"first_ski_descent": {
+		"name": "PRIMEIRA DESCIDA", "check": "ski_races>=1",
+		"desc": "Conclua sua primeira prova de ski no Cume Branco.",
+	},
+	"ski_mountain_champion": {
+		"name": "REI DA MONTANHA", "check": "ski_races>=3",
+		"desc": "Conclua três provas de ski na face norte.",
+	},
+	"mountain_legend": {
+		"name": "A SOMBRA NA NEVE", "check": "mountain_clues>=3",
+		"desc": "Reúna todas as evidências da expedição desaparecida.",
 	},
 	"first_grand": {
 		"name": "GRANA SUJA", "check": "money>=2000",
@@ -72,6 +84,20 @@ const ACHIEVEMENTS := {
 		"desc": "Desmanche 10 carros no desmanche dos Cobras.",
 	},
 }
+
+## One-time rewards. Stored unlocked IDs also act as receipts; old saves
+## retain earned badges without receiving the same payout after restoration.
+const CASH_REWARDS := {
+	"first_lead": 50, "secret_lead": 100, "lead_hunter": 150, "map_explorer": 400,
+	"first_race": 100, "street_racer": 250, "personal_best": 100,
+	"first_ski_descent": 100, "ski_mountain_champion": 250, "mountain_legend": 200,
+	"first_grand": 50, "shark": 200, "armed_up": 100, "armored": 50,
+	"most_wanted": 100, "drift_apprentice": 100, "drift_master": 250,
+	"first_scrap": 100, "junkyard_king": 250,
+}
+
+static func cash_reward(id: String) -> int:
+	return int(CASH_REWARDS.get(id, 0))
 
 ## Avalia "chave>=valor" contra o dicionário de stats atual do jogador.
 static func evaluate(stats: Dictionary, achievement_id: String) -> bool:

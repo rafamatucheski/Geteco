@@ -3,6 +3,17 @@
 ## Medic Box: Ambulância de suporte avançado tipo baú médico (SAMU / Resgate).
 ## Identidade: Módulo cúbico traseiro alargado, cruzes médicas em relevo, giroflex azul/vermelho e degrau de maca.
 
+var rear_doors: Array[Node3D] = []
+var rear_door_motion: Tween
+
+func set_rear_doors(open: bool, immediate := false) -> void:
+	if rear_door_motion: rear_door_motion.kill()
+	if not immediate: rear_door_motion = create_tween().set_parallel(true)
+	for i in rear_doors.size():
+		var angle := (1.0 if i == 0 else -1.0) * deg_to_rad(110) if open else 0.0
+		if immediate: rear_doors[i].rotation.y = angle
+		else: rear_door_motion.tween_property(rear_doors[i], "rotation:y", angle, 0.65)
+
 func build() -> void:
 	paint = mat("paint", "f5f6fa", 0.20, 0.35)
 	var orange_stripe := mat("medic_orange", "e67e22", 0.1, 0.4)
@@ -37,7 +48,11 @@ func build() -> void:
 		tube([Vector3(s * 0.95, 1.18, -1.35), Vector3(s * 1.06, 1.18, -1.35)], 0.018, black)
 
 	# 3. Módulo Traseiro Cúbico de Resgate (Box Module - mais largo e mais alto)
-	box(Vector3(0.0, 1.45, 0.95), Vector3(2.14, 1.55, 3.25), paint)
+	# Hollow bay: the stretcher passes through the rear doorway.
+	for side in [-1.0, 1.0]:
+		box(Vector3(side*1.02,1.45,0.95),Vector3(.10,1.55,3.25),paint)
+	box(Vector3(0,1.45,-.63),Vector3(1.96,1.55,.10),paint)
+	box(Vector3(0,.72,.95),Vector3(1.96,.09,3.20),black)
 	# Teto do módulo médico
 	box(Vector3(0.0, 2.25, 0.95), Vector3(2.12, 0.08, 3.20), paint)
 
@@ -59,13 +74,20 @@ func build() -> void:
 	box(Vector3(0.0, 2.30, 0.95), Vector3(0.20, 0.025, 0.65), red_cross)
 
 	# 6. Identidade Visual 3: Portas Traseiras de Maca com Janelas Quadradas Fumê e Degrau
-	# Divisão central das portas traseiras
-	box(Vector3(0.0, 1.25, 2.58), Vector3(0.02, 1.60, 0.02), black)
-	# Janelas quadradas fumê nas duas portas traseiras
-	for s in [-0.45, 0.45]:
-		box(Vector3(s, 1.55, 2.585), Vector3(0.38, 0.48, 0.02), glass)
-		# Maçanetas pretas
-		box(Vector3(s * 0.25, 1.15, 2.59), Vector3(0.03, 0.14, 0.03), black)
+	for side in [-1.0,1.0]:
+		var hinge := Node3D.new()
+		hinge.name = "RearDoorLeft" if side < 0 else "RearDoorRight"
+		hinge.position = Vector3(side*1.02,.70,2.58)
+		add_child(hinge)
+		rear_doors.append(hinge)
+		var panel := box(Vector3(side*.51,1.45,2.58),Vector3(1.0,1.5,.06),paint)
+		var window := box(Vector3(side*.48,1.65,2.62),Vector3(.38,.42,.02),glass)
+		var handle := box(Vector3(side*.10,1.14,2.64),Vector3(.04,.16,.03),black)
+		for part in [panel,window,handle]:
+			var at: Vector3 = part.position
+			remove_child(part)
+			hinge.add_child(part)
+			part.position = at-hinge.position
 
 	# Degrau traseiro antiderrapante de acesso à maca
 	box(Vector3(0.0, 0.38, 2.65), Vector3(1.65, 0.08, 0.24), chrome)

@@ -12,6 +12,7 @@ signal mission_selected(mission_id: String)
 
 @export var use_legacy_position: bool = true
 var interaction_enabled: bool = true
+var interaction_radius: float = 45.0
 var campaign_mode: bool = false
 var campaign_missions: Array[Dictionary] = []
 
@@ -72,6 +73,7 @@ var nav_hint_label: Label
 var duel_btn: Button
 var board_title: Label
 var audio_player: AudioStreamPlayer2D
+var _backdrop: ColorRect
 var _close_btn: Button
 var _locked_message_key: String = ""
 var _locked_prompt: Label
@@ -133,7 +135,7 @@ func _build_world_prop() -> void:
 	
 	var prompt = Label.new()
 	prompt.name = "Prompt"
-	prompt.text = "[E] LOUSA DE CARROS"
+	prompt.text = "E"
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt.position = Vector2(-50, -28)
 	prompt.add_theme_font_size_override("font_size", 9)
@@ -155,6 +157,7 @@ func _build_world_prop() -> void:
 	add_child(_locked_prompt)
 
 	audio_player = AudioStreamPlayer2D.new()
+	audio_player.bus = &"SFX"
 	add_child(audio_player)
 
 ## Recomputes the panel's fixed rect (PRESET_CENTER + explicit offsets encode a
@@ -171,6 +174,13 @@ func _build_ui() -> void:
 	ui_layer = CanvasLayer.new()
 	ui_layer.layer = 25
 	add_child(ui_layer)
+
+	_backdrop = ColorRect.new()
+	_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_backdrop.color = Color(0.015, 0.025, 0.03, 0.72)
+	_backdrop.mouse_filter = Control.MOUSE_FILTER_STOP
+	_backdrop.visible = false
+	ui_layer.add_child(_backdrop)
 
 	panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -283,10 +293,10 @@ func _process(_delta: float) -> void:
 
 	var dist = global_position.distance_to(player.global_position)
 	var prompt = get_node_or_null("Prompt")
-	if interaction_enabled and dist < 45.0 and not is_ui_open:
+	if interaction_enabled and dist < interaction_radius and not is_ui_open:
 		if prompt: prompt.visible = true
 		if _locked_prompt: _locked_prompt.visible = false
-	elif not interaction_enabled and dist < 45.0 and not is_ui_open and not _locked_message_key.is_empty():
+	elif not interaction_enabled and dist < interaction_radius and not is_ui_open and not _locked_message_key.is_empty():
 		if prompt: prompt.visible = false
 		if _locked_prompt:
 			_locked_prompt.text = "🔒 " + tr(_locked_message_key)
@@ -301,7 +311,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif interaction_enabled and not is_ui_open and event.is_action_pressed("interact") and not event.is_echo():
 		var player := get_tree().get_first_node_in_group("player") as Node2D
-		if is_instance_valid(player) and global_position.distance_to(player.global_position) < 45.0:
+		if is_instance_valid(player) and global_position.distance_to(player.global_position) < interaction_radius:
 			open_chalkboard()
 			get_viewport().set_input_as_handled()
 
@@ -309,6 +319,7 @@ func open_chalkboard() -> void:
 	if not interaction_enabled or is_ui_open:
 		return
 	is_ui_open = true
+	_backdrop.visible = true
 	panel.visible = true
 	_refresh_orders_list()
 	# Animação curta de abertura: a lousa "surge" em vez de simplesmente aparecer.
@@ -325,6 +336,7 @@ func close_chalkboard() -> void:
 	if not is_ui_open:
 		return
 	is_ui_open = false
+	_backdrop.visible = false
 	# Controle/foco do jogador voltam imediatamente; o fade é só cosmético.
 	get_viewport().gui_release_focus()
 	dialogue_closed.emit()
@@ -341,6 +353,7 @@ func _focus_first_selectable() -> void:
 		if child is Button and not child.disabled:
 			child.grab_focus()
 			return
+	_close_btn.grab_focus()
 
 func configure_missions(missions: Array[Dictionary]) -> void:
 	var first_activation := not campaign_mode
@@ -368,7 +381,9 @@ func _build_completed_row(title: String, desc: String) -> Control:
 	text.fit_content = true
 	text.scroll_active = false
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	text.text = "[s]%s[/s]\n[s][font_size=13]%s[/font_size][/s]" % [title, desc]
+	text.text = "[s]%s[/s]" % title
+	if not desc.is_empty():
+		text.text += "\n[s][font_size=13]%s[/font_size][/s]" % desc
 	text.add_theme_color_override("default_color", Color(0.6, 0.6, 0.6, 0.85))
 	row.add_child(text)
 	return row
@@ -419,27 +434,62 @@ func _refresh_orders_list() -> void:
 		duel_btn.visible = false
 		status_label.text = tr("BOARD_STATUS_MACIOTA")
 		status_label.add_theme_color_override("font_color", Color("#e8b44f"))
-		# Lista fixa e autorada (sem contratos gerados): cada missão aparece em um
-		# de três estados — disponível (botão clicável), concluída (riscada) ou
-		# bloqueada (mostra o motivo). Nunca inventa conteúdo para preencher a lista.
+		var is_en := TranslationServer.get_locale().begins_with("en")
+		var completed_count := 0
+		var current: Dictionary = {}
+		# Reveal only the first unfinished contract, even when later ones are enabled.
 		for mission in campaign_missions:
-			var title := String(mission.get("title", "Serviço"))
-			var desc := String(mission.get("description", ""))
-			var completed := bool(mission.get("completed", false))
-			var enabled := bool(mission.get("enabled", false))
-			var requirement := String(mission.get("requirement", ""))
-			if completed:
-				orders_vbox.add_child(_build_completed_row(title, desc))
-			elif enabled:
+			if bool(mission.get("completed", false)):
+				completed_count += 1
+			elif current.is_empty():
+				current = mission
+		status_label.text = ("Completed: %d" if is_en else "Concluídas: %d") % completed_count
+		if not current.is_empty():
+			var heading := Label.new()
+			heading.text = "CURRENT MISSION" if is_en else "MISSÃO ATUAL"
+			heading.add_theme_font_size_override("font_size", 12)
+			heading.add_theme_color_override("font_color", Color("#e8b44f"))
+			orders_vbox.add_child(heading)
+			var title := Label.new()
+			title.text = String(current.get("title", ""))
+			title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			title.add_theme_font_size_override("font_size", 28)
+			orders_vbox.add_child(title)
+			var description := Label.new()
+			description.text = String(current.get("description", ""))
+			description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			description.add_theme_font_size_override("font_size", 17)
+			description.add_theme_color_override("font_color", Color("#ccd4ce"))
+			orders_vbox.add_child(description)
+			if bool(current.get("enabled", false)):
 				var button := Button.new()
-				button.text = "%s\n%s" % [title, desc]
+				button.text = "ACCEPT MISSION  →" if is_en else "ACEITAR MISSÃO  →"
+				button.set_meta("mission_id", String(current.get("id", "")))
 				button.focus_mode = Control.FOCUS_ALL
-				button.add_theme_font_size_override("font_size", 15)
-				button.custom_minimum_size = Vector2(0, 56)
-				button.pressed.connect(_select_mission.bind(String(mission.get("id", ""))))
+				button.custom_minimum_size = Vector2(0, 52)
+				button.add_theme_font_size_override("font_size", 17)
+				button.pressed.connect(_select_mission.bind(String(current.get("id", ""))))
 				orders_vbox.add_child(button)
 			else:
-				orders_vbox.add_child(_build_locked_row(title, desc, requirement))
+				var requirement := Label.new()
+				requirement.text = String(current.get("requirement", ""))
+				requirement.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				requirement.add_theme_color_override("font_color", Color("#e8b44f"))
+				orders_vbox.add_child(requirement)
+		if completed_count > 0:
+			orders_vbox.add_child(HSeparator.new())
+			var history := Label.new()
+			history.text = "COMPLETED" if is_en else "CONCLUÍDAS"
+			history.add_theme_font_size_override("font_size", 12)
+			history.add_theme_color_override("font_color", Color("#8da399"))
+			orders_vbox.add_child(history)
+			for index in range(campaign_missions.size() - 1, -1, -1):
+				var mission := campaign_missions[index]
+				if bool(mission.get("completed", false)):
+					orders_vbox.add_child(_build_completed_row(String(mission.get("title", "")), ""))
+		nav_hint_label.text = "[ Enter / Click ] Accept    [ ESC ] Close" if is_en else "[ Enter / Clique ] Aceitar    [ ESC ] Fechar"
+		if current.is_empty() or not bool(current.get("enabled", false)):
+			nav_hint_label.text = "[ ESC ] Close" if is_en else "[ ESC ] Fechar"
 		if campaign_missions.is_empty():
 			var notice := Label.new()
 			notice.text = tr("BOARD_NO_SERVICES")

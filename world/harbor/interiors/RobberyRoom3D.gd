@@ -6,7 +6,7 @@ var phase := HeistPhase.LOBBY
 var keycard_taken := false
 var keycard_available := false
 var keycard_position := Vector2.ZERO
-var keycard_visual: Polygon2D
+var keycard_visual: Node3D
 var opening_time := 0.0
 var entry_grace := 0.0
 var interaction_released := false
@@ -44,6 +44,8 @@ var loot_meshes: Array[Node3D] = []
 var vault_partitions: Array[GeometryInstance3D] = []
 var loot_positions := [Vector2(-95,-105),Vector2(0,-105),Vector2(95,-105)]
 var aftermath: Node
+var bank_model: Node3D
+var _bank_presentations: Dictionary = {}
 
 func _init() -> void:
 	room_size=Vector2(460,330)
@@ -66,6 +68,7 @@ func _setup_interior_content() -> void:
 	view.render_target_update_mode=SubViewport.UPDATE_ONCE
 	add_child(view)
 	var model := Node3D.new()
+	bank_model = model
 	view.add_child(model)
 	var builder := preload("res://world/shared/pedestrians/CitizenDetails.gd")
 	builder.piece(model,Vector3(14,.15,10),Vector3(0,-.1,0),floor_color)
@@ -84,6 +87,7 @@ func _setup_interior_content() -> void:
 			_solid(Vector2(x*32,-40),Vector2(90,40))
 		for i in 3:
 			loot_meshes.append(preload("res://world/harbor/interiors/BankVaultTreasure.gd").build(model,Vector3(-3+i*3,0,-4.2),i))
+			loot_meshes[-1].set_meta("bank_collectible", true)
 		for x in [-170,170]:
 			var guard := preload("res://world/harbor/events/BankGuard.gd").new()
 			guard.position=Vector2(x,25)
@@ -155,7 +159,7 @@ func _setup_interior_content() -> void:
 		aftermath=preload("res://world/harbor/events/BankAftermath.gd").new()
 		aftermath.room=self
 		add_child(aftermath)
-	exit_door.custom_prompt_text="[E] SAIR"
+	exit_door.custom_prompt_text="E"
 	exit_door.get_node("Facade").hide()
 	if is_bank:
 		exit_door.get_node("Prompt").modulate.a=0.0
@@ -219,7 +223,9 @@ func _solid(point: Vector2, size: Vector2) -> StaticBody2D:
 	add_child(body)
 	return body
 func actor_inside() -> bool:
-	return is_instance_valid(actor) and actor.visible and not actor.is_dead and not actor.is_arrested and get_camera_rect().has_point(actor.global_position)
+	return is_instance_valid(actor) and actor.get_world_2d() == get_world_2d() and actor.visible and not actor.is_dead and not actor.is_arrested and get_camera_rect().has_point(actor.global_position)
+func actor_present() -> bool:
+	return is_instance_valid(actor) and actor.get_world_2d() == get_world_2d() and actor.visible and get_camera_rect().has_point(actor.global_position)
 func armed() -> bool:
 	return is_instance_valid(actor) and actor.active_weapon_id != "fists"
 func _on_shot() -> void:
@@ -233,6 +239,11 @@ func start_alarm() -> void:
 	if is_bank and is_instance_valid(aftermath): aftermath.report_robbery()
 	for person in civilians:
 		if is_instance_valid(person): person.frighten()
+	if is_bank:
+		# Travel and disembarkation are the response delay. Start them on the
+		# first shot so the perimeter can form while the robbery is in progress.
+		alarm_time=0.0
+		dispatch_response()
 	var sound := AudioStreamPlayer2D.new()
 	sound.stream=ProceduralAudio.get_police_alarm_stream()
 	sound.volume_db=-20
@@ -246,7 +257,7 @@ func _process(delta: float) -> void:
 		alarm_time=maxf(0,alarm_time-delta)
 		if alarm_time<=0: dispatch_response()
 	var inside := actor_inside()
-	if is_bank: status.visible=inside
+	if is_bank: status.hide()
 	if inside and not was_inside: on_actor_entered(actor)
 	was_inside=inside
 	if not inside:
@@ -256,10 +267,6 @@ func _process(delta: float) -> void:
 		intimidation=0
 		return
 	armed_warning=is_bank and armed()
-	if armed_warning and actor.weapon_aim_active:
-		for person in civilians:
-			if is_instance_valid(person): person.frighten()
-
 	if armed_warning and not alarm_started:
 		status.text="SEGURANÇA: Largue a arma! Fique parado!"
 	elif not alarm_started: status.text=""
@@ -300,7 +307,7 @@ func _tick_vault(delta: float, holding: bool) -> void:
 	if is_instance_valid(lockpick) and lockpick.active: return
 	var local_actor := to_local(actor.global_position)
 	var target_id := ""
-	if not alarm_started or not _security_clear() or opening_time>0:
+	if not alarm_started or opening_time>0:
 		hold_time=0
 		hold_target=""
 		return
@@ -321,7 +328,7 @@ func _tick_vault(delta: float, holding: bool) -> void:
 	if target_id=="card" and hold_time>=1.2:
 		keycard_taken=true
 		if is_instance_valid(keycard_visual): keycard_visual.hide()
-		actor._show_weapon_notice("CARTÃO DE SEGURANÇA — acesso ao cofre liberado")
+		actor._show_weapon_notice("CARTÃO DE SEGURANÇA")
 		hold_time=0
 	elif target_id=="vault" and hold_time>=0.6:
 		actor.set_dialogue_active(true)
@@ -399,11 +406,7 @@ func _project_bank_layout() -> void:
 		if child is StaticBody2D:
 			remove_child(child)
 			child.queue_free()
-	for box in [Rect2(-7,-5,14,.18),Rect2(-7,-5,.18,10),Rect2(6.82,-5,.18,10),Rect2(-7,4.8,14,.18),Rect2(-7,-3.3,5.9,.22),Rect2(1.1,-3.3,5.9,.22),Rect2(-5.8,-1.6,2.6,1.2),Rect2(3.2,-1.6,2.6,1.2),Rect2(-6,2.5,2,.6),Rect2(4,2.5,2,.6)]:
-		_projected_solid(box)
-	for box in [Rect2(-6.65,.15,.7,1.25), Rect2(5.95,.15,.7,1.25), Rect2(-6.7,3.8,.6,.6), Rect2(6.1,3.8,.6,.6)]:
-		_projected_solid(box)
-	vault_body=_projected_solid(Rect2(-1.1,-3.3,2.2,.22))
+	preload("res://world/harbor/interiors/BankInteriorGeometry.gd").build(self, bank_model, vault)
 	vault_position=project_floor(Vector2(0,-2.5))
 	for i in 3: loot_positions[i]=project_floor(Vector2(-3+i*3,-4.2))
 	spawn_point.position=project_floor(Vector2(0,3))
@@ -430,6 +433,9 @@ func can_enter() -> bool:
 
 func reset_after_investigation() -> void:
 	if lockpick and lockpick.active: lockpick.finish(false)
+	for group in ["bank_guard_blood","bank_guard_armor","bank_guard_weapon"]:
+		for item in get_tree().get_nodes_in_group(group):
+			if item.get_parent()==self: item.queue_free()
 	for person in guards+civilians:
 		if is_instance_valid(person): person.queue_free()
 	guards.clear()
@@ -493,16 +499,42 @@ func _scale_npc(_person: Node2D, render: SubViewport, sprite: Sprite2D, point: V
 
 func _sync_actor_scale() -> void:
 	if not is_bank: return
-	if actor_inside() and not is_instance_valid(actor_scale):
-		actor_scale=preload("res://world/mountain_pass/MountainInteriorActorScale.gd").new()
+	if actor_present() and not is_instance_valid(actor_scale):
+		actor_scale=preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
 		add_child(actor_scale)
 		actor_scale.configure(actor,room_camera,room_display)
-	elif not actor_inside() and is_instance_valid(actor_scale):
+	elif not actor_present() and is_instance_valid(actor_scale):
 		actor_scale.restore()
 		actor_scale.queue_free()
 		actor_scale=null
+	_sync_bank_people(actor_present())
+	if actor_present(): view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+
+func set_npc_rendering_active(active: bool) -> void:
+	if not is_bank:
+		super.set_npc_rendering_active(active)
+		return
+	_sync_bank_people(active)
+
+func _sync_bank_people(active: bool) -> void:
+	for person in _bank_presentations.keys():
+		if not active or not is_instance_valid(person) or person.get_parent() != self:
+			var adapter: Node = _bank_presentations[person]
+			if is_instance_valid(adapter):
+				adapter.restore()
+				adapter.queue_free()
+			_bank_presentations.erase(person)
+	if not active: return
+	for person in guards + civilians:
+		if not is_instance_valid(person) or person.get_parent() != self or _bank_presentations.has(person): continue
+		var adapter := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+		add_child(adapter)
+		adapter.configure(person, room_camera, room_display)
+		_bank_presentations[person] = adapter
+
 func _exit_tree() -> void:
 	if is_instance_valid(actor_scale): actor_scale.restore()
+	_sync_bank_people(false)
 
 func _unlock_vault() -> void:
 	# A fechadura destrava, mas a porta pesada leva três segundos para abrir.
@@ -535,16 +567,33 @@ func _security_clear() -> bool:
 	return true
 
 func on_guard_down(guard: Node2D) -> void:
-	if guard!=guards[0] or keycard_available: return
+	if keycard_available: return
 	# A pista continua coletável mesmo depois da remoção do corpo.
 	keycard_available=true
 	keycard_position=guard.global_position
-	keycard_visual=Polygon2D.new()
-	keycard_visual.polygon=PackedVector2Array([Vector2(-4,-3),Vector2(4,-3),Vector2(4,3),Vector2(-4,3)])
-	keycard_visual.color=Color("b9c7ba")
-	keycard_visual.z_index=2
-	add_child(keycard_visual)
-	keycard_visual.global_position=keycard_position
+	# Choose a reachable floor patch beside the body with conservative
+	# clearance against the projected furniture solids.
+	var probe := PhysicsShapeQueryParameters2D.new()
+	probe.shape=CircleShape2D.new()
+	probe.shape.radius=12.0
+	probe.collision_mask=1
+	for offset in [Vector2(0,.65),Vector2(.65,0),Vector2(-.65,0),Vector2(0,-.65)]:
+		probe.transform.origin=guard.global_position+project_floor(offset)-project_floor(Vector2.ZERO)
+		if get_world_2d().direct_space_state.intersect_shape(probe,1).is_empty():
+			keycard_position=probe.transform.origin
+			break
+	keycard_visual=Node3D.new()
+	keycard_visual.name="SecurityKeycard"
+	view.add_child(keycard_visual)
+	var pixel := room_display.to_local(keycard_position)+Vector2(view.size)*.5
+	var origin := room_camera.project_ray_origin(pixel)
+	var ray := room_camera.project_ray_normal(pixel)
+	keycard_visual.position=origin+ray*(-origin.y/ray.y)+Vector3(0,.035,0)
+	keycard_visual.rotation.y=.35
+	var part=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	part.piece(keycard_visual,Vector3(.24,.018,.15),Vector3.ZERO,Color("ddd9c7"))
+	part.piece(keycard_visual,Vector3(.23,.004,.035),Vector3(0,.011,-.04),Color("273b48"))
+	part.piece(keycard_visual,Vector3(.048,.004,.045),Vector3(-.065,.013,.025),Color("c6a24c"))
 
 func _update_heist_phase() -> void:
 	if opening_time>0: phase=HeistPhase.OPENING
@@ -555,16 +604,4 @@ func _update_heist_phase() -> void:
 	else: phase=HeistPhase.WARNING if armed_warning else HeistPhase.LOBBY
 
 func _update_bank_status() -> void:
-	var instruction := ""
-	match phase:
-		HeistPhase.WARNING: instruction="SEGURANÇA: Pare! Guarde a arma e se renda. Ninguém precisa se ferir."
-		HeistPhase.COMBAT: instruction="ASSALTO — neutralize a segurança • Use os balcões como cobertura"
-		HeistPhase.KEYCARD: instruction="CARTÃO DE SEGURANÇA — segure [E] junto ao guarda de escopeta"
-		HeistPhase.VAULT: instruction="CARTÃO OBTIDO — vá ao cofre e segure [E] para destravar"
-		HeistPhase.OPENING: instruction="COFRE ABRINDO — %.1f s" % opening_time
-		HeistPhase.LOOT: instruction="COFRE ABERTO - segure [E] para recolher | $%d restantes" % remaining_loot()
-		HeistPhase.ESCAPE: instruction="DINHEIRO RECOLHIDO — volte à entrada e sobreviva à fuga"
-	if hold_time>0: instruction+=" • %d%%" % mini(100,int(hold_time/1.2*100))
-	if alarm_started:
-		instruction+="\nPOLÍCIA EM %ds" % ceili(alarm_time) if not dispatched else "\nCERCO EXTERNO — viaturas a caminho" if not is_instance_valid(blockade) or not blockade.is_ready() else "\nSAÍDA CERCADA — policiais atrás das viaturas. Use cobertura!"
-	status.text=instruction
+	status.text=""

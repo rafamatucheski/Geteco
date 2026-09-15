@@ -35,6 +35,8 @@ static func build(model: Node3D) -> void:
 		PART.piece(atm,Vector3(.49,.36,.035),Vector3(0,1.1,.465),Color("72a6a1"))
 		PART.piece(atm,Vector3(.4,.1,.025),Vector3(0,.56,.465),Color("16282d"))
 		PART.piece(atm,Vector3(.42,.055,.25),Vector3(0,.81,.51),BRASS)
+		for mesh in atm.get_children():
+			if mesh is MeshInstance3D: mesh.set_meta("interior_solid_id", &"ATMLeft" if x < 0 else &"ATMRight")
 		_label(atm,"24h",Vector3(0,1.64,.2),32,.007,INK)
 		_plant(decor,Vector3(x,0,4.1))
 	# Soleira legível alinhada exatamente ao gatilho da saída automática.
@@ -42,6 +44,14 @@ static func build(model: Node3D) -> void:
 	for x in [-1.15,1.15]: PART.piece(decor,Vector3(.09,.62,.16),Vector3(x,.31,4.65),BRASS)
 	var exit_sign := _label(decor,"SAÍDA  ↓",Vector3(0,.058,4.3),52,.009,Color("e8e4cd"))
 	exit_sign.rotation_degrees.x=-90
+	# Classify small details too: counter props belong to the counter envelope;
+	# signs are overhead and the runner/threshold are walkable floor decoration.
+	for mesh in decor.find_children("*", "MeshInstance3D", true, false):
+		if mesh.has_meta("interior_solid_id"): continue
+		if signs.is_ancestor_of(mesh): mesh.set_meta("interior_surface", "overhead")
+		elif mesh.position.y < .1: mesh.set_meta("interior_surface", "floor")
+		elif mesh.position.z < 0: mesh.set_meta("interior_solid_id", &"CounterLeft" if mesh.position.x < 0 else &"CounterRight")
+		else: mesh.set_meta("interior_solid_id", &"ExitPostLeft" if mesh.position.x < 0 else &"ExitPostRight")
 
 static func _label(parent: Node3D, text: String, point: Vector3, size: int, pixel: float, color: Color) -> Label3D:
 	var label := Label3D.new()
@@ -55,6 +65,7 @@ static func _label(parent: Node3D, text: String, point: Vector3, size: int, pixe
 	return label
 
 static func _plant(parent: Node3D, point: Vector3) -> void:
+	var before := parent.get_child_count()
 	PART.piece(parent,Vector3(.58,.48,.58),point+Vector3(0,.24,0),Color("8f7860"))
 	PART.piece(parent,Vector3(.45,.02,.45),point+Vector3(0,.49,0),Color("343b30"))
 	PART.piece(parent,Vector3(.06,.65,.06),point+Vector3(0,.78,0),Color("66543c"))
@@ -62,3 +73,5 @@ static func _plant(parent: Node3D, point: Vector3) -> void:
 		var a := i*TAU/7
 		var leaf := PART.piece(parent,Vector3(.36,.5,.32),point+Vector3(cos(a)*.22,1.0+(i%2)*.2,sin(a)*.22),Color("526b51") if i%2 else Color("718064"),true)
 		leaf.rotation.z=cos(a)*.6
+	for i in range(before, parent.get_child_count()):
+		parent.get_child(i).set_meta("interior_solid_id", &"PlanterLeft" if point.x < 0 else &"PlanterRight")

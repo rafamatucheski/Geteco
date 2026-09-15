@@ -10,7 +10,7 @@ func run() -> void:
 	var ordinary = load("res://PlayerCar.gd").new()
 	ordinary.velocity = Vector2(200,0)
 	ordinary._apply_steering_motion(1.0,0.1)
-	check(is_equal_approx(ordinary.rotation, ordinary.turn_speed * 0.1), "Ordinary cars must retain legacy steering")
+	check(ordinary.rotation > 0.0 and ordinary.rotation < ordinary.turn_speed * 0.1, "Ordinary cars build yaw progressively with speed-dependent steering")
 	check(ordinary.velocity == Vector2(200,0), "Legacy steering must not modify ordinary car velocity")
 	ordinary.free()
 	var scene = load("res://world/harbor/HarborPreview.tscn").instantiate()
@@ -48,10 +48,20 @@ func run() -> void:
 	car.velocity = Vector2.ZERO
 	car.set_physics_process(true)
 	scene._drive()
-	await create_timer(0.5).timeout
+	# Entry now animates the walk and door before driving input is armed.
+	for i in 300:
+		await physics_frame
+		if car.is_driven_by_player and (not is_instance_valid(car._boarding) or not car._boarding.active): break
+	check(car.is_driven_by_player, "Driver must complete boarding before native input")
+	for i in 3: await physics_frame
 	# Actual native movement/input, in an empty area to isolate handling from
 	# authored junctions. Existing road/bridge tests cover authored geometry.
-	for controls in [["ui_up","ui_right"],["ui_up","ui_left"],["ui_down","ui_right"]]:
+	# This fixture deliberately drives outside the city. Its perimeter recovery
+	# would teleport the car back into downtown traffic during each curve.
+	for child in scene.get_children():
+		if child.get_script() == preload("res://world/harbor/WorldPerimeter.gd"):
+			child.set_physics_process(false)
+	for controls in [["move_up","move_right"],["move_up","move_left"],["move_down","move_right"]]:
 		car.global_position = Vector2(28000,28000)
 		car.rotation = 0
 		car.velocity = Vector2.ZERO
@@ -60,7 +70,7 @@ func run() -> void:
 		var travelled := 0.0
 		var previous: Vector2 = car.global_position
 		for action in controls: Input.action_press(action)
-		for i in 90:
+		for i in 120:
 			await physics_frame
 			travelled += car.global_position.distance_to(previous)
 			previous = car.global_position
@@ -68,7 +78,7 @@ func run() -> void:
 		check(travelled > 150, "Native controls must drive a real curve")
 		check(car.health == health_before, "Normal driving must not damage/explode the car")
 		check(car.transform.is_finite(), "Turning must retain finite transform")
-		check((car.rotation > 0) == (controls[1] == "ui_right" and controls[0] == "ui_up"), "Native steering direction mismatch")
+		check((car.rotation > 0) == (controls[1] == "move_right" and controls[0] == "move_up"), "Native steering direction mismatch")
 		print("COUPE_NATIVE_TURN controls=%s travel=%.1f yaw=%.2f health=%d" % [controls,travelled,car.rotation,car.health])
 	scene.queue_free()
 	await process_frame

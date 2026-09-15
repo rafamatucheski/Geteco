@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://c2nffrkpv8rrh"
+path="res://.godot/imported/ElevenLabs_2026-09-14T19_32_35_Lax Whisper_pvc_sp84_s30_sb100_se26_m2.mp3-ca93b05c44acdf337c664daede1c241a.mp3str"
+
+[deps]
+
+source_file="res://audio/mission_voices/maciota_pt_2026-09-14/ElevenLabs_2026-09-14T19_32_35_Lax Whisper_pvc_sp84_s30_sb100_se26_m2.mp3"
+dest_files=["res://.godot/imported/ElevenLabs_2026-09-14T19_32_35_Lax Whisper_pvc_sp84_s30_sb100_se26_m2.mp3-ca93b05c44acdf337c664daede1c241a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

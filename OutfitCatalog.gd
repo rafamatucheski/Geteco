@@ -42,16 +42,33 @@ const OUTFITS = {
 		"district": "Distrito do Gelo",
 		"price": 1800,
 		"description": "Casaco térmico pesado azul ártico com capuz acolchoado de pele polar, gorro de lã e luvas térmicas para nevascas.",
-		"jacket_color": Color("2e86de"),
+		"jacket_color": Color("527d92"),
 		"pants_color": Color("222f3e"),
 		"skin_color": Color(0.86, 0.70, 0.56),
 		"hair_color": Color(0.08, 0.08, 0.10),
 		"headwear_type": "beanie",
-		"headwear_color": Color("0abde3"),
+		"headwear_color": Color("334b5a"),
 		"accessory_type": "fur_hood",
-		"shoes_color": Color("10ac84"),
+		"shoes_color": Color("493e34"),
 		"shirt_style": "heavy_parka",
-		"trim_color": Color("f1f2f6")
+		"trim_color": Color("d5cbb5")
+	},
+	"dante_ski": {
+		"id": "dante_ski",
+		"name": "CONJUNTO DE SKI CUME BRANCO",
+		"district": "Distrito do Gelo",
+		"price": 0,
+		"description": "Jaqueta técnica impermeável, calça térmica reforçada e luvas próprias para as pistas do cume.",
+		"jacket_color": Color("c84b43"),
+		"pants_color": Color("182b3b"),
+		"skin_color": Color(0.86, 0.70, 0.56),
+		"hair_color": Color(0.08, 0.08, 0.10),
+		"headwear_type": "beanie",
+		"headwear_color": Color("17242d"),
+		"accessory_type": "fur_hood",
+		"shoes_color": Color("12191f"),
+		"shirt_style": "heavy_parka",
+		"trim_color": Color("f0e4c8")
 	},
 	"dante_trench": {
 		"id": "dante_trench",
@@ -208,4 +225,4 @@ static func get_districts() -> Array[String]:
 
 ## Fraction of exposure prevented, used by both the shop and survival system.
 static func cold_protection(id: String) -> float:
-	return float({"dante_arctic":0.8,"dante_trench":0.6,"dante_lumberjack":0.35,"dante_classic":0.15,"dante_suit":0.1,"dante_cowboy":0.1,"dante_madmax":0.1,"dante_ghillie":0.25}.get(id,0.0))
+	return float({"dante_ski":0.9,"dante_arctic":0.8,"dante_trench":0.6,"dante_lumberjack":0.35,"dante_classic":0.15,"dante_suit":0.1,"dante_cowboy":0.1,"dante_madmax":0.1,"dante_ghillie":0.25}.get(id,0.0))

@@ -8,8 +8,15 @@ enum Personality { SUBMISSIVE, CALL_POLICE, FIGHTER }
 var stolen_vehicle: Node2D = null
 var health: int = 50
 var is_dead: bool = false
+var is_incapacitated := false
+var is_flying := false
+var fly_velocity := Vector2.ZERO
 var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
 var state_timer: float = 0.0
+var motorcycle_fall_timer := 0.0
+var exit_reaction_timer := 0.0
+var punch_timer := 0.0
+var _exit_direction := Vector2.ZERO
 var phone_call_duration: float = 6.0
 var phone_call_progress: float = 0.0
 var has_called_police: bool = false
@@ -27,14 +34,19 @@ var pants_color: Color = Color(0.15, 0.15, 0.2)
 var skin_color: Color = Color(0.85, 0.68, 0.55)
 
 func _ready() -> void:
+	preload("res://VehicleMotionSafety.gd").configure(self)
 	add_to_group("damageable")
 	add_to_group("pedestrian")
 	z_index = 10
 	
 	collision_layer = 4 # Pedestre
-	collision_mask = 3 # Paredes & Carros
+	collision_mask = 7 # Cenário, veículos e pessoas.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
 
 	var col = CollisionShape2D.new()
+	col.name = "CollisionShape2D"
 	var shape = CircleShape2D.new()
 	shape.radius = 8.0
 	col.shape = shape
@@ -53,8 +65,6 @@ func _ready() -> void:
 	# 3. Balão de Fala
 	_setup_speech_bubble()
 
-	# 4. Indicador de Chamada de Emergência
-	_setup_phone_indicator()
 
 func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 	stolen_vehicle = vehicle
@@ -81,12 +91,17 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 		detail.piece(driver_model,Vector3(.08,.10,.03),Vector3(.12,1.24,.18),Color("e6dfc8"))
 		driver_viewport.render_target_update_mode=SubViewport.UPDATE_ONCE
 	global_position = spawn_pos
+	velocity = Vector2.ZERO
+	exit_reaction_timer = 0.65
+	_exit_direction = vehicle.global_position.direction_to(spawn_pos)
+	global_rotation = (-_exit_direction).angle()
+	reset_physics_interpolation()
 	
 	# Sorteia a personalidade
 	var roll = randf()
-	if roll < 0.35:
+	if roll < 0.25:
 		personality = Personality.SUBMISSIVE
-	elif roll < 0.75:
+	elif roll < 0.55:
 		personality = Personality.CALL_POLICE
 	else:
 		personality = Personality.FIGHTER
@@ -120,10 +135,43 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 			]
 			show_speech(fight_phrases[randi() % fight_phrases.size()], 4.0)
 
+func fall_from_motorcycle(vehicle: Node2D, direction: Vector2, force: float) -> void:
+	stolen_vehicle = vehicle
+	personality = Personality.SUBMISSIVE
+	motorcycle_fall_timer = 3.0
+	velocity = direction * clampf(force * 0.50, 45.0, 210.0)
+	add_collision_exception_with(vehicle)
+	fall_presentation.start(self, driver_model, driver_viewport, velocity)
+	fall_presentation.duration = 0.95
+	show_speech("Ai! Cuidado!", 2.5)
+	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, 20)
+
 func _physics_process(delta: float) -> void:
-	if is_dead:
+	if is_dead or is_incapacitated:
+		if is_flying:
+			fly_velocity = preload("res://world/shared/combat/VehiclePersonImpact.gd").move_falling_body(self, fly_velocity, delta)
+			is_flying = fly_velocity.length() >= 12.0
 		velocity = Vector2.ZERO
 		fall_presentation.update(delta)
+		return
+
+	if motorcycle_fall_timer > 0.0:
+		motorcycle_fall_timer = maxf(0.0, motorcycle_fall_timer - delta)
+		velocity = velocity.move_toward(Vector2.ZERO, 95.0 * delta)
+		if not velocity.is_zero_approx():
+			var contact := move_and_collide(velocity * delta)
+			if contact: velocity = Vector2.ZERO
+		fall_presentation.update(delta)
+		if motorcycle_fall_timer <= 0.0:
+			fall_presentation.reset()
+			_begin_civilian_routine()
+		return
+
+	punch_timer = maxf(0.0, punch_timer - delta)
+	if exit_reaction_timer > 0.0:
+		exit_reaction_timer = maxf(0.0, exit_reaction_timer - delta)
+		velocity = Vector2.ZERO
+		if exit_reaction_timer <= 0.0: velocity = Vector2.ZERO
 		return
 
 	state_timer += delta
@@ -155,7 +203,7 @@ func _physics_process(delta: float) -> void:
 				var flee_dir = stolen_vehicle.global_position.direction_to(global_position).normalized()
 				velocity = flee_dir * 140.0
 				rotation = flee_dir.angle()
-			move_and_slide()
+			preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
 			
 			if state_timer >= 5.0:
 				_fade_and_despawn()
@@ -180,13 +228,11 @@ func _physics_process(delta: float) -> void:
 					_fade_and_despawn()
 					return
 
-			move_and_slide()
+			preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
 
 			# Contagem regressiva da ligação
 			if not has_called_police and phone_call_progress > 0.0:
 				phone_call_progress -= delta
-				if phone_label:
-					phone_label.text = "📱 [190] Ligando pra Polícia... %.1fs" % maxf(0.0, phone_call_progress)
 				
 				if phone_call_progress <= 0.0:
 					has_called_police = true
@@ -198,70 +244,91 @@ func _physics_process(delta: float) -> void:
 					if wanted:
 						wanted.report_crime(20)
 					
-					# Despacha viatura policial
-					if wanted and wanted.has_method("_dispatch_police"):
-						wanted._dispatch_police()
+					# WantedManager schedules the response after the report.
 						
 					await get_tree().create_timer(4.0).timeout
 					_fade_and_despawn()
 
 		Personality.FIGHTER:
-			# Corre furioso atrás do carro para bater no vidro ou tentar retomar
-			if is_instance_valid(stolen_vehicle):
-				var dist = global_position.distance_to(stolen_vehicle.global_position)
-				var dir = global_position.direction_to(stolen_vehicle.global_position).normalized()
-				rotation = dir.angle()
+			_update_defense(delta)
 
-				if dist > 35.0 and dist < 380.0:
-					velocity = dir * 180.0
-					move_and_slide()
-				elif dist <= 35.0:
-					velocity = Vector2.ZERO
-					# Desfere socos no carro
-					if state_timer > 0.8:
-						state_timer = 0.0
-						if audio_player:
-							audio_player.stream = ProceduralAudio.get_punch_whack_stream()
-							audio_player.play()
-						if stolen_vehicle.has_method("take_damage"):
-							stolen_vehicle.take_damage(4)
-						show_speech("Sai desse carro agora!", 1.5)
-				else:
-					# O carro acelerou muito longe, desiste cansado
-					velocity = Vector2.ZERO
-					show_speech("Na próxima você não me escapa!", 3.0)
-					_fade_and_despawn()
-			else:
-				_fade_and_despawn()
+func _update_defense(delta: float) -> void:
+	if not is_instance_valid(stolen_vehicle):
+		_begin_civilian_routine()
+		return
+	# Aim at the door, which is reachable outside the car's collision hull.
+	var half_width := 22.0
+	var hull := stolen_vehicle.get_node_or_null("Collision") as CollisionShape2D
+	if hull and hull.shape is RectangleShape2D:
+		half_width = hull.shape.size.y * 0.5
+	var local_position := stolen_vehicle.to_local(global_position)
+	var side := -1.0 if local_position.y <= 0.0 else 1.0
+	var target := stolen_vehicle.to_global(Vector2(-8.0, side * (half_width + 12.0)))
+	var distance := global_position.distance_to(target)
+	if distance > 300.0 or stolen_vehicle.get("velocity").length() > 220.0:
+		velocity = Vector2.ZERO
+		show_speech("Não vou me jogar na frente do carro!", 2.5)
+		_begin_civilian_routine()
+		return
+	var direction := global_position.direction_to(target)
+	rotation = direction.angle()
+	if distance > 12.0:
+		velocity = velocity.move_toward(direction * minf(115.0, distance * 4.0), 420.0 * delta)
+		preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
+		return
+	velocity = Vector2.ZERO
+	if state_timer >= 1.1:
+		state_timer = 0.0
+		punch_timer = 0.4
+		if audio_player:
+			audio_player.stream = ProceduralAudio.get_punch_whack_stream()
+			audio_player.play()
+		if stolen_vehicle.has_method("take_damage"):
+			stolen_vehicle.take_damage(4)
+		show_speech("Sai! Esse carro é meu!", 1.5)
 
 func show_speech(text: String, duration: float = 3.0) -> void:
 	if speech_label and speech_bubble:
 		speech_label.text = text
-		speech_bubble.visible = true
-		var t = create_tween()
-		t.tween_interval(duration)
-		t.tween_callback(func():
-			if speech_bubble: speech_bubble.visible = false
-		)
+		preload("res://ui/WorldSpeechLayout.gd").show_for(self, speech_bubble, duration)
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
+	if amount <= 0 or is_dead: return
 	health -= amount
+	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, amount)
 	if health <= 0 and not is_dead:
 		is_dead = true
+		get_node("CollisionShape2D").set_deferred("disabled", true)
+		preload("res://world/shared/combat/GroundBlood.gd").spawn(self, true)
 		if phone_indicator: phone_indicator.visible = false
 		show_speech("Aaaagh!", 1.0)
 		var effects := get_tree().get_first_node_in_group("weapon_effects")
 		if effects: effects.spawn_blood(global_position,Vector2.UP,amount)
 		var t = create_tween()
 		fall_presentation.start(self, driver_model, driver_viewport)
+		if has_meta("medical_pending"):
+			t.kill()
+			return
 		t.tween_interval(2.0)
 		t.tween_property(self, "modulate:a", 0.0, 3.0)
 		t.tween_callback(queue_free)
 
 func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> void:
-	take_damage(100, true)
-	velocity = impact_velocity * 0.5
-	move_and_slide()
+	if motorcycle_fall_timer > 2.0 or exit_reaction_timer > 0.0: return # Ignore the initiating contact during dismount.
+	if is_dead or is_incapacitated or not impact_velocity.is_finite() or impact_velocity.length() < 35.0: return
+	is_flying = true
+	fly_velocity = impact_velocity.limit_length(600.0) * 0.85
+	if impact_velocity.length() >= 200.0:
+		take_damage(100, _is_player_driver)
+	else:
+		health = 1
+		is_incapacitated = true
+		get_node("CollisionShape2D").set_deferred("disabled", true)
+		if phone_indicator: phone_indicator.hide()
+	fall_presentation.start(self, driver_model, driver_viewport, impact_velocity)
+	preload("res://world/shared/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
+	var care := get_node_or_null("/root/NPCMedicalCare")
+	if care: care.report_injury(self)
 
 func _fade_and_despawn() -> void:
 	_begin_civilian_routine()
@@ -308,11 +375,13 @@ func _build_driver_visual() -> void:
 	sun.rotation_degrees = Vector3(-45,-25,0)
 	sun.light_energy = 1.5
 	driver_viewport.add_child(sun)
+	preload("res://ContactShadow.gd").add_person(driver_viewport)
 	var sprite := Sprite2D.new()
 	sprite.texture = driver_viewport.get_texture()
 	sprite.scale = Vector2.ONE*(15.0*2.6/128.0)
 	sprite.position = (Vector2(64,64)-camera.unproject_position(Vector3.ZERO))*sprite.scale
 	visual_root.add_child(sprite)
+	preload("res://ContactShadow.gd").add_silhouette(sprite,driver_viewport)
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(driver_model): return
@@ -324,15 +393,24 @@ func _process(delta: float) -> void:
 		driver_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		return
 	_render_clock += delta
-	if _render_clock < 1.0/20.0: return
-	driver_model.walking = not is_dead and velocity.length()>2
-	if not is_dead: driver_model.rotation.y = -global_rotation + PI*0.5
-	if not is_dead: driver_model._process(_render_clock)
+	if _render_clock < 1.0/30.0: return
+	driver_model.walking = not is_dead and not is_incapacitated and velocity.length()>2
+	if not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0: driver_model.rotation.y = -global_rotation + PI*0.5
+	if not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0: driver_model._process(_render_clock)
+	if not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0 and driver_model.get("limbs") is Array:
+		var limbs: Array = driver_model.limbs
+		var walking_speed := velocity.length()
+		var phase := float(Time.get_ticks_msec()) * 0.001 * clampf(walking_speed / 10.0, 5.0, 12.0)
+		for i in limbs.size():
+			limbs[i].rotation.x = sin(phase + (PI if i in [0,3] else 0.0)) * (0.55 if walking_speed > 65.0 else 0.32 if walking_speed > 2.0 else 0.0)
+		if personality == Personality.FIGHTER and not civilian_routine and limbs.size() >= 4:
+			limbs[1].rotation.x = -0.9
+			limbs[3].rotation.x = -0.9 - sin(punch_timer / 0.4 * PI) * 0.9
 	_render_clock = 0
 	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 func _begin_civilian_routine() -> void:
-	if civilian_routine or is_dead: return
+	if civilian_routine or is_dead or is_incapacitated: return
 	civilian_routine = true
 	if phone_indicator: phone_indicator.hide()
 	var nearest := INF
@@ -364,7 +442,7 @@ func _update_civilian_routine(delta: float) -> void:
 		return
 	velocity = global_position.direction_to(point)*42
 	rotation = velocity.angle()
-	move_and_slide()
+	preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if _age>60 and is_instance_valid(player) and player.global_position.distance_to(global_position)>1800:
 		queue_free()
@@ -394,29 +472,3 @@ func _setup_speech_bubble() -> void:
 	speech_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	speech_bubble.add_child(speech_label)
 	add_child(speech_bubble)
-
-func _setup_phone_indicator() -> void:
-	phone_indicator = PanelContainer.new()
-	phone_indicator.position = Vector2(-100, -84)
-	phone_indicator.custom_minimum_size = Vector2(200, 22)
-	phone_indicator.visible = false
-	phone_indicator.z_index = 26
-	
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.75, 0.15, 0.15, 0.95)
-	style.border_color = Color(1.0, 0.90, 0.20)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(4)
-	style.content_margin_left = 6
-	style.content_margin_right = 6
-	style.content_margin_top = 2
-	style.content_margin_bottom = 2
-	phone_indicator.add_theme_stylebox_override("panel", style)
-	
-	phone_label = Label.new()
-	phone_label.text = "📱 [190] Ligando pra Polícia... 6.0s"
-	phone_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	phone_label.add_theme_font_size_override("font_size", 9)
-	phone_label.add_theme_color_override("font_color", Color.WHITE)
-	phone_indicator.add_child(phone_label)
-	add_child(phone_indicator)

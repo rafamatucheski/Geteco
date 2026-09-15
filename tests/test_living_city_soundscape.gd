@@ -54,10 +54,11 @@ func run() -> void:
 	soundscape = world.get_node("HarborSoundscape")
 	var quarter = soundscape.quarter
 	var count := soundscape.find_children("*", "AudioStreamPlayer2D", true, false).size()
-	check(count == 10, "Dez emissores espaciais fixos, incluindo o pátio de sucata")
+	check(count == 11, "Onze emissores espaciais fixos, incluindo oficina interior e pátio de sucata")
 	var stations := AUDIO.stations()
-	check(stations.size() == 3 and stations[0].get_length() > 120 and stations[1].get_length() > 200, "Duas músicas completas e opção desligado")
-	check(stations[2].data.size() == 16000 and stations[2].data.count(0) == 16000, "Estação desligada contém apenas silêncio")
+	check(stations.size() == 8 and stations[0].get_length() > 120 and stations[1].get_length() > 200, "Sete músicas completas e opção desligado")
+	check(stations[2].get_length() > 120 and stations[3].get_length() > 120, "Novas estações têm músicas completas")
+	check(stations[-1].data.size() == 16000 and stations[-1].data.count(0) == 16000, "Estação desligada contém apenas silêncio")
 	check(stations[0] == AUDIO.stations()[0] and stations[0].loop, "Músicas em cache e reprodução contínua")
 	check(AUDIO.bed("street").get_length() >= 28 and AUDIO.bed("street") != AUDIO.bed("street", 1), "Ambiente longo com gravações variantes")
 	check(AUDIO.detail("gull", 0) != AUDIO.detail("gull", 1), "Gaivotas variam o trecho gravado")
@@ -75,8 +76,8 @@ func run() -> void:
 	await visit(Vector2(790, 1750), "03_oficina_rua")
 	check(quarter.sources.garage_radio.playing and quarter.sources.tools.playing, "Oficina tem rádio e atividade na fachada")
 	var garage = world.get_node("Interiors").garage_interior
-	await visit(garage.get_camera_rect().get_center(), "04_oficina_dentro")
-	check(quarter.sources.indoor_radio.playing and not quarter.sources.cafe.playing, "Interior usa sua fonte e silencia a rua")
+	await visit(garage.spawn_point.global_position, "04_oficina_dentro")
+	check(not quarter.sources.indoor_radio.playing and not quarter.sources.cafe.playing, "Garagem silencia radio e rua")
 	check(not quarter.sources.garage_radio.playing and soundscape.weights.workshop > 0.8, "Sem rádio duplicada entre fachada e interior")
 	player.is_in_dialogue = true
 	await create_timer(1.0).timeout
@@ -93,7 +94,7 @@ func run() -> void:
 	for source in quarter.sources.values():
 		check(not source.playing, "Fonte distante suspensa: " + String(source.name))
 	check(soundscape.find_children("*", "AudioStreamPlayer2D", true, false).size() == count, "Número de emissores permanece constante durante o percurso")
-	check(quarter.sources.cafe.bus == &"SFX" and quarter.sources.garage_radio.bus == &"Music", "Efeitos e rádio respeitam seus controles de volume")
+	check(quarter.sources.cafe.bus == &"Ambient" and quarter.sources.garage_radio.bus == &"Music", "Ambiente e rádio respeitam seus controles de volume")
 	# Exercita o receptor de verdade em um veículo do mundo.
 	var car: Node2D
 	for candidate in get_nodes_in_group("vehicle"):
@@ -121,7 +122,19 @@ func run() -> void:
 		await create_timer(0.2).timeout
 		print("RADIO_RESUME backend=", AudioServer.get_driver_name(), " saved=", receiver._saved_position, " playback=", radio.get_playback_position())
 		check(radio.get_playback_position() > 11.0, "Sair e voltar ao carro preserva o ponto da música")
-		radio.stream = stations[2]
+		receiver._mute_button.pressed.emit()
+		await process_frame
+		await process_frame
+		check(radio.volume_db == -80.0 and radio.playing, "Mute mantém a música avançando")
+		receiver._controls.get_child(2).pressed.emit()
+		await process_frame
+		await process_frame
+		check(car.radio_index == 1 and radio.stream == stations[1] and radio.volume_db == -80.0, "Botão troca estação e preserva mute")
+		receiver._mute_button.pressed.emit()
+		await process_frame
+		await process_frame
+		check(radio.volume_db > -80.0, "Botão restaura som")
+		radio.stream = stations[-1]
 		radio.play()
 		await create_timer(0.2).timeout
 		check(receiver._notice.text.contains("DESLIGADO") or receiver._notice.text == "RADIO OFF", "Opção desligado identificada")

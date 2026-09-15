@@ -25,6 +25,18 @@ func _run() -> void:
 	bridge.disable_3d = true
 	root.add_child(bridge)
 	check(bridge.msaa_2d == Viewport.MSAA_2X, "Arte 2D em viewport próprio também precisa de AA.")
+	var settings := root.get_node("SettingsManager")
+	var original: int = settings.msaa_3d
+	settings.msaa_3d = Viewport.MSAA_4X
+	settings.display_settings_changed.emit()
+	check(model.msaa_3d == Viewport.MSAA_4X, "Mudança de qualidade alcança modelos já criados.")
+	check(model.render_target_update_mode == SubViewport.UPDATE_ONCE, "Atualizar cache apenas uma vez ao trocar AA.")
+	settings.msaa_3d = Viewport.MSAA_DISABLED
+	settings.display_settings_changed.emit()
+	check(model.msaa_3d == Viewport.MSAA_DISABLED, "Opção desligada alcança modelos comuns.")
+	check(portrait.msaa_3d == Viewport.MSAA_4X, "Retrato mantém qualidade autorada.")
+	settings.msaa_3d = original
+	settings.display_settings_changed.emit()
 	model.queue_free()
 	portrait.queue_free()
 	bridge.queue_free()

@@ -10,6 +10,7 @@ func run() -> void:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 35: await process_frame
+	while not current_scene.gameplay_ready: await process_frame
 	var player = current_scene.get_node("Player")
 	var car = current_scene.get_node("PersonalCarManager").car
 	car.global_position = Vector2(4500,-950)
@@ -29,16 +30,39 @@ func run() -> void:
 	cruiser.is_acting = false
 	cruiser.officer_deployed = false
 	var deadline := Time.get_ticks_msec() + 15000
-	var extracted := false
-	while not player.is_arrested and Time.get_ticks_msec() < deadline:
-		if not car.is_driven_by_player: extracted = true
+	var stop_officer: CharacterBody2D
+	while not is_instance_valid(stop_officer) and Time.get_ticks_msec() < deadline:
+		for crew in get_nodes_in_group("police_officer"):
+			if crew.vehicle_stop.phase == "command": stop_officer = crew
 		await physics_frame
-	check(cruiser.deployed_officers > 0 or player.is_arrested, "Crew deploys for seated stationary suspect")
-	check(extracted, "Real driver is removed without firing a shot")
-	check(player.is_arrested, "Police arrest without waiting for a new attack")
+	check(cruiser.deployed_officers > 0, "Crew deploys for seated stationary suspect")
+	check(is_instance_valid(stop_officer), "Officer reaches the door and orders voluntary exit")
+	if not is_instance_valid(stop_officer):
+		quit(1)
+		return
+	await create_timer(6).timeout
+	check(car.is_driven_by_player and not player.is_arrested, "Waiting inside never forces extraction or arrest")
+	check(stop_officer.is_police_aiming(), "One-star officer keeps weapon aimed during the order")
+	check(absf(stop_officer.get_node("NPCCombatRig").combat_pose._carry_pitch) < 0.05, "Combat rig raises the weapon into its actual aiming pose")
+	var toward: Vector2 = stop_officer.global_position.direction_to(car.global_position)
+	check(absf(angle_difference(stop_officer.model_root.rotation.y, -atan2(toward.y, toward.x) - PI * 0.5)) < 0.15, "Officer faces the driver while waiting")
+	check(stop_officer.response_aggression == 0.0 and stop_officer.fire_cooldown == 0.0, "Order does not open fire on a passive driver")
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("D:/geteco/police-stop-live.png")
+		root.get_texture().get_image().save_png("D:/geteco/police-surrender-live-0911.png")
+	car.exit_vehicle()
+	while car.get_meta("vehicle_boarding", false): await physics_frame
+	await physics_frame
+	check(player.is_physics_processing() and not player.is_control_disabled and not player.is_arrested, "Voluntary exit leaves movement and weapons available")
+	player._respawn_grace_active = true
+	player.weapon_inventory["pistol"] = true
+	player.weapon_ammo["pistol"] = {"clip": 12, "reserve": 24}
+	player.equip_weapon("pistol")
+	player._shoot_towards(player.global_position + Vector2(0, -300))
+	await create_timer(0.4).timeout
+	check(player.weapon_ammo["pistol"]["clip"] == 11, "Player can actually fire after stepping out")
+	check(stop_officer.response_aggression > 0.0 and not player.is_arrested, "Firing interrupts surrender and triggers armed resistance")
+	wanted.dismiss_all_police()
 	# Positive contact: walking into the parked cruiser must not move it.
 	cruiser = root.get_node("EmergencyPool").get_vehicle("police")
 	cruiser.set_physics_process(false)
@@ -82,10 +106,10 @@ func run() -> void:
 	check(officer.vehicle_stop.phase == "idle" and car.is_driven_by_player, "Moving driver cannot be extracted")
 	car.velocity = Vector2.ZERO
 	for i in 16: officer.vehicle_stop.approach(officer,car,0.1)
-	check(officer.vehicle_stop.phase == "open", "Stationary driver receives door approach")
+	check(officer.vehicle_stop.phase == "command", "Stationary driver receives an exit order")
 	car.velocity = Vector2(100,0)
 	officer.vehicle_stop.tick(officer,0.1)
-	check(officer.vehicle_stop.phase == "idle" and not car.has_meta("police_stop_owner") and car.is_driven_by_player, "Flight during door opening cancels the stop")
+	check(officer.vehicle_stop.phase == "idle" and not car.has_meta("police_stop_owner") and car.is_driven_by_player, "Driving away cancels the stop and releases its owner")
 	car.velocity = Vector2.ZERO
 	var wall := StaticBody2D.new()
 	var wall_col := CollisionShape2D.new()
@@ -100,9 +124,15 @@ func run() -> void:
 	wall.queue_free()
 	await physics_frame
 	car.exit_vehicle()
+	while car.get_meta("vehicle_boarding", false): await physics_frame
+	check(not player.is_arrested and not player.is_control_disabled, "A second voluntary exit still allows a surrender choice")
 	officer.set_physics_process(true)
 	var foot_deadline := Time.get_ticks_msec() + 9000
 	while not player.is_arrested and Time.get_ticks_msec() < foot_deadline: await physics_frame
 	check(player.is_arrested, "Voluntary exit retargets the driver and arrests without an attack")
+	await create_timer(4).timeout
+	var station := current_scene.get_node("District/Police/Entrance/OutsideReturn") as Node2D
+	check(player.global_position.distance_to(station.global_position) < 30.0, "Surrender respawns at the police station")
+	check(not player.is_arrested and not player.is_recovering and not player.is_control_disabled and player.is_physics_processing(), "Station return restores player control")
 	print("POLICE VEHICLE STOP LIVE: ",failures)
 	quit(0 if failures.is_empty() else 1)

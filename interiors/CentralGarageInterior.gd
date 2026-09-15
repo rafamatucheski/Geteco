@@ -332,7 +332,7 @@ func _update_prompt_ui() -> void:
 		prompt_label.text = "[ %s: SUA VAGA PRIVATIVA ]" % bay.name.to_upper()
 		prompt_label.add_theme_color_override("font_color", Color("#2ecc71"))
 	else:
-		prompt_label.text = "[ PRESSIONE E ] COMPRAR %s POR $ %d" % [bay.name.to_upper(), bay.price]
+		prompt_label.text = "E"
 		prompt_label.add_theme_color_override("font_color", Color("#f1c40f"))
 
 func _apply_theme() -> void:

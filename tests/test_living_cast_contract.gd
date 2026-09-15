@@ -138,12 +138,19 @@ func run() -> void:
 	Input.parse_input_event(key)
 	await create_timer(0.4).timeout
 	check(car.is_driven_by_player, "Real Player input boards vehicle")
+	# Embarque é animado (~2 s) desde 10/09 e o carro ignora o acelerador até a
+	# transição terminar; 0,4 s de espera consumia os 95 quadros de aceleração.
+	var board_deadline := Time.get_ticks_msec() + 6000
+	while car.has_meta("vehicle_boarding") and Time.get_ticks_msec() < board_deadline:
+		await physics_frame
+	for frame in 4: await physics_frame
 	var dents_before: int = car.collision_animations
-	Input.action_press("ui_up")
+	# O carro lê as ações move_* do GameInput (desde 10/09), não ui_up.
+	Input.action_press("move_up")
 	for frame in 95:
 		await physics_frame
 		if car.collision_animations > dents_before: break
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	await create_timer(0.3).timeout
 	check(car.collision_animations > dents_before, "Physical driven collision triggers deformation")
 	check(car.position.x < barrier.position.x, "Car did not pass through barrier")

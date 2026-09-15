@@ -30,6 +30,12 @@ const BENCH_POINTS: Array[Vector2] = [
 
 
 func _build_sites() -> void:
+	_building("BridgeCourtWest",Vector2(4925,-2240),Vector2(260,175),"brownstone","", "#ac9275")
+	_building("BridgeCourtEast",Vector2(5290,-2240),Vector2(245,175),"office","", "#a5ad9b")
+	_building("BridgeQuayHouse",Vector2(6485,-2195),Vector2(225,145),"brownstone","", "#b39c84")
+	for x in [4925,5290,6485]:
+		var front_y := -2122.0 if x==6485 else -2152.0
+		_access("BridgeFrontage%d" % x,Rect2(x-24,front_y,48,-2082-front_y),Vector2(x,-2090),false)
 	# Four coherent blocks: homes and practical businesses near the regional road.
 	_building("GatewayFlats", Vector2(4915, -1730), Vector2(250, 220), "brownstone", "GATEWAY FLATS", "#b6ac93")
 	_building("TransitHouse", Vector2(5260, -1730), Vector2(230, 220), "office", "TRANSIT HOUSE", "#8ab6b9")
@@ -68,6 +74,9 @@ func _build_sites() -> void:
 
 
 func _build_trees() -> void:
+	_build_bridge_trees()
+	for i in 8:
+		preload("res://world/harbor/ExteriorFinish.gd").tree(self,[Vector2(4700,-2310),Vector2(5570,-2190),Vector2(5485,-2260),Vector2(6280,-2325),Vector2(6685,-2290),Vector2(4480,-1650),Vector2(4480,-700),Vector2(6620,-850)][i],330+i,1.25)
 	for index in TREE_POINTS.size():
 		var tree := TREE.new()
 		tree.position = TREE_POINTS[index]
@@ -76,6 +85,25 @@ func _build_trees() -> void:
 		tree.leaf_color = Color(["476456","64775d","35564b"][index%3])
 		tree.variant_seed = int(absf(tree.position.x + tree.position.y))
 		add_child(tree)
+
+func _build_bridge_trees() -> void:
+	# Replace the flat verge dots along the complete causeway. The existing
+	# projected broadleaf models share two static 3D renders for all 30 trees.
+	# The old dots north of -3960 were covered by the interchange asphalt;
+	# do not turn those hidden marks into solid trees in the curved lanes.
+	const BRIDGE_TREE = preload("res://world/mountain_pass/MountainPine3D.gd")
+	var index := 0
+	for x in [5729.0, 6271.0]:
+		for y in range(-3960, -2410, 105):
+			var tree := BRIDGE_TREE.new()
+			tree.name = "BridgeTree%02d" % index
+			tree.position = Vector2(x,y)
+			tree.variant_seed = 3 if index % 2 == 0 else 4
+			tree.tree_scale = 0.85 + float(index % 3) * 0.05
+			tree.is_snowy = false
+			tree.add_to_group("bridge_verge_tree")
+			add_child(tree)
+			index += 1
 
 func get_environment_detail_contract() -> Dictionary:
 	var trees: Array[Dictionary] = []
@@ -97,8 +125,22 @@ func _build_site_solids() -> void:
 func _build_boundaries() -> void:
 	# Two northern water blocks leave the highway causeway uninterrupted at
 	# y=-2400. The cap is beyond the authored turnaround, never across its lanes.
-	for i in range(get_north_water_collision_rects().size()):
-		_add_obstacle(get_north_water_collision_rects()[i], "NorthWater%d" % i)
+	var cutouts := preload("res://world/harbor/HarborNorthAccess.gd").water_cutouts()
+	for rect in get_north_water_collision_rects():
+		var pieces: Array[PackedVector2Array] = [PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])]
+		for cutout in cutouts:
+			var next: Array[PackedVector2Array] = []
+			for piece in pieces: next.append_array(Geometry2D.clip_polygons(piece,cutout))
+			pieces = next
+		for piece in pieces:
+			var body := StaticBody2D.new()
+			body.name = "NorthWater"
+			body.collision_layer = 1
+			body.collision_mask = 0
+			var collision := CollisionPolygon2D.new()
+			collision.polygon = piece
+			body.add_child(collision)
+			add_child(body)
 
 
 func _add_obstacle(bounds: Rect2, label: String) -> void:
@@ -146,42 +188,45 @@ func get_sidewalk_routes() -> Array[PackedVector2Array]:
 
 func _draw() -> void:
 	# Water surrounds the narrow engineered causeway; no oversized green slab.
-	draw_rect(NORTH_LAND, Color("#999789"))
-	draw_rect(HIGHWAY_LAND, Color("#82887d"))
+	SURFACE.paint(self,NORTH_LAND, Color("#999789"),"concrete")
+	SURFACE.paint(self,HIGHWAY_LAND, Color("#82887d"),"gravel")
 	_draw_northern_shore()
+	for patch in [Rect2(4430,-1850,120,520),Rect2(4430,-960,120,460),Rect2(6540,-1770,155,450),Rect2(6535,-950,160,510),Rect2(4750,-2380,750,40),Rect2(6320,-2380,350,40)]:
+		preload("res://world/harbor/ExteriorFinish.gd").meadow(self,patch,int(patch.position.x),Color("667858"))
 	# Gravel verges stay beyond both carriageway+sidewalk envelopes. The main
 	# provider renders the carriageways and central separation above this terrain.
 	for x in [5708.0, 6250.0]:
-		draw_rect(Rect2(x, -4430, 42, 2030), Color("#b0ac96"))
-		for y in range(-4380, -2410, 105):
-			draw_circle(Vector2(x + 21, y), 15, Color("#637a67"))
-			draw_circle(Vector2(x + 16, y - 3), 9, Color("#798b6e"))
-	draw_rect(Rect2(5980, -4050, 40, 1650), Color("#7d8b74"))
+		SURFACE.paint(self,Rect2(x, -4430, 42, 2030), Color("#b0ac96"),"gravel")
+	SURFACE.paint(self,Rect2(5980, -4050, 40, 1650), Color("#7d8b74"),"grass")
 	for y in range(-3990, -2410, 100):
 		draw_line(Vector2(5990, y), Vector2(6010, y), Color("#a9ad8e"), 2)
 	# Plazas north of the first urban avenue announce the neighborhood entrance.
-	draw_rect(Rect2(4785, -2320, 620, 160), Color("#b4ac96"))
+	SURFACE.paint(self,Rect2(4785, -2320, 620, 160), Color("#b4ac96"),"stone")
 	for stripe in range(0, 600, 40):
 		draw_line(Vector2(4785 + stripe, -2320), Vector2(4785 + stripe, -2160), Color("#a39f8d"), 1)
-	draw_rect(Rect2(6335, -2320, 240, 160), Color("#b4ac96"))
+	SURFACE.paint(self,Rect2(6335, -2320, 240, 160), Color("#b4ac96"),"stone")
 	# Northwest/northeast and southwest/southeast blocks have clearly different
 	# residential courts and working aprons rather than random isolated props.
 	for x in [4775.0, 5675.0]:
-		draw_rect(Rect2(x, -1875, 650, 650), Color("#ada38e"))
+		SURFACE.paint(self,Rect2(x, -1875, 650, 650), Color("#ada38e"),"concrete")
 		draw_rect(Rect2(x + 8, -1867, 634, 634), Color("#969183"), false, 2)
-		draw_rect(Rect2(x, -975, 650, 510), Color("#b2a68f"))
+		SURFACE.paint(self,Rect2(x, -975, 650, 510), Color("#b2a68f"),"concrete")
 		draw_rect(Rect2(x + 8, -967, 634, 494), Color("#989080"), false, 2)
 	for x in [4800.0, 5720.0]:
-		draw_rect(Rect2(x, -1550, 590, 65), Color("#c3b69e"))
-		draw_rect(Rect2(x, -707, 590, 30), Color("#c3b69e"))
+		SURFACE.paint(self,Rect2(x, -1550, 590, 65), Color("#c3b69e"),"stone")
+		SURFACE.paint(self,Rect2(x, -707, 590, 30), Color("#c3b69e"),"stone")
 	for access in accesses:
-		draw_rect(access.bounds, Color("#737a77") if access.vehicle else Color("#c8bca3"))
+		SURFACE.paint(self,access.bounds, Color("#737a77") if access.vehicle else Color("#c8bca3"),"concrete")
+		if access.vehicle: SURFACE.yard(self,access.bounds,int(access.bounds.position.x),true)
 	_draw_fire_apron()
+	SURFACE.foundations(self,sites)
 	# Small public gardens form the seam to the existing Northbank frontage.
 	for x in [4780.0, 5690.0]:
-		draw_rect(Rect2(x, -235, 650, 120), Color("#75836b"))
-		draw_rect(Rect2(x, -155, 650, 35), Color("#c6bba2"))
-		draw_rect(Rect2(x + 290, -350, 45, 235), Color("#c6bba2"))
+		SURFACE.paint(self,Rect2(x, -235, 650, 120), Color("#75836b"),"grass")
+		SURFACE.paint(self,Rect2(x, -155, 650, 35), Color("#c6bba2"),"stone")
+		SURFACE.paint(self,Rect2(x + 290, -350, 45, 235), Color("#c6bba2"),"stone")
+		SURFACE.garden_edge(self,Rect2(x+8,-230,270,60),int(x))
+		SURFACE.garden_edge(self,Rect2(x+345,-230,295,60),int(x)+1)
 	for point in BENCH_POINTS:
 		_draw_bench(point)
 	for i in ROCK_POINTS.size():
@@ -233,7 +278,7 @@ func _draw_northern_shore() -> void:
 
 func _draw_fire_apron() -> void:
 	# Keep the entire departure area empty. Bay guide lines are paint, not gates.
-	draw_rect(FIRE_APRON, Color("#737975"))
+	SURFACE.paint(self,FIRE_APRON, Color("#737975"),"concrete")
 	for x in [5762.0, 5880.0, 5998.0]:
 		draw_line(Vector2(x - 35, -1250), Vector2(x - 35, -1175), Color("#d9c795"), 2)
 		draw_line(Vector2(x + 35, -1250), Vector2(x + 35, -1175), Color("#d9c795"), 2)

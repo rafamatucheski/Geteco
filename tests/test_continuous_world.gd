@@ -8,11 +8,20 @@ func _run() -> void:
 	root.size = Vector2i(1280,720)
 	root.content_scale_size = root.size
 	create_timer(90).timeout.connect(func(): printerr("CONTINUOUS WORLD TIMEOUT"); quit(2))
-	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete", true)
+	var saves := root.get_node("SaveManager")
+	var output := "D:/geteco/artifacts/proximity-0912/seam-saves/"
+	DirAccess.make_dir_recursive_absolute(output)
+	saves.set("_save_dir", output)
+	saves.set("_save_directory_ready", false)
+	saves.clear_pending_save()
+	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met", &"harbor_delivery_complete"]:
+		root.get_node("CampaignState").set_campaign_flag(flag, true)
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	for i in 25: await process_frame
 	var world := current_scene
+	while not world.gameplay_ready or not world.world_build_ready: await process_frame
 	var stream := world.get_node("ContinuousWorld")
+	check(stream.mountain == null, "mountain is not instantiated at city startup")
 	await stream.ensure_mountain()
 	while not stream.ready_for_crossing: await process_frame
 	var mountain: Node2D = stream.mountain
@@ -28,21 +37,29 @@ func _run() -> void:
 	player.global_position = car.global_position+Vector2(0,-50)
 	car.enter_vehicle(player)
 	print("BOARDING ",car.is_driven_by_player," processing=",car.is_physics_processing()," treepaused=",paused," pos=",car.global_position)
+	var boarding_deadline := Time.get_ticks_msec() + 6000
+	while is_instance_valid(car._boarding) and car._boarding.active and Time.get_ticks_msec() < boarding_deadline:
+		await process_frame
+	check(not is_instance_valid(car._boarding) or not car._boarding.active, "boarding completes before driving")
 	for i in 3: await physics_frame
 	var health: int = car.health
 	var previous: Vector2 = car.global_position
 	var largest_step := 0.0
-	Input.action_press("ui_up")
+	Input.action_press("move_up")
 	for i in 200:
 		await physics_frame
 		largest_step = maxf(largest_step,car.global_position.distance_to(previous))
 		previous = car.global_position
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	stream._update_region()
-	print("CROSSING RESULT ",car.global_position," velocity=",car.velocity," health=",car.health," driven=",car.is_driven_by_player)
+	print("CROSSING RESULT ",car.global_position," velocity=",car.velocity," health=",car.health," driven=",car.is_driven_by_player," process=",car.can_process()," armed=",car._drive_input_armed)
 	check(current_scene.get_instance_id()==world_id and player.get_instance_id()==player_id and car.get_instance_id()==car_id,"world/player/car instances survive physical crossing")
 	check(car.global_position.x>7500 and largest_step<20 and car.health==health,"drive over seam without jump or invisible barrier")
 	check(stream.current_region=="mountain", "region weather changes geographically")
+	check(not world.weather.is_inside_interior, "mountain exterior retains the world day/night lighting")
+	world.weather.atmosphere.refresh_immediately()
+	check(world.weather.atmosphere.mountain_weight > 0.2, "driving onto the bridge blends toward mountain atmosphere")
+	check(get_nodes_in_group("regional_atmosphere").size() == 1, "streaming adds no duplicate atmosphere compositor")
 	var snapshot: Dictionary = root.get_node("RegionTravel").snapshot_world()
 	check(snapshot.region=="mountain" and snapshot.coordinates_version==2,"save uses continuous world coordinates")
 	check(load("res://world/harbor/HarborSceneRoute.gd").for_save({"world":snapshot}).ends_with("HarborGame.tscn"),"mountain save opens unified world")
@@ -50,14 +67,18 @@ func _run() -> void:
 	car.global_position = Vector2(7540,-4591)
 	car.rotation = PI
 	previous = car.global_position
-	Input.action_press("ui_up")
-	for i in 100:
+	Input.action_press("move_up")
+	# Same acceleration window as outbound: both legs start from rest.
+	for i in 200:
 		await physics_frame
 		largest_step = maxf(largest_step,car.global_position.distance_to(previous))
 		previous = car.global_position
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	stream._update_region()
+	print("RETURN RESULT ", car.global_position, " velocity=", car.velocity)
 	check(car.global_position.x<7300 and largest_step<20 and stream.current_region=="harbor","return over seam without scene change")
+	world.weather.atmosphere.refresh_immediately()
+	check(world.weather.atmosphere.mountain_weight < 0.3, "returning west recovers harbor atmosphere geographically")
 	print("STREAM STATS ",stream.get_streaming_stats()," largest_frame_displacement=",largest_step)
 	if DisplayServer.get_name()!="headless":
 		car.velocity = Vector2.ZERO

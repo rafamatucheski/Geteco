@@ -123,6 +123,11 @@ func run() -> void:
 	await create_timer(1.2).timeout
 	check(snow.bed.volume_db < outside_db - 14 and snow._filter.cutoff_hz < 900 and not snow.gust.playing, "Abrigo abafa vento e cancela rajadas")
 	await record("04_abrigo", 5)
+	player.set_meta("mountain_interior", true)
+	await visit(mountain.interior_manager.cabin_interior.global_position)
+	check(soundscape._district_gain == 0.0 and not soundscape.beds.city.playing and not soundscape.beds.terminal.playing, "Cabana fora do mapa não toca vozes da cidade")
+	check(snow.bed.playing and storm.sheltered, "Cabana mantém vento de neve abafado")
+	player.remove_meta("mountain_interior")
 	mountain.set_process(true)
 	await visit(Vector2(1700, 1130))
 	check(mountain.process_mode == Node.PROCESS_MODE_DISABLED and not snow.bed.playing and not snow.gale.playing and not snow.gust.playing, "Volta à cidade desliga vento mesmo com região suspensa")

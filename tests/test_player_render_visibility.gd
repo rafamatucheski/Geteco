@@ -25,8 +25,10 @@ func run() -> void:
 	var viewport: SubViewport = player.get("viewport_3d")
 	check(viewport.render_target_update_mode == SubViewport.UPDATE_DISABLED, "Initially hidden player must not render")
 	var physics_enabled := player.is_physics_processing()
+	# O Player visível usa UPDATE_WHEN_VISIBLE (só desenha o que aparece na tela);
+	# o contrato é voltar a renderizar ao mostrar, não um modo específico.
 	player.show()
-	check(viewport.render_target_update_mode == SubViewport.UPDATE_ALWAYS, "Showing player must resume 3D rendering")
+	check(viewport.render_target_update_mode != SubViewport.UPDATE_DISABLED, "Showing player must resume 3D rendering")
 	player.hide()
 	check(viewport.render_target_update_mode == SubViewport.UPDATE_DISABLED, "Boarding-style hide must stop 3D rendering")
 	check(player.is_physics_processing() == physics_enabled, "Visibility toggle must not change physics")
@@ -34,12 +36,12 @@ func run() -> void:
 	stage.hide()
 	check(viewport.render_target_update_mode == SubViewport.UPDATE_DISABLED, "Hidden ancestor must stop player rendering")
 	stage.show()
-	check(viewport.render_target_update_mode == SubViewport.UPDATE_ALWAYS, "Showing ancestor must restore rendering")
+	check(viewport.render_target_update_mode != SubViewport.UPDATE_DISABLED, "Showing ancestor must restore rendering")
 	# Death/arrest show the player, disable physics, then animate via Tween.
 	player.hide()
 	player.set_physics_process(false)
 	player.show()
-	check(viewport.render_target_update_mode == SubViewport.UPDATE_ALWAYS, "Death/arrest display must not depend on physics")
+	check(viewport.render_target_update_mode != SubViewport.UPDATE_DISABLED, "Death/arrest display must not depend on physics")
 	var model: Node3D = player.get("model_root")
 	var fall := player.create_tween()
 	fall.tween_property(model, "rotation:x", 0.5, 0.05)

@@ -65,10 +65,17 @@ func run() -> void:
 	await picture("01_cais", Vector2(3540,1450))
 	await create_timer(1.2).timeout
 	await picture("02_cais_movimento", Vector2(3540,1450))
-	await visit(Vector2(1750,1070))
+	var fountain_position: Vector2 = world.get_node("District/FountainWater").global_position
+	await visit(fountain_position + Vector2(0,65))
 	check(details.beds.fountain.playing and details.gains.fountain > 0.9, "Fonte toca ao se aproximar")
-	await picture("03_fonte", Vector2(1750,1005), 2.0)
+	check(details.beds.fountain.volume_db <= -26.0, "Fonte tem teto discreto mesmo junto à borda")
+	await picture("03_fonte", fountain_position, 2.0)
 	await visit(Vector2(1700,1130))
+	# O HarborSoundscape faz fade exponencial (constante 0,7 s) e só para o leito
+	# abaixo de 0,001: leva ~3 s, e 1,8 s fixos cortavam a transição no meio.
+	var waves_deadline := Time.get_ticks_msec() + 6000
+	while soundscape.beds.water.playing and Time.get_ticks_msec() < waves_deadline:
+		await process_frame
 	check(not soundscape.beds.water.playing, "Ondas param ao se afastar do mar")
 	await visit(Vector2(5900,-3800))
 	var continuous = world.get_node("ContinuousWorld")
@@ -92,7 +99,18 @@ func run() -> void:
 	await create_timer(1.8).timeout
 	check(not details.beds.lake.playing and not soundscape.beds.water.playing, "Abrigo silencia água externa")
 	player.remove_meta("mountain_interior")
-	await visit(mountain.to_global(Vector2(7100,-20)))
+	# Mede sobre o curso desenhado do riacho, não numa coordenada fixa: a geometria
+	# da serra mudou e (7100,-20) ficou a ~150 px da margem (ganho 0,69).
+	var stream_probe: Vector2 = mountain.to_global(Vector2(7100,-20))
+	var best_distance := INF
+	for zone in get_nodes_in_group("water_sound_zone"):
+		if not zone is Line2D or zone.get_meta("water_sound_kind", zone.get("sound_kind")) != "stream": continue
+		for i in zone.points.size() - 1:
+			var closest := Geometry2D.get_closest_point_to_segment(stream_probe, zone.to_global(zone.points[i]), zone.to_global(zone.points[i + 1]))
+			if closest.distance_to(stream_probe) < best_distance:
+				best_distance = closest.distance_to(stream_probe)
+				stream_probe = closest
+	await visit(stream_probe)
 	check(details.beds.stream.playing and details.gains.stream > 0.8, "Riacho usa correnteza perto do curso real")
 	await picture("05_corredeira", mountain.to_global(Vector2(7060,50)), 1.3)
 	await visit(Vector2(1700,1130))

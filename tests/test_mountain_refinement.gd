@@ -33,15 +33,34 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	check(scene.storm_manager.visible, "snow returns outside")
-	var expedition = scene.get_node("MountainExpedition")
-	var key := InputEventKey.new()
-	key.physical_keycode = KEY_F
+	var door = scene.get_node("MountainExpedition/SnowOutfitters/OutfittersEntrance")
+	actor.global_position = door.global_position + Vector2(0,24)
+	for i in 4: await physics_frame
+	check(door.request_interaction(actor), "native outfitters entrance accepts player")
+	await create_timer(.8).timeout
+	var room = scene.interior_manager._interiors[&"mountain_outfitters"]
+	check(room.contains_point(actor.global_position), "single mountain door reaches clothing shop")
+	check(not room._at_counter(actor), "arrival and exit do not open the clothing menu")
+	actor.money = 5000
+	actor.global_position = room.global_position
+	var key := InputEventAction.new()
+	key.action = "interact"
 	key.pressed = true
-	actor.money = 1000
-	expedition._unhandled_key_input(key)
-	check(actor.money == 350 and actor.mountain_thermal_coat, "coat purchase exact charge")
-	expedition._unhandled_key_input(key)
-	check(actor.money == 350, "coat cannot charge twice")
+	room._unhandled_input(key)
+	check(room.shop.is_active and actor.is_in_dialogue, "counter opens shop and holds movement")
+	room.shop._on_action_pressed()
+	check(actor.money == 3200 and actor.mountain_thermal_coat, "coat purchase exact catalog charge")
+	room.shop._on_action_pressed()
+	check(actor.money == 3200, "coat cannot charge twice")
+	await process_frame
+	check(not scene.cold_hud._panel.visible, "cold HUD stays behind clothing modal")
+	room.shop.close_store()
+	check(not actor.is_in_dialogue, "closing store releases movement")
+	actor.global_position=room.exit_door.global_position+Vector2(0,-20)
+	for i in 4: await physics_frame
+	check(room.exit_door.request_interaction(actor), "native shop exit accepts player")
+	await create_timer(.8).timeout
+	check(not actor.has_meta("mountain_interior"), "shop exit clears shelter identity")
 	var saved: Dictionary = actor.serialize()
 	actor.mountain_thermal_coat = false
 	actor.restore(saved)

@@ -49,11 +49,18 @@ func _run_test() -> void:
 	root.add_child(diner)
 	await process_frame
 
-	p1.global_position = Vector2(250, 200) # Na calcada em frente ao restaurante
+	p1.set_physics_process(false)
+	p2.set_physics_process(false)
+	# The facade ends at y=199; a body of radius 11 at y=200 overlaps it.
+	p1.global_position = Vector2(250, 200)
+	p1._try_start_poi_visit()
+	assert(not p1.is_visiting, "Nao iniciar visita de um ponto sobreposto a parede")
+	p1.global_position = Vector2(250, 214) # Corpo inteiro fora da fachada.
 	p1.visit_cooldown = 0.0
 	p1._update_ambient_life(0.01)
 
 	assert(p1.is_visiting, "Pedestre deve ter iniciado a rotina de visitar o restaurante")
+	assert(p1.movement_navigation.clear_segment(p1, p1._visiting_door_pos, p1._visiting_door_pos), "Ponto da visita comporta o corpo fora da parede")
 	print("  ✓ Pedestre escolheu visitar o restaurante e foi em direcao a porta!")
 
 	# Simular chegada na porta

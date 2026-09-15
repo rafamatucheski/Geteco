@@ -102,7 +102,9 @@ func _post_patrol() -> void:
 		get_tree().current_scene.add_child(officer)
 		officers.append(officer)
 
-func _on_shot() -> void: _on_crime(1)
+func _on_shot() -> void:
+	if is_instance_valid(room.actor) and room.actor.get_world_2d() == room.get_world_2d():
+		_on_crime(1)
 func _on_crime(severity: int) -> void:
 	if severity<=0 or _crime_guard or not closed or not is_instance_valid(patrol): return
 	var actor: Node2D=get_node("/root/WantedManager").get_pursuit_target()

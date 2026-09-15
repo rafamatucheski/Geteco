@@ -1,0 +1,12 @@
+# Acabamento do pátio da serraria — 13/09/2026
+
+As quatro faixas planas foram substituídas por madeira serrada baixa com bordas, veios, nós e cintas. A serragem usa lascas dispersas com densidade e transparência variáveis. `SawmillYardDetails.gd` gera comandos de desenho uma vez, sem processamento por frame, luzes ou SubViewports adicionais. Os contornos que desenham as tábuas também originam suas colisões; serragem permanece piso transitável.
+
+A caminhonete da serraria passou de (120,50) para (120,30), deslocando veículo e colisão juntos e liberando espaço junto ao lenhador.
+
+Validação visual: HarborGame renderizado, câmera na serraria, 1280×720, Mobile / RTX 4060 Laptop. Evidências antes/depois em `D:/geteco/artifacts/sawmill-props-0913/`. Parse do builder aprovado. `tests/test_sawmill_yard.gd` verifica varredura de corpos reais de jogador e morador contra os quatro lados, circulação frontal e posições de corte próximas à caminhonete.
+
+Performance exploratória: seed 912, tempo limpo, câmera fixa, 120 frames de aquecimento e 30 segundos de amostragem por versão, VSync desligado, limite 60 FPS. Antes: 39,23 FPS; p50/p95/p99 23,86/38,10/51,58 ms. Depois: 47,94 FPS; 18,19/33,09/48,01 ms. Máximos 239,55/226,29 ms; frames >33,3 ms 153/69; >66,7 ms 2/3. Outros processos Godot estavam abertos: os valores não demonstram ganho causado pelo ajuste nem certificam performance. A meta de 60 FPS permanece pendente. Foram registrados avisos de câmera e vazamentos de recursos no encerramento da cena completa.
+
+A primeira execução da fixture começou antes da ativação da região: os bloqueios estavam suspensos pelo streaming. A fixture agora espera a ativação perto do pátio. Em seguida, a posição de corte esquerda revelou contato com a extremidade das tábuas; seu comprimento foi reduzido de 68 para 54 pixels e a origem deslocada 4 pixels à esquerda, mantendo espaço para o corpo do lenhador. A checagem de circulação também passou a estacionar o jogador fora do trajeto do NPC, evitando que um ator de teste bloqueasse o outro. O ajuste final mantém a quantidade de objetos e comandos; o comparativo acima precede esse ajuste de geometria.
+`nResultado final: teste renderizado encerrou com código 0 e 12 verificações aprovadas (8 varreduras, 2 percursos livres, 2 lados de corte). Captura final.png inspecionada. A cena também registrou erro externo de metadata em InteriorActorPresentation.gd:29 por MountainProjectedExterior.gd:31; isso não certifica os demais exteriores/interiores.

@@ -39,9 +39,17 @@ func _ready() -> void:
 	_lane_motion_initialized = true
 	_lane_motion_speed = 0.0
 
-func enter_vehicle(_actor: CharacterBody2D) -> void:
-	# Scheduled passenger service, not a stealable vehicle in this first slice.
-	pass
+func enter_vehicle(actor: CharacterBody2D) -> void:
+	var was_detached := _detached_from_lane
+	super.enter_vehicle(actor)
+	if not is_driven_by_player or was_detached: return
+	dwelling = false
+	stop_armed = false
+	doors = 0.0
+	body_model.set_platform_doors(0.0)
+	_body_render_visible = false
+	if is_instance_valid(station) and station.has_method("bus_stolen"):
+		station.bus_stolen()
 
 func advance_on_lane(delta: float) -> void:
 	var follow := get_parent() as PathFollow2D
@@ -118,4 +126,32 @@ func door_position() -> Vector2:
 	return to_global(Vector2(37, -30))
 
 
+func _lane_pedestrian_blocks(follow: PathFollow2D, pedestrian: Node, _must_clear_rail_crossing: bool) -> bool:
+	# Side rays extend beyond the bus in a turn and can hit a stationary resident
+	# on the sidewalk. Stop for the actual swept lane hull and a crossing person's
+	# predicted movement, including their collision radius, instead of the ray alone.
+	var path := follow.get_parent() as Path2D
+	if path != null and bool(path.get_meta("curved_pedestrian_corridor", false)):
+		return super._lane_pedestrian_blocks(follow, pedestrian, _must_clear_rail_crossing)
+	if path == null or path.curve == null or not pedestrian is Node2D:
+		return true
+	var radius := 11.0
+	for part in pedestrian.get_children():
+		if part is CollisionShape2D and part.shape != null and not part.disabled:
+			var extent: Vector2 = part.shape.get_rect().size * part.global_scale.abs() * 0.5
+			radius = maxf(radius, maxf(extent.x, extent.y))
+	var half: Vector2 = collision.shape.size * 0.5 + Vector2.ONE * (radius + 2.0)
+	var future: Vector2 = pedestrian.global_position
+	if pedestrian is CharacterBody2D:
+		future += pedestrian.velocity * 0.65
+	var end := minf(path.curve.get_baked_length(), follow.progress + maxf(95.0, target_length * 1.1))
+	var samples := maxi(1, ceili((end - follow.progress) / 6.0))
+	for index in range(samples + 1):
+		var pose := path.global_transform * path.curve.sample_baked_with_rotation(lerpf(follow.progress, end, float(index) / samples), true) * collision.transform
+		var here: Vector2 = pose.affine_inverse() * pedestrian.global_position
+		var predicted := pose.affine_inverse() * future
+		var swept := Rect2(here, Vector2.ZERO).expand(predicted).grow(0.01)
+		if Rect2(-half, half * 2.0).intersects(swept):
+			return true
+	return false
 

@@ -16,21 +16,25 @@ func walk(point: Vector3) -> void:
 	for i in 240:
 		var delta := target - player.global_position
 		if delta.length() < 2.5: break
-		for action in ["ui_left", "ui_right", "ui_up", "ui_down"]: Input.action_release(action)
+		for action in ["move_left", "move_right", "move_up", "move_down"]: Input.action_release(action)
 		var direction := delta.normalized()
-		Input.action_press("ui_right" if direction.x > 0 else "ui_left", absf(direction.x))
-		Input.action_press("ui_down" if direction.y > 0 else "ui_up", absf(direction.y))
+		Input.action_press("move_right" if direction.x > 0 else "move_left", absf(direction.x))
+		Input.action_press("move_down" if direction.y > 0 else "move_up", absf(direction.y))
 		await physics_frame
-	for action in ["ui_left", "ui_right", "ui_up", "ui_down"]: Input.action_release(action)
+	for action in ["move_left", "move_right", "move_up", "move_down"]: Input.action_release(action)
 	await physics_frame
 	check(player.global_position.distance_to(target) < 4, "Dante walks to " + str(point) + " actual=" + str(garage.to_local(player.global_position)))
 
 func run() -> void:
-	create_timer(100).timeout.connect(func(): quit(2))
+	create_timer(180).timeout.connect(func(): quit(2))
+	var saves := root.get_node("SaveManager")
+	saves.set("_save_dir", OS.get_temp_dir().path_join("workshop_review_%d" % Time.get_ticks_usec()) + "/")
+	saves.set("_save_directory_ready", false)
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
-	for i in 30: await process_frame
+	await scene_changed
+	while not current_scene.gameplay_ready: await process_frame
 	var world := current_scene
 	var interiors: Node = world.get_node("Interiors")
 	garage = interiors.garage_interior
@@ -43,13 +47,20 @@ func run() -> void:
 	check(player.get_node("Camera").has_meta("compact_interior"), "Gameplay camera frames compact workshop")
 	var camera: Camera2D = player.get_node("Camera")
 	var screen := camera.get_viewport_rect().size
-	var previous_zoom := minf(screen.x / garage.room_size.x, screen.y / garage.room_size.y) * 0.88
-	check(is_equal_approx(camera.zoom.x, previous_zoom * 1.2), "Workshop camera is exactly 20 percent closer")
+	var visible_rect := Rect2(camera.global_position - screen / camera.zoom * .5, screen / camera.zoom)
+	check(visible_rect.encloses(garage.get_camera_rect()), "Whole workshop and visible threshold fit the camera")
+	check(garage.showroom.display_car != null, "Workshop owns the detailed Monaliza model")
+	check(garage.showroom.display_car.visible or garage.showroom.display_car_body.collision_layer == 0, "Hidden delivery car never blocks the service bay")
+	if DisplayServer.get_name() != "headless":
+		for frame in 20: await process_frame
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("D:/geteco/artifacts/workshop-entry.png")
 	check(garage.diagnostic_area.position.distance_to(garage.workshop_point(garage.showroom.model.get_interaction_points().workbench)) < 0.01, "Diagnostic interaction follows the repositioned bench")
 	await walk(Vector3(1.35, 0, 1.5))
 	check(not garage.jager_npc.is_player_nearby, "Glass partition cannot trigger Maciota dialogue")
-	await walk(Vector3(3.2, 0, 1.5))
-	await walk(Vector3(5.5, 0, 1.5))
+	await walk(Vector3(3.0, 0, 1.5))
+	await walk(Vector3(3.0, 0, .0))
+	await walk(Vector3(5.5, 0, .0))
 	await walk(Vector3(5.5, 0, -0.2))
 	await walk(Vector3(4.5, 0, -0.2))
 	check(garage.jager_npc.is_player_nearby, "Real actor reaches Maciota desk interaction")
@@ -72,20 +83,25 @@ func run() -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("D:/geteco/workshop-integrated-review.png")
 	await walk(Vector3(5.5, 0, -0.2))
-	await walk(Vector3(5.5, 0, 1.5))
-	await walk(Vector3(1.35, 0, 1.5))
-	await walk(Vector3(1.35, 0, 3.55))
-	await walk(Vector3(1.35, 0, 1.5))
-	await walk(Vector3(5.25, 0, 1.5))
+	await walk(Vector3(5.5, 0, .0))
+	await walk(Vector3(3.0, 0, .0))
+	await walk(Vector3(3.0, 0, 1.5))
+	await walk(Vector3(3.0, 0, 3.55))
 	await walk(Vector3(5.25, 0, 3.55))
 	check(not garage.diagnostic_active and not garage.jager_npc.is_player_nearby, "Mission board approach does not trigger other stations")
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("D:/geteco/workshop-board-review.png")
-	await walk(Vector3(5.25, 0, 1.5))
+	await walk(Vector3(3.0, 0, 3.55))
+	await walk(Vector3(3.0, 0, 1.5))
 	await walk(Vector3(1.35, 0, 1.5))
-	await walk(Vector3(1.35, 0, 3.55))
-	interiors._on_exit_door_requested(garage.exit_door, player, &"", null, &"", &"harbor/District/Garage/Entrance")
+	await walk(Vector3(1.35, 0, 3.0))
+	# Real movement into the gate sensor must leave without pressing E.
+	Input.action_press("move_down")
+	for tick in 100:
+		await physics_frame
+		if player.global_position.distance_to(garage.global_position) > 1500: break
+	Input.action_release("move_down")
 	check(not player.get_node("Camera").has_meta("compact_interior"), "Exterior camera restored on exit")
 	check(player.global_position.distance_to(garage.global_position) > 1500, "Pedestrian returns to Harbor")
 	player.remove_meta("westgate_layout_checked")

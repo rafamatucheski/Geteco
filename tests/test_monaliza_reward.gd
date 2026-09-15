@@ -35,6 +35,8 @@ func _run() -> void:
 	var player: Node2D = world.get_node("Player")
 	var car: Node2D = manager.car
 	var garage: Node2D = manager.garage
+	check(player.active_weapon_id == "fists" and player.weapon_inventory.values().count(true) == 1, "new game starts unarmed with no owned weapons")
+	check(player.weapon_ammo.pistol == {"clip":0,"reserve":0}, "new game has no starter pistol ammunition")
 	player.set_physics_process(false)
 	player.global_position = car.global_position+Vector2(50,0)
 	car.enter_vehicle(player)
@@ -47,6 +49,10 @@ func _run() -> void:
 	player.global_position = garage.jager_npc.global_position+Vector2(0,30)
 	var cash: int = player.money
 	check(world.campaign_controller.interact_with_objective(),"actual first mission hand-in succeeds")
+	check(manager.delivery_in_progress and not car.unlocked, "keys stay with mechanic during arrival")
+	while manager.delivery_in_progress:
+		await process_frame
+	check(garage.showroom.mechanic_working, "mechanic reaches workbench after handoff")
 	check(car.unlocked and car.get_instance_id()==id and player.money==cash+150,"same display car unlocked plus original cash reward")
 	var bridge: Node = world.get_node("CobraCampaign")
 	check(bridge._messages.size()>=1,"Maciota car dialogue queued after brother clue")
@@ -56,6 +62,12 @@ func _run() -> void:
 	await key(KEY_T)
 	check(manager.panel.visible and car.trunk_open,"trunk opens on foot behind personal vehicle")
 	check(player.personal_loadout_enabled and player.world_pickups_collected.has("monaliza_starter_case"),"surprise grants loadout and unique case flag")
+	check(player.weapon_inventory.values().count(true) == 2 and player.weapon_inventory.pistol, "first trunk grants only the pistol")
+	check(player.weapon_ammo.pistol == {"clip":12,"reserve":60}, "starter pistol is loaded and has reserve ammunition")
+	check(manager.pending_loadout == {"curta":"pistol","longa":"","corpo":"","granada":""}, "shotgun, melee and grenade spaces start empty")
+	check(manager.live_view.slot_models.longa.get_child_count() == 0 and manager.live_view.slot_models.granada.get_child_count() == 0, "empty shotgun and grenade spaces contain no weapon geometry")
+	check(manager.first_trunk_hint._box.visible and manager.first_trunk_hint.layer > manager.panel.get_parent().layer, "first trunk tip appears above the open trunk")
+	check(manager.first_trunk_hint._box.anchor_left == 0.5 and manager.first_trunk_hint._box.anchor_top == 0.5, "first trunk tip is centered on screen")
 	check(not paused and manager.live_view.live_world.world_2d == world.get_viewport().world_2d, "trunk projects the live simulation without pausing")
 	check(not manager.live_view.mirrors.has(player) and manager.live_view.hand != null, "close-up shows handling hands without Dante's body")
 	check(manager.live_view.weapons.find_children("*", "Sprite3D", true, false).is_empty(), "arsenal uses mesh geometry, never flat weapon sprites")
@@ -104,15 +116,19 @@ func _run() -> void:
 	view._gui_input(click)
 	check(manager.weapon_stats.visible and manager.weapon_stats.text.contains("PISTOLA"), "clicking the 3D weapon displays its catalog stats")
 	check(view.selection_audio.playing, "weapon inspection plays selection sound")
-	check(player.personal_loadout.longa == "shotgun", "inspection does not change the equipped loadout")
+	check(player.personal_loadout.longa == "", "inspection does not fill the empty long-gun space")
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("D:/geteco/artifacts/trunk-inspect-review.png")
-	var reserve: int = player.weapon_ammo.shotgun.reserve
+	var reserve: int = player.weapon_ammo.pistol.reserve
 	await key(KEY_ESCAPE)
 	check(not manager.panel.visible and not paused and not player.is_control_disabled,"Escape closes trunk and releases controls without pausing")
 	manager.open_panel()
-	check(player.weapon_ammo.shotgun.reserve==reserve,"reopening cannot duplicate ammunition")
+	check(player.weapon_ammo.pistol.reserve==reserve and manager.first_trunk_hint == null,"reopening cannot duplicate ammunition or replay the introduction")
+	manager.close_panel()
+	player.add_weapon_loot(&"shotgun",16)
+	check(player.personal_loadout.longa == "shotgun", "a later weapon pickup fills the empty long-gun slot")
+	manager.open_panel()
 	await create_timer(1.2).timeout
 	player.weapon_inventory.ak47 = true
 	check(manager.set_slot("longa","ak47"),"long gun can be changed in personal trunk")
@@ -127,7 +143,7 @@ func _run() -> void:
 	check(player.personal_loadout.longa == "shotgun", "cancel discards pending loadout")
 	manager.open_panel()
 	manager.set_slot("longa", "ak47")
-	var selection: OptionButton = manager.rows.get_child(1).get_child(1)
+	var selection: OptionButton = manager.rows.get_child(1).get_child(0).get_child(2)
 	for index in selection.item_count:
 		if selection.get_item_metadata(index)=="shotgun": selection.item_selected.emit(index); break
 	check(player.personal_loadout.longa=="shotgun","actual long-gun selector updates the correct slot")

@@ -6,6 +6,9 @@ extends Node3D
 var materials: Dictionary = {}
 var paint: StandardMaterial3D
 
+func is_open_top() -> bool:
+	return false
+
 func _ready() -> void:
 	if get_child_count() == 0: build()
 
@@ -94,6 +97,8 @@ func build_shell() -> void:
 		for i in 16:
 			var x0 := lerpf(-1, 1, i / 16.0)
 			var x1 := lerpf(-1, 1, (i + 1) / 16.0)
+			if is_open_top() and z0 > -0.73 and z1 < 0.95 and x0 >= -0.75 and x1 <= 0.75:
+				continue
 			var a := Vector3(x0 * width_at(z0), top_at(x0,z0), z0)
 			var b := Vector3(x0 * width_at(z1), top_at(x0,z1), z1)
 			var c := Vector3(x1 * width_at(z1), top_at(x1,z1), z1)
@@ -137,24 +142,27 @@ func build() -> void:
 				points.append(Vector3(u * 0.60, 1.25 + 0.075 * (1-u*u) + 0.025 * sin(ij.y / 12 * PI), z))
 			for k in [0,2,1,0,3,2]: roof_tool.add_vertex(points[k])
 	roof_tool.generate_normals()
-	mesh_node(roof_tool.commit(),Vector3.ZERO,paint)
+	if not is_open_top(): mesh_node(roof_tool.commit(),Vector3.ZERO,paint)
 	for i in 16:
 		var u0 := -1.0 + i / 8.0
 		var u1 := -1.0 + (i + 1) / 8.0
 		var y0 := 1.25 + 0.075 * (1-u0*u0)
 		var y1 := 1.25 + 0.075 * (1-u1*u1)
 		surface([Vector3(u0*0.70,0.82,-0.88),Vector3(u1*0.70,0.82,-0.88),Vector3(u1*0.60,y1,-0.30),Vector3(u0*0.60,y0,-0.30)],glass)
-		surface([Vector3(u0*0.60,y0,0.64),Vector3(u1*0.60,y1,0.64),Vector3(u1*0.73,0.82,1.42),Vector3(u0*0.73,0.82,1.42)],glass)
+		if not is_open_top(): surface([Vector3(u0*0.60,y0,0.64),Vector3(u1*0.60,y1,0.64),Vector3(u1*0.73,0.82,1.42),Vector3(u0*0.73,0.82,1.42)],glass)
 	for side in [-1.0,1.0]:
 		var lower_front := Vector3(side*0.75,0.81,-0.73)
 		var upper_front := Vector3(side*0.60,1.25,-0.30)
 		var upper_rear := Vector3(side*0.60,1.25,0.64)
 		var lower_rear := Vector3(side*0.78,0.82,1.17)
-		surface([lower_front,upper_front,upper_rear,lower_rear],glass)
-		tube([lower_front,upper_front,upper_rear,lower_rear,lower_front],0.025,paint)
-		tube([Vector3(side*0.60,1.25,0.24),Vector3(side*0.765,0.815,0.32)],0.020,trim)
-		# Painted rear haunch and C pillar, tapering toward the engine cover.
-		surface([upper_rear,lower_rear,Vector3(side*0.86,0.85,1.55),Vector3(side*0.73,0.82,1.42)],paint)
+		if not is_open_top():
+			surface([lower_front,upper_front,upper_rear,lower_rear],glass)
+			tube([lower_front,upper_front,upper_rear,lower_rear,lower_front],0.025,paint)
+			tube([Vector3(side*0.60,1.25,0.24),Vector3(side*0.765,0.815,0.32)],0.020,trim)
+			# Painted rear haunch and C pillar, tapering toward the engine cover.
+			surface([upper_rear,lower_rear,Vector3(side*0.86,0.85,1.55),Vector3(side*0.73,0.82,1.42)],paint)
+		else:
+			tube([lower_front, upper_front], 0.025, paint)
 		# Door shut line and flush handle.
 		tube([Vector3(side*0.892,0.75,-0.70),Vector3(side*0.862,0.34,-0.57),Vector3(side*0.882,0.34,0.70),Vector3(side*0.912,0.76,0.83)],0.005,trim)
 		box(Vector3(side*0.899,0.70,0.52),Vector3(0.023,0.025,0.15),trim)

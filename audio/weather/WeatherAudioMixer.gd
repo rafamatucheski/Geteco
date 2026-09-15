@@ -1,6 +1,6 @@
 extends Node
 ## Three constant voices, authored offline. No PCM generation or transient Tweens.
-## A private bus filters only this weather instance, then sends to the user's SFX.
+## A private bus filters only this weather instance, then sends to the user's Ambient.
 const LOOPS := [preload("res://audio/weather/rain_bed.wav"), preload("res://audio/weather/rain_drops.wav"), preload("res://audio/weather/rain_sheets.wav")]
 const THUNDER := [preload("res://audio/weather/thunder_0.wav"), preload("res://audio/weather/thunder_1.wav")]
 # Rain is a background bed, including storms: retain space for voices/engines/shots.
@@ -10,6 +10,7 @@ var thunder: AudioStreamPlayer
 var target_intensity := 0.0
 var intensity := 0.0
 var sheltered := false
+var interior_silence := false
 var shelter_mix := 0.0
 var dialogue_focused := false
 var focus_gain := 1.0
@@ -23,7 +24,7 @@ func _ready() -> void:
 	AudioServer.add_bus()
 	var index := AudioServer.bus_count - 1
 	AudioServer.set_bus_name(index, bus_name)
-	AudioServer.set_bus_send(index, &"SFX" if AudioServer.get_bus_index(&"SFX") >= 0 else &"Master")
+	AudioServer.set_bus_send(index, &"Ambient" if AudioServer.get_bus_index(&"Ambient") >= 0 else &"Master")
 	low_pass = AudioEffectLowPassFilter.new()
 	low_pass.cutoff_hz = 18000.0
 	AudioServer.add_bus_effect(index, low_pass)
@@ -49,6 +50,12 @@ func set_conditions(amount: float, inside: bool) -> void:
 	target_intensity = clampf(amount, 0.0, 1.0)
 	sheltered = inside
 
+func set_interior_silence(active: bool) -> void:
+	interior_silence = active
+	AudioServer.set_bus_mute(AudioServer.get_bus_index(bus_name), active)
+	if active:
+		thunder.stop()
+
 func set_dialogue_focus(active: bool) -> void:
 	dialogue_focused = active
 
@@ -71,6 +78,8 @@ func _process(delta: float) -> void:
 	thunder.volume_db = lerpf(-16.0, -28.0, shelter_mix) + linear_to_db(focus_gain)
 
 func play_thunder() -> void:
+	if interior_silence:
+		return
 	thunder.stream = THUNDER[_rng.randi_range(0, THUNDER.size() - 1)]
 	thunder.pitch_scale = _rng.randf_range(0.94, 1.04)
 	thunder.play()

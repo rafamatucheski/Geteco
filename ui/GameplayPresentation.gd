@@ -1,6 +1,7 @@
 extends Node
 ## Coordena apresentaÃ§Ã£o sem transferir lÃ³gica de missÃ£o para o HUD.
 const STYLE = preload("res://ui/GameStyle.gd")
+const INTERACTION_KEYCAP = preload("res://ui/InteractionKeycap.gd")
 var _elapsed := 0.0
 var _surfaces: Array[Node] = []
 var _labels: Array[Label] = []
@@ -16,7 +17,16 @@ func _ready() -> void:
 	_collect(world)
 	for label in world.find_children("*","Label",true,false): _labels.append(label)
 	_apply_style()
+	get_tree().node_added.connect(_track_label)
 	get_node("/root/SettingsManager").interface_changed.connect(_apply_style)
+
+func _track_label(node: Node) -> void:
+	if node is Label and world.is_ancestor_of(node):
+		_labels.append(node)
+		node.tree_exiting.connect(_untrack_label.bind(node), CONNECT_ONE_SHOT)
+
+func _untrack_label(label: Label) -> void:
+	_labels.erase(label)
 
 func _collect(node: Node) -> void:
 	if node is CanvasLayer:
@@ -47,28 +57,39 @@ func _process(delta: float) -> void:
 	if minimap != null:
 		if OS.has_feature("mobile") or "--touch-ui" in OS.get_cmdline_user_args():
 			minimap.panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-			minimap.panel.offset_left = -260
+			minimap.panel.offset_left = -44-minimap.PANEL_SIZE.x
 			minimap.panel.offset_right = -44
 			minimap.panel.offset_top = 190
-			minimap.panel.offset_bottom = 392
+			minimap.panel.offset_bottom = 190+minimap.PANEL_SIZE.y
 		minimap.panel.visible = not blocked and minimap.map_world_position(player).distance_to(player.global_position)<500
 	var arrival: Node = world.get_node_or_null("ArrivalMission")
 	var cobra: Node = world.get_node_or_null("CobraCampaign")
 	if hud != null and arrival != null and cobra != null:
-		var top: Control = hud.get_node("RootMargin/TopLeftPanel")
-		var y := maxf(150,top.get_global_rect().end.y+12)
+		var top: Control = hud.get_node("RootMargin/TopRightPanel")
+		var y := maxf(200,top.get_global_rect().end.y+12)
+		var journal: Control = cobra.get("_journal_button")
+		var achievement: Control = hud.get("achievement_panel")
+		if is_instance_valid(achievement) and achievement.is_visible_in_tree():
+			y = maxf(y,achievement.get_global_rect().end.y+12)
+		if is_instance_valid(journal) and journal.is_visible_in_tree():
+			journal.position.y = y
+			y = journal.get_global_rect().end.y+12
 		for card in [arrival.get("_obj_card"),cobra.get("_objective_card")]:
-			if is_instance_valid(card): card.position.y = y
+			if is_instance_valid(card):
+				card.position = Vector2(get_viewport().get_visible_rect().size.x-24-card.size.x,y)
 		var objective_bottom := y
 		for card in [arrival.get("_obj_card"),cobra.get("_objective_card")]:
 			if is_instance_valid(card) and card.visible: objective_bottom = maxf(objective_bottom,card.position.y+card.size.y+12)
+		if minimap != null and (OS.has_feature("mobile") or "--touch-ui" in OS.get_cmdline_user_args()):
+			minimap.panel.position.y = maxf(190,objective_bottom)
 		var stream: Node = world.get_node_or_null("ContinuousWorld")
 		if stream != null and stream.ready_for_crossing:
 			if not _mountain_styled:
 				_mountain_styled = true
 				_apply_style.call_deferred()
 			var cold: Node = stream.mountain.get("cold_hud")
-			if cold != null and cold.has_method("set_stack_top"): cold.set_stack_top(objective_bottom)
+			if cold != null and cold.has_method("set_stack_top"):
+				cold.set_stack_top(24.0)
 	var tutorials: Node = world.get_node_or_null("GameplayTutorials")
 	if tutorials != null:
 		tutorials.presenter.visible = not blocked and get_node("/root/SettingsManager").tutorial_hints
@@ -98,3 +119,4 @@ func _update_hints() -> void:
 		label.set_meta("hint_source",source)
 		label.set_meta("hint_rendered",result)
 		label.text = result
+		INTERACTION_KEYCAP.sync(label, source.strip_edges() == "E")

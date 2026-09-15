@@ -14,6 +14,8 @@ extends Node3D
 ## - Suporte de rifles decorativos; as armas coletáveis ficam no piso livre
 
 var materials: Dictionary = {}
+# Set while building each physical object; collision is derived from its meshes.
+var _solid_id: StringName = &""
 
 func _ready() -> void:
 	_setup_environment_and_lights()
@@ -66,6 +68,7 @@ func _box(pos: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
 	mi.material_override = material
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(mi)
+	mi.set_meta("interior_solid_id", _solid_id)
 	return mi
 
 func _box_child(p: Node3D, pos: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
@@ -77,6 +80,7 @@ func _box_child(p: Node3D, pos: Vector3, size: Vector3, material: Material) -> M
 	mi.material_override = material
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	p.add_child(mi)
+	mi.set_meta("interior_solid_id", _solid_id)
 	return mi
 
 func _cyl(pos: Vector3, radius: float, height: float, material: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
@@ -92,6 +96,7 @@ func _cyl(pos: Vector3, radius: float, height: float, material: Material, rot_de
 	mi.material_override = material
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(mi)
+	mi.set_meta("interior_solid_id", _solid_id)
 	return mi
 
 func _torus(pos: Vector3, inner_rad: float, outer_rad: float, material: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
@@ -107,6 +112,7 @@ func _torus(pos: Vector3, inner_rad: float, outer_rad: float, material: Material
 	mi.material_override = material
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	add_child(mi)
+	mi.set_meta("interior_solid_id", _solid_id)
 	return mi
 
 func _setup_environment_and_lights() -> void:
@@ -114,7 +120,7 @@ func _setup_environment_and_lights() -> void:
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-45.0, 35.0, 0.0)
 	sun.light_color = Color(0.85, 0.92, 1.0)
-	sun.light_energy = 0.7
+	sun.light_energy = 0.48
 	sun.shadow_enabled = true
 	add_child(sun)
 
@@ -226,6 +232,7 @@ func _build_monumental_fireplace() -> void:
 	var mat_brass := _mat("brass", Color("#d4af37"), 0.8, 0.3)
 
 	# Chaminé e parede de pedras de rio
+	_solid_id = &"Fireplace"
 	_box(Vector3(0.0, 1.8, -4.2), Vector3(3.2, 3.6, 1.0), mat_stone)
 	_box(Vector3(0.0, 0.15, -3.9), Vector3(3.6, 0.3, 1.5), mat_stone_hi)
 
@@ -255,11 +262,13 @@ func _build_monumental_fireplace() -> void:
 		_cyl(Vector3(0.4 + lx, 0.46, -3.8), 0.06, 0.45, _mat("birch", Color("#d5ccbb")), Vector3(0, 0, 90))
 
 	# Cesto de lenha de bétula
+	_solid_id = &"LogBasket"
 	_box(Vector3(1.9, 0.3, -3.8), Vector3(0.7, 0.5, 0.6), mat_iron)
 	for ly in [0.2, 0.35, 0.5]:
 		_cyl(Vector3(1.9, ly, -3.8), 0.07, 0.6, _mat("birch", Color("#d5ccbb")), Vector3(90, 0, 0))
 
 	# Galhadas de Cervo 3D na chaminé
+	_solid_id = &""
 	_box(Vector3(0.0, 2.5, -3.65), Vector3(0.35, 0.45, 0.08), mat_mantel)
 	_cyl(Vector3(0.0, 2.5, -3.55), 0.1, 0.15, _mat("deer_fur", Color("#7f5233")), Vector3(90, 0, 0))
 	_cyl(Vector3(-0.25, 2.8, -3.55), 0.03, 0.55, mat_bone, Vector3(0, 0, 30))
@@ -290,6 +299,7 @@ func _build_living_lounge() -> void:
 	_box(Vector3(0.0, 0.12, -2.7), Vector3(0.24, 0.18, 0.3), mat_bear_snout)
 
 	# 2. Sofá Chesterfield 3D em Couro Conhaque
+	_solid_id = &"Sofa"
 	var sofa_pos := Vector3(-2.2, 0.0, -1.2)
 	_box(sofa_pos + Vector3(0.0, 0.45, 0.0), Vector3(1.1, 0.4, 2.2), mat_leather)
 	_box(sofa_pos + Vector3(-0.45, 0.85, 0.0), Vector3(0.35, 0.8, 2.2), mat_leather_dark)
@@ -298,6 +308,7 @@ func _build_living_lounge() -> void:
 	_box(sofa_pos + Vector3(-0.42, 0.95, 0.0), Vector3(0.38, 0.45, 0.7), mat_plaid)
 
 	# 3. Poltrona de Couro Aconchegante
+	_solid_id = &"Armchair"
 	var chair_pos := Vector3(2.2, 0.0, -1.2)
 	_box(chair_pos + Vector3(0.0, 0.45, 0.0), Vector3(1.0, 0.4, 1.1), mat_leather)
 	_box(chair_pos + Vector3(0.42, 0.85, 0.0), Vector3(0.3, 0.8, 1.1), mat_leather_dark)
@@ -305,6 +316,7 @@ func _build_living_lounge() -> void:
 	_cyl(chair_pos + Vector3(0.0, 0.75, 0.55), 0.2, 1.0, mat_leather_dark, Vector3(0, 0, 90))
 
 	# 4. Mesa de Centro de Tronco Maciço com Pés
+	_solid_id = &"CoffeeTable"
 	var table_pos := Vector3(0.0, 0.0, -1.2)
 	for tx in [-0.65, 0.65]:
 		for tz in [-0.4, 0.4]:
@@ -327,18 +339,22 @@ func _build_hunter_kitchenette() -> void:
 	var mat_bread := _mat("bread", Color("#cda26f"), 0.0, 0.8)
 	var mat_amber_glass := _mat("amber_bottle", Color(0.9, 0.5, 0.1, 0.85), 0.1, 0.2)
 
+	_solid_id = &"Counter"
 	var bar_pos := Vector3(-4.8, 0.0, -2.8)
 	_box(bar_pos + Vector3(0.0, 0.55, 0.0), Vector3(2.4, 1.1, 0.9), mat_wood)
 	_box(bar_pos + Vector3(0.0, 1.12, 0.0), Vector3(2.5, 0.08, 1.0), mat_slate)
 
+	_solid_id = &"CounterReturn"
 	_box(bar_pos + Vector3(1.0, 0.55, 1.0), Vector3(0.9, 1.1, 1.1), mat_wood)
 	_box(bar_pos + Vector3(1.0, 1.12, 1.0), Vector3(1.0, 0.08, 1.2), mat_slate)
 
 	for bz in [-0.3, 0.7]:
+		_solid_id = StringName("BarStool" + str(bz))
 		var stool_pos := bar_pos + Vector3(1.8, 0.0, bz)
 		_cyl(stool_pos + Vector3(0, 0.4, 0), 0.04, 0.8, mat_wood)
 		_cyl(stool_pos + Vector3(0, 0.8, 0), 0.22, 0.1, mat_leather)
 
+	_solid_id = &""
 	_box(bar_pos + Vector3(-0.4, 1.18, 0.0), Vector3(0.5, 0.04, 0.35), mat_wood)
 	_cyl(bar_pos + Vector3(-0.4, 1.25, -0.05), 0.12, 0.26, mat_bread, Vector3(0, 0, 90))
 
@@ -365,6 +381,7 @@ func _build_rustic_bedroom() -> void:
 	var mat_chest := _mat("chest", Color("#2c1a0e"), 0.0, 0.6)
 	var mat_iron := _mat("iron", Color("#18181a"), 0.7, 0.35)
 
+	_solid_id = &"Bed"
 	var bed_pos := Vector3(-4.8, 0.0, 1.8)
 
 	for px in [-1.1, 1.1]:
@@ -381,6 +398,7 @@ func _build_rustic_bedroom() -> void:
 	for tx in [-0.5, 0.5]:
 		_box(bed_pos + Vector3(tx, 0.88, -0.9), Vector3(0.65, 0.18, 0.45), mat_pillow)
 
+	_solid_id = &"BedsideTable"
 	var nightstand_pos := bed_pos + Vector3(1.6, 0.0, -1.0)
 	_box(nightstand_pos + Vector3(0.0, 0.35, 0.0), Vector3(0.7, 0.7, 0.6), mat_pine_log)
 	_cyl(nightstand_pos + Vector3(0.0, 0.85, 0.0), 0.15, 0.25, _mat("lamp_shade", Color(1.0, 0.9, 0.7), 0.0, 0.5, 1.5))
@@ -392,6 +410,7 @@ func _build_rustic_bedroom() -> void:
 	bed_light.omni_range = 3.5
 	add_child(bed_light)
 
+	_solid_id = &"Chest"
 	var chest_pos := bed_pos + Vector3(0.0, 0.0, 1.8)
 	_box(chest_pos + Vector3(0.0, 0.3, 0.0), Vector3(1.4, 0.6, 0.6), mat_chest)
 	_box(chest_pos + Vector3(-0.4, 0.3, 0.0), Vector3(0.06, 0.62, 0.62), mat_iron)
@@ -409,6 +428,7 @@ func _build_armory_and_ranger_desk() -> void:
 	var mat_ammo_green := _mat("ammo_green", Color("#334d28"), 0.3, 0.6)
 	var mat_banker_lamp := _mat("banker", Color("#196f3d"), 0.1, 0.3, 2.0)
 
+	_solid_id = &"RangerDesk"
 	var desk_pos := Vector3(4.8, 0.0, 0.2)
 	_box(desk_pos + Vector3(0.0, 0.45, 0.0), Vector3(1.2, 0.9, 2.2), mat_desk)
 
@@ -429,6 +449,7 @@ func _build_armory_and_ranger_desk() -> void:
 	_box(desk_pos + Vector3(0.1, 0.98, -0.5), Vector3(0.25, 0.1, 0.18), mat_radio)
 
 	# Suporte de Rifles de Caça 3D na Parede Leste (Armaria do Caçador)
+	_solid_id = &""
 	var gun_pos := Vector3(6.75, 2.0, -2.2)
 	_box(gun_pos, Vector3(0.12, 1.25, 1.8), mat_desk)
 	# Fundo em veludo nobre bordô
@@ -440,6 +461,7 @@ func _build_armory_and_ranger_desk() -> void:
 		_cyl(gun_pos + Vector3(-0.08, gy + 0.08, -0.05), 0.035, 0.35, mat_gun_steel, Vector3(90, 0, 0))
 
 
+	_solid_id = &"AmmoCrates"
 	_box(Vector3(5.5, 0.25, -2.8), Vector3(0.8, 0.5, 0.6), mat_ammo_green)
 	_box(Vector3(5.5, 0.6, -2.8), Vector3(0.6, 0.3, 0.5), mat_ammo_green)
 
@@ -453,13 +475,17 @@ func _build_mudroom_and_entry() -> void:
 	var mat_parka := _mat("parka_blue", Color("#1b4f72"), 0.0, 0.8)
 	var mat_rubber := _mat("rubber", Color("#1b1b1e"), 0.0, 0.9)
 
+	_solid_id = &""
 	var mud_pos := Vector3(0.0, 0.0, 3.8)
 	_box(mud_pos + Vector3(0, 0.01, 0), Vector3(2.2, 0.02, 1.2), mat_rubber)
+	_solid_id = &"EntryDoor"
 	_box(mud_pos + Vector3(0, 1.5, 0.7), Vector3(1.6, 2.8, 0.15), mat_wood)
 
+	_solid_id = &"SkiStand"
 	_cyl(Vector3(-2.4, 1.4, 4.2), 0.05, 2.6, mat_ski, Vector3(-12, 0, 8))
 	_cyl(Vector3(-2.2, 1.4, 4.2), 0.05, 2.6, mat_ski, Vector3(-12, 0, -8))
 
+	_solid_id = &"CoatStand"
 	var coat_pos := Vector3(2.2, 0.0, 4.2)
 	_cyl(coat_pos + Vector3(0, 1.1, 0), 0.05, 2.2, mat_wood)
 	_box(coat_pos + Vector3(0, 1.4, 0), Vector3(0.6, 1.0, 0.35), mat_parka)

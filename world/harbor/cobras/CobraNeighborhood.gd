@@ -3,6 +3,8 @@ extends Node2D
 
 ## Ashbend Court: authored residential enclave. Roads belong exclusively to
 ## UnifiedRoadNetwork2D; this provider never paints a second asphalt surface.
+const FINISH := preload("res://world/harbor/ExteriorFinish.gd")
+const SURFACE := preload("res://world/harbor/UrbanGround.gd")
 const HOUSE := preload("res://world/harbor/cobras/CobraResidence.gd")
 const LAMP := preload("res://StreetLamp.gd")
 const CENTER := Vector2(7700, 1700)
@@ -81,6 +83,7 @@ func _ready() -> void:
 		var p: Vector2 = feature.center
 		var trunk := StaticBody2D.new()
 		trunk.name = "TreeTrunk"
+		trunk.set_meta("impact_material", &"wood")
 		trunk.position = p
 		trunk.collision_layer = 1
 		trunk.collision_mask = 0
@@ -90,6 +93,12 @@ func _ready() -> void:
 		shape.shape = circle
 		trunk.add_child(shape)
 		add_child(trunk)
+		# A copa é pintada no chão do bairro; repete-a sobre quem passa atrás do
+		# tronco para o ator não parecer em pé sobre a árvore.
+		var canopy := Node2D.new()
+		canopy.name = "TreeCanopyOcclusion"
+		add_child(canopy)
+		preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach_drawn(canopy, feature.bounds, p.y, func(canvas: CanvasItem): _draw_landscape(feature, canvas))
 	for p in [Vector2(6890,1635),Vector2(7170,1765),Vector2(7450,1450),Vector2(7980,1450),Vector2(8010,1920),Vector2(7450,1960)]:
 		var lamp := LAMP.new()
 		lamp.position = p
@@ -97,11 +106,28 @@ func _ready() -> void:
 	_solid_line("EasternCoast", Vector2(8520,960), Vector2(8520,2410), 24.0)
 	for fence in FENCES:
 		_solid_line("YardFence",fence[0],fence[1],5.0)
+	# Reuse the neighborhood exclusion contract for every added trunk/canopy.
+	var planted := 0
+	for p in [Vector2(6830,1510),Vector2(6840,1910),Vector2(7110,1050),Vector2(7250,1190),Vector2(8110,1070),Vector2(8360,1280),Vector2(8400,2140),Vector2(8240,2310),Vector2(7330,2250),Vector2(7580,1515),Vector2(7860,1600),Vector2(7830,1840),Vector2(7720,1885)]:
+		var clear := _clear_for_prop(p,65)
+		for path in get_garden_paths():
+			for i in range(path.size()-1):
+				if Geometry2D.get_closest_point_to_segment(p,path[i],path[i+1]).distance_to(p)<65: clear=false
+		for feature in get_landscape_definitions():
+			if p.distance_to(feature.center)<feature.radius+55: clear=false
+		for fence in FENCES:
+			if Geometry2D.get_closest_point_to_segment(p,fence[0],fence[1]).distance_to(p)<70: clear=false
+		for bench in [Vector2(7630,1570),Vector2(7820,1740),Vector2(7600,1840)]:
+			if p.distance_to(bench+Vector2(18,4))<85: clear=false
+		if clear:
+			FINISH.tree(self,p,130+planted,1.15)
+			planted+=1
 	queue_redraw()
 
 func _solid_line(id: String, a: Vector2, b: Vector2, thickness: float) -> void:
 	var body := StaticBody2D.new()
 	body.name = id
+	if id == "YardFence": body.set_meta("impact_material", &"metal")
 	body.position = (a+b)*0.5
 	body.rotation = (b-a).angle()
 	body.collision_layer = 1
@@ -181,7 +207,7 @@ func get_spatial_audit() -> Array[String]:
 
 func _draw() -> void:
 	# Dry coastal soil, no luminous green blanket. Static batched drawing only.
-	draw_rect(VISUAL_LAND, Color("555643"))
+	FINISH.meadow(self,VISUAL_LAND,913,Color("64724f"))
 	draw_rect(Rect2(6510,1580,940,240),Color("777361"))
 	draw_polyline(PackedVector2Array(SECRET_DRIVE),Color("837d67"),64.0,true)
 	draw_line(Vector2(8500,960),Vector2(8500,2410),Color("9b9580"),34.0,true)
@@ -189,7 +215,8 @@ func _draw() -> void:
 		draw_polyline(PackedVector2Array(route),Color("99917b"),36.0,true)
 		draw_polyline(PackedVector2Array(route),Color("827e6c"),29.0,true)
 	for site in SITES:
-		draw_rect(site.rect.grow(26),Color("686750"))
+		SURFACE.paint(self,site.rect.grow(26),Color("8c866c"),"gravel")
+		FINISH.aggregate(self,site.rect.grow(26),int(site.rect.position.x))
 	for path in ENTRANCE_PATHS:
 		draw_polyline(PackedVector2Array(path),Color("9e9580"),20,true)
 	for fence in FENCES:
@@ -221,7 +248,13 @@ func _draw() -> void:
 	for i in 3:
 		draw_circle(table+Vector2.RIGHT.rotated(float(i)*TAU/3)*29,7,Color("63573e"))
 	# Central communal dry garden; no obstacle inside the turning road.
-	draw_circle(CENTER,200,Color("68634a"))
+	var lawn := PackedVector2Array()
+	for i in 64: lawn.append(CENTER+Vector2.from_angle(TAU*i/64.0)*200)
+	FINISH.surface_polygon(self,lawn,Color("62774f"),"grass")
+	for i in 220:
+		var a := float(i)*2.39996
+		var p := CENTER+Vector2(cos(a),sin(a))*sqrt(float(i)/220.0)*190
+		draw_line(p,p+Vector2(1,-4),Color("819260"),1.3)
 	# North opening matches the authored footpath; the rest of the rim stays closed.
 	draw_arc(CENTER,198,-PI/2+.09,3*PI/2-.09,64,Color("938674"),5,true)
 	for garden_path in get_garden_paths():
@@ -234,7 +267,8 @@ func _draw() -> void:
 	for feature in get_landscape_definitions():
 		_draw_landscape(feature)
 	# Workshop forecourt and concealed gravel parking, both physically accessible.
-	draw_rect(Rect2(8220,1670,270,150),Color("777466"))
+	SURFACE.paint(self,Rect2(8220,1670,270,150),Color("8c8977"),"gravel")
+	SURFACE.yard(self,Rect2(8220,1670,270,150),83,true)
 	draw_rect(Rect2(6930,2220,270,145),Color("7b735e"))
 	for i in 5:
 		draw_circle(Vector2(8430+i%2*14,1690+i*20),9,Color("292e2b"))
@@ -269,12 +303,16 @@ func get_landscape_definitions() -> Array[Dictionary]:
 			"bounds":Rect2(p-Vector2.ONE*radius,Vector2.ONE*radius*2),"trunk_radius":0.0 if entry[1]=="coastal" else 8.0})
 	return _landscape_cache.duplicate(true)
 
-func _draw_landscape(feature: Dictionary) -> void:
+## `canvas` nulo desenha no próprio bairro, com a sombra. A oclusão passa o
+## overlay e recebe só a árvore em pé: sombra de chão sobre o ator ficaria errada.
+func _draw_landscape(feature: Dictionary, canvas: CanvasItem = null) -> void:
+	var grounded := canvas == null
+	if grounded: canvas = self
 	var p: Vector2 = feature.center
 	var r: float = feature.radius
 	var fid: String = String(feature.get("id", ""))
 	if feature.kind == "shade":
-		draw_circle(p+Vector2(r*.12,r*.18),r*.75,Color(0.08,.10,.07,.32))
+		if grounded: canvas.draw_circle(p+Vector2(r*.12,r*.18),r*.75,Color(0.08,.10,.07,.32))
 		# An irregular crown outline and small facets replace identical circles.
 		# All offsets stay inside the published bounds, including branch strokes.
 		var crown := PackedVector2Array()
@@ -282,24 +320,24 @@ func _draw_landscape(feature: Dictionary) -> void:
 			var angle := float(i)*TAU/19.0
 			var reach := r*(.70+float((i*7)%5)*.037)
 			crown.append(p+Vector2(cos(angle),sin(angle))*reach)
-		draw_colored_polygon(crown,Color("394e37"))
+		canvas.draw_colored_polygon(crown,Color("394e37"))
 		for i in 11:
 			var angle := float(i)*2.39996
 			var center := p+Vector2(cos(angle),sin(angle))*r*(.23+float(i%3)*.16)
 			var size := r*(.17+float(i%2)*.07)
 			var facet := PackedVector2Array([center+Vector2(-size,-size*.2),center+Vector2(-size*.3,-size*.8),center+Vector2(size*.8,-size*.5),center+Vector2(size*.6,size*.6),center+Vector2(-size*.5,size*.8)])
-			draw_colored_polygon(facet,[Color("506443"),Color("61764d"),Color("435c3c"),Color("718154")][i%4])
-		draw_line(p+Vector2(0,r*.83),p+Vector2(-r*.04,r*.25),Color("594832"),6)
-		draw_line(p+Vector2(-r*.04,r*.35),p+Vector2(-r*.33,r*.12),Color("594832"),3)
-		draw_line(p+Vector2(-r*.04,r*.38),p+Vector2(r*.28,r*.22),Color("776044"),3)
+			canvas.draw_colored_polygon(facet,[Color("506443"),Color("61764d"),Color("435c3c"),Color("718154")][i%4])
+		canvas.draw_line(p+Vector2(0,r*.83),p+Vector2(-r*.04,r*.25),Color("594832"),6)
+		canvas.draw_line(p+Vector2(-r*.04,r*.35),p+Vector2(-r*.33,r*.12),Color("594832"),3)
+		canvas.draw_line(p+Vector2(-r*.04,r*.38),p+Vector2(r*.28,r*.22),Color("776044"),3)
 	elif feature.kind == "dry":
 		# Sombra suave de solo sob arvore seca
-		draw_circle(p+Vector2(r*.12,r*.18),r*.6,Color(0.06,.08,.06,.22))
-		draw_line(p+Vector2(0,r*.8),p-Vector2(0,r*.65),Color("776247"),5)
-		draw_line(p,p+Vector2(-r*.7,-r*.35),Color("776247"),3)
-		draw_line(p-Vector2(0,r*.3),p+Vector2(r*.65,-r*.7),Color("776247"),3)
-		draw_colored_polygon(PackedVector2Array([p+Vector2(-r*.85,-r*.3),p+Vector2(-r*.4,-r*.78),p+Vector2(r*.12,-r*.62),p+Vector2(r*.3,-r*.1),p+Vector2(-r*.25,r*.25)]),Color("747647"))
-		draw_circle(p+Vector2(r*.48,-r*.6),r*.25,Color("8a8856"))
+		if grounded: canvas.draw_circle(p+Vector2(r*.12,r*.18),r*.6,Color(0.06,.08,.06,.22))
+		canvas.draw_line(p+Vector2(0,r*.8),p-Vector2(0,r*.65),Color("776247"),5)
+		canvas.draw_line(p,p+Vector2(-r*.7,-r*.35),Color("776247"),3)
+		canvas.draw_line(p-Vector2(0,r*.3),p+Vector2(r*.65,-r*.7),Color("776247"),3)
+		canvas.draw_colored_polygon(PackedVector2Array([p+Vector2(-r*.85,-r*.3),p+Vector2(-r*.4,-r*.78),p+Vector2(r*.12,-r*.62),p+Vector2(r*.3,-r*.1),p+Vector2(-r*.25,r*.25)]),Color("747647"))
+		canvas.draw_circle(p+Vector2(r*.48,-r*.6),r*.25,Color("8a8856"))
 	else:
 		# Elementos costeiros: diferenciacao entre rochas e arbustos litoraneos
 		if fid.ends_with("_scrub"):

@@ -23,7 +23,7 @@ func run() -> void:
 	await frames(10)
 	var widget := scene.get_node("HarborWeatherReadout")
 	var weather: Node = scene.weather
-	for sample in [{"time":0.5,"state":0,"icon":"sun","clock":"12:00"},{"time":0.875,"state":0,"icon":"moon","clock":"21:00"},{"time":0.5,"state":1,"icon":"rain","clock":"12:00"},{"time":0.5,"state":2,"icon":"storm","clock":"12:00"},{"time":0.0,"state":0,"icon":"moon","clock":"00:00"}]:
+	for sample in [{"time":0.5,"state":0,"icon":"sun","clock":"12:00"},{"time":0.29,"state":0,"icon":"moon","clock":"06:57"},{"time":0.875,"state":0,"icon":"moon","clock":"21:00"},{"time":0.5,"state":3,"icon":"cloud","clock":"12:00"},{"time":0.5,"state":1,"icon":"rain","clock":"12:00"},{"time":0.5,"state":2,"icon":"storm","clock":"12:00"},{"time":0.0,"state":0,"icon":"moon","clock":"00:00"}]:
 		weather.time_of_day = sample.time
 		weather.set_weather(sample.state)
 		var before := [weather.time_of_day,weather.weather_state,weather.weather_timer]

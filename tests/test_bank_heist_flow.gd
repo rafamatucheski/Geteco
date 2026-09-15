@@ -19,6 +19,9 @@ func _run() -> void:
 	create_timer(90).timeout.connect(func(): printerr("BANK_HEIST TIMEOUT"); quit(2))
 	root.size = Vector2i(1280, 800)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
+	root.get_node("CampaignState").reset_campaign()
+	root.get_node("SaveManager").clear_pending_save()
+	root.get_node("SaveManager")._save_dir = OS.get_temp_dir().path_join("bank_heist_%d" % OS.get_process_id()) + "/"
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_arrival_seen", true)
 	root.get_node("CampaignState").set_campaign_flag(&"harbor_arrival_call_complete", true)
 	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
@@ -60,7 +63,11 @@ func _run() -> void:
 	player._respawn_grace_active=true
 	player.weapon_fired.emit()
 	check(room.alarm_started and room.shots_fired,"Primeiro tiro inicia combate e contagem da polícia")
-	for guard in room.guards: guard._physics_process(0.2)
+	# Security now requires 0.65s of visible aim before firing. Exercise real
+	# physics ticks instead of expecting a shot after a single 0.2s call.
+	for i in 90:
+		await physics_frame
+		if room.guards[0].fire_cooldown>0 or room.guards[1].fire_cooldown>0: break
 	check(room.guards[0].fire_cooldown>0 or room.guards[1].fire_cooldown>0,"Segurança revida com projéteis reais")
 	player.global_position=room.to_global(room.vault_position)
 	var vault_ray:=PhysicsRayQueryParameters2D.create(player.global_position,room.to_global(room.loot_positions[1]),1)
@@ -158,8 +165,14 @@ func _run() -> void:
 	await process_frame
 	player.weapon_aim_active=true
 	wallet=player.money
+	var prior_achievements: Array = player.unlocked_achievements.duplicate()
 	fuel._tick_cashier(3.2,clerk.global_position)
+	var achievement_bonus := 0
+	for id in player.unlocked_achievements:
+		if id not in prior_achievements: achievement_bonus += AchievementCatalog.cash_reward(id)
+	check(fuel.cash_paid and player.money==wallet+180+achievement_bonus,"Posto paga $180 e contabiliza separadamente conquistas novas")
+	wallet=player.money
 	fuel._tick_cashier(4,clerk.global_position)
-	check(fuel.cash_paid and player.money==wallet+180,"Posto preserva intimidação e pagamento único do caixa")
+	check(player.money==wallet,"Posto não repete pagamento nem conquistas")
 	print("BANK_HEIST: ",failures)
 	quit(0 if failures.is_empty() else 1)

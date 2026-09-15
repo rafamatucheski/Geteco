@@ -1,12 +1,17 @@
 @tool
 extends Node2D
+const SURFACE := preload("res://world/harbor/UrbanGround.gd")
 
 ## A separate authored district, not a replacement for DistrictOneComplete.
 ## Ground, lots and accesses share the same world coordinates as RoadLayout.
 const BUILDING := preload("res://world/harbor/HarborBuilding.gd")
 const TREE := preload("res://world/shared/nature/ProceduralStreetTree.gd")
+const MEDICAL_PARKING := preload("res://world/harbor/HarborMedicalParking.gd")
+const LOCAL_STREETS := preload("res://world/harbor/HarborLocalStreets.gd")
 const LAND_BOUNDS := Rect2(-100, -100, 3300, 2580)
 const SPAWN := Vector2(715, 1800)
+const TERMINAL_LOT := Rect2(1500, 810, 600, 350)
+const FOUNTAIN_POSITION := Vector2(1675, 1810)
 
 var sites: Array[Dictionary] = []
 var accesses: Array[Dictionary] = []
@@ -22,11 +27,21 @@ func _ready() -> void:
 
 func _build_animated_water() -> void:
 	preload("res://world/shared/nature/WaterPresentation.gd").rectangle(self, Rect2(-5000, 2480, 8200, 10000), Color("204754"))
-	preload("res://world/shared/nature/WaterPresentation.gd").fountain(self)
+	preload("res://world/shared/nature/WaterPresentation.gd").fountain(self, FOUNTAIN_POSITION)
+
+func _has_terminal() -> bool:
+	return get_parent() != null and get_parent().has_node("ArrivalStop")
+
+func _bench_points() -> Array[Vector2]:
+	var points: Array[Vector2] = [Vector2(1650, 2070), Vector2(1920, 2070)]
+	if not _has_terminal():
+		points.append_array([Vector2(1575, 870), Vector2(1910, 870), Vector2(1575, 1060), Vector2(1910, 1060)])
+	return points
 
 func _build_street_lamps() -> void:
 	const LAMP_SCRIPT := preload("res://StreetLamp.gd")
 	for p in get_street_lamp_points():
+		if name == "District" and LOCAL_STREETS.reserves(p.pos, 12.0): continue
 		var blocked:=false
 		for site in sites:
 			if (site.bounds as Rect2).grow(12).has_point(p.pos): blocked=true
@@ -55,14 +70,32 @@ func get_street_lamp_points() -> Array[Dictionary]:
 		{"pos": Vector2(743, 1136), "south": true},
 		{"pos": Vector2(1174, 1136), "south": true},
 	]
+	# Replace the old painted round fixtures with working modern street lamps.
+	for point in [Vector2(1465, 955), Vector2(2015, 955), Vector2(500, 550), Vector2(1195, 550), Vector2(2320, 1390), Vector2(2890, 1390)]:
+		if _has_terminal() and TERMINAL_LOT.has_point(point):
+			continue
+		points.append({"pos": point, "south": true})
 	for x in [650,1000,1550,1900,2450,2800]:
 		for y in [315,515,1165,1335,2285]:
 			# Keep the bank entrance axis clear; the lamp belongs beside the frontage.
 			var lamp_point := Vector2(790,285) if x == 650 and y == 315 else Vector2(x,y)
+			if x == 1550 and y == 315:
+				lamp_point.x += 70.0 # Keep the Ammu-Nation street-to-door approach clear.
+			# The route 510 convoy uses more curb length than a rigid vehicle while
+			# its two joints straighten after these corners. Keep the physical lamp
+			# bases on the same sidewalk, beyond that swept tail envelope.
+			if x == 650 and y == 2285:
+				lamp_point.x = 800.0
+			elif x == 2800 and y == 315:
+				lamp_point.x = 2650.0
 			points.append({"pos":lamp_point,"south":y in [315,1165]})
 	for x in [315,485,1215,1385,2115,2285]:
 		for y in [850,1650,1950]:
-			points.append({"pos":Vector2(x,y),"south":true})
+			# Keep the medical yard's turning aisle clear; its lamp is on the footway.
+			var lamp_point := Vector2(2136, y) if x == 2115 and y == 1650 else Vector2(x,y)
+			# Keep the complete 28px east alley clear, including its outer edge.
+			if x==1215 and y==850: lamp_point.x=1204
+			points.append({"pos":lamp_point,"south":true})
 	return points
 
 
@@ -70,7 +103,7 @@ func get_street_lamp_points() -> Array[Dictionary]:
 func _building(id: String, center: Vector2, size: Vector2, kind: String, title: String, accent_color: String, entrance: Dictionary = {}) -> void:
 	var bounds := Rect2(center - size * 0.5, size)
 	sites.append({"id": id, "bounds": bounds, "kind": kind})
-	var building := BUILDING.new()
+	var building := preload("res://world/harbor/hospital/HarborHospital.gd").new() if id == "Clinic" else BUILDING.new()
 	building.name = id
 	building.position = center
 	building.footprint = size
@@ -95,12 +128,12 @@ func _build_sites() -> void:
 	for i in 6:
 		var x: float = [650, 990, 1550, 1890, 2460, 2780][i]
 		var title: String = ["BANCO / NORTH PIER", "FOUNDRY FLATS", "ROAST / COFFEE", "ROUPAS / UNION", "POSTO / CONVENIÊNCIA", "CUSTOMS HOUSE"][i]
-		_building("NorthFrontage%d" % i, Vector2(x, 140), Vector2(230, 180), "brownstone" if i < 4 else "office", title, "#a9b9a5")
+		_building("NorthFrontage%d" % i, Vector2(x, 140), Vector2(230, 180), "bank_branch" if i == 0 else ("brownstone" if i < 4 else "office"), title, "#a9b9a5")
 		_access("NorthEntry%d" % i, Rect2(x - 25, 230, 50, 170), Vector2(x, 270), false)
 	# Quadra 1 Pilot: Westgate Core
 	# North frontage: authentic semi-detached rowhouse terraces (construções geminadas) facing Foundry Ave
-	_building("FoundryTerraceWest", Vector2(621, 640), Vector2(210, 230), "rowhouse_terrace", "FOUNDRY TERRACES W", "#a87d60", {"north": true})
-	_building("FoundryTerraceEast", Vector2(855, 640), Vector2(210, 230), "rowhouse_terrace", "FOUNDRY TERRACES E", "#94765a", {"north": true})
+	_building("FoundryTerraceWest", Vector2(621, 640), Vector2(210, 230), "rowhouse_terrace", "FOUNDRY TERRACES W", "#a87d60")
+	_building("FoundryTerraceEast", Vector2(855, 640), Vector2(210, 230), "rowhouse_terrace", "FOUNDRY TERRACES E", "#94765a")
 
 	# Northeast corner: L-shaped industrial loft complex with courtyard wing
 	_building("FoundryLofts", Vector2(1077, 655), Vector2(186, 260), "l_shaped_block", "UNION LOFTS & WORKS", "#8b6e58")
@@ -111,32 +144,49 @@ func _build_sites() -> void:
 	_building("UnionWorkshop", Vector2(1065, 1038), Vector2(195, 164), "artisan_workshop", "HARBOR BINDERY", "#825a47")
 	_building("MarketHall", Vector2(1750, 665), Vector2(480, 220), "warehouse_shop", "BREAKWATER MARKET", "#d1a866")
 	_building("ColdStorage", Vector2(2600, 710), Vector2(420, 280), "warehouse", "COLD STORAGE  /  04", "#78afb6")
-	_building("Garage", Vector2(790, 1570), Vector2(390, 250), "garage", "WESTGATE MOTOR CO.", "#e8b44f", {"offset": -40.0})
-	_building("Police", Vector2(1080, 1910), Vector2(190, 250), "police_precinct", "HARBOR PATROL", "#68a8d3")
-	_building("Clinic", Vector2(1910, 1530), Vector2(260, 230), "hospital", "BAY MEDICAL", "#78c7bd")
-	_building("Apartments", Vector2(1570, 1530), Vector2(245, 230), "office", "UNION LOFTS", "#c89f85")
+	_building("Garage", LOCAL_STREETS.GARAGE_POSITION, Vector2(390, 250), "garage", "WESTGATE MOTOR CO.", "#e8b44f", {"offset": -40.0})
+	_building("Police", LOCAL_STREETS.POLICE_POSITION, Vector2(190, 250), "police_precinct", "HARBOR PATROL", "#68a8d3")
+	_building("Clinic", MEDICAL_PARKING.CLINIC_POSITION, Vector2(260, 230), "hospital", "BAY MEDICAL", "#78c7bd")
+	_building("Apartments", Vector2(1550, 1530), Vector2(185, 230), "office", "UNION LOFTS", "#c89f85")
 	_building("FreightOffice", Vector2(2520, 1510), Vector2(285, 170), "office", "PORT AUTHORITY", "#c1b37c")
 	_building("FreightDepot", Vector2(2570, 1930), Vector2(330, 260), "warehouse", "TRANSATLANTIC / 02", "#c97d57")
 	# Access strips end at building fronts, never inside building solids.
-	_access("GarageAccess", Rect2(620, 1695, 280, 505), Vector2(750, 1810), true)
-	_access("PatrolAccess", Rect2(985, 2035, 190, 105), Vector2(1080, 2085), true)
-	_access("MarketAccess", Rect2(1820, 775, 50, 475), Vector2(1845, 820), false)
+	_access("GarageAccess", Rect2(620, 1620, 160, 98), Vector2(750, 1660), true)
+	_access("GarageSouthAccess", Rect2(640, 1718, 140, 482), Vector2(710, 2100), true)
+	_access("PatrolNorthAccess", Rect2(899, 1718, 80, 372), Vector2(939, 1718), true)
+	_access("MedicalSouthAccess", Rect2(2041, 1690, 84, 270), Vector2(2083, 1960), true)
+	_access("PatrolAccess", Rect2(904, 1990, 70, 100), Vector2(939, 2045), true)
+	_access("PatrolWalk", Rect2(985, 2075, 190, 65), Vector2(1080, 2120), false)
+	if _has_terminal():
+		# The market is reached along its northern terminal-side promenade.
+		_access("MarketAccess", Rect2(1820, 775, 50, 45), Vector2(1845, 800), false)
+	else:
+		_access("MarketAccess", Rect2(1820, 775, 50, 475), Vector2(1845, 820), false)
 	_access("ColdStorageAccess", Rect2(2450, 850, 310, 400), Vector2(2600, 1040), true)
-	_access("ClinicAccess", Rect2(1860, 1645, 100, 120), Vector2(1910, 1705), false)
-	# Side emergency parking connects directly to Warehouse Way. The
-	# pedestrian front entrance and basketball court are not vehicle routes.
-	_access("ClinicVehicleAccess", Rect2(2040, 1515, 105, 110), Vector2(2095, 1570), true)
-	_access("CoronerVehicleAccess", Rect2(2040, 1400, 105, 110), Vector2(2095, 1455), true)
+	_access("ClinicAccess", Rect2(1750, 1645, 100, 120), Vector2(1800, 1705), false)
+	# Both medical services park fully inside the shared yard, behind its aisle.
+	_access("ClinicVehicleAccess", Rect2(1930, 1533, 215, 74), MEDICAL_PARKING.AMBULANCE_STOP, true)
+	_access("CoronerVehicleAccess", Rect2(1930, 1418, 215, 74), MEDICAL_PARKING.CORONER_STOP, true)
 	_access("FreightAccess", Rect2(2375, 2060, 390, 140), Vector2(2550, 2115), true)
 	_access("PortOfficeWalk", Rect2(2365, 1250, 100, 175), Vector2(2415, 1380), false)
 	_access("DinerWalk", Rect2(590, 1120, 62, 28), Vector2(621, 1136), false)
 	_access("LaundryWalk", Rect2(815, 1120, 60, 28), Vector2(845, 1136), false)
 	_access("WorkshopWalk", Rect2(1035, 1120, 60, 28), Vector2(1065, 1136), false)
-	_access("LoftsWalk", Rect2(1540, 1645, 60, 555), Vector2(1570, 1690), false)
+	_access("LoftsWalk", Rect2(1520, 1645, 60, 95), Vector2(1550, 1690), false)
 	_access("HomesWalk", Rect2(730, 860, 26, 270), Vector2(743, 880), false)
 
 
 func _build_trees() -> void:
+	# Memorial's east buffer used painted circles, including one row beneath
+	# Memorial North. Plant only the free pockets between roads and footways.
+	for x in [45, 205]:
+		for y in [1100, 1640, 1820, 2000]:
+			var memorial_tree := preload("res://world/mountain_pass/MountainPine3D.gd").new()
+			memorial_tree.position = Vector2(x,y)
+			memorial_tree.variant_seed = 3 if x == 45 else 4
+			memorial_tree.tree_scale = .85
+			memorial_tree.add_to_group("memorial_verge_tree")
+			add_child(memorial_tree)
 	var positions: Array[Vector2] = []
 	for x in [1465, 2015]:
 		for y in [865, 1025]:
@@ -148,6 +198,9 @@ func _build_trees() -> void:
 	positions.append(Vector2(650, 805))
 	positions.append(Vector2(880, 805))
 	for point in positions:
+		if name == "District" and LOCAL_STREETS.reserves(point, 32.0): continue
+		if _has_terminal() and TERMINAL_LOT.grow(22).has_point(point):
+			continue
 		var tree := TREE.new()
 		tree.position = point
 		tree.crown_scale = 1.25
@@ -162,7 +215,7 @@ func _build_boundaries() -> void:
 	# ~190px from the seawall curb below -- brake with a safety margin instead
 	# of coming to rest right at the wall's doorstep. See TrafficVehicle.gd's
 	# _lane_end_boundary_margin().
-	for rect in [Rect2(-130, -130, 30, 1200), Rect2(-1450, 1070, 1320, 25), Rect2(-1450, 1070, 25, 1338), Rect2(-1450, 2390, 1350, 18), Rect2(-130, -130, 3360, 30), Rect2(-100, 2390, 3165, 18), Rect2(3170, 2390, 30, 18), Rect2(-5000, 3500, 8200, 6500)]:
+	for rect in [Rect2(-130, -130, 30, 1200), Rect2(-1450, 1070, 140, 25), Rect2(-1190, 1070, 1060, 25), Rect2(-1450, 1070, 25, 1338), Rect2(-1450, 2390, 1350, 18), Rect2(-130, -130, 3360, 30), Rect2(-100, 2390, 3165, 18), Rect2(3170, 2390, 30, 18), Rect2(-5000, 3500, 8200, 6500)]:
 		var body := StaticBody2D.new()
 		body.collision_layer = 1
 		body.collision_mask = 0
@@ -199,7 +252,12 @@ func _build_site_solids() -> void:
 	storage.name = "HarborStorageArt"
 	storage.position = Vector2(2600, 1700)
 	add_child(storage)
-	for point in [Vector2(1575, 870), Vector2(1910, 870), Vector2(1575, 1060), Vector2(1910, 1060), Vector2(1650, 2010), Vector2(1920, 2010)]:
+	if name == "District":
+		var supplies := preload("res://world/harbor/HarborGarageSupplies.gd").new()
+		supplies.name = "GarageSupplies"
+		supplies.position = Vector2(1090, 1495)
+		add_child(supplies)
+	for point in _bench_points():
 		obstacles.append(Rect2(point, Vector2(65, 19)))
 	for rect in obstacles:
 		var body := StaticBody2D.new()
@@ -214,7 +272,7 @@ func _build_site_solids() -> void:
 		add_child(body)
 	var fountain := StaticBody2D.new()
 	fountain.name = "FountainSolid"
-	fountain.position = Vector2(1750, 1005)
+	fountain.position = FOUNTAIN_POSITION
 	fountain.collision_layer = 1
 	fountain.collision_mask = 0
 	var circle := CircleShape2D.new()
@@ -252,66 +310,78 @@ func get_spatial_audit() -> Array[String]:
 func _draw() -> void:
 	# The descent to the tunnel follows a narrow built embankment, not a larger
 	# rectangular lawn. The return railway is underground beyond the portal.
-	draw_rect(LAND_BOUNDS, Color("#6b7067"))
-	draw_rect(Rect2(-1450,1070,1850,1320), Color("#52674e"))
+	SURFACE.paint(self,LAND_BOUNDS, Color("#6b7067"),"concrete")
+	SURFACE.paint(self,Rect2(-1450,1070,1850,1320), Color("#52674e"),"grass")
 	draw_colored_polygon(PackedVector2Array([Vector2(2850, 2410), Vector2(3200, 2410), Vector2(3200, 3500), Vector2(3010, 3500), Vector2(2890, 3330)]), Color("#747a69"))
 	draw_colored_polygon(PackedVector2Array([Vector2(3010, 3110), Vector2(3200, 3160), Vector2(3200, 3480), Vector2(3030, 3450), Vector2(2940, 3280)]), Color("#576255"))
 	for point in [Vector2(2980, 3120), Vector2(2940, 3190), Vector2(2980, 3370), Vector2(3060, 3440), Vector2(3170, 3390)]:
 		draw_colored_polygon(PackedVector2Array([point + Vector2(-28, 13), point + Vector2(-17, -24), point + Vector2(15, -30), point + Vector2(36, 5), point + Vector2(13, 21)]), Color("#919084"))
 	# Compact rear gardens, fenced service pockets and a planted west buffer.
-	draw_rect(Rect2(515, -45, 2390, 310), Color("#9b9787"))
+	SURFACE.paint(self,Rect2(515, -45, 2390, 310), Color("#9b9787"),"concrete")
 	for x in [650, 990, 1550, 1890, 2460, 2780]:
-		draw_rect(Rect2(x - 135, -35, 270, 65), Color("#4f6658"))
+		SURFACE.paint(self,Rect2(x - 135, -35, 270, 65), Color("#4f6658"),"grass")
 		preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(x - 130, -30, 260, 55), x)
 		draw_line(Vector2(x - 135, -35), Vector2(x + 135, -35), Color("#b1ac97"), 3)
-	draw_rect(Rect2(10, 500, 225, 1670), Color("#536b5b"))
+	SURFACE.paint(self,Rect2(10, 500, 225, 1670), Color("#536b5b"),"grass")
 	preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(10, 500, 225, 1670), 71)
-	draw_rect(Rect2(93, 500, 45, 1670), Color("#b4aa95"))
+	SURFACE.paint(self,Rect2(93, 500, 45, 1670), Color("#b4aa95"),"stone")
 	for y in range(560, 2140, 180):
+		if y >= 1070: continue # Memorial buffer now uses solid 3D trees.
 		for x in [45, 205]:
 			draw_circle(Vector2(x + 6, y + 8), 33, Color("#3d4f44"))
 			draw_circle(Vector2(x, y), 30, Color("#446b53"))
 			draw_circle(Vector2(x - 8, y - 7), 20, Color("#557d5e"))
 	# Footways connect the planted buffer to the two neighborhood streets.
 	for y in [620, 1435, 2100]:
-		draw_rect(Rect2(95, y, 305, 40), Color("#b4aa95"))
+		SURFACE.paint(self,Rect2(95, y, 305, 40), Color("#b4aa95"),"stone")
+	# Flush planted strips occupy empty outer pavement, leaving the promenade open.
+	for patch in [Rect2(265,-55,150,300),Rect2(2930,-40,190,240),Rect2(2940,560,100,420),Rect2(2940,1480,100,560)]:
+		preload("res://world/harbor/ExteriorFinish.gd").meadow(self,patch,int(patch.position.y)+930)
+	for x in [520,1440,2310]:
+		SURFACE.paint(self,Rect2(x,2340,230,24),Color("707b58"),"grass")
+		SURFACE.garden_edge(self,Rect2(x,2340,230,24),x)
 	# Authored district blocks replace the old grass blanket.
 	for block in [Rect2(510, 510, 680, 630), Rect2(1410, 510, 680, 630), Rect2(2310, 510, 580, 630), Rect2(510, 1360, 680, 730), Rect2(1410, 1360, 680, 730), Rect2(2310, 1360, 580, 730)]:
-		draw_rect(block, Color("#a69f8c"))
+		SURFACE.paint(self,block, Color("#a69f8c"),"concrete")
+		# Shallow curb attached to the paving, with a lit lip and dark riser.
+		draw_line(Vector2(block.position.x, block.end.y - 3), Vector2(block.end.x, block.end.y - 3), Color("#c4bba7"), 2)
+		draw_line(Vector2(block.position.x, block.end.y), block.end, Color("#6b665d"), 3)
+		draw_line(Vector2(block.end.x - 1, block.position.y), block.end - Vector2(1, 0), Color("#777064"), 2)
 		draw_rect(block.grow(-8), Color("#8e897b"), false, 2)
 	# Quadra 1: residential courtyard, landscaped garden pocket, service yard, and diner café
 	_draw_quadra1_urban_spaces()
 
-	draw_rect(Rect2(1440, 790, 620, 345), Color("#b7ad96"))
+	SURFACE.paint(self,Rect2(1440, 790, 620, 345), Color("#b7ad96"),"stone")
 	for x in range(1440, 2060, 40):
 		draw_line(Vector2(x, 795), Vector2(x, 1135), Color("#a49d8c"), 1)
 	for y in range(795, 1135, 40):
 		draw_line(Vector2(1440, y), Vector2(2060, y), Color("#a49d8c"), 1)
-	# Union garden: usable promenade and a small court, not a giant empty lawn.
-	draw_rect(Rect2(1440, 1740, 620, 330), Color("#526b5c"))
-	preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(1440, 1740, 620, 330), 93)
-	draw_rect(Rect2(1440, 1910, 620, 65), Color("#c0b79e"))
-	draw_rect(Rect2(1535, 1660, 70, 475), Color("#c0b79e"))
-	_draw_court(Rect2(1785, 1765, 205, 120))
+	# Union plaza shares the sidewalk concrete and world-aligned tile grid.
+	SURFACE.paint(self,Rect2(1440, 1740, 620, 330), Color("#aaa9a1"),"concrete")
+	SURFACE.paint(self,Rect2(1440, 1910, 620, 65), Color("#aaa9a1"),"concrete")
+	SURFACE.paint(self,Rect2(1515, 1660, 70, 475), Color("#aaa9a1"),"concrete")
+	_draw_court(Rect2(1785, 1745, 205, 120))
 	for access in accesses:
-		draw_rect(access.bounds, Color("#676e70") if access.vehicle else Color("#c0b79e"))
-	# Loading yards: front apron remains clear for actual vehicle turning.
-	_draw_parking(Rect2(635, 1760, 270, 280), 3)
+		SURFACE.paint(self,access.bounds, Color("#676e70") if access.vehicle else Color("#aaa9a1"),"concrete")
+		SURFACE.yard(self,access.bounds,int(access.bounds.position.x),access.vehicle)
+	# Parking belongs beside the driveway, outside the door/turning corridor.
+	SURFACE.foundations(self,sites)
+	SURFACE.paint(self,Rect2(520, 1810, 100, 270), Color("#656b6b"),"concrete")
+	SURFACE.yard(self,Rect2(520,1810,100,270),913,true)
+	for y in [1810, 1945, 2080]:
+		draw_line(Vector2(520, y), Vector2(610, y), Color("#d8cfab"), 2)
+	draw_line(Vector2(520, 1810), Vector2(520, 2080), Color("#d8cfab"), 2)
 	_draw_parking(Rect2(2480, 935, 280, 180), 3)
 	# The plaza's water feature has an explicit solid, added by the preview audit.
-	draw_circle(Vector2(1750, 1005), 60, Color("#7b8078"))
-	draw_circle(Vector2(1750, 1005), 51, Color("#397d86"))
-	draw_arc(Vector2(1750, 1005), 40, 0, TAU, 48, Color("#92c3be"), 2, true)
-	draw_circle(Vector2(1750, 1005), 13, Color("#c4c4ad"))
-	for point in [Vector2(1575, 870), Vector2(1910, 870), Vector2(1575, 1060), Vector2(1910, 1060), Vector2(1650, 2010), Vector2(1920, 2010)]:
+	draw_circle(FOUNTAIN_POSITION, 60, Color("#7b8078"))
+	draw_circle(FOUNTAIN_POSITION, 51, Color("#397d86"))
+	draw_arc(FOUNTAIN_POSITION, 40, 0, TAU, 48, Color("#92c3be"), 2, true)
+	draw_circle(FOUNTAIN_POSITION, 13, Color("#c4c4ad"))
+	for point in _bench_points():
 		_draw_bench(point)
-	for point in [Vector2(1465, 955), Vector2(2015, 955), Vector2(530, 550), Vector2(1180, 550), Vector2(2320, 1390), Vector2(2890, 1390)]:
-		draw_circle(point, 7, Color("#303e43"))
-		draw_line(point, point + Vector2(-15, -22), Color("#334950"), 4)
-		draw_circle(point + Vector2(-15, -22), 9, Color("#e8d8a1"))
 	# Rail service strip, fenced from road users; no hidden road/train overlap.
 	draw_rect(Rect2(-100, 2390, 3300, 80), Color("#7a786c"))
-	draw_rect(Rect2(300, 2330, 2700, 45), Color("#c0b79e"))
+	SURFACE.paint(self,Rect2(300, 2330, 2700, 45), Color("#c0b79e"),"stone")
 	draw_line(Vector2(-100, 2470), Vector2(2850, 2470), Color("#a5a899"), 8)
 	for x in range(-100, 3065, 55):
 		draw_line(Vector2(x, 2390), Vector2(x, 2405), Color("#333e43"), 3)
@@ -321,16 +391,17 @@ func _draw() -> void:
 func _draw_quadra1_urban_spaces() -> void:
 	# 1. Residential Courtyard & Garden (North half: between rowhouses and rail line)
 	# Stone paving for the pedestrian courtyard
-	draw_rect(Rect2(520, 755, 450, 100), Color("#b5ad9a"))
+	SURFACE.paint(self,Rect2(520, 755, 450, 100), Color("#b5ad9a"),"stone")
 	for x in range(530, 970, 36):
 		draw_line(Vector2(x, 755), Vector2(x, 855), Color("#a39a86"), 1.0)
 	for y in range(755, 855, 25):
 		draw_line(Vector2(520, y), Vector2(970, y), Color("#a39a86"), 1.0)
 	
 	# Lush garden pocket
-	draw_rect(Rect2(545, 770, 220, 70), Color("#4d6655"))
-	draw_rect(Rect2(545, 770, 220, 70).grow(-2), Color("#445d4b"))
+	SURFACE.paint(self,Rect2(545, 770, 220, 70), Color("#4d6655"),"grass")
+	SURFACE.paint(self,Rect2(545, 770, 220, 70).grow(-2), Color("#445d4b"),"grass")
 	preload("res://world/shared/nature/GrassDetail.gd").paint(self, Rect2(549, 774, 212, 62), 105)
+	SURFACE.garden_edge(self,Rect2(549,774,212,62),105)
 	draw_rect(Rect2(545, 770, 220, 70), Color("#8e8a7b"), false, 2.0)
 	# Garden footpath
 	draw_colored_polygon(PackedVector2Array([
@@ -345,7 +416,7 @@ func _draw_quadra1_urban_spaces() -> void:
 	draw_circle(Vector2(657, 800), 5, Color("#48818a"))
 	
 	# Pedestrian passage alley from Foundry Ave (between West and East terraces)
-	draw_rect(Rect2(726, 520, 24, 235), Color("#a8a18e"))
+	SURFACE.paint(self,Rect2(726, 520, 24, 235), Color("#a8a18e"),"concrete")
 	for y in range(525, 755, 18):
 		draw_line(Vector2(727, y), Vector2(749, y), Color("#968e7d"), 1.0)
 	
@@ -353,7 +424,7 @@ func _draw_quadra1_urban_spaces() -> void:
 	# HarborAlleys owns the walkable service passages; do not redraw the old
 	# 40px strip that overlapped the Laundry's west wall.
 	# Rear industrial yard behind shops and beneath rail viaduct
-	draw_rect(Rect2(766, 855, 404, 105), Color("#5c605f"))
+	SURFACE.paint(self,Rect2(766, 855, 404, 105), Color("#5c605f"),"concrete")
 	# Concrete slab expansion seams
 	for x in range(780, 1170, 60):
 		draw_line(Vector2(x, 855), Vector2(x, 960), Color("#484c4b"), 1.0)
@@ -375,7 +446,7 @@ func _draw_quadra1_urban_spaces() -> void:
 		draw_line(Vector2(gx, 918), Vector2(gx, 928), Color("#3e4345"), 1.5)
 	
 	# 3. Sidewalk Café Terrace for Anchor Diner (SW Corner)
-	draw_rect(Rect2(516, 1120, 210, 28), Color("#a97155")) # Terracotta paving
+	SURFACE.paint(self,Rect2(516, 1120, 210, 28), Color("#a97155"),"brick") # Terracotta paving
 	for tx in range(516, 726, 15):
 		draw_line(Vector2(tx, 1120), Vector2(tx, 1148), Color("#915f47"), 1.0)
 	# Planter boxes along sidewalk boundary
@@ -383,9 +454,7 @@ func _draw_quadra1_urban_spaces() -> void:
 	draw_rect(Rect2(523, 1141, 52, 4), Color("#497552"))
 	draw_rect(Rect2(662, 1142, 54, 6), Color("#543f32"))
 	draw_rect(Rect2(663, 1141, 52, 4), Color("#497552"))
-	# Bistro tables & chairs
-	_draw_cafe_table(Vector2(555, 1132), Color("#d97845"))
-	_draw_cafe_table(Vector2(685, 1132), Color("#e4b568"))
+	# Mesas, cadeiras e clientes 3D são criados por HarborRestaurantLife.
 
 func _draw_service_dumpster(rect: Rect2, color: Color) -> void:
 	# Drop shadow
@@ -432,7 +501,8 @@ func _draw_cafe_table(pos: Vector2, umbrella_color: Color) -> void:
 
 
 func _draw_parking(rect: Rect2, spaces: int) -> void:
-	draw_rect(rect, Color("#656b6b"))
+	SURFACE.paint(self,rect, Color("#656b6b"),"concrete")
+	SURFACE.yard(self,rect,spaces*931,true)
 	var step := rect.size.x / spaces
 	for i in range(spaces + 1):
 		var start := rect.position + Vector2(i * step, 0)
@@ -446,6 +516,7 @@ func _draw_container(rect: Rect2, color: Color) -> void:
 		draw_line(Vector2(x, rect.position.y + 4), Vector2(x, rect.end.y - 4), color.darkened(0.2), 2)
 
 func _draw_bench(point: Vector2) -> void:
+	draw_texture_rect(preload("res://ContactShadow.gd").texture(), Rect2(point + Vector2(-4, -1), Vector2(77, 27)), false, Color(0.025,0.03,0.045,0.40))
 	draw_rect(Rect2(point, Vector2(65, 19)), Color("#594e42"))
 	for y in [3, 8, 13]:
 		draw_line(point + Vector2(3, y), point + Vector2(62, y), Color("#bd9b69"), 3)

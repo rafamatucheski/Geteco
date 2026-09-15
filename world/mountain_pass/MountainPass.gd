@@ -47,6 +47,13 @@ var main_camera: Camera2D
 
 func _ready() -> void:
 	if not streamed_region:
+		var weather := preload("res://DayNightWeatherManager.gd").new()
+		weather.name = "DayNightWeather"
+		weather.day_length_seconds = 1440.0
+		weather.time_of_day = 0.45
+		weather.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(weather)
+		weather.enable_regional_atmosphere()
 		var combat_effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
 		combat_effects.name = "WeaponEffects"
 		add_child(combat_effects)
@@ -86,8 +93,19 @@ func _ready() -> void:
 	add_child(settlement)
 	if streamed_region:
 		while not settlement.region_ready: await get_tree().process_frame
+	var ski_area := preload("res://world/mountain_pass/MountainSkiArea.gd").new()
+	ski_area.name = "MountainSkiArea"
+	add_child(ski_area)
+	if streamed_region:
+		while not ski_area.region_ready: await get_tree().process_frame
+	var mystery := preload("res://world/mountain_pass/MountainMysteryDirector.gd").new()
+	mystery.name = "MountainMystery"
+	add_child(mystery)
+	preload("res://world/mountain_pass/transit/MountainTransitIntegration.gd").build(self)
 	var traffic := preload("res://world/mountain_pass/MountainTraffic.gd").new()
 	traffic.name = "MountainTraffic"
+	# Regional service keeps its nearby road traffic alive while scenery sleeps.
+	traffic.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(traffic)
 	if streamed_region:
 		while not traffic.region_ready: await get_tree().process_frame
@@ -97,6 +115,10 @@ func _ready() -> void:
 		hud.get_node("RootMargin/VehicleTestPanel").hide()
 		add_child(preload("res://ui/PauseMenu.tscn").instantiate())
 		call_deferred("_finish_region_arrival")
+	var road_lighting := preload("res://world/shared/roads/RoadLighting.gd").new()
+	road_lighting.name = "RoadLighting"
+	road_lighting.mountain_road = road
+	add_child(road_lighting)
 	region_ready = true
 
 func _setup_environment() -> void:
@@ -272,7 +294,8 @@ func _setup_weather_and_cold() -> void:
 	# 2. Controlador de Sobrevivência ao Frio
 	cold_controller = ColdSurvivalControllerScript.new()
 	cold_controller.name = "ColdSurvivalController"
-	cold_controller.set("cold_zone_y_threshold", -1400.0) # Frio inicia na subida para a neve
+	# The entire selected mountain region already renders snow, including the lake.
+	cold_controller.force_cold_active = true
 	add_child(cold_controller)
 	if streamed_region and not region_selected: cold_controller.set_process(false)
 
@@ -293,9 +316,8 @@ func _spawn_player_and_suv() -> void:
 
 	# 2. Spawna Dante (Jogador)
 	if PLAYER_SCRIPT:
-		player_instance = CharacterBody2D.new()
+		player_instance = PLAYER_SCRIPT.new()
 		player_instance.name = "Player"
-		player_instance.set_script(PLAYER_SCRIPT)
 		player_instance.position = Vector2(3260, 400) # Atrás do carro na ponte
 		player_instance.z_index = 10
 		player_instance.collision_layer = 1 | 4
@@ -337,6 +359,9 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(player_instance):
 		return
 	var indoors := bool(player_instance.get_meta("mountain_interior", false)) or bool(player_instance.get_meta("harbor_interior",false))
+	if not streamed_region:
+		var weather := get_node("DayNightWeather")
+		if weather.is_inside_interior != indoors: weather.set_interior_mode(indoors)
 	var underground: bool = tunnel.contains_actor(player_instance)
 	var covered: bool = indoors or underground or bool(player_instance.get_meta("mountain_shelter", false))
 	storm_manager.set_sheltered(covered)
@@ -368,7 +393,7 @@ func restore_region_interior(actor: Node2D, data: Dictionary) -> void:
 	actor.set_meta("mountain_interior_id", id)
 	room.set_npc_rendering_active(true)
 	if room.get("camera_3d") is Camera3D and room.get("sprite_3d") is Sprite2D:
-		var helper := preload("res://world/mountain_pass/MountainInteriorActorScale.gd").new()
+		var helper := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
 		interior_manager.add_child(helper)
 		helper.configure(actor,room.camera_3d,room.sprite_3d)
 		interior_manager._actor_scale_helpers[actor] = helper

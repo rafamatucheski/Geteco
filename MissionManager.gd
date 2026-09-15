@@ -17,6 +17,8 @@ var docks_garage_pos: Vector2 = Vector2(268, 880)
 # Instâncias Ativas da Missão
 var target_car: Node2D = null
 var gang_guards: Array[Node2D] = []
+var collectible_quest_markers: Array[Dictionary] = []
+const MAX_COLLECTIBLE_QUESTS: int = 3
 var chase_cars: Array[Node2D] = []
 
 # Componentes de UI e Marcadores
@@ -81,6 +83,7 @@ func _build_hud() -> void:
 
 	audio_player = AudioStreamPlayer2D.new()
 	audio_player.max_distance = 800.0
+	audio_player.bus = &"SFX"
 	add_child(audio_player)
 
 func _create_payphone_prop() -> void:
@@ -112,7 +115,7 @@ func _create_payphone_prop() -> void:
 
 	var prompt_label = Label.new()
 	prompt_label.name = "Prompt"
-	prompt_label.text = "[E] ATENDER"
+	prompt_label.text = "E"
 	prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_label.position = Vector2(-42, -54)
 	prompt_label.add_theme_font_size_override("font_size", 11)
@@ -148,6 +151,7 @@ func _process(delta: float) -> void:
 	var player = get_tree().get_first_node_in_group("player")
 	if not is_instance_valid(player):
 		return
+	_update_collectible_missions(player, delta)
 
 	# Lógica do Orelhão / Toque de Telefone no Mercado Velho
 	if current_state == MissionState.INACTIVE:
@@ -190,10 +194,75 @@ func _process(delta: float) -> void:
 		else:
 			_fail_mission("O COBRA V8 FOI DESTRUÍDO!")
 
+func register_collectible_mission(position: Vector2, source_label: String, reward_money: int, final_suffix: String) -> void:
+	if collectible_quest_markers.size() >= MAX_COLLECTIBLE_QUESTS:
+		_complete_collectible_mission(collectible_quest_markers.size() - 1, false)
+	var marker := Node2D.new()
+	marker.name = "CollectibleQuest_%s" % str(collectible_quest_markers.size())
+	marker.position = position
+	marker.add_to_group("collectible_quest_marker")
+	add_child(marker)
+	var base := Polygon2D.new()
+	base.polygon = PackedVector2Array([
+		Vector2(0, -8), Vector2(8, 0), Vector2(0, 10), Vector2(-8, 0)
+	])
+	base.color = Color("#ffcc5c")
+	marker.add_child(base)
+	var glow := Polygon2D.new()
+	glow.polygon = PackedVector2Array([
+		Vector2(0, -11), Vector2(10, 0), Vector2(0, 13), Vector2(-10, 0)
+	])
+	glow.color = Color("#ffcc5c", 0.24)
+	marker.add_child(glow)
+	var tw = marker.create_tween().set_loops()
+	tw.tween_property(marker, "scale", Vector2(1.15, 1.15), 0.45)
+	tw.tween_property(marker, "scale", Vector2(0.92, 0.92), 0.45)
+	collectible_quest_markers.append({
+		"id": source_label,
+		"position": position,
+		"marker": marker,
+		"reward_money": maxi(0, reward_money),
+		"suffix": final_suffix,
+		"source_label": source_label
+	})
+	_show_collectible_notice("%s ENCONTRADO: vá ao local no mapa para concluir a missão" % source_label)
+
+func _update_collectible_missions(player: Node2D, _delta: float) -> void:
+	for i in range(collectible_quest_markers.size() - 1, -1, -1):
+		var quest: Dictionary = collectible_quest_markers[i]
+		var marker: Node = quest.get("marker", null)
+		if marker == null or not is_instance_valid(marker):
+			collectible_quest_markers.remove_at(i)
+			continue
+		var marker_pos: Vector2 = quest.get("position", player.global_position)
+		if player.global_position.distance_to(marker_pos) <= 56.0:
+			_complete_collectible_mission(i, true)
+
+func _complete_collectible_mission(index: int, give_reward: bool) -> void:
+	var quest := collectible_quest_markers[index]
+	var reward_money := int(quest.get("reward_money", 0))
+	var suffix := String(quest.get("suffix", ""))
+	var marker: Node = quest.get("marker", null)
+	if marker != null and is_instance_valid(marker):
+		marker.queue_free()
+	collectible_quest_markers.remove_at(index)
+	if not give_reward:
+		return
+	var player := get_tree().get_first_node_in_group("player")
+	if player != null and player.has_method("_refresh_weapon_ui") and reward_money > 0 and "money" in player:
+		player.money += reward_money
+		player._refresh_weapon_ui()
+	_show_collectible_notice("MISSÃO EXTRA CONCLUÍDA: %s. +$%d" % [suffix, reward_money])
+
+func _show_collectible_notice(message: String) -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("show_notice"):
+		hud.show_notice(message, Color("ffcc5c"))
+
 func _start_cobra_mission(player: Node2D) -> void:
 	active_mission_id = "steal_cobra_v8"
 	current_state = MissionState.STEAL_VEHICLE
-	_play_sfx(ProceduralAudio.get_mission_start_stream(), 0.0)
+	_play_sfx(ProceduralAudio.get_mission_start_stream(), -3.0)
 
 	banner_panel.visible = true
 	objective_label.text = "MISSÃO: O DON E O COBRA V8"
@@ -242,7 +311,7 @@ func _complete_cobra_mission(player: Node2D) -> void:
 	current_state = MissionState.COMPLETED
 	waypoint_marker.visible = false
 	
-	_play_sfx(ProceduralAudio.get_mission_passed_stream(), 2.0)
+	_play_sfx(ProceduralAudio.get_mission_passed_stream(), -2.0)
 	
 	# Recompensa em Dinheiro e Desbloqueio
 	if "money" in player:
@@ -285,7 +354,7 @@ func _fail_mission(reason: String) -> void:
 func _start_boss_duel() -> void:
 	active_mission_id = "blacklist_5_don_hector"
 	current_state = MissionState.STEAL_VEHICLE
-	_play_sfx(ProceduralAudio.get_mission_start_stream(), 2.0)
+	_play_sfx(ProceduralAudio.get_mission_start_stream(), -3.0)
 	
 	banner_panel.visible = true
 	objective_label.text = "★ DUELO DA BLACKLIST #5: DON HECTOR ★"
@@ -313,7 +382,7 @@ func _start_boss_duel() -> void:
 func _complete_boss_duel() -> void:
 	current_state = MissionState.COMPLETED
 	waypoint_marker.visible = false
-	_play_sfx(ProceduralAudio.get_mission_passed_stream(), 3.0)
+	_play_sfx(ProceduralAudio.get_mission_passed_stream(), -2.0)
 	
 	var player = get_tree().get_first_node_in_group("player")
 	if is_instance_valid(player) and "money" in player:

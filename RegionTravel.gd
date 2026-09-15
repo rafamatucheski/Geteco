@@ -53,7 +53,7 @@ func request(region: String, actor: Node2D) -> bool:
 
 func _depart() -> void:
 	if is_instance_valid(carried_car):
-		carried_car.exit_vehicle()
+		carried_car.force_exit_vehicle()
 		carried_car.reparent(self, true)
 		carried_car.process_mode = Node.PROCESS_MODE_DISABLED
 		carried_car.hide()
@@ -73,6 +73,8 @@ func finish_arrival(scene: Node) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null:
 		return
+	if pending_world.has("north_access_lower"):
+		player.set_meta("north_access_lower",bool(pending_world.north_access_lower))
 	var stream := get_tree().get_first_node_in_group("continuous_world")
 	if stream != null and pending_world.get("region", "") == "mountain":
 		if not stream.ready_for_crossing:
@@ -139,6 +141,7 @@ func snapshot_world() -> Dictionary:
 		result["temperature"] = scene.cold_controller.current_temperature
 		result["weather_clock"] = scene.storm_manager.weather_clock
 	var player := get_tree().get_first_node_in_group("player")
+	result["north_access_lower"] = bool(player.get_meta("north_access_lower",false))
 	if region == "mountain" and player.get_meta("mountain_interior",false):
 		result["interior"] = String(player.get_meta("mountain_interior_id",""))
 		var point: Vector2 = scene.interior_manager._actor_returns.get(player,Vector2(7350,730))
@@ -160,6 +163,9 @@ func snapshot_world() -> Dictionary:
 		elif "sprite" in car and car.sprite:
 			color = car.sprite.modulate
 		result["vehicle"] = {"script": script, "name": String(car.name), "archetype": car.get("active_archetype_id") if "active_archetype_id" in car else car.get("vehicle_id"), "paint": color.to_html(), "x": car.global_position.x, "y": car.global_position.y, "rotation": car.rotation, "values": values}
+		result.vehicle["north_access_lower"] = bool(car.get_meta("north_access_lower",false))
+		if car.has_meta("salvage_token"): result.vehicle["salvage_token"] = String(car.get_meta("salvage_token"))
+		if car.get_meta("residence_stored_vehicle",false): result.vehicle["residence_stored_vehicle"] = true
 		if car.has_meta("service_safe_position"):
 			var safe: Vector2 = car.get_meta("service_safe_position")
 			result.vehicle.x = safe.x
@@ -190,15 +196,18 @@ func _restore_saved_vehicle(scene: Node, player: Node) -> void:
 	elif script.contains("mountain_pass"):
 		car = load(script).new()
 	else:
-		# PlayerCar.tscn belonged to the pre-refactor layout and no longer
-		# exists.  Restore the allowlisted script directly; this also keeps
-		# malformed/old saves from turning a missing resource into a crash.
+		# Both allowlisted player-car scripts require their physical/camera nodes
+		# before _ready. A bare script cannot restore a drivable car.
 		var car_script := load(script) as Script
 		if car_script == null:
 			push_warning("Saved vehicle script could not be loaded; restoring player on foot.")
 			return
-		car = car_script.new()
+		car = load("res://world/shared/traffic/SavedPlayerCar.tscn").instantiate()
+		car.set_script(car_script)
 	car.name = String(data.get("name", "TravelVehicle"))
+	car.set_meta("north_access_lower",bool(data.get("north_access_lower",false)))
+	if data.has("salvage_token"): car.set_meta("salvage_token",String(data.salvage_token))
+	if data.get("residence_stored_vehicle",false): car.set_meta("residence_stored_vehicle",true)
 	car.position = Vector2(float(data.get("x", player.global_position.x)), float(data.get("y", player.global_position.y)))
 	car.rotation = float(data.get("rotation", 0.0))
 	if not personal: scene.add_child(car)
@@ -227,6 +236,18 @@ func sanitize_saved_coordinates(data: Dictionary) -> Array[String]:
 		if int(world.get("coordinates_version",1)) >= 2:
 			fallback += preload("res://world/harbor/ContinuousWorld.gd").MOUNTAIN_OFFSET
 	var player_data: Dictionary = data.get("player", {}) if data.get("player", {}) is Dictionary else {}
+	if region in ["legacy", "harbor"]:
+		const YARD_LOCATION = preload("res://world/shared/salvage/SalvageLocation.gd")
+		if valid_saved_point(player_data.get("position", [])):
+			var old_point := Vector2(float(player_data.position[0]),float(player_data.position[1]))
+			var safe_point := YARD_LOCATION.safe_load_position(old_point,region=="legacy")
+			player_data.position = [safe_point.x,safe_point.y]
+		var saved_car: Dictionary = world.get("vehicle", {}) if world.get("vehicle", {}) is Dictionary else {}
+		if valid_saved_point([saved_car.get("x"),saved_car.get("y")]):
+			var car_point := Vector2(float(saved_car.x),float(saved_car.y))
+			var safe_car := YARD_LOCATION.safe_load_position(car_point,region=="legacy")
+			saved_car.x=safe_car.x
+			saved_car.y=safe_car.y
 	if player_data.has("position") and not valid_saved_point(player_data.position):
 		if fallback.is_finite(): player_data.position = [fallback.x,fallback.y]
 		else: player_data.erase("position") # Unknown scenes retain their own spawn.

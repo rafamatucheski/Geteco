@@ -1,0 +1,122 @@
+{
+  "bumper_0": {
+    "seconds": 0.52,
+    "peak_dbfs": -5.19,
+    "rms_dbfs": -22.38,
+    "sha256": "28285b65aa82b367ec4918aa8759ed1aafcb72211379fcc80531e0bb29bb57d2"
+  },
+  "bumper_1": {
+    "seconds": 0.58,
+    "peak_dbfs": -5.19,
+    "rms_dbfs": -22.1,
+    "sha256": "bda5feef2a7d5f2c8d0bb626c3c10243e3deeab4f7b92cc7369a0d745ee4b64b"
+  },
+  "bumper_2": {
+    "seconds": 0.49,
+    "peak_dbfs": -5.19,
+    "rms_dbfs": -22.08,
+    "sha256": "e5b4083475f3ed2bb6a4e9fa1c7a0a56b0d969316afbbae5e7f9629f3199c59e"
+  },
+  "bumper_3": {
+    "seconds": 0.62,
+    "peak_dbfs": -5.19,
+    "rms_dbfs": -25.41,
+    "sha256": "04697e178e11da240005093b18f39523ea6736f3ae06ef186db5e288f26e6611"
+  },
+  "metal_0": {
+    "seconds": 1.18,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -18.27,
+    "sha256": "dfb2ec841a8201e211077dd2aee1594bf2348249fe77d1702fefdb1bc0d3a0ae"
+  },
+  "metal_1": {
+    "seconds": 1.3,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -16.93,
+    "sha256": "e0228c61e7e5d55c10e6d4c0251a44fa5fb966bb4a0b2b92f3747c450bcbc4e6"
+  },
+  "metal_2": {
+    "seconds": 1.22,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -18.16,
+    "sha256": "b5398f426bc11a5c3f6afd12c133b93e892a725475932ce0485bccc80b950567"
+  },
+  "metal_3": {
+    "seconds": 1.38,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -18.77,
+    "sha256": "1d40bf00694a5b84f401a54bb3456692c892fdb87f14ef3c7e0caffb26258354"
+  },
+  "solid_0": {
+    "seconds": 1.12,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -21.82,
+    "sha256": "5f72e337260abbb7789e623a1f8072f56694dfce3d69e77a70888a97b11432d9"
+  },
+  "solid_1": {
+    "seconds": 1.24,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -22.02,
+    "sha256": "08cf6c7c1c8bef9005a20fbd2c8ea403b080a53bd70e4b0fa885abb8341df12f"
+  },
+  "solid_2": {
+    "seconds": 1.18,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -22.01,
+    "sha256": "1e0c1e7484f5238b64f54aeb4608f2f7cd6c742b2d8f6717611f73df1a329eba"
+  },
+  "solid_3": {
+    "seconds": 1.3,
+    "peak_dbfs": -2.38,
+    "rms_dbfs": -23.21,
+    "sha256": "2c844d2bfeea78949a80ac339a5299ace9886514960f21bce58b63a6f9adfab7"
+  },
+  "heavy_0": {
+    "seconds": 2.18,
+    "peak_dbfs": -1.51,
+    "rms_dbfs": -21.36,
+    "sha256": "d590cea0a563c6dff43ce1eb010e47c76ef78490a313c45ce5ac4f4969b4026b"
+  },
+  "heavy_1": {
+    "seconds": 2.3,
+    "peak_dbfs": -1.51,
+    "rms_dbfs": -20.7,
+    "sha256": "378ba23f49f46c7d5b9574d76ffdac24e2441f521fd8a61a8d7d2a1a6b54c4f2"
+  },
+  "heavy_2": {
+    "seconds": 2.06,
+    "peak_dbfs": -1.51,
+    "rms_dbfs": -19.32,
+    "sha256": "7dbd8a2d028610a1a1eae83c9f4a85443d9edad1ecf5f35942bb8d864c456a73"
+  },
+  "heavy_3": {
+    "seconds": 2.36,
+    "peak_dbfs": -1.51,
+    "rms_dbfs": -19.37,
+    "sha256": "3828b90277a80e7fb29f92c3467950d9b7aff5a50581b526ed16a94ea53fb8d6"
+  },
+  "motorcycle_0": {
+    "seconds": 0.65,
+    "peak_dbfs": -2.85,
+    "rms_dbfs": -16.61,
+    "sha256": "31c8ff0cafd7a9ec2615ecd2d8ed8b3c0927044229fb75e4616da8f1f5bbfdcf"
+  },
+  "motorcycle_1": {
+    "seconds": 0.78,
+    "peak_dbfs": -2.85,
+    "rms_dbfs": -16.36,
+    "sha256": "22d1a2cbaf7d9424b31897a2b686ffed22c537d4d19899c5e49caced2ad67475"
+  },
+  "motorcycle_2": {
+    "seconds": 0.72,
+    "peak_dbfs": -2.85,
+    "rms_dbfs": -15.87,
+    "sha256": "267e22624ac8960167d202957a149ea83a7a84d66c5b37007476d9310860e484"
+  },
+  "motorcycle_3": {
+    "seconds": 0.86,
+    "peak_dbfs": -2.85,
+    "rms_dbfs": -15.53,
+    "sha256": "dde607147fdaafcde633ae2a01a1504ea489600e6002bda5678cb376f354a204"
+  }
+}

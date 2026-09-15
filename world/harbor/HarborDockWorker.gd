@@ -167,6 +167,11 @@ func _physics_process(delta: float) -> void:
 	_update_carry_pose()
 
 func _update_carry_pose() -> void:
+	if get_meta("port_guiding",false) and not carrying and phase not in ["pickup","put_down"]:
+		# Banksman gives a visible hand signal from outside the truck's swept path.
+		right_upper_arm.rotation = Vector3(2.35,0,.22*sin(phase_time*4))
+		right_lower_arm.rotation = Vector3(.3,0,0)
+		return
 	if not carrying and phase not in ["pickup", "put_down"]: return
 	var reach := 1.0
 	if phase == "pickup": reach = smoothstep(0.0, 1.8, phase_time)

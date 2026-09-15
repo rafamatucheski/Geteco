@@ -2,6 +2,19 @@
 
 ## Aqui na raiz — documentação que continua valendo
 
+- [Bíblia completa da campanha](CAMPAIGN_STORY_BIBLE.md) — compilação de 10/09/2026,
+  personagens, cinco capítulos, perda/recuperação da Monaliza, oficina e quatro finais.
+  Desenvolvimento autoral; distingue decisões do autor de propostas novas.
+- [Chegada jogável: delegacia, Neko e Maciota](ARRIVAL_V2_IMPLEMENTATION.md) — roteiro inicial implementado, carro e trajeto.
+- [Missões em ordem cronológica](CAMPAIGN_MISSIONS.md) — 37 missões principais,
+  preparações finais e histórias paralelas; planejamento, não implementação.
+- [Personagens e conexões](CAMPAIGN_CHARACTERS_AND_CONNECTIONS.md) — biografias,
+  identidade, vínculos, cenas de afeto e revisão da causalidade da campanha.
+- [Produção e testes da campanha](CAMPAIGN_PRODUCTION.md) — locais, tuning,
+  protótipos independentes, persistência e matriz de validação futura.
+- [Cânone narrativo — contém spoilers](../world/harbor/campaign/NARRATIVE_CANON_SPOILERS.md)
+  — história de Dante e do irmão, reencontro na corrida da cidade 2, CGI da prisão
+  e clã do último boss; distingue decisões aprovadas de propostas em aberto.
 - [ARCHITECTURE.md](ARCHITECTURE.md) — mapa técnico: cadeia de entrada, autoloads,
   física 2D com apresentação 3D, streaming entre regiões, cadeia de despacho de
   emergência e as pendências conhecidas. **Comece por aqui.**

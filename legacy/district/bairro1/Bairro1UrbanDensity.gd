@@ -113,20 +113,7 @@ func _spawn_infill(data: Dictionary) -> void:
 	building.building_kind = String(data.kind)
 	building.variant_seed = int(data.seed)
 	add_child(building)
-	# Solid buildings are collision blockers, but the safety buffer above means
-	# they can never be introduced over an authored roadway or sidewalk.
-	var body := StaticBody2D.new()
-	body.name = "%s_Blocker" % String(data.id)
-	body.position = lot_rect.get_center()
-	body.collision_layer = 1
-	body.collision_mask = 0
-	body.add_to_group("building_blocker")
-	var shape := CollisionShape2D.new()
-	var rectangle := RectangleShape2D.new()
-	rectangle.size = lot_rect.size - Vector2(4, 4)
-	shape.shape = rectangle
-	body.add_child(shape)
-	add_child(body)
+	# ProceduralBuilding owns the solid geodata for this lot.
 
 func _draw() -> void:
 	if _expansion == null:

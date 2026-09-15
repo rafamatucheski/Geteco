@@ -2,10 +2,10 @@ class_name AnimatedPedestrian3D
 extends CharacterBody2D
 
 enum DistrictTheme {
-	ALL_MIXED,       # 0: Mistura orgânica de todos os distritos
-	CITY_DOWNTOWN,   # 1: Bairro Urbano Central (Executivos, Universitários, Casual)
-	WINTER_SNOW,     # 2: Bairro de Frio (Parkas com pele felpuda, gorros de lã, cachecóis)
-	DESERT_BADLANDS, # 3: Bairro de Deserto (Cowboys, chapéu de aba larga, bandanas, couro)
+	ALL_MIXED,       # 0: Mistura orgÃ¢nica de todos os distritos
+	CITY_DOWNTOWN,   # 1: Bairro Urbano Central (Executivos, UniversitÃ¡rios, Casual)
+	WINTER_SNOW,     # 2: Bairro de Frio (Parkas com pele felpuda, gorros de lÃ£, cachecÃ³is)
+	DESERT_BADLANDS, # 3: Bairro de Deserto (Cowboys, chapÃ©u de aba larga, bandanas, couro)
 	FOREST_WOODS,    # 4: Bairro de Floresta (Lenhadores flanela xadrez, mochilas de trilha, rangers)
 	BEACH_COASTAL    # 5: Bairro Praiano / Lazer (Camisas floridas havaianas, bermudas, surfistas)
 }
@@ -59,36 +59,42 @@ var archetype: Archetype
 var walk_target: Vector2 = Vector2.ZERO
 var walk_timer: float = 0.0
 var stride_freq_mult: float = 1.0
+var gait: RefCounted
+var _gait_last_position := Vector2.ZERO
+var _gait_position_valid := false
 var walk_dir: Vector2 = Vector2.RIGHT
 var is_scared: bool = false
 var panic_timer: float = 0.0
 var danger_response := preload("res://PedestrianDanger.gd").new()
+var _horn_escape_target := Vector2.ZERO
+var _horn_escape_time := 0.0
 var panic_recovery := 0.0
 @export var max_health: int = 40
 var health: int = 40
 var is_dead: bool = false
 var fall_presentation := preload("res://CharacterFallPresentation.gd").new()
 ## Knocked down but alive (survivable vehicle impact, see get_run_over()) --
-## frozen on the ground waiting for an ambulance, distinct from is_dead
-## (which is fatal and dispatches the coroner instead). See
-## rescue_from_emergency() / _on_ambulance_arrived_at_hospital().
+## frozen on the ground waiting for an ambulance. Shared medical care gives
+## nonfatal injuries one hospital day and critical injuries two days.
 var is_incapacitated: bool = false
 
-# Escala e Porte Físico Únicos (Silhuetas reais variadas)
+# Escala e Porte FÃ­sico Ãšnicos (Silhuetas reais variadas)
 var body_height_scale: float = 1.0
 var body_width_scale: float = 1.0
 enum BodyType { AVERAGE, SLIM, HEAVY, TALL, SHORT }
 @export var body_type_override: int = -1
-@export_enum("Aleatório", "Homem", "Mulher") var appearance_gender := 0
+@export_enum("AleatÃ³rio", "Homem", "Mulher") var appearance_gender := 0
 @export var appearance_seed := -1
 @export var hair_style_override := -1
+## -1 selects a stable facial-hair style from identity; 0 is clean shaven.
+@export_range(-1,5,1) var beard_style_override := -1
 var body_type: BodyType = BodyType.AVERAGE
 # Height, torso width, torso depth, limb thickness. Clothing is independent.
 const BODY_PROPORTIONS := [
 	Vector4(1.0, 1.0, 1.0, 1.0),
 	Vector4(1.02, 0.72, 0.78, 0.72),
 	Vector4(1.0, 1.35, 1.24, 1.16),
-	Vector4(1.22, 0.88, 0.90, 0.90),
+	Vector4(1.12, 0.88, 0.90, 0.90),
 	Vector4(0.86, 1.03, 1.0, 1.0),
 ]
 
@@ -111,7 +117,9 @@ var sprite_3d_display: Sprite2D
 # and was previously always-on regardless of camera distance. Only characters
 # actually near the active camera need it updated every frame.
 const VIEWPORT_CULL_CHECK_INTERVAL := 0.3
-const VIEWPORT_CULL_MARGIN := 220.0
+# The rig is ready more than two seconds before a normal walker reaches the
+# screen, without submitting offscreen 3D viewports across a wider empty ring.
+const VIEWPORT_CULL_MARGIN := 120.0
 var _viewport_cull_timer: float = 0.0
 var _viewport_render_active: bool = true
 var _viewport_frame_timer: float = 0.0
@@ -132,7 +140,7 @@ var right_upper_leg: Node3D
 var right_lower_leg: Node3D
 var muzzle_flash_3d: MeshInstance3D
 
-# Materiais e Customizações Visuais
+# Materiais e CustomizaÃ§Ãµes Visuais
 var skin_color: Color
 var hair_color: Color
 var shirt_color: Color
@@ -141,7 +149,7 @@ var shoe_color: Color
 var hat_color: Color
 var accessory_color: Color
 
-# Flags de Detalhamento Visual Físico 3D
+# Flags de Detalhamento Visual FÃ­sico 3D
 var has_cowboy_hat: bool = false
 var has_beanie: bool = false
 var has_fur_hood: bool = false
@@ -176,9 +184,13 @@ var dropped_cash: int = 35
 # Timers de Comportamento Bioma
 var behavior_timer: float = 0.0
 var behavior_action: int = 0 # 0 = Normal, 1 = Tremer de frio, 2 = Limpar suor, 3 = Olhar natureza, 4 = Celular
+const AMBIENT_NAVIGATION_INTERVAL := 1.0 / 30.0
+var _ambient_navigation_elapsed := 0.0
+var _ambient_navigation_velocity := Vector2.ZERO
+var _ambient_navigation_target := Vector2.INF
 
 func _ready() -> void:
-	# Multidões repartem buscas; os agentes de emergência usam o orçamento maior.
+	# MultidÃµes repartem buscas; os agentes de emergÃªncia usam o orÃ§amento maior.
 	movement_navigation.search_budget = 48
 	movement_navigation.retry_delay = 2.5
 	add_to_group("pedestrian")
@@ -189,7 +201,11 @@ func _ready() -> void:
 	stride_freq_mult = randf_range(0.85, 1.15)
 	
 	collision_layer = 4
-	collision_mask = 1 | 2 # Colide com prédios/paredes (1) e veículos (2)
+	collision_mask = 1 | 2 | 4 # CenÃ¡rio, veÃ­culos e pessoas.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	platform_floor_layers = 0
+	platform_wall_layers = 0
+	platform_on_leave = CharacterBody2D.PLATFORM_ON_LEAVE_DO_NOTHING
 	if get_node_or_null("CollisionShape2D") == null:
 		var c := CollisionShape2D.new()
 		c.name = "CollisionShape2D"
@@ -201,7 +217,7 @@ func _ready() -> void:
 	_setup_district_and_archetype()
 	preload("res://world/shared/pedestrians/CitizenAppearance.gd").prepare(self)
 	if defer_presentation:
-		# A silhueta mantém o cidadão visível enquanto o detalhe aguarda orçamento.
+		# A silhueta mantÃ©m o cidadÃ£o visÃ­vel enquanto o detalhe aguarda orÃ§amento.
 		_presentation_fallback = Polygon2D.new()
 		_presentation_fallback.polygon = PackedVector2Array([Vector2(-5, 0), Vector2(-5, -16), Vector2(0, -22), Vector2(5, -16), Vector2(5, 0)])
 		_presentation_fallback.color = shirt_color
@@ -210,33 +226,37 @@ func _ready() -> void:
 	else:
 		_build_3d_viewport()
 	_pick_new_sidewalk_target()
+	# Ambient route/spacing decisions are distributed across two physics ticks.
+	# Movement and collision remain at the full physics rate, and danger/combat
+	# branches below still calculate a fresh response on every tick.
+	_ambient_navigation_elapsed = randf_range(0.0, AMBIENT_NAVIGATION_INTERVAL)
 	# Stagger the first check across instances so 39+ pedestrians don't all
 	# query the active camera on the same frame.
 	_viewport_cull_timer = randf_range(0.0, VIEWPORT_CULL_CHECK_INTERVAL)
 	_viewport_frame_timer = randf_range(0.0, 1.0 / 30.0)
 
 func _setup_district_and_archetype() -> void:
-	# Variação de Altura e Largura Corporal (Portes Físicos Distintos)
+	# VariaÃ§Ã£o de Altura e Largura Corporal (Portes FÃ­sicos Distintos)
 	body_height_scale = randf_range(0.90, 1.14)
 	body_width_scale = randf_range(0.88, 1.18)
 
 	# Tons de Pele Naturais e Diversos (8 tonalidades calibradas)
 	var skin_tones := [
-		Color(0.96, 0.84, 0.74), # Pele Clara Nórdica
+		Color(0.96, 0.84, 0.74), # Pele Clara NÃ³rdica
 		Color(0.90, 0.76, 0.62), # Pele Clara Rosada
 		Color(0.82, 0.66, 0.50), # Moreno Claro / Oliva
 		Color(0.72, 0.54, 0.38), # Moreno / Bronze Tan
 		Color(0.58, 0.40, 0.26), # Moreno Escuro / Caramelo
 		Color(0.44, 0.28, 0.18), # Negro / Chocolate
 		Color(0.32, 0.20, 0.14), # Negro Retinto / Espresso
-		Color(0.24, 0.15, 0.10)  # Ébano Profundo
+		Color(0.24, 0.15, 0.10)  # Ã‰bano Profundo
 	]
 	skin_color = skin_tones[randi() % skin_tones.size()]
 
 	var hair_tones := [
-		Color(0.10, 0.10, 0.10), # Preto Ônix
+		Color(0.10, 0.10, 0.10), # Preto Ã”nix
 		Color(0.28, 0.18, 0.12), # Castanho Escuro
-		Color(0.48, 0.30, 0.16), # Castanho Médio
+		Color(0.48, 0.30, 0.16), # Castanho MÃ©dio
 		Color(0.72, 0.44, 0.20), # Castanho Acobreado
 		Color(0.88, 0.72, 0.38), # Loiro Dourado
 		Color(0.78, 0.28, 0.14), # Ruivo Vivo
@@ -344,7 +364,7 @@ func _setup_district_and_archetype() -> void:
 			dropped_cash = randi_range(120, 350)
 
 		Archetype.CITY_TOURIST:
-			# Turista com Câmera e Mapa
+			# Turista com CÃ¢mera e Mapa
 			var retro_shirts := [Color("f1c40f"), Color("e67e22"), Color("1abc9c"), Color("3498db")]
 			shirt_color = retro_shirts[randi() % retro_shirts.size()]
 			pants_color = Color("ecf0f1")
@@ -545,7 +565,7 @@ func _build_3d_viewport() -> void:
 	model_root.scale = Vector3(1.0, body_height_scale, 1.0)
 	viewport.add_child(model_root)
 	
-	# Sombra Projetada 3D nos pés
+	# Sombra Projetada 3D nos pÃ©s
 	var shadow_mat := StandardMaterial3D.new()
 	shadow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	shadow_mat.albedo_color = Color(0.02, 0.02, 0.04, 0.50)
@@ -562,6 +582,7 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.name = "GroundShadow"
 	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	viewport.add_child(shadow_mesh)
+	preload("res://ContactShadow.gd").soften(shadow_mesh, Vector2(0.86 * body_width_scale, 0.72))
 	
 	# Materiais 3D
 	var mat_shirt := _make_mat(shirt_color, 0.6)
@@ -626,7 +647,7 @@ func _build_3d_viewport() -> void:
 		pack.position = Vector3(0.0, 0.05, 0.19)
 		torso_node.add_child(pack)
 
-		# Isolante Térmico / Saco de Dormir Enrolado no Topo da Mochila
+		# Isolante TÃ©rmico / Saco de Dormir Enrolado no Topo da Mochila
 		if has_sleeping_bag:
 			var mat_roll := MeshInstance3D.new()
 			var cyl_mr := CylinderMesh.new()
@@ -667,7 +688,7 @@ func _build_3d_viewport() -> void:
 		badge.position = Vector3(-0.08, 0.10, -0.165)
 		torso_node.add_child(badge)
 		
-	# 2. CABEÇA 3D
+	# 2. CABEÃ‡A 3D
 	head_node = Node3D.new()
 	head_node.position = Vector3(0.0, 1.25, 0.0)
 	model_root.add_child(head_node)
@@ -709,7 +730,7 @@ func _build_3d_viewport() -> void:
 		glasses.position = Vector3(0.0, 0.03, -0.165)
 		head_node.add_child(glasses)
 
-	# Coberturas de Cabeça
+	# Coberturas de CabeÃ§a
 	if has_cowboy_hat:
 		var crown := MeshInstance3D.new()
 		var cyl_cr := CylinderMesh.new()
@@ -847,7 +868,7 @@ func _build_3d_viewport() -> void:
 		headband.position = Vector3(0.0, 0.07, 0.0)
 		head_node.add_child(headband)
 		
-	# 3. BRAÇOS 3D
+	# 3. BRAÃ‡OS 3D
 	left_upper_arm = Node3D.new()
 	left_upper_arm.position = Vector3(-0.24, 1.05, 0.0)
 	model_root.add_child(left_upper_arm)
@@ -861,7 +882,7 @@ func _build_3d_viewport() -> void:
 	left_lower_arm.add_child(_create_hand(mat_skin, Vector3(0, -0.19, 0)))
 	left_lower_arm.add_child(_create_joint_cap(0.046, mat_forearm_l, Vector3.ZERO))
 
-	# Detalhe: Câmera Turística no Pescoço
+	# Detalhe: CÃ¢mera TurÃ­stica no PescoÃ§o
 	if has_camera:
 		var cam_body := MeshInstance3D.new()
 		var box_cam := BoxMesh.new()
@@ -882,7 +903,7 @@ func _build_3d_viewport() -> void:
 		cam_lens.position = Vector3(0.0, 0.02, -0.21)
 		torso_node.add_child(cam_lens)
 
-	# Detalhe: Copinho de Café na Mão Esquerda
+	# Detalhe: Copinho de CafÃ© na MÃ£o Esquerda
 	if has_coffee_cup:
 		var cup := MeshInstance3D.new()
 		var cyl_cup := CylinderMesh.new()
@@ -894,7 +915,7 @@ func _build_3d_viewport() -> void:
 		cup.position = Vector3(0.0, -0.18, -0.05)
 		left_lower_arm.add_child(cup)
 
-	# Detalhe: Prancha de Surf 3D no Braço Esquerdo
+	# Detalhe: Prancha de Surf 3D no BraÃ§o Esquerdo
 	if has_surfboard:
 		var board := MeshInstance3D.new()
 		var cap_bd := CapsuleMesh.new()
@@ -940,7 +961,7 @@ func _build_3d_viewport() -> void:
 		cane.position = Vector3(0.06, -0.24, -0.08)
 		right_lower_arm.add_child(cane)
 
-	# Detalhe: Pistola 3D na mão do Gangster
+	# Detalhe: Pistola 3D na mÃ£o do Gangster
 	if has_handgun:
 		muzzle_flash_3d = MeshInstance3D.new()
 		var sph_mf := SphereMesh.new()
@@ -989,18 +1010,26 @@ func _build_3d_viewport() -> void:
 	preload("res://world/shared/pedestrians/CitizenDetails.gd").dress(self, int(archetype))
 	if has_handgun:
 		preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, "pistol")
-	# Exibição 2D
+	# ExibiÃ§Ã£o 2D
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport.get_texture()
 	sprite_3d_display.scale = Vector2(0.38, 0.38)
 	add_child(sprite_3d_display)
+	# Deferred citizens keep walking before PresentationBudget builds the rig.
+	# Install the gait only after every articulated limb exists.
+	var built_gait := preload("res://world/shared/pedestrians/CitizenGait.gd").new()
+	if built_gait.configure(self, int(get_meta("appearance_variant", 0))):
+		gait = built_gait
 
 func _apply_body_proportions() -> void:
 	var proportions: Vector4 = BODY_PROPORTIONS[body_type]
 	# Preserve clothing bulk, without inflating the head and hands with the torso.
 	var clothing_bulk := maxf(1.0, body_width_scale)
 	torso_node.scale = Vector3(proportions.y * clothing_bulk, 1.0, proportions.z * clothing_bulk)
-	head_node.scale = Vector3(1.0, 1.0 / sqrt(body_height_scale), 1.0)
+	# Match Dante's adult head proportions; hair and facial details inherit this
+	# scale. The neck still overlaps the collar and the base of the head.
+	const HEAD_SCALE := 0.72
+	head_node.scale = Vector3(HEAD_SCALE, HEAD_SCALE / sqrt(body_height_scale), HEAD_SCALE)
 	for arm in [left_upper_arm, right_upper_arm]:
 		arm.position.x = signf(arm.position.x) * (0.17 * proportions.y * clothing_bulk + 0.07 * proportions.w)
 		arm.scale = Vector3(proportions.w, 1.0, proportions.w)
@@ -1096,8 +1125,7 @@ func _update_viewport_render_state(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	_update_viewport_render_state(delta)
 	if is_flying:
-		position += fly_velocity * delta
-		fly_velocity = fly_velocity.move_toward(Vector2.ZERO, 950.0 * delta)
+		fly_velocity = preload("res://world/shared/combat/VehiclePersonImpact.gd").move_falling_body(self, fly_velocity, delta)
 		if fly_velocity.length() < 12.0: is_flying = false
 
 	if is_dead or is_incapacitated:
@@ -1108,6 +1136,7 @@ func _physics_process(delta: float) -> void:
 	var actual_speed := velocity.length()
 	if actual_speed > 1.0:
 		walk_timer += delta * (actual_speed / maxf(1.0, base_walk_speed)) * stride_freq_mult
+	_advance_gait(delta)
 	behavior_timer += delta
 	
 	if is_scared:
@@ -1119,7 +1148,7 @@ func _physics_process(delta: float) -> void:
 	panic_recovery = maxf(0.0, panic_recovery - delta)
 	
 	# Velocidade adaptativa conforme o bioma
-	# Velocidade adaptativa conforme o bioma e arquétipo
+	# Velocidade adaptativa conforme o bioma e arquÃ©tipo
 	var biome_speed_mult: float = 1.0
 	match archetype:
 		Archetype.WINTER_PARKA_FUR, Archetype.WINTER_BEANIE_SCARF, Archetype.WINTER_SKI_PUFFER:
@@ -1131,96 +1160,106 @@ func _physics_process(delta: float) -> void:
 		Archetype.BEACH_FITNESS_RUNNER, Archetype.CITY_JOGGER:
 			biome_speed_mult = 1.65 if ambient_running_enabled else 1.0
 
-	# Lógica de Combate e Retaliação Armada (Gangsters de Bairro)
+	# LÃ³gica de Combate e RetaliaÃ§Ã£o Armada (Gangsters de Bairro)
 	if is_gangster and is_instance_valid(combat_target):
+		_ambient_navigation_target = Vector2.INF
 		var target_dist = global_position.distance_to(combat_target.global_position)
 		walk_dir = global_position.direction_to(combat_target.global_position)
 		
-		# Mantém postura de tiro com a mão erguida
+		# MantÃ©m postura de tiro com a mÃ£o erguida
 		if right_upper_arm and right_lower_arm:
 			right_upper_arm.rotation = Vector3(1.40, -0.05, 0.0)
 			right_lower_arm.rotation = Vector3(0.05, 0.0, 0.0)
 			
+		# LÃ³gica de combate: distingue armas brancas e armas de fogo
+		var rig := get_node_or_null("NPCCombatRig")
+		var is_melee_npc := false
+		var melee_data: Dictionary = {}
+		if rig:
+			melee_data = WeaponCatalog.get_weapon(rig.active_weapon_id)
+			is_melee_npc = melee_data.get("is_melee", false) == true
+
+		var attack_range: float = float(melee_data.get("melee_range", 52.0)) if is_melee_npc else 420.0
 		gun_cooldown -= delta
-		if gun_cooldown <= 0.0 and target_dist < 420.0:
-			gun_cooldown = randf_range(0.8, 1.4)
-			_gangster_shoot_target(combat_target.global_position)
-			
-		# Recua ou avança taticamente
-		var combat_speed = base_walk_speed * 1.2
-		var dest = combat_target.global_position + (global_position - combat_target.global_position).normalized() * 180.0
+		if gun_cooldown <= 0.0 and target_dist <= attack_range:
+			if is_melee_npc:
+				gun_cooldown = float(melee_data.get("fire_interval", 0.65)) + randf_range(0.1, 0.25)
+				_gangster_melee_attack(combat_target, melee_data)
+			else:
+				gun_cooldown = randf_range(0.8, 1.4)
+				_gangster_shoot_target(combat_target.global_position)
+
+		# Recua ou avanÃ§a taticamente de acordo com o tipo de combate
+		var combat_speed = base_walk_speed * (1.35 if is_melee_npc else 1.2)
+		var stand_dist := (attack_range * 0.65) if is_melee_npc else 180.0
+		var dest = combat_target.global_position + (global_position - combat_target.global_position).normalized() * stand_dist
 		velocity = _navigate_towards(dest, combat_speed, delta)
 	elif is_scared:
+		_ambient_navigation_target = Vector2.INF
 		velocity = danger_response.movement(self, delta, base_walk_speed * 2.4)
 		walk_dir = velocity.normalized()
+	elif _horn_escape_time > 0.0:
+		_horn_escape_time = maxf(0.0, _horn_escape_time - delta)
+		_ambient_navigation_target = Vector2.INF
+		velocity = _navigate_towards(_horn_escape_target, base_walk_speed * 1.8, delta) if global_position.distance_to(_horn_escape_target) > 8.0 else Vector2.ZERO
+		walk_dir = velocity.normalized()
 	elif _ambient_walk_paused():
+		_ambient_navigation_target = Vector2.INF
 		velocity = Vector2.ZERO
 	else:
 		var cur_speed: float = base_walk_speed * biome_speed_mult * (0.75 if panic_recovery > 0.0 else 1.0)
-		var dist: float = global_position.distance_to(walk_target)
-		
-		if dist < 16.0 or dist > 1400.0 or stuck_timer > 2.5:
-			_pick_new_sidewalk_target()
-			stuck_timer = 0.0
-		
-		velocity = _navigate_towards(walk_target, cur_speed, delta)
+		_update_walk_destination(delta)
+
+		# The navigation helper performs route and social-neighbour decisions.
+		# Its result is safe to retain for one intervening tick because the actual
+		# body still calls move_and_slide every tick and therefore reacts to live
+		# physical contact immediately. Accumulated delta keeps its timers exact.
+		_ambient_navigation_elapsed += delta
+		if _ambient_navigation_target != walk_target or _ambient_navigation_elapsed >= AMBIENT_NAVIGATION_INTERVAL:
+			var navigation_delta := maxf(delta, _ambient_navigation_elapsed)
+			_ambient_navigation_elapsed = 0.0
+			_ambient_navigation_target = walk_target
+			_ambient_navigation_velocity = _navigate_towards(walk_target, cur_speed, navigation_delta)
+		velocity = _ambient_navigation_velocity
 		walk_dir = velocity.normalized() if velocity.length_squared() > 1.0 else global_position.direction_to(walk_target)
 	
 	# The 3D rig orientation/walk-cycle pose below is pure presentation: nothing
 	# else in the codebase reads model_root/limb rotations, and the collision
 	# shape driving move_and_slide() below is rotation-independent. When the
-	# character's SubViewport isn't being submitted for render (off-screen —
+	# character's SubViewport isn't being submitted for render (off-screen â€”
 	# see _update_viewport_render_state above), skip recomputing and writing
 	# it; walk_timer keeps advancing so the cycle resumes in-phase the moment
 	# it's back in view. Navigation/collision/move_and_slide are unaffected.
 	if _viewport_render_active:
-		# Rotação 3D com orientação precisa
+		# RotaÃ§Ã£o 3D com orientaÃ§Ã£o precisa
 		if model_root and walk_dir.length_squared() > 0.01:
 			var target_angle_3d: float = -atan2(walk_dir.y, walk_dir.x) - PI * 0.5
 			model_root.rotation.y = lerp_angle(model_root.rotation.y, target_angle_3d, 10.0 * delta)
 
-		# Animação Articulada fluida com Micro-Comportamentos (Caminhada vs Corrida/Sprint)
-		var is_sprinting := is_scared or (is_gangster and is_instance_valid(combat_target)) or (ambient_running_enabled and (is_jogger or archetype == Archetype.BEACH_FITNESS_RUNNER))
-		var anim_freq: float = 14.5 if is_sprinting else 7.5
-		var is_moving := actual_speed > 1.0
-		var step_angle: float = (sin(walk_timer * anim_freq) * (0.70 if is_sprinting else 0.45)) if is_moving else 0.0
-		var arm_angle: float = (-step_angle * (0.85 if is_sprinting else 0.55)) if is_moving else 0.0
-		var bobbing: float = (absf(cos(walk_timer * anim_freq)) * (0.040 if is_sprinting else 0.025)) if is_moving else 0.0
-		var forward_lean: float = (-0.16 if is_sprinting else 0.0) if is_moving else 0.0
+		if gait != null:
+			gait.apply_pose()
 
-		# Comportamento Climático: Tremer de frio no inverno
-		var shiver_offset: float = 0.0
-		if archetype in [Archetype.WINTER_PARKA_FUR, Archetype.WINTER_BEANIE_SCARF, Archetype.WINTER_SKI_PUFFER]:
-			shiver_offset = sin(walk_timer * 32.0) * 0.015
+	preload("res://world/shared/pedestrians/PersonMotion.gd").move_actor(self)
 
-		if left_upper_leg and right_upper_leg:
-			left_upper_leg.rotation.x = step_angle
-			right_upper_leg.rotation.x = -step_angle
-			if left_lower_leg and right_lower_leg:
-				left_lower_leg.rotation.x = maxf(0.0, -step_angle * (0.85 if is_sprinting else 0.65))
-				right_lower_leg.rotation.x = maxf(0.0, step_angle * (0.85 if is_sprinting else 0.65))
-
-		if left_upper_arm and right_upper_arm:
-			left_upper_arm.rotation = Vector3(arm_angle, 0.0, 0.0)
-			if not (is_gangster and is_instance_valid(combat_target)):
-				right_upper_arm.rotation = Vector3(-arm_angle, 0.0, 0.0)
-				if right_lower_arm:
-					right_lower_arm.rotation = Vector3(0.15 + absf(arm_angle) * 0.25, 0.0, 0.0)
-			if left_lower_arm:
-				left_lower_arm.rotation = Vector3(0.15 + absf(arm_angle) * 0.25, 0.0, 0.0)
-
-		if torso_node and head_node:
-			torso_node.position.y = 0.85 + bobbing
-			torso_node.position.x = shiver_offset
-			torso_node.rotation.x = forward_lean
-			head_node.position.y = 1.25 + bobbing
-			head_node.position.x = shiver_offset
-			head_node.rotation.x = forward_lean * 0.5
-
-	move_and_slide()
+func _advance_gait(delta: float) -> void:
+	# move_actor can skip move_and_slide when stopped; get_position_delta would
+	# then retain an old step indefinitely. Measure actual position ourselves.
+	var displacement := global_position - _gait_last_position if _gait_position_valid else Vector2.ZERO
+	_gait_last_position=global_position
+	_gait_position_valid=true
+	if gait == null: return
+	var sprinting: bool=is_scared or (is_gangster and is_instance_valid(combat_target)) or (ambient_running_enabled and (is_jogger or archetype==Archetype.BEACH_FITNESS_RUNNER))
+	gait.advance_distance(delta,displacement,sprinting)
 
 func _ambient_walk_paused() -> bool:
 	return false
+
+func _update_walk_destination(_delta: float) -> void:
+	var dist := global_position.distance_to(walk_target)
+	if dist < 16.0 or dist > 1400.0 or stuck_timer > 2.5:
+		_pick_new_sidewalk_target()
+		movement_navigation.reset_progress()
+		stuck_timer = 0.0
 
 func _gangster_shoot_target(target_pos: Vector2) -> void:
 	var rig := get_node_or_null("NPCCombatRig")
@@ -1231,6 +1270,7 @@ func _gangster_shoot_target(target_pos: Vector2) -> void:
 		var bullet = bullet_scene.instantiate()
 		get_tree().current_scene.add_child(bullet)
 		bullet.owner_body = self
+		bullet.configure_range(WeaponCatalog.get_weapon("pistol"))
 		bullet.damage = 10
 		bullet.speed = 900.0
 		bullet.direction = dir.rotated(randf_range(-0.06, 0.06))
@@ -1243,6 +1283,20 @@ func _gangster_shoot_target(target_pos: Vector2) -> void:
 		t.tween_callback(func(): if muzzle_flash_3d: muzzle_flash_3d.visible = false)
 
 	_play_audio(ProceduralAudio.get_gunshot_pistol_stream(), -4.0, randf_range(0.92, 1.08))
+
+func _gangster_melee_attack(target: Node2D, data: Dictionary) -> void:
+	var rig := get_node_or_null("NPCCombatRig")
+	if rig:
+		rig.attack()
+	var dmg: int = int(data.get("damage", 12))
+	if is_instance_valid(target) and target.has_method("take_damage"):
+		target.set_meta("combat_attacker", self)
+		var reach := float(data.get("melee_range", 46.0))
+		dmg = WeaponCatalog.distance_damage(dmg, global_position.distance_to(target.global_position), float(data.get("falloff_start", reach * 0.65)), reach, float(data.get("min_damage_ratio", 0.65)))
+		if dmg <= 0: return
+		target.take_damage(dmg, false)
+		if data.get("is_knife", false) and preload("res://audio/combat/ImpactMaterial.gd").resolve(target) == &"flesh":
+			preload("res://world/shared/combat/BodyWound.gd").apply(target, global_position.direction_to(target.global_position))
 
 var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
@@ -1275,7 +1329,10 @@ var fly_velocity: Vector2 = Vector2.ZERO
 const LETHAL_IMPACT_SPEED := 200.0
 
 func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> void:
+	set_meta("death_cause", "vehicle_impact")
 	if is_dead or is_incapacitated: return
+	if not impact_velocity.is_finite() or impact_velocity.length() < 35.0: return
+	if _panic_bubble: _panic_bubble.hide()
 	is_flying = true
 	fly_velocity = impact_velocity.limit_length(600.0) * 0.85
 	_start_fall(impact_velocity)
@@ -1289,21 +1346,21 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 		is_incapacitated = true
 		health = 1
 		_play_audio(ProceduralAudio.get_scream_stream(), -5.0)
-		if wm: wm.report_crime(6)
+		if wm and _is_player_driver: wm.report_crime(6)
 		_dispatch_emergency_ambulance()
 	else:
 		is_dead = true
 		health = 0
 		_drop_cash_loot()
 		_create_3d_blood_puddle()
-		_play_audio(ProceduralAudio.get_squish_stream(), -3.0)
 		_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
-		if wm: wm.report_crime(20)
+		if wm and _is_player_driver: wm.report_crime(20)
 		_dispatch_emergency_coroner()
 		_start_decay()
+	preload("res://world/shared/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
 
 func take_damage(amount: int, is_player_attacker: bool = false) -> void:
-	if is_dead or is_incapacitated: return
+	if amount <= 0 or is_dead or is_incapacitated: return
 	health = maxi(0, health - amount)
 	
 	if is_gangster:
@@ -1312,19 +1369,44 @@ func take_damage(amount: int, is_player_attacker: bool = false) -> void:
 	else:
 		panic()
 		
-	_play_audio(ProceduralAudio.get_squish_stream(), -6.0)
+	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, amount)
 	
 	if health <= 0:
-		_die()
+		_die(is_player_attacker)
 
 func _show_gangster_bubble() -> void:
 	var phrases = ["MEXEU COM O BONDE ERRADO!", "DERRUBA ELE!", "PEGA O CARA!", "FOGO NELE!"]
 	_show_custom_bubble(phrases[randi() % phrases.size()], Color(0.9, 0.2, 0.2))
 
+func hear_traffic_horn(vehicle: Node2D) -> void:
+	if is_dead or is_incapacitated or is_flying or is_scared: return
+	if get_meta("medical_vehicle_protected", false): return
+	var forward := vehicle.global_transform.x.normalized()
+	var relative := global_position - vehicle.global_position
+	if relative.dot(forward) < 0.0 or relative.dot(forward) > 220.0: return
+	var side := forward.orthogonal()
+	var width := 44.0
+	var hull := vehicle.get_node_or_null("Collision") as CollisionShape2D
+	if hull != null and hull.shape is RectangleShape2D:
+		width = hull.shape.size.y * vehicle.global_scale.y * 0.5 + 28.0
+	if absf(relative.dot(side)) > width: return
+	if relative.dot(side) < 0.0: side = -side
+	# Test both shoulders with the actual walking body. Never teleport through
+	# a parked car or wall; the ordinary navigation and movement remain active.
+	for direction in [side, -side]:
+		var target: Vector2 = global_position + direction * (width + 28.0 - relative.dot(direction))
+		if test_move(global_transform, target - global_position): continue
+		_horn_escape_target = target
+		_horn_escape_time = 4.5
+		return
+
 func hear_gunfire(origin: Vector2, end: Vector2) -> void:
 	if is_dead or is_incapacitated or is_gangster: return
+	var was_scared := is_scared
 	danger_response.remember(origin, end)
 	panic()
+	if not was_scared:
+		_show_custom_bubble("TIROS! CORRE!", Color(0.9, 0.6, 0.2))
 
 func _resume_after_panic() -> void:
 	danger_response.threats.clear()
@@ -1340,8 +1422,10 @@ func panic() -> void:
 		danger_response.remember(origin, origin)
 	is_scared = true
 	behavior_action = 0
-	_play_audio(ProceduralAudio.get_pedestrian_scream_stream(), -6.0)
-	var phrases = ["SOCORRO!", "ELE TÁ ARMADO!", "CORRE!", "CUIDADO!"]
+	# A lethal hit has its own reaction in _die(); do not stack two voices.
+	if health > 0:
+		_play_audio(ProceduralAudio.get_pedestrian_scream_stream(), -6.0)
+	var phrases = ["SOCORRO!", "PARA COM ISSO!", "CORRE!", "CUIDADO!"]
 	_show_custom_bubble(phrases[randi() % phrases.size()], Color(0.9, 0.6, 0.2))
 
 var _panic_bubble: PanelContainer = null
@@ -1372,12 +1456,7 @@ func _show_custom_bubble(text: String, border_col: Color) -> void:
 		add_child(_panic_bubble)
 		
 	_panic_label.text = text
-	_panic_bubble.visible = true
-	var t = create_tween()
-	t.tween_interval(2.8)
-	t.tween_callback(func():
-		if _panic_bubble: _panic_bubble.visible = false
-	)
+	preload("res://ui/WorldSpeechLayout.gd").show_for(self, _panic_bubble, 2.8)
 
 func _drop_cash_loot() -> void:
 	var tree = get_tree()
@@ -1395,7 +1474,7 @@ func _drop_cash_loot() -> void:
 		wp.global_position = global_position + Vector2(randf_range(-12, 12), randf_range(-12, 12))
 		parent.call_deferred("add_child", wp)
 
-func _die() -> void:
+func _die(is_player_attacker: bool = false) -> void:
 	is_dead = true
 	if _panic_bubble: _panic_bubble.visible = false
 	velocity = Vector2.ZERO
@@ -1404,14 +1483,18 @@ func _die() -> void:
 	_start_fall()
 	_drop_cash_loot()
 	_create_3d_blood_puddle()
-	_play_audio(ProceduralAudio.get_pedestrian_scream_stream(), -4.0)
+	_play_audio(ProceduralAudio.get_death_reaction_stream(), -4.0)
 	
 	var wm = get_node_or_null("/root/WantedManager")
-	if wm: wm.report_crime(20)
+	if wm and is_player_attacker: wm.report_crime(20)
 	_dispatch_emergency_coroner()
 	_start_decay()
 
 func _dispatch_emergency_coroner() -> void:
+	var care := get_node_or_null("/root/NPCMedicalCare")
+	if care:
+		care.report_injury(self)
+		return
 	var director := get_tree().get_first_node_in_group("emergency_depot_director")
 	if director and director.has_method("request_dispatch"):
 		get_tree().create_timer(2.5).timeout.connect(func():
@@ -1420,6 +1503,10 @@ func _dispatch_emergency_coroner() -> void:
 		)
 
 func _dispatch_emergency_ambulance() -> void:
+	var care := get_node_or_null("/root/NPCMedicalCare")
+	if care:
+		care.report_injury(self)
+		return
 	var director := get_tree().get_first_node_in_group("emergency_depot_director")
 	if director and director.has_method("request_dispatch"):
 		get_tree().create_timer(1.2).timeout.connect(func():
@@ -1427,121 +1514,23 @@ func _dispatch_emergency_ambulance() -> void:
 				director.request_dispatch("ambulance", self)
 		)
 
-## Called by Paramedic.gd once it finishes treating this pedestrian on
-## scene. Instead of vanishing, the pedestrian "rides along" (hidden,
-## physics off) until the same ambulance reports back at its depot
-## (EmergencyVehicle.arrived_at_depot, already emitted for every service
-## type), then reappears near the hospital to simulate the visit.
+## Compatibility entry point; recovery belongs to the saved medical routine.
 var emergency_rescue_in_progress := false
 
 func rescue_from_emergency(ambulance: Node2D) -> void:
-	if is_dead or not is_incapacitated or emergency_rescue_in_progress:
-		return
-	# Both crew members finish treatment independently. Boarding belongs to
-	# the patient and must happen once, including while hospital care runs.
+	if emergency_rescue_in_progress: return
+	var care := get_node_or_null("/root/NPCMedicalCare")
+	if care == null or not is_instance_valid(ambulance): return
 	emergency_rescue_in_progress = true
-	hide()
-	set_physics_process(false)
-	var col = get_node_or_null("CollisionShape2D")
-	if col: col.set_deferred("disabled", true)
-	if is_instance_valid(ambulance) and ambulance.has_signal("arrived_at_depot"):
-		if not ambulance.arrived_at_depot.is_connected(_on_ambulance_arrived_at_hospital):
-			ambulance.arrived_at_depot.connect(_on_ambulance_arrived_at_hospital, CONNECT_ONE_SHOT)
-	else:
-		# The ambulance reference is already gone -- still complete the
-		# rescue instead of leaving the pedestrian stuck hidden forever.
-		get_tree().create_timer(6.0).timeout.connect(func(): _on_ambulance_arrived_at_hospital(null, ""))
-
-func _nearest_hospital_spawn() -> Node2D:
-	var nearest: Node2D = null
-	var best_distance := INF
-	for node in get_tree().get_nodes_in_group("hospital_spawn"):
-		var spawn := node as Node2D
-		if not is_instance_valid(spawn):
-			continue
-		var distance := global_position.distance_squared_to(spawn.global_position)
-		if nearest == null or distance < best_distance:
-			nearest = spawn
-			best_distance = distance
-	return nearest
-
-func _on_ambulance_arrived_at_hospital(_vehicle: Node = null, _depot_id: String = "") -> void:
-	if not is_instance_valid(self):
-		return
-	var spawn := _nearest_hospital_spawn()
-	if spawn:
-		# Offset well clear of the marker itself: hospital_spawn also doubles
-		# as the ambulance/coroner depot's own spawn/exit point
-		# (HarborEmergencyDirector's "ambulance"/"coroner" apron, a ~100x46
-		# footprint checked by _spawn_clear()), and a pedestrian standing on
-		# or near it would block the next real dispatch's clearance check.
-		global_position = spawn.global_position + Vector2(80.0, 70.0)
-	fall_presentation.reset()
-	is_flying = false
-	fly_velocity = Vector2.ZERO
-	modulate.a = 0.0
-	show()
-	var enter_tween := create_tween()
-	enter_tween.tween_property(self, "modulate:a", 1.0, 0.3)
-	await enter_tween.finished
-	await get_tree().create_timer(1.0).timeout
-	if not is_instance_valid(self):
-		return
-	# Walks into the building: a short step toward the door, then fades out.
-	var door_step := global_position + Vector2(randf_range(-16.0, 16.0), 26.0)
-	var walk_tween := create_tween()
-	walk_tween.tween_property(self, "global_position", door_step, 0.8)
-	walk_tween.parallel().tween_property(self, "modulate:a", 0.0, 0.9)
-	await walk_tween.finished
-	await get_tree().create_timer(randf_range(8.0, 14.0)).timeout
-	if not is_instance_valid(self):
-		return
-	show()
-	var exit_tween := create_tween()
-	exit_tween.tween_property(self, "modulate:a", 1.0, 0.6)
-	health = max_health
-	is_dead = false
-	is_incapacitated = false
-	emergency_rescue_in_progress = false
-	var col = get_node_or_null("CollisionShape2D")
-	if col: col.set_deferred("disabled", false)
-	# Forces an immediate fresh pick on the next physics frame instead of
-	# leaving a stale (possibly very far) walk_target from before the ride.
-	walk_target = global_position
-	set_physics_process(true)
+	care.report_injury(self)
+	care.board_patient(self, ambulance)
 
 func _create_3d_blood_puddle() -> void:
-	var puddle_root := Node2D.new()
-	puddle_root.name = "3DBloodPuddle"
-	puddle_root.global_position = global_position
-	puddle_root.z_as_relative = false
-	puddle_root.z_index = 3
-	
-	var poly := Polygon2D.new()
-	poly.polygon = PackedVector2Array([
-		Vector2(-10, -2), Vector2(-7, -7), Vector2(0, -9),
-		Vector2(7, -7), Vector2(11, -1), Vector2(9, 6),
-		Vector2(3, 8), Vector2(-4, 7), Vector2(-9, 3)
-	])
-	poly.color = Color(0.65, 0.03, 0.03, 0.95)
-	puddle_root.add_child(poly)
-	
-	if get_parent():
-		get_parent().add_child(puddle_root)
-	else:
-		get_tree().current_scene.add_child(puddle_root)
-		
-	puddle_root.global_position = global_position
-	puddle_root.scale = Vector2(0.1, 0.1)
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(puddle_root, "scale", Vector2(0.65, 0.65), 0.55)
-	
-	var fade_tween := puddle_root.create_tween()
-	fade_tween.tween_interval(30.0) # Era 6.0 -- a poca sumia rapido demais
-	fade_tween.tween_property(puddle_root, "modulate:a", 0.0, 3.0)
-	fade_tween.tween_callback(puddle_root.queue_free)
+	preload("res://world/shared/combat/GroundBlood.gd").spawn(self, true)
+
 
 func _start_decay() -> void:
+	if has_meta("medical_pending"): return
 	var t := create_tween()
 	t.tween_interval(35.0) # Era 8.0 -- corpo sumia quase instantaneamente
 	t.tween_property(self, "modulate:a", 0.0, 3.0)

@@ -62,25 +62,21 @@ func _build_interior() -> void:
 	curb_bot.points = PackedVector2Array([Vector2(0, tunnel_width * 0.5 - 6), Vector2(tunnel_length, tunnel_width * 0.5 - 6)])
 	interior_node.add_child(curb_bot)
 	
-	# Iluminação Âmbar de Emergência ao longo do túnel
-	var light_spacing: float = 180.0
+	# Enclosed overhead LED battens overlap across the full road width.
+	var light_spacing: float = 140.0
 	var current_x: float = 90.0
 	while current_x < tunnel_length:
-		var lamp := PointLight2D.new()
-		lamp.name = "AmberLamp_%d" % int(current_x)
-		lamp.position = Vector2(current_x, 0)
-		lamp.color = Color(1.0, 0.72, 0.32, 1.0)
-		lamp.energy = 1.25
-		lamp.texture_scale = 1.8
-		# Textura radial suave para o ponto de luz
-		var light_img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
-		for ly in 64:
-			for lx in 64:
-				var dist: float = Vector2(lx - 31.5, ly - 31.5).length()
-				var alpha: float = clampf(1.0 - (dist / 31.5), 0.0, 1.0)
-				light_img.set_pixel(lx, ly, Color(1, 1, 1, alpha * alpha))
-		lamp.texture = ImageTexture.create_from_image(light_img)
-		interior_node.add_child(lamp)
+		for side in [-1,1]:
+			var lamp := preload("res://world/shared/roads/RoadLuminaire3D.gd").new()
+			lamp.name = "TunnelBatten_%d_%d" % [int(current_x),side]
+			lamp.fixture_kind = "strip"
+			lamp.position = Vector2(current_x,side*(tunnel_width*.5-10))
+			lamp.target_offset = Vector2(0,-side*50)
+			lamp.always_on = true
+			interior_node.add_child(lamp)
+			# The rock roof still hides the real fixture until the cutaway opens.
+			lamp.hardware.z_index = 6
+			lamp.beam.z_index = 5
 		current_x += light_spacing
 
 func _build_roof() -> void:

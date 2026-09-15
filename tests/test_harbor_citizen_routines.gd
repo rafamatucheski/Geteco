@@ -32,7 +32,7 @@ func run() -> void:
  player.global_position=Vector2(750,482)
  officer.global_position=Vector2(800,482)
  await physics_frame
- root.get_node("WantedManager").report_crime(1)
+ root.get_node("WantedManager").report_crime(12)
  assert(officer.alerted,"Nearby patrol sees reported crime")
  root.get_node("WantedManager").reset_crime()
  officer._physics_process(.1)
@@ -47,7 +47,7 @@ func run() -> void:
  world.add_child(wall)
  await physics_frame
  await physics_frame
- root.get_node("WantedManager").report_crime(1)
+ root.get_node("WantedManager").report_crime(12)
  assert(not officer.alerted,"Wall blocks witnessing a crime")
  root.get_node("WantedManager").reset_crime()
  wall.queue_free()

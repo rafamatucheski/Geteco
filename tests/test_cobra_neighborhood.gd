@@ -112,7 +112,9 @@ func run() -> void:
 	for frame in 3:
 		await physics_frame
 	for lamp in lamps:
-		check(lamp.is_lit and lamp.lamp_light.visible, "Authored lamp responds to nighttime: %s" % lamp.position)
+		check(lamp.is_lit, "Authored lamp responds to nighttime: %s" % lamp.position)
+		# Camera remains in the harbor: current lighting culls offscreen sources.
+		check(not lamp.lamp_light.visible, "Offscreen neighborhood lamps preserve light culling")
 	weather.time_of_day = 0.45
 	weather.set_biome(weather.current_biome)
 	await drive_approach(scene)
@@ -175,21 +177,26 @@ func drive_approach(scene: Node2D) -> void:
 	car.global_position = Vector2(6460, 1700)
 	car.rotation = 0.0
 	car.set("max_speed", 200.0)
-	car.call("enter_vehicle", player)
+	scene.call("_drive")
 	await physics_frame
 	check(bool(car.get("is_driven_by_player")), "Actual car entry succeeds")
+	# Boarding locks input until the door animation finishes and controls return to neutral.
+	var boarding_deadline := Time.get_ticks_msec()+10000
+	while ((is_instance_valid(car._boarding) and car._boarding.active) or not car._drive_input_armed) and Time.get_ticks_msec()<boarding_deadline:
+		await physics_frame
+	check(car._drive_input_armed and (not is_instance_valid(car._boarding) or not car._boarding.active),"Boarding finishes before accelerating")
 	var collided := false
-	Input.action_press("ui_up")
+	Input.action_press("move_up")
 	for frame in 720:
 		await physics_frame
 		if car.get_slide_collision_count() > 0:
 			collided = true
 		if car.global_position.x >= 7380.0:
 			break
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	check(not collided, "Real car collided on east approach")
 	check(car.global_position.x >= 7380.0, "Real car reaches neighborhood, actual endpoint=%s" % car.global_position)
-	print("COBRA_ACCESS_DRIVE endpoint=%s collided=%s" % [car.global_position, collided])
+	print("COBRA_ACCESS_DRIVE endpoint=%s collided=%s driven=%s processing=%s broken=%s boarding=%s" % [car.global_position, collided,car.is_driven_by_player,car.is_physics_processing(),car.is_broken,is_instance_valid(car._boarding) and car._boarding.active])
 
 func collect_exclusions(node: Node) -> void:
 	if node is PhysicsBody2D and not node is StaticBody2D:
@@ -218,7 +225,7 @@ func check(condition: bool, message: String) -> void:
 		failures.append(message)
 
 func finish(scene: Node) -> void:
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	for failure in failures:
 		push_error("COBRA_NEIGHBORHOOD: " + failure)
 	scene.queue_free()

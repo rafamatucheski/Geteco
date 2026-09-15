@@ -6,7 +6,7 @@ const RATE := 22050
 static func sound(kind: String) -> AudioStreamWAV:
 	if cache.has(kind):
 		return cache[kind]
-	var looped := kind in ["water", "terminal", "workshop"]
+	var looped := kind in ["water", "terminal", "workshop", "port"]
 	var duration := 6.0 if looped else 2.6
 	var count := int(RATE * duration)
 	var bytes := PackedByteArray()
@@ -20,6 +20,17 @@ static func sound(kind: String) -> AudioStreamWAV:
 		low = lerpf(low, noise, 0.035)
 		var value := 0.0
 		match kind:
+			"wood_break":
+				value = noise*.55*exp(-t*22) + low*1.2*exp(-t*12)
+				for crack in 4:
+					var age := t-float(crack)*.045
+					if age >= 0: value += noise*.18*exp(-age*65)
+			"port":
+				# Diesel motors, crane transmission and loose metal, periodic over six seconds.
+				var work := 0.65 + 0.35*sin(TAU*t/6.0)
+				value = low*.8 + (sin(TAU*55*t)*.06 + sin(TAU*110*t)*.025)*work
+				value += sin(TAU*330*t)*.012*pow(maxf(0,sin(TAU*t/3.0)),4)
+				value += noise*.025*pow(maxf(0,sin(TAU*t/2.0)),12)
 			"voice_dante", "voice_maciota":
 				# Stylized syllables, deliberately not intelligible speech/dubbing.
 				var syllable := fmod(t, 0.23) / 0.23

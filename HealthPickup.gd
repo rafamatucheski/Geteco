@@ -118,15 +118,7 @@ func _on_body_entered(body: Node2D) -> void:
 			body._refresh_weapon_ui()
 			
 		# Áudio de cura médica (Powerup)
-		var p := AudioStreamPlayer2D.new()
-		p.bus = &"SFX"
-		p.stream = ProceduralAudio.get_powerup_stream()
-		p.volume_db = -4.0
-		var parent_node: Node = get_tree().current_scene if get_tree().current_scene != null else get_tree().root
-		parent_node.add_child(p)
-		p.global_position = global_position
-		p.play()
-		p.finished.connect(p.queue_free)
+		preload("res://audio/rewards/RewardAudioBank.gd").play(self, "pickup")
 		
 		# Efeito flutuante de coleta
 		if visual_root: visual_root.visible = false

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://world/shared/atmosphere/AtmosphereProfile.gd" id="1"]
+[resource]
+script = ExtResource("1")
+label = "Deserto"
+shadow_tint = Color(0.94, 0.97, 1.08, 1)
+sunlight_tint = Color(1.09, 1.035, 0.91, 1)
+fog_color = Color(0.83, 0.70, 0.51, 1)
+haze = 0.11
+distant_haze = 0.44
+saturation = 0.96
+contrast = 1.08
+wind = Vector2(22, 3)

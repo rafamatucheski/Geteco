@@ -6,9 +6,19 @@ var hinge: Node3D
 var animation: Tween
 var moving := false
 var extracted_triangles := 0
+var cabin_ceiling := 1.25
+var entry_center_z := 0.0
 
 func configure(model: Node3D, side_sign: float = -1.0) -> void:
 	door_side = side_sign
+	if model.get("vehicle_id") == "port_forklift":
+		# Open access beside the seat: no body panel is a door on this machine.
+		hinge = Node3D.new()
+		add_child(hinge)
+		hinge.position = Vector3(side_sign * 0.55, 0.65, 0.1)
+		entry_center_z = 0.45
+		cabin_ceiling = 1.95
+		return
 	var sources: Array[MeshInstance3D] = []
 	var bounds := AABB()
 	var first := true
@@ -34,6 +44,17 @@ func configure(model: Node3D, side_sign: float = -1.0) -> void:
 	if "Van" in script_path or "Box" in script_path or "Pumper" in script_path or "Tow" in script_path:
 		front = bounds.position.z + length * 0.13
 		rear = front + 1.15
+	# Side glazing locates the cabin independently of cargo, hood and spoilers.
+	# Using total body length cut roof/cargo surfaces out as commercial doors.
+	var window := _side_window_bounds(sources, glazing, side_sign, bounds.size.x)
+	if window.size.length_squared() > 0.01:
+		front = window.position.z - 0.05
+		rear = minf(window.end.z + 0.05, front + 1.30)
+		top = window.end.y + 0.035
+		cabin_ceiling = window.end.y - 0.015
+	else:
+		cabin_ceiling = top - 0.04
+	entry_center_z = lerpf(front, rear, 0.62)
 	var side := bounds.position.x if door_side < 0 else bounds.end.x
 	var cut_width := absf(side)*0.42+0.08
 	var cut_x := side-0.08 if door_side < 0 else side+0.08-cut_width
@@ -42,9 +63,40 @@ func configure(model: Node3D, side_sign: float = -1.0) -> void:
 	hinge.name = "DriverDoorHinge" if door_side < 0 else "PassengerDoorHinge"
 	hinge.position = Vector3(side,bottom,front)
 	add_child(hinge)
+	# Authored cab livery follows the moving door without changing cabin bounds.
+	for node in model.get_children():
+		if not node.get_meta("door_trim",false): continue
+		if node is MeshInstance3D and node.mesh != null and not sources.has(node):
+			if cut.intersects(node.transform*node.mesh.get_aabb()): sources.append(node)
+		elif node is Label3D and cut.has_point(node.position):
+			node.reparent(hinge,true)
 	for source in sources:
 		_split(source, cut, model)
 	visible = extracted_triangles > 0
+
+func _side_window_bounds(sources: Array[MeshInstance3D], glazing: Array, side_sign: float, width: float) -> AABB:
+	var result := AABB()
+	var found := false
+	for source in sources:
+		if source.material_override not in glazing: continue
+		var arrays := source.mesh.surface_get_arrays(0)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+		var count := indices.size() if not indices.is_empty() else vertices.size()
+		for offset in range(0, count, 3):
+			var triangle: Array[Vector3] = []
+			for j in 3:
+				triangle.append(source.transform * vertices[indices[offset+j] if not indices.is_empty() else offset+j])
+			var normal := (triangle[1]-triangle[0]).cross(triangle[2]-triangle[0]).normalized()
+			var center := (triangle[0]+triangle[1]+triangle[2])/3.0
+			if absf(normal.x) < 0.65 or center.x * side_sign < width * 0.25: continue
+			for point in triangle:
+				if not found:
+					result = AABB(point, Vector3.ZERO)
+					found = true
+				else:
+					result = result.expand(point)
+	return result
 
 func _split(source: MeshInstance3D, cut: AABB, model: Node3D) -> void:
 	var arrays := source.mesh.surface_get_arrays(0)

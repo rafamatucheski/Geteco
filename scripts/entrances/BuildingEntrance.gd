@@ -47,6 +47,10 @@ enum EntranceKind {
 @export var actor_group: StringName = &"player"
 @export var input_action: StringName = &"interact"
 @export var handle_input_locally: bool = true
+@export var show_interaction_prompt: bool = true:
+	set(value):
+		show_interaction_prompt = value
+		_refresh_prompt()
 @export var enabled: bool = true:
 	set(value):
 		enabled = value
@@ -185,12 +189,5 @@ func _on_body_exited(body: Node2D) -> void:
 func _refresh_prompt() -> void:
 	if not is_node_ready() or _prompt == null:
 		return
-	_prompt.visible = enabled and not _busy and not _nearby_actors.is_empty()
-	if not custom_prompt_text.is_empty():
-		_prompt.text = custom_prompt_text
-	else:
-		var verb := "ENTRAR"
-		if entrance_kind == EntranceKind.GARAGE:
-			verb = "USAR GARAGEM"
-		_prompt.text = "[E] %s · %s" % [verb, display_name.to_upper()]
-
+	_prompt.visible = show_interaction_prompt and enabled and not _busy and not _nearby_actors.is_empty()
+	_prompt.text = custom_prompt_text if not custom_prompt_text.is_empty() else "E"

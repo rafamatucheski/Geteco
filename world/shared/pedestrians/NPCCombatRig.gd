@@ -86,20 +86,27 @@ func equip(id: String) -> void:
 
 func attack() -> void:
 	combat_pose.on_attack(active_weapon_id)
+	var data := WeaponCatalog.get_weapon(active_weapon_id)
+	if data.get("is_melee", false) == true and actor and actor.has_method("_play_audio"):
+		var sound_type: String = String(data.get("sound_type", "fists"))
+		var vol: float = float(data.get("audio_volume_db", -4.0))
+		actor._play_audio(ProceduralAudio.get_melee_swing_stream(sound_type), vol)
 
 func is_reloading() -> bool:
-	return actor.has_method("is_reloading") and actor.is_reloading()
+	return actor != null and actor.has_method("is_reloading") and actor.is_reloading()
 
 func get_reload_progress() -> float:
-	return float(actor.get_reload_progress()) if actor.has_method("get_reload_progress") else 0.0
+	return float(actor.get_reload_progress()) if (actor != null and actor.has_method("get_reload_progress")) else 0.0
 
 func _physics_process(delta: float) -> void:
-	if actor.get("is_dead") == true or actor.get("is_flying") == true or actor.get("is_incapacitated") == true: return
+	if actor == null or actor.get("is_dead") == true or actor.get("is_flying") == true or actor.get("is_incapacitated") == true: return
 	if actor.get("_viewport_render_active") == false: return
 	clock += delta
 	var moving: bool = actor.velocity.length_squared() > 1.0
 	var aiming := aim_override
-	if actor.get("combat_target") != null:
+	if actor.has_method("is_police_aiming"):
+		aiming = aiming or actor.is_police_aiming()
+	elif actor.get("combat_target") != null:
 		aiming = aiming or is_instance_valid(actor.get("combat_target"))
 	elif actor.get("target") != null and is_instance_valid(actor.get("target")):
 		var wm := get_node_or_null("/root/WantedManager")

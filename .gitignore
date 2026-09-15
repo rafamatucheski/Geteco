@@ -9,6 +9,9 @@ export_presets.cfg
 .DS_Store
 Thumbs.db
 
+# Cache de bytecode do Python, gerado ao rodar scripts em tools/
+__pycache__/
+
 # Logs and local test scratch
 *.log
 

@@ -1,5 +1,6 @@
 extends SceneTree
-## Controller integration, actual finite encounter actors and production rival.
+## Controller integration and finite encounter actors.
+## Full bank/tow progression lives in test_first_favors; real driving in test_cobra_race_player_car.
 ## Subject is a collision fixture, NOT a claim of manual PlayerCar playtesting.
 const CONTROLLER = preload("res://world/harbor/campaign/CobraCampaignController.gd")
 const STATE = preload("res://world/harbor/campaign/CobraCampaignState.gd")
@@ -60,29 +61,34 @@ func _run() -> void:
 	check(territory.guards.size() == 3 and controller._contact == territory.guards[2] and not controller._contact.is_dead, "retry preserves finite three-guard roster")
 	check(not controller.interact(), "remote E cannot complete delivery")
 	player.position = controller.WORKSHOP
-	check(controller.interact() and controller.stage == 1, "contact requires conversation")
-	check(controller.interact() and controller.active_id.is_empty(), "second interaction completes finite contact")
-	check(player.money == 120, "one cash reward")
-	check(int(state.data.cobra_access) > 0, "contact grants saved access")
+	check(controller.interact() and controller.stage == 0, "contact requires available physical recovery service")
+	check(controller.interact() and not controller.active_id.is_empty(), "repeated E cannot bypass the new tow objective")
+	# This minimal combat world intentionally has no salvage yard. Its full
+	# physical mission is exercised in test_first_favors; stage prerequisites
+	# here so unrelated encounter regressions retain their isolated coverage.
+	controller.fail_mission("fixture stages completed tow prerequisite")
+	state.data.completed["cobra_contact"] = true
+	state.data.cobra_access = 1
+	player.money = 120
+	controller._set_access(true)
 	territory.report_aggression()
 	check(int(state.data.cobra_access) == 0, "assault revokes persistent access, not just runtime permission")
 	check(controller.get_status().target == Vector2.ZERO, "completed job removes old objective marker")
-	check(not controller.start_mission("cobra_race"), "no back-to-back race")
-	state.rest_until_next_day()
-	check(controller.start_mission("cobra_race"), "next day race unlocked")
+	check(state.get_status("cobra_race").available, "race is available immediately after prerequisite")
+	check(controller.start_mission("cobra_race"), "race starts without waiting another day")
 	player.position = controller.RACE_START
 	controller.interact()
 	check(not controller._race_started, "race requires actual driven vehicle")
 	var car := Car.new()
 	car.position = controller.RACE_START
+	car.rotation = -PI/2.0
 	car.add_to_group("vehicle")
 	world.add_child(car)
 	controller.interact()
-	check(controller._race_started and controller._rival is DemoTrafficVehicle, "production TrafficVehicle rival instantiated")
-	var stopped_position: Vector2 = controller._rival.global_position
+	check(controller._race_started and controller.get_status().route.size() > 20, "time trial follows production lane geometry")
 	for i in 20:
 		await physics_frame
-	check(controller._rival.global_position.distance_to(stopped_position) < 0.1, "rival waits physically for countdown")
+	check(controller._countdown > 0.0 and controller._race_elapsed == 0.0, "timer waits for the visible countdown")
 	car.position += Vector2(120, 0)
 	await physics_frame
 	await physics_frame
@@ -93,7 +99,8 @@ func _run() -> void:
 	check(controller.start_mission("cobra_race"), "failed race can retry")
 	controller.interact()
 	var race_angle := PI
-	var rival_travel := 0.0
+	var player_travel := 0.0
+	var previous_car_position: Vector2 = car.position
 	for frame in 1400:
 		await physics_frame
 		if controller.active_id.is_empty():
@@ -104,10 +111,11 @@ func _run() -> void:
 		var next_point: Vector2 = controller.CENTER + Vector2(cos(race_angle), sin(race_angle)) * 300.0
 		car.velocity = (next_point - car.position) * 60.0
 		car.move_and_slide()
-		rival_travel = maxf(rival_travel, controller._rival_distance)
+		player_travel += car.position.distance_to(previous_car_position)
+		previous_car_position = car.position
 	check(bool(state.data.completed.get("cobra_race", false)), "ordered physical lap wins the race")
-	check(rival_travel > 300.0, "production rival physically advances during race")
-	check(int(traffic.get_telemetry_snapshot().get("invalid_lane_contracts", 0)) == 0, "rival retains canonical lane contracts")
+	check(player_travel > 1800.0, "whole lap physically advances through ordered gates")
+	check(int(traffic.get_telemetry_snapshot().get("invalid_lane_contracts", 0)) == 0, "time trial preserves canonical lane contracts")
 	check(player.money == 320, "race pays once")
 	car.queue_free()
 	await process_frame

@@ -21,6 +21,7 @@ enum WorkerPose {
 var current_pose: WorkerPose = WorkerPose.HOLD
 var walking: bool = false
 var clock: float = 0.0
+var gait_phase := 0.0
 var dig_cycle_clock: float = 0.0
 
 var torso_node: Node3D
@@ -31,6 +32,8 @@ var left_forearm: Node3D
 var right_forearm: Node3D
 var left_leg: Node3D
 var right_leg: Node3D
+var left_knee: Node3D
+var right_knee: Node3D
 
 var shovel: Node3D
 var right_hand_mount: Node3D
@@ -83,7 +86,7 @@ func _build_rig() -> void:
 	torso_node.position = Vector3(0.0, 0.86, 0.0)
 	add_child(torso_node)
 
-	var jacket_chest := _create_box(Vector3(0.40, 0.50, 0.24), mat_jacket)
+	var jacket_chest := _create_ellipsoid(Vector3(0.46, 0.57, 0.29), mat_jacket)
 	torso_node.add_child(jacket_chest)
 
 	for s in [-1.0, 1.0]:
@@ -129,7 +132,7 @@ func _build_rig() -> void:
 	left_arm.position = Vector3(-0.24, 1.04, 0.0)
 	add_child(left_arm)
 
-	var l_uarm := _create_box(Vector3(0.09, 0.24, 0.10), mat_jacket)
+	var l_uarm := _create_ellipsoid(Vector3(0.09, 0.24, 0.10), mat_jacket)
 	l_uarm.position = Vector3(0.0, -0.12, 0.0)
 	left_arm.add_child(l_uarm)
 
@@ -137,11 +140,11 @@ func _build_rig() -> void:
 	left_forearm.position = Vector3(0.0, -0.24, 0.0)
 	left_arm.add_child(left_forearm)
 
-	var l_farm := _create_box(Vector3(0.08, 0.22, 0.09), mat_jacket)
+	var l_farm := _create_ellipsoid(Vector3(0.08, 0.22, 0.09), mat_jacket)
 	l_farm.position = Vector3(0.0, -0.11, 0.0)
 	left_forearm.add_child(l_farm)
 
-	var l_glove := _create_box(Vector3(0.07, 0.10, 0.07), mat_gloves)
+	var l_glove := _create_ellipsoid(Vector3(0.07, 0.10, 0.07), mat_gloves)
 	l_glove.position = Vector3(0.0, -0.23, 0.0)
 	left_forearm.add_child(l_glove)
 
@@ -149,7 +152,7 @@ func _build_rig() -> void:
 	right_arm.position = Vector3(0.24, 1.04, 0.0)
 	add_child(right_arm)
 
-	var r_uarm := _create_box(Vector3(0.09, 0.24, 0.10), mat_jacket)
+	var r_uarm := _create_ellipsoid(Vector3(0.09, 0.24, 0.10), mat_jacket)
 	r_uarm.position = Vector3(0.0, -0.12, 0.0)
 	right_arm.add_child(r_uarm)
 
@@ -157,11 +160,11 @@ func _build_rig() -> void:
 	right_forearm.position = Vector3(0.0, -0.24, 0.0)
 	right_arm.add_child(right_forearm)
 
-	var r_farm := _create_box(Vector3(0.08, 0.22, 0.09), mat_jacket)
+	var r_farm := _create_ellipsoid(Vector3(0.08, 0.22, 0.09), mat_jacket)
 	r_farm.position = Vector3(0.0, -0.11, 0.0)
 	right_forearm.add_child(r_farm)
 
-	var r_glove := _create_box(Vector3(0.07, 0.10, 0.07), mat_gloves)
+	var r_glove := _create_ellipsoid(Vector3(0.07, 0.10, 0.07), mat_gloves)
 	r_glove.position = Vector3(0.0, -0.23, 0.0)
 	right_forearm.add_child(r_glove)
 
@@ -174,25 +177,56 @@ func _build_rig() -> void:
 	left_leg.position = Vector3(-0.11, 0.60, 0.0)
 	add_child(left_leg)
 
-	var l_pant := _create_box(Vector3(0.12, 0.52, 0.13), mat_trousers)
-	l_pant.position = Vector3(0.0, -0.26, 0.0)
-	left_leg.add_child(l_pant)
-
-	var l_boot := _create_box(Vector3(0.13, 0.11, 0.21), mat_boots)
-	l_boot.position = Vector3(0.0, -0.56, -0.03)
-	left_leg.add_child(l_boot)
-
+	left_knee = _build_leg(left_leg)
 	right_leg = Node3D.new()
 	right_leg.position = Vector3(0.11, 0.60, 0.0)
 	add_child(right_leg)
+	right_knee = _build_leg(right_leg)
+	_build_face()
 
-	var r_pant := _create_box(Vector3(0.12, 0.52, 0.13), mat_trousers)
-	r_pant.position = Vector3(0.0, -0.26, 0.0)
-	right_leg.add_child(r_pant)
+func _build_leg(hip: Node3D) -> Node3D:
+	var thigh := _create_ellipsoid(Vector3(.16,.32,.18), mat_trousers)
+	thigh.position.y = -.13
+	hip.add_child(thigh)
+	var knee := Node3D.new()
+	knee.position.y = -.27
+	hip.add_child(knee)
+	var calf := _create_ellipsoid(Vector3(.14,.29,.15), mat_trousers)
+	calf.position.y = -.12
+	knee.add_child(calf)
+	var boot := _create_ellipsoid(Vector3(.15,.15,.24), mat_boots)
+	boot.position = Vector3(0,-.28,-.035)
+	knee.add_child(boot)
+	preload("res://world/harbor/cemetery/CemeteryStride.gd").ankle(knee, .28)
+	return knee
 
-	var r_boot := _create_box(Vector3(0.13, 0.11, 0.21), mat_boots)
-	r_boot.position = Vector3(0.0, -0.56, -0.03)
-	right_leg.add_child(r_boot)
+func _build_face() -> void:
+	var nose := _create_ellipsoid(Vector3(.055,.08,.065), mat_skin)
+	nose.position = Vector3(0,-.01,-.12)
+	head_node.add_child(nose)
+	for side in [-1.0,1.0]:
+		var ear := _create_ellipsoid(Vector3(.045,.08,.05), mat_skin)
+		ear.position = Vector3(side*.119,0,0)
+		head_node.add_child(ear)
+		var eye_white := StandardMaterial3D.new()
+		eye_white.albedo_color = Color("b6a08a")
+		eye_white.roughness = .65
+		var eye := _create_ellipsoid(Vector3(.034,.018,.018), eye_white)
+		eye.position = Vector3(side*.045,.025,-.116)
+		head_node.add_child(eye)
+		var pupil := _create_ellipsoid(Vector3(.014,.014,.01), mat_hair)
+		pupil.position = Vector3(side*.045,.025,-.126)
+		head_node.add_child(pupil)
+		var brow := _create_box(Vector3(.038,.012,.015), mat_hair)
+		brow.position = Vector3(side*.046,.047,-.108)
+		brow.rotation.z = side*.12
+		head_node.add_child(brow)
+	var moustache := _create_ellipsoid(Vector3(.078,.025,.018), mat_hair)
+	moustache.position = Vector3(0,-.048,-.116)
+	head_node.add_child(moustache)
+	var neck := _create_ellipsoid(Vector3(.12,.17,.13),mat_skin)
+	neck.position = Vector3(0,1.12,0)
+	add_child(neck)
 
 func _attach_shovel() -> void:
 	shovel = SHOVEL_SCRIPT.new()
@@ -235,19 +269,27 @@ func set_dig_pose(active: bool) -> void:
 	else:
 		set_worker_pose(WorkerPose.CARRY if walking else WorkerPose.HOLD)
 
-func update_animation(delta: float, moving: bool) -> void:
+func update_animation(delta: float, moving: bool, travel_metres: float = -1.0) -> void:
 	walking = moving
+	if not walking:
+		left_leg.position.y = .60
+		right_leg.position.y = .60
+		left_knee.get_node("StrideFoot").rotation.x = 0
+		right_knee.get_node("StrideFoot").rotation.x = 0
+	clock += delta * 4.0
 	if walking:
 		if current_pose == WorkerPose.HOLD:
 			set_worker_pose(WorkerPose.CARRY)
 
-		clock += delta * 4.0
-		var leg_swing := sin(clock) * 20.0
-		left_leg.rotation_degrees.x = leg_swing
-		right_leg.rotation_degrees.x = -leg_swing
-
-		var arm_swing := sin(clock) * 12.0
-		left_arm.rotation_degrees.x = -arm_swing
+		gait_phase = fposmod(gait_phase + (travel_metres if travel_metres >= 0 else delta * 1.2) * TAU / .8, TAU)
+		left_leg.position.y = .585
+		right_leg.position.y = .585
+		var gait = preload("res://world/harbor/cemetery/CemeteryStride.gd")
+		gait.pose(left_leg, left_knee, gait_phase, .27, .28, .075, -1.0)
+		gait.pose(right_leg, right_knee, gait_phase + PI, .27, .28, .075, -1.0)
+		torso_node.rotation.z = sin(gait_phase)*.018
+		head_node.rotation.y = sin(gait_phase*.5)*.035
+		left_arm.rotation.x = -cos(gait_phase) * .25
 	elif current_pose == WorkerPose.DIG:
 		dig_cycle_clock += delta * 2.8
 		var dig_phase := fmod(dig_cycle_clock, TAU)
@@ -257,6 +299,12 @@ func update_animation(delta: float, moving: bool) -> void:
 		right_arm.rotation_degrees.x = 25.0 + bend * 0.8
 		left_arm.rotation_degrees.x = 32.0 + bend * 0.8
 	else:
+		torso_node.scale = Vector3(1.0,1.0+sin(clock*.42)*.007,1.0)
+		torso_node.rotation.z = sin(clock*.23)*.015
+		head_node.rotation.y = sin(clock*.19)*.09
+		head_node.rotation.x = sin(clock*.31)*.025
+		left_knee.rotation.x = lerpf(left_knee.rotation.x,0.0,minf(1.0,delta*8.0))
+		right_knee.rotation.x = lerpf(right_knee.rotation.x,0.0,minf(1.0,delta*8.0))
 		left_leg.rotation_degrees.x = lerpf(left_leg.rotation_degrees.x, 0.0, 8.0 * delta)
 		right_leg.rotation_degrees.x = lerpf(right_leg.rotation_degrees.x, 0.0, 8.0 * delta)
 
@@ -273,8 +321,8 @@ func _create_ellipsoid(size: Vector3, mat: Material) -> MeshInstance3D:
 	var sph := SphereMesh.new()
 	sph.radius = 0.5
 	sph.height = 1.0
-	sph.radial_segments = 12
-	sph.rings = 6
+	sph.radial_segments = 24
+	sph.rings = 12
 	mi.mesh = sph
 	mi.material_override = mat
 	mi.scale = size

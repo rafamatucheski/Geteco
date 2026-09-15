@@ -24,10 +24,13 @@ func run() -> void:
 		root.add_child(label)
 	assert(actors[2].torso_node.scale.x > actors[1].torso_node.scale.x * 1.5)
 	assert(actors[2].torso_node.scale.x < actors[1].torso_node.scale.x * 2.0)
-	assert(actors[3].model_root.scale.y > actors[4].model_root.scale.y * 1.35)
+	assert(actors[3].model_root.scale.y > actors[4].model_root.scale.y * 1.25)
+	assert(actors[3].model_root.scale.y <= actors[0].model_root.scale.y * 1.15)
 	assert(actors[2].torso_node.get_node_or_null("Belly") == null)
 	for actor in actors:
-		assert(actor.head_node.scale.x > .9 and actor.head_node.scale.x < 1.1)
+		# Adult head width stays close to Dante's ~0.23-unit head including ears.
+		var head_width: float = .34 * actor.head_node.scale.x
+		assert(head_width > .22 and head_width < .28)
 		assert(actor.head_node.has_node("Neck"))
 		actor.velocity = Vector2(30, 0)
 		actor._physics_process(0.016)

@@ -289,6 +289,7 @@ func _build_ui() -> void:
 	_audio.bus = "SFX"
 	_audio.volume_db = -18
 	add_child(_audio)
+	get_node("/root/MissionVoiceMixer").track(_audio)
 	_panel.hide()
 
 func get_status() -> Dictionary:

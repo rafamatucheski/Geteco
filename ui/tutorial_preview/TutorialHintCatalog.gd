@@ -26,25 +26,25 @@ const HINTS := {
 	"first_trunk": {
 		"pt": {
 			"eyebrow": "PORTA-MALAS",
-			"title": "Prepare sua saída",
-			"body": "Escolha uma arma curta, uma longa e uma corpo a corpo. As alternativas ficam guardadas.",
+			"title": "A Monaliza tem um baú",
+			"body": "Compre armas ou pegue as que sobrarem depois de uma confusão e guarde aqui. Seu loadout acompanha você: a Monaliza é sua, só sua, durante toda esta jornada.",
 		},
 		"en": {
 			"eyebrow": "TRUNK",
-			"title": "Get ready to head out",
-			"body": "Pick a sidearm, a long gun and a melee weapon. The rest stays stored.",
+			"title": "Monaliza has a stash",
+			"body": "Buy weapons or pick up what is left after a fight and store them here. Your loadout travels with you: Monaliza is yours, and yours alone, throughout this journey.",
 		},
 	},
 	"loadout_capacity": {
 		"pt": {
 			"eyebrow": "CAPACIDADE",
-			"title": "Três espaços, sempre com você",
-			"body": "Curta, longa e corpo a corpo. Trocar uma arma devolve a anterior ao porta-malas.",
+			"title": "Seu equipamento, sempre com você",
+			"body": "Curta, longa, corpo a corpo e granada. Trocar uma arma devolve a anterior ao porta-malas.",
 		},
 		"en": {
 			"eyebrow": "CAPACITY",
-			"title": "Three slots, always on you",
-			"body": "Sidearm, long gun and melee. Swapping one returns the old weapon to the trunk.",
+			"title": "Your gear, always with you",
+			"body": "Sidearm, long gun, melee and grenade. Swapping one returns the old weapon to the trunk.",
 		},
 	},
 	"cold_shelter": {
@@ -62,13 +62,13 @@ const HINTS := {
 	"thermal_shop": {
 		"pt": {
 			"eyebrow": "LOJA TÉRMICA",
-			"title": "Casacos que seguram o frio",
-			"body": "Um casaco térmico reduz a perda de calor lá fora. Vale a parada.",
+			"title": "Antes de subir, prepare um casaco",
+			"body": "Compre ou equipe uma parka no Último Abrigo ou na Union, no porto. Procure a camiseta no mapa. Carros e lareiras recuperam calor.",
 		},
 		"en": {
 			"eyebrow": "THERMAL SHOP",
-			"title": "Coats that hold the cold back",
-			"body": "A thermal coat slows heat loss outside. Worth the stop.",
+			"title": "Before the climb, pack a warm coat",
+			"body": "Buy or equip a parka at Último Abrigo or Union in the harbor. Look for the shirt on the map. Cars and fireplaces restore warmth.",
 		},
 	},
 	"tunnel": {

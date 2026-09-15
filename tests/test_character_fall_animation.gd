@@ -2,7 +2,7 @@ extends SceneTree
 var failures: Array[String] = []
 var actors: Array[Node2D] = []
 var scene: Node2D
-const OUTPUT := "res://docs/measurements/death-animation-0910/"
+const OUTPUT := "res://docs/measurements/death-variants-0912/"
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -50,6 +50,8 @@ func _run() -> void:
 		title.add_theme_color_override("font_color", Color("182424"))
 		scene.add_child(title)
 	await physics_frame
+	# As texturas dos SubViewports precisam ser apresentadas antes da captura.
+	for frame in 3: await process_frame
 	await capture("01_em_pe")
 	for actor in actors:
 		actor.take_damage(1000)
@@ -88,6 +90,20 @@ func _run() -> void:
 	var original: Transform3D = injured.fall_presentation.initial_transform
 	injured.fall_presentation.reset()
 	check(injured.model_root.transform.is_equal_approx(original) and injured.fall_presentation.shadow.scale.is_equal_approx(Vector3.ONE), "Recuperação restaura postura e sombra de pé")
+	var variants: Dictionary = {}
+	for attempt in 32:
+		injured.fall_presentation.start(injured, injured.model_root, injured.viewport)
+		var fall = injured.fall_presentation
+		fall.update(fall.duration)
+		var rotations: Array[Vector3] = []
+		for joint in fall.joints: rotations.append(joint.node.rotation)
+		variants[fall.variant] = rotations
+		check(not fall.active, "Variante termina sem atualização permanente")
+		fall.reset()
+	check(variants.size() == 4, "Sorteio exercita quatro variantes")
+	for a in variants:
+		for b in variants:
+			if a < b: check(variants[a] != variants[b], "Variantes têm poses finais distintas")
 	scene.queue_free()
 	await process_frame
 	print("CHARACTER_FALL: ", failures)

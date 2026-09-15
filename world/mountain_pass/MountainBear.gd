@@ -31,7 +31,7 @@ func _ready() -> void:
 	remove_from_group("winter_resident")
 	add_to_group("mountain_wildlife")
 	add_to_group("bear_cub" if is_cub else "bear_adult")
-	health = 55 if is_cub else 180
+	health = 55 if is_cub else 360
 	get_child(0).shape.radius = 8 if is_cub else 14
 	speech.hide()
 	viewport.size = Vector2i(128,128) if is_cub else Vector2i(160,160)
@@ -63,8 +63,6 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
-		_death_age += delta
-		if _death_age > 24: queue_free()
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null: return
@@ -104,7 +102,8 @@ func _update_adult(player: Node2D, exposed: bool, distance: float, delta: float)
 	var hunting := exposed and distance < (310 if threat_time>0 else 235) and player.global_position.distance_to(home)<370
 	if not hunting:
 		state = State.WANDER
-		velocity = global_position.direction_to(home)*32 if global_position.distance_to(home)>12 else Vector2.ZERO
+		var roam := home + Vector2(sin(elapsed * 0.11), cos(elapsed * 0.08)) * 48.0
+		velocity = global_position.direction_to(roam)*30 if global_position.distance_to(roam)>10 else Vector2.ZERO
 		return
 	if warning_cooldown == 0:
 		player._show_weapon_notice("URSA PROTEGENDO A MATA! Afaste-se dos filhotes; desvie quando ela baixar a cabeça.")
@@ -118,13 +117,14 @@ func _update_adult(player: Node2D, exposed: bool, distance: float, delta: float)
 			state = State.CHARGE
 			state_time = 0.8
 			charge_hit = false
-			charge_cooldown = 5
+			charge_cooldown = 2.4
 			_voice("charge",true)
 	elif state == State.CHARGE:
-		velocity = charge_direction*235
+		velocity = charge_direction*320
 		state_time -= delta
 		if not charge_hit and distance < 36 and _clear_attack(player):
-			player.take_damage(24)
+			player.take_damage(60)
+			preload("res://world/shared/combat/BodyWound.gd").apply(player, charge_direction)
 			charge_hit = true
 			bite_cooldown = 1.4
 		if state_time <= 0:
@@ -135,9 +135,10 @@ func _update_adult(player: Node2D, exposed: bool, distance: float, delta: float)
 		state_time -= delta
 		if state_time <= 0: state = State.WANDER
 	else:
-		velocity = global_position.direction_to(player.global_position)*90
+		velocity = global_position.direction_to(player.global_position)*135
 		if distance<32 and bite_cooldown == 0 and _clear_attack(player):
-			player.take_damage(18)
+			player.take_damage(38)
+			preload("res://world/shared/combat/BodyWound.gd").apply(player, global_position.direction_to(player.global_position))
 			bite_cooldown = 1.2
 			_voice("warning")
 		elif distance>62 and distance<210 and charge_cooldown == 0 and _clear_attack(player):
@@ -175,6 +176,7 @@ func take_damage(amount: int, _source: Variant = null) -> void:
 		model.hurt_flash = 0.18
 		return
 	is_dead = true
+	get_node("/root/NPCMedicalCare").report_injury(self)
 	breath_voice.stop()
 	velocity = Vector2.ZERO
 	collision_layer = 0
@@ -201,6 +203,7 @@ func _blood(amount: int) -> void:
 	if is_instance_valid(_blood_pool): return
 	_blood_pool = Polygon2D.new()
 	_blood_pool.name = "WildlifeBlood"
+	_blood_pool.add_to_group("wildlife_blood")
 	_blood_pool.z_as_relative = false
 	_blood_pool.z_index = 3
 	_blood_pool.color = Color("61242b")
@@ -212,6 +215,7 @@ func _blood(amount: int) -> void:
 	_blood_pool.polygon = points
 	get_parent().add_child(_blood_pool)
 	_blood_pool.global_position = global_position
+	preload("res://world/shared/combat/BloodTransferSystem.gd").ensure(self)
 	var fade := _blood_pool.create_tween()
 	fade.tween_interval(25)
 	fade.tween_property(_blood_pool,"modulate:a",0.0,8)
@@ -227,3 +231,16 @@ func _voice(event: String, urgent := false) -> void:
 	audio_voice.pitch_scale = 1.1 if is_cub else 0.96
 	audio_voice.play()
 	sound_cooldown = 4
+
+func on_medical_discharge() -> void:
+	_death_age = 0.0
+	state = State.WANDER
+	state_time = 0.0
+	threat_time = 0.0
+	charge_cooldown = 5.0
+	model.dead = false
+	model.alert = false
+	model.charging = false
+	model.rotation.z = 0.0
+	model.position.y = 0.0
+	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE

@@ -24,6 +24,7 @@ var _apex_poly: PackedVector2Array = PackedVector2Array()
 var _apex_snow: PackedVector2Array = PackedVector2Array()
 
 func _ready() -> void:
+	set_meta("impact_material", &"wood")
 	z_index = 6
 	collision_layer = 1 if enable_collision else 0
 	collision_mask = 0

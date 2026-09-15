@@ -95,11 +95,16 @@ func _run() -> void:
 	print("\n--- 2. ANIMAÇÕES & CICLOS DE PASSOS (INPUT NATIVO) ---")
 	var initial_pos: Vector2 = player.global_position
 
-	# Testar caminhada via 'ui_right'
-	Input.action_press("ui_right")
+	# Caminhada via 'move_right': desde 10/09 o GameInput lê as ações move_*,
+	# não as ui_* do Godot, então pressionar ui_right não movia o Dante.
+	Input.action_press("move_right")
+	var walk_gain := 0.0
+	var last_clock: float = player.walk_clock
 	for f in 30:
 		await physics_frame
-	Input.action_release("ui_right")
+		walk_gain += fposmod(player.walk_clock - last_clock, TAU)
+		last_clock = player.walk_clock
+	Input.action_release("move_right")
 
 	_check(player.global_position.x > initial_pos.x + 10.0, "Player deve se mover com input ui_right")
 	_check(player.walk_clock > 0.5, "walk_clock deve avançar durante a caminhada")
@@ -108,16 +113,22 @@ func _run() -> void:
 	# Testar corrida via 'sprint'
 	var pos_before_sprint: Vector2 = player.global_position
 	var clock_before: float = player.walk_clock
-	Input.action_press("ui_right")
+	Input.action_press("move_right")
 	Input.action_press("sprint")
+	var sprint_gain := 0.0
+	last_clock = player.walk_clock
 	for f in 30:
 		await physics_frame
+		sprint_gain += fposmod(player.walk_clock - last_clock, TAU)
+		last_clock = player.walk_clock
 	Input.action_release("sprint")
-	Input.action_release("ui_right")
+	Input.action_release("move_right")
 
 	var sprint_dist: float = player.global_position.x - pos_before_sprint.x
 	_check(sprint_dist > 30.0, "Velocidade de corrida (sprint) deve ser superior à de caminhada")
-	_check(player.walk_clock - clock_before > 1.5, "Cadência de passos deve acelerar durante corrida")
+	# O limite absoluto de 1,5 rad era da velocidade antiga; o contrato é a corrida
+	# avançar o ciclo de passos mais depressa que a caminhada no mesmo intervalo.
+	_check(sprint_gain > walk_gain, "Cadência de passos deve acelerar durante corrida (%.2f > %.2f)" % [sprint_gain, walk_gain])
 
 	# -------------------------------------------------------------
 	# 3. PLAYER COMBAT POSE & EMPUNHADURA DE ARMAS (1H, 2H, MIRAS)
@@ -134,7 +145,8 @@ func _run() -> void:
 			await physics_frame
 
 		_check(is_instance_valid(player.current_gun_mesh) or w_id == "fists", "Mesh 3D da arma '%s' deve instanciar no mount" % w_id)
-		_check(player.weapon_mount_node.position.distance_to(Vector3(0.0, -0.18, 0.0)) < 0.01, "WeaponMount deve manter posição precisa do socket")
+		# O socket é a palma do antebraço direito (-0,20 no rig atual), não uma constante.
+		_check(player.weapon_mount_node.position.distance_to(player.right_lower_arm.get_node("Palm").position) < 0.01, "WeaponMount deve manter posição precisa do socket")
 
 	# Testar disparo e efeito visual (muzzle flash & light)
 	player.active_weapon_id = "pistol"
@@ -165,17 +177,25 @@ func _run() -> void:
 	if car:
 		player.global_position = car.global_position + Vector2(20, 0)
 		player.try_enter_vehicle()
-		await physics_frame
+		# Embarque é animado desde 10/09 (~2 s); espera a transição terminar.
+		var board_deadline := Time.get_ticks_msec() + 6000
+		while (car.has_meta("vehicle_boarding") or car.get("is_driven_by_player") != true) and Time.get_ticks_msec() < board_deadline:
+			await physics_frame
+		await process_frame
 		_check(car.get("is_driven_by_player") == true, "Dante deve embarcar no carro")
 		_check(not player.visible, "Sprite/corpo do Dante deve ser ocultado ao entrar no veículo")
 		_check(player.viewport_3d.render_target_update_mode == SubViewport.UPDATE_DISABLED, "Viewport 3D deve pausar quando oculto para poupar GPU")
 
 		# Desembarcar
 		car.exit_vehicle()
-		await physics_frame
+		var exit_deadline := Time.get_ticks_msec() + 6000
+		while car.get("is_driven_by_player") == true and Time.get_ticks_msec() < exit_deadline:
+			await physics_frame
+		await process_frame
 		_check(car.get("is_driven_by_player") == false, "Dante deve desembarcar com sucesso")
 		_check(player.visible == true, "Dante deve voltar a ficar visível ao desembarcar")
-		_check(player.viewport_3d.render_target_update_mode == SubViewport.UPDATE_ALWAYS, "Viewport 3D deve retomar renderização ao desembarcar")
+		# Visível, o Player usa UPDATE_WHEN_VISIBLE; basta não estar desativado.
+		_check(player.viewport_3d.render_target_update_mode != SubViewport.UPDATE_DISABLED, "Viewport 3D deve retomar renderização ao desembarcar")
 
 	# -------------------------------------------------------------
 	# 6. TROCA DE ROUPAS (OUTFIT CATALOG)

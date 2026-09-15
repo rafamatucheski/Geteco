@@ -2,8 +2,11 @@ extends "res://legacy/city_demo/scenes/pickups/WeaponPickup.gd"
 ## O jogador escolhe recolher a arma solta, sem coleta automática ao pisar nela.
 var drop_origin := Vector2.ZERO
 var landed := false
+var room: Node2D
+var visual: Node3D
 
 func _ready() -> void:
+	persistent_loot=true
 	super._ready()
 	add_to_group("bank_guard_weapon")
 	_prompt_label.text="E · "+_get_weapon_short_name()
@@ -11,12 +14,18 @@ func _ready() -> void:
 	_prompt_label.size=Vector2(88,15)
 	_prompt_label.z_as_relative=false
 	_prompt_label.z_index=20
-	_art_root.rotation=-.35 if weapon_id==&"shotgun" else .40
-	_art_root.position=to_local(drop_origin)
-	_glow_circle.modulate.a=.45
+	_art_root.hide()
+	_glow_circle.hide()
+	visual=Node3D.new()
+	visual.name="DroppedWeapon"
+	preload("res://scripts/player/ArsenalWeapon3D.gd").build(visual,String(weapon_id))
+	visual.rotation=Vector3(0,-.35 if weapon_id==&"shotgun" else .4,PI*.5)
+	visual.scale=Vector3.ONE*1.24
+	preload("res://world/harbor/events/BankFloorItem.gd").place(room,visual,global_position)
+	var resting:Vector3=visual.position
+	visual.position=preload("res://world/harbor/events/BankFloorItem.gd").floor_position(room,drop_origin)+Vector3.UP*.35
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(_art_root,"position",Vector2(0,-5),.28)
-	tween.tween_property(_art_root,"position",Vector2.ZERO,.14)
+	tween.tween_property(visual,"position",resting,.42)
 	tween.tween_callback(func(): landed=true)
 
 func _process(_delta: float) -> void:
@@ -35,3 +44,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _on_body_entered(_body: Node2D) -> void:
 	pass
+
+func _take(player: Node) -> void:
+	if _consumed: return
+	visual.hide()
+	super._take(player)
+
+func _exit_tree() -> void:
+	if is_instance_valid(visual): visual.queue_free()

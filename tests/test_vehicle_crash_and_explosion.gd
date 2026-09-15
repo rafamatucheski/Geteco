@@ -81,6 +81,10 @@ func _run_crash_test() -> void:
 	var safe_exit = car._get_safe_exit_position()
 	print("  - Posição de saída segura calculada: %s" % str(safe_exit))
 	car.exit_vehicle()
+	# Exit now reverses the real boarding animation; wait for the seat to clear.
+	for frame in 150:
+		if not car.is_driven_by_player: break
+		await physics_frame
 	if car.is_driven_by_player:
 		failures.append("Falha ao sair voluntariamente do carro em chamas")
 	else:

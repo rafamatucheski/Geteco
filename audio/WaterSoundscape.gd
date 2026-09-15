@@ -10,7 +10,7 @@ func _ready() -> void:
 	for kind in gains:
 		var audio := AudioStreamPlayer.new()
 		audio.name = String(kind).capitalize() + "Water"
-		audio.bus = &"SFX"
+		audio.bus = &"Ambient"
 		audio.stream = RECORDED.bed("water", 1) if kind == "lake" else preload("res://audio/water/flow.ogg")
 		if audio.stream is AudioStreamOggVorbis: audio.stream.loop = true
 		audio.pitch_scale = 1.15 if kind == "fountain" else 1.0
@@ -30,6 +30,7 @@ static func coast_weight(point: Vector2) -> float:
 	# Margens navegáveis dos bairros e da península. A ponte da rodovia tem sua
 	# própria gravação em RegionalSoundscape; não somamos uma segunda ali.
 	var shores: Array[PackedVector2Array] = [
+		PackedVector2Array([Vector2(3200,3500),Vector2(3200,6000),Vector2(6100,6000),Vector2(6100,3200),Vector2(3600,3200)]),
 		PackedVector2Array([Vector2(3200,-2400), Vector2(3200,3500), Vector2(3010,3500), Vector2(2890,3330), Vector2(2853,2480), Vector2(-100,2480)]),
 		PackedVector2Array([Vector2(4380,-2400), Vector2(4380,2600), Vector2(6760,2600), Vector2(6760,-2400), Vector2(6300,-2400)]),
 		PackedVector2Array([Vector2(4380,-2400), Vector2(5700,-2400)]),
@@ -56,11 +57,12 @@ func update_context(point: Vector2, inside: bool, focus: float, delta: float) ->
 				elif surface is Line2D:
 					distance = maxf(0.0, path_distance(surface.to_local(point), surface.points) - surface.width * 0.5)
 				var reach := 220.0 if kind == "fountain" else 420.0
-				targets[kind] = maxf(targets[kind], 1.0 - smoothstep(25, reach, distance))
+				var zone_gain := float(surface.get_meta("water_sound_gain", 1.0))
+				targets[kind] = maxf(targets[kind], (1.0 - smoothstep(25, reach, distance)) * zone_gain)
 	for kind in gains:
 		gains[kind] = move_toward(gains[kind], targets[kind], delta * 0.8)
 		var gain: float = gains[kind] * focus
 		var audio: AudioStreamPlayer = beds[kind]
-		audio.volume_db = (-14.0 if kind == "lake" else -12.0) + linear_to_db(maxf(gain, 0.0001))
+		audio.volume_db = (-26.0 if kind == "fountain" else -14.0 if kind == "lake" else -12.0) + linear_to_db(maxf(gain, 0.0001))
 		if gain > 0.001 and not audio.playing: audio.play()
 		elif gain <= 0.001 and audio.playing: audio.stop()

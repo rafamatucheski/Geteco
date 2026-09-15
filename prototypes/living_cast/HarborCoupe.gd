@@ -24,6 +24,7 @@ var animation_clock := 0.0
 var last_heading := INF
 var brake_glows: Array[Sprite2D] = []
 var high_beam := false
+var _authored_lamp_mounts: Array[Vector3] = []
 
 func _create_body_model() -> Node3D:
 	return MODEL.new()
@@ -58,6 +59,13 @@ func _ready() -> void:
 	add_child(body_viewport)
 	body_model = _create_body_model()
 	body_viewport.add_child(body_model)
+	var lens: Material = body_model.materials.get("headlight")
+	for mesh in body_model.get_children():
+		if mesh is MeshInstance3D and lens != null and mesh.material_override == lens:
+			_authored_lamp_mounts.append(mesh.position)
+	_authored_lamp_mounts.sort_custom(func(a: Vector3, b: Vector3): return a.x < b.x)
+	if _authored_lamp_mounts.size() >= 2:
+		_authored_lamp_mounts = [_authored_lamp_mounts[0], _authored_lamp_mounts[-1]]
 	# Os cubos vêm do metadado autoral do modelo. A geometria declarada aqui em
 	# baixo só cobre modelo sem metadado: quando ela era a fonte principal, todo
 	# modelo que montava a roda fora de y=0.36 (a picape em 0.44, o furgão em
@@ -92,13 +100,7 @@ func _ready() -> void:
 	sprite.rotation = 0
 	sprite.modulate = Color.WHITE
 	# Ground contact follows the physical footprint, not the elevated roof.
-	var contact_shadow := Sprite2D.new()
-	contact_shadow.name = "ContactShadow"
-	contact_shadow.texture = _make_soft_particle_texture()
-	contact_shadow.modulate = Color(0, 0, 0, 0.45)
-	contact_shadow.scale = Vector2(78, 35) / contact_shadow.texture.get_size()
-	contact_shadow.show_behind_parent = true
-	add_child(contact_shadow)
+	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(78, 35))
 	# Full physical footprint inside the visible body (not the old atlas crop).
 	$Collision.shape.size = Vector2(72,31)
 	$BumperHitbox.get_child(0).shape.size = Vector2(74,33)
@@ -120,6 +122,8 @@ func _ready() -> void:
 		var glow := Sprite2D.new()
 		glow.texture = _make_soft_particle_texture()
 		glow.position = Vector2(-34,side*11)
+		# Ground spill is occluded by the opaque 3D body, including its roof.
+		glow.z_index = -1
 		glow.scale = Vector2.ONE * 0.22
 		glow.modulate = Color(1,0.08,0.04,0.25)
 		var unshaded := CanvasItemMaterial.new()
@@ -174,8 +178,22 @@ func _apply_steering_motion(turn_input: float, delta: float) -> void:
 	steering_angle = move_toward(steering_angle, clampf(turn_input, -1.0, 1.0) * maximum_angle, (4.0 if is_zero_approx(turn_input) else 3.2) * delta)
 	# Bicycle-model yaw: no pivoting at rest, natural reverse steering and a
 	# wider turn radius at speed. Rotate velocity with the rolling direction.
-	rotation += longitudinal / _steering_wheelbase() * tan(steering_angle) * delta
-	velocity = global_transform.x * longitudinal + global_transform.y * lateral * exp(-8.0 * delta)
+	var incoming := velocity
+	var slide := clampf(handbrake_slide / 0.35, 0.0, 1.0)
+	var heading: float = rotation + longitudinal / _steering_wheelbase() * tan(steering_angle) * _drivetrain.steer_scale * delta * lerpf(1.0, 2.25, slide)
+	preload("res://VehicleMotionSafety.gd").rotate_clear(self, heading)
+	var rolling := global_transform.x * longitudinal + global_transform.y * lateral * exp(-8.0 / (1.0 + maxf(0.0, _drivetrain.drift_bias) * 5.0) * delta)
+	# Locked rear wheels preserve world momentum; grip returns progressively.
+	velocity = rolling.lerp(incoming, slide)
+
+## Alinha sprite e modelo 3D ao rumo atual. O _physics_process faz isso a cada
+## quadro, mas com a árvore pausada (entrega da Monaliza na garagem, diálogo)
+## o carro ficava de lado até a física voltar.
+func sync_presentation_heading() -> void:
+	if not body_model: return
+	body_model.rotation.y = -global_rotation - PI/2
+	sprite.global_rotation = 0
+	if has_method("request_appearance_update"): request_appearance_update()
 
 func _physics_process(delta: float) -> void:
 	_visual_damage_cooldown = maxf(0,_visual_damage_cooldown-delta)
@@ -186,11 +204,14 @@ func _physics_process(delta: float) -> void:
 	body_model.rotation.y = -global_rotation - PI/2
 	_update_projected_lamps()
 	sprite.global_rotation = 0
+	preload("res://world/harbor/urban_transit/UrbanVehicleDepth.gd").update(self, sprite)
 	var moving := velocity.length() > 1
 	var signed_speed := velocity.dot(global_transform.x)
 	var braking_now := is_driven_by_player and Input.get_axis("ui_down","ui_up") * signed_speed < -10
-	for glow in brake_glows:
-		glow.modulate.a = 0.85 if braking_now else (0.22 if is_headlight_on() else 0.0)
+	for i in brake_glows.size():
+		var glow := brake_glows[i]
+		var broken: bool = is_broken or is_exploded or body_model.broken_tail_lamps[mini(i,1)]
+		glow.modulate.a = 0.0 if broken else (0.85 if braking_now else (0.22 if is_headlight_on() else 0.0))
 	# Dirigido pelo jogador existe ângulo de volante de verdade; sob IA (Cobras,
 	# empurrão, reboque) o esterço é deduzido da guinada da própria carroceria.
 	wheel_rig.update(delta, signed_speed / PIXELS_PER_METRE, global_rotation, steering_angle if is_driven_by_player else INF)
@@ -213,10 +234,10 @@ func _apply_headlight_state() -> void:
 	headlight.visible = enabled and not body_model.broken_lamps[0]
 	second_headlight.visible = enabled and not body_model.broken_lamps[1]
 
-func _apply_crash_deformation(normal: Vector2, force: float, world_hit: Vector2 = Vector2.ZERO) -> void:
+func _apply_crash_deformation(normal: Vector2, force: float, world_hit: Vector2 = Vector2.ZERO, is_post: bool = false) -> void:
 	if _visual_damage_cooldown > 0: return
 	_visual_damage_cooldown = 0.25
-	super._apply_crash_deformation(normal,force,world_hit)
+	super._apply_crash_deformation(normal,force,world_hit,is_post)
 	if not body_model: return
 	var hit := to_local(world_hit) / PIXELS_PER_METRE
 	var inward := global_transform.basis_xform_inv(normal)
@@ -234,9 +255,11 @@ func _clear_all_dents() -> void:
 	_apply_headlight_state()
 
 func _explode() -> void:
+	if is_exploded: return
 	super._explode()
 	if body_model:
-		body_model.paint.albedo_color = paint_color.darkened(0.85)
+		body_model.char_body()
+		sprite.modulate = Color.WHITE
 		request_appearance_update()
 
 func repair_vehicle() -> void:
@@ -244,7 +267,7 @@ func repair_vehicle() -> void:
 	repaint_vehicle(paint_color)
 
 func _headlamp_mounts() -> Array[Vector3]:
-	return []
+	return _authored_lamp_mounts
 
 func _update_projected_lamps() -> void:
 	var mounts := _headlamp_mounts()

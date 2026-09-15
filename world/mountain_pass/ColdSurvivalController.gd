@@ -17,6 +17,8 @@ signal thermal_suit_equipped(has_suit: bool)
 @export var car_warming_rate: float = 20.0 # Recuperação por segundo dentro de veículo
 @export var campfire_warming_rate: float = 35.0 # Recuperação por segundo próximo a fogo
 @export var hypothermia_damage_rate: float = 5.0 # Dano por segundo quando a barra zerar
+@export var arrival_grace_seconds: float = 15.0
+@export var exposure_ramp_seconds: float = 15.0
 
 # Altitude onde o frio se inicia (coordenada Y menor = mais alto na montanha)
 @export var cold_zone_y_threshold: float = -1500.0
@@ -32,6 +34,7 @@ var is_hypothermic: bool = false
 var _damage_accumulator: float = 0.0
 var sheltered := false
 var weather_exposure := 0.0
+var exposure_seconds := 0.0
 
 func _ready() -> void:
 	current_temperature = max_temperature
@@ -87,6 +90,14 @@ func is_in_cold_zone() -> bool:
 func _update_temperature(delta: float) -> void:
 	var in_cold: bool = is_in_cold_zone()
 	var prev_temp: float = current_temperature
+	var exposed := in_cold and not is_near_heat_source and not is_in_vehicle
+	var previous_exposure := exposure_seconds
+	if exposed:
+		exposure_seconds += delta
+	else:
+		exposure_seconds = maxf(0.0, exposure_seconds - delta * 2.0)
+	# Integrating the ramp keeps grace and drain independent of frame rate.
+	var drain_seconds := _exposure_integral(exposure_seconds) - _exposure_integral(previous_exposure) if exposed else 0.0
 
 	if in_cold:
 		if is_near_heat_source:
@@ -97,11 +108,11 @@ func _update_temperature(delta: float) -> void:
 			current_temperature = minf(max_temperature, current_temperature + car_warming_rate * delta)
 		elif has_thermal_suit or outfit_protection>0:
 			# Roupa térmica reduz exposição em 80%; ainda exige abrigo.
-			current_temperature = maxf(0.0, current_temperature - (cold_drain_rate + blizzard_extra_drain * weather_exposure) * (1.0-maxf(outfit_protection,0.8 if has_thermal_suit else 0.0)) * delta)
+			current_temperature = maxf(0.0, current_temperature - (cold_drain_rate + blizzard_extra_drain * weather_exposure) * (1.0-clampf(maxf(outfit_protection,0.8 if has_thermal_suit else 0.0),0.0,1.0)) * drain_seconds)
 		else:
 			# Exposto ao relento: temperatura cai
 			var drain: float = cold_drain_rate + blizzard_extra_drain * weather_exposure
-			current_temperature = maxf(0.0, current_temperature - drain * delta)
+			current_temperature = maxf(0.0, current_temperature - drain * drain_seconds)
 	else:
 		# Fora da zona fria: temperatura normaliza naturalmente
 		current_temperature = minf(max_temperature, current_temperature + 15.0 * delta)
@@ -133,3 +144,13 @@ func _apply_cold_damage(amount: int) -> void:
 			player_target.take_environment_damage(amount)
 		elif "health" in player_target:
 			player_target.health = max(0, player_target.health - amount)
+
+func _exposure_integral(seconds: float) -> float:
+	var time := maxf(0.0, seconds - arrival_grace_seconds)
+	var ramp := maxf(0.001, exposure_ramp_seconds)
+	return time * time / (2.0 * ramp) if time < ramp else time - ramp * 0.5
+
+func should_show_status() -> bool:
+	# Show the cold zone immediately, including grace time and vehicle heating.
+	# Exposure controls temperature loss, not whether the player can see the HUD.
+	return current_temperature < max_temperature - 0.5 or is_in_cold_zone()

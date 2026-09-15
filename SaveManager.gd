@@ -55,6 +55,15 @@ func get_slot_path(slot_id: String) -> String:
 	return _save_dir + clean_id
 
 ## Retorna lista detalhada de slots com metadados para UI do MainMenu e PauseMenu
+func delete_save(slot_id: String) -> Dictionary:
+	if slot_id.is_empty() or slot_id != slot_id.get_file() or slot_id.contains(".."):
+		return {"success": false, "error": "Invalid slot"}
+	var path := get_slot_path(slot_id)
+	if not FileAccess.file_exists(path):
+		return {"success": true}
+	var error := DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	return {"success": error == OK, "error": error_string(error)}
+
 func list_slots() -> Array[Dictionary]:
 	_ensure_save_directory()
 	var results: Array[Dictionary] = []
@@ -149,6 +158,11 @@ func inspect_slot(slot_id: String) -> Dictionary:
 
 ## Salva o estado completo atual do jogo em um slot
 func save_game(slot_id: String = "slot_01", custom_summary_note: String = "") -> Dictionary:
+	for service in get_tree().get_nodes_in_group("salvage_tow_service"):
+		service.snapshot()
+	if not get_tree().get_nodes_in_group("chop_shop_busy").is_empty():
+		save_completed.emit(slot_id,false,"Aguarde a prensa terminar antes de salvar.")
+		return {"success": false, "error": "Aguarde a prensa terminar antes de salvar.", "reason": "salvage_busy"}
 	_ensure_save_directory()
 	
 	var tree := get_tree()
@@ -168,6 +182,12 @@ func save_game(slot_id: String = "slot_01", custom_summary_note: String = "") ->
 		return {"success": false, "error": err_msg, "reason": "wanted"}
 
 	# Obter dados de cada subsistema sem duplicar fontes de verdade
+	# Capture parked cars synchronously: saving immediately after leaving a
+	# vehicle in a home bay must not depend on the next periodic update.
+	for residence in tree.get_nodes_in_group("residence_manager"):
+		residence.capture_parking_for_save()
+	for garage in tree.get_nodes_in_group("port_boss_garage"):
+		garage.capture_for_save()
 	var player_data: Dictionary = player.serialize() if player.has_method("serialize") else {}
 	var wanted_data: Dictionary = wanted.serialize() if wanted and wanted.has_method("serialize") else {}
 	var campaign_data: Dictionary = campaign.to_save_data() if campaign and campaign.has_method("to_save_data") else {}

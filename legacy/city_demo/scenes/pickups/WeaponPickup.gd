@@ -8,6 +8,7 @@ extends Area2D
 @export var weapon_id: StringName = &"pistol"
 @export_range(0, 300, 1) var ammo_amount: int = 12
 @export var interaction_radius: float = 22.0
+@export var persistent_loot: bool = false
 
 var _nearby_player: Node2D
 var _base_y: float
@@ -32,11 +33,12 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	
-	# Desaparece suavemente após 35 segundos se abandonada na rua
-	var tw = create_tween()
-	tw.tween_interval(28.0)
-	tw.tween_property(self, "modulate:a", 0.0, 7.0)
-	tw.tween_callback(queue_free)
+	# Desaparece suavemente após 35 segundos se abandonada na rua (salvo se for pickup fixo de cenário)
+	if not persistent_loot:
+		var tw = create_tween()
+		tw.tween_interval(28.0)
+		tw.tween_property(self, "modulate:a", 0.0, 7.0)
+		tw.tween_callback(queue_free)
 
 func _process(delta: float) -> void:
 	if _consumed: return
@@ -100,6 +102,10 @@ func _get_halo_color() -> Color:
 		"shotgun", "sawed_off": return Color(1.0, 0.55, 0.15, 0.25) # Laranja
 		"ak47", "rpg", "flamethrower": return Color(1.0, 0.25, 0.25, 0.28) # Vermelho
 		"grenade": return Color(0.2, 0.9, 0.4, 0.25)          # Verde
+		"knuckles": return Color(0.95, 0.75, 0.15, 0.35)      # Bronze
+		"knife": return Color(0.65, 0.85, 0.95, 0.30)         # Aço afiado
+		"axe": return Color(0.95, 0.40, 0.15, 0.32)           # Laranja corte
+		"bat": return Color(0.90, 0.65, 0.25, 0.30)           # Madeira taco
 		_: return Color(0.5, 0.9, 0.5, 0.25)
 
 func _get_weapon_short_name() -> String:
@@ -114,6 +120,10 @@ func _get_weapon_short_name() -> String:
 		"rpg": return "RPG-7"
 		"flamethrower": return "CHAMAS"
 		"grenade": return "GRANADA"
+		"knuckles": return "SOQUEIRA"
+		"knife": return "FACA"
+		"axe": return "MACHADO"
+		"bat": return "TACO"
 		_: return String(weapon_id).to_upper()
 
 func _create_weapon_geometry(id: String) -> void:
@@ -215,6 +225,55 @@ func _create_weapon_geometry(id: String) -> void:
 			var pin = _make_rect(Vector2(-1.5, -6.5), Vector2(3, 2.5), Color("#bdc3c7"))
 			_art_root.add_child(body)
 			_art_root.add_child(pin)
+		"knuckles":
+			# Soqueira de Bronze (14x9px)
+			var palm_bar = _make_rect(Vector2(-6, 2), Vector2(12, 2.5), Color("#b7950b"))
+			var front_ridge = _make_rect(Vector2(-7, -4), Vector2(14, 3), Color("#d4ac0d"))
+			_art_root.add_child(palm_bar)
+			_art_root.add_child(front_ridge)
+			# 4 orifícios para os dedos
+			for i in range(4):
+				var h = _make_rect(Vector2(-5.5 + i * 3.0, -1), Vector2(2, 2.5), Color("#141416"))
+				_art_root.add_child(h)
+		"knife":
+			# Faca de Combate (16x5px)
+			var handle = _make_rect(Vector2(-8, -1.2), Vector2(5.5, 2.4), Color("#2d3436"))
+			var guard = _make_rect(Vector2(-2.5, -2.5), Vector2(1.5, 5.0), Color("#d4ac0d"))
+			var blade = _make_rect(Vector2(-1, -1.0), Vector2(7.5, 2.0), Color("#dfe4ea"))
+			var tip = Polygon2D.new()
+			tip.polygon = PackedVector2Array([
+				Vector2(6.5, -1.0), Vector2(9.5, 0.0), Vector2(6.5, 1.0)
+			])
+			tip.color = Color("#dfe4ea")
+			_art_root.add_child(handle)
+			_art_root.add_child(guard)
+			_art_root.add_child(blade)
+			_art_root.add_child(tip)
+		"axe":
+			# Machado de Lenhador (16x12px)
+			var handle = _make_rect(Vector2(-8, -1), Vector2(14, 2.2), Color("#795548"))
+			var head = _make_rect(Vector2(2.5, -5), Vector2(3.5, 10), Color("#747d8c"))
+			var edge = Polygon2D.new()
+			edge.polygon = PackedVector2Array([
+				Vector2(6.0, -5.5), Vector2(8.5, -4.0), Vector2(8.5, 4.0), Vector2(6.0, 5.5)
+			])
+			edge.color = Color("#dfe4ea")
+			_art_root.add_child(handle)
+			_art_root.add_child(head)
+			_art_root.add_child(edge)
+		"bat":
+			# Taco de Beisebol (18x6px)
+			var pommel = _make_rect(Vector2(-9, -1.5), Vector2(1.5, 3.0), Color("#875626"))
+			var grip = _make_rect(Vector2(-7.5, -1.0), Vector2(5.0, 2.0), Color("#2f3542"))
+			var barrel = Polygon2D.new()
+			barrel.polygon = PackedVector2Array([
+				Vector2(-2.5, -1.2), Vector2(8.0, -2.2), Vector2(9.0, -1.5),
+				Vector2(9.0, 1.5), Vector2(8.0, 2.2), Vector2(-2.5, 1.2)
+			])
+			barrel.color = Color("#b07d48")
+			_art_root.add_child(pommel)
+			_art_root.add_child(grip)
+			_art_root.add_child(barrel)
 		_:
 			# Padrão compacto
 			var default_box = _make_rect(Vector2(-6, -3), Vector2(12, 6), Color("#57606f"))
@@ -249,16 +308,7 @@ func _take(player: Node) -> void:
 		player.add_weapon_loot(weapon_id, ammo_amount)
 	
 	# Som de recarga/equipamento
-	var p := AudioStreamPlayer2D.new()
-	p.bus = &"SFX"
-	p.stream = ProceduralAudio.get_gunshot_pistol_stream()
-	p.pitch_scale = 1.6
-	p.volume_db = -10.0
-	p.max_distance = 450.0
-	get_tree().current_scene.add_child(p)
-	p.global_position = global_position
-	p.play()
-	p.finished.connect(p.queue_free)
+	preload("res://audio/rewards/RewardAudioBank.gd").play(self, "weapon")
 	
 	# Efeito de absorção suave
 	var tw := create_tween().set_parallel(true)

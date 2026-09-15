@@ -3,6 +3,10 @@ extends CharacterBody2D
 
 enum State { DISEMBARK, APPROACH, EXTINGUISH, RETURN, EMBARKING, EMBARKED }
 
+const SUPPRESSION := preload("res://world/shared/emergency/FireSuppression.gd")
+const POST_REACH := 52.0
+const APPROACH_TIMEOUT := 35.0
+
 @export var speed: float = 160.0
 @export var max_health: int = 60
 
@@ -24,6 +28,10 @@ var extinguish_timer: float = 0.0
 var crew_side := 1.0
 var crew_longitudinal := 22.0
 var boarding_started := false
+var _service_post := Vector2.INF
+var _post_origin := Vector2.INF
+var _post_retry := 0.0
+var _approach_elapsed := 0.0
 
 # 3D SubViewport Rig
 var viewport_3d: SubViewport
@@ -79,6 +87,7 @@ func _ready() -> void:
 	
 	water_audio = AudioStreamPlayer2D.new()
 	water_audio.stream = ProceduralAudio.get_water_stream()
+	water_audio.bus = &"SFX"
 	water_audio.max_distance = 600.0
 	water_audio.volume_db = -6.0
 	add_child(water_audio)
@@ -130,6 +139,7 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.name = "GroundShadow"
 	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	viewport_3d.add_child(shadow_mesh)
+	preload("res://ContactShadow.gd").soften(shadow_mesh)
 
 	# Uniforme Amarelo Mostarda de Resgate
 	mat_uniform = _make_mat(Color(0.85, 0.68, 0.10), 0.6)
@@ -298,13 +308,13 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	_start_decay()
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
-	if is_dead: return
+	if amount <= 0 or is_dead: return
 	health = maxi(0, health - amount)
 	if mat_uniform:
 		mat_uniform.albedo_color = Color(1.0, 0.4, 0.4)
 		var tween := create_tween()
 		tween.tween_property(mat_uniform, "albedo_color", Color(0.85, 0.68, 0.10), 0.2)
-	_play_audio(ProceduralAudio.get_squish_stream(), -6.0)
+	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, amount)
 	
 	if health <= 0:
 		_die()
@@ -318,7 +328,7 @@ func _die() -> void:
 	if water_audio: water_audio.stop()
 	_start_fall()
 	_create_3d_blood_puddle()
-	_play_audio(ProceduralAudio.get_scream_stream(), -5.0)
+	_play_audio(ProceduralAudio.get_death_reaction_stream(), -5.0)
 	_start_decay()
 
 func _physics_process(delta: float) -> void:
@@ -347,30 +357,39 @@ func _physics_process(delta: float) -> void:
 					is_moving = true
 				else:
 					velocity = Vector2.ZERO
+					if not preload("res://EmergencyCrewTransition.gd").finish_exit(self, fire_truck, crew_side, delta): return
 					state = State.APPROACH
 					remove_collision_exception_with(fire_truck)
 		State.APPROACH:
-			if not is_instance_valid(target):
+			if not SUPPRESSION.is_active(target):
+				_start_return_to_truck()
+				return
+			_approach_elapsed += delta
+			if _approach_elapsed >= APPROACH_TIMEOUT:
+				# An inaccessible fire stays queued. Do not repair or extinguish it
+				# just to release this truck, and do not flood it with replacements.
+				target.set_meta("fire_retry_after_ms", Time.get_ticks_msec() + 25000)
+				_service_radio("fire_blocked")
 				_start_return_to_truck()
 				return
 			var dist: float = global_position.distance_to(target.global_position)
 			var dir: Vector2 = global_position.direction_to(target.global_position)
 			dir_to_look = dir
-			
-			if dist > 60.0 or not _can_reach_fire():
-				velocity = _navigate_towards(movement_navigation.service_position(self, target, 50.0, delta), speed, delta)
+			var post := _fire_service_position(delta)
+			if dist > 60.0 or global_position.distance_to(post) > 10.0 or not _can_reach_fire():
+				velocity = _navigate_towards(post, speed, delta)
 				is_moving = true
 			else:
 				velocity = Vector2.ZERO
 				state = State.EXTINGUISH
-				extinguish_timer = 2.6
+				extinguish_timer = SUPPRESSION.HOSE_SECONDS
 				water_hose.emitting = true
 				water_hose.direction = dir
 				water_audio.play()
 				
 		State.EXTINGUISH:
 			velocity = Vector2.ZERO
-			if not is_instance_valid(target):
+			if not SUPPRESSION.is_active(target):
 				_start_return_to_truck()
 				return
 			if global_position.distance_to(target.global_position) > 70.0 or not _can_reach_fire():
@@ -381,15 +400,12 @@ func _physics_process(delta: float) -> void:
 			if is_instance_valid(target):
 				dir_to_look = global_position.direction_to(target.global_position)
 				water_hose.direction = dir_to_look
-			extinguish_timer -= delta
-			if extinguish_timer <= 0.0:
+			_approach_elapsed = 0.0
+			extinguish_timer = maxf(0.0, extinguish_timer - delta)
+			if SUPPRESSION.apply_water(target, delta):
 				water_hose.emitting = false
 				water_audio.stop()
-				if is_instance_valid(target):
-					if target.has_method("extinguish_fire"):
-						target.extinguish_fire()
-					elif target.has_method("repair_vehicle"):
-						target.repair_vehicle()
+				_service_radio("fire_clear")
 				_start_return_to_truck()
 				
 		State.RETURN:
@@ -463,6 +479,52 @@ func _can_reach_fire() -> bool:
 	var query := PhysicsRayQueryParameters2D.create(global_position, target.global_position, 3, [get_rid()])
 	var hit := get_world_2d().direct_space_state.intersect_ray(query)
 	return hit.is_empty() or hit.collider == target
+
+func _fire_service_position(delta: float) -> Vector2:
+	_post_retry -= delta
+	if _post_retry > 0.0 and _post_origin.distance_to(target.global_position) < 12.0:
+		return _service_post
+	_post_retry = 0.75
+	_post_origin = target.global_position
+	var anchor := fire_truck.global_position if is_instance_valid(fire_truck) else global_position
+	var preferred := target.global_position.direction_to(anchor).rotated(crew_side * 0.42)
+	if preferred.is_zero_approx(): preferred = Vector2.RIGHT.rotated(crew_side * 0.42)
+	var shape := CircleShape2D.new()
+	shape.radius = 10.0
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = shape
+	query.collision_mask = 3
+	query.exclude = [get_rid()]
+	var space := get_world_2d().direct_space_state
+	var best := INF
+	_service_post = global_position
+	for i in 12:
+		var direction := preferred.rotated(float(i) * TAU / 12.0)
+		var point := target.global_position + direction * POST_REACH
+		query.transform = Transform2D(0.0, point)
+		if not space.intersect_shape(query, 1).is_empty(): continue
+		var ray := PhysicsRayQueryParameters2D.create(point, target.global_position, 3, [get_rid()])
+		ray.hit_from_inside = true
+		var hit := space.intersect_ray(ray)
+		if not hit.is_empty() and hit.collider != target: continue
+		var cost := global_position.distance_to(point) + (1.0 - direction.dot(preferred)) * 70.0
+		# Only the current truck's small crew is inspected, never the city population.
+		if is_instance_valid(fire_truck):
+			var crew: Variant = fire_truck.get("_response_crew")
+			if crew is Array:
+				for colleague in crew:
+					if not is_instance_valid(colleague) or colleague == self or colleague.get("is_dead") == true: continue
+					var occupied: Variant = colleague.get("_service_post")
+					if occupied is Vector2 and point.distance_to(occupied) < 22.0: cost += 180.0
+		if cost < best:
+			best = cost
+			_service_post = point
+	return _service_post
+
+func _service_radio(event: String) -> void:
+	# Loaded lazily so the responder remains usable in isolated scenes.
+	var path := "res://audio/police_dispatch/EmergencyServiceRadio.gd"
+	if ResourceLoader.exists(path): load(path).play_at(self, event)
 
 
 func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) -> void:
@@ -554,6 +616,7 @@ func _create_3d_blood_puddle() -> void:
 	fade_tween.tween_callback(puddle_root.queue_free)
 
 func _start_decay() -> void:
+	if has_meta("medical_pending"): return
 	var t := create_tween()
 	t.tween_interval(8.0)
 	t.tween_property(self, "modulate:a", 0.0, 3.0)
@@ -561,6 +624,7 @@ func _start_decay() -> void:
 
 func _play_audio(stream: AudioStream, volume_db: float = -6.0) -> void:
 	var player := AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = volume_db
 	player.max_distance = 600.0

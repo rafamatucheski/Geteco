@@ -14,7 +14,6 @@ var treasure_model: Node3D
 var treasure_lid: Node3D
 var gold: Node3D
 var prompt: Label
-var entrance_hint: Label
 signal treasure_claimed(amount: int)
 func _ready() -> void:
 	z_as_relative = false
@@ -25,8 +24,8 @@ func _ready() -> void:
 	_build_treasure()
 	_build_smg_pickup()
 	prompt = Label.new()
-	prompt.text = "[E] ABRIR CAIXA DE CONTRABANDO"
-	prompt.position = project_floor(Vector2(0,-6.7))-Vector2(110,0)
+	prompt.text = "E · Abrir baú"
+	prompt.position = project_floor(Vector2(0.55,-6.7))-Vector2(38,0)
 	prompt.add_theme_font_size_override("font_size",11)
 	prompt.add_theme_color_override("font_shadow_color",Color.BLACK)
 	prompt.add_theme_constant_override("shadow_offset_x",1)
@@ -34,13 +33,6 @@ func _ready() -> void:
 	prompt.z_index = 20
 	prompt.hide()
 	add_child(prompt)
-	entrance_hint = Label.new()
-	entrance_hint.text = "CARGUEIRO DOS LOBOS / ENTRE PELA RAMPA"
-	entrance_hint.position = project_floor(Vector2(0,10))-Vector2(125,0)
-	entrance_hint.add_theme_font_size_override("font_size",11)
-	entrance_hint.z_index = 20
-	entrance_hint.hide()
-	add_child(entrance_hint)
 func _build_smg_pickup() -> void:
 	var pickup := preload("res://world/mountain_pass/MountainWeaponPickup.gd").new()
 	pickup.name = "CargoSMG"
@@ -48,10 +40,24 @@ func _build_smg_pickup() -> void:
 	pickup.pickup_id = "mountain_cargo_plane_smg_01"
 	pickup.ammo = 20
 	pickup.load_on_pickup = true
+	pickup.hover_height = 0.40
 	pickup.render_host = self
-	pickup.position = project_floor(Vector2(0.35, -5.2))
+	pickup.position = project_floor(Vector2(-0.55, -7.35))
 	add_child(pickup)
-	pickup.install_model(model, Vector3(0.35, 0.08, -5.2))
+	# The cargo deck/rollers reach y=0.215; both halo and weapon must clear it.
+	pickup.install_model(model, Vector3(-0.55, 0.28, -7.35))
+	pickup.model.scale = Vector3.ONE * 2.3
+	var floor_weapon := pickup.model.get_node("FloorWeapon") as Node3D
+	for part in floor_weapon.get_children():
+		part.free()
+	preload("res://scripts/player/ArsenalWeapon3D.gd").build(floor_weapon, "smg")
+	var halo := pickup.model.get_node("FloorHalo") as MeshInstance3D
+	halo.position.y = 0.0
+	var highlight := halo.material_override as StandardMaterial3D
+	highlight.albedo_color = Color("65e8ff")
+	highlight.emission_enabled = true
+	highlight.emission = Color("65e8ff")
+	(halo.mesh as TorusMesh).outer_radius = 0.18
 
 func _open_cargo_aisle() -> void:
 	var materials: Dictionary = model._materials
@@ -85,20 +91,39 @@ func _build_treasure() -> void:
 	treasure_model.position = Vector3(0.55,0.20,-7.35)
 	model.add_child(treasure_model)
 	var paint := StandardMaterial3D.new()
-	paint.albedo_color = Color("344938")
-	paint.metallic = 0.6
-	_box(treasure_model,Vector3(0,0.21,0),Vector3(0.75,0.42,0.6),paint)
+	paint.albedo_color = Color("98532c")
+	paint.roughness = 0.75
+	_box(treasure_model,Vector3(0,0.04,0),Vector3(0.75,0.08,0.6),paint)
+	for x in [-0.34,0.34]:
+		_box(treasure_model,Vector3(x,0.25,0),Vector3(0.07,0.42,0.6),paint)
+	for z in [-0.265,0.265]:
+		_box(treasure_model,Vector3(0,0.25,z),Vector3(0.68,0.42,0.07),paint)
 	treasure_lid = Node3D.new()
 	treasure_lid.position = Vector3(0,0.45,-0.30)
 	treasure_model.add_child(treasure_lid)
-	_box(treasure_lid,Vector3(0,0,0.30),Vector3(0.78,0.06,0.62),paint)
 	var brass := StandardMaterial3D.new()
-	brass.albedo_color = Color("c6aa58")
-	brass.metallic = 0.75
-	_box(treasure_lid,Vector3(0,0.01,0.62),Vector3(0.11,0.12,0.03),brass)
+	brass.albedo_color = Color("ffd16b")
+	brass.metallic = 0.45
+	brass.emission_enabled = true
+	brass.emission = Color("b67a24")
+	brass.emission_energy_multiplier = 0.35
+	# Broad bands and a front lock read as a treasure chest from the overhead camera.
+	for x in [-0.26, 0.26]:
+		_box(treasure_model,Vector3(x,0.21,0),Vector3(0.075,0.44,0.62),brass)
+	# Faceted barrel lid with raised brass straps, hinged at the rear edge.
+	for segment in 8:
+		var angle := (float(segment)+0.5)*PI/8.0
+		var centre := Vector3(0,sin(angle)*0.24,0.30+cos(angle)*0.30)
+		_box(treasure_lid,centre,Vector3(0.78,0.055,0.125),paint)
+		(treasure_lid.get_child(-1) as Node3D).rotation.x = angle-PI*0.5
+		for x in [-0.26,0.26]:
+			_box(treasure_lid,centre+Vector3(x,sin(angle)*0.025,cos(angle)*0.025),Vector3(0.08,0.035,0.13),brass)
+			(treasure_lid.get_child(-1) as Node3D).rotation.x = angle-PI*0.5
+	_box(treasure_model,Vector3(0,0.035,0),Vector3(0.79,0.07,0.64),brass)
+	_box(treasure_lid,Vector3(0,-0.035,0.62),Vector3(0.16,0.20,0.045),brass)
 	gold = Node3D.new()
 	treasure_model.add_child(gold)
-	for x in [-0.2,0.0,0.2]: _box(gold,Vector3(x,0.47,0),Vector3(0.13,0.06,0.25),brass)
+	for x in [-0.2,0.0,0.2]: _box(gold,Vector3(x,0.39,0),Vector3(0.13,0.06,0.25),brass)
 func _box(parent: Node3D,pos: Vector3,size: Vector3,material: Material) -> void:
 	var part := MeshInstance3D.new()
 	var box := BoxMesh.new()
@@ -123,7 +148,6 @@ func _process(delta: float) -> void:
 	if saved != collected: _set_collected(saved)
 	var floor_position := unproject_floor(player.global_position)
 	prompt.visible = inside and not collected and floor_position.distance_to(Vector2(0.55,-7.35)) < 1.75
-	entrance_hint.visible = not inside and player.visible and floor_position.distance_to(Vector2(0,9.2))<8.0
 func _set_inside(player: Node2D, value: bool) -> void:
 	if inside and is_instance_valid(_actor): _actor.remove_meta("mountain_shelter")
 	if is_instance_valid(_camera):

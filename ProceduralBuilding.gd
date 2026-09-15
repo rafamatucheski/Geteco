@@ -18,10 +18,40 @@ func _ready() -> void:
 	if "park" in building_kind:
 		z_index = -19
 	queue_redraw()
+	_build_geodata()
 	_setup_pass_through_area()
 
-func _setup_pass_through_area() -> void:
+func get_solid_rects() -> Array[Rect2]:
 	if "park" in building_kind:
+		return []
+	var bounds := Rect2(-footprint * 0.5, footprint).grow(-1)
+	if arcade_depth > 0.0:
+		bounds.size.y = maxf(30.0, bounds.size.y - arcade_depth)
+	return [bounds]
+
+func _build_geodata() -> void:
+	var solids := get_solid_rects()
+	if solids.is_empty(): return
+	var body := StaticBody2D.new()
+	body.name = "BuildingSolid"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.add_to_group("building_blocker")
+	body.add_to_group("building_geodata")
+	body.set_meta("solid_rects_local", solids)
+	for solid in solids:
+		var collision := CollisionShape2D.new()
+		var shape := RectangleShape2D.new()
+		shape.size = solid.size
+		collision.shape = shape
+		collision.position = solid.get_center()
+		body.add_child(collision)
+	add_child(body)
+
+func _setup_pass_through_area() -> void:
+	# Only an authored ground-floor arcade can occlude a walking actor.
+	# Roofs and closed facades are solid, never pass-through triggers.
+	if "park" in building_kind or arcade_depth <= 0.0:
 		return
 	var area := Area2D.new()
 	area.name = "PassThroughArea"

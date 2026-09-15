@@ -44,6 +44,24 @@ static func resolve(actor: Node2D, raining: bool) -> String:
 				if paved: continue
 				for garden in GARDENS[provider_name]:
 					if garden.has_point(local): surface = "grass"
+	# Authored polygons/road strips use the same geometry as their visible material.
+	var priority := -2147483648
+	for ground in actor.get_tree().get_nodes_in_group("audio_ground"):
+		if not ground is Node2D or not ground.is_visible_in_tree(): continue
+		if world and not world.is_ancestor_of(ground): continue
+		var point: Vector2 = ground.to_local(actor.global_position)
+		var inside := false
+		if ground is Polygon2D:
+			inside = Geometry2D.is_point_in_polygon(point, ground.polygon)
+		elif ground is Line2D:
+			for i in range(1, ground.points.size()):
+				if point.distance_to(Geometry2D.get_closest_point_to_segment(point, ground.points[i-1], ground.points[i])) <= ground.width * 0.5:
+					inside = true
+		var rank: int = ground.z_index
+		if inside and rank >= priority:
+			priority = rank
+			var material := String(ground.get_meta("footstep_surface", ground.get_meta("mountain_surface", "concrete")))
+			surface = {"road_grain": "asphalt", "earth": "dirt", "forest": "grass", "packed": "snow"}.get(material, material)
 	if raining:
 		return "wet" if surface == "concrete" else surface + "_wet"
 	return surface

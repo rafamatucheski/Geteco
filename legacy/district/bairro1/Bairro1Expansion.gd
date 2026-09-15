@@ -601,8 +601,6 @@ func _create_buildings_and_collisions() -> void:
 		if lot.has("arcade_depth"):
 			building.arcade_depth = float(lot.arcade_depth)
 		visual_root.add_child(building)
-		if String(lot.kind) != "park":
-			_add_rect_collision(building.get_collision_rect(), "%s_Blocker" % building.name)
 
 func _create_decor() -> void:
 	var rail_corridor := _rail_corridor_points()

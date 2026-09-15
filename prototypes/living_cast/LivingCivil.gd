@@ -156,10 +156,10 @@ func take_damage(amount: int, is_player_attacker: bool = false) -> void:
 		is_scared = false
 		if _panic_bubble: _panic_bubble.hide()
 
-func _die() -> void:
+func _die(is_player_attacker: bool = false) -> void:
 	if is_dead: return
 	var original := model_root.rotation
-	super._die()
+	super._die(is_player_attacker)
 	death_animation_started = true
 	model_root.rotation = original
 	var fall := create_tween().set_parallel(true)

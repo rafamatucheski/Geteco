@@ -5,13 +5,19 @@ signal changed
 signal dialogue(speaker: String, text: String)
 signal mission_finished(id: String, success: bool)
 
-const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 const ENCOUNTER_PATH := "res://world/harbor/cobras/CobraEncounter.gd"
+const NEIGHBORHOOD = preload("res://world/harbor/cobras/CobraNeighborhood.gd")
+const RACE_RADIUS: float = NEIGHBORHOOD.RADIUS
+const RACE_HALF_WIDTH: float = NEIGHBORHOOD.WIDTH * 0.5 + 18.0
+const RACE_RETURN_SECONDS := 4.0
+const RACE_HOUR := 21
+const RACE_TIME_LIMIT := 100.0
+const RACE_LANE_RADIUS: float = NEIGHBORHOOD.RADIUS + NEIGHBORHOOD.WIDTH * 0.25
 const WORKSHOP := Vector2(8150, 1760)
 const RESIDENT := Vector2(7210, 1850)
 const SUPPLY := Vector2(8150, 2080)
-const RACE_START := Vector2(7400, 1700)
-const CENTER := Vector2(7700, 1700)
+const RACE_START: Vector2 = NEIGHBORHOOD.CENTER + Vector2.LEFT * RACE_LANE_RADIUS
+const CENTER: Vector2 = NEIGHBORHOOD.CENTER
 const INTERACT_DISTANCE := 82.0
 var player: Node2D
 var ledger: RefCounted
@@ -22,18 +28,10 @@ var elapsed := 0.0
 var objective_position := Vector2.ZERO
 var _encounter: Node2D
 var _encounter_complete := false
-var _race_path: Path2D
-var _race_network: Node
-var _race_legs: Array[Dictionary] = []
-var _race_leg := 0
-var _rival: Node2D
-var _rival_follow: PathFollow2D
 var _race_points := PackedVector2Array()
 var _checkpoint := 0
 var _race_elapsed := 0.0
 var _race_started := false
-var _rival_distance := 0.0
-var _rival_previous := Vector2.ZERO
 var _previous_subject := Vector2.ZERO
 var _countdown := 0.0
 var _subject_initialized := false
@@ -41,12 +39,23 @@ var _last_message := ""
 var _optional_id := ""
 var _neighbor: Node2D
 var _contact: Node2D
+var _story_tow: RefCounted
+var _race_car: Node2D
+var _race_route := PackedVector2Array()
+var _race_progress := 0.0
+var _race_previous_angle := PI
+var _outside_seconds := 0.0
+var _was_on_track := true
+var _track_exit_angle := PI
+var _starting_position := Vector2.ZERO
+var _race_traffic: Node2D
 
 func _ready() -> void:
 	_spawn_neighbor()
 
 func _spawn_neighbor() -> void:
 	if is_instance_valid(_neighbor):
+		_forget_replaced_mission_actor(_neighbor)
 		_neighbor.queue_free()
 	var actor_script = load("res://world/harbor/cobras/CobraResident.gd")
 	_neighbor = actor_script.new()
@@ -61,6 +70,8 @@ func configure(subject: Node2D, state: RefCounted, local_territory: Node) -> voi
 	player = subject
 	ledger = state
 	territory = local_territory
+	_story_tow = load("res://world/harbor/campaign/HarborStoryTow.gd").new()
+	_story_tow.configure(self)
 	if is_instance_valid(territory) and territory.has_signal("state_changed") and not territory.state_changed.is_connected(_on_territory_state_changed):
 		territory.state_changed.connect(_on_territory_state_changed)
 	# Runtime fixtures are never restored mid-combat. Resume at a safe mission
@@ -92,6 +103,15 @@ func start_mission(id: String) -> bool:
 		"cobra_collection": objective_position = RESIDENT
 		"cobra_supply": objective_position = SUPPLY
 		"cobra_finale": objective_position = WORKSHOP
+	if id == "cobra_contact" and _story_tow != null:
+		_story_tow.start()
+	if id == "cobra_race":
+		_race_traffic = load("res://world/harbor/campaign/CobraRaceTraffic.gd").new()
+		add_child(_race_traffic)
+		if not _race_traffic.configure(self):
+			fail_mission(_tr("A organização da prova está indisponível. Tente novamente pelo quadro do Maciota.", "The trial cannot be organized right now. Retry at Maciota's board."))
+			return false
+		_resolve_race_route()
 	_say("Maciota", _briefing(id))
 	changed.emit()
 	queue_redraw()
@@ -105,6 +125,8 @@ func interact() -> bool:
 	if active_id == "cobra_contact" and (not is_instance_valid(_contact) or _contact.get("is_dead") == true):
 		fail_mission(_tr("Ferrugem não pode mais receber a entrega. Reorganize a visita.", "Ferrugem can no longer receive the delivery. Arrange another visit."))
 		return true
+	if active_id == "cobra_contact" and _story_tow != null:
+		return _story_tow.interact()
 	if _subject().global_position.distance_to(objective_position) > INTERACT_DISTANCE:
 		return false
 	# Talking, collecting evidence and rescuing a resident require disembarking.
@@ -112,12 +134,6 @@ func interact() -> bool:
 		_say("Dante", _tr("Preciso descer do carro.", "I need to get out of the car."))
 		return true
 	match active_id:
-		"cobra_contact":
-			if stage == 0:
-				_set_stage(1)
-				_say("Cobra — Ferrugem", _tr("Maciota mandou a peça? Deixa aqui. Teu irmão esteve aqui procurando um motorista. Quer falar com a turma? Faz a prova de rua.", "Maciota sent the part? Leave it here. Your brother came here looking for a driver. Want to talk to the crew? Run the street trial."))
-			else:
-				_finish()
 		"cobra_race":
 			if not _race_started:
 				if _subject() == player:
@@ -159,6 +175,9 @@ func _physics_process(delta: float) -> void:
 	if player.get("is_dead") == true:
 		fail_mission(_tr("Você foi hospitalizado. A missão pode ser tentada novamente.", "You were hospitalized. You can retry the mission."))
 		return
+	if player.get("is_arrested") == true:
+		fail_mission(_tr("Você foi preso. Volte ao quadro do Maciota para tentar novamente.", "You were arrested. Return to Maciota's board to retry."))
+		return
 	if active_id == "cobra_contact" and (not is_instance_valid(_contact) or _contact.get("is_dead") == true):
 		fail_mission(_tr("O contato morreu. A entrega falhou.", "Your contact died. The delivery failed."))
 		return
@@ -166,10 +185,10 @@ func _physics_process(delta: float) -> void:
 		fail_mission(_tr("A moradora morreu. A proteção falhou.", "The resident died. You failed to protect her."))
 		return
 	if player.get("is_in_dialogue") == true or player.get("is_control_disabled") == true:
-		if is_instance_valid(_rival):
-			_rival.set_process(false)
 		return
 	elapsed += delta
+	if active_id == "cobra_contact" and _story_tow != null:
+		_story_tow.tick(delta)
 	if _race_started:
 		_tick_race(delta)
 	# Combat cannot survive an interior transition, leaving an invisible boss
@@ -198,91 +217,127 @@ func _on_encounter_completed() -> void:
 	_say("Dante", _tr("Área segura. Vou conferir aqui.", "Area clear. I'll check here."))
 
 func _prepare_race() -> void:
+	if is_instance_valid(_race_traffic) and not _race_traffic.is_clear():
+		_say("Ferrugem", _tr("Estou fechando a entrada da praça. Ainda há %d carros saindo; espere fora do cruzamento. A contagem só começa com a pista livre. Pode cancelar pelo Diário [J], sem pagar.", "I'm closing the square entrance. %d cars are still leaving; wait clear of the junction. The countdown starts only when the route is clear. You can cancel in the Journal [J] at no cost.") % _race_traffic.remaining)
+		return
+	var chosen_car := _subject()
+	if chosen_car == player or _vehicle_broken(chosen_car):
+		_say("Ferrugem", _tr("Esse carro não pode correr. Traga um carro funcionando até a largada [R].", "That car cannot race. Bring a working car to the starting line [R]."))
+		return
+	if chosen_car.get("velocity") is Vector2 and chosen_car.get("velocity").length() > 20.0:
+		_say("Ferrugem", _tr("Pare sobre a marca de largada, apontando para o primeiro portão ao norte, e aperte [R].", "Stop on the starting mark, facing the first gate to the north, and press [R]."))
+		return
+	if Vector2.RIGHT.rotated(chosen_car.global_rotation).dot(Vector2.UP) < 0.65:
+		_say("Ferrugem", _tr("Vire o carro para o primeiro portão, ao norte. Pare e aperte [R] quando estiver alinhado.", "Point the car toward the first gate, to the north. Stop and press [R] when aligned."))
+		return
+	for clock_bridge in get_tree().get_nodes_in_group("medical_campaign_clock"):
+		if clock_bridge.has_method("ensure_race_night") and not clock_bridge.ensure_race_night():
+			return
 	_cleanup_race()
+	_race_car = chosen_car
+	_starting_position = chosen_car.global_position
 	_race_points.clear()
 	for quarter in range(1, 5):
 		var angle := PI + float(quarter) * PI * 0.5
-		_race_points.append(CENTER + Vector2(cos(angle), sin(angle)) * 300.0)
-	if not _resolve_race_lanes():
-		fail_mission(_tr("Circuito indisponível. Verifique a malha.", "Circuit unavailable. Check the road network."))
+		_race_points.append(CENTER + Vector2(cos(angle), sin(angle)) * RACE_LANE_RADIUS)
+	if not _resolve_race_route():
+		fail_mission(_tr("A prova não está disponível. Volte ao quadro do Maciota para tentar novamente.", "The race is unavailable. Return to Maciota's board to retry."))
 		return
-	_rival = FACTORY.spawn_moving_vehicle(_race_path, "CobraRaceRival", "ranch_pickup", 0.04, 105.0, 5)
-	_rival_follow = _rival.get_parent() as PathFollow2D
-	_plan_rival_leg()
-	_rival.set_process(false)
-	_rival.set_physics_process(false)
-	_rival_previous = _rival.global_position
-	_rival_distance = 0.0
 	_checkpoint = 0
 	_countdown = 3.0
 	_race_elapsed = 0.0
+	_race_progress = 0.0
+	_outside_seconds = 0.0
+	_was_on_track = true
 	_subject_initialized = false
 	_race_started = true
 	objective_position = RACE_START
 	_set_stage(1)
-	_say("Ferrugem", _tr("Três segundos. Uma volta, sem cortar o jardim. Cruze os quatro portões.", "Three seconds. One lap, no cutting through the garden. Pass all four gates."))
+	_say("Ferrugem", _tr("Teu irmão também chegou calado. Vamos ver se dirige como ele. Fique parado até JÁ! Você tem 100 segundos: norte, leste, sul e chegada aqui. Cruze os quatro portões na ordem. Siga as setas pela faixa externa. Sem armas. Se sair do asfalto, volte pelo mesmo lugar em quatro segundos.", "Your brother was quiet too. Let's see if you drive like him. Stay still until GO! You have 100 seconds: north, east, south, then finish here. Cross all four gates in order. Follow the arrows in the outer lane. No weapons. If you leave the road, rejoin at the same place within four seconds."))
+
+func _vehicle_broken(vehicle: Node2D) -> bool:
+	return not is_instance_valid(vehicle) or vehicle.get("is_broken") == true or vehicle.get("is_exploding") == true or vehicle.get("is_exploded") == true or (vehicle.get("health") != null and int(vehicle.get("health")) <= 0)
 
 func _tick_race(delta: float) -> void:
-	if not is_instance_valid(_rival):
-		fail_mission(_tr("A prova foi interrompida. Tente novamente.", "The race was interrupted. Try again."))
+	if _vehicle_broken(_race_car):
+		fail_mission(_tr("Seu carro não pode continuar. Repare ou troque o carro e aceite a prova de novo no quadro do Maciota.", "Your car cannot continue. Repair or replace it and accept the race again at Maciota's board."))
 		return
 	var car := _subject()
-	if car == player:
-		fail_mission(_tr("Você abandonou o carro. Tente novamente.", "You left the car. Try again."))
+	if car != _race_car:
+		fail_mission(_tr("Você saiu do carro da prova. Volte ao quadro do Maciota para tentar novamente.", "You left your race car. Return to Maciota's board to retry."))
 		return
 	if _countdown > 0.0:
-		if car.global_position.distance_to(RACE_START) > 100.0:
-			fail_mission(_tr("Queimou a largada. Tente novamente.", "False start. Try again."))
+		if car.global_position.distance_to(_starting_position) > 18.0:
+			fail_mission(_tr("Queimou a largada. Espere JÁ! na próxima tentativa pelo quadro do Maciota.", "False start. Wait for GO! on your next attempt from Maciota's board."))
 			return
-		_countdown -= delta
+		var previous_second := ceili(_countdown)
+		_countdown = maxf(0.0, _countdown - delta)
+		if ceili(_countdown) != previous_second:
+			_play_feedback(preload("res://audio/rewards/RewardAudioBank.gd").sound("checkpoint"))
+			changed.emit()
+			queue_redraw()
 		if _countdown <= 0.0:
-			_rival.set_process(true)
-			_rival.set_physics_process(true)
+			_race_previous_angle = (car.global_position - CENTER).angle()
+			_race_progress = wrapf(_race_previous_angle - PI, -PI, PI)
+			_previous_subject = car.global_position
+			_subject_initialized = true
 			objective_position = _race_points[0]
 			changed.emit()
 		return
 	_race_elapsed += delta
-	if is_instance_valid(_rival):
-		_rival.set_process(true)
-		var follow := _rival.get_parent() as PathFollow2D
-		if follow == null:
-			fail_mission(_tr("O carro rival saiu da prova. Reinicie na largada.", "The rival left the race. Restart at the starting line."))
-			return
-		if _race_leg < _race_legs.size() and follow.get_parent() == _race_network.get_lane_path(String(_race_legs[_race_leg].to_lane_id)):
-			_race_leg += 1
-			_plan_rival_leg()
 	if _subject_initialized and car.global_position.distance_to(_previous_subject) > maxf(80.0, delta * 900.0):
-		fail_mission(_tr("Percurso interrompido. Volte à largada.", "Route interrupted. Return to the start."))
+		fail_mission(_tr("Percurso interrompido. Tente novamente pelo quadro do Maciota.", "Route interrupted. Retry at Maciota's board."))
 		return
 	_previous_subject = car.global_position
 	_subject_initialized = true
-	if absf(car.global_position.distance_to(CENTER) - 300.0) > 70.0:
-		fail_mission(_tr("Saiu do circuito. Tente novamente.", "You left the circuit. Try again."))
+	var on_track := absf(car.global_position.distance_to(CENTER) - RACE_RADIUS) <= RACE_HALF_WIDTH
+	var angle := (car.global_position - CENTER).angle()
+	if on_track and _was_on_track:
+		_race_progress += wrapf(angle - _race_previous_angle, -PI, PI)
+	elif on_track:
+		var rejoin_progress := wrapf(angle - _track_exit_angle, -PI, PI)
+		if absf(rejoin_progress) > 0.3:
+			fail_mission(_tr("Você cortou o trajeto. Ao sair da pista, volte pelo mesmo lugar. Tente de novo no quadro do Maciota.", "You cut the route. When leaving the road, rejoin at the same place. Retry at Maciota's board."))
+			return
+		_race_progress += rejoin_progress
+	elif not on_track:
+		if _was_on_track:
+			_track_exit_angle = _race_previous_angle
+		_outside_seconds += delta
+		if _outside_seconds >= RACE_RETURN_SECONDS or car.global_position.distance_to(CENTER) < RACE_RADIUS * 0.5:
+			fail_mission(_tr("Você abandonou o trajeto. A prova pode ser aceita de novo no quadro do Maciota.", "You left the route. Accept the race again at Maciota's board."))
+			return
+	if on_track:
+		_outside_seconds = 0.0
+	_race_previous_angle = angle
+	_was_on_track = on_track
+	if _race_elapsed >= RACE_TIME_LIMIT:
+		fail_mission(_tr("O tempo da prova acabou. Aceite novamente no quadro do Maciota.", "Race time expired. Accept again at Maciota's board."))
 		return
-	if is_instance_valid(_rival):
-		_rival_distance += _rival.global_position.distance_to(_rival_previous)
-		_rival_previous = _rival.global_position
-	if _race_leg >= 4 or _rival_distance >= 1880.0 or _race_elapsed > 100.0:
-		fail_mission(_tr("O rival venceu. A prova continua disponível.", "The rival won. The race remains available."))
-		return
-	if car.global_position.distance_to(_race_points[_checkpoint]) < 85.0:
+	# Ordered directed progress prevents reversing into gates or shortcutting
+	# across the garden. The finish requires the full lap, not an 85px near miss.
+	var required_progress := float(_checkpoint + 1) * PI * 0.5
+	if on_track and _race_progress >= required_progress and car.global_position.distance_to(_race_points[_checkpoint]) < 85.0:
 		_checkpoint += 1
 		if _checkpoint == _race_points.size():
-			_say("Ferrugem", _tr("Você sabe dirigir. Só não confunde isso com mandar aqui.", "You can drive. Don't mistake that for being in charge."))
+			_say("Ferrugem", _tr("Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo.", "All right. You can drive. The driver will take Maciota's call. Your brother wanted out of Harbor, but he didn't look like he was running away."))
 			_finish()
 		else:
+			_play_feedback(preload("res://audio/rewards/RewardAudioBank.gd").sound("checkpoint"))
 			objective_position = _race_points[_checkpoint]
 			changed.emit()
 	queue_redraw()
 
 func _finish() -> void:
 	var id := active_id
+	var previous_respect := int(ledger.data.get("civilian_reputation", 0))
 	if not ledger.complete():
 		return
 	var reward: Dictionary = ledger.claim_reward(id)
 	_play_feedback(ProceduralAudio.get_mission_passed_stream())
 	if not reward.is_empty() and player.get("money") != null:
 		player.money += int(reward.get("cash", 0))
+	get_tree().call_group("hud", "show_mission_passed", int(reward.get("cash", 0)), maxi(0, int(ledger.data.get("civilian_reputation", 0)) - previous_respect))
 	_cleanup()
 	if id == "cobra_finale" and is_instance_valid(territory):
 		territory.set_defeated(true)
@@ -294,7 +349,7 @@ func _play_feedback(stream: AudioStream) -> void:
 	sound.process_mode = Node.PROCESS_MODE_ALWAYS
 	sound.bus = &"SFX"
 	sound.stream = stream
-	sound.volume_db = -10.0
+	sound.volume_db = -2.0
 	add_child(sound)
 	sound.finished.connect(sound.queue_free)
 	sound.play()
@@ -309,52 +364,40 @@ func fail_mission(reason: String = "") -> void:
 	mission_finished.emit(id, false)
 
 func _cleanup_race() -> void:
-	if is_instance_valid(_rival):
-		if _rival.get("is_driven_by_player") == true and _rival.has_method("exit_vehicle"):
-			_rival.exit_vehicle()
-		_rival.queue_free()
-	if is_instance_valid(_rival_follow):
-		_rival_follow.queue_free()
-	_rival_follow = null
-	_race_path = null
-	_rival = null
 	_race_started = false
+	_race_car = null
+	_race_route.clear()
+	_outside_seconds = 0.0
+	_countdown = 0.0
 
-func _resolve_race_lanes() -> bool:
-	_race_legs.clear()
-	_race_leg = 0
+func _resolve_race_route() -> bool:
+	_race_route.clear()
+	# Cache the actual forward driving lane from the production graph. Its
+	# clockwise direction uses the OUTER lane, keeping Dante with traffic.
 	for node in get_tree().current_scene.find_children("*", "", true, false):
 		if not node.has_method("get_graph_data") or not node.has_method("get_lane_path"):
 			continue
 		var graph: Dictionary = node.get_graph_data()
-		var connections: Array = graph.get("lane_connections", [])
-		for connection in connections:
-			if String(connection.from_road_id).get_file() == "cobra_court_northwest" and String(connection.to_road_id).get_file() == "cobra_court_northeast":
-				_race_legs.append(connection)
-				break
-		if _race_legs.is_empty():
-			continue
-		for road in ["cobra_court_southeast", "cobra_court_southwest", "cobra_court_northwest"]:
-			for connection in connections:
-				if String(connection.from_lane_id) == String(_race_legs.back().to_lane_id) and String(connection.to_road_id).get_file() == road:
-					_race_legs.append(connection)
+		var found := 0
+		for id in ["cobra_court_northwest", "cobra_court_northeast", "cobra_court_southeast", "cobra_court_southwest"]:
+			for lane in graph.get("lanes", []):
+				if String(lane.road_id).get_file() == id and int(lane.direction) == 1:
+					for point in lane.points:
+						_race_route.append(node.to_global(point))
+					found += 1
 					break
-		if _race_legs.size() == 4:
-			_race_network = node
-			_race_path = node.get_lane_path(String(_race_legs[0].from_lane_id))
-			return is_instance_valid(_race_path)
-		_race_legs.clear()
+		if found == 4:
+			return _race_route.size() > 4
+		_race_route.clear()
 	return false
 
-func _plan_rival_leg() -> void:
-	if not is_instance_valid(_rival) or _race_leg >= _race_legs.size():
-		return
-	var follow := _rival.get_parent() as PathFollow2D
-	var leg: Dictionary = _race_legs[_race_leg]
-	follow.set_meta("traffic_planned_connection_id", String(leg.connection_id))
-	follow.set_meta("traffic_planned_junction_index", int(leg.junction_index))
-
 func _cleanup() -> void:
+	if is_instance_valid(_race_traffic):
+		_race_traffic.cleanup()
+		_race_traffic.queue_free()
+	_race_traffic = null
+	if _story_tow != null:
+		_story_tow.cleanup()
 	_cleanup_race()
 	if is_instance_valid(_encounter):
 		_encounter.queue_free()
@@ -393,6 +436,7 @@ func _ensure_contact() -> void:
 		return
 	var actor_script = load("res://world/harbor/cobras/CobraResident.gd")
 	if is_instance_valid(_contact):
+		_forget_replaced_mission_actor(_contact)
 		_contact.queue_free()
 	_contact = actor_script.new()
 	_contact.name = "CobraWorkshopContact"
@@ -402,6 +446,7 @@ func _ensure_contact() -> void:
 	_contact.patrol = PackedVector2Array([WORKSHOP])
 	if is_instance_valid(territory) and guards.size() > 2:
 		if is_instance_valid(guards[2]):
+			_forget_replaced_mission_actor(guards[2])
 			guards[2].queue_free()
 		guards[2] = _contact
 		_contact.position = territory.to_local(WORKSHOP)
@@ -409,6 +454,17 @@ func _ensure_contact() -> void:
 	else:
 		_contact.position = to_local(WORKSHOP)
 		add_child(_contact) # isolated contract fixture, still a real actor
+
+func _forget_replaced_mission_actor(actor: Node) -> void:
+	# Explicit mission retries replace this finite actor. Its stable medical
+	# identity would otherwise immediately apply the old death to the new cast.
+	# Never reset unrelated residents or the global medical ledger.
+	var care := get_node_or_null("/root/NPCMedicalCare")
+	var identity := String(actor.get_meta("medical_identity", ""))
+	if care == null or identity.is_empty(): return
+	care.incidents.erase(identity)
+	care.residents.erase(identity)
+	care.records().erase(identity)
 
 func _on_territory_state_changed(_previous: String, next: String) -> void:
 	if next != "combat" or ledger == null or not is_instance_valid(territory):
@@ -449,12 +505,23 @@ func _say(speaker: String, message: String) -> void:
 
 func get_status() -> Dictionary:
 	var near := is_instance_valid(player) and _subject().global_position.distance_to(objective_position) <= INTERACT_DISTANCE
-	return {"active_id":active_id, "stage":stage, "objective":get_objective(), "position":objective_position, "target":objective_position, "can_interact":near and not active_id.is_empty(), "checkpoint":_checkpoint, "checkpoint_count":4, "countdown":maxf(0.0,_countdown), "race_seconds":_race_elapsed, "message":_last_message}
+	return {"active_id":active_id, "stage":stage, "objective":get_objective(), "position":objective_position, "target":objective_position, "can_interact":near and not active_id.is_empty(), "checkpoint":_checkpoint, "checkpoint_count":4, "countdown":maxf(0.0,_countdown), "race_seconds":_race_elapsed, "message":_last_message, "route":_race_route, "race_phase":("countdown" if _countdown > 0.0 else "racing") if _race_started else ("clearing" if is_instance_valid(_race_traffic) and not _race_traffic.is_clear() else "approach"), "race_preparation_cars":_race_traffic.remaining if is_instance_valid(_race_traffic) else 0, "race_time_left":maxf(0.0, RACE_TIME_LIMIT - _race_elapsed), "race_return_seconds":maxf(0.0, RACE_RETURN_SECONDS - _outside_seconds) if _outside_seconds > 0.0 else 0.0}
 
 func get_objective() -> String:
 	match active_id:
-		"cobra_contact": return _tr("Oficina Cobra: entregue a peça e converse [E].", "Cobra workshop: deliver the part and talk [E].")
-		"cobra_race": return (_tr("Portão %d/4", "Gate %d/4") % mini(_checkpoint+1,4)) if _race_started else _tr("Leve um carro até a largada [R].", "Bring a car to the starting line [R].")
+		"cobra_contact": return _story_tow.objective_text() if _story_tow != null else _tr("Oficina Cobra: entregue a peça e converse [E].", "Cobra workshop: deliver the part and talk [E].")
+		"cobra_race":
+			if not _race_started:
+				if is_instance_valid(_race_traffic) and not _race_traffic.is_clear():
+					return _tr("Preparando praça · %d carros saindo. Aguarde fora da pista. Cancelar: Diário [J].", "Preparing square · %d cars leaving. Wait off the track. Cancel: Journal [J].") % _race_traffic.remaining
+				return _tr("Pare um carro na largada, apontando ao norte. Iniciar [R].", "Stop a car at the start, facing north. Start [R].")
+			if _countdown > 0.0:
+				return _tr("LARGADA EM %d · Fique parado até JÁ!", "START IN %d · Stay still until GO!") % ceili(_countdown)
+			if _outside_seconds > 0.0:
+				return _tr("VOLTE À PISTA PELO MESMO LUGAR · %d s", "REJOIN THE ROAD AT THE SAME PLACE · %d s") % ceili(RACE_RETURN_SECONDS - _outside_seconds)
+			if _checkpoint == 3:
+				return _tr("CHEGADA · Portão 4/4 · Restam %d s.", "FINISH · Gate 4/4 · %d s left.") % ceili(RACE_TIME_LIMIT - _race_elapsed)
+			return _tr("Portão %d/4 · Restam %d s · Siga as setas pela faixa externa.", "Gate %d/4 · %d s left · Follow the outer-lane arrows.") % [_checkpoint + 1, ceili(RACE_TIME_LIMIT - _race_elapsed)]
 		"cobra_collection": return _tr("Proteja a moradora; depois fale com ela [E].", "Protect the resident, then talk to her [E].") if stage > 0 else _tr("Ouça a moradora ameaçada [E].", "Hear the threatened resident [E].")
 		"cobra_supply": return _tr("Neutralize os cobradores e recolha os registros [E].", "Stop the collectors and recover the records [E].")
 		"cobra_finale": return _tr("Derrote a liderança e procure a pista na oficina [E].", "Defeat the leadership and search the workshop for a clue [E].")
@@ -473,7 +540,7 @@ func get_brother_clue(id: String) -> String:
 func _briefing(id: String) -> String:
 	match id:
 		"cobra_contact": return _tr("Leva a peça que você buscou para Ferrugem, na oficina dos Cobras. Ele falou com teu irmão. Usa a entrega para puxar conversa.", "Take the part you collected to Ferrugem at the Cobras workshop. He spoke to your brother. Use the delivery to start a conversation.")
-		"cobra_race": return _tr("O motorista que teu irmão procurou anda com a turma das corridas. Ferrugem te espera na praça; completa a prova para ganhar a confiança deles.", "The driver your brother sought runs with the racing crew. Ferrugem is waiting at the square; finish the trial to earn their trust.")
+		"cobra_race": return _tr("Às 21h, Ferrugem fecha a praça para uma prova. O motorista que viu teu irmão quer saber se você dirige bem. Espere o trânsito sair e leve um carro à largada de Ashbend. Complete os quatro portões em 100 segundos. Pode cancelar ou tentar novamente sem pagar.", "At 9 pm, Ferrugem closes the square for a trial. The driver who saw your brother wants to know if you can drive. Let traffic leave, then bring a car to the Ashbend start. Complete four gates within 100 seconds. Cancelling or retrying costs nothing.")
 		"cobra_collection": return _tr("O motorista deixou teu irmão perto dessa moradora. Protege ela da cobrança dos Cobras; talvez aceite contar o que viu.", "The driver dropped your brother near the home of this resident. Protect her from the Cobras extortion; she may tell you what she saw.")
 		"cobra_supply": return _tr("Teu irmão procurava os mesmos registros. A moradora apontou os fundos da quadra. Recupera os papéis e corta o abastecimento dos cobradores.", "Your brother sought those same records. The resident pointed us behind the block. Recover the papers and cut the collectors supply.")
 		"cobra_finale": return _tr("A autorização da carga veio da liderança. Enfrenta os Cobras na oficina e procura o documento que liga teu irmão à transferência.", "The cargo authorization came from the leaders. Face the Cobras at their workshop and find the document linking your brother to the transfer.")
@@ -489,8 +556,40 @@ func _draw() -> void:
 	draw_rect(Rect2(evidence-Vector2(10,8),Vector2(20,15)),Color("c7bda2"))
 	for i in 3:
 		draw_line(evidence+Vector2(-7,-4+i*4),evidence+Vector2(5,-4+i*4),Color("514e43"),1)
-	if active_id.is_empty():
+	if active_id == "cobra_race":
+		_draw_race_route()
+		return
+	if active_id.is_empty() or active_id == "cobra_contact":
 		return
 	var point := to_local(objective_position)
 	draw_arc(point, 28, 0, TAU, 32, Color("e5b85c"), 3, true)
 	draw_line(point+Vector2(-12,0),point+Vector2(12,0),Color("e5b85c"),2)
+
+func _draw_race_route() -> void:
+	var gold := Color("e5b85c")
+	if _race_route.size() > 1:
+		var local_route := PackedVector2Array()
+		for point in _race_route:
+			local_route.append(to_local(point))
+		draw_polyline(local_route, Color(0.90, 0.72, 0.36, 0.42), 4.0, true)
+	# These are navigation markings, not new physical obstructions. Arrows
+	# indicate the same clockwise circuit as the forward lane in the road graph.
+	for index in 12:
+		var angle := PI + float(index) * TAU / 12.0 + 0.16
+		var radial := Vector2(cos(angle), sin(angle))
+		var tangent := Vector2(-radial.y, radial.x)
+		var point := to_local(CENTER + radial * RACE_LANE_RADIUS)
+		draw_polyline(PackedVector2Array([point - tangent * 9.0 + radial * 7.0, point + tangent * 5.0, point - tangent * 9.0 - radial * 7.0]), gold, 3.0, true)
+	var font := ThemeDB.fallback_font
+	for index in 4:
+		var angle := PI + float(index + 1) * PI * 0.5
+		var radial := Vector2(cos(angle), sin(angle))
+		var point := to_local(CENTER + radial * RACE_LANE_RADIUS)
+		var color := Color("73af8c") if _race_started and index < _checkpoint else gold
+		draw_line(point - radial * 38.0, point + radial * 38.0, color, 5.0, true)
+		draw_string(font, point + radial * 53.0 + Vector2(-6, 5), str(index + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, color)
+	var start := to_local(RACE_START) + Vector2(-80, -48)
+	var label := _tr("LARGADA [R]", "START [R]")
+	if _race_started:
+		label = str(ceili(_countdown)) if _countdown > 0.0 else (_tr("JÁ!", "GO!") if _race_elapsed < 1.0 else _tr("CHEGADA", "FINISH"))
+	draw_string(font, start, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, gold)

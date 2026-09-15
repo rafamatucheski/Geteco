@@ -113,7 +113,7 @@ func _physics_process(delta: float) -> void:
 	var player: Node2D=room.actor
 	var wanted := get_node("/root/WantedManager")
 	var inside: bool=room.actor_inside()
-	escape_hint.visible=not inside
+	escape_hint.hide()
 	escape_hint.position=Vector2(get_viewport_rect().size.x*.5-220,145)
 	if player.is_dead or player.is_arrested or (not inside and player.global_position.distance_to(entrance.global_position)>900):
 		_release()

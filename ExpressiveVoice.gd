@@ -2,11 +2,34 @@ extends RefCounted
 ## Non-verbal speech. One finite buffer per line, bounded cache, no per-frame synthesis.
 const RATE := 22050
 static var cache: Dictionary = {}
+static var recordings: Dictionary = {}
+static var _recordings_loaded := false
 
-static func line(text: String, persona := "dante", duration := 0.0) -> AudioStreamWAV:
+static func recording_key(text: String, persona: String) -> String:
+	return (persona.to_lower() + "|" + text).sha256_text()
+
+static func _recording(text: String, persona: String) -> AudioStream:
+	if not _recordings_loaded:
+		_recordings_loaded = true
+		var manifest := "res://audio/mission_voices/recordings.json"
+		if FileAccess.file_exists(manifest):
+			var data = JSON.parse_string(FileAccess.get_file_as_string(manifest))
+			if data is Dictionary: recordings = data
+	var path := String(recordings.get(recording_key(text, persona), ""))
+	if path.is_empty() or not ResourceLoader.exists(path): return null
+	var stream := load(path) as AudioStream
+	if stream != null: stream.set_meta("mission_voice", true)
+	return stream
+
+static func line(text: String, persona := "dante", duration := 0.0) -> AudioStream:
 	var key := "%s|%s|%s" % [persona, duration, text]
 	if cache.has(key):
 		return cache[key]
+	var recorded := _recording(text, persona)
+	if recorded != null:
+		if cache.size() >= 32: cache.erase(cache.keys()[0])
+		cache[key] = recorded
+		return recorded
 	var units: Array[float] = []
 	var voiced: Array[bool] = []
 	for character in text.left(400):

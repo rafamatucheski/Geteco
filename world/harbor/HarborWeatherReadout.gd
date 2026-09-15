@@ -20,14 +20,14 @@ class WeatherIcon extends Control:
 				for i in 25:
 					crescent.append(c + Vector2(4, 0) + Vector2.from_angle(-PI * 0.5 - i * PI / 24.0) * Vector2(5, 9))
 				draw_colored_polygon(crescent, INK)
-			"rain", "storm":
+			"cloud", "rain", "storm":
 				draw_circle(Vector2(10, 12), 5, INK)
 				draw_circle(Vector2(16, 9), 6, INK)
 				draw_circle(Vector2(22, 12), 4, INK)
 				draw_line(Vector2(8, 16), Vector2(23, 16), INK, 2, true)
 				if state == "storm":
 					draw_polyline(PackedVector2Array([Vector2(18,17),Vector2(14,22),Vector2(18,22),Vector2(14,28)]), Color("e5cf8e"), 2, true)
-				else:
+				elif state == "rain":
 					for x in [10, 16, 22]:
 						draw_line(Vector2(x, 20), Vector2(x-2, 25), Color("9dc8da"), 1.5, true)
 			"snow":
@@ -53,12 +53,14 @@ func _ready() -> void:
 	row.size_flags_horizontal = Control.SIZE_SHRINK_END
 	row.add_theme_constant_override("separation", 5)
 	icon = WeatherIcon.new()
-	icon.custom_minimum_size = Vector2(30, 30)
+	icon.custom_minimum_size = Vector2(24, 24)
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon)
 	clock_label = Label.new()
+	clock_label.set_meta("preserve_hud_ink", true)
+	clock_label.add_theme_font_override("font", preload("res://ui/ProjectTypography.gd").SEMIBOLD)
 	clock_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	clock_label.add_theme_font_size_override("font_size", 18)
+	clock_label.add_theme_font_size_override("font_size", 24)
 	clock_label.add_theme_color_override("font_color", Color("d9e3e5"))
 	clock_label.add_theme_color_override("font_outline_color", Color(0.05,0.07,0.09,0.85))
 	clock_label.add_theme_constant_override("outline_size", 3)
@@ -86,6 +88,7 @@ func refresh() -> void:
 				var target := hud.get_node_or_null("RootMargin/TopRightPanel")
 				if target is BoxContainer:
 					row.reparent(target)
+					target.move_child(row, 0)
 					_mounted = true
 					break
 	var weather: Node = world.weather
@@ -110,9 +113,11 @@ static func describe(weather: Node) -> Dictionary:
 		state = "snow"
 	elif biome == 2:
 		state = "wind"
+	elif precipitation == 3:
+		state = "cloud"
 	elif precipitation > 0:
 		state = "storm" if precipitation == 2 else "rain"
-	elif day < 0.28 or day >= 0.78:
+	elif day < 0.30 or day >= 0.79:
 		state = "moon"
 	return {"icon": state, "clock": "%02d:%02d" % [minutes / 60, minutes % 60]}
 

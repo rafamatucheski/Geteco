@@ -19,8 +19,9 @@ func _run() -> void:
 	var scene := PREVIEW.instantiate()
 	root.add_child(scene)
 	current_scene = scene
-	for frame in 5:
-		await physics_frame
+	for frame in 240:
+		if scene.world_build_ready: break
+		await process_frame
 	var director := get_first_node_in_group("emergency_depot_director")
 	check(director != null and director.get_script() == ADAPTER, "Production preview integrates Harbor emergency adapter")
 	if director == null:

@@ -60,12 +60,12 @@ func _run() -> void:
 	# --- escada de marchas --------------------------------------------------
 	engine.update(audio, 90.0, 500.0, 1.0, 0.1, "sedan_classic")
 	check(engine.gear == 1, "A primeira marcha ainda está engatada a 18%% da máxima")
-	engine.update(audio, 108.0, 500.0, 1.0, 0.1, "sedan_classic")
+	engine.update(audio, 145.0, 500.0, 1.0, 0.1, "sedan_classic")
 	check(engine.gear == 2, "Acelerando, engata a segunda")
 	var rpm_after_shift: float = engine.rpm
 	check(rpm_after_shift < 0.98, "Ao engatar a próxima marcha o giro CAI (%.2f): é essa serra que soa como troca de marcha" % rpm_after_shift)
 	check(engine.shift_remaining > 0.0, "A troca corta torque e giro")
-	engine.update(audio, 96.0, 500.0, 1.0, 0.1, "sedan_classic")
+	engine.update(audio, 130.0, 500.0, 1.0, 0.1, "sedan_classic")
 	check(engine.gear == 2, "A histerese evita subir e descer marcha em cima do limiar")
 
 	# --- arrancada completa -------------------------------------------------
@@ -115,6 +115,15 @@ func _run() -> void:
 			high_share_at_top = db_to_linear(top_player.volume_db) if top_player.playing else 0.0
 	check(worst_stretch < 2.05, "Nenhuma camada audível é esticada além de 2x (pior: %.2fx)" % worst_stretch)
 	check(high_share_at_top > 0.0, "Na velocidade máxima quem toca é a camada de alto giro")
+	check(layer_engine.rpm < 0.9, "Sobremarcha deixa reserva de giro na máxima de rua")
+	var cruise_min := INF
+	var cruise_max := -INF
+	for i in 360:
+		layer_engine.update(audio, road_top, road_top, 1.0, 1.0 / 60.0, "sedan_classic")
+		var level := _audible_db(layer_engine, audio)
+		cruise_min = minf(cruise_min, level)
+		cruise_max = maxf(cruise_max, level)
+	check(cruise_max - cruise_min > 0.5 and cruise_max - cruise_min < 2.5, "Escape varia suavemente em velocidade constante")
 
 	# --- famílias -----------------------------------------------------------
 	var expected_family := {

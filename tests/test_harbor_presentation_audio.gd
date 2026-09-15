@@ -82,7 +82,7 @@ func run() -> void:
 	await create_timer(2.5).timeout
 	check(soundscape.weights.terminal <= 0.51 and soundscape.weights.workshop < 0.01, "Night is quieter and leaving garage restores exterior")
 	for bed in soundscape.beds.values():
-		check(bed.bus == &"SFX", "Environment follows SFX settings")
+		check(bed.bus == &"Ambient", "Environment follows Ambient settings")
 	check(soundscape.get_child_count() == 7 and soundscape.quarter.sources.size() == 7, "No per-frame audio allocations")
 	world.queue_free()
 	await process_frame

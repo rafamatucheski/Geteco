@@ -57,7 +57,7 @@ func _setup_interior_content() -> void:
 	_build_projected_collisions()
 	_create_spawn_and_exit(project_floor(Vector2(0, 4.3)), project_floor(Vector2(0, 5.8)), &"bunker_exterior_return", "SAIR DA ESTAÇÃO ZERO")
 	exit_door.name = "ExitDoor"
-	exit_door.custom_prompt_text = "[E] SAIR DA ESTAÇÃO ZERO"
+	exit_door.custom_prompt_text = "E"
 	exit_door.get_node("Facade").hide()
 	var boss_anchor := Marker2D.new()
 	boss_anchor.name = "Boss2Anchor"

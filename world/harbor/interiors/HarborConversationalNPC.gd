@@ -12,6 +12,7 @@ signal dialogue_closed()
 @export var hat_color: Color = Color("#2c3e50")
 @export var has_hat: bool = false
 @export var is_female: bool = false
+@export var resting_facing_y: float = 0.0
 
 var dialogues: Array = [
 	"Olá, como posso ajudar?",
@@ -41,9 +42,20 @@ var left_upper_arm: Node3D
 var left_lower_arm: Node3D
 var right_upper_arm: Node3D
 var right_lower_arm: Node3D
+var torso_rest_height := 0.75
+var head_rest_height := 1.14
 
 func _ready() -> void:
 	z_index = 8
+	collision_layer = 4
+	collision_mask = 1 | 2 | 4
+	var body_shape := CollisionShape2D.new()
+	body_shape.name = "BodyCollision"
+	var capsule := CapsuleShape2D.new()
+	capsule.radius = 5.0
+	capsule.height = 16.0
+	body_shape.shape = capsule
+	add_child(body_shape)
 	_build_3d_viewport()
 	preload("res://world/shared/pedestrians/CitizenDetails.gd").finish_rig(self, "clerk")
 	_setup_interaction()
@@ -75,6 +87,7 @@ func _build_3d_viewport() -> void:
 		viewport_world.environment = env
 
 	var cam := Camera3D.new()
+	cam.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
 	cam.size = 2.2
 	cam.position = Vector3(0.0, 10.0, 0.01)
@@ -90,11 +103,63 @@ func _build_3d_viewport() -> void:
 	viewport_3d.add_child(light)
 
 	_build_model()
+	preload("res://ContactShadow.gd").add_person(viewport_3d)
 
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport_3d.get_texture()
 	sprite_3d_display.position = Vector2.ZERO
 	add_child(sprite_3d_display)
+
+## Production Dante's viewing angle, with ground contact calibrated to the room.
+func configure_room_presentation(camera: Camera3D, display: Sprite2D) -> void:
+	# Dante's longer legs and shallow tailored torso read naturally from above.
+	torso_rest_height = 0.85
+	head_rest_height = 1.21
+	torso_node.position.y = torso_rest_height
+	torso_node.scale.z = 0.65
+	head_node.position.y = head_rest_height
+	left_upper_arm.position = Vector3(-0.185, 1.05, 0)
+	right_upper_arm.position = Vector3(0.185, 1.05, 0)
+	for part in model_root.get_children():
+		if part is Node3D and is_equal_approx(part.position.y, 0.50):
+			part.position.y = 0.65
+			for mesh in part.get_children():
+				if mesh is MeshInstance3D and mesh.mesh is CylinderMesh:
+					mesh.mesh.height = 0.59
+					mesh.position.y = -0.295
+				else:
+					mesh.position.y -= 0.15
+	# Replace the flat hair cap with a coherent hairstyle; keep uniform headwear.
+	for part in head_node.get_children():
+		if part is MeshInstance3D and part.mesh is SphereMesh and part.position.y > 0.05:
+			part.hide()
+	var hair_color := Color("88817c") if is_female else Color("302921")
+	preload("res://world/shared/pedestrians/CitizenAppearance.gd").build_hair(head_node, 3 if is_female else 1, hair_color, has_hat)
+	head_node.get_node("HairStyle").scale = Vector3.ONE * 0.82
+	if is_female:
+		var tail := head_node.get_node("HairStyle")
+		# A compact tied bun for Dona Cida.
+		for part in tail.get_children():
+			if part.position.y < 0.04:
+				part.hide()
+		preload("res://world/shared/pedestrians/CitizenDetails.gd").piece(tail, Vector3(.15, .14, .14), Vector3(0, .06, .19), hair_color, true)
+	resting_facing_y = PI
+	model_root.rotation.y = resting_facing_y
+	viewport_3d.find_world_3d().environment.ambient_light_energy = 0.65
+	viewport_3d.size = Vector2i(256, 256)
+	var portrait_camera := viewport_3d.get_camera_3d()
+	portrait_camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	portrait_camera.fov = 30.0
+	portrait_camera.look_at_from_position(Vector3(0, 3.2, 1.4), Vector3(0, 0.65, 0))
+	portrait_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	portrait_camera.force_update_transform()
+	portrait_camera.reset_physics_interpolation()
+	var height := camera.unproject_position(Vector3.UP * 1.8).distance_to(camera.unproject_position(Vector3.ZERO)) * display.scale.y
+	var rig_height := portrait_camera.unproject_position(Vector3.UP * 1.4).distance_to(portrait_camera.unproject_position(Vector3.ZERO))
+	var factor := height / maxf(rig_height, 1.0)
+	sprite_3d_display.scale = Vector2.ONE * factor
+	sprite_3d_display.position = -(portrait_camera.unproject_position(Vector3.ZERO) - Vector2(viewport_3d.size) * 0.5) * factor
+	sprite_3d_display.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func _make_mat(color: Color, roughness: float = 0.5) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -107,7 +172,7 @@ func _build_model() -> void:
 	model_root = Node3D.new()
 	viewport_3d.add_child(model_root)
 
-	var mat_shirt := _make_mat(shirt_color, 0.4)
+	var mat_shirt := _make_mat(shirt_color, 0.85)
 	var mat_pants := _make_mat(pants_color, 0.5)
 	var mat_skin := _make_mat(skin_color, 0.5)
 	var mat_hat := _make_mat(hat_color, 0.3)
@@ -121,13 +186,13 @@ func _build_model() -> void:
 	var cap_t := CapsuleMesh.new()
 	cap_t.radius = 0.16
 	cap_t.height = 0.46
-	torso_mesh.mesh = cap_t
+	torso_mesh.mesh = load("res://world/shared/pedestrians/CitizenAppearance.gd").tailored_body(is_female, false)
 	torso_mesh.material_override = mat_shirt
 	torso_node.add_child(torso_mesh)
 
 	# Head
 	head_node = Node3D.new()
-	head_node.position = Vector3(0.0, 1.20, 0.0)
+	head_node.position = Vector3(0.0, 1.14, 0.0)
 	model_root.add_child(head_node)
 
 	var head_mesh := MeshInstance3D.new()
@@ -137,6 +202,10 @@ func _build_model() -> void:
 	head_mesh.mesh = sph_h
 	head_mesh.material_override = mat_skin
 	head_node.add_child(head_mesh)
+	head_node.scale=Vector3.ONE*.85
+	var detail=preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	detail.piece(torso_node,Vector3(.11,.20,.115),Vector3(0,.285,.01),skin_color,true)
+	detail.piece(torso_node,Vector3(.27,.13,.23),Vector3(0,-.25,0),pants_color)
 
 	if has_hat:
 		var cap := MeshInstance3D.new()
@@ -184,6 +253,7 @@ func _build_model() -> void:
 		leg.position = Vector3(side, 0.50, 0.0)
 		model_root.add_child(leg)
 		leg.add_child(_create_limb(0.050, 0.44, mat_pants, Vector3(0, -0.22, 0)))
+		preload("res://world/shared/pedestrians/CitizenDetails.gd").piece(leg,Vector3(.11,.08,.20),Vector3(0,-.46,-.04),Color("34414a"),true)
 
 func _create_limb(radius: float, height: float, mat: Material, offset: Vector3) -> MeshInstance3D:
 	var m := MeshInstance3D.new()
@@ -213,7 +283,7 @@ func _setup_interaction() -> void:
 	interact_area.body_exited.connect(_on_body_exited)
 
 	prompt_badge = Label.new()
-	prompt_badge.text = "[ E ] CONVERSAR COM %s" % character_name.to_upper()
+	prompt_badge.text = "E"
 	prompt_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_badge.position = Vector2(-120, -50)
 	prompt_badge.size = Vector2(240, 20)
@@ -329,6 +399,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 func _open_dialogue() -> void:
+	if dialogues.is_empty():
+		return
+	dialogue_index = 0
 	is_talking = true
 	if prompt_badge != null:
 		prompt_badge.visible = false
@@ -338,9 +411,12 @@ func _open_dialogue() -> void:
 	_show_current_text()
 
 func _advance_dialogue() -> void:
-	if dialogues.is_empty():
+	if not is_talking:
 		return
-	dialogue_index = (dialogue_index + 1) % dialogues.size()
+	if dialogue_index + 1 >= dialogues.size():
+		_close_dialogue()
+		return
+	dialogue_index += 1
 	_show_current_text()
 
 func _show_current_text() -> void:
@@ -351,6 +427,8 @@ func _show_current_text() -> void:
 	var is_en := TranslationServer.get_locale().begins_with("en")
 	if continue_hint != null:
 		continue_hint.text = "[ SPACE / E ] Continue    [ ESC ] Close" if is_en else "[ ESPAÇO / E ] Continuar    [ ESC ] Fechar"
+		if dialogue_index == dialogues.size() - 1:
+			continue_hint.text = "[ SPACE / E / ESC ] Close" if is_en else "[ ESPAÇO / E / ESC ] Fechar"
 
 	var p := AudioStreamPlayer.new()
 	p.stream = ProceduralAudio.get_dialogue_blip_stream()
@@ -382,8 +460,8 @@ func _physics_process(delta: float) -> void:
 	anim_clock += delta
 	if model_root and not is_talking:
 		var sway := sin(anim_clock * 1.6) * 0.03
-		torso_node.position.y = 0.75 + sway * 0.5
-		head_node.position.y = 1.20 + sway * 0.5
+		torso_node.position.y = torso_rest_height + sway * 0.5
+		head_node.position.y = head_rest_height + sway * 0.5
 		right_upper_arm.rotation.x = sin(anim_clock * 1.1) * 0.05
 		left_upper_arm.rotation.x = -sin(anim_clock * 1.1) * 0.05
 
@@ -393,4 +471,4 @@ func _physics_process(delta: float) -> void:
 			var angle_3d: float = -atan2(dir.y, dir.x) - PI * 0.5
 			model_root.rotation.y = lerp_angle(model_root.rotation.y, angle_3d, 6.0 * delta)
 		else:
-			model_root.rotation.y = lerp_angle(model_root.rotation.y, 0.0, 3.0 * delta)
+			model_root.rotation.y = lerp_angle(model_root.rotation.y, resting_facing_y, 3.0 * delta)

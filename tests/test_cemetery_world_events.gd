@@ -9,9 +9,17 @@ func _run() -> void:
 	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene=world
-	while not world.gameplay_ready: await process_frame
+	while not world.gameplay_ready or not world.world_build_ready: await process_frame
 	var events=world.get_node("WorldEvents")
 	events.set_process(false)
+	var fleet = world.get_node("ThematicFleet")
+	assert(not fleet.has_node("FreightCourierVan") and not fleet.has_node("PortRanchPickup"), "Dock Street sidewalk must not host display cars")
+	# Advancing the ambient clock must not create a fire beside the freight frontage.
+	events.next_funeral = 10000.0
+	events.robbery_cooldown = 10000.0
+	for tick in 240:
+		events._process(1.0)
+	assert(not is_instance_valid(events.incident), "Idle world time must not ignite a scripted sidewalk fire")
 	var cemetery=world.get_node("Cemetery")
 	assert(cemetery.global_position.x<0)
 	var query:=PhysicsPointQueryParameters2D.new()
@@ -42,8 +50,9 @@ func _run() -> void:
 	Engine.time_scale=1
 	var wanted=root.get_node("WantedManager")
 	var stars=wanted.current_stars
-	assert(events.start_incident("robbery"),"NPC robbery dispatches actual pooled cruiser")
-	assert(events.unit.target==events.incident)
+	assert(events.start_incident("robbery"),"NPC robbery begins with pedestrians approaching")
+	assert(events.street_incident.phase=="approach")
+	assert(not events.street_incident.reported,"A witness must complete the phone call before police respond")
 	assert(wanted.current_stars==stars,"NPC crime must not incriminate player")
 	assert(not events.start_incident("fire"),"Incident budget is bounded")
 	events.end_incident()

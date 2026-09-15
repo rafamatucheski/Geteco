@@ -34,10 +34,10 @@ static func sound_zone(surface: Node2D, kind: String) -> void:
 	surface.set_meta("water_sound_kind", kind)
 	surface.add_to_group("water_sound_zone")
 
-static func fountain(parent: Node2D) -> void:
+static func fountain(parent: Node2D, point := Vector2(1750, 1005)) -> void:
 	var surface := Polygon2D.new()
 	surface.name = "FountainWater"
-	surface.position = Vector2(1750, 1005)
+	surface.position = point
 	surface.color = Color("397d86")
 	var rim := PackedVector2Array()
 	for i in 64:

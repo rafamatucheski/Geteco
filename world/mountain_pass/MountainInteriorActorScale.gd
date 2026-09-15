@@ -1,6 +1,6 @@
 extends Node
 ## Calibrate the existing animated player sprite against a 1.8 m person in the
-## room camera. Scale only the visual and footprint, never movement or controls.
+## room camera. Expose visual calibration so Player can match travel to the enlarged rig.
 const HUMAN_HEIGHT := 1.8
 const RIG_HEIGHT := 1.45
 var actor: Node2D
@@ -14,6 +14,7 @@ var collider: CollisionShape2D
 
 func configure(target: Node2D, camera: Camera3D, display: Sprite2D) -> void:
 	actor = target
+	actor.set_meta("interior_movement_presentation", self)
 	room_camera = camera
 	room_display = display
 	old_viewport_size = actor.viewport_3d.size
@@ -52,8 +53,14 @@ func _update_scale() -> void:
 		var depth := room_camera.unproject_position(foot + Vector3.BACK).distance_to(room_camera.unproject_position(foot)) * room_display.scale.y
 		collider.scale = old_collision_scale * Vector2(clampf(metre * 0.23 / 5.0, 1.0, 3.0), clampf(depth * 0.23 / 8.0, 0.7, 3.0))
 
+func pixels_per_rig_unit(direction: Vector2) -> float:
+	var cam: Camera3D = actor.viewport_3d.get_camera_3d()
+	var axis := Vector3(direction.normalized().x, 0, direction.normalized().y) * .01
+	return (cam.unproject_position(axis) - cam.unproject_position(-axis)).length() * actor.sprite_3d_display.scale.x / .02
+
 func restore() -> void:
 	if is_instance_valid(actor):
+		actor.remove_meta("interior_movement_presentation")
 		actor.viewport_3d.size = old_viewport_size
 		actor.sprite_3d_display.scale = old_scale
 		actor.sprite_3d_display.position = old_position

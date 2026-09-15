@@ -61,7 +61,7 @@ func _run() -> void:
 		check(scene.get_world_2d().direct_space_state.intersect_point(query).is_empty(),"pickup in walkable floor outside furniture: "+station.weapon_id)
 		var initial: float = station.model.rotation.y
 		await create_timer(0.12).timeout
-		check(station.model.rotation.y != initial and station.model.position.y < 0.10,"low 3D rotation close to floor: "+station.weapon_id)
+		check(station.model.rotation.y == initial and station.model.position.y < 0.10,"weapon rests close to floor: "+station.weapon_id)
 		check(station.model.get_node("FloorWeapon").get_child_count()>5,"detailed shared geometry: "+station.weapon_id)
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw

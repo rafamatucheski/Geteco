@@ -911,16 +911,26 @@ class _PortGantryCrane extends Node2D:
 		_base_pos = base_pos
 		
 	func _ready() -> void:
-		# 4 Pernas com Colisores Sólidos Individuais nos cantos
-		# Permite que carros dirijam LIVREMENTE por baixo do guindaste!
-		if not has_node("Leg_NW"):
-			_add_leg_collider(Vector2(-100, -60), "Leg_NW")
-			_add_leg_collider(Vector2(100, -60), "Leg_NE")
-			_add_leg_collider(Vector2(-100, 60), "Leg_SW")
-			_add_leg_collider(Vector2(100, 60), "Leg_SE")
+		# Estrutura sólida completa, sem túnel no miolo do guindaste.
+		if has_node("CraneStructure"):
+			queue_redraw()
+			return
+		var structure := Node2D.new()
+		structure.name = "CraneStructure"
+		add_child(structure)
+		# Pernas: colisão mais larga para fechar o envelope do chassi.
+		_add_leg_collider(structure, Vector2(-100, -60), "Leg_NW")
+		_add_leg_collider(structure, Vector2(100, -60), "Leg_NE")
+		_add_leg_collider(structure, Vector2(-100, 60), "Leg_SW")
+		_add_leg_collider(structure, Vector2(100, 60), "Leg_SE")
+		# Estruturas intermediárias: impedem atravessar por baixo do tablado e da torre.
+		_add_rect_collider(structure, Rect2(-36, -32, 72, 204), "CraneCentralRiser")
+		_add_rect_collider(structure, Rect2(-98, -52, 24, 172), "CraneLeftBay")
+		_add_rect_collider(structure, Rect2(74, -52, 24, 172), "CraneRightBay")
+		_add_rect_collider(structure, Rect2(-20, 172, 40, 42), "CraneDeckBase")
 		queue_redraw()
 		
-	func _add_leg_collider(offset: Vector2, leg_name: String) -> void:
+	func _add_leg_collider(parent: Node, offset: Vector2, leg_name: String) -> void:
 		var leg_body := StaticBody2D.new()
 		leg_body.name = leg_name
 		leg_body.collision_layer = 1
@@ -929,10 +939,25 @@ class _PortGantryCrane extends Node2D:
 		
 		var col := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()
-		shape.size = Vector2(28.0, 24.0)
+		shape.size = Vector2(34.0, 42.0)
 		col.shape = shape
 		leg_body.add_child(col)
-		add_child(leg_body)
+		parent.add_child(leg_body)
+		
+	func _add_rect_collider(parent: Node, bounds: Rect2, name: String) -> void:
+		var body := StaticBody2D.new()
+		body.name = name
+		body.collision_layer = 1
+		body.collision_mask = 0
+		body.position = _base_pos + bounds.position
+		
+		var col := CollisionShape2D.new()
+		var shape := RectangleShape2D.new()
+		shape.size = bounds.size
+		col.shape = shape
+		col.position = bounds.size * 0.5
+		body.add_child(col)
+		parent.add_child(body)
 		
 	func _draw() -> void:
 		var bp := _base_pos

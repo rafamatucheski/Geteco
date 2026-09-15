@@ -1,4 +1,4 @@
-LOAD_PROFILE load_ms=1923 instantiate_ms=0 add_child_ms=1134 first180frames_ms=6591 total_ms=9648
-LOAD_PROFILE_SPIKES frame0=4777ms frame1=292ms
-LOAD_PROFILE_NODES total=6931 MeshInstance3D=1717 CollisionShape2D=972 Polygon2D=724 Area2D=369 Node3D=356 StaticBody2D=302 Node2D=297 Path2D=262 Sprite2D=259 RayCast2D=198 PointLight2D=180 Label=168 CharacterBody2D=160 Line2D=102 Marker2D=94 VisibleOnScreenNotifier2D=81 Camera2D=71 PathFollow2D=59
-LOAD_PROFILE_MONITORS nodes=7109 orphans=0 draw_calls=1094 video_mem_mb=558.2 static_mem_mb=277.9
+LOAD_PROFILE load_ms=4894 instantiate_ms=12 add_child_ms=8895 first180frames_ms=18168 total_ms=31969
+LOAD_PROFILE_SPIKES frame0=15404ms frame1=1485ms frame6=113ms frame7=184ms
+LOAD_PROFILE_NODES total=29677 MeshInstance3D=11420 CollisionShape2D=3941 Sprite2D=2834 Node3D=2458 StaticBody2D=1243 Node2D=955 Area2D=840 VisibleOnScreenNotifier2D=689 Polygon2D=627 PointLight2D=572 CollisionPolygon2D=520 DirectionalLight3D=328 SubViewport=325 Camera3D=324 Path2D=319 WorldEnvironment=292 CharacterBody2D=280 RayCast2D=225
+LOAD_PROFILE_MONITORS nodes=30113 orphans=0 draw_calls=993 video_mem_mb=2298.2 static_mem_mb=867.6

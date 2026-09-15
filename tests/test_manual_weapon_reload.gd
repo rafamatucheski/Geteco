@@ -46,12 +46,15 @@ func _run() -> void:
 	player.active_weapon_id = "pistol"
 	player.weapon_ammo.pistol = {"clip": 5, "reserve": 20}
 	press_r()
+	check(player.weapon_ammo.pistol == {"clip": 5, "reserve": 20}, "R preserva munição durante a animação")
+	await player.reload_finished
 	check(player.weapon_ammo.pistol == {"clip": 12, "reserve": 13}, "R completa o carregador usando a reserva")
 	check(hud.ammo == player.weapon_ammo.pistol, "HUD atualiza assim que recarrega")
 	press_r()
 	check(player.weapon_ammo.pistol == {"clip": 12, "reserve": 13}, "Carregador cheio preserva a reserva")
 	player.weapon_ammo.pistol = {"clip": 0, "reserve": 3}
 	press_r()
+	await player.reload_finished
 	check(player.weapon_ammo.pistol == {"clip": 3, "reserve": 0}, "Reserva parcial recarrega apenas as balas disponíveis")
 	press_r()
 	check(player.weapon_ammo.pistol == {"clip": 3, "reserve": 0}, "Sem reserva não cria munição")

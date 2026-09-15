@@ -9,6 +9,7 @@ var park_ambience_player: AudioStreamPlayer
 var horn_timer: float = 4.0
 var distant_siren_timer: float = 18.0
 var radio_chatter_timer: float = 28.0
+var ambience_active := false
 var _rng := RandomNumberGenerator.new()
 
 func _ready():
@@ -20,23 +21,22 @@ func _ready():
 	ambience_player.name = "CityAmbience"
 	ambience_player.stream = ProceduralAudio.get_city_ambience_stream()
 	ambience_player.volume_db = -24.0
-	ambience_player.bus = "Music"
-	ambience_player.autoplay = true
+	ambience_player.bus = "Ambient"
 	add_child(ambience_player)
-	ambience_player.play()
+	ambience_player.autoplay = false
 
 	# 2. Sirenes distantes da metrópole
 	distant_siren_player = AudioStreamPlayer.new()
 	distant_siren_player.name = "DistantSirens"
 	distant_siren_player.volume_db = -22.0
-	distant_siren_player.bus = "SFX"
+	distant_siren_player.bus = "Ambient"
 	add_child(distant_siren_player)
 
 	# 3. Rádio comunicador policial distante
 	radio_chatter_player = AudioStreamPlayer.new()
 	radio_chatter_player.name = "PoliceRadioChatter"
 	radio_chatter_player.volume_db = -25.0
-	radio_chatter_player.bus = "SFX"
+	radio_chatter_player.bus = "Ambient"
 	add_child(radio_chatter_player)
 
 	# 4. Ambiente de parque (pássaros e brisa)
@@ -44,15 +44,23 @@ func _ready():
 	park_ambience_player.name = "ParkAmbience"
 	park_ambience_player.stream = ProceduralAudio.get_birds_wind_stream()
 	park_ambience_player.volume_db = -28.0
-	park_ambience_player.bus = "Music"
+	park_ambience_player.bus = "Ambient"
 	add_child(park_ambience_player)
 
+	# Inicia mudo por padrão para evitar áudio de abertura em loading/menu/cutscene.
+	_set_ambient_enabled(false)
+
 func _process(delta: float):
+	if not ambience_active:
+		return
+
 	# Harbor owns regional beds. Do not layer global music-bed/fake sirens over
 	# its opening or interiors. Other districts retain the legacy soundscape.
 	var scene := get_tree().current_scene
 	if scene != null and scene.has_node("HarborSoundscape"):
 		ambience_player.volume_db = -80.0
+		if ambience_player.playing:
+			ambience_player.stop()
 		park_ambience_player.stop()
 		distant_siren_player.stop()
 		radio_chatter_player.stop()
@@ -75,6 +83,29 @@ func _process(delta: float):
 	if radio_chatter_timer <= 0.0:
 		_play_radio_chatter()
 		radio_chatter_timer = _rng.randf_range(35.0, 75.0)
+
+func set_active(enabled: bool) -> void:
+	_set_ambient_enabled(enabled)
+
+func _set_ambient_enabled(enabled: bool) -> void:
+	ambience_active = enabled
+	if not is_instance_valid(ambience_player):
+		return
+	if not ambience_active:
+		if ambience_player.playing:
+			ambience_player.stop()
+		if distant_siren_player.playing:
+			distant_siren_player.stop()
+		if radio_chatter_player.playing:
+			radio_chatter_player.stop()
+		if park_ambience_player.playing:
+			park_ambience_player.stop()
+		return
+
+	if not ambience_player.playing and ambience_player.stream != null:
+		ambience_player.play()
+	if not park_ambience_player.playing and park_ambience_player.stream != null:
+		park_ambience_player.play()
 
 func _trigger_random_traffic_horn():
 	var traffic_vehicles := get_tree().get_nodes_in_group("ambient_traffic")

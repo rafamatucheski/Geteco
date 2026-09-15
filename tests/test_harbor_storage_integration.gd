@@ -13,7 +13,7 @@ func run() -> void:
 	for i in 40: await process_frame
 	var art = current_scene.get_node("District/HarborStorageArt")
 	var player = current_scene.get_node("Player")
-	check(art.model.get_batch_metrics().after_count <= 30, "Integrated depot uses material batches")
+	check(get_nodes_in_group("physical_cargo").size() >= 11, "Integrated depot has independent physical loads")
 	check(art.viewport_3d.render_target_update_mode != SubViewport.UPDATE_ALWAYS, "Static art does not render continuously")
 	# Check the complete footprint against reserved streets, buildings and entrances.
 	var district = current_scene.get_node("District")
@@ -34,9 +34,9 @@ func run() -> void:
 	for i in 3: await physics_frame
 	for i in 480:
 		if player.global_position.x >= 2720: break
-		Input.action_press("ui_right")
+		Input.action_press("move_right")
 		await physics_frame
-	Input.action_release("ui_right")
+	Input.action_release("move_right")
 	check(player.global_position.x >= 2720, "Dante walks across the loading apron: " + str(player.global_position))
 	# Positive control: real player shape must be blocked by the pallet stack.
 	player.global_position = art.to_global(art.project_floor(Vector2(-3.4, -4.0)))

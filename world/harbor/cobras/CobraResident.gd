@@ -105,6 +105,7 @@ func _gangster_shoot_target(target_pos: Vector2) -> void:
 		for pellet in int(data.get("pellets",1)):
 			var bullet := COBRA_BULLET.instantiate()
 			bullet.owner_body = self
+			bullet.configure_range(data)
 			bullet.damage = int(data.damage)
 			bullet.speed = float(data.projectile_speed)
 			bullet.direction = direction.rotated(randf_range(-float(data.spread),float(data.spread)))

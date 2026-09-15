@@ -127,8 +127,20 @@ func _run_integration_flow() -> void:
 	_report_step("Disparo de SFX de Clique", click_triggered, "AudioStreamPlayer '__MenuClickPlayer' criado no bus SFX")
 
 	# A transição agora inclui um fade real; frames headless não medem duração.
+	# Desde 14/09 o menu toca a transição do pôr do sol antes de chamar
+	# GameLoading.begin(); dois quadros não bastam para o carregador ficar ativo.
+	var start_deadline := Time.get_ticks_msec() + 15000
+	while not root.get_node("GameLoading").active and Time.get_ticks_msec() < start_deadline:
+		await process_frame
 	var transition_deadline := Time.get_ticks_msec() + 120000
 	while root.get_node("GameLoading").active and Time.get_ticks_msec() < transition_deadline:
+		# A abertura refeita em 14/09 dura ~86 s e roda antes de construir a cidade.
+		# O jogador pode pulá-la; este teste mede a transição, não o filme. Sem o
+		# pulo o prazo estourava e o encerramento abortava a carga em thread, o que
+		# imprimia "Could not preload" enganosos no fim do log.
+		var opening = root.get_node("GameLoading").get("opening")
+		if is_instance_valid(opening) and bool(opening.get("_running")) and opening.has_method("skip"):
+			opening.skip()
 		await process_frame
 	for i in range(15):
 		await process_frame
@@ -365,6 +377,10 @@ func _run_integration_flow() -> void:
 		slot_01_btn.pressed.emit()
 		
 		# Aguardar troca de cena para Main.tscn e restauração do save
+		# Carregar save também toca a transição do pôr do sol antes do begin().
+		var load_start_deadline := Time.get_ticks_msec() + 15000
+		while not root.get_node("GameLoading").active and Time.get_ticks_msec() < load_start_deadline:
+			await process_frame
 		var load_deadline := Time.get_ticks_msec()+120000
 		while root.get_node("GameLoading").active and Time.get_ticks_msec()<load_deadline:
 			await process_frame

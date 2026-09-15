@@ -28,8 +28,9 @@ func run() -> void:
 	while arrival.phase in ["arrival","disembark","arrival_wait"] and Time.get_ticks_msec()<deadline: await process_frame
 	check(state.has_campaign_flag(&"harbor_arrival_seen"),"Término grava a chegada")
 	check(not paused,"Controle de pausa devolvido ao mundo")
-	check(world.weather.time_of_day>=.18 and world.weather.time_of_day<.21,"Madrugada preservada no mundo")
-	check(world.weather.is_dark and world.weather.weather_state==2,"Iluminação e chuva coerentes")
+	check(world.weather.time_of_day>=.21 and world.weather.time_of_day<.24,"Amanhecer preservado no mundo")
+	check(world.weather.is_dark and world.weather.weather_state==DayNightWeatherManager.WeatherState.DRIZZLE,"Amanhecer com garoa leve e sem tempestade")
+	check(world.weather.get_rain_intensity()<=0.30,"Chegada nunca usa chuva pesada")
 	check(arrival.phase=="phone","Desembarque conclui e libera a ligação de Maciota")
 	check(world.get_node("Player").visible,"Dante visível após sair do ônibus")
 	arrival.answer_phone()

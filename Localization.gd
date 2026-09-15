@@ -15,6 +15,12 @@ const DEFAULT_LOCALE := "pt_BR"
 const AVAILABLE_LOCALES: Array[String] = ["pt_BR", "en"]
 
 const PT_BR := {
+	"MACIOTA_V2_GARAGE_1": "Aqui a gente pode conversar. Eu posso te ajudar a encontrar teu irmão, mas vou precisar de alguns favores.",
+	"MACIOTA_V2_GARAGE_2": "Que tipo de favores?",
+	"ARRIVAL_V2_PHONE_1": "Alô?",
+	"ARRIVAL_V2_PHONE_2": "Preciso falar com você. Encontra comigo no ferro-velho do Neko.",
+	"ARRIVAL_V2_PHONE_3": "Quem está falando?",
+	"ARRIVAL_V2_PHONE_4": "Você vai me reconhecer. Estou perto de um sedã preto preparado, estilo M8 Competition.",
 	"Pista do Cargueiro": "Pista do Cargueiro",
 	"Pista do Covil": "Pista do Covil",
 	"Achado do Limite Oeste": "Achado do Limite Oeste",
@@ -62,7 +68,8 @@ const PT_BR := {
 	"SETTINGS_BTN_BACK": "CANCELAR",
 	"SETTINGS_BTN_SAVE": "SALVAR E VOLTAR",
 	"SETTINGS_MASTER_VOLUME": "Volume Geral (Master):",
-	"SETTINGS_MUSIC_VOLUME": "Música & Ambiente:",
+	"SETTINGS_MUSIC_VOLUME": "Música:",
+	"SETTINGS_AMBIENT_VOLUME": "Ambiente:",
 	"SETTINGS_SFX_VOLUME": "Efeitos Sonoros (SFX):",
 	"SETTINGS_AUDIO_HINT": "Ajuste o som do jogo. Salve para manter suas preferências.",
 	"SETTINGS_WINDOW_MODE": "Modo de Janela:",
@@ -148,6 +155,12 @@ const PT_BR := {
 }
 
 const EN := {
+	"MACIOTA_V2_GARAGE_1": "We can talk here. I can help you find your brother, but I'll need a few favors.",
+	"MACIOTA_V2_GARAGE_2": "What kind of favors?",
+	"ARRIVAL_V2_PHONE_1": "Hello?",
+	"ARRIVAL_V2_PHONE_2": "I need to talk to you. Meet me at Neko's scrapyard.",
+	"ARRIVAL_V2_PHONE_3": "Who's calling?",
+	"ARRIVAL_V2_PHONE_4": "You'll recognize me. I'm next to a black performance sedan, M8 Competition style.",
 	"COLLECTION_TITLE": "COLLECTIBLES",
 	"COLLECTION_PROGRESS": "%d of %d found",
 	"COLLECTION_LEGACY": "PRESERVED RECORDS FROM ANOTHER MAP VERSION (%d)",
@@ -198,7 +211,8 @@ const EN := {
 	"SETTINGS_BTN_BACK": "CANCEL",
 	"SETTINGS_BTN_SAVE": "SAVE & BACK",
 	"SETTINGS_MASTER_VOLUME": "Master Volume:",
-	"SETTINGS_MUSIC_VOLUME": "Music & Ambience:",
+	"SETTINGS_MUSIC_VOLUME": "Music:",
+	"SETTINGS_AMBIENT_VOLUME": "Ambience:",
 	"SETTINGS_SFX_VOLUME": "Sound Effects (SFX):",
 	"SETTINGS_AUDIO_HINT": "Adjust the game audio. Save to keep your preferences.",
 	"SETTINGS_WINDOW_MODE": "Window Mode:",

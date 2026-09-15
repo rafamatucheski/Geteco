@@ -18,6 +18,7 @@
 [ext_resource type="Script" path="res://world/harbor/HarborGateway.gd" id="16"]
 [ext_resource type="Script" path="res://world/harbor/interiors/HarborInteriorManager.gd" id="17"]
 [ext_resource type="Script" path="res://world/harbor/cobras/CobraNeighborhood.gd" id="18"]
+[ext_resource type="Script" path="res://world/harbor/HarborSouthPort.gd" id="19"]
 
 [sub_resource type="CapsuleShape2D" id="PlayerShape"]
 radius = 5.0
@@ -67,6 +68,9 @@ script = ExtResource("13")
 z_index = 1
 script = ExtResource("14")
 
+[node name="SouthPort" type="Node2D" parent="."]
+script = ExtResource("19")
+
 [node name="RoadLayout" type="Node2D" parent="."]
 script = ExtResource("3")
 
@@ -78,6 +82,9 @@ script = ExtResource("4")
 provider_paths = Array[NodePath]([NodePath("../RoadLayout"), NodePath("../CobraNeighborhood")])
 build_guard_rails = false
 signalized_junction_overrides = {
+"3750,3600": false,
+"3750,4770": false,
+"5750,4770": false,
 "7400,1700": false,
 "7700,1400": false,
 "8000,1700": false,
@@ -94,7 +101,7 @@ script = ExtResource("11")
 script = ExtResource("6")
 
 [node name="PlayerCar" type="CharacterBody2D" parent="."]
-position = Vector2(770, 1800)
+position = Vector2(565, 1990)
 rotation = 1.5707963
 z_index = 8
 collision_mask = 23
@@ -126,22 +133,22 @@ z_index = 10
 collision_layer = 4
 collision_mask = 7
 script = ExtResource("7")
-speed = 100.0
+speed = 27.6
 
 [node name="Camera" type="Camera2D" parent="Player"]
-zoom = Vector2(1.85, 1.85)
+zoom = Vector2(2.072, 2.072)
 position_smoothing_enabled = true
 position_smoothing_speed = 10.0
 script = ExtResource("9")
-zoom_close = 1.85
-zoom_far = 1.75
+zoom_close = 2.072
+zoom_far = 1.96
 lead_distance = 18.0
 
 [node name="Collision" type="CollisionShape2D" parent="Player"]
 shape = SubResource("PlayerShape")
 
 [node name="OverviewCamera" type="Camera2D" parent="."]
-position = Vector2(3320, -450)
+position = Vector2(3320, 800)
 zoom = Vector2(0.074, 0.074)
 
 [node name="Interiors" type="Node2D" parent="."]

@@ -11,11 +11,13 @@ extends AnimatedPedestrian3D
 
 var _shout_cooldown: float = 0.0
 
+@export var melee_weapon: String = ""
+
 func _ready() -> void:
 	district_theme = DistrictTheme.CITY_DOWNTOWN
 	archetype = Archetype.CITY_GANGSTER
 	is_gangster = true
-	has_handgun = true
+	has_handgun = melee_weapon.is_empty()
 	dropped_cash = randi_range(65, 140)
 	max_health = 120 if is_boss_guard else 80
 	health = max_health
@@ -33,6 +35,8 @@ func _ready() -> void:
 	add_to_group("gang_member")
 	
 	super._ready()
+	if not melee_weapon.is_empty():
+		preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, melee_weapon)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:

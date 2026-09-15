@@ -33,7 +33,10 @@ func _run() -> void:
 		var ray := PhysicsRayQueryParameters2D.create(at + Vector2(0, -80), at + Vector2(0, 80), 1)
 		var collision: Dictionary = scene.get_world_2d().direct_space_state.intersect_ray(ray)
 		_check(collision.is_empty(), "Street below viaduct must remain physically open at %s" % at)
-	var ramp_ray := PhysicsRayQueryParameters2D.create(Vector2(3114, 2320), Vector2(3114, 3310), 1)
+	# Desde 12/09 a rampa do porto sul segue HarborSouthPortLayout.ACCESS, que desce
+	# em x=3310 (antes era x=3114). O raio acompanha o trecho vertical real.
+	var access: Array = preload("res://world/harbor/HarborSouthPortLayout.gd").ACCESS
+	var ramp_ray := PhysicsRayQueryParameters2D.create(Vector2(access[2].x, access[2].y + 10.0), Vector2(access[3].x, 3310), 1)
 	_check(scene.get_world_2d().direct_space_state.intersect_ray(ramp_ray).is_empty(), "Real ramp corridor must fit the sea embankment and southern fence opening")
 	var rail := scene.get_node("FreightRail")
 	var cranes: Array = scene.get_node("Waterfront").get_waterfront_audit_data().crane_obstacles

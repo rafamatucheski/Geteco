@@ -574,6 +574,8 @@ func _build_lane_paths() -> void:
 			path.set_meta("traffic_direction", direction)
 			path.set_meta("traffic_direction_name", direction_name)
 			path.set_meta("traffic_lane_offset", offset)
+			path.set_meta("traffic_road_width", float(road.width))
+			path.set_meta("traffic_sidewalk_width", SIDEWALK_MARGIN)
 			var is_loop := lane_points.size() > 2 and lane_points[0].distance_to(lane_points[-1]) <= MIN_POINT_DISTANCE
 			path.set_meta("traffic_lane_loop", is_loop)
 			container.add_child(path)
@@ -1188,6 +1190,18 @@ func _draw_road_pass(color: Color, extra_width: float) -> void:
 		var patch := geometry.polygon as PackedVector2Array
 		if patch.size() >= 3 and not Geometry2D.triangulate_polygon(patch).is_empty():
 			static_canvas.draw_colored_polygon(patch, color)
+
+
+func get_signal_ground_surfaces(extra_width: float) -> Array[PackedVector2Array]:
+	var surfaces: Array[PackedVector2Array] = []
+	for road in _roads:
+		if bool(road.render):
+			surfaces.append_array(Geometry2D.offset_polyline(road.points, (float(road.width) + extra_width) * 0.5, Geometry2D.JOIN_ROUND, Geometry2D.END_BUTT))
+	for junction in _junctions:
+		var polygon: PackedVector2Array = _build_junction_surface_geometry(junction, extra_width).polygon
+		if polygon.size() >= 3:
+			surfaces.append(polygon)
+	return surfaces
 
 
 func _draw_bridge_lane(road: Dictionary) -> void:

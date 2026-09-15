@@ -38,7 +38,7 @@ func _run() -> void:
 	cash._on_body_entered(player)
 	check(player.money==start_money+75,"cash cannot be collected twice")
 	player._create_3d_blood_puddle()
-	var puddle := world.get_node("3DBloodPuddle") as Node2D
+	var puddle := get_nodes_in_group("ground_blood").back() as Node2D
 	check(puddle.z_index>road.z_index and not puddle.z_as_relative,"blood puddle draws above the road")
 	var police = root.get_node("EmergencyPool").get_vehicle("police")
 	police.position = Vector2(0,120)
@@ -100,5 +100,4 @@ func _run() -> void:
 		root.get_texture().get_image().save_png("D:/geteco/vehicle-feedback-review.png")
 	print("VEHICLE/PICKUP FEEDBACK FAILURES: ",failures)
 	quit(0 if failures.is_empty() else 1)
-
 

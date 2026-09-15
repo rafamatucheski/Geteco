@@ -52,7 +52,7 @@ func _process(_delta: float) -> void:
 		return
 	else:
 		if prompt:
-			prompt.text = "🔫 [E / F] AMMU-NATION"
+			prompt.text = "E"
 			prompt.modulate = Color("ffe36b")
 			prompt.visible = not is_open
 		if not is_door_open:
@@ -202,14 +202,41 @@ func _refresh(notice: String = "") -> void:
 		120, 150  # Completa: 120 balas por $150
 	)
 	
-	# Item 3.5: FACA DE COMBATE (corpo a corpo, sem municao pra comprar depois)
+	# Armas de corpo a corpo
+	var knuckles_owned: bool = (inventory.get("knuckles", false) == true)
+	_create_melee_card(
+		"🥊 SOQUEIRA DE BRONZE",
+		"Corpo a Corpo • Impacto Rápido • Brutalidade nas Ruas",
+		knuckles_owned,
+		150,
+		"knuckles"
+	)
+
 	var knife_owned: bool = (inventory.get("knife", false) == true)
 	_create_melee_card(
 		"🔪 FACA DE COMBATE",
-		"Corpo a Corpo • Silenciosa • Sem Necessidade de Munição",
+		"Corpo a Corpo • Silenciosa • Corte Preciso",
 		knife_owned,
 		350,
 		"knife"
+	)
+
+	var bat_owned: bool = (inventory.get("bat", false) == true)
+	_create_melee_card(
+		"🏏 TACO DE BEISEBOL",
+		"Corpo a Corpo • Impacto Contundente Amplo",
+		bat_owned,
+		250,
+		"bat"
+	)
+
+	var axe_owned: bool = (inventory.get("axe", false) == true)
+	_create_melee_card(
+		"🪓 MACHADO DE LENHADOR",
+		"Corpo a Corpo • Dano Devastador • Golpe Pesado",
+		axe_owned,
+		650,
+		"axe"
 	)
 
 	# Item 4: COLETE BALÍSTICO
@@ -422,7 +449,7 @@ func _build_storefront_visual() -> void:
 	
 	# Prompt flutuante
 	prompt = Label.new()
-	prompt.text = "[E] ENTRAR"
+	prompt.text = "E"
 	prompt.position = Vector2(-100, -68)
 	prompt.size = Vector2(200, 22)
 	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

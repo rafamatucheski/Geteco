@@ -187,6 +187,8 @@ func _process(delta: float) -> void:
 		
 	if has_meta("mountain_zoom") and not _is_overview_mode:
 		target_zoom_val = _safe_zoom(float(get_meta("mountain_zoom")), safe_close)
+	if has_meta("north_underpass_zoom") and not _is_overview_mode:
+		target_zoom_val = _safe_zoom(float(get_meta("north_underpass_zoom")), safe_close)
 	if has_meta("compact_interior"):
 		var room: Rect2 = get_meta("compact_interior")
 		var screen := get_viewport_rect().size

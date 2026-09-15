@@ -49,7 +49,12 @@ func _ready() -> void:
 	move_child(_load_shade,load_panel.get_index())
 	_load_shade.hide()
 	STYLE.apply(load_panel)
-	get_node("/root/GameLoading").failed.connect(_on_loading_failed)
+	var loading := get_node("/root/GameLoading")
+	loading.failed.connect(_on_loading_failed)
+	# Harbor is both the new-game scene and the destination of current saves.
+	# Start its resource I/O after the menu's first setup cycle so Continue can
+	# reuse the in-flight result without touching or staging the player's save.
+	loading.call_deferred("prefetch", MAIN_GAME_SCENE)
 
 	# Conexões dos botões principais
 	btn_new_game.pressed.connect(_on_btn_new_game_pressed)
@@ -101,7 +106,12 @@ func _stop_bg_music() -> void:
 
 func _on_btn_new_game_pressed() -> void:
 	if _starting_game: return
-	_starting_game = get_node("/root/GameLoading").begin(MAIN_GAME_SCENE,true)
+	_starting_game = true
+	MenuAudio.play_start(self)
+	var pres = get_node_or_null("SunsetPresentation")
+	if pres and pres.has_method("play_start_transition") and DisplayServer.get_name() != "headless" and not get_node("/root/SettingsManager").reduce_motion:
+		await pres.play_start_transition()
+	get_node("/root/GameLoading").begin(MAIN_GAME_SCENE, true)
 
 func _on_btn_load_game_pressed() -> void:
 	if _starting_game: return
@@ -179,9 +189,14 @@ func _select_and_load_slot(slot_id: String) -> void:
 
 	var res: Dictionary = sm.load_game(slot_id)
 	if res.get("success", false):
+		_starting_game = true
+		MenuAudio.play_start(self)
 		_stop_bg_music()
 		label_load_status.text = tr("MENU_LOADING") % slot_id
-		_starting_game = get_node("/root/GameLoading").begin(SCENE_ROUTE.for_save(res.get("data", {})))
+		var pres = get_node_or_null("SunsetPresentation")
+		if pres and pres.has_method("play_start_transition") and DisplayServer.get_name() != "headless" and not get_node("/root/SettingsManager").reduce_motion:
+			await pres.play_start_transition()
+		get_node("/root/GameLoading").begin(SCENE_ROUTE.for_save(res.get("data", {})))
 	else:
 		label_load_status.text = tr("MENU_LOAD_FAILED") % res.get("error", tr("COMMON_UNKNOWN_ERROR"))
 		label_load_status.add_theme_color_override("font_color", Color("#e74c3c"))

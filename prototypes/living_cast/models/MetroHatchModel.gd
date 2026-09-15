@@ -21,11 +21,11 @@ func build() -> void:
 	# Capô compacto
 	box(Vector3(0.0, 0.58, -1.18), Vector3(1.64, 0.34, 1.35), paint)
 	# Cabine inferior ampla
-	box(Vector3(0.0, 0.58, 0.35), Vector3(1.68, 0.35, 1.85), paint)
+	box(Vector3(0.0, 0.58, 0.6325), Vector3(1.68, 0.35, 2.415), paint)
 
 	# 3. Cabine Superior (Greenhouse Hatchback)
 	# Teto arqueado
-	box(Vector3(0.0, 1.34, 0.15), Vector3(1.28, 0.05, 1.70), paint)
+	box(Vector3(0.0, 1.34, 0.325), Vector3(1.28, 0.05, 2.05), paint)
 	# Para-brisa dianteiro com boa inclinação aerodinâmica
 	var w_front := box(Vector3(0.0, 1.02, -0.62), Vector3(1.26, 0.55, 0.04), glass)
 	w_front.rotation.x = deg_to_rad(36.0)
@@ -34,7 +34,7 @@ func build() -> void:
 	w_rear.rotation.x = deg_to_rad(-22.0)
 	# Vidros laterais de porta única ampla (estilo 3 portas)
 	for s in [-1.0, 1.0]:
-		box(Vector3(s * 0.65, 1.04, 0.15), Vector3(0.02, 0.46, 1.62), glass)
+		box(Vector3(s * 0.65, 1.04, 0.38), Vector3(0.02, 0.46, 2.08), glass)
 		# Coluna de porta
 		box(Vector3(s * 0.655, 1.04, -0.05), Vector3(0.03, 0.46, 0.06), black)
 		# Maçaneta esportiva da porta

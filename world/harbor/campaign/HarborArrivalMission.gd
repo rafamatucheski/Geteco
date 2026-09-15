@@ -12,7 +12,7 @@ const REWARD := 150
 const OPENING := preload("res://cutscenes/opening/OpeningCutscene.tscn")
 ## Speaker + translation key per line (extracted text only — the call's
 ## sequence, timing and voice synthesis mechanics are unchanged).
-const PHONE_LINES := [
+var PHONE_LINES := [
 	["DANTE", "PHONE_LINE_1"],
 	["MACIOTA", "PHONE_LINE_2"],
 	["DANTE", "PHONE_LINE_3"],
@@ -51,6 +51,8 @@ var _refresh_clock := 0.0
 var _phone_wait := 0.0
 var _phone_answered := false
 var _phone_audio: AudioStreamPlayer
+var story_arrival: Node
+var first_favors: RefCounted
 
 
 func configure(scene: Node2D) -> void:
@@ -75,8 +77,16 @@ func configure(scene: Node2D) -> void:
 	_build_pickup_prop()
 	_phone_audio = AudioStreamPlayer.new()
 	_phone_audio.bus = "SFX"
-	_phone_audio.volume_db = -18.0
+	_phone_audio.volume_db = -8.0
 	add_child(_phone_audio)
+	get_node("/root/MissionVoiceMixer").track(_phone_audio)
+	story_arrival = preload("res://world/harbor/campaign/HarborStoryArrival.gd").new()
+	add_child(story_arrival)
+	story_arrival.configure(self)
+	first_favors = preload("res://world/harbor/campaign/HarborFirstFavors.gd").new()
+	first_favors.configure(self)
+	if story_arrival.active:
+		PHONE_LINES = [["DANTE","ARRIVAL_V2_PHONE_1"],["CONTATO","ARRIVAL_V2_PHONE_2"],["DANTE","ARRIVAL_V2_PHONE_3"],["CONTATO","ARRIVAL_V2_PHONE_4"]]
 	for entry in PHONE_LINES:
 		preload("res://ExpressiveVoice.gd").line(tr(entry[1]), "dante" if entry[0] == "DANTE" else "maciota")
 	for voice in ["voice_dante", "voice_maciota"]:
@@ -94,7 +104,12 @@ func _on_language_changed(_locale: String) -> void:
 	if is_instance_valid(_obj_tag):
 		_obj_tag.text = "🎯 CURRENT OBJECTIVE" if TranslationServer.get_locale().begins_with("en") else "🎯 OBJETIVO ATUAL"
 	_refresh_board()
+	if is_instance_valid(first_favors) and first_favors.active() and phase != "story_dialogue": first_favors.resume()
 	_refresh_objective()
+	if phase == "story_dialogue" and is_instance_valid(story_arrival) and not story_arrival.lines.is_empty():
+		_speaker.text = story_arrival.lines[story_arrival.line_index][0]
+		_text.text = story_arrival.lines[story_arrival.line_index][2 if TranslationServer.get_locale().begins_with("en") else 1]
+		_next.text = "Continue" if TranslationServer.get_locale().begins_with("en") else "Continuar"
 	if phase == "phone":
 		if not _phone_answered:
 			_speaker.text = tr("PHONE_INCOMING")
@@ -107,21 +122,39 @@ func _on_language_changed(_locale: String) -> void:
 
 
 func start_or_resume() -> void:
+	# Continuing an existing journey must not replay the opening, including
+	# older saves that do not contain the arrival flag yet.
+	if world.get("loaded_from_save") == true:
+		campaign.call("set_campaign_flag", &"harbor_arrival_seen", true)
 	campaign.call("set_campaign_flag", &"harbor_campaign_active", true)
 	garage.call("set_campaign_contact_enabled", not _flag("harbor_maciota_met"))
 	garage.call("set_mission_board_unlocked", _flag("harbor_maciota_met"))
 	_refresh_board()
 	var loading := get_node_or_null("/root/GameLoading")
 	if loading != null and loading.active:
+		await loading.presentation_preparing
+		if not _flag("harbor_arrival_seen") and not _flag("harbor_arrival_call_complete") and not _flag("harbor_maciota_met") and not _flag("harbor_delivery_started") and not _flag("harbor_delivery_picked_up") and not _flag("harbor_delivery_complete"):
+			_begin_arrival(true)
+			await loading.finished
+			if loading.studio_intro_presented:
+				_on_opening_finished(&"bus_terminal_arrival")
+				return
+			get_tree().paused = true
+			_opening.play()
+			return
 		await loading.finished
 	if _flag("harbor_delivery_complete"):
 		_set_phase("complete", tr("OBJ_COMPLETE_RESUME"), Vector2.ZERO)
+	elif first_favors.active():
+		first_favors.resume()
 	elif _flag("harbor_delivery_picked_up"):
 		_set_phase("delivery_return", tr("OBJ_DELIVERY_RETURN"), entrance.global_position)
 	elif _flag("harbor_delivery_started"):
 		_set_phase("delivery_pickup", tr("OBJ_DELIVERY_PICKUP"), _pickup_position())
 	elif _flag("harbor_maciota_met"):
 		_set_phase("board", tr("OBJ_BOARD"), entrance.global_position)
+	elif story_arrival.active and _flag("harbor_arrival_seen"):
+		story_arrival.resume()
 	elif _flag("harbor_arrival_call_complete"):
 		_set_phase("meet_maciota", tr("OBJ_MEET_MACIOTA"), entrance.global_position)
 	elif _flag("harbor_arrival_seen"):
@@ -130,8 +163,11 @@ func start_or_resume() -> void:
 		_begin_arrival()
 
 
-func _begin_arrival() -> void:
+func _begin_arrival(prepare_only := false) -> void:
 	phase = "arrival"
+	var city_audio := get_node_or_null("/root/CityAudioManager")
+	if is_instance_valid(city_audio) and city_audio.has_method("set_active"):
+		city_audio.set_active(false)
 	_lock_player()
 	_dialog.hide()
 	_opening_layer = CanvasLayer.new()
@@ -139,13 +175,19 @@ func _begin_arrival() -> void:
 	_opening_layer.layer = 100
 	_opening_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_opening_layer)
-	_opening = OPENING.instantiate()
-	_opening.show_preview_hud = false
-	_opening.show_studio_intro = true
-	_opening.finished.connect(_on_opening_finished)
-	_opening.skipped.connect(_on_opening_finished)
-	_opening_layer.add_child(_opening)
-	_previous_paused = get_tree().paused
+	var loading := get_node_or_null("/root/GameLoading")
+	if prepare_only and loading != null and is_instance_valid(loading.opening):
+		_opening = loading.opening
+		_opening.reparent(_opening_layer)
+	else:
+		_opening = OPENING.instantiate()
+		_opening.auto_start = not prepare_only
+		_opening.show_preview_hud = false
+		_opening.show_studio_intro = true
+		_opening.finished.connect(_on_opening_finished)
+		_opening.skipped.connect(_on_opening_finished)
+		_opening_layer.add_child(_opening)
+	_previous_paused = false if prepare_only else get_tree().paused
 	_paused_weather = world.weather
 	_weather_process_mode = _paused_weather.process_mode
 	# The CGI has its own rain/foley. Suspend the always-running world weather
@@ -164,6 +206,9 @@ func skip_cinematic() -> void:
 func _on_opening_finished(destination: StringName) -> void:
 	if phase != "arrival" or destination != &"bus_terminal_arrival":
 		return
+	var city_audio := get_node_or_null("/root/CityAudioManager")
+	if is_instance_valid(city_audio) and city_audio.has_method("set_active"):
+		city_audio.set_active(true)
 	# Both actual completion and skip arrive here only after the fade. Keep the
 	# player locked through the following phone call; never fabricate completion.
 	if is_instance_valid(_opening_layer):
@@ -174,14 +219,17 @@ func _on_opening_finished(destination: StringName) -> void:
 		_opening_layer.add_child(reveal)
 		reveal.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		var fade := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		fade.tween_property(reveal, "color:a", 0.0, 0.65)
+		fade.tween_interval(0.2)
+		fade.tween_property(reveal, "color:a", 0.0, 1.0)
 		fade.tween_callback(_opening_layer.queue_free)
 	_opening = null
 	_restore_opening_pause()
-	# A madrugada da CGI continua no desembarque; só a primeira chegada passa aqui.
-	world.weather.time_of_day = 0.18
-	world.weather.set_weather(2)
-	world.weather.weather_timer = 90.0
+	# A madrugada da CGI continua num amanhecer cinzento com garoa leve.
+	# A tempestade forte escondia o porto justamente na primeira exploração.
+	world.weather.time_of_day = 0.21
+	world.weather.set_rain_intensity(0.20)
+	world.weather.set_weather(DayNightWeatherManager.WeatherState.DRIZZLE)
+	world.weather.weather_timer = 150.0
 	var camera := player.get_node_or_null("Camera") as Camera2D
 	if camera != null:
 		camera.make_current()
@@ -197,6 +245,9 @@ func _on_opening_finished(destination: StringName) -> void:
 	terminal.begin_player_disembark(player)
 
 func _wait_for_phone() -> void:
+	if story_arrival.active:
+		story_arrival.resume()
+		return
 	phase = "arrival_wait"
 	_phone_wait = 0.0
 	_unlock_player()
@@ -223,6 +274,9 @@ func answer_phone() -> void:
 
 
 func advance_dialogue() -> void:
+	if phase == "story_dialogue":
+		story_arrival.advance()
+		return
 	if phase == "arrival":
 		if is_instance_valid(_opening):
 			_opening.request_skip()
@@ -240,7 +294,10 @@ func advance_dialogue() -> void:
 	_phone_audio.stop()
 	_unlock_player()
 	campaign.call("set_campaign_flag", &"harbor_arrival_call_complete", true)
-	_set_phase("meet_maciota", tr("OBJ_MEET_MACIOTA"), entrance.global_position)
+	if story_arrival.active:
+		story_arrival.meet_at_yard()
+	else:
+		_set_phase("meet_maciota", tr("OBJ_MEET_MACIOTA"), entrance.global_position)
 	arrival_finished.emit()
 
 
@@ -269,17 +326,23 @@ func accept_mission(id: String) -> bool:
 	var board := garage.get("mission_board") as Node2D
 	if board == null or not player.visible or player.get("is_dead") == true or player.global_position.distance_to(board.global_position) > 80.0:
 		return false
+	var bridge := world.get_node_or_null("CobraCampaign")
+	if bridge and bridge.has_method("prepare_story_time") and not bridge.prepare_story_time(CONTRACT_ID):
+		return false
 	campaign.call("set_campaign_flag", &"harbor_delivery_started", true)
 	_play_mission_feedback(ProceduralAudio.get_mission_start_stream())
 	_refresh_board()
-	_set_phase("delivery_pickup", tr("OBJ_DELIVERY_PICKUP"), _pickup_position())
+	first_favors.begin()
 	return true
 
 
 func interact_with_objective() -> bool:
-	if player.get("is_dead") == true or player.get("is_control_disabled") == true or not player.visible:
+	if is_instance_valid(first_favors) and first_favors.interact(): return true
+	if is_instance_valid(story_arrival) and story_arrival.interact(): return true
+	if player.get("is_dead") == true or player.get("is_arrested") == true or player.get("is_control_disabled") == true or not player.visible:
 		return false
 	if phase == "delivery_pickup" and player.global_position.distance_to(_pickup_position()) <= 65.0:
+		if first_favors.active() and not _flag("harbor_delivery_receipt"): return false
 		campaign.call("set_campaign_flag", &"harbor_delivery_picked_up", true)
 		_play_mission_feedback(ProceduralAudio.get_powerup_stream())
 		_set_phase("delivery_return", tr("OBJ_DELIVERY_RETURN"), entrance.global_position)
@@ -290,17 +353,26 @@ func interact_with_objective() -> bool:
 			return false
 		if _flag("harbor_delivery_complete"):
 			return false
-		# Flag before payment makes repeated interaction idempotent.
-		campaign.call("set_campaign_flag", &"harbor_delivery_complete", true)
-		_play_mission_feedback(ProceduralAudio.get_mission_passed_stream())
-		player.set("money", int(player.get("money")) + REWARD)
-		if player.has_method("_refresh_weapon_ui"):
-			player.call("_refresh_weapon_ui")
-		_refresh_board()
-		_set_phase("complete", tr("OBJ_COMPLETE_REWARD"), Vector2.ZERO)
-		delivery_finished.emit()
+		if first_favors.active():
+			first_favors.finish_dialogue(_complete_delivery)
+		else:
+			_complete_delivery()
 		return true
 	return false
+
+
+func _complete_delivery() -> void:
+	if _flag("harbor_delivery_complete"): return
+	# Flag before payment makes repeated interaction idempotent.
+	campaign.call("set_campaign_flag", &"harbor_delivery_complete", true)
+	_play_mission_feedback(ProceduralAudio.get_mission_passed_stream())
+	player.set("money", int(player.get("money")) + REWARD)
+	get_tree().call_group("hud", "show_mission_passed", REWARD)
+	if player.has_method("_refresh_weapon_ui"):
+		player.call("_refresh_weapon_ui")
+	_refresh_board()
+	_set_phase("complete", tr("OBJ_COMPLETE_REWARD"), Vector2.ZERO)
+	delivery_finished.emit()
 
 
 func _play_mission_feedback(stream: AudioStream) -> void:
@@ -308,7 +380,7 @@ func _play_mission_feedback(stream: AudioStream) -> void:
 	sound.process_mode = Node.PROCESS_MODE_ALWAYS
 	sound.bus = &"SFX"
 	sound.stream = stream
-	sound.volume_db = -10.0
+	sound.volume_db = -2.0
 	add_child(sound)
 	sound.finished.connect(sound.queue_free)
 	sound.play()
@@ -353,10 +425,13 @@ func _pickup_position() -> Vector2:
 
 
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_accept") and not event.is_echo() and phase in ["arrival", "phone"]:
+	if event.is_action_pressed("ui_cancel") and phase == "city_tour":
+		story_arrival.cancel_ride()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_accept") and not event.is_echo() and phase in ["arrival", "phone", "story_dialogue"]:
 		advance_dialogue()
 		get_viewport().set_input_as_handled()
-	elif event.is_action_pressed("interact") and phase in ["delivery_pickup", "delivery_return"]:
+	elif event.is_action_pressed("interact") and phase in ["delivery_bank", "delivery_pickup", "delivery_return", "police_visit", "yard_meeting", "tour_board"]:
 		if interact_with_objective():
 			get_viewport().set_input_as_handled()
 
@@ -364,19 +439,20 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if phase == "arrival_wait" and player.get("is_dead") != true:
 		_phone_wait += delta
-		if _phone_wait >= 7.0:
+		if _phone_wait >= (4.0 if story_arrival.active else 7.0):
 			_begin_phone()
 	if phase == "phone" and not _phone_answered and not _phone_audio.playing:
 		_phone_audio.play()
 	_refresh_clock += delta
 	if _refresh_clock >= 0.2 and is_instance_valid(player):
 		_refresh_clock = 0.0
+		if is_instance_valid(first_favors): first_favors.tick()
 		_refresh_objective()
 
 
 func set_objective_card_visible(is_visible: bool) -> void:
 	if is_instance_valid(_obj_card):
-		_obj_card.visible = is_visible
+		_obj_card.visible = false # Navigation stays on the minimap.
 
 func _is_any_interior_modal_open() -> bool:
 	var interiors: Node = world.get_node_or_null("Interiors") if is_instance_valid(world) else null
@@ -392,28 +468,46 @@ func _is_any_interior_modal_open() -> bool:
 	return false
 
 func _refresh_objective() -> void:
-	if is_instance_valid(player) and (player.has_meta("robbery_room") or player.has_meta("bank_heist_active")):
+	if is_instance_valid(player) and (player.has_meta("robbery_room") or player.has_meta("bank_heist_active")) and not (is_instance_valid(first_favors) and first_favors.active()):
 		if _obj_card: _obj_card.hide()
 		return
 	if _objective_label == null:
 		return
 	var destination := target
-	# Interior coordinates are isolated; never show a misleading 20 km route.
-	if player.global_position.distance_to(garage.global_position) < 900.0:
+	var local_destination := false
+	if is_instance_valid(first_favors) and phase == "delivery_bank":
+		var bank: Node2D = first_favors.bank_room()
+		if bank and bank.actor_inside() and not first_favors.bank_unavailable():
+			destination = first_favors.bank_interaction_position()
+			local_destination = true
+	if is_instance_valid(story_arrival) and story_arrival.active and phase == "police_visit" and story_arrival.police.contains_point(player.global_position):
+		destination = story_arrival.police.sergeant_npc.global_position
+		local_destination = true
+	if is_instance_valid(story_arrival) and story_arrival.active and phase == "police_exit" and story_arrival.police.contains_point(player.global_position):
+		local_destination = true
+	# The objective card uses room coordinates inside the garage; the city
+	# minimap continues to use the exterior entrance for the same objective.
+	if is_instance_valid(garage) and garage.contains_point(player.global_position):
 		if phase in ["meet_maciota", "delivery_return"]:
 			destination = (garage.get("jager_npc") as Node2D).global_position
+			local_destination = true
 		elif phase == "board":
 			destination = (garage.get("mission_board") as Node2D).global_position
-		elif phase == "delivery_pickup":
+			local_destination = true
+		elif phase in ["delivery_pickup", "delivery_bank"]:
 			destination = (garage.get("exit_door") as Node2D).global_position
-	navigation_target = destination if phase not in ["idle","phone","arrival","disembark","arrival_wait"] else Vector2.ZERO
+			local_destination = true
+	navigation_target = target if phase not in ["idle","phone","arrival","disembark","arrival_wait"] else Vector2.ZERO
+	if phase == "police_exit": navigation_target = Vector2.ZERO
 	var suffix := ""
 	if destination != Vector2.ZERO and phase not in ["phone", "arrival", "delivery_pickup"]:
-		var map_position: Vector2=player.get_meta("police_exterior_position",player.global_position)
-		var distance := map_position.distance_to(destination)
-		var direction := destination - map_position
-		var compass: Array[String] = ["L", "SE", "S", "SO", "O", "NO", "N", "NE"]
-		suffix = "  ·  %s / %.0f m" % [compass[posmod(int(round(direction.angle() / (PI / 4.0))), 8)], distance / 16.6]
+		var map_position: Vector2 = player.global_position if local_destination else player.get_meta("police_exterior_position", player.global_position)
+		var distance := map_position.distance_to(destination) / 16.6
+		if local_destination and garage.contains_point(player.global_position):
+			var workshop: Node2D = garage.get("showroom")
+			# The workshop is metric 3D; undo its floor projection to measure metres.
+			distance = workshop.unproject_floor(map_position).distance_to(workshop.unproject_floor(destination))
+		suffix = "  ·  %.0f m" % distance
 	_objective_label.text = objective + suffix
 	if _obj_card != null:
 		if _flag("harbor_delivery_complete"):
@@ -425,7 +519,7 @@ func _refresh_objective() -> void:
 		var maciota_talking: bool = bool(maciota.get("is_talking")) if is_instance_valid(maciota) else false
 		var dialog_open: bool = _dialog.visible if is_instance_valid(_dialog) else false
 		var modal_open: bool = dialog_open or _owns_lock or board_open or maciota_talking or _is_any_interior_modal_open()
-		_obj_card.visible = not modal_open
+		_obj_card.visible = not modal_open and player.visible and player.get("is_dead") != true and phase in ["police_visit", "police_exit", "yard_meeting", "tour_board", "meet_maciota", "board", "delivery_bank", "delivery_pickup", "delivery_return"]
 
 
 func _lock_player() -> void:
@@ -475,26 +569,21 @@ func _build_ui() -> void:
 	_ui.layer = 30
 	add_child(_ui)
 
-	# Card compacto estruturado de objetivo HUD
+	# Faixa discreta de objetivo; sem cabeçalho ou moldura de notificação.
 	var obj_card := PanelContainer.new()
 	_obj_card = obj_card
-	obj_card.position = Vector2(24, 150)
-	obj_card.custom_minimum_size = Vector2(400, 0)
-	var card_style := StyleBoxFlat.new()
-	card_style.bg_color = Color(0.06, 0.08, 0.12, 1.0)
-	card_style.border_color = Color("#dab471")
-	card_style.border_width_left = 3
-	card_style.border_width_top = 1
-	card_style.border_width_right = 1
-	card_style.border_width_bottom = 1
-	card_style.corner_radius_top_right = 6
-	card_style.corner_radius_bottom_right = 6
-	card_style.content_margin_left = 14
-	card_style.content_margin_right = 14
-	card_style.content_margin_top = 8
-	card_style.content_margin_bottom = 8
-	obj_card.add_theme_stylebox_override("panel", card_style)
+	obj_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	obj_card.offset_left = -344
+	obj_card.offset_right = -24
+	obj_card.offset_top = 180
+	obj_card.offset_bottom = 180
+	obj_card.custom_minimum_size = Vector2(320, 0)
+	obj_card.set_meta("preserve_panel_style", true)
+	obj_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	obj_card.add_theme_stylebox_override("panel", preload("res://ui/GameStyle.gd").objective_strip())
 	_ui.add_child(obj_card)
+	world.get_node("HUD").place_objective_card(obj_card)
+	obj_card.hide()
 
 	var obj_vbox := VBoxContainer.new()
 	obj_vbox.add_theme_constant_override("separation", 2)
@@ -505,12 +594,13 @@ func _build_ui() -> void:
 	obj_tag.text = "🎯 CURRENT OBJECTIVE" if TranslationServer.get_locale().begins_with("en") else "🎯 OBJETIVO ATUAL"
 	obj_tag.add_theme_font_size_override("font_size", 12)
 	obj_tag.add_theme_color_override("font_color", Color("#e6bd76"))
+	obj_tag.hide()
 	obj_vbox.add_child(obj_tag)
 
 	_objective_label = Label.new()
-	_objective_label.custom_minimum_size = Vector2(370, 0)
+	_objective_label.custom_minimum_size = Vector2(298, 0)
 	_objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_objective_label.add_theme_font_size_override("font_size", 16)
+	_objective_label.add_theme_font_size_override("font_size", 15)
 	_objective_label.add_theme_color_override("font_color", Color.WHITE)
 	_objective_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	_objective_label.add_theme_constant_override("shadow_offset_x", 1)

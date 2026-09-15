@@ -14,7 +14,7 @@ const KEYS := {
 	"handbrake": [KEY_SPACE], "horn": [KEY_H], "headlights": [KEY_L],
 	"radio_next": [KEY_R], "reload": [KEY_R], "journal": [KEY_J], "trunk": [KEY_T],
 	"weapon_next": [KEY_Q], "weapon_previous": [], "unarmed": [KEY_X],
-	"fire": [], "aim": [], "pause_game": [KEY_ESCAPE],
+	"fire": [], "aim": [], "pause_game": [KEY_ESCAPE], "world_map": [KEY_M],
 	"weapon_slot_1": [KEY_1],
 	"weapon_slot_2": [KEY_2],
 	"weapon_slot_3": [KEY_3],
@@ -38,7 +38,7 @@ const LABELS := {
 	"trunk": ["Porta-malas","Trunk"], "weapon_next": ["Próxima arma","Next weapon"],
 	"weapon_previous": ["Arma anterior","Previous weapon"], "unarmed": ["Mãos livres","Unarmed"],
 	"fire": ["Atacar / Disparar","Attack / Fire"], "aim": ["Mirar","Aim"],
-	"pause_game": ["Pausa","Pause"],
+	"pause_game": ["Pausa","Pause"], "world_map": ["Mapa / GPS","Map / GPS"],
 }
 const PAD := {"interact":JOY_BUTTON_A,"exit_vehicle":JOY_BUTTON_B,"handbrake":JOY_BUTTON_X,"trunk":JOY_BUTTON_Y,"weapon_next":JOY_BUTTON_RIGHT_SHOULDER,"weapon_previous":JOY_BUTTON_LEFT_SHOULDER,"journal":JOY_BUTTON_BACK,"pause_game":JOY_BUTTON_START,"sprint":JOY_BUTTON_LEFT_STICK,"horn":JOY_BUTTON_RIGHT_STICK,"headlights":JOY_BUTTON_DPAD_UP,"radio_next":JOY_BUTTON_DPAD_RIGHT,"unarmed":JOY_BUTTON_DPAD_DOWN,"reload":JOY_BUTTON_DPAD_LEFT}
 

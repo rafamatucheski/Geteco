@@ -22,17 +22,8 @@ func run() -> void:
 	await process_frame
 	assert(atmosphere.wind.playing)
 	assert(atmosphere.wind.stream.data.decode_s16(0) == 0)
-	atmosphere.start_visit()
-	var first = atmosphere.keeper
-	atmosphere.start_visit()
-	assert(atmosphere.keeper == first, "Only one visiting keeper")
-	atmosphere.keeper.finished = true
-	atmosphere._process(23)
-	assert(atmosphere.leaving)
-	atmosphere.keeper.finished = true
-	atmosphere._process(1)
-	await process_frame
-	assert(not is_instance_valid(atmosphere.keeper))
+	assert(not atmosphere.has_method("start_visit"), "Atmosphere no longer spawns temporary workers")
+	assert(get_nodes_in_group("cemetery_keeper").is_empty(), "Wind cannot create a random keeper")
 	print("CEMETERY_ATMOSPHERE PASS")
 	lot.queue_free()
 	await process_frame

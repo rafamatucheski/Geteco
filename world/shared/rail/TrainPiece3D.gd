@@ -9,6 +9,9 @@ var _last_heading := INF
 var _materials: Dictionary = {}
 
 func _ready() -> void:
+	# Cached renders must contain the requested pose, never a transient physics
+	# interpolation angle that would then remain frozen on a straight track.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	viewport = SubViewport.new()
 	viewport.name = "TrainModelViewport"
 	viewport.size = Vector2i(256, 256)
@@ -18,6 +21,7 @@ func _ready() -> void:
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(viewport)
 	var stage := Node3D.new()
+	stage.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	viewport.add_child(stage)
 	var projection := Node3D.new()
 	# Compensa o encurtamento do chão pela câmera, preservando engates nas curvas.

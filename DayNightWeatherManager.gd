@@ -5,11 +5,21 @@ signal time_changed(is_dark: bool)
 signal biome_changed(biome_name: String)
 
 enum BiomeType {
-	CITY_METROPOLIS,  # 0: Cidade (Dia/Noite com Chuva e Trovões ocasionais)
+	CITY_METROPOLIS,  # 0: Cidade (Dia/Noite, nublado e garoa ocasional)
 	WINTER_SNOW,      # 1: Frio / Neve (Flocos caindo, vento gélido, modulação fria)
 	DESERT_BADLANDS,  # 2: Deserto Árido (Sem chuva, tempestade de areia/poeira, calor intenso)
 	FOREST_WOODS,     # 3: Floresta / Montanha (Folhas ao vento, névoa leve, brisa da floresta)
 	BEACH_COASTAL     # 4: Praia / Costa Tropical (Sol radiante, maresia, ondas do mar)
+}
+
+# Os IDs antigos permanecem estáveis: saves, missões e testes ainda podem
+# pedir STORM explicitamente. O ciclo natural da cidade usa apenas os estados
+# mais leves CLEAR, CLOUDY e DRIZZLE.
+enum WeatherState {
+	CLEAR = 0,
+	DRIZZLE = 1,
+	STORM = 2,
+	CLOUDY = 3,
 }
 
 @export var current_biome: BiomeType = BiomeType.CITY_METROPOLIS
@@ -18,8 +28,8 @@ enum BiomeType {
 
 var time_of_day: float = 0.25
 var is_dark: bool = false
-var weather_state: int = 0
-var weather_timer: float = 45.0
+var weather_state: int = WeatherState.CLEAR
+var weather_timer: float = 120.0
 var lightning_timer: float = 14.0
 
 # Emissores de Partículas Climáticas
@@ -37,15 +47,38 @@ var biome_audio: AudioStreamPlayer
 const WEATHER_AUDIO := preload("res://audio/weather/WeatherAudioMixer.gd")
 const RAIN_VISUALS := preload("res://audio/weather/RainVisualPalette.gd")
 var weather_audio: Node
-var rain_intensity := 0.55
+var rain_intensity := 0.22
 var _flash_tween: Tween
 var _thunder_tween: Tween
+var atmosphere: CanvasLayer
+var regional_rain_exposure := 1.0
+
+func enable_regional_atmosphere() -> void:
+	if is_instance_valid(atmosphere): return
+	atmosphere = preload("res://world/shared/atmosphere/RegionalAtmosphere.gd").new()
+	add_child(atmosphere)
+
+func set_regional_rain_exposure(value: float) -> void:
+	value = clampf(value, 0.0, 1.0)
+	if is_equal_approx(value, regional_rain_exposure): return
+	regional_rain_exposure = value
+	if value <= 0.001:
+		if _flash_tween and _flash_tween.is_running(): _flash_tween.kill()
+		if _thunder_tween and _thunder_tween.is_running(): _thunder_tween.kill()
+	_sync_rain_audio()
+	_update_rain_particles()
+	_update_lighting()
 
 # Paleta de Cores
 const COLOR_DAY = Color(1.0, 1.0, 1.0, 1.0)
-const COLOR_SUNSET = Color(1.0, 0.72, 0.50, 1.0)
-const COLOR_NIGHT = Color(0.18, 0.22, 0.38, 1.0)
-const COLOR_DAWN = Color(0.85, 0.75, 0.90, 1.0)
+const COLOR_GOLDEN_HOUR = Color(1.0, 0.88, 0.70, 1.0)
+const COLOR_SUNSET = Color(1.0, 0.62, 0.38, 1.0)
+const COLOR_TWILIGHT = Color(0.52, 0.44, 0.58, 1.0)
+const COLOR_NIGHT = Color(0.25, 0.29, 0.40, 1.0)
+const COLOR_DAWN_GRAY = Color(0.61, 0.67, 0.73, 1.0)
+const COLOR_FIRST_LIGHT = Color(0.91, 0.82, 0.74, 1.0)
+const COLOR_OVERCAST = Color(0.66, 0.71, 0.74, 1.0)
+const COLOR_DRIZZLE = Color(0.57, 0.64, 0.69, 1.0)
 const COLOR_STORM = Color(0.32, 0.36, 0.44, 1.0)
 const COLOR_WINTER = Color(0.80, 0.88, 1.05, 1.0)
 const COLOR_DESERT = Color(1.08, 0.96, 0.82, 1.0)
@@ -191,7 +224,7 @@ func _setup_weather_effects() -> void:
 	thunder_audio = weather_audio.thunder
 	
 	biome_audio = AudioStreamPlayer.new()
-	biome_audio.bus = &"SFX"
+	biome_audio.bus = &"Ambient"
 	biome_audio.volume_db = -12.0
 	add_child(biome_audio)
 
@@ -208,7 +241,7 @@ func set_biome(type: BiomeType) -> void:
 	
 	match current_biome:
 		BiomeType.CITY_METROPOLIS:
-			if weather_state > 0:
+			if get_rain_intensity() > 0.0:
 				rain_particles.emitting = true
 				splash_particles.emitting = true
 			if biome_audio.playing: biome_audio.stop()
@@ -218,7 +251,7 @@ func set_biome(type: BiomeType) -> void:
 			snow_particles.emitting = true
 			biome_audio.stream = ProceduralAudio.get_snow_wind_stream()
 			biome_audio.play()
-			weather_state = 0 # Sem chuva comum
+			weather_state = WeatherState.CLEAR # Sem chuva comum
 			_fade_rain(false)
 			biome_changed.emit("Distrito Ártico")
 			
@@ -226,7 +259,7 @@ func set_biome(type: BiomeType) -> void:
 			sand_particles.emitting = true
 			biome_audio.stream = ProceduralAudio.get_desert_wind_stream()
 			biome_audio.play()
-			weather_state = 0 # NO DESERTO NUNCA CHOVE!
+			weather_state = WeatherState.CLEAR # NO DESERTO NUNCA CHOVE!
 			_fade_rain(false)
 			biome_changed.emit("Badlands Áridas")
 			
@@ -241,7 +274,7 @@ func set_biome(type: BiomeType) -> void:
 			spray_particles.emitting = true
 			biome_audio.stream = ProceduralAudio.get_beach_waves_stream()
 			biome_audio.play()
-			weather_state = 0
+			weather_state = WeatherState.CLEAR
 			_fade_rain(false)
 			biome_changed.emit("Sunset Coast")
 			
@@ -250,6 +283,7 @@ func set_biome(type: BiomeType) -> void:
 	if is_inside_interior:
 		set_interior_mode(true)
 	_update_lighting()
+	_refresh_weather_reactive_visuals()
 
 var is_inside_interior: bool = false
 
@@ -279,29 +313,21 @@ func is_raining() -> bool:
 	return not is_inside_interior and get_rain_intensity() > 0.0
 
 func _process(delta: float) -> void:
-	if is_inside_interior:
-		color = Color(1.0, 1.0, 1.0, 1.0)
-		return
-
 	if is_dynamic_time:
 		time_of_day = fmod(time_of_day + (delta / day_length_seconds), 1.0)
 		_update_lighting()
+	if is_inside_interior:
+		color = Color.WHITE
+		return
 		
 	# Apenas a cidade tem transições de chuva/trovão dinâmicas
 	if current_biome == BiomeType.CITY_METROPOLIS:
 		weather_timer -= delta
 		if weather_timer <= 0.0:
-			weather_timer = randf_range(45.0, 100.0)
-			var r = randf()
-			if r < 0.55:
-				set_weather(0)
-			elif r < 0.85:
-				rain_intensity = randf_range(0.22, 0.65)
-				set_weather(1)
-			else:
-				set_weather(2)
+			weather_timer = randf_range(90.0, 180.0)
+			_roll_next_city_weather()
 				
-		if weather_state == 2:
+		if weather_state == WeatherState.STORM:
 			lightning_timer -= delta
 			if lightning_timer <= 0.0:
 				lightning_timer = randf_range(14.0, 26.0)
@@ -325,27 +351,33 @@ func _process(delta: float) -> void:
 		if spray_particles: spray_particles.global_position = pos
 
 func _update_lighting() -> void:
-	if is_inside_interior:
-		color = Color.WHITE
-		return
 	var target_color = COLOR_DAY
 	
-	if time_of_day < 0.20:
+	if time_of_day < 0.19:
 		target_color = COLOR_NIGHT
-	elif time_of_day < 0.28:
-		var factor = (time_of_day - 0.20) / 0.08
-		target_color = COLOR_NIGHT.lerp(COLOR_DAWN, factor)
-	elif time_of_day < 0.35:
-		var factor = (time_of_day - 0.28) / 0.07
-		target_color = COLOR_DAWN.lerp(COLOR_DAY, factor)
-	elif time_of_day < 0.70:
+	elif time_of_day < 0.24:
+		var factor = (time_of_day - 0.19) / 0.05
+		target_color = COLOR_NIGHT.lerp(COLOR_DAWN_GRAY, factor)
+	elif time_of_day < 0.30:
+		var factor = (time_of_day - 0.24) / 0.06
+		target_color = COLOR_DAWN_GRAY.lerp(COLOR_FIRST_LIGHT, factor)
+	elif time_of_day < 0.36:
+		var factor = (time_of_day - 0.30) / 0.06
+		target_color = COLOR_FIRST_LIGHT.lerp(COLOR_DAY, factor)
+	elif time_of_day < 0.68:
 		target_color = COLOR_DAY
-	elif time_of_day < 0.78:
-		var factor = (time_of_day - 0.70) / 0.08
-		target_color = COLOR_DAY.lerp(COLOR_SUNSET, factor)
-	elif time_of_day < 0.85:
-		var factor = (time_of_day - 0.78) / 0.07
-		target_color = COLOR_SUNSET.lerp(COLOR_NIGHT, factor)
+	elif time_of_day < 0.74:
+		var factor = (time_of_day - 0.68) / 0.06
+		target_color = COLOR_DAY.lerp(COLOR_GOLDEN_HOUR, factor)
+	elif time_of_day < 0.79:
+		var factor = (time_of_day - 0.74) / 0.05
+		target_color = COLOR_GOLDEN_HOUR.lerp(COLOR_SUNSET, factor)
+	elif time_of_day < 0.84:
+		var factor = (time_of_day - 0.79) / 0.05
+		target_color = COLOR_SUNSET.lerp(COLOR_TWILIGHT, factor)
+	elif time_of_day < 0.88:
+		var factor = (time_of_day - 0.84) / 0.04
+		target_color = COLOR_TWILIGHT.lerp(COLOR_NIGHT, factor)
 	else:
 		target_color = COLOR_NIGHT
 		
@@ -360,44 +392,71 @@ func _update_lighting() -> void:
 		BiomeType.BEACH_COASTAL:
 			target_color = target_color * COLOR_BEACH
 		_:
-			if weather_state == 2:
-				target_color = target_color.lerp(COLOR_STORM, 0.75)
-			elif weather_state == 1:
-				target_color = target_color.lerp(COLOR_STORM, 0.40)
+			if weather_state == WeatherState.STORM:
+				target_color = target_color.lerp(COLOR_STORM, 0.75 * regional_rain_exposure)
+			elif weather_state == WeatherState.DRIZZLE:
+				target_color = target_color.lerp(COLOR_DRIZZLE, 0.52 * regional_rain_exposure)
+			elif weather_state == WeatherState.CLOUDY:
+				target_color = target_color.lerp(COLOR_OVERCAST, 0.46 * regional_rain_exposure)
 			
+	if is_instance_valid(atmosphere):
+		# The compositor colors highlights and shadows separately. Keep the shared
+		# sunset's brightness here without tinting every snowy shadow orange.
+		var luminance := target_color.get_luminance()
+		var twilight := smoothstep(0.67, 0.76, time_of_day) * (1.0 - smoothstep(0.78, 0.88, time_of_day))
+		target_color = target_color.lerp(Color(luminance, luminance, luminance), twilight * 0.70)
 	if not (_flash_tween and _flash_tween.is_running()):
-		color = target_color
+		color = Color.WHITE if is_inside_interior else target_color
 	
-	var new_is_dark = (time_of_day > 0.78 or time_of_day < 0.28 or weather_state == 2)
+	var new_is_dark = (time_of_day > 0.79 or time_of_day < 0.30 or (weather_state == WeatherState.STORM and regional_rain_exposure > 0.5))
 	if new_is_dark != is_dark:
 		is_dark = new_is_dark
 		time_changed.emit(is_dark)
 		_notify_headlights(is_dark)
+		_refresh_weather_reactive_visuals()
 
 func _notify_headlights(dark: bool) -> void:
 	for vehicle in get_tree().get_nodes_in_group("traffic_vehicles"):
-		if vehicle.has_method("set_headlights"):
+		if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion() and vehicle.has_method("set_headlights"):
 			vehicle.set_headlights(dark)
 	for car in get_tree().get_nodes_in_group("player_car"):
-		if car.has_method("set_headlights"):
+		if is_instance_valid(car) and not car.is_queued_for_deletion() and car.has_method("set_headlights"):
 			car.set_headlights(dark)
 
 func set_weather(state: int) -> void:
 	if current_biome == BiomeType.DESERT_BADLANDS:
-		state = 0 # No deserto não há chuva
+		state = WeatherState.CLEAR # No deserto não há chuva
 	var previous := weather_state
-	weather_state = clampi(state, 0, 2)
+	weather_state = clampi(state, WeatherState.CLEAR, WeatherState.CLOUDY)
 	_sync_rain_audio()
 	_update_rain_particles()
-	if weather_state != 2:
+	if weather_state != WeatherState.STORM:
 		if _flash_tween and _flash_tween.is_valid():
 			_flash_tween.kill()
 		if _thunder_tween and _thunder_tween.is_valid():
 			_thunder_tween.kill()
-	elif previous != 2:
+	elif previous != WeatherState.STORM:
 		_trigger_lightning()
 		
 	_update_lighting()
+	if previous != weather_state:
+		_refresh_weather_reactive_visuals()
+
+func _refresh_weather_reactive_visuals() -> void:
+	if is_inside_tree():
+		get_tree().call_group(&"weather_reactive_visuals", &"queue_redraw")
+
+func _roll_next_city_weather() -> void:
+	# Porto variado, mas legível: tempestade forte nunca aparece por sorteio.
+	# Um estado STORM ainda pode ser dirigido explicitamente por narrativa.
+	var roll := randf()
+	if roll < 0.42:
+		set_weather(WeatherState.CLEAR)
+	elif roll < 0.78:
+		set_weather(WeatherState.CLOUDY)
+	else:
+		set_rain_intensity(randf_range(0.14, 0.30))
+		set_weather(WeatherState.DRIZZLE)
 
 func _fade_rain(enable: bool, target_db: float = -12.0) -> void:
 	# Legacy biome callers retain this API; no competing fade/stop callbacks.
@@ -407,10 +466,11 @@ func _fade_rain(enable: bool, target_db: float = -12.0) -> void:
 func get_rain_intensity() -> float:
 	if current_biome not in [BiomeType.CITY_METROPOLIS, BiomeType.FOREST_WOODS]:
 		return 0.0
-	return 1.0 if weather_state == 2 else (rain_intensity if weather_state == 1 else 0.0)
+	var local_rain := 1.0 if weather_state == WeatherState.STORM else (rain_intensity if weather_state == WeatherState.DRIZZLE else 0.0)
+	return local_rain * regional_rain_exposure
 
 func set_rain_intensity(amount: float) -> void:
-	# Preserve serialized weather IDs: 0 clear, 1 rain (light/moderate), 2 storm.
+	# Preserve serialized weather IDs: 0 clear, 1 drizzle/rain, 2 storm, 3 cloudy.
 	rain_intensity = clampf(amount, 0.0, 1.0)
 	_sync_rain_audio()
 	_update_rain_particles()
@@ -424,23 +484,23 @@ func _update_rain_particles() -> void:
 	var outside := strength > 0.0 and not is_inside_interior
 	if rain_particles:
 		rain_particles.emitting = outside
-		var drop_count := int(lerpf(60.0, 180.0, strength))
+		var drop_count := int(lerpf(34.0, 120.0, strength))
 		if rain_particles.amount != drop_count:
 			rain_particles.amount = drop_count
-		rain_particles.initial_velocity_min = lerpf(400.0, 740.0, strength)
-		rain_particles.initial_velocity_max = lerpf(560.0, 980.0, strength)
-		rain_particles.scale_amount_min = lerpf(0.35, 0.65, strength)
-		rain_particles.scale_amount_max = lerpf(0.5, 1.3, strength)
-		rain_particles.color.a = lerpf(0.18, 0.70, strength)
+		rain_particles.initial_velocity_min = lerpf(300.0, 680.0, strength)
+		rain_particles.initial_velocity_max = lerpf(430.0, 880.0, strength)
+		rain_particles.scale_amount_min = lerpf(0.28, 0.58, strength)
+		rain_particles.scale_amount_max = lerpf(0.42, 1.05, strength)
+		rain_particles.color.a = lerpf(0.14, 0.58, strength)
 	if splash_particles:
 		splash_particles.emitting = outside
-		var splash_count := int(lerpf(15.0, 50.0, strength))
+		var splash_count := int(lerpf(8.0, 36.0, strength))
 		if splash_particles.amount != splash_count:
 			splash_particles.amount = splash_count
-		splash_particles.color.a = lerpf(0.12, 0.45, strength)
+		splash_particles.color.a = lerpf(0.08, 0.36, strength)
 
 func _trigger_lightning() -> void:
-	if weather_state != 2 or is_inside_interior or get_rain_intensity() <= 0.0: return
+	if weather_state != WeatherState.STORM or is_inside_interior or get_rain_intensity() <= 0.0: return
 	if _thunder_tween and _thunder_tween.is_running(): return
 	_flash_tween = create_tween()
 	var flash_t := _flash_tween
@@ -454,6 +514,6 @@ func _trigger_lightning() -> void:
 	var thunder_t := _thunder_tween
 	thunder_t.tween_interval(randf_range(0.8, 3.2))
 	thunder_t.tween_callback(func():
-		if weather_audio and weather_state == 2 and get_rain_intensity() > 0.0:
+		if weather_audio and weather_state == WeatherState.STORM and get_rain_intensity() > 0.0:
 			weather_audio.play_thunder()
 	)

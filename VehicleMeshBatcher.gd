@@ -26,6 +26,7 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 		var material: Material = node.material_override
 		if material == null: continue
 		# Lamp damage uses individual lens positions. Keep those addressable.
+		if "lamp_sources" in model and model.lamp_sources.has(node): continue
 		if "materials" in model and material in [model.materials.get("headlight"), model.materials.get("dead_led")]: continue
 		# Preserve transparent object sorting and any unextracted wheel articulation.
 		if material is BaseMaterial3D and material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED: continue

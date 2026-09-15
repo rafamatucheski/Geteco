@@ -8,6 +8,10 @@ func run() -> void:
 	for i in 30: await process_frame
 	var p: Node2D = current_scene.get_node("Player")
 	var g: Node = current_scene.get_node("Interiors").garage_interior
+	# Desde 13/09 o WorldPerimeter devolve ao último ponto seguro quem está fora
+	# do mapa sem a marca de interior. Entrar pela porta real, como o jogador.
+	current_scene.get_node("Interiors")._on_exterior_destination_requested(current_scene.get_node("District/Garage/Entrance"), p, &"", null, &"", g, g.spawn_point)
+	for i in 3: await physics_frame
 	p.global_position = g.mission_board.global_position
 	p.velocity = Vector2.ZERO
 	for i in 8: await physics_frame

@@ -11,7 +11,7 @@ signal phase_changed(state_ew: int, state_ns: int)
 enum LightState { GREEN, YELLOW, RED }
 enum CyclePhase { EW_GREEN, EW_YELLOW, ALL_RED_TO_NS, NS_GREEN, NS_YELLOW, ALL_RED_TO_EW }
 
-const TIME_GREEN := 7.5
+const TIME_GREEN := 5.0
 const TIME_YELLOW := 2.2
 const TIME_ALL_RED := 2.0
 const SIGNAL_SET_Z_INDEX := 32
@@ -140,7 +140,7 @@ func _rebuild_visual_set(intersection_id: StringName) -> void:
 	_update_visuals()
 
 func _add_signal_post(parent: Node2D, world_position: Vector2, axis: String, mirrored: bool) -> void:
-	var post := Node2D.new()
+	var post := preload("res://world/shared/roads/TrafficSignalPost.gd").new()
 	post.name = "Signal_%02d" % (parent.get_child_count() + 1)
 	post.position = world_position
 	post.set_meta("axis", axis)
@@ -178,6 +178,8 @@ func _update_visuals() -> void:
 			var post := post_value as Node2D
 			var box := post.get_node_or_null("SignalBox") as ColorRect
 			if box == null:
+				continue
+			if post.get("broken") == true:
 				continue
 			var state := get_state_for(String(post.get_meta("axis", "NS")))
 			_set_bulb(box.get_node("Red") as ColorRect, state == LightState.RED, Color("ff3b30"))

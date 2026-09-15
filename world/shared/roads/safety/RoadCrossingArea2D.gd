@@ -33,6 +33,7 @@ var _pedestrians_inside: Dictionary = {}
 var _vehicles_inside: Dictionary = {}
 var _last_stop_required := false
 var _signal_controller: Node = null
+var _roadway_occupancy_shape := RectangleShape2D.new()
 
 
 func _ready() -> void:
@@ -114,10 +115,42 @@ func is_pedestrian_allowed() -> bool:
 	return true
 
 
-func should_stop_vehicle(_vehicle: Node = null) -> bool:
+func should_stop_vehicle(vehicle: Node = null) -> bool:
 	if _has_signal_state:
-		return not _vehicle_permitted or _pedestrian_permitted
-	return not _pedestrians_inside.is_empty()
+		if _pedestrian_permitted or has_pedestrian_on_roadway():
+			return true
+		if _vehicle_permitted:
+			return false
+		if is_instance_valid(_signal_controller) and _signal_controller.has_method("can_clear_crossing"):
+			return not bool(_signal_controller.call("can_clear_crossing", vehicle, junction_id, self))
+		return true
+	return has_pedestrian_on_roadway()
+
+
+func has_pedestrian_on_roadway() -> bool:
+	# The monitoring area includes waiting space on both sidewalks. Preserve
+	# that broad registry for signal demand, but stop traffic only for bodies
+	# whose actual collision shapes overlap the zebra on the carriageway.
+	_roadway_occupancy_shape.size = Vector2(crossing_depth+2.0,road_width+2.0)
+	for reference in _pedestrians_inside.values():
+		var body: Object = reference.get_ref() if reference is WeakRef else null
+		if not is_instance_valid(body) or not body is Node2D:
+			continue
+		if body is CollisionObject2D:
+			var collision_body := body as CollisionObject2D
+			for owner_id in collision_body.get_shape_owners():
+				if collision_body.is_shape_owner_disabled(owner_id):
+					continue
+				var shape_transform := collision_body.global_transform * collision_body.shape_owner_get_transform(owner_id)
+				for shape_index in collision_body.shape_owner_get_shape_count(owner_id):
+					var shape := collision_body.shape_owner_get_shape(owner_id,shape_index)
+					if shape != null and shape.collide(shape_transform,_roadway_occupancy_shape,global_transform):
+						return true
+		else:
+			var point := to_local((body as Node2D).global_position)
+			if Rect2(-_roadway_occupancy_shape.size*0.5,_roadway_occupancy_shape.size).has_point(point):
+				return true
+	return false
 
 
 func contains_world_point(world_point: Vector2, include_approach: bool = true) -> bool:

@@ -16,6 +16,8 @@ var ammunation_interior: Node2D
 var cabin_interior: Node2D
 var bunker_interior: Node2D
 var lumberjack_interior: Node2D
+var ski_lodge_interior: Node2D
+var mystery_cave_interior: Node2D
 var region_ready := false
 
 # Maps exterior entrance -> Dictionary { "interior_id": StringName, "return_pos": Vector2 }
@@ -70,6 +72,20 @@ func _build_interiors() -> void:
 	_interiors[&"mountain_outfitters"] = outfitters
 	outfitters.modal_opened.connect(_set_outfitters_modal.bind(true))
 	outfitters.modal_closed.connect(_set_outfitters_modal.bind(false))
+	await _interior_budget_pause()
+
+	ski_lodge_interior = preload("res://world/mountain_pass/SummitSkiLodgeInterior.gd").new()
+	ski_lodge_interior.name = "SummitSkiLodgeInterior"
+	ski_lodge_interior.position = Vector2(36500, 20000)
+	spaces_root.add_child(ski_lodge_interior)
+	_interiors[&"ski_lodge"] = ski_lodge_interior
+	await _interior_budget_pause()
+
+	mystery_cave_interior = preload("res://world/mountain_pass/MountainMysteryCaveInterior.gd").new()
+	mystery_cave_interior.name = "MountainMysteryCaveInterior"
+	mystery_cave_interior.position = Vector2(40000, 20000)
+	spaces_root.add_child(mystery_cave_interior)
+	_interiors[&"mountain_mystery_cave"] = mystery_cave_interior
 
 	# Conecta portas de saida dos interiores
 	call_deferred("_bind_interior_exits")
@@ -89,10 +105,10 @@ func _interior_budget_pause() -> void:
 func _bind_interior_exits() -> void:
 	for id in _interiors:
 		var interior: Node2D = _interiors[id]
-		var exit_door: BuildingEntrance = interior.get_node_or_null("ExitDoor") as BuildingEntrance
-		if exit_door == null:
-			exit_door = interior.get_node_or_null("InteriorExit") as BuildingEntrance
-		if exit_door:
+		for candidate in get_tree().get_nodes_in_group("harbor_interior_exit"):
+			var exit_door := candidate as BuildingEntrance
+			if exit_door == null or not interior.is_ancestor_of(exit_door):
+				continue
 			exit_door.get_node("InteractionArea").collision_mask = 4
 			var callback := _on_exit_requested.bind(id)
 			if not exit_door.destination_requested.is_connected(callback):
@@ -121,6 +137,8 @@ func _on_entrance_requested(entrance_self: BuildingEntrance, actor: Node2D, _des
 	var interior: Node2D = _interiors.get(i_id)
 	if interior == null:
 		return
+	if actor.has_method("stop_skiing"):
+		actor.stop_skiing()
 
 	# Salva ponto de retorno deste ator
 	_actor_returns[actor] = data["return_pos"]
@@ -145,13 +163,18 @@ func _on_entrance_requested(entrance_self: BuildingEntrance, actor: Node2D, _des
 		if _actor_scale_helpers.has(actor):
 			_actor_scale_helpers[actor].restore()
 			_actor_scale_helpers[actor].queue_free()
-		var helper := preload("res://world/mountain_pass/MountainInteriorActorScale.gd").new()
+		var helper := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
 		add_child(helper)
 		helper.configure(actor, interior.camera_3d, interior.sprite_3d)
 		_actor_scale_helpers[actor] = helper
 	actor_entered_interior.emit(actor, i_id)
 
 func _on_exit_requested(exit_door_self: BuildingEntrance, actor: Node2D, _dest_id: StringName, _scene: PackedScene, _spawn: StringName, interior_id: StringName) -> void:
+	var starts_skiing := is_instance_valid(exit_door_self) and bool(exit_door_self.get_meta("starts_skiing", false))
+	if starts_skiing and actor.get("ski_equipment_ready") != true:
+		if actor.has_method("_show_weapon_notice"):
+			actor._show_weapon_notice("RETIRE OS SKIS NO RACK ANTES DE IR ÀS PISTAS")
+		return
 	var interior: Node2D = _interiors.get(interior_id)
 	if interior and interior.has_method("set_npc_rendering_active"):
 		interior.set_npc_rendering_active(false)
@@ -161,6 +184,8 @@ func _on_exit_requested(exit_door_self: BuildingEntrance, actor: Node2D, _dest_i
 		_actor_scale_helpers[actor].queue_free()
 		_actor_scale_helpers.erase(actor)
 	var return_pos: Vector2 = _actor_returns.get(actor, Vector2(6350, 600))
+	if is_instance_valid(exit_door_self) and exit_door_self.has_meta("mountain_return_position"):
+		return_pos = exit_door_self.get_meta("mountain_return_position")
 	actor.remove_meta("mountain_interior")
 	actor.remove_meta("mountain_interior_id")
 	actor.remove_meta("police_exterior_position")
@@ -173,6 +198,10 @@ func _on_exit_requested(exit_door_self: BuildingEntrance, actor: Node2D, _dest_i
 	if actor_camera:
 		actor_camera.make_current()
 		actor_camera.reset_smoothing()
+	if starts_skiing and actor.has_method("start_skiing"):
+		actor.start_skiing(Vector2.UP)
+		if actor.has_method("_show_weapon_notice"):
+			actor._show_weapon_notice("SKI: W ACELERA · S FREIA · A/D CURVAM · ESPAÇO CRAVA AS BORDAS")
 	actor_returned_to_exterior.emit(actor, interior_id)
 
 func _process(_delta: float) -> void:

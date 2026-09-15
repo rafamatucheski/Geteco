@@ -12,6 +12,12 @@ static func prepare(actor: Node) -> void:
 	var hair: int = actor.hair_style_override if actor.hair_style_override >= 0 else styles[(variant / 2) % styles.size()]
 	actor.set_meta("hair_style", posmod(hair, HAIR_NAMES.size()))
 	if female: actor.has_beard = false
+	var beard: int = actor.beard_style_override
+	if beard < 0:
+		beard = (2 + posmod(variant / 3,4)) if actor.has_beard else posmod(variant / 2,6)
+	if female: beard = 0
+	actor.set_meta("beard_style",beard)
+	actor.has_beard = beard > 0
 	# Parte da população usa o cabelo exposto: bonés não devem uniformizar a rua.
 	if actor.archetype in [0,1,2,6,7] and variant % 3 != 0:
 		actor.has_cap = false

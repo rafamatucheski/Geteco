@@ -17,6 +17,7 @@ func run() -> void:
 	results["engine.wav"] = KIT.generate_engine_stream().save_to_wav(OUT_DIR + "engine.wav")
 	results["turbo_spool.wav"] = KIT.generate_turbo_spool_stream().save_to_wav(OUT_DIR + "turbo_spool.wav")
 	results["turbo_release.wav"] = KIT.generate_turbo_release_stream().save_to_wav(OUT_DIR + "turbo_release.wav")
+	results["turbo_shift.wav"] = KIT.generate_turbo_shift_stream().save_to_wav(OUT_DIR + "turbo_shift.wav")
 	results["ignition.wav"] = KIT.generate_ignition_stream().save_to_wav(OUT_DIR + "ignition.wav")
 	results["demo_start_accelerate_release.wav"] = KIT.generate_demo_stream().save_to_wav(OUT_DIR + "demo_start_accelerate_release.wav")
 

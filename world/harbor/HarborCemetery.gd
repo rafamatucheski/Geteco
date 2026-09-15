@@ -12,6 +12,8 @@ extends Node2D
 ## takes the same short final off-road step onto the lot that depot
 ## aprons already rely on.
 
+const PATH_TEXTURE = preload("res://world/harbor/cemetery/CemeteryPath.svg")
+
 const LOT_SIZE := Vector2(780.0, 700.0)
 const PLOT_ROWS := 3
 const PLOT_COLS := 4
@@ -28,7 +30,11 @@ func _ready() -> void:
 	_build_ground()
 	_build_wall()
 	_build_plot_grid()
+	restore_burials()
 	_build_gardens()
+	var keeper_home := preload("res://world/harbor/cemetery/CemeteryKeeperHome.gd").new()
+	keeper_home.position = keeper_home.HOME_LOCAL
+	add_child(keeper_home)
 	_build_secret()
 	var storyteller := preload("res://world/harbor/events/CemeteryStoryteller.gd").new()
 	storyteller.position = Vector2(0,-280)
@@ -50,6 +56,8 @@ func _build_ground() -> void:
 		Vector2(half.x, half.y), Vector2(-half.x, half.y)
 	])
 	ground.color = Color("#27362f")
+	ground.add_to_group("audio_ground")
+	ground.set_meta("footstep_surface", "grass")
 	add_child(ground)
 	var grass := preload("res://world/shared/nature/GrassDetail.gd").new()
 	grass.dark = true
@@ -61,9 +69,18 @@ func _build_ground() -> void:
 		Vector2(-14, -half.y), Vector2(14, -half.y),
 		Vector2(14, half.y), Vector2(-14, half.y)
 	])
-	path.color = Color("#606660")
+	_texture_path(path)
 	path.z_index = 1
+	path.add_to_group("audio_ground")
+	path.set_meta("footstep_surface", "dirt")
 	add_child(path)
+
+func _texture_path(polygon: Polygon2D) -> void:
+	polygon.color = Color.WHITE
+	polygon.texture = PATH_TEXTURE
+	polygon.uv = polygon.polygon
+	polygon.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	polygon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
 func _build_wall() -> void:
 	var half := LOT_SIZE * 0.5
@@ -145,6 +162,36 @@ func get_open_plot_position() -> Vector2:
 func register_grave(grave: Node2D, _world_pos: Vector2) -> void:
 	_graves.append(grave)
 
+func reserve_plot(identity: String) -> Vector2:
+	var records: Dictionary = get_node("/root/CoronerCare").records()
+	if not records.has(identity): return Vector2.INF
+	var slot := int(records[identity].get("plot", -1))
+	if slot >= 0 and slot < _plots.size(): return to_global(_plots[slot])
+	var occupied := {}
+	for record in records.values():
+		if int(record.get("plot", -1)) >= 0: occupied[int(record.plot)] = true
+	for i in _plots.size():
+		if occupied.has(i): continue
+		records[identity].plot = i
+		return to_global(_plots[i])
+	return Vector2.INF # Full means pending, never overwrite another person's grave.
+
+func restore_burials() -> void:
+	var care := get_node_or_null("/root/CoronerCare")
+	if care == null: return
+	for key in care.records():
+		var record: Dictionary = care.records()[key]
+		if record.phase != "buried" or int(record.get("plot", -1)) < 0: continue
+		if _graves.any(func(grave): return is_instance_valid(grave) and grave.get_meta("burial_identity", "") == key): continue
+		var point := reserve_plot(key)
+		if point == Vector2.INF: continue
+		var marker := preload("res://world/shared/emergency/CoronerGrave.gd").new()
+		marker.set_meta("burial_identity", key)
+		marker.set_meta("deceased_name", record.name)
+		add_child(marker)
+		marker.global_position = point
+		_graves.append(marker)
+
 ## World position of the north gate opening (see _build_wall) -- a short
 ## walk/drive outside the walled lot, close enough to real road lanes for
 ## the normal lane-following travel logic to take over cleanly. The hearse
@@ -153,33 +200,34 @@ func register_grave(grave: Node2D, _world_pos: Vector2) -> void:
 func get_gate_position() -> Vector2:
 	return to_global(Vector2(0.0, -LOT_SIZE.y * 0.5 - 12.0))
 
+func get_coroner_stop_position() -> Vector2:
+	# Leave the entire van outside the wall and the pedestrian gate clear.
+	return get_gate_position() - Vector2(0,90)
+
 func _build_gardens() -> void:
 	# Six planted rows, two side gardens, open central funeral procession aisle.
 	for x in [-290,-210,-130,130,210,290]:
 		for y in [-240,-160,-80,20,110,200]:
-			var grave := Node2D.new()
-			grave.position = Vector2(x,y)
+			# Reserve the northwest cottage and its service path to the main aisle.
+			if (x <= -210 and y == -240) or (x < 0 and y == -160): continue
+			var grave := preload("res://world/mountain_pass/MountainStaticModelView.gd").new()
+			grave.name = "StoneTomb_%s_%s" % [x, y]
+			grave.position = Vector2(x, y + 12)
 			grave.z_index = 3
 			add_child(grave)
-			for part in [[Rect2(-23,-13,46,66),Color("303b32")],[Rect2(-20,-16,40,60),Color("666e69")],[Rect2(-16,-12,32,50),Color("858b7d")],[Rect2(-21,-23,42,13),Color("555a55")],[Rect2(-19,-30,38,15),Color("777e76")],[Rect2(-9,-26,18,2),Color("555a55")]]:
-				var p := Polygon2D.new()
-				var r: Rect2 = part[0]
-				p.polygon = PackedVector2Array([r.position,r.position+Vector2(r.size.x,0),r.end,r.position+Vector2(0,r.size.y)])
-				p.color = part[1]
-				grave.add_child(p)
-			var flowers := Polygon2D.new()
-			flowers.polygon = PackedVector2Array([Vector2(-6,23),Vector2(0,17),Vector2(8,24),Vector2(0,30)])
-			flowers.color = Color("89816b") if (x+y)%3 else Color("725d66")
-			grave.add_child(flowers)
+			grave.build_view(preload("res://world/harbor/cemetery/CemeteryGrave3D.gd"), 5.8, 20.0, Vector3(0,.6,0), Vector3(0,24,20), Vector2i(256,256))
+			grave.model.set_plant_variant(posmod((x * 73 + y * 37) / 10, 997))
+			grave.add_solid(Rect2(-1.05,-1.75,2.1,3.5), "TombCollision")
+
 	for x in [-350,350]:
-		for y in range(-290,320,100):
-			var tree := preload("res://world/shared/nature/ProceduralStreetTree.gd").new()
+		for y in range(-270,291,140):
+			# Leave the cottage frontage and service aisle completely open.
+			if x < 0 and y < -100: continue
+			var tree := preload("res://world/mountain_pass/MountainPine3D.gd").new()
 			tree.position=Vector2(x,y)
-			tree.tree_style = tree.TreeStyle.PINE
-			tree.leaf_color = Color("263f37")
-			tree.trunk_color = Color("433e38")
-			tree.variant_seed = int(x+y)
-			tree.crown_scale = 1.12
+			tree.variant_seed = 1
+			tree.tree_scale = .85
+			tree.add_to_group("cemetery_tree")
 			add_child(tree)
 	for x in [-210,210]:
 		var bench := Line2D.new()
@@ -190,8 +238,15 @@ func _build_gardens() -> void:
 		add_child(bench)
 	var approach := Polygon2D.new()
 	approach.polygon=PackedVector2Array([Vector2(-25,-490),Vector2(25,-490),Vector2(25,-350),Vector2(-25,-350)])
-	approach.color=Color("606660")
+	_texture_path(approach)
 	add_child(approach)
+	var service_path := Polygon2D.new()
+	service_path.name = "KeeperHousePath"
+	var service_route := PackedVector2Array([Vector2(-235,-178),Vector2(-235,-145),Vector2(0,-145)])
+	service_path.polygon = Geometry2D.offset_polyline(service_route, 12.0, Geometry2D.JOIN_MITER, Geometry2D.END_BUTT)[0]
+	_texture_path(service_path)
+	service_path.z_index = 1
+	add_child(service_path)
 	# Scuffed ground and a discarded ribbon lead toward the hidden letter.
 	for i in 7:
 		var mark := Polygon2D.new()

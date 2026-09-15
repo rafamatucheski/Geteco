@@ -19,6 +19,8 @@ const ROCK_SCRIPT := preload("res://world/shared/nature/ProceduralUrbanRock.gd")
 const ENTRANCE_SCENE: PackedScene = preload("res://scripts/entrances/BuildingEntrance.tscn")
 const PICKUP_SCRIPT := preload("res://world/mountain_pass/MountainPickup.gd")
 const ARCTIC_JEEP_SCRIPT := preload("res://world/mountain_pass/ArcticJeep.gd")
+const SOIL := preload("res://world/mountain_pass/ForestGroundBlend.gd")
+const WATER_BANKS := preload("res://world/mountain_pass/MountainWaterBanks.gd")
 
 # Curvas das 3 estradinhas de terra
 static var dirt_road_curves: Array[Curve2D] = []
@@ -123,8 +125,8 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 	var ocean := Polygon2D.new()
 	ocean.color = Color("#10202a")
 	ocean.polygon = PackedVector2Array([
-		Vector2(-4000, 5000), Vector2(4650, 5000),
-		Vector2(4650, -5000), Vector2(-4000, -5000)
+		Vector2(-4000, 5000), Vector2(12000, 5000),
+		Vector2(12000, -5000), Vector2(-4000, -5000)
 	])
 	base.add_child(ocean)
 	preload("res://world/shared/nature/WaterPresentation.gd").apply(ocean)
@@ -132,7 +134,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 	var beach := Polygon2D.new()
 	beach.color = Color("#2c2720")
 	beach.polygon = PackedVector2Array([
-		Vector2(4600, 5000), Vector2(4700, 5000),
+		Vector2(4600, 1800), Vector2(4700, 1800),
 		Vector2(4720, -5000), Vector2(4620, -5000)
 	])
 	base.add_child(beach)
@@ -141,7 +143,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 	foam.width = 8.0
 	foam.default_color = Color(0.65, 0.78, 0.85, 0.5)
 	foam.points = PackedVector2Array([
-		Vector2(4625, 5000), Vector2(4635, 2000),
+		Vector2(4625, 1800), Vector2(4635, 1200),
 		Vector2(4615, 0), Vector2(4640, -2000), Vector2(4630, -5000)
 	])
 	base.add_child(foam)
@@ -150,11 +152,9 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 	# B. Chao da Floresta
 	var forest_floor := Polygon2D.new()
 	forest_floor.color = Color("#172315")
-	forest_floor.polygon = PackedVector2Array([
-		Vector2(4650, 5000), Vector2(12000, 5000),
-		Vector2(12000, -5000), Vector2(4650, -5000)
-	])
+	forest_floor.polygon = preload("res://world/mountain_pass/MountainLandGeometry.gd").outline()
 	base.add_child(forest_floor)
+	SOIL.polygon(forest_floor,"forest",0.0,.78)
 
 	# Curvas de nivel do relevo florestal
 	var terrace1 := Polygon2D.new()
@@ -165,6 +165,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 		Vector2(6200, -600), Vector2(5400, 600)
 	])
 	base.add_child(terrace1)
+	SOIL.polygon(terrace1,"forest",60.0,.90)
 
 	var terrace2 := Polygon2D.new()
 	terrace2.color = Color("#223320")
@@ -173,6 +174,7 @@ static func build_mountain_base_terrain(parent: Node2D) -> void:
 		Vector2(7300, -1100), Vector2(5900, -750)
 	])
 	base.add_child(terrace2)
+	SOIL.polygon(terrace2,"forest",55.0,.95)
 
 	# C. Chao Alpino de Neve e Gelo
 	var snow_drifts := Node2D.new()
@@ -217,43 +219,13 @@ static func build_backcountry_dirt_roads(parent: Node2D) -> void:
 		if pts.size() < 2:
 			continue
 
-		# A. Base larga de leito de terra e cascalho batido
+		# One continuous soil bed, with a feathered shoulder and faded wheel tracks.
 		var road_base := Line2D.new()
-		road_base.width = 74.0
+		road_base.width = 60.0
 		road_base.default_color = Color("#34291e")
 		road_base.points = pts
 		roads_root.add_child(road_base)
-
-		# B. Cascalho intermediario
-		var gravel := Line2D.new()
-		gravel.width = 64.0
-		gravel.default_color = Color("#453728")
-		gravel.points = pts
-		roads_root.add_child(gravel)
-
-		# C. Duas trilhas de pneus desgastadas onde as rodas passam
-		var left_rut := PackedVector2Array()
-		var right_rut := PackedVector2Array()
-		for i in range(pts.size()):
-			var p := pts[i]
-			var tan := Vector2.RIGHT
-			if i < pts.size() - 1: tan = (pts[i + 1] - p).normalized()
-			elif i > 0: tan = (p - pts[i - 1]).normalized()
-			var n := Vector2(-tan.y, tan.x)
-			left_rut.append(p + n * 18.0)
-			right_rut.append(p - n * 18.0)
-
-		var r1 := Line2D.new()
-		r1.width = 9.0
-		r1.default_color = Color("#241c14", 0.75)
-		r1.points = left_rut
-		roads_root.add_child(r1)
-
-		var r2 := Line2D.new()
-		r2.width = 9.0
-		r2.default_color = Color("#241c14", 0.75)
-		r2.points = right_rut
-		roads_root.add_child(r2)
+		SOIL.path(road_base,20.0,true)
 
 # 2. Encostas Rochosas Naturais e Cristas
 static func build_rocky_cliffs_and_ridges(parent: Node2D, road: MountainPassRoad) -> void:
@@ -272,7 +244,7 @@ static func build_rocky_cliffs_and_ridges(parent: Node2D, road: MountainPassRoad
 	]
 	for idx in range(rock_coords.size()):
 		var rpos := rock_coords[idx]
-		if road and road.is_point_on_road(rpos, 95.0):
+		if _is_helipad_reserved(rpos) or (road and road.is_point_on_road(rpos, 95.0)):
 			continue
 		var rock = ROCK_SCRIPT.new()
 		rock.position = rpos
@@ -295,6 +267,7 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7220, -300), Vector2(6940, -110), Vector2(6740, 140)
 	])
 	water_system.add_child(lake_shore)
+	WATER_BANKS.earth(lake_shore)
 
 	var shallow_water := Polygon2D.new()
 	shallow_water.color = Color("#226274")
@@ -303,7 +276,7 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7190, -270), Vector2(6960, -90), Vector2(6760, 130)
 	])
 	water_system.add_child(shallow_water)
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(shallow_water, "lake")
+	WATER_BANKS.water(shallow_water,18.0)
 	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(shallow_water, "lake")
 
 	var deep_water := Polygon2D.new()
@@ -313,25 +286,31 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 		Vector2(7130, -210), Vector2(6980, -60), Vector2(6840, 110)
 	])
 	water_system.add_child(deep_water)
-	preload("res://world/shared/nature/WaterPresentation.gd").apply(deep_water, "lake")
+	WATER_BANKS.water(deep_water,28.0)
 
 	var stream := Line2D.new()
-	stream.width = 44.0
+	stream.width = 30.0
 	stream.default_color = Color("#1e5668")
 	stream.points = PackedVector2Array([
-		Vector2(7380, -260), Vector2(7120, -40), Vector2(6890, 160), Vector2(6760, 270)
+		Vector2(7380,-260), Vector2(7350,-235), Vector2(7310,-207), Vector2(7285,-157), Vector2(7260,-115)
 	])
 	water_system.add_child(stream)
+	# The inlet meets the lake beneath its shallows; it must not paint a stripe
+	# across the deep-water surface.
+	water_system.move_child(stream,1)
+	WATER_BANKS.stream(stream)
 	preload("res://world/shared/nature/WaterPresentation.gd").apply(stream, "stream")
+	WATER_BANKS.stream_banks(stream)
 	preload("res://world/shared/nature/WaterPresentation.gd").sound_zone(stream, "stream")
 
 	var rapids := Line2D.new()
-	rapids.width = 13.0
-	rapids.default_color = Color(0.85, 0.94, 0.98, 0.7)
+	rapids.width = 4.5
+	rapids.default_color = Color(0.70, 0.86, 0.88, 0.28)
 	rapids.points = PackedVector2Array([
-		Vector2(7220, -130), Vector2(7050, 40), Vector2(6920, 150)
+		Vector2(7340,-227), Vector2(7310,-204), Vector2(7295,-178)
 	])
 	water_system.add_child(rapids)
+	WATER_BANKS.stream(rapids)
 	preload("res://world/shared/nature/WaterPresentation.gd").apply(rapids, "foam")
 
 # 3B. Lago Secreto dos Contrabandistas (Secret Glacial Tarn) com Segredo Submerso e Cofre
@@ -357,10 +336,11 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 		Vector2(45, 90), Vector2(-40, 85), Vector2(-90, 30)
 	])
 	camp.add_child(camp_ground)
+	SOIL.polygon(camp_ground,"earth",24.0)
 
 	var gravel_rim := Line2D.new()
 	gravel_rim.width = 4.0
-	gravel_rim.default_color = Color("#4a3e30")
+	gravel_rim.default_color = Color.TRANSPARENT
 	gravel_rim.points = camp_ground.polygon
 	camp.add_child(gravel_rim)
 
@@ -447,10 +427,11 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 	])
 	shore.polygon = Transform2D(0,Vector2(1.35,1.65),0,Vector2.ZERO) * shore.polygon
 	secret_lake.add_child(shore)
+	WATER_BANKS.earth(shore)
 
 	var beach_sand := Line2D.new()
 	beach_sand.width = 12.0
-	beach_sand.default_color = Color("#3e352b")
+	beach_sand.default_color = Color.TRANSPARENT
 	beach_sand.points = shore.polygon
 	secret_lake.add_child(beach_sand)
 
@@ -463,6 +444,7 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 	])
 	shallow.polygon = Transform2D(0,Vector2(1.35,1.65),0,Vector2.ZERO) * shallow.polygon
 	secret_lake.add_child(shallow)
+	WATER_BANKS.water(shallow,16.0)
 
 	var deep := Polygon2D.new()
 	deep.color = Color("#0b2f3a")
@@ -472,6 +454,7 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D) -> voi
 	])
 	deep.polygon = Transform2D(0,Vector2(1.35,1.65),0,Vector2.ZERO) * deep.polygon
 	secret_lake.add_child(deep)
+	WATER_BANKS.water(deep,26.0)
 
 	# Fragmentos fraturados: bordas submersas, espessura e geada irregular.
 	var ice_positions := [Vector2(-135, -75), Vector2(95, -60), Vector2(-95, 65), Vector2(45, 80), Vector2(-54, -177), Vector2(-31, -168), Vector2(-66, -158)]
@@ -692,6 +675,7 @@ static func _build_single_chalet(parent: Node2D, pos: Vector2, _size: Vector2, i
 	yard.color = Color("3d382e")
 	yard.polygon = PackedVector2Array([Vector2(-70,-40),Vector2(70,-40),Vector2(85,75),Vector2(-80,75)])
 	chalet.add_child(yard)
+	SOIL.polygon(yard,"earth",26.0)
 	var door: BuildingEntrance = ENTRANCE_SCENE.instantiate()
 	door.name = "Door"
 	door.position = chalet.project(chalet.model.entrance_local_position)+Vector2(0,12)
@@ -715,6 +699,7 @@ static func _build_single_chalet(parent: Node2D, pos: Vector2, _size: Vector2, i
 	# Acesso lateral: deixa a estrada de terra e a porta livres da construção.
 	access.points = PackedVector2Array([Vector2(-95,-180),Vector2(-95,55),door.position+Vector2(0,25)])
 	chalet.add_child(access)
+	SOIL.path(access,12.0)
 
 # 5. Loja Ammu-Nation da Montanha (Timber Ridge Guns & Ammo)
 static func build_mountain_ammunation(parent: Node2D, _setpieces: Node2D, interior_mgr: Node2D) -> void:
@@ -758,7 +743,16 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 		{"center": Vector2(5900, -2150), "count": 24, "radius": 260.0, "snow": true},
 		{"center": Vector2(6950, -2550), "count": 24, "radius": 240.0, "snow": true},
 		{"center": Vector2(6200, -2700), "count": 18, "radius": 220.0, "snow": true},
-		{"center": Vector2(6850, -2750), "count": 18, "radius": 220.0, "snow": true}
+		{"center": Vector2(6850, -2750), "count": 18, "radius": 220.0, "snow": true},
+		# Mixed groves across the waterfall meadow and the snowy foothills.
+		{"center": Vector2(5480, -360), "count": 34, "radius": 280.0, "snow": false, "grove": true},
+		{"center": Vector2(5750, -100), "count": 30, "radius": 245.0, "snow": false, "grove": true},
+		{"center": Vector2(5660, -650), "count": 26, "radius": 210.0, "snow": false, "grove": true},
+		{"center": Vector2(5200, -1830), "count": 30, "radius": 270.0, "snow": true, "grove": true},
+		{"center": Vector2(5700, -1770), "count": 32, "radius": 265.0, "snow": true, "grove": true},
+		{"center": Vector2(6070, -1870), "count": 24, "radius": 230.0, "snow": true, "grove": true},
+		{"center": Vector2(5470, -2390), "count": 26, "radius": 280.0, "snow": true, "grove": true},
+		{"center": Vector2(5930, -2490), "count": 24, "radius": 220.0, "snow": true, "grove": true}
 	]
 
 	for cfg in cluster_configs:
@@ -766,6 +760,7 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 		var count: int = cfg["count"]
 		var radius: float = cfg["radius"]
 		var is_snow: bool = cfg["snow"]
+		var grove: bool = cfg.get("grove", false)
 
 		var placed := 0
 		var attempts := 0
@@ -781,6 +776,7 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 			var dist := sqrt(randf()) * radius
 			var pos := center + Vector2(cos(angle), sin(angle)) * dist
 
+			if _is_helipad_reserved(pos): continue
 			var reserved := false
 			if preload("res://world/mountain_pass/MountainVillageLayout.gd").is_reserved(pos): continue
 			if rail_reservation.is_mountain_reserved(pos): continue
@@ -789,7 +785,8 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 			if reserved: continue
 			if Rect2(5800, 440, 420, 460).has_point(pos) or Rect2(6750, -3170, 430, 380).has_point(pos):
 				continue
-			if road and road.is_point_on_road(pos, 95.0):
+			if Rect2(6910,-2860,480,440).has_point(pos): continue
+			if road and road.is_point_on_road(pos, 130.0):
 				continue
 			if _is_point_on_dirt_road(pos, 42.0):
 				continue
@@ -798,11 +795,30 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 			if pos.distance_to(Vector2(7480, 760)) < 125.0 or pos.distance_to(Vector2(8350, 730)) < 145.0 or pos.distance_to(Vector2(8460, 760)) < 95.0 or pos.distance_to(Vector2(6050, 780)) < 80.0:
 				continue
 
+			if grove:
+				# Keep gaps between solid footprints, including existing trees.
+				for neighbor in forest.get_children():
+					if neighbor is Node2D and neighbor.position.distance_to(pos) < 85.0:
+						reserved = true
+						break
+				if reserved: continue
+				if placed % 5 == 0:
+					var rock = ROCK_SCRIPT.new()
+					rock.position = pos
+					rock.variant_seed = int(pos.x * 43 + pos.y * 71)
+					rock.rock_size = Vector2(38 + placed % 3 * 12, 28 + placed % 4 * 6)
+					rock.base_color = Color("89979f") if is_snow else Color("61665a")
+					rock.set_meta("mountain_grove", true)
+					forest.add_child(rock)
+					chunk_trees += 1
+					placed += 1
+					continue
 			var pine = PINE_SCRIPT.new()
 			pine.position = pos
-			pine.is_snowy = is_snow
-			pine.tree_scale = randf_range(0.85, 1.45)
+			pine.tree_scale = randf_range(0.65, 1.55)
 			pine.variant_seed = int(pos.x * 43 + pos.y * 71)
+			pine.is_snowy = (is_snow and posmod(pine.variant_seed,7)!=0) or (not is_snow and pos.y < -650 and posmod(pine.variant_seed,5)==0)
+			if grove: pine.set_meta("mountain_grove", true)
 			forest.add_child(pine)
 			chunk_trees += 1
 			placed += 1
@@ -829,6 +845,7 @@ static func build_detailed_sawmill(sawmill_node: Node2D) -> void:
 		Vector2(200, 130), Vector2(-170, 140)
 	])
 	sawmill_node.add_child(yard)
+	SOIL.polygon(yard,"earth",38.0)
 
 	var driveway := Polygon2D.new()
 	driveway.color = Color("#382e22")
@@ -837,6 +854,7 @@ static func build_detailed_sawmill(sawmill_node: Node2D) -> void:
 		Vector2(55, -100), Vector2(-55, -100)
 	])
 	sawmill_node.add_child(driveway)
+	SOIL.polygon(driveway,"earth",22.0)
 
 	var shed := preload("res://world/mountain_pass/MountainProp.gd").new()
 	shed.name = "SawmillShed3D"
@@ -847,25 +865,13 @@ static func build_detailed_sawmill(sawmill_node: Node2D) -> void:
 		stack.model_script = preload("res://world/mountain_pass/art/winter_props/CoveredWoodpile3D.gd")
 		stack.position = point
 		sawmill_node.add_child(stack)
-	var lumber := Node2D.new()
-	lumber.position = Vector2(40, 85)
-	sawmill_node.add_child(lumber)
-	for i in 4:
-		var plank_stack := Polygon2D.new()
-		plank_stack.color = Color("#9d7d4f").lightened(i * 0.05)
-		var py: float = (i - 2) * 9.0
-		plank_stack.polygon = PackedVector2Array([Vector2(-35, py - 3), Vector2(35, py - 3), Vector2(35, py + 3), Vector2(-35, py + 3)])
-		lumber.add_child(plank_stack)
-
-	var sawdust := Polygon2D.new()
-	sawdust.color = Color("#b59357", 0.75)
-	sawdust.polygon = PackedVector2Array([Vector2(-50, 70), Vector2(-15, 60), Vector2(-10, 100), Vector2(-45, 95)])
-	sawmill_node.add_child(sawdust)
+	var details := preload("res://world/mountain_pass/SawmillYardDetails.gd").new()
+	sawmill_node.add_child(details)
 
 	var work_truck = PICKUP_SCRIPT.new()
 	work_truck.name = "SawmillRanchPickup3D"
 	work_truck.paint_color = Color("#576574")
-	work_truck.position = Vector2(120, 50)
+	work_truck.position = Vector2(120, 30)
 	work_truck.rotation = -0.25
 	sawmill_node.add_child(work_truck)
 
@@ -914,49 +920,15 @@ static func build_detailed_cave_cache(cave_node: Node2D) -> void:
 	cave_node.position = Vector2(6200, -320)
 	cave_node.z_index = 3
 
-	var mouth := Polygon2D.new()
-	mouth.color = Color("#0c0b0a")
-	mouth.polygon = PackedVector2Array([
-		Vector2(-55, -40), Vector2(55, -40), Vector2(45, 35), Vector2(-45, 35)
-	])
-	cave_node.add_child(mouth)
-
-	var arch := Polygon2D.new()
-	arch.color = Color("#483f36")
-	arch.polygon = PackedVector2Array([
-		Vector2(-65, -50), Vector2(65, -50), Vector2(55, -30), Vector2(-55, -30)
-	])
-	cave_node.add_child(arch)
-
-	var crate1 := Polygon2D.new()
-	crate1.color = Color("#2d4a2d")
-	crate1.polygon = PackedVector2Array([Vector2(-20, -12), Vector2(10, -12), Vector2(10, 8), Vector2(-20, 8)])
-	cave_node.add_child(crate1)
-
-	var c_line := Line2D.new()
-	c_line.width = 1.5
-	c_line.default_color = Color("#1e331e")
-	c_line.points = PackedVector2Array([Vector2(-5, -12), Vector2(-5, 8)])
-	cave_node.add_child(c_line)
-
-	var crate2 := Polygon2D.new()
-	crate2.color = Color("#6b573b")
-	crate2.polygon = PackedVector2Array([Vector2(14, -6), Vector2(32, -6), Vector2(32, 10), Vector2(14, 10)])
-	cave_node.add_child(crate2)
-
-	var lantern := PointLight2D.new()
-	lantern.position = Vector2(0, 5)
-	lantern.color = Color(1.0, 0.7, 0.3)
-	lantern.energy = 1.6
-	lantern.texture_scale = 2.0
-	var limg := Image.create(64, 64, false, Image.FORMAT_RGBA8)
-	for ly in 64:
-		for lx in 64:
-			var d: float = Vector2(lx - 31.5, ly - 31.5).length()
-			var a: float = clampf(1.0 - d / 31.5, 0.0, 1.0)
-			limg.set_pixel(lx, ly, Color(1, 1, 1, a * a))
-	lantern.texture = ImageTexture.create_from_image(limg)
-	cave_node.add_child(lantern)
+	var waterfall := preload("res://world/mountain_pass/MountainWaterfallCaveExterior.gd").new()
+	cave_node.add_child(waterfall)
+	var mountain := cave_node.get_parent().get_parent()
+	waterfall.install_entrance(mountain.interior_manager)
+	var pack := preload("res://world/mountain_pass/MountainEvidence.gd").new()
+	pack.name = "AbandonedExpeditionPack"
+	pack.configure("mountain_expedition_pack","MOCHILA DE ALVARO","Uma mochila abandonada junto a trilha. O diario e a camera ficaram na caverna, atras da queda d'agua.","pack")
+	pack.position = waterfall.project_floor(Vector2(3.2,3.8))
+	cave_node.add_child(pack)
 
 # 10. Mirante Panoramico com Vista para a Cidade (ScenicOverlookArea)
 static func build_detailed_overlook(overlook_node: Node2D) -> void:
@@ -1003,6 +975,14 @@ static func build_detailed_overlook(overlook_node: Node2D) -> void:
 	scope.add_child(lenses)
 
 # 11. Base Militar e Bunker de Radar no Cume (AltitudeOutpostBunker)
+static func _is_helipad_reserved(point: Vector2) -> bool:
+	# Reserve canopy clearance as well as the actor corridor around the landing pad.
+	if point.distance_to(Vector2(6335,-2795)) < 125.0: return true
+	var walk := PackedVector2Array([Vector2(6335,-2765),Vector2(6335,-2735),Vector2(6365,-2720),Vector2(6440,-2720)])
+	for i in range(walk.size()-1):
+		if point.distance_to(Geometry2D.get_closest_point_to_segment(point,walk[i],walk[i+1])) < 65.0: return true
+	return false
+
 static func build_detailed_bunker(bunker_node: Node2D) -> void:
 	if bunker_node == null:
 		return
@@ -1010,41 +990,52 @@ static func build_detailed_bunker(bunker_node: Node2D) -> void:
 	bunker_node.position = Vector2(6500, -2800)
 	bunker_node.z_index = 3
 
-	var loop := Polygon2D.new()
-	loop.color = Color("#22272e")
-	loop.polygon = PackedVector2Array([
-		Vector2(-130, -30), Vector2(130, -30),
-		Vector2(145, 150), Vector2(-145, 150)
-	])
-	bunker_node.add_child(loop)
+	# A narrow paved walk, with real slab joints and a square shoulder landing.
+	# The curve and paving share their footprint; no round brush cap covers asphalt.
+	var access := Line2D.new()
+	access.name = "HelipadFootpath"
+	access.width = 19.0
+	access.default_color = Color("6b7d84")
+	access.antialiased = true
+	access.joint_mode = Line2D.LINE_JOINT_ROUND
+	var walk := Curve2D.new()
+	walk.bake_interval = 2.0
+	walk.add_point(Vector2(-165,35),Vector2.ZERO,Vector2(0,20))
+	walk.add_point(Vector2(-143,73),Vector2(-18,-2),Vector2(23,3))
+	walk.add_point(Vector2(-66,79),Vector2(-24,0),Vector2.ZERO)
+	access.points = walk.get_baked_points()
+	bunker_node.add_child(access)
+	var length := walk.get_baked_length()
+	var slab_count := ceili(length / 10.0)
+	for i in slab_count:
+		var start := length * float(i) / slab_count + 0.35
+		var end := length * float(i+1) / slab_count - 0.35
+		var a := walk.sample_baked_with_rotation(start, true)
+		var b := walk.sample_baked_with_rotation(end, true)
+		var na := a.x.orthogonal() * 8.0
+		var nb := b.x.orthogonal() * 8.0
+		var slab := Polygon2D.new()
+		slab.name = "PavingSlab%d" % i
+		slab.polygon = PackedVector2Array([a.origin-na,b.origin-nb,b.origin+nb,a.origin+na])
+		slab.color = Color("aab6b8").darkened(float(i%3)*0.025)
+		slab.antialiased = true
+		access.add_child(slab)
+		preload("res://world/mountain_pass/MountainGroundMaterials.gd").grain(slab)
+	# Slim stone borders catch the light and separate paving from the snow.
+	for side in [-1.0,1.0]:
+		var border := Line2D.new()
+		border.width = 1.25
+		border.default_color = Color("c8d1d0")
+		border.antialiased = true
+		for distance in range(0,int(length)+1,2):
+			var pose := walk.sample_baked_with_rotation(float(distance),true)
+			border.add_point(pose.origin + pose.x.orthogonal()*8.8*side)
+		access.add_child(border)
 
-	var helipad := Node2D.new()
-	helipad.position = Vector2(-70, 60)
+	var helipad := preload("res://world/mountain_pass/MountainHelipad.gd").new()
+	helipad.name = "MountainHelipad"
+	helipad.position = Vector2(-165, 5)
 	bunker_node.add_child(helipad)
-
-	var h_circle := Line2D.new()
-	h_circle.width = 3.5
-	h_circle.default_color = Color("#f1c40f", 0.9)
-	var c_pts := PackedVector2Array()
-	for i in 24:
-		var a := TAU * float(i) / 24.0
-		c_pts.append(Vector2(cos(a) * 38.0, sin(a) * 38.0))
-	c_pts.append(c_pts[0])
-	h_circle.points = c_pts
-	helipad.add_child(h_circle)
-
-	for hx in [-13.0, 13.0]:
-		var h_leg := Line2D.new()
-		h_leg.width = 3.5
-		h_leg.default_color = Color("#f1c40f", 0.9)
-		h_leg.points = PackedVector2Array([Vector2(hx, -18), Vector2(hx, 18)])
-		helipad.add_child(h_leg)
-
-	var h_mid := Line2D.new()
-	h_mid.width = 3.5
-	h_mid.default_color = Color("#f1c40f", 0.9)
-	h_mid.points = PackedVector2Array([Vector2(-13, 0), Vector2(13, 0)])
-	helipad.add_child(h_mid)
 
 	var bunker := Node2D.new()
 	bunker.position = Vector2(0, -90)

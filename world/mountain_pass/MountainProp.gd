@@ -53,6 +53,8 @@ func _ready() -> void:
 	notifier.screen_entered.connect(_render_when_visible)
 	add_child(notifier)
 	var footprint: Vector2 = model.footprint_size
+	var shadow_size := Vector2(project(Vector3(footprint.x,0,0)).length(), project(Vector3(0,0,footprint.y)).length())
+	preload("res://ContactShadow.gd").add_box(self, shadow_size * 1.05, 0.44)
 	if open_front:
 		_solid(Rect2(-footprint*0.5, Vector2(footprint.x,0.15)))
 		_solid(Rect2(-footprint*0.5, Vector2(0.15,footprint.y)))
@@ -62,6 +64,15 @@ func _ready() -> void:
 
 func project(point: Vector3) -> Vector2:
 	return (camera.unproject_position(point) - camera.unproject_position(Vector3.ZERO)) * DISPLAY_SCALE
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(model) or open_front: return
+	# Raised roof pixels must occlude actors standing behind the solid floor.
+	var actor := get_tree().get_first_node_in_group("player") as Node2D
+	if actor == null: return
+	var front := project(Vector3(0, 0, model.footprint_size.y * 0.5)).y
+	sprite.z_as_relative = false
+	sprite.z_index = 12 if to_local(actor.global_position).y < front else 4
 
 func _solid(rect: Rect2) -> void:
 	var body := StaticBody2D.new()

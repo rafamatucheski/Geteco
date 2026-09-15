@@ -249,15 +249,15 @@ func _run() -> void:
 
 	# TEST 3: COMPACT OBJECTIVE HUD & NON-OVERLAPPING
 	print("\n--- TEST 3: COMPACT OBJECTIVE HUD & NON-OVERLAPPING ---")
-	_check(arrival_card != null and arrival_card.visible, "Objective HUD card is restored in gameplay")
+	_check(arrival_card != null and not arrival_card.visible, "Persistent objective prose stays hidden in gameplay")
 	var hud = null
 	for h in root.find_children("*", "CanvasLayer", true, false):
-		if h.has_node("RootMargin/TopLeftPanel"):
+		if h.is_in_group("hud"):
 			hud = h
 			break
 	_check(hud != null, "HUD CanvasLayer found")
 	if hud != null:
-		var top_left = hud.get_node("RootMargin/TopLeftPanel") as Control
+		var top_left = hud.health_bar as Control
 		var top_right = hud.get_node("RootMargin/TopRightPanel") as Control
 		var weather = top_right.get_node_or_null("WeatherReadout")
 		print("HUD: TopLeft rect=", top_left.get_global_rect(), " TopRight rect=", top_right.get_global_rect())

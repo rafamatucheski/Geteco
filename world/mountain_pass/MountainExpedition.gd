@@ -1,10 +1,11 @@
 extends Node2D
 
-const COAT_PRICE := 650
+const SKI_LAYOUT := preload("res://world/mountain_pass/MountainSkiLayout.gd")
+
 ## Reserva de fallback caso mountain.cold_hud ainda não exista quando este
-## bloco é montado (ordem de _ready() entre irmãos não é garantida) --
-## coincide com ColdStatusHUD.BLOCK_TOP + 96, ver ui/HUD_LAYOUT_NOTES.md.
-const STACK_TOP_FALLBACK := 350.0
+## bloco é montado. A temperatura agora vive junto de vida/colete à direita,
+## portanto os avisos curtos podem começar na margem livre da esquerda.
+const STACK_TOP_FALLBACK := 24.0
 const STACK_LEFT := 24.0
 const STACK_WIDTH := 300.0
 var mountain: Node2D
@@ -19,6 +20,7 @@ var previous_altitude := 0.0
 var _was_indoors := false
 var tutorial_seen: Dictionary = {}
 var shop_position := Vector2(5980, 650)
+var _arrival_time := 0.0
 
 func _ready() -> void:
 	mountain = get_parent()
@@ -36,10 +38,8 @@ func _ready() -> void:
 	hud.layer = 106
 	add_child(hud)
 
-	# Empilha abaixo do bloco de temperatura/proteção térmica de
-	# ColdStatusHUD.gd (contrato: get_stack_bottom_offset()) em vez de um
-	# número mágico solto -- evita que os dois blocos voltem a se sobrepor
-	# se um deles crescer.
+	# ColdStatusHUD expõe a margem segura da coluna esquerda. O vital térmico
+	# em si está integrado ao HUD principal, junto de vida e colete.
 	var stack_top := STACK_TOP_FALLBACK
 	if mountain.cold_hud != null and mountain.cold_hud.has_method("get_stack_bottom_offset"):
 		stack_top = mountain.cold_hud.get_stack_bottom_offset()
@@ -54,6 +54,7 @@ func _ready() -> void:
 	readout.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	readout.add_theme_constant_override("outline_size", 3)
 	_readout_panel.add_child(readout)
+	_readout_panel.hide()
 
 	# Avisos temporários (frio, túnel, casaco, chefe): painel próprio logo
 	# abaixo, com quebra de linha automática para nunca cortar texto mais
@@ -109,12 +110,14 @@ func _is_cgi_playing() -> bool:
 	return opening_layer != null and is_instance_valid(opening_layer)
 
 func _process(delta: float) -> void:
+	if not mountain.region_selected:
+		return
 	if is_instance_valid(_readout_panel) and mountain.cold_hud != null:
 		_readout_panel.position.y = mountain.cold_hud.get_stack_bottom_offset()
-		if is_instance_valid(_prompt_panel): _prompt_panel.position.y = _readout_panel.position.y+maxf(40,_readout_panel.size.y+6)
+		if is_instance_valid(_prompt_panel): _prompt_panel.position.y = _readout_panel.position.y
 	var cgi_playing := _is_cgi_playing()
 	if is_instance_valid(_readout_panel):
-		_readout_panel.visible = not cgi_playing
+		_readout_panel.visible = false
 	if cgi_playing:
 		if is_instance_valid(_prompt_panel):
 			_prompt_panel.visible = false
@@ -122,25 +125,34 @@ func _process(delta: float) -> void:
 	var actor: Node2D = mountain.player_instance
 	if not is_instance_valid(actor):
 		return
+	if actor.is_in_dialogue:
+		_readout_panel.hide()
+		_prompt_panel.hide()
+		return
 	var indoors := bool(actor.get_meta("mountain_interior", false)) or bool(actor.get_meta("harbor_interior",false))
+	if not indoors and not actor.is_in_dialogue and not actor.is_dead:
+		_arrival_time += delta
 	if indoors != _was_indoors:
 		message_time = 0.0
 		prompt.text = ""
 		_was_indoors = indoors
 	var local_actor: Vector2 = mountain.to_local(actor.global_position)
 	var altitude := clampf(680.0 + (400.0 - local_actor.y) * 0.62, 680.0, 2780.0)
-	var slope := "SUBINDO" if altitude > previous_altitude + 0.1 else ("DESCENDO" if altitude < previous_altitude - 0.1 else "")
+	if local_actor.y < SKI_LAYOUT.RIDGE_Y:
+		# Após a crista, a coordenada continua para o norte da tela, mas o
+		# terreno passa a descer pela face oposta da montanha.
+		altitude = clampf(2780.0 - (SKI_LAYOUT.RIDGE_Y - local_actor.y) * 0.55, 1450.0, 2780.0)
 	previous_altitude = altitude
-	readout.text = "SERRA DA NEVASCA  /  %d m  %s" % [int(altitude), slope] if not indoors else "ABRIGO / RECUPERANDO CALOR"
+	readout.text = ""
 	mountain.cold_controller.has_thermal_suit = actor.mountain_thermal_coat
 	mountain.cold_controller.outfit_protection = OutfitCatalog.cold_protection(actor.current_outfit_id)
 	message_time = maxf(0.0, message_time - delta)
 	if message_time == 0.0:
 		prompt.text = ""
 	if message_time == 0.0:
-		if not indoors and actor.visible and local_actor.distance_to(shop_position) < 65.0:
-			prompt.text = "[E] ENTRAR / ROUPAS DE FRIO"
-		elif not indoors and local_actor.y < -1450 and not tutorial_seen.has("cold"):
+		if not indoors and _arrival_time >= 6.0 and not tutorial_seen.has("thermal_shop") and not actor.mountain_thermal_coat:
+			_notice("thermal_shop", "ANTES DE SUBIR\nEncontre roupas térmicas no Último Abrigo ou na Union, no porto. Procure a camiseta no mapa.")
+		elif not indoors and mountain.cold_controller.current_temperature < 65.0 and not tutorial_seen.has("cold"):
 			_notice("cold", "FRIO: temperatura zerada causa dano contínuo à vida.
 Carros, lareiras e túneis oferecem abrigo.")
 		elif mountain.tunnel.contains_actor(actor) and not tutorial_seen.has("tunnel"):
@@ -161,8 +173,8 @@ func _unhandled_key_input(_event: InputEvent) -> void:
 func _notice(id: String, text: String) -> void:
 	tutorial_seen[id] = true
 	var tutorials := get_tree().get_first_node_in_group("gameplay_tutorials")
-	if tutorials != null and id in ["cold", "tunnel"]:
-		tutorials.request_context("cold_shelter" if id == "cold" else "tunnel")
+	if tutorials != null and id in ["cold", "tunnel", "thermal_shop"]:
+		tutorials.request_context("cold_shelter" if id == "cold" else id)
 		return
 	prompt.text = text
 	message_time = 8.0
@@ -202,7 +214,7 @@ func _wall(a: Vector2, b: Vector2, bridge_edge := false) -> void:
 func _build_boundaries() -> void:
 	# Closed regional perimeter, preserving the bridge corridor and every existing POI.
 	var west := 3000.0 if mountain.streamed_region else 2900.0
-	var points := PackedVector2Array([Vector2(west, 290), Vector2(4650, 290), Vector2(4800, -1800), Vector2(5750, -3300), Vector2(7400, -3300), Vector2(9150, -800), Vector2(9200, 1150), Vector2(5000, 1400), Vector2(4650, 510), Vector2(west, 510), Vector2(west, 290)])
+	var points := PackedVector2Array([Vector2(west, 290), Vector2(4650, 290), Vector2(4800, -1800), Vector2(5750, -3300), Vector2(6100, -5050), Vector2(8100, -5050), Vector2(8250, -3350), Vector2(9150, -800), Vector2(9200, 1150), Vector2(5000, 1400), Vector2(4650, 510), Vector2(west, 510), Vector2(west, 290)])
 	for i in points.size() - 1:
 		if mountain.streamed_region and i == points.size() - 2: continue
 		_wall(points[i], points[i + 1], i == 0 or i == 8)
@@ -215,7 +227,6 @@ func _build_shop() -> void:
 	add_child(shop)
 	var model := preload("res://world/mountain_pass/MountainOutfitters3D.gd").new()
 	shop.add_child(model)
-	_sign(shop, Vector2(-90, -105), "ÚLTIMO ABRIGO / ROUPAS DE NEVE")
 	var wall := StaticBody2D.new()
 	wall.name = "OutfittersStructure"
 	wall.collision_layer = 1
@@ -229,7 +240,8 @@ func _build_shop() -> void:
 	door.position = model.project_floor(Vector2(0,2.2))
 	door.display_name = "ÚLTIMO ABRIGO"
 	door.destination_id = &"mountain_outfitters"
-	door.custom_prompt_text = "E"
+	door.custom_prompt_text = "E  ENTRAR NA LOJA"
+	door.add_to_group("clothing_shop")
 	shop.add_child(door)
 	door.get_node("Facade").hide()
 	mountain.interior_manager.register_exterior_entrance(door,&"mountain_outfitters",door.global_position+Vector2(0,30))
@@ -249,8 +261,6 @@ func _build_summit() -> void:
 	summit.name = "IceWolvesStronghold"
 	summit.position = Vector2(6500, -2800)
 	summit.z_index = 5
-	add_child(summit)
-	_sign(summit, Vector2(-115, -175), "LOBOS DE GELO / ESTAÇÃO ZERO")
 	for side in [-1.0, 1.0]:
 		for i in 4:
 			_box(summit, Rect2(side * 135 - 15, -80 + i * 32, 30, 23), Color("625c4a"))
@@ -263,13 +273,12 @@ func _build_summit() -> void:
 	car.max_speed = 580.0
 	car.acceleration = 480.0
 	summit.add_child(car)
-	_sign(summit, Vector2(50, 140), "WHITEOUT / 4x4 ESPECIAL")
 	var entrance := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate() as BuildingEntrance
 	entrance.name = "StationZeroEntrance"
 	entrance.position = Vector2(0, -42)
 	entrance.destination_id = &"mountain_bunker"
 	entrance.display_name = "ESTAÇÃO ZERO"
-	entrance.custom_prompt_text = "[E] ENTRAR NA ESTAÇÃO ZERO"
+	entrance.custom_prompt_text = "E"
 	summit.add_child(entrance)
 	mountain.interior_manager.register_exterior_entrance(entrance, &"mountain_bunker", mountain.to_global(Vector2(6500, -2790)))
 	# Solid facade prevents walking straight through the bunker outside.
@@ -291,15 +300,15 @@ func _build_summit() -> void:
 func _build_residents() -> void:
 	var people := [
 		[Vector2(6045, 680), "Mara / Último Abrigo", Color("53778e"), [
-			"Sou Mara. Casaco no balcão, por $650. Na serra, roupa boa compra tempo; abrigo salva a vida.",
-			"Ouvi o rádio do porto. Os Cobras perderam o controle, mas os carregamentos continuam subindo para cá.",
-			"Os Lobos de Gelo ocupam a antiga estação no cume. Quem controla aquela passagem cobra de todos.",
-			"Depois dos picos vem a rodovia do deserto. Os pilotos correm rumo à cidade das luzes. Você consegue vê-la lá de cima."
+			"Parka térmica aqui. Entre na loja e experimente.",
+			"Os Cobras continuam subindo carga pela serra.",
+			"Os Lobos de Gelo controlam a passagem no cume.",
+			"Depois dos picos, a rodovia leva à cidade."
 		]],
 		[Vector2(6430, 635), "Ivo / Madeireira", Color("59715b"), [
-			"A estrada faz curvas fechadas. Tire o pé antes de entrar; frear em cima do gelo só piora.",
-			"A gente mantém o fogo aceso para quem ficou preso na subida. Pode chegar.",
-			"Vi um 4x4 dourado no bunker. Chamam de Whiteout. Não é carro de lenhador."
+			"Reduza antes das curvas. Gelo não perdoa.",
+			"O fogo está aceso para quem ficou na subida.",
+			"O 4x4 dourado do bunker é o Whiteout."
 		]]
 	]
 	for entry in people:

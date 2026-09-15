@@ -3,6 +3,7 @@ extends CanvasLayer
 ## does not replace arrival, Maciota, localization or the player's controller.
 const LEDGER := preload("res://world/harbor/campaign/CobraCampaignState.gd")
 const RUNTIME := preload("res://world/harbor/campaign/CobraCampaignController.gd")
+const SCHEDULE := preload("res://world/harbor/campaign/ChapterOneSchedule.gd")
 var ledger: RefCounted
 var runtime: Node2D
 var world: Node2D
@@ -10,6 +11,7 @@ var player: Node2D
 var garage: Node2D
 var board: Node2D
 var _clock := 0.0
+var _voice_audio: AudioStreamPlayer
 var _journal: PanelContainer
 var _entries: RichTextLabel
 var _objective_card: PanelContainer
@@ -17,6 +19,7 @@ var _objective_tag: Label
 var _objective: Label
 var _journal_button: Button
 var _rest_button: Button
+var _cancel_race_button: Button
 var _rest_reason: Label
 var _close_button: Button
 var _dialog: PanelContainer
@@ -34,10 +37,13 @@ var _shade: ColorRect
 var _locked_vehicle: Node2D
 var _vehicle_physics_enabled := false
 var _previous_paused := false
+var _time_transition := false
+var _time_caption: Label
 
 var navigation_target := Vector2.ZERO
 
 func configure(scene: Node2D) -> void:
+	add_to_group("medical_campaign_clock")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	world = scene
 	player = world.get_node("Player")
@@ -104,8 +110,11 @@ func _exit_tree() -> void:
 func _process(delta: float) -> void:
 	if not is_instance_valid(player) or ledger == null:
 		return
+	if not _messages.is_empty() and not _locked and not get_tree().paused and not _recovery_blocks_message():
+		_show_pending_message()
 	if not get_tree().paused and not _locked and player.get("is_dead") != true and player.get("is_control_disabled") != true and _onboarding_done():
 		ledger.tick(delta)
+		get_node("/root/NPCMedicalCare").advance_days(delta / LEDGER.DAY_SECONDS)
 		# This campaign's day is ten playable minutes. Arrival weather remains
 		# untouched; resting uses the same clock rather than the wall clock.
 		world.weather.time_of_day = fposmod(0.35 + float(ledger.data.day_elapsed) / LEDGER.DAY_SECONDS, 1.0)
@@ -123,7 +132,7 @@ func _refresh() -> void:
 	ledger.sync_legacy()
 	_refresh_board()
 	var enabled := _onboarding_done()
-	_journal_button.visible = enabled and not _locked
+	_journal_button.visible = false
 	_objective.visible = enabled and not _locked
 	if not enabled:
 		if is_instance_valid(_objective_card):
@@ -156,14 +165,16 @@ func _refresh() -> void:
 		var maciota: Node = (garage.get("jager_npc") if is_instance_valid(garage) else null) as Node
 		var maciota_talking: bool = bool(maciota.get("is_talking")) if is_instance_valid(maciota) else false
 		var terminal_open: bool = _is_any_interior_modal_open()
-		var modal_open: bool = _journal.visible or _dialog.visible or board_open or maciota_talking or terminal_open or _locked
-		_objective_card.visible = enabled and not modal_open and not get_tree().paused
-		_journal_button.visible = enabled and not modal_open and not get_tree().paused
+		var modal_open: bool = _journal.visible or _dialog.visible or board_open or maciota_talking or terminal_open or _locked or player.get("is_in_dialogue") == true
+		_objective_card.visible = not str(ledger.data.active_id).is_empty() and not modal_open and player.get("is_dead") != true and player.get("is_arrested") != true
+		_journal_button.visible = false
 	_update_marker(target)
 	_journal_button.text = _text("Diário [J]", "Journal [J]")
 	_rest_button.text = _text("Descansar até amanhã · opcional", "Rest until tomorrow · optional")
 	_close_button.text = _text("Voltar ao jogo [J / Esc]", "Back to game [J / Esc]")
 	_rest_button.disabled = not can_rest()
+	_cancel_race_button.visible = runtime.active_id == "cobra_race"
+	_cancel_race_button.text = _text("Cancelar prova · tentar novamente sem custo", "Cancel trial · retry at no cost")
 	var reason := _rest_block_reason()
 	_rest_reason.text = reason
 	_rest_reason.visible = not reason.is_empty()
@@ -207,7 +218,12 @@ func _refresh_board() -> void:
 			"prerequisite": requirement = _text("Conclua o serviço anterior.", "Finish the previous job.")
 			"active": requirement = _text("Há uma missão em andamento.", "A mission is already in progress.")
 		var titles = LEDGER.TITLES_EN if TranslationServer.get_locale().begins_with("en") else LEDGER.TITLES_PT
-		rows.append({"id": id, "title": titles[index], "description": _text("Serviço para os contatos do Maciota · Recompensa $%d", "A job for Maciota’s contacts · Reward $%d") % LEDGER.REWARDS[index], "enabled": bool(state.available), "completed": bool(ledger.data.completed.get(id, false)), "requirement": requirement})
+		var detail := SCHEDULE.description(id, TranslationServer.get_locale().begins_with("en"))
+		if detail.is_empty(): detail = runtime._briefing(id)
+		rows.append({"id": id, "title": titles[index], "description": detail + _text(" · Recompensa $%d", " · Reward $%d") % LEDGER.REWARDS[index], "enabled": bool(state.available), "completed": bool(ledger.data.completed.get(id, false)), "requirement": requirement})
+	rows[0].title = _text("Atrás do irmão", "Looking for My Brother")
+	rows[0].description = _text("Delegacia, encontro no Neco e passeio até a garagem.", "Police station, meeting at Neco's and a ride to the garage.")
+	rows[1].description = SCHEDULE.description("primeiro_giro", TranslationServer.get_locale().begins_with("en"))
 	if board.campaign_missions != rows:
 		garage.configure_mission_board(rows)
 
@@ -216,8 +232,67 @@ func _selected(id: String) -> void:
 		return
 	if player.global_position.distance_to(board.global_position) > 80.0:
 		return
+	if not bool(ledger.get_status(id).available): return
+	if not prepare_story_time(id): return
 	runtime.start_mission(id)
 	_refresh()
+
+func story_start_block_reason(allow_driver: bool = false) -> String:
+	if _resting or _time_transition or _locked or get_tree().paused:
+		return _text("Termine a conversa antes de iniciar o serviço.", "Finish the conversation before starting the job.")
+	var driving: bool = allow_driver and is_instance_valid(runtime) and runtime._subject() != player and runtime._subject().get("is_driven_by_player") == true
+	if player.get("is_dead") == true or player.get("is_arrested") == true or player.get("is_recovering") == true or (not player.visible and not driving):
+		return _text("Recupere-se antes de iniciar o serviço.", "Recover before starting the job.")
+	var wanted := get_node_or_null("/root/WantedManager")
+	if (wanted and int(wanted.current_stars) > 0) or world.get_node("CobraTerritory").state == "combat":
+		return _text("Despiste a polícia e saia do confronto antes de combinar o serviço.", "Lose the police and leave combat before arranging the job.")
+	for manager in get_tree().get_nodes_in_group("mission_manager"):
+		if str(manager.get("active_mission_id")) != "" and manager.get("current_state") in [1, 2, 3]:
+			return _text("Conclua o outro serviço primeiro.", "Finish the other job first.")
+	return ""
+
+func prepare_story_time(id: String) -> bool:
+	if not str(ledger.data.active_id).is_empty(): return false
+	var reason := story_start_block_reason()
+	if not reason.is_empty():
+		if not _locked: _message("Maciota", reason)
+		return false
+	_advance_story_clock(id)
+	return true
+
+func ensure_race_night() -> bool:
+	if str(ledger.data.active_id) != "cobra_race": return false
+	var reason := story_start_block_reason(true)
+	if not reason.is_empty():
+		if not _locked and not _time_transition: _message("Ferrugem", reason)
+		return false
+	_advance_story_clock("cobra_race")
+	return true
+
+func _advance_story_clock(id: String) -> void:
+	var current: float = world.weather.time_of_day
+	var skipped := SCHEDULE.forward_days(current, id)
+	if skipped <= 0.0: return
+	# Align both clocks: the regular bridge tick must not undo this jump.
+	ledger.data.day_elapsed = fposmod(current - 0.35, 1.0) * LEDGER.DAY_SECONDS
+	ledger.tick(skipped * LEDGER.DAY_SECONDS)
+	get_node("/root/NPCMedicalCare").advance_days(skipped)
+	get_node("/root/CampaignState").advance_bank_days(skipped)
+	world.weather.time_of_day = fposmod(current + skipped, 1.0)
+	world.weather._update_lighting()
+	_time_transition = true
+	_fade.color.a = 1.0
+	_fade.show()
+	_time_caption.text = _text("MAIS TARDE", "LATER") + " · %02d:00" % int(SCHEDULE.HOURS[id])
+	_time_caption.show()
+	var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_interval(0.45)
+	tween.tween_property(_fade, "color:a", 0.0, 0.35)
+	tween.tween_callback(func():
+		_fade.hide()
+		_time_caption.hide()
+		_time_transition = false
+	)
 
 func can_rest() -> bool:
 	if ledger == null or not _onboarding_done() or _resting or not str(ledger.data.active_id).is_empty():
@@ -253,8 +328,11 @@ func _rest_block_reason() -> String:
 	return ""
 
 func rest() -> bool:
+	var skipped_days := 1.0 - float(ledger.data.day_elapsed) / LEDGER.DAY_SECONDS
 	if not can_rest() or not ledger.rest_until_next_day(false):
 		return false
+	get_node("/root/NPCMedicalCare").advance_days(skipped_days)
+	get_node("/root/CampaignState").advance_bank_days(skipped_days)
 	_resting = true
 	_journal.hide()
 	_lock()
@@ -300,11 +378,19 @@ func _toggle_journal() -> void:
 		_journal.hide()
 		get_viewport().gui_release_focus()
 		_unlock()
-	elif player.get("is_control_disabled") != true and player.visible:
+	elif player.get("is_control_disabled") != true and (player.visible or runtime._subject() != player):
 		_lock()
 		_journal.show()
 		_refresh()
 		_close_button.grab_focus()
+	_refresh()
+
+func _cancel_race() -> void:
+	if runtime.active_id != "cobra_race" or not _journal.visible: return
+	_journal.hide()
+	get_viewport().gui_release_focus()
+	_unlock()
+	runtime.fail_mission(_text("Prova cancelada. Aceite novamente no quadro, sem custo.", "Trial cancelled. Accept it again at the board, at no cost."))
 	_refresh()
 
 func _lock() -> void:
@@ -343,53 +429,74 @@ func _unlock() -> void:
 	_shade.hide()
 	_objective.show()
 	if is_instance_valid(_objective_card):
-		_objective_card.show()
+		_objective_card.hide()
 	_refresh()
 
 func _message(speaker: String, text: String) -> void:
 	_messages.append([speaker, text])
 	if _messages.size() == 1:
-		_lock()
-		if is_instance_valid(_dialog_speaker):
-			_dialog_speaker.text = speaker.to_upper()
-		_dialog_text.text = text
-		_continue.text = _text("Continuar [Enter / Espaço]", "Continue [Enter / Space]")
-		_dialog.show()
-		_continue.grab_focus()
+		# Death/arrest recovery must finish before a modal takes ownership of
+		# pause and controls. Otherwise respawn runs inside that modal's lock.
+		if _recovery_blocks_message(): return
+		_show_pending_message()
+
+func _recovery_blocks_message() -> bool:
+	return player.get("is_dead") == true or player.get("is_arrested") == true or player.get("is_recovering") == true or (not _locked and player.get("is_control_disabled") == true)
+
+func _show_pending_message() -> void:
+	_lock()
+	if is_instance_valid(_dialog_speaker):
+		_dialog_speaker.text = str(_messages[0][0]).to_upper()
+	_dialog_text.text = str(_messages[0][1])
+	_play_recorded_voice(str(_messages[0][0]), str(_messages[0][1]))
+	_continue.text = _text("Continuar [Enter / Espaço]", "Continue [Enter / Space]")
+	_dialog.show()
+	_continue.grab_focus()
 
 func _next_message() -> void:
+	if _time_transition: return
+	var personal_car := get_tree().get_first_node_in_group("personal_car_manager")
+	if personal_car != null and personal_car.get("delivery_in_progress") == true:
+		return
 	if _messages.is_empty():
 		return
 	_messages.pop_front()
 	if _messages.is_empty():
 		_dialog.hide()
+		if is_instance_valid(_voice_audio): _voice_audio.stop()
 		get_viewport().gui_release_focus()
 		_unlock()
 	else:
 		if is_instance_valid(_dialog_speaker):
 			_dialog_speaker.text = str(_messages[0][0]).to_upper()
 		_dialog_text.text = str(_messages[0][1])
+		_play_recorded_voice(str(_messages[0][0]),str(_messages[0][1]))
+
+func _play_recorded_voice(speaker: String, text: String) -> void:
+	if not is_instance_valid(_voice_audio):
+		_voice_audio = AudioStreamPlayer.new()
+		_voice_audio.volume_db = -8.0
+		add_child(_voice_audio)
+		get_node("/root/MissionVoiceMixer").track(_voice_audio)
+	_voice_audio.stop()
+	_voice_audio.stream = preload("res://ExpressiveVoice.gd")._recording(text,speaker.to_lower())
+	if _voice_audio.stream != null: _voice_audio.play()
 
 func _build_ui() -> void:
-	# Card compacto estruturado de objetivo HUD
+	# Faixa discreta de objetivo; sem cabeçalho ou moldura de notificação.
 	_objective_card = PanelContainer.new()
-	_objective_card.position = Vector2(24, 150)
-	_objective_card.custom_minimum_size = Vector2(400, 0)
-	var card_style := StyleBoxFlat.new()
-	card_style.bg_color = Color(0.06, 0.08, 0.12, 1.0)
-	card_style.border_color = Color("#a67b49")
-	card_style.border_width_left = 3
-	card_style.border_width_top = 1
-	card_style.border_width_right = 1
-	card_style.border_width_bottom = 1
-	card_style.corner_radius_top_right = 6
-	card_style.corner_radius_bottom_right = 6
-	card_style.content_margin_left = 14
-	card_style.content_margin_right = 14
-	card_style.content_margin_top = 8
-	card_style.content_margin_bottom = 8
-	_objective_card.add_theme_stylebox_override("panel", card_style)
+	_objective_card.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_objective_card.offset_left = -344
+	_objective_card.offset_right = -24
+	_objective_card.offset_top = 180
+	_objective_card.offset_bottom = 180
+	_objective_card.custom_minimum_size = Vector2(320, 0)
+	_objective_card.set_meta("preserve_panel_style", true)
+	_objective_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_objective_card.add_theme_stylebox_override("panel", preload("res://ui/GameStyle.gd").objective_strip())
 	add_child(_objective_card)
+	world.get_node("HUD").place_objective_card(_objective_card)
+	_objective_card.hide()
 
 	var obj_vbox := VBoxContainer.new()
 	obj_vbox.add_theme_constant_override("separation", 2)
@@ -399,12 +506,13 @@ func _build_ui() -> void:
 	_objective_tag.text = _text("🎯 OBJETIVO ATUAL", "🎯 CURRENT OBJECTIVE")
 	_objective_tag.add_theme_font_size_override("font_size", 12)
 	_objective_tag.add_theme_color_override("font_color", Color("#e8b44f"))
+	_objective_tag.hide()
 	obj_vbox.add_child(_objective_tag)
 
 	_objective = Label.new()
-	_objective.custom_minimum_size = Vector2(370, 0)
+	_objective.custom_minimum_size = Vector2(298, 0)
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_objective.add_theme_font_size_override("font_size", 16)
+	_objective.add_theme_font_size_override("font_size", 15)
 	_objective.add_theme_color_override("font_color", Color.WHITE)
 	_objective.add_theme_color_override("font_shadow_color", Color.BLACK)
 	_objective.add_theme_constant_override("shadow_offset_x", 1)
@@ -420,6 +528,7 @@ func _build_ui() -> void:
 	_journal_button.add_theme_font_size_override("font_size", 14)
 	_journal_button.pressed.connect(_toggle_journal)
 	add_child(_journal_button)
+	_journal_button.hide()
 
 	_shade = ColorRect.new()
 	_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -435,7 +544,7 @@ func _build_ui() -> void:
 
 	_entries = RichTextLabel.new()
 	_entries.bbcode_enabled = true
-	_entries.custom_minimum_size = Vector2(700, 390)
+	_entries.custom_minimum_size = Vector2(700, 340)
 	_entries.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(_entries)
 
@@ -451,6 +560,11 @@ func _build_ui() -> void:
 	_rest_reason.add_theme_color_override("font_color", Color("#e8b44f"))
 	_rest_reason.visible = false
 	column.add_child(_rest_reason)
+	_cancel_race_button = Button.new()
+	_cancel_race_button.custom_minimum_size = Vector2(0, 38)
+	_cancel_race_button.add_theme_font_size_override("font_size", 14)
+	_cancel_race_button.pressed.connect(_cancel_race)
+	column.add_child(_cancel_race_button)
 
 	_close_button = Button.new()
 	_close_button.custom_minimum_size = Vector2(0, 44)
@@ -510,11 +624,22 @@ func _build_ui() -> void:
 	_fade.color = Color(0.02, 0.025, 0.03, 0)
 	add_child(_fade)
 	_fade.hide()
+	_time_caption = Label.new()
+	_time_caption.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_time_caption.offset_left = -250
+	_time_caption.offset_right = 250
+	_time_caption.offset_top = -28
+	_time_caption.offset_bottom = 28
+	_time_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_time_caption.add_theme_font_size_override("font_size", 30)
+	_fade.add_child(_time_caption)
+	_time_caption.hide()
 
 	_marker = Node2D.new()
 	_marker.name = "CobraObjectiveMarker"
 	_marker.z_index = 20
 	var diamond := Polygon2D.new()
+	diamond.name = "ObjectiveShape"
 	diamond.polygon = PackedVector2Array([Vector2(0,-24),Vector2(13,-11),Vector2(0,2),Vector2(-13,-11)])
 	diamond.color = Color(0.85, 0.64, 0.30, 0.85)
 	_marker.add_child(diamond)
@@ -548,3 +673,12 @@ func _update_marker(target: Vector2) -> void:
 	if is_instance_valid(_marker):
 		_marker.visible = target != Vector2.ZERO
 		_marker.global_position = target
+		var shape := _marker.get_node("ObjectiveShape") as Polygon2D
+		var contact_mission: bool = is_instance_valid(runtime) and runtime.active_id == "cobra_contact"
+		if contact_mission:
+			# Small downward arrow above Ferrugem, leaving his face unobstructed.
+			shape.polygon = PackedVector2Array([Vector2(-2,-34),Vector2(2,-34),Vector2(2,-29),Vector2(5,-29),Vector2(0,-24),Vector2(-5,-29),Vector2(-2,-29)])
+			if is_instance_valid(runtime._contact):
+				_marker.global_position = runtime._contact.global_position
+		else:
+			shape.polygon = PackedVector2Array([Vector2(0,-24),Vector2(13,-11),Vector2(0,2),Vector2(-13,-11)])

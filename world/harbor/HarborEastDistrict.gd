@@ -6,7 +6,7 @@ extends "res://world/harbor/HarborDistrict.gd"
 const EAST_LAND := Rect2(4380, -100, 2380, 2700)
 # A montanha contínua começa em (4300,-4960); sua costa fica em x=4650
 # local. O antigo oceano de Northbank não pode continuar sólido sob essa terra.
-const MOUNTAIN_LAND := Rect2(8950, -9960, 7350, 6400)
+const MOUNTAIN_LAND := Rect2(8950, -9960, 7350, 10000)
 @export var cobra_connection_enabled := false
 const NATURE := [
 	[Vector2(4860,1123),1,0.95,"426451"],[Vector2(4925,1122),3,0.75,"65775a"],[Vector2(5340,1120),2,0.85,"354f49"],
@@ -105,11 +105,17 @@ func _build_boundaries() -> void:
 		body.collision_layer = 1
 		body.collision_mask = 0
 		body.position = rect.get_center()
-		var collision := CollisionShape2D.new()
-		var shape := RectangleShape2D.new()
-		shape.size = rect.size
-		collision.shape = shape
-		body.add_child(collision)
+		var pieces := preload("res://world/harbor/HarborSouthPortLayout.gd").subtract_surfaces(preload("res://world/harbor/HarborSouthPortLayout.gd").rect_polygon(rect))
+		for cutout in preload("res://world/harbor/HarborNorthAccess.gd").water_cutouts():
+			var next: Array[PackedVector2Array] = []
+			for piece in pieces: next.append_array(Geometry2D.clip_polygons(piece,cutout))
+			pieces = next
+		for piece in pieces:
+			var collision := CollisionPolygon2D.new()
+			var local_piece := PackedVector2Array()
+			for point in piece: local_piece.append(point - body.position)
+			collision.polygon = local_piece
+			body.add_child(collision)
 		add_child(body)
 
 static func _subtract_land(water: Rect2, land: Rect2) -> Array[Rect2]:
@@ -136,7 +142,10 @@ func get_sidewalk_routes() -> Array[PackedVector2Array]:
 	]
 
 func _draw() -> void:
-	draw_rect(EAST_LAND, Color("#a19d8c"))
+	SURFACE.paint(self,EAST_LAND, Color("#a19d8c"),"stone")
+	# Low coastal planting breaks long paved margins without narrowing the footway.
+	for patch in [Rect2(4430,530,85,500),Rect2(4430,1470,85,550),Rect2(6610,560,85,390),Rect2(6610,1870,85,220)]:
+		preload("res://world/harbor/ExteriorFinish.gd").meadow(self,patch,int(patch.position.y)+51,Color("62765a"))
 	# Reclaimed shore: stone sea wall with a public promenade, no empty green slab.
 	for x in [4380, 6725]:
 		draw_rect(Rect2(x, -100, 35, 2700), Color("#b9b6a4"))
@@ -144,27 +153,30 @@ func _draw() -> void:
 	draw_rect(Rect2(4380, 2565, 2380, 35), Color("#b9b6a4"))
 	for x in [4780, 5680]:
 		for row in [530, 1380]:
-			draw_rect(Rect2(x, row, 640, 710 if row > 1000 else 600), Color("#b5ac95"))
+			SURFACE.paint(self,Rect2(x, row, 640, 710 if row > 1000 else 600), Color("#b5ac95"),"stone")
 			draw_rect(Rect2(x + 8, row + 8, 624, 694 if row > 1000 else 584), Color("#9b9789"), false, 2)
 	for x in [4900, 5290, 5840, 6200]:
 		draw_rect(Rect2(x - 145, -35, 290, 60), Color("#5a7768"))
 	# Exchange forecourt is open stone, the southern promenade an actual park.
 	for x in range(4800, 5410, 45):
 		draw_line(Vector2(x, 925), Vector2(x, 1125), Color("#a39e8c"), 1)
-	draw_rect(Rect2(4810, 1655, 600, 150), Color("#6c8067"))
-	draw_rect(Rect2(4810, 1711, 600, 32), Color("#c5bca3"))
-	draw_rect(Rect2(5695, 1740, 625, 340), Color("#819383"))
+	SURFACE.paint(self,Rect2(4810, 1655, 600, 150), Color("#6c8067"),"grass")
+	SURFACE.paint(self,Rect2(4810, 1711, 600, 32), Color("#c5bca3"),"stone")
+	SURFACE.paint(self,Rect2(5695, 1740, 625, 340), Color("#819383"),"grass")
 	for i in ROCKS.size():
 		_draw_east_rock(ROCKS[i], i % 3)
 	for access in accesses:
-		draw_rect(access.bounds, Color("#d0c4a7"))
+		SURFACE.paint(self,access.bounds, Color("#d0c4a7"),"stone")
+	SURFACE.garden_edge(self,Rect2(4810,1655,600,150),81)
+	SURFACE.garden_edge(self,Rect2(5695,1740,625,340),82)
+	SURFACE.foundations(self,sites)
 	# Broad waterfront promenade outside the perimeter road, with small gardens.
-	draw_rect(Rect2(4440, 2335, 2260, 170), Color("#d0c4a7"))
+	SURFACE.paint(self,Rect2(4440, 2335, 2260, 170), Color("#d0c4a7"),"stone")
 	for index in PROMENADE_GARDENS.size():
 		_draw_promenade_planter(PROMENADE_GARDENS[index], index)
 	for point in PROMENADE_BENCHES: _draw_bench(point)
 	for x in [4830, 5760, 6270]:
-		draw_rect(Rect2(x, 2200, 60, 305), Color("#d0c4a7"))
+		SURFACE.paint(self,Rect2(x, 2200, 60, 305), Color("#d0c4a7"),"stone")
 	# Compass-shaped courtyard monument gives this shore a different landmark.
 	var center := Vector2(6080, 1000)
 	draw_circle(center, 46, Color("#8c9589"))

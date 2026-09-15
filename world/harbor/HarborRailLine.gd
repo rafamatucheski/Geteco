@@ -5,6 +5,7 @@ extends "res://world/shared/rail/DistrictRailLine.gd"
 ## túneis unem os trechos visíveis sem reiniciar nem duplicar a composição.
 const TRAIN_SCRIPT := preload("res://world/harbor/HarborTrain.gd")
 const REGIONAL_ROUTE := preload("res://world/shared/rail/HarborMountainRailRoute.gd")
+const STRUCTURE_3D := preload("res://world/shared/rail/RailStructure3D.gd")
 const DECK_WIDTH := 48.0
 const DECK_ELEVATION := 64.0
 const WEST_PORTAL := Vector2(0, 892)
@@ -25,22 +26,19 @@ var _regional_scenery: Node2D
 class PortalCover extends Node2D:
 	var east := false
 	var snowy := false
-	func _draw() -> void:
-		draw_rect(Rect2(-25, -41, 123, 82), Color("#9aabb5") if snowy else Color("#59655c"))
-		# A recessed mouth and covered roof read as a tunnel, not a track bumper.
-		draw_rect(Rect2(-22, -28, 54, 56), Color("#111c24"))
-		draw_rect(Rect2(13, -28, 19, 56), Color("#080f14"))
-		draw_rect(Rect2(32, -37, 62, 74), Color("#717767"))
-		draw_line(Vector2(35, -32), Vector2(89, -32), Color("#939582"), 3)
-		draw_rect(Rect2(-30, -38, 17, 76), Color("#b5b4a4"))
-		for side in [-1.0, 1.0]:
-			draw_rect(Rect2(-28, side * 30.0 - 4.0, 24, 8), Color("#ddd0a1"))
-		# Architectural keystone and masonry relief replacing painted text
-		draw_rect(Rect2(-14, -46, 28, 8), Color("#828678"))
-		draw_rect(Rect2(-9, -48, 18, 3), Color("#a2a696"))
-		if snowy:
-			draw_line(Vector2(-25,-42),Vector2(96,-42),Color("e5eef3"),7.0,true)
-			draw_line(Vector2(33,-34),Vector2(92,-34),Color("d5e4ed"),5.0,true)
+	func _ready() -> void:
+		var model = load("res://world/shared/rail/RailStructure3D.gd").new()
+		add_child(model)
+		# Geometry rotates in 3D; the orthographic camera stays aligned to the world.
+		var heading := rotation
+		rotation = 0.0
+		for side in [-1.0,1.0]:
+			model.box(Vector2(18,side*35).rotated(heading),Vector3(80,48,14),16,heading,"92998e")
+			model.box(Vector2(-25,side*35).rotated(heading),Vector3(12,52,18),16,heading,"bdbeac")
+		model.box(Vector2(18,0).rotated(heading),Vector3(86,12,84),44,heading,"737e75")
+		model.box(Vector2(-26,0).rotated(heading),Vector3(14,15,88),45,heading,"b3b6a7")
+		if snowy: model.box(Vector2(18,0).rotated(heading),Vector3(88,3,86),51,heading,"e5eef3")
+		model.finish()
 
 
 
@@ -52,15 +50,11 @@ class ViaductShadow extends Node2D:
 			draw_polyline(points, Color(0.035, 0.045, 0.045, 0.25), 54.0, true)
 		for rect in pillars:
 			draw_rect(Rect2(rect.position + Vector2(8, 11), rect.size + Vector2(14, 14)), Color(0.04, 0.05, 0.05, 0.28))
-			draw_rect(rect.grow(3), Color("#545f60"))
-			draw_rect(rect, Color("#b1b2a3"))
+
 
 
 class RampDeck extends Node2D:
 	var rail: Node2D
-	func _draw() -> void:
-		if is_instance_valid(rail):
-			rail.draw_track(self, rail._ramp_start, rail._visible_end)
 
 
 func _ready() -> void:
@@ -83,6 +77,9 @@ func _ready() -> void:
 	ramp.z_as_relative = false
 	ramp.z_index = 3
 	add_child(ramp)
+	STRUCTURE_3D.track(self, self, _visible_start, _ramp_start)
+	STRUCTURE_3D.track(ramp, self, _ramp_start, _visible_end)
+	STRUCTURE_3D.barriers(ramp, _ground_barriers)
 	_create_portals()
 	_regional_scenery = preload("res://world/shared/rail/RegionalRailScenery.gd").new()
 	_regional_scenery.name = "HarborMountainRailScenery"
@@ -226,6 +223,10 @@ func _create_track_safety_boundaries() -> void:
 	body.collision_mask = 0
 	body.add_to_group("rail_safety_boundary")
 	var proposed := [Vector2(150, 892), Vector2(600, 873), Vector2(800, 873), Vector2(1000, 873), Vector2(1180, 892), Vector2(1690, 873), Vector2(2050, 873), Vector2(2330, 892), Vector2(2400, 873), Vector2(2820, 873), Vector2(2880, 925), Vector2(3114, 1360), Vector2(3114, 1800), Vector2(3114, 2150)]
+	if get_parent().has_node("ArrivalStop"):
+		# The terminal's east bus lane passes beneath the viaduct. Its support
+		# belongs in the central island, outside the complete swept coach hull.
+		proposed[6] = Vector2(2005, 873)
 	for point in proposed:
 		var rect := Rect2(point - Vector2(6, 9), Vector2(12, 18))
 		if not _pillar_is_clear(rect):
@@ -263,6 +264,7 @@ func _create_track_safety_boundaries() -> void:
 		distance += 10.0
 	shadow.pillars = _pillar_bounds.duplicate()
 	shadow.queue_redraw()
+	STRUCTURE_3D.supports(shadow, _pillar_bounds)
 
 
 func _pillar_is_clear(rect: Rect2) -> bool:
@@ -309,50 +311,4 @@ func _create_portals() -> void:
 
 
 func _draw() -> void:
-	draw_track(self, _visible_start, _ramp_start)
-
-
-func draw_track(target: Node2D, from_distance: float, to_distance: float) -> void:
-	if _baked_points.size() < 2:
-		return
-	var visible_points := PackedVector2Array()
-	var left := PackedVector2Array()
-	var right := PackedVector2Array()
-	var distance := from_distance
-	while distance <= to_distance:
-		var point := _route.sample_baked(distance, true)
-		var normal := _route_tangent(distance).orthogonal()
-		visible_points.append(point)
-		left.append(point + normal * TRACK_GAUGE * 0.5)
-		right.append(point - normal * TRACK_GAUGE * 0.5)
-		distance += 6.0
-	target.draw_polyline(visible_points, Color("#353f44"), DECK_WIDTH, true)
-	target.draw_polyline(visible_points, Color("#b7b4a5"), DECK_WIDTH - 5.0, true)
-	target.draw_polyline(visible_points, Color("#696861"), DECK_WIDTH - 12.0, true)
-	distance = from_distance
-	while distance <= to_distance:
-		var point := _route.sample_baked(distance, true)
-		var normal := _route_tangent(distance).orthogonal()
-		target.draw_line(point - normal * 15.0, point + normal * 15.0, Color("#3e3a34"), 4.0, true)
-		distance += SLEEPER_SPACING
-	target.draw_polyline(left, Color("#d8dfdc"), 3.0, true)
-	target.draw_polyline(right, Color("#d8dfdc"), 3.0, true)
-	# A borda inferior escura e o corrimão deixam a espessura do viaduto legível.
-	if from_distance < _ramp_start or from_distance > _visible_end:
-		var edge := PackedVector2Array()
-		var rail_top := PackedVector2Array()
-		distance = from_distance
-		while distance <= to_distance:
-			var point := _route.sample_baked(distance, true)
-			var normal := _route_tangent(distance).orthogonal()
-			edge.append(point + normal * (DECK_WIDTH * 0.5 - 1.0) + Vector2(0, 4))
-			rail_top.append(point - normal * (DECK_WIDTH * 0.5 - 2.0))
-			distance += 6.0
-		target.draw_polyline(edge, Color("#333e43"), 4.0, true)
-		target.draw_polyline(rail_top, Color("#c7c5b7"), 2.0, true)
-	if is_equal_approx(from_distance, _ramp_start):
-		for rect in _ground_barriers:
-			target.draw_rect(rect, Color("#505e62"))
-			target.draw_line(rect.position + Vector2(3, 0), rect.end - Vector2(3, 0), Color("#c5c3ac"), 2.0)
-			for y in range(int(rect.position.y), int(rect.end.y), 50):
-				target.draw_rect(Rect2(rect.position.x - 3, y, 12, 5), Color("#a5aaa0"))
+	pass

@@ -1,3 +1,49 @@
+# Atualização: HUD clássico (2026-09-13)
+
+Revisão solicitada: botão do diário removido do HUD (atalho J preservado).
+Conquistas no topo central, y=28 e largura máxima de 440 px; texto centralizado.
+A vinheta de missão é original e sintetizada, com quatro segundos, melodia e
+ritmo próprios (`v5-original`). A inclusão equivocada da gravação de GTA foi
+desfeita. Evidências visuais na subpasta `v2`; áudio e origem em `v5-original`.
+
+Esta revisão substitui os layouts históricos abaixo. Relógio/clima, arma/munição,
+vida vermelha, colete claro, dinheiro verde e procurado ficam no canto superior
+direito. O minimapa tem área útil quadrada de 208 × 208 px, com borda preta;
+objetivos e rotas continuam sendo alimentados pelos controladores existentes.
+Não há descrição permanente de missão na lateral. O diário mantém os detalhes.
+
+`HUD._layout_classic_status()` monta os controles existentes em
+`RootMargin/TopRightPanel/Status` depois de resolver as referências `@onready`.
+Consumidores devem usar `health_bar`, `armor_bar` e `weapon_row`, e não o antigo
+caminho de `TopLeftPanel`. A temperatura corporal agora é um vital de 120 × 12
+px anexado por `HUD.attach_vital_indicator()`, imediatamente abaixo do colete;
+mostra somente floco, barra fina e porcentagem. A coluna esquerda fica livre
+para avisos contextuais da expedição desde y=24.
+
+Conclusões da primeira entrega e da campanha chamam `show_mission_passed` com
+dinheiro efetivamente concedido e o aumento real de reputação civil. A faixa
+central dourada dura cerca de seis segundos, responde ao tamanho da tela e
+continua animando durante os diálogos de conclusão. Não concede recompensas,
+não dispara em carregamento e não substitui a lógica de pagamento único.
+O contorno é preservado pelo tema com `preserve_hud_ink`.
+
+Validação dirigida: `tests/test_classic_mission_hud.gd` e
+`tests/test_reward_audio.gd`. Evidências em `D:/geteco/artifacts/sa-hud-0913`.
+Desempenho sem certificação: o baseline foi interrompido ao detectar outra
+medição renderizada concorrente. As capturas não são um benchmark.
+
+# Histórico: vida e arma discretas (2026-09-11)
+
+O bloco superior esquerdo usa vida de 144 × 6 px e armadura de 144 × 4 px, sem ícones nem molduras. Armadura aparece somente enquanto há proteção. Sem arma equipada, o bloco da arma desaparece; com faca, aparece somente a imagem; armas de fogo mostram carregador/reserva em 14 px abaixo da imagem. O shader local do HUD oculta a moldura incorporada à arte compartilhada. `GameplayPresentation` continua posicionando frio/altitude pela altura real de `TopLeftPanel`, inclusive quando arma ou armadura aparecem e desaparecem.
+
+# Atualização: objetivo discreto (2026-09-11)
+
+Os dois objetivos usam uma faixa de 320 px, sem cabeçalho visível, com texto de 15 px, margens de 6 px na vertical e fundo translúcido. Um traço de 2 px substitui a moldura. `GameStyle.objective_strip()` centraliza o estilo; `preserve_panel_style` impede que a aplicação do tema restaure o card opaco e as margens grandes. O texto completo continua quebrando linhas e respeitando a escala de acessibilidade. A posição na coluna direita e a ocultação durante modais permanecem coordenadas pelos controladores existentes.
+
+# Atualização: objetivo na coluna direita (2026-09-10)
+
+O objetivo de chegada e o da campanha ficam a 24 px da borda direita, abaixo do dinheiro/relógio, diário e conquistas visíveis. GameplayPresentation ajusta o topo pelo tamanho real desses elementos. No modo touch, o minimapa fica abaixo do objetivo. Frio e altitude continuam na esquerda e não dependem mais da altura do objetivo. As notas abaixo registram o layout anterior.
+
 # HUD — coluna esquerda: contrato de layout (2026-09-08)
 
 ## Revisão de integração Astra

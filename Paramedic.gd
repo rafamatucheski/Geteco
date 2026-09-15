@@ -23,6 +23,36 @@ var treat_timer: float = 0.0
 var crew_side := 1.0
 var crew_longitudinal := 8.0
 var boarding_started := false
+var danger_response := preload("res://PedestrianDanger.gd").new()
+
+func hear_gunfire(origin: Vector2, end: Vector2) -> void:
+	if is_dead or state == State.EMBARKED or not visible: return
+	danger_response.remember(origin, end)
+	if is_instance_valid(ambulance):
+		var sequence: Node = ambulance.get_meta("medical_sequence") if ambulance.has_meta("medical_sequence") else null
+		if is_instance_valid(sequence) and sequence.has_method("hear_gunfire"):
+			sequence.hear_gunfire(origin, end)
+
+func _evade_danger(delta: float) -> bool:
+	if danger_response.threats.is_empty() or state in [State.DISEMBARK, State.EMBARKING]: return false
+	velocity = danger_response.movement(self, delta, speed * .85)
+	move_and_slide()
+	_animate_danger(delta)
+	return true
+
+func _animate_danger(delta: float, advance_clock := true) -> void:
+	if velocity.length_squared() > 1:
+		model_root.rotation.y = lerp_angle(model_root.rotation.y, -velocity.angle()-PI*.5, minf(1,delta*10))
+		if advance_clock: walk_clock += delta * 10
+	var step := sin(walk_clock) * .4 if velocity.length_squared() > 1 else 0.0
+	left_upper_leg.rotation.x = step
+	right_upper_leg.rotation.x = -step
+	left_lower_leg.rotation.x = maxf(0,-step*.7)
+	right_lower_leg.rotation.x = maxf(0,step*.7)
+	torso_node.rotation.x = .28 if not danger_response.threats.is_empty() else 0.0
+	left_lower_arm.rotation.x = 1.0 if not danger_response.threats.is_empty() else 0.0
+	right_lower_arm.rotation.x = 1.0 if not danger_response.threats.is_empty() else 0.0
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 # 3D SubViewport Rig
 var viewport_3d: SubViewport
@@ -40,8 +70,10 @@ var right_upper_leg: Node3D
 var right_lower_leg: Node3D
 var mat_uniform: StandardMaterial3D
 var stretcher_mesh: MeshInstance3D = null
+var medical_kit: MeshInstance3D
 
 func _ready() -> void:
+	set_collision_mask_value(3, true)
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	platform_floor_layers = 0
 	platform_wall_layers = 0
@@ -52,7 +84,15 @@ func _ready() -> void:
 	z_index = 6
 	
 	_build_3d_viewport()
+	set_meta("appearance_variant", 1 if crew_side < 0 else 2)
 	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"medic")
+	# Adult proportions match the production Dante silhouette.
+	head_node.scale = Vector3(.62, .72, .62)
+	head_node.position.y = 1.23
+	model_root.scale = Vector3.ONE
+	var details = preload("res://world/shared/pedestrians/CitizenDetails.gd")
+	details.piece(head_node, Vector3(.30,.12,.29), Vector3(0,.12,.015), Color("302b29") if crew_side < 0 else Color("584033"), true)
+	details.piece(model_root, Vector3(.09,.12,.09), Vector3(0,1.10,0), Color("c38f71"), true)
 	
 	var col := CollisionShape2D.new()
 	var cap := CapsuleShape2D.new()
@@ -78,7 +118,7 @@ func _build_3d_viewport() -> void:
 
 	var light := DirectionalLight3D.new()
 	light.rotation_degrees = Vector3(-60.0, 35.0, 0.0)
-	light.light_energy = 1.35
+	light.light_energy = .85
 	viewport_3d.add_child(light)
 
 	var env := WorldEnvironment.new()
@@ -109,9 +149,10 @@ func _build_3d_viewport() -> void:
 	shadow_mesh.name = "GroundShadow"
 	shadow_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	viewport_3d.add_child(shadow_mesh)
+	preload("res://ContactShadow.gd").soften(shadow_mesh)
 
 	# Jaleco / Uniforme Médico Branco com detalhes
-	mat_uniform = _make_mat(Color(0.92, 0.95, 0.96), 0.5)
+	mat_uniform = _make_mat(Color(0.67, 0.74, 0.76), 0.9)
 	var mat_pants := _make_mat(Color(0.20, 0.35, 0.55), 0.6)
 	var mat_skin := _make_mat(Color(0.85, 0.68, 0.52), 0.5)
 	var mat_red := _make_mat(Color(0.88, 0.15, 0.15), 0.3)
@@ -172,7 +213,7 @@ func _build_3d_viewport() -> void:
 
 	# Braços 3D
 	left_upper_arm = Node3D.new()
-	left_upper_arm.position = Vector3(-0.24, 1.05, 0.0)
+	left_upper_arm.position = Vector3(-0.185, 1.05, 0.0)
 	model_root.add_child(left_upper_arm)
 	left_upper_arm.add_child(_create_limb(0.050, 0.22, mat_uniform, Vector3(0, -0.11, 0)))
 
@@ -182,7 +223,7 @@ func _build_3d_viewport() -> void:
 	left_lower_arm.add_child(_create_limb(0.042, 0.18, mat_skin, Vector3(0, -0.09, 0)))
 
 	right_upper_arm = Node3D.new()
-	right_upper_arm.position = Vector3(0.24, 1.05, 0.0)
+	right_upper_arm.position = Vector3(0.185, 1.05, 0.0)
 	model_root.add_child(right_upper_arm)
 	right_upper_arm.add_child(_create_limb(0.050, 0.22, mat_uniform, Vector3(0, -0.11, 0)))
 
@@ -193,6 +234,7 @@ func _build_3d_viewport() -> void:
 
 	# Maleta de Primeiros Socorros 3D na Mão Direita
 	var med_kit := MeshInstance3D.new()
+	medical_kit = med_kit
 	var box_mk := BoxMesh.new()
 	box_mk.size = Vector3(0.08, 0.16, 0.22)
 	med_kit.mesh = box_mk
@@ -232,6 +274,12 @@ func _build_3d_viewport() -> void:
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport_3d.get_texture()
 	sprite_3d_display.scale = Vector2(0.38, 0.38)
+	# Anchor the visible soles to the physical floor, rather than centring the
+	# torso on the collider. This also keeps cot handles and post depth aligned.
+	var floor_in_camera := cam.to_local(Vector3.ZERO)
+	var focal := float(viewport_3d.size.y)*.5/tan(deg_to_rad(cam.fov)*.5)
+	var floor_pixel := Vector2(floor_in_camera.x,-floor_in_camera.y)*focal/-floor_in_camera.z
+	sprite_3d_display.position = -floor_pixel*sprite_3d_display.scale
 	add_child(sprite_3d_display)
 
 func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
@@ -296,13 +344,15 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	_start_decay()
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
-	if is_dead: return
+	if amount <= 0 or is_dead: return
 	health = maxi(0, health - amount)
+	var attacker: Node2D = get_meta("combat_attacker") as Node2D if has_meta("combat_attacker") else null
+	if is_instance_valid(attacker): hear_gunfire(attacker.global_position, global_position)
 	if mat_uniform:
 		mat_uniform.albedo_color = Color(1.0, 0.4, 0.4)
 		var tween := create_tween()
 		tween.tween_property(mat_uniform, "albedo_color", Color(0.92, 0.95, 0.96), 0.2)
-	_play_audio(ProceduralAudio.get_squish_stream(), -6.0)
+	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, amount)
 	if health <= 0:
 		_die()
 
@@ -313,7 +363,7 @@ func _die() -> void:
 		collision_shape.set_deferred("disabled", true)
 	_start_fall()
 	_create_3d_blood_puddle()
-	_play_audio(ProceduralAudio.get_scream_stream(), -5.0)
+	_play_audio(ProceduralAudio.get_death_reaction_stream(), -5.0)
 	_start_decay()
 
 func _physics_process(delta: float) -> void:
@@ -326,6 +376,8 @@ func _physics_process(delta: float) -> void:
 		fall_presentation.update(delta)
 		return
 	if state == State.EMBARKED: return
+	if has_meta("medical_managed"): return
+	if _evade_danger(delta): return
 		
 	var is_moving: bool = false
 	var dir_to_look: Vector2 = Vector2.ZERO
@@ -342,6 +394,7 @@ func _physics_process(delta: float) -> void:
 					is_moving = true
 				else:
 					velocity = Vector2.ZERO
+					if not preload("res://EmergencyCrewTransition.gd").finish_exit(self, ambulance, crew_side, delta): return
 					state = State.APPROACH
 					remove_collision_exception_with(ambulance)
 		State.APPROACH:
@@ -508,6 +561,7 @@ func _create_3d_blood_puddle() -> void:
 	fade_tween.tween_callback(puddle_root.queue_free)
 
 func _start_decay() -> void:
+	if has_meta("medical_pending"): return
 	var t := create_tween()
 	t.tween_interval(8.0)
 	t.tween_property(self, "modulate:a", 0.0, 3.0)
@@ -515,6 +569,7 @@ func _start_decay() -> void:
 
 func _play_audio(stream: AudioStream, volume_db: float = -6.0) -> void:
 	var player := AudioStreamPlayer2D.new()
+	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = volume_db
 	player.max_distance = 600.0

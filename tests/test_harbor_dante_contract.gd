@@ -68,7 +68,7 @@ func _run() -> void:
 	await frames(2)
 	var gait_walk: Dictionary = await _gait(false)
 	var gait_run: Dictionary = await _gait(true)
-	check(gait_walk.distance > 25.0 and gait_walk.leg_range > 0.15, "Native walking moves body and articulates legs")
+	check(absf(gait_walk.distance - player.speed * 30.0 / Engine.physics_ticks_per_second) < 2.0 and gait_walk.leg_range > 0.15, "Native walking moves body and articulates legs")
 	check(gait_run.distance > gait_walk.distance * 1.25 and gait_run.leg_range > 0.25, "Native sprint is faster and animates a distinct leg cycle")
 	check(player.collision_mask == original_mask and not capsule.disabled, "Gait never bypassed production collisions")
 	for id in ["pistol", "shotgun", "smg"]:
@@ -85,11 +85,12 @@ func _run() -> void:
 	check(not player.muzzle_flash_3d.visible and not player.muzzle_light_3d.visible, "Weapon flash finishes instead of remaining on")
 	var health_before: int = player.health
 	var armor_before: int = player.armor
+	var jacket_before: Color = player.mat_black_jacket.albedo_color
 	player.take_damage(20)
 	check(player.health == health_before - maxi(0, 20 - armor_before), "Production damage respects armor and health")
 	check(player.mat_black_jacket.albedo_color.r > player.mat_black_jacket.albedo_color.g, "Damage flash appears on actual jacket material")
 	await create_timer(0.35).timeout
-	check(player.mat_black_jacket.albedo_color.r < 0.2, "Damage flash restores dark clothing")
+	check(player.mat_black_jacket.albedo_color.is_equal_approx(jacket_before), "Damage flash restores the original outfit material")
 	var car: CharacterBody2D = world.get_node("PlayerCar")
 	# A second explicit fixture placement near the existing parked car, away
 	# from building interactions. Boarding itself MUST use the real E binding.
@@ -139,7 +140,7 @@ func _gait(sprinting: bool) -> Dictionary:
 	var before := player.global_position
 	var smallest := INF
 	var largest := -INF
-	Input.action_press("ui_right")
+	Input.action_press("move_right")
 	if sprinting:
 		Input.action_press("sprint")
 	for frame in 30:
@@ -147,12 +148,12 @@ func _gait(sprinting: bool) -> Dictionary:
 		var angle: float = player.left_upper_leg.rotation.x
 		smallest = minf(smallest, angle)
 		largest = maxf(largest, angle)
-	Input.action_release("ui_right")
+	Input.action_release("move_right")
 	Input.action_release("sprint")
 	return {"distance": before.distance_to(player.global_position), "leg_range": largest - smallest}
 
 func _finish() -> void:
-	for action in ["ui_right", "sprint", "interact"]:
+	for action in ["move_right", "sprint", "interact"]:
 		Input.action_release(action)
 	world.queue_free()
 	await process_frame

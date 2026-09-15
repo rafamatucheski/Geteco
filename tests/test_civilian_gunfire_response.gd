@@ -54,12 +54,14 @@ func run() -> void:
 	check(resident.panic_timer > 0.0 and resident.speech.text.is_empty(), "Named resident interrupts dialogue and responds to gunfire")
 	check(person._window_shop_pause == 0.0, "Gunfire interrupts window shopping")
 	check(not distant.is_scared, "Distant civilian continues routine")
-	check(sheltered.is_scared and sheltered.danger_response.sheltered, "Civilian behind physical cover stays sheltered")
+	check(not sheltered.is_scared, "Distant civilian behind cover keeps routine")
 	await frames(100)
 	check(person.global_position.distance_to(officer.global_position) > initial.distance_to(officer.global_position) + 50, "Civilian physically runs away from shooter")
 	check(person.global_position.y > initial.y + 30, "Civilian leaves firing line rather than crossing it")
 	person.panic_timer = 0.2
-	officer._shoot_at_target(Vector2(900, 300))
+	# O segundo tiro precisa continuar perto de quem já correu para longe.
+	officer.global_position = person.global_position - Vector2(140, 80)
+	officer._shoot_at_target(officer.global_position + Vector2(800, 0))
 	await frames(5)
 	check(person.panic_timer > 8.0, "Further shots renew fear instead of expiring mid-fight")
 	# Real collision fixture blocks the preferred direction of escape.

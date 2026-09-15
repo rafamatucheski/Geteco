@@ -54,6 +54,8 @@ func _run() -> void:
 		for entrance in entrances:
 			await _test_entrance(scene, player, building, entrance, expected)
 	_check(tested_doors == 7, "All seven doors in the five existing service buildings must be exercised")
+	# Only synthetic out-of-map fixtures bypass exterior recovery.
+	scene.get_node("WorldPerimeter").set_physics_process(false)
 	# These are isolated test fixtures, not new lots authored into the preview.
 	# They prove future Ammunation/IML facade reuse without claiming either exists.
 	for fixture_spec in [{"kind": "ammunation_shop", "role": "ammunation", "width": 58.0}, {"kind": "morgue", "role": "morgue", "width": 60.0}]:
@@ -75,6 +77,7 @@ func _run() -> void:
 	_check(fixture_doors == 2 and tested_doors == 9, "Seven authored doors plus exactly two out-of-district fixtures must pass")
 	car.collision_layer = car_layer
 	car.collision_mask = car_mask
+	scene.get_node("WorldPerimeter").set_physics_process(true)
 	await _test_driven_car(scene, player, car)
 	_check(destination_requests == 0, "Exterior-only preview must never emit an interior destination request")
 	_release_input()
@@ -192,8 +195,12 @@ func _test_driven_car(scene: Node, player: CharacterBody2D, car: CharacterBody2D
 	_check(not bool(car.get("is_driven_by_player")), "Garage car fixture must initially be unoccupied")
 	_check(float(entrance.call("get_entrance_state").open_amount) < 0.02, "A parked/unoccupied car must not hold the garage open")
 	var initial_car_position := car.global_position
+	# Boarding now animates a real approach and cabin entry; place its actor
+	# beside this car, outside the previous synthetic building fixture.
+	player.global_position = car.global_position + Vector2(60,0)
+	player.velocity = Vector2.ZERO
 	car.call("enter_vehicle", player)
-	await create_timer(0.8).timeout
+	await _wait_boarding(car)
 	_check(bool(car.get("is_driven_by_player")) and not player.visible, "Actual PlayerCar boarding API must activate the driver")
 	_check(entrance.call("is_actor_in_range", car), "Already-overlapping car must become an accepted actor when driven")
 	_check(float(entrance.call("get_entrance_state").open_amount) > 0.98, "Boarding a parked car inside the sensor must open the garage without recrossing it")
@@ -204,13 +211,20 @@ func _test_driven_car(scene: Node, player: CharacterBody2D, car: CharacterBody2D
 	_check(hit != null and hit.get_collider() == solid, "Open garage must preserve BuildingSolid against the real PlayerCar too")
 	_check((car.global_position - threshold).dot(outward) > 0.0, "Driven car crossed the garage facade")
 	car.call("exit_vehicle")
-	await physics_frame
+	await _wait_boarding(car)
 	_check(not bool(car.get("is_driven_by_player")) and player.visible, "Actual PlayerCar exit API must restore the walking player")
 	await _walk_input(player, threshold + outward * 130.0, entrance)
 	await create_timer(1.5).timeout
 	_check(float(entrance.call("get_entrance_state").open_amount) < 0.02, "Abandoned car inside the sensor must not prevent closure after Player walks away")
 	_check(not entrance.call("is_actor_in_range", car), "Former driver vehicle must be removed from accepted actors after parking")
 	driven_car_verified = failures.size() == before_failures
+
+func _wait_boarding(car: Node) -> void:
+	# Completion contract, bounded by the slowest authored boarding profile.
+	for i in 100:
+		if not car.get_meta("vehicle_boarding", false): return
+		await create_timer(.05).timeout
+	_check(false, "Vehicle boarding did not complete within five seconds")
 
 
 func _walk_input(player: CharacterBody2D, target: Vector2, entrance: Node) -> bool:
@@ -224,9 +238,9 @@ func _walk_input(player: CharacterBody2D, target: Vector2, entrance: Node) -> bo
 		_release_input()
 		var direction := delta.normalized()
 		if absf(direction.x) > 0.1:
-			Input.action_press("ui_right" if direction.x > 0.0 else "ui_left", absf(direction.x))
+			Input.action_press("move_right" if direction.x > 0.0 else "move_left", absf(direction.x))
 		if absf(direction.y) > 0.1:
-			Input.action_press("ui_down" if direction.y > 0.0 else "ui_up", absf(direction.y))
+			Input.action_press("move_down" if direction.y > 0.0 else "move_up", absf(direction.y))
 		await physics_frame
 		var fraction := float(entrance.call("get_entrance_state").open_amount)
 		saw_intermediate = saw_intermediate or (fraction > 0.02 and fraction < 0.98)
@@ -256,7 +270,7 @@ func _quiet_ambient(node: Node, player: CharacterBody2D) -> void:
 
 
 func _release_input() -> void:
-	for action in ["ui_up", "ui_down", "ui_left", "ui_right"]:
+	for action in ["move_up", "move_down", "move_left", "move_right"]:
 		Input.action_release(action)
 
 

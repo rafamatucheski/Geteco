@@ -145,10 +145,18 @@ func run() -> void:
 	player.global_position=target.global_position+Vector2(-60,0)
 	root.get_node("WantedManager").reset()
 	var money: int=player.money
+	var achievements_before: Array = player.unlocked_achievements.duplicate()
 	check(yard.confirm_delivery(target),"Entrega à prensa depois de guinchar")
+	check(yard._current_reward==1800,"Serviço contratado preserva recompensa de 1800")
 	check(player.money==money,"Não antecipa pagamento")
 	while yard.art.animating: await process_frame
-	check(player.money==money+1800,"Primeiro serviço paga depois de esmagar")
+	# The first crushed vehicle also unlocks PRIMEIRA SUCATA. Keep the service
+	# reward exact while accounting for the independently authored achievement.
+	var achievement_bonus := 0
+	for achievement_id in player.unlocked_achievements:
+		if not achievement_id in achievements_before:
+			achievement_bonus += preload("res://AchievementCatalog.gd").cash_reward(achievement_id)
+	check(player.money==money+1800+achievement_bonus,"Primeiro serviço paga depois de esmagar, mais somente conquistas novas")
 	check(int(yard.ledger().data.get("tow_completed",0))==1,"Entrega avança série")
 	# Reação policial depende da hora de carregar, nunca de quando aceitou.
 	for time in [.5,.9]:

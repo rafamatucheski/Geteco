@@ -48,6 +48,9 @@ func _run() -> void:
 			var hits := _probe(space, Vector2(x, y))
 			_check(not hits.is_empty(), "Water outside bridge is missing collision at %s" % Vector2(x, y))
 	car.call("enter_vehicle", player)
+	# Boarding now animates before throttle input is accepted.
+	while is_instance_valid(car.get("_boarding")) and car.get("_boarding").active:
+		await process_frame
 	car.set("max_speed", 240.0)
 	await physics_frame
 	_check(bool(car.get("is_driven_by_player")), "Actual vehicle entry must succeed")
@@ -81,13 +84,13 @@ func _probe(space: PhysicsDirectSpaceState2D, point: Vector2) -> Array[Dictionar
 
 
 func _drive_leg(car: CharacterBody2D, start: Vector2, destination: Vector2, heading: float, label: String) -> void:
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	car.velocity = Vector2.ZERO
 	car.global_position = start
 	car.rotation = heading
 	await physics_frame
 	var collisions: Array[String] = []
-	Input.action_press("ui_up")
+	Input.action_press("move_up")
 	for _frame in 720:
 		await physics_frame
 		for collision_index in car.get_slide_collision_count():
@@ -98,7 +101,7 @@ func _drive_leg(car: CharacterBody2D, start: Vector2, destination: Vector2, head
 				collisions.append(name)
 		if car.global_position.distance_to(destination) < 16.0:
 			break
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	var final_position := car.global_position
 	var distance := final_position.distance_to(start)
 	_check(collisions.is_empty(), "%s bridge drive hit %s at %s" % [label, collisions, final_position])
@@ -124,7 +127,7 @@ func _check(condition: bool, message: String) -> void:
 
 
 func _finish(scene: Node) -> void:
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	for failure in _failures:
 		push_error("HARBOR_BRIDGE: " + failure)
 	scene.queue_free()

@@ -7,11 +7,80 @@ extends "res://world/shared/roads/UnifiedRoadNetwork2D.gd"
 func _draw_grass_ground() -> void:
 	pass
 
+func _ready() -> void:
+	var finish := ShaderMaterial.new()
+	finish.shader=preload("res://world/harbor/UrbanRoad.gdshader")
+	finish.set_shader_parameter("grain",preload("res://world/harbor/UrbanGround.gd").texture("asphalt"))
+	finish.set_shader_parameter("paving",preload("res://world/harbor/UrbanGround.gd").texture("concrete"))
+	material=finish
+	super._ready()
+
 
 const EDGE_EPSILON := 0.02
 var _edge_revision := -1
 var _edge_builds := 0
 var _edge_layers: Dictionary = {}
+var _north_mouths: Array[PackedVector2Array] = []
+
+
+func _has_north_access() -> bool:
+	for road in _roads:
+		if String(road.id) == "RoadLayout/map2_highway_inbound": return true
+	return false
+
+
+func _draw_road_pass(color: Color, extra_width: float) -> void:
+	super._draw_road_pass(color,extra_width)
+	if is_zero_approx(extra_width):
+		for mouth in _terminal_mouths():
+			static_canvas.draw_colored_polygon(mouth, ROAD_COLOR)
+	if not _has_north_access(): return
+	# Draw the access mouths in the SAME sidewalk/curb/asphalt passes as the
+	# avenue. A lower-layer road cannot cut through a later sidewalk pass.
+	if _north_mouths.is_empty():
+		_north_mouths = preload("res://world/harbor/HarborNorthAccess.gd").mouths()
+	for mouth in _north_mouths:
+		var margin := extra_width * (48.0/84.0) if extra_width > 10 else extra_width
+		var tint := Color("92998e") if extra_width > 10 else Color("e1dfca") if extra_width > 0 else ROAD_COLOR
+		for polygon in Geometry2D.offset_polyline(mouth,(96.0+margin)*0.5,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT):
+			static_canvas.draw_colored_polygon(polygon,tint)
+	for polygon in _north_flare_surfaces(extra_width):
+		static_canvas.draw_colored_polygon(polygon,color if extra_width > 0 else ROAD_COLOR)
+
+func _terminal_mouths() -> Array[PackedVector2Array]:
+	var result: Array[PackedVector2Array] = []
+	var terminal := get_parent().get_node_or_null("ArrivalStop") as Node2D if get_parent() else null
+	if terminal == null: return result
+	for local_polygon in preload("res://world/harbor/terminal/HarborTerminalAccess.gd").driveway_polygons():
+		var polygon := PackedVector2Array()
+		for point in local_polygon: polygon.append(to_local(terminal.to_global(point)))
+		result.append(polygon)
+	return result
+
+
+func _north_flare_surfaces(extra_width: float) -> Array[PackedVector2Array]:
+	# One closed ribbon per flare: separately antialiased short quads leave
+	# hundreds of small cracks along a densely baked curve.
+	var result: Array[PackedVector2Array] = []
+	for road in _roads:
+		if not String(road.id).contains("mountain_bridge_"): continue
+		var points: PackedVector2Array = road.points.duplicate()
+		if String(road.id).ends_with("inbound"): points.reverse()
+		var left := PackedVector2Array()
+		var right := PackedVector2Array()
+		var travelled := 0.0
+		for i in points.size():
+			var tangent := (points[mini(i+1,points.size()-1)]-points[maxi(i-1,0)]).normalized()
+			var normal := Vector2(-tangent.y,tangent.x)
+			var width := lerpf(96,62,clampf(travelled/180.0,0,1))+extra_width
+			left.append(points[i]+normal*width*.5)
+			right.append(points[i]-normal*width*.5)
+			if travelled >= 180: break
+			if i+1 < points.size(): travelled += points[i].distance_to(points[i+1])
+		right.reverse()
+		left.append_array(right)
+		result.append(_counter_clockwise_polygon(left))
+	return result
 
 
 func _build_junction_surface_geometry(junction: Dictionary, extra_width: float) -> Dictionary:
@@ -145,6 +214,10 @@ func _ensure_edge_cache() -> void:
 		_edge_layers[String(layer.id)] = _union_boundary(polygons)
 
 
+func get_signal_ground_surfaces(extra_width: float) -> Array[PackedVector2Array]:
+	return _collect_edge_surfaces(extra_width)
+
+
 func _collect_edge_surfaces(extra_width: float) -> Array[PackedVector2Array]:
 	# Exactly the filled ribbons and patches used by the inherited material pass;
 	# never invent another centerline, junction radius, collision or traffic mesh.
@@ -160,6 +233,11 @@ func _collect_edge_surfaces(extra_width: float) -> Array[PackedVector2Array]:
 		var polygon: PackedVector2Array = geometry.polygon
 		if polygon.size() >= 3 and not Geometry2D.triangulate_polygon(polygon).is_empty():
 			polygons.append(polygon)
+	if _has_north_access():
+		for mouth in preload("res://world/harbor/HarborNorthAccess.gd").mouths():
+			var margin := extra_width * (48.0/84.0) if extra_width > 10 else extra_width
+			polygons.append_array(Geometry2D.offset_polyline(mouth,(96.0+margin)*0.5,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT))
+		polygons.append_array(_north_flare_surfaces(extra_width))
 	return polygons
 
 
@@ -225,6 +303,14 @@ func _subtract_from_edge_holes(holes: Array[PackedVector2Array], filled: PackedV
 
 func _collect_edge_openings(include_alleys: bool = false) -> Array[PackedVector2Array]:
 	var openings: Array[PackedVector2Array] = []
+	openings.append_array(_terminal_mouths())
+	if _has_north_access():
+		for mouth in preload("res://world/harbor/HarborNorthAccess.gd").mouths():
+			var at_end := mouth[-1].y < mouth[0].y
+			var cap: Vector2 = mouth[-1] if at_end else mouth[0]
+			var tangent := (mouth[-1]-mouth[-2]).normalized() if at_end else (mouth[1]-mouth[0]).normalized()
+			var normal := Vector2(-tangent.y,tangent.x)
+			openings.append(PackedVector2Array([cap-normal*100-tangent*8,cap+normal*100-tangent*8,cap+normal*100+tangent*8,cap-normal*100+tangent*8]))
 	var composition := get_parent()
 	if composition == null:
 		return openings

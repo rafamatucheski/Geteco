@@ -150,6 +150,10 @@ func _audit_solids(space: PhysicsDirectSpaceState2D, waterfront: Node2D, data: D
 			var point := Vector2(x, y)
 			if gangway.grow(3.0).has_point(point) or Geometry2D.is_point_in_polygon(point, cutout):
 				continue
+			var on_south_port := false
+			for surface in waterfront.get_waterfront_audit_data().get("south_port_surfaces", []):
+				if Geometry2D.is_point_in_polygon(point,surface): on_south_port = true
+			if on_south_port: continue
 			var near_boundary := false
 			for index in cutout.size():
 				if Geometry2D.get_closest_point_to_segment(point, cutout[index], cutout[(index + 1) % cutout.size()]).distance_to(point) < 3.0:
@@ -171,9 +175,9 @@ func _walk_input(player: CharacterBody2D, destination: Vector2) -> void:
 		_release_input()
 		var direction := delta.normalized()
 		if absf(direction.x) > 0.1:
-			Input.action_press("ui_right" if direction.x > 0 else "ui_left", absf(direction.x))
+			Input.action_press("move_right" if direction.x > 0 else "move_left", absf(direction.x))
 		if absf(direction.y) > 0.1:
-			Input.action_press("ui_down" if direction.y > 0 else "ui_up", absf(direction.y))
+			Input.action_press("move_down" if direction.y > 0 else "move_up", absf(direction.y))
 		await physics_frame
 	_release_input()
 	player.velocity = Vector2.ZERO
@@ -277,7 +281,7 @@ func _names(hits: Array[Dictionary]) -> String:
 
 
 func _release_input() -> void:
-	for action in ["ui_up", "ui_down", "ui_left", "ui_right"]:
+	for action in ["move_up", "move_down", "move_left", "move_right"]:
 		Input.action_release(action)
 
 

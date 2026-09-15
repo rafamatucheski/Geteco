@@ -142,7 +142,7 @@ func _build_registry_log() -> void:
 	)
 
 	registry_badge = Label.new()
-	registry_badge.text = "[ E ] PRANCHETA FORENSE & LIVRO DE ÓBITOS"
+	registry_badge.text = "E"
 	registry_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	registry_badge.position = reg_pos + Vector2(-150, -45)
 	registry_badge.size = Vector2(300, 20)
@@ -242,4 +242,4 @@ func _read_registry() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 
-	registry_text.text = "LAUDO PERICIAL FORENSE #119:\n• Gaveta 04: Vítima de afogamento no Píer Norte (Identidade confirmada).\n• Gaveta 07: Confronto armado na zona industrial (Projéteis 9mm recolhidos).\n• Status das câmaras frias: Temperatura estável (-4.2°C)."
+	registry_text.text = get_node("/root/CoronerCare").registry_text()

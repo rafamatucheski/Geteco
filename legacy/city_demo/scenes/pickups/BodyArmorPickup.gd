@@ -8,7 +8,7 @@ extends Area2D
 @export var interaction_radius: float = 42.0
 
 var _nearby_player: Node2D
-var _base_y: float
+var _art_root: Node2D
 var _time := 0.0
 var _consumed := false
 
@@ -16,8 +16,8 @@ func _ready() -> void:
 	monitoring = true
 	monitorable = true
 	collision_layer = 0
-	collision_mask = 1
-	_base_y = position.y
+	collision_mask = 4
+	
 	_ensure_collision()
 	_ensure_art()
 	body_entered.connect(_on_body_entered)
@@ -26,7 +26,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	position.y = _base_y + sin(_time * 2.6) * 2.0
+	if _consumed: return
+	_art_root.position.y = sin(_time * 3.2) * 1.5
+	_art_root.rotation = _time * 1.6
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -40,7 +42,7 @@ func _draw() -> void:
 	# Small procedural outline/prompt; art stays crisp with no external PNG.
 	if _nearby_player != null and not _consumed:
 		draw_arc(Vector2.ZERO, interaction_radius, 0.0, TAU, 32, Color(0.2, 0.85, 1.0, 0.7), 1.5)
-		draw_string(ThemeDB.fallback_font, Vector2(-29, -35), "[E] COLETE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.65, 0.93, 1.0))
+		draw_string(ThemeDB.fallback_font, Vector2(-29, -35), "COLETE", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.65, 0.93, 1.0))
 
 func _ensure_collision() -> void:
 	if get_node_or_null("CollisionShape2D") != null:
@@ -53,22 +55,24 @@ func _ensure_collision() -> void:
 	add_child(shape)
 
 func _ensure_art() -> void:
-	if get_node_or_null("VestArt") != null:
-		return
-	var vest := Polygon2D.new()
-	vest.name = "VestArt"
-	vest.polygon = PackedVector2Array([
-		Vector2(-7, -9), Vector2(-3, -11), Vector2(0, -8), Vector2(3, -11),
-		Vector2(7, -9), Vector2(6, 9), Vector2(3, 11), Vector2(0, 8),
-		Vector2(-3, 11), Vector2(-6, 9)
-	])
-	vest.color = Color("23516d")
-	add_child(vest)
-	var plate := Polygon2D.new()
-	plate.name = "ArmorPlate"
-	plate.polygon = PackedVector2Array([Vector2(-4, -4), Vector2(4, -4), Vector2(3, 6), Vector2(-3, 6)])
-	plate.color = Color("75c9e9")
-	vest.add_child(plate)
+	_art_root = Node2D.new()
+	_art_root.name = "VestArt"
+	add_child(_art_root)
+	# Compact 10 x 15 silhouette: shoulder straps, open neck and tapered waist.
+	_piece([Vector2(-5,-7.5),Vector2(-2,-7.5),Vector2(-1.5,-4),Vector2(1.5,-4),Vector2(2,-7.5),Vector2(5,-7.5),Vector2(4.5,-2),Vector2(5,0),Vector2(4,7.5),Vector2(-4,7.5),Vector2(-5,0),Vector2(-4.5,-2)], Color("182b38"))
+	_piece([Vector2(-3.8,-2.8),Vector2(3.8,-2.8),Vector2(3,5.8),Vector2(-3,5.8)], Color("46677d"))
+	_piece([Vector2(-3,-2),Vector2(3,-2),Vector2(2.6,1),Vector2(-2.6,1)], Color("7798ac"))
+	for x in [-2.8, 0.4]:
+		_piece([Vector2(x,2),Vector2(x+2.4,2),Vector2(x+2.4,5),Vector2(x,5)], Color("263e50"))
+	for x in [-4.1, 2.5]:
+		_piece([Vector2(x,-6),Vector2(x+1.6,-6),Vector2(x+1.6,-4.8),Vector2(x,-4.8)], Color("a8c3ce"))
+
+func _piece(points: Array, color: Color) -> void:
+	var part := Polygon2D.new()
+	part.polygon = PackedVector2Array(points)
+	part.color = color
+	part.antialiased = true
+	_art_root.add_child(part)
 
 func _on_body_entered(body: Node2D) -> void:
 	if _is_player(body):
@@ -89,16 +93,7 @@ func _take(player: Node) -> void:
 	player.add_armor(armor_amount)
 	picked_up.emit(player, armor_amount)
 
-	var p := AudioStreamPlayer2D.new()
-	p.bus = &"SFX"
-	p.stream = ProceduralAudio.get_powerup_stream()
-	p.pitch_scale = 0.85
-	p.volume_db = -5.0
-	p.max_distance = 480.0
-	get_tree().current_scene.add_child(p)
-	p.global_position = global_position
-	p.play()
-	p.finished.connect(p.queue_free)
+	preload("res://audio/rewards/RewardAudioBank.gd").play(self, "pickup")
 
 	var tw := create_tween().set_parallel(true)
 	tw.tween_property(self, "scale", Vector2(1.4, 1.4), 0.18)

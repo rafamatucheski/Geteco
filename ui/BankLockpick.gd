@@ -9,6 +9,10 @@ var active := false
 var dial: Control
 var info: Label
 var panel: PanelContainer
+var lock_title := "COFRE"
+var instruction_text := "ESPAÇO / CLIQUE — travar na faixa verde\nESC — desistir • O alarme continua!"
+var required_pins := 3
+var allowed_mistakes := 3
 
 func _ready() -> void:
 	layer=75
@@ -39,7 +43,7 @@ func _ready() -> void:
 	dial.draw.connect(_draw_dial)
 	column.add_child(dial)
 	var instructions := Label.new()
-	instructions.text="ESPAÇO / CLIQUE — travar na faixa verde\nESC — desistir • O alarme continua!"
+	instructions.text=instruction_text
 	instructions.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(instructions)
 	hide()
@@ -57,27 +61,27 @@ func _process(delta: float) -> void:
 	dial.queue_redraw()
 func _input(event: InputEvent) -> void:
 	if not active: return
-	if event.is_pressed() and not event.is_echo():
+	if event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
+		attempt()
+		get_viewport().set_input_as_handled()
+	elif event.is_pressed() and not event.is_echo():
 		if event.is_action_pressed("ui_cancel"):
 			finish(false)
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("ui_accept"):
 			attempt()
 			get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed and event.button_index==MOUSE_BUTTON_LEFT:
-		attempt()
-		get_viewport().set_input_as_handled()
 func attempt() -> void:
 	if not active: return
 	if absf(angle_difference(angle,target_angle))<=.32:
 		pins+=1
-		if pins==3:
+		if pins==required_pins:
 			finish(true)
 			return
 		target_angle=fposmod(target_angle+randf_range(1.2,3.6),TAU)
 	else:
 		mistakes+=1
-		if mistakes>=3:
+		if mistakes>=allowed_mistakes:
 			finish(false)
 			return
 	_refresh()
@@ -87,7 +91,7 @@ func finish(success: bool) -> void:
 	if success: unlocked.emit()
 	else: cancelled.emit()
 func _refresh() -> void:
-	info.text="COFRE — TRAVAS %d/3 • ERROS %d/3"%[pins,mistakes]
+	info.text="%s — TRAVAS %d/%d • ERROS %d/%d"%[lock_title,pins,required_pins,mistakes,allowed_mistakes]
 func _draw_dial() -> void:
 	var center := dial.size*.5
 	dial.draw_circle(center,91,Color("333f42"))

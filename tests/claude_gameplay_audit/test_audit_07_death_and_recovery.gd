@@ -43,9 +43,8 @@ func run() -> void:
 		player.call("take_damage", 999)
 		check(bool(player.get("is_dead")), "Ciclo %d: take_damage(999) mata o jogador de verdade (is_dead)" % cycle)
 
-		# _wasted() waits ~2.2s (flash) + _respawn_at_hospital() + ~1.5s more
-		# before clearing is_dead — real wall-clock waits, like the codebase's
-		# own create_timer(...) idiom for these coroutines.
+		# Death clears at discharge after 2.2s; the automatic walkout then
+		# takes up to 1.5s before handing movement back to the player.
 		await create_timer(4.5).timeout
 
 		check(not bool(player.get("is_dead")), "Ciclo %d: is_dead volta a falso depois da sequência real de respawn" % cycle)
@@ -61,7 +60,7 @@ func run() -> void:
 				nearest_hospital_distance = minf(nearest_hospital_distance, player.global_position.distance_to(h.global_position))
 			check(nearest_hospital_distance < 5.0, "Ciclo %d: posição final coincide com um hospital_spawn real (não o fallback antigo Vector2(1125,375), dist=%.0f)" % [cycle, distance_from_fallback])
 
-		check(int(player.get("money")) == money_before, "Ciclo %d: morte não desconta dinheiro (comportamento observado, sem penalidade monetária)" % cycle)
+		check(int(player.get("money")) == maxi(0, money_before - 100), "Ciclo %d: hospital desconta 100 dólares por morte" % cycle)
 
 		print("  Recuperação: janela de invulnerabilidade pós-respawn")
 		player.call("take_damage", 50)

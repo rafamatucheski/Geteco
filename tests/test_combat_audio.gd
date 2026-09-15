@@ -26,12 +26,27 @@ func run() -> void:
 		ambient.set_process(false)
 		for child in ambient.get_children():
 			if child is AudioStreamPlayer: child.stop()
-	for kind in ["pistol", "magnum", "smg", "ak47", "m4a1", "shotgun", "sawed_off"]:
+	for kind in ["pistol", "magnum", "smg", "ak47", "m4a1", "shotgun", "sawed_off", "hunting_rifle"]:
 		var sound := ProceduralAudio.get_gunshot_stream(kind) as AudioStreamRandomizer
 		check(sound != null and sound == BANK.sound(kind), "Existing weapon API reaches authored palette: " + kind)
-		check(sound.streams_count == 3, "Three takes for " + kind)
+		check(sound.streams_count == 5, "Five takes for " + kind)
 		check(sound.playback_mode == AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS, "No consecutive identical takes")
 		check(sound.get_stream(0) != sound.get_stream(1), "Distinct sample resources")
+	var resolver := preload("res://audio/combat/ImpactMaterial.gd")
+	for group in [&"paramedic", &"firefighter", &"mortician", &"police_officer", &"pedestrian"]:
+		var actor := Node.new()
+		actor.add_to_group(group)
+		root.add_child(actor)
+		check(resolver.resolve(actor) == &"flesh", "Human contact includes " + group)
+		actor.free()
+	var prop := Node.new()
+	prop.set_meta("impact_material", &"wood")
+	var child_collider := StaticBody2D.new()
+	prop.add_child(child_collider)
+	check(resolver.resolve(child_collider) == &"wood", "Child collider inherits authored surface")
+	child_collider.set_meta("impact_material", &"metal")
+	check(resolver.resolve(child_collider) == &"metal", "Specific collider surface overrides parent")
+	prop.free()
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
@@ -90,6 +105,12 @@ func run() -> void:
 			if child is AudioStreamPlayer2D and child.stream == BANK.sound(kind):
 				heard = child.playing and child.bus == &"SFX"
 		check(heard, "Real Player plays the new shot through SFX: " + kind)
+	if "combat-only" in OS.get_cmdline_user_args():
+		world.queue_free()
+		await create_timer(0.3).timeout
+		print("COMBAT_AUDIO_ONLY failures=", failures)
+		quit(0 if failures == 0 else 1)
+		return
 	var weather := WEATHER.new()
 	weather.is_dynamic_time = false
 	world.add_child(weather)

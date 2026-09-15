@@ -1,0 +1,31 @@
+# Preferências visuais do projeto
+
+## Regras permanentes da garagem
+
+- Maciota e o mecânico dele nunca podem morrer, em nenhuma circunstância: armas, explosões, fogo, atropelamentos ou eventos de missão. Preserve a ausência de rotinas de dano/morte nesses personagens; qualquer futura integração ao combate deve manter essa proteção.
+- A garagem do Maciota é uma área sem armas. Guardar automaticamente a arma na entrada e na restauração de save; bloquear saque, troca, disparos, explosivos e ataques corpo a corpo enquanto estiver dentro. Preservar o inventário e liberar o uso ao sair.
+- Validar essas regras com `tests/test_garage_weapon_restrictions.gd` ao alterar combate, os personagens ou transições da garagem.
+
+- Para todo ambiente acessível e suas interações, siga obrigatoriamente [o contrato de colisão e profundidade](docs/interior-physics-and-depth.md). Jogador e NPCs não podem atravessar sólidos, nascer sobre móveis ou aparecer andando por cima deles. Valide colisão e oclusão separadamente; qualquer falha bloqueia a entrega.
+
+- O usuário não quer textos descritivos ou decorativos explicando lojas, objetos, ambientes ou elementos visuais. Comunique essas informações pela aparência.
+- Em fachadas, deixe somente o nome próprio do estabelecimento. Não acrescente categorias, slogans, legendas, descrições de produtos ou chamadas de coleção.
+- Aplique essa orientação a novas implementações e às telas e ambientes que forem alterados. Preserve textos funcionais necessários para jogar, como ações, diálogos e objetivos.
+- Vitrines de roupas devem usar manequins vestidos com proporções naturais, em vez de peças de roupa gigantes e isoladas.
+
+## Performance do jogo
+
+- Antes de implementar e ao validar mudanças com custo em runtime (iluminação, sombras, efeitos, modelos, SubViewports, NPCs, tráfego, física, streaming ou loops por frame), carregue e siga `C:/Users/rafae/.codex/skills/performance-do-jogo/SKILL.md`.
+- Exija comparação de frame time antes/depois na cena real renderizada e nos cenários afetados. Teste headless, cobertura de luz e captura bonita não comprovam FPS. Preserve a intenção visual e a jogabilidade.
+- Não declare performance aprovada com regressão confirmada, queda reproduzível para 12–15 FPS ou sem medição; informe precisamente a pendência. Mudanças apenas de texto/documentação dispensam benchmark.
+- Se a skill estiver indisponível, informe e aplique estes critérios diretamente, junto de `testes-com-criterio` na validação de software.
+
+## Segurança do Git e Trabalho Concorrente (CRÍTICO)
+
+- NUNCA execute `git checkout`, `git restore`, `git reset --hard`, `git clean` ou qualquer comando que descarte alterações locais em arquivos que tenham modificações não commitadas — nem para desfazer a própria edição, nem para "limpar" conflitos.
+- Este repositório opera com múltiplas sessões simultâneas de IA sem commits imediatos. Descartar arquivos locais destrói trabalho em andamento de outras sessões.
+- Antes de qualquer ação que envolva estado do git, execute `git status` primeiro.
+- Caso precise desfazer alterações:
+  - Para reverter apenas a sua própria alteração, desfaça a edição manualmente no arquivo ou utilize `git stash` (NUNCA utilize `stash drop` ou descarte stash sem verificar o conteúdo).
+  - Se houver conflito ou arquivo alterado por outra sessão, NUNCA tente resolver descartando ou sobrescrevendo: notifique o usuário imediatamente.
+

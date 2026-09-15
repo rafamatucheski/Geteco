@@ -14,7 +14,8 @@ func check(ok: bool,label: String) -> void:
 func frames(n: int) -> void:
 	for i in n: await process_frame
 func run() -> void:
-	create_timer(90).timeout.connect(func(): quit(2))
+	root.get_node("SaveManager")._save_dir = "D:/geteco/artifacts/paynspray-0912/saves/"
+	create_timer(150).timeout.connect(func(): quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met",&"harbor_delivery_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag,true)
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
@@ -22,6 +23,7 @@ func run() -> void:
 	var world := current_scene
 	var player: Node2D = world.get_node("Player")
 	var manager: Node = world.get_node("PersonalCarManager")
+	manager.introduction_seen = true
 	var car: Node2D = manager.car
 	var map: Node = world.get_node("Minimap")
 	var service: Node2D = world.get_node("PayNSpray")
@@ -38,7 +40,7 @@ func run() -> void:
 	service._clock = 999
 	player.money = 50
 	car.enter_vehicle(player)
-	await frames(3)
+	while car.has_meta("vehicle_boarding"): await process_frame
 	map.refresh()
 	check(not map.show_car,"personal parked marker hides while driving it")
 	service._clock = 999
@@ -50,8 +52,20 @@ func run() -> void:
 	var paint: Color = car.paint_color
 	var layer: int = car.collision_layer
 	service._clock = 0
+	# Let regional presentation finish before measuring the timed service.
+	await frames(180)
+	var approach_position: Vector2 = car.global_position
+	await create_timer(0.6).timeout
+	check(not service.busy and car.is_physics_processing() and not player.is_control_disabled and car.global_position.distance_to(approach_position)<2,"approach opens door without pulling or locking driver")
+	check(service.shutter.position.y < -40,"shutter opens on approach")
+	# Sweep the actual hull through the doorway with normal world collisions.
+	var travel := Vector2(0,-145)
+	check(not car.test_move(car.global_transform,travel),"real car hull can drive through workshop entrance")
+	car.global_position += travel
+	var parked: Vector2 = car.global_position
+	root.get_node("WantedManager").ensure_minimum_wanted_level(3)
 	while not service.busy: await process_frame
-	check(not car.is_physics_processing() and player.is_control_disabled,"slow arrival automatically starts protected vehicle movement")
+	check(not car.is_physics_processing() and player.is_control_disabled,"parking inside starts service")
 	check(not car.headlight.enabled and not car.second_headlight.enabled,"both headlamps stop emitting before entering facade")
 	var snapshot: Dictionary = root.get_node("RegionTravel").snapshot_world()
 	check(Vector2(snapshot.vehicle.x,snapshot.vehicle.y).distance_to(service.global_position+service.EXIT_OFFSET)<1,"save during service stores a safe exterior vehicle position")
@@ -69,19 +83,22 @@ func run() -> void:
 	check(car.headlight.enabled and car.second_headlight.enabled,"headlamp emission returns outside workshop")
 	check(car.health==car.max_health and car.paint_color.is_equal_approx(paint),"Monaliza restored without changing paint")
 	check(player.money==400 and service.serviced_count==1,"service charges exactly once")
-	check(car.is_driven_by_player and car.is_physics_processing() and not player.is_control_disabled and car.collision_layer==layer and car.modulate.a==1,"automatic exit restores visibility, physics and controls")
-	check(car.global_position.distance_to(service.global_position+service.EXIT_OFFSET)<2,"vehicle returns outside instead of remaining in wall")
+	check(car.is_driven_by_player and car.is_physics_processing() and not player.is_control_disabled and car.collision_layer==layer and car.modulate.a==1,"service restores visibility, physics and controls")
+	check(car.global_position.distance_to(parked)<2,"service never moves the parked car")
+	check(root.get_node("WantedManager").current_stars==0 and root.get_node("WantedManager").crime_points==0,"completed paint service clears stars and underlying crime score")
 	var collider: CollisionShape2D = car.get_node("Collision")
 	var query := PhysicsShapeQueryParameters2D.new()
 	query.shape = collider.shape
 	query.transform = car.global_transform*collider.transform
 	query.collision_mask = 1
 	query.exclude = [car.get_rid()]
-	check(car.get_world_2d().direct_space_state.intersect_shape(query).is_empty(),"returned car hull is clear of building and curb solids")
+	check(car.get_world_2d().direct_space_state.intersect_shape(query).is_empty(),"parked car hull is clear of workshop walls")
 	check(car.global_position.y+43<=-1160,"personal car exits onto apron before active traffic lanes")
 	await frames(20)
 	check(not service.busy and player.money==400,"exit cannot retrigger repeated service")
+	car.global_position = service.global_position + service.EXIT_OFFSET
 	car.exit_vehicle()
+	while car.has_meta("vehicle_boarding"): await process_frame
 	player.set_physics_process(false)
 	player.global_position = car.global_position+Vector2(-65,10)
 	map.refresh()
@@ -94,11 +111,11 @@ func run() -> void:
 		camera.reset_smoothing()
 		await frames(8)
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("D:/geteco/minimap-paynspray-review.png")
+		root.get_texture().get_image().save_png("D:/geteco/artifacts/paynspray-0912/service.png")
 	# A second ordinary car keeps the normal repaint service.
 	var other := preload("res://world/mountain_pass/MountainSUV.gd").new()
 	world.add_child(other)
-	other.global_position = service.global_position+Vector2(0,15)
+	other.global_position = service.global_position+Vector2(0,-130)
 	other.rotation = -PI/2
 	other.repaint_vehicle(Color("123456"))
 	other.health = 55
@@ -113,12 +130,16 @@ func run() -> void:
 	check(other.health==other.max_health and not other.paint_color.is_equal_approx(Color("123456")),"ordinary vehicle repaired and repainted")
 	check(not other.has_punctured_tires and is_equal_approx(other.max_speed,normal_speed),"repaired tires recover original performance")
 	other.exit_vehicle()
+	while other.has_meta("vehicle_boarding"): await process_frame
 	service._departing = null
-	other.global_position = service.global_position
+	other.global_position = service.global_position+Vector2(0,-130)
 	other.enter_vehicle(player)
 	while other.has_meta("vehicle_boarding"): await process_frame
 	check(service.start_service(other),"another visit can start after departure")
+	root.get_node("WantedManager").ensure_minimum_wanted_level(2)
+	var balance_before_cancel: int = player.money
 	service._cancel()
+	check(player.money==balance_before_cancel and root.get_node("WantedManager").current_stars==2,"cancelled service neither charges nor clears stars")
 	check(other.headlight.enabled and other.second_headlight.enabled,"cancel restores both headlamps")
 	check(not service.busy and other.is_physics_processing() and not player.is_control_disabled and other.modulate.a==1,"interrupted service releases car and controls")
 	check(not leaked_cold_hud,"background mountain loading never shows cold HUD in Northgate")

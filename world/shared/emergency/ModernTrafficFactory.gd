@@ -5,16 +5,13 @@ extends RefCounted
 ## Authored road geometry remains owned by each district; this factory only
 ## turns those exact lane centre-lines into Path2D traffic and parked cars.
 
-const VEHICLE_SCENE: PackedScene = preload("res://world/shared/traffic/TrafficVehicle.tscn")
+# Resolve the scene after scripts finish loading. Preloading it here while
+# referring to DemoTrafficVehicle can attach an incomplete script in a worker.
+const VEHICLE_SCENE_PATH := "res://world/shared/traffic/TrafficVehicle.tscn"
 
-const VEHICLE_CROPS: Array[Rect2] = [
-	# The retired green panel van was visually inconsistent with the current
-	# traffic set and is intentionally not spawned anywhere in the live city.
-	Rect2(350, 49, 235, 462),
-	Rect2(663, 48, 234, 475), Rect2(970, 35, 246, 499),
-	Rect2(29, 638, 264, 548), Rect2(340, 625, 256, 566),
-	Rect2(650, 587, 264, 619), Rect2(968, 551, 248, 673),
-]
+# Compatibility alias; vehicles read the catalog directly to avoid the cycle
+# factory -> vehicle scene -> vehicle script -> factory during threaded loads.
+const VEHICLE_CROPS: Array[Rect2] = VehicleCatalog.VEHICLE_CROPS
 
 const MINIMUM_SPAWN_CLEARANCE := 96.0
 # DistrictRailLine occupies this authored horizontal band. Routes may cross it
@@ -67,7 +64,7 @@ static func spawn_moving_vehicle(
 	path.add_child(follow)
 	follow.progress_ratio = _find_clear_ratio(path, requested_ratio)
 
-	var vehicle := VEHICLE_SCENE.instantiate() as DemoTrafficVehicle
+	var vehicle := (load(VEHICLE_SCENE_PATH) as PackedScene).instantiate() as DemoTrafficVehicle
 	vehicle.defer_presentation = true
 	vehicle.name = vehicle_name
 	vehicle.vehicle_id = archetype_id
@@ -93,9 +90,10 @@ static func spawn_parked_vehicle(
 	world_rotation: float,
 	archetype_id: String,
 	visual_index: int,
-	custom_color: Color = Color.TRANSPARENT
+	custom_color: Color = Color.TRANSPARENT,
+	replenish: bool = true
 ) -> DemoTrafficVehicle:
-	var vehicle := VEHICLE_SCENE.instantiate() as DemoTrafficVehicle
+	var vehicle := (load(VEHICLE_SCENE_PATH) as PackedScene).instantiate() as DemoTrafficVehicle
 	vehicle.defer_presentation = true
 	vehicle.name = vehicle_name
 	vehicle.position = world_position
@@ -111,6 +109,11 @@ static func spawn_parked_vehicle(
 	vehicle.apply_archetype(archetype_id, chosen_color)
 	vehicle.configure_as_parked()
 	vehicle.add_to_group("modern_parked_vehicle")
+	if replenish and parent is Node2D:
+		var slot: Node = load("res://world/shared/traffic/ParkedVehicleSpawn.gd").new()
+		slot.name = vehicle_name+"Spawn"
+		parent.add_child(slot)
+		slot.configure(parent,vehicle,world_position,world_rotation,archetype_id,visual_index,chosen_color)
 	return vehicle
 
 

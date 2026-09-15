@@ -11,10 +11,18 @@ extends Node2D
 
 var _cloud_offset: float = 0.0
 var _clouds: Array[Dictionary] = []
+var _air_material: ShaderMaterial
 
 func _ready() -> void:
 	z_index = -20 # Bem abaixo do piso e da estrada jogável
+	_air_material = ShaderMaterial.new()
+	_air_material.shader = preload("res://world/shared/atmosphere/distant_atmosphere.gdshader")
+	material = _air_material
 	_generate_clouds()
+
+func set_atmosphere(air: Color, amount: float) -> void:
+	_air_material.set_shader_parameter("air_color", air)
+	_air_material.set_shader_parameter("air_amount", clampf(amount, 0.0, 0.85))
 
 func _generate_clouds() -> void:
 	_clouds.clear()

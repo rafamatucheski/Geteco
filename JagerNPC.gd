@@ -159,6 +159,7 @@ func _build_3d_viewport() -> void:
 func _build_jager_model() -> void:
 	model_root = Node3D.new()
 	model_root.name = "JagerRig"
+	model_root.rotation.y = PI
 	viewport_3d.add_child(model_root)
 	var shadow := MeshInstance3D.new()
 	var shadow_mesh := CylinderMesh.new()
@@ -173,6 +174,7 @@ func _build_jager_model() -> void:
 	shadow.material_override = shadow_material
 	shadow.position.y = 0.01
 	model_root.add_child(shadow)
+	preload("res://ContactShadow.gd").soften(shadow)
 
 	# Paleta de Cores Estilo "A Pimp Named Slickback" / Maciota
 	var mat_purple_suit := _make_mat(Color("#6c3483"), 0.70) # Tecido roxo, sem reflexo plástico
@@ -510,7 +512,7 @@ func _setup_interaction() -> void:
 	interact_area.body_exited.connect(_on_body_exited)
 
 	prompt_badge = Label.new()
-	prompt_badge.text = "[ E ] FALAR COM JÄGER"
+	prompt_badge.text = "E"
 	prompt_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_badge.position = Vector2(-80, -50)
 	prompt_badge.size = Vector2(160, 20)
@@ -615,8 +617,9 @@ func _try_greeting(body: Node2D) -> void:
 	if not is_instance_valid(speech_audio):
 		speech_audio = AudioStreamPlayer.new()
 		speech_audio.bus = "SFX"
-		speech_audio.volume_db = -18.0
+		speech_audio.volume_db = -8.0
 		add_child(speech_audio)
+	get_node("/root/MissionVoiceMixer").track(speech_audio)
 	speech_audio.stream = preload("res://ExpressiveVoice.gd").line(greeting_label.text, "maciota", 1.8)
 	speech_audio.play()
 
@@ -686,8 +689,9 @@ func _show_current_text() -> void:
 	if not is_instance_valid(speech_audio):
 		speech_audio = AudioStreamPlayer.new()
 		speech_audio.bus = "SFX"
-		speech_audio.volume_db = -18.0
+		speech_audio.volume_db = -8.0
 		add_child(speech_audio)
+	get_node("/root/MissionVoiceMixer").track(speech_audio)
 	speech_audio.stop()
 	speech_audio.stream = preload("res://ExpressiveVoice.gd").line(text_label.text, speaker, speech_remaining)
 	speech_audio.play()
@@ -717,6 +721,13 @@ func _physics_process(delta: float) -> void:
 	if not is_visible_in_tree():
 		return
 	anim_clock += delta
+	if model_root:
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if is_instance_valid(player):
+			var direction := global_position.direction_to(player.global_position)
+			if not direction.is_zero_approx():
+				# The rig faces -Z; screen down maps to +Z in its viewport.
+				model_root.rotation.y = -atan2(direction.y, direction.x) - PI * 0.5
 	if model_root and is_talking and active_speaker == "maciota":
 		gesture_clock += delta
 		var blend := 1.0 - exp(-7.0 * delta)
@@ -753,10 +764,6 @@ func _physics_process(delta: float) -> void:
 		torso_node.position.y = 0.78 + sin(anim_clock * 1.8) * 0.012
 		torso_node.rotation.z = lerpf(torso_node.rotation.z, -0.028 + accent * 0.016, blend)
 		head_node.position.y = 1.26 + sin(anim_clock * 1.8) * 0.008
-		var listener := get_tree().get_first_node_in_group("player") as Node2D
-		if is_instance_valid(listener):
-			var direction := global_position.direction_to(listener.global_position)
-			model_root.rotation.y = lerp_angle(model_root.rotation.y, -atan2(direction.y, direction.x) - PI * 0.5, blend)
 	
 	# Idle suave e dominante (balanço suave do corpo, postura calma e confiante)
 	if model_root and (not is_talking or active_speaker != "maciota"):
@@ -776,14 +783,6 @@ func _physics_process(delta: float) -> void:
 		left_hand.rotation = left_hand.rotation.lerp(Vector3.ZERO, 1.0 - exp(-6.0 * delta))
 		pointing_finger.rotation.x = lerpf(pointing_finger.rotation.x, -1.35, 1.0 - exp(-6.0 * delta))
 		
-		# Rosto vira levemente para o jogador se ele estiver perto
-		var player := get_tree().get_first_node_in_group("player")
-		if player and is_player_nearby:
-			var dir_to_p := global_position.direction_to(player.global_position)
-			var angle_3d: float = -atan2(dir_to_p.y, dir_to_p.x) - PI * 0.5
-			model_root.rotation.y = lerp_angle(model_root.rotation.y, angle_3d, 1.0 - exp(-6.0 * delta))
-		else:
-			model_root.rotation.y = lerp_angle(model_root.rotation.y, 0.0, 1.0 - exp(-3.0 * delta))
 	if model_root:
 		speech_remaining = maxf(0.0, speech_remaining - delta)
 		var syllable := preload("res://ExpressiveVoice.gd").mouth(speech_audio)

@@ -1,6 +1,6 @@
 # Bairro vivo e rádio — 10/09/2026
 
-Gravações reais de rua, café, oficina, água e pássaros, com duas músicas completas.
+Gravações reais de rua, café, oficina, água e pássaros, com quatro músicas completas.
 Os loops de ambiente duram 29/37 segundos e usam sobreposição de 2 segundos;
 os eventos de gaivotas, aves e oficina têm três trechos alternados. O processamento
 suaviza transientes de louça e metal, remove graves abaixo de 110 Hz nos ambientes
@@ -23,6 +23,8 @@ Freesound: versões públicas de prévia em alta qualidade, convertidas e editad
 | Gaivotas | Seagulls-M.wav — DaveGould | https://freesound.org/people/DaveGould/sounds/32930/ |
 | Porto FM | Empty Stretch — Zane Little Music | https://opengameart.org/content/empty-stretch |
 | Porto Noite | (Basically not) Fusion Jazz — Julie Damsgaard / Spring Spring | https://opengameart.org/content/basically-not-fusion-jazz |
+| Porto Groove | Wednesday Night — Zane Little Music | https://opengameart.org/content/wednesday-night-funk-fusion |
+| Porto Brisa | Apple Cider — Zane Little Music | https://opengameart.org/content/apple-cider |
 
 ## No jogo
 
@@ -35,19 +37,23 @@ Freesound: versões públicas de prévia em alta qualidade, convertidas e editad
 - Mercado, terminal, pátio e cais: fontes e camas distintas; pássaros diurnos,
   comércio mais quieto à noite e água gravada no cais. O freio de ônibus continua
   sincronizado às visitas/partidas reais do serviço já existente.
-- Carros próprios e do trânsito: **R** percorre Porto FM, Porto Noite e desligado;
-  identificação temporária da estação; volume pelo controle Música; retomada
+- Carros próprios e do trânsito: **R** percorre Porto FM, Porto Noite, Porto Groove,
+  Porto Brisa e desligado. Botões de anterior/próxima e Mute/Ouvir clicáveis
+  ficam visíveis enquanto dirige. Mute silencia apenas a rádio do veículo e
+  mantém a música avançando; a escolha vale entre carros durante a sessão.
+  Identificação persistente da estação; volume pelo controle Música; retomada
   ao sair e voltar ao mesmo carro. Segurar R não troca a cada quadro.
 - Diálogos reduzem ambiente e música; fontes distantes param de decodificar.
   O porto desaparece gradualmente ao avançar para a montanha.
 
-Esta primeira programação tem uma faixa completa por estação (2:21 / 4:06).
+Cada estação tem uma faixa completa (2:21 / 4:06 / 2:57 / 3:20).
 Locução, anúncios e boletins da campanha ficam para uma expansão editorial.
 Não há serviço de streaming externo nem dependência de rede durante a partida.
 
 ## Reproduzir os arquivos
 
 `python tools/build_living_city_audio.py` usa numpy, scipy e imageio-ffmpeg.
+Depois, `python tools/expand_radio.py` acrescenta as duas estações novas e seus créditos.
 O cache é local em `tools/.living_audio_cache` e não entra no Git nem no Godot.
 O manifesto permite reutilizar downloads já verificados, sem nova consulta.
 Arquivos finais e manifesto ficam em `audio/living_city`.

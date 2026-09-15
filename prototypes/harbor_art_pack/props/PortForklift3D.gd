@@ -118,6 +118,7 @@ func _build_model() -> void:
 	_cyl(Vector3(0.0, 1.05, mast_z - 0.04), 0.045, 1.60, mat_hardware)
 
 	# 7. Carro de Carga e Garfos de Aço Forjado
+	var carriage_start := get_child_count()
 	var carriage_z := mast_z + 0.08
 	# Grade protetora do carro de carga (Load backrest)
 	_box(Vector3(0.0, 0.60, carriage_z), Vector3(0.92, 0.80, 0.04), mat_dark)
@@ -131,6 +132,8 @@ func _build_model() -> void:
 		_box(Vector3(fork_x, 0.04, carriage_z + 0.05 + blade_l * 0.5), Vector3(0.10, 0.04, blade_l), mat_dark)
 		# Ponta chanfrada do garfo
 		_box(Vector3(fork_x, 0.035, carriage_z + 0.05 + blade_l), Vector3(0.09, 0.02, 0.06), mat_dark)
+	for i in range(carriage_start, get_child_count()):
+		get_child(i).set_meta("forklift_carriage", true)
 
 func _box(pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()

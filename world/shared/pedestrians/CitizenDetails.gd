@@ -28,24 +28,7 @@ static func dress(actor: Node, variant: int) -> void:
 		actor.presentation_ready.connect(func(): dress(actor, variant), CONNECT_ONE_SHOT)
 		return
 	if actor.has_meta("citizen_dressed"): return
-	variant = int(actor.get_meta("citizen_detail_variant", variant))
-	actor.set_meta("citizen_dressed", true)
-	load("res://world/shared/pedestrians/CitizenAppearance.gd").apply(actor)
-	var head: Node3D = actor.head_node
-	var face := int(actor.get_meta("appearance_variant",variant))
-	for side in [-1,1]:
-		piece(head,Vector3(.045,.065,.04),Vector3(side*.17,-.015,0),actor.skin_color,true)
-		piece(head,Vector3(.031,.017+(face%3)*.003,.015),Vector3(side*(.058+(face%3)*.005),.008,-.157),Color("292a2b"))
-	piece(head,Vector3(.034+(face%4)*.006,.05,.05),Vector3(0,-.025,-.17),actor.skin_color,true)
-	var shirt: Color = actor.shirt_color
-	if face%4 in [0,2]:
-		piece(actor.torso_node,Vector3(.085,.07,.025),Vector3(-.10,.035,-.17),shirt.darkened(.22))
-		for i in 3:
-			piece(actor.torso_node,Vector3(.016,.016,.02),Vector3(0,.08-i*.065,-.183),Color("b8b6a6"))
-	if variant%3==0:
-		piece(actor.torso_node,Vector3(.04,.38,.025),Vector3(.10,0,-.19),Color("514433")).rotation.z=-.4
-		piece(actor.torso_node,Vector3(.19,.19,.13),Vector3(-.19,-.15,-.02),Color("71563e"))
-	finish_rig(actor, "civilian")
+	preload("res://world/shared/pedestrians/CitizenSculpt.gd").build(actor)
 
 static func finish_rig(actor: Node, role: String) -> void:
 	if actor.has_meta("rig_tailored"): return
@@ -63,18 +46,10 @@ static func finish_rig(actor: Node, role: String) -> void:
 		if part is MeshInstance3D and part.material_override:
 			cloth = part.material_override.albedo_color
 			break
-	# Facial features follow each rig's head size, including smaller shop staff.
-	for side in [-1, 1]:
-		piece(head, Vector3(.050,.015,.020), Vector3(side*radius*.39,.044,-radius*.94), skin.darkened(.52))
-	if role in ["clerk", "mortician"]:
-		for side in [-1, 1]:
-			piece(head, Vector3(.034,.022,.022), Vector3(side*radius*.4,.012,-radius*.98), Color("292c31"))
-			piece(head, Vector3(.045,.065,.05), Vector3(side*radius,-.01,0), skin,true)
-		piece(head,Vector3(.045,.06,.055),Vector3(0,-.025,-radius),skin,true)
-		# A solid crown of hair also reads from the top-down shop camera.
-		piece(head,Vector3(radius*2.04,.10,radius*1.95),Vector3(0,radius*.77,.012),Color("47362f"),true)
 	if role != "mortician":
-		piece(head, Vector3(.054,.012,.012), Vector3(0,-.074,-radius*.89), skin.darkened(.42))
+		preload("res://world/shared/pedestrians/CitizenFace.gd").build(head,radius,skin,int(actor.get_meta("appearance_variant",0)))
+	if role in ["clerk", "mortician"]:
+		piece(head,Vector3(radius*2.04,.10,radius*1.95),Vector3(0,radius*.77,.012),Color("47362f"),true)
 	for side in [-1,1]:
 		# Collar, shoulder seam, rolled sleeve cuff and tailored trouser seam.
 		if role != "civilian" or int(actor.get_meta("appearance_variant",0))%4 != 1:

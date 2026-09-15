@@ -3,6 +3,7 @@ extends Control
 var buttons: Array[Button] = []
 var motion: Dictionary = {}
 var background: TextureRect
+var atmosphere: Control
 var cover: ColorRect
 var resume_label: Label
 var source_menu: Control
@@ -23,25 +24,14 @@ func install(menu: Control) -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
-	var shader := Shader.new()
-	shader.code = """shader_type canvas_item;
-uniform bool reduce_motion = false;
-void fragment() {
- vec2 uv = UV;
- float water = smoothstep(0.40,0.46,uv.y) * (1.0-smoothstep(0.58,0.72,uv.y));
- float right_side = smoothstep(0.28,0.44,uv.x);
- uv.x += sin(uv.y*170.0 + TIME*1.25)*0.00065*water*right_side*(reduce_motion ? 0.0 : 1.0);
- vec4 c = texture(TEXTURE,uv);
- float glow = pow(max(0.0,1.0-distance(uv,vec2(0.56,0.27))*3.0),3.0);
- c.rgb += vec3(1.0,0.39,0.10)*glow*(0.018+(reduce_motion ? 0.0 : 0.012*sin(TIME*0.65)));
- COLOR = c;
-}"""
 	var mat := ShaderMaterial.new()
-	mat.shader = shader
+	mat.shader = preload("res://ui/SunsetAtmosphere.gdshader")
 	background.material = mat
-	# Opaque UI plate replaces the labels baked into the concept illustration.
+	atmosphere = preload("res://ui/SunsetAtmosphere.gd").new()
+	add_child(atmosphere)
+	# Painel translúcido elegante que destaca os botões sem ocultar a arte do porto.
 	cover = ColorRect.new()
-	cover.color = Color("091018")
+	cover.color = Color(0.04, 0.05, 0.08, 0.65)
 	cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cover)
 	buttons.assign([menu.btn_new_game, menu.btn_load_game, menu.btn_settings, menu.btn_quit])
@@ -81,14 +71,25 @@ void fragment() {
 		add_child(resume_label)
 	arrange()
 	modulate.a = 0.0
-	create_tween().tween_property(self,"modulate:a",1.0,0.65)
+	var intro_tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	intro_tween.tween_property(self, "modulate:a", 1.0, 0.55)
+	if not get_node("/root/SettingsManager").reduce_motion:
+		for i in buttons.size():
+			var btn := buttons[i]
+			var target_x: float = btn.position.x
+			btn.position.x = target_x - 28.0
+			btn.modulate.a = 0.0
+			intro_tween.tween_property(btn, "position:x", target_x, 0.42).set_delay(0.06 + i * 0.05)
+			intro_tween.tween_property(btn, "modulate:a", 1.0, 0.36).set_delay(0.06 + i * 0.05)
 
 func arrange() -> void:
-	# Preserva logo e rosto nas proporções largas; recorta a borda inferior/direita.
+	# Preserva proporções do porto e de Dante; recorta bordas excessivas.
 	background.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	var art_size := background.texture.get_size()
 	background.size = art_size*maxf(size.x/art_size.x,size.y/art_size.y)
 	background.position = Vector2.ZERO
+	atmosphere.size = background.size
+	atmosphere.position = background.position
 	var menu_top := minf(maxf(size.y*0.385,background.size.y*0.36),size.y-430)
 	cover.position = Vector2(size.x*0.018,menu_top)
 	cover.size = size * Vector2(0.30, 0.075*buttons.size()+0.05)
@@ -104,22 +105,50 @@ func arrange() -> void:
 		button.size = size * Vector2(0.266, 0.065)
 		button.add_theme_font_size_override("font_size", maxi(15, int(size.y * 0.027)))
 		button.pivot_offset = Vector2(0,button.size.y*0.5)
+		button.set_meta("base_x", button.position.x)
 
 func animate(button: Button, active: bool) -> void:
 	if get_node("/root/SettingsManager").reduce_motion: return
 	if motion.has(button): motion[button].kill()
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	motion[button] = tween
-	tween.tween_property(button,"scale",Vector2.ONE * (1.025 if active else 1.0),0.16)
+	var base_x: float = float(button.get_meta("base_x", button.position.x))
+	tween.tween_property(button, "scale", Vector2.ONE * (1.025 if active else 1.0), 0.16)
+	tween.tween_property(button, "position:x", base_x + (5.0 if active else 0.0), 0.16)
 
 func pulse(button: Button) -> void:
 	if get_node("/root/SettingsManager").reduce_motion: return
 	if motion.has(button): motion[button].kill()
 	button.scale = Vector2.ONE * 0.97
 
-func _process(_delta: float) -> void:
-	if background != null:
-		background.material.set_shader_parameter("reduce_motion",get_node("/root/SettingsManager").reduce_motion)
+## Transição cinematográfica disparada ao iniciar a partida (Novo Jogo / Continuar)
+func play_start_transition() -> void:
+	if get_node("/root/SettingsManager").reduce_motion:
+		return
+	var tween := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	for i in buttons.size():
+		var btn := buttons[i]
+		tween.tween_property(btn, "position:x", btn.position.x - 45.0, 0.35).set_delay(i * 0.03)
+		tween.tween_property(btn, "modulate:a", 0.0, 0.28).set_delay(i * 0.03)
+	if resume_label != null:
+		tween.tween_property(resume_label, "modulate:a", 0.0, 0.25)
+	if cover != null:
+		tween.tween_property(cover, "modulate:a", 0.0, 0.30)
+	tween.tween_property(background, "scale", Vector2(1.04, 1.04), 0.45)
+	var curtain := ColorRect.new()
+	curtain.color = Color(0, 0, 0, 0)
+	curtain.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	curtain.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(curtain)
+	tween.tween_property(curtain, "color:a", 1.0, 0.38).set_delay(0.05)
+	await tween.finished
+
+func _process(delta: float) -> void:
+	if background != null and atmosphere != null:
+		atmosphere.advance(delta, get_node("/root/SettingsManager").reduce_motion)
+		background.material.set_shader_parameter("atmosphere_time", atmosphere.elapsed)
 	if resume_label != null:
 		var data: Dictionary = source_menu.latest_save
+		resume_label.visible = not data.is_empty()
+		if data.is_empty(): return
 		resume_label.text = preload("res://ui/SavePresentation.gd").stage_name(data.summary.get("current_stage",""),get_node("/root/CampaignState"))+"\n"+data.date_string

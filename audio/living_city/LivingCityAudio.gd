@@ -14,6 +14,24 @@ static func stations() -> Array:
 	var night := _stream("porto_noite.ogg", true)
 	day.resource_name = "PORTO FM · Empty Stretch"
 	night.resource_name = "PORTO NOITE · Fusion Jazz"
+	var groove := _stream("porto_groove.ogg", true)
+	var brisa := _stream("porto_brisa.ogg", true)
+	groove.resource_name = "PORTO GROOVE · Wednesday Night"
+	brisa.resource_name = "PORTO BRISA · Apple Cider"
+	var neon := _stream("porto_neon.ogg", true)
+	var arcade := _stream("porto_arcade.ogg", true)
+	var pesada := _stream("porto_pesada.ogg", true)
+	neon.resource_name = "PORTO NEON · Synth Rock"
+	arcade.resource_name = "PORTO ARCADE · Chiptune"
+	pesada.resource_name = "PORTO PESADA · Metal Fusion"
+	var reggae := _stream("porto_reggae.ogg", true)
+	var club := _stream("porto_club.ogg", true)
+	var estrada := _stream("porto_estrada.ogg", true)
+	var cruise := _stream("porto_cruise.ogg", true)
+	reggae.resource_name = "PORTO REGGAE · Sweet Coast"
+	club.resource_name = "PORTO CLUB · Electronic Outlaw"
+	estrada.resource_name = "PORTO ESTRADA · Freeway Fumes"
+	cruise.resource_name = "PORTO CRUISE · Midnight Cruiser"
 	if not _cache.has("off"):
 		var off := AudioStreamWAV.new()
 		off.format = AudioStreamWAV.FORMAT_16_BITS
@@ -25,7 +43,7 @@ static func stations() -> Array:
 		off.loop_end = 8000
 		off.resource_name = "RADIO OFF"
 		_cache.off = off
-	return [day, night, _cache.off]
+	return [day, night, groove, brisa, neon, arcade, pesada, reggae, club, estrada, cruise, _cache.off]
 
 static func _stream(file: String, looped: bool) -> AudioStream:
 	if not _cache.has(file):

@@ -14,7 +14,8 @@ func _ready() -> void:
 
 func _on_crime(_severity: int) -> void:
 	if is_dead: return
-	var suspect: Node2D = get_node("/root/WantedManager").get_pursuit_target()
+	if get_node("/root/WantedManager").current_stars <= 0: return
+	var suspect: Node2D = get_node("/root/WantedManager").get_suspect_actor()
 	if not is_instance_valid(suspect) or global_position.distance_to(suspect.global_position)>300: return
 	target=suspect
 	if _has_target_sight():
@@ -31,7 +32,7 @@ func _physics_process(delta: float) -> void:
 	if alerted:
 		if is_instance_valid(target) and _has_target_sight():
 			lost_sight=0
-			wm.time_hidden=0
+			wm.report_visual_contact(self)
 		else: lost_sight+=delta
 		if wm.current_stars==0 or lost_sight>8:
 			alerted=false

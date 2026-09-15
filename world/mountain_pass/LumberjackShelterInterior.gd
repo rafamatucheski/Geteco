@@ -9,8 +9,15 @@ func _setup_interior_content() -> void:
 	_setup_3d_cabin_viewport()
 	_setup_heat_source()
 	_build_projected_furniture()
+	var pickup := preload("res://world/mountain_pass/MountainWeaponPickup.gd").new()
+	pickup.name = "WoodAxeStation"
+	pickup.weapon_id = "axe"
+	pickup.pickup_id = "lumberjack_shelter_axe"
+	pickup.position = project_floor(Vector2(2.2,-2.7))
+	add_child(pickup)
+	pickup.install_model(cabin_3d_world, Vector3(2.2,0.08,-2.7))
 	_create_spawn_and_exit(project_floor(Vector2(0,3.0)),project_floor(Vector2(0,4.15)),&"lumberjack_exterior_return","SAIR DO ABRIGO DOS LENHADORES")
-	exit_door.custom_prompt_text = "[E] SAIR DO ABRIGO DOS LENHADORES"
+	exit_door.custom_prompt_text = "E"
 	exit_door.get_node("Facade").hide()
 func _setup_weapon_stations() -> void: pass
 func _setup_3d_cabin_viewport() -> void:

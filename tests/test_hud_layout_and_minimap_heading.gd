@@ -1,8 +1,7 @@
 extends SceneTree
 ## Testes de:
-## 1) Sobreposição corrigida entre o card de objetivo de missão, o bloco de
-##    temperatura/proteção térmica (ColdStatusHUD.gd) e o readout de
-##    altitude (MountainExpedition.gd), sem cortar texto.
+## 1) Temperatura compacta junto de vida/colete, sem o antigo card, e avisos
+##    da expedição livres na coluna esquerda sem cortar texto.
 ## 2) A seta do pedestre no minimapa (ui/HarborMinimap.gd) acompanha a
 ##    direção real de movimento, conserva a última direção ao parar, e usa
 ##    a orientação do veículo ao dirigir -- preservando os ícones da
@@ -110,7 +109,7 @@ func run() -> void:
 	check(minimap_source.contains("car_marker") and minimap_source.contains("show_car"), "Monaliza marker draw block preserved (car_marker + show_car)")
 
 	# ==========================================
-	# HUD: coluna esquerda (objetivo / frio / altitude) sem sobreposição
+	# HUD: temperatura compacta integrada a vida/colete no canto direito
 	# ==========================================
 	if not stream.ready_for_crossing:
 		stream.ensure_mountain()
@@ -124,34 +123,59 @@ func run() -> void:
 	var cold_hud = mountain.cold_hud
 	var expedition = mountain.get_node("MountainExpedition")
 	await frames(3)
+	var main_hud = root.get_tree().get_first_node_in_group("hud")
+	main_hud.set_armor(64, 100)
+	await frames(1)
+	var vitals: VBoxContainer = main_hud.health_bar.get_parent().get_parent()
+	check(cold_hud._panel.get_parent() == vitals, "temperature vital joins the same HUD stack as health and armor")
+	check(cold_hud._panel.get_index() == main_hud.armor_row.get_index() + 1, "temperature vital sits immediately below body armor")
+	check(main_hud.armor_row.visible, "armor is visible in the visual fixture for side-by-side HUD review")
+	check(cold_hud._panel.custom_minimum_size.x <= 120 and cold_hud._panel.custom_minimum_size.y <= 12, "temperature presentation is compact rather than a large card")
+	check(cold_hud._temp_label.text.ends_with("%") and not cold_hud._temp_label.text.contains("TEMPERATURA"), "temperature row uses only a subtle percentage label")
+	check(cold_hud._panel.get_global_rect().position.x >= root.get_visible_rect().size.x * 0.5, "temperature vital follows health and armor into the right HUD column")
+	cold_hud.hide()
+	await frames(1)
+	check(not cold_hud._panel.visible, "streaming the mountain HUD out also hides the reparented temperature vital")
+	cold_hud.show()
+	await frames(2)
+	check(cold_hud._panel.visible, "streaming the mountain HUD back in restores the temperature vital")
 
 	# Card de objetivo (não editado por esta tarefa) -- mede o que existe de
 	# verdade em vez de assumir, para validar a margem de segurança.
 	var objective_card: Control = world.get_node("CobraCampaign").get("_objective_card")
 	var objective_bottom := 150.0
 	if objective_card != null:
+		check(not objective_card.visible, "mission prose remains hidden; navigation lives on the map")
 		await frames(1) # 1 frame de layout para o VBoxContainer calcular a altura real
 		objective_bottom = objective_card.position.y + objective_card.size.y
-		check(objective_bottom <= cold_hud.BLOCK_TOP, "cold HUD block starts at/after the real measured bottom of the objective card (%.1f <= %.1f)" % [objective_bottom, cold_hud.BLOCK_TOP])
+		check(objective_card.get_global_rect().position.x >= root.get_visible_rect().size.x * 0.5, "objective card sits in the right HUD column")
+		check(not objective_card.get_global_rect().intersects(cold_hud._panel.get_global_rect()), "objective stays below the compact vitals stack")
 	else:
 		check(false, "objective card not found (CobraCampaign._objective_card) -- could not measure the real overlap margin")
 
 	var cold_bottom: float = cold_hud.get_stack_bottom_offset()
 	check(is_instance_valid(expedition._readout_panel), "altitude readout panel exists")
-	check(expedition._readout_panel.position.y >= cold_bottom, "altitude readout starts at/after the cold HUD's documented stack offset (%.1f >= %.1f)" % [expedition._readout_panel.position.y, cold_bottom])
+	check(expedition._readout_panel.position.y >= cold_bottom, "expedition readout honors the now-free left HUD margin (%.1f >= %.1f)" % [expedition._readout_panel.position.y, cold_bottom])
 
 	check(is_instance_valid(expedition._prompt_panel), "temporary notice panel exists")
-	check(expedition._prompt_panel.position.y > expedition._readout_panel.position.y, "temporary notice panel sits below the altitude readout")
+	check(expedition._prompt_panel.position.y >= cold_bottom, "temporary notice uses the left column without competing with temperature")
 
 	# Move o jogador para dentro da região da montanha (x>=SEAM_X, y<-2000)
 	# para os textos reais (temperatura/altitude) aparecerem.
-	player.global_position = Vector2(9000, -3500)
+	player.global_position = mountain.to_global(Vector2(6600, -1011))
 	mountain.player_instance = player
 	stream._update_region()
 	await frames(5)
 	map.refresh()
 	check(cold_hud.visible, "cold HUD becomes visible once the mountain region is selected")
-	check(expedition.readout.text != "", "altitude readout has real text once inside the mountain region")
+	check(not expedition._readout_panel.visible, "region name card stays hidden")
+	check(map.caption.text == "1554 m", "minimap shows only current altitude at the snowy lake")
+	check(mountain.cold_controller.is_in_cold_zone(), "snowy lake activates cold below the old threshold")
+	mountain.cold_controller._update_temperature(20.0)
+	check(mountain.cold_controller.current_temperature < 100, "snowy lake actually drains warmth after grace")
+	for child in map.panel.get_children():
+		if child is Label:
+			check(not child.text.contains("DRIFT") and not child.text.contains("CORRIDA") and not child.text.contains("DESTINO"), "minimap has no unsolicited legends")
 
 	expedition._notice("funds", "Você precisa de $650 para o casaco térmico e mais um pouco de texto para testar a quebra de linha automática sem cortar nada.")
 	await frames(1)
@@ -173,7 +197,7 @@ func run() -> void:
 		await frames(2)
 		map.refresh()
 		check(cold_hud.get("_panel").visible, "cold HUD reappears once the CGI is gone")
-		check(expedition._readout_panel.visible, "altitude readout reappears once the CGI is gone")
+		check(not expedition._readout_panel.visible, "region card remains hidden after CGI")
 	else:
 		check(false, "ArrivalMission node not found -- could not test the CGI/HUD guard")
 	check(expedition.prompt.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART, "temporary notice label wraps instead of clipping long text")

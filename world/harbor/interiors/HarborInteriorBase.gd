@@ -27,6 +27,7 @@ var spawn_point: Marker2D
 var exit_door: BuildingEntrance
 var walls_body: StaticBody2D
 var interactive_stations: Array[Dictionary] = []
+var _resident_presentations: Dictionary = {}
 
 const ENTRANCE_SCENE: PackedScene = preload("res://scripts/entrances/BuildingEntrance.tscn")
 
@@ -246,6 +247,24 @@ func contains_point(point: Vector2) -> bool:
 ## so without this the NPC would render a full 3D pass every frame even while
 ## nobody is inside. Toggled by HarborInteriorManager on actual enter/exit.
 func set_npc_rendering_active(active: bool) -> void:
+	# Projected rooms admit their residents to the same depth buffer as furniture.
+	# The shared adapter restores each rig before an empty room is suspended.
+	if not active:
+		for presentation in _resident_presentations.values():
+			if is_instance_valid(presentation):
+				presentation.restore()
+				presentation.queue_free()
+		_resident_presentations.clear()
+	elif get("camera_3d") is Camera3D and get("sprite_3d") is Sprite2D:
+		for resident in find_children("*", "CharacterBody2D", true, false):
+			if _resident_presentations.has(resident): continue
+			var rig = resident.get("model_root")
+			if rig == null: rig = resident.get("model")
+			if not rig is Node3D: continue
+			var presentation := preload("res://world/shared/interiors/InteriorActorPresentation.gd").new()
+			add_child(presentation)
+			presentation.configure(resident, get("camera_3d"), get("sprite_3d"))
+			_resident_presentations[resident] = presentation
 	var mode := SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
 	for child in find_children("*", "", true, false):
 		var vp = child.get("viewport_3d")

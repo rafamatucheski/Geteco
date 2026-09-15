@@ -1,4 +1,5 @@
 extends RefCounted
+const CROSSING_HALF_WIDTH := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").CROSSING_HALF_WIDTH
 ## Sidewalk centers follow the width of each bordering road.
 const BLOCKS := [Rect2(477,482,736,686),Rect2(1387,482,736,686),Rect2(2277,482,641,686),Rect2(477,1332,736,786),Rect2(1387,1332,736,786),Rect2(2277,1332,641,786)]
 
@@ -42,7 +43,7 @@ static func crossing_wait(actor: CharacterBody2D, destination: Vector2) -> bool:
 		if not is_instance_valid(crossing): continue
 		var p: Vector2 = crossing.to_local(actor.global_position)
 		var goal: Vector2 = crossing.to_local(destination)
-		if absf(p.x)>18 or absf(goal.x)>18 or p.y*goal.y>=0: continue
+		if absf(p.x)>CROSSING_HALF_WIDTH or absf(goal.x)>CROSSING_HALF_WIDTH or p.y*goal.y>=0: continue
 		# Once committed, finish crossing even when the signal changes.
 		if absf(p.y)<crossing.road_width*0.5+8: continue
 		if absf(p.y)>crossing.road_width*0.5+40: continue
@@ -52,6 +53,9 @@ static func crossing_wait(actor: CharacterBody2D, destination: Vector2) -> bool:
 			if not is_instance_valid(car) or not car.is_visible_in_tree(): continue
 			var v = car.get("velocity")
 			if not v is Vector2: continue
+			# Stationary vehicles are physical obstacles for the navigator.
+			# Treating them as approaching traffic prevents any detour attempt.
+			if v.length_squared() < 1.0: continue
 			var now: Vector2 = crossing.to_local(car.global_position)
 			var future: Vector2 = crossing.to_local(car.global_position+v*1.8)
 			if absf(now.y)<crossing.road_width*0.5+18 and (absf(now.x)<65 or (now.x*future.x<=0 and absf(now.x)<320)):

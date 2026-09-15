@@ -140,7 +140,7 @@ func _build_tuning_bench() -> void:
 	)
 
 	bench_badge = Label.new()
-	bench_badge.text = "[ E ] BANCADA DE PREPARAÇÃO & PEÇAS"
+	bench_badge.text = "E"
 	bench_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bench_badge.position = bench_pos + Vector2(-140, -55)
 	bench_badge.size = Vector2(280, 20)

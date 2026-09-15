@@ -3,7 +3,7 @@ extends Node2D
 
 ## Ponto de Prontidão da Polícia Militar com viatura real autêntica.
 ## A viatura é um TrafficVehicle completo no grupo 'vehicle', interativo e dirigível.
-## Se o jogador tentar roubá-la, o alarme anti-furto dispara e a polícia é chamada imediatamente!
+## Lockpick: sucesso permite o furto e chama a polícia; falha dispara só o alarme.
 
 @export var standby_id := "alley_unit_01"
 @export var service_key := "police"
@@ -24,7 +24,9 @@ func _spawn_standby_car() -> void:
 	if not is_inside_tree():
 		return
 	if is_instance_valid(parked_car):
-		parked_car.queue_free()
+		# Replacing the standby unit must preserve the cruiser the player stole.
+		if parked_car.get("was_stolen_from_police") != true:
+			parked_car.queue_free()
 		parked_car = null
 		
 	var car_scene := load("res://world/shared/traffic/TrafficVehicle.tscn") as PackedScene
@@ -44,7 +46,7 @@ func _spawn_standby_car() -> void:
 		car.set("is_police_vehicle", true)
 		car.set("is_standby_unit", true)
 		car.set("standby_source", self)
-		car.apply_archetype("police_cruiser")
+		car.apply_archetype("police_suv" if posmod(standby_id.hash(), 3) == 0 else "police_cruiser")
 		
 	parked_car = car
 	available = true

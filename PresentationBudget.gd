@@ -14,6 +14,8 @@ func request(actor: Node2D) -> void:
 func _process(_delta: float) -> void:
 	var started := Time.get_ticks_usec()
 	for iteration in max_builds_per_frame:
+		if Time.get_ticks_usec() - started >= budget_usec:
+			return
 		var best: Node2D
 		var best_distance := INF
 		for index in range(pending.size() - 1, -1, -1):
@@ -22,6 +24,8 @@ func _process(_delta: float) -> void:
 				pending.remove_at(index)
 				continue
 			if not actor.is_visible_in_tree():
+				continue
+			if actor.get_meta("proximity_sleeping", false):
 				continue
 			var screen := actor.get_global_transform_with_canvas().origin
 			var rect := actor.get_viewport_rect()

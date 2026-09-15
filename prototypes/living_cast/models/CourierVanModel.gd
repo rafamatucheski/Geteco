@@ -22,10 +22,11 @@ func build() -> void:
 	# Capô inclinado curto frontal
 	box(Vector3(0.0, 0.72, -1.75), Vector3(1.86, 0.44, 1.25), paint)
 	# Área de carga inferior
-	box(Vector3(0.0, 0.72, 0.35), Vector3(1.92, 0.44, 2.95), paint)
+	# Mantém a frente do compartimento e fecha a carroceria no plano das portas.
+	box(Vector3(0.0, 0.72, 0.625), Vector3(1.92, 0.44, 3.50), paint)
 
 	# 3. Baú Traseiro Alto Fechado (Sem janelas traseiras)
-	box(Vector3(0.0, 1.55, 0.45), Vector3(1.90, 1.15, 2.85), paint)
+	box(Vector3(0.0, 1.5325, 0.70), Vector3(1.90, 1.185, 3.35), paint)
 
 	# 4. Cabine Superior (Envidraçada apenas para motorista/passageiro)
 	box(Vector3(0.0, 1.62, -1.05), Vector3(1.80, 0.95, 1.15), paint)

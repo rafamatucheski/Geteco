@@ -1,5 +1,9 @@
 # Disparos, impactos e chuva de fundo — 06/09/2026
 
+Revisão posterior de 10/09: impactos corporais e gritos eletrônicos substituídos por gravações CC0 de pancada e voz. Fontes e reconstrução em [reactions/CREDITS.md](../reactions/CREDITS.md). O contato corporal não contém mais a vogal sintetizada descrita na atualização anterior.
+
+Atualização de 10/09: cinco takes por família, doze/serrada reforçadas, reação curta de dor e materiais dos objetos integrados. Os detalhes e validações atuais estão em [vehicle-combat-feedback-0910.md](../../docs/vehicle-combat-feedback-0910.md). O restante deste arquivo documenta a entrega histórica de 06/09.
+
 ## Entrega
 
 - Sete famílias de armas: pistola, Magnum, SMG, AK-47, M4A1, escopeta e cano serrado. Cada uma tem três takes originais, escolhidos sem repetição consecutiva, com pequena variação de afinação/volume. Transiente, corpo, mecanismo e reflexões curtas têm parâmetros distintos; as automáticas têm caudas mais curtas.

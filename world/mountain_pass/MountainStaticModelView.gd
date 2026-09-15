@@ -5,10 +5,10 @@ var viewport_3d: SubViewport
 var camera_3d: Camera3D
 var sprite_3d: Sprite2D
 var model: Node3D
-func build_view(script: Script, metres_in_view: float, pixels_per_metre: float, target := Vector3.ZERO, view_direction := Vector3(0,24,20)) -> void:
+func build_view(script: Script, metres_in_view: float, pixels_per_metre: float, target := Vector3.ZERO, view_direction := Vector3(0,24,20), render_size := Vector2i(960,800)) -> void:
 	viewport_3d = SubViewport.new()
 	viewport_3d.name = "ModelViewport3D"
-	viewport_3d.size = Vector2i(960,800)
+	viewport_3d.size = render_size
 	viewport_3d.transparent_bg = true
 	viewport_3d.own_world_3d = true
 	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -29,10 +29,12 @@ func build_view(script: Script, metres_in_view: float, pixels_per_metre: float, 
 	# uma camera sem orientacao (o chao inteiro colapsando numa faixa horizontal).
 	# Sem interpolacao nesta camera, a projecao le o transform de verdade.
 	camera_3d.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera_3d.force_update_transform()
 	camera_3d.reset_physics_interpolation()
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55,-24,0)
 	sun.light_energy = 1.0
+	sun.shadow_enabled = true
 	viewport_3d.add_child(sun)
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()

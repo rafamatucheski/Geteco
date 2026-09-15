@@ -1,0 +1,31 @@
+extends SceneTree
+func _initialize() -> void:
+	call_deferred("run")
+func run() -> void:
+	var lane := Path2D.new()
+	lane.curve = Curve2D.new()
+	lane.curve.add_point(Vector2(0, 0))
+	lane.curve.add_point(Vector2(500, 0))
+	root.add_child(lane)
+	var follow := PathFollow2D.new()
+	lane.add_child(follow)
+	follow.progress = 100
+	var bus = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
+	bus.set_script(preload("res://world/harbor/HarborTransitBus.gd"))
+	follow.add_child(bus)
+	bus.set_physics_process(false)
+	bus.set_process(false)
+	var person := CharacterBody2D.new()
+	root.add_child(person)
+	person.position = Vector2(180, -60)
+	var clear: bool = not bus._lane_pedestrian_blocks(follow, person, false)
+	person.position = Vector2(180, -20)
+	var crossing: bool = bus._lane_pedestrian_blocks(follow, person, false)
+	person.position = Vector2(180, -60)
+	person.velocity = Vector2(0, 65)
+	var predicted: bool = bus._lane_pedestrian_blocks(follow, person, false)
+	print("HARBOR_BUS_PEDESTRIAN_CORRIDOR sidewalk_clear=", clear, " crossing_yield=", crossing, " approaching_yield=", predicted)
+	lane.queue_free()
+	person.queue_free()
+	await process_frame
+	quit(0 if clear and crossing and predicted else 1)

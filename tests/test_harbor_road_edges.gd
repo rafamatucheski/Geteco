@@ -2,6 +2,7 @@ extends SceneTree
 
 const PREVIEW := preload("res://world/harbor/HarborPreview.tscn")
 const NETWORK := preload("res://world/harbor/HarborRoadNetwork.gd")
+const BOUNDARY_AUDIT := preload("res://tests/support/RoadBoundaryAudit.gd")
 var failures: Array[String] = []
 var boundary_segments := 0
 var closed_contours := 0
@@ -68,6 +69,7 @@ func _audit_network(network: Node2D, label: String) -> void:
 	_check(audit.layers.size() == 2, label + " must outline both curb and outside sidewalk")
 	for layer_name in audit.layers:
 		var layer: Dictionary = audit.layers[layer_name]
+		var regions := BOUNDARY_AUDIT.prepare(layer.sources)
 		_check(int(layer.open_chains) == 0, "%s/%s has broken boundary chains: %d" % [label, layer_name, layer.open_chains])
 		_check(not layer.contours.is_empty(), label + "/" + layer_name + " has no complete contours")
 		for contour: PackedVector2Array in layer.contours:
@@ -77,11 +79,8 @@ func _audit_network(network: Node2D, label: String) -> void:
 			_check(not Geometry2D.triangulate_polygon(polygon).is_empty(), label + " boundary loop must be a valid simple polygon")
 		for segment: PackedVector2Array in layer.segments:
 			boundary_segments += 1
-			var normal := (segment[1] - segment[0]).normalized().orthogonal()
 			var middle := (segment[0] + segment[1]) * 0.5
-			var inside_plus := _inside(middle + normal * 0.12, layer.sources)
-			var inside_minus := _inside(middle - normal * 0.12, layer.sources)
-			_check(inside_plus != inside_minus, "%s/%s contains an internal seam or detached contour at %s" % [label, layer_name, middle])
+			_check(BOUNDARY_AUDIT.is_boundary(segment, regions), "%s/%s contains an internal seam or detached contour at %s" % [label, layer_name, middle])
 		for segment: PackedVector2Array in layer.visible_segments:
 			for index in range(segment.size() - 1):
 				for fraction in [0.2, 0.5, 0.8]:
@@ -176,11 +175,10 @@ func _audit_hole_and_island(network: Node2D) -> void:
 	for rect in [Rect2(0,0,300,20),Rect2(0,280,300,20),Rect2(0,20,20,260),Rect2(280,20,20,260),Rect2(120,120,40,40),Rect2(20,80,60,120)]:
 		polygons.append(PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)]))
 	var union: Dictionary = network._union_boundary(polygons)
+	var regions := BOUNDARY_AUDIT.prepare(polygons)
 	_check(union.contours.size()==3,"Native union preserves outer loop, courtyard hole and island inside hole")
 	for edge: PackedVector2Array in union.segments:
-		var middle := (edge[0]+edge[1])*0.5
-		var normal := (edge[1]-edge[0]).normalized().orthogonal()*0.12
-		_check(_inside(middle+normal,polygons)!=_inside(middle-normal,polygons),"Hole/island contour is a real boundary, not filled void")
+		_check(BOUNDARY_AUDIT.is_boundary(edge,regions),"Hole/island contour is a real boundary, not filled void")
 
 
 func _audit_court_seams(network: Node2D) -> void:

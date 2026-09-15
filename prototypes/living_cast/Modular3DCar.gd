@@ -44,10 +44,6 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		$Camera.enabled = true
 	super.enter_vehicle(player_body)
 
-func exit_vehicle() -> void:
-	if has_node("Camera"):
-		$Camera.enabled = false
-	super.exit_vehicle()
 
 func _create_body_model() -> Node3D:
 	model_spec = VehicleCatalog.get_vehicle_spec(archetype_id)
@@ -113,6 +109,4 @@ func _ready() -> void:
 			sprite.scale = Vector2.ONE * uniform_scale
 
 	# Ajustar sombra de contato
-	var shadow = get_node_or_null("ContactShadow") as Sprite2D
-	if shadow and shadow.texture:
-		shadow.scale = Vector2(t_len * 1.02, t_wid * 1.05) / shadow.texture.get_size()
+	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(t_len, t_wid))

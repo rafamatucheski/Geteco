@@ -37,6 +37,7 @@ func add_wheel(
 	var brake_mat := mat("caliper", "cd382b", 0.3, 0.4)
 	var rotor_mat := mat("rotor", "555d64", 0.6, 0.5)
 
+	var style := _wheel_style()
 	var first_idx := get_child_count()
 	var center := Vector3(side, wheel_y, wheel_z)
 
@@ -44,26 +45,45 @@ func add_wheel(
 	var tire := cylinder(center, tire_radius, tire_width, black)
 	tire.rotation.z = PI / 2.0
 
-	# 2. Roda / Aro metálico
-	var rim_mesh := cylinder(Vector3(side * (absf(side) + 0.02) / absf(side), wheel_y, wheel_z), rim_radius, tire_width * 0.95, rim_mat)
-	rim_mesh.rotation.z = PI / 2.0
-
-	# 3. Disco de freio ventilado
-	var disc := cylinder(Vector3(side * (absf(side) - 0.03) / absf(side), wheel_y, wheel_z), rim_radius * 0.85, 0.02, rotor_mat)
+	# The authored tire is a capped cylinder. Place the wheel face beyond its
+	# outer cap: the former solid rim hid every spoke inside that cylinder.
+	var outward := signf(side)
+	var face := center + Vector3(outward * (tire_width * 0.5 + 0.014), 0, 0)
+	var lip := TorusMesh.new()
+	lip.inner_radius = rim_radius * 0.87
+	lip.outer_radius = rim_radius
+	lip.rings = 32
+	lip.ring_segments = 6
+	mesh_node(lip, face, rim_mat).rotation.z = PI / 2.0
+	var disc := cylinder(face - Vector3(outward * 0.010, 0, 0), rim_radius * 0.87, 0.006, rotor_mat)
 	disc.rotation.z = PI / 2.0
+	var caliper := box(face + Vector3(-outward * 0.003, rim_radius * 0.60, 0.035), Vector3(0.012, rim_radius * 0.35, 0.055), brake_mat if style in ["split", "sport"] else trim)
 
-	# 4. Pinça de freio (caliper - não gira com a roda)
-	var caliper := box(Vector3(side * (absf(side) + 0.01) / absf(side), wheel_y + tire_radius * 0.4, wheel_z + 0.06), Vector3(0.04, 0.10, 0.06), brake_mat)
-
-	# 5. Raios da roda
-	for i in spoke_count:
-		var ang: float = float(i) * TAU / float(spoke_count)
-		var p1 := Vector3(side * (absf(side) + 0.03) / absf(side), wheel_y + cos(ang) * 0.05, wheel_z + sin(ang) * 0.05)
-		var p2 := Vector3(side * (absf(side) + 0.03) / absf(side), wheel_y + cos(ang) * (rim_radius * 0.88), wheel_z + sin(ang) * (rim_radius * 0.88))
-		tube([p1, p2], 0.018, rim_mat)
-
-	# 6. Cubo central
-	var hub := cylinder(Vector3(side * (absf(side) + 0.035) / absf(side), wheel_y, wheel_z), 0.055, 0.025, trim)
+	if style in ["steel", "utility", "classic", "aero"]:
+		var plate := cylinder(face, rim_radius * 0.88, 0.008, rim_mat)
+		plate.rotation.z = PI / 2.0
+		var holes := 6 if style == "steel" else 8
+		for i in holes:
+			var angle := TAU * i / holes
+			var inset := face + Vector3(outward * 0.006, cos(angle) * rim_radius * 0.65, sin(angle) * rim_radius * 0.65)
+			if style == "aero":
+				var slot := box(inset, Vector3(0.004, rim_radius * 0.27, rim_radius * 0.085), trim)
+				slot.rotation.x = angle + 0.35
+			else:
+				var hole := cylinder(inset, rim_radius * (0.14 if style == "utility" else 0.10), 0.004, trim)
+				hole.rotation.z = PI / 2.0
+	else:
+		var count := 5 if style in ["sport", "split"] else spoke_count
+		for i in count:
+			var angle := TAU * i / count
+			var branches := 2 if style == "split" else 1
+			for branch in branches:
+				var a := angle + ((-0.10 if branch == 0 else 0.10) if branches == 2 else 0.0)
+				var width := rim_radius * (0.23 if style == "sport" else 0.11)
+				var spoke := box(face + Vector3(outward * 0.005, cos(a) * rim_radius * 0.53, sin(a) * rim_radius * 0.53), Vector3(0.014, rim_radius * 0.76, width), rim_mat)
+				spoke.rotation.x = a
+	var hub_radius := rim_radius * (0.48 if style == "classic" else 0.24)
+	var hub := cylinder(face + Vector3(outward * 0.014, 0, 0), hub_radius, 0.020, rim_mat if style in ["classic", "utility"] else trim)
 	hub.rotation.z = PI / 2.0
 
 	# Marcação de metadados para direção de HarborCoupe
@@ -74,6 +94,18 @@ func add_wheel(
 		# O rig precisa do raio real para rolar o pneu na velocidade certa: um
 		# caminhão de 0.50 m girava com a cadência de um sedã de 0.355 m.
 		part.set_meta("wheel_radius", tire_radius)
+		part.set_meta("wheel_style", style)
+
+func _wheel_style() -> String:
+	# Stable per authored model, including models whose legacy vehicle_id is empty.
+	match get_script().resource_path.get_file().trim_suffix("Model.gd"):
+		"MetroHatch", "CourierVan", "DockDeliveryVan", "PoliceCruiser": return "steel"
+		"RouteCity", "Boxrunner", "Towmaster", "RescuePumper", "MedicBox", "AmericanFlatbed", "SnowPlow": return "utility"
+		"NordicEstate", "WoodyWagon", "BeachBuggy", "UnionSedan": return "classic"
+		"OrbitaMicro", "NimbusMinivan": return "aero"
+		"SportEstate", "VerticeMidEngine", "ValeCrossover": return "split"
+		"SummitSUV", "ArcticJeep", "PoliceSUV", "RanchSingle", "BravioCrew", "DuneBuggy": return "sport"
+		_: return "multi"
 
 func add_lightbar(
 	y_pos: float,

@@ -28,6 +28,7 @@ func _ready() -> void:
 	_create_hostile_trigger()
 	_create_burning_barrels()
 	_create_barricades_and_cover()
+	_create_culdesac_pickups()
 	_spawn_initial_squad()
 	queue_redraw()
 
@@ -157,13 +158,34 @@ func _create_barricades_and_cover() -> void:
 	tire_stack.color = Color("#111113")
 	add_child(tire_stack)
 
+func _create_culdesac_pickups() -> void:
+	# Soqueira perto das barricadas de pneus
+	var wp_knuckles := WeaponPickup.new()
+	wp_knuckles.name = "CobraKnucklesPickup"
+	wp_knuckles.weapon_id = &"knuckles"
+	wp_knuckles.ammo_amount = 0
+	wp_knuckles.persistent_loot = true
+	wp_knuckles.position = Vector2(40, -18)
+	add_child(wp_knuckles)
+
+	# Faca de combate perto dos barris de fogo
+	var wp_knife := WeaponPickup.new()
+	wp_knife.name = "CobraKnifePickup"
+	wp_knife.weapon_id = &"knife"
+	wp_knife.ammo_amount = 0
+	wp_knife.persistent_loot = true
+	wp_knife.position = Vector2(-28, 36)
+	add_child(wp_knife)
+
 func _spawn_initial_squad() -> void:
 	var spawn_offsets := [
 		Vector2(-35, -15), Vector2(-20, 28), Vector2(25, -24),
 		Vector2(10, 32), Vector2(70, 0)
 	]
+	var melee_assignments := ["knuckles", "bat", "", "knife", ""]
 	for i in range(mini(max_patrol, spawn_offsets.size())):
 		var member = IronCobraMember.new()
+		member.melee_weapon = melee_assignments[i]
 		member.global_position = global_position + spawn_offsets[i]
 		member.guard_center = global_position
 		member.guard_radius = 150.0
@@ -186,6 +208,7 @@ func _process(delta: float) -> void:
 		if respawn_timer > 9.0:
 			respawn_timer = 0.0
 			var member = IronCobraMember.new()
+			member.melee_weapon = ["knuckles", "bat", "", "knife"][randi() % 4]
 			member.global_position = global_position + Vector2(randf_range(-40, 40), randf_range(-40, 40))
 			member.guard_center = global_position
 			member.guard_radius = 150.0

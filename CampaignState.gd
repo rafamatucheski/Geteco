@@ -21,7 +21,15 @@ var campaign_flags: Dictionary = {}
 var completed_beats: Array[StringName] = []
 ## Isolated Harbor arc namespace, serialized by the existing campaign adapter.
 var cobra_campaign: Dictionary = {}
+var salvage_state: Dictionary = {}
+## Single active residence plus its transferable extra-vehicle slot.
+var residence_state: Dictionary = {}
+## A valid best time also marks that circuit as completed.
+var race_best_times: Dictionary = {}
 var bank_incident: Dictionary = {}
+var npc_medical_care: Dictionary = {}
+var coroner_cases: Dictionary = {}
+var coroner_staff_serial := 0
 
 func _process(delta: float) -> void:
 	if bank_incident.get("phase","")!="closed" or get_tree().paused: return
@@ -54,7 +62,13 @@ func load_campaign_data() -> bool:
 
 
 func reset_campaign() -> void:
+	npc_medical_care.clear()
+	coroner_cases.clear()
+	coroner_staff_serial = 0
 	bank_incident.clear()
+	race_best_times.clear()
+	residence_state.clear()
+	salvage_state.clear()
 	cobra_campaign.clear()
 	current_stage = INITIAL_STAGE
 	completed_beats.clear()
@@ -167,6 +181,20 @@ func get_territories_for_region(region_id: StringName) -> Array[Dictionary]:
 	return result
 
 
+func get_race_best_time(race_id: String) -> float:
+	return float(race_best_times.get(race_id, -1.0))
+
+
+func record_race_time(race_id: String, elapsed: float) -> bool:
+	if race_id.is_empty() or not is_finite(elapsed) or elapsed <= 0.0:
+		return false
+	var best := get_race_best_time(race_id)
+	if best > 0.0 and elapsed >= best:
+		return false
+	race_best_times[race_id] = elapsed
+	return true
+
+
 ## Save adapters may serialize this dictionary to their own slot format later.
 func to_save_data() -> Dictionary:
 	return {
@@ -177,7 +205,13 @@ func to_save_data() -> Dictionary:
 		"unlocked_territories": unlocked_territories.map(func(value): return String(value)),
 		"campaign_flags": campaign_flags.duplicate(true),
 		"cobra_campaign": cobra_campaign.duplicate(true),
+		"salvage_state": salvage_state.duplicate(true),
+		"residence_state": residence_state.duplicate(true),
+		"race_best_times": race_best_times.duplicate(true),
 		"bank_incident": bank_incident.duplicate(true),
+		"npc_medical_care": npc_medical_care.duplicate(true),
+		"coroner_cases": coroner_cases.duplicate(true),
+		"coroner_staff_serial": coroner_staff_serial,
 	}
 
 
@@ -188,8 +222,24 @@ func restore_from_save(save_data: Dictionary) -> bool:
 	if get_beat(restored_stage).is_empty():
 		return false
 	current_stage = restored_stage
+	var medical: Variant = save_data.get("npc_medical_care", {})
+	npc_medical_care = medical.duplicate(true) if medical is Dictionary else {}
+	var deaths: Variant = save_data.get("coroner_cases", {})
+	coroner_cases = deaths.duplicate(true) if deaths is Dictionary else {}
+	coroner_staff_serial = maxi(0,int(save_data.get("coroner_staff_serial",0)))
 	var restored_bank: Variant=save_data.get("bank_incident",{})
 	bank_incident=restored_bank.duplicate(true) if restored_bank is Dictionary else {}
+	race_best_times.clear()
+	var restored_races: Variant = save_data.get("race_best_times", {})
+	if restored_races is Dictionary:
+		for race_id in restored_races:
+			var time: Variant = restored_races[race_id]
+			if time is float or time is int:
+				record_race_time(String(race_id), float(time))
+	var restored_salvage: Variant = save_data.get("salvage_state", {})
+	salvage_state = restored_salvage.duplicate(true) if restored_salvage is Dictionary else {}
+	var restored_residence: Variant = save_data.get("residence_state", {})
+	residence_state = restored_residence.duplicate(true) if restored_residence is Dictionary else {}
 	var restored_cobra: Variant = save_data.get("cobra_campaign", {})
 	cobra_campaign = restored_cobra.duplicate(true) if restored_cobra is Dictionary else {}
 	completed_beats.clear()

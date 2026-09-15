@@ -1,5 +1,5 @@
 extends Node2D
-## One-platform urban terminal. Service uses the canonical street network.
+## Rodoviária: covered coach bays, guarded yard and the canonical street service.
 signal player_disembarked
 const BUS := preload("res://world/harbor/HarborTransitBus.gd")
 const PASSENGER := preload("res://world/harbor/HarborTransitPassenger.gd")
@@ -20,23 +20,23 @@ var _actor_route := PackedVector2Array()
 var _actor_clock := 0.0
 var _first_arrival := true
 var _saved_physics := true
+var _passenger_routes: Dictionary = {}
+var terminal_view: Node2D
+var terminal_operations: Node2D
 
 func _ready() -> void:
 	# Register before the parent populates traffic: the service bus is created
 	# deferred, so it cannot yet be discovered by the factory's vehicle scan.
 	add_to_group("traffic_spawn_exclusion")
-	set_meta("traffic_spawn_exclusion_rect", Rect2(1580, 1160, 240, 120))
-	for rect in [Rect2(-82, -27, 164, 8), Rect2(-82, -19, 7, 46), Rect2(75, -19, 7, 46)]:
-		var body := StaticBody2D.new()
-		body.collision_layer = 1
-		body.collision_mask = 0
-		var shape := RectangleShape2D.new()
-		shape.size = rect.size
-		var collider := CollisionShape2D.new()
-		collider.shape = shape
-		collider.position = rect.get_center()
-		body.add_child(collider)
-		add_child(body)
+	# Reserve both the local stop and the regional departure berth before cars spawn.
+	set_meta("traffic_spawn_exclusion_rect", Rect2(1580, 1160, 535, 120))
+	terminal_view = preload("res://world/harbor/terminal/HarborTerminalView.gd").new()
+	terminal_view.name = "TerminalArchitecture"
+	add_child(terminal_view)
+	terminal_operations = preload("res://world/harbor/terminal/HarborTerminalOperations.gd").new()
+	terminal_operations.name = "TerminalOperations"
+	terminal_operations.architecture = terminal_view
+	add_child(terminal_operations)
 	call_deferred("_setup_service")
 
 func _setup_service() -> void:
@@ -68,8 +68,9 @@ func _setup_service() -> void:
 		person.archetype_override = [1, 2, 6, 7][i]
 		person.ambient_running_enabled = false
 		person.base_walk_speed = 40.0
-		person.position = Vector2(-90 + i * 23, QUEUE_LOCAL_Y)
+		person.position = _queue_slot(i)
 		add_child(person)
+		person.add_collision_exception_with(bus)
 		person.set_destination(person.global_position, "waiting" if i < 2 else "onboard")
 		if i >= 2:
 			person.hide()
@@ -99,10 +100,13 @@ func begin_player_disembark(actor: CharacterBody2D) -> void:
 	bus.dwelling = true
 
 func _physics_process(delta: float) -> void:
-	if bus == null:
+	if bus == null or bus._detached_from_lane:
 		return
 	_elapsed += delta
+	_update_passenger_routes()
 	for person in passengers:
+		if person.transit_state == "onboard":
+			person.global_position = bus.door_position() + Vector2(0, 12)
 		if person.is_dead:
 			person.transit_state = "unavailable"
 	if _phase == "hold" or _phase == "away":
@@ -113,41 +117,63 @@ func _physics_process(delta: float) -> void:
 	if bus.doors < 0.95:
 		return
 	if _phase == "unload":
+		# Finish each person's steps and aisle before the next one leaves. This
+		# keeps the shared door clear and never asks opposing queues to overlap.
+		if not _passenger_routes.is_empty():
+			return
 		for person in passengers:
 			if person.transit_state == "onboard":
-				if _elapsed < 1.3:
-					return
-				person.global_position = bus.door_position()
+				if _elapsed < 1.3: return
+				var door: Vector2 = bus.door_position()
+				var slot := to_global(_queue_slot(passengers.find(person)))
+				person.global_position = door + Vector2(0, 12)
+				_passenger_route(person, [door, Vector2(door.x, slot.y + 32), Vector2(slot.x, slot.y + 32), slot], "alighting")
 				person.show()
 				person.set_physics_process(true)
-				person.set_destination(Vector2(person.global_position.x, to_global(Vector2(0, QUEUE_LOCAL_Y)).y), "alighting")
 				alighted += 1
 				_elapsed = 0.0
 				return
 		_phase = "board"
 	if _phase == "board":
-		for person in passengers:
-			if person.transit_state == "alighting" and person.global_position.distance_to(person.destination) < 8:
-				person.set_destination(to_global(Vector2(-90 + passengers.find(person) * 23, QUEUE_LOCAL_Y)), "resting")
-		for person in passengers:
-			if person.transit_state == "boarding":
-				if person.global_position.distance_to(bus.door_position()) < 8:
-					person.set_destination(person.global_position, "onboard")
-					person.hide()
-					person.set_physics_process(false)
-					boarded += 1
-				return
+		if not _passenger_routes.is_empty(): return
 		for person in passengers:
 			if person.transit_state == "waiting":
-				person.set_destination(bus.door_position(), "boarding")
-				return
-		for person in passengers:
-			if person.transit_state == "alighting":
+				var door: Vector2 = bus.door_position()
+				var aisle_y: float = to_global(Vector2(0, QUEUE_LOCAL_Y)).y + 32
+				_passenger_route(person, [Vector2(person.global_position.x, aisle_y), Vector2(door.x, aisle_y), door, door + Vector2(0, 12)], "boarding")
 				return
 		if _elapsed > 2.0:
 			bus.depart()
 			departures += 1
 			_phase = "away"
+
+func _queue_slot(index: int) -> Vector2:
+	return Vector2(-112 + index * 36, QUEUE_LOCAL_Y)
+
+func _passenger_route(person: Node2D, points: Array, state: String) -> void:
+	_passenger_routes[person] = points.duplicate()
+	person.set_destination(points[0], state)
+
+func _update_passenger_routes() -> void:
+	for person in _passenger_routes.keys():
+		if not is_instance_valid(person) or person.is_dead or person.is_incapacitated:
+			_passenger_routes.erase(person)
+			continue
+		if person.global_position.distance_to(person.destination) > 3.2: continue
+		_passenger_routes[person].pop_front()
+		if not _passenger_routes[person].is_empty():
+			person.set_destination(_passenger_routes[person][0], person.transit_state)
+			continue
+		_passenger_routes.erase(person)
+		if person.transit_state == "boarding":
+			person.set_destination(person.global_position, "onboard")
+			person.velocity = Vector2.ZERO
+			person.hide()
+			person.set_physics_process(false)
+			boarded += 1
+		else:
+			person.set_destination(person.global_position, "resting")
+		_elapsed = 0.0
 
 func _walk_player_off(delta: float) -> void:
 	if bus.doors < 0.95:
@@ -187,32 +213,20 @@ func _exit_tree() -> void:
 	if is_instance_valid(_actor) and _phase == "player_exit":
 		_actor.set_physics_process(_saved_physics)
 	# The bus's parent belongs to RoadNetwork, not this station.
-	if is_instance_valid(bus) and is_instance_valid(bus.get_parent()):
+	if is_instance_valid(bus) and bus.get_parent() is PathFollow2D:
 		bus.get_parent().queue_free()
 
+func bus_stolen() -> void:
+	_phase = "away"
+	_passenger_routes.clear()
+	for person in passengers:
+		if not is_instance_valid(person) or person.is_dead: continue
+		if person.transit_state == "onboard": person.global_position = bus.door_position()
+		person.show()
+		person.set_physics_process(true)
+		person.set_destination(person.global_position + Vector2(0,-45),"waiting")
+
 func _draw() -> void:
-	draw_style_box(_platform_style(), Rect2(-115, -55, 230, 112))
-	# Shelter roof and slender supports leave a genuine walk-through frontage.
-	draw_rect(Rect2(-86, -31, 172, 48), Color("344f54"))
-	draw_rect(Rect2(-82, -27, 164, 37), Color("618183"))
-	for x in [-78, 78]:
-		draw_circle(Vector2(x, 24), 4, Color("394348"))
-	for x in [-48, 23]:
-		draw_rect(Rect2(x, 25, 29, 8), Color("725b47"))
-	# A telephone pictogram rather than a building name painted on the street.
-	draw_rect(Rect2(96, -20, 10, 30), Color("38494f"))
-	draw_rect(Rect2(97, -18, 8, 10), Color("78b8af"))
-	# Bay furniture and luggage lockers keep the pedestrian frontage open.
-	draw_rect(Rect2(-114, -31, 21, 49), Color("465356"))
-	for y in [-26, -11, 4]:
-		draw_rect(Rect2(-111, y, 15, 11), Color("8c9b99"), false, 1)
+	# Tactile edging joins the 3D terminal promenade to the active street stop.
 	for x in [-60, -20, 20, 60]:
 		draw_line(Vector2(x, 108), Vector2(x + 20, 108), Color("e6c46a"), 3)
-
-func _platform_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("b5aa94")
-	style.border_color = Color("ddd0af")
-	style.set_border_width_all(3)
-	style.set_corner_radius_all(8)
-	return style

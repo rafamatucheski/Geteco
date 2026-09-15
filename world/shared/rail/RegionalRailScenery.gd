@@ -9,27 +9,6 @@ class Deck extends Node2D:
 	var from_offset := 0.0
 	var to_offset := 0.0
 	var bridge := false
-	func _draw() -> void:
-		rail.draw_track(self, from_offset, to_offset)
-		var offset := from_offset
-		while offset < to_offset:
-			var next := minf(offset + 88.0, to_offset)
-			var a: Vector2 = rail._route.sample_baked(offset, true)
-			var b: Vector2 = rail._route.sample_baked(next, true)
-			var normal: Vector2 = a.direction_to(b).orthogonal()
-			if bridge:
-				for side in [-1.0, 1.0]:
-					var base_a: Vector2 = a + normal * 27.0 * side
-					var base_b: Vector2 = b + normal * 27.0 * side
-					var upper_a: Vector2 = base_a + Vector2(0, -15)
-					var upper_b: Vector2 = base_b + Vector2(0, -15)
-					draw_line(upper_a, upper_b, Color("94a6a3"), 3, true)
-					draw_line(upper_a, base_a, Color("617d7d"), 3, true)
-					draw_line(base_a, upper_b, Color("617d7d"), 2, true)
-					draw_line(upper_a, base_b, Color("617d7d"), 2, true)
-			elif a.y < -6460:
-				draw_line(a - normal * 21.0, b - normal * 21.0, Color("dce6eb"), 5, true)
-			offset = next
 
 class Piers extends Node2D:
 	var lines: Array[PackedVector2Array] = []
@@ -41,8 +20,7 @@ class Piers extends Node2D:
 			draw_polyline(shadow, Color(0.015,0.03,0.035,0.27), 52.0, true)
 		for rect in supports:
 			draw_rect(Rect2(rect.position + Vector2(9, 14), rect.size + Vector2(10,10)), Color(0.02,0.03,0.03,0.3))
-			draw_rect(rect.grow(4), Color("5f6c68"))
-			draw_rect(rect, Color("a3ada3"))
+
 
 func build(owner_rail: Node2D) -> void:
 	rail = owner_rail
@@ -72,6 +50,7 @@ func build(owner_rail: Node2D) -> void:
 			deck.z_index = 14
 			deck.material = rail.get_underpass_material()
 			add_child(deck)
+			preload("res://world/shared/rail/RailStructure3D.gd").track(deck, rail, deck.from_offset, deck.to_offset, deck.bridge)
 			from = deck.to_offset
 		var offset: float = section.start + 180.0
 		while offset < float(section.end) - 140.0:
@@ -87,3 +66,4 @@ func build(owner_rail: Node2D) -> void:
 			offset += 300.0
 	piers.supports = supports
 	piers.queue_redraw()
+	preload("res://world/shared/rail/RailStructure3D.gd").supports(piers, supports)

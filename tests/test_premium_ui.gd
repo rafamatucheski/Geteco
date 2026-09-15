@@ -103,6 +103,8 @@ func run() -> void:
 		await shot("loading_%d" % variant)
 		layer.queue_free()
 		await frames()
+	loader.finished.connect(func():
+		check(is_instance_valid(loader.get_node_or_null("OpeningCurtain")),"cobertura permanece durante a entrega para a abertura"), CONNECT_ONE_SHOT)
 	menu.btn_new_game.pressed.emit()
 	check(root.get_node("GameLoading").active,"Novo jogo abre tela de loading")
 	check(not root.get_node("GameLoading").begin("res://ui/MainMenu.tscn"),"clique duplo não inicia outra transição")
@@ -112,6 +114,7 @@ func run() -> void:
 	var world := current_scene
 	check(world.gameplay_ready and world.world_build_ready,"loading aguarda preparo do mundo e gameplay")
 	var mission: Node = world.get_node("ArrivalMission")
+	check(is_instance_valid(mission._opening) and is_instance_valid(mission._opening._studio_card),"RCM está pronta ao terminar o loading")
 	mission.skip_cinematic()
 	var deadline := Time.get_ticks_msec()+20000
 	while mission.phase in ["arrival","disembark","arrival_wait"] and Time.get_ticks_msec()<deadline: await process_frame

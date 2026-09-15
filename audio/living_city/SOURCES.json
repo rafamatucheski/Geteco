@@ -55,6 +55,94 @@
       "download": "https://opengameart.org/sites/default/files/fusion%20jazz_0.ogg",
       "license": "CC0-1.0",
       "sha256": "645f7cd6ef7a56b22fe394ff006dae17348cf70c72aa9e2a9b4d7f70b2804af4"
+    },
+    "porto_groove": {
+      "author": "Zane Little Music",
+      "page": "https://opengameart.org/content/wednesday-night-funk-fusion",
+      "download": "https://opengameart.org/sites/default/files/wednesday_night.ogg",
+      "license": "CC0-1.0",
+      "sha256": "514f0665f7eaa74e9fc687e01e8633b67f8bab3e26de53b66ee68499762f18f3"
+    },
+    "porto_brisa": {
+      "author": "Zane Little Music",
+      "page": "https://opengameart.org/content/apple-cider",
+      "download": "https://opengameart.org/sites/default/files/apple_cider.ogg",
+      "license": "CC0-1.0",
+      "sha256": "29dfe7f2491fa2cabd159db70db868445be253e395db5f75b30b3113f798f4ca"
+    },
+    "porto_neon": {
+      "author": "Zane Little Music",
+      "page": "https://opengameart.org/content/the-way-it-is",
+      "download": "https://opengameart.org/sites/default/files/the_way_it_is.mp3",
+      "license": "CC0-1.0",
+      "sha256": "6e0ccd96095e917ecfa675c084705cfcd607bc998c2c681838c4b37e4609de7c"
+    },
+    "porto_arcade": {
+      "author": "Zane Little Music",
+      "page": "https://opengameart.org/content/the-cool-factor",
+      "download": "https://opengameart.org/sites/default/files/the_cool_factor.wav",
+      "license": "CC0-1.0",
+      "sha256": "04ea1e678697508138c394cac4383ce2a63b70aa7dfb93c9e9dc784946993c0f"
+    },
+    "porto_pesada": {
+      "author": "Zane Little Music",
+      "page": "https://opengameart.org/content/the-end-day-30",
+      "download": "https://opengameart.org/sites/default/files/the_end_2.wav",
+      "license": "CC0-1.0",
+      "sha256": "79ee2293c87016a072b5875214ef36db3b419951726f9e1042985beb45f2c775"
+    },
+    "porto_reggae": {
+      "author": "Zane Little Music",
+      "title": "Sweet Coast",
+      "page": "https://opengameart.org/content/reggae",
+      "download": "https://opengameart.org/sites/default/files/regea.mp3",
+      "license": "CC0-1.0",
+      "sha256": "e276b0afddff4eb483d4ae13e9b7f95a04cc46d03180ebf1c3d58084f415adfd"
+    },
+    "porto_club": {
+      "author": "Zane Little Music",
+      "title": "Electronic Outlaw",
+      "page": "https://opengameart.org/content/electronic-outlaw",
+      "download": "https://opengameart.org/sites/default/files/electronic_outlaw.mp3",
+      "license": "CC0-1.0",
+      "sha256": "c07ac8a824b54d1d006c42121516cf0b92fd9635d1293e0600f7aae658a3de50"
+    },
+    "porto_estrada": {
+      "author": "Zane Little Music",
+      "title": "Freeway Fumes",
+      "page": "https://opengameart.org/content/freeway-fumes",
+      "download": "https://opengameart.org/sites/default/files/freeway_fumes.mp3",
+      "license": "CC0-1.0",
+      "sha256": "746ff2560f59145183d9ba8d82610fa73844f4133697996dafad1a5bd44097b7"
+    },
+    "porto_cruise": {
+      "author": "Ragnar Random",
+      "title": "Midnight Cruiser",
+      "page": "https://opengameart.org/content/midnight-cruiser",
+      "download": "https://opengameart.org/sites/default/files/midnight_cruiser.mp3",
+      "license": "CC0-1.0",
+      "sha256": "be0285ba239d85c47c6a0de6466123e3fe8dbc4ad4d9419ccd224ab8ea2b54fc"
+    },
+    "crickets": {
+      "author": "2DPIXX",
+      "page": "https://opengameart.org/content/crickets-ambient-noise-loopable",
+      "download": "https://opengameart.org/sites/default/files/crickets-oneloop.mp3",
+      "license": "CC0-1.0",
+      "sha256": "3b26c4d529c722716eac9eab52f64cf4e7507d35f8cd4e01ff08b097a2746cbd"
+    },
+    "ship_horn": {
+      "author": "Lord_Tarkus",
+      "page": "https://freesound.org/people/Lord_Tarkus/sounds/777497/",
+      "download": "https://cdn.freesound.org/previews/777/777497_429945-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "7213d51999874cb9eac096848789336fad5c17c332d7781db4595fd17777f2af"
+    },
+    "dog": {
+      "author": "qubodup",
+      "page": "https://freesound.org/people/qubodup/sounds/813116/",
+      "download": "https://cdn.freesound.org/previews/813/813116_71257-hq.mp3",
+      "license": "CC0-1.0",
+      "sha256": "3a135e1075fdebe18b5aa2248e17fde6ac23725b5c37a8194a1d945c6ccbe759"
     }
   },
   "processing": "32000 Hz; ambiente mono filtrado 110–6500 Hz, RMS/peak normalizados, loops com crossfade de 2 s; músicas completas estéreo; detalhes com fades de 150 ms.",
@@ -205,6 +293,125 @@
       "rms_db": -20.09,
       "peak_db": -3.0,
       "loop": true
+    },
+    {
+      "file": "porto_groove.ogg",
+      "seconds": 176.585,
+      "rms_db": -19.0,
+      "peak_db": -4.62,
+      "loop": true
+    },
+    {
+      "file": "porto_brisa.ogg",
+      "seconds": 199.838,
+      "rms_db": -19.29,
+      "peak_db": -3.0,
+      "loop": true
+    },
+    {
+      "file": "porto_neon.ogg",
+      "seconds": 148.036,
+      "rms_db": -19.0,
+      "peak_db": -5.91,
+      "loop": true
+    },
+    {
+      "file": "porto_arcade.ogg",
+      "seconds": 132.004,
+      "rms_db": -19.01,
+      "peak_db": -5.27,
+      "loop": true
+    },
+    {
+      "file": "porto_pesada.ogg",
+      "seconds": 242.461,
+      "rms_db": -20.82,
+      "peak_db": -3.0,
+      "loop": true
+    },
+    {
+      "file": "porto_reggae.ogg",
+      "seconds": 238.004,
+      "rms_db": -19.0,
+      "peak_db": -6.2,
+      "loop": true
+    },
+    {
+      "file": "porto_club.ogg",
+      "seconds": 173.61,
+      "rms_db": -19.0,
+      "peak_db": -4.81,
+      "loop": true
+    },
+    {
+      "file": "porto_estrada.ogg",
+      "seconds": 200.255,
+      "rms_db": -19.0,
+      "peak_db": -3.39,
+      "loop": true
+    },
+    {
+      "file": "porto_cruise.ogg",
+      "seconds": 144.408,
+      "rms_db": -19.0,
+      "peak_db": -5.44,
+      "loop": true
+    },
+    {
+      "file": "crickets_0.ogg",
+      "seconds": 29.0,
+      "rms_db": -23.0,
+      "peak_db": -10.36,
+      "loop": true
+    },
+    {
+      "file": "crickets_1.ogg",
+      "seconds": 37.0,
+      "rms_db": -23.0,
+      "peak_db": -10.37,
+      "loop": true
+    },
+    {
+      "file": "ship_horn_detail_0.wav",
+      "seconds": 4.2,
+      "rms_db": -23.06,
+      "peak_db": -12.15,
+      "loop": false
+    },
+    {
+      "file": "ship_horn_detail_1.wav",
+      "seconds": 4.2,
+      "rms_db": -23.39,
+      "peak_db": -11.82,
+      "loop": false
+    },
+    {
+      "file": "ship_horn_detail_2.wav",
+      "seconds": 4.2,
+      "rms_db": -23.26,
+      "peak_db": -14.22,
+      "loop": false
+    },
+    {
+      "file": "dog_detail_0.wav",
+      "seconds": 0.533,
+      "rms_db": -23.8,
+      "peak_db": -12.59,
+      "loop": false
+    },
+    {
+      "file": "dog_detail_1.wav",
+      "seconds": 0.533,
+      "rms_db": -23.8,
+      "peak_db": -12.59,
+      "loop": false
+    },
+    {
+      "file": "dog_detail_2.wav",
+      "seconds": 0.533,
+      "rms_db": -23.8,
+      "peak_db": -12.59,
+      "loop": false
     }
   ]
 }

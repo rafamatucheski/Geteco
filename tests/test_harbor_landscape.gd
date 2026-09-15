@@ -96,6 +96,13 @@ func run() -> void:
 			audit_detail(rock.bounds, rock.bounds, name+" rock "+str(rock.position))
 			rocks_checked += 1
 		check(styles.size() >= 3, name+" has at least three structural tree styles")
+	# New exterior trees obey the same road, entry and opaque-canopy contract.
+	for tree in get_nodes_in_group("exterior_finish_solid"):
+		var scale_value: float = tree.crown_scale
+		var bounds := Rect2(tree.global_position+Vector2(-48,-49)*scale_value,Vector2(98,77)*scale_value)
+		var opaque := Rect2(tree.global_position+Vector2(-43,-47)*scale_value,Vector2(89,65)*scale_value)
+		audit_detail(bounds,opaque,"Exterior "+str(tree.get_path()))
+		trees_checked += 1
 	var cobra_definitions: Array = cobra.get_landscape_definitions()
 	check(cobra_definitions.size() == 11, "All eleven authored Cobra landscape groups survive validation")
 	var families := {}
@@ -135,6 +142,13 @@ func run() -> void:
 		player.global_position = route[0]
 		await frames(2)
 		for i in range(1,route.size()):
+			# At a public crossing, wait for a passing traffic body to leave.
+			# Static obstructions fail immediately; masks/colliders remain untouched.
+			var deadline := Time.get_ticks_msec()+8000
+			while Time.get_ticks_msec()<deadline:
+				var probe := player.move_and_collide(route[i]-player.global_position,true)
+				if probe==null or not probe.get_collider() is CharacterBody2D: break
+				await frames(1)
 			var hit := player.move_and_collide(route[i]-player.global_position)
 			check(hit == null and player.global_position.distance_to(route[i]) < 0.1, "Real capsule path remains clear " + str(route[i]))
 			if hit != null:

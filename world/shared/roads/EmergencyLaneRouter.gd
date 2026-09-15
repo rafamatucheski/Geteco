@@ -13,9 +13,11 @@ var plans := 0
 var avoidance_target := Vector2.INF
 var linked_lane: Path2D
 var _linked_entry_pending := false
+var at_roadside_goal := false
 
 
 func reset() -> void:
+	at_roadside_goal = false
 	linked_lane = null
 	_linked_entry_pending = false
 	legs.clear()
@@ -28,6 +30,9 @@ func reset() -> void:
 
 
 func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
+	at_roadside_goal = false
+	if destination.distance_to(target) > 120.0:
+		reset()
 	if is_instance_valid(linked_lane):
 		return _guide_linked_lane(vehicle, target)
 	var now := Time.get_ticks_msec()
@@ -76,6 +81,7 @@ func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
 			# O trecho terminou: devolver o ponto atrás do para-choque fazia
 			# o veículo circular em torno dele sem autorizar a equipe a sair.
 			if vehicle.global_position.distance_to(endpoint) < 32.0:
+				at_roadside_goal = true
 				return vehicle.global_position
 			return endpoint
 	return target
@@ -143,6 +149,16 @@ func _plan(vehicle: Node2D, target: Vector2) -> void:
 	var goals := _nearest_lanes(cache.lanes, target)
 	var frontier: Array[Dictionary] = []
 	var costs := {}
+	# Join in the current direction; use road junctions to turn back.
+	var forward_starts: Array[Dictionary] = []
+	if vehicle.get("type") in [1,3]:
+		for start in starts:
+			var path := cache.lanes[start.id] as Path2D
+			var offset := float(start.offset)
+			var tangent := path.to_global(path.curve.sample_baked(minf(path.curve.get_baked_length(), offset + 10.0))) - path.to_global(path.curve.sample_baked(maxf(0.0, offset - 10.0)))
+			if tangent.normalized().dot(vehicle.global_transform.x) > .3:
+				forward_starts.append(start)
+		if not forward_starts.is_empty(): starts = forward_starts
 	for start in starts:
 		frontier.append({"lane": start.id, "offset": start.offset, "cost": start.distance * 4.0, "legs": []})
 	var best := INF
@@ -172,11 +188,15 @@ func _plan(vehicle: Node2D, target: Vector2) -> void:
 				continue
 			var length := connector.curve.get_baked_length() if is_instance_valid(connector) else 0.0
 			var cost := float(state.cost) + maxf(0.0, entry - float(state.offset)) + length
+			var key := String(connection.connection_id)
+			# Obstacle penalties are nonnegative. Reject already dominated
+			# routes before sweeping their full length through the physics world.
+			if cost >= best or cost >= float(costs.get(key, INF)):
+				continue
 			cost += _obstacle_cost(vehicle, path, float(state.offset), entry, obstacle_costs)
 			if is_instance_valid(connector):
 				cost += _obstacle_cost(vehicle, connector, 0.0, length, obstacle_costs)
-			var key := String(connection.connection_id)
-			if cost >= float(costs.get(key, INF)):
+			if cost >= best or cost >= float(costs.get(key, INF)):
 				continue
 			costs[key] = cost
 			var route: Array = (state.legs as Array).duplicate()
@@ -202,14 +222,17 @@ func _nearest_lanes(lanes: Dictionary, position: Vector2) -> Array[Dictionary]:
 
 
 func _steer_clear(vehicle: Node2D, waypoint: Vector2) -> Vector2:
+	# Rejoin as soon as the lane ahead is clear; retaining a detour already
+	# passed by the bumper would turn the responder back into the blockage.
+	if _clear_motion(vehicle, waypoint):
+		avoidance_target = Vector2.INF
+		return waypoint
 	if avoidance_target.is_finite():
-		if vehicle.global_position.distance_to(avoidance_target) > 20.0:
+		if vehicle.global_position.distance_to(avoidance_target) > 20.0 and _clear_motion(vehicle, avoidance_target):
 			return avoidance_target
 		avoidance_target = Vector2.INF
 	var forward := vehicle.global_position.direction_to(waypoint)
 	var normal := Vector2(-forward.y, forward.x)
-	if _clear_motion(vehicle, waypoint):
-		return waypoint
 	for lateral in [40.0, -40.0, 64.0, -64.0]:
 		var candidate: Vector2 = waypoint + normal * float(lateral)
 		if _clear_motion(vehicle, candidate):
@@ -252,15 +275,23 @@ func _obstacle_cost(vehicle: Node2D, path: Path2D, start: float, end: float, cos
 
 
 func _clear_motion(vehicle: Node2D, point: Vector2) -> bool:
-	var shape := CircleShape2D.new()
-	shape.radius = 22.0
+	var hull := vehicle.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	var query := PhysicsShapeQueryParameters2D.new()
-	query.shape = shape
-	query.collision_mask = 1
+	if hull != null:
+		query.shape = hull.shape
+		query.transform = hull.global_transform
+	else:
+		var shape := CircleShape2D.new()
+		shape.radius = 22.0
+		query.shape = shape
+		query.transform = Transform2D(0.0, vehicle.global_position)
+	query.collision_mask = 1 | 2 | 4 | 8
+	query.margin = 3.0
 	query.exclude = [vehicle.get_rid()]
-	query.transform = Transform2D(0.0, vehicle.global_position)
 	query.motion = point - vehicle.global_position
-	var fractions := vehicle.get_world_2d().direct_space_state.cast_motion(query)
+	var space := vehicle.get_world_2d().direct_space_state
+	if not space.intersect_shape(query, 1).is_empty(): return false
+	var fractions := space.cast_motion(query)
 	return fractions[0] >= 0.99
 
 
@@ -314,15 +345,25 @@ func _guide_linked_lane(vehicle: Node2D, target: Vector2) -> Vector2:
 	var length := curve.get_baked_length()
 	var offset := curve.get_closest_offset(path.to_local(vehicle.global_position))
 	var point := path.to_global(curve.sample_baked(offset, true))
-	if point.distance_to(vehicle.global_position) > 54.0: return point
+	if point.distance_to(vehicle.global_position) > 54.0:
+		return _steer_clear(vehicle, path.to_global(curve.sample_baked(minf(length, offset + 65.0), true)))
 	var goal := curve.get_closest_offset(path.to_local(target))
 	var goal_point := path.to_global(curve.sample_baked(goal, true))
-	if goal_point.distance_to(vehicle.global_position) < 28.0 and goal_point.distance_to(target) < 160.0:
-		return target if goal_point.distance_to(target) <= 32.0 else vehicle.global_position
+	if goal_point.distance_to(vehicle.global_position) < 28.0:
+		# A suspect in a yard or interior can be farther than 160 from this
+		# loop. Finish on its nearest pavement, as canonical graph routes do,
+		# instead of making endless laps. Preserve cross-region handoffs.
+		if goal >= length - 50.0 and goal_point.distance_to(target) > 160.0 and _link_adjacent_lane(vehicle, path):
+			return _guide_linked_lane(vehicle, target)
+		at_roadside_goal = goal_point.distance_to(target) > 32.0
+		return vehicle.global_position if at_roadside_goal else target
 	var end := path.to_global(curve.sample_baked(length, true))
 	if offset >= length - 50.0 and end.distance_to(vehicle.global_position) < 28.0:
 		if _link_adjacent_lane(vehicle, path): return _guide_linked_lane(vehicle, target)
 		if bool(path.get_meta("traffic_lane_loop", false)) or end.distance_to(path.to_global(curve.sample_baked(0, true))) < 5.0:
 			return path.to_global(curve.sample_baked(60.0, true))
 		return vehicle.global_position
-	return path.to_global(curve.sample_baked(minf(length, offset + 65.0), true))
+	var lookahead := minf(length, offset + 65.0)
+	if goal >= offset and goal < length - 50.0:
+		lookahead = minf(lookahead, goal)
+	return _steer_clear(vehicle, path.to_global(curve.sample_baked(lookahead, true)))

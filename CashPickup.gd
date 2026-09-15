@@ -99,15 +99,7 @@ func _on_body_entered(body: Node2D) -> void:
 				body._refresh_weapon_ui()
 		
 		# Som satisfatório de caixa registradora (Cha-Ching!)
-		var p := AudioStreamPlayer2D.new()
-		p.bus = &"SFX"
-		p.stream = ProceduralAudio.get_cash_register_stream()
-		p.volume_db = -3.0
-		p.max_distance = 500.0
-		get_tree().current_scene.add_child(p)
-		p.global_position = global_position
-		p.play()
-		p.finished.connect(p.queue_free)
+		preload("res://audio/rewards/RewardAudioBank.gd").play(self, "cash")
 		
 		# Efeito flutuante de coleta
 		if bundle_poly: bundle_poly.visible = false

@@ -40,7 +40,36 @@ const ENTRIES := {
 		"name": "Achado do Limite Sul",
 		"region": "Extremidade sul do distrito",
 	},
+	"mountain_expedition_pack": {
+		"name": "Mochila de Álvaro",
+		"region": "Cachoeira da Mountain Pass",
+	},
+	"mountain_expedition_journal": {
+		"name": "Diário de Álvaro",
+		"region": "Caverna da Queda",
+	},
+	"mountain_expedition_camera": {
+		"name": "Câmera quebrada",
+		"region": "Câmara profunda da montanha",
+	},
 }
+
+const FIND_CASH := 50
+const MILESTONE_CASH := {3: 100, 5: 200, 10: 500}
+
+static func known_count(found: Array) -> int:
+	var total := 0
+	for id in ENTRIES:
+		if id in found: total += 1
+	return total
+
+static func reward_summary(found: Array) -> String:
+	var count := known_count(found)
+	var english := TranslationServer.get_locale().begins_with("en")
+	for target in MILESTONE_CASH:
+		if count < target:
+			return (("Each discovery: $%d · Next bonus: %d/%d → $%d" if english else "Cada descoberta: $%d · Próximo bônus: %d/%d → $%d") % [FIND_CASH, count, target, MILESTONE_CASH[target]])
+	return "Collection complete · All discovery bonuses earned" if english else "Coleção completa · Todos os bônus de exploração conquistados"
 
 static func get_all_ids() -> Array:
 	return ENTRIES.keys()

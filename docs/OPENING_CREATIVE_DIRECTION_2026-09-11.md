@@ -2,6 +2,15 @@
 
 11/09/2026. Proposta criativa para discussão; não altera o cânone nem a cinemática integrada.
 
+**Decisão posterior do autor em 11/09:** a primeira missão após a chegada é ir
+à delegacia atrás do irmão, onde Dante confirma a soltura há alguns meses e
+descobre o envolvimento com contrabando de mercadorias para carros, rachas ilegais
+e a busca policial. Sai assustado e confuso. Alguns segundos depois, recebe uma ligação para encontrar alguém no ferro-velho do Neko. Lá conhece Maciota, que confirma a ligação e o leva como passageiro no seu sedã preto de alto desempenho, inspirado no M8 Competition. Maciota dirige pela cidade explicando algumas coisas até sua garagem; dentro, oferece ajuda para encontrar o irmão em troca de favores. A Monaliza ainda não está lá, conforme a interpretação registrada na bíblia.
+A transição terminal → ligação para Maciota descrita nesta avaliação fica superada
+no planejamento. A ligação anterior à viagem, se mantida na CGI, é contexto
+preliminar e não deve antecipar a revelação completa da delegacia. Ver
+[bíblia da campanha](CAMPAIGN_STORY_BIBLE.md#i--harbor-a-promessa).
+
 ## Conceito: a ligação que Dante esperava há anos
 
 Um homem que perdeu contato com o irmão descobre que ele saiu da prisão e não o procurou. A notícia devolve esperança, mas também expõe uma ferida. Dante decide ir atrás dele.

@@ -1,24 +1,18 @@
 extends Node
-var mountain_bound := false
 func _ready() -> void:
 	_bind_shop.call_deferred(get_parent().get_node("District/NorthFrontage3"),Vector2(0,85),false,0)
-func _process(_delta: float) -> void:
-	if mountain_bound: return
-	var mountain := get_parent().get_node_or_null("MountainRegion")
-	if not mountain: return
-	var store := mountain.find_child("SnowOutfitters",true,false)
-	if not store: return
-	mountain_bound=true
-	_bind_shop(store,Vector2(0,35),true,1)
 func _bind_shop(building: Node2D, door_offset: Vector2, winter: bool, index: int) -> void:
 	var entrance := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate()
 	entrance.set_script(preload("res://world/harbor/HarborEntrance.gd"))
 	entrance.name="ClothingEntrance"
 	entrance.role="clothing"
+	entrance.display_name="UNION / ROUPAS"
 	entrance.position=door_offset
 	entrance.door_width=48
 	entrance.interior_available=true
 	building.add_child(entrance)
+	var facade := preload("res://world/harbor/UnionClothingFacade.gd").new()
+	building.add_child(facade)
 	entrance.add_to_group("clothing_shop")
 	var manager := get_parent().get_node("Interiors")
 	var room := preload("res://world/harbor/interiors/ClothingRoom3D.gd").new()

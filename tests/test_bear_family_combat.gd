@@ -58,16 +58,16 @@ func _run() -> void:
 	player.global_position = bear.global_position+fixed_heading*20
 	var health_before: int = player.health
 	bear._physics_process(0.016)
-	check(player.health == health_before-24,"charge hits real exposed player once")
+	check(player.health == health_before-60,"charge hits real exposed player once")
 	bear._physics_process(0.016)
-	check(player.health == health_before-24,"continuous overlap cannot cause damage every frame")
+	check(player.health == health_before-60,"continuous overlap cannot cause damage every frame")
 	player.set_meta("mountain_interior",true)
 	bear._physics_process(0.1)
 	check(bear.state == bear.State.WANDER and bear.velocity.length()<=32,"entering interior cancels hunting")
 	player.remove_meta("mountain_interior")
 	player.hide()
 	bear._physics_process(0.1)
-	check(player.health == health_before-24,"hidden vehicle occupant not bitten")
+	check(player.health == health_before-60,"hidden vehicle occupant not bitten")
 	player.show()
 	player.global_position = cubs[0].global_position+Vector2(30,0)
 	var cub_health_before: int = player.health
@@ -98,6 +98,12 @@ func _run() -> void:
 	bullet.set_physics_process(false)
 	scene.add_child(bullet)
 	bullet._hit(bear,bear.global_position,Vector2.UP)
+	check(not bear.is_dead and bear.health == 160, "adult survives 200 damage")
+	var finishing_bullet = load("res://Bullet.gd").new()
+	finishing_bullet.damage = 160
+	finishing_bullet.set_physics_process(false)
+	scene.add_child(finishing_bullet)
+	finishing_bullet._hit(bear,bear.global_position,Vector2.UP)
 	check(bear.is_dead and bear.collision_layer == 0,"projectile kills and disables physical actor")
 	check(bear.get_parent().find_child("WildlifeBlood",false,false) != null,"blood visible on world floor")
 	await create_timer(0.55).timeout

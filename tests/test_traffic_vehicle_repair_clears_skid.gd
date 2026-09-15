@@ -31,7 +31,8 @@ func _run() -> void:
 	car.global_position = Vector2(500.0, 500.0)
 	await process_frame
 
-	var skid_line: Line2D = car.get("skid_line")
+	# Production allocates this lazily, at the first actual skid.
+	var skid_line: Line2D = car._ensure_skid_line()
 	if skid_line == null:
 		failures.append("TrafficVehicle has no skid_line -- fixture changed?")
 		_finish(car, failures)

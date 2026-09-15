@@ -1,4 +1,4 @@
-﻿extends "res://prototypes/living_cast/BaseVehicle3DModel.gd"
+extends "res://prototypes/living_cast/BaseVehicle3DModel.gd"
 
 ## Route City Ônibus Urbano: Ônibus de passageiros metropolitano de 2 portas.
 ## Identidade: Letreiro digital iluminado frontal, janelas panorâmicas, ar-condicionado de teto e portas de embarque.
@@ -42,7 +42,7 @@ func build() -> void:
 		box(Vector3(1.195, 1.95, z_col), Vector3(0.03, 1.35, 0.10), black)
 
 	# 5. Identidade Visual 1: Duas Portas Sanfonadas de Embarque e Desembarque (Lado Direito)
-	for z_door in [-3.55, 3.55]:
+	for z_door in [-3.95, 3.65]:
 		# Vão da porta (reentrância)
 		box(Vector3(1.16, 1.45, z_door), Vector3(0.08, 2.25, 0.96), black)
 		# Folhas da porta de vidro sanfonada

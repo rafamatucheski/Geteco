@@ -3,15 +3,97 @@ extends RefCounted
 ## materiais próprios, e o script de dano registra suas próprias peças em _ready.
 static var _models: Dictionary = {}
 static var hits := 0
+static var _prepared: Dictionary = {}
+const STARTUP_PRESENTATION_MARGIN := 320.0
+
+static func is_startup_relevant(actor: Node2D) -> bool:
+	if not is_instance_valid(actor) or not actor.is_inside_tree() or not actor.is_visible_in_tree():
+		return false
+	if actor.get_meta("proximity_sleeping", false):
+		return false
+	if actor.get("is_driven_by_player") == true:
+		return true
+	var screen_position := actor.get_global_transform_with_canvas().origin
+	return screen_position.is_finite() and actor.get_viewport_rect().grow(STARTUP_PRESENTATION_MARGIN).has_point(screen_position)
 
 static func prepare_common_models(tree: SceneTree) -> void:
-	# Prepare one type per loading-screen frame, before control returns to play.
-	for name in ["UnionSedan", "MetroHatch", "CourierVan", "RouteCity", "SummitSUV", "Boxrunner", "RanchSingle", "Towmaster", "ArcticJeep"]:
+	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
+	# Warm the entire expensive geometry path, not only the raw constructor.
+	# Wheel-well cutting and surface batching otherwise first run in gameplay.
+	var staging := Node3D.new()
+	staging.name = "VehicleGeometryPreparation"
+	staging.visible = false
+	staging.process_mode = Node.PROCESS_MODE_DISABLED
+	tree.root.add_child(staging)
+	for name in ["UnionSedan", "SportEstate", "NordicEstate", "MetroHatch", "CourierVan", "RouteCity", "SummitSUV", "PoliceSUV", "Boxrunner", "RanchSingle", "Towmaster", "ArcticJeep", "OrbitaMicro", "AuroraExecutive", "ValeCrossover", "NimbusMinivan", "VerticeMidEngine", "BravioCrew", "DockDeliveryVan"]:
 		var path: String = "res://prototypes/living_cast/models/" + name + "Model.gd"
-		if _models.has(path): continue
-		await tree.process_frame
+		if _prepared.has(path): continue
+		await batch.checkpoint(tree)
 		var model: Node3D = load(path).new()
+		staging.add_child(model)
+		var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
+		rig.mount(model)
+		preload("res://VehicleMeshBatcher.gd").batch_model(model)
 		model.free()
+		_prepared[path] = true
+	for path in ["res://world/shared/transit/RegionalIntercityCoachModel.gd"]:
+		if _prepared.has(path): continue
+		await batch.checkpoint(tree)
+		var res = load(path)
+		if res:
+			var model: Node3D = res.new()
+			staging.add_child(model)
+			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
+			rig.mount(model)
+			preload("res://VehicleMeshBatcher.gd").batch_model(model)
+			model.free()
+			_prepared[path] = true
+	staging.free()
+
+static func prepare_resident_presentations(tree: SceneTree) -> int:
+	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
+	# Only the entry view belongs on the critical loading path. Deferred actors
+	# already keep a lightweight silhouette and remain queued in PresentationBudget,
+	# which resolves them shortly before they enter the camera. Building the whole
+	# city's rigs here made every save wait for distant residents it could not see.
+	var prepared := 0
+	for vehicle in tree.get_nodes_in_group("modern_traffic"):
+		if not is_instance_valid(vehicle) or not vehicle.has_method("ensure_presentation"): continue
+		if vehicle.get("_pending_spec") == null or vehicle.get("_pending_spec").is_empty(): continue
+		if not is_startup_relevant(vehicle): continue
+		await batch.checkpoint(tree)
+		if not is_instance_valid(vehicle) or not vehicle.is_inside_tree(): continue
+		vehicle.ensure_presentation()
+		prepared += 1
+	for car in tree.get_nodes_in_group("modern_parked_vehicle") + tree.get_nodes_in_group("regional_coach"):
+		if not is_instance_valid(car) or not car.has_method("ensure_presentation"): continue
+		if car.get("_pending_spec") == null or car.get("_pending_spec").is_empty(): continue
+		if not is_startup_relevant(car): continue
+		await batch.checkpoint(tree)
+		if not is_instance_valid(car) or not car.is_inside_tree(): continue
+		car.ensure_presentation()
+		prepared += 1
+	for walker in tree.get_nodes_in_group("pedestrian") + tree.get_nodes_in_group("authored_sidewalk_pedestrian"):
+		if not is_instance_valid(walker) or not walker.has_method("ensure_presentation"): continue
+		if walker.get("viewport") != null: continue
+		if not is_startup_relevant(walker): continue
+		await batch.checkpoint(tree)
+		if not is_instance_valid(walker) or not walker.is_inside_tree(): continue
+		walker.ensure_presentation()
+		prepared += 1
+	for signal_post in tree.get_nodes_in_group("fixed_traffic_signal"):
+		if not is_instance_valid(signal_post) or not signal_post.has_method("ensure_presentation"): continue
+		if not is_startup_relevant(signal_post): continue
+		await batch.checkpoint(tree)
+		if not is_instance_valid(signal_post) or not signal_post.is_inside_tree(): continue
+		var original_state: int = int(signal_post.get("signal_state"))
+		for state in [0, 1, 2]:
+			signal_post.signal_state = state
+			signal_post.ensure_presentation()
+		signal_post.signal_state = original_state
+		signal_post.ensure_presentation()
+		prepared += 1
+	return prepared
 
 static func restore(model: Node3D) -> bool:
 	var key: String = model.get_script().resource_path

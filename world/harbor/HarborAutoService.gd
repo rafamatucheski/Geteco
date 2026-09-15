@@ -1,5 +1,5 @@
 extends Node2D
-## Timed exterior service. The real vehicle and camera move together throughout.
+## Drive-in service: proximity opens the shutter; parking inside starts repair.
 const PRICE := 100
 const SERVICE_SECONDS := 4.5
 const EXIT_OFFSET := Vector2(0,-6)
@@ -14,6 +14,8 @@ var _clock := 0.0
 var _departing: Node2D
 var _motion: Tween
 var _insufficient_notified := false
+var _door_motion: Tween
+var _door_open := false
 var shutter: Polygon2D
 var spray: CPUParticles2D
 func _ready() -> void:
@@ -21,6 +23,10 @@ func _ready() -> void:
 	global_position = get_parent().get_node("NorthDistrict/MotorWorkshopApron").global_position
 	player = get_parent().get_node("Player")
 	z_index = 15
+	var doorway := Polygon2D.new()
+	doorway.polygon = PackedVector2Array([Vector2(-55,-104),Vector2(55,-104),Vector2(55,-58),Vector2(-55,-58)])
+	doorway.color = Color("111c20")
+	add_child(doorway)
 	shutter = Polygon2D.new()
 	shutter.polygon = PackedVector2Array([Vector2(-55,-104),Vector2(55,-104),Vector2(55,-58),Vector2(-55,-58)])
 	shutter.color = Color("425a60")
@@ -46,7 +52,7 @@ func _ready() -> void:
 	spray.color = Color(0.7,0.92,0.85,0.35)
 	add_child(spray)
 func eligible(car: Node2D) -> bool:
-	return is_instance_valid(car) and car != _departing and not car.has_meta("vehicle_boarding") and car.has_method("repair_vehicle") and car.get("is_driven_by_player")==true and car.is_physics_processing() and car.velocity.length()<110 and Rect2(-47,-25,94,65).has_point(to_local(car.global_position)) and not player.is_control_disabled and not player.is_dead
+	return is_instance_valid(car) and car != _departing and not car.has_meta("vehicle_boarding") and car.has_method("repair_vehicle") and car.get("is_driven_by_player")==true and car.is_physics_processing() and car.velocity.length()<35 and Rect2(-20,-155,40,48).has_point(to_local(car.global_position)) and not player.is_control_disabled and not player.is_dead
 func _process(delta: float) -> void:
 	if busy:
 		if not is_instance_valid(target) or player.is_dead or target.get("is_driven_by_player")!=true:
@@ -64,8 +70,10 @@ func _process(delta: float) -> void:
 	_clock -= delta
 	if _clock>0: return
 	_clock = 0.15
-	if is_instance_valid(_departing) and _departing.global_position.distance_to(global_position)>140: _departing = null
+	if is_instance_valid(_departing) and _departing.global_position.distance_to(global_position + Vector2(0,-65))>210: _departing = null
 	var car := get_node("/root/RegionTravel").controlled_car() as Node2D
+	var visitor: Node2D = car if is_instance_valid(car) else player
+	_set_open(is_instance_valid(visitor) and visitor.global_position.distance_to(global_position + Vector2(0,-65)) < 210)
 	if eligible(car):
 		if player.money < PRICE:
 			if not _insufficient_notified:
@@ -74,6 +82,13 @@ func _process(delta: float) -> void:
 		else: start_service(car)
 	else:
 		_insufficient_notified = false
+func _set_open(value: bool) -> void:
+	if _door_open == value: return
+	_door_open = value
+	if is_instance_valid(_door_motion): _door_motion.kill()
+	_door_motion = create_tween()
+	_door_motion.tween_property(shutter,"position:y",-48.0 if value else 0.0,0.35)
+
 func _text(pt: String,en: String) -> String: return en if TranslationServer.get_locale().begins_with("en") else pt
 func start_service(car: Node2D) -> bool:
 	if busy or not eligible(car) or player.money < PRICE: return false
@@ -88,6 +103,10 @@ func start_service(car: Node2D) -> bool:
 	for light in car.find_children("", "Light2D", true, false):
 		_saved.lights.append({"node":light,"enabled":light.enabled})
 		light.enabled = false
+	# Keep car and player from triggering any exterior entrance/interior transition
+	# while the service is animating.
+	player.set_meta("pay_n_spray_busy", true)
+	car.set_meta("pay_n_spray_busy", true)
 	car.set_meta("service_safe_position",global_position+EXIT_OFFSET)
 	car.set_meta("service_safe_rotation",-PI/2)
 	player.is_control_disabled = true
@@ -99,18 +118,15 @@ func start_service(car: Node2D) -> bool:
 	car.collision_layer = 0
 	car.collision_mask = 0
 	_motion = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_motion.tween_property(shutter,"position:y",-35,0.35)
-	_motion.parallel().tween_property(car,"rotation",-PI/2,0.35)
-	_motion.tween_property(car,"global_position",global_position+Vector2(0,-85),0.9)
-	_motion.parallel().tween_property(car,"modulate:a",0.0,0.8)
+	if is_instance_valid(_door_motion): _door_motion.kill()
+	_door_open = false
 	_motion.tween_property(shutter,"position:y",0.0,0.35)
+	_motion.parallel().tween_property(car,"modulate:a",0.0,0.35)
 	_motion.tween_callback(_begin_repair)
 	_motion.tween_interval(SERVICE_SECONDS)
 	_motion.tween_callback(_repair)
-	_motion.tween_property(shutter,"position:y",-35,0.35)
-	_motion.tween_property(car,"global_position",global_position+EXIT_OFFSET,1.0)
-	_motion.parallel().tween_property(car,"modulate:a",1.0,0.7)
-	_motion.tween_property(shutter,"position:y",0.0,0.35)
+	_motion.tween_property(shutter,"position:y",-48.0,0.35)
+	_motion.parallel().tween_property(car,"modulate:a",1.0,0.35)
 	_motion.tween_callback(_finish)
 	return true
 func _begin_repair() -> void:
@@ -152,12 +168,14 @@ func _repair() -> void:
 		target.acceleration = restored_acceleration
 		target.turn_speed = restored_turn
 		target.drift_factor = float(VehicleCatalog.get_vehicle_spec(target.active_archetype_id).get("drift_factor",0.9))
+	var wanted := get_node_or_null("/root/WantedManager")
+	if is_instance_valid(wanted) and wanted.has_method("reset_crime"): wanted.reset_crime()
 	player._refresh_weapon_ui()
 func _release() -> void:
 	for entry in _saved.get("lights", []):
 		if is_instance_valid(entry.node): entry.node.enabled = entry.enabled
 	if is_instance_valid(target):
-		target.global_position = target.get_meta("service_safe_position",global_position+EXIT_OFFSET)
+		target.remove_meta("pay_n_spray_busy")
 		target.modulate = _saved.get("modulate",Color.WHITE)
 		target.collision_layer = _saved.get("layer",2)
 		target.collision_mask = _saved.get("mask",1)
@@ -170,10 +188,12 @@ func _release() -> void:
 			player.global_position = target.global_position
 		_departing = target
 	if is_instance_valid(player): player.is_control_disabled = _saved.get("disabled",false)
+	if is_instance_valid(player): player.remove_meta("pay_n_spray_busy")
 	busy = false
 	phase = "idle"
 	spray.emitting = false
 func _finish() -> void:
+	_door_open = true
 	_release()
 	serviced_count += 1
 	player._show_weapon_notice(_text("RESTAURADO / -$100","RESTORED / -$100"))
@@ -182,6 +202,7 @@ func _finish() -> void:
 func _cancel() -> void:
 	if is_instance_valid(_motion): _motion.kill()
 	_release()
-	shutter.position.y = 0
+	_door_open = true
+	shutter.position.y = -48.0
 func _exit_tree() -> void:
 	if busy: _cancel()

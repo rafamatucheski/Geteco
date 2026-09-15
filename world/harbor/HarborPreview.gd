@@ -12,17 +12,18 @@ var _status: Label
 var _panel: CanvasLayer
 var _clock := 0.0
 
-# Environment panel — reuses the existing DayNightWeatherManager (day/night
-# tint, rain particles+audio, time_changed/is_raining contract) rather than a
-# second weather system. See world/harbor/README.md for the
+# Environment panel — reuses the existing DayNightWeatherManager (time palette,
+# clouds, drizzle particles+audio, time_changed/is_raining contract) rather than
+# a second weather system. See world/harbor/README.md for the
 # lamp-post/window-light interface this exposes.
 var weather: CanvasModulate
-var _is_night := false
-var _is_raining := false
+var _review_time_index := 1
+var _review_weather_index := 0
 var _show_perf_hud := false
 var _perf_hud: Label
 
 func _ready() -> void:
+	add_child(preload("res://world/harbor/WorldPerimeter.gd").new())
 	var combat_effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
 	combat_effects.name = "WeaponEffects"
 	add_child(combat_effects)
@@ -31,6 +32,10 @@ func _ready() -> void:
 	weather.is_dynamic_time = false
 	weather.time_of_day = 0.45
 	add_child(weather)
+	weather.enable_regional_atmosphere()
+	var road_lighting := preload("res://world/shared/roads/RoadLighting.gd").new()
+	road_lighting.name = "RoadLighting"
+	add_child(road_lighting)
 	if review_mode:
 		_build_review_ui()
 	call_deferred("_start_review")
@@ -93,12 +98,10 @@ func _setup_thematic_fleet() -> void:
 	var factory := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 	# 1. Ambulância 3D na baia médica da clínica
 	# Keep the clinic dispatch apron clear for the actual service ambulance.
-	# 2. Guincho plataforma 3D no pátio da oficina/garagem
-	factory.spawn_parked_vehicle(fleet_root, "WorkshopTowTruck", Vector2(680, 1800), 0.0, "towmaster", 0)
-	# 3. Furgão de entrega expressa 3D no pátio de cargas
-	factory.spawn_parked_vehicle(fleet_root, "FreightCourierVan", Vector2(2460, 2115), 0.0, "courier_van", 0)
-	# 4. Pickup 4x4 3D com Santo Antônio nas docas
-	factory.spawn_parked_vehicle(fleet_root, "PortRanchPickup", Vector2(2560, 2115), 0.0, "ranch_single", 0)
+	# Side service bay: keep the garage door and its approach clear.
+	factory.spawn_parked_vehicle(fleet_root, "WorkshopTowTruck", Vector2(565, 1870), PI * 0.5, "towmaster", 0)
+	# Dock Street's north sidewalk spans y=2098..2140. The former freight
+	# display vehicles at y=2115 blocked pedestrians; this frontage stays clear.
 
 func _setup_cobras() -> void:
 	if not has_node("CobraNeighborhood") or has_node("CobraTerritory"):
@@ -130,7 +133,7 @@ func _finish_cobra_vehicles(vehicles: Node2D) -> void:
 
 func _full_map_zoom() -> float:
 	var viewport_size := get_viewport_rect().size
-	return minf(viewport_size.x / 10600.0, maxf(240.0, viewport_size.y - 120.0) / 8100.0)
+	return minf(viewport_size.x / 10600.0, maxf(240.0, viewport_size.y - 120.0) / 11000.0)
 
 func _build_review_ui() -> void:
 	_panel = CanvasLayer.new()
@@ -174,24 +177,39 @@ func _build_review_ui() -> void:
 	env_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(env_row)
 	var day_night_button := Button.new()
-	day_night_button.text = "🌙 Noite"
-	day_night_button.custom_minimum_size = Vector2(100, 40)
+	day_night_button.text = "☀ Dia"
+	day_night_button.custom_minimum_size = Vector2(125, 40)
 	day_night_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	day_night_button.pressed.connect(func():
-		_is_night = not _is_night
-		day_night_button.text = "☀ Dia" if _is_night else "🌙 Noite"
-		weather.time_of_day = 0.90 if _is_night else 0.45
+		var presets := [
+			{"label": "🌅 Amanhecer", "time": 0.23},
+			{"label": "☀ Dia", "time": 0.45},
+			{"label": "🌇 Pôr do sol", "time": 0.77},
+			{"label": "🌙 Noite", "time": 0.90},
+		]
+		_review_time_index = (_review_time_index + 1) % presets.size()
+		var preset: Dictionary = presets[_review_time_index]
+		day_night_button.text = preset.label
+		weather.time_of_day = preset.time
 		weather.set_biome(weather.current_biome)
 	)
 	env_row.add_child(day_night_button)
 	var rain_button := Button.new()
-	rain_button.text = "🌧 Chuva"
-	rain_button.custom_minimum_size = Vector2(100, 40)
+	rain_button.text = "☀ Limpo"
+	rain_button.custom_minimum_size = Vector2(125, 40)
 	rain_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rain_button.pressed.connect(func():
-		_is_raining = not _is_raining
-		rain_button.text = "☁ Parar chuva" if _is_raining else "🌧 Chuva"
-		weather.set_weather(1 if _is_raining else 0)
+		var presets := [
+			{"label": "☀ Limpo", "state": DayNightWeatherManager.WeatherState.CLEAR},
+			{"label": "☁ Nublado", "state": DayNightWeatherManager.WeatherState.CLOUDY},
+			{"label": "🌦 Garoa", "state": DayNightWeatherManager.WeatherState.DRIZZLE},
+		]
+		_review_weather_index = (_review_weather_index + 1) % presets.size()
+		var preset: Dictionary = presets[_review_weather_index]
+		rain_button.text = preset.label
+		if preset.state == DayNightWeatherManager.WeatherState.DRIZZLE:
+			weather.set_rain_intensity(0.22)
+		weather.set_weather(preset.state)
 	)
 	env_row.add_child(rain_button)
 	var perf_button := Button.new()
@@ -252,6 +270,12 @@ func _visit_ship() -> void:
 		$Player.velocity = Vector2.ZERO
 		$Player/Camera.reset_smoothing()
 
+func _visit_south_port() -> void:
+	_walk()
+	$Player.global_position = Vector2(3570,2070)
+	$Player.velocity = Vector2.ZERO
+	$Player/Camera.reset_smoothing()
+
 func _drive() -> void:
 	_follow_train = false
 	if not $PlayerCar.is_driven_by_player:
@@ -278,6 +302,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_TAB:
 			_toggle_overview()
+		elif event.keycode == KEY_P:
+			_visit_south_port()
 		elif event.keycode == KEY_T:
 			_follow_train = not _follow_train
 			_overview = true
@@ -287,7 +313,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_follow_train = false
 			_overview = true
 			$OverviewCamera.make_current()
-			var point := Vector2(3320, -450)
+			var point := Vector2(3320, 800)
 			var scale_value := _full_map_zoom()
 			if event.keycode == KEY_1:
 				point = Vector2(1260, 890)
@@ -345,4 +371,4 @@ func _process(delta: float) -> void:
 		return
 	_clock = 0.0
 	var population: Dictionary = $Life.get_population_snapshot()
-	_status.text = "WASD mover • E entrar/sair • Tab mapa • 4 Northbank • 5 viaduto • 6 túnel • 7 becos • 8 ruas locais • 9 rodovia • N expansão • T trem • 0 geral\n%d veículos / %d pedestres • Navio: acesso a pé pelo cais • Mapa 2: conexão futura; use o retorno." % [population.vehicles, population.pedestrians]
+	_status.text = "WASD mover • E entrar/sair • Tab mapa • P passarela do Porto Sul • 4 Northbank • 5 viaduto • 6 túnel • 8 ruas • 9 rodovia • T trem • 0 geral\n%d veículos / %d pedestres • Porto Sul: desça pela passarela na popa ou pela ponte ao fim da avenida do cais." % [population.vehicles, population.pedestrians]

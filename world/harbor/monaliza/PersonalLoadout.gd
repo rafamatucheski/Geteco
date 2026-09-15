@@ -2,7 +2,7 @@ extends RefCounted
 const GROUPS := {
 	"curta":["pistol","magnum","smg"],
 	"longa":["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
-	"corpo":["knife"],
+	"corpo":["knife","axe","knuckles","bat"],
 	"granada":["grenade"]
 }
 static func slot_for(id: String) -> String:

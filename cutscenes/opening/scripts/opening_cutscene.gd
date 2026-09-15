@@ -41,6 +41,7 @@ var _studio_elapsed := 0.0
 var _studio_audio: AudioStreamPlayer
 var _skip_button: Button
 var _skip_dialog: ConfirmationDialog
+var _studio_waiting_for_draw := false
 
 
 func _ready() -> void:
@@ -69,6 +70,9 @@ func _ready() -> void:
 	_skip_dialog.canceled.connect(resume_playback)
 	add_child(_skip_dialog)
 	cue_requested.connect(_procedural_audio.play_cue)
+	if show_studio_intro:
+		preload("res://world/harbor/HarborAudioBank.gd").sound("water")
+		preload("res://world/harbor/HarborAudioBank.gd").sound("logo")
 	if auto_start:
 		play()
 
@@ -118,13 +122,25 @@ func restart() -> void:
 		_studio_audio.volume_db = -12.0
 		_studio_audio.stream = preload("res://world/harbor/HarborAudioBank.gd").sound("logo")
 		add_child(_studio_audio)
-		_studio_audio.play()
+		_studio_waiting_for_draw = true
+		_start_studio_after_draw.call_deferred(_studio_audio)
 	else:
 		_begin_shot(0)
 	move_child(_skip_button, get_child_count() - 1)
 	_skip_button.visible = allow_skip
 	_update_help_text()
 
+
+func _start_studio_after_draw(player: AudioStreamPlayer) -> void:
+	# O mixer não deve se antecipar ao primeiro quadro visível da identidade.
+	_studio_card.elapsed = 0.04
+	_studio_card.queue_redraw()
+	await get_tree().process_frame
+	if DisplayServer.get_name() != "headless": await RenderingServer.frame_post_draw
+	if not is_instance_valid(player) or player != _studio_audio or _finishing: return
+	_studio_waiting_for_draw = false
+	player.play()
+	player.stream_paused = _paused
 
 func pause_playback() -> void:
 	if not _running or _finishing:
@@ -175,6 +191,7 @@ func jump_to_shot(index: int) -> void:
 
 
 func _process(delta: float) -> void:
+	if _studio_waiting_for_draw: return
 	if _running and not _paused and not _finishing and is_instance_valid(_studio_card):
 		_studio_elapsed += delta * playback_speed
 		_studio_card.elapsed = _studio_elapsed

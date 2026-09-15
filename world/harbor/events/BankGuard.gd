@@ -82,6 +82,8 @@ func _shoot_at_target(target_pos: Vector2) -> void:
 	if not uses_shotgun:
 		super._shoot_at_target(target_pos)
 		return
+	weapon_reload.equip(String(dropped_weapon))
+	if not weapon_reload.consume(): return
 	fire_cooldown=1.55
 	for pellet in 6: _fire_single_bullet(target_pos,4,880,.16)
 	_play_audio(ProceduralAudio.get_gunshot_shotgun_stream(),-5)
@@ -111,7 +113,12 @@ func _physics_process(delta: float) -> void:
 
 func take_damage(amount: int, is_player_attacker: bool = false) -> void:
 	if amount>0 and not is_dead and is_player_attacker and is_instance_valid(room): room._on_shot()
+	# This custom uniform replaces the torso material. The inherited red flash
+	# only tinted the remaining trousers, falsely suggesting every hit was a leg hit.
+	var trousers := mat_uniform
+	mat_uniform=null
 	super.take_damage(amount,is_player_attacker)
+	mat_uniform=trousers
 	if is_dead and is_instance_valid(room): room.on_guard_down(self)
 
 func _dispatch_emergency_coroner() -> void:
@@ -126,6 +133,8 @@ func _drop_loot() -> void:
 	var camera := viewport_3d.get_camera_3d()
 	var hand_pixel := camera.unproject_position(rig.weapon_mount_node.global_position)-Vector2(viewport_3d.size)*.5
 	var hand_point := sprite_3d_display.to_global(hand_pixel)
+	if has_meta("interior_actor_presentation"):
+		hand_point = get_meta("interior_actor_presentation").project_node(rig.weapon_mount_node)
 	rig.current_gun_mesh.hide()
 	muzzle_flash_3d.hide()
 	for eye in eyes:
@@ -136,14 +145,21 @@ func _drop_loot() -> void:
 	var pickup := preload("res://world/harbor/events/BankGuardWeaponPickup.gd").new()
 	pickup.weapon_id=dropped_weapon
 	pickup.ammo_amount=8 if uses_shotgun else 12
+	pickup.room=room
 	# Aterrissa na circulação, separado do corpo e do cartão de segurança.
-	var landing := global_position+Vector2(44 if uses_shotgun else -44,26)
+	var landing := preload("res://world/harbor/events/BankFloorItem.gd").clear_drop(room,global_position,Vector2(44 if uses_shotgun else -44,26))
 	pickup.position=get_parent().to_local(landing)
 	pickup.drop_origin=hand_point
 	get_parent().call_deferred("add_child",pickup)
 	# Mantém a chance de colete; a arma já foi solta exatamente uma vez.
 	police_loot.weapon_drop_chance=0.0
 	police_loot.weapon_pickup_scene=null
+	if randf()<=police_loot.armor_drop_chance:
+		var armor:=preload("res://world/harbor/events/BankArmorPickup.gd").new()
+		armor.room=room
+		armor.position=get_parent().to_local(preload("res://world/harbor/events/BankFloorItem.gd").clear_drop(room,global_position,Vector2(0,36)))
+		get_parent().call_deferred("add_child",armor)
+	police_loot.armor_drop_chance=0.0
 	super._drop_loot()
 
 func _create_3d_blood_puddle() -> void:

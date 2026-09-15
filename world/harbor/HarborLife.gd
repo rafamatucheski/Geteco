@@ -5,7 +5,9 @@ extends Node2D
 const FACTORY := preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 const CONTROLLER := preload("res://world/shared/roads/traffic/JunctionTrafficController.gd")
 const RAIL := preload("res://world/harbor/HarborRailLine.gd")
-const CAR_TYPES := ["sedan_classic", "union_sedan", "metro_hatch", "courier_van", "station_wagon", "taxi_yellow", "route_city", "summit_suv"]
+const CAR_TYPES := ["orbita_micro", "sport_estate", "sedan_classic", "metro_hatch", "aurora_executive", "union_sedan", "vale_crossover", "metro_hatch", "nordic_estate", "sport_coupe", "nimbus_minivan", "courier_van", "station_wagon", "cobra_v8", "taxi_yellow", "vertice_midengine", "metro_hatch", "summit_suv", "bravio_crew", "courier_van", "sedan_classic", "union_sedan", "station_wagon"]
+const MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
+const MAX_AMBIENT_TRUCKS := 2
 
 @export var rail_path: NodePath = NodePath("../FreightRail")
 
@@ -19,34 +21,11 @@ var _traffic_target := 0
 var _population_clock := 0.0
 var _budget_clock := 0.0
 var _spawn_serial := 1000
-var _sleeping_vehicles: Dictionary = {}
-var _sleeping_walkers: Dictionary = {}
+var _population_activity := preload("res://world/shared/traffic/PopulationActivity.gd").new()
+var walk_space := preload("res://world/shared/pedestrians/PedestrianWalkSpace.gd").new()
 
 
 class HarborController extends JunctionTrafficController:
-	func try_reserve_junction(junction_ref: Variant, vehicle_instance_id: int, road_index: int, lane_id: StringName = &"", vehicle: Node = null) -> bool:
-		var junction_index := _resolve_junction_index(junction_ref)
-		var state: Dictionary = _states.get(junction_index, {})
-		# Never revoke a committed car's reservation. Gate only NEW requests so
-		# node processing order cannot award the junction to the back of a queue.
-		if int(state.get("reservation_owner", 0)) != vehicle_instance_id and vehicle != null:
-			var follow := vehicle.get_parent() as PathFollow2D
-			var path := follow.get_parent() as Path2D if follow != null else null
-			if path != null and path.curve != null and is_instance_valid(graph_source) and graph_source.is_ancestor_of(path) and junction_index >= 0:
-				var junction_offset := path.curve.get_closest_offset(path.to_local(_junction_world_position(junction_index)))
-				for sibling in path.get_children():
-					if sibling == follow or not sibling is PathFollow2D or sibling.get_child_count() == 0:
-						continue
-					if not sibling.get_child(0) is DemoTrafficVehicle:
-						continue
-					var ahead := sibling as PathFollow2D
-					if ahead.progress > follow.progress + 0.5 and ahead.progress <= junction_offset + 0.5:
-						_telemetry.reservation_denials = int(_telemetry.reservation_denials) + 1
-						_track_wait(vehicle_instance_id, junction_index, road_index, lane_id)
-						return false
-		return super.try_reserve_junction(junction_ref, vehicle_instance_id, road_index, lane_id, vehicle)
-
-
 	func _release_if_vehicle_cleared(vehicle: Node2D, vehicle_length: float) -> void:
 		super._release_if_vehicle_cleared(vehicle, vehicle_length)
 		var owned := _owned_junction_for_vehicle(vehicle.get_instance_id())
@@ -74,6 +53,8 @@ class HarborController extends JunctionTrafficController:
 		if crossing_half_width <= 0.0:
 			return
 		var center := _junction_world_position(owned)
+		if vehicle.has_method("occupies_junction") and vehicle.occupies_junction(center,crossing_half_width+8.0):
+			return
 		var half_size := (collision.shape as RectangleShape2D).size * 0.5
 		for corner in [Vector2(-half_size.x, -half_size.y), Vector2(half_size.x, -half_size.y), half_size, Vector2(-half_size.x, half_size.y)]:
 			if (collision.to_global(corner) - center).dot(axis) <= crossing_half_width + 8.0:
@@ -113,8 +94,11 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 	var _destination_pause := 0.0
 	var companion: Node2D
 	var appearance_variant := 0
+	var _social_cooldown := 12.0
+	var _companion_wait := 0.0
 
 	func _ready() -> void:
+		if get_parent().get("walk_space") != null: walk_space = get_parent().get("walk_space")
 		district_theme = DistrictTheme.CITY_DOWNTOWN
 		defer_presentation = true
 		archetype_override = [0,1,2,4,6,7][appearance_variant%6]
@@ -130,35 +114,62 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 
 	func _physics_process(delta: float) -> void:
 		_destination_pause = maxf(0.0, _destination_pause - delta)
+		_social_cooldown -= delta
+		if is_scared or is_dead or is_incapacitated:
+			_destination_pause = 0.0
+			_companion_wait = 0.0
+			_social_cooldown = 15.0
+		elif _social_cooldown <= 0.0 and not _rejoining_route:
+			_social_cooldown = randf_range(20.0, 40.0)
+			# Chat only alongside a companion, on a roomy uninterrupted sidewalk.
+			if is_instance_valid(companion) and not companion.is_scared and global_position.distance_to(companion.global_position) < 46.0 and global_position.distance_to(walk_target) > 90.0 and _safe_to_pause():
+				_destination_pause = randf_range(1.2, 2.8)
+				companion._destination_pause = _destination_pause
+				companion._social_cooldown = _social_cooldown
+				walk_dir = global_position.direction_to(companion.global_position)
+				companion.walk_dir = -walk_dir
 		super._physics_process(delta)
 
+	func _safe_to_pause() -> bool:
+		for crossing in preload("res://world/harbor/CrossingNeighborhood.gd").near(self):
+			if is_instance_valid(crossing) and global_position.distance_to(crossing.global_position) < crossing.road_width * 0.5 + 65.0: return false
+		for other in _cached_neighbors:
+			if _social_neighbor(other) and other != companion and global_position.distance_to(other.global_position) < 50.0: return false
+		return true
+
 	func _pick_new_sidewalk_target() -> void:
-		if pause_at_destinations and _route_target_ready:
+		# Waiting for a crossing or another person is not completion of a leg.
+		# The base pedestrian's stuck timeout used to skip these authored corners
+		# and send residents diagonally into the space needed by turning vehicles.
+		if _route_target_ready and not is_scared and global_position.distance_to(walk_target) > 8.0:
+			return
+		if pause_at_destinations and _route_target_ready and not is_scared and not _rejoining_route and _safe_to_pause():
 			_destination_pause = randf_range(0.4, 2.4)
 			destination_pauses += 1
 		super._pick_new_sidewalk_target()
+		# Corner markers stay on the route centre; clearance comes from the
+		# committed detour, not a randomly offset inaccessible destination.
+		if not _rejoining_route: walk_target = route_points[_next_route_index()]
+
+	func _ambient_walk_paused() -> bool:
+		return super._ambient_walk_paused() or (_destination_pause > 0.0 and not is_scared)
 
 	func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
 		move_speed *= 0.80
-		if preload("res://world/harbor/HarborPedestrianRoutes.gd").crossing_wait(self,dest): return Vector2.ZERO
-		if is_instance_valid(companion) and not is_scared and not companion.is_dead:
+		if preload("res://world/harbor/HarborPedestrianRoutes.gd").crossing_wait(self,dest):
+			locomotion_state = &"waiting_crossing"
+			movement_navigation.reset_progress()
+			stuck_timer = 0.0
+			return Vector2.ZERO
+		if is_instance_valid(companion) and not is_scared and not companion.is_dead and not companion.is_incapacitated and not companion.is_scared:
 			var gap: float = global_position.distance_to(companion.global_position)
-			if gap>55 and global_position.distance_to(dest)<companion.global_position.distance_to(dest): move_speed *= 0.4
+			if gap > 55.0 and gap < 180.0 and global_position.distance_to(dest) < companion.global_position.distance_to(dest) and _safe_to_pause():
+				_companion_wait += delta
+				if _companion_wait < 4.0: move_speed *= 0.5
+			else: _companion_wait = 0.0
 		if _destination_pause > 0.0 and not is_scared:
 			return Vector2.ZERO
-		var desired := super._navigate_towards(dest, move_speed, delta)
-		if route_points.size() != 2 or delta <= 0.0:
-			return desired
-		# Constrain the requested velocity, never actor position. The inherited
-		# CharacterBody2D still performs every movement and collision response.
-		var start := route_points[0]
-		var segment := route_points[1] - start
-		var axis := segment.normalized()
-		var normal := axis.orthogonal()
-		var predicted := global_position + desired * delta - start
-		var safe_next := start + axis * clampf(predicted.dot(axis), 0.0, segment.length())
-		safe_next += normal * clampf(predicted.dot(normal), -14.0, 14.0)
-		return ((safe_next - global_position) / delta).limit_length(move_speed)
+		return super._navigate_towards(dest, move_speed, delta)
 
 
 func _ready() -> void:
@@ -179,6 +190,15 @@ func setup(network: Node2D) -> void:
 		push_error("HarborLife requires a canonical road network")
 		return
 	_configured = true
+	# Harbor's turning rays can touch residents on the far sidewalk. Enable
+	# the actual swept corridor when this population starts, even when the
+	# optional interregional coach service has not been initialized.
+	var graph: Dictionary = network.get_graph_data()
+	walk_space.configure(network, graph)
+	for connection in graph.lane_connections:
+		var connector: Path2D = connection.get("path")
+		if is_instance_valid(connector) and connector.is_in_group("unified_lane_connector"):
+			connector.set_meta("curved_pedestrian_corridor", true)
 	traffic_controller = HarborController.new()
 	traffic_controller.name = "JunctionTrafficController"
 	traffic_controller.graph_source = network
@@ -196,6 +216,19 @@ func _spawn_traffic(network: Node2D) -> void:
 	var lanes: Array[Path2D] = []
 	for candidate in network.find_children("*", "Path2D", true, false):
 		if candidate.is_in_group("unified_traffic_lane") and not bool(candidate.get_meta("is_lane_connector", false)):
+			# Local relief roads remain routable, but adding them must not seed
+			# extra traffic directly across the emergency depot mouths.
+			if String(candidate.get_meta("traffic_road_id", "")).get_file() in ["westgate_service_lane", "medical_garden_lane"]:
+				continue
+			# The freight terminal owns its working fleet; keep the city population
+			# distributed over public streets instead of spawning buses in the yard.
+			if String(candidate.get_meta("traffic_road_id", "")).get_file().begins_with("south_port_"):
+				continue
+			# This 240px link lies entirely between two turn-entry envelopes.
+			# Traffic can drive through it, but seeding a car midway can place
+			# it past its outgoing connector before it ever receives a route.
+			if String(candidate.get_meta("traffic_road_id", "")).get_file() == "map2_temporary_return":
+				continue
 			lanes.append(candidate as Path2D)
 	lanes.sort_custom(func(a: Path2D, b: Path2D) -> bool: return String(a.name) < String(b.name))
 	for lane in lanes:
@@ -213,9 +246,25 @@ func _spawn_traffic(network: Node2D) -> void:
 		var lane_index := floori(float(index * lanes.size()) / float(population))
 		var vehicle := FACTORY.spawn_moving_vehicle(
 			lanes[lane_index], "HarborTraffic_%02d" % index,
-			CAR_TYPES[index % CAR_TYPES.size()], 0.17 + float(index % 4) * 0.17,
+			_traffic_archetype(lanes[lane_index], index), 0.17 + float(index % 4) * 0.17,
 			80.0 + float(index % 3) * 9.6, index)
 		vehicles.append(vehicle)
+
+
+func _traffic_archetype(lane: Path2D, serial: int) -> String:
+	# Spread all three styles across successive streets, within the existing fleet budget.
+	if posmod(serial, 4) == 3:
+		return MOTORCYCLE_TYPES[posmod(floori(float(serial) / 4.0), MOTORCYCLE_TYPES.size())]
+	# Freight operations have their own fleet. Residential through traffic is
+	# mostly compact cars; a tanker/bus on every fourth block consumed all of
+	# the short receiving lanes before any ordinary car could clear a junction.
+	if serial % 11 == 0 and lane.curve.get_baked_length() >= 1500.0 and float(lane.get_meta("traffic_road_width", 0.0)) >= 140.0:
+		var heavy := 0
+		for vehicle in vehicles:
+			if is_instance_valid(vehicle) and vehicle.vehicle_id == "cargo_flatbed_truck": heavy += 1
+		if heavy < MAX_AMBIENT_TRUCKS: return "cargo_flatbed_truck"
+	var car_serial := serial - floori(float(serial) / 4.0)
+	return CAR_TYPES[posmod(car_serial, CAR_TYPES.size())]
 
 
 func _spawn_walkers() -> void:
@@ -284,14 +333,16 @@ func _spawn_district_neighbors(district_name: String) -> void:
 func _spawn_place_strollers() -> void:
 	# Verified outdoor destinations: storefront forecourt -> market plaza, and
 	# the south residential courtyard. No claim of entering an unbuilt interior.
-	# Market routes flank the fountain at (1750,955), clear of its 60px radius;
-	# courtyard routes stay south of the trees aligned at y850.
+	# Market visitors stay on the public frontage outside the terminal bus bays.
 	var routes := [
 		PackedVector2Array([Vector2(1550, 805), Vector2(1550, 1100)]),
 		PackedVector2Array([Vector2(1880, 805), Vector2(1880, 1100)]),
 		PackedVector2Array([Vector2(650, 905), Vector2(1090, 905)]),
 		PackedVector2Array([Vector2(650, 905), Vector2(1090, 905)]),
 	]
+	if get_parent().has_node("ArrivalStop"):
+		routes[0] = PackedVector2Array([Vector2(1420, 800), Vector2(1420, 1100)])
+		routes[1] = PackedVector2Array([Vector2(1440, 850), Vector2(1440, 1100)])
 	for index in routes.size():
 		var global_route := PackedVector2Array()
 		for point in routes[index]:
@@ -320,33 +371,12 @@ func get_population_snapshot() -> Dictionary:
 
 
 func _budget_population(focus: Vector2) -> void:
-	var area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(self,focus)
-	var walk_area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(self,focus,preload("res://world/shared/traffic/CameraSimulationArea.gd").PEDESTRIAN_MARGIN)
-	for car in vehicles:
-		if not is_instance_valid(car): continue
-		var distant: bool = not area.has_point(car.global_position) and car.get("is_driven_by_player") != true and not car.get("is_exploding")
-		if distant and not _sleeping_vehicles.has(car) and (car.is_processing() or car.is_physics_processing()):
-			_sleeping_vehicles[car] = {"physics": car.is_physics_processing(), "idle": car.is_processing()}
-			car.set_physics_process(false)
-			car.set_process(false)
-		elif not distant and _sleeping_vehicles.has(car):
-			car.set_physics_process(_sleeping_vehicles[car].physics)
-			car.set_process(_sleeping_vehicles[car].idle)
-			_sleeping_vehicles.erase(car)
-	for car in _sleeping_vehicles.keys():
-		if not is_instance_valid(car): _sleeping_vehicles.erase(car)
+	# The continuous world owns all populations. Preview scenes use this fallback.
+	if get_tree().get_first_node_in_group("continuous_world") != null: return
+	_population_activity.update(self, focus, vehicles, walkers)
 
-	for walker in walkers:
-		if not is_instance_valid(walker): continue
-		var distant_walker: bool = not walk_area.has_point(walker.global_position) and not walker.get("is_scared") and not walker.get("is_flying")
-		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
-			_sleeping_walkers[walker] = true
-			walker.set_physics_process(false)
-		elif not distant_walker and _sleeping_walkers.has(walker):
-			walker.set_physics_process(true)
-			_sleeping_walkers.erase(walker)
-	for walker in _sleeping_walkers.keys():
-		if not is_instance_valid(walker): _sleeping_walkers.erase(walker)
+func _exit_tree() -> void:
+	_population_activity.restore_all()
 
 func _process(delta: float) -> void:
 	if not _configured or _traffic_lanes.is_empty():
@@ -369,6 +399,7 @@ func _process(delta: float) -> void:
 	if subject == null:
 		return
 	var focus := subject.global_position
+	_replace_buried_walker()
 	for car in get_tree().get_nodes_in_group("modern_traffic"):
 		if car.get("is_driven_by_player") == true:
 			focus = car.global_position
@@ -376,6 +407,7 @@ func _process(delta: float) -> void:
 	for attempt in 2:
 		if vehicles.size() >= _traffic_target:
 			break
+
 		for offset in _traffic_lanes.size():
 			var lane := _traffic_lanes[(_spawn_serial + offset) % _traffic_lanes.size()]
 			var ratio := 0.23 + float(_spawn_serial % 3) * 0.23
@@ -386,7 +418,44 @@ func _process(delta: float) -> void:
 			candidate = lane.to_global(lane.curve.sample_baked(lane.curve.get_baked_length() * clear_ratio))
 			if candidate.distance_to(focus) < 1400.0 or not FACTORY._position_is_clear(get_tree(), candidate):
 				continue
-			var vehicle := FACTORY.spawn_moving_vehicle(lane, "HarborTraffic_%d" % _spawn_serial, CAR_TYPES[_spawn_serial % CAR_TYPES.size()], clear_ratio, 90.0, _spawn_serial)
+			var vehicle := FACTORY.spawn_moving_vehicle(lane, "HarborTraffic_%d" % _spawn_serial, _traffic_archetype(lane, _spawn_serial), clear_ratio, 90.0, _spawn_serial)
 			vehicles.append(vehicle)
 			_spawn_serial += 1
 			break
+
+
+func _replace_buried_walker() -> void:
+	var care := get_node("/root/CoronerCare")
+	var renewal := get_node("/root/WorldRenewal")
+	for index in walkers.size():
+		var previous: Node2D = walkers[index]
+		if not is_instance_valid(previous) or not previous is HarborWalker or not previous.is_dead: continue
+		var key: String = care.identity(previous)
+		var record: Dictionary = care.records().get(key,{})
+		if record.get("phase","") not in ["buried","unrecovered"]: continue
+		var distance := 0.0
+		for segment in range(1,previous.route_points.size()):
+			var a: Vector2 = previous.route_points[segment-1]
+			var b: Vector2 = previous.route_points[segment]
+			var length := a.distance_to(b)
+			var point := a.lerp(b,.5)
+			if not renewal.outside_view(previous,point) or not renewal.free_position(previous,point,18):
+				distance += length
+				continue
+			var successor := HarborWalker.new()
+			# A stable successor name survives scene reloads; a subsequent death
+			# gets its own record rather than clearing the predecessor's obituary.
+			successor.name = String(record.get("successor_name","HarborSuccessor_%s" % str(key.hash())))
+			successor.appearance_variant = int(record.get("successor_variant",previous.appearance_variant+7919))
+			successor.sidewalk_half_width = previous.sidewalk_half_width
+			successor.configure_authored_route(previous.route_points.duplicate(),previous.route_id,distance+length*.5)
+			add_child(successor)
+			if not successor.is_dead and (not renewal.free_position(successor,successor.global_position,18) or not renewal.outside_view(successor,successor.global_position)):
+				successor.queue_free()
+				distance += length
+				continue
+			record.successor_name = String(successor.name)
+			record.successor_variant = successor.appearance_variant
+			walkers[index] = successor
+			previous.queue_free()
+			return # At most one replacement per existing three-second budget.

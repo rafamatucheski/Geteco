@@ -18,6 +18,8 @@ extends RefCounted
 ## admissão e assobio de turbina/câmbio. É a cadeia física do som real.
 
 const RATE := 22050
+## The procedural layers below contain RATE frames (one second).
+const LOOP_SECONDS := 1.0
 ## Amostras de guarda depois do fim do laço. O resampler do AudioStreamWAV
 ## interpola lendo ALÉM de loop_end; sem elas ele cai no padding de zeros e
 ## estala a cada volta (medido em tests/test_engine_loop_seam.gd).
@@ -70,6 +72,12 @@ const _AUDIO_DIR := "res://audio"
 ## rápido": com marcha longa no topo o carro passa segundos subindo no último
 ## engate em vez de estourar a escada inteira em um segundo e meio.
 const _GEARBOX := {
+	"bike_sport": [0.22, 0.37, 0.53, 0.69, 0.85, 1.0],
+	"bike_cruiser": [0.25, 0.43, 0.63, 0.82, 1.0],
+	"bike_urban": [0.22, 0.40, 0.61, 0.81, 1.0],
+	"vq35": [0.24, 0.40, 0.57, 0.73, 0.87, 1.0],
+	"m8_v8": [0.13, 0.25, 0.38, 0.52, 0.65, 0.77, 0.88, 1.0],
+	"rosso_v12": [0.12,0.23,0.36,0.51,0.68,0.84,1.0],
 	"street": [0.19, 0.34, 0.51, 0.71, 1.0],
 	"sport": [0.15, 0.27, 0.41, 0.57, 0.77, 1.0],
 	"muscle": [0.24, 0.45, 0.71, 1.0],
@@ -106,6 +114,50 @@ const _DOWNSHIFT_MARGIN := 0.045
 ## drive          saturação por camada: alto giro distorce mais.
 ## sub            ronco de meio-tempo (ordem do ciclo), o "lope" do motor grande.
 const _PROFILES := {
+	"bike_cruiser": {
+		# 45-degree V-twin: unequal 315/405-degree firing intervals, low rev limit.
+		"cyl": 2, "cycles": [8, 22, 44], "idle": 7.5, "redline": 46.0,
+		"decay": [0.8, 1.1, 1.4], "sub": 0.30,
+		"res": [[82.0, 3.0, 1.0], [170.0, 2.5, 0.65], [640.0, 1.8, 0.16]],
+		"knock": [0.0, 1800.0], "intake": [0.045, 1100.0, 0.8],
+		"whine": [0.0, 0.0], "drive": [1.4, 2.0, 2.7],
+		"pattern_offset": [0.0, -0.125], "pattern_amp": [1.0, 0.86],
+	},
+	"bike_sport": {
+		"cyl": 4, "cycles": [11, 48, 95], "idle": 10.5, "redline": 110.0,
+		"decay": [2.8, 2.2, 1.8], "sub": 0.06,
+		"res": [[230.0, 3.8, 0.8], [740.0, 3.0, 0.6], [2200.0, 2.0, 0.3]],
+		"knock": [0.0, 2400.0], "intake": [0.13, 2600.0, 0.9],
+		"whine": [24.0, 0.035], "drive": [1.2, 1.8, 2.6],
+	},
+	"bike_urban": {
+		"cyl": 1, "cycles": [12, 35, 62], "idle": 11.5, "redline": 70.0,
+		"decay": [0.65, 0.9, 1.3], "sub": 0.12,
+		"res": [[135.0, 3.0, 0.85], [390.0, 2.5, 0.45], [1200.0, 1.8, 0.15]],
+		"knock": [0.02, 1800.0], "intake": [0.055, 1600.0, 0.8],
+		"whine": [0.0, 0.0], "drive": [1.1, 1.6, 2.2],
+	},
+	"vq35": {
+		"cyl": 6, "cycles": [6, 15, 26, 40, 54], "idle": 6.0, "redline": 55.0,
+		"decay": [4.4, 3.7, 3.1, 2.6, 2.3], "sub": 0.16,
+		"res": [[145.0, 3.6, 0.95], [430.0, 3.0, 0.48], [1280.0, 2.0, 0.16]],
+		"knock": [0.0, 2200.0], "intake": [0.07, 1750.0, 0.7],
+		"whine": [0.0, 0.0], "drive": [1.1, 1.3, 1.6, 1.9, 2.2],
+		"pattern_amp": [1.0, 0.96, 1.02, 0.97, 1.0, 0.95],
+	},
+	"m8_v8": {
+		# V8 biturbo de sedã de competição: oito cilindros, oito relações e
+		# uma faixa de giro longa. O escapamento tem corpo cheio sem virar um
+		# V8 muscle grave; admissão e assobio entram apenas sob carga.
+		"cyl": 8, "cycles": [7, 19, 36, 55, 72], "idle": 7.0, "redline": 74.0,
+		"decay": [3.4, 2.9, 2.45, 2.05, 1.8], "sub": 0.18,
+		"res": [[108.0, 5.5, 1.08], [236.0, 4.7, 0.62], [780.0, 3.2, 0.24]],
+		"knock": [0.0, 2300.0], "intake": [0.16, 2200.0, 1.0],
+		"whine": [52.0, 0.055], "drive": [1.30, 1.85, 2.55, 3.25, 3.95],
+		"pattern_offset": [0.0, 0.06, -0.025, 0.045, 0.0, 0.07, -0.03, 0.04],
+		"pattern_amp": [1.0, 0.88, 0.97, 0.91, 1.0, 0.86, 0.95, 0.89],
+	},
+	"rosso_v12": {"cyl":12,"cycles":[8,30,65],"idle":7.8,"redline":70.0,"decay":[3.8,2.5,1.8],"sub":0.06,"res":[[235.0,5.0,0.85],[710.0,4.5,0.58],[2100.0,3.0,0.28]],"knock":[0.0,2800.0],"intake":[0.17,2800.0,0.9],"whine":[52.0,0.065],"drive":[1.2,2.0,3.1]},
 	"street": {
 		"cyl": 4, "cycles": [7, 21, 44], "idle": 6.4, "redline": 50.0,
 		"decay": [4.6, 3.6, 2.9], "sub": 0.14,
@@ -203,6 +255,8 @@ const _PROFILES := {
 ## Duração do corte de torque na troca e o quanto de força sobra durante ela.
 ## Caminhão e ônibus trocam devagar e com corte longo; esportivo quase não corta.
 const _SHIFT := {
+	"vq35": [0.42, 0.28],
+	"m8_v8": [0.15, 0.30],
 	"street": [0.16, 0.30], "sport": [0.13, 0.28], "muscle": [0.20, 0.32],
 	"suv": [0.20, 0.32], "diesel": [0.24, 0.36], "truck": [0.30, 0.40],
 	"bus": [0.34, 0.42], "fire_diesel": [0.30, 0.40], "ambulance": [0.22, 0.34],
@@ -264,7 +318,12 @@ static func _cache_key(vehicle_id: String, family: String) -> String:
 	return "#:%s" % normalized_family
 
 static func family_for_vehicle(vehicle_id: String) -> String:
+	if vehicle_id == "maciota_m8": return "m8_v8"
+	if vehicle_id == "maciota_350z": return "vq35"
+	if vehicle_id == "porto_rosso": return "rosso_v12"
 	var spec := VehicleCatalog.get_vehicle_spec(vehicle_id)
+	if spec.get("vehicle_kind", "car") == "motorcycle":
+		return String(spec.get("engine_family", "bike_urban"))
 	var roof := String(spec.get("roof_prop", ""))
 	var mass := float(spec.get("mass", 1.0))
 	var pitch := float(spec.get("engine_pitch", 1.0))
@@ -325,7 +384,7 @@ static func get_layer_streams(family: String, vehicle_id: String = "") -> Array:
 	var shared_key := _cache_key("", normalized_family)
 	if not _layer_sets.has(shared_key):
 		var built: Array = []
-		for layer in 3:
+		for layer in _profile(normalized_family).cycles.size():
 			built.append(_generate_layer(normalized_family, layer))
 		_layer_sets[shared_key] = built
 		_streams[shared_key] = built[0]
@@ -345,12 +404,16 @@ static func prewarm(vehicle_id: String) -> void:
 	get_air_brake_stream()
 
 static func prepare_catalog(tree: SceneTree) -> void:
+	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
+	# The scripted tour car is not an ambient catalog spawn.
+	prewarm("maciota_m8")
+	if tree != null: await batch.checkpoint(tree)
 	for spec in VehicleCatalog.get_all_specs():
 		var vehicle_id := String(spec.id)
 		if _layer_sets.has(_cache_key(vehicle_id, family_for_vehicle(vehicle_id))):
 			continue
 		if tree != null:
-			await tree.process_frame
+			await batch.checkpoint(tree)
 		prewarm(vehicle_id)
 
 # ---------------------------------------------------------------------------
@@ -754,6 +817,10 @@ func _play_turbo_shift(audio: AudioStreamPlayer2D, load: float, current_rpm: flo
 	var rpm_factor: float = clampf(current_rpm, 0.35, 1.0)
 	_shift_player.volume_db = clampf(-7.0 + load_factor * 6.0 + rpm_factor * 3.0, -14.0, 2.0)
 	_shift_player.pitch_scale = clampf(0.96 + (rpm_factor - 0.5) * 0.16 + (load_factor - 0.5) * 0.10, 0.85, 1.25)
+	# Alívio mais discreto e grave nos caminhões, sem o assobio estridente.
+	if _family == "truck":
+		_shift_player.volume_db -= 8.0
+		_shift_player.pitch_scale *= 0.75
 	_shift_player.play()
 
 func _play_air_brake(audio: AudioStreamPlayer2D) -> void:
@@ -808,7 +875,7 @@ func stop() -> void:
 	if is_instance_valid(_air_player) and _air_player.playing:
 		_air_player.stop()
 
-func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle: float, delta: float, vehicle_id: String, boosting: bool = false) -> void:
+func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle: float, delta: float, vehicle_id: String, boosting: bool = false, launch_charge: float = 0.0) -> void:
 	if audio == null:
 		return
 	var spec := VehicleCatalog.get_vehicle_spec(vehicle_id)
@@ -840,6 +907,12 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 
 	shift_remaining = maxf(0.0, shift_remaining - step)
 	shift_cooldown = maxf(0.0, shift_cooldown - step)
+	# The longer shift spacing must not leave the Z in third gear after a
+	# hard stop; disengage and select first before the next pull-away.
+	if _family == "vq35" and ratio < .006:
+		gear = 1
+		shift_remaining = 0.0
+		shift_cooldown = 0.0
 	var previous_gear := gear
 	if shift_cooldown <= 0.0 and gear < tops.size() and ratio > _gear_top(gear):
 		gear += 1
@@ -850,7 +923,7 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 		shift_remaining = float(_shift_spec()[0])
 		# A histerese de _DOWNSHIFT_MARGIN é o que impede chatter; o cooldown só
 		# precisa cobrir o corte de torque mais uma folga curta.
-		shift_cooldown = shift_remaining + 0.16
+		shift_cooldown = shift_remaining + (1.10 if _family == "vq35" else 0.16)
 		if gear > previous_gear and is_heavy and (load_amount > 0.20 or rpm > 0.30):
 			_play_turbo_shift(audio, load_amount, rpm)
 
@@ -886,6 +959,9 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	if ratio < 0.03:
 		# Parado: o acelerador sobe o giro sem mover o carro.
 		target = maxf(target, idle_norm + load_amount * (1.0 - idle_norm) * 0.62)
+	if launch_charge > 0.0:
+		_limiter_phase += step * 27.0
+		target = maxf(target, 0.65 + 0.22 * launch_charge - 0.035 * maxf(0.0, sin(_limiter_phase)))
 	if boosting:
 		target = minf(1.0, target + 0.05)
 	if wheel_rpm >= 0.995 and load_amount > 0.6:
@@ -916,6 +992,7 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	engine_rpm = cycles * 120.0
 
 	var master := -23.0 + load_amount * 7.0 + rpm * 6.5 + ratio * 1.5
+	if _family == "vq35": master -= 5.0
 	if shift_remaining > 0.0:
 		master -= 4.0
 

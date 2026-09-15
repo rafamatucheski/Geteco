@@ -1,11 +1,13 @@
 class_name ProceduralAudio
 extends RefCounted
 
+const REWARD_AUDIO := preload("res://audio/rewards/RewardAudioBank.gd")
+
 const COMBAT_AUDIO := preload("res://audio/combat/CombatAudioBank.gd")
+const VEHICLE_CATALOG := preload("res://VehicleCatalog.gd")
 
 static var _cached_engine: AudioStream = null
 static var _cached_skid: Dictionary = {}
-static var _cached_crash: Dictionary = {}
 static var _cached_horn: Dictionary = {}
 static var _cached_ambience: AudioStream = null
 static var _cached_siren: AudioStream = null
@@ -92,14 +94,26 @@ static func get_skid_stream(vehicle_id: String = "") -> AudioStream:
 	var key := _cache_key(vehicle_id, "skid")
 	if _cached_skid.has(key):
 		return _cached_skid[key]
-
 	var stream := _resolve_vehicle_sound_stream(vehicle_id, "skid")
 	if stream == null:
-		stream = _generate_skid_stream()
+		stream = _generate_skid_stream(vehicle_id)
 	_cached_skid[key] = stream
 	return stream
 
-static func _generate_skid_stream() -> AudioStream:
+static func _generate_skid_stream(vehicle_id: String = "") -> AudioStream:
+	var spec: Dictionary = VEHICLE_CATALOG.get_vehicle_spec(vehicle_id)
+	var mass: float = float(spec.get("mass", 1.0))
+	var drift: float = float(spec.get("drift_factor", 0.9))
+	var drivetrain: String = String(spec.get("drivetrain", "fwd"))
+	var signature: int = vehicle_id.hash() & 0x7fffffff
+	var drive_tone: float = float({"fwd": 90.0, "rwd": 250.0, "awd": 150.0, "4x4": 115.0}.get(drivetrain, 130.0))
+	# Cada modelo recebe pequenas diferenças determinísticas; massa, acerto e
+	# tração dão a diferença maior. Assim o cache é barato e o timbre é estável.
+	var base_frequency: float = clampf(1380.0 - mass * 155.0 + drift * 185.0 + drive_tone + float(signature % 137), 760.0, 1780.0)
+	var modulation_rate: float = 21.0 + float(int(signature / 137.0) % 19)
+	var noise_amount: float = clampf(0.16 + mass * 0.055 + float(signature % 11) * 0.006, 0.16, 0.42)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = signature if signature > 0 else 1
 	var sample_rate := 22050
 	var duration := 0.8
 	var num_samples := int(sample_rate * duration)
@@ -108,10 +122,10 @@ static func _generate_skid_stream() -> AudioStream:
 
 	for i in range(num_samples):
 		var t := float(i) / float(sample_rate)
-		var fm := sin(2.0 * PI * 28.0 * t) * 200.0
-		var squeal := sin(2.0 * PI * (1250.0 + fm) * t) * 0.3
-		var squeal2 := sin(2.0 * PI * (2400.0 + fm * 1.5) * t) * 0.15
-		var friction_noise := randf_range(-0.25, 0.25)
+		var fm := sin(2.0 * PI * modulation_rate * t) * (145.0 + drift * 75.0)
+		var squeal := sin(2.0 * PI * (base_frequency + fm) * t) * 0.3
+		var squeal2 := sin(2.0 * PI * (base_frequency * 1.88 + fm * 1.5) * t) * 0.15
+		var friction_noise := rng.randf_range(-noise_amount, noise_amount)
 		var sample := (squeal + squeal2 + friction_noise) * 0.35
 		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
 		data.encode_s16(i * 2, int_sample)
@@ -128,40 +142,10 @@ static func _generate_skid_stream() -> AudioStream:
 # COLISÃO (CRASH / IMPACT)
 # ==========================================
 static func get_crash_stream(vehicle_id: String = "") -> AudioStream:
-	var key := _cache_key(vehicle_id, "crash")
-	if _cached_crash.has(key):
-		return _cached_crash[key]
-
-	var stream := _resolve_vehicle_sound_stream(vehicle_id, "crash")
-	if stream == null:
-		stream = _generate_crash_stream()
-	_cached_crash[key] = stream
-	return stream
-
-static func _generate_crash_stream() -> AudioStream:
-	var sample_rate := 22050
-	var duration := 0.6
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var env := exp(-t * 8.0) # decaimento rápido
-		var low_thump := sin(2.0 * PI * 95.0 * t) * env * 0.6
-		var crunch_noise := randf_range(-0.5, 0.5) * env
-		var metal_ring := sin(2.0 * PI * 480.0 * t) * exp(-t * 14.0) * 0.25
-		var sample := (low_thump + crunch_noise + metal_ring) * 0.7
-		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	return stream
+	var authored := _resolve_vehicle_sound_stream(vehicle_id, "crash")
+	if authored != null:
+		return authored
+	return preload("res://audio/VehicleCrashAudio.gd").sound("solid", randi_range(0, 3))
 
 # ==========================================
 # BUZINA (HORN)
@@ -495,34 +479,10 @@ static func get_scream_stream() -> AudioStream:
 		return load("res://audio/scream.wav")
 	if ResourceLoader.exists("res://audio/scream.ogg"):
 		return load("res://audio/scream.ogg")
-	if _cached_scream != null:
-		return _cached_scream
+	return preload("res://audio/reactions/CharacterReactionBank.gd").sound("hurt")
 
-	var sample_rate := 22050
-	var duration := 0.42
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var env := 1.0 - (t / duration)
-		var pitch := 460.0 - (t * 320.0)
-		var vibrato := sin(2.0 * PI * 22.0 * t) * 35.0
-		var tone := sin(2.0 * PI * (pitch + vibrato) * t)
-		var grit := randf_range(-0.15, 0.15)
-		var sample := (tone * 0.7 + grit) * env * 0.55
-		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_scream = stream
-	return stream
+static func get_death_reaction_stream() -> AudioStream:
+	return preload("res://audio/reactions/CharacterReactionBank.gd").sound("death")
 
 # ==========================================
 # WASTED / MORTE
@@ -597,74 +557,16 @@ static func get_water_stream() -> AudioStream:
 # ==========================================
 # POWERUP / ATENDIMENTO MÉDICO (HEAL / CHIME)
 # ==========================================
-static var _cached_powerup: AudioStream = null
 
 static func get_powerup_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/powerup.wav"):
-		return load("res://audio/powerup.wav")
-	if _cached_powerup != null:
-		return _cached_powerup
-
-	var sample_rate := 22050
-	var duration := 0.6
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	var freqs := [440.0, 554.37, 659.25, 880.0]
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var note_idx := clampi(int(t * 7.0), 0, freqs.size() - 1)
-		var f: float = freqs[note_idx]
-		var env := exp(-fmod(t, 0.15) * 12.0)
-		var sample := sin(2.0 * PI * f * t) * env * 0.35
-		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_powerup = stream
-	return stream
+	return REWARD_AUDIO.sound("pickup")
 
 # ==========================================
 # CAIXA REGISTRADORA / COMPRA (CASH REGISTER)
 # ==========================================
-static var _cached_cash: AudioStream = null
 
 static func get_cash_register_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/cash.wav"):
-		return load("res://audio/cash.wav")
-	if _cached_cash != null:
-		return _cached_cash
-
-	var sample_rate := 22050
-	var duration := 0.45
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		# "Cha-Ching" sino metálico com harmônicos duplos
-		var bell1 := sin(2.0 * PI * 1760.0 * t) * exp(-t * 16.0) * 0.4
-		var bell2 := sin(2.0 * PI * 2637.0 * t) * exp(-maxf(0.0, t - 0.1) * 18.0) * 0.5
-		var coin := sin(2.0 * PI * 3520.0 * t) * exp(-maxf(0.0, t - 0.12) * 24.0) * 0.35
-		var sample := (bell1 + bell2 + coin) * 0.8
-		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_cash = stream
-	return stream
+	return REWARD_AUDIO.sound("cash")
 
 # ==========================================
 # AMASSAMENTO DE METAL (METAL CRUMPLE / DEFORMATION)
@@ -854,6 +756,8 @@ static var _cached_knife_slash: AudioStream = null
 
 static func get_melee_swing_stream(weapon_id: String = "fists") -> AudioStream:
 	match weapon_id:
+		"bat":
+			return preload("res://audio/combat/BatAudio.gd").swing()
 		"knife":
 			return get_knife_slash_stream()
 		_:
@@ -931,6 +835,8 @@ static func get_knife_slash_stream() -> AudioStream:
 
 static func get_gunshot_stream(weapon_id: String = "pistol") -> AudioStream:
 	match weapon_id:
+		"hunting_rifle":
+			return COMBAT_AUDIO.sound("hunting_rifle")
 		"magnum":
 			return get_gunshot_magnum_stream()
 		"sawed_off":
@@ -1215,6 +1121,33 @@ static func get_beach_waves_stream() -> AudioStream:
 # ==========================================
 # SONS DE INTERFACE
 # ==========================================
+static var _cached_empty_weapon: AudioStreamWAV = null
+
+static func get_empty_weapon_stream() -> AudioStreamWAV:
+	if _cached_empty_weapon != null: return _cached_empty_weapon
+	# Short hammer impact and spring return, without a gunshot's blast or bass.
+	var sample_rate := 44100
+	var samples := int(sample_rate * 0.14)
+	var data := PackedByteArray()
+	data.resize(samples * 2)
+	var noise := RandomNumberGenerator.new()
+	noise.seed = 7142
+	for i in samples:
+		var t := float(i) / sample_rate
+		var attack := minf(t / 0.0006, 1.0)
+		var hammer := (sin(TAU * 620.0 * t) * 0.45 + noise.randf_range(-0.55, 0.55)) * exp(-t * 155.0) * attack
+		var metal := sin(TAU * 2650.0 * t) * exp(-t * 100.0) * 0.24 * attack
+		var release_time := maxf(0.0, t - 0.028)
+		var spring := sin(TAU * 1450.0 * release_time) * exp(-release_time * 180.0) * 0.20
+		data.encode_s16(i * 2, clampi(roundi((hammer + metal + spring) * 32767.0), -32768, 32767))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = sample_rate
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = data
+	_cached_empty_weapon = stream
+	return stream
+
 static var _cached_ui_click: AudioStream = null
 
 static func get_ui_click_stream() -> AudioStream:
@@ -1316,23 +1249,7 @@ static func get_phone_dial_stream() -> AudioStream:
 	return s
 
 static func get_punch_whack_stream() -> AudioStream:
-	if _cached_punch != null: return _cached_punch
-	var sample_rate := 22050
-	var duration := 0.14
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var impact := sin(2.0 * PI * 140.0 * t) * exp(-t * 65.0) * 0.85
-		var crack := randf_range(-0.4, 0.4) * exp(-t * 90.0) * 0.60
-		data.encode_s16(i * 2, clampi(int((impact + crack) * 32767.0), -32768, 32767))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = sample_rate
-	s.data = data
-	_cached_punch = s
-	return s
+	return preload("res://audio/combat/CombatAudioBank.gd").sound("flesh")
 
 # ==========================================
 # PACOTE SONORO URBANO: SIRENES DISTANTES, RÁDIO POLICIAL, GRITOS E PROPS
@@ -1390,24 +1307,7 @@ static func get_police_radio_chatter_stream() -> AudioStream:
 	return s
 
 static func get_pedestrian_scream_stream() -> AudioStream:
-	if _cached_ped_scream != null: return _cached_ped_scream
-	var sample_rate := 22050
-	var duration := 0.32
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var freq := 850.0 - t * 450.0 # Grito agudo descendente
-		var scream := sin(2.0 * PI * freq * t) * exp(-t * 8.0) * 0.50
-		var rasp := randf_range(-0.25, 0.25) * exp(-t * 12.0)
-		data.encode_s16(i * 2, clampi(int((scream + rasp) * 32767.0), -32768, 32767))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = sample_rate
-	s.data = data
-	_cached_ped_scream = s
-	return s
+	return preload("res://audio/reactions/CharacterReactionBank.gd").sound("panic")
 
 static func get_trashcan_hit_stream() -> AudioStream:
 	if _cached_trashcan != null: return _cached_trashcan
@@ -1490,77 +1390,12 @@ static func get_phone_ring_stream() -> AudioStream:
 	_cached_phone = s
 	return s
 
-static var _cached_mission_start: AudioStream = null
 static func get_mission_start_stream() -> AudioStream:
-	if _cached_mission_start != null: return _cached_mission_start
-	var sample_rate := 22050
-	var duration := 0.8
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var freq := 380.0 + t * 450.0
-		var tone := sin(2.0 * PI * freq * t) * exp(-t * 3.5) * 0.5
-		var sub := sin(2.0 * PI * (freq * 0.5) * t) * 0.3
-		data.encode_s16(i * 2, clampi(int((tone + sub) * 32767.0), -32768, 32767))
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = sample_rate
-	s.data = data
-	_cached_mission_start = s
-	return s
+	return REWARD_AUDIO.sound("mission_start")
 
-static var _cached_mission_passed: AudioStream = null
 static func get_mission_passed_stream() -> AudioStream:
-	if _cached_mission_passed != null: return _cached_mission_passed
-	_cached_mission_passed = _generate_mission_passed_stream()
-	return _cached_mission_passed
+	return REWARD_AUDIO.sound("complete")
 
-static func _generate_mission_passed_stream() -> AudioStream:
-	var sample_rate := 22050
-	var duration := 2.4
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	# Fanfarra triunfal curta: Dó4, Mi4, Sol4, Dó5. Each note has its own
-	# linear-attack / exponential-decay envelope, evaluated on the note's
-	# own local clock (not truncated at the next note's start), so a note
-	# never gets cut off mid-decay -- that hard cutoff was the source of the
-	# click at each note boundary in the previous version.
-	var notes := [
-		{"freq": 261.63, "start": 0.0},
-		{"freq": 329.63, "start": 0.35},
-		{"freq": 392.00, "start": 0.70},
-		{"freq": 523.25, "start": 1.05},
-	]
-	var attack := 0.012
-	var decay_rate := 4.6
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var sample := 0.0
-		for note in notes:
-			var local_t: float = t - float(note["start"])
-			if local_t < 0.0:
-				continue
-			var freq: float = note["freq"]
-			var env: float = (local_t / attack) if local_t < attack else exp(-(local_t - attack) * decay_rate)
-			var brass := sin(2.0 * PI * freq * local_t) + 0.5 * sin(4.0 * PI * freq * local_t) + 0.22 * sin(6.0 * PI * freq * local_t)
-			var bass := sin(2.0 * PI * (freq * 0.5) * local_t) * 0.35
-			sample += (brass * 0.28 + bass * 0.20) * env
-		# Soft-clip keeps overlapping note tails from ever hard-clipping
-		# while staying volume-coherent with the other one-shot SFX streams.
-		var final_sample := tanh(sample * 0.9) * 0.75
-		data.encode_s16(i * 2, clampi(int(final_sample * 32767.0), -32768, 32767))
-
-	var s := AudioStreamWAV.new()
-	s.format = AudioStreamWAV.FORMAT_16_BITS
-	s.mix_rate = sample_rate
-	s.stereo = false
-	s.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	s.data = data
-	return s
 
 static var _cached_nitro: AudioStream = null
 static func get_nitro_stream() -> AudioStream:

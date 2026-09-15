@@ -234,7 +234,7 @@ func _refresh_slots_list() -> void:
 		btn.text = display_text
 		STYLE.apply(btn)
 		MenuAudio.hook_button(btn, self)
-		slots_list.add_child(btn)
+		preload("res://ui/SaveSlotRow.gd").install(self, slots_list, btn, info, _refresh_slots_list, slots_status_label)
 
 func _execute_slot_action(slot_id: String) -> void:
 	if get_node("/root/GameLoading").active: return
@@ -314,15 +314,15 @@ func _refresh_achievements_list() -> void:
 		hbox.add_child(vbox)
 
 		var title_label := Label.new()
-		title_label.text = String(entry.get("name", achievement_id)) if is_unlocked else "???"
+		title_label.text = String(entry.get("name", achievement_id))
 		title_label.add_theme_font_size_override("font_size", 15)
-		title_label.add_theme_color_override("font_color", Color("#f6c445") if is_unlocked else Color(0.55, 0.55, 0.58))
+		title_label.add_theme_color_override("font_color", Color("#f6c445") if is_unlocked else Color(0.82, 0.84, 0.86))
 		vbox.add_child(title_label)
 
 		var desc_label := Label.new()
-		desc_label.text = String(entry.get("desc", "")) if is_unlocked else "???"
+		desc_label.text = String(entry.get("desc", "")) + " · $%d" % ACHIEVEMENT_CATALOG.cash_reward(achievement_id)
 		desc_label.add_theme_font_size_override("font_size", 11)
-		desc_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8) if is_unlocked else Color(0.45, 0.45, 0.48))
+		desc_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 		desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		vbox.add_child(desc_label)
 
@@ -368,6 +368,7 @@ func _refresh_collectibles_list() -> void:
 			known_found_count += 1
 
 	collectibles_progress_label.text = tr("COLLECTION_PROGRESS") % [known_found_count, known_ids.size()]
+	collectibles_progress_label.text += "\n" + COLLECTIBLE_CATALOG.reward_summary(found)
 
 	for collectible_id in known_ids:
 		var entry: Dictionary = COLLECTIBLE_CATALOG.get_entry(collectible_id)

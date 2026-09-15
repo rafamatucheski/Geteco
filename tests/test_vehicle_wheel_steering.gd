@@ -70,8 +70,13 @@ func run() -> void:
 		bench.add_child(model)
 		var rig = RIG.new()
 		check(rig.mount(model), "%s: rodas extraídas do metadado autoral" % path.get_file())
-		check(rig.pivots.size() >= 4, "%s: pelo menos quatro cubos (obteve %d)" % [path.get_file(), rig.pivots.size()])
+		var minimum_wheels := 2 if model.get_meta("vehicle_kind", "car") == "motorcycle" else 4
+		check(rig.pivots.size() >= minimum_wheels, "%s: cubos correspondem ao tipo de veículo (obteve %d)" % [path.get_file(), rig.pivots.size()])
 		var axles := _axle_indices(rig)
+		var rear_steering := bool(model.get_meta("rear_steering", false))
+		var directional: Array = axles.rear if rear_steering else axles.front
+		var fixed: Array = axles.front if rear_steering else axles.rear
+		var direction_sign := -1.0 if rear_steering else 1.0
 		check(not axles.front.is_empty() and not axles.rear.is_empty(), "%s: eixo dianteiro e traseiro distintos" % path.get_file())
 		var tires_ok := true
 		for spin in rig.spinners:
@@ -82,10 +87,10 @@ func run() -> void:
 		_drive(rig, 0.55, 12.0)
 		var steer_right: float = rig.steering_angle
 		check(steer_right > 0.05, "%s: curva à direita produz esterço à direita (%.3f rad)" % [path.get_file(), steer_right])
-		for i in axles.front:
-			check(rig.pivots[i].rotation.y < -0.05, "%s: cubo dianteiro %d gira para a direita" % [path.get_file(), i])
-		for i in axles.rear:
-			check(is_zero_approx(rig.pivots[i].rotation.y), "%s: cubo traseiro %d não esterça" % [path.get_file(), i])
+		for i in directional:
+			check(rig.pivots[i].rotation.y * direction_sign < -0.05, "%s: eixo direcional %d acompanha curva à direita" % [path.get_file(), i])
+		for i in fixed:
+			check(is_zero_approx(rig.pivots[i].rotation.y), "%s: eixo fixo %d não esterça" % [path.get_file(), i])
 
 		# Curva à esquerda pelo mesmo caminho.
 		var left_rig = RIG.new()
@@ -94,8 +99,9 @@ func run() -> void:
 		left_rig.mount(left_model)
 		_drive(left_rig, -0.55, 12.0)
 		check(left_rig.steering_angle < -0.05, "%s: curva à esquerda produz esterço à esquerda (%.3f rad)" % [path.get_file(), left_rig.steering_angle])
-		for i in _axle_indices(left_rig).front:
-			check(left_rig.pivots[i].rotation.y > 0.05, "%s: cubo dianteiro %d gira para a esquerda" % [path.get_file(), i])
+		var left_axles := _axle_indices(left_rig)
+		for i in (left_axles.rear if rear_steering else left_axles.front):
+			check(left_rig.pivots[i].rotation.y * direction_sign > 0.05, "%s: eixo direcional %d acompanha curva à esquerda" % [path.get_file(), i])
 		bench.remove_child(left_model)
 		left_model.free()
 
@@ -159,8 +165,9 @@ func run() -> void:
 			{"label": "esquerda", "corner": Vector2(4000, -2000), "sign": 1.0}]:
 		var sample := await _traffic_corner(turn.corner)
 		check(sample.wheels == 4, "trânsito na curva à %s monta quatro rodas" % turn.label)
-		check(absf(sample.steer) > 0.05, "trânsito na curva à %s esterça (%.3f rad)" % [turn.label, sample.steer])
-		check(sample.front * turn.sign > 0.05, "trânsito: cubo dianteiro acompanha a curva à %s (%.3f)" % [turn.label, sample.front])
+		# The angle depends on the authored wheelbase and this 800 px radius.
+		check(absf(absf(sample.steer) - sample.expected) < .015, "trânsito na curva à %s esterça conforme o entre-eixos (%.3f rad)" % [turn.label, sample.steer])
+		check(sample.front * turn.sign > sample.expected * .7, "trânsito: cubo dianteiro acompanha a curva à %s (%.3f)" % [turn.label, sample.front])
 		check(is_zero_approx(sample.rear), "trânsito na curva à %s: eixo traseiro reto" % turn.label)
 
 	print("VEHICLE_WHEEL_STEERING failures=%d" % failures)
@@ -196,7 +203,7 @@ func _traffic_corner(corner: Vector2) -> Dictionary:
 	# sem malha viária ao redor mantém o carro parado).
 	car.set_process(false)
 	var speed := 420.0
-	var result := {"wheels": 0, "steer": 0.0, "front": 0.0, "rear": 0.0, "progress": 0.0}
+	var result := {"wheels": 0, "steer": 0.0, "front": 0.0, "rear": 0.0, "progress": 0.0, "expected":atan(car.wheel_rig.wheelbase / (800.0 / PPM))}
 	for i in 600:
 		follow.progress += speed / 60.0
 		car.is_moving_on_lane = true

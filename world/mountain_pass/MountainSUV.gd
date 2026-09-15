@@ -59,10 +59,6 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 		$Camera.enabled = true
 	super.enter_vehicle(player_body)
 
-func exit_vehicle() -> void:
-	if has_node("Camera"):
-		$Camera.enabled = false
-	super.exit_vehicle()
 
 
 func _headlamp_mounts() -> Array[Vector3]:

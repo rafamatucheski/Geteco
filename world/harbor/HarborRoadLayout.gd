@@ -36,7 +36,7 @@ const STREET_DEFINITIONS := [
 
 func get_road_graph_definitions() -> Array[Dictionary]:
 	var definitions: Array[Dictionary] = []
-	for street in STREET_DEFINITIONS:
+	for street in STREET_DEFINITIONS + preload("res://world/harbor/HarborLocalStreets.gd").ROADS:
 		var definition := {
 			"id": String(street.id),
 			"points": PackedVector2Array([street.start, street.end]),
@@ -49,9 +49,12 @@ func get_road_graph_definitions() -> Array[Dictionary]:
 				{"lane_id": "forward_01", "offset": 22.0, "direction": 1, "direction_name": "forward"},
 				{"lane_id": "forward_02", "offset": -22.0, "direction": 1, "direction_name": "forward"},
 			]
+		if String(street.id) in ["map2_highway_inbound","map2_highway_outbound"]:
+			definition["guard_rail_openings"] = [preload("res://world/harbor/HarborNorthAccess.gd").avenue_opening(String(street.id) == "map2_highway_inbound")]
 		definitions.append(definition)
 	# UnifiedRoadNetwork2D generates its normal forward/reverse pair of lanes.
 	definitions.append_array(preload("res://world/harbor/HarborMountainConnector.gd").road_definitions())
+	definitions.append_array(preload("res://world/harbor/HarborSouthPortLayout.gd").roads())
 	return definitions
 
 
@@ -59,7 +62,7 @@ func get_reserved_road_rects() -> Array[Rect2]:
 	# Includes the shared 42px sidewalk and an additional 24px facade/shadow
 	# setback. Building footprints must not intersect any of these rectangles.
 	var reserved: Array[Rect2] = []
-	for street in STREET_DEFINITIONS:
+	for street in STREET_DEFINITIONS + preload("res://world/harbor/HarborLocalStreets.gd").ROADS:
 		var first: Vector2 = street.start
 		var last: Vector2 = street.end
 		reserved.append(Rect2(first, Vector2.ZERO).expand(last).grow(float(street.width) * 0.5 + 42.0 + 24.0))
@@ -67,4 +70,8 @@ func get_reserved_road_rects() -> Array[Rect2]:
 		var points: PackedVector2Array = definition.points
 		for i in range(points.size()-1):
 			reserved.append(Rect2(points[i], Vector2.ZERO).expand(points[i+1]).grow(114))
+	for definition in preload("res://world/harbor/HarborSouthPortLayout.gd").roads():
+		var points: PackedVector2Array = definition.points
+		for i in range(points.size()-1):
+			reserved.append(Rect2(points[i],Vector2.ZERO).expand(points[i+1]).grow(float(definition.width)*.5+66))
 	return reserved

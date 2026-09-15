@@ -8,7 +8,20 @@ static func build(root: Node3D, id: String) -> void:
 	var rubber := _mat(Color("252629"), 0.0, 0.86)
 	var wood := _mat(Color("714331"), 0.0, 0.62)
 	var brass := _mat(Color("b7955b"), 0.65, 0.38)
-	if id == "knife":
+	if id == "axe":
+		var trail := preload("res://scripts/player/AxeSwingTrail.gd").new()
+		trail.name = "AxeSwingTrail"
+		root.add_child(trail)
+		_cylinder(root,"AshHandle",Vector3(0,0,-0.17),0.018,0.65,wood,Vector3(90,0,0))
+		_cylinder(root,"GripWrap",Vector3(0,0,0.065),0.020,0.10,rubber,Vector3(90,0,0))
+		_cylinder(root,"HandleHeel",Vector3(0,0,0.15),0.023,0.018,wood,Vector3(90,0,0))
+		var head := Node3D.new()
+		head.name = "ForgedHead"
+		head.rotation.z = -PI * 0.5
+		root.add_child(head)
+		_profile(head,"SteelHead",PackedVector2Array([Vector2(-0.49,-0.055),Vector2(-0.40,-0.055),Vector2(-0.405,0.045),Vector2(-0.365,0.155),Vector2(-0.37,0.18),Vector2(-0.51,0.19),Vector2(-0.525,0.16),Vector2(-0.49,0.045)]),0.045,dark)
+		_profile(head,"CuttingEdge",PackedVector2Array([Vector2(-0.525,0.16),Vector2(-0.51,0.19),Vector2(-0.37,0.18),Vector2(-0.365,0.155),Vector2(-0.39,0.14),Vector2(-0.50,0.15)]),0.012,steel)
+	elif id == "knife":
 		_profile(root, "Grip", PackedVector2Array([Vector2(0.045,-0.017),Vector2(0.085,-0.012),Vector2(0.085,0.012),Vector2(-0.015,0.017),Vector2(-0.035,0.012),Vector2(-0.035,-0.012)]), 0.028, rubber)
 		_box(root,"Guard",Vector3(0,0,-0.04),Vector3(0.054,0.025,0.012),brass)
 		# Full-tang drop-point blade: angular silhouette, central ridge and cutting bevel.
@@ -18,9 +31,36 @@ static func build(root: Node3D, id: String) -> void:
 			_cylinder(root,"TangRivet",Vector3(0,0,z),0.005,0.031,brass,Vector3(0,0,90))
 		for z in [-0.016,0.0,0.032,0.048]:
 			_box(root,"GripGroove",Vector3(0,0,z),Vector3(0.030,0.032,0.004),dark)
+	elif id == "knuckles":
+		var gold_brass := _mat(Color("d4ac0d"), 0.82, 0.28)
+		_box(root, "PalmBar", Vector3(0, -0.015, 0.02), Vector3(0.082, 0.018, 0.014), gold_brass)
+		for x in [-0.038,0.038]:
+			_box(root,"PalmSupport",Vector3(x,-0.008,0),Vector3(0.012,0.018,0.055),gold_brass)
+		for i in range(4):
+			var x_off := -0.033 + i * 0.022
+			var ring := MeshInstance3D.new()
+			var mesh := TorusMesh.new()
+			mesh.inner_radius = 0.007
+			mesh.outer_radius = 0.012
+			mesh.rings = 12
+			mesh.ring_segments = 6
+			ring.mesh = mesh
+			ring.position = Vector3(x_off,0.005,-0.025)
+			ring.rotation.x = PI/2
+			ring.material_override = gold_brass
+			root.add_child(ring)
+		_box(root, "StrikingRidge", Vector3(0, 0.008, -0.038), Vector3(0.084, 0.016, 0.012), gold_brass)
+		for i in range(4):
+			var x_off := -0.033 + i * 0.022
+			_box(root, "KnucklePyramid_%d" % i, Vector3(x_off, 0.008, -0.045), Vector3(0.012, 0.012, 0.010), steel)
+	elif id in ["bat", "taco", "baseball"]:
+		_cylinder(root, "BatBarrel", Vector3(0, 0, -0.28), 0.032, 0.42, wood, Vector3(90, 0, 0))
+		_cylinder(root, "BatTaper", Vector3(0, 0, -0.04), 0.022, 0.16, wood, Vector3(90, 0, 0))
+		_cylinder(root, "BatGrip", Vector3(0, 0, 0.08), 0.018, 0.16, rubber, Vector3(90, 0, 0))
+		_cylinder(root, "BatPommel", Vector3(0, 0, 0.17), 0.025, 0.022, wood, Vector3(90, 0, 0))
 	elif id == "hunting_rifle":
-		_profile(root,"WalnutStock",PackedVector2Array([Vector2(0.30,-0.085),Vector2(0.29,0.042),Vector2(0.18,0.037),Vector2(0.085,0.045),Vector2(-0.25,0.018),Vector2(-0.25,-0.017),Vector2(-0.065,-0.025),Vector2(-0.012,-0.035),Vector2(0.035,-0.07),Vector2(0.065,-0.052),Vector2(0.10,-0.014),Vector2(0.21,-0.052)]),0.046,wood)
-		_box(root,"ButtPad",Vector3(0,-0.02,0.302),Vector3(0.050,0.135,0.015),rubber)
+		_profile(root,"WalnutStock",PackedVector2Array([Vector2(0.18,-0.085),Vector2(0.175,0.042),Vector2(0.13,0.037),Vector2(0.085,0.045),Vector2(-0.25,0.018),Vector2(-0.25,-0.017),Vector2(-0.065,-0.025),Vector2(-0.012,-0.035),Vector2(0.035,-0.07),Vector2(0.065,-0.052),Vector2(0.10,-0.014),Vector2(0.14,-0.052)]),0.046,wood)
+		_box(root,"ButtPad",Vector3(0,-0.02,0.182),Vector3(0.050,0.135,0.015),rubber)
 		_box(root,"Receiver",Vector3(0,0.04,-0.055),Vector3(0.041,0.035,0.19),dark)
 		_cylinder(root,"Barrel",Vector3(0,0.055,-0.375),0.012,0.43,steel,Vector3(90,0,0))
 		_cylinder(root,"Bore",Vector3(0,0.055,-0.591),0.007,0.003,rubber,Vector3(90,0,0))

@@ -34,12 +34,13 @@ func _setup_interior_content() -> void:
 	_setup_weapon_stations()
 	_build_projected_furniture()
 	_create_spawn_and_exit(project_floor(Vector2(0, 3)), project_floor(Vector2(0, 4.15)), &"cabin_exterior_return", "SAIR DO CHALÉ")
-	exit_door.custom_prompt_text = "[E] SAIR DO CHALÉ"
+	exit_door.custom_prompt_text = "E"
 	exit_door.get_node("Facade").hide()
 
 func _setup_weapon_stations() -> void:
 	for entry in [
 		["LegendaryRifleStation", "hunting_rifle", Vector2(3.1, 1.8), 35],
+		["WoodAxeStation", "axe", Vector2(2.5, 2.8), 0],
 		["HuntingKnifeStation", "knife", Vector2(-2.55, 1.3), 0],
 	]:
 		var pickup := preload("res://world/mountain_pass/MountainWeaponPickup.gd").new()
@@ -47,6 +48,8 @@ func _setup_weapon_stations() -> void:
 		pickup.weapon_id = entry[1]
 		pickup.pickup_id = "mountain_cabin_" + String(entry[1])
 		pickup.ammo = entry[3]
+		pickup.animate_on_floor = false
+		pickup.hover_height = 0.38
 		pickup.position = project_floor(entry[2])
 		add_child(pickup)
 		pickup.install_model(cabin_3d_world, Vector3(entry[2].x, 0.08, entry[2].y))
@@ -66,7 +69,7 @@ func _setup_3d_cabin_viewport() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.04, 0.03, 0.02, 1.0)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.35, 0.30, 0.28)
+	env.ambient_light_color = Color(0.38, 0.32, 0.26)
 	env.ambient_light_energy = 1.0
 	var world := viewport_3d.find_world_3d()
 	if world:
@@ -81,6 +84,12 @@ func _setup_3d_cabin_viewport() -> void:
 	camera_3d.current = true
 	viewport_3d.add_child(camera_3d)
 	camera_3d.look_at_from_position(Vector3(3.2, 8.4, 8.5), Vector3(0.0, 1.2, -0.6), Vector3.UP)
+	# Streamed rooms are built after the first frame. Flush the camera transform
+	# before projecting gameplay geometry, or it still uses the origin camera.
+	camera_3d.force_update_transform()
+	# Project collision footprints and the exit using the final fixed camera pose.
+	camera_3d.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	camera_3d.reset_physics_interpolation()
 
 	sprite_3d = Sprite2D.new()
 	sprite_3d.name = "CabinDisplay3D"
@@ -129,16 +138,7 @@ func _build_projected_furniture() -> void:
 		"WestWall": Rect2(-7.1, -4.8, 0.35, 9.6),
 		"EastWall": Rect2(6.75, -4.8, 0.35, 9.6),
 		"SouthWall": Rect2(-7, 4.5, 14, 0.35),
-		"Fireplace": Rect2(-1.8, -4.6, 3.6, 1.45),
-		"Sofa": Rect2(-2.85, -2.5, 1.25, 2.6),
-		"Armchair": Rect2(1.65, -1.95, 1.15, 1.5),
-		"CoffeeTable": Rect2(-0.8, -1.7, 1.6, 1.0),
-		"Bed": Rect2(-5.95, 0.35, 2.3, 2.9),
-		"BedsideTable": Rect2(-3.55, 0.5, 0.7, 0.6),
-		"Chest": Rect2(-5.5, 3.3, 1.4, 0.6),
-		"Counter": Rect2(-6, -3.25, 2.4, 0.9),
-		"CounterReturn": Rect2(-4.25, -2.35, 0.9, 1.1),
-		"RangerDesk": Rect2(4.2, -0.9, 1.2, 2.2)
+
 	}
 	for id in footprints:
 		var rect: Rect2 = footprints[id]
@@ -146,3 +146,19 @@ func _build_projected_furniture() -> void:
 		shape.name = id
 		shape.polygon = PackedVector2Array([project_floor(rect.position), project_floor(Vector2(rect.end.x, rect.position.y)), project_floor(rect.end), project_floor(Vector2(rect.position.x, rect.end.y))])
 		walls_body.add_child(shape)
+	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(cabin_3d_world, walls_body, project_floor)
+	# The perspective floor extends beyond the displayed texture at the front.
+	# Its clipped edge must also be solid; the exit sensor remains inside it.
+	var half := Vector2(viewport_3d.size) * sprite_3d.scale * 0.5
+	for edge in [
+		[Vector2(0, half.y + 32), Vector2(half.x * 2 + 128, 64)],
+		[Vector2(0, -half.y - 32), Vector2(half.x * 2 + 128, 64)],
+		[Vector2(-half.x - 32, 0), Vector2(64, half.y * 2)],
+		[Vector2(half.x + 32, 0), Vector2(64, half.y * 2)],
+	]:
+		var boundary := CollisionShape2D.new()
+		boundary.position = sprite_3d.position + edge[0]
+		var rectangle := RectangleShape2D.new()
+		rectangle.size = edge[1]
+		boundary.shape = rectangle
+		walls_body.add_child(boundary)

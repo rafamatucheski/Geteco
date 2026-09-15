@@ -1,6 +1,8 @@
 extends RefCounted
 const REGIONAL_ACTIVITY_RADIUS := 900.0
-const PEDESTRIAN_MARGIN := 120.0
+# At ambient walking speed this gives well over half a second of pre-roll even
+# after the 200 ms activity review interval; combat and mission actors are pinned.
+const PEDESTRIAN_MARGIN := 80.0
 const REGIONAL_PEDESTRIAN_RADIUS := 600.0
 static func visible_area(reference: CanvasItem, focus: Vector2, margin := 360.0) -> Rect2:
 	var view := reference.get_viewport_rect()

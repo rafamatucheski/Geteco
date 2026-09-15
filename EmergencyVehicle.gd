@@ -4,6 +4,34 @@ const CREW_TRANSITION := preload("res://EmergencyCrewTransition.gd")
 const CREW_DOOR_SCRIPT := preload("res://VehicleDoorVisual.gd")
 const LANE_ROUTER := preload("res://world/shared/roads/EmergencyLaneRouter.gd")
 var _lane_router := LANE_ROUTER.new()
+var _hospital_arrival := preload("res://world/shared/emergency/HospitalArrival.gd").new()
+var _ambulance_approach := preload("res://world/shared/emergency/AmbulanceApproach.gd").new()
+var _traffic_passage := preload("res://world/shared/emergency/AmbulanceTrafficPassage.gd").new()
+var _depot_driveway := preload("res://world/shared/emergency/DepotDriveway.gd").new()
+var service_targets: Array[Node2D] = []
+var _coroner_stage := ""
+var _coroner_wait := 0.0
+
+func enter_vehicle(actor: CharacterBody2D) -> void:
+	preload("res://world/shared/emergency/EmergencyVehicleTheft.gd").enter(self,actor)
+
+func add_service_target(subject: Node2D) -> void:
+	if is_instance_valid(subject) and not service_targets.has(subject):
+		service_targets.append(subject)
+
+func _advance_service_target() -> bool:
+	service_targets = service_targets.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion() and not t.get_meta("service_complete", false) and t != target)
+	if service_targets.is_empty(): return false
+	target = service_targets.pop_front()
+	is_acting = false
+	is_returning_to_base = false
+	deployed_firefighters = 0
+	returned_firefighters = 0
+	deployed_morticians = 0
+	returned_morticians = 0
+	scene_timeout = 0.0
+	_lane_router.reset()
+	return true
 
 @export_enum("POLICE", "AMBULANCE", "FIRE", "CORONER") var type: int = 0
 
@@ -20,6 +48,38 @@ var health: int = 100
 var is_broken := false
 var is_acting := false
 var officer_deployed := false
+var police_variant := "patrol"
+# Body identity survives dispatch tiers, pooling and theft.
+var police_archetype := "police_cruiser"
+var police_response_level := 1
+var police_dispatch_serial := 0
+var _police_crew: Array[Node2D] = []
+var _police_available_seats := 2
+var _police_crew_on_foot := false
+var _police_recall_requested := false
+var _police_boarded_ids := {}
+var _vehicle_combat := preload("res://world/shared/emergency/PoliceVehicleCombat.gd").new()
+
+func configure_police_response(level: int, serial: int, elite_unit := false) -> void:
+	police_response_level = clampi(level, 1, 6)
+	police_dispatch_serial = serial
+	if police_variant != "motorcycle":
+		police_variant = ("tactical" if elite_unit else "patrol") if level >= 4 else ("interceptor" if level == 3 else "patrol")
+	max_target_speed = 255.0 if police_variant in ["motorcycle", "interceptor"] else 235.0
+	acceleration = 195.0 if police_variant == "motorcycle" else 165.0
+	health = 70 if police_variant == "motorcycle" else (165 if police_variant == "tactical" else 115)
+	if is_instance_valid(body_model):
+		body_model.paint.albedo_color = Color("23364a") if police_variant == "tactical" else (Color("8eabc0") if police_variant == "interceptor" else Color("e5e9ed"))
+		if body_viewport: body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+func has_emergency_priority() -> bool:
+	if not visible or is_broken or is_acting: return false
+	return is_instance_valid(siren_audio) and siren_audio.playing
+
+func _police_stop_radius() -> float:
+	if is_instance_valid(target) and target.has_meta("police_stop_distance"):
+		return float(target.get_meta("police_stop_distance"))
+	return 140.0 + float(police_dispatch_serial % 3) * 36.0
 
 signal returning_to_depot(vehicle: Node, depot_id: String)
 signal arrived_at_depot(vehicle: Node, depot_id: String)
@@ -142,8 +202,8 @@ func _ready():
 	# Sirene (Volume balanceado e agradável)
 	siren_audio = AudioStreamPlayer2D.new()
 	siren_audio.stream = ProceduralAudio.get_siren_stream()
-	siren_audio.max_distance = 600.0
-	siren_audio.volume_db = -24.0
+	siren_audio.max_distance = 1200.0
+	siren_audio.volume_db = -10.0
 	siren_audio.autoplay = false
 	siren_audio.bus = "SFX"
 	add_child(siren_audio)
@@ -171,6 +231,7 @@ func _ready():
 	smoke_emitter.scale_amount_min = 0.5
 	smoke_emitter.scale_amount_max = 1.6
 	smoke_emitter.color = Color(0.25, 0.25, 0.28, 0.65)
+	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
 	add_child(smoke_emitter)
 	
 	# Faíscas
@@ -246,6 +307,8 @@ func _setup_headlight() -> void:
 	headlight.color = Color(1.0, 0.98, 0.90, 1.0)
 	headlight.energy = 1.35
 	headlight.shadow_enabled = false
+	# Ground beams must pass beneath vehicle bodies (drawn at z = 8 or above).
+	headlight.range_z_max = 7
 	headlight.position = Vector2(36.0, 0.0)
 	headlight.texture = HeadlightTextureGenerator.get_conical_headlight_texture()
 	headlight.offset = Vector2(170.0, 0.0)
@@ -262,9 +325,26 @@ func _setup_headlight() -> void:
 	flame_particles.scale_amount_min = 0.6
 	flame_particles.scale_amount_max = 1.8
 	flame_particles.color = Color(1.0, 0.50, 0.15, 0.90)
+	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
 	add_child(flame_particles)
 
 func activate():
+	var residual := get_node_or_null("ResidualFire")
+	if is_instance_valid(residual): residual.finish()
+	for key in ["fire_residual_burning", "service_complete", "fire_water_progress", "fire_response_assigned", "fire_retry_after_ms"]:
+		remove_meta(key)
+	remove_meta("hospital_available")
+	remove_meta("hospital_unloading")
+	remove_meta("medical_waiting_admission")
+	if has_meta("medical_sequence"):
+		var sequence: Node = get_meta("medical_sequence")
+		if is_instance_valid(sequence):
+			sequence._abort()
+			remove_child(sequence)
+		remove_meta("medical_sequence")
+	remove_meta("medical_phase")
+	remove_meta("medical_abort_reason")
+	remove_meta("medical_abort_phase")
 	# A geometria define colisão e portas: finalizar antes de sair do depósito.
 	ensure_presentation()
 	_clear_tactical_doors()
@@ -272,6 +352,23 @@ func activate():
 	if visual: visual.show()
 	_lane_router.reset()
 	_response_crew.clear()
+	_ambulance_approach.reset()
+	_traffic_passage.reset()
+	_hospital_arrival.reset()
+	for key in ["hospital_arrived", "hospital_dock_waiting", "hospital_parking_wait"]: remove_meta(key)
+	for key in ["ambulance_parking_goal", "ambulance_parking_exceptional", "ambulance_walk_route"]:
+		remove_meta(key)
+	_police_crew.clear()
+	_police_available_seats = 1 if police_variant == "motorcycle" else 2
+	_police_crew_on_foot = false
+	_police_recall_requested = false
+	_police_boarded_ids.clear()
+	_vehicle_combat = preload("res://world/shared/emergency/PoliceVehicleCombat.gd").new()
+	service_targets.clear()
+	_coroner_stage = ""
+	_coroner_wait = 0.0
+	remove_meta("coroner_cargo")
+	if has_meta("service_incident_key"): remove_meta("service_incident_key")
 	_target_stopped_time = 0.0
 	is_reversing = false
 	reverse_timer = 0.0
@@ -281,12 +378,16 @@ func activate():
 	stuck_despawn_timer = 0.0
 	last_tracked_pos = global_position
 	_ram_damage_cooldown = 0.0
+	remove_meta("spike_drop_timer")
 	set_meta("police_player_pursuit", false)
 	set_meta("ambient_response", false)
 	set_meta("harbor_director_id", 0)
 	if has_meta("depot_road_gate"):
 		remove_meta("depot_road_gate")
 	set_meta("depot_departure_pending", false)
+	if has_meta("depot_departure_waypoints"):
+		remove_meta("depot_departure_waypoints")
+	_depot_driveway.cursor = 1
 	home_depot_id = ""
 	home_return_position = Vector2.ZERO
 	home_parking_position = Vector2.ZERO
@@ -324,10 +425,10 @@ func activate():
 	if flame_particles: flame_particles.emitting = false
 	if smoke_emitter:
 		smoke_emitter.emitting = false
-		smoke_emitter.amount = 25
+		smoke_emitter.amount = 20
 		smoke_emitter.color = Color(0.2, 0.2, 0.2, 0.8)
 	if siren_audio:
-		siren_audio.volume_db = -24.0
+		siren_audio.volume_db = -10.0
 		siren_audio.stop()
 	if engine_audio:
 		engine_audio.volume_db = -26.0
@@ -389,9 +490,10 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if health < 50:
 		smoke_emitter.emitting = true
 	if health <= 25:
-		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
-		smoke_emitter.amount = 50
+		smoke_emitter.color = Color(0.65, 0.65, 0.68, 0.85)
+		smoke_emitter.amount = 20
 	if health == 0 and not is_broken:
+		set_meta("explosion_player_caused", _is_player_attacker)
 		_clear_tactical_doors()
 		is_broken = true
 		current_speed = 0.0
@@ -406,8 +508,8 @@ func _start_combustion_countdown() -> void:
 	if flame_particles: flame_particles.emitting = true
 	if smoke_emitter:
 		smoke_emitter.emitting = true
-		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
-		smoke_emitter.amount = 65
+		smoke_emitter.color = Color(0.65, 0.65, 0.68, 0.85)
+		smoke_emitter.amount = 20
 		
 	await get_tree().create_timer(3.0).timeout
 	if not is_exploded and health <= 0:
@@ -432,78 +534,7 @@ func _explode() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 	
-	# 2. Bola de fogo densa e expansiva
-	var fireball := CPUParticles2D.new()
-	fireball.global_position = global_position
-	fireball.emitting = true
-	fireball.one_shot = true
-	fireball.explosiveness = 0.98
-	fireball.amount = 45
-	fireball.lifetime = 1.0
-	fireball.spread = 180.0
-	fireball.initial_velocity_min = 160.0
-	fireball.initial_velocity_max = 420.0
-	fireball.gravity = Vector2(0, 120)
-	fireball.scale_amount_min = 4.0
-	fireball.scale_amount_max = 10.0
-	fireball.color = Color(1.0, 0.48, 0.08, 0.95)
-	fireball.texture = _get_smooth_particle_texture()
-	get_parent().add_child(fireball)
-	
-	# 3. Estilhaços metálicos incandescentes
-	var shrapnel := CPUParticles2D.new()
-	shrapnel.global_position = global_position
-	shrapnel.emitting = true
-	shrapnel.one_shot = true
-	shrapnel.explosiveness = 0.95
-	shrapnel.amount = 30
-	shrapnel.lifetime = 0.9
-	shrapnel.spread = 180.0
-	shrapnel.initial_velocity_min = 200.0
-	shrapnel.initial_velocity_max = 500.0
-	shrapnel.gravity = Vector2(0, 350)
-	shrapnel.scale_amount_min = 3.0
-	shrapnel.scale_amount_max = 6.0
-	shrapnel.color = Color(1.0, 0.85, 0.3)
-	shrapnel.texture = _get_smooth_particle_texture()
-	get_parent().add_child(shrapnel)
-	
-	# 4. Clarão de Luz Instantâneo
-	var flash_light := PointLight2D.new()
-	flash_light.color = Color(1.0, 0.85, 0.5)
-	flash_light.energy = 1.6 # Reduzido de 4.5: mesmo ajuste feito em PlayerCar.gd,
-	# o valor antigo estourava a tela inteira em branco/laranja (e aqui em roxo,
-	# pois o giroflex da viatura soma cores vermelho/azul/roxo na mesma area).
-	var f_grad = Gradient.new()
-	f_grad.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
-	var f_tex = GradientTexture2D.new()
-	f_tex.gradient = f_grad
-	f_tex.width = 260
-	f_tex.height = 260
-	f_tex.fill = GradientTexture2D.FILL_RADIAL
-	f_tex.fill_from = Vector2(0.5, 0.5)
-	f_tex.fill_to = Vector2(1.0, 0.5)
-	flash_light.texture = f_tex
-	flash_light.global_position = global_position
-	get_parent().add_child(flash_light)
-	var fl_tween = flash_light.create_tween()
-	fl_tween.tween_property(flash_light, "energy", 0.0, 0.45)
-	fl_tween.tween_callback(flash_light.queue_free)
-	
-	# 5. Marca de Asfalto Queimado no Solo
-	var scorch := Polygon2D.new()
-	var sc_pts = PackedVector2Array()
-	var sc_count = 14
-	for k in sc_count:
-		var ang = k * TAU / sc_count
-		var rad = randf_range(34.0, 52.0)
-		sc_pts.append(Vector2(cos(ang), sin(ang)) * rad)
-	scorch.polygon = sc_pts
-	scorch.color = Color(0.04, 0.04, 0.05, 0.85)
-	scorch.global_position = global_position
-	scorch.z_index = -15
-	get_parent().add_child(scorch)
-	
+	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 200.0, true)
 	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if visual:
 		visual.modulate = Color(0.12, 0.12, 0.12)
@@ -511,25 +542,10 @@ func _explode() -> void:
 		visual.skew = 0.0
 		
 	# 7. Onda de choque: danifica outros carros e arremessa pedestres
-	var blast_radius = 210.0
-	for body in get_tree().get_nodes_in_group("damageable"):
-		if body != self and is_instance_valid(body):
-			var d = global_position.distance_to(body.global_position)
-			if d < blast_radius:
-				var blast_dir = global_position.direction_to(body.global_position)
-				if body.has_method("get_run_over"):
-					body.get_run_over(blast_dir * 550.0)
-				elif body.has_method("take_damage"):
-					body.take_damage(int(lerp(120.0, 35.0, d / blast_radius)))
+	preload("res://world/shared/combat/VehicleBlast.gd").apply(self)
+	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
 					
-	# 8. Desaparece suavemente após 12 segundos e recicla
-	var tw = create_tween()
-	tw.tween_interval(12.0)
-	tw.tween_property(self, "modulate:a", 0.0, 2.0)
-	tw.tween_callback(func():
-		modulate.a = 1.0
-		_deactivate()
-	)
+	# WorldRenewal returns the wreck to the pool even in sleeping regions.
 
 var scene_timeout: float = 0.0
 var stuck_despawn_timer: float = 0.0
@@ -543,7 +559,32 @@ var _target_stopped_time := 0.0
 var _response_crew: Array[Node2D] = []
 var _missing_crew_time := 0.0
 
+func has_police_response_crew() -> bool:
+	if not _police_crew_on_foot or returned_officers > 0: return true
+	for officer in _police_crew:
+		if is_instance_valid(officer) and not officer.is_queued_for_deletion() and not officer.is_dead:
+			return true
+	return false
+
+func _all_surviving_police_boarded() -> bool:
+	if returned_officers <= 0: return false
+	for officer in _police_crew:
+		if is_instance_valid(officer) and not officer.is_dead and not _police_boarded_ids.has(officer.get_instance_id()):
+			return false
+	return true
+
 func _physics_process(delta: float) -> void:
+	# Occupancy outranks pursuit, return orders, reversing and stuck recovery.
+	# Only a completed boarding cycle may release this latch; time/death cannot.
+	if type == 0 and _police_crew_on_foot:
+		_police_recall_requested = _police_recall_requested or is_returning_to_base
+		is_returning_to_base = false
+		is_acting = true
+		is_reversing = false
+		reverse_timer = 0.0
+		current_speed = 0.0
+		velocity = Vector2.ZERO
+		stuck_despawn_timer = 0.0
 	preload("res://VehicleMotionSafety.gd").sanitize(self)
 	_ram_damage_cooldown = maxf(0.0, _ram_damage_cooldown - delta)
 	reverse_cooldown = maxf(0.0, reverse_cooldown - delta)
@@ -554,17 +595,45 @@ func _physics_process(delta: float) -> void:
 		elif wanted and wanted.has_method("get_pursuit_target") and (get_meta("police_player_pursuit", false) or (is_instance_valid(target) and target.is_in_group("player"))):
 			target = wanted.get_pursuit_target()
 	_update_response_audio()
+	if type == 0: _vehicle_combat.tick(self, delta)
 	if is_instance_valid(target) and target.get("is_driven_by_player") == true:
 		_target_stopped_time = _target_stopped_time + delta if target.velocity.length() <= 12.0 else 0.0
 	else:
 		_target_stopped_time = 0.0
 	if is_broken:
+		if type == 0 and _police_crew_on_foot: return
 		current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 500.0 * delta)
 		preload("res://VehicleMotionSafety.gd").move(self)
 		return
+	if bool(get_meta("hospital_available", false)) or bool(get_meta("hospital_unloading", false)):
+		current_speed = 0.0
+		velocity = Vector2.ZERO
+		stuck_despawn_timer = 0.0
+		return
+	if type == 3 and _coroner_stage == "morgue":
+		current_speed = 0
+		velocity = Vector2.ZERO
+		_coroner_wait -= delta
+		if _coroner_wait <= 0: _leave_morgue()
+		return
+	if type == 3 and _coroner_stage == "waiting_plot":
+		current_speed = 0
+		velocity = Vector2.ZERO
+		_coroner_wait -= delta
+		if _coroner_wait <= 0:
+			_coroner_wait = 10.0
+			_deploy_morticians_for_burial()
+		return
+	if not is_acting and not is_returning_to_base and bool(get_meta("depot_departure_pending", false)) and has_meta("depot_departure_waypoints"):
+		if _depot_driveway.tick(self, delta): return
+	if not is_acting and ((type == 1 and has_emergency_priority()) or (type == 3 and is_heading_to_cemetery) or _traffic_passage.state != "idle"):
+		if _traffic_passage.tick(self,delta): return
 		
 	# Recuperação anti-travamento (Dá ré e manobra se ficar preso em engarrafamentos)
+	if type == 1 and not is_acting and not is_returning_to_base and is_instance_valid(target) and global_position.distance_to(target.global_position) <= 620:
+		is_reversing = false
+		stuck_despawn_timer = 0
 	if is_reversing:
 		reverse_timer -= delta
 		velocity = -transform.x * 120.0
@@ -575,13 +644,24 @@ func _physics_process(delta: float) -> void:
 			reverse_cooldown = 1.5
 		return
 		
-	# Auto-Despawn e reciclagem se ficar travado no mapa por mais de 5 segundos
-	if global_position.distance_to(last_tracked_pos) < 8.0 and not is_acting:
+	# Waiting for traffic to clear a driveway is not a failed route.
+	var waiting_for_merge := bool(get_meta("depot_departure_pending", false)) and _is_vehicle_ahead()
+	if global_position.distance_to(last_tracked_pos) < 8.0 and not is_acting and not waiting_for_merge and not _lane_router.at_roadside_goal and not has_meta("medical_sequence"):
 		stuck_despawn_timer += delta
-		if stuck_despawn_timer >= 5.0:
-			stuck_despawn_timer = 0.0
-			_recycle_and_despawn()
-			return
+		if stuck_despawn_timer >= 5.0 and reverse_cooldown <= 0.0:
+			_lane_router.reset()
+			reverse_cooldown = 3.0
+			if not _is_vehicle_ahead():
+				is_reversing = true
+				reverse_timer = 0.6
+			# A response cannot disappear beside its patient or pursuer.
+			# Only recycle a distant, unseen unit after sustained route failure.
+			var viewer := get_tree().get_first_node_in_group("player") as Node2D
+			var screen := get_canvas_transform() * global_position
+			var unseen := not get_viewport().get_visible_rect().grow(180).has_point(screen)
+			if stuck_despawn_timer >= 24.0 and unseen and viewer and viewer.global_position.distance_to(global_position) > 1000.0 and not (type == 1 and is_instance_valid(target) and target.has_meta("medical_pending")):
+				_recycle_and_despawn()
+				return
 	else:
 		stuck_despawn_timer = 0.0
 		last_tracked_pos = global_position
@@ -596,25 +676,22 @@ func _physics_process(delta: float) -> void:
 			is_heading_to_cemetery = false
 			is_returning_to_base = true
 			return
-		# Straight-line steering, not _get_road_guidance_target(): the burial
-		# plot deliberately sits well inside the cemetery's walled lot (for
-		# looks, not depot-style road-adjacency), and the shared lane router
-		# has no coherent path onto a point that far off any lane -- it
-		# oscillated in place indefinitely when this used the same routing
-		# every other leg relies on. A short direct hop (same idea as the
-		# "last stretch off the lane" every depot apron already allows, just
-		# over a longer final distance) reaches the plot reliably instead.
+		# Road guidance ends at the gate; only the crew enters the cemetery.
 		var dist_cem = global_position.distance_to(_cemetery_target_position)
-		var dir_cem = global_position.direction_to(_cemetery_target_position)
+		var waypoint: Vector2 = _get_road_guidance_target(_cemetery_target_position)
+		if _lane_router.at_roadside_goal and waypoint.distance_to(global_position)<2 and dist_cem<240:
+			dist_cem = 0.0
+		var dir_cem = global_position.direction_to(waypoint)
 		var cem_angle_diff = absf(wrapf(dir_cem.angle() - rotation, -PI, PI))
-		rotation = lerp_angle(rotation, dir_cem.angle(), minf(1.0, 4.5 * delta))
+		preload("res://VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_cem.angle(), minf(1.0, 4.5 * delta)))
 		var cem_cruise = max_target_speed * 0.55
 		if cem_angle_diff > 0.4:
 			cem_cruise *= 0.5
-		if _is_obstacle_ahead():
-			cem_cruise *= 0.35
+		var clearance := _forward_clearance()
+		cem_cruise = minf(cem_cruise, sqrt(1040.0 * maxf(0.0, clearance - 8.0)))
 		if dist_cem > 40.0:
 			current_speed = move_toward(current_speed, cem_cruise, acceleration * delta)
+			current_speed = minf(current_speed, maxf(0, clearance-3)/maxf(delta,.001))
 			velocity = transform.x * current_speed
 		else:
 			current_speed = move_toward(current_speed, 0.0, 400.0 * delta)
@@ -638,9 +715,39 @@ func _physics_process(delta: float) -> void:
 	# === VIAGEM DE RETORNO À BASE (Quartel ou Hospital) ===
 	if is_returning_to_base:
 		_notify_return_started()
-		if siren_audio and siren_audio.playing:
-			siren_audio.stop()
 		var base_pos := home_return_position
+		var medical_sequence: Node = get_meta("medical_sequence") if has_meta("medical_sequence") else null
+		var hospital: Node2D = null
+		var medical_director: Node = instance_from_id(int(get_meta("harbor_director_id", 0))) if int(get_meta("harbor_director_id", 0)) > 0 else null
+		if type == 1:
+			hospital = get_tree().get_first_node_in_group("hospital_emergency_admission")
+			if hospital: base_pos = hospital.get_ambulance_stop_position()
+			if hospital and is_instance_valid(medical_director) and medical_director.has_method("get_medical_return_position"):
+				base_pos = medical_director.get_medical_return_position(self)
+		if hospital and not base_pos.is_finite():
+			current_speed = 0
+			velocity = Vector2.ZERO
+			set_meta("hospital_parking_wait", true)
+			return
+		remove_meta("hospital_parking_wait")
+		if hospital and global_position.distance_to(base_pos) < 330:
+			if not bool(get_meta("hospital_arrived",false)):
+				if not _hospital_arrival.tick(self,base_pos,hospital.get_ambulance_stop_rotation(),delta): return
+				set_meta("hospital_arrived",true)
+				_lane_router.reset()
+				if siren_audio: siren_audio.stop()
+			current_speed = 0
+			velocity = Vector2.ZERO
+			if not is_instance_valid(medical_sequence) or not medical_sequence.delivered:
+				finish_hospital_parking()
+				return
+			if is_instance_valid(medical_director) and medical_director.has_method("is_medical_bay_owner") and not medical_director.is_medical_bay_owner(self):
+				set_meta("medical_waiting_admission", true)
+				return
+			remove_meta("medical_waiting_admission")
+			medical_sequence.start_hospital_admission(hospital)
+			arrived_at_depot.emit(self, home_depot_id)
+			return
 		if base_pos == Vector2.ZERO:
 			var depot_director := get_tree().get_first_node_in_group("emergency_depot_director")
 			if depot_director and depot_director.has_method("get_return_position"):
@@ -648,8 +755,16 @@ func _physics_process(delta: float) -> void:
 		if base_pos == Vector2.ZERO:
 			_deactivate()
 			return
+		if type == 3 and int(get_meta("harbor_director_id",0))>0 and global_position.distance_to(base_pos)<330:
+			if not _hospital_arrival.tick(self,base_pos,0.0,delta): return
+			if _admit_coroner_cargo(): return
+			arrived_at_depot.emit(self,home_depot_id)
+			var owner: Node = instance_from_id(int(get_meta("harbor_director_id")))
+			if is_instance_valid(owner): owner.complete_vehicle_return(self)
+			_deactivate()
+			return
 		var waypoint = _get_road_guidance_target(base_pos)
-		if waypoint.distance_to(global_position) < 1.0:
+		if waypoint.distance_to(global_position) < 1.0 and global_position.distance_to(base_pos) > 45.0:
 			current_speed = 0.0
 			velocity = Vector2.ZERO
 			return
@@ -657,19 +772,24 @@ func _physics_process(delta: float) -> void:
 		var dir_wpt = global_position.direction_to(waypoint)
 		
 		var angle_diff = absf(wrapf(dir_wpt.angle() - rotation, -PI, PI))
-		rotation = lerp_angle(rotation, dir_wpt.angle(), minf(1.0, 4.5 * delta))
+		preload("res://VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_wpt.angle(), minf(1.0, 4.5 * delta)))
 		
 		var target_cruise = max_target_speed * 0.75
 		if angle_diff > 0.4:
 			target_cruise *= 0.5 # Desacelera nas curvas
 			
 		if dist_base > 45.0:
-			current_speed = move_toward(current_speed, target_cruise, acceleration * delta)
+			var clearance := _forward_clearance()
+			target_cruise = minf(target_cruise, sqrt(1040.0 * maxf(0.0, clearance - 8.0)))
+			current_speed = move_toward(current_speed, target_cruise, (520.0 if target_cruise < current_speed else acceleration) * delta)
+			current_speed = minf(current_speed, maxf(0.0, clearance - 3.0) / maxf(delta, 0.001))
 			velocity = transform.x * current_speed
 		else:
 			current_speed = move_toward(current_speed, 0.0, 400.0 * delta)
 			velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
 			if velocity.length() < 12 and current_speed < 12:
+				if is_instance_valid(medical_sequence): medical_sequence.finish_transport_without_entrance()
+				if _admit_coroner_cargo(): return
 				arrived_at_depot.emit(self, home_depot_id)
 				var depot_director := get_tree().get_first_node_in_group("emergency_depot_director")
 				if depot_director and depot_director.has_method("complete_vehicle_return"):
@@ -681,22 +801,33 @@ func _physics_process(delta: float) -> void:
 		
 	if is_acting:
 		if type == 0:
+			_police_crew = _police_crew.filter(func(officer): return is_instance_valid(officer) and not officer.is_dead)
+			if deployed_officers > 0 and returned_officers == 0 and _police_crew.is_empty():
+				_clear_tactical_doors()
+				return
 			# Polícia em bloqueio tático: permanece firme servindo de barricada enquanto o alvo estiver procurado
 			var wm = get_node_or_null("/root/WantedManager")
 			var stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wm.current_stars if wm else 0)
 			var dist_to_target = global_position.distance_to(target.global_position) if is_instance_valid(target) else 9999.0
 			var fleeing_car: bool = is_instance_valid(target) and target.get("is_driven_by_player") == true and target.get("velocity") is Vector2 and (target.get("velocity") as Vector2).length() > 12.0
-			if stars == 0 or dist_to_target > 600.0 or not is_instance_valid(target) or fleeing_car or scene_timeout >= 1.5:
+			if _police_recall_requested or stars == 0 or dist_to_target > 600.0 or not is_instance_valid(target) or fleeing_car or scene_timeout >= 1.5:
 				scene_timeout += delta
 				# Ask deployed officers to walk back to their assigned doors first.
-				# The fallback keeps a dead/stuck officer from holding the cruiser
-				# forever, while normal cases leave only after both boarded.
+				# A stuck, dead or missing officer never authorizes an empty car.
 				if scene_timeout >= 1.5:
 					_request_officers_return()
-				if (deployed_officers > 0 and returned_officers >= deployed_officers) or scene_timeout >= 12.0:
+				if deployed_officers > 0 and _all_surviving_police_boarded():
+					# A new engagement cannot recreate a killed or stranded partner.
+					_police_available_seats = returned_officers
+					for officer in _police_crew:
+						if is_instance_valid(officer) and not officer.boarding_service_vehicle:
+							officer.service_vehicle = null
+							officer.returning_to_service_vehicle = false
 					is_acting = false
+					_police_crew_on_foot = false
 					_clear_tactical_doors()
-					is_returning_to_base = stars == 0 or not is_instance_valid(target)
+					is_returning_to_base = _police_recall_requested or stars == 0 or not is_instance_valid(target)
+					_police_recall_requested = false
 					officer_deployed = false
 					deployed_officers = 0
 					returned_officers = 0
@@ -714,13 +845,14 @@ func _physics_process(delta: float) -> void:
 				is_acting = false
 				is_returning_to_base = true
 				if siren_audio: siren_audio.stop()
-			elif scene_timeout >= 30.0:
+			elif scene_timeout >= (45.0 if type == 2 else 30.0) and not has_meta("medical_sequence"):
 				for crew in _response_crew:
 					if type == 1: crew._start_return_to_ambulance()
 					elif type == 2: crew._start_return_to_truck()
 			
 		current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
+		if type == 0 and _police_crew_on_foot: return
 		preload("res://VehicleMotionSafety.gd").move(self)
 		return
 	else:
@@ -743,14 +875,16 @@ func _physics_process(delta: float) -> void:
 			preload("res://VehicleMotionSafety.gd").move(self)
 			return
 			
+		if type in [2, 3] and _advance_service_target(): return
 		# Se não há ocorrência válida ativa, desliga sirene e retorna à central imediatamente
 		if siren_audio and siren_audio.playing:
 			siren_audio.stop()
 		is_returning_to_base = true
 		return
 		
+	if (type == 1 or (type == 3 and get_tree().current_scene.has_node("RoadNetwork"))) and _ambulance_approach.tick(self, target, delta): return
 	var is_target_in_car: bool = target.is_in_group("vehicle") or target.get("is_driven_by_player") == true
-	var arrival_radius := float(target.get_meta("police_stop_distance",140.0)) if type == 0 else (120.0 if type == 2 else 75.0)
+	var arrival_radius := _police_stop_radius() if type == 0 else (120.0 if type == 2 else 75.0)
 	var may_stop := type != 0 or not is_target_in_car or _target_stopped_time >= 0.6
 	if may_stop and global_position.distance_to(target.global_position) <= arrival_radius:
 		# Frear antes de orientar para outro waypoint evita rodar parado ao lado
@@ -770,7 +904,8 @@ func _physics_process(delta: float) -> void:
 		current_speed = 0.0
 		velocity = Vector2.ZERO
 		# A faixa termina no meio-fio: socorristas percorrem o trecho a pé.
-		if global_position.distance_to(target.global_position) <= 360.0:
+		var foot_response_range := 550.0 if type == 0 and _lane_router.at_roadside_goal else 360.0
+		if global_position.distance_to(target.global_position) <= foot_response_range:
 			if type != 0 or not is_target_in_car or _target_stopped_time >= 0.6:
 				_begin_response()
 		return
@@ -782,10 +917,8 @@ func _physics_process(delta: float) -> void:
 	var stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wm.current_stars if wm else 1)
 	var police_top_speed = max_target_speed + float(stars * 18.0)
 	
-	# Emergency vehicles remain on their intended heading.  Side-steering around
-	# traffic was what made cruisers cut across lanes; they now brake instead.
-	var obstacle_ahead := _is_obstacle_ahead()
-	var vehicle_ahead := _is_vehicle_ahead()
+	# The lane router chooses hull-checked detours; the forward sweep below
+	# brakes for traffic that enters the maneuver after it was planned.
 	var steer_avoid_angle := 0.0
 		
 	# Verificação de No-Go Zone (A polícia não se atreve a entrar no Beco dos Cobras com menos de 4 estrelas)
@@ -796,7 +929,7 @@ func _physics_process(delta: float) -> void:
 			if global_position.distance_to(roadblock_pos) < 60.0:
 				current_speed = move_toward(current_speed, 0.0, 500.0 * delta)
 				velocity = velocity.move_toward(Vector2.ZERO, 700.0 * delta)
-				rotation = lerp_angle(rotation, PI, 3.0 * delta) # Aponta viatura para o beco montando cerco
+				preload("res://VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, PI, 3.0 * delta)) # Aponta viatura para o beco montando cerco
 				preload("res://VehicleMotionSafety.gd").move(self)
 				return
 			else:
@@ -806,19 +939,26 @@ func _physics_process(delta: float) -> void:
 	var target_angle = (dir.rotated(steer_avoid_angle)).angle()
 	var angle_diff = absf(wrapf(target_angle - rotation, -PI, PI))
 	var steer_rate = 6.0 if type == 0 else 4.5
-	rotation = lerp_angle(rotation, target_angle, minf(1.0, steer_rate * delta))
+	var next_heading: float = rotate_toward(rotation, target_angle, current_speed * delta / 70.0) if type == 1 else lerp_angle(rotation, target_angle, minf(1.0, steer_rate * delta))
+	if type != 1: preload("res://VehicleMotionSafety.gd").rotate_clear(self, next_heading)
 	
 	var desired_speed = police_top_speed if type == 0 else max_target_speed
-	if angle_diff > 0.50:
+	if angle_diff > 1.20:
+		# A waypoint behind the bumper requires braking before turning. Keeping
+		# half cruising speed here made short detours become circular orbits.
+		desired_speed = 35.0 if type == 1 else 0.0
+	elif angle_diff > 0.50:
 		desired_speed *= 0.55 # Desaceleração realista em curvas fechadas
+	desired_speed = minf(desired_speed, sqrt(1040.0 * maxf(0.0, global_position.distance_to(waypoint) - 4.0)))
 		
-	if obstacle_ahead and dist > 140.0:
-		desired_speed = move_toward(desired_speed, desired_speed * 0.4, 250.0 * delta)
-	if vehicle_ahead and dist > 96.0:
-		desired_speed = minf(desired_speed, 52.0)
+	var clearance := _forward_clearance()
+	desired_speed = minf(desired_speed, sqrt(2.0 * 520.0 * maxf(0.0, clearance - 8.0)))
+	if waiting_for_merge:
+		desired_speed = 0.0
 
-	current_speed = move_toward(current_speed, desired_speed, (acceleration + float(stars * 20.0)) * delta)
-	var forward_vec = transform.x
+	current_speed = move_toward(current_speed, desired_speed, (520.0 if desired_speed < current_speed else acceleration + float(stars * 20.0)) * delta)
+	current_speed = minf(current_speed, maxf(0.0, clearance - 3.0) / maxf(delta, 0.001))
+	var forward_vec = Vector2.from_angle(rotation + angle_difference(rotation,next_heading)*.5) if type == 1 else transform.x
 	
 	if type == 0: # POLÍCIA
 		var target_moving := false
@@ -849,7 +989,7 @@ func _physics_process(delta: float) -> void:
 					get_tree().current_scene.add_child(spike)
 		else:
 			# === ALVO PARADO/ACUADO OU A PÉ: BLOQUEIO TÁTICO E DESEMBARQUE DA DUPLA ===
-			var stop_distance := float(target.get_meta("police_stop_distance",140.0)) if is_instance_valid(target) else 140.0
+			var stop_distance := _police_stop_radius()
 			if dist <= stop_distance:
 				current_speed = move_toward(current_speed, 0.0, 520.0 * delta)
 				velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
@@ -898,7 +1038,12 @@ func _physics_process(delta: float) -> void:
 			velocity = forward_vec * current_speed
 			
 	var prev_velocity = velocity
-	preload("res://VehicleMotionSafety.gd").move(self)
+	if type == 1:
+		if not _ambulance_approach._move_to(self, global_position + velocity * delta, next_heading, delta):
+			current_speed = 0
+			velocity = Vector2.ZERO
+	else:
+		preload("res://VehicleMotionSafety.gd").move(self)
 	
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
@@ -911,7 +1056,8 @@ func _physics_process(delta: float) -> void:
 				body._apply_crash_deformation(-col.get_normal(), impact_speed, col.get_position())
 	
 	# Detecta travamento contra prédios ou barreiras e executa manobra ágil de ré e curva
-	if (current_speed > 30.0 and velocity.length() < 16.0) or (obstacle_ahead and current_speed < 15.0 and not is_acting):
+	var low_speed_obstacle := current_speed < 15.0 and not is_acting and _is_obstacle_ahead()
+	if (current_speed > 30.0 and velocity.length() < 16.0) or low_speed_obstacle:
 		stuck_timer += delta
 		if stuck_timer > 0.45 and reverse_cooldown <= 0.0:
 			# Um congestionamento perto da ocorrência não exige repetir ré:
@@ -932,6 +1078,13 @@ func _physics_process(delta: float) -> void:
 		stuck_timer = maxf(0.0, stuck_timer - delta * 0.5)
 
 func _begin_response() -> void:
+	if type == 1 and (not is_instance_valid(target) or not _ambulance_approach.service_clear(self, target, global_transform)):
+		return
+	if type == 1:
+		if not has_meta("ambulance_parking_goal"):
+			set_meta("ambulance_parking_goal", global_position)
+			set_meta("ambulance_parking_exceptional", true)
+		set_meta("ambulance_walk_route", _ambulance_approach.walk_route.duplicate())
 	_missing_crew_time = 0.0
 	current_speed = 0.0
 	velocity = Vector2.ZERO
@@ -949,6 +1102,20 @@ func _begin_response() -> void:
 			if deployed_firefighters == 0: _deploy_firefighters()
 		3:
 			if deployed_morticians == 0: _deploy_morticians()
+
+func _forward_clearance() -> float:
+	var hull := get_node("CollisionShape2D") as CollisionShape2D
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = hull.shape
+	query.transform = hull.global_transform
+	query.collision_mask = EMERGENCY_COLLISION_MASK
+	query.exclude = [get_rid()]
+	query.margin = 2.0
+	var distance := maxf(110.0, current_speed * current_speed / 1040.0 + 45.0)
+	var space := get_world_2d().direct_space_state
+	if not space.intersect_shape(query, 1).is_empty(): return 0.0
+	query.motion = transform.x * distance
+	return distance * space.cast_motion(query)[0]
 
 func _get_obstacle_avoidance_angle() -> float:
 	var space_state = get_world_2d().direct_space_state
@@ -1022,6 +1189,7 @@ func get_crew_spawn_point(side: float, longitudinal: float = -8.0) -> Vector2:
 
 
 func play_crew_door(side: float, longitudinal: float = -8.0) -> void:
+	if police_variant == "motorcycle": return
 	if _tactical_doors.has(side):
 		close_crew_cover_door(side)
 		return
@@ -1040,6 +1208,7 @@ func play_crew_door(side: float, longitudinal: float = -8.0) -> void:
 	cleanup.tween_callback(door.queue_free)
 
 func open_crew_cover_door(side: float, longitudinal: float = -8.0) -> void:
+	if police_variant == "motorcycle": return
 	if _tactical_doors.has(side): return
 	var door := CREW_DOOR_SCRIPT.new()
 	door.name = "TacticalDoorLeft" if side < 0 else "TacticalDoorRight"
@@ -1109,31 +1278,58 @@ func _clear_tactical_doors() -> void:
 func _release_cover_exceptions(cover: StaticBody2D) -> void:
 	# Uma exceção que ainda aponta para o RID da porta destruída quebra consultas
 	# físicas posteriores; removê-la faz parte do fechamento da porta.
+	if not is_inside_tree(): return
 	for officer in get_tree().get_nodes_in_group("police_officer"):
 		if officer.get("service_vehicle") == self:
 			officer.remove_collision_exception_with(cover)
 
 func _deploy_officers_duo() -> void:
+	if _police_crew_on_foot: return
 	var officer_scene = load("res://PoliceOfficer.tscn")
+	var officer_pool := get_node_or_null("/root/EmergencyPool")
 	if officer_scene:
-		deployed_officers = 2
+		var driver_seat := Vector2(-8.0, -1.0)
+		if police_variant == "motorcycle":
+			driver_seat = preload("res://world/shared/emergency/PoliceMotorcycleCrew.gd").exit_seat(self)
+			if not driver_seat.is_finite():
+				# Make physical room before spawning a rider inside an obstacle.
+				officer_deployed = false
+				is_acting = false
+				is_reversing = true
+				reverse_timer = 0.45
+				return
+		deployed_officers = mini(_police_available_seats, 1 if police_variant == "motorcycle" else 2)
+		if deployed_officers <= 0:
+			is_acting = false
+			is_returning_to_base = true
+			return
 		returned_officers = 0
+		_police_crew_on_foot = true
+		_police_recall_requested = false
+		_police_boarded_ids.clear()
+		_police_crew.clear()
 		# Policial 1 (Motorista - desce pela lateral esquerda)
-		var off1 = officer_scene.instantiate()
+		var driver_level := police_response_level if police_variant != "patrol" else mini(police_response_level, 2)
+		var off1 = officer_pool.take_officer(driver_level) if officer_pool != null else officer_scene.instantiate()
+		off1.set_meta("response_tier_level", police_response_level if police_variant != "patrol" else mini(police_response_level, 2))
 		off1.target = target
-		off1.global_position = get_crew_spawn_point(-1.0, -8.0)
+		off1.global_position = get_crew_spawn_point(driver_seat.y, driver_seat.x)
 		if off1.has_method("begin_service_disembark"):
-			off1.begin_service_disembark(self, -1.0, -8.0)
+			off1.begin_service_disembark(self, driver_seat.y, driver_seat.x)
 		get_parent().add_child(off1)
-		open_crew_cover_door(-1.0, -8.0)
+		_police_crew.append(off1)
+		open_crew_cover_door(driver_seat.y, driver_seat.x)
+		if deployed_officers == 1: return
 		
 		# Policial 2 (Parceiro tático - desce pela lateral direita)
-		var off2 = officer_scene.instantiate()
+		var off2 = officer_pool.take_officer(police_response_level) if officer_pool != null else officer_scene.instantiate()
+		off2.set_meta("response_tier_level", police_response_level)
 		off2.target = target
 		off2.global_position = get_crew_spawn_point(1.0, -8.0)
 		if off2.has_method("begin_service_disembark"):
 			off2.begin_service_disembark(self, 1.0, -8.0)
 		get_parent().add_child(off2)
+		_police_crew.append(off2)
 		off1.add_collision_exception_with(off2)
 		off2.add_collision_exception_with(off1)
 		off1.crew_partner = off2
@@ -1150,7 +1346,12 @@ func _request_officers_return() -> void:
 			officer.return_to_service_vehicle()
 
 
-func on_officer_embarked(_officer: Node2D) -> void:
+func on_officer_embarked(officer: Node2D) -> void:
+	if not is_instance_valid(officer) or not _police_crew.has(officer): return
+	if officer.service_vehicle != self or officer.is_dead or not officer.boarding_service_vehicle or officer.visible: return
+	var id := officer.get_instance_id()
+	if _police_boarded_ids.has(id): return
+	_police_boarded_ids[id] = true
 	returned_officers += 1
 
 func _deploy_paramedics() -> void:
@@ -1182,6 +1383,10 @@ func _deploy_paramedics() -> void:
 		get_parent().add_child(p2)
 		_response_crew.append(p2)
 		play_crew_door(1.0, 8.0)
+		if is_instance_valid(target) and target is CharacterBody2D and get_node_or_null("/root/NPCMedicalCare"):
+			var sequence := preload("res://world/shared/emergency/MedicalRescueSequence.gd").new()
+			add_child(sequence)
+			sequence.setup(self,target,[p1,p2])
 
 func on_paramedic_embarked(_p: Node2D) -> void:
 	returned_paramedics += 1
@@ -1189,7 +1394,9 @@ func on_paramedic_embarked(_p: Node2D) -> void:
 		await get_tree().create_timer(1.0).timeout
 		is_acting = false
 		is_returning_to_base = true
-		if siren_audio: siren_audio.stop()
+		# Replan from the pickup position rather than retaining the inbound lane.
+		_lane_router.reset()
+		_update_response_audio()
 
 func _deploy_firefighters() -> void:
 	var ff_scene = load("res://Firefighter.tscn")
@@ -1221,6 +1428,7 @@ func on_firefighter_embarked(_ff: Node2D) -> void:
 	returned_firefighters += 1
 	if returned_firefighters >= deployed_firefighters:
 		await get_tree().create_timer(1.0).timeout
+		if _advance_service_target(): return
 		is_acting = false
 		is_returning_to_base = true
 		if engine_audio:
@@ -1251,7 +1459,7 @@ func _deploy_morticians() -> void:
 		var m2 = m_scene.instantiate()
 		m2.target = target
 		m2.hearse = self
-		m2.is_stretcher_bearer = false
+		m2.is_stretcher_bearer = is_instance_valid(target) and target.has_method("collect_piece")
 		m2.global_position = get_crew_spawn_point(1.0, 22.0)
 		if m2.has_method("begin_service_disembark"):
 			m2.begin_service_disembark(self, 1.0, 22.0)
@@ -1270,6 +1478,13 @@ func _deploy_morticians_for_burial() -> void:
 		var m1 = m_scene.instantiate()
 		m1.is_burial_trip = true
 		m1.burial_position = _cemetery_target_position
+		if not get_node("/root/CoronerCare").start_burial(self, m1):
+			m1.free()
+			deployed_morticians = 0
+			_coroner_stage = "waiting_plot"
+			_coroner_wait = 10.0
+			return
+		_coroner_stage = "burial"
 		m1.hearse = self
 		m1.is_stretcher_bearer = true
 		m1.global_position = get_crew_spawn_point(-1.0, 22.0)
@@ -1282,45 +1497,83 @@ func _deploy_morticians_for_burial() -> void:
 func on_mortician_embarked(_m: Node2D) -> void:
 	returned_morticians += 1
 	if returned_morticians < deployed_morticians:
-		return
-	if type == 3 and not _coroner_carrying_body:
-		# Just picked up the body -- head to the cemetery before going home.
-		_coroner_carrying_body = true
-		var cemetery := get_tree().get_first_node_in_group("cemetery")
-		if cemetery and cemetery.has_method("get_open_plot_position"):
-			_cemetery_target_position = cemetery.get_open_plot_position()
-		await get_tree().create_timer(1.0).timeout
-		if _cemetery_target_position != Vector2.ZERO:
+		var waiting := _response_crew.any(func(crew): return is_instance_valid(crew) and not crew.is_queued_for_deletion() and not crew.is_dead and crew.state != crew.State.EMBARKED)
+		if waiting: return
+	var care := get_node("/root/CoronerCare")
+	if _coroner_stage == "burial":
+		deployed_morticians = 0
+		returned_morticians = 0
+		if care.has_cargo(self):
+			_deploy_morticians_for_burial()
+		else:
+			_coroner_stage = "return"
 			is_acting = false
-			deployed_morticians = 0
-			returned_morticians = 0
-			is_heading_to_cemetery = true
-			return
-		# No cemetery registered anywhere in this scene -- fall back to base
-		# instead of getting stuck waiting for a destination that never comes.
-	await get_tree().create_timer(1.2).timeout
+			is_returning_to_base = true
+			_lane_router.reset()
+		return
+	if not is_heading_to_cemetery and _advance_service_target(): return
+	if care.has_cargo(self):
+		_coroner_stage = "to_morgue"
+		is_acting = false
+		is_returning_to_base = true
+		target = null
+		_lane_router.reset()
+		return
 	is_acting = false
-	_coroner_carrying_body = false
-	if engine_audio:
-		engine_audio.volume_db = -26.0
-		engine_audio.play()
-	if siren_audio:
-		siren_audio.stop()
-	if type == 3:
-		# Burial just finished (this is the second on_mortician_embarked for
-		# this trip) -- back out to the cemetery gate first, same reasoning
-		# as the inbound leg, before handing off to the normal road-based
-		# return-to-base travel.
-		var cemetery := get_tree().get_first_node_in_group("cemetery")
-		var gate_pos := Vector2.ZERO
-		if cemetery and cemetery.has_method("get_gate_position"):
-			gate_pos = cemetery.get_gate_position()
-		if gate_pos != Vector2.ZERO:
-			_cemetery_target_position = gate_pos
-			_cemetery_leaving = true
-			is_heading_to_cemetery = true
-			return
 	is_returning_to_base = true
+	return
+
+func _admit_coroner_cargo() -> bool:
+	if type != 3 or _coroner_stage != "to_morgue" or not get_node("/root/CoronerCare").has_cargo(self): return false
+	is_returning_to_base = false
+	is_acting = true
+	_coroner_stage = "morgue"
+	_coroner_wait = 8.0
+	get_node("/root/CoronerCare").morgue_arrival(self)
+	return true
+
+func _leave_morgue() -> void:
+	var cemetery := get_tree().get_first_node_in_group("cemetery")
+	if cemetery == null:
+		_coroner_wait = 10.0
+		return
+	_cemetery_target_position = cemetery.get_coroner_stop_position()
+	_coroner_stage = "cemetery"
+	is_acting = false
+	is_returning_to_base = false
+	is_heading_to_cemetery = true
+	deployed_morticians = 0
+	returned_morticians = 0
+	set_meta("depot_departure_pending", true)
+	if int(get_meta("harbor_director_id",0))>0:
+		var north_exit := _coroner_north_departure()
+		if not north_exit.is_empty(): set_meta("depot_departure_waypoints",north_exit)
+		_depot_driveway.cursor = 1
+	_hospital_arrival.reset()
+	_lane_router.reset()
+	var care := get_node("/root/CoronerCare")
+	for key in get_meta("coroner_cargo", []): care.set_phase(key, "cemetery")
+
+func _coroner_north_departure() -> PackedVector2Array:
+	# The cemetery is served via the yard's east driveway and a northbound
+	# lane, avoiding the busy southern hospital entrance on the funeral leg.
+	var gate: Vector2 = get_meta("depot_road_gate",global_position)
+	var merge := Vector2.INF
+	var best := INF
+	for path in get_tree().get_nodes_in_group("unified_traffic_lane"):
+		if not path is Path2D or path.curve==null or not path.can_process(): continue
+		var offset: float = path.curve.get_closest_offset(path.to_local(gate))
+		var pose: Transform2D = path.global_transform*path.curve.sample_baked_with_rotation(offset,true)
+		if pose.x.y>-.8 or pose.origin.x<global_position.x+90: continue
+		var distance := pose.origin.distance_to(gate)
+		if distance<best and distance<160: best=distance; merge=pose.origin
+	if not merge.is_finite(): return PackedVector2Array()
+	var points := PackedVector2Array([global_position])
+	var center := Vector2(merge.x-70,global_position.y-70)
+	for i in 13:
+		points.append(center+Vector2.from_angle(lerpf(PI*.5,0,i/12.0))*70)
+	points.append(Vector2(merge.x,global_position.y-140))
+	return points
 
 func _get_road_guidance_target(dest: Vector2) -> Vector2:
 	if type==0 and is_instance_valid(target) and target.get_meta("bank_blockade",false) and global_position.distance_to(dest)<300:
@@ -1453,13 +1706,39 @@ func _clear_all_dents() -> void:
 		for child in dents_container.get_children():
 			child.queue_free()
 
+func finish_hospital_parking() -> void:
+	set_meta("hospital_available",true)
+	set_meta("hospital_unloading",false)
+	set_meta("hospital_arrived",true)
+	set_meta("medical_phase","parked")
+	remove_meta("medical_waiting_admission")
+	is_acting = false
+	is_returning_to_base = false
+	is_reversing = false
+	target = null
+	velocity = Vector2.ZERO
+	current_speed = 0
+	if siren_audio: siren_audio.stop()
+	if lights: lights.hide()
+	if engine_audio: engine_audio.stop()
+	var owner_id := int(get_meta("harbor_director_id",0))
+	var director: Node = instance_from_id(owner_id) if owner_id else get_tree().get_first_node_in_group("emergency_depot_director")
+	if is_instance_valid(director): director.complete_vehicle_return(self)
+
 func _update_response_audio() -> void:
-	var responding := visible and not is_broken and not is_returning_to_base and is_instance_valid(target)
+	# A patient aboard is still an emergency response; only an empty return
+	# should silence the ambulance and switch its warning lights off.
+	var medical_sequence: Node = get_meta("medical_sequence") if has_meta("medical_sequence") else null
+	var patient_transport: bool = type == 1 and is_instance_valid(medical_sequence) and medical_sequence.delivered and medical_sequence.phase == "transport"
+	var responding := visible and not is_broken and ((not is_returning_to_base and is_instance_valid(target)) or patient_transport)
 	if type == 0:
 		var wanted := get_node_or_null("/root/WantedManager")
-		responding = responding and ((is_instance_valid(target) and target.get_meta("ambient_crime",false)) or (wanted != null and wanted.current_stars > 0)) and not target.get_meta("police_search_position", false)
+		responding = responding and ((is_instance_valid(target) and target.get_meta("ambient_crime",false)) or (wanted != null and wanted.current_stars > 0))
+		if responding and target.get_meta("police_search_position", false):
+			responding = global_position.distance_to(target.global_position) > 240.0
 	if lights: lights.visible = responding
 	if siren_audio:
-		var sounding := responding and not is_acting
+		var sounding := responding and not is_acting and not bool(get_meta("medical_waiting_admission", false)) and not bool(get_meta("hospital_arrived",false)) and not bool(get_meta("hospital_dock_waiting",false)) and not bool(get_meta("hospital_parking_wait",false))
+		if sounding: siren_audio.volume_db = -10.0
 		if sounding and not siren_audio.playing: siren_audio.play()
 		elif not sounding and siren_audio.playing: siren_audio.stop()

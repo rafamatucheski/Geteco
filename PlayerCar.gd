@@ -1,5 +1,10 @@
 extends CharacterBody2D
 
+var _handling_yaw_rate: float = 0.0
+var _drivetrain = preload("res://VehicleDrivetrain.gd").new()
+var _launch = preload("res://VehicleLaunchControl.gd").new()
+var _tire_trail = preload("res://VehicleTireTrail.gd").new()
+
 const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
 
 @export var max_speed = 600.0
@@ -14,6 +19,7 @@ const VEHICLE_DOOR_VISUAL := preload("res://VehicleDoorVisual.gd")
 
 var skid_line: Line2D
 var is_skidding: bool = false
+var handbrake_slide: float = 0.0
 var lateral_speed: float = 0.0 # px/s de derrapada — lido por DriftChallengeZone
 var target_length: float = 74.0
 var uniform_scale: float = 1.0
@@ -106,6 +112,7 @@ func _ready():
 	sprite.rotation = PI/2 # Vira pra direita
 	sprite.modulate = Color(0.9, 0.25, 0.25) # Vermelho esportivo do Dante
 	add_child(sprite)
+	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(target_length * 1.04, 38))
 	
 	# Ajusta a colisão dinamicamente para o mesmo tamanho
 	var new_shape = RectangleShape2D.new()
@@ -129,13 +136,14 @@ func _ready():
 	# Criando emissor de fumaça para danos
 	smoke_emitter = CPUParticles2D.new()
 	smoke_emitter.emitting = false
-	smoke_emitter.amount = 30
+	smoke_emitter.amount = 20
 	smoke_emitter.lifetime = 1.0
 	smoke_emitter.gravity = Vector2(0, -98)
 	smoke_emitter.scale_amount_min = 12.0 / 64.0
 	smoke_emitter.scale_amount_max = 32.0 / 64.0
 	smoke_emitter.color = Color(0.5, 0.5, 0.5, 0.8)
 	smoke_emitter.texture = _make_soft_particle_texture()
+	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
 	add_child(smoke_emitter)
 	
 	# Emissor de fogo
@@ -150,19 +158,21 @@ func _ready():
 	flame_particles.scale_amount_max = 24.0 / 64.0
 	flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
 	flame_particles.texture = _make_soft_particle_texture()
+	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
 	add_child(flame_particles)
 	
 	# Faíscas
 	collision_particles = CPUParticles2D.new()
 	collision_particles.emitting = false
 	collision_particles.one_shot = true
-	collision_particles.amount = 16
-	collision_particles.lifetime = 0.5
-	collision_particles.initial_velocity_min = 60.0
-	collision_particles.initial_velocity_max = 120.0
-	collision_particles.scale_amount_min = 2.0 / 64.0
-	collision_particles.scale_amount_max = 5.0 / 64.0
-	collision_particles.color = Color(0.8, 0.8, 0.8, 1.0)
+	collision_particles.local_coords = false
+	collision_particles.amount = 10
+	collision_particles.lifetime = 0.24
+	collision_particles.initial_velocity_min = 40.0
+	collision_particles.initial_velocity_max = 90.0
+	collision_particles.scale_amount_min = 1.5 / 64.0
+	collision_particles.scale_amount_max = 3.5 / 64.0
+	collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
 	collision_particles.texture = _make_soft_particle_texture()
 	add_child(collision_particles)
 	
@@ -383,6 +393,8 @@ func _setup_headlight() -> void:
 	headlight.color = Color(1.0, 0.98, 0.90, 1.0)
 	headlight.energy = 1.35
 	headlight.shadow_enabled = false
+	# Ground beams must pass beneath vehicle bodies (drawn at z = 8 or above).
+	headlight.range_z_max = 7
 	headlight.position = Vector2(38.0, 0.0) # Na frente do para-choque
 	headlight.texture = HeadlightTextureGenerator.get_conical_headlight_texture()
 	headlight.offset = Vector2(170.0, 0.0) # Projeta feixe cônico suave 340px à frente
@@ -396,6 +408,9 @@ func _get_weather_manager() -> Node:
 	return _weather_manager_cache
 
 func _physics_process(delta):
+	if not is_driven_by_player or is_broken:
+		_launch.reset()
+		_tire_trail.reset()
 	preload("res://VehicleMotionSafety.gd").sanitize(self)
 	has_nitro = false
 	is_boosting = false
@@ -416,6 +431,8 @@ func _physics_process(delta):
 
 		# Espaço = freio de mão / derrapagem manual. Shift = nitro (ver mais abaixo).
 		var wants_handbrake := Input.is_action_pressed("handbrake")
+		_launch.update(delta, velocity.length(), input_dir, wants_handbrake, max_speed, not is_broken)
+		handbrake_slide = 0.7 if wants_handbrake and velocity.length() > 55.0 else maxf(0.0, handbrake_slide - delta)
 		var weather := _get_weather_manager()
 		var rain_intensity: float = float(weather.get_rain_intensity()) if weather and weather.has_method("get_rain_intensity") else 0.0
 
@@ -423,28 +440,18 @@ func _physics_process(delta):
 		var skid_threshold: float = lerpf(90.0, 50.0, rain_intensity)
 
 		# Puxão de traseira ao puxar o freio de mão em curva, tipo GTA clássico.
-		if wants_handbrake and turn_dir != 0.0 and velocity.length() > 60.0:
-			velocity += transform.y * sign(turn_dir) * 130.0 * delta * clampf(velocity.length() / max_speed, 0.35, 1.0)
+		# Yaw separates the body from momentum; never inject lateral energy.
 
 		# Lógica de Drift e Skidmarks
 		var lateral_velocity = velocity.project(transform.y)
 		lateral_speed = lateral_velocity.length()
 		var is_actively_drifting := lateral_speed > skid_threshold or (wants_handbrake and velocity.length() > 60.0)
-		if is_actively_drifting:
-			if not is_skidding:
-				is_skidding = true
-				skid_line.clear_points()
-			if skid_line.get_point_count() == 0 or skid_line.get_point_position(skid_line.get_point_count() - 1).distance_to(global_position) > 6.0:
-				skid_line.add_point(global_position)
-			if skid_line.get_point_count() > 30:
-				skid_line.remove_point(0)
-		else:
-			is_skidding = false
-			if skid_line.get_point_count() > 0 and bloody_tires_timer <= 0.0:
-				skid_line.clear_points()
+		is_skidding = is_actively_drifting
+		if skid_line: skid_line.clear_points()
 
-		velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor, delta, rain_intensity, wants_handbrake)
-		if wants_handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.45*delta)
+		_drivetrain.update(str(VehicleCatalog.get_vehicle_spec(active_archetype_id).get("drivetrain", "rwd")), velocity.dot(transform.x), input_dir, turn_dir, rain_intensity)
+		velocity = preload("res://VehicleMotionSafety.gd").grip(velocity, global_rotation, drift_factor + _drivetrain.drift_bias, delta, rain_intensity, handbrake_slide > 0.0, vehicle_mass)
+		if wants_handbrake: velocity = velocity.move_toward(Vector2.ZERO, braking*0.10*preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass)*delta)
 
 		# Respingo de água lateral: só quando derrapando com chuva de verdade caindo.
 		if water_spray_emitter:
@@ -456,7 +463,6 @@ func _physics_process(delta):
 				water_spray_emitter.amount = int(lerpf(12.0, 26.0, rain_intensity))
 
 		# Sincroniza áudio de derrapagem
-		_update_skid_audio()
 
 		# Teclas de validação rápida para veículo
 		var horn_pressed := Input.is_action_pressed("horn")
@@ -470,15 +476,16 @@ func _physics_process(delta):
 		_headlight_key_was_pressed = headlights_pressed
 
 		# Verifica input para sair
-		var exit_pressed := Input.is_action_pressed("exit_vehicle") or (InputMap.has_action("interact") and Input.is_action_pressed("interact"))
+		var exit_pressed := Input.is_action_pressed("exit_vehicle")
 		if not exit_pressed:
 			_entry_input_released = true
-		if _entry_input_released and exit_pressed and not _is_near_building_entrance():
+		if _entry_input_released and exit_pressed:
 			exit_vehicle()
 	else:
 		_horn_key_was_pressed = false
 		_headlight_key_was_pressed = false
 		lateral_speed = 0.0
+		handbrake_slide = 0.0
 		if water_spray_emitter and water_spray_emitter.emitting:
 			water_spray_emitter.emitting = false
 	
@@ -499,13 +506,17 @@ func _physics_process(delta):
 	
 	if input_dir != 0:
 		if (input_dir > 0 and velocity.dot(forward_vec) < -10) or (input_dir < 0 and velocity.dot(forward_vec) > 10):
-			velocity = velocity.move_toward(Vector2.ZERO, braking * delta)
+			velocity = velocity.move_toward(Vector2.ZERO, braking * preload("res://VehicleMotionSafety.gd").brake_mass_scale(vehicle_mass) * delta)
 		else:
-			velocity += forward_vec * input_dir * acceleration * _engine_sound.drive_force(velocity.length(), max_speed) * delta
+			velocity += forward_vec * input_dir * acceleration * preload("res://VehicleMotionSafety.gd").drive_mass_scale(vehicle_mass) * _drivetrain.force_scale * _launch.force_scale * _engine_sound.drive_force(velocity.length(), max_speed) * delta
 			velocity = velocity.limit_length(_engine_sound.road_top_speed(max_speed))
 	else:
-		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
+		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
 
+	if _launch.holding: velocity = Vector2.ZERO
+	is_skidding = is_skidding or _launch.wheelspin > 0.12
+	_tire_trail.update(self, delta, is_driven_by_player and not is_broken and is_skidding, 0.38 + _launch.wheelspin * 0.25)
+	if is_driven_by_player: _update_skid_audio()
 	var prev_velocity = velocity
 	preload("res://VehicleMotionSafety.gd").move(self)
 	
@@ -519,7 +530,7 @@ func _physics_process(delta):
 	if is_driven_by_player:
 		if engine_audio and engine_audio.stream:
 			if health > 0:
-				_engine_sound.update(engine_audio, velocity.length(), _engine_sound.road_top_speed(max_speed), input_dir, delta, active_archetype_id, is_boosting)
+				_engine_sound.update(engine_audio, velocity.length(), _engine_sound.road_top_speed(max_speed), input_dir, delta, active_archetype_id, is_boosting, _launch.charge * _launch.strength)
 			else:
 				if engine_audio.playing:
 					engine_audio.stop()
@@ -541,36 +552,48 @@ func _physics_process(delta):
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
 		var body = col.get_collider()
+		if preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body):
+			preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, prev_velocity)
+			continue
 		# get_normal() aponta da parede pra fora (pro lado do carro). Só conta
 		# como impacto quando a velocidade vai CONTRA essa normal (carro
 		# entrando na parede) — não quando ela se afasta (saindo de ré), senão
 		# um contato residual de 1-2 frames continua batendo mesmo recuando.
 		var closing_speed = maxf(0.0, -prev_velocity.dot(col.get_normal()))
-		var impact_speed = maxf(prev_velocity.length() - velocity.length(), closing_speed)
+		var impact_speed = closing_speed
+		if impact_speed > 85.0 and is_instance_valid(body) and not body.is_in_group("ambient_traffic") and not body.is_in_group("vehicle") and body.has_method("take_damage"):
+			body.take_damage(100, is_driven_by_player)
 		
 		if impact_speed > 35.0:
+			var is_post: bool = is_instance_valid(body) and (body.is_in_group("fragile_road_post") or body.is_in_group("street_lamp"))
 			# Deforma a lataria (amassa parachoque, capô, portas ou traseira no ponto exato)
-			_apply_crash_deformation(col.get_normal(), impact_speed, col.get_position())
+			_apply_crash_deformation(col.get_normal(), impact_speed, col.get_position(), is_post)
 			
-			# Screen Shake proporcional ao impacto
-			_do_screen_shake(clampf(impact_speed / 500.0, 0.05, 0.4))
+			# Screen Shake proporcional ao impacto (muito mais suave em postes finos que cedem)
+			_do_screen_shake(clampf(impact_speed / 1200.0, 0.02, 0.06) if is_post else clampf(impact_speed / 500.0, 0.05, 0.4))
 			
-			# Hit-stop: 2 frames em impactos médios, 3 frames em violentos
-			_hit_stop_frames = 3 if impact_speed > 250 else 2
+			# Hit-stop: sem congelar a tela em postes que cedem; 2-3 frames apenas em colisões rígidas
+			_hit_stop_frames = 0 if is_post else (3 if impact_speed > 250 else 2)
 			
-			# Partículas de metal/vidro
+			# Partículas de metal/vidro no ponto exato de contato no mundo
 			collision_particles.global_position = col.get_position()
+			if is_post:
+				collision_particles.direction = col.get_normal()
+				collision_particles.spread = 45.0
+				collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
+				collision_particles.initial_velocity_min = 35.0
+				collision_particles.initial_velocity_max = 75.0
+				preload("res://world/shared/combat/WeaponEffects.gd").spawn_post_impact(get_parent(), col.get_position(), col.get_normal(), impact_speed)
+			else:
+				collision_particles.direction = col.get_normal()
+				collision_particles.spread = 60.0
+				collision_particles.color = Color(0.85, 0.85, 0.85, 1.0)
+				collision_particles.initial_velocity_min = 50.0
+				collision_particles.initial_velocity_max = 100.0
 			collision_particles.restart()
 			
 			# Som de batida dinâmico
-			var crash_player = AudioStreamPlayer2D.new()
-			crash_player.stream = ProceduralAudio.get_crash_stream(active_archetype_id)
-			crash_player.pitch_scale = randf_range(0.85, 1.15)
-			crash_player.volume_db = clampf(lerp(-18.0, -6.0, impact_speed / 500.0), -22.0, -4.0)
-			crash_player.max_distance = 600.0
-			add_child(crash_player)
-			crash_player.play()
-			crash_player.finished.connect(crash_player.queue_free)
+			preload("res://audio/VehicleCrashAudio.gd").play(self, body, col.get_position(), impact_speed)
 		
 		# A car sliding sideways along a curb/wall reports a fresh slide
 		# collision EVERY physics frame it stays in contact (that is what
@@ -581,57 +604,33 @@ func _physics_process(delta):
 		# nowhere. Only the first frame of a given contact should count as
 		# a hit; a short cooldown lets the car keep sliding without being
 		# charged damage on every single frame of that same scrape.
-		if impact_speed > 160.0 and Time.get_ticks_msec() - _last_collision_damage_ms > COLLISION_DAMAGE_COOLDOWN_MS:
+		if impact_speed > 180.0 and Time.get_ticks_msec() - _last_collision_damage_ms > COLLISION_DAMAGE_COOLDOWN_MS:
 			_last_collision_damage_ms = Time.get_ticks_msec()
-			take_damage(int(impact_speed * 0.06))
+			take_damage(preload("res://VehicleMotionSafety.gd").collision_damage(impact_speed), is_driven_by_player)
 			
-		# Atropelar pessoas no slide collision!
-		if prev_velocity.length() > 25.0:
-			if is_instance_valid(body) and not body.is_in_group("ambient_traffic") and not body.is_in_group("vehicle"):
-				if not (body.is_in_group("player") and is_driven_by_player):
-					if body.has_method("get_run_over"):
-						body.get_run_over(prev_velocity, true)
-						_activate_bloody_tires()
-					elif body.has_method("take_damage"):
-						body.take_damage(100, true)
 
-	# Gerencia marcas de pneu sangrentas após atropelar alguém
-	if bloody_tires_timer > 0.0:
-		bloody_tires_timer -= delta
-		if velocity.length() > 40.0:
-			skid_line.add_point(global_position)
-			if skid_line.get_point_count() > 60:
-				skid_line.remove_point(0)
-		if bloody_tires_timer <= 0.0:
-			skid_line.default_color = Color(0.1, 0.1, 0.1, 0.5)
+	# Ground-contact residue is rendered separately from braking skid marks.
+	bloody_tires_timer = maxf(0.0, bloody_tires_timer - delta)
 
 var _door_visual: Node2D = null
 
 func _on_bumper_hitbox_entered(body: Node2D) -> void:
 	if body == null or body == self or (body.is_in_group("player") and is_driven_by_player) or body.is_in_group("ambient_traffic") or body.is_in_group("vehicle"):
 		return # Nunca atropelar ou causar dano ao próprio motorista ao entrar ou dirigir!
-	var cur_speed = velocity.length()
-	if cur_speed > 25.0:
-		var impact = velocity if cur_speed > 10.0 else transform.x * maxf(120.0, cur_speed)
-		if body.has_method("get_run_over"):
-			body.get_run_over(impact, true)
-			_activate_bloody_tires()
-		elif body.has_method("take_damage"):
-			body.take_damage(100, true)
+	preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, velocity)
+	if not preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body) and velocity.length() > 85.0 and body.has_method("take_damage"):
+		body.take_damage(100, is_driven_by_player)
+
 
 func _apply_steering_motion(turn_input: float, delta: float) -> void:
-	# Preserve existing handling for ordinary cars; specialized vehicles can
-	# supply their own steering geometry without duplicating collision/gameplay.
-	if velocity.length() > 10:
-		var current_turn: float = turn_input * turn_speed * delta
-		if velocity.dot(transform.x) < 0:
-			current_turn *= -1
-		rotation += current_turn
+	var slide_steer := lerpf(1.0, 1.65, clampf(handbrake_slide / 0.35, 0.0, 1.0))
+	_handling_yaw_rate = preload("res://VehicleMotionSafety.gd").steering_rate(_handling_yaw_rate, turn_input, velocity.dot(transform.x), turn_speed * _drivetrain.steer_scale * slide_steer, vehicle_mass, delta)
+	preload("res://VehicleMotionSafety.gd").rotate_clear(self, rotation + _handling_yaw_rate * delta)
+
 
 func _activate_bloody_tires() -> void:
 	bloody_tires_timer = 4.0
-	if skid_line:
-		skid_line.default_color = Color(0.72, 0.05, 0.05, 0.85)
+	preload("res://world/shared/combat/BloodTransferSystem.gd").splash(self)
 	_do_screen_shake(0.18)
 
 func _get_safe_exit_position() -> Vector2:
@@ -662,12 +661,25 @@ func _is_near_building_entrance() -> bool:
 
 var _boarding: Node
 
-func exit_vehicle():
+func exit_vehicle() -> void:
+	_launch.reset()
+	_tire_trail.reset()
+	if not is_driven_by_player: return
+	preload("res://VehicleBoarding.gd").start_exit(self, get_tree().get_first_node_in_group("player"))
+
+func force_exit_vehicle() -> void:
+	# Lifecycle cleanup (death/scene travel) cannot leave a pending animation.
+	if not is_driven_by_player: return
+	if is_instance_valid(_boarding): _boarding.cancel()
+	_complete_exit_vehicle(_get_safe_exit_position())
+
+func _complete_exit_vehicle(exit_position: Vector2) -> void:
 	if not is_driven_by_player:
 		return
-	if is_instance_valid(_boarding): _boarding.cancel()
+	preload("res://VehicleBoarding.gd").clear_occupant(self)
 	var camera_view := preload("res://DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = false
+	if camera: camera.enabled = false
 	_clear_headlight_override()
 	velocity = Vector2.ZERO
 	is_boosting = false
@@ -677,11 +689,10 @@ func exit_vehicle():
 	if radio_audio: radio_audio.stop()
 	_apply_headlight_state()
 	
-	var exit_position := _get_safe_exit_position()
-	_animate_car_door(-1.0 if to_local(exit_position).y <= 0 else 1.0)
 	
 	var player = get_tree().get_first_node_in_group("player")
 	if player:
+		player.set_meta("north_access_lower",bool(get_meta("north_access_lower",false)))
 		player.global_position = exit_position
 		player.velocity = Vector2.ZERO
 		player.reset_physics_interpolation()
@@ -722,7 +733,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	player_body.reset_physics_interpolation()
 	
 	# Animação visual da porta abrindo e batendo
-	_animate_car_door(entry_side, 0.95 if entry_side > 0 else 0.6)
+	_animate_car_door(entry_side, preload("res://VehicleBoarding.gd").duration_for(self, entry_side) - 0.60)
 	
 	player_body.hide()
 	player_body.set_physics_process(false)
@@ -750,6 +761,7 @@ func _animate_car_door(side: float = -1.0, hold_seconds: float = 0.42) -> void:
 	_door_visual.play(body_color, side, hold_seconds)
 
 func take_damage(amount: int, _is_player_attacker: bool = false):
+	if is_exploded or amount <= 0: return
 	health -= amount
 	if health < 75:
 		sprite.modulate = Color(0.8, 0.8, 0.8) # Levemente arranhado/sujo
@@ -758,36 +770,56 @@ func take_damage(amount: int, _is_player_attacker: bool = false):
 		smoke_emitter.color = Color(0.5, 0.5, 0.5, 0.8) # Fumaça branca/cinza
 	if health <= 25:
 		sprite.modulate = Color(0.5, 0.5, 0.5) # Bem amassado/sujo
-		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.9) # Fumaça preta
-		smoke_emitter.amount = 60 # Fumaça densa
+		smoke_emitter.color = Color(0.65, 0.65, 0.68, 0.85) # Fumaça preta
+		smoke_emitter.amount = 20 # Fumaça densa
 	
 	if health <= 0:
 		health = 0
 		is_broken = true
+		if max_speed > 0.0: set_meta("speed_before_destruction",max_speed)
 		max_speed = 0.0
+		if has_meta("mountain_falling"):
+			# The wreck is below the road, outside the emergency service network.
+			_combustion_epoch += 1
+			is_exploding = false
+			is_exploded = true
+			if flame_particles: flame_particles.emitting = false
+			if smoke_emitter: smoke_emitter.emitting = false
+			set_meta("cliff_collision_layer", collision_layer)
+			set_meta("cliff_collision_mask", collision_mask)
+			collision_layer = 0
+			collision_mask = 0
+			hide()
+			_apply_headlight_state()
+			return
 		if not is_exploding and not is_exploded:
+			set_meta("explosion_player_caused", _is_player_attacker)
 			_start_combustion_countdown()
 		_dispatch_fire_truck()
 
 var is_exploding: bool = false
 var is_exploded: bool = false
+var _combustion_epoch := 0
 
 const COLLISION_DAMAGE_COOLDOWN_MS := 650
 var _last_collision_damage_ms: int = -999999
 
 func _start_combustion_countdown() -> void:
 	if is_exploding or is_exploded: return
+	set_meta("service_complete", false)
+	_combustion_epoch += 1
+	var epoch := _combustion_epoch
 	is_exploding = true
 	if flame_particles: flame_particles.emitting = true
 	if smoke_emitter:
 		smoke_emitter.emitting = true
-		smoke_emitter.color = Color(0.1, 0.1, 0.1, 0.95)
-		smoke_emitter.amount = 65
+		smoke_emitter.color = Color(0.65, 0.65, 0.68, 0.85)
+		smoke_emitter.amount = 20
 	# O jogador NÃO é expulso automaticamente aqui: ele tem 3.2s para saltar com F/Enter!
 		
 	# Contagem para a grande explosão (3.2s)
 	await get_tree().create_timer(3.2).timeout
-	if not is_exploded and health <= 0:
+	if epoch == _combustion_epoch and is_exploding and not is_exploded and health <= 0:
 		_explode()
 
 func _explode() -> void:
@@ -800,7 +832,7 @@ func _explode() -> void:
 	# Se o jogador ainda estiver no veículo na detonação final, ele é ejetado e toma o dano da explosão
 	if is_driven_by_player:
 		var player_node = get_tree().get_first_node_in_group("player")
-		exit_vehicle()
+		force_exit_vehicle()
 		if is_instance_valid(player_node) and player_node.has_method("take_damage"):
 			player_node.take_damage(100) # Dano crítico de explosão
 	
@@ -814,76 +846,7 @@ func _explode() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 	
-	# 2. Bola de fogo e detonação intensa
-	var fireball := CPUParticles2D.new()
-	fireball.global_position = global_position
-	fireball.emitting = true
-	fireball.one_shot = true
-	fireball.explosiveness = 0.98
-	fireball.amount = 45
-	fireball.lifetime = 1.0
-	fireball.spread = 180.0
-	fireball.initial_velocity_min = 160.0
-	fireball.initial_velocity_max = 420.0
-	fireball.gravity = Vector2(0, 120)
-	fireball.scale_amount_min = 50.0 / 64.0
-	fireball.scale_amount_max = 120.0 / 64.0
-	fireball.color = Color(1.0, 0.48, 0.08, 0.95)
-	fireball.texture = _make_soft_particle_texture()
-	get_parent().add_child(fireball)
-	
-	# 3. Estilhaços metálicos incandescentes
-	var shrapnel := CPUParticles2D.new()
-	shrapnel.global_position = global_position
-	shrapnel.emitting = true
-	shrapnel.one_shot = true
-	shrapnel.explosiveness = 0.95
-	shrapnel.amount = 30
-	shrapnel.lifetime = 0.9
-	shrapnel.spread = 180.0
-	shrapnel.initial_velocity_min = 200.0
-	shrapnel.initial_velocity_max = 500.0
-	shrapnel.gravity = Vector2(0, 350)
-	shrapnel.scale_amount_min = 2.0 / 64.0
-	shrapnel.scale_amount_max = 5.0 / 64.0
-	shrapnel.color = Color(1.0, 0.85, 0.3)
-	shrapnel.texture = _make_soft_particle_texture()
-	get_parent().add_child(shrapnel)
-	
-	# 4. Clarão de Luz Instantâneo
-	var flash_light := PointLight2D.new()
-	flash_light.color = Color(1.0, 0.85, 0.5)
-	flash_light.energy = 1.6 # Reduzido de 4.5: com a textura de particula nova,
-	# o valor antigo deixava a tela inteira estourada em branco/laranja.
-	var f_grad = Gradient.new()
-	f_grad.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
-	var f_tex = GradientTexture2D.new()
-	f_tex.gradient = f_grad
-	f_tex.width = 260
-	f_tex.height = 260
-	f_tex.fill = GradientTexture2D.FILL_RADIAL
-	f_tex.fill_from = Vector2(0.5, 0.5)
-	f_tex.fill_to = Vector2(1.0, 0.5)
-	flash_light.texture = f_tex
-	flash_light.global_position = global_position
-	get_parent().add_child(flash_light)
-	var fl_tween = flash_light.create_tween()
-	fl_tween.tween_property(flash_light, "energy", 0.0, 0.45)
-	fl_tween.tween_callback(flash_light.queue_free)
-	
-	# 5. Marca de Asfalto Queimado no Solo
-	var scorch := Polygon2D.new()
-	var sc_pts = PackedVector2Array()
-	var sc_count = 14
-	for k in sc_count:
-		var ang = k * TAU / sc_count
-		var rad = randf_range(34.0, 52.0)
-		sc_pts.append(Vector2(cos(ang), sin(ang)) * rad)
-	scorch.polygon = sc_pts
-	scorch.color = Color(0.04, 0.04, 0.05, 0.85)
-	scorch.global_position = global_position
-	scorch.z_index = -15
-	get_parent().add_child(scorch)
+	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 180.0, true)
 	
 	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if sprite:
@@ -896,16 +859,8 @@ func _explode() -> void:
 	_do_screen_shake(0.70)
 		
 	# 8. Onda de choque
-	var blast_radius = 210.0
-	for body in get_tree().get_nodes_in_group("damageable"):
-		if body != self and is_instance_valid(body):
-			var d = global_position.distance_to(body.global_position)
-			if d < blast_radius:
-				var blast_dir = global_position.direction_to(body.global_position)
-				if body.has_method("get_run_over"):
-					body.get_run_over(blast_dir * 550.0)
-				elif body.has_method("take_damage"):
-					body.take_damage(int(lerp(120.0, 35.0, d / blast_radius)))
+	preload("res://world/shared/combat/VehicleBlast.gd").apply(self)
+	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
 
 var _fire_truck_dispatched: bool = false
 
@@ -925,12 +880,14 @@ func _dispatch_fire_truck():
 			pool.return_vehicle(fire_truck)
 
 func extinguish_fire() -> void:
+	set_meta("service_complete", true)
+	_combustion_epoch += 1
 	_fire_truck_dispatched = false
 	is_exploding = false
 	if flame_particles: flame_particles.emitting = false
 	if smoke_emitter:
 		smoke_emitter.color = Color(0.9, 0.9, 0.9, 0.5)
-		smoke_emitter.amount = 35
+		smoke_emitter.amount = 20
 
 var damage_deformation_scale := Vector2(1.0, 1.0)
 var damage_deformation_offset := Vector2.ZERO
@@ -946,16 +903,18 @@ func _ensure_dents_container() -> void:
 
 var _last_crash_visual_ms := -999999
 
-func _apply_crash_deformation(_impact_normal: Vector2, impact_force: float, _hit_world_pos: Vector2 = Vector2.ZERO) -> void:
-	if sprite == null or impact_force < 80.0:
+func _apply_crash_deformation(_impact_normal: Vector2, impact_force: float, _hit_world_pos: Vector2 = Vector2.ZERO, is_post: bool = false) -> void:
+	if sprite == null or impact_force < (40.0 if is_post else 80.0):
 		return
 	var now := Time.get_ticks_msec()
-	if now - _last_crash_visual_ms < 650:
+	if now - _last_crash_visual_ms < (350 if is_post else 650):
 		return
 	_last_crash_visual_ms = now
+	if not is_post:
+		preload("res://world/shared/combat/WeaponEffects.gd").spawn_crash(get_parent(), _hit_world_pos, _impact_normal, impact_force)
 	# Preserve the authored body; generic polygon dents protrude beyond its silhouette.
 	sprite.modulate = sprite.modulate.lerp(Color(0.72, 0.72, 0.74), 0.08)
-	if not "body_model" in self:
+	if not "body_model" in self and not is_post:
 		_ensure_dents_container()
 		_spawn_dent_decal(to_local(_hit_world_pos),global_transform.basis_xform_inv(_impact_normal),clampf(impact_force/420.0,0,1))
 
@@ -1034,7 +993,10 @@ func _do_screen_shake(intensity: float):
 	tween.tween_property(camera, "offset", Vector2.ZERO, duration)
 
 func _update_skid_audio():
-	if not skid_audio or not skid_audio.stream: return
+	if not skid_audio: return
+	if not skid_audio.stream:
+		if skid_audio.playing: skid_audio.stop()
+		return
 	if is_skidding and not skid_audio.playing:
 		skid_audio.play()
 	elif not is_skidding and skid_audio.playing:
@@ -1102,6 +1064,8 @@ func _refresh_vehicle_sound_sets() -> void:
 			engine_audio.play()
 
 	if skid_audio:
+		if skid_audio.playing:
+			skid_audio.stop()
 		skid_audio.stream = ProceduralAudio.get_skid_stream(active_archetype_id)
 
 	if horn_audio:
@@ -1157,7 +1121,20 @@ func repair_and_repaint(new_color: Color = Color.TRANSPARENT) -> void:
 	repaint_vehicle(new_color)
 
 func repair_vehicle() -> void:
+	_launch.reset()
+	_tire_trail.reset()
+	if has_meta("cliff_collision_layer"):
+		collision_layer = get_meta("cliff_collision_layer")
+		collision_mask = get_meta("cliff_collision_mask")
+		global_position = get_meta("cliff_recovery_position", global_position)
+		reset_physics_interpolation()
+		for key in ["mountain_falling", "cliff_collision_layer", "cliff_collision_mask", "cliff_recovery_position"]:
+			remove_meta(key)
+		show()
+	_combustion_epoch += 1
 	health = max_health
+	if max_speed <= 0.0:
+		max_speed = float(get_meta("speed_before_destruction",VehicleCatalog.get_vehicle_spec(active_archetype_id).get("max_speed",600.0)))
 	is_broken = false
 	is_exploding = false
 	is_exploded = false
@@ -1170,7 +1147,7 @@ func repair_vehicle() -> void:
 		sprite.skew = 0.0
 	if smoke_emitter:
 		smoke_emitter.emitting = false
-		smoke_emitter.amount = 30
+		smoke_emitter.amount = 20
 	if flame_particles:
 		flame_particles.emitting = false
 	if rim_sparks:

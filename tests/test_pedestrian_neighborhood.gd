@@ -37,6 +37,9 @@ func _run() -> void:
 	# Um objeto pode sair da árvore entre duas consultas do mesmo tick.
 	var removed: Node2D = actors.pop_back()
 	removed.free()
+	var pedestrian := preload("res://world/shared/pedestrians/AuthoredSidewalkPedestrian.gd").new()
+	check(not pedestrian._social_neighbor(removed), "Vizinho em cache já liberado deve ser rejeitado sem erro de argumento.")
+	pedestrian.free()
 	check(not INDEX.neighbors(actors[-1], 64.0).has(removed), "Consulta não deve devolver objeto removido.")
 	actors[0].position = actors[-1].position
 	await physics_frame

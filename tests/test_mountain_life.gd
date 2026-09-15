@@ -23,7 +23,10 @@ func _run() -> void:
 	check(not weather.hail_particles.emitting and not weather.snow_blizzard_particles.emitting and not weather.visible, "changing front cannot emit inside shelter")
 	weather.advance_weather(100)
 	check(weather.storm_intensity == 0, "front fades back to calm")
-	check(get_nodes_in_group("winter_resident").size() == 25, "twenty-five winter residents present across the valley and snow stops")
+	var outdoor_residents := get_nodes_in_group("winter_resident").filter(func(n): return n.get_parent().name in [&"MountainSettlement", &"MountainExpedition"])
+	check(outdoor_residents.size() == 25, "twenty-five residents across valley and snow stops")
+	for resident in get_nodes_in_group("winter_resident"):
+		check(resident.is_in_group("damageable"), "resident participates in combat: " + String(resident.name))
 	check(get_nodes_in_group("mountain_wildlife").size() == 4, "two adults and two cubs in remote forest")
 	var bear: Node2D = get_nodes_in_group("mountain_wildlife")[0]
 	player.global_position = bear.global_position + Vector2(20,0)
@@ -45,12 +48,12 @@ func _run() -> void:
 	for i in 4: await physics_frame
 	check(entrance.request_interaction(player), "real cabin door opens")
 	await create_timer(0.4).timeout
-	for pickup_name in ["LegendaryRifleStation","HuntingKnifeStation"]:
+	for pickup_name in ["LegendaryRifleStation","HuntingKnifeStation","WoodAxeStation"]:
 		var pickup: Node2D = cabin.get_node(pickup_name)
-		check(pickup.model is Node3D and pickup.model.get_node("FloorWeapon").get_child_count() >= 5, "physical modeled weapon: "+pickup_name)
+		check(pickup.model is Node3D and pickup.model.get_node("FloorWeapon").get_child_count() >= (3 if pickup.weapon_id == "axe" else 5), "physical modeled weapon: "+pickup_name)
 		var rotation_before: float = pickup.model.rotation.y
 		await create_timer(0.15).timeout
-		check(pickup.model.rotation.y != rotation_before,"pickup rotates in occupied room")
+		check(pickup.model.rotation.y == rotation_before,"cabin pickup rests on the floor")
 		player.global_position = pickup.global_position
 		for i in 5: await physics_frame
 		check(pickup.collected and not pickup.model.visible, "proximity collects without E: "+pickup_name)
@@ -60,6 +63,19 @@ func _run() -> void:
 		check(player.world_pickups_collected.has(pickup.pickup_id),"pickup persists through JSON save")
 	var saved_world: Dictionary = root.get_node("RegionTravel").snapshot_world()
 	check(saved_world.get("interior","")=="mountain_cabin","save includes occupied room")
+	check(cabin.spawn_point.position.distance_to(cabin.project_floor(Vector2(0,3))) < 0.1, "cabin spawn remains aligned after camera interpolation")
+	var bed_polygon: PackedVector2Array = cabin.walls_body.get_node("Bed").polygon
+	check(Geometry2D.is_point_in_polygon(cabin.project_floor(Vector2(-4.8,1.8)), bed_polygon), "bed collision covers the displayed bed")
+	var shelter_axe: Node2D = manager.lumberjack_interior.get_node("WoodAxeStation")
+	player.global_position = shelter_axe.global_position
+	for i in 5: await physics_frame
+	check(shelter_axe.collected and not shelter_axe.model.visible, "lumberjack shelter axe collects by physical proximity")
+	for room in [cabin, manager.lumberjack_interior]:
+		player.global_position = room.to_global(room.project_floor(Vector2(0,3.4)))
+		for i in 4: await physics_frame
+		check(room.exit_door.request_interaction(player), "reachable exit sensor: " + String(room.interior_id))
+		await create_timer(0.4).timeout
+		check(not player.get_meta("mountain_interior", false), "exit returns player outdoors")
 	var traffic: Node = scene.get_node("MountainTraffic") if scene.has_node("MountainTraffic") else null
 	check(traffic != null and traffic.vehicles.size()==8,"mountain traffic fleet present")
 	print("MOUNTAIN LIFE FAILURES: ", failures)

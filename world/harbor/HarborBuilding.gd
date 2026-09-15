@@ -18,24 +18,17 @@ func _height_px() -> float:
 func _ready() -> void:
 	super._ready()
 	z_index = 5
-	var body := StaticBody2D.new()
-	body.name = "BuildingSolid"
-	body.collision_layer = 1
-	body.collision_mask = 0
-	for solid in get_solid_rects():
-		var collision := CollisionShape2D.new()
-		var shape := RectangleShape2D.new()
-		shape.size = solid.size
-		collision.shape = shape
-		collision.position = solid.get_center()
-		body.add_child(collision)
-	add_child(body)
+	add_to_group(&"weather_reactive_visuals")
 	_build_entrances()
+	if name == "Garage": _build_garage_exterior()
 	var mgr := get_tree().get_first_node_in_group("day_night_manager")
 	if mgr and mgr.has_signal("time_changed"):
 		mgr.connect("time_changed", func(_dark): queue_redraw())
 
 func get_solid_rects() -> Array[Rect2]:
+	if name == "MotorWorkshop":
+		# A 110px driveable bay, with side walls and a solid rear wall.
+		return [Rect2(-134,-104,79,208), Rect2(55,-104,79,208), Rect2(-55,-104,110,40)]
 	if building_kind != "l_shaped_block":
 		# Preserve every existing non-L building's collision exactly.
 		return [Rect2(-footprint*0.5+Vector2.ONE,footprint-Vector2(2,2))]
@@ -60,6 +53,7 @@ func _entrance_role() -> String:
 	return "morgue" if "iml" in building_kind else ""
 
 func _build_entrances() -> void:
+	if name == "MotorWorkshop": return # The drive-in service owns this shutter.
 	var role := _entrance_role()
 	if role.is_empty():
 		return
@@ -88,6 +82,7 @@ func _palette() -> Dictionary:
 	return colors
 
 func _draw() -> void:
+	if name == "Garage": return
 	if entrance_north:
 		draw_set_transform(Vector2.ZERO, PI)
 
@@ -101,7 +96,9 @@ func _draw() -> void:
 
 	var bounds := Rect2(-footprint * 0.5, footprint).grow(-5)
 
-	if building_kind == "corner_shop" or building_kind == "corner_diner":
+	if building_kind == "bank_branch":
+		preload("res://world/harbor/BankFacade.gd").draw_facade(self,bounds,is_dark,is_rain)
+	elif building_kind == "corner_shop" or building_kind == "corner_diner":
 		_draw_corner_shop(bounds, is_dark, is_rain)
 	elif building_kind == "rowhouse_terrace":
 		_draw_rowhouse_terrace(bounds, is_dark, is_rain)
@@ -117,140 +114,79 @@ func _draw() -> void:
 
 	draw_set_transform(Vector2.ZERO)
 
-func _draw_corner_shop(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
-	var height := 38.0
-	var r := Rect2(bounds.position + Vector2(0, height), Vector2(bounds.size.x, bounds.size.y - height))
-	var roof := Rect2(r.position + Vector2(0, -height), r.size)
-	
-	# Drop shadow
-	draw_rect(Rect2(r.position + Vector2(10, 14), r.size), Color(0.04, 0.05, 0.08, 0.42))
-	
-	# Chamfered corner on SW (position.x, end.y)
-	var chamfer := 32.0
-	var r_poly := PackedVector2Array([
-		r.position,
-		Vector2(r.end.x, r.position.y),
-		r.end,
-		Vector2(r.position.x + chamfer, r.end.y),
-		Vector2(r.position.x, r.end.y - chamfer)
-	])
-	var roof_poly := PackedVector2Array([
-		roof.position,
-		Vector2(roof.end.x, roof.position.y),
-		roof.end,
-		Vector2(roof.position.x + chamfer, roof.end.y),
-		Vector2(roof.position.x, roof.end.y - chamfer)
-	])
-	
-	# Extrusion facade walls
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(roof.position.x, roof.end.y - chamfer),
-		roof.position,
-		r.position,
-		Vector2(r.position.x, r.end.y - chamfer)
-	]), Color("#6a4538"))
-	
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(roof.position.x + chamfer, roof.end.y),
-		roof.end,
-		r.end,
-		Vector2(r.position.x + chamfer, r.end.y)
-	]), Color("#875945"))
-	
-	# Chamfered corner wall facet (faces SW directly)
-	draw_colored_polygon(PackedVector2Array([
-		Vector2(roof.position.x, roof.end.y - chamfer),
-		Vector2(roof.position.x + chamfer, roof.end.y),
-		Vector2(r.position.x + chamfer, r.end.y),
-		Vector2(r.position.x, r.end.y - chamfer)
-	]), Color("#a06a52"))
-	
-	# Roof surface
-	var roof_col := Color("#4c4441") if not is_rain else Color("#393838")
-	draw_colored_polygon(roof_poly, roof_col)
-	draw_polyline(roof_poly, Color("#262220"), 2.5)
-	
-	# Rain sheen on roof
+func _draw_shop_shell(bounds: Rect2, wall: Color, trim: Color, is_rain: bool) -> Rect2:
+	# Roof and street facade occupy separate bands inside the solid footprint.
+	var facade := Rect2(bounds.position.x, bounds.end.y - 60, bounds.size.x, 60)
+	var roof := Rect2(bounds.position, Vector2(bounds.size.x, bounds.size.y - 60))
+	draw_rect(Rect2(bounds.position + Vector2(5, 7), bounds.size), Color(0.04, 0.05, 0.07, 0.28))
+	draw_rect(facade, wall)
+	draw_rect(Rect2(facade.position.x, facade.end.y - 9, facade.size.x, 9), trim.darkened(0.3))
+	for x in [facade.position.x, facade.end.x - 5]:
+		draw_rect(Rect2(x, facade.position.y, 5, facade.size.y), trim)
+	draw_rect(roof, Color("#353e40") if is_rain else Color("#505653"))
+	draw_rect(roof.grow(-3), Color("#737a70"), false, 1.0)
+	for y in range(int(roof.position.y + 17), int(roof.end.y - 7), 18):
+		draw_line(Vector2(roof.position.x + 7, y), Vector2(roof.end.x - 7, y), Color(0.1, 0.15, 0.15, 0.2), 1)
+	draw_rect(Rect2(roof.position.x, roof.end.y - 4, roof.size.x, 4), trim)
+	var unit := Rect2(roof.position + Vector2(17, 15), Vector2(29, 22))
+	draw_rect(Rect2(unit.position + Vector2(3, 3), unit.size), Color(0, 0, 0, 0.25))
+	draw_rect(unit, Color("#323b3c"))
+	draw_rect(unit.grow(-2), Color("#8b9390"))
+	for y in range(4, 19, 4):
+		draw_line(unit.position + Vector2(4, y), unit.position + Vector2(25, y), Color("#465352"), 1)
+	var skylight := Rect2(roof.end.x - 60, roof.position.y + 17, 39, 24)
+	draw_rect(skylight, Color("#a1a89a"))
+	draw_rect(skylight.grow(-3), Color("#47656b"))
+	draw_line(skylight.get_center() - Vector2(0, 9), skylight.get_center() + Vector2(0, 9), Color("#8c9c95"), 2)
 	if is_rain:
-		draw_line(roof.position + Vector2(15, 15), Vector2(roof.end.x - 20, roof.position.y + 15), Color(0.7, 0.85, 1.0, 0.22), 2.0)
-		draw_line(roof.position + Vector2(25, 30), Vector2(roof.end.x - 40, roof.position.y + 30), Color(0.7, 0.85, 1.0, 0.15), 1.5)
-	
-	# Rooftop mechanical units
-	var hvac_pos := roof.get_center() + Vector2(20, -12)
-	draw_rect(Rect2(hvac_pos, Vector2(34, 24)), Color("#323538"))
-	draw_rect(Rect2(hvac_pos + Vector2(2, 2), Vector2(30, 20)), Color("#50565a"))
-	for y in range(4, 20, 4):
-		draw_line(hvac_pos + Vector2(4, y), hvac_pos + Vector2(30, y), Color("#272a2c"), 1.5)
-	
-	# Grease extraction flue stack
-	var flue_pos := roof.position + Vector2(45, 24)
-	draw_circle(flue_pos + Vector2(3, 4), 11, Color(0.05, 0.05, 0.05, 0.35))
-	draw_circle(flue_pos, 10, Color("#3a3e42"))
-	draw_circle(flue_pos, 8, Color("#60666b"))
-	draw_circle(flue_pos, 4, Color("#222426"))
-	
-	# Roof skylight
-	draw_rect(Rect2(roof.position + Vector2(roof.size.x * 0.5 - 20, 15), Vector2(38, 20)), Color("#2d3336"))
-	draw_rect(Rect2(roof.position + Vector2(roof.size.x * 0.5 - 18, 17), Vector2(34, 16)), Color("#59828e") if not is_dark else Color("#a87b32"))
-	
-	# Ground-level facade storefronts & windows
-	var win_color := Color("#ffdd88") if is_dark else Color("#56848c")
-	
-	# South facade display windows
-	var win_y := r.end.y - 28.0
-	for wx in [r.position.x + chamfer + 16.0, r.position.x + chamfer + 62.0, r.position.x + chamfer + 108.0]:
-		if wx + 36.0 < r.end.x - 8.0:
-			draw_rect(Rect2(wx, win_y, 36, 22), Color("#211915"))
-			draw_rect(Rect2(wx + 2, win_y + 2, 32, 18), win_color)
-			draw_line(Vector2(wx + 18, win_y + 2), Vector2(wx + 18, win_y + 20), Color("#211915"), 1.5)
-			if is_dark:
-				# Pendant lamp glow inside
-				draw_circle(Vector2(wx + 18, win_y + 7), 3, Color(1.0, 1.0, 0.8, 0.8))
-	
-	# Chamfered corner entrance door
-	var door_c := (Vector2(r.position.x + chamfer, r.end.y) + Vector2(r.position.x, r.end.y - chamfer)) * 0.5
-	draw_rect(Rect2(door_c - Vector2(10, 15), Vector2(20, 26)), Color("#2b1e19"))
-	draw_rect(Rect2(door_c - Vector2(8, 13), Vector2(16, 22)), Color("#4a332a"))
-	draw_rect(Rect2(door_c - Vector2(6, 11), Vector2(12, 12)), win_color)
-	draw_circle(door_c + Vector2(4, 2), 2, Color("#d4aa50")) # Brass handle
-	
-	# Striped wraparound corner awning canopy
-	var awning_p := PackedVector2Array([
-		Vector2(r.position.x - 6, r.end.y - chamfer - 2),
-		Vector2(r.position.x + chamfer + 8, r.end.y + 6),
-		Vector2(r.position.x + chamfer + 4, r.end.y - 4),
-		Vector2(r.position.x - 2, r.end.y - chamfer - 8)
-	])
-	draw_colored_polygon(awning_p, Color("#d97845"))
-	for step in 5:
-		var t0 := float(step) / 5.0
-		var t1 := float(step + 0.5) / 5.0
-		var pa := (awning_p[0] as Vector2).lerp(awning_p[1], t0)
-		var pb := (awning_p[3] as Vector2).lerp(awning_p[2], t0)
-		var pc := (awning_p[0] as Vector2).lerp(awning_p[1], t1)
-		var pd := (awning_p[3] as Vector2).lerp(awning_p[2], t1)
-		draw_colored_polygon(PackedVector2Array([pa, pb, pd, pc]), Color("#f4e8cf"))
-	
-	# Vintage retro roof emblem (replacing text "DINER" with iconic coffee cup diamond plaque)
-	var sign_pos := Vector2(roof.position.x + 14, roof.end.y - chamfer + 4)
-	var emblem := PackedVector2Array([
-		sign_pos + Vector2(22, -8),
-		sign_pos + Vector2(44, 1),
-		sign_pos + Vector2(22, 10),
-		sign_pos + Vector2(0, 1)
-	])
-	draw_colored_polygon(emblem, Color("#1f1f22"))
-	var emblem_border := Color("#ff6b4a") if not is_dark else Color("#ff8866")
-	draw_polyline(emblem, emblem_border, 1.5)
-	# Coffee cup icon silhouette inside
-	draw_rect(Rect2(sign_pos + Vector2(17, -2), Vector2(10, 6)), Color("#f4e8cf"))
-	draw_arc(sign_pos + Vector2(27, 1), 3, -PI * 0.5, PI * 0.5, 8, Color("#f4e8cf"), 1.2)
-	# Rising steam curls
-	draw_line(sign_pos + Vector2(20, -3), sign_pos + Vector2(20, -6), Color("#ffd4a8"), 1.0)
-	draw_line(sign_pos + Vector2(24, -3), sign_pos + Vector2(24, -6), Color("#ffd4a8"), 1.0)
-	if is_dark:
-		# Subtle, gentle neon halo (controlled, not overblown)
-		draw_circle(sign_pos + Vector2(22, 1), 14, Color(1.0, 0.45, 0.2, 0.08))
+		draw_line(roof.position + Vector2(10, 9), roof.position + Vector2(roof.size.x - 10, 9), Color(0.7, 0.85, 1, 0.18), 1)
+	return facade
+
+func _draw_shop_awning(rect: Rect2, fabric: Color) -> void:
+	# A shallow horizontal canopy above the glazing; never across the doorway.
+	draw_rect(Rect2(rect.position + Vector2(0, 3), rect.size + Vector2(0, 2)), Color(0, 0, 0, 0.18))
+	var canopy := PackedVector2Array([rect.position + Vector2(3, 0), Vector2(rect.end.x - 3, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)])
+	draw_colored_polygon(canopy, fabric)
+	for i in 12:
+		if i % 2 == 0: continue
+		var a := float(i) / 12.0
+		var b := float(i + 1) / 12.0
+		draw_colored_polygon(PackedVector2Array([canopy[0].lerp(canopy[1], a), canopy[0].lerp(canopy[1], b), canopy[3].lerp(canopy[2], b), canopy[3].lerp(canopy[2], a)]), Color("#e9dfc7"))
+	draw_rect(Rect2(rect.position.x, rect.end.y, rect.size.x, 3), fabric.darkened(0.15))
+	draw_line(rect.position + Vector2(3, 0), Vector2(rect.end.x - 3, rect.position.y), fabric.lightened(0.25), 1)
+
+func _draw_shop_door(rect: Rect2, glass: Color, trim: Color) -> void:
+	draw_rect(rect, trim.darkened(0.65))
+	draw_rect(rect.grow(-2), trim)
+	draw_rect(Rect2(rect.position + Vector2(4, 3), Vector2(rect.size.x - 8, rect.size.y - 11)), glass)
+	draw_line(rect.position + Vector2(6, 6), rect.position + Vector2(6, rect.size.y - 14), Color(0.85, 0.95, 1, 0.3), 1)
+	draw_line(rect.end - Vector2(5, 13), rect.end - Vector2(5, 8), Color("#e9d7a6"), 1.5)
+	draw_rect(Rect2(rect.position.x - 2, rect.end.y, rect.size.x + 4, 2), Color("#b8b5a5"))
+
+func _draw_corner_shop(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
+	var facade := _draw_shop_shell(bounds, Color("#ac7c5e"), Color("#d1b899"), is_rain)
+	var glass := Color("#c99f63") if is_dark else Color("#496c70")
+	# Centered entrance aligns with the terrace's pedestrian opening.
+	var door := Rect2(-13, facade.end.y - 33, 26, 31)
+	_draw_shop_door(door, glass, Color("#4d6558"))
+	for window in [Rect2(facade.position.x + 13, door.position.y, facade.size.x * 0.5 - 34, 25), Rect2(21, door.position.y, facade.size.x * 0.5 - 34, 25)]:
+		draw_rect(window, Color("#3b332b"))
+		draw_rect(window.grow(-2), glass)
+		for part in [0.33, 0.66]:
+			var x: float = window.position.x + window.size.x * part
+			draw_line(Vector2(x, window.position.y + 2), Vector2(x, window.end.y - 2), Color("#cab79a"), 1.5)
+		draw_rect(Rect2(window.position.x - 2, window.end.y, window.size.x + 4, 2), Color("#e2c5a0"))
+		# Pendant and counter silhouettes behind the glass.
+		draw_line(window.get_center() - Vector2(0, 10), window.get_center() - Vector2(0, 5), Color("#453c31"), 1)
+		draw_circle(window.get_center() - Vector2(0, 4), 2, Color("#efcc83"))
+		draw_line(Vector2(window.position.x + 3, window.end.y - 6), Vector2(window.end.x - 3, window.end.y - 6), Color("#765139"), 2)
+	var awning_color := Color("#477f7d") if business_name == "TIDELINE" else (Color("#68784a") if business_name == "EARLY SHIFT" else Color("#a65338"))
+	_draw_shop_awning(Rect2(facade.position.x + 8, facade.position.y + 13, facade.size.x - 16, 9), awning_color)
+	var sign := Rect2(-43, facade.position.y + 1, 86, 11)
+	draw_rect(sign, Color("#35483e"))
+	draw_rect(sign.grow(-1), Color("#cdb890"), false, 0.6)
+	var sign_name := business_name if not business_name.is_empty() else "ANCHOR CAFE"
+	draw_string(ThemeDB.fallback_font, sign.position + Vector2(7, 8), sign_name, HORIZONTAL_ALIGNMENT_CENTER, 72, 8, Color("#f0dfb7"))
 
 func _draw_rowhouse_terrace(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
 	var is_east := name.ends_with("East") or "East" in name
@@ -295,21 +231,24 @@ func _draw_rowhouse_terrace(bounds: Rect2, is_dark: bool, is_rain: bool) -> void
 		var bx: float = bounds.position.x + bay.offset
 		var bw: float = bay.w
 		var bh: float = bay.h
-		var by: float = bounds.position.y + bh
-		var bsize_y: float = bounds.size.y - bh
+		var by: float = bounds.end.y - bh - 26.0
+		var bsize_y: float = bh + 26.0
 		
 		var r := Rect2(bx, by, bw, bsize_y)
-		var roof := Rect2(bx, by - bh, bw, bsize_y)
+		var roof := Rect2(bx, bounds.position.y, bw, by - bounds.position.y)
 		
 		# Shadow
-		draw_rect(Rect2(r.position + Vector2(7, 10), r.size), Color(0.04, 0.05, 0.08, 0.32))
+		draw_rect(Rect2(bx + 3, bounds.position.y + 3, bw, by + bh - bounds.position.y), Color(0.04, 0.05, 0.08, 0.22))
 		
 		# Facade wall
 		draw_rect(Rect2(r.position.x, r.position.y, r.size.x, bh), bay.wall)
+		_draw_masonry_volume(Rect2(bx, by, bw, bh), bay.wall, bay.trim)
 		
 		# Roof surface with subtle texture
 		draw_rect(roof, bay.roof if not is_rain else bay.roof.darkened(0.12))
 		draw_rect(roof, Color("#212529"), false, 1.5)
+		for seam_y in range(int(roof.position.y + 16), int(roof.end.y - 4), 18):
+			draw_line(Vector2(bx + 3, seam_y), Vector2(bx + bw - 3, seam_y), Color(0.75, 0.79, 0.75, 0.09), 1)
 		
 		# Roof cornice with dentil brackets
 		var cornice_y := by
@@ -334,7 +273,7 @@ func _draw_rowhouse_terrace(bounds: Rect2, is_dark: bool, is_rain: bool) -> void
 		
 		# Windows with varied division, curtains and lighting
 		var win_color := Color("#ffdd88") if is_dark else Color("#527a85")
-		var floor1_y := r.position.y + 10.0
+		var floor1_y := r.position.y + 7.0
 		for wx in [bx + 14.0, bx + bw - 44.0]:
 			# Window lintel & sill
 			draw_rect(Rect2(wx - 2, floor1_y - 4, 30, 4), bay.trim)
@@ -393,6 +332,17 @@ func _draw_rowhouse_terrace(bounds: Rect2, is_dark: bool, is_rain: bool) -> void
 			draw_rect(Rect2(door_x + 25, stoop_y + 5, 4, 4), Color("#dfd7c8"))
 
 
+func _draw_masonry_volume(wall: Rect2, brick: Color, trim: Color) -> void:
+	for row in range(int(wall.size.y / 7.0)):
+		var y := wall.position.y + row * 7.0
+		draw_line(Vector2(wall.position.x + 3, y), Vector2(wall.end.x - 3, y), brick.darkened(0.16), 1)
+		for x in range(int(wall.position.x + 5 + (row % 2) * 9), int(wall.end.x - 3), 18):
+			draw_line(Vector2(x, y), Vector2(x, minf(y + 7, wall.end.y)), brick.darkened(0.13), 1)
+	draw_rect(Rect2(wall.end.x - 5, wall.position.y, 5, wall.size.y), brick.darkened(0.24))
+	draw_rect(Rect2(wall.position.x, wall.position.y, wall.size.x, 4), Color(0.06, 0.05, 0.04, 0.28))
+	draw_rect(Rect2(wall.position.x, wall.end.y - 4, wall.size.x, 4), trim.darkened(0.35))
+	draw_line(Vector2(wall.position.x, wall.end.y), wall.end, Color(0.04, 0.04, 0.03, 0.45), 2)
+
 func _draw_l_shaped_block(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
 	var height := 44.0
 	# L-shape: Main Wing occupies north, East Wing extends south
@@ -404,20 +354,22 @@ func _draw_l_shaped_block(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
 	var wing_d := bounds.size.y - main_d
 	
 	# Drop shadows
-	draw_rect(Rect2(bounds.position + Vector2(10, height + 12), Vector2(main_w, main_d - height)), Color(0.04, 0.05, 0.08, 0.38))
-	draw_rect(Rect2(Vector2(wing_x + 10, wing_y + height + 12), Vector2(wing_w, wing_d - height)), Color(0.04, 0.05, 0.08, 0.38))
+	draw_rect(Rect2(bounds.position + Vector2(3, 4), Vector2(main_w, main_d)), Color(0.04, 0.05, 0.08, 0.25))
+	draw_rect(Rect2(Vector2(wing_x + 3, wing_y + 4), Vector2(wing_w, wing_d)), Color(0.04, 0.05, 0.08, 0.25))
 	
 	# Main wing volumes
-	var r_main := Rect2(bounds.position.x, bounds.position.y + height, main_w, main_d - height)
+	var r_main := Rect2(bounds.position.x, bounds.position.y + main_d - height, main_w, height)
 	var roof_main := Rect2(bounds.position.x, bounds.position.y, main_w, main_d - height)
 	draw_rect(r_main, Color("#755749")) # Brick facade
+	_draw_masonry_volume(r_main, Color("#755749"), Color("#aa9680"))
 	draw_rect(roof_main, Color("#47423f"))
 	draw_rect(roof_main, Color("#262220"), false, 2.0)
 	
 	# East wing volumes
-	var r_wing := Rect2(wing_x, wing_y + height, wing_w, wing_d - height)
+	var r_wing := Rect2(wing_x, wing_y + wing_d - height, wing_w, height)
 	var roof_wing := Rect2(wing_x, wing_y, wing_w, wing_d - height)
 	draw_rect(r_wing, Color("#6e5043"))
+	_draw_masonry_volume(r_wing, Color("#6e5043"), Color("#aa9680"))
 	draw_rect(roof_wing, Color("#443f3c"))
 	draw_rect(roof_wing, Color("#262220"), false, 2.0)
 	
@@ -461,86 +413,28 @@ func _draw_l_shaped_block(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
 	draw_line(Vector2(dock_x + 20, dock_y + 2), Vector2(dock_x + 20, dock_y + 22), Color("#1c1e20"), 2.0)
 
 func _draw_laundromat(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
-	var height := 36.0
-	var r := Rect2(bounds.position + Vector2(0, height), Vector2(bounds.size.x, bounds.size.y - height))
-	var roof := Rect2(r.position + Vector2(0, -height), r.size)
-	
-	# Drop shadow
-	draw_rect(Rect2(r.position + Vector2(8, 12), r.size), Color(0.04, 0.05, 0.08, 0.38))
-	
-	# Facade wall: pale celadon plaster with glazed seafoam subway tile wainscot
-	draw_rect(r, Color("#bccac7"))
-	draw_rect(Rect2(r.position.x, r.end.y - 18, r.size.x, 18), Color("#2a4e52"))
-	
-	# Roof surface and parapet
-	var roof_col := Color("#414447") if not is_rain else Color("#323538")
-	draw_rect(roof, roof_col)
-	draw_rect(roof, Color("#222527"), false, 2.0)
-	if is_rain:
-		draw_line(roof.position + Vector2(10, 12), Vector2(roof.end.x - 10, roof.position.y + 12), Color(0.7, 0.85, 1.0, 0.2), 1.5)
-	
-	# Rooftop dryer exhaust vents
-	var vent1 := roof.position + Vector2(30, 22)
-	draw_circle(vent1 + Vector2(2, 3), 9, Color(0.05, 0.05, 0.05, 0.3))
-	draw_circle(vent1, 8, Color("#555c61"))
-	draw_circle(vent1, 5, Color("#7b858c"))
-	draw_circle(vent1, 2, Color("#282b2d"))
-	var vent2 := roof.position + Vector2(58, 22)
-	draw_circle(vent2 + Vector2(2, 3), 9, Color(0.05, 0.05, 0.05, 0.3))
-	draw_circle(vent2, 8, Color("#555c61"))
-	draw_circle(vent2, 5, Color("#7b858c"))
-	draw_circle(vent2, 2, Color("#282b2d"))
-	
-	# Commercial HVAC / condenser box
-	var ac_pos := roof.get_center() + Vector2(14, -6)
-	draw_rect(Rect2(ac_pos, Vector2(28, 20)), Color("#3b4044"))
-	draw_rect(Rect2(ac_pos + Vector2(2, 2), Vector2(24, 16)), Color("#565d63"))
-	for ly in range(4, 16, 4):
-		draw_line(ac_pos + Vector2(4, ly), ac_pos + Vector2(24, ly), Color("#272a2c"), 1.2)
-	
-	# Storefront display window showing front-load washing machines
-	var win_color := Color("#d6f2f7") if not is_dark else Color("#ffea9f")
-	var win_rect := Rect2(r.position.x + 14, r.end.y - 34, 92, 26)
-	draw_rect(win_rect, Color("#181e20"))
-	draw_rect(win_rect.grow(-2), win_color.darkened(0.1))
-	for m in 3:
-		var mx := win_rect.position.x + 16.0 + float(m) * 28.0
-		var my := win_rect.position.y + 13.0
-		draw_rect(Rect2(mx - 11, my - 10, 22, 20), Color("#eef5f4"))
-		draw_rect(Rect2(mx - 11, my - 10, 22, 20), Color("#7a8f91"), false, 1.0)
-		draw_circle(Vector2(mx, my), 7.5, Color("#445254"))
-		draw_circle(Vector2(mx, my), 6.5, Color("#889ea0"))
-		draw_circle(Vector2(mx, my), 5.0, Color("#3a728a") if not is_dark else Color("#d49842"))
-		draw_arc(Vector2(mx, my), 3.5, 0.2, 1.8, 6, Color(1, 1, 1, 0.6), 1.2)
-	
-	# Commercial glazed entry door
-	var door_x := r.end.x - 44.0
-	var door_y := r.end.y - 36.0
-	draw_rect(Rect2(door_x, door_y, 30, 34), Color("#20282b"))
-	draw_rect(Rect2(door_x + 2, door_y + 2, 26, 30), Color("#324447"))
-	draw_rect(Rect2(door_x + 4, door_y + 4, 22, 18), win_color)
-	draw_line(Vector2(door_x + 8, door_y + 22), Vector2(door_x + 8, door_y + 28), Color("#d4d9db"), 2.0)
-	
-	# Drop Awning Canopy in turquoise and cream stripes
-	var awn_p := PackedVector2Array([
-		Vector2(r.position.x + 8, r.end.y - 28),
-		Vector2(r.end.x - 8, r.end.y - 28),
-		Vector2(r.end.x - 4, r.end.y - 18),
-		Vector2(r.position.x + 4, r.end.y - 18)
-	])
-	draw_colored_polygon(awn_p, Color("#244a5e"))
-	for s in 10:
-		if s % 2 == 1:
-			var t0 := float(s) / 10.0
-			var t1 := float(s + 1) / 10.0
-			var p0: Vector2 = awn_p[0].lerp(awn_p[1], t0)
-			var p1: Vector2 = awn_p[0].lerp(awn_p[1], t1)
-			var p2: Vector2 = awn_p[3].lerp(awn_p[2], t1)
-			var p3: Vector2 = awn_p[3].lerp(awn_p[2], t0)
-			draw_colored_polygon(PackedVector2Array([p0, p1, p2, p3]), Color("#f0ede6"))
-	
-	if is_dark:
-		draw_circle(win_rect.get_center(), 20.0, Color(1.0, 0.9, 0.6, 0.08))
+	var facade := _draw_shop_shell(bounds, Color("#b7c5b8"), Color("#69938a"), is_rain)
+	var glass := Color("#c8c68c") if is_dark else Color("#709fa3")
+	var door := Rect2(-12, facade.end.y - 33, 24, 31)
+	_draw_shop_door(door, glass, Color("#426c68"))
+	for window in [Rect2(facade.position.x + 10, door.position.y, facade.size.x * 0.5 - 28, 26), Rect2(18, door.position.y, facade.size.x * 0.5 - 28, 26)]:
+		draw_rect(window, Color("#304c4d"))
+		draw_rect(window.grow(-2), glass.darkened(0.15))
+		for i in 2:
+			var center := Vector2(window.position.x + window.size.x * (0.26 + i * 0.48), window.get_center().y + 2)
+			var machine := Rect2(center - Vector2(9, 10), Vector2(18, 20))
+			draw_rect(machine, Color("#d2dbcd"))
+			draw_rect(Rect2(machine.position, Vector2(18, 4)), Color("#a9bab2"))
+			draw_circle(center + Vector2(0, 2), 6, Color("#6d8886"))
+			draw_circle(center + Vector2(0, 2), 4.3, Color("#284d5b"))
+			draw_arc(center + Vector2(0, 2), 3, -2.7, -1.0, 8, Color("#adc8c7"), 0.8)
+			draw_circle(machine.position + Vector2(14, 2), 0.8, Color("#415e57"))
+		draw_rect(Rect2(window.position.x - 1, window.end.y, window.size.x + 2, 2), Color("#dbe1ce"))
+	_draw_shop_awning(Rect2(facade.position.x + 7, facade.position.y + 13, facade.size.x - 14, 9), Color("#366f70"))
+	var sign := Rect2(-36, facade.position.y + 1, 72, 11)
+	draw_rect(sign, Color("#315d5d"))
+	draw_rect(sign.grow(-1), Color("#a9c3af"), false, 0.6)
+	draw_string(ThemeDB.fallback_font, sign.position + Vector2(4, 8), "WASH / DRY", HORIZONTAL_ALIGNMENT_CENTER, 64, 8, Color("#e9e4c8"))
 
 func _draw_artisan_workshop(bounds: Rect2, is_dark: bool, is_rain: bool) -> void:
 	var height := 40.0
@@ -629,3 +523,33 @@ func _draw_ammunation_identity(_roof: Rect2, facade: Rect2, p: Dictionary) -> vo
 	var icon := facade.get_center() + Vector2(0, -14)
 	draw_rect(Rect2(icon - Vector2(4, 5), Vector2(8, 12)), Color("#d8ad45"))
 	draw_colored_polygon(PackedVector2Array([icon + Vector2(-4, -5), icon + Vector2(4, -5), icon + Vector2(0, -12)]), p.accent)
+
+func _build_garage_exterior() -> void:
+	var old := get_node_or_null("BuildingSolid")
+	if old != null:
+		remove_child(old)
+		old.queue_free()
+	var exterior := preload("res://world/mountain_pass/MountainStaticModelView.gd").new()
+	exterior.name = "GarageExterior3D"
+	add_child(exterior)
+	exterior.build_view(preload("res://world/harbor/HarborGarageExterior3D.gd"),24.0,20.0,Vector3(0,2,0),Vector3(0,24,18),Vector2i(960,800))
+	var body := StaticBody2D.new()
+	body.name = "BuildingSolid"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.add_to_group("building_blocker")
+	body.add_to_group("building_geodata")
+	exterior.add_child(body)
+	preload("res://world/shared/interiors/InteriorSolidProjection.gd").build(exterior.model,body,exterior.project_floor)
+	var bounds: Array[Rect2] = []
+	for shape in body.get_children():
+		var rect := Rect2(shape.polygon[0],Vector2.ZERO)
+		for point in shape.polygon: rect = rect.expand(point)
+		bounds.append(rect)
+	body.set_meta("solid_rects_local",bounds)
+	preload("res://world/shared/interiors/ExteriorOcclusion.gd").attach(exterior.sprite_3d,footprint.y*.5)
+	var sign := Label.new()
+	sign.text = business_name
+	sign.position = exterior.project_point(Vector3(-4.5,3.9,7.85))
+	sign.add_theme_font_size_override("font_size",12)
+	exterior.add_child(sign)

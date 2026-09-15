@@ -9,17 +9,19 @@ var building := false
 var ready_for_crossing := false
 var current_region := "harbor"
 var _elapsed := 0.0
-var _sleeping_traffic: Dictionary = {}
+var population_activity := preload("res://world/shared/traffic/PopulationActivity.gd").new()
 var _mountain_layers: Array[CanvasLayer] = []
+var _mountain_layer_visibility: Dictionary = {}
+var _mountain_layers_selected := false
 var handoff_max_displacement := 0.0
 
 func _ready() -> void:
 	add_to_group("continuous_world")
-	ResourceLoader.load_threaded_request(MOUNTAIN_SCENE)
 
 func ensure_mountain() -> void:
 	if building or ready_for_crossing: return
 	building = true
+	ResourceLoader.load_threaded_request(MOUNTAIN_SCENE)
 	while ResourceLoader.load_threaded_get_status(MOUNTAIN_SCENE) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 		await get_tree().process_frame
 	var resource := ResourceLoader.load_threaded_get(MOUNTAIN_SCENE) as PackedScene
@@ -41,6 +43,8 @@ func ensure_mountain() -> void:
 		await get_tree().process_frame
 	for node in mountain.find_children("*", "CanvasLayer", true, false):
 		_mountain_layers.append(node)
+		_mountain_layer_visibility[node] = node.visible
+		node.hide()
 	ready_for_crossing = true
 	for lane in get_tree().get_nodes_in_group("unified_traffic_lane"):
 		var road_id := String(lane.get_meta("traffic_road_id", ""))
@@ -80,54 +84,37 @@ func _update_region() -> void:
 	mountain.process_mode = Node.PROCESS_MODE_INHERIT if nearby else Node.PROCESS_MODE_DISABLED
 	mountain.region_selected = selected
 	mountain.cold_controller.set_process(selected)
-	mountain.cold_hud.visible = selected
 	if not selected: mountain.storm_manager.set_sheltered(true)
 	mountain.parallax.visible = selected
-	for layer in _mountain_layers: layer.visible = selected
+	# Region transitions suspend layers; each menu still owns its open/closed state.
+	# Forcing every layer visible on every tick used to open both stores on arrival.
+	if selected != _mountain_layers_selected:
+		for layer in _mountain_layers:
+			if selected:
+				layer.visible = bool(_mountain_layer_visibility.get(layer, false))
+			else:
+				_mountain_layer_visibility[layer] = layer.visible
+				layer.hide()
+		_mountain_layers_selected = selected
+	mountain.cold_hud.visible = selected
 	var expedition := mountain.get_node("MountainExpedition")
 	expedition.set_process(selected)
 	expedition.set_process_unhandled_key_input(selected)
-	get_parent().weather.set_interior_mode(selected or bool(player.get_meta("harbor_interior", false)))
+	get_parent().weather.set_interior_mode(bool(player.get_meta("mountain_interior", false)) or bool(player.get_meta("harbor_interior", false)))
 	if not selected:
 		var camera := get_viewport().get_camera_2d()
 		if camera and camera.has_meta("mountain_zoom"): camera.remove_meta("mountain_zoom")
 
-var _sleeping_walkers: Dictionary = {}
-
 func _budget_traffic(point: Vector2) -> void:
-	var area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(get_parent(),point)
-	var walk_area := preload("res://world/shared/traffic/CameraSimulationArea.gd").visible_area(get_parent(),point,preload("res://world/shared/traffic/CameraSimulationArea.gd").PEDESTRIAN_MARGIN)
-	# Keep parked/driven cars and live pursuit state. Distant ambient followers
-	# stop simulation, retaining their instances and damage rather than respawning.
-	for car in get_tree().get_nodes_in_group("modern_traffic"):
-		if not is_instance_valid(car): continue
-		var distant: bool = not area.has_point(car.global_position) and car.get("is_driven_by_player") != true and not car.get("is_exploding")
-		if distant and not _sleeping_traffic.has(car) and (car.is_processing() or car.is_physics_processing()):
-			_sleeping_traffic[car] = {"physics":car.is_physics_processing(),"idle":car.is_processing()}
-			car.set_physics_process(false)
-			car.set_process(false)
-		elif not distant and _sleeping_traffic.has(car):
-			car.set_physics_process(_sleeping_traffic[car].physics)
-			car.set_process(_sleeping_traffic[car].idle)
-			_sleeping_traffic.erase(car)
-	for car in _sleeping_traffic.keys():
-		if not is_instance_valid(car): _sleeping_traffic.erase(car)
-
-	for walker in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
-		if not is_instance_valid(walker): continue
-		var distant_walker: bool = not walk_area.has_point(walker.global_position) and not walker.get("is_scared") and not walker.get("is_flying")
-		if distant_walker and not _sleeping_walkers.has(walker) and walker.is_physics_processing():
-			_sleeping_walkers[walker] = true
-			walker.set_physics_process(false)
-		elif not distant_walker and _sleeping_walkers.has(walker):
-			walker.set_physics_process(true)
-			_sleeping_walkers.erase(walker)
-	for walker in _sleeping_walkers.keys():
-		if not is_instance_valid(walker): _sleeping_walkers.erase(walker)
+	var walkers := get_tree().get_nodes_in_group("pedestrian")
+	for actor in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
+		if not walkers.has(actor): walkers.append(actor)
+	population_activity.update(get_parent(), point, get_tree().get_nodes_in_group("modern_traffic"), walkers)
 
 func _transfer_bridge_traffic() -> void:
 	var traffic := mountain.get_node("MountainTraffic")
 	for car in get_tree().get_nodes_in_group("modern_traffic"):
+		if car.is_in_group("regional_coach"): continue
 		if car.get("is_driven_by_player") == true or car.get("is_broken") == true: continue
 		var follower := car.get_parent() as PathFollow2D
 		if follower == null: continue
@@ -171,8 +158,7 @@ func _handoff(follower: PathFollow2D, target: Path2D) -> bool:
 
 func get_streaming_stats() -> Dictionary:
 	return {"ready": ready_for_crossing, "region": current_region, "resident_regions": 2 if ready_for_crossing else 1,
-		"sleeping_traffic": _sleeping_traffic.size(), "memory_bytes": OS.get_static_memory_usage()}
+		"population": population_activity.stats, "sleeping_traffic": population_activity.stats.get("sleeping_traffic", 0), "memory_bytes": OS.get_static_memory_usage()}
 
 func _exit_tree() -> void:
-	_sleeping_traffic.clear()
-	_sleeping_walkers.clear()
+	population_activity.restore_all()

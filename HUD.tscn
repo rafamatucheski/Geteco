@@ -23,69 +23,52 @@ theme_override_constants/margin_bottom = 24
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
 [node name="HealthRow" type="HBoxContainer" parent="RootMargin/TopLeftPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="HeartIcon" type="Label" parent="RootMargin/TopLeftPanel/HealthRow"]
-custom_minimum_size = Vector2(24, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.180392, 0.835294, 0.419608, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 20
-text = "♥"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="HealthBar" type="ProgressBar" parent="RootMargin/TopLeftPanel/HealthRow"]
-custom_minimum_size = Vector2(210, 16)
+custom_minimum_size = Vector2(144, 6)
 layout_mode = 2
 size_flags_vertical = 4
 value = 100.0
 show_percentage = false
 
 [node name="ArmorRow" type="HBoxContainer" parent="RootMargin/TopLeftPanel"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ArmorIcon" type="Label" parent="RootMargin/TopLeftPanel/ArmorRow"]
-custom_minimum_size = Vector2(24, 0)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.439216, 0.631373, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
-text = "🛡"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="ArmorBar" type="ProgressBar" parent="RootMargin/TopLeftPanel/ArmorRow"]
-custom_minimum_size = Vector2(210, 16)
+custom_minimum_size = Vector2(144, 4)
 layout_mode = 2
 size_flags_vertical = 4
-value = 100.0
+value = 0.0
 show_percentage = false
 
-[node name="WeaponRow" type="HBoxContainer" parent="RootMargin/TopLeftPanel"]
+[node name="WeaponRow" type="VBoxContainer" parent="RootMargin/TopLeftPanel"]
+visible = false
 layout_mode = 2
-theme_override_constants/separation = 12
+size_flags_horizontal = 0
+theme_override_constants/separation = 0
 
 [node name="WeaponIcon" type="Control" parent="RootMargin/TopLeftPanel/WeaponRow"]
 custom_minimum_size = Vector2(96, 48)
 layout_mode = 2
 script = ExtResource("2_weapon_icon")
+frameless = true
 
 [node name="AmmoLabel" type="Label" parent="RootMargin/TopLeftPanel/WeaponRow"]
 layout_mode = 2
 size_flags_vertical = 4
-theme_override_colors/font_color = Color(0.945098, 0.768627, 0.0588235, 1)
+theme_override_colors/font_color = Color(0.88, 0.91, 0.94, 0.85)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 22
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 14
 text = "12 / 60"
+horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TopRightPanel" type="VBoxContainer" parent="RootMargin"]

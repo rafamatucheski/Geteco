@@ -7,6 +7,9 @@ var clock := 0.0
 var collected := false
 var render_host: Node2D
 var load_on_pickup := false
+var animate_on_floor := true
+var hover_height := 0.0
+var _floor_height := 0.08
 
 func _ready() -> void:
 	collision_layer = 0
@@ -21,11 +24,15 @@ func install_model(parent: Node3D, point: Vector3) -> void:
 	model = Node3D.new()
 	model.name = name + "Model"
 	model.position = point
+	_floor_height = point.y
 	parent.add_child(model)
 	# Lying on its side, just above the boards; yaw is rotation on the floor plane.
 	var weapon := Node3D.new()
 	weapon.name = "FloorWeapon"
 	weapon.rotation.z = PI * 0.5
+	weapon.position.y = hover_height
+	if weapon_id == "knife":
+		weapon.scale = Vector3.ONE * 1.3
 	model.add_child(weapon)
 	preload("res://scripts/player/WeaponPresentation3D.gd").build(weapon, weapon_id)
 	var halo := MeshInstance3D.new()
@@ -45,16 +52,20 @@ func install_model(parent: Node3D, point: Vector3) -> void:
 
 func _process(delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player")
-	if not collected and player != null and player.world_pickups_collected.has(pickup_id):
+	if not collected and player != null and ("world_pickups_collected" in player) and player.world_pickups_collected.has(pickup_id):
 		_hide_collected()
 	if not is_instance_valid(model) or collected:
 		return
 	if player == null or not (player.get_meta("mountain_interior", false) or (is_instance_valid(render_host) and render_host.contains_actor(player))):
 		return
 	clock += delta
-	model.rotation.y = clock * 0.8
-	model.position.y = 0.08 + sin(clock * 1.5) * 0.012
-	_refresh_host()
+	if hover_height > 0.0:
+		model.get_node("FloorWeapon").position.y = hover_height + sin(clock * 1.8) * 0.035
+	if animate_on_floor:
+		model.rotation.y = clock * 0.8
+		model.position.y = _floor_height + sin(clock * 1.5) * 0.012
+	if animate_on_floor or hover_height > 0.0:
+		_refresh_host()
 
 func _collect(body: Node2D) -> void:
 	if collected or not body.is_in_group("player") or not body.visible or body.is_dead:
@@ -76,13 +87,7 @@ func _collect(body: Node2D) -> void:
 	var tutorials := get_tree().get_first_node_in_group("gameplay_tutorials")
 	if tutorials != null: tutorials.request_context("rare_item")
 	_hide_collected()
-	var sound := AudioStreamPlayer.new()
-	sound.bus = &"SFX"
-	sound.stream = _pickup_sound()
-	sound.volume_db = -17.0
-	add_child(sound)
-	sound.finished.connect(sound.queue_free)
-	sound.play()
+	preload("res://audio/rewards/RewardAudioBank.gd").play(self, "weapon")
 	var data := WeaponCatalog.get_weapon(weapon_id)
 	var notice := "ARMA RECOLHIDA — " + String(data.get("short_label", weapon_id))
 	if data.has("discovery_pickup"):
@@ -98,18 +103,7 @@ func _hide_collected() -> void:
 	set_process(false)
 
 func _refresh_host() -> void:
-	if is_instance_valid(render_host): render_host.viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
-
-static func _pickup_sound() -> AudioStreamWAV:
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = 22050
-	var bytes := PackedByteArray()
-	bytes.resize(4410)
-	for i in 2205:
-		var time := float(i)/22050.0
-		var envelope := sin(PI*float(i)/2205.0)*exp(-time*25)
-		var value := (sin(TAU*920*time)+sin(TAU*1380*time)*0.35)*envelope
-		bytes.encode_s16(i*2,int(value*11000))
-	stream.data = bytes
-	return stream
+	if is_instance_valid(render_host):
+		var viewport: SubViewport = render_host.viewport_3d
+		# The room also renders its occupants; a pickup must not freeze their rig.
+		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if int(viewport.get_meta("interior_actor_count", 0)) > 0 else SubViewport.UPDATE_ONCE

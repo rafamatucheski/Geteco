@@ -38,7 +38,7 @@ func build() -> void:
 	box(Vector3(0.96, 1.74, -0.85), Vector3(0.12, 0.10, 0.16), black)
 
 	# 4. Cabine Fechada de 3 Fileiras (Estilo SUV Expedição)
-	box(Vector3(0.0, 1.62, 0.25), Vector3(1.72, 0.08, 2.85), paint) # Teto
+	box(Vector3(0.0, 1.62, 0.6125), Vector3(1.72, 0.08, 3.575), paint) # Teto até o vidro traseiro
 	# Para-brisa dianteiro inclinado
 	var w_front := box(Vector3(0.0, 1.36, -0.75), Vector3(1.68, 0.58, 0.04), glass)
 	w_front.rotation.x = deg_to_rad(26.0)
@@ -46,7 +46,7 @@ func build() -> void:
 	box(Vector3(0.0, 1.38, 2.38), Vector3(1.62, 0.54, 0.04), glass)
 	# Vidros laterais (três janelas de cada lado)
 	for s in [-1.0, 1.0]:
-		box(Vector3(s * 0.855, 1.38, 0.25), Vector3(0.03, 0.52, 2.75), glass)
+		box(Vector3(s * 0.855, 1.38, 0.6375), Vector3(0.03, 0.52, 3.525), glass)
 		# Retrovisores grandes de reboque
 		box(Vector3(s * 1.12, 1.25, -0.70), Vector3(0.22, 0.26, 0.09), black)
 

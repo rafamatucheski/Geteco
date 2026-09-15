@@ -3,6 +3,7 @@ extends Node2D
 ## Structural second bridge. Asphalt and traffic are supplied by RoadLayout.
 const OUTLET := Vector2(7300, -4529)
 const INLET := Vector2(7300, -4591)
+const SURFACE_STYLE = preload("res://world/shared/roads/BridgeSurfaceStyle.gd")
 
 static func road_definitions() -> Array[Dictionary]:
 	var outbound := PackedVector2Array()
@@ -30,6 +31,7 @@ static func road_definitions() -> Array[Dictionary]:
 
 func _ready() -> void:
 	z_index = 1
+	_build_lighting()
 	var rails := StaticBody2D.new()
 	rails.collision_layer = 1
 	rails.collision_mask = 0
@@ -57,23 +59,47 @@ func _ready() -> void:
 		rails.add_child(collision)
 	queue_redraw()
 
+func _build_lighting() -> void:
+	if Engine.is_editor_hint(): return
+	const FIXTURE = preload("res://world/shared/roads/RoadLuminaire3D.gd")
+	for definition in road_definitions():
+		var curve := Curve2D.new()
+		for point in definition.points: curve.add_point(point)
+		var length := curve.get_baked_length()
+		var count := ceili(length/140)
+		for i in count+1:
+			var offset := length*float(i)/count
+			var center := curve.sample_baked(offset)
+			var tangent := (curve.sample_baked(minf(offset+5,length))-curve.sample_baked(maxf(offset-5,0))).normalized()
+			# The outer edge of each one-way deck keeps both merging lanes clear.
+			var normal := -tangent.orthogonal()
+			var fixture := FIXTURE.new()
+			fixture.fixture_kind = "flood" if i%3 == 1 else "strip"
+			fixture.position = center+normal*76
+			fixture.target_offset = -normal*76
+			fixture.tangent = tangent
+			add_child(fixture)
+
 func _draw() -> void:
+	draw_surface(self)
+
+
+static func draw_surface(canvas: Node2D) -> void:
 	for edge_points in guardrail_segments():
-		draw_line(edge_points[0],edge_points[1],Color("a4b5ba"),5,true)
-	draw_rect(Rect2(6480, -4732, 720, 345), Color("667982"))
-	draw_colored_polygon(PackedVector2Array([Vector2(7200,-4732),Vector2(7300,-4670),Vector2(7300,-4450),Vector2(7200,-4387)]),Color("667982"))
+		canvas.draw_line(edge_points[0],edge_points[1],Color("a4b5ba"),5,true)
+	canvas.draw_rect(Rect2(6480, -4732, 720, 345), SURFACE_STYLE.SHOULDER)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(7200,-4732),Vector2(7300,-4670),Vector2(7300,-4450),Vector2(7200,-4387)]),SURFACE_STYLE.SHOULDER)
 	for y in [-4725.0, -4395.0]:
-		draw_line(Vector2(6480, y), Vector2(7200, y), Color("c3c6b7"), 7)
+		canvas.draw_line(Vector2(6480, y), Vector2(7200, y), Color("c3c6b7"), 7)
 		for x in range(6500, 7200, 45):
-			draw_circle(Vector2(x, y), 3, Color("efbf66"))
+			canvas.draw_circle(Vector2(x, y), 3, Color("efbf66"))
 	for side in [-1.0, 1.0]:
-		draw_line(Vector2(7200,-4560+side*165),Vector2(7300,-4560+side*110),Color("a4b5ba"),5,true)
+		canvas.draw_line(Vector2(7200,-4560+side*165),Vector2(7300,-4560+side*110),Color("a4b5ba"),5,true)
 	for x in [6700.0, 7040.0]:
 		for y in [-4740.0, -4380.0]:
-			draw_rect(Rect2(x-14, y-18, 28, 36), Color("a4afa8"))
+			canvas.draw_rect(Rect2(x-14, y-18, 28, 36), Color("a4afa8"))
 			for anchor_x in [x-190, x+190]:
-				draw_line(Vector2(x, y), Vector2(anchor_x, y), Color("d2d0bd"), 2)
-	draw_string(ThemeDB.fallback_font, Vector2(6500, -4330), "SERRA DA NEVASCA  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color("e4e7d1"))
+				canvas.draw_line(Vector2(x, y), Vector2(anchor_x, y), Color("d2d0bd"), 2)
 
 
 static func guardrail_segments() -> Array[PackedVector2Array]:

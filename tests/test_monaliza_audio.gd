@@ -50,6 +50,19 @@ func _peak(samples: PackedInt32Array) -> int:
 		peak = maxi(peak, absi(s))
 	return peak
 
+func _decode_loop(stream: AudioStreamWAV, seconds: float, label: String) -> PackedInt32Array:
+	var samples := _decode(stream)
+	var frames := int(seconds * stream.mix_rate)
+	var guard := KIT.ENGINE.GUARD
+	check(samples.size() == frames + guard, label + ": export inclui guarda de interpolação")
+	if samples.size() < frames + guard: return samples
+	var valid := true
+	for i in guard: valid = valid and samples[frames + i] == samples[i]
+	check(valid, label + ": guarda repete o começo do loop")
+	# The guard is read ahead by the mixer, never played as part of the loop.
+	# Comparing its last sample to frame zero measures a fictitious seam.
+	return samples.slice(0, frames)
+
 func _rms(samples: PackedInt32Array) -> float:
 	if samples.is_empty():
 		return 0.0
@@ -83,6 +96,7 @@ func run() -> void:
 	_test_engine()
 	_test_turbo_spool()
 	_test_turbo_release()
+	_test_turbo_shift()
 	_test_ignition_if_present()
 	_test_demo()
 
@@ -126,7 +140,7 @@ func _test_engine() -> void:
 	var duration := float(stream.data.size() / 2) / float(stream.mix_rate)
 	check(absf(duration - KIT.ENGINE_DURATION) < 0.01, "engine.wav tem a duração documentada (~%.2fs, medido %.3fs)" % [KIT.ENGINE_DURATION, duration])
 
-	var samples := _decode(stream)
+	var samples := _decode_loop(stream, KIT.ENGINE_DURATION, "engine.wav")
 	var peak := _peak(samples)
 	check(peak < 32000, "engine.wav sem clipping (pico=%d < 32000/32767)" % peak)
 	check(peak > 4000, "engine.wav tem corpo audível (pico=%d, não é silêncio quase total)" % peak)
@@ -151,7 +165,7 @@ func _test_turbo_spool() -> void:
 	var duration := float(stream.data.size() / 2) / float(stream.mix_rate)
 	check(absf(duration - KIT.TURBO_SPOOL_DURATION) < 0.01, "turbo_spool.wav tem a duração documentada (~%.2fs, medido %.3fs)" % [KIT.TURBO_SPOOL_DURATION, duration])
 
-	var samples := _decode(stream)
+	var samples := _decode_loop(stream, KIT.TURBO_SPOOL_DURATION, "turbo_spool.wav")
 	var peak := _peak(samples)
 	check(peak < 32000, "turbo_spool.wav sem clipping (pico=%d < 32000/32767)" % peak)
 
@@ -188,6 +202,21 @@ func _test_turbo_release() -> void:
 # ==========================================
 # ignition.wav (opcional): também precisa de fade se foi entregue
 # ==========================================
+func _test_turbo_shift() -> void:
+	var stream := _load_wav(AUDIO_DIR + "turbo_shift.wav")
+	check(stream != null, "turbo_shift.wav carrega")
+	if stream == null: return
+	var samples := _decode(stream)
+	check(stream.loop_mode == AudioStreamWAV.LOOP_DISABLED, "flutter de troca não repete em loop")
+	check(_peak(samples) < 32000 and samples[0] == 0 and samples[-1] == 0, "flutter sem clipping e com pontas em silêncio")
+	var rate := float(stream.mix_rate)
+	var first := _rms(samples.slice(int(0.018 * rate), int(0.062 * rate)))
+	var second := _rms(samples.slice(int(0.102 * rate), int(0.153 * rate)))
+	var third := _rms(samples.slice(int(0.205 * rate), int(0.265 * rate)))
+	var gap := _rms(samples.slice(int(0.075 * rate), int(0.090 * rate)))
+	check(first > second and second > third and third > 100.0, "flutter tem três pulsos audíveis de intensidade decrescente")
+	check(gap < second * 0.25, "pausa entre pulsos destaca o tu-tu-tu")
+
 func _test_ignition_if_present() -> void:
 	var path := AUDIO_DIR + "ignition.wav"
 	if not FileAccess.file_exists(path):
@@ -229,7 +258,7 @@ func _test_demo() -> void:
 	var sr := stream.mix_rate
 	check(_peak_in_range(samples, 0, int(0.3 * sr)) > 200, "demonstração tem som audível na partida (primeiros 0.3s)")
 	check(_peak_in_range(samples, int(2.0 * sr), int(2.4 * sr)) > 1500, "demonstração tem som audível durante a aceleração (~2.0-2.4s)")
-	check(_peak_in_range(samples, int(3.05 * sr), int(3.35 * sr)) > 500, "demonstração tem som audível no instante do alívio do turbo (~3.05-3.35s)")
+	check(_peak_in_range(samples, int(5.8 * sr), int(6.1 * sr)) > 500, "demonstração tem som audível no instante do alívio do turbo (~5.8-6.1s)")
 
 	# Final da demonstração precisa fechar em silêncio (fade), não cortar seco.
 	var tail_n := mini(800, samples.size())

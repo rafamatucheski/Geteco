@@ -1,0 +1,72 @@
+{
+  "pickup_0": {
+    "seconds": 0.48,
+    "peak_dbfs": -5.986496740294336,
+    "rms_dbfs": -19.995409825819173
+  },
+  "pickup_1": {
+    "seconds": 0.48,
+    "peak_dbfs": -5.978420347018954,
+    "rms_dbfs": -19.994141172284042
+  },
+  "pickup_2": {
+    "seconds": 0.48,
+    "peak_dbfs": -5.983096385784333,
+    "rms_dbfs": -20.006514154116406
+  },
+  "cash_0": {
+    "seconds": 0.52,
+    "peak_dbfs": -5.975496661444869,
+    "rms_dbfs": -20.05168621485015
+  },
+  "cash_1": {
+    "seconds": 0.52,
+    "peak_dbfs": -5.97324588224761,
+    "rms_dbfs": -19.910696681142053
+  },
+  "cash_2": {
+    "seconds": 0.52,
+    "peak_dbfs": -5.994472624968932,
+    "rms_dbfs": -20.093029664371155
+  },
+  "weapon": {
+    "seconds": 0.55,
+    "peak_dbfs": -5.994472624968932,
+    "rms_dbfs": -20.456289121607934
+  },
+  "collectible": {
+    "seconds": 1.15,
+    "peak_dbfs": -5.0,
+    "rms_dbfs": -16.72285691713174,
+    "source": "Original synthesis, same instruments as approved mission sting"
+  },
+  "checkpoint": {
+    "seconds": 0.68,
+    "peak_dbfs": -5.994472624968932,
+    "rms_dbfs": -19.38467381688145
+  },
+  "mission_start": {
+    "seconds": 0.9,
+    "peak_dbfs": -5.994472624968932,
+    "rms_dbfs": -19.63738888336222
+  },
+  "complete": {
+    "seconds": 4.0,
+    "peak_dbfs": -3.499999999999999,
+    "rms_dbfs": -14.522411794168665,
+    "bpm": 96,
+    "source": "Original deterministic synthesis; no recorded audio inputs",
+    "arrangement_sha256": "29a987bb012a865b8ed885dc5a57a64c9aa5c449907f33c7244d8b9aab36af7a"
+  },
+  "achievement": {
+    "seconds": 2.4,
+    "peak_dbfs": -3.4999999999999973,
+    "rms_dbfs": -15.211411540749939,
+    "source": "Original synthesis, same instruments as approved mission sting"
+  },
+  "countdown": {
+    "seconds": 0.22,
+    "peak_dbfs": -5.994472624968932,
+    "rms_dbfs": -19.12974504478887
+  }
+}

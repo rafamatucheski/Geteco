@@ -31,6 +31,13 @@ var bag_timer: float = 0.0
 var crew_side := 1.0
 var crew_longitudinal := 22.0
 var boarding_started := false
+var _burial_gate_passed := false
+var _burial_return_gate_passed := false
+var _access_route: Array[Vector2] = []
+var _access_index := 0
+var _return_route: Array[Vector2] = []
+var _return_index := 0
+var _passing_point := Vector2.INF
 
 # 3D SubViewport Rig
 var viewport_3d: SubViewport
@@ -50,6 +57,9 @@ var stretcher_mesh: MeshInstance3D = null
 var body_bag_mesh: MeshInstance3D = null
 
 func _ready() -> void:
+	if not has_meta("medical_identity"):
+		set_meta("medical_identity",get_node("/root/CoronerCare").next_staff_identity())
+	set_collision_mask_value(3, true)
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	platform_floor_layers = 0
 	platform_wall_layers = 0
@@ -90,12 +100,11 @@ func _build_3d_viewport() -> void:
 	add_child(viewport_3d)
 
 	var cam := Camera3D.new()
-	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.size = 2.45
-	cam.position = Vector3(0.0, 10.0, 0.01)
-	cam.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+	cam.position = Vector3(0.0, 3.2, 1.4)
+	cam.fov = 30.0
 	cam.current = true
 	viewport_3d.add_child(cam)
+	cam.look_at(Vector3(0.0, 0.65, 0.0), Vector3.UP)
 
 	var key_light := DirectionalLight3D.new()
 	key_light.position = Vector3(5.0, 12.0, 5.0)
@@ -103,12 +112,15 @@ func _build_3d_viewport() -> void:
 	key_light.light_color = Color(1.0, 0.98, 0.94)
 	key_light.light_energy = 1.35
 	viewport_3d.add_child(key_light)
+	preload("res://ContactShadow.gd").add_person(viewport_3d)
 
 	_build_mortician_rig()
 
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.name = "Sprite3DDisplay"
 	sprite_3d_display.texture = viewport_3d.get_texture()
+	# Mesma escala de apresentação da equipe de paramédicos.
+	sprite_3d_display.scale = Vector2(0.38, 0.38)
 	sprite_3d_display.position = Vector2.ZERO
 	add_child(sprite_3d_display)
 
@@ -273,28 +285,47 @@ func _physics_process(delta: float) -> void:
 					is_moving = true
 				else:
 					velocity = Vector2.ZERO
+					if not preload("res://EmergencyCrewTransition.gd").finish_exit(self, hearse, crew_side, delta): return
 					state = State.APPROACH
 					remove_collision_exception_with(hearse)
 		State.APPROACH:
 			if is_burial_trip:
-				var dist_b: float = global_position.distance_to(burial_position)
-				dir_to_look = global_position.direction_to(burial_position)
-				if dist_b > 20.0:
-					velocity = _navigate_towards(burial_position, speed, delta)
+				var destination := burial_position
+				var crossing_gate := has_meta("burial_gate") and not _burial_gate_passed
+				if crossing_gate: destination = get_meta("burial_gate") + Vector2(0,26)
+				var dist_b := global_position.distance_to(destination)
+				dir_to_look = global_position.direction_to(destination)
+				if dist_b > (7.0 if crossing_gate else 20.0):
+					velocity = _navigate_towards(destination, speed, delta)
 					is_moving = true
+				elif crossing_gate:
+					_burial_gate_passed = true
 				else:
 					velocity = Vector2.ZERO
 					state = State.BAG_AND_LIFT
-					bag_timer = 1.5
-			elif not is_instance_valid(target):
+					bag_timer = 5.0
+			elif not is_instance_valid(target) or target.get_meta("service_complete",false):
 				_start_return_to_hearse()
 				return
 			else:
-				var dist: float = global_position.distance_to(target.global_position)
-				dir_to_look = global_position.direction_to(target.global_position)
-				if dist > 26.0:
-					velocity = _navigate_towards(target.global_position, speed, delta)
+				var pickup: Vector2 = target.collection_position(self) if target.has_method("collection_position") else target.global_position
+				var portal_wait: bool = target.has_method("can_collect") and not target.can_collect(self)
+				if target.has_method("can_collect") and not portal_wait: _access_index = _access_route.size()
+				var following_route := _access_index < _access_route.size()
+				if following_route: pickup = _access_route[_access_index]
+				var dist: float = global_position.distance_to(pickup)
+				dir_to_look = global_position.direction_to(pickup)
+				var sight := PhysicsRayQueryParameters2D.create(global_position, pickup, 3, [get_rid()])
+				sight.hit_from_inside = true
+				var hit := get_world_2d().direct_space_state.intersect_ray(sight)
+				if following_route and dist <= 8.0:
+					_access_index += 1
+					velocity = Vector2.ZERO
+				elif dist > (7.0 if portal_wait else (8.0 if following_route else 28.0)) or (not hit.is_empty() and not _pickup_obstacle_owned(hit.collider)):
+					velocity = _navigate_towards(pickup, speed, delta)
 					is_moving = true
+				elif portal_wait:
+					velocity = Vector2.ZERO
 				else:
 					velocity = Vector2.ZERO
 					state = State.BAG_AND_LIFT
@@ -309,24 +340,60 @@ func _physics_process(delta: float) -> void:
 			bag_timer -= delta
 			if bag_timer <= 0.0:
 				if is_burial_trip:
+					if not get_node("/root/CoronerCare").bury(self):
+						bag_timer = .5
+						return
 					_place_grave_marker()
 				elif is_instance_valid(target):
-					# Desaparece com o corpo e poça de sangue
-					target.queue_free()
+					var pickup: Vector2 = target.collection_position(self) if target.has_method("collection_position") else target.global_position
+					var ray := PhysicsRayQueryParameters2D.create(global_position,pickup,3,[get_rid()])
+					var obstruction := get_world_2d().direct_space_state.intersect_ray(ray)
+					if global_position.distance_to(pickup)>28 or (not obstruction.is_empty() and not _pickup_obstacle_owned(obstruction.collider)):
+						state = State.APPROACH
+						return
+					if not is_stretcher_bearer and not target.has_method("collect_piece"):
+						_start_return_to_hearse()
+						return
+					if target.has_method("collect_piece"):
+						if body_bag_mesh: body_bag_mesh.visible = true
+						if not target.collect_piece(self):
+							state = State.APPROACH
+							return
+					if not get_node("/root/CoronerCare").begin_collection(target, self):
+						_start_return_to_hearse()
+						return
+					target.set_meta("service_complete", true)
+					# The saved victim stays hidden; only disposable remains/bags
+					# are freed. Cargo enters the van when this worker boards.
+					if not target is CharacterBody2D and not target.has_method("return_point"): target.queue_free()
 				if body_bag_mesh:
-					body_bag_mesh.visible = true # Saco de cadáver preto fechado na maca
+					body_bag_mesh.visible = not is_burial_trip
 				_start_return_to_hearse()
 
 		State.RETURN_HEARSE:
 			if not is_instance_valid(hearse):
 				queue_free()
 				return
+			var crossing_gate := is_burial_trip and has_meta("burial_gate") and not _burial_return_gate_passed
 			var door_point: Vector2 = hearse.get_crew_door_point(crew_side, crew_longitudinal) if hearse.has_method("get_crew_door_point") else hearse.global_position
-			var dist_h: float = global_position.distance_to(door_point)
+			if crossing_gate: door_point = get_meta("burial_gate")
+			var following_route := _return_index < _return_route.size()
+			if following_route: door_point = _return_route[_return_index]
+			var portal: Variant = get_meta("coroner_portal") if has_meta("coroner_portal") else null
+			var portal_point: Vector2 = portal.return_point(self) if is_instance_valid(portal) else Vector2.INF
+			var exiting_interior := portal_point.is_finite()
+			if exiting_interior: door_point = portal_point
+			var dist_h := global_position.distance_to(door_point)
 			dir_to_look = global_position.direction_to(door_point)
 			if dist_h > 7.0:
 				velocity = _navigate_towards(door_point, speed, delta)
 				is_moving = true
+			elif exiting_interior:
+				velocity = Vector2.ZERO
+			elif following_route:
+				_return_index += 1
+			elif crossing_gate:
+				_burial_return_gate_passed = true
 			else:
 				velocity = Vector2.ZERO
 				_board_hearse()
@@ -366,13 +433,39 @@ var stuck_timer: float = 0.0
 
 var movement_navigation := preload("res://ResponderNavigation.gd").new()
 
+func _pickup_obstacle_owned(obstacle: Node) -> bool:
+	if not is_instance_valid(target): return false
+	return obstacle==target or target.is_ancestor_of(obstacle) or (target.has_method("owns_obstacle") and target.owns_obstacle(obstacle))
+
 func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector2:
 	var result: Vector2 = movement_navigation.movement(self, dest, move_speed, delta)
 	stuck_timer = movement_navigation.stuck_time
+	# Static route planning excludes moving people. Give opposing coworkers a
+	# short, swept passing step instead of stopping nose-to-nose on one waypoint.
+	if _passing_point.is_finite():
+		var step := _passing_point-global_position
+		if step.length()>4 and not test_move(global_transform,step):
+			return step.normalized()*minf(move_speed,step.length()/maxf(delta,.001))
+		_passing_point = Vector2.INF
+	if not result.is_zero_approx():
+		var hit := KinematicCollision2D.new()
+		if test_move(global_transform,result.normalized()*24,hit):
+			var other: Variant = hit.get_collider()
+			if other is CollisionObject2D and (other.collision_layer & 4) != 0:
+				for angle in [.8,1.3,1.8,2.2,-.8,-1.3,-1.8]:
+					var step := result.normalized().rotated(angle)*28
+					if not test_move(global_transform,step):
+						_passing_point = global_position+step
+						return step.normalized()*move_speed
+				return Vector2.ZERO
 	return result
 
 
 func _start_return_to_hearse() -> void:
+	if state != State.RETURN_HEARSE and not is_burial_trip:
+		_return_route = _access_route.duplicate()
+		_return_route.reverse()
+		_return_index = 0
 	if is_instance_valid(hearse): add_collision_exception_with(hearse)
 	state = State.RETURN_HEARSE
 	if not is_instance_valid(hearse):
@@ -382,6 +475,11 @@ func _start_return_to_hearse() -> void:
 ## a small dirt mound, same low-poly Polygon2D style used by the other
 ## props in this file. Registers with the HarborCemetery node if present.
 func _place_grave_marker() -> void:
+	var identity := String(get_meta("burial_identity", ""))
+	if not identity.is_empty():
+		var yard := get_tree().get_first_node_in_group("cemetery")
+		if yard: yard.restore_burials()
+		return
 	var grave := Node2D.new()
 	grave.name = "GraveMarker"
 	grave.global_position = burial_position
@@ -415,6 +513,9 @@ func _place_grave_marker() -> void:
 
 
 func begin_service_disembark(vehicle: Node2D, side: float, longitudinal: float) -> void:
+	if not is_burial_trip:
+		_access_route.assign(vehicle.get_meta("ambulance_walk_route", []))
+		_access_index = 0
 	hearse = vehicle
 	crew_side = side
 	crew_longitudinal = longitudinal
@@ -436,17 +537,21 @@ func _board_hearse() -> void:
 	if collision_shape:
 		collision_shape.set_deferred("disabled", true)
 	if is_instance_valid(hearse) and hearse.has_method("on_mortician_embarked"):
+		get_node("/root/CoronerCare").board(self, hearse)
 		hearse.on_mortician_embarked(self)
 	queue_free()
 
 func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
+	if amount <= 0 or is_dead: return
 	health = maxi(0, health - amount)
+	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, amount)
 	if health <= 0 and not is_dead:
 		is_dead = true
 		velocity = Vector2.ZERO
 		if collision_shape: collision_shape.set_deferred("disabled", true)
 		_start_fall()
-		create_tween().tween_interval(10.0).finished.connect(queue_free)
+		get_node("/root/NPCMedicalCare").report_injury(self)
+		if not has_meta("medical_pending"): create_tween().tween_interval(10.0).finished.connect(queue_free)
 
 func _start_fall(impact := Vector2.ZERO) -> void:
 	fall_presentation.start(self, model_root, viewport_3d, impact)

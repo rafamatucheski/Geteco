@@ -34,7 +34,7 @@ func _check_family(family: String, layer: int = 0) -> void:
 	var natural := _natural_max_step(stream)
 
 	var capture := AudioEffectCapture.new()
-	capture.buffer_length = 3.0
+	capture.buffer_length = 4.0
 	AudioServer.add_bus_effect(0, capture, 0)
 
 	var player := AudioStreamPlayer.new()
@@ -46,7 +46,7 @@ func _check_family(family: String, layer: int = 0) -> void:
 
 	await create_timer(0.4).timeout
 	capture.clear_buffer()
-	await create_timer(1.6).timeout
+	await create_timer(3.0).timeout
 
 	var buffer := capture.get_buffer(capture.get_frames_available())
 	player.stop()
@@ -81,6 +81,27 @@ func _check_family(family: String, layer: int = 0) -> void:
 		push_error("Estalo no ponto de laco do motor '%s' camada %d: %d degraus acima do natural" % [family, layer, spikes])
 
 func _run() -> void:
+	if "rosso-only" in OS.get_cmdline_user_args():
+		for layer in 3: await _check_family("rosso_v12", layer)
+		print("ROSSO_LOOP_SEAM failures=%d inconclusive=%d" % [failures,inconclusive])
+		quit(1 if failures or inconclusive else 0)
+		return
+	if "monaliza-only" in OS.get_cmdline_user_args():
+		for layer in ENGINE.get_layer_streams("monaliza").size(): await _check_family("monaliza", layer)
+		print("MONALIZA_LOOP_SEAM failures=%d inconclusive=%d" % [failures, inconclusive])
+		quit(1 if failures or inconclusive else 0)
+		return
+	if "bikes-only" in OS.get_cmdline_user_args():
+		for family in ["bike_sport", "bike_cruiser", "bike_urban"]:
+			for layer in 3: await _check_family(family, layer)
+		print("MOTORCYCLE_LOOP_SEAM failures=%d inconclusive=%d" % [failures, inconclusive])
+		quit(1 if failures or inconclusive else 0)
+		return
+	if "sport-only" in OS.get_cmdline_user_args():
+		for layer in 3: await _check_family("sport", layer)
+		print("SPORT_LOOP_SEAM failures=%d inconclusive=%d" % [failures, inconclusive])
+		quit(1 if failures or inconclusive else 0)
+		return
 	for family in ["street", "sport", "muscle", "suv", "diesel", "bus", "truck", "fire_diesel", "ambulance", "police"]:
 		await _check_family(family)
 	# A camada de alto giro e a que mais tem ruido: a emenda dela e a mais dificil.

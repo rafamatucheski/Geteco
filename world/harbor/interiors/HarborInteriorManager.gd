@@ -25,7 +25,7 @@ var _curtain_tween: Tween
 
 const GARAGE_SCRIPT := preload("res://world/harbor/interiors/HarborGarageInterior.gd")
 const POLICE_SCRIPT := preload("res://world/harbor/interiors/HarborPoliceInterior.gd")
-const CLINIC_SCRIPT := preload("res://world/harbor/interiors/HarborClinicInterior.gd")
+const CLINIC_SCRIPT := preload("res://world/harbor/interiors/HarborHospitalInterior3D.gd")
 const WORKSHOP_SCRIPT := preload("res://world/harbor/interiors/HarborWorkshopInterior.gd")
 const FIRE_STATION_SCRIPT := preload("res://world/harbor/interiors/HarborFireStationInterior.gd")
 const AMMUNATION_SCRIPT := preload("res://world/harbor/interiors/HarborAmmunationInterior.gd")
@@ -216,6 +216,44 @@ func _bind_exit_door(door: BuildingEntrance, default_exterior_door_id: StringNam
 
 var _door_configs: Dictionary = {}
 
+func _physics_process(_delta: float) -> void:
+	if not enabled or _fade_busy:
+		return
+	if _try_police_proximity_passage():
+		return
+	for path in _door_configs:
+		var door := get_parent().get_node_or_null(path) as BuildingEntrance
+		if door == null or door.get("role") != "garage" or not door.enabled or door._busy or float(door.get("open_amount")) < 0.95:
+			continue
+		var actor := door.get_nearest_actor()
+		if actor == null or actor.get("velocity") == null:
+			continue
+		var local_position := door.to_local(actor.global_position)
+		var inward_speed := -(actor.get("velocity") as Vector2).dot(door.global_transform.y.normalized())
+		# Trigger before the facade solid stops the actor's body. Proximity alone
+		# only opens the shutter; entering requires movement into the doorway.
+		var reach := 48.0 if actor.is_in_group("vehicle") else 24.0
+		if absf(local_position.x) <= float(door.get("door_width")) * 0.5 - 10.0 and local_position.y >= 0.0 and local_position.y <= reach and inward_speed > 1.0:
+			door.request_interaction(actor)
+			return
+
+func _try_police_proximity_passage() -> bool:
+	var exterior := get_parent().get_node_or_null("District/Police/Entrance") as BuildingEntrance
+	var exit_door: BuildingEntrance = police_interior.exit_door if is_instance_valid(police_interior) else null
+	for door in [exterior, exit_door]:
+		if door == null or not door.enabled or door._busy:
+			continue
+		var actor: Node2D = door.get_nearest_actor()
+		if actor == null or not actor.is_in_group("player"):
+			continue
+		var point: Vector2 = door.to_local(actor.global_position)
+		# Both arrival markers are outside this threshold, preventing a return
+		# transfer when the cooldown ends, even if the actor stays in the sensor.
+		var near_threshold := absf(point.x) <= 24.0 and absf(point.y) <= (28.0 if door == exterior else 14.0)
+		if near_threshold and door.request_interaction(actor):
+			return true
+	return false
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not enabled:
 		return
@@ -228,7 +266,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				break
 
 		# 1. Verificar saídas dos interiores
-		for exit_door in get_tree().get_nodes_in_group("harbor_interior_exit"):
+		for candidate in get_tree().get_nodes_in_group("harbor_interior_exit"):
+			# Residences share the group to reserve interaction before vehicle entry,
+			# but handle their own input and do not implement BuildingEntrance.
+			var exit_door := candidate as BuildingEntrance
 			if exit_door and exit_door.enabled and not exit_door.get("_busy") and exit_door.is_actor_in_range(active_actor):
 				get_viewport().set_input_as_handled()
 				exit_door.request_interaction(active_actor)
@@ -323,6 +364,9 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 
 	# If actor is inside a car or is car
 	var effective_actor := actor
+	var entry_position := spawn_marker.global_position
+	if interior.has_method("get_entry_position"):
+		entry_position = interior.get_entry_position(actor, spawn_marker)
 	var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
 	if player:
 		player.set_meta("police_exterior_position", entrance.global_position)
@@ -331,13 +375,15 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 	if actor.is_in_group("vehicle") and actor.get("is_driven_by_player") == true:
 		effective_actor = actor
 		if player and is_instance_valid(player):
-			player.global_position = spawn_marker.global_position
+			player.global_position = entry_position
 			player.velocity = Vector2.ZERO
 			player.reset_physics_interpolation()
 			_actor_origin_entrances[player] = entrance
 			_frame_interior_camera(player, interior.get_camera_rect())
 
-	effective_actor.global_position = spawn_marker.global_position
+	effective_actor.global_position = entry_position
+	if interior.has_method("orient_actor_on_entry"):
+		interior.orient_actor_on_entry(effective_actor)
 	# Entrar num interior e um corte de cena, nao um deslocamento: descarta o
 	# transform anterior para nao desenhar o ator atravessando a parede.
 	effective_actor.reset_physics_interpolation()
@@ -421,10 +467,12 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 
 	_reset_exterior_camera(effective_actor)
 
+	var exited_interior_id := default_exterior_door_id
 	if exit_door_node:
 		_arm_cooldown(exit_door_node)
 		var interior: Node2D = _exit_door_interior.get(exit_door_node)
 		if interior:
+			exited_interior_id = interior.interior_id
 			interior.set_npc_rendering_active(false)
 
 	var weather := get_tree().get_first_node_in_group("day_night_manager")
@@ -432,9 +480,13 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 		weather.set_interior_mode(false)
 
 	_fade_in()
-	actor_returned_to_exterior.emit(effective_actor, default_exterior_door_id)
+	actor_returned_to_exterior.emit(effective_actor, exited_interior_id)
 
 func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:
+	# Shared by walking/driving entry and save restoration.
+	var player := get_tree().get_first_node_in_group("player")
+	if is_instance_valid(player) and player.has_method("enforce_weapon_restrictions"):
+		player.enforce_weapon_restrictions()
 	var cam := actor.get_node_or_null("Camera") as Camera2D
 	if cam:
 		cam.remove_meta("interior_follow_bounds")

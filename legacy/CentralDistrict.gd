@@ -173,9 +173,7 @@ func _create_lot_visuals_and_collisions() -> void:
 				building.arcade_depth = float(lot.arcade_depth)
 			seed += 1
 			visual_root.add_child(building)
-			# Parks are walkable public space; only real structures block movement.
-			if String(lot.kind) != "park":
-				_add_building_collision(building.get_collision_rect(), building.name)
+			# ProceduralBuilding owns its solid; parks remain walkable.
 			# POIs will get small façade signs later; never float labels over roofs.
 
 func _create_service_yard(rect: Rect2, service_kind: String) -> void:

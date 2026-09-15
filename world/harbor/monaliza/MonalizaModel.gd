@@ -46,6 +46,10 @@ func build() -> void:
 	_quad([Vector3(-0.83, 0.84, -0.57), Vector3(0.83, 0.84, -0.57), Vector3(0.68, 1.27, 0.05), Vector3(-0.68, 1.27, 0.05)], glass)
 	_quad([Vector3(-0.69, 1.28, 0.05), Vector3(0.69, 1.28, 0.05), Vector3(0.66, 1.25, 0.95), Vector3(-0.66, 1.25, 0.95)], paint)
 	_quad([Vector3(-0.66, 1.24, 0.95), Vector3(0.66, 1.24, 0.95), Vector3(0.83, 0.84, 1.53), Vector3(-0.83, 0.84, 1.53)], glass)
+	# Seal the 1 cm glass/roof joins so the seated occupant cannot show through
+	# a bright crack above the windshield. These are the rubber window headers.
+	tube([Vector3(-0.69, 1.275, 0.05), Vector3(0.69, 1.275, 0.05)], 0.014, black)
+	tube([Vector3(-0.66, 1.245, 0.95), Vector3(0.66, 1.245, 0.95)], 0.014, black)
 
 	for side in [-1.0, 1.0]:
 		# Side windows and pillars

@@ -25,6 +25,10 @@ func _run() -> void:
 	actor.position = Vector2.ZERO
 	var probe := NavigationProbe.new()
 	actor.movement_navigation = probe
+	# Measure social steering after the route's local waypoint is established.
+	# Waypoint occupancy is checked once on selection, not on each steering tick.
+	actor._local_route_goal = Vector2(300, 0)
+	actor._local_target = Vector2(300, 0)
 	var velocity := actor._navigate_towards(Vector2(300, 0), 48.0, 1.0 / 60.0)
 	check(velocity == Vector2(40, 0), "Sem vizinho, preservar movimento validado pela navegação.")
 	check(probe.sweeps == 0, "Sem desvio, não repetir três raycasts por pedestre/tick.")

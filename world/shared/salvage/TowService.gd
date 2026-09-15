@@ -15,6 +15,8 @@ var _cargo_idle := false
 var _previous_health := 0
 var _load_tween: Tween
 var _offer: Node2D
+var _customer_pickups: Array[Node2D] = []
+var _customer_pickup_clock := 0.0
 
 func _ready() -> void:
 	yard = get_parent()
@@ -34,6 +36,11 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	hint.hide()
 	if not yard._active_world() or not is_instance_valid(yard._player): return
+	if not _customer_pickups.is_empty():
+		_customer_pickup_clock += _delta
+		if _customer_pickup_clock >= .5:
+			_customer_pickup_clock = 0.0
+			_collect_customer_repairs()
 	if not _restored:
 		_restore()
 	if not is_instance_valid(truck): return
@@ -106,11 +113,41 @@ func _restore() -> void:
 						break
 			if not is_instance_valid(target): target = FACTORY.spawn_parked_vehicle(yard.get_parent(),"NecoRestoredCargo",truck.position,truck.rotation,String(carried.id),0,Color(String(carried.paint)))
 		target.set_meta("tow_origin",carried.get("origin",{}))
+		if bool(carried.get("story_tow_authorized",false)):
+			target.set_meta("story_tow_authorized",true)
+			target.add_to_group("mission_vehicle")
+			target.has_theft_alarm=false
 		target.health = int(carried.health)
 		_mount(target,false)
 
 func can_tow(car: Node2D) -> bool:
-	return yard.eligible(car) and car.get("_detached_from_lane") == true and float(car.target_length) <= 95 and car.get("is_moving_on_lane") != true and not car.has_meta("tow_carried")
+	if not is_instance_valid(car): return false
+	if car.has_meta("story_customer_received"): return false
+	var authorized: bool = car.has_meta("story_tow_authorized") and car.is_in_group("mission_vehicle") and not car.is_in_group("personal_vehicle") and not car.is_in_group("emergency_vehicle") and car.get("is_motorcycle") != true and car.get("is_driven_by_player") != true and not car.has_meta("vehicle_boarding") and car.get("health") != null and int(car.health) > 0 and car.get("velocity") is Vector2 and car.velocity.length() <= 8
+	return (yard.eligible(car) or authorized) and car.get("_detached_from_lane") == true and float(car.target_length) <= 95 and car.get("is_moving_on_lane") != true and not car.has_meta("tow_carried")
+
+func receive_customer_repair(car: Node2D) -> void:
+	# Customer ownership starts at Neco's handover. Keep the solid car in place
+	# while witnessed; the service owns its eventual pickup beyond mission cleanup.
+	if not is_instance_valid(car) or car == cargo or car.has_meta("tow_carried"): return
+	car.set_meta("story_customer_received", true)
+	car.remove_meta("story_tow_authorized")
+	if not _customer_pickups.has(car): _customer_pickups.append(car)
+
+func _collect_customer_repairs() -> void:
+	for index in range(_customer_pickups.size()-1, -1, -1):
+		var car: Node2D = _customer_pickups[index]
+		if not is_instance_valid(car):
+			_customer_pickups.remove_at(index)
+			continue
+		if car == cargo or car.has_meta("tow_carried") or car.has_meta("vehicle_boarding") or car.get("is_driven_by_player") == true or car.get("is_moving_on_lane") == true: continue
+		if car.get("velocity") is Vector2 and car.velocity.length() > 8: continue
+		if yard._player.global_position.distance_to(yard.global_position) <= 700 or yard._player.global_position.distance_to(car.global_position) <= 700: continue
+		var canvas: Transform2D = car.get_global_transform_with_canvas()
+		var margin: float = maxf(canvas.x.length(), canvas.y.length()) * maxf(float(car.target_length), 100.0) + 48.0
+		if get_viewport().get_visible_rect().grow(margin).has_point(canvas.origin): continue
+		_customer_pickups.remove_at(index)
+		car.queue_free()
 
 func nearby_car() -> Node2D:
 	var nearest: Node2D
@@ -237,7 +274,7 @@ func snapshot() -> void:
 	if is_instance_valid(cargo):
 		var paint := Color.WHITE
 		if is_instance_valid(cargo.body_model): paint = cargo.body_model.paint.albedo_color
-		saved.cargo = {"id":cargo.vehicle_id,"health":cargo.health,"paint":paint.to_html(),"token":String(cargo.get_meta("salvage_token","")),"origin":cargo.get_meta("tow_origin",{})}
+		saved.cargo = {"id":cargo.vehicle_id,"health":cargo.health,"paint":paint.to_html(),"token":String(cargo.get_meta("salvage_token","")),"origin":cargo.get_meta("tow_origin",{}),"story_tow_authorized":cargo.has_meta("story_tow_authorized")}
 	yard.ledger().data["tow_vehicle"] = saved
 
 func night_now() -> bool:
@@ -248,6 +285,13 @@ func add_offer(content: VBoxContainer) -> void:
 	var data: Dictionary = yard.ledger().data
 	if not is_instance_valid(truck) or ((truck.health <= 0 or truck.global_position.distance_to(yard.global_position)>700) and not truck.is_driven_by_player and not is_instance_valid(cargo)):
 		yard._button(content,yard._text("Recuperar guincho no pátio", "Recover truck at the yard"),recover_truck)
+	if has_meta("story_recovery_active"):
+		var story_note := Label.new()
+		story_note.custom_minimum_size.x = 520
+		story_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		story_note.text = yard._text("O guincho está reservado para o carro da cliente do Ferrugem. Siga o GPS, descarregue na baia e fale com Neco; esse carro vai para reparo.", "The flatbed is reserved for Ferrugem's customer's car. Follow GPS, unload at the bay and speak to Neco; this car is for repair.")
+		content.add_child(story_note)
+		return
 	if not data.contract.is_empty(): return
 	var job := JOBS.next_job(data)
 	_offer = choose_target(job)

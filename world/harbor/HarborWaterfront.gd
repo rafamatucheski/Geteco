@@ -1,10 +1,12 @@
 @tool
 extends Node2D
+const SURFACE := preload("res://world/harbor/UrbanGround.gd")
 ## Self-contained east waterfront for the isolated Harbor district preview.
 ## The quay begins beyond the road/sidewalk reservation. The channel is impassable
 ## except for HarborBridge and the fixed gangway leading onto Northstar's deck.
 
 const SHORE_X := 3200.0
+const SOUTH_PORT := preload("res://world/harbor/HarborSouthPortLayout.gd")
 const QUAY_X := 3130.0
 const SHIP_BOUNDS := Rect2(3350.0, 650.0, 440.0, 1500.0)
 const WATER_BOUNDS := Rect2(3200.0, -5000.0, 10000.0, 15000.0)
@@ -41,11 +43,15 @@ func _ready() -> void:
 func _build_water_surfaces() -> void:
 	var water = preload("res://world/shared/nature/WaterPresentation.gd")
 	# Filhos atrás do desenho estático mantêm navio, cais e terra sobre a água.
-	water.rectangle(self, Rect2(WATER_BOUNDS.position, Vector2(MOUNTAIN_COAST_X - WATER_BOUNDS.position.x, WATER_BOUNDS.size.y)), Color("204754"), animate_water)
-	water.rectangle(self, Rect2(Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y), WATER_BOUNDS.end - Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y)), Color("204754"), animate_water)
-	water.rectangle(self, Rect2(3200, -5000, 32, 15000), Color("326a72"), animate_water)
-	water.rectangle(self, Rect2(3232, -5000, 65, 15000), Color("2b5965"), animate_water)
-	water.rectangle(self, Rect2(3297, -5000, 110, 15000), Color("264e5d"), animate_water)
+	var surfaces: Array[Polygon2D] = [
+		water.rectangle(self, Rect2(WATER_BOUNDS.position, Vector2(MOUNTAIN_COAST_X - WATER_BOUNDS.position.x, WATER_BOUNDS.size.y)), Color("204754"), animate_water),
+		water.rectangle(self, Rect2(Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y), WATER_BOUNDS.end - Vector2(MOUNTAIN_COAST_X, MOUNTAIN_SOUTH_Y)), Color("204754"), animate_water),
+		water.rectangle(self, Rect2(3200, -5000, 32, 15000), Color("326a72"), animate_water),
+		water.rectangle(self, Rect2(3232, -5000, 65, 15000), Color("2b5965"), animate_water),
+		water.rectangle(self, Rect2(3297, -5000, 110, 15000), Color("264e5d"), animate_water),
+	]
+	for surface in surfaces:
+		surface.z_index = -1
 
 
 func _build_collisions() -> void:
@@ -66,7 +72,7 @@ func _build_collisions() -> void:
 	# Metal impact groups belong to structures, never the water boundary.
 	var structures := _new_solid_body("ShipStructures", true)
 	for i in range(CRANE_Y.size()):
-		_add_box(structures, Rect2(3140.0, CRANE_Y[i] - 36.0, 51.0, 72.0), "CraneBase%d" % i)
+		_add_gantry_crane_collision(structures, CRANE_Y[i], i)
 	var obstacles := _get_ship_obstacles()
 	for i in range(obstacles.size()):
 		_add_box(structures, obstacles[i], "ShipObstacle%d" % i)
@@ -104,6 +110,18 @@ func _add_box(body: StaticBody2D, bounds: Rect2, label: String) -> void:
 	body.add_child(collision)
 
 
+func _add_gantry_crane_collision(parent: StaticBody2D, base_y: float, index: int) -> void:
+	var x := 3140.0
+	var core := "Crane%d" % index
+	# Solid envelope of the supporting legs and lower tower.
+	_add_box(parent, Rect2(x - 60.0, base_y - 70.0, 120.0, 84.0), core + "Base")
+	_add_box(parent, Rect2(x - 74.0, base_y - 130.0, 30.0, 110.0), core + "WestPier")
+	_add_box(parent, Rect2(x + 44.0, base_y - 130.0, 30.0, 110.0), core + "EastPier")
+	# Prevents clipping through the lower deck slab and keeps the upper gantry
+	# silhouette from being pass-through.
+	_add_box(parent, Rect2(x - 30.0, base_y - 2.0, 60.0, 22.0), core + "DeckFoot")
+
+
 func get_waterfront_audit_data() -> Dictionary:
 	var bases: Array[Rect2] = []
 	for y in CRANE_Y:
@@ -120,13 +138,13 @@ func get_waterfront_audit_data() -> Dictionary:
 		"bridge_opening": BRIDGE_OPENING,
 		"crane_obstacles": bases,
 		"ship_access": get_ship_access_data(),
+		"south_port_surfaces": SOUTH_PORT.surfaces(),
 	}
 
 
 func get_water_collision_rects() -> Array[Rect2]:
 	return [
 		Rect2(SHORE_X, -5000.0, EAST_SHORE_X - SHORE_X, BRIDGE_OPENING.position.y + 5000.0),
-		Rect2(SHORE_X, 2140.0, EAST_SHORE_X - SHORE_X, 7860.0),
 	]
 
 
@@ -137,7 +155,14 @@ func get_water_collision_polygons() -> Array[PackedVector2Array]:
 	var water_band := _rect_polygon(Rect2(SHORE_X, BRIDGE_OPENING.end.y, EAST_SHORE_X - SHORE_X, 2140.0 - BRIDGE_OPENING.end.y))
 	var connected_land := Geometry2D.merge_polygons(_hull_polygon(), _rect_polygon(GANGWAY_BOUNDS))
 	assert(connected_land.size() == 1, "Ship gangway must physically overlap its hull")
-	return Geometry2D.clip_polygons(water_band, connected_land[0])
+	var result: Array[PackedVector2Array] = []
+	# The access bend and its shoulder extend north of y=2140. Subtract the
+	# same visible land from BOTH water bands, or this older band leaves an
+	# invisible wall across the approach despite WorldPerimeter being clear.
+	for piece in Geometry2D.clip_polygons(water_band, connected_land[0]):
+		result.append_array(SOUTH_PORT.subtract_surfaces(piece))
+	result.append_array(SOUTH_PORT.subtract_surfaces(_rect_polygon(Rect2(SHORE_X,2140,EAST_SHORE_X-SHORE_X,7860))))
+	return result
 
 
 func _rect_polygon(bounds: Rect2) -> PackedVector2Array:
@@ -177,7 +202,10 @@ func _deck_edge_segments() -> Array[PackedVector2Array]:
 	for i in range(deck.size()):
 		var first := deck[i]
 		var last := deck[(i + 1) % deck.size()]
-		if first.x == 3372.0 and last.x == 3372.0:
+		if first.y == 2115.0 and last.y == 2115.0:
+			segments.append(PackedVector2Array([first,Vector2(3606,2115)]))
+			segments.append(PackedVector2Array([Vector2(3534,2115),last]))
+		elif first.x == 3372.0 and last.x == 3372.0:
 			segments.append(PackedVector2Array([first, Vector2(3372, GANGWAY_BOUNDS.end.y)]))
 			segments.append(PackedVector2Array([Vector2(3372, GANGWAY_BOUNDS.position.y), last]))
 		else:
@@ -197,7 +225,7 @@ func get_ship_access_data() -> Dictionary:
 		"walk_route": PackedVector2Array([Vector2(3130, 1762), Vector2(3402, 1762), Vector2(3402, 1050), Vector2(3402, 965), Vector2(3465, 965), Vector2(3515, 965), Vector2(3515, 1450), Vector2(3515, 965), Vector2(3465, 965), Vector2(3465, 830), Vector2(3570, 830), Vector2(3570, 755), Vector2(3570, 830), Vector2(3675, 830), Vector2(3675, 965), Vector2(3738, 965), Vector2(3738, 2070), Vector2(3402, 2070), Vector2(3402, 1762), Vector2(3130, 1762)]),
 		"future_markers": {"GangwayEntry": Vector2(3130, 1762), "ShipLanding": Vector2(3402, 1762), "CargoInspection": Vector2(3515, 1450), "BowLookout": Vector2(3570, 755), "AftAssembly": Vector2(3570, 2070)},
 		"combat_probe": {"position": Vector2(3402, 1762), "target": Vector2(3460, 1610)},
-		"water_negative_samples": PackedVector2Array([Vector2(3300, 750), Vector2(4000, 1000), Vector2(3300, 1710), Vector2(3300, 1820), Vector2(3400, 720), Vector2(3570, 2180)]),
+		"water_negative_samples": PackedVector2Array([Vector2(3300, 750), Vector2(4000, 1000), Vector2(3300, 1710), Vector2(3300, 1820), Vector2(3400, 720), Vector2(3670, 2180)]),
 		"mission_integrated": false,
 		"ship_pilotable": false,
 	}
@@ -235,7 +263,7 @@ func _draw_water() -> void:
 
 
 func _draw_quay() -> void:
-	draw_rect(Rect2(3130, 0, 70, 2700), Color("989488"))
+	SURFACE.paint(self,Rect2(3130, 0, 70, 2700), Color("989488"),"concrete")
 	draw_rect(Rect2(3130, 0, 8, 2700), Color("b2ad9a"))
 	draw_rect(Rect2(3190, 0, 10, 2700), Color("c3bba6"))
 	draw_rect(Rect2(3200, 0, 7, 2700), Color("132c35"))
@@ -245,6 +273,8 @@ func _draw_quay() -> void:
 		draw_line(Vector2(3188, y), Vector2(3197, y + 15), Color("d9b75a"), 5.0)
 	for y in range(180, 2600, 160):
 		# Bollards are outside the usable road corridor; rubber fenders face water.
+		draw_circle(Vector2(3179,y+3),12,Color(.36,.20,.10,.20))
+		draw_line(Vector2(3198,y+15),Vector2(3199,y+48),Color(.22,.34,.24,.48),3)
 		draw_rect(Rect2(3197, y - 18, 13, 36), Color("192e33"))
 		draw_circle(Vector2(3179, y), 7.0, Color("444b48"))
 		draw_line(Vector2(3173, y), Vector2(3185, y), Color("d0b273"), 5.0)

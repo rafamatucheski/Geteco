@@ -82,7 +82,7 @@ func _ready() -> void:
 	has_nitro = false
 	$Collision.shape.size = Vector2(82,35)
 	$BumperHitbox.get_child(0).shape.size = Vector2(84,37)
-	$ContactShadow.scale = Vector2(84,37) / $ContactShadow.texture.get_size()
+	preload("res://ContactShadow.gd").add_vehicle(self, Vector2(84,37))
 	headlight.position = Vector2(39,-12)
 	second_headlight.position = Vector2(39,12)
 	for index in brake_glows.size():

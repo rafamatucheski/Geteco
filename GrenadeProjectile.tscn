@@ -7,7 +7,7 @@ radius = 6.0
 
 [node name="GrenadeProjectile" type="CharacterBody2D"]
 collision_layer = 0
-collision_mask = 13
+collision_mask = 15
 script = ExtResource("1_grenade_script")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

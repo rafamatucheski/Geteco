@@ -48,15 +48,14 @@ shape = SubResource("RectangleShape2D_sensor")
 [node name="Prompt" type="Label" parent="."]
 z_index = 100
 visible = false
-offset_left = -98.0
+offset_left = -120.0
 offset_top = 32.0
-offset_right = 98.0
+offset_right = 120.0
 offset_bottom = 58.0
 theme_override_colors/font_color = Color(1, 0.9, 0.42, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 14
-text = "[E] ENTRAR · PRÉDIO"
+theme_override_font_sizes/font_size = 16
+text = "E  ENTRAR"
 horizontal_alignment = 1
-

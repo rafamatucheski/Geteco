@@ -12,6 +12,7 @@ const PortMeshOptimizer = preload("res://prototypes/harbor_art_pack/PortMeshOpti
 @export var optimize_batch: bool = true
 
 var _obstacle_bounds: Array[AABB] = []
+var obstacle_materials: Array[StringName] = []
 var _total_envelope: AABB = AABB(Vector3(-4.10, 0.0, -3.20), Vector3(8.20, 1.20, 6.00))
 var _is_built: bool = false
 var _batch_metrics: Dictionary = {}
@@ -40,6 +41,7 @@ func get_batch_metrics() -> Dictionary:
 func _build_composition() -> void:
 	_is_built = true
 	_obstacle_bounds.clear()
+	obstacle_materials.clear()
 
 	# 1. Pilhas de Pallets no fundo esquerdo
 	var stack1 := PortPalletStack3D.new()
@@ -127,9 +129,16 @@ func _build_composition() -> void:
 func _add_prop_and_register_obstacles(prop: Node3D) -> void:
 	add_child(prop)
 	var xform := prop.transform
+	var material: StringName = &"metal"
+	if prop is PortPalletStack3D or prop is PortWoodenPallet3D or prop is PortLongCrate3D or prop is PortCargoCrate3D:
+		material = &"wood"
+	elif prop is PortPlasticTote3D:
+		# A dull contact is closer to a plastic tote than a ringing steel hit.
+		material = &"wood"
 	for aabb in prop.get_obstacle_bounds():
 		var transformed := _transform_aabb(xform, aabb)
 		_obstacle_bounds.append(transformed)
+		obstacle_materials.append(material)
 
 static func _transform_aabb(xform: Transform3D, aabb: AABB) -> AABB:
 	var corners: Array[Vector3] = [

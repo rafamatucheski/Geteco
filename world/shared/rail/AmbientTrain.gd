@@ -25,6 +25,7 @@ var _audio_clock := 0.0
 
 
 func configure(rail_line: DistrictRailLine, configured_speed: float, configured_cars: int) -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_rail_line = rail_line
 	speed = configured_speed
 	freight_car_count = clampi(configured_cars, 2, 7)

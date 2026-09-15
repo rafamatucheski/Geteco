@@ -6,8 +6,13 @@ static func apply(actor: Node, role: String) -> void:
 	var root: Node3D=actor.model_root
 	var torso: Node3D=actor.torso_node
 	var head: Node3D=actor.head_node
-	root.scale=Vector3(randf_range(.93,1.10),randf_range(.94,1.10),1)
+	if role == "police":
+		root.scale = Vector3.ONE
+	else:
+		root.scale=Vector3(randf_range(.93,1.10),randf_range(.94,1.10),1)
 	var skin := [Color("c68c67"),Color("8f5f48"),Color("e1b599")].pick_random() as Color
+	if role == "police" and actor.has_meta("police_appearance"):
+		skin = Color(actor.get_meta("police_appearance").skin)
 	for child in head.get_children():
 		if child is MeshInstance3D and child.mesh is SphereMesh and child.position.is_zero_approx():
 			child.material_override=child.material_override.duplicate()

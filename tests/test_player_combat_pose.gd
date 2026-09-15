@@ -15,6 +15,9 @@ func _run() -> void:
 	root.add_child(scene)
 	current_scene = scene
 	var player = load("res://Player.gd").new()
+	# Regressão do rig procedural original; o Dante Meshy (padrão desde 14/09)
+	# tem cobertura própria em test_meshy_dante e test_meshy_outfits.
+	player.use_meshy_dante = false
 	player.name = "Player"
 	var camera := Camera2D.new()
 	camera.name = "Camera"
@@ -35,7 +38,10 @@ func _run() -> void:
 		check(hand_pos.distance_to(mount.global_position) < 0.001, "%s grip on glove" % id)
 		check(hand_pos.distance_to(player.current_gun_mesh.to_global(player.combat_pose.GRIPS[id])) < 0.001, "%s actual handle in palm" % id)
 		var local_barrel: Vector3 = player.model_root.global_basis.inverse() * -mount.global_basis.z
-		check(local_barrel.dot(Vector3.FORWARD) > 0.99, "%s aimed barrel alignment" % id)
+		if id in ["axe", "bat"]:
+			check(local_barrel.y > 0.5, "%s guard raises striking end above hands" % id)
+		else:
+			check(local_barrel.dot(Vector3.FORWARD) > 0.99, "%s aimed barrel alignment" % id)
 		var support: Vector3 = player.combat_pose.SUPPORT_GRIPS.get(id, Vector3.ZERO)
 		if support != Vector3.ZERO:
 			var left_hand: Vector3 = player.left_lower_arm.to_global(Vector3(0, -0.20, 0))
