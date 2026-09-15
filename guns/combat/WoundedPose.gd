@@ -14,7 +14,7 @@ static func apply(person: Node2D, amount: float, direction: Vector2, previous_he
 	if person.get("torso_node") == null: return
 	var pose := person.get_node_or_null("WoundedPose")
 	if pose == null:
-		pose = load("res://world/shared/combat/WoundedPose.gd").new()
+		pose = load("res://guns/combat/WoundedPose.gd").new()
 		pose.name = "WoundedPose"
 		pose.initial_health = maxf(previous_health, float(person.get("max_health")) if "max_health" in person else previous_health)
 		person.add_child(pose)

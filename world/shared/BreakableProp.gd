@@ -17,7 +17,7 @@ func receive_vehicle_impact(speed: float, direction: Vector2) -> void:
 	collision_layer = 0
 	collision_mask = 0
 	if is_instance_valid(presentation): presentation.hide()
-	preload("res://world/shared/ImpactDebris.gd").spawn(get_parent(),global_position,direction,speed,debris_material,extent)
+	preload("res://guns/ImpactDebris.gd").spawn(get_parent(),global_position,direction,speed,debris_material,extent)
 	queue_redraw()
 
 func _draw() -> void:

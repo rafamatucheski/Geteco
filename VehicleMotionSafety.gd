@@ -74,7 +74,7 @@ static func move(body: CharacterBody2D) -> void:
 		body.set_meta("vehicle_safe_transform", body.global_transform)
 		return
 	var maximum_step := SPEED_LIMIT * body.get_physics_process_delta_time() + 16.0
-	var people := preload("res://world/shared/combat/VehiclePersonImpact.gd").prepare_motion(body, incoming)
+	var people := preload("res://guns/combat/VehiclePersonImpact.gd").prepare_motion(body, incoming)
 	body.move_and_slide()
 	# Sliding against a moving car can inject that collider's velocity even in
 	# floating mode. Keep only this vehicle's own motion for subsequent frames.

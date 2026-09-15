@@ -1,5 +1,5 @@
 extends SceneTree
-const IMPACT = preload("res://world/shared/combat/VehiclePersonImpact.gd")
+const IMPACT = preload("res://guns/combat/VehiclePersonImpact.gd")
 const FACTORY = preload("res://world/shared/emergency/ModernTrafficFactory.gd")
 var failures: Array[String] = []
 

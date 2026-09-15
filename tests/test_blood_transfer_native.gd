@@ -23,7 +23,7 @@ func run() -> void:
 	var actors: Array[Node2D] = [car, bike, person, medic]
 	for actor in actors:
 		actor.set_physics_process(false)
-		var blood := preload("res://world/shared/combat/GroundBlood.gd").new()
+		var blood := preload("res://guns/combat/GroundBlood.gd").new()
 		blood.radius = 32.0
 		world.add_child(blood)
 		blood.position = Vector2(165, actor.position.y + 3)

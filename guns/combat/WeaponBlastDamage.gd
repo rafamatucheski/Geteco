@@ -1,10 +1,10 @@
 extends RefCounted
 const MATERIAL := preload("res://audio/combat/ImpactMaterial.gd")
-const REMAINS := preload("res://world/shared/combat/ExplosionRemains.gd")
-const IMPULSE := preload("res://world/shared/combat/BlastImpulse.gd")
+const REMAINS := preload("res://guns/combat/ExplosionRemains.gd")
+const IMPULSE := preload("res://guns/combat/BlastImpulse.gd")
 
 static func exposed(source: Node2D, target: Node2D, origin: Vector2) -> bool:
-	if not preload("res://world/shared/combat/CombatWorld.gd").shares_world(source, target): return false
+	if not preload("res://guns/combat/CombatWorld.gd").shares_world(source, target): return false
 	var ray := PhysicsRayQueryParameters2D.create(origin, target.global_position, 1 | 2)
 	var excluded: Array[RID] = []
 	if source is CollisionObject2D: excluded.append(source.get_rid())

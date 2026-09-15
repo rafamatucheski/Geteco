@@ -33,10 +33,10 @@ static func feedback(actor: Node2D, incoming: Vector2, lethal: bool, sound := tr
 	actor.set_meta("vehicle_feedback_ms", Time.get_ticks_msec())
 	var effects := actor.get_tree().get_first_node_in_group("weapon_effects")
 	if effects == null:
-		effects = preload("res://world/shared/combat/WeaponEffects.gd").new()
+		effects = preload("res://guns/combat/WeaponEffects.gd").new()
 		actor.get_parent().add_child(effects)
 	effects.spawn_vehicle_splash(actor.global_position, incoming, lethal)
-	if not lethal: preload("res://world/shared/combat/GroundBlood.gd").spawn(actor, false)
+	if not lethal: preload("res://guns/combat/GroundBlood.gd").spawn(actor, false)
 	if not sound: return
 	var audio := AudioStreamPlayer2D.new()
 	audio.name = "VehicleBodyImpact"

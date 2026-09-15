@@ -1,7 +1,7 @@
 extends SceneTree
 ## Render the actual production projectile sprites at native and inspection scale.
-const BULLET := preload("res://Bullet.tscn")
-const CATALOG := preload("res://WeaponCatalog.gd")
+const BULLET := preload("res://guns/Bullet.tscn")
+const CATALOG := preload("res://guns/WeaponCatalog.gd")
 
 func _initialize() -> void:
 	run.call_deferred()

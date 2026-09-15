@@ -21,7 +21,7 @@ func target_at(x: float) -> Target:
  return target
 func shot(weapon: String, distance: float) -> int:
  var target := target_at(distance)
- var b = load("res://Bullet.tscn").instantiate()
+ var b = load("res://guns/Bullet.tscn").instantiate()
  var data := WeaponCatalog.get_weapon(weapon)
  b.damage = int(data.damage)
  b.speed = float(data.projectile_speed)
@@ -61,7 +61,7 @@ func run():
   check(monotonic, weapon+" damage decreases monotonically")
  var front := target_at(80)
  var behind := target_at(160)
- var b = load("res://Bullet.tscn").instantiate()
+ var b = load("res://guns/Bullet.tscn").instantiate()
  b.direction = Vector2.RIGHT
  world.add_child(b)
  b.set_physics_process(false)
@@ -72,7 +72,7 @@ func run():
  front.queue_free()
  behind.queue_free()
  await process_frame
- var flame = load("res://FlameJet.tscn").instantiate()
+ var flame = load("res://guns/FlameJet.tscn").instantiate()
  flame.configure_range(WeaponCatalog.get_weapon("flamethrower"))
  world.add_child(flame)
  flame.set_physics_process(false)
@@ -88,12 +88,12 @@ func run():
  for weapon in ["fists","knuckles","knife","bat","axe"]:
   var data := WeaponCatalog.get_weapon(weapon)
   check(WeaponCatalog.distance_damage(int(data.damage),float(data.melee_range),float(data.falloff_start),float(data.max_range),float(data.min_damage_ratio)) < int(data.damage),weapon+" edge contact weaker")
- var rocket = load("res://Bullet.tscn").instantiate()
+ var rocket = load("res://guns/Bullet.tscn").instantiate()
  rocket.configure_range(WeaponCatalog.get_weapon("rpg"))
  rocket.damage = 95
  check(rocket.max_range == 650 and rocket.damage_at_distance(600) == 95,"rocket limits flight but retains explosive charge")
  rocket.free()
- var grenade = load("res://GrenadeProjectile.tscn").instantiate()
+ var grenade = load("res://guns/GrenadeProjectile.tscn").instantiate()
  world.add_child(grenade)
  grenade.setup(Vector2.ZERO,Vector2.RIGHT,10000,null)
  grenade.set_physics_process(false)
@@ -115,7 +115,7 @@ func run():
   var data := WeaponCatalog.get_weapon(weapon)
   for child in world.get_children():
    if child in before: continue
-   if child.get_script() == load("res://Bullet.gd"):
+   if child.get_script() == load("res://guns/Bullet.gd"):
     spawned += 1
     check(child.max_range == float(data.max_range) and child.falloff_start == float(data.falloff_start), weapon+" player wires projectile profile")
     child.queue_free()

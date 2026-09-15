@@ -72,7 +72,7 @@ func run() -> void:
 	check(guard.weapon_reload.clip==ammunition-1,"shotgun consumes one cartridge per blast")
 	var helper=guard.get_meta("interior_actor_presentation")
 	var chest:Vector2=helper.project_world(helper.floor_position(guard.global_position)+Vector3.UP*1.1)
-	var round=load("res://Bullet.tscn").instantiate()
+	var round=load("res://guns/Bullet.tscn").instantiate()
 	round.owner_body=player
 	round.damage=5
 	round.global_position=chest+Vector2(16,0)

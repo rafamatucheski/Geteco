@@ -22,7 +22,7 @@ func person(point: Vector2) -> Node2D:
 	return body
 
 func flame_at(point: Vector2) -> Node2D:
-	var flame = load("res://FlameJet.tscn").instantiate()
+	var flame = load("res://guns/FlameJet.tscn").instantiate()
 	flame.position = point
 	world.add_child(flame)
 	flame.setup(point, Vector2.RIGHT, null)
@@ -74,7 +74,7 @@ func run() -> void:
 	burning.health = 1000
 	for i in 12: fire._physics_process(0.5)
 	check(not fire.flames.emitting, "Expired flames stop emitting during smoke tail")
-	preload("res://world/shared/combat/PersonBurning.gd").ignite(burning)
+	preload("res://guns/combat/PersonBurning.gd").ignite(burning)
 	check(fire.flames.emitting and fire.remaining == 6.0, "Reigniting during smoke tail restarts visible fire")
 	for i in 15: fire._physics_process(0.5)
 	await frames(2)
@@ -95,7 +95,7 @@ func run() -> void:
 	var rocket_victim = person(Vector2(185, 70))
 	var survivor = person(Vector2(185, -58))
 	await frames(3)
-	var rocket = load("res://Bullet.tscn").instantiate()
+	var rocket = load("res://guns/Bullet.tscn").instantiate()
 	rocket.position = Vector2(150, 70)
 	rocket.damage = 200
 	rocket.is_explosive = true
@@ -105,7 +105,7 @@ func run() -> void:
 	check(not survivor.is_dead and survivor.health < survivor.max_health, "Outer blast survivor is not killed by extra run-over damage")
 	var grenade_victim = person(Vector2(270, 70))
 	await frames(3)
-	var grenade = load("res://GrenadeProjectile.tscn").instantiate()
+	var grenade = load("res://guns/GrenadeProjectile.tscn").instantiate()
 	world.add_child(grenade)
 	grenade.setup(Vector2(280, 70), Vector2.ZERO, 0, null)
 	grenade.current_fuse = 0.08
@@ -116,7 +116,7 @@ func run() -> void:
 		if not victim.has_meta("explosion_remains"): continue
 		var remains: Node2D = victim.get_meta("explosion_remains")
 		check(not victim.visible and remains.pieces.size() >= 4 and remains.pieces.size() <= 6, "Variable anatomical fragments replace whole body")
-		var again = preload("res://world/shared/combat/ExplosionRemains.gd").spawn(victim, victim.position)
+		var again = preload("res://guns/combat/ExplosionRemains.gd").spawn(victim, victim.position)
 		check(again == remains, "Repeated explosion cannot duplicate fragments")
 	await create_timer(2).timeout
 	await screenshot("explosion-remains")
@@ -139,7 +139,7 @@ func run() -> void:
 	isolated.add_child(remote)
 	remote.set_physics_process(false)
 	await frames(3)
-	var overlapping_rocket = load("res://Bullet.tscn").instantiate()
+	var overlapping_rocket = load("res://guns/Bullet.tscn").instantiate()
 	overlapping_rocket.position = overlap_victim.position
 	overlapping_rocket.speed = 0
 	overlapping_rocket.is_explosive = true

@@ -59,7 +59,7 @@ func _damage(amount: float, direction: Vector2) -> void:
 		collision_layer = 0
 		collision_mask = 0
 		if is_instance_valid(view): view.hide()
-		preload("res://world/shared/ImpactDebris.gd").spawn(get_parent(), global_position, direction, velocity.length(), cargo_material, extent)
+		preload("res://guns/ImpactDebris.gd").spawn(get_parent(), global_position, direction, velocity.length(), cargo_material, extent)
 		velocity = Vector2.ZERO
 
 func restore_world_prop() -> void:

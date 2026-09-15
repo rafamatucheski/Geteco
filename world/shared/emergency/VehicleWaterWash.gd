@@ -5,7 +5,7 @@ var _phase := 0.0
 var _size := Vector2(62, 26)
 
 static func apply(vehicle: Node) -> void:
-	preload("res://world/shared/combat/BloodTransferSystem.gd").wash(vehicle)
+	preload("res://guns/combat/BloodTransferSystem.gd").wash(vehicle)
 	if "bloody_tires_timer" in vehicle:
 		vehicle.bloody_tires_timer = 0.0
 		var skid: Line2D = vehicle.get("skid_line")

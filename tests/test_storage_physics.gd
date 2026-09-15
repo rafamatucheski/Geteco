@@ -38,7 +38,7 @@ func run() -> void:
 	check(wood.broken and wood.collision_layer == 0, "Damage breaks wood and removes blocking collision")
 	var debris: Node2D
 	for child in depot.get_children():
-		if child.get_script() == preload("res://world/shared/ImpactDebris.gd"):
+		if child.get_script() == preload("res://guns/ImpactDebris.gd"):
 			debris = child
 	check(debris != null, "Broken wood leaves fragments")
 	if debris != null:

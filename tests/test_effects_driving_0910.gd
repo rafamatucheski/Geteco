@@ -1,7 +1,7 @@
 extends SceneTree
 const ENGINE := preload("res://audio/VehicleEngineSound.gd")
 const SAFETY := preload("res://VehicleMotionSafety.gd")
-const BLAST := preload("res://world/shared/combat/ExplosionVisual.gd")
+const BLAST := preload("res://guns/combat/ExplosionVisual.gd")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, label: String) -> void:
@@ -77,11 +77,11 @@ func run() -> void:
 	for i in 60: speed += 880.0 * engine.drive_force(speed,490) / 60.0
 	check(speed < 175 and speed > 100,"first second of acceleration remains controllable")
 	var previous_bursts := get_nodes_in_group("explosion_visuals").size()
-	var grenade := preload("res://GrenadeProjectile.gd").new()
+	var grenade := preload("res://guns/GrenadeProjectile.gd").new()
 	world.add_child(grenade)
 	grenade.global_position = Vector2(5000,5000)
 	grenade.explode()
-	var rocket = preload("res://Bullet.tscn").instantiate()
+	var rocket = preload("res://guns/Bullet.tscn").instantiate()
 	world.add_child(rocket)
 	rocket._trigger_explosion(Vector2(6000,6000))
 	rocket.queue_free()

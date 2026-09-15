@@ -1,7 +1,7 @@
 extends Node
 ## One atlas per casualty, never one viewport per limb. Render only while
 ## tumbling; settled fragments retain the last texture without render work.
-const MESHES := preload("res://world/shared/combat/BodyFragmentMesh.gd")
+const MESHES := preload("res://guns/combat/BodyFragmentMesh.gd")
 const CELL := 128
 const CELL_UNITS := 1.7
 var viewport: SubViewport

@@ -46,7 +46,7 @@ func run() -> void:
 		check(not fallen.fall_presentation.started and fallen.civilian_routine, "rider recovers")
 	var shot_bike = FACTORY.spawn_moving_vehicle(path,"ShotBike","bike_urban",.35,90,0)
 	shot_bike.set_physics_process(false)
-	var bullet = preload("res://Bullet.gd").new()
+	var bullet = preload("res://guns/Bullet.gd").new()
 	world.add_child(bullet)
 	bullet._hit(shot_bike, shot_bike.global_position, Vector2.LEFT)
 	await process_frame

@@ -143,7 +143,7 @@ func _ready():
 	smoke_emitter.scale_amount_max = 32.0 / 64.0
 	smoke_emitter.color = Color(0.5, 0.5, 0.5, 0.8)
 	smoke_emitter.texture = _make_soft_particle_texture()
-	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
+	preload("res://guns/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
 	add_child(smoke_emitter)
 	
 	# Emissor de fogo
@@ -158,7 +158,7 @@ func _ready():
 	flame_particles.scale_amount_max = 24.0 / 64.0
 	flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
 	flame_particles.texture = _make_soft_particle_texture()
-	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
+	preload("res://guns/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
 	add_child(flame_particles)
 	
 	# Faíscas
@@ -552,8 +552,8 @@ func _physics_process(delta):
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
 		var body = col.get_collider()
-		if preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body):
-			preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, prev_velocity)
+		if preload("res://guns/combat/VehiclePersonImpact.gd").is_person(body):
+			preload("res://guns/combat/VehiclePersonImpact.gd").hit(self, body, prev_velocity)
 			continue
 		# get_normal() aponta da parede pra fora (pro lado do carro). Só conta
 		# como impacto quando a velocidade vai CONTRA essa normal (carro
@@ -583,7 +583,7 @@ func _physics_process(delta):
 				collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
 				collision_particles.initial_velocity_min = 35.0
 				collision_particles.initial_velocity_max = 75.0
-				preload("res://world/shared/combat/WeaponEffects.gd").spawn_post_impact(get_parent(), col.get_position(), col.get_normal(), impact_speed)
+				preload("res://guns/combat/WeaponEffects.gd").spawn_post_impact(get_parent(), col.get_position(), col.get_normal(), impact_speed)
 			else:
 				collision_particles.direction = col.get_normal()
 				collision_particles.spread = 60.0
@@ -617,8 +617,8 @@ var _door_visual: Node2D = null
 func _on_bumper_hitbox_entered(body: Node2D) -> void:
 	if body == null or body == self or (body.is_in_group("player") and is_driven_by_player) or body.is_in_group("ambient_traffic") or body.is_in_group("vehicle"):
 		return # Nunca atropelar ou causar dano ao próprio motorista ao entrar ou dirigir!
-	preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, velocity)
-	if not preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body) and velocity.length() > 85.0 and body.has_method("take_damage"):
+	preload("res://guns/combat/VehiclePersonImpact.gd").hit(self, body, velocity)
+	if not preload("res://guns/combat/VehiclePersonImpact.gd").is_person(body) and velocity.length() > 85.0 and body.has_method("take_damage"):
 		body.take_damage(100, is_driven_by_player)
 
 
@@ -630,7 +630,7 @@ func _apply_steering_motion(turn_input: float, delta: float) -> void:
 
 func _activate_bloody_tires() -> void:
 	bloody_tires_timer = 4.0
-	preload("res://world/shared/combat/BloodTransferSystem.gd").splash(self)
+	preload("res://guns/combat/BloodTransferSystem.gd").splash(self)
 	_do_screen_shake(0.18)
 
 func _get_safe_exit_position() -> Vector2:
@@ -846,7 +846,7 @@ func _explode() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 	
-	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 180.0, true)
+	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 180.0, true)
 	
 	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if sprite:
@@ -859,7 +859,7 @@ func _explode() -> void:
 	_do_screen_shake(0.70)
 		
 	# 8. Onda de choque
-	preload("res://world/shared/combat/VehicleBlast.gd").apply(self)
+	preload("res://guns/combat/VehicleBlast.gd").apply(self)
 	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
 
 var _fire_truck_dispatched: bool = false
@@ -911,7 +911,7 @@ func _apply_crash_deformation(_impact_normal: Vector2, impact_force: float, _hit
 		return
 	_last_crash_visual_ms = now
 	if not is_post:
-		preload("res://world/shared/combat/WeaponEffects.gd").spawn_crash(get_parent(), _hit_world_pos, _impact_normal, impact_force)
+		preload("res://guns/combat/WeaponEffects.gd").spawn_crash(get_parent(), _hit_world_pos, _impact_normal, impact_force)
 	# Preserve the authored body; generic polygon dents protrude beyond its silhouette.
 	sprite.modulate = sprite.modulate.lerp(Color(0.72, 0.72, 0.74), 0.08)
 	if not "body_model" in self and not is_post:

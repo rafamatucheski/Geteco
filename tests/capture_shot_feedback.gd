@@ -59,7 +59,7 @@ func run() -> void:
 	var start := person.global_position
 	for frame in 150:
 		if frame == 2:
-			var round = preload("res://Bullet.tscn").instantiate()
+			var round = preload("res://guns/Bullet.tscn").instantiate()
 			round.position = Vector2(70,-10)
 			round.direction = Vector2.DOWN
 			round.speed = 1200
@@ -67,7 +67,7 @@ func run() -> void:
 			round.impact_resolved.connect(func(_target,_point,_material,_accepted): _capture_named.call_deferred("vehicle-impact"))
 			world.add_child(round)
 		if frame == 15:
-			var bullet = preload("res://Bullet.tscn").instantiate()
+			var bullet = preload("res://guns/Bullet.tscn").instantiate()
 			bullet.position = person.global_position + Vector2(-35,0)
 			bullet.direction = Vector2.RIGHT
 			bullet.speed = 1200

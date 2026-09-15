@@ -12,7 +12,7 @@ func run() -> void:
 	var scene := Node2D.new()
 	root.add_child(scene)
 	current_scene = scene
-	var effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
+	var effects := preload("res://guns/combat/WeaponEffects.gd").new()
 	scene.add_child(effects)
 	var player = load("res://Player.gd").new()
 	var camera := Camera2D.new()

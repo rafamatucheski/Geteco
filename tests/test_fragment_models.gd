@@ -1,6 +1,6 @@
 extends SceneTree
-const REMAINS := preload("res://world/shared/combat/ExplosionRemains.gd")
-const BUILDER := preload("res://world/shared/combat/BodyFragmentMesh.gd")
+const REMAINS := preload("res://guns/combat/ExplosionRemains.gd")
+const BUILDER := preload("res://guns/combat/BodyFragmentMesh.gd")
 var failures := 0
 var output := "D:/geteco/artifacts/remains-pain-revision"
 

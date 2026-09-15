@@ -24,7 +24,7 @@ var _perf_hud: Label
 
 func _ready() -> void:
 	add_child(preload("res://world/harbor/WorldPerimeter.gd").new())
-	var combat_effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
+	var combat_effects := preload("res://guns/combat/WeaponEffects.gd").new()
 	combat_effects.name = "WeaponEffects"
 	add_child(combat_effects)
 	weather = WEATHER_MANAGER.new()

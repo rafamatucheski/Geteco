@@ -76,10 +76,10 @@ func _bind_ammunation() -> void:
 	building.self_modulate.a = 0.0
 	var old_solid = building.get_node_or_null("BuildingSolid")
 	if old_solid: old_solid.queue_free()
-	var facade = preload("res://world/shared/ammunation/AmmunationBranchView.gd").new()
+	var facade = preload("res://guns/ammunation/AmmunationBranchView.gd").new()
 	facade.name = "AmmunationBranchFacade"
 	building.add_child(facade)
-	facade.build_view(preload("res://world/shared/ammunation/AmmunationFacade3D.gd"),12.0,25.0,Vector3(0,1.8,0))
+	facade.build_view(preload("res://guns/ammunation/AmmunationFacade3D.gd"),12.0,25.0,Vector3(0,1.8,0))
 	facade.position = door.position-facade.project_floor(Vector2(0,2.9))
 	facade.add_solid(Rect2(-4.2,-2.2,8.4,4.4),"GunShopStructure")
 	door.get_node("Facade").hide()

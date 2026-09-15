@@ -47,7 +47,7 @@ func run() -> void:
 	await physics_frame
 	person._die()
 	if OS.get_cmdline_user_args().has("fragments"):
-		preload("res://world/shared/combat/ExplosionRemains.gd").spawn(person,Vector2(375,100))
+		preload("res://guns/combat/ExplosionRemains.gd").spawn(person,Vector2(375,100))
 	medical.witness_called(person)
 	var key: String = care.identity(person)
 	var second_key := ""

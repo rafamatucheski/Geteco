@@ -43,7 +43,7 @@ static func spawn(actor: Node2D, lethal := true) -> Node2D:
 func _ready() -> void:
 	get_node("/root/WorldRenewal").watch_transient(self, LIFETIME)
 	add_to_group("ground_blood")
-	preload("res://world/shared/combat/BloodTransferSystem.gd").ensure.call_deferred(self)
+	preload("res://guns/combat/BloodTransferSystem.gd").ensure.call_deferred(self)
 	z_as_relative = false
 	z_index = 5
 	_build_pattern()

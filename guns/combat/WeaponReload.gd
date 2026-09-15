@@ -1,6 +1,6 @@
 extends RefCounted
 ## Player and police share magazine capacity and reload timing by weapon.
-const CATALOG := preload("res://WeaponCatalog.gd")
+const CATALOG := preload("res://guns/WeaponCatalog.gd")
 const AUDIO := preload("res://audio/reload/ReloadAudioBank.gd")
 static var _durations: Dictionary = {}
 var weapon_id := ""

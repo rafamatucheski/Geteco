@@ -100,7 +100,7 @@ func _physics_process(delta):
 		excluded.append(owner_body.get_rid())
 		var body_area := owner_body.get_node_or_null("InteriorBallisticBody") as Area2D
 		if body_area: excluded.append(body_area.get_rid())
-	var result = preload("res://world/shared/combat/ShotQuery.gd").cast(self, from, to, collision_mask, excluded, true)
+	var result = preload("res://guns/combat/ShotQuery.gd").cast(self, from, to, collision_mask, excluded, true)
 	if not result.is_empty():
 		distance_travelled += from.distance_to(result.get("position", to))
 		_hit(result.get("collider"), result.get("position", to), result.get("normal", Vector2.ZERO))
@@ -152,24 +152,24 @@ func _hit(target, hit_position: Vector2, hit_normal: Vector2) -> void:
 		target.take_damage(damage, is_player)
 		damage_applied = previous_health != null and target.get("health") != null and target.get("health") < previous_health
 		if material == &"flesh" and damage_applied:
-			preload("res://world/shared/combat/WoundedPose.gd").apply(target, float(previous_health) - float(target.health), direction, float(previous_health))
+			preload("res://guns/combat/WoundedPose.gd").apply(target, float(previous_health) - float(target.health), direction, float(previous_health))
 		if material == &"flesh" and previous_health != null and target.get("health") < previous_health:
-			preload("res://world/shared/combat/BodyWound.gd").apply(target, direction)
+			preload("res://guns/combat/BodyWound.gd").apply(target, direction)
 			if not target.is_in_group("player"):
 				preload("res://audio/reactions/PainReaction.gd").react(target, float(previous_health - target.get("health")))
 		if material == &"flesh" and damage_applied:
-			preload("res://world/shared/combat/BulletReaction.gd").apply(target)
+			preload("res://guns/combat/BulletReaction.gd").apply(target)
 		if material == &"flesh":
 			target.remove_meta("bullet_impulse")
 	
 	var subject_id: int = target.get_instance_id() if material == &"flesh" and is_instance_valid(target) else 0
 	IMPACT_AUDIO.play_hit(self, hit_position, material, damage, subject_id)
-	preload("res://world/shared/combat/ShotFeedback.gd").contact(self, hit_position, hit_normal, material, damage_applied)
+	preload("res://guns/combat/ShotFeedback.gd").contact(self, hit_position, hit_normal, material, damage_applied)
 	impact_resolved.emit(target, hit_position, material, damage_applied)
 		
-	var effects := preload("res://world/shared/combat/CombatWorld.gd").effects_for(self)
+	var effects := preload("res://guns/combat/CombatWorld.gd").effects_for(self)
 	if effects == null:
-		effects = preload("res://world/shared/combat/WeaponEffects.gd").new()
+		effects = preload("res://guns/combat/WeaponEffects.gd").new()
 		get_parent().add_child(effects)
 	if effects:
 		if material == &"flesh":
@@ -199,11 +199,11 @@ func _trigger_explosion(pos: Vector2) -> void:
 		if body == owner_body or not is_instance_valid(body) or not body.is_visible_in_tree(): continue
 		var dist := pos.distance_to(body.global_position)
 		if dist >= explosion_radius or not body.has_method("take_damage"): continue
-		if not preload("res://world/shared/combat/WeaponBlastDamage.gd").exposed(self, body, pos): continue
+		if not preload("res://guns/combat/WeaponBlastDamage.gd").exposed(self, body, pos): continue
 		var splash_dmg := int(damage * (1.0 - dist / explosion_radius))
-		preload("res://world/shared/combat/WeaponBlastDamage.gd").apply(body, splash_dmg, pos, self, owner_body as Node2D)
+		preload("res://guns/combat/WeaponBlastDamage.gd").apply(body, splash_dmg, pos, self, owner_body as Node2D)
 					
-	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), pos, explosion_radius)
+	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), pos, explosion_radius)
 
 func _expire() -> void:
 	if is_instance_valid(self):

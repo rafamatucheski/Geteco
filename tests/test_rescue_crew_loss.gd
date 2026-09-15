@@ -45,7 +45,7 @@ func run() -> void:
 	sequence._set_phase("return_with_patient")
 	var initial_pose: Transform3D = cot.patient_transform
 	var key: String = patient.get_meta("medical_identity")
-	var bullet = preload("res://Bullet.gd").new()
+	var bullet = preload("res://guns/Bullet.gd").new()
 	bullet.damage = 1000
 	world.add_child(bullet)
 	bullet._hit(crew[0],crew[0].global_position,Vector2.RIGHT)

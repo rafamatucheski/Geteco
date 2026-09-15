@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
-const BULLET_SCENE: PackedScene = preload("res://Bullet.tscn")
-const WEAPON_CATALOG = preload("res://WeaponCatalog.gd")
-const WEAPON_WHEEL_SCRIPT = preload("res://WeaponWheel.gd")
+const BULLET_SCENE: PackedScene = preload("res://guns/Bullet.tscn")
+const WEAPON_CATALOG = preload("res://guns/WeaponCatalog.gd")
+const WEAPON_WHEEL_SCRIPT = preload("res://guns/WeaponWheel.gd")
 
 @export var speed: float = 27.6
 const SPRINT_MULTIPLIER := 90.0 / 27.6
@@ -645,7 +645,7 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> void:
 	if is_dead or is_arrested or _respawn_grace_active or is_recovering or not impact_velocity.is_finite():
 		return
-	if impact_velocity.length() < preload("res://world/shared/combat/VehiclePersonImpact.gd").MIN_SPEED:
+	if impact_velocity.length() < preload("res://guns/combat/VehiclePersonImpact.gd").MIN_SPEED:
 		return
 	is_recovering = true
 	var damage = clampi(int(impact_velocity.length() * 0.25), 35, 100)
@@ -657,7 +657,7 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	take_damage(damage)
 	
 	if health > 0:
-		preload("res://world/shared/combat/GroundBlood.gd").spawn(self, false)
+		preload("res://guns/combat/GroundBlood.gd").spawn(self, false)
 		await get_tree().create_timer(0.8).timeout
 		is_recovering = false
 
@@ -831,7 +831,7 @@ func _spawn_blood_burst(dir: Vector2) -> void:
 	_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
 
 func _create_3d_blood_puddle() -> void:
-	preload("res://world/shared/combat/GroundBlood.gd").spawn(self, true)
+	preload("res://guns/combat/GroundBlood.gd").spawn(self, true)
 
 func _wasted() -> void:
 	if is_dead or is_arrested:
@@ -1228,10 +1228,10 @@ func _shoot_towards(target: Vector2) -> void:
 
 	# Disparo Especial: Jato ContÃƒÂ­nuo de Fogo de Curto Alcance do LanÃƒÂ§a-Chamas
 	if active_weapon_id == "flamethrower" or (data.get("is_flame", false) == true):
-		var flame_scene = preload("res://FlameJet.tscn")
+		var flame_scene = preload("res://guns/FlameJet.tscn")
 		var flame = flame_scene.instantiate() as FlameJet
 		var flame_origin := get_weapon_muzzle_position()
-		var flame_world: Node2D = preload("res://world/shared/combat/CombatWorld.gd").scene_for(self)
+		var flame_world: Node2D = preload("res://guns/combat/CombatWorld.gd").scene_for(self)
 		# World-space particles must enter the tree at the nozzle; moving
 		# their parent after _ready leaves the first burst at the old origin.
 		flame.position = flame_world.to_local(flame_origin)
@@ -1262,7 +1262,7 @@ func _shoot_towards(target: Vector2) -> void:
 		var ratio := 0.0 if pellets == 1 else float(pellet_index) / float(pellets - 1) - 0.5
 		var shot_direction := direction.rotated(ratio * spread)
 		var bullet = BULLET_SCENE.instantiate()
-		preload("res://world/shared/combat/CombatWorld.gd").scene_for(self).add_child(bullet)
+		preload("res://guns/combat/CombatWorld.gd").scene_for(self).add_child(bullet)
 		bullet.owner_body = self
 		bullet.direction = shot_direction
 		bullet.configure_range(data)
@@ -1280,7 +1280,7 @@ func _shoot_towards(target: Vector2) -> void:
 	var vol: float = float(data.get("audio_volume_db", -2.0))
 	_play_audio(ProceduralAudio.get_gunshot_stream(active_weapon_id), vol)
 	
-	var effects := preload("res://world/shared/combat/CombatWorld.gd").effects_for(self)
+	var effects := preload("res://guns/combat/CombatWorld.gd").effects_for(self)
 	if effects:
 		# The 3D flash already sits on the barrel; do not add a ground-level flash.
 		if not is_explosive and not is_flame:
@@ -1297,8 +1297,8 @@ func _release_grenade(direction: Vector2, throw_dist: float, data: Dictionary, a
 			weapon_ammo["grenade"] = ammo
 			_refresh_weapon_ui()
 			return
-	var grenade := preload("res://GrenadeProjectile.tscn").instantiate() as GrenadeProjectile
-	preload("res://world/shared/combat/CombatWorld.gd").scene_for(self).add_child(grenade)
+	var grenade := preload("res://guns/GrenadeProjectile.tscn").instantiate() as GrenadeProjectile
+	preload("res://guns/combat/CombatWorld.gd").scene_for(self).add_child(grenade)
 	grenade.damage = int(data.damage)
 	grenade.blast_radius = float(data.blast_radius)
 	grenade.max_throw_range = float(data.throw_range)
@@ -1318,7 +1318,7 @@ func get_weapon_muzzle_position() -> Vector2:
 
 func _alert_nearby_pedestrians() -> void:
 	for ped in get_tree().get_nodes_in_group("pedestrian"):
-		if preload("res://world/shared/combat/CombatWorld.gd").shares_world(self, ped) and ped != self:
+		if preload("res://guns/combat/CombatWorld.gd").shares_world(self, ped) and ped != self:
 			if global_position.distance_to(ped.global_position) < 450.0:
 				if ped.has_method("panic"):
 					ped.panic()
@@ -1358,7 +1358,7 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 		candidates = candidates.filter(func(n): return n is Node2D)
 		candidates.sort_custom(func(a, b): return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position))
 	for body in candidates:
-		if not preload("res://world/shared/combat/CombatWorld.gd").shares_world(self, body) or body == self:
+		if not preload("res://guns/combat/CombatWorld.gd").shares_world(self, body) or body == self:
 			continue
 		var to_body: Vector2 = body.global_position - global_position
 		var dist: float = to_body.length()
@@ -1378,7 +1378,7 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 			var contact_damage := WeaponCatalog.distance_damage(melee_damage, dist, float(data.falloff_start), melee_range, float(data.min_damage_ratio))
 			body.take_damage(contact_damage, true)
 			if data.get("is_knife", false) and preload("res://audio/combat/ImpactMaterial.gd").resolve(body) == &"flesh":
-				preload("res://world/shared/combat/BodyWound.gd").apply(body, direction)
+				preload("res://guns/combat/BodyWound.gd").apply(body, direction)
 			hit_anyone = true
 			if is_axe or is_bat: _axe_impact(body.global_position, direction, body, contact_damage)
 			if is_stab:
@@ -1403,7 +1403,7 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 
 func _axe_impact(point: Vector2, direction: Vector2, body: Node, damage: float) -> void:
 	var material := preload("res://audio/combat/ImpactMaterial.gd").resolve(body)
-	var effects := preload("res://world/shared/combat/CombatWorld.gd").effects_for(self)
+	var effects := preload("res://guns/combat/CombatWorld.gd").effects_for(self)
 	if effects: effects.spawn_impact(point, -direction, material, damage)
 	preload("res://audio/combat/CombatImpactAudio.gd").play_hit(self, point, material, damage, body.get_instance_id())
 
@@ -1417,7 +1417,7 @@ func _reload_active_weapon() -> void:
 	var ammo: Dictionary = weapon_ammo.get(active_weapon_id, {})
 	if int(data.get("magazine_size", -1)) <= 0 or int(ammo.get("reserve", 0)) <= 0 or int(ammo.get("clip", 0)) >= int(data.magazine_size): return
 	_reload_weapon = active_weapon_id
-	_reload_duration = preload("res://world/shared/combat/WeaponReload.gd").duration(active_weapon_id)
+	_reload_duration = preload("res://guns/combat/WeaponReload.gd").duration(active_weapon_id)
 	_reload_elapsed = 0.0
 	if not is_instance_valid(_reload_audio):
 		_reload_audio = AudioStreamPlayer2D.new()

@@ -585,7 +585,7 @@ func _ensure_interior_loaded() -> void:
 
 	_isolation = preload("res://world/harbor/sewer/SewerIsolation.gd").new()
 	_isolation.build(self, _interior_overlay)
-	var effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
+	var effects := preload("res://guns/combat/WeaponEffects.gd").new()
 	_interior_overlay.add_child(effects)
 	_water_art = SewerWaterArt.new()
 	_water_art.name = "AnimatedWater"

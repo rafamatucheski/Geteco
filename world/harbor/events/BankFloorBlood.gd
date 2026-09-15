@@ -11,7 +11,7 @@ func _ready() -> void:
 	name="BankGuardBloodPool"
 	room=get_parent()
 	add_to_group("bank_guard_blood")
-	preload("res://world/shared/combat/BloodTransferSystem.gd").ensure.call_deferred(self)
+	preload("res://guns/combat/BloodTransferSystem.gd").ensure.call_deferred(self)
 	visual=MeshInstance3D.new()
 	visual.name="BloodOnBankFloor"
 	var vertices:=PackedVector3Array()

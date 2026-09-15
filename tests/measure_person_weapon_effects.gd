@@ -13,18 +13,18 @@ func _report_render() -> void:
 	person.ensure_presentation()
 	person.set_physics_process(false)
 	if hits % 3 == 0:
-		var flame = load("res://FlameJet.tscn").instantiate()
+		var flame = load("res://guns/FlameJet.tscn").instantiate()
 		flame.position = person.position - Vector2(55, 0)
 		current_scene.add_child(flame)
 		flame.setup(flame.position, Vector2.RIGHT, _subject)
 	elif hits % 3 == 1:
-		var grenade = load("res://GrenadeProjectile.tscn").instantiate()
+		var grenade = load("res://guns/GrenadeProjectile.tscn").instantiate()
 		grenade.position = person.position + Vector2(8, 0)
 		current_scene.add_child(grenade)
 		grenade.setup(grenade.position, Vector2.ZERO, 0, _subject)
 		grenade.current_fuse = 0.1
 	else:
-		var rocket = load("res://Bullet.tscn").instantiate()
+		var rocket = load("res://guns/Bullet.tscn").instantiate()
 		rocket.position = person.position - Vector2(45, 0)
 		rocket.is_explosive = true
 		rocket.damage = 200

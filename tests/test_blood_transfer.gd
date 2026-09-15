@@ -1,6 +1,6 @@
 extends SceneTree
-const SYSTEM := preload("res://world/shared/combat/BloodTransferSystem.gd")
-const BLOOD := preload("res://world/shared/combat/GroundBlood.gd")
+const SYSTEM := preload("res://guns/combat/BloodTransferSystem.gd")
+const BLOOD := preload("res://guns/combat/GroundBlood.gd")
 var failures: Array[String] = []
 var checks := 0
 var world: Node2D

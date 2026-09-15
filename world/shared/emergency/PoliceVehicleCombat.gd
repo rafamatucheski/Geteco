@@ -1,10 +1,10 @@
 extends RefCounted
 
-const BULLET := preload("res://Bullet.tscn")
+const BULLET := preload("res://guns/Bullet.tscn")
 var cooldown := 1.2
 var aim_time := 0.0
 var burst := 0
-var weapon_reload := preload("res://world/shared/combat/WeaponReload.gd").new()
+var weapon_reload := preload("res://guns/combat/WeaponReload.gd").new()
 
 func tick(unit: CharacterBody2D, delta: float) -> void:
 	weapon_reload.equip("pistol")

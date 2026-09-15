@@ -22,10 +22,10 @@ func run() -> void:
 		actor.set_physics_process(false)
 		actors.append(actor)
 	for frame in 30: await process_frame
-	var pool := preload("res://world/shared/combat/GroundBlood.gd")
+	var pool := preload("res://guns/combat/GroundBlood.gd")
 	for index in actors.size():
 		var actor := actors[index]
-		if index < 3: preload("res://world/shared/combat/BodyWound.gd").apply(actor)
+		if index < 3: preload("res://guns/combat/BodyWound.gd").apply(actor)
 		else:
 			var stain := pool.spawn(actor, true)
 			stain.position.x += 22

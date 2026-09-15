@@ -7,7 +7,7 @@ static func apply(actor: Node2D) -> void:
 	if actor.get("is_dead") == true or actor.get("is_incapacitated") == true: return
 	var reaction := actor.get_node_or_null("BulletReaction")
 	if reaction == null:
-		reaction = load("res://world/shared/combat/BulletReaction.gd").new()
+		reaction = load("res://guns/combat/BulletReaction.gd").new()
 		reaction.name = "BulletReaction"
 		actor.add_child(reaction)
 	reaction.impulse = actor.get_meta("bullet_impulse", Vector2.ZERO)

@@ -124,7 +124,7 @@ func _update_adult(player: Node2D, exposed: bool, distance: float, delta: float)
 		state_time -= delta
 		if not charge_hit and distance < 36 and _clear_attack(player):
 			player.take_damage(60)
-			preload("res://world/shared/combat/BodyWound.gd").apply(player, charge_direction)
+			preload("res://guns/combat/BodyWound.gd").apply(player, charge_direction)
 			charge_hit = true
 			bite_cooldown = 1.4
 		if state_time <= 0:
@@ -138,7 +138,7 @@ func _update_adult(player: Node2D, exposed: bool, distance: float, delta: float)
 		velocity = global_position.direction_to(player.global_position)*135
 		if distance<32 and bite_cooldown == 0 and _clear_attack(player):
 			player.take_damage(38)
-			preload("res://world/shared/combat/BodyWound.gd").apply(player, global_position.direction_to(player.global_position))
+			preload("res://guns/combat/BodyWound.gd").apply(player, global_position.direction_to(player.global_position))
 			bite_cooldown = 1.2
 			_voice("warning")
 		elif distance>62 and distance<210 and charge_cooldown == 0 and _clear_attack(player):
@@ -215,7 +215,7 @@ func _blood(amount: int) -> void:
 	_blood_pool.polygon = points
 	get_parent().add_child(_blood_pool)
 	_blood_pool.global_position = global_position
-	preload("res://world/shared/combat/BloodTransferSystem.gd").ensure(self)
+	preload("res://guns/combat/BloodTransferSystem.gd").ensure(self)
 	var fade := _blood_pool.create_tween()
 	fade.tween_interval(25)
 	fade.tween_property(_blood_pool,"modulate:a",0.0,8)

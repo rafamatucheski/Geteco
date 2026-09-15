@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-const BULLET_SCENE: PackedScene = preload("res://Bullet.tscn")
+const BULLET_SCENE: PackedScene = preload("res://guns/Bullet.tscn")
 const POLICE_LOOT_SCRIPT = preload("res://world/shared/pickups/PoliceLoot.gd")
 
 enum UnitTier {
@@ -34,7 +34,7 @@ var visible_aim_time := 0.0
 var fleeing_after_warning := 0.0
 var burst_shots := 0
 var burst_pause := 0.0
-var weapon_reload := preload("res://world/shared/combat/WeaponReload.gd").new()
+var weapon_reload := preload("res://guns/combat/WeaponReload.gd").new()
 var walk_clock: float = 0.0
 var service_vehicle: Node2D = null
 var crew_side := 1.0

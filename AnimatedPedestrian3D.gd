@@ -1125,7 +1125,7 @@ func _update_viewport_render_state(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	_update_viewport_render_state(delta)
 	if is_flying:
-		fly_velocity = preload("res://world/shared/combat/VehiclePersonImpact.gd").move_falling_body(self, fly_velocity, delta)
+		fly_velocity = preload("res://guns/combat/VehiclePersonImpact.gd").move_falling_body(self, fly_velocity, delta)
 		if fly_velocity.length() < 12.0: is_flying = false
 
 	if is_dead or is_incapacitated:
@@ -1264,7 +1264,7 @@ func _update_walk_destination(_delta: float) -> void:
 func _gangster_shoot_target(target_pos: Vector2) -> void:
 	var rig := get_node_or_null("NPCCombatRig")
 	if rig: rig.attack()
-	var bullet_scene = load("res://Bullet.tscn")
+	var bullet_scene = load("res://guns/Bullet.tscn")
 	if bullet_scene:
 		var dir: Vector2 = global_position.direction_to(target_pos)
 		var bullet = bullet_scene.instantiate()
@@ -1296,7 +1296,7 @@ func _gangster_melee_attack(target: Node2D, data: Dictionary) -> void:
 		if dmg <= 0: return
 		target.take_damage(dmg, false)
 		if data.get("is_knife", false) and preload("res://audio/combat/ImpactMaterial.gd").resolve(target) == &"flesh":
-			preload("res://world/shared/combat/BodyWound.gd").apply(target, global_position.direction_to(target.global_position))
+			preload("res://guns/combat/BodyWound.gd").apply(target, global_position.direction_to(target.global_position))
 
 var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
@@ -1357,7 +1357,7 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 		if wm and _is_player_driver: wm.report_crime(20)
 		_dispatch_emergency_coroner()
 		_start_decay()
-	preload("res://world/shared/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
+	preload("res://guns/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
 
 func take_damage(amount: int, is_player_attacker: bool = false) -> void:
 	if amount <= 0 or is_dead or is_incapacitated: return
@@ -1526,7 +1526,7 @@ func rescue_from_emergency(ambulance: Node2D) -> void:
 	care.board_patient(self, ambulance)
 
 func _create_3d_blood_puddle() -> void:
-	preload("res://world/shared/combat/GroundBlood.gd").spawn(self, true)
+	preload("res://guns/combat/GroundBlood.gd").spawn(self, true)
 
 
 func _start_decay() -> void:

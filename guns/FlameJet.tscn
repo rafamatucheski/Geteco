@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://flame_jet_uid_101"]
 
-[ext_resource type="Script" path="res://FlameJet.gd" id="1_script"]
+[ext_resource type="Script" path="res://guns/FlameJet.gd" id="1_script"]
 
 [node name="FlameJet" type="Node2D"]
 script = ExtResource("1_script")

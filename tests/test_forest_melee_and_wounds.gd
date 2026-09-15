@@ -75,7 +75,7 @@ func _run() -> void:
 	civilian.hear_gunfire(Vector2.ZERO, Vector2(400,0))
 	check(civilian.panic_timer > 0 and civilian.retaliation_left == 0, "unarmed resident seeks safety")
 	check(civilian._visual_interval() <= 1.0 / 60.0, "nearby residents animate at city frame rate")
-	var bullet = load("res://Bullet.gd").new()
+	var bullet = load("res://guns/Bullet.gd").new()
 	bullet.damage = 10
 	bullet.set_physics_process(false)
 	scene.add_child(bullet)

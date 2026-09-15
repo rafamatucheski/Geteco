@@ -12,7 +12,7 @@ func _sample(output: String, label: String, seconds: float, car: Node2D) -> void
 		candidates.sort_custom(func(a,b): return a.global_position.distance_squared_to(car.global_position) < b.global_position.distance_squared_to(car.global_position))
 		for actor in candidates.slice(0, 12):
 			wounded.append(actor)
-			preload("res://world/shared/combat/BodyWound.gd").apply(actor)
+			preload("res://guns/combat/BodyWound.gd").apply(actor)
 		print("BLOOD_LOAD actors=", wounded.size())
 	await super._sample(output, label, seconds, car)
 	print("BLOOD_PEAK marks=", peak_marks, " pools=", peak_pools)
@@ -24,7 +24,7 @@ func _hold_scenario_clock() -> void:
 	if effect_timer >= 6.0:
 		effect_timer = 0.0
 		for actor in wounded:
-			if is_instance_valid(actor): preload("res://world/shared/combat/BodyWound.gd").apply(actor)
+			if is_instance_valid(actor): preload("res://guns/combat/BodyWound.gd").apply(actor)
 	var system := get_first_node_in_group("blood_transfer_system")
 	if system != null: peak_marks = maxi(peak_marks, system.marks.size())
 	peak_pools = maxi(peak_pools, get_nodes_in_group("ground_blood").size())

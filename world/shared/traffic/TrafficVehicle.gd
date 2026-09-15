@@ -253,7 +253,7 @@ func _ensure_smoke_emitter() -> CPUParticles2D:
 		smoke_emitter.scale_amount_min = 10.0 / 32.0
 		smoke_emitter.scale_amount_max = 22.0 / 32.0
 		smoke_emitter.color = Color(0.2, 0.2, 0.2, 0.8)
-		preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
+		preload("res://guns/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
 		add_child(smoke_emitter)
 	return smoke_emitter
 
@@ -271,7 +271,7 @@ func _ensure_collision_particles() -> CPUParticles2D:
 		collision_particles.scale_amount_min = 1.5 / 64.0
 		collision_particles.scale_amount_max = 3.5 / 64.0
 		collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
-		collision_particles.texture = preload("res://world/shared/combat/VehicleDamageParticles.gd").texture()
+		collision_particles.texture = preload("res://guns/combat/VehicleDamageParticles.gd").texture()
 		add_child(collision_particles)
 	return collision_particles
 
@@ -287,7 +287,7 @@ func _ensure_flame_particles() -> CPUParticles2D:
 		flame_particles.scale_amount_min = 4.0
 		flame_particles.scale_amount_max = 8.0
 		flame_particles.color = Color(1.0, 0.45, 0.1, 0.95)
-		preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
+		preload("res://guns/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
 		add_child(flame_particles)
 	return flame_particles
 
@@ -568,7 +568,7 @@ func _explode() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 	
-	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 180.0, true)
+	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 180.0, true)
 	
 	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if visual:
@@ -586,7 +586,7 @@ func _explode() -> void:
 		_do_screen_shake(0.70)
 		
 	# 8. Onda de choque
-	preload("res://world/shared/combat/VehicleBlast.gd").apply(self)
+	preload("res://guns/combat/VehicleBlast.gd").apply(self)
 	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
 	_start_decay()
 
@@ -705,7 +705,7 @@ func _apply_crash_deformation(impact_normal: Vector2, impact_force: float, hit_w
 	if now - _last_crash_visual_ms < (350 if is_post else 500): return
 	_last_crash_visual_ms = now
 	# Poste tem efeito próprio (spawn_post_impact), disparado na colisão.
-	if not is_post: preload("res://world/shared/combat/WeaponEffects.gd").spawn_crash(get_parent(), hit_world_pos, impact_normal, impact_force)
+	if not is_post: preload("res://guns/combat/WeaponEffects.gd").spawn_crash(get_parent(), hit_world_pos, impact_normal, impact_force)
 	# The native vehicle receives a bounded dent in its own mesh. Flat decals
 	# cannot follow its projected sides and must never be layered on top.
 	if is_3d_vehicle and is_instance_valid(body_model):
@@ -1782,8 +1782,8 @@ func _physics_process(delta: float) -> void:
 	for i in get_slide_collision_count():
 		var col = get_slide_collision(i)
 		var body = col.get_collider()
-		if preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body):
-			preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, prev_velocity)
+		if preload("res://guns/combat/VehiclePersonImpact.gd").is_person(body):
+			preload("res://guns/combat/VehiclePersonImpact.gd").hit(self, body, prev_velocity)
 			continue
 		var normal_impact = maxf(0.0, -prev_velocity.dot(col.get_normal()))
 		var impact_speed = normal_impact
@@ -1809,7 +1809,7 @@ func _physics_process(delta: float) -> void:
 				collision_particles.color = Color(1.0, 0.85, 0.35, 1.0)
 				collision_particles.initial_velocity_min = 35.0
 				collision_particles.initial_velocity_max = 75.0
-				preload("res://world/shared/combat/WeaponEffects.gd").spawn_post_impact(get_parent(), col.get_position(), col.get_normal(), impact_speed)
+				preload("res://guns/combat/WeaponEffects.gd").spawn_post_impact(get_parent(), col.get_position(), col.get_normal(), impact_speed)
 			else:
 				collision_particles.direction = col.get_normal()
 				collision_particles.spread = 60.0
@@ -1829,7 +1829,7 @@ func _physics_process(delta: float) -> void:
 
 func _activate_bloody_tires() -> void:
 	bloody_tires_timer = 4.0
-	preload("res://world/shared/combat/BloodTransferSystem.gd").splash(self)
+	preload("res://guns/combat/BloodTransferSystem.gd").splash(self)
 	if is_driven_by_player:
 		_do_screen_shake(0.18)
 
@@ -2044,7 +2044,7 @@ func advance_on_lane(delta: float) -> void:
 	if actual_advance > 0.001:
 		var proposed := _lane_proposed_pose(path, lane_follow, actual_advance)
 		var incoming := global_position.direction_to(proposed.origin) * maxf(previous_speed, _lane_motion_speed)
-		person_bypass = preload("res://world/shared/combat/VehiclePersonImpact.gd").prepare_motion(self, incoming, proposed.origin - global_position)
+		person_bypass = preload("res://guns/combat/VehiclePersonImpact.gd").prepare_motion(self, incoming, proposed.origin - global_position)
 	if actual_advance > 0.001 and not _lane_step_is_clear(path, lane_follow, actual_advance):
 		if _person_warned:
 			# Long hulls reserve a small corner margin before kinematic contact.
@@ -2125,11 +2125,11 @@ func _press_blocking_person(contact: KinematicCollision2D, delta: float) -> void
 	if person == null or not _person_patience_expired(person): return
 	_person_push_time += delta
 	if _person_push_time >= 0.6:
-		preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, person, global_transform.x.normalized() * preload("res://world/shared/combat/VehiclePersonImpact.gd").MIN_SPEED)
+		preload("res://guns/combat/VehiclePersonImpact.gd").hit(self, person, global_transform.x.normalized() * preload("res://guns/combat/VehiclePersonImpact.gd").MIN_SPEED)
 
 func _lane_contact_crash(contact: KinematicCollision2D, incoming: Vector2) -> void:
 	var body := contact.get_collider() as Node
-	if body == null or preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body): return
+	if body == null or preload("res://guns/combat/VehiclePersonImpact.gd").is_person(body): return
 	var force := maxf(0.0, -incoming.dot(contact.get_normal()))
 	if force < 80.0 or Time.get_ticks_msec() - _last_collision_damage_ms < 650: return
 	_last_collision_damage_ms = Time.get_ticks_msec()
@@ -2378,7 +2378,7 @@ func _get_lane_obstruction(lane_follow: PathFollow2D, must_clear_rail_crossing: 
 	return {"hard": hard_blocked, "yield": yield_blocked, "person": person}
 
 func _person_patience_expired(person: Node) -> bool:
-	return _waiting_person != null and _waiting_person.get_ref() == person and _person_warned and _person_wait >= PERSON_HORN_DELAY + PERSON_WARNING_GRACE and not person.get_meta("medical_vehicle_protected", false) and preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(person)
+	return _waiting_person != null and _waiting_person.get_ref() == person and _person_warned and _person_wait >= PERSON_HORN_DELAY + PERSON_WARNING_GRACE and not person.get_meta("medical_vehicle_protected", false) and preload("res://guns/combat/VehiclePersonImpact.gd").is_person(person)
 
 func _update_person_wait(person: Node, delta: float) -> void:
 	if person == null or _waiting_person == null or _waiting_person.get_ref() != person:
@@ -2640,8 +2640,8 @@ func _on_pedestrian_hitbox_body_entered(body: Node) -> void:
 			cur_speed = 0.0
 			
 		var impact_vel = velocity if velocity.length() > 10.0 else global_transform.x * cur_speed
-		preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(self, body, impact_vel)
-		if not preload("res://world/shared/combat/VehiclePersonImpact.gd").is_person(body) and cur_speed > (35.0 if active_archetype_id == "port_forklift" else 85.0) and body.has_method("take_damage"):
+		preload("res://guns/combat/VehiclePersonImpact.gd").hit(self, body, impact_vel)
+		if not preload("res://guns/combat/VehiclePersonImpact.gd").is_person(body) and cur_speed > (35.0 if active_archetype_id == "port_forklift" else 85.0) and body.has_method("take_damage"):
 			body.take_damage(100, is_driven_by_player)
 
 

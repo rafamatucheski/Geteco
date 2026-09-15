@@ -51,14 +51,23 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
-# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio economy/, o menor e mais
-# isolado, primeiro para validar o procedimento antes dos dominios maiores.
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio guns/.
 MOVES: list[tuple[str, str]] = [
-    ("Collectible.gd", "economy/Collectible.gd"),
-    ("CollectibleCatalog.gd", "economy/CollectibleCatalog.gd"),
-    ("CashPickup.gd", "economy/CashPickup.gd"),
-    ("HealthPickup.gd", "economy/HealthPickup.gd"),
-    ("AchievementCatalog.gd", "economy/AchievementCatalog.gd"),
+    ("WeaponCatalog.gd", "guns/WeaponCatalog.gd"),
+    ("WeaponStore.gd", "guns/WeaponStore.gd"),
+    ("WeaponStore.tscn", "guns/WeaponStore.tscn"),
+    ("WeaponWheel.gd", "guns/WeaponWheel.gd"),
+    ("WeaponIcon3D.gd", "guns/WeaponIcon3D.gd"),
+    ("Bullet.gd", "guns/Bullet.gd"),
+    ("Bullet.tscn", "guns/Bullet.tscn"),
+    ("GrenadeProjectile.gd", "guns/GrenadeProjectile.gd"),
+    ("GrenadeProjectile.tscn", "guns/GrenadeProjectile.tscn"),
+    ("FlameJet.gd", "guns/FlameJet.gd"),
+    ("FlameJet.tscn", "guns/FlameJet.tscn"),
+    ("AmmuNationInterior.gd", "guns/AmmuNationInterior.gd"),
+    ("world/shared/combat", "guns/combat"),
+    ("world/shared/ammunation", "guns/ammunation"),
+    ("world/shared/ImpactDebris.gd", "guns/ImpactDebris.gd"),
 ]
 
 

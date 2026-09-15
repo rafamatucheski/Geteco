@@ -13,7 +13,7 @@ func run() -> void:
 	world.add_child(person)
 	person.set_physics_process(false)
 	var initial_health: int = person.health
-	var bullet = preload("res://Bullet.gd").new()
+	var bullet = preload("res://guns/Bullet.gd").new()
 	world.add_child(bullet)
 	bullet.damage = 1
 	bullet.direction = Vector2.RIGHT
@@ -23,7 +23,7 @@ func run() -> void:
 	await physics_frame
 	await physics_frame
 	check(person.position.x > 0.0, "body recoils in bullet direction")
-	var fatal = preload("res://Bullet.gd").new()
+	var fatal = preload("res://guns/Bullet.gd").new()
 	world.add_child(fatal)
 	fatal.damage = 1000
 	fatal.direction = Vector2.DOWN

@@ -7,7 +7,7 @@ func _ready() -> void:
 	get_node("/root/WorldRenewal").watch_transient(self, 30.0)
 
 static func spawn(parent: Node, point: Vector2, direction: Vector2, speed: float, material: String, extent := Vector2(24,22)) -> Node2D:
-	var debris := load("res://world/shared/ImpactDebris.gd").new() as Node2D
+	var debris := load("res://guns/ImpactDebris.gd").new() as Node2D
 	parent.add_child(debris)
 	debris.global_position = point
 	# Storage art has its own elevated Z layer; fragments belong to the ground,

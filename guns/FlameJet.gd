@@ -209,7 +209,7 @@ func _apply_fire_damage(target: Node2D) -> void:
 	if _elapsed >= flame_lifetime: return
 	var effective_damage := damage_at_distance(global_position.distance_to(target.global_position))
 	if effective_damage <= 0: return
-	if not preload("res://world/shared/combat/WeaponBlastDamage.gd").exposed(self, target, global_position): return
+	if not preload("res://guns/combat/WeaponBlastDamage.gd").exposed(self, target, global_position): return
 	_hit_bodies.append(target)
 
 	# Cooldown de dano de fogo para evitar dano instantâneo infinito por sobreposição de partículas
@@ -227,7 +227,7 @@ func _apply_fire_damage(target: Node2D) -> void:
 		target.set_meta("combat_attacker", shooter)
 		target.take_damage(effective_damage, is_player_attacker)
 		if previous_health != null and target.get("health") < previous_health:
-			preload("res://world/shared/combat/PersonBurning.gd").ignite(target, shooter)
+			preload("res://guns/combat/PersonBurning.gd").ignite(target, shooter)
 	elif target.is_in_group("vehicle") and "health" in target:
 		target.health = maxi(0, int(target.health) - effective_damage)
 

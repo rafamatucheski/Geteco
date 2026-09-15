@@ -37,7 +37,7 @@ func run() -> void:
 		player._shoot_towards(player.global_position + Vector2(1000, 0))
 		var spawned: Node2D
 		for node in world.get_children():
-			if node.get_script() == load("res://Bullet.gd") or node is FlameJet: spawned = node
+			if node.get_script() == load("res://guns/Bullet.gd") or node is FlameJet: spawned = node
 		check(spawned != null, id + " creates a real projectile/effect")
 		check(spawned.global_position.distance_to(origin) < 0.01, id + " leaves the visible nozzle")
 		if id == "rpg":

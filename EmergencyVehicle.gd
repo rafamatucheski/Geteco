@@ -231,7 +231,7 @@ func _ready():
 	smoke_emitter.scale_amount_min = 0.5
 	smoke_emitter.scale_amount_max = 1.6
 	smoke_emitter.color = Color(0.25, 0.25, 0.28, 0.65)
-	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
+	preload("res://guns/combat/VehicleDamageParticles.gd").configure(smoke_emitter, false)
 	add_child(smoke_emitter)
 	
 	# Faíscas
@@ -325,7 +325,7 @@ func _setup_headlight() -> void:
 	flame_particles.scale_amount_min = 0.6
 	flame_particles.scale_amount_max = 1.8
 	flame_particles.color = Color(1.0, 0.50, 0.15, 0.90)
-	preload("res://world/shared/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
+	preload("res://guns/combat/VehicleDamageParticles.gd").configure(flame_particles, true)
 	add_child(flame_particles)
 
 func activate():
@@ -534,7 +534,7 @@ func _explode() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 	
-	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 200.0, true)
+	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, 200.0, true)
 	# 6. Carcaça queimada estável no solo (sem salto no ar, sem teleporte, sem deformação)
 	if visual:
 		visual.modulate = Color(0.12, 0.12, 0.12)
@@ -542,7 +542,7 @@ func _explode() -> void:
 		visual.skew = 0.0
 		
 	# 7. Onda de choque: danifica outros carros e arremessa pedestres
-	preload("res://world/shared/combat/VehicleBlast.gd").apply(self)
+	preload("res://guns/combat/VehicleBlast.gd").apply(self)
 	preload("res://world/shared/emergency/VehicleResidualFire.gd").start(self)
 					
 	# WorldRenewal returns the wreck to the pool even in sleeping regions.

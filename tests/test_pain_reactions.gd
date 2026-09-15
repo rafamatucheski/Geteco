@@ -36,7 +36,7 @@ func run() -> void:
 	check(not player.has_node("PainReaction"), "Fully absorbed armor hit does not play pain")
 	player.armor = 0
 	player.health = 1000
-	var bullet = load("res://Bullet.tscn").instantiate()
+	var bullet = load("res://guns/Bullet.tscn").instantiate()
 	world.add_child(bullet)
 	bullet._hit(player, player.position, Vector2.ZERO)
 	var voice: Node = player.get_node_or_null("PainReaction")
@@ -71,7 +71,7 @@ func run() -> void:
 	world.add_child(npc)
 	npc.set_physics_process(false)
 	npc.health = 1000
-	var npc_bullet = load("res://Bullet.tscn").instantiate()
+	var npc_bullet = load("res://guns/Bullet.tscn").instantiate()
 	world.add_child(npc_bullet)
 	npc_bullet._hit(npc, npc.position, Vector2.ZERO)
 	check(npc.has_node("PainReaction"), "Actual NPC bullet damage reaches the same occasional pain policy")

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c8m7k3b2w5v1q"]
 
-[ext_resource type="Script" path="res://GrenadeProjectile.gd" id="1_grenade_script"]
+[ext_resource type="Script" path="res://guns/GrenadeProjectile.gd" id="1_grenade_script"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_col"]
 radius = 6.0

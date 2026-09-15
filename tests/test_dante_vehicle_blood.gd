@@ -1,6 +1,6 @@
 extends SceneTree
 
-const IMPACT = preload("res://world/shared/combat/VehiclePersonImpact.gd")
+const IMPACT = preload("res://guns/combat/VehiclePersonImpact.gd")
 var failures := 0
 
 func _initialize() -> void: run.call_deferred()

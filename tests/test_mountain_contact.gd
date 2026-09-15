@@ -1,6 +1,6 @@
 extends SceneTree
 const SCENERY = preload("res://world/mountain_pass/MountainSceneryBuilder.gd")
-const GRENADE = preload("res://GrenadeProjectile.tscn")
+const GRENADE = preload("res://guns/GrenadeProjectile.tscn")
 var failures := 0
 var world: Node2D
 

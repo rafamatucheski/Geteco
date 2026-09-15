@@ -1,5 +1,5 @@
 extends Node3D
-const ART = preload("res://world/shared/ammunation/AmmunationArt.gd")
+const ART = preload("res://guns/ammunation/AmmunationArt.gd")
 var panels: Array[Node3D] = []
 var open_amount := 0.0
 

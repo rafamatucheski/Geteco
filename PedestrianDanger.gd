@@ -18,7 +18,7 @@ static func report(projectile: Node2D, origin: Vector2, direction: Vector2, shoo
 	# ameaÃ§am uma rua inteira do outro lado de uma quadra fechada.
 	var excluded: Array[RID] = []
 	if shooter is CollisionObject2D: excluded.append(shooter.get_rid())
-	var obstruction := preload("res://world/shared/combat/ShotQuery.gd").cast(projectile, origin, end, 3, excluded)
+	var obstruction := preload("res://guns/combat/ShotQuery.gd").cast(projectile, origin, end, 3, excluded)
 	if not obstruction.is_empty(): end = obstruction.position
 	var listeners := projectile.get_tree().get_nodes_in_group("pedestrian")
 	listeners.append_array(projectile.get_tree().get_nodes_in_group("restaurant_terrace"))
@@ -32,7 +32,7 @@ static func report(projectile: Node2D, origin: Vector2, direction: Vector2, shoo
 			continue
 		# Mesmo perto do disparo, paredes separam as reaÃ§Ãµes. A faixa da bala
 		# tambÃ©m respeita cobertura lateral, sem espalhar pÃ¢nico para outra rua.
-		var cover := preload("res://world/shared/combat/ShotQuery.gd").cast(projectile, origin, person.global_position, 3, excluded)
+		var cover := preload("res://guns/combat/ShotQuery.gd").cast(projectile, origin, person.global_position, 3, excluded)
 		if not cover.is_empty() and cover.collider != person and not person.is_ancestor_of(cover.collider):
 			continue
 		person.set_meta("combat_attacker", shooter)
@@ -52,7 +52,7 @@ func remember(origin: Vector2, end: Vector2) -> void:
 	replan = 0.0
 
 func _ray(person: CharacterBody2D, start: Vector2, end: Vector2) -> Dictionary:
-	return preload("res://world/shared/combat/ShotQuery.gd").cast(person, start, end, 3, [person.get_rid()])
+	return preload("res://guns/combat/ShotQuery.gd").cast(person, start, end, 3, [person.get_rid()])
 
 func movement(person: CharacterBody2D, delta: float, speed: float) -> Vector2:
 	for threat in threats: threat.life -= delta

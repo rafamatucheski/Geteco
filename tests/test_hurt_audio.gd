@@ -1,6 +1,6 @@
 extends SceneTree
 const BANK := preload("res://audio/combat/CombatAudioBank.gd")
-const BULLET := preload("res://Bullet.tscn")
+const BULLET := preload("res://guns/Bullet.tscn")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, message: String) -> void:

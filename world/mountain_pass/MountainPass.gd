@@ -54,7 +54,7 @@ func _ready() -> void:
 		weather.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(weather)
 		weather.enable_regional_atmosphere()
-		var combat_effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
+		var combat_effects := preload("res://guns/combat/WeaponEffects.gd").new()
 		combat_effects.name = "WeaponEffects"
 		add_child(combat_effects)
 	var travel := get_node("/root/RegionTravel")

@@ -72,7 +72,7 @@ func spawn_vehicle_splash(pos: Vector2, incoming: Vector2, lethal: bool) -> void
 		return
 	if get_tree().get_nodes_in_group("vehicle_splashes").size() >= 12:
 		return
-	var splash := preload("res://world/shared/combat/VehicleSplash.gd").new()
+	var splash := preload("res://guns/combat/VehicleSplash.gd").new()
 	splash.setup(pos, incoming, lethal)
 	splash.add_to_group("vehicle_splashes")
 	_add_effect(splash)

@@ -71,7 +71,7 @@ func _run() -> void:
 	await _sample(output, "warmup", 5.0, player)
 	for row in 4:
 		for col in 8:
-			var stain = load("res://world/shared/combat/GroundBlood.gd").new()
+			var stain = load("res://guns/combat/GroundBlood.gd").new()
 			stain.position = player.global_position + Vector2(col * 40 - 140, row * 36 - 54)
 			world.add_child(stain)
 	await _sample(output, "blood", 30.0, player)

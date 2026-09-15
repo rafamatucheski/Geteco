@@ -8,7 +8,7 @@ func run():
 	holder.self_modulate.a=0
 	var facade=load("res://world/mountain_pass/MountainStaticModelView.gd").new()
 	holder.add_child(facade)
-	facade.build_view(load("res://world/shared/ammunation/AmmunationFacade3D.gd"),12.0,65.0,Vector3(0,1.8,0))
+	facade.build_view(load("res://guns/ammunation/AmmunationFacade3D.gd"),12.0,65.0,Vector3(0,1.8,0))
 	for i in 5: await process_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("D:/geteco/artifacts/ammunation-0910/facade-diagnostic.png")

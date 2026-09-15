@@ -65,7 +65,7 @@ func run() -> void:
 		check(selected in [stream.get_stream(0),stream.get_stream(1),stream.get_stream(2)],id+" selects its own recorded take")
 		check(player.weapon_ammo[id] == {"clip":0,"reserve":size},id+" ammo stays unchanged during reload")
 		check(player._reload_audio.playing and player._reload_audio.bus == &"SFX",id+" R plays matching sound on SFX")
-		check(is_equal_approx(player._reload_duration,preload("res://world/shared/combat/WeaponReload.gd").duration(id)) and is_equal_approx(player._reload_audio.pitch_scale, 1.0) and selected.get_length() <= player._reload_duration,id+" original take plays unpitched within shared reload duration")
+		check(is_equal_approx(player._reload_duration,preload("res://guns/combat/WeaponReload.gd").duration(id)) and is_equal_approx(player._reload_audio.pitch_scale, 1.0) and selected.get_length() <= player._reload_duration,id+" original take plays unpitched within shared reload duration")
 		press_r()
 		check(player._reload_audio.stream == selected,id+" repeated R does not restart sound")
 		await create_timer(player._reload_duration*0.5).timeout

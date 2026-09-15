@@ -362,7 +362,7 @@ func take_damage(amount: int, _source: Variant = null) -> void:
 		if is_instance_valid(attacker) and attacker is Node2D:
 			retaliation_target = attacker
 			retaliation_left = 14.0
-	preload("res://world/shared/combat/GroundBlood.gd").spawn(self, health <= 0)
+	preload("res://guns/combat/GroundBlood.gd").spawn(self, health <= 0)
 	var effects := get_tree().get_first_node_in_group("weapon_effects")
 	if effects: effects.spawn_blood(global_position, velocity.normalized(), float(amount))
 	panic_timer = maxf(panic_timer, 6.0)
@@ -409,7 +409,7 @@ func _process_retaliation(delta: float) -> bool:
 				var axe_dmg: int = 28
 				retaliation_target.take_damage(axe_dmg)
 				if retaliation_target.health < health_before:
-					preload("res://world/shared/combat/BodyWound.gd").apply(retaliation_target)
+					preload("res://guns/combat/BodyWound.gd").apply(retaliation_target)
 	elif distance <= 38.0 and axe_cooldown <= 0.0:
 		axe_windup = 0.38
 		axe_cooldown = 1.15

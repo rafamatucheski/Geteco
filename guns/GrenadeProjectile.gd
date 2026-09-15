@@ -118,7 +118,7 @@ func explode() -> void:
 	
 	# Screen shake na câmera do jogador
 	var player = get_tree().get_first_node_in_group("player")
-	if preload("res://world/shared/combat/CombatWorld.gd").shares_world(self, player):
+	if preload("res://guns/combat/CombatWorld.gd").shares_world(self, player):
 		var dist: float = global_position.distance_to(player.global_position)
 		if dist < 650.0:
 			var shake_intensity := clampf(1.0 - (dist / 650.0), 0.15, 1.0)
@@ -152,7 +152,7 @@ func explode() -> void:
 			if total_dmg <= 0: continue
 			
 			if collider.has_method("take_damage"):
-				preload("res://world/shared/combat/WeaponBlastDamage.gd").apply(collider, total_dmg, global_position, self, owner_body as Node2D)
+				preload("res://guns/combat/WeaponBlastDamage.gd").apply(collider, total_dmg, global_position, self, owner_body as Node2D)
 			elif collider.has_method("damage_vehicle"):
 				collider.damage_vehicle(total_dmg, global_position.direction_to(collider.global_position))
 			elif collider.has_method("explode") and collider != owner_body:
@@ -163,7 +163,7 @@ func explode() -> void:
 	queue_free()
 
 func _spawn_explosion_visual() -> void:
-	preload("res://world/shared/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, blast_radius)
+	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), global_position, blast_radius)
 
 func _draw() -> void:
 	if is_exploded:

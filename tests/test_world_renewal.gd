@@ -101,7 +101,7 @@ func run() -> void:
 	var cargo = load("res://world/shared/PhysicalCargo.gd").new()
 	cargo.position = Vector2(5400,3000)
 	world.add_child(cargo)
-	var debris = load("res://world/shared/ImpactDebris.gd").spawn(world, Vector2(5600,3000), Vector2.RIGHT, 100, "wood")
+	var debris = load("res://guns/ImpactDebris.gd").spawn(world, Vector2(5600,3000), Vector2.RIGHT, 100, "wood")
 	var car = load("res://world/shared/traffic/TrafficVehicle.tscn").instantiate()
 	car.position = Vector2(6000,3000)
 	world.add_child(car)

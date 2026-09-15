@@ -12,7 +12,7 @@ func _create_model() -> Node3D:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
-		impact_velocity = preload("res://world/shared/combat/VehiclePersonImpact.gd").move_falling_body(self, impact_velocity, delta)
+		impact_velocity = preload("res://guns/combat/VehiclePersonImpact.gd").move_falling_body(self, impact_velocity, delta)
 		super._physics_process(delta)
 		return
 	if _process_danger(delta): return

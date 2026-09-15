@@ -1,6 +1,6 @@
 extends SceneTree
 const TRAFFIC := preload("res://world/shared/traffic/TrafficVehicle.tscn")
-const BLAST := preload("res://world/shared/combat/VehicleBlast.gd")
+const BLAST := preload("res://guns/combat/VehicleBlast.gd")
 var failures := 0
 var world: Node2D
 var capture := "--capture" in OS.get_cmdline_user_args()

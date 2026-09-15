@@ -55,7 +55,7 @@ func _sample(output: String, label: String, seconds: float, car: Node2D) -> void
 		quit(1)
 
 func _count_bullet(node: Node) -> void:
-	if _tracking and node.get_script() == preload("res://Bullet.gd"):
+	if _tracking and node.get_script() == preload("res://guns/Bullet.gd"):
 		_bullets += 1
 
 func _report_render() -> void:

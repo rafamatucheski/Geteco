@@ -12,7 +12,7 @@ static func play_hurt(actor: Node2D, damage: float) -> void:
 	play_hit(actor, actor.global_position, &"flesh", damage, actor.get_instance_id())
 
 static func play_hit(context: Node, pos: Vector2, material: StringName, damage: float = 15.0, subject_id: int = 0) -> void:
-	var world := preload("res://world/shared/combat/CombatWorld.gd").scene_for(context)
+	var world := preload("res://guns/combat/CombatWorld.gd").scene_for(context)
 	if world == null:
 		world = context.get_parent()
 	var pool := world.get_node_or_null("CombatImpactAudio")

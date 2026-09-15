@@ -1,6 +1,6 @@
 class_name HarborAmmunationInterior
 extends "res://world/harbor/interiors/HarborInteriorBase.gd"
-const ART = preload("res://world/shared/ammunation/AmmunationArt.gd")
+const ART = preload("res://guns/ammunation/AmmunationArt.gd")
 const DISPLAY_SCALE := .52
 var actor: Node2D
 var room_view: SubViewport

@@ -7,7 +7,7 @@ var _door_amount := 0.0
 
 func bind_entrance(door: BuildingEntrance, room: Node2D) -> void:
 	animated_entrance = door
-	var passage := preload("res://world/shared/ammunation/AmmunationPassage.gd").new()
+	var passage := preload("res://guns/ammunation/AmmunationPassage.gd").new()
 	passage.room = room
 	passage.entrance = door
 	add_child(passage)

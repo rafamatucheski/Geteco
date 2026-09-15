@@ -10,7 +10,7 @@ func check(ok: bool, label: String) -> void:
 	print("SHOT_CHECK ", label, " ", ok)
 	if not ok: failures += 1; push_error(label)
 func fire(at: Vector2, facing: Vector2, amount := 5) -> Node2D:
-	var bullet = preload("res://Bullet.tscn").instantiate()
+	var bullet = preload("res://guns/Bullet.tscn").instantiate()
 	bullet.position = at
 	bullet.direction = facing
 	bullet.damage = amount

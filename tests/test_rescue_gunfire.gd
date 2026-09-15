@@ -27,13 +27,13 @@ func _nearby_shot(sequence: Node) -> void:
 	var origin := Vector2.INF
 	for i in 8:
 		var candidate := medic.global_position + Vector2.from_angle(i*PI/4)*75
-		if preload("res://world/shared/combat/ShotQuery.gd").cast(medic,candidate,medic.global_position,7,[medic.get_rid()],true).is_empty():
+		if preload("res://guns/combat/ShotQuery.gd").cast(medic,candidate,medic.global_position,7,[medic.get_rid()],true).is_empty():
 			origin = candidate
 			break
 	if origin == Vector2.INF:
 		interruption_errors["Threat fixture requires a shooter with unobstructed sight"] = true
 		return
-	var bullet = preload("res://Bullet.tscn").instantiate()
+	var bullet = preload("res://guns/Bullet.tscn").instantiate()
 	bullet.position = origin
 	bullet.direction = medic.global_position.direction_to(origin)
 	bullet.damage = 1

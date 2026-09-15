@@ -1,7 +1,7 @@
 extends SceneTree
 const ENCOUNTER := preload("res://world/harbor/cobras/CobraEncounter.gd")
 const BOSS := preload("res://world/harbor/cobras/CobraBoss.gd")
-const BULLET := preload("res://Bullet.tscn")
+const BULLET := preload("res://guns/Bullet.tscn")
 var failures := 0
 var completions := 0
 class Subject extends CharacterBody2D:

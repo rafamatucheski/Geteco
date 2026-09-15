@@ -42,7 +42,7 @@ func receive_vehicle_impact(speed: float, direction: Vector2) -> void:
 		collision_layer = 0
 		collision_mask = 0
 		visual.hide()
-		preload("res://world/shared/ImpactDebris.gd").spawn(get_parent(),global_position,direction,speed,"wood")
+		preload("res://guns/ImpactDebris.gd").spawn(get_parent(),global_position,direction,speed,"wood")
 		velocity = Vector2.ZERO
 		return
 	velocity += direction * minf(speed * .5, 70)

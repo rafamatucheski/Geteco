@@ -149,7 +149,7 @@ func fall_from_motorcycle(vehicle: Node2D, direction: Vector2, force: float) -> 
 func _physics_process(delta: float) -> void:
 	if is_dead or is_incapacitated:
 		if is_flying:
-			fly_velocity = preload("res://world/shared/combat/VehiclePersonImpact.gd").move_falling_body(self, fly_velocity, delta)
+			fly_velocity = preload("res://guns/combat/VehiclePersonImpact.gd").move_falling_body(self, fly_velocity, delta)
 			is_flying = fly_velocity.length() >= 12.0
 		velocity = Vector2.ZERO
 		fall_presentation.update(delta)
@@ -299,7 +299,7 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if health <= 0 and not is_dead:
 		is_dead = true
 		get_node("CollisionShape2D").set_deferred("disabled", true)
-		preload("res://world/shared/combat/GroundBlood.gd").spawn(self, true)
+		preload("res://guns/combat/GroundBlood.gd").spawn(self, true)
 		if phone_indicator: phone_indicator.visible = false
 		show_speech("Aaaagh!", 1.0)
 		var effects := get_tree().get_first_node_in_group("weapon_effects")
@@ -326,7 +326,7 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 		get_node("CollisionShape2D").set_deferred("disabled", true)
 		if phone_indicator: phone_indicator.hide()
 	fall_presentation.start(self, driver_model, driver_viewport, impact_velocity)
-	preload("res://world/shared/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
+	preload("res://guns/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
 	var care := get_node_or_null("/root/NPCMedicalCare")
 	if care: care.report_injury(self)
 

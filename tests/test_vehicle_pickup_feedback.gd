@@ -14,7 +14,7 @@ func _run() -> void:
 	road.polygon = PackedVector2Array([Vector2(-1000,-1000),Vector2(4000,-1000),Vector2(4000,1000),Vector2(-1000,1000)])
 	road.color = Color("394144")
 	world.add_child(road)
-	var effects := preload("res://world/shared/combat/WeaponEffects.gd").new()
+	var effects := preload("res://guns/combat/WeaponEffects.gd").new()
 	world.add_child(effects)
 	var player = preload("res://Player.gd").new()
 	player.collision_layer = 4
@@ -79,7 +79,7 @@ func _run() -> void:
 	check(driver.driver_model is Node3D and driver.shirt_color==Color("39835a"),"ejected civilian uses articulated green 3D model")
 	check(driver.civilian_routine and driver.global_position.distance_to(old_position)>5,"civilian resumes a walking routine")
 	var effect_count := effects.get_child_count()
-	var bullet = preload("res://Bullet.tscn").instantiate()
+	var bullet = preload("res://guns/Bullet.tscn").instantiate()
 	world.add_child(bullet)
 	bullet._hit(driver,driver.global_position,Vector2.UP)
 	check(effects.get_child_count()>effect_count,"flesh impact emits combat feedback")

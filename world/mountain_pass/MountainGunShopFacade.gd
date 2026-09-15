@@ -1,9 +1,9 @@
-extends "res://world/shared/ammunation/AmmunationBranchView.gd"
+extends "res://guns/ammunation/AmmunationBranchView.gd"
 var entrance: BuildingEntrance
 func _ready() -> void:
 	z_as_relative = false
 	z_index = 4
-	build_view(preload("res://world/shared/ammunation/AmmunationFacade3D.gd"),12.0,22.0,Vector3(0,1.8,0))
+	build_view(preload("res://guns/ammunation/AmmunationFacade3D.gd"),12.0,22.0,Vector3(0,1.8,0))
 	_build_parking()
 	add_solid(Rect2(-4.2,-2.2,8.4,4.4),"GunShopStructure")
 	for side in [-1.0,1.0]:

@@ -70,7 +70,7 @@ func run() -> void:
 	helper = load("res://world/shared/interiors/InteriorActorPresentation.gd").new()
 	world.add_child(helper)
 	helper.configure(actor, room.camera_3d, room.sprite_3d)
-	var fire = load("res://world/shared/combat/PersonBurning.gd").ignite(actor)
+	var fire = load("res://guns/combat/PersonBurning.gd").ignite(actor)
 	await create_timer(.6).timeout
 	check(is_instance_valid(fire.interior_fire) and not fire.flames.visible, "Interior burn uses 3D particles without external overlay")
 	check(fire.interior_fire.get_viewport() == room.viewport_3d, "Fire shares room depth buffer")
@@ -79,7 +79,7 @@ func run() -> void:
 	await occlusion([fire.interior_fire], "fire", helper.anchor.position + Vector3.UP * .9)
 	fire.queue_free()
 	await process_frame
-	var grenade = load("res://GrenadeProjectile.tscn").instantiate()
+	var grenade = load("res://guns/GrenadeProjectile.tscn").instantiate()
 	world.add_child(grenade)
 	grenade.setup(actor.global_position + Vector2(2, 0), Vector2.ZERO, 0, null)
 	grenade.damage = 2000

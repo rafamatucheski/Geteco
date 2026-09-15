@@ -175,7 +175,7 @@ func take_damage(amount: int, _source: Variant = null) -> void:
 		is_dead = true
 		collision_layer = 0
 		velocity = Vector2.ZERO
-		preload("res://world/shared/combat/GroundBlood.gd").spawn(self)
+		preload("res://guns/combat/GroundBlood.gd").spawn(self)
 	_refresh_model(0.04, 0.0)
 
 func _point_visible(point: Vector2) -> bool:

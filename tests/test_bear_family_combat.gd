@@ -14,7 +14,7 @@ func _run() -> void:
 	var region := Node2D.new()
 	region.position = Vector2(4300,-4960)
 	scene.add_child(region)
-	var effects = load("res://world/shared/combat/WeaponEffects.gd").new()
+	var effects = load("res://guns/combat/WeaponEffects.gd").new()
 	scene.add_child(effects)
 	var player = load("res://Player.gd").new()
 	player.name = "Player"
@@ -93,13 +93,13 @@ func _run() -> void:
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("D:/geteco/bear-family-review.png")
-	var bullet = load("res://Bullet.gd").new()
+	var bullet = load("res://guns/Bullet.gd").new()
 	bullet.damage = 200
 	bullet.set_physics_process(false)
 	scene.add_child(bullet)
 	bullet._hit(bear,bear.global_position,Vector2.UP)
 	check(not bear.is_dead and bear.health == 160, "adult survives 200 damage")
-	var finishing_bullet = load("res://Bullet.gd").new()
+	var finishing_bullet = load("res://guns/Bullet.gd").new()
 	finishing_bullet.damage = 160
 	finishing_bullet.set_physics_process(false)
 	scene.add_child(finishing_bullet)

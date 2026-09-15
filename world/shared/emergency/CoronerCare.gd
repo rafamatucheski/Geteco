@@ -61,7 +61,7 @@ func restore_actor(body: Node2D) -> bool:
 func _restore_fragments(reference: WeakRef, fragments: Array) -> void:
 	var body: Variant = reference.get_ref()
 	if not is_instance_valid(body) or body.has_meta("explosion_remains"): return
-	preload("res://world/shared/combat/ExplosionRemains.gd").spawn(body,body.global_position,null,fragments)
+	preload("res://guns/combat/ExplosionRemains.gd").spawn(body,body.global_position,null,fragments)
 
 func _hide_body(body: Node2D) -> void:
 	body.hide()

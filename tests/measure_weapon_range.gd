@@ -40,7 +40,7 @@ func run():
   var elapsed = (Time.get_ticks_usec()-started)/1000000.0
   if elapsed >= next_shot:
    next_shot += 0.11
-   var b = load("res://Bullet.tscn").instantiate()
+   var b = load("res://guns/Bullet.tscn").instantiate()
    b.position = player.position + Vector2(0,-25)
    b.direction = Vector2.UP
    b.owner_body = player

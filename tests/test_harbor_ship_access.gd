@@ -256,7 +256,7 @@ func _fire_player_bullet(scene: Node2D, player: CharacterBody2D, target: Vector2
 	for child in scene.get_children():
 		if not before.has(child) and child is Node2D:
 			var script := child.get_script() as Script
-			if script != null and script.resource_path == "res://Bullet.gd":
+			if script != null and script.resource_path == "res://guns/Bullet.gd":
 				return child as Node2D
 	_check(false, "Actual Player pistol firing must instantiate the production Bullet")
 	return null

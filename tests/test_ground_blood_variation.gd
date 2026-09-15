@@ -1,5 +1,5 @@
 extends SceneTree
-const BLOOD := preload("res://world/shared/combat/GroundBlood.gd")
+const BLOOD := preload("res://guns/combat/GroundBlood.gd")
 var failures: Array[String] = []
 
 func _initialize() -> void:

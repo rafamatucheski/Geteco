@@ -1,6 +1,6 @@
 extends SceneTree
 const BANK := preload("res://audio/combat/CombatAudioBank.gd")
-const BULLET := preload("res://Bullet.tscn")
+const BULLET := preload("res://guns/Bullet.tscn")
 const WEATHER := preload("res://DayNightWeatherManager.gd")
 var failures := 0
 

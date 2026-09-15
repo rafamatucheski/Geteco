@@ -1,5 +1,5 @@
 extends SceneTree
-const RELOAD := preload("res://world/shared/combat/WeaponReload.gd")
+const RELOAD := preload("res://guns/combat/WeaponReload.gd")
 var failures: Array[String] = []
 
 class PursuedCar extends CharacterBody2D:

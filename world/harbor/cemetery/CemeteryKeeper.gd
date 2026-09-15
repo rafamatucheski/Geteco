@@ -147,7 +147,7 @@ func set_sleeping(value: bool) -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
-		impact_velocity = preload("res://world/shared/combat/VehiclePersonImpact.gd").move_falling_body(self, impact_velocity, delta)
+		impact_velocity = preload("res://guns/combat/VehiclePersonImpact.gd").move_falling_body(self, impact_velocity, delta)
 		fall.update(delta)
 		return
 	_speech_left -= delta
@@ -212,7 +212,7 @@ func _tick_hostility(delta: float) -> void:
 	_shot_cooldown = 1.8
 	shots_fired += 1
 	for pellet in 4:
-		var bullet := preload("res://Bullet.tscn").instantiate()
+		var bullet := preload("res://guns/Bullet.tscn").instantiate()
 		bullet.owner_body = self
 		bullet.configure_range(WeaponCatalog.get_weapon("shotgun"))
 		bullet.damage = 4

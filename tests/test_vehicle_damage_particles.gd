@@ -1,6 +1,6 @@
 extends SceneTree
-const PARTICLES := preload("res://world/shared/combat/VehicleDamageParticles.gd")
-const EXPLOSION := preload("res://world/shared/combat/ExplosionVisual.gd")
+const PARTICLES := preload("res://guns/combat/VehicleDamageParticles.gd")
+const EXPLOSION := preload("res://guns/combat/ExplosionVisual.gd")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, label: String) -> void:

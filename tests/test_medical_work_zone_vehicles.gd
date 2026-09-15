@@ -68,7 +68,7 @@ func run() -> void:
 	var initial_health: int = source.crew[0].health
 	var hitter := CharacterBody2D.new()
 	world.add_child(hitter)
-	check(not preload("res://world/shared/combat/VehiclePersonImpact.gd").hit(hitter, source.crew[0], Vector2(900, 0)) and source.crew[0].health == initial_health, "Direct bumper impacts cannot injure protected working medics")
+	check(not preload("res://guns/combat/VehiclePersonImpact.gd").hit(hitter, source.crew[0], Vector2(900, 0)) and source.crew[0].health == initial_health, "Direct bumper impacts cannot injure protected working medics")
 	hitter.queue_free()
 	for archetype in ["route_city", "bike_urban", "local_bus"]:
 		await _lane_case(archetype)

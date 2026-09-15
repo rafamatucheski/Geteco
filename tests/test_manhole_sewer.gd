@@ -203,7 +203,7 @@ func verify_combat_isolation() -> void:
 	check(above.heard == 0, "street pedestrian cannot hear underground gunfire")
 	check(room.has_node("CombatImpactAudio") and not world.has_node("CombatImpactAudio"), "bullet impact audio belongs to the isolated room")
 	var before_blast := below.health
-	var rocket := preload("res://Bullet.tscn").instantiate()
+	var rocket := preload("res://guns/Bullet.tscn").instantiate()
 	room.add_child(rocket)
 	rocket.owner_body = player
 	rocket.damage = 80

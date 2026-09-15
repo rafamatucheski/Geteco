@@ -30,7 +30,7 @@ func _process(_delta: float) -> void:
 		model.global_position = presentation.floor_position(piece.global_position)
 		var pixels: float = presentation.pixels_per_rig_unit(Vector2.UP)
 		model.rotation = piece.tumble
-		model.position.y = preload("res://world/shared/combat/BodyFragmentMesh.gd").floor_offset(model) + piece.height / maxf(pixels, 1) * presentation.anchor.scale.x
+		model.position.y = preload("res://guns/combat/BodyFragmentMesh.gd").floor_offset(model) + piece.height / maxf(pixels, 1) * presentation.anchor.scale.x
 		model.visible = piece.is_visible_in_tree()
 		for mesh in model.get_children():
 			if mesh is GeometryInstance3D: mesh.transparency = 1.0-get_parent().modulate.a

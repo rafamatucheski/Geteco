@@ -1,5 +1,5 @@
 extends SceneTree
-const BLAST := preload("res://world/shared/combat/ExplosionVisual.gd")
+const BLAST := preload("res://guns/combat/ExplosionVisual.gd")
 func _initialize() -> void: run.call_deferred()
 func caption(world: Node, text: String, at: Vector2) -> void:
 	var label := Label.new()

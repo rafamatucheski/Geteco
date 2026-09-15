@@ -71,7 +71,7 @@ static func spawn(actor: Node2D, origin: Vector2, source: CollisionObject2D = nu
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(actor.get_meta("fragment_seed", randi()))
 	if actor.has_method("ensure_presentation"): actor.ensure_presentation()
-	var plans := preload("res://world/shared/combat/BodyFragmentMesh.gd").plans(actor, rng)
+	var plans := preload("res://guns/combat/BodyFragmentMesh.gd").plans(actor, rng)
 	if not saved.is_empty(): plans = saved.map(func(fragment): return fragment.parts)
 	if plans.is_empty():
 		actor.remove_meta("explosion_remains")
@@ -82,7 +82,7 @@ static func spawn(actor: Node2D, origin: Vector2, source: CollisionObject2D = nu
 	for i in plans.size():
 		var piece := Piece.new()
 		piece.part_keys = plans[i]
-		piece.fragment_model = preload("res://world/shared/combat/BodyFragmentMesh.gd").build(actor, plans[i])
+		piece.fragment_model = preload("res://guns/combat/BodyFragmentMesh.gd").build(actor, plans[i])
 		var bounds: AABB = piece.fragment_model.get_meta("fragment_bounds")
 		piece.shadow_radius = clampf(bounds.size.length()*5.5, 2, 6)
 		var spread := lerpf(-1.4, 1.4, float(i)/maxf(1, plans.size()-1)) + rng.randf_range(-.32, .32)
@@ -102,9 +102,9 @@ static func spawn(actor: Node2D, origin: Vector2, source: CollisionObject2D = nu
 		remains.pieces.append(piece)
 	var visual: Node
 	if actor.has_meta("interior_actor_presentation"):
-		visual = preload("res://world/shared/combat/InteriorRemainsPresentation.gd").new()
+		visual = preload("res://guns/combat/InteriorRemainsPresentation.gd").new()
 	else:
-		visual = preload("res://world/shared/combat/FragmentAtlasPresentation.gd").new()
+		visual = preload("res://guns/combat/FragmentAtlasPresentation.gd").new()
 	remains.add_child(visual)
 	visual.configure(actor, remains)
 	actor.hide()

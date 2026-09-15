@@ -88,13 +88,13 @@ func _inject_hud():
 		garage.position = Vector2(-664, 494)
 		get_parent().call_deferred("add_child", garage)
 
-	var weapon_store_scene = load("res://WeaponStore.tscn")
+	var weapon_store_scene = load("res://guns/WeaponStore.tscn")
 	if weapon_store_scene:
 		var weapon_store = weapon_store_scene.instantiate()
 		weapon_store.position = Vector2(-425, 485)
 		get_parent().call_deferred("add_child", weapon_store)
 
-	var effects_script = load("res://world/shared/combat/WeaponEffects.gd")
+	var effects_script = load("res://guns/combat/WeaponEffects.gd")
 	if effects_script:
 		var effects = effects_script.new()
 		get_parent().call_deferred("add_child", effects)

@@ -2,8 +2,8 @@ extends RefCounted
 const RADIUS := 230.0
 const FRAGMENT_RADIUS := 110.0
 const MATERIAL := preload("res://audio/combat/ImpactMaterial.gd")
-const REMAINS := preload("res://world/shared/combat/ExplosionRemains.gd")
-const IMPULSE := preload("res://world/shared/combat/BlastImpulse.gd")
+const REMAINS := preload("res://guns/combat/ExplosionRemains.gd")
+const IMPULSE := preload("res://guns/combat/BlastImpulse.gd")
 
 static func apply(source: Node2D) -> void:
 	var subjects: Array[Node] = []
