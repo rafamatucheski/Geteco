@@ -17,7 +17,7 @@ func _run() -> void:
 	await physics_frame
 	var models := {}
 	for index in 10:
-		var officer = load("res://PoliceOfficer.tscn").instantiate()
+		var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 		officer.set_meta("quiet_patrol", true)
 		officer.set_meta("response_tier_level", 1)
 		scene.add_child(officer)
@@ -68,7 +68,7 @@ func _run() -> void:
 		officer.free()
 	check(models.size() == 10, "Ten consecutive officers have distinct models")
 	for stars in range(1, 7):
-		var officer = load("res://PoliceOfficer.tscn").instantiate()
+		var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 		officer.set_meta("response_tier_level", stars)
 		officer.set_meta("quiet_patrol", true)
 		scene.add_child(officer)
@@ -82,7 +82,7 @@ func _run() -> void:
 	var target := Node2D.new()
 	scene.add_child(target)
 	target.position = Vector2(600, 300)
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	officer.set_meta("quiet_patrol", true)
 	officer.set_meta("response_tier_level", 1)
 	officer.begin_service_disembark(car, -1.0, -8.0)

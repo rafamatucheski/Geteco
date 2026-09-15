@@ -1,7 +1,7 @@
 extends CharacterBody2D
 
 const BULLET_SCENE: PackedScene = preload("res://guns/Bullet.tscn")
-const POLICE_LOOT_SCRIPT = preload("res://world/shared/pickups/PoliceLoot.gd")
+const POLICE_LOOT_SCRIPT = preload("res://police/PoliceLoot.gd")
 
 enum UnitTier {
 	PATROL,       # 1-2 Estrelas: Polícia Regular (Pistola 9mm)
@@ -42,7 +42,7 @@ var crew_longitudinal := -8.0
 var service_disembark_active := false
 var returning_to_service_vehicle := false
 var boarding_service_vehicle := false
-var vehicle_stop := preload("res://PoliceVehicleStop.gd").new()
+var vehicle_stop := preload("res://police/PoliceVehicleStop.gd").new()
 var crew_partner: CharacterBody2D
 var car_cover_elapsed := 0.0
 var car_cover_released := false
@@ -84,7 +84,7 @@ func _ready() -> void:
 	add_to_group("damageable")
 	
 	_configure_tier()
-	preload("res://world/shared/emergency/PoliceAppearance.gd").prepare(self)
+	preload("res://police/PoliceAppearance.gd").prepare(self)
 	
 	health = max_health
 	z_index = 6
@@ -97,7 +97,7 @@ func _ready() -> void:
 	
 	_build_3d_viewport()
 	preload("res://world/shared/pedestrians/ServiceUniformDetails.gd").apply(self,"police")
-	preload("res://world/shared/emergency/PoliceAppearance.gd").apply(self)
+	preload("res://police/PoliceAppearance.gd").apply(self)
 	preload("res://world/shared/pedestrians/NPCCombatRig.gd").attach(self, String(dropped_weapon))
 	
 	var col := CollisionShape2D.new()
@@ -229,7 +229,7 @@ func _build_3d_viewport() -> void:
 	torso_node.position = Vector3(0.0, 0.85, 0.0)
 	model_root.add_child(torso_node)
 
-	var torso_mesh := preload("res://world/shared/emergency/PoliceAppearance.gd").uniform_body(mat_uniform, get_meta("police_appearance").get("woman", false))
+	var torso_mesh := preload("res://police/PoliceAppearance.gd").uniform_body(mat_uniform, get_meta("police_appearance").get("woman", false))
 	torso_node.add_child(torso_mesh)
 
 	# Colete Tático Blindado Kevlar (SWAT, FBI e Exército)
@@ -724,7 +724,7 @@ var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
 var unstuck_dir_sign: float = 1.0
 
-var movement_navigation := preload("res://world/shared/emergency/PoliceFootNavigation.gd").new()
+var movement_navigation := preload("res://police/PoliceFootNavigation.gd").new()
 
 func _release_car_cover() -> void:
 	car_cover_released = true

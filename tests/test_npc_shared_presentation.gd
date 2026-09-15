@@ -70,7 +70,7 @@ func _run() -> void:
 	var wm := root.get_node("WantedManager")
 	for stars in [1,3,4,5,6]:
 		wm.current_stars = stars
-		var officer = add_actor("res://PoliceOfficer.gd", "Policia %s" % stars)
+		var officer = add_actor("res://police/PoliceOfficer.gd", "Policia %s" % stars)
 		var crown: MeshInstance3D = officer.head_node.get_node("CoveredCrown")
 		var bounds := crown.mesh.get_aabb()
 		check(bounds.end.y + crown.position.y >= .20, "Crown covers scalp tier %s" % stars)

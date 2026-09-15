@@ -51,26 +51,19 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
-# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio systems/. PopulationActivity
-# ja esta em cars/traffic/ (movido no commit anterior de cars/).
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio police/.
 MOVES: list[tuple[str, str]] = [
-    ("SaveManager.gd", "systems/SaveManager.gd"),
-    ("SettingsManager.gd", "systems/SettingsManager.gd"),
-    ("Localization.gd", "systems/Localization.gd"),
-    ("CampaignState.gd", "systems/CampaignState.gd"),
-    ("DistrictRestrictionManager.gd", "systems/DistrictRestrictionManager.gd"),
-    ("RegionTravel.gd", "systems/RegionTravel.gd"),
-    ("PresentationBudget.gd", "systems/PresentationBudget.gd"),
-    ("DynamicCamera.gd", "systems/DynamicCamera.gd"),
-    ("RenderQuality.gd", "systems/RenderQuality.gd"),
-    ("ContactShadow.gd", "systems/ContactShadow.gd"),
-    ("DayNightWeatherManager.gd", "systems/DayNightWeatherManager.gd"),
-    ("world/shared/atmosphere", "systems/atmosphere"),
-    ("world/shared/interiors", "systems/interiors"),
-    ("cars/traffic/PopulationActivity.gd", "systems/PopulationActivity.gd"),
-    ("world/shared/WorldRenewal.gd", "systems/WorldRenewal.gd"),
-    ("world/shared/LivePoseShadow.gd", "systems/LivePoseShadow.gd"),
-    ("world/shared/StaticGroundShadow.gd", "systems/StaticGroundShadow.gd"),
+    ("PoliceOfficer.gd", "police/PoliceOfficer.gd"),
+    ("PoliceOfficer.tscn", "police/PoliceOfficer.tscn"),
+    ("WantedManager.gd", "police/WantedManager.gd"),
+    ("PoliceVehicleStop.gd", "police/PoliceVehicleStop.gd"),
+    ("SpikeStrip.gd", "police/SpikeStrip.gd"),
+    ("world/shared/pickups/PoliceLoot.gd", "police/PoliceLoot.gd"),
+    ("world/shared/emergency/PoliceAppearance.gd", "police/PoliceAppearance.gd"),
+    ("world/shared/emergency/PoliceFootNavigation.gd", "police/PoliceFootNavigation.gd"),
+    ("world/shared/emergency/PoliceMotorcycleCrew.gd", "police/PoliceMotorcycleCrew.gd"),
+    ("world/shared/emergency/PoliceMotorcycleModel.gd", "police/PoliceMotorcycleModel.gd"),
+    ("world/shared/emergency/PoliceVehicleCombat.gd", "police/PoliceVehicleCombat.gd"),
 ]
 
 

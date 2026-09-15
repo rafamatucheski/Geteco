@@ -22,7 +22,7 @@ func _run() -> void:
 	var actor := Suspect.new()
 	actor.add_to_group("player")
 	scene.add_child(actor)
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	scene.add_child(officer)
 	officer.set_physics_process(false)
 	officer.position = Vector2(-25, 0)

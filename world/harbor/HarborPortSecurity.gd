@@ -1,4 +1,4 @@
-extends "res://PoliceOfficer.gd"
+extends "res://police/PoliceOfficer.gd"
 
 var checkpoint: Node
 

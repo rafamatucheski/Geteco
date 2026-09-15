@@ -1,4 +1,4 @@
-extends "res://PoliceOfficer.gd"
+extends "res://police/PoliceOfficer.gd"
 ## One foot patrol owns this call; it never switches to the player's pursuit.
 var responding := false
 var walking_home := false

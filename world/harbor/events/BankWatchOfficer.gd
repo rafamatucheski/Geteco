@@ -1,4 +1,4 @@
-extends "res://PoliceOfficer.gd"
+extends "res://police/PoliceOfficer.gd"
 var post: Node
 var home := Vector2.ZERO
 var responding := false

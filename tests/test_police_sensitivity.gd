@@ -14,7 +14,7 @@ class Civilian extends AnimatedPedestrian3D:
 	func _dispatch_emergency_ambulance() -> void: ambulance_calls += 1
 	func _dispatch_emergency_coroner() -> void: coroner_calls += 1
 
-class Officer extends "res://PoliceOfficer.gd":
+class Officer extends "res://police/PoliceOfficer.gd":
 	func _ready() -> void: set_physics_process(false)
 	func _drop_loot() -> void: pass
 	func _create_3d_blood_puddle() -> void: pass
@@ -24,7 +24,7 @@ class Officer extends "res://PoliceOfficer.gd":
 	func _play_audio(_s: AudioStream, _v: float = -6.0, _p: float = 1.0) -> void: pass
 	func _dispatch_emergency_coroner() -> void: pass
 
-class DispatchProbe extends "res://WantedManager.gd":
+class DispatchProbe extends "res://police/WantedManager.gd":
 	var dispatches := 0
 	func _dispatch_police(): dispatches += 1
 

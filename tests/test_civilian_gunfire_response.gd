@@ -15,7 +15,7 @@ func run() -> void:
 	root.add_child(scene)
 	current_scene = scene
 	root.get_node("WantedManager").set_process(false)
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	scene.add_child(officer)
 	officer.set_physics_process(false)
 	officer.position = Vector2(100, 300)

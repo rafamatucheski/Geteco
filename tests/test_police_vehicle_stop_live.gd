@@ -95,7 +95,7 @@ func run() -> void:
 	car.enter_vehicle(player)
 	await create_timer(2).timeout
 	wanted.current_stars = 1
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	current_scene.add_child(officer)
 	officer.set_physics_process(false)
 	officer.global_position = car.global_position + Vector2(0,-55)

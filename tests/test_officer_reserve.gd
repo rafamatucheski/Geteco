@@ -17,7 +17,7 @@ func run() -> void:
  var target := Node2D.new()
  world.add_child(target)
  for level in [1,2,3,4,5,6]:
-  var cold: Node2D = load("res://PoliceOfficer.tscn").instantiate()
+  var cold: Node2D = load("res://police/PoliceOfficer.tscn").instantiate()
   cold.set_meta("response_tier_level",level)
   cold.set_meta("quiet_patrol",true)
   start=Time.get_ticks_usec()

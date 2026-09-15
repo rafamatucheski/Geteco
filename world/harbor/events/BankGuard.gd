@@ -1,4 +1,4 @@
-extends "res://PoliceOfficer.gd"
+extends "res://police/PoliceOfficer.gd"
 var room: Node2D
 var uses_shotgun := false
 var eyes: Array[MeshInstance3D] = []

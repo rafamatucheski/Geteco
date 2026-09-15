@@ -23,7 +23,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var officer := preload("res://PoliceOfficer.gd").new()
+	var officer := preload("res://police/PoliceOfficer.gd").new()
 	world.add_child(officer)
 	officer.set_physics_process(false)
 	for id in WeaponCatalog.get_order():
@@ -52,7 +52,7 @@ func run() -> void:
 		officer._shoot_at_target(Vector2(300,0))
 		check(world.get_child_count() == count, id + " actual officer cannot spawn projectile during reload")
 		check(is_equal_approx(officer.weapon_reload.remaining, RELOAD.duration(id)), id + " actual officer uses player duration")
-	var drive_by := preload("res://world/shared/emergency/PoliceVehicleCombat.gd").new()
+	var drive_by := preload("res://police/PoliceVehicleCombat.gd").new()
 	var unit := DriveByUnit.new()
 	var hull := CollisionShape2D.new()
 	hull.name = "CollisionShape2D"

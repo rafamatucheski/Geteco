@@ -1,4 +1,4 @@
-extends "res://PoliceOfficer.gd"
+extends "res://police/PoliceOfficer.gd"
 var patrol_route := PackedVector2Array()
 var patrol_index := 0
 var alerted := false

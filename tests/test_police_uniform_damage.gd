@@ -27,7 +27,7 @@ func run() -> void:
 	current_scene = world
 	root.get_node("WantedManager").set_process(false)
 	for level in [1, 3, 4, 5, 6]:
-		var officer := preload("res://PoliceOfficer.gd").new()
+		var officer := preload("res://police/PoliceOfficer.gd").new()
 		# Each case is a different resident, not a streamed return of a corpse.
 		officer.name = "UniformCase%d" % level
 		officer.set_meta("quiet_patrol", true)

@@ -16,7 +16,7 @@ func run() -> void:
 	for person in people:
 		if person.global_position.distance_to(Vector2(1750, 1950)) < focus.global_position.distance_to(Vector2(1750, 1950)):
 			focus = person
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	current_scene.add_child(officer)
 	officer.set_physics_process(false)
 	officer.global_position = focus.global_position - Vector2(110, 110)

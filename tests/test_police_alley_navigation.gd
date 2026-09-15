@@ -14,7 +14,7 @@ func _run() -> void:
 	player.set_physics_process(false)
 	player.collision_layer = 0
 	var provider := scene.get_node("Alleys") as Node2D
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	officer.set_meta("quiet_patrol", true)
 	officer.set_meta("response_tier_level", 1)
 	scene.add_child(officer)
@@ -27,7 +27,7 @@ func _run() -> void:
 			var entry := provider.to_global(points[0])
 			var goal := provider.to_global(points[-1])
 			officer.global_position = entry - points[0].direction_to(points[1]) * 40.0
-			officer.movement_navigation = load("res://world/shared/emergency/PoliceFootNavigation.gd").new()
+			officer.movement_navigation = load("res://police/PoliceFootNavigation.gd").new()
 			await physics_frame
 			var max_step := 0.0
 			for frame in 1500:

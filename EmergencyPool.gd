@@ -16,7 +16,7 @@ func prepare_officers() -> void:
 	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
 	# One initial full deployment per tier, bounded by the existing fleet size.
 	# Detached unused units have no active groups, physics, audio or viewport.
-	var scene := load("res://PoliceOfficer.tscn") as PackedScene
+	var scene := load("res://police/PoliceOfficer.tscn") as PackedScene
 	for level in [1, 3, 4, 5, 6]:
 		if not _officer_reserve.has(level): _officer_reserve[level] = []
 		var reserve: Array = _officer_reserve[level]
@@ -37,7 +37,7 @@ func take_officer(level: int) -> Node2D:
 	if key == 2: key = 1
 	var reserve: Array = _officer_reserve.get(key, [])
 	if reserve.is_empty():
-		return load("res://PoliceOfficer.tscn").instantiate()
+		return load("res://police/PoliceOfficer.tscn").instantiate()
 	var officer: Node2D = reserve.pop_back()
 	# No used or dead officer returns here: combat/loot state is never recycled.
 	# The caller assigns target, tier and disembark state before adding it.

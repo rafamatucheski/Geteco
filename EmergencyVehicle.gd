@@ -58,7 +58,7 @@ var _police_available_seats := 2
 var _police_crew_on_foot := false
 var _police_recall_requested := false
 var _police_boarded_ids := {}
-var _vehicle_combat := preload("res://world/shared/emergency/PoliceVehicleCombat.gd").new()
+var _vehicle_combat := preload("res://police/PoliceVehicleCombat.gd").new()
 
 func configure_police_response(level: int, serial: int, elite_unit := false) -> void:
 	police_response_level = clampi(level, 1, 6)
@@ -363,7 +363,7 @@ func activate():
 	_police_crew_on_foot = false
 	_police_recall_requested = false
 	_police_boarded_ids.clear()
-	_vehicle_combat = preload("res://world/shared/emergency/PoliceVehicleCombat.gd").new()
+	_vehicle_combat = preload("res://police/PoliceVehicleCombat.gd").new()
 	service_targets.clear()
 	_coroner_stage = ""
 	_coroner_wait = 0.0
@@ -1285,12 +1285,12 @@ func _release_cover_exceptions(cover: StaticBody2D) -> void:
 
 func _deploy_officers_duo() -> void:
 	if _police_crew_on_foot: return
-	var officer_scene = load("res://PoliceOfficer.tscn")
+	var officer_scene = load("res://police/PoliceOfficer.tscn")
 	var officer_pool := get_node_or_null("/root/EmergencyPool")
 	if officer_scene:
 		var driver_seat := Vector2(-8.0, -1.0)
 		if police_variant == "motorcycle":
-			driver_seat = preload("res://world/shared/emergency/PoliceMotorcycleCrew.gd").exit_seat(self)
+			driver_seat = preload("res://police/PoliceMotorcycleCrew.gd").exit_seat(self)
 			if not driver_seat.is_finite():
 				# Make physical room before spawning a rider inside an obstacle.
 				officer_deployed = false

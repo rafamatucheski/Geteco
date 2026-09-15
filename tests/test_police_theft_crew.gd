@@ -53,7 +53,7 @@ func run() -> void:
 		for officer in get_nodes_in_group("police_officer"):
 			for point in positions: check(point.distance_to(officer.position) >= 16, "Medics exit separately")
 			positions.append(officer.position)
-			check(officer.get_script() == load("res://PoliceOfficer.gd"), "Real police officer is used")
+			check(officer.get_script() == load("res://police/PoliceOfficer.gd"), "Real police officer is used")
 		if driven != null:
 			while driven.has_meta("vehicle_boarding"): await process_frame
 			driven.force_exit_vehicle()

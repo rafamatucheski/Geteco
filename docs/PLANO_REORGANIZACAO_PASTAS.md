@@ -60,7 +60,7 @@ Total: 232 arquivos (72 da raiz + 160 de `world/shared/`), fora os 6 que vão pa
 
 `world/shared/` fica **retirado** ao final (todo o conteúdo redistribuído); `world/harbor/`
 e `world/mountain_pass/` continuam apontando para esses domínios pelos novos caminhos
-(ex.: `res://police/PoliceOfficer.gd` em vez de `res://PoliceOfficer.gd`).
+(ex.: `res://police/PoliceOfficer.gd` em vez de `res://police/PoliceOfficer.gd`).
 
 Dois casos **não** viram pasta de domínio nova, por já terem endereço melhor:
 - `HUD.gd` (raiz) → entra em `ui/`, que já existe e já é o lugar certo pra interface.
@@ -103,7 +103,7 @@ faca, taco e machado como "armas"), por isso fica dentro de `guns/` e não vira 
 | `world/shared/emergency/` | `PoliceAppearance.gd`, `PoliceFootNavigation.gd`, `PoliceMotorcycleCrew.gd`, `PoliceMotorcycleModel.gd`, `PoliceVehicleCombat.gd` (os 5 arquivos de `emergency/` com prefixo `Police*`, que são especificamente sobre policiamento, não sobre despacho médico/bombeiro) |
 
 `WantedManager.gd` é autoload — muda só o caminho no `project.godot`
-(`res://WantedManager.gd` → `res://police/WantedManager.gd`), não o comportamento.
+(`res://police/WantedManager.gd` → `res://police/WantedManager.gd`), não o comportamento.
 
 ### `emergency/`
 

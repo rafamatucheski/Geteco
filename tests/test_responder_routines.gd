@@ -61,7 +61,7 @@ func _run() -> void:
 	lane.queue_free()
 	probe.queue_free()
 	# Contorno real: parede entre policial e destino, sem teleporte ou rodopio.
-	var officer = load("res://PoliceOfficer.tscn").instantiate()
+	var officer = load("res://police/PoliceOfficer.tscn").instantiate()
 	officer.set_meta("quiet_patrol", true)
 	scene.add_child(officer)
 	officer.set_physics_process(false)

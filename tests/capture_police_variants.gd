@@ -17,7 +17,7 @@ func _run() -> void:
 			camera.name = "Camera"
 			actor.add_child(camera)
 		else:
-			actor = load("res://PoliceOfficer.tscn").instantiate()
+			actor = load("res://police/PoliceOfficer.tscn").instantiate()
 			actor.appearance_model = index - 1
 			actor.set_meta("quiet_patrol", true)
 			actor.set_meta("response_tier_level", 1)

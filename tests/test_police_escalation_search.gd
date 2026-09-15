@@ -20,10 +20,10 @@ class Depot extends Node2D:
 		add_child(unit)
 		return unit
 
-class ArmedOfficer extends "res://PoliceOfficer.gd":
+class ArmedOfficer extends "res://police/PoliceOfficer.gd":
 	func _ready() -> void: set_physics_process(false)
 
-class Officer extends "res://PoliceOfficer.gd":
+class Officer extends "res://police/PoliceOfficer.gd":
 	var shots := 0
 	func _ready() -> void:
 		add_to_group("police_officer")
