@@ -155,7 +155,7 @@ func run() -> void:
 	var achievement_bonus := 0
 	for achievement_id in player.unlocked_achievements:
 		if not achievement_id in achievements_before:
-			achievement_bonus += preload("res://AchievementCatalog.gd").cash_reward(achievement_id)
+			achievement_bonus += preload("res://economy/AchievementCatalog.gd").cash_reward(achievement_id)
 	check(player.money==money+1800+achievement_bonus,"Primeiro serviço paga depois de esmagar, mais somente conquistas novas")
 	check(int(yard.ledger().data.get("tow_completed",0))==1,"Entrega avança série")
 	# Reação policial depende da hora de carregar, nunca de quando aceitou.

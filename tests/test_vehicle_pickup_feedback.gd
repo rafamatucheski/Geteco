@@ -28,7 +28,7 @@ func _run() -> void:
 	world.add_child(player)
 	for i in 5: await physics_frame
 	var start_money: int = player.money
-	var cash := preload("res://CashPickup.gd").new()
+	var cash := preload("res://economy/CashPickup.gd").new()
 	cash.amount = 75
 	cash.position = player.global_position
 	world.add_child(cash)

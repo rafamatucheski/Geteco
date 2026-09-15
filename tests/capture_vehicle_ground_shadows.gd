@@ -85,7 +85,7 @@ func run() -> void:
 	world.add_child(label_l)
 
 	# 7. Collectible (Briefcase)
-	var collectible = preload("res://Collectible.gd").new()
+	var collectible = preload("res://economy/Collectible.gd").new()
 	collectible.position = Vector2(800, 260)
 	collectible.collectible_id = "test_case_999"
 	world.add_child(collectible)

@@ -24,7 +24,7 @@ func run() -> void:
 	shape.shape.radius = 5
 	actor.add_child(shape)
 	world.add_child(actor)
-	var item := preload("res://Collectible.gd").new()
+	var item := preload("res://economy/Collectible.gd").new()
 	item.collectible_id = "physics_pickup"
 	world.add_child(item)
 	await physics_frame

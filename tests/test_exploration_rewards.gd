@@ -7,7 +7,7 @@ class TestPlayer extends "res://Player.gd":
 	func _physics_process(_delta: float) -> void: pass
 
 var failures: Array[String] = []
-const CATALOG := preload("res://CollectibleCatalog.gd")
+const CATALOG := preload("res://economy/CollectibleCatalog.gd")
 const BANK := preload("res://audio/rewards/RewardAudioBank.gd")
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, message: String) -> void:

@@ -127,7 +127,7 @@ func _start_gameplay() -> void:
 ## CobraNeighborhood.CENTER/LAND (7700,1700) / (6510,960,2010,1450).
 func _spawn_world_extras() -> void:
 	const CHOP_SHOP_SCRIPT := preload("res://ChopShopZone.gd")
-	const COLLECTIBLE_SCRIPT := preload("res://Collectible.gd")
+	const COLLECTIBLE_SCRIPT := preload("res://economy/Collectible.gd")
 	const DRIFT_ZONE_SCRIPT := preload("res://DriftChallengeZone.gd")
 
 	var chop_shop: Node2D = CHOP_SHOP_SCRIPT.new()

@@ -17,7 +17,7 @@ extends SceneTree
 ## 4. Fechar a tela (botão e Esc) devolve o foco e não deixa a modal visível.
 
 const PAUSE_MENU_SCENE := "res://ui/PauseMenu.tscn"
-const COLLECTIBLE_CATALOG := preload("res://CollectibleCatalog.gd")
+const COLLECTIBLE_CATALOG := preload("res://economy/CollectibleCatalog.gd")
 
 var failures: Array[String] = []
 var step_results: Dictionary = {}

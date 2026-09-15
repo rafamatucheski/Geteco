@@ -52,9 +52,9 @@ var chop_shop_deliveries: int = 0
 var chop_shop_total_scrap: int = 0
 var unlocked_achievements: Array[String] = []
 var _achievement_ready := false
-const DISCOVERY_CATALOG := preload("res://CollectibleCatalog.gd")
+const DISCOVERY_CATALOG := preload("res://economy/CollectibleCatalog.gd")
 signal achievement_unlocked(id: String, title: String)
-const ACHIEVEMENT_CATALOG := preload("res://AchievementCatalog.gd")
+const ACHIEVEMENT_CATALOG := preload("res://economy/AchievementCatalog.gd")
 var ski_rental_active: bool = false
 var ski_equipment_ready: bool = false
 var is_skiing: bool = false

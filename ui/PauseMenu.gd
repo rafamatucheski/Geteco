@@ -11,8 +11,8 @@ const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
 const MAIN_MENU_SCENE: String = "res://ui/MainMenu.tscn"
 const SCENE_ROUTE = preload("res://world/harbor/HarborSceneRoute.gd")
 const MenuAudio = preload("res://ui/MenuAudio.gd")
-const ACHIEVEMENT_CATALOG := preload("res://AchievementCatalog.gd")
-const COLLECTIBLE_CATALOG := preload("res://CollectibleCatalog.gd")
+const ACHIEVEMENT_CATALOG := preload("res://economy/AchievementCatalog.gd")
+const COLLECTIBLE_CATALOG := preload("res://economy/CollectibleCatalog.gd")
 
 @onready var root_control: Control = %RootControl
 @onready var btn_resume: Button = %BtnResume

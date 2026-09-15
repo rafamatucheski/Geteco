@@ -51,10 +51,14 @@ EDIT_SUFFIXES = {".gd", ".tscn", ".tres", ".cfg", ".godot", ".json", ".md"}
 DRY = "--dry-run" in sys.argv
 
 # (origem, destino) relativos a raiz do projeto. Do mais especifico ao mais generico.
+# Fase 4 (docs/PLANO_REORGANIZACAO_PASTAS.md): dominio economy/, o menor e mais
+# isolado, primeiro para validar o procedimento antes dos dominios maiores.
 MOVES: list[tuple[str, str]] = [
-    # Exemplo (Fase 4, quando for a hora):
-    # ("Player.gd", "systems/player/Player.gd"),
-    # ("PlayerCar.gd", "systems/vehicles/PlayerCar.gd"),
+    ("Collectible.gd", "economy/Collectible.gd"),
+    ("CollectibleCatalog.gd", "economy/CollectibleCatalog.gd"),
+    ("CashPickup.gd", "economy/CashPickup.gd"),
+    ("HealthPickup.gd", "economy/HealthPickup.gd"),
+    ("AchievementCatalog.gd", "economy/AchievementCatalog.gd"),
 ]
 
 

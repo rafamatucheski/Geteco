@@ -1,4 +1,4 @@
-extends "res://HealthPickup.gd"
+extends "res://economy/HealthPickup.gd"
 var viewport_3d: SubViewport
 var cross_3d: Node3D
 func _ready() -> void:

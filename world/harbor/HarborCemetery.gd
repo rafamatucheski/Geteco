@@ -264,7 +264,7 @@ func _build_gardens() -> void:
 	add_child(ribbon)
 
 func _build_secret() -> void:
-	var secret := preload("res://Collectible.gd").new()
+	var secret := preload("res://economy/Collectible.gd").new()
 	secret.collectible_id="harbor_memorial_letter"
 	secret.flavor_label="CARTA ANTIGA"
 	secret.position=Vector2(310,292)
