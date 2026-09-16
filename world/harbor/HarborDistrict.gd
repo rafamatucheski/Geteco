@@ -16,13 +16,25 @@ const FOUNTAIN_POSITION := Vector2(1675, 1810)
 var sites: Array[Dictionary] = []
 var accesses: Array[Dictionary] = []
 
+## Congelado pela ferramenta "Congelar Nós Procedurais" do city_layout_editor:
+## prédios/árvores/postes já viraram nós salvos e arrastáveis na cena, então
+## _ready() não os recria por cima (duplicaria tudo). _build_sites() continua
+## rodando sempre -- sites/accesses são consultados por fora (HarborRoadNetwork
+## corta a calçada nas aberturas de acesso; get_spatial_audit() os usa) --
+## mas cada chamada de _building()/_access() só recria o NÓ quando ainda não
+## está congelado; congelado, elas só preenchem os dois arrays e voltam.
+@export var baked_from_editor := false
+
 func _ready() -> void:
-	_build_animated_water()
 	_build_sites()
-	_build_trees()
-	_build_site_solids()
-	_build_boundaries()
-	_build_street_lamps()
+	if not baked_from_editor:
+		_build_animated_water()
+		_build_trees()
+		_build_site_solids()
+		_build_boundaries()
+		_build_street_lamps()
+	_build_memorial_trees()
+	call_deferred("_bind_street_lamp_weather")
 	queue_redraw()
 
 func _build_animated_water() -> void:
@@ -50,7 +62,6 @@ func _build_street_lamps() -> void:
 		lamp.position = p.pos
 		lamp.is_facing_south = p.south
 		add_child(lamp)
-	call_deferred("_bind_street_lamp_weather")
 
 func _bind_street_lamp_weather() -> void:
 	var weather := get_tree().get_first_node_in_group("day_night_manager")
@@ -103,6 +114,8 @@ func get_street_lamp_points() -> Array[Dictionary]:
 func _building(id: String, center: Vector2, size: Vector2, kind: String, title: String, accent_color: String, entrance: Dictionary = {}) -> void:
 	var bounds := Rect2(center - size * 0.5, size)
 	sites.append({"id": id, "bounds": bounds, "kind": kind})
+	if baked_from_editor:
+		return
 	var building := preload("res://world/harbor/hospital/HarborHospital.gd").new() if id == "Clinic" else BUILDING.new()
 	building.name = id
 	building.position = center
@@ -117,6 +130,8 @@ func _building(id: String, center: Vector2, size: Vector2, kind: String, title: 
 
 func _access(id: String, bounds: Rect2, destination: Vector2, vehicle: bool) -> void:
 	accesses.append({"id": id, "bounds": bounds, "destination": destination, "vehicle": vehicle})
+	if baked_from_editor:
+		return
 	var marker := Marker2D.new()
 	marker.name = id
 	marker.position = destination
@@ -176,17 +191,31 @@ func _build_sites() -> void:
 	_access("HomesWalk", Rect2(730, 860, 26, 270), Vector2(743, 880), false)
 
 
-func _build_trees() -> void:
+## MountainPine3D compartilha um SubViewport 3D entre árvores do mesmo pai
+## via get_parent().add_child() síncrono (diferente do StreetLamp, que já
+## posterga pro root da árvore). Isso só funciona quando cada árvore entra na
+## cena ao vivo, uma de cada vez -- dentro de uma subárvore congelada e
+## pré-montada pelo bake, o pai ainda está "montando filhos" no momento em
+## que MountainPine3D tenta anexar sua view, e o Godot recusa. Por isso as
+## árvores de memorial ficam de fora do congelamento (_ready() sempre chama
+## esta função, congelado ou não) até esse código de view compartilhada
+## receber o mesmo conserto que o StreetLamp.gd já tem.
+func _build_memorial_trees() -> void:
 	# Memorial's east buffer used painted circles, including one row beneath
 	# Memorial North. Plant only the free pockets between roads and footways.
 	for x in [45, 205]:
 		for y in [1100, 1640, 1820, 2000]:
+			if has_node("MemorialTree_%d_%d" % [x, y]):
+				continue
 			var memorial_tree := preload("res://world/mountain_pass/MountainPine3D.gd").new()
+			memorial_tree.name = "MemorialTree_%d_%d" % [x, y]
 			memorial_tree.position = Vector2(x,y)
 			memorial_tree.variant_seed = 3 if x == 45 else 4
 			memorial_tree.tree_scale = .85
 			memorial_tree.add_to_group("memorial_verge_tree")
 			add_child(memorial_tree)
+
+func _build_trees() -> void:
 	var positions: Array[Vector2] = []
 	for x in [1465, 2015]:
 		for y in [865, 1025]:
