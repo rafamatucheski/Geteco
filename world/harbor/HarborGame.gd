@@ -25,6 +25,13 @@ func _ready() -> void:
 func _start_gameplay() -> void:
 	# Player's deferred save restore and the inherited world setup run first.
 	# Um dia dura 24 minutos; refeições acompanham o relógio e a pausa do jogo.
+	# GETECO-PERF-03A: esta função criava ~25 subsistemas num único bloco
+	# síncrono (nenhum await), consumindo vários segundos inteiros de um único
+	# quadro. LoadingWorkBatch.checkpoint() entre os grupos abaixo deixa a tela
+	# de loading redesenhar; a ORDEM e o conteúdo de cada add_child/configure
+	# não mudam, e gameplay_ready continua virando true na mesma posição
+	# relativa (antes de PersonalCarManager/ResidenceManager/ContinuousWorld).
+	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
 	weather.day_length_seconds = 1440.0
 	weather.is_dynamic_time = true
 	weather.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -43,22 +50,30 @@ func _start_gameplay() -> void:
 		if "current_stars" in wanted:
 			hud.update_stars(wanted.current_stars)
 	_restore_room_presentation()
+	await batch.checkpoint(get_tree())
 	var soundscape := preload("res://world/harbor/HarborSoundscape.gd").new()
 	soundscape.name = "HarborSoundscape"
-	add_child(soundscape)
-	$ArrivalStop.prepare_player($Player)
+	if not loaded_from_save:
+		$ArrivalStop.prepare_player($Player)
+	else:
+		$Player.show()
+	await batch.checkpoint(get_tree())
 	campaign_controller = load("res://world/harbor/campaign/HarborArrivalMission.gd").new()
 	campaign_controller.name = "ArrivalMission"
 	add_child(campaign_controller)
 	campaign_controller.configure(self)
 	campaign_controller.start_or_resume()
+	if loaded_from_save:
+		$Player.show()
 	var city_audio := get_node_or_null("/root/CityAudioManager")
 	if is_instance_valid(city_audio) and city_audio.has_method("set_active"):
 		# Inicia só quando a campanha indica que a cena de chegada já terminou.
 		city_audio.set_active(state.has_campaign_flag(&"harbor_arrival_seen"))
+	await batch.checkpoint(get_tree())
 	var tutorials := preload("res://ui/tutorial_preview/GameplayTutorials.gd").new()
 	tutorials.name = "GameplayTutorials"
 	add_child(tutorials)
+	await batch.checkpoint(get_tree())
 	var cobra_campaign := preload("res://world/harbor/campaign/CobraCampaignBridge.gd").new()
 	cobra_campaign.name = "CobraCampaign"
 	add_child(cobra_campaign)
@@ -71,18 +86,22 @@ func _start_gameplay() -> void:
 	aftermath.name = "CobraAftermath"
 	add_child(aftermath)
 	aftermath.configure(self, cobra_campaign.ledger)
+	await batch.checkpoint(get_tree())
 	$Interiors/InteriorSpaces.add_child(preload("res://world/harbor/PortBossGarage.gd").new())
 	_spawn_world_extras()
 	_spawn_police_manhole_sewer()
 	_spawn_motorsport_weather()
+	await batch.checkpoint(get_tree())
 	gameplay_ready = true
 	add_child(preload("res://ui/ZoneEntryHUD.gd").new())
 	var personal_car := preload("res://world/harbor/monaliza/PersonalCarManager.gd").new()
 	personal_car.name = "PersonalCarManager"
 	add_child(personal_car)
+	await batch.checkpoint(get_tree())
 	var residences := preload("res://world/harbor/residences/ResidenceManager.gd").new()
 	residences.name = "ResidencePrototype"
 	add_child(residences)
+	await batch.checkpoint(get_tree())
 	var stream := preload("res://world/harbor/ContinuousWorld.gd").new()
 	stream.name = "ContinuousWorld"
 	add_child(stream)
@@ -97,6 +116,7 @@ func _start_gameplay() -> void:
 	cemetery.name = "Cemetery"
 	cemetery.global_position = Vector2(-650, 1740)
 	add_child(cemetery)
+	await batch.checkpoint(get_tree())
 	var living_events := preload("res://world/harbor/events/HarborWorldEvents.gd").new()
 	living_events.name = "WorldEvents"
 	add_child(living_events)
@@ -114,6 +134,7 @@ func _start_gameplay() -> void:
 	var minimap := preload("res://ui/HarborMinimap.gd").new()
 	minimap.name = "Minimap"
 	add_child(minimap)
+	await batch.checkpoint(get_tree())
 	get_node("/root/RegionTravel").finish_arrival(self)
 	var presentation := preload("res://ui/GameplayPresentation.gd").new()
 	presentation.name = "GameplayPresentation"

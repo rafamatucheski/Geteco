@@ -1,0 +1,134 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Godot_v4.7.2-stable_win64_console.exe : WARNING: Camera2D overridden to physics process mode due to use of physics 
+interpolation.
+No linha:6 caractere:1
++ & $godot --path $root --script res://tests/test_south_port.gd 2>&1 |  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Camera... interpolation.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:11)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+PORT_3D views=57 batched_meshes=397 texture_pixels=4045007
+ROAD_LIGHTING_AUDIT roads=40 added=290 samples=2841 underlit_before=1931 underlit_after=0
+PORT_TRUCKS lowering=true departure=true laps=[0, 0, 0] states=[{ "phase": "departed", "remaining": 0.0, "bay": 0, "loads": 1, "loaded": true }, { "phase": "departed", "remaining": 0.0, "bay": 1, "loads": 1, "loaded": true }, { "phase": "departed", "remaining": 0.0, "bay": 2, "loads": 1, "loaded": true }]
+ERROR: Player blocked at (4924.563, 5565.0) towards (4920.0, 5565.0) by RoadPost253:<StaticBody2D#1731459069094>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Player blocked at (4924.488, 5563.944) towards (4920.0, 5500.0) by RoadPost253:<StaticBody2D#1731459069094>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Player blocked at (3923.625, 4695.0) towards (3920.0, 4695.0) by RoadPost272:<StaticBody2D#1766959654767>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Player blocked at (3923.622, 4694.938) towards (3920.0, 4630.0) by RoadPost272:<StaticBody2D#1766959654767>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Player blocked at (4250.0, 5551.859) towards (4250.0, 5575.0) by RoadPost257:<StaticBody2D#1732599917241>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Player blocked at (4249.75, 5551.923) towards (4160.0, 5575.0) by RoadPost257:<StaticBody2D#1732599917241>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3524.516, 3600.0) towards (3750.0, 3600.0) by RoadPost222:<StaticBody2D#1686429021240>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3524.509, 3600.0) towards (5750.0, 3600.0) by RoadPost222:<StaticBody2D#1686429021240>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3930.737, 3974.203) towards (5750.0, 5650.0) by 
+LooseCargoSolid0:<StaticBody2D#1793249552170>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3930.737, 3972.694) towards (3750.0, 5650.0) by 
+LooseCargoSolid0:<StaticBody2D#1793249552170>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3930.737, 3971.557) towards (3750.0, 4770.0) by 
+LooseCargoSolid0:<StaticBody2D#1793249552170>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3950.796, 3980.361) towards (5750.0, 4770.0) by Container01:<StaticBody2D#524321567674>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3951.561, 3980.199) towards (5750.0, 3600.0) by Container01:<StaticBody2D#524321567674>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3951.561, 3972.068) towards (3750.0, 3600.0) by 
+LooseCargoSolid0:<StaticBody2D#1793249552170>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3876.087, 3928.549) towards (3310.0, 3600.0) by RoadPost271:<StaticBody2D#1755249160843>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3745.978, 3561.131) towards (3310.0, 2330.0) by RoadPost223:<StaticBody2D#1686714231536>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3746.102, 3561.43) towards (3180.0, 2200.0) by RoadPost223:<StaticBody2D#1686714231536>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: PlayerCar blocked at (3746.553, 3562.253) towards (3000.0, 2200.0) by RoadPost223:<StaticBody2D#1686714231536>
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Loaded truck travels away around the port
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Loaded carrier completes a full circuit without losing or reloading cargo
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Loaded carrier completes a full circuit without losing or reloading cargo
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+ERROR: Loaded carrier completes a full circuit without losing or reloading cargo
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/test_south_port.gd:219)
+       [1] _capture (res://tests/test_south_port.gd:326)
+SOUTH_PORT steps=2996 workers=32 trucks=3 loads=1 failures=22

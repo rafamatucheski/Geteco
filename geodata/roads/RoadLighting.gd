@@ -32,6 +32,16 @@ func _build() -> void:
 	await get_tree().process_frame
 	var loading_batch := preload("res://ui/LoadingWorkBatch.gd").new()
 	var world := get_parent()
+	# GETECO-PERF-03A: HarborSouthPort agora constrói seus StaticBody2D em
+	# etapas (ver o script) em vez de bloquear um quadro inteiro. A colocação
+	# de postes abaixo consulta a física real via _safe_pole()/intersect_shape
+	# para não sobrepor "física estática... de outros componentes da cena";
+	# sem esperar o porto terminar, essa consulta via early e acha vazio onde
+	# o porto ainda vai construir, dobrando postes que depois colidem com a
+	# geometria real (visto em test_south_port: total_road_posts 146→290).
+	var south_port := world.get_node_or_null("SouthPort")
+	if south_port != null:
+		while not south_port.port_ready: await get_tree().process_frame
 	if mountain_road:
 		_roads.append({"id":"mountain_road","points":mountain_road.smooth_points,"width":mountain_road.road_width})
 		var village := preload("res://world/mountain_pass/MountainVillageLayout.gd")

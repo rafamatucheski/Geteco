@@ -78,6 +78,14 @@ func _start_review() -> void:
 		for issue in $CobraNeighborhood.get_spatial_audit():
 			push_error("Ashbend Court: " + issue)
 
+	# GETECO-PERF-03A: HarborSouthPort._ready() agora constrói em etapas (ver o
+	# script) em vez de bloquear um quadro inteiro; world_build_ready não pode
+	# virar true antes dela terminar, ou GameLoading libera o jogador com o
+	# porto pela metade. Mesmo padrão de espera já usado para region_ready em
+	# MountainPass/ContinuousWorld.
+	if has_node("SouthPort"):
+		while not $SouthPort.port_ready: await get_tree().process_frame
+
 	world_build_ready = true
 
 func _setup_emergency_services() -> void:

@@ -1,0 +1,20 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+ERROR: Can't create shader cache folder, no shader caching will happen: user://
+   at: RendererCompositorRD (servers/rendering/renderer_rd/renderer_compositor_rd.cpp:337)
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://ui/GameLoading.gd:143)
+       [1] _draw_frame (res://ui/GameLoading.gd:110)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+MEASURE_03A_STATUS complete
+MEASURE_03A_CLICK_TO_READY {"frames":532,"max_ms":14427.423828125,"mean_fps":10.3545025921563,"over_100":80,"over_16_67":269,"over_33_33":165,"over_50":156,"p50_ms":16.6700000762939,"p95_ms":233.186004638672,"p99_ms":844.890014648438,"seconds":51.3786147876382}
+MEASURE_03A_WORST3 [{"markers_during":["world_enter_tree","child_ready:OceanBackdrop","child_ready:District","child_ready:Waterfront","child_ready:EastDistrict","child_ready:NorthDistrict","child_ready:Gateway","child_ready:Bridge","child_ready:Alleys","child_ready:SouthPort","child_ready:RoadLayout","child_ready:CobraNeighborhood","child_ready:RoadNetwork","child_ready:FreightRail","child_ready:RoadSafety","child_ready:Life","child_ready:PlayerCar","child_ready:Player","child_ready:OverviewCamera","child_ready:Interiors","child_ready:HarborWeatherReadout","child_ready:ArrivalSpawn","child_ready:ArrivalStop","child_ready:FirstDeliveryPickup","child_ready:HospitalSpawn","world_ready","deferred_child_added:WeaponNotices","deferred_child_added:HarborGangReputation","deferred_child_added:CobraTerritory","deferred_child_added:ArrivalMission","deferred_child_added:FirstDeliveryParcel","deferred_child_added:CobraVehicles"],"ms":14427.423828125,"phase":"world_construction","t_ms":21513.8125},{"markers_during":["deferred_child_added:WorldEvents","deferred_child_added:@Node2D@17290","deferred_child_added:Robberies","deferred_child_added:ClothingShops","deferred_child_added:UrbanTransit","deferred_child_added:Minimap","deferred_child_added:GameplayPresentation"],"ms":4966.81689453125,"phase":"world_construction","t_ms":29712.462890625},{"markers_during":["deferred_child_added:@CanvasLayer@14298","deferred_child_added:PersonalCarManager","deferred_child_added:Monaliza"],"ms":1339.18896484375,"phase":"world_construction","t_ms":23704.107421875}]
+WARNING: 41 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

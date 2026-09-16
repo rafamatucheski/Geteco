@@ -35,6 +35,11 @@ var cargo_quay_points: Array[Vector2] = []
 var unloaded_containers := 0
 var loaded_containers := 0
 var truck_logistics: RefCounted
+## GETECO-PERF-03A: fica true só depois que TODA a construção abaixo termina
+## (containers, prédios, grua, docas, HUD). HarborPreview._start_review()
+## aguarda esta flag antes de marcar world_build_ready — nenhum outro nó lê
+## sites/workers/trucks/checkpoint antes disso (ver grep no relatório 03A).
+var port_ready := false
 
 class OperationsArt extends Node2D:
 	var port: Node2D
@@ -42,11 +47,20 @@ class OperationsArt extends Node2D:
 
 func _ready() -> void:
 	add_to_group("south_port")
+	# GETECO-PERF-03A: _process() lê _hud/_status_label abaixo (criados só ao
+	# final); com a construção agora fatiada em vários quadros, um _process()
+	# no meio do caminho encontraria essas referências nulas. Sem isso o
+	# comportamento já era o mesmo (síncrono, _process nunca corria antes do
+	# fim de _ready), então este guard só formaliza a garantia existente.
+	set_process(false)
+	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
 	_build_solids()
-	_build_buildings()
-	_build_port_models()
+	await batch.checkpoint(get_tree())
+	await _build_buildings(batch)
+	await _build_port_models(batch)
 	preload("res://world/harbor/HarborPortDressing.gd").build(self)
-	_build_life()
+	await batch.checkpoint(get_tree())
+	await _build_life(batch)
 	add_child(preload("res://world/harbor/HarborLaunchRoutine.gd").new())
 	_build_markers()
 	_build_lights()
@@ -68,6 +82,8 @@ func _ready() -> void:
 	_hud.add_child(_status_label)
 	_hud.hide()
 	queue_redraw()
+	set_process(true)
+	port_ready = true
 
 func _solid(rect: Rect2, label: String, layer: int = 1) -> StaticBody2D:
 	var body := StaticBody2D.new()
@@ -137,7 +153,7 @@ func _ship_rail(a: Vector2,b: Vector2,index: int) -> void:
 	body.position = (a+b)*.5
 	body.rotation = (b-a).angle()
 
-func _build_buildings() -> void:
+func _build_buildings(batch: RefCounted) -> void:
 	var definitions := [
 		{"rect":L.WAREHOUSES[0],"title":"ARMAZÉM 07 · CARGA GERAL","kind":"warehouse"},
 		{"rect":L.WAREHOUSES[1],"title":"ARMAZÉM 08 · EXPORTAÇÃO","kind":"warehouse"},
@@ -149,15 +165,16 @@ func _build_buildings() -> void:
 		var item: Dictionary = definitions[i]
 		var building := _model(item.kind,item.rect,i,"PortBuilding%d" % i)
 		sites.append({"bounds":item.rect,"id":building.name})
-		if i == 4 or item.title.is_empty(): continue
-		var sign := Label.new()
-		sign.text = item.title
-		sign.add_theme_font_size_override("font_size",16 if i < 2 else 11)
-		sign.add_theme_color_override("font_color",Color("ece0be"))
-		sign.add_theme_color_override("font_outline_color",Color("24383d"))
-		sign.add_theme_constant_override("outline_size",3)
-		sign.position = Vector2(-item.rect.size.x*.46,item.rect.size.y*.5+8)
-		building.add_child(sign)
+		if i != 4 and not item.title.is_empty():
+			var sign := Label.new()
+			sign.text = item.title
+			sign.add_theme_font_size_override("font_size",16 if i < 2 else 11)
+			sign.add_theme_color_override("font_color",Color("ece0be"))
+			sign.add_theme_color_override("font_outline_color",Color("24383d"))
+			sign.add_theme_constant_override("outline_size",3)
+			sign.position = Vector2(-item.rect.size.x*.46,item.rect.size.y*.5+8)
+			building.add_child(sign)
+		await batch.checkpoint(get_tree())
 
 func _model(kind: String,rect: Rect2,variant: int,label_text: String) -> Node2D:
 	var view := MODEL_VIEW.new()
@@ -167,12 +184,20 @@ func _model(kind: String,rect: Rect2,variant: int,label_text: String) -> Node2D:
 	model_views.append(view)
 	return view
 
-func _build_port_models() -> void:
+## GETECO-PERF-03A: cada _model() cria um SubViewport 3D próprio (câmera, luz,
+## malha) — a rodada 01 mediu esse tipo de construção em dezenas/centenas de ms
+## por item. Este era o maior bloco indivisível de HarborSouthPort._ready();
+## o checkpoint entre cada item deixa o LoadingWorkBatget decidir quantos cabem
+## em cada quadro (~6 ms), sem mudar quantidade, ordem ou parâmetros de nenhum.
+func _build_port_models(batch: RefCounted) -> void:
 	var containers := L.containers()
 	for i in containers.size():
 		_model("containers",containers[i],i,"CargoStack3D%02d" % i)
+		await batch.checkpoint(get_tree())
 	_model("ship_cargo",L.SHIP_CARGO,0,"SantaMareCargo3D")
+	await batch.checkpoint(get_tree())
 	_model("office",L.WHEELHOUSE,2,"SantaMareWheelhouse3D")
+	await batch.checkpoint(get_tree())
 	for i in L.CRANES.size():
 		var base: Vector2 = L.CRANES[i]
 		var crane := _model("crane",Rect2(base+Vector2(-35,-360),Vector2(240,410)),i,"QuaysideCrane3D%d" % i)
@@ -186,13 +211,20 @@ func _build_port_models() -> void:
 		cargo_quay_points.append(crane.position+crane.project_floor(Vector2(start.x,start.z)))
 		cargo_ship_points.append(crane.position+crane.project_floor(Vector2(end.x,end.z)))
 		cargo_bodies.append(_solid(Rect2(-48,-21,96,42),"TransferCargoSolid%d" % i))
+		await batch.checkpoint(get_tree())
 	_update_hoists()
 	for i in 6:
 		var rect := Rect2(3970+(i%3)*550,4900 if i < 3 else 5420,130,55)
 		_model("supplies",rect,i,"PalletsAndDrums3D%d" % i)
 		_solid(rect,"PalletsAndDrumsSolid%d" % i)
+		await batch.checkpoint(get_tree())
 
-func _build_life() -> void:
+## GETECO-PERF-03A: os trabalhadores são baratos (Node2D simples, física
+## desligada até ficarem ativos), mas truck_logistics.build() e cada forklift
+## chamam _setup_3d_model()/ensure_presentation() diretamente — construção 3D
+## completa, sem cache aquecido (nenhum dos dois arquétipos está na lista de
+## VehicleGeometryCache.prepare_common_models). São os itens caros aqui.
+func _build_life(batch: RefCounted) -> void:
 	var bases := [Vector2(3900,3370),Vector2(4430,3370),Vector2(5020,3370),Vector2(5860,3760),Vector2(5860,4320),Vector2(4030,5500),Vector2(4920,5500),Vector2(3570,3260),Vector2(3860,3770),Vector2(4430,3770),Vector2(5480,4020),Vector2(4430,4650),Vector2(5550,5410),Vector2(3490,5510),Vector2(4250,3270),Vector2(4400,2880),Vector2(4780,2880),Vector2(5140,2880),Vector2(5410,2990),Vector2(3940,2820)]
 	bases.append_array([Vector2(3890,4180),Vector2(4470,4150),Vector2(5100,4160),Vector2(5540,4110),Vector2(3920,4630),Vector2(4540,4620),Vector2(5140,4640),Vector2(5380,4650),Vector2(4160,5510),Vector2(4610,5520),Vector2(5180,5510),Vector2(5810,4970)])
 	for i in 3: bases[i] = cargo_quay_points[i]+Vector2(-90,95)
@@ -219,6 +251,7 @@ func _build_life() -> void:
 		workers.append(worker)
 		worker.set_meta("night_shift",i in [6,7,13,19,20,22,24,27,29,31])
 		worker.set_physics_process(false)
+		if i % 8 == 7: await batch.checkpoint(get_tree())
 	var axe_pickup := WeaponPickup.new()
 	axe_pickup.name = "PortMaintenanceAxePickup"
 	axe_pickup.weapon_id = &"axe"
@@ -226,10 +259,12 @@ func _build_life() -> void:
 	axe_pickup.persistent_loot = true
 	axe_pickup.position = Vector2(3970, 4930)
 	add_child(axe_pickup)
+	await batch.checkpoint(get_tree())
 
 	# Catalog vehicles retain driving, damage, theft and collision behavior.
 	truck_logistics = preload("res://world/harbor/HarborPortTruckLogistics.gd").new()
 	truck_logistics.build(self)
+	await batch.checkpoint(get_tree())
 	FACTORY.spawn_parked_vehicle(self,"PortDispatchVan",Vector2(3480,4020),PI*0.5,"dock_delivery_van",0)
 	FACTORY.spawn_parked_vehicle(self,"PortServicePickup",Vector2(3480,4160),PI*0.5,"ranch_single",0)
 	for i in 2:
@@ -242,6 +277,7 @@ func _build_life() -> void:
 			crate.name = "ForkliftCrate%d_%d" % [i,j]
 			crate.position = Vector2(4480+i*600+j*36,3450)
 			add_child(crate)
+		await batch.checkpoint(get_tree())
 
 func _build_markers() -> void:
 	for entry in [{"id":"SouthPortArrival","p":Vector2(3570,3260)},{"id":"SpecialVehicleContainer","p":Vector2(5290,5870)},{"id":"CargoMissionContact","p":Vector2(3490,3910)},{"id":"CargoDispatch","p":Vector2(5600,5500)}]:

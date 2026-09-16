@@ -1,0 +1,26 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Godot_v4.7.2-stable_win64_console.exe : WARNING: Camera2D overridden to physics process mode due to use of physics 
+interpolation.
+No linha:10 caractere:3
++   & $godot --path $path --script res://tests/perf_audit_claude/measur ...
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: Camera... interpolation.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://ui/GameLoading.gd:143)
+       [1] _draw_frame (res://ui/GameLoading.gd:110)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+SaveManager: Save aplicado com sucesso no mundo!
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+MEASURE_03A_STATUS complete
+MEASURE_03A_CLICK_TO_READY {"frames":446,"max_ms":20936.662109375,"mean_fps":12.7473831312625,"over_100":27,"over_16_67":238,"over_33_33":88,"over_50":49,"p50_ms":16.6700000762939,"p95_ms":109.141998291016,"p99_ms":223.647003173828,"seconds":34.9875731675625}
+MEASURE_03A_WORST3 [{"markers_during":["world_enter_tree","child_ready:OceanBackdrop","child_ready:District","child_ready:Waterfront","child_ready:EastDistrict","child_ready:NorthDistrict","child_ready:Gateway","child_ready:Bridge","child_ready:Alleys","child_ready:SouthPort","child_ready:RoadLayout","child_ready:CobraNeighborhood","child_ready:RoadNetwork","child_ready:FreightRail","child_ready:RoadSafety","child_ready:Life","child_ready:PlayerCar","child_ready:Player","child_ready:OverviewCamera","child_ready:Interiors","child_ready:HarborWeatherReadout","child_ready:ArrivalSpawn","child_ready:ArrivalStop","child_ready:FirstDeliveryPickup","child_ready:HospitalSpawn","world_ready","deferred_child_added:WeaponNotices","deferred_child_added:HarborGangReputation","deferred_child_added:CobraTerritory","deferred_child_added:ArrivalMission","deferred_child_added:FirstDeliveryParcel","deferred_child_added:GameplayTutorials","deferred_child_added:CobraCampaign","deferred_child_added:CobraCampaignController","deferred_child_added:CobraObjectiveMarker","deferred_child_added:CobraBossReward","deferred_child_added:CobraAftermath","deferred_child_added:ChopShopZone","deferred_child_added:@Area2D@24453","deferred_child_added:@Area2D@24479","deferred_child_added:@Area2D@24505","deferred_child_added:@Area2D@24531","deferred_child_added:@Area2D@24557","deferred_child_added:@Area2D@24583","deferred_child_added:DriftZone_PÁTIO_WESTGATE","deferred_child_added:DriftZone_PÁTIO_DOS_ARMAZÉNS","deferred_child_added:@Node2D@24651","deferred_child_added:@Node2D@24652","deferred_child_added:@Node2D@24670","deferred_child_added:@CanvasLayer@24688","deferred_child_added:PersonalCarManager","deferred_child_added:Monaliza","deferred_child_added:ResidencePrototype","deferred_child_added:Residence_westgate_garden","deferred_child_added:Residence_quayside_house","deferred_child_added:Residence_canal_north","deferred_child_added:ContinuousWorld","deferred_child_added:HarborMountainCoachService","deferred_child_added:PayNSpray","deferred_child_added:Cemetery","deferred_child_added:WorldEvents","deferred_child_added:@Node2D@26886","deferred_child_added:Robberies","deferred_child_added:ClothingShops","deferred_child_added:UrbanTransit","deferred_child_added:Minimap","deferred_child_added:GameplayPresentation","deferred_child_added:CobraVehicles"],"ms":20936.662109375,"phase":"world_construction","t_ms":26218.951171875},{"markers_during":[],"ms":805.767028808594,"phase":"world_construction","t_ms":28928.25},{"markers_during":["phase:post_load_settle"],"ms":332.497985839844,"phase":"post_load_settle","t_ms":35722.703125}]
+WARNING: 41 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
