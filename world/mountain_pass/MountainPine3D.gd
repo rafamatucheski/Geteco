@@ -63,7 +63,15 @@ func _build_shared_view(variant: int) -> Dictionary:
 	view.transparent_bg = true
 	view.own_world_3d = true
 	view.render_target_update_mode = SubViewport.UPDATE_ONCE
-	get_parent().add_child(view)
+	# Nasce sob a raiz da árvore de cena, adiada por um quadro -- mesmo padrão
+	# de StreetLamp._get_shared_lamp_data() (tree.root.call_deferred). O pai
+	# desta árvore de memorial pode estar "ocupado montando filhos" quando
+	# várias nascem juntas dentro de uma subárvore pré-montada (cena
+	# congelada pelo bake de distrito), e o Godot recusa add_child síncrono
+	# nesse instante. Por isso a câmera abaixo usa look_at_from_position() e
+	# a projeção é calculada à mão em vez de unproject_position(): nenhuma
+	# das duas pode depender da câmera já estar dentro da árvore.
+	get_tree().root.call_deferred("add_child", view)
 	var tree := Node3D.new()
 	view.add_child(tree)
 	var trunk := StandardMaterial3D.new()
@@ -118,12 +126,14 @@ func _build_shared_view(variant: int) -> Dictionary:
 				if is_snowy and (bough+tier)%3!=0:
 					_crown(tree,tuft.position+Vector3(0,.20,0),Vector3(radius*.52,.20,radius*.45),snow)
 					if tier<3: _icicle(tree,tip,ice,.18+(bough%3)*.08)
+	var camera_position := Vector3(0,10,6)
+	var camera_target := Vector3(0,2.0,0)
 	var camera := Camera3D.new()
 	view.add_child(camera)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 7.0
-	camera.position = Vector3(0,10,6)
-	camera.look_at(Vector3(0,2.0,0))
+	camera.position = camera_position
+	camera.look_at_from_position(camera_position, camera_target)
 	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55,-35,0)
@@ -135,9 +145,23 @@ func _build_shared_view(variant: int) -> Dictionary:
 	env.environment.ambient_light_color = Color("b5cbd5")
 	env.environment.ambient_light_energy = 0.65
 	view.add_child(env)
-	var ppm := camera.unproject_position(Vector3.RIGHT).distance_to(camera.unproject_position(Vector3.ZERO))
-	var display_scale := 18.0/ppm
-	var offset := (Vector2(view.size)*0.5-camera.unproject_position(Vector3.ZERO))*display_scale
+	# Equivalente analítico do que unproject_position() daria, sem exigir que
+	# a câmera esteja dentro da árvore (ela nasce adiada, ver acima). Câmera
+	# ortogonal: a escala (pixels por unidade de mundo) é uniforme e não
+	# depende de rotação -- só de view.size/camera.size. O deslocamento
+	# depende da orientação, calculada com a mesma convenção que
+	# Basis.looking_at() usa por baixo de look_at_from_position() (a câmera
+	# olha ao longo do -Z local).
+	var basis_z := -(camera_target - camera_position).normalized()
+	var basis_x := Vector3.UP.cross(basis_z).normalized()
+	var basis_y := basis_z.cross(basis_x).normalized()
+	var pixels_per_unit := float(view.size.y) / camera.size
+	var display_scale := 18.0/pixels_per_unit
+	var origin_relative_to_camera := -camera_position
+	var offset := Vector2(
+		-origin_relative_to_camera.dot(basis_x),
+		origin_relative_to_camera.dot(basis_y)
+	) * 18.0
 	# Limpa a referência quando a região é descarregada, inclusive após load.
 	var key := "%s_%d_%d" % [get_parent().get_instance_id(), int(is_snowy), variant]
 	view.tree_exiting.connect(func(): _views.erase(key))

@@ -22,6 +22,7 @@
 [ext_resource type="Script" path="res://world/harbor/HarborEastDistrict.gd" id="12"]
 [ext_resource type="Script" path="res://world/harbor/HarborBridge.gd" id="13"]
 [ext_resource type="Script" path="res://world/harbor/HarborAlleys.gd" id="14"]
+[ext_resource type="Script" path="res://world/mountain_pass/MountainPine3D.gd" id="14_bc8bl"]
 [ext_resource type="Script" path="res://world/harbor/HarborNorthDistrict.gd" id="15"]
 [ext_resource type="Script" path="res://world/harbor/HarborGatewayWorks.gd" id="15_5hs2n"]
 [ext_resource type="Script" path="res://world/harbor/HarborGateway.gd" id="16"]
@@ -623,6 +624,29 @@ ambient_light_source = 2
 ambient_light_color = Color(0.70980394, 0.79607844, 0.8352941, 1)
 ambient_light_energy = 0.65
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_jujil"]
+radius = 40.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xduib"]
+shader = ExtResource("5_jujil")
+shader_parameter/flow = Vector2(7, 2)
+shader_parameter/strength = 1.0
+shader_parameter/foam = 0.0
+shader_parameter/fountain = 0.0
+shader_parameter/running = 1.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vlh8r"]
+size = Vector2(65, 19)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qa2cq"]
+size = Vector2(65, 19)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lua7j"]
+size = Vector2(65, 19)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kfxj4"]
+size = Vector2(65, 19)
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_jiyt8"]
 size = Vector2(230, 68)
 
@@ -650,7 +674,7 @@ size = Vector2(12, 15)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_sa80n"]
 size = Vector2(12, 15)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_qh7d3"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5hs2n"]
 shader = ExtResource("16_rkc0p")
 shader_parameter/patch = Vector4(6400, -4780, 600, 470)
 shader_parameter/enabled = false
@@ -661,13 +685,13 @@ size = Vector2(1180, 8)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_d2558"]
 size = Vector2(1180, 8)
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_fuf2y"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rkc0p"]
 shader = ExtResource("25_dn4ry")
 shader_parameter/reveal_position = Vector2(715, 1800)
 shader_parameter/reveal_amount = 0.0
 shader_parameter/reveal_radius = 76.0
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_quwdk"]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_80pjo"]
 size = Vector2(72, 31)
 
 [sub_resource type="CircleShape2D" id="InteractionShape"]
@@ -2021,11 +2045,1271 @@ texture_filter = 4
 texture_repeat = 2
 script = ExtResource("12")
 cobra_connection_enabled = true
+baked_from_editor = true
+
+[node name="ExchangeTower" type="Node2D" parent="EastDistrict" unique_id=492155428]
+z_index = 5
+position = Vector2(5000, 720)
+script = ExtResource("3_6eivg")
+business_name = "NORTHBANK EXCHANGE"
+accent = Color(0.5137255, 0.7764706, 0.8, 1)
+height_override = 128.0
+footprint = Vector2(300, 320)
+building_kind = "office"
+variant_seed = 17
+
+[node name="CivicTower" type="Node2D" parent="EastDistrict" unique_id=1831036741]
+z_index = 5
+position = Vector2(5305, 680)
+script = ExtResource("3_6eivg")
+business_name = "HORIZON"
+accent = Color(0.6666667, 0.7921569, 0.8039216, 1)
+height_override = 95.0
+footprint = Vector2(170, 240)
+building_kind = "office"
+variant_seed = 34
+
+[node name="MaritimeMuseum" type="Node2D" parent="EastDistrict" unique_id=562697601]
+z_index = 5
+position = Vector2(6020, 700)
+script = ExtResource("3_6eivg")
+business_name = "MARITIME MUSEUM"
+accent = Color(0.8784314, 0.7882353, 0.6313726, 1)
+footprint = Vector2(460, 250)
+building_kind = "office"
+variant_seed = 51
+
+[node name="NorthbankHomes0" type="Node2D" parent="EastDistrict" unique_id=1447423288]
+z_index = 5
+position = Vector2(4900, 1510)
+script = ExtResource("3_6eivg")
+accent = Color(0.54509807, 0.38431373, 0.32941177, 1)
+footprint = Vector2(160, 190)
+building_kind = "rowhouse_terrace"
+variant_seed = 68
+
+[node name="NorthbankHomes1" type="Node2D" parent="EastDistrict" unique_id=1088079744]
+z_index = 5
+position = Vector2(5120, 1510)
+script = ExtResource("3_6eivg")
+accent = Color(0.6666667, 0.627451, 0.54509807, 1)
+footprint = Vector2(180, 210)
+building_kind = "brownstone"
+variant_seed = 85
+
+[node name="NorthbankHomes2" type="Node2D" parent="EastDistrict" unique_id=168488829]
+z_index = 5
+position = Vector2(5330, 1510)
+script = ExtResource("3_6eivg")
+accent = Color(0.39607844, 0.4627451, 0.4745098, 1)
+footprint = Vector2(180, 170)
+building_kind = "artisan_workshop"
+variant_seed = 102
+
+[node name="IslandGrocer" type="Node2D" parent="EastDistrict" unique_id=2044648238]
+z_index = 5
+position = Vector2(4930, 1990)
+script = ExtResource("3_6eivg")
+business_name = "NORTHBANK GROCERY"
+accent = Color(0.8784314, 0.7254902, 0.45882353, 1)
+footprint = Vector2(240, 170)
+building_kind = "corner_shop"
+variant_seed = 119
+
+[node name="IslandCinema" type="Node2D" parent="EastDistrict" unique_id=875956252]
+z_index = 5
+position = Vector2(5270, 1990)
+script = ExtResource("3_6eivg")
+business_name = "THE ORION / CINEMA"
+accent = Color(0.80784315, 0.5294118, 0.49411765, 1)
+footprint = Vector2(240, 170)
+building_kind = "shop"
+variant_seed = 136
+
+[node name="Aquarium" type="Node2D" parent="EastDistrict" unique_id=671226286]
+z_index = 5
+position = Vector2(6100, 1550)
+script = ExtResource("3_6eivg")
+business_name = "BAY AQUARIUM"
+accent = Color(0.4509804, 0.7490196, 0.7764706, 1)
+footprint = Vector2(360, 270)
+building_kind = "office"
+variant_seed = 153
+
+[node name="PromenadeCafe" type="Node2D" parent="EastDistrict" unique_id=2056652695]
+z_index = 5
+position = Vector2(5790, 1515)
+script = ExtResource("3_6eivg")
+business_name = "TIDELINE"
+accent = Color(0.87058824, 0.7254902, 0.4627451, 1)
+footprint = Vector2(170, 210)
+building_kind = "corner_shop"
+variant_seed = 170
+
+[node name="NorthbankFront0" type="Node2D" parent="EastDistrict" unique_id=1286154694]
+z_index = 5
+position = Vector2(4900, 145)
+script = ExtResource("3_6eivg")
+business_name = "BRIDGE HOUSE"
+accent = Color(0.5882353, 0.7176471, 0.7058824, 1)
+footprint = Vector2(260, 180)
+building_kind = "brownstone"
+variant_seed = 187
+
+[node name="NorthbankFrontEntry0" type="Marker2D" parent="EastDistrict" unique_id=1739828163]
+position = Vector2(4900, 270)
+
+[node name="NorthbankFront1" type="Node2D" parent="EastDistrict" unique_id=1539172128]
+z_index = 5
+position = Vector2(5290, 145)
+script = ExtResource("3_6eivg")
+business_name = "FOUNDERS CLUB"
+accent = Color(0.5882353, 0.7176471, 0.7058824, 1)
+footprint = Vector2(260, 180)
+building_kind = "brownstone"
+variant_seed = 204
+
+[node name="NorthbankFrontEntry1" type="Marker2D" parent="EastDistrict" unique_id=971962231]
+position = Vector2(5290, 270)
+
+[node name="NorthbankFront2" type="Node2D" parent="EastDistrict" unique_id=1972066674]
+z_index = 5
+position = Vector2(5840, 145)
+script = ExtResource("3_6eivg")
+business_name = "DESIGN WORKS"
+accent = Color(0.5882353, 0.7176471, 0.7058824, 1)
+footprint = Vector2(260, 180)
+building_kind = "office"
+variant_seed = 221
+
+[node name="NorthbankFrontEntry2" type="Marker2D" parent="EastDistrict" unique_id=860181556]
+position = Vector2(5840, 270)
+
+[node name="NorthbankFront3" type="Node2D" parent="EastDistrict" unique_id=1866793417]
+z_index = 5
+position = Vector2(6200, 145)
+script = ExtResource("3_6eivg")
+business_name = "EASTGATE HOTEL"
+accent = Color(0.5882353, 0.7176471, 0.7058824, 1)
+footprint = Vector2(260, 180)
+building_kind = "office"
+variant_seed = 238
+
+[node name="NorthbankFrontEntry3" type="Marker2D" parent="EastDistrict" unique_id=838084470]
+position = Vector2(6200, 270)
+
+[node name="ExchangeEntry" type="Marker2D" parent="EastDistrict" unique_id=1152590748]
+position = Vector2(5000, 925)
+
+[node name="HorizonEntry" type="Marker2D" parent="EastDistrict" unique_id=833671745]
+position = Vector2(5305, 845)
+
+[node name="MuseumEntry" type="Marker2D" parent="EastDistrict" unique_id=231287581]
+position = Vector2(5855, 880)
+
+[node name="NorthbankCourtyard" type="Marker2D" parent="EastDistrict" unique_id=253678322]
+position = Vector2(4785, 1660)
+
+[node name="GroceryEntry" type="Marker2D" parent="EastDistrict" unique_id=1457247785]
+position = Vector2(4930, 2110)
+
+[node name="CinemaEntry" type="Marker2D" parent="EastDistrict" unique_id=177807694]
+position = Vector2(5270, 2110)
+
+[node name="AquariumEntry" type="Marker2D" parent="EastDistrict" unique_id=1534010926]
+position = Vector2(6100, 1730)
+
+[node name="CafeEntry" type="Marker2D" parent="EastDistrict" unique_id=166254683]
+position = Vector2(5790, 1670)
+
+[node name="@StaticBody2D@2154" type="StaticBody2D" parent="EastDistrict" unique_id=460439704]
+z_index = 8
+position = Vector2(4860, 1123)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.95
+variant_seed = 5983
+leaf_color = Color(0.25882354, 0.39215687, 0.31764707, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2157" type="StaticBody2D" parent="EastDistrict" unique_id=81677506]
+z_index = 8
+position = Vector2(4925, 1122)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.75
+variant_seed = 6047
+leaf_color = Color(0.39607844, 0.46666667, 0.3529412, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2160" type="StaticBody2D" parent="EastDistrict" unique_id=1634933007]
+z_index = 8
+position = Vector2(5340, 1120)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 2
+crown_scale = 0.85
+variant_seed = 6460
+leaf_color = Color(0.20784314, 0.30980393, 0.28627452, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2163" type="StaticBody2D" parent="EastDistrict" unique_id=746439244]
+z_index = 8
+position = Vector2(5730, 970)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.9
+variant_seed = 6700
+leaf_color = Color(0.3254902, 0.4509804, 0.4, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2166" type="StaticBody2D" parent="EastDistrict" unique_id=1073359330]
+z_index = 8
+position = Vector2(6290, 970)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 1.05
+variant_seed = 7260
+leaf_color = Color(0.39215687, 0.4862745, 0.40784314, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2169" type="StaticBody2D" parent="EastDistrict" unique_id=257757849]
+z_index = 8
+position = Vector2(4870, 1685)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.8
+variant_seed = 6555
+leaf_color = Color(0.3137255, 0.42745098, 0.28235295, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2172" type="StaticBody2D" parent="EastDistrict" unique_id=170169439]
+z_index = 8
+position = Vector2(4940, 1685)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.7
+variant_seed = 6625
+leaf_color = Color(0.45882353, 0.5019608, 0.3764706, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2175" type="StaticBody2D" parent="EastDistrict" unique_id=298129103]
+z_index = 8
+position = Vector2(5320, 1685)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.85
+variant_seed = 7005
+leaf_color = Color(0.24705882, 0.38431373, 0.3019608, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2178" type="StaticBody2D" parent="EastDistrict" unique_id=789032980]
+z_index = 8
+position = Vector2(5920, 1845)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 1.15
+variant_seed = 7765
+leaf_color = Color(0.29803923, 0.4117647, 0.33333334, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2181" type="StaticBody2D" parent="EastDistrict" unique_id=552404580]
+z_index = 8
+position = Vector2(5985, 1890)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.8
+variant_seed = 7875
+leaf_color = Color(0.42745098, 0.4862745, 0.3764706, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2184" type="StaticBody2D" parent="EastDistrict" unique_id=385255487]
+z_index = 8
+position = Vector2(6260, 1825)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+variant_seed = 8085
+leaf_color = Color(0.32156864, 0.45882353, 0.4117647, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2187" type="StaticBody2D" parent="EastDistrict" unique_id=152005024]
+z_index = 8
+position = Vector2(5920, 2040)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 2
+crown_scale = 0.85
+variant_seed = 7960
+leaf_color = Color(0.24705882, 0.36078432, 0.3137255, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2190" type="StaticBody2D" parent="EastDistrict" unique_id=2074900451]
+z_index = 8
+position = Vector2(6250, 2040)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.85
+variant_seed = 8290
+leaf_color = Color(0.4117647, 0.4862745, 0.33333334, 1)
+metadata/impact_material = &"wood"
+
+[node name="CompassSculpture" type="StaticBody2D" parent="EastDistrict" unique_id=1219108331]
+position = Vector2(6080, 1000)
+collision_mask = 0
+
+[node name="@CollisionShape2D@2193" type="CollisionShape2D" parent="EastDistrict/CompassSculpture" unique_id=510066770]
+shape = SubResource("CircleShape2D_jujil")
+
+[node name="EastWaterBoundary40" type="StaticBody2D" parent="EastDistrict" unique_id=1087954466]
+position = Vector2(7855, -4866)
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2194" type="CollisionPolygon2D" parent="EastDistrict/EastWaterBoundary40" unique_id=273585752]
+polygon = PackedVector2Array(1095, 134, -1074.9443, 134, -1075.583, 133.48145, -1081.063, 129.14502, -1082.4961, 128.03955, -1088.1553, 123.78174, -1089.5347, 122.76904, -1095, 118.85205, -1095, -134, 1095, -134)
+
+[node name="EastWaterBoundary41" type="StaticBody2D" parent="EastDistrict" unique_id=1623930153]
+position = Vector2(7855, -1713.5)
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2195" type="CollisionPolygon2D" parent="EastDistrict/EastWaterBoundary41" unique_id=1196486226]
+polygon = PackedVector2Array(1095, 2673.5, -1095, 2673.5, -1095, -2402.746, -1093.144, -2404.8882, -1092.3013, -2405.879, -1089.582, -2409.1313, -1088.7749, -2410.1133, -1086.1055, -2413.42, -1085.311, -2414.4219, -1082.6929, -2417.7822, -1081.957, -2418.7427, -1079.3867, -2422.1553, -1078.6577, -2423.1401, -1076.1372, -2426.6045, -1075.4473, -2427.5684, -1072.9746, -2431.084, -1072.3076, -2432.0488, -1069.8838, -2435.6138, -1069.249, -2436.563, -1066.8721, -2440.1777, -1066.2524, -2441.1362, -1063.9238, -2444.7993, -1063.3438, -2445.7266, -1061.061, -2449.4375, -1060.4946, -2450.374, -1058.2593, -2454.1313, -1057.727, -2455.041, -1055.5371, -2458.8442, -1055.022, -2459.753, -1052.8779, -2463.601, -1052.3867, -2464.4976, -1050.2876, -2468.3906, -1049.8257, -2469.2607, -1047.7705, -2473.1968, -1047.3164, -2474.081, -1045.3066, -2478.0596, -1044.8848, -2478.9082, -1042.918, -2482.9287, -1042.5073, -2483.7817, -1040.5845, -2487.8433, -1040.2012, -2488.6655, -1038.3208, -2492.7666, -1037.9468, -2493.5967, -1036.1094, -2497.7378, -1035.7588, -2498.5405, -1033.9634, -2502.7197, -1033.625, -2503.52, -1031.8716, -2507.7373, -1031.5557, -2508.5103, -1029.8433, -2512.7637, -1029.5435, -2513.52, -1027.8711, -2517.8096, -1027.5762, -2518.5786, -1025.9453, -2522.9033, -1025.6743, -2523.6328, -1024.0825, -2527.9922, -1023.8179, -2528.729, -1022.2666, -2533.121, -1022.0205, -2533.83, -1020.5078, -2538.2554, -1020.27295, -2538.954, -1018.7988, -2543.4111, -1018.5713, -2544.1094, -1017.1362, -2548.5972, -1016.93066, -2549.2505, -1015.53174, -2553.769, -1015.3237, -2554.4526, -1013.96387, -2559, -1013.7749, -2559.644, -1012.45166, -2564.2197, -1012.271, -2564.8535, -1010.9839, -2569.4575, -1010.8125, -2570.081, -1009.5615, -2574.7114, -1009.3994, -2575.3232, -1008.1841, -2579.9795, -1008.0293, -2580.581, -1006.8491, -2585.2632, -1006.7031, -2585.854, -1005.5581, -2590.5596, -1005.4204, -2591.1353, -1004.3096, -2595.8647, -1004.1782, -2596.433, -1003.10156, -2601.185, -1002.97754, -2601.7427, -1001.9346, -2606.5166, -1001.8203, -2607.0493, -1000.8096, -2611.8447, -1000.6963, -2612.3916, -999.71924, -2617.207, -999.6172, -2617.7212, -998.6719, -2622.5557, -998.5737, -2623.0664, -997.66016, -2627.9194, -997.56494, -2628.434, -996.6836, -2633.3052, -996.6011, -2633.772, -995.749, -2638.6597, -995.6621, -2639.166, -994.8428, -2644.0698, -994.7671, -2644.5298, -993.97656, -2649.4487, -993.9033, -2649.9136, -993.1426, -2654.8472, -993.0752, -2655.2944, -992.34326, -2660.2417, -992.27783, -2660.6914, -991.5752, -2665.651, -991.5161, -2666.0776, -990.8413, -2671.0488, -990.7842, -2671.4814, -990.52246, -2673.5, 1095, -2673.5)
+
+[node name="EastWaterBoundary42" type="StaticBody2D" parent="EastDistrict" unique_id=1144026739]
+position = Vector2(11855, 500)
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2196" type="CollisionPolygon2D" parent="EastDistrict/EastWaterBoundary42" unique_id=1788954092]
+polygon = PackedVector2Array(2905, 460, -2905, 460, -2905, -460, 2905, -460)
+
+[node name="EastWaterBoundary43" type="StaticBody2D" parent="EastDistrict" unique_id=2103265024]
+position = Vector2(10760, 6205)
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2197" type="CollisionPolygon2D" parent="EastDistrict/EastWaterBoundary43" unique_id=1600797773]
+polygon = PackedVector2Array(4000, 3795, -4000, 3795, -4000, -3795, 4000, -3795)
+
+[node name="EastWaterBoundary44" type="StaticBody2D" parent="EastDistrict" unique_id=440992338]
+position = Vector2(5570, 6100)
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2198" type="CollisionPolygon2D" parent="EastDistrict/EastWaterBoundary44" unique_id=2045023049]
+polygon = PackedVector2Array(1190, 3500, -1190, 3500, -1190, -100, 530, -100, 530, -1790, 760, -1790, 760, -1890, 530, -1890, 530, -2350, 760, -2350, 760, -2450, 530, -2450, 530, -2900, -1190, -2900, -1190, -2980, -110, -2980, 20, -3050, 130, -3175, 50, -3280, -110, -3370, -1190, -3370, -1190, -3500, 1190, -3500)
+
+[node name="@StaticBody2D@2199" type="StaticBody2D" parent="EastDistrict" unique_id=1793972407]
+z_index = 8
+position = Vector2(5080, 1060)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2206" type="StaticBody2D" parent="EastDistrict" unique_id=405964755]
+z_index = 8
+position = Vector2(6100, 1330)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2213" type="StaticBody2D" parent="EastDistrict" unique_id=1164874069]
+z_index = 8
+position = Vector2(5050, 1330)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2220" type="StaticBody2D" parent="EastDistrict" unique_id=75977136]
+z_index = 8
+position = Vector2(6100, 2280)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+is_facing_south = false
+
+[node name="@StaticBody2D@2227" type="StaticBody2D" parent="EastDistrict" unique_id=896100406]
+z_index = 8
+position = Vector2(5050, 2280)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+is_facing_south = false
+
+[node name="@StaticBody2D@2234" type="StaticBody2D" parent="EastDistrict" unique_id=1655633078]
+z_index = 8
+position = Vector2(6020, 480)
+collision_mask = 0
+script = ExtResource("9_lua7j")
 
 [node name="NorthDistrict" type="Node2D" parent="." unique_id=434367815]
 texture_filter = 4
 texture_repeat = 2
 script = ExtResource("15")
+baked_from_editor = true
+
+[node name="BridgeCourtWest" type="Node2D" parent="NorthDistrict" unique_id=2107681814]
+z_index = 5
+position = Vector2(4925, -2240)
+script = ExtResource("3_6eivg")
+accent = Color(0.6745098, 0.57254905, 0.45882353, 1)
+footprint = Vector2(260, 175)
+building_kind = "brownstone"
+variant_seed = 17
+
+[node name="BridgeCourtEast" type="Node2D" parent="NorthDistrict" unique_id=908558803]
+z_index = 5
+position = Vector2(5290, -2240)
+script = ExtResource("3_6eivg")
+accent = Color(0.64705884, 0.6784314, 0.60784316, 1)
+footprint = Vector2(245, 175)
+building_kind = "office"
+variant_seed = 34
+
+[node name="BridgeQuayHouse" type="Node2D" parent="NorthDistrict" unique_id=785527211]
+z_index = 5
+position = Vector2(6485, -2195)
+script = ExtResource("3_6eivg")
+accent = Color(0.7019608, 0.6117647, 0.5176471, 1)
+footprint = Vector2(225, 145)
+building_kind = "brownstone"
+variant_seed = 51
+
+[node name="BridgeFrontage4925" type="Marker2D" parent="NorthDistrict" unique_id=816810377]
+position = Vector2(4925, -2090)
+
+[node name="BridgeFrontage5290" type="Marker2D" parent="NorthDistrict" unique_id=1727401530]
+position = Vector2(5290, -2090)
+
+[node name="BridgeFrontage6485" type="Marker2D" parent="NorthDistrict" unique_id=1477205980]
+position = Vector2(6485, -2090)
+
+[node name="GatewayFlats" type="Node2D" parent="NorthDistrict" unique_id=697612591]
+z_index = 5
+position = Vector2(4915, -1730)
+script = ExtResource("3_6eivg")
+business_name = "GATEWAY FLATS"
+accent = Color(0.7137255, 0.6745098, 0.5764706, 1)
+footprint = Vector2(250, 220)
+building_kind = "brownstone"
+variant_seed = 68
+
+[node name="TransitHouse" type="Node2D" parent="NorthDistrict" unique_id=1477209158]
+z_index = 5
+position = Vector2(5260, -1730)
+script = ExtResource("3_6eivg")
+business_name = "TRANSIT HOUSE"
+accent = Color(0.5411765, 0.7137255, 0.7254902, 1)
+footprint = Vector2(230, 220)
+building_kind = "office"
+variant_seed = 85
+
+[node name="MotorWorkshop" type="Node2D" parent="NorthDistrict" unique_id=2136552855]
+z_index = 5
+position = Vector2(4925, -1360)
+script = ExtResource("3_6eivg")
+accent = Color(0.41960785, 0.8235294, 0.69803923, 1)
+footprint = Vector2(270, 210)
+building_kind = "garage"
+variant_seed = 102
+
+[node name="RoadsideSupplies" type="Node2D" parent="NorthDistrict" unique_id=351457030]
+z_index = 5
+position = Vector2(5265, -1360)
+script = ExtResource("3_6eivg")
+business_name = "HARDWARE / SUPPLY"
+accent = Color(0.7372549, 0.6039216, 0.45490196, 1)
+footprint = Vector2(230, 210)
+building_kind = "shop"
+variant_seed = 119
+
+[node name="ServiceLodge" type="Node2D" parent="NorthDistrict" unique_id=1292493941]
+z_index = 5
+position = Vector2(5860, -1740)
+script = ExtResource("3_6eivg")
+business_name = "THE GATEWAY LODGE"
+accent = Color(0.60784316, 0.6666667, 0.68235296, 1)
+footprint = Vector2(300, 220)
+building_kind = "office"
+variant_seed = 136
+
+[node name="ParcelOffice" type="Node2D" parent="NorthDistrict" unique_id=223635602]
+z_index = 5
+position = Vector2(6200, -1740)
+script = ExtResource("3_6eivg")
+business_name = "NORTH PARCEL"
+accent = Color(0.6745098, 0.6666667, 0.5176471, 1)
+footprint = Vector2(200, 220)
+building_kind = "warehouse"
+variant_seed = 153
+
+[node name="NorthFireStation" type="Node2D" parent="NorthDistrict" unique_id=130576871]
+z_index = 5
+position = Vector2(5880, -1370)
+script = ExtResource("3_6eivg")
+business_name = "NORTHGATE FIRE / 03"
+accent = Color(0.8509804, 0.4745098, 0.34509805, 1)
+footprint = Vector2(310, 220)
+building_kind = "fire_station"
+variant_seed = 170
+
+[node name="ServiceCafe" type="Node2D" parent="NorthDistrict" unique_id=1840190358]
+z_index = 5
+position = Vector2(6200, -1370)
+script = ExtResource("3_6eivg")
+business_name = "EARLY SHIFT"
+accent = Color(0.84313726, 0.7058824, 0.46666667, 1)
+footprint = Vector2(200, 220)
+building_kind = "corner_shop"
+variant_seed = 187
+
+[node name="CanalHomesWest" type="Node2D" parent="NorthDistrict" unique_id=1471296932]
+z_index = 5
+position = Vector2(4915, -860)
+script = ExtResource("3_6eivg")
+accent = Color(0.72156864, 0.6313726, 0.50980395, 1)
+footprint = Vector2(250, 180)
+building_kind = "brownstone"
+variant_seed = 204
+
+[node name="CanalHomesEast" type="Node2D" parent="NorthDistrict" unique_id=2085282828]
+z_index = 5
+position = Vector2(5260, -860)
+script = ExtResource("3_6eivg")
+accent = Color(0.6509804, 0.69803923, 0.627451, 1)
+footprint = Vector2(230, 180)
+building_kind = "brownstone"
+variant_seed = 221
+
+[node name="NorthGrocer" type="Node2D" parent="NorthDistrict" unique_id=1881889664]
+z_index = 5
+position = Vector2(4915, -585)
+script = ExtResource("3_6eivg")
+business_name = "CANAL GROCERY"
+accent = Color(0.84705883, 0.7372549, 0.47058824, 1)
+footprint = Vector2(250, 160)
+building_kind = "corner_shop"
+variant_seed = 238
+
+[node name="CycleWorkshop" type="Node2D" parent="NorthDistrict" unique_id=33607164]
+z_index = 5
+position = Vector2(5260, -585)
+script = ExtResource("3_6eivg")
+business_name = "SPOKE / CYCLE CO."
+accent = Color(0.50980395, 0.72156864, 0.7058824, 1)
+footprint = Vector2(230, 160)
+building_kind = "shop"
+variant_seed = 255
+
+[node name="GardenFlats" type="Node2D" parent="NorthDistrict" unique_id=1876433334]
+z_index = 5
+position = Vector2(5875, -860)
+script = ExtResource("3_6eivg")
+accent = Color(0.7411765, 0.61960787, 0.5176471, 1)
+footprint = Vector2(310, 180)
+building_kind = "brownstone"
+variant_seed = 272
+
+[node name="UnionApartments" type="Node2D" parent="NorthDistrict" unique_id=2082066221]
+z_index = 5
+position = Vector2(6220, -860)
+script = ExtResource("3_6eivg")
+business_name = "NORTH UNION"
+accent = Color(0.62352943, 0.7372549, 0.7529412, 1)
+footprint = Vector2(210, 180)
+building_kind = "office"
+variant_seed = 289
+
+[node name="CommunityHall" type="Node2D" parent="NorthDistrict" unique_id=600457979]
+z_index = 5
+position = Vector2(5875, -585)
+script = ExtResource("3_6eivg")
+business_name = "NORTHGATE HALL"
+accent = Color(0.7882353, 0.70980394, 0.5921569, 1)
+footprint = Vector2(310, 160)
+building_kind = "office"
+variant_seed = 306
+
+[node name="CornerPharmacy" type="Node2D" parent="NorthDistrict" unique_id=745355113]
+z_index = 5
+position = Vector2(6220, -585)
+script = ExtResource("3_6eivg")
+business_name = "CORNER PHARMACY"
+accent = Color(0.5647059, 0.7411765, 0.7058824, 1)
+footprint = Vector2(210, 160)
+building_kind = "shop"
+variant_seed = 323
+
+[node name="GatewayEntry" type="Marker2D" parent="NorthDistrict" unique_id=1141464224]
+position = Vector2(4890, -1594)
+
+[node name="TransitEntry" type="Marker2D" parent="NorthDistrict" unique_id=689786878]
+position = Vector2(5290, -1594)
+
+[node name="MotorWorkshopApron" type="Marker2D" parent="NorthDistrict" unique_id=1042154544]
+position = Vector2(4925, -1198)
+
+[node name="RoadsideEntry" type="Marker2D" parent="NorthDistrict" unique_id=2140487858]
+position = Vector2(5265, -1205)
+
+[node name="LodgeEntry" type="Marker2D" parent="NorthDistrict" unique_id=946194719]
+position = Vector2(5830, -1604)
+
+[node name="ParcelEntry" type="Marker2D" parent="NorthDistrict" unique_id=249933062]
+position = Vector2(6230, -1604)
+
+[node name="FireStationApron" type="Marker2D" parent="NorthDistrict" unique_id=1894856894]
+position = Vector2(5880, -1198)
+
+[node name="ServiceCafeEntry" type="Marker2D" parent="NorthDistrict" unique_id=374812928]
+position = Vector2(6200, -1205)
+
+[node name="CanalWestEntry" type="Marker2D" parent="NorthDistrict" unique_id=1631795880]
+position = Vector2(4890, -744)
+
+[node name="CanalEastEntry" type="Marker2D" parent="NorthDistrict" unique_id=130875794]
+position = Vector2(5290, -744)
+
+[node name="NorthGrocerEntry" type="Marker2D" parent="NorthDistrict" unique_id=1732445247]
+position = Vector2(4915, -470)
+
+[node name="CycleWorkshopEntry" type="Marker2D" parent="NorthDistrict" unique_id=119278756]
+position = Vector2(5260, -470)
+
+[node name="GardenFlatsEntry" type="Marker2D" parent="NorthDistrict" unique_id=2024184395]
+position = Vector2(5850, -744)
+
+[node name="UnionApartmentEntry" type="Marker2D" parent="NorthDistrict" unique_id=1168789259]
+position = Vector2(6250, -744)
+
+[node name="CommunityHallEntry" type="Marker2D" parent="NorthDistrict" unique_id=1554075272]
+position = Vector2(5875, -470)
+
+[node name="PharmacyEntry" type="Marker2D" parent="NorthDistrict" unique_id=1771584087]
+position = Vector2(6220, -470)
+
+[node name="AnimatedWater" type="Polygon2D" parent="NorthDistrict" unique_id=164041520]
+show_behind_parent = true
+material = SubResource("ShaderMaterial_xduib")
+color = Color(0.1254902, 0.2784314, 0.32941177, 1)
+polygon = PackedVector2Array(4380, -10000, 6760, -10000, 6760, -100, 4380, -100)
+
+[node name="BridgeTree00" type="StaticBody2D" parent="NorthDistrict" unique_id=1053873855]
+z_index = 6
+position = Vector2(5729, -3960)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree01" type="StaticBody2D" parent="NorthDistrict" unique_id=2015756462]
+z_index = 6
+position = Vector2(5729, -3855)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree02" type="StaticBody2D" parent="NorthDistrict" unique_id=2021707659]
+z_index = 6
+position = Vector2(5729, -3750)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree03" type="StaticBody2D" parent="NorthDistrict" unique_id=636501532]
+z_index = 6
+position = Vector2(5729, -3645)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree04" type="StaticBody2D" parent="NorthDistrict" unique_id=576804924]
+z_index = 6
+position = Vector2(5729, -3540)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree05" type="StaticBody2D" parent="NorthDistrict" unique_id=431410772]
+z_index = 6
+position = Vector2(5729, -3435)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree06" type="StaticBody2D" parent="NorthDistrict" unique_id=597400912]
+z_index = 6
+position = Vector2(5729, -3330)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree07" type="StaticBody2D" parent="NorthDistrict" unique_id=1370317737]
+z_index = 6
+position = Vector2(5729, -3225)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree08" type="StaticBody2D" parent="NorthDistrict" unique_id=174665230]
+z_index = 6
+position = Vector2(5729, -3120)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree09" type="StaticBody2D" parent="NorthDistrict" unique_id=1298807011]
+z_index = 6
+position = Vector2(5729, -3015)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree10" type="StaticBody2D" parent="NorthDistrict" unique_id=623117762]
+z_index = 6
+position = Vector2(5729, -2910)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree11" type="StaticBody2D" parent="NorthDistrict" unique_id=1899809510]
+z_index = 6
+position = Vector2(5729, -2805)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree12" type="StaticBody2D" parent="NorthDistrict" unique_id=678856366]
+z_index = 6
+position = Vector2(5729, -2700)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree13" type="StaticBody2D" parent="NorthDistrict" unique_id=31762967]
+z_index = 6
+position = Vector2(5729, -2595)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree14" type="StaticBody2D" parent="NorthDistrict" unique_id=1206904746]
+z_index = 6
+position = Vector2(5729, -2490)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree15" type="StaticBody2D" parent="NorthDistrict" unique_id=1839992553]
+z_index = 6
+position = Vector2(6271, -3960)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree16" type="StaticBody2D" parent="NorthDistrict" unique_id=791883134]
+z_index = 6
+position = Vector2(6271, -3855)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree17" type="StaticBody2D" parent="NorthDistrict" unique_id=1194022148]
+z_index = 6
+position = Vector2(6271, -3750)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree18" type="StaticBody2D" parent="NorthDistrict" unique_id=71322697]
+z_index = 6
+position = Vector2(6271, -3645)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree19" type="StaticBody2D" parent="NorthDistrict" unique_id=284985017]
+z_index = 6
+position = Vector2(6271, -3540)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree20" type="StaticBody2D" parent="NorthDistrict" unique_id=1042855382]
+z_index = 6
+position = Vector2(6271, -3435)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree21" type="StaticBody2D" parent="NorthDistrict" unique_id=1882007017]
+z_index = 6
+position = Vector2(6271, -3330)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree22" type="StaticBody2D" parent="NorthDistrict" unique_id=565820648]
+z_index = 6
+position = Vector2(6271, -3225)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree23" type="StaticBody2D" parent="NorthDistrict" unique_id=214775957]
+z_index = 6
+position = Vector2(6271, -3120)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree24" type="StaticBody2D" parent="NorthDistrict" unique_id=323090844]
+z_index = 6
+position = Vector2(6271, -3015)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree25" type="StaticBody2D" parent="NorthDistrict" unique_id=931931933]
+z_index = 6
+position = Vector2(6271, -2910)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree26" type="StaticBody2D" parent="NorthDistrict" unique_id=264595605]
+z_index = 6
+position = Vector2(6271, -2805)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree27" type="StaticBody2D" parent="NorthDistrict" unique_id=809269642]
+z_index = 6
+position = Vector2(6271, -2700)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.85
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="BridgeTree28" type="StaticBody2D" parent="NorthDistrict" unique_id=943596343]
+z_index = 6
+position = Vector2(6271, -2595)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.9
+variant_seed = 3
+metadata/impact_material = &"wood"
+metadata/forest_species = "birch"
+
+[node name="BridgeTree29" type="StaticBody2D" parent="NorthDistrict" unique_id=1077420325]
+z_index = 6
+position = Vector2(6271, -2490)
+collision_mask = 0
+script = ExtResource("14_bc8bl")
+tree_scale = 0.95
+variant_seed = 4
+metadata/impact_material = &"wood"
+metadata/forest_species = "rowan"
+
+[node name="ExteriorTree330" type="StaticBody2D" parent="NorthDistrict" unique_id=1229305258]
+z_index = 8
+position = Vector2(4700, -2310)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 1.25
+variant_seed = 330
+leaf_color = Color(0.32156864, 0.41568628, 0.2627451, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree331" type="StaticBody2D" parent="NorthDistrict" unique_id=1967562983]
+z_index = 8
+position = Vector2(5570, -2190)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 1.25
+variant_seed = 331
+leaf_color = Color(0.24705882, 0.38431373, 0.29411766, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree332" type="StaticBody2D" parent="NorthDistrict" unique_id=731106523]
+z_index = 8
+position = Vector2(5485, -2260)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 1.25
+variant_seed = 332
+leaf_color = Color(0.41960785, 0.4745098, 0.3137255, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree333" type="StaticBody2D" parent="NorthDistrict" unique_id=1247922883]
+z_index = 8
+position = Vector2(6280, -2325)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 1.25
+variant_seed = 333
+leaf_color = Color(0.32156864, 0.41568628, 0.2627451, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree334" type="StaticBody2D" parent="NorthDistrict" unique_id=1090574935]
+z_index = 8
+position = Vector2(6685, -2290)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 1.25
+variant_seed = 334
+leaf_color = Color(0.24705882, 0.38431373, 0.29411766, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree335" type="StaticBody2D" parent="NorthDistrict" unique_id=1361967970]
+z_index = 8
+position = Vector2(4480, -1650)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 1.25
+variant_seed = 335
+leaf_color = Color(0.41960785, 0.4745098, 0.3137255, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree336" type="StaticBody2D" parent="NorthDistrict" unique_id=704718561]
+z_index = 8
+position = Vector2(4480, -700)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 1.25
+variant_seed = 336
+leaf_color = Color(0.32156864, 0.41568628, 0.2627451, 1)
+metadata/impact_material = &"wood"
+
+[node name="ExteriorTree337" type="StaticBody2D" parent="NorthDistrict" unique_id=819638474]
+z_index = 8
+position = Vector2(6620, -850)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 1.25
+variant_seed = 337
+leaf_color = Color(0.24705882, 0.38431373, 0.29411766, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2614" type="StaticBody2D" parent="NorthDistrict" unique_id=1645058341]
+z_index = 8
+position = Vector2(4835, -1518)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.8
+variant_seed = 3317
+leaf_color = Color(0.2784314, 0.39215687, 0.3372549, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2617" type="StaticBody2D" parent="NorthDistrict" unique_id=523022624]
+z_index = 8
+position = Vector2(4900, -1522)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.7
+variant_seed = 3378
+leaf_color = Color(0.39215687, 0.46666667, 0.3647059, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2620" type="StaticBody2D" parent="NorthDistrict" unique_id=530408695]
+z_index = 8
+position = Vector2(5360, -1520)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 2
+crown_scale = 0.85
+variant_seed = 3840
+leaf_color = Color(0.20784314, 0.3372549, 0.29411766, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2623" type="StaticBody2D" parent="NorthDistrict" unique_id=941063305]
+z_index = 8
+position = Vector2(5750, -1530)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.8
+variant_seed = 4220
+leaf_color = Color(0.2784314, 0.39215687, 0.3372549, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2626" type="StaticBody2D" parent="NorthDistrict" unique_id=1177276127]
+z_index = 8
+position = Vector2(6310, -1530)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.85
+variant_seed = 4780
+leaf_color = Color(0.39215687, 0.46666667, 0.3647059, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2629" type="StaticBody2D" parent="NorthDistrict" unique_id=2068612350]
+z_index = 8
+position = Vector2(4830, -180)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.8
+variant_seed = 4650
+leaf_color = Color(0.20784314, 0.3372549, 0.29411766, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2632" type="StaticBody2D" parent="NorthDistrict" unique_id=45934973]
+z_index = 8
+position = Vector2(4900, -174)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.75
+variant_seed = 4726
+leaf_color = Color(0.2784314, 0.39215687, 0.3372549, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2635" type="StaticBody2D" parent="NorthDistrict" unique_id=442322029]
+z_index = 8
+position = Vector2(5340, -180)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 2
+crown_scale = 0.8
+variant_seed = 5160
+leaf_color = Color(0.39215687, 0.46666667, 0.3647059, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2638" type="StaticBody2D" parent="NorthDistrict" unique_id=1753830178]
+z_index = 8
+position = Vector2(5770, -178)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 1
+crown_scale = 0.85
+variant_seed = 5592
+leaf_color = Color(0.20784314, 0.3372549, 0.29411766, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2641" type="StaticBody2D" parent="NorthDistrict" unique_id=1396060606]
+z_index = 8
+position = Vector2(5840, -174)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.7
+variant_seed = 5666
+leaf_color = Color(0.2784314, 0.39215687, 0.3372549, 1)
+metadata/impact_material = &"wood"
+
+[node name="@StaticBody2D@2644" type="StaticBody2D" parent="NorthDistrict" unique_id=29443609]
+z_index = 8
+position = Vector2(6270, -178)
+collision_mask = 0
+script = ExtResource("6_xduib")
+tree_style = 3
+crown_scale = 0.9
+variant_seed = 6092
+leaf_color = Color(0.39215687, 0.46666667, 0.3647059, 1)
+metadata/impact_material = &"wood"
+
+[node name="Bench0" type="StaticBody2D" parent="NorthDistrict" unique_id=1340519212]
+position = Vector2(5112.5, -1525.5)
+collision_mask = 0
+
+[node name="@CollisionShape2D@2647" type="CollisionShape2D" parent="NorthDistrict/Bench0" unique_id=1008932962]
+shape = SubResource("RectangleShape2D_vlh8r")
+
+[node name="Bench1" type="StaticBody2D" parent="NorthDistrict" unique_id=1006304675]
+position = Vector2(6122.5, -1530.5)
+collision_mask = 0
+
+[node name="@CollisionShape2D@2648" type="CollisionShape2D" parent="NorthDistrict/Bench1" unique_id=121362692]
+shape = SubResource("RectangleShape2D_qa2cq")
+
+[node name="Bench2" type="StaticBody2D" parent="NorthDistrict" unique_id=1262452219]
+position = Vector2(5062.5, -150.5)
+collision_mask = 0
+
+[node name="@CollisionShape2D@2649" type="CollisionShape2D" parent="NorthDistrict/Bench2" unique_id=894196100]
+shape = SubResource("RectangleShape2D_lua7j")
+
+[node name="Bench3" type="StaticBody2D" parent="NorthDistrict" unique_id=317251499]
+position = Vector2(6042.5, -150.5)
+collision_mask = 0
+
+[node name="@CollisionShape2D@2650" type="CollisionShape2D" parent="NorthDistrict/Bench3" unique_id=1057738762]
+shape = SubResource("RectangleShape2D_kfxj4")
+
+[node name="NorthWater" type="StaticBody2D" parent="NorthDistrict" unique_id=1138590931]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2651" type="CollisionPolygon2D" parent="NorthDistrict/NorthWater" unique_id=496133707]
+polygon = PackedVector2Array(5700, -4783.1943, 5696.9346, -4780.653, 5693.258, -4777.657, 5689.521, -4774.663, 5685.723, -4771.667, 5681.872, -4768.6733, 5677.9707, -4765.6826, 5674.0137, -4762.687, 5670.0093, -4759.693, 5665.9546, -4756.694, 5661.854, -4753.6914, 5657.713, -4750.6875, 5653.525, -4747.675, 5649.305, -4744.66, 5645.042, -4741.6353, 5640.741, -4738.6, 5636.4146, -4735.5596, 5632.0625, -4732.514, 5627.6587, -4729.4395, 5623.2495, -4726.3667, 5618.8135, -4723.278, 5614.367, -4720.182, 5614.328, -4720.155, 5609.8887, -4717.0596, 5609.84, -4717.0254, 5605.4087, -4713.931, 5605.3184, -4713.8677, 5600.8984, -4710.771, 5600.7974, -4710.7, 5596.3896, -4707.601, 5596.24, -4707.4956, 5591.8486, -4704.3916, 5591.681, -4704.273, 5587.307, -4701.163, 5587.128, -4701.035, 5582.7725, -4697.919, 5582.54, -4697.7524, 5578.207, -4694.627, 5577.973, -4694.457, 5573.6636, -4691.3228, 5573.3735, -4691.111, 5569.0903, -4687.964, 5568.788, -4687.7407, 5564.5337, -4684.5815, 5564.207, -4684.3374, 5559.9824, -4681.164, 5559.6265, -4680.895, 5555.4346, -4677.7065, 5555.04, -4677.4043, 5550.8833, -4674.198, 5550.4814, -4673.886, 5546.361, -4670.6626, 5545.913, -4670.3096, 5541.832, -4667.066, 5541.3506, -4666.68, 5537.3115, -4663.4146, 5536.83, -4663.022, 5532.8335, -4659.735, 5532.3037, -4659.2944, 5528.353, -4655.983, 5527.8013, -4655.516, 5523.899, -4652.1797, 5523.317, -4651.677, 5519.4644, -4648.313, 5518.858, -4647.778, 5515.0576, -4644.3857, 5514.438, -4643.826, 5510.692, -4640.406, 5510.029, -4639.793, 5506.339, -4636.3403, 5505.6606, -4635.6978, 5502.03, -4632.2134, 5501.318, -4631.5205, 5497.7485, -4628.002, 5497.033, -4627.2876, 5493.5254, -4623.734, 5492.768, -4622.955, 5489.327, -4619.365, 5488.5654, -4618.5586, 5485.191, -4614.9307, 5484.397, -4614.0635, 5481.093, -4610.396, 5480.294, -4609.494, 5477.061, -4605.786, 5476.244, -4604.833, 5473.085, -4601.083, 5472.2466, -4600.07, 5469.1636, -4596.2754, 5468.328, -4595.228, 5465.3228, -4591.389, 5464.463, -4590.2686, 5461.539, -4586.3833, 5460.6816, -4585.2207, 5457.8403, -4581.2876, 5456.984, -4580.0767, 5454.227, -4576.0947, 5453.3623, -4574.818, 5450.693, -4570.785, 5449.8403, -4569.467, 5447.2593, -4565.382, 5446.408, -4564.002, 5443.919, -4559.8643, 5443.079, -4558.4316, 5440.683, -4554.239, 5439.852, -4552.745, 5437.5522, -4548.4956, 5436.7495, -4546.97, 5434.547, -4542.6636, 5433.755, -4541.068, 5431.653, -4536.7017, 5430.894, -4535.0747, 5428.894, -4530.649, 5428.159, -4528.9683, 5426.2637, -4524.4805, 5425.5635, -4522.7627, 5423.7744, -4518.212, 5423.1074, -4516.449, 5421.4272, -4511.8335, 5420.8013, -4510.043, 5419.2314, -4505.3604, 5418.647, -4503.539, 5417.1904, -4498.7905, 5416.6475, -4496.9355, 5415.306, -4492.117, 5414.8105, -4490.2417, 5413.587, -4485.3535, 5413.1416, -4483.4697, 5412.037, -4478.5103, 5411.6387, -4476.602, 5410.6563, -4471.5693, 5410.3086, -4469.6567, 5409.45, -4464.5493, 5409.155, -4462.638, 5408.4224, -4457.455, 5408.1777, -4455.5435, 5407.5737, -4450.2837, 5407.38, -4448.3804, 5406.9063, -4443.0415, 5406.763, -4441.1543, 5406.422, -4435.7354, 5406.327, -4433.854, 5406.121, -4428.354, 5406.075, -4426.5024, 5406.006, -4420.919, 5406.0103, -4418.779, 5406.0835, -4414.342, 5406.1626, -4411.925, 5406.3794, -4407.5205, 5406.538, -4405.104, 5406.897, -4400.7324, 5407.1323, -4398.343, 5407.631, -4394.0024, 5407.94, -4391.6475, 5408.5757, -4387.338, 5408.9565, -4385.013, 5409.7275, -4380.735, 5410.175, -4378.4575, 5411.0786, -4374.21, 5411.5864, -4371.9907, 5412.6206, -4367.7725, 5413.188, -4365.601, 5414.3506, -4361.4126, 5414.964, -4359.3228, 5416.2515, -4355.163, 5416.9214, -4353.106, 5418.3335, -4348.9756, 5419.036, -4347.0117, 5420.5693, -4342.9087, 5421.3096, -4341.0073, 5422.9614, -4336.933, 5423.7334, -4335.1, 5425.5024, -4331.0527, 5426.2964, -4329.3, 5428.1797, -4325.2793, 5428.996, -4323.592, 5430.9917, -4319.598, 5431.8203, -4317.9893, 5433.926, -4314.0215, 5434.7637, -4312.4873, 5436.9766, -4308.545, 5437.8228, -4307.0767, 5440.1406, -4303.16, 5440.991, -4301.759, 5443.4126, -4297.8667, 5444.2554, -4296.5435, 5446.777, -4292.676, 5447.6284, -4291.3984, 5450.2495, -4287.5547, 5451.077, -4286.366, 5453.793, -4282.5464, 5454.623, -4281.4023, 5457.4336, -4277.605, 5458.2485, -4276.525, 5461.1504, -4272.7505, 5461.9507, -4271.7275, 5464.942, -4267.975, 5465.7256, -4267.0093, 5468.803, -4263.279, 5469.5796, -4262.353, 5472.7427, -4258.644, 5473.4927, -4257.7783, 5476.738, -4254.0903, 5477.475, -4253.265, 5480.801, -4249.5977, 5481.51, -4248.8267, 5484.9126, -4245.179, 5485.6074, -4244.445, 5489.086, -4240.817, 5489.7617, -4240.121, 5493.3135, -4236.5127, 5493.964, -4235.8604, 5497.5864, -4232.2705, 5498.224, -4231.6455, 5501.916, -4228.074, 5502.521, -4227.496, 5506.279, -4223.9424, 5506.867, -4223.3916, 5510.689, -4219.8555, 5511.2583, -4219.3345, 5515.142, -4215.8154, 5515.6885, -4215.325, 5519.632, -4211.8228, 5520.159, -4211.359, 5524.1597, -4207.873, 5524.66, -4207.441, 5528.7153, -4203.9707, 5529.197, -4203.5625, 5533.3047, -4200.1074, 5533.7705, -4199.7183, 5537.929, -4196.2783, 5538.37, -4195.917, 5542.5767, -4192.4917, 5542.994, -4192.154, 5547.2466, -4188.742, 5547.648, -4188.423, 5551.9434, -4185.0254, 5552.321, -4184.7285, 5556.6577, -4181.3438, 5557.022, -4181.0615, 5561.398, -4177.69, 5561.7373, -4177.4297, 5566.15, -4174.0703, 5566.4683, -4173.8296, 5570.915, -4170.482, 5571.224, -4170.2505, 5575.703, -4166.915, 5575.976, -4166.713, 5580.4844, -4163.3877, 5580.756, -4163.1885, 5585.292, -4159.8745, 5585.5347, -4159.6978, 5590.096, -4156.3936, 5590.3203, -4156.232, 5594.9043, -4152.9375, 5595.116, -4152.7856, 5599.7207, -4149.501, 5599.9116, -4149.365, 5604.5347, -4146.0894, 5604.703, -4145.9707, 5609.342, -4142.703, 5609.504, -4142.589, 5614.157, -4139.3296, 5614.291, -4139.2363, 5618.955, -4135.985, 5619.072, -4135.9033, 5623.745, -4132.6587, 5623.8496, -4132.5864, 5628.5303, -4129.3486, 5628.61, -4129.2935, 5633.2944, -4126.062, 5633.361, -4126.016, 5638.048, -4122.7905, 5638.093, -4122.7603, 5642.779, -4119.54, 5642.822, -4119.5103, 5647.507, -4116.296, 5647.515, -4116.2905, 5652.196, -4113.08, 5656.859, -4109.8804, 5661.4746, -4106.712, 5666.091, -4103.538, 5670.6597, -4100.39, 5675.198, -4097.255, 5679.7, -4094.1348, 5684.1597, -4091.0317, 5688.583, -4087.9397, 5692.9536, -4084.868, 5697.2856, -4081.8052, 5700, -4079.8735, 5700, -2400, 4380, -2400, 4380, -10000, 5700, -10000)
+
+[node name="@StaticBody2D@2653" type="StaticBody2D" parent="NorthDistrict" unique_id=1761085629]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2652" type="CollisionPolygon2D" parent="NorthDistrict/@StaticBody2D@2653" unique_id=598032014]
+polygon = PackedVector2Array(5700, -4259.8994, 5698.997, -4260.5986, 5694.4927, -4263.754, 5690.018, -4266.906, 5685.5737, -4270.0547, 5681.1733, -4273.1943, 5676.8037, -4276.3345, 5672.4775, -4279.4683, 5668.1987, -4282.5938, 5663.9614, -4285.719, 5659.7764, -4288.836, 5655.6406, -4291.9497, 5651.558, -4295.0576, 5647.5337, -4298.158, 5643.567, -4301.254, 5639.6616, -4304.343, 5635.8184, -4307.4263, 5632.0415, -4310.502, 5628.3364, -4313.5664, 5624.7026, -4316.623, 5621.137, -4319.674, 5617.6523, -4322.7104, 5614.2446, -4325.737, 5610.9194, -4328.75, 5607.677, -4331.7505, 5604.5156, -4334.7397, 5601.4443, -4337.7104, 5598.4673, -4340.661, 5595.5786, -4343.5957, 5592.7856, -4346.5083, 5590.0845, -4349.4043, 5587.483, -4352.273, 5584.981, -4355.116, 5582.582, -4357.929, 5580.2847, -4360.7144, 5578.086, -4363.4727, 5575.992, -4366.196, 5574.0044, -4368.881, 5572.1177, -4371.5347, 5570.337, -4374.146, 5568.6636, -4376.7134, 5567.0894, -4379.2437, 5565.6206, -4381.725, 5564.25, -4384.1665, 5562.9785, -4386.563, 5561.8066, -4388.9087, 5560.729, -4391.209, 5559.7437, -4393.463, 5558.849, -4395.67, 5558.038, -4397.8403, 5557.3135, -4399.9604, 5556.6675, -4402.046, 5556.0967, -4404.104, 5555.6006, -4406.126, 5555.1753, -4408.125, 5554.819, -4410.102, 5554.5283, -4412.0713, 5554.3027, -4414.0386, 5554.141, -4416.0063, 5554.043, -4417.9937, 5554.008, -4420.1514, 5554.0522, -4423.739, 5554.1885, -4427.372, 5554.4106, -4430.9063, 5554.7163, -4434.349, 5555.101, -4437.701, 5555.5635, -4440.9727, 5556.1006, -4444.1675, 5556.71, -4447.29, 5557.392, -4450.3535, 5558.145, -4453.361, 5558.9673, -4456.314, 5559.86, -4459.224, 5560.824, -4462.1006, 5561.8574, -4464.9395, 5562.9624, -4467.7495, 5564.14, -4470.5386, 5565.3926, -4473.3105, 5566.719, -4476.065, 5568.1235, -4478.8115, 5569.606, -4481.551, 5571.166, -4484.281, 5572.8096, -4487.0127, 5574.538, -4489.7485, 5576.3486, -4492.483, 5578.2446, -4495.2217, 5580.2285, -4497.9683, 5582.2935, -4500.712, 5584.45, -4503.4673, 5586.6963, -4506.2314, 5589.0273, -4508.998, 5591.4517, -4511.7793, 5593.9595, -4514.5625, 5596.5557, -4517.3535, 5599.2373, -4520.151, 5602.008, -4522.958, 5604.8633, -4525.773, 5607.7993, -4528.5903, 5610.8184, -4531.4155, 5613.923, -4534.25, 5617.11, -4537.0947, 5620.368, -4539.9395, 5623.7036, -4542.791, 5627.113, -4545.649, 5630.604, -4548.52, 5634.161, -4551.3965, 5637.7783, -4554.271, 5641.473, -4557.1616, 5645.233, -4560.0615, 5649.048, -4562.9634, 5652.931, -4565.8804, 5656.872, -4568.807, 5660.8584, -4571.736, 5664.907, -4574.68, 5669.005, -4577.636, 5673.156, -4580.606, 5677.356, -4583.5923, 5681.5894, -4586.5845, 5685.8726, -4589.596, 5690.1943, -4592.624, 5694.56, -4595.673, 5698.955, -4598.7373, 5700, -4599.465)
+
+[node name="@StaticBody2D@2655" type="StaticBody2D" parent="NorthDistrict" unique_id=1948077254]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2654" type="CollisionPolygon2D" parent="NorthDistrict/@StaticBody2D@2655" unique_id=732344455]
+polygon = PackedVector2Array(6303.4785, -4749.49, 6307.895, -4748.5205, 6312.3696, -4747.5356, 6316.8257, -4746.5537, 6321.274, -4745.5713, 6325.7344, -4744.5835, 6330.222, -4743.588, 6334.6895, -4742.5933, 6339.1685, -4741.5938, 6343.6333, -4740.593, 6348.133, -4739.5815, 6352.5996, -4738.573, 6357.095, -4737.5537, 6361.5713, -4736.5347, 6366.0576, -4735.5083, 6370.5435, -4734.477, 6375.024, -4733.442, 6379.502, -4732.4014, 6381.22, -4732, 6300, -4732, 6300, -4750.2534)
+
+[node name="@StaticBody2D@2657" type="StaticBody2D" parent="NorthDistrict" unique_id=365121822]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2656" type="CollisionPolygon2D" parent="NorthDistrict/@StaticBody2D@2657" unique_id=602729223]
+polygon = PackedVector2Array(6760, -4747.148, 6759.6333, -4747.4106, 6758.289, -4748.3516, 6752.2866, -4752.455, 6750.987, -4753.3237, 6744.8193, -4757.3516, 6743.572, -4758.149, 6737.244, -4762.103, 6736.036, -4762.842, 6729.5513, -4766.7236, 6728.3945, -4767.402, 6721.759, -4771.2124, 6720.643, -4771.8403, 6713.86, -4775.581, 6712.7876, -4776.161, 6705.862, -4779.833, 6704.8315, -4780.3687, 6697.767, -4783.973, 6697.0186, -4784.3496, 6693.4355, -4786.127, 6692.954, -4786.364, 6689.338, -4788.125, 6688.8735, -4788.349, 6685.226, -4790.094, 6684.747, -4790.3213, 6681.067, -4792.05, 6680.6206, -4792.258, 6676.9097, -4793.9707, 6676.4663, -4794.1733, 6672.7246, -4795.8706, 6672.2905, -4796.066, 6668.519, -4797.7476, 6668.093, -4797.936, 6664.291, -4799.6025, 6663.8657, -4799.7876, 6660.0356, -4801.438, 6659.647, -4801.604, 6655.788, -4803.2407, 6655.3687, -4803.417, 6651.4814, -4805.0376, 6651.103, -4805.1943, 6647.189, -4806.801, 6646.806, -4806.9565, 6642.865, -4808.5483, 6642.488, -4808.6997, 6638.5205, -4810.277, 6638.156, -4810.4204, 6634.1626, -4811.9834, 6633.8145, -4812.1187, 6629.798, -4813.6675, 6629.4424, -4813.8037, 6625.3994, -4815.339, 6625.0557, -4815.4683, 6620.9893, -4816.9893, 6620.6567, -4817.113, 6616.566, -4818.6206, 6616.2466, -4818.7373, 6612.135, -4820.2314, 6611.804, -4820.351, 6607.669, -4821.8315, 6607.3657, -4821.9395, 6603.2085, -4823.407, 6602.9, -4823.5156, 6598.7217, -4824.97, 6598.4263, -4825.0723, 6594.2275, -4826.514, 6593.929, -4826.6157, 6589.7104, -4828.0444, 6589.4404, -4828.1353, 6585.2026, -4829.5522, 6584.917, -4829.647, 6580.6597, -4831.0513, 6580.3877, -4831.1406, 6576.112, -4832.5327, 6575.8433, -4832.6196, 6571.5493, -4833.9995, 6571.2964, -4834.08, 6566.986, -4835.448, 6566.7407, -4835.526, 6562.4136, -4836.883, 6562.1626, -4836.961, 6557.819, -4838.306, 6557.5713, -4838.3823, 6553.2114, -4839.716, 6552.979, -4839.7866, 6548.6045, -4841.109, 6548.384, -4841.175, 6543.9956, -4842.4863, 6543.7627, -4842.5557, 6539.3594, -4843.856, 6539.152, -4843.917, 6534.736, -4845.207, 6534.5225, -4845.269, 6530.0938, -4846.5483, 6529.8853, -4846.6084, 6525.4434, -4847.8774, 6525.2373, -4847.936, 6520.784, -4849.1943, 6520.5947, -4849.2476, 6516.131, -4850.496, 6515.942, -4850.5483, 6511.4673, -4851.787, 6511.274, -4851.8403, 6506.789, -4853.069, 6506.6123, -4853.117, 6502.1177, -4854.3364, 6501.9453, -4854.383, 6497.442, -4855.593, 6497.2666, -4855.6396, 6492.7554, -4856.84, 6492.585, -4856.8853, 6488.0654, -4858.076, 6487.92, -4858.1143, 6483.3926, -4859.2974, 6483.225, -4859.341, 6478.692, -4860.514, 6478.545, -4860.5522, 6474.0054, -4861.7173, 6473.864, -4861.7534, 6469.3193, -4862.91, 6469.167, -4862.9487, 6464.6167, -4864.0967, 6464.4756, -4864.1323, 6459.9204, -4865.272, 6459.799, -4865.3022, 6455.24, -4866.4346, 6455.114, -4866.466, 6450.5522, -4867.5903, 6450.4165, -4867.6235, 6445.8516, -4868.7397, 6445.73, -4868.7695, 6441.1636, -4869.878, 6441.0693, -4869.9004, 6436.501, -4871.003, 6436.372, -4871.034, 6431.8022, -4872.1284, 6431.6987, -4872.153, 6427.1284, -4873.24, 6427.0264, -4873.2646, 6422.456, -4874.345, 6422.3633, -4874.367, 6417.7935, -4875.4414, 6417.687, -4875.4663, 6413.118, -4876.533, 6413.041, -4876.5513, 6408.475, -4877.6123, 6408.382, -4877.634, 6403.8164, -4878.6885, 6403.7363, -4878.707, 6399.1753, -4879.7554, 6399.103, -4879.772, 6394.5444, -4880.815, 6394.468, -4880.832, 6389.9126, -4881.869, 6389.85, -4881.884, 6385.3003, -4882.9155, 6385.2285, -4882.9316, 6380.6836, -4883.9575, 6380.6206, -4883.9717, 6376.081, -4884.992, 6376.036, -4885.0024, 6371.503, -4886.0186, 6371.432, -4886.034, 6366.9043, -4887.0444, 6366.8745, -4887.051, 6362.3555, -4888.057, 6362.2983, -4888.07, 6357.7866, -4889.071, 6357.757, -4889.0776, 6353.254, -4890.0747, 6353.215, -4890.0835, 6348.72, -4891.076, 6348.6855, -4891.0835, 6344.2007, -4892.072, 6344.183, -4892.0757, 6339.7085, -4893.0605, 6339.6753, -4893.068, 6335.211, -4894.0483, 6335.1963, -4894.052, 6330.743, -4895.029, 6330.73, -4895.0317, 6326.2886, -4896.0054, 6326.2695, -4896.0093, 6321.8564, -4896.9756, 6317.441, -4897.9434, 6317.4233, -4897.9473, 6313.0205, -4898.911, 6308.6343, -4899.8716, 6304.276, -4900.8267, 6300, -4901.7646, 6300, -10000, 6760, -10000)
+
+[node name="@StaticBody2D@2659" type="StaticBody2D" parent="NorthDistrict" unique_id=1279091996]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2658" type="CollisionPolygon2D" parent="NorthDistrict/@StaticBody2D@2659" unique_id=1900091766]
+polygon = PackedVector2Array(6760, -2400, 6300, -2400, 6300, -3981.309, 6301.1104, -3981.7202, 6304.369, -3982.8945, 6307.6836, -3984.0554, 6311.0356, -3985.1985, 6314.4287, -3986.323, 6317.8623, -3987.4294, 6321.338, -3988.5176, 6324.8613, -3989.59, 6328.413, -3990.6404, 6332.019, -3991.6758, 6335.6533, -3992.69, 6339.3237, -3993.6829, 6343.043, -3994.6602, 6346.7876, -3995.614, 6350.577, -3996.5503, 6354.3975, -3997.465, 6358.2573, -3998.3604, 6362.15, -3999.2346, 6366.077, -4000.0884, 6370.036, -4000.9211, 6374.0283, -4001.7322, 6378.0513, -4002.5222, 6382.1104, -4003.291, 6386.2, -4004.0388, 6390.3174, -4004.7644, 6394.4644, -4005.4678, 6398.643, -4006.15, 6402.851, -4006.8098, 6407.088, -4007.448, 6411.3477, -4008.0632, 6415.638, -4008.6565, 6419.954, -4009.2273, 6424.2983, -4009.7756, 6428.661, -4010.301, 6433.0547, -4010.8037, 6437.471, -4011.284, 6441.908, -4011.7405, 6446.3726, -4012.175, 6450.856, -4012.5857, 6455.3643, -4012.974, 6459.8936, -4013.3389, 6464.442, -4013.6807, 6469.0107, -4013.999, 6473.6, -4014.294, 6478.2114, -4014.566, 6482.8345, -4014.8142, 6487.4785, -4015.0388, 6492.143, -4015.2405, 6496.8223, -4015.4182, 6501.5166, -4015.5725, 6506.2266, -4015.703, 6510.9526, -4015.8098, 6515.6943, -4015.8928, 6520.4497, -4015.9524, 6525.215, -4015.988, 6530.1826, -4016.0002, 6530.631, -4016.0027, 6535.987, -4016.0483, 6537.262, -4016.0703, 6542.549, -4016.2065, 6543.849, -4016.2515, 6549.0674, -4016.4778, 6550.385, -4016.5466, 6555.5347, -4016.862, 6556.869, -4016.9558, 6561.9507, -4017.3594, 6563.3027, -4017.4792, 6568.3174, -4017.9702, 6569.6895, -4018.1177, 6574.636, -4018.6953, 6576.0146, -4018.8691, 6580.896, -4019.5322, 6582.2954, -4019.736, 6587.1104, -4020.4841, 6588.528, -4020.7185, 6593.277, -4021.551, 6594.692, -4021.8132, 6599.3755, -4022.7285, 6600.807, -4023.0232, 6605.4263, -4024.021, 6606.878, -4024.3499, 6611.432, -4025.43, 6612.8657, -4025.785, 6617.3564, -4026.945, 6618.8105, -4027.3367, 6623.2373, -4028.577, 6624.6914, -4029.0002, 6629.0547, -4030.3196, 6630.505, -4030.7744, 6634.8057, -4032.1719, 6636.2563, -4032.66, 6640.4956, -4034.135, 6641.9556, -4034.6602, 6646.1323, -4036.2124, 6647.56, -4036.76, 6651.6753, -4038.387, 6653.119, -4038.9753, 6657.174, -4040.678, 6658.6045, -4041.2966, 6662.598, -4043.0735, 6664.002, -4043.7158, 6667.936, -4045.5654, 6669.3477, -4046.2473, 6673.221, -4048.1697, 6674.605, -4048.8748, 6678.42, -4050.869, 6679.7915, -4051.604, 6683.5474, -4053.669, 6684.8975, -4054.43, 6688.5947, -4056.5647, 6689.919, -4057.3477, 6693.5586, -4059.5513, 6694.878, -4060.3691, 6698.4595, -4062.6416, 6699.7334, -4063.4685, 6703.2583, -4065.8079, 6704.5273, -4066.669, 6707.9956, -4069.0757, 6709.2285, -4069.95, 6712.64, -4072.422, 6713.845, -4073.3142, 6717.201, -4075.8513, 6718.3857, -4076.7659, 6721.686, -4079.3674, 6722.83, -4080.2878, 6726.0757, -4082.9524, 6727.198, -4083.8928, 6730.3896, -4086.6204, 6731.4785, -4087.5696, 6734.615, -4090.3582, 6735.6816, -4091.325, 6738.7646, -4094.175, 6739.789, -4095.1401, 6742.819, -4098.05, 6743.819, -4099.0283, 6746.796, -4101.9976, 6747.758, -4102.975, 6750.6826, -4106.0024, 6751.6245, -4106.9956, 6754.4966, -4110.0806, 6755.3965, -4111.065, 6758.218, -4114.207, 6759.086, -4115.191, 6760, -4116.246)
+
+[node name="@StaticBody2D@2661" type="StaticBody2D" parent="NorthDistrict" unique_id=1519439111]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2660" type="CollisionPolygon2D" parent="NorthDistrict/@StaticBody2D@2661" unique_id=1141848158]
+polygon = PackedVector2Array(6714.861, -4386.199, 6714.145, -4381.744, 6713.4063, -4377.3247, 6712.6387, -4372.922, 6711.846, -4368.542, 6711.029, -4364.201, 6710.184, -4359.881, 6709.3145, -4355.594, 6708.4175, -4351.339, 6707.4937, -4347.111, 6706.5444, -4342.9214, 6705.568, -4338.764, 6704.565, -4334.642, 6703.535, -4330.5557, 6702.478, -4326.507, 6701.394, -4322.4937, 6700.2827, -4318.5186, 6699.1445, -4314.5825, 6697.983, -4310.698, 6696.791, -4306.8477, 6695.5723, -4303.0366, 6694.329, -4299.278, 6693.057, -4295.5566, 6691.7607, -4291.8867, 6690.437, -4288.2607, 6689.0884, -4284.6855, 6687.7134, -4281.1587, 6686.309, -4277.6704, 6684.8823, -4274.239, 6683.4316, -4270.862, 6681.9565, -4267.5376, 6680.4546, -4264.262, 6678.9287, -4261.0386, 6677.3784, -4257.8696, 6675.806, -4254.757, 6674.2095, -4251.6987, 6672.586, -4248.688, 6670.9453, -4245.743, 6669.279, -4242.8496, 6667.593, -4240.015, 6665.8833, -4237.2363, 6664.154, -4234.516, 6662.405, -4231.856, 6660.6313, -4229.2476, 6658.837, -4226.6963, 6657.026, -4224.2065, 6655.188, -4221.767, 6653.335, -4219.388, 6651.4663, -4217.0737, 6649.572, -4214.8076, 6647.657, -4212.5977, 6645.7197, -4210.44, 6643.7686, -4208.344, 6641.796, -4206.3022, 6639.8, -4204.3115, 6637.7817, -4202.3735, 6635.744, -4200.4897, 6633.6855, -4198.6597, 6631.5996, -4196.877, 6629.4873, -4195.143, 6627.3516, -4193.4595, 6625.1904, -4191.825, 6622.998, -4190.237, 6620.7803, -4188.6978, 6618.5273, -4187.2026, 6616.2427, -4185.753, 6613.925, -4184.3496, 6611.565, -4182.987, 6609.17, -4181.6704, 6606.7324, -4180.396, 6604.257, -4179.1675, 6601.731, -4177.98, 6599.1543, -4176.8335, 6596.5366, -4175.7344, 6593.858, -4174.6753, 6591.125, -4173.6597, 6588.3413, -4172.6914, 6585.4917, -4171.765, 6582.5806, -4170.885, 6579.6084, -4170.0522, 6576.5605, -4169.265, 6573.4497, -4168.527, 6570.2725, -4167.841, 6567.012, -4167.2036, 6563.68, -4166.6196, 6560.274, -4166.0903, 6556.7813, -4165.6157, 6553.21, -4165.1987, 6549.557, -4164.8413, 6545.819, -4164.5444, 6541.9956, -4164.31, 6538.086, -4164.1406, 6534.0874, -4164.0376, 6529.5947, -4163.999, 6524.6665, -4163.9873, 6524.2974, -4163.9854, 6519.1587, -4163.947, 6518.784, -4163.9434, 6513.6567, -4163.879, 6513.287, -4163.8735, 6508.172, -4163.7837, 6507.7935, -4163.7764, 6502.6914, -4163.6606, 6502.318, -4163.6514, 6497.229, -4163.5103, 6496.847, -4163.499, 6491.7715, -4163.332, 6491.39, -4163.319, 6486.3296, -4163.1265, 6485.947, -4163.111, 6480.9004, -4162.8926, 6480.5186, -4162.875, 6475.4873, -4162.632, 6475.095, -4162.612, 6470.08, -4162.3423, 6469.69, -4162.3203, 6464.691, -4162.0254, 6464.3027, -4162.0015, 6459.319, -4161.681, 6458.922, -4161.655, 6453.956, -4161.309, 6453.555, -4161.28, 6448.606, -4160.908, 6448.208, -4160.877, 6443.277, -4160.48, 6442.869, -4160.446, 6437.9565, -4160.023, 6437.553, -4159.987, 6432.659, -4159.5386, 6432.245, -4159.4995, 6427.37, -4159.025, 6426.963, -4158.9844, 6422.1084, -4158.485, 6421.68, -4158.4395, 6416.8457, -4157.9136, 6416.4375, -4157.8677, 6411.623, -4157.317, 6411.187, -4157.266, 6406.394, -4156.689, 6405.9746, -4156.637, 6401.2026, -4156.0347, 6400.7646, -4155.978, 6396.0156, -4155.35, 6395.586, -4155.292, 6390.8584, -4154.638, 6390.415, -4154.5757, 6385.7104, -4153.896, 6385.266, -4153.8306, 6380.585, -4153.1255, 6380.14, -4153.057, 6375.483, -4152.3267, 6375.0273, -4152.254, 6370.394, -4151.4976, 6369.941, -4151.422, 6365.3335, -4150.6406, 6364.867, -4150.56, 6360.2837, -4149.7524, 6359.815, -4149.668, 6355.258, -4148.835, 6354.7944, -4148.7485, 6350.263, -4147.89, 6349.7793, -4147.797, 6345.2744, -4146.9126, 6344.7964, -4146.817, 6340.3184, -4145.907, 6339.8237, -4145.8047, 6335.373, -4144.8687, 6334.885, -4144.764, 6330.463, -4143.803, 6329.9624, -4143.6924, 6325.5684, -4142.7056, 6325.068, -4142.5913, 6320.7026, -4141.5786, 6320.1904, -4141.458, 6315.855, -4140.42, 6315.3384, -4140.2944, 6311.0317, -4139.2305, 6310.5107, -4139.0996, 6306.235, -4138.0103, 6305.6978, -4137.871, 6301.4526, -4136.756, 6300.934, -4136.617, 6300, -4136.3647, 6300, -4387, 6714.9844, -4387)
+
+[node name="@StaticBody2D@2663" type="StaticBody2D" parent="NorthDistrict" unique_id=852461297]
+collision_mask = 0
+
+[node name="@CollisionPolygon2D@2662" type="CollisionPolygon2D" parent="NorthDistrict/@StaticBody2D@2663" unique_id=1509336320]
+polygon = PackedVector2Array(6300, -4901.7646, 6299.925, -4901.7813, 6295.603, -4902.729, 6291.3154, -4903.6724, 6287.0234, -4904.6177, 6282.7617, -4905.558, 6278.525, -4906.495, 6274.3003, -4907.4326, 6270.1245, -4908.3613, 6265.9604, -4909.2915, 6261.8086, -4910.2207, 6257.699, -4911.145, 6253.612, -4912.0684, 6249.5557, -4912.9883, 6245.517, -4913.9097, 6241.519, -4914.826, 6237.548, -4915.7417, 6233.5977, -4916.658, 6229.683, -4917.572, 6225.799, -4918.4844, 6221.945, -4919.3965, 6218.1265, -4920.3066, 6214.345, -4921.215, 6210.625, -4922.115, 6203.201, -4923.9365, 6195.9517, -4925.7476, 6188.8555, -4927.556, 6181.9165, -4929.3633, 6175.1406, -4931.169, 6168.5356, -4932.9727, 6162.1074, -4934.7744, 6155.8706, -4936.5723, 6149.826, -4938.3667, 6143.9863, -4940.1563, 6138.3506, -4941.9414, 6132.931, -4943.719, 6127.742, -4945.4854, 6122.795, -4947.2363, 6118.093, -4948.9717, 6113.651, -4950.6826, 6109.4775, -4952.3667, 6105.583, -4954.0156, 6101.9883, -4955.617, 6098.7, -4957.164, 6095.731, -4958.642, 6094, -4959.5576, 6094, -5120.5117, 6093.9995, -5125.356, 6094, -5130.2314, 6094.0005, -5135.1235, 6094.0005, -5135.138, 6094, -5140.0386, 6094, -5149.8896, 6094.0005, -5154.839, 6094.0005, -5154.8535, 6094, -5159.7993, 6094.0005, -5164.771, 6094.0005, -5164.7856, 6094, -5169.7607, 6094, -5214.916, 6094.0005, -5219.954, 6094.0005, -5219.9688, 6094, -5225, 6094, -5295.1616, 6093.9995, -5300.095, 6094, -5305.0317, 6094, -5314.8765, 6093.9995, -5319.7534, 6094, -5324.6294, 6094, -5329.5024, 6093.9995, -5334.329, 6094, -5339.1504, 6094, -5348.749, 6093.9995, -5353.4863, 6094.0005, -5358.2236, 6094.0005, -5358.2466, 6094, -5362.9536, 6094, -5367.6357, 6094.0005, -5372.3013, 6094.0005, -5372.317, 6094, -5376.949, 6094, -5390.6978, 6094.0005, -5395.2256, 6094.0005, -5395.2417, 6094, -5399.7236, 6094.0005, -5404.191, 6094.0005, -5408.643, 6094, -5413.0376, 6094, -5417.399, 6094.0005, -5421.734, 6094.0005, -5430.3145, 6094, -5434.542, 6093.9995, -5438.7134, 6094, -5442.8643, 6094, -5442.882, 6093.9995, -5446.975, 6094, -5451.046, 6094, -5880, 5946, -5880, 5946, -5451.0635, 5945.9995, -5446.9927, 5945.9995, -5446.975, 5946, -5442.8643, 5945.9995, -5438.731, 5945.9995, -5438.7134, 5946, -5434.5244, 5946.0005, -5430.297, 5946.0005, -5421.7505, 5946, -5417.4155, 5946, -5413.0293, 5946.0005, -5408.6265, 5946.0005, -5404.2075, 5946, -5399.74, 5946, -5399.7236, 5946.0005, -5395.225, 5946, -5390.7134, 5946, -5376.9414, 5946.0005, -5372.3013, 5946, -5367.6514, 5946, -5362.946, 5946.0005, -5358.231, 5945.9995, -5353.5166, 5945.9995, -5353.4937, 5946, -5348.7334, 5946, -5339.165, 5945.9995, -5334.3438, 5945.9995, -5334.329, 5946, -5329.488, 5946, -5324.644, 5945.9995, -5319.768, 5945.9995, -5319.7534, 5946, -5314.862, 5946, -5305.0464, 5945.9995, -5300.11, 5945.9995, -5300.095, 5946, -5295.147, 5946, -5224.9927, 5946.0005, -5219.954, 5946, -5214.9307, 5946, -5169.7534, 5946.0005, -5164.771, 5946, -5159.814, 5946, -5159.7993, 5946.0005, -5154.839, 5946, -5149.9043, 5946, -5140.0313, 5946.0005, -5135.1235, 5946, -5130.246, 5945.9995, -5125.3706, 5945.9995, -5125.356, 5946, -5120.497, 5946, -4940, 5946.328, -4933.04, 5946.8936, -4927.0547, 5947.074, -4925.351, 5949.484, -4913.437, 5951.1563, -4907.66, 5951.3857, -4906.8833, 5955.8374, -4895.5728, 5958.5806, -4889.9966, 5964.3936, -4880.1743, 5968.1724, -4874.7856, 5974.2285, -4867.2495, 5979.0073, -4862.04, 5984.713, -4856.457, 5990.455, -4851.415, 5994.366, -4848.211, 5997.588, -4845.7505, 5999.9673, -4844.0073, 6003.4165, -4841.5845, 6005.6416, -4840.081, 6009.3145, -4837.6953, 6011.367, -4836.409, 6015.2583, -4834.059, 6017.149, -4832.955, 6021.254, -4830.6387, 6023.0254, -4829.6704, 6027.341, -4827.388, 6028.951, -4826.562, 6033.4717, -4824.311, 6034.9624, -4823.5894, 6039.684, -4821.3687, 6041.059, -4820.739, 6045.977, -4818.5474, 6047.2466, -4817.996, 6052.356, -4815.833, 6053.514, -4815.354, 6058.8105, -4813.217, 6059.8994, -4812.7876, 6065.38, -4810.6763, 6066.3667, -4810.304, 6072.0254, -4808.2163, 6072.951, -4807.8813, 6078.784, -4805.817, 6079.6294, -4805.524, 6085.6313, -4803.481, 6086.411, -4803.22, 6092.578, -4801.1973, 6093.295, -4800.966, 6099.6235, -4798.961, 6100.2915, -4798.753, 6106.7754, -4796.766, 6107.3945, -4796.5796, 6114.031, -4794.6094, 6114.5977, -4794.4434, 6121.381, -4792.4883, 6121.903, -4792.34, 6128.829, -4790.3984, 6129.3066, -4790.266, 6136.371, -4788.337, 6136.8086, -4788.219, 6144.007, -4786.301, 6144.4165, -4786.193, 6151.7446, -4784.2847, 6152.1133, -4784.1895, 6159.5664, -4782.2896, 6159.9106, -4782.2026, 6167.483, -4780.311, 6167.788, -4780.236, 6175.4775, -4778.3496, 6175.6978, -4778.296, 6179.585, -4777.355, 6179.706, -4777.3257, 6183.62, -4776.3853, 6183.7593, -4776.352, 6187.7007, -4775.413, 6187.804, -4775.388, 6191.771, -4774.449, 6191.8926, -4774.421, 6195.8853, -4773.483, 6195.985, -4773.4595, 6200.0024, -4772.5215, 6200.109, -4772.4966, 6204.1514, -4771.559, 6204.2363, -4771.5396, 6208.3027, -4770.6016, 6208.4033, -4770.578, 6212.4937, -4769.6406, 6212.57, -4769.6235, 6216.682, -4768.6855, 6216.767, -4768.666, 6220.902, -4767.728, 6220.9697, -4767.713, 6225.127, -4766.774, 6225.189, -4766.76, 6229.367, -4765.82, 6229.4443, -4765.8027, 6233.6436, -4764.863, 6233.681, -4764.854, 6237.8994, -4763.912, 6237.9565, -4763.9, 6242.1943, -4762.957, 6242.238, -4762.9473, 6246.4946, -4762.003, 6246.539, -4761.993, 6250.815, -4761.0474, 6250.8477, -4761.04, 6255.1416, -4760.0923, 6255.177, -4760.0845, 6255.5605, -4760, 5879.2095, -4760, 5880.5146, -4761.918, 5881.308, -4763.1084, 5884.15, -4767.464, 5884.9487, -4768.716, 5887.7056, -4773.1323, 5888.4897, -4774.4175, 5891.1597, -4778.895, 5891.9414, -4780.2383, 5894.5215, -4784.7793, 5895.2764, -4786.141, 5897.766, -4790.746, 5898.514, -4792.1655, 5900.91, -4796.8364, 5901.6387, -4798.2964, 5903.9385, -4803.034, 5904.6426, -4804.527, 5906.8447, -4809.3335, 5907.5225, -4810.8574, 5909.625, -4815.734, 5910.28, -4817.3022, 5912.28, -4822.2505, 5912.903, -4823.8447, 5914.7983, -4828.8657, 5915.3877, -4830.4834, 5917.177, -4835.578, 5917.732, -4837.22, 5919.4126, -4842.3906, 5919.935, -4844.066, 5921.5044, -4849.314, 5921.983, -4850.9854, 5923.44, -4856.3105, 5923.8877, -4858.0264, 5925.2285, -4863.4326, 5925.6284, -4865.1313, 5926.8525, -4870.6177, 5927.2163, -4872.3447, 5928.3203, -4877.9146, 5928.64, -4879.634, 5929.6226, -4885.2876, 5929.901, -4887.009, 5930.7593, -4892.7476, 5930.995, -4894.4634, 5931.7275, -4900.2886, 5931.922, -4901.9956, 5932.5264, -4907.9097, 5932.681, -4909.6143, 5933.155, -4915.6177, 5933.2686, -4917.3057, 5933.6094, -4923.4004, 5933.6836, -4925.0693, 5933.8896, -4931.2563, 5933.9263, -4932.9023, 5933.9956, -4939.183, 5934, -4940, 5934, -5012.121, 5934.0005, -5016.246, 5934.0005, -5024.638, 5934, -5028.8794, 5934, -5033.177, 5933.9995, -5037.4956, 5933.9995, -5041.8525, 5934, -5046.255, 5934, -5050.692, 5934.0005, -5055.164, 5934.0005, -5059.6865, 5934, -5064.2188, 5934, -5068.7983, 5933.9995, -5073.3853, 5934, -5078.0176, 5934, -5087.3706, 5934.0005, -5092.088, 5934.0005, -5092.1035, 5934, -5096.8394, 5934, -5120.9297, 5933.9995, -5125.7974, 5934, -5130.699, 5934, -5130.714, 5933.9995, -5135.62, 5934, -5140.559, 5934, -5190.7383, 5933.9995, -5195.7974, 5934, -5200.877, 5934, -5277.2183, 5934.0005, -5282.2744, 5934.0005, -5282.289, 5934, -5287.3286, 5934, -5317.364, 5933.9995, -5322.303, 5934, -5327.2397, 5934, -5880, 5786, -5880, 5786, -5327.2544, 5785.9995, -5322.318, 5785.9995, -5322.303, 5786, -5317.349, 5786, -5287.3213, 5786.0005, -5282.2744, 5786, -5277.233, 5786, -5200.8916, 5785.9995, -5195.812, 5785.9995, -5195.7974, 5786, -5190.7236, 5786, -5140.5737, 5785.9995, -5135.635, 5785.9995, -5135.62, 5786, -5130.699, 5785.9995, -5125.812, 5785.9995, -5125.7974, 5786, -5120.915, 5786, -5096.8315, 5786.0005, -5092.088, 5786, -5087.386, 5786, -5078.033, 5785.9995, -5073.401, 5785.9995, -5073.3853, 5786, -5068.7827, 5786, -5064.211, 5786.0005, -5059.671, 5786.0005, -5055.1807, 5786, -5050.7085, 5786, -5046.2715, 5785.9995, -5041.869, 5785.9995, -5037.4873, 5786, -5033.16, 5786, -5028.871, 5786.0005, -5024.6216, 5786.0005, -5016.2637, 5786, -5012.1387, 5786, -4940.408, 5785.9443, -4935.36, 5785.7935, -4930.83, 5785.5464, -4926.414, 5785.2065, -4922.1074, 5784.7764, -4917.8994, 5784.2593, -4913.785, 5783.658, -4909.7656, 5782.9746, -4905.8325, 5782.2124, -4901.986, 5781.37, -4898.2124, 5780.453, -4894.5137, 5779.4595, -4890.883, 5778.3906, -4887.3076, 5777.249, -4883.7964, 5776.032, -4880.3315, 5774.743, -4876.917, 5773.383, -4873.551, 5771.9463, -4870.2197, 5770.4355, -4866.922, 5768.852, -4863.6597, 5767.195, -4860.429, 5765.457, -4857.215, 5763.6455, -4854.0264, 5761.759, -4850.863, 5759.794, -4847.715, 5757.749, -4844.5806, 5755.6255, -4841.4595, 5753.425, -4838.3545, 5751.1396, -4835.2534, 5748.7813, -4832.1694, 5746.3438, -4829.096, 5743.821, -4826.0244, 5741.2236, -4822.965, 5738.546, -4819.912, 5735.784, -4816.8584, 5732.95, -4813.816, 5730.041, -4810.782, 5727.0557, -4807.753, 5723.9897, -4804.7246, 5720.8506, -4801.7, 5717.641, -4798.683, 5714.3584, -4795.6685, 5711.0103, -4792.6616, 5707.59, -4789.6553, 5704.0986, -4786.6484, 5700.55, -4783.6504, 5700, -4783.1943, 5700, -10000, 6300, -10000)
+
+[node name="@StaticBody2D@2664" type="StaticBody2D" parent="NorthDistrict" unique_id=969331969]
+z_index = 8
+position = Vector2(5000, -1920)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2671" type="StaticBody2D" parent="NorthDistrict" unique_id=666136040]
+z_index = 8
+position = Vector2(6100, -1920)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2678" type="StaticBody2D" parent="NorthDistrict" unique_id=1417726171]
+z_index = 8
+position = Vector2(5000, -1030)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2685" type="StaticBody2D" parent="NorthDistrict" unique_id=1903002582]
+z_index = 8
+position = Vector2(6100, -1030)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2692" type="StaticBody2D" parent="NorthDistrict" unique_id=613589384]
+z_index = 8
+position = Vector2(5050, -285)
+collision_mask = 0
+script = ExtResource("9_lua7j")
+
+[node name="@StaticBody2D@2699" type="StaticBody2D" parent="NorthDistrict" unique_id=2016219854]
+z_index = 8
+position = Vector2(6050, -285)
+collision_mask = 0
+script = ExtResource("9_lua7j")
 
 [node name="Gateway" type="Node2D" parent="." unique_id=326032073]
 z_index = 3
@@ -2096,7 +3380,7 @@ position = Vector2(6120, -4200)
 [node name="MountainConnector" type="Node2D" parent="Gateway" unique_id=490512799]
 z_index = 1
 z_as_relative = false
-material = SubResource("ShaderMaterial_qh7d3")
+material = SubResource("ShaderMaterial_5hs2n")
 script = ExtResource("17_80pjo")
 
 [node name="Bridge" type="Node2D" parent="." unique_id=1662090521]
@@ -2296,7 +3580,7 @@ script = ExtResource("18")
 
 [node name="RoadNetwork" type="Node2D" parent="." unique_id=240850062]
 z_index = 2
-material = SubResource("ShaderMaterial_qh7d3")
+material = SubResource("ShaderMaterial_5hs2n")
 script = ExtResource("4")
 provider_paths = Array[NodePath]([NodePath("../RoadLayout"), NodePath("../CobraNeighborhood")])
 signalized_junction_overrides = {
@@ -2311,7 +3595,7 @@ signalized_junction_overrides = {
 
 [node name="FreightRail" type="Node2D" parent="." unique_id=563481173]
 z_index = 14
-material = SubResource("ShaderMaterial_fuf2y")
+material = SubResource("ShaderMaterial_rkc0p")
 script = ExtResource("10")
 train_speed = 105.0
 freight_car_count = 6
@@ -2334,13 +3618,13 @@ motion_mode = 1
 platform_on_leave = 2
 platform_floor_layers = 0
 script = ExtResource("8")
-max_speed = 450.0
-acceleration = 900.0
+max_speed = 337.5
+acceleration = 675.0
 metadata/vehicle_safe_position = Vector2(565, 1990)
 metadata/vehicle_safe_transform = Transform2D(7.54979e-08, 1, -1, 7.54979e-08, 565, 1990)
 
 [node name="Collision" type="CollisionShape2D" parent="PlayerCar" unique_id=1577533096]
-shape = SubResource("RectangleShape2D_quwdk")
+shape = SubResource("RectangleShape2D_80pjo")
 
 [node name="Camera" type="Camera2D" parent="PlayerCar" unique_id=2000604091]
 zoom = Vector2(1.55, 1.55)
@@ -2350,7 +3634,7 @@ script = ExtResource("9")
 zoom_close = 1.55
 zoom_far = 1.25
 zoom_nitro = 1.15
-max_speed = 450.0
+max_speed = 337.5
 
 [node name="InteractArea" type="Area2D" parent="PlayerCar" unique_id=1395580109]
 collision_layer = 0
