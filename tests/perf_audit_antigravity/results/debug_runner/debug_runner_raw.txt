@@ -1,0 +1,57 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Configuracao: session_id=pilot_corrected, drive_s=60.0, extended=false, out_dir=tests/perf_audit_antigravity/results/pilot_corrected
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+Trafego de producao ativo: 57 veiculos modern_traffic preservados.
+Carro pessoal identificado: Monaliza em (20150.0, 20020.0)
+[1/6] Carro preparado e jogador embarcado (entradas armadas).
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+[2/6] Streaming MountainPass concluido em 25654 ms.
+DIAG_41_DEEP: pos=(6440.394, -4480.287) prog=480.21484375 spd=99.2 lane_spd=84.32 hard=<null> sweep=false block_timer=0.0
+  obs={ "hard": false, "yield": false, "person": <null> }
+  flow={ "target_speed": inf, "allowed_advance": inf }
+  hit_env=false collider=none
+[3/6] Iniciando travessia da ponte outbound com entradas reais...
+TRACK: wp=4/49 pos=(6120.051, -4196.093) spd=99.6 lead=none l_pos=(0.0, 0.0) prog=-1.0 dist=240.0 tgt_spd=150.0 l_spd=0.0 hb=false obs={  }
+TRACK: wp=7/49 pos=(6129.428, -4263.775) spd=152.5 lead=none l_pos=(0.0, 0.0) prog=-1.0 dist=240.0 tgt_spd=150.0 l_spd=0.0 hb=false obs={  }
+TRACK: wp=12/49 pos=(6157.454, -4334.14) spd=152.9 lead=none l_pos=(0.0, 0.0) prog=-1.0 dist=240.0 tgt_spd=150.0 l_spd=0.0 hb=false obs={  }
+TRACK: wp=16/49 pos=(6203.104, -4394.58) spd=153.2 lead=none l_pos=(0.0, 0.0) prog=-1.0 dist=240.0 tgt_spd=150.0 l_spd=0.0 hb=false obs={  }
+TRACK: wp=20/49 pos=(6263.314, -4440.462) spd=153.6 lead=none l_pos=(0.0, 0.0) prog=-1.0 dist=240.0 tgt_spd=150.0 l_spd=0.0 hb=false obs={  }
+TRACK: wp=28/49 pos=(6313.566, -4457.259) spd=89.3 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=128.8 tgt_spd=85.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6344.956, -4461.661) spd=50.2 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=97.1 tgt_spd=50.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+TRACK: wp=28/49 pos=(6354.038, -4462.935) spd=8.8 lead=HarborTraffic_41 l_pos=(6440.394, -4480.287) prog=480.2 dist=87.9 tgt_spd=0.0 l_spd=84.3 hb=false obs={ "hard": false, "yield": false, "person": <null> }
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/perf_audit_antigravity/benchmark_session.gd:90)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+

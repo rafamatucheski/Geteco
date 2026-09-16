@@ -1,0 +1,46 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+=== TESTANDO CONDUTOR AUTOMATIZADO COM ENTRADAS REAIS DO JOGO ===
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+  [OK] Tr├ífego e colis├Áes de produ├º├úo preservados intactos.
+  [OK] Carro pessoal identificado: Monaliza em (20150.0, 20020.0)
+  [OK] Jogador embarcado e controles armados.
+  Aguardando prontid├úo do streaming...
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+  Iniciando condu├º├úo com a├º├Áes reais (move_up, move_left, move_right, move_down)...
+  ESTADO INICIAL: unlocked=true, driven=true, armed=true, pos=(6120.0, -4100.0), phys=true, vis=true, mode=0
+  FORCA: drive_force=0.362, holding=false, can_move_north=true, accel=1380.0
+    FRAME 1: pos=(6120.0, -4100.0), vel=(0.0, 0.0), g_mov=(0.0, 0.0), angle_diff=0.00
+    FRAME 31: pos=(6120.0, -4148.667), vel=(-0.000007, -166.1182), g_mov=(0.0, -1.0), angle_diff=0.00
+    FRAME 1: pos=(6120.0, -4162.265), vel=(-0.000007, -164.3339), g_mov=(0.0, 0.0), angle_diff=0.01
+    FRAME 1: pos=(6120.0, -4181.177), vel=(-0.000007, -158.0976), g_mov=(0.0, 0.0), angle_diff=0.04
+    FRAME 1: pos=(6120.0, -4200.142), vel=(-0.000007, -161.2294), g_mov=(0.0, 0.0), angle_diff=0.10
+    FRAME 1: pos=(6120.338, -4219.095), vel=(5.504915, -162.088), g_mov=(0.0, 0.0), angle_diff=0.14
+=== RESULTADO DO TESTE DE CONDUCAO REAL: APROVADO ===
+ERROR: 40 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+ERROR: 44 RID allocations of type 'N10RendererRD14TextureStorage7TextureE' were leaked at exit.
+ERROR: 16 RID allocations of type 'N10RendererRD11MeshStorage4MeshE' were leaked at exit.
+ERROR: 1 RID allocations of type 'P11GodotArea2D' were leaked at exit.
+ERROR: 2 RID allocations of type 'P11GodotBody2D' were leaked at exit.
+ERROR: 2 RID allocations of type 'P12GodotShape2D' were leaked at exit.
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/perf_audit_antigravity/test_real_input_driving.gd:26)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 44 RIDs of type "Texture" were leaked.
+WARNING: 27 RIDs of type "CanvasItem" were leaked.
+   at: finalize (servers/rendering/rendering_device.cpp:8900)
+WARNING: 181 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+ERROR: 11 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+   at: cleanup (core/object/object.cpp:2536)
+

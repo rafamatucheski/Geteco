@@ -482,14 +482,17 @@ func _advance_gait(travelled: float, delta: float, moving: bool, sprinting: bool
 	if is_instance_valid(interior_presentation):
 		pixels_per_unit = interior_presentation.pixels_per_rig_unit(direction)
 	var run := move_toward(_sprint_weight, 1.0 if sprinting else 0.0, delta * 4.5)
-	var stride := lerpf(0.22, 0.29, run)
+	# Stride length must grow with speed, not just cadence. At the old 0.29 the
+	# sprint's ~3.3x speed increase over walking was almost entirely absorbed
+	# by faster leg-cycling instead of longer strides (legs looked sped-up).
+	var stride := lerpf(0.22, 0.34, run)
 	var support_fraction := lerpf(0.5, 0.34, run)
 	walk_clock = fposmod(walk_clock + travelled * TAU / maxf(2.0 * stride * pixels_per_unit / support_fraction, 0.001), TAU)
 
 func _update_locomotion(delta: float, moving: bool, sprinting: bool) -> void:
 	_move_weight = move_toward(_move_weight, 1.0 if moving else 0.0, delta * 7.0)
 	_sprint_weight = move_toward(_sprint_weight, 1.0 if moving and sprinting else 0.0, delta * 4.5)
-	var stride: float = lerpf(0.22, 0.29, _sprint_weight) * _move_weight
+	var stride: float = lerpf(0.22, 0.34, _sprint_weight) * _move_weight
 	var lift: float = lerpf(0.065, 0.32, _sprint_weight) * _move_weight
 	# Rise over the supporting leg at mid-stance; sink at the wider contact
 	# pose. Constant low hips made the walk read as a permanent crouch.
@@ -861,7 +864,7 @@ func _wasted() -> void:
 	
 	var wm = get_node_or_null("/root/WantedManager")
 	if wm:
-		wm.dismiss_all_police()
+		wm.stand_down_police()
 	
 	var flash := CanvasLayer.new()
 	var rect := ColorRect.new()
@@ -930,7 +933,7 @@ func arrest_and_respawn() -> void:
 
 	var wm = get_node_or_null("/root/WantedManager")
 	if wm:
-		wm.dismiss_all_police()
+		wm.stand_down_police()
 
 	await get_tree().create_timer(2.2).timeout
 	if is_instance_valid(flash):
@@ -986,6 +989,9 @@ func _respawn_at_hospital(recovery_position: Variant = null) -> void:
 		camera.make_current()
 		camera.reset_smoothing()
 	_refresh_weapon_ui()
+	var wm = get_node_or_null("/root/WantedManager")
+	if wm:
+		wm.dismiss_all_police()
 
 	# Limpa a mira de qualquer gangster que ainda estivesse com "combat_target"
 	# travado no jogador antes de morrer. Sem isso, ao reaparecer no hospital

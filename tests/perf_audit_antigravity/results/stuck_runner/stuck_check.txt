@@ -1,0 +1,30 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Configuracao: session_id=pilot_corrected, drive_s=60.0, extended=false, out_dir=tests/perf_audit_antigravity/results/pilot_corrected
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+Trafego de producao ativo: 57 veiculos modern_traffic preservados.
+Carro pessoal identificado: Monaliza em (20150.0, 20020.0)
+[1/6] Carro preparado e jogador embarcado (entradas armadas).
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+[2/6] Streaming MountainPass concluido em 21712 ms.
+[3/6] Iniciando travessia da ponte outbound com entradas reais...
+SLOW/STUCK: pos=(6120.0, -4183.698) vel=(0.0, 0.0) angle_diff=0.08 cols=[]
+SLOW/STUCK: pos=(6363.485, -4474.864) vel=(-0.001264, -0.008903) angle_diff=0.07 cols=["HarborTraffic_41"]
+SLOW/STUCK: pos=(6363.484, -4474.864) vel=(0.000598, 0.004167) angle_diff=0.07 cols=["HarborTraffic_41"]
+SLOW/STUCK: pos=(6363.484, -4474.864) vel=(0.000585, 0.00407) angle_diff=0.07 cols=["HarborTraffic_41"]
+SLOW/STUCK: pos=(6363.484, -4474.864) vel=(-0.000268, -0.001858) angle_diff=0.07 cols=["HarborTraffic_41"]
+SLOW/STUCK: pos=(6363.485, -4474.864) vel=(-0.001389, -0.009786) angle_diff=0.07 cols=["HarborTraffic_41"]
+SLOW/STUCK: pos=(6363.484, -4474.864) vel=(0.000019, 0.00014) angle_diff=0.07 cols=["HarborTraffic_41"]
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/perf_audit_antigravity/benchmark_session.gd:90)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+
+--- TIMEOUT: processo (pid=30828) e filhos diretos finalizados apÃ³s 60s sem retornar ---

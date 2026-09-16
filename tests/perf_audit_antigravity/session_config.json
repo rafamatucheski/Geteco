@@ -1,0 +1,6 @@
+﻿{
+  "session_id": "pilot_corrected",
+  "active_drive_seconds": 60.0,
+  "extended": false,
+  "out_dir": "tests/perf_audit_antigravity/results/pilot_corrected"
+}

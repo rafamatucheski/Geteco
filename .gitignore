@@ -22,3 +22,10 @@ __pycache__/
 # regeneravel em segundos e pesada (30 arquivos de ~44 KB). O relatorio de texto
 # ao lado deles fica versionado.
 docs/measurements/engine_layers/
+
+# Cache de shader (Vulkan) dentro de app_userdata/ capturado por auditorias de
+# performance que rodam com --appdata isolado (tests/perf_audit_*/results/).
+# E lixo de engine regeneravel, igual ao .godot/ acima -- e em Windows os
+# nomes de arquivo do cache (hash + .vulkan.cache) somados ao caminho aninhado
+# passam do limite de 260 caracteres do git, quebrando o commit.
+shader_cache/

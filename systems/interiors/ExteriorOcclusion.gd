@@ -80,22 +80,35 @@ func _process(_delta: float) -> void:
  for body in bodies:
   if not is_instance_valid(body) or not body.is_visible_in_tree(): continue
   var sprite: Sprite2D
-  for key in ["sprite_3d_display", "presentation_sprite", "visual", "sprite_3d"]:
+  for key in ["sprite_3d_display", "presentation_sprite", "visual", "sprite_3d", "sprite", "presentation"]:
    sprite = body.get(key) as Sprite2D
    if sprite != null: break
   if sprite == null or not sprite.is_visible_in_tree(): continue
   var rect := sprite.global_transform * sprite.get_rect()
+  if body is CharacterBody2D:
+   if body.is_in_group("player") or body.is_in_group("pedestrian") or body.get("sprite_3d_display") != null:
+    rect.position.y = minf(rect.position.y, body.global_position.y - 42.0)
+    rect.end.y = maxf(rect.end.y, body.global_position.y + 8.0)
+    rect.position.x = minf(rect.position.x, body.global_position.x - 20.0)
+    rect.end.x = maxf(rect.end.x, body.global_position.x + 20.0)
+   else:
+    rect = rect.grow(20.0)
   if not rect.intersects(covered): continue
-  var item := Vector4(rect.position.x,rect.position.y,rect.end.x,rect.end.y)
-  if body.global_position.y < global_position.y + front_y:
+  var item := Vector4(rect.position.x, rect.position.y, rect.end.x, rect.end.y)
+  var split_y := global_position.y + front_y
+  if rect.position.y < split_y and body.global_position.y < split_y + 12.0:
    if behind.size() < 16: behind.append(item)
-  elif ahead.size() < 16: ahead.append(item)
+  elif body.global_position.y >= split_y:
+   if ahead.size() < 16: ahead.append(item)
+ var was_visible := overlay.visible
  overlay.visible = not behind.is_empty()
+ if overlay.visible and not was_visible and painter.is_valid():
+  overlay.queue_redraw()
  if not painter.is_valid(): (overlay as Sprite2D).texture = source.texture
- overlay.material.set_shader_parameter("behind_count",behind.size())
- overlay.material.set_shader_parameter("ahead_count",ahead.size())
+ overlay.material.set_shader_parameter("behind_count", behind.size())
+ overlay.material.set_shader_parameter("ahead_count", ahead.size())
  behind.resize(16)
  ahead.resize(16)
- overlay.material.set_shader_parameter("behind",behind)
- overlay.material.set_shader_parameter("ahead",ahead)
+ overlay.material.set_shader_parameter("behind", behind)
+ overlay.material.set_shader_parameter("ahead", ahead)
  if bodies.is_empty(): set_process(false)

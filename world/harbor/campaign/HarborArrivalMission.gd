@@ -126,6 +126,9 @@ func start_or_resume() -> void:
 	# older saves that do not contain the arrival flag yet.
 	if world.get("loaded_from_save") == true:
 		campaign.call("set_campaign_flag", &"harbor_arrival_seen", true)
+		if is_instance_valid(player):
+			player.show()
+			_unlock_player()
 	campaign.call("set_campaign_flag", &"harbor_campaign_active", true)
 	garage.call("set_campaign_contact_enabled", not _flag("harbor_maciota_met"))
 	garage.call("set_mission_board_unlocked", _flag("harbor_maciota_met"))

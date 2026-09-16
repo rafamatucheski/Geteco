@@ -1,0 +1,40 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Configuracao: session_id=B1, drive_s=60.0, extended=false, out_dir=tests/perf_audit_antigravity/results/session_B1
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+[1/6] Carro preparado e jogador embarcado.
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+[2/6] Streaming MountainPass: 20363 ms em 193 frames. Spikes >16ms: 107, >33ms: 51, >50ms: 46, >100ms: 41, max: 1712.43 ms
+[4/6] Iniciando conducao ativa na montanha (meta: >= 60.0 s)...
+[3/6] Travessia da fronteira concluida. Quadro de apresentacao: 16.66 ms, regiao: mountain
+  Conducao ativa: 60.0s, 3602 frames, FPS medio: 60.0, p50: 16.67 ms, p95: 16.73 ms, p99: 16.89 ms, pior: 17.36 ms
+  Spikes ativos: >16ms=1386, >33ms=0, >50ms=0, >100ms=0
+[5/6] Retornando pela ponte inbound ao Harbor...
+  Retorno concluido: posicao=(5800.039, -4100.049), current_region=harbor
+[6/6] Testando REENTRADA na Mountain Pass...
+  Reentrada concluida: quadro de reentrada: 33.27 ms, regiao=mountain
+  Contagem de nos MountainPass: inicial=17, final=17
+=== SESSAO B1: APROVADA (exit_code=0) ===
+ERROR: 2 RID allocations of type 'P11GodotBody2D' were leaked at exit.
+ERROR: 2 RID allocations of type 'P12GodotShape2D' were leaked at exit.
+ERROR: 16 RID allocations of type 'N10RendererRD11MeshStorage4MeshE' were leaked at exit.
+ERROR: 45 RID allocations of type 'N10RendererRD14TextureStorage7TextureE' were leaked at exit.
+ERROR: 39 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'P11GodotArea2D' were leaked at exit.
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+       [0] _run (res://tests/perf_audit_antigravity/benchmark_session.gd:57)
+   GDScript backtrace (most recent call first):
+WARNING: 45 RIDs of type "Texture" were leaked.
+   at: finalize (servers/rendering/rendering_device.cpp:8900)
+WARNING: 182 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+WARNING: 27 RIDs of type "CanvasItem" were leaked.
+ERROR: 11 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+

@@ -1,0 +1,136 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Configuracao: session_id=pilot_corrected, drive_s=60.0, extended=false, out_dir=tests/perf_audit_antigravity/results/pilot_corrected
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+Trafego de producao ativo: 57 veiculos modern_traffic preservados.
+Carro pessoal identificado: Monaliza em (20150.0, 20020.0)
+[1/6] Carro preparado e jogador embarcado (entradas armadas).
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+[2/6] Streaming MountainPass concluido em 23326 ms.
+[3/6] Iniciando travessia da ponte outbound com entradas reais...
+TRACK: wp=1/49 pos=(6079.752, -4168.431) speed=107.2 lead=none dist=220.0 spd=150.0
+TRACK: wp=3/49 pos=(6117.564, -4182.405) speed=82.4 lead=none dist=220.0 spd=150.0
+TRACK: wp=4/49 pos=(6144.919, -4212.092) speed=79.2 lead=none dist=220.0 spd=150.0
+TRACK: wp=8/49 pos=(6159.225, -4270.89) speed=149.6 lead=none dist=220.0 spd=150.0
+TRACK: wp=12/49 pos=(6173.756, -4344.482) speed=157.2 lead=none dist=220.0 spd=150.0
+TRACK: wp=17/49 pos=(6217.997, -4405.51) speed=153.1 lead=none dist=220.0 spd=150.0
+TRACK: wp=21/49 pos=(6280.261, -4448.413) speed=151.3 lead=none dist=220.0 spd=150.0
+TRACK: wp=23/49 pos=(6317.549, -4463.9) speed=64.0 lead=HarborTraffic_41 dist=121.8 spd=65.0
+TRACK: wp=24/49 pos=(6329.592, -4467.542) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.547) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.552) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.557) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.562) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.566) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.571) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.576) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.581) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.586) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.591) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.596) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.601) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.605) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.61) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.615) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.62) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.625) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.63) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.635) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.64) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.645) speed=0.0 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.649) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.654) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.659) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.664) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.669) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.674) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.592, -4467.679) speed=0.0 lead=HarborTraffic_41 dist=109.8 spd=0.0
+TRACK: wp=24/49 pos=(6329.493, -4467.656) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.411, -4467.635) speed=6.3 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.318, -4467.611) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.428, -4467.643) speed=6.3 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.345, -4467.619) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.467, -4467.65) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.389, -4467.63) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=65.0
+TRACK: wp=24/49 pos=(6329.304, -4467.608) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.412, -4467.64) speed=6.3 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.319, -4467.616) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.426, -4467.647) speed=6.3 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.333, -4467.623) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.441, -4467.654) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.356, -4467.63) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=65.0
+TRACK: wp=24/49 pos=(6329.477, -4467.662) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.393, -4467.638) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.3, -4467.61) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.408, -4467.638) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.315, -4467.61) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.422, -4467.64) speed=6.3 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.33, -4467.616) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.437, -4467.647) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.344, -4467.623) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.452, -4467.654) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.359, -4467.63) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=65.0
+TRACK: wp=24/49 pos=(6329.467, -4467.662) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.38, -4467.637) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.479, -4467.666) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.381, -4467.638) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.281, -4467.611) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.381, -4467.639) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.281, -4467.611) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.639) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.281, -4467.612) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.64) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.281, -4467.612) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.379, -4467.64) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.281, -4467.613) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.379, -4467.641) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.281, -4467.613) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.642) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=65.0
+TRACK: wp=24/49 pos=(6329.281, -4467.614) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.642) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=65.0
+TRACK: wp=24/49 pos=(6329.28, -4467.614) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.643) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.28, -4467.615) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.643) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.279, -4467.615) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.644) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.279, -4467.616) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.38, -4467.644) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.278, -4467.616) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.379, -4467.645) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.478, -4467.672) speed=6.3 lead=HarborTraffic_41 dist=109.9 spd=0.0
+TRACK: wp=24/49 pos=(6329.379, -4467.645) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.28, -4467.618) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.379, -4467.646) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.28, -4467.618) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.379, -4467.646) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+TRACK: wp=24/49 pos=(6329.28, -4467.619) speed=6.2 lead=HarborTraffic_41 dist=110.1 spd=65.0
+TRACK: wp=24/49 pos=(6329.379, -4467.646) speed=6.2 lead=HarborTraffic_41 dist=110.0 spd=0.0
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+       [0] _run (res://tests/perf_audit_antigravity/benchmark_session.gd:90)
+   GDScript backtrace (most recent call first):
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+

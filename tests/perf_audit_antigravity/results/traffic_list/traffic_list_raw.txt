@@ -1,0 +1,25 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+Configuracao: session_id=pilot_corrected, drive_s=60.0, extended=false, out_dir=tests/perf_audit_antigravity/results/pilot_corrected
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+Trafego de producao ativo: 57 veiculos modern_traffic preservados.
+Carro pessoal identificado: Monaliza em (20150.0, 20020.0)
+[1/6] Carro preparado e jogador embarcado (entradas armadas).
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+[2/6] Streaming MountainPass concluido em 25337 ms.
+[3/6] Iniciando travessia da ponte outbound com entradas reais...
+  TRAFEGO NA PONTE: HarborTraffic_28 pos=(5902.0, -3805.062) rot=1.57 p=HarborTraffic_28_Follow
+  TRAFEGO NA PONTE: HarborTraffic_41 pos=(6439.53, -4480.275) rot=-0.01 p=HarborTraffic_41_Follow
+  TRAFEGO NA PONTE: HarborTraffic_40 pos=(6987.616, -4607.579) rot=-3.05 p=HarborTraffic_40_Follow
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://tests/perf_audit_antigravity/benchmark_session.gd:90)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+

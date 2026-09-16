@@ -4,7 +4,7 @@ extends Node
 const HARBOR := "res://world/harbor/HarborGame.tscn"
 const MOUNTAIN := "res://world/mountain_pass/MountainPass.tscn"
 const VEHICLE_SCRIPTS := [
-	"res://PlayerCar.gd", "res://prototypes/living_cast/HarborCoupe.gd",
+	"res://characters/PlayerCar.gd", "res://prototypes/living_cast/HarborCoupe.gd",
 	"res://world/mountain_pass/MountainSUV.gd",
 	"res://world/mountain_pass/ArcticJeep.gd",
 	"res://world/mountain_pass/MountainPickup.gd",
@@ -89,6 +89,9 @@ func finish_arrival(scene: Node) -> void:
 			var old_return: Array = pending_world.get("exterior_return", [7350, 730])
 			pending_world.exterior_return = [old_return[0] + stream.MOUNTAIN_OFFSET.x, old_return[1] + stream.MOUNTAIN_OFFSET.y]
 			pending_world.coordinates_version = 2
+		player.remove_meta("north_access_lower")
+		player.show()
+		player.reset_physics_interpolation()
 		_restore_saved_vehicle(scene, player)
 		stream.mountain.restore_region_interior(player, pending_world)
 		pending_world.clear()

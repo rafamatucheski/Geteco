@@ -78,12 +78,21 @@ func _setup_service() -> void:
 		passengers.append(person)
 	var state := get_node("/root/CampaignState")
 	var saves := get_node("/root/SaveManager")
-	_first_arrival = not saves.has_pending_save() and not state.has_campaign_flag(&"harbor_arrival_seen")
+	var travel := get_node_or_null("/root/RegionTravel")
+	var is_save: bool = (saves != null and saves.has_pending_save()) \
+		or (get_parent() != null and bool(get_parent().get("loaded_from_save"))) \
+		or (travel != null and not travel.pending_world.is_empty())
+	_first_arrival = not is_save and not state.has_campaign_flag(&"harbor_arrival_seen")
 	if not _first_arrival:
 		_phase = "unload"
 
 func prepare_player(actor: CharacterBody2D) -> void:
-	if not _first_arrival:
+	var travel := get_node_or_null("/root/RegionTravel")
+	var is_save: bool = (get_parent() != null and bool(get_parent().get("loaded_from_save"))) \
+		or (travel != null and not travel.pending_world.is_empty())
+	if not _first_arrival or is_save:
+		if is_instance_valid(actor):
+			actor.show()
 		return
 	_actor = actor
 	_actor.hide()
