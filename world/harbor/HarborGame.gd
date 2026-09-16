@@ -53,6 +53,7 @@ func _start_gameplay() -> void:
 	await batch.checkpoint(get_tree())
 	var soundscape := preload("res://world/harbor/HarborSoundscape.gd").new()
 	soundscape.name = "HarborSoundscape"
+	add_child(soundscape)
 	if not loaded_from_save:
 		$ArrivalStop.prepare_player($Player)
 	else:

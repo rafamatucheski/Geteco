@@ -1,0 +1,54 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+ERROR: Can't create shader cache folder, no shader caching will happen: user://
+   at: RendererCompositorRD (servers/rendering/renderer_rd/renderer_compositor_rd.cpp:337)
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] run (res://tests/test_regional_soundscape.gd:41)
+DISTRICT_ROAD_SAFETY: crosswalks=115 rail_level=0 rail_grade_separated=8 errors=0 warnings=0
+BREAKWATER_AUDIT buildings=53 access_routes=55 issues=0
+PASS Base contínua e rajadas com término
+PASS Arquivos longos e sucata variada
+ROAD_LIGHTING_AUDIT roads=40 added=267 samples=2841 underlit_before=1740 underlit_after=0
+PASS Ferro-velho real ativa sucata por proximidade
+PASS Batidas usam variante diferente sem repetição imediata
+PASS Metal vem do pátio
+PASS Ambiente cede espaço à prensa sincronizada
+PASS Metal e mar não vazam no centro
+PASS Acesso terrestre ainda sem ondas
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+ERROR: Viewport Texture must be set to use it.
+   at: _err_print_viewport_not_set (scene/main/viewport.cpp:207)
+PASS Ondas audíveis sobre o mar na rodovia
+PASS Veículo real disponível para verificar o ouvinte
+PASS Mar acompanha o veículo com jogador oculto na cabine
+PASS Mar recua durante diálogo
+PASS Serra pré-carregada não toca vento na ponte
+ROAD_LIGHTING_AUDIT roads=4 added=41 samples=342 underlit_before=263 underlit_after=0
+PASS Neve calma usa brisa sem vendaval
+PASS Mar some ao entrar no interior da serra
+PASS Nevasca acrescenta camada de vento forte
+PASS Abrigo abafa vento e cancela rajadas
+PASS Cabana fora do mapa não toca vozes da cidade
+FAIL Cabana mantém vento de neve abafado
+PASS Volta à cidade desliga vento mesmo com região suspensa
+PASS Mixer de neve liberado ao sair do mundo
+REGIONAL_AUDIO: 1 falhas
+ERROR: 2 RID allocations of type 'P11GodotBody2D' were leaked at exit.
+ERROR: 1 RID allocations of type 'P11GodotArea2D' were leaked at exit.
+ERROR: 2 RID allocations of type 'P12GodotShape2D' were leaked at exit.
+ERROR: 16 RID allocations of type 'N10RendererRD11MeshStorage4MeshE' were leaked at exit.
+ERROR: 47 RID allocations of type 'N10RendererRD14TextureStorage7TextureE' were leaked at exit.
+ERROR: 40 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+WARNING: 27 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 47 RIDs of type "Texture" were leaked.
+   at: finalize (servers/rendering/rendering_device.cpp:8900)
+WARNING: 187 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 11 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
