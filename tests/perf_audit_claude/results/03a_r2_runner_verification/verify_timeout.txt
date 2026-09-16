@@ -1,0 +1,2 @@
+﻿
+--- TIMEOUT: processo (pid=38080) e filhos diretos finalizados apÃ³s 3s sem retornar ---
