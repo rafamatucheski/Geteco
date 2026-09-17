@@ -1,4 +1,3 @@
-class_name MountainPass
 extends Node2D
 
 ## MountainPass: Região 2 - Montanha, Floresta & Cume Congelado

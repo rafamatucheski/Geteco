@@ -1,4 +1,3 @@
-class_name MountainSkiArea
 extends Node2D
 
 const LAYOUT := preload("res://world/mountain_pass/MountainSkiLayout.gd")

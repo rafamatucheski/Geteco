@@ -1,4 +1,3 @@
-class_name MountainSceneryBuilder
 extends RefCounted
 
 ## Construtor de Cenografia e Detalhamento da Montanha (MountainPass):

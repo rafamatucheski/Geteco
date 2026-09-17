@@ -1,4 +1,3 @@
-class_name MountainPassRoad
 extends Node2D
 const BRIDGE_SURFACE = preload("res://geodata/roads/BridgeSurfaceStyle.gd")
 
