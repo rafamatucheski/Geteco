@@ -176,11 +176,31 @@ func _build_buildings(batch: RefCounted) -> void:
 			building.add_child(sign)
 		await batch.checkpoint(get_tree())
 
+## GETECO-PERF: os 37 modelos aqui embaixo eram construídos ao vivo (SubViewport
+## + Camera3D + malha 3D) toda vez que o Porto Sul carregava -- medido pela
+## rodada 03A como o maior bloco indivisível do world_build (22-28s). São
+## 100% determinísticos dado (kind, tamanho, variant), sem depender de save
+## nem RNG, então tools/bake_south_port_models.gd pré-renderiza cada um numa
+## textura + extrai a geometria (pontos de içamento da grua, contorno de
+## colisão dos prédios) uma única vez. Em tempo real, se existir bake pra este
+## label, HarborPortModelBaked.gd só posiciona a textura -- sem 3D nenhum.
+## Sem bake (asset ainda não gerado, ou um novo item adicionado depois do
+## último bake), cai de volta no caminho ao vivo, idêntico a antes.
+const MODEL_VIEW_BAKED := preload("res://world/harbor/HarborPortModelBaked.gd")
+
 func _model(kind: String,rect: Rect2,variant: int,label_text: String) -> Node2D:
-	var view := MODEL_VIEW.new()
-	view.name = label_text
-	add_child(view)
-	view.setup(kind,rect,variant)
+	var view: Node2D
+	if MODEL_VIEW_BAKED.has_data(label_text):
+		var baked := MODEL_VIEW_BAKED.new()
+		baked.name = label_text
+		add_child(baked)
+		baked.setup(kind,rect,label_text)
+		view = baked
+	else:
+		view = MODEL_VIEW.new()
+		view.name = label_text
+		add_child(view)
+		view.setup(kind,rect,variant)
 	model_views.append(view)
 	return view
 

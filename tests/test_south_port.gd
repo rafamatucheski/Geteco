@@ -16,13 +16,25 @@ func _run() -> void:
 	var port: Node2D = scene.get_node("SouthPort")
 	var player: CharacterBody2D = scene.get_node("Player")
 	var car: CharacterBody2D = scene.get_node("PlayerCar")
+	# GETECO-PERF: view.model pode ser HarborPortModel3D (Node3D, malha real ao
+	# vivo) ou HarborPortModelBaked.BakedModelData (RefCounted só com
+	# height/hoist_start/hoist_end) -- ver world/harbor/HarborPortModelBaked.gd.
+	# Os itens já pré-renderizados por tools/bake_south_port_models.gd não têm
+	# viewport_3d/camera_3d/mesh_stats; a verificação de recorte/malha real só
+	# se aplica ao caminho ao vivo (que continua existindo como fallback para
+	# qualquer item sem bake).
 	var model_meshes := 0
 	var model_pixels := 0
+	var baked_views := 0
 	for view in port.model_views:
 		var size: Vector2 = view.footprint.size
 		var first: Vector2 = view.project_floor(Vector2(-size.x/40.0,-size.y/32.0))
 		var last: Vector2 = view.project_floor(Vector2(size.x/40.0,size.y/32.0))
 		_check((last-first).distance_to(size) < .1,"3D floor matches world footprint: "+view.name)
+		var is_baked: bool = view.get_script() == preload("res://world/harbor/HarborPortModelBaked.gd")
+		if is_baked:
+			baked_views += 1
+			continue
 		_check(view.model.mesh_stats.after_count > 0,"Real 3D geometry exists: "+view.name)
 		_check(view.viewport_3d.render_target_update_mode != SubViewport.UPDATE_ALWAYS,"Static 3D renders are cached")
 		model_meshes += view.model.mesh_stats.after_count
@@ -34,6 +46,7 @@ func _run() -> void:
 				var screen: Vector2 = view.camera_3d.unproject_position(mesh.to_global(bounds.get_endpoint(corner)))
 				if not Rect2(Vector2.ZERO,Vector2(view.viewport_3d.size)).grow(-2).has_point(screen): fitted = false
 		_check(fitted,"Whole 3D model fits cached image without clipping: "+view.name)
+	print("PORT_3D_BAKED baked_views=%d live_views=%d" % [baked_views, port.model_views.size()-baked_views])
 	_check(port.model_views.size() >= 30,"Port buildings, cargo, cranes and supplies use 3D models")
 	_check(model_meshes < 450,"Port geometry remains batched instead of one draw per corrugation")
 	print("PORT_3D views=%d batched_meshes=%d texture_pixels=%d" % [port.model_views.size(),model_meshes,model_pixels])
@@ -196,8 +209,8 @@ func _run() -> void:
 		camera.position = Vector2(4780,4750)
 		camera.zoom = Vector2.ONE*.46
 		await _capture("D:/geteco/artifacts/south-port-yard.png")
-		port.get_node("CargoStack3D00").viewport_3d.get_texture().get_image().save_png("D:/geteco/artifacts/south-port-container-model.png")
-		port.get_node("QuaysideCrane3D0").viewport_3d.get_texture().get_image().save_png("D:/geteco/artifacts/south-port-crane-model.png")
+		_export_model_image(port.get_node("CargoStack3D00"), "D:/geteco/artifacts/south-port-container-model.png")
+		_export_model_image(port.get_node("QuaysideCrane3D0"), "D:/geteco/artifacts/south-port-crane-model.png")
 		camera.position = Vector2(4200,3970)
 		camera.zoom = Vector2.ONE*1.4
 		await _capture("D:/geteco/artifacts/south-port-3d-detail.png")
@@ -315,3 +328,12 @@ func _capture(path: String) -> void:
 	for i in 8: await process_frame
 	await RenderingServer.frame_post_draw
 	_check(root.get_texture().get_image().save_png(path) == OK,"Screenshot saved: "+path)
+
+## GETECO-PERF: se o item já foi pré-renderizado (HarborPortModelBaked), não
+## existe viewport_3d ao vivo -- exporta a textura já bakeada (mesma imagem
+## que o jogo realmente usa) em vez da renderização em tempo real.
+func _export_model_image(view: Node2D, path: String) -> void:
+	if view.get_script() == preload("res://world/harbor/HarborPortModelBaked.gd"):
+		_check(view.sprite_3d.texture.get_image().save_png(path) == OK,"Model image saved (baked): "+path)
+	else:
+		_check(view.viewport_3d.get_texture().get_image().save_png(path) == OK,"Model image saved (live): "+path)
