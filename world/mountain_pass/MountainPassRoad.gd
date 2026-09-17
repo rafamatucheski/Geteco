@@ -89,6 +89,22 @@ func _ready() -> void:
 	_precompute_road_draw_geometry()
 	queue_redraw()
 
+## Curve2D.sample_baked() a cada 8px, seguido de um append incondicional do
+## ponto final, deixa o último par de pontos quase idênticos sempre que
+## get_baked_length() não é múltiplo de 8 -- o segmento final some, vira
+## comprimento ~0, e o desenho da pista (draw_polyline/draw_colored_polygon
+## direto no CanvasItem nativo, sem passar pelo StaticCanvasGeometry
+## compartilhado) tenta triangular esse ponto degenerado e o Godot loga
+## "Invalid polygon data, triangulation failed." toda vez que a cena
+## redesenha (cada zoom/pan no editor). Mesma causa raiz do conserto em
+## StaticCanvasGeometry.gd, aplicada aqui na fonte (a amostragem), já que
+## esta pista desenha direto sem passar por aquele utilitário.
+const MIN_SAMPLED_SEGMENT := 0.05
+
+func _append_sampled_point(points: PackedVector2Array, point: Vector2) -> void:
+	if points.is_empty() or points[-1].distance_to(point) >= MIN_SAMPLED_SEGMENT:
+		points.append(point)
+
 func _build_curve() -> void:
 	curve = Curve2D.new()
 	curve.bake_interval = 8.0
@@ -107,8 +123,8 @@ func _build_curve() -> void:
 	
 	smooth_points.clear()
 	for distance in range(0, int(curve.get_baked_length()), 8):
-		smooth_points.append(curve.sample_baked(float(distance), true))
-	smooth_points.append(control_points[-1])
+		_append_sampled_point(smooth_points, curve.sample_baked(float(distance), true))
+	_append_sampled_point(smooth_points, control_points[-1])
 	winter_pocket_access = preload("res://world/mountain_pass/MountainVillageLayout.gd").winter_stop_access_curve(curve,1)
 
 	# Acesso Asfaltado do Resort Cume Branco
@@ -119,8 +135,8 @@ func _build_curve() -> void:
 	resort_curve.add_point(resort_access_points[2], Vector2(-50, 0), Vector2.ZERO)
 	resort_smooth_points.clear()
 	for distance in range(0, int(resort_curve.get_baked_length()), 8):
-		resort_smooth_points.append(resort_curve.sample_baked(float(distance), true))
-	resort_smooth_points.append(resort_access_points[-1])
+		_append_sampled_point(resort_smooth_points, resort_curve.sample_baked(float(distance), true))
+	_append_sampled_point(resort_smooth_points, resort_access_points[-1])
 
 	# Conector Pavimentado do Platô (Bunker <-> Resort)
 	summit_connector_curve = Curve2D.new()
@@ -130,8 +146,8 @@ func _build_curve() -> void:
 	summit_connector_curve.add_point(summit_connector_points[2], Vector2(-80, 0), Vector2.ZERO)
 	summit_connector_smooth_points.clear()
 	for distance in range(0, int(summit_connector_curve.get_baked_length()), 8):
-		summit_connector_smooth_points.append(summit_connector_curve.sample_baked(float(distance), true))
-	summit_connector_smooth_points.append(summit_connector_points[-1])
+		_append_sampled_point(summit_connector_smooth_points, summit_connector_curve.sample_baked(float(distance), true))
+	_append_sampled_point(summit_connector_smooth_points, summit_connector_points[-1])
 
 func _draw() -> void:
 	if smooth_points.size() < 2:
