@@ -11,6 +11,17 @@ var _tire_trail = preload("res://cars/VehicleTireTrail.gd").new()
 const VEHICLE_ATLAS: Texture2D = preload("res://assets/art/vehicle-atlas.png")
 const VEHICLE_DOOR_VISUAL := preload("res://cars/VehicleDoorVisual.gd")
 const MAX_LANE_ADVANCE_PER_FRAME := 14.0
+## Medido com tests/measure_harbor_performance.gd (bisecção real): tráfego
+## ambiente custava ~30-40 FPS o tempo todo dirigindo, porque "na tela" usa
+## uma margem generosa (260px) e todo carro nela roda advance_on_lane() --
+## raycasts de obstrução, sweep de física, negociação de cruzamento -- a
+## taxa cheia, mesmo o carro estando na periferia da tela, longe do jogador.
+## Perto do centro da câmera (onde o jogador realmente presta atenção) o
+## carro continua a taxa cheia; na tela mas fora desse raio cai pra um nível
+## intermediário -- mais devagar que taxa cheia, mais rápido que o 10 Hz já
+## usado pra fora da tela. Não muda nada dentro de advance_on_lane() em si.
+const NEAR_CENTER_RADIUS_PX := 520.0
+const MID_TIER_INTERVAL := 1.0 / 24.0
 const TRAFFIC_FLOW := preload("res://cars/traffic/TrafficFlowModel.gd")
 const TRAFFIC_SWEEP := preload("res://cars/traffic/TrafficBodySweep.gd")
 
@@ -1888,7 +1899,13 @@ func _process(delta: float) -> void:
 		smoke_emitter.emitting = health < 50 and on_screen
 	_remote_lane_elapsed += delta
 	var interval := minf(0.1, MAX_LANE_ADVANCE_PER_FRAME * 0.8 / maxf(speed, 1.0))
-	if not on_screen and not _emergency_yield_active and _remote_lane_elapsed < interval:
+	var near_center := false
+	if on_screen:
+		var viewport_rect := get_viewport().get_visible_rect()
+		near_center = viewport_rect.get_center().distance_to(get_canvas_transform() * global_position) < NEAR_CENTER_RADIUS_PX
+	if on_screen and not near_center:
+		interval = minf(interval, MID_TIER_INTERVAL)
+	if not near_center and not _emergency_yield_active and _remote_lane_elapsed < interval:
 		return
 	var motion_delta := _remote_lane_elapsed
 	_remote_lane_elapsed = 0.0
