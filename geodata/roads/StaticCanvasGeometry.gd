@@ -49,7 +49,28 @@ func draw_rect(rect: Rect2, color: Color, filled := true, width := -1.0, _aa := 
 		draw_rect(Rect2(rect.position+Vector2(-w*0.5,w*0.5),Vector2(w,maxf(0,rect.size.y-w))),color)
 		draw_rect(Rect2(Vector2(rect.end.x-w*0.5,rect.position.y+w*0.5),Vector2(w,maxf(0,rect.size.y-w))),color)
 
+## Pontos consecutivos quase idênticos (menos de MIN_SEGMENT_LENGTH de
+## distância) produzem segmentos/arestas de comprimento ~0 -- Geometry2D
+## (offset_polyline e triangulate_polygon) volta com um polígono inválido
+## pra esses casos e loga "Invalid polygon data, triangulation failed." em
+## vez de simplesmente ignorar o ponto redundante. Estradas amostradas por
+## Curve2D.sample_baked() (mountain_bridge_outbound/inbound, MountainPassRoad,
+## etc.) acumulam esses quase-duplicados nas transições de curvatura --
+## multiplicado por toda passada de material (calçada/meio-fio/asfalto) e
+## por cada vez que o editor redesenha a cena (todo zoom/pan), isso é o que
+## deixava o editor lento e a Saída cheia do mesmo erro repetido.
+const MIN_SEGMENT_LENGTH := 0.05
+
+func _deduplicate_consecutive(points: PackedVector2Array) -> PackedVector2Array:
+	if points.size() < 2: return points
+	var result := PackedVector2Array([points[0]])
+	for i in range(1, points.size()):
+		if points[i].distance_to(result[-1]) >= MIN_SEGMENT_LENGTH:
+			result.append(points[i])
+	return result
+
 func draw_line(a: Vector2,b: Vector2,color: Color,width := -1.0,_aa := false) -> void:
+	if a.distance_to(b) < MIN_SEGMENT_LENGTH: return
 	var normal := a.direction_to(b).orthogonal()*maxf(1,width)*0.5
 	draw_colored_polygon(PackedVector2Array([a+normal,b+normal,b-normal,a-normal]),color)
 
@@ -57,7 +78,9 @@ func draw_multiline(points: PackedVector2Array,color: Color,width := -1.0,aa := 
 	for i in range(0,points.size()-1,2): draw_line(points[i],points[i+1],color,width,aa)
 
 func draw_polyline(points: PackedVector2Array,color: Color,width := -1.0,_aa := false) -> void:
-	for polygon in Geometry2D.offset_polyline(points,maxf(1,width)*0.5,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT):
+	var clean := _deduplicate_consecutive(points)
+	if clean.size() < 2: return
+	for polygon in Geometry2D.offset_polyline(clean,maxf(1,width)*0.5,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT):
 		draw_colored_polygon(polygon,color)
 
 func draw_circle(center: Vector2,radius: float,color: Color,filled := true,width := -1.0,_aa := false) -> void:
@@ -69,10 +92,17 @@ func draw_circle(center: Vector2,radius: float,color: Color,filled := true,width
 		for i in count: draw_line(points[i],points[(i+1)%count],color,width)
 
 func draw_colored_polygon(polygon: PackedVector2Array,color: Color) -> void:
-	if polygon.size()<3: return
-	var indices := Geometry2D.triangulate_polygon(polygon)
+	var clean := _deduplicate_consecutive(polygon)
+	# Fecha o anel antes de checar o par inicial/final: sem isso, um polígono
+	# cujo último ponto for quase igual ao primeiro (comum em anéis gerados
+	# por offset_polyline) passa no dedup acima mas ainda chega com aresta
+	# de fechamento degenerada no triangulate_polygon.
+	if clean.size() >= 2 and clean[0].distance_to(clean[-1]) < MIN_SEGMENT_LENGTH:
+		clean.remove_at(clean.size() - 1)
+	if clean.size()<3: return
+	var indices := Geometry2D.triangulate_polygon(clean)
 	for i in range(0,indices.size(),3):
-		_triangle(PackedVector2Array([polygon[indices[i]],polygon[indices[i+1]],polygon[indices[i+2]]]),color)
+		_triangle(PackedVector2Array([clean[indices[i]],clean[indices[i+1]],clean[indices[i+2]]]),color)
 
 func _triangle(points: PackedVector2Array,color: Color) -> void:
 	var bounds := Rect2(points[0],Vector2.ZERO).expand(points[1]).expand(points[2])
