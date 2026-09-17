@@ -202,8 +202,16 @@ func _circle_polygon(center: Vector2, radius: float) -> PackedVector2Array:
 
 func _build_pavement() -> void:
 	# Boolean geometry is built once, never in the render/frame loop.
+	# END_BUTT (não END_ROUND): a ponta oeste (control_points[0], x=3000) é a
+	# emenda com o tabuleiro da ponte de HarborMountainConnector.gd, não uma
+	# extremidade de verdade -- uma tampa arredondada ali sobrava como um
+	# semicírculo cravado sobre a água, com cor errada (reportado pelo
+	# usuário). A ponta leste continua arredondada de verdade: ganha seu
+	# próprio círculo explícito (_circle_polygon(control_points[-1], 80.0)
+	# logo abaixo), fundido por cima, então trocar o cap da polilinha base
+	# não muda a aparência dela.
 	var parts: Array[PackedVector2Array] = []
-	parts.append_array(Geometry2D.offset_polyline(smooth_points, road_width * 0.5, Geometry2D.JOIN_ROUND, Geometry2D.END_ROUND))
+	parts.append_array(Geometry2D.offset_polyline(smooth_points, road_width * 0.5, Geometry2D.JOIN_ROUND, Geometry2D.END_BUTT))
 	for route in [resort_smooth_points, summit_connector_smooth_points]:
 		var strips := Geometry2D.offset_polyline(route, 70.0 if route == resort_smooth_points else 64.0, Geometry2D.JOIN_ROUND, Geometry2D.END_ROUND)
 		parts.append_array(strips)
