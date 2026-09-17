@@ -35,6 +35,10 @@ func build(owner_rail: Node2D) -> void:
 	body.collision_mask = 0
 	body.add_to_group("rail_safety_boundary")
 	add_child(body)
+	# get_graph_data() copia toda a malha viária a cada chamada; buscar uma
+	# vez fora dos loops de seção evita repetir essa cópia a cada 300px de
+	# trecho de montanha/baía (ver comentário em HarborRailLine._pillar_is_clear).
+	var cached_roads: Array = rail._fetch_roads_for_pillar_checks()
 	for section in rail.regional_route.sections:
 		if String(section.id) == "harbor": continue
 		var from: float = section.start
@@ -56,7 +60,7 @@ func build(owner_rail: Node2D) -> void:
 		while offset < float(section.end) - 140.0:
 			var point: Vector2 = rail._route.sample_baked(offset, true)
 			var rect := Rect2(point - Vector2(7, 9), Vector2(14, 18))
-			if rail._pillar_is_clear(rect):
+			if rail._pillar_is_clear(rect, cached_roads):
 				supports.append(rect)
 				var shape := CollisionShape2D.new()
 				shape.shape = RectangleShape2D.new()

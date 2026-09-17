@@ -227,9 +227,10 @@ func _create_track_safety_boundaries() -> void:
 		# The terminal's east bus lane passes beneath the viaduct. Its support
 		# belongs in the central island, outside the complete swept coach hull.
 		proposed[6] = Vector2(2005, 873)
+	var cached_roads := _fetch_roads_for_pillar_checks()
 	for point in proposed:
 		var rect := Rect2(point - Vector2(6, 9), Vector2(12, 18))
-		if not _pillar_is_clear(rect):
+		if not _pillar_is_clear(rect, cached_roads):
 			continue
 		_pillar_bounds.append(rect)
 		var collision := CollisionShape2D.new()
@@ -276,12 +277,20 @@ func _create_track_safety_boundaries() -> void:
 	STRUCTURE_3D.supports(shadow, _pillar_bounds)
 
 
-func _pillar_is_clear(rect: Rect2) -> bool:
+## get_graph_data() faz cópia profunda de todas as estradas a cada chamada
+## (Array.duplicate(true) sobre ~40 estradas com milhares de pontos somados).
+## Chamadores que testam vários pilares em sequência (o loop desta própria
+## classe e RegionalRailScenery.build(), que varre trechos de montanha/baía
+## a cada 300px) devem buscar essa lista UMA vez e passar em `cached_roads`;
+## sem isso, cada _pillar_is_clear custava ~6-8ms e o total passava de 300ms
+## num carregamento só, medido com tests/profile_load_time_0909.gd.
+func _pillar_is_clear(rect: Rect2, cached_roads: Variant = null) -> bool:
 	var network := get_node_or_null("../RoadNetwork")
 	if network == null:
 		network = get_node_or_null("../../RoadNetwork")
 	if network != null:
-		for road in network.get_graph_data().get("roads", []):
+		var roads: Array = cached_roads if cached_roads != null else network.get_graph_data().get("roads", [])
+		for road in roads:
 			var points: PackedVector2Array = road.points
 			for index in range(points.size() - 1):
 				var reserved := Rect2(network.to_global(points[index]), Vector2.ZERO).expand(network.to_global(points[index + 1])).grow(float(road.width) * 0.5 + 42.0)
@@ -296,6 +305,14 @@ func _pillar_is_clear(rect: Rect2) -> bool:
 			if (access.bounds as Rect2).grow(8).intersects(rect):
 				return false
 	return true
+
+## Busca a lista de estradas uma única vez para reutilizar em várias chamadas
+## de _pillar_is_clear (ver comentário acima).
+func _fetch_roads_for_pillar_checks() -> Array:
+	var network := get_node_or_null("../RoadNetwork")
+	if network == null:
+		network = get_node_or_null("../../RoadNetwork")
+	return network.get_graph_data().get("roads", []) if network != null else []
 
 
 func _create_portals() -> void:
