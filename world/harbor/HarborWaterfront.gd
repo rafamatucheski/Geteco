@@ -66,6 +66,20 @@ func _build_collisions() -> void:
 	for i in range(water_rects.size()):
 		_add_box(body, water_rects[i], "ChannelBoundary%d" % i)
 	for polygon in get_water_collision_polygons():
+		# get_water_collision_polygons() encadeia merge_polygons/clip_polygons/
+		# subtract_surfaces (boolean de verdade) -- de vez em quando uma peça
+		# sai autointersectante ou degenerada. Isso nunca aparecia rodando o
+		# jogo (forma de colisão não é desenhada em runtime) nem nestes testes
+		# por --script, só abrindo a cena de verdade no editor: o Godot
+		# desenha um contorno de toda CollisionPolygon2D automaticamente na
+		# viewport 2D, e é esse contorno nativo do editor que falhava ao
+		# tentar triangular a peça ruim ("Invalid polygon data" sem pilha de
+		# script nenhuma, porque quem desenha é o próprio editor, não este
+		# arquivo). Uma peça que não triangula também não serve como forma de
+		# colisão de verdade -- pular é mais seguro que salvá-la quebrada.
+		if Geometry2D.triangulate_polygon(polygon).is_empty():
+			push_warning("HarborWaterfront: descartando peça de colisão de água degenerada (%d pontos)" % polygon.size())
+			continue
 		var collision := CollisionPolygon2D.new()
 		collision.polygon = polygon
 		body.add_child(collision)

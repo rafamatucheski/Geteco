@@ -257,10 +257,19 @@ func _create_track_safety_boundaries() -> void:
 		shadow.z_as_relative = false
 		shadow.z_index = 3
 		add_child(shadow)
+	# Amostragem de curva a passo fixo: se _route tiver uma reversão apertada
+	# em algum trecho, dois pontos consecutivos podem sair quase idênticos.
+	# ViaductShadow._draw() chama draw_polyline() nativo (não passa pelo
+	# StaticCanvasGeometry compartilhado, que já tem esse filtro) -- e essa
+	# construção só roda com Engine.is_editor_hint() == true (linha 73 desta
+	# função), então nunca aparecia rodando o jogo nem nos testes por
+	# --script, só abrindo a cena de verdade no editor.
 	shadow.points = PackedVector2Array()
 	var distance := _visible_start
 	while distance <= _ramp_start:
-		shadow.points.append(_route.sample_baked(distance, true) + Vector2(11, 24))
+		var sampled := _route.sample_baked(distance, true) + Vector2(11, 24)
+		if shadow.points.is_empty() or shadow.points[-1].distance_to(sampled) >= 0.05:
+			shadow.points.append(sampled)
 		distance += 10.0
 	shadow.pillars = _pillar_bounds.duplicate()
 	shadow.queue_redraw()
