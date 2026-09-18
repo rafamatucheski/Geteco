@@ -19,9 +19,3 @@ static func draw_contacts(map: CanvasLayer) -> void:
 		var side := Vector2(0, 2).rotated(unit.global_rotation)
 		map.canvas.draw_circle(point + side, 1.7, Color("ef4355"))
 		map.canvas.draw_circle(point - side, 1.7, Color("448fff"))
-	for officer in map.get_tree().get_nodes_in_group("police_officer"):
-		if not is_instance_valid(officer) or officer.is_dead or not officer.is_visible_in_tree(): continue
-		var point: Vector2 = map.project(officer.global_position)
-		if area.has_point(point):
-			map.canvas.draw_circle(point, 3.5, Color("101c29"))
-			map.canvas.draw_circle(point, 2.0, Color("e9b95c") if searching else Color("729eff"))

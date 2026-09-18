@@ -81,16 +81,18 @@ func _initialize_service() -> void:
 		state = "missing_road_connection"
 		return
 	harbor_offset = harbor_lane.curve.get_closest_offset(harbor_lane.to_local(HARBOR_BERTH))
+	# Pre-warm the regional coach model so meshes and materials compile during world init, not during gameplay
+	var prewarm_model = preload("res://geodata/transit/RegionalIntercityCoachModel.gd").new()
+	prewarm_model.free()
 	# Terminal operations and the local service are also created deferred during
 	# HarborGame startup. Let their collision bodies reach the physics server
 	# before testing this shared street berth; otherwise both long coaches can
 	# be spawned on the same frame at virtually the same position and neither
 	# can recover from the overlap.
 	await get_tree().physics_frame
-	while is_inside_tree() and not _harbor_berth_clear():
-		await get_tree().create_timer(0.5).timeout
-	if not is_inside_tree():
-		return
+
+	# Pre-instantiate the regional coach early during world startup so its nodes, SubViewport,
+	# and collision structures do not cause a frame drop when the berth later clears.
 	var follow := PathFollow2D.new()
 	follow.name = "RegionalCoachFollow"
 	follow.loop = false
@@ -101,7 +103,33 @@ func _initialize_service() -> void:
 	coach.station = self
 	coach.stop_lane = harbor_lane
 	coach.stop_offset = harbor_offset
+	coach.visible = false
+	coach.process_mode = Node.PROCESS_MODE_DISABLED
+	var original_col_layer: int = coach.collision_layer
+	var original_col_mask: int = coach.collision_mask
+	coach.collision_layer = 0
+	coach.collision_mask = 0
 	follow.add_child(coach)
+	if coach.collision != null:
+		coach.collision.disabled = true
+	var ped_col = coach.pedestrian_hitbox.get_node_or_null("Collision") as CollisionShape2D if coach.pedestrian_hitbox else null
+	if ped_col != null:
+		ped_col.disabled = true
+
+	while is_inside_tree() and not _harbor_berth_clear():
+		await get_tree().create_timer(0.5).timeout
+	if not is_inside_tree():
+		return
+
+	# Berth is now clear: activate the coach seamlessly without construction hitch
+	coach.visible = true
+	coach.process_mode = Node.PROCESS_MODE_PAUSABLE
+	coach.collision_layer = original_col_layer
+	coach.collision_mask = original_col_mask
+	if coach.collision != null:
+		coach.collision.disabled = false
+	if ped_col != null:
+		ped_col.disabled = false
 	state = "harbor_dwell"
 	dwell_elapsed = 0.0
 	# The city leg does not require a resident mountain scene. Prepare it ahead

@@ -10,13 +10,15 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("regional_coach")
 	remove_from_group("harbor_transit_bus")
-	_setup_3d_model({"model_class": "res://geodata/transit/RegionalIntercityCoachModel.gd", "target_length": 120.0, "target_width": 34.0}, Color("3f788b"))
-	var ppm := 74.0 / 4.46
-	body_model.scale = Vector3(34.0 / (3.23 * ppm), 0.85, 120.0 / (11.96 * ppm))
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(120, 34)
 	collision.shape = shape
 	pedestrian_hitbox.get_node("Collision").shape = shape.duplicate()
+
+func _setup_transit_model() -> void:
+	_setup_3d_model({"model_class": "res://geodata/transit/RegionalIntercityCoachModel.gd", "target_length": 120.0, "target_width": 34.0}, Color("3f788b"))
+	var ppm := 74.0 / 4.46
+	body_model.scale = Vector3(34.0 / (3.23 * ppm), 0.85, 120.0 / (11.96 * ppm))
 
 func advance_on_lane(delta: float) -> void:
 	body_model.mountain_platform = station != null and station.at_mountain_berth()

@@ -263,14 +263,20 @@ func _draw_map() -> void:
 	var map_area := Rect2(center-MAP_SIZE/(2.0*SCALE),MAP_SIZE/SCALE)
 	for port in get_tree().get_nodes_in_group("south_port"):
 		var layout := preload("res://world/harbor/HarborSouthPortLayout.gd")
+		if not map_area.intersects(layout.LAND.grow(300.0)): continue
 		for rect in [layout.LAND,layout.WALKWAY,layout.SHIP,layout.SHIP_GANGWAY]:
-			canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("697d7b"))
+			if map_area.intersects(rect):
+				canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("697d7b"))
 		for rect in layout.containers():
-			canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("b29869"))
+			if map_area.intersects(rect):
+				canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("b29869"))
 		for rect in layout.PIERS:
-			canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("a4a78b"))
+			if map_area.intersects(rect):
+				canvas.draw_rect(Rect2(project(rect.position),rect.size*SCALE),Color("a4a78b"))
 	for yard in get_tree().get_nodes_in_group("chop_shop"):
 		var land: Rect2=yard.LOCATION.LAND
+		var global_land := Rect2(yard.to_global(land.position), land.size)
+		if not map_area.intersects(global_land.grow(300.0)): continue
 		canvas.draw_rect(Rect2(project(yard.to_global(land.position)),land.size*SCALE),Color("4e6345"))
 		canvas.draw_rect(Rect2(project(yard.global_position+Vector2(-344,-196)),Vector2(688,392)*SCALE),Color("89836a"))
 	for rect in _buildings:
