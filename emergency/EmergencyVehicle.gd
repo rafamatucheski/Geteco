@@ -704,20 +704,20 @@ func _physics_process(delta: float) -> void:
 			return
 		# Road guidance ends at the gate; only the crew enters the cemetery.
 		var dist_cem = global_position.distance_to(_cemetery_target_position)
-		var waypoint: Vector2 = _get_road_guidance_target(_cemetery_target_position)
-		if _lane_router.at_roadside_goal and waypoint.distance_to(global_position)<2 and dist_cem<240:
+		var cem_waypoint: Vector2 = _get_road_guidance_target(_cemetery_target_position)
+		if _lane_router.at_roadside_goal and cem_waypoint.distance_to(global_position)<2 and dist_cem<240:
 			dist_cem = 0.0
-		var dir_cem = global_position.direction_to(waypoint)
+		var dir_cem = global_position.direction_to(cem_waypoint)
 		var cem_angle_diff = absf(wrapf(dir_cem.angle() - rotation, -PI, PI))
 		preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_cem.angle(), minf(1.0, 4.5 * delta)))
 		var cem_cruise = max_target_speed * 0.55
 		if cem_angle_diff > 0.4:
 			cem_cruise *= 0.5
-		var clearance := _forward_clearance()
-		cem_cruise = minf(cem_cruise, sqrt(1040.0 * maxf(0.0, clearance - 8.0)))
+		var cem_clearance := _forward_clearance()
+		cem_cruise = minf(cem_cruise, sqrt(1040.0 * maxf(0.0, cem_clearance - 8.0)))
 		if dist_cem > 40.0:
 			current_speed = move_toward(current_speed, cem_cruise, acceleration * delta)
-			current_speed = minf(current_speed, maxf(0, clearance-3)/maxf(delta,.001))
+			current_speed = minf(current_speed, maxf(0, cem_clearance-3)/maxf(delta,.001))
 			velocity = transform.x * current_speed
 		else:
 			current_speed = move_toward(current_speed, 0.0, 400.0 * delta)
@@ -785,30 +785,30 @@ func _physics_process(delta: float) -> void:
 			if not _hospital_arrival.tick(self,base_pos,0.0,delta): return
 			if _admit_coroner_cargo(): return
 			arrived_at_depot.emit(self,home_depot_id)
-			var owner: Node = instance_from_id(int(get_meta("harbor_director_id")))
-			if is_instance_valid(owner): owner.complete_vehicle_return(self)
+			var depot_owner: Node = instance_from_id(int(get_meta("harbor_director_id")))
+			if is_instance_valid(depot_owner): depot_owner.complete_vehicle_return(self)
 			_deactivate()
 			return
-		var waypoint = _get_road_guidance_target(base_pos)
-		if waypoint.distance_to(global_position) < 1.0 and global_position.distance_to(base_pos) > 45.0:
+		var base_waypoint = _get_road_guidance_target(base_pos)
+		if base_waypoint.distance_to(global_position) < 1.0 and global_position.distance_to(base_pos) > 45.0:
 			current_speed = 0.0
 			velocity = Vector2.ZERO
 			return
 		var dist_base = global_position.distance_to(base_pos)
-		var dir_wpt = global_position.direction_to(waypoint)
+		var dir_wpt = global_position.direction_to(base_waypoint)
 		
-		var angle_diff = absf(wrapf(dir_wpt.angle() - rotation, -PI, PI))
+		var base_angle_diff = absf(wrapf(dir_wpt.angle() - rotation, -PI, PI))
 		preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, lerp_angle(rotation, dir_wpt.angle(), minf(1.0, 4.5 * delta)))
 		
 		var target_cruise = max_target_speed * 0.75
-		if angle_diff > 0.4:
+		if base_angle_diff > 0.4:
 			target_cruise *= 0.5 # Desacelera nas curvas
 			
 		if dist_base > 45.0:
-			var clearance := _forward_clearance()
-			target_cruise = minf(target_cruise, sqrt(1040.0 * maxf(0.0, clearance - 8.0)))
+			var base_clearance := _forward_clearance()
+			target_cruise = minf(target_cruise, sqrt(1040.0 * maxf(0.0, base_clearance - 8.0)))
 			current_speed = move_toward(current_speed, target_cruise, (520.0 if target_cruise < current_speed else acceleration) * delta)
-			current_speed = minf(current_speed, maxf(0.0, clearance - 3.0) / maxf(delta, 0.001))
+			current_speed = minf(current_speed, maxf(0.0, base_clearance - 3.0) / maxf(delta, 0.001))
 			velocity = transform.x * current_speed
 		else:
 			current_speed = move_toward(current_speed, 0.0, 400.0 * delta)
@@ -832,11 +832,11 @@ func _physics_process(delta: float) -> void:
 				_clear_tactical_doors()
 				return
 			# Polícia em bloqueio tático: permanece firme servindo de barricada enquanto o alvo estiver procurado
-			var wm = get_node_or_null("/root/WantedManager")
-			var stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wm.current_stars if wm else 0)
+			var wanted_mgr = get_node_or_null("/root/WantedManager")
+			var tactical_stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wanted_mgr.current_stars if wanted_mgr else 0)
 			var dist_to_target = global_position.distance_to(target.global_position) if is_instance_valid(target) else 9999.0
 			var fleeing_car: bool = is_instance_valid(target) and target.get("is_driven_by_player") == true and target.get("velocity") is Vector2 and (target.get("velocity") as Vector2).length() > 12.0
-			if _police_recall_requested or stars == 0 or dist_to_target > 600.0 or not is_instance_valid(target) or fleeing_car or scene_timeout >= 1.5:
+			if _police_recall_requested or tactical_stars == 0 or dist_to_target > 600.0 or not is_instance_valid(target) or fleeing_car or scene_timeout >= 1.5:
 				scene_timeout += delta
 				# Ask deployed officers to walk back to their assigned doors first.
 				# A stuck, dead or missing officer never authorizes an empty car.
@@ -852,7 +852,7 @@ func _physics_process(delta: float) -> void:
 					is_acting = false
 					_police_crew_on_foot = false
 					_clear_tactical_doors()
-					is_returning_to_base = _police_recall_requested or stars == 0 or not is_instance_valid(target)
+					is_returning_to_base = _police_recall_requested or tactical_stars == 0 or not is_instance_valid(target)
 					_police_recall_requested = false
 					officer_deployed = false
 					deployed_officers = 0
@@ -1191,11 +1191,6 @@ func _is_vehicle_ahead() -> bool:
 	var result := space_state.intersect_ray(query)
 	var collider := result.get("collider") as Node if not result.is_empty() else null
 	return collider != null and collider.is_in_group("vehicle")
-	
-	# Pitch dinâmico suave do motor
-	if engine_audio:
-		var speed_ratio = clampf(current_speed / maxf(1.0, max_target_speed), 0.0, 1.0)
-		engine_audio.pitch_scale = lerp(0.8, 1.4, speed_ratio)
 
 func _recycle_and_despawn() -> void:
 	var tw = create_tween()

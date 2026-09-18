@@ -123,7 +123,7 @@ func _pedestrian_crossing(unit: CharacterBody2D) -> bool:
 	query.transform = hull.global_transform
 	query.collision_mask = 4
 	query.exclude = [unit.get_rid()]
-	query.margin = planner._hull_margin(unit)
+	query.margin = preload("res://emergency/AmbulanceApproach.gd")._hull_margin(unit)
 	query.motion = (path[cursor]-unit.global_position).limit_length(4) if cursor<path.size() else Vector2.ZERO
 	var space := unit.get_world_2d().direct_space_state
 	return not space.intersect_shape(query,1).is_empty() or space.cast_motion(query)[0]<1
@@ -141,7 +141,7 @@ func _curve(unit: CharacterBody2D, start: Vector2, from_angle: float, end: Vecto
 	query.shape = hull.shape
 	query.collision_mask = unit.collision_mask
 	query.exclude = [unit.get_rid()]
-	query.margin = planner._hull_margin(unit)+.2
+	query.margin = preload("res://emergency/AmbulanceApproach.gd")._hull_margin(unit)+.2
 	var space := unit.get_world_2d().direct_space_state
 	var steps := maxi(16,ceili(distance/3))
 	for i in range(1,steps+1):

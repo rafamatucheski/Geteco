@@ -109,14 +109,14 @@ func _physics_process(delta: float) -> void:
 		return
 	match phase:
 		"exit":
-			var ready := phase_time >= .5
+			var is_ready := phase_time >= .5
 			for i in 2:
 				var medic: CharacterBody2D = crew[i]
 				if phase_time < .35 + i * .18:
-					ready = false
+					is_ready = false
 					continue
-				if not _move(medic, ambulance.get_crew_exit_point(medic.crew_side, 8), delta, 37): ready = false
-			if ready:
+				if not _move(medic, ambulance.get_crew_exit_point(medic.crew_side, 8), delta, 37): is_ready = false
+			if is_ready:
 				for medic in crew:
 					medic.remove_collision_exception_with(ambulance)
 					ambulance.visual_3d.close_door(medic.crew_side)
@@ -206,9 +206,9 @@ func _physics_process(delta: float) -> void:
 				_move_stretcher(rear_point(), delta, angle)
 				return
 			stretcher.update_patient()
-			var ready := _pair_to(stretcher.global_position, delta, false)
+			var is_ready := _pair_to(stretcher.global_position, delta, false)
 			var alignment := absf(angle_difference(stretcher.heading, ambulance.global_rotation))
-			if ready and minf(alignment, absf(PI - alignment)) < .025:
+			if is_ready and minf(alignment, absf(PI - alignment)) < .025:
 				ambulance.visual_3d.set_rear_doors(true)
 				_set_phase("open_to_load")
 		"open_to_load":
@@ -236,10 +236,10 @@ func _physics_process(delta: float) -> void:
 		"close_rear":
 			if phase_time >= .8: _set_phase("crew_return")
 		"crew_return":
-			var ready := true
+			var is_ready := true
 			for i in crew.size():
-				if not _return_around_rear(i, delta): ready = false
-			if ready:
+				if not _return_around_rear(i, delta): is_ready = false
+			if is_ready:
 				for i in 2:
 					crew[i].add_collision_exception_with(ambulance)
 					ambulance.visual_3d.open_door(crew[i].crew_side)
@@ -308,24 +308,24 @@ func _parking_waypoint(goal: Vector2, returning: bool) -> Vector2:
 	return _parking_route[_parking_route_index]
 
 func _pair_to(point: Vector2, delta: float, handles := true) -> bool:
-	var ready := true
+	var is_ready := true
 	var axis: Vector2 = Vector2.from_angle(stretcher.heading) if is_instance_valid(stretcher) else ambulance.global_transform.x
 	for i in 2:
 		var side_distance := 13.0 if hospital_delivery else 19.0
 		var offset := axis * (25 if i == 0 else -25) if handles else axis.orthogonal() * side_distance * (1 if i == 0 else -1)
-		if not _move(crew[i], point + offset, delta, 62, handles): ready = false
-	return ready
+		if not _move(crew[i], point + offset, delta, 62, handles): is_ready = false
+	return is_ready
 
 func _move(medic: CharacterBody2D, point: Vector2, delta: float, speed := 72.0, hands := false) -> bool:
 	var direction := point - medic.global_position
-	var ready := direction.length() < (.2 if hands else 3.0)
-	medic.velocity = Vector2.ZERO if ready else medic._navigate_towards(point, speed, delta)
+	var is_ready := direction.length() < (.2 if hands else 3.0)
+	medic.velocity = Vector2.ZERO if is_ready else medic._navigate_towards(point, speed, delta)
 	var before := medic.global_position
 	medic.move_and_slide()
 	var facing := direction
 	if hands and is_instance_valid(stretcher): facing = stretcher.global_position - medic.global_position
 	_animate_move(medic,(medic.global_position-before)/maxf(delta,.001),facing,delta,hands)
-	return ready
+	return is_ready
 
 func _animate_move(medic: CharacterBody2D, motion: Vector2, facing: Vector2, delta: float, hands: bool) -> void:
 	medic.velocity = motion
@@ -380,10 +380,10 @@ func _move_stretcher(point: Vector2, delta: float, heading: float = INF) -> bool
 		return false
 	formation.configure(stretcher, crew)
 	var at := formation.pose()
-	var ready := true
+	var is_ready := true
 	for i in 2:
-		if crew[i].global_position.distance_to(formation.handles(at,i)) > .3: ready = false
-	if not ready:
+		if crew[i].global_position.distance_to(formation.handles(at,i)) > .3: is_ready = false
+	if not is_ready:
 		_pair_to(stretcher.global_position, delta)
 	else:
 		var next := formation.next_pose(point,heading,delta,39 if carrying else 46)
@@ -538,8 +538,8 @@ func _assigned_director() -> Node:
 	if not is_instance_valid(ambulance): return null
 	var owner_id := int(ambulance.get_meta("harbor_director_id", 0))
 	if owner_id != 0:
-		var owner := instance_from_id(owner_id)
-		if is_instance_valid(owner): return owner
+		var dir_owner := instance_from_id(owner_id)
+		if is_instance_valid(dir_owner): return dir_owner
 	for director in get_tree().get_nodes_in_group("emergency_depot_director"):
 		if director._vehicle_assignments.has(ambulance.get_instance_id()): return director
 	return null

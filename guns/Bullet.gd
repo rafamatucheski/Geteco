@@ -138,12 +138,12 @@ func _hit(target, hit_position: Vector2, hit_normal: Vector2) -> void:
 	var original_damage := damage
 	damage = damage_at_distance(distance_travelled)
 	var impact_strength := float(damage) / maxf(original_damage, 1.0)
-	var material: StringName = IMPACT_MATERIAL.resolve(target)
+	var impact_mat: StringName = IMPACT_MATERIAL.resolve(target)
 	var damage_applied := false
 	
 	if target != null and target.has_method("take_damage"):
 		var is_player = owner_body != null and owner_body.is_in_group("player")
-		if material == &"flesh":
+		if impact_mat == &"flesh":
 			target.set_meta("bullet_impulse", direction.normalized() * clampf(original_damage * 4.0, 65.0, 260.0) * impact_strength)
 		if target.has_method("receive_bullet_impact"):
 			target.receive_bullet_impact(direction, damage)
@@ -151,31 +151,31 @@ func _hit(target, hit_position: Vector2, hit_normal: Vector2) -> void:
 		target.set_meta("combat_attacker", owner_body)
 		target.take_damage(damage, is_player)
 		damage_applied = previous_health != null and target.get("health") != null and target.get("health") < previous_health
-		if material == &"flesh" and damage_applied:
+		if impact_mat == &"flesh" and damage_applied:
 			preload("res://guns/combat/WoundedPose.gd").apply(target, float(previous_health) - float(target.health), direction, float(previous_health))
-		if material == &"flesh" and previous_health != null and target.get("health") < previous_health:
+		if impact_mat == &"flesh" and previous_health != null and target.get("health") < previous_health:
 			preload("res://guns/combat/BodyWound.gd").apply(target, direction)
 			if not target.is_in_group("player"):
 				preload("res://audio/reactions/PainReaction.gd").react(target, float(previous_health - target.get("health")))
-		if material == &"flesh" and damage_applied:
+		if impact_mat == &"flesh" and damage_applied:
 			preload("res://guns/combat/BulletReaction.gd").apply(target)
-		if material == &"flesh":
+		if impact_mat == &"flesh":
 			target.remove_meta("bullet_impulse")
 	
-	var subject_id: int = target.get_instance_id() if material == &"flesh" and is_instance_valid(target) else 0
-	IMPACT_AUDIO.play_hit(self, hit_position, material, damage, subject_id)
-	preload("res://guns/combat/ShotFeedback.gd").contact(self, hit_position, hit_normal, material, damage_applied)
-	impact_resolved.emit(target, hit_position, material, damage_applied)
+	var subject_id: int = target.get_instance_id() if impact_mat == &"flesh" and is_instance_valid(target) else 0
+	IMPACT_AUDIO.play_hit(self, hit_position, impact_mat, damage, subject_id)
+	preload("res://guns/combat/ShotFeedback.gd").contact(self, hit_position, hit_normal, impact_mat, damage_applied)
+	impact_resolved.emit(target, hit_position, impact_mat, damage_applied)
 		
 	var effects := preload("res://guns/combat/CombatWorld.gd").effects_for(self)
 	if effects == null:
 		effects = preload("res://guns/combat/WeaponEffects.gd").new()
 		get_parent().add_child(effects)
 	if effects:
-		if material == &"flesh":
+		if impact_mat == &"flesh":
 			effects.spawn_blood(hit_position, direction, damage)
 		else:
-			effects.spawn_impact(hit_position, hit_normal, material, damage)
+			effects.spawn_impact(hit_position, hit_normal, impact_mat, damage)
 	queue_free()
 
 func _trigger_explosion(pos: Vector2) -> void:

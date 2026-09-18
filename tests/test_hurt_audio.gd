@@ -31,7 +31,7 @@ func run() -> void:
 		AudioServer.add_bus_effect(bus,recorder)
 		recorder.set_recording_active(true)
 		await create_timer(0.25).timeout
-	var pool: Node
+	var pool: Node = null
 	var actors: Array[Node2D] = []
 	for path in ["Player", "AnimatedPedestrian3D", "PoliceOfficer", "CarjackedDriver", "Paramedic", "Firefighter", "Mortician"]:
 		var actor: Node2D = load("res://"+path+".gd").new()

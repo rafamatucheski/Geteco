@@ -43,8 +43,9 @@ func _process(delta: float) -> void:
 			if post.global_position.distance_squared_to(actor.global_position) > 10000: continue
 			if maxf(a.y,b.y) <= post.global_position.y: continue
 			var key := "%d:%d"%[actor.get_instance_id(),post.get_instance_id()]
+			var overlay: Sprite2D
 			if not layers.has(key):
-				var overlay := Sprite2D.new()
+				overlay = Sprite2D.new()
 				overlay.name = "MedicalPostForeground"
 				overlay.material = ShaderMaterial.new()
 				overlay.material.shader = MASK
@@ -52,7 +53,8 @@ func _process(delta: float) -> void:
 				overlay.z_index = _depth(post)+1
 				sprite.add_child(overlay)
 				layers[key] = {"overlay":overlay}
-			var overlay: Sprite2D = layers[key].overlay
+			else:
+				overlay = layers[key].overlay
 			overlay.texture = sprite.texture
 			overlay.centered = sprite.centered
 			overlay.offset = sprite.offset

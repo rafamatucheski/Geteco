@@ -624,7 +624,6 @@ func _physics_process(delta: float) -> void:
 		if visible_target and dist < 220.0:
 			if not arrest_warning_given:
 				arrest_warning_given = true
-				_play_audio(ProceduralAudio.get_police_radio_chatter_stream(), -12.0)
 				if target.has_method("_show_weapon_notice"):
 					target._show_weapon_notice("POLÍCIA: Pare e fique imóvel para se render!" if TranslationServer.get_locale().begins_with("pt") else "POLICE: Stop and stand still to surrender!")
 			arrest_warning_elapsed += delta

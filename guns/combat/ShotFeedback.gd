@@ -9,12 +9,12 @@ var accepted := false
 var strength := 1.0
 const LIFE := .24
 
-static func contact(projectile: Node2D, at: Vector2, hit_normal: Vector2, material: StringName, damaged: bool) -> void:
+static func contact(projectile: Node2D, at: Vector2, hit_normal: Vector2, mat_name: StringName, damaged: bool) -> void:
 	if projectile.get_tree().get_nodes_in_group("shot_contacts").size() >= 48: return
 	var effect = load("res://guns/combat/ShotFeedback.gd").new()
 	effect.trail = (projectile.global_position - at).limit_length(70)
 	effect.normal = hit_normal if not hit_normal.is_zero_approx() else -projectile.direction.normalized()
-	effect.surface = material
+	effect.surface = mat_name
 	effect.accepted = damaged
 	effect.strength = clampf(.75 + float(projectile.damage) / 70.0, .75, 1.4)
 	projectile.get_parent().add_child(effect)

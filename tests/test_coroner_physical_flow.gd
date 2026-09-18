@@ -63,7 +63,7 @@ func run() -> void:
 	var observed := {}
 	care.case_changed.connect(func(changed_key: String, phase: String):
 		if changed_key==key: observed[phase] = true)
-	var unit: Node2D
+	var unit: Node2D = null
 	var travel := 0.0
 	var last := Vector2.INF
 	var lost_crew := false

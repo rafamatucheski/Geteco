@@ -30,7 +30,7 @@ func run() -> void:
 	cruiser.is_acting = false
 	cruiser.officer_deployed = false
 	var deadline := Time.get_ticks_msec() + 15000
-	var stop_officer: CharacterBody2D
+	var stop_officer: CharacterBody2D = null
 	while not is_instance_valid(stop_officer) and Time.get_ticks_msec() < deadline:
 		for crew in get_nodes_in_group("police_officer"):
 			if crew.vehicle_stop.phase == "command": stop_officer = crew
