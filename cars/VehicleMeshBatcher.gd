@@ -67,7 +67,11 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 		var first: MeshInstance3D = sources[0]
 		var parts: Array = []
 		for source in sources:
-			parts.append([source.mesh.get_rid().get_id(),source.transform])
+			parts.append([_mesh_identity_key(source.mesh),source.transform])
+		# Testado usar `parts` (Array) direto como chave para pular a
+		# serialização: piorou (hash recursivo de Array com Transform3D custa
+		# mais que comparar String pré-computada). var_to_bytes()+hex_encode()
+		# medido mais rápido apesar de parecer redundante -- mantido.
 		var geometry_key := var_to_bytes(parts).hex_encode()
 		var mesh: ArrayMesh = _mesh_cache.get(geometry_key)
 		if mesh == null:
@@ -104,6 +108,24 @@ static func _batch_branch(parent: Node3D, model: Node3D) -> int:
 		if tracked: model.originals[batch] = mesh
 		removed += sources.size()-1
 	return removed
+
+## Modelos sem malha estática (motos, BossMuscle) criam um PrimitiveMesh novo a
+## cada build() -- mesma geometria, RID diferente. A chave por RID nunca batia
+## entre instâncias da mesma silhueta, então o grupo de tubos/anéis que
+## compartilham material (quadro, raios de roda, membros do piloto) recomeçava
+## do zero em toda construção: até 48 ms medidos (probe_traffic_vehicle_build_0918),
+## contra ~1 ms de malha estática já cacheada. Para PrimitiveMesh, os parâmetros
+## que geram a forma (raio, altura, tamanho) definem a identidade tão bem quanto
+## a malha de verdade; ArrayMesh (casco/teto autorados à mão) mantém a chave por
+## RID, que já funciona bem para eles.
+static func _mesh_identity_key(mesh: Mesh) -> String:
+	if mesh is PrimitiveMesh:
+		return "%s:%s:%s:%s:%s:%s:%s:%s" % [
+			mesh.get_class(), mesh.get("size"), mesh.get("radius"), mesh.get("height"),
+			mesh.get("top_radius"), mesh.get("bottom_radius"),
+			mesh.get("inner_radius"), mesh.get("outer_radius"),
+		]
+	return str(mesh.get_rid().get_id())
 
 static func _invalidate_cache() -> void:
 	cache_invalidations += 1
