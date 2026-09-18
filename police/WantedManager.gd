@@ -20,11 +20,9 @@ var deployed_this_pursuit := 0
 const CONTACT_GRACE := 1.0
 var _contact_age := CONTACT_GRACE + 1.0
 var _sensor_timer := 0.0
-var _radio_cooldown := 0.0
 var _dispatch_serial := 0
 var _has_known_position := false
 var _radio_player: AudioStreamPlayer
-var _last_radio_event: StringName
 signal radio_message(event: StringName, level: int)
 
 # Avisa o HUD e os carros da Polícia sempre que o nível de estrelas mudar
@@ -93,11 +91,9 @@ func report_visual_contact(observer: Node2D) -> bool:
 	query.exclude = excluded
 	var hit := observer.get_world_2d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty() and hit.collider != suspect: return false
-	var reacquired := _contact_age > 6.0
 	_remember_position(suspect.global_position)
 	_contact_age = 0.0
 	time_hidden = 0.0
-	if reacquired: _radio(&"suspect_spotted")
 	return true
 
 func _scan_police_contact() -> void:
@@ -106,29 +102,30 @@ func _scan_police_contact() -> void:
 	for observer in get_tree().get_nodes_in_group("emergency_vehicle"):
 		if observer.get("type") == 0 and report_visual_contact(observer): return
 
-func _radio(event: StringName) -> void:
-	if _radio_cooldown > 0.0 and (event != &"officer_down" or _last_radio_event == event): return
-	_radio_cooldown = 7.0
-	_last_radio_event = event
-	radio_message.emit(event, current_stars)
+func _play_star_radio(stars: int) -> void:
+	if stars <= 0:
+		return
+	var event: StringName = &"suspect_spotted" if stars <= 1 else &"reinforcements"
+	radio_message.emit(event, stars)
 	var chatter = preload("res://audio/police_dispatch/PoliceDispatchRadio.gd").stream_for(event)
-	if not chatter: chatter = ProceduralAudio.get_police_radio_chatter_stream()
-	if not chatter: return
-	if is_instance_valid(_radio_player):
-		_radio_player.stop()
-		_radio_player.queue_free()
-	var player := AudioStreamPlayer.new()
-	_radio_player = player
-	player.stream = chatter
-	player.volume_db = -16.0
-	player.bus = "SFX"
-	add_child(player)
-	player.finished.connect(player.queue_free)
-	player.play()
+	if not chatter:
+		chatter = ProceduralAudio.get_police_radio_chatter_stream()
+	if not chatter:
+		return
+	if not is_instance_valid(_radio_player):
+		_radio_player = AudioStreamPlayer.new()
+		_radio_player.name = "PoliceRadioPlayer"
+		_radio_player.bus = "SFX"
+		_radio_player.volume_db = -16.0
+		add_child(_radio_player)
+	_radio_player.stream = chatter
+	_radio_player.play()
+
+func _radio(_event: StringName) -> void:
+	pass
 
 func report_officer_killed() -> void:
 	report_crime(maxi(30, STAR_THRESHOLDS[3] - crime_points))
-	_radio(&"officer_down")
 	police_spawn_timer = minf(police_spawn_timer, 0.8)
 
 func _is_active_pursuit_unit(unit: Node) -> bool:
@@ -153,7 +150,6 @@ func _configure_dispatch(unit: Node) -> void:
 		# tactical crew in that formation and replace it only after it leaves.
 		var elite := current_stars >= 4 and not _has_active_elite(unit)
 		unit.configure_police_response(current_stars, _dispatch_serial, elite)
-	_radio(&"reinforcements")
 
 func _find_lane_spawn(target_node: Node2D) -> Dictionary:
 	var shape := RectangleShape2D.new()
@@ -196,7 +192,6 @@ func _find_lane_spawn(target_node: Node2D) -> Dictionary:
 
 
 func _process(delta):
-	_radio_cooldown = maxf(0.0, _radio_cooldown - delta)
 	if current_stars == 0:
 		if crime_points > 0:
 			time_hidden += delta
@@ -211,7 +206,6 @@ func _process(delta):
 		_sensor_timer = 0.25
 		_scan_police_contact()
 	if time_hidden >= get_escape_duration():
-		_radio(&"search_cancelled")
 		reset_crime()
 		return
 	police_spawn_timer -= delta
@@ -280,14 +274,16 @@ func _dispatch_police():
 func report_police_car_theft() -> void:
 	time_hidden = 0.0
 	# Each newly stolen cruiser adds one star, preserving an existing pursuit.
+	var gained := false
 	if current_stars < STAR_THRESHOLDS.size() - 1:
 		current_stars += 1
 		crime_points = maxi(crime_points, STAR_THRESHOLDS[current_stars])
 		stars_changed.emit(current_stars)
+		gained = true
 		
-	# Toca rádio policial alertando o furto
 	_remember_reported_crime()
-	_radio(&"cruiser_stolen")
+	if gained:
+		_play_star_radio(current_stars)
 
 	_dispatch_police()
 	police_spawn_timer = DISPATCH_INTERVAL[current_stars]
@@ -308,12 +304,15 @@ func report_crime(severity: int):
 			calc_stars = maxi(calc_stars, level)
 	
 	if calc_stars != current_stars:
+		var stars_gained: bool = calc_stars > current_stars
 		if current_stars == 0:
 			police_spawn_timer = INITIAL_DISPATCH_DELAY[calc_stars]
 		else:
 			police_spawn_timer = minf(police_spawn_timer, INITIAL_DISPATCH_DELAY[calc_stars])
 		current_stars = calc_stars
 		stars_changed.emit(current_stars)
+		if stars_gained:
+			_play_star_radio(current_stars)
 
 	crime_reported.emit(severity)
 
