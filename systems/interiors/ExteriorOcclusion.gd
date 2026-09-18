@@ -64,9 +64,18 @@ func _ready() -> void:
  overlay.hide()
  body_entered.connect(func(body: Node2D):
   if body is CharacterBody2D or body is RigidBody2D:
-   bodies.append(body)
+   if not bodies.has(body):
+    bodies.append(body)
    set_process(true))
- body_exited.connect(func(body: Node2D): bodies.erase(body))
+ body_exited.connect(func(body: Node2D):
+  bodies.erase(body)
+  # Clean any stray invalid instances
+  for i in range(bodies.size() - 1, -1, -1):
+   if not is_instance_valid(bodies[i]) or not bodies[i].is_inside_tree():
+    bodies.remove_at(i)
+  if bodies.is_empty():
+   overlay.hide()
+   set_process(false))
  set_process(false)
 
 func _covered_rect() -> Rect2:
@@ -74,9 +83,21 @@ func _covered_rect() -> Rect2:
  return source.global_transform * source.get_rect()
 
 func _process(_delta: float) -> void:
+ if not is_instance_valid(source) or not source.is_visible_in_tree():
+  if is_instance_valid(overlay): overlay.hide()
+  set_process(false)
+  return
  var behind := PackedVector4Array()
  var ahead := PackedVector4Array()
  var covered := _covered_rect()
+ for i in range(bodies.size() - 1, -1, -1):
+  var b := bodies[i]
+  if not is_instance_valid(b) or not b.is_inside_tree():
+   bodies.remove_at(i)
+ if bodies.is_empty():
+  overlay.hide()
+  set_process(false)
+  return
  for body in bodies:
   if not is_instance_valid(body) or not body.is_visible_in_tree(): continue
   var sprite: Sprite2D
@@ -111,4 +132,14 @@ func _process(_delta: float) -> void:
  ahead.resize(16)
  overlay.material.set_shader_parameter("behind", behind)
  overlay.material.set_shader_parameter("ahead", ahead)
- if bodies.is_empty(): set_process(false)
+ if bodies.is_empty():
+  set_process(false)
+  return
+ var any_moving := false
+ for body in bodies:
+  if not is_instance_valid(body) or not body.is_visible_in_tree(): continue
+  if body.is_in_group("player") or (body is CharacterBody2D and body.velocity.length_squared() > 1.0) or body is RigidBody2D:
+   any_moving = true
+   break
+ if not any_moving and behind.is_empty():
+  set_process(false)

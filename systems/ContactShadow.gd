@@ -128,7 +128,7 @@ static func add_vehicle(parent: Node2D, footprint: Vector2) -> Sprite2D:
 	if vp == null: vp = parent.get("body_viewport") as SubViewport
 	if vp == null: vp = parent.get("viewport_3d") as SubViewport
 	if is_instance_valid(display) and is_instance_valid(vp) and vp.transparent_bg:
-		add_silhouette(display, vp)
+		add_vehicle_silhouette(display, vp, footprint)
 
 	return shadow
 
@@ -204,3 +204,51 @@ static func add_silhouette(display: Sprite2D, viewport: SubViewport) -> void:
 	shadow.material = mat
 	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	display.add_child(shadow)
+
+static var _vehicle_silhouette_shader: Shader
+static var _vehicle_mat_normal: ShaderMaterial
+static var _vehicle_mat_large: ShaderMaterial
+
+static func vehicle_silhouette_shader() -> Shader:
+	if _vehicle_silhouette_shader == null:
+		_vehicle_silhouette_shader = Shader.new()
+		_vehicle_silhouette_shader.code = "shader_type canvas_item;\nrender_mode unshaded, world_vertex_coords;\nuniform vec2 light_offset = vec2(7.5, 10.5);\nuniform float shadow_opacity = 0.36;\nvoid vertex() {\n\tVERTEX += light_offset;\n}\nvoid fragment() {\n\tCOLOR = vec4(vec3(0.015, 0.02, 0.035), COLOR.a * shadow_opacity);\n}\n"
+	return _vehicle_silhouette_shader
+
+static func _get_vehicle_material(is_large: bool) -> ShaderMaterial:
+	if is_large:
+		if _vehicle_mat_large == null:
+			_vehicle_mat_large = ShaderMaterial.new()
+			_vehicle_mat_large.shader = vehicle_silhouette_shader()
+			_vehicle_mat_large.set_shader_parameter("light_offset", Vector2(10.0, 14.0))
+			_vehicle_mat_large.set_shader_parameter("shadow_opacity", 0.40)
+		return _vehicle_mat_large
+	else:
+		if _vehicle_mat_normal == null:
+			_vehicle_mat_normal = ShaderMaterial.new()
+			_vehicle_mat_normal.shader = vehicle_silhouette_shader()
+			_vehicle_mat_normal.set_shader_parameter("light_offset", Vector2(7.5, 10.5))
+			_vehicle_mat_normal.set_shader_parameter("shadow_opacity", 0.36)
+		return _vehicle_mat_normal
+
+static func add_vehicle_silhouette(display: Sprite2D, viewport: SubViewport, footprint := Vector2.ZERO) -> Sprite2D:
+	if display == null or viewport == null: return null
+	if display.has_node("VehicleShadow"):
+		var existing := display.get_node("VehicleShadow") as Sprite2D
+		if existing.texture != viewport.get_texture():
+			existing.texture = viewport.get_texture()
+		return existing
+	var shadow := Sprite2D.new()
+	shadow.name = "VehicleShadow"
+	shadow.show_behind_parent = true
+	shadow.texture = viewport.get_texture()
+	shadow.centered = display.centered
+	shadow.offset = display.offset
+	shadow.scale = Vector2.ONE
+	var is_large := footprint.x > 100.0 or footprint.y > 40.0
+	shadow.material = _get_vehicle_material(is_large)
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	display.add_child(shadow)
+	display.move_child(shadow, 0)
+	return shadow
+

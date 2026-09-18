@@ -18,40 +18,67 @@ static func is_startup_relevant(actor: Node2D) -> bool:
 
 static func prepare_common_models(tree: SceneTree) -> void:
 	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
-	# Warm the entire expensive geometry path, not only the raw constructor.
-	# Wheel-well cutting and surface batching otherwise first run in gameplay.
-	var staging := Node3D.new()
-	staging.name = "VehicleGeometryPreparation"
-	staging.visible = false
-	staging.process_mode = Node.PROCESS_MODE_DISABLED
-	tree.root.add_child(staging)
-	for name in ["UnionSedan", "SportEstate", "NordicEstate", "MetroHatch", "CourierVan", "RouteCity", "SummitSUV", "PoliceSUV", "Boxrunner", "RanchSingle", "Towmaster", "ArcticJeep", "OrbitaMicro", "AuroraExecutive", "ValeCrossover", "NimbusMinivan", "VerticeMidEngine", "BravioCrew", "DockDeliveryVan"]:
+	# Warm the entire expensive geometry and GPU pipeline path.
+	# Compiling CSG/SurfaceTool geometry and Vulkan shaders in warmup prevents 150ms hitches during gameplay.
+	var warmup_view := SubViewport.new()
+	warmup_view.name = "VehicleWarmupViewport"
+	warmup_view.size = Vector2i(96, 96)
+	warmup_view.own_world_3d = true
+	warmup_view.transparent_bg = true
+	warmup_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	tree.root.add_child(warmup_view)
+
+	var cam := Camera3D.new()
+	warmup_view.add_child(cam)
+	cam.look_at_from_position(Vector3(0, 8, 4), Vector3(0, 0.45, 0), Vector3.UP)
+	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
+	cam.size = 6.0
+
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-55, -30, 0)
+	warmup_view.add_child(sun)
+
+	var model_names := [
+		"UnionSedan", "SportEstate", "NordicEstate", "MetroHatch", "CourierVan",
+		"RouteCity", "SummitSUV", "PoliceSUV", "Boxrunner", "RanchSingle",
+		"Towmaster", "ArcticJeep", "OrbitaMicro", "AuroraExecutive", "ValeCrossover",
+		"NimbusMinivan", "VerticeMidEngine", "BravioCrew", "DockDeliveryVan",
+		"YellowCab", "AmericanDump", "AmericanFlatbed", "AmericanTanker"
+	]
+	for name in model_names:
 		var path: String = "res://prototypes/living_cast/models/" + name + "Model.gd"
-		if _prepared.has(path): continue
-		await batch.checkpoint(tree)
-		var model: Node3D = load(path).new()
-		staging.add_child(model)
-		var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
-		rig.mount(model)
-		preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
-		model.free()
-		_prepared[path] = true
-	for path in ["res://geodata/transit/RegionalIntercityCoachModel.gd"]:
-		if _prepared.has(path): continue
+		if _prepared.has(path) or not ResourceLoader.exists(path): continue
 		await batch.checkpoint(tree)
 		var res = load(path)
 		if res:
 			var model: Node3D = res.new()
-			staging.add_child(model)
+			warmup_view.add_child(model)
 			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
 			rig.mount(model)
 			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
+			warmup_view.render_target_update_mode = SubViewport.UPDATE_ONCE
 			model.free()
-			_prepared[path] = true
-	# Modelos dos veículos que existem no mundo carregado e ficaram fora da lista
-	# fixa acima: o AmericanTanker custava ~155 ms no primeiro exemplar já em
-	# gameplay (GETECO-PERF-02B). Limite natural: só classes presentes na árvore;
-	# a região da montanha, carregada depois por streaming, não entra aqui.
+		_prepared[path] = true
+
+	for path in [
+		"res://prototypes/living_cast/CabrioletModel.gd",
+		"res://prototypes/living_cast/BossMuscleModel.gd",
+		"res://geodata/transit/RegionalIntercityCoachModel.gd"
+	]:
+		if _prepared.has(path) or not ResourceLoader.exists(path): continue
+		await batch.checkpoint(tree)
+		var res = load(path)
+		if res:
+			var model: Node3D = res.new()
+			warmup_view.add_child(model)
+			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
+			rig.mount(model)
+			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
+			warmup_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+			model.free()
+		_prepared[path] = true
+
+	# Modelos dos veículos que existem no mundo carregado e ficaram fora da lista fixa
 	for group in ["modern_traffic", "modern_parked_vehicle", "regional_coach"]:
 		for vehicle in tree.get_nodes_in_group(group):
 			if not is_instance_valid(vehicle): continue
@@ -60,14 +87,17 @@ static func prepare_common_models(tree: SceneTree) -> void:
 			var path := String(spec.get("model_class", ""))
 			if path.is_empty() or _prepared.has(path) or not ResourceLoader.exists(path): continue
 			await batch.checkpoint(tree)
-			var model: Node3D = load(path).new()
-			staging.add_child(model)
-			var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
-			rig.mount(model)
-			preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
-			model.free()
+			var res = load(path)
+			if res:
+				var model: Node3D = res.new()
+				warmup_view.add_child(model)
+				var rig := preload("res://prototypes/living_cast/VehicleWheelRig.gd").new()
+				rig.mount(model)
+				preload("res://cars/VehicleMeshBatcher.gd").batch_model(model)
+				warmup_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+				model.free()
 			_prepared[path] = true
-	staging.free()
+	warmup_view.queue_free()
 
 static func prepare_resident_presentations(tree: SceneTree) -> int:
 	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
@@ -116,7 +146,7 @@ static func prepare_resident_presentations(tree: SceneTree) -> int:
 
 static func restore(model: Node3D) -> bool:
 	var key: String = model.get_script().resource_path
-	if not key.begins_with("res://prototypes/living_cast/models/"): return false
+	if not (key.begins_with("res://prototypes/living_cast/models/") or key.begins_with("res://prototypes/living_cast/")): return false
 	if not _models.has(key): return false
 	var data: Dictionary = _models[key]
 	var raw: Node3D = data.scene.instantiate()
@@ -124,8 +154,11 @@ static func restore(model: Node3D) -> bool:
 	model.materials = {}
 	for role in data.materials:
 		model.materials[role] = _material(data.materials[role],copies)
-	model.paint = _material(data.paint,copies)
-	model.vehicle_id = data.vehicle_id
+	if "vehicle_id" in model: model.vehicle_id = data.get("vehicle_id", "")
+	if "paint" in model:
+		model.paint = _material(data.get("paint"), copies)
+		if model.paint == null and model.materials.has("paint"):
+			model.paint = model.materials["paint"]
 	_rebind(raw,copies)
 	_own_children(raw,null)
 	for metadata in raw.get_meta_list(): model.set_meta(metadata,raw.get_meta(metadata))
@@ -138,7 +171,7 @@ static func restore(model: Node3D) -> bool:
 
 static func capture(model: Node3D) -> void:
 	var key: String = model.get_script().resource_path
-	if not key.begins_with("res://prototypes/living_cast/models/"): return
+	if not (key.begins_with("res://prototypes/living_cast/models/") or key.begins_with("res://prototypes/living_cast/")): return
 	if _models.has(key) or not _static_children(model): return
 	# Equipamentos com âncoras de operação (canhão d'água, guindaste) ainda
 	# precisam executar seu construtor para ligar as referências de gameplay.
@@ -154,7 +187,7 @@ static func capture(model: Node3D) -> void:
 	_own_children(raw,raw)
 	var scene := PackedScene.new()
 	if scene.pack(raw) == OK:
-		_models[key] = {"scene":scene,"materials":materials,"paint":paint,"vehicle_id":model.vehicle_id}
+		_models[key] = {"scene":scene,"materials":materials,"paint":paint,"vehicle_id":model.get("vehicle_id") if "vehicle_id" in model else ""}
 	raw.free()
 
 static func _has_node_reference(value: Variant) -> bool:

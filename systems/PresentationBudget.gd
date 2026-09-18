@@ -71,7 +71,9 @@ func _process(_delta: float) -> void:
 		var waited: int = now_msec - int(_relevant_msec.get(id, now_msec))
 		_requested_msec.erase(id)
 		_relevant_msec.erase(id)
-		var kind_name := String(best.get_script().resource_path).get_file() if best.get_script() != null else best.get_class()
+		var kind_name := best.name + " (" + best.get_class() + ")"
+		if best.get_script() != null and not String(best.get_script().resource_path).is_empty():
+			kind_name = String(best.get_script().resource_path).get_file()
 		# Veículos com modelo adiado: separar por classe de modelo, pois primeiro
 		# exemplar e exemplares repetidos têm custos muito diferentes.
 		var pending_spec = best.get("_pending_spec")
@@ -79,7 +81,10 @@ func _process(_delta: float) -> void:
 			kind_name += ":" + String(pending_spec.model_class).get_file()
 		var build_started := Time.get_ticks_usec()
 		best.ensure_presentation()
-		_record_build(kind_name, Time.get_ticks_usec() - build_started, best_class, waited, since_request)
+		var build_usec := Time.get_ticks_usec() - build_started
+		if build_usec > 5000:
+			print("PB_BUILD: %s took %.2f ms" % [kind_name, build_usec / 1000.0])
+		_record_build(kind_name, build_usec, best_class, waited, since_request)
 		if Time.get_ticks_usec() - started >= budget_usec:
 			return
 

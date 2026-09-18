@@ -2,7 +2,7 @@ extends Node
 ## Configure streamed viewports and one shadow-casting key light per 3D world.
 
 func _ready() -> void:
-	get_tree().root.msaa_2d = Viewport.MSAA_2X
+	get_tree().root.msaa_2d = Viewport.MSAA_DISABLED
 	get_tree().node_added.connect(_configure_node)
 	get_parent().display_settings_changed.connect(_refresh_quality)
 
@@ -53,7 +53,7 @@ func _configure_light(light) -> void:
 
 func _configure_display(display) -> void:
 	if not is_instance_valid(display) or not display.is_inside_tree(): return
-	if display.name == "PoseShadow": return
+	if display.name == "PoseShadow" or display.name == "VehicleShadow": return
 	var host: Node = display.get_parent()
 	var viewport: SubViewport
 	# Explicit production display contracts; never flatten a whole interior/UI.
@@ -64,9 +64,12 @@ func _configure_display(display) -> void:
 		viewport = host.get("body_viewport") as SubViewport
 		if viewport == null: viewport = host.get("viewport_3d") as SubViewport
 		if viewport == null: viewport = host.get("viewport") as SubViewport
-	elif host.get("lamp_sprite") == display and (host.get("view") is SubViewport or host.get("viewport") is SubViewport):
-		viewport = host.get("view") as SubViewport
-		if viewport == null: viewport = host.get("viewport") as SubViewport
+		if viewport != null and viewport.transparent_bg:
+			var footprint: Vector2 = host.get("footprint") if host.get("footprint") is Vector2 else Vector2.ZERO
+			preload("res://systems/ContactShadow.gd").add_vehicle_silhouette(display, viewport, footprint)
+		return
+	elif host.get("lamp_sprite") == display:
+		return
 	elif host.get("sprite_3d") == display and host.has_method("project_floor"):
 		viewport = host.get("viewport_3d") as SubViewport
 		if viewport != null and host.get("model") is Node3D:

@@ -120,7 +120,11 @@ func _make_model(lit: bool) -> Dictionary:
 	viewport.own_world_3d = true
 	viewport.transparent_bg = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	get_tree().root.add_child.call_deferred(viewport)
+	var host: Node = get_tree().root.get_node_or_null("PresentationBudget")
+	if host and is_instance_valid(host):
+		host.add_child(viewport)
+	else:
+		get_tree().root.call_deferred("add_child", viewport)
 	var stage := Node3D.new()
 	viewport.add_child(stage)
 	var steel := StandardMaterial3D.new()

@@ -74,7 +74,11 @@ func _build_render(angle_step: int, state: int, falling: bool = false) -> Dictio
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	get_tree().root.add_child(viewport)
+	var host: Node = get_tree().root.get_node_or_null("PresentationBudget")
+	if host and is_instance_valid(host):
+		host.add_child(viewport)
+	else:
+		get_tree().root.call_deferred("add_child", viewport)
 	var model := MODEL.new()
 	viewport.add_child(model)
 	var tangent := Vector2.from_angle(float(angle_step) * TAU / ANGLE_STEPS)

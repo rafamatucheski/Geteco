@@ -78,7 +78,11 @@ static func _get_shared_lamp_data(facing_south: bool, tree: SceneTree, light_col
 	vp.own_world_3d = true
 	vp.transparent_bg = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-	tree.root.call_deferred("add_child", vp)
+	var host: Node = tree.root.get_node_or_null("PresentationBudget")
+	if host and is_instance_valid(host):
+		host.add_child(vp)
+	else:
+		tree.root.call_deferred("add_child", vp)
 
 	var m := Node3D.new()
 	vp.add_child(m)
@@ -199,9 +203,25 @@ func _build_lamp_post() -> void:
 	var visibility_extent := maxf(180.0, float(light_radius) * 0.5 + (road_target.length() if road_target.is_finite() else 24.0))
 	notifier.rect = Rect2(Vector2.ONE * -visibility_extent, Vector2.ONE * visibility_extent * 2.0)
 	add_child(notifier)
-	notifier.screen_entered.connect(func(): _near_view = true; set_lit(is_lit))
-	notifier.screen_exited.connect(func(): _near_view = false; set_lit(is_lit))
+	notifier.screen_entered.connect(func():
+		_near_view = true
+		if _occlusion and not broken:
+			_occlusion.monitoring = true
+		set_lit(is_lit)
+	)
+	notifier.screen_exited.connect(func():
+		_near_view = false
+		if _occlusion:
+			_occlusion.monitoring = false
+			_occlusion.bodies.clear()
+			_occlusion.set_process(false)
+			if _occlusion.overlay:
+				_occlusion.overlay.hide()
+		set_lit(is_lit)
+	)
 	_near_view = notifier.is_on_screen()
+	if _occlusion and not _near_view:
+		_occlusion.monitoring = false
 
 func _setup_light() -> void:
 	var arm_offset = Vector2(0, 24) if is_facing_south else Vector2(0, -24)

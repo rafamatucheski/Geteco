@@ -1096,13 +1096,13 @@ func _update_viewport_render_state(delta: float) -> void:
 		var should_render := screen_position.is_finite() and is_finite(projected_scale)
 		should_render = should_render and get_viewport().get_visible_rect().grow(VIEWPORT_CULL_MARGIN).has_point(screen_position)
 		if should_render and not _viewport_render_active:
-			_viewport_frame_timer = 0.0
+			_viewport_frame_timer = fposmod(float(get_instance_id()) * 0.0073, _viewport_frame_interval)
 		_viewport_render_active = should_render
 		# Close-up rigs must follow the physics pose every tick, rather than
 		# visibly stepping at 30Hz while the camera and body move at 60Hz.
 		# Keep cheaper rendering for small representations in the overview.
 		var projected_height := projected_scale * 36.0
-		var render_hz := 60.0 if projected_height >= 36.0 else (15.0 if projected_height < 18.0 else 30.0)
+		var render_hz := 30.0 if projected_height >= 36.0 else (12.0 if projected_height < 18.0 else 20.0)
 		_viewport_frame_interval = 1.0 / render_hz
 	if not _viewport_render_active or not is_visible_in_tree():
 		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
