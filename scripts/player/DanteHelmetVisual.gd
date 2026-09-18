@@ -12,12 +12,12 @@ static func attach(head: Node3D) -> Node3D:
 	var shell := ADAPTER._make_mat(Color("e9e7e2"),.27,.22)
 	var trim := ADAPTER._make_mat(Color("191e26"),.65)
 	var visor := ADAPTER._make_mat(Color("152434"),.16,.45)
-	helmet.add_child(ADAPTER._make_ellipsoid(Vector3(.29,.35,.31),shell,Vector3(0,.025,0)))
-	helmet.add_child(ADAPTER._make_ellipsoid(Vector3(.263,.14,.09),visor,Vector3(0,.035,-.126)))
-	helmet.add_child(ADAPTER._make_box(Vector3(.21,.05,.052),shell,Vector3(0,-.096,-.134)))
-	helmet.add_child(ADAPTER._make_box(Vector3(.09,.013,.006),trim,Vector3(0,-.09,-.163)))
+	helmet.add_child(ADAPTER._make_ellipsoid(Vector3(.325,.395,.352),shell,Vector3(0,.044,.018)))
+	helmet.add_child(ADAPTER._make_ellipsoid(Vector3(.292,.162,.112),visor,Vector3(0,.052,-.138)))
+	helmet.add_child(ADAPTER._make_box(Vector3(.23,.060,.064),shell,Vector3(0,-.088,-.146)))
+	helmet.add_child(ADAPTER._make_box(Vector3(.105,.014,.008),trim,Vector3(0,-.085,-.180)))
 	for side in [-1.0,1.0]:
-		helmet.add_child(ADAPTER._make_ellipsoid(Vector3(.012,.035,.035),trim,Vector3(side*.14,.025,-.03)))
+		helmet.add_child(ADAPTER._make_ellipsoid(Vector3(.014,.038,.038),trim,Vector3(side*.158,.044,-.025)))
 	helmet.hide()
 	return helmet
 
@@ -38,5 +38,11 @@ static func apply(head: Node3D, worn: bool, action: String = "", progress: float
 		if child is Node3D and child != helmet:
 			if not child.has_meta("helmet_rest_visible"): child.set_meta("helmet_rest_visible",child.visible)
 			child.visible = bool(child.get_meta("helmet_rest_visible")) and not covering
+	var parent: Node = head.get_parent()
+	if is_instance_valid(parent):
+		var outfit_head := parent.find_child("MeshyOutfitHead", true, false) as Node3D
+		if is_instance_valid(outfit_head):
+			if not outfit_head.has_meta("helmet_rest_visible"): outfit_head.set_meta("helmet_rest_visible", outfit_head.visible)
+			outfit_head.visible = bool(outfit_head.get_meta("helmet_rest_visible")) and not covering
 	helmet.visible = show_helmet
 	helmet.position = offset

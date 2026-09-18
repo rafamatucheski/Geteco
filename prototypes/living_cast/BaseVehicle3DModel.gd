@@ -4,8 +4,6 @@ extends "res://prototypes/living_cast/CoupeDamageModel.gd"
 ## Herda os contratos de deformação e dano de lataria (CoupeDamageModel.gd).
 ## Fornece helpers especializados para carrocerias, vidros, rodas esterçáveis e equipamentos.
 
-var vehicle_id: String = ""
-
 func _init() -> void:
 	if get_child_count() == 0:
 		if not preload("res://cars/VehicleGeometryCache.gd").restore(self):

@@ -60,8 +60,11 @@ static func handoff(target: Camera2D, state: Dictionary) -> void:
 	target.reset_smoothing()
 	target.force_update_scroll()
 
+func _init() -> void:
+	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
+
 func _ready() -> void:
-	pass
+	process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 
 func frame_interior_follow() -> void:
 	var bounds: Rect2 = get_meta("interior_follow_bounds")

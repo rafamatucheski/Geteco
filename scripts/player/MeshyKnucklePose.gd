@@ -28,8 +28,8 @@ static func sample(variant: int, age: float, engaged: bool, swing: float, sprint
 				left_basis = Basis(Vector3.UP,-0.55*reach)*Basis(Vector3.BACK,-turn)
 			3:
 				# A short rising arc, with the fist kept ahead of the jacket.
-				var load := sin(clampf(age/0.12,0,1)*PI)*0.09 if age < 0.12 else 0.0
+				var load_offset := sin(clampf(age/0.12,0,1)*PI)*0.09 if age < 0.12 else 0.0
 				right = right.lerp(Vector3(0.045,1.16,-0.34),reach)
-				right.y -= load
+				right.y -= load_offset
 				right_basis = Basis(Vector3.RIGHT,-0.45*reach)*Basis(Vector3.BACK,0.35*reach)
 	return {"right":right,"left":left,"right_basis":right_basis,"left_basis":left_basis}

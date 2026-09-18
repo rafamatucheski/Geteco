@@ -92,5 +92,5 @@ func apply_on_foot_pose() -> void:
 	var weight := sin(PI*clampf(action_seconds/ACTION_SECONDS,0.0,1.0))
 	var rest: Vector3 = actor.model_root.to_local(actor.left_lower_arm.to_global(Vector3(0,-.20,0)))
 	var shell: Node3D = actor.head_node.get_node("MotorcycleHelmet")
-	var target: Vector3 = actor.head_node.transform*(shell.position+Vector3(-.14,-.06,0))
+	var target: Vector3 = actor.head_node.transform*(shell.position+Vector3(-.16,-.06,0))
 	actor.combat_pose._solve_arm(actor.left_upper_arm,actor.left_lower_arm,rest.lerp(target,weight),-1.0)

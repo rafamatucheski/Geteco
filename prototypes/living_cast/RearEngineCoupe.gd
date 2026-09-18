@@ -5,6 +5,7 @@ extends Node3D
 ## Coordinates in approximate metres, nose = -Z. No gameplay dependencies.
 var materials: Dictionary = {}
 var paint: StandardMaterial3D
+var vehicle_id: String = ""
 
 func is_open_top() -> bool:
 	return false

@@ -85,7 +85,7 @@ func build() -> void:
 		_loft([Vector3(.09,.77,-.47),Vector3(.23,.85,-.12),Vector3(.20,.79,.20)],[.08,.15,.10],paint)
 		_loft([Vector3(.14,.80,.53),Vector3(.19,.80,.94)],[.10,.07],paint)
 		for side in [-1.0,1.0]:
-			var bag := box(Vector3(side*.25,.49,.60),Vector3(.20,.30,.42),leather)
+			box(Vector3(side*.25,.49,.60),Vector3(.20,.30,.42),leather)
 			box(Vector3(side*.357,.55,.59),Vector3(.013,.045,.12),chrome)
 			box(Vector3(side*.357,.42,.59),Vector3(.013,.08,.045),chrome)
 		_round_lamp(Vector3(0,1.04,-.77),.13)
@@ -98,7 +98,7 @@ func build() -> void:
 	# Tank and filler cap, contoured saddle, tail light and registration plate.
 	if style == "sport":
 		_loft([Vector3(.11,.90,-.35),Vector3(.23,.97,-.07),Vector3(.15,.87,.20)],[.07,.14,.06],paint)
-	var cap := cylinder(Vector3(0,1.10 if style == "sport" else .98, -.08),.046,.008,chrome)
+	cylinder(Vector3(0,1.10 if style == "sport" else .98, -.08),.046,.008,chrome)
 	_loft([Vector3(.12,_seat_y,.12),Vector3(.18,_seat_y+.025,.40),Vector3(.13,_seat_y+.07,.65)],[.033,.045,.028],leather)
 	box(Vector3(0,_seat_y+.025,.73),Vector3(.22,.045,.035),mat("taillight","bd2530",.3,.23,.55))
 	var plate := box(Vector3(0,_seat_y-.14,.82),Vector3(.19,.12,.014),mat("plate","d6d9d2",.0,.75))
@@ -196,7 +196,7 @@ func _wheel(z: float, front: bool) -> void:
 		get_child(i).set_meta("wheel_radius",_radius)
 		get_child(i).set_meta("wheel_spins",true)
 	start = get_child_count()
-	var caliper := box(center+Vector3(.083,.035,.12),Vector3(.04,.095,.065),mat("caliper","b84332",.4,.4))
+	box(center+Vector3(.083,.035,.12),Vector3(.04,.095,.065),mat("caliper","b84332",.4,.4))
 	# Fender follows the fork, with a real air gap above the tread.
 	for step in 9:
 		var a := PI*(.10+step*.08)
@@ -255,7 +255,7 @@ func _build_rider() -> void:
 		var upper := _limb(arm,.066,rider_jacket)
 		var lower := _limb(arm,.051,rider_jacket)
 		first = get_child_count()
-		var hand := ell(Vector3.ZERO,Vector3(.10,.075,.11),gloves)
+		ell(Vector3.ZERO,Vector3(.10,.075,.11),gloves)
 		# Hand needs its own transform, preserved by the static mesh batcher.
 		var hand_pivot := Node3D.new()
 		arm.add_child(hand_pivot)

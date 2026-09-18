@@ -144,6 +144,7 @@ func ensure_presentation() -> void:
 	var spec := _pending_spec
 	_pending_spec = {}
 	_setup_3d_model(spec, _pending_color)
+
 var body_viewport: SubViewport = null
 var body_model: Node3D = null
 var lightbar_3d := preload("res://emergency/EmergencyLightbar3D.gd").new()
@@ -166,6 +167,7 @@ func _ensure_required_nodes() -> void:
 	if camera == null:
 		camera = Camera2D.new()
 		camera.name = "Camera"
+		camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 		camera.enabled = false
 		add_child(camera)
 	pedestrian_hitbox = get_node_or_null("PedestrianHitbox") as Area2D
@@ -247,6 +249,7 @@ func _ensure_camera() -> Camera2D:
 		if camera == null:
 			camera = Camera2D.new()
 			camera.name = "Camera"
+			camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 			add_child(camera)
 		var dyn_cam = load("res://systems/DynamicCamera.gd")
 		if dyn_cam:
@@ -883,6 +886,7 @@ func apply_archetype(archetype_id: String, custom_color: Color = Color.TRANSPARE
 	preload("res://world/harbor/ForkliftLift.gd").sync_vehicle(self, archetype_id == "port_forklift")
 
 func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) -> void:
+	var _setup_t0 := Time.get_ticks_usec()
 	is_3d_vehicle = true
 	var model_path: String = String(spec.get("model_class", ""))
 	var model_res = load(model_path)
@@ -890,6 +894,10 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 		return
 	# Recycled vehicles must rebuild when their authored class changes.
 	if body_model != null and body_model.get_script() != model_res:
+		if visual and visual.has_node("VehicleShadow"):
+			visual.get_node("VehicleShadow").queue_free()
+		if visual:
+			visual.texture = null
 		body_viewport.free()
 		body_viewport = null
 		body_model = null
@@ -982,6 +990,8 @@ func _setup_3d_model(spec: Dictionary, custom_color: Color = Color.TRANSPARENT) 
 
 	if visual:
 		visual.texture = body_viewport.get_texture()
+		if visual.has_node("VehicleShadow"):
+			visual.get_node("VehicleShadow").texture = body_viewport.get_texture()
 		visual.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if is_motorcycle else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 		visual.region_enabled = false
 		visual.centered = true
@@ -1068,7 +1078,13 @@ func _update_3d_orientation(delta: float) -> void:
 	var steer_moved := absf(wheel_rig.steering_angle - _last_render_steer) > 0.004
 	var beacon_changed := lightbar_3d.update((is_siren_on or is_alarm_active) and not is_broken and not is_exploded, Time.get_ticks_msec())
 	var moving_pose := absf(signed_speed)>0.1 or steer_moved or rider_moved or not is_equal_approx(_last_render_heading,global_rotation)
-	if not _body_render_visible or beacon_changed or (moving_pose and _body_render_clock >= interval):
+	if not _body_render_visible:
+		_body_render_clock = fposmod(float(get_instance_id()) * 0.0071, interval)
+		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		body_render_requests += 1
+		_last_render_heading = global_rotation
+		_last_render_steer = wheel_rig.steering_angle
+	elif beacon_changed or (moving_pose and _body_render_clock >= interval):
 		_body_render_clock = fmod(_body_render_clock, interval)
 		body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		body_render_requests += 1
@@ -1279,6 +1295,7 @@ func configure_as_parked() -> void:
 	speed = 0.0
 	velocity = Vector2.ZERO
 	set_process(false)
+	set_physics_process(false)
 	if camera:
 		camera.enabled = false
 		camera.set_process(false)
@@ -1302,6 +1319,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 
 func _enter_vehicle_with_role(player_body: CharacterBody2D, as_taxi_passenger := false, steal_taxi := false) -> void:
 	if has_meta("forklift_carried"): return
+	set_physics_process(true)
 	ensure_presentation()
 	if is_broken or is_driven_by_player or player_body == null:
 		return

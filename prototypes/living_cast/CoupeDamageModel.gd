@@ -1,3 +1,4 @@
+@tool
 extends "res://prototypes/living_cast/RearEngineCoupe.gd"
 
 ## Event-driven visual damage. Never rewrites vertices during normal driving.
@@ -11,6 +12,13 @@ var is_charred := false
 var impact_count := 0
 var detached := false
 var marks: Array[Node] = []
+
+func _init() -> void:
+	if get_script() != null and get_script().resource_path.ends_with("CoupeDamageModel.gd") and get_child_count() == 0:
+		var cache = load("res://cars/VehicleGeometryCache.gd")
+		if cache and not cache.restore(self):
+			build()
+			cache.capture(self)
 
 func _ready() -> void:
 	super._ready()

@@ -60,7 +60,7 @@ func pose(bike: Node3D, steering: float, foot_down: float, helmet_state: Node) -
 		var grip := Vector3(side*.31,bike._handle_y+.015,bike._handle_z+.065)
 		var target: Vector3 = (axis+Basis(Vector3.UP,steering)*(grip-axis))/units
 		var shell := head_node.get_node("MotorcycleHelmet") as Node3D
-		var touch := head_node.transform*(shell.position+Vector3(side*.14,-.06,0))
+		var touch := head_node.transform*(shell.position+Vector3(side*.16,-.06,0))
 		target = target.lerp(touch,gesture)
 		arm_solver._solve_arm(arm.upper,arm.lower,target,side)
 	for leg in legs:

@@ -142,7 +142,7 @@ func request_appearance_update() -> void:
 
 func repaint_vehicle(new_color: Color = Color.TRANSPARENT) -> void:
 	paint_color = PALETTE.pick_random() if new_color == Color.TRANSPARENT else new_color
-	if body_model:
+	if body_model and body_model.paint:
 		body_model.paint.albedo_color = paint_color
 		request_appearance_update()
 	if sprite: sprite.modulate = Color.WHITE
