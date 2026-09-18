@@ -362,7 +362,7 @@ func _walk_to(actor: CharacterBody2D, point: Vector2, generation: int) -> bool:
 	var waited := 0.0
 	var elapsed := 0.0
 	var limit := actor.global_position.distance_to(point)/40.0+3.0
-	var depth: Node
+	var depth: Node = null
 	while actor.global_position.distance_to(point) > 1.5 and generation == _boarding_generation:
 		await get_tree().physics_frame
 		var delta := get_physics_process_delta_time()

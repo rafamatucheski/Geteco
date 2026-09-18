@@ -5,9 +5,9 @@ const STREET_ROBBERY := preload("res://world/harbor/events/HarborStreetRobbery.g
 var rng := RandomNumberGenerator.new()
 var next_funeral := 25.0
 var event_age := 0.0
-var incident: Node2D
-var unit: Node2D
-var victim: Node2D
+var incident: Node2D = null
+var unit: Node2D = null
+var victim: Node2D = null
 var funeral_age := 0.0
 var funeral_phase := "idle"
 var guests: Array[Node2D] = []

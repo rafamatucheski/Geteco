@@ -170,6 +170,20 @@ func _build_all_interiors() -> void:
 
 	_connect_npc_dialogue_signals()
 	_register_interior_exits()
+	set_active_interior(null)
+
+func set_active_interior(active_room: Node2D) -> void:
+	var spaces_root := get_node_or_null("InteriorSpaces")
+	if not is_instance_valid(spaces_root):
+		return
+	for child in spaces_root.get_children():
+		if child is Node2D and child.position.y >= 10000.0:
+			var should_be_active := (child == active_room)
+			if child.visible != should_be_active:
+				child.visible = should_be_active
+			var target_mode := Node.PROCESS_MODE_INHERIT if should_be_active else Node.PROCESS_MODE_DISABLED
+			if child.process_mode != target_mode:
+				child.process_mode = target_mode
 
 func _connect_npc_dialogue_signals() -> void:
 	for interior in [garage_interior, police_interior, clinic_interior, workshop_interior, fire_station_interior, ammunation_interior, morgue_interior]:
@@ -355,6 +369,7 @@ func _on_exterior_destination_requested(entrance: BuildingEntrance, actor: Node2
 	if not is_instance_valid(actor) or interior == null or spawn_marker == null:
 		return
 	if interior.has_method("can_enter") and not interior.can_enter(): return
+	set_active_interior(interior)
 
 	# Record origin entrance for return routing
 	_actor_origin_entrances[actor] = entrance
@@ -475,6 +490,7 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 			exited_interior_id = interior.interior_id
 			interior.set_npc_rendering_active(false)
 
+	set_active_interior(null)
 	var weather := get_tree().get_first_node_in_group("day_night_manager")
 	if weather and weather.has_method("set_interior_mode"):
 		weather.set_interior_mode(false)
@@ -492,6 +508,8 @@ func _frame_interior_camera(actor: Node2D, rect: Rect2) -> void:
 		cam.remove_meta("interior_follow_bounds")
 		# Também atende a restauração de save, que passa somente o retângulo.
 		for interior in get_node("InteriorSpaces").get_children():
+			if interior is Node2D and interior.position.y >= 10000.0 and interior.has_method("get_camera_rect") and interior.get_camera_rect() == rect:
+				set_active_interior(interior)
 			if interior.has_method("get_gameplay_camera_bounds") and interior.get_camera_rect() == rect and interior.is_bank:
 				cam.set_meta("interior_follow_bounds", interior.get_gameplay_camera_bounds())
 				break

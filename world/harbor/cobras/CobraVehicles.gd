@@ -34,6 +34,7 @@ func _ready() -> void:
 	secret_car.add_child(collider)
 	var camera := CAMERA.new()
 	camera.name = "Camera"
+	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	camera.ignore_rotation = true
 	camera.position_smoothing_enabled = true
 	camera.position_smoothing_speed = 8.0

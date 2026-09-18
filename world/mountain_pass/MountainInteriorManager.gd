@@ -90,6 +90,17 @@ func _build_interiors() -> void:
 	# Conecta portas de saida dos interiores
 	call_deferred("_bind_interior_exits")
 	region_ready = true
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	var active_id: StringName = player.get_meta("mountain_interior_id", &"") if player != null else &""
+	set_active_interior(_interiors.get(active_id, null))
+
+func set_active_interior(active_room: Node2D) -> void:
+	for id in _interiors:
+		var room: Node2D = _interiors[id]
+		if room == null: continue
+		var is_current := (room == active_room)
+		room.visible = is_current
+		room.process_mode = Node.PROCESS_MODE_INHERIT if is_current else Node.PROCESS_MODE_DISABLED
 
 func _set_outfitters_modal(active: bool) -> void:
 	var actor := get_tree().get_first_node_in_group("player")
@@ -167,6 +178,7 @@ func _on_entrance_requested(entrance_self: BuildingEntrance, actor: Node2D, _des
 		add_child(helper)
 		helper.configure(actor, interior.camera_3d, interior.sprite_3d)
 		_actor_scale_helpers[actor] = helper
+	set_active_interior(interior)
 	actor_entered_interior.emit(actor, i_id)
 
 func _on_exit_requested(exit_door_self: BuildingEntrance, actor: Node2D, _dest_id: StringName, _scene: PackedScene, _spawn: StringName, interior_id: StringName) -> void:
@@ -202,6 +214,7 @@ func _on_exit_requested(exit_door_self: BuildingEntrance, actor: Node2D, _dest_i
 		actor.start_skiing(Vector2.UP)
 		if actor.has_method("_show_weapon_notice"):
 			actor._show_weapon_notice("SKI: W ACELERA · S FREIA · A/D CURVAM · ESPAÇO CRAVA AS BORDAS")
+	set_active_interior(null)
 	actor_returned_to_exterior.emit(actor, interior_id)
 
 func _process(_delta: float) -> void:

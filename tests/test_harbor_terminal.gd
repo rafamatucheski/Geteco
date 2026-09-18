@@ -15,7 +15,7 @@ func run() -> void:
 	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
-	for i in 12:
+	while world.get("campaign_controller") == null or not bool(world.get("world_build_ready")):
 		await process_frame
 	var terminal = world.get_node("ArrivalStop")
 	var player = world.get_node("Player")
@@ -41,19 +41,20 @@ func run() -> void:
 	check(not player.visible, "Dante remains inside the bus during CGI")
 	mission.skip_cinematic()
 	var started := Time.get_ticks_msec()
-	while mission.phase != "phone" and Time.get_ticks_msec() - started < 20000:
+	while not (mission.phase in ["phone", "police_visit"]) and Time.get_ticks_msec() - started < 20000:
 		await process_frame
-	check(mission.phase == "phone", "Physical disembark completes before phone")
+	check(mission.phase in ["phone", "police_visit"], "Physical disembark completes before phone or story transition")
 	print("TERMINAL_DANTE position=%s phase=%s" % [player.global_position, mission.phase])
-	if mission.phase != "phone":
+	if not (mission.phase in ["phone", "police_visit"]):
 		world.queue_free()
 		await process_frame
 		quit(1)
 		return
 	check(player.visible and player.global_position.distance_to(world.get_node("ArrivalSpawn").global_position) < 4, "Dante reaches platform on foot")
-	mission.answer_phone()
-	for i in 4:
-		mission.advance_dialogue()
+	if mission.phase == "phone":
+		mission.answer_phone()
+		for i in 4:
+			mission.advance_dialogue()
 	var last_road := ""
 	var seen: Dictionary = {}
 	var previous_bus_position: Vector2 = terminal.bus.global_position

@@ -142,6 +142,7 @@ func _begin_shot() -> void:
 	if _previous_pause: return
 	_previous_camera = get_viewport().get_camera_2d()
 	_camera = Camera2D.new()
+	_camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	_focus = works.get_focus_position()
 	_camera.zoom = Vector2(.72,.72)
 	_camera.process_mode = Node.PROCESS_MODE_ALWAYS

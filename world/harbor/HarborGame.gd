@@ -51,6 +51,8 @@ func _start_gameplay() -> void:
 			hud.update_stars(wanted.current_stars)
 	_restore_room_presentation()
 	await batch.checkpoint(get_tree())
+	await preload("res://cars/VehicleGeometryCache.gd").prepare_common_models(get_tree())
+	await batch.checkpoint(get_tree())
 	var soundscape := preload("res://world/harbor/HarborSoundscape.gd").new()
 	soundscape.name = "HarborSoundscape"
 	add_child(soundscape)
@@ -93,7 +95,6 @@ func _start_gameplay() -> void:
 	_spawn_police_manhole_sewer()
 	_spawn_motorsport_weather()
 	await batch.checkpoint(get_tree())
-	gameplay_ready = true
 	add_child(preload("res://ui/ZoneEntryHUD.gd").new())
 	var personal_car := preload("res://world/harbor/monaliza/PersonalCarManager.gd").new()
 	personal_car.name = "PersonalCarManager"
@@ -140,6 +141,10 @@ func _start_gameplay() -> void:
 	var presentation := preload("res://ui/GameplayPresentation.gd").new()
 	presentation.name = "GameplayPresentation"
 	add_child(presentation)
+	if has_node("RoadLighting"):
+		while not $RoadLighting.ready_for_audit:
+			await get_tree().process_frame
+	gameplay_ready = true
 
 ## Desmanche, colecionáveis e zonas de drift — esta é a árvore que "Novo
 ## Jogo" realmente carrega (Main.tscn é legado, só usado por saves antigos).
@@ -225,9 +230,11 @@ func _restore_room_presentation() -> void:
 		_last_room.set_npc_rendering_active(false)
 	_last_room = room
 	if room != null:
+		$Interiors.set_active_interior(room)
 		room.set_npc_rendering_active(true)
 		$Interiors._frame_interior_camera($Player, room.get_camera_rect())
 	else:
+		$Interiors.set_active_interior(null)
 		$Interiors._reset_exterior_camera($Player)
 		if $Player.has_meta("harbor_interior"):
 			$Player.remove_meta("harbor_interior")

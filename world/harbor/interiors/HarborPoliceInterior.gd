@@ -84,7 +84,7 @@ func _setup_3d_station_viewport() -> void:
 	view.transparent_bg = true
 	view.own_world_3d = true
 	view.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	view.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(view)
 
 	var env := Environment.new()
@@ -378,7 +378,12 @@ func _open_terminal() -> void:
 # 5. ESCALA DO JOGADOR & CICLO DE VIDA
 # ==============================================================================
 
+var _warmed: bool = false
+
 func _process(_delta: float) -> void:
+	if not _warmed and is_instance_valid(view):
+		_warmed = true
+		view.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	_sync_actor_scale()
 	if is_instance_valid(actor) and is_instance_valid(terminal_area):
 		var dist := actor.global_position.distance_to(terminal_area.global_position)
@@ -415,7 +420,11 @@ func actor_inside() -> bool:
 func set_npc_rendering_active(active: bool) -> void:
 	super.set_npc_rendering_active(active)
 	if is_instance_valid(view):
-		view.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
+		if active:
+			view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+			_warmed = true
+		else:
+			view.render_target_update_mode = SubViewport.UPDATE_DISABLED if _warmed else SubViewport.UPDATE_ONCE
 	if not active and is_instance_valid(actor_scale):
 		actor_scale.restore()
 		actor_scale.queue_free()

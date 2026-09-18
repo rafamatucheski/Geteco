@@ -19,14 +19,7 @@ func _ready() -> void:
 	vehicle_mass = 4.2
 	max_health = 300
 	health = max_health
-	_setup_3d_model({
-		"model_class": "res://world/harbor/HarborTransitBusModel.gd",
-		"target_length": target_length,
-		"target_width": 34.0,
-	}, Color("d1cbb7"))
-	# Match the authored midi-bus footprint, including bumpers and tires.
-	var ppm := 74.0 / 4.46
-	body_model.scale = Vector3(34.0 / (2.42 * ppm), 0.85, target_length / (9.78 * ppm))
+	_setup_transit_model()
 	collision_layer = 2
 	collision_mask = 7
 	display_name = "Ônibus do Harbor"
@@ -38,6 +31,16 @@ func _ready() -> void:
 	add_to_group("harbor_transit_bus")
 	_lane_motion_initialized = true
 	_lane_motion_speed = 0.0
+
+func _setup_transit_model() -> void:
+	_setup_3d_model({
+		"model_class": "res://world/harbor/HarborTransitBusModel.gd",
+		"target_length": target_length,
+		"target_width": 34.0,
+	}, Color("d1cbb7"))
+	# Match the authored midi-bus footprint, including bumpers and tires.
+	var ppm := 74.0 / 4.46
+	body_model.scale = Vector3(34.0 / (2.42 * ppm), 0.85, target_length / (9.78 * ppm))
 
 func enter_vehicle(actor: CharacterBody2D) -> void:
 	var was_detached := _detached_from_lane

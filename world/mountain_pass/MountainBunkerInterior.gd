@@ -78,6 +78,7 @@ func _setup_interior_content() -> void:
 	console_position = project_floor(Vector2(6.6, -3.15))
 	route_position = project_floor(Vector2(0, -3.0))
 	room_camera = Camera2D.new()
+	room_camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	room_camera.name = "BunkerCamera"
 	room_camera.enabled = false
 	room_camera.set_meta("mountain_fixed_framing", true)

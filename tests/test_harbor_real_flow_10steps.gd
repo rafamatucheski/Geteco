@@ -190,13 +190,13 @@ func _run_flow() -> void:
 	_check(not locked_btn_found, "ETAPA 7: Missão bloqueada não pode ser selecionada (sem botão ativo)")
 
 	# Confirmar e aceitar a missão disponível com Enter real
-	var mission_accepted_id := ""
-	board.mission_selected.connect(func(mid: String): mission_accepted_id = mid)
+	var mission_accepted_box := [""]
+	board.mission_selected.connect(func(mid: String): mission_accepted_box[0] = mid)
 
 	await _press_key(KEY_ENTER)
 	for _f in 6:
 		await physics_frame
-	_check(mission_accepted_id == "test_mission_available", "ETAPA 6: Missão disponível aceita com sucesso via ui_accept")
+	_check(mission_accepted_box[0] == "test_mission_available", "ETAPA 6: Missão disponível aceita com sucesso via ui_accept")
 
 	# Fechar a lousa
 	await _press_key(KEY_ESCAPE)

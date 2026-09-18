@@ -382,7 +382,7 @@ func dispatch_response() -> void:
 	var wanted := get_node("/root/WantedManager")
 	wanted.report_crime(35 if is_bank else 15)
 	var depot := get_tree().get_first_node_in_group("emergency_depot_director")
-	var unit: Node2D
+	var unit: Node2D = null
 	if depot and is_instance_valid(entrance):
 		entrance.set_meta("police_search_position",true)
 		unit=depot.request_dispatch("police",entrance)

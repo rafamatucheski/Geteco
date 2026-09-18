@@ -48,7 +48,7 @@ func run() -> void:
 	patient.take_damage(1000)
 	wanted.clear_wanted_level()
 	var care := root.get_node("NPCMedicalCare")
-	var unit: Node2D
+	var unit: Node2D = null
 	var start := Time.get_ticks_msec()
 	var last_status := start
 	var parked_at := 0

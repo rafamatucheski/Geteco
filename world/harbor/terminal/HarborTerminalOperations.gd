@@ -209,7 +209,10 @@ func _tick_gate(gate: Dictionary, delta: float) -> void:
 		gate.request_lamp.emission_enabled = pulse
 		gate.request_lamp.emission = Color("63dce8")
 	if is_instance_valid(gate.arm):
+		var prev_rot: float = gate.arm.rotation.z
 		gate.arm.rotation.z = float(gate.opening) * PI * 0.49
+		if not is_equal_approx(prev_rot, gate.arm.rotation.z) and is_instance_valid(architecture):
+			architecture.request_gate_redraw()
 
 func get_operation_status() -> Dictionary:
 	var status := {"entries": 0, "exits": 0, "bay_visits": 0, "distance": 0.0, "boarded": 0, "alighted": 0, "people": passengers.size(), "fleet": [], "gate_requests": gate_requests, "gate_authorizations": gate_authorizations, "gate_passages": gate_passages}

@@ -47,7 +47,7 @@ func _setup_district_and_archetype() -> void:
 	health = max_health
 
 func _ready() -> void:
-	defer_presentation = true
+	defer_presentation = false
 	super._ready()
 	add_to_group("cobra_local")
 	if guard:

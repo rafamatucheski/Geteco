@@ -10,7 +10,7 @@ var floodlights: Array[Node2D] = []
 
 func _ready() -> void:
 	build_view(TERMINAL_MODEL, 40.0, 18.0, Vector3(5.5, 0, -5), Vector3(0, 24, 20))
-	viewport_3d.size = Vector2i(1920, 1600)
+	viewport_3d.size = Vector2i(1280, 1066)
 	var rendered_metre := camera_3d.unproject_position(Vector3.RIGHT).distance_to(camera_3d.unproject_position(Vector3.ZERO))
 	sprite_3d.scale = Vector2.ONE * 18.0 / rendered_metre
 	sprite_3d.position = -(camera_3d.unproject_position(Vector3.ZERO) - Vector2(viewport_3d.size) * 0.5) * sprite_3d.scale
@@ -124,8 +124,6 @@ func floor_from_local(point: Vector2) -> Vector3:
 func request_redraw() -> void:
 	if not _animation_active and _on_screen:
 		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
-		gate_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-		overhead_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 func set_animation_active(active: bool) -> void:
 	_animation_active = active
@@ -146,5 +144,9 @@ func _refresh_render_mode() -> void:
 		overhead_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	else:
 		viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE if _animation_active else SubViewport.UPDATE_ONCE
-		gate_viewport.render_target_update_mode = viewport_3d.render_target_update_mode
+		gate_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		overhead_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+func request_gate_redraw() -> void:
+	if _on_screen and is_instance_valid(gate_viewport):
+		gate_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE

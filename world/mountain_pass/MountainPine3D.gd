@@ -71,7 +71,11 @@ func _build_shared_view(variant: int) -> Dictionary:
 	# nesse instante. Por isso a câmera abaixo usa look_at_from_position() e
 	# a projeção é calculada à mão em vez de unproject_position(): nenhuma
 	# das duas pode depender da câmera já estar dentro da árvore.
-	get_tree().root.call_deferred("add_child", view)
+	var tree_loop := Engine.get_main_loop() as SceneTree
+	if tree_loop != null and tree_loop.root != null:
+		tree_loop.root.call_deferred("add_child", view)
+	else:
+		get_tree().root.call_deferred("add_child", view)
 	var tree := Node3D.new()
 	view.add_child(tree)
 	var trunk := StandardMaterial3D.new()
@@ -165,7 +169,8 @@ func _build_shared_view(variant: int) -> Dictionary:
 	# Limpa a referência quando a região é descarregada, inclusive após load.
 	var key := "%s_%d_%d" % [get_parent().get_instance_id(), int(is_snowy), variant]
 	view.tree_exiting.connect(func(): _views.erase(key))
-	return {"viewport":weakref(view),"texture":view.get_texture(),"scale":display_scale,"offset":offset}
+	var tex := view.get_texture()
+	return {"viewport":weakref(view),"texture":tex,"scale":display_scale,"offset":offset}
 
 func _branch(parent: Node3D, start: Vector3, end: Vector3, radius: float, mat: Material) -> void:
 	var limb := _cylinder(parent,(start+end)*.5,radius*.55,radius,start.distance_to(end),mat,6)

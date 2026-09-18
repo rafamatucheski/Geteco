@@ -74,12 +74,45 @@ func _process(delta: float) -> void:
 	_update_region()
 	_transfer_bridge_traffic()
 
+const HARBOR_EXTERIOR_TARGETS: Array[String] = [
+	"District", "EastDistrict", "NorthDistrict", "SouthPort",
+	"Gateway", "Waterfront", "Alleys", "CobraNeighborhood",
+	"CobraTerritory", "CobraVehicles", "Cemetery", "RoadNetwork",
+	"FreightRail", "RoadSafety", "Life", "Interiors", "ArrivalStop",
+	"RoadLighting", "UrbanTransit", "ChopShopZone", "RestaurantLife",
+	"PatrolParking", "ResidencePrototype", "Residence_westgate_garden",
+	"Residence_quayside_house", "Residence_canal_north", "PayNSpray",
+	"ThematicFleet", "NecoTowTruck", "Bridge"
+]
+var _harbor_suspended := false
+
+func _update_harbor_suspension(harbor_nearby: bool) -> void:
+	var should_suspend := not harbor_nearby
+	if _harbor_suspended == should_suspend: return
+	_harbor_suspended = should_suspend
+	var harbor = get_parent()
+	if harbor == null: return
+	for node_name in HARBOR_EXTERIOR_TARGETS:
+		var node = harbor.get_node_or_null(node_name)
+		if node != null:
+			if should_suspend:
+				node.set_meta("cw_prev_vis", node.visible if node is CanvasItem else true)
+				node.set_meta("cw_prev_proc", node.process_mode)
+				if node is CanvasItem: node.visible = false
+				node.process_mode = Node.PROCESS_MODE_DISABLED
+			else:
+				if node is CanvasItem:
+					node.visible = bool(node.get_meta("cw_prev_vis", true))
+				node.process_mode = int(node.get_meta("cw_prev_proc", Node.PROCESS_MODE_INHERIT))
+
 func _update_region() -> void:
 	var point := exterior_position()
 	var player: Node2D = mountain.player_instance
 	var selected: bool = point.x >= SEAM_X and point.y < -2000 or bool(player.get_meta("mountain_interior", false))
 	current_region = "mountain" if selected else "harbor"
 	var nearby: bool = selected or point.distance_to(Vector2(SEAM_X, -4560)) < 3200
+	var harbor_nearby: bool = not selected or point.distance_to(Vector2(SEAM_X, -4560)) < 3200
+	_update_harbor_suspension(harbor_nearby)
 	mountain.visible = nearby
 	mountain.process_mode = Node.PROCESS_MODE_INHERIT if nearby else Node.PROCESS_MODE_DISABLED
 	mountain.region_selected = selected
@@ -106,12 +139,14 @@ func _update_region() -> void:
 		if camera and camera.has_meta("mountain_zoom"): camera.remove_meta("mountain_zoom")
 
 func _budget_traffic(point: Vector2) -> void:
+	if _harbor_suspended: return
 	var walkers := get_tree().get_nodes_in_group("pedestrian")
 	for actor in get_tree().get_nodes_in_group("authored_sidewalk_pedestrian"):
 		if not walkers.has(actor): walkers.append(actor)
 	population_activity.update(get_parent(), point, get_tree().get_nodes_in_group("modern_traffic"), walkers)
 
 func _transfer_bridge_traffic() -> void:
+	if _harbor_suspended: return
 	var traffic := mountain.get_node("MountainTraffic")
 	for car in get_tree().get_nodes_in_group("modern_traffic"):
 		if car.is_in_group("regional_coach"): continue

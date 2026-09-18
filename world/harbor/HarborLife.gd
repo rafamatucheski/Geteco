@@ -100,7 +100,7 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 	func _ready() -> void:
 		if get_parent().get("walk_space") != null: walk_space = get_parent().get("walk_space")
 		district_theme = DistrictTheme.CITY_DOWNTOWN
-		defer_presentation = true
+		defer_presentation = false
 		archetype_override = [0,1,2,4,6,7][appearance_variant%6]
 		appearance_seed = appearance_variant
 		appearance_gender = 1 + appearance_variant % 2

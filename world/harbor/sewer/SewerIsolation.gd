@@ -39,6 +39,7 @@ func build(owner: Node, room: Node2D) -> void:
 	room.reparent(viewport, true)
 	var camera := Camera2D.new()
 	camera.name = "SewerCamera"
+	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	room.add_child(camera)
 	camera.position = Vector2(100, 17)
 	camera.zoom = Vector2.ONE * 2.072
