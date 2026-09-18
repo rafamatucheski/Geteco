@@ -1,0 +1,50 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+--- primeira construcao por arquétipo (cache frio para este model_class) ---
+PROBE_TV_SETUP model_new_us=177742 mount_us=22276 lamps_us=140 batch_us=32697 children=16 model=res://prototypes/living_cast/models/UnionSedanModel.gd
+  first archetype=union_sedan total_us=245790 total_ms=245.79
+PROBE_TV_SETUP model_new_us=217396 mount_us=25002 lamps_us=128 batch_us=17013 children=15 model=res://prototypes/living_cast/models/SummitSUVModel.gd
+  first archetype=summit_suv total_us=259970 total_ms=259.97
+PROBE_TV_SETUP model_new_us=8154 mount_us=16475 lamps_us=124 batch_us=21086 children=15 model=res://prototypes/living_cast/models/CourierVanModel.gd
+  first archetype=courier_van total_us=57791 total_ms=57.79
+PROBE_TV_SETUP model_new_us=9064 mount_us=10887 lamps_us=123 batch_us=26268 children=24 model=res://prototypes/living_cast/models/RouteCityModel.gd
+  first archetype=route_city total_us=58061 total_ms=58.06
+PROBE_MC_BUILD frame_us=2358 wheels_us=1631 stand_us=52 rider_us=858 children=161
+PROBE_TV_SETUP model_new_us=5258 mount_us=337 lamps_us=26 batch_us=45329 children=17 model=res://cars/motorcycles/UrbanMotorcycle.gd
+  first archetype=bike_urban total_us=53129 total_ms=53.13
+--- segunda construcao do MESMO arquétipo (cache quente, mesma malha) ---
+PROBE_TV_SETUP model_new_us=1934 mount_us=591 lamps_us=190 batch_us=1418 children=16 model=res://prototypes/living_cast/models/UnionSedanModel.gd
+  repeat_a archetype=union_sedan total_us=4509 total_ms=4.51
+PROBE_TV_SETUP model_new_us=1962 mount_us=588 lamps_us=200 batch_us=1457 children=16 model=res://prototypes/living_cast/models/UnionSedanModel.gd
+  repeat_b archetype=union_sedan total_us=4592 total_ms=4.59
+PROBE_TV_SETUP model_new_us=1712 mount_us=559 lamps_us=166 batch_us=1086 children=15 model=res://prototypes/living_cast/models/SummitSUVModel.gd
+  repeat_a archetype=summit_suv total_us=3863 total_ms=3.86
+PROBE_TV_SETUP model_new_us=1636 mount_us=669 lamps_us=198 batch_us=1141 children=15 model=res://prototypes/living_cast/models/SummitSUVModel.gd
+  repeat_b archetype=summit_suv total_us=3998 total_ms=4.00
+PROBE_TV_SETUP model_new_us=1877 mount_us=563 lamps_us=176 batch_us=1444 children=15 model=res://prototypes/living_cast/models/CourierVanModel.gd
+  repeat_a archetype=courier_van total_us=4459 total_ms=4.46
+PROBE_TV_SETUP model_new_us=1976 mount_us=572 lamps_us=175 batch_us=1422 children=15 model=res://prototypes/living_cast/models/CourierVanModel.gd
+  repeat_b archetype=courier_van total_us=4479 total_ms=4.48
+PROBE_TV_SETUP model_new_us=2108 mount_us=598 lamps_us=166 batch_us=1524 children=24 model=res://prototypes/living_cast/models/RouteCityModel.gd
+  repeat_a archetype=route_city total_us=4730 total_ms=4.73
+PROBE_TV_SETUP model_new_us=2150 mount_us=585 lamps_us=179 batch_us=1561 children=24 model=res://prototypes/living_cast/models/RouteCityModel.gd
+  repeat_b archetype=route_city total_us=4796 total_ms=4.80
+PROBE_MC_BUILD frame_us=2450 wheels_us=1608 stand_us=47 rider_us=893 children=161
+PROBE_TV_SETUP model_new_us=5421 mount_us=353 lamps_us=25 batch_us=16184 children=17 model=res://cars/motorcycles/UrbanMotorcycle.gd
+  repeat_a archetype=bike_urban total_us=22362 total_ms=22.36
+PROBE_MC_BUILD frame_us=2335 wheels_us=1628 stand_us=49 rider_us=902 children=161
+PROBE_TV_SETUP model_new_us=5298 mount_us=358 lamps_us=27 batch_us=16982 children=17 model=res://cars/motorcycles/UrbanMotorcycle.gd
+  repeat_b archetype=bike_urban total_us=23053 total_ms=23.05
+--- SubViewport isolado (sem modelo nenhum, só o custo do viewport+own_world_3d) ---
+  viewport_alone iter=0 subviewport_new_us=137 cam_env_light_us=44
+  viewport_alone iter=1 subviewport_new_us=76 cam_env_light_us=24
+  viewport_alone iter=2 subviewport_new_us=57 cam_env_light_us=18
+  viewport_alone iter=3 subviewport_new_us=62 cam_env_light_us=19
+  viewport_alone iter=4 subviewport_new_us=58 cam_env_light_us=18
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+       [0] _time_one (res://tests/perf_audit_claude/probe_traffic_vehicle_build_0918.gd:50)
+   GDScript backtrace (most recent call first):
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+       [1] _run (res://tests/perf_audit_claude/probe_traffic_vehicle_build_0918.gd:17)
+

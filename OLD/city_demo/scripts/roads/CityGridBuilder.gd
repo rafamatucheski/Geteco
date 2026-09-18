@@ -2,10 +2,10 @@
 class_name CityGridBuilder
 extends Node2D
 
-const ROAD_SEGMENT_SCRIPT = preload("res://city_demo/scripts/roads/CityRoadSegment.gd")
-const INTERSECTION_SCRIPT = preload("res://city_demo/scripts/roads/CityIntersection.gd")
-const BUILDING_SCENE = preload("res://city_demo/scenes/CityBuilding.tscn")
-const PARKING_LOT_SCRIPT = preload("res://city_demo/scripts/roads/CityParkingLot.gd")
+const ROAD_SEGMENT_SCRIPT = preload("res://OLD/city_demo/scripts/roads/CityRoadSegment.gd")
+const INTERSECTION_SCRIPT = preload("res://OLD/city_demo/scripts/roads/CityIntersection.gd")
+const BUILDING_SCENE = preload("res://OLD/city_demo/scenes/CityBuilding.tscn")
+const PARKING_LOT_SCRIPT = preload("res://OLD/city_demo/scripts/roads/CityParkingLot.gd")
 
 @export_group("Grid Dimensions")
 @export_range(1, 10, 1) var grid_columns: int = 3:

@@ -302,7 +302,9 @@ static func build_dante_character() -> Node3D:
 	stubble.position = Vector3(0.0, -0.08, -0.06)
 	head_node.add_child(stubble)
 
-	DANTE_ADAPTER._build_cgi_hair(head_node, mat_hair)
+	var hair_cap := _create_ellipsoid(Vector3(0.36, 0.28, 0.36), mat_hair)
+	hair_cap.position = Vector3(0.0, 0.06, 0.02)
+	head_node.add_child(hair_cap)
 
 	# Braço Esquerdo
 	var left_upper_arm := Node3D.new()

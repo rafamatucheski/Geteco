@@ -1,0 +1,35 @@
+﻿Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Vulkan 1.4.341 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 4060 Laptop GPU
+
+--- primeira construcao por arquétipo (cache frio para este model_class) ---
+  first archetype=union_sedan total_us=277066 total_ms=277.07
+  first archetype=summit_suv total_us=61279 total_ms=61.28
+  first archetype=courier_van total_us=59514 total_ms=59.51
+  first archetype=route_city total_us=62435 total_ms=62.44
+PROBE_MC_BUILD frame_us=2324 wheels_us=1617 stand_us=56 rider_us=876 children=161
+  first archetype=bike_urban total_us=49741 total_ms=49.74
+--- segunda construcao do MESMO arquétipo (cache quente, mesma malha) ---
+  repeat_a archetype=union_sedan total_us=4149 total_ms=4.15
+  repeat_b archetype=union_sedan total_us=4074 total_ms=4.07
+  repeat_a archetype=summit_suv total_us=3550 total_ms=3.55
+  repeat_b archetype=summit_suv total_us=3353 total_ms=3.35
+  repeat_a archetype=courier_van total_us=3863 total_ms=3.86
+  repeat_b archetype=courier_van total_us=3693 total_ms=3.69
+  repeat_a archetype=route_city total_us=4231 total_ms=4.23
+  repeat_b archetype=route_city total_us=4014 total_ms=4.01
+PROBE_MC_BUILD frame_us=2523 wheels_us=1688 stand_us=87 rider_us=880 children=161
+  repeat_a archetype=bike_urban total_us=52426 total_ms=52.43
+PROBE_MC_BUILD frame_us=2223 wheels_us=1663 stand_us=48 rider_us=987 children=161
+  repeat_b archetype=bike_urban total_us=56153 total_ms=56.15
+--- SubViewport isolado (sem modelo nenhum, só o custo do viewport+own_world_3d) ---
+  viewport_alone iter=0 subviewport_new_us=148 cam_env_light_us=38
+  viewport_alone iter=1 subviewport_new_us=74 cam_env_light_us=24
+  viewport_alone iter=2 subviewport_new_us=58 cam_env_light_us=18
+  viewport_alone iter=3 subviewport_new_us=87 cam_env_light_us=23
+  viewport_alone iter=4 subviewport_new_us=67 cam_env_light_us=29
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+   at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+   GDScript backtrace (most recent call first):
+       [0] _time_one (res://tests/perf_audit_claude/probe_traffic_vehicle_build_0918.gd:50)
+       [1] _run (res://tests/perf_audit_claude/probe_traffic_vehicle_build_0918.gd:17)
+

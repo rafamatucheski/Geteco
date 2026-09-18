@@ -1,0 +1,658 @@
+{
+	"environment": {
+		"adapter": "NVIDIA GeForce RTX 4060 Laptop GPU",
+		"args": [
+			"run=03b_baseline_1_warm",
+			"mode=new"
+		],
+		"cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+		"cpu_threads": 20,
+		"debug_build": true,
+		"display_server": "Windows",
+		"engine": {
+			"build": "official",
+			"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+			"hex": 263938,
+			"major": 4,
+			"minor": 7,
+			"patch": 2,
+			"status": "stable",
+			"string": "4.7.2-stable (official)",
+			"timestamp": 0
+		},
+		"executable": "D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64.exe",
+		"max_fps": 60,
+		"physics_ticks_per_second": 60,
+		"renderer_method": "mobile",
+		"rendering_driver": "vulkan",
+		"root_size": "(1280, 720)",
+		"screen_refresh_hz": 159.962005615234,
+		"user_data_dir": "D:/geteco/game/tests/perf_audit_claude/results/03b_baseline_1/appdata/Godot/app_userdata/Geteco",
+		"vsync_mode": 1
+	},
+	"gameloading_phase_times_ms": {
+		"audio": 1532.169,
+		"before_resources": 6068.957,
+		"emergency": 2935.469,
+		"resident_vehicles": 18.533,
+		"resources": 0.049,
+		"scene_ready": 4210.667,
+		"total": 37975.436,
+		"vehicle_models": 3284.164,
+		"world_build": 19856.171
+	},
+	"markers": [
+		{
+			"name": "phase:menu_boot",
+			"t_ms": 2.371
+		},
+		{
+			"name": "menu_ready",
+			"t_ms": 437.798
+		},
+		{
+			"name": "phase:menu_click_new_game",
+			"t_ms": 437.808
+		},
+		{
+			"name": "phase:menu_transition_and_opening_wait",
+			"t_ms": 442.574
+		},
+		{
+			"name": "opening_started",
+			"t_ms": 6656.35
+		},
+		{
+			"name": "phase:opening_presentation_skip",
+			"t_ms": 6656.362
+		},
+		{
+			"name": "opening_complete",
+			"t_ms": 6939.644
+		},
+		{
+			"name": "phase:world_construction",
+			"t_ms": 6939.651
+		},
+		{
+			"children": 24,
+			"name": "world_enter_tree",
+			"t_ms": 7041.416
+		},
+		{
+			"name": "child_ready:OceanBackdrop",
+			"t_ms": 7044.896
+		},
+		{
+			"name": "child_ready:District",
+			"t_ms": 7387.64
+		},
+		{
+			"name": "child_ready:Waterfront",
+			"t_ms": 7655.057
+		},
+		{
+			"name": "child_ready:EastDistrict",
+			"t_ms": 7661.775
+		},
+		{
+			"name": "child_ready:NorthDistrict",
+			"t_ms": 7674.551
+		},
+		{
+			"name": "child_ready:Gateway",
+			"t_ms": 7767.015
+		},
+		{
+			"name": "child_ready:Bridge",
+			"t_ms": 7767.965
+		},
+		{
+			"name": "child_ready:Alleys",
+			"t_ms": 7768.665
+		},
+		{
+			"name": "child_ready:SouthPort",
+			"t_ms": 7849.347
+		},
+		{
+			"name": "child_ready:RoadLayout",
+			"t_ms": 7849.353
+		},
+		{
+			"name": "child_ready:CobraNeighborhood",
+			"t_ms": 7854.388
+		},
+		{
+			"name": "child_ready:RoadNetwork",
+			"t_ms": 8233.986
+		},
+		{
+			"name": "child_ready:FreightRail",
+			"t_ms": 8470.852
+		},
+		{
+			"name": "child_ready:RoadSafety",
+			"t_ms": 8470.863
+		},
+		{
+			"name": "child_ready:Life",
+			"t_ms": 8470.867
+		},
+		{
+			"name": "child_ready:PlayerCar",
+			"t_ms": 9155.937
+		},
+		{
+			"name": "child_ready:Player",
+			"t_ms": 9392.601
+		},
+		{
+			"name": "child_ready:OverviewCamera",
+			"t_ms": 9392.607
+		},
+		{
+			"name": "child_ready:Interiors",
+			"t_ms": 9986.637
+		},
+		{
+			"name": "child_ready:HarborWeatherReadout",
+			"t_ms": 9986.792
+		},
+		{
+			"name": "child_ready:ArrivalSpawn",
+			"t_ms": 9986.796
+		},
+		{
+			"name": "child_ready:ArrivalStop",
+			"t_ms": 11120.321
+		},
+		{
+			"name": "child_ready:FirstDeliveryPickup",
+			"t_ms": 11120.328
+		},
+		{
+			"name": "child_ready:HospitalSpawn",
+			"t_ms": 11120.33
+		},
+		{
+			"name": "world_ready",
+			"t_ms": 11167.705
+		},
+		{
+			"name": "deferred_child_added:WeaponNotices",
+			"t_ms": 14879.877
+		},
+		{
+			"name": "deferred_child_added:HarborGangReputation",
+			"t_ms": 15867.825
+		},
+		{
+			"name": "deferred_child_added:CobraTerritory",
+			"t_ms": 15867.862
+		},
+		{
+			"name": "deferred_child_added:HarborSoundscape",
+			"t_ms": 15869.594
+		},
+		{
+			"name": "deferred_child_added:CobraVehicles",
+			"t_ms": 16204.722
+		},
+		{
+			"name": "deferred_child_added:HarborEmergencyDirector",
+			"t_ms": 16658.33
+		},
+		{
+			"name": "deferred_child_added:PatrolParking",
+			"t_ms": 16659.23
+		},
+		{
+			"name": "deferred_child_added:ArrivalMission",
+			"t_ms": 16904.7
+		},
+		{
+			"name": "deferred_child_added:FirstDeliveryParcel",
+			"t_ms": 16909.043
+		},
+		{
+			"name": "deferred_child_added:ThematicFleet",
+			"t_ms": 17113.037
+		},
+		{
+			"name": "deferred_child_added:GameplayTutorials",
+			"t_ms": 17113.486
+		},
+		{
+			"name": "deferred_child_added:CobraCampaign",
+			"t_ms": 17114.169
+		},
+		{
+			"name": "deferred_child_added:CobraCampaignController",
+			"t_ms": 17115.917
+		},
+		{
+			"name": "deferred_child_added:CobraObjectiveMarker",
+			"t_ms": 17126.596
+		},
+		{
+			"name": "deferred_child_added:CobraBossReward",
+			"t_ms": 17126.83
+		},
+		{
+			"name": "deferred_child_added:CobraAftermath",
+			"t_ms": 17127.294
+		},
+		{
+			"name": "deferred_child_added:ChopShopZone",
+			"t_ms": 17245.291
+		},
+		{
+			"name": "deferred_child_added:@Area2D@14125",
+			"t_ms": 17330.224
+		},
+		{
+			"name": "deferred_child_added:@Area2D@14151",
+			"t_ms": 17331.167
+		},
+		{
+			"name": "deferred_child_added:@Area2D@14177",
+			"t_ms": 17331.918
+		},
+		{
+			"name": "deferred_child_added:@Area2D@14203",
+			"t_ms": 17332.706
+		},
+		{
+			"name": "deferred_child_added:@Area2D@14229",
+			"t_ms": 17333.423
+		},
+		{
+			"name": "deferred_child_added:@Area2D@14255",
+			"t_ms": 17334.355
+		},
+		{
+			"name": "deferred_child_added:DriftZone_PÁTIO_WESTGATE",
+			"t_ms": 17335.2
+		},
+		{
+			"name": "deferred_child_added:DriftZone_PÁTIO_DOS_ARMAZÉNS",
+			"t_ms": 17335.601
+		},
+		{
+			"name": "deferred_child_added:@Node2D@14323",
+			"t_ms": 17336.802
+		},
+		{
+			"name": "deferred_child_added:@Node2D@14324",
+			"t_ms": 17336.824
+		},
+		{
+			"name": "deferred_child_added:@Node2D@14342",
+			"t_ms": 17337.524
+		},
+		{
+			"name": "deferred_child_added:@CanvasLayer@14382",
+			"t_ms": 17444.775
+		},
+		{
+			"name": "deferred_child_added:PersonalCarManager",
+			"t_ms": 17444.967
+		},
+		{
+			"name": "deferred_child_added:Monaliza",
+			"t_ms": 17445.144
+		},
+		{
+			"name": "deferred_child_added:ResidencePrototype",
+			"t_ms": 18805.139
+		},
+		{
+			"name": "deferred_child_added:Residence_westgate_garden",
+			"t_ms": 18805.217
+		},
+		{
+			"name": "deferred_child_added:Residence_quayside_house",
+			"t_ms": 18813.711
+		},
+		{
+			"name": "deferred_child_added:Residence_canal_north",
+			"t_ms": 18821.788
+		},
+		{
+			"name": "deferred_child_added:ContinuousWorld",
+			"t_ms": 19105.57
+		},
+		{
+			"name": "deferred_child_added:HarborMountainCoachService",
+			"t_ms": 19105.609
+		},
+		{
+			"name": "deferred_child_added:PayNSpray",
+			"t_ms": 19105.633
+		},
+		{
+			"name": "deferred_child_added:Cemetery",
+			"t_ms": 19105.782
+		},
+		{
+			"name": "deferred_child_added:WorldEvents",
+			"t_ms": 19759.761
+		},
+		{
+			"name": "deferred_child_added:@Node2D@17533",
+			"t_ms": 19759.78
+		},
+		{
+			"name": "deferred_child_added:Robberies",
+			"t_ms": 19760.156
+		},
+		{
+			"name": "deferred_child_added:ClothingShops",
+			"t_ms": 19760.163
+		},
+		{
+			"name": "deferred_child_added:UrbanTransit",
+			"t_ms": 19760.178
+		},
+		{
+			"name": "deferred_child_added:Minimap",
+			"t_ms": 19760.213
+		},
+		{
+			"name": "deferred_child_added:GameplayPresentation",
+			"t_ms": 19762.102
+		},
+		{
+			"name": "deferred_child_added:CombatImpactAudio",
+			"t_ms": 38794.154
+		},
+		{
+			"name": "loading_finished",
+			"t_ms": 38863.55
+		},
+		{
+			"name": "deferred_child_added:NecoTowTruck",
+			"t_ms": 38958.883
+		},
+		{
+			"name": "deferred_child_added:NecoTowTruckSpawn",
+			"t_ms": 38959.156
+		},
+		{
+			"name": "phase:post_load_settle",
+			"t_ms": 39492.204
+		}
+	],
+	"memory_static_mib": 997.600050926209,
+	"memory_video_mib": 1938.86161804199,
+	"mode": "new",
+	"nodes": 32737,
+	"phases_order": [
+		"menu_boot",
+		"menu_click_new_game",
+		"menu_transition_and_opening_wait",
+		"opening_presentation_skip",
+		"world_construction",
+		"post_load_settle"
+	],
+	"stats_by_phase": {
+		"menu_boot": {
+			"frames": 14,
+			"max_ms": 56.3230018615723,
+			"mean_fps": 54.6296689355368,
+			"over_100": 0,
+			"over_16_67": 6,
+			"over_33_33": 1,
+			"over_50": 1,
+			"p50_ms": 16.6639995574951,
+			"p95_ms": 56.3230018615723,
+			"p99_ms": 56.3230018615723,
+			"seconds": 0.256271002054214
+		},
+		"menu_click_new_game": {
+			"frames": 0
+		},
+		"menu_transition_and_opening_wait": {
+			"frames": 342,
+			"max_ms": 552.109008789063,
+			"mean_fps": 54.9967785153528,
+			"over_100": 1,
+			"over_16_67": 101,
+			"over_33_33": 1,
+			"over_50": 1,
+			"p50_ms": 16.6650009155273,
+			"p95_ms": 16.7169990539551,
+			"p99_ms": 16.8239994049072,
+			"seconds": 6.218546053648
+		},
+		"opening_presentation_skip": {
+			"frames": 17,
+			"max_ms": 16.8570003509521,
+			"mean_fps": 60.0066360182883,
+			"over_100": 0,
+			"over_16_67": 7,
+			"over_33_33": 0,
+			"over_50": 0,
+			"p50_ms": 16.6620006561279,
+			"p95_ms": 16.8570003509521,
+			"p99_ms": 16.8570003509521,
+			"seconds": 0.283302000045776
+		},
+		"post_load_settle": {
+			"frames": 116,
+			"max_ms": 164.498992919922,
+			"mean_fps": 38.5323431122113,
+			"over_100": 3,
+			"over_16_67": 109,
+			"over_33_33": 8,
+			"over_50": 4,
+			"p50_ms": 20.6800003051758,
+			"p95_ms": 35.6059989929199,
+			"p99_ms": 151.886001586914,
+			"seconds": 3.01045798492432
+		},
+		"world_construction": {
+			"frames": 172,
+			"max_ms": 9540.158203125,
+			"mean_fps": 5.28376393056916,
+			"over_100": 62,
+			"over_16_67": 168,
+			"over_33_33": 129,
+			"over_50": 87,
+			"p50_ms": 56.648998260498,
+			"p95_ms": 514.846008300781,
+			"p99_ms": 3385.60791015625,
+			"seconds": 32.5525519800186
+		}
+	},
+	"stats_click_to_ready": {
+		"frames": 531,
+		"max_ms": 9540.158203125,
+		"mean_fps": 13.5964193417805,
+		"over_100": 63,
+		"over_16_67": 276,
+		"over_33_33": 130,
+		"over_50": 88,
+		"p50_ms": 16.6700000762939,
+		"p95_ms": 177.684997558594,
+		"p99_ms": 671.367980957031,
+		"seconds": 39.0544000337124
+	},
+	"stats_world_construction_only": {
+		"frames": 172,
+		"max_ms": 9540.158203125,
+		"mean_fps": 5.28376393056916,
+		"over_100": 62,
+		"over_16_67": 168,
+		"over_33_33": 129,
+		"over_50": 87,
+		"p50_ms": 56.648998260498,
+		"p95_ms": 514.846008300781,
+		"p99_ms": 3385.60791015625,
+		"seconds": 32.5525519800186
+	},
+	"status": "complete",
+	"t_first_frame_after_finished_ms": 39492.195,
+	"t_loading_finished_ms": 38863.548,
+	"t_menu_ready_ms": 437.797,
+	"t_opening_skipped_to_complete_ms": 6939.643,
+	"t_opening_started_ms": 6656.348,
+	"tree_paused_after_finished": false,
+	"world_build_ready": true,
+	"world_gameplay_ready": true,
+	"worst_frames": [
+		{
+			"markers_during": [
+				"world_enter_tree",
+				"child_ready:OceanBackdrop",
+				"child_ready:District",
+				"child_ready:Waterfront",
+				"child_ready:EastDistrict",
+				"child_ready:NorthDistrict",
+				"child_ready:Gateway",
+				"child_ready:Bridge",
+				"child_ready:Alleys",
+				"child_ready:SouthPort",
+				"child_ready:RoadLayout",
+				"child_ready:CobraNeighborhood",
+				"child_ready:RoadNetwork",
+				"child_ready:FreightRail",
+				"child_ready:RoadSafety",
+				"child_ready:Life",
+				"child_ready:PlayerCar",
+				"child_ready:Player",
+				"child_ready:OverviewCamera",
+				"child_ready:Interiors",
+				"child_ready:HarborWeatherReadout",
+				"child_ready:ArrivalSpawn",
+				"child_ready:ArrivalStop",
+				"child_ready:FirstDeliveryPickup",
+				"child_ready:HospitalSpawn",
+				"world_ready",
+				"deferred_child_added:WeaponNotices",
+				"deferred_child_added:HarborGangReputation",
+				"deferred_child_added:CobraTerritory",
+				"deferred_child_added:HarborSoundscape",
+				"deferred_child_added:CobraVehicles"
+			],
+			"ms": 9540.158203125,
+			"phase": "world_construction",
+			"t_ms": 16580.51953125
+		},
+		{
+			"markers_during": [
+				"deferred_child_added:WorldEvents",
+				"deferred_child_added:@Node2D@17533",
+				"deferred_child_added:Robberies",
+				"deferred_child_added:ClothingShops",
+				"deferred_child_added:UrbanTransit",
+				"deferred_child_added:Minimap",
+				"deferred_child_added:GameplayPresentation"
+			],
+			"ms": 3385.60791015625,
+			"phase": "world_construction",
+			"t_ms": 23096.982421875
+		},
+		{
+			"markers_during": [],
+			"ms": 1336.97094726563,
+			"phase": "world_construction",
+			"t_ms": 26659.572265625
+		},
+		{
+			"markers_during": [
+				"deferred_child_added:@CanvasLayer@14382",
+				"deferred_child_added:PersonalCarManager",
+				"deferred_child_added:Monaliza"
+			],
+			"ms": 1245.87194824219,
+			"phase": "world_construction",
+			"t_ms": 18679.498046875
+		},
+		{
+			"markers_during": [],
+			"ms": 845.224975585938,
+			"phase": "world_construction",
+			"t_ms": 33039.03125
+		},
+		{
+			"markers_during": [
+				"deferred_child_added:ContinuousWorld",
+				"deferred_child_added:HarborMountainCoachService",
+				"deferred_child_added:PayNSpray",
+				"deferred_child_added:Cemetery"
+			],
+			"ms": 671.367980957031,
+			"phase": "world_construction",
+			"t_ms": 19711.373046875
+		},
+		{
+			"markers_during": [],
+			"ms": 552.109008789063,
+			"phase": "menu_transition_and_opening_wait",
+			"t_ms": 2356.4970703125
+		},
+		{
+			"markers_during": [
+				"deferred_child_added:NecoTowTruck",
+				"deferred_child_added:NecoTowTruckSpawn"
+			],
+			"ms": 538.596008300781,
+			"phase": "world_construction",
+			"t_ms": 39492.1875
+		},
+		{
+			"markers_during": [
+				"deferred_child_added:HarborEmergencyDirector",
+				"deferred_child_added:PatrolParking",
+				"deferred_child_added:ArrivalMission",
+				"deferred_child_added:FirstDeliveryParcel"
+			],
+			"ms": 521.263000488281,
+			"phase": "world_construction",
+			"t_ms": 17101.78125
+		},
+		{
+			"markers_during": [],
+			"ms": 514.846008300781,
+			"phase": "world_construction",
+			"t_ms": 30327.9765625
+		},
+		{
+			"markers_during": [],
+			"ms": 499.210998535156,
+			"phase": "world_construction",
+			"t_ms": 29315.28515625
+		},
+		{
+			"markers_during": [],
+			"ms": 497.843994140625,
+			"phase": "world_construction",
+			"t_ms": 29813.130859375
+		},
+		{
+			"markers_during": [],
+			"ms": 496.860992431641,
+			"phase": "world_construction",
+			"t_ms": 28816.07421875
+		},
+		{
+			"markers_during": [],
+			"ms": 384.928009033203,
+			"phase": "world_construction",
+			"t_ms": 28319.21484375
+		},
+		{
+			"markers_during": [
+				"deferred_child_added:ResidencePrototype",
+				"deferred_child_added:Residence_westgate_garden",
+				"deferred_child_added:Residence_quayside_house",
+				"deferred_child_added:Residence_canal_north"
+			],
+			"ms": 360.507995605469,
+			"phase": "world_construction",
+			"t_ms": 19040.005859375
+		}
+	]
+}
