@@ -10,6 +10,19 @@ const RETURN_SECONDS := 20.0
 const MAX_INCIDENT_SECONDS := 300.0
 const MAX_OBSERVERS := 4
 const REPORTED_WAIT_SECONDS := 180.0
+# Sem isso, um tiroteio contínuo (o jogador correndo e matando por 2+ minutos,
+# sem parar pra deixar as poucas viaturas de resgate darem conta) empilha
+# corpos indefinidamente: o menor prazo de limpeza (UNATTENDED_SECONDS) já é
+# 30s, e a maioria passa de 120-300s -- mais longo que muita sessão de combate
+# real. Cada corpo pendente é um AnimatedPedestrian3D inteiro, com SubViewport
+# 3D próprio, ainda vivo. Vídeo do usuário: RAM de ~15,5GB pra ~27GB e FPS de
+# ~40 pra ~15 numa perseguição a pé de 140s contínuos. GroundBlood.gd já limita
+# decalque de sangue a 64 descartando o mais velho; aqui não havia limite
+# nenhum, só prazo por tempo. Este teto empurra pro "fading" (mesmo caminho já
+# usado pelos prazos por tempo) os incidentes mais antigos e ainda não
+# atendidos assim que o total passa do limite, sem interromper resgate já em
+# andamento (dispatched/carrying/transport ficam de fora).
+const MAX_SIMULTANEOUS_INCIDENTS := 24
 
 func _ready() -> void:
 	get_tree().node_added.connect(_node_added)
@@ -144,6 +157,13 @@ func _process(delta: float) -> void:
 	# waiting casualty. Dictionary insertion order must not decide who is saved.
 	var pending := incidents.keys()
 	pending.sort_custom(func(a: String, b: String) -> bool: return _dispatch_priority(incidents[a]) > _dispatch_priority(incidents[b]))
+	if pending.size() > MAX_SIMULTANEOUS_INCIDENTS:
+		for index in range(MAX_SIMULTANEOUS_INCIDENTS, pending.size()):
+			var overflow: Dictionary = incidents[pending[index]]
+			# "dispatched/carrying/transport" já tem resgate em andamento -- nunca
+			# interrompido por excesso de fila. "noticed"/"reported" são os únicos
+			# que ainda não comprometeram uma equipe; só esses forçamos.
+			if overflow.phase in ["noticed", "reported"]: overflow.force_fade = true
 	for key in pending:
 		var incident: Dictionary = incidents[key]
 		# Mission retries and finite encounters can free a patient between scans.
@@ -444,9 +464,14 @@ func _cleanup_incident(key: String, _elapsed: float) -> bool:
 	var room := actor.get_parent()
 	if room.has_method("actor_present") and room.actor_present(): return true
 	# Confirmed deaths belong to custody, never to the hospital/repopulation
-	# timeout. Obstructed or busy services remain pending and retry.
+	# timeout. Obstructed or busy services remain pending and retry. A queue
+	# past MAX_SIMULTANEOUS_INCIDENTS (force_fade, set above) is the one
+	# exception -- a sustained kill spree outpaces the finite coroner pool
+	# well before 180s+out-of-view, and each pending corpse is a whole live
+	# AnimatedPedestrian3D with its own SubViewport.
+	var forced: bool = bool(incident.get("force_fade", false))
 	if actor.is_dead and not actor.is_in_group("mountain_wildlife"):
-		if incident.phase == "noticed" and incident.age >= 180.0 and get_node("/root/WorldRenewal").outside_view(actor,actor.global_position):
+		if forced or (incident.phase == "noticed" and incident.age >= 180.0 and get_node("/root/WorldRenewal").outside_view(actor,actor.global_position)):
 			get_node("/root/CoronerCare").mark_unrecovered(actor)
 			incidents.erase(key)
 			records().erase(key)
@@ -462,7 +487,7 @@ func _cleanup_incident(key: String, _elapsed: float) -> bool:
 		incident.rescue_age = float(incident.get("rescue_age", 0.0)) + _elapsed
 		cleanup_age = incident.rescue_age
 	if actor.is_in_group("mountain_wildlife"): limit = UNATTENDED_SECONDS
-	if incident.phase != "fading" and cleanup_age < limit and incident.age < MAX_INCIDENT_SECONDS: return false
+	if incident.phase != "fading" and cleanup_age < limit and incident.age < MAX_INCIDENT_SECONDS and not forced: return false
 	if incident.phase != "fading":
 		incident.phase = "fading"
 		incident.fade = 0.0
