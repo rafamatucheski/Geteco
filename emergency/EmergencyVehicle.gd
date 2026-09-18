@@ -39,6 +39,32 @@ func _advance_service_target() -> bool:
 # inherits the velocity of a PathFollow platform from another vehicle.
 const EMERGENCY_COLLISION_MASK := 1 | 2 | 4
 
+## Sem NavigationAgent2D, cada viatura mira o mesmo intercept_pos do alvo de
+## forma independente -- convergindo todas no mesmo ponto/faixa, elas travam
+## umas nas outras (cada uma tenta dar ré pra sair, sem coordenar com a
+## vizinha, e a "ré" de uma empurra a próxima pro mesmo lugar). Esta repulsão
+## dá um leve desvio de direção quando outra viatura policial está por perto,
+## sem tocar no roteamento de faixa em si -- viaturas se espalham ao convergir
+## em vez de empilhar.
+const POLICE_SEPARATION_RADIUS := 85.0
+const POLICE_SEPARATION_STRENGTH := 1.35
+
+func _police_separation_dir() -> Vector2:
+	if type != 0: return Vector2.ZERO
+	var pool := get_node_or_null("/root/EmergencyPool")
+	if pool == null or not pool.has_method("get_active_police"): return Vector2.ZERO
+	var push := Vector2.ZERO
+	for other in pool.get_active_police():
+		if other == self or not is_instance_valid(other) or other.get("is_broken"): continue
+		var offset: Vector2 = global_position - other.global_position
+		var dist := offset.length()
+		if dist >= POLICE_SEPARATION_RADIUS: continue
+		if dist < 1.0:
+			offset = Vector2.from_angle(randf() * TAU)
+			dist = 1.0
+		push += offset.normalized() * ((POLICE_SEPARATION_RADIUS - dist) / POLICE_SEPARATION_RADIUS)
+	return push
+
 var target: Node2D = null
 var current_speed: float = 0.0
 var _ram_damage_cooldown := 0.0
@@ -910,8 +936,12 @@ func _physics_process(delta: float) -> void:
 				_begin_response()
 		return
 	var dir = global_position.direction_to(waypoint)
+	if type == 0:
+		var separation := _police_separation_dir()
+		if separation != Vector2.ZERO:
+			dir = (dir + separation * POLICE_SEPARATION_STRENGTH).normalized()
 	var dist = global_position.distance_to(target.global_position)
-	
+
 	# Escala velocidade máxima com o nível de procurado
 	var wm = get_node_or_null("/root/WantedManager")
 	var stars: int = 1 if is_instance_valid(target) and target.get_meta("ambient_crime",false) else (wm.current_stars if wm else 1)

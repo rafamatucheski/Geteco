@@ -147,6 +147,13 @@ func get_vehicle(type: String) -> Node:
 			
 	return null
 
+func get_active_police() -> Array:
+	var active: Array = []
+	for unit in _pool.police:
+		if is_instance_valid(unit) and unit.visible:
+			active.append(unit)
+	return active
+
 func _retire_empty_police_offscreen() -> void:
 	var wanted := get_node_or_null("/root/WantedManager")
 	if wanted == null: return
