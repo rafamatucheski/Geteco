@@ -60,6 +60,9 @@ func build() -> void:
 		add_child(destination_sign)
 		for side in [-1.0,1.0]:
 			box(Vector3(side*0.91,0.74,-4.04),Vector3(0.35,0.20,0.05),mat("headlight","fff4ca",0.1,0.3,0.6))
+		box(Vector3(0,1.94,4.02),Vector3(2.2,1.35,0.03),glass)
+		for side in [-1.0,1.0]:
+			box(Vector3(side*1.01,0.7,4.03),Vector3(0.12,0.36,0.03),mat("taillight","ea3930",0.1,0.3,0.4))
 	else:
 		box(Vector3(0,1.94,3.27),Vector3(2.2,1.35,0.03),glass)
 		for side in [-1.0,1.0]:

@@ -15,6 +15,7 @@ func run() -> void:
 	world.add_child(fleet)
 	var bus := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
 	bus.set_script(preload("res://world/harbor/urban_transit/UrbanBus.gd"))
+	bus.is_articulated = true
 	bus.system = fleet
 	world.add_child(bus)
 	bus._detached_from_lane = true

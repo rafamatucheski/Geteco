@@ -175,8 +175,7 @@ func _update_schedule() -> void:
 		stop.refresh(operating,count)
 		if operating: _order_platform_queue(stop)
 	for bus in buses:
-		if not is_instance_valid(bus): continue
-		if bus.body_model.destination_sign:
+		if bus.body_model and "destination_sign" in bus.body_model and bus.body_model.destination_sign:
 			bus.body_model.destination_sign.text = "510 CIRCULAR" if operating else "RECOLHENDO"
 			bus._body_render_visible = false
 		if operating and bus.suspended:

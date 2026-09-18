@@ -16,15 +16,41 @@ var distance_travelled := 0.0
 var onboard: Array[Node2D] = []
 var _joints: Node2D
 var suspended := false
+var is_articulated := false
 var _pending_section_poses: Array[Transform2D] = []
+
+func attach_section() -> CharacterBody2D:
+	is_articulated = true
+	if not is_inside_tree() or system == null:
+		return null
+	var part := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
+	part.set_script(preload("res://world/harbor/urban_transit/UrbanBusTrailer.gd"))
+	part.name = "ArticulatedSection%d" % (sections.size() + 2)
+	part.lead_bus = self
+	system.add_child(part)
+	sections.append(part)
+	part.tree_exiting.connect(_on_section_exiting.bind(part))
+	add_collision_exception_with(part)
+	part.add_collision_exception_with(self)
+	for ray in ["FrontRay","FrontRayL","FrontRayR"]:
+		var r := get_node_or_null(ray)
+		if r: r.add_exception(part)
+	if _joints == null and system != null:
+		_joints = Node2D.new()
+		_joints.z_index = 9
+		system.add_child(_joints)
+		_joints.draw.connect(func(): _draw_joints_canvas(_joints))
+	_update_sections(0)
+	return part
+
 func _ready() -> void:
 	target_length = 134.0
 	speed = 118.0
 	super._ready()
 	active_archetype_id = "route_city"
 	vehicle_id = active_archetype_id
-	display_name = "510 • Expresso Articulado"
-	vehicle_mass = 12.0
+	display_name = "510 • Linha Circular"
+	vehicle_mass = 5.5
 	max_health = 650
 	health = max_health
 	_setup_3d_model({"model_class":"res://world/harbor/urban_transit/UrbanBusModel.gd","target_length":134.0,"target_width":38.0},Color("c82d32"))
@@ -40,26 +66,19 @@ func _ready() -> void:
 	add_to_group("urban_bus")
 	_lane_motion_initialized = true
 	_lane_motion_speed = 0
-	for i in 1:
-		var part := preload("res://cars/traffic/TrafficVehicle.tscn").instantiate() as CharacterBody2D
-		part.set_script(preload("res://world/harbor/urban_transit/UrbanBusTrailer.gd"))
-		part.name = "ArticulatedSection%d" % (i+2)
-		part.lead_bus = self
-		system.add_child(part)
-		sections.append(part)
-		part.tree_exiting.connect(_on_section_exiting.bind(part))
-		add_collision_exception_with(part)
-		part.add_collision_exception_with(self)
-		for ray in ["FrontRay","FrontRayL","FrontRayR"]: get_node(ray).add_exception(part)
+	if is_articulated:
+		for i in 1:
+			attach_section()
 	history.resize(HISTORY_CAPACITY)
 	_history_count = 240
 	for i in _history_count: history[i] = global_position-global_transform.x*float(i)*2
-	_update_sections(0)
-	_joints = Node2D.new()
-	_joints.z_index = 9
-	system.add_child(_joints)
-	_joints.draw.connect(_draw_joints)
-	set_headlights(is_instance_valid(system.clock) and (system.clock.is_dark or system.clock.weather_state > 0))
+	if not sections.is_empty() and _joints == null and system != null:
+		_update_sections(0)
+		_joints = Node2D.new()
+		_joints.z_index = 9
+		system.add_child(_joints)
+		_joints.draw.connect(func(): _draw_joints_canvas(_joints))
+	set_headlights(is_instance_valid(system) and is_instance_valid(system.clock) and (system.clock.is_dark or system.clock.weather_state > 0))
 
 func enter_vehicle(actor: CharacterBody2D) -> void:
 	var was_detached := _detached_from_lane
@@ -79,6 +98,15 @@ func _physics_process(delta: float) -> void:
 	var previous := global_transform
 	super._physics_process(delta)
 	if previous != global_transform:
+		if sections.is_empty():
+			if not TRAFFIC_SWEEP.clear(self, [{"body": self, "pose": global_transform}]):
+				global_transform = previous
+				velocity = Vector2.ZERO
+				set_meta("vehicle_safe_position", previous.origin)
+				set_meta("vehicle_safe_transform", previous)
+				return
+			distance_travelled += previous.origin.distance_to(global_position)
+			return
 		var head := global_transform
 		var proposed: Array[Dictionary] = [{"body":self,"pose":head}]
 		var ahead := head
@@ -105,7 +133,7 @@ func _physics_process(delta: float) -> void:
 			part.global_transform = pose
 			part._lane_motion_speed = part.velocity.length()
 			part.is_moving_on_lane = part.velocity.length()>1
-		_joints.queue_redraw()
+		if is_instance_valid(_joints): _joints.queue_redraw()
 func _process(delta: float) -> void:
 	var weather: Node = system.clock
 	var lights_on: bool = is_instance_valid(weather) and (weather.is_dark or weather.weather_state > 0)
@@ -136,8 +164,9 @@ func advance_on_lane(delta: float) -> void:
 	doors = move_toward(doors,1.0 if dwelling else 0.0,delta*1.8)
 	if old_doors != doors:
 		for body in [self]+sections:
-			body.body_model.set_doors(doors)
-			body._body_render_visible = false
+			if is_instance_valid(body) and body.body_model and body.body_model.has_method("set_doors"):
+				body.body_model.set_doors(doors)
+				body._body_render_visible = false
 	if dwelling or doors > 0 or is_broken or suspended:
 		_lane_motion_speed = 0
 		velocity = Vector2.ZERO
@@ -162,12 +191,13 @@ func advance_on_lane(delta: float) -> void:
 			_history_head = posmod(_history_head - 1, HISTORY_CAPACITY)
 			history[_history_head] = global_position
 			_history_count = mini(_history_count + 1, HISTORY_CAPACITY)
-		if _pending_section_poses.size() == sections.size():
-			_apply_section_poses(_pending_section_poses, delta)
-		else:
-			_update_sections(delta)
-		_pending_section_poses.clear()
-		_joints.queue_redraw()
+		if not sections.is_empty():
+			if _pending_section_poses.size() == sections.size():
+				_apply_section_poses(_pending_section_poses, delta)
+			else:
+				_update_sections(delta)
+			_pending_section_poses.clear()
+			if is_instance_valid(_joints): _joints.queue_redraw()
 	var stop: Node2D = system.stops[next_stop]
 	follow = get_parent() as PathFollow2D
 	if follow != null and follow.get_parent() == stop.lane and absf(follow.progress-stop.offset)<1:
@@ -262,11 +292,12 @@ func _constrained_section_poses(head: Transform2D) -> Array[Transform2D]:
 func can_apply_lane_pose(head: Transform2D) -> bool:
 	var proposed: Array[Dictionary] = [{"body": self, "pose": head}]
 	_pending_section_poses.clear()
-	var section_poses := _constrained_section_poses(head)
-	for i in sections.size():
-		var pose := section_poses[i]
-		_pending_section_poses.append(pose)
-		proposed.append({"body": sections[i], "pose": pose})
+	if not sections.is_empty():
+		var section_poses := _constrained_section_poses(head)
+		for i in sections.size():
+			var pose := section_poses[i]
+			_pending_section_poses.append(pose)
+			proposed.append({"body": sections[i], "pose": pose})
 	var clear := TRAFFIC_SWEEP.clear(self, proposed)
 	if not clear: _pending_section_poses.clear()
 	return clear
@@ -277,6 +308,7 @@ func _sections_clear() -> bool:
 	return _lane_step_is_clear(follow.get_parent(), follow, minf(14.0, _lane_motion_speed * get_process_delta_time()))
 
 func _update_sections(delta: float) -> void:
+	if sections.is_empty(): return
 	_apply_section_poses(_constrained_section_poses(global_transform), delta)
 
 func _apply_section_poses(poses: Array[Transform2D], delta: float) -> void:
@@ -297,7 +329,8 @@ func get_traffic_bodies() -> Array:
 func get_traffic_storage_length() -> float:
 	return 132.0 if sections.is_empty() else 134.0 + (sections.size() - 1) * 120.0 + 66.0 + 66.0
 
-func _draw_joints() -> void:
+func _draw_joints_canvas(canvas: CanvasItem) -> void:
+	if sections.is_empty(): return
 	var bodies := [self]+sections
 	for i in sections.size():
 		var ahead: Node2D = bodies[i]
@@ -308,17 +341,17 @@ func _draw_joints() -> void:
 		var b := behind.global_transform.y*18
 		var up := Vector2(0,-20)
 		var contour := Geometry2D.convex_hull(PackedVector2Array([front+a,front-a,rear-b,rear+b,front+a+up,front-a+up,rear-b+up,rear+b+up]))
-		_joints.draw_colored_polygon(contour,Color("596064"))
+		canvas.draw_colored_polygon(contour,Color("596064"))
 		for rib in 9:
 			var t := float(rib)/8
 			var side_a := (front+a).lerp(rear+b,t)
 			var side_b := (front-a).lerp(rear-b,t)
-			_joints.draw_polyline(PackedVector2Array([side_a,side_a+up,side_b+up,side_b]),Color("232b2e"),2,true)
+			canvas.draw_polyline(PackedVector2Array([side_a,side_a+up,side_b+up,side_b]),Color("232b2e"),2,true)
 
 func _exit_tree() -> void:
 	# Lane handoffs temporarily exit the tree. The director owns the trailers.
 	if is_instance_valid(system) and system.is_inside_tree():
 		var owned: Array = []
 		owned.append_array(sections)
-		owned.append(_joints)
+		if is_instance_valid(_joints): owned.append(_joints)
 		system.call_deferred("cleanup_removed_bus",weakref(self),owned)

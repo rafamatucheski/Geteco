@@ -3,9 +3,10 @@ var lead_bus: CharacterBody2D
 ## A real collision body; its pose is owned by the leading bus's travelled path.
 func _ready() -> void:
 	target_length = 108.0
-	super._ready()
 	active_archetype_id = "route_city"
 	_detached_from_lane = true
+	defer_presentation = true
+	super._ready()
 	_setup_3d_model({"model_class":"res://world/harbor/urban_transit/UrbanBusTrailerModel.gd","target_length":108.0,"target_width":38.0},Color("c82d32"))
 	body_viewport.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	collision.shape = RectangleShape2D.new()
