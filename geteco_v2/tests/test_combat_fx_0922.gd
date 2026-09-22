@@ -89,6 +89,9 @@ func _initialize() -> void:
 	var first := bytes.decode_s16(0)
 	_check(absi(last - first) < 6000, "emenda do laço sem salto (|Δ| = %d)" % absi(last - first))
 	_check(AUDIO.grenade_bounce() != null, "quique da granada gerado")
+	var magnum_body := AUDIO.gun_body("magnum")
+	_check(magnum_body != null and magnum_body.get_length() > 0.8, "Magnum tem camada de corpo com cauda longa")
+	_check(AUDIO.gun_body("pistol").get_length() < magnum_body.get_length(), "pistola tem corpo mais curto que a Magnum")
 
 	print("RESULT: %s (%d falhas)" % ["OK" if _failures == 0 else "FALHOU", _failures])
 	quit(0 if _failures == 0 else 1)

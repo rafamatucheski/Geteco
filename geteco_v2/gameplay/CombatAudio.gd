@@ -198,6 +198,45 @@ static func flamethrower() -> AudioStream:
 	_generated["flame"] = stream
 	return stream
 
+## Corpo de cada calibre: [Hz do baque, decaimento do baque, segundos de cauda, dB relativo ao tiro].
+## As gravações de tiro são só o estalo (~0,2 s, quase nada abaixo de 100 Hz):
+## sozinhas soavam fracas, principalmente Magnum e escopeta. Esta camada soma
+## o soco grave e a cauda difusa de rua. Não há reflexões discretas (eco repetido).
+const GUN_BODY := {
+	"pistol": [96.0, 40.0, 0.35, -9.0], "magnum": [60.0, 20.0, 0.95, -2.5],
+	"smg": [104.0, 46.0, 0.25, -11.0], "shotgun": [56.0, 18.0, 0.85, -2.5],
+	"sawed_off": [52.0, 16.0, 0.85, -1.5], "ak47": [78.0, 30.0, 0.55, -6.0],
+	"m4a1": [86.0, 34.0, 0.5, -7.0], "hunting_rifle": [58.0, 22.0, 1.1, -3.0],
+}
+
+static func gun_body(kind: String) -> AudioStream:
+	if not GUN_BODY.has(kind): return null
+	var key := "body_" + kind
+	if _generated.has(key): return _generated[key]
+	var spec: Array = GUN_BODY[kind]
+	var rate := 22050
+	var tail := float(spec[2])
+	var count := int(rate * (tail + 0.05))
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(kind)
+	var lp := 0.0
+	var lp2 := 0.0
+	for i in count:
+		var t := float(i) / float(rate)
+		var noise := rng.randf_range(-1.0, 1.0)
+		lp += (noise - lp) * 0.06
+		lp2 += (lp - lp2) * 0.06
+		# Baque: seno que cai de tom (sensação de pressão), ataque de 2 ms.
+		var freq: float = float(spec[0]) * (1.0 + 0.8 * exp(-t * 40.0))
+		var thump := sin(TAU * freq * t) * exp(-t * float(spec[1])) * minf(t / 0.002, 1.0)
+		# Cauda: ruído grave com envelope que sobe em 25 ms e morre em `tail`.
+		var roll := lp2 * 5.0 * smoothstep(0.0, 0.025, t) * exp(-t * 4.6 / tail)
+		data.encode_s16(i * 2, clampi(int(tanh(thump * 0.95 + roll * 0.55) * 0.9 * 32767.0), -32768, 32767))
+	_generated[key] = _make(data, rate)
+	return _generated[key]
+
 ## `ProceduralAudio.get_grenade_throw_stream`: pino e sopro do arremesso.
 static func grenade_throw() -> AudioStream:
 	if _generated.has("grenade"): return _generated["grenade"]
