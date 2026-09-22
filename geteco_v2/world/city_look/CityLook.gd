@@ -25,6 +25,10 @@ var _pools_visible := false
 var _grade: GradientTexture1D
 var _blink := 0.0
 var _blink_on := false
+var _beacon_on := false
+var _tv_clock := 0.0
+var _tv_rng := RandomNumberGenerator.new()
+var _neon_night := -1.0
 
 
 func _ready() -> void:
@@ -38,6 +42,16 @@ func _process(delta: float) -> void:
 	if phase != _blink_on:
 		_blink_on = phase
 		MATERIALS.set_signal_phase(phase)
+	# Balizamento de prédio alto: lampejo curto a cada 1,5 s.
+	var beacon := fposmod(_blink, 1.5) < .28
+	if beacon != _beacon_on:
+		_beacon_on = beacon
+		MATERIALS.set_beacon_phase(beacon)
+	# TV nas janelas: troca de cena a cada 80–250 ms, como TV de verdade.
+	_tv_clock -= delta
+	if _tv_clock <= 0.0:
+		_tv_clock = _tv_rng.randf_range(.08, .25)
+		MATERIALS.flicker_tv(_tv_rng)
 	_follow_silhouettes()
 	_clock += delta
 	# A hora anda devagar (um dia = 10 min); 4 Hz é mais que suficiente.
@@ -52,6 +66,7 @@ func _update(force: bool) -> void:
 	if force or absf(night - _last_night) > .004:
 		_last_night = night
 		MATERIALS.set_night(night)
+		_update_neon_labels(night)
 		var visible := night > .01
 		if force or visible != _pools_visible:
 			_pools_visible = visible
@@ -159,3 +174,15 @@ func _follow_silhouettes() -> void:
 	for target in _silhouettes:
 		if is_instance_valid(target):
 			_silhouettes[target].set_shader_parameter("target_inverse", Projection(target.global_transform.affine_inverse()))
+
+
+## Letreiros de neon (Label3D, sem sombreamento): de dia cor chapada, à noite
+## cor em HDR acima de 1 para o glow pegar.
+func _update_neon_labels(night: float) -> void:
+	if absf(night - _neon_night) < .02: return
+	_neon_night = night
+	# Acima de ~1,6 o tonemap estoura para branco e a cor some; o glow faz o resto.
+	var boost := lerpf(1.0, 1.55, night)
+	for label in get_tree().get_nodes_in_group(&"city_neon_label"):
+		var color: Color = label.get_meta("neon_color", Color.WHITE)
+		label.modulate = Color(color.r * boost, color.g * boost, color.b * boost, 1.0)

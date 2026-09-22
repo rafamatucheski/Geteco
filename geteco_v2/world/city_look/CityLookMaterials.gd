@@ -15,6 +15,9 @@ static var night := 0.0
 const SODIUM := Color(1.0, 0.62, 0.26)
 const WINDOW_TONES := [Color(1.0, 0.76, 0.42), Color(1.0, 0.86, 0.62), Color(0.62, 0.78, 1.0)]
 const SHOP_TONE := Color(1.0, 0.78, 0.48)
+## Janelas apagadas com cortina/persiana: bege, vinho, azul-marinho, persiana clara.
+const UNLIT_VARIANTS := 4
+const UNLIT_TONES := [Color("8a7a60"), Color("5a2a2e"), Color("27344a"), Color("a9a89c")]
 
 
 static func set_night(value: float) -> void:
@@ -117,6 +120,70 @@ static func signal_amber() -> StandardMaterial3D:
 
 static func set_signal_phase(on: bool) -> void:
 	signal_amber().emission_energy_multiplier = lerpf(1.6, 4.0, night) if on else 0.0
+
+
+static func window_unlit(index: int) -> StandardMaterial3D:
+	var key := "window_unlit_%d" % index
+	if _cache.has(key): return _cache[key]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = UNLIT_TONES[index % UNLIT_TONES.size()]
+	material.roughness = 0.45
+	material.metallic_specular = 0.6
+	if index == 3:
+		# Persiana: listras horizontais finas.
+		material.albedo_texture = _blinds_texture()
+	_cache[key] = material
+	return material
+
+
+static func _blinds_texture() -> ImageTexture:
+	if _cache.has("blinds_tex"): return _cache["blinds_tex"]
+	var image := Image.create(8, 16, false, Image.FORMAT_RGBA8)
+	for y in 16:
+		for x in 8:
+			image.set_pixel(x, y, Color(1, 1, 1) if y % 4 != 0 else Color(0.55, 0.55, 0.55))
+	var texture := ImageTexture.create_from_image(image)
+	_cache["blinds_tex"] = texture
+	return texture
+
+
+## Janela de TV: cor e energia trocadas pelo CityLook (tremulação à noite).
+static func window_tv() -> StandardMaterial3D:
+	if _cache.has("window_tv"): return _cache["window_tv"]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.22, 0.3, 0.4)
+	material.roughness = 0.2
+	material.emission_enabled = true
+	material.emission = Color(0.45, 0.6, 1.0)
+	material.emission_energy_multiplier = 0.0
+	_cache["window_tv"] = material
+	return material
+
+
+static func flicker_tv(rng: RandomNumberGenerator) -> void:
+	var material := window_tv()
+	if night < 0.05:
+		material.emission_energy_multiplier = 0.0
+		return
+	var tones := [Color(0.45, 0.6, 1.0), Color(0.7, 0.8, 1.0), Color(0.35, 0.45, 0.9), Color(0.9, 0.85, 1.0)]
+	material.emission = tones[rng.randi() % tones.size()]
+	material.emission_energy_multiplier = night * rng.randf_range(0.9, 2.2)
+
+
+## Balizamento vermelho de prédio alto: pisca com CityLook, forte à noite.
+static func beacon() -> StandardMaterial3D:
+	if _cache.has("beacon"): return _cache["beacon"]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.45, 0.05, 0.04)
+	material.emission_enabled = true
+	material.emission = Color(1.0, 0.08, 0.05)
+	material.emission_energy_multiplier = 0.0
+	_cache["beacon"] = material
+	return material
+
+
+static func set_beacon_phase(on: bool) -> void:
+	beacon().emission_energy_multiplier = lerpf(1.2, 6.0, night) if on else 0.05
 
 
 # --- Neon (letreiros e outdoors) ---

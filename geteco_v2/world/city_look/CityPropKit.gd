@@ -47,6 +47,7 @@ static func mesh(kind: String) -> ArrayMesh:
 		"drain": _drain(tool)
 		"bench_seat": _bench_seat(tool)
 		"planter": _planter(tool)
+		_: preload("res://world/city_look/BuildingLifeKit.gd").build(kind, tool)
 	tool.generate_normals()
 	var result := tool.commit()
 	_meshes[kind] = result

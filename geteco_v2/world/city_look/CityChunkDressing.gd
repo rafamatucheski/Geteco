@@ -15,7 +15,10 @@ extends RefCounted
 const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const BRANDS := preload("res://world/city_look/CityBrands.gd")
+const LIFE := preload("res://world/city_look/BuildingLife.gd")
 const NIGHT_GROUP := &"city_look_night"
+const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
+const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
 const WINDOW_LIT_RATIO := 0.38
@@ -24,7 +27,7 @@ const SHOP_LIT_RATIO := 0.85
 const SIDEWALK := 42.0 / 16.0
 const FURNITURE_SPACING := 7.0
 const DECAL_Y := 0.034
-const SHADOW_CASTERS := ["signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit"]
+const SHADOW_CASTERS := ["signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry"]
 
 
 static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
@@ -113,6 +116,7 @@ static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vec
 
 
 static func _flush(chunk: Node3D, batches: Dictionary) -> void:
+	var built := {}
 	for kind in batches:
 		var transforms: Array = batches[kind]
 		if transforms.is_empty(): continue
@@ -129,6 +133,16 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			multimesh.mesh = _lens_mesh()
 			material = MATERIALS.signal_amber()
 			shadows = false
+		elif kind == "beacon_lens":
+			multimesh.mesh = _lens_mesh()
+			material = MATERIALS.beacon()
+			shadows = false
+		elif kind.begins_with("graffiti:"):
+			var quad := QuadMesh.new()
+			quad.size = Vector2.ONE
+			multimesh.mesh = quad
+			material = LIFE.graffiti_material(kind.trim_prefix("graffiti:").to_int())
+			shadows = false
 		else:
 			multimesh.mesh = KIT.mesh(kind)
 			material = KIT.material()
@@ -144,12 +158,30 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		instance.material_override = material
 		if not shadows: instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(instance)
+		built[kind] = multimesh
+	_register_fragile(chunk, batches, built)
+
+
+## Mobília e semáforo viram quebráveis (StreetPhysics). A lente do semáforo é
+## outra MultiMesh; vai junto como peça irmã, com o mesmo índice de criação.
+static func _register_fragile(chunk: Node3D, batches: Dictionary, built: Dictionary) -> void:
+	for kind in FRAGILE_KINDS:
+		if not built.has(kind): continue
+		var multimesh: MultiMesh = built[kind]
+		for index in multimesh.instance_count:
+			var extra := []
+			if kind == "signal_pole" and built.has("signal_amber") and index < built.signal_amber.instance_count:
+				var pole := multimesh.get_instance_transform(index)
+				var lens: Transform3D = built.signal_amber.get_instance_transform(index)
+				extra.append({"multimesh": built.signal_amber, "index": index, "offset": pole.affine_inverse() * lens})
+			FRAGILE.register_instance(kind, multimesh, index, chunk, extra)
 
 
 # ---------------------------------------------------------------------------
 # 1. Noite: postes com cabeça emissiva + mancha de luz, janelas acesas.
 
 static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
+	var lamp_roots := {}
 	var pools := PackedVector3Array()
 	var pool_sizes := PackedFloat32Array()
 	for node in chunk.find_children("*", "MeshInstance3D", true, false):
@@ -162,11 +194,17 @@ static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
 			pools.append(Vector3(head.x, head.y - lamp_height + 0.06, head.z))
 			pool_sizes.append(clampf(lamp_height * 2.3, 6.0, 11.0))
 			context.lamps.append(Vector2(head.x, head.z))
+			var root := _lamp_root(mesh)
+			if root != null and not lamp_roots.has(root): lamp_roots[root] = pools.size() - 1
 			continue
 		_treat_window(mesh)
 	if not pools.is_empty():
 		for index in pools.size(): pools[index] = chunk.to_local(pools[index])
-		chunk.add_child(_light_pools(pools, pool_sizes))
+		var pool_instance := _light_pools(pools, pool_sizes)
+		chunk.add_child(pool_instance)
+		# Poste que o carro derruba apaga a própria mancha de luz.
+		for root in lamp_roots:
+			FRAGILE.register_node("lamp", root, chunk, {"multimesh": pool_instance.multimesh, "index": lamp_roots[root]})
 
 
 ## Altura aproximada da cabeça do poste acima do chão, ou 0 se a malha não é
@@ -180,6 +218,17 @@ static func _lamp_height(mesh: MeshInstance3D) -> float:
 		if root != null and String(root.name).begins_with("StreetLight"):
 			return maxf(2.5, mesh.global_position.y - root.global_position.y)
 	return 0.0
+
+
+## Raiz que gira quando o poste tomba: o nó do poste inteiro, com origem no
+## chão. Postes da Cobra e da ponte ficam de fora (várias luminárias no mesmo
+## nó; tombar um derrubaria o bairro inteiro).
+static func _lamp_root(head: MeshInstance3D) -> Node3D:
+	var parent := head.get_parent() as Node3D
+	if parent == null: return null
+	var label := String(parent.name)
+	if label.begins_with("HarborLamp") or label.begins_with("StreetLight"): return parent
+	return null
 
 
 static func _treat_window(mesh: MeshInstance3D) -> void:
@@ -212,11 +261,15 @@ static func _treat_window(mesh: MeshInstance3D) -> void:
 		mesh.material_override = MATERIALS.shop_glass() if roll < SHOP_LIT_RATIO else material
 		return
 	if roll < WINDOW_LIT_RATIO:
-		mesh.material_override = MATERIALS.window_lit(int(roll * 1000.0) % MATERIALS.WINDOW_TONES.size())
+		# ~1 em 7 acesas é TV: azul trêmulo à noite (CityLook anima).
+		if roll < WINDOW_LIT_RATIO * 0.14: mesh.material_override = MATERIALS.window_tv()
+		else: mesh.material_override = MATERIALS.window_lit(int(roll * 1000.0) % MATERIALS.WINDOW_TONES.size())
 	else:
-		# Apagada continua vidro, mas opaco: vidro transparente sobre caixa
-		# escura custa uma passada transparente por janela sem ganho visual.
-		mesh.material_override = MATERIALS.flat(Color(0.20, 0.29, 0.34), 0.18)
+		# Apagada continua vidro, mas opaco (vidro transparente sobre caixa
+		# escura custa uma passada transparente sem ganho visual). Variantes de
+		# cortina/persiana tiram a cara de fileira idêntica de dia.
+		var variant := int(_position_roll(mesh.global_position + Vector3(7.1, 0, 3.3)) * 10.0)
+		mesh.material_override = MATERIALS.window_unlit(variant) if variant < MATERIALS.UNLIT_VARIANTS else MATERIALS.flat(Color(0.20, 0.29, 0.34), 0.18)
 
 
 ## Sorteio determinístico por posição: a mesma janela acende sempre, em
@@ -394,6 +447,9 @@ static func _push(batches: Dictionary, kind: String, transform: Transform3D) -> 
 # de bueiro e bocas de lobo junto ao meio-fio.
 
 static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
+	# The police sewer owns a dedicated interactive hatch at this exact spot.
+	# Keep generic road lids clear so they cannot overlap the authored access.
+	var sewer_access := Vector2(1182.0, 2114.0) / 16.0
 	for road in context.roads:
 		var points: PackedVector2Array = road.points
 		var width: float = road.width
@@ -431,7 +487,7 @@ static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
 						_push(batches, "decal:crack", Transform3D(Basis(Vector3.UP, yaw + _roll(key + "cr") * TAU).scaled(Vector3(size, 1, size)), Vector3(p.x, DECAL_Y + 0.001, p.y)))
 				elif roll < 0.355:
 					var p := along + normal * lane * 0.2
-					if _in_chunk(context, p) and not _near_junction(context, p, 0.0):
+					if _in_chunk(context, p) and not _near_junction(context, p, 0.0) and p.distance_to(sewer_access) > 1.35:
 						_add(batches, "manhole", Vector3(p.x, 0.028, p.y), tangent)
 				elif roll < 0.38:
 					var side := 1.0 if _roll(key + "d") < 0.5 else -1.0
@@ -522,7 +578,7 @@ const ROOF_TINTS := [
 	Color(0.10, 0.10, 0.11, 0.35), Color(0.45, 0.30, 0.24, 0.28), Color(0.62, 0.62, 0.58, 0.30),
 	Color(0.26, 0.33, 0.29, 0.30), Color(0.20, 0.22, 0.28, 0.32), Color(0.55, 0.47, 0.36, 0.26),
 ]
-const ROOF_PROPS := [["ac_unit", 0.34], ["vent", 0.26], ["roof_hatch", 0.1], ["antenna", 0.1], ["dish", 0.12], ["pipe_run", 0.08]]
+const ROOF_PROPS := [["ac_unit", 0.28], ["vent", 0.2], ["roof_hatch", 0.08], ["antenna", 0.08], ["dish", 0.1], ["pipe_run", 0.07], ["roof_shed", 0.07], ["roof_garden", 0.07], ["roof_chairs", 0.05]]
 
 
 static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -> void:
@@ -554,7 +610,8 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 			var pz := (_roll(key + "tz%d" % patch) - 0.5) * (size.y - 2.5)
 			var ps := Vector3(1.5 + _roll(key + "tw%d" % patch) * 3.0, 1, 1.2 + _roll(key + "th%d" % patch) * 2.5)
 			_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(roof_center.x + px, roof_y + 0.004, roof_center.y + pz)))
-		var wanted := clampi(int(size.x * size.y / 28.0), 1, 7)
+		# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
+		var wanted := clampi(int(size.x * size.y / 18.0), 2, 10)
 		var placed := 0
 		for attempt in wanted * 4:
 			if placed >= wanted: break
@@ -563,6 +620,8 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 			if kind.is_empty(): continue
 			var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
 			if kind == "pipe_run": radius = 2.2
+			if kind in ["roof_shed", "roof_garden"]: radius = 1.6
+			if kind == "roof_chairs": radius = 0.9
 			var local := roof_center + Vector2((_roll(akey + "x") - 0.5) * (size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (size.y - 2.0 * radius - 0.6))
 			var blocked := false
 			for other in occupied:
@@ -572,8 +631,12 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 			var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
 			_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, roof_y, local.y)))
 			placed += 1
+		var has_billboard := false
 		if billboards < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
-			if _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches): billboards += 1
+			has_billboard = _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches)
+			if has_billboard: billboards += 1
+		# Fachada e telhado "vivos" (escada de incêndio, ar-condicionado, varal...).
+		LIFE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches, has_billboard)
 
 
 ## Maior caixa horizontal (>=60% da planta nos dois eixos) mais alta, em
