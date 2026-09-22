@@ -186,6 +186,33 @@ static func set_beacon_phase(on: bool) -> void:
 	beacon().emission_energy_multiplier = lerpf(1.2, 6.0, night) if on else 0.05
 
 
+## Delegacia: letreiro, lampiões, neon, giroflex e luzes do heliponto.
+const POLICE_TONES := {"lightbox": Color(0.95, 0.97, 1.0), "globe": Color(0.35, 0.55, 1.0), "neon": Color(0.2, 0.45, 1.0), "red": Color(1.0, 0.12, 0.1), "blue": Color(0.15, 0.35, 1.0), "pad": Color(0.4, 1.0, 0.45)}
+
+static func police(kind: String) -> StandardMaterial3D:
+	var key := "police_" + kind
+	if _cache.has(key): return _cache[key]
+	var tone: Color = POLICE_TONES.get(kind, Color.WHITE)
+	var material := StandardMaterial3D.new()
+	material.albedo_color = tone.lerp(Color.WHITE, 0.55) if kind == "lightbox" else tone.darkened(0.35)
+	material.emission_enabled = true
+	material.emission = tone
+	material.emission_energy_multiplier = 0.5
+	_cache[key] = material
+	return material
+
+
+## Chamado pelo CityLook: luz fixa segue a noite; giroflex alterna vermelho/azul.
+static func set_police_phase(phase: bool) -> void:
+	police("lightbox").emission_energy_multiplier = lerpf(0.35, 1.0, night)
+	police("globe").emission_energy_multiplier = lerpf(0.4, 3.0, night)
+	police("neon").emission_energy_multiplier = lerpf(0.3, 3.0, night)
+	police("pad").emission_energy_multiplier = lerpf(0.0, 2.5, night) if phase else lerpf(0.0, 0.6, night)
+	var strobe := lerpf(2.0, 6.0, night)
+	police("red").emission_energy_multiplier = strobe if phase else 0.05
+	police("blue").emission_energy_multiplier = 0.05 if phase else strobe
+
+
 # --- Neon (letreiros e outdoors) ---
 
 static func neon(color: Color) -> StandardMaterial3D:

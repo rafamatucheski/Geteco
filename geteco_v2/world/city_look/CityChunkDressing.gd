@@ -16,6 +16,9 @@ const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const BRANDS := preload("res://world/city_look/CityBrands.gd")
 const LIFE := preload("res://world/city_look/BuildingLife.gd")
+const STAIRS := preload("res://world/city_look/WalkableStairs.gd")
+const ROOFS := preload("res://world/city_look/RoofSurfaces.gd")
+const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
@@ -27,13 +30,14 @@ const SHOP_LIT_RATIO := 0.85
 const SIDEWALK := 42.0 / 16.0
 const FURNITURE_SPACING := 7.0
 const DECAL_Y := 0.034
-const SHADOW_CASTERS := ["signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry"]
+const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry"]
 
 
 static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	var context := _context(region, rect)
 	var batches := {}
 	_night_pass(chunk, context)
+	STAIRS.build_chunk(chunk)
 	_junction_signage(context, batches, chunk)
 	_sidewalk_furniture(context, batches)
 	_building_surroundings(context, batches)
@@ -132,6 +136,10 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		elif kind == "signal_amber":
 			multimesh.mesh = _lens_mesh()
 			material = MATERIALS.signal_amber()
+			shadows = false
+		elif kind.begins_with("roofmat:"):
+			multimesh.mesh = _flat_quad()
+			material = ROOFS.material(kind.trim_prefix("roofmat:").to_int())
 			shadows = false
 		elif kind == "beacon_lens":
 			multimesh.mesh = _lens_mesh()
@@ -578,10 +586,11 @@ const ROOF_TINTS := [
 	Color(0.10, 0.10, 0.11, 0.35), Color(0.45, 0.30, 0.24, 0.28), Color(0.62, 0.62, 0.58, 0.30),
 	Color(0.26, 0.33, 0.29, 0.30), Color(0.20, 0.22, 0.28, 0.32), Color(0.55, 0.47, 0.36, 0.26),
 ]
-const ROOF_PROPS := [["ac_unit", 0.28], ["vent", 0.2], ["roof_hatch", 0.08], ["antenna", 0.08], ["dish", 0.1], ["pipe_run", 0.07], ["roof_shed", 0.07], ["roof_garden", 0.07], ["roof_chairs", 0.05]]
+const ROOF_PROPS := [["ac_unit", 0.2], ["vent", 0.14], ["roof_hatch", 0.06], ["antenna", 0.06], ["dish", 0.07], ["pipe_run", 0.06], ["roof_shed", 0.06], ["roof_garden", 0.06], ["roof_chairs", 0.04], ["water_tank", 0.06], ["skylight", 0.07], ["solar_row", 0.05], ["cooling_tower", 0.04]]
 
 
 static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -> void:
+	_other_roofs(chunk, batches)
 	var billboards := 0
 	for node in chunk.find_children("*", "Node3D", true, false):
 		if not node is UrbanBuildingBase: continue
@@ -599,11 +608,13 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 		if size.x < 4.0 or size.y < 4.0: continue
 		var xform := building.global_transform
 		var occupied := _roof_obstacles(building, roof_y)
-		# Tom da laje: um quad translúcido por prédio muda a leitura do telhado
-		# sem tocar no material compartilhado da fábrica.
-		var tint_index := int(_roll(key + "tint") * ROOF_TINTS.size()) % ROOF_TINTS.size()
+		# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
+		if key == "Police": POLICE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches)
+		# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
+		# por tipo de prédio, sem tocar no material compartilhado da fábrica.
+		var surface := ROOFS.pick(building.building_kind, _roll(key + "tint"))
 		var inset := size - Vector2.ONE * 0.7
-		_push(batches, "decal:roof_%d" % tint_index, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof_center.x, roof_y, roof_center.y)))
+		_push(batches, "roofmat:%d" % surface, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof_center.x, roof_y, roof_center.y)))
 		for patch in 2:
 			if _roll(key + "tar%d" % patch) < 0.5: continue
 			var px := (_roll(key + "tx%d" % patch) - 0.5) * (size.x - 2.5)
@@ -622,6 +633,9 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 			if kind == "pipe_run": radius = 2.2
 			if kind in ["roof_shed", "roof_garden"]: radius = 1.6
 			if kind == "roof_chairs": radius = 0.9
+			if kind in ["water_tank", "cooling_tower"]: radius = 1.4
+			if kind == "solar_row": radius = 2.1
+			if kind == "skylight": radius = 1.0
 			var local := roof_center + Vector2((_roll(akey + "x") - 0.5) * (size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (size.y - 2.0 * radius - 0.6))
 			var blocked := false
 			for other in occupied:
@@ -690,3 +704,18 @@ static func _place_billboard(chunk: Node3D, building: UrbanBuildingBase, roof_y:
 	var brand: Dictionary = BRANDS.pick(building.building_id)
 	chunk.add_child(BRANDS.billboard_panel(brand, chunk.global_transform.affine_inverse() * world))
 	return true
+
+
+
+## Prédios montados fora dos arquétipos (hospital, residências, fachadas
+## autorais): só o acabamento da laje, sem adereços (não sabemos o que há lá).
+static func _other_roofs(chunk: Node3D, batches: Dictionary) -> void:
+	for child in chunk.get_children():
+		if not child is Node3D or child is UrbanBuildingBase or child is MultiMeshInstance3D: continue
+		if child.find_children("*", "MeshInstance3D", true, false).size() < 3: continue
+		var roof := ROOFS.find_roof(child)
+		if roof.size == Vector3.ZERO or roof.end.y < 2.5: continue
+		var surface := ROOFS.pick("", _roll(String(child.name) + "tint"))
+		var inset := Vector2(roof.size.x, roof.size.z) - Vector2.ONE * 0.6
+		if inset.x < 3.0 or inset.y < 3.0: continue
+		_push(batches, "roofmat:%d" % surface, child.global_transform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof.get_center().x, roof.end.y + 0.012, roof.get_center().z)))

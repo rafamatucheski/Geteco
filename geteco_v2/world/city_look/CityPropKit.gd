@@ -14,6 +14,8 @@ static func material() -> StandardMaterial3D:
 	if _material == null:
 		_material = StandardMaterial3D.new()
 		_material.vertex_color_use_as_albedo = true
+		# Cores do kit são escritas em sRGB (hex); sem isto saíam desbotadas.
+		_material.vertex_color_is_srgb = true
 		_material.roughness = 0.82
 	return _material
 

@@ -47,10 +47,11 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 	var facade := _read_facade(building)
 	if not facade.is_empty():
 		if kind in RESIDENTIAL or kind in OFFICE:
-			_fire_escape(key, kind, facade, batches)
+			_fire_escape(key, kind, facade, batches, chunk)
 		_window_units(key, kind, facade, batches)
 		_drainpipes(key, kind, facade, roof_y, batches)
-		_street_level(key, kind, facade, batches, chunk)
+		# Delegacia não leva pichação/lambe-lambe na fachada.
+		if kind != "police_precinct": _street_level(key, kind, facade, batches, chunk)
 	_roof_life(chunk, building, key, kind, roof_y, roof_center, roof_size, occupied, batches)
 	if not has_billboard and (kind in COMMERCIAL or kind in OFFICE) and not building.proper_name.is_empty():
 		_roof_neon(chunk, building, key, roof_y, roof_center, roof_size)
@@ -104,7 +105,7 @@ static func _columns(facade: Dictionary) -> Dictionary:
 # ---------------------------------------------------------------------------
 # Escada de incêndio (a marca do prédio residencial de GTA IV).
 
-static func _fire_escape(key: String, kind: String, facade: Dictionary, batches: Dictionary) -> void:
+static func _fire_escape(key: String, kind: String, facade: Dictionary, batches: Dictionary, chunk: Node3D) -> void:
 	if _roll(key + "|fe") > (0.55 if kind in RESIDENTIAL else 0.35): return
 	var columns := _columns(facade)
 	var candidates := []
@@ -118,20 +119,45 @@ static func _fire_escape(key: String, kind: String, facade: Dictionary, batches:
 	var stack: Array = columns[column]
 	var x := clampf(float(stack[0].x), float(facade.left) + 1.35, float(facade.right) - 1.35)
 	var z: float = facade.face_z
-	var floors := []
+	var base: float = facade.base_y
+	# Patamares nos andares; lance mais íngreme que o chão aceita (rise > 2,6 m)
+	# encerra a escada ali.
+	var floors := [base]
 	for window in stack:
 		var y := float(window.bottom) - 0.14
-		if floors.is_empty() or y - float(floors[-1]) > 1.6: floors.append(y)
-	for index in floors.size():
+		var rise: float = y - float(floors[-1])
+		if rise < 1.6: continue
+		if rise > 2.6: break
+		floors.append(y)
+	if floors.size() < 2: return
+	var body := StaticBody3D.new()
+	body.name = "FireEscape_" + key
+	body.collision_layer = 1
+	body.collision_mask = 0
+	chunk.add_child(body)
+	for index in range(1, floors.size()):
 		var y: float = floors[index]
+		var below: float = floors[index - 1]
+		var rise := y - below
 		_push(batches, "fe_platform", Transform3D(Basis.IDENTITY, Vector3(x, y, z)))
-		if index + 1 < floors.size():
-			var rise: float = float(floors[index + 1]) - y
-			var basis := Basis.IDENTITY.scaled(Vector3(1.0, rise / 2.5, 1.0))
-			_push(batches, "fe_stair" if index % 2 == 0 else "fe_stair_m", Transform3D(basis, Vector3(x, y, z)))
-	if float(floors[0]) - float(facade.base_y) > 2.2:
-		_push(batches, "fe_ladder", Transform3D(Basis.IDENTITY, Vector3(x + 0.85, floors[0], z)))
+		_push(batches, "fe_stair", Transform3D(Basis.IDENTITY.scaled(Vector3(1.0, rise / 2.5, 1.0)), Vector3(x, below, z)))
+		_box(body, chunk, Vector3(2.6, 0.1, 0.95), Transform3D(Basis.IDENTITY, Vector3(x, y - 0.05, z + 0.5)))
+		# Rampa de colisão do lance (mesma inclinação dos degraus).
+		var run := 2.6
+		var d := Vector3(run, rise, 0).normalized()
+		var normal := Vector3.BACK.cross(d)
+		var ramp_center := Vector3(x, below + rise * 0.5, z + 1.3) - normal * 0.06
+		_box(body, chunk, Vector3(Vector2(run, rise).length(), 0.12, 0.6), Transform3D(Basis(d, normal, Vector3.BACK), ramp_center))
 	facade["fire_escape_x"] = x
+
+
+static func _box(body: StaticBody3D, chunk: Node3D, size: Vector3, global_xform: Transform3D) -> void:
+	var collider := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collider.shape = shape
+	collider.transform = chunk.global_transform.affine_inverse() * global_xform
+	body.add_child(collider)
 
 
 # ---------------------------------------------------------------------------

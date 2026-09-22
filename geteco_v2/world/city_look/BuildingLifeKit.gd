@@ -27,6 +27,10 @@ static func build(kind: String, t: SurfaceTool) -> void:
 		"roof_garden": _roof_garden(t)
 		"roof_shed": _roof_shed(t)
 		"roof_chairs": _roof_chairs(t)
+		"water_tank": _water_tank(t)
+		"skylight": _skylight(t)
+		"solar_row": _solar_row(t)
+		"cooling_tower": _cooling_tower(t)
 
 
 ## Ar-condicionado de janela: pendurado no peitoril, grade frontal e suporte.
@@ -62,21 +66,27 @@ static func _fe_platform(t: SurfaceTool) -> void:
 	for x in [-1.1, 1.1]: KIT.box(t, Vector3(x, -0.28, 0.35), Vector3(0.04, 0.6, 0.04), IRON)
 
 
-## Lance diagonal: sobe 2,5 m em 2,1 m, ancorado no patamar de baixo. `sign`
-## espelha o sentido (zigue-zague) com geometria própria: escala negativa na
-## instância inverteria as faces.
+## Lance diagonal por FORA do patamar (faixa z 1,0–1,6 m da parede): sobe
+## 2,5 m em 2,6 m (44°, dentro do limite de chão de 45° do CharacterBody).
+## Todos os lances sobem no mesmo sentido e ficam empilhados a 2,5 m um do
+## outro, então quem sobe nunca bate a cabeça no patamar de cima (a versão em
+## zigue-zague, dentro do patamar, era impossível de subir). `sign` fica para
+## compatibilidade com malhas já registradas.
+const FE_RUN := 2.6
+const FE_RISE := 2.5
+const FE_Z := 1.3
+
 static func _fe_stair(t: SurfaceTool, sign: float) -> void:
-	var rise := 2.5
-	var run := 2.1
-	var steps := 9
+	var steps := 10
 	for i in steps:
 		var f := (i + 0.5) / steps
-		KIT.box(t, Vector3((-run * 0.5 + f * run) * sign, f * rise, 0.55), Vector3(0.22, 0.03, 0.62), IRON_LIGHT)
-	var angle := atan2(rise, run) * sign
-	var length := sqrt(rise * rise + run * run)
-	for z in [0.22, 0.88]:
-		_slanted(t, Vector3(0, rise * 0.5, z), Vector3(length, 0.06, 0.04), angle, IRON)
-		_slanted(t, Vector3(0, rise * 0.5 + 0.8, z), Vector3(length, 0.03, 0.03), angle, IRON)
+		KIT.box(t, Vector3((-FE_RUN * 0.5 + f * FE_RUN) * sign, f * FE_RISE, FE_Z), Vector3(0.24, 0.03, 0.6), IRON_LIGHT)
+	var angle := atan2(FE_RISE, FE_RUN) * sign
+	var length := sqrt(FE_RISE * FE_RISE + FE_RUN * FE_RUN)
+	for z in [FE_Z - 0.32, FE_Z + 0.32]:
+		_slanted(t, Vector3(0, FE_RISE * 0.5 - 0.05, z), Vector3(length, 0.1, 0.04), angle, IRON)
+	# Corrimão só do lado de fora; o de dentro deixaria o patamar inacessível.
+	_slanted(t, Vector3(0, FE_RISE * 0.5 + 0.85, FE_Z + 0.32), Vector3(length, 0.035, 0.035), angle, IRON)
 
 
 static func _slanted(t: SurfaceTool, center: Vector3, size: Vector3, angle: float, color: Color) -> void:
@@ -195,3 +205,40 @@ static func _roof_chairs(t: SurfaceTool) -> void:
 		KIT.box(t, Vector3(x, 0.45, -0.4), Vector3(0.55, 0.5, 0.05), seat)
 		for leg in [-0.22, 0.22]: KIT.box(t, Vector3(x + leg, 0.1, 0), Vector3(0.03, 0.2, 0.8), Color("9aa0a2"))
 	KIT.box(t, Vector3(0, 0.15, 0.6), Vector3(0.4, 0.3, 0.3), Color("d8453c"))
+
+
+
+## Caixa-d'água de madeira sobre torre de ferro (a silhueta de telhado de Nova York).
+static func _water_tank(t: SurfaceTool) -> void:
+	for x in [-0.7, 0.7]:
+		for z in [-0.7, 0.7]:
+			KIT.box(t, Vector3(x, 1.0, z), Vector3(0.1, 2.0, 0.1), IRON)
+	KIT.box(t, Vector3(0, 1.0, 0.7), Vector3(1.5, 0.05, 0.05), IRON)
+	KIT.box(t, Vector3(0, 1.0, -0.7), Vector3(1.5, 0.05, 0.05), IRON)
+	KIT.box(t, Vector3(0, 2.02, 0), Vector3(1.8, 0.08, 1.8), Color("4a3b2e"))
+	KIT.cylinder(t, Vector3(0, 2.06, 0), 0.95, 1.8, Color("6b4f36"), 12, 0.9)
+	for y in [2.4, 3.0, 3.55]: KIT.cylinder(t, Vector3(0, y, 0), 0.97, 0.05, IRON, 12)
+	KIT.cylinder(t, Vector3(0, 3.86, 0), 1.0, 0.55, Color("3f3a35"), 12, 0.08)
+	KIT.box(t, Vector3(0.95, 1.9, 0), Vector3(0.05, 3.8, 0.35), IRON_LIGHT)
+
+
+static func _skylight(t: SurfaceTool) -> void:
+	KIT.box(t, Vector3(0, 0.2, 0), Vector3(1.6, 0.4, 1.1), Color("8a8f90"))
+	KIT.box(t, Vector3(0, 0.46, 0), Vector3(1.45, 0.12, 0.95), Color("7fa6b8"))
+	KIT.box(t, Vector3(0, 0.53, 0), Vector3(0.05, 0.03, 0.95), Color("5a5f61"))
+
+
+static func _solar_row(t: SurfaceTool) -> void:
+	for i in 3:
+		var x := -1.3 + i * 1.3
+		KIT.box(t, Vector3(x, 0.25, -0.2), Vector3(0.05, 0.5, 0.05), Color("9aa0a2"))
+		KIT.box(t, Vector3(x, 0.45, 0), Vector3(1.2, 0.04, 0.9), Color("1d2e4a"), 0.0)
+		for c in 3: KIT.box(t, Vector3(x - 0.4 + c * 0.4, 0.475, 0), Vector3(0.015, 0.01, 0.88), Color("8fa3bf"))
+
+
+## Torre de resfriamento de escritório (caixa com ventilador no topo).
+static func _cooling_tower(t: SurfaceTool) -> void:
+	KIT.box(t, Vector3(0, 0.9, 0), Vector3(2.2, 1.8, 1.8), Color("9ea3a0"))
+	for y in [0.4, 0.7, 1.0, 1.3]: KIT.box(t, Vector3(0, y, 0.91), Vector3(2.0, 0.08, 0.02), Color("5f666a"))
+	KIT.cylinder(t, Vector3(0, 1.8, 0), 0.8, 0.35, Color("6f7577"), 12, 0.75)
+	KIT.cylinder(t, Vector3(0, 2.1, 0), 0.72, 0.04, Color("2b2f31"), 12)

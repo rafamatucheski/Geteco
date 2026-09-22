@@ -26,6 +26,7 @@ var _grade: GradientTexture1D
 var _blink := 0.0
 var _blink_on := false
 var _beacon_on := false
+var _strobe_on := false
 var _tv_clock := 0.0
 var _tv_rng := RandomNumberGenerator.new()
 var _neon_night := -1.0
@@ -42,6 +43,11 @@ func _process(delta: float) -> void:
 	if phase != _blink_on:
 		_blink_on = phase
 		MATERIALS.set_signal_phase(phase)
+	# Giroflex da delegacia: alterna 3x por segundo, mais nervoso que o semáforo.
+	var strobe := fposmod(_blink, .34) < .17
+	if strobe != _strobe_on:
+		_strobe_on = strobe
+		MATERIALS.set_police_phase(strobe)
 	# Balizamento de prédio alto: lampejo curto a cada 1,5 s.
 	var beacon := fposmod(_blink, 1.5) < .28
 	if beacon != _beacon_on:
