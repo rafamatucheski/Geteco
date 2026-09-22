@@ -3,6 +3,8 @@ extends Node3D
 signal changed
 signal message(text: String)
 signal player_died
+signal player_arrested
+signal police_warning_issued
 signal crime_reported(points: int)
 signal weapon_fired(weapon_id: String, origin: Vector3)
 signal explosion_occurred(origin: Vector3, radius: float, source: Node)
@@ -17,6 +19,31 @@ const AUDIO = preload("res://gameplay/CombatAudio.gd")
 const PROTECTION = preload("res://gameplay/DamageProtection.gd")
 const EFFECTS = preload("res://gameplay/CombatEffects.gd")
 const RIG_POSE = preload("res://gameplay/WeaponRigPose.gd")
+const LOOT = preload("res://gameplay/LootPickup.gd")
+## Mixagem de combate (ver `_hearing_gain_db`). Volumes da V1: recarga -5 dB
+## (`Player._reload_audio`), explosão +3 dB (`Bullet._trigger_explosion`). O
+## lança-chamas era -15 dB na V1; sobe um pouco porque aqui soa contínuo sob o
+## tráfego e a chuva da V2.
+const COMBAT_VOICES := 12
+const RELOAD_VOLUME_DB := -5.0
+const FLAME_VOLUME_DB := -11.0
+const EXPLOSION_VOLUME_DB := 3.0
+## Tiro de NPC (polícia, gangue, assalto): um pouco abaixo da arma do jogador.
+const NPC_GUNFIRE_DB := -4.0
+## Alcance audível (m) com queda linear até zero, como o AudioStreamPlayer2D da
+## V1 (max_distance em px ÷ 16): tiro 600 px, tiro silenciado 220 px, explosão 1600 px.
+const HEARING_GUNFIRE := 37.5
+const HEARING_SUPPRESSED := 13.75
+const HEARING_EXPLOSION := 100.0
+const HEARING_DEFAULT := 30.0
+## V1 `police/PoliceLoot.gd`: chance de largar a arma (com 8–20 balas) e colete de
+## 50 pontos. Patamar pesado (V1 SWAT; aqui tier >= 2, os de M4A1) larga mais.
+const LOOT_WEAPON_CHANCE := 0.35
+const LOOT_WEAPON_CHANCE_HEAVY := 0.45
+const LOOT_ARMOR_CHANCE := 0.12
+const LOOT_ARMOR_CHANCE_HEAVY := 0.35
+const LOOT_AMMO := Vector2i(8, 20)
+const LOOT_ARMOR_POINTS := 50
 ## Cheat de arsenal do V1: digitar as letras em sequência (pausa máxima 3 s, buffer de 13).
 const CHEAT_ARSENAL := "dukenuke"
 const CHEAT_BUFFER := 13
@@ -85,6 +112,7 @@ var player: CharacterBody3D
 var camera: Camera3D
 var state: RefCounted
 var health := 100.0
+var _last_arrest_warning_msec := -10000
 var armor := 0.0
 var stars := 0
 var crime_points := 0
@@ -101,17 +129,20 @@ var _reload_total := 0.0
 var reloading_id := ""
 var aim_point := Vector3.ZERO
 var gun: Node3D
+## Segunda soqueira, no punho esquerdo (V1 `MeshyDanteRig.sync_knuckles`).
+var _left_knuckles: Node3D
 var socket: Node3D
 var visual_id := "@unbuilt"
 var contact_age := 10.0
 var _occupancy: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
-var _loot: Array[Dictionary] = []
+var _loot: Array[Node3D] = []
 var _effects: Array[Dictionary] = []
 var _flash_material: StandardMaterial3D
 var enabled := true
 var _dead_notified := false
 var _audio_pool: Array[AudioStreamPlayer3D] = []
+var _ui_audio: AudioStreamPlayer
 var customization: Dictionary = {}
 var flashlight_enabled := false
 var flashlight: SpotLight3D
@@ -226,13 +257,19 @@ func _ready() -> void:
 	# `police/PoliceVehicleCombat.gd` etc.); sem isso o slider de SFX do menu de
 	# configurações não tinha efeito nenhum sobre tiro/recarga/impacto.
 	var sfx_bus := AUDIO.SFX_BUS_NAME
-	for index in 8:
-		var channel := AudioStreamPlayer3D.new()
-		channel.max_distance = 55
-		channel.unit_size = 5
-		channel.bus = sfx_bus
+	# O ouvinte do Godot é a câmera ortogonal, ~36 m acima/atrás do jogador
+	# (`CameraRig.EXTERIOR_OFFSET`). Com atenuação 3D por distância, até o tiro do
+	# próprio jogador chegava ~12 dB abaixo do volume da V1 — "baixíssimo". A V1
+	# ouvia do ponto do jogador (AudioStreamPlayer2D, câmera centrada nele). Os
+	# canais aqui só usam a posição para o panorama; o volume por distância é
+	# calculado em `_hearing_gain_db`, a partir do jogador, com a curva da V1.
+	for index in COMBAT_VOICES:
+		var channel := _combat_voice(sfx_bus)
 		add_child(channel)
 		_audio_pool.append(channel)
+	_ui_audio = AudioStreamPlayer.new()
+	_ui_audio.bus = sfx_bus
+	add_child(_ui_audio)
 	# Clarão de boca do V1: esfera emissiva + uma OmniLight, sem sombra, reaproveitadas.
 	_muzzle_material = StandardMaterial3D.new()
 	_muzzle_material.albedo_color = Color(1.0, 0.85, 0.2)
@@ -245,23 +282,15 @@ func _ready() -> void:
 	effects.name = "CombatEffects"
 	add_child(effects)
 	for index in PAIN_VOICES:
-		var voice := AudioStreamPlayer3D.new()
-		voice.max_distance = 45
-		voice.unit_size = 4
-		voice.bus = sfx_bus
+		var voice := _combat_voice(sfx_bus)
 		add_child(voice)
 		_pain_pool.append(voice)
-	_flame_audio = AudioStreamPlayer3D.new()
-	_flame_audio.max_distance = 55
-	_flame_audio.unit_size = 5
-	_flame_audio.volume_db = -15.0
-	_flame_audio.bus = sfx_bus
+	# Lança-chamas e recarga são sempre do jogador: volume da V1 sem perda por distância.
+	_flame_audio = _combat_voice(sfx_bus)
+	_flame_audio.volume_db = FLAME_VOLUME_DB
 	add_child(_flame_audio)
-	_reload_audio = AudioStreamPlayer3D.new()
-	_reload_audio.max_distance = 45
-	_reload_audio.unit_size = 4
-	_reload_audio.volume_db = -5.0
-	_reload_audio.bus = sfx_bus
+	_reload_audio = _combat_voice(sfx_bus)
+	_reload_audio.volume_db = RELOAD_VOLUME_DB
 	add_child(_reload_audio)
 
 func _build_socket() -> void:
@@ -346,6 +375,7 @@ func _update_visual() -> void:
 			var local_basis: Basis = _pose_frame.basis
 			gun.global_transform = Transform3D((player.visual.global_basis * local_basis).orthonormalized(), player.visual.to_global(_pose_frame.gun_origin))
 		_update_weapon_parts(id)
+	_update_left_knuckles(id)
 	flashlight.visible = gun.visible and flashlight_enabled and CUSTOM.installed(customization, id)
 	var laser_part := CUSTOM.selected(customization, id, "laser")
 	laser.visible = gun.visible and laser_part != "none"
@@ -361,6 +391,21 @@ func _update_visual() -> void:
 		laser.scale.z = maxf(0.01, origin.distance_to(end))
 		laser.material_override.albedo_color = Color("58e07c") if laser_part == "laser_green" else Color("e5493c")
 
+func _update_left_knuckles(id: String) -> void:
+	var wanted := id == "knuckles" and gun.visible and player.has_method("combat_left_palm_transform")
+	if not wanted:
+		if is_instance_valid(_left_knuckles): _left_knuckles.visible = false
+		return
+	if not is_instance_valid(_left_knuckles):
+		_left_knuckles = Node3D.new()
+		_left_knuckles.name = "LeftKnuckles"
+		_left_knuckles.top_level = true
+		gun.get_parent().add_child(_left_knuckles)
+		ARSENAL.build(_left_knuckles, "knuckles")
+	_left_knuckles.visible = true
+	# A fileira de anéis segue o eixo Y da palma, igual à soqueira da direita.
+	_left_knuckles.global_transform = player.combat_left_palm_transform() * Transform3D(Basis(Vector3.BACK, PI * 0.5), Vector3.ZERO)
+
 func _update_weapon_pose(delta: float) -> void:
 	if not is_instance_valid(player): return
 	var id := equipped()
@@ -369,7 +414,9 @@ func _update_weapon_pose(delta: float) -> void:
 	var sprinting := speed_now > 4.2
 	var progress := 0.0
 	if reload_timer > 0.0 and _reload_total > 0.0: progress = clampf(1.0 - reload_timer / _reload_total, 0.0, 1.0)
-	_pose_frame = _rig_pose.update(id, delta, aiming, reload_timer > 0.0, progress, moving, sprinting, float(player.phase))
+	var rig: Dictionary = player.combat_rig_info() if player.has_method("combat_rig_info") else {}
+	if id == "grenade": rig.loaded = int(state.get_ammo(id).get("magazine", 0)) > 0
+	_pose_frame = _rig_pose.update(id, delta, aiming, reload_timer > 0.0, progress, moving, sprinting, float(player.phase), rig)
 	if player.has_method("set_combat_weapon_pose"):
 		player.set_combat_weapon_pose(id, _pose_frame)
 
@@ -447,6 +494,10 @@ func _flash_muzzle(id: String) -> void:
 	_muzzle_flash.visible = true
 	_muzzle_light.visible = not suppressed
 	_muzzle_timer = 0.075 if id == "flamethrower" else (0.09 if id == "rpg" else (0.065 if heavy else 0.035))
+	if is_instance_valid(effects) and id != "flamethrower":
+		var muzzle_pos: Vector3 = _muzzle_world_position()
+		var aim_dir: Vector3 = -gun.global_transform.basis.z if is_instance_valid(gun) else -player.global_transform.basis.z
+		effects.muzzle_smoke(muzzle_pos, aim_dir)
 
 ## Apaga o clarão e para o rugido do lança-chamas quando o gatilho solta ou o ataque é bloqueado.
 func _update_muzzle_and_flame(delta: float) -> void:
@@ -478,7 +529,10 @@ func _hit_effect(hit: Dictionary, amount: float, direction: Vector3) -> void:
 		effects.blood(hit.position, direction, amount)
 		_pain_voice(collider as Node3D, amount)
 		var victim := collider as Node3D
-		if victim != null and victim.get("dead") == true: effects.stain(victim.global_position, 0.6)
+		if victim != null and victim.get("dead") == true:
+			effects.stain(victim.global_position, 0.75)
+		elif amount >= 25.0 and randf() < 0.4:
+			effects.stain(hit.position, 0.35)
 	else:
 		effects.impact(hit.position, hit.normal, material, amount)
 
@@ -612,7 +666,7 @@ func _pain_voice(victim: Node3D, amount: float) -> void:
 		_pain_next[id] = _combat_clock + PAIN_COOLDOWN
 		voice.stream = stream
 		voice.global_position = victim.global_position + Vector3.UP
-		voice.volume_db = -6.0 if victim == player else -11.0
+		voice.volume_db = (-6.0 if victim == player else -11.0) + _hearing_gain_db(victim.global_position, HEARING_DEFAULT)
 		voice.pitch_scale = 1.0 if victim == player else 0.97
 		voice.play()
 		return
@@ -725,8 +779,11 @@ func fire_at(target: Vector3) -> bool:
 		shot.global_position = origin
 		if not shot.grenade: effects.backblast(origin, direction)
 	elif melee:
-		# Clipe do rig quando existe; senão, o balanço procedural da arma.
-		if not _start_combat_clip(id, data): _start_swing(data, direction)
+		# Golpe procedural da V1 (`WeaponRigPose`: socos alternados, soqueira em
+		# quatro variações, faca, arco de ombro do machado/taco). Os clipes
+		# `Attack`/`Punch_Forward_with_Both_Fists` do GLB moviam o corpo inteiro e
+		# ignoravam a arma na mão; ficam fora do golpe.
+		_start_swing(data, direction)
 		_melee(origin, direction, data)
 	else:
 		_in_pellet_volley = true
@@ -914,7 +971,6 @@ func reload_weapon() -> bool:
 	_reload_total = reload_timer
 	reloading_id = id
 	_play_reload_audio(id, float(data.get("reload_multiplier", 1.0)))
-	message.emit("Recarregando…")
 	return true
 
 func cycle_weapon(step: int) -> bool:
@@ -955,9 +1011,9 @@ func _free_play_ok() -> bool:
 ## `weapon_next`/`unarmed`. Trata-se aqui, depois do `_input` do FullSession e só em jogo livre.
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo() or not attack_allowed(): return
-	# A roda do mouse também aproxima/afasta a câmera (CameraRig) e `weapon_next` já a usa; não se
-	# amarra o recuo da roda à troca de arma sem decisão do integrador. Teclado e controle valem.
-	var previous := event.is_action_pressed("weapon_previous") and not (event is InputEventMouseButton)
+	# Como na V1 (`Player._input`), a roda do mouse troca de arma nos dois sentidos; a câmera não tem
+	# zoom manual. Dirigindo, a roda sintoniza a rádio (`WorldAudio`) e `attack_allowed` barra isto.
+	var previous := event.is_action_pressed("weapon_previous")
 	var slot := -1
 	for index in SLOT_ORDER.size():
 		if event.is_action_pressed("weapon_slot_%d" % (index + 1)): slot = index
@@ -1007,7 +1063,7 @@ func activate_arsenal_cheat() -> bool:
 func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool = true) -> void:
 	# Explosives launched outside cannot cross the safe-zone boundary through a transition.
 	if source == player and not state.weapons_allowed(): return
-	_sound("explosion", point)
+	_sound("explosion", point, EXPLOSION_VOLUME_DB)
 	if emergency != null: emergency.ignite(point, source, 1.0)
 	var sphere := SphereShape3D.new()
 	sphere.radius = radius
@@ -1039,6 +1095,18 @@ func damage_environment(amount: float) -> void:
 	# Cold and other environmental damage do not consume ballistic armor or crime.
 	_apply_player_damage(amount, false)
 
+func arrest_player() -> bool:
+	if health <= 0 or stars != 1 or state == null or not state.weapons_allowed() or player.input_locked: return false
+	player.input_locked = true
+	player_arrested.emit()
+	return true
+
+func police_arrest_warning() -> void:
+	var now := Time.get_ticks_msec()
+	if now-_last_arrest_warning_msec < 2500: return
+	_last_arrest_warning_msec = now
+	police_warning_issued.emit()
+
 func _apply_player_damage(amount: float, use_armor: bool) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or state == null or not state.weapons_allowed(): return
 	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
@@ -1049,6 +1117,8 @@ func _apply_player_damage(amount: float, use_armor: bool) -> void:
 	if health == 0 and not _dead_notified:
 		_dead_notified = true
 		player.input_locked = true
+		if is_instance_valid(effects): effects.stain(player.global_position, 0.8)
+		if player.has_method("on_player_death"): player.on_player_death()
 		player_died.emit()
 
 func heal(amount: float) -> bool:
@@ -1117,6 +1187,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 	var direction := origin.direction_to(suspect.global_position + Vector3.UP).rotated(Vector3.UP, _rng.randf_range(-spread, spread))
 	var data := CATALOG.get_weapon(weapon_id)
 	var token: Dictionary = effects.police_tracer(origin, direction, 75.0 if tactical else 55.0) if is_instance_valid(effects) else {}
+	if is_instance_valid(effects): effects.muzzle_smoke(origin, direction)
 	# A muzzle beyond a thin wall must not start the projectile on its far side.
 	var bridge := PhysicsRayQueryParameters3D.create(officer.global_position + Vector3.UP * 1.1, origin, 7, [officer.get_rid()])
 	var blocked := get_world_3d().direct_space_state.intersect_ray(bridge)
@@ -1125,7 +1196,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 		"damage": amount, "data": data, "source": weakref(officer), "rid": officer.get_rid(), "visual": token, "blocked": blocked})
 	visual.attack()
 	# V1 PoliceOfficer uses pistol for patrol and SMG for every other tier.
-	_play_stream(AUDIO.gunfire_take("pistol" if int(officer.get("tier")) == 0 else "smg", _rng), origin, -7.0, _rng.randf_range(0.95, 1.05))
+	_play_stream(AUDIO.gunfire_take("pistol" if int(officer.get("tier")) == 0 else "smg", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 
 func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
@@ -1151,35 +1222,58 @@ func police_reload(officer: Node3D, weapon_id: String) -> void:
 	if not is_instance_valid(officer): return
 	var sample := AUDIO.reload_take(weapon_id, _rng)
 	if sample != null:
-		_play_stream(sample, officer.global_position, -9.0, sample.get_length() / maxf(AUDIO.MIN_RELOAD, AUDIO.reload_seconds(weapon_id)))
+		_play_stream(sample, officer.global_position, 0.0, sample.get_length() / maxf(AUDIO.MIN_RELOAD, AUDIO.reload_seconds(weapon_id)))
 
 ## Tiro/explosão: 5 takes sem repetir o anterior + variação de tom e volume por disparo,
 ## como o `AudioStreamRandomizer` da V1 (`audio/combat/CombatAudioBank.gd`: random_pitch=1.035,
 ## random_volume_offset_db=0.65). Sem essa variação todo tiro soava idêntico — uma das
 ## diferenças perceptíveis de "efeito diferente" entre V1 e V2.
-func _sound(kind: String, point: Vector3, base_volume_db: float = -10.0) -> void:
+func _sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB) -> void:
 	var stream := AUDIO.gunfire_take(kind, _rng)
 	if stream == null: return
-	for channel in _audio_pool:
-		if channel.playing: continue
-		channel.global_position = point
-		channel.stream = stream
-		channel.volume_db = base_volume_db + AUDIO.gunfire_volume_jitter(_rng)
-		channel.pitch_scale = AUDIO.gunfire_pitch(_rng)
-		channel.play()
-		break
+	var reach := HEARING_EXPLOSION if kind == "explosion" else HEARING_GUNFIRE
+	_play_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng), reach)
 
 ## Toca um stream já carregado no primeiro canal livre do pool posicional.
-func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0) -> void:
+func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0, reach: float = HEARING_DEFAULT) -> void:
 	if stream == null: return
+	var gain := _hearing_gain_db(point, reach)
+	if gain <= -60.0: return
 	for channel in _audio_pool:
 		if channel.playing: continue
 		channel.global_position = point
 		channel.stream = stream
-		channel.volume_db = volume_db
+		channel.volume_db = volume_db + gain
 		channel.pitch_scale = pitch
 		channel.play()
 		return
+
+## Som não posicional (coleta de item), como o `RewardAudioBank` da V1.
+func _play_ui(stream: AudioStream, volume_db: float) -> void:
+	if stream == null or not is_instance_valid(_ui_audio): return
+	_ui_audio.stream = stream
+	_ui_audio.volume_db = volume_db
+	_ui_audio.play()
+
+## Voz de combate: a posição só dá o panorama esquerda/direita; o volume por
+## distância vem de `_hearing_gain_db`.
+func _combat_voice(bus: String) -> AudioStreamPlayer3D:
+	var voice := AudioStreamPlayer3D.new()
+	voice.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
+	voice.max_distance = 0.0
+	voice.panning_strength = 0.6
+	voice.bus = bus
+	return voice
+
+## Perda por distância medida do JOGADOR, não da câmera: queda linear até zero em
+## `reach`, a curva do AudioStreamPlayer2D da V1 (attenuation = 1). Quem atira
+## é o próprio jogador → 0 dB.
+func _hearing_gain_db(point: Vector3, reach: float) -> float:
+	if not is_instance_valid(player): return 0.0
+	var offset := point - player.global_position
+	offset.y = 0.0
+	var fraction := 1.0 - offset.length() / maxf(reach, 0.1)
+	return linear_to_db(fraction) if fraction > 0.001 else -80.0
 
 ## Disparo: tiro silenciado usa a amostra `suppressed_*` do V1 (-9 dB abaixo do volume da
 ## arma, como `characters/Player.gd`: `vol - (9.0 if suppressed else 0.0)`); o resto, o WAV
@@ -1190,7 +1284,7 @@ func _shot_sound(id: String, data: Dictionary) -> void:
 	if data.get("suppressed", false) and id in SUPPRESSED_WEAPONS:
 		var muffled := AUDIO.gunfire_take("suppressed_" + id, _rng)
 		if muffled != null:
-			_play_stream(muffled, player.global_position, base_volume - 9.0, AUDIO.gunfire_pitch(_rng))
+			_play_stream(muffled, player.global_position, base_volume - 9.0 + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng), HEARING_SUPPRESSED)
 			return
 	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
 
@@ -1200,7 +1294,8 @@ func _melee_swing_sound(_id: String, data: Dictionary) -> void:
 	var stream: AudioStream = AUDIO.punch_swing()
 	if stance == "knife": stream = AUDIO.knife_sample(-1)
 	elif stance == "axe": stream = AUDIO.bat_swing()
-	_play_stream(stream, player.global_position, -10.0 + float(data.get("audio_volume_db", -4.0)))
+	# V1 `Player._melee_attack`: o volume do catálogo, sem o -10 dB extra da V2.
+	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)))
 
 ## Lança-chamas: rajada de 0,38 s reiniciada enquanto o gatilho segue (V1 `_flamethrower_audio`).
 func _flame_sound() -> void:
@@ -1300,6 +1395,7 @@ func on_region_changed() -> void:
 	if is_instance_valid(player) and player.has_method("clear_combat_weapon_pose"): player.clear_combat_weapon_pose()
 	_present(NAN, "", 0.0)
 	if is_instance_valid(effects): effects.clear()
+	clear_loot()
 	for unit in get_children():
 		if unit.get_meta("gameplay_role","") == "police": unit.queue_free()
 	police.clear()
@@ -1427,31 +1523,64 @@ func _update_effects(delta: float) -> void:
 			_effects[index].node.queue_free()
 			_effects.remove_at(index)
 
+## Chamado na morte de policial/gangue. Rolagem única por corpo, como
+## `PoliceLoot.drop_now`: a arma dele (com munição) e/ou um colete, espalhados
+## em volta do corpo (V1: ±12 px e ±16 px = 0,75 m e 1 m).
 func drop_ammo(point: Vector3, id: String) -> void:
-	var pickup := Node3D.new()
-	add_child(pickup)
-	pickup.global_position = point + Vector3.UP * 0.15
-	pickup.rotation.z = PI / 2
-	ARSENAL.build(pickup, id)
-	_loot.append({"node": pickup, "weapon": id, "remaining": 60.0})
+	# O patamar pesado é o que carrega M4A1 (`PoliceAgent.TIER_WEAPONS`, tier >= 2).
+	var heavy := id == "m4a1"
+	if CATALOG.WEAPONS.has(id) and _rng.randf() <= (LOOT_WEAPON_CHANCE_HEAVY if heavy else LOOT_WEAPON_CHANCE):
+		spawn_loot("weapon", id, _rng.randi_range(LOOT_AMMO.x, LOOT_AMMO.y), point + Vector3(_rng.randf_range(-0.75, 0.75), 0, _rng.randf_range(-0.75, 0.75)))
+	if _rng.randf() <= (LOOT_ARMOR_CHANCE_HEAVY if heavy else LOOT_ARMOR_CHANCE):
+		spawn_loot("armor", "", LOOT_ARMOR_POINTS, point + Vector3(_rng.randf_range(-1.0, 1.0), 0, _rng.randf_range(-1.0, 1.0)))
 
+func spawn_loot(kind: String, id: String, amount: int, point: Vector3) -> Node3D:
+	var pickup := LOOT.new()
+	pickup.setup(kind, id, amount)
+	add_child(pickup)
+	pickup.global_position = point
+	_loot.append(pickup)
+	return pickup
+
+## Coleta por contato, sem mensagem na tela (a V1 mostrava "PEGOU ..."; aqui só
+## o som e o HUD de munição/colete mudam). Item que não cabe (colete cheio,
+## reserva no limite) fica no chão para depois.
 func _update_loot(delta: float) -> void:
 	for index in range(_loot.size() - 1, -1, -1):
-		var loot: Dictionary = _loot[index]
-		loot.remaining -= delta
-		var collected := false
-		if attack_allowed() and loot.node.global_position.distance_to(player.global_position) < 1.0:
-			if state.owns_weapon(loot.weapon):
-				state.add_ammo(loot.weapon, 12)
-				collected = true
-			elif state.has_method("grant_weapon"):
-				collected = state.grant_weapon(loot.weapon)
-		if collected or loot.remaining <= 0:
-			loot.node.queue_free()
+		var pickup: Node3D = _loot[index]
+		if not is_instance_valid(pickup) or pickup.consumed:
 			_loot.remove_at(index)
-			if collected:
-				message.emit("Munição recolhida.")
-				changed.emit()
+			continue
+		if not pickup.advance(delta):
+			pickup.queue_free()
+			_loot.remove_at(index)
+			continue
+		if not attack_allowed() or not is_instance_valid(player) or not pickup.can_collect(player.global_position): continue
+		if not _grant_loot(pickup): continue
+		pickup.collect()
+		_loot.remove_at(index)
+		changed.emit()
+
+func _grant_loot(pickup: Node3D) -> bool:
+	if pickup.kind == "armor":
+		if armor >= 100.0: return false
+		armor = minf(100.0, armor + float(pickup.armor_amount))
+		_play_ui(AUDIO.reward("pickup", _rng), -3.0)
+		return true
+	var id := String(pickup.weapon_id)
+	var gained := false
+	if not state.owns_weapon(id):
+		gained = state.grant_weapon(id)
+		# Arma nova vai para a mão, como `Player.add_weapon_loot` da V1.
+		if gained and state.has_method("equip_weapon"): state.equip_weapon(id)
+	if state.owns_weapon(id) and state.add_ammo(id, int(pickup.ammo_amount)): gained = true
+	if gained: _play_ui(AUDIO.reward("weapon", _rng), -3.0)
+	return gained
+
+func clear_loot() -> void:
+	for pickup in _loot:
+		if is_instance_valid(pickup): pickup.queue_free()
+	_loot.clear()
 
 func snapshot() -> Dictionary:
 	return {"health": health, "armor": armor, "crime_points": crime_points, "hidden_time": hidden_time, "customization": customization.duplicate(true)}

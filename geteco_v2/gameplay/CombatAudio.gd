@@ -57,6 +57,12 @@ static func gunfire_pitch(rng: RandomNumberGenerator) -> float:
 static func gunfire_volume_jitter(rng: RandomNumberGenerator) -> float:
 	return rng.randf_range(-GUNFIRE_VOLUME_JITTER_DB, GUNFIRE_VOLUME_JITTER_DB)
 
+## Som de coleta da V1 (`audio/rewards/RewardAudioBank.gd`): "weapon" para arma/
+## munição, "pickup" (3 takes) para colete.
+static func reward(kind: String, rng: RandomNumberGenerator) -> AudioStream:
+	if kind == "weapon": return wav("reward_weapon.wav")
+	return wav("reward_pickup_%d.wav" % rng.randi_range(0, 2))
+
 static func reload_take(weapon_id: String, rng: RandomNumberGenerator) -> AudioStream:
 	if weapon_id not in RELOAD_WEAPONS: return null
 	return wav("reload/%s_%d.wav" % [weapon_id, rng.randi_range(0, RELOAD_TAKES - 1)])
