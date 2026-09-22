@@ -601,57 +601,99 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 		# altura e no tamanho: altura nominal de UrbanBuildingBase não bate
 		# com arquétipo que monta platibanda/penthouse próprio, e o tom de laje
 		# ficava flutuando sobre a rua.
-		var roof := _roof_box(building)
-		if roof.size == Vector3.ZERO: continue
-		var roof_y := roof.end.y + 0.012
-		var roof_center := Vector2(roof.get_center().x, roof.get_center().z)
-		var size := Vector2(roof.size.x, roof.size.z)
-		if size.x < 4.0 or size.y < 4.0: continue
-		var xform := building.global_transform
-		var occupied := _roof_obstacles(building, roof_y)
-		# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
-		if key == "Police": POLICE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches)
-		# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
-		# por tipo de prédio, sem tocar no material compartilhado da fábrica.
-		var surface := ROOFS.pick(building.building_kind, _roll(key + "tint"))
-		var inset := size - Vector2.ONE * 0.7
-		_push(batches, "roofmat:%d" % surface, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof_center.x, roof_y, roof_center.y)))
-		for patch in 2:
-			if _roll(key + "tar%d" % patch) < 0.5: continue
-			var px := (_roll(key + "tx%d" % patch) - 0.5) * (size.x - 2.5)
-			var pz := (_roll(key + "tz%d" % patch) - 0.5) * (size.y - 2.5)
-			var ps := Vector3(1.5 + _roll(key + "tw%d" % patch) * 3.0, 1, 1.2 + _roll(key + "th%d" % patch) * 2.5)
-			_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(roof_center.x + px, roof_y + 0.004, roof_center.y + pz)))
-		# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
-		var wanted := clampi(int(size.x * size.y / 18.0), 2, 10)
-		var placed := 0
-		for attempt in wanted * 4:
-			if placed >= wanted: break
-			var akey := key + "|roof|" + str(attempt)
-			var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
-			if kind.is_empty(): continue
-			var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
-			if kind == "pipe_run": radius = 2.2
-			if kind in ["roof_shed", "roof_garden"]: radius = 1.6
-			if kind == "roof_chairs": radius = 0.9
-			if kind in ["water_tank", "cooling_tower"]: radius = 1.4
-			if kind == "solar_row": radius = 2.1
-			if kind == "skylight": radius = 1.0
-			var local := roof_center + Vector2((_roll(akey + "x") - 0.5) * (size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (size.y - 2.0 * radius - 0.6))
-			var blocked := false
-			for other in occupied:
-				if local.distance_to(other.point) < radius + other.radius: blocked = true; break
-			if blocked: continue
-			occupied.append({"point": local, "radius": radius})
-			var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
-			_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, roof_y, local.y)))
-			placed += 1
+		var slabs := _roof_slabs(building)
+		if slabs.is_empty(): continue
+		var main_roof: AABB = slabs[0]
+		var main_occupied := []
+		for slab_index in slabs.size():
+			var roof: AABB = slabs[slab_index]
+			var unit_key := key if slab_index == 0 else "%s|u%d" % [key, slab_index]
+			var roof_y := roof.end.y + 0.012
+			var roof_center := Vector2(roof.get_center().x, roof.get_center().z)
+			var size := Vector2(roof.size.x, roof.size.z)
+			if size.x < 2.8 or size.y < 2.8: continue
+			var xform := building.global_transform
+			var occupied := _roof_obstacles(building, roof_y)
+			# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
+			if key == "Police" and slab_index == 0: POLICE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches)
+			# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
+			# por tipo de prédio, sem tocar no material compartilhado da fábrica.
+			var surface := ROOFS.pick(building.building_kind, _roll(unit_key + "tint"))
+			var inset := size - Vector2.ONE * 0.7
+			_push(batches, "roofmat:%d" % surface, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof_center.x, roof_y, roof_center.y)))
+			for patch in 2:
+				if _roll(unit_key + "tar%d" % patch) < 0.5: continue
+				var px := (_roll(unit_key + "tx%d" % patch) - 0.5) * (size.x - 2.5)
+				var pz := (_roll(unit_key + "tz%d" % patch) - 0.5) * (size.y - 2.5)
+				var ps := Vector3(1.5 + _roll(unit_key + "tw%d" % patch) * 3.0, 1, 1.2 + _roll(unit_key + "th%d" % patch) * 2.5)
+				_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(roof_center.x + px, roof_y + 0.004, roof_center.y + pz)))
+			# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
+			var wanted := clampi(int(size.x * size.y / 18.0), 2, 10)
+			var placed := 0
+			for attempt in wanted * 4:
+				if placed >= wanted: break
+				var akey := unit_key + "|roof|" + str(attempt)
+				var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
+				if kind.is_empty(): continue
+				var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
+				if kind == "pipe_run": radius = 2.2
+				if kind in ["roof_shed", "roof_garden"]: radius = 1.6
+				if kind == "roof_chairs": radius = 0.9
+				if kind in ["water_tank", "cooling_tower"]: radius = 1.4
+				if kind == "solar_row": radius = 2.1
+				if kind == "skylight": radius = 1.0
+				# Laje estreita (unidade de casa geminada): peça que não cabe fica de fora.
+				if size.x < radius * 2.0 + 0.8 or size.y < radius * 2.0 + 0.8: continue
+				var local := roof_center + Vector2((_roll(akey + "x") - 0.5) * (size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (size.y - 2.0 * radius - 0.6))
+				var blocked := false
+				for other in occupied:
+					if local.distance_to(other.point) < radius + other.radius: blocked = true; break
+				if blocked: continue
+				occupied.append({"point": local, "radius": radius})
+				var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
+				_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, roof_y, local.y)))
+				placed += 1
+			if slab_index == 0: main_occupied = occupied
+		var roof_y := main_roof.end.y + 0.012
+		var roof_center := Vector2(main_roof.get_center().x, main_roof.get_center().z)
+		var size := Vector2(main_roof.size.x, main_roof.size.z)
+		var occupied := main_occupied
 		var has_billboard := false
 		if billboards < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
 			has_billboard = _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches)
 			if has_billboard: billboards += 1
 		# Fachada e telhado "vivos" (escada de incêndio, ar-condicionado, varal...).
 		LIFE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches, has_billboard)
+
+
+## Lajes do prédio: a laje única do arquétipo ou, nas casas geminadas (cada
+## unidade é um volume próprio, nenhum cobre 60% da planta), o topo de cada
+## unidade. Sem isto os telhados dessas fileiras ficavam de cor chapada.
+static func _roof_slabs(building: UrbanBuildingBase) -> Array:
+	var single := _roof_box(building)
+	if single.size != Vector3.ZERO: return [single]
+	var result := []
+	var inverse := building.global_transform.affine_inverse()
+	for node in building.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if not mesh.mesh is BoxMesh: continue
+		var box := inverse * (mesh.global_transform * mesh.get_aabb())
+		if box.size.x < 2.8 or box.size.z < 2.8 or box.size.y < 2.5 or box.position.y > 0.5: continue
+		result.append(box)
+	# A laje visível é a caixa mais alta sobre cada unidade (a fábrica põe uma
+	# placa de cor por cima do volume); o acabamento vai acima dela.
+	for index in result.size():
+		var unit: AABB = result[index]
+		for node in building.find_children("*", "MeshInstance3D", true, false):
+			var mesh := node as MeshInstance3D
+			var box := inverse * (mesh.global_transform * mesh.get_aabb())
+			if box.size.x < unit.size.x * 0.5 or box.size.z < unit.size.z * 0.5: continue
+			if not unit.grow(0.3).has_point(box.get_center()) and not Rect2(unit.position.x - 0.3, unit.position.z - 0.3, unit.size.x + 0.6, unit.size.z + 0.6).has_point(Vector2(box.get_center().x, box.get_center().z)): continue
+			if box.end.y > unit.end.y and box.end.y < unit.end.y + 0.6:
+				unit.size.y = box.end.y - unit.position.y
+		result[index] = unit
+	result.sort_custom(func(a, b): return a.size.x * a.size.z > b.size.x * b.size.z)
+	return result
 
 
 ## Maior caixa horizontal (>=60% da planta nos dois eixos) mais alta, em
