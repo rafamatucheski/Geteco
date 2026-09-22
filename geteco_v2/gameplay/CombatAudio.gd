@@ -155,29 +155,48 @@ static func bat_swing() -> AudioStream:
 	_generated["bat"] = _make(data, rate)
 	return _generated["bat"]
 
-## `ProceduralAudio.get_flamethrower_stream`: rajada de 0,38 s, reiniciada enquanto o gatilho segue apertado.
+## Rugido contínuo do lança-chamas em laço sem emenda. A rajada de 0,38 s da V1
+## tinha envelope senoidal (zero nas pontas) e era reiniciada só quando acabava:
+## segurando o gatilho, o som pulsava "uá-uá" a cada 0,38 s. Aqui o ruído é
+## gerado com sobra e o fim é misturado ao começo, então o laço não estala.
+## Quem toca para o som ao soltar o gatilho (`Gameplay._update_muzzle_and_flame`).
 static func flamethrower() -> AudioStream:
 	if _generated.has("flame"): return _generated["flame"]
 	var rate := 22050
-	var duration := 0.38
-	var count := int(rate * duration)
-	var data := PackedByteArray()
-	data.resize(count * 2)
+	var count := int(rate * 1.2)
+	var blend := int(rate * 0.12)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 922
+	var raw := PackedFloat32Array()
+	raw.resize(count + blend)
 	var lp := 0.0
 	var lp_sub := 0.0
-	for i in count:
+	var crackle := 0.0
+	for i in count + blend:
 		var t := float(i) / float(rate)
-		var env := sin(PI * clampf(t / duration, 0.0, 1.0))
-		var raw_noise := rng.randf_range(-1.0, 1.0)
-		lp += (raw_noise - lp) * 0.14
-		lp_sub += (raw_noise - lp_sub) * 0.03
-		var roar := (lp * 0.45 + lp_sub * 0.55) * (0.88 + 0.12 * sin(TAU * 10.0 * t))
-		var hiss := (raw_noise - lp) * 0.08
-		data.encode_s16(i * 2, clampi(int((roar + hiss) * env * 0.42 * 32767.0), -32768, 32767))
-	_generated["flame"] = _make(data, rate)
-	return _generated["flame"]
+		var noise := rng.randf_range(-1.0, 1.0)
+		lp += (noise - lp) * 0.14
+		lp_sub += (noise - lp_sub) * 0.03
+		# Estalos esparsos de combustível queimando por cima do rugido.
+		if rng.randf() < 0.0016: crackle = rng.randf_range(0.5, 1.0) * (1.0 if rng.randf() < 0.5 else -1.0)
+		crackle *= 0.93
+		# 10 Hz fecha 12 ciclos inteiros em 1,2 s: a modulação também não emenda torta.
+		var roar := (lp * 0.5 + lp_sub * 0.62) * (0.86 + 0.14 * sin(TAU * 10.0 * t))
+		raw[i] = roar + (noise - lp) * 0.07 + crackle * 0.35
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	for i in count:
+		var sample := raw[i]
+		if i < blend:
+			var w := float(i) / float(blend)
+			sample = raw[i] * w + raw[count + i] * (1.0 - w)
+		data.encode_s16(i * 2, clampi(int(tanh(sample * 0.9) * 0.5 * 32767.0), -32768, 32767))
+	var stream := _make(data, rate)
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
+	stream.loop_end = count
+	_generated["flame"] = stream
+	return stream
 
 ## `ProceduralAudio.get_grenade_throw_stream`: pino e sopro do arremesso.
 static func grenade_throw() -> AudioStream:
@@ -205,8 +224,11 @@ static func grenade_bounce() -> AudioStream:
 	rng.seed = 947
 	for i in count:
 		var t := float(i) / float(rate)
-		var ping := sin(TAU * (1450.0 - 520.0 * t) * t) * exp(-t * 58.0)
-		var click := rng.randf_range(-1.0, 1.0) * exp(-t * 120.0) * 0.28
-		data.encode_s16(i * 2, clampi(int((ping * 0.42 + click) * 32767.0), -32768, 32767))
+		# Corpo de ferro fundido no chão: baque grave + tinido curto. Só o tinido
+		# (e ainda tocado com tom 1,5–2x) soava como sininho.
+		var thud := sin(TAU * 170.0 * t) * exp(-t * 55.0)
+		var ping := sin(TAU * (880.0 - 260.0 * t) * t) * exp(-t * 85.0)
+		var click := rng.randf_range(-1.0, 1.0) * exp(-t * 140.0) * 0.3
+		data.encode_s16(i * 2, clampi(int((thud * 0.5 + ping * 0.3 + click) * 32767.0), -32768, 32767))
 	_generated["grenade_bounce"] = _make(data, rate)
 	return _generated["grenade_bounce"]
