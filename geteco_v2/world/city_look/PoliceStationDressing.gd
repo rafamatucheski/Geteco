@@ -32,7 +32,8 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 	t.begin(Mesh.PRIMITIVE_TRIANGLES)
 	t.set_smooth_group(-1)
 	var glow := {"lightbox": [], "globe": [], "neon": [], "red": [], "blue": [], "pad": []}
-	_facade(t, glow, building, hw, hz, ex)
+	var obstacles := _ground_obstacles(chunk, building)
+	_facade(t, glow, building, hw, hz, ex, obstacles)
 	_roof(t, glow, hw, hz, local_roof, roof_center, roof_size, occupied, batches, building)
 	t.generate_normals()
 	var mesh := MeshInstance3D.new()
@@ -49,7 +50,29 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 
 # ---------------------------------------------------------------------------
 
-static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBase, hw: float, hz: float, ex: float) -> void:
+## Objetos pequenos que já estão no chão perto da delegacia (ralo, poste,
+## floreira da zona de rota...), no espaço local do prédio. Frade e mastro não
+## podem nascer em cima deles.
+static func _ground_obstacles(chunk: Node3D, building: UrbanBuildingBase) -> Array:
+	var result := []
+	var inverse := building.global_transform.affine_inverse()
+	for node in chunk.get_parent().find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if building.is_ancestor_of(mesh): continue
+		var box := inverse * (mesh.global_transform * mesh.get_aabb())
+		if box.size.x > 3.0 or box.size.z > 3.0 or box.end.y < 0.02 or box.position.y > 1.5: continue
+		if box.position.z < building.building_size.y * 0.5 - 0.5 or box.position.z > building.building_size.y * 0.5 + 5.0: continue
+		result.append(box)
+	return result
+
+
+static func _clear(obstacles: Array, x: float, z: float, radius: float) -> bool:
+	for box in obstacles:
+		if x > box.position.x - radius and x < box.end.x + radius and z > box.position.z - radius and z < box.end.z + radius: return false
+	return true
+
+
+static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBase, hw: float, hz: float, ex: float, obstacles: Array) -> void:
 	var h := building.height
 	# Pilastras de concreto no andar de cima (quebram a fachada lisa).
 	if h > 5.0:
@@ -99,20 +122,36 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 	# Frades de proteção na calçada, com vão na porta.
 	var x0 := -hw + 0.6
 	while x0 < hw - 0.4:
-		if absf(x0 - ex) > 1.4:
+		if absf(x0 - ex) > 1.4 and _clear(obstacles, x0, hz + 2.4, 0.2):
 			KIT.cylinder(t, Vector3(x0, 0, hz + 2.4), 0.13, 0.9, Color("3b3f42"), 8)
 			KIT.cylinder(t, Vector3(x0, 0.62, hz + 2.4), 0.135, 0.12, Color("d9b43a"), 8)
 		x0 += 1.3
 	# Mastros com bandeiras (fictícias: Harbor, polícia, estado).
 	var flags := [[Color("1b3f8b"), Color("f2f2ee")], [Color("0f1c33"), Color("d9b43a")], [Color("2c7a4b"), Color("f2f2ee")]]
-	for i in 3:
-		var fx := clampf(ex + 4.3 + i * 0.9, -hw + 0.5, hw + 1.5)
-		KIT.cylinder(t, Vector3(fx, 0, hz + 3.0), 0.05, 7.2, Color("c9ccd0"), 8)
-		KIT.cylinder(t, Vector3(fx, 7.2, hz + 3.0), 0.09, 0.12, Color("d9b43a"), 8)
+	# Os três mastros juntos: procura, da direita da porta para a quina, o
+	# primeiro trecho livre (a tampa do bueiro do esgoto fica nessa calçada).
+	var start := INF
+	var fz := hz + 3.0
+	for row in [hz + 3.0, hz + 0.7]:
+		# Junto à parede, só depois do mural PROCURADOS (ocupa ex+2,2 a ex+4,0).
+		var candidate: float = ex + 2.2 if row > hz + 1.0 else ex + 4.15
+		while candidate < hw + 1.5 and start == INF:
+			var ok := true
+			for i in 3:
+				if not _clear(obstacles, candidate + i * 0.9, row, 0.3): ok = false
+			if ok:
+				start = candidate
+				fz = row
+			candidate += 0.3
+		if start != INF: break
+	for i in (3 if start != INF else 0):
+		var fx: float = start + i * 0.9
+		KIT.cylinder(t, Vector3(fx, 0, fz), 0.05, 7.2, Color("c9ccd0"), 8)
+		KIT.cylinder(t, Vector3(fx, 7.2, fz), 0.09, 0.12, Color("d9b43a"), 8)
 		var colors: Array = flags[i]
-		KIT.box(t, Vector3(fx + 0.62, 6.55, hz + 3.0), Vector3(1.2, 0.8, 0.02), colors[0], 0.25)
-		KIT.box(t, Vector3(fx + 0.62, 6.55, hz + 3.012), Vector3(1.2, 0.18, 0.02), colors[1], 0.25)
-		KIT.box(t, Vector3(fx + 0.34, 6.72, hz + 3.02), Vector3(0.22, 0.22, 0.02), colors[1], 0.25)
+		KIT.box(t, Vector3(fx + 0.62, 6.55, fz), Vector3(1.2, 0.8, 0.02), colors[0], 0.25)
+		KIT.box(t, Vector3(fx + 0.62, 6.55, fz + 0.012), Vector3(1.2, 0.18, 0.02), colors[1], 0.25)
+		KIT.box(t, Vector3(fx + 0.34, 6.72, fz + 0.02), Vector3(0.22, 0.22, 0.02), colors[1], 0.25)
 	# Zebrado amarelo em frente ao portão de viaturas.
 	var bay_w := building.building_size.x * 0.48
 	var bay_x := -hw + 0.6 + bay_w * 0.5

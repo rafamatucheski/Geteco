@@ -38,6 +38,7 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	var batches := {}
 	_night_pass(chunk, context)
 	STAIRS.build_chunk(chunk)
+	_texture_walls(chunk)
 	_junction_signage(context, batches, chunk)
 	_sidewalk_furniture(context, batches)
 	_building_surroundings(context, batches)
@@ -719,3 +720,30 @@ static func _other_roofs(chunk: Node3D, batches: Dictionary) -> void:
 		var inset := Vector2(roof.size.x, roof.size.z) - Vector2.ONE * 0.6
 		if inset.x < 3.0 or inset.y < 3.0: continue
 		_push(batches, "roofmat:%d" % surface, child.global_transform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof.get_center().x, roof.end.y + 0.012, roof.get_center().z)))
+
+
+
+## Paredes grandes de cor chapada (lojas, galpões, delegacia, Cobra...) ganham
+## a mesma textura de alvenaria/reboco/concreto dos brownstones. Só troca
+## material_override de caixa grande sem textura e sem emissão: vidro, letreiro,
+## toldo e acabamento pequeno ficam como estão.
+static func _texture_walls(chunk: Node3D) -> void:
+	for node in chunk.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var material := mesh.material_override as StandardMaterial3D
+		if material == null or material.albedo_texture != null or material.emission_enabled: continue
+		if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED or material.metallic > 0.2: continue
+		if not mesh.mesh is BoxMesh: continue
+		var box := mesh.global_transform * mesh.get_aabb()
+		# Parede: alta e larga; laje/chão (baixo) e poste (fino) não entram.
+		if box.size.y < 2.5 or maxf(box.size.x, box.size.z) < 3.0: continue
+		if not _inside_building_node(mesh): continue
+		mesh.material_override = UrbanMaterials.textured_wall(material.albedo_color, material.roughness)
+
+
+static func _inside_building_node(node: Node) -> bool:
+	var parent := node.get_parent()
+	while parent != null:
+		if parent is UrbanBuildingBase: return true
+		parent = parent.get_parent()
+	return false
