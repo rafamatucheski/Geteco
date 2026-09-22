@@ -22,6 +22,18 @@ var activity := ""
 ## Subclasses (estivador) fixam peças do guarda-roupa antes de `_ready`.
 var wardrobe_overrides: Dictionary = {}
 var wardrobe: Dictionary = {}
+## Alvos globais das mãos [lado -X do corpo, lado +X]; null = braço livre. Quem
+## segura arma ou maca (polícia, socorristas) escreve aqui a cada quadro e o
+## braço vai até lá por IK, por cima da passada.
+var hand_targets: Array = [null, null]
+## false = pose todo quadro. NPC com arma precisa: a arma se move todo quadro.
+var lod_enabled := true
+## Sentado (0..1) num assento a `seat_height` metros do chão, como o
+## `WinterResidentModel.set_seat_pose` dos moradores da montanha.
+var sit_amount := 0.0
+var seat_height := 0.45
+## Alternativa a escrever `hand_targets`: chamado a cada pose, devolve [alvo0, alvo1].
+var hand_provider: Callable
 
 var pelvis: MeshInstance3D
 var spine: MeshInstance3D
@@ -222,7 +234,7 @@ func _process(delta: float) -> void:
 	_measure(delta)
 	_pending += delta
 	_frame += 1
-	var interval := _update_interval()
+	var interval := _update_interval() if lod_enabled else 1
 	if interval > 1 and (_frame + _stagger) % interval != 0: return
 	_pose(_pending)
 	_pending = 0.0
@@ -279,7 +291,7 @@ func _pose(dt: float) -> void:
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
 		var f := _foot(fposmod(_phase + 0.5 * i, 1.0), duty, reach, behind, lift, strike, push, rw * mw)
-		ankles.append(Vector3(side * lerpf(0.098, 0.078, rw * mw), f.y, f.x) + _idle_stance[i] * idle)
+		ankles.append((Vector3(side * lerpf(0.098, 0.078, rw * mw), f.y, f.x) + _idle_stance[i] * idle).lerp(Vector3(side * 0.13, KIT.ANKLE_HEIGHT, 0.4), _sit()))
 		pitches.append(f.z)
 
 	# Pelve: sobe no meio do apoio andando, desce no apoio correndo; gira com a
@@ -305,6 +317,13 @@ func _pose(dt: float) -> void:
 		var gap: Vector3 = pelvis_position + pelvis_basis * _hip_offsets[i] - ankles[i]
 		drop = maxf(drop, gap.y - sqrt(maxf(leg_reach * leg_reach - gap.x * gap.x - gap.z * gap.z, 0.0)))
 	pelvis_position.y -= drop
+	# Sentado: a pelve desce até o assento (a altura é global; o modelo tem
+	# escala própria) e os pés vão à frente; o IK dobra os joelhos sozinho.
+	var sit := _sit()
+	if sit > 0.0:
+		var seat := seat_height / maxf(global_transform.basis.get_scale().y, 0.01) + 0.08
+		pelvis_position = pelvis_position.lerp(Vector3(0.0, seat, -0.06), sit)
+		pelvis_basis = pelvis_basis.slerp(Basis(Vector3.RIGHT, -0.08), sit)
 	pelvis.transform = Transform3D(pelvis_basis, pelvis_position)
 	for i in 2: _place_leg(i, pelvis_basis, pelvis_position, ankles[i], pitches[i])
 
@@ -313,7 +332,7 @@ func _pose(dt: float) -> void:
 	var breathe := sin(clock * 1.7 + _seed) * 0.012 * (1.0 + rw * 1.5)
 	var chest_yaw := -yaw * 1.7
 	var chest_roll := -roll * 0.85
-	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w
+	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w + 0.1 * _sit()
 	spine.transform = Transform3D(Basis.from_euler(Vector3(chest_lean, chest_yaw, chest_roll)), SPINE_OFFSET)
 	var spine_model := pelvis.transform * spine.transform
 
@@ -331,6 +350,7 @@ func _pose(dt: float) -> void:
 
 	# Braços em oposição às pernas; na corrida cotovelo a ~90° e balanço cruzando
 	# levemente à frente do corpo. Parado: pendem com leve dobra.
+	if hand_provider.is_valid(): hand_targets = hand_provider.call()
 	var amplitude := lerpf(0.2 + 0.12 * clampf(v - 1.1, 0.0, 1.0), 0.62, rw) * mw
 	var bias := lerpf(0.03, -0.05, rw) * mw
 	for i in 2:
@@ -348,12 +368,19 @@ func _pose(dt: float) -> void:
 			abduct = lerpf(abduct, side * 0.22, _talk_w)
 		var arm_basis := Basis.from_euler(Vector3(-flex, -side * 0.22 * rw, abduct))
 		var fore_basis := Basis(Vector3.RIGHT, -elbow)
-		if _carry_w > 0.0:
+		if hand_targets[i] is Vector3:
+			var reached := _reach_arm(i, spine_model, to_local(hand_targets[i]), Vector3(side * 0.9, -0.8, -0.3))
+			arm_basis = reached[0]
+			fore_basis = reached[1]
+		elif _carry_w > 0.0:
 			var carried := _carry_arm(i, spine_model)
 			arm_basis = arm_basis.slerp(carried[0], _carry_w)
 			fore_basis = fore_basis.slerp(carried[1], _carry_w)
 		upper_arms[i].transform = Transform3D(arm_basis, _shoulders[i])
 		forearms[i].transform = Transform3D(fore_basis, Vector3(0, -KIT.UPPER_ARM, 0))
+
+func _sit() -> float:
+	return smoothstep(0.0, 1.0, clampf(sit_amount, 0.0, 1.0))
 
 ## Tornozelo do pé no instante `t` do ciclo: Vector3(z, y, inclinação do pé).
 func _foot(t: float, duty: float, reach: float, behind: float, lift: float, strike: float, push: float, kick: float) -> Vector3:
@@ -399,9 +426,12 @@ func _place_leg(i: int, pelvis_basis: Basis, pelvis_position: Vector3, ankle: Ve
 ## e só um pouco abertos (polo lateral demais abria os braços como asa).
 func _carry_arm(i: int, spine_model: Transform3D) -> Array:
 	var side := -1.0 if i == 0 else 1.0
+	return _reach_arm(i, spine_model, Vector3(side * 0.235, 1.0 / maxf(scale.y, 0.01), 0.3), Vector3(side * 0.35, -1.0, -0.25))
+
+## Braço até `target` (espaço do modelo), cotovelo puxado para `pole`.
+func _reach_arm(i: int, spine_model: Transform3D, target: Vector3, pole: Vector3) -> Array:
 	var shoulder := spine_model * _shoulders[i]
-	var target := Vector3(side * 0.235, 1.0 / maxf(scale.y, 0.01), 0.3)
-	var solved := _two_bone(shoulder, target, KIT.UPPER_ARM, KIT.FOREARM + 0.06, Vector3(side * 0.35, -1.0, -0.25))
+	var solved := _two_bone(shoulder, target, KIT.UPPER_ARM, KIT.FOREARM + 0.06, pole)
 	var elbow: Vector3 = solved[0]
 	var upper := _bone_basis(shoulder, elbow, Vector3(0, 0, 1))
 	var fore := _bone_basis(elbow, target, Vector3(0, 1, 0))

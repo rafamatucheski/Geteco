@@ -193,8 +193,8 @@ static func chest_mesh(p: Dictionary, top: int, backpack: bool, strap: int) -> A
 		var waist: Vector2 = p.waist
 		var ch: Vector2 = p.chest
 		var sh: float = p.shoulder
-		var bulk := 0.014 if top in [2, 3] else 0.0
-		var hem := -0.26 if top == 2 else (-0.20 if top == 3 else -0.16)
+		var bulk := 0.014 if top in [2, 3, 9] else (0.03 if top == 7 else 0.0)
+		var hem: float = {2: -0.26, 3: -0.20, 7: -0.22, 9: -0.22}.get(top, -0.16)
 		var body_slot := SLOT_TOP
 		var rings := [
 			[hem, waist.x + .018 + bulk, waist.y + .016 + bulk + p.belly * .6, body_slot, p.belly * .4, 2.6],
@@ -215,6 +215,25 @@ static func chest_mesh(p: Dictionary, top: int, backpack: bool, strap: int) -> A
 			b.ellipsoid(Vector3(0, .02, waist.y + .01), Vector3(waist.x * .85, .13, .07), SLOT_TOP, Basis.IDENTITY, 10, 5)
 		var front: float = ch.y + bulk
 		match top:
+			6, 8: # farda: gola, bolsos no peito, distintivo, platinas.
+				b.loft([[.43, .07, .064, SLOT_TOP, -.01], [.385, .1, .086, SLOT_TOP, -.01]], SLOT_TOP, Transform3D.IDENTITY, 12, false, false, .9)
+				for side in [-1.0, 1.0]:
+					b.ellipsoid(Vector3(side * .07, .2, front - .003), Vector3(.045, .04, .014), SLOT_TOP, Basis.IDENTITY, 6, 4, .78)
+					b.ellipsoid(Vector3(side * (sh - .05), .345, -.004), Vector3(.05, .012, .035), SLOT_TOP, Basis.IDENTITY, 6, 3, .8)
+				b.ellipsoid(Vector3(-.07, .25, front + .004), Vector3(.022, .026, .008), SLOT_METAL, Basis.IDENTITY, 6, 4)
+				if top == 8:
+					# Colete balístico com bolsas de carregador.
+					b.loft([[.3, sh - .03, ch.y + .05, SLOT_ACCENT, 0.0, 3.2], [.0, waist.x + .05, waist.y + .06, SLOT_ACCENT, 0.0, 3.2], [-.07, waist.x + .05, waist.y + .06, SLOT_ACCENT, 0.0, 3.2]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, true, .9)
+					for x in [-.08, 0.0, .08]:
+						b.ellipsoid(Vector3(x, .02, front + .07), Vector3(.034, .05, .025), SLOT_ACCENT, Basis.IDENTITY, 6, 4, .75)
+			7: # casaco de bombeiro: gola alta e faixas refletivas.
+				b.loft([[.45, .085, .08, SLOT_TOP], [.38, .12, .1, SLOT_TOP]], SLOT_TOP, Transform3D.IDENTITY, 12, false, false, .9)
+				for y in [.08, -.3]:
+					b.loft([[y + .025, waist.x + bulk + .02, waist.y + bulk + .02, SLOT_INNER, 0.0, 2.6], [y - .025, waist.x + bulk + .022, waist.y + bulk + .022, SLOT_INNER, 0.0, 2.6]], SLOT_INNER, Transform3D.IDENTITY, 14, false, false)
+			9: # sobretudo: lapelas e camisa clara.
+				b.ellipsoid(Vector3(0, .12, front - .004), Vector3(.045, .24, .02), SLOT_INNER, Basis.IDENTITY, 8, 6)
+				for side in [-1.0, 1.0]:
+					b.ellipsoid(Vector3(side * .06, .26, front), Vector3(.04, .13, .016), SLOT_TOP, Basis(Vector3.FORWARD, side * .38), 6, 4, .8)
 			0: # camiseta: decote em U com pele.
 				b.ellipsoid(Vector3(0, .372, .052), Vector3(.055, .032, .03), SLOT_SKIN, Basis(Vector3.RIGHT, -.5), 8, 4)
 			1: # manga longa / suéter: gola canelada.
@@ -254,9 +273,9 @@ static func pelvis_mesh(p: Dictionary, top: int, bottom: int, bag: int) -> Array
 		var b := _builder()
 		var hip: Vector2 = p.hip
 		var waist: Vector2 = p.waist
-		var tucked := top == 5
+		var tucked := top in [5, 6, 8]
 		var hem_slot := SLOT_BOTTOM if tucked else SLOT_TOP
-		var skirt := bottom == 2 or top == 4
+		var skirt := bottom == 2 or top in [4, 7, 9]
 		var lower_slot := SLOT_TOP if top == 4 else SLOT_BOTTOM
 		var rings := [
 			[.15, waist.x + .004, waist.y + .004 + p.belly * .5, hem_slot, p.belly * .3, 2.5],
@@ -279,13 +298,14 @@ static func pelvis_mesh(p: Dictionary, top: int, bottom: int, bag: int) -> Array
 		if skirt:
 			# Saia rodada até o joelho, casca aberta com avesso.
 			var s := _builder()
-			var length := -.40 if top == 4 else -.33
+			var length := -.40 if top == 4 else (-.3 if top == 7 else (-.38 if top == 9 else -.33))
+			var skirt_slot := SLOT_TOP if top in [7, 9] else lower_slot
 			s.loft([
-				[.06, hip.x + .004, hip.y + .004, lower_slot, 0.0, 2.3],
-				[-.08, hip.x + .03, hip.y + .03, lower_slot, 0.0, 2.2],
-				[length, hip.x + .085, hip.y + .08, lower_slot, 0.0, 2.1],
-				[length - .012, hip.x + .088, hip.y + .083, lower_slot, 0.0, 2.1],
-			], lower_slot, Transform3D.IDENTITY, 16, false, false)
+				[.06, hip.x + .004, hip.y + .004, skirt_slot, 0.0, 2.3],
+				[-.08, hip.x + .03, hip.y + .03, skirt_slot, 0.0, 2.2],
+				[length, hip.x + .085, hip.y + .08, SLOT_INNER if top == 7 else skirt_slot, 0.0, 2.1],
+				[length - .04, hip.x + .088, hip.y + .083, skirt_slot, 0.0, 2.1],
+			], skirt_slot, Transform3D.IDENTITY, 16, false, false)
 			s.commit(mesh, true)
 		return mesh)
 
@@ -295,7 +315,7 @@ static func thigh_mesh(p: Dictionary, bottom: int, top: int) -> ArrayMesh:
 	return cached(key, func() -> ArrayMesh:
 		var b := _builder()
 		var k: float = p.limb
-		var bare := bottom == 2 or top == 4
+		var bare := (bottom == 2 or top == 4) and top not in [7, 9]
 		var main := SLOT_SKIN if bare else SLOT_BOTTOM
 		var shorts := bottom == 1
 		var rings := [
@@ -320,7 +340,7 @@ static func shin_mesh(p: Dictionary, bottom: int, top: int, shoe: int) -> ArrayM
 	return cached(key, func() -> ArrayMesh:
 		var b := _builder()
 		var k: float = p.limb
-		var bare := bottom in [1, 2] or top == 4
+		var bare := (bottom in [1, 2] or top == 4) and top not in [7, 9]
 		var main := SLOT_SKIN if bare else SLOT_BOTTOM
 		var ankle_slot := main
 		if shoe == 1: ankle_slot = SLOT_SHOE
@@ -337,6 +357,9 @@ static func shin_mesh(p: Dictionary, bottom: int, top: int, shoe: int) -> ArrayM
 			# Barra da calça cai sobre o sapato.
 			rings[3] = [-.33, .046 * k, .05 * k, main]
 			rings[4] = [-.40, .05 * k, .056 * k, main]
+		if bottom == 3:
+			rings[2] = [-.2, .062 * k, .066 * k, SLOT_INNER, -.004]
+			rings.insert(3, [-.245, .058 * k, .062 * k, main])
 		b.loft(rings, main, Transform3D.IDENTITY, 12)
 		return b.commit())
 
@@ -362,7 +385,7 @@ static func upper_arm_mesh(p: Dictionary, top: int) -> ArrayMesh:
 	return cached(key, func() -> ArrayMesh:
 		var b := _builder()
 		var k: float = p.limb * (1.0 if not p.bust else .92)
-		var bulk := .012 if top in [2, 3] else 0.0
+		var bulk := .012 if top in [2, 3, 9] else (.024 if top == 7 else 0.0)
 		var short := top in [0, 4, 5]
 		var sleeve := SLOT_TOP
 		var rings: Array
@@ -382,7 +405,7 @@ static func forearm_mesh(p: Dictionary, top: int, side: float) -> ArrayMesh:
 	return cached(key, func() -> ArrayMesh:
 		var b := _builder()
 		var k: float = p.limb * (1.0 if not p.bust else .9)
-		var bulk := .012 if top in [2, 3] else 0.0
+		var bulk := .012 if top in [2, 3, 9] else (.024 if top == 7 else 0.0)
 		var bare := top in [0, 4, 5]
 		var slot := SLOT_SKIN if bare else SLOT_TOP
 		var rings := [
@@ -466,4 +489,21 @@ static func head_mesh(female: bool, hair: int, beard: int, hat: int, glasses: bo
 			2: # gorro com dobra
 				b.ellipsoid(Vector3(0, .232, -.012), Vector3(.112, .1, .124), SLOT_ACCENT, Basis.IDENTITY, 12, 7)
 				b.loft([[.21, .113, .124, SLOT_ACCENT, -.012], [.17, .113, .125, SLOT_ACCENT, -.012]], SLOT_ACCENT, Transform3D.IDENTITY, 14, false, false, .82)
+			4: # quepe de polícia: copa larga, faixa, pala e emblema.
+				b.loft([[.29, .118, .13, SLOT_ACCENT, 0.0, 2.2], [.25, .112, .122, SLOT_ACCENT, 0.0, 2.2], [.215, .108, .118, SLOT_ACCENT]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, false)
+				b.loft([[.225, .11, .12, SLOT_EYE, -.004], [.2, .108, .118, SLOT_EYE, -.004]], SLOT_EYE, Transform3D.IDENTITY, 14, false, false)
+				b.ellipsoid(Vector3(0, .205, .115), Vector3(.08, .01, .06), SLOT_EYE, Basis(Vector3.RIGHT, .25), 10, 3)
+				b.ellipsoid(Vector3(0, .255, .128), Vector3(.02, .022, .006), SLOT_METAL, Basis.IDENTITY, 6, 4)
+			5: # capacete de bombeiro: domo com crista e aba larga caída atrás.
+				b.ellipsoid(Vector3(0, .24, -.01), Vector3(.12, .11, .135), SLOT_ACCENT, Basis.IDENTITY, 12, 7)
+				b.ellipsoid(Vector3(0, .31, -.01), Vector3(.02, .03, .12), SLOT_ACCENT, Basis.IDENTITY, 6, 4, .85)
+				b.ellipsoid(Vector3(0, .19, -.04), Vector3(.17, .014, .2), SLOT_ACCENT, Basis(Vector3.RIGHT, -.18), 12, 3, .9)
+				b.ellipsoid(Vector3(0, .25, .13), Vector3(.045, .04, .01), SLOT_METAL, Basis.IDENTITY, 6, 4)
+			7: # fedora: copa com vinco, fita no tom `inner` e aba larga.
+				b.loft([[.335, .082, .09, SLOT_ACCENT, -.01, 2.4], [.3, .1, .112, SLOT_ACCENT, -.01, 2.4], [.24, .112, .124, SLOT_INNER, -.01, 2.3], [.21, .113, .125, SLOT_ACCENT, -.01]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, false)
+				b.ellipsoid(Vector3(0, .335, -.01), Vector3(.03, .012, .07), SLOT_ACCENT, Basis.IDENTITY, 6, 3, .7)
+				b.ellipsoid(Vector3(0, .212, -.008), Vector3(.2, .012, .21), SLOT_ACCENT, Basis(Vector3.RIGHT, -.06), 14, 3, .9)
+			6: # capacete tático com óculos de proteção.
+				b.ellipsoid(Vector3(0, .225, -.01), Vector3(.125, .11, .135), SLOT_ACCENT, Basis.IDENTITY, 12, 7)
+				b.ellipsoid(Vector3(0, .175, .1), Vector3(.085, .03, .03), SLOT_LENS, Basis.IDENTITY, 8, 4)
 		return b.commit())
