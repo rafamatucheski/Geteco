@@ -15,7 +15,9 @@ const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const SILHOUETTE_SHADER := preload("res://world/city_look/occluded_silhouette.gdshader")
 
 var controller
-var _silhouette: ShaderMaterial
+## Um material por alvo: cada um carrega a caixa do próprio dono para o
+## shader distinguir auto-oclusão (teto do ônibus) de prédio na frente.
+var _silhouettes := {}
 var _silhouette_targets: Array = []
 var _clock := 0.0
 var _last_night := -1.0
@@ -27,8 +29,6 @@ var _blink_on := false
 
 func _ready() -> void:
 	name = "CityLook"
-	_silhouette = ShaderMaterial.new()
-	_silhouette.shader = SILHOUETTE_SHADER
 	_update(true)
 
 
@@ -38,6 +38,7 @@ func _process(delta: float) -> void:
 	if phase != _blink_on:
 		_blink_on = phase
 		MATERIALS.set_signal_phase(phase)
+	_follow_silhouettes()
 	_clock += delta
 	# A hora anda devagar (um dia = 10 min); 4 Hz é mais que suficiente.
 	if _clock < .25: return
@@ -118,14 +119,43 @@ func _refresh_silhouette() -> void:
 	if driving != null and driving.get("occupied") and is_instance_valid(driving.get("car")):
 		targets.append(driving.car)
 	for target in targets:
+		var material: ShaderMaterial = _silhouettes.get(target)
+		if material == null:
+			material = ShaderMaterial.new()
+			material.shader = SILHOUETTE_SHADER
+			_silhouettes[target] = material
 		# Modelos são reconstruídos (arma, roupa, dano); reaplicar é barato
 		# porque só toca instâncias que ainda não têm o overlay.
+		var inverse: Transform3D = target.global_transform.affine_inverse()
+		var box := AABB()
+		var has_box := false
 		for node in target.find_children("*", "GeometryInstance3D", true, false):
 			var geometry := node as GeometryInstance3D
-			if geometry.material_overlay == null and geometry.visible and not (geometry is Label3D) and not (geometry is GPUParticles3D) and not (geometry is CPUParticles3D):
-				geometry.material_overlay = _silhouette
+			if not geometry.visible or geometry is Label3D or geometry is GPUParticles3D or geometry is CPUParticles3D: continue
+			var part: AABB = (inverse * geometry.global_transform) * geometry.get_aabb()
+			box = box.merge(part) if has_box else part
+			has_box = true
+			if geometry.material_overlay == null:
+				geometry.material_overlay = material
+		# Margem pequena: o depth buffer tem precisão finita e a borda do teto
+		# não pode cair "fora" da própria caixa.
+		box = box.grow(.08)
+		material.set_shader_parameter("box_min", box.position)
+		material.set_shader_parameter("box_max", box.end)
 	for previous in _silhouette_targets:
 		if is_instance_valid(previous) and previous not in targets:
+			var material = _silhouettes.get(previous)
 			for node in previous.find_children("*", "GeometryInstance3D", true, false):
-				if node.material_overlay == _silhouette: node.material_overlay = null
+				if node.material_overlay == material: node.material_overlay = null
+	for key in _silhouettes.keys():
+		if not is_instance_valid(key) or key not in targets: _silhouettes.erase(key)
 	_silhouette_targets = targets
+	_follow_silhouettes()
+
+
+## O transform muda todo frame (carro andando); a caixa local só muda quando
+## o modelo é reconstruído, por isso fica no refresh de 4 Hz.
+func _follow_silhouettes() -> void:
+	for target in _silhouettes:
+		if is_instance_valid(target):
+			_silhouettes[target].set_shader_parameter("target_inverse", Projection(target.global_transform.affine_inverse()))

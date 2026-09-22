@@ -12,11 +12,24 @@ uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
 // no intervalo near..far, 180 m). 0.004 ~= 0.7 m, evita que braço na frente
 // do tronco acenda a silhueta.
 uniform float bias = 0.004;
+// Caixa do próprio alvo (espaço local dele). A folga de profundidade não
+// basta para veículo: bancos, chassi e rodas de um ônibus ficam metros atrás
+// do teto e o carro inteiro acendia em rua aberta. Se o que está na frente
+// cai dentro da caixa do alvo, é o próprio alvo se cobrindo, não um prédio.
+uniform mat4 target_inverse = mat4(1.0);
+uniform vec3 box_min = vec3(0.0);
+uniform vec3 box_max = vec3(0.0);
 
 void fragment() {
 	float scene_depth = texture(depth_tex, SCREEN_UV).r;
 	// Godot 4.3+ usa reverse-Z: maior = mais perto da câmera.
 	if (scene_depth <= FRAGCOORD.z + bias) {
+		discard;
+	}
+	vec4 view = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, scene_depth, 1.0);
+	vec3 occluder = (INV_VIEW_MATRIX * vec4(view.xyz / view.w, 1.0)).xyz;
+	vec3 local = (target_inverse * vec4(occluder, 1.0)).xyz;
+	if (all(greaterThanEqual(local, box_min)) && all(lessThanEqual(local, box_max))) {
 		discard;
 	}
 	float rim = 1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0);
