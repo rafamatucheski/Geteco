@@ -38,7 +38,7 @@ static func billboard_panel(brand: Dictionary, placement: Transform3D) -> Node3D
 	var quad := QuadMesh.new()
 	quad.size = Vector2(5.9, 2.8)
 	panel.mesh = quad
-	panel.position = Vector3(0, 2.4, 0.07)
+	panel.position = Vector3(0, 2.4, 0.1)
 	panel.material_override = MATERIALS.billboard(Color(brand.bg))
 	panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(panel)
@@ -47,12 +47,12 @@ static func billboard_panel(brand: Dictionary, placement: Transform3D) -> Node3D
 	var stripe_quad := QuadMesh.new()
 	stripe_quad.size = Vector2(5.9, 0.34)
 	stripe.mesh = stripe_quad
-	stripe.position = Vector3(0, 1.17, 0.075)
+	stripe.position = Vector3(0, 1.17, 0.14)
 	stripe.material_override = MATERIALS.neon(Color(brand.accent))
 	stripe.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(stripe)
-	root.add_child(_label(brand.name, Color(brand.fg), 150, Vector3(0, 2.72, 0.09), 5.4))
-	root.add_child(_label(brand.slogan, Color(brand.fg).lerp(Color(brand.bg), 0.15), 62, Vector3(0, 1.82, 0.09), 5.4))
+	root.add_child(_label(brand.name, Color(brand.fg), 150, Vector3(0, 2.72, 0.18), 5.4))
+	root.add_child(_label(brand.slogan, Color(brand.fg).lerp(Color(brand.bg), 0.15), 62, Vector3(0, 1.82, 0.18), 5.4))
 	return root
 
 

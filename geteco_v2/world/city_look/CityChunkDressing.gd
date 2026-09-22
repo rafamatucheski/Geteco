@@ -266,6 +266,7 @@ static func _treat_window(mesh: MeshInstance3D) -> void:
 	if local_size.z < local_size[thin_axis]: thin_axis = 2
 	if absf(mesh.global_basis[thin_axis].normalized().y) > 0.35: return
 	var roll := _position_roll(mesh.global_position)
+	_pull_out(mesh)
 	if kind == "shop":
 		mesh.material_override = MATERIALS.shop_glass() if roll < SHOP_LIT_RATIO else material
 		return
@@ -279,6 +280,23 @@ static func _treat_window(mesh: MeshInstance3D) -> void:
 		# cortina/persiana tiram a cara de fileira idêntica de dia.
 		var variant := int(_position_roll(mesh.global_position + Vector3(7.1, 0, 3.3)) * 10.0)
 		mesh.material_override = MATERIALS.window_unlit(variant) if variant < MATERIALS.UNLIT_VARIANTS else MATERIALS.flat(Color(0.20, 0.29, 0.34), 0.18)
+
+
+## O arquétipo põe o vidro (2 cm) dentro da caixa do caixilho (8 cm): as faces
+## ficam no mesmo plano e piscam (z-fighting), muito visível na janela acesa.
+## Empurra o vidro 4 cm para fora, pelo eixo fino, no sentido oposto ao centro
+## do prédio.
+static func _pull_out(mesh: MeshInstance3D) -> void:
+	var building := mesh.get_parent()
+	while building != null and not building is UrbanBuildingBase: building = building.get_parent()
+	if building == null: return
+	var size := mesh.get_aabb().size
+	var axis := 0
+	if size.y < size[axis]: axis = 1
+	if size.z < size[axis]: axis = 2
+	var normal: Vector3 = mesh.global_basis[axis].normalized()
+	if normal.dot(mesh.global_position - (building as Node3D).global_position) < 0.0: normal = -normal
+	mesh.global_position += normal * 0.04
 
 
 ## Sorteio determinístico por posição: a mesma janela acende sempre, em
