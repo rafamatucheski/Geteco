@@ -14,6 +14,14 @@ static var SFX_BUS_NAME: String:
 	get: return "SFX" if AudioServer.get_bus_index("SFX") != -1 else "Master"
 const RELOAD_WEAPONS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade"]
 const RELOAD_TAKES := 3
+## Tiro/explosão: 5 takes por som, como `audio/acoustic/<arma>_0..4.wav` da V1.
+const GUNFIRE_TAKES := 5
+## Mesma faixa do `AudioStreamRandomizer` da V1 (`audio/combat/CombatAudioBank.gd`):
+## `random_pitch = 1.035` (multiplicador, tom varia entre 1/1.035 e 1.035) e
+## `random_volume_offset_db = 0.65` (±0,65 dB por tiro).
+const GUNFIRE_PITCH_RANGE := 1.035
+const GUNFIRE_VOLUME_JITTER_DB := 0.65
+static var _last_gunfire_take: Dictionary = {}
 ## V1 `WeaponReload.duration`: nunca menos que isto, mesmo com amostra curta.
 const MIN_RELOAD := 0.5
 static var _wav: Dictionary = {}
@@ -31,6 +39,23 @@ static func wav(relative_path: String) -> AudioStream:
 ## Um take aleatório de `<prefixo>_<0..2>.wav` (nulo se a família não existir).
 static func take(prefix: String, rng: RandomNumberGenerator) -> AudioStream:
 	return wav("%s_%d.wav" % [prefix, rng.randi_range(0, RELOAD_TAKES - 1)])
+
+## Take de tiro/explosão entre os 5 disponíveis, sem repetir o take anterior da mesma
+## família — replica `AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS` da V1.
+static func gunfire_take(prefix: String, rng: RandomNumberGenerator) -> AudioStream:
+	var index := rng.randi_range(0, GUNFIRE_TAKES - 1)
+	if GUNFIRE_TAKES > 1 and _last_gunfire_take.get(prefix, -1) == index:
+		index = (index + 1) % GUNFIRE_TAKES
+	_last_gunfire_take[prefix] = index
+	return wav("%s_%d.wav" % [prefix, index])
+
+## Variação de tom por disparo (±3,5%), mesma faixa do `random_pitch` da V1.
+static func gunfire_pitch(rng: RandomNumberGenerator) -> float:
+	return rng.randf_range(1.0 / GUNFIRE_PITCH_RANGE, GUNFIRE_PITCH_RANGE)
+
+## Variação de volume por disparo (±0,65 dB), mesma faixa do `random_volume_offset_db` da V1.
+static func gunfire_volume_jitter(rng: RandomNumberGenerator) -> float:
+	return rng.randf_range(-GUNFIRE_VOLUME_JITTER_DB, GUNFIRE_VOLUME_JITTER_DB)
 
 static func reload_take(weapon_id: String, rng: RandomNumberGenerator) -> AudioStream:
 	if weapon_id not in RELOAD_WEAPONS: return null

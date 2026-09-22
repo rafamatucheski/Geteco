@@ -111,7 +111,6 @@ var _effects: Array[Dictionary] = []
 var _flash_material: StandardMaterial3D
 var enabled := true
 var _dead_notified := false
-var _audio_cache: Dictionary = {}
 var _audio_pool: Array[AudioStreamPlayer3D] = []
 var customization: Dictionary = {}
 var flashlight_enabled := false
@@ -184,7 +183,6 @@ func _exit_tree() -> void:
 		channel.stop()
 		channel.stream = null
 	_audio_pool.clear()
-	_audio_cache.clear()
 	# Descarga: solta a camada de combate do ator, apaga luzes e limpa os emissores.
 	if is_instance_valid(player) and "combat_clip" in player: _present(NAN, "", 0.0)
 	if is_instance_valid(player) and player.has_method("clear_combat_weapon_pose"): player.clear_combat_weapon_pose()
@@ -1127,7 +1125,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 		"damage": amount, "data": data, "source": weakref(officer), "rid": officer.get_rid(), "visual": token, "blocked": blocked})
 	visual.attack()
 	# V1 PoliceOfficer uses pistol for patrol and SMG for every other tier.
-	_play_stream(AUDIO.take("pistol" if int(officer.get("tier")) == 0 else "smg", _rng), origin, -7.0, _rng.randf_range(0.95, 1.05))
+	_play_stream(AUDIO.gunfire_take("pistol" if int(officer.get("tier")) == 0 else "smg", _rng), origin, -7.0, _rng.randf_range(0.95, 1.05))
 
 func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
@@ -1155,16 +1153,19 @@ func police_reload(officer: Node3D, weapon_id: String) -> void:
 	if sample != null:
 		_play_stream(sample, officer.global_position, -9.0, sample.get_length() / maxf(AUDIO.MIN_RELOAD, AUDIO.reload_seconds(weapon_id)))
 
-func _sound(kind: String, point: Vector3) -> void:
-	var path := "%s_%d.wav" % [kind, _rng.randi_range(0, 2)]
-	if not _audio_cache.has(path): _audio_cache[path] = AUDIO.wav(path)
-	if _audio_cache[path] == null: return
+## Tiro/explosão: 5 takes sem repetir o anterior + variação de tom e volume por disparo,
+## como o `AudioStreamRandomizer` da V1 (`audio/combat/CombatAudioBank.gd`: random_pitch=1.035,
+## random_volume_offset_db=0.65). Sem essa variação todo tiro soava idêntico — uma das
+## diferenças perceptíveis de "efeito diferente" entre V1 e V2.
+func _sound(kind: String, point: Vector3, base_volume_db: float = -10.0) -> void:
+	var stream := AUDIO.gunfire_take(kind, _rng)
+	if stream == null: return
 	for channel in _audio_pool:
 		if channel.playing: continue
 		channel.global_position = point
-		channel.stream = _audio_cache[path]
-		channel.volume_db = -10.0
-		channel.pitch_scale = 1.0
+		channel.stream = stream
+		channel.volume_db = base_volume_db + AUDIO.gunfire_volume_jitter(_rng)
+		channel.pitch_scale = AUDIO.gunfire_pitch(_rng)
 		channel.play()
 		break
 
@@ -1180,14 +1181,18 @@ func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: 
 		channel.play()
 		return
 
-## Disparo: tiro silenciado usa a amostra `suppressed_*` do V1 (-9 dB, como o V1); o resto, o WAV da arma.
+## Disparo: tiro silenciado usa a amostra `suppressed_*` do V1 (-9 dB abaixo do volume da
+## arma, como `characters/Player.gd`: `vol - (9.0 if suppressed else 0.0)`); o resto, o WAV
+## da arma na intensidade própria dela (`audio_volume_db` do catálogo — antes ignorado, o
+## que fazia toda arma soar no mesmo volume fixo).
 func _shot_sound(id: String, data: Dictionary) -> void:
+	var base_volume: float = float(data.get("audio_volume_db", -2.0))
 	if data.get("suppressed", false) and id in SUPPRESSED_WEAPONS:
-		var muffled := AUDIO.take("suppressed_" + id, _rng)
+		var muffled := AUDIO.gunfire_take("suppressed_" + id, _rng)
 		if muffled != null:
-			_play_stream(muffled, player.global_position, -19.0)
+			_play_stream(muffled, player.global_position, base_volume - 9.0, AUDIO.gunfire_pitch(_rng))
 			return
-	_sound(String(data.get("sound_type", id)), player.global_position)
+	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
 
 ## Golpe no ar do V1: faca = `KnifeAudio.swing`, machado = `BatAudio.swing`, o resto = golpe de punho.
 func _melee_swing_sound(_id: String, data: Dictionary) -> void:
