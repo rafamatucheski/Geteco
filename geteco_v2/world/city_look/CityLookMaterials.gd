@@ -1,0 +1,196 @@
+extends RefCounted
+## Materiais compartilhados do visual urbano (noite, chão, telhado, marcas).
+##
+## Tudo que acende à noite usa UM material compartilhado por tipo, e o
+## CityLook.gd só reescreve a energia desses poucos materiais quando a hora
+## muda. Assim centenas de janelas e postes acendem sem Light3D nova (o
+## renderizador Mobile não aguenta dezenas de luzes dinâmicas por tela) e sem
+## varrer a cena a cada quadro.
+
+static var _cache := {}
+static var night := 0.0
+
+# Cores de referência: sódio laranja nos postes (a assinatura da noite de GTA),
+# janelas em três tons para a fachada não ficar uniforme.
+const SODIUM := Color(1.0, 0.62, 0.26)
+const WINDOW_TONES := [Color(1.0, 0.76, 0.42), Color(1.0, 0.86, 0.62), Color(0.62, 0.78, 1.0)]
+const SHOP_TONE := Color(1.0, 0.78, 0.48)
+
+
+static func set_night(value: float) -> void:
+	night = clampf(value, 0.0, 1.0)
+	for index in WINDOW_TONES.size():
+		var window := window_lit(index)
+		window.emission_energy_multiplier = lerpf(0.0, 1.8, night)
+	shop_glass().emission_energy_multiplier = lerpf(0.05, 1.25, night)
+	lamp_head().emission_energy_multiplier = lerpf(0.0, 5.0, night)
+	# Additivo: cor zero some sem custo visual; a visibilidade do nó é
+	# desligada pelo CityLook durante o dia para economizar o draw.
+	light_pool().albedo_color = Color(SODIUM.r, SODIUM.g, SODIUM.b) * (1.25 * night)
+	neon_materials_set(night)
+
+
+static func window_lit(index: int) -> StandardMaterial3D:
+	var key := "window_lit_%d" % index
+	if _cache.has(key): return _cache[key]
+	var material := StandardMaterial3D.new()
+	# De dia a janela "acesa" precisa ler como vidro comum, não como amarelo.
+	material.albedo_color = Color(0.30, 0.42, 0.48)
+	material.roughness = 0.2
+	material.metallic_specular = 0.7
+	material.emission_enabled = true
+	material.emission = WINDOW_TONES[index]
+	material.emission_energy_multiplier = 0.0
+	_cache[key] = material
+	return material
+
+
+static func shop_glass() -> StandardMaterial3D:
+	if _cache.has("shop_glass"): return _cache["shop_glass"]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.40, 0.56, 0.60)
+	material.roughness = 0.12
+	material.metallic_specular = 0.8
+	material.emission_enabled = true
+	material.emission = SHOP_TONE
+	material.emission_energy_multiplier = 0.05
+	_cache["shop_glass"] = material
+	return material
+
+
+static func lamp_head() -> StandardMaterial3D:
+	if _cache.has("lamp_head"): return _cache["lamp_head"]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color("e4d6b0")
+	material.emission_enabled = true
+	material.emission = SODIUM
+	material.emission_energy_multiplier = 0.0
+	_cache["lamp_head"] = material
+	return material
+
+
+## Mancha de luz no chão embaixo do poste: quad aditivo com gradiente radial.
+static func light_pool() -> StandardMaterial3D:
+	if _cache.has("light_pool"): return _cache["light_pool"]
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.no_depth_test = false
+	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.albedo_texture = radial_texture("pool", [Color(1, 1, 1, 1), Color(0.55, 0.55, 0.55, 1), Color(0, 0, 0, 1)], [0.0, 0.45, 1.0])
+	material.albedo_color = Color.BLACK
+	material.disable_receive_shadows = true
+	_cache["light_pool"] = material
+	return material
+
+
+static func radial_texture(key: String, colors: Array, offsets: Array, size := 128) -> GradientTexture2D:
+	var cache_key := "radial_" + key
+	if _cache.has(cache_key): return _cache[cache_key]
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray(colors)
+	gradient.offsets = PackedFloat32Array(offsets)
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1.0, 0.5)
+	texture.width = size
+	texture.height = size
+	_cache[cache_key] = texture
+	return texture
+
+
+## Lente do semáforo amarelo piscante. O CityLook alterna a energia (1 Hz).
+static func signal_amber() -> StandardMaterial3D:
+	if _cache.has("signal_amber"): return _cache["signal_amber"]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.35, 0.24, 0.05)
+	material.emission_enabled = true
+	material.emission = Color(1.0, 0.66, 0.1)
+	material.emission_energy_multiplier = 0.0
+	_cache["signal_amber"] = material
+	return material
+
+
+static func set_signal_phase(on: bool) -> void:
+	signal_amber().emission_energy_multiplier = lerpf(1.6, 4.0, night) if on else 0.0
+
+
+# --- Neon (letreiros e outdoors) ---
+
+static func neon(color: Color) -> StandardMaterial3D:
+	var key := "neon_" + color.to_html(false)
+	if _cache.has(key): return _cache[key]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color.darkened(0.25)
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = 0.4
+	_cache[key] = material
+	var list: Array = _cache.get("neon_list", [])
+	list.append(material)
+	_cache["neon_list"] = list
+	return material
+
+
+static func neon_materials_set(value: float) -> void:
+	for material in _cache.get("neon_list", []):
+		material.emission_energy_multiplier = lerpf(0.4, 3.2, value)
+	for material in _cache.get("panel_list", []):
+		material.emission_energy_multiplier = lerpf(0.12, 0.75, value)
+
+
+## Fundo de outdoor: iluminado por refletor, não é neon. Energia baixa para o
+## texto continuar legível e o glow não engolir o painel à noite.
+static func billboard(color: Color) -> StandardMaterial3D:
+	var key := "panel_" + color.to_html(false)
+	if _cache.has(key): return _cache[key]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.7
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = 0.12
+	_cache[key] = material
+	var list: Array = _cache.get("panel_list", [])
+	list.append(material)
+	_cache["panel_list"] = list
+	return material
+
+
+# --- Superfícies opacas simples ---
+
+static func flat(color: Color, roughness := 0.9) -> StandardMaterial3D:
+	var key := "flat_%s_%.2f" % [color.to_html(true), roughness]
+	if _cache.has(key): return _cache[key]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = roughness
+	_cache[key] = material
+	return material
+
+
+## Decal de chão (mancha, remendo, sombra de contato): cor escura com alfa
+## vindo da textura. Escurece qualquer tom de asfalto/calçada sem precisar de
+## uma textura por superfície. É sombreado (recebe sol e sombra) para não
+## "brilhar" à noite como um adesivo por cima do chão.
+static func ground_decal(key: String, texture: Texture2D, tint: Color) -> StandardMaterial3D:
+	var cache_key := "ground_" + key
+	if _cache.has(cache_key): return _cache[cache_key]
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	material.albedo_texture = texture
+	material.albedo_color = tint
+	material.roughness = 0.95
+	material.render_priority = -1
+	_cache[cache_key] = material
+	return material
+
+
+## Textura radial em tons de alfa (preto opaco no centro, transparente na borda).
+static func alpha_blob(key: String, falloff := 0.0, size := 64) -> GradientTexture2D:
+	return radial_texture("blob_%s" % key, [Color(1, 1, 1, 1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)], [0.0, falloff, 1.0], size)

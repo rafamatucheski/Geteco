@@ -1,0 +1,629 @@
+extends RefCounted
+## Acabamento visual "cidade de jogo" aplicado a cada chunk de Harbor depois
+## que o NativeRegion termina de montá-lo.
+##
+## Roda uma única vez por chunk (no streaming, não por quadro) e só acrescenta
+## adereços ou troca material de malhas já existentes: não move prédio, não
+## mexe em colisão da fonte V1 e não depende de nenhuma arte ser reescrita.
+## Quem quiser desligar tudo remove a chamada em NativeRegion._build_chunk.
+##
+## Tudo que é repetido (hidrante, lixeira, mancha de óleo, ar-condicionado)
+## sai em MultiMesh por tipo e por chunk. Os adereços são só visuais, sem
+## colisão: não entram no caminho de pedestres/tráfego nem mudam a física que
+## os testes de fidelidade conferem.
+
+const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
+const KIT := preload("res://world/city_look/CityPropKit.gd")
+const BRANDS := preload("res://world/city_look/CityBrands.gd")
+const NIGHT_GROUP := &"city_look_night"
+
+# Fração de janelas acesas à noite. Residência acende menos que vitrine.
+const WINDOW_LIT_RATIO := 0.38
+const SHOP_LIT_RATIO := 0.85
+# Largura da calçada gerada por HarborRoadGeometry3D (42 px de cada lado).
+const SIDEWALK := 42.0 / 16.0
+const FURNITURE_SPACING := 7.0
+const DECAL_Y := 0.034
+const SHADOW_CASTERS := ["signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit"]
+
+
+static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
+	var context := _context(region, rect)
+	var batches := {}
+	_night_pass(chunk, context)
+	_junction_signage(context, batches, chunk)
+	_sidewalk_furniture(context, batches)
+	_building_surroundings(context, batches)
+	_road_wear(context, batches)
+	_rooftops(chunk, context, batches)
+	_flush(chunk, batches)
+
+
+# ---------------------------------------------------------------------------
+# Contexto: só as vias/prédios que tocam o chunk, para os testes de colisão
+# visual (não pôr lixeira no asfalto nem dentro de prédio) ficarem baratos.
+
+static func _context(region: Node3D, rect: Rect2) -> Dictionary:
+	var grown := rect.grow(16.0)
+	var roads: Array = []
+	var junctions: Array = []
+	var geometry = region.get("harbor_road_geometry")
+	if geometry != null:
+		for road in geometry._roads:
+			var points: PackedVector2Array = road.points
+			var bounds := Rect2(points[0], Vector2.ZERO)
+			for point in points: bounds = bounds.expand(point)
+			if bounds.grow(float(road.width)).intersects(grown): roads.append(road)
+		for junction in geometry._junctions:
+			if grown.has_point(junction.position): junctions.append(junction)
+	var buildings: Array = []
+	for building in region.get("buildings"):
+		var center := Vector2(building.position.x, building.position.z)
+		var footprint := Rect2(center - building.size * 0.5, building.size)
+		if footprint.grow(4.0).intersects(grown): buildings.append({"rect": footprint, "data": building})
+	return {"region": region, "rect": rect, "roads": roads, "junctions": junctions, "buildings": buildings, "geometry": geometry, "lamps": []}
+
+
+static func _in_chunk(context: Dictionary, point: Vector2) -> bool:
+	return (context.rect as Rect2).has_point(point)
+
+
+## Distância até o eixo da via mais próxima menos a meia largura: <0 é asfalto,
+## 0..SIDEWALK é calçada.
+static func _road_clearance(context: Dictionary, point: Vector2) -> float:
+	var best := INF
+	for road in context.roads:
+		var points: PackedVector2Array = road.points
+		for index in points.size() - 1:
+			var closest := Geometry2D.get_closest_point_to_segment(point, points[index], points[index + 1])
+			best = minf(best, point.distance_to(closest) - float(road.width) * 0.5)
+	return best
+
+
+static func _inside_building(context: Dictionary, point: Vector2, margin := 0.3) -> bool:
+	for building in context.buildings:
+		if (building.rect as Rect2).grow(margin).has_point(point): return true
+	return false
+
+
+static func _near_junction(context: Dictionary, point: Vector2, extra := 5.0) -> bool:
+	for junction in context.junctions:
+		var widest := 0.0
+		for index in junction.roads: widest = maxf(widest, float(context.geometry._roads[int(index)].width))
+		if point.distance_to(junction.position) < widest * 0.68 + extra: return true
+	return false
+
+
+static func _near_lamp(context: Dictionary, point: Vector2, radius := 1.6) -> bool:
+	for lamp in context.lamps:
+		if point.distance_to(lamp) < radius: return true
+	return false
+
+
+static func _roll(key: String) -> float:
+	return float(key.hash() % 10007) / 10007.0
+
+
+static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vector2, scale := 1.0) -> void:
+	# forward: direção (x,z) para onde a frente (+Z local) do adereço aponta.
+	var yaw := atan2(forward.x, forward.y)
+	var basis := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale)
+	if not batches.has(kind): batches[kind] = []
+	batches[kind].append(Transform3D(basis, point))
+
+
+static func _flush(chunk: Node3D, batches: Dictionary) -> void:
+	for kind in batches:
+		var transforms: Array = batches[kind]
+		if transforms.is_empty(): continue
+		var multimesh := MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		var material: Material
+		var shadows := true
+		if kind.begins_with("decal:"):
+			var spec: Dictionary = _decal_spec(kind.trim_prefix("decal:"))
+			multimesh.mesh = _flat_quad()
+			material = spec.material
+			shadows = false
+		elif kind == "signal_amber":
+			multimesh.mesh = _lens_mesh()
+			material = MATERIALS.signal_amber()
+			shadows = false
+		else:
+			multimesh.mesh = KIT.mesh(kind)
+			material = KIT.material()
+			# Sombra só em peça grande: hidrante/lixeira/antena dobravam as
+			# primitivas (passada de sombra) sem sombra visível nesta câmera.
+			shadows = kind in SHADOW_CASTERS
+		multimesh.instance_count = transforms.size()
+		for index in transforms.size():
+			multimesh.set_instance_transform(index, chunk.global_transform.affine_inverse() * transforms[index])
+		var instance := MultiMeshInstance3D.new()
+		instance.name = "CityLook_" + kind.replace(":", "_")
+		instance.multimesh = multimesh
+		instance.material_override = material
+		if not shadows: instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		chunk.add_child(instance)
+
+
+# ---------------------------------------------------------------------------
+# 1. Noite: postes com cabeça emissiva + mancha de luz, janelas acesas.
+
+static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
+	var pools := PackedVector3Array()
+	var pool_sizes := PackedFloat32Array()
+	for node in chunk.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh == null or not mesh.is_inside_tree(): continue
+		var lamp_height := _lamp_height(mesh)
+		if lamp_height > 0.0:
+			mesh.material_override = MATERIALS.lamp_head()
+			var head := mesh.global_position
+			pools.append(Vector3(head.x, head.y - lamp_height + 0.06, head.z))
+			pool_sizes.append(clampf(lamp_height * 2.3, 6.0, 11.0))
+			context.lamps.append(Vector2(head.x, head.z))
+			continue
+		_treat_window(mesh)
+	if not pools.is_empty():
+		for index in pools.size(): pools[index] = chunk.to_local(pools[index])
+		chunk.add_child(_light_pools(pools, pool_sizes))
+
+
+## Altura aproximada da cabeça do poste acima do chão, ou 0 se a malha não é
+## uma luminária. Os nomes vêm de HarborProp3D, HarborAreaDressing3D,
+## HarborBridge3D e HarborRouteProps.create_streetlight.
+static func _lamp_height(mesh: MeshInstance3D) -> float:
+	var label := String(mesh.name)
+	if label.contains("LampHead"): return 2.9
+	if label in ["Bulb", "Lens"] or label.begins_with("Globe_"):
+		var root := mesh.get_parent() as Node3D
+		if root != null and String(root.name).begins_with("StreetLight"):
+			return maxf(2.5, mesh.global_position.y - root.global_position.y)
+	return 0.0
+
+
+static func _treat_window(mesh: MeshInstance3D) -> void:
+	var material := mesh.material_override
+	if material == null: return
+	var kind := ""
+	if material == UrbanMaterials.glass_window() or material == UrbanMaterials.glass_window_lit(true) or material == UrbanMaterials.glass_window_lit(false):
+		kind = "window"
+	elif material == UrbanMaterials.glass_display() or material == UrbanMaterials.glass_warm_interior():
+		kind = "shop"
+	elif material is StandardMaterial3D and String(mesh.name).contains("Glass") and material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
+		kind = "window"
+	if kind.is_empty(): return
+	# Claraboia (vidro deitado) não acende: de cima leria como laje amarela.
+	var aabb := mesh.global_transform * mesh.get_aabb()
+	if aabb.size.y < minf(aabb.size.x, aabb.size.z) * 0.5: return
+	# Janela de verdade tem ~1 m de altura ou mais; faixa baixa e comprida é
+	# lanternim/dente de serra no telhado e virava tubo de luz à noite.
+	if aabb.size.y < 0.9 and maxf(aabb.size.x, aabb.size.z) > 2.5: return
+	if aabb.size.y < 0.6 and aabb.size.y < maxf(aabb.size.x, aabb.size.z) * 0.25: return
+	# Vidro inclinado (dente de serra de galpão): a face fina aponta para
+	# cima, não para a rua. Fica como está.
+	var local_size := mesh.get_aabb().size
+	var thin_axis := 0
+	if local_size.y < local_size[thin_axis]: thin_axis = 1
+	if local_size.z < local_size[thin_axis]: thin_axis = 2
+	if absf(mesh.global_basis[thin_axis].normalized().y) > 0.35: return
+	var roll := _position_roll(mesh.global_position)
+	if kind == "shop":
+		mesh.material_override = MATERIALS.shop_glass() if roll < SHOP_LIT_RATIO else material
+		return
+	if roll < WINDOW_LIT_RATIO:
+		mesh.material_override = MATERIALS.window_lit(int(roll * 1000.0) % MATERIALS.WINDOW_TONES.size())
+	else:
+		# Apagada continua vidro, mas opaco: vidro transparente sobre caixa
+		# escura custa uma passada transparente por janela sem ganho visual.
+		mesh.material_override = MATERIALS.flat(Color(0.20, 0.29, 0.34), 0.18)
+
+
+## Sorteio determinístico por posição: a mesma janela acende sempre, em
+## qualquer carregamento do chunk. hash() de Vector3i tem bits baixos pouco
+## variados entre vizinhos; via string o módulo distribui de verdade.
+static func _position_roll(point: Vector3) -> float:
+	return _roll("%d,%d,%d" % [roundi(point.x * 4.0), roundi(point.y * 4.0), roundi(point.z * 4.0)])
+
+
+static func _light_pools(points: PackedVector3Array, sizes: PackedFloat32Array) -> MultiMeshInstance3D:
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.mesh = _flat_quad()
+	multimesh.instance_count = points.size()
+	for index in points.size():
+		var basis := Basis.IDENTITY.scaled(Vector3(sizes[index], 1.0, sizes[index]))
+		multimesh.set_instance_transform(index, Transform3D(basis, points[index]))
+	var instance := MultiMeshInstance3D.new()
+	instance.name = "CityLightPools"
+	instance.multimesh = multimesh
+	instance.material_override = MATERIALS.light_pool()
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	instance.visible = MATERIALS.night > 0.01
+	instance.add_to_group(NIGHT_GROUP)
+	return instance
+
+
+static func _flat_quad() -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	quad.orientation = PlaneMesh.FACE_Y
+	return quad
+
+
+static func _lens_mesh() -> SphereMesh:
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.13
+	sphere.height = 0.2
+	sphere.radial_segments = 10
+	sphere.rings = 5
+	return sphere
+
+
+# ---------------------------------------------------------------------------
+# 2. Cruzamentos: semáforo amarelo piscante onde há faixa de pedestre, placa
+# de PARE nos cruzamentos que a V1 deixou sem sinalização.
+#
+# O tráfego não tem lógica de fase de sinal; um semáforo vermelho/verde que os
+# carros ignoram ficaria errado. Amarelo piscante (atenção) é o que a rua real
+# usa quando o controlador não opera, e casa com o comportamento atual.
+
+static func _junction_signage(context: Dictionary, batches: Dictionary, chunk: Node3D) -> void:
+	var geometry = context.geometry
+	if geometry == null: return
+	for junction in context.junctions:
+		var center: Vector2 = junction.position
+		if not _in_chunk(context, center): continue
+		var arms: Array = geometry._crossing_arms(junction)
+		if arms.size() < 3: continue
+		var widest := 0.0
+		for index in junction.roads: widest = maxf(widest, float(geometry._roads[int(index)].width))
+		var setback := maxf(1.5, widest * 0.68 + 0.875 - 0.5) + 1.9
+		var signalized: bool = not geometry._is_unsignalized(center)
+		for arm in arms:
+			var d: Vector2 = arm.direction
+			var width: float = arm.width
+			# Lado direito de quem chega ao cruzamento (mão inglesa não existe
+			# em Harbor): mesma convenção de NativeTrafficRoutes._lane_offset.
+			var right := Vector2(d.y, -d.x)
+			var base := center + d * setback + right * (width * 0.5 + 0.9)
+			if _road_clearance(context, base) < 0.2 or _inside_building(context, base): continue
+			var point := Vector3(base.x, 0.02, base.y)
+			if signalized:
+				# Poste: local +X = right, +Z = d (placa e sinal voltados para
+				# quem chega).
+				var basis := Basis(Vector3(right.x, 0, right.y), Vector3.UP, Vector3(d.x, 0, d.y))
+				if not batches.has("signal_pole"): batches["signal_pole"] = []
+				batches["signal_pole"].append(Transform3D(basis, point))
+				var lens := point + basis * Vector3(-3.3, 4.55, 0.2)
+				if not batches.has("signal_amber"): batches["signal_amber"] = []
+				batches["signal_amber"].append(Transform3D(Basis.IDENTITY, lens))
+			else:
+				_add(batches, "stop_sign", point, d)
+
+
+# ---------------------------------------------------------------------------
+# Calçada: hidrante, lixeira, jornaleiro, caixa de correio, orelhão, banco.
+
+const FURNITURE := [
+	["hydrant", 0.13], ["trash_can", 0.14], ["news_box", 0.07], ["mailbox", 0.05],
+	["phone_booth", 0.03], ["bench_seat", 0.04], ["trash_bags", 0.05], ["planter", 0.03],
+]
+
+
+static func _sidewalk_furniture(context: Dictionary, batches: Dictionary) -> void:
+	for road in context.roads:
+		var points: PackedVector2Array = road.points
+		var width: float = road.width
+		var travelled := 0.0
+		for index in points.size() - 1:
+			var a := points[index]
+			var b := points[index + 1]
+			var length := a.distance_to(b)
+			if length < 0.01: continue
+			var tangent := (b - a) / length
+			var normal := Vector2(tangent.y, -tangent.x)
+			var s := fposmod(-travelled, FURNITURE_SPACING)
+			while s < length:
+				for side in [-1.0, 1.0]:
+					var key := "%s|%d|%d|%d" % [road.id, index, int(s * 10.0), int(side)]
+					var jitter := (_roll(key + "j") - 0.5) * 2.4
+					var along := a + tangent * clampf(s + jitter, 0.0, length)
+					var outward: Vector2 = normal * side
+					var point := along + outward * (width * 0.5 + 0.55)
+					if not _in_chunk(context, point): continue
+					var kind := _pick(FURNITURE, _roll(key))
+					if kind.is_empty(): continue
+					if _near_junction(context, point) or _near_lamp(context, point): continue
+					if _road_clearance(context, point) < 0.25 or _inside_building(context, point, 0.6): continue
+					# Orelhão e banco ficam mais para dentro, encostados no lado
+					# do prédio, para não invadir o meio-fio.
+					if kind in ["phone_booth", "bench_seat", "planter"]:
+						point = along + outward * (width * 0.5 + SIDEWALK - 0.7)
+						if _inside_building(context, point, 0.5): continue
+					_add(batches, kind, Vector3(point.x, 0.012, point.y), -outward)
+				s += FURNITURE_SPACING
+			travelled += length
+
+
+static func _pick(table: Array, roll: float) -> String:
+	var acc := 0.0
+	for entry in table:
+		acc += float(entry[1])
+		if roll < acc: return entry[0]
+	return ""
+
+
+# ---------------------------------------------------------------------------
+# 3. Entorno dos prédios: sombra de contato (AO falsa) e caçamba/lixo no
+# beco lateral. A câmera olha para o norte, então só lateral e frente sul
+# aparecem; caçamba no fundo ficaria escondida pelo próprio prédio.
+
+static func _building_surroundings(context: Dictionary, batches: Dictionary) -> void:
+	for entry in context.buildings:
+		var footprint: Rect2 = entry.rect
+		var data: Dictionary = entry.data
+		var center := footprint.get_center()
+		if not _in_chunk(context, center): continue
+		var margin := 1.3
+		var ao_size := footprint.size + Vector2.ONE * margin * 2.0
+		var basis := Basis.IDENTITY.scaled(Vector3(ao_size.x, 1, ao_size.y))
+		_push(batches, "decal:contact", Transform3D(basis, Vector3(center.x, DECAL_Y, center.y)))
+		var id := str(data.get("id", ""))
+		if str(data.get("kind", "")) in ["cobra_house"]: continue
+		for side in [-1.0, 1.0]:
+			var key := id + "|alley|" + str(side)
+			if _roll(key) > 0.42: continue
+			var z := center.y + (_roll(key + "z") - 0.6) * footprint.size.y * 0.6
+			var point := Vector2(center.x + side * (footprint.size.x * 0.5 + 1.05), z)
+			if _inside_building(context, point, 0.9) or _road_clearance(context, point) < SIDEWALK + 0.4: continue
+			_add(batches, "dumpster", Vector3(point.x, 0.012, point.y), Vector2(-side, 0), 1.0)
+			var bags := point + Vector2(0, 1.5)
+			if _roll(key + "bags") < 0.6 and not _inside_building(context, bags, 0.4):
+				_add(batches, "trash_bags", Vector3(bags.x, 0.012, bags.y), Vector2(-side, 0.3))
+			_push(batches, "decal:grime", Transform3D(Basis.IDENTITY.scaled(Vector3(3.2, 1, 3.6)), Vector3(point.x, DECAL_Y + 0.001, point.y + 0.4)))
+
+
+static func _push(batches: Dictionary, kind: String, transform: Transform3D) -> void:
+	if not batches.has(kind): batches[kind] = []
+	batches[kind].append(transform)
+
+
+# ---------------------------------------------------------------------------
+# 3. Desgaste do asfalto: manchas de óleo no meio da faixa, remendos, tampas
+# de bueiro e bocas de lobo junto ao meio-fio.
+
+static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
+	for road in context.roads:
+		var points: PackedVector2Array = road.points
+		var width: float = road.width
+		var travelled := 0.0
+		for index in points.size() - 1:
+			var a := points[index]
+			var b := points[index + 1]
+			var length := a.distance_to(b)
+			if length < 0.01: continue
+			var tangent := (b - a) / length
+			var normal := Vector2(tangent.y, -tangent.x)
+			var yaw := atan2(tangent.x, tangent.y)
+			var s := fposmod(-travelled, 3.0)
+			while s < length:
+				var key := "%s|w|%d|%d" % [road.id, index, int(s * 10.0)]
+				var roll := _roll(key)
+				var along := a + tangent * s
+				var lane := (1.0 if _roll(key + "l") < 0.5 else -1.0) * width * 0.25
+				if roll < 0.22:
+					# Óleo pinga no meio da faixa, onde o carro para.
+					var p := along + normal * (lane + (_roll(key + "o") - 0.5) * 0.6)
+					if _in_chunk(context, p) and not _near_junction(context, p, 1.0):
+						var size := 0.7 + _roll(key + "s") * 1.1
+						_push(batches, "decal:oil", Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3(size, 1, size * 1.5)), Vector3(p.x, DECAL_Y, p.y)))
+				elif roll < 0.29:
+					var p := along + normal * (_roll(key + "p") - 0.5) * width * 0.6
+					if _in_chunk(context, p) and not _near_junction(context, p, 0.0):
+						var w := 1.6 + _roll(key + "pw") * 2.4
+						var h := 1.2 + _roll(key + "ph") * 3.0
+						_push(batches, "decal:patch", Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3(w, 1, h)), Vector3(p.x, DECAL_Y - 0.002, p.y)))
+				elif roll < 0.34:
+					var p := along + normal * (_roll(key + "c") - 0.5) * width * 0.7
+					if _in_chunk(context, p):
+						var size := 2.5 + _roll(key + "cs") * 3.5
+						_push(batches, "decal:crack", Transform3D(Basis(Vector3.UP, yaw + _roll(key + "cr") * TAU).scaled(Vector3(size, 1, size)), Vector3(p.x, DECAL_Y + 0.001, p.y)))
+				elif roll < 0.355:
+					var p := along + normal * lane * 0.2
+					if _in_chunk(context, p) and not _near_junction(context, p, 0.0):
+						_add(batches, "manhole", Vector3(p.x, 0.028, p.y), tangent)
+				elif roll < 0.38:
+					var side := 1.0 if _roll(key + "d") < 0.5 else -1.0
+					var p := along + normal * side * (width * 0.5 - 0.25)
+					if _in_chunk(context, p) and not _near_junction(context, p, 0.0):
+						_add(batches, "drain", Vector3(p.x, 0.028, p.y), tangent)
+				elif roll < 0.46:
+					# Sujeira/chiclete na calçada.
+					var side := 1.0 if _roll(key + "g") < 0.5 else -1.0
+					var p := along + normal * side * (width * 0.5 + 0.4 + _roll(key + "gd") * (SIDEWALK - 0.8))
+					if _in_chunk(context, p) and not _inside_building(context, p, 0.0):
+						var size := 0.5 + _roll(key + "gs") * 1.2
+						_push(batches, "decal:grime", Transform3D(Basis.IDENTITY.scaled(Vector3(size, 1, size)), Vector3(p.x, DECAL_Y, p.y)))
+				s += 3.0
+			travelled += length
+
+
+static func _decal_spec(kind: String) -> Dictionary:
+	match kind:
+		"contact":
+			return {"material": MATERIALS.ground_decal("contact", _soft_rect_texture(), Color(0.02, 0.03, 0.04, 0.5))}
+		"oil":
+			return {"material": MATERIALS.ground_decal("oil", MATERIALS.alpha_blob("oil", 0.15), Color(0.02, 0.02, 0.025, 0.42))}
+		"patch":
+			return {"material": MATERIALS.ground_decal("patch", _soft_rect_texture(0.18), Color(0.05, 0.06, 0.07, 0.38))}
+		"crack":
+			return {"material": MATERIALS.ground_decal("crack", _crack_texture(), Color(0.03, 0.03, 0.035, 0.75))}
+		"grime":
+			return {"material": MATERIALS.ground_decal("grime", MATERIALS.alpha_blob("grime", 0.0), Color(0.12, 0.10, 0.07, 0.3))}
+		"roof_tar":
+			return {"material": MATERIALS.ground_decal("roof_tar", _soft_rect_texture(0.08), Color(0.06, 0.06, 0.07, 0.45))}
+	if kind.begins_with("roof_"):
+		var index := kind.trim_prefix("roof_").to_int()
+		return {"material": MATERIALS.ground_decal(kind, _soft_rect_texture(0.03), ROOF_TINTS[index])}
+	return {"material": MATERIALS.flat(Color.MAGENTA)}
+
+
+static var _textures := {}
+
+
+## Retângulo de borda suave: sombra de contato (prédio) e remendo de asfalto.
+## edge = fração da meia largura usada para o degradê.
+static func _soft_rect_texture(edge := 0.42) -> ImageTexture:
+	var key := "rect_%.2f" % edge
+	if _textures.has(key): return _textures[key]
+	var size := 64
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	for y in size:
+		for x in size:
+			var u := absf((x + 0.5) / size * 2.0 - 1.0)
+			var v := absf((y + 0.5) / size * 2.0 - 1.0)
+			var d := maxf(u, v)
+			var alpha := 1.0 - smoothstep(1.0 - edge, 1.0, d)
+			image.set_pixel(x, y, Color(1, 1, 1, alpha))
+	var texture := ImageTexture.create_from_image(image)
+	_textures[key] = texture
+	return texture
+
+
+## Rachaduras: três passeios aleatórios a partir do centro (determinístico).
+static func _crack_texture() -> ImageTexture:
+	if _textures.has("crack"): return _textures["crack"]
+	var size := 128
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	image.fill(Color(1, 1, 1, 0))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 90221
+	for branch in 5:
+		var p := Vector2(size * 0.5, size * 0.5)
+		var heading := rng.randf() * TAU
+		for step in 70:
+			heading += rng.randf_range(-0.5, 0.5)
+			p += Vector2(cos(heading), sin(heading)) * 0.9
+			if p.x < 1 or p.y < 1 or p.x > size - 2 or p.y > size - 2: break
+			var fade := 1.0 - step / 70.0
+			image.set_pixelv(Vector2i(p), Color(1, 1, 1, fade))
+			if step < 30: image.set_pixelv(Vector2i(p) + Vector2i(1, 0), Color(1, 1, 1, fade * 0.6))
+	var texture := ImageTexture.create_from_image(image)
+	_textures["crack"] = texture
+	return texture
+
+
+# ---------------------------------------------------------------------------
+# 4. Telhados: variação de cor da laje, ar-condicionado, respiros, antenas,
+# parabólicas, alçapões e outdoors virados para a câmera.
+
+const ROOF_TINTS := [
+	Color(0.10, 0.10, 0.11, 0.35), Color(0.45, 0.30, 0.24, 0.28), Color(0.62, 0.62, 0.58, 0.30),
+	Color(0.26, 0.33, 0.29, 0.30), Color(0.20, 0.22, 0.28, 0.32), Color(0.55, 0.47, 0.36, 0.26),
+]
+const ROOF_PROPS := [["ac_unit", 0.34], ["vent", 0.26], ["roof_hatch", 0.1], ["antenna", 0.1], ["dish", 0.12], ["pipe_run", 0.08]]
+
+
+static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -> void:
+	var billboards := 0
+	for node in chunk.find_children("*", "Node3D", true, false):
+		if not node is UrbanBuildingBase: continue
+		var building: UrbanBuildingBase = node
+		var key := building.building_id
+		# A laje real (maior caixa horizontal mais alta do prédio) manda na
+		# altura e no tamanho: altura nominal de UrbanBuildingBase não bate
+		# com arquétipo que monta platibanda/penthouse próprio, e o tom de laje
+		# ficava flutuando sobre a rua.
+		var roof := _roof_box(building)
+		if roof.size == Vector3.ZERO: continue
+		var roof_y := roof.end.y + 0.012
+		var roof_center := Vector2(roof.get_center().x, roof.get_center().z)
+		var size := Vector2(roof.size.x, roof.size.z)
+		if size.x < 4.0 or size.y < 4.0: continue
+		var xform := building.global_transform
+		var occupied := _roof_obstacles(building, roof_y)
+		# Tom da laje: um quad translúcido por prédio muda a leitura do telhado
+		# sem tocar no material compartilhado da fábrica.
+		var tint_index := int(_roll(key + "tint") * ROOF_TINTS.size()) % ROOF_TINTS.size()
+		var inset := size - Vector2.ONE * 0.7
+		_push(batches, "decal:roof_%d" % tint_index, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof_center.x, roof_y, roof_center.y)))
+		for patch in 2:
+			if _roll(key + "tar%d" % patch) < 0.5: continue
+			var px := (_roll(key + "tx%d" % patch) - 0.5) * (size.x - 2.5)
+			var pz := (_roll(key + "tz%d" % patch) - 0.5) * (size.y - 2.5)
+			var ps := Vector3(1.5 + _roll(key + "tw%d" % patch) * 3.0, 1, 1.2 + _roll(key + "th%d" % patch) * 2.5)
+			_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(roof_center.x + px, roof_y + 0.004, roof_center.y + pz)))
+		var wanted := clampi(int(size.x * size.y / 28.0), 1, 7)
+		var placed := 0
+		for attempt in wanted * 4:
+			if placed >= wanted: break
+			var akey := key + "|roof|" + str(attempt)
+			var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
+			if kind.is_empty(): continue
+			var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
+			if kind == "pipe_run": radius = 2.2
+			var local := roof_center + Vector2((_roll(akey + "x") - 0.5) * (size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (size.y - 2.0 * radius - 0.6))
+			var blocked := false
+			for other in occupied:
+				if local.distance_to(other.point) < radius + other.radius: blocked = true; break
+			if blocked: continue
+			occupied.append({"point": local, "radius": radius})
+			var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
+			_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, roof_y, local.y)))
+			placed += 1
+		if billboards < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
+			if _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches): billboards += 1
+
+
+## Maior caixa horizontal (>=60% da planta nos dois eixos) mais alta, em
+## coordenadas locais do prédio. AABB vazio se o arquétipo não tem laje plana.
+static func _roof_box(building: UrbanBuildingBase) -> AABB:
+	var best := AABB()
+	var inverse := building.global_transform.affine_inverse()
+	var footprint: Vector2 = building.building_size
+	for node in building.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var box := inverse * (mesh.global_transform * mesh.get_aabb())
+		if box.size.x < footprint.x * 0.6 or box.size.z < footprint.y * 0.6: continue
+		if box.size.x > footprint.x * 1.3 or box.size.z > footprint.y * 1.3: continue
+		if best.size == Vector3.ZERO or box.end.y > best.end.y: best = box
+	return best
+
+
+## Tudo que já está em cima da laje (caixa d'água, claraboia, chaminé) vira
+## obstáculo em coordenadas locais do prédio, para o adereço novo não
+## atravessar o existente.
+static func _roof_obstacles(building: UrbanBuildingBase, roof_y: float) -> Array:
+	var result := []
+	var inverse := building.global_transform.affine_inverse()
+	for node in building.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var box := inverse * (mesh.global_transform * mesh.get_aabb())
+		if box.end.y < roof_y + 0.08 or box.position.y > roof_y + 6.0: continue
+		if box.size.x > building.building_size.x * 0.8 and box.size.z > building.building_size.y * 0.8: continue
+		if box.size.x > building.building_size.x * 0.9 or box.size.z > building.building_size.y * 0.9: continue
+		var center := box.get_center()
+		result.append({"point": Vector2(center.x, center.z), "radius": maxf(box.size.x, box.size.z) * 0.5 + 0.2})
+	return result
+
+
+## Outdoor no telhado encostado na borda sul, virado para a câmera (+Z
+## global). É a única face que a câmera fixa vê de frente.
+static func _place_billboard(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, roof_center: Vector2, size: Vector2, occupied: Array, batches: Dictionary) -> bool:
+	var inverse_basis := building.global_transform.basis.inverse()
+	var south_local := inverse_basis * Vector3(0, 0, 1)
+	var facing := Vector2(south_local.x, south_local.z).normalized()
+	# Só eixos: prédios da V1 são alinhados à grade.
+	var along_z := absf(facing.y) > absf(facing.x)
+	var half_depth := (size.y if along_z else size.x) * 0.5
+	var edge := roof_center + facing * (half_depth - 1.2)
+	for other in occupied:
+		if edge.distance_to(other.point) < other.radius + 3.0: return false
+	var yaw := atan2(facing.x, facing.y)
+	var local := Transform3D(Basis(Vector3.UP, yaw), Vector3(edge.x, roof_y, edge.y))
+	var world := building.global_transform * local
+	_push(batches, "billboard_frame", world)
+	var brand: Dictionary = BRANDS.pick(building.building_id)
+	chunk.add_child(BRANDS.billboard_panel(brand, chunk.global_transform.affine_inverse() * world))
+	return true
