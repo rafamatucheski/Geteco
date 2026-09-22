@@ -123,7 +123,7 @@ func _apply_grade() -> void:
 		gradient.offsets = PackedFloat32Array([0.0, 0.18, 0.5, 0.8, 1.0])
 		gradient.colors = PackedColorArray([
 			Color(0.015, 0.03, 0.05), Color(0.15, 0.17, 0.2), Color(0.5, 0.5, 0.49),
-			Color(0.83, 0.81, 0.76), Color(1.0, 0.97, 0.9)])
+			Color(0.83, 0.82, 0.79), Color(1.0, 0.98, 0.95)])
 		_grade = GradientTexture1D.new()
 		_grade.gradient = gradient
 		_grade.width = 256

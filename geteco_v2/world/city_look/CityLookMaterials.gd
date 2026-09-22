@@ -10,11 +10,14 @@ extends RefCounted
 static var _cache := {}
 static var night := 0.0
 
-# Cores de referência: sódio laranja nos postes (a assinatura da noite de GTA),
-# janelas em três tons para a fachada não ficar uniforme.
-const SODIUM := Color(1.0, 0.62, 0.26)
-const WINDOW_TONES := [Color(1.0, 0.76, 0.42), Color(1.0, 0.86, 0.62), Color(0.62, 0.78, 1.0)]
-const SHOP_TONE := Color(1.0, 0.78, 0.48)
+# Cores de referência. Os postes eram sódio puro (1, .62, .26): somado às
+# janelas âmbar, à vitrine âmbar e ao LUT creme, a noite inteira virava um
+# laranja chapado. Agora o poste é branco-quente (~3500 K, LED/vapor metálico),
+# as janelas misturam âmbar, branco neutro e azul-TV, e a vitrine é neutra —
+# o contraste quente/frio é o que dá leitura de cidade à noite.
+const SODIUM := Color(1.0, 0.86, 0.66)
+const WINDOW_TONES := [Color(1.0, 0.8, 0.55), Color(0.96, 0.94, 0.88), Color(0.62, 0.78, 1.0)]
+const SHOP_TONE := Color(0.98, 0.93, 0.84)
 ## Janelas apagadas com cortina/persiana: bege, vinho, azul-marinho, persiana clara.
 const UNLIT_VARIANTS := 4
 const UNLIT_TONES := [Color("8a7a60"), Color("5a2a2e"), Color("27344a"), Color("a9a89c")]
@@ -29,7 +32,9 @@ static func set_night(value: float) -> void:
 	lamp_head().emission_energy_multiplier = lerpf(0.0, 5.0, night)
 	# Additivo: cor zero some sem custo visual; a visibilidade do nó é
 	# desligada pelo CityLook durante o dia para economizar o draw.
-	light_pool().albedo_color = Color(SODIUM.r, SODIUM.g, SODIUM.b) * (1.25 * night)
+	# A cor está na textura (núcleo branco, borda quente); aqui só a energia.
+	# Era 1,25: em asfalto claro estourava e virava disco sólido.
+	light_pool().albedo_color = Color(1, 1, 1) * (0.85 * night)
 	neon_materials_set(night)
 
 
@@ -82,7 +87,12 @@ static func light_pool() -> StandardMaterial3D:
 	material.no_depth_test = false
 	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.albedo_texture = radial_texture("pool", [Color(1, 1, 1, 1), Color(0.55, 0.55, 0.55, 1), Color(0, 0, 0, 1)], [0.0, 0.45, 1.0])
+	# Gradiente colorido em vez de cinza: núcleo quase branco logo abaixo da
+	# lâmpada, anel quente e borda longa que morre suave. Uma cor só em todo o
+	# disco lia como adesivo laranja no chão.
+	material.albedo_texture = radial_texture("pool_v2", [
+		Color(1.0, 0.97, 0.9, 1), Color(0.78, 0.7, 0.56, 1), Color(0.34, 0.27, 0.18, 1),
+		Color(0.1, 0.075, 0.05, 1), Color(0, 0, 0, 1)], [0.0, 0.18, 0.45, 0.72, 1.0])
 	material.albedo_color = Color.BLACK
 	material.disable_receive_shadows = true
 	_cache["light_pool"] = material
