@@ -223,6 +223,28 @@ static func set_police_phase(phase: bool) -> void:
 	police("blue").emission_energy_multiplier = 0.05 if phase else strobe
 
 
+## Escurecimento na base da parede (oclusão falsa): preto no chão sumindo em 1,3 m.
+static func wall_ao() -> StandardMaterial3D:
+	if _cache.has("wall_ao"): return _cache["wall_ao"]
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+	gradient.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.12), Color(0, 0, 0, 0.55)])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill_from = Vector2(0, 0)
+	texture.fill_to = Vector2(0, 1)
+	texture.width = 4
+	texture.height = 64
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	material.albedo_texture = texture
+	material.albedo_color = Color(0.02, 0.025, 0.035, 1)
+	_cache["wall_ao"] = material
+	return material
+
+
 # --- Neon (letreiros e outdoors) ---
 
 static func neon(color: Color) -> StandardMaterial3D:

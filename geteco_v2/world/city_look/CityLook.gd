@@ -34,6 +34,8 @@ var _neon_night := -1.0
 
 func _ready() -> void:
 	name = "CityLook"
+	# Depois do Weather/atmosfera no quadro: a direção do sol é ajustada aqui.
+	process_priority = 100
 	_update(true)
 
 
@@ -59,6 +61,7 @@ func _process(delta: float) -> void:
 		_tv_clock = _tv_rng.randf_range(.08, .25)
 		MATERIALS.flicker_tv(_tv_rng)
 	_follow_silhouettes()
+	_orient_sun()
 	_clock += delta
 	# A hora anda devagar (um dia = 10 min); 4 Hz é mais que suficiente.
 	if _clock < .25: return
@@ -192,3 +195,16 @@ func _update_neon_labels(night: float) -> void:
 	for label in get_tree().get_nodes_in_group(&"city_neon_label"):
 		var color: Color = label.get_meta("neon_color", Color.WHITE)
 		label.modulate = Color(color.r * boost, color.g * boost, color.b * boost, 1.0)
+
+
+## O Weather mantém o relógio e a energia da luz. Cada exterior define o rumo
+## e a altura máxima para que as sombras alcancem o chão visível pela câmera.
+func _orient_sun() -> void:
+	var sun = controller.get("sun") if controller != null else null
+	if sun == null or not is_instance_valid(sun): return
+	if not String(controller.state.place_id).is_empty(): return
+	sun.rotation_degrees.y = -135.0
+	if controller.state.region_id == "harbor":
+		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -35.0)
+	elif controller.state.region_id == "mountain":
+		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -42.0)

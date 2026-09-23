@@ -28,6 +28,8 @@ const WINDOW_LIT_RATIO := 0.38
 const SHOP_LIT_RATIO := 0.85
 # Largura da calçada gerada por HarborRoadGeometry3D (42 px de cada lado).
 const SIDEWALK := 42.0 / 16.0
+const SEWER_ACCESS := Vector2(1182.0, 2114.0) / 16.0
+const SEWER_CLEARANCE := 2.0
 const FURNITURE_SPACING := 7.0
 const DECAL_Y := 0.034
 const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry"]
@@ -39,6 +41,7 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	_night_pass(chunk, context)
 	STAIRS.build_chunk(chunk)
 	_texture_walls(chunk)
+	_face_ground_up(chunk)
 	_junction_signage(context, batches, chunk)
 	_sidewalk_furniture(context, batches)
 	_building_surroundings(context, batches)
@@ -141,6 +144,12 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		elif kind.begins_with("roofmat:"):
 			multimesh.mesh = _flat_quad()
 			material = ROOFS.material(kind.trim_prefix("roofmat:").to_int())
+			shadows = false
+		elif kind == "wall_ao":
+			var quad := QuadMesh.new()
+			quad.size = Vector2.ONE
+			multimesh.mesh = quad
+			material = MATERIALS.wall_ao()
 			shadows = false
 		elif kind == "beacon_lens":
 			multimesh.mesh = _lens_mesh()
@@ -421,6 +430,7 @@ static func _sidewalk_furniture(context: Dictionary, batches: Dictionary) -> voi
 					if kind in ["phone_booth", "bench_seat", "planter"]:
 						point = along + outward * (width * 0.5 + SIDEWALK - 0.7)
 						if _inside_building(context, point, 0.5): continue
+					if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
 					_add(batches, kind, Vector3(point.x, 0.012, point.y), -outward)
 				s += FURNITURE_SPACING
 			travelled += length
@@ -445,10 +455,18 @@ static func _building_surroundings(context: Dictionary, batches: Dictionary) -> 
 		var data: Dictionary = entry.data
 		var center := footprint.get_center()
 		if not _in_chunk(context, center): continue
-		var margin := 1.3
+		# Sombra de contato em duas camadas: halo largo e suave + faixa estreita
+		# e escura colada na parede (é ela que "assenta" o prédio no chão).
+		var margin := 1.8
 		var ao_size := footprint.size + Vector2.ONE * margin * 2.0
 		var basis := Basis.IDENTITY.scaled(Vector3(ao_size.x, 1, ao_size.y))
 		_push(batches, "decal:contact", Transform3D(basis, Vector3(center.x, DECAL_Y, center.y)))
+		var tight := footprint.size + Vector2.ONE * 0.9
+		_push(batches, "decal:contact_tight", Transform3D(Basis.IDENTITY.scaled(Vector3(tight.x, 1, tight.y)), Vector3(center.x, DECAL_Y + 0.001, center.y)))
+		# Oclusão na base da fachada sul (a única que a câmera vê): gradiente
+		# escuro de 1,3 m subindo do chão.
+		var face := Vector3(center.x, 0.65, footprint.end.y + 0.018)
+		_push(batches, "wall_ao", Transform3D(Basis.IDENTITY.scaled(Vector3(footprint.size.x + 0.04, 1.3, 1)), face))
 		var id := str(data.get("id", ""))
 		if str(data.get("kind", "")) in ["cobra_house"]: continue
 		for side in [-1.0, 1.0]:
@@ -457,9 +475,10 @@ static func _building_surroundings(context: Dictionary, batches: Dictionary) -> 
 			var z := center.y + (_roll(key + "z") - 0.6) * footprint.size.y * 0.6
 			var point := Vector2(center.x + side * (footprint.size.x * 0.5 + 1.05), z)
 			if _inside_building(context, point, 0.9) or _road_clearance(context, point) < SIDEWALK + 0.4: continue
+			if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
 			_add(batches, "dumpster", Vector3(point.x, 0.012, point.y), Vector2(-side, 0), 1.0)
 			var bags := point + Vector2(0, 1.5)
-			if _roll(key + "bags") < 0.6 and not _inside_building(context, bags, 0.4):
+			if _roll(key + "bags") < 0.6 and bags.distance_to(SEWER_ACCESS) >= SEWER_CLEARANCE and not _inside_building(context, bags, 0.4):
 				_add(batches, "trash_bags", Vector3(bags.x, 0.012, bags.y), Vector2(-side, 0.3))
 			_push(batches, "decal:grime", Transform3D(Basis.IDENTITY.scaled(Vector3(3.2, 1, 3.6)), Vector3(point.x, DECAL_Y + 0.001, point.y + 0.4)))
 
@@ -476,7 +495,6 @@ static func _push(batches: Dictionary, kind: String, transform: Transform3D) -> 
 static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
 	# The police sewer owns a dedicated interactive hatch at this exact spot.
 	# Keep generic road lids clear so they cannot overlap the authored access.
-	var sewer_access := Vector2(1182.0, 2114.0) / 16.0
 	for road in context.roads:
 		var points: PackedVector2Array = road.points
 		var width: float = road.width
@@ -514,7 +532,7 @@ static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
 						_push(batches, "decal:crack", Transform3D(Basis(Vector3.UP, yaw + _roll(key + "cr") * TAU).scaled(Vector3(size, 1, size)), Vector3(p.x, DECAL_Y + 0.001, p.y)))
 				elif roll < 0.355:
 					var p := along + normal * lane * 0.2
-					if _in_chunk(context, p) and not _near_junction(context, p, 0.0) and p.distance_to(sewer_access) > 1.35:
+					if _in_chunk(context, p) and not _near_junction(context, p, 0.0) and p.distance_to(SEWER_ACCESS) > 1.35:
 						_add(batches, "manhole", Vector3(p.x, 0.028, p.y), tangent)
 				elif roll < 0.38:
 					var side := 1.0 if _roll(key + "d") < 0.5 else -1.0
@@ -535,7 +553,9 @@ static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
 static func _decal_spec(kind: String) -> Dictionary:
 	match kind:
 		"contact":
-			return {"material": MATERIALS.ground_decal("contact", _soft_rect_texture(), Color(0.02, 0.03, 0.04, 0.5))}
+			return {"material": MATERIALS.ground_decal("contact", _soft_rect_texture(), Color(0.02, 0.03, 0.04, 0.62))}
+		"contact_tight":
+			return {"material": MATERIALS.ground_decal("contact_tight", _soft_rect_texture(0.55), Color(0.01, 0.015, 0.02, 0.55))}
 		"oil":
 			return {"material": MATERIALS.ground_decal("oil", MATERIALS.alpha_blob("oil", 0.15), Color(0.02, 0.02, 0.025, 0.42))}
 		"patch":
@@ -807,3 +827,91 @@ static func _inside_building_node(node: Node) -> bool:
 		if parent is UrbanBuildingBase: return true
 		parent = parent.get_parent()
 	return false
+
+
+
+## O piso das quadras é gerado com triângulos em sentido anti-horário vistos
+## de cima: a câmera vê o VERSO, e o Godot inverte a normal do verso. O chão
+## das quadras apontava para baixo — zero de sol, zero de sombra (medido: a
+## máscara de contribuição do sol era preta em todo o piso de lajota/grama), e
+## os prédios pareciam colados. Refaz a malha com a ordem dos triângulos
+## invertida (a face da frente passa a olhar para cima); a malha corrigida é
+## compartilhada por instância de malha original.
+static var _ground_meshes := {}
+
+static func _face_ground_up(chunk: Node3D) -> void:
+	for node in chunk.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh.mesh == null or not mesh.mesh is ArrayMesh: continue
+		var box := mesh.global_transform * mesh.get_aabb()
+		if box.size.y > 0.4 or box.end.y > 0.3 or maxf(box.size.x, box.size.z) < 3.0: continue
+		if not _faces_down(mesh.mesh): continue
+		var key := mesh.mesh.get_instance_id()
+		if not _ground_meshes.has(key): _ground_meshes[key] = _flipped(mesh.mesh)
+		# A malha original fica (escondida): a colisão do piso é gerada dela
+		# depois deste passo e precisa continuar igual à que os testes de via
+		# conferem. Só o desenho usa a cópia invertida.
+		var visual := MeshInstance3D.new()
+		visual.name = String(mesh.name) + "_Lit"
+		visual.mesh = _ground_meshes[key]
+		visual.material_override = mesh.material_override
+		visual.cast_shadow = mesh.cast_shadow
+		visual.layers = mesh.layers
+		mesh.add_sibling(visual)
+		visual.transform = mesh.transform
+		mesh.visible = false
+
+
+static func _flipped(source: ArrayMesh) -> ArrayMesh:
+	var result := ArrayMesh.new()
+	for surface in source.get_surface_count():
+		var arrays := source.surface_get_arrays(surface)
+		var indices = arrays[Mesh.ARRAY_INDEX]
+		if indices != null and indices.size() > 0:
+			var flipped := PackedInt32Array(indices)
+			for i in range(0, flipped.size() - 2, 3):
+				var t := flipped[i + 1]
+				flipped[i + 1] = flipped[i + 2]
+				flipped[i + 2] = t
+			arrays[Mesh.ARRAY_INDEX] = flipped
+		else:
+			for channel in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_TANGENT, Mesh.ARRAY_COLOR, Mesh.ARRAY_TEX_UV, Mesh.ARRAY_TEX_UV2]:
+				var data = arrays[channel]
+				if data == null or data.size() == 0: continue
+				var stride: int = data.size() / (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
+				var copy = data.duplicate()
+				for tri in range(0, (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() - 2, 3):
+					for k in stride:
+						copy[(tri + 1) * stride + k] = data[(tri + 2) * stride + k]
+						copy[(tri + 2) * stride + k] = data[(tri + 1) * stride + k]
+				arrays[channel] = copy
+		var normals = arrays[Mesh.ARRAY_NORMAL]
+		if normals != null and normals.size() > 0:
+			var up := PackedVector3Array()
+			up.resize(normals.size())
+			up.fill(Vector3.UP)
+			arrays[Mesh.ARRAY_NORMAL] = up
+		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		result.surface_set_material(surface, source.surface_get_material(surface))
+	return result
+
+
+static func _faces_down(array_mesh: ArrayMesh) -> bool:
+	var arrays := array_mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices = arrays[Mesh.ARRAY_INDEX]
+	var up := 0.0
+	var count := 0
+	var step := 3
+	var total: int = indices.size() if indices != null and indices.size() > 0 else vertices.size()
+	for i in range(0, mini(total, 90), step):
+		var a: Vector3; var b: Vector3; var c: Vector3
+		if indices != null and indices.size() > 0:
+			a = vertices[indices[i]]; b = vertices[indices[i + 1]]; c = vertices[indices[i + 2]]
+		else:
+			a = vertices[i]; b = vertices[i + 1]; c = vertices[i + 2]
+		# Frente no Godot = horário visto de fora: normal geométrica (b-a)x(c-a)
+		# aponta para TRÁS da face da frente.
+		up += (b - a).cross(c - a).y
+		count += 1
+	return count > 0 and up > 0.0
