@@ -7,6 +7,9 @@ signal player_arrested
 signal police_warning_issued
 signal crime_reported(points: int)
 signal weapon_fired(weapon_id: String, origin: Vector3)
+## Disparo de arma de fogo por NPC (polícia, Cobras, seguranças, civil armado). Os civis ouvem tiro de qualquer um,
+## não só do jogador; antes só percebiam o tiro da polícia quando eram atingidos.
+signal npc_gunfire(origin: Vector3, direction: Vector3, shooter: Node3D)
 signal explosion_occurred(origin: Vector3, radius: float, source: Node)
 const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
@@ -77,6 +80,8 @@ const MELEE_CLIPS := {
 const SLOT_ORDER := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "rpg", "flamethrower", "grenade"]
 ## V1 `Player._trigger_muzzle_flash_3d`: duração do clarão por arma (s).
 const HEAVY_FLASH := ["magnum", "shotgun", "sawed_off", "rpg"]
+## Tranco de câmera por disparo (metros de deslocamento ortográfico). Armas leves ficam sem.
+const CAMERA_KICK := {"magnum": 0.07, "shotgun": 0.08, "sawed_off": 0.10, "hunting_rifle": 0.07, "rpg": 0.12, "ak47": 0.025}
 ## Agrupa impactos do mesmo material no mesmo instante (chumbo de escopeta), como o V1 (40 ms).
 const IMPACT_GROUP_SECONDS := 0.04
 ## Crime por fonte CONTÍNUA (jato do lança-chamas, fogo aceso pelo jogador): uma denúncia por vítima
@@ -153,6 +158,7 @@ var _muzzle_flash: MeshInstance3D
 var _muzzle_light: OmniLight3D
 var _muzzle_material: StandardMaterial3D
 var _muzzle_timer := 0.0
+var _kick_tween: Tween
 var _flame_audio: AudioStreamPlayer3D
 var _flame_clock := 0.0
 var _reload_audio: AudioStreamPlayer3D
@@ -530,7 +536,11 @@ func _hit_effect(hit: Dictionary, amount: float, direction: Vector3) -> void:
 		_pain_voice(collider as Node3D, amount)
 		var victim := collider as Node3D
 		if victim != null and victim.get("dead") == true:
-			effects.stain(victim.global_position, 0.75)
+			# Uma poça por cadáver, sob o tronco: o corpo tomba ~0,7 m no sentido do golpe.
+			if not victim.has_meta("v2_blood_pool"):
+				victim.set_meta("v2_blood_pool", true)
+				var flat := Vector3(direction.x, 0.0, direction.z).normalized()
+				effects.stain(victim.global_position + flat * 0.7, 0.75)
 		elif amount >= 25.0 and randf() < 0.4:
 			effects.stain(hit.position, 0.35)
 	else:
@@ -788,6 +798,10 @@ func fire_at(target: Vector3) -> bool:
 	else:
 		_in_pellet_volley = true
 		if not data.get("is_flame", false): effects.shell(origin - direction * 0.12, direction, player.global_position.y)
+		# Chumbos no mesmo corpo viram UM respingo com o dano somado: oito respingos,
+		# oito vozes de dor e até sete poças no mesmo cadáver (o corpo ainda está no
+		# espaço de física durante a rajada) deixavam a escopeta estranha.
+		var flesh_hits: Dictionary = {}
 		for pellet in int(data.get("pellets", 1)):
 			var spread := float(data.get("spread", 0))
 			var ray_direction := direction.rotated(Vector3.UP, _rng.randf_range(-spread, spread))
@@ -798,16 +812,29 @@ func fire_at(target: Vector3) -> bool:
 			if not hit.is_empty():
 				var amount := CATALOG.distance_damage(int(data.damage), origin.distance_to(end) * 16.0, float(data.get("falloff_start", 0)), float(data.get("max_range", 420)), float(data.get("min_damage_ratio", 1)))
 				if data.get("is_flame", false):
-					if _flame_hit_due(hit.collider): _damage(hit.collider, amount, player, true)
+					if _flame_hit_due(hit.collider):
+						if hit.collider is Node and String(hit.collider.get_meta("gameplay_role", "")) == "civilian":
+							_ignite_actor(hit.collider as Node3D, player)
+						_damage(hit.collider, amount, player, true)
+						if hit.collider is Node and String(hit.collider.get_meta("gameplay_role", "")) == "vehicle":
+							var damage_look: Node = hit.collider.get("damage_look")
+							if damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					_damage(hit.collider, amount, player)
 					_impact_sound(hit.collider, end, float(amount))
-					_hit_effect(hit, float(amount), ray_direction)
+					if _impact_material(hit.collider) == "flesh":
+						var key: int = hit.collider.get_instance_id()
+						if flesh_hits.has(key): flesh_hits[key].amount += float(amount)
+						else: flesh_hits[key] = {"hit": hit, "amount": float(amount), "direction": ray_direction}
+					else:
+						_hit_effect(hit, float(amount), ray_direction)
 			if data.get("is_flame", false):
 				effects.flame(origin, ray_direction, origin.distance_to(end))
 				emergency.ignite(end, player, 0.3)
 			else:
 				effects.tracer(origin, end, float(data.get("projectile_speed", 920.0)) / 16.0, data.get("tracer_color", Color("ffe36b")), float(data.get("damage", 16.0)))
+		for entry in flesh_hits.values():
+			_hit_effect(entry.hit, entry.amount, entry.direction)
 		_in_pellet_volley = false
 	if not melee and not self_defense:
 		if data.get("is_flame", false):
@@ -819,6 +846,27 @@ func fire_at(target: Vector3) -> bool:
 			register_crime(1 if data.get("suppressed", false) else 4, player.global_position)
 	changed.emit()
 	return true
+
+func _ignite_actor(actor: Node3D, source: Node) -> void:
+	if not is_instance_valid(actor) or actor.get("dead") == true: return
+	if not actor.has_method("receive_damage") or actor == player: return
+	var effect := actor.get_node_or_null("V2Burning")
+	if effect == null:
+		var active := get_tree().get_nodes_in_group("v2_burning_actor").size()
+		if active >= 24: return
+		effect = preload("res://gameplay/BurningActor.gd").new()
+		effect.name = "V2Burning"
+		effect.configure(actor, self, source)
+		actor.add_child(effect)
+		actor.set_meta("v2_burning", true)
+		var reactions: Node = world.get_node_or_null("CivilianReactionDirector")
+		if not is_instance_valid(reactions):
+			var production: Node = world.get("production")
+			reactions = production.get("civilian_reactions") if production != null else null
+		if is_instance_valid(reactions) and reactions.has_method("report_assault"):
+			reactions.report_assault(actor, source)
+	else:
+		effect.ignite(source)
 
 func _melee(origin: Vector3, direction: Vector3, data: Dictionary) -> void:
 	var reach := float(data.get("melee_range", 46.0)) / 16.0
@@ -930,6 +978,9 @@ func _damage(actor: Object, amount: float, source: Node, continuous: bool = fals
 		actor.receive_damage(amount, source)
 		var role := String(actor.get_meta("gameplay_role", "")) if actor is Node else ""
 		var killed: bool = not was_dead and actor.get("dead") == true
+		if actor is Node3D and role == "civilian" and not killed and source is Node3D:
+			var reactions: Node = world.get_node_or_null("CivilianReactionDirector") if is_instance_valid(world) else null
+			if is_instance_valid(reactions): reactions.report_assault(actor, source)
 		if actor is Node3D and role in ["civilian", "emergency"]:
 			emergency.report_injury(actor, actor.get("dead") == true)
 		if source == player and role != "cobra" and not actor.get_meta("local_security",false):
@@ -1084,6 +1135,7 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 		_damage(actor, amount * falloff, source)
 		_hit_effect({"collider": actor, "position": target, "normal": Vector3.UP}, amount * falloff, (target - point).normalized())
 	if is_instance_valid(effects): effects.explosion(point, radius)
+	if is_instance_valid(player): _kick_camera(0.28 * clampf(1.0 - player.global_position.distance_to(point) / (radius * 4.0), 0.0, 1.0))
 	# Um único evento por detonação admitida. A origem e a autoria são as mesmas
 	# usadas pelo dano; `null` continua desconhecido e nunca vira jogador por inferência.
 	explosion_occurred.emit(point, radius, source)
@@ -1132,6 +1184,7 @@ func respawn() -> void:
 	armor = 0
 	_dead_notified = false
 	player.input_locked = false
+	player.remove_meta("v2_blood_pool")
 	clear_wanted()
 	changed.emit()
 
@@ -1159,6 +1212,18 @@ func report_contact(point: Vector3) -> void:
 	contact_age = 0
 	hidden_time = 0
 
+## A testemunha informa a posição observada e antecipa a primeira viatura.
+## Não cria crime novo nem procura quando o jogador não é suspeito.
+func report_civilian_call(witness: Vector3, suspect: Vector3) -> bool:
+	if stars <= 0 or health <= 0: return false
+	report_contact(suspect)
+	if dispatch_owned:
+		var dispatcher: Variant = world.get("dispatch") if is_instance_valid(world) else null
+		if is_instance_valid(dispatcher) and dispatcher.has_method("witness_call"):
+			dispatcher.witness_call(witness)
+	else: dispatch_timer = minf(dispatch_timer, 1.5)
+	return true
+
 func police_can_see(officer: CharacterBody3D) -> bool:
 	if "place_id" in state and not state.place_id.is_empty(): return false
 	var suspect := pursuit_target()
@@ -1174,6 +1239,24 @@ func pursuit_target() -> Node3D:
 	return player
 
 var _police_rounds: Array[Dictionary] = []
+
+func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) -> bool:
+	if not is_instance_valid(shooter) or shooter.get("dead") == true or not is_instance_valid(player) or health <= 0:
+		return false
+	if state == null or not state.weapons_allowed() or _police_rounds.size() >= 128: return false
+	var target: Vector3 = player.global_position + Vector3.UP
+	var direction := origin.direction_to(target).rotated(Vector3.UP, _rng.randf_range(-0.11, 0.11))
+	var data := CATALOG.get_weapon("pistol")
+	var token: Dictionary = effects.police_tracer(origin, direction, 55.0) if is_instance_valid(effects) else {}
+	if is_instance_valid(effects): effects.muzzle_smoke(origin, direction)
+	var bridge := PhysicsRayQueryParameters3D.create(shooter.global_position + Vector3.UP * 1.1, origin, 7, [shooter.get_rid()])
+	var blocked := get_world_3d().direct_space_state.intersect_ray(bridge)
+	_police_rounds.append({"point": origin, "direction": direction, "speed": 55.0,
+		"distance": 0.0, "range": float(data.get("max_range", 420.0)) / 16.0,
+		"damage": amount, "data": data, "source": weakref(shooter), "rid": shooter.get_rid(), "visual": token, "blocked": blocked})
+	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
+	npc_gunfire.emit(origin, direction, shooter)
+	return true
 
 func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "pistol") -> void:
 	if not police_can_see(officer): return
@@ -1195,6 +1278,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 		"distance": 0.0, "range": float(data.get("max_range", 420.0)) / 16.0,
 		"damage": amount, "data": data, "source": weakref(officer), "rid": officer.get_rid(), "visual": token, "blocked": blocked})
 	visual.attack()
+	npc_gunfire.emit(origin, direction, officer)
 	# V1 PoliceOfficer uses pistol for patrol and SMG for every other tier.
 	_play_stream(AUDIO.gunfire_take("pistol" if int(officer.get("tier")) == 0 else "smg", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 
@@ -1232,7 +1316,11 @@ func _sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB
 	var stream := AUDIO.gunfire_take(kind, _rng)
 	if stream == null: return
 	var reach := HEARING_EXPLOSION if kind == "explosion" else HEARING_GUNFIRE
-	_play_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng), reach)
+	var pitch := AUDIO.gunfire_pitch(_rng)
+	_play_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
+	# Camada de corpo (baque + cauda) no mesmo tom: o estalo gravado sozinho soava fraco.
+	var body := AUDIO.gun_body(kind)
+	if body != null: _play_stream(body, point, base_volume_db + float(AUDIO.GUN_BODY[kind][3]), pitch, reach * 1.3)
 
 ## Toca um stream já carregado no primeiro canal livre do pool posicional.
 func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0, reach: float = HEARING_DEFAULT) -> void:
@@ -1287,6 +1375,7 @@ func _shot_sound(id: String, data: Dictionary) -> void:
 			_play_stream(muffled, player.global_position, base_volume - 9.0 + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng), HEARING_SUPPRESSED)
 			return
 	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
+	_kick_camera(float(CAMERA_KICK.get(id, 0.0)))
 
 ## Golpe no ar do V1: faca = `KnifeAudio.swing`, machado = `BatAudio.swing`, o resto = golpe de punho.
 func _melee_swing_sound(_id: String, data: Dictionary) -> void:
@@ -1313,9 +1402,23 @@ func _play_reload_audio(id: String, multiplier: float) -> void:
 	_reload_audio.pitch_scale = 1.0 / maxf(multiplier, 0.1)
 	_reload_audio.play()
 
+## Tranco curto de câmera no disparo pesado (mesmo recurso do choque de veículo em
+## `StreetPhysics`): `h_offset/v_offset` não brigam com o CameraRig. O tranco anterior é
+## substituído, não somado, para rajada não virar terremoto.
+func _kick_camera(strength: float) -> void:
+	if strength <= 0.0 or not is_instance_valid(camera): return
+	if _kick_tween != null and _kick_tween.is_valid(): _kick_tween.kill()
+	_kick_tween = camera.create_tween()
+	for step in 4:
+		var amount := strength * (1.0 - step / 4.0)
+		_kick_tween.tween_property(camera, "h_offset", _rng.randf_range(-1, 1) * amount, 0.03)
+		_kick_tween.parallel().tween_property(camera, "v_offset", _rng.randf_range(0.2, 1.0) * amount, 0.03)
+	_kick_tween.tween_property(camera, "h_offset", 0.0, 0.06)
+	_kick_tween.parallel().tween_property(camera, "v_offset", 0.0, 0.06)
+
 func projectile_bounce(point: Vector3, speed: float) -> void:
-	if speed < 1.8: return
-	_play_stream(AUDIO.grenade_bounce(), point, -14.0, _rng.randf_range(1.55, 2.05))
+	if speed < 1.2: return
+	_play_stream(AUDIO.grenade_bounce(), point, -16.0 + clampf(speed - 2.0, 0.0, 6.0), _rng.randf_range(0.9, 1.12))
 
 ## Material do que foi atingido (V1 `ImpactMaterial.resolve`): `impact_material` autorado, gente = corpo,
 ## veículo = metal, o resto = concreto. Sem nomes de objeto.

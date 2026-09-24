@@ -27,6 +27,7 @@ static var _char_embers: Texture2D
 
 var vehicle: CharacterBody3D
 var burning := false
+var _flame_ignited := false
 var wrecked := false
 var _stage := 0
 var _paint_base: Dictionary = {}
@@ -52,7 +53,7 @@ func note_source(source: Node) -> void:
 func refresh() -> void:
 	var ratio: float = clampf(vehicle.health / maxf(1.0, vehicle.max_health), 0.0, 1.0)
 	_apply_wear(1.0 - ratio)
-	var should_burn: bool = vehicle.health > 0 and ratio <= BURN_RATIO
+	var should_burn: bool = vehicle.health > 0 and (_flame_ignited or ratio <= BURN_RATIO)
 	if should_burn != burning:
 		burning = should_burn
 		set_physics_process(burning)
@@ -215,6 +216,17 @@ func _stop_fire() -> void:
 	if is_instance_valid(_fire): _fire.emitting = false
 	if is_instance_valid(_fire_light): _fire_light.visible = false
 
+## Impacto direto de lança-chamas inicia o fogo no capô mesmo antes do limiar
+## de dano pesado. O escoamento continua usando o dano normal do veículo.
+func ignite(source: Node = null) -> void:
+	if not is_instance_valid(vehicle) or vehicle.health <= 0 or wrecked: return
+	_flame_ignited = true
+	if source != null: note_source(source)
+	if not burning:
+		burning = true
+		set_physics_process(true)
+	_update_fire()
+
 # --- Carcaça ------------------------------------------------------------------------------
 
 ## Explodiu: lataria carbonizada com brasa que esfria, vidro estourado, pneu derretido,
@@ -223,6 +235,7 @@ func wreck() -> void:
 	if wrecked: return
 	wrecked = true
 	burning = false
+	_flame_ignited = false
 	set_physics_process(false)
 	_stop_fire()
 	_ember = StandardMaterial3D.new()
@@ -278,6 +291,7 @@ func restore() -> void:
 	if is_instance_valid(_tween): _tween.kill()
 	_stop_fire()
 	burning = false
+	_flame_ignited = false
 	set_physics_process(false)
 	for entry in _saved:
 		var part: MeshInstance3D = entry[0]
@@ -286,6 +300,7 @@ func restore() -> void:
 		else: part.set_surface_override_material(entry[1], entry[2])
 	_saved.clear()
 	wrecked = false
+	_flame_ignited = false
 	if is_instance_valid(vehicle.visual):
 		vehicle.visual.position = Vector3.ZERO
 		vehicle.visual.rotation = Vector3(0, vehicle.visual.rotation.y, 0)
