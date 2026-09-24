@@ -6,7 +6,7 @@ extends RefCounted
 ## (2,2 m/s na direção do choque) ele tomba em 0,7 s, apaga, perde a colisão e o
 ## carro segue em frente. Mesmo limiar aqui, com três famílias:
 ## - "post": poste de luz, semáforo, placa — tomba girando na base;
-## - "light": lixeira, jornaleiro, caixa de correio — voa e rola;
+## - "light": lixeira, jornaleiro, caixa de correio — vira corpo rígido e quebra;
 ## - "hydrant": hidrante — arranca e vira gêiser por alguns segundos.
 ## O registro é espacial (células de 8 m) e não depende de corpo físico: a
 ## mobília do CityLook não tem colisão (não atrapalha pedestre), então a
@@ -139,24 +139,195 @@ static func _topple(item: Dictionary, flat: Vector3, director: Node) -> void:
 	if item.kind == "phone_booth": director.spawn_glass(base.origin + Vector3.UP, flat)
 
 
-## Objeto leve voa na direção do carro, gira e fica caído de lado.
+## Objeto leve vira corpo rígido: sai com a velocidade que o para-choque
+## transfere, bate em parede/meio-fio/carro de verdade e para onde a física
+## deixar. Antes era um arco em tween com distância fixa, que atravessava
+## prédio e carro e pousava sempre igual.
 static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Node) -> void:
 	var base := _base(item)
-	var travel := clampf(speed * 0.55, 1.2, 9.0)
+	var mesh: Mesh = null
+	var node_copy: Node3D = null
+	if item.has("multimesh"):
+		mesh = item.multimesh.mesh
+		# Escala zero some com a instância original; a cópia física assume.
+		var hidden := Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), base.origin)
+		item.multimesh.set_instance_transform(item.index, hidden)
+		for extra in item.extra: extra.multimesh.set_instance_transform(extra.index, hidden)
+		# A instância é local ao chunk; o destroço vive no mundo.
+		var chunk = item.chunk.get_ref()
+		if is_instance_valid(chunk): base = chunk.global_transform * base
+	else:
+		_disable_collision(item)
+		var root = item.root.get_ref()
+		if is_instance_valid(root):
+			node_copy = root.duplicate(0)
+			for body in node_copy.find_children("*", "CollisionObject3D", true, false): body.free()
+			root.visible = false
+	# Carro pesa ~100x o objeto: sai a ~(1+e) vezes a velocidade do carro no
+	# sentido do choque (e≈0,3 para metal amassando), um pouco para cima porque
+	# o para-choque pega abaixo do centro de massa.
 	var side := Vector3.UP.cross(flat).normalized()
-	var land := base.origin + flat * travel + side * randf_range(-0.8, 0.8)
-	var peak := clampf(speed * 0.12, 0.4, 2.0)
-	var axis := (side + Vector3.UP * randf_range(-0.3, 0.3)).normalized()
-	var spins := randf_range(1.5, 3.0) * TAU
-	var rest := Basis(side, PI * 0.5) * Basis(Vector3.UP, randf_range(-PI, PI)) * base.basis
-	var tween: Tween = director.create_tween()
-	tween.tween_method(func(t: float):
-		var origin := base.origin.lerp(land, t) + Vector3.UP * (4.0 * peak * t * (1.0 - t))
-		var basis := (Basis(axis, spins * t) * base.basis).slerp(rest, smoothstep(0.75, 1.0, t))
-		_set_transform(item, Transform3D(basis, origin))
-	, 0.0, 1.0, clampf(travel / maxf(speed * 0.6, 1.0), 0.35, 0.9))
-	tween.tween_callback(func(): director.play_prop_hit(land, "metal", 1.5))
-	if item.kind in ["trash_can"]: director.spawn_litter(land, flat)
+	var launch := flat * speed * randf_range(0.95, 1.3) + side * speed * randf_range(-0.15, 0.15) + Vector3.UP * clampf(speed * 0.18, 0.5, 4.0)
+	launch = launch.limit_length(26.0)
+	var spin := side * clampf(speed * 1.6, 2.0, 22.0) + Vector3.UP * randf_range(-4.0, 4.0)
+	if item.kind == "trash_can":
+		_break_trash_can(base, launch, spin, director)
+		return
+	var piece := _debris_body(director, base.origin, MASSES.get(item.kind, 15.0))
+	if mesh != null:
+		var visual := MeshInstance3D.new()
+		visual.mesh = mesh
+		visual.transform = Transform3D(base.basis, Vector3.ZERO)
+		piece.add_child(visual)
+		_add_box_shape(piece, visual.transform * mesh.get_aabb())
+	elif node_copy != null:
+		piece.add_child(node_copy)
+		node_copy.transform = Transform3D(base.basis, Vector3.ZERO)
+		_add_box_shape(piece, _local_aabb(node_copy))
+	piece.linear_velocity = launch
+	piece.angular_velocity = spin
+	if item.kind == "news_box": director.spawn_glass(base.origin, flat)
+	if item.kind == "mailbox": _spill_later(director, piece, flat, 0.5)
+
+
+## Lixeira: o corpo amassa e voa, a tampa solta e sai por conta própria, e o
+## lixo espalha onde o corpo parar de rolar (não num ponto pré-calculado).
+static func _break_trash_can(base: Transform3D, launch: Vector3, spin: Vector3, director: Node) -> void:
+	var can := _debris_body(director, base.origin, MASSES.trash_can)
+	var shell := CylinderMesh.new()
+	shell.top_radius = 0.29
+	shell.bottom_radius = 0.26
+	shell.height = 0.82
+	shell.radial_segments = 7
+	shell.rings = 1
+	shell.material = _flat_material(Color("2f5a43"))
+	var shell_visual := MeshInstance3D.new()
+	shell_visual.mesh = shell
+	# Amassado do para-choque: achata no sentido do choque.
+	var dent := Vector3(launch.x, 0, launch.z).normalized()
+	if dent.length_squared() < 0.01: dent = Vector3.FORWARD
+	shell_visual.transform = Transform3D(Basis.looking_at(dent, Vector3.UP).scaled(Vector3(1.0, 1.0, randf_range(0.72, 0.86))), Vector3.UP * 0.41)
+	can.add_child(shell_visual)
+	_add_cylinder_shape(can, 0.27, 0.82, Vector3.UP * 0.41)
+	can.linear_velocity = launch
+	can.angular_velocity = spin
+	var lid := _debris_body(director, base.origin + Vector3.UP * 0.88, 1.2)
+	var lid_mesh := CylinderMesh.new()
+	lid_mesh.top_radius = 0.22
+	lid_mesh.bottom_radius = 0.31
+	lid_mesh.height = 0.08
+	lid_mesh.radial_segments = 7
+	lid_mesh.rings = 1
+	lid_mesh.material = _flat_material(Color("1f3a2c"))
+	var lid_visual := MeshInstance3D.new()
+	lid_visual.mesh = lid_mesh
+	lid.add_child(lid_visual)
+	_add_cylinder_shape(lid, 0.3, 0.08, Vector3.ZERO)
+	# Tampa é leve e está no alto: sobe mais e gira solta.
+	lid.linear_velocity = launch * randf_range(0.8, 1.15) + Vector3(randf_range(-1, 1), randf_range(1.5, 3.5), randf_range(-1, 1))
+	lid.angular_velocity = Vector3(randf_range(-15, 15), randf_range(-10, 10), randf_range(-15, 15))
+	# Parte cai no choque (boca aberta); o resto onde a lata parar.
+	director.spawn_litter(base.origin, dent)
+	_spill_later(director, can, dent, 0.8)
+
+
+const DEBRIS_LAYER := 8
+const MAX_DEBRIS := 18
+const DEBRIS_LIFETIME := 45.0
+## kg; o carro leva ~1200 kg.
+const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0}
+static var _debris: Array = []
+
+
+static func _debris_body(director: Node, origin: Vector3, mass: float) -> RigidBody3D:
+	var body := RigidBody3D.new()
+	body.name = "StreetDebris"
+	body.mass = mass
+	body.collision_layer = DEBRIS_LAYER
+	# Só o mundo no começo: o objeto nasce encostado no carro que o acertou e
+	# colidir com ele no primeiro quadro o expulsaria com impulso absurdo.
+	body.collision_mask = 1
+	body.continuous_cd = true
+	body.linear_damp = 0.05
+	body.angular_damp = 0.4
+	var material := PhysicsMaterial.new()
+	material.friction = 0.8
+	material.bounce = 0.2
+	body.physics_material_override = material
+	director.add_child(body)
+	body.global_position = origin
+	var tree: SceneTree = director.get_tree()
+	# Depois de se afastar, carro que passar por cima empurra o destroço.
+	tree.create_timer(0.35, false, true).timeout.connect(func():
+		if is_instance_valid(body): body.collision_mask = 1 | 4 | DEBRIS_LAYER)
+	tree.create_timer(DEBRIS_LIFETIME, false, true).timeout.connect(func():
+		if is_instance_valid(body): body.queue_free())
+	var alive := []
+	for ref in _debris:
+		if is_instance_valid(ref.get_ref()): alive.append(ref)
+	alive.append(weakref(body))
+	while alive.size() > MAX_DEBRIS:
+		var oldest = alive.pop_front().get_ref()
+		if is_instance_valid(oldest): oldest.queue_free()
+	_debris = alive
+	return body
+
+
+static func _flat_material(color: Color) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.65
+	return material
+
+
+static func _add_box_shape(body: RigidBody3D, box: AABB) -> void:
+	var shape := CollisionShape3D.new()
+	var geometry := BoxShape3D.new()
+	geometry.size = box.size.max(Vector3.ONE * 0.08)
+	shape.shape = geometry
+	shape.position = box.get_center()
+	body.add_child(shape)
+
+
+static func _add_cylinder_shape(body: RigidBody3D, radius: float, height: float, at: Vector3) -> void:
+	var shape := CollisionShape3D.new()
+	var geometry := CylinderShape3D.new()
+	geometry.radius = radius
+	geometry.height = height
+	shape.shape = geometry
+	shape.position = at
+	body.add_child(shape)
+
+
+static func _local_aabb(root: Node3D) -> AABB:
+	var result := AABB()
+	var first := true
+	for mesh in root.find_children("*", "MeshInstance3D", true, false):
+		var box: AABB = root.transform * _relative(root, mesh) * mesh.get_aabb()
+		result = box if first else result.merge(box)
+		first = false
+	return result if not first else AABB(Vector3(-0.3, 0, -0.3), Vector3(0.6, 1.0, 0.6))
+
+
+## Transformação de `node` relativa a `ancestor` sem depender de estar na árvore.
+static func _relative(ancestor: Node3D, node: Node3D) -> Transform3D:
+	var xform := Transform3D.IDENTITY
+	var current: Node = node
+	while current != null and current != ancestor:
+		if current is Node3D: xform = (current as Node3D).transform * xform
+		current = current.get_parent()
+	return xform
+
+
+static func _spill_later(director: Node, body: RigidBody3D, flat: Vector3, delay: float) -> void:
+	director.get_tree().create_timer(delay, false, true).timeout.connect(func():
+		if not is_instance_valid(body): return
+		var at := body.global_position
+		# Lixo vai no piso sob a lata, não no ar onde ela estiver quicando.
+		var query := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 0.5, at + Vector3.DOWN * 4.0, 1)
+		var hit: Dictionary = body.get_world_3d().direct_space_state.intersect_ray(query)
+		director.spawn_litter(Vector3(at.x, hit.position.y if not hit.is_empty() else at.y - 0.3, at.z), flat)
+		director.play_prop_hit(at, "metal", 1.5))
 
 
 ## Hidrante arranca voando e deixa um gêiser (V1 não tinha; é o clássico de GTA).

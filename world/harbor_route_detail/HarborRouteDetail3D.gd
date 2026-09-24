@@ -255,21 +255,23 @@ static func _build_rodoviaria_zone() -> Node3D:
 static func _build_connecting_streets() -> Node3D:
 	var zone := Node3D.new()
 	
-	# 1. Northern sidewalk of Market St towards Union Ave (X: 83.0 to 92.0, Z: 72.5 to 74.5)
-	var slab_market := HarborRouteProps.create_sidewalk_slab(Vector2(9.0, 2.0), 0.12)
-	slab_market.position = Vector3(87.5, 0.0, 73.5)
+	# 1. Northern sidewalk of Market St towards Union Ave (X: 85.6 to 92.0, Z: 72.5 to 74.5)
+	# Começa em 85.6, alinhada à calçada leste da Union Ave: a Union Ave ocupa X 77.2–85.3
+	# e a versão anterior (X 83.0) avançava 2.3 m sobre a pista, bloqueando carros no cruzamento.
+	var slab_market := HarborRouteProps.create_sidewalk_slab(Vector2(6.4, 2.0), 0.12)
+	slab_market.position = Vector3(88.8, 0.0, 73.5)
 	zone.add_child(slab_market)
 	
-	# Curb along Market St edge, trimmed to start past the pedestrian curb ramp at X = 84.1 (X: 84.1 to 92.0, span 7.9m)
-	# Eliminates collider overlap between the vertical curb and the beveled ramp wedge (X: 81.9 to 84.1)
-	var curb_market := HarborRouteProps.create_curb_segment(7.9, 0.30, 0.14)
+	# Curb along Market St edge, trimmed to start past the pedestrian curb ramp at X = 87.8 (X: 87.8 to 92.0, span 4.2m)
+	# Eliminates collider overlap between the vertical curb and the beveled ramp wedge (X: 85.6 to 87.8)
+	var curb_market := HarborRouteProps.create_curb_segment(4.2, 0.30, 0.14)
 	curb_market.rotation_degrees = Vector3(0, 90, 0)
-	curb_market.position = Vector3(88.05, 0.0, 74.55)
+	curb_market.position = Vector3(89.9, 0.0, 74.55)
 	zone.add_child(curb_market)
 	
-	# Pedestrian curb cut ramp at Market/Union intersection corner (X: 81.9 to 84.1, span 2.2m)
+	# Pedestrian curb cut ramp at Market/Union intersection corner (X: 85.6 to 87.8, span 2.2m)
 	var ramp_market := HarborRouteProps.create_curb_ramp(2.2, 0.70, 0.12)
-	ramp_market.position = Vector3(83.0, 0.0, 74.55)
+	ramp_market.position = Vector3(86.7, 0.0, 74.55)
 	zone.add_child(ramp_market)
 	
 	# 2. Pedestrian crosswalk across Market St at Union Ave corner
