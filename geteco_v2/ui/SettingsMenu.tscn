@@ -1,0 +1,390 @@
+[gd_scene format=3 uid="uid://settings_menu_001"]
+
+[ext_resource type="Script" path="res://ui/SettingsMenu.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.06, 0.07, 0.09, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.945, 0.768, 0.059, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_active"]
+bg_color = Color(0.12, 0.14, 0.18, 1)
+border_width_bottom = 3
+border_color = Color(0.945, 0.768, 0.059, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+bg_color = Color(0.14, 0.16, 0.20, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.28, 0.35, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.20, 0.24, 0.30, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.945, 0.768, 0.059, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="SettingsMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="MainPanel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(720, 520)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -360.0
+offset_top = -260.0
+offset_right = 360.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="Margin" type="MarginContainer" parent="MainPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="MainPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="MainPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 24
+text = "CONFIGURAÇÕES"
+horizontal_alignment = 1
+
+[node name="TabsBar" type="HBoxContainer" parent="MainPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TabAudioBtn" type="Button" parent="MainPanel/Margin/VBox/TabsBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "ÁUDIO"
+
+[node name="TabVideoBtn" type="Button" parent="MainPanel/Margin/VBox/TabsBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "VÍDEO"
+
+[node name="TabControlsBtn" type="Button" parent="MainPanel/Margin/VBox/TabsBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "CONTROLES"
+
+[node name="ContentContainer" type="MarginContainer" parent="MainPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PanelAudio" type="VBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="MasterRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
+layout_mode = 2
+
+[node name="LabelMasterRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MasterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Volume Geral (Master):"
+
+[node name="SliderMaster" type="HSlider" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MasterRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="LabelMasterVal" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MasterRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(55, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 14
+text = "100%"
+horizontal_alignment = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
+layout_mode = 2
+
+[node name="LabelMusicRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MusicRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Música:"
+
+[node name="SliderMusic" type="HSlider" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MusicRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 0.8
+
+[node name="LabelMusicVal" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MusicRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(55, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 14
+text = "80%"
+horizontal_alignment = 2
+
+[node name="AmbientRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
+layout_mode = 2
+
+[node name="LabelAmbientRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Ambiente:"
+
+[node name="SliderAmbient" type="HSlider" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="LabelAmbientVal" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(55, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 14
+text = "100%"
+horizontal_alignment = 2
+
+[node name="SFXRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
+layout_mode = 2
+
+[node name="LabelSFXRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/SFXRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Efeitos Sonoros (SFX):"
+
+[node name="SliderSFX" type="HSlider" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/SFXRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="LabelSFXVal" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio/SFXRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(55, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 14
+text = "100%"
+horizontal_alignment = 2
+
+[node name="AudioHint" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelAudio"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.6, 1)
+theme_override_font_sizes/font_size = 12
+text = "Os volumes são aplicados diretamente aos barramentos do AudioServer e salvos em user://settings.cfg."
+
+[node name="PanelVideo" type="VBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="LanguageRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo"]
+layout_mode = 2
+
+[node name="LabelLanguage" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/LanguageRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Idioma:"
+
+[node name="OptLanguage" type="OptionButton" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/LanguageRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 32)
+layout_mode = 2
+
+[node name="ModeRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo"]
+layout_mode = 2
+
+[node name="LabelModeRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ModeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Modo de Janela:"
+
+[node name="OptWindowMode" type="OptionButton" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ModeRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 32)
+layout_mode = 2
+
+[node name="ResRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo"]
+layout_mode = 2
+
+[node name="LabelResRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ResRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Resolução da Janela:"
+
+[node name="OptResolution" type="OptionButton" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ResRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 32)
+layout_mode = 2
+
+[node name="VsyncRow" type="HBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo"]
+layout_mode = 2
+
+[node name="LabelVsyncRow" type="Label" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/VsyncRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.92, 1)
+theme_override_font_sizes/font_size = 15
+text = "Sincronização Vertical (VSync):"
+
+[node name="CheckVSync" type="CheckBox" parent="MainPanel/Margin/VBox/ContentContainer/PanelVideo/VsyncRow"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Ativado"
+
+[node name="PanelControls" type="VBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Scroll" type="ScrollContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelControls"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ControlsList" type="VBoxContainer" parent="MainPanel/Margin/VBox/ContentContainer/PanelControls/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="SettingsStatus" type="Label" parent="MainPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="BottomActions" type="HBoxContainer" parent="MainPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="BtnDefaults" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "PADRÕES"
+
+[node name="BtnBack" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "CANCELAR"
+
+[node name="BtnApply" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 38)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "APLICAR"
+
+[node name="BtnSave" type="Button" parent="MainPanel/Margin/VBox/BottomActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
+theme_override_font_sizes/font_size = 14
+text = "SALVAR E VOLTAR"
+
+

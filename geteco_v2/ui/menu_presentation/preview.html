@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geteco V2 · Apresentação dos menus</title>
+<style>
+:root{color-scheme:dark;--ink:#101923;--surface:#1c2a38;--text:#f4f1e8;--muted:#b9c7d2;--accent:#f2bc75;--edge:#455a6c}
+*{box-sizing:border-box}body{margin:0;background:#080e14;color:var(--text);font:20px/1.45 "Barlow","Segoe UI",sans-serif}
+main{max-width:1640px;margin:auto;padding:48px}header{border-bottom:1px solid var(--edge);padding-bottom:28px;margin-bottom:32px}
+.eyebrow{color:var(--accent);font-size:14px;letter-spacing:.14em;margin:0 0 12px}h1{font-size:38px;font-weight:600;line-height:1.15;margin:0 0 16px}
+.note{color:var(--muted);font-size:16px;margin:0;max-width:950px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+figure{margin:0;min-width:0}figcaption{font-size:14px;color:var(--muted);margin-bottom:12px;display:flex;justify-content:space-between;gap:12px}
+.stage{background:#0b121a;border:1px solid #263542;padding:24px;border-radius:10px}.panel{background:var(--ink);border:1px solid var(--edge);border-radius:6px;padding:16px;display:flex;flex-direction:column;height:572px;max-width:760px;margin:auto}
+h2{font-size:30px;font-weight:600;line-height:1.2;margin:0;padding-bottom:16px;border-bottom:1px solid var(--edge)}
+.body{flex:1;min-height:0;overflow-y:auto;scrollbar-color:var(--muted) var(--ink);padding:12px 3px 12px 0;display:flex;flex-direction:column;gap:10px}
+.action{background:var(--surface);border:1px solid var(--edge);border-radius:6px;padding:12px 18px;min-height:52px;font:inherit;color:var(--text);text-align:left;flex-shrink:0;overflow-wrap:anywhere;width:100%}
+button.action{cursor:pointer}.action:hover{background:#2b4052}.action:active{background:#364b5b}.action:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.focus-example{outline:3px solid var(--accent);outline-offset:-3px}.footer{margin-top:10px}.volume{display:flex;flex-direction:column;gap:4px}input{width:100%;height:44px;margin:0;accent-color:var(--accent)}
+.legend{display:flex;gap:24px;flex-wrap:wrap;margin-top:32px;color:var(--muted);font-size:15px}.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;background:var(--accent)}
+@media(max-width:1050px){main{padding:24px}.grid{grid-template-columns:1fr}.stage{padding:16px}}
+@media(max-width:460px){main{padding:16px}.stage{padding:0;border:0}h1{font-size:30px}.panel{height:560px}figcaption{display:block}}
+</style>
+<main>
+<header><p class="eyebrow">GETECO V2 / UI</p><h1>Inventário, missões, configurações e controles</h1><p class="note">Referência visual em HTML, não captura do Godot. Estados de exemplo com textos existentes. Os botões permitem inspecionar foco e aparência; não executam ações no jogo. A cena Demo.tscn usa os componentes entregues.</p></header>
+<div class="grid">
+<figure><figcaption><span>01 / Inventário</span><span>Exemplo mínimo · foco inicial</span></figcaption><div class="stage"><section class="panel" aria-label="Exemplo de inventário"><h2>Inventário · R$ 0</h2><div class="body"><button class="action focus-example">PUNHOS</button><button class="action">Configurações</button></div><button class="action footer">Voltar</button></section></div></figure>
+<figure><figcaption><span>02 / Missões</span><span>Primeiro Giro · objetivo real</span></figcaption><div class="stage"><section class="panel" aria-label="Exemplo de missões"><h2>Missões</h2><div class="body"><button class="action">Vá ao Banco North Pier. Guarde a arma e fale com Helena para retirar o comprovante.</button><button class="action">Cancelar missão</button></div><button class="action footer">Voltar</button></section></div></figure>
+<figure><figcaption><span>03 / Configurações</span><span>Valores de demonstração</span></figcaption><div class="stage"><section class="panel" aria-label="Exemplo de configurações"><h2>Configurações</h2><div class="body"><label class="volume">Volume geral<input type="range" min="0" max="1" step="0.05" value="0.8" aria-label="Volume geral — apenas prévia"></label><button class="action">Tela cheia: não</button><button class="action">Suavização: 1</button><button class="action">Restaurar controles</button><button class="action">Configurar teclas</button></div><button class="action footer">Voltar</button></section></div></figure>
+<figure><figcaption><span>04 / Controles</span><span>Recorte dos bindings padrão · rolável</span></figcaption><div class="stage"><section class="panel" aria-label="Exemplo de controles"><h2>Controles</h2><div class="body"><button class="action">Lanterna da arma · G</button><button class="action">Avançar / Acelerar · W / Up</button><button class="action">Recuar / Ré · S / Down</button><button class="action">Esquerda · A / Left</button><button class="action">Direita · D / Right</button><button class="action">Correr · Shift</button><button class="action">Ação · E</button><button class="action">Entrar / Roubar veículo · F</button><button class="action">Sair do veículo · F / Enter</button><button class="action">Freio de mão · Space</button><button class="action">Buzina · H</button><button class="action">Faróis · L</button></div><button class="action footer">Voltar</button></section></div></figure>
+</div><div class="legend"><span><i class="swatch"></i>Foco · 3 px</span><span>Texto · 20 / 30</span><span>Ação · mínimo 52</span><span>Retorno fixo + conteúdo rolável</span></div>
+<p class="note" style="margin-top:20px">A navegação desta prancha é a do navegador. Teclado e controle no Godot, fonte Barlow, resoluções, integração e performance aguardam validação coordenada com o integrador.</p>
+</main>
+</html>

@@ -1,0 +1,209 @@
+extends SceneTree
+
+var failures: Array[String] = []
+var world: Node
+var hud: CanvasLayer
+
+func _initialize() -> void:
+	_run.call_deferred()
+
+func _check(condition: bool, description: String) -> void:
+	if condition: return
+	failures.append(description)
+	push_error(description)
+
+func _run() -> void:
+	world = load("res://Main.tscn").instantiate()
+	world.set_meta("skip_arrival", true)
+	world.set_meta("skip_dispatch", true)
+	world.set_meta("skip_traffic_yield", true)
+	root.add_child(world)
+	for frame in 900:
+		await physics_frame
+		if world.session != null and world.session.ready_for_play: break
+	_check(world.session != null and world.session.ready_for_play, "production session reaches playable no-save state")
+	_check(world.production != null and world.production.no_save, "capture never reads or writes a personal save")
+	if not failures.is_empty():
+		_finish()
+		return
+	hud = world.hud
+	for frame in 12: await process_frame
+	_check(hud.get_script().resource_path == "res://ui/ClassicGameplayHUD.gd", "World mounts the V1 HUD adapter")
+	_check(hud.get_node_or_null("GameplayHUDRoot") != null, "compatibility root remains available")
+	_check(is_instance_valid(world.session.stats) and is_instance_valid(world.session.objective) and is_instance_valid(world.session.prompt) and is_instance_valid(world.session.notice), "FullSession references remain valid")
+	_check(is_instance_valid(world.camera.scope_reticle) and world.camera.scope_reticle.get_parent() == hud, "CameraRig scope contract remains attached to HUD")
+	_check(hud.get_node_or_null("GameplayHUDRoot/StatusPanel") == null and hud.get_node_or_null("GameplayHUDRoot/ActionPanel") == null, "rejected V2 status and action cards are absent")
+
+	await _resize(Vector2i(1280, 720))
+	world.player.teleport(world.maciota_place.entry_position + Vector3(0, 0, .25))
+	for frame in 20: await physics_frame
+	_check("Entrar" in hud.interaction_label.text, "on-foot prompt is sourced from the real interaction query")
+	_check(hud.interaction_row.visible, "V1 keycap prompt is visible near a real action")
+	_check(hud.money_label.text.begins_with("$"), "money uses the V1 counter format")
+	_check(hud.weather_row.visible and ":" in hud.clock_label.text, "V1 weather and clock readout uses the current production weather")
+	_check(hud.minimap.visible and hud.minimap.size == Vector2(192, 192), "V1 vector minimap is mounted over the current 3D region")
+	_check(not hud.objective_card.visible, "V1 onboarding guidance stays on the minimap instead of a persistent prose card")
+	_check(not hud.objective_card.get_global_rect().intersects(hud.top_right_panel.get_global_rect()), "objective strip clears V1 status stack")
+	await _shot("classic-hud-01-on-foot-objective-interaction-1280x720.png")
+
+	var state = world.session.state
+	state.grant_weapon("pistol")
+	state.add_ammo("pistol", 47)
+	_check(state.equip_weapon("pistol"), "armed fixture equips through authoritative GameState")
+	state.economy.grant_reward("classic_hud_review_capture", 2450)
+	world.gameplay.health = 73
+	world.gameplay.armor = 48
+	world.gameplay.stars = 2
+	world.session.show_message("Munição recarregada.")
+	for frame in 12: await process_frame
+	_check(hud.weapon_icon.get("weapon_id") == "pistol", "V1 weapon silhouette mirrors equipped weapon")
+	_check("-" in hud.ammo_label.text and hud.ammo_label.visible, "V1 ammo counter shows magazine and reserve")
+	_check(int(hud.health_bar.value) == 73 and int(hud.armor_bar.value) == 48, "V1 bars mirror authoritative health and armor")
+	_check(hud.stars_label.text == "★★☆☆☆☆" and hud.stars_label.visible, "V1 stars mirror authoritative wanted level")
+	_check(hud.notice_label.visible and "Munição" in hud.notice_label.text, "temporary message uses V1 notice channel")
+	await _shot("classic-hud-02-armed-wanted-message-1280x720.png")
+
+	# Same authored fixture as tests/test_classic_mission_hud.gd in V1.
+	var comparison_wallet: Dictionary = state.economy.snapshot()
+	comparison_wallet.balance = 350
+	comparison_wallet.weapons.pistol = {"magazine": 12, "reserve": 60}
+	comparison_wallet.equipped_weapon = "pistol"
+	_check(state.economy.restore_snapshot(comparison_wallet), "V1 comparison wallet fixture is valid")
+	world.gameplay.health = 100
+	world.gameplay.armor = 70
+	world.gameplay.stars = 0
+	world.session.notice_time = 0.0
+	if hud._notice_tween != null and hud._notice_tween.is_valid(): hud._notice_tween.kill()
+	hud._last_notice = ""
+	hud.notice_label.hide()
+	for frame in 8: await process_frame
+	_check(hud.money_label.text == "$00000350" and hud.ammo_label.text == "12-60" and int(hud.armor_bar.value) == 70, "V2 renders the exact V1 comparison state")
+	await _shot("classic-comparison-v1-state-1280x720.png")
+
+	var controls := root.get_node("GameInput")
+	var original_bindings: Dictionary = controls.export_bindings()
+	var remap := InputEventKey.new()
+	remap.physical_keycode = KEY_K
+	remap.keycode = KEY_K
+	_check(controls.rebind("interact", remap).is_empty(), "temporary interaction remap is accepted")
+	for frame in 4: await process_frame
+	_check(hud.interaction_key.text == "K", "V1 keycap follows remapped keyboard binding")
+	var joy_motion := InputEventJoypadMotion.new()
+	joy_motion.device = 0
+	joy_motion.axis = JOY_AXIS_RIGHT_X
+	joy_motion.axis_value = 0.8
+	Input.parse_input_event(joy_motion)
+	Input.flush_buffered_events()
+	for frame in 4: await process_frame
+	_check(controls.using_gamepad and hud.interaction_key.text == "X", "V1 keycap follows a real generic-controller event")
+	joy_motion.axis_value = 0.0
+	Input.parse_input_event(joy_motion)
+	var mouse_motion := InputEventMouseMotion.new()
+	mouse_motion.position = Vector2(10, 10)
+	mouse_motion.global_position = mouse_motion.position
+	mouse_motion.relative = Vector2(4, 0)
+	Input.parse_input_event(mouse_motion)
+	Input.flush_buffered_events()
+	for frame in 4: await process_frame
+	_check(not controls.using_gamepad and hud.interaction_key.text == "K", "real mouse input restores the remapped keyboard prompt")
+	controls.import_bindings(original_bindings)
+	for frame in 4: await process_frame
+
+	# V1 scope is camera magnification only; the compatibility node survives,
+	# while the four invented V2 bars stay suppressed.
+	state.grant_weapon("hunting_rifle")
+	state.add_ammo("hunting_rifle", 20)
+	state.equip_weapon("hunting_rifle")
+	world.gameplay.customization = {"hunting_rifle":{"owned":false,"installed":false,"owned_parts":["scope_2x"],"parts":{"scope":"scope_2x"}}}
+	Input.action_press("aim")
+	for frame in 6: await physics_frame
+	_check(world.gameplay.scope_active(), "real scoped aiming state is active")
+	_check(world.camera.size < world.camera.target_size, "scope retains the V1 magnification behavior")
+	for child in world.camera.scope_reticle.get_children():
+		_check(not child.visible, "invented V2 reticle bar remains suppressed")
+	await _shot("classic-hud-03-scoped-1280x720.png")
+	Input.action_release("aim")
+	state.equip_weapon("pistol")
+
+	var car: CharacterBody3D = world.driving.car
+	var entered := false
+	for side in [-1.0, 1.0]:
+		world.player.teleport(car.to_global(Vector3(side * (car.half_width + .55), 0, .15)))
+		for frame in 5: await physics_frame
+		if world.driving.interact(true):
+			entered = true
+			break
+	_check(entered and world.driving.occupied, "driving capture enters through the real Driving operation")
+	for frame in 12: await process_frame
+	_check("Sair do carro" in hud.interaction_label.text, "driving prompt uses the exit binding")
+	_check(hud.speed_label.visible and "km/h" in hud.speed_label.text, "current speed remains available without a V2 card")
+	await _shot("classic-hud-04-driving-1280x720.png")
+
+	await _resize(Vector2i(1024, 768))
+	for frame in 6: await process_frame
+	_check(not hud.objective_card.get_global_rect().intersects(hud.top_right_panel.get_global_rect()), "objective stays below V1 status at 1024x768")
+	_check(root.get_visible_rect().encloses(hud.top_right_panel.get_global_rect()), "V1 status respects alternative-aspect safe margins")
+	_check(root.get_visible_rect().encloses(hud.speed_label.get_global_rect()), "driving speed respects alternative-aspect safe margins")
+	_check(root.get_visible_rect().encloses(hud.minimap.get_global_rect()), "V1 minimap respects alternative-aspect safe margins")
+	await _shot("classic-hud-05-driving-responsive-1024x768.png")
+
+	# Reachable FullSession menus keep their callbacks and locks, but inherit the
+	# V1 panel/button theme from the HUD adapter.
+	await _resize(Vector2i(1280, 720))
+	if world.driving.occupied: world.driving.leave()
+	world.session.show_inventory()
+	for frame in 5: await process_frame
+	_check(world.session.modal and world.player.input_locked, "inventory preserves gameplay input lock")
+	_check(world.session.panel.visible and not hud.root_margin.visible, "inventory hides gameplay HUD without invalidating source nodes")
+	_check(world.session.panel.get_theme_stylebox("panel") is StyleBoxFlat, "inventory uses the V1 menu panel style")
+	var ammo_before: Dictionary = state.get_ammo(state.equipped_weapon)
+	var player_before: Vector3 = world.player.position
+	for pressed in [true, false]:
+		var mouse_fire := InputEventMouseButton.new()
+		mouse_fire.button_index = MOUSE_BUTTON_LEFT
+		mouse_fire.position = Vector2(10, 10)
+		mouse_fire.global_position = mouse_fire.position
+		mouse_fire.pressed = pressed
+		Input.parse_input_event(mouse_fire)
+		Input.flush_buffered_events()
+		for frame in 2: await physics_frame
+	_check(state.get_ammo(state.equipped_weapon) == ammo_before and world.player.position.is_equal_approx(player_before), "inventory input does not fire or move the world")
+	await _shot("classic-menu-01-inventory-1280x720.png")
+	world.session.close_menu()
+	for frame in 3: await process_frame
+
+	world.pause_panel.pause_game()
+	for frame in 3: await process_frame
+	_check(paused and world.pause_panel.visible, "pause menu owns paused state")
+	_check(world.pause_panel.get_node("RootControl/CenterPanel").visible, "production V1 pause scene is reachable")
+	await _shot("classic-menu-02-pause-1280x720.png")
+	world.pause_panel.open_settings()
+	for frame in 3: await process_frame
+	_check(world.pause_panel.settings.visible, "settings is reachable from pause")
+	_check(root.gui_get_focus_owner() != null, "settings traps keyboard/controller focus")
+	await _shot("classic-menu-03-settings-1280x720.png")
+	world.pause_panel.resume_game()
+	_check(not paused, "closing pause restores gameplay")
+
+	_finish()
+
+func _resize(dimensions: Vector2i) -> void:
+	root.content_scale_size = dimensions
+	root.size = dimensions
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(dimensions)
+	for frame in 6: await process_frame
+
+func _shot(file_name: String) -> void:
+	if DisplayServer.get_name() == "headless": return
+	for frame in 3: await process_frame
+	await RenderingServer.frame_post_draw
+	var evidence_dir := ProjectSettings.globalize_path("res://evidence")
+	DirAccess.make_dir_recursive_absolute(evidence_dir)
+	var result := root.get_texture().get_image().save_png(evidence_dir.path_join(file_name))
+	_check(result == OK, "capture written: " + file_name)
+
+func _finish() -> void:
+	Input.action_release("aim")
+	Input.action_release("fire")
+	print("CLASSIC_HUD_REVIEW ", "PASS" if failures.is_empty() else "FAIL", " failures=", failures)
+	quit(0 if failures.is_empty() else 1)
