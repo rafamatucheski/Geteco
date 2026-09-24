@@ -169,6 +169,9 @@ func build() -> void:
 	var rain_puddles = preload("res://world/rain/RainPuddles3D.gd").new()
 	rain_puddles.controller = self
 	world.add_child(rain_puddles)
+	var wildlife = preload("res://gameplay/wildlife/MountainWildlife.gd").new()
+	wildlife.controller = self
+	world.add_child(wildlife)
 	ready_for_play = true
 	await session.restore_location()
 	curtain.lift()
