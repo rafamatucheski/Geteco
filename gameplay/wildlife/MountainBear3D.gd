@@ -43,7 +43,6 @@ var charge_direction := Vector3.ZERO
 var charge_hit := false
 var charge_cooldown := 2.0
 var bite_cooldown := 0.0
-var warning_cooldown := 0.0
 var threat_time := 0.0
 var sound_cooldown := 0.0
 var elapsed := 0.0
@@ -100,7 +99,6 @@ func _physics_process(delta: float) -> void:
 	elapsed += delta
 	bite_cooldown = maxf(0, bite_cooldown - delta)
 	charge_cooldown = maxf(0, charge_cooldown - delta)
-	warning_cooldown = maxf(0, warning_cooldown - delta)
 	sound_cooldown = maxf(0, sound_cooldown - delta)
 	threat_time = maxf(0, threat_time - delta)
 	var exposed: bool = player.is_visible_in_tree() and player.get("dead") != true and String(controller.state.place_id).is_empty()
@@ -138,9 +136,8 @@ func _update_adult(player: Node3D, exposed: bool, distance: float, to_player: Ve
 		var to_roam := Vector3(roam.x - global_position.x, 0, roam.z - global_position.z)
 		_set_flat_velocity(to_roam.normalized(), WANDER_SPEED if to_roam.length() > 0.6 else 0.0)
 		return
-	if warning_cooldown == 0:
-		_notice("URSA PROTEGENDO A MATA! Afaste-se dos filhotes; desvie quando ela baixar a cabeça.")
-		warning_cooldown = 18
+	# A V1 mostrava um aviso em texto aqui; tirado a pedido do jogador (2026-09-24):
+	# o grunhido e a cabeça baixa já avisam.
 	var toward := to_player.normalized()
 	match state:
 		State.WARNING:
@@ -204,10 +201,6 @@ func _clear_attack(player: Node3D) -> bool:
 func _hurt_player(amount: float) -> void:
 	var gameplay = controller.world.get("gameplay") if controller != null else null
 	if gameplay != null and gameplay.has_method("damage_player"): gameplay.damage_player(amount)
-
-func _notice(text: String) -> void:
-	var session = controller.session if controller != null else null
-	if session != null and session.has_method("show_message"): session.show_message(text)
 
 ## Contrato de dano da V2 (Gameplay._damage): tiro, soco e fogo chamam isto.
 func receive_damage(amount: float, _source: Node = null) -> void:

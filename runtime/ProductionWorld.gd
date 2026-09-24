@@ -172,6 +172,9 @@ func build() -> void:
 	var wildlife = preload("res://gameplay/wildlife/MountainWildlife.gd").new()
 	wildlife.controller = self
 	world.add_child(wildlife)
+	var roadside = preload("res://world/mountain_detail/MountainRoadside3D.gd").new()
+	roadside.controller = self
+	world.add_child(roadside)
 	ready_for_play = true
 	await session.restore_location()
 	curtain.lift()

@@ -68,14 +68,16 @@ void fragment() {
 	float slope = 1.0 - clamp(world_normal.y, 0.0, 1.0);
 
 	// Chão sem neve: terra e capim em manchas, com o tom de altura do vértice.
-	vec3 ground = mix(earth_dark, grass, smoothstep(0.35, 0.7, mid));
+	vec3 ground = mix(earth_dark, grass, smoothstep(0.45, 0.55, mid));
 	ground = mix(ground, base, 0.25);
 	ground *= 0.85 + macro * 0.3;
 	// Neve do inverno cobre o chão baixo em manchas; o alto fica todo branco.
-	float drift = smoothstep(0.42, 0.62, macro * 0.6 + mid * 0.4);
+	// Borda de neve nítida: com transição larga as manchas pareciam nuvem borrada
+	// (relato do jogador em 2026-09-24). O grão entra na borda para ela não ser lisa.
+	float drift = smoothstep(0.50, 0.53, macro * 0.6 + mid * 0.4 + (fine - 0.5) * 0.05);
 	float cover = clamp(max(snow_amount, drift * 0.85), 0.0, 1.0);
 	// Terra aparecendo pela neve em pontos (pegadas, pedras, tufos).
-	cover *= 1.0 - smoothstep(0.66, 0.8, mid) * 0.7;
+	cover *= 1.0 - smoothstep(0.70, 0.73, mid + (fine - 0.5) * 0.06) * 0.8;
 	// Luz de inverno estoura a neve para quase branco; o contraste vem de manchas de
 	// sombra fria largas e de ondulações de vento (sastrugi) numa direção só.
 	vec3 snow = mix(snow_shade, snow_lit, smoothstep(0.3, 0.75, macro));
@@ -92,6 +94,14 @@ void fragment() {
 	color = mix(color, rock * (0.85 + fine * 0.25), cliff);
 	color *= 0.94 + fine * 0.08;
 	ALBEDO = color;
+	// Relevo fino na iluminação: sem ele o chão é um plano liso e sem textura.
+	float e = 0.15;
+	float h0 = noise(local_xz * 1.5, 96.0) + noise(local_xz * 4.0, 256.0) * 0.5;
+	float hx = noise((local_xz + vec2(e, 0.0)) * 1.5, 96.0) + noise((local_xz + vec2(e, 0.0)) * 4.0, 256.0) * 0.5;
+	float hz = noise((local_xz + vec2(0.0, e)) * 1.5, 96.0) + noise((local_xz + vec2(0.0, e)) * 4.0, 256.0) * 0.5;
+	vec2 bump = vec2(hx - h0, hz - h0) / e * 0.08;
+	NORMAL_MAP = vec3(0.5 - bump.x, 0.5 - bump.y, 1.0);
+	NORMAL_MAP_DEPTH = 1.0;
 	float snowy = cover * (1.0 - cliff);
 	ROUGHNESS = mix(0.95, 0.6, snowy);
 	SPECULAR = mix(0.2, 0.4, snowy);

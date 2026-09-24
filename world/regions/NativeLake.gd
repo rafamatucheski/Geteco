@@ -12,17 +12,17 @@ func _ready() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalLakeData.json"))[variant]
 	_collect_road_clearance()
 	if variant == "alpine":
-		_surface("AlpineShore",_points(data.lake_shore,Vector2(-7000,0)),.007,Color("342e26"))
+		_surface("AlpineShore",_points(data.lake_shore,Vector2(-7000,0)),.007,Color("3b3a2d"))
 		water_polygon = _points(data.shallow_water,Vector2(-7000,0))
-		water_polygon = _clear_roads(water_polygon)
+		water_polygon = _smooth(_clear_roads(water_polygon))
 		_surface("AlpineShallows",water_polygon,.042,Color("226274"),true)
-		_surface("AlpineDeepColor",_points(data.deep_water,Vector2(-7000,0)),.048,Color("133c4a"),true)
+		_surface("AlpineDeepColor",_points(data.deep_water,Vector2(-7000,0)),.048,Color("1a4a58"),true)
 		for pair in [[Vector2(7380,-260),Vector2(7350,-235)],[Vector2(7350,-235),Vector2(7310,-207)],[Vector2(7310,-207),Vector2(7285,-157)],[Vector2(7285,-157),Vector2(7260,-115)]]:
 			_strip((pair[0]-Vector2(7000,0))*SCALE,(pair[1]-Vector2(7000,0))*SCALE,30*SCALE,.014,Color("1e5668"))
 	else:
 		_surface("GlacialShore",_points(data.shore),.007,Color("2a241e"))
 		water_polygon = _points(data.shallow)
-		water_polygon = _clear_roads(water_polygon)
+		water_polygon = _smooth(_clear_roads(water_polygon))
 		_surface("GlacialShallows",water_polygon,.042,Color("175b6a"),true)
 		_surface("GlacialDeepColor",_points(data.deep),.048,Color("0b2f3a"),true)
 		_surface("FrozenCascade",_points(data.frozen_fall),.09,Color("709ba6"))
@@ -95,7 +95,7 @@ func _material(color: Color,water := false) -> Material:
 	materials[key] = mat
 	return mat
 func _surface(id: String,polygon: PackedVector2Array,height: float,color: Color,water := false) -> void:
-	if id in CLIPPED_SURFACES: polygon = _clear_roads(polygon)
+	if id in CLIPPED_SURFACES: polygon = _smooth(_clear_roads(polygon))
 	if polygon.size() < 3: return
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -201,3 +201,18 @@ static func _area(polygon: PackedVector2Array) -> float:
 	var sum := 0.0
 	for i in polygon.size(): sum += polygon[i].cross(polygon[(i+1)%polygon.size()])
 	return sum*.5
+
+## Contorno arredondado (Chaikin): os polígonos da V1 têm poucos pontos e cantos
+## retos, e em 3D o lago parecia recortado em papel (relato do jogador em 2026-09-24).
+static func _smooth(polygon: PackedVector2Array, iterations := 2) -> PackedVector2Array:
+	var result := polygon
+	for n in iterations:
+		if result.size() < 3: return result
+		var next := PackedVector2Array()
+		for i in result.size():
+			var a := result[i]
+			var b := result[(i+1)%result.size()]
+			next.append(a.lerp(b,.25))
+			next.append(a.lerp(b,.75))
+		result = next
+	return result

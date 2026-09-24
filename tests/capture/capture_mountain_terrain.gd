@@ -41,6 +41,17 @@ func run() -> void:
 		if region != null: region.set_focus(point)
 		await frames(240)
 		await shot(label)
+	# Beira de estrada à noite: trilha e postes da montanha acesos.
+	var road_point: Vector3 = CATALOG._at(SPOTS["b_encosta"], "mountain")
+	road_point = controller.nearest_road(road_point)
+	world.player.teleport(road_point + Vector3(0, .2, 0))
+	controller.regions.get("mountain").set_focus(road_point)
+	weather.time_of_day = .5
+	await frames(200)
+	await shot("e_estrada_dia")
+	weather.time_of_day = .95
+	await frames(120)
+	await shot("f_estrada_noite")
 	print("CAPTURE_DONE")
 	world.queue_free()
 	await process_frame
