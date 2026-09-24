@@ -3,6 +3,10 @@ extends RefCounted
 const WATER_Y := -0.94 # Preserve the top of the previous water box.
 const STEP := 4.0
 const DEPTH_RANGE := 24.0
+## Período das ondas em metros. O shader recebe coordenada local 0..PERIOD em UV:
+## no renderizador Mobile a coordenada de mundo (~500 m) perdia precisão no
+## fragmento e a fase das ondas virava blocos quadrados (captura de 2026-09-24).
+const PERIOD := 256.0
 const SHADER := preload("res://world/regions/harbor_ocean.gdshader")
 var shores: Array[PackedVector2Array] = []
 var material: ShaderMaterial
@@ -31,6 +35,9 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
+	var uvs := PackedVector2Array()
+	# Chunks de 64 m alinhados cabem inteiros num bloco de PERIOD: sem costura dentro do chunk.
+	var base := (rect.position/PERIOD).floor()*PERIOD
 	var indices := PackedInt32Array()
 	for z in range(count+1):
 		for x in range(count+1):
@@ -38,6 +45,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 			vertices.append(Vector3(point.x,WATER_Y,point.y))
 			normals.append(Vector3.UP)
 			colors.append(Color(shore_distance(point)/DEPTH_RANGE,0,0,1))
+			uvs.append(point-base)
 	for z in count:
 		for x in count:
 			var a := z*(count+1)+x
@@ -47,6 +55,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)

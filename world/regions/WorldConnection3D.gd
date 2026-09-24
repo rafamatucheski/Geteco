@@ -4,6 +4,9 @@ extends Node3D
 ## margins, barriers, abutment and tunnel shell so neither region duplicates it.
 
 const UNIT := 1.0 / 16.0
+const HARBOR_OCEAN := preload("res://world/regions/HarborOcean.gd")
+const PIER_FOAM := preload("res://world/regions/bridge_pier_foam.gdshader")
+const PIER_FOAM_REACH := 1.3
 const SEAM := Vector3(7300.0, 0.0, -4560.0) * UNIT
 const HARBOR_ABUTMENT_X := 6300.0 * UNIT
 const HARBOR_CONNECTOR_X := 6480.0 * UNIT
@@ -104,6 +107,7 @@ func _build_bridge() -> void:
 		var x: float = float(source_x)*UNIT
 		for side in [-1.0,1.0]:
 			_box("HarborConnectorPylon",Vector3(x,1.5,CENTER_Z+side*11.2),Vector3(1.75,3.0,1.75),concrete,true)
+			_pier_in_water(Vector3(x,0,CENTER_Z+side*11.2),1.75,concrete)
 	var length := BRIDGE_END_X-SEAM.x
 	# The Mountain road slab ends at y=0. Keep the structural deck just below
 	# it so their coplanar faces cannot alternate in the depth buffer.
@@ -118,9 +122,29 @@ func _build_bridge() -> void:
 		var x: float = float(source_x)*UNIT
 		for side in [-1.0,1.0]:
 			_box("BridgePylon",Vector3(x,2.0,CENTER_Z+side*8.2),Vector3(1.5,4.0,1.5),concrete,true)
+			_pier_in_water(Vector3(x,0,CENTER_Z+side*8.2),1.5,concrete)
 	_build_bridge_lamps(steel)
 	# East shore/access between the authored bridge end and tunnel portal.
 	_box("MountainAbutment",Vector3((BRIDGE_END_X+TUNNEL_START_X)*.5,-.30,CENTER_Z),Vector3(TUNNEL_START_X-BRIDGE_END_X,.54,18.0),edge,true)
+
+## Os pilares começavam em y=0, fora do tabuleiro: ficavam pendurados 0,94 m acima
+## do mar. A base desce até dentro da água e a espuma marca onde ela bate.
+func _pier_in_water(top: Vector3, width: float, concrete: StandardMaterial3D) -> void:
+	var bottom := HARBOR_OCEAN.WATER_Y-2.5
+	_box("BridgePierFooting",Vector3(top.x,(top.y+bottom)*.5,top.z),Vector3(width+.3,top.y-bottom,width+.3),concrete)
+	var foam := MeshInstance3D.new()
+	foam.name = "BridgePierFoam"
+	var quad := PlaneMesh.new()
+	quad.size = Vector2.ONE*(width+.3+PIER_FOAM_REACH*3.2)
+	foam.mesh = quad
+	foam.position = Vector3(top.x,HARBOR_OCEAN.WATER_Y+.02,top.z)
+	foam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var material := ShaderMaterial.new()
+	material.shader = PIER_FOAM
+	material.set_shader_parameter("half_size",Vector2.ONE*(width+.3)*.5)
+	material.set_shader_parameter("reach",PIER_FOAM_REACH)
+	foam.material_override = material
+	add_child(foam)
 
 func _build_bridge_lamps(steel: StandardMaterial3D) -> void:
 	var glass := _material("bridge_lamp_glass",Color("dbc391"))
