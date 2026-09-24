@@ -6,8 +6,9 @@ extends RefCounted
 ## leitura de "prédio da polícia" de jogo:
 ## - fachada: marquise com letreiro luminoso POLÍCIA, lampiões azuis ladeando a
 ##   porta, giroflex vermelho/azul na marquise, faixa de neon azul, pilastras,
-##   mural PROCURADOS com cartazes, câmeras de segurança, frades de proteção,
-##   mastros com bandeiras e aviso de VIATURAS no portão com zebrado no chão;
+##   mural de procurados com cartazes (sem título: o texto ficava torto), câmeras
+##   de segurança e mastros com bandeiras; zebrado no chão do portão. Frades na
+##   calçada e o aviso VIATURAS foram tirados por poluírem a fachada;
 ## - telhado: heliponto com H e luzes de borda, torre de rádio treliçada com
 ##   balizamento, holofote e parabólicas.
 ## Tudo visual (sem colisão), numa malha estática com cor por vértice + poucas
@@ -119,13 +120,6 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 		var x: float = side * (hw - 0.3)
 		KIT.box(t, Vector3(x, 3.5, hz + 0.18), Vector3(0.08, 0.08, 0.3), Color("2b2f31"))
 		KIT.box(t, Vector3(x - side * 0.08, 3.42, hz + 0.38), Vector3(0.18, 0.14, 0.34), Color("e3e4df"), -side * 0.5)
-	# Frades de proteção na calçada, com vão na porta.
-	var x0 := -hw + 0.6
-	while x0 < hw - 0.4:
-		if absf(x0 - ex) > 1.4 and _clear(obstacles, x0, hz + 2.4, 0.2):
-			KIT.cylinder(t, Vector3(x0, 0, hz + 2.4), 0.13, 0.9, Color("3b3f42"), 8)
-			KIT.cylinder(t, Vector3(x0, 0.62, hz + 2.4), 0.135, 0.12, Color("d9b43a"), 8)
-		x0 += 1.3
 	# Mastros com bandeiras (fictícias: Harbor, polícia, estado).
 	var flags := [[Color("1b3f8b"), Color("f2f2ee")], [Color("0f1c33"), Color("d9b43a")], [Color("2c7a4b"), Color("f2f2ee")]]
 	# Os três mastros juntos: procura, da direita da porta para a quina, o
@@ -238,11 +232,6 @@ static func _emissive(kind: String, boxes: Array, xform: Transform3D) -> MeshIns
 static func _labels(chunk: Node3D, building: UrbanBuildingBase, hw: float, hz: float, ex: float) -> void:
 	var xf := building.global_transform
 	_label(chunk, xf * Transform3D(Basis.IDENTITY, Vector3(ex, 2.72, hz + 2.065)), "POLÍCIA", 96, 0.0085, Color("12306e"), 4.0)
-	_label(chunk, xf * Transform3D(Basis.IDENTITY, Vector3(clampf(ex + 3.1, -hw + 1.2, hw - 1.2), 2.4, hz + 0.1)), "PROCURADOS", 64, 0.005, Color("f2e9d0"), 1.7)
-	var bay_w := building.building_size.x * 0.48
-	var bay_x := -hw + 0.6 + bay_w * 0.5
-	# Esquerda da marquise, que cobre o meio do portão vista de cima.
-	_label(chunk, xf * Transform3D(Basis.IDENTITY, Vector3(-hw + 0.6 + (bay_w - 2.2) * 0.5, 2.3, hz + 0.12)), "VIATURAS", 90, 0.008, Color("f2f2ee"), bay_w - 2.6)
 
 
 static func _label(chunk: Node3D, xform: Transform3D, text: String, font_size: int, pixel: float, color: Color, max_width: float) -> void:
