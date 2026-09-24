@@ -33,7 +33,10 @@ const SEWER_ACCESS := Vector2(1182.0, 2114.0) / 16.0
 const SEWER_CLEARANCE := 2.0
 const FURNITURE_SPACING := 7.0
 const DECAL_Y := 0.034
-const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry"]
+const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry",
+	# Mobília de calçada: sem sombra, lixeira/hidrante/jornaleiro pareciam soltos,
+	# flutuando sobre a calçada (relato do jogador em 2026-09-24).
+	"trash_can", "news_box", "mailbox", "hydrant", "stop_sign", "bench_seat", "planter", "bollard", "trash_bags"]
 
 
 static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
@@ -165,8 +168,8 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		else:
 			multimesh.mesh = KIT.mesh(kind)
 			material = KIT.material()
-			# Sombra só em peça grande: hidrante/lixeira/antena dobravam as
-			# primitivas (passada de sombra) sem sombra visível nesta câmera.
+			# Peça de telhado pequena (antena, respiro, antena parabólica) segue sem
+			# sombra: dobrava as primitivas na passada de sombra sem aparecer nesta câmera.
 			shadows = kind in SHADOW_CASTERS
 		multimesh.instance_count = transforms.size()
 		for index in transforms.size():
