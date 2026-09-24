@@ -166,6 +166,9 @@ func build() -> void:
 	var street_physics = preload("res://gameplay/street_physics/StreetPhysics.gd").new()
 	street_physics.controller = self
 	world.add_child(street_physics)
+	var rain_puddles = preload("res://world/rain/RainPuddles3D.gd").new()
+	rain_puddles.controller = self
+	world.add_child(rain_puddles)
 	ready_for_play = true
 	await session.restore_location()
 	curtain.lift()

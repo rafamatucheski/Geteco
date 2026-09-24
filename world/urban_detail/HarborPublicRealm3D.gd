@@ -81,9 +81,9 @@ func _build_union_plaza() -> void:
 		_box("UnionPlazaJoint", Vector3(0, 0.041, float(z)), Vector3(38.3, 0.012, 0.025), "8e8d86")
 	# V1 radii 60/51/40/13 px converted by 16 px/m.
 	_disc("UnionFountainBasin", Vector3(0, 0.30, 0), 3.75, 0.60, "7b8078", true)
-	_disc("UnionFountainWater", Vector3(0, 0.615, 0), 3.19, 0.03, "397d86")
-	_disc("UnionFountainInnerRing", Vector3(0, 0.65, 0), 2.50, 0.06, "92c3be")
 	_disc("UnionFountainPedestal", Vector3(0, 0.93, 0), 0.81, 0.62, "c4c4ad", true)
+	# Água, taça e jato: antes eram dois discos pintados (água e anel claro da V1 2D).
+	add_child(preload("res://world/urban_detail/fountain/UnionFountain3D.gd").new())
 
 func _build_foundry_courtyard() -> void:
 	# Anchor is the shared courtyard centre; preserve the V1 stone/garden split.
