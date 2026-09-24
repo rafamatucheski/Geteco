@@ -46,7 +46,7 @@ func _external_transition_blocked() -> bool:
 	return is_instance_valid(world) and is_instance_valid(world.get("session")) and world.session.has_method("blocks_driving_change") and world.session.blocks_driving_change()
 
 func is_body_transition_active() -> bool:
-	return is_instance_valid(transition)
+	return is_instance_valid(transition) or _jacking
 
 func _player_alive() -> bool:
 	return not is_instance_valid(world.get("gameplay")) or float(world.gameplay.get("health")) > 0
@@ -60,18 +60,31 @@ func _entry_option(allow_transition := false) -> Dictionary:
 		var distance := 5.0
 		for possible in get_tree().get_nodes_in_group("drivable"):
 			if not possible is CharacterBody3D or not possible.is_visible_in_tree() or possible.collision_layer == 0 or possible.has_meta("awaiting_ground"): continue
-			if possible.health <= 0 or absf(possible.speed) > .5: continue
+			if possible.health <= 0 or not _speed_allows_entry(possible): continue
 			var separation: float = possible.global_position.distance_to(world.player.position)
 			if separation < distance:
 				candidate = possible
 				distance = separation
-	if not is_instance_valid(candidate) or absf(candidate.speed) > .5 or candidate.health <= 0: return {}
+	if not is_instance_valid(candidate) or not _speed_allows_entry(candidate) or candidate.health <= 0: return {}
+	var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 1.8
 	for side in (candidate.boarding_sides() if candidate.has_method("boarding_sides") else [-1,1]):
 		var door: Vector3 = candidate.driver_door_anchor(side) if candidate.has_method("driver_door_anchor") else candidate.to_global(Vector3(side*(candidate.half_width+.51),0,0.15))
-		if world.player.position.distance_to(door) > 1.8: continue
+		if world.player.position.distance_to(door) > reach: continue
 		var ray := PhysicsRayQueryParameters3D.create(world.player.position+Vector3.UP*.9,door+Vector3.UP*.9,7,[world.player.get_rid(),candidate.get_rid()])
 		if world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): return {"car":candidate,"side":side,"door":door}
 	return {}
+
+## Roubo em movimento, como no GTA: carro ou moto do trânsito andando até
+## JACK_MAX_SPEED pode ser agarrado pela porta. Carro parado continua igual; viatura
+## em serviço e carro do jogador só parados.
+const JACK_MAX_SPEED := 11.0 # ~40 km/h
+const JACK_DOOR_REACH := 2.8 # a porta passa rápido: alcance maior que o 1,8 m parado
+const JACK_STOP_SECONDS := .4
+var _jacking := false
+
+func _speed_allows_entry(candidate: CharacterBody3D) -> bool:
+	if absf(candidate.speed) <= .5: return true
+	return candidate.traffic and not candidate.get_meta("dispatch_unit",false) and absf(candidate.speed) <= JACK_MAX_SPEED
 
 func can_enter(allow_transition := false) -> bool:
 	return not _entry_option(allow_transition).is_empty()
@@ -114,13 +127,38 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	world.player.collision_mask = 0
 	world.player.show()
 	if not world.camera.locked: world.camera.target = car
+	if absf(car.speed) > .5:
+		_grab_moving(side)
+		return true
+	_start_boarding(side)
+	return true
+
+## Jogador agarrado à porta enquanto o motorista freia; depois segue o roubo normal.
+func _grab_moving(side: int) -> void:
+	_jacking = true
+	var start_speed: float = car.speed
+	var elapsed := 0.0
+	while elapsed < JACK_STOP_SECONDS:
+		await get_tree().physics_frame
+		if not is_instance_valid(car) or car.health <= 0 or not _player_alive():
+			_jacking = false
+			_force_detach("jack_failed")
+			return
+		elapsed += get_physics_process_delta_time()
+		car.speed = lerpf(start_speed, 0.0, clampf(elapsed / JACK_STOP_SECONDS, 0.0, 1.0))
+		var door: Vector3 = car.driver_door_anchor(side)
+		world.player.global_position = Vector3(door.x, world.player.global_position.y, door.z)
+	car.speed = 0.0
+	_jacking = false
+	_start_boarding(side)
+
+func _start_boarding(side: int) -> void:
 	transition = BOARDING_PRESENTATION.new()
 	add_child(transition)
 	transition.entered.connect(_complete_entry)
 	transition.exited.connect(_complete_exit)
 	transition.cancelled.connect(_transition_cancelled)
 	transition.begin_entry(world,car,world.player,side)
-	return true
 
 ## Carro de trânsito tem motorista. Antes o roubo só tirava o carro da faixa e ninguém
 ## saía dele. O motorista desce pela porta dele assim que o ladrão abre a do lado de
@@ -227,7 +265,7 @@ func leave() -> bool:
 	return true
 
 func _reverse_entry_to_exit() -> bool:
-	if not occupied or not is_body_transition_active() or transition.exiting or not transition.reverse_entry_to_exit(): return false
+	if not occupied or not is_instance_valid(transition) or transition.exiting or not transition.reverse_entry_to_exit(): return false
 	if not world.camera.locked:
 		world.camera.target = world.player
 		world.camera.initialized = false
