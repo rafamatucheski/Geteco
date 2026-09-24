@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="Geteco V2"
+config/version="0.2.0"
 run/main_scene="res://ui/MainMenu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="GetecoV2"
@@ -22,6 +23,7 @@ run/max_fps=60
 GameInput="*res://runtime/GameInput.gd"
 V2Settings="*res://runtime/Settings.gd"
 V2Launch="*res://runtime/SessionLaunch.gd"
+BuildWatermark="*res://ui/BuildWatermark.gd"
 
 [display]
 
