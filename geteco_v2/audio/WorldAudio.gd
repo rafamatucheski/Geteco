@@ -4,10 +4,15 @@ const V1_AUDIO := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
 const SURFACES := preload("res://audio/v1_ambience/SurfaceResolver3D.gd")
 const PROFILES := preload("res://audio/v1_ambience/AmbienceProfile.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
+const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
+const ROAD_SOUND := preload("res://audio/vehicle_fx/road.wav")
+const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
+const TURBO_SHIFT_SOUNDS := [preload("res://audio/vehicle_fx/turbo_shift_0.wav"), preload("res://audio/vehicle_fx/turbo_shift_1.wav"), preload("res://audio/vehicle_fx/turbo_shift_2.wav")]
+const SPORT_BLOWOFF_SOUNDS := [preload("res://audio/vehicle_fx/sport_blowoff_0.wav"), preload("res://audio/vehicle_fx/sport_blowoff_1.wav"), preload("res://audio/vehicle_fx/sport_blowoff_2.wav")]
 const NEARBY_VEHICLE_AUDIO := preload("res://audio/vehicle_ambience/NearbyVehicleAudio.gd")
 const BED_OFFSETS := {"city":-10.0,"water":-6.0,"port":-15.0,"birds":-9.0,"crickets":-10.0,"workshop":-20.0}
 var world
-var layers: Array[AudioStreamPlayer3D] = []
+var layers: Array[AudioStreamPlayer] = []
 var engine_car: CharacterBody3D
 var radio: AudioStreamPlayer
 var ambience: AudioStreamPlayer
@@ -23,7 +28,18 @@ var step_distance := 0.0
 var previous := Vector3.ZERO
 var family := ""
 var engine_archetype := ""
-var resolved_families: Dictionary = {}
+var engine_gear := 1
+var engine_rpm := 0.0
+var engine_shift_cooldown := 0.0
+var engine_load := 0.0
+var engine_turbo_pressure := 0.0
+var engine_last_throttle := 0.0
+var engine_fx_cooldown := 0.0
+var engine_fx_variant := 0
+var engine_was_moving_fast := false
+var road_audio: AudioStreamPlayer
+var shift_audio: AudioStreamPlayer
+var air_brake_audio: AudioStreamPlayer
 var water_steps: Node3D
 var ambience_clock := .25
 var detail_clock := 5.0
@@ -43,7 +59,7 @@ var radio_notice_time := 0.0
 func _exit_tree() -> void:
 	if is_instance_valid(vehicle_ambience) and vehicle_ambience.has_method("shutdown"):
 		vehicle_ambience.shutdown()
-	for channel in [radio, footsteps, detail] + beds.values() + layers:
+	for channel in [radio, footsteps, detail, road_audio, shift_audio, air_brake_audio] + beds.values() + layers:
 		if not is_instance_valid(channel): continue
 		channel.stop()
 		channel.stream = null
@@ -93,11 +109,30 @@ func _ready() -> void:
 		vehicle_ambience.queue_free()
 		vehicle_ambience = null
 	for index in 7:
-		var layer := AudioStreamPlayer3D.new()
-		layer.max_distance = 45
-		layer.unit_size = 12
-		world.add_child(layer)
+		# The listener camera sits about 36 m above the occupied car. In V1 the
+		# driver's engine was foreground audio, so it must not fade with that gap.
+		var layer := AudioStreamPlayer.new()
+		layer.name = "PlayerEngineBand%d" % index
+		layer.bus = _bus(&"SFX")
+		layer.max_polyphony = 1
+		add_child(layer)
 		layers.append(layer)
+	road_audio = AudioStreamPlayer.new()
+	road_audio.name = "PlayerRoadNoise"
+	road_audio.bus = _bus(&"SFX")
+	var road_stream := ROAD_SOUND.duplicate() as AudioStreamWAV
+	road_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	road_stream.loop_end = maxi(1, roundi(road_stream.get_length() * road_stream.mix_rate) - 8)
+	road_audio.stream = road_stream
+	add_child(road_audio)
+	shift_audio = AudioStreamPlayer.new()
+	shift_audio.name = "PlayerTurboRelease"
+	shift_audio.bus = _bus(&"SFX")
+	add_child(shift_audio)
+	air_brake_audio = AudioStreamPlayer.new()
+	air_brake_audio.name = "PlayerAirBrake"
+	air_brake_audio.bus = _bus(&"SFX")
+	add_child(air_brake_audio)
 func _bus(preferred: StringName) -> StringName:
 	return preferred if AudioServer.get_bus_index(preferred)>=0 else &"Master"
 func _make_bed(id: String, stream: AudioStream) -> void:
@@ -224,49 +259,137 @@ func _process(delta: float) -> void:
 			# exatamente igual) em vez do mesmo dB fixo toda vez.
 			footsteps.volume_db = FOOTSTEP_VOLUME_DB + rng.randf_range(-1.5,1.5)
 			footsteps.play()
-	if not moving:
+	if not moving or not is_instance_valid(world.driving.car) or world.driving.car.health <= 0 or world.driving.car.engine_disabled:
 		engine_car = null
 		engine_archetype = ""
 		for layer in layers: if layer.playing: layer.stop()
+		for channel in [road_audio, shift_audio, air_brake_audio]: if channel.playing: channel.stop()
 		return
 	var current_car: CharacterBody3D = world.driving.car
-	if not is_instance_valid(current_car): return
 	_sync_engine_family(current_car)
-	var ratio: float = absf(engine_car.speed)/maxf(engine_car.max_forward_speed,1)
-	var gear := mini(5,int(ratio*6))
-	var rpm := clampf(.15+fmod(ratio*6,1)*.7+absf(engine_car.throttle_input)*.12,0,1)*6
+	var tops: Array = ENGINE_PROFILE.GEAR_TOPS.get(family, ENGINE_PROFILE.GEAR_TOPS.street)
+	var nominal: Array = ENGINE_PROFILE.NOMINAL.get(family, ENGINE_PROFILE.NOMINAL.street)
+	var ratio := clampf(absf(current_car.speed) / maxf(float(current_car.max_forward_speed), 1.0), 0.0, 1.0)
+	var throttle := absf(float(current_car.throttle_input))
+	if family == "electric" and ratio < 0.02 and throttle < 0.01:
+		for layer in layers: if layer.playing: layer.stop()
+		if road_audio.playing: road_audio.stop()
+		return
+	engine_load = lerpf(engine_load, throttle, 1.0 - exp(-delta * 9.0))
+	engine_shift_cooldown = maxf(0.0, engine_shift_cooldown - delta)
+	engine_fx_cooldown = maxf(0.0, engine_fx_cooldown - delta)
+	var previous_gear := engine_gear
+	if ratio < 0.006:
+		engine_gear = 1
+		engine_shift_cooldown = 0.0
+	elif engine_shift_cooldown <= 0.0:
+		if engine_gear < tops.size() and ratio > float(tops[engine_gear - 1]):
+			engine_gear += 1
+			engine_shift_cooldown = 0.25 if family in ["truck", "bus", "fire_diesel"] else 0.16
+		elif engine_gear > 1 and ratio < float(tops[engine_gear - 2]) - 0.045:
+			engine_gear -= 1
+			engine_shift_cooldown = 0.16
+	var idle := float(nominal[0]) / float(nominal[6])
+	var gear_top := float(tops[engine_gear - 1])
+	var top_fraction := lerpf(0.86, 1.0, float(engine_gear - 1) / maxf(float(tops.size() - 1), 1.0))
+	if engine_gear == tops.size(): top_fraction = 0.87
+	var target := maxf(idle, clampf(ratio / maxf(gear_top, 0.01) * top_fraction, 0.0, 1.0))
+	if ratio < 0.03: target = maxf(target, idle + engine_load * (1.0 - idle) * 0.62)
+	engine_rpm = lerpf(engine_rpm, target, 1.0 - exp(-delta * (18.0 if ratio > 0.03 else 8.0)))
+	var spec: Dictionary = FLEET.spec(engine_archetype)
+	_update_vehicle_foley(current_car, spec, ratio, throttle, previous_gear)
+	var tint := pow(maxf(float(spec.get("engine_pitch", 1.0)), 0.3), 0.35)
+	var cycles := float(nominal[6]) * engine_rpm * tint
+	var timbre := cycles / maxf(tint, 0.3) * (0.8 + 0.2 * engine_load)
+	var lower := 0
+	while lower < 5 and timbre > float(nominal[lower + 1]): lower += 1
+	var upper := lower + 1
+	var blend := clampf(log(maxf(timbre, 0.5) / float(nominal[lower])) / maxf(log(float(nominal[upper]) / float(nominal[lower])), 0.001), 0.0, 1.0)
+	var master := -20.0 + engine_load * 7.0 + engine_rpm * 6.5 + ratio * 1.5
+	if family == "vq35": master -= 5.0
+	if family == "electric": master -= 13.0
 	for index in 7:
-		var weight := maxf(0,1-absf(rpm-index))
-		layers[index].global_position = engine_car.global_position
-		layers[index].volume_db = linear_to_db(maxf(.0001,sqrt(weight)))-17
-		layers[index].pitch_scale = lerpf(layers[index].pitch_scale,1.0+gear*.015,minf(1,delta*5))
-		if layers[index].stream != null and not layers[index].playing: layers[index].play()
+		var share := cos(blend * PI * 0.5) if index == lower else (sin(blend * PI * 0.5) if index == upper else 0.0)
+		var layer := layers[index]
+		if share <= 0.002 or layer.stream == null:
+			if layer.playing: layer.stop()
+			continue
+		layer.pitch_scale = clampf(cycles / float(nominal[index]), 0.35, 3.0)
+		layer.volume_db = master + linear_to_db(share)
+		if not layer.playing: layer.play()
 
 func _sync_engine_family(car: CharacterBody3D) -> void:
 	var archetype := str(car.archetype)
 	if engine_car == car and engine_archetype == archetype: return
 	engine_car = car
 	engine_archetype = archetype
-	var next_family := ""
-	if resolved_families.has(archetype):
-		next_family = str(resolved_families[archetype])
-	else:
-		var spec: Dictionary = FLEET.spec(archetype)
-		next_family = str(spec.get("engine_family","sport"))
-		if not ResourceLoader.exists("res://audio/acoustic/engine_"+next_family+"_0.wav"):
-			next_family = "street"
-		resolved_families[archetype] = next_family
+	engine_gear = 1
+	engine_rpm = 0.0
+	engine_load = 0.0
+	engine_shift_cooldown = 0.0
+	engine_turbo_pressure = 0.0
+	engine_last_throttle = 0.0
+	engine_fx_cooldown = 0.0
+	engine_was_moving_fast = false
+	for channel in [road_audio, shift_audio, air_brake_audio]: if channel.playing: channel.stop()
+	var next_family: String = ENGINE_PROFILE.bank_family(archetype)
 	if next_family == family: return
 	family = next_family
 	for index in 7:
+		layers[index].stop()
 		var source := load("res://audio/acoustic/engine_%s_%d.wav"%[family,index])
 		if not source is AudioStreamWAV:
 			layers[index].stream = null
 			continue
 		var stream := source.duplicate() as AudioStreamWAV
 		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_end = roundi(stream.get_length()*stream.mix_rate)
+		stream.loop_end = maxi(1, roundi(stream.get_length()*stream.mix_rate) - 8)
 		layers[index].stream = stream
+
+func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, ratio: float, throttle: float, previous_gear: int) -> void:
+	# V1 VehicleEngineSound._update_road: an absolute-speed cue independent of RPM.
+	if ratio < 0.04:
+		if road_audio.playing: road_audio.stop()
+	else:
+		var heavy := family in ["truck", "bus", "fire_diesel"]
+		road_audio.pitch_scale = clampf((0.72 + ratio * 0.85) * (0.78 if heavy else 1.0), 0.4, 2.0)
+		road_audio.volume_db = -42.0 + ratio * 21.0 + (3.0 if heavy else 0.0)
+		if not road_audio.playing: road_audio.play()
+	var heavy_turbo := family in ["bus", "fire_diesel"]
+	var sport_turbo := bool(spec.get("turbo_audio", false))
+	if sport_turbo:
+		var pressure_target := throttle * smoothstep(0.24, 0.82, engine_rpm)
+		engine_turbo_pressure = lerpf(engine_turbo_pressure, pressure_target,
+			1.0 - exp(-get_process_delta_time() * (3.6 if pressure_target > engine_turbo_pressure else 7.0)))
+	else:
+		engine_turbo_pressure = 0.0
+	if engine_gear > previous_gear and heavy_turbo and (engine_load > 0.20 or engine_rpm > 0.30):
+		_play_vehicle_fx(TURBO_SHIFT_SOUNDS, clampf(-7.0 + engine_load * 6.0 + engine_rpm * 3.0, -14.0, 2.0) - (8.0 if family == "truck" else 0.0))
+	elif engine_gear > previous_gear and sport_turbo and engine_turbo_pressure > 0.16:
+		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-11.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -13.0, -1.0))
+	if heavy_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.65 and throttle < 0.15 and engine_rpm > 0.42:
+		_play_vehicle_fx(TURBO_SHIFT_SOUNDS, -2.0)
+	if sport_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.58 and throttle < 0.16 and engine_turbo_pressure > 0.18:
+		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-11.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -13.0, -1.0))
+		engine_turbo_pressure *= 0.24
+	if family in ["truck", "bus", "fire_diesel"]:
+		if absf(float(car.speed)) > 1.25: engine_was_moving_fast = true
+		elif engine_was_moving_fast and absf(float(car.speed)) < 0.375 and throttle < 0.1:
+			engine_was_moving_fast = false
+			air_brake_audio.stream = AIR_BRAKE_SOUND
+			air_brake_audio.volume_db = -6.0
+			air_brake_audio.pitch_scale = randf_range(0.96, 1.04)
+			air_brake_audio.play()
+	engine_last_throttle = throttle
+
+func _play_vehicle_fx(sounds: Array, volume: float) -> void:
+	if engine_fx_cooldown > 0.0: return
+	engine_fx_variant = (engine_fx_variant + 1) % sounds.size()
+	shift_audio.stream = sounds[engine_fx_variant]
+	shift_audio.volume_db = volume
+	shift_audio.pitch_scale = 0.96 + engine_rpm * 0.12
+	shift_audio.play()
+	engine_fx_cooldown = 0.18
 
 func _update_ambience(delta: float) -> void:
 	if world.session == null: return

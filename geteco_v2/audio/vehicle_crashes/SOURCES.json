@@ -1,0 +1,38 @@
+{
+  "squareal": {
+    "file": "squareal_car_crash.mp3",
+    "author": "squareal",
+    "title": "Car Crash",
+    "page": "https://freesound.org/people/squareal/sounds/237375/",
+    "download": "https://cdn.freesound.org/previews/237/237375_1502374-hq.mp3",
+    "description": "Recorded metal cabinet impact, grit and broken glass Foley.",
+    "sha256": "6587ffc83281ecea17bf41a37e461c93d73424b478759e78dad35d71310823da",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "format_note": "Public high-quality MP3 preview; edited to mono PCM WAV."
+  },
+  "metal": {
+    "file": "675460.mp3",
+    "author": "craigsmith",
+    "title": "S37-12 Car crash; no motor sound; metallic.wav",
+    "page": "https://freesound.org/people/craigsmith/sounds/675460/",
+    "download": "https://cdn.freesound.org/previews/675/675460_2524442-hq.mp3",
+    "description": "Digitized vintage film crash effect, metal collision without engine.",
+    "sha256": "47a0c6a7201da53b6b6356127d81f0c8748c60ec9f8b94680ee6f1ddb8b759b0",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "format_note": "Public high-quality MP3 preview; edited to mono PCM WAV."
+  },
+  "glass": {
+    "file": "592388.mp3",
+    "author": "magnuswaker",
+    "title": "Car Crash (with Glass)",
+    "page": "https://freesound.org/people/magnuswaker/sounds/592388/",
+    "download": "https://cdn.freesound.org/previews/592/592388_11537497-hq.mp3",
+    "description": "Recorded metal panels colliding, layered with recorded glass shattering.",
+    "sha256": "0169d0fe29c4aba3cf1b0dd94c186a5fb917e9eef975c9a1485568d4a325d822",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "format_note": "Public high-quality MP3 preview; edited to mono PCM WAV."
+  }
+}
