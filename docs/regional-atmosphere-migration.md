@@ -45,7 +45,7 @@ Não houve alterações de geometria, colisões, câmera, móveis, dano ou armas
   de integração terminou com aviso de 12 objetos e quatro recursos retidos ao
   encerrar Main; os checks funcionais passaram, mas a limpeza global não está
   certificada por este teste.
-- Comparação renderizada: `tests/measure_regional_atmosphere.gd`; dados brutos,
+- Comparação renderizada: `tests/measure/measure_regional_atmosphere.gd`; dados brutos,
   aquecimento, capturas e logs em `evidence/atmosphere-before` e
   `evidence/atmosphere-after` (primeira rodada) e `evidence/atmosphere-final`
   (rodada completa após revisão). Oito pontos de observação, não uma rota completa.

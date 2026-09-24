@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 var combat_mode := false
 var fire_clock := 0.0
 var combat_alive_seconds := 0.0

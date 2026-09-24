@@ -2,7 +2,7 @@ extends SceneTree
 ## Custo de N pedestres civis andando, com renderização real (nunca headless:
 ## o driver dummy tira o sentido de draw calls e tempo de quadro).
 ## Uso:
-##   "$GODOT" --path . --script res://tests/measure_pedestrian_cost.gd -- --model=res://assets/CivilianModel.gd --count=96
+##   "$GODOT" --path . --script res://tests/measure/measure_pedestrian_cost.gd -- --model=res://assets/CivilianModel.gd --count=96
 ## Relata percentis em milissegundos (não FPS) e as draw calls do quadro.
 var model_path := "res://assets/CivilianModel.gd"
 var count := 96

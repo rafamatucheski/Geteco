@@ -13,7 +13,7 @@ O descarregamento acompanha os chunks existentes. A distância é uma aproximaç
 ## Evidência e limites
 
 - `tests/test_harbor_ocean.gd`: PASS, distância em metros, limite de geometria, material compartilhado, altura original, ausência de colisão e igualdade dos vértices/cores nas emendas.
-- `tests/measure_harbor_ocean.gd --capture-only`: executado em Main.tscn real, Mobile/Vulkan, RTX 4060 Laptop, 1280×720, população solicitada 24, sem gravar save. Capturas de dia, caminhada e noite inspecionadas; execução renderizada sem erros no stderr.
+- `tests/measure/measure_harbor_ocean.gd --capture-only`: executado em Main.tscn real, Mobile/Vulkan, RTX 4060 Laptop, 1280×720, população solicitada 24, sem gravar save. Capturas de dia, caminhada e noite inspecionadas; execução renderizada sem erros no stderr.
 - Imagens: `evidence/harbor-ocean.png`, `evidence/harbor-ocean-walk.png`, `evidence/harbor-ocean-night.png`.
 - A execução funcional headless passou, mas o sandbox emitiu avisos de acesso aos logs de usuário e à loja de certificados. A execução renderizada posterior gravou logs no workspace.
 - **Performance pendente por solicitação do usuário.** Nenhum FPS ou frame time desta entrega foi aprovado. Havia processos Godot de outras sessões; não foram encerrados. Não foi capturada baseline antes da edição.

@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 ## Rendered Main scene: fixed harbor views, then a 30 s south-port frame sample.
 ## Run with --no-save --skip-arrival --benchmark --population=24.
 var output_root := "user://port-ships-v2"

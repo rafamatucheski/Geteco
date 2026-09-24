@@ -1,6 +1,6 @@
 extends SceneTree
 ## Amostra de tempo de quadro do combate na sessão de produção (janela real; NÃO usar --headless).
-##   godot --path . --script res://tests/measure_combat.gd -- --no-save --skip-arrival --population=8 --seed=7
+##   godot --path . --script res://tests/measure/measure_combat.gd -- --no-save --skip-arrival --population=8 --seed=7
 ## Fases (mesma cena, mesma câmera, mesmo estado): `idle` (parado, sem armas em uso) e `combat` (SMG automática
 ## contra civis parados + granadas/RPG periódicos). Reporta ms, não FPS convertido. Grava evidence/combat/measure.json.
 ## Não altera saves (`--no-save`). Comparação válida só na mesma máquina, sem outros benchmarks rodando.

@@ -1,6 +1,6 @@
 param([switch]$AllowConcurrent, [int[]]$Counts = @(0,24,96), [string]$Prefix = '', [switch]$Driving, [switch]$Interior, [switch]$Sandbox, [switch]$Native, [switch]$Combat, [switch]$TraceRuntime)
 $ErrorActionPreference = 'Stop'
-$prototypeRoot = Split-Path -Parent $PSScriptRoot
+$prototypeRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $engine = 'D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
 if ($Prefix -notmatch '^[a-zA-Z0-9-]*$') { throw 'Prefixo inválido.' }
 foreach ($count in $Counts) {
@@ -15,8 +15,8 @@ foreach ($count in $Counts) {
     $errorLog = Join-Path $prototypeRoot "evidence/$label.err"
     $snapshots = [System.Collections.Generic.List[object]]::new()
     $snapshots.Add(@{utc=[DateTime]::UtcNow.ToString('o'); phase='before'; processes=$existing})
-    $runArguments = @('--path',('"'+$prototypeRoot+'"'),'--script','res://tests/measure.gd','--',"--population=$count","--label=$label")
-    if ($Native) { $runArguments[3] = 'res://tests/measure_full.gd'; $runArguments += '--benchmark' }
+    $runArguments = @('--path',('"'+$prototypeRoot+'"'),'--script','res://tests/measure/measure.gd','--',"--population=$count","--label=$label")
+    if ($Native) { $runArguments[3] = 'res://tests/measure/measure_full.gd'; $runArguments += '--benchmark' }
     if ($Driving) { $runArguments += '--drive' }
     if ($Combat) { $runArguments += '--combat' }
     if ($TraceRuntime) { $runArguments += '--trace-runtime' }

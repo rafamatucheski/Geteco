@@ -1,6 +1,6 @@
 param([string]$Label = 'before', [switch]$Baseline)
 $ErrorActionPreference = 'Stop'
-$danteRoot = Split-Path -Parent $PSScriptRoot
+$danteRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $danteEngine = 'D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe'
 $danteOutput = Join-Path $danteRoot 'evidence/dante-deformation-0922'
 $danteHashes = Get-ChildItem -LiteralPath $danteRoot -Recurse -File -Filter '*.gd' | Where-Object { $_.FullName -notmatch '\\(evidence|tests|assets|\.godot)\\' } | Get-FileHash
@@ -9,7 +9,7 @@ $danteExisting = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" | 
 if (@($danteExisting | Where-Object { $_.CommandLine -notmatch '(^|\s)--editor(\s|$)' }).Count -gt 0) { throw 'Outro runtime Godot ativo; benchmark recusado.' }
 $danteProcesses = [Collections.Generic.List[object]]::new()
 $danteProcesses.Add(@{time=[DateTime]::UtcNow.ToString('o');processes=$danteExisting})
-$danteArgs = @('--path', ('"'+$danteRoot+'"'), '--script', 'res://tests/capture_dante_deformation.gd', '--', '--no-save', '--skip-arrival', '--population=24', "--dante-label=$Label")
+$danteArgs = @('--path', ('"'+$danteRoot+'"'), '--script', 'res://tests/capture/capture_dante_deformation.gd', '--', '--no-save', '--skip-arrival', '--population=24', "--dante-label=$Label")
 if ($Baseline) { $danteArgs += '--dante-baseline' }
 $danteProcess = Start-Process -FilePath $danteEngine -ArgumentList $danteArgs -WindowStyle Hidden -RedirectStandardOutput (Join-Path $danteOutput "$Label-measure.log") -RedirectStandardError (Join-Path $danteOutput "$Label-measure.err") -PassThru
 $danteWatch = [Diagnostics.Stopwatch]::StartNew()

@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 var cold_enabled := false
 var cold_adapter: Node
 func run() -> void:

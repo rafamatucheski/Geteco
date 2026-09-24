@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 ## Rendered Main. PNG readbacks occur outside frame-time sampling.
 func run() -> void:
 	if DisplayServer.get_name()=="headless": quit(2); return

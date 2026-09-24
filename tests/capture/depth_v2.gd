@@ -1,4 +1,4 @@
-extends "res://tests/visual_depth.gd"
+extends "res://tests/capture/visual_depth.gd"
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	world = load("res://Main.tscn").instantiate()

@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 ## Same production scene and seeded conditions before/after. Never writes saves.
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return

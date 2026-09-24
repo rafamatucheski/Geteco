@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 ## Rendered production scene. --capture-only for visual QA; otherwise 5s warmup + 30s.
 ## Run with --no-save --skip-arrival --benchmark --population=24.
 class LegacyWater extends RefCounted:

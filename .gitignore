@@ -24,3 +24,6 @@ evidence/export/
 .secrets/
 *.err
 __pycache__/
+
+# Relatórios de cada execução da suíte (tests/run_suite.ps1): mudam a cada rodada.
+evidence/test-suite/

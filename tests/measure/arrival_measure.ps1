@@ -1,6 +1,6 @@
 param([switch]$Cgi, [string]$Label = '')
 $ErrorActionPreference = 'Stop'
-$arrivalRoot = Split-Path -Parent $PSScriptRoot
+$arrivalRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $arrivalEngine = 'D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
 $arrivalLabel = if ($Cgi) { 'arrival-cgi' } else { 'arrival-tour' }
 if ($Label -ne '') {
@@ -12,7 +12,7 @@ $arrivalRunning = @($arrivalExisting | Where-Object { $_.CommandLine -notmatch '
 if ($arrivalRunning.Count -gt 0) { throw 'Outro jogo ativo: medição não iniciada.' }
 $arrivalSamples = [System.Collections.Generic.List[object]]::new()
 $arrivalSamples.Add(@{utc=[DateTime]::UtcNow.ToString('o');phase='before';processes=$arrivalExisting})
-$arrivalArguments = @('--path',('"'+$arrivalRoot+'"'),'--script','res://tests/arrival_measure.gd','--','--no-save','--skip-arrival','--benchmark','--population=24')
+$arrivalArguments = @('--path',('"'+$arrivalRoot+'"'),'--script','res://tests/measure/arrival_measure.gd','--','--no-save','--skip-arrival','--benchmark','--population=24')
 $arrivalArguments += "--label=$arrivalLabel"
 if ($Cgi) { $arrivalArguments += '--cgi' }
 $arrivalLog = Join-Path $arrivalRoot "evidence/$arrivalLabel.log"

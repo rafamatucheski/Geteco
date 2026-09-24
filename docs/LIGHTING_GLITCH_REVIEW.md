@@ -25,7 +25,7 @@ Nenhuma correção visual foi aplicada por esta frente. A única causa confirmad
 
 ## Método reproduzível
 
-O roteiro `tests/capture_lighting_glitches.gd` instancia `Main.tscn` com `--no-save`, tempo limpo, população e tráfego desativados para isolar o cenário. Para cada local, registra duas imagens paradas, uma durante a interpolação da câmera, outra após estabilizar, zoom próximo, zoom distante e rotação de 90°. Repete em dia (`time_of_day = 0.36`, aproximadamente 08:38) e noite (`0.84`, aproximadamente 20:10).
+O roteiro `tests/capture/capture_lighting_glitches.gd` instancia `Main.tscn` com `--no-save`, tempo limpo, população e tráfego desativados para isolar o cenário. Para cada local, registra duas imagens paradas, uma durante a interpolação da câmera, outra após estabilizar, zoom próximo, zoom distante e rotação de 90°. Repete em dia (`time_of_day = 0.36`, aproximadamente 08:38) e noite (`0.84`, aproximadamente 20:10).
 
 | Local | Posição inicial → final (m) | Câmera | Condição de carga |
 |---|---|---|---|
@@ -138,7 +138,7 @@ Observação de concorrência: `WorldConnection3D.gd` e `NativeRegion.gd` foram 
 
 ## Correções aplicadas
 
-- Adicionado `tests/capture_lighting_glitches.gd`, harness sem save para repetir as condições acima e registrar carga regional/câmera.
+- Adicionado `tests/capture/capture_lighting_glitches.gd`, harness sem save para repetir as condições acima e registrar carga regional/câmera.
 - Corrigida a espera do próprio harness após um salto diagnóstico: agora ele só fotografa depois de todos os chunks residentes chegarem a zero pendências e registra a posição real do jogador.
 - Nenhum arquivo de runtime, material ou shader foi alterado. Nenhuma causa demonstrada pertence a material/shader exclusivo disponível para esta frente.
 

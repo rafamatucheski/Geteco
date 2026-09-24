@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 var control := false
 var stock_count := 0
 var guard_count := 0

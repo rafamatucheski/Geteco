@@ -1,4 +1,4 @@
-extends "res://tests/capture_lighting_glitches.gd"
+extends "res://tests/capture/capture_lighting_glitches.gd"
 ## Sequential images are visual evidence only, never frame-time samples.
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return

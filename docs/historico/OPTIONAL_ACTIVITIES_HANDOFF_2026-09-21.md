@@ -86,7 +86,7 @@ No V2, `PlaceCatalog.definitions()` entrega os prêmios de interiores a `NativeP
 ## Arquivos desta frente
 
 - Criado: `geteco_v2/activities/V1OptionalRewardPolicy.gd`.
-- Criado: `geteco_v2/docs/OPTIONAL_ACTIVITIES_HANDOFF_2026-09-21.md`.
+- Criado: `geteco_v2/docs/historico/OPTIONAL_ACTIVITIES_HANDOFF_2026-09-21.md`.
 - Nenhum arquivo existente foi alterado.
 - Nenhum arquivo central, ocupado ou pertencente às outras frentes foi editado.
 

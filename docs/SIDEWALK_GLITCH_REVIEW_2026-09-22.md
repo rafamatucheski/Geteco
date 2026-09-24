@@ -31,7 +31,7 @@ Preservados materiais, cores, UVs mundiais, altura y=0,006, pontos de acesso e c
 - `tests/test_regional_atmosphere.gd`: 25 checks, zero falhas.
 - `tests/test_weather_lighting_parity.gd -- --no-save --skip-arrival`: **falhou** na igualdade da cor diurna com `HARBOR_SUN_DAY` em t=0,45. Weather conserva o mesmo SHA256 anterior à correção; a divergência entre expectativa fixa e perfil atmosférico atual não foi alterada nesta frente.
 - `tests/test_weather_atmosphere_integration.gd`: primeira execução contaminada por erro concorrente de TrunkView; após correção desse arquivo pela outra frente, repetição justificada terminou limpa, saída 0, 20 checks e `errors=[]`. Inclui entrada real na garagem, suspensão da atmosfera exterior e restrição de armas. Log: `evidence/sidewalk-atmosphere-integration.log`. Não substitui o teste integrado de combate.
-- `tests/measure_sidewalk_glitches.gd`: sintaxe verificada com `--check-only`; execução de performance ainda não aprovada.
+- `tests/measure/measure_sidewalk_glitches.gd`: sintaxe verificada com `--check-only`; execução de performance ainda não aprovada.
 
 ## Performance: não aprovada / sem comparativo válido
 

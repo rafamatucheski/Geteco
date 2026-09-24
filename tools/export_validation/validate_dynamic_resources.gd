@@ -326,7 +326,7 @@ func _validate_exclusions() -> void:
 		"res://evidence/controls-functional.json",
 	]:
 		_check(not ResourceLoader.exists(path) and not FileAccess.file_exists(path), "[exclusions] arquivo de desenvolvimento entrou no pacote: %s" % path)
-	_check(not FileAccess.file_exists("res://docs/GLOBAL_MIGRATION_STATUS_2026-09-21.md"), "[exclusions] documentação entrou no pacote")
+	_check(not FileAccess.file_exists("res://docs/historico/GLOBAL_MIGRATION_STATUS_2026-09-21.md"), "[exclusions] documentação entrou no pacote")
 
 func _read_json(path: String, label: String) -> Variant:
 	checks += 1

@@ -58,7 +58,7 @@ Escopo desta rodada: revisão por código e correções isoladas em `runtime/Ser
 
 - `geteco_v2/runtime/Services.gd`: contenção da rota genérica insegura do mecânico.
 - `geteco_v2/data/catalogs/ServiceCatalog.gd`: remove a falsa referência ao preço legado de R$ 150 e registra os contratos produtivos de reparo/recuperação da Monaliza a R$ 50, Northgate e colete.
-- `geteco_v2/docs/SERVICES_FLOW_HANDOFF_2026-09-21.md`: evidências, integrações e lacunas desta frente.
+- `geteco_v2/docs/historico/SERVICES_FLOW_HANDOFF_2026-09-21.md`: evidências, integrações e lacunas desta frente.
 - `geteco_v2/data/catalogs/ServiceDialogue.gd`: conferido, não alterado.
 
 ## Hipóteses e verificações não executadas

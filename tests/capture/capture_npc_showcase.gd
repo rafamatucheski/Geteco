@@ -2,7 +2,7 @@ extends SceneTree
 ## Vitrine dos NPCs com o corpo articulado dos pedestres: polícia (escalões e
 ## armas), socorristas com maca, residentes, caixas, garagem do Maciota e
 ## moradores da montanha. Só evidência visual.
-## Uso: "$GODOT" --path . --script res://tests/capture_npc_showcase.gd -- --out=<pasta res://>
+## Uso: "$GODOT" --path . --script res://tests/capture/capture_npc_showcase.gd -- --out=<pasta res://>
 var output_dir := "res://evidence/npc-look-0922"
 var police: Array = []
 var movers: Array = []

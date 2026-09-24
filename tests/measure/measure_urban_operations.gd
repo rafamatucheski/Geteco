@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 ## Rendered, finite benchmark for the two Harbor locations changed by the
 ## V1 urban-operations migration. Functional validation lives in a separate
 ## headless test; this script measures the integrated Main scene only.

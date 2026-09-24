@@ -1,4 +1,4 @@
-extends "res://tests/capture_lighting_glitches.gd"
+extends "res://tests/capture/capture_lighting_glitches.gd"
 ## One-variable rendered diagnostics. No persistent runtime mutation or saves.
 const SURFACE := preload("res://world/urban_detail/HarborUrbanSurface3D.gd")
 var snapshots: Array = []

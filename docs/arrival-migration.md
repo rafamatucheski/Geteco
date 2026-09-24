@@ -57,4 +57,4 @@ Capturas inspecionadas:
 
 **Lacuna visual confirmada:** a região do desembarque ainda é um terreno amplo com o ônibus e a rua, sem a arquitetura/ambientação completa da rodoviária original. Portanto a apresentação da CGI e o funcionamento/desempenho do adapter foram validados, mas a paridade gráfica do terminal não foi declarada concluída. Essa geometria pertence ao mundo regional e não foi substituída por cenografia inventada neste adapter.
 
-Fixture reproduzível: `tests/arrival_measure.ps1 -Cgi` e `tests/arrival_measure.ps1 -Label arrival-tour-fixed`. JSONs contêm todas as amostras, métricas e resultados físicos. Novas execuções devem usar outro identificador para preservar estas evidências.
+Fixture reproduzível: `tests/measure/arrival_measure.ps1 -Cgi` e `tests/measure/arrival_measure.ps1 -Label arrival-tour-fixed`. JSONs contêm todas as amostras, métricas e resultados físicos. Novas execuções devem usar outro identificador para preservar estas evidências.

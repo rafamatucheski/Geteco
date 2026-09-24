@@ -1,8 +1,8 @@
 extends SceneTree
 ## Vitrine dos pedestres civis: parados, andando e correndo, na mesma projeção
 ## ortográfica de 45° do jogo e num close. Só evidência visual; nada aqui é
-## medida de desempenho (ver tests/measure_pedestrian_cost.gd).
-## Uso: "$GODOT" --path . --script res://tests/capture_pedestrian_showcase.gd -- --out=<pasta res://>
+## medida de desempenho (ver tests/measure/measure_pedestrian_cost.gd).
+## Uso: "$GODOT" --path . --script res://tests/capture/capture_pedestrian_showcase.gd -- --out=<pasta res://>
 const MODEL := preload("res://assets/CivilianModel.gd")
 var output_dir := "res://evidence/pedestrian-look-0922"
 var movers: Array = []

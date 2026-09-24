@@ -51,7 +51,7 @@ Revisão do bueiro no jogo 3D, 22/09: tampa fechada por padrão, abertura desliz
 - [x] Geometria e posições: testes dirigidos de regiões, cápsulas dos oito residentes originais e sete posições de veículos da garagem do chefe aprovados.
 - [x] Apresentação e oclusão amostradas separadamente: 56 fotos de entrada/atrás de mobiliário, mais quatro salas povoadas; [relatório e fotos reais](../geteco_v2/docs/interior-visual-review.md). A aprovação é dos enquadramentos e pontos registrados.
 - [x] Sessão integrada: tarefa do Maciota, transições, banco, câmera, restrição de armas, aproximação e diálogos dos oito residentes e coleta hospitalar aprovados em `test_full_session.gd`.
-- [x] Maciota nativo atual: passagem do escritório e braços do elevador recolhidos com colisão; oclusão separada em [amostras reais](../geteco_v2/evidence/native-v2-depth.json), 85,23% da silhueta atrás da mesa. [Foto atual](../geteco_v2/evidence/full-native-interior-final-isolated-population24.png) e comparação de desempenho em [FULL_MIGRATION](../geteco_v2/docs/FULL_MIGRATION.md).
+- [x] Maciota nativo atual: passagem do escritório e braços do elevador recolhidos com colisão; oclusão separada em [amostras reais](../geteco_v2/evidence/native-v2-depth.json), 85,23% da silhueta atrás da mesa. [Foto atual](../geteco_v2/evidence/full-native-interior-final-isolated-population24.png) e comparação de desempenho em [FULL_MIGRATION](../geteco_v2/docs/historico/FULL_MIGRATION.md).
 - [x] Garagem do chefe: cinco carros e dois guardas com física dirigida e [foto renderizada](../geteco_v2/evidence/garage-guards-product.png). Comparação neutra 60 FPS, p95 17,460 → 17,615 ms, sem quadros >33,3 ms na janela estável. Pausas iniciais de aproximadamente 1,4 s e combate dos guardas permanecem fora desta aprovação.
 - [x] Teste obrigatório V1: `full-v1-garage-test.log`, zero falhas; avisos de recursos retidos ao encerrar continuam registrados.
 - [ ] Fluxos integrados de todos os ambientes, residentes, serviços, recompensas e restauração de saves.
@@ -59,7 +59,7 @@ Revisão do bueiro no jogo 3D, 22/09: tampa fechada por padrão, abertura desliz
 - Transferências dirigidas já aprovadas: 11 verificações nas duas garagens e 26 de restauração do motorista, incluindo casco completo, apoios, acesso físico à porta, câmera, inventário e ausência de duplicação. Não certificam todas as manobras de todos os 49 modelos.
 - [ ] Desempenho comparável dos interiores adicionais com moradores e sistemas ativos. Medições do Maciota não aprovam as outras salas.
 
-Migração integral **não concluída**. Estado geral em [FULL_MIGRATION](../geteco_v2/docs/FULL_MIGRATION.md).
+Migração integral **não concluída**. Estado geral em [FULL_MIGRATION](../geteco_v2/docs/historico/FULL_MIGRATION.md).
 
 ### Evidência histórica — primeiro trecho
 
@@ -72,7 +72,7 @@ Migração integral **não concluída**. Estado geral em [FULL_MIGRATION](../get
 - [x] Desempenho estável renderizado: mesma rota exterior antes/depois 60 FPS; interior 60 FPS durante 30 s, 52,50 m caminhados; condução com 96 pessoas também 60 FPS. Sem quadros >33,3 ms nas amostras estáveis. Aquecimento tem picos até74,296 ms; ausência de engasgos iniciais não certificada.
 - [x] Teste obrigatório V1 de restrição de armas: 0 falhas; avisos de limpeza de recursos no encerramento registrados.
 
-Detalhes, métricas e limites: [validação V2](../geteco_v2/docs/VALIDATION.md). A comparação exterior avalia o acréscimo desta integração; o novo interior fornece baseline própria, sem alegação de superioridade sobre a sala híbrida V1.
+Detalhes, métricas e limites: [validação V2](historico/VALIDATION.md). A comparação exterior avalia o acréscimo desta integração; o novo interior fornece baseline própria, sem alegação de superioridade sobre a sala híbrida V1.
 
 ### Acesso às lojas de armas na V2 — 23/09/2026
 

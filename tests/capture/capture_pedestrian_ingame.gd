@@ -1,7 +1,7 @@
-extends "res://tests/capture_lighting_glitches.gd"
+extends "res://tests/capture/capture_lighting_glitches.gd"
 ## Pedestres na cidade real (Main, clima, câmera do jogo), de dia e à noite, em
 ## zoom de jogo e aproximado. Só evidência visual; custo em
-## tests/measure_pedestrian_cost.gd.
+## tests/measure/measure_pedestrian_cost.gd.
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	output_dir = "res://evidence/pedestrian-look-0922/ingame"

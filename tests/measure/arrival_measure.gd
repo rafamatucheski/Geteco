@@ -1,4 +1,4 @@
-extends "res://tests/measure.gd"
+extends "res://tests/measure/measure.gd"
 var cgi := false
 var arrival
 var capture_busy := false

@@ -1,7 +1,7 @@
 extends SceneTree
 ## Captura renderizada (Vulkan, não headless) de cada veículo da frota em quatro ângulos,
 ## para revisar a geometria (vidros, lanternas, proporções) sem entrar no jogo.
-## Uso: --script res://tests/capture_fleet_models.gd -- [id ...]. Saída em res://evidence/fleet-models/.
+## Uso: --script res://tests/capture/capture_fleet_models.gd -- [id ...]. Saída em res://evidence/fleet-models/.
 const OUTPUT := "res://evidence/fleet-models/"
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 func _initialize() -> void: run.call_deferred()

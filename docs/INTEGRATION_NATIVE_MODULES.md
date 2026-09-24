@@ -26,7 +26,7 @@ O módulo é de apresentação: não cria outros ônibus, passageiros ou intera�
 
 ## Trabalho concorrente
 
-`urban_detail` e `dispatch` já estão conectados. As entregas `mountain_detail` e `traffic_yield` entraram na etapa de integração. Próximos ownerships externos e instruções completas estão em [NEXT_EXTERNAL_TASKS](NEXT_EXTERNAL_TASKS.md): Claude cuida da ultrapassagem no DispatchDriver/helpers e Antigravity de novos componentes de apresentação da prensa do Neco. O integrador não edita essas novas frentes.
+`urban_detail` e `dispatch` já estão conectados. As entregas `mountain_detail` e `traffic_yield` entraram na etapa de integração. Próximos ownerships externos e instruções completas estão em [NEXT_EXTERNAL_TASKS](historico/NEXT_EXTERNAL_TASKS.md): Claude cuida da ultrapassagem no DispatchDriver/helpers e Antigravity de novos componentes de apresentação da prensa do Neco. O integrador não edita essas novas frentes.
 
 ## Montanha
 

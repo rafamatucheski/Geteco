@@ -1,6 +1,6 @@
 # Revisão renderizada dos 28 interiores
 
-Data: 2026-09-21. Fixture tests/visual_regions.gd usa o Actor.gd real (Dante), câmera ortográfica da FullSession, offset(0,18,15), tamanho por sala e luz/Environment da ProductionWorld. Render Vulkan Mobile real na RTX 4060, 1280x720. Não é benchmark de FPS.
+Data: 2026-09-21. Fixture tests/capture/visual_regions.gd usa o Actor.gd real (Dante), câmera ortográfica da FullSession, offset(0,18,15), tamanho por sala e luz/Environment da ProductionWorld. Render Vulkan Mobile real na RTX 4060, 1280x720. Não é benchmark de FPS.
 
 Foram inspecionadas imagens de entrada e posição fisicamente livre atrás de um móvel por interior. O teste de profundidade compara a máscara visível de Dante com sua referência isolada; a contagem exclui sombra no piso. A métrica é apoio à inspeção visual, não prova sozinha aprovação. A primeira captura tinha T-pose por fixture congelada antes da animação; a segunda usa a pose real após update do Actor.
 

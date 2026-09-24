@@ -1,6 +1,6 @@
 # Maciota — primeiro lugar do Geteco V2
 
-Estado final: primeiro trecho implementado e validado pelo integrador. 1 lugar físico, 1 interior distinto com checks funcionais, físicos, visuais e desempenho estável registrados em [VALIDATION.md](VALIDATION.md). Não significa paridade com toda a missão V1. Os parágrafos abaixo preservam o histórico da entrega do agente e suas pendências naquele momento; fechamento integrado em VALIDATION.md.
+Estado final: primeiro trecho implementado e validado pelo integrador. 1 lugar físico, 1 interior distinto com checks funcionais, físicos, visuais e desempenho estável registrados em [VALIDATION.md](historico/VALIDATION.md). Não significa paridade com toda a missão V1. Os parágrafos abaixo preservam o histórico da entrega do agente e suas pendências naquele momento; fechamento integrado em VALIDATION.md.
 
 Reuso isolado de HarborGarageExterior3D (fachada MACIOTA e vizinho), MonalizaWorkshopProps3D (baia, elevador, bancada, escritório), WorkshopDetails3D (acabamento), construção visual de JagerNPC e WorkshopMechanicModel. A extração do Maciota mantém traje, bengala e chapéu originais; escala visual convertida para metros humanos. O mecânico mantém geometria original e somente seu construtor de peças, sem herdar a lógica/autoloads da montanha.
 

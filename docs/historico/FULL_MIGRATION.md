@@ -6,25 +6,25 @@ Perfis originais de porto/floresta/neve, tratamentos de cemitério e resort,
 marcos de amanhecer/entardecer, névoa por profundidade e mistura geográfica de
 chuva/neve integrados à iluminação 3D. A luz noturna deixou de ser rasante.
 Relógio térmico e IDs de clima persistidos preservados. Contratos e integração
-com Main: 45 checks aprovados. [Implementação, fotos, medições e limites](regional-atmosphere-migration.md).
+com Main: 45 checks aprovados. [Implementação, fotos, medições e limites](../regional-atmosphere-migration.md).
 Não encerra a migração geral; estilhaços de gelo no chão continuam pendentes.
 
 Atualização: 21/09/2026. Trabalho em andamento. A cena principal agora inicia o mundo nativo de Harbor; `--slice` abre o primeiro trecho anterior e `--sandbox` conserva o laboratório urbano.
 
 ## Lote atual — implementação, validação adiada pelo usuário
 
-Atualização de integração: as fachadas `urban_detail` agora substituem os registros urbanos no streaming nativo; o despacho foi conectado à sessão com exclusividade sobre o envio de equipes. Seis estações e a rodoviária foram conectadas às posições originais, sem duplicar ônibus ou passageiros da chegada. [Integração e limites](INTEGRATION_NATIVE_MODULES.md). A seção de revisão externa mais abaixo é histórica; os módulos receberam correções posteriores.
+Atualização de integração: as fachadas `urban_detail` agora substituem os registros urbanos no streaming nativo; o despacho foi conectado à sessão com exclusividade sobre o envio de equipes. Seis estações e a rodoviária foram conectadas às posições originais, sem duplicar ônibus ou passageiros da chegada. [Integração e limites](../INTEGRATION_NATIVE_MODULES.md). A seção de revisão externa mais abaixo é histórica; os módulos receberam correções posteriores.
 
-O controlador de cessão de passagem também foi conectado ao tráfego, incluindo restauração de rotas na troca de região, carregamento e resgate. A entrega de ultrapassagem das viaturas recebeu conexão explícita ao grafo de ruas; passagem em ruas estreitas e recuperação com tráfego contrário continuam limitadas e não validadas. A apresentação térmica ganhou reconciliação entre fontes originais do mapa e fallback, sem duplicar corpos durante streaming. [Contrato de calor](heat-streaming-integration.md). Histórico das tarefas de Claude e Antigravity: [prompts e áreas de trabalho](NEXT_EXTERNAL_TASKS.md).
+O controlador de cessão de passagem também foi conectado ao tráfego, incluindo restauração de rotas na troca de região, carregamento e resgate. A entrega de ultrapassagem das viaturas recebeu conexão explícita ao grafo de ruas; passagem em ruas estreitas e recuperação com tráfego contrário continuam limitadas e não validadas. A apresentação térmica ganhou reconciliação entre fontes originais do mapa e fallback, sem duplicar corpos durante streaming. [Contrato de calor](../heat-streaming-integration.md). Histórico das tarefas de Claude e Antigravity: [prompts e áreas de trabalho](NEXT_EXTERNAL_TASKS.md).
 
 Madeireira e vilarejo conectados ao streaming com modelos e posições originais: cabana, madeira empilhada, terreno, terminal e mobiliário. As cinco fachadas do catálogo permanecem únicas; as fogueiras/braseiros reconstruídos e construções sem fonte foram omitidos. Física, acessos, aparência e desempenho deste acréscimo permanecem sem validação.
 
 As alterações abaixo foram escritas após a instrução de implementar agora e testar/medir depois. **Nenhum teste, execução no Godot, captura ou benchmark deste lote foi realizado.** Resultados históricos nas seções seguintes se referem à versão anterior e não aprovam estas alterações.
 
-- Pintura visual: materiais de carroceria independentes por veículo, preservando vidro, pneus e acabamento; cores originais, garagens e veículos de missão usam o mesmo setter. Save comum passa a guardar cor, identidade e motorista, aceitando arquivos antigos sem esses campos. [Detalhes](vehicle-paint-migration.md).
+- Pintura visual: materiais de carroceria independentes por veículo, preservando vidro, pneus e acabamento; cores originais, garagens e veículos de missão usam o mesmo setter. Save comum passa a guardar cor, identidade e motorista, aceitando arquivos antigos sem esses campos. [Detalhes](../vehicle-paint-migration.md).
 - Corrida Cobra: largada de três segundos, falsa largada, percurso angular dirigido, quatro portões e retorno à pista, com estado de prova persistido. O objetivo exibe contagem/portão/tempo e a largada usa a interação existente com o carro alinhado.
 - Retomada do motorista: carros comuns carregam a região do destino e procuram porta/casco livres antes de embarcar; hóspedes de garagem usam seu registro próprio. A corrida aguarda a restauração física. Bloqueios reais mantêm a restauração a pé, sem forçar passagem por sólidos.
-- Água: som original, ondulações, gotas e seis pegadas úmidas após sair; respeito às áreas secas e ao avião, sem introduzir natação. [Detalhes](water-cold-migration.md).
+- Água: som original, ondulações, gotas e seis pegadas úmidas após sair; respeito às áreas secas e ao avião, sem introduzir natação. [Detalhes](../water-cold-migration.md).
 - Clima da montanha: apresentação usa o mesmo relógio de 240 s persistido pelo frio, com os limiares originais de céu frio, neve leve, nevasca e granizo. Neve/granizo coexistem, intensidade altera vento e luz do dia; abrigos interrompem precipitação. Harbor mantém seu clima independente. Naquele lote, neblina e estilhaços de gelo no chão ainda não haviam sido portados; a névoa foi integrada em 22/09, conforme seção acima.
 
 Antigravity e Claude continuam corrigindo seus diretórios. Não foram alterados nem ativados neste lote. A revisão externa anterior retrata a cópia daquele momento, não certifica nem reprova automaticamente as correções em andamento.
@@ -41,15 +41,15 @@ Antigravity e Claude continuam corrigindo seus diretórios. Não foram alterados
 
 ## Integrações posteriores à primeira medição
 
-- Chegada: filme original de 28 quadros, desembarque, delegacia, telefonema e passeio físico de 201 m aprovados nos testes dirigidos. Conectados à sessão e ao save; cancelamento seguro do passeio e tratamento do Escape do filme integrados. Filme e passeio renderizados mediram 60 FPS; [evidências e limitações](arrival-migration.md).
+- Chegada: filme original de 28 quadros, desembarque, delegacia, telefonema e passeio físico de 201 m aprovados nos testes dirigidos. Conectados à sessão e ao save; cancelamento seguro do passeio e tratamento do Escape do filme integrados. Filme e passeio renderizados mediram 60 FPS; [evidências e limitações](../arrival-migration.md).
 - Serviços: hospital com coleta física e intervalo de 180 s, atendimento dos bombeiros, cinco policiais com diálogos originais e oficina automática com preço/tempo da fonte. Aproximação física e diálogos dos oito residentes, coleta hospitalar e intervalo aprovados na sessão integrada.
 - Assaltos: banco e posto com ameaças, fechadura original, saque e fechamento temporário; 32 verificações do módulo. Viaturas em perseguição/despacho ficam no lote externo.
-- Garagens: cinco carros, Ironback e hóspedes comuns persistidos. 37 verificações do módulo, 11 de transferências físicas e 26 de restauração do motorista aprovadas; duas garagens, câmera, casco completo, inventário e ausência de duplicação. Dois guardas originais integrados com 18 verificações físicas e comparação renderizada neutra aprovada; [evidências](garage-reward-migration.md). Prensa e pintura visual ainda pendentes.
+- Garagens: cinco carros, Ironback e hóspedes comuns persistidos. 37 verificações do módulo, 11 de transferências físicas e 26 de restauração do motorista aprovadas; duas garagens, câmera, casco completo, inventário e ausência de duplicação. Dois guardas originais integrados com 18 verificações físicas e comparação renderizada neutra aprovada; [evidências](../garage-reward-migration.md). Prensa e pintura visual ainda pendentes.
 - Salvamento: publicação, backup, recuperação de arquivo interrompido, rejeição de estado inválido, inventário e estado térmico aprovados em `test_full_save.gd`. O roundtrip compara valores numéricos, pois JSON pode restaurar inteiros como floats.
 - Corrida: tempo decorrido e exposição fora da pista persistidos; pausa não consome tempo; limite de 100 s, corte interno e abandono por 4 s fora do anel. Campanha/economia: 158 verificações aprovadas. Regras angulares completas e contagem regressiva seguem identificadas como paridade pendente.
 - Frio: cálculo original, roupas, sete fontes térmicas, abrigo, veículo, dano sem absorção pelo colete e persistência integrados. Resgate recupera temperatura para evitar ciclo imediato de mortes, uma melhoria deliberada do V2. Clima visual ainda precisa sincronização integral com o ciclo térmico original.
 - Admissão física dos saves na montanha: fontes próximas instaladas e sincronizadas antes da consulta de casco/cápsula. Carros distantes aguardam terreno. Onze verificações isoladas e sete com Main real aprovadas; carro sobre braseiro recusado, pose livre aceita. Raio de 8 m cobre a frota atual e deve ser revisado para modelos maiores.
-- Interiores: 31 acessos / 29 interiores; [56 capturas e quatro salas povoadas](interior-visual-review.md) inspecionadas. Não certificam toda rota nem performance de todas as salas.
+- Interiores: 31 acessos / 29 interiores; [56 capturas e quatro salas povoadas](../interior-visual-review.md) inspecionadas. Não certificam toda rota nem performance de todas as salas.
 
 Primeira entrega externa: `urban_detail` por Antigravity e `dispatch` por Claude. A primeira execução encontrou erros e gerou a [revisão histórica](EXTERNAL_REVIEW.md). Após correções dos autores, ambos foram conectados à cena principal, conforme o lote atual acima, ainda sem nova execução ou aprovação. Os trabalhos externos agora reservados são `mountain_detail` e `traffic_yield`.
 
@@ -80,7 +80,7 @@ O pico de 88 ms na rua não se reproduziu; sua causa continua sem confirmação.
 
 A captura antiga `full-native-combat-isolated-population24.png` revelou Dante morto e painel de resgate aberto, portanto não aprova combate sustentado. As novas execuções mantêm saúde apenas na fixture e registram tiros/tempo ativo; a amostra `combat-live` disparou 138 tiros ao longo de 35 s ativos. Artefatos inválidos anteriores foram preservados. O ensaio neutro dos guardas não certifica combate deles.
 
-Montanha após correções do terreno: 60,003 FPS, p95 17,516 ms, p99 18,091 ms, máximo 20,460 ms e zero quadros >33,3 ms; 685 verificações de terreno aprovadas. [Condições, controles e limites](water-cold-migration.md).
+Montanha após correções do terreno: 60,003 FPS, p95 17,516 ms, p99 18,091 ms, máximo 20,460 ms e zero quadros >33,3 ms; 685 verificações de terreno aprovadas. [Condições, controles e limites](../water-cold-migration.md).
 
 ## Pendências que impedem declarar migração integral
 
@@ -90,7 +90,7 @@ Montanha após correções do terreno: 60,003 FPS, p95 17,516 ms, p99 18,091 ms,
 - Fechar paridade dos serviços ainda incompletos, drops/corpos dos guardas, prensa e sequência integral de recompensas.
 - Concluir fachadas especiais, lagos/relevo e ambientação que não possuíam malha 3D original. Arte 2D reconstruída não é identidade visual automaticamente certificada.
 - Medir interiores, direção, combate e novas regiões com os sistemas ativos. Um resultado em Harbor não aprova todos os cenários.
-- Completar apresentação climática sincronizada, efeitos dos passos aquáticos e transporte entre regiões; [auditoria da fonte](water-cold-migration.md) distingue regras originais de funcionalidades novas.
+- Completar apresentação climática sincronizada, efeitos dos passos aquáticos e transporte entre regiões; [auditoria da fonte](../water-cold-migration.md) distingue regras originais de funcionalidades novas.
 - Diagnosticar avisos de recursos de áudio ainda observados em alguns encerramentos headless. Não foram suprimidos.
 
 Campanhas e percursos antigos que não fazem parte do fluxo de produção ficam identificados como conteúdo legado. O catálogo preservado não significa que cada cena legada já foi encenada ou instalada no mundo atual.

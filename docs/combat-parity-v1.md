@@ -481,7 +481,7 @@ Conferida por leitura: as cinco seções (rodada 1 com a tabela, e as rodadas 2 
 | `tests/test_arsenal_input_integration.gd` | entrada real, `dukenuke` | `ARSENAL_INPUT_PASS` |
 | `tests/test_gameplay.gd` | headless, 208 checks | 0 falhas. **Adaptei** um contrato: pente vazio agora inicia a recarga sozinho (V1) e a duração vem do banco de recarga (pistola 1,69 s, antes 1,35 s); o teste esperava a recarga manual |
 | `tests/test_private_security_crime.gd`, `test_maciota_world.gd`, `test_environment_damage.gd`, `test_vehicle_equipment.gd`, `tests/garage_guards/test_guards.gd` (18 checks) | headless | 0 falhas |
-| `tests/measure_combat.gd` (novo) | janela real, ver "Desempenho" | amostras abaixo |
+| `tests/measure/measure_combat.gd` (novo) | janela real, ver "Desempenho" | amostras abaixo |
 
 O teste obrigatório da garagem de V1 (`tests/test_garage_weapon_restrictions.gd`) **não existe no V2**; a cobertura equivalente foi o bloco de garagem de `test_combat_flow` (entrada real por `enter_place`) e o de `test_gameplay` (linhas de bloqueio).
 

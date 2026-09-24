@@ -1,6 +1,6 @@
 # Validação da primeira base — 21/09/2026
 
-Registro histórico da primeira entrega. A versão seguinte, com direção e tráfego, tem medição isolada antes/depois em **SYSTEMS.md**.
+Registro histórico da primeira entrega. A versão seguinte, com direção e tráfego, tem medição isolada antes/depois em **SYSTEMS_DIRECAO_TRAFEGO_2026-09-21.md**.
 
 ## Estado
 
@@ -39,4 +39,4 @@ As janelas de aquecimento incluem picos, chegando a 75,857 ms com 96 pessoas. A 
 
 ## Pendência objetiva
 
-Para confirmar a linha de base sem outra execução concorrente, fechar a janela do jogo atual e executar `tests/Measure.ps1` sem `-AllowConcurrent`. O editor pode ficar aberto, mas isso deve continuar registrado. Esta pendência não impede jogar o protótipo; impede apresentar os números como aprovação isolada ou ganho frente ao jogo completo.
+Para confirmar a linha de base sem outra execução concorrente, fechar a janela do jogo atual e executar `tests/measure/Measure.ps1` sem `-AllowConcurrent`. O editor pode ficar aberto, mas isso deve continuar registrado. Esta pendência não impede jogar o protótipo; impede apresentar os números como aprovação isolada ou ganho frente ao jogo completo.
