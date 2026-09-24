@@ -14,11 +14,15 @@ extends Node
 ##   explosão continua saindo do sinal `destroyed` já ligado pelos mundos.
 
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
+const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const BURN_RATIO := .2
 ## Segundos entre o limiar de fogo e a explosão, com o carro parado de levar tiro.
 const BURN_SECONDS := 3.5
 const WEAR_STAGES := 3
 const SAG := .14
+## A carcaça continua queimando depois da explosão, com o fogo minguando até apagar.
+const WRECK_FIRE_SECONDS := 11.0
+const HOP_GRAVITY := 20.0
 
 static var _scratch_textures: Array[Texture2D] = []
 static var _dent_normal: Texture2D
@@ -38,6 +42,15 @@ var _fire_light: OmniLight3D
 var _ember: StandardMaterial3D
 var _tween: Tween
 var _rng := RandomNumberGenerator.new()
+var _hop_active := false
+var _hop_height := 0.0
+var _hop_velocity := 0.0
+var _hop_tilt := Vector2.ZERO
+var _hop_spin := Vector2.ZERO
+var _hop_rest := Vector2.ZERO
+var _hop_bounces := 0
+var _hop_landed := false
+var _wreck_fire_time := 0.0
 
 func configure(car: CharacterBody3D) -> void:
 	vehicle = car
@@ -60,6 +73,9 @@ func refresh() -> void:
 		if not burning: _stop_fire()
 
 func _physics_process(delta: float) -> void:
+	if wrecked:
+		_step_wreck(delta)
+		return
 	if not burning or vehicle.health <= 0:
 		burning = false
 		_stop_fire()
@@ -274,21 +290,77 @@ func wreck() -> void:
 			part.set_surface_override_material(index, replacement[_role(part.get_active_material(index) as StandardMaterial3D, surface_key)])
 	_blast_hop()
 
+## Salto balístico do corpo. Antes era um tween fixo (sobe .75 m em .16 s e quica com
+## TRANS_BOUNCE): lia como desenho animado, com a mesma altura para moto e caminhão. Agora a
+## frente (onde fica o motor que pegou fogo) levanta primeiro, o corpo cai sob gravidade,
+## quica uma vez amortecido e assenta torto sobre os aros. Veículo pesado salta menos.
 func _blast_hop() -> void:
 	if is_instance_valid(_tween): _tween.kill()
-	var visual: Node3D = vehicle.visual
-	var rest := Vector3(_rng.randf_range(-.05, .05), visual.rotation.y, _rng.randf_range(-.07, .07))
-	_tween = vehicle.create_tween()
-	_tween.set_parallel(true)
-	_tween.tween_property(visual, "position:y", .75, .16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_tween.tween_property(visual, "rotation", rest * 2.5, .16)
-	_tween.chain().tween_property(visual, "position:y", -SAG, .32).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-	_tween.tween_property(visual, "rotation", rest, .32)
+	var mass := 1.0
+	var handling = vehicle.get("handling")
+	if handling != null and handling.get("mass") != null: mass = maxf(.5, float(handling.mass))
+	var lift := 1.0 / sqrt(mass)
+	_hop_height = 0.0
+	_hop_velocity = _rng.randf_range(4.4, 5.4) * lift
+	_hop_tilt = Vector2.ZERO
+	_hop_spin = Vector2(_rng.randf_range(1.5, 2.3), _rng.randf_range(-1.3, 1.3)) * lift
+	_hop_rest = Vector2(_rng.randf_range(-.035, .035), _rng.randf_range(-.06, .06))
+	_hop_bounces = 0
+	_hop_landed = false
+	_hop_active = true
+	_wreck_fire_time = WRECK_FIRE_SECONDS
+	if is_instance_valid(STREET_PHYSICS.instance):
+		STREET_PHYSICS.instance.spawn_glass(vehicle.global_position + Vector3.UP * 1.0, Vector3.UP)
+	_update_fire()
+	set_physics_process(true)
 	# A brasa esfria até sobrar só a lataria queimada.
-	_tween.chain().tween_property(_ember, "emission_energy_multiplier", 0.0, 9.0).set_trans(Tween.TRANS_SINE)
+	_tween = vehicle.create_tween()
+	_tween.tween_property(_ember, "emission_energy_multiplier", 0.0, 12.0).set_trans(Tween.TRANS_SINE)
+
+func _step_wreck(delta: float) -> void:
+	if _hop_active: _step_hop(delta)
+	if _wreck_fire_time > 0.0:
+		_wreck_fire_time = maxf(0.0, _wreck_fire_time - delta)
+		var strength := _wreck_fire_time / WRECK_FIRE_SECONDS
+		_update_fire()
+		_fire.amount_ratio = clampf(strength * 1.4, 0.0, 1.0)
+		_fire_light.light_energy *= strength
+		if _wreck_fire_time <= 0.0: _stop_fire()
+	if not _hop_active and _wreck_fire_time <= 0.0: set_physics_process(false)
+
+func _step_hop(delta: float) -> void:
+	var visual: Node3D = vehicle.visual
+	if not is_instance_valid(visual):
+		_hop_active = false
+		return
+	if not _hop_landed:
+		_hop_velocity -= HOP_GRAVITY * delta
+		_hop_height += _hop_velocity * delta
+		_hop_tilt += _hop_spin * delta
+		# No ar a frente volta a cair: o giro perde força e inverte perto do pico.
+		_hop_spin -= _hop_tilt * 9.0 * delta
+		if _hop_height <= -SAG and _hop_velocity < 0.0:
+			_hop_height = -SAG
+			if _hop_bounces < 1 and _hop_velocity < -2.0:
+				_hop_bounces += 1
+				_hop_velocity = -_hop_velocity * .22
+				_hop_spin *= -.35
+			else:
+				_hop_velocity = 0.0
+				_hop_landed = true
+	else:
+		_hop_tilt = _hop_tilt.lerp(_hop_rest, 1.0 - exp(-7.0 * delta))
+		if _hop_tilt.distance_to(_hop_rest) < .002:
+			_hop_tilt = _hop_rest
+			_hop_active = false
+	visual.position.y = _hop_height
+	visual.rotation = Vector3(_hop_tilt.x, visual.rotation.y, _hop_tilt.y)
 
 func restore() -> void:
 	if is_instance_valid(_tween): _tween.kill()
+	_hop_active = false
+	_wreck_fire_time = 0.0
+	if is_instance_valid(_fire): _fire.amount_ratio = 1.0
 	_stop_fire()
 	burning = false
 	_flame_ignited = false

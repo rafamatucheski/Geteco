@@ -193,28 +193,50 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 		var now := Time.get_ticks_msec()
 		if now - int(_crash_pairs.get(key, -100000)) < 500: continue
 		_crash_pairs[key] = now
-		_crash(vehicle, other, normal, closing, collision.get_position())
+		_crash(vehicle, other, normal, closing, collision.get_position(), incoming)
 	_update_slide(vehicle, delta)
 
 
-## O atingido é empurrado no rumo do choque e roda conforme o ponto de
-## contato (batida na traseira gira mais que batida de frente). O carro que
-## bateu recua um pouco. Tráfego atingido para de seguir a faixa enquanto roda.
-func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3) -> void:
-	var push := -normal * closing * 0.6
+## Batida como troca de momento entre as massas do catálogo (`handling.mass`), com pouca
+## restituição. Antes o atingido ganhava 60% da velocidade de aproximação e quem bateu
+## parava seco e ainda recuava: o carro atingido parecia repelido, sem contato. Agora
+## quem bate conserva o que sobra do momento e acompanha o outro; caminhão empurra carro
+## e carro quase não move caminhão. A rotação continua vindo do ponto de contato.
+const CRASH_RESTITUTION := 0.15
+
+func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
+	var into := -normal
+	var mine := _vehicle_mass(vehicle)
+	var theirs := _vehicle_mass(other)
+	var impulse := (1.0 + CRASH_RESTITUTION) * closing / (1.0 / mine + 1.0 / theirs)
+	var push := into * impulse / theirs
 	var lever: Vector3 = point - other.global_position
 	lever.y = 0
 	var spin := clampf(lever.cross(push).y * 0.12, -3.5, 3.5)
 	_add_slide(other, push, spin)
+	# O move_and_slide já zerou a velocidade de quem bateu contra o corpo cinemático;
+	# devolve a parte que o momento preserva, sem empurrão para trás.
+	var after := incoming - into * impulse / mine
+	vehicle.set("horizontal_velocity", after)
+	vehicle.set("speed", after.dot(-vehicle.global_basis.z))
 	var self_lever: Vector3 = point - vehicle.global_position
 	self_lever.y = 0
-	_add_slide(vehicle, normal * closing * 0.18, clampf(self_lever.cross(normal * closing).y * 0.04, -1.5, 1.5))
+	_add_slide(vehicle, Vector3.ZERO, clampf(self_lever.cross(into * impulse / mine).y * 0.04, -1.2, 1.2))
 	play("impact_metal", point, lerpf(-6.0, 3.0, clampf(closing / 14.0, 0, 1)), randf_range(0.8, 0.95))
 	if closing > 7.0:
 		play("impact_glass", point, -4.0)
-		spawn_glass(point, -normal)
+		spawn_glass(point, into)
 	_shake_if_player(vehicle, clampf(closing / 30.0, 0.08, 0.35))
 	_shake_if_player(other, clampf(closing / 30.0, 0.08, 0.35))
+
+
+static func _vehicle_mass(vehicle: Node) -> float:
+	var handling = vehicle.get("handling")
+	if handling != null and handling.get("mass") != null: return clampf(float(handling.mass), 0.3, 8.0)
+	var width = vehicle.get("half_width")
+	var length = vehicle.get("half_length")
+	if width == null or length == null: return 1.0
+	return clampf(float(width) * float(length) * 0.35, 0.3, 8.0)
 
 
 func _add_slide(vehicle: CharacterBody3D, push: Vector3, spin: float) -> void:

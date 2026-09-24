@@ -127,6 +127,30 @@ func finish(reason: String) -> void:
 		else: vehicle.queue_free()
 	controller.emit_dispatch_event("unit_finished", {"unit": self, "reason": reason})
 
+## O jogador tomou a viatura parada. Quem ainda estava a bordo desce pela porta do
+## lado do ladrão (é arrancado do banco) e entra em combate; a equipe a pé fica e
+## continua a busca. A viatura passa a ser do jogador: não some nem volta à base.
+func surrender_vehicle(thief_side: float) -> void:
+	if finished: return
+	if driver != null:
+		driver.discard_overtaking("stolen")
+		_detach_driver()
+	_set_siren(false)
+	_release_incident()
+	if is_police() and crew_remaining > 0 and is_instance_valid(vehicle):
+		# Arrancado pela porta do ladrão, caindo um pouco para trás dela para não nascer
+		# dentro do jogador que está entrando.
+		var point: Vector3 = vehicle.to_global(Vector3(thief_side * (vehicle.half_width + 0.8), 0.0, 0.7))
+		point.y = vehicle.global_position.y + 0.04
+		var officer: CharacterBody3D = controller.spawn_officer(self, point, thief_side)
+		officers.append(officer)
+		crew_remaining -= 1
+	for officer in officers:
+		if is_instance_valid(officer) and officer.mode == "return": officer.mode = "combat"
+	finished = true
+	end_reason = "stolen"
+	controller.emit_dispatch_event("unit_finished", {"unit": self, "reason": "stolen"})
+
 ## Solta as ligações unidade <-> piloto <-> ultrapassagem (o controlador as cria em
 ## `_make_unit`). Sem isto, os Callables dos sinais mantêm unidade e piloto (RefCounted)
 ## referenciando um ao outro depois da remoção, e nada os libera. Não toca nos carros

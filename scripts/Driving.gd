@@ -66,7 +66,7 @@ func _entry_option(allow_transition := false) -> Dictionary:
 				candidate = possible
 				distance = separation
 	if not is_instance_valid(candidate) or absf(candidate.speed) > .5 or candidate.health <= 0: return {}
-	for side in [-1,1]:
+	for side in (candidate.boarding_sides() if candidate.has_method("boarding_sides") else [-1,1]):
 		var door: Vector3 = candidate.driver_door_anchor(side) if candidate.has_method("driver_door_anchor") else candidate.to_global(Vector3(side*(candidate.half_width+.51),0,0.15))
 		if world.player.position.distance_to(door) > 1.8: continue
 		var ray := PhysicsRayQueryParameters3D.create(world.player.position+Vector3.UP*.9,door+Vector3.UP*.9,7,[world.player.get_rid(),candidate.get_rid()])
@@ -97,6 +97,9 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	if car.traffic:
 		car.traffic = false
 		if world.get("gameplay") != null: world.gameplay.register_crime(15,car.global_position)
+		_eject_civilian_driver(car,side)
+	elif car.get_meta("dispatch_unit",false) and is_instance_valid(world.get("dispatch")):
+		world.dispatch.vehicle_stolen(car,side)
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
@@ -119,6 +122,38 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	transition.begin_entry(world,car,world.player,side)
 	return true
 
+## Carro de trânsito tem motorista. Antes o roubo só tirava o carro da faixa e ninguém
+## saía dele. O motorista desce pela porta dele assim que o ladrão abre a do lado de
+## lá (ou é empurrado para trás, se o ladrão veio pela mesma porta) e foge em pânico.
+func _eject_civilian_driver(candidate: CharacterBody3D, thief_side: int) -> void:
+	if not is_instance_valid(world.get("production")) or world.get("people") == null: return
+	# O banco do motorista é o esquerdo; no ônibus ele sai pela porta de serviço.
+	var driver_side := 1 if candidate.has_method("boarding_class") and candidate.boarding_class() == "bus" else -1
+	var point: Vector3 = candidate.driver_door_anchor(driver_side)
+	if driver_side == thief_side:
+		point = candidate.to_global(candidate.to_local(point)+Vector3(float(driver_side)*.35,0,1.25))
+	point.y = candidate.global_position.y+.08
+	var civilian = preload("res://scripts/Actor.gd").new()
+	civilian.identity = randi_range(0,10000)
+	civilian.speed = randf_range(1.2,1.6)
+	civilian.position = point
+	civilian.route = PackedVector3Array([point,point+(point-candidate.global_position).normalized()*8.0])
+	civilian.set_meta("region_id",candidate.get_meta("region_id",""))
+	civilian.hide()
+	world.add_child(civilian)
+	civilian.add_collision_exception_with(candidate)
+	world.people.append(civilian)
+	# Aparece quando a porta dele abre, não antes do ladrão chegar ao carro.
+	get_tree().create_timer(.35).timeout.connect(func():
+		if not is_instance_valid(civilian): return
+		civilian.show()
+		if is_instance_valid(candidate) and candidate.has_method("animate_driver_door") and driver_side != thief_side:
+			candidate.animate_driver_door(driver_side,true,.22)
+			get_tree().create_timer(.9).timeout.connect(func():
+				if is_instance_valid(candidate): candidate.animate_driver_door(driver_side,false,.3))
+		var reactions = world.production.get("civilian_reactions")
+		if is_instance_valid(reactions) and reactions.has_method("report_assault"): reactions.report_assault(civilian,world.player))
+
 func _complete_entry() -> void:
 	transition = null
 	if not is_instance_valid(car) or car.is_queued_for_deletion() or car.health <= 0 or not _player_alive():
@@ -134,8 +169,8 @@ func _complete_entry() -> void:
 
 func exit_position() -> Vector3:
 	if not is_instance_valid(car): return Vector3.INF
-	for side in [-1,1]:
-		for offset in [-clampf(car.half_length*.18,.30,.62),-1.1,1.1]:
+	for side in (car.boarding_sides() if car.has_method("boarding_sides") else [-1,1]):
+		for offset in [car._cab_z() if car.has_method("_cab_z") else -clampf(car.half_length*.18,.30,.62),-1.1,1.1]:
 			var point := car.to_global(Vector3(side*(car.half_width+.61),0,offset))
 			point.y = car.position.y+.04
 			var query := PhysicsShapeQueryParameters3D.new()
@@ -256,6 +291,18 @@ func _watch_car(candidate: CharacterBody3D) -> void:
 	if not is_instance_valid(candidate): return
 	var callback := _on_car_tree_exiting.bind(candidate)
 	if not candidate.tree_exiting.is_connected(callback): candidate.tree_exiting.connect(callback,CONNECT_ONE_SHOT)
+	var blast := _on_car_destroyed.bind(candidate)
+	if candidate.has_signal("destroyed") and not candidate.destroyed.is_connected(blast): candidate.destroyed.connect(blast)
+
+## Quem está no carro tem a colisão desligada, então a esfera de `Gameplay.explode` não o
+## encontrava e o jogador saía vivo da explosão. Aqui ele é jogado para fora e morre.
+func _on_car_destroyed(candidate: CharacterBody3D) -> void:
+	if candidate != car or not (occupied or is_body_transition_active()): return
+	var gameplay = world.get("gameplay")
+	if is_body_transition_active(): transition.abort("vehicle_destroyed")
+	else: _force_detach("vehicle_destroyed")
+	if is_instance_valid(gameplay) and gameplay.has_method("damage_player"):
+		gameplay.damage_player(1000.0)
 
 func _on_car_tree_exiting(candidate: CharacterBody3D) -> void:
 	if candidate != car: return

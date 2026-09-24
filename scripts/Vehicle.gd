@@ -29,6 +29,7 @@ var max_forward_speed := MAX_SPEED
 var drive_acceleration := 5.0
 var half_width := 1.04
 var half_length := 2.3
+var body_height := 1.4
 signal damaged(amount: float)
 signal destroyed
 var controlled := false
@@ -102,6 +103,7 @@ func _ready() -> void:
 		if handling != null: handling.configure(specification)
 	half_width = hull.size.x*.5
 	half_length = hull.size.z*.5
+	body_height = hull.size.y
 	shape.shape = hull
 	shape.position.y = hull.size.y*.5
 	add_child(shape)
@@ -403,11 +405,44 @@ func place(point: Vector3, yaw: float) -> void:
 	horizontal_velocity = Vector3.ZERO
 	reset_physics_interpolation()
 
+## Porte para embarque/desembarque. Antes toda carroceria usava a porta e o banco do
+## carro pequeno: o motorista de ônibus e de caminhão entrava abaixado pelo meio da
+## lataria. `open`: moto, buggy e empilhadeira (sem porta); `car`: senta baixo;
+## `tall`: caminhonete, SUV e van (um degrau); `truck`: cabine alta, sobe pelo estribo;
+## `bus`: porta dianteira direita com escada.
+func boarding_class() -> String:
+	if archetype.begins_with("bike_") or archetype in ["port_forklift", "beach_buggy", "dune_buggy"]: return "open"
+	if archetype == "route_city": return "bus"
+	if body_height >= 2.35: return "truck"
+	if body_height >= 1.75: return "tall"
+	return "car"
+
+## Lados por onde se entra ao volante. Ônibus só pela porta de serviço da direita.
+func boarding_sides() -> Array:
+	return [1] if boarding_class() == "bus" else [-1, 1]
+
+## Altura do piso da cabine sobre o chão, que o corpo precisa vencer para entrar.
+func boarding_step_height() -> float:
+	match boarding_class():
+		"truck": return clampf(body_height * .36, .85, 1.15)
+		"bus": return .42
+		"tall": return .32
+	return 0.0
+
+func _cab_z() -> float:
+	match boarding_class():
+		"bus": return -(half_length - .8)
+		"truck": return -(half_length - 1.3)
+	return -clampf(half_length * .18, .30, .62)
+
 func driver_door_anchor(side: int) -> Vector3:
-	var door_z := -clampf(half_length * .18, .30, .62)
-	return to_global(Vector3(float(side) * (half_width + .54), .04, door_z))
+	return to_global(Vector3(float(side) * (half_width + .54), .04, _cab_z()))
 
 func driver_seat_anchor() -> Vector3:
+	if boarding_class() == "bus":
+		return to_global(Vector3(-minf(.55, half_width * .4), .08 + boarding_step_height(), _cab_z() - .15))
+	if boarding_class() in ["truck", "tall"]:
+		return to_global(Vector3(-minf(.45, half_width * .3), .08 + boarding_step_height(), _cab_z() + .15))
 	var seat_z := -clampf(half_length * .16, .26, .55)
 	return to_global(Vector3(-minf(.28, half_width * .24), .08, seat_z))
 
@@ -416,7 +451,7 @@ func animate_driver_door(side: int, opened: bool, duration := .28) -> void:
 	if is_instance_valid(door_presentation): door_presentation.set_open(side, opened, duration)
 
 func _ensure_door_presentation() -> void:
-	if is_instance_valid(door_presentation) or archetype.begins_with("bike_") or archetype in ["port_forklift", "beach_buggy", "dune_buggy"]: return
+	if is_instance_valid(door_presentation) or boarding_class() in ["open", "bus"]: return
 	door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
 	visual.add_child(door_presentation)
 	door_presentation.configure(self)

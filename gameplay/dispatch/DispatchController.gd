@@ -298,13 +298,17 @@ func _archetype_size(archetype: String) -> Vector3:
 
 ## Ponto ao lado da porta onde uma pessoa cabe: chão sólido, sem corpo dentro,
 ## sem parede entre o veículo e o ponto. Vazio quando não há saída segura.
+## A equipe policial alterna os lados: o primeiro desce pela porta do motorista (-1), o
+## segundo pela do carona (+1). Antes o lado +1 era sempre testado primeiro e, havendo
+## espaço, a dupla inteira descia pelo mesmo lado, um atrás do outro.
 func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -> Dictionary:
 	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
 	var sides: Array[float] = [1.0]
 	var longitudinal: Array[float] = [0.0, 0.3, -0.3]
 	if not right_only:
-		sides.append(-1.0)
-		longitudinal = [0.3, -1.0, 1.4]
+		sides.assign([-1.0, 1.0] if taken.size() % 2 == 0 else [1.0, -1.0])
+		var door := -clampf(float(car.half_length) * .18, .30, .62)
+		longitudinal.assign([door, 0.3, -1.0, 1.4])
 	var reach: float = car.half_width + (0.9 if right_only else 0.75)
 	var excluded: Array[RID] = [car.get_rid()]
 	var capsule := CapsuleShape3D.new()
@@ -342,9 +346,9 @@ func _create_vehicle(service: String, point: Vector3, yaw: float) -> CharacterBo
 	car.set_meta("dispatch_unit", true)
 	world.add_child(car)
 	car.place(point + Vector3.UP * 0.12, yaw)
-	# A viatura de serviço não é um carro que o jogador possa simplesmente pegar
-	# (o roubo de viatura é uma lacuna documentada): sai da busca de Driving.gd.
-	car.remove_from_group("drivable")
+	# Ambulância, bombeiro e rabecão não são carros que o jogador possa pegar. A viatura
+	# policial parada pode ser roubada: `vehicle_stolen` expulsa quem estava a bordo.
+	if service != "police": car.remove_from_group("drivable")
 	car.destroyed.connect(func():
 		if is_instance_valid(car) and is_instance_valid(gameplay):
 			gameplay.explode(car.global_position+Vector3.UP*.4,5.0,35.0,car,false)
@@ -352,6 +356,16 @@ func _create_vehicle(service: String, point: Vector3, yaw: float) -> CharacterBo
 				gameplay.emergency.ignite(car.global_position, car))
 	if service != "mortician": car.ensure_equipment(world)
 	return car
+
+## Chamado por Driving.gd quando o jogador começa a entrar numa viatura em serviço.
+func vehicle_stolen(car: CharacterBody3D, thief_side: int) -> bool:
+	for unit in units:
+		if unit.vehicle != car or unit.finished: continue
+		unit.surrender_vehicle(float(thief_side))
+		car.remove_meta("dispatch_unit")
+		if is_instance_valid(gameplay): gameplay.register_crime(40, car.global_position)
+		return true
+	return false
 
 func _make_unit(service: String, car: CharacterBody3D, speed_cap: float, stall: float) -> RefCounted:
 	var unit := UNIT.new()

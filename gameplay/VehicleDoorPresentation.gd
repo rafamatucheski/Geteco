@@ -28,10 +28,19 @@ func configure(owner_vehicle: CharacterBody3D) -> void:
 		hinge.name = "DriverDoorL" if side < 0 else "DriverDoorR"
 		var length := clampf(vehicle.half_length * .48, .72, 1.28)
 		var front_z := -clampf(vehicle.half_length * .42, .62, 1.05)
-		hinge.position = Vector3(float(side) * (vehicle.half_width + .055), .63, front_z)
+		var hinge_y := .63
+		var height := .76
+		# Cabine alta: a folha da porta acompanha o piso elevado, na frente do chassi.
+		var step: float = vehicle.boarding_step_height() if vehicle.has_method("boarding_step_height") else 0.0
+		if step > 0.0:
+			length = 1.0 if step > .5 else 1.1
+			front_z = vehicle._cab_z() - length * .5
+			hinge_y = .63 + step
+			height = .9
+		hinge.position = Vector3(float(side) * (vehicle.half_width + .055), hinge_y, front_z)
 		var panel := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
-		mesh.size = Vector3(.035, .76, length)
+		mesh.size = Vector3(.035, height, length)
 		panel.mesh = mesh
 		panel.position = Vector3(float(side) * .02, 0.0, length * .5)
 		panel.material_override = material
