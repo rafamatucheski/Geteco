@@ -9,14 +9,15 @@ var head: Node3D
 var jaw: Node3D
 var ears: Array[Node3D] = []
 var fur_parts: Array[MeshInstance3D] = []
-var fur_color := Color("66513d")
+# Mais escuro que na V1: a exposição de inverno de Mountain deixava o pardo bege.
+var fur_color := Color("3a2a1e")
 var _flash_applied := false
 var _fur_colors: Array[Color] = []
 
 func _ready() -> void:
 	if is_cub:
 		scale = Vector3.ONE * 0.53
-		fur_color = Color("84674c")
+		fur_color = Color("54402f")
 	body = Node3D.new()
 	body.name = "ShoulderMass"
 	add_child(body)
@@ -79,6 +80,31 @@ func _ready() -> void:
 	shadow.material_override.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	shadow.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+## Peça do urso: esfera mais lisa que a dos moradores (10x5 segmentos virava bolha
+## facetada vista de perto) e material com brilho de borda, que imita a pelagem
+## pegando luz no contorno. Tom levemente variado por peça para o corpo não ser
+## uma cor só. StandardMaterial3D de propósito: hurt_flash troca albedo_color.
+func part(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radial_segments = 20
+	sphere.rings = 10
+	sphere.height = 2
+	sphere.radius = 1
+	mesh.mesh = sphere
+	mesh.scale = size * 0.5
+	mesh.position = point
+	var material := StandardMaterial3D.new()
+	var jitter := fmod(absf(point.x * 7.3 + point.y * 3.1 + point.z * 5.7), 1.0) - 0.5
+	material.albedo_color = color.darkened(jitter * 0.08) if color.a >= 1.0 else color
+	material.roughness = 1.0
+	material.rim_enabled = true
+	material.rim = 0.2
+	material.rim_tint = 0.6
+	mesh.material_override = material
+	parent.add_child(mesh)
+	return mesh
 
 func _claw(parent: Node3D, point: Vector3, radius: float, length: float, color: Color, forward := false) -> void:
 	var part_node := MeshInstance3D.new()
