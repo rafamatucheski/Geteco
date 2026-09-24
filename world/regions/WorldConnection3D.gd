@@ -124,20 +124,26 @@ func _build_bridge() -> void:
 			_box("BridgePylon",Vector3(x,2.0,CENTER_Z+side*8.2),Vector3(1.5,4.0,1.5),concrete,true)
 			_pier_in_water(Vector3(x,0,CENTER_Z+side*8.2),1.5,concrete)
 	_build_bridge_lamps(steel)
+	# Vigas sob as bordas do tabuleiro, só visuais: com o mar rebaixado no vão, dão
+	# espessura à ponte e a sombra dela cai longe, mostrando a altura.
+	for side in [-1.0,1.0]:
+		_box("HarborConnectorGirder",Vector3((HARBOR_CONNECTOR_X+SEAM.x)*.5,-1.35,CENTER_Z+side*10.3),Vector3(SEAM.x-HARBOR_CONNECTOR_X,1.2,.9),concrete)
+		_box("BridgeGirder",Vector3((SEAM.x+BRIDGE_END_X)*.5,-1.35,CENTER_Z+side*(BRIDGE_HALF_WIDTH-.6)),Vector3(length,1.2,.9),concrete)
 	# East shore/access between the authored bridge end and tunnel portal.
 	_box("MountainAbutment",Vector3((BRIDGE_END_X+TUNNEL_START_X)*.5,-.30,CENTER_Z),Vector3(TUNNEL_START_X-BRIDGE_END_X,.54,18.0),edge,true)
 
 ## Os pilares começavam em y=0, fora do tabuleiro: ficavam pendurados 0,94 m acima
 ## do mar. A base desce até dentro da água e a espuma marca onde ela bate.
 func _pier_in_water(top: Vector3, width: float, concrete: StandardMaterial3D) -> void:
-	var bottom := HARBOR_OCEAN.WATER_Y-2.5
+	var water_y := HARBOR_OCEAN.surface_y(Vector2(top.x,top.z))
+	var bottom := water_y-2.5
 	_box("BridgePierFooting",Vector3(top.x,(top.y+bottom)*.5,top.z),Vector3(width+.3,top.y-bottom,width+.3),concrete)
 	var foam := MeshInstance3D.new()
 	foam.name = "BridgePierFoam"
 	var quad := PlaneMesh.new()
 	quad.size = Vector2.ONE*(width+.3+PIER_FOAM_REACH*3.2)
 	foam.mesh = quad
-	foam.position = Vector3(top.x,HARBOR_OCEAN.WATER_Y+.02,top.z)
+	foam.position = Vector3(top.x,water_y+.02,top.z)
 	foam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var material := ShaderMaterial.new()
 	material.shader = PIER_FOAM

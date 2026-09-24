@@ -7,6 +7,18 @@ const DEPTH_RANGE := 24.0
 ## no renderizador Mobile a coordenada de mundo (~500 m) perdia precisão no
 ## fragmento e a fase das ondas virava blocos quadrados (captura de 2026-09-24).
 const PERIOD := 256.0
+## Vão da ponte Harbor–Mountain: o tabuleiro ficava a 17 cm do mar e a ponte não
+## tinha altura nenhuma. Só a água desce (até BRIDGE_DROP), longe de qualquer
+## margem e com transição suave; tabuleiro, colisão e trânsito não mudam.
+const BRIDGE_DROP := 3.0
+const BRIDGE_START_X := 6300.0/16.0
+const BRIDGE_END_X := (4300.0+4650.0)/16.0
+const BRIDGE_CENTER_Z := -4560.0/16.0
+
+static func surface_y(point: Vector2, shore: float = DEPTH_RANGE) -> float:
+	var along := smoothstep(BRIDGE_START_X+10.0,BRIDGE_START_X+35.0,point.x)*(1.0-smoothstep(BRIDGE_END_X-35.0,BRIDGE_END_X-10.0,point.x))
+	var across := 1.0-smoothstep(25.0,70.0,absf(point.y-BRIDGE_CENTER_Z))
+	return WATER_Y-BRIDGE_DROP*along*across*smoothstep(8.0,22.0,shore)
 const SHADER := preload("res://world/regions/harbor_ocean.gdshader")
 var shores: Array[PackedVector2Array] = []
 var material: ShaderMaterial
@@ -42,9 +54,10 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	for z in range(count+1):
 		for x in range(count+1):
 			var point := rect.position+rect.size*Vector2(float(x)/count,float(z)/count)
-			vertices.append(Vector3(point.x,WATER_Y,point.y))
+			var shore := shore_distance(point)
+			vertices.append(Vector3(point.x,surface_y(point,shore),point.y))
 			normals.append(Vector3.UP)
-			colors.append(Color(shore_distance(point)/DEPTH_RANGE,0,0,1))
+			colors.append(Color(shore/DEPTH_RANGE,0,0,1))
 			uvs.append(point-base)
 	for z in count:
 		for x in count:
