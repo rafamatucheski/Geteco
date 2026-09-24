@@ -10,9 +10,11 @@ var materials: Dictionary = {}
 const WATER_SHADER := preload("res://world/regions/mountain_lake.gdshader")
 func _ready() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalLakeData.json"))[variant]
+	_collect_road_clearance()
 	if variant == "alpine":
 		_surface("AlpineShore",_points(data.lake_shore,Vector2(-7000,0)),.007,Color("342e26"))
 		water_polygon = _points(data.shallow_water,Vector2(-7000,0))
+		water_polygon = _clear_roads(water_polygon)
 		_surface("AlpineShallows",water_polygon,.042,Color("226274"),true)
 		_surface("AlpineDeepColor",_points(data.deep_water,Vector2(-7000,0)),.048,Color("133c4a"),true)
 		for pair in [[Vector2(7380,-260),Vector2(7350,-235)],[Vector2(7350,-235),Vector2(7310,-207)],[Vector2(7310,-207),Vector2(7285,-157)],[Vector2(7285,-157),Vector2(7260,-115)]]:
@@ -20,6 +22,7 @@ func _ready() -> void:
 	else:
 		_surface("GlacialShore",_points(data.shore),.007,Color("2a241e"))
 		water_polygon = _points(data.shallow)
+		water_polygon = _clear_roads(water_polygon)
 		_surface("GlacialShallows",water_polygon,.042,Color("175b6a"),true)
 		_surface("GlacialDeepColor",_points(data.deep),.048,Color("0b2f3a"),true)
 		_surface("FrozenCascade",_points(data.frozen_fall),.09,Color("709ba6"))
@@ -92,6 +95,8 @@ func _material(color: Color,water := false) -> Material:
 	materials[key] = mat
 	return mat
 func _surface(id: String,polygon: PackedVector2Array,height: float,color: Color,water := false) -> void:
+	if id in CLIPPED_SURFACES: polygon = _clear_roads(polygon)
+	if polygon.size() < 3: return
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var indices := Geometry2D.triangulate_polygon(polygon)
@@ -149,3 +154,50 @@ func _box(parent: Node3D,at: Vector3,size: Vector3,color: Color,solid := false) 
 	mesh.material_override = _material(color)
 	parent.add_child(mesh)
 	if solid: mesh.create_trimesh_collision()
+
+## Recorte das estradas: os polígonos da V1 foram desenhados com a estrada pintada
+## por cima; em 3D a água e a margem encostavam no asfalto e pareciam invadir a
+## pista (relato do jogador em 2026-09-24). Água e margem ficam ROAD_CLEARANCE
+## além da borda da estrada.
+const ROAD_CLEARANCE := 3.5
+const CLIPPED_SURFACES := ["AlpineShore","AlpineShallows","AlpineDeepColor","GlacialShore","GlacialShallows","GlacialDeepColor"]
+var _road_buffers: Array[PackedVector2Array] = []
+
+func _collect_road_clearance() -> void:
+	_road_buffers.clear()
+	var region: Node = get_parent()
+	while region != null and not ("roads" in region): region = region.get_parent()
+	if region == null: return
+	for road in region.roads:
+		var points: PackedVector3Array = road.points
+		var half: float = float(road.width)*.5+ROAD_CLEARANCE
+		for i in range(points.size()-1):
+			var a := Vector2(points[i].x-position.x,points[i].z-position.z)
+			var b := Vector2(points[i+1].x-position.x,points[i+1].z-position.z)
+			if Geometry2D.get_closest_point_to_segment(Vector2.ZERO,a,b).length() > 120.0: continue
+			var along := (b-a).normalized()*half
+			var side := along.orthogonal()
+			_road_buffers.append(PackedVector2Array([a-along-side,b+along-side,b+along+side,a-along+side]))
+
+func _clear_roads(polygon: PackedVector2Array) -> PackedVector2Array:
+	var result := polygon
+	for buffer in _road_buffers:
+		if result.size() < 3: return result
+		var pieces := Geometry2D.clip_polygons(result,buffer)
+		if pieces.is_empty(): return PackedVector2Array()
+		# Fica o maior pedaço (um furo é sempre menor que o contorno de fora); a água
+		# não vira ilhas soltas por causa de uma estrada.
+		var best := PackedVector2Array()
+		var best_area := 0.0
+		for piece in pieces:
+			var area := absf(_area(piece))
+			if area > best_area:
+				best_area = area
+				best = piece
+		result = best
+	return result
+
+static func _area(polygon: PackedVector2Array) -> float:
+	var sum := 0.0
+	for i in polygon.size(): sum += polygon[i].cross(polygon[(i+1)%polygon.size()])
+	return sum*.5
