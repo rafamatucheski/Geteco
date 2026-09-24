@@ -39,6 +39,7 @@ var _saved: Array = []
 var _last_source: WeakRef
 var _fire: GPUParticles3D
 var _fire_light: OmniLight3D
+var _smoke: GPUParticles3D
 var _ember: StandardMaterial3D
 var _tween: Tween
 var _rng := RandomNumberGenerator.new()
@@ -187,7 +188,7 @@ static func _char(embers: bool) -> Texture2D:
 				var tone := lerpf(.028, .2, ash)
 				albedo.set_pixel(x, y, Color(tone, tone * 1.01, tone * 1.06))
 				# Linhas finas onde o ruído cruza zero: rachaduras, não manchas.
-				var crack := 1.0 - smoothstep(.0, .032, absf(cracks.get_noise_2d(x, y)))
+				var crack := 1.0 - smoothstep(.0, .014, absf(cracks.get_noise_2d(x, y)))
 				glow.set_pixel(x, y, Color.WHITE * crack * (1.0 - ash))
 		albedo.generate_mipmaps()
 		glow.generate_mipmaps()
@@ -199,37 +200,79 @@ static func _char(embers: bool) -> Texture2D:
 
 func _update_fire() -> void:
 	if not is_instance_valid(_fire):
-		_fire = RESOURCES.emitter("EngineFire", 48, .6, Vector2(.75, .75), false)
+		# Chama: núcleo pequeno e aditivo (sprite macio, sem "wisp"), que sobe rápido
+		# e encolhe; a versão anterior usava quads grandes em alpha-mix que viravam
+		# um borrão laranja parado sobre o capô.
+		_fire = RESOURCES.emitter("EngineFire", 64, .55, Vector2(.55, .55), false)
+		var flame_mesh: QuadMesh = _fire.draw_pass_1.duplicate(true)
+		(flame_mesh.material as StandardMaterial3D).blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		_fire.draw_pass_1 = flame_mesh
 		var process := RESOURCES.particle_process()
-		process.emission_sphere_radius = .45
-		process.spread = 18.0
-		process.initial_velocity_min = 1.2
-		process.initial_velocity_max = 2.4
-		process.scale_min = .5
-		process.scale_max = 1.3
+		process.emission_sphere_radius = .35
+		process.spread = 12.0
+		process.initial_velocity_min = 1.6
+		process.initial_velocity_max = 2.8
+		process.scale_min = .6
+		process.scale_max = 1.2
+		var shrink := Curve.new()
+		shrink.add_point(Vector2(0, .7))
+		shrink.add_point(Vector2(.3, 1))
+		shrink.add_point(Vector2(1, .15))
+		var shrink_texture := CurveTexture.new()
+		shrink_texture.curve = shrink
+		process.scale_curve = shrink_texture
 		var ramp := Gradient.new()
-		ramp.offsets = PackedFloat32Array([0.0, .25, .65, 1.0])
-		ramp.colors = PackedColorArray([Color(1, .93, .55, .95), Color(1, .55, .12, .9), Color(.85, .18, .05, .55), Color(.12, .12, .13, 0)])
+		ramp.offsets = PackedFloat32Array([0.0, .3, .7, 1.0])
+		ramp.colors = PackedColorArray([Color(1, .85, .45, .9), Color(1, .45, .1, .75), Color(.6, .12, .03, .35), Color(0, 0, 0, 0)])
 		var ramp_texture := GradientTexture1D.new()
 		ramp_texture.gradient = ramp
 		process.color_ramp = ramp_texture
 		_fire.process_material = process
 		vehicle.add_child(_fire)
 		_fire.top_level = true
+		# Fumaça escura separada, acima da chama: é ela que lê como "carro pegando fogo"
+		# vista de cima, e esconde o corte seco do topo das partículas de chama.
+		_smoke = RESOURCES.emitter("EngineSmoke", 28, 2.4, Vector2(1.3, 1.3), true)
+		var smoke := RESOURCES.particle_process()
+		smoke.emission_sphere_radius = .4
+		smoke.spread = 20.0
+		smoke.initial_velocity_min = 1.0
+		smoke.initial_velocity_max = 1.8
+		smoke.gravity = Vector3(.25, .3, 0)
+		smoke.scale_min = .8
+		smoke.scale_max = 1.4
+		var grow := Curve.new()
+		grow.add_point(Vector2(0, .5))
+		grow.add_point(Vector2(1, 2.2))
+		var grow_texture := CurveTexture.new()
+		grow_texture.curve = grow
+		smoke.scale_curve = grow_texture
+		var smoke_ramp := Gradient.new()
+		smoke_ramp.offsets = PackedFloat32Array([0.0, .15, .6, 1.0])
+		smoke_ramp.colors = PackedColorArray([Color(.1, .09, .08, 0), Color(.12, .11, .1, .6), Color(.2, .2, .21, .35), Color(.3, .3, .32, 0)])
+		var smoke_texture := GradientTexture1D.new()
+		smoke_texture.gradient = smoke_ramp
+		smoke.color_ramp = smoke_texture
+		_smoke.process_material = smoke
+		vehicle.add_child(_smoke)
+		_smoke.top_level = true
 		_fire_light = OmniLight3D.new()
-		_fire_light.light_color = Color(1, .55, .2)
-		_fire_light.omni_range = 6.0
+		_fire_light.light_color = Color(1, .5, .18)
+		_fire_light.omni_range = 5.0
 		_fire_light.shadow_enabled = false
 		vehicle.add_child(_fire_light)
 	var hood: Vector3 = Vector3(0, .85, -vehicle.half_length * .58)
 	_fire.global_position = vehicle.to_global(hood)
 	_fire.emitting = true
+	_smoke.global_position = _fire.global_position + Vector3.UP * .5
+	_smoke.emitting = true
 	_fire_light.position = hood + Vector3.UP * .4
-	_fire_light.light_energy = 2.2 + _rng.randf_range(-.7, .7)
+	_fire_light.light_energy = 1.6 + _rng.randf_range(-.5, .5)
 	_fire_light.visible = true
 
 func _stop_fire() -> void:
 	if is_instance_valid(_fire): _fire.emitting = false
+	if is_instance_valid(_smoke): _smoke.emitting = false
 	if is_instance_valid(_fire_light): _fire_light.visible = false
 
 ## Impacto direto de lança-chamas inicia o fogo no capô mesmo antes do limiar
@@ -259,13 +302,13 @@ func wreck() -> void:
 	_ember.metallic = .3
 	_ember.roughness = .92
 	_ember.uv1_triplanar = true
-	_ember.uv1_scale = Vector3(.5, .5, .5)
+	_ember.uv1_scale = Vector3(.22, .22, .22)
 	# A brasa fica só nas rachaduras da máscara; emissão chapada deixava a carcaça laranja.
 	_ember.emission_enabled = true
-	_ember.emission = Color(1, .3, .06)
+	_ember.emission = Color(.9, .22, .04)
 	_ember.emission_texture = _char(true)
 	_ember.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
-	_ember.emission_energy_multiplier = 2.4
+	_ember.emission_energy_multiplier = 1.1
 	var molten := StandardMaterial3D.new()
 	molten.albedo_color = Color(.02, .02, .022)
 	molten.roughness = 1.0
@@ -315,7 +358,7 @@ func _blast_hop() -> void:
 	set_physics_process(true)
 	# A brasa esfria até sobrar só a lataria queimada.
 	_tween = vehicle.create_tween()
-	_tween.tween_property(_ember, "emission_energy_multiplier", 0.0, 12.0).set_trans(Tween.TRANS_SINE)
+	_tween.tween_property(_ember, "emission_energy_multiplier", 0.0, 7.0).set_trans(Tween.TRANS_SINE)
 
 func _step_wreck(delta: float) -> void:
 	if _hop_active: _step_hop(delta)
@@ -324,6 +367,7 @@ func _step_wreck(delta: float) -> void:
 		var strength := _wreck_fire_time / WRECK_FIRE_SECONDS
 		_update_fire()
 		_fire.amount_ratio = clampf(strength * 1.4, 0.0, 1.0)
+		_smoke.amount_ratio = clampf(strength * 2.0, .3, 1.0)
 		_fire_light.light_energy *= strength
 		if _wreck_fire_time <= 0.0: _stop_fire()
 	if not _hop_active and _wreck_fire_time <= 0.0: set_physics_process(false)
@@ -361,6 +405,7 @@ func restore() -> void:
 	_hop_active = false
 	_wreck_fire_time = 0.0
 	if is_instance_valid(_fire): _fire.amount_ratio = 1.0
+	if is_instance_valid(_smoke): _smoke.amount_ratio = 1.0
 	_stop_fire()
 	burning = false
 	_flame_ignited = false

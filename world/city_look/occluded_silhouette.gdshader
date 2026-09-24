@@ -6,7 +6,9 @@ shader_type spatial;
 // buffer). Onde o personagem está visível, o fragmento é descartado.
 render_mode unshaded, depth_test_disabled, depth_draw_never, cull_back, shadows_disabled, blend_mix;
 
-uniform vec4 tint : source_color = vec4(0.98, 0.78, 0.24, 0.62);
+// Neutro e só na borda: a versão amarela chapada acendia o teto inteiro de
+// ônibus e carro como um bloco de luz atrás do prédio.
+uniform vec4 tint : source_color = vec4(0.82, 0.86, 0.92, 0.55);
 uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
 // Folga em unidades de depth não linear (câmera ortográfica: depth é linear
 // no intervalo near..far, 180 m). 0.004 ~= 0.7 m, evita que braço na frente
@@ -34,5 +36,5 @@ void fragment() {
 	}
 	float rim = 1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0);
 	ALBEDO = tint.rgb;
-	ALPHA = tint.a * (0.55 + 0.45 * rim);
+	ALPHA = tint.a * (0.08 + 0.92 * pow(rim, 2.5));
 }
