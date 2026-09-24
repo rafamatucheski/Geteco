@@ -1,0 +1,29 @@
+{
+	"baseline": false,
+	"dispatch_status": {
+		"fire": 0,
+		"foot_officers": 0,
+		"medic": 0,
+		"mortician": 0,
+		"police": 2,
+		"released_slots": 0,
+		"stranded": 0,
+		"suspended": 0,
+		"units": 2,
+		"wrecks": 0
+	},
+	"frames": 1801,
+	"frames_over_33ms": 0,
+	"label": "v1-arrest-before",
+	"legacy_officers_alive": 0,
+	"max_ms": 27.889,
+	"mean_ms": 16.6662348695169,
+	"p50_ms": 16.646,
+	"p95_ms": 17.349,
+	"p99_ms": 18.334,
+	"peak_dispatch_units": 2,
+	"population": 24,
+	"renderer": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"seed": true,
+	"stars": 1
+}

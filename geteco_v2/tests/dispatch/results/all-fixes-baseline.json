@@ -1,0 +1,17 @@
+{
+	"baseline": true,
+	"frames": 1800,
+	"frames_over_33ms": 0,
+	"label": "all-fixes-baseline",
+	"legacy_officers_alive": 5,
+	"max_ms": 30.752,
+	"mean_ms": 16.6678594444444,
+	"p50_ms": 16.66,
+	"p95_ms": 17.194,
+	"p99_ms": 17.95,
+	"peak_dispatch_units": 0,
+	"population": 24,
+	"renderer": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"seed": true,
+	"stars": 4
+}

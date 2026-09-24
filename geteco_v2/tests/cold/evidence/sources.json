@@ -1,0 +1,20 @@
+[
+	{
+		"approach_clear": true,
+		"heat": "logging_camp",
+		"id": "logging_camp",
+		"image": "D:/geteco/game/geteco_v2/tests/cold/evidence/heat-logging_camp.png"
+	},
+	{
+		"approach_clear": true,
+		"heat": "summit_camp",
+		"id": "summit_camp",
+		"image": "D:/geteco/game/geteco_v2/tests/cold/evidence/heat-summit_camp.png"
+	},
+	{
+		"approach_clear": true,
+		"heat": "smuggler_camp",
+		"id": "smuggler_camp",
+		"image": "D:/geteco/game/geteco_v2/tests/cold/evidence/heat-smuggler_camp.png"
+	}
+]
