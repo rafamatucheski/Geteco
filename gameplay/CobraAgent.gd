@@ -142,7 +142,10 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	if _source is Node3D: last_known = _source.global_position
 	health = maxf(0, health - amount)
 	cooldown = minf(cooldown, 0.4)
-	if health > 0: return
+	if health > 0:
+		var impact_dir: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
+		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, impact_dir, amount)
+		return
 	dead = true
 	collision_layer = 0
 	collision_mask = 0

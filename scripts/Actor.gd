@@ -50,9 +50,7 @@ var combat_weapon_pose: Dictionary = {}
 var combat_weapon_id := ""
 var combat_weapon_mount: Node3D
 var combat_weapon_grip := Vector3.ZERO
-var _reaction_tween: Tween
 const FALL_TIME := 0.22
-const FLINCH_ANGLE := 0.22
 ## Mistura curta entre locomoção e clipe de golpe (0 = só locomoção, 1 = só o clipe), tempo em `COMBAT_BLEND`.
 var _combat_weight := 0.0
 var _last_clip := ""
@@ -583,6 +581,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		if gameplay: gameplay.damage_player(amount)
 		return
 	var vehicle_source: bool = is_instance_valid(source) and source.has_method("is_player_damage_source") and source.is_player_damage_source()
+	var impact_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 	health = maxf(0,health-amount)
 	if health <= 0:
 		dead = true
@@ -591,10 +590,9 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		set_physics_process(false)
 		collision_layer = 0
 		collision_mask = 0
-		var impact_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 		_fall_over(impact_dir)
 	else:
-		_flinch()
+		_flinch(impact_dir, amount)
 	var gameplay = get_parent().get("gameplay")
 	# A autoria continua no veículo real. A denúncia só é encaminhada depois de
 	# `dead` refletir o resultado deste impacto, inclusive no golpe fatal.
@@ -606,7 +604,6 @@ func receive_damage(amount: float, source: Node = null) -> void:
 ## Queda com articulação de membros, rotação direcional e quique suave no solo (V1).
 func _fall_over(impact := Vector3.ZERO) -> void:
 	if not is_instance_valid(visual): return
-	if _reaction_tween != null: _reaction_tween.kill()
 	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, impact)
 
 func on_player_death() -> void:
@@ -621,7 +618,6 @@ func respawn_player() -> void:
 	if not is_player: return
 	dead = false
 	health = 100.0
-	if _reaction_tween != null: _reaction_tween.kill()
 	visual.position = Vector3.ZERO
 	visual.rotation.x = 0.0
 	visual.rotation.z = 0.0
@@ -632,13 +628,10 @@ func respawn_player() -> void:
 	last_position = global_position
 	velocity = Vector3.ZERO
 
-## Reação curta ao ferimento (o civil se curva para trás e volta): só apresentação, o dano já foi aplicado acima.
-func _flinch() -> void:
+## O modelo articula tronco, cabeça, braços e pelve sobre a passada atual.
+func _flinch(impact: Vector3, amount: float) -> void:
 	if not is_instance_valid(visual) or is_player: return
-	if _reaction_tween != null: _reaction_tween.kill()
-	_reaction_tween = create_tween()
-	_reaction_tween.tween_property(visual, "rotation:x", -FLINCH_ANGLE, 0.06)
-	_reaction_tween.tween_property(visual, "rotation:x", 0.0, 0.14)
+	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, impact, amount)
 
 func recover_from_injury() -> void:
 	if dead: return

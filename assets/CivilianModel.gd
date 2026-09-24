@@ -66,6 +66,10 @@ var _look_timer := 0.0
 var _talk_w := 0.0
 var _carry_w := 0.0
 var _owner_actor: Node
+const HIT_DURATION := 0.38
+var _hit_time := HIT_DURATION
+var _hit_local := Vector3.ZERO
+var _hit_power := 0.0
 
 const PELVIS_Y := 0.94
 const HIP_DROP := -0.04
@@ -225,16 +229,25 @@ func teleported() -> void:
 
 # --- Animação ------------------------------------------------------------------
 
+func react_to_hit(impact: Vector3, amount: float) -> void:
+	var flat := Vector3(impact.x, 0.0, impact.z).normalized()
+	if flat.is_zero_approx(): flat = global_basis.z.normalized()
+	_hit_local = (global_basis.orthonormalized().inverse() * flat).normalized()
+	_hit_power = clampf(amount / 30.0, 0.4, 1.0)
+	_hit_time = 0.001
+
 func _process(delta: float) -> void:
 	clock += delta
 	if is_instance_valid(_owner_actor) and _owner_actor.get("dead") == true:
 		# A queda (`CharacterFallPresentation3D`) passa a dirigir as articulações.
 		set_process(false)
 		return
+	if _hit_time < HIT_DURATION: _hit_time = minf(HIT_DURATION, _hit_time + delta)
 	_measure(delta)
 	_pending += delta
 	_frame += 1
 	var interval := _update_interval() if lod_enabled else 1
+	if _hit_time < HIT_DURATION and interval <= 2: interval = 1
 	if interval > 1 and (_frame + _stagger) % interval != 0: return
 	_pose(_pending)
 	_pending = 0.0
@@ -266,6 +279,11 @@ func _update_interval() -> int:
 
 func _pose(dt: float) -> void:
 	dt = minf(dt, 0.25)
+	var hit := 0.0
+	var hit_head := 0.0
+	if _hit_time < HIT_DURATION:
+		hit = smoothstep(0.0, 0.055, _hit_time) * (1.0 - smoothstep(0.08, HIT_DURATION, _hit_time)) * _hit_power
+		hit_head = smoothstep(0.025, 0.09, _hit_time) * (1.0 - smoothstep(0.12, HIT_DURATION, _hit_time)) * _hit_power
 	var v := _speed
 	_move_w = move_toward(_move_w, 1.0 if v > 0.18 else 0.0, dt * 4.0)
 	_run_w = move_toward(_run_w, smoothstep(2.2, 3.3, v), dt * 3.0)
@@ -306,7 +324,7 @@ func _pose(dt: float) -> void:
 	shift += 0.022 * weight * idle
 	roll -= 0.03 * weight * idle
 	var tilt := lerpf(0.02, 0.09, rw) * mw
-	var pelvis_basis := Basis.from_euler(Vector3(tilt, yaw, roll))
+	var pelvis_basis := Basis.from_euler(Vector3(tilt + _hit_local.z * 0.045 * hit, yaw, roll - _hit_local.x * 0.055 * hit))
 	var pelvis_position := Vector3(shift, PELVIS_Y - (0.008 + 0.015 * rw) * mw + bob, 0.0)
 	# Só a perna de apoio limita a altura da pelve: a do balanço está no ar e
 	# pode encolher. Incluí-la agachava o corredor no começo do balanço.
@@ -316,7 +334,7 @@ func _pose(dt: float) -> void:
 		if fposmod(_phase + 0.5 * i, 1.0) >= duty and mw > 0.5: continue
 		var gap: Vector3 = pelvis_position + pelvis_basis * _hip_offsets[i] - ankles[i]
 		drop = maxf(drop, gap.y - sqrt(maxf(leg_reach * leg_reach - gap.x * gap.x - gap.z * gap.z, 0.0)))
-	pelvis_position.y -= drop
+	pelvis_position.y -= drop + 0.07 * hit
 	# Sentado: a pelve desce até o assento (a altura é global; o modelo tem
 	# escala própria) e os pés vão à frente; o IK dobra os joelhos sozinho.
 	var sit := _sit()
@@ -330,9 +348,9 @@ func _pose(dt: float) -> void:
 	# Tronco contra-gira a pelve (ombros opostos ao quadril), inclina na corrida
 	# e respira parado.
 	var breathe := sin(clock * 1.7 + _seed) * 0.012 * (1.0 + rw * 1.5)
-	var chest_yaw := -yaw * 1.7
-	var chest_roll := -roll * 0.85
-	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w + 0.1 * _sit()
+	var chest_yaw := -yaw * 1.7 + _hit_local.x * 0.10 * hit
+	var chest_roll := -roll * 0.85 - _hit_local.x * 0.19 * hit
+	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w + 0.1 * _sit() + _hit_local.z * 0.20 * hit
 	spine.transform = Transform3D(Basis.from_euler(Vector3(chest_lean, chest_yaw, chest_roll)), SPINE_OFFSET)
 	var spine_model := pelvis.transform * spine.transform
 
@@ -344,8 +362,8 @@ func _pose(dt: float) -> void:
 	_look = lerpf(_look, _look_target, 1.0 - exp(-3.0 * dt))
 	var nod := sin(clock * 2.6 + _seed) * 0.06 * _talk_w
 	var head_yaw := -(yaw + chest_yaw) * 0.85 + _look * (1.0 - 0.7 * rw)
-	var head_pitch := -(tilt + chest_lean) * 0.75 + 0.05 + nod + 0.12 * _carry_w
-	var head_roll := -(roll + chest_roll) * 0.8
+	var head_pitch := -(tilt + chest_lean) * 0.75 + 0.05 + nod + 0.12 * _carry_w - _hit_local.z * 0.13 * hit_head
+	var head_roll := -(roll + chest_roll) * 0.8 + _hit_local.x * 0.11 * hit_head
 	head_node.transform = Transform3D(Basis.from_euler(Vector3(head_pitch, head_yaw, head_roll)), NECK)
 
 	# Braços em oposição às pernas; na corrida cotovelo a ~90° e balanço cruzando
@@ -361,6 +379,10 @@ func _pose(dt: float) -> void:
 		# peito) e abre quando vai para trás; fixo em 90° parecia zumbi.
 		var elbow := lerpf(0.13 + 0.3 * clampf(flex / 0.35, 0.0, 1.0) * mw, 1.3 + 0.38 * swing, rw)
 		var abduct := side * (0.085 + 0.05 * rw)
+		var guard := hit * (0.75 if side * _hit_local.x > 0.0 else 0.35)
+		flex += 0.42 * guard
+		elbow += 0.55 * guard
+		abduct += side * 0.16 * guard
 		if i == 1 and _talk_w > 0.0:
 			# Gesticula com a mão direita enquanto conversa.
 			flex = lerpf(flex, 0.35 + 0.22 * sin(clock * 2.1 + _seed), _talk_w)

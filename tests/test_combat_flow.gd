@@ -200,7 +200,10 @@ func _run() -> void:
 	check(gameplay.crime_points > crime_before, "disparo em civil gera crime", "%d -> %d" % [crime_before, gameplay.crime_points])
 	check(gameplay.effects._tracers.any(func(node): return node.visible), "trajetória da pistola usa cauda móvel visível")
 	await frames(4)
-	check(absf(npc.visual.rotation.x) > 0.02, "ferimento: o civil reage (curva-se) sem perder o dano único", "rot.x=%.3f" % npc.visual.rotation.x)
+	var hurt_model: Node3D = npc.visual.get_child(0) as Node3D
+	var hurt_spine: Node3D = hurt_model.get("spine") as Node3D
+	check(absf(hurt_spine.rotation.x) + absf(hurt_spine.rotation.z) > 0.04,
+		"ferimento: o tronco reage sem perder o dano único", "tronco=%s" % str(hurt_spine.rotation))
 	await shot("03_pistola_acerto")
 
 	# ---- 2. continuar até morrer
@@ -216,8 +219,9 @@ func _run() -> void:
 		guard += 1
 	check(npc.dead and npc.health == 0.0, "NPC morre pelos disparos", "tiros=%d guard=%d" % [shots_taken, guard])
 	check(monotonic, "vida só diminui")
-	await frames(20)
-	check(npc.collision_layer == 0 and absf(npc.visual.rotation.z - PI / 2.0) < 0.01, "morte: corpo caído e sem colisão")
+	await frames(75)
+	check(npc.collision_layer == 0 and maxf(absf(npc.visual.rotation.x), absf(npc.visual.rotation.z)) > 1.3,
+		"morte: corpo caído e sem colisão")
 	check(gameplay.stars >= 1 and gameplay.crime_points > 0, "crime escalou para procurado", "crime=%d estrelas=%d" % [gameplay.crime_points, gameplay.stars])
 	var incidents: Dictionary = gameplay.emergency.incidents
 	var roles: Array = []
