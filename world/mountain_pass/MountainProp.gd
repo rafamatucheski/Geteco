@@ -8,6 +8,10 @@ var camera: Camera3D
 var sprite: Sprite2D
 var open_front := false
 var _rendered_once := false
+var inline_entrance: BuildingEntrance
+var inline_room: Node2D
+var inline_door_blocker: CollisionPolygon2D
+var _inline_door_amount := 0.0
 const DISPLAY_SCALE := 0.4921875 # 256 / 7m * scale = 18px/m
 
 func _ready() -> void:
@@ -66,6 +70,7 @@ func project(point: Vector3) -> Vector2:
 	return (camera.unproject_position(point) - camera.unproject_position(Vector3.ZERO)) * DISPLAY_SCALE
 
 func _process(_delta: float) -> void:
+	if is_instance_valid(inline_entrance): _update_inline_door(_delta)
 	if not is_instance_valid(model) or open_front: return
 	# Raised roof pixels must occlude actors standing behind the solid floor.
 	var actor := get_tree().get_first_node_in_group("player") as Node2D
@@ -73,6 +78,43 @@ func _process(_delta: float) -> void:
 	var front := project(Vector3(0, 0, model.footprint_size.y * 0.5)).y
 	sprite.z_as_relative = false
 	sprite.z_index = 12 if to_local(actor.global_position).y < front else 4
+
+func bind_inline_entrance(entrance: BuildingEntrance, room: Node2D) -> void:
+	inline_entrance = entrance
+	inline_room = room
+	var body := StaticBody2D.new()
+	body.name = "CabinDoorBody"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	add_child(body)
+	inline_door_blocker = CollisionPolygon2D.new()
+	inline_door_blocker.name = "DoorLeaf"
+	inline_door_blocker.polygon = PackedVector2Array([
+		project(Vector3(-.48, 0, 1.86)),
+		project(Vector3(.48, 0, 1.86)),
+		project(Vector3(.48, 0, 2.02)),
+		project(Vector3(-.48, 0, 2.02)),
+	])
+	body.add_child(inline_door_blocker)
+
+func _update_inline_door(delta: float) -> void:
+	var actor := get_tree().get_first_node_in_group("player") as Node2D
+	var near := false
+	if is_instance_valid(actor) and actor.get("is_dead") != true and actor.visible:
+		var local := inline_entrance.to_local(actor.global_position)
+		near = absf(local.x) < 30.0 and absf(local.y) < 62.0
+		near = near or (is_instance_valid(inline_room) and inline_room.contains_point(actor.global_position))
+	var amount := move_toward(_inline_door_amount, 1.0 if inline_entrance.enabled and near else 0.0, delta / .22)
+	if is_equal_approx(amount, _inline_door_amount): return
+	_inline_door_amount = amount
+	if model.has_method("set_open_amount"): model.set_open_amount(amount)
+	if is_instance_valid(inline_door_blocker): inline_door_blocker.disabled = amount >= .55
+	if sprite.visible: viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+func set_inline_occupied(active: bool) -> void:
+	if not is_instance_valid(sprite): return
+	sprite.visible = not active
+	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED if active else SubViewport.UPDATE_ONCE
 
 func _solid(rect: Rect2) -> void:
 	var body := StaticBody2D.new()

@@ -24,6 +24,7 @@ var _sprite_visible := true
 var _uses_cabin := false
 var _closing_exit := false
 var _close_progress := 0.0
+var theft_sequence: Node
 
 static func clear_occupant(vehicle: Node) -> void:
 	if not "body_model" in vehicle or not is_instance_valid(vehicle.body_model): return
@@ -73,6 +74,9 @@ func begin(vehicle: CharacterBody2D, pedestrian: CharacterBody2D, approach: Vect
 	side = entry_side
 	profile = profile_for(car)
 	duration = duration_for(car, side)
+	if profile == "motorcycle" and is_instance_valid(theft_sequence):
+		# Ground anchors stay upright while the bike rolls independently.
+		car.body_model.rotation.z = 0.0
 	_interpolation = actor.physics_interpolation_mode
 	_z_index = actor.z_index
 	original_color = actor.modulate
@@ -118,7 +122,7 @@ func begin(vehicle: CharacterBody2D, pedestrian: CharacterBody2D, approach: Vect
 		_uses_cabin = true
 		_sprite_visible = actor.sprite_3d_display.visible
 		actor.sprite_3d_display.hide()
-	elif profile == "motorcycle" and exiting and "model_root" in actor and is_instance_valid(actor.model_root):
+	elif profile == "motorcycle" and "model_root" in actor and is_instance_valid(actor.model_root):
 		clear_occupant(car)
 		cabin_occupant = preload("res://scripts/player/VehicleCabinOccupant.gd").new()
 		car.body_model.add_child(cabin_occupant)
@@ -142,7 +146,14 @@ func begin(vehicle: CharacterBody2D, pedestrian: CharacterBody2D, approach: Vect
 			return
 		_start = landing
 	motion = create_tween()
-	motion.tween_property(self, "progress", 1.0, duration)
+	if is_instance_valid(theft_sequence):
+		theft_sequence.bind_boarding(self)
+		motion.tween_property(theft_sequence, "progress", 1.0, theft_sequence.duration)
+		motion.tween_callback(theft_sequence.finish)
+		motion.tween_callback(func(): progress = 0.18)
+		motion.tween_property(self, "progress", 1.0, duration * 0.82)
+	else:
+		motion.tween_property(self, "progress", 1.0, duration)
 	motion.tween_callback(_finish)
 	_process(0.0)
 
@@ -158,12 +169,20 @@ static func start_exit(vehicle: CharacterBody2D, pedestrian: CharacterBody2D) ->
 		var destination: Vector2 = vehicle._get_safe_exit_position()
 		var preferred := -1.0 if vehicle.to_local(destination).y <= 0 else 1.0
 		for exit_side in [preferred, -preferred]:
-			vehicle._animate_car_door(exit_side, duration_for(vehicle, exit_side) - 0.25)
+			# Build the authored hinge before CabinOccupant resolves its doorway,
+			# without opening a side that may fail the body-clearance query.
+			if vehicle.has_method("_prepare_native_door"):
+				vehicle._prepare_native_door(exit_side)
 			transition = load("res://cars/VehicleBoarding.gd").new()
 			vehicle.add_child(transition)
 			vehicle._boarding = transition
 			transition.begin(vehicle, pedestrian, destination, exit_side, true)
-			if transition.active: break
+			if transition.active:
+				# Only animate the door for the side that passed the full body
+				# clearance query. Previously the blocked side began opening before
+				# its landing was rejected, so both doors could swing outside.
+				vehicle._animate_car_door(exit_side, duration_for(vehicle, exit_side) - 0.25)
+				break
 		if not transition.active: return
 		transition.progress = 1.0
 		opening = false
@@ -195,7 +214,14 @@ func _door_landing(doorway: Vector2) -> Vector2:
 	return Vector2.INF
 
 func reverse_to_exit(open_door := true) -> void:
+	if is_instance_valid(theft_sequence): theft_sequence.finish()
 	exiting = true
+	# The engine is switched off when leaving begins, not after the door closes.
+	# Physics pauses during boarding, so it cannot perform this cleanup for us.
+	if car.engine_audio: car.engine_audio.stop()
+	car._engine_sound.stop()
+	if car.skid_audio: car.skid_audio.stop()
+	if car.radio_audio: car.radio_audio.stop()
 	if motion: motion.kill()
 	# Reverse from the current pose if entry was interrupted; never jump seats.
 	var seconds := maxf(0.45, duration * progress)
@@ -243,6 +269,9 @@ func _process(_delta: float) -> void:
 	if not active: return
 	if not is_instance_valid(actor) or not is_instance_valid(car):
 		cancel()
+		return
+	if is_instance_valid(theft_sequence) and not theft_sequence.completed:
+		theft_sequence.update_pose()
 		return
 	var t := progress
 	if t < 0.18:
@@ -302,6 +331,7 @@ func _finish() -> void:
 		return
 	active = false
 	phase = "seated"
+	if is_instance_valid(theft_sequence): theft_sequence.finish()
 	if is_instance_valid(cabin_occupant):
 		_pose.apply(actor, profile, side, 1.0, car.global_rotation)
 		cabin_occupant.settle(actor)
@@ -315,6 +345,7 @@ func _finish() -> void:
 	queue_free()
 
 func cancel() -> void:
+	if is_instance_valid(theft_sequence): theft_sequence.finish()
 	if motion: motion.kill()
 	active = false
 	if is_instance_valid(car): car.remove_meta("vehicle_boarding")
@@ -323,6 +354,7 @@ func cancel() -> void:
 	queue_free()
 
 func _exit_tree() -> void:
+	if is_instance_valid(theft_sequence): theft_sequence.finish()
 	if not active: return
 	if motion: motion.kill()
 	if is_instance_valid(car): car.remove_meta("vehicle_boarding")

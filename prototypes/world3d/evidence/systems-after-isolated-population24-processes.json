@@ -1,0 +1,673 @@
+[
+  {
+    "utc": "2026-09-21T12:23:44.8442034Z",
+    "phase": "before",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      }
+    ]
+  },
+  {
+    "utc": "2026-09-21T12:23:45.1195701Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:46.3595354Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:47.5973735Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:48.8816172Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:50.1503910Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:51.4195287Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:52.6908438Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:53.9291819Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:55.2032149Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:56.4588280Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:57.6666556Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:23:58.9374903Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:00.1976083Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:01.4475564Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:02.7005119Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:03.9582942Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:05.2337846Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:06.4920226Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:07.7583368Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:08.9968257Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:10.2453539Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:11.4924991Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:12.7601203Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:14.0167538Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:15.2852775Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:16.5607105Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:17.7920534Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:19.0330365Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:20.2936907Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "utc": "2026-09-21T12:24:21.5438258Z",
+    "phase": "during",
+    "processes": [
+      {
+        "ProcessId": 48296,
+        "ParentProcessId": 60428,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 52944,
+        "ParentProcessId": 76276,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      },
+      {
+        "ProcessId": 63552,
+        "ParentProcessId": 52944,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\prototypes\\world3d\" --script res://tests/measure.gd -- --population=24 --label=systems-after-isolated-population24"
+      }
+    ],
+    "concurrent": false
+  }
+]

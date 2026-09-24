@@ -9,6 +9,8 @@ enum State { SURFACE, OPENING, INSIDE, EXITING }
 
 const INTERACTION_RADIUS := 27.0
 const EXIT_RADIUS := 54.0
+const CENTER_ACCESS_RADIUS := 11.0
+const LADDER_ACCESS_RADIUS := 20.0
 const SEWER_COLLISION_LAYER := 1
 const INTERIOR_BOUNDS := Rect2(-130.0, -118.0, 460.0, 270.0)
 const CANAL_BOUNDS := Rect2(112.0, -100.0, 54.0, 234.0)
@@ -21,6 +23,8 @@ const COVER_GRIP := Vector2(-12.0, 6.0)
 
 var state := State.SURFACE
 var _inside := false
+var inline_mode := true
+var _exit_armed := false
 var _nearby_player: CharacterBody2D
 var _player: CharacterBody2D
 var _actor_state: Dictionary = {}
@@ -28,8 +32,6 @@ var _rig_transforms: Dictionary = {}
 var _interior_overlay: Node2D
 var _water_art: Node2D
 var _secret_art: Node2D
-var _exit_prompt: Label
-var _secret_prompt: Label
 var _ambient_water: AudioStreamPlayer
 var _surface_sensor: Area2D
 var _surface_art: ManholeSurfaceArt
@@ -38,6 +40,7 @@ var _reward_collected := false
 var _shaft_material: ShaderMaterial
 var _arm_solver := preload("res://characters/PlayerCombatPose.gd").new()
 var _isolation: RefCounted
+var _actor_presentation: Node
 var _transition_step := "surface":
 	set(value):
 		_transition_step = value
@@ -45,6 +48,7 @@ var _transition_step := "surface":
 			print("SEWER_PHASE ", value, " t=", Time.get_ticks_msec())
 
 func _exit_tree() -> void:
+	_restore_room_actor()
 	if _isolation != null:
 		_isolation.dispose()
 
@@ -99,34 +103,6 @@ class SewerWaterArt:
 			draw_line(Vector2(118, level), Vector2(160, level + 3), Color(0.37, 0.62, 0.56, 0.24), 1.0)
 			draw_line(Vector2(126, level + 5), Vector2(152, level + 7), Color(0.56, 0.74, 0.61, 0.12), 1.0)
 
-class SecretStashArt:
-	extends Node2D
-
-	var nearby := false
-	var collected := false
-	var clock := 0.0
-
-	func _process(delta: float) -> void:
-		if collected:
-			return
-		clock += delta
-		queue_redraw()
-
-	func _draw() -> void:
-		if collected:
-			return
-		var lift := sin(clock * 2.2) * 1.5
-		draw_circle(Vector2(0.0, 10.0), 24.0, Color(0.85, 0.49, 0.16, 0.10 if not nearby else 0.18))
-		draw_rect(Rect2(-31.0, -10.0, 62.0, 36.0), Color("#1c2427"))
-		draw_rect(Rect2(-28.0, -8.0, 56.0, 31.0), Color("#4c5557"))
-		draw_rect(Rect2(-28.0, -8.0, 56.0, 31.0), Color("#88908c"), false, 2.0)
-		draw_line(Vector2(-22.0, 4.0), Vector2(22.0, 4.0), Color("#20282b"), 3.0)
-		# Compact double-barrel silhouette; the prompt is the only text.
-		var p := Vector2(0.0, -14.0 + lift)
-		draw_line(p + Vector2(-19.0, -2.0), p + Vector2(13.0, -2.0), Color("#aeb7b6"), 4.0)
-		draw_line(p + Vector2(-19.0, 2.0), p + Vector2(13.0, 2.0), Color("#737f82"), 4.0)
-		draw_line(p + Vector2(-18.0, 3.0), p + Vector2(-25.0, 13.0), Color("#8b5c36"), 6.0)
-
 func _ready() -> void:
 	z_as_relative = false
 	_build_surface()
@@ -153,10 +129,6 @@ func _build_surface() -> void:
 	_surface_sensor.body_entered.connect(_on_surface_body_entered)
 	_surface_sensor.body_exited.connect(_on_surface_body_exited)
 
-	var prompt := _make_prompt(_surface_art, Vector2(-28.0, -50.0))
-	prompt.name = "Prompt"
-	prompt.hide()
-
 	_lid_audio = AudioStreamPlayer2D.new()
 	_lid_audio.name = "LidAudio"
 	_lid_audio.bus = &"SFX"
@@ -165,37 +137,20 @@ func _build_surface() -> void:
 	_lid_audio.max_distance = 480.0
 	add_child(_lid_audio)
 
-func _make_prompt(parent: Node, at: Vector2) -> Label:
-	var prompt := Label.new()
-	prompt.text = "E"
-	prompt.position = at
-	prompt.size = Vector2(56.0, 24.0)
-	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prompt.add_theme_font_size_override("font_size", 13)
-	prompt.add_theme_color_override("font_color", Color("#f4dfad"))
-	prompt.add_theme_color_override("font_outline_color", Color("#11191c"))
-	prompt.add_theme_constant_override("outline_size", 4)
-	prompt.z_as_relative = false
-	prompt.z_index = 250
-	parent.add_child(prompt)
-	return prompt
-
 func _on_surface_body_entered(body: Node2D) -> void:
 	if state != State.SURFACE or not body.is_in_group("player") or not body is CharacterBody2D:
 		return
 	_nearby_player = body as CharacterBody2D
-	_refresh_surface_prompt()
+	set_process(true)
 
 func _on_surface_body_exited(body: Node2D) -> void:
 	if body != _nearby_player:
 		return
 	_nearby_player = null
-	_refresh_surface_prompt()
+	if state == State.SURFACE: set_process(false)
 
 func _refresh_surface_prompt() -> void:
-	var prompt := _surface_art.get_node_or_null("Prompt") as Label
-	if prompt != null:
-		prompt.visible = state == State.SURFACE and _can_use_surface(_nearby_player)
+	pass
 
 func _can_use_surface(actor: CharacterBody2D) -> bool:
 	if not is_instance_valid(actor) or not actor.visible:
@@ -206,21 +161,6 @@ func _can_use_surface(actor: CharacterBody2D) -> bool:
 		return false
 	return actor.global_position.distance_to(global_position) <= INTERACTION_RADIUS + 3.0
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_action_pressed("interact") or event.is_echo():
-		return
-	if state == State.SURFACE and request_interaction(_nearby_player):
-		get_viewport().set_input_as_handled()
-		return
-	if state != State.INSIDE or not is_instance_valid(_player):
-		return
-	if not _reward_collected and _player.global_position.distance_to(to_global(SECRET_POSITION)) <= 48.0:
-		get_viewport().set_input_as_handled()
-		_collect_secret()
-	elif _player.global_position.distance_to(global_position) <= EXIT_RADIUS:
-		get_viewport().set_input_as_handled()
-		_begin_exit()
-
 func request_interaction(actor: CharacterBody2D) -> bool:
 	if state != State.SURFACE or not _can_use_surface(actor):
 		return false
@@ -228,22 +168,23 @@ func request_interaction(actor: CharacterBody2D) -> bool:
 	return true
 
 func _process(_delta: float) -> void:
+	if state == State.SURFACE:
+		if _can_use_surface(_nearby_player) and _nearby_player.global_position.distance_to(global_position) <= CENTER_ACCESS_RADIUS:
+			request_interaction(_nearby_player)
+		return
 	if state != State.INSIDE or not is_instance_valid(_player):
 		return
 	if bool(_player.get("is_dead")) or bool(_player.get("is_arrested")):
 		_force_surface_restore()
 		return
-	var at_exit := _player.global_position.distance_to(global_position) <= EXIT_RADIUS
-	var at_secret := not _reward_collected and _player.global_position.distance_to(to_global(SECRET_POSITION)) <= 48.0
-	if is_instance_valid(_exit_prompt):
-		_exit_prompt.visible = at_exit and not at_secret
-	if is_instance_valid(_secret_prompt):
-		_secret_prompt.visible = at_secret
-	if is_instance_valid(_secret_art):
-		_secret_art.set("nearby", at_secret)
+	if is_instance_valid(_secret_art): _reward_collected = _secret_art.collected
+	var distance := _player.global_position.distance_to(global_position)
+	if distance >= EXIT_RADIUS: _exit_armed = true
+	if _exit_armed and distance <= LADDER_ACCESS_RADIUS: _begin_exit()
 
 func _begin_entry(actor: CharacterBody2D) -> void:
 	state = State.OPENING
+	_exit_armed = false
 	_player = actor
 	_capture_actor_state(actor)
 	_refresh_surface_prompt()
@@ -270,12 +211,40 @@ func _begin_entry(actor: CharacterBody2D) -> void:
 	approach.tween_property(actor, "global_position", global_position, 0.32)
 	await approach.finished
 	await _face_ladder()
-	await _animate_ladder(0.0, 18.0, 2.0, false)
+	# V2 style: Dante braces on the rim and lowers himself into the shaft,
+	# keeping the torso and hands at the opening until his feet reach the floor.
+	await _animate_entry_descent()
 	_activate_interior()
-	await get_tree().process_frame
-	await _animate_ladder(-38.0, 0.0, 0.85, true)
 	_restore_actor_visuals()
 	_finish_transition_to_inside()
+
+func _animate_entry_descent() -> void:
+	var sprite := _player.get("sprite_3d_display") as Sprite2D
+	if not is_instance_valid(sprite):
+		return
+	if _shaft_material == null:
+		_shaft_material = ShaderMaterial.new()
+		_shaft_material.shader = preload("res://world/harbor/sewer/ShaftClip.gdshader")
+	sprite.material = _shaft_material
+	# Keep Dante planted at the opening while the rig lowers hand-over-hand.
+	# Sprite offset then carries the lower body below street level and into the
+	# shaft; the clip at the lip reveals a genuine descent instead of a slide.
+	var descent := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	descent.tween_method(_apply_entry_descent_frame, 0.0, 1.0, 2.0)
+	await descent.finished
+
+func _apply_entry_descent_frame(progress: float) -> void:
+	if not is_instance_valid(_player):
+		return
+	var sprite := _player.get("sprite_3d_display") as Sprite2D
+	if not is_instance_valid(sprite):
+		return
+	var stepped := (floorf(progress * 3.0) + smoothstep(0.0, 1.0, fposmod(progress * 3.0, 1.0))) / 3.0
+	var offset := lerpf(0.0, 38.0, stepped)
+	sprite.position = _actor_state.sprite_position + Vector2(0.0, offset)
+	_shaft_material.set_shader_parameter("lip_y", ((-20.0 - offset) / sprite.scale.y))
+	_shaft_material.set_shader_parameter("ceiling", false)
+	_apply_climb_pose(1.0 - progress)
 
 func _activate_interior() -> void:
 	if not is_instance_valid(_player) or not is_instance_valid(_interior_overlay):
@@ -301,9 +270,11 @@ func _finish_transition_to_inside() -> void:
 		return
 	_restore_rig()
 	_set_weapon_visible(true)
+	_present_room_actor()
 	_player.set_physics_process(bool(_actor_state.get("physics_processing", true)))
 	_player.set("is_control_disabled", false)
 	state = State.INSIDE
+	_exit_armed = false
 	set_process(true)
 	_refresh_inside_prompts()
 
@@ -311,6 +282,7 @@ func _begin_exit() -> void:
 	if state != State.INSIDE or not is_instance_valid(_player):
 		return
 	state = State.EXITING
+	_restore_room_actor()
 	_transition_step = "exit_align"
 	set_process(false)
 	_hide_inside_prompts()
@@ -351,6 +323,7 @@ func _begin_exit() -> void:
 	_finish_transition_to_surface()
 
 func _deactivate_interior() -> void:
+	_restore_room_actor()
 	_inside = false
 	if _isolation != null:
 		_isolation.leave()
@@ -375,9 +348,10 @@ func _finish_transition_to_surface() -> void:
 	_player.set_physics_process(bool(_actor_state.get("physics_processing", true)))
 	_player.set("is_control_disabled", bool(_actor_state.get("control_disabled", false)))
 	state = State.SURFACE
+	_exit_armed = false
 	_teardown_interior()
 	_nearby_player = _player
-	_refresh_surface_prompt()
+	set_process(false)
 
 func _force_surface_restore() -> void:
 	if is_instance_valid(_player):
@@ -387,6 +361,7 @@ func _force_surface_restore() -> void:
 		_player.set_physics_process(bool(_actor_state.get("physics_processing", true)))
 		_player.set("is_control_disabled", bool(_actor_state.get("control_disabled", false)))
 	state = State.SURFACE
+	_exit_armed = false
 	_surface_art.open_amount = 0.0
 	set_process(false)
 	_teardown_interior()
@@ -593,21 +568,19 @@ func _ensure_interior_loaded() -> void:
 	_interior_overlay.add_child(_water_art)
 	_build_interior_collisions()
 
-	_secret_art = SecretStashArt.new()
+	_secret_art = preload("res://world/mountain_pass/MountainWeaponPickup.gd").new()
 	_secret_art.name = "SecretStash"
 	_secret_art.position = SECRET_POSITION
-	_secret_art.scale = Vector2.ONE * 0.42
+	_secret_art.weapon_id = "sawed_off"
+	_secret_art.pickup_id = SECRET_PICKUP_ID
+	_secret_art.ammo = 24
+	_secret_art.render_host = self
 	_secret_art.set("collected", _reward_collected)
-	_secret_art.visible = not _reward_collected
 	_secret_art.set_process(not _reward_collected)
 	_interior_overlay.add_child(_secret_art)
-
-	_exit_prompt = _make_prompt(_interior_overlay, Vector2(-28.0, -55.0))
-	_exit_prompt.name = "ExitPrompt"
-	_exit_prompt.hide()
-	_secret_prompt = _make_prompt(_interior_overlay, SECRET_POSITION + Vector2(-28.0, -58.0))
-	_secret_prompt.name = "SecretPrompt"
-	_secret_prompt.hide()
+	var room_model := _interior_overlay.get_node("RoomModel")
+	_secret_art.install_model(room_model.stage,room_model._point(SECRET_POSITION,.08))
+	if _reward_collected: _secret_art._hide_collected()
 
 	_ambient_water = AudioStreamPlayer.new()
 	_ambient_water.name = "SewerWater"
@@ -632,6 +605,10 @@ func _build_interior_collisions() -> void:
 	_add_wall(collision_root, Rect2(212.0, -56.0, 72.0, 45.0))
 	_add_wall(collision_root, Rect2(208.0, 100.0, 65.0, 24.0))
 	_add_wall(collision_root, Rect2(-98.0, 32.0, 33.0, 46.0))
+	for point in [Vector2(77,102),Vector2(291,112)]:
+		_add_wall(collision_root,Rect2(point-Vector2(5,5),Vector2(10,10)))
+	_add_wall(collision_root,Rect2(-100,-85,396,10))
+	_add_wall(collision_root,Rect2(285,-80,10,70))
 
 func _add_wall(parent: Node2D, rect: Rect2) -> void:
 	var body := StaticBody2D.new()
@@ -646,36 +623,34 @@ func _add_wall(parent: Node2D, rect: Rect2) -> void:
 	parent.add_child(body)
 
 func _refresh_inside_prompts() -> void:
-	if not is_instance_valid(_player):
-		return
-	if is_instance_valid(_exit_prompt):
-		_exit_prompt.visible = _player.global_position.distance_to(global_position) <= EXIT_RADIUS
-	if is_instance_valid(_secret_prompt):
-		_secret_prompt.visible = not _reward_collected and _player.global_position.distance_to(to_global(SECRET_POSITION)) <= 48.0
+	pass
 
 func _hide_inside_prompts() -> void:
-	if is_instance_valid(_exit_prompt):
-		_exit_prompt.hide()
-	if is_instance_valid(_secret_prompt):
-		_secret_prompt.hide()
+	pass
 
 func _collect_secret() -> void:
-	if _reward_collected or not is_instance_valid(_player):
-		return
-	_reward_collected = true
-	if _player.get("world_pickups_collected") is Array and not _player.world_pickups_collected.has(SECRET_PICKUP_ID):
-		_player.world_pickups_collected.append(SECRET_PICKUP_ID)
-	if _player.has_method("add_weapon_loot"):
-		_player.add_weapon_loot(&"sawed_off", 24)
-	preload("res://audio/rewards/RewardAudioBank.gd").play(self, "weapon", -2.0)
-	if is_instance_valid(_secret_art):
-		_secret_art.set("collected", true)
-		_secret_art.set_process(false)
-		_secret_art.hide()
-	if is_instance_valid(_secret_prompt):
-		_secret_prompt.hide()
+	if not is_instance_valid(_secret_art): return
+	_secret_art._collect(_player)
+	_reward_collected = _secret_art.collected
+
+func contains_actor(actor: Node2D) -> bool:
+	return _inside and actor == _player and contains_point(actor.global_position)
+
+func _present_room_actor() -> void:
+	if is_instance_valid(_actor_presentation) or not is_instance_valid(_interior_overlay): return
+	var room_model := _interior_overlay.get_node("RoomModel")
+	_actor_presentation = preload("res://systems/interiors/InteriorActorPresentation.gd").new()
+	_interior_overlay.add_child(_actor_presentation)
+	_actor_presentation.configure(_player,room_model.camera_3d,room_model.sprite_3d)
+
+func _restore_room_actor() -> void:
+	if not is_instance_valid(_actor_presentation): return
+	_actor_presentation.restore()
+	_actor_presentation.queue_free()
+	_actor_presentation = null
 
 func _teardown_interior() -> void:
+	_restore_room_actor()
 	if is_instance_valid(_interior_overlay):
 		for voice in _interior_overlay.find_children("*", "AudioStreamPlayer", true, false): voice.stop()
 		for voice in _interior_overlay.find_children("*", "AudioStreamPlayer2D", true, false): voice.stop()
@@ -687,8 +662,6 @@ func _teardown_interior() -> void:
 	_interior_overlay = null
 	_water_art = null
 	_secret_art = null
-	_exit_prompt = null
-	_secret_prompt = null
 	_ambient_water = null
 
 func contains_point(world_point: Vector2) -> bool:
@@ -727,9 +700,11 @@ func debug_enter_immediately(actor: CharacterBody2D) -> void:
 	_surface_art.open_amount = 1.0
 	_activate_interior()
 	_restore_actor_visuals()
+	_present_room_actor()
 	_player.set("is_control_disabled", false)
 	_player.set_physics_process(bool(_actor_state.get("physics_processing", true)))
 	state = State.INSIDE
+	_exit_armed = false
 	set_process(true)
 	_refresh_inside_prompts()
 

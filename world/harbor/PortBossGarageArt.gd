@@ -25,11 +25,12 @@ func _ready() -> void:
 	box("",Vector3(0,-.12,0),Vector3(22,.24,17),"525c60")
 	box("NorthWall",Vector3(0,1.6,-8),Vector3(22,.0+3.2,.35),"777e7b")
 	box("WestWall",Vector3(-10.8,1.6,0),Vector3(.35,3.2,16),"737b78")
-	box("EastWall",Vector3(10.8,1.6,0),Vector3(.35,3.2,16),"737b78")
+	box("EastWallNorth",Vector3(10.8,1.6,-5.25),Vector3(.35,3.2,5.5),"737b78")
+	box("EastWallSouth",Vector3(10.8,1.6,5.25),Vector3(.35,3.2,5.5),"737b78")
 	for side in [-1.0,1.0]:
-		box("SouthWall%s" % side,Vector3(side*6.95,.22,8),Vector3(7.8,.44,.35),"858c87")
-		box("RampSide%s" % side,Vector3(side*3.15,.35,9.5),Vector3(.3,.7,3),"777e7b")
-	box("",Vector3(0,-.06,9.3),Vector3(6,.12,3.3),"626a69")
+		box("SouthWall%s" % side,Vector3(side*5.4,1.6,8),Vector3(10.8,3.2,.35),"858c87")
+		box("RampSide%s" % side,Vector3(12.3,.35,side*2.35),Vector3(2.8,.7,.3),"777e7b")
+	box("",Vector3(12.3,-.06,0),Vector3(2.9,.12,4.4),"626a69")
 	for x in [-8.0,-4.0,0.0,4.0,8.0]:
 		for side in [-1.0,1.0]:
 			box("",Vector3(x+side*1.6,.008,-4.5),Vector3(.07,.015,5.4),"d1c5a4")

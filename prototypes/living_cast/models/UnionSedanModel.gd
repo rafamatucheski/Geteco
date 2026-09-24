@@ -3,6 +3,36 @@
 ## Union Sedan Premier: Sedã executivo/familiar clássico de 3 volumes.
 ## Proporções balanceadas: capô amplo, cabine de 4 portas e porta-malas traseiro destacado.
 
+# Keep authored parts separate so damage and the live wheel rig retain their
+# exact nodes, transforms and per-instance materials. Only the immutable
+# primitive Mesh resources are shared; this removes repeated BoxMesh and
+# CylinderMesh construction from the cold model that seeds VehicleGeometryCache.
+static var _shared_box_meshes: Dictionary = {}
+static var _shared_cylinder_meshes: Dictionary = {}
+
+
+func box(pos: Vector3, size_value: Vector3, material: Material) -> MeshInstance3D:
+	var mesh := _shared_box_meshes.get(size_value) as BoxMesh
+	if mesh == null:
+		mesh = BoxMesh.new()
+		mesh.size = size_value
+		_shared_box_meshes[size_value] = mesh
+	return mesh_node(mesh, pos, material)
+
+
+func cylinder(pos: Vector3, radius: float, depth: float, material: Material) -> MeshInstance3D:
+	var key := Vector2(radius, depth)
+	var mesh := _shared_cylinder_meshes.get(key) as CylinderMesh
+	if mesh == null:
+		mesh = CylinderMesh.new()
+		mesh.top_radius = radius
+		mesh.bottom_radius = radius
+		mesh.height = depth
+		mesh.radial_segments = 32
+		_shared_cylinder_meshes[key] = mesh
+	return mesh_node(mesh, pos, material)
+
+
 func build() -> void:
 	paint = mat("paint", "2c3e50", 0.35, 0.28)
 	var chrome := mat("chrome", "ecf0f1", 0.88, 0.15)

@@ -24,6 +24,22 @@ func run() -> void:
 		var state := {"world":{"region":"mountain","coordinates_version":2,"interior":"cabin","exterior_return":[8000,-3000]},"player":{"position":point,"personal_car_state":{"position":point}}}
 		var before := state.duplicate(true)
 		check(travel.sanitize_saved_coordinates(state).is_empty() and state == before,"legitimate interior/world coordinates untouched")
+	for migrated in [
+		{"old":[20000.0,20000.0],"safe":[777.0,1594.258]},
+		{"old":[21400.0,20000.0],"safe":[1080.0,2053.672]},
+		{"old":[22800.0,20000.0],"safe":[1800.0,1622.293]},
+		{"old":[25800.0,20000.0],"safe":[5905.0,-1296.218]},
+		{"old":[30600.0,20000.0],"safe":[5479.0,5870.0]},
+		{"old":[42000.0,20000.0],"safe":[650.0,190.0]},
+		{"old":[48000.0,20000.0],"safe":[2460.0,195.0]},
+		{"old":[30000.0,20000.0],"safe":[1890.0,200.0]},
+	]:
+		var state := {"world":{"region":"harbor","interior":"old_room","exterior_return":[1200.0,500.0]},"player":{"position":migrated.old,"money":731}}
+		check(not travel.sanitize_saved_coordinates(state).is_empty(),"old off-map room migration reported")
+		var restored_position := Vector2(float(state.player.position[0]), float(state.player.position[1]))
+		var expected_position := Vector2(float(migrated.safe[0]), float(migrated.safe[1]))
+		check(restored_position.distance_to(expected_position) < 0.01 and state.player.money == 731,"old room save returns to physical aisle without losing progress")
+		check(not state.world.has("interior") and not state.world.has("exterior_return"),"old room return route removed")
 	var invalid_vehicle := {"world":{"region":"mountain","coordinates_version":2,"interior":"cabin","exterior_return":[INF,3],"vehicle":{"x":1e30,"y":0}},"player":{"position":[30000,30000]}}
 	travel.sanitize_saved_coordinates(invalid_vehicle)
 	check(not invalid_vehicle.world.has("vehicle"),"invalid driven vehicle not instantiated")

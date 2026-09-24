@@ -34,7 +34,7 @@ func _run() -> void:
 	backdrop.polygon = PackedVector2Array([Vector2.ZERO, Vector2(2000, 0), Vector2(2000, 1000), Vector2(0, 1000)])
 	backdrop.color = Color("b9c1bf")
 	scene.add_child(backdrop)
-	var scripts := ["AnimatedPedestrian3D", "PoliceOfficer", "Paramedic", "Firefighter", "Mortician", "world/mountain_pass/WinterResident", "CarjackedDriver"]
+	var scripts := ["characters/AnimatedPedestrian3D", "police/PoliceOfficer", "emergency/Paramedic", "emergency/Firefighter", "emergency/Mortician", "world/mountain_pass/WinterResident", "characters/CarjackedDriver"]
 	for i in scripts.size():
 		var actor = load("res://" + scripts[i] + ".gd").new()
 		actor.set_meta("quiet_patrol", true)
@@ -51,7 +51,6 @@ func _run() -> void:
 		scene.add_child(title)
 	await physics_frame
 	# As texturas dos SubViewports precisam ser apresentadas antes da captura.
-	for frame in 3: await process_frame
 	await capture("01_em_pe")
 	for actor in actors:
 		actor.take_damage(1000)

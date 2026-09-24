@@ -67,6 +67,24 @@ func apply(actor: CharacterBody2D, profile: String, side: float, t: float, headi
 	_solve_leg(actor.left_upper_leg, actor.left_lower_leg, near_foot if side < 0 else far_foot, hip)
 	_solve_leg(actor.right_upper_leg, actor.right_lower_leg, far_foot if side < 0 else near_foot, hip)
 
+func apply_theft(actor: CharacterBody2D, side: float, t: float, heading: float, lifting: bool, lift_t: float) -> void:
+	if not _ready: return
+	apply(actor, "motorcycle" if lifting else "car", side, 0.18 * smoothstep(0, 0.22, t), heading)
+	var reach := smoothstep(0.20, 0.38, t)
+	var pull := smoothstep(0.40, 0.88, t)
+	var bend := sin(PI * clampf(lift_t, 0, 1)) if lifting else reach * (1.0 - pull)
+	actor.model_root.rotation.y = -heading - PI * 0.5 + side * PI * 0.5
+	var hip := -0.24 * bend if lifting else -0.06 * bend
+	actor.torso_node.position.y = 0.85 + hip
+	actor.torso_node.rotation.x = 0.55 * bend if lifting else 0.20 * bend - 0.12 * pull
+	actor._sync_upper_body_anchors(actor.torso_node.rotation.x)
+	for arm_side in [-1.0, 1.0]:
+		var target := Vector3(arm_side * 0.21, 0.67, 0).lerp(Vector3(arm_side * 0.20, 0.98 + hip, -lerpf(0.42, 0.18, pull)), reach)
+		if lifting: target = Vector3(arm_side * 0.24, 0.85 - 0.30 * bend, -0.35)
+		_arms._solve_arm(actor.left_upper_arm if arm_side < 0 else actor.right_upper_arm, actor.left_lower_arm if arm_side < 0 else actor.right_lower_arm, target, arm_side)
+	_solve_leg(actor.left_upper_leg, actor.left_lower_leg, Vector3(-0.14, 0.045, -0.08), hip)
+	_solve_leg(actor.right_upper_leg, actor.right_lower_leg, Vector3(0.14, 0.045, 0.10), hip)
+
 func apply_close(actor: CharacterBody2D, side: float, t: float, heading: float) -> void:
 	if not _ready: return
 	actor.model_root.rotation.y = -heading - PI * 0.5 + side * PI * 0.5

@@ -15,6 +15,8 @@ const MINOR_INCIDENT_MEMORY := 12.0
 const INITIAL_DISPATCH_DELAY := [0.0, 6.0, 3.0, 1.0, 1.0, 1.0, 1.0]
 const DISPATCH_INTERVAL := [0.0, 10.0, 8.0, 6.0, 5.0, 4.0, 4.0]
 const MAX_ACTIVE_UNITS := [0, 2, 3, 4, 5, 5, 5]
+const LANE_SPAWN_QUERY_BUDGET_USEC := 1800
+const MAX_LANE_SPAWN_CANDIDATES := 192
 const DEPLOYMENT_BUDGET := [0, 4, 6, 10, 14, 18, 22]
 var deployed_this_pursuit := 0
 const CONTACT_GRACE := 1.0
@@ -161,10 +163,14 @@ func _find_lane_spawn(target_node: Node2D) -> Dictionary:
 	var best_score := INF
 	var camera := target_node.get_viewport().get_camera_2d()
 	var view_rect := Rect2()
+	var spawn_started_usec := Time.get_ticks_usec()
+	var candidate_checks := 0
+	var budget_exhausted := false
 	if camera:
 		var size := target_node.get_viewport_rect().size / camera.zoom
 		view_rect = Rect2(camera.get_screen_center_position() - size * 0.5, size).grow(90)
 	for node in get_tree().get_nodes_in_group("unified_traffic_lane"):
+		if budget_exhausted: break
 		var lane := node as Path2D
 		if lane == null or lane.curve == null or lane.curve.point_count < 2 or not lane.can_process(): continue
 		var length := lane.curve.get_baked_length()
@@ -172,6 +178,7 @@ func _find_lane_spawn(target_node: Node2D) -> Dictionary:
 		var closed := bool(lane.get_meta("traffic_lane_loop", false))
 		closed = closed or lane.curve.get_point_position(0).distance_to(lane.curve.get_point_position(lane.curve.point_count - 1)) < 5.0
 		for index in range(1, int(length / 160.0)):
+			if budget_exhausted: break
 			var offset := float(index) * 160.0
 			var ahead := goal_offset - offset
 			if closed: ahead = fposmod(ahead, length)
@@ -184,10 +191,17 @@ func _find_lane_spawn(target_node: Node2D) -> Dictionary:
 			# Keep the first equal score, matching the lane traversal order.
 			if score >= best_score: continue
 			var forward := lane.to_global(lane.curve.sample_baked(minf(length, offset + 8.0), true)) - point
+			if candidate_checks >= MAX_LANE_SPAWN_CANDIDATES or Time.get_ticks_usec() - spawn_started_usec >= LANE_SPAWN_QUERY_BUDGET_USEC:
+				budget_exhausted = true
+				break
+			candidate_checks += 1
 			query.transform = Transform2D(forward.angle(), point)
 			if target_node.get_world_2d().direct_space_state.intersect_shape(query, 1).is_empty():
 				best_score = score
 				best_candidate = {"position": point, "rotation": forward.angle(), "distance": distance, "route_score": score}
+		if budget_exhausted: break
+	if OS.get_cmdline_user_args().has("--profile-dispatch"):
+		print("LANE_SPAWN_PROFILE usec=%d checks=%d exhausted=%s found=%s" % [Time.get_ticks_usec() - spawn_started_usec, candidate_checks, budget_exhausted, not best_candidate.is_empty()])
 	return best_candidate
 
 
@@ -214,6 +228,8 @@ func _process(delta):
 		police_spawn_timer = DISPATCH_INTERVAL[current_stars]
 
 func _dispatch_police():
+	var _dispatch_profile := OS.get_cmdline_user_args().has("--profile-dispatch")
+	var _dispatch_started_usec := Time.get_ticks_usec()
 	if not can_request_reinforcements(): return
 	var target_node := get_pursuit_target()
 	if not is_instance_valid(target_node): return
@@ -240,6 +256,7 @@ func _dispatch_police():
 		var dispatched = depot_director.request_dispatch("police", target_node, true)
 		if dispatched != null:
 			_configure_dispatch(dispatched)
+			if _dispatch_profile: print("POLICE_DISPATCH_PROFILE path=director ms=%.3f" % (float(Time.get_ticks_usec() - _dispatch_started_usec) / 1000.0))
 			return
 
 	if lane_spawn.is_empty(): lane_spawn = _find_lane_spawn(target_node)
@@ -270,6 +287,7 @@ func _dispatch_police():
 		if police.has_method("show"):
 			police.show()
 		police.set_physics_process(true)
+		if _dispatch_profile: print("POLICE_DISPATCH_PROFILE path=lane ms=%.3f" % (float(Time.get_ticks_usec() - _dispatch_started_usec) / 1000.0))
 
 func report_police_car_theft() -> void:
 	time_hidden = 0.0

@@ -163,15 +163,13 @@ static func soften(shadow: MeshInstance3D, size := Vector2(0.86,0.72)) -> void:
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color(0.025,0.03,0.045,0.0)
+	material.albedo_color = Color(0.025, 0.03, 0.045, 0.50)
+	material.albedo_texture = texture()
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	shadow.material_override = material
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Keep the floor patch out of the animated rig's yaw and body lean.
-	if shadow.get_parent() is Node3D:
-		shadow.top_level = true
-	shadow.position = Vector3(0,0.008,0)
-	shadow.visible = false # Preserve the rig/fall slot; the live display casts its silhouette.
+	shadow.position = Vector3(shadow.position.x, 0.008, shadow.position.z)
+	shadow.visible = true
 
 static func add_person(viewport: SubViewport) -> MeshInstance3D:
 	var shadow := viewport.get_node_or_null("GroundShadow") as MeshInstance3D

@@ -283,7 +283,7 @@ func _setup_interaction() -> void:
 	interact_area.body_exited.connect(_on_body_exited)
 
 	prompt_badge = Label.new()
-	prompt_badge.text = "E"
+	prompt_badge.text = ""
 	prompt_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_badge.position = Vector2(-120, -50)
 	prompt_badge.size = Vector2(240, 20)

@@ -7,6 +7,10 @@ func check(ok: bool, label: String) -> void:
 		failures.append(label)
 		push_error(label)
 func run() -> void:
+	create_timer(45.0).timeout.connect(func():
+		printerr("CITIZEN_QUALITY TIMEOUT")
+		quit(2)
+	)
 	seed(914)
 	var stage := Node2D.new()
 	root.add_child(stage)

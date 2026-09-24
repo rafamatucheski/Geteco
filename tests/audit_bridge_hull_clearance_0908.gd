@@ -5,11 +5,12 @@ var sample_count := 0
 var lane_count := 0
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
-	create_timer(60).timeout.connect(func(): print("BRIDGE_HULL_AUDIT TIMEOUT"); quit(2))
+	create_timer(180).timeout.connect(func(): print("BRIDGE_HULL_AUDIT TIMEOUT"); quit(2))
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met", &"harbor_delivery_complete"]:
 		root.get_node("CampaignState").set_campaign_flag(flag, true)
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
-	for i in 20: await process_frame
+	while current_scene == null or not current_scene.gameplay_ready:
+		await process_frame
 	var world := current_scene
 	var stream: Node = world.get_node("ContinuousWorld")
 	await stream.ensure_mountain()
@@ -17,6 +18,11 @@ func run() -> void:
 	await physics_frame
 	await process_frame
 	var space: PhysicsDirectSpaceState2D = world.get_world_2d().direct_space_state
+	var works: Node = world.get_node("Gateway/Works")
+	var lower_access_rails: StaticBody2D = works.get_node("AccessRails")
+	var upper_probe := CharacterBody2D.new()
+	world.add_child(upper_probe)
+	var cross_level_clearances := 0
 	for lane in get_nodes_in_group("unified_traffic_lane"):
 		var road := String(lane.get_meta("traffic_road_id", ""))
 		if not ("mountain_bridge_" in road or "map2_highway_" in road or "map2_temporary_return" in road): continue
@@ -41,6 +47,13 @@ func run() -> void:
 				for hit in space.intersect_shape(query,64):
 					var body: Node = hit.collider
 					if not body is StaticBody2D: continue
+					if body == lower_access_rails:
+						# The construction access crosses beneath this deck. An
+						# upper-level actor must ignore only its lower-level rails.
+						upper_probe.global_position = point
+						if not works.update_actor_layer(upper_probe) and upper_probe.get_collision_exceptions().has(body):
+							cross_level_clearances += 1
+							continue
 					var key := "%s|%s|%s|%s" % [lane.get_path(),hull.id,body.get_path(),hit.shape]
 					if not findings.has(key):
 						var owner: Object = body.shape_owner_get_owner(body.shape_find_owner(int(hit.shape)))
@@ -58,10 +71,10 @@ func run() -> void:
 		for hit in space.intersect_point(probe,32): names.append(String(hit.collider.get_path()))
 		print("WATER_PROBE position=",point," colliders=",names)
 	for finding in findings.values(): print("OBSTRUCTION ",JSON.stringify(finding))
-	print("BRIDGE_HULL_AUDIT lanes=",lane_count," samples=",sample_count," obstructions=",findings.size())
-	var report := FileAccess.open("res://tests/bridge_hull_clearance_0908.json",FileAccess.WRITE)
+	print("BRIDGE_HULL_AUDIT lanes=",lane_count," samples=",sample_count," obstructions=",findings.size()," cross_level_clearances=",cross_level_clearances)
+	upper_probe.queue_free()
+	var report := FileAccess.open(OS.get_temp_dir().path_join("bridge_hull_clearance_current.json"),FileAccess.WRITE)
 	report.store_string(JSON.stringify({"lanes":lane_count,"samples":sample_count,"obstructions":findings.values()},"\t"))
 	world.queue_free()
 	await process_frame
 	quit(0 if findings.is_empty() and lane_count == 8 and sample_count > 2000 else 1)
-

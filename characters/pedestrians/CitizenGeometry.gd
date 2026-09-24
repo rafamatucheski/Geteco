@@ -1,7 +1,24 @@
 extends RefCounted
 ## Build-time geometry only. Vertex colours batch all opaque detail on a joint.
+static var _prewarm_mesh: ArrayMesh
+static var _prewarm_material: StandardMaterial3D
 var surface := SurfaceTool.new()
 var count := 0
+
+static func prewarm_vertex_color_mesh() -> void:
+	if is_instance_valid(_prewarm_mesh) and is_instance_valid(_prewarm_material):
+		return
+	var geometry := new()
+	geometry.loft([
+		Vector4(-.12, .10, .08, 0.0),
+		Vector4(.12, .11, .09, 0.0),
+	], Color("b7896f"), 16)
+	var part := geometry.finish_detached("CitizenGeometryPrewarm")
+	_prewarm_mesh = part.mesh
+	_prewarm_material = part.material_override
+	part.mesh = null
+	part.material_override = null
+	part.free()
 
 func _init() -> void:
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -118,6 +135,11 @@ func lock(start: Vector3, control: Vector3, tip: Vector3, width: float, color: C
 	add(mesh_surface.commit(),color)
 
 func finish(parent: Node3D, label: String, roughness := .88) -> MeshInstance3D:
+	var part := finish_detached(label, roughness)
+	parent.add_child(part)
+	return part
+
+func finish_detached(label: String, roughness := .88) -> MeshInstance3D:
 	var part := MeshInstance3D.new()
 	part.name = label
 	var material := StandardMaterial3D.new()
@@ -126,5 +148,4 @@ func finish(parent: Node3D, label: String, roughness := .88) -> MeshInstance3D:
 	material.metallic_specular = .2
 	part.mesh = surface.commit()
 	part.material_override = material
-	parent.add_child(part)
 	return part

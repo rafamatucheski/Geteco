@@ -8,7 +8,7 @@ var collected := false
 var render_host: Node2D
 var load_on_pickup := false
 var animate_on_floor := true
-var hover_height := 0.0
+var hover_height := 0.38
 var _floor_height := 0.08
 
 func _ready() -> void:
@@ -35,17 +35,24 @@ func install_model(parent: Node3D, point: Vector3) -> void:
 		weapon.scale = Vector3.ONE * 1.3
 	model.add_child(weapon)
 	preload("res://scripts/player/WeaponPresentation3D.gd").build(weapon, weapon_id)
+	_install_halo()
+
+func _install_halo() -> void:
 	var halo := MeshInstance3D.new()
 	halo.name = "FloorHalo"
 	var ring := TorusMesh.new()
 	ring.inner_radius = 0.30 if weapon_id == "hunting_rifle" else 0.15
 	ring.outer_radius = ring.inner_radius + 0.012
+	if weapon_id == "rpg":
+		ring.inner_radius = 0.58
+		ring.outer_radius = 0.62
 	ring.rings = 24
 	ring.ring_segments = 6
 	halo.mesh = ring
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = Color("ad9459") if weapon_id == "hunting_rifle" else Color("65939a")
+	if weapon_id == "rpg": material.albedo_color = Color("f5cf72")
 	halo.material_override = material
 	halo.position.y = -0.055
 	model.add_child(halo)
@@ -60,7 +67,7 @@ func _process(delta: float) -> void:
 		return
 	clock += delta
 	if hover_height > 0.0:
-		model.get_node("FloorWeapon").position.y = hover_height + sin(clock * 1.8) * 0.035
+		model.get_node("FloorWeapon").position.y = hover_height + sin(clock * 1.8) * 0.10
 	if animate_on_floor:
 		model.rotation.y = clock * 0.8
 		model.position.y = _floor_height + sin(clock * 1.5) * 0.012
@@ -68,7 +75,7 @@ func _process(delta: float) -> void:
 		_refresh_host()
 
 func _collect(body: Node2D) -> void:
-	if collected or not body.is_in_group("player") or not body.visible or body.is_dead:
+	if collected or not body.is_in_group("player") or not body.is_visible_in_tree() or body.is_dead or body.get("is_in_dialogue") == true or body.get("is_control_disabled") == true:
 		return
 	if is_instance_valid(render_host) and not render_host.contains_actor(body):
 		return
@@ -103,7 +110,8 @@ func _hide_collected() -> void:
 	set_process(false)
 
 func _refresh_host() -> void:
-	if is_instance_valid(render_host):
-		var viewport: SubViewport = render_host.viewport_3d
+	if is_instance_valid(render_host) and is_instance_valid(model):
+		var viewport := model.get_viewport() as SubViewport
+		if viewport == null: return
 		# The room also renders its occupants; a pickup must not freeze their rig.
 		viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if int(viewport.get_meta("interior_actor_count", 0)) > 0 else SubViewport.UPDATE_ONCE

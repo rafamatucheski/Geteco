@@ -1,5 +1,21 @@
 extends "res://prototypes/living_cast/CoupeDamageModel.gd"
 
+const PREPARED_GEOMETRY := preload("res://prototypes/living_cast/BossMusclePreparedGeometry.scn")
+const MATERIAL_KEY_META := &"boss_muscle_material_key"
+const SURFACE_KEYS_META := &"boss_muscle_surface_material_keys"
+const EXPECTED_PREPARED_GEOMETRY_SIGNATURE := 3943922188
+const EXPECTED_PREPARED_CONTRACT_VERSION := 2
+const EXPECTED_PREPARED_MESHES := 10
+const EXPECTED_PREPARED_TRIANGLES := 26582
+
+func _ready() -> void:
+	if get_child_count()==0:
+		var cache:=preload("res://cars/VehicleGeometryCache.gd")
+		if not cache.restore(self):
+			build()
+			cache.capture(self)
+	super._ready()
+
 ## Ironback V8: original long-hood, rear-cabin fastback. Uses the shared mesh
 ## damage/material contracts, but none of the coupe's shell or lamp geometry.
 func width_at(z: float) -> float:
@@ -44,6 +60,114 @@ func build_shell() -> void:
 		surface(points,paint)
 
 func build() -> void:
+	if get_child_count()!=0:
+		push_error("BossMuscleModel.build refused duplicate geometry")
+		return
+	# Geometry is the exact post-clearance/post-batching result of
+	# build_procedural_source(). Materials stay unique per live vehicle so paint,
+	# lamp damage, charring and repair never leak between instances.
+	paint=mat("paint","49252d",.42,.24)
+	mat("rubber","15191a",0,.92)
+	mat("trim","272c2d",.35,.4)
+	mat("bronze","a17c4b",.72,.27)
+	var glass:=mat("glass","22343e",.38,.16)
+	glass.cull_mode=BaseMaterial3D.CULL_DISABLED
+	mat("headlight","ede5cc",.1,.2,.5)
+	mat("tail","c53f34",.1,.2,.6)
+	mat("rotor","6b6a62",.6,.5)
+	var template:=PREPARED_GEOMETRY.instantiate() as Node3D
+	assert(template != null)
+	# A failed/interrupted bake must never replace the authored car. The builder
+	# only publishes this contract after exact triangle/material validation.
+	if not _prepared_template_is_acceptable(template):
+		template.free()
+		set_meta("boss_muscle_geometry_source",&"procedural_fallback")
+		build_procedural_source()
+		return
+	set_meta("vehicle_wheel_clearance_signature",int(template.get_meta("vehicle_wheel_clearance_signature",0)))
+	set_meta("boss_muscle_prepared_geometry_signature",int(template.get_meta("boss_muscle_prepared_geometry_signature",0)))
+	set_meta("boss_muscle_geometry_source",&"prepared")
+	for child in template.get_children():
+		_clear_owner(child)
+		template.remove_child(child)
+		add_child(child)
+		_bind_materials(child)
+	template.free()
+
+func _prepared_template_is_acceptable(template: Node3D) -> bool:
+	if int(template.get_meta("boss_muscle_prepared_contract_version",0))!=EXPECTED_PREPARED_CONTRACT_VERSION:
+		return false
+	if int(template.get_meta("boss_muscle_prepared_geometry_signature",0))!=EXPECTED_PREPARED_GEOMETRY_SIGNATURE:
+		return false
+	if int(template.get_meta("boss_muscle_prepared_meshes",0))!=EXPECTED_PREPARED_MESHES:
+		return false
+	if int(template.get_meta("boss_muscle_prepared_triangles",0))!=EXPECTED_PREPARED_TRIANGLES:
+		return false
+	var meshes:=0
+	var wheels:=0
+	var lamps:=0
+	var damage_bodies:=0
+	var static_groups:=0
+	for child in template.get_children():
+		var part:=child as MeshInstance3D
+		if part==null or part.mesh==null:
+			return false
+		meshes+=1
+		var surface_keys:PackedStringArray=part.get_meta(SURFACE_KEYS_META,PackedStringArray())
+		if surface_keys.is_empty() or surface_keys.size()!=part.mesh.get_surface_count():
+			return false
+		for key in surface_keys:
+			if not materials.has(StringName(key)):
+				return false
+		if String(part.name).begins_with("BossMuscle_wheel_"):
+			if not part.has_meta("wheel_center") or not bool(part.get_meta("wheel_spins",false)):
+				return false
+			wheels+=1
+		elif String(part.name).begins_with("BossMuscle_lamp_"):
+			if absf(part.position.x)<0.4 or absf(part.position.z)<2.4:
+				return false
+			lamps+=1
+		elif bool(part.get_meta("boss_muscle_damage_body",false)):
+			if part.mesh.get_surface_count()!=1:
+				return false
+			damage_bodies+=1
+		elif part.name==&"BossMuscle_static_misc":
+			static_groups+=1
+	return meshes==EXPECTED_PREPARED_MESHES and wheels==4 and lamps==4 and damage_bodies==1 and static_groups==1
+
+func _bind_materials(node: Node) -> void:
+	if node is MeshInstance3D:
+		var part:=node as MeshInstance3D
+		var surface_keys:PackedStringArray=part.get_meta(SURFACE_KEYS_META,PackedStringArray())
+		assert(surface_keys.size()==part.mesh.get_surface_count())
+		if _all_same_surface_key(surface_keys):
+			var material_key:=StringName(surface_keys[0])
+			assert(materials.has(material_key))
+			part.material_override=materials[material_key]
+		else:
+			for surface_index in surface_keys.size():
+				var material_key:=StringName(surface_keys[surface_index])
+				assert(materials.has(material_key))
+				part.set_surface_override_material(surface_index,materials[material_key])
+	for child in node.get_children():
+		_bind_materials(child)
+
+func _all_same_surface_key(surface_keys: PackedStringArray) -> bool:
+	if surface_keys.is_empty():
+		return false
+	for material_key in surface_keys:
+		if material_key!=surface_keys[0]:
+			return false
+	return true
+
+func _clear_owner(node: Node) -> void:
+	node.owner=null
+	for child in node.get_children():
+		_clear_owner(child)
+
+## Kept as the reproducible authored source for
+## tests/build_boss_muscle_prepared_geometry.gd.
+func build_procedural_source() -> void:
 	paint=mat("paint","49252d",.42,.24)
 	var rubber:=mat("rubber","15191a",0,.92)
 	var trim:=mat("trim","272c2d",.35,.4)

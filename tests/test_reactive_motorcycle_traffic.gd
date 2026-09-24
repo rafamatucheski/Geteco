@@ -17,6 +17,7 @@ func run() -> void:
 	path.curve.add_point(Vector2(2000, 200))
 	world.add_child(path)
 	var bike = FACTORY.spawn_moving_vehicle(path,"CrashBike","bike_urban",.2,90,0)
+	var original_follow := bike.get_parent() as PathFollow2D
 	bike.set_process(false)
 	bike.set_physics_process(false)
 	bike.receive_vehicle_impact(30.0, Vector2.RIGHT)
@@ -36,14 +37,43 @@ func run() -> void:
 			count += 1
 	check(count == 1, "repeated contact creates only one fallen rider")
 	if fallen:
+		# This case specifically tests the remount reaction.
+		fallen.motorcycle_reaction = 0
 		fallen.set_physics_process(false)
 		check(not fallen.is_dead and fallen.fall_presentation.airborne, "rider falls alive with launch arc")
+		check(fallen.motorcycle_appearance_seed == int(bike.get_meta("driver_appearance_seed", -2)), "fallen rider keeps the mounted rider identity")
+		check(fallen.motorcycle_jacket_color.is_equal_approx(bike.body_model.rider_jacket.albedo_color) and fallen.motorcycle_helmet_color.is_equal_approx(bike.body_model.rider_helmet.albedo_color), "fallen rider keeps the mounted jacket and helmet")
 		var origin := fallen.global_position
-		for i in 120: fallen._physics_process(1.0/60.0)
+		for i in 120:
+			fallen._physics_process(1.0/60.0)
+			fallen._process(1.0/60.0)
 		check(fallen.global_position.distance_to(origin) > 25.0 and fallen.global_position.distance_to(origin) < 240.0, "bounded rider throw")
 		check(fallen.motorcycle_fall_timer > 0.0, "rider remains stunned")
-		for i in 65: fallen._physics_process(1.0/60.0)
-		check(not fallen.fall_presentation.started and fallen.civilian_routine, "rider recovers")
+		for i in 12:
+			fallen._physics_process(1.0/60.0)
+			fallen._process(1.0/60.0)
+		check(fallen.motorcycle_recovery_active and fallen.fall_presentation.recovery_active, "rider begins an authored get-up animation")
+		var grounded_pitch := fallen.driver_model.rotation.x
+		for i in 42:
+			fallen._physics_process(1.0/60.0)
+			fallen._process(1.0/60.0)
+		check(fallen.driver_model.rotation.x < grounded_pitch - 0.25 and not fallen.civilian_routine, "get-up visibly raises the same rider before locomotion")
+		for i in 50:
+			fallen._physics_process(1.0/60.0)
+			fallen._process(1.0/60.0)
+		check(not fallen.fall_presentation.started and not fallen.motorcycle_recovery_active and fallen.motorcycle_returning and not fallen.civilian_routine, "rider gets up and returns to the recoverable motorcycle")
+		for i in 240:
+			if not is_instance_valid(fallen) or fallen.motorcycle_mounting: break
+			fallen._physics_process(1.0/60.0)
+			fallen._process(1.0/60.0)
+		check(fallen.motorcycle_mounting, "rider physically reaches the motorcycle before mounting")
+		await create_timer(0.9).timeout
+		check(not is_instance_valid(fallen), "fallen presentation is removed only after mounting")
+		check(bike.get_parent() == original_follow and not bike._detached_from_lane and not bike._rider_fallen, "motorcycle returns to its original lane with its rider")
+		check(bike.body_model.rider.visible, "same rider presentation is seated again")
+		var resumed_at := original_follow.progress
+		bike.advance_on_lane(0.25)
+		check(original_follow.progress > resumed_at, "remounted motorcycle resumes traffic")
 	var shot_bike = FACTORY.spawn_moving_vehicle(path,"ShotBike","bike_urban",.35,90,0)
 	shot_bike.set_physics_process(false)
 	var bullet = preload("res://guns/Bullet.gd").new()

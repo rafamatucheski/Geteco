@@ -1,0 +1,12 @@
+{
+  "animations": [
+    "Idle",
+    "Stylish_Walk_inplace",
+    "Talk_with_Left_Hand_on_Hip"
+  ],
+  "bones": 24,
+  "bounds": "[P: (-0.556499, -0.0, -0.268335), S: (1.112998, 1.85, 0.536671)]",
+  "meshes": 1,
+  "source": "D:/geteco/game/assets/characters/maciota_meshy/maciota-animated.glb",
+  "triangles": 15524
+}

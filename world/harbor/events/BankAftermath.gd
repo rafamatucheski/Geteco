@@ -23,7 +23,11 @@ func _sync() -> void:
 	var state := get_node("/root/CampaignState")
 	var data: Dictionary=state.bank_incident
 	if data.get("phase","")=="pending" and not room.actor_inside():
-		data["phase"]="closed"
+		# Let an escaping actor clear the physical threshold before the police
+		# barrier materializes. Closing at the floor polygon edge overlaps the
+		# player's capsule and traps them in the doorway.
+		var clear_of_door: bool = not is_instance_valid(room.actor) or room.actor.global_position.distance_to(room.entrance.global_position) > 40.0
+		if clear_of_door: data["phase"]="closed"
 	var should_close: bool=data.get("phase","")=="closed" and float(data.get("elapsed_days",0))<4.0
 	if should_close and not closed: _close()
 	if not should_close and (closed or data.get("phase","")=="closed"):

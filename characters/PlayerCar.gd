@@ -24,6 +24,7 @@ var lateral_speed: float = 0.0 # px/s de derrapada — lido por DriftChallengeZo
 var target_length: float = 74.0
 var uniform_scale: float = 1.0
 var headlight: PointLight2D
+var brake_lights: Node2D
 var bloody_tires_timer: float = 0.0
 
 var health: int = 100
@@ -49,6 +50,8 @@ var nitro_audio: AudioStreamPlayer2D
 # Chuva, freio de mão (derrapagem) e respingo de poça
 var water_spray_emitter: CPUParticles2D
 var _weather_manager_cache: Node = null
+var drift_smoke_l: CPUParticles2D
+var drift_smoke_r: CPUParticles2D
 
 # Efeitos de Escapamento e Purga de Nitro
 var nos_purge_l: CPUParticles2D
@@ -107,6 +110,9 @@ func _ready():
 	
 	# Métrica do Codex
 	target_length = 74.0
+	brake_lights = preload("res://cars/VehicleBrakeLights.gd").new()
+	add_child(brake_lights)
+	brake_lights.configure(target_length, 38.0)
 	uniform_scale = target_length / max(1.0, tex.region.size.y)
 	sprite.scale = Vector2(uniform_scale, uniform_scale)
 	sprite.rotation = PI/2 # Vira pra direita
@@ -191,6 +197,7 @@ func _ready():
 	# Derrapagem
 	skid_audio = AudioStreamPlayer2D.new()
 	skid_audio.stream = ProceduralAudio.get_skid_stream(active_archetype_id)
+	skid_audio.bus = &"SFX"
 	skid_audio.max_distance = 500.0
 	skid_audio.volume_db = -16.0
 	add_child(skid_audio)
@@ -244,6 +251,43 @@ func _ready():
 	water_spray_emitter.color = Color(0.75, 0.86, 1.0, 0.65)
 	water_spray_emitter.texture = _make_soft_particle_texture()
 	add_child(water_spray_emitter)
+
+	# Fumaça lateral de derrapagem (drift smoke) nas rodas traseiras
+	drift_smoke_l = CPUParticles2D.new()
+	drift_smoke_l.emitting = false
+	drift_smoke_l.local_coords = false
+	drift_smoke_l.amount = 14
+	drift_smoke_l.lifetime = 0.42
+	drift_smoke_l.explosiveness = 0.0
+	drift_smoke_l.position = Vector2(-target_length * 0.32, -14.0)
+	drift_smoke_l.direction = Vector2(-0.45, -1.0).normalized()
+	drift_smoke_l.spread = 35.0
+	drift_smoke_l.gravity = Vector2(0, -15.0)
+	drift_smoke_l.initial_velocity_min = 25.0
+	drift_smoke_l.initial_velocity_max = 70.0
+	drift_smoke_l.scale_amount_min = 6.0 / 64.0
+	drift_smoke_l.scale_amount_max = 16.0 / 64.0
+	drift_smoke_l.color = Color(0.88, 0.88, 0.90, 0.36)
+	drift_smoke_l.texture = _make_soft_particle_texture()
+	add_child(drift_smoke_l)
+
+	drift_smoke_r = CPUParticles2D.new()
+	drift_smoke_r.emitting = false
+	drift_smoke_r.local_coords = false
+	drift_smoke_r.amount = 14
+	drift_smoke_r.lifetime = 0.42
+	drift_smoke_r.explosiveness = 0.0
+	drift_smoke_r.position = Vector2(-target_length * 0.32, 14.0)
+	drift_smoke_r.direction = Vector2(-0.45, 1.0).normalized()
+	drift_smoke_r.spread = 35.0
+	drift_smoke_r.gravity = Vector2(0, -15.0)
+	drift_smoke_r.initial_velocity_min = 25.0
+	drift_smoke_r.initial_velocity_max = 70.0
+	drift_smoke_r.scale_amount_min = 6.0 / 64.0
+	drift_smoke_r.scale_amount_max = 16.0 / 64.0
+	drift_smoke_r.color = Color(0.88, 0.88, 0.90, 0.36)
+	drift_smoke_r.texture = _make_soft_particle_texture()
+	add_child(drift_smoke_r)
 
 	# Purga de Nitro Lateral/Capô (NOS Purge estilo Velozes e Furiosos)
 	nos_purge_l = CPUParticles2D.new()
@@ -419,18 +463,20 @@ func _physics_process(delta):
 		return
 	var input_dir = 0.0
 	var turn_dir = 0.0
+	var wants_handbrake := false
 
 	# Só processa os inputs se o jogador estiver no volante
 	if is_driven_by_player:
-		input_dir = -get_node("/root/GameInput").movement().y
-		turn_dir = get_node("/root/GameInput").movement().x
+		var drive_input: Vector2 = get_node("/root/GameInput").vehicle_input()
+		input_dir = drive_input.y
+		turn_dir = drive_input.x
 		if not _drive_input_armed:
 			_drive_input_armed = is_zero_approx(input_dir) and is_zero_approx(turn_dir)
 			input_dir = 0.0
 			turn_dir = 0.0
 
 		# Espaço = freio de mão / derrapagem manual. Shift = nitro (ver mais abaixo).
-		var wants_handbrake := Input.is_action_pressed("handbrake")
+		wants_handbrake = Input.is_action_pressed("handbrake")
 		_launch.update(delta, velocity.length(), input_dir, wants_handbrake, max_speed, not is_broken)
 		handbrake_slide = 0.7 if wants_handbrake and velocity.length() > 55.0 else maxf(0.0, handbrake_slide - delta)
 		var weather := _get_weather_manager()
@@ -481,6 +527,8 @@ func _physics_process(delta):
 			_entry_input_released = true
 		if _entry_input_released and exit_pressed:
 			exit_vehicle()
+			if is_instance_valid(_boarding) and _boarding.active and _boarding.exiting:
+				return
 	else:
 		_horn_key_was_pressed = false
 		_headlight_key_was_pressed = false
@@ -488,6 +536,10 @@ func _physics_process(delta):
 		handbrake_slide = 0.0
 		if water_spray_emitter and water_spray_emitter.emitting:
 			water_spray_emitter.emitting = false
+		if drift_smoke_l and drift_smoke_l.emitting:
+			drift_smoke_l.emitting = false
+		if drift_smoke_r and drift_smoke_r.emitting:
+			drift_smoke_r.emitting = false
 	
 	# === Hit-stop: congela física por N frames ===
 	if _hit_stop_frames > 0:
@@ -512,11 +564,15 @@ func _physics_process(delta):
 			velocity = velocity.limit_length(_engine_sound.road_top_speed(max_speed))
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * preload("res://cars/VehicleMotionSafety.gd").coast_mass_scale(vehicle_mass) * delta)
+	var service_brake := wants_handbrake or (input_dir != 0.0 and signf(input_dir) != signf(velocity.dot(forward_vec)))
+	brake_lights.observe_speed(velocity.length(), delta, service_brake)
 
 	if _launch.holding: velocity = Vector2.ZERO
 	is_skidding = is_skidding or _launch.wheelspin > 0.12
 	_tire_trail.update(self, delta, is_driven_by_player and not is_broken and is_skidding, 0.38 + _launch.wheelspin * 0.25)
-	if is_driven_by_player: _update_skid_audio()
+	if is_driven_by_player:
+		_update_skid_audio()
+		_update_drift_smoke()
 	var prev_velocity = velocity
 	preload("res://cars/VehicleMotionSafety.gd").move(self)
 	
@@ -536,9 +592,6 @@ func _physics_process(delta):
 					engine_audio.stop()
 				_engine_sound.stop()
 		
-		# === Rádio (Tecla R ou Input radio_next) ===
-		if Input.is_action_just_pressed("radio_next"):
-			_next_radio_track()
 	else:
 		if engine_audio and engine_audio.playing:
 			engine_audio.stop()
@@ -664,6 +717,9 @@ var _boarding: Node
 func exit_vehicle() -> void:
 	_launch.reset()
 	_tire_trail.reset()
+	if brake_lights: brake_lights.set_braking(false)
+	if drift_smoke_l: drift_smoke_l.emitting = false
+	if drift_smoke_r: drift_smoke_r.emitting = false
 	if not is_driven_by_player: return
 	preload("res://cars/VehicleBoarding.gd").start_exit(self, get_tree().get_first_node_in_group("player"))
 
@@ -714,7 +770,7 @@ func enter_vehicle(player_body: CharacterBody2D) -> void:
 	var camera_view := preload("res://systems/DynamicCamera.gd").capture_view(get_viewport())
 	is_driven_by_player = true
 	_entry_input_released = false
-	_drive_input_armed = get_node("/root/GameInput").movement().is_zero_approx()
+	_drive_input_armed = get_node("/root/GameInput").vehicle_input().is_zero_approx()
 	_last_collision_damage_ms = Time.get_ticks_msec()
 	add_collision_exception_with(player_body)
 	player_body.add_collision_exception_with(self)
@@ -778,20 +834,6 @@ func take_damage(amount: int, _is_player_attacker: bool = false):
 		is_broken = true
 		if max_speed > 0.0: set_meta("speed_before_destruction",max_speed)
 		max_speed = 0.0
-		if has_meta("mountain_falling"):
-			# The wreck is below the road, outside the emergency service network.
-			_combustion_epoch += 1
-			is_exploding = false
-			is_exploded = true
-			if flame_particles: flame_particles.emitting = false
-			if smoke_emitter: smoke_emitter.emitting = false
-			set_meta("cliff_collision_layer", collision_layer)
-			set_meta("cliff_collision_mask", collision_mask)
-			collision_layer = 0
-			collision_mask = 0
-			hide()
-			_apply_headlight_state()
-			return
 		if not is_exploding and not is_exploded:
 			set_meta("explosion_player_caused", _is_player_attacker)
 			_start_combustion_countdown()
@@ -834,7 +876,8 @@ func _explode() -> void:
 		var player_node = get_tree().get_first_node_in_group("player")
 		force_exit_vehicle()
 		if is_instance_valid(player_node) and player_node.has_method("take_damage"):
-			player_node.take_damage(100) # Dano crítico de explosão
+			player_node.take_damage(25)
+			set_meta("vehicle_explosion_ejected_player_id", player_node.get_instance_id())
 	
 	# 1. Som estrondoso de explosão potente
 	var p = AudioStreamPlayer2D.new()
@@ -860,6 +903,7 @@ func _explode() -> void:
 		
 	# 8. Onda de choque
 	preload("res://guns/combat/VehicleBlast.gd").apply(self)
+	remove_meta("vehicle_explosion_ejected_player_id")
 	preload("res://emergency/VehicleResidualFire.gd").start(self)
 
 var _fire_truck_dispatched: bool = false
@@ -994,6 +1038,8 @@ func _do_screen_shake(intensity: float):
 
 func _update_skid_audio():
 	if not skid_audio: return
+	skid_audio.volume_db = lerpf(-24.0, -11.0, clampf(velocity.length() / 260.0, 0.0, 1.0))
+	skid_audio.pitch_scale = lerpf(0.88, 1.12, clampf(lateral_speed / 180.0, 0.0, 1.0))
 	if not skid_audio.stream:
 		if skid_audio.playing: skid_audio.stop()
 		return
@@ -1001,6 +1047,35 @@ func _update_skid_audio():
 		skid_audio.play()
 	elif not is_skidding and skid_audio.playing:
 		skid_audio.stop()
+
+func _update_drift_smoke() -> void:
+	if drift_smoke_l == null or drift_smoke_r == null: return
+	if not is_driven_by_player or is_broken:
+		if drift_smoke_l.emitting: drift_smoke_l.emitting = false
+		if drift_smoke_r.emitting: drift_smoke_r.emitting = false
+		return
+
+	var weather := _get_weather_manager()
+	var rain_intensity: float = float(weather.get_rain_intensity()) if weather and weather.has_method("get_rain_intensity") else 0.0
+	# Na chuva forte, o pneu molhado espirra água ao invés de queimar borracha em fumaça
+	if rain_intensity >= 0.35:
+		if drift_smoke_l.emitting: drift_smoke_l.emitting = false
+		if drift_smoke_r.emitting: drift_smoke_r.emitting = false
+		return
+
+	var is_wheelspin: bool = float(_launch.wheelspin) > 0.12
+	if not is_skidding and not is_wheelspin:
+		if drift_smoke_l.emitting: drift_smoke_l.emitting = false
+		if drift_smoke_r.emitting: drift_smoke_r.emitting = false
+		return
+
+	var lateral_velocity = velocity.project(transform.y)
+	var slip_speed := lateral_velocity.length()
+	var slip_dir := lateral_velocity.dot(transform.y)
+	# Cantando pneu na arrancada ou derrapagem intensa: emite de ambos os lados
+	var both_sides: bool = is_wheelspin or slip_speed > 130.0 or absf(slip_dir) < 15.0
+	drift_smoke_l.emitting = both_sides or slip_dir < -10.0
+	drift_smoke_r.emitting = both_sides or slip_dir > 10.0
 
 func _load_radio_tracks():
 	var dir = DirAccess.open("res://audio/radio/") if DirAccess.dir_exists_absolute("res://audio/radio/") else null
@@ -1123,14 +1198,8 @@ func repair_and_repaint(new_color: Color = Color.TRANSPARENT) -> void:
 func repair_vehicle() -> void:
 	_launch.reset()
 	_tire_trail.reset()
-	if has_meta("cliff_collision_layer"):
-		collision_layer = get_meta("cliff_collision_layer")
-		collision_mask = get_meta("cliff_collision_mask")
-		global_position = get_meta("cliff_recovery_position", global_position)
-		reset_physics_interpolation()
-		for key in ["mountain_falling", "cliff_collision_layer", "cliff_collision_mask", "cliff_recovery_position"]:
-			remove_meta(key)
-		show()
+	if drift_smoke_l: drift_smoke_l.emitting = false
+	if drift_smoke_r: drift_smoke_r.emitting = false
 	_combustion_epoch += 1
 	health = max_health
 	if max_speed <= 0.0:

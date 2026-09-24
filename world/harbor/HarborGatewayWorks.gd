@@ -350,7 +350,7 @@ func _draw() -> void:
 		_draw_gate(Vector2(x,ACCESS.GATE_Y))
 		_draw_equipment(Vector2(x+15,-5680))
 	for i in WORKERS.size():
-		_draw_worker(WORKERS[i]+Vector2(sin(_clock*.45+i)*3,cos(_clock*.38+i)*2),_clock+i*1.7)
+		_draw_worker(WORKERS[i], i, _clock)
 	for p in [Vector2(5825,-5545),Vector2(5990,-5545)]:
 		draw_rect(Rect2(p,Vector2(24,12)),Color("967c56"))
 		for offset in [4,12,20]: draw_line(p+Vector2(offset,0),p+Vector2(offset,12),Color("ccb88e"),2)
@@ -362,21 +362,153 @@ func _draw_gate(center: Vector2) -> void:
 	for side in [-1.0,1.0]:
 		draw_circle(center+Vector2(side*62,0),7,Color("2c3437"))
 		draw_circle(center+Vector2(side*62,-2),3,Color("e4aa42"))
-	# Closed lock icon: no oversized ground text or localization dependency.
-	draw_rect(Rect2(center+Vector2(-7,-11),Vector2(14,15)),Color("e3d5a8"))
-	draw_arc(center+Vector2(0,-12),5,PI,TAU,12,Color("e3d5a8"),3)
 
-func _draw_worker(point: Vector2,time: float) -> void:
-	draw_circle(point+Vector2(2,3),8,Color(0,0,0,0.25))
-	draw_line(point+Vector2(-3,3),point+Vector2(-4,10),Color("28323a"),4)
-	draw_line(point+Vector2(3,3),point+Vector2(5,10),Color("28323a"),4)
-	draw_rect(Rect2(point+Vector2(-5,-5),Vector2(10,12)),Color("cc8638"))
-	draw_line(point+Vector2(-3,-4),point+Vector2(-3,6),Color("ecdb94"),2)
-	draw_line(point+Vector2(4,-1),point+Vector2(10,-3+sin(time*2)*3),Color("b49c7c"),3)
-	draw_circle(point+Vector2(0,-6),5,Color("e9c65b"))
-	var tool := point+Vector2(11,-4+sin(time*2)*5)
-	draw_line(point+Vector2(6,1),tool,Color("a18b60"),2)
-	draw_line(tool+Vector2(-3,-2),tool+Vector2(4,1),Color("929f9d"),3)
+func _draw_worker(point: Vector2, index: int, time: float) -> void:
+	var cycle := time * 2.0 + index * 1.5
+	var breath := sin(cycle) * 0.4
+	var arm_swing := sin(cycle * 1.2)
+
+	# 1. Soft Ambient Ground Shadow
+	draw_circle(point + Vector2(2, 7), 11.0, Color(0.02, 0.03, 0.05, 0.40))
+	draw_circle(point + Vector2(1, 6), 8.0, Color(0.01, 0.02, 0.03, 0.32))
+
+	# 2. Heavy Work Boots
+	var boot_left := point + Vector2(-5.5, 8.5)
+	var boot_right := point + Vector2(5.5, 8.5)
+	if index % 2 == 1:
+		boot_left += Vector2(-1, -1)
+		boot_right += Vector2(1, 1)
+
+	for boot_pos in [boot_left, boot_right]:
+		draw_rect(Rect2(boot_pos - Vector2(3, 4), Vector2(6, 8.5)), Color("#131518"))
+		draw_rect(Rect2(boot_pos - Vector2(2.5, 3.5), Vector2(5, 7.0)), Color("#26292e"))
+		draw_line(boot_pos + Vector2(-2, 2.5), boot_pos + Vector2(2, 2.5), Color("#3d4249"), 1.5)
+
+	# 3. Reinforced Work Pants
+	var pants_color := Color("#28343f") if index % 2 == 0 else Color("#31363e")
+	draw_line(point + Vector2(-4, 2), boot_left + Vector2(0, -2), pants_color, 5.5)
+	draw_line(point + Vector2(4, 2), boot_right + Vector2(0, -2), pants_color, 5.5)
+	draw_circle(point + Vector2(-4.5, 4.0), 2.2, pants_color.darkened(0.25))
+	draw_circle(point + Vector2(4.5, 4.0), 2.2, pants_color.darkened(0.25))
+
+	# 4. Tool Belt
+	draw_line(point + Vector2(-7, 1 + breath), point + Vector2(7, 1 + breath), Color("#38271a"), 3.0)
+	draw_rect(Rect2(point + Vector2(-1.5, breath), Vector2(3, 2)), Color("#8c9298"))
+	draw_rect(Rect2(point + Vector2(6.5, breath), Vector2(3, 3.5)), Color("#d99824"))
+
+	# 5. Torso & High-Vis Safety Vest
+	var vest_color := Color("#ea580c") if index in [0, 2, 4] else (Color("#c0eb1a") if index in [1, 5] else Color("#f1f5f9"))
+	var under_shirt := Color("#202832") if index % 2 == 0 else Color("#2a2e36")
+
+	var torso_poly := PackedVector2Array([
+		point + Vector2(-9.5, -5 + breath),
+		point + Vector2(9.5, -5 + breath),
+		point + Vector2(7.0, 1 + breath),
+		point + Vector2(-7.0, 1 + breath)
+	])
+	draw_colored_polygon(torso_poly, under_shirt)
+
+	var vest_poly := PackedVector2Array([
+		point + Vector2(-8.0, -4.5 + breath),
+		point + Vector2(8.0, -4.5 + breath),
+		point + Vector2(6.0, 0.5 + breath),
+		point + Vector2(-6.0, 0.5 + breath)
+	])
+	draw_colored_polygon(vest_poly, vest_color)
+
+	# 3M Retroreflective Stripes
+	draw_line(point + Vector2(-4.0, -4.5 + breath), point + Vector2(-3.0, 0.5 + breath), Color("#f8fafc"), 1.8)
+	draw_line(point + Vector2(4.0, -4.5 + breath), point + Vector2(3.0, 0.5 + breath), Color("#f8fafc"), 1.8)
+	draw_line(point + Vector2(-5.5, -1.0 + breath), point + Vector2(5.5, -1.0 + breath), Color("#f8fafc"), 1.8)
+	draw_line(point + Vector2(0, -4.5 + breath), point + Vector2(0, 0.5 + breath), Color("#1e252e"), 1.0)
+
+	# 6. Arms, Sleeves & Work Gloves
+	var glove_color := Color("#c6a87d")
+	var shoulder_l := point + Vector2(-8.5, -4 + breath)
+	var shoulder_r := point + Vector2(8.5, -4 + breath)
+
+	match index:
+		0:
+			var hand_l := point + Vector2(-7, 2 + breath)
+			var hand_r := point + Vector2(5, 5 + breath + arm_swing * 0.5)
+			draw_line(shoulder_l, hand_l, under_shirt, 3.5)
+			draw_line(shoulder_r, hand_r, under_shirt, 3.5)
+			draw_circle(hand_l, 2.2, glove_color)
+			draw_circle(hand_r, 2.2, glove_color)
+			draw_line(hand_r - Vector2(2, 6), hand_r + Vector2(4, 10), Color("#4b535d"), 2.5)
+			draw_rect(Rect2(hand_r + Vector2(2, 4), Vector2(4, 5)), Color("#26292f"))
+		1:
+			var hand_l := point + Vector2(-4, -1 + breath)
+			var hand_r := point + Vector2(6, -1 + breath + arm_swing * 0.3)
+			draw_line(shoulder_l, hand_l, under_shirt, 3.2)
+			draw_line(shoulder_r, hand_r, under_shirt, 3.2)
+			draw_circle(hand_l, 2.0, glove_color)
+			draw_circle(hand_r, 2.0, glove_color)
+			draw_rect(Rect2(hand_l + Vector2(1, -3), Vector2(7, 4)), Color("#eab308"))
+			draw_rect(Rect2(hand_l + Vector2(7, -2), Vector2(2, 2)), Color("#ef4444"))
+		2:
+			var hand_l := point + Vector2(-5, 3 + breath)
+			var hand_r := point + Vector2(4, 1 + breath)
+			draw_line(shoulder_l, hand_l, under_shirt, 3.5)
+			draw_line(shoulder_r, hand_r, under_shirt, 3.5)
+			draw_circle(hand_l, 2.2, glove_color)
+			draw_circle(hand_r, 2.2, glove_color)
+			draw_line(point + Vector2(1, -5), point + Vector2(9, 12), Color("#a17c52"), 2.0)
+			draw_rect(Rect2(point + Vector2(6, 9), Vector2(7, 5)), Color("#475569"))
+		3:
+			var hand_l := point + Vector2(-3, breath)
+			var hand_r := point + Vector2(4, 1 + breath)
+			draw_line(shoulder_l, hand_l, under_shirt, 3.2)
+			draw_line(shoulder_r, hand_r, under_shirt, 3.2)
+			draw_circle(hand_l, 1.8, glove_color)
+			draw_circle(hand_r, 1.8, glove_color)
+			draw_rect(Rect2(point + Vector2(-5, -2 + breath), Vector2(10, 7)), Color("#334155"))
+			draw_rect(Rect2(point + Vector2(-4, -1 + breath), Vector2(8, 5)), Color("#f8fafc"))
+			draw_line(point + Vector2(-3, 1 + breath), point + Vector2(2, 1 + breath), Color("#0284c7"), 1.0)
+		4:
+			var hand_l := point + Vector2(-6, breath)
+			var hand_r := point + Vector2(7, -1 + breath + sin(cycle * 1.5) * 1.5)
+			draw_line(shoulder_l, hand_l, under_shirt, 3.5)
+			draw_line(shoulder_r, hand_r, under_shirt, 3.5)
+			draw_circle(hand_l, 2.2, glove_color)
+			draw_circle(hand_r, 2.2, glove_color)
+			draw_line(hand_r - Vector2(1, 1), hand_r + Vector2(7, -4), Color("#94a3b8"), 2.2)
+			draw_circle(hand_r + Vector2(7, -4), 2.2, Color("#64748b"))
+		_:
+			var hand_l := point + Vector2(-6, -4 + breath)
+			var hand_r := point + Vector2(8, 2 + breath + arm_swing * 0.8)
+			draw_line(shoulder_l, hand_l, under_shirt, 3.2)
+			draw_line(shoulder_r, hand_r, under_shirt, 3.2)
+			draw_circle(hand_l, 2.0, glove_color)
+			draw_circle(hand_r, 2.0, glove_color)
+			draw_rect(Rect2(shoulder_l + Vector2(-2, -3), Vector2(3, 4)), Color("#0f172a"))
+			draw_line(shoulder_l + Vector2(-1, -3), shoulder_l + Vector2(-1, -7), Color("#0f172a"), 1.0)
+
+	# 7. Head & Industrial Safety Hard Hat
+	var head_pos := point + Vector2(0, -6 + breath * 0.5)
+	draw_circle(head_pos + Vector2(0, 2), 3.2, Color("#b88a6d"))
+	draw_line(head_pos + Vector2(-2.5, 2.5), head_pos + Vector2(2.5, 2.5), Color("#2e2620"), 1.5)
+
+	var helmet_color := Color("#f8fafc") if index == 3 else (Color("#fbbf24") if index in [0, 1, 4] else Color("#f97316"))
+	var helmet_shadow := helmet_color.darkened(0.28)
+	var helmet_highlight := helmet_color.lightened(0.35)
+
+	draw_circle(head_pos + Vector2(0, -0.5), 6.5, helmet_shadow)
+	draw_circle(head_pos + Vector2(0, -1.0), 6.0, helmet_color)
+
+	var brim_poly := PackedVector2Array([
+		head_pos + Vector2(-5.5, -4.0),
+		head_pos + Vector2(-2.0, -7.2),
+		head_pos + Vector2(2.0, -7.2),
+		head_pos + Vector2(5.5, -4.0),
+		head_pos + Vector2(0.0, -4.5)
+	])
+	draw_colored_polygon(brim_poly, helmet_color)
+	draw_line(head_pos + Vector2(-2.0, -7.2), head_pos + Vector2(2.0, -7.2), helmet_highlight, 1.5)
+	draw_line(head_pos + Vector2(0, 4.0), head_pos + Vector2(0, -6.5), helmet_highlight, 1.8)
+
+	draw_rect(Rect2(head_pos + Vector2(-7.2, -2.5), Vector2(2.2, 4.0)), Color("#1e293b"))
+	draw_rect(Rect2(head_pos + Vector2(5.0, -2.5), Vector2(2.2, 4.0)), Color("#1e293b"))
 
 func _draw_equipment(point: Vector2) -> void:
 	for side in [-1.0,1.0]:

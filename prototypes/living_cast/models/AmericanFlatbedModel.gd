@@ -1,6 +1,36 @@
 extends "res://prototypes/living_cast/BaseVehicle3DModel.gd"
 ## Conventional long-hood rigid truck; negative Z is the front.
 
+# A flatbed creates 151 separate 3D parts, but many of them have exactly the
+# same primitive dimensions (wheel holes, deck boards, grille bars and lamps).
+# Keep the nodes separate for damage, materials and wheel articulation while
+# sharing the immutable Mesh resources. This reduces the first construction;
+# VehicleGeometryCache still owns reuse of the complete model afterwards.
+static var _shared_box_meshes: Dictionary = {}
+static var _shared_cylinder_meshes: Dictionary = {}
+
+
+func box(pos: Vector3, size_value: Vector3, material: Material) -> MeshInstance3D:
+	var mesh := _shared_box_meshes.get(size_value) as BoxMesh
+	if mesh == null:
+		mesh = BoxMesh.new()
+		mesh.size = size_value
+		_shared_box_meshes[size_value] = mesh
+	return mesh_node(mesh, pos, material)
+
+
+func cylinder(pos: Vector3, radius: float, depth: float, material: Material) -> MeshInstance3D:
+	var key := Vector2(radius, depth)
+	var mesh := _shared_cylinder_meshes.get(key) as CylinderMesh
+	if mesh == null:
+		mesh = CylinderMesh.new()
+		mesh.top_radius = radius
+		mesh.bottom_radius = radius
+		mesh.height = depth
+		mesh.radial_segments = 32
+		_shared_cylinder_meshes[key] = mesh
+	return mesh_node(mesh, pos, material)
+
 func build() -> void:
 	paint = mat("paint", "943e32", 0.35, 0.35)
 	var steel := mat("frame", "293238", 0.5, 0.6)

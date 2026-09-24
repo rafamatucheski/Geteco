@@ -72,6 +72,7 @@ func run() -> void:
 	# Finite status expiration, without waiting on wall-clock time.
 	# Keep the victim alive while exercising the final smoke-tail boundary.
 	burning.health = 1000
+	burning.set_physics_process(false)
 	for i in 12: fire._physics_process(0.5)
 	check(not fire.flames.emitting, "Expired flames stop emitting during smoke tail")
 	preload("res://guns/combat/PersonBurning.gd").ignite(burning)

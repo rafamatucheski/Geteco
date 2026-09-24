@@ -1,0 +1,10 @@
+{
+  "enable_pbr": true,
+  "texture_resolution": "2k",
+  "target_formats": [
+    "glb"
+  ],
+  "texture_prompt": "Deep purple tailored suit and wide brim fedora #6c3483, black satin lapels #17202a, tan leopard print hatband with dark spots, dark sunglasses with metallic gold frames, warm medium tan brown skin #a87858, thin black goatee, open neck chest, gold chain, purple trousers, polished dark purple leather shoes #4a235a. Cane entirely metallic gold #f1c40f with a purple gemstone handle. Elegant clean fabric, realistic restrained PBR, no text or logos.",
+  "mode": "refine",
+  "preview_task_id": "01a0c96d-cfbf-70ac-8c3a-917fc6c101ff"
+}

@@ -61,7 +61,9 @@ func _ready() -> void:
 	if travel.is_arriving() or get_node("/root/SaveManager").has_pending_save():
 		spawn_suv_on_ready = false
 	await _setup_environment()
+	if not is_inside_tree(): return
 	if streamed_region: await get_tree().process_frame
+	if not is_inside_tree(): return
 	_setup_bridge()
 	_setup_setpieces()
 	if not streamed_region:
@@ -75,42 +77,50 @@ func _ready() -> void:
 		await MOUNTAIN_SCENERY_BUILDER.build_streamed_scenery(self)
 	else:
 		await MOUNTAIN_SCENERY_BUILDER.build_full_scenery(self)
+	if not is_inside_tree(): return
 	_setup_weather_and_cold()
 	cold_controller.cold_zone_y_threshold += global_position.y
 	if streamed_region:
 		cold_controller.set_player(player_instance)
 		storm_manager.follow_target = player_instance
 		await get_tree().process_frame
+		if not is_inside_tree(): return
 	if spawn_player_on_ready:
 		_spawn_player_and_suv()
 	var expedition := preload("res://world/mountain_pass/MountainExpedition.gd").new()
 	expedition.name = "MountainExpedition"
 	add_child(expedition)
 	if streamed_region:
-		while not expedition.region_ready: await get_tree().process_frame
+		while is_inside_tree() and not expedition.region_ready: await get_tree().process_frame
+		if not is_inside_tree(): return
 	var settlement := preload("res://world/mountain_pass/MountainSettlement.gd").new()
 	settlement.name = "MountainSettlement"
 	add_child(settlement)
 	if streamed_region:
-		while not settlement.region_ready: await get_tree().process_frame
+		while is_inside_tree() and not settlement.region_ready: await get_tree().process_frame
+		if not is_inside_tree(): return
 	var ski_area := preload("res://world/mountain_pass/MountainSkiArea.gd").new()
 	ski_area.name = "MountainSkiArea"
 	add_child(ski_area)
 	if streamed_region:
-		while not ski_area.region_ready: await get_tree().process_frame
+		while is_inside_tree() and not ski_area.region_ready: await get_tree().process_frame
+		if not is_inside_tree(): return
 	var mystery := preload("res://world/mountain_pass/MountainMysteryDirector.gd").new()
 	mystery.name = "MountainMystery"
 	add_child(mystery)
 	if streamed_region: await get_tree().process_frame
+	if not is_inside_tree(): return
 	preload("res://world/mountain_pass/transit/MountainTransitIntegration.gd").build(self)
 	if streamed_region: await get_tree().process_frame
+	if not is_inside_tree(): return
 	var traffic := preload("res://world/mountain_pass/MountainTraffic.gd").new()
 	traffic.name = "MountainTraffic"
 	# Regional service keeps its nearby road traffic alive while scenery sleeps.
 	traffic.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(traffic)
 	if streamed_region:
-		while not traffic.region_ready: await get_tree().process_frame
+		while is_inside_tree() and not traffic.region_ready: await get_tree().process_frame
+		if not is_inside_tree(): return
 	if spawn_player_on_ready:
 		var hud := preload("res://HUD.tscn").instantiate()
 		add_child(hud)
@@ -122,8 +132,9 @@ func _ready() -> void:
 	road_lighting.mountain_road = road
 	add_child(road_lighting)
 	if streamed_region:
-		while not road_lighting.ready_for_audit:
+		while is_inside_tree() and not road_lighting.ready_for_audit:
 			await get_tree().process_frame
+		if not is_inside_tree(): return
 	region_ready = true
 
 func _setup_environment() -> void:
@@ -132,7 +143,8 @@ func _setup_environment() -> void:
 	interior_manager.name = "MountainInteriorManager"
 	add_child(interior_manager)
 	if streamed_region:
-		while not interior_manager.region_ready: await get_tree().process_frame
+		while is_inside_tree() and not interior_manager.region_ready: await get_tree().process_frame
+		if not is_inside_tree(): return
 
 	# 1. Parallax da Cidade Minúscula ao Fundo
 	parallax = MountainAltitudeParallaxScript.new()
@@ -232,18 +244,12 @@ func _setup_setpieces() -> void:
 	# B. Ponte Suspensa Estreita (Gorgeneck - Bloqueia carros, so pedestres)
 	var footbridge := StaticBody2D.new()
 	footbridge.name = "GorgeneckFootbridge"
-	footbridge.position = Vector2(7050, 40)
+	footbridge.position = Vector2(7100, 40)
 	footbridge.collision_layer = 1
 	footbridge.collision_mask = 0
 	setpieces.add_child(footbridge)
 
-	for ppos in [Vector2(-95, 0), Vector2(95, 0)]:
-		var pcol := CollisionShape2D.new()
-		var pcirc := CircleShape2D.new()
-		pcirc.radius = 16.0
-		pcol.shape = pcirc
-		pcol.position = ppos
-		footbridge.add_child(pcol)
+	preload("res://world/mountain_pass/MountainFootbridgeCollision.gd").install(footbridge)
 
 	# C. Caverna Secreta com Cache de Armas (Cave Cache)
 	var cave := Node2D.new()
@@ -340,6 +346,7 @@ func _spawn_player_and_suv() -> void:
 
 		main_camera = Camera2D.new()
 		main_camera.name = "Camera"
+		main_camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 		main_camera.position_smoothing_enabled = true
 		main_camera.position_smoothing_speed = 6.0
 		player_instance.add_child(main_camera)
@@ -389,13 +396,21 @@ func restore_region_interior(actor: Node2D, data: Dictionary) -> void:
 	storm_manager.weather_clock = float(data.get("weather_clock",0))
 	storm_manager.advance_weather(0)
 	var id := StringName(data.get("interior", ""))
-	var room: Node2D = interior_manager._interiors.get(id)
+	var room: Node2D = interior_manager.get_interior(id)
 	if room == null: return
+	if room.get("inline_mode") == true:
+		# Older saves kept these shops at distant coordinates. New saves keep
+		# the player's physical position in the building.
+		if not room.contains_point(actor.global_position):
+			actor.global_position = room.spawn_point.global_position
+			actor.reset_physics_interpolation()
+		return
 	var point: Array = data.get("exterior_return", [7350,730])
 	interior_manager._actor_returns[actor] = Vector2(point[0],point[1])
 	actor.set_meta("police_exterior_position", Vector2(point[0],point[1]))
 	actor.set_meta("mountain_interior", true)
 	actor.set_meta("mountain_interior_id", id)
+	interior_manager.set_active_interior(room)
 	room.set_npc_rendering_active(true)
 	if room.get("camera_3d") is Camera3D and room.get("sprite_3d") is Sprite2D:
 		var helper := preload("res://systems/interiors/InteriorActorPresentation.gd").new()

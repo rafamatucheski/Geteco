@@ -9,6 +9,8 @@ const FADE_SECONDS := 5.0
 const RETURN_SECONDS := 20.0
 const MAX_INCIDENT_SECONDS := 300.0
 const MAX_OBSERVERS := 4
+const WITNESS_SCAN_INTERVAL := 1.0
+const OBSERVER_SCAN_INTERVAL := 1.5
 const REPORTED_WAIT_SECONDS := 180.0
 # Sem isso, um tiroteio contínuo (o jogador correndo e matando por 2+ minutos,
 # sem parar pra deixar as poucas viaturas de resgate darem conta) empilha
@@ -23,6 +25,9 @@ const REPORTED_WAIT_SECONDS := 180.0
 # atendidos assim que o total passa do limite, sem interromper resgate já em
 # andamento (dispatched/carrying/transport ficam de fora).
 const MAX_SIMULTANEOUS_INCIDENTS := 24
+const AMBULANCE_DISPATCH_COOLDOWN_SECONDS := 10.0
+const AMBULANCE_RESPONSE_RADIUS := 1100.0
+var _ambulance_dispatch_cooldown := 0.0
 
 func _ready() -> void:
 	get_tree().node_added.connect(_node_added)
@@ -31,6 +36,7 @@ func _ready() -> void:
 func _reset() -> void:
 	incidents.clear()
 	residents.clear()
+	_ambulance_dispatch_cooldown = 0.0
 
 func _node_added(node: Node) -> void:
 	# Responders can be removed before the deferred registration runs (scene
@@ -58,8 +64,6 @@ func _register(actor: Node) -> void:
 		actor.set_meta("medical_identity", key)
 	if residents.has(key) and residents[key].actor == actor: return
 	residents[key] = {"actor":actor, "home":actor.global_position, "health":maxi(1, int(actor.health)), "physics":actor.is_physics_processing(), "mode":actor.process_mode, "layer":actor.collision_layer, "mask":actor.collision_mask}
-	var coroner := get_node_or_null("/root/CoronerCare")
-	if coroner and coroner.restore_actor(actor): return
 	var saved: Dictionary = records().get(key, {})
 	if saved.is_empty(): return
 	residents[key].home = Vector2(saved.get("home_x", actor.global_position.x), saved.get("home_y", actor.global_position.y))
@@ -107,15 +111,14 @@ func report_injury(actor: Node) -> void:
 	if not is_instance_valid(actor) or not actor is CharacterBody2D or actor.is_in_group("player"): return
 	if not "is_dead" in actor or not "health" in actor: return
 	if actor.get("is_dead") != true and actor.get("is_incapacitated") != true: return
+	# Fatal casualties are visual bodies with a bounded fade budget. Medical
+	# dispatch remains exclusively for living incapacitated actors.
+	if actor.get("is_dead") == true:
+		actor.remove_meta("medical_pending")
+		return
 	actor.set_meta("medical_pending", true)
 	if not actor.has_meta("medical_identity"): _register(actor)
 	var key: String = actor.get_meta("medical_identity", "")
-	if actor.is_dead and not actor.is_in_group("mountain_wildlife"):
-		var coroner := get_node_or_null("/root/CoronerCare")
-		if coroner:
-			if actor.get_meta("service_complete",false) and coroner.records().has(key): return
-			if coroner.records().get(key, {}).get("phase", "") in ["carrying", "transport", "morgue", "cemetery", "burial", "awaiting_plot", "recovery", "buried", "unrecovered"]: return
-			coroner.register_death(actor)
 	if key.is_empty() or incidents.has(key) or records().get(key, {}).get("phase", "") == "hospital": return
 	if records().get(key, {}).get("phase", "") == "recycling": return
 	var prior_age := float(records().get(key, {}).get("cleanup_age", 0.0))
@@ -126,6 +129,7 @@ func report_injury(actor: Node) -> void:
 
 func _process(delta: float) -> void:
 	if get_tree().paused: return
+	_ambulance_dispatch_cooldown = maxf(0.0, _ambulance_dispatch_cooldown - delta)
 	# Only fading casualties need per-frame work; discovery stays at 2 Hz.
 	for incident in incidents.values():
 		if incident.phase != "fading" or not is_instance_valid(incident.actor): continue
@@ -137,6 +141,8 @@ func _process(delta: float) -> void:
 	_scan_clock += delta
 	if _scan_clock < 0.5: return
 	var elapsed := _scan_clock
+	var _medical_profile := OS.get_cmdline_user_args().has("--profile-dispatch")
+	var _medical_started_usec := Time.get_ticks_usec()
 	_scan_clock = 0
 	for key in residents.keys():
 		var actor: Variant = residents[key].actor
@@ -176,6 +182,10 @@ func _process(delta: float) -> void:
 			incidents.erase(key)
 			continue
 		incident.age += elapsed
+		var witness_scan_cooldown := maxf(0.0, float(incident.get("witness_scan_cooldown", 0.0)) - elapsed)
+		incident.witness_scan_cooldown = witness_scan_cooldown
+		var observer_scan_cooldown := maxf(0.0, float(incident.get("observer_scan_cooldown", 0.0)) - elapsed)
+		incident.observer_scan_cooldown = observer_scan_cooldown
 		if actor.is_dead and is_instance_valid(incident.unit) and incident.unit.get("type") == 1:
 			var ambulance: Node = incident.unit
 			var sequence: Node = ambulance.get_meta("medical_sequence") if ambulance.has_meta("medical_sequence") else null
@@ -201,13 +211,9 @@ func _process(delta: float) -> void:
 			if not is_instance_valid(incident.carrier): retry_patient(actor, actor.global_position)
 			continue
 		if incident.phase == "dispatched":
-			if actor.is_dead and is_instance_valid(incident.unit) and incident.unit.get("type") == 3 and incident.unit.visible and not incident.unit.is_broken and not incident.unit.is_returning_to_base:
-				var assigned_target: Variant = incident.unit.target
-				if is_instance_valid(assigned_target) and get_node("/root/CoronerCare").identity(assigned_target) == key: continue
-				if incident.unit.service_targets.any(func(candidate): return is_instance_valid(candidate) and get_node("/root/CoronerCare").identity(candidate) == key): continue
 			if is_instance_valid(incident.unit) and incident.unit.visible and not incident.unit.is_broken and incident.unit.target == actor and not incident.unit.is_returning_to_base: continue
 			incident.phase = "reported"
-		if incident.phase == "noticed":
+		if incident.phase == "noticed" and witness_scan_cooldown <= 0.0:
 			_notice_by_responder(actor, incident, elapsed)
 			if incident.phase == "noticed" and not is_instance_valid(incident.witness):
 				var witness := _nearest_witness(actor)
@@ -215,23 +221,42 @@ func _process(delta: float) -> void:
 					incident.witness = _add_observer(witness, actor, incident, true)
 			# Wait for a real witness to finish calling, including after an
 			# interrupted call. Elapsed time alone cannot report the casualty.
-		if incident.phase in ["noticed", "reported"]:
+		incident.witness_scan_cooldown = WITNESS_SCAN_INTERVAL
+		if incident.phase == "noticed" and observer_scan_cooldown <= 0.0:
 			_gather_observers(actor, incident)
 		if incident.phase == "reported" and incident.retry <= 0:
 			incident.retry = 4.0
 			var director := _nearest_director(actor)
 			if director:
-				var service := "coroner" if actor.is_dead else "ambulance"
+				var service := "ambulance"
+				if not _ambulance_dispatch_allowed(actor):
+					continue
 				var unit: Node = director.request_dispatch(service, actor)
 				if is_instance_valid(unit):
-					if actor.is_dead: get_node("/root/CoronerCare").assigned(actor, unit)
+					if service == "ambulance": _ambulance_dispatch_cooldown = AMBULANCE_DISPATCH_COOLDOWN_SECONDS
 					incident.unit = unit
 					incident.phase = "dispatched"
 					incident.rescue_age = 0.0
+	if _medical_profile:
+		print("MEDICAL_SCAN_PROFILE ms=%.3f residents=%d incidents=%d" % [float(Time.get_ticks_usec() - _medical_started_usec) / 1000.0, residents.size(), incidents.size()])
 	_advance_recycling(elapsed)
 	var clock := get_tree().get_first_node_in_group("day_night_manager")
 	if clock != null and clock.is_dynamic_time and get_tree().get_first_node_in_group("medical_campaign_clock") == null:
 		advance_days(elapsed / maxf(1.0, float(clock.day_length_seconds)))
+
+func _ambulance_dispatch_allowed(actor: Node2D) -> bool:
+	if not is_instance_valid(actor) or actor.get("is_dead") == true or actor.get("is_incapacitated") != true:
+		return false
+	if _ambulance_dispatch_cooldown > 0.0: return false
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(player): return false
+	if actor.global_position.distance_to(player.global_position) > AMBULANCE_RESPONSE_RADIUS:
+		return false
+	for vehicle in get_tree().get_nodes_in_group("emergency_vehicle"):
+		if not is_instance_valid(vehicle) or int(vehicle.get("type")) != 1: continue
+		if vehicle.visible and not vehicle.get("is_broken") and is_instance_valid(vehicle.get("target")):
+			return false
+	return true
 
 func _dispatch_priority(incident: Dictionary) -> float:
 	var actor: Variant = incident.actor
@@ -312,7 +337,7 @@ func _nearest_director(patient: Node2D) -> Node:
 	var distance := INF
 	for director in get_tree().get_nodes_in_group("emergency_depot_director"):
 		if not director.can_process(): continue
-		var service := "coroner" if patient.get("is_dead") == true else "ambulance"
+		var service := "ambulance"
 		var depot: Node2D = director._choose_depot(service, address.global_position)
 		if depot == null: continue
 		var d := depot.global_position.distance_squared_to(address.global_position)
@@ -429,7 +454,6 @@ func advance_days(days: float) -> void:
 			record.phase = "discharged"
 
 func _recover(key: String, point: Vector2 = Vector2.INF) -> void:
-	if get_node("/root/CoronerCare").records().has(key): return
 	var item: Dictionary = residents[key]
 	var actor: CharacterBody2D = item.actor
 	if "fall_presentation" in actor: actor.fall_presentation.reset()
@@ -472,7 +496,6 @@ func _cleanup_incident(key: String, _elapsed: float) -> bool:
 	var forced: bool = bool(incident.get("force_fade", false))
 	if actor.is_dead and not actor.is_in_group("mountain_wildlife"):
 		if forced or (incident.phase == "noticed" and incident.age >= 180.0 and get_node("/root/WorldRenewal").outside_view(actor,actor.global_position)):
-			get_node("/root/CoronerCare").mark_unrecovered(actor)
 			incidents.erase(key)
 			records().erase(key)
 			return true
@@ -519,7 +542,6 @@ func _advance_recycling(elapsed: float) -> void:
 	var renewal := get_node("/root/WorldRenewal")
 	for key in records().keys():
 		var record: Dictionary = records()[key]
-		if get_node("/root/CoronerCare").records().has(key): continue
 		if record.get("phase", "") == "hospital":
 			record.recovery_age = float(record.get("recovery_age", 0.0)) + elapsed
 			if record.recovery_age >= RESCUE_LIMIT_SECONDS:

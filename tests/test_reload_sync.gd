@@ -38,6 +38,9 @@ func run() -> void:
 		for frame in 60: player.combat_pose.update(player,1.0/60.0,true,false,0)
 		var initial_left: Vector3 = player.left_lower_arm.get_node("Palm").global_position
 		player._reload_active_weapon()
+		if id == "pistol":
+			check(player.meshy_rig._is_gripping("Left"), "pistol support hand closes around the magazine during reload")
+			check(player.combat_pose.reload_targets("pistol", 0.28).left.y >= 0.77, "pistol magazine hand stays purposeful at waist height")
 		var started := Time.get_ticks_msec()
 		var duration: float = player._reload_duration
 		var next_capture := 0.08

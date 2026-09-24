@@ -13,6 +13,13 @@ var old_collision_scale := Vector2.ONE
 var collider: CollisionShape2D
 
 func configure(target: Node2D, camera: Camera3D, display: Sprite2D) -> void:
+	var prev_move: Node = target.get_meta("interior_movement_presentation") if target.has_meta("interior_movement_presentation") else null
+	if is_instance_valid(prev_move) and prev_move != self and prev_move.has_method("restore"):
+		prev_move.restore()
+	var prev_actor: Node = target.get_meta("interior_actor_presentation") if target.has_meta("interior_actor_presentation") else null
+	if is_instance_valid(prev_actor) and prev_actor.has_method("restore"):
+		prev_actor.restore()
+
 	actor = target
 	actor.set_meta("interior_movement_presentation", self)
 	room_camera = camera
@@ -61,9 +68,18 @@ func pixels_per_rig_unit(direction: Vector2) -> float:
 func restore() -> void:
 	if is_instance_valid(actor):
 		actor.remove_meta("interior_movement_presentation")
-		actor.viewport_3d.size = old_viewport_size
-		actor.sprite_3d_display.scale = old_scale
-		actor.sprite_3d_display.position = old_position
+		var target_vp_size := old_viewport_size
+		if target_vp_size == Vector2i(384, 384) or target_vp_size == Vector2i.ZERO:
+			target_vp_size = Vector2i(128, 128)
+		if actor.get("viewport_3d") is SubViewport:
+			actor.viewport_3d.size = target_vp_size
+
+		var target_scale := old_scale
+		if target_scale.x > 0.45 and actor.is_in_group("player"):
+			target_scale = Vector2(0.34, 0.34) if actor.get_tree() != null and actor.get_tree().get_first_node_in_group("mountain_pass") != null else Vector2(0.24, 0.24)
+		if actor.get("sprite_3d_display") is Sprite2D:
+			actor.sprite_3d_display.scale = target_scale
+			actor.sprite_3d_display.position = old_position
 		if is_instance_valid(collider):
 			collider.scale = old_collision_scale
 	actor = null

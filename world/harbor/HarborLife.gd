@@ -5,11 +5,19 @@ extends Node2D
 const FACTORY := preload("res://emergency/ModernTrafficFactory.gd")
 const CONTROLLER := preload("res://geodata/roads/traffic/JunctionTrafficController.gd")
 const RAIL := preload("res://world/harbor/HarborRailLine.gd")
-const CAR_TYPES := ["orbita_micro", "sport_estate", "sedan_classic", "metro_hatch", "aurora_executive", "union_sedan", "vale_crossover", "metro_hatch", "nordic_estate", "sport_coupe", "nimbus_minivan", "courier_van", "station_wagon", "cobra_v8", "taxi_yellow", "vertice_midengine", "metro_hatch", "summit_suv", "bravio_crew", "courier_van", "sedan_classic", "union_sedan", "station_wagon"]
+const POPULATION_ZONES := preload("res://systems/PopulationZoneManager.gd")
+const CAR_TYPES := ["orbita_micro", "sport_estate", "sedan_classic", "metro_hatch", "aurora_executive", "union_sedan", "vale_crossover", "metro_hatch", "nordic_estate", "sport_coupe", "nimbus_minivan", "courier_van", "station_wagon", "cobra_v8", "taxi_yellow", "vertice_midengine", "metro_hatch", "summit_suv", "bravio_crew", "atlas_crew_pickup", "sertao_trail_pickup", "courier_van", "sedan_classic", "union_sedan", "station_wagon"]
 const MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
 const MAX_AMBIENT_TRUCKS := 2
+# Keeps three residents for every former ambient slot. Distant identities stay
+# virtual, so this raises street density without tripling the loaded scene.
+const WALKER_DENSITY_MULTIPLIER := 3
+const VIRTUAL_PRESENTATION_RADIUS := 700.0
+const VIRTUAL_SPAWN_MIN_RADIUS := 420.0
+const VIRTUAL_SPAWN_SEPARATION := 52.0
 
 @export var rail_path: NodePath = NodePath("../FreightRail")
+@export var enable_virtual_population := false
 
 var _configured := false
 var traffic_controller: Node
@@ -23,6 +31,14 @@ var _budget_clock := 0.0
 var _spawn_serial := 1000
 var _population_activity := preload("res://systems/PopulationActivity.gd").new()
 var walk_space := preload("res://characters/pedestrians/PedestrianWalkSpace.gd").new()
+var _virtual_population_enabled := false
+var _walker_specs: Array[Dictionary] = []
+var _traffic_specs: Array[Dictionary] = []
+var _walker_specs_by_key: Dictionary = {}
+var _traffic_specs_by_key: Dictionary = {}
+var _materialized_walker_keys: Dictionary = {}
+var _materialized_traffic_keys: Dictionary = {}
+var _companion_groups: Dictionary = {}
 
 
 class HarborController extends JunctionTrafficController:
@@ -100,12 +116,17 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 	func _ready() -> void:
 		if get_parent().get("walk_space") != null: walk_space = get_parent().get("walk_space")
 		district_theme = DistrictTheme.CITY_DOWNTOWN
-		defer_presentation = false
+		# Ambient residents keep the authored citizen silhouette and clothing.
+		# Runtime savings must come from proximity/viewport scheduling, never from
+		# replacing visible people with the primitive low-detail rig.
+		ambient_low_lod = false
+		ambient_presentation_atlas = true
+		defer_presentation = bool(get_meta("defer_presentation", false))
 		archetype_override = [0,1,2,4,6,7][appearance_variant%6]
 		appearance_seed = appearance_variant
 		appearance_gender = 1 + appearance_variant % 2
 		super._ready()
-		preload("res://characters/pedestrians/CitizenDetails.gd").dress(self,appearance_variant)
+		preload("res://characters/pedestrians/CitizenDetails.gd").dress(self, appearance_variant)
 
 	# Existing generic shop visits target an approximate facade position. Until
 	# preview buildings expose verified entrances, remain on audited promenades.
@@ -173,6 +194,15 @@ class HarborWalker extends AuthoredSidewalkPedestrian:
 
 
 func _ready() -> void:
+	# Pay the first vertex-colour ArrayMesh allocation while Harbor is still in
+	# its loading phase, never when a resident becomes visible during gameplay.
+	preload("res://characters/pedestrians/CitizenGeometry.gd").prewarm_vertex_color_mesh()
+	preload("res://characters/AnimatedPedestrian3D.gd").prewarm_ambient_primitives()
+	var presentation_budget := get_node_or_null("/root/PresentationBudget")
+	if presentation_budget != null and presentation_budget.has_method("prewarm_ambient_authored"):
+		presentation_budget.prewarm_ambient_authored()
+	if OS.get_cmdline_user_args().has("--virtual-population"):
+		enable_virtual_population = true
 	if not Engine.is_editor_hint():
 		call_deferred("_setup_sibling")
 
@@ -190,6 +220,11 @@ func setup(network: Node2D) -> void:
 		push_error("HarborLife requires a canonical road network")
 		return
 	_configured = true
+	# O ContinuousWorld pode registrar seu grupo depois deste sibling durante a
+	# mesma inicializacao. O opt-in e a autoridade; o reconciliador so e
+	# chamado pelo ContinuousWorld quando ele existir.
+	_virtual_population_enabled = enable_virtual_population
+	if _virtual_population_enabled: add_to_group("population_region")
 	# Harbor's turning rays can touch residents on the far sidewalk. Enable
 	# the actual swept corridor when this population starts, even when the
 	# optional interregional coach service has not been initialized.
@@ -240,15 +275,51 @@ func _spawn_traffic(network: Node2D) -> void:
 	var population := mini(target_population, lanes.size())
 	_traffic_lanes = lanes
 	_traffic_target = population
+	_traffic_specs.clear()
+	_traffic_specs_by_key.clear()
 	for index in population:
 		# Cover the entire authored district, including northern/highway lanes,
 		# rather than excluding roads at the end of the alphabetic lane list.
 		var lane_index := floori(float(index * lanes.size()) / float(population))
-		var vehicle := FACTORY.spawn_moving_vehicle(
-			lanes[lane_index], "HarborTraffic_%02d" % index,
-			_traffic_archetype(lanes[lane_index], index), 0.17 + float(index % 4) * 0.17,
-			80.0 + float(index % 3) * 9.6, index)
-		vehicles.append(vehicle)
+		var lane: Path2D = lanes[lane_index]
+		var ratio := 0.17 + float(index % 4) * 0.17
+		var archetype := _traffic_archetype(lane, index)
+		var spec := {
+			"key": "harbor:traffic:%d" % index,
+			"name": "HarborTraffic_%02d" % index,
+			"lane": lane,
+			"lane_id": String(lane.get_meta("traffic_lane_id", lane.name)),
+			"position": lane.to_global(lane.curve.sample_baked(lane.curve.get_baked_length() * ratio, true)),
+			"ratio": ratio,
+			"archetype": archetype,
+			"speed": 80.0 + float(index % 3) * 9.6,
+			"serial": index,
+		}
+		_register_traffic_spec(spec)
+		if not _virtual_population_enabled:
+			_materialize_traffic_spec(spec)
+
+
+func _materialize_traffic_spec(spec: Dictionary) -> Node2D:
+	var key := String(spec.get("key", ""))
+	# A queued/free actor can remain in the identity map until the next
+	# reconciliation pass. Validate the Variant before casting it; casting a
+	# freed Object directly to Node2D emits an engine error on every retry.
+	var existing_value: Variant = _materialized_traffic_keys.get(key)
+	if is_instance_valid(existing_value) and existing_value is Node2D and existing_value.is_inside_tree() and not existing_value.is_queued_for_deletion():
+		return existing_value as Node2D
+	_materialized_traffic_keys.erase(key)
+	var lane := spec.get("lane") as Path2D
+	if not is_instance_valid(lane): return null
+	var vehicle := FACTORY.spawn_moving_vehicle(
+		lane, String(spec.get("name", key)), String(spec.get("archetype", "sedan_classic")),
+		float(spec.get("ratio", 0.25)), float(spec.get("speed", 80.0)), int(spec.get("serial", 0)))
+	vehicle.set_meta("population_key", key)
+	vehicle.set_meta("virtual_population", true)
+	vehicle.set_meta("traffic_serial", int(spec.get("serial", 0)))
+	vehicles.append(vehicle)
+	_materialized_traffic_keys[key] = vehicle
+	return vehicle
 
 
 func _traffic_archetype(lane: Path2D, serial: int) -> String:
@@ -279,31 +350,281 @@ func _spawn_walkers() -> void:
 		var global_route := PackedVector2Array()
 		for point in local_route:
 			global_route.append(to_global(point))
-		var residents := 4 if route_index < 5 else 3
+		var residents := (4 if route_index < 5 else 3) * WALKER_DENSITY_MULTIPLIER
 		for index in residents:
-			var walker := HarborWalker.new()
-			walker.name = "HarborResident_%d_%d" % [route_index, index]
 			var directed_route := global_route.duplicate()
 			if index >= 2:
 				directed_route.reverse()
-			walker.configure_authored_route(directed_route, "harbor_walk_%d" % route_index, (float(index) + 0.35) * global_route[0].distance_to(global_route[1]) / float(residents))
-			walker.appearance_variant = route_index*4+index
-			walker.sidewalk_half_width = 14.0
-			add_child(walker)
-			walkers.append(walker)
-			if index == 1:
-				var partner = walkers[walkers.size()-2]
-				walker.companion=partner
-				partner.companion=walker
-				walker._place_at_route_distance(0.35*global_route[0].distance_to(global_route[1])/float(residents)+25)
+			var spawn_distance := (float(index) + 0.35) * _route_length(directed_route) / float(residents)
+			_queue_walker_spec({
+				"key": "harbor:resident:%d:%d" % [route_index, index],
+				"name": "HarborResident_%d_%d" % [route_index, index],
+				"position": _route_position_at_distance(directed_route, spawn_distance),
+				"route_points": directed_route,
+				"route_id": "harbor_walk_%d" % route_index,
+				"spawn_distance": spawn_distance,
+				"appearance_variant": route_index * 4 + index,
+				"sidewalk_half_width": 14.0,
+				"companion_group": "harbor_walk_companion_%d" % route_index if index < 2 else "",
+			})
 	for i in [0,3]:
 		var officer := preload("res://world/harbor/HarborFootPatrol.gd").new()
+		officer.name = "HarborFootPatrol_%d" % i
 		officer.patrol_route=promenades[i]
 		officer.position=promenades[i][0]
 		add_child(officer)
 	_spawn_place_strollers()
 	for district_name in ["EastDistrict", "NorthDistrict"]:
 		_spawn_district_neighbors(district_name)
+
+
+func _queue_walker_spec(spec: Dictionary) -> void:
+	var data := spec.duplicate(true)
+	var key := String(data.get("key", ""))
+	if key.is_empty(): key = "harbor:%s" % String(data.get("name", "walker_%d" % _walker_specs.size()))
+	data["key"] = key
+	data["owner"] = "harbor"
+	data["kind"] = "pedestrian"
+	_register_walker_spec(data)
+	if _virtual_population_enabled:
+		var world := get_tree().get_first_node_in_group("continuous_world")
+		if world != null and world.get("population_zones") != null:
+			world.population_zones.register_virtual({
+				"key": key,
+				"owner": "harbor",
+				"kind": "pedestrian",
+				"position": data.get("position", Vector2.ZERO),
+				"route_points": data.get("route_points", PackedVector2Array()),
+				"route_id": data.get("route_id", ""),
+				"appearance_variant": data.get("appearance_variant", 0),
+				"spawn_distance": data.get("spawn_distance", 0.0),
+			})
+		return
+	_materialize_walker_spec(data)
+
+
+func _materialize_walker_spec(spec: Dictionary) -> Node2D:
+	var key := String(spec.get("key", ""))
+	var existing_value: Variant = _materialized_walker_keys.get(key)
+	if is_instance_valid(existing_value) and existing_value is Node2D and existing_value.is_inside_tree() and not existing_value.is_queued_for_deletion():
+		return existing_value as Node2D
+	_materialized_walker_keys.erase(key)
+	var walker := HarborWalker.new()
+	walker.name = String(spec.get("name", key))
+	walker.configure_authored_route(spec.get("route_points", PackedVector2Array()), String(spec.get("route_id", key)), float(spec.get("spawn_distance", 0.0)))
+	# The actor's _ready() runs synchronously inside add_child(). Give the
+	# pedestrian its catalog position before entering the tree so the first
+	# rendered frame cannot show the route seed/default position and then snap.
+	if spec.get("position", null) is Vector2:
+		walker.initial_global_position = spec["position"]
+	walker.appearance_variant = int(spec.get("appearance_variant", 0))
+	walker.sidewalk_half_width = float(spec.get("sidewalk_half_width", 14.0))
+	walker.pause_at_destinations = bool(spec.get("pause_at_destinations", true))
+	walker.set_meta("population_key", key)
+	walker.set_meta("virtual_population", _virtual_population_enabled)
+	walker.set_meta("defer_presentation", _virtual_population_enabled)
+	walker.set_meta("presentation_wait_for_close", _virtual_population_enabled)
+	walker.defer_presentation = _virtual_population_enabled
+	if spec.has("ambient_activity"): walker.set_meta("ambient_activity", spec["ambient_activity"])
+	add_child(walker)
+	walkers.append(walker)
+	_materialized_walker_keys[key] = walker
+	var companion_group := String(spec.get("companion_group", ""))
+	if not companion_group.is_empty():
+		var companion_value: Variant = _companion_groups.get(companion_group)
+		if is_instance_valid(companion_value) and companion_value is Node2D and companion_value.is_inside_tree() and not companion_value.is_queued_for_deletion() and companion_value != walker:
+			var companion := companion_value as Node2D
+			walker.companion = companion
+			if companion is HarborWalker: companion.companion = walker
+		else:
+			_companion_groups[companion_group] = walker
+	return walker
+
+
+func reconcile_virtual_population(focus: Vector2, catalog: RefCounted) -> Dictionary:
+	# Fase segura do streaming: somente specs previamente registrados podem ser
+	# materializados; o spawn legado continua funcionando enquanto a migração é
+	# feita por lotes. Nunca libera atores de missão ou patrulha.
+	if not _virtual_population_enabled or catalog == null:
+		return {"materialized": 0, "virtualized": 0}
+	for spec in _traffic_specs:
+		var traffic_key := String(spec.get("key", ""))
+		if traffic_key.is_empty() or catalog.records.has(traffic_key): continue
+		catalog.register_virtual({
+			"key": traffic_key,
+			"owner": "harbor",
+			"kind": "traffic",
+			"position": spec.get("position", Vector2.ZERO),
+			"lane_id": spec.get("lane_id", ""),
+			"ratio": spec.get("ratio", 0.25),
+			"archetype": spec.get("archetype", "sedan_classic"),
+			"speed": spec.get("speed", 80.0),
+			"serial": spec.get("serial", 0),
+		})
+	# Sibling ready order can make the catalog unavailable while routes are
+	# authored. Registering here is idempotent and closes that initialization
+	# seam without creating distant Nodes.
+	for spec in _walker_specs:
+		var spec_key := String(spec.get("key", ""))
+		if spec_key.is_empty() or catalog.records.has(spec_key): continue
+		catalog.register_virtual({
+			"key": spec_key,
+			"owner": "harbor",
+			"kind": "pedestrian",
+			"position": spec.get("position", Vector2.ZERO),
+			"route_points": spec.get("route_points", PackedVector2Array()),
+			"route_id": spec.get("route_id", ""),
+			"appearance_variant": spec.get("appearance_variant", 0),
+			"spawn_distance": spec.get("spawn_distance", 0.0),
+		})
+	var materialized := 0
+	var traffic_pending: Array[Dictionary] = catalog.pending_materialization(focus, POPULATION_ZONES.MAX_MATERIALIZE_PER_TICK, "harbor", 0.0, "traffic")
+	for record in traffic_pending:
+		var traffic_key := String(record.get("key", ""))
+		var traffic_spec: Dictionary = _traffic_spec_for_key(traffic_key)
+		if traffic_spec.is_empty(): continue
+		for field in ["position", "lane_id", "ratio", "archetype", "speed", "serial"]:
+			if record.has(field): traffic_spec[field] = record[field]
+		var traffic_actor := _materialize_traffic_spec(traffic_spec)
+		if is_instance_valid(traffic_actor):
+			catalog.materialize(traffic_key)
+			materialized += 1
+	var pending: Array[Dictionary] = catalog.pending_materialization(focus, POPULATION_ZONES.MAX_MATERIALIZE_PER_TICK, "harbor", VIRTUAL_SPAWN_MIN_RADIUS, "pedestrian")
+	# If the player starts in a sparse edge of the authored population, allow one
+	# nearby actor to bootstrap the scene. Normal replenishment still uses the
+	# ring, avoiding a visible pile-up on the player.
+	if pending.is_empty() and walkers.is_empty():
+		pending = catalog.pending_materialization(focus, 1, "harbor", 0.0, "pedestrian")
+	for record in pending:
+		var key := String(record.get("key", ""))
+		var spec: Dictionary = _walker_spec_for_key(key)
+		if spec.is_empty(): continue
+		var candidate_position: Vector2 = record.get("position", spec.get("position", focus))
+		if not _spawn_point_clear(candidate_position): continue
+		var restored_spec := spec.duplicate(true)
+		# Materialization must carry the live catalog position into _ready(), not
+		# apply it only after add_child() has already exposed one frame to the player.
+		restored_spec["position"] = candidate_position
+		for field in ["route_points", "route_id", "route_segment", "route_direction", "walk_target", "appearance_variant", "spawn_distance"]:
+			if record.has(field): restored_spec[field] = record[field]
+		var walker := _materialize_walker_spec(restored_spec)
+		if is_instance_valid(walker):
+			if record.has("position"): walker.global_position = record["position"]
+			if record.has("route_segment"): walker.set("_route_segment", int(record["route_segment"]))
+			if record.has("route_direction"): walker.set("_route_direction", int(record["route_direction"]))
+			if record.has("walk_target"): walker.set("walk_target", record["walk_target"])
+			if walker.has_method("_configure_navigation_corridor"): walker.call("_configure_navigation_corridor")
+		catalog.materialize(key)
+		materialized += 1
+	var virtualized := 0
+	for vehicle in vehicles.duplicate():
+		if not is_instance_valid(vehicle) or not vehicle.get_meta("virtual_population", false): continue
+		if vehicle.get("is_driven_by_player") == true or vehicle.get("is_broken") == true or vehicle.get("_detached_from_lane") == true: continue
+		if catalog.should_retain(vehicle.global_position, focus): continue
+		var traffic_key := String(vehicle.get_meta("population_key", ""))
+		var follower := vehicle.get_parent() as PathFollow2D
+		var lane := follower.get_parent() as Path2D if follower != null else null
+		if traffic_key.is_empty() or not is_instance_valid(follower) or not is_instance_valid(lane): continue
+		var lane_length := maxf(1.0, lane.curve.get_baked_length())
+		var state := {
+			"position": vehicle.global_position,
+			"lane_id": String(lane.get_meta("traffic_lane_id", lane.name)),
+			"ratio": follower.progress / lane_length,
+			"archetype": vehicle.get("active_archetype_id"),
+			"speed": vehicle.get("speed"),
+			"serial": int(vehicle.get_meta("traffic_serial", 0)),
+		}
+		catalog.capture_actor(vehicle, state)
+		_materialized_traffic_keys.erase(traffic_key)
+		vehicles.erase(vehicle)
+		follower.queue_free()
+		virtualized += 1
+	for walker in walkers.duplicate():
+		if not is_instance_valid(walker) or not walker.get_meta("virtual_population", false): continue
+		if walker.get("viewport") == null:
+			if walker.global_position.distance_to(focus) <= VIRTUAL_PRESENTATION_RADIUS:
+				walker.set_meta("presentation_wait_for_close", false)
+				walker.queue_presentation()
+		if catalog.should_retain(walker.global_position, focus, _walker_is_pinned(walker)): continue
+		var key := String(walker.get_meta("population_key", ""))
+		if key.is_empty(): continue
+		var state := {
+			"route_points": walker.get("route_points"),
+			"route_id": walker.get("route_id"),
+			"route_segment": walker.get("_route_segment"),
+			"route_direction": walker.get("_route_direction"),
+			"walk_target": walker.get("walk_target"),
+			"appearance_variant": walker.get("appearance_variant"),
+			"spawn_distance": 0.0,
+		}
+		catalog.capture_actor(walker, state)
+		_materialized_walker_keys.erase(key)
+		walkers.erase(walker)
+		walker.queue_free()
+		virtualized += 1
+	return {"materialized": materialized, "virtualized": virtualized}
+
+
+func _traffic_spec_for_key(key: String) -> Dictionary:
+	if _traffic_specs_by_key.has(key):
+		return _traffic_specs_by_key[key]
+	return {}
+
+
+func _walker_spec_for_key(key: String) -> Dictionary:
+	if _walker_specs_by_key.has(key):
+		return _walker_specs_by_key[key]
+	return {}
+
+
+func _register_traffic_spec(spec: Dictionary) -> void:
+	_traffic_specs.append(spec)
+	var key := String(spec.get("key", ""))
+	if not key.is_empty():
+		_traffic_specs_by_key[key] = spec
+
+
+func _register_walker_spec(spec: Dictionary) -> void:
+	_walker_specs.append(spec)
+	var key := String(spec.get("key", ""))
+	if not key.is_empty():
+		_walker_specs_by_key[key] = spec
+
+
+func _route_length(route: PackedVector2Array) -> float:
+	var length := 0.0
+	for index in range(route.size() - 1):
+		length += route[index].distance_to(route[index + 1])
+	return length
+
+
+func _route_position_at_distance(route: PackedVector2Array, distance: float) -> Vector2:
+	if route.is_empty(): return Vector2.ZERO
+	var remaining := maxf(distance, 0.0)
+	for index in range(route.size() - 1):
+		var start: Vector2 = route[index]
+		var end: Vector2 = route[index + 1]
+		var segment := start.distance_to(end)
+		if segment <= 0.001: continue
+		if remaining <= segment:
+			return start.lerp(end, remaining / segment)
+		remaining -= segment
+	return route[route.size() - 1]
+
+
+func _spawn_point_clear(position: Vector2) -> bool:
+	for walker in walkers:
+		if is_instance_valid(walker) and walker.global_position.distance_to(position) < VIRTUAL_SPAWN_SEPARATION:
+			return false
+	return true
+
+
+func _walker_is_pinned(walker: Node2D) -> bool:
+	if walker.is_in_group("player") or walker.has_meta("simulation_keep_alive"): return true
+	if walker.get_meta("medical_pending", false): return true
+	if bool(walker.get("is_dead")) or bool(walker.get("is_incapacitated")): return true
+	var target = walker.get("combat_target")
+	return is_instance_valid(target) and target is Node2D
 
 
 func _spawn_district_neighbors(district_name: String) -> void:
@@ -317,17 +638,23 @@ func _spawn_district_neighbors(district_name: String) -> void:
 			points.append(district.to_global(point))
 		if points.size() != 2:
 			continue
-		for neighbor_index in 3:
-			var walker := HarborWalker.new()
-			walker.name = "%sNeighbor_%d_%d" % [district_name, index, neighbor_index]
+		var neighbors_per_route := 3 * WALKER_DENSITY_MULTIPLIER
+		for neighbor_index in neighbors_per_route:
 			var directed_route := points.duplicate()
 			if neighbor_index % 2 == 1:
 				directed_route.reverse()
-			walker.configure_authored_route(directed_route, "%s_walk_%d" % [district_name.to_snake_case(), index], (float(neighbor_index) + 0.4) * points[0].distance_to(points[1]) / 3.0)
-			walker.appearance_variant = index*3+neighbor_index
-			walker.sidewalk_half_width = 14.0
-			add_child(walker)
-			walkers.append(walker)
+			_queue_walker_spec({
+				"key": "harbor:%s:neighbor:%d:%d" % [district_name.to_snake_case(), index, neighbor_index],
+				"name": "%sNeighbor_%d_%d" % [district_name, index, neighbor_index],
+				"position": _route_position_at_distance(directed_route, (float(neighbor_index) + 0.4) * _route_length(directed_route) / float(neighbors_per_route)),
+				"route_points": directed_route,
+				"route_id": "%s_walk_%d" % [district_name.to_snake_case(), index],
+				"spawn_distance": (float(neighbor_index) + 0.4) * _route_length(directed_route) / float(neighbors_per_route),
+				# District identity prevents the same three faces/outfits from being
+				# cloned again in every neighboring quarter.
+				"appearance_variant": posmod(district_name.hash(), 10000) + index * neighbors_per_route + neighbor_index,
+				"sidewalk_half_width": 14.0,
+			})
 
 
 func _spawn_place_strollers() -> void:
@@ -347,14 +674,21 @@ func _spawn_place_strollers() -> void:
 		var global_route := PackedVector2Array()
 		for point in routes[index]:
 			global_route.append(to_global(point))
-		var walker := HarborWalker.new()
-		walker.name = "MarketStroller_%d" % index if index < 2 else "CourtyardNeighbor_%d" % index
-		walker.pause_at_destinations = true
-		walker.set_meta("ambient_activity", "market_frontage_and_plaza" if index < 2 else "courtyard_stroll")
-		walker.configure_authored_route(global_route, "harbor_place_%d" % index, 90.0 * float(index % 2))
-		walker.sidewalk_half_width = 14.0
-		add_child(walker)
-		walkers.append(walker)
+		for resident_index in WALKER_DENSITY_MULTIPLIER:
+			var spawn_distance := (float(resident_index) + 0.5) * _route_length(global_route) / float(WALKER_DENSITY_MULTIPLIER)
+			var serial := index * WALKER_DENSITY_MULTIPLIER + resident_index
+			_queue_walker_spec({
+				"key": "harbor:stroller:%d" % serial,
+				"name": "MarketStroller_%d" % serial if index < 2 else "CourtyardNeighbor_%d" % serial,
+				"position": _route_position_at_distance(global_route, spawn_distance),
+				"route_points": global_route,
+				"route_id": "harbor_place_%d" % index,
+				"spawn_distance": spawn_distance,
+				"appearance_variant": 12000 + serial * 17,
+				"sidewalk_half_width": 14.0,
+				"pause_at_destinations": true,
+				"ambient_activity": "market_frontage_and_plaza" if index < 2 else "courtyard_stroll",
+			})
 
 
 func get_population_snapshot() -> Dictionary:
@@ -394,6 +728,8 @@ func _process(delta: float) -> void:
 	if _population_clock < 3.0:
 		return
 	_population_clock = 0.0
+	if _virtual_population_enabled:
+		return
 	vehicles = vehicles.filter(func(car): return is_instance_valid(car) and not car.is_broken and not car._detached_from_lane)
 	var subject := get_tree().get_first_node_in_group("player") as Node2D
 	if subject == null:
@@ -425,37 +761,6 @@ func _process(delta: float) -> void:
 
 
 func _replace_buried_walker() -> void:
-	var care := get_node("/root/CoronerCare")
-	var renewal := get_node("/root/WorldRenewal")
-	for index in walkers.size():
-		var previous: Node2D = walkers[index]
-		if not is_instance_valid(previous) or not previous is HarborWalker or not previous.is_dead: continue
-		var key: String = care.identity(previous)
-		var record: Dictionary = care.records().get(key,{})
-		if record.get("phase","") not in ["buried","unrecovered"]: continue
-		var distance := 0.0
-		for segment in range(1,previous.route_points.size()):
-			var a: Vector2 = previous.route_points[segment-1]
-			var b: Vector2 = previous.route_points[segment]
-			var length := a.distance_to(b)
-			var point := a.lerp(b,.5)
-			if not renewal.outside_view(previous,point) or not renewal.free_position(previous,point,18):
-				distance += length
-				continue
-			var successor := HarborWalker.new()
-			# A stable successor name survives scene reloads; a subsequent death
-			# gets its own record rather than clearing the predecessor's obituary.
-			successor.name = String(record.get("successor_name","HarborSuccessor_%s" % str(key.hash())))
-			successor.appearance_variant = int(record.get("successor_variant",previous.appearance_variant+7919))
-			successor.sidewalk_half_width = previous.sidewalk_half_width
-			successor.configure_authored_route(previous.route_points.duplicate(),previous.route_id,distance+length*.5)
-			add_child(successor)
-			if not successor.is_dead and (not renewal.free_position(successor,successor.global_position,18) or not renewal.outside_view(successor,successor.global_position)):
-				successor.queue_free()
-				distance += length
-				continue
-			record.successor_name = String(successor.name)
-			record.successor_variant = successor.appearance_variant
-			walkers[index] = successor
-			previous.queue_free()
-			return # At most one replacement per existing three-second budget.
+	# Burial/IML progression was removed; fatal ambient bodies are bounded by
+	# GroundBlood and are not replaced through a coroner ledger.
+	return

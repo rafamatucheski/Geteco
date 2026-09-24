@@ -18,6 +18,9 @@ static var _models: Dictionary = {}
 static var _pool_texture: GradientTexture2D
 static var _beam_shader: Shader
 
+func _init() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
 func _ready() -> void:
 	add_to_group("road_luminaire")
 	add_to_group("elevated_road_light")
@@ -32,10 +35,10 @@ func _ready() -> void:
 	pool.name = "RoadWash"
 	pool.texture = wash_texture()
 	pool.position = target_offset
-	pool.color = Color("e2efff") if fixture_kind == "strip" else Color("fff0d8")
-	pool.energy = 0.50 if fixture_kind == "strip" else 0.75
+	pool.color = Color("fff2db") if fixture_kind == "strip" else Color("fff0d8")
+	pool.energy = 0.44 if fixture_kind == "strip" else 0.58
 	pool.height = 85
-	pool.scale = Vector2(1.25, 0.85) if fixture_kind == "strip" else Vector2(1.65, 1.20)
+	pool.scale = Vector2(1.5, 0.95) if fixture_kind == "strip" else Vector2(1.8, 1.30)
 	pool.rotation = tangent.angle()
 	pool.shadow_enabled = false
 	pool.enabled = emits_ground_light
@@ -60,8 +63,8 @@ func _bind_weather() -> void:
 static func wash_texture() -> GradientTexture2D:
 	if _pool_texture: return _pool_texture
 	var gradient := Gradient.new()
-	gradient.offsets = PackedFloat32Array([0,0.25,0.55,0.80,1])
-	gradient.colors = PackedColorArray([Color(1,1,1,.90),Color(1,1,1,.76),Color(1,1,1,.40),Color(1,1,1,.10),Color(1,1,1,0)])
+	gradient.offsets = PackedFloat32Array([0, 0.35, 0.70, 1.0])
+	gradient.colors = PackedColorArray([Color(1,1,1,.95), Color(1,1,1,.76), Color(1,1,1,.35), Color(1,1,1,0)])
 	_pool_texture = GradientTexture2D.new()
 	_pool_texture.width = 256
 	_pool_texture.height = 256
@@ -93,7 +96,7 @@ func _align_hardware() -> void:
 	hardware.position = -((data.mount_pixel-center)*hardware.scale).rotated(hardware.rotation)
 	var origin: Vector2 = hardware.position+((data.emitter_pixel-center)*hardware.scale).rotated(hardware.rotation)
 	var across := tangent.normalized()
-	var narrow := 19.0 if fixture_kind == "flood" else 58.0
+	var narrow := 19.0 if fixture_kind == "flood" else 40.0
 	beam.polygon = PackedVector2Array([origin-across*narrow,origin+across*narrow,target_offset+across*110,target_offset-across*110])
 
 func set_lit(value: bool) -> void:
@@ -134,10 +137,10 @@ func _make_model(lit: bool) -> Dictionary:
 	var rim := StandardMaterial3D.new()
 	rim.albedo_color = Color("24353f")
 	var lens := StandardMaterial3D.new()
-	lens.albedo_color = Color("f0f3ec") if lit else Color("a0afae")
+	lens.albedo_color = Color(0.85, 0.85, 0.80) if lit else Color(0.38, 0.42, 0.44)
 	lens.emission_enabled = lit
-	lens.emission = Color("d9edff") if fixture_kind == "strip" else Color("ffe7b8")
-	lens.emission_energy_multiplier = 2.0
+	lens.emission = Color("fff0db") if fixture_kind == "strip" else Color("ffebc8")
+	lens.emission_energy_multiplier = 0.85 if fixture_kind == "strip" else 1.0
 	if fixture_kind == "flood":
 		_box(stage,Vector3(0,.12,0),Vector3(.55,.24,.55),steel)
 		_box(stage,Vector3(0,3.5,0),Vector3(.16,7,.16),steel)
@@ -156,18 +159,22 @@ func _make_model(lit: bool) -> Dictionary:
 			var spot := SpotLight3D.new()
 			spot.rotation_degrees.x = -90
 			spot.light_color = lens.emission
-			spot.light_energy = 1.6 if lit else 0.0
+			spot.light_energy = 1.0 if lit else 0.0
 			spot.spot_range = 12
 			spot.spot_angle = 62
 			head.add_child(spot)
 	else:
-		# Long enclosed linear luminaire, mounting brackets and segmented lenses.
-		_box(stage,Vector3.ZERO,Vector3(6.8,.22,.34),rim)
-		for x in [-2.7,0.0,2.7]:
-			_box(stage,Vector3(x,-.18,.25),Vector3(.16,.48,.32),steel)
-		for i in 12:
-			_box(stage,Vector3(-3.08+i*.56,.015,.19),Vector3(.48,.13,.06),lens)
-		_box(stage,Vector3(0,.15,0),Vector3(6.9,.07,.42),steel)
+		# Industrial linear barrier luminaire: angled protective hood, beveled casing and unified recessed diffuser.
+		_box(stage, Vector3.ZERO, Vector3(4.2, 0.28, 0.36), rim)
+		_box(stage, Vector3(0, 0.16, 0.06), Vector3(4.35, 0.10, 0.44), steel)
+		for cap_x in [-2.14, 2.14]:
+			_box(stage, Vector3(cap_x, 0.02, 0.08), Vector3(0.14, 0.32, 0.38), steel)
+		for mount_x in [-1.4, 1.4]:
+			_box(stage, Vector3(mount_x, -0.16, 0.24), Vector3(0.20, 0.42, 0.28), steel)
+		# Dual recessed luminous diffuser panels with central housing bridge
+		for side in [-1, 1]:
+			_box(stage, Vector3(side * 1.0, 0.015, 0.19), Vector3(1.72, 0.12, 0.07), lens)
+		_box(stage, Vector3(0, 0.02, 0.20), Vector3(0.18, 0.18, 0.10), rim)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-35,-25,0)
 	sun.light_energy = .8

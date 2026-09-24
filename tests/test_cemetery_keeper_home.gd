@@ -10,6 +10,7 @@ class TestInteriors extends HarborInteriorManager:
 class ClockStub extends Node:
 	signal time_changed(is_dark: bool)
 	var is_dark := true
+	var is_dynamic_time := false
 	var time_of_day := .02
 	var interior_mode := false
 	func set_interior_mode(value: bool) -> void: interior_mode = value
@@ -68,23 +69,22 @@ func run() -> void:
 	check(keeper.sleeping and keeper.get_parent() == room, "After midnight the keeper starts in his bed")
 	check(keeper.model.shovel.get_parent() == keeper.model.right_hand_mount, "Real 3D shovel is attached to the hand")
 	check(keeper.find_children("*", "Line2D", false, false).is_empty(), "Oversized floating 2D shovel removed")
-	check(home.has_node("HouseFootprint") and room.walls_body.get_child_count() >= 9, "House and projected furniture have physical collision")
+	check(not home.has_node("HouseFootprint") and room.walls_body.get_child_count() >= 9, "Physical cottage shell and furniture have projected collision")
 	check(home.is_sleep_time(), "00:28 is inside sleeping schedule")
 	actor.global_position = home._outside_approach()
 	for i in 3: await physics_frame
 	check(not keeper.hostile and keeper.shots_fired == 0, "Passing the house at night does not provoke gunfire")
-	check(home.entrance.request_interaction(actor), "Real entrance accepts a nearby player")
+	check(not home.entrance.handle_input_locally and not home.entrance.show_entrance_marker, "Cottage entrance needs no E or marker")
+	actor.global_position = room.spawn_point.global_position
 	await create_timer(.6).timeout
-	check(room.contains_point(actor.global_position) and weather.interior_mode, "Entrance transitions into the playable room")
+	check(room.contains_point(actor.global_position) and room.actor_inside(), "Player occupies the physical cottage")
 	check(home.state == "waking", "Intrusion first wakes the resident with a warning")
 	await create_timer(2.8).timeout
 	check(keeper.hostile and keeper.shots_fired > 0 and actor.hits > 0, "Woken keeper shoots real projectiles at the intruder")
 	check(root.get_node("WantedManager").current_stars == 0, "Keeper gunfire does not falsely blame the player")
-	actor.global_position = room.exit_door.global_position + Vector2(0, -18)
-	for i in 3: await physics_frame
-	check(room.exit_door.request_interaction(actor), "Interior exit stays usable during confrontation")
+	actor.global_position = home._outside_approach()
 	await create_timer(.5).timeout
-	check(actor.global_position.distance_to(home._outside_approach()) < 1 and not weather.interior_mode, "Exit returns to the exact cottage door")
+	check(not room.actor_inside() and actor.global_position.distance_to(home._outside_approach()) < 1, "Leaving the physical doorway ends the confrontation")
 	var shots_before: int = keeper.shots_fired
 	await create_timer(2).timeout
 	check(keeper.shots_fired == shots_before and not keeper.hostile, "Keeper stops firing when the intruder leaves")

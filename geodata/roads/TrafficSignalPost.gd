@@ -5,6 +5,9 @@ var broken := false
 var _impact_tween: Tween
 var _next_wobble := 0
 
+func _init() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
 func _ready() -> void:
 	collision_layer = 1
 	collision_mask = 0

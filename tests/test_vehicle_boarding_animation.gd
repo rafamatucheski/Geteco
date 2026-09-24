@@ -63,6 +63,11 @@ func run() -> void:
 			actor.global_rotation = 0
 			actor.model_root.rotation = Vector3(0,0.3,0)
 			actor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+			# Commit fixture teleports/rotations before manually completing an
+			# entire boarding and exit within one tick. Otherwise PhysicsServer
+			# treats the repositioned hull as moving when collisions resume.
+			await physics_frame
+			await process_frame
 			var rest: Transform3D = actor.left_upper_leg.transform
 			var approach: Vector2 = actor.global_position
 			car.enter_vehicle(actor)

@@ -12,10 +12,12 @@ func check(ok: bool, message: String) -> void:
 func _run() -> void:
 	create_timer(180).timeout.connect(func(): quit(2))
 	seed(9102026)
-	root.get_node("CampaignState").set_campaign_flag(&"harbor_delivery_complete",true)
+	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_delivery_complete"]:
+		root.get_node("CampaignState").set_campaign_flag(flag, true)
 	change_scene_to_file("res://world/harbor/HarborGame.tscn")
 	while current_scene == null: await process_frame
 	var scene := current_scene
+	while not scene.gameplay_ready or not scene.world_build_ready: await process_frame
 	var stream := scene.get_node("ContinuousWorld")
 	await stream.ensure_mountain()
 	while not stream.ready_for_crossing: await process_frame
@@ -86,26 +88,21 @@ func _run() -> void:
 	check(not crossed,"Carros mantêm a ordem ao fazer a curva da ponte")
 	check(follow.progress > start_progress+120,"Carro completa o arco sem ficar preso")
 	check(probe._mountain_hull_is_clear(outbound,follow.progress),"Carrocerias não se sobrepõem na saída da curva")
-	# Portas verificadas com a camada real de Dante, que vem do mapa 1.
+	# O personagem vindo do porto usa a mesma passagem física das lojas e abrigos.
 	var manager: Node = mountain.interior_manager
-	var doors: Array = manager._exterior_doors.keys()
-	for door in doors:
-		var id: StringName = manager._exterior_doors[door].interior_id
-		if id not in [&"mountain_outfitters",&"mountain_cabin",&"lumberjack_shelter"]: continue
-		player.global_position = door.global_position+Vector2(0,18)
-		for i in 5: await physics_frame
-		check(door.request_interaction(player),"Porta detecta jogador do porto: "+str(door.get_path()))
-		await create_timer(0.3).timeout
-		check(player.get_meta("mountain_interior_id",&"") == id,"Entrada leva ao interior correto: "+str(id))
-		var interior: Node = manager._interiors[id]
-		var exit_door: Node2D = interior.get_node_or_null("ExitDoor")
-		if exit_door == null: exit_door = interior.get_node("InteriorExit")
-		player.global_position = exit_door.global_position+Vector2(0,-14)
-		for i in 5: await physics_frame
-		check(exit_door.request_interaction(player),"Saída detecta o jogador: "+str(id))
-		await create_timer(0.3).timeout
-		check(not player.get_meta("mountain_interior",false),"Saída devolve ao exterior: "+str(id))
-		await create_timer(1.0).timeout
+	for id in [&"mountain_outfitters", &"mountain_cabin", &"lumberjack_shelter"]:
+		var door := _find_mountain_door(mountain, id)
+		var interior: Node2D = manager.get_interior(id)
+		check(door != null and interior != null, "Acesso físico no mundo contínuo: " + String(id))
+		if door == null or interior == null: continue
+		var outside := door.global_position + Vector2(0, 24)
+		player.global_position = outside
+		for i in 8: await physics_frame
+		check(not door.handle_input_locally and not door.show_entrance_marker, "Sem E ou marcador: " + String(id))
+		check(await _walk_mountain(player, interior.to_global(interior.project_floor(Vector2(0, .5)))), "Entrada caminhando: " + String(id))
+		check(player.get_meta("mountain_interior_id", &"") == id, "Interior correto: " + String(id))
+		check(await _walk_mountain(player, outside), "Saída caminhando: " + String(id))
+		check(not player.get_meta("mountain_interior", false), "Exterior restaurado: " + String(id))
 	# Saída do asfalto para a grama diante da primeira casa, com colisão real.
 	var grass_car := FACTORY.spawn_parked_vehicle(scene,"GrassProbe",OFFSET+Vector2(5980,480),PI*0.5,"arctic_jeep",0)
 	grass_car.set_process(false)
@@ -131,3 +128,21 @@ func _run() -> void:
 	scene.queue_free()
 	await process_frame
 	quit(0 if failures.is_empty() else 1)
+
+func _find_mountain_door(parent: Node, id: StringName) -> BuildingEntrance:
+	if parent is BuildingEntrance and parent.destination_id == id: return parent
+	for child in parent.get_children():
+		var found := _find_mountain_door(child, id)
+		if found != null: return found
+	return null
+
+func _walk_mountain(actor: CharacterBody2D, target: Vector2) -> bool:
+	for _step in 320:
+		var motion := target - actor.global_position
+		if motion.length() < 2.0: return true
+		var hit := actor.move_and_collide(motion.limit_length(2.5))
+		if hit != null:
+			print("MOUNTAIN_WALK_BLOCKED from=", actor.global_position, " target=", target, " collider=", hit.get_collider().get_path())
+			return false
+		await physics_frame
+	return false

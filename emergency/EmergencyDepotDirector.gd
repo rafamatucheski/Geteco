@@ -27,7 +27,10 @@ func register_depot(depot: EmergencyDepotMarker) -> void:
 
 func request_dispatch(service_key: String, target: Node2D, prefer_standby := true) -> Node:
 	if not is_instance_valid(target) or not is_inside_tree() or not can_process(): return null
-	if service_key in ["fire", "coroner"]:
+	# Coroner/IML was removed: fatalities are handled by the bounded corpse
+	# presentation budget and never allocate an emergency vehicle or incident.
+	if service_key == "coroner": return null
+	if service_key == "fire":
 		if not is_instance_valid(_service_incidents):
 			_service_incidents = preload("res://emergency/ServiceIncidents.gd").new()
 			_service_incidents.director = self

@@ -2,6 +2,9 @@ extends Node2D
 ## Short-lived ground stain; geometry is generated once and retained while fading.
 const LIFETIME := 18.0
 const FADE_DURATION := 6.0
+const MAX_CORPSE_VISUALS := 5
+const CORPSE_FADE_SECONDS := 0.45
+static var _corpse_visuals: Array[Dictionary] = []
 var pattern_seed: int = -1
 var droplets: Array[Vector3] = []
 var age := 0.0
@@ -38,7 +41,55 @@ static func spawn(actor: Node2D, lethal := true) -> Node2D:
 	actor.get_parent().add_child(stain)
 	stain.global_position = actor.global_position + Vector2(0, 3)
 	if actor.get("is_flying") == true: stain.settling_actor = weakref(actor)
+	if lethal and not actor.is_in_group("player"):
+		_register_corpse(actor, stain)
 	return stain
+
+static func _register_corpse(actor: Node2D, stain: Node2D) -> void:
+	_prune_corpse_visuals()
+	var actor_id := actor.get_instance_id()
+	for entry in _corpse_visuals:
+		var existing: Variant = entry.get("actor")
+		if existing is WeakRef and existing.get_ref() == actor:
+			(entry.get("blood", []) as Array).append(weakref(stain))
+			return
+	var entry := {"actor":weakref(actor), "blood":[weakref(stain)], "fading":false}
+	_corpse_visuals.append(entry)
+	actor.set_meta("corpse_visual_id", actor_id)
+	while _corpse_visuals.size() > MAX_CORPSE_VISUALS:
+		var oldest: Dictionary = _corpse_visuals.pop_front()
+		_fade_out_corpse(oldest)
+
+static func _prune_corpse_visuals() -> void:
+	for index in range(_corpse_visuals.size() - 1, -1, -1):
+		var actor: Variant = _corpse_visuals[index].get("actor")
+		if not actor is WeakRef or not is_instance_valid(actor.get_ref()):
+			_corpse_visuals.remove_at(index)
+
+static func _fade_out_corpse(entry: Dictionary) -> void:
+	if bool(entry.get("fading", false)): return
+	entry.fading = true
+	var actor: Variant = entry.get("actor")
+	var actor_node: Node2D = actor.get_ref() if actor is WeakRef else null
+	if is_instance_valid(actor_node):
+		actor_node.remove_meta("medical_pending")
+		actor_node.set_meta("corpse_budget_evicted", true)
+		actor_node.collision_layer = 0
+		actor_node.collision_mask = 0
+		var actor_tween: Tween = actor_node.create_tween()
+		actor_tween.tween_property(actor_node, "modulate:a", 0.0, CORPSE_FADE_SECONDS)
+		actor_tween.tween_callback(actor_node.queue_free)
+		var remains: Variant = actor_node.get_meta("explosion_remains") if actor_node.has_meta("explosion_remains") else null
+		if is_instance_valid(remains):
+			var remains_tween: Tween = remains.create_tween()
+			remains_tween.tween_property(remains, "modulate:a", 0.0, CORPSE_FADE_SECONDS)
+			remains_tween.tween_callback(remains.queue_free)
+	for blood_ref in entry.get("blood", []):
+		var blood: Variant = blood_ref.get_ref() if blood_ref is WeakRef else null
+		if not is_instance_valid(blood): continue
+		var blood_tween: Tween = blood.create_tween()
+		blood_tween.tween_property(blood, "modulate:a", 0.0, CORPSE_FADE_SECONDS)
+		blood_tween.tween_callback(blood.queue_free)
 
 func _ready() -> void:
 	get_node("/root/WorldRenewal").watch_transient(self, LIFETIME)

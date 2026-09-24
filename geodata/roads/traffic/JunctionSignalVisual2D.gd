@@ -20,6 +20,12 @@ var curb_surfaces: Array = []
 var sidewalk_surfaces: Array = []
 
 
+func _init() -> void:
+	# This anchor is fixed street furniture. Disabling transform interpolation
+	# prevents a newly streamed signal set from streaking in from its old origin.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
+
 func _ready() -> void:
 	add_to_group("junction_signal_visual")
 	_rebuild_posts()

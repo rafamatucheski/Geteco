@@ -336,8 +336,11 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	fly_velocity = impact_velocity.limit_length(600.0) * 0.85
 	_start_fall(impact_velocity)
 	health = 0
-	if collision_shape:
-		collision_shape.set_deferred("disabled", true)
+	collision_layer = 0
+	for c in find_children("", "CollisionShape2D", true, false):
+		(c as CollisionShape2D).set_deferred("disabled", true)
+	for c in find_children("", "CollisionPolygon2D", true, false):
+		(c as CollisionPolygon2D).set_deferred("disabled", true)
 	_create_3d_blood_puddle()
 	_play_audio(ProceduralAudio.get_squish_stream(), -3.0)
 	_play_audio(ProceduralAudio.get_scream_stream(), -4.0)
@@ -359,8 +362,11 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
-	if collision_shape:
-		collision_shape.set_deferred("disabled", true)
+	collision_layer = 0
+	for c in find_children("", "CollisionShape2D", true, false):
+		(c as CollisionShape2D).set_deferred("disabled", true)
+	for c in find_children("", "CollisionPolygon2D", true, false):
+		(c as CollisionPolygon2D).set_deferred("disabled", true)
 	_start_fall()
 	_create_3d_blood_puddle()
 	_play_audio(ProceduralAudio.get_death_reaction_stream(), -5.0)

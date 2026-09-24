@@ -22,8 +22,8 @@ func _ready() -> void:
 		pool.texture = texture
 		pool.position = direction+Vector2(side*90,0)
 		pool.texture_scale = 2.8
-		pool.color = Color("daeaff")
-		pool.energy = .95
+		pool.color = Color("fff2db")
+		pool.energy = 0.70
 		pool.height = 100
 		add_child(pool)
 		pools.append(pool)
@@ -31,7 +31,7 @@ func _ready() -> void:
 		glow.texture = texture
 		glow.position = Vector2(side*20,-96)
 		glow.scale = Vector2(.18,.12)
-		glow.modulate = Color(.77,.88,1,.8)
+		glow.modulate = Color(1.0, 0.94, 0.85, 0.25)
 		glow.z_index = 9
 		var additive := CanvasItemMaterial.new()
 		additive.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED

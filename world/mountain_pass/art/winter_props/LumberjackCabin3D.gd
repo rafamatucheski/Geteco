@@ -19,6 +19,7 @@ extends Node3D
 
 var _materials: Dictionary = {}
 var _is_built: bool = false
+var _door_parts: Array[MeshInstance3D] = []
 
 func _init(p_main_color: Color = Color("#543820")) -> void:
 	main_color = p_main_color
@@ -53,6 +54,16 @@ func _add_box(pos: Vector3, size: Vector3, mat: Material, rot_deg: Vector3 = Vec
 	mi.material_override = mat
 	add_child(mi)
 	return mi
+
+func _add_door_part(pos: Vector3, size: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> void:
+	var part := _add_box(pos, size, mat, rot_deg)
+	part.set_meta("closed_position", pos)
+	_door_parts.append(part)
+
+func set_open_amount(value: float) -> void:
+	for part in _door_parts:
+		var closed: Vector3 = part.get_meta("closed_position")
+		part.position = closed + Vector3(-1.05 * clampf(value, 0, 1), 0, 0)
 
 func _add_cyl(pos: Vector3, radius: float, height: float, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -146,15 +157,15 @@ func _build_cabin() -> void:
 
 	# Folha da porta rústica com tábuas desiguais e ferragens
 	var door_mat := _mat("door_leaf", Color("#3b2415"), 0.82)
-	_add_box(Vector3(0.0, 1.14, 1.88), Vector3(0.92, 2.00, 0.06), door_mat)
+	_add_door_part(Vector3(0.0, 1.14, 1.88), Vector3(0.92, 2.00, 0.06), door_mat)
 	# Travessas diagonais em Z
-	_add_box(Vector3(0.0, 0.45, 1.92), Vector3(0.86, 0.10, 0.03), wood_trim)
-	_add_box(Vector3(0.0, 1.80, 1.92), Vector3(0.86, 0.10, 0.03), wood_trim)
-	_add_box(Vector3(0.0, 1.12, 1.92), Vector3(0.86, 0.10, 0.03), wood_trim)
-	_add_box(Vector3(0.0, 1.12, 1.92), Vector3(0.08, 1.30, 0.03), wood_trim, Vector3(0, 0, 32.0))
+	_add_door_part(Vector3(0.0, 0.45, 1.92), Vector3(0.86, 0.10, 0.03), wood_trim)
+	_add_door_part(Vector3(0.0, 1.80, 1.92), Vector3(0.86, 0.10, 0.03), wood_trim)
+	_add_door_part(Vector3(0.0, 1.12, 1.92), Vector3(0.86, 0.10, 0.03), wood_trim)
+	_add_door_part(Vector3(0.0, 1.12, 1.92), Vector3(0.08, 1.30, 0.03), wood_trim, Vector3(0, 0, 32.0))
 	# Fechadura e alavanca pesada de ferro forjado
-	_add_box(Vector3(0.36, 1.05, 1.94), Vector3(0.04, 0.16, 0.04), iron_mat)
-	_add_box(Vector3(0.34, 1.05, 1.97), Vector3(0.09, 0.03, 0.03), iron_mat)
+	_add_door_part(Vector3(0.36, 1.05, 1.94), Vector3(0.04, 0.16, 0.04), iron_mat)
+	_add_door_part(Vector3(0.34, 1.05, 1.97), Vector3(0.09, 0.03, 0.03), iron_mat)
 
 	# ==============================================================================
 	# 5. DIFERENCIAÇÃO: BANCO DE TORA PARA DESCALÇAR BOTAS E ÁREA DE ENTRADA

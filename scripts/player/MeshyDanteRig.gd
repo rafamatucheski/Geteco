@@ -4,6 +4,7 @@ extends Node3D
 ## Legacy anchors remain as lightweight pose targets; their meshes are hidden.
 const MODEL_PATH := "res://assets/characters/meshy_dante/dante_grip.glb"
 const SCALE := 0.82
+const HAND_SCALE := 0.95
 const RETARGET := preload("res://scripts/player/MeshyAnchorRetarget.gd")
 const APPEARANCE := preload("res://scripts/player/MeshyDanteAppearance.gd")
 var material: ShaderMaterial
@@ -19,8 +20,15 @@ var _hidden_meshes: Array[GeometryInstance3D] = []
 var _last_pose: Array[Transform3D] = []
 var _transition := 1.0
 var _clip := ""
+var _locomotion_arm_clip_active := false
+var _left_locomotion_pose: Array[Transform3D] = []
+var _right_handgun_run_pose: Array[Transform3D] = []
+var _left_locomotion_weight := 0.0
+var _left_visible_clip_weight := 0.0
 var _skin_mesh: MeshInstance3D
 var left_knuckles: Node3D
+var _right_palm_anchor_rest: Transform3D
+var _left_palm_anchor_rest: Transform3D
 
 func configure(actor: Node2D) -> bool:
 	player = actor
@@ -44,6 +52,8 @@ func configure(actor: Node2D) -> bool:
 		if not _bones.has(bone): return false
 	material = APPEARANCE.apply(_skin_mesh, skeleton, player.current_outfit_id)
 	_anchors = RETARGET.find_anchors(player.model_root)
+	_right_palm_anchor_rest = player.right_lower_arm.get_node("Palm").transform
+	_left_palm_anchor_rest = player.left_lower_arm.get_node("Palm").transform
 	# Roda depois do VehicleBoarding e do esqui, que posam as âncoras em _process.
 	process_priority = 200
 	for n in player.model_root.find_children("*", "GeometryInstance3D", true, false):
@@ -63,6 +73,14 @@ func restore() -> void:
 func prepare_pose(delta: float, moving: bool, sprinting: bool) -> void:
 	if not is_instance_valid(skeleton): return
 	_driven_frame = Engine.get_physics_frames()
+	# This state follows the input transition, not the smoothed locomotion
+	# weight. On release, the procedural idle arms take over in this same frame;
+	# otherwise the imported arms fade through the skeleton's T-pose rest.
+	var relaxed_handgun_run: bool = player.active_weapon_id in player.combat_pose.SKIN_HANDGUNS and not player.combat_pose.is_engaged and not player.is_reloading()
+	_locomotion_arm_clip_active = moving and ((player.active_weapon_id == "fists" and not player.combat_pose.is_engaged) or relaxed_handgun_run)
+	if not _locomotion_arm_clip_active:
+		player.right_lower_arm.get_node("Palm").transform = _right_palm_anchor_rest
+		player.left_lower_arm.get_node("Palm").transform = _left_palm_anchor_rest
 	var clip := "Running" if moving and sprinting else "Walking"
 	var direction := Vector2.ZERO
 	if moving:
@@ -82,18 +100,36 @@ func prepare_pose(delta: float, moving: bool, sprinting: bool) -> void:
 	if moving: _phase = fposmod(player.walk_clock / TAU, 1.0)
 	animations.play(clip)
 	animations.seek(start + _phase * duration, true)
+	if relaxed_handgun_run and moving and sprinting and _right_handgun_run_pose.is_empty():
+		_cache_handgun_run_pose(start, duration)
+		animations.seek(start + _phase * duration, true)
+	# Keep the authored shoulder, elbow and wrist rotations together. Solving
+	# a free running arm from a palm target loses the sleeve's natural roll.
+	_left_locomotion_pose.clear()
+	for name in ["LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand"]:
+		_left_locomotion_pose.append(skeleton.get_bone_pose(_bones[name]))
+	var left_running: bool = moving and player.active_weapon_id in ["axe", "bat"]
+	_left_locomotion_weight = move_toward(_left_locomotion_weight, 1.0 if left_running else 0.0, delta * 10.0)
 	_transition = minf(1.0, _transition + delta * 7.0)
+	var free_run_arms := _uses_locomotion_arm_clip()
 	for i in skeleton.get_bone_count():
 		var pose := skeleton.get_bone_pose(i)
 		# Upper-body aiming is independent of the locomotion clip.
-		if i > 0 and i < int(_bones.LeftUpLeg): pose = _rests[i]
-		# Blend into a planted standing pose; never leave the model in its T pose.
-		pose = _rests[i].interpolate_with(pose, player._move_weight)
+		if i > 0 and i < int(_bones.LeftUpLeg) and not (free_run_arms and _is_arm_bone(i)):
+			pose = _rests[i]
+		# Legs and trunk can fade toward the planted rest pose. Visible free-run
+		# arms must keep the full authored clip: this model's rest pose is a T pose.
+		if not (free_run_arms and _is_arm_bone(i)):
+			pose = _rests[i].interpolate_with(pose, player._move_weight)
 		# Upper limbs are solved procedurally below. Blending their previous
 		# IK result into the new clip carries stale arm roll into the solver.
 		if _transition < 1.0 and _last_pose.size() == skeleton.get_bone_count() and (i == 0 or i >= int(_bones.LeftUpLeg)):
 			pose = _last_pose[i].interpolate_with(pose, _transition)
 		skeleton.set_bone_pose(i, pose)
+	if relaxed_handgun_run and _right_handgun_run_pose.size() == 4:
+		var names := ["RightShoulder", "RightArm", "RightForeArm", "RightHand"]
+		for i in names.size():
+			skeleton.set_bone_pose(_bones[names[i]], _right_handgun_run_pose[i])
 	# Remove root travel from the clip: CharacterBody2D owns displacement.
 	var hips: int = _bones.Hips
 	var hip_pos := skeleton.get_bone_pose_position(hips)
@@ -117,27 +153,75 @@ func sync_shoulders() -> void:
 		# Slight clavicle protraction is part of reaching forward. Leaving the
 		# T-pose shoulders pinned behind the chest forced the sleeves inward.
 		var clavicle: int = _bones[side + "Shoulder"]
-		skeleton.set_bone_pose(clavicle, _rests[clavicle])
 		var shoulder_pose := skeleton.get_bone_global_pose(clavicle)
-		var shoulder_forward := 0.20
-		shoulder_pose.basis = Basis(Vector3.UP, shoulder_forward if side == "Right" else -shoulder_forward) * shoulder_pose.basis
-		skeleton.set_bone_global_pose(clavicle, shoulder_pose)
+		if not _uses_locomotion_arm_clip():
+			skeleton.set_bone_pose(clavicle, _rests[clavicle])
+			shoulder_pose = skeleton.get_bone_global_pose(clavicle)
+			shoulder_pose.basis = Basis(Vector3.UP, 0.20 if side == "Right" else -0.20) * shoulder_pose.basis
+			skeleton.set_bone_global_pose(clavicle, shoulder_pose)
 		var arm: Node3D = player.right_upper_arm if side == "Right" else player.left_upper_arm
 		arm.position = player.model_root.to_local(skeleton.to_global(skeleton.get_bone_global_pose(_bones[side + "Arm"]).origin))
 
 func update_pose(_delta: float, _moving: bool, _sprinting: bool) -> void:
 	# Arms are solved after animation, preserving firing/reload targets and recoil.
-	_solve_arm("Right", player.right_lower_arm.get_node("Palm"), 1.0)
-	_solve_arm("Left", player.left_lower_arm.get_node("Palm"), -1.0)
+	var free_run_arms := _uses_locomotion_arm_clip()
+	if not free_run_arms:
+		_solve_arm("Right", player.right_lower_arm.get_node("Palm"), 1.0)
+		_solve_arm("Left", player.left_lower_arm.get_node("Palm"), -1.0)
+	elif player.active_weapon_id in player.combat_pose.SKIN_HANDGUNS:
+		_sync_running_handgun_mount()
+	_left_visible_clip_weight = 0.0
+	if player.active_weapon_id in ["axe", "bat"] and _left_locomotion_pose.size() == 4:
+		_left_visible_clip_weight = _left_locomotion_weight * (1.0 - player.combat_pose.melee_support_weight)
+		var names := ["LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand"]
+		for i in names.size():
+			var bone: int = _bones[names[i]]
+			var solved := skeleton.get_bone_pose(bone)
+			skeleton.set_bone_pose(bone, solved.interpolate_with(_left_locomotion_pose[i], _left_visible_clip_weight))
+	# Keep the wrist position and weapon reach unchanged while reducing only
+	# the visible hand and its finger descendants by the requested five percent.
+	for side in ["Right", "Left"]:
+		skeleton.set_bone_pose_scale(_bones[side + "Hand"], Vector3.ONE * HAND_SCALE)
 	var armed: bool = player.active_weapon_id != "fists"
-	var closed_fists: bool = player.active_weapon_id == "knuckles" and _skin_mesh.get_blend_shape_count() >= 4
+	var closed_fists: bool = (player.active_weapon_id == "knuckles" or (player.active_weapon_id == "fists" and player.combat_pose.action_age < 0.30)) and _skin_mesh.get_blend_shape_count() >= 4
 	if is_instance_valid(_skin_mesh) and _skin_mesh.get_blend_shape_count() >= 2:
-		_skin_mesh.set_blend_shape_value(0, 1.0 if armed and not closed_fists and _is_gripping("Right") else 0.0)
-		_skin_mesh.set_blend_shape_value(1, 1.0 if armed and not closed_fists and (_is_gripping("Left") or player.active_weapon_id == "knuckles") else 0.0)
+		_skin_mesh.set_blend_shape_value(0, 1.0 if armed and not closed_fists and _is_gripping("Right") else (0.18 if free_run_arms else 0.0))
+		_skin_mesh.set_blend_shape_value(1, 1.0 if armed and not closed_fists and (_is_gripping("Left") or player.active_weapon_id == "knuckles") else (0.18 if free_run_arms else 0.18 * _left_visible_clip_weight))
 		if _skin_mesh.get_blend_shape_count() >= 4:
 			_skin_mesh.set_blend_shape_value(2, 1.0 if closed_fists else 0.0)
 			_skin_mesh.set_blend_shape_value(3, 1.0 if closed_fists else 0.0)
 	sync_knuckles()
+
+
+func _uses_locomotion_arm_clip() -> bool:
+	return _locomotion_arm_clip_active
+
+
+func _cache_handgun_run_pose(start: float, duration: float) -> void:
+	# Phase 0.75 is the authored back/down stroke: the hand clears the head and
+	# remains beside the hip while the elbow keeps its natural sleeve roll.
+	animations.seek(start + duration * 0.75, true)
+	for name in ["RightShoulder", "RightArm", "RightForeArm", "RightHand"]:
+		_right_handgun_run_pose.append(skeleton.get_bone_pose(_bones[name]))
+
+
+func _is_arm_bone(bone: int) -> bool:
+	return bone in [_bones.RightShoulder, _bones.LeftShoulder, _bones.RightArm, _bones.LeftArm, _bones.RightForeArm, _bones.LeftForeArm, _bones.RightHand, _bones.LeftHand]
+
+
+func _sync_running_handgun_mount() -> void:
+	# Preserve the authored running shoulder/elbow/wrist chain and move the gun
+	# to that hand, instead of pulling the whole arm toward a procedural target.
+	var hand_pose: Transform3D = skeleton.get_bone_global_pose(_bones.RightHand)
+	var hand_world_basis: Basis = skeleton.global_basis.orthonormalized() * hand_pose.basis.orthonormalized()
+	var wrist_alignment := Basis(Vector3.RIGHT, -PI * 0.5)
+	var gun_basis := hand_world_basis * Basis(Vector3.UP, 0.358) * wrist_alignment.inverse()
+	var right_palm_position := palm_position("Right")
+	player.weapon_mount_node.global_transform = Transform3D(gun_basis.orthonormalized(), right_palm_position)
+	var right_palm: Node3D = player.right_lower_arm.get_node("Palm")
+	right_palm.global_transform = Transform3D(gun_basis.orthonormalized(), right_palm_position)
+	var left_palm: Node3D = player.left_lower_arm.get_node("Palm")
+	left_palm.global_position = palm_position("Left")
 
 func sync_knuckles() -> void:
 	if player.active_weapon_id != "knuckles":
@@ -156,12 +240,14 @@ func sync_knuckles() -> void:
 	left_knuckles.show()
 
 func _is_gripping(side: String) -> bool:
+	if side == "Left" and player.active_weapon_id in ["axe", "bat"]:
+		return player.combat_pose.melee_support_active
 	if player.active_weapon_id == "knuckles": return true
 	if side == "Right" and player.active_weapon_id == "grenade" and not player.current_gun_mesh.visible: return false
 	# A holstered pistol/magnum is one-handed; the off-hand only closes into
-	# a grip once it actually joins the gun while aiming or firing.
+	# a grip once it actually joins the gun or manipulates a magazine/cylinder.
 	if side == "Left" and player.active_weapon_id in ["pistol", "magnum"]:
-		return player.combat_pose.is_engaged
+		return player.combat_pose.is_engaged or player.is_reloading()
 	return player.active_weapon_id != "fists" and (side == "Right" or (not player.is_reloading() and player.combat_pose.SUPPORT_GRIPS.has(player.active_weapon_id)))
 
 func _cross_grip(side: String) -> bool:
@@ -216,11 +302,24 @@ func _solve_arm(side: String, palm: Node3D, sign_side: float) -> void:
 	# Keep the elbow outside and in front of the jacket instead of folding
 	# it down through the rib cage when both hands meet in front of the chest.
 	var long_gun: bool = player.active_weapon_id in player.combat_pose.SKIN_LONG_GUNS or player.active_weapon_id in ["axe", "bat", "rpg", "flamethrower"]
+	var free_arms: bool = (side == "Left" and player.active_weapon_id in ["knife", "grenade"]) or (player.active_weapon_id == "grenade" and player.combat_pose.action_age >= 0.70) or (player.active_weapon_id == "fists" and (player.combat_pose.action_age >= 0.30 or (side == "Left") != player.combat_pose.punch_left))
+	var free_weight := 1.0 if free_arms else 0.0
+	if side == "Left" and player.active_weapon_id in ["axe", "bat"]:
+		free_weight = 1.0 - player.combat_pose.melee_support_weight
 	var elbow_width := 1.10 if long_gun else 0.65
 	var elbow_forward := -1.35 if long_gun else -0.5
 	var pole_world: Vector3 = player.model_root.global_basis * Vector3(sign_side * elbow_width, -1.5, elbow_forward)
 	var pole := skeleton.global_basis.inverse() * pole_world
 	var bend := (pole - axis * pole.dot(axis)).normalized()
+	if free_weight > 0.0:
+		# A running elbow hinges in the shoulder/hand sagittal plane. A generic
+		# lateral pole becomes unstable near the back stroke and sends the elbow
+		# either across the chest or out like a wing when viewed from above.
+		var lateral: Vector3 = (skeleton.global_basis.inverse() * (player.model_root.global_basis * Vector3.RIGHT)).normalized()
+		var free_bend := lateral.cross(axis).normalized()
+		var desired_bend: Vector3 = skeleton.global_basis.inverse() * (player.model_root.global_basis * Vector3(0, -1.0, -0.35))
+		if free_bend.dot(desired_bend) < 0.0: free_bend = -free_bend
+		bend = bend.lerp(free_bend, free_weight).normalized()
 	var along := (a * a - b * b + distance * distance) / (2.0 * distance)
 	var elbow := shoulder + axis * along + bend * sqrt(maxf(0.0, a * a - along * along))
 	_point_bone(upper, fore, elbow)

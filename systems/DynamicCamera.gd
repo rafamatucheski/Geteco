@@ -196,6 +196,8 @@ func _process(delta: float) -> void:
 		var room: Rect2 = get_meta("compact_interior")
 		var screen := get_viewport_rect().size
 		target_zoom_val = minf(screen.x / room.size.x, screen.y / room.size.y) * 0.88
+	var scoped: bool = not _is_overview_mode and not has_meta("compact_interior") and parent.has_method("weapon_scope_active") and parent.weapon_scope_active()
+	if scoped: target_zoom_val *= 2.0
 	var target_zoom_vec = Vector2(target_zoom_val, target_zoom_val)
 	zoom = zoom.lerp(target_zoom_vec, blend)
 
@@ -213,6 +215,7 @@ func _process(delta: float) -> void:
 			var safe_lead := maxf(lead_distance, 0.0) if is_finite(lead_distance) else 52.0
 			target_lead = char_parent.velocity.normalized() * minf(safe_lead * lead_mult, current_speed * 0.10)
 		
+		if scoped: target_lead = (get_node("/root/GameInput").aim_target(parent)-parent.global_position).limit_length(250.0)
 		# Lead is a world-space direction; the camera position is parent-local.
 		var local_lead: Vector2 = parent.global_transform.basis_xform_inv(target_lead) if parent is Node2D else target_lead
 		if has_meta("compact_interior"):

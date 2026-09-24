@@ -66,10 +66,8 @@ func _draw() -> void:
 			draw_line(Vector2(x, y-34), Vector2(x, y+34), Color("c6c9be"), 2)
 	for ends in [Vector2(1375, 1418), Vector2(1492, 1533), Vector2(1607, 1725)]:
 		draw_line(Vector2(2143, ends.x), Vector2(2143, ends.y), Color("e0e0d1"), 3)
-	# Public reception has a separate pedestrian approach.
-	draw_rect(Rect2(1750, 1645, 100, 95), Color("b8b7a9"))
-	for y in range(1650, 1740, 18):
-		draw_line(Vector2(1752, y), Vector2(1848, y), Color("a5aa9f"), 1)
+	# HarborDistrict owns the public reception approach (ClinicAccess). Drawing
+	# another slab and tile grid here put two sidewalk finishes on the same area.
 	for island in _islands():
 		draw_rect(Rect2(island.position+Vector2(2, 3), island.size), Color("343f3b"))
 		draw_rect(island, Color("c7c9b9"))

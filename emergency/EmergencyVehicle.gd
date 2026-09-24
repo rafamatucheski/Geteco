@@ -79,6 +79,12 @@ var police_variant := "patrol"
 var police_archetype := "police_cruiser"
 var police_response_level := 1
 var police_dispatch_serial := 0
+var police_pursuit_role := 0
+var police_pursuit_spacing := 150.0
+var police_pursuit_lead := 0.35
+var _police_pursuit_goal := Vector2.ZERO
+var _police_pursuit_goal_valid := false
+var _police_low_speed_goal_clock := 0.0
 var _police_crew: Array[Node2D] = []
 var _police_available_seats := 2
 var _police_crew_on_foot := false
@@ -89,6 +95,13 @@ var _vehicle_combat := preload("res://police/PoliceVehicleCombat.gd").new()
 func configure_police_response(level: int, serial: int, elite_unit := false) -> void:
 	police_response_level = clampi(level, 1, 6)
 	police_dispatch_serial = serial
+	# Cada viatura recebe uma função estável dentro da formação. O serial vem
+	# do despacho, portanto a formação varia sem depender de randf() por frame.
+	police_pursuit_role = posmod(serial, 5)
+	police_pursuit_spacing = [130.0, 175.0, 175.0, 260.0, 360.0][police_pursuit_role]
+	police_pursuit_lead = [0.22, 0.42, 0.42, 0.70, 0.95][police_pursuit_role]
+	_police_pursuit_goal_valid = false
+	_police_low_speed_goal_clock = 0.0
 	if police_variant != "motorcycle":
 		police_variant = ("tactical" if elite_unit else "patrol") if level >= 4 else ("interceptor" if level == 3 else "patrol")
 	max_target_speed = 255.0 if police_variant in ["motorcycle", "interceptor"] else 235.0
@@ -106,6 +119,35 @@ func _police_stop_radius() -> float:
 	if is_instance_valid(target) and target.has_meta("police_stop_distance"):
 		return float(target.get_meta("police_stop_distance"))
 	return 140.0 + float(police_dispatch_serial % 3) * 36.0
+
+func _police_dynamic_pursuit_goal(target_position: Vector2, target_velocity: Vector2) -> Vector2:
+	var motion := target_velocity
+	if motion.length_squared() < 900.0 and is_instance_valid(target):
+		motion = Vector2.from_angle(target.rotation) * 120.0
+	var forward := motion.normalized() if motion.length_squared() > 900.0 else Vector2.RIGHT
+	var lateral := Vector2(-forward.y, forward.x)
+	var goal := target_position + forward * (target_velocity.length() * police_pursuit_lead)
+	# Keep flank goals close to the road; parked suspects need a compact approach.
+	var spacing := police_pursuit_spacing
+	if target_velocity.length() <= 12.0:
+		spacing = minf(spacing, _police_stop_radius() * 0.65)
+	match police_pursuit_role:
+		0: # perseguidor: chega perto, mas continua atrás do para-choque
+			goal -= forward * spacing
+		1: # flanco esquerdo
+			goal += lateral * 32.0 - forward * spacing
+		2: # flanco direito
+			goal -= lateral * 32.0 + forward * spacing
+		3: # interceptor: tenta ocupar a linha à frente
+			goal += forward * spacing
+		4: # contenção distante: cria pressão sem colar na traseira
+			goal += forward * spacing
+	if not _police_pursuit_goal_valid:
+		_police_pursuit_goal = goal
+		_police_pursuit_goal_valid = true
+	else:
+		_police_pursuit_goal = _police_pursuit_goal.lerp(goal, 0.12)
+	return _police_pursuit_goal
 
 signal returning_to_depot(vehicle: Node, depot_id: String)
 signal arrived_at_depot(vehicle: Node, depot_id: String)
@@ -146,6 +188,7 @@ var _tactical_doors: Dictionary = {}
 var visual_3d: Node
 var is_3d_vehicle := true
 var body_model: Node3D
+var brake_lights: Node2D
 var body_viewport: SubViewport
 
 var visual: Sprite2D
@@ -167,44 +210,31 @@ func _ready():
 	collision_layer = 2
 	collision_mask = EMERGENCY_COLLISION_MASK
 	var target_length = 74.0
-	var uniform_scale = 1.0
+	# Emergency units are 3D-only. The old PNG assignment was a transitional
+	# fallback that could remain visible for a frame and hid presentation bugs.
+	visual.texture = null
+	visual.visible = false
 	
 	if type == 0: # POLICE (Interceptor)
-		visual.texture = load("res://assets/art/police_car.png")
-		visual.region_enabled = false
 		target_length = 82.0
-		uniform_scale = target_length / 480.0
-		visual.modulate = Color.WHITE
 		max_target_speed = 240.0
 		acceleration = 160.0
 	elif type == 1: # AMBULANCE (Resgate)
-		visual.texture = load("res://assets/art/ambulance.png")
-		visual.region_enabled = false
 		target_length = 88.0
-		uniform_scale = target_length / 520.0
-		visual.modulate = Color.WHITE
 		max_target_speed = 210.0
 		acceleration = 130.0
 	elif type == 2: # FIRE (Caminhão de Bombeiro - Pesado e Progressivo)
-		visual.texture = load("res://assets/art/firetruck.png")
-		visual.region_enabled = false
 		target_length = 102.0
-		uniform_scale = target_length / 580.0
-		visual.modulate = Color.WHITE
 		max_target_speed = 175.0
 		acceleration = 100.0
 	elif type == 3: # CORONER (Rabecão do IML / Necrotério)
-		visual.texture = load("res://assets/art/ambulance.png")
-		visual.region_enabled = false
 		target_length = 88.0
-		uniform_scale = target_length / 520.0
-		visual.modulate = Color(0.15, 0.16, 0.19) # Chumbo/Preto funerário sóbrio
 		max_target_speed = 195.0
 		acceleration = 125.0
+	brake_lights = preload("res://cars/VehicleBrakeLights.gd").new()
+	add_child(brake_lights)
+	brake_lights.configure(target_length, 34.0)
 		
-	visual.scale = Vector2(uniform_scale, uniform_scale)
-	visual.rotation = PI * 0.5
-	
 	var collision = CollisionShape2D.new()
 	collision.name = "CollisionShape2D"
 	var rect = RectangleShape2D.new()
@@ -228,7 +258,8 @@ func _ready():
 	# Sirene (Volume balanceado e agradável)
 	siren_audio = AudioStreamPlayer2D.new()
 	siren_audio.stream = ProceduralAudio.get_siren_stream()
-	siren_audio.max_distance = 1200.0
+	siren_audio.max_distance = 900.0
+	siren_audio.attenuation = 2.5
 	siren_audio.volume_db = -10.0
 	siren_audio.autoplay = false
 	siren_audio.bus = "SFX"
@@ -355,6 +386,8 @@ func _setup_headlight() -> void:
 	add_child(flame_particles)
 
 func activate():
+	var _dispatch_profile := OS.get_cmdline_user_args().has("--profile-dispatch")
+	var _dispatch_started_usec := Time.get_ticks_usec()
 	var residual := get_node_or_null("ResidualFire")
 	if is_instance_valid(residual): residual.finish()
 	for key in ["fire_residual_burning", "service_complete", "fire_water_progress", "fire_response_assigned", "fire_retry_after_ms"]:
@@ -467,6 +500,8 @@ func activate():
 		vehicle_collision.set_deferred("disabled", false)
 	set_deferred("collision_layer", 2)
 	set_deferred("collision_mask", EMERGENCY_COLLISION_MASK)
+	if _dispatch_profile:
+		print("EMERGENCY_ACTIVATE_PROFILE type=%d variant=%s ms=%.3f visual3d=%s" % [type, police_variant, float(Time.get_ticks_usec() - _dispatch_started_usec) / 1000.0, visual_3d != null])
 
 func configure_depot_assignment(depot_id: String, return_position: Vector2, parking_position: Vector2, standby_id := "") -> void:
 	set_meta("harbor_director_id", 0)
@@ -600,6 +635,7 @@ func _all_surviving_police_boarded() -> bool:
 	return true
 
 func _physics_process(delta: float) -> void:
+	brake_lights.observe_speed(absf(current_speed), delta)
 	# Occupancy outranks pursuit, return orders, reversing and stuck recovery.
 	# Only a completed boarding cycle may release this latch; time/death cannot.
 	if type == 0 and _police_crew_on_foot:
@@ -911,8 +947,11 @@ func _physics_process(delta: float) -> void:
 	if (type == 1 or (type == 3 and get_tree().current_scene.has_node("RoadNetwork"))) and _ambulance_approach.tick(self, target, delta): return
 	var is_target_in_car: bool = target.is_in_group("vehicle") or target.get("is_driven_by_player") == true
 	var arrival_radius := _police_stop_radius() if type == 0 else (120.0 if type == 2 else 75.0)
-	var may_stop := type != 0 or not is_target_in_car or _target_stopped_time >= 0.6
-	if may_stop and global_position.distance_to(target.global_position) <= arrival_radius:
+	var may_stop := type != 0 or not is_target_in_car or _target_stopped_time >= 1.5
+	var police_parking_allowed := type != 0 or bool(target.get_meta("bank_blockade", false))
+	if type == 0 and may_stop and global_position.distance_to(target.global_position) <= arrival_radius and not police_parking_allowed:
+		police_parking_allowed = _lane_router.permits_police_stop(self)
+	if may_stop and police_parking_allowed and global_position.distance_to(target.global_position) <= arrival_radius:
 		# Frear antes de orientar para outro waypoint evita rodar parado ao lado
 		# da ocorrência e impede desembarque com a viatura ainda em movimento.
 		current_speed = move_toward(current_speed, 0.0, 520.0 * delta)
@@ -921,25 +960,43 @@ func _physics_process(delta: float) -> void:
 		if velocity.length() <= 12.0 and current_speed <= 12.0: _begin_response()
 		return
 	var intercept_pos := target.global_position
-	if is_target_in_car and "velocity" in target and target.velocity.length() > 30.0:
-		# Antecipa a trajetória do veículo do jogador para interceptação
-		intercept_pos = target.global_position + target.velocity * 0.35
+	if is_target_in_car and "velocity" in target:
+		# A formação continua válida mesmo quando o alvo freia ou para. A função
+		# usa a rotação do carro como direção de referência nesse caso; sem isso,
+		# todas as viaturas caíam no mesmo ponto assim que a velocidade baixava,
+		# criando a sensação de um ímã puxando a polícia para o jogador.
+		if target.velocity.length() > 30.0 or not _police_pursuit_goal_valid or _police_low_speed_goal_clock <= 0.0:
+			intercept_pos = _police_dynamic_pursuit_goal(target.global_position, target.velocity)
+			_police_low_speed_goal_clock = 0.0 if target.velocity.length() > 30.0 else 0.12
+		else:
+			intercept_pos = _police_pursuit_goal
+		_police_low_speed_goal_clock -= delta
+	else:
+		_police_pursuit_goal_valid = false
 		
 	var waypoint = _get_road_guidance_target(intercept_pos)
 	if waypoint.distance_to(global_position) < 1.0:
 		current_speed = 0.0
 		velocity = Vector2.ZERO
 		# A faixa termina no meio-fio: socorristas percorrem o trecho a pé.
-		var foot_response_range := 550.0 if type == 0 and _lane_router.at_roadside_goal else 360.0
+		var foot_response_range := _police_stop_radius() if type == 0 else 360.0
 		if global_position.distance_to(target.global_position) <= foot_response_range:
-			if type != 0 or not is_target_in_car or _target_stopped_time >= 0.6:
+			if may_stop and police_parking_allowed:
 				_begin_response()
+		# A formation waypoint is not a parking reservation. Continue toward
+		# the suspect if the slot ends on a crossing or too far from the scene.
+		if type == 0 and not is_acting and is_target_in_car and _lane_router.destination.distance_to(target.global_position) > 32.0:
+			_police_pursuit_goal = target.global_position
+			_police_low_speed_goal_clock = 1.5
+			_lane_router.reset()
 		return
 	var dir = global_position.direction_to(waypoint)
 	if type == 0:
 		var separation := _police_separation_dir()
 		if separation != Vector2.ZERO:
-			dir = (dir + separation * POLICE_SEPARATION_STRENGTH).normalized()
+			# Separation may nudge the steering, never reverse the route heading.
+			var lateral_push: Vector2 = separation - dir * separation.dot(dir)
+			dir = (dir + lateral_push.limit_length(0.3) * POLICE_SEPARATION_STRENGTH).normalized()
 	var dist = global_position.distance_to(target.global_position)
 
 	# Escala velocidade máxima com o nível de procurado
@@ -970,13 +1027,16 @@ func _physics_process(delta: float) -> void:
 	var angle_diff = absf(wrapf(target_angle - rotation, -PI, PI))
 	var steer_rate = 6.0 if type == 0 else 4.5
 	var next_heading: float = rotate_toward(rotation, target_angle, current_speed * delta / 70.0) if type == 1 else lerp_angle(rotation, target_angle, minf(1.0, steer_rate * delta))
+	if type == 0:
+		# Steering needs travel: no pivoting around the centre of a parked car.
+		next_heading = rotate_toward(rotation, target_angle, minf(current_speed, velocity.length()) * delta / 90.0)
 	if type != 1: preload("res://cars/VehicleMotionSafety.gd").rotate_clear(self, next_heading)
 	
 	var desired_speed = police_top_speed if type == 0 else max_target_speed
 	if angle_diff > 1.20:
 		# A waypoint behind the bumper requires braking before turning. Keeping
 		# half cruising speed here made short detours become circular orbits.
-		desired_speed = 35.0 if type == 1 else 0.0
+		desired_speed = 40.0 if type == 0 else (35.0 if type == 1 else 0.0)
 	elif angle_diff > 0.50:
 		desired_speed *= 0.55 # Desaceleração realista em curvas fechadas
 	desired_speed = minf(desired_speed, sqrt(1040.0 * maxf(0.0, global_position.distance_to(waypoint) - 4.0)))
@@ -993,7 +1053,7 @@ func _physics_process(delta: float) -> void:
 	if type == 0: # POLÍCIA
 		var target_moving := false
 		if is_instance_valid(target) and "velocity" in target:
-			target_moving = (target.velocity as Vector2).length() > 12.0 or _target_stopped_time < 0.6
+			target_moving = (target.velocity as Vector2).length() > 12.0 or _target_stopped_time < 1.5
 			
 		if is_target_in_car and target_moving:
 			# === PERSEGUIÇÃO VEICULAR DINÂMICA (Acompanhamento e tentativa de emparelhar/cortar) ===
@@ -1020,7 +1080,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			# === ALVO PARADO/ACUADO OU A PÉ: BLOQUEIO TÁTICO E DESEMBARQUE DA DUPLA ===
 			var stop_distance := _police_stop_radius()
-			if dist <= stop_distance:
+			if dist <= stop_distance and police_parking_allowed:
 				current_speed = move_toward(current_speed, 0.0, 520.0 * delta)
 				velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
 				if velocity.length() < 30.0:
@@ -1048,7 +1108,7 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			is_acting = true
 			if engine_audio: engine_audio.volume_db = -30.0
-			if siren_audio: siren_audio.volume_db = -28.0
+			if siren_audio: siren_audio.stop()
 			if deployed_firefighters == 0:
 				_deploy_firefighters()
 			return
@@ -1060,7 +1120,7 @@ func _physics_process(delta: float) -> void:
 			velocity = Vector2.ZERO
 			is_acting = true
 			if engine_audio: engine_audio.volume_db = -30.0
-			if siren_audio: siren_audio.volume_db = -28.0
+			if siren_audio: siren_audio.stop()
 			if deployed_morticians == 0:
 				_deploy_morticians()
 			return
@@ -1089,10 +1149,10 @@ func _physics_process(delta: float) -> void:
 	var low_speed_obstacle := current_speed < 15.0 and not is_acting and _is_obstacle_ahead()
 	if (current_speed > 30.0 and velocity.length() < 16.0) or low_speed_obstacle:
 		stuck_timer += delta
-		if stuck_timer > 0.45 and reverse_cooldown <= 0.0:
+		if stuck_timer > (2.0 if type == 0 else 0.45) and reverse_cooldown <= 0.0:
 			# Um congestionamento perto da ocorrência não exige repetir ré:
 			# estacionar aqui permite que a equipe conclua o acesso a pé.
-			if dist <= 360.0 and may_stop:
+			if may_stop and ((type != 0 and dist <= 360.0) or (type == 0 and stuck_timer >= 2.0 and dist <= _police_stop_radius() and police_parking_allowed)):
 				_begin_response()
 				return
 			is_reversing = true
@@ -1467,8 +1527,11 @@ func _deploy_firefighters() -> void:
 		play_crew_door(1.0, 22.0)
 
 func on_firefighter_embarked(_ff: Node2D) -> void:
+	if not is_instance_valid(_ff) or _ff.get_meta("fire_boarded_counted", false): return
+	_ff.set_meta("fire_boarded_counted", true)
 	returned_firefighters += 1
-	if returned_firefighters >= deployed_firefighters:
+	var waiting := _response_crew.any(func(crew): return is_instance_valid(crew) and not crew.is_queued_for_deletion() and crew.get("is_dead") != true and not crew.get_meta("fire_boarded_counted", false))
+	if not waiting:
 		await get_tree().create_timer(1.0).timeout
 		if _advance_service_target(): return
 		is_acting = false
@@ -1772,7 +1835,7 @@ func _update_response_audio() -> void:
 	# should silence the ambulance and switch its warning lights off.
 	var medical_sequence: Node = get_meta("medical_sequence") if has_meta("medical_sequence") else null
 	var patient_transport: bool = type == 1 and is_instance_valid(medical_sequence) and medical_sequence.delivered and medical_sequence.phase == "transport"
-	var responding := visible and not is_broken and ((not is_returning_to_base and is_instance_valid(target)) or patient_transport)
+	var responding := visible and not is_broken and not is_exploded and not is_exploding and ((not is_returning_to_base and is_instance_valid(target)) or patient_transport)
 	if type == 0:
 		var wanted := get_node_or_null("/root/WantedManager")
 		responding = responding and ((is_instance_valid(target) and target.get_meta("ambient_crime",false)) or (wanted != null and wanted.current_stars > 0))

@@ -27,7 +27,7 @@ const GARAGE_SCRIPT := preload("res://world/harbor/interiors/HarborGarageInterio
 const POLICE_SCRIPT := preload("res://world/harbor/interiors/HarborPoliceInterior.gd")
 const CLINIC_SCRIPT := preload("res://world/harbor/interiors/HarborHospitalInterior3D.gd")
 const WORKSHOP_SCRIPT := preload("res://world/harbor/interiors/HarborWorkshopInterior.gd")
-const FIRE_STATION_SCRIPT := preload("res://world/harbor/interiors/HarborFireStationInterior.gd")
+const FIRE_STATION_SCRIPT := preload("res://world/harbor/interiors/HarborFireStationStandard.gd")
 const AMMUNATION_SCRIPT := preload("res://world/harbor/interiors/HarborAmmunationInterior.gd")
 const MORGUE_SCRIPT := preload("res://world/harbor/interiors/HarborMorgueInterior.gd")
 
@@ -130,18 +130,21 @@ func _build_all_interiors() -> void:
 	# 1. Garage (Westgate Motor Co.)
 	garage_interior = GARAGE_SCRIPT.new()
 	garage_interior.name = "GarageInterior"
+	garage_interior.inline_mode = true
 	garage_interior.position = Vector2(20000, 20000)
 	spaces_root.add_child(garage_interior)
 
 	# 2. Police (Harbor Patrol)
 	police_interior = POLICE_SCRIPT.new()
 	police_interior.name = "PoliceInterior"
+	police_interior.inline_mode = true
 	police_interior.position = Vector2(21400, 20000)
 	spaces_root.add_child(police_interior)
 
 	# 3. Clinic (Bay Medical) — enters from north
 	clinic_interior = CLINIC_SCRIPT.new()
 	clinic_interior.name = "ClinicInterior"
+	clinic_interior.inline_mode = true
 	clinic_interior.position = Vector2(22800, 20000)
 	spaces_root.add_child(clinic_interior)
 
@@ -154,12 +157,14 @@ func _build_all_interiors() -> void:
 	# 5. Fire Station (Northgate Fire / 03) — 3 bays
 	fire_station_interior = FIRE_STATION_SCRIPT.new()
 	fire_station_interior.name = "FireStationInterior"
+	fire_station_interior.inline_mode = true
 	fire_station_interior.position = Vector2(25800, 20000)
 	spaces_root.add_child(fire_station_interior)
 
 	# 6. Reusable templates (Ammu-Nation & Morgue)
 	ammunation_interior = AMMUNATION_SCRIPT.new()
 	ammunation_interior.name = "AmmunationInterior"
+	ammunation_interior.inline_mode = true
 	ammunation_interior.position = Vector2(27400, 20000)
 	spaces_root.add_child(ammunation_interior)
 
@@ -177,8 +182,8 @@ func set_active_interior(active_room: Node2D) -> void:
 	if not is_instance_valid(spaces_root):
 		return
 	for child in spaces_root.get_children():
-		if child is Node2D and child.position.y >= 10000.0:
-			var should_be_active := (child == active_room)
+		if child is Node2D and (child.position.y >= 10000.0 or child.get("inline_mode") == true):
+			var should_be_active: bool = child == active_room or child.get("inline_mode") == true
 			if child.visible != should_be_active:
 				child.visible = should_be_active
 			var target_mode := Node.PROCESS_MODE_INHERIT if should_be_active else Node.PROCESS_MODE_DISABLED
@@ -202,15 +207,15 @@ func _connect_npc_dialogue_signals() -> void:
 
 func _register_interior_exits() -> void:
 	# Garage exit
-	if garage_interior.exit_door:
+	if garage_interior.exit_door and not garage_interior.inline_mode:
 		_bind_exit_door(garage_interior.exit_door, &"harbor/District/Garage/Entrance", garage_interior)
 
 	# Police exit
-	if police_interior.exit_door:
+	if police_interior.exit_door and not police_interior.inline_mode:
 		_bind_exit_door(police_interior.exit_door, &"harbor/District/Police/Entrance", police_interior)
 
 	# Clinic exit
-	if clinic_interior.exit_door:
+	if clinic_interior.exit_door and not clinic_interior.inline_mode:
 		_bind_exit_door(clinic_interior.exit_door, &"harbor/District/Clinic/Entrance", clinic_interior)
 
 	# Workshop exit
@@ -218,9 +223,10 @@ func _register_interior_exits() -> void:
 		_bind_exit_door(workshop_interior.exit_door, &"harbor/NorthDistrict/MotorWorkshop/Entrance", workshop_interior)
 
 	# Fire Station exits (Bays 0, 1, 2)
-	for i in fire_station_interior.bay_exits.size():
-		var bay_exit = fire_station_interior.bay_exits[i]
-		_bind_exit_door(bay_exit, StringName("harbor/NorthDistrict/NorthFireStation/Entrance%d" % i), fire_station_interior)
+	if not fire_station_interior.inline_mode:
+		for i in fire_station_interior.bay_exits.size():
+			var bay_exit = fire_station_interior.bay_exits[i]
+			_bind_exit_door(bay_exit, StringName("harbor/NorthDistrict/NorthFireStation/Entrance%d" % i), fire_station_interior)
 
 func _bind_exit_door(door: BuildingEntrance, default_exterior_door_id: StringName, interior: Node2D) -> void:
 	_exit_door_interior[door] = interior
@@ -252,6 +258,7 @@ func _physics_process(_delta: float) -> void:
 			return
 
 func _try_police_proximity_passage() -> bool:
+	if is_instance_valid(police_interior) and police_interior.inline_mode: return false
 	var exterior := get_parent().get_node_or_null("District/Police/Entrance") as BuildingEntrance
 	var exit_door: BuildingEntrance = police_interior.exit_door if is_instance_valid(police_interior) else null
 	for door in [exterior, exit_door]:
@@ -308,42 +315,44 @@ func _bind_exterior_entrances() -> void:
 
 	# Map of exterior door paths to spawn points & interior refs
 	_door_configs = {
-		"District/Garage/Entrance": {
-			"interior": garage_interior,
-			"spawn": garage_interior.spawn_point,
-			"id": &"harbor/District/Garage/Entrance"
-		},
-		"District/Police/Entrance": {
-			"interior": police_interior,
-			"spawn": police_interior.spawn_point,
-			"id": &"harbor/District/Police/Entrance"
-		},
-		"District/Clinic/Entrance": {
-			"interior": clinic_interior,
-			"spawn": clinic_interior.spawn_point,
-			"id": &"harbor/District/Clinic/Entrance"
-		},
 		"NorthDistrict/MotorWorkshop/Entrance": {
 			"interior": workshop_interior,
 			"spawn": workshop_interior.spawn_point,
 			"id": &"harbor/NorthDistrict/MotorWorkshop/Entrance"
-		},
-		"NorthDistrict/NorthFireStation/Entrance0": {
-			"interior": fire_station_interior,
-			"spawn": fire_station_interior.get_spawn_for_bay(0),
-			"id": &"harbor/NorthDistrict/NorthFireStation/Entrance0"
-		},
-		"NorthDistrict/NorthFireStation/Entrance1": {
-			"interior": fire_station_interior,
-			"spawn": fire_station_interior.get_spawn_for_bay(1),
-			"id": &"harbor/NorthDistrict/NorthFireStation/Entrance1"
-		},
-		"NorthDistrict/NorthFireStation/Entrance2": {
-			"interior": fire_station_interior,
-			"spawn": fire_station_interior.get_spawn_for_bay(2),
-			"id": &"harbor/NorthDistrict/NorthFireStation/Entrance2"
 		}
 	}
+	if is_instance_valid(fire_station_interior) and fire_station_interior.inline_mode:
+		var fire_facade := root_preview.get_node_or_null("NorthDistrict/NorthFireStation") as Node2D
+		var fire_doors: Array[BuildingEntrance] = []
+		for index in 3:
+			var fire_door := root_preview.get_node_or_null("NorthDistrict/NorthFireStation/Entrance%d" % index) as BuildingEntrance
+			if fire_door: fire_doors.append(fire_door)
+		if fire_facade and fire_doors.size()==3: fire_station_interior.attach_inline_facade(fire_facade,fire_doors)
+	else:
+		for index in 3:
+			_door_configs["NorthDistrict/NorthFireStation/Entrance%d" % index] = {
+				"interior": fire_station_interior,
+				"spawn": fire_station_interior.get_spawn_for_bay(index),
+				"id": StringName("harbor/NorthDistrict/NorthFireStation/Entrance%d" % index)
+			}
+	if is_instance_valid(garage_interior) and garage_interior.inline_mode:
+		var garage_facade := root_preview.get_node_or_null("District/Garage") as Node2D
+		var garage_door := root_preview.get_node_or_null("District/Garage/Entrance") as BuildingEntrance
+		if garage_facade and garage_door: garage_interior.attach_inline_facade(garage_facade,garage_door)
+	else:
+		_door_configs["District/Garage/Entrance"] = {
+			"interior": garage_interior,
+			"spawn": garage_interior.spawn_point,
+			"id": &"harbor/District/Garage/Entrance"
+		}
+	if is_instance_valid(police_interior) and police_interior.inline_mode:
+		var police_facade := root_preview.get_node_or_null("District/Police") as Node2D
+		var police_door := root_preview.get_node_or_null("District/Police/Entrance") as BuildingEntrance
+		if police_facade and police_door: police_interior.attach_inline_facade(police_facade,police_door)
+	if is_instance_valid(clinic_interior) and clinic_interior.inline_mode:
+		var clinic_facade := root_preview.get_node_or_null("District/Clinic") as Node2D
+		var clinic_door := root_preview.get_node_or_null("District/Clinic/Entrance") as BuildingEntrance
+		if clinic_facade and clinic_door: clinic_interior.attach_inline_facade(clinic_facade,clinic_door)
 
 	for path in _door_configs:
 		var entrance = root_preview.get_node_or_null(path) as BuildingEntrance
@@ -481,6 +490,20 @@ func _on_exit_door_requested(exit_door_node: BuildingEntrance, actor: Node2D, _d
 			col.disabled = false
 
 	_reset_exterior_camera(effective_actor)
+
+	if is_instance_valid(effective_actor):
+		if effective_actor.has_meta("interior_movement_presentation"):
+			var pres = effective_actor.get_meta("interior_movement_presentation")
+			if is_instance_valid(pres) and pres.has_method("restore"):
+				pres.restore()
+				pres.queue_free()
+			effective_actor.remove_meta("interior_movement_presentation")
+		if effective_actor.has_meta("interior_actor_presentation"):
+			var pres = effective_actor.get_meta("interior_actor_presentation")
+			if is_instance_valid(pres) and pres.has_method("restore"):
+				pres.restore()
+				pres.queue_free()
+			effective_actor.remove_meta("interior_actor_presentation")
 
 	var exited_interior_id := default_exterior_door_id
 	if exit_door_node:

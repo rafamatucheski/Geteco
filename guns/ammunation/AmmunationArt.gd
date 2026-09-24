@@ -50,7 +50,7 @@ static func item(root: Node3D, id: String) -> void:
 		box(root,Vector3(.26,.06,.025),Vector3(0,.17,.10),CREAM)
 		text(root,"A / N",Vector3(0,.17,.12),.0009,INK)
 		return
-	ARSENAL.build(root,id)
+	root.set_meta("weapon_muzzle", ARSENAL.build(root,id))
 	if id == "grenade":
 		for row in 4:
 			for col in 8:
@@ -113,6 +113,9 @@ static func bevel_box(size: Vector3) -> ArrayMesh:
 static func gunsmith(root: Node3D) -> Node3D:
 	var npc := Node3D.new()
 	npc.name = "VanceMilitaryGunsmith"
+	# Match the shared 1.8 m actor presentation; the original .94 m arm span
+	# made the clerk read as a giant even behind the counter.
+	npc.scale = Vector3(.70, 1.8 / 1.91, .85)
 	root.add_child(npc)
 	var skin := Color("b78360")
 	for side in [-1,1]:
@@ -132,7 +135,7 @@ static func gunsmith(root: Node3D) -> Node3D:
 	vest.position = Vector3(0,1.19,.13)
 	box(npc,Vector3(.53,.08,.37),Vector3(0,.87,0),INK)
 	box(npc,Vector3(.10,.065,.025),Vector3(0,.87,.20),CREAM)
-	P.piece(npc,Vector3(.36,.36,.31),Vector3(0,1.71,0),skin,true)
+	P.piece(npc,Vector3(.32,.30,.29),Vector3(0,1.71,0),skin,true)
 	box(npc,Vector3(.17,.12,.17),Vector3(0,1.49,0),skin)
 	box(npc,Vector3(.35,.08,.30),Vector3(0,1.87,0),OLIVE)
 	box(npc,Vector3(.33,.035,.18),Vector3(0,1.84,.19),OLIVE)
@@ -146,7 +149,7 @@ static func gunsmith(root: Node3D) -> Node3D:
 	text(npc,"VANCE",Vector3(.12,1.40,.24),.00055)
 	return npc
 
-static func room(root: Node3D) -> void:
+static func room(root: Node3D, mountain := false) -> void:
 	box(root,Vector3(14,.16,10),Vector3(0,-.09,0),Color("535954"))
 	for x in range(-7,8): box(root,Vector3(.018,.014,10),Vector3(x,0,0),Color("7b8075"))
 	for z in range(-5,6): box(root,Vector3(14,.014,.018),Vector3(0,0,z),Color("7b8075"))
@@ -156,7 +159,6 @@ static func room(root: Node3D) -> void:
 		box(root,Vector3(.25,.14,10),Vector3(side*6.98,1.9,0),RED)
 	box(root,Vector3(14,.72,.08),Vector3(0,2.55,-4.83),RED)
 	text(root,"AMMU-NATION",Vector3(0,2.62,-4.76),.015)
-	text(root,"ARMAS  /  MUNIÇÃO  /  EQUIPAMENTO",Vector3(0,2.21,-4.75),.0043)
 	target(root,Vector3(-3.7,2.6,-4.73),.27)
 	target(root,Vector3(3.7,2.6,-4.73),.27)
 	for side in [-1,1]:
@@ -172,6 +174,7 @@ static func room(root: Node3D) -> void:
 			weapon.scale = Vector3.ONE*2.25
 		box(root,Vector3(3.4,.035,.08),Vector3(side*4.8,2.09,-4.68),CREAM)
 	# Counter has transparent upper glazing and visible pistols on a felt shelf.
+	var counter_start := root.get_child_count()
 	box(root,Vector3(5,.64,1.1),Vector3(0,.32,-2.2),RED)
 	box(root,Vector3(5.12,.10,1.18),Vector3(0,.67,-2.2),INK)
 	var glass := box(root,Vector3(4.92,.32,.025),Vector3(0,.86,-1.64),Color("a5d2ca"))
@@ -193,6 +196,9 @@ static func room(root: Node3D) -> void:
 	npc.position = Vector3(0,0,-3.4)
 	box(root,Vector3(.55,.10,.45),Vector3(1.85,1.18,-2.2),INK)
 	box(root,Vector3(.45,.32,.08),Vector3(1.85,1.36,-2.35),Color("476b60"))
+	if mountain:
+		for index in range(counter_start, root.get_child_count()):
+			root.get_child(index).position.x += 1.7
 	# Ammunition shelves and service drawers frame the merchant's station.
 	for side in [-1,1]:
 		box(root,Vector3(1.25,1.45,.45),Vector3(side*2.25,.73,-4.5),Color("121c1c"))
@@ -201,11 +207,10 @@ static func room(root: Node3D) -> void:
 			for col in 3:
 				box(root,Vector3(.31,.25,.28),Vector3(side*2.25-.39+col*.39,.34+row*.43,-4.42),Color("b2a073"))
 				box(root,Vector3(.19,.07,.015),Vector3(side*2.25-.39+col*.39,.35+row*.43,-4.27),RED)
-		text(root,"MUNIÇÃO",Vector3(side*2.25,1.64,-4.25),.003)
 	for side in [-1,1]:
+		var island_start := root.get_child_count()
 		box(root,Vector3(1.55,.85,2.9),Vector3(side*5.5,.425,.5),INK)
 		box(root,Vector3(1.65,.08,3),Vector3(side*5.5,.90,.5),Color("9b9377"))
-		text(root,"PROTEÇÃO" if side<0 else "EXPLOSIVOS",Vector3(side*5.5,.56,1.97),.0049)
 		for i in 3:
 			var stock := Node3D.new()
 			root.add_child(stock)
@@ -215,11 +220,76 @@ static func room(root: Node3D) -> void:
 		for i in 3:
 			box(root,Vector3(.8,.26,.55),Vector3(side*5.5,.13,2.5+i*.46),OLIVE)
 			box(root,Vector3(.48,.08,.015),Vector3(side*5.5,.17,2.78+i*.46),CREAM)
+		if mountain and side < 0:
+			for index in range(island_start, root.get_child_count()):
+				root.get_child(index).position.x += 2.6
 	# Entrance is a cutaway: a threshold, posts and floor markings keep it readable.
 	for side in [-1,1]:
 		box(root,Vector3(5.8,.42,.22),Vector3(side*4.1,.21,4.9),INK)
 		box(root,Vector3(.18,1.4,.26),Vector3(side*1.15,.7,4.82),RED)
 	box(root,Vector3(2.15,.025,1.6),Vector3(0,.015,3.8),Color("243d33"))
-	var exit_label := text(root,"SAÍDA  ↓",Vector3(0,.042,3.95),.010)
-	exit_label.rotation.x = -PI*.5
+	if mountain:
+		for i in 18:
+			box(root,Vector3(.55,2.1,.08),Vector3(-6.5+i*.75,1.05,-4.68),Color("54412f"))
+		box(root,Vector3(1.0,1.1,.95),Vector3(-5.65,.55,1.7),Color("303735"))
+		box(root,Vector3(.65,.35,.025),Vector3(-5.65,.55,2.19),Color("e2a350"))
+		box(root,Vector3(.18,1.9,.18),Vector3(-5.65,2.05,1.5),Color("414844"))
+		var stove_light := OmniLight3D.new()
+		stove_light.position = Vector3(-5.6,1.4,2.1)
+		stove_light.light_color = Color("ffb873")
+		stove_light.light_energy = .8
+		stove_light.omni_range = 4
+		root.add_child(stove_light)
 	for side in [-1,1]: box(root,Vector3(.055,.02,5.4),Vector3(side*1.8,.02,1.35),Color("ad9654"))
+
+## Cutaway shop that fits the exterior's 8.4 x 4.4 m physical footprint.
+## The center aisle stays clear from the entrance to Vance's counter.
+static func compact_room(root: Node3D, mountain := false) -> void:
+	box(root, Vector3(8.4,.16,4.4), Vector3(0,-.09,0), Color("535954"))
+	for x in range(-4,5):
+		box(root, Vector3(.018,.014,4.35), Vector3(x,0,0), Color("7b8075"))
+	for z in range(-2,3):
+		box(root, Vector3(8.35,.014,.018), Vector3(0,0,z), Color("7b8075"))
+	box(root, Vector3(8.5,.14,.18), Vector3(0,.12,2.24), RED)
+	# The rear and side walls frame the room. The near wall is cut down so the
+	# products, counter and actor remain visible from the street camera.
+	box(root, Vector3(8.4,2.65,.2), Vector3(0,1.32,-2.2), INK)
+	for side in [-1.0,1.0]:
+		box(root, Vector3(.18,2.55,4.4), Vector3(side*4.12,1.27,0), INK)
+		box(root, Vector3(2.9,.42,.18), Vector3(side*2.75,.21,2.2), INK)
+		box(root, Vector3(.16,1.75,.18), Vector3(side*1.31,.875,2.2), RED)
+		box(root, Vector3(.52,2.0,2.25), Vector3(side*3.72,1.0,.10), Color("303b39"))
+		for row in 3:
+			box(root, Vector3(.55,.06,2.18), Vector3(side*3.72,.34+row*.55,.10), OLIVE)
+		for index in 2:
+			var displayed := Node3D.new()
+			root.add_child(displayed)
+			item(displayed, ["armor","shotgun"][index] if side < 0 else ["grenade","smg"][index])
+			displayed.position = Vector3(side*3.5,.72+index*.62,-.42)
+			displayed.rotation.y = -side*PI*.5
+			displayed.scale = Vector3.ONE*(.9 if side < 0 else 1.8)
+		box(root, Vector3(1.0,1.65,.30), Vector3(side*3.04,.85,-2.02), Color("384440"))
+		for index in 2:
+			var long_gun := Node3D.new()
+			root.add_child(long_gun)
+			item(long_gun, ["ak47","m4a1"][index] if side < 0 else ["hunting_rifle","sawed_off"][index])
+			long_gun.position = Vector3(side*3.04,.66+index*.68,-1.78)
+			long_gun.rotation = Vector3(0,PI*.5,PI*.5)
+			long_gun.scale = Vector3.ONE*1.35
+	box(root, Vector3(4.75,.72,.72), Vector3(0,.36,-.91), RED)
+	box(root, Vector3(4.85,.09,.82), Vector3(0,.76,-.91), Color("a8b8aa"))
+	box(root, Vector3(4.78,.28,.05), Vector3(0,.94,-.49), Color("799d96"))
+	for index in 3:
+		var pistol := Node3D.new()
+		root.add_child(pistol)
+		item(pistol, ["pistol","magnum","sawed_off"][index])
+		pistol.position = Vector3(-1.5+index*1.5,.82,-.80)
+		pistol.rotation = Vector3(0,PI*.5,PI*.5)
+		pistol.scale = Vector3.ONE*1.25
+	var clerk := gunsmith(root)
+	clerk.position = Vector3(0,0,-1.66)
+	text(root, "AMMU-NATION", Vector3(0,2.49,-2.075), .008)
+	box(root, Vector3(1.9,.025,.68), Vector3(0,.02,1.72), Color("243d33"))
+	if mountain:
+		box(root, Vector3(.55,1.3,.50), Vector3(-3.72,.65,1.53), Color("54412f"))
+		box(root, Vector3(.4,.36,.06), Vector3(-3.72,.68,1.81), Color("d59b56"))

@@ -6,19 +6,23 @@ func install_model(parent: Node3D, point: Vector3) -> void:
 	model = Node3D.new()
 	model.name = "SecretRPGModel"
 	model.position = point
+	_floor_height = point.y
 	parent.add_child(model)
 	var weapon := Node3D.new()
 	weapon.name = "FloorWeapon"
 	weapon.rotation.z = PI*0.5
+	weapon.position.y = hover_height
 	model.add_child(weapon)
 	preload("res://scripts/player/ArsenalWeapon3D.gd").build(weapon,"rpg")
+	_install_halo()
 
 func _ready() -> void:
 	weapon_id = "rpg"
 	pickup_id = "mountain_waterfall_secret_rpg_01"
 	ammo = 4
 	load_on_pickup = true
-	animate_on_floor = false
+	animate_on_floor = true
+	hover_height = 0.55
 	super._ready()
 	prompt = Label.new()
 	prompt.position = Vector2(-140,-78)
@@ -36,14 +40,14 @@ func _process(delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	prompt.visible = can_collect(player)
 	if prompt.visible:
-		prompt.text = "[%s] PEGAR RPG-7 · 4 FOGUETES" % get_node("/root/GameInput").hint("interact")
+		prompt.text = "E"
 
 func can_collect(player: Node2D) -> bool:
-	return not collected and is_instance_valid(player) and player.is_visible_in_tree() and player.get("is_dead") != true and player.get("is_in_dialogue") != true and player.get("is_control_disabled") != true and render_host.contains_actor(player) and global_position.distance_to(player.global_position) < 74.0
+	var reach := 42.0 if is_instance_valid(render_host) and render_host.get("inline_mode") == true else 74.0
+	return not collected and is_instance_valid(player) and player.is_visible_in_tree() and player.get("is_dead") != true and player.get("is_in_dialogue") != true and player.get("is_control_disabled") != true and render_host.contains_actor(player) and global_position.distance_to(player.global_position) < reach
 
-func _collect(_body: Node2D) -> void:
-	# The case is collected deliberately with Interact, not by walking past it.
-	pass
+func _collect(body: Node2D) -> void:
+	request_pickup(body)
 
 func request_pickup(player: Node2D) -> bool:
 	if not can_collect(player): return false

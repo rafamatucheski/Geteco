@@ -152,12 +152,11 @@ func _run() -> void:
 	blockade._physics_process(0.1)
 	check(not blockade.active and not player.has_meta("bank_heist_active"),"Sair do quarteirão encerra o cerco e libera a perseguição normal")
 	var fuel=manager.get_node("InteriorSpaces/FuelInterior")
-	manager._on_exterior_destination_requested(fuel.entrance,player,fuel.entrance.destination_id,null,&"",fuel,fuel.spawn_point)
+	player.global_position=fuel.to_global(fuel.project_floor(Vector2(0,.35)))
 	player.set_physics_process(false)
 	room._process(0.1)
 	fuel.set_process(false)
 	fuel.cashier_resists=false
-	player.global_position=fuel.to_global(Vector2(0,10))
 	var clerk=fuel.civilians[0]
 	exterior_camera.global_position=fuel.global_position
 	for i in 3: await process_frame

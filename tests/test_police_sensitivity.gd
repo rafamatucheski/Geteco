@@ -24,6 +24,14 @@ class Officer extends "res://police/PoliceOfficer.gd":
 	func _play_audio(_s: AudioStream, _v: float = -6.0, _p: float = 1.0) -> void: pass
 	func _dispatch_emergency_coroner() -> void: pass
 
+class FootPatrolProbe extends "res://world/harbor/HarborFootPatrol.gd":
+	var shots := 0
+	func _ready() -> void:
+		super._ready()
+		set_physics_process(false)
+	func _fire_single_bullet(_point: Vector2, _damage: int, _speed: float, _spread: float) -> void: shots += 1
+	func _play_audio(_stream: AudioStream, _volume: float = -6.0, _pitch: float = 1.0) -> void: pass
+
 class DispatchProbe extends "res://police/WantedManager.gd":
 	var dispatches := 0
 	func _dispatch_police(): dispatches += 1
@@ -117,6 +125,21 @@ func run() -> void:
 	wanted.report_crime(6)
 	check(patrol.alerted, "Nearby foot patrol responds to repeated incidents in sight")
 	patrol.free()
+	wanted.reset_crime()
+	actor.position = Vector2(600, 0)
+	var street_patrol := FootPatrolProbe.new()
+	root.add_child(street_patrol)
+	street_patrol.set_physics_process(false)
+	await physics_frame
+	wanted.ensure_minimum_wanted_level(2)
+	check(not street_patrol.alerted, "Street patrol does not detect a wanted suspect outside sight range")
+	actor.position = Vector2(400, 0)
+	street_patrol._physics_process(0.26)
+	check(street_patrol.alerted and street_patrol.target == actor, "Street patrol joins an existing pursuit when the wanted suspect enters sight")
+	actor.position = Vector2(180, 0)
+	street_patrol._physics_process(0.7)
+	check(street_patrol.shots > 0, "Street patrol uses armed response against a visible two-star suspect")
+	street_patrol.free()
 	actor.free()
 	for scene_path in ["res://characters/PlayerCar.gd", "res://cars/traffic/TrafficVehicle.tscn", "res://emergency/EmergencyVehicle.tscn"]:
 		for player_caused in [false, true]:
@@ -138,6 +161,7 @@ func run() -> void:
 			victim.add_to_group("damageable")
 			root.add_child(victim)
 			victim.position = car.position + Vector2(40, 0)
+			victim.health = 50 # Preserve homicide-attribution coverage after the vehicle-blast damage reduction.
 			car.take_damage(1000, player_caused)
 			car._explode()
 			check(victim.is_dead and wanted.crime_points == (20 if player_caused else 0), "Vehicle explosion preserves attribution: %s player=%s" % [scene_path, player_caused])

@@ -21,7 +21,12 @@ extends Node3D
 # Referência ao nó do teto para cutaway imediato
 var cutaway_roof: Node3D = null
 
+static var _shared_box_mesh: BoxMesh
+static var _shared_cylinder_mesh: CylinderMesh
+
 var _materials: Dictionary = {}
+var _box_batches: Dictionary = {}
+var _cylinder_batches: Dictionary = {}
 var _is_built: bool = false
 
 func _init(p_main_color: Color = Color("#4a564e")) -> void:
@@ -52,33 +57,64 @@ func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.
 		m.emission_enabled = true
 		m.emission = color
 		m.emission_energy_multiplier = glow
+	m.resource_name = id
 	_materials[id] = m
 	return m
 
-func _add_box_to(p: Node3D, pos: Vector3, size: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	mi.mesh = bm
-	mi.position = pos
-	mi.rotation_degrees = rot_deg
-	mi.material_override = mat
-	p.add_child(mi)
-	return mi
+static func _unit_box() -> BoxMesh:
+	if _shared_box_mesh == null:
+		_shared_box_mesh = BoxMesh.new()
+		_shared_box_mesh.size = Vector3.ONE
+		_shared_box_mesh.resource_name = "CargoPlaneSharedUnitBox"
+	return _shared_box_mesh
 
-func _add_cyl_to(p: Node3D, pos: Vector3, radius: float, height: float, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var cm := CylinderMesh.new()
-	cm.top_radius = radius
-	cm.bottom_radius = radius
-	cm.height = height
-	cm.radial_segments = 16
-	mi.mesh = cm
-	mi.position = pos
-	mi.rotation_degrees = rot_deg
-	mi.material_override = mat
-	p.add_child(mi)
-	return mi
+static func _unit_cylinder() -> CylinderMesh:
+	if _shared_cylinder_mesh == null:
+		_shared_cylinder_mesh = CylinderMesh.new()
+		_shared_cylinder_mesh.top_radius = 0.5
+		_shared_cylinder_mesh.bottom_radius = 0.5
+		_shared_cylinder_mesh.height = 1.0
+		_shared_cylinder_mesh.radial_segments = 16
+		_shared_cylinder_mesh.resource_name = "CargoPlaneSharedUnitCylinder"
+	return _shared_cylinder_mesh
+
+func _queue_instance(batches: Dictionary, p: Node3D, mat: Material, transform: Transform3D) -> void:
+	if not batches.has(p):
+		batches[p] = {}
+	var material_batches: Dictionary = batches[p]
+	if not material_batches.has(mat):
+		material_batches[mat] = []
+	var transforms: Array = material_batches[mat]
+	transforms.append(transform)
+
+func _add_box_to(p: Node3D, pos: Vector3, size: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> void:
+	var basis := Basis.from_euler(rot_deg * PI / 180.0) * Basis.from_scale(size)
+	_queue_instance(_box_batches, p, mat, Transform3D(basis, pos))
+
+func _add_cyl_to(p: Node3D, pos: Vector3, radius: float, height: float, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> void:
+	var size := Vector3(radius * 2.0, height, radius * 2.0)
+	var basis := Basis.from_euler(rot_deg * PI / 180.0) * Basis.from_scale(size)
+	_queue_instance(_cylinder_batches, p, mat, Transform3D(basis, pos))
+
+func _flush_batches(batches: Dictionary, mesh: Mesh, prefix: String) -> void:
+	for parent_key in batches:
+		var batch_parent := parent_key as Node3D
+		var material_batches: Dictionary = batches[parent_key]
+		for material_key in material_batches:
+			var material := material_key as Material
+			var transforms: Array = material_batches[material_key]
+			var multimesh := MultiMesh.new()
+			multimesh.transform_format = MultiMesh.TRANSFORM_3D
+			multimesh.mesh = mesh
+			multimesh.instance_count = transforms.size()
+			for index in range(transforms.size()):
+				multimesh.set_instance_transform(index, transforms[index])
+			var batch := MultiMeshInstance3D.new()
+			batch.name = "%s_%s" % [prefix, material.resource_name]
+			batch.multimesh = multimesh
+			batch.material_override = material
+			batch_parent.add_child(batch)
+	batches.clear()
 
 func _build_model() -> void:
 	_is_built = true
@@ -156,15 +192,18 @@ func _build_model() -> void:
 		_add_box_to(self, Vector3(1.30, 0.52, sz), Vector3(0.35, 0.04, 0.85), seat_canvas)
 
 	# Carga amarrada no meio da baía (Caixas militares e paletes com suprimentos)
-	_add_box_to(self, Vector3(-0.45, 0.65, -3.2), Vector3(1.10, 0.90, 1.40), crate_wood)
-	_add_box_to(self, Vector3(0.55, 0.58, -3.2), Vector3(0.95, 0.75, 1.20), crate_metal)
-	_add_box_to(self, Vector3(0.10, 1.22, -3.2), Vector3(0.80, 0.40, 0.90), crate_wood)
+	# MountainCargoPlane used to mutate these boxes after construction to keep
+	# the walkable aisle open. MultiMesh instances are immutable individually,
+	# so store the same final gameplay transform directly in the batched model.
+	_add_box_to(self, Vector3(-0.95, 0.65, -3.2), Vector3(0.55, 0.90, 1.40), crate_wood)
+	_add_box_to(self, Vector3(-0.95, 0.58, -3.2), Vector3(0.55, 0.75, 1.20), crate_metal)
+	_add_box_to(self, Vector3(-0.95, 1.22, -3.2), Vector3(0.55, 0.40, 0.90), crate_wood)
 	# Tiras de amarração de carga
 	_add_box_to(self, Vector3(0.05, 0.75, -3.2), Vector3(2.10, 0.03, 0.03), yellow_hazard)
 
 	# Outro lote de carga perto da rampa
-	_add_box_to(self, Vector3(0.50, 0.55, 2.5), Vector3(0.85, 0.70, 1.10), crate_wood)
-	_add_box_to(self, Vector3(-0.55, 0.45, 2.8), Vector3(0.75, 0.52, 0.90), crate_metal)
+	_add_box_to(self, Vector3(-0.95, 0.55, 2.5), Vector3(0.55, 0.70, 1.10), crate_wood)
+	_add_box_to(self, Vector3(-0.95, 0.45, 2.8), Vector3(0.55, 0.52, 0.90), crate_metal)
 
 	# ==============================================================================
 	# 4. CABINE DE COMANDO FRONTAL (COCKPIT) — Z = -9.0 a -15.0m
@@ -218,7 +257,7 @@ func _build_model() -> void:
 	# 6. ASAS MONUMENTAIS E MOTORES TURBOPROP (ENVERGADURA DE 28 METROS)
 	# ==============================================================================
 	# Caixa central da asa sobre a fuselagem (Z = -3.5m, Y = 2.95m)
-	_add_box_to(self, Vector3(0.0, 2.95, -3.5), Vector3(3.40, 0.55, 3.20), fuse_mat)
+	_add_box_to(cutaway_roof, Vector3(0.0, 2.95, -3.5), Vector3(3.40, 0.55, 3.20), fuse_mat)
 
 	# ASA DIREITA (+X = 1.7 a 14.0m) — Angulada levemente para cima
 	_add_box_to(self, Vector3(7.8, 3.30, -3.5), Vector3(12.2, 0.38, 2.80), fuse_mat, Vector3(0, 0, 3.5))
@@ -269,12 +308,15 @@ func _build_model() -> void:
 	# 7. EMPENAGEM TRASEIRA MONUMENTAL (LEME VERTICAL E ESTABILIZADOR HORIZONTAL)
 	# ==============================================================================
 	# Cauda afilada subindo (Z = 6.0 a 10.5m)
-	_add_box_to(self, Vector3(0.0, 2.20, 8.2), Vector3(2.40, 1.80, 4.4), fuse_mat, Vector3(-12.0, 0, 0))
+	_add_box_to(cutaway_roof, Vector3(0.0, 2.20, 8.2), Vector3(2.40, 1.80, 4.4), fuse_mat, Vector3(-12.0, 0, 0))
 
 	# Estabilizador Vertical (Leme colossal de 5.2m de altura)
-	_add_box_to(self, Vector3(0.0, 5.0, 8.4), Vector3(0.32, 4.20, 3.4), fuse_mat, Vector3(-16.0, 0, 0))
-	_add_box_to(self, Vector3(0.0, 7.2, 8.2), Vector3(0.34, 0.12, 3.2), snow_mat, Vector3(-16.0, 0, 0))
+	_add_box_to(cutaway_roof, Vector3(0.0, 5.0, 8.4), Vector3(0.32, 4.20, 3.4), fuse_mat, Vector3(-16.0, 0, 0))
+	_add_box_to(cutaway_roof, Vector3(0.0, 7.2, 8.2), Vector3(0.34, 0.12, 3.2), snow_mat, Vector3(-16.0, 0, 0))
 
 	# Estabilizadores Horizontais (Em T no alto da cauda)
-	_add_box_to(self, Vector3(0.0, 6.8, 8.4), Vector3(9.2, 0.28, 2.2), fuse_mat)
-	_add_box_to(self, Vector3(0.0, 7.0, 8.4), Vector3(9.0, 0.12, 2.0), snow_mat)
+	_add_box_to(cutaway_roof, Vector3(0.0, 6.8, 8.4), Vector3(9.2, 0.28, 2.2), fuse_mat)
+	_add_box_to(cutaway_roof, Vector3(0.0, 7.0, 8.4), Vector3(9.0, 0.12, 2.0), snow_mat)
+
+	_flush_batches(_box_batches, _unit_box(), "CargoBoxes")
+	_flush_batches(_cylinder_batches, _unit_cylinder(), "CargoCylinders")

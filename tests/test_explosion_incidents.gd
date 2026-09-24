@@ -21,6 +21,18 @@ func check(ok: bool, message: String) -> void:
 func frames(count: int) -> void:
 	for i in count: await physics_frame
 
+func wait_for_fire_pool() -> bool:
+	var pool: Node = root.get_node_or_null("EmergencyPool")
+	if pool == null: return false
+	for _i in 120:
+		var ready: bool = pool._pool.fire.size() == 2
+		for unit in pool._pool.fire:
+			if not is_instance_valid(unit) or not unit.is_node_ready():
+				ready = false
+		if ready: return true
+		await process_frame
+	return false
+
 func person_at(point: Vector2) -> Node2D:
 	var person = load("res://characters/AnimatedPedestrian3D.gd").new()
 	world.add_child(person)
@@ -46,14 +58,17 @@ func _run() -> void:
 		camera.make_current()
 	var director := EmergencyDepotDirector.new()
 	world.add_child(director)
-	for service in ["fire", "coroner"]:
+	for service in ["fire"]:
 		var depot := EmergencyDepotMarker.new()
 		depot.service_key = service
 		depot.depot_id = "test_" + service
 		depot.position = Vector2(-800, -800)
 		director.add_child(depot)
 		director.register_depot(depot)
-	await frames(3)
+	check(await wait_for_fire_pool(), "Emergency fire pool is ready before dispatch")
+	if failures > 0:
+		print("EXPLOSION_INCIDENTS failures=%d" % failures)
+		quit(1)
 	var cars: Array[Node2D] = []
 	var first: Node
 	for i in 7:
@@ -62,6 +77,8 @@ func _run() -> void:
 		car.configure_as_parked()
 		car.position = Vector2(1000 + i * 60, 1000)
 		car.is_broken = true
+		car.is_exploding = true
+		car.set_meta("fire_residual_burning", true)
 		cars.append(car)
 		var unit := director.request_dispatch("fire", car, false)
 		if unit: unit.set_physics_process(false)
@@ -94,6 +111,7 @@ func _run() -> void:
 	source.configure_as_parked()
 	source.position = Vector2(280, 320)
 	var near_person = person_at(source.position + Vector2(80, 0))
+	near_person.health = 40 # Keeps the fatal-remains coverage while vehicle blast damage is reduced.
 	var far_person = person_at(source.position + Vector2(205, 70))
 	var protected_person = person_at(source.position + Vector2(0, -95))
 	var wall := StaticBody2D.new()
@@ -111,8 +129,11 @@ func _run() -> void:
 	await frames(3)
 	var near_health: int = nearby_car.health
 	source._explode()
+	var remains_ready: Node = near_person.get_meta("explosion_remains", null)
+	while is_instance_valid(remains_ready) and remains_ready._build_index < remains_ready._build_plans.size(): await process_frame
 	check(near_person.is_dead and near_person.has_meta("explosion_remains"), "Near blast death creates remains")
 	check(not far_person.is_dead and far_person.health < far_person.max_health, "Outer blast damages but does not automatically kill")
+	check(far_person.health >= far_person.max_health - 20, "Vehicle blast substantially reduces injury at the outer radius")
 	check(protected_person.health == protected_person.max_health, "Wall protects people from blast damage")
 	check(nearby_car.health < near_health, "Blast damages nearby cars even outside damageable group")
 	check(far_person.has_node("BlastImpulse"), "Survivor receives collision-resolved knockback")
@@ -126,19 +147,7 @@ func _run() -> void:
 	await screenshot("02-remains")
 	for piece in remains.pieces:
 		check(piece.height == 0 and piece.velocity == Vector2.ZERO, "Fragments land and stop")
-	var hearse: Node = director.request_dispatch("coroner", remains)
-	check(hearse != null, "One IML vehicle responds to all four pieces")
-	if hearse:
-		hearse.set_physics_process(false)
-		hearse.position = remains.position + Vector2(110, -60)
-		hearse.rotation = 0
-		hearse._deploy_morticians()
-		var original_count: int = remains.pieces.size()
-		for i in 1100:
-			await physics_frame
-			if i == 120: await screenshot("03-iml")
-			if not is_instance_valid(remains): break
-		check(not is_instance_valid(remains), "Actual IML crew approaches and collects all four parts")
-		print("IML_PARTS original=%d collected=%s" % [original_count, not is_instance_valid(remains)])
+	check(director.request_dispatch("coroner", remains) == null, "Fatal bodies do not dispatch an IML vehicle")
+	check(get_nodes_in_group("emergency_vehicle").filter(func(unit): return is_instance_valid(unit) and int(unit.get("type")) == 3).is_empty(), "No IML fleet is instantiated")
 	print("EXPLOSION_INCIDENTS failures=%d" % failures)
 	quit(0 if failures == 0 else 1)

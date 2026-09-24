@@ -13,7 +13,9 @@ func run():
  var room=manager.ammunation_interior
  var actor=world.get_node("Player")
  var door=world.get_node("District/NorthFrontage2/AmmunationEntrance")
- manager._on_exterior_destination_requested(door,actor,door.destination_id,null,&"",room,room.spawn_point)
+ assert(room.inline_mode and room.global_position.distance_to(world.get_node("District/NorthFrontage2/AmmunationBranchFacade").global_position)<1)
+ actor.global_position=room.spawn_point.global_position
+ for i in 5: await process_frame
  assert(room.get_camera_rect().has_point(actor.global_position))
  actor.visible=true
  actor.set_physics_process(false)
@@ -40,7 +42,9 @@ func run():
   if layer!=room.catalog: layer.hide()
  for i in 5: await process_frame
  await RenderingServer.frame_post_draw
- root.get_texture().get_image().save_png("D:/geteco/ammunation-catalog.png")
+ var artifact_dir=OS.get_temp_dir().path_join("geteco-ammunation-cutaway-0922")
+ DirAccess.make_dir_recursive_absolute(artifact_dir)
+ if DisplayServer.get_name()!="headless": root.get_texture().get_image().save_png(artifact_dir.path_join("city-catalog.png"))
  room.close_catalog()
  assert(not actor.is_in_dialogue)
  var camera=Camera2D.new()
@@ -51,10 +55,11 @@ func run():
  for layer in world.find_children("","CanvasLayer",true,false): layer.hide()
  for i in 5: await process_frame
  await RenderingServer.frame_post_draw
- root.get_texture().get_image().save_png("D:/geteco/ammunation-interior.png")
- manager._on_exit_door_requested(room.exit_door,actor,&"",null,&"",door.destination_id)
- assert(actor.global_position.distance_to(door.get_node("OutsideReturn").global_position)<1)
- print("AMMUNATION PASS entry preview purchase duplicate funds close exit")
+ if DisplayServer.get_name()!="headless": root.get_texture().get_image().save_png(artifact_dir.path_join("city-interior.png"))
+ actor.global_position=door.to_global(Vector2(0,85))
+ for i in 5: await process_frame
+ assert(not room.contains_point(actor.global_position) and room.exit_door==null)
+ print("AMMUNATION PASS inline entry preview purchase duplicate funds close exit")
  world.queue_free()
  await process_frame
  quit()

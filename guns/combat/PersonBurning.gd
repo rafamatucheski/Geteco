@@ -103,7 +103,6 @@ func _physics_process(delta: float) -> void:
 		if actor.get("is_dead") == true: continue
 		if attacker != null: actor.set_meta("combat_attacker", attacker.get_ref())
 		actor.take_damage(TICK_DAMAGE, from_player)
-		if actor.has_method("panic"): actor.panic()
 	if remaining <= 0:
 		if flames: flames.emitting = false
 		if smoke: smoke.emitting = false

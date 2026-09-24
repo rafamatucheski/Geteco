@@ -2,13 +2,15 @@ extends RefCounted
 
 ## Resposta de motor compartilhada pelos dois controladores de veículo.
 ##
-## O motor não é um loop único puxado no pitch: cada família tem TRÊS camadas
-## sintetizadas em rotações nominais diferentes (marcha lenta, meio, alto giro)
+## O banco offline usa sete faixas de giro por família de combustão.
+## Duas faixas adjacentes são misturadas em potência constante; os geradores
+## legados abaixo permanecem como fallback e para o motor elétrico.
+## As camadas têm rotações nominais diferentes (marcha lenta, meio, alto giro)
 ## e o controlador faz o crossfade entre elas conforme o giro. Esticar uma
 ## amostra só de 0.5x a 2.4x é exatamente o que dava o som "computadorizado":
 ## um motor real não muda apenas de altura quando sobe de giro, ele muda de
 ## timbre — a batida vira zumbido, o escape ganha aspereza. Com três camadas
-## nenhuma delas é esticada mais que ~1.9x, que é a faixa em que reamostragem
+## a transposição fica limitada à vizinhança das faixas, em que reamostragem
 ## ainda soa como o instrumento original.
 ##
 ## Cada camada é construída como um MOTOR, não como uma soma de senóides:
@@ -18,6 +20,7 @@ extends RefCounted
 ## admissão e assobio de turbina/câmbio. É a cadeia física do som real.
 
 const RATE := 22050
+const ACOUSTIC_BANK := preload("res://audio/acoustic/AcousticBank.gd")
 ## The procedural layers below contain RATE frames (one second).
 const LOOP_SECONDS := 1.0
 ## Amostras de guarda depois do fim do laço. O resampler do AudioStreamWAV
@@ -27,9 +30,20 @@ const GUARD := 8
 
 static var _streams: Dictionary = {}
 static var _layer_sets: Dictionary = {}
+static var _authored_streams: Dictionary = {}
+static var _fallback_layer_sets: Dictionary = {}
+static var _family_job_ids: Dictionary = {}
+static var _family_job_results: Dictionary = {}
 static var _road_stream: AudioStreamWAV = null
+static var _road_fallback_stream: AudioStreamWAV = null
+static var _road_job_id := -1
+static var _road_job_result: AudioStreamWAV = null
+static var _preparation_mutex := Mutex.new()
 static var _turbo_shift_streams: Array = []
+static var _sport_blowoff_streams: Array = []
 static var _air_brake_stream: AudioStream = null
+
+const _FALLBACK_FRAMES := 2048
 
 var rpm := 0.0
 var load_amount := 0.0
@@ -55,9 +69,13 @@ var _air_player: AudioStreamPlayer2D = null
 var _previous_throttle := 0.0
 var _was_moving_fast := false
 var _shift_variation := 0
+var _turbo_pressure := 0.0
+var _turbo_release_cooldown := 0.0
+var turbo_release_count := 0
 var _assigned_stream: AudioStream = null
 var _limiter_phase := 0.0
 var _idle_phase := 0.0
+var _blend_weights := PackedFloat32Array()
 
 const _VEHICLE_AUDIO_DIR := "res://audio/vehicle"
 const _AUDIO_DIR := "res://audio"
@@ -75,19 +93,23 @@ const _GEARBOX := {
 	"bike_sport": [0.22, 0.37, 0.53, 0.69, 0.85, 1.0],
 	"bike_cruiser": [0.25, 0.43, 0.63, 0.82, 1.0],
 	"bike_urban": [0.22, 0.40, 0.61, 0.81, 1.0],
-	"vq35": [0.24, 0.40, 0.57, 0.73, 0.87, 1.0],
-	"m8_v8": [0.13, 0.25, 0.38, 0.52, 0.65, 0.77, 0.88, 1.0],
-	"rosso_v12": [0.12,0.23,0.36,0.51,0.68,0.84,1.0],
-	"street": [0.19, 0.34, 0.51, 0.71, 1.0],
-	"sport": [0.15, 0.27, 0.41, 0.57, 0.77, 1.0],
-	"muscle": [0.24, 0.45, 0.71, 1.0],
-	"suv": [0.17, 0.31, 0.47, 0.65, 0.84, 1.0],
-	"diesel": [0.16, 0.29, 0.44, 0.62, 0.82, 1.0],
-	"truck": [0.11, 0.20, 0.31, 0.43, 0.57, 0.73, 0.90, 1.0],
-	"bus": [0.14, 0.26, 0.40, 0.56, 0.76, 1.0],
-	"fire_diesel": [0.12, 0.23, 0.36, 0.50, 0.66, 0.83, 1.0],
-	"ambulance": [0.18, 0.33, 0.51, 0.72, 1.0],
-	"police": [0.16, 0.29, 0.45, 0.63, 0.83, 1.0],
+	"vq35": [0.24, 0.40, 0.57, 0.73, 0.87, 0.935, 1.0],
+	"m8_v8": [0.13, 0.25, 0.38, 0.52, 0.65, 0.77, 0.88, 0.94, 1.0],
+	"rosso_v12": [0.12,0.23,0.36,0.51,0.68,0.84,0.92,1.0],
+	"street": [0.19, 0.34, 0.51, 0.71, 0.855, 1.0],
+	# Uma relação adicional no trecho final, mantendo os pontos das trocas iniciais.
+	"sport": [0.20, 0.37, 0.56, 0.77, 0.885, 1.0],
+	"muscle": [0.24, 0.45, 0.71, 0.855, 1.0],
+	"suv": [0.17, 0.31, 0.47, 0.65, 0.84, 0.92, 1.0],
+	"diesel": [0.16, 0.29, 0.44, 0.62, 0.82, 0.91, 1.0],
+	# A caixa pesada continua escalonada, mas sem a antiga sucessão de oito
+	# trocas que soava infinita no percurso curto da cidade.
+	"truck": [0.15, 0.29, 0.46, 0.64, 0.83, 0.915, 1.0],
+	"electric": [1.0],
+	"bus": [0.14, 0.26, 0.40, 0.56, 0.76, 0.88, 1.0],
+	"fire_diesel": [0.12, 0.23, 0.36, 0.50, 0.66, 0.83, 0.915, 1.0],
+	"ambulance": [0.18, 0.33, 0.51, 0.72, 0.86, 1.0],
+	"police": [0.16, 0.29, 0.45, 0.63, 0.83, 0.915, 1.0],
 }
 ## Folga abaixo do ponto de troca antes de reduzir: evita subir e descer marcha
 ## em loop quando a velocidade fica cruzando o limiar.
@@ -202,6 +224,15 @@ const _PROFILES := {
 		"whine": [30.0, 0.03], "drive": [1.2, 1.6, 2.1],
 		"pattern_amp": [1.0, 0.88, 1.06, 0.91],
 	},
+	"electric": {
+		# Motor de tração/inversor: sem combustão, marcha lenta ou escapamento.
+		# `cycles` são apenas três rotações nominais para o crossfade do
+		# zumbido; a síntese dedicada abaixo não usa pulsos de cilindro.
+		"cyl": 1, "cycles": [8, 30, 72], "idle": 0.0, "redline": 72.0,
+		"decay": [1.0, 1.0, 1.0], "sub": 0.0,
+		"res": [], "knock": [0.0, 0.0], "intake": [0.0, 1000.0, 1.0],
+		"whine": [0.0, 0.0], "drive": [1.0, 1.0, 1.0],
+	},
 	"truck": {
 		"cyl": 6, "cycles": [4, 9, 17], "idle": 3.6, "redline": 19.0,
 		"decay": [5.0, 5.0, 3.6], "sub": 0.44,
@@ -259,6 +290,7 @@ const _SHIFT := {
 	"m8_v8": [0.15, 0.30],
 	"street": [0.16, 0.30], "sport": [0.13, 0.28], "muscle": [0.20, 0.32],
 	"suv": [0.20, 0.32], "diesel": [0.24, 0.36], "truck": [0.30, 0.40],
+	"electric": [0.0, 1.0],
 	"bus": [0.34, 0.42], "fire_diesel": [0.30, 0.40], "ambulance": [0.22, 0.34],
 	"police": [0.14, 0.28],
 }
@@ -289,14 +321,12 @@ func _shift_spec() -> Array:
 		return _SHIFT.street
 	return _SHIFT.get(_family, _SHIFT.street)
 
-## Curva de tração. A largada é idêntica à anterior (0-25% da velocidade de rua
-## no mesmo tempo) mas o topo cai muito mais: o antigo `lerp(1, 0.45)` ainda
-## entregava 45% da força na velocidade máxima e o carro percorria a escada de
-## marchas inteira em 1.8 s. Com queda quadrática o último terço leva o dobro do
-## tempo, que é o "chega no final muito rápido" do relato.
+## Curva de tração com subida progressiva e menor força perto da máxima.
+## Afeta a aceleração real compartilhada pelos controladores, não apenas pitch.
 func drive_force(speed: float, top_speed: float) -> float:
 	var ratio := clampf(speed / maxf(road_top_speed(top_speed), 1.0), 0.0, 1.0)
-	var pull := 0.35 * (1.0 - ratio * ratio) * (1.0 - 0.45 * ratio) + 0.012
+	# Sustained pull: lower gears remain readable and the last third is longer.
+	var pull := 0.26 * (1.0 - ratio * ratio) * (1.0 - 0.55 * ratio) + 0.010
 	if shift_remaining > 0.0:
 		pull *= float(_shift_spec()[1])
 	return pull
@@ -322,6 +352,11 @@ static func family_for_vehicle(vehicle_id: String) -> String:
 	if vehicle_id == "maciota_350z": return "vq35"
 	if vehicle_id == "porto_rosso": return "rosso_v12"
 	var spec := VehicleCatalog.get_vehicle_spec(vehicle_id)
+	# A ficha é a fonte autoral do timbre. A heurística abaixo existe apenas
+	# para veículos legados que ainda não declaram uma família reconhecida.
+	var declared_family := _normalize_family(String(spec.get("engine_family", "")))
+	if not String(spec.get("engine_family", "")).is_empty() and _PROFILES.has(declared_family) and _GEARBOX.has(declared_family):
+		return declared_family
 	if spec.get("vehicle_kind", "car") == "motorcycle":
 		return String(spec.get("engine_family", "bike_urban"))
 	var roof := String(spec.get("roof_prop", ""))
@@ -359,18 +394,105 @@ static func _candidate_stream_paths(vehicle_id: String, family: String) -> Array
 	return candidates
 
 static func _load_stream_from_candidates(vehicle_id: String, family: String) -> AudioStream:
+	var lookup_key := _cache_key(vehicle_id, family)
+	if _authored_streams.has(lookup_key):
+		return _authored_streams[lookup_key]
 	for path in _candidate_stream_paths(vehicle_id, family):
 		if ResourceLoader.exists(path):
 			var stream := load(path)
 			if stream is AudioStream:
+				_authored_streams[lookup_key] = stream
 				return stream
+	_authored_streams[lookup_key] = null
 	return null
 
-## Conjunto de camadas (marcha lenta, meio, alto giro) de uma família. Se
-## existir gravação autoral para o veículo ela vence e o conjunto tem uma camada
-## só — o controlador cai no modo antigo de pitch único, porque uma gravação foi
-## feita em uma rotação e não dá para inventar as outras a partir dela.
-static func get_layer_streams(family: String, vehicle_id: String = "") -> Array:
+static func _build_fallback_stream(family: String, layer: int, road: bool) -> AudioStreamWAV:
+	var normalized_family := _normalize_family(family)
+	var profile := _profile(normalized_family)
+	var data := PackedByteArray()
+	data.resize((_FALLBACK_FRAMES + GUARD) * 2)
+	var nominal_cycles := 7.0 if road else float(profile.cycles[clampi(layer, 0, profile.cycles.size() - 1)])
+	var cycles := clampi(int(round(nominal_cycles * float(_FALLBACK_FRAMES) / float(RATE))), 1, 12)
+	var family_tint := float(posmod(hash(normalized_family), 17)) / 17.0
+	for i in _FALLBACK_FRAMES:
+		var phase := TAU * float(cycles * i) / float(_FALLBACK_FRAMES)
+		var sample: float
+		if road:
+			sample = sin(phase) * 0.18 + sin(phase * 7.0 + 0.4) * 0.10 + sin(phase * 19.0) * 0.05
+		else:
+			var sub := float(profile.sub)
+			sample = sin(phase) * (0.30 + sub * 0.35)
+			sample += sin(phase * 2.0 + family_tint + float(layer) * 0.17) * 0.18
+			sample += sin(phase * 3.0 + family_tint * 2.0) * (0.08 + float(profile.cyl) * 0.006)
+		data.encode_s16(i * 2, int(clampf(sample, -0.8, 0.8) * 32767.0))
+	for i in GUARD:
+		data.encode_s16((_FALLBACK_FRAMES + i) * 2, data.decode_s16(i * 2))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = RATE
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
+	stream.loop_end = _FALLBACK_FRAMES
+	stream.data = data
+	return stream
+
+## Loops baratos usados somente enquanto uma família inédita termina de ser
+## preparada fora da thread do frame. Mantêm desde o primeiro bind a mesma
+## quantidade de camadas do motor final. Os recursos são imutáveis e
+## compartilhados; pitch, volume, posição e playback pertencem a cada player.
+static func _fallback_layers(family: String) -> Array:
+	var normalized_family := _normalize_family(family)
+	if _fallback_layer_sets.has(normalized_family):
+		return _fallback_layer_sets[normalized_family]
+	var layers: Array = []
+	for layer in _profile(normalized_family).cycles.size():
+		layers.append(_build_fallback_stream(normalized_family, layer, false))
+	_fallback_layer_sets[normalized_family] = layers
+	return layers
+
+static func _fallback_road_stream() -> AudioStreamWAV:
+	if _road_fallback_stream == null:
+		_road_fallback_stream = _build_fallback_stream("street", 0, true)
+	return _road_fallback_stream
+
+static func _generate_family_layers(family: String) -> Array:
+	var built: Array = []
+	for layer in _profile(family).cycles.size():
+		built.append(_generate_layer(family, layer))
+	return built
+
+static func _run_family_job(family: String) -> void:
+	var built := _generate_family_layers(family)
+	_preparation_mutex.lock()
+	_family_job_results[family] = built
+	_preparation_mutex.unlock()
+
+static func _consume_family_job(family: String, wait := false) -> bool:
+	if not _family_job_ids.has(family):
+		return false
+	var task_id := int(_family_job_ids[family])
+	if not wait and not WorkerThreadPool.is_task_completed(task_id):
+		return false
+	WorkerThreadPool.wait_for_task_completion(task_id)
+	_preparation_mutex.lock()
+	var built: Array = _family_job_results.get(family, [])
+	_family_job_results.erase(family)
+	_preparation_mutex.unlock()
+	_family_job_ids.erase(family)
+	if built.is_empty():
+		return false
+	var shared_key := _cache_key("", family)
+	_layer_sets[shared_key] = built
+	_streams[shared_key] = built[0]
+	return true
+
+static func _request_family_job(family: String) -> void:
+	if _family_job_ids.has(family):
+		return
+	_family_job_ids[family] = WorkerThreadPool.add_task(
+		_run_family_job.bind(family), false, "Vehicle engine %s" % family)
+
+static func _get_layer_streams(family: String, vehicle_id: String, blocking: bool) -> Array:
 	var normalized_family := _normalize_family(family)
 	var key := _cache_key(vehicle_id, normalized_family)
 	if _layer_sets.has(key):
@@ -382,15 +504,33 @@ static func get_layer_streams(family: String, vehicle_id: String = "") -> Array:
 		_streams[key] = authored
 		return single
 	var shared_key := _cache_key("", normalized_family)
+	if ACOUSTIC_BANK.ENGINES.has(normalized_family):
+		var baked: Array = ACOUSTIC_BANK.ENGINES[normalized_family]
+		_layer_sets[shared_key] = baked
+		_streams[shared_key] = baked[0]
+		_layer_sets[key] = baked
+		_streams[key] = baked[0]
+		return baked
 	if not _layer_sets.has(shared_key):
-		var built: Array = []
-		for layer in _profile(normalized_family).cycles.size():
-			built.append(_generate_layer(normalized_family, layer))
-		_layer_sets[shared_key] = built
-		_streams[shared_key] = built[0]
+		_consume_family_job(normalized_family, blocking)
+	if not _layer_sets.has(shared_key):
+		if blocking:
+			var built := _generate_family_layers(normalized_family)
+			_layer_sets[shared_key] = built
+			_streams[shared_key] = built[0]
+		else:
+			_request_family_job(normalized_family)
+			return _fallback_layers(normalized_family)
 	_layer_sets[key] = _layer_sets[shared_key]
 	_streams[key] = _streams[shared_key]
 	return _layer_sets[key]
+
+## Conjunto de camadas (marcha lenta, meio, alto giro) de uma família. Se
+## existir gravação autoral para o veículo ela vence e o conjunto tem uma camada
+## só — o controlador cai no modo antigo de pitch único, porque uma gravação foi
+## feita em uma rotação e não dá para inventar as outras a partir dela.
+static func get_layer_streams(family: String, vehicle_id: String = "") -> Array:
+	return _get_layer_streams(family, vehicle_id, true)
 
 static func get_stream(family: String, vehicle_id: String = "") -> AudioStream:
 	return get_layer_streams(family, vehicle_id)[0]
@@ -398,9 +538,10 @@ static func get_stream(family: String, vehicle_id: String = "") -> AudioStream:
 ## Constrói as camadas antes de o carro sair andando. Sem isso a síntese das
 ## três camadas cai no primeiro quadro de direção e vira engasgo.
 static func prewarm(vehicle_id: String) -> void:
-	get_layer_streams(family_for_vehicle(vehicle_id), vehicle_id)
+	_get_layer_streams(family_for_vehicle(vehicle_id), vehicle_id, true)
 	get_road_stream()
 	get_turbo_shift_stream(0)
+	get_sport_blowoff_stream(0)
 	get_air_brake_stream()
 
 static func prepare_catalog(tree: SceneTree) -> void:
@@ -480,6 +621,8 @@ static func _highpass(buf: PackedFloat32Array, freq: float) -> void:
 				buf[i] = y
 
 static func _generate_layer(family: String, layer: int) -> AudioStreamWAV:
+	if family == "electric":
+		return _generate_electric_layer(layer)
 	var profile := _profile(family)
 	var cyl := int(profile.cyl)
 	var cycles := int(profile.cycles[layer])
@@ -596,9 +739,7 @@ static func _generate_layer(family: String, layer: int) -> AudioStreamWAV:
 ## num carro real a quinta marcha a 4000 rpm não soa como a primeira a 4000 rpm
 ## por causa deste ruído, não porque o motor mudou de altura. Sem ele, marchas
 ## fisicamente corretas soam todas iguais.
-static func get_road_stream() -> AudioStreamWAV:
-	if _road_stream != null:
-		return _road_stream
+static func _generate_road_stream() -> AudioStreamWAV:
 	var roar := _circular_noise(RATE, 240.0, 1.1, 20260909)
 	var hiss := _circular_noise(RATE, 1500.0, 0.8, 31415926)
 	var body := _circular_noise(RATE, 78.0, 2.2, 27182818)
@@ -623,8 +764,82 @@ static func get_road_stream() -> AudioStreamWAV:
 	stream.loop_begin = 0
 	stream.loop_end = RATE
 	stream.data = data
-	_road_stream = stream
 	return stream
+
+## Zumbido discreto de motor elétrico e PWM do inversor. Não há trem de
+## combustão, grave de escapamento nem marcha: em baixa velocidade o pneu e o
+## ambiente devem dominar, como numa empilhadeira elétrica real.
+static func _generate_electric_layer(layer: int) -> AudioStreamWAV:
+	var nominal: Array = _PROFILES.electric.cycles
+	var shaft_hz := float(nominal[clampi(layer, 0, nominal.size() - 1)])
+	var carrier_hz: float = [620.0, 980.0, 1480.0][clampi(layer, 0, 2)]
+	var data := PackedByteArray()
+	data.resize((RATE + GUARD) * 2)
+	for i in RATE:
+		var t := float(i) / float(RATE)
+		var rotation := sin(TAU * shaft_hz * t) * 0.24
+		var inverter := sin(TAU * carrier_hz * t + sin(TAU * shaft_hz * t) * 0.22) * 0.09
+		var bearing := sin(TAU * shaft_hz * 6.0 * t) * 0.025
+		var sample := (rotation + inverter + bearing) * 0.55
+		data.encode_s16(i * 2, int(clampf(sample, -0.35, 0.35) * 32767.0))
+	for i in GUARD:
+		data.encode_s16((RATE + i) * 2, data.decode_s16(i * 2))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = RATE
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_begin = 0
+	stream.loop_end = RATE
+	stream.data = data
+	return stream
+
+static func _run_road_job() -> void:
+	var built := _generate_road_stream()
+	_preparation_mutex.lock()
+	_road_job_result = built
+	_preparation_mutex.unlock()
+
+static func _consume_road_job(wait := false) -> bool:
+	if _road_job_id < 0:
+		return false
+	if not wait and not WorkerThreadPool.is_task_completed(_road_job_id):
+		return false
+	WorkerThreadPool.wait_for_task_completion(_road_job_id)
+	_preparation_mutex.lock()
+	var built := _road_job_result
+	_road_job_result = null
+	_preparation_mutex.unlock()
+	_road_job_id = -1
+	if built == null:
+		return false
+	_road_stream = built
+	return true
+
+static func _request_road_stream() -> AudioStreamWAV:
+	if _road_stream != null:
+		return _road_stream
+	_consume_road_job(false)
+	if _road_stream != null:
+		return _road_stream
+	if _road_job_id < 0:
+		_road_job_id = WorkerThreadPool.add_task(_run_road_job, false, "Vehicle road loop")
+	return _fallback_road_stream()
+
+static func get_road_stream() -> AudioStreamWAV:
+	if _road_stream != null:
+		return _road_stream
+	_consume_road_job(true)
+	if _road_stream == null:
+		_road_stream = _generate_road_stream()
+	return _road_stream
+
+## Observabilidade curta para testes e para encerrar tarefas concluídas mesmo
+## quando o veículo que iniciou o preparo já saiu da árvore.
+static func poll_preparation() -> int:
+	for family_value in _family_job_ids.keys():
+		_consume_family_job(String(family_value), false)
+	_consume_road_job(false)
+	return _family_job_ids.size() + (1 if _road_job_id >= 0 else 0)
 
 ## Assobio característico de alívio da turbina em caminhões e ônibus ("tipiuuuuuu" /
 ## "pente na turbina"). Três variações acústicas orgânicas (ataque estridente,
@@ -708,6 +923,59 @@ static func get_turbo_shift_stream(variation: int = 0) -> AudioStream:
 	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
 	stream.data = data
 	_turbo_shift_streams[idx] = stream
+	return stream
+
+## Espirro curto de válvula de alívio seguido de compressor surge (flutter).
+## É um evento de esportivo turbo, separado do assobio longo dos pesados para
+## que trocar a personalidade de um não contamine a frota inteira.
+static func get_sport_blowoff_stream(variation: int = 0) -> AudioStream:
+	var idx := posmod(variation, 3)
+	while _sport_blowoff_streams.size() < 3:
+		_sport_blowoff_streams.append(null)
+	if _sport_blowoff_streams[idx] != null:
+		return _sport_blowoff_streams[idx]
+	for path in [
+		"%s/sport_blowoff_%d.wav" % [_VEHICLE_AUDIO_DIR, idx],
+		"%s/sport_blowoff.wav" % _VEHICLE_AUDIO_DIR,
+		"%s/turbo_blowoff.wav" % _AUDIO_DIR
+	]:
+		if ResourceLoader.exists(path):
+			var authored := load(path)
+			if authored is AudioStream:
+				_sport_blowoff_streams[idx] = authored
+				return authored
+
+	var duration: float = [0.46, 0.52, 0.42][idx]
+	var frames := int(RATE * duration)
+	var samples := PackedFloat32Array()
+	samples.resize(frames)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 76031 + idx * 1301
+	var flutter_hz: float = [27.0, 31.0, 24.0][idx]
+	for i in frames:
+		var t := float(i) / float(RATE)
+		var attack := clampf(t / 0.008, 0.0, 1.0)
+		var sneeze := rng.randf_range(-1.0, 1.0) * attack * exp(-t * 22.0)
+		# Pulsos separados, cada vez mais lentos, formam o "stu-tu-tu" em vez
+		# de um apito contínuo. A portadora grave lembra ar/compressor, não buzina.
+		var slowing_phase := TAU * flutter_hz * (t - 0.72 * t * t / duration)
+		var gate := pow(maxf(0.0, sin(slowing_phase)), 2.6)
+		var flutter_env := clampf((t - 0.035) / 0.025, 0.0, 1.0) * exp(-t * 5.7)
+		var compressor := (rng.randf_range(-1.0, 1.0) * 0.72 + sin(TAU * 410.0 * t) * 0.28)
+		samples[i] = sneeze * 0.78 + compressor * gate * flutter_env
+	var peak := 0.0001
+	for sample in samples:
+		peak = maxf(peak, absf(sample))
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	for i in frames:
+		data.encode_s16(i * 2, int(clampf(samples[i] * 0.86 / peak, -0.999, 0.999) * 32767.0))
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = RATE
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = data
+	_sport_blowoff_streams[idx] = stream
 	return stream
 
 ## Alívio pneumático de freio a ar de veículos pesados ("TCHÚÚÚ-ssss").
@@ -823,6 +1091,19 @@ func _play_turbo_shift(audio: AudioStreamPlayer2D, load: float, current_rpm: flo
 		_shift_player.pitch_scale *= 0.75
 	_shift_player.play()
 
+func _play_sport_turbo_release(audio: AudioStreamPlayer2D, pressure: float, current_rpm: float) -> void:
+	if audio == null or not audio.is_inside_tree() or _turbo_release_cooldown > 0.0:
+		return
+	_shift_player = _ensure_sub_player(audio, _shift_player)
+	_shift_variation = (_shift_variation + 1) % 3
+	_shift_player.stream = get_sport_blowoff_stream(_shift_variation)
+	_shift_player.volume_db = clampf(-11.0 + pressure * 10.0 + current_rpm * 2.0, -13.0, -1.0)
+	_shift_player.pitch_scale = clampf(0.92 + pressure * 0.15 + current_rpm * 0.08, 0.90, 1.18)
+	_shift_player.play()
+	_turbo_release_cooldown = 0.18
+	_turbo_pressure *= 0.24
+	turbo_release_count += 1
+
 func _play_air_brake(audio: AudioStreamPlayer2D) -> void:
 	if audio == null or not audio.is_inside_tree():
 		return
@@ -843,7 +1124,7 @@ func bind(audio: AudioStreamPlayer2D, vehicle_id: String) -> void:
 	if audio == null:
 		return
 	var family := family_for_vehicle(vehicle_id)
-	var layers: Array = get_layer_streams(family, vehicle_id)
+	var layers: Array = _get_layer_streams(family, vehicle_id, false)
 	_family = family
 	_stream_cache_key = _cache_key(vehicle_id, family)
 	_assigned_stream = layers[0]
@@ -856,11 +1137,14 @@ func bind(audio: AudioStreamPlayer2D, vehicle_id: String) -> void:
 	load_amount = 0.0
 	_was_moving_fast = false
 	_previous_throttle = 0.0
+	_turbo_pressure = 0.0
+	_turbo_release_cooldown = 0.0
+	turbo_release_count = 0
 	if is_instance_valid(_shift_player) and _shift_player.playing:
 		_shift_player.stop()
 	if is_instance_valid(_air_player) and _air_player.playing:
 		_air_player.stop()
-	get_road_stream()
+	_request_road_stream()
 
 ## Os controladores param o motor pelo player deles; as camadas extras são
 ## irmãs e não sabem disso sozinhas.
@@ -881,7 +1165,7 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	var spec := VehicleCatalog.get_vehicle_spec(vehicle_id)
 	var family := family_for_vehicle(vehicle_id)
 	var key := _cache_key(vehicle_id, family)
-	var layers: Array = get_layer_streams(family, vehicle_id)
+	var layers: Array = _get_layer_streams(family, vehicle_id, false)
 	if key != _stream_cache_key:
 		_stream_cache_key = key
 		_family = family
@@ -891,10 +1175,18 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 		gear = 1
 		_was_moving_fast = false
 		_previous_throttle = 0.0
+		_turbo_pressure = 0.0
+		_turbo_release_cooldown = 0.0
+		turbo_release_count = 0
 		if is_instance_valid(_shift_player) and _shift_player.playing:
 			_shift_player.stop()
 		if is_instance_valid(_air_player) and _air_player.playing:
 			_air_player.stop()
+	elif layers[0] != _assigned_stream:
+		# O fallback não bloqueante terminou de ser substituído pelo conjunto
+		# final. Preserve giro/marcha e troque apenas os recursos imutáveis.
+		audio.stream = layers[0]
+		_assigned_stream = layers[0]
 	_sync_layer_players(audio, layers)
 	# Carros com gravação exclusiva (Monaliza) trocam o stream por fora. Nesse
 	# caso não há camadas para cruzar: modula só o player do dono.
@@ -907,9 +1199,18 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 
 	shift_remaining = maxf(0.0, shift_remaining - step)
 	shift_cooldown = maxf(0.0, shift_cooldown - step)
+	_turbo_release_cooldown = maxf(0.0, _turbo_release_cooldown - step)
+	var current_throttle := absf(throttle)
+	var has_sport_turbo := bool(spec.get("turbo_audio", false))
+	if has_sport_turbo:
+		var pressure_target := current_throttle * smoothstep(0.24, 0.82, rpm)
+		var pressure_response := 3.6 if pressure_target > _turbo_pressure else 7.0
+		_turbo_pressure = lerpf(_turbo_pressure, pressure_target, 1.0 - exp(-step * pressure_response))
+	else:
+		_turbo_pressure = 0.0
 	# The longer shift spacing must not leave the Z in third gear after a
 	# hard stop; disengage and select first before the next pull-away.
-	if _family == "vq35" and ratio < .006:
+	if ratio < .006:
 		gear = 1
 		shift_remaining = 0.0
 		shift_cooldown = 0.0
@@ -919,18 +1220,23 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	elif shift_cooldown <= 0.0 and gear > 1 and ratio < _gear_bottom(gear) - _DOWNSHIFT_MARGIN:
 		gear -= 1
 	var is_heavy: bool = _family in ["truck", "bus", "fire_diesel"]
+	var has_heavy_turbo_release: bool = _family in ["bus", "fire_diesel"]
 	if gear != previous_gear:
 		shift_remaining = float(_shift_spec()[0])
 		# A histerese de _DOWNSHIFT_MARGIN é o que impede chatter; o cooldown só
 		# precisa cobrir o corte de torque mais uma folga curta.
 		shift_cooldown = shift_remaining + (1.10 if _family == "vq35" else 0.16)
-		if gear > previous_gear and is_heavy and (load_amount > 0.20 or rpm > 0.30):
+		if gear > previous_gear and has_heavy_turbo_release and (load_amount > 0.20 or rpm > 0.30):
 			_play_turbo_shift(audio, load_amount, rpm)
+		elif gear > previous_gear and has_sport_turbo and _turbo_pressure > 0.16:
+			_play_sport_turbo_release(audio, _turbo_pressure, rpm)
 
-	if is_heavy and shift_remaining <= 0.0 and shift_cooldown <= 0.0:
+	if has_heavy_turbo_release and shift_remaining <= 0.0 and shift_cooldown <= 0.0:
 		if _previous_throttle > 0.65 and absf(throttle) < 0.15 and rpm > 0.42:
 			_play_turbo_shift(audio, 0.75, rpm)
 			shift_cooldown = 0.45
+	if has_sport_turbo and _previous_throttle > 0.58 and current_throttle < 0.16 and _turbo_pressure > 0.18:
+		_play_sport_turbo_release(audio, _turbo_pressure, rpm)
 
 	if is_heavy:
 		if speed > 20.0:
@@ -938,7 +1244,7 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 		elif _was_moving_fast and speed < 6.0 and absf(throttle) < 0.1:
 			_was_moving_fast = false
 			_play_air_brake(audio)
-	_previous_throttle = absf(throttle)
+	_previous_throttle = current_throttle
 
 	var blend := 1.0 - exp(-step * 9.0)
 	load_amount = lerpf(load_amount, clampf(absf(throttle), 0.0, 1.0), blend)
@@ -954,6 +1260,9 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	# do corte. Antes isso vinha de um termo somado por velocidade, que jogava o
 	# esportivo a 8800 rpm no fim da reta.
 	var top_fraction: float = lerpf(0.86, 1.0, float(gear - 1) / maxf(float(tops.size() - 1), 1.0))
+	# The added final relation is overdrive: cruise below the rev limiter.
+	if gear == tops.size() and not _family in ["electric", "bike_sport", "bike_cruiser", "bike_urban"]:
+		top_fraction = 0.87
 	var wheel_rpm := clampf(ratio / maxf(_gear_top(gear), 0.01) * top_fraction, 0.0, 1.0)
 	var target: float = maxf(idle_norm, wheel_rpm)
 	if ratio < 0.03:
@@ -991,8 +1300,11 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	engine_hz = cycles * float(profile.cyl)
 	engine_rpm = cycles * 120.0
 
-	var master := -23.0 + load_amount * 7.0 + rpm * 6.5 + ratio * 1.5
+	var master := -20.0 + load_amount * 7.0 + rpm * 6.5 + ratio * 1.5
+	# Subtle exhaust-pressure variation under load, including steady overdrive.
+	master += load_amount * smoothstep(0.25, 0.7, rpm) * (0.5 * sin(_idle_phase * 0.71) + 0.12 * sin(_idle_phase * 1.13))
 	if _family == "vq35": master -= 5.0
+	if _family == "electric": master -= 13.0
 	if shift_remaining > 0.0:
 		master -= 4.0
 
@@ -1010,25 +1322,27 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 	# Crossfade entre as camadas em espaço logarítmico de rotação. Fora da
 	# vizinhança da sua rotação nominal a camada some, então nenhuma amostra é
 	# esticada além de ~1.9x — a origem do som "computadorizado".
-	var nominal: Array = profile.cycles
+	var nominal: Array = ACOUSTIC_BANK.NOMINAL.get(_family, profile.cycles)
 	# Sem acelerador o motor fica mais surdo: puxar o timbre para baixo imita a
 	# perda de pressão no escapamento sem precisar de uma quarta camada.
 	var timbre := cycles / maxf(vehicle_tint, 0.3) * (0.80 + 0.20 * load_amount)
-	# Uma camada some por completo a 2x da sua rotação nominal: é o limite em que
-	# reamostragem ainda soa como o instrumento e não como sintetizador.
-	var spread := log(2.0)
-	var weights := PackedFloat32Array()
-	weights.resize(nominal.size())
+	# Faixas adjacentes: mais resolução sem aumentar vozes ativas no mixer.
+	if _blend_weights.size() != nominal.size():
+		_blend_weights.resize(nominal.size())
+	_blend_weights.fill(0.0)
 	var total := 0.0
-	for i in nominal.size():
-		var distance := log(maxf(timbre, 0.5) / float(nominal[i])) / spread
-		if (i == 0 and distance < 0.0) or (i == nominal.size() - 1 and distance > 0.0):
-			distance = 0.0
-		var weight: float = clampf(1.0 - absf(distance), 0.0, 1.0)
-		weights[i] = weight
-		total += weight
+	# Only the two adjacent RPM bands play, regardless of palette resolution.
+	# Equal-power crossfade avoids the old ~3 dB hole halfway between bands.
+	var lower := 0
+	while lower < nominal.size() - 2 and timbre > float(nominal[lower + 1]):
+		lower += 1
+	var upper := mini(lower + 1, nominal.size() - 1)
+	var mix := clampf(log(maxf(timbre, 0.5) / float(nominal[lower])) / maxf(log(float(nominal[upper]) / float(nominal[lower])), 0.001), 0.0, 1.0)
+	_blend_weights[lower] = cos(mix * PI * 0.5)
+	_blend_weights[upper] = sin(mix * PI * 0.5)
+	total = 1.0
 	if total <= 0.0:
-		weights[0] = 1.0
+		_blend_weights[0] = 1.0
 		total = 1.0
 
 	for i in nominal.size():
@@ -1040,7 +1354,7 @@ func update(audio: AudioStreamPlayer2D, speed: float, top_speed: float, throttle
 		if player == null or not is_instance_valid(player):
 			continue
 		player.pitch_scale = clampf(cycles / float(nominal[i]), 0.35, 3.0)
-		var share := weights[i] / total
+		var share := _blend_weights[i] / total
 		if share <= 0.002:
 			if player.playing:
 				player.stop()
@@ -1057,7 +1371,14 @@ func _update_road(audio: AudioStreamPlayer2D, ratio: float) -> void:
 		return
 	if not is_instance_valid(_road_player):
 		_road_player = _spawn_sibling(audio)
-		_road_player.stream = get_road_stream()
+		_road_player.stream = _request_road_stream()
+	else:
+		var prepared_road := _request_road_stream()
+		if prepared_road != null and _road_player.stream != prepared_road:
+			var was_playing := _road_player.playing
+			_road_player.stream = prepared_road
+			if was_playing:
+				_road_player.play()
 	var heavy: float = 1.0 if _family in ["truck", "bus", "fire_diesel"] else 0.0
 	_road_player.pitch_scale = clampf((0.72 + ratio * 0.85) * (1.0 - heavy * 0.22), 0.4, 2.0)
 	_road_player.volume_db = -42.0 + ratio * 21.0 + heavy * 3.0

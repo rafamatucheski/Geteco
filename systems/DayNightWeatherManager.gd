@@ -52,6 +52,10 @@ var _flash_tween: Tween
 var _thunder_tween: Tween
 var atmosphere: CanvasLayer
 var regional_rain_exposure := 1.0
+const HEADLIGHT_NOTIFY_BUDGET := 24
+var _headlight_notify_queue: Array[Node] = []
+var _headlight_notify_index := 0
+var _headlight_notify_dark := false
 
 func enable_regional_atmosphere() -> void:
 	if is_instance_valid(atmosphere): return
@@ -313,6 +317,7 @@ func is_raining() -> bool:
 	return not is_inside_interior and get_rain_intensity() > 0.0
 
 func _process(delta: float) -> void:
+	_drain_headlight_notifications()
 	if is_dynamic_time:
 		time_of_day = fmod(time_of_day + (delta / day_length_seconds), 1.0)
 		_update_lighting()
@@ -416,12 +421,31 @@ func _update_lighting() -> void:
 		_refresh_weather_reactive_visuals()
 
 func _notify_headlights(dark: bool) -> void:
-	for vehicle in get_tree().get_nodes_in_group("traffic_vehicles"):
-		if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion() and vehicle.has_method("set_headlights"):
-			vehicle.set_headlights(dark)
-	for car in get_tree().get_nodes_in_group("player_car"):
-		if is_instance_valid(car) and not car.is_queued_for_deletion() and car.has_method("set_headlights"):
-			car.set_headlights(dark)
+	_headlight_notify_queue.clear()
+	var seen: Dictionary = {}
+	for group in [&"traffic_vehicles", &"player_car"]:
+		for vehicle in get_tree().get_nodes_in_group(group):
+			if not is_instance_valid(vehicle) or seen.has(vehicle.get_instance_id()): continue
+			if not vehicle.has_method("set_headlights"): continue
+			seen[vehicle.get_instance_id()] = true
+			_headlight_notify_queue.append(vehicle)
+	_headlight_notify_dark = dark
+	_headlight_notify_index = 0
+	_drain_headlight_notifications()
+
+
+func _drain_headlight_notifications() -> void:
+	if _headlight_notify_index >= _headlight_notify_queue.size(): return
+	var processed := 0
+	while _headlight_notify_index < _headlight_notify_queue.size() and processed < HEADLIGHT_NOTIFY_BUDGET:
+		var vehicle: Variant = _headlight_notify_queue[_headlight_notify_index]
+		_headlight_notify_index += 1
+		if is_instance_valid(vehicle) and not vehicle.is_queued_for_deletion():
+			vehicle.set_headlights(_headlight_notify_dark)
+		processed += 1
+	if _headlight_notify_index >= _headlight_notify_queue.size():
+		_headlight_notify_queue.clear()
+		_headlight_notify_index = 0
 
 func set_weather(state: int) -> void:
 	if current_biome == BiomeType.DESERT_BADLANDS:

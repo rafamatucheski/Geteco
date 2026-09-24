@@ -204,7 +204,7 @@ func _on_area_entered(area: Area2D) -> void:
 func _apply_fire_damage(target: Node2D) -> void:
 	if is_instance_valid(target) and target.has_meta("combat_actor"):
 		target = target.get_meta("combat_actor")
-	if not is_instance_valid(target) or target == shooter or _hit_bodies.has(target):
+	if not is_instance_valid(target) or target == shooter:
 		return
 	if _elapsed >= flame_lifetime: return
 	var effective_damage := damage_at_distance(global_position.distance_to(target.global_position))
@@ -228,8 +228,6 @@ func _apply_fire_damage(target: Node2D) -> void:
 		target.take_damage(effective_damage, is_player_attacker)
 		if previous_health != null and target.get("health") < previous_health:
 			preload("res://guns/combat/PersonBurning.gd").ignite(target, shooter)
-	elif target.is_in_group("vehicle") and "health" in target:
-		target.health = maxi(0, int(target.health) - effective_damage)
 
 	# Pedestres entram em estado de pânico ao queimar
 	if "is_scared" in target:

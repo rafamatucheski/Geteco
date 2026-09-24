@@ -1,0 +1,20 @@
+{
+	"failures": [],
+	"samples": {
+		"behind": {
+			"visible_ratio": 0.550436854646545,
+			"with_crate": 2079,
+			"without_crate": 3777
+		},
+		"beside": {
+			"visible_ratio": 1.0,
+			"with_crate": 3682,
+			"without_crate": 3682
+		},
+		"front": {
+			"visible_ratio": 1.2215018908698,
+			"with_crate": 4522,
+			"without_crate": 3702
+		}
+	}
+}

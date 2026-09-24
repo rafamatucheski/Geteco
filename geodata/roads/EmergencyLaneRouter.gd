@@ -73,6 +73,15 @@ func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
 		if not is_instance_valid(path) or path.curve == null or path.curve.point_count < 2:
 			legs.clear()
 			return vehicle.global_position
+		# A stopped suspect can be on a crossing. Carry the approach along the
+		# same lane instead of parking there or waiting forever at the slot.
+		if vehicle.get("type") == 0 and float(vehicle.get("_target_stopped_time")) >= 1.5 and not permits_police_stop(vehicle):
+			var extended_end := minf(path.curve.get_baked_length(), float(last.end) + 100.0)
+			if extended_end > float(last.end) + 1.0:
+				last.end = extended_end
+				legs[legs.size() - 1] = last
+				leg_index = legs.size() - 1
+				return _steer_clear(vehicle, path.to_global(path.curve.sample_baked(extended_end, true)))
 		var endpoint := path.to_global(path.curve.sample_baked(float(last.end), true))
 		if endpoint.distance_to(target) > 42.0:
 			if float(last.end) >= path.curve.get_baked_length() - 30.0 and vehicle.global_position.distance_to(endpoint) < 32.0:
@@ -87,6 +96,31 @@ func guidance(vehicle: Node2D, target: Vector2) -> Vector2:
 	return target
 
 
+func permits_police_stop(vehicle: Node2D) -> bool:
+	# Do not turn a connector or a sideways lane entry into a parking spot.
+	var path: Path2D = linked_lane
+	if not is_instance_valid(path) and leg_index < legs.size():
+		path = legs[leg_index].path as Path2D
+	if not is_instance_valid(path) and not legs.is_empty():
+		path = legs.back().path as Path2D
+	if not is_instance_valid(path) or not path.is_in_group("unified_traffic_lane") or path.curve == null:
+		return false
+	var curve := path.curve
+	var length := curve.get_baked_length()
+	if length < 1.0: return false
+	var offset := curve.get_closest_offset(path.to_local(vehicle.global_position))
+	var point := path.to_global(curve.sample_baked(offset, true))
+	var tangent := path.to_global(curve.sample_baked(minf(length, offset + 12.0), true)) - path.to_global(curve.sample_baked(maxf(0.0, offset - 12.0), true))
+	if vehicle.global_position.distance_to(point) > 24.0 or tangent.normalized().dot(vehicle.global_transform.x) < 0.92:
+		return false
+	if is_instance_valid(network):
+		var cache := _cache(network)
+		for junction_offset in cache.get("junction_offsets", {}).get(path.get_instance_id(), []):
+			if absf(offset - float(junction_offset)) < 85.0:
+				return false
+	return true
+
+
 func _cache(graph: Node2D) -> Dictionary:
 	var version := int(graph.call("get_routing_revision"))
 	var cached: Dictionary = graph.get_meta(CACHE_KEY, {})
@@ -95,13 +129,20 @@ func _cache(graph: Node2D) -> Dictionary:
 	var data := graph.call("get_graph_data") as Dictionary
 	var lanes := {}
 	var outgoing := {}
+	var junction_offsets := {}
 	for lane in data.lanes:
 		lanes[String(lane.lane_id)] = lane.path
 		outgoing[String(lane.lane_id)] = []
 	for connection in data.lane_connections:
 		if connection.from_lane_id != connection.to_lane_id:
 			outgoing[String(connection.from_lane_id)].append(connection)
-	cached = {"revision": version, "lanes": lanes, "outgoing": outgoing}
+			for endpoint in [[connection.from_lane_id, connection.entry_lane_progress], [connection.to_lane_id, connection.exit_lane_progress]]:
+				var lane_path := lanes[String(endpoint[0])] as Path2D
+				if not is_instance_valid(lane_path) or lane_path.curve == null: continue
+				var id := lane_path.get_instance_id()
+				if not junction_offsets.has(id): junction_offsets[id] = []
+				junction_offsets[id].append(float(endpoint[1]) * lane_path.curve.get_baked_length())
+	cached = {"revision": version, "lanes": lanes, "outgoing": outgoing, "junction_offsets": junction_offsets}
 	graph.set_meta(CACHE_KEY, cached)
 	return cached
 
@@ -151,7 +192,7 @@ func _plan(vehicle: Node2D, target: Vector2) -> void:
 	var costs := {}
 	# Join in the current direction; use road junctions to turn back.
 	var forward_starts: Array[Dictionary] = []
-	if vehicle.get("type") in [1,3]:
+	if vehicle.get("type") in [0,1,3]:
 		for start in starts:
 			var path := cache.lanes[start.id] as Path2D
 			var offset := float(start.offset)

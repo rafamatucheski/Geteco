@@ -1,0 +1,219 @@
+{
+	"campaign": {
+		"bank_incident": {},
+		"campaign_flags": {
+			"harbor_arrival_call_complete": true,
+			"harbor_arrival_seen": true,
+			"harbor_campaign_active": true,
+			"harbor_delivery_complete": true,
+			"harbor_maciota_met": true
+		},
+		"cobra_campaign": {
+			"active_id": "",
+			"aftermath": {
+				"call_complete": false,
+				"works_complete": false
+			},
+			"boss_owned": {},
+			"civilian_reputation": 0.0,
+			"cobra_access": 0.0,
+			"completed": {
+				"arrival": true,
+				"primeiro_giro": true
+			},
+			"day": 1.0,
+			"day_elapsed": 22.0754473333339,
+			"defeated": false,
+			"optional_flags": {},
+			"reward_claimed": {},
+			"secret_owned": {},
+			"stage": 0.0,
+			"unlock_days": {
+				"cobra_contact": 1.0
+			},
+			"version": 1.0
+		},
+		"completed_beats": [],
+		"coroner_cases": {},
+		"coroner_staff_serial": 0,
+		"current_stage": "prologue_call",
+		"npc_medical_care": {},
+		"race_best_times": {},
+		"residence_state": {
+			"active_home": "",
+			"purchases": 0.0,
+			"schema_version": 1.0,
+			"stored_vehicle": {}
+		},
+		"salvage_state": {
+			"clock": 0.0,
+			"completed": 0.0,
+			"contract": {},
+			"day": 1.0,
+			"delivered": 1.0,
+			"jobs_taken": 0.0,
+			"last_result": "",
+			"port_boss": {
+				"alarm_remaining": 0.0,
+				"car": {
+					"health": 168.0,
+					"position": [
+						5515.0,
+						5870.0
+					],
+					"rotation": 0.0
+				},
+				"police_called": true,
+				"status": "delivered"
+			},
+			"tow_vehicle": {
+				"cargo": {},
+				"health": 220,
+				"legacy": false,
+				"position": [
+					-595.0,
+					990.0
+				],
+				"rotation": -3.14159250259399
+			}
+		},
+		"schema_version": 1,
+		"unlocked_regions": [
+			"central"
+		],
+		"unlocked_territories": [
+			"mercado_velho"
+		]
+	},
+	"date_string": "2026-09-20 10:11:19",
+	"player": {
+		"active_weapon_id": "fists",
+		"armor": 0,
+		"best_drift_score": 0,
+		"chop_shop_deliveries": 1,
+		"chop_shop_total_scrap": 50000,
+		"collectibles_found": [],
+		"current_outfit_id": "dante_classic",
+		"drift_challenges_completed": 0,
+		"health": 100,
+		"money": 53300,
+		"mountain_thermal_coat": false,
+		"owned_outfits": {
+			"dante_classic": true
+		},
+		"personal_car_state": {
+			"broken": false,
+			"health": 180,
+			"impounded": false,
+			"introduction_seen": false,
+			"paint": "183b91ff",
+			"position": [
+				20150.0,
+				20020.0
+			],
+			"rotation": 1.57079637050629
+		},
+		"personal_loadout": {},
+		"personal_loadout_enabled": false,
+		"position": [
+			-771.5,
+			700.375
+		],
+		"races_best_time_count": 0,
+		"races_finished": 0,
+		"rotation": 0.0,
+		"secret_car_leads": 0,
+		"unlocked_achievements": [
+			"first_grand",
+			"shark",
+			"first_scrap"
+		],
+		"weapon_ammo": {
+			"ak47": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"fists": {
+				"clip": -1,
+				"reserve": -1
+			},
+			"flamethrower": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"grenade": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"knife": {
+				"clip": -1,
+				"reserve": -1
+			},
+			"m4a1": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"magnum": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"pistol": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"rpg": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"sawed_off": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"shotgun": {
+				"clip": 0,
+				"reserve": 0
+			},
+			"smg": {
+				"clip": 0,
+				"reserve": 0
+			}
+		},
+		"weapon_customization": {},
+		"weapon_inventory": {
+			"ak47": false,
+			"fists": true,
+			"flamethrower": false,
+			"grenade": false,
+			"knife": false,
+			"m4a1": false,
+			"magnum": false,
+			"pistol": false,
+			"rpg": false,
+			"sawed_off": false,
+			"shotgun": false,
+			"smg": false
+		},
+		"world_pickups_collected": []
+	},
+	"save_version": 1,
+	"slot_id": "port_boss_test",
+	"summary": {
+		"current_stage": "prologue_call",
+		"current_stars": 0,
+		"money": 53300,
+		"note": "Garage integration test",
+		"player_health": 100
+	},
+	"timestamp": 1789909879.481,
+	"wanted": {
+		"crime_points": 0,
+		"current_stars": 0,
+		"deployed_this_pursuit": 0,
+		"time_hidden": 0.0
+	},
+	"world": {
+		"coordinates_version": 2,
+		"north_access_lower": false,
+		"region": "harbor"
+	}
+}

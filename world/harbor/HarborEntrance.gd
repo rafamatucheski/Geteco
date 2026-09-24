@@ -7,7 +7,10 @@ extends "res://scripts/entrances/BuildingEntrance.gd"
 @export var door_width := 120.0
 @export var door_height := 38.0
 @export var accent_color := Color("#d7ae68")
-@export var interior_available := false
+@export var interior_available := false:
+	set(value):
+		interior_available = value
+		_refresh_marker()
 var open_amount := 0.0:
 	set(value):
 		open_amount = clampf(value, 0.0, 1.0)
@@ -40,10 +43,15 @@ func _ready() -> void:
 
 
 func _refresh_prompt() -> void:
-	var prompt := get_node_or_null("Prompt") as Label
-	if prompt != null:
-		prompt.text = ""
-		prompt.hide()
+	super._refresh_prompt()
+	if is_instance_valid(_prompt) and not interior_available:
+		_prompt.hide()
+
+
+func _refresh_marker() -> void:
+	super._refresh_marker()
+	if is_instance_valid(_marker_node):
+		_marker_node.visible = _marker_node.visible and interior_available
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -52,6 +60,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if body not in _nearby_actors:
 		_nearby_actors.append(body)
 		actor_approached.emit(self, body)
+	_refresh_prompt()
 	if enabled and is_actor_in_range(body):
 		_away_time = 0.0
 		open_door()

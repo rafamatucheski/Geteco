@@ -4,6 +4,8 @@ signal finished
 signal presentation_preparing
 signal failed(message: String)
 const SCREEN = preload("res://ui/LoadingScreen.gd")
+const MOUNTAIN_STATIC_MODEL_VIEW = preload("res://world/mountain_pass/MountainStaticModelView.gd")
+const STATIC_GRAPHICS_PREWARM_TIMEOUT_MS := 3000
 var active := false
 var screen: Control
 var last_variant := -1
@@ -17,6 +19,9 @@ var _phase_started_us := 0
 var _load_started_us := 0
 var _prefetch_path := ""
 var _prefetch_error := OK
+var static_graphics_prewarm: Dictionary = {}
+var vehicle_graphics_prewarm: Dictionary = {}
+var _static_graphics_loading_session := -1
 
 func prefetch(path: String) -> void:
 	# Main menu hint only: resource I/O happens on the loader thread and no save
@@ -43,6 +48,7 @@ func _ready() -> void:
 func begin(path: String, new_game := false) -> bool:
 	if active: return false
 	active = true
+	start_static_graphics_prewarm_session()
 	phase_times_ms.clear()
 	_load_started_us = Time.get_ticks_usec()
 	_phase_started_us = _load_started_us
@@ -109,6 +115,42 @@ func _draw_frame() -> void:
 	await get_tree().process_frame
 	if DisplayServer.get_name() != "headless": await RenderingServer.frame_post_draw
 
+func start_static_graphics_prewarm_session() -> int:
+	_static_graphics_loading_session = MOUNTAIN_STATIC_MODEL_VIEW.begin_graphics_prewarm_loading_session()
+	return _static_graphics_loading_session
+
+func _prepare_static_model_graphics() -> Dictionary:
+	if _static_graphics_loading_session < 0:
+		start_static_graphics_prewarm_session()
+	if is_instance_valid(screen) and screen.has_method("set_stage"):
+		screen.set_stage(0.64, _text("Preparando a apresentação…", "Preparing presentation…"))
+	var started := Time.get_ticks_usec()
+	var result: Dictionary = await MOUNTAIN_STATIC_MODEL_VIEW.prewarm_graphics_backend(
+		get_tree(), STATIC_GRAPHICS_PREWARM_TIMEOUT_MS, _static_graphics_loading_session)
+	var loading_elapsed_usec := Time.get_ticks_usec() - started
+	result["loading_elapsed_usec"] = loading_elapsed_usec
+	result["loading_visible"] = is_instance_valid(screen) and screen.visible
+	result["world_paused"] = get_tree().paused
+	result["vehicle_model_cost_included"] = false
+	static_graphics_prewarm = result.duplicate(true)
+	phase_times_ms["static_graphics_backend"] = loading_elapsed_usec / 1000.0
+	phase_times_ms["static_graphics_backend_ready"] = 1.0 if bool(result.get("ready", false)) else 0.0
+	phase_times_ms["static_graphics_backend_timeout"] = 1.0 if bool(result.get("timed_out", false)) else 0.0
+	phase_times_ms["static_graphics_backend_pending"] = 1.0 if bool(result.get("timed_out", false)) else 0.0
+	print("GAME_LOADING_STATIC_GRAPHICS ", result)
+	if bool(result.get("timed_out", false)):
+		push_warning("Mountain static graphics prewarm timed out after %d ms; loading will continue." % STATIC_GRAPHICS_PREWARM_TIMEOUT_MS)
+	return result
+
+func _prepare_vehicle_models() -> Dictionary:
+	if is_instance_valid(screen) and screen.has_method("set_stage"):
+		screen.set_stage(0.65, _text("Preparando veículos…", "Preparing vehicles…"))
+	var result: Dictionary = await preload("res://cars/VehicleGeometryCache.gd").prepare_common_models(get_tree())
+	result["world_paused"] = get_tree().paused
+	result["loading_visible"] = is_instance_valid(screen) and screen.visible
+	vehicle_graphics_prewarm = result.duplicate(true)
+	return result
+
 func _run(path: String, new_game: bool) -> void:
 	await _draw_frame()
 	if not ResourceLoader.exists(path):
@@ -158,8 +200,9 @@ func _run(path: String, new_game: bool) -> void:
 		await get_tree().process_frame
 	# Um frame completo de apresentação antes de liberar os controles/abertura.
 	_mark_phase("world_build")
-	screen.set_stage(0.65,_text("Preparando veículos…","Preparing vehicles…"))
-	await preload("res://cars/VehicleGeometryCache.gd").prepare_common_models(get_tree())
+	await _prepare_static_model_graphics()
+	_mark_phase("static_graphics")
+	vehicle_graphics_prewarm = await _prepare_vehicle_models()
 	_mark_phase("vehicle_models")
 	screen.set_stage(0.75,_text("Preparando o trânsito…","Preparing traffic…"))
 	await preload("res://cars/VehicleGeometryCache.gd").prepare_resident_presentations(get_tree())

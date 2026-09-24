@@ -160,7 +160,7 @@ func _ready() -> void:
 
 	prompt_badge = Label.new()
 	prompt_badge.name = "PromptBadge"
-	prompt_badge.text = "[E]"
+	prompt_badge.text = ""
 	prompt_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	prompt_badge.position = Vector2(-25, -46)
 	prompt_badge.size = Vector2(50, 18)
@@ -197,8 +197,6 @@ func _ready() -> void:
 
 func request_bench_rest(max_distance:float=230.0,scope:String="") -> bool:
 	if is_stationary or get_parent() == null or not is_inside_tree(): return false
-	var benches := get_tree().get_nodes_in_group("mountain_bench")
-	if benches.is_empty(): return false
 	return _bench_rest.request(max_distance,scope)
 
 func bench_state() -> String:
@@ -429,7 +427,7 @@ func _visual_interval() -> float:
 func _can_interact(player: Node2D) -> bool:
 	if not is_instance_valid(player) or not player.is_visible_in_tree() or is_dead or lines.is_empty(): return false
 	if player.get("is_dead") == true or player.get("is_recovering") == true or player.get("is_control_disabled") == true or player.get("is_in_dialogue") == true: return false
-	if player.has_meta("mountain_lift_riding") or player.has_meta("mountain_falling"): return false
+	if player.has_meta("mountain_lift_riding"): return false
 	if get_tree().get_meta("winter_dialogue_frame", -1) == Engine.get_process_frames(): return false
 	var distance := global_position.distance_squared_to(player.global_position)
 	if distance > 65.0 * 65.0: return false

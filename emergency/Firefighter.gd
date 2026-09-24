@@ -24,6 +24,10 @@ var walk_clock: float = 0.0
 var collision_shape: CollisionShape2D
 var water_hose: CPUParticles2D
 var water_audio: AudioStreamPlayer2D
+var hose_line: Line2D
+var hose_muzzle: Marker3D
+var hose_camera: Camera3D
+var _return_door_retry := 0.0
 var extinguish_timer: float = 0.0
 var crew_side := 1.0
 var crew_longitudinal := 22.0
@@ -71,6 +75,15 @@ func _ready() -> void:
 	add_child(col)
 	
 	water_hose = CPUParticles2D.new()
+	var droplet := GradientTexture2D.new()
+	droplet.width = 16
+	droplet.height = 16
+	droplet.fill = GradientTexture2D.FILL_RADIAL
+	droplet.fill_from = Vector2(0.5, 0.5)
+	droplet.fill_to = Vector2(1.0, 0.5)
+	droplet.gradient = Gradient.new()
+	droplet.gradient.colors = PackedColorArray([Color.WHITE, Color(1, 1, 1, 0)])
+	water_hose.texture = droplet
 	water_hose.emitting = false
 	water_hose.amount = 40
 	water_hose.lifetime = 0.55
@@ -79,11 +92,18 @@ func _ready() -> void:
 	water_hose.initial_velocity_min = 140.0
 	water_hose.initial_velocity_max = 210.0
 	water_hose.gravity = Vector2(0, 80)
-	water_hose.scale_amount_min = 2.5
-	water_hose.scale_amount_max = 5.5
+	water_hose.scale_amount_min = 0.12
+	water_hose.scale_amount_max = 0.28
 	water_hose.color = Color(0.4, 0.75, 1.0, 0.88)
 	water_hose.position = Vector2(0, -6)
 	add_child(water_hose)
+	hose_line = Line2D.new()
+	hose_line.name = "TruckSupplyHose"
+	hose_line.width = 1.4
+	hose_line.default_color = Color("bc9c54")
+	hose_line.z_index = -1
+	hose_line.visible = false
+	add_child(hose_line)
 	
 	water_audio = AudioStreamPlayer2D.new()
 	water_audio.stream = ProceduralAudio.get_water_stream()
@@ -94,13 +114,14 @@ func _ready() -> void:
 
 func _build_3d_viewport() -> void:
 	viewport_3d = SubViewport.new()
-	viewport_3d.size = Vector2i(96, 96)
+	viewport_3d.size = Vector2i(160, 160)
 	viewport_3d.transparent_bg = true
 	viewport_3d.own_world_3d = true
 	viewport_3d.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	add_child(viewport_3d)
 
 	var cam := Camera3D.new()
+	hose_camera = cam
 	cam.position = Vector3(0.0, 3.2, 1.4)
 	cam.fov = 30.0
 	viewport_3d.add_child(cam)
@@ -172,6 +193,7 @@ func _build_3d_viewport() -> void:
 	# Cabeça com Capacete de Bombeiro com Aba
 	head_node = Node3D.new()
 	head_node.position = Vector3(0.0, 1.25, 0.0)
+	head_node.scale = Vector3.ONE * 0.80
 	model_root.add_child(head_node)
 
 	var head_mesh := MeshInstance3D.new()
@@ -233,6 +255,9 @@ func _build_3d_viewport() -> void:
 	hose_nozzle.rotation_degrees = Vector3(90, 0, 0)
 	hose_nozzle.position = Vector3(0.0, -0.18, -0.12)
 	right_lower_arm.add_child(hose_nozzle)
+	hose_muzzle = Marker3D.new()
+	hose_muzzle.position = Vector3(0, -0.10, 0)
+	hose_nozzle.add_child(hose_muzzle)
 
 	# Pernas 3D
 	left_upper_leg = Node3D.new()
@@ -260,7 +285,7 @@ func _build_3d_viewport() -> void:
 	# Exibição 2D
 	sprite_3d_display = Sprite2D.new()
 	sprite_3d_display.texture = viewport_3d.get_texture()
-	sprite_3d_display.scale = Vector2(0.38, 0.38)
+	sprite_3d_display.scale = Vector2.ONE * (0.38 * 96.0 / 160.0)
 	add_child(sprite_3d_display)
 
 func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
@@ -296,8 +321,11 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	fly_velocity = impact_velocity.limit_length(600.0) * 0.85
 	_start_fall(impact_velocity)
 	health = 0
-	if collision_shape:
-		collision_shape.set_deferred("disabled", true)
+	collision_layer = 0
+	for c in find_children("", "CollisionShape2D", true, false):
+		(c as CollisionShape2D).set_deferred("disabled", true)
+	for c in find_children("", "CollisionPolygon2D", true, false):
+		(c as CollisionPolygon2D).set_deferred("disabled", true)
 	if water_hose: water_hose.emitting = false
 	if water_audio: water_audio.stop()
 	
@@ -322,8 +350,11 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 func _die() -> void:
 	is_dead = true
 	velocity = Vector2.ZERO
-	if collision_shape:
-		collision_shape.set_deferred("disabled", true)
+	collision_layer = 0
+	for c in find_children("", "CollisionShape2D", true, false):
+		(c as CollisionShape2D).set_deferred("disabled", true)
+	for c in find_children("", "CollisionPolygon2D", true, false):
+		(c as CollisionPolygon2D).set_deferred("disabled", true)
 	if water_hose: water_hose.emitting = false
 	if water_audio: water_audio.stop()
 	_start_fall()
@@ -338,6 +369,7 @@ func _physics_process(delta: float) -> void:
 		if fly_velocity.length() < 12.0: is_flying = false
 		
 	if is_dead:
+		if hose_line: hose_line.hide()
 		fall_presentation.update(delta)
 		return
 	if state == State.EMBARKED: return
@@ -413,6 +445,15 @@ func _physics_process(delta: float) -> void:
 				_disperse_on_foot()
 				return
 			var door_point: Vector2 = fire_truck.get_crew_door_point(crew_side, crew_longitudinal) if fire_truck.has_method("get_crew_door_point") else fire_truck.global_position
+			_return_door_retry -= delta
+			if movement_navigation.stuck_time > 2.0 and _return_door_retry <= 0.0:
+				_return_door_retry = 2.0
+				var alternate: Vector2 = fire_truck.get_crew_door_point(-crew_side, crew_longitudinal)
+				if movement_navigation.clear_segment(self, alternate, alternate):
+					crew_side = -crew_side
+					door_point = alternate
+				movement_navigation.repath()
+				movement_navigation.reset_progress()
 			var dist_truck: float = global_position.distance_to(door_point)
 			dir_to_look = global_position.direction_to(door_point)
 			if dist_truck > 7.0:
@@ -447,11 +488,35 @@ func _physics_process(delta: float) -> void:
 		if state == State.EXTINGUISH:
 			right_upper_arm.rotation = Vector3(1.35, -0.08, 0.0)
 			right_lower_arm.rotation = Vector3(0.05, 0.0, 0.0)
-			left_upper_arm.rotation = Vector3(1.30, 0.22, 0.0)
-			left_lower_arm.rotation = Vector3(0.15, 0.28, 0.0)
+			left_upper_arm.rotation = Vector3(1.05, 0.15, 0.55)
+			left_lower_arm.rotation = Vector3(0.45, 0.0, 0.70)
 		else:
 			right_upper_arm.rotation = Vector3(-step_angle * 0.6, 0.0, 0.0)
 			left_upper_arm.rotation = Vector3(step_angle * 0.6, 0.0, 0.0)
+			right_lower_arm.rotation = Vector3.ZERO
+			left_lower_arm.rotation = Vector3.ZERO
+	_update_hose()
+
+func _update_hose() -> void:
+	hose_line.visible = not is_dead and state in [State.APPROACH, State.EXTINGUISH, State.RETURN] and is_instance_valid(fire_truck)
+	if not hose_line.visible: return
+	# Project the actual nozzle through the same camera/texture as the responder.
+	var nozzle_pixel := hose_camera.unproject_position(hose_muzzle.global_position)
+	var nozzle_local := (nozzle_pixel - Vector2(viewport_3d.size) * 0.5) * sprite_3d_display.scale
+	water_hose.position = sprite_3d_display.position + nozzle_local
+	if is_instance_valid(target): water_hose.direction = water_hose.global_position.direction_to(target.global_position)
+	var coupling := to_local(fire_truck.to_global(Vector2(17, crew_side * 20)))
+	var foot := Vector2(0, 4)
+	var hose_points := PackedVector2Array()
+	var ground_bend := coupling.lerp(foot, 0.45) + Vector2(0, 16)
+	for segment in 9:
+		var fraction := float(segment) / 8.0
+		hose_points.append(coupling.lerp(ground_bend, fraction).lerp(ground_bend.lerp(foot, fraction), fraction))
+	var lifted_bend := foot + Vector2(6, 0)
+	for segment in range(1, 5):
+		var fraction := float(segment) / 4.0
+		hose_points.append(foot.lerp(lifted_bend, fraction).lerp(lifted_bend.lerp(water_hose.position, fraction), fraction))
+	hose_line.points = hose_points
 
 var last_pos: Vector2 = Vector2.ZERO
 var stuck_timer: float = 0.0
@@ -466,11 +531,14 @@ func _navigate_towards(dest: Vector2, move_speed: float, delta: float) -> Vector
 
 
 func _start_return_to_truck() -> void:
-	if boarding_started: return
+	if boarding_started or state == State.RETURN: return
 	water_hose.emitting = false
 	water_audio.stop()
 	if is_instance_valid(fire_truck): add_collision_exception_with(fire_truck)
 	state = State.RETURN
+	movement_navigation.repath()
+	movement_navigation.reset_progress()
+	if is_instance_valid(fire_truck) and fire_truck.get("siren_audio"): fire_truck.siren_audio.stop()
 	if not is_instance_valid(fire_truck):
 		_disperse_on_foot()
 

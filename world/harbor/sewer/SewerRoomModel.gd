@@ -4,6 +4,8 @@ extends Node2D
 ## authored collision remains in SewerInterior, not in the render viewport.
 var view: SubViewport
 var stage: Node3D
+var camera_3d: Camera3D
+var sprite_3d: Sprite2D
 var palette: Dictionary = {}
 
 func _ready() -> void:
@@ -16,14 +18,17 @@ func _ready() -> void:
 	view.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(view)
 	stage = Node3D.new()
-	stage.scale.z = sqrt(18.0 * 18.0 + 12.0 * 12.0) / 18.0
+	stage.scale.z = sqrt(18.0 * 18.0 + 15.0 * 15.0) / 18.0
 	view.add_child(stage)
 	var camera := Camera3D.new()
+	camera_3d = camera
+	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 18.0
-	camera.position = Vector3(0, 18, 12)
+	camera.position = Vector3(0, 18, 15)
 	view.add_child(camera)
 	camera.look_at(Vector3.ZERO)
+	camera.force_update_transform()
 	camera.current = true
 	var environment := WorldEnvironment.new()
 	environment.environment = Environment.new()
@@ -40,10 +45,14 @@ func _ready() -> void:
 	view.add_child(key)
 	_build()
 	var display := Sprite2D.new()
+	sprite_3d = display
 	display.texture = view.get_texture()
 	display.scale = Vector2.ONE * 0.5
 	display.position = Vector2(100, 17)
 	add_child(display)
+
+func project_floor(point: Vector2) -> Vector2:
+	return (camera_3d.unproject_position(Vector3(point.x,0,point.y))-Vector2(view.size)*.5)*sprite_3d.scale+sprite_3d.position
 
 func _mat(color: String, metal := false) -> StandardMaterial3D:
 	if not palette.has(color):

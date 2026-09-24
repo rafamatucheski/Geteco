@@ -7,7 +7,6 @@ extends Node2D
 const OPEN_ANGLE := deg_to_rad(64.0)
 
 var _door_length := 32.0
-var _shadow: Polygon2D
 var _panel: Polygon2D
 var _window: Polygon2D
 var _edge_highlight: Line2D
@@ -69,13 +68,6 @@ func _rebuild_geometry() -> void:
 		Vector2(-_door_length * 0.16, outer_edge + 0.7),
 		Vector2(1.2, 4.2),
 	])
-
-	_shadow = Polygon2D.new()
-	_shadow.name = "DoorContactShadow"
-	_shadow.polygon = body_panel
-	_shadow.position = Vector2(1.2, 2.2)
-	_shadow.z_index = -1
-	add_child(_shadow)
 
 	_panel = Polygon2D.new()
 	_panel.name = "PaintedDoorPanel"
@@ -146,7 +138,6 @@ func _apply_palette(body_color: Color) -> void:
 	var paint := body_color
 	paint.a = 1.0
 	_panel.color = paint
-	_shadow.color = Color(0.015, 0.02, 0.03, 0.44)
 	_window.color = Color("#24394a").lerp(paint.darkened(0.34), 0.15)
 	_edge_highlight.default_color = paint.lightened(0.30)
 	_seam.default_color = paint.darkened(0.56)

@@ -96,11 +96,18 @@ func _spawn_funeral_guests_staggered(cemetery: Node2D) -> void:
 	for i in 5:
 		if not is_inside_tree() or funeral_phase != "arriving": return
 		var guest := RESIDENT.new()
+		var lane_x := -14.0 if i % 2 == 0 else 14.0
+		var row := i / 2
 		guest.coat_color=Color("343543") if i%2 else Color("45434b")
 		guest.lines=[]
-		guest.position=cemetery.get_gate_position()+Vector2((i%2)*12-6,-55-i*16)
+		guest.position=cemetery.get_gate_position()+Vector2(0,24+i*28)
+		guest.set_meta("funeral_lane_x", lane_x)
 		get_parent().add_child(guest)
-		guest.set_route(PackedVector2Array([cemetery.get_gate_position(),cemetery.global_position+Vector2(0,65),cemetery.global_position+Vector2(-48+(i%2)*96,35+(i/2)*22)]))
+		guest.set_route(PackedVector2Array([
+			cemetery.global_position+Vector2(lane_x,-288+i*28),
+			cemetery.global_position+Vector2(lane_x,65),
+			cemetery.global_position+Vector2(-60+(i%2)*120,30+row*32)
+		]))
 		guests.append(guest)
 		await get_tree().process_frame
 
@@ -119,7 +126,14 @@ func _tick_funeral(delta: float) -> void:
 		funeral_age=0
 		if is_instance_valid(coffin): coffin.hide()
 		for guest in guests:
-			if is_instance_valid(guest): guest.set_route(PackedVector2Array([cemetery.global_position+Vector2(0,80),cemetery.global_position+Vector2(0,-330),cemetery.get_gate_position()+Vector2(0,-80)]))
+			if is_instance_valid(guest):
+				var lane_x := float(guest.get_meta("funeral_lane_x", 0.0))
+				guest.set_route(PackedVector2Array([
+					cemetery.global_position+Vector2(lane_x,105),
+					cemetery.global_position+Vector2(lane_x,-260),
+					cemetery.global_position+Vector2(0,-300),
+					cemetery.get_gate_position()+Vector2(0,-18)
+				]))
 	elif funeral_phase=="leaving":
 		var left := true
 		for guest in guests:

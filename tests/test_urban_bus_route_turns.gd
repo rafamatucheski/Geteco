@@ -87,8 +87,8 @@ func _run() -> void:
 		return
 
 	var bus: CharacterBody2D = transit.buses[0]
-	_check(bus.get_traffic_bodies().size() == 1, "Bus has single physical body")
-	_check(is_equal_approx(bus.get_traffic_storage_length(), 132.0), "Traffic reserves conventional bus length")
+	_check(bus.get_traffic_bodies().size() == 2, "Production bus exposes its complete articulated convoy")
+	_check(is_equal_approx(bus.get_traffic_storage_length(), 266.0), "Traffic reserves the articulated convoy length")
 	var controller: Node
 	for frame in 240:
 		controller = bus._get_junction_traffic_controller()

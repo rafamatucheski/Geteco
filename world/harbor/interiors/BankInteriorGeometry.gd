@@ -56,5 +56,10 @@ static func build(room: Node2D, model: Node3D, door: Node3D) -> void:
 	var floor_mesh := model.find_child("Floor", true, false) as MeshInstance3D
 	if floor_mesh:
 		var rect: AABB = floor_mesh.transform * floor_mesh.mesh.get_aabb()
-		var front: StaticBody2D = room._projected_solid(Rect2(rect.position.x,rect.end.z,rect.size.x,.12))
-		front.name = "BankFloorBoundary"
+		if room.get("inline_mode") == true:
+			for edge in [Rect2(rect.position.x,rect.end.z,-1.55-rect.position.x,.12),Rect2(1.55,rect.end.z,rect.end.x-1.55,.12)]:
+				var side: StaticBody2D = room._projected_solid(edge)
+				side.name = "BankFloorBoundary"
+		else:
+			var front: StaticBody2D = room._projected_solid(Rect2(rect.position.x,rect.end.z,rect.size.x,.12))
+			front.name = "BankFloorBoundary"

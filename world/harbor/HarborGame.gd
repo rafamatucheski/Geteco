@@ -15,6 +15,25 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	preload("res://world/harbor/urban_transit/UrbanTransit.gd").reserve_platform_spawns(self)
 	super._ready()
+	# Player.restore runs before these facades install their inline rooms. Prevent
+	# the old whole-building collision from pushing a saved player outside.
+	if loaded_from_save:
+		for path in ["District/NorthFrontage0/BuildingSolid", "District/NorthFrontage4/BuildingSolid", "District/NorthFrontage3/BuildingSolid", "District/Police/BuildingSolid", "District/Garage/GarageExterior3D/BuildingSolid", "NorthDistrict/NorthFireStation/BuildingSolid", "NorthDistrict/CanalHomesWest/BuildingSolid"]:
+			var placeholder := get_node_or_null(path) as StaticBody2D
+			if is_instance_valid(placeholder):
+				placeholder.collision_layer = 0
+		# Bay Medical keeps three ambulance-bay blockers. Only the public lobby
+		# shape is replaced by the inline room after the saved actor is restored.
+		var clinic_solid := get_node_or_null("District/Clinic/BuildingSolid") as StaticBody2D
+		if is_instance_valid(clinic_solid) and clinic_solid.get_child_count() > 0:
+			var lobby_shape := clinic_solid.get_child(0) as CollisionShape2D
+			if is_instance_valid(lobby_shape): lobby_shape.disabled = true
+	# Production uses demand-driven pedestrians by default. Keep HarborLife's
+	# opt-in untouched for isolated fixtures and focused tests, but never let the
+	# playable city materialize every resident across all districts at startup.
+	var life := get_node_or_null("Life")
+	if life != null and "enable_virtual_population" in life:
+		life.enable_virtual_population = true
 	var hud := preload("res://HUD.tscn").instantiate()
 	add_child(hud)
 	# Review buttons can operate a parked vehicle remotely; not a campaign action.
@@ -226,16 +245,19 @@ func _restore_room_presentation() -> void:
 			break
 	if room == _last_room:
 		return
-	if is_instance_valid(_last_room):
+	var was_inline_room: bool = is_instance_valid(_last_room) and _last_room.get("inline_mode") == true
+	if is_instance_valid(_last_room) and not was_inline_room:
 		_last_room.set_npc_rendering_active(false)
 	_last_room = room
 	if room != null:
 		$Interiors.set_active_interior(room)
-		room.set_npc_rendering_active(true)
-		$Interiors._frame_interior_camera($Player, room.get_camera_rect())
+		if room.get("inline_mode") != true:
+			room.set_npc_rendering_active(true)
+			$Interiors._frame_interior_camera($Player, room.get_camera_rect())
 	else:
 		$Interiors.set_active_interior(null)
-		$Interiors._reset_exterior_camera($Player)
+		if not was_inline_room:
+			$Interiors._reset_exterior_camera($Player)
 		if $Player.has_meta("harbor_interior"):
 			$Player.remove_meta("harbor_interior")
 			$Player.remove_meta("police_exterior_position")

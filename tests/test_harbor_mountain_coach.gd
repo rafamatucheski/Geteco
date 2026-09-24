@@ -15,20 +15,55 @@ func run() -> void:
 	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
-	for frame in 12:
+	var started := Time.get_ticks_msec()
+	while world.get_node_or_null("ContinuousWorld") == null and Time.get_ticks_msec() - started < 180000:
 		await process_frame
+	var stream: Node = world.get_node_or_null("ContinuousWorld")
+	check(stream != null, "Continuous regional stream becomes available")
+	if stream == null:
+		quit(1)
+		return
 	var services := get_nodes_in_group("regional_coach_service")
 	var service: Node2D
 	if services.is_empty():
 		service = preload("res://geodata/transit/HarborMountainCoachService.gd").new()
 		world.add_child(service)
-		service.configure(world, world.get_node("ContinuousWorld"))
+		service.configure(world, stream)
 	else:
 		service = services[0]
-	var started := Time.get_ticks_msec()
+	started = Time.get_ticks_msec()
+	while service.coach == null and Time.get_ticks_msec() - started < 10000:
+		await process_frame
+	check(service.coach != null, "Regional coach is prepared at the Harbor terminal")
+	for frame in 30:
+		await process_frame
+	check(service.access_lane == null and not stream.ready_for_crossing and not stream.building, "Distant autonomous coach does not construct Mountain on the player's frame budget")
+	check(service._plan_city(service.outbound_lane, service.outbound_lane.curve.get_baked_length()), "Directed Harbor departure route exists before Mountain streaming")
+	var prior_network_mode: int = service.network.process_mode
+	var prior_dwell: float = service.dwell_elapsed
+	var prior_departures: int = service.departures
+	service.network.process_mode = Node.PROCESS_MODE_DISABLED
+	service.dwell_elapsed = service.STATION_DWELL + 1.0
+	service._clock = 0.0
+	service._process(0.11)
+	check(service.departures == prior_departures and service.state == "harbor_dwell" and not service._route_failure_reported, "Sleeping Harbor graph pauses coach departure without reporting a missing route")
+	service.network.process_mode = prior_network_mode
+	service.dwell_elapsed = prior_dwell
+	var approach_actor := get_first_node_in_group("player") as Node2D
+	var controlled_car := root.get_node("RegionTravel").controlled_car() as Node2D
+	if controlled_car != null:
+		approach_actor = controlled_car
+	check(approach_actor != null, "Physical approach probe has a live player-controlled actor")
+	if approach_actor != null:
+		approach_actor.global_position = stream.MOUNTAIN_SEAM_POSITION - Vector2(100.0, 0.0)
+		if approach_actor.has_method("reset_physics_interpolation"):
+			approach_actor.reset_physics_interpolation()
+		stream._process(0.21)
+	started = Time.get_ticks_msec()
 	while service.access_lane == null and Time.get_ticks_msec() - started < 180000:
 		await process_frame
-	check(service.access_lane != null, "Coach requests the mountain destination without player travel")
+	check(service.access_lane != null, "Physical player approach prepares the coach's mountain destination")
+	check(String(stream._mountain_load_trigger.get("reason", "")) == "physical_approach", "Mountain construction records the physical approach gate")
 	if service.access_lane == null:
 		quit(1)
 		return
@@ -124,6 +159,12 @@ func run() -> void:
 	await process_frame
 	service.state = prior_state
 	if OS.get_cmdline_user_args().has("--geometry-only"):
+		var departures_before_wake: int = service.departures
+		service.dwell_elapsed = service.STATION_DWELL + 1.0
+		service._route_retry_left = 0.0
+		service._clock = 0.0
+		service._process(0.11)
+		check(service.state == "outbound" and service.departures == departures_before_wake + 1, "Coach departs when Harbor graph wakes again")
 		print("REGIONAL_COACH_GEOMETRY failures=", failures.size())
 		world.queue_free()
 		for frame in 4:

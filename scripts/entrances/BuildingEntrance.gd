@@ -55,6 +55,16 @@ enum EntranceKind {
 	set(value):
 		enabled = value
 		_refresh_prompt()
+		_refresh_marker()
+
+@export_group("Visual Marker")
+@export var show_entrance_marker: bool = true:
+	set(value):
+		show_entrance_marker = value
+		_refresh_marker()
+@export var marker_shape: String = "rounded_rect" # "rounded_rect" or "circle"
+@export var marker_color: Color = Color(1.0, 0.88, 0.55)
+@export var marker_offset: Vector2 = Vector2.ZERO
 
 @export_group("Door Animation")
 @export_range(0.05, 2.0, 0.05) var open_duration: float = 0.22
@@ -74,6 +84,7 @@ var _door_open: bool = false
 var _busy: bool = false
 var _left_closed_position: Vector2
 var _right_closed_position: Vector2
+var _marker_node: Node2D
 
 
 func _ready() -> void:
@@ -83,7 +94,14 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		_sensor.body_entered.connect(_on_body_entered)
 		_sensor.body_exited.connect(_on_body_exited)
+		var input := get_node_or_null("/root/GameInput")
+		if input != null:
+			for signal_name in [&"bindings_changed", &"device_changed"]:
+				if input.has_signal(signal_name):
+					input.connect(signal_name, _refresh_prompt)
+	_setup_entrance_marker()
 	_refresh_prompt()
+	_refresh_marker()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -135,6 +153,7 @@ func close_door() -> void:
 func _begin_transition(actor: Node2D) -> void:
 	_busy = true
 	_refresh_prompt()
+	_refresh_marker()
 	transition_started.emit(self, actor)
 	_set_door_open(true)
 	await get_tree().create_timer(open_duration).timeout
@@ -152,6 +171,7 @@ func _begin_transition(actor: Node2D) -> void:
 	await get_tree().create_timer(close_duration).timeout
 	_busy = false
 	_refresh_prompt()
+	_refresh_marker()
 
 
 func _set_door_open(value: bool) -> void:
@@ -176,6 +196,7 @@ func _on_body_entered(body: Node2D) -> void:
 	_nearby_actors.append(body)
 	actor_approached.emit(self, body)
 	_refresh_prompt()
+	_refresh_marker()
 
 
 func _on_body_exited(body: Node2D) -> void:
@@ -184,10 +205,30 @@ func _on_body_exited(body: Node2D) -> void:
 	_nearby_actors.erase(body)
 	actor_departed.emit(self, body)
 	_refresh_prompt()
+	_refresh_marker()
 
 
 func _refresh_prompt() -> void:
 	if not is_node_ready() or _prompt == null:
 		return
-	_prompt.visible = show_interaction_prompt and enabled and not _busy and not _nearby_actors.is_empty()
-	_prompt.text = custom_prompt_text if not custom_prompt_text.is_empty() else "E"
+	_prompt.hide()
+	_prompt.text = ""
+	preload("res://ui/InteractionKeycap.gd").sync(_prompt, false)
+	_refresh_marker()
+
+
+func _setup_entrance_marker() -> void:
+	if _marker_node != null or Engine.is_editor_hint():
+		return
+	var marker := preload("res://ui/DoorAccessMarker.gd").new()
+	marker.name = "EntranceMarker"
+	marker.position = marker_offset
+	add_child(marker)
+	_marker_node = marker
+
+
+func _refresh_marker() -> void:
+	if not is_node_ready() or _marker_node == null:
+		return
+	_marker_node.visible = show_entrance_marker and enabled and not _busy
+	_marker_node.position = marker_offset

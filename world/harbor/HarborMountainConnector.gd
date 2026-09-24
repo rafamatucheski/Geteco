@@ -10,6 +10,7 @@ const SURFACE_STYLE = preload("res://geodata/roads/BridgeSurfaceStyle.gd")
 ## = (62 + 42*2)*0.5 = 73. Usado abaixo pra desenhar o fundo decorativo do
 ## tabuleiro do tamanho exato da pista de verdade, sem sobra nem falta.
 const LANE_HALF_ENVELOPE := 73.0
+const DECK_CONCRETE := Color("777f7c")
 
 ## A partir daqui o tabuleiro reto (o Rect2 largo em draw_surface) dá lugar
 ## ao afunilamento real das duas pistas até o encontro em OUTLET/INLET.
@@ -60,20 +61,19 @@ func _ready() -> void:
 		collision.shape = edge
 		rails.add_child(collision)
 	# No travel Area2D: the eastern end physically meets MountainRegion.
-	for side in [-1.0, 1.0]:
+	for edge_points in transition_guardrail_segments():
 		var collision := CollisionShape2D.new()
 		var segment := SegmentShape2D.new()
-		segment.a = Vector2(7200,-4560+side*165)
-		segment.b = Vector2(7300,-4560+side*110)
+		segment.a = edge_points[0]
+		segment.b = edge_points[1]
 		collision.shape = segment
 		rails.add_child(collision)
 	queue_redraw()
 	# z_as_relative=false (HarborGateway._ready() faz isso pra este nó) --
 	# o z_index daqui não soma com o do pai, ele É o valor final. RoadLayout
 	# (RoadNetwork) desenha o asfalto de verdade em z_index=2 absoluto; um
-	# overlay próprio, também absoluto e mais alto, garante que o remendo do
-	# vão entre as duas pistas (ver draw_inner_gap_fill) realmente fica por
-	# cima do asfalto em vez de atrás dele.
+	# overlay próprio, também absoluto e mais alto, fecha somente o vão interno
+	# entre as pistas sem cobrir a leitura das duas mãos na bifurcação.
 	var gap_fill_overlay := Node2D.new()
 	gap_fill_overlay.name = "GapFillOverlay"
 	gap_fill_overlay.z_as_relative = false
@@ -85,23 +85,28 @@ func _ready() -> void:
 func _build_lighting() -> void:
 	if Engine.is_editor_hint(): return
 	const FIXTURE = preload("res://geodata/roads/RoadLuminaire3D.gd")
-	for definition in road_definitions():
+	var definitions := road_definitions()
+	for road_index in definitions.size():
+		var definition: Dictionary = definitions[road_index]
 		var curve := Curve2D.new()
 		for point in definition.points: curve.add_point(point)
 		var length := curve.get_baked_length()
-		var count := ceili(length/140)
+		var count := ceili(length/210)
 		for i in count+1:
 			var offset := length*float(i)/count
 			var center := curve.sample_baked(offset)
 			var tangent := (curve.sample_baked(minf(offset+5,length))-curve.sample_baked(maxf(offset-5,0))).normalized()
-			# The outer edge of each one-way deck keeps both merging lanes clear.
+			# Godot's orthogonal() points left in screen coordinates. Negate it
+			# to keep both one-way carriageways' shared median clear.
 			var normal := -tangent.orthogonal()
 			var fixture := FIXTURE.new()
-			fixture.fixture_kind = "flood" if i%3 == 1 else "strip"
+			# Tall projected poles face away from the road only on the north deck.
+			fixture.fixture_kind = "flood" if road_index == 1 and i%3 == 1 else "strip"
 			fixture.position = center+normal*76
 			fixture.target_offset = -normal*76
 			fixture.tangent = tangent
 			add_child(fixture)
+			fixture.pool.scale.x *= 1.4
 
 func _draw() -> void:
 	draw_surface(self)
@@ -141,36 +146,70 @@ static func _interpolate_y_at_x(points: PackedVector2Array, x: float) -> float:
 	return points[0].y if x <= points[0].x else points[-1].y
 
 
-## Pinta por cima, com asfalto escuro, o meio do vão entre as duas pistas
-## nesta última esticada -- Geometry2D.offset_polyline() de UnifiedRoadNetwork2D
-## não fecha perfeitamente o vão entre outbound e inbound bem onde a curva
-## delas se aperta, e deixa passar uma cunha clara (SIDEWALK_COLOR) do fundo
-## por baixo. Uma linha grossa acompanhando o meio do vão (em vez de um
-## polígono com os dois lados offset um em direção ao outro, que cruzaria e
-## viraria um "laço" com pontas tão perto) cobre a falha sem depender de
-## acertar a largura exata dela.
-static func draw_inner_gap_fill(canvas: Node2D) -> void:
+## Cobre somente o vão real entre as duas pistas. O pequeno avanço de 3 px
+## apaga as linhas brancas internas antes de a faixa central compartilhada
+## começar, sem transformar a emenda inteira num retângulo de outra camada.
+static func _inner_gap_polygon(marking_clearance := 3.0) -> PackedVector2Array:
 	var outbound: PackedVector2Array = road_definitions()[0].points
 	var inbound: PackedVector2Array = road_definitions()[1].points
-	var midline := PackedVector2Array()
+	var upper_inner := PackedVector2Array()
+	var lower_inner := PackedVector2Array()
 	for i in 13:
 		var x := lerpf(TAPER_START_X, 7300.0, float(i) / 12.0)
-		var mid_y := (_interpolate_y_at_x(outbound, x) + _interpolate_y_at_x(inbound, x)) * 0.5
-		midline.append(Vector2(x, mid_y))
-	canvas.draw_polyline(midline, SURFACE_STYLE.ASPHALT, 190.0, true)
+		upper_inner.append(Vector2(
+			x,
+			_interpolate_y_at_x(inbound, x) + 31.0 - marking_clearance
+		))
+		lower_inner.append(Vector2(
+			x,
+			_interpolate_y_at_x(outbound, x) - 31.0 + marking_clearance
+		))
+	var polygon := upper_inner
+	for index in range(lower_inner.size() - 1, -1, -1):
+		polygon.append(lower_inner[index])
+	return polygon
+
+
+static func draw_inner_gap_fill(canvas: Node2D) -> void:
+	# The two one-way lanes keep a visible, dark median until the merge. The
+	# shared road renderer otherwise paints a bright sidewalk wedge between them.
+	var median := PackedVector2Array()
+	var median_colors := PackedColorArray()
+	var median_bottom := PackedVector2Array()
+	var bottom_colors := PackedColorArray()
+	var inbound: PackedVector2Array = road_definitions()[1].points
+	var outbound: PackedVector2Array = road_definitions()[0].points
+	for i in 32:
+		var x := lerpf(6400.0, TAPER_START_X, float(i) / 31.0)
+		var tint := Color(0.345, 0.392, 0.412, smoothstep(6400.0, 6620.0, x))
+		median.append(Vector2(x, _interpolate_y_at_x(inbound, x) + 36.0))
+		median_colors.append(tint)
+		median_bottom.append(Vector2(x, _interpolate_y_at_x(outbound, x) - 36.0))
+		bottom_colors.append(tint)
+	for i in range(median_bottom.size() - 1, -1, -1):
+		median.append(median_bottom[i])
+		median_colors.append(bottom_colors[i])
+	canvas.draw_polygon(median, median_colors)
+	var gap := _inner_gap_polygon()
+	if gap.size() >= 3:
+		canvas.draw_colored_polygon(gap, SURFACE_STYLE.ASPHALT)
+	# A one-pixel endpoint edge from the two independent road meshes otherwise
+	# remains across the driving surface at the streaming seam.
+	canvas.draw_rect(Rect2(7298.5, -4620.0, 3.0, 120.0), SURFACE_STYLE.ASPHALT)
+	canvas.draw_line(Vector2(7298.5, -4560), Vector2(7301.5, -4560), SURFACE_STYLE.LANE, SURFACE_STYLE.MARKING_WIDTH, true)
 
 
 static func draw_surface(canvas: Node2D) -> void:
 	for edge_points in guardrail_segments():
 		canvas.draw_line(edge_points[0],edge_points[1],Color("a4b5ba"),5,true)
-	canvas.draw_rect(Rect2(6480, -4732, TAPER_START_X - 6480, 345), SURFACE_STYLE.SHOULDER)
-	canvas.draw_colored_polygon(_east_end_envelope(), SURFACE_STYLE.SHOULDER)
+	canvas.draw_rect(Rect2(6480, -4732, TAPER_START_X - 6480, 345), DECK_CONCRETE)
+	canvas.draw_colored_polygon(_east_end_envelope(), DECK_CONCRETE)
 	for y in [-4725.0, -4395.0]:
 		canvas.draw_line(Vector2(6480, y), Vector2(TAPER_START_X, y), Color("c3c6b7"), 7)
 		for x in range(6500, int(TAPER_START_X), 45):
 			canvas.draw_circle(Vector2(x, y), 3, Color("efbf66"))
-	for side in [-1.0, 1.0]:
-		canvas.draw_line(Vector2(7200,-4560+side*165),Vector2(7300,-4560+side*110),Color("a4b5ba"),5,true)
+	for edge_points in transition_guardrail_segments():
+		canvas.draw_line(edge_points[0], edge_points[1], Color("a4b5ba"), 5, true)
 	for x in [6700.0, 7040.0]:
 		for y in [-4740.0, -4380.0]:
 			canvas.draw_rect(Rect2(x-14, y-18, 28, 36), Color("a4afa8"))
@@ -199,4 +238,14 @@ static func guardrail_segments() -> Array[PackedVector2Array]:
 						internal_edge = true
 						break
 				if not internal_edge: result.append(PackedVector2Array([a,b]))
+	return result
+
+
+static func transition_guardrail_segments() -> Array[PackedVector2Array]:
+	var result: Array[PackedVector2Array] = []
+	for side in [-1.0, 1.0]:
+		result.append(PackedVector2Array([
+			Vector2(TAPER_START_X, -4560 + side * 165),
+			Vector2(7300, -4560 + side * 110),
+		]))
 	return result

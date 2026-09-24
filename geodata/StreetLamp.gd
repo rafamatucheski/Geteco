@@ -32,6 +32,10 @@ const LAMP_PPM := 16.0
 static var _shared_cache: Dictionary = {}
 static var _light_textures: Dictionary = {}
 
+func _init() -> void:
+	# The 2D anchor never moves; only the projected damage model animates.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
 func _ready() -> void:
 	z_index = 8 # Fica acima das calçadas
 	add_to_group("obstacle")

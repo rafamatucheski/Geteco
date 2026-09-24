@@ -77,7 +77,7 @@ func _physics_process(delta: float) -> void:
 func _update_turbo_audio(delta: float) -> void:
 	if not is_instance_valid(spool): return
 	var running := is_driven_by_player and not is_broken and health > 0
-	var throttle: bool = running and _drive_input_armed and get_node("/root/GameInput").movement().y < -0.1
+	var throttle: bool = running and _drive_input_armed and get_node("/root/GameInput").vehicle_input().y > 0.1
 	var current_gear: int = _engine_sound.gear
 	if throttle and current_gear > _last_audio_gear and boost_pressure >= 0.06:
 		_pending_shift_pressure = boost_pressure

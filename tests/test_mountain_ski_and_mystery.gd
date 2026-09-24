@@ -58,7 +58,7 @@ func run() -> void:
 		expect(lodge_room.get("room_view").get("model") is Node3D, "lodge interior is rendered from a Node3D model")
 		expect(lodge_room.get_node_or_null("RentalCounter") != null, "rental counter exists")
 		expect(lodge_room.get_node_or_null("EquipmentRack") != null, "equipment rack exists")
-		expect(lodge_room.get_node_or_null("SlopeExit") != null, "rear slope exit exists")
+		expect(lodge_room.inline_mode and lodge_room.inline_facade.slope_entrance != null, "rear physical slope door exists")
 
 	var cave_cache := mountain.find_child("CaveCache", true, false)
 	var waterfall := cave_cache.find_child("WaterfallCaveExterior", true, false) if cave_cache else null
@@ -70,24 +70,26 @@ func run() -> void:
 	for id in ["mountain_expedition_pack", "mountain_expedition_journal", "mountain_expedition_camera"]:
 		expect(CollectibleCatalog.has_entry(id), "collectible catalog contains " + id)
 
-	var player: Node = mountain.player_instance
+	var player: CharacterBody2D = mountain.player_instance
 	expect(player != null, "MountainPass player exists")
 	if player:
 		player.money = 1000
 		var money_before: int = player.money
 		expect(player.begin_ski_rental(250), "player can rent the ski outfit")
 		expect(player.money == money_before - 250 and player.current_outfit_id == "dante_ski", "rental charges once and equips the ski suit")
-		var slope_exit: BuildingEntrance = lodge_room.get_node("SlopeExit")
-		player.set_meta("mountain_interior", true)
-		player.set_meta("mountain_interior_id", &"ski_lodge")
-		manager._actor_returns[player] = player.global_position
-		var blocked_position: Vector2 = player.global_position
-		manager._on_exit_requested(slope_exit, player, &"", null, &"", &"ski_lodge")
-		expect(player.global_position == blocked_position and player.has_meta("mountain_interior"), "rear exit stays locked until skis are collected")
+		player.set_physics_process(false)
+		var front: BuildingEntrance = lodge_room.inline_facade.entrance
+		var slope_exit: BuildingEntrance = lodge_room.inline_facade.slope_entrance
+		player.global_position = front.global_position + Vector2(0, 22)
+		for _i in 8: await process_frame
+		expect(await _walk(player, lodge_room.to_global(lodge_room.project_floor(Vector2(0, 3.75)))), "lodge front door admits actor on foot")
+		expect(not await _walk(player, slope_exit.global_position + Vector2(0, -22)) and player.has_meta("mountain_interior"), "rear door stays solid until skis are collected")
 		player.take_ski_equipment()
 		expect(player.ski_equipment_ready, "rack grants skis and poles")
-		manager._on_exit_requested(slope_exit, player, &"", null, &"", &"ski_lodge")
-		expect(player.is_skiing and not player.has_meta("mountain_interior"), "rear exit places the player on skis on the far side")
+		for _i in 10: await process_frame
+		expect(await _walk(player, slope_exit.global_position + Vector2(0, -22)), "rear door opens with equipment")
+		for _i in 5: await process_frame
+		expect(player.is_skiing and not player.has_meta("mountain_interior"), "rear exit starts skis at the physical doorway")
 		player.global_position = mountain.to_global(Vector2(6600, -3100))
 		var skis: Node = player.ski_controller
 		skis._update_trails(0.06)
@@ -115,3 +117,11 @@ func run() -> void:
 	if failures.is_empty():
 		print("PASS: mountain ski lodge, far-side slopes, races, waterfall cave and monster mystery")
 	quit(0 if failures.is_empty() else 1)
+
+func _walk(actor: CharacterBody2D, target: Vector2) -> bool:
+	for _step in 420:
+		var motion := target - actor.global_position
+		if motion.length() < 2.0: return true
+		if actor.move_and_collide(motion.limit_length(2.5)) != null: return false
+		await physics_frame
+	return false

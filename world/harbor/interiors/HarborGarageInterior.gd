@@ -9,6 +9,18 @@ const CHALKBOARD := preload("res://cars/CarChalkboard.gd")
 const WORKSHOP_VIEW := preload("res://world/harbor/interiors/HarborWorkshopView.gd")
 var showroom: Node2D
 var actor_scale: Node
+var _render_active := false
+var inline_mode := false
+var inline_facade: Node2D
+var inline_entrance: BuildingEntrance
+var inline_floor_polygon := PackedVector2Array()
+var inline_door_body: StaticBody2D
+var inline_door_blocker: CollisionPolygon2D
+var inline_car_presentation: Node
+var inline_car: Node2D
+var parked_car_presentation: Node
+var _inline_occupied := false
+var _inline_door_amount := 0.0
 var camera_3d: Camera3D:
 	get: return showroom.camera_3d if is_instance_valid(showroom) else null
 var sprite_3d: Sprite2D:
@@ -149,6 +161,9 @@ func _init() -> void:
 	floor_color = Color("#1e242b")
 	accent_color = Color("#e8b44f")
 
+func _build_blackout() -> void:
+	if not inline_mode: super._build_blackout()
+
 # The art supplies every floor, wall and light. No second, oversized 2D room.
 func _build_walls_and_floor() -> void:
 	pass
@@ -158,6 +173,142 @@ func _build_lights() -> void:
 
 func workshop_point(point: Vector3) -> Vector2:
 	return showroom.position + showroom.project_point(point)
+
+func _inline_project_rect(rect: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([
+		workshop_point(Vector3(rect.position.x,0,rect.position.y)),
+		workshop_point(Vector3(rect.end.x,0,rect.position.y)),
+		workshop_point(Vector3(rect.end.x,0,rect.end.y)),
+		workshop_point(Vector3(rect.position.x,0,rect.end.y)),
+	])
+
+func attach_inline_facade(facade: Node2D, entrance: BuildingEntrance) -> void:
+	inline_facade = facade
+	inline_entrance = entrance
+	global_position = entrance.global_position-workshop_point(Vector3(0,0,4.7))
+	z_as_relative = false
+	z_index = 6
+	entrance.interior_available = false
+	entrance.handle_input_locally = false
+	entrance.show_entrance_marker = false
+	entrance.show_interaction_prompt = false
+	var exterior := facade.get_node_or_null("GarageExterior3D") as Node2D
+	if exterior:
+		var old_body := exterior.get_node_or_null("BuildingSolid") as StaticBody2D
+		if old_body:
+			old_body.collision_layer = 0
+			old_body.queue_free()
+		# The workshop office uses most of the adjacent frontage. Reserve its
+		# remaining right-hand strip so that the solid neighbor stays solid.
+		var neighbor := StaticBody2D.new()
+		neighbor.name = "InlineNeighborSolid"
+		neighbor.collision_layer = 1
+		exterior.add_child(neighbor)
+		var strip := CollisionPolygon2D.new()
+		strip.polygon = PackedVector2Array([
+			exterior.call("project_floor",Vector2(6.65,1.56)),
+			exterior.call("project_floor",Vector2(8.9,1.56)),
+			exterior.call("project_floor",Vector2(8.9,7.81)),
+			exterior.call("project_floor",Vector2(6.65,7.81)),
+		])
+		neighbor.add_child(strip)
+
+func _update_inline_access(delta: float) -> void:
+	if not is_instance_valid(inline_facade) or not is_instance_valid(inline_entrance): return
+	var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
+	if not is_instance_valid(player): return
+	var controlled := get_node("/root/RegionTravel").controlled_car() as Node2D
+	if not is_instance_valid(controlled): controlled = player
+	var available: bool = controlled.visible and controlled.get("is_dead") != true
+	var inside: bool = available and contains_point(controlled.global_position)
+	var near: bool = available and controlled.global_position.distance_to(inline_entrance.global_position)<115.0
+	if near:
+		inline_entrance._away_time = 0.0
+		if not inline_entrance._door_open: inline_entrance.open_door()
+	var amount := move_toward(_inline_door_amount,1.0 if near and inline_entrance._door_open else 0.0,delta/.5)
+	if not is_equal_approx(amount,_inline_door_amount):
+		_inline_door_amount = amount
+		inline_door_blocker.set_deferred("disabled",amount>=.6)
+		showroom.viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if inside else SubViewport.UPDATE_ONCE
+	if inside and not _inline_occupied:
+		_inline_occupied = true
+		var exterior := inline_facade.get_node_or_null("GarageExterior3D") as Node2D
+		var exterior_model: Node3D = exterior.get("model") as Node3D if exterior else null
+		if exterior_model and exterior_model.has_method("set_cutaway"): exterior_model.call("set_cutaway",true)
+		if exterior:
+			for child in exterior.get_children():
+				if child is Area2D and child.get("overlay") != null:
+					(child.get("overlay") as CanvasItem).hide()
+					child.set_process(false)
+		set_npc_rendering_active(true)
+		player.set_meta("harbor_interior",true)
+		player.set_meta("police_exterior_position",inline_entrance.global_position)
+		player.enforce_weapon_restrictions()
+		var camera := player.get_node_or_null("Camera") as Camera2D
+		if camera:
+			camera.set_meta("compact_interior",get_camera_rect())
+			camera.reset_smoothing()
+		if controlled != player:
+			var car_camera := controlled.get_node_or_null("Camera") as Camera2D
+			if car_camera: car_camera.set_meta("compact_interior",get_camera_rect())
+		else: on_actor_entered(player)
+		get_parent().get_parent().emit_signal("actor_entered_interior",controlled,interior_id)
+	elif not inside and _inline_occupied:
+		_inline_occupied = false
+		var exterior := inline_facade.get_node_or_null("GarageExterior3D") as Node2D
+		var exterior_model: Node3D = exterior.get("model") as Node3D if exterior else null
+		if exterior_model and exterior_model.has_method("set_cutaway"): exterior_model.call("set_cutaway",false)
+		if exterior:
+			for child in exterior.get_children():
+				if child is Area2D and child.get("overlay") != null and not (child.get("bodies") as Array).is_empty(): child.set_process(true)
+		set_npc_rendering_active(false)
+		player.remove_meta("harbor_interior")
+		player.remove_meta("police_exterior_position")
+		var camera := player.get_node_or_null("Camera") as Camera2D
+		if camera: camera.remove_meta("compact_interior")
+		if controlled != player:
+			var car_camera := controlled.get_node_or_null("Camera") as Camera2D
+			if car_camera: car_camera.remove_meta("compact_interior")
+		get_parent().get_parent().emit_signal("actor_returned_to_exterior",controlled,interior_id)
+	if inside and controlled != player and not is_instance_valid(inline_car_presentation):
+		if is_instance_valid(parked_car_presentation) and parked_car_presentation.car == controlled:
+			parked_car_presentation.call("restore")
+			parked_car_presentation.queue_free()
+			parked_car_presentation = null
+		inline_car = controlled
+		inline_car_presentation = preload("res://systems/interiors/InteriorVehiclePresentation.gd").new()
+		add_child(inline_car_presentation)
+		inline_car_presentation.call("configure",controlled,showroom)
+	elif not inside and not _inline_occupied and is_instance_valid(inline_car_presentation):
+		inline_car_presentation.call("restore")
+		inline_car_presentation.queue_free()
+		inline_car_presentation = null
+		inline_car = null
+	_sync_parked_car_presentation()
+
+func _sync_parked_car_presentation() -> void:
+	if not inline_mode or not is_instance_valid(showroom): return
+	var owner := get_tree().get_first_node_in_group("personal_car_manager")
+	if not is_instance_valid(owner): return
+	var car = owner.get("car")
+	if not is_instance_valid(car) or not is_instance_valid(car.sprite): return
+	var parked_inside: bool = car.visible and contains_point(car.global_position)
+	var needs_room_pass: bool = parked_inside and _inline_occupied and _render_active and not car.is_driven_by_player
+	if needs_room_pass and not is_instance_valid(parked_car_presentation) and not car.has_meta("interior_vehicle_presentation"):
+		parked_car_presentation = preload("res://systems/interiors/InteriorVehiclePresentation.gd").new()
+		add_child(parked_car_presentation)
+		parked_car_presentation.call("configure",car,showroom)
+	elif not needs_room_pass and is_instance_valid(parked_car_presentation):
+		parked_car_presentation.call("restore")
+		parked_car_presentation.queue_free()
+		parked_car_presentation = null
+	# restore() displays the street sprite. A car parked under the closed roof
+	# must stay interactive and collidable without painting over that roof.
+	if not car.has_meta("interior_vehicle_presentation"):
+		var street_visible: bool = not parked_inside and car.visible
+		if car.sprite.visible != street_visible: car.sprite.visible = street_visible
+		var shadow := car.get_node_or_null("ContactShadow") as CanvasItem
+		if is_instance_valid(shadow) and shadow.visible != street_visible: shadow.visible = street_visible
 
 func get_vehicle_bay_position() -> Vector2:
 	return to_global(workshop_point(Vector3.ZERO))
@@ -190,6 +341,7 @@ func orient_actor_on_entry(actor: Node2D) -> void:
 				presentation.sync()
 
 func restore_legacy_visitor(player: Node2D) -> void:
+	if inline_mode: return
 	if player.has_meta("westgate_layout_checked") or not player.visible:
 		return
 	var old_room := Rect2(global_position - Vector2(560, 320), Vector2(1120, 640))
@@ -210,19 +362,27 @@ func is_vehicle_at_exit(world_point: Vector2) -> bool:
 ## a garagem deixasse de conter o jogador ali, HarborGame._restore_room_presentation()
 ## limparia o estado de interior no meio da manobra e a saida nunca dispararia.
 func contains_point(point: Vector2) -> bool:
+	if inline_mode: return Geometry2D.is_point_in_polygon(to_local(point),inline_floor_polygon)
 	if super.contains_point(point):
 		return true
 	var ground: Vector2 = showroom.unproject_floor(point)
 	return absf(ground.x) < 3.0 and ground.y > 0.0 and ground.y < 12.0
 
 func get_camera_rect() -> Rect2:
+	if inline_mode:
+		var center := to_global(workshop_point(Vector3(1.2,0,0)))
+		return Rect2(center-Vector2(155,115),Vector2(310,230))
 	# Fit the rear wall's top and the visible gate threshold, including the office.
 	var top_left := to_global(workshop_point(Vector3(-4.5, 3.8, -4.4)))
 	var bottom_right := to_global(workshop_point(Vector3(6.8, 0, 4.95)))
 	return Rect2(top_left, bottom_right - top_left)
 
 func set_npc_rendering_active(active: bool) -> void:
+	if inline_mode and active:
+		if is_instance_valid(jager_npc): jager_npc.show()
+		if is_instance_valid(tito_pedestrian): tito_pedestrian.show()
 	super.set_npc_rendering_active(active)
+	_render_active = active
 	if not active and is_instance_valid(actor_scale):
 		actor_scale.restore()
 		actor_scale.queue_free()
@@ -230,10 +390,27 @@ func set_npc_rendering_active(active: bool) -> void:
 	if is_instance_valid(showroom):
 		# The existing room pass contains its actors; suspend it when empty.
 		showroom.viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
+		if inline_mode: showroom.sprite_3d.visible = active
+	if inline_mode and not active:
+		if is_instance_valid(jager_npc): jager_npc.hide()
+		if is_instance_valid(tito_pedestrian): tito_pedestrian.hide()
+		if is_instance_valid(inline_car_presentation):
+			inline_car_presentation.call("restore")
+			inline_car_presentation.queue_free()
+			inline_car_presentation = null
+			inline_car = null
+		if is_instance_valid(parked_car_presentation):
+			parked_car_presentation.call("restore")
+			parked_car_presentation.queue_free()
+			parked_car_presentation = null
+		_sync_parked_car_presentation()
 
 func on_actor_entered(actor: Node2D) -> void:
-	if not actor.is_in_group("player") or is_instance_valid(actor_scale):
+	if not actor.is_in_group("player") or actor.has_meta("interior_actor_presentation"):
 		return
+	if is_instance_valid(actor_scale):
+		actor_scale.restore()
+		actor_scale.queue_free()
 	actor_scale = preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 	add_child(actor_scale)
 	actor_scale.configure(actor, showroom.camera_3d, showroom.sprite_3d)
@@ -249,6 +426,7 @@ func _setup_interior_content() -> void:
 	showroom.position = Vector2(150, 20)
 	add_child(showroom)
 	showroom.build_workshop()
+	if inline_mode: showroom.set_background_static_preparation_enabled(false)
 	jager_npc = JAGER_NPC.new()
 	jager_npc.name = "JagerMaciota"
 	jager_npc.position = workshop_point(showroom.model.get_interaction_points().maciota_seat)
@@ -285,17 +463,40 @@ func _setup_interior_content() -> void:
 	var contact_shape := jager_npc.interact_area.get_child(0) as CollisionShape2D
 	contact_shape.shape = CircleShape2D.new()
 	contact_shape.shape.radius = 15.0
-	_create_spawn_and_exit(workshop_point(Vector3(1.35, 0, 3.35)), workshop_point(Vector3(0, 0, 4.3)), &"harbor/District/Garage/Entrance/exit", "SAIR DA GARAGEM")
-	exit_door.get_node("Facade").hide()
-	exit_door.get_node("Prompt").modulate.a = 0.0
-	var sensor := exit_door.get_node("InteractionArea") as Area2D
-	sensor.position = Vector2.ZERO
-	var sensor_shape := sensor.get_node("CollisionShape2D") as CollisionShape2D
-	sensor_shape.shape = RectangleShape2D.new()
-	sensor_shape.shape.size = Vector2(70, 12)
+	if inline_mode:
+		spawn_point = Marker2D.new()
+		spawn_point.name = "SpawnPoint"
+		spawn_point.position = workshop_point(Vector3(1.35,0,3.35))
+		add_child(spawn_point)
+		inline_floor_polygon = _inline_project_rect(Rect2(-4.15,-4.10,10.65,9.05))
+		inline_door_body = StaticBody2D.new()
+		inline_door_body.name = "GarageDoorLeaves"
+		inline_door_body.collision_layer = 1
+		add_child(inline_door_body)
+		inline_door_blocker = CollisionPolygon2D.new()
+		inline_door_blocker.polygon = _inline_project_rect(Rect2(-2.10,4.54,4.4,.28))
+		inline_door_body.add_child(inline_door_blocker)
+		set_meta("fixed_camera",true)
+	else:
+		_create_spawn_and_exit(workshop_point(Vector3(1.35, 0, 3.35)), workshop_point(Vector3(0, 0, 4.3)), &"harbor/District/Garage/Entrance/exit", "SAIR DA GARAGEM")
+		exit_door.get_node("Facade").hide()
+		exit_door.get_node("Prompt").modulate.a = 0.0
+		var sensor := exit_door.get_node("InteractionArea") as Area2D
+		sensor.position = Vector2.ZERO
+		var sensor_shape := sensor.get_node("CollisionShape2D") as CollisionShape2D
+		sensor_shape.shape = RectangleShape2D.new()
+		sensor_shape.shape.size = Vector2(70, 12)
 	_build_diagnostic_station()
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
+	if inline_mode: _update_inline_access(delta)
+	# Boarding temporarily restores the rig to the car animation. Bind it back
+	# to the room only after disembarkation has returned pedestrian control.
+	if _render_active:
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if is_instance_valid(player) and player.visible and not player.get("is_control_disabled") and not player.get("is_dead") and contains_point(player.global_position) and not player.has_meta("interior_actor_presentation"):
+			on_actor_entered(player)
+	if inline_mode: return
 	if not is_instance_valid(exit_door) or not exit_door.enabled or exit_door._busy:
 		return
 	var actor := exit_door.get_nearest_actor()

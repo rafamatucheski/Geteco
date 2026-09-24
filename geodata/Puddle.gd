@@ -7,6 +7,9 @@ extends Area2D
 
 const RAIN_VISUALS := preload("res://audio/weather/RainVisualPalette.gd")
 
+static var _geometry_cache: Dictionary = {}
+static var _reflection_material: CanvasItemMaterial
+
 @export var puddle_radius: Vector2 = Vector2(26.0, 15.0)
 
 var _surface := "asphalt"
@@ -23,51 +26,49 @@ func _ready() -> void:
 	add_to_group("rain_puddle")
 	# Sky highlights stay readable after the night CanvasModulate darkens asphalt.
 	# Child polygons retain ordinary lighting, so the water body never glows.
-	var reflection_material := CanvasItemMaterial.new()
-	reflection_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
-	material = reflection_material
+	if _reflection_material == null:
+		_reflection_material = CanvasItemMaterial.new()
+		_reflection_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	material = _reflection_material
 	collision_layer = 0
 	collision_mask = 1 | 2 | 4 | 8 # Jogador, carros, pedestres — quem passar, respinga
+	var geometry := _geometry_for_radius(puddle_radius)
 
 	var col := CollisionShape2D.new()
-	var shape := ConvexPolygonShape2D.new()
-	shape.points = Geometry2D.convex_hull(_create_ellipse_polygon(puddle_radius.x, puddle_radius.y, 16))
-	col.shape = shape
+	col.shape = geometry.shape
 	add_child(col)
 
 	_reflection_poly = Polygon2D.new()
-	_reflection_poly.polygon = _create_ellipse_polygon(puddle_radius.x, puddle_radius.y, 16)
+	_reflection_poly.polygon = geometry.surface
 	_reflection_poly.color = Color(0.16, 0.22, 0.30, 0.55)
 	add_child(_reflection_poly)
 
 	var rim := Polygon2D.new()
 	_rim = rim
-	rim.polygon = _create_ellipse_polygon(puddle_radius.x * 1.08, puddle_radius.y * 1.08, 16)
+	rim.polygon = geometry.rim
 	rim.color = Color(0.35, 0.45, 0.55, 0.18)
 	add_child(rim)
 	move_child(rim, 0)
 
-	_splash_particles = CPUParticles2D.new()
-	_splash_particles.emitting = false
-	_splash_particles.one_shot = true
-	_splash_particles.amount = 18
-	_splash_particles.lifetime = 0.35
-	_splash_particles.explosiveness = 0.95
-	_splash_particles.direction = Vector2(0, -1)
-	_splash_particles.spread = 60.0
-	_splash_particles.gravity = Vector2(0, 340.0)
-	_splash_particles.initial_velocity_min = 70.0
-	_splash_particles.initial_velocity_max = 170.0
-	_splash_particles.scale_amount_min = 0.35
-	_splash_particles.scale_amount_max = 0.75
-	_splash_particles.texture = RAIN_VISUALS.splash()
-	_splash_particles.color = Color(0.82, 0.90, 1.0, 0.75)
-	_splash_particles.z_index = 9
-	add_child(_splash_particles)
-
 	body_entered.connect(_on_body_entered)
 
-func _create_ellipse_polygon(radius_x: float, radius_y: float, points: int) -> PackedVector2Array:
+
+static func _geometry_for_radius(radius: Vector2) -> Dictionary:
+	if _geometry_cache.has(radius):
+		return _geometry_cache[radius]
+	var surface := _create_ellipse_polygon(radius.x, radius.y, 16)
+	var shape := ConvexPolygonShape2D.new()
+	shape.points = Geometry2D.convex_hull(surface)
+	var geometry := {
+		"surface": surface,
+		"rim": _create_ellipse_polygon(radius.x * 1.08, radius.y * 1.08, 16),
+		"shape": shape,
+	}
+	_geometry_cache[radius] = geometry
+	return geometry
+
+
+static func _create_ellipse_polygon(radius_x: float, radius_y: float, points: int) -> PackedVector2Array:
 	var arr := PackedVector2Array()
 	for i in range(points):
 		var ang = (float(i) / float(points)) * TAU
@@ -100,7 +101,16 @@ func _draw() -> void:
 	draw_arc(Vector2(8,1),2+phase*10,0,TAU,20,Color(0.62,0.78,0.91,(1-phase)*0.4),1.0,true)
 
 func _splash(impact_speed: float) -> void:
-	if _splash_particles:
+	var pooled := false
+	var pool := get_parent()
+	if pool != null and pool.has_method("emit_puddle_splash"):
+		pooled = pool.emit_puddle_splash(global_position)
+	if not pooled:
+		# Standalone puddles (fixtures and legacy scenes) retain the exact effect,
+		# but pay for it only on their first actual impact.
+		if not is_instance_valid(_splash_particles):
+			_splash_particles = create_splash_emitter()
+			add_child(_splash_particles)
 		_splash_particles.restart()
 		_splash_particles.emitting = true
 
@@ -119,6 +129,26 @@ func _splash(impact_speed: float) -> void:
 			p.stop()
 			p.queue_free()
 	)
+
+
+static func create_splash_emitter() -> CPUParticles2D:
+	var particles := CPUParticles2D.new()
+	particles.emitting = false
+	particles.one_shot = true
+	particles.amount = 18
+	particles.lifetime = 0.35
+	particles.explosiveness = 0.95
+	particles.direction = Vector2(0, -1)
+	particles.spread = 60.0
+	particles.gravity = Vector2(0, 340.0)
+	particles.initial_velocity_min = 70.0
+	particles.initial_velocity_max = 170.0
+	particles.scale_amount_min = 0.35
+	particles.scale_amount_max = 0.75
+	particles.texture = RAIN_VISUALS.splash()
+	particles.color = Color(0.82, 0.90, 1.0, 0.75)
+	particles.z_index = 9
+	return particles
 
 func set_surface(surface: String) -> void:
 	_surface = surface

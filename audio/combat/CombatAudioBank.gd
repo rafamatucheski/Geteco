@@ -1,6 +1,7 @@
 extends RefCounted
 ## Cached resources with five non-repeating takes, usable by existing AudioStream APIs.
 const TAKES := 5
+const ACOUSTIC_BANK := preload("res://audio/acoustic/AcousticBank.gd")
 static var _cache: Dictionary = {}
 
 const IMPACT_SAMPLES: Dictionary = {
@@ -52,13 +53,19 @@ static func sound(kind: String) -> AudioStream:
 	variants.playback_mode = AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS
 	variants.random_pitch = 1.035
 	variants.random_volume_offset_db = 0.65
-	if IMPACT_SAMPLES.has(kind):
+	if ACOUSTIC_BANK.EVENTS.has(kind):
+		for sample in ACOUSTIC_BANK.EVENTS[kind]:
+			variants.add_stream(-1, sample as AudioStream)
+	elif IMPACT_SAMPLES.has(kind):
 		var takes: Array = IMPACT_SAMPLES[kind]
 		for sample in takes:
 			variants.add_stream(-1, sample as AudioStream)
 	else:
 		for take in TAKES:
-			var sample := load("res://audio/combat/%s_%d.wav" % [kind, take]) as AudioStream
+			var path := "res://audio/combat/%s_%d.wav" % [kind, take]
+			var revised: bool = kind in ["pistol","magnum","shotgun"] or kind.begins_with("suppressed_")
+			if revised: path = "res://audio/combat/arsenal_v2/%s_%d.wav" % [kind,take]
+			var sample := load(path) as AudioStream
 			variants.add_stream(-1, sample)
 	_cache[kind] = variants
 	return variants

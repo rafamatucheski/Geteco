@@ -68,6 +68,9 @@ func run() -> void:
 				player.meshy_rig.prepare_pose(1.0 / 60.0, moving, moving)
 				player.combat_pose.update(player, 1.0 / 60.0, state == "aim", moving, player._gait_arm_swing())
 				player.meshy_rig.update_pose(1.0 / 60.0, moving, moving)
+				if weapon == "knife" and state == "carry" and frame > 45:
+					var knife_palm: Node3D = player.right_lower_arm.get_node("Palm")
+					check(knife_palm.global_position.y < player.torso_node.global_position.y - 0.14, "knife carry hand hangs below the hip line")
 				if frame > 45:
 					for side in ["Right", "Left"]:
 						if state != "aim" and weapon not in MELEE and weapon != "rpg":
@@ -86,7 +89,8 @@ func run() -> void:
 						var palm: Node3D = arm.get_node("Palm")
 						if not player.meshy_rig._is_gripping(side):
 							var wrist: Basis = player.meshy_rig.skeleton.get_bone_pose(bone).basis
-							check(wrist.is_equal_approx(player.meshy_rig.skeleton.get_bone_rest(bone).basis), weapon + " reload keeps free wrist neutral")
+							# Hand size is allowed to change; neutral means no extra wrist rotation.
+							check(wrist.orthonormalized().is_equal_approx(player.meshy_rig.skeleton.get_bone_rest(bone).basis.orthonormalized()), weapon + " reload keeps free wrist neutral")
 						else:
 							check((hand_world * thumb_axis).normalized().dot(palm.global_basis.y.normalized()) > 0.99, weapon + " thumb faces up relative to grip")
 					for bone in player.meshy_rig.skeleton.get_bone_count():

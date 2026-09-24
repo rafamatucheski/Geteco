@@ -11,6 +11,7 @@ func _ready() -> void:
 	_build_barracks()
 	_build_radio()
 	_build_supplies()
+	_build_lived_in_details()
 	_build_lighting()
 	var fire := preload("res://world/mountain_pass/MountainHearthEffects3D.gd").new()
 	fire.name = "HeaterFlame"
@@ -110,9 +111,6 @@ func _build_shell() -> void:
 	for side in [-1.0, 1.0]:
 		box("AisleEdge", Vector3(side * 1.15, 0.012, 3.9), Vector3(0.035, 0.02, 3.8), yellow)
 	label("ESTAÇÃO ZERO", Vector3(0, 2.25, -5.94), 55, Color("d8e5e7"))
-	label("COMANDO / 02", Vector3(0, 0.02, -1.5), 35, Color("c4c7bd"), true)
-	label("ALOJAMENTO", Vector3(-6.6, 0.02, 1.8), 22, Color("b5bdbe"), true)
-	label("RÁDIO", Vector3(6.4, 0.02, 1.8), 26, Color("b5bdbe"), true)
 
 func _build_command() -> void:
 	var steel: Material = materials["steel"]
@@ -178,7 +176,6 @@ func _build_radio() -> void:
 		for i in 7:
 			box("ServerSlot", Vector3(8.25, 0.28 + i * 0.21, z + 0.44), Vector3(0.73, 0.13, 0.04), materials["edge"])
 			box("ServerLED", Vector3(7.98, 0.28 + i * 0.21, z + 0.47), Vector3(0.035, 0.025, 0.02), cyan)
-	label("CANAL 07 / ROTA NORTE", Vector3(6.65, 2.45, -5.94), 23, Color("89ccd2"))
 
 func _build_supplies() -> void:
 	var wood := material("crate", "77654b")
@@ -195,6 +192,26 @@ func _build_supplies() -> void:
 	for i in 5:
 		box("HeaterBars", Vector3(7.54 + i * 0.08, 0.65, 3.21), Vector3(0.025, 0.44, 0.03), steel)
 
+func _build_lived_in_details() -> void:
+	var steel: Material = materials["steel"]
+	var edge: Material = materials["edge"]
+	var cloth: Material = materials["blanket"]
+	# Wall conduits, worn blankets and desk objects give each functional zone
+	# its own scale cues without adding obstacles to the circulation lanes.
+	for y in [2.65,2.83]:
+		box("WallConduit",Vector3(0,y,-5.92),Vector3(17.5,.045,.055),steel)
+	for x in [-8.6,-4.1,4.1,8.6]:
+		box("ConduitClip",Vector3(x,2.75,-5.84),Vector3(.12,.3,.08),edge)
+	for z in [-4.6,-1.9]:
+		for height in [.48,1.65]:
+			for fold in 7:
+				box("BlanketFold",Vector3(-7.5+fold*.15,height+.097,z),Vector3(.035,.025,1.18),cloth)
+	for i in 3:
+		box("CommandDocuments",Vector3(-1.18,1.2+i*.018,-4.35),Vector3(.35,.016,.46),materials["paper"])
+	cylinder("EnamelMug",Vector3(.68,1.28,-3.95),.085,.17,edge)
+	for x in [-8.25,-7.5,-6.75,-6.0]:
+		box("LockerBase",Vector3(x,.07,4.8),Vector3(.71,.14,.76),edge)
+
 func _build_lighting() -> void:
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
@@ -202,19 +219,19 @@ func _build_lighting() -> void:
 	env.environment.background_color = Color("10171c")
 	env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.environment.ambient_light_color = Color("97b1c3")
-	env.environment.ambient_light_energy = 0.65
+	env.environment.ambient_light_energy = 0.38
 	add_child(env)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-65, -25, 0)
 	sun.light_color = Color("b6cbd6")
-	sun.light_energy = 0.65
+	sun.light_energy = 0.55
 	sun.shadow_enabled = true
 	add_child(sun)
 	for x in [-6.5, 0, 6.5]:
 		var light := OmniLight3D.new()
 		light.position = Vector3(x, 2.6, -2.8)
 		light.light_color = Color("8cc8d8") if x > 4 else Color("ffd9a0")
-		light.light_energy = 1.1
+		light.light_energy = 1.65
 		if x > 4:
 			radio_light = light
 		light.omni_range = 7
@@ -224,4 +241,4 @@ func _build_lighting() -> void:
 func _process(delta: float) -> void:
 	_ambient_clock += minf(delta, 0.1)
 	if radio_light:
-		radio_light.light_energy = 1.06 + 0.035 * sin(_ambient_clock * 1.8) + 0.015 * sin(_ambient_clock * 4.2)
+		radio_light.light_energy = 1.60 + 0.035 * sin(_ambient_clock * 1.8) + 0.015 * sin(_ambient_clock * 4.2)

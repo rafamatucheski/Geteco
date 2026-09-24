@@ -59,6 +59,8 @@ func _run() -> void:
 	assert(batch_c.get_child(0).mesh.get_aabb().size.x > original.get_aabb().size.x)
 	for batch in [batch_a,batch_b,batch_c]: batch.free()
 	await CACHE.prepare_common_models(self)
+	assert(not CACHE._models.has("res://prototypes/living_cast/models/ArcticJeepModel.gd"))
+	await CACHE.prepare_region(self, &"mountain")
 	assert(CACHE._models.has("res://prototypes/living_cast/models/ArcticJeepModel.gd"))
 	print("VEHICLE_GEOMETRY_CACHE_RESULT hits=%d first_us=%d cached_us=%d" % [CACHE.hits,total_first,total_cached])
 	quit(0)

@@ -140,8 +140,6 @@ func _build_platforms() -> void:
 		_box_at(Vector2(x + 40, -157), 0.83, Vector3(0.22, 0.29, 0.035), "trim")
 	# Arrival gantry clears coach roofs, below the elevated rail's screen
 	# silhouette. Its outer posts leave every coach bay free.
-	_mesh_layer = OVERHEAD_LAYER
-	_sign("RODOVIÁRIA  HARBOR", Vector2(9, -55), 3.38, Vector2(22.4, 1.16), 82)
 	_mesh_layer = 1
 	for x in [-190.0, 209.0]:
 		_box_at(Vector2(x, -55), 1.68, Vector3(0.15, 3.36, 0.15), "metal")

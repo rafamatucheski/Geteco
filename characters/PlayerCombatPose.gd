@@ -64,6 +64,8 @@ var action_age := 10.0
 # Exposed for MeshyDanteRig: idle pistols hang one-handed, the off-hand only
 # comes up to support the grip while aiming/firing.
 var is_engaged := false
+var melee_support_active := false
+var melee_support_weight := 0.0
 var equip_blend := 0.0
 var punch_left := false
 var knife_variant := -1
@@ -72,9 +74,9 @@ var knuckle_variant := -1
 var _right_hand := Vector3(0.24, 0.68, -0.02)
 var _left_hand := Vector3(-0.24, 0.68, -0.02)
 
-func on_attack(id: String) -> void:
+func on_attack(id: String, recoil_multiplier: float = 1.0) -> void:
 	var profile: Array = PROFILES.get(id, PROFILES.pistol)
-	recoil = minf(recoil + float(profile[2]), float(profile[2]) * 1.6)
+	recoil = minf(recoil + float(profile[2]) * recoil_multiplier, float(profile[2]) * 1.6 * recoil_multiplier)
 	action_age = 0.0
 	if id == "knife": knife_variant = (knife_variant + 1) % 3
 	if id == "axe": axe_variant = (axe_variant + 1) % 2
@@ -105,9 +107,15 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	is_engaged = engaged
 	# A bladed shoulder stance gives the support arm room to reach the
 	# fore-end while the stock actually meets the firing shoulder.
+	var melee_pose: Dictionary = {}
+	if id in ["axe", "bat"]:
+		melee_pose = preload("res://scripts/player/MeshyMeleePose.gd").shoulder_swing(id, action_age, player.walk_clock, player._move_weight, player._sprint_weight, player.torso_node.position - Vector3(0, 0.85, 0))
+	melee_support_weight = float(melee_pose.support_weight) if not melee_pose.is_empty() else 0.0
+	melee_support_active = melee_support_weight > 0.995
 	var shouldered := STOCK_ENDS.has(id) or id == "rpg"
 	var stance := -0.60 if (shouldered or id == "flamethrower") and engaged else 0.0
 	if skinned and id in SKIN_LONG_GUNS and not engaged: stance = -0.30
+	if not melee_pose.is_empty(): stance = float(melee_pose.torso)
 	_stance_yaw = lerpf(_stance_yaw, stance, 1.0 - exp(-12.0 * delta))
 	if "torso_node" in player and player.torso_node and player.has_method("_sync_upper_body_anchors"):
 		player.torso_node.rotation.y = sin(player.walk_clock) * 0.035 * player._move_weight + _stance_yaw
@@ -154,9 +162,11 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	if id in ["pistol", "magnum"] and engaged:
 		hand = Vector3(0.035, 1.09, -0.32)
 	elif id in ["pistol", "magnum"]:
-		# Idle low-ready: barrel angled toward the ground, not level with
-		# the aimed stance, so a holstered pistol reads as relaxed.
-		pitch = -0.75 if not sprinting else -0.45
+		# Keep a one-handed low carry while running. Raising the muzzle during a
+		# sprint made the pistol read like a loose vertical prop below the glove.
+		var run_weight: float = clampf(float(player.get("_sprint_weight")), 0.0, 1.0) if "_sprint_weight" in player else (1.0 if sprinting else 0.0)
+		pitch = lerpf(-0.75, -0.88, run_weight)
+		carry_yaw = lerpf(0.0, 0.08, run_weight)
 	if id == "flamethrower" and not engaged:
 		hand = Vector3(0.14, 0.99, -0.28)
 		pitch = 0.18 if sprinting else -0.08
@@ -178,33 +188,41 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		if id == "shotgun" and action_age > 0.10 and action_age < 0.48:
 			left_target.z += sin((action_age - 0.10) / 0.38 * PI) * 0.08
 	if id == "fists":
-		if engaged:
-			hand = Vector3(0.19, 0.99, -0.14)
-			left_target = Vector3(-0.19, 1.0, -0.14)
+		if action_age < 0.30:
+			hand = Vector3(0.215, 0.65, -0.025)
+			left_target = Vector3(-0.215, 0.65, -0.025)
 		else:
 			# Blend the arm carriage with the legs; holding Shift while stopped
 			# must not snap the elbows into a running/boxing pose.
 			var run: float = float(player.get("_sprint_weight")) if "_sprint_weight" in player else 0.0
 			var hand_height := 0.65
 			var hand_forward := -0.025
-			var swing_scale := 0.25
+			var swing_scale := 0.22
 			var torso: Node3D = player.get("torso_node")
 			var body_offset: Vector3 = (torso.position - Vector3(0, 0.85, 0)) if torso != null else Vector3.ZERO
 			hand = Vector3(0.215, hand_height, hand_forward - arm_swing * swing_scale) + body_offset
 			left_target = Vector3(-0.215, hand_height, hand_forward + arm_swing * swing_scale) + body_offset
 			if torso != null and run > 0.0:
-				# Swing bent arms from the shoulders in torso space. The hands
-				# rise on the forward stroke instead of sliding horizontally.
-				var right_run := Vector3(0.215, 0.20, 0) + Basis(Vector3.RIGHT, arm_swing * 0.9) * Vector3(0, -0.22, -0.20)
-				var left_run := Vector3(-0.215, 0.20, 0) + Basis(Vector3.RIGHT, -arm_swing * 0.9) * Vector3(0, -0.22, -0.20)
+				# Real running is not a fixed bent-elbow pose: the rear hand passes
+				# behind the shoulder near the hip with a more open elbow, while the
+				# forward hand rises with a shorter lever. Sweep that complete arc.
+				var swing_limit := lerpf(0.32, 0.55, run)
+				var right_cycle := clampf(arm_swing / swing_limit * 0.5 + 0.5, 0.0, 1.0)
+				var left_cycle := 1.0 - right_cycle
+				var right_angle := lerpf(-0.46, 1.15, right_cycle)
+				var left_angle := lerpf(-0.46, 1.15, left_cycle)
+				var right_radius := lerpf(0.27, 0.22, right_cycle)
+				var left_radius := lerpf(0.27, 0.22, left_cycle)
+				var right_run := Vector3(0.185, 0.20, 0) + Basis(Vector3.RIGHT, right_angle) * Vector3(0, -right_radius, 0)
+				var left_run := Vector3(-0.185, 0.20, 0) + Basis(Vector3.RIGHT, left_angle) * Vector3(0, -left_radius, 0)
 				hand = hand.lerp(torso.transform * right_run, run)
 				left_target = left_target.lerp(torso.transform * left_run, run)
 		if action_age < 0.30:
-			var jab := sin(action_age / 0.30 * PI) * 0.18
+			var jab := sin(action_age / 0.30 * PI)
 			if punch_left:
-				left_target.z -= jab
+				left_target = left_target.lerp(Vector3(-0.12, 1.06, -0.38), jab)
 			else:
-				hand.z -= jab
+				hand = hand.lerp(Vector3(0.12, 1.06, -0.38), jab)
 	elif id == "knuckles":
 		if engaged:
 			hand = Vector3(0.18, 0.96, -0.16)
@@ -232,37 +250,38 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 	elif id == "knife":
 		if engaged:
 			hand = Vector3(0.21, 0.86, -0.16)
-			left_target = Vector3(-0.18, 0.82, -0.06)
+			left_target = Vector3(-0.215, 0.65, -0.025 + arm_swing * 0.22) + player.torso_node.position - Vector3(0, 0.85, 0)
+		else:
+			# A carried knife hangs beside the thigh instead of resting at the
+			# waist. Keep a small fore/aft gait response without lifting the hand.
+			hand = Vector3(0.21, 0.66 if sprinting else 0.68, -0.11 - arm_swing * 0.12)
+			# The empty hand follows the relaxed gait, including torso bob.
+			# Do not lift it into the generic armed sprint pose.
+			left_target = Vector3(-0.215, 0.65, -0.025 + arm_swing * 0.22) + player.torso_node.position - Vector3(0, 0.85, 0)
 		if action_age < 0.32:
 			var thrust := sin(action_age / 0.32 * PI)
 			hand += [Vector3(-0.035, 0.015, -0.23), Vector3(-0.12, 0.09, -0.16), Vector3(-0.055, -0.07, -0.20)][maxi(knife_variant, 0)] * thrust
 			gun_basis = Basis(Vector3.UP, thrust * (0.45 if knife_variant == 1 else 0.08)) * Basis(Vector3.FORWARD, thrust * (0.25 if knife_variant == 2 else 0.05)) * gun_basis
-			left_target.z += 0.06 * thrust
-	elif id == "axe":
-		var pose := axe_targets(action_age, engaged, sprinting)
-		hand = pose.hand + Vector3(0.025, 0.0, -0.045)
-		gun_basis = pose.basis
-		if not engaged:
-			hand = Vector3(0.115, 0.96, -0.24)
-			gun_basis = Basis(Vector3.RIGHT, 1.1) * Basis(Vector3.BACK, -PI * 0.5)
-		left_target = hand + gun_basis * support
-	elif id == "bat":
-		hand = Vector3(0.12, 0.95, -0.28)
-		gun_basis = Basis(Vector3.RIGHT, 1.15 if engaged else 1.0)
-		if action_age < BAT_SWING_DURATION:
-			# Load behind the shoulder, sweep across the front, then recover.
-			var windup := smoothstep(0.0, 0.14, action_age)
-			var strike := smoothstep(0.14, 0.34, action_age)
-			var recovery := smoothstep(0.34, BAT_SWING_DURATION, action_age)
-			var yaw := lerpf(-1.05 * windup + 2.10 * strike, 0.0, recovery)
-			var elevation := lerpf(1.15 - 1.05 * smoothstep(0.14, BAT_HIT_TIME, action_age), 1.15, recovery)
-			hand += Vector3(0.06 * windup - 0.20 * strike, 0.04 * windup, -0.04 * strike) * (1.0 - recovery)
-			gun_basis = Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, elevation)
-		left_target = hand + gun_basis * support
 	elif id == "grenade" and action_age < 0.45:
 		var throw_arc := sin(action_age / 0.45 * PI)
 		hand += Vector3(0.0, 0.22 * throw_arc, -0.17 * throw_arc)
-	if skinned and id in ["grenade", "axe", "bat"]:
+	if id in ["axe", "bat"]:
+		hand = melee_pose.hand
+		gun_basis = melee_pose.basis
+		var torso: Node3D = player.torso_node
+		var relaxed := Vector3(-0.215, 0.65, -0.025 + arm_swing * 0.22) + torso.position - Vector3(0, 0.85, 0)
+		var run: float = player._sprint_weight
+		if run > 0.0:
+			# Open the elbow behind the hip, then shorten the lever as the hand
+			# swings forward. The free arm follows the opposing leg, not the gun.
+			var cycle := 1.0 - clampf(arm_swing / lerpf(0.32, 0.55, run) * 0.5 + 0.5, 0.0, 1.0)
+			var angle := lerpf(-0.46, 1.15, cycle)
+			var radius := lerpf(0.27, 0.22, cycle)
+			var running_hand := Vector3(-0.185, 0.20, 0) + Basis(Vector3.RIGHT, angle) * Vector3(0, -radius, 0)
+			relaxed = relaxed.lerp(torso.transform * running_hand, run)
+		left_target = relaxed.lerp(hand + gun_basis * support, melee_support_weight)
+		if not melee_support_active: support = Vector3.ZERO
+	if skinned and id == "grenade":
 		var pose := preload("res://scripts/player/MeshyMeleePose.gd").sample(id, action_age, aiming)
 		hand = pose.hand
 		gun_basis = pose.basis
@@ -288,7 +307,17 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		# The imported shoulders are narrower and the sleeves are thicker.
 		# Reach forward instead of lifting the elbow to keep the jacket clear.
 		if id in SKIN_HANDGUNS and not reloading:
-			hand = Vector3(0.035, 1.08, -0.375) if engaged else Vector3(0.26, 0.80, -0.15)
+			if engaged:
+				hand = Vector3(0.035, 1.08, -0.375)
+			else:
+				# A sprint is a compact one-handed carry, not the idle hand frozen
+				# beside the thigh. Follow the torso and a short opposing gait arc so
+				# the elbow stays bent while the actual grip remains locked to the palm.
+				var run_weight: float = clampf(float(player.get("_sprint_weight")), 0.0, 1.0) if "_sprint_weight" in player else (1.0 if sprinting else 0.0)
+				var body_offset: Vector3 = player.torso_node.position - Vector3(0, 0.85, 0)
+				var relaxed_carry: Vector3 = Vector3(0.23, 0.80, -0.15) + body_offset
+				var sprint_carry: Vector3 = Vector3(0.19, 0.70, -0.11 - arm_swing * 0.07) + body_offset
+				hand = relaxed_carry.lerp(sprint_carry, run_weight)
 			hand.z += recoil * 0.22
 			# Idle carry stays one-handed; the off-hand only joins the grip
 			# once the player actually aims or fires (support is zero until then).
@@ -321,6 +350,8 @@ func update(player: Node2D, delta: float, aiming: bool, sprinting: bool, arm_swi
 		blend = 1.0
 	_right_hand = _right_hand.lerp(hand, blend)
 	_left_hand = _left_hand.lerp(left_target, blend)
+	if id in ["axe", "bat"] and melee_support_weight == 0.0 and equip_blend >= 1.0:
+		_left_hand = left_target
 	if skinned:
 		if id in SKIN_HANDGUNS and (engaged or reloading or equip_blend < 1.0):
 			# A blend from a rifle reload must not drag the pistol through the
@@ -472,7 +503,16 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 	var left := insert
 	var pump := 0.0
 	match id:
-		"pistol", "smg", "ak47", "m4a1":
+		"pistol":
+			# Keep the magazine hand purposeful at the waist and under the grip;
+			# the old hip target left the arm hanging straight down mid-reload.
+			var magazine_well := Vector3(-0.01, 0.89, -0.22)
+			var waist_magazine := Vector3(-0.16, 0.78, -0.02)
+			var fetch := smoothstep(0.09, 0.22, t) * (1.0 - smoothstep(0.30, 0.47, t))
+			left = magazine_well.lerp(waist_magazine, fetch)
+			var rack := smoothstep(0.56, 0.65, t) * (1.0 - smoothstep(0.80, 0.89, t))
+			left = left.lerp(Vector3(0.06, 0.98, -0.25 + _reload_stroke(t, 0.66, 0.81) * 0.07), rack)
+		"smg", "ak47", "m4a1":
 			var fetch := smoothstep(0.09, 0.22, t) * (1.0 - smoothstep(0.30, 0.47, t))
 			left = insert.lerp(belt, fetch)
 			var rack := smoothstep(0.56, 0.65, t) * (1.0 - smoothstep(0.80, 0.89, t))

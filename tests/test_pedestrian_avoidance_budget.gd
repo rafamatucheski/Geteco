@@ -23,6 +23,17 @@ func _run() -> void:
 	root.add_child(actor)
 	actor.set_physics_process(false)
 	actor.position = Vector2.ZERO
+	actor._ambient_physics_elapsed = 0.0
+	actor._life_clock = 0.0
+	actor._physics_process(1.0 / 60.0)
+	check(is_zero_approx(actor._life_clock), "Authored ambient work must skip the first 60 Hz tick.")
+	actor._physics_process(1.0 / 60.0)
+	check(is_equal_approx(actor._life_clock, 1.0 / 30.0), "Authored ambient work must consume the accumulated 30 Hz step.")
+	actor.is_scared = true
+	var priority_clock := actor._life_clock
+	actor._physics_process(1.0 / 60.0)
+	check(is_equal_approx(actor._life_clock - priority_clock, 1.0 / 60.0), "Scared authored actors must remain at full physics cadence.")
+	actor.is_scared = false
 	var probe := NavigationProbe.new()
 	actor.movement_navigation = probe
 	# Measure social steering after the route's local waypoint is established.
@@ -39,7 +50,23 @@ func _run() -> void:
 	velocity = actor._navigate_towards(Vector2(300, 0), 48.0, 1.0 / 60.0)
 	check(absf(velocity.y) > 0.0, "Vizinho próximo deve continuar causando desvio.")
 	check(probe.sweeps == 1, "Direção alterada deve continuar verificando obstáculos.")
+	var commuter := preload("res://world/harbor/urban_transit/UrbanPassenger.gd").new()
+	commuter.defer_presentation = true
+	root.add_child(commuter)
+	commuter.position = Vector2.ZERO
+	commuter.walk_route(PackedVector2Array([Vector2.ZERO, Vector2(100, 0)]), "arriving")
+	commuter.set_physics_process(false)
+	commuter._ambient_physics_elapsed = 0.0
+	commuter._physics_process(1.0 / 60.0)
+	check(commuter.waypoints.size() == 2, "Urban commuter waypoint work must skip the first ambient 60 Hz tick.")
+	commuter._physics_process(1.0 / 60.0)
+	check(commuter.waypoints.size() == 1, "Urban commuter waypoint work must consume the accumulated 30 Hz step.")
+	commuter.is_scared = true
+	commuter.position = Vector2(100, 0)
+	commuter._physics_process(1.0 / 60.0)
+	check(commuter.waypoints.is_empty(), "Scared urban commuters must resume full-rate waypoint work immediately.")
 	actor.queue_free()
+	commuter.queue_free()
 	neighbor.queue_free()
 	await process_frame
 	print("PEDESTRIAN_AVOIDANCE_BUDGET_RESULT failures=%d" % failures)

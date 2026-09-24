@@ -162,27 +162,27 @@ static func _make_fire_resources() -> void:
 func _build_fire() -> void:
 	_make_fire_resources()
 	flames = CPUParticles2D.new()
-	flames.amount = 16
-	flames.lifetime = 0.55
+	flames.amount = 14
+	flames.lifetime = 0.4
 	flames.texture = flame_texture
 	flames.color_ramp = flame_colors
 	flames.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	flames.emission_rect_extents = Vector2(4, 3)
+	flames.emission_rect_extents = Vector2(4, 2)
 	flames.direction = Vector2.UP
-	flames.spread = 20
-	flames.gravity = Vector2(0, -140)
-	flames.initial_velocity_min = 30
-	flames.initial_velocity_max = 60
-	flames.scale_amount_min = 0.8
-	flames.scale_amount_max = 1.6
+	flames.spread = 16
+	flames.gravity = Vector2(0, -22)
+	flames.initial_velocity_min = 10
+	flames.initial_velocity_max = 22
+	flames.scale_amount_min = 0.2
+	flames.scale_amount_max = 0.4
 	flames.position = Vector2(0, -34)
 	add_child(flames)
 	glow_light = PointLight2D.new()
 	glow_light.color = Color("ff8a3d")
-	glow_light.energy = 0.9
+	glow_light.energy = 0.75
 	glow_light.texture = flame_texture
-	glow_light.texture_scale = 3.5
-	glow_light.position = Vector2(0, -30)
+	glow_light.texture_scale = 1.4
+	glow_light.position = Vector2(0, -32)
 	glow_light.shadow_enabled = false
 	add_child(glow_light)
 

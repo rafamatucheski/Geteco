@@ -5,10 +5,17 @@ extends "res://prototypes/living_cast/CoupeDamageModel.gd"
 ## Fornece helpers especializados para carrocerias, vidros, rodas esterçáveis e equipamentos.
 
 func _init() -> void:
+	var geometry_cache := preload("res://cars/VehicleGeometryCache.gd")
+	# Regional prewarm constructs an empty scripted shell, then advances geometry,
+	# validation and publication in scheduler-owned stages. Normal gameplay never
+	# enters this mode and keeps the restore/build/capture path below unchanged.
+	if geometry_cache.should_defer_constructor(self):
+		set_meta("vehicle_deferred_prewarm_shell", true)
+		return
 	if get_child_count() == 0:
-		if not preload("res://cars/VehicleGeometryCache.gd").restore(self):
+		if not geometry_cache.restore(self):
 			build()
-			preload("res://cars/VehicleGeometryCache.gd").capture(self)
+			geometry_cache.capture(self)
 
 func _enter_tree() -> void:
 	if get_child_count() == 0:
@@ -102,7 +109,7 @@ func _wheel_style() -> String:
 		"NordicEstate", "WoodyWagon", "BeachBuggy", "UnionSedan": return "classic"
 		"OrbitaMicro", "NimbusMinivan": return "aero"
 		"SportEstate", "VerticeMidEngine", "ValeCrossover": return "split"
-		"SummitSUV", "ArcticJeep", "PoliceSUV", "RanchSingle", "BravioCrew", "DuneBuggy": return "sport"
+		"SummitSUV", "ArcticJeep", "PoliceSUV", "RanchSingle", "BravioCrew", "AtlasCrewPickup", "SertaoTrailPickup", "DuneBuggy": return "sport"
 		_: return "multi"
 
 func add_lightbar(

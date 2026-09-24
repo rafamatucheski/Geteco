@@ -68,8 +68,8 @@ func _run() -> void:
 	for cycle in 3:
 		check(await walk("move_up",func(): return entries==cycle+1),"Atravessar a porta andando entra no banco, ciclo %d"%cycle)
 		await frames(55)
-		check(room.actor_inside() and exits==cycle,"Spawn interno não aciona saída involuntária")
-		check(manager._fade.color.a<.01 and not manager.is_transitioning(),"Cortina termina e libera o salão")
+		check(room.actor_inside() and exits==cycle,"Entrada física não aciona saída involuntária")
+		check(manager._fade.color.a<.01 and not manager.is_transitioning(),"Salão abre sem cortina")
 		check(player.get_node("Camera").has_meta("compact_interior"),"Enquadramento interno acompanha a entrada física")
 		if cycle==0:
 			if DisplayServer.get_name()!="headless":
@@ -95,17 +95,18 @@ func _run() -> void:
 	check(await walk("move_up",func(): return entries==5),"Reentrar imediatamente não perde a passagem durante cooldown")
 	check(await walk("move_down",func(): return exits==5),"Segunda reversão rápida retorna corretamente à rua")
 	await frames(70)
-	check(peak_fade>.9,"Passagens confirmadas usam a cortina de transição")
-	# A interação explícita continua utilizável nas outras portas.
+	check(peak_fade<.01,"Passagens físicas não usam cortina de transição")
+	# Both businesses now occupy their own lots.
 	var fuel=manager.get_node("InteriorSpaces/FuelInterior")
-	player.global_position=fuel.entrance.to_global(Vector2(0,42))
+	player.global_position=fuel.entrance.to_global(Vector2(0,65))
 	player.reset_physics_interpolation()
 	await frames(60)
 	peak_fade=0
 	await frames(30)
 	check(peak_fade==0,"Porta do posto também abre por proximidade sem fade falso")
-	check(fuel.entrance.request_interaction(player),"Interação explícita aceita ator no sensor do posto")
-	await frames(70)
-	check(fuel.actor_inside() and manager._fade.color.a<.01,"Interação com porta já aberta transfere e encerra a cortina")
+	check(not fuel.entrance.show_entrance_marker and not manager._door_configs.has("District/NorthFrontage4/RobberyEntrance"),"Posto não exibe marcador nem tem destino de teleporte")
+	check(await walk("move_up",func(): return fuel.actor_inside(),120),"Posto aceita entrada caminhando sem E")
+	check(fuel.inline_mode and not fuel.inline_store.roof.visible and manager._fade.color.a<.01,"Teto do posto desaparece sem cortina")
+	check(await walk("move_down",func(): return not fuel.actor_inside(),120),"Posto retorna à rua caminhando")
 	print("BANK_WALK: ",failures)
 	quit(0 if failures.is_empty() else 1)

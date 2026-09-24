@@ -71,6 +71,12 @@ func _ready() -> void:
 	moving_art.port = self
 	moving_art.z_index = 6
 	add_child(moving_art)
+	var scaffold := Node2D.new()
+	scaffold.name = "SantaMareMaintenanceScaffold"
+	scaffold.position = Vector2(0, 10)
+	scaffold.z_index = 3
+	add_child(scaffold)
+	scaffold.draw.connect(func(): _draw_ship_scaffold(scaffold))
 	_hud = CanvasLayer.new()
 	_hud.layer = 16
 	add_child(_hud)
@@ -222,6 +228,15 @@ func _build_port_models(batch: RefCounted) -> void:
 		var base: Vector2 = L.CRANES[i]
 		var crane := _model("crane",Rect2(base+Vector2(-35,-360),Vector2(240,410)),i,"QuaysideCrane3D%d" % i)
 		crane.z_index = 6
+		# Keep the existing logistics envelope, but render the raised jib over
+		# people behind its pedestal instead of painting their sprites on steel.
+		preload("res://systems/interiors/ExteriorOcclusion.gd").attach(crane.sprite_3d, base.y + 25.0 - crane.position.y)
+		# Calibrate the pedestal against the same projection as its baked/live
+		# model; the authored base anchor is not the visible footing centre.
+		var pedestal := Vector2(-crane.footprint.size.x / 20.0 * .4, crane.footprint.size.y / 16.0 * .42)
+		var foot_a: Vector2 = crane.position + crane.project_floor(pedestal-Vector2(1.5,1.5))
+		var foot_b: Vector2 = crane.position + crane.project_floor(pedestal+Vector2(1.5,1.5))
+		_solid(Rect2(foot_a, foot_b-foot_a), "CranePedestal%d" % i)
 		crane_views.append(crane)
 		var cargo := _model("transfer_cargo",Rect2(base,Vector2(96,42)),i+1,"HoistedCargo3D%d" % i)
 		cargo.z_index = 7
@@ -329,8 +344,7 @@ func _process(delta: float) -> void:
 			var worker := workers[i]
 			if worker.has_meta("medical_witness") or (worker.has_meta("medical_pending") and not worker.visible): continue
 			worker.set_physics_process((active and (shift_open or worker.get_meta("night_shift",false))) or worker.is_scared or worker.is_flying)
-		_hud.visible = L.LAND.has_point(focus) or L.WALKWAY.has_point(focus) or L.SHIP_GANGWAY.has_point(focus) or Geometry2D.is_point_in_polygon(focus,L.ship_hull())
-		_status_label.text = "PORTO SUL  ·  " + ("OPERAÇÃO DE CARGA 06h–18h" if shift_open else "TURNO NOTURNO · EQUIPE DE MANUTENÇÃO")
+		_hud.hide()
 		_update_gate(focus)
 	if not active: return
 	elapsed += delta
@@ -526,13 +540,56 @@ func _draw_walkway() -> void:
 
 func _draw_cargo_ship() -> void:
 	var hull := L.ship_hull()
+	var shadow := PackedVector2Array()
+	for point in hull:
+		shadow.append(point + Vector2(14, 16))
+	draw_colored_polygon(shadow, Color(0.02, 0.09, 0.12, 0.32))
 	draw_colored_polygon(hull,Color("183d49"))
 	var closed := hull.duplicate()
 	closed.append(hull[0])
 	draw_polyline(closed,Color("dcc6a0"),5,true)
 	draw_rect(Rect2(3930,2760,1510,330),Color("627b78"))
+	# Continuous gunwale, weathered plating and clear foredeck fittings.
+	for y in [2748.0, 3102.0]:
+		draw_line(Vector2(3960, y), Vector2(5430, y), Color("b6bca9"), 3.0)
+	for x in range(4010, 5450, 150):
+		for y in [2750.0, 3099.0]:
+			draw_rect(Rect2(x - 4, y - 8, 8, 16), Color("344e51"))
+			draw_circle(Vector2(x, y), 3.0, Color("e1cb91"))
+	for x in range(4340, 5390, 152):
+		draw_line(Vector2(x, 2934), Vector2(x + 112, 2934), Color("a6b1a1"), 2.0)
+		draw_rect(Rect2(x + 7, 2946, 23, 8), Color("3e5558"))
+		draw_circle(Vector2(x + 14, 2950), 3.0, Color("d6bb79"))
+	draw_colored_polygon(PackedVector2Array([Vector2(5460, 2760), Vector2(5601, 2842), Vector2(5667, 2925), Vector2(5574, 3034), Vector2(5460, 3085)]), Color("728a85"))
+	draw_line(Vector2(5492, 2789), Vector2(5627, 2925), Color("b9bea7"), 3.0, true)
+	draw_line(Vector2(5627, 2925), Vector2(5492, 3054), Color("b9bea7"), 3.0, true)
+	for x in [5515.0, 5575.0]:
+		draw_circle(Vector2(x, 2926), 20.0, Color("344e51"))
+		draw_circle(Vector2(x, 2926), 12.0, Color("b4b19a"))
+		draw_line(Vector2(x - 13, 2926), Vector2(x + 13, 2926), Color("e2d2aa"), 3.0)
 	for x in range(4310,5380,38): draw_line(Vector2(x,2868),Vector2(x+18,2868),Color("d4c28c"),2)
 	for x in [3960,5450]: draw_line(Vector2(x,3110),Vector2(x+65,3238),Color("b5ac8d"),2)
+	label(self, Vector2(3955, 3076), "SANTA MARE", 15, Color("e6ddc1"))
+
+
+func _draw_ship_scaffold(canvas: CanvasItem) -> void:
+	# Maintenance stage faces the water, outside the collision-protected deck.
+	var platform := Rect2(4380, 2648, 530, 72)
+	canvas.draw_rect(Rect2(platform.position + Vector2(11, 10), platform.size), Color(0.02, 0.09, 0.12, 0.32))
+	canvas.draw_rect(platform, Color("334b50"))
+	canvas.draw_rect(platform.grow(-7), Color("87938c"))
+	for x in range(4393, 4900, 13):
+		canvas.draw_line(Vector2(x, 2657), Vector2(x, 2712), Color("bbbba6"), 2.0)
+	for y in [2647.0, 2721.0]:
+		canvas.draw_line(Vector2(4378, y), Vector2(4912, y), Color("d2b16a"), 4.0)
+		for x in range(4380, 4912, 67):
+			canvas.draw_circle(Vector2(x, y), 4.0, Color("ead5a0"))
+	for x in range(4380, 4900, 106):
+		canvas.draw_line(Vector2(x, 2649), Vector2(x + 106, 2719), Color("536a6b"), 2.0)
+		canvas.draw_line(Vector2(x + 106, 2649), Vector2(x, 2719), Color("536a6b"), 2.0)
+	for x in [4450.0, 4660.0, 4860.0]:
+		canvas.draw_rect(Rect2(x - 14, 2719, 28, 13), Color("455f61"))
+		canvas.draw_line(Vector2(x, 2724), Vector2(x, 2743), Color("d4bf86"), 3.0)
 
 static func container(canvas: Node2D, rect: Rect2, color: Color) -> void:
 	canvas.draw_rect(Rect2(rect.position+Vector2(7,9),rect.size),Color(0.05,.1,.12,.3))

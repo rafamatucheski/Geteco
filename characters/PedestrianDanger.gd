@@ -14,6 +14,7 @@ static func report(projectile: Node2D, origin: Vector2, direction: Vector2, shoo
 		if now < int(shooter.get_meta("civilian_alert_after", 0)): return
 		shooter.set_meta("civilian_alert_after", now + 200)
 	var end := origin + direction.normalized() * 850.0
+	var hearing_radius := clampf(float(projectile.get_meta("gunfire_hearing_radius",HEARING_RADIUS)),0.0,HEARING_RADIUS)
 	# A trajetÃ³ria percebida termina na primeira parede/carro; tiros nÃ£o
 	# ameaÃ§am uma rua inteira do outro lado de uma quadra fechada.
 	var excluded: Array[RID] = []
@@ -28,7 +29,7 @@ static func report(projectile: Node2D, origin: Vector2, direction: Vector2, shoo
 		if not person.has_method("hear_gunfire") or person.get_world_2d() != projectile.get_world_2d(): continue
 		var near_line := Geometry2D.get_closest_point_to_segment(person.global_position, origin, end)
 		var distance: float = person.global_position.distance_to(origin)
-		if distance >= HEARING_RADIUS and person.global_position.distance_to(near_line) >= FIRING_LANE_RADIUS:
+		if distance >= hearing_radius and person.global_position.distance_to(near_line) >= FIRING_LANE_RADIUS:
 			continue
 		# Mesmo perto do disparo, paredes separam as reaÃ§Ãµes. A faixa da bala
 		# tambÃ©m respeita cobertura lateral, sem espalhar pÃ¢nico para outra rua.
@@ -36,7 +37,10 @@ static func report(projectile: Node2D, origin: Vector2, direction: Vector2, shoo
 		if not cover.is_empty() and cover.collider != person and not person.is_ancestor_of(cover.collider):
 			continue
 		person.set_meta("combat_attacker", shooter)
-		person.hear_gunfire(origin, end)
+		if person.has_method("react_to_gunfire"):
+			person.react_to_gunfire(origin, end, shooter)
+		else:
+			person.hear_gunfire(origin, end)
 
 func remember(origin: Vector2, end: Vector2) -> void:
 	for threat in threats:

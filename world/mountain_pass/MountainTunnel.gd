@@ -62,9 +62,9 @@ func _build_interior() -> void:
 	curb_bot.points = PackedVector2Array([Vector2(0, tunnel_width * 0.5 - 6), Vector2(tunnel_length, tunnel_width * 0.5 - 6)])
 	interior_node.add_child(curb_bot)
 	
-	# Enclosed overhead LED battens overlap across the full road width.
-	var light_spacing: float = 140.0
-	var current_x: float = 90.0
+	# Enclosed overhead LED battens spaced comfortably along the tunnel walls.
+	var light_spacing: float = 200.0
+	var current_x: float = 60.0
 	while current_x < tunnel_length:
 		for side in [-1,1]:
 			var lamp := preload("res://geodata/roads/RoadLuminaire3D.gd").new()
@@ -74,6 +74,7 @@ func _build_interior() -> void:
 			lamp.target_offset = Vector2(0,-side*50)
 			lamp.always_on = true
 			interior_node.add_child(lamp)
+			lamp.pool.scale = Vector2(1.8, 1.3)
 			# The rock roof still hides the real fixture until the cutaway opens.
 			lamp.hardware.z_index = 6
 			lamp.beam.z_index = 5

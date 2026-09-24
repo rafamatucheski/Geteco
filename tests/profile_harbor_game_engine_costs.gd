@@ -33,6 +33,7 @@ func _summarize(label: String, values: Array[float]) -> void:
 	])
 
 func _run() -> void:
+	var chaos_profile := OS.get_cmdline_user_args().has("--chaos")
 	root.size = Vector2i(1920, 1080)
 	root.content_scale_size = Vector2i(1920, 1080)
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
@@ -46,8 +47,10 @@ func _run() -> void:
 	var world := GAME.instantiate()
 	root.add_child(world)
 	current_scene = world
-	for i in 90: await process_frame
-	if not world.gameplay_ready or paused:
+	var checkpoint_deadline := Time.get_ticks_msec() + 120000
+	while (not world.gameplay_ready or not world.world_build_ready) and Time.get_ticks_msec() < checkpoint_deadline:
+		await process_frame
+	if not world.gameplay_ready or not world.world_build_ready or paused:
 		push_error("Engine-cost profiling checkpoint did not become playable")
 		quit(1)
 		return
@@ -58,6 +61,13 @@ func _run() -> void:
 	car.rotation = 0.0
 	world.call("_drive")
 	for i in 30: await process_frame
+	if chaos_profile:
+		var weather = world.get("weather")
+		if weather != null:
+			weather.set_weather(1)
+			weather.weather_timer = 1000000.0
+		root.get_node("WantedManager").report_crime(240)
+		await process_frame
 
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	_collect_viewports(world)

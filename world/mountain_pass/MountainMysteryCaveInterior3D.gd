@@ -2,6 +2,7 @@ extends Node3D
 
 const DETAIL := preload("res://world/mountain_pass/CaveDetailGeometry.gd")
 const SECRET_POSITION := Vector3(3.1, 0.54, -0.6)
+const FLOOR_OUTLINE: Array[Vector2] = [Vector2(-1,5.5),Vector2(-4.9,4.7),Vector2(-7.6,2.8),Vector2(-7.8,-1.9),Vector2(-5.5,-5.5),Vector2(-1.8,-6.2),Vector2(2.1,-5.8),Vector2(6.4,-4.4),Vector2(7.7,-1.1),Vector2(7.3,2.7),Vector2(4.6,4.7),Vector2(1,5.5)]
 
 func _ready() -> void:
 	_build_cave()
@@ -14,7 +15,7 @@ func _build_cave() -> void:
 	var canvas := _mat(Color("806a48"), 0.92)
 	var steel := _mat(Color("68747a"), 0.42, 0.56)
 	var amber := _mat(Color("c48a3d"), 0.62, 0.05, 1.4)
-	var outline := PackedVector2Array([Vector2(-1,5.5),Vector2(-4.9,4.7),Vector2(-7.6,2.8),Vector2(-7.8,-1.9),Vector2(-5.5,-5.5),Vector2(-1.8,-6.2),Vector2(2.1,-5.8),Vector2(6.4,-4.4),Vector2(7.7,-1.1),Vector2(7.3,2.7),Vector2(4.6,4.7),Vector2(1,5.5)])
+	var outline := PackedVector2Array(FLOOR_OUTLINE)
 	var floor_surface := SurfaceTool.new()
 	floor_surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in outline.size():
@@ -88,7 +89,8 @@ func _build_hideout_details() -> void:
 		var side := -1.0 if i%2 == 0 else 1.0
 		var p := Vector3(side*(5.8+float(i%3)*0.32),0,-3.5+float(i/2)*0.95)
 		var height := 0.45+float(i%4)*0.30
-		DETAIL.cylinder(self,"Stalagmite",p+Vector3.UP*height*0.5,0.24,0.035,height,stone)
+		var stalagmite := DETAIL.cylinder(self,"Stalagmite",p+Vector3.UP*height*0.5,0.24,0.035,height,stone)
+		stalagmite.set_meta("interior_solid_id",StringName("Stalagmite%d" % i))
 		if i < 6:
 			DETAIL.cylinder(self,"Stalactite",Vector3(p.x,2.5,p.z),0.02,0.28,1.1,stone)
 	# Layered mineral seams and fallen slabs around the rear wall.
@@ -168,11 +170,21 @@ func _box(node_name: String, point: Vector3, size: Vector3, material: Material, 
 	node.material_override = material
 	node.position = point
 	node.rotation = rotation
+	var groups := {
+		"CampBedroll":"ExpeditionCot", "CotRail":"ExpeditionCot", "CotFoot":"ExpeditionCot",
+		"SupplyCase":"SupplyCase", "SuppliesLid":"SupplyCase", "CaseStrap":"SupplyCase",
+		"SecretWeaponCase":"SecretWeaponCase", "WeaponCaseFoam":"SecretWeaponCase",
+		"OpenWeaponCaseLid":"SecretWeaponCase", "LidFoam":"SecretWeaponCase", "CaseLatch":"SecretWeaponCase",
+		"PickaxeHandle":"CampPickaxe", "PickaxeHead":"CampPickaxe"
+	}
+	node.set_meta("interior_solid_id",StringName(groups.get(node_name,"")))
 	add_child(node)
 	return node
 
 func _sphere(point: Vector3, scale_value: Vector3, material: Material) -> MeshInstance3D:
-	return preload("res://world/mountain_pass/CaveRockGeometry.gd").rock(self,point,scale_value,get_child_count()*13,material.albedo_color)
+	var rock := preload("res://world/mountain_pass/CaveRockGeometry.gd").rock(self,point,scale_value,get_child_count()*13,material.albedo_color)
+	rock.set_meta("interior_solid_id",StringName("CaveRock%d" % get_child_count()))
+	return rock
 
 func _cylinder(node_name: String, point: Vector3, radius: float, height: float, material: Material, rotation := Vector3.ZERO) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
@@ -186,5 +198,7 @@ func _cylinder(node_name: String, point: Vector3, radius: float, height: float, 
 	node.material_override = material
 	node.position = point
 	node.rotation = rotation
+	var groups := {"CampLantern":"CampLantern", "LanternCap":"CampLantern", "LanternFrame":"CampLantern", "CacheLantern":"CacheLantern", "CacheLanternCap":"CacheLantern", "RolledBlanket":"ExpeditionCot", "FoodTin":"FoodTins"}
+	node.set_meta("interior_solid_id",StringName(groups.get(node_name,"")))
 	add_child(node)
 	return node

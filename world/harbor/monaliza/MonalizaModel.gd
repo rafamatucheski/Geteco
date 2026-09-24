@@ -2,9 +2,63 @@ extends "res://prototypes/living_cast/BaseVehicle3DModel.gd"
 ## High-performance sport coupe: deep metallic blue, vibrant orange aerodynamic livery,
 ## front-mount intercooler (FMIC), projector headlights, sport rims with red calipers,
 ## and swan-neck GT wing on functional trunk pivot.
+const WHEEL_WELL_RESOURCE_PATH := "res://world/harbor/monaliza/MonalizaWheelWells.res"
+const WHEEL_WELL_RESOURCE: Resource = preload(WHEEL_WELL_RESOURCE_PATH)
 var trunk_pivot: Node3D
+static var _last_build_profile_usec: Dictionary = {}
+static var _shared_box_meshes: Dictionary = {}
+static var _shared_cylinder_meshes: Dictionary = {}
+static var _shared_sport_rim_mesh: TorusMesh
+static var _baked_wheel_well_meshes: Dictionary = {}
+# Stable authored mesh order is the lookup key for the exact carved surfaces.
+# test_monaliza_cold_construction.gd locks the resulting triangle/material
+# signature so inserting a part before an existing ordinal cannot fail silently.
+var _mesh_ordinal := 0
+
+static func last_build_profile_usec() -> Dictionary:
+	return _last_build_profile_usec.duplicate(true)
+
+func mesh_node(mesh: Mesh, position_value: Vector3, material: Material) -> MeshInstance3D:
+	var ordinal := _mesh_ordinal
+	var final_mesh: Mesh = _baked_wheel_well_meshes.get(ordinal, mesh)
+	var node := MeshInstance3D.new()
+	node.mesh = final_mesh
+	node.position = position_value
+	node.material_override = material if final_mesh.get_surface_count() > 0 else null
+	node.set_meta("monaliza_mesh_ordinal", ordinal)
+	if _baked_wheel_well_meshes.has(ordinal):
+		node.set_meta("monaliza_precarved_mesh", true)
+		if final_mesh.get_surface_count() == 0:
+			node.hide()
+	_mesh_ordinal += 1
+	add_child(node)
+	return node
+
+func box(pos: Vector3, size_value: Vector3, material: Material) -> MeshInstance3D:
+	var mesh := _shared_box_meshes.get(size_value) as BoxMesh
+	if mesh == null:
+		mesh = BoxMesh.new()
+		mesh.size = size_value
+		_shared_box_meshes[size_value] = mesh
+	return mesh_node(mesh, pos, material)
+
+func cylinder(pos: Vector3, radius: float, depth: float, material: Material) -> MeshInstance3D:
+	var key := Vector2(radius, depth)
+	var mesh := _shared_cylinder_meshes.get(key) as CylinderMesh
+	if mesh == null:
+		mesh = CylinderMesh.new()
+		mesh.top_radius = radius
+		mesh.bottom_radius = radius
+		mesh.height = depth
+		mesh.radial_segments = 32
+		_shared_cylinder_meshes[key] = mesh
+	return mesh_node(mesh, pos, material)
 
 func build() -> void:
+	_ensure_baked_wheel_well_meshes()
+	var profile: Dictionary = {}
+	var total_started := Time.get_ticks_usec()
+	var stage_started := total_started
 	paint = mat("paint", "183b91", 0.65, 0.22)
 	var orange := mat("orange", "ef7727", 0.35, 0.30)
 	var white := mat("ivory", "f0f2f5", 0.20, 0.40)
@@ -19,6 +73,8 @@ func build() -> void:
 	var amber := mat("amber", "ff9800", 0.20, 0.25, 0.65)
 	var boost_blue := mat("boost_blue", "1a68d1", 0.15, 0.40)
 	var caliper_red := mat("caliper_red", "d63031", 0.35, 0.35)
+	profile["materials"] = Time.get_ticks_usec() - stage_started
+	stage_started = Time.get_ticks_usec()
 
 	# 1. Aerodynamic Chamfered Body Rings: z, half-width, sill height, belt height.
 	var rings := [
@@ -41,6 +97,8 @@ func build() -> void:
 
 	# Underbody belly pan / undertray
 	box(Vector3(0, 0.30, 0), Vector3(1.72, 0.08, 4.30), black)
+	profile["body"] = Time.get_ticks_usec() - stage_started
+	stage_started = Time.get_ticks_usec()
 
 	# 2. Sleek Sports Coupe Cabin
 	_quad([Vector3(-0.83, 0.84, -0.57), Vector3(0.83, 0.84, -0.57), Vector3(0.68, 1.27, 0.05), Vector3(-0.68, 1.27, 0.05)], glass)
@@ -85,6 +143,8 @@ func build() -> void:
 				var angle := PI * step / 12.0
 				arch.append(Vector3(side * 0.976, 0.36 + sin(angle) * 0.38, axle + cos(angle) * 0.38))
 			tube(arch, 0.025, black)
+	profile["cabin_sides_wheels"] = Time.get_ticks_usec() - stage_started
+	stage_started = Time.get_ticks_usec()
 
 	# 3. Aggressive Front Fascia, FMIC and Aerodynamics
 	# Main front bumper in deep blue body paint
@@ -138,6 +198,8 @@ func build() -> void:
 		for z in [-1.10, -0.99, -0.88]:
 			box(Vector3(side * 0.43, 0.846, z), Vector3(0.23, 0.012, 0.026), black)
 		tube([Vector3(side * 0.30, 0.848, -1.14), Vector3(side * 0.56, 0.848, -1.14), Vector3(side * 0.56, 0.848, -0.84), Vector3(side * 0.30, 0.848, -0.84)], 0.006, orange)
+	profile["front"] = Time.get_ticks_usec() - stage_started
+	stage_started = Time.get_ticks_usec()
 
 	# 5. Rear Fascia, Diffuser and Performance Exhaust
 	box(Vector3(0, 0.42, 2.22), Vector3(1.72, 0.18, 0.12), paint)
@@ -162,6 +224,8 @@ func build() -> void:
 	for side in [-1.0, 1.0]:
 		box(Vector3(side * 0.58, 0.69, 2.17), Vector3(0.48, 0.07, 0.04), tail)
 		box(Vector3(side * 0.22, 0.69, 2.17), Vector3(0.18, 0.04, 0.03), white)
+	profile["rear"] = Time.get_ticks_usec() - stage_started
+	stage_started = Time.get_ticks_usec()
 
 	# 6. Functional Trunk Lid, Swan-Neck GT Wing & Loadout Storage
 	trunk_pivot = Node3D.new()
@@ -213,6 +277,25 @@ func build() -> void:
 	badge.position = Vector3(0, 0.53, 2.30)
 	badge.modulate = white.albedo_color
 	add_child(badge)
+	profile["trunk_and_storage"] = Time.get_ticks_usec() - stage_started
+	profile["total"] = Time.get_ticks_usec() - total_started
+	_last_build_profile_usec = profile
+	set_meta("vehicle_wheel_clearance_signature", int(WHEEL_WELL_RESOURCE.get_meta("wheel_clearance_signature", 0)))
+
+func _ensure_baked_wheel_well_meshes() -> void:
+	if not _baked_wheel_well_meshes.is_empty():
+		return
+	assert(int(WHEEL_WELL_RESOURCE.get_meta("format_version", 0)) == 1)
+	assert(String(WHEEL_WELL_RESOURCE.get_meta("model_id", "")) == "monaliza")
+	var baked: Dictionary = WHEEL_WELL_RESOURCE.get_meta("meshes", {})
+	assert(not baked.is_empty())
+	# These are the output of VehicleWheelClearance for the original Monaliza,
+	# not simplified replacements. Runtime wheel mounting therefore keeps the
+	# exact openings while avoiding polygon clipping across 277 authored parts.
+	for ordinal in baked:
+		var mesh := baked[ordinal] as ArrayMesh
+		assert(mesh != null)
+		_baked_wheel_well_meshes[int(ordinal)] = mesh
 
 func _sport_rim(side: float, axle: float, silver: Material, black: Material, caliper_mat: Material) -> void:
 	var first := get_child_count()
@@ -229,12 +312,13 @@ func _sport_rim(side: float, axle: float, silver: Material, black: Material, cal
 	var face := cylinder(Vector3(x, 0.36, axle), 0.253, 0.016, black)
 	face.rotation.z = PI / 2.0
 
-	var rim := TorusMesh.new()
-	rim.inner_radius = 0.225
-	rim.outer_radius = 0.265
-	rim.rings = 24
-	rim.ring_segments = 8
-	var lip := mesh_node(rim, Vector3(x + side * 0.014, 0.36, axle), silver)
+	if _shared_sport_rim_mesh == null:
+		_shared_sport_rim_mesh = TorusMesh.new()
+		_shared_sport_rim_mesh.inner_radius = 0.225
+		_shared_sport_rim_mesh.outer_radius = 0.265
+		_shared_sport_rim_mesh.rings = 24
+		_shared_sport_rim_mesh.ring_segments = 8
+	var lip := mesh_node(_shared_sport_rim_mesh, Vector3(x + side * 0.014, 0.36, axle), silver)
 	lip.rotation.z = PI / 2.0
 
 	# 4. Six sculpted athletic spokes

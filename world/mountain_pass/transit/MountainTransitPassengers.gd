@@ -34,12 +34,19 @@ func receive_coach(coach: Node2D) -> bool:
 	exchange_complete = false
 	arrival_clock = 0.6
 	release_delay = 0.0
-	# Recycle only people already inside a chalet; nobody vanishes on a sidewalk.
+	# Recycle people inside a chalet and corpses outside the player's view.
+	# Dead travelers must not occupy the ten live passenger slots forever.
+	var live_count := 0
+	var player := get_tree().get_first_node_in_group("player") as Node2D
 	for traveler in travelers.duplicate():
-		if traveler.routine == "inside_chalet":
+		if not is_instance_valid(traveler):
+			travelers.erase(traveler)
+		elif traveler.routine == "inside_chalet" or (traveler.is_dead and _corpse_out_of_view(traveler, player)):
 			travelers.erase(traveler)
 			traveler.queue_free()
-	var count := mini([5, 2, 4, 3][(trip_count - 1) % 4], maxi(0, 10 - travelers.size()))
+		elif not traveler.is_dead:
+			live_count += 1
+	var count := mini([5, 2, 4, 3][(trip_count - 1) % 4], maxi(0, 10 - live_count))
 	var manifest := {"trip": trip_count, "expected": count, "alighted": 0, "winter_ready": 0, "shopping": 0}
 	for index in count:
 		var traveler := Traveler.new()
@@ -62,6 +69,15 @@ func receive_coach(coach: Node2D) -> bool:
 		manifest["winter_ready" if traveler.winter_outfit else "shopping"] += 1
 	history.append(manifest)
 	if history.size() > 12: history.pop_front()
+	return true
+
+func _corpse_out_of_view(traveler: Node2D, player: Node2D) -> bool:
+	if player != null and traveler.global_position.distance_to(player.global_position) <= 1100.0:
+		return false
+	if traveler.is_visible_in_tree():
+		var screen_point := traveler.get_global_transform_with_canvas().origin
+		if get_viewport().get_visible_rect().grow(100.0).has_point(screen_point):
+			return false
 	return true
 
 func is_exchange_complete() -> bool:

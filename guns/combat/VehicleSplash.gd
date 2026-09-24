@@ -7,10 +7,12 @@ var drops: Array[Vector4] = []
 var lifts := PackedFloat32Array()
 var sizes := PackedFloat32Array()
 const LIFE := 1.35
+const VISUAL_SCALE := 0.45
 
 func setup(origin: Vector2, incoming: Vector2, lethal: bool) -> void:
 	global_position = origin
-	scale = Vector2.ONE * 0.8
+	# Keep the directional spray readable without covering the person or vehicle.
+	scale = Vector2.ONE * VISUAL_SCALE
 	direction = incoming.normalized() if not incoming.is_zero_approx() else Vector2.RIGHT
 	strength = lerpf(0.55, 1.35, clampf((incoming.length() - 60.0) / 300.0, 0.0, 1.0))
 	if lethal: strength *= 1.15

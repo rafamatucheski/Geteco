@@ -16,6 +16,10 @@ enum TreeStyle { STREET, BROADLEAF, PINE, COASTAL }
 @export var trunk_color := Color("#594334")
 
 
+func _init() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
+
 func _ready() -> void:
 	set_meta("impact_material", &"wood")
 	collision_layer = 1

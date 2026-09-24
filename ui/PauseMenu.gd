@@ -101,7 +101,10 @@ func _on_language_changed(_locale: String) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_pressed() and not event.is_echo():
-		if event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
+		var pause_pressed := event.is_action_pressed("pause_game")
+		var back_pressed := event.is_action_pressed("ui_cancel")
+		# Options abre a pausa. Círculo só volta/fecha quando o menu já está aberto.
+		if pause_pressed or (visible and back_pressed):
 			# In-world modal dialogue owns Escape first (NPC, mission board,
 			# phone). Pausing here would freeze its gesture/close animation.
 			var player := get_tree().get_first_node_in_group("player")

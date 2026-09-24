@@ -46,6 +46,16 @@ func run() -> void:
 	check(bounds[2].position.y<bounds[1].position.y,"Short beard is longer than stubble")
 	check(bounds[5].size.y<.04,"Moustache remains above the chin")
 	check(bounds[4].size.x<bounds[3].size.x*.6,"Goatee has a narrow silhouette")
+	var outfit_variants := {}
+	for identity in 8:
+		var dressed:=AnimatedPedestrian3D.new()
+		dressed.appearance_seed=identity
+		dressed.archetype_override=identity
+		stage.add_child(dressed)
+		dressed.ensure_presentation()
+		outfit_variants[int(dressed.get_meta("outfit_variant",-1))]=true
+		dressed.free()
+	check(outfit_variants.size()==8,"Eight distinct clothing families are represented")
 	# Rebuilding the same seeded citizen must not shuffle facial hair.
 	var first:=AnimatedPedestrian3D.new()
 	first.appearance_seed=128

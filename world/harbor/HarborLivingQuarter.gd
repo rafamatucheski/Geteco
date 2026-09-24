@@ -12,13 +12,15 @@ var _garage: Node2D
 var _next_bird := 7.0
 var _bird_variant := 0
 var _bird: AudioStreamPlayer2D
+var _voice_clock := 0.0
+var _voice_clear := {"cafe": false, "market": false}
 
 func _ready() -> void:
 	_rng.randomize()
 	var world := get_parent().get_parent()
 	_garage = world.get_node("Interiors").garage_interior
-	_add_source("cafe", Vector2(621, 1132), AUDIO.bed("cafe"), 290, -3)
-	_add_source("market", Vector2(1750, 805), AUDIO.bed("street", 1), 390, -9)
+	_add_source("cafe", Vector2(621, 1132), AUDIO.bed("cafe"), 125, -10)
+	_add_source("market", Vector2(1750, 805), AUDIO.bed("street", 1), 165, -14)
 	_add_source("tools", preload("res://world/harbor/HarborLocalStreets.gd").GARAGE_POSITION + Vector2(0, 120), AUDIO.bed("workshop", 1), 310, -3)
 	_add_source("courtyard", Vector2(855, 875), AUDIO.bed("birds", 1), 320, -7)
 	var stations := AUDIO.stations()
@@ -85,6 +87,15 @@ func update_context(pos: Vector2, room: Node2D, dark: bool, focus: float, distri
 	for person in neighbors:
 		if is_instance_valid(person) and (person.is_scared or person.is_dead or person.is_incapacitated):
 			panic = true
+	_voice_clock -= delta
+	if _voice_clock <= 0.0:
+		_voice_clock = 0.2
+		for key in _voice_clear:
+			var voice: AudioStreamPlayer2D = sources[key]
+			_voice_clear[key] = not inside and pos.distance_to(voice.global_position) < voice.max_distance
+			if _voice_clear[key]:
+				var ray := PhysicsRayQueryParameters2D.create(pos, voice.global_position, 1)
+				_voice_clear[key] = get_world_2d().direct_space_state.intersect_ray(ray).is_empty()
 	var active := {
 		"cafe": 0.12 if panic else (0.8 if dark else 1.0),
 		"market": 0.08 if dark else 1.0,
@@ -97,6 +108,8 @@ func update_context(pos: Vector2, room: Node2D, dark: bool, focus: float, distri
 	if not cafe_occupied:
 		active["cafe"] = 0.0
 		active["cafe_radio"] = 0.0
+	for key in _voice_clear:
+		if not _voice_clear[key]: active[key] = 0.0
 	for key in sources:
 		var source: AudioStreamPlayer2D = sources[key]
 		var allowed := room == _garage if key == "indoor_radio" else not inside

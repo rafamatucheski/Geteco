@@ -69,7 +69,12 @@ func _run() -> void:
 				var support_pos: Vector3 = support
 				if id == "shotgun": support_pos.z += player.current_gun_mesh.get_node("Pump").position.z + 0.16
 				var left_palm: Node3D = player.left_lower_arm.get_node("Palm")
-				check(left_palm.global_position.distance_to(player.current_gun_mesh.to_global(support_pos)) < 0.035, "%s moving support contact frame %d" % [id, frame])
+				var support_distance := left_palm.global_position.distance_to(player.current_gun_mesh.to_global(support_pos))
+				var relaxed_handgun_carry: bool = id in player.combat_pose.SKIN_HANDGUNS and not bool(player.combat_pose.is_engaged)
+				if relaxed_handgun_carry:
+					check(support_distance > 0.05, "%s moving free hand frame %d" % [id, frame])
+				else:
+					check(support_distance < 0.035, "%s moving support contact frame %d" % [id, frame])
 		# Exercise the actual attack entry point, not just the pose callback.
 		player.weapon_ammo[id] = {"clip": 5, "reserve": 10}
 		player._shoot_towards(player.global_position + Vector2(250, 0))

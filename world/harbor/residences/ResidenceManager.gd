@@ -53,6 +53,7 @@ var residence_interiors: Dictionary = {}
 var menu: ResidenceMenu
 var deployed_vehicle: Node2D
 var _action: Dictionary = {}
+var _access_marker: Node2D
 var _tick := 0.0
 var _old_control_disabled := false
 var _parking_tick := 0.0
@@ -100,9 +101,10 @@ func _build_properties_and_interiors() -> void:
 
 		var room := INTERIOR_SCRIPT.new() as ResidenceInterior
 		room.name = "Residence_" + String(property_id)
-		room.position = definition.interior_position
+		room.position = property.position
 		room.configure(definition, index, self)
 		interiors.get_node("InteriorSpaces").add_child(room)
+		room.attach_inline_property(property)
 		residence_interiors[property_id] = room
 		index += 1
 
@@ -128,7 +130,19 @@ func _process(delta: float) -> void:
 		return
 	_tick = 0.0
 	_snapshot_deployed_vehicle()
+	_restore_legacy_room_position()
 	_refresh_prompt()
+
+func _restore_legacy_room_position() -> void:
+	if not is_instance_valid(player): return
+	for property_id in residence_interiors:
+		var old_position: Vector2 = PROPERTIES[property_id].interior_position
+		if player.global_position.distance_to(old_position) < 500.0:
+			var destination: ResidenceInterior = residence_interiors[property_id]
+			player.global_position = destination.spawn_point.global_position if property_id == active_home_id() else properties[property_id].checkpoint_position()
+			player.velocity = Vector2.ZERO
+			player.reset_physics_interpolation()
+			return
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -156,7 +170,7 @@ func _find_action(actor: Node2D) -> Dictionary:
 		return {}
 	for property_id in residence_interiors:
 		var room: ResidenceInterior = residence_interiors[property_id]
-		if room.contains_point(player.global_position):
+		if property_id == active_home_id() and room.contains_point(player.global_position):
 			var station := room.station_near(player.global_position)
 			if not station.is_empty():
 				return {"kind": String(station.kind), "property_id": property_id, "label": String(station.label)}
@@ -178,11 +192,10 @@ func _find_action(actor: Node2D) -> Dictionary:
 					"label": "[E] GUARDAR MONALIZA" if personal else "[E] GUARDAR VEÍCULO"}
 		else:
 			var entrance_distance := player.global_position.distance_to(property.entrance_position())
-			if entrance_distance <= 62.0 and entrance_distance < best:
+			if property_id != active_home_id() and entrance_distance <= 62.0 and entrance_distance < best:
 				best = entrance_distance
-				var owned: bool = property_id == active_home_id()
-				result = {"kind": "enter" if owned else "purchase", "property_id": property_id,
-					"label": "[E] ENTRAR" if owned else "[E] COMPRAR · $ %d" % property.price}
+				result = {"kind": "purchase", "property_id": property_id,
+					"label": "[E] COMPRAR · $ %d" % property.price}
 			if property_id == active_home_id() and has_stored_vehicle():
 				var garage_distance := player.global_position.distance_to(property.garage_position())
 				if garage_distance <= 72.0 and garage_distance < best:
@@ -195,7 +208,19 @@ func _refresh_prompt() -> void:
 	if not is_instance_valid(menu):
 		return
 	_action = _find_action(_controlled_actor())
-	menu.show_prompt(String(_action.get("label", "")))
+	var kind := String(_action.get("kind", ""))
+	if not is_instance_valid(_access_marker):
+		_access_marker = preload("res://ui/DoorAccessMarker.gd").new()
+		add_child(_access_marker)
+	_access_marker.visible = false
+	if kind == "enter":
+		_access_marker.global_position = properties[_action.property_id].entrance_position()
+	elif kind == "exit":
+		var room: ResidenceInterior = residence_interiors[_action.property_id]
+		for station in room.stations:
+			if station.kind == "exit":
+				_access_marker.global_position = room.to_global(station.position)
+	menu.show_prompt("" if _access_marker.visible else String(_action.get("label", "")))
 
 
 func _run_action(action: Dictionary, actor: Node2D) -> void:
@@ -261,8 +286,17 @@ func enter_home(property_id: String) -> bool:
 	if property_id != active_home_id() or not residence_interiors.has(property_id) or interiors.is_transitioning():
 		return false
 	var room: ResidenceInterior = residence_interiors[property_id]
-	interiors.request_transition(func(): _complete_enter_home(room))
+	interiors.request_transition(func(): _prepare_enter_home(room))
 	return true
+
+
+func _prepare_enter_home(room: ResidenceInterior) -> void:
+	if not is_instance_valid(room):
+		interiors._fade_in()
+		return
+	# request_transition invokes this only after fade-out. Keep the curtain black
+	# for one rendered room frame, then move the actor and start fade-in.
+	room.prepare_presentation_for_entry(_complete_enter_home.bind(room))
 
 
 func _complete_enter_home(room: ResidenceInterior) -> void:

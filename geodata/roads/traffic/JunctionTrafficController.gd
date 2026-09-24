@@ -69,6 +69,7 @@ var _admission_blockers: Dictionary = {}
 var _actor_index_frame := -1
 var _traffic_actors: Array[Node] = []
 var _simulation_seconds := 0.0
+var _simulation_suspended := false
 var _telemetry := {
 	"reservation_grants": 0,
 	"reservation_releases": 0,
@@ -95,6 +96,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if get_tree().paused: return
+	if _simulation_suspended: return
 	_simulation_seconds += delta
 	if graph_source == null or not is_instance_valid(graph_source):
 		graph_source = _discover_graph_source()
@@ -118,6 +120,14 @@ func _process(delta: float) -> void:
 		_stage_publication_pending = false
 		_refresh_signal_visuals()
 		_synchronize_crossing_consumers()
+
+
+func set_simulation_suspended(suspended: bool) -> void:
+	_simulation_suspended = suspended
+
+
+func is_simulation_suspended() -> bool:
+	return _simulation_suspended
 
 
 func configure_graph_source(source: Node2D) -> void:
@@ -1308,8 +1318,8 @@ func _rebuild_signal_visuals() -> void:
 		visual.ground_source = graph_source
 		visual.curb_surfaces = curb_surfaces
 		visual.sidewalk_surfaces = sidewalk_surfaces
-		add_child(visual)
 		visual.global_position = _junction_world_position(junction_index)
+		add_child(visual)
 		visual.configure(StringName(junction.id), float(junction.get("radius", 48.0)), approaches)
 		_signal_visuals[junction_index] = visual
 	_refresh_signal_visuals()

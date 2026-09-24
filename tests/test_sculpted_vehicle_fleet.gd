@@ -18,15 +18,17 @@ const EXPECTED_MODELS := {
 	"nimbus_minivan": "NimbusMinivanModel.gd",
 	"vertice_midengine": "VerticeMidEngineModel.gd",
 	"bravio_crew": "BravioCrewModel.gd",
+	"atlas_crew_pickup": "AtlasCrewPickupModel.gd",
+	"sertao_trail_pickup": "SertaoTrailPickupModel.gd",
 }
 const NEW_CITY_MODELS := [
 	"orbita_micro", "aurora_executive", "vale_crossover",
-	"nimbus_minivan", "vertice_midengine", "bravio_crew",
+	"nimbus_minivan", "vertice_midengine", "bravio_crew", "atlas_crew_pickup", "sertao_trail_pickup",
 ]
 const DOOR_MODELS := [
 	"surf_woody_wagon", "dock_delivery_van", "orbita_micro",
 	"aurora_executive", "vale_crossover", "nimbus_minivan",
-	"vertice_midengine", "bravio_crew",
+	"vertice_midengine", "bravio_crew", "atlas_crew_pickup", "sertao_trail_pickup",
 ]
 
 var failures: Array[String] = []
@@ -58,6 +60,8 @@ func _run() -> void:
 		model_paths.append(model_path)
 		for key in ["target_length", "target_width", "mass", "max_speed", "acceleration", "braking", "turn_speed", "drift_factor", "durability"]:
 			check(float(spec.get(key, 0.0)) > 0.0, "%s possui %s físico válido" % [id, key])
+		if id == "vertice_midengine":
+			check(is_equal_approx(float(spec.max_speed), 780.0), "Vértice MR mantém o aumento de 20% na velocidade máxima")
 		check(ENGINE_SOUND.family_for_vehicle(id) == String(spec.engine_family), "%s usa família de motor %s" % [id, spec.engine_family])
 
 		var script := load(model_path)

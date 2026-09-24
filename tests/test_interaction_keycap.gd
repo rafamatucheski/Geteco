@@ -48,6 +48,43 @@ func run() -> void:
 	InputMap.action_add_event("interact", ev)
 	presentation._update_hints()
 	check(label.text == "F", "Rebound key is displayed without hardcoding E")
+	var door := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate()
+	world.add_child(door)
+	var actor := CharacterBody2D.new()
+	actor.add_to_group("player")
+	world.add_child(actor)
+	door._on_body_entered(actor)
+	var prompt := door.get_node("Prompt") as Label
+	check(not prompt.visible and prompt.text.is_empty(), "Door never displays a key when approached")
+	check(door._marker_node.visible, "Orange doorway marker remains visible on approach")
+	presentation._update_hints()
+	check(not prompt.visible and door._marker_node.visible, "Presentation refresh preserves the text-free doorway marker")
+	input.using_gamepad = true
+	input.device_changed.emit()
+	check(prompt.text.is_empty() and door._marker_node.visible, "Controller input does not add a glyph to the doorway")
+	door._busy = true
+	door._refresh_prompt()
+	check(not prompt.visible, "Transition hides the door interaction")
+	check(not door._marker_node.visible, "Busy doorway hides its access marker")
+	door._busy = false
+	door.show_interaction_prompt = false
+	check(not prompt.visible, "Explicit automatic passage keeps its prompt hidden")
+	door.show_interaction_prompt = true
+	door._on_body_exited(actor)
+	check(not prompt.visible, "Leaving the sensor hides the door interaction")
+	check(door._marker_node.visible, "Doorway remains marked after leaving the sensor")
+	door.enabled = false
+	check(not door._marker_node.visible, "Disabled doorway never advertises access")
+	var service_door := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate()
+	service_door.set_script(preload("res://world/harbor/HarborEntrance.gd"))
+	world.add_child(service_door)
+	check(not service_door._marker_node.visible, "Unconnected service facade has no access marker")
+	service_door.interior_available = true
+	check(service_door._marker_node.visible, "Connecting an interior immediately marks its garage doorway")
+	service_door._on_body_entered(actor)
+	check(service_door._marker_node.visible and not service_door.get_node("Prompt").visible, "Service doorway retains the orange marker on approach")
+	service_door.interior_available = false
+	check(not service_door._marker_node.visible, "Disconnecting a destination hides its access marker")
 	if DisplayServer.get_name() != "headless":
 		root.size = Vector2i(880, 320)
 		root.content_scale_size = Vector2i(880, 320)

@@ -5,7 +5,6 @@ func _ready() -> void:
 	z_index = 4
 	build_view(preload("res://guns/ammunation/AmmunationFacade3D.gd"),12.0,22.0,Vector3(0,1.8,0))
 	_build_parking()
-	add_solid(Rect2(-4.2,-2.2,8.4,4.4),"GunShopStructure")
 	for side in [-1.0,1.0]:
 		add_solid(Rect2(side*3.8-0.15,2.65,0.30,0.30),"PorchPost")
 
@@ -41,9 +40,10 @@ func install_entrance(manager: Node2D) -> void:
 	entrance = preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate()
 	entrance.name = "AmmuNationEntrance"
 	entrance.position = project_floor(Vector2(0,3.2))
-	entrance.display_name = "AMMU-NATION — ARMAS E MUNIÇÃO"
+	entrance.display_name = "AMMU-NATION"
 	entrance.entrance_kind = BuildingEntrance.EntranceKind.SHOP
 	entrance.destination_id = &"ammunation"
+	entrance.show_entrance_marker = false
 	add_child(entrance)
 	# BuildingEntrance.tscn's own $InteractionArea keeps collision_mask=3 (no
 	# player bit) so it can be reused for vehicle-only or mixed doors without
@@ -53,7 +53,7 @@ func install_entrance(manager: Node2D) -> void:
 	# ever needs to trigger it), so the fix is local to this one door instead
 	# of touching the shared scene's default or every other entrance kind.
 	entrance.get_node("InteractionArea").collision_mask = 4
+	entrance.handle_input_locally = false
 	entrance.get_node("Facade").hide()
 	entrance.get_node("Prompt").modulate.a = 0.0
-	manager.register_exterior_entrance(entrance,&"ammunation",to_global(project_floor(Vector2(0,4.5))))
 	bind_entrance(entrance,manager.ammunation_interior)

@@ -23,6 +23,7 @@ func run() -> void:
 	path.curve.add_point(Vector2(2200, 0))
 	path.set_meta("traffic_road_width", 120.0)
 	path.set_meta("traffic_lane_offset", 30.0)
+	path.set_meta("traffic_direction", 1)
 	world.add_child(path)
 	var car := ModernTrafficFactory.spawn_moving_vehicle(path, "Civilian", "union_sedan", 0.4, 80.0, 1)
 	car.set_process(false)
@@ -53,6 +54,13 @@ func run() -> void:
 	car._last_lane_motion_contract = {"controlled":true,"reservation_granted":false}
 	check(not car._siren_maneuver.tick(car,path,car.get_parent(),.3),"Yielding never drives a civilian past an ungranted junction stop")
 	car._last_lane_motion_contract = {}
+	car._siren_maneuver.state = "idle"
+	car._siren_maneuver.retry = 0
+	car._siren_maneuver.tick(car,path,car.get_parent(),.3)
+	check(car._siren_maneuver.offsets.size() == 1 and car._siren_maneuver.offsets[0] < 0.0,
+		"Yielding plans the authored outside road edge, never across opposing lanes")
+	car._siren_maneuver.state = "idle"
+	car._siren_maneuver.route = null
 	var barriers: Array[StaticBody2D] = []
 	for side in [-1,1]:
 		var person := StaticBody2D.new()

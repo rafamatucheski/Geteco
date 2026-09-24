@@ -5,16 +5,18 @@ const MAX_BURSTS := 16
 var age := 0.0
 var radius := 100.0
 var vehicle_blast := false
+var rocket_direction := Vector2.ZERO
 var lobes: Array[Vector3] = []
 var fragments: Array[Vector3] = []
 static var soft: GradientTexture2D
 
-static func spawn(parent: Node, origin: Vector2, blast_radius: float, vehicle: bool = false) -> Node2D:
+static func spawn(parent: Node, origin: Vector2, blast_radius: float, vehicle: bool = false, impact_direction: Vector2 = Vector2.ZERO) -> Node2D:
 	if not is_instance_valid(parent) or not parent.is_inside_tree(): return null
 	if parent.get_tree().get_nodes_in_group("explosion_visuals").size() >= MAX_BURSTS: return null
 	var effect := new()
 	effect.radius = clampf(blast_radius * 0.68, 40.0, 135.0)
 	effect.vehicle_blast = vehicle
+	effect.rocket_direction = impact_direction.normalized()
 	parent.add_child(effect)
 	effect.global_position = origin
 	if parent.get_tree().get_nodes_in_group("explosion_scorches").size() < 24:
@@ -56,7 +58,7 @@ func _ready() -> void:
 	for i in (30 if vehicle_blast else 22):
 		var angle := randf() * TAU
 		fragments.append(Vector3(cos(angle), sin(angle), randf_range(0.35, 1.0)))
-	if vehicle_blast:
+	if vehicle_blast or not rocket_direction.is_zero_approx():
 		var light := PointLight2D.new()
 		light.texture = soft
 		light.texture_scale = radius / 22.0
@@ -79,6 +81,7 @@ func puff(center: Vector2, size: float, color: Color) -> void:
 		draw_texture_rect(soft, Rect2(center - Vector2.ONE * size, Vector2.ONE * size * 2.0), false, color)
 
 func _draw() -> void:
+	var rocket := not rocket_direction.is_zero_approx()
 	# Dust rolls close to the road; smoke rises after the hot core has faded.
 	var dust_t := clampf(age / 0.75, 0.0, 1.0)
 	if dust_t < 1.0:
@@ -116,7 +119,17 @@ func _draw() -> void:
 			puff(center, size * 0.5, Color(1, 0.75, 0.25, (1.0 - t) * 0.70))
 	var flash := maxf(0.0, 1.0 - age / 0.12)
 	puff(Vector2.ZERO, radius * 0.72, Color(1.0,0.91,0.7,flash * 0.7))
-	if age < 0.38:
+	if rocket and age<.22:
+		var impact_fade := 1.0-age/.22
+		var sideways := rocket_direction.orthogonal()
+		for i in 7:
+			var angle := (float(i)-3.0)*.32
+			var spray := (-rocket_direction).rotated(angle)
+			var tip := spray*radius*(.18+age*3.4)
+			draw_line(tip-spray*8.0*impact_fade,tip,Color(1,.77,.35,impact_fade),1.4,true)
+		puff(sideways*radius*.15, radius*.32,Color(1,.51,.11,impact_fade*.6))
+		puff(-sideways*radius*.15, radius*.25,Color(1,.75,.3,impact_fade*.6))
+	if age < 0.38 and not rocket:
 		draw_arc(Vector2.ZERO, maxf(1.0,radius * age / 0.3), 0, TAU, 48, Color(0.9,0.76,0.52,(1.0-age/0.38)*0.35), 1.5, true)
 	if age >= 2.0: return
 	for i in fragments.size():

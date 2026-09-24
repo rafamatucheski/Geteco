@@ -11,6 +11,10 @@ extends StaticBody2D
 var _points := PackedVector2Array()
 
 
+func _init() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
+
 func _ready() -> void:
 	collision_layer = 1 if collision_enabled else 0
 	collision_mask = 0

@@ -1,0 +1,11 @@
+{
+  "should_remesh": true,
+  "prompt": "A flamboyant slender adult man wearing a WIDE BRIM FEDORA HAT and SUNGLASSES, holding a long WALKING CANE in his right hand. Full body character. The large fedora hat is essential, with a leopard print hatband. Dark sunglasses with thick gold frames cover his eyes. Thin black goatee. Elegant purple suit with black lapels, open bare chest neckline, gold necklace, NO NECKTIE. Purple trousers and dress shoes. Golden cane with a purple gemstone handle. Warm brown skin. Original charismatic Brazilian nightclub and garage owner, confident relaxed expression, natural human proportions, stylized realistic game character. Arms slightly apart, standing, feet apart. Hat, sunglasses and cane must be modeled as visible geometry. No base, no background, no text.",
+  "target_polycount": 15000,
+  "mode": "preview",
+  "topology": "triangle",
+  "ai_model": "meshy-6",
+  "target_formats": [
+    "glb"
+  ]
+}

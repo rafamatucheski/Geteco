@@ -2,9 +2,14 @@ extends "res://world/mountain_pass/MountainStaticModelView.gd"
 ## Continuous on-foot exploration: there is no scene change or actor relocation.
 const PICKUP_ID := "mountain_cargo_plane_treasure_01"
 const REWARD := 1800
+const PRESENTATION_STAGE_BUDGET_USEC := 2000
+const MAX_PRESENTATION_STEPS_PER_FRAME := 2
+const CARGO_RUNTIME_WORK := preload("res://systems/RuntimeWorkScheduler.gd")
 var inside := false
 var collected := false
 var _actor: Node2D
+var _actor_presentation: Node
+var _visitor_presentations: Dictionary = {}
 var _clock := 0.0
 var _camera: Camera2D
 var _old_zoom_meta: Variant
@@ -14,17 +19,33 @@ var treasure_model: Node3D
 var treasure_lid: Node3D
 var gold: Node3D
 var prompt: Label
+var _treasure_paint: StandardMaterial3D
+var _treasure_brass: StandardMaterial3D
+var _presentation_jobs: Array[Callable] = []
+var _presentation_job_index := 0
+var _presentation_staging_complete := false
+var _presentation_staging_frames := 0
+var _presentation_staging_steps := 0
+var _presentation_staging_last_usec := 0
+var _presentation_staging_peak_usec := 0
+var _presentation_staging_over_budget_frames := 0
+var _presentation_staging_last_steps := 0
+var _presentation_gate_pending := false
+var _treasure_box_mesh_resource: BoxMesh
 signal treasure_claimed(amount: int)
+signal presentation_staging_completed
 func _ready() -> void:
 	z_as_relative = false
 	z_index = 4
-	build_view(preload("res://world/mountain_pass/art/review_0908/CrashedCargoPlane3D.gd"),36.0,16.0,Vector3(0,1.4,-2.0))
+	build_view(preload("res://world/mountain_pass/art/review_0908/CrashedCargoPlane3D.gd"),36.0,16.0,Vector3(0,1.4,-2.0),Vector3(0,18,15),Vector2i(1440,1000))
 	_open_cargo_aisle()
 	_build_solids()
-	_build_treasure()
-	_build_smg_pickup()
+	_prepare_treasure_staging()
+	_prepare_smg_pickup()
+	_queue_presentation_stages()
 	prompt = Label.new()
-	prompt.text = "E · Abrir baú"
+	prompt.text = "E"
+	prompt.set_meta("interaction_action", &"interact")
 	prompt.position = project_floor(Vector2(0.55,-6.7))-Vector2(38,0)
 	prompt.add_theme_font_size_override("font_size",11)
 	prompt.add_theme_color_override("font_shadow_color",Color.BLACK)
@@ -33,7 +54,7 @@ func _ready() -> void:
 	prompt.z_index = 20
 	prompt.hide()
 	add_child(prompt)
-func _build_smg_pickup() -> void:
+func _prepare_smg_pickup() -> void:
 	var pickup := preload("res://world/mountain_pass/MountainWeaponPickup.gd").new()
 	pickup.name = "CargoSMG"
 	pickup.weapon_id = "smg"
@@ -45,23 +66,45 @@ func _build_smg_pickup() -> void:
 	pickup.position = project_floor(Vector2(-0.55, -7.35))
 	add_child(pickup)
 	# The cargo deck/rollers reach y=0.215; both halo and weapon must clear it.
-	pickup.install_model(model, Vector3(-0.55, 0.28, -7.35))
-	pickup.model.scale = Vector3.ONE * 2.3
-	var floor_weapon := pickup.model.get_node("FloorWeapon") as Node3D
-	for part in floor_weapon.get_children():
-		part.free()
-	preload("res://scripts/player/ArsenalWeapon3D.gd").build(floor_weapon, "smg")
-	var halo := pickup.model.get_node("FloorHalo") as MeshInstance3D
-	halo.position.y = 0.0
-	var highlight := halo.material_override as StandardMaterial3D
+	# Build only the functional shell here. install_model() would build a generic
+	# weapon that this wrapper immediately deleted, doubling first-visit work.
+	pickup.model = Node3D.new()
+	pickup.model.name = "CargoSMGModel"
+	pickup.model.position = Vector3(-0.55, 0.28, -7.35)
+	pickup._floor_height = 0.28
+	model.add_child(pickup.model)
+	var floor_weapon := Node3D.new()
+	floor_weapon.name = "FloorWeapon"
+	floor_weapon.rotation.z = PI * 0.5
+	floor_weapon.position.y = pickup.hover_height
+	pickup.model.add_child(floor_weapon)
+	var halo := MeshInstance3D.new()
+	halo.name = "FloorHalo"
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.15
+	ring.outer_radius = 0.18
+	ring.rings = 24
+	ring.ring_segments = 6
+	halo.mesh = ring
+	var highlight := StandardMaterial3D.new()
+	highlight.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	highlight.albedo_color = Color("65e8ff")
 	highlight.emission_enabled = true
 	highlight.emission = Color("65e8ff")
-	(halo.mesh as TorusMesh).outer_radius = 0.18
+	halo.material_override = highlight
+	halo.position.y = 0.0
+	pickup.model.add_child(halo)
+	pickup.model.scale = Vector3.ONE * 2.3
+
+func _stage_build_smg_geometry() -> void:
+	var pickup := get_node_or_null("CargoSMG")
+	if pickup == null or not is_instance_valid(pickup.model): return
+	var floor_weapon := pickup.model.get_node("FloorWeapon") as Node3D
+	preload("res://scripts/player/ArsenalWeapon3D.gd").build(floor_weapon, "smg")
 
 func _open_cargo_aisle() -> void:
 	var materials: Dictionary = model._materials
-	for part in model.get_children():
+	for part in model.find_children("*", "MeshInstance3D", true, false):
 		if not part is MeshInstance3D or not part.mesh is BoxMesh: continue
 		if part.material_override in [materials.get("crate_wood"),materials.get("crate_metal")]:
 			# The supplied art stacked cargo across the complete fuselage width.
@@ -73,6 +116,17 @@ func _open_cargo_aisle() -> void:
 			# Wing centre and raised tail would still cover the walking corridor
 			# even with CutawayRoof removed. Treat these as overhead sections.
 			_roof_parts.append(part)
+	# The optimized aircraft batches static boxes in MultiMeshes. Keep the same
+	# walkable aisle contract by moving only authored cargo-crate instances.
+	for batch in model.find_children("*", "MultiMeshInstance3D", true, false):
+		if batch.material_override not in [materials.get("crate_wood"), materials.get("crate_metal")]: continue
+		var multimesh: MultiMesh = batch.multimesh
+		for index in multimesh.instance_count:
+			var transform := multimesh.get_instance_transform(index)
+			transform.origin.x = -0.95
+			if transform.basis.x.length() > 0.55:
+				transform.basis.x = transform.basis.x.normalized() * 0.55
+			multimesh.set_instance_transform(index, transform)
 func _build_solids() -> void:
 	for side in [-1.0,1.0]:
 		add_solid(Rect2(side*1.55-0.12,-13.3,0.24,19.9),"FuselageWall")
@@ -85,70 +139,182 @@ func _build_solids() -> void:
 	for side in [-1.0,1.0]:
 		add_solid(Rect2(side*0.62-0.26,-11.85,0.52,0.8),"PilotSeat")
 	add_solid(Rect2(-1.1,-12.9,2.2,0.6),"CockpitInstruments")
-func _build_treasure() -> void:
+func _prepare_treasure_staging() -> void:
 	treasure_model = Node3D.new()
 	treasure_model.name = "SmugglerTreasure"
 	treasure_model.position = Vector3(0.55,0.20,-7.35)
 	model.add_child(treasure_model)
-	var paint := StandardMaterial3D.new()
-	paint.albedo_color = Color("98532c")
-	paint.roughness = 0.75
-	_box(treasure_model,Vector3(0,0.04,0),Vector3(0.75,0.08,0.6),paint)
-	for x in [-0.34,0.34]:
-		_box(treasure_model,Vector3(x,0.25,0),Vector3(0.07,0.42,0.6),paint)
-	for z in [-0.265,0.265]:
-		_box(treasure_model,Vector3(0,0.25,z),Vector3(0.68,0.42,0.07),paint)
+	_treasure_paint = StandardMaterial3D.new()
+	_treasure_paint.albedo_color = Color("98532c")
+	_treasure_paint.roughness = 0.75
 	treasure_lid = Node3D.new()
+	treasure_lid.name = "Lid"
 	treasure_lid.position = Vector3(0,0.45,-0.30)
 	treasure_model.add_child(treasure_lid)
-	var brass := StandardMaterial3D.new()
-	brass.albedo_color = Color("ffd16b")
-	brass.metallic = 0.45
-	brass.emission_enabled = true
-	brass.emission = Color("b67a24")
-	brass.emission_energy_multiplier = 0.35
-	# Broad bands and a front lock read as a treasure chest from the overhead camera.
-	for x in [-0.26, 0.26]:
-		_box(treasure_model,Vector3(x,0.21,0),Vector3(0.075,0.44,0.62),brass)
-	# Faceted barrel lid with raised brass straps, hinged at the rear edge.
-	for segment in 8:
-		var angle := (float(segment)+0.5)*PI/8.0
-		var centre := Vector3(0,sin(angle)*0.24,0.30+cos(angle)*0.30)
-		_box(treasure_lid,centre,Vector3(0.78,0.055,0.125),paint)
-		(treasure_lid.get_child(-1) as Node3D).rotation.x = angle-PI*0.5
-		for x in [-0.26,0.26]:
-			_box(treasure_lid,centre+Vector3(x,sin(angle)*0.025,cos(angle)*0.025),Vector3(0.08,0.035,0.13),brass)
-			(treasure_lid.get_child(-1) as Node3D).rotation.x = angle-PI*0.5
-	_box(treasure_model,Vector3(0,0.035,0),Vector3(0.79,0.07,0.64),brass)
-	_box(treasure_lid,Vector3(0,-0.035,0.62),Vector3(0.16,0.20,0.045),brass)
+	_treasure_brass = StandardMaterial3D.new()
+	_treasure_brass.albedo_color = Color("ffd16b")
+	_treasure_brass.metallic = 0.45
+	_treasure_brass.emission_enabled = true
+	_treasure_brass.emission = Color("b67a24")
+	_treasure_brass.emission_energy_multiplier = 0.35
 	gold = Node3D.new()
+	gold.name = "Gold"
 	treasure_model.add_child(gold)
-	for x in [-0.2,0.0,0.2]: _box(gold,Vector3(x,0.39,0),Vector3(0.13,0.06,0.25),brass)
-func _box(parent: Node3D,pos: Vector3,size: Vector3,material: Material) -> void:
+
+func _queue_presentation_stages() -> void:
+	_presentation_jobs.append(Callable(self, "_stage_build_smg_geometry"))
+	_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(0,0.04,0),Vector3(0.75,0.08,0.6),_treasure_paint))
+	for x in [-0.34,0.34]:
+		_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(x,0.25,0),Vector3(0.07,0.42,0.6),_treasure_paint))
+	for z in [-0.265,0.265]:
+		_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(0,0.25,z),Vector3(0.68,0.42,0.07),_treasure_paint))
+	# Broad bands and a front lock read as a treasure chest from the overhead camera.
+	for x in [-0.26,0.26]:
+		_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(x,0.21,0),Vector3(0.075,0.44,0.62),_treasure_brass))
+	# Each lid segment is a single bounded stage so it never appears half assembled.
+	for segment in 8:
+		_presentation_jobs.append(Callable(self, "_stage_treasure_lid_segment").bind(segment))
+	_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(0,0.035,0),Vector3(0.79,0.07,0.64),_treasure_brass))
+	_presentation_jobs.append(Callable(self, "_box").bind(treasure_lid,Vector3(0,-0.035,0.62),Vector3(0.16,0.20,0.045),_treasure_brass))
+	for x in [-0.2,0.0,0.2]:
+		_presentation_jobs.append(Callable(self, "_box").bind(gold,Vector3(x,0.39,0),Vector3(0.13,0.06,0.25),_treasure_brass))
+	for z in [-7.0, 1.5]:
+		_presentation_jobs.append(Callable(self, "_stage_cargo_lamp").bind(z))
+
+func _stage_cargo_lamp(z: float) -> void:
+	var lens := StandardMaterial3D.new()
+	lens.albedo_color = Color("ffd1a0")
+	lens.emission_enabled = true
+	lens.emission = Color("ffc080")
+	lens.emission_energy_multiplier = 1.3
+	_box(model, Vector3(1.35,.95,z), Vector3(.08,.16,.28), lens)
+	var light := OmniLight3D.new()
+	light.name = "CargoEmergencyLight"
+	light.position = Vector3(.8,1.25,z)
+	light.light_color = Color("ffcd95")
+	light.light_energy = 1.35
+	light.omni_range = 4.5
+	light.shadow_enabled = false
+	model.add_child(light)
+
+func _stage_treasure_lid_segment(segment: int) -> void:
+	var angle := (float(segment)+0.5)*PI/8.0
+	var centre := Vector3(0,sin(angle)*0.24,0.30+cos(angle)*0.30)
+	var panel := _box(treasure_lid,centre,Vector3(0.78,0.055,0.125),_treasure_paint)
+	panel.rotation.x = angle-PI*0.5
+	for x in [-0.26,0.26]:
+		var strap := _box(treasure_lid,centre+Vector3(x,sin(angle)*0.025,cos(angle)*0.025),Vector3(0.08,0.035,0.13),_treasure_brass)
+		strap.rotation.x = angle-PI*0.5
+
+func _drain_presentation_staging() -> void:
+	if _presentation_staging_complete or _presentation_gate_pending: return
+	_presentation_gate_pending = true
+	var ticket: Dictionary = await CARGO_RUNTIME_WORK.reserve(
+		self,
+		&"mountain_cargo_plane",
+		CARGO_RUNTIME_WORK.PRIORITY_VISIBLE,
+		PRESENTATION_STAGE_BUDGET_USEC)
+	_presentation_gate_pending = false
+	if ticket.is_empty() or _presentation_staging_complete:
+		return
+	var started := Time.get_ticks_usec()
+	var steps := 0
+	while _presentation_job_index < _presentation_jobs.size() and steps < MAX_PRESENTATION_STEPS_PER_FRAME:
+		if steps > 0 and Time.get_ticks_usec() - started >= PRESENTATION_STAGE_BUDGET_USEC: break
+		_presentation_jobs[_presentation_job_index].call()
+		_presentation_job_index += 1
+		steps += 1
+	var elapsed := Time.get_ticks_usec() - started
+	CARGO_RUNTIME_WORK.complete(ticket, elapsed)
+	_presentation_staging_frames += 1
+	_presentation_staging_steps += steps
+	_presentation_staging_last_steps = steps
+	_presentation_staging_last_usec = elapsed
+	_presentation_staging_peak_usec = maxi(_presentation_staging_peak_usec, elapsed)
+	if elapsed > PRESENTATION_STAGE_BUDGET_USEC: _presentation_staging_over_budget_frames += 1
+	if is_instance_valid(viewport_3d): viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if inside else SubViewport.UPDATE_ONCE
+	if _presentation_job_index >= _presentation_jobs.size():
+		_presentation_staging_complete = true
+		_presentation_jobs.clear()
+		presentation_staging_completed.emit()
+
+func is_presentation_staging_complete() -> bool:
+	return _presentation_staging_complete
+
+func get_presentation_staging_metrics() -> Dictionary:
+	return {
+		"complete": _presentation_staging_complete,
+		"budget_usec": PRESENTATION_STAGE_BUDGET_USEC,
+		"max_steps_per_frame": MAX_PRESENTATION_STEPS_PER_FRAME,
+		"frames": _presentation_staging_frames,
+		"steps": _presentation_staging_steps,
+		"pending_steps": maxi(0, _presentation_jobs.size() - _presentation_job_index),
+		"last_steps": _presentation_staging_last_steps,
+		"last_usec": _presentation_staging_last_usec,
+		"peak_usec": _presentation_staging_peak_usec,
+		"over_budget_frames": _presentation_staging_over_budget_frames,
+	}
+
+func _treasure_box_mesh() -> BoxMesh:
+	if _treasure_box_mesh_resource == null:
+		_treasure_box_mesh_resource = BoxMesh.new()
+		_treasure_box_mesh_resource.size = Vector3.ONE
+		_treasure_box_mesh_resource.resource_name = "MountainCargoTreasureSharedBox"
+	return _treasure_box_mesh_resource
+
+func _box(parent: Node3D,pos: Vector3,size: Vector3,material: Material) -> MeshInstance3D:
 	var part := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = size
-	part.mesh = box
+	part.mesh = _treasure_box_mesh()
 	part.material_override = material
 	part.position = pos
+	part.scale = size
 	parent.add_child(part)
+	return part
 func contains_actor(actor: Node2D) -> bool:
 	if not is_instance_valid(actor) or not actor.is_visible_in_tree(): return false
 	if actor.get("is_dead") == true: return false
+	if global_position.distance_squared_to(actor.global_position) > 810000.0: return false
 	return Rect2(-1.37,-13.0,2.74,22.4).has_point(unproject_floor(actor.global_position))
 func _process(delta: float) -> void:
+	_drain_presentation_staging()
 	_clock += delta
 	if _clock < 0.10: return
 	_clock = 0.0
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	var occupied := contains_actor(player)
-	if occupied != inside or (inside and player != _actor): _set_inside(player,occupied)
+	var presentation_lost: bool = inside and is_instance_valid(_actor_presentation) and _actor_presentation.actor != player
+	if occupied != inside or (inside and player != _actor) or presentation_lost: _set_inside(player,occupied)
+	_sync_visitors()
+	if int(viewport_3d.get_meta("interior_actor_count",0)) > 0:
+		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	elif viewport_3d.render_target_update_mode == SubViewport.UPDATE_ALWAYS:
+		viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
 	if not is_instance_valid(player): return
 	var saved: bool = player.get("world_pickups_collected") is Array and player.world_pickups_collected.has(PICKUP_ID)
 	if saved != collected: _set_collected(saved)
 	var floor_position := unproject_floor(player.global_position)
 	prompt.visible = inside and not collected and floor_position.distance_to(Vector2(0.55,-7.35)) < 1.75
+
+func _sync_visitors() -> void:
+	for visitor in _visitor_presentations.keys():
+		if not is_instance_valid(visitor) or _visitor_presentations[visitor].actor != visitor or not contains_actor(visitor):
+			_visitor_presentations[visitor].restore()
+			_visitor_presentations[visitor].queue_free()
+			_visitor_presentations.erase(visitor)
+	for visitor in get_tree().get_nodes_in_group("pedestrian") + get_tree().get_nodes_in_group("police_officer"):
+		if _visitor_presentations.has(visitor) or visitor.has_meta("interior_actor_presentation") or not contains_actor(visitor): continue
+		var rig = visitor.get("model_root") if visitor.get("model_root") != null else visitor.get("model")
+		var view = visitor.get("viewport_3d") if visitor.get("viewport_3d") != null else visitor.get("viewport")
+		if not rig is Node3D or not view is SubViewport: continue
+		var presentation := preload("res://world/mountain_pass/MountainCargoActorPresentation.gd").new()
+		add_child(presentation)
+		presentation.configure(visitor,camera_3d,sprite_3d)
+		_visitor_presentations[visitor] = presentation
 func _set_inside(player: Node2D, value: bool) -> void:
+	if is_instance_valid(_actor_presentation):
+		_actor_presentation.restore()
+		_actor_presentation.queue_free()
+		_actor_presentation = null
 	if inside and is_instance_valid(_actor): _actor.remove_meta("mountain_shelter")
 	if is_instance_valid(_camera):
 		if _had_zoom_meta: _camera.set_meta("mountain_zoom",_old_zoom_meta)
@@ -158,8 +324,12 @@ func _set_inside(player: Node2D, value: bool) -> void:
 	inside = value
 	model.set_cutaway(value)
 	for part in _roof_parts: part.visible = not value
-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if value else SubViewport.UPDATE_ONCE
 	if value:
+		if player.get("model_root") is Node3D and player.get("viewport_3d") is SubViewport:
+			_actor_presentation = preload("res://world/mountain_pass/MountainCargoActorPresentation.gd").new()
+			add_child(_actor_presentation)
+			_actor_presentation.configure(player, camera_3d, sprite_3d)
 		player.set_meta("mountain_shelter",true)
 		_camera = player.get_node_or_null("Camera") as Camera2D
 		if _camera:
@@ -167,7 +337,7 @@ func _set_inside(player: Node2D, value: bool) -> void:
 			_old_zoom_meta = _camera.get_meta("mountain_zoom") if _had_zoom_meta else null
 			_camera.set_meta("mountain_zoom",2.5)
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode==KEY_E and prompt.visible:
+	if event.is_action_pressed("interact") and not event.is_echo() and prompt.visible:
 		claim_treasure(_actor)
 		get_viewport().set_input_as_handled()
 func claim_treasure(player: Node2D) -> bool:
@@ -188,14 +358,18 @@ func claim_treasure(player: Node2D) -> bool:
 	sound.play()
 	if player.has_method("_show_weapon_notice"): player._show_weapon_notice("TESOURO DOS LOBOS ENCONTRADO · +$%d" % REWARD)
 	treasure_claimed.emit(REWARD)
+	get_node("/root/SaveManager").request_autosave("Tesouro encontrado")
 	return true
 func _set_collected(value: bool) -> void:
 	collected = value
 	treasure_lid.rotation.x = -1.15 if value else 0.0
 	gold.visible = not value
 	if value: prompt.hide()
-	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS if inside else SubViewport.UPDATE_ONCE
 func _exit_tree() -> void:
+	if is_instance_valid(_actor_presentation): _actor_presentation.restore()
+	for presentation in _visitor_presentations.values(): presentation.restore()
+	super._exit_tree()
 	if is_instance_valid(_actor): _actor.remove_meta("mountain_shelter")
 	if is_instance_valid(_camera):
 		if _had_zoom_meta: _camera.set_meta("mountain_zoom",_old_zoom_meta)

@@ -38,6 +38,16 @@ func run() -> void:
 		if car.radio_index != entry[1]: failures += 1
 		if audio.stream != car.radio_tracks[entry[1]]: failures += 1
 		if not receiver._notice.visible: failures += 1
+	# O mesmo receptor atende carros e motos: L1 volta, R1 avança.
+	for entry in [[JOY_BUTTON_RIGHT_SHOULDER, 1], [JOY_BUTTON_LEFT_SHOULDER, 0]]:
+		for down in [true, false]:
+			var shoulder := InputEventJoypadButton.new()
+			shoulder.button_index = entry[0]
+			shoulder.pressed = down
+			root.push_input(shoulder)
+			await process_frame
+		if car.radio_index != entry[1]: failures += 1
+		if audio.stream != car.radio_tracks[entry[1]]: failures += 1
 	await create_timer(2.0).timeout
 	if not receiver._notice.visible: failures += 1
 	await create_timer(1.2).timeout

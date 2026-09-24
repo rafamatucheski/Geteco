@@ -4,7 +4,7 @@ func _initialize() -> void: call_deferred("run")
 func run() -> void:
 	assert(ENGINE.family_for_vehicle("maciota_350z") == "vq35")
 	var layers := ENGINE.get_layer_streams("vq35","maciota_350z")
-	assert(layers.size() == 5)
+	assert(layers.size() == 7)
 	for stream in layers:
 		assert(stream is AudioStreamWAV and stream.data.size() > 10000)
 		var peak := 0
@@ -22,5 +22,5 @@ func run() -> void:
 	assert(engine.gear == 1 and engine.engine_rpm < 1000,"a hard stop selects first and settles back to idle")
 	engine.stop()
 	player.stop()
-	print("PASS VQ35: five non-clipping layers, vehicle binding and gear shifts")
+	print("PASS VQ35: seven non-clipping layers, vehicle binding and gear shifts")
 	quit()

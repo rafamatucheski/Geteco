@@ -17,6 +17,9 @@ var sprite: Sprite2D
 var render_view: SubViewport
 var _near_view := false
 
+func _init() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
 func _ready() -> void:
 	collision_layer = 1
 	collision_mask = 0
@@ -49,7 +52,10 @@ func set_signal_state(state: int) -> void:
 	state = clampi(state, 0, 2)
 	if state == signal_state: return
 	signal_state = state
-	if _near_view: get_node("/root/PresentationBudget").request(self)
+	# The shared viewport is rendered once for each aspect. Queueing the post
+	# here can leave the previous texture visible indefinitely when it is already
+	# presented; select/build the cached aspect immediately instead.
+	if _near_view: ensure_presentation()
 
 func ensure_presentation() -> void:
 	if not is_inside_tree() or sprite == null: return

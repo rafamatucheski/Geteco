@@ -389,12 +389,14 @@ func _draw() -> void:
 	SURFACE.paint(self,Rect2(1440, 1740, 620, 330), Color("#aaa9a1"),"concrete")
 	SURFACE.paint(self,Rect2(1440, 1910, 620, 65), Color("#aaa9a1"),"concrete")
 	SURFACE.paint(self,Rect2(1515, 1660, 70, 475), Color("#aaa9a1"),"concrete")
-	_draw_court(Rect2(1785, 1745, 205, 120))
 	for access in accesses:
 		SURFACE.paint(self,access.bounds, Color("#676e70") if access.vehicle else Color("#aaa9a1"),"concrete")
 		SURFACE.yard(self,access.bounds,int(access.bounds.position.x),access.vehicle)
 	# Parking belongs beside the driveway, outside the door/turning corridor.
 	SURFACE.foundations(self,sites)
+	# The hospital's public footway reaches the court edge. Keep the playable
+	# access underneath so the complete court surface and boundary stay visible.
+	_draw_court(Rect2(1785, 1745, 205, 120))
 	SURFACE.paint(self,Rect2(520, 1810, 100, 270), Color("#656b6b"),"concrete")
 	SURFACE.yard(self,Rect2(520,1810,100,270),913,true)
 	for y in [1810, 1945, 2080]:

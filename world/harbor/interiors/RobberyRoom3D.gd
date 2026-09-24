@@ -13,6 +13,16 @@ var interaction_released := false
 var was_inside := false
 var blockade: Node
 var is_bank := true
+var inline_mode := false
+var inline_entrance: BuildingEntrance
+var inline_building: Node2D
+var inline_store: Node3D
+var inline_sign: Label
+var inline_door_blocker: CollisionPolygon2D
+var inline_floor_polygon := PackedVector2Array()
+var _inline_occupied := false
+var _inline_door_amount := 0.0
+var _inline_was_on_screen := false
 var actor: Node2D
 var entrance: Node2D
 var armed_warning := false
@@ -51,15 +61,22 @@ func _init() -> void:
 	room_size=Vector2(460,330)
 	floor_color=Color("494d4b")
 	accent_color=Color("7a8989")
+func _build_blackout() -> void:
+	if not inline_mode: super._build_blackout()
 func _build_lights() -> void: pass
 func _build_walls_and_floor() -> void:
-	if not is_bank: super._build_walls_and_floor()
+	pass
 
 func _setup_interior_content() -> void:
 	actor=get_tree().get_first_node_in_group("player")
-	_create_spawn_and_exit(Vector2(0,95),Vector2(0,145),&"robbery_exit","SAIR")
+	if inline_mode:
+		spawn_point = Marker2D.new()
+		spawn_point.name = "SpawnPoint"
+		add_child(spawn_point)
+	else:
+		_create_spawn_and_exit(Vector2(0,95),Vector2(0,145),&"robbery_exit","SAIR")
 	view=SubViewport.new()
-	view.size=Vector2i(1440,1000) if is_bank else Vector2i(800,600)
+	view.size=(Vector2i(1050,729) if is_bank else Vector2i(800,667)) if inline_mode else Vector2i(1440,1000)
 	view.transparent_bg=true
 	view.own_world_3d=true
 	# Este cenário é uma imagem em cache. Interpolar a câmera a partir da
@@ -102,6 +119,12 @@ func _setup_interior_content() -> void:
 			for y in [0.5,1.2,1.9]:
 				builder.piece(model,Vector3(1.3,.15,2.8),Vector3(x,y,-1),Color("727e80"))
 		cashier_resists=randf()<.25
+		for child in model.get_children(): child.free()
+		var store := preload("res://world/harbor/interiors/FuelStoreArt3D.gd").new()
+		store.compact_mode = inline_mode
+		model.add_child(store)
+		inline_store = store if inline_mode else null
+		set_meta("fixed_camera",true)
 	if is_bank:
 		for x in [-4.05,4.05]:
 			builder.piece(model,Vector3(5.9,2.6,.22),Vector3(x,1.3,-3.2),Color("797e79"))
@@ -116,6 +139,9 @@ func _setup_interior_content() -> void:
 		display_name = "BANCO NORTH PIER"
 		_install_finished_bank(model)
 		preload("res://world/harbor/interiors/BankLobbyDetails.gd").build(model)
+	else:
+		interior_id = &"fuel"
+		display_name = "MARÉ"
 	var cam := Camera3D.new()
 	view.add_child(cam)
 	cam.position=Vector3(0,13,9)
@@ -123,10 +149,15 @@ func _setup_interior_content() -> void:
 	cam.projection=Camera3D.PROJECTION_ORTHOGONAL
 	cam.size=16
 	room_camera=cam
+	cam.look_at_from_position(Vector3(0,18,15),Vector3.ZERO)
+	if inline_mode and not is_bank:
+		cam.size = 12.0
+		cam.look_at_from_position(Vector3(0,25.8,20),Vector3(0,1.8,0))
 	if is_bank:
 		# Projeção paralela mantém portas, colisões e atores na mesma escala.
 		cam.size=14.8
-		cam.look_at_from_position(Vector3(0,14,10),Vector3(0,0,0))
+		cam.look_at_from_position(Vector3(0,18,15),Vector3.ZERO)
+	cam.force_update_transform()
 	cam.physics_interpolation_mode=Node.PHYSICS_INTERPOLATION_MODE_OFF
 	cam.reset_physics_interpolation()
 	var sun := DirectionalLight3D.new()
@@ -143,9 +174,22 @@ func _setup_interior_content() -> void:
 		view.add_child(environment)
 	var image := Sprite2D.new()
 	image.texture=view.get_texture()
-	image.scale=Vector2(.52,.52) if is_bank else Vector2(.85,.85)
+	image.scale=Vector2.ONE * (25.0 * 12.0 / 667.0) if inline_mode and not is_bank else (Vector2.ONE * (230.0 / 729.0) if inline_mode else Vector2(.52,.52))
+	if inline_mode and not is_bank:
+		image.position=-(cam.unproject_position(Vector3.ZERO)-Vector2(view.size)*.5)*image.scale
 	room_display=image
 	add_child(image)
+	if inline_mode and not is_bank:
+		inline_sign = Label.new()
+		inline_sign.text = "MARÉ"
+		inline_sign.position = image.position+(cam.unproject_position(Vector3(0,2.82,2.35))-Vector2(view.size)*.5)*image.scale+Vector2(-29,-8)
+		inline_sign.size = Vector2(58,20)
+		inline_sign.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		inline_sign.add_theme_font_size_override("font_size",13)
+		inline_sign.add_theme_color_override("font_color",Color("f5e8bb"))
+		inline_sign.add_theme_color_override("font_outline_color",Color("17332e"))
+		inline_sign.add_theme_constant_override("outline_size",3)
+		add_child(inline_sign)
 	for i in (2 if is_bank else 1):
 		var person := preload("res://world/harbor/events/RobberyCivilian.gd").new()
 		person.position=Vector2(-70+i*70,40) if is_bank else Vector2(0,-100)
@@ -155,14 +199,14 @@ func _setup_interior_content() -> void:
 		add_child(person)
 		civilians.append(person)
 	if is_bank: _project_bank_layout()
+	else: _project_fuel_layout()
 	if is_bank:
 		aftermath=preload("res://world/harbor/events/BankAftermath.gd").new()
 		aftermath.room=self
 		add_child(aftermath)
-	exit_door.custom_prompt_text="E"
-	exit_door.get_node("Facade").hide()
-	if is_bank:
-		exit_door.get_node("Prompt").modulate.a=0.0
+	if is_instance_valid(exit_door):
+		exit_door.custom_prompt_text="E"
+		exit_door.get_node("Facade").hide()
 	status=Label.new()
 	status.position=Vector2(-285,-218) if is_bank else Vector2(-205,-155)
 	status.z_index=12
@@ -223,9 +267,17 @@ func _solid(point: Vector2, size: Vector2) -> StaticBody2D:
 	add_child(body)
 	return body
 func actor_inside() -> bool:
-	return is_instance_valid(actor) and actor.get_world_2d() == get_world_2d() and actor.visible and not actor.is_dead and not actor.is_arrested and get_camera_rect().has_point(actor.global_position)
+	return is_instance_valid(actor) and actor.get_world_2d() == get_world_2d() and actor.visible and not actor.is_dead and not actor.is_arrested and contains_point(actor.global_position)
 func actor_present() -> bool:
-	return is_instance_valid(actor) and actor.get_world_2d() == get_world_2d() and actor.visible and get_camera_rect().has_point(actor.global_position)
+	return is_instance_valid(actor) and actor.get_world_2d() == get_world_2d() and actor.visible and contains_point(actor.global_position)
+func contains_point(point: Vector2) -> bool:
+	if inline_mode:
+		return not inline_floor_polygon.is_empty() and Geometry2D.is_point_in_polygon(to_local(point),inline_floor_polygon)
+	return super.contains_point(point)
+
+func get_camera_rect() -> Rect2:
+	if inline_mode and is_bank: return get_gameplay_camera_bounds()
+	return super.get_camera_rect()
 func armed() -> bool:
 	return is_instance_valid(actor) and actor.active_weapon_id != "fists"
 func _on_shot() -> void:
@@ -252,6 +304,10 @@ func start_alarm() -> void:
 	sound.play()
 	get_tree().create_timer(3).timeout.connect(sound.queue_free)
 func _process(delta: float) -> void:
+	if inline_mode and is_bank:
+		_tick_inline_bank(delta)
+	elif inline_mode:
+		_tick_inline_store(delta)
 	_sync_actor_scale()
 	if alarm_started and not dispatched:
 		alarm_time=maxf(0,alarm_time-delta)
@@ -347,7 +403,7 @@ func remaining_loot() -> int:
 
 func _refresh_loot() -> void:
 	for i in loot_meshes.size(): loot_meshes[i].visible=not _taken("cash%d"%i)
-	view.render_target_update_mode=SubViewport.UPDATE_ONCE
+	view.render_target_update_mode=SubViewport.UPDATE_ALWAYS if view.get_meta("interior_actor_count",0)>0 else SubViewport.UPDATE_ONCE
 func _tick_cashier(delta: float, aim_point: Vector2) -> void:
 	var clerk: Node2D=civilians[0]
 	if clerk.is_dead or cash_paid or _taken("register"): return
@@ -390,7 +446,10 @@ func dispatch_response() -> void:
 	wanted.police_spawn_timer=8
 
 func project_floor(point: Vector2) -> Vector2:
-	return (room_camera.unproject_position(Vector3(point.x,0,point.y))-Vector2(view.size)*.5)*room_display.scale
+	return room_display.position+(room_camera.unproject_position(Vector3(point.x,0,point.y))-Vector2(view.size)*.5)*room_display.scale
+
+func _project_floor_rect(rect: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([project_floor(rect.position),project_floor(Vector2(rect.end.x,rect.position.y)),project_floor(rect.end),project_floor(Vector2(rect.position.x,rect.end.y))])
 
 func _projected_solid(rect: Rect2) -> StaticBody2D:
 	var body := StaticBody2D.new()
@@ -407,11 +466,152 @@ func _project_bank_layout() -> void:
 			remove_child(child)
 			child.queue_free()
 	preload("res://world/harbor/interiors/BankInteriorGeometry.gd").build(self, bank_model, vault)
+	if inline_mode:
+		inline_floor_polygon=_project_floor_rect(Rect2(-6.95,-4.85,13.9,9.78))
+		var door_body := _projected_solid(Rect2(-1.55,4.91,3.1,.14))
+		door_body.name="BankDoorLeaves"
+		inline_door_blocker=door_body.get_child(0) as CollisionPolygon2D
 	vault_position=project_floor(Vector2(0,-2.5))
 	for i in 3: loot_positions[i]=project_floor(Vector2(-3+i*3,-4.2))
 	spawn_point.position=project_floor(Vector2(0,3))
-	exit_door.position=project_floor(Vector2(0,4.3))
+	if is_instance_valid(exit_door): exit_door.position=project_floor(Vector2(0,4.3))
 	_position_bank_npcs()
+
+func _project_fuel_layout() -> void:
+	room_size = Vector2(340,240) if inline_mode else Vector2(740,510)
+	for child in get_children():
+		if child is StaticBody2D:
+			remove_child(child)
+			child.queue_free()
+	var bounds := preload("res://systems/interiors/InteriorSolidProjection.gd").mesh_bounds(bank_model)
+	for id in bounds:
+		var body := _projected_solid(bounds[id])
+		body.name = String(id)
+		if id == &"Counter": counter_body = body
+	if inline_mode:
+		inline_floor_polygon = _project_floor_rect(Rect2(-4.0,-2.03,8.0,4.2))
+		spawn_point.position = project_floor(Vector2(0,1.65))
+		civilians[0].position = project_floor(Vector2(2.1,-1.78))
+		# The cashier belongs behind the roof until the shared 3D depth pass is active.
+		civilians[0].presentation_sprite.hide()
+		var door_body := _projected_solid(Rect2(-.95,2.12,1.9,.15))
+		door_body.name = "DoorLeaves"
+		inline_door_blocker = door_body.get_child(0) as CollisionPolygon2D
+		add_cash_reward(bank_model,Vector2(-1.85,.85),350,"harbor_fuel_cash_01")
+	else:
+		spawn_point.position = project_floor(Vector2(0,3.3))
+		exit_door.position = project_floor(Vector2(0,4.3))
+		civilians[0].position = project_floor(Vector2(4.6,-3.8))
+		add_cash_reward(bank_model,Vector2(1.7,2.7),350,"harbor_fuel_cash_01")
+
+func attach_inline_entrance(door: BuildingEntrance) -> void:
+	if not inline_mode or not is_instance_valid(door): return
+	inline_entrance = door
+	entrance = door
+	if is_bank:
+		inline_building=door.get_parent() as Node2D
+		global_position=door.global_position-project_floor(Vector2(0,4.93))
+	else:
+		global_position=door.global_position-project_floor(Vector2(0,2.2))
+	z_as_relative = false
+	z_index = 4 if is_bank else 6
+	visible = true
+	process_mode = Node.PROCESS_MODE_INHERIT
+	view.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+func _tick_inline_bank(delta: float) -> void:
+	if not is_instance_valid(actor): actor=get_tree().get_first_node_in_group("player")
+	if not is_instance_valid(inline_entrance) or not is_instance_valid(actor): return
+	var inside := actor_inside()
+	var near_door := inline_entrance.to_local(actor.global_position)
+	var threshold := absf(near_door.x)<34.0 and absf(near_door.y)<60.0
+	if threshold and inline_entrance.enabled:
+		inline_entrance._away_time=0.0
+		inline_entrance.open_door()
+	var target := 1.0 if inline_entrance.enabled and (inline_entrance._door_open or inside or threshold) else 0.0
+	_inline_door_amount=move_toward(_inline_door_amount,target,delta/.45)
+	if is_instance_valid(inline_door_blocker): inline_door_blocker.disabled=_inline_door_amount>=.55
+	if inside and not _inline_occupied:
+		_inline_occupied=true
+		inline_entrance.hide()
+		if is_instance_valid(inline_building):
+			inline_building.set_meta("bank_inline_occupied",true)
+			inline_building.queue_redraw()
+		actor.set_meta("harbor_interior",true)
+		actor.set_meta("interior_camera_overview",true)
+		var camera := actor.get_node_or_null("Camera") as Camera2D
+		if camera:
+			camera.set_meta("compact_interior",get_camera_rect())
+			camera.limit_left=-10000000
+			camera.limit_top=-10000000
+			camera.limit_right=10000000
+			camera.limit_bottom=10000000
+			camera.reset_smoothing()
+		var manager := get_parent().get_parent()
+		if is_instance_valid(manager): manager.emit_signal("actor_entered_interior",actor,interior_id)
+		view.render_target_update_mode=SubViewport.UPDATE_ALWAYS
+	elif not inside and _inline_occupied:
+		_inline_occupied=false
+		inline_entrance.show()
+		if is_instance_valid(inline_building):
+			inline_building.set_meta("bank_inline_occupied",false)
+			inline_building.queue_redraw()
+		set_npc_rendering_active(false)
+		view.render_target_update_mode=SubViewport.UPDATE_ONCE
+		actor.remove_meta("harbor_interior")
+		actor.remove_meta("interior_camera_overview")
+		var camera := actor.get_node_or_null("Camera") as Camera2D
+		if camera: camera.remove_meta("compact_interior")
+		var manager := get_parent().get_parent()
+		if is_instance_valid(manager): manager.emit_signal("actor_returned_to_exterior",actor,interior_id)
+
+func _tick_inline_store(delta: float) -> void:
+	if not is_instance_valid(actor): actor = get_tree().get_first_node_in_group("player")
+	if not is_instance_valid(inline_entrance) or not is_instance_valid(room_display): return
+	var on_screen := is_visible_in_tree() and get_viewport_rect().grow(230).has_point(room_display.get_global_transform_with_canvas().origin)
+	if on_screen and not _inline_was_on_screen:
+		view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	_inline_was_on_screen = on_screen
+	var inside := actor_inside()
+	var threshold := false
+	if is_instance_valid(actor) and not actor.is_dead:
+		var door_point := inline_entrance.to_local(actor.global_position)
+		threshold = absf(door_point.x) < 34.0 and absf(door_point.y) < 60.0
+	var target := 1.0 if inline_entrance.enabled and (inline_entrance._door_open or inside or threshold) else 0.0
+	var amount := move_toward(_inline_door_amount,target,delta/.45)
+	if not is_equal_approx(amount,_inline_door_amount):
+		_inline_door_amount = amount
+		inline_store.call("set_open_amount",amount)
+		if is_instance_valid(inline_door_blocker): inline_door_blocker.disabled = amount >= .75
+		if on_screen: view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	if inside and not _inline_occupied:
+		_inline_occupied = true
+		inline_store.call("set_roof_visible",false)
+		if is_instance_valid(inline_sign): inline_sign.hide()
+		view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		actor.set_meta("harbor_interior",true)
+		var manager := get_parent().get_parent()
+		if is_instance_valid(manager): manager.emit_signal("actor_entered_interior",actor,interior_id)
+		var cam := actor.get_node_or_null("Camera") as Camera2D
+		if cam:
+			cam.set_meta("compact_interior",get_camera_rect())
+			cam.limit_left=-10000000
+			cam.limit_top=-10000000
+			cam.limit_right=10000000
+			cam.limit_bottom=10000000
+			cam.reset_smoothing()
+	elif not inside and _inline_occupied:
+		_inline_occupied = false
+		inline_store.call("set_roof_visible",true)
+		if is_instance_valid(inline_sign): inline_sign.show()
+		set_npc_rendering_active(false)
+		view.render_target_update_mode = SubViewport.UPDATE_ONCE
+		if is_instance_valid(actor):
+			actor.remove_meta("harbor_interior")
+			var cam := actor.get_node_or_null("Camera") as Camera2D
+			if cam: cam.remove_meta("compact_interior")
+			var manager := get_parent().get_parent()
+			if is_instance_valid(manager): manager.emit_signal("actor_returned_to_exterior",actor,interior_id)
 
 func _position_bank_npcs() -> void:
 	for i in guards.size():
@@ -498,7 +698,6 @@ func _scale_npc(_person: Node2D, render: SubViewport, sprite: Sprite2D, point: V
 	render.render_target_update_mode=SubViewport.UPDATE_ONCE
 
 func _sync_actor_scale() -> void:
-	if not is_bank: return
 	if actor_present() and not is_instance_valid(actor_scale):
 		actor_scale=preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		add_child(actor_scale)
@@ -511,10 +710,12 @@ func _sync_actor_scale() -> void:
 	if actor_present(): view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
 func set_npc_rendering_active(active: bool) -> void:
-	if not is_bank:
-		super.set_npc_rendering_active(active)
-		return
 	_sync_bank_people(active)
+	if is_instance_valid(view): view.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
+	if not active and is_instance_valid(actor_scale):
+		actor_scale.restore()
+		actor_scale.queue_free()
+		actor_scale = null
 
 func _sync_bank_people(active: bool) -> void:
 	for person in _bank_presentations.keys():

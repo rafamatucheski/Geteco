@@ -121,7 +121,9 @@ func _setup_environment_and_lights() -> void:
 	sun.rotation_degrees = Vector3(-45.0, 35.0, 0.0)
 	sun.light_color = Color(0.85, 0.92, 1.0)
 	sun.light_energy = 0.48
-	sun.shadow_enabled = true
+	# The shell is static and already receives the main warm shadow below.
+	# A second full-room shadow map doubled geometry submission every update.
+	sun.shadow_enabled = false
 	add_child(sun)
 
 	# Luz radiante dourada do lustre de roda de carroça central
@@ -139,7 +141,9 @@ func _setup_environment_and_lights() -> void:
 	fire_omni.light_color = Color(1.0, 0.58, 0.18)
 	fire_omni.light_energy = 1.2
 	fire_omni.omni_range = 9.0
-	fire_omni.shadow_enabled = true
+	# Flicker remains visible through light energy and emissive flames; moving a
+	# full shadow map with it is disproportionately expensive in this dense room.
+	fire_omni.shadow_enabled = false
 	add_child(fire_omni)
 
 # ==============================================================================

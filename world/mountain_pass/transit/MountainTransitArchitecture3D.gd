@@ -81,7 +81,6 @@ func _station() -> void:
 	for x in [7396.0,7519.0]:
 		_box(Vector2(x,-1624),1.3,Vector3(0.16,2.6,0.16),"wood")
 		_solid(Rect2(x-3,-1627,6,6),"TerminalPorchPost")
-	_sign("TERMINAL DA SERRA",Vector2(7457,-1617),2.49,Vector2(7.35,0.64),64)
 	_sign("HARBOR  ·  PLATAFORMA 01",Vector2(7457,-1712),2.86,Vector2(7.15,0.47),48)
 	_bench(Vector2(7418,-1631),1.7)
 	_bench(Vector2(7498,-1631),1.5)
@@ -103,13 +102,14 @@ func _shop() -> void:
 		_box(Vector2(x,-1606),1.6,Vector3(2.91,1.56,0.07),"warm")
 		_box(Vector2(x,-1604),1.6,Vector3(0.055,1.56,0.07),"trim")
 	_box(Vector2(7790,-1608),1.3,Vector3(1.25,2.49,0.14),"trim")
-	_box(Vector2(7790,-1606),1.61,Vector3(1.01,1.55,0.07),"glass")
+	var shop_door := _box(Vector2(7790,-1606),1.61,Vector3(1.01,1.55,0.07),"glass")
+	shop_door.set_meta("inline_door_id", &"mountain_village_outfitters")
+	shop_door.set_meta("inline_door_closed_position", shop_door.position)
 	_roof(LAYOUT.SHOP_CENTER,10.15,5.85,3.34,0.29)
 	_record_volume(solid_index,mesh_start)
 	var awning := _box(Vector2(7790,-1595),2.91,Vector3(9.7,0.16,2.2),"red")
 	awning.rotation.x = 0.08
 	_box(Vector2(7790,-1595),3.02,Vector3(9.7,0.06,2.2),"snow")
-	_sign("ROUPAS DE INVERNO",Vector2(7790,-1579),2.68,Vector2(9.55,0.73),70)
 	for x in [7712.0,7868.0]:
 		# Wall-mounted cantilever brackets leave the public shopping sidewalk open.
 		_box(Vector2(x,-1597),2.73,Vector3(0.15,0.19,2.15),"wood")
@@ -117,7 +117,8 @@ func _shop() -> void:
 		var x := 7725.0 + i * 17.0 if i < 2 else 7822.0 + (i-2) * 17.0
 		_coat(Vector2(x,-1564),["red","green","gold","glass"][i])
 		_solid(Rect2(x-7,-1568,14,8),"WinterCoatDisplay")
-	_sign("CASACOS  •  LUVAS  •  BOTAS",Vector2(7790,-1577),2.08,Vector2(6.9,0.38),39)
+	_sign("CASACOS DA VILA",Vector2(7790,-1577),2.08,Vector2(6.9,0.38),39)
+	_mark_inline_building(mesh_start, &"mountain_village_outfitters")
 
 func _chalet(center: Vector2, index: int) -> void:
 	var wood_key := "chalet%d" % index
@@ -137,7 +138,9 @@ func _chalet(center: Vector2, index: int) -> void:
 		for shutter in [-1.0,1.0]:
 			_box(center+Vector2(side*31+shutter*15,34),1.43,Vector3(0.32,1.1,0.10),wood_key)
 	_box(center+Vector2(0,33),1.15,Vector3(0.97,2.14,0.14),"trim")
-	_box(center+Vector2(0,35),1.31,Vector3(0.77,1.46,0.07),wood_key)
+	var chalet_door := _box(center+Vector2(0,35),1.31,Vector3(0.77,1.46,0.07),wood_key)
+	chalet_door.set_meta("inline_door_id", StringName("mountain_cabin_village_%d" % (index + 1)))
+	chalet_door.set_meta("inline_door_closed_position", chalet_door.position)
 	_box(center+Vector2(5.4,36),1.08,Vector3(0.075,0.13,0.08),"gold")
 	_slab(Rect2(center+Vector2(-14,33),Vector2(28,10)),0.11,0.22,"wood")
 	_roof(center,6.6,5.46,2.94,0.48)
@@ -148,8 +151,26 @@ func _chalet(center: Vector2, index: int) -> void:
 	_box(center+Vector2(34,-16),3.63,Vector3(0.47,1.56,0.52),"stone")
 	_box(center+Vector2(34,-16),4.42,Vector3(0.64,0.13,0.69),"snow")
 	_record_volume(solid_index,mesh_start)
+	_mark_inline_building(mesh_start, StringName("mountain_cabin_village_%d" % (index + 1)))
 	for i in 3:
 		_box(center+Vector2(-40+i*9,38),0.27,Vector3(0.43,0.42,0.45),"wood")
+
+func _mark_inline_building(first_child: int, id: StringName) -> void:
+	for i in range(first_child, get_child_count()):
+		get_child(i).set_meta("inline_building_id", id)
+
+func set_inline_building_hidden(id: StringName, hidden: bool) -> void:
+	for child in get_children():
+		var part := child as Node3D
+		if part != null and part.get_meta("inline_building_id", &"") == id:
+			part.visible = not hidden
+
+func set_inline_door_amount(id: StringName, amount: float) -> void:
+	for child in get_children():
+		var part := child as Node3D
+		if part != null and part.get_meta("inline_door_id", &"") == id:
+			var closed: Vector3 = part.get_meta("inline_door_closed_position")
+			part.position = closed + Vector3(-1.15 if id == &"mountain_village_outfitters" else -.85, 0, 0) * amount
 
 func _amenities() -> void:
 	for point in [Vector2(7384,-1570),Vector2(7578,-1532),Vector2(7908,-1565),Vector2(7650,-1364)]:

@@ -150,16 +150,10 @@ func _process(delta: float) -> void:
 	if message_time == 0.0:
 		prompt.text = ""
 	if message_time == 0.0:
-		if not indoors and _arrival_time >= 6.0 and not tutorial_seen.has("thermal_shop") and not actor.mountain_thermal_coat:
-			_notice("thermal_shop", "ANTES DE SUBIR\nEncontre roupas térmicas no Último Abrigo ou na Union, no porto. Procure a camiseta no mapa.")
-		elif not indoors and mountain.cold_controller.current_temperature < 65.0 and not tutorial_seen.has("cold"):
-			_notice("cold", "FRIO: temperatura zerada causa dano contínuo à vida.
-Carros, lareiras e túneis oferecem abrigo.")
+		if not indoors and mountain.cold_controller.current_temperature < 65.0 and not tutorial_seen.has("cold"):
+			_notice("cold", "FRIO INTENSO")
 		elif mountain.tunnel.contains_actor(actor) and not tutorial_seen.has("tunnel"):
 			_notice("tunnel", "TÚNEL: diminua a velocidade. [L] faróis / [Espaço] freio de mão.")
-		elif local_actor.distance_to(Vector2(6500, -2800)) < 220 and not tutorial_seen.has("boss"):
-			_notice("boss", "COVIL DOS LOBOS DE GELO
-O chefe controla a passagem para a rodovia do deserto.")
 	# Sincroniza o painel de fundo do aviso com o texto atual -- roda por
 	# último e sempre (não dentro de um early-return), senão o painel nunca
 	# aparece enquanto message_time > 0 (ou seja, bem quando o aviso está
@@ -193,7 +187,7 @@ func _sign(parent: Node2D, pos: Vector2, text: String) -> void:
 	label.add_theme_color_override("font_color", Color("f4dfaa"))
 	parent.add_child(label)
 
-func _wall(a: Vector2, b: Vector2, bridge_edge := false) -> void:
+func _wall(a: Vector2, b: Vector2, _bridge_edge := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -204,12 +198,6 @@ func _wall(a: Vector2, b: Vector2, bridge_edge := false) -> void:
 	shape.shape = segment
 	body.add_child(shape)
 	add_child(body)
-	var edge := Line2D.new()
-	edge.points = PackedVector2Array([a, b])
-	edge.width = 5 if bridge_edge else 32
-	edge.default_color = Color("a4b5ba") if bridge_edge else Color("566575")
-	edge.z_index = 3
-	add_child(edge)
 
 func _build_boundaries() -> void:
 	# Closed regional perimeter, preserving the bridge corridor and every existing POI.
@@ -220,44 +208,14 @@ func _build_boundaries() -> void:
 		_wall(points[i], points[i + 1], i == 0 or i == 8)
 
 func _build_shop() -> void:
-	var shop := Node2D.new()
+	var shop := preload("res://world/mountain_pass/MountainOutfittersFacade.gd").new()
 	shop.name = "SnowOutfitters"
 	shop.position = shop_position
-	shop.z_index = 5
+	shop.mountain = mountain
 	add_child(shop)
-	var model := preload("res://world/mountain_pass/MountainOutfitters3D.gd").new()
-	shop.add_child(model)
-	var wall := StaticBody2D.new()
-	wall.name = "OutfittersStructure"
-	wall.collision_layer = 1
-	wall.collision_mask = 0
-	var collision := CollisionPolygon2D.new()
-	collision.polygon = PackedVector2Array([model.project_floor(Vector2(-3,-1.8)),model.project_floor(Vector2(3,-1.8)),model.project_floor(Vector2(3,0.9)),model.project_floor(Vector2(-3,0.9))])
-	wall.add_child(collision)
-	shop.add_child(wall)
-	var door := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate() as BuildingEntrance
-	door.name = "OutfittersEntrance"
-	door.position = model.project_floor(Vector2(0,2.2))
-	door.display_name = "ÚLTIMO ABRIGO"
-	door.destination_id = &"mountain_outfitters"
-	door.custom_prompt_text = "E  ENTRAR NA LOJA"
-	door.add_to_group("clothing_shop")
-	shop.add_child(door)
-	door.get_node("Facade").hide()
-	mountain.interior_manager.register_exterior_entrance(door,&"mountain_outfitters",door.global_position+Vector2(0,30))
-	# A warm service counter provides a safe first stop.
-	var heater := Node2D.new()
-	heater.position = Vector2(0, 65)
-	heater.add_to_group("heat_source")
-	shop.add_child(heater)
-	var recovery := Marker2D.new()
-	recovery.name = "MountainRecoverySpawn"
-	recovery.position = Vector2(0, 105)
-	recovery.add_to_group("hospital_spawn")
-	shop.add_child(recovery)
 
 func _build_summit() -> void:
-	var summit := Node2D.new()
+	var summit := preload("res://world/mountain_pass/MountainBunkerFacade.gd").new()
 	summit.name = "IceWolvesStronghold"
 	summit.position = Vector2(6500, -2800)
 	summit.z_index = 5
@@ -273,26 +231,46 @@ func _build_summit() -> void:
 	car.max_speed = 580.0
 	car.acceleration = 480.0
 	summit.add_child(car)
+	var door_visual := Polygon2D.new()
+	door_visual.name = "StationZeroSlidingDoor"
+	door_visual.polygon = PackedVector2Array([Vector2(-21,-108),Vector2(21,-108),Vector2(21,-42),Vector2(-21,-42)])
+	door_visual.color = Color("313b42")
+	summit.add_child(door_visual)
+	summit.door_leaf = door_visual
 	var entrance := preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate() as BuildingEntrance
 	entrance.name = "StationZeroEntrance"
 	entrance.position = Vector2(0, -42)
 	entrance.destination_id = &"mountain_bunker"
 	entrance.display_name = "ESTAÇÃO ZERO"
-	entrance.custom_prompt_text = "E"
+	entrance.handle_input_locally = false
+	entrance.show_entrance_marker = false
+	entrance.show_interaction_prompt = false
 	summit.add_child(entrance)
-	mountain.interior_manager.register_exterior_entrance(entrance, &"mountain_bunker", mountain.to_global(Vector2(6500, -2790)))
+	entrance.get_node("Facade").hide()
+	summit.entrance = entrance
 	# Solid facade prevents walking straight through the bunker outside.
 	var facade := StaticBody2D.new()
 	facade.name = "StationZeroFacadeCollision"
 	facade.collision_layer = 1
 	facade.collision_mask = 0
-	var collider := CollisionShape2D.new()
-	var box := RectangleShape2D.new()
-	box.size = Vector2(240, 105)
-	collider.shape = box
-	collider.position = Vector2(0, -105)
-	facade.add_child(collider)
+	for entry in [
+		[Vector2(-73,-105),Vector2(94,105)],
+		[Vector2(73,-105),Vector2(94,105)],
+		[Vector2(0,-146),Vector2(52,22)],
+		[Vector2(0,-75),Vector2(42,66)],
+	]:
+		var collider := CollisionShape2D.new()
+		var box := RectangleShape2D.new()
+		box.size = entry[1]
+		collider.shape = box
+		collider.position = entry[0]
+		facade.add_child(collider)
+		if entry[0] == Vector2(0,-75): summit.door_collision = collider
 	summit.add_child(facade)
+	add_child(summit)
+	summit.inline_room = mountain.interior_manager.get_interior(&"mountain_bunker")
+	summit.inline_room.attach_inline_facade(summit, entrance, mountain.interior_manager)
+	summit.inline_room.global_position = entrance.global_position - summit.inline_room.project_floor(Vector2(0, 5.8))
 	var vista := preload("res://world/mountain_pass/MountainVista.gd").new()
 	vista.name = "SummitVista"
 	add_child(vista)

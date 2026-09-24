@@ -2,12 +2,17 @@ extends Node2D
 
 var camera: Camera3D
 var sprite: Sprite2D
+var viewport_3d: SubViewport
+var door_leaf: MeshInstance3D
+var door_handle: MeshInstance3D
+var _open_amount := 0.0
 
 func project_floor(point: Vector2) -> Vector2:
 	return (camera.unproject_position(Vector3(point.x,0,point.y))-camera.unproject_position(Vector3.ZERO))*sprite.scale
 
 func _ready() -> void:
 	var viewport := SubViewport.new()
+	viewport_3d = viewport
 	viewport.size = Vector2i(768, 640)
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
@@ -32,8 +37,8 @@ func _ready() -> void:
 		_mesh(world, Vector3(side * 1.85, 1.5, 1.07), Vector3(0.06, 1.15, 0.04), dark)
 		_mesh(world, Vector3(side * 1.85, 1.5, 1.07), Vector3(1.3, 0.06, 0.04), dark)
 		_mesh(world, Vector3(side * 2.9, 1.25, 1.8), Vector3(0.16, 2.4, 0.16), trim)
-	_mesh(world, Vector3(0, 1.13, 0.99), Vector3(1.05, 2.1, 0.1), dark)
-	_mesh(world, Vector3(0.35, 1.1, 1.07), Vector3(0.08, 0.12, 0.08), warm)
+	door_leaf = _mesh(world, Vector3(0, 1.13, 0.99), Vector3(1.05, 2.1, 0.1), dark)
+	door_handle = _mesh(world, Vector3(0.35, 1.1, 1.07), Vector3(0.08, 0.12, 0.08), warm)
 	var canopy := _mesh(world, Vector3(0, 2.55, 1.25), Vector3(6.5, 0.12, 1.7), red)
 	canopy.rotation.x = 0.12
 	for i in 11:
@@ -53,6 +58,13 @@ func _ready() -> void:
 		for side in [-1.0, 1.0]:
 			_mesh(world, Vector3(x + side * 0.23, 0.9, 1.55), Vector3(0.14, 0.48, 0.2), coat)
 	_mesh(world, Vector3(-1.65, 1.4, 1.55), Vector3(1.85, 0.06, 0.06), dark)
+	var sign := Label3D.new()
+	sign.text = "ÚLTIMO ABRIGO"
+	sign.font_size = 68
+	sign.pixel_size = .004
+	sign.modulate = Color("f1dab2")
+	sign.position = Vector3(0, 2.44, 1.09)
+	world.add_child(sign)
 	camera = Camera3D.new()
 	viewport.add_child(camera)
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
@@ -84,6 +96,13 @@ func _ready() -> void:
 	notifier.rect = Rect2(-180,-180,360,320)
 	notifier.screen_entered.connect(func(): viewport.render_target_update_mode = SubViewport.UPDATE_ONCE)
 	add_child(notifier)
+
+func set_open_amount(value: float) -> void:
+	_open_amount = clampf(value, 0.0, 1.0)
+	if not is_instance_valid(door_leaf): return
+	door_leaf.position.x = -1.15 * _open_amount
+	door_handle.position.x = .35 - 1.15 * _open_amount
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 func _material(color: Color, glow: bool = false) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()

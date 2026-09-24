@@ -56,11 +56,13 @@ func _run() -> void:
 	_check(tv_3d.visual.texture == tv_3d.body_viewport.get_texture(), "Visual deve usar textura do SubViewport")
 	_check(tv_3d.spinners.size() >= 4, "Veículo 3D deve possuir spinners de roda configurados")
 
-	# Teste de retrocompatibilidade com veículo 2D clássico (sedan_classic)
+	# Nenhum veículo conhecido da frota jogável pode cair no caminho 2D legado.
 	var tv_2d = TRAFFIC_VEHICLE.new()
 	root.add_child(tv_2d)
 	tv_2d.apply_archetype("sedan_classic")
-	_check(not tv_2d.is_3d_vehicle, "sedan_classic deve manter is_3d_vehicle == false para retrocompatibilidade 2D")
+	_check(tv_2d.is_3d_vehicle, "sedan_classic deve ser construído como veículo 3D")
+	_check(tv_2d.body_model != null, "sedan_classic deve possuir carroceria 3D")
+	_check(tv_2d.body_viewport != null, "sedan_classic deve possuir apresentação 3D")
 
 	# --- 3. AMBIENT TRAFFIC EM HARBORLIFE ---
 	print("\n--- 3. Tráfego Circulante em HarborLife ---")

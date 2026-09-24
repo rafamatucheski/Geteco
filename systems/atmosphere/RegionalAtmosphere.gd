@@ -100,6 +100,7 @@ func _refresh_context() -> void:
 		2: cloud = 1.0
 		3: cloud = 0.45
 	_target = PALETTE.sample(weather.current_biome, weather.time_of_day, cloud, mountain_weight, summit_weight, snow)
+	_target["exposure"] = PALETTE.mountain_bridge_exposure(focus_world, weather.time_of_day)
 	if resort_weight > 0.0:
 		_target = PALETTE.resort_sample(_target, resort_weight)
 	cemetery_weight = 0.0
@@ -124,6 +125,7 @@ func _apply(delta: float) -> void:
 	if inside: return
 	for key in ["shadow_tint", "sunlight_tint", "fog_color", "saturation", "contrast"]:
 		effect.set_shader_parameter(key, current[key])
+	effect.set_shader_parameter("exposure", current.exposure)
 	effect.set_shader_parameter("haze", 0.0 if sheltered else current.haze)
 	_drift += Vector2(current.wind) * delta
 	effect.set_shader_parameter("drift", _drift)

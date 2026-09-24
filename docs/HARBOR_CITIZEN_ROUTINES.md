@@ -16,9 +16,12 @@ crossing if the phase changes. This does not guarantee protection against a
 player deliberately accelerating into an occupied crossing.
 
 Two real PoliceOfficer-derived patrols walk the central sidewalks. A reported
-crime or a wanted suspect within 300 pixels requires unobstructed sight before
-engagement. Existing warning, surrender duration and defensive fire rules apply.
-Sight loss for eight seconds or cleared wanted status ends the engagement.
+crime or a wanted suspect entering the 430-pixel police sight range requires
+unobstructed sight before engagement. Existing warning, surrender duration and
+armed-response rules apply. A patrol already on the street checks for an active
+wanted suspect four times per second, while a new crime still triggers an
+immediate check. Sight loss for eight seconds or cleared wanted status ends the
+engagement.
 No civilian wearing a cosmetic police uniform is spawned by the HarborWalker pool.
 
 Validation: tests/test_harbor_citizen_routines.gd loads the actual world, checks

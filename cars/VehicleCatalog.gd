@@ -16,7 +16,7 @@ const VEHICLE_CROPS: Array[Rect2] = [
 ]
 
 const DISTRICT_VEHICLES := {
-	"city": ["orbita_micro", "aurora_executive", "vale_crossover", "nimbus_minivan", "vertice_midengine", "bravio_crew", "sport_estate", "nordic_estate", "bike_sport", "bike_cruiser", "bike_urban", "sedan_classic", "taxi_yellow", "sport_coupe", "station_wagon", "cobra_v8", "union_sedan", "metro_hatch", "courier_van", "route_city"],
+	"city": ["orbita_micro", "aurora_executive", "vale_crossover", "nimbus_minivan", "vertice_midengine", "bravio_crew", "atlas_crew_pickup", "sertao_trail_pickup", "sport_estate", "nordic_estate", "bike_sport", "bike_cruiser", "bike_urban", "sedan_classic", "taxi_yellow", "sport_coupe", "station_wagon", "cobra_v8", "union_sedan", "metro_hatch", "courier_van", "route_city"],
 	"desert": ["desert_jeep_4x4", "dune_buggy", "ranch_pickup", "muscle_classic", "ranch_single"],
 	"winter": ["winter_suv_heavy", "snow_plow_truck", "polar_van"],
 	"beach": ["sport_estate", "bike_sport", "bike_cruiser", "bike_urban", "beach_cabriolet", "surf_woody_wagon", "beach_buggy"],
@@ -72,7 +72,7 @@ const VEHICLES := {
 		"target_length":60.0, "target_width":25.0, "mass":2.7,
 		"max_speed":90.0, "acceleration":105.0, "braking":280.0,
 		"turn_speed":2.5, "drift_factor":0.7, "durability":180,
-		"engine_family":"diesel", "engine_pitch":0.8, "roof_prop":"none", "crop_index":0,
+		"engine_family":"electric", "engine_pitch":0.8, "roof_prop":"none", "crop_index":0,
 		"colors":[Color("db7925")]
 	},
 	# ==========================================
@@ -114,7 +114,7 @@ const VEHICLES := {
 		"drivetrain":"rwd", "id":"vertice_midengine", "label":"Vértice MR", "district":"city",
 		"model_class":"res://prototypes/living_cast/models/VerticeMidEngineModel.gd",
 		"target_length":76.0, "target_width":37.0, "mass":1.00,
-		"max_speed":650.0, "acceleration":1250.0, "braking":1420.0, "turn_speed":3.50, "drift_factor":1.08,
+		"max_speed":780.0, "acceleration":1250.0, "braking":1420.0, "turn_speed":3.50, "drift_factor":1.08,
 		"durability":120, "engine_family":"sport", "engine_pitch":1.24, "roof_prop":"none", "crop_index":4,
 		"colors":[Color("d43b32"),Color("ef8b2c"),Color("235b91"),Color("ddd9cd"),Color("24262b")]
 	},
@@ -125,6 +125,22 @@ const VEHICLES := {
 		"max_speed":460.0, "acceleration":820.0, "braking":990.0, "turn_speed":2.45, "drift_factor":0.70,
 		"durability":205, "engine_family":"suv", "engine_pitch":0.86, "roof_prop":"none", "crop_index":5,
 		"colors":[Color("3d6f63"),Color("303943"),Color("8b4b3f"),Color("d3d1c7"),Color("6f6655")]
+	},
+	"atlas_crew_pickup": {
+		"drivetrain":"4x4", "id":"atlas_crew_pickup", "label":"Atlas Crew 4x4", "district":"city",
+		"model_class":"res://prototypes/living_cast/models/AtlasCrewPickupModel.gd",
+		"target_length":101.0, "target_width":41.0, "mass":2.12,
+		"max_speed":460.0, "acceleration":720.0, "braking":1050.0, "turn_speed":2.35, "drift_factor":0.62,
+		"durability":225, "engine_family":"diesel", "engine_pitch":0.82, "roof_prop":"none", "crop_index":5,
+		"colors":[Color("526979"),Color("d6d4cc"),Color("30363c"),Color("7b4b3a"),Color("405948")]
+	},
+	"sertao_trail_pickup": {
+		"drivetrain":"4x4", "id":"sertao_trail_pickup", "label":"Sertão Trail 4x4", "district":"city",
+		"model_class":"res://prototypes/living_cast/models/SertaoTrailPickupModel.gd",
+		"target_length":94.0, "target_width":39.0, "mass":1.85,
+		"max_speed":500.0, "acceleration":860.0, "braking":1100.0, "turn_speed":2.65, "drift_factor":0.73,
+		"durability":195, "engine_family":"suv", "engine_pitch":0.89, "roof_prop":"none", "crop_index":5,
+		"colors":[Color("8b5941"),Color("c4c1b7"),Color("38454c"),Color("526b4e"),Color("7b3035")]
 	},
 	"bike_sport": MOTORCYCLES.SPORT,
 	"bike_cruiser": MOTORCYCLES.CRUISER,
@@ -164,7 +180,7 @@ const VEHICLES := {
 		"id": "sport_coupe", "label": "Infernus GT Turbo", "district": "city",
 		"target_length": 72.0, "target_width": 34.0, "mass": 0.85, # Super leve e ágil
 		"max_speed": 620.0, "acceleration": 1180.0, "braking": 1450.0, "turn_speed": 3.65, "drift_factor": 1.15,
-		"durability": 80, "engine_pitch": 1.25, "roof_prop": "spoiler",
+		"durability": 80, "engine_pitch": 1.25, "turbo_audio": true, "roof_prop": "spoiler",
 		"crop_index": 4,
 		"colors": [Color.WHITE]
 	},
@@ -192,7 +208,7 @@ const VEHICLES := {
 		"target_length": 82.0, "target_width": 36.0, "mass": 1.25,
 		"max_speed": 600.0, "acceleration": 1100.0, "braking": 1400.0, "turn_speed": 3.40, "drift_factor": 0.95,
 		"durability": 170, "engine_pitch": 1.12, "roof_prop": "police_lightbar",
-		"texture": "res://assets/art/police_car.png",
+		"model_class": "res://prototypes/living_cast/models/PoliceCruiserModel.gd",
 		"colors": [Color.WHITE]
 	},
 

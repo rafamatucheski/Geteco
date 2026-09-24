@@ -88,7 +88,7 @@ func _run() -> void:
 	assert(boutique != null, "ResortShopFacade deve estar instanciado")
 	assert(boutique.entrance != null, "Entrada da Boutique Alpina deve existir")
 	assert(boutique.entrance.display_name == "BOUTIQUE ALPINA", "Nome próprio da fachada deve ser BOUTIQUE ALPINA")
-	assert(boutique.entrance.destination_id == &"mountain_outfitters", "Destino deve ser o interior mountain_outfitters")
+	assert(boutique.entrance.destination_id == &"mountain_boutique", "Boutique Alpina deve ter seu interior distinto")
 	assert(boutique.model.find_children("WindowBackdrop*", "MeshInstance3D",true,false).size()==2, "Both boutique windows have native 3D displays")
 
 	# Promenade de Pedestres

@@ -32,6 +32,13 @@ func _ready() -> void:
 	_build_water_surfaces()
 	_build_collisions()
 	_build_ship_markers()
+	_build_crane_presentations()
+	var scaffold := Node2D.new()
+	scaffold.name = "NorthstarMaintenanceScaffold"
+	scaffold.position = Vector2(-12, 0)
+	scaffold.z_index = 3
+	add_child(scaffold)
+	scaffold.draw.connect(func(): _draw_ship_scaffold(scaffold))
 	if not Engine.is_editor_hint():
 		var crew := preload("res://world/harbor/HarborDockCrew.gd").new()
 		crew.name = "DockCrew"
@@ -125,15 +132,21 @@ func _add_box(body: StaticBody2D, bounds: Rect2, label: String) -> void:
 
 
 func _add_gantry_crane_collision(parent: StaticBody2D, base_y: float, index: int) -> void:
-	var x := 3140.0
 	var core := "Crane%d" % index
-	# Solid envelope of the supporting legs and lower tower.
-	_add_box(parent, Rect2(x - 60.0, base_y - 70.0, 120.0, 84.0), core + "Base")
-	_add_box(parent, Rect2(x - 74.0, base_y - 130.0, 30.0, 110.0), core + "WestPier")
-	_add_box(parent, Rect2(x + 44.0, base_y - 130.0, 30.0, 110.0), core + "EastPier")
-	# Prevents clipping through the lower deck slab and keeps the upper gantry
-	# silhouette from being pass-through.
-	_add_box(parent, Rect2(x - 30.0, base_y - 2.0, 60.0, 22.0), core + "DeckFoot")
+	# Block the pedestal actually drawn on the quay, not a guessed tower
+	# footprint on the road. The raised jib remains passable underneath.
+	_add_box(parent, Rect2(3140, base_y - 36, 51, 72), core + "Base")
+
+
+func _build_crane_presentations() -> void:
+	for i in CRANE_Y.size():
+		var crane := Node2D.new()
+		crane.name = "NorthstarCrane%d" % i
+		crane.z_index = 4
+		add_child(crane)
+		var paint := _draw_crane.bind(CRANE_Y[i], i)
+		crane.draw.connect(func(): paint.call(crane))
+		preload("res://systems/interiors/ExteriorOcclusion.gd").attach_drawn(crane, Rect2(3138, CRANE_Y[i]-132, 600, 170), CRANE_Y[i]+36, paint)
 
 
 func get_waterfront_audit_data() -> Dictionary:
@@ -263,8 +276,10 @@ func _draw() -> void:
 	_draw_quay()
 	_draw_ship()
 	_draw_gangway_and_rails()
-	for i in range(CRANE_Y.size()):
-		_draw_crane(CRANE_Y[i], i)
+	for i in CRANE_Y.size():
+		var base := Vector2(3165, CRANE_Y[i])
+		var boom_end := Vector2(3715-i*26, CRANE_Y[i]-110)
+		draw_line(base+Vector2(18,19),boom_end+Vector2(18,19),Color(.05,.15,.18,.28),17.0,true)
 
 
 func _draw_water() -> void:
@@ -315,6 +330,14 @@ func _draw_ship() -> void:
 	draw_polyline(closed, Color("d6c9a8"), 5.0, true)
 	var deck := _deck_polygon()
 	draw_colored_polygon(deck, Color("596a68"))
+	# Plated gunwale and service strip keep the long hull from reading as a flat slab.
+	for x in [3380.0, 3760.0]:
+		draw_line(Vector2(x, 1000), Vector2(x, 2070), Color("9da9a0"), 3.0)
+		draw_line(Vector2(x + (7 if x < 3500 else -7), 1010), Vector2(x + (7 if x < 3500 else -7), 2050), Color("394f52"), 2.0)
+	for y in range(1060, 2070, 125):
+		for x in [3385.0, 3755.0]:
+			draw_rect(Rect2(x - 4, y - 12, 8, 24), Color("33484b"))
+			draw_circle(Vector2(x, y), 3.0, Color("c5b997"))
 	# Raised foredeck, mooring gear and hatch before the first container bay.
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(3570, 704), Vector2(3650, 790), Vector2(3705, 939),
@@ -334,6 +357,11 @@ func _draw_ship() -> void:
 		draw_line(Vector2(x, 980), Vector2(x, 1740), Color(0.83, 0.80, 0.64, 0.30), 22.0)
 		draw_line(Vector2(x - 17, 992), Vector2(x - 17, 1715), Color("d3c596"), 1.0)
 		draw_line(Vector2(x + 17, 992), Vector2(x + 17, 1715), Color("d3c596"), 1.0)
+	for y in range(1030, 1710, 112):
+		for x in [3402.0, 3738.0]:
+			draw_rect(Rect2(x - 10, y - 3, 20, 6), Color("32474a"))
+			draw_circle(Vector2(x - 7, y), 2.0, Color("dfc47e"))
+			draw_circle(Vector2(x + 7, y), 2.0, Color("dfc47e"))
 	draw_line(Vector2(3392, 1762), Vector2(3748, 1762), Color(0.83, 0.80, 0.64, 0.20), 30.0)
 	# Aft accommodation block / wheelhouse reads differently from cargo.
 	draw_rect(Rect2(3448, 1807, 260, 232), Color(0.05, 0.13, 0.15, 0.35))
@@ -359,6 +387,27 @@ func _draw_ship() -> void:
 	draw_line(Vector2(3537, 1841), Vector2(3601, 1841), Color("e5d8b8"), 3.0)
 	draw_circle(Vector2(3569, 1829), 6.0, Color("ead7a0"))
 	_draw_label(Vector2(3422, 2087), "NORTHSTAR  /  PACIFIC FREIGHT", 15, Color("e4dfc7"))
+
+
+func _draw_ship_scaffold(canvas: CanvasItem) -> void:
+	# Fixed maintenance staging outside the starboard guardrail, in blocked water.
+	# The ship's traversable deck and the cargo lifts remain unobstructed.
+	var frame := Rect2(3801, 1120, 72, 390)
+	canvas.draw_rect(Rect2(frame.position + Vector2(13, 13), frame.size), Color(0.02, 0.09, 0.12, 0.30))
+	canvas.draw_rect(frame, Color("344d51"))
+	canvas.draw_rect(frame.grow(-7), Color("81918b"))
+	for y in range(1131, 1505, 12):
+		canvas.draw_line(Vector2(3810, y), Vector2(3864, y), Color("b9b7a2"), 2.0)
+	for x in [3802.0, 3872.0]:
+		canvas.draw_line(Vector2(x, 1118), Vector2(x, 1512), Color("d1b26c"), 4.0)
+		for y in range(1122, 1510, 62):
+			canvas.draw_circle(Vector2(x, y), 4.0, Color("ead5a0"))
+	for y in range(1120, 1500, 78):
+		canvas.draw_line(Vector2(3803, y), Vector2(3871, y + 78), Color("52686a"), 2.0)
+		canvas.draw_line(Vector2(3871, y), Vector2(3803, y + 78), Color("52686a"), 2.0)
+	for y in [1170.0, 1365.0, 1480.0]:
+		canvas.draw_rect(Rect2(3787, y - 19, 15, 38), Color("263c40"))
+		canvas.draw_line(Vector2(3794, y), Vector2(3810, y), Color("d0bd86"), 3.0)
 
 
 func _draw_gangway_and_rails() -> void:
@@ -391,30 +440,35 @@ func _draw_container(bounds: Rect2, color: Color) -> void:
 	draw_rect(Rect2(bounds.position + Vector2(8, 14), Vector2(17, 6)), Color(0.93, 0.91, 0.79, 0.55))
 
 
-func _draw_crane(y: float, index: int) -> void:
+func _draw_crane(canvas: CanvasItem, y: float, index: int) -> void:
 	var base := Vector2(3165, y)
 	var boom_end := Vector2(3715 - index * 26, y - 110)
 	var gold := Color("c4a366")
 	var shade := Color("7b754f")
-	# A diagonal raised boom reaches across the vessel; its shadow sits on water.
-	draw_line(base + Vector2(18, 19), boom_end + Vector2(18, 19), Color(0.05, 0.15, 0.18, 0.28), 17.0, true)
-	draw_rect(Rect2(3140, y - 36, 51, 72), Color("5f6b65"))
-	draw_rect(Rect2(3146, y - 30, 39, 60), gold)
-	draw_circle(base, 16.0, shade)
+	# Elevated structure has its own presentation above water and behind-actor mask.
+	canvas.draw_rect(Rect2(3140, y - 36, 51, 72), Color("5f6b65"))
+	canvas.draw_rect(Rect2(3146, y - 30, 39, 60), gold)
+	for offset in [-24.0, 0.0, 24.0]:
+		canvas.draw_line(Vector2(3147, y + offset), Vector2(3184, y + offset), Color("e0c786"), 2.0)
+	canvas.draw_rect(Rect2(3139, y - 38, 53, 76), Color("d4bb77"), false, 2.0)
+	canvas.draw_circle(base, 16.0, shade)
 	var perpendicular := (boom_end - base).normalized().orthogonal() * 11.0
-	draw_line(base + perpendicular, boom_end + perpendicular, gold, 5.0, true)
-	draw_line(base - perpendicular, boom_end - perpendicular, gold, 5.0, true)
+	canvas.draw_line(base + perpendicular, boom_end + perpendicular, gold, 5.0, true)
+	canvas.draw_line(base - perpendicular, boom_end - perpendicular, gold, 5.0, true)
+	canvas.draw_line(base + perpendicular * 0.52, boom_end + perpendicular * 0.52, Color("f0d389"), 1.5, true)
 	for part in range(14):
 		var start := base.lerp(boom_end, float(part) / 14.0)
 		var finish := base.lerp(boom_end, float(part + 1) / 14.0)
-		draw_line(start + perpendicular, finish - perpendicular, shade, 2.5, true)
-		draw_line(start - perpendicular, start + perpendicular, gold, 2.0, true)
-	draw_rect(Rect2(base + Vector2(4, -22), Vector2(26, 26)), Color("dad1a9"))
-	draw_rect(Rect2(base + Vector2(10, -18), Vector2(16, 13)), Color("355561"))
+		canvas.draw_line(start + perpendicular, finish - perpendicular, shade, 2.5, true)
+		canvas.draw_line(start - perpendicular, start + perpendicular, gold, 2.0, true)
+	canvas.draw_rect(Rect2(base + Vector2(4, -22), Vector2(26, 26)), Color("dad1a9"))
+	canvas.draw_rect(Rect2(base + Vector2(10, -18), Vector2(16, 13)), Color("355561"))
 	var trolley := base.lerp(boom_end, 0.77)
-	draw_circle(trolley, 6.0, Color("303f41"))
-	draw_line(trolley, trolley + Vector2(0, 49), Color("d0ccac"), 1.5)
-	draw_rect(Rect2(trolley + Vector2(-25, 44), Vector2(50, 11)), gold)
+	canvas.draw_line(base + Vector2(-6, -26), trolley, Color("58686b"), 1.5, true)
+	canvas.draw_circle(trolley, 6.0, Color("303f41"))
+	canvas.draw_line(trolley, trolley + Vector2(0, 49), Color("d0ccac"), 1.5)
+	canvas.draw_rect(Rect2(trolley + Vector2(-25, 44), Vector2(50, 11)), gold)
+	canvas.draw_rect(Rect2(trolley + Vector2(-20, 47), Vector2(40, 5)), Color("e4d5a8"))
 
 
 func _rounded_box(color: Color, radius: int) -> StyleBoxFlat:

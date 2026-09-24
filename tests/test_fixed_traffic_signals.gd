@@ -15,6 +15,10 @@ func _run() -> void:
 	root.add_child(stage)
 	current_scene = stage
 	var junction = load("res://geodata/roads/traffic/JunctionSignalVisual2D.gd").new()
+	check(
+		junction.physics_interpolation_mode == Node.PHYSICS_INTERPOLATION_MODE_OFF,
+		"fixed signal set does not interpolate from a streamed origin"
+	)
 	stage.add_child(junction)
 	junction.position = Vector2(400, 300)
 	junction.configure(&"fixed_signal_test", 48, [
@@ -24,6 +28,10 @@ func _run() -> void:
 	await physics_frame
 	check(junction.signal_posts.size() == 2, "one permanent post per canonical approach")
 	for post in junction.signal_posts:
+		check(
+			post.physics_interpolation_mode == Node.PHYSICS_INTERPOLATION_MODE_OFF,
+			"fixed signal post does not interpolate its world anchor"
+		)
 		post.ensure_presentation()
 		# Wait for the real camera matrices, not the viewport's initial state.
 		for frame in 3: await process_frame

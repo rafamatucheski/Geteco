@@ -6,6 +6,13 @@
 var water_turret: Node3D
 var water_muzzle: Marker3D
 
+# The water cannon is operational gameplay state, not static presentation. Its
+# live references are authored by build() and currently have no proven restore
+# rebind contract, so regional prewarm may present this model but must never
+# publish it through VehicleGeometryCache.
+func vehicle_geometry_cache_operational_only() -> bool:
+	return true
+
 func build() -> void:
 	paint = mat("paint", "c0392b", 0.35, 0.25)
 	var white := mat("white_stripe", "f5f6fa", 0.2, 0.35)
@@ -34,6 +41,13 @@ func build() -> void:
 	# Para-brisa frontal amplo
 	var w_front := box(Vector3(0.0, 1.62, -4.10), Vector3(2.26, 0.85, 0.04), glass)
 	w_front.rotation.x = deg_to_rad(12.0)
+	# Recessed grille, windshield divider and wipers make the cab readable.
+	box(Vector3(0, 0.87, -4.13), Vector3(1.03, 0.34, 0.045), black)
+	for grille_y in [0.76, 0.85, 0.94]:
+		box(Vector3(0, grille_y, -4.16), Vector3(0.97, 0.023, 0.025), chrome)
+	box(Vector3(0, 1.66, -4.14), Vector3(0.055, 0.77, 0.035), black)
+	for side in [-1.0, 1.0]:
+		box(Vector3(side * 0.55, 1.31, -4.19), Vector3(0.63, 0.022, 0.022), black)
 	# Vidros laterais da cabine dupla (4 portas de equipe)
 	for s in [-1.0, 1.0]:
 		box(Vector3(s * 1.20, 1.65, -3.4), Vector3(0.02, 0.65, 1.05), glass)
@@ -63,6 +77,9 @@ func build() -> void:
 		# Portas de compartimento de ferramentas (persianas de alumínio rolantes)
 		for z_comp in [1.15, 2.35]:
 			box(Vector3(s * 1.19, 1.35, z_comp), Vector3(0.03, 1.20, 0.95), diamond_plate)
+			for slat in 7:
+				box(Vector3(s * 1.21, 0.86 + slat * 0.15, z_comp), Vector3(0.018, 0.012, 0.87), black)
+			box(Vector3(s * 1.23, 0.87, z_comp), Vector3(0.045, 0.055, 0.23), chrome)
 
 	# 5. Identidade Visual 2: Canhão Monitor de Água no Teto da Cabine (Deck Gun)
 	cylinder(Vector3(0.0, 2.32, -1.55), 0.20, 0.20, red_metal_mat())

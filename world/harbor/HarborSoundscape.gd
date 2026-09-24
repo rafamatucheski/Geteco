@@ -145,7 +145,8 @@ func _update_zones() -> void:
 	# Mountain rooms live off-map at positive Y; those coordinates are not city zones.
 	if actor.get_meta("mountain_interior", false):
 		_district_gain = 0.0
-	targets.city = 0.0 if inside else (0.22 if dark else 0.42)
+	var crowd := nearby_conversation_weight(pos) if not inside else 0.0
+	targets.city = (0.22 if dark else 0.42) * crowd
 	var outdoors: bool = not inside and not actor.get_meta("harbor_interior", false) and not actor.get_meta("mountain_interior", false)
 	var cemetery_gain := cemetery_weight(pos)
 	var nature := natural_weight(pos) if outdoors else 0.0
@@ -165,7 +166,7 @@ func _update_zones() -> void:
 	var plaza_gain := plaza_weight(pos) if outdoors else 0.0
 	targets.city *= 1.0 - plaza_gain
 	targets.water = 0.0 if inside or actor.get_meta("mountain_interior", false) or actor.get_meta("harbor_interior", false) else preload("res://audio/WaterSoundscape.gd").coast_weight(pos)
-	targets.terminal = 0.0 if inside else clampf(1.0 - pos.distance_to(Vector2(1700, 1130)) / 550.0, 0.0, 1.0)
+	targets.terminal = 0.0 if inside else clampf(1.0 - pos.distance_to(Vector2(1700, 1130)) / 220.0, 0.0, 1.0) * crowd
 	targets.terminal *= 1.0 - cemetery_gain
 	if dark:
 		targets.terminal *= 0.5
@@ -208,6 +209,29 @@ func _update_zones() -> void:
 			_play_detail("metal", beds.workshop.global_position)
 		elif targets.port > 0.2:
 			_play_detail("metal", pos + Vector2(100, -80))
+
+func nearby_conversation_weight(point: Vector2) -> float:
+	if not point.is_finite(): return 0.0
+	var presence := 0.0
+	var query := PhysicsRayQueryParameters2D.new()
+	query.collision_mask = 1
+	query.from = point
+	var rays := 0
+	for person in get_tree().get_nodes_in_group("pedestrian"):
+		if not person is Node2D or not person.is_visible_in_tree(): continue
+		if person.get("is_dead") == true or person.get("is_incapacitated") == true or person.get("is_scared") == true: continue
+		var person_position: Vector2 = person.global_position
+		if not person_position.is_finite(): continue
+		var distance: float = point.distance_to(person_position)
+		if distance >= 160.0: continue
+		if rays >= 12: break
+		rays += 1
+		query.to = person_position
+		if not person.get_world_2d().direct_space_state.intersect_ray(query).is_empty(): continue
+		presence += 1.0 - smoothstep(55.0, 160.0, distance)
+		if presence >= 4.0: break
+	# A lone passerby does not sound like a crowd. Walls silence the next street.
+	return smoothstep(1.0, 4.0, presence)
 
 func cemetery_weight(point: Vector2) -> float:
 	var cemetery := get_parent().get_node_or_null("Cemetery") as Node2D

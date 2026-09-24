@@ -56,6 +56,9 @@ func _configure_visuals() -> void:
 	tracer.position.x = -3.0 - trail_length * 0.5
 	if is_explosive:
 		core.texture = ROCKET_TEXTURE
+		if not has_meta("rocket_trail_started"):
+			set_meta("rocket_trail_started",true)
+			preload("res://guns/combat/RocketTrail.gd").attach(self)
 		core.scale = Vector2(0.1625, 0.1625)
 		# Align the rocket nose with the same collision front as ordinary rounds.
 		core.position.x = -11.0
@@ -115,6 +118,9 @@ func _on_body_entered(body):
 	# sprite overlap otherwise reports an impact before reaching the surface.
 	if not is_explosive: return
 	if body != owner_body:
+		var actor = body.get_meta("combat_actor") if is_instance_valid(body) and body.has_meta("combat_actor") else body
+		if is_instance_valid(actor) and (actor.get("is_dead") == true or actor.get("is_incapacitated") == true):
+			return
 		# Explosions instantiate physical fragments. Area signals are emitted
 		# during query flushing, when adding collision shapes is forbidden.
 		if is_explosive: _hit.call_deferred(body, global_position, Vector2.ZERO)
@@ -126,6 +132,8 @@ func _hit(target, hit_position: Vector2, hit_normal: Vector2) -> void:
 	if is_instance_valid(target) and target.has_meta("combat_actor"):
 		target = target.get_meta("combat_actor")
 	if target == owner_body: return
+	if is_instance_valid(target) and (target.get("is_dead") == true or target.get("is_incapacitated") == true):
+		return
 	if _spent:
 		return
 	_spent = true
@@ -203,7 +211,7 @@ func _trigger_explosion(pos: Vector2) -> void:
 		var splash_dmg := int(damage * (1.0 - dist / explosion_radius))
 		preload("res://guns/combat/WeaponBlastDamage.gd").apply(body, splash_dmg, pos, self, owner_body as Node2D)
 					
-	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), pos, explosion_radius)
+	preload("res://guns/combat/ExplosionVisual.gd").spawn(get_parent(), pos, explosion_radius, false, direction)
 
 func _expire() -> void:
 	if is_instance_valid(self):

@@ -140,7 +140,7 @@ func run() -> void:
 	# -------------------------------------------------------------
 	# 4. LOOP DE GAMEPLAY COMPLETO DO JOGADOR
 	# -------------------------------------------------------------
-	var player: Node = mountain.player_instance
+	var player: CharacterBody2D = mountain.player_instance
 	expect(player != null, "player exists in mountain")
 	if player and lodge_room:
 		player.money = 1500
@@ -155,13 +155,16 @@ func run() -> void:
 		player.take_ski_equipment()
 		expect(player.ski_equipment_ready, "skis and poles ready")
 
-		# Passo 3: Saída pelas pistas com esquiagem ativa
-		var slope_exit: BuildingEntrance = lodge_room.get_node("SlopeExit")
-		player.set_meta("mountain_interior", true)
-		player.set_meta("mountain_interior_id", &"ski_lodge")
-		manager._actor_returns[player] = player.global_position
-		manager._on_exit_requested(slope_exit, player, &"", null, &"", &"ski_lodge")
-		expect(player.is_skiing, "player begins skiing on slope exit")
+		# Passo 3: atravessa as duas portas físicas do chalé.
+		player.set_physics_process(false)
+		var front: BuildingEntrance = lodge_room.inline_facade.entrance
+		var rear: BuildingEntrance = lodge_room.inline_facade.slope_entrance
+		player.global_position = front.global_position + Vector2(0, 22)
+		for _i in 8: await process_frame
+		expect(await _walk(player, lodge_room.to_global(lodge_room.project_floor(Vector2(0, 3.75)))), "player enters lodge on foot")
+		expect(await _walk(player, rear.global_position + Vector2(0, -22)), "player crosses lodge to slopes on foot")
+		for _i in 5: await process_frame
+		expect(player.is_skiing and not player.has_meta("mountain_interior"), "rear door starts skiing without teleport")
 
 		# Passo 4: Conclusão de prova de corrida
 		var race: SkiRaceController = races[0]
@@ -207,3 +210,11 @@ func run() -> void:
 	else:
 		print("TEST FAILED WITH %d ERRORS" % failures.size())
 	quit(0 if failures.is_empty() else 1)
+
+func _walk(actor: CharacterBody2D, target: Vector2) -> bool:
+	for _step in 420:
+		var motion := target - actor.global_position
+		if motion.length() < 2.0: return true
+		if actor.move_and_collide(motion.limit_length(2.5)) != null: return false
+		await physics_frame
+	return false

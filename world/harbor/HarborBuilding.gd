@@ -11,6 +11,7 @@ const ENTRANCE_SCENE := preload("res://scripts/entrances/BuildingEntrance.tscn")
 const ENTRANCE_SCRIPT := preload("res://world/harbor/HarborEntrance.gd")
 const L_MAIN_DEPTH := 0.55
 const L_WING_WIDTH := 0.50
+var inline_cutaway := false
 
 func _height_px() -> float:
 	return height_override if height_override > 0.0 else super._height_px()
@@ -82,6 +83,7 @@ func _palette() -> Dictionary:
 	return colors
 
 func _draw() -> void:
+	if inline_cutaway: return
 	if name == "Garage": return
 	if entrance_north:
 		draw_set_transform(Vector2.ZERO, PI)
@@ -97,7 +99,10 @@ func _draw() -> void:
 	var bounds := Rect2(-footprint * 0.5, footprint).grow(-5)
 
 	if building_kind == "bank_branch":
-		preload("res://world/harbor/BankFacade.gd").draw_facade(self,bounds,is_dark,is_rain)
+		if get_meta("bank_inline_occupied",false):
+			preload("res://world/harbor/BankFacade.gd").draw_inline_cutaway(self,bounds)
+		else:
+			preload("res://world/harbor/BankFacade.gd").draw_facade(self,bounds,is_dark,is_rain)
 	elif building_kind == "corner_shop" or building_kind == "corner_diner":
 		_draw_corner_shop(bounds, is_dark, is_rain)
 	elif building_kind == "rowhouse_terrace":

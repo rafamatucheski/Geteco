@@ -63,7 +63,15 @@ func _ready() -> void:
 	if calls_for_help:
 		phase = "check"
 		timer = 0.6
-	if actor.has_method("ensure_presentation"): actor.ensure_presentation()
+	if actor.has_method("ensure_presentation"):
+		if actor.get("defer_presentation") == true:
+			var presentation_budget := get_node_or_null("/root/PresentationBudget")
+			if presentation_budget != null and presentation_budget.has_method("request"):
+				presentation_budget.request(actor)
+			else:
+				actor.ensure_presentation()
+		else:
+			actor.ensure_presentation()
 	if "right_lower_arm" in actor: _arm = actor.right_lower_arm
 	if "right_upper_arm" in actor: _upper = actor.right_upper_arm
 	if _upper: _upper_transform = _upper.transform

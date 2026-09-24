@@ -20,6 +20,8 @@ var alighted := 0
 var departures := 0
 var _exchanges := {}
 var _tick := 0.0
+var _service_logic_elapsed := 0.0
+const SERVICE_LOGIC_INTERVAL := 1.0 / 30.0
 var ready_for_service := false
 var player_ride: CanvasLayer
 
@@ -47,6 +49,14 @@ static func is_service_hour(hour: float) -> bool:
 
 func current_hour() -> float:
 	return float(clock.time_of_day)*24 if is_instance_valid(clock) else 12.0
+
+func _prune_removed_passengers() -> void:
+	# Explosions and section streaming may free a commuter between bus stops.
+	# Keep the long-lived service roster free of those stale object references
+	# before any queue sort reads their world position.
+	for index in range(passengers.size() - 1, -1, -1):
+		if not is_instance_valid(passengers[index]):
+			passengers.remove_at(index)
 
 func _setup() -> void:
 	network = get_parent().get_node("RoadNetwork")
@@ -113,6 +123,9 @@ func _setup() -> void:
 		bus.set_script(preload("res://world/harbor/urban_transit/UrbanBus.gd"))
 		bus.name = "UrbanExpress%d"%initial_stop
 		bus.system = self
+		# Production route 510 is articulated. This must be set before add_child(),
+		# because UrbanBus creates its physical trailer during _ready().
+		bus.is_articulated = true
 		bus.current_stop = initial_stop
 		bus.next_stop = initial_stop
 		follow.add_child(bus)
@@ -156,14 +169,21 @@ func _physics_process(delta: float) -> void:
 	_tick += delta
 	if _tick >= 0.25:
 		_tick = 0
+		_prune_removed_passengers()
 		_update_schedule()
-	_update_people(delta)
+	_service_logic_elapsed += delta
+	if _service_logic_elapsed < SERVICE_LOGIC_INTERVAL:
+		return
+	var service_delta := _service_logic_elapsed
+	_service_logic_elapsed = 0.0
+	_prune_removed_passengers()
+	_update_people(service_delta)
 	for bus in _exchanges.keys():
 		if not is_instance_valid(bus):
 			_exchanges.erase(bus)
 			continue
 		if bus.get_meta("proximity_sleeping", false): continue
-		_exchange(bus,delta)
+		_exchange(bus,service_delta)
 
 func _update_schedule() -> void:
 	var was_open := operating
@@ -174,7 +194,11 @@ func _update_schedule() -> void:
 			if is_instance_valid(person) and not person.is_dead and person.stop == stop and person.transit_state in ["waiting","arriving"]: count += 1
 		stop.refresh(operating,count)
 		if operating: _order_platform_queue(stop)
-	for bus in buses:
+	for index in range(buses.size() - 1, -1, -1):
+		var bus: CharacterBody2D = buses[index]
+		if not is_instance_valid(bus):
+			buses.remove_at(index)
+			continue
 		if bus.body_model and "destination_sign" in bus.body_model and bus.body_model.destination_sign:
 			bus.body_model.destination_sign.text = "510 CIRCULAR" if operating else "RECOLHENDO"
 			bus._body_render_visible = false

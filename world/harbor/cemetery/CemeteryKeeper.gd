@@ -15,6 +15,8 @@ var viewport_3d: SubViewport
 var model: Node3D
 var camera: Camera3D
 var display: Sprite2D
+var presentation_sprite: Sprite2D:
+	get: return display
 var weapon: Node3D
 var speech: Label
 var _render_elapsed := 0.0
@@ -158,8 +160,8 @@ func _physics_process(delta: float) -> void:
 	if hostile:
 		_tick_hostility(delta)
 	elif not burial_identity.is_empty():
-		var care := get_node("/root/CoronerCare")
-		if care.records().get(burial_identity,{}).get("phase", "") != "burial":
+		var care := get_node_or_null("/root/CoronerCare")
+		if care == null or care.records().get(burial_identity,{}).get("phase", "") != "burial":
 			finish_burial()
 		elif global_position.distance_to(_burial_point)>6:
 			velocity = _burial_navigation.movement(self,_burial_point,36.0,delta)

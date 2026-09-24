@@ -53,14 +53,20 @@ func capture(label: String) -> void:
 	if label=="04_coleta":
 		check(not room.loot_meshes[0].visible and room.remaining_loot()==6000,"Primeira coleta remove o conjunto e deixa seis mil")
 		var wallet: int=player.money
+		var prior_achievements: Array = player.unlocked_achievements.duplicate()
 		for i in [1,2]:
 			player.global_position=room.to_global(room.loot_positions[i])
 			room._tick_vault(1.3,true)
-		check(player.money==wallet+6000 and room.remaining_loot()==0,"As três coletas totalizam exatamente dez mil")
+		var achievement_bonus := 0
+		for id in player.unlocked_achievements:
+			if id not in prior_achievements: achievement_bonus += AchievementCatalog.cash_reward(id)
+		print("BANK_PAYOUT remaining before=",wallet," after=",player.money," achievement_bonus=",achievement_bonus)
+		check(player.money==wallet+6000+achievement_bonus and room.remaining_loot()==0,"Três pilhas somam $10000; bônus de conquistas contabilizados separadamente")
+		var after_collection: int = player.money
 		for point in room.loot_positions:
 			player.global_position=room.to_global(point)
 			room._tick_vault(2,true)
-		check(player.money==wallet+6000,"Voltar às pilhas vazias não duplica o pagamento")
+		check(player.money==after_collection,"Voltar às pilhas vazias não duplica pagamento nem conquistas")
 		check(room.loot_meshes.all(func(pile): return not pile.visible),"Notas e ouro desaparecem após a coleta")
 		room._process(.1)
 		check(room.phase==room.HeistPhase.ESCAPE,"Cofre vazio avança para fuga")

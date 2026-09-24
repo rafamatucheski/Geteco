@@ -2,6 +2,7 @@ extends "res://world/harbor/cemetery/CemeteryPropBuilder.gd"
 
 var light: OmniLight3D
 var ledger: Node3D
+var compact_mode := false
 
 func _ready() -> void:
 	box("StoneSlab", Vector3(9.3, .25, 7.4), Vector3(0, -.18, 0), "444940")
@@ -57,7 +58,6 @@ func _ready() -> void:
 	box("WindowCross", Vector3(.06, 1.15, .06), Vector3(.2, 1.84, -3.31), "ded0a4")
 	box("WindowCross", Vector3(1.5, .06, .06), Vector3(.2, 1.84, -3.31), "ded0a4")
 	box("MemorialMap", Vector3(.88, .72, .06), Vector3(-.36, 1.85, -3.27), "c8b98c")
-	lettering("QUADRA 7\nS. / 1986", Vector3(-.36, 1.85, -3.22), 15, "555a43")
 	box("Stove", Vector3(.72, .76, .76), Vector3(-3.75, .38, -.55), "39443b")
 	cylinder("StovePipe", .10, 2.1, Vector3(-3.9, 1.78, -.74), "3e473d")
 	cylinder("CoffeePot", .15, .22, Vector3(-3.70, .9, -.5), "8a7560")
@@ -88,6 +88,25 @@ func _ready() -> void:
 	light.omni_range = 8
 	light.shadow_enabled = true
 	add_child(light)
+	if compact_mode: _fit_cottage()
+
+func _fit_cottage() -> void:
+	# Preserve the furniture at its original scale while moving it into the
+	# physical 7.6 x 5.9 m cottage footprint.
+	for child in get_children():
+		if child is Node3D:
+			child.position.x *= .78
+			child.position.z *= .75
+			if child is MeshInstance3D and child.mesh is BoxMesh and child.name in ["StoneSlab", "BackPlaster", "LeftPlaster", "RightCutaway", "SouthCutaway", "BackSkirting", "DoorMat"]:
+				var mesh := child.mesh.duplicate() as BoxMesh
+				mesh.size.x *= .78
+				mesh.size.z *= .75
+				child.mesh = mesh
+			if child.name == "SouthCutaway" and child is MeshInstance3D and child.mesh is BoxMesh:
+				child.position.x = -2.2 if child.position.x < 0 else 2.2
+				var front_mesh := child.mesh.duplicate() as BoxMesh
+				front_mesh.size.x = 2.8
+				child.mesh = front_mesh
 
 func set_night(night: bool) -> void:
 	if light: light.light_energy = .3 if night else .8

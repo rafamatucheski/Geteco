@@ -2,7 +2,7 @@ extends Node2D
 ## Two tall twin-head industrial masts, with light in both presentation worlds.
 const POLES := [Vector3(-14.6,0,9.4),Vector3(14.4,0,-9.4)]
 const TARGETS := [Vector3(-4,0,3),Vector3(5,0,-1)]
-const LIGHT_COLOR := Color("e9f2ff")
+const LIGHT_COLOR := Color("fff2db")
 var art: Node2D
 var is_lit := false
 var _spots: Array[SpotLight3D]=[]
@@ -40,14 +40,14 @@ func _build_mast(index: int) -> void:
 		var material:=StandardMaterial3D.new()
 		material.albedo_color=Color("d2dbe0")
 		material.emission=LIGHT_COLOR
-		material.emission_energy_multiplier=2.0
+		material.emission_energy_multiplier=0.9
 		lens.material_override=material
 		_lenses.append(material)
 		var glow:=Sprite2D.new()
 		glow.texture=_gradient(64)
 		glow.position=art.projected(head.global_position)
 		glow.scale=Vector2.ONE*.75
-		glow.modulate=Color(.82,.91,1,.8)
+		glow.modulate=Color(1.0, 0.94, 0.85, 0.25)
 		glow.z_as_relative=false
 		glow.z_index=25
 		var additive:=CanvasItemMaterial.new()
@@ -64,7 +64,7 @@ func _build_mast(index: int) -> void:
 	spot.position=POLES[index]+Vector3(0,8.15,0)
 	spot.layers=3
 	spot.light_color=LIGHT_COLOR
-	spot.light_energy=1.4
+	spot.light_energy=1.0
 	spot.spot_range=32
 	spot.spot_angle=65
 	spot.spot_attenuation=.6
@@ -79,7 +79,7 @@ func _build_mast(index: int) -> void:
 	pool.texture=_gradient(512)
 	pool.texture_scale=1.55
 	pool.color=LIGHT_COLOR
-	pool.energy=1.25
+	pool.energy=0.75
 	pool.height=80
 	add_child(pool)
 	_pools.append(pool)

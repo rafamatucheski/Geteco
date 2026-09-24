@@ -145,7 +145,14 @@ func snapshot_world() -> Dictionary:
 		result["weather_clock"] = scene.storm_manager.weather_clock
 	var player := get_tree().get_first_node_in_group("player")
 	result["north_access_lower"] = bool(player.get_meta("north_access_lower",false))
-	if region == "mountain" and player.get_meta("mountain_interior",false):
+	var inline_shop := false
+	if region == "mountain" and is_instance_valid(scene) and is_instance_valid(scene.interior_manager):
+		for id in scene.interior_manager._interiors:
+			var room: Node2D = scene.interior_manager._interiors[id]
+			if is_instance_valid(room) and room.get("inline_mode") == true and room.contains_point(player.global_position):
+				inline_shop = true
+				break
+	if region == "mountain" and player.get_meta("mountain_interior",false) and not inline_shop:
 		result["interior"] = String(player.get_meta("mountain_interior_id",""))
 		var point: Vector2 = scene.interior_manager._actor_returns.get(player,Vector2(7350,730))
 		result["exterior_return"] = [point.x,point.y]
@@ -244,6 +251,25 @@ func sanitize_saved_coordinates(data: Dictionary) -> Array[String]:
 		if valid_saved_point(player_data.get("position", [])):
 			var old_point := Vector2(float(player_data.position[0]),float(player_data.position[1]))
 			var safe_point := YARD_LOCATION.safe_load_position(old_point,region=="legacy")
+			if region == "harbor":
+				# Rooms moved into their buildings. Keep campaign inventory/mission
+				# state, but restore old off-map visitors to a clear physical aisle.
+				for legacy in [
+					{"bounds":Rect2(19600,19700,800,600),"safe":Vector2(777,1594.258)},
+					{"bounds":Rect2(21000,19700,800,600),"safe":Vector2(1080,2053.672)},
+					{"bounds":Rect2(22400,19700,800,600),"safe":Vector2(1800,1622.293)},
+					{"bounds":Rect2(25400,19700,800,600),"safe":Vector2(5905,-1296.218)},
+					{"bounds":Rect2(30200,19700,800,600),"safe":Vector2(5479,5870)},
+					{"bounds":Rect2(41600,19700,800,600),"safe":Vector2(650,190)},
+					{"bounds":Rect2(47600,19700,800,600),"safe":Vector2(2460,195)},
+					{"bounds":Rect2(29600,19700,800,600),"safe":Vector2(1890,200)},
+				]:
+					if legacy.bounds.has_point(old_point):
+						safe_point=legacy.safe
+						world.erase("interior")
+						world.erase("exterior_return")
+						warnings.append("Interior antigo reposicionado no prédio acessível.")
+						break
 			player_data.position = [safe_point.x,safe_point.y]
 		var saved_car: Dictionary = world.get("vehicle", {}) if world.get("vehicle", {}) is Dictionary else {}
 		if valid_saved_point([saved_car.get("x"),saved_car.get("y")]):
@@ -251,6 +277,23 @@ func sanitize_saved_coordinates(data: Dictionary) -> Array[String]:
 			var safe_car := YARD_LOCATION.safe_load_position(car_point,region=="legacy")
 			saved_car.x=safe_car.x
 			saved_car.y=safe_car.y
+	if region == "mountain" and valid_saved_point(player_data.get("position", [])):
+		# Older mountain interiors lived in a strip far beyond the physical map.
+		# The room ID, when present, is restored to its facade by MountainPass.
+		var mountain_offset := preload("res://world/harbor/ContinuousWorld.gd").MOUNTAIN_OFFSET if int(world.get("coordinates_version", 1)) >= 2 else Vector2.ZERO
+		var old_position := Vector2(float(player_data.position[0]), float(player_data.position[1]))
+		var old_local := old_position - mountain_offset
+		if Rect2(16000, 18000, 90000, 4000).has_point(old_local):
+			var safe_local := Vector2(3240, 430)
+			var saved_return: Array = world.get("exterior_return", []) if world.get("exterior_return", []) is Array else []
+			if valid_saved_point(saved_return):
+				var return_local := Vector2(float(saved_return[0]), float(saved_return[1])) - mountain_offset
+				if Rect2(0, -5000, 13500, 8500).has_point(return_local): safe_local = return_local
+			var safe_position: Vector2 = safe_local + mountain_offset
+			player_data.position = [safe_position.x, safe_position.y]
+			if not world.has("interior"):
+				world.erase("exterior_return")
+			warnings.append("Interior antigo da serra reposicionado no mapa físico.")
 	if player_data.has("position") and not valid_saved_point(player_data.position):
 		if fallback.is_finite(): player_data.position = [fallback.x,fallback.y]
 		else: player_data.erase("position") # Unknown scenes retain their own spawn.

@@ -21,7 +21,7 @@ static func build(model: Node3D) -> void:
 	decor.add_child(signs)
 	for x in [-4.05,4.05]:
 		PART.piece(signs,Vector3(3.6,.63,.05),Vector3(x,2.03,-3.055),INK)
-		_label(signs,"NORTH PIER" if x<0 else "ATENDIMENTO",Vector3(x,2.05,-3.01),42,.008,Color("eadcbf"))
+		_label(signs,"NORTH PIER",Vector3(x,2.05,-3.01),42,.008,Color("eadcbf"))
 	for x in [-4.5,4.5]:
 		PART.piece(decor,Vector3(.5,.012,.34),Vector3(x+.8,1.192,-.85),Color("e1dbc9"))
 		PART.piece(decor,Vector3(.33,.025,.25),Vector3(x-.85,1.20,-.78),INK)
@@ -37,13 +37,10 @@ static func build(model: Node3D) -> void:
 		PART.piece(atm,Vector3(.42,.055,.25),Vector3(0,.81,.51),BRASS)
 		for mesh in atm.get_children():
 			if mesh is MeshInstance3D: mesh.set_meta("interior_solid_id", &"ATMLeft" if x < 0 else &"ATMRight")
-		_label(atm,"24h",Vector3(0,1.64,.2),32,.007,INK)
 		_plant(decor,Vector3(x,0,4.1))
 	# Soleira legível alinhada exatamente ao gatilho da saída automática.
 	PART.piece(decor,Vector3(2.2,.025,.95),Vector3(0,.033,4.3),INK)
 	for x in [-1.15,1.15]: PART.piece(decor,Vector3(.09,.62,.16),Vector3(x,.31,4.65),BRASS)
-	var exit_sign := _label(decor,"SAÍDA  ↓",Vector3(0,.058,4.3),52,.009,Color("e8e4cd"))
-	exit_sign.rotation_degrees.x=-90
 	# Classify small details too: counter props belong to the counter envelope;
 	# signs are overhead and the runner/threshold are walkable floor decoration.
 	for mesh in decor.find_children("*", "MeshInstance3D", true, false):

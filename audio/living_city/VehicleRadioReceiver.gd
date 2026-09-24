@@ -47,10 +47,15 @@ func _process(delta: float) -> void:
 		_notice_time = 0.0
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton or not event.pressed:
-		return
-	if event.button_index not in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
-		return
+	if not event.is_pressed(): return
+	var direction := 0
+	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		direction = 1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1
+	elif event.is_action_pressed("radio_next"):
+		direction = 1
+	elif event.is_action_pressed("radio_previous"):
+		direction = -1
+	if direction == 0: return
 	if get_tree().paused or _audio.get_parent().get("is_driven_by_player") != true:
 		return
 	var actor := get_tree().get_first_node_in_group("player")
@@ -59,7 +64,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var input_manager := get_node_or_null("/root/GameInput")
 	if input_manager != null and input_manager.get("remapping") == true:
 		return
-	_change_station(1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1)
+	_change_station(direction)
 	get_viewport().set_input_as_handled()
 
 func _change_station(direction: int) -> void:

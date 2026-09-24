@@ -1,10 +1,16 @@
 extends Control
 const STYLE = preload("res://ui/GameStyle.gd")
 const ART := [
-	"res://cutscenes/opening/frames/frame_10_bus_terminal_arrival.png",
-	"res://cutscenes/opening/frames/frame_08_bus_highway.png",
-	"res://cutscenes/opening/frames/frame_v2_decision.png",
+	"res://ui/art/loading/harbor_arrival.png",
+	"res://ui/art/loading/mountain_pass.png",
+	"res://ui/art/loading/garage_district.png",
 ]
+const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
+const LOCATION_PT := ["PORTO CENTRAL", "PASSAGEM DA SERRA", "DISTRITO DA OFICINA"]
+const LOCATION_EN := ["CENTRAL HARBOR", "MOUNTAIN PASS", "GARAGE DISTRICT"]
+const TITLE_PT := ["Chegada ao porto", "Atravessando a serra", "De volta à oficina"]
+const TITLE_EN := ["Arriving at the harbor", "Crossing the mountains", "Back to the garage"]
 var variant := 0
 var progress: ProgressBar
 var stage: Label
@@ -19,9 +25,11 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var background := TextureRect.new()
+	background.name = "Background"
 	background.texture = load(ART[variant])
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
@@ -43,6 +51,7 @@ func _ready() -> void:
 	margin.add_child(stack)
 	var brand := Label.new()
 	brand.text = "GETECO   /   " + str(variant+1).pad_zeros(2)
+	brand.add_theme_font_override("font", DISPLAY_FONT)
 	brand.add_theme_font_size_override("font_size", 22)
 	brand.add_theme_color_override("font_color", STYLE.TEXT)
 	stack.add_child(brand)
@@ -50,23 +59,27 @@ func _ready() -> void:
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stack.add_child(spacer)
 	var eyebrow := Label.new()
-	eyebrow.text = _text("UMA CIDADE. NOVOS CAMINHOS.", "ONE CITY. NEW ROADS.")
+	eyebrow.text = (LOCATION_EN if TranslationServer.get_locale().begins_with("en") else LOCATION_PT)[variant]
+	eyebrow.add_theme_font_override("font", DISPLAY_FONT)
 	eyebrow.add_theme_color_override("font_color", STYLE.ACCENT)
 	eyebrow.add_theme_font_size_override("font_size", 14)
 	stack.add_child(eyebrow)
 	title = Label.new()
-	title.text = [_text("De volta às ruas", "Back on the streets"),_text("O caminho continua", "The road continues"),_text("Cada escolha deixa marcas", "Every choice leaves a mark")][variant]
+	title.text = (TITLE_EN if TranslationServer.get_locale().begins_with("en") else TITLE_PT)[variant]
+	title.add_theme_font_override("font", DISPLAY_FONT)
 	title.add_theme_font_size_override("font_size", 38)
 	title.add_theme_color_override("font_color", STYLE.TEXT)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stack.add_child(title)
 	tip = Label.new()
+	tip.add_theme_font_override("font", BODY_FONT)
 	tip.add_theme_font_size_override("font_size", 17)
 	tip.add_theme_color_override("font_color", STYLE.MUTED)
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip.custom_minimum_size.y = 48
 	stack.add_child(tip)
 	stage = Label.new()
+	stage.add_theme_font_override("font", DISPLAY_FONT)
 	stage.add_theme_font_size_override("font_size", 15)
 	stage.add_theme_color_override("font_color", STYLE.TEXT)
 	stack.add_child(stage)

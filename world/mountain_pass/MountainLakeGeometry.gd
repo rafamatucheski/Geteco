@@ -1,6 +1,6 @@
 extends Node2D
 ## Render and collision share one shoreline; the footbridge cuts out a dry deck.
-const DECK := Rect2(6970, 14, 350, 52)
+const DECK := Rect2(6880, 14, 440, 52)
 var water := PackedVector2Array()
 var clock := 0.0
 

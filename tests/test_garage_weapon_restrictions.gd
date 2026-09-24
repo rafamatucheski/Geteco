@@ -24,13 +24,23 @@ func run() -> void:
 	var manager = current_scene.get_node("Interiors")
 	var garage = manager.garage_interior
 	var door = current_scene.get_node("District/Garage/Entrance")
+	check(garage.inline_mode and garage.exit_door==null and not door.show_entrance_marker and not door.handle_input_locally, "Garage uses a physical door without E or entry marker")
+	player.global_position = door.global_position+Vector2(0,100)
 	player.personal_loadout_enabled = false
 	player.weapon_inventory["pistol"] = true
 	player.weapon_ammo["pistol"] = {"clip": 12, "reserve": 24}
 	player.equip_weapon("pistol")
 	check(player.active_weapon_id == "pistol", "Exterior allows equipping weapons")
-	manager._on_exterior_destination_requested(door, player, &"", null, &"", garage, garage.spawn_point)
-	check(player.weapons_forbidden() and player.active_weapon_id == "fists", "Real door entry holsters the weapon immediately")
+	player.money = 1000
+	player.customize_weapon("pistol", "install")
+	player.weapon_flashlight.toggle()
+	check(player.weapon_flashlight.enabled, "Exterior allows the installed flashlight")
+	player.global_position = garage.spawn_point.global_position
+	for frame in 3: await physics_frame
+	check(player.weapons_forbidden() and player.active_weapon_id == "fists", "Crossing the real threshold holsters the weapon immediately")
+	check(not player.weapon_flashlight.enabled, "Garage entry extinguishes the flashlight immediately")
+	player.weapon_flashlight.toggle()
+	check(not player.weapon_flashlight.enabled, "Garage blocks flashlight activation")
 	var ammo: Dictionary = player.weapon_ammo.duplicate(true)
 	for id in ["pistol", "grenade", "rpg", "flamethrower", "knife", "axe", "fists"]:
 		player.weapon_inventory[id] = true
@@ -49,11 +59,13 @@ func run() -> void:
 		check(not actor.has_method("take_damage") and not actor.has_method("get_run_over") and not actor.has_method("die"), "Essential character has no damage, run-over or death entry point: " + str(actor.get_script().resource_path))
 		check(not actor.is_in_group("damageable"), "Essential character is not a damage target")
 	mechanic.free()
-	manager._on_exit_door_requested(garage.exit_door, player, &"", null, &"", &"harbor/District/Garage/Entrance")
+	player.global_position = door.global_position + Vector2(0, 100)
+	await physics_frame
 	player.equip_weapon("pistol")
 	check(not player.weapons_forbidden() and player.active_weapon_id == "pistol", "Exit restores weapon use without losing inventory")
+	check(player.weapon_customization.pistol.installed, "Garage preserves the installed accessory")
 	player.global_position = garage.spawn_point.global_position
-	manager._frame_interior_camera(player, garage.get_camera_rect())
+	await physics_frame
 	check(player.active_weapon_id == "fists" and player.weapons_forbidden(), "Restored interior position holsters the saved weapon")
 	player.global_position = door.global_position + Vector2(0, 80)
 	player.equip_weapon("pistol")

@@ -17,7 +17,7 @@ func run()->void:
 	var world:=Node2D.new()
 	root.add_child(world)
 	current_scene=world
-	var player:=Node2D.new()
+	var player:=CharacterBody2D.new()
 	player.add_to_group("player")
 	world.add_child(player)
 	var bench:=body_at(world,Vector2.ZERO,Vector2(38,10))

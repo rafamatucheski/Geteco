@@ -40,8 +40,11 @@ func _ready() -> void:
 	area.collision_mask = 6
 	var detection := CollisionShape2D.new()
 	detection.shape = RectangleShape2D.new()
-	detection.shape.size = Vector2(440,210)
-	detection.position = Vector2(20,-25)
+	# Share the station's 3D depth only on the actual platform and access ramp.
+	# The old 440x210 trigger reached far into the surrounding pavement, so the
+	# player visibly changed render projection merely by passing near the tube.
+	detection.shape.size = Vector2(370, 82)
+	detection.position = Vector2(18, 1)
 	area.add_child(detection)
 	area.body_entered.connect(func(actor): _actor_entered.call_deferred(actor))
 	area.body_exited.connect(func(actor): _actor_exited.call_deferred(actor))

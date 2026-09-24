@@ -9,6 +9,7 @@ extends "res://world/harbor/interiors/HarborInteriorBase.gd"
 ## e terminal interativo de ocorrências e mandados.
 
 const STATION_3D_SCENE := preload("res://world/harbor/interiors/HarborPoliceStation3D.gd")
+const COMPACT_STATION_3D_SCENE := preload("res://world/harbor/interiors/HarborPoliceCompactArt3D.gd")
 const NPC_SCRIPT := preload("res://world/harbor/interiors/HarborConversationalNPC.gd")
 const ACTOR_SCALE_SCRIPT := preload("res://systems/interiors/InteriorActorPresentation.gd")
 
@@ -18,6 +19,13 @@ var station_3d: Node3D
 var room_display: Sprite2D
 var actor_scale: Node
 var actor: Node2D
+var inline_mode := false
+var inline_facade: Node2D
+var inline_entrance: BuildingEntrance
+var inline_floor_polygon := PackedVector2Array()
+var inline_door_blocker: CollisionPolygon2D
+var _inline_occupied := false
+var _inline_door_amount := 0.0
 var camera_3d: Camera3D:
 	get: return room_camera
 var sprite_3d: Sprite2D:
@@ -44,7 +52,7 @@ var anim_clock: float = 0.0
 
 func _init() -> void:
 	interior_id = &"police"
-	display_name = "HARBOR PATROL — DELEGACIA DO PORTO"
+	display_name = "HARBOR PATROL"
 	room_size = Vector2(960, 660)
 	wall_color = Color("#11161f")
 	floor_color = Color("#1c2430")
@@ -53,6 +61,9 @@ func _init() -> void:
 func _build_lights() -> void:
 	# Toda a iluminação e sombras PBR são geradas pelo HarborPoliceStation3D
 	pass
+
+func _build_blackout() -> void:
+	if not inline_mode: super._build_blackout()
 
 func _build_walls_and_floor() -> void:
 	# A renderização visual é gerada pela cena 3D; colisões físicas 2D
@@ -67,11 +78,25 @@ func _setup_interior_content() -> void:
 	_build_incident_terminal()
 
 	# Configuração do ponto de entrada e saída alinhado às portas duplas da fachada Sul
-	var spawn_pos := project_floor(Vector2(0.0, 4.8))
-	var exit_pos := project_floor(Vector2(0.0, 6.2))
-	_create_spawn_and_exit(spawn_pos, exit_pos, &"harbor/District/Police/Entrance/exit", "SAIR DA DELEGACIA")
-	exit_door.show_interaction_prompt = false
-	exit_door.get_node("Facade").hide()
+	if inline_mode:
+		spawn_point = Marker2D.new()
+		spawn_point.name = "SpawnPoint"
+		spawn_point.position = project_floor(Vector2(0,4.9))
+		add_child(spawn_point)
+		inline_floor_polygon = _project_rect(Rect2(-4.12,-5.82,8.24,11.95))
+		inline_door_blocker = CollisionPolygon2D.new()
+		inline_door_blocker.name = "DoorLeaves"
+		inline_door_blocker.polygon = _project_rect(Rect2(-1.3,5.92,2.6,.18))
+		walls_body.add_child(inline_door_blocker)
+		room_display.hide()
+		set_meta("fixed_camera",true)
+	else:
+		var spawn_pos := project_floor(Vector2(0.0, 4.8))
+		var exit_pos := project_floor(Vector2(0.0, 6.2))
+		_create_spawn_and_exit(spawn_pos, exit_pos, &"harbor/District/Police/Entrance/exit", "SAIR DA DELEGACIA")
+		exit_door.show_interaction_prompt = false
+		exit_door.get_node("Facade").hide()
+	add_cash_reward(station_3d, Vector2(1.9, 3.3) if inline_mode else Vector2(1.4, 3.8), 250, "harbor_patrol_cash_01")
 
 # ==============================================================================
 # 1. VIEWPORT 3D & PROJEÇÃO ORTOGONAL
@@ -80,7 +105,7 @@ func _setup_interior_content() -> void:
 func _setup_3d_station_viewport() -> void:
 	view = SubViewport.new()
 	view.name = "StationViewport3D"
-	view.size = Vector2i(1760, 1100)
+	view.size = Vector2i(800, 667) if inline_mode else Vector2i(1760, 1100)
 	view.transparent_bg = true
 	view.own_world_3d = true
 	view.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -97,18 +122,21 @@ func _setup_3d_station_viewport() -> void:
 	if world_3d:
 		world_3d.environment = env
 
-	station_3d = STATION_3D_SCENE.new()
+	station_3d = COMPACT_STATION_3D_SCENE.new() if inline_mode else STATION_3D_SCENE.new()
 	view.add_child(station_3d)
 
 	room_camera = Camera3D.new()
 	room_camera.name = "StationCamera3D"
 	room_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	room_camera.size = 18.0
+	room_camera.size = 12.0 if inline_mode else 18.0
 	room_camera.current = true
 	view.add_child(room_camera)
 
 	# Ângulo isométrico institucional calibrado (54.5° em relação ao plano horizontal)
-	room_camera.look_at_from_position(Vector3(0.0, 18.0, 12.35), Vector3(0.0, 0.0, -0.5), Vector3.UP)
+	if inline_mode:
+		room_camera.look_at_from_position(Vector3(0,24.0,20.0),Vector3(0,1.2,0),Vector3.UP)
+	else:
+		room_camera.look_at_from_position(Vector3(0.0, 18.0, 14.5), Vector3(0.0, 0.0, -0.5), Vector3.UP)
 	room_camera.force_update_transform()
 	room_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	room_camera.reset_physics_interpolation()
@@ -117,13 +145,19 @@ func _setup_3d_station_viewport() -> void:
 	room_display.name = "StationDisplay3D"
 	room_display.texture = view.get_texture()
 	room_display.position = Vector2(0, 0)
-	room_display.scale = Vector2(0.52, 0.52)
+	var unit_x: float = room_camera.unproject_position(Vector3.RIGHT).distance_to(room_camera.unproject_position(Vector3.ZERO))
+	room_display.scale = Vector2.ONE * (20.0 / unit_x) if inline_mode else Vector2(0.52, 0.52)
+	if inline_mode:
+		room_display.position = -(room_camera.unproject_position(Vector3.ZERO)-Vector2(view.size)*.5)*room_display.scale
 	room_display.z_index = 0
 	add_child(room_display)
 
 ## Converte coordenadas no plano do chão 3D (X, Z em metros) para pixels 2D locais
 func project_floor(point: Vector2) -> Vector2:
-	return (room_camera.unproject_position(Vector3(point.x, 0.0, point.y)) - Vector2(view.size) * 0.5) * room_display.scale
+	return room_display.position+(room_camera.unproject_position(Vector3(point.x, 0.0, point.y)) - Vector2(view.size) * 0.5) * room_display.scale
+
+func _project_rect(rect: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([project_floor(rect.position),project_floor(Vector2(rect.end.x,rect.position.y)),project_floor(rect.end),project_floor(Vector2(rect.position.x,rect.end.y))])
 
 
 # ==============================================================================
@@ -159,7 +193,7 @@ func _build_npcs() -> void:
 		"Não toleramos rachas nem tiroteios no perímetro do porto. Considere isso um aviso amigável."
 	]
 	sergeant_npc.interact_radius = 80.0
-	sergeant_npc.position = project_floor(Vector2(-0.75, -0.1))
+	sergeant_npc.position = project_floor(Vector2(-.6,-1.15) if inline_mode else Vector2(-0.75, -0.1))
 	add_child(sergeant_npc)
 	all_npcs.append(sergeant_npc)
 
@@ -177,7 +211,7 @@ func _build_npcs() -> void:
 		"Aquele mural na parede não mente: cada foto tem ligação direta com os galpões do porto."
 	]
 	detective_npc.interact_radius = 75.0
-	detective_npc.position = project_floor(Vector2(-3.4, -4.2))
+	detective_npc.position = project_floor(Vector2(-1.8,-2.65) if inline_mode else Vector2(-3.4, -4.2))
 	add_child(detective_npc)
 	all_npcs.append(detective_npc)
 
@@ -196,7 +230,7 @@ func _build_npcs() -> void:
 		"Delegacia não é ponto turístico. Faça o que veio fazer e siga seu caminho."
 	]
 	guard_npc.interact_radius = 75.0
-	guard_npc.position = project_floor(Vector2(5.5, -1.2))
+	guard_npc.position = project_floor(Vector2(2.25,-1.5) if inline_mode else Vector2(5.5, -1.2))
 	add_child(guard_npc)
 	all_npcs.append(guard_npc)
 
@@ -214,7 +248,7 @@ func _build_npcs() -> void:
 		"Se você veio procurar o Vicente... aquele sumiu no mapa faz tempo, tá correndo em outro nível."
 	]
 	prisoner_npc.interact_radius = 70.0
-	prisoner_npc.position = project_floor(Vector2(5.5, -3.8))
+	prisoner_npc.position = project_floor(Vector2(1.9,-4.5) if inline_mode else Vector2(5.5, -3.8))
 	add_child(prisoner_npc)
 	all_npcs.append(prisoner_npc)
 
@@ -233,7 +267,7 @@ func _build_npcs() -> void:
 		"Tome cuidado pelas ruas à noite, meu jovem. O porto não perdoa distrações."
 	]
 	civilian_npc.interact_radius = 70.0
-	civilian_npc.position = project_floor(Vector2(-2.4, 4.3))
+	civilian_npc.position = project_floor(Vector2(-2.25,3.65) if inline_mode else Vector2(-2.4, 4.3))
 	add_child(civilian_npc)
 	all_npcs.append(civilian_npc)
 
@@ -245,7 +279,7 @@ func _build_npcs() -> void:
 # ==============================================================================
 
 func _build_incident_terminal() -> void:
-	var terminal_pos := project_floor(Vector2(-4.2, 1.5))
+	var terminal_pos := project_floor(Vector2(-2.5,2.15) if inline_mode else Vector2(-4.2, 1.5))
 
 	terminal_area = Area2D.new()
 	terminal_area.name = "TerminalArea"
@@ -380,10 +414,11 @@ func _open_terminal() -> void:
 
 var _warmed: bool = false
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not _warmed and is_instance_valid(view):
 		_warmed = true
 		view.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if inline_mode: _update_inline_access(delta)
 	_sync_actor_scale()
 	if is_instance_valid(actor) and is_instance_valid(terminal_area):
 		var dist := actor.global_position.distance_to(terminal_area.global_position)
@@ -415,10 +450,84 @@ func _exit_tree() -> void:
 		actor_scale.restore()
 
 func actor_inside() -> bool:
-	return is_instance_valid(actor) and actor.visible and not actor.is_dead and not actor.is_arrested and get_camera_rect().has_point(actor.global_position)
+	return is_instance_valid(actor) and actor.visible and not actor.is_dead and not actor.is_arrested and contains_point(actor.global_position)
+
+func contains_point(point: Vector2) -> bool:
+	if inline_mode: return Geometry2D.is_point_in_polygon(to_local(point),inline_floor_polygon)
+	return super.contains_point(point)
+
+func get_camera_rect() -> Rect2:
+	if inline_mode: return Rect2(global_position-Vector2(110,135),Vector2(220,270))
+	return super.get_camera_rect()
+
+func attach_inline_facade(facade: Node2D, entrance: BuildingEntrance) -> void:
+	inline_facade = facade
+	inline_entrance = entrance
+	global_position = facade.global_position+Vector2(0,30)
+	z_as_relative = false
+	z_index = 6
+	entrance.interior_available = false
+	entrance.handle_input_locally = false
+	entrance.show_entrance_marker = false
+	entrance.show_interaction_prompt = false
+	var old_body := facade.get_node_or_null("BuildingSolid") as StaticBody2D
+	if old_body:
+		old_body.collision_layer = 0
+		old_body.queue_free()
+
+func _update_inline_access(delta: float) -> void:
+	if not is_instance_valid(inline_facade) or not is_instance_valid(inline_entrance): return
+	if not is_instance_valid(actor): actor = get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(actor): return
+	var inside: bool = actor.visible and actor.get("is_dead") != true and contains_point(actor.global_position)
+	var near: bool = actor.visible and actor.get("is_dead") != true and actor.global_position.distance_to(inline_entrance.global_position) < 78.0
+	# The facade sensor covers the street side only; the same door must reopen
+	# when somebody approaches the threshold from inside the station.
+	if near:
+		inline_entrance._away_time = 0.0
+		if not inline_entrance._door_open: inline_entrance.open_door()
+	var target := 1.0 if near and inline_entrance._door_open else 0.0
+	var amount := move_toward(_inline_door_amount,target,delta/.4)
+	if not is_equal_approx(amount,_inline_door_amount):
+		_inline_door_amount = amount
+		station_3d.call("set_open_amount",amount)
+		inline_door_blocker.set_deferred("disabled",amount >= .6)
+		if is_instance_valid(view): view.render_target_update_mode = SubViewport.UPDATE_ONCE if not inside else SubViewport.UPDATE_ALWAYS
+	if inside and not _inline_occupied:
+		_inline_occupied = true
+		inline_facade.set("inline_cutaway",true)
+		inline_facade.queue_redraw()
+		room_display.show()
+		set_npc_rendering_active(true)
+		actor.set_meta("harbor_interior",true)
+		actor.set_meta("police_exterior_position",inline_entrance.global_position)
+		var cam := actor.get_node_or_null("Camera") as Camera2D
+		if cam:
+			cam.set_meta("compact_interior",get_camera_rect())
+			cam.reset_smoothing()
+		get_parent().get_parent().emit_signal("actor_entered_interior",actor,interior_id)
+	elif not inside and _inline_occupied:
+		_inline_occupied = false
+		inline_facade.set("inline_cutaway",false)
+		inline_facade.queue_redraw()
+		room_display.hide()
+		set_npc_rendering_active(false)
+		actor.remove_meta("harbor_interior")
+		actor.remove_meta("police_exterior_position")
+		var cam := actor.get_node_or_null("Camera") as Camera2D
+		if cam: cam.remove_meta("compact_interior")
+		get_parent().get_parent().emit_signal("actor_returned_to_exterior",actor,interior_id)
+	elif not near and is_zero_approx(_inline_door_amount) and is_instance_valid(view):
+		view.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 func set_npc_rendering_active(active: bool) -> void:
+	if inline_mode and active:
+		for resident in all_npcs:
+			if is_instance_valid(resident): resident.show()
 	super.set_npc_rendering_active(active)
+	if inline_mode and not active:
+		for resident in all_npcs:
+			if is_instance_valid(resident): resident.hide()
 	if is_instance_valid(view):
 		if active:
 			view.render_target_update_mode = SubViewport.UPDATE_ALWAYS

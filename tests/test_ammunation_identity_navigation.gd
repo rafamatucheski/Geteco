@@ -19,7 +19,9 @@ func shot(path: String) -> void:
 	if DisplayServer.get_name()=="headless": return
 	for i in 5: await process_frame
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("D:/geteco/artifacts/ammunation-0910/"+path+".png")
+	var dir := OS.get_temp_dir().path_join("geteco-ammunation-cutaway-0922")
+	DirAccess.make_dir_recursive_absolute(dir)
+	root.get_texture().get_image().save_png(dir.path_join(path+".png"))
 func run() -> void:
 	_tag = "ammunation_identity_navigation"
 	arm_watchdog(180)
@@ -45,9 +47,9 @@ func run() -> void:
 	if not entrance.is_actor_in_range(player):
 		quit(1)
 		return
-	await press_key(KEY_E)
-	await create_timer(1.2).timeout
-	check(room.contains_point(player.global_position),"E enters through real door")
+	check(await walk_to(player,room.spawn_point.global_position,180,8),"Walking through the door enters the real building")
+	await physics_frames(5)
+	check(room.contains_point(player.global_position) and room._occupied,"Entry stays at the exterior building")
 	check(await walk_to(player,room.to_global(room.merchant_point),240,8),"Walk from spawn to gunsmith")
 	await shot("interior-gameplay")
 	await press_key(KEY_E)
@@ -59,11 +61,17 @@ func run() -> void:
 		room.selection=room.stock.find(id)
 		room.change_selection(0)
 		var before: int = player.money
+		var achievements_before: Array[String] = player.unlocked_achievements.duplicate()
 		room.buy.pressed.emit()
-		check(player.money==before-int(room._data().price),"Charges correct price: "+id)
+		var achievement_cash := 0
+		for achievement_id in player.unlocked_achievements:
+			if achievement_id not in achievements_before:
+				achievement_cash += preload("res://economy/AchievementCatalog.gd").cash_reward(achievement_id)
+		var paid_balance := before-int(room._data().price)+achievement_cash
+		check(player.money==paid_balance,"Charges correct price: "+id)
 		check(player.armor==player.max_armor if id=="armor" else player.weapon_inventory.get(id,false),"Purchase grants: "+id)
 		room.purchase()
-		check(player.money==before-int(room._data().price),"Duplicate purchase prevented: "+id)
+		check(player.money==paid_balance,"Duplicate purchase prevented: "+id)
 		await shot("catalog-"+id)
 	room.selection=room.stock.find("grenade")
 	room.change_selection(0)
@@ -82,13 +90,13 @@ func run() -> void:
 	check(not room.active and not player.is_in_dialogue,"Escape closes catalog and restores movement")
 	# Each wall and display must physically stop the player before its far side.
 	for route in [
-		[Vector2(0,0),Vector2(0,-4.5),"counter"],
-		[Vector2(0,2.4),Vector2(0,6),"south wall"],
-		[Vector2(0,0),Vector2(-6,.5),"armor display"],
-		[Vector2(0,0),Vector2(6,.5),"explosives display"],
-		[Vector2(-3.5,2.5),Vector2(-8,2.5),"west wall"],
-		[Vector2(3.5,2.5),Vector2(8,2.5),"east wall"],
-		[Vector2(-3.5,0),Vector2(-3.5,-6),"staff boundary"]
+		[Vector2(0,.1),Vector2(0,-1.8),"counter"],
+		[Vector2(-2.8,1.5),Vector2(-2.8,3.7),"south wall"],
+		[Vector2(-2.5,.2),Vector2(-3.8,.2),"armor display"],
+		[Vector2(2.5,.2),Vector2(3.8,.2),"explosives display"],
+		[Vector2(-2.8,1.3),Vector2(-4.8,1.3),"west wall"],
+		[Vector2(2.8,1.3),Vector2(4.8,1.3),"east wall"],
+		[Vector2(2.8,-.4),Vector2(2.8,-2.2),"staff boundary"]
 	]:
 		# Start points isolate one obstacle; movement toward each uses production input.
 		player.global_position=room.to_global(room.floor_point(route[0]))
@@ -98,12 +106,9 @@ func run() -> void:
 		check(not reached and room.contains_point(player.global_position),"Geodata blocks "+route[2])
 	player.global_position=room.spawn_point.global_position
 	await physics_frames(5)
-	check(await walk_to(player,room.exit_door.global_position,160,7),"Walk to visible exit threshold")
+	check(await walk_to(player,entrance.get_node("OutsideReturn").global_position,160,7),"Walk back through the same door")
 	await physics_frames(4)
-	check(room.exit_door.is_actor_in_range(player),"Exit sensor detects normal approach")
-	await press_key(KEY_E)
-	await create_timer(1.2).timeout
-	check(player.global_position.distance_to(entrance.get_node("OutsideReturn").global_position)<8,"E returns to original branch entrance")
+	check(not room.contains_point(player.global_position),"Exit stays beside the original branch entrance")
 	check(not player.is_in_dialogue and not camera.has_meta("compact_interior"),"Exterior controls and camera restored")
 	# Build a real mountain manager and branch at an isolated test location.
 	var mountain = preload("res://world/mountain_pass/MountainInteriorManager.gd").new()
@@ -115,6 +120,7 @@ func run() -> void:
 	facade.position=Vector2(48000,10000)
 	world.add_child(facade)
 	facade.install_entrance(mountain)
+	player.set_meta("police_exterior_position",facade.global_position)
 	player.global_position=facade.to_global(facade.project_floor(Vector2(0,4.5)))
 	player.reset_physics_interpolation()
 	camera.global_position=player.global_position
@@ -122,17 +128,15 @@ func run() -> void:
 	await physics_frames(5)
 	check(await walk_to(player,facade.entrance.get_node("InteractionArea").global_position,180,8),"Mountain branch approach")
 	await shot("mountain-exterior")
-	await press_key(KEY_E)
-	await create_timer(.9).timeout
 	room=mountain.ammunation_interior
-	check(room.contains_point(player.global_position),"Mountain door enters shared interior")
+	check(await walk_to(player,room.spawn_point.global_position,240,10),"Mountain door enters in place by walking")
+	check(room.contains_point(player.global_position),"Mountain player remains in the same building")
 	check(await walk_to(player,room.to_global(room.merchant_point),240,10),"Mountain circulation reaches gunsmith")
 	await press_key(KEY_E)
 	check(room.active and player.is_in_dialogue,"Mountain gunsmith opens same catalog")
 	await press_key(KEY_ESCAPE)
-	check(await walk_to(player,room.exit_door.global_position,240,8),"Mountain walk back to exit")
-	await press_key(KEY_E)
-	await create_timer(.8).timeout
+	check(await walk_to(player,facade.to_global(facade.project_floor(Vector2(0,4.5))),240,8),"Mountain walk back out")
+	await physics_frames(5)
 	check(player.global_position.distance_to(facade.to_global(facade.project_floor(Vector2(0,4.5))))<8,"Mountain exit returns to correct branch")
 	check(not player.is_in_dialogue and not camera.has_meta("compact_interior"),"Mountain camera and movement restored")
 	print("AMMUNATION IDENTITY: %d passed, %d failed"%[passed_count,failures.size()])

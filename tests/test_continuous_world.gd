@@ -9,9 +9,14 @@ func _run() -> void:
 	root.content_scale_size = root.size
 	create_timer(90).timeout.connect(func(): printerr("CONTINUOUS WORLD TIMEOUT"); quit(2))
 	var saves := root.get_node("SaveManager")
-	var output := "D:/geteco/artifacts/proximity-0912/seam-saves/"
-	DirAccess.make_dir_recursive_absolute(output)
-	saves.set("_save_dir", output)
+	var output := ProjectSettings.globalize_path("user://tests/continuous-world")
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("out_dir="): output = arg.trim_prefix("out_dir=")
+	if DirAccess.make_dir_recursive_absolute(output.path_join("saves")) != OK:
+		push_error("Cannot create continuous-world test output: " + output)
+		quit(1)
+		return
+	saves.set("_save_dir", output.path_join("saves") + "/")
 	saves.set("_save_directory_ready", false)
 	saves.clear_pending_save()
 	for flag in [&"harbor_arrival_seen", &"harbor_arrival_call_complete", &"harbor_maciota_met", &"harbor_delivery_complete"]:
@@ -25,6 +30,13 @@ func _run() -> void:
 	await stream.ensure_mountain()
 	while not stream.ready_for_crossing: await process_frame
 	var mountain: Node2D = stream.mountain
+	var harbor_life = world.get_node_or_null("Life")
+	var harbor_controller = harbor_life.get("traffic_controller") if harbor_life != null else null
+	check(harbor_controller != null and harbor_controller.has_method("is_simulation_suspended"), "Harbor traffic controller exposes suspension state")
+	if harbor_controller == null or not harbor_controller.has_method("is_simulation_suspended"):
+		quit(1)
+		return
+	check(not harbor_controller.is_simulation_suspended(), "Harbor traffic controller starts active")
 	var player: Node2D = world.get_node("Player")
 	var player_id := player.get_instance_id()
 	var world_id := world.get_instance_id()
@@ -56,6 +68,14 @@ func _run() -> void:
 	check(current_scene.get_instance_id()==world_id and player.get_instance_id()==player_id and car.get_instance_id()==car_id,"world/player/car instances survive physical crossing")
 	check(car.global_position.x>7500 and largest_step<20 and car.health==health,"drive over seam without jump or invisible barrier")
 	check(stream.current_region=="mountain", "region weather changes geographically")
+	check(not harbor_controller.is_simulation_suspended(), "Harbor traffic controller stays active in the seam handoff neighborhood")
+	stream._update_harbor_suspension(false)
+	check(harbor_controller.is_simulation_suspended(), "Harbor traffic controller suspends outside the Harbor neighborhood")
+	stream.population_activity.stats = {}
+	stream._budget_traffic(mountain.global_position)
+	check(not stream.population_activity.stats.is_empty(), "Population budget remains active while Harbor is suspended")
+	stream._update_harbor_suspension(true)
+	check(not harbor_controller.is_simulation_suspended(), "Harbor traffic controller resumes after the handoff neighborhood")
 	check(not world.weather.is_inside_interior, "mountain exterior retains the world day/night lighting")
 	world.weather.atmosphere.refresh_immediately()
 	check(world.weather.atmosphere.mountain_weight > 0.2, "driving onto the bridge blends toward mountain atmosphere")
@@ -77,6 +97,7 @@ func _run() -> void:
 	stream._update_region()
 	print("RETURN RESULT ", car.global_position, " velocity=", car.velocity)
 	check(car.global_position.x<7300 and largest_step<20 and stream.current_region=="harbor","return over seam without scene change")
+	check(not harbor_controller.is_simulation_suspended(), "Harbor traffic controller resumes on return")
 	world.weather.atmosphere.refresh_immediately()
 	check(world.weather.atmosphere.mountain_weight < 0.3, "returning west recovers harbor atmosphere geographically")
 	print("STREAM STATS ",stream.get_streaming_stats()," largest_frame_displacement=",largest_step)
@@ -84,12 +105,17 @@ func _run() -> void:
 		car.velocity = Vector2.ZERO
 		car.set_physics_process(false)
 		var camera := Camera2D.new()
-		world.add_child(camera)
 		camera.position = Vector2(7300,-4560)
 		camera.zoom = Vector2.ONE*0.75
+		world.add_child(camera)
+		camera.reset_physics_interpolation()
 		camera.make_current()
+		for i in 3: await physics_frame
+		camera.force_update_scroll()
+		check(camera.get_screen_center_position().distance_to(Vector2(7300,-4560)) < 1.0, "capture camera is centered on the physical seam")
 		await process_frame
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("D:/geteco/continuous-bridge-review.png")
+		var image_error := root.get_texture().get_image().save_png(output.path_join("bridge.png"))
+		check(image_error == OK, "rendered crossing evidence is saved")
 	print("CONTINUOUS WORLD FAILURES: ",failures)
 	quit(0 if failures.is_empty() else 1)

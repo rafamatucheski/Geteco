@@ -73,6 +73,14 @@ func _run() -> void:
 	player.weapon_ammo.pistol.reserve = 1
 	type_code("dukenuke")
 	check(player.weapon_ammo.pistol.reserve == 9999, "Pode reabastecer repetindo o código")
+	player.money = 321
+	type_code("dirtybagmone")
+	check(player.money == 321, "Sequência de dinheiro incompleta não ativa")
+	type_code("y")
+	check(player.money == 100321, "dirtybagmoney adiciona exatamente $100.000")
+	check(player.weapon_wheel.notice == "Cheat ativado: +$100.000", "Cheat de dinheiro mostra confirmação")
+	type_code("DIRTYBAGMONEY")
+	check(player.money == 200321, "Cheat de dinheiro pode ser repetido")
 	world.queue_free()
 	await process_frame
 	print("Keyboard cheats: %d failures" % failures)

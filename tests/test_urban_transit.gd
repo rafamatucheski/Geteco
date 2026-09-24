@@ -22,6 +22,13 @@ func run() -> void:
 	system.clock.time_of_day = 12.0/24
 	check(system.stops.size()==6,"six urban stops in production world")
 	check(system.buses.size()==2 and system.passengers.size()==24,"bounded fleet and living commuter pool")
+	var removed_commuter := Node2D.new()
+	system.passengers.append(removed_commuter)
+	current_scene.add_child(removed_commuter)
+	removed_commuter.queue_free()
+	await process_frame
+	system._prune_removed_passengers()
+	check(not system.passengers.has(removed_commuter),"explosion-removed commuter is pruned before boarding queues are sorted")
 	check(current_scene.get_node_or_null("ArrivalStop") != system,"urban service separate from coach terminal")
 	for bus in system.buses:
 		check(bus.sections.size()==1,"articulated bus has two physical bodies")

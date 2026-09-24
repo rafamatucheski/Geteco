@@ -242,4 +242,5 @@ func _read_registry() -> void:
 	p.play()
 	p.finished.connect(p.queue_free)
 
-	registry_text.text = get_node("/root/CoronerCare").registry_text()
+	var care := get_node_or_null("/root/CoronerCare")
+	registry_text.text = care.registry_text() if care != null else "Nenhuma ocorrência registrada."

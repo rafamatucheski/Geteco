@@ -1,11 +1,15 @@
 extends "res://world/harbor/cemetery/CemeteryPropBuilder.gd"
 
 var variant_index := 0
+var compact_mode := false
 var solid_rects: Dictionary = {}
 var station_points: Dictionary = {}
 var furniture: Node3D
 
 func _ready() -> void:
+	if compact_mode:
+		_build_compact()
+		return
 	var wood: String = ["947354","857566","615749"][variant_index]
 	var fabric: String = ["647c72","49717e","8b8474"][variant_index]
 	var wall: String = ["d4c9b4","c4d4d2","dfddd1"][variant_index]
@@ -30,25 +34,106 @@ func _ready() -> void:
 	furniture.name = "Furnishings"
 	add_child(furniture)
 	# Variants use different room arrangements, not just recoloured walls.
-	var mirror := -1.0 if variant_index == 1 else 1.0
-	_kitchen(Vector2(4.65*mirror,-3.8),fabric)
-	_bedroom(Vector2(4.55*mirror,2.0),fabric)
-	_wardrobe(Vector2(-5.95*mirror,-3.25),wood)
-	_armory(Vector2(-2.7*mirror,-4.2),wood)
-	_lounge(Vector2(-3.5*mirror,1.2),fabric,wood)
+	var kitchen: Vector2 = [Vector2(4.65,-3.8),Vector2(4.3,2.5),Vector2(-4.3,-3.8)][variant_index]
+	var bedroom: Vector2 = [Vector2(4.55,2),Vector2(-4.4,-2.6),Vector2(4.5,2.2)][variant_index]
+	var wardrobe: Vector2 = [Vector2(-5.95,-3.25),Vector2(5.9,-3),Vector2(5.95,-3.25)][variant_index]
+	var armory: Vector2 = [Vector2(-2.7,-4.2),Vector2(.2,-4.2),Vector2(1.1,-4.2)][variant_index]
+	var lounge: Vector2 = [Vector2(-3.5,1.2),Vector2(-3.8,1.7),Vector2(-3.7,.4)][variant_index]
+	_kitchen(kitchen,fabric)
+	_bedroom(bedroom,fabric)
+	_wardrobe(wardrobe,wood)
+	_armory(armory,wood)
+	_lounge(lounge,fabric,wood)
 	if variant_index == 2:
-		box("OfficeDesk",Vector3(2.1,.12,.85),Vector3(.5,.79,-2.7),wood)
-		for x in [-.4,1.4]: box("DeskLeg",Vector3(.07,.75,.65),Vector3(x,.37,-2.7),"454e4b")
-		box("Laptop",Vector3(.7,.03,.44),Vector3(.5,.88,-2.6),"303c43")
-		solid_rects["Desk"] = Rect2(-.55,-3.13,2.1,.85)
+		box("OfficeDesk",Vector3(2.1,.12,.85),Vector3(.1,.79,-1.7),wood)
+		for x in [-.8,1]: box("DeskLeg",Vector3(.07,.75,.65),Vector3(x,.37,-1.7),"454e4b")
+		box("Laptop",Vector3(.7,.03,.44),Vector3(.1,.88,-1.6),"303c43")
+		var screen := box("LaptopScreen",Vector3(.7,.43,.025),Vector3(.1,1.1,-1.8),"678c91")
+		screen.rotation.x = -.12
+		solid_rects["Desk"] = Rect2(-.95,-2.13,2.1,.85)
 	box("EntryMat",Vector3(2.0,.015,1.0),Vector3(0,.02,4.25),"47544e")
 	station_points["exit"] = Vector2(0,4.3)
 	for point in [Vector3(-6.25,0,3.9),Vector3(6.35,0,-.4)]:
 		cylinder("CeramicPot",.3,.46,point+Vector3.UP*.23,"b4a78c")
+		solid_rects["Plant"+str(point.x)] = Rect2(Vector2(point.x,point.z)-Vector2(.32,.32),Vector2(.64,.64))
 		for i in 5:
 			beam("PlantStem",point+Vector3.UP*.4,point+Vector3(sin(i*1.5)*.35,1.15+sin(i)*.2,cos(i*1.5)*.3),.04,"486447")
 			var leaf := box("PlantLeaf",Vector3(.23,.055,.48),point+Vector3(sin(i*1.5)*.3,1.0+sin(i)*.2,cos(i*1.5)*.25),"5b7a50")
 			leaf.rotation.y = i*1.5
+	var lamp_point := lounge+Vector2(-1.75,-.3)
+	cylinder("ReadingLampBase",.16,.055,Vector3(lamp_point.x,.035,lamp_point.y),"685d46")
+	cylinder("ReadingLampStem",.025,1.15,Vector3(lamp_point.x,.62,lamp_point.y),"ae9975")
+	cylinder("ReadingLampShade",.24,.34,Vector3(lamp_point.x,1.36,lamp_point.y),"ddd1b6")
+	solid_rects["ReadingLamp"] = Rect2(lamp_point-Vector2(.17,.17),Vector2(.34,.34))
+	for point in [bedroom+Vector2(-1.6,-1.05),lamp_point]:
+		var light := OmniLight3D.new()
+		light.position = Vector3(point.x,1.5,point.y)
+		light.light_color = Color("ffd6a0")
+		light.light_energy = .65
+		light.omni_range = 4.2
+		add_child(light)
+
+func _build_compact() -> void:
+	var wood: String = ["947354","857566","615749"][variant_index]
+	var fabric: String = ["647c72","49717e","8b8474"][variant_index]
+	var wall: String = ["d4c9b4","c4d4d2","dfddd1"][variant_index]
+	var side := -1.0 if variant_index == 1 else 1.0
+	box("Foundation",Vector3(9.0,.18,6.4),Vector3(0,-.12,0),"505852")
+	for row in 14:
+		box("OakFloorboard",Vector3(8.8,.03,.43),Vector3(0,-.01,-2.78+row*.43),wood)
+	_wall("BackWall",Rect2(-4.45,-3.16,8.9,.2),2.65,wall)
+	_wall("LeftWall",Rect2(-4.48,-3.1,.2,6.2),2.65,wall)
+	_wall("RightWall",Rect2(4.28,-3.1,.2,6.2),2.65,wall)
+	_wall("FrontLeft",Rect2(-4.45,2.95,3.45,.2),.55,wall)
+	_wall("FrontRight",Rect2(1.0,2.95,3.45,.2),.55,wall)
+	box("BackSkirting",Vector3(8.6,.15,.08),Vector3(0,.08,-3.0),"ebe4d3")
+	for x in [-2.9,0,2.9]:
+		box("WindowFrame",Vector3(1.5,1.2,.09),Vector3(x,1.65,-3.02),"eeeadc")
+		box("WindowGlass",Vector3(1.28,.96,.04),Vector3(x,1.65,-2.96),"88b3bc")
+		box("WindowMullion",Vector3(.05,1.0,.05),Vector3(x,1.65,-2.9),"e8e0ce")
+	var kitchen := Vector2(-side*2.55,-2.36)
+	var armory := Vector2(side*2.55,-2.45)
+	var wardrobe := Vector2(-side*3.72,-.2)
+	var bed := Vector2(side*3.02,.38 if variant_index == 2 else .58)
+	var sofa := Vector2(-side*2.22,.52 if variant_index == 2 else 1.05)
+	box("KitchenBase",Vector3(2.4,.82,.8),Vector3(kitchen.x,.41,kitchen.y),fabric)
+	box("KitchenTop",Vector3(2.48,.08,.9),Vector3(kitchen.x,.86,kitchen.y),"e2ddcc")
+	box("Sink",Vector3(.52,.03,.38),Vector3(kitchen.x-side*.55,.93,kitchen.y),"738783")
+	box("Hob",Vector3(.52,.04,.45),Vector3(kitchen.x+side*.55,.93,kitchen.y),"303b3b")
+	box("Fridge",Vector3(.68,1.78,.68),Vector3(kitchen.x-side*1.58,.89,kitchen.y),"c7cfc8")
+	solid_rects["Kitchen"] = Rect2(kitchen-Vector2(1.95,.46),Vector2(3.9,.92))
+	station_points["food"] = kitchen+Vector2(0,1.05)
+	box("ArmoryBench",Vector3(2.0,.82,.62),Vector3(armory.x,.41,armory.y),wood)
+	box("ArmoryBoard",Vector3(2.05,1.15,.08),Vector3(armory.x,1.55,armory.y-.33),"374948")
+	for rack in [-.55,.55]:
+		box("StoredRifle",Vector3(.68,.09,.08),Vector3(armory.x+rack,1.55,armory.y-.24),"596767")
+	solid_rects["Armory"] = Rect2(armory-Vector2(1.05,.38),Vector2(2.1,.76))
+	station_points["arsenal"] = armory+Vector2(0,1.0)
+	box("Wardrobe",Vector3(.76,2.15,1.5),Vector3(wardrobe.x,1.075,wardrobe.y),wood)
+	box("WardrobePanel",Vector3(.05,2.0,1.35),Vector3(wardrobe.x+side*.41,1.1,wardrobe.y),"b8ae97")
+	solid_rects["Wardrobe"] = Rect2(wardrobe-Vector2(.4,.78),Vector2(.8,1.56))
+	station_points["wardrobe"] = wardrobe+Vector2(side*.96,0)
+	box("BedroomRug",Vector3(2.2,.015,2.55),Vector3(bed.x,.02,bed.y),"b9b29b")
+	box("BedBase",Vector3(1.55,.36,2.0),Vector3(bed.x,.24,bed.y),"6c5846")
+	box("Mattress",Vector3(1.52,.23,1.96),Vector3(bed.x,.52,bed.y),"e5dfcd")
+	box("Duvet",Vector3(1.54,.12,1.33),Vector3(bed.x,.7,bed.y+.3),fabric)
+	box("Pillow",Vector3(1.16,.15,.42),Vector3(bed.x,.7,bed.y-.69),"efe8d6")
+	solid_rects["Bed"] = Rect2(bed-Vector2(.81,1.05),Vector2(1.62,2.1))
+	station_points["time"] = bed+Vector2(-side*1.4,0)
+	box("LoungeRug",Vector3(2.45,.015,1.7),Vector3(sofa.x,.02,sofa.y+.35),"b1a789")
+	box("SofaBase",Vector3(1.8,.42,.68),Vector3(sofa.x,.35,sofa.y),fabric)
+	box("SofaBack",Vector3(1.84,.7,.18),Vector3(sofa.x,.7,sofa.y-.31),fabric)
+	solid_rects["Sofa"] = Rect2(sofa-Vector2(.94,.39),Vector2(1.88,.78))
+	box("CoffeeTable",Vector3(.9,.1,.5),Vector3(sofa.x,.44,sofa.y+1.0),wood)
+	solid_rects["CoffeeTable"] = Rect2(sofa+Vector2(-.48,.72),Vector2(.96,.56))
+	box("EntryMat",Vector3(1.8,.015,.65),Vector3(0,.02,2.55),"47544e")
+	for x in [-2.9,2.9]:
+		var light := OmniLight3D.new()
+		light.position = Vector3(x,2.25,-1.3)
+		light.light_color = Color("ffd6a0")
+		light.light_energy = .6
+		light.omni_range = 3.6
+		add_child(light)
 
 func _wall(id: String,r: Rect2,height: float,color: String) -> void:
 	box(id,Vector3(r.size.x,height,r.size.y),Vector3(r.get_center().x,height*.5,r.get_center().y),color)
@@ -85,7 +170,7 @@ func _bedroom(p: Vector2,color: String) -> void:
 		box("BedsideCabinet",Vector3(.64,.57,.65),Vector3(p.x+x,.285,p.y-1.05),"8e7e65")
 		cylinder("LampStem",.06,.3,Vector3(p.x+x,.75,p.y-1.05),"ad9c7a")
 		cylinder("LinenShade",.21,.3,Vector3(p.x+x,1,p.y-1.05),"ded2b4")
-	solid_rects["Bed"] = Rect2(p-Vector2(1.15,1.55),Vector2(2.3,3.05))
+	solid_rects["Bed"] = Rect2(p-Vector2(1.175,1.565),Vector2(2.35,3.065))
 	for side in [-1,1]: solid_rects["Bedside%d"%side] = Rect2(p+Vector2(side*1.6-.32,-1.375),Vector2(.64,.65))
 	station_points["time"] = p+Vector2(-signf(p.x)*1.9,.25)
 
@@ -95,7 +180,7 @@ func _wardrobe(p: Vector2,color: String) -> void:
 	for z in [-.77,0,.77]:
 		box("WardrobePanel",Vector3(.05,2.17,.72),Vector3(front,1.18,p.y+z),"b8ae97")
 		box("WardrobeHandle",Vector3(.07,.2,.04),Vector3(front-signf(p.x)*.04,1.12,p.y+z+.2),"8d8062")
-	solid_rects["Wardrobe"] = Rect2(p-Vector2(.7,1.25),Vector2(1.4,2.5))
+	solid_rects["Wardrobe"] = Rect2(p-Vector2(.8,1.25),Vector2(1.6,2.5))
 	station_points["wardrobe"] = p+Vector2(-signf(p.x)*1.45,0)
 
 func _armory(p: Vector2,color: String) -> void:

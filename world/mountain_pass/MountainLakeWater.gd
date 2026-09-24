@@ -4,6 +4,7 @@ const MAX_MARKS := 48
 var polygon := PackedVector2Array()
 var plane: Node2D
 var dry_islands: Array[Polygon2D] = []
+var dry_decks: Array[Rect2] = []
 var marks: Array[Dictionary] = []
 var wet_steps: Dictionary = {}
 
@@ -15,6 +16,9 @@ func animate_surface(surface: Polygon2D) -> void:
 	preload("res://geodata/nature/WaterPresentation.gd").apply(surface, "lake")
 
 func is_deck_at(actor: Node2D) -> bool:
+	for deck in dry_decks:
+		if deck.has_point(to_local(actor.global_position)):
+			return true
 	return is_instance_valid(plane) and plane.contains_actor(actor)
 
 func is_water_at(actor: Node2D) -> bool:

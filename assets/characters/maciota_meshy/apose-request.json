@@ -1,0 +1,15 @@
+{
+  "topology": "triangle",
+  "target_formats": [
+    "glb"
+  ],
+  "enable_pbr": true,
+  "image_url": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/preview.png?Expires=4943635200&Signature=OtYd-ibuUAO5lm2gnPiJ5SPzfY~3RgjwO7LaSoWEPMBkcItsexzPyUatC83QOVcyrSErsCcFlzi9oKV~Iyag1oh~nG76SZmB06iWgX3ZuXE0AsWrc323n-iedkUtDW3dxgIbBlMh0MQC0ExwVvBuY3a9PH31QTKmrOeHZxi3lFw81FdQL8M54d5L~skWB46Mh04CB8YTTb4l1rI-iawrM6uVIIq0tu-FYvneTW3DWxqwtNLXp-H7-Q7a6oTYsT2d362Vv7Sz8VF~Rv3bgGOUynzp9GsQmj-S7lQmxOcre-JeQSDjOm4~6ddSawX5Ix3EIAfD7X7lin5eMKAbmEHVwA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "should_remesh": true,
+  "pose_mode": "a-pose",
+  "should_texture": true,
+  "texture_resolution": "2k",
+  "ai_model": "meshy-6",
+  "target_polycount": 15000,
+  "image_enhancement": false
+}

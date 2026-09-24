@@ -19,6 +19,7 @@ func run() -> void:
 	for id in VehicleCatalog.VEHICLES:
 		var spec := VehicleCatalog.get_vehicle_spec(id)
 		check(ResourceLoader.exists(spec.model_class),id+" resolves to 3D body")
+		check(not String(spec.get("model_class", "")).is_empty() and not spec.has("texture"), id+" has no playable 2D texture fallback")
 	var car = ModernTrafficFactory.spawn_parked_vehicle(world,"CrashCar",Vector2.ZERO,0,"sport_coupe",0,Color.RED)
 	var obstacle = ModernTrafficFactory.spawn_parked_vehicle(world,"OtherCar",Vector2(140,0),0,"union_sedan",0,Color.BLUE)
 	car.is_driven_by_player = true

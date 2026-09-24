@@ -23,47 +23,37 @@ func run() -> void:
 	player.weapon_inventory.axe = true
 	player.equip_weapon("axe")
 	for i in 60: player.combat_pose.update(player, 1.0/60, true, false, 0)
-	for variant in 2:
-		player.combat_pose.on_attack("axe")
+	for id in ["axe", "bat"]:
+		player.weapon_inventory[id] = true
+		player.equip_weapon(id)
+		for i in 60: player.combat_pose.update(player, 1.0/60, false, false, 0)
+		var weapon: Node3D = player.current_gun_mesh
+		var idle_tip: Vector3 = player.model_root.to_local(weapon.to_global(Vector3(0,0,-0.44)))
+		check(idle_tip.z > 0.1, id + " rests behind the shoulder")
+		check(not player.combat_pose.melee_support_active, id + " idle leaves support hand free")
+		player.combat_pose.on_attack(id)
 		var grip_error := 0.0
 		var support_error := 0.0
-		var blade_top := -INF
+		var support_frames := 0
 		var blade_low := INF
-		var blade_left := INF
-		var blade_right := -INF
+		var travel := 0.0
 		for i in 60:
-			player.combat_pose.update(player, 1.0/60, true, false, 0)
-			var weapon: Node3D = player.current_gun_mesh
-			grip_error = maxf(grip_error, player.right_lower_arm.get_node("Palm").global_position.distance_to(weapon.to_global(player.combat_pose.GRIPS.axe)))
-			support_error = maxf(support_error, player.left_lower_arm.get_node("Palm").global_position.distance_to(weapon.to_global(player.combat_pose.SUPPORT_GRIPS.axe)))
-			var blade := weapon.to_global(Vector3(0.19,0,-0.44))
-			blade_top = maxf(blade_top, blade.y)
+			player.combat_pose.update(player, 1.0/60, false, false, 0)
+			grip_error = maxf(grip_error, player.right_lower_arm.get_node("Palm").global_position.distance_to(weapon.to_global(player.combat_pose.GRIPS[id])))
+			if player.combat_pose.melee_support_active:
+				support_frames += 1
+				var support: Vector3 = player.combat_pose.SUPPORT_GRIPS[id]
+				if id == "axe": support = player.combat_pose.GRIPS[id] + Vector3(0,0,-0.12)
+				support_error = maxf(support_error, player.left_lower_arm.get_node("Palm").global_position.distance_to(weapon.to_global(support)))
+			var blade := weapon.to_global(Vector3(0,0,-0.44))
 			blade_low = minf(blade_low, blade.y)
-			blade_left = minf(blade_left, blade.x)
-			blade_right = maxf(blade_right, blade.x)
-		check(grip_error < 0.001, "dominant palm stays on handle: " + str(grip_error))
-		check(support_error < 0.035, "support palm stays on handle throughout chop: " + str(support_error))
-		check(blade_low > 0.05, "blade never crosses floor")
-		check(blade_top - blade_low > 0.5 if variant == 0 else blade_right - blade_left > 0.6, "vertical/lateral sweep follows distinct axis")
-		check(player.combat_pose.axe_variant == variant, "consecutive attacks alternate vertical and lateral")
-		var before_contact: Dictionary = player.combat_pose.axe_targets(0.24, true, false)
-		var at_contact: Dictionary = player.combat_pose.axe_targets(0.26, true, false)
-		var head_offset: Vector3 = Vector3(0,0,-0.44) - player.combat_pose.GRIPS.axe
-		var travel: Vector3 = (at_contact.hand + at_contact.basis * head_offset) - (before_contact.hand + before_contact.basis * head_offset)
-		check(at_contact.basis.x.dot(travel.normalized()) > 0.7, "cutting edge leads the strike, variant " + str(variant))
-		if variant == 1:
-			var nearest_head_z := -INF
-			var outward := 1.0
-			for frame in range(28, 73):
-				var pose: Dictionary = player.combat_pose.axe_targets(frame / 100.0, true, false)
-				outward = minf(outward, pose.basis.z.z)
-				for x in [-0.055, 0.19]:
-					for y in [-0.0225, 0.0225]:
-						for z in [-0.525, -0.365]:
-							var corner: Vector3 = pose.hand + pose.basis * (Vector3(x,y,z) - player.combat_pose.GRIPS.axe)
-							nearest_head_z = maxf(nearest_head_z, corner.z)
-			check(nearest_head_z < -0.27, "entire axe head stays ahead of belly through follow-through and recovery: " + str(nearest_head_z))
-			check(outward > 0.65, "shaft points outward throughout lateral recovery")
+			travel = maxf(travel, player.model_root.to_local(blade).distance_to(idle_tip))
+		check(grip_error < 0.001, id + " dominant palm stays on handle")
+		check(support_frames > 5 and support_error < 0.035, id + " support joins handle during strike")
+		check(blade_low > 0.05, id + " never crosses floor")
+		check(travel > 0.5, id + " makes a full swing from shoulder")
+		check(not player.combat_pose.melee_support_active, id + " releases support after recovery")
+	player.equip_weapon("axe")
 	var trail: Node = player.current_gun_mesh.get_node("AxeSwingTrail")
 	check(trail.samples.is_empty() and not trail.ribbon.visible, "short ribbon expires after swing")
 	var target := Target.new()

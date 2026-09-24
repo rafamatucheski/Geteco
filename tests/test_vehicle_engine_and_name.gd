@@ -83,7 +83,7 @@ func _run() -> void:
 		last_gear = road_engine.gear
 		if time_to_top <= 0.0 and road_speed >= road_top * 0.97:
 			time_to_top = frame / 60.0
-	check(shift_times.size() == 4, "A arrancada passa pelas cinco marchas do sedan: %s" % str(shift_times))
+	check(shift_times.size() == 5, "A arrancada passa pelas seis marchas do sedan: %s" % str(shift_times))
 	check(shift_times[0] > 0.20, "A primeira marcha dura tempo de ser ouvida (%.2fs)" % shift_times[0])
 	# O relato foi "parece que chega no final muito rápido". A curva antiga
 	# entregava 45%% da força na velocidade máxima e vencia a escada inteira em
@@ -111,7 +111,7 @@ func _run() -> void:
 			layer_engine.update(audio, speed, road_top, 1.0, 1.0 / 60.0, "sedan_classic")
 		worst_stretch = maxf(worst_stretch, _worst_audible_stretch(layer_engine, audio))
 		if step == 39:
-			var top_player: AudioStreamPlayer2D = layer_engine._layer_players[1]
+			var top_player: AudioStreamPlayer2D = layer_engine._layer_players.back()
 			high_share_at_top = db_to_linear(top_player.volume_db) if top_player.playing else 0.0
 	check(worst_stretch < 2.05, "Nenhuma camada audível é esticada além de 2x (pior: %.2fx)" % worst_stretch)
 	check(high_share_at_top > 0.0, "Na velocidade máxima quem toca é a camada de alto giro")
@@ -140,7 +140,7 @@ func _run() -> void:
 	var fingerprints := {}
 	for family in ["street", "sport", "muscle", "suv", "diesel", "truck", "bus", "fire_diesel", "ambulance", "police"]:
 		var layers: Array = ENGINE.get_layer_streams(family)
-		check(layers.size() == 3, "A família %s tem três camadas de rotação" % family)
+		check(layers.size() == 7, "A família %s tem sete camadas de rotação" % family)
 		var key := hash(layers[0].data)
 		check(not fingerprints.has(key), "O timbre de %s é próprio (colidiu com %s)" % [family, fingerprints.get(key, "")])
 		fingerprints[key] = family

@@ -9,6 +9,7 @@ extends SceneTree
 var idle_nodes: Array[Node] = []
 var physics_nodes: Array[Node] = []
 var totals := {}
+var categories := {}
 
 func _init() -> void: call_deferred("run")
 
@@ -32,7 +33,8 @@ func collect(node: Node) -> void:
 	for child in node.get_children(): collect(child)
 
 func run() -> void:
-	root.size = Vector2i(1920, 1080)
+	var args := OS.get_cmdline_user_args()
+	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
@@ -44,22 +46,29 @@ func run() -> void:
 	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
 	root.add_child(world)
 	current_scene = world
-	for i in 90: await process_frame
-	if not world.gameplay_ready or paused:
+	var checkpoint_deadline := Time.get_ticks_msec() + 120000
+	while (not world.gameplay_ready or not world.world_build_ready) and Time.get_ticks_msec() < checkpoint_deadline:
+		await process_frame
+	if not world.gameplay_ready or not world.world_build_ready or paused:
 		push_error("Profiling checkpoint did not become playable")
 		quit(1)
 		return
 	var player: Node2D = world.get_node("Player")
 	player.global_position = Vector2(2200, 1050)
 	var car: CharacterBody2D = world.get_node("PlayerCar")
-	car.global_position = Vector2(700, 425)
+	car.global_position = Vector2(700, 370)
 	car.rotation = 0.0
 	world.call("_drive")
 	for i in 30: await process_frame
-	Input.action_press("ui_up")
+	if args.has("--chaos"):
+		world.weather.set_weather(1)
+		world.weather.weather_timer = 1000000.0
+		root.get_node("WantedManager").report_crime(240)
+		await process_frame
+	Input.action_press("move_up")
 	collect(root)
 	var sample_count := 600
-	for argument in OS.get_cmdline_user_args():
+	for argument in args:
 		if argument.begins_with("samples="):
 			sample_count = maxi(1, int(argument.trim_prefix("samples=")))
 	for frame in sample_count:
@@ -71,6 +80,9 @@ func run() -> void:
 			var elapsed := Time.get_ticks_usec() - before
 			var key := String(node.get_path()) + " physics"
 			totals[key] = int(totals.get(key, 0)) + elapsed
+			var script := node.get_script() as Script
+			var category := (script.resource_path if script != null else node.get_class()) + " physics"
+			categories[category] = int(categories.get(category, 0)) + elapsed
 			if elapsed > 20000: print("SLOW_CALLBACK frame=%d us=%d node=%s" % [frame, elapsed, key])
 		for node in idle_nodes:
 			if not is_instance_valid(node): continue
@@ -79,8 +91,11 @@ func run() -> void:
 			var elapsed := Time.get_ticks_usec() - before
 			var key := String(node.get_path())
 			totals[key] = int(totals.get(key, 0)) + elapsed
+			var script := node.get_script() as Script
+			var category := script.resource_path if script != null else node.get_class()
+			categories[category] = int(categories.get(category, 0)) + elapsed
 			if elapsed > 20000: print("SLOW_CALLBACK frame=%d us=%d node=%s" % [frame, elapsed, key])
-	Input.action_release("ui_up")
+	Input.action_release("move_up")
 	var names := totals.keys()
 	names.sort_custom(func(a, b): return totals[a] > totals[b])
 	var grand_total := 0
@@ -88,6 +103,10 @@ func run() -> void:
 	print("CALLBACK_TOTAL_MS %.2f over_%d_frames" % [grand_total / 1000.0, sample_count])
 	for name_value in names.slice(0, 25):
 		print("CALLBACK_COST %s avg_us=%.1f total_ms=%.2f" % [name_value, totals[name_value] / float(sample_count), totals[name_value] / 1000.0])
+	var category_names := categories.keys()
+	category_names.sort_custom(func(a, b): return categories[a] > categories[b])
+	for category_value in category_names.slice(0, 25):
+		print("CALLBACK_CATEGORY %s avg_us=%.1f total_ms=%.2f" % [category_value, categories[category_value] / float(sample_count), categories[category_value] / 1000.0])
 	world.queue_free()
 	await process_frame
 	quit()

@@ -83,7 +83,10 @@ func _covered_rect() -> Rect2:
  return source.global_transform * source.get_rect()
 
 func _process(_delta: float) -> void:
- if not is_instance_valid(source) or not source.is_visible_in_tree():
+ # Drawn scenery supplies a painter instead of a Sprite2D. Its owner is the
+ # visibility source; treating the absent sprite as freed disabled every tree.
+ var source_visible := is_visible_in_tree() if painter.is_valid() else (is_instance_valid(source) and source.is_visible_in_tree())
+ if not source_visible:
   if is_instance_valid(overlay): overlay.hide()
   set_process(false)
   return

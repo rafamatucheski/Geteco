@@ -92,7 +92,14 @@ func _run_crash_test() -> void:
 	
 	# 5. Detonação final (_explode)
 	print("\n[PASSO 5] Executando detonação final (_explode)...")
+	car.health = car.max_health
+	car.is_broken = false
+	car.is_exploding = false
+	car.enter_vehicle(player)
+	var health_before_explosion: int = player.health
 	car._explode()
+	if player.health != health_before_explosion - 25:
+		failures.append("O ocupante recebeu dano de explosão acima do limite reduzido: %d" % (health_before_explosion - player.health))
 	print("  - Escala após explosão: %s" % str(car.visual.scale))
 	print("  - Posição após explosão: %s" % str(car.visual.position))
 	print("  - Skew após explosão: %f" % car.visual.skew)

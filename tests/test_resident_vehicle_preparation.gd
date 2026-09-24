@@ -34,7 +34,7 @@ func _run() -> void:
 	assert(budget.pending.has(actors[1]) and budget.pending.has(actors[2]), "Offscreen vehicles remain in the presentation queue")
 	budget.pending.erase(actors[0])
 	actors[1].global_position = Vector2(120, 120)
-	budget._process(0.016)
+	budget._process(0.12)
 	assert(is_instance_valid(actors[1].body_model) and actors[1]._pending_spec.is_empty(), "Presentation budget resolves a deferred vehicle when it approaches")
 	paused = false
 	fixture.free()

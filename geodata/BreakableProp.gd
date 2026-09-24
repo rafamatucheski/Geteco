@@ -4,6 +4,9 @@ var extent := Vector2(24,22)
 var presentation: Node2D
 var broken := false
 
+func _init() -> void:
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+
 func _ready() -> void:
 	if debris_material in ["trash", "wood"]:
 		preload("res://systems/ContactShadow.gd").add_box(self, extent * 1.05, 0.48)

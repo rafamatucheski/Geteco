@@ -3,7 +3,20 @@ extends "res://systems/interiors/InteriorActorPresentation.gd"
 var station: Node2D
 var street_rig_scale := 1.0
 var street_basis := Basis.IDENTITY
+var street_screen_correction := Vector2.ONE
 var street_foot_offset := Vector2.ZERO
+var personal_lighting := preload("res://scripts/player/ActorSharedLighting.gd").new()
+
+func allows_population_sleep() -> bool:
+	# This adapter is outdoors and follows the city's proximity budget. Interior
+	# adapters intentionally remain pinned while the player occupies a room.
+	return true
+
+func set_population_active(active: bool) -> void:
+	set_process(active)
+	if is_instance_valid(anchor): anchor.visible = active and is_instance_valid(actor) and actor.is_visible_in_tree()
+	if is_instance_valid(hit_area): hit_area.collision_layer = 4 if active and actor.get("is_dead") != true else 0
+	if active: _update_scale()
 
 func configure(target: Node2D, camera: Camera3D, sprite: Sprite2D) -> void:
 	var personal: SubViewport = target.get("viewport_3d") if target.get("viewport_3d") != null else target.get("viewport")
@@ -19,9 +32,9 @@ func configure(target: Node2D, camera: Camera3D, sprite: Sprite2D) -> void:
 	var height := personal_camera.unproject_position(reference).distance_to(personal_camera.unproject_position(Vector3.ZERO)) * personal_display.scale.y
 	var stage_height := camera.unproject_position(street_basis * reference).distance_to(camera.unproject_position(Vector3.ZERO)) * sprite.scale.y
 	street_rig_scale = height / stage_height
-	# Perspective enlarges the head/shoulders relative to the feet. Calibrate
-	# both screen axes from this actor's actual geometry once on admission;
-	# a height-only scalar still makes slim/tall civilians visibly narrower.
+	# The personal perspective and station orthographic camera have different
+	# screen aspect magnification. Calibrate in camera space, outside the actor's
+	# rotating rig, so turning cannot swap the width and height corrections.
 	var points := PackedVector3Array()
 	for mesh in native_rig.find_children("*", "MeshInstance3D", true, false):
 		if not mesh.visible: continue
@@ -50,13 +63,17 @@ func configure(target: Node2D, camera: Camera3D, sprite: Sprite2D) -> void:
 			minimum = minimum.min(ratio)
 			maximum = maximum.max(ratio)
 	if minimum.is_finite():
-		var correction := Vector2(sqrt(minimum.x * maximum.x), sqrt(minimum.y * maximum.y))
-		street_basis = camera.global_basis * Basis.from_scale(Vector3(correction.x, correction.y, 1.0)) * camera.global_basis.inverse() * street_basis
-	street_foot_offset = personal_display.position + (personal_camera.unproject_position(Vector3.ZERO) - Vector2(personal.size) * 0.5) * personal_display.scale
+		street_screen_correction = Vector2(sqrt(minimum.x * maximum.x), sqrt(minimum.y * maximum.y))
+	street_foot_offset = personal_display.position
 	super.configure(target, camera, sprite)
+	personal_lighting.configure(target, room_viewport, street_basis)
 	# No portrait resize is needed for a street fixture: only its existing rig moves.
 	actor_viewport.size = old_viewport_size
 	_update_scale()
+
+func restore() -> void:
+	personal_lighting.restore()
+	super.restore()
 
 func floor_position(canvas_position: Vector2) -> Vector3:
 	var local := station.to_local(canvas_position)
@@ -68,7 +85,8 @@ func pixels_per_rig_unit(direction: Vector2) -> float:
 
 func _update_scale() -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(room_camera): return
-	anchor.basis = street_basis.scaled(Vector3.ONE * street_rig_scale)
+	var screen_scale := Basis.from_scale(Vector3(street_screen_correction.x, street_screen_correction.y, 1.0))
+	anchor.basis = room_camera.global_basis * screen_scale * room_camera.global_basis.inverse() * street_basis.scaled(Vector3.ONE * street_rig_scale)
 	anchor.global_position = floor_position(actor.global_position + street_foot_offset)
 	anchor.visible = actor.is_visible_in_tree()
 	# Use the displayed body, not the interior's fixed 1.8 m capsule. Keep the

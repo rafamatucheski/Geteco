@@ -11,7 +11,7 @@ func run() -> void:
 	var world := Node2D.new()
 	root.add_child(world)
 	current_scene = world
-	var player := Node2D.new()
+	var player := CharacterBody2D.new()
 	player.add_to_group("player")
 	world.add_child(player)
 	var actor = preload("res://world/mountain_pass/WinterResident.gd").new()
@@ -45,15 +45,22 @@ func run() -> void:
 	world.add_child(logger)
 	logger.set_physics_process(false)
 	await process_frame
+	logger.routine_cycle = 0
 	logger._choose_activity()
-	logger._physics_process(.1)
-	check(logger.activity == "work" and logger.model.axe.visible,"logger works at home station with axe")
+	check(logger.activity == "walk" and logger._return_to_work, "Logger first walks to a side of the block")
+	for frame in 360:
+		await physics_frame
+		logger._physics_process(1.0 / 60.0)
+		if logger._logger_work.working: break
+	check(logger.activity == "work" and logger._logger_work.working and logger.model.chop_pose.visible,"Logger reaches the block and chops with the articulated axe")
 	check(world.get_node_or_null("FirewoodWorkstation") != null,"physical wood block remains in world")
-	logger.activity = "walk"
-	logger.destination = logger.home
-	logger.activity_left = 10.0
-	logger._physics_process(.1)
-	check(logger.activity == "work","return to wood block resumes working")
+	logger.routine_cycle = 0
+	logger._choose_activity()
+	for frame in 360:
+		await physics_frame
+		logger._physics_process(1.0 / 60.0)
+		if logger._logger_work.working: break
+	check(logger.activity == "work" and logger._logger_work.working,"Logger reaches the other side and resumes chopping")
 	if "--visual" in OS.get_cmdline_user_args():
 		logger.model._process(1.0)
 		logger.viewport.render_target_update_mode = SubViewport.UPDATE_ONCE

@@ -1,0 +1,10 @@
+{
+  "animations": [
+    "Armature|clip0|baselayer"
+  ],
+  "bones": 24,
+  "bounds": "[P: (-0.005565, 0.0, -0.002683), S: (0.01113, 0.0185, 0.005367)]",
+  "meshes": 1,
+  "source": "D:/geteco/game/assets/characters/maciota_meshy/maciota-rigged.glb",
+  "triangles": 15524
+}

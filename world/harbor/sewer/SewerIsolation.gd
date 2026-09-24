@@ -58,7 +58,9 @@ func enter(player: Node2D, room: Node2D) -> void:
 	player.reparent(room, true)
 	player.set_meta("combat_scene_root", room)
 	player.set_meta("isolated_interior", true)
-	player.set_meta("interior_return_position", controller.global_position)
+	# A save made underground resumes beside the cover, clear of the automatic
+	# descent radius, so loading cannot start another climb on its own.
+	player.set_meta("interior_return_position", controller.global_position + Vector2(0,20))
 	player.set_meta("police_exterior_position", controller.global_position)
 	var camera := player.get_node_or_null("Camera") as Camera2D
 	if camera:
@@ -163,5 +165,12 @@ func leave() -> void:
 	layer.hide()
 
 func dispose() -> void:
-	leave()
+	# During whole-world teardown the street is already queued for deletion;
+	# reparenting into it would fail and leave the isolated viewport half alive.
+	if active and is_instance_valid(street) and street.is_queued_for_deletion():
+		active = false
+		if controller.get_tree().node_added.is_connected(_on_node_added):
+			controller.get_tree().node_added.disconnect(_on_node_added)
+	else:
+		leave()
 	if is_instance_valid(layer): layer.queue_free()

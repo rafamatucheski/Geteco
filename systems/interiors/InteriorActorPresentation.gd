@@ -12,6 +12,7 @@ var actor_viewport: SubViewport
 var display: Sprite2D
 var rig: Node3D
 var rig_parent: Node
+var old_rig_transform := Transform3D.IDENTITY
 var anchor: Node3D
 var collider: CollisionShape2D
 var old_viewport_size := Vector2i.ZERO
@@ -54,6 +55,7 @@ func configure(target: Node2D, camera: Camera3D, sprite: Sprite2D) -> void:
 			old_collision_scale = collider.scale
 			break
 	rig_parent = rig.get_parent()
+	old_rig_transform = rig.transform
 	anchor = Node3D.new()
 	anchor.name = "InteriorActorAnchor"
 	anchor.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -70,6 +72,7 @@ func configure(target: Node2D, camera: Camera3D, sprite: Sprite2D) -> void:
 	anchor.scale = Vector3.ONE * HUMAN_HEIGHT / standing_rig_height
 	anchor.rotation.y = room_camera.global_rotation.y
 	rig.reparent(anchor, false)
+	rig.transform = Transform3D(old_rig_transform.basis, Vector3.ZERO)
 	display.hide()
 	actor.set_meta("interior_actor_presentation", self)
 	hit_area = Area2D.new()
@@ -155,10 +158,11 @@ func _update_scale() -> void:
 	# Preserve the sprite calibration contract for gait and collision callers.
 	var projected_height := room_camera.unproject_position(foot + Vector3.UP * HUMAN_HEIGHT).distance_to(room_camera.unproject_position(foot)) * room_display.scale.y
 	var player_camera := actor_viewport.get_camera_3d()
-	var player_height := player_camera.unproject_position(Vector3.UP * standing_rig_height).distance_to(player_camera.unproject_position(Vector3.ZERO))
+	var native_origin := old_rig_transform.origin
+	var player_height := player_camera.unproject_position(native_origin + Vector3.UP * standing_rig_height).distance_to(player_camera.unproject_position(native_origin))
 	var factor := clampf(projected_height / maxf(player_height, 1.0), 0.05, 2.0)
 	display.scale = Vector2.ONE * factor
-	display.position = -(player_camera.unproject_position(Vector3.ZERO) - Vector2(actor_viewport.size) * 0.5) * factor
+	display.position = -(player_camera.unproject_position(native_origin) - Vector2(actor_viewport.size) * 0.5) * factor
 	if collider:
 		var metre := room_camera.unproject_position(foot + Vector3.RIGHT).distance_to(room_camera.unproject_position(foot)) * room_display.scale.x
 		var depth := room_camera.unproject_position(foot + Vector3.BACK).distance_to(room_camera.unproject_position(foot)) * room_display.scale.y
@@ -178,6 +182,7 @@ func restore() -> void:
 	room_viewport = null
 	if is_instance_valid(rig) and is_instance_valid(rig_parent):
 		rig.reparent(rig_parent, false)
+		rig.transform = old_rig_transform
 	if is_instance_valid(actor):
 		actor.remove_meta("interior_actor_presentation")
 		if actor.tree_exiting.is_connected(restore): actor.tree_exiting.disconnect(restore)

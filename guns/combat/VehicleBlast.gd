@@ -1,17 +1,26 @@
 extends RefCounted
 const RADIUS := 230.0
 const FRAGMENT_RADIUS := 110.0
+const PERSON_DAMAGE := 70.0
 const MATERIAL := preload("res://audio/combat/ImpactMaterial.gd")
 const REMAINS := preload("res://guns/combat/ExplosionRemains.gd")
 const IMPULSE := preload("res://guns/combat/BlastImpulse.gd")
 
 static func apply(source: Node2D) -> void:
 	var subjects: Array[Node] = []
+	var seen_subjects: Dictionary = {}
 	for group in ["damageable", "vehicle", "pedestrian", "police_officer", "firefighter", "paramedic", "mortician"]:
 		for body in source.get_tree().get_nodes_in_group(group):
-			if not subjects.has(body): subjects.append(body)
+			if not is_instance_valid(body) or not body is Node2D: continue
+			var instance_id := body.get_instance_id()
+			if seen_subjects.has(instance_id): continue
+			seen_subjects[instance_id] = true
+			subjects.append(body)
 	for body in subjects:
 		if body == source or not is_instance_valid(body) or not body is Node2D or not body.is_visible_in_tree(): continue
+		# A driver ejected by this blast already receives the controlled cabin damage.
+		# Do not immediately stack the full shockwave on the same person.
+		if int(source.get_meta("vehicle_explosion_ejected_player_id", -1)) == body.get_instance_id(): continue
 		var distance: float = source.global_position.distance_to(body.global_position)
 		if distance >= RADIUS or not body.has_method("take_damage"): continue
 		var query := PhysicsRayQueryParameters2D.create(source.global_position, body.global_position, 1)
@@ -21,8 +30,8 @@ static func apply(source: Node2D) -> void:
 		query.exclude = excluded
 		if not source.get_world_2d().direct_space_state.intersect_ray(query).is_empty(): continue
 		var strength := 1.0 - distance / RADIUS
-		var damage := maxi(1, int(165.0 * strength))
 		var flesh := MATERIAL.resolve(body) == &"flesh"
+		var damage := maxi(1, int((PERSON_DAMAGE if flesh else 165.0) * strength))
 		# Incapacitated pedestrians normally reject gun damage while awaiting rescue.
 		if flesh and body.get("is_incapacitated") == true and damage >= int(body.get("health")):
 			body.set("is_incapacitated", false)

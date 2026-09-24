@@ -36,6 +36,10 @@ func _ready() -> void:
 	var silver := mat("9badae",0.70)
 	var cream := mat("d3c7ae")
 	var floor := mat("665441")
+	var warm_glow := mat("ffd2a0")
+	warm_glow.emission_enabled = true
+	warm_glow.emission = Color("ffad61")
+	warm_glow.emission_energy_multiplier = 1.5
 	box(self,Vector3(0,0.04,0),Vector3(10,0.08,9.4),floor,"BunkhouseFloor")
 	for i in 21:
 		box(self,Vector3(-5+i*0.5,0.09,0),Vector3(0.018,0.015,9.35),dark)
@@ -44,6 +48,23 @@ func _ready() -> void:
 		box(self,Vector3(0,y,-4.7),Vector3(10,0.20,0.20),timber)
 		for side in [-1.0,1.0]: box(self,Vector3(side*4.95,y,0),Vector3(0.20,0.20,9.4),timber)
 	for side in [-1.0,1.0]: box(self,Vector3(side*2.9,0.4,4.65),Vector3(4.1,0.8,0.18),timber)
+	# Heavy ceiling beams and two practical lamps give the long room a readable
+	# depth rhythm without adding more shadow maps.
+	for z in [-3.2, 0.0, 3.2]:
+		box(self, Vector3(0, 3.0, z), Vector3(10.0, 0.18, 0.22), dark)
+	for x in [-2.2, 2.2]:
+		cylinder(self, Vector3(x, 2.72, 0.0), 0.035, 0.55, steel)
+		cylinder(self, Vector3(x, 2.40, 0.0), 0.16, 0.20, warm_glow)
+	# Rear windows break up the uninterrupted log wall and add a cold exterior
+	# counterpoint to the stove lighting.
+	var glass := mat("8ba7b4")
+	glass.metallic = 0.15
+	glass.roughness = 0.18
+	for x in [-3.1, 3.1]:
+		box(self, Vector3(x, 1.65, -4.56), Vector3(1.35, 1.20, 0.08), pale)
+		box(self, Vector3(x, 1.65, -4.50), Vector3(1.14, 0.98, 0.035), glass)
+		box(self, Vector3(x, 1.65, -4.47), Vector3(0.055, 1.0, 0.03), dark)
+		box(self, Vector3(x, 1.65, -4.47), Vector3(1.16, 0.055, 0.03), dark)
 	# Four iron bunks, eight individual mattresses, personal blankets and ladders.
 	for side in [-1.0,1.0]:
 		for row in 2:

@@ -3,7 +3,169 @@
 ## Ranch Single V8 4x4: Picape pesada de caçamba aberta e cabine simples.
 ## Identidade: Caçamba longa aberta, santantônio tubular com holofotes, estepe na caçamba e suspensão 4x4 elevada.
 
+const PREPARED_GEOMETRY := preload("res://prototypes/living_cast/models/RanchSinglePreparedGeometry.scn")
+const MATERIAL_KEY_META := &"ranch_single_material_key"
+const SURFACE_KEYS_META := &"ranch_single_surface_material_keys"
+const EXPECTED_CONTRACT_VERSION := 1
+const EXPECTED_SIGNATURE := 2058053124
+const EXPECTED_MESHES := 14
+const EXPECTED_TRIANGLES := 13800
+
+
+## Opt-in contract for resumable regional prewarm. The cache may publish this
+## already-baked scene directly after validation instead of constructing and
+## capturing the same geometry twice.
+func vehicle_prepared_template_resource() -> PackedScene:
+	return PREPARED_GEOMETRY
+
+
+func prepare_vehicle_prewarm_materials() -> void:
+	_prepare_runtime_materials()
+
+
+func validate_vehicle_prepared_template(template: Node3D) -> bool:
+	return _prepared_template_is_acceptable(template)
+
+
+func vehicle_prepared_template_runtime_metadata(_template: Node3D) -> Dictionary:
+	return {
+		&"vehicle_mesh_batched": true,
+		&"ranch_single_geometry_source": &"prepared",
+	}
+
+
+func bind_vehicle_prepared_template_materials(template: Node) -> void:
+	_bind_prepared_material(template)
+
+
+func _ready() -> void:
+	# VehicleGeometryCache rebinds material_override, but compact multi-surface
+	# groups use per-surface overrides. Rebind them to this live instance before
+	# CoupeDamageModel captures paint and lamps.
+	if get_meta("ranch_single_geometry_source", &"") == &"prepared":
+		_bind_prepared_material(self)
+	super._ready()
+
+
 func build() -> void:
+	if get_child_count() != 0:
+		push_error("RanchSingleModel.build refused duplicate geometry")
+		return
+	_prepare_runtime_materials()
+	var template := PREPARED_GEOMETRY.instantiate() as Node3D
+	if template == null or not _prepared_template_is_acceptable(template):
+		if template != null:
+			template.free()
+		set_meta("ranch_single_geometry_source", &"procedural_fallback")
+		build_procedural_source()
+		return
+	set_meta("vehicle_wheel_clearance_signature", int(template.get_meta("vehicle_wheel_clearance_signature", 0)))
+	set_meta("ranch_single_prepared_geometry_signature", int(template.get_meta("ranch_single_prepared_geometry_signature", 0)))
+	set_meta("ranch_single_geometry_source", &"prepared")
+	for child in template.get_children():
+		_clear_owner(child)
+		template.remove_child(child)
+		add_child(child)
+		_bind_prepared_material(child)
+	template.free()
+
+
+func _prepare_runtime_materials() -> void:
+	paint = mat("paint", "8e44ad", 0.35, 0.30)
+	mat("chrome", "dcdde1", 0.85, 0.20)
+	mat("bed_liner", "2d3436", 0.1, 0.85)
+	mat("black_trim", "1e272e", 0.1, 0.7)
+	mat("rubber", "15191d", 0.0, 0.95)
+	var glass := mat("glass", "2c3e50", 0.35, 0.15)
+	glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat("headlight", "f5f6fa", 0.1, 0.1, 0.7)
+	mat("taillight", "c0392b", 0.1, 0.2, 0.6)
+	mat("amber_turn", "f39c12", 0.1, 0.2, 0.5)
+	mat("spotlight_glow", "ffffaa", 0.1, 0.1, 0.9)
+	mat("trim", "282f36", 0.2, 0.45)
+	mat("rim_dcdde1", "dcdde1", 0.75, 0.25)
+	mat("caliper", "cd382b", 0.3, 0.4)
+	mat("rotor", "555d64", 0.6, 0.5)
+
+
+func _prepared_template_is_acceptable(template: Node3D) -> bool:
+	if int(template.get_meta("ranch_single_prepared_contract_version", 0)) != EXPECTED_CONTRACT_VERSION:
+		return false
+	if int(template.get_meta("ranch_single_prepared_geometry_signature", 0)) != EXPECTED_SIGNATURE:
+		return false
+	if int(template.get_meta("ranch_single_prepared_meshes", 0)) != EXPECTED_MESHES:
+		return false
+	if int(template.get_meta("ranch_single_prepared_triangles", 0)) != EXPECTED_TRIANGLES:
+		return false
+	var meshes := 0
+	var wheel_centres: Array[Vector3] = []
+	var headlamps := 0
+	var taillamps := 0
+	var paint_parts := 0
+	var spinning_wheels := 0
+	var fixed_wheels := 0
+	var static_groups := 0
+	for child in template.get_children():
+		var part := child as MeshInstance3D
+		if part == null or part.mesh == null:
+			return false
+		meshes += 1
+		var surface_keys: PackedStringArray = part.get_meta(SURFACE_KEYS_META, PackedStringArray())
+		if surface_keys.is_empty() or surface_keys.size() != part.mesh.get_surface_count():
+			return false
+		for key in surface_keys:
+			if not materials.has(StringName(key)):
+				return false
+		var material_key := StringName(surface_keys[0]) if _all_same_surface_key(surface_keys) else &""
+		if String(part.name).begins_with("RanchSingle_lamp_") and material_key == &"headlight":
+			headlamps += 1
+		elif String(part.name).begins_with("RanchSingle_lamp_") and material_key == &"taillight":
+			taillamps += 1
+		elif bool(part.get_meta("ranch_single_damage_body", false)) and material_key == &"paint" and part.mesh.get_surface_count() == 1:
+			paint_parts += 1
+		if part.has_meta("wheel_center"):
+			var centre: Vector3 = part.get_meta("wheel_center")
+			if not wheel_centres.has(centre):
+				wheel_centres.append(centre)
+			if bool(part.get_meta("wheel_spins", false)):
+				spinning_wheels += 1
+			else:
+				fixed_wheels += 1
+		elif part.name == &"RanchSingle_static_misc":
+			static_groups += 1
+	return meshes == EXPECTED_MESHES and wheel_centres.size() == 4 and spinning_wheels == 4 and fixed_wheels == 4 and headlamps == 2 and taillamps == 2 and paint_parts == 1 and static_groups == 1
+
+
+func _bind_prepared_material(node: Node) -> void:
+	if node is MeshInstance3D:
+		var part := node as MeshInstance3D
+		var surface_keys: PackedStringArray = part.get_meta(SURFACE_KEYS_META, PackedStringArray())
+		if _all_same_surface_key(surface_keys):
+			part.material_override = materials[StringName(surface_keys[0])]
+		else:
+			for surface_index in surface_keys.size():
+				part.set_surface_override_material(surface_index, materials[StringName(surface_keys[surface_index])])
+	for child in node.get_children():
+		_bind_prepared_material(child)
+
+
+func _all_same_surface_key(surface_keys: PackedStringArray) -> bool:
+	if surface_keys.is_empty():
+		return false
+	for key in surface_keys:
+		if key != surface_keys[0]:
+			return false
+	return true
+
+
+func _clear_owner(node: Node) -> void:
+	node.owner = null
+	for child in node.get_children():
+		_clear_owner(child)
+
+
+## Fonte autoral reproduzível usada pelo fallback e pelo gerador do recurso.
+func build_procedural_source() -> void:
 	paint = mat("paint", "8e44ad", 0.35, 0.30)
 	var chrome := mat("chrome", "dcdde1", 0.85, 0.20)
 	var bed_liner := mat("bed_liner", "2d3436", 0.1, 0.85)

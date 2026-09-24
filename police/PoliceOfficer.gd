@@ -434,8 +434,11 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	_start_fall(impact_velocity)
 	health = 0
 	_drop_loot()
-	if collision_shape:
-		collision_shape.set_deferred("disabled", true)
+	collision_layer = 0
+	for c in find_children("", "CollisionShape2D", true, false):
+		(c as CollisionShape2D).set_deferred("disabled", true)
+	for c in find_children("", "CollisionPolygon2D", true, false):
+		(c as CollisionPolygon2D).set_deferred("disabled", true)
 	
 	_spawn_blood_burst(impact_velocity.normalized())
 	_create_3d_blood_puddle()
@@ -475,8 +478,11 @@ func _die(is_player_attacker: bool = false) -> void:
 	is_dead = true
 	_drop_loot()
 	velocity = Vector2.ZERO
-	if collision_shape:
-		collision_shape.set_deferred("disabled", true)
+	collision_layer = 0
+	for c in find_children("", "CollisionShape2D", true, false):
+		(c as CollisionShape2D).set_deferred("disabled", true)
+	for c in find_children("", "CollisionPolygon2D", true, false):
+		(c as CollisionPolygon2D).set_deferred("disabled", true)
 	_start_fall()
 	_create_3d_blood_puddle()
 	_play_audio(ProceduralAudio.get_death_reaction_stream(), -5.0)

@@ -10,6 +10,9 @@ class EntranceRegistry extends Node2D:
 		door = value
 		return_position = point
 func _run() -> void:
+	root.get_node("SaveManager")._save_dir = "user://cargo-shop-validation/"
+	root.get_node("SaveManager")._save_directory_ready = false
+	root.get_node("SaveManager").clear_pending_save()
 	root.size = Vector2i(1280,720)
 	var world := Node2D.new()
 	root.add_child(world)

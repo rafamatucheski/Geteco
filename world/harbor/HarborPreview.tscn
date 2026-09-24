@@ -1030,24 +1030,6 @@ crown_scale = 1.25
 variant_seed = 2490
 metadata/impact_material = &"wood"
 
-[node name="@StaticBody2D@182" type="StaticBody2D" parent="District" unique_id=1618120619]
-z_index = 8
-position = Vector2(2015, 865)
-collision_mask = 0
-script = ExtResource("6_xduib")
-crown_scale = 1.25
-variant_seed = 2880
-metadata/impact_material = &"wood"
-
-[node name="@StaticBody2D@185" type="StaticBody2D" parent="District" unique_id=1705958540]
-z_index = 8
-position = Vector2(2015, 1025)
-collision_mask = 0
-script = ExtResource("6_xduib")
-crown_scale = 1.25
-variant_seed = 3040
-metadata/impact_material = &"wood"
-
 [node name="@StaticBody2D@188" type="StaticBody2D" parent="District" unique_id=1340563797]
 z_index = 8
 position = Vector2(1460, 1840)

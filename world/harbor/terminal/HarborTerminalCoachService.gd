@@ -399,14 +399,15 @@ func _build_external_view() -> void:
 	# The same model remains in one 3D world. A small tracking viewport keeps it
 	# visible when it leaves the terminal render, with matching floor projection.
 	_external_view = SubViewport.new()
-	_external_view.size = Vector2i(320, 256)
+	_external_view.size = Vector2i(512, 512)
 	_external_view.transparent_bg = true
+	_external_view.msaa_3d = Viewport.MSAA_4X
 	_external_view.world_3d = architecture.viewport_3d.find_world_3d()
 	_external_view.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	add_child(_external_view)
 	_external_camera = Camera3D.new()
 	_external_camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	_external_camera.size = 14.0
+	_external_camera.size = 9.0
 	_external_camera.cull_mask = 1 << (platform_index + 2)
 	_external_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_external_view.add_child(_external_camera)
@@ -416,6 +417,7 @@ func _build_external_view() -> void:
 	_external_sprite = Sprite2D.new()
 	_external_sprite.z_as_relative = false
 	_external_sprite.z_index = 10
+	_external_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_external_sprite.texture = _external_view.get_texture()
 	var rendered_meter := _external_camera.unproject_position(Vector3.RIGHT).distance_to(_external_camera.unproject_position(Vector3.ZERO))
 	_external_sprite.scale = Vector2.ONE * PPM / rendered_meter

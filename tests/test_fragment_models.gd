@@ -45,6 +45,7 @@ func run() -> void:
 			for frame in 5: await physics_frame
 			await capture("original-character")
 		var remains: Node2D = REMAINS.spawn(actor, actor.position-Vector2(25,0))
+		while remains._build_index < remains._build_plans.size(): await process_frame
 		if i == 0:
 			print("ATLAS_SCALE source_view=", actor.viewport.size, " source_sprite=", actor.sprite_3d_display.scale, " fragment_sprite=", remains.pieces[0].fragment_sprite.scale)
 		all_remains.append(remains)
@@ -84,6 +85,7 @@ func run() -> void:
 			head_meshes += branch.find_children("*", "MeshInstance3D", true, false).size()
 		check(head_meshes >= 5, "Alternate head retains face and hair, not just neck geometry")
 		var remains := REMAINS.spawn(alternate, alternate.position-Vector2(20,0))
+		while remains._build_index < remains._build_plans.size(): await process_frame
 		check(remains != null and remains.pieces.size() >= 4, "Alternate production rig produces actual mesh fragments")
 		if remains != null:
 			var atlas: Node = remains.get_child(remains.get_child_count()-1)

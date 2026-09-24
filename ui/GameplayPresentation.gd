@@ -105,6 +105,10 @@ func _update_hints() -> void:
 	var tokens := {"E":"interact","T":"trunk","J":"journal","R":"reload","H":"horn","L":"headlights","Q":"weapon_next"}
 	for label in _labels:
 		if not is_instance_valid(label) or not label.is_visible_in_tree(): continue
+		if label.has_meta("interaction_action"):
+			label.text = input.hint(String(label.get_meta("interaction_action")))
+			INTERACTION_KEYCAP.sync(label, true)
+			continue
 		var source := label.text
 		if source == String(label.get_meta("hint_rendered","")):
 			source = String(label.get_meta("hint_source",source))
@@ -115,7 +119,9 @@ func _update_hints() -> void:
 		result = result.replace("[ ESPAÇO / E ]","[ "+input.hint("interact")+" ]")
 		result = result.replace("[ SPACE / E ]","[ "+input.hint("interact")+" ]")
 		result = result.replace("[ E ]","[ "+input.hint("interact")+" ]")
-		if input.using_gamepad: result = result.replace("[ ESC ]","[ B ]").replace("[Esc]","[B]")
+		if input.using_gamepad:
+			var cancel_hint: String = input.hint("ui_cancel")
+			result = result.replace("[ ESC ]","[ "+cancel_hint+" ]").replace("[Esc]","["+cancel_hint+"]")
 		label.set_meta("hint_source",source)
 		label.set_meta("hint_rendered",result)
 		label.text = result

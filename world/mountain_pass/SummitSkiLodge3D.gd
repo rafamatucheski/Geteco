@@ -7,6 +7,8 @@ var footprint_size := Vector2(13.8, 8.4)
 var front_entrance_local_position := Vector3(0, 0, 4.55)
 var slope_entrance_local_position := Vector3(0, 0, -4.55)
 var materials: Dictionary = {}
+var front_door_parts: Array[MeshInstance3D] = []
+var rear_door_parts: Array[MeshInstance3D] = []
 
 func _ready() -> void:
 	_build_lodge()
@@ -67,7 +69,12 @@ func _build_lodge() -> void:
 	var red := _mat("red", Color("a84b3e"), 0.75)
 
 	_box("Foundation", Vector3(0, 0.12, 0), Vector3(14.4, 0.24, 9.0), stone)
-	_box("MainHall", Vector3(0, 1.75, 0), Vector3(13.6, 3.25, 8.1), wood)
+	for side in [-1.0, 1.0]:
+		_box("SideWall", Vector3(side * 6.73, 1.75, 0), Vector3(.15, 3.25, 8.1), wood)
+	for z in [-4.0, 4.0]:
+		for side in [-1.0, 1.0]:
+			_box("FacadeWall", Vector3(side * 3.8, 1.75, z), Vector3(6.0, 3.25, .16), wood)
+		_box("DoorHeader", Vector3(0, 3.02, z), Vector3(1.55, .7, .16), wood)
 	for side in [-1.0, 1.0]:
 		_box("Roof", Vector3(side * 3.45, 3.85, 0), Vector3(7.35, 0.22, 9.2), roof, Vector3(0, 0, side * -26.0))
 		_box("RoofSnow", Vector3(side * 3.45, 4.03, 0), Vector3(7.4, 0.13, 9.25), snow, Vector3(0, 0, side * -26.0))
@@ -79,8 +86,12 @@ func _build_lodge() -> void:
 			_box("WindowGlass", Vector3(x, 1.9, z + (0.11 if z > 0 else -0.11)), Vector3(1.12, 1.30, 0.05), glass)
 			_box("WindowWarmth", Vector3(x, 1.9, z + (0.145 if z > 0 else -0.145)), Vector3(0.96, 1.12, 0.02), warm)
 		# Vão visual das duas entradas; a interação acontece do lado de fora.
-		_box("Door", Vector3(0, 1.25, z + (0.08 if z > 0 else -0.08)), Vector3(1.45, 2.35, 0.16), timber)
-		_box("DoorWindow", Vector3(0, 1.6, z + (0.18 if z > 0 else -0.18)), Vector3(0.8, 0.72, 0.04), glass)
+		var leaf := _box("Door", Vector3(0, 1.25, z + (0.08 if z > 0 else -0.08)), Vector3(1.45, 2.35, 0.16), timber)
+		var pane := _box("DoorWindow", Vector3(0, 1.6, z + (0.18 if z > 0 else -0.18)), Vector3(0.8, 0.72, 0.04), glass)
+		for part in [leaf, pane]:
+			part.set_meta("closed_position", part.position)
+			if z > 0: front_door_parts.append(part)
+			else: rear_door_parts.append(part)
 		_box("Porch", Vector3(0, 0.18, z + (0.75 if z > 0 else -0.75)), Vector3(4.3, 0.18, 1.45), timber)
 		for x in [-1.85, 1.85]:
 			_box("PorchPost", Vector3(x, 1.35, z + (0.92 if z > 0 else -0.92)), Vector3(0.22, 2.5, 0.22), timber)
@@ -94,16 +105,6 @@ func _build_lodge() -> void:
 		_box("OutsideSki", Vector3(-5.65 + i * 0.28, 1.05, -4.45), Vector3(0.10, 0.10, 1.85), color, Vector3(-8, 0, -5))
 	_box("SkiRack", Vector3(-5.1, 0.8, -4.25), Vector3(2.1, 0.12, 0.18), timber)
 
-	var sign := Label3D.new()
-	sign.name = "LodgeName"
-	sign.text = "CUME BRANCO"
-	sign.font_size = 72
-	sign.pixel_size = 0.007
-	sign.modulate = Color("f2e7cb")
-	sign.outline_size = 0
-	sign.position = Vector3(0, 3.15, 4.08)
-	add_child(sign)
-
 	for point in [Vector3(-4.5, 3.1, 4.25), Vector3(4.5, 3.1, 4.25), Vector3(0, 2.8, -4.25)]:
 		var light := OmniLight3D.new()
 		light.position = point
@@ -111,3 +112,9 @@ func _build_lodge() -> void:
 		light.light_energy = 0.75
 		light.omni_range = 4.5
 		add_child(light)
+
+func set_lodge_open_amount(front: float, rear: float) -> void:
+	for part in front_door_parts:
+		part.position = part.get_meta("closed_position") + Vector3(-1.65 * clampf(front, 0, 1), 0, 0)
+	for part in rear_door_parts:
+		part.position = part.get_meta("closed_position") + Vector3(1.65 * clampf(rear, 0, 1), 0, 0)

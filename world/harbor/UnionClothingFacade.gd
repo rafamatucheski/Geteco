@@ -1,8 +1,13 @@
 extends Node2D
-## Storefront fitted to NorthFrontage3; keeps its original solid and doorway.
+## Union's roof and street frontage cover the physical room until entry.
+
+var entrance: BuildingEntrance
+var inline_room: Node2D
+var door_blocker: CollisionShape2D
 
 func _ready() -> void:
 	z_index = 6
+	set_process(false)
 	var sign := Label.new()
 	sign.text = "U N I O N"
 	sign.position = Vector2(-87, 7)
@@ -13,7 +18,45 @@ func _ready() -> void:
 	add_child(sign)
 	queue_redraw()
 
+func bind_inline(door: BuildingEntrance, room: Node2D) -> void:
+	entrance = door
+	inline_room = room
+	var body := StaticBody2D.new()
+	body.name = "SlidingDoorSolid"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	add_child(body)
+	door_blocker = CollisionShape2D.new()
+	door_blocker.name = "DoorLeaves"
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(44, 9)
+	door_blocker.shape = shape
+	door_blocker.position = Vector2(0, 81)
+	body.add_child(door_blocker)
+	set_process(true)
+
+func set_inline_occupied(occupied: bool) -> void:
+	visible = not occupied
+	if is_instance_valid(entrance): entrance.visible = not occupied
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(entrance): return
+	var actor := get_tree().get_first_node_in_group("player") as Node2D
+	if is_instance_valid(actor) and actor.get("is_dead") != true:
+		var local := entrance.to_local(actor.global_position)
+		if absf(local.x) < 43 and absf(local.y) < 66:
+			entrance._away_time = 0.0
+			entrance.open_door()
+	if is_instance_valid(door_blocker): door_blocker.disabled = entrance.open_amount >= .55
+
 func _draw() -> void:
+	# The roof sits within the original 230 x 180 px lot. It disappears with
+	# this facade when the player crosses the threshold.
+	draw_rect(Rect2(-108, -85, 216, 91), Color("394847"))
+	draw_rect(Rect2(-103, -81, 206, 83), Color("505e59"))
+	for y in [-66, -43, -20]:
+		draw_line(Vector2(-96, y), Vector2(96, y), Color("2a3c3b"), 2)
+	draw_rect(Rect2(-108, 2, 216, 5), Color("c2a676"))
 	draw_rect(Rect2(-108, 5, 216, 85), Color("273d3c"))
 	draw_rect(Rect2(-102, 8, 204, 25), Color("203331"))
 	draw_line(Vector2(-100, 34), Vector2(100, 34), Color("bca275"), 2)

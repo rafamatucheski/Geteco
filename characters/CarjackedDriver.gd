@@ -14,6 +14,16 @@ var fly_velocity := Vector2.ZERO
 var fall_presentation := preload("res://characters/CharacterFallPresentation.gd").new()
 var state_timer: float = 0.0
 var motorcycle_fall_timer := 0.0
+var motorcycle_recovery_active := false
+var motorcycle_reaction := 0 # 0: remount, 1: flee, 2: confront.
+var motorcycle_appearance_seed := -1
+var motorcycle_jacket_color := Color.TRANSPARENT
+var motorcycle_helmet_color := Color.TRANSPARENT
+var motorcycle_returning := false
+var motorcycle_mounting := false
+var motorcycle_return_elapsed := 0.0
+var motorcycle_mount_point := Vector2.INF
+var motorcycle_mount_probe_timer := 0.0
 var exit_reaction_timer := 0.0
 var punch_timer := 0.0
 var _exit_direction := Vector2.ZERO
@@ -66,14 +76,15 @@ func _ready() -> void:
 	_setup_speech_bubble()
 
 
-func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
+func setup(vehicle: Node2D, spawn_pos: Vector2, react := true) -> void:
 	stolen_vehicle = vehicle
 	var professional := preload("res://characters/pedestrians/ProfessionalDriverModel.gd")
 	var driver_role := professional.role_for(vehicle)
-	if not driver_role.is_empty():
+	if not driver_role.is_empty() and driver_model.get_meta("theft_driver_role", "") != driver_role:
 		if is_instance_valid(driver_model): driver_model.free()
 		driver_model = professional.new()
 		driver_model.role = driver_role
+		driver_model.set_meta("theft_driver_role", driver_role)
 		driver_model.winter_outfit = professional.is_winter(vehicle)
 		var identity: int = int(vehicle.get_meta("driver_appearance_seed",-1))
 		if identity < 0:
@@ -84,7 +95,8 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 		driver_viewport.add_child(driver_model)
 		driver_model.set_process(false)
 		driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	if is_instance_valid(driver_model) and "taxi" in String(vehicle.get("vehicle_id")):
+	if is_instance_valid(driver_model) and "taxi" in String(vehicle.get("vehicle_id")) and not driver_model.has_meta("taxi_details"):
+		driver_model.set_meta("taxi_details", true)
 		var detail := preload("res://characters/pedestrians/CitizenDetails.gd")
 		detail.piece(driver_model,Vector3(.36,.11,.31),Vector3(0,1.79,0),Color("b59855"),true)
 		detail.piece(driver_model,Vector3(.27,.025,.15),Vector3(0,1.75,.16),Color("b59855"))
@@ -96,6 +108,7 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 	_exit_direction = vehicle.global_position.direction_to(spawn_pos)
 	global_rotation = (-_exit_direction).angle()
 	reset_physics_interpolation()
+	if not react: return
 	
 	# Sorteia a personalidade
 	var roll = randf()
@@ -137,10 +150,12 @@ func setup(vehicle: Node2D, spawn_pos: Vector2) -> void:
 
 func fall_from_motorcycle(vehicle: Node2D, direction: Vector2, force: float) -> void:
 	stolen_vehicle = vehicle
+	motorcycle_reaction = randi_range(0, 2)
 	personality = Personality.SUBMISSIVE
-	motorcycle_fall_timer = 3.0
+	motorcycle_fall_timer = 2.15
+	motorcycle_recovery_active = false
 	velocity = direction * clampf(force * 0.50, 45.0, 210.0)
-	add_collision_exception_with(vehicle)
+	preload("res://systems/CollisionExceptionLifetime.gd").add(self, vehicle)
 	fall_presentation.start(self, driver_model, driver_viewport, velocity)
 	fall_presentation.duration = 0.95
 	show_speech("Ai! Cuidado!", 2.5)
@@ -155,16 +170,33 @@ func _physics_process(delta: float) -> void:
 		fall_presentation.update(delta)
 		return
 
-	if motorcycle_fall_timer > 0.0:
-		motorcycle_fall_timer = maxf(0.0, motorcycle_fall_timer - delta)
-		velocity = velocity.move_toward(Vector2.ZERO, 95.0 * delta)
-		if not velocity.is_zero_approx():
-			var contact := move_and_collide(velocity * delta)
-			if contact: velocity = Vector2.ZERO
-		fall_presentation.update(delta)
-		if motorcycle_fall_timer <= 0.0:
-			fall_presentation.reset()
-			_begin_civilian_routine()
+	if motorcycle_fall_timer > 0.0 or motorcycle_recovery_active:
+		if motorcycle_fall_timer > 0.0:
+			motorcycle_fall_timer = maxf(0.0, motorcycle_fall_timer - delta)
+			velocity = velocity.move_toward(Vector2.ZERO, 95.0 * delta)
+			if not velocity.is_zero_approx():
+				var contact := move_and_collide(velocity * delta)
+				if contact: velocity = Vector2.ZERO
+			fall_presentation.update(delta)
+			if motorcycle_fall_timer <= 0.0:
+				velocity = Vector2.ZERO
+				motorcycle_recovery_active = true
+				fall_presentation.begin_recovery(1.45)
+		else:
+			velocity = Vector2.ZERO
+			fall_presentation.update(delta)
+			if not fall_presentation.recovery_active:
+				motorcycle_recovery_active = false
+				fall_presentation.reset()
+				_finish_motorcycle_recovery()
+		return
+
+	if motorcycle_mounting:
+		velocity = Vector2.ZERO
+		return
+
+	if motorcycle_returning:
+		_update_motorcycle_return(delta)
 		return
 
 	punch_timer = maxf(0.0, punch_timer - delta)
@@ -253,6 +285,9 @@ func _physics_process(delta: float) -> void:
 			_update_defense(delta)
 
 func _update_defense(delta: float) -> void:
+	if motorcycle_reaction == 2 and motorcycle_appearance_seed >= 0:
+		_update_motorcycle_confrontation(delta)
+		return
 	if not is_instance_valid(stolen_vehicle):
 		_begin_civilian_routine()
 		return
@@ -298,7 +333,12 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	preload("res://audio/combat/CombatImpactAudio.gd").play_hurt(self, amount)
 	if health <= 0 and not is_dead:
 		is_dead = true
-		get_node("CollisionShape2D").set_deferred("disabled", true)
+		collision_layer = 0
+		z_index = 5
+		for c in find_children("", "CollisionShape2D", true, false):
+			(c as CollisionShape2D).set_deferred("disabled", true)
+		for c in find_children("", "CollisionPolygon2D", true, false):
+			(c as CollisionPolygon2D).set_deferred("disabled", true)
 		preload("res://guns/combat/GroundBlood.gd").spawn(self, true)
 		if phone_indicator: phone_indicator.visible = false
 		show_speech("Aaaagh!", 1.0)
@@ -323,7 +363,12 @@ func get_run_over(impact_velocity: Vector2, _is_player_driver: bool = false) -> 
 	else:
 		health = 1
 		is_incapacitated = true
-		get_node("CollisionShape2D").set_deferred("disabled", true)
+		collision_layer = 0
+		z_index = 5
+		for c in find_children("", "CollisionShape2D", true, false):
+			(c as CollisionShape2D).set_deferred("disabled", true)
+		for c in find_children("", "CollisionPolygon2D", true, false):
+			(c as CollisionPolygon2D).set_deferred("disabled", true)
 		if phone_indicator: phone_indicator.hide()
 	fall_presentation.start(self, driver_model, driver_viewport, impact_velocity)
 	preload("res://guns/combat/VehiclePersonImpact.gd").feedback(self, impact_velocity, is_dead)
@@ -383,6 +428,124 @@ func _build_driver_visual() -> void:
 	visual_root.add_child(sprite)
 	preload("res://systems/ContactShadow.gd").add_silhouette(sprite,driver_viewport)
 
+func configure_motorcycle_identity(seed_value: int, jacket: Color, helmet: Color) -> void:
+	motorcycle_appearance_seed = seed_value
+	motorcycle_jacket_color = jacket
+	motorcycle_helmet_color = helmet
+	shirt_color = jacket
+	pants_color = Color("253043")
+	if is_instance_valid(driver_model): driver_model.free()
+	driver_model = preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
+	driver_model.appearance_variant = seed_value
+	driver_model.appearance_locked = true
+	driver_model.coat_color = jacket
+	driver_model.pants_color = pants_color
+	driver_model.motorcycle_helmet_color = helmet
+	driver_viewport.add_child(driver_model)
+	driver_model.set_process(false)
+	driver_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+func _finish_motorcycle_recovery() -> void:
+	state_timer = 0.0
+	_age = 0.0
+	if motorcycle_reaction == 0:
+		if not _begin_motorcycle_return(): _begin_civilian_routine()
+	else:
+		if is_instance_valid(stolen_vehicle): remove_collision_exception_with(stolen_vehicle)
+		personality = Personality.SUBMISSIVE if motorcycle_reaction == 1 else Personality.FIGHTER
+
+func _update_motorcycle_confrontation(_delta: float) -> void:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(player) or global_position.distance_to(player.global_position) > 220.0:
+		_begin_civilian_routine()
+		return
+	var direction := global_position.direction_to(player.global_position)
+	rotation = direction.angle()
+	if global_position.distance_to(player.global_position) > 24.0:
+		velocity = direction * 115.0
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
+	else:
+		velocity = Vector2.ZERO
+		if state_timer >= 1.1:
+			state_timer = 0.0
+			punch_timer = 0.4
+			var ray := PhysicsRayQueryParameters2D.create(global_position, player.global_position, 3, [get_rid()])
+			if get_world_2d().direct_space_state.intersect_ray(ray).is_empty() and player.has_method("take_damage"):
+				player.take_damage(4)
+
+func _begin_motorcycle_return() -> bool:
+	if not is_instance_valid(stolen_vehicle) or not stolen_vehicle.has_method("can_traffic_rider_return"): return false
+	if not stolen_vehicle.can_traffic_rider_return(self): return false
+	motorcycle_returning = true
+	motorcycle_return_elapsed = 0.0
+	motorcycle_mount_point = Vector2.INF
+	motorcycle_mount_probe_timer = 0.0
+	show_speech("Vou buscar minha moto.", 2.0)
+	return true
+
+func _update_motorcycle_return(delta: float) -> void:
+	if not is_instance_valid(stolen_vehicle) or not stolen_vehicle.can_traffic_rider_return(self):
+		_abandon_motorcycle_return()
+		return
+	motorcycle_return_elapsed += delta
+	if motorcycle_return_elapsed > 15.0:
+		_abandon_motorcycle_return()
+		return
+	motorcycle_mount_probe_timer = maxf(0.0, motorcycle_mount_probe_timer - delta)
+	if motorcycle_mount_probe_timer <= 0.0 or not motorcycle_mount_point.is_finite():
+		motorcycle_mount_probe_timer = 0.15
+		motorcycle_mount_point = stolen_vehicle.traffic_rider_mount_position(self)
+	if not motorcycle_mount_point.is_finite():
+		velocity = Vector2.ZERO
+		return
+	var distance := global_position.distance_to(motorcycle_mount_point)
+	if distance > 9.0:
+		var direction := global_position.direction_to(motorcycle_mount_point)
+		velocity = velocity.move_toward(direction * 78.0, 260.0 * delta)
+		rotation = direction.angle()
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
+		return
+	velocity = Vector2.ZERO
+	if not stolen_vehicle.begin_traffic_rider_remount(self): return
+	motorcycle_returning = false
+	motorcycle_mounting = true
+	collision_layer = 0
+	collision_mask = 0
+	if speech_bubble: speech_bubble.hide()
+	var mount := create_tween()
+	mount.set_parallel(true)
+	mount.tween_property(self, "global_position", stolen_vehicle.global_position, 0.65).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	mount.tween_property(self, "modulate:a", 0.0, 0.30).set_delay(0.35)
+	mount.chain().tween_callback(_finish_motorcycle_remount)
+
+func _finish_motorcycle_remount() -> void:
+	if is_instance_valid(stolen_vehicle) and stolen_vehicle.has_method("complete_traffic_rider_remount") and stolen_vehicle.complete_traffic_rider_remount(self):
+		queue_free()
+		return
+	motorcycle_mounting = false
+	modulate.a = 1.0
+	# Se a moto for roubada ou destruída durante a montagem, refaça fisicamente
+	# o pequeno deslocamento até o ponto lateral antes de restaurar a colisão.
+	if motorcycle_mount_point.is_finite():
+		var retreat := create_tween()
+		retreat.tween_property(self, "global_position", motorcycle_mount_point, 0.30).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		retreat.tween_callback(_abandon_motorcycle_return)
+	else:
+		_abandon_motorcycle_return()
+
+func _abandon_motorcycle_return() -> void:
+	motorcycle_returning = false
+	motorcycle_mounting = false
+	motorcycle_mount_point = Vector2.INF
+	motorcycle_mount_probe_timer = 0.0
+	modulate.a = 1.0
+	collision_layer = 4
+	collision_mask = 7
+	for shape in find_children("", "CollisionShape2D", true, false):
+		(shape as CollisionShape2D).set_deferred("disabled", false)
+	if is_instance_valid(stolen_vehicle): remove_collision_exception_with(stolen_vehicle)
+	_begin_civilian_routine()
+
 func _process(delta: float) -> void:
 	if not is_instance_valid(driver_model): return
 	visual_root.global_rotation = 0
@@ -394,10 +557,11 @@ func _process(delta: float) -> void:
 		return
 	_render_clock += delta
 	if _render_clock < 1.0/30.0: return
-	driver_model.walking = not is_dead and not is_incapacitated and velocity.length()>2
-	if not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0: driver_model.rotation.y = -global_rotation + PI*0.5
-	if not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0: driver_model._process(_render_clock)
-	if not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0 and driver_model.get("limbs") is Array:
+	var free_to_animate := not is_dead and not is_incapacitated and motorcycle_fall_timer <= 0.0 and not motorcycle_recovery_active
+	driver_model.walking = free_to_animate and velocity.length()>2
+	if free_to_animate: driver_model.rotation.y = -global_rotation + PI*0.5
+	if free_to_animate: driver_model._process(_render_clock)
+	if free_to_animate and driver_model.get("limbs") is Array:
 		var limbs: Array = driver_model.limbs
 		var walking_speed := velocity.length()
 		var phase := float(Time.get_ticks_msec()) * 0.001 * clampf(walking_speed / 10.0, 5.0, 12.0)

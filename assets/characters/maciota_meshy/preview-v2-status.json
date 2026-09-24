@@ -1,0 +1,23 @@
+{
+  "id": "01a0c96d-cfbf-70ac-8c3a-917fc6c101ff",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2261855234,
+  "prompt": "A flamboyant slender adult man wearing a WIDE BRIM FEDORA HAT and SUNGLASSES, holding a long WALKING CANE in his right hand. Full body character. The large fedora hat is essential, with a leopard print hatband. Dark sunglasses with thick gold frames cover his eyes. Thin black goatee. Elegant purple suit with black lapels, open bare chest neckline, gold necklace, NO NECKTIE. Purple trousers and dress shoes. Golden cane with a purple gemstone handle. Warm brown skin. Original charismatic Brazilian nightclub and garage owner, confident relaxed expression, natural human proportions, stylized realistic game character. Arms slightly apart, standing, feet apart. Hat, sunglasses and cane must be modeled as visible geometry. No base, no background, no text.",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1790085814170,
+  "progress": 100,
+  "started_at": 1790085814176,
+  "finished_at": 1790085872114,
+  "task_error": null,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96d-cfbf-70ac-8c3a-917fc6c101ff/output/model.glb?Expires=4943635200&Signature=OZZCqwYfbjGFzJPW94b6kDJza2GzvmYv6RDfUwBvn-n1v5no4m5QuB0FAafZZzFfr3puEvMTB6ESylohHAPtrbPXG6BRQ6p7b4gDktfPaB~pzs65t9JNcpiHcrdmvL748NYkd9TQha7Aphwx3hajEDUmzNHOSvmh4W4mRfU8ZlllzGp9SNy~AgIEsR2G6KxESr6l4CZ7LHK8xbM1mbXFuPTEYd1S7PzqUjoyI3SxnxGYlFcuOWTUEWDE3HR-MaOlItHfOjjYWPXqvuhE~GBfbpGJItdGh~lnV-eoU2bTQ7Gs~Dy4N~-sOqbu~VFltS8V5Cn6Q8Da6qAxl8M0nZy3lg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96d-cfbf-70ac-8c3a-917fc6c101ff/output/preview.png?Expires=4943635200&Signature=aGB8D~Ph97WMXqsqme7TQZNBCklI0M5zBT0lH0-fNGD8q4viWtp7hOeqFP6tIKwQk0TJ9iV7FUIoN4A0E-oue-S4oxnvtPTTuPjA87Vbld7ijGjlfb88qwqr7lqZpXrht1i6ZE5pLbFGeXOdzAfsxcl-zuD9-Roov10MfvtOkORwYtcXuvklnE93o6h57PbRGJZPXpXUbfL5v0hcybKRufCxnpeL8RbnWnyS-ih~IgEFM-xigVAYp03CpugsnWN1BXV5Qk2wNitR-t-H6HKuPabJ7tkDU6~HzBtcc1LpcuFEiHg7wXhz0fKyvn2tvHUZ5mYSTiBw8LxWgGMmenObjw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20
+}

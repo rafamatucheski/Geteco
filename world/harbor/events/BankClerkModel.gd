@@ -5,7 +5,8 @@ var forearms: Array[Node3D] = []
 
 func _ready() -> void:
 	set_meta("standing_rig_height", 1.8)
-	scale = Vector3.ONE
+	# Match Dante's adult silhouette; avoid the broad, balloon-like old clerk.
+	scale = Vector3(.88, .93, .90)
 	var skin := Color("c38e70") if appearance_female else Color("b88c70")
 	var suit := Color("345a60") if appearance_female else Color("344254")
 	var shirt := Color("e4dfd0")
@@ -61,6 +62,10 @@ func _ready() -> void:
 	_process(0.0)
 
 func _shape(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> MeshInstance3D:
+	if size.y > size.x * 2.0 or size.z > size.y * 1.5:
+		var tailored := DETAIL.piece(parent, size, point, color)
+		tailored.mesh = preload("res://guns/ammunation/AmmunationArt.gd").bevel_box(size)
+		return tailored
 	var piece := DETAIL.piece(parent,size,point,color,true)
 	var mesh := piece.mesh as SphereMesh
 	mesh.radial_segments=16
@@ -69,13 +74,11 @@ func _shape(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> Mesh
 
 func _garment(parent: Node3D, size: Vector3, point: Vector3, color: Color) -> void:
 	var piece := DETAIL.piece(parent,Vector3.ONE,point,color)
-	var mesh := CylinderMesh.new()
-	mesh.top_radius=.5
-	mesh.bottom_radius=.42
-	mesh.height=1.0
-	mesh.radial_segments=16
-	piece.mesh=mesh
-	piece.scale=size
+	if parent == self:
+		piece.mesh = preload("res://characters/pedestrians/CitizenAppearance.gd").tailored_body(appearance_female, false)
+		piece.scale = size / Vector3(.37,.465,.296)
+	else:
+		piece.mesh = preload("res://guns/ammunation/AmmunationArt.gd").bevel_box(size)
 
 func _process(delta: float) -> void:
 	clock+=delta

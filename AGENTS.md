@@ -1,5 +1,12 @@
 # Preferências visuais do projeto
 
+## Padrão obrigatório de interiores
+
+- Antes de criar, reformar ou alterar apresentação, câmera, mobiliário ou acessos de interiores em qualquer mapa, carregue a skill `padrao-interiores`. Cópia versionada: [SKILL.md](docs/skills/padrao-interiores/SKILL.md).
+- Siga [o padrão Chalé + Maciota](docs/interior-standard.md), combinando atmosfera e volume do chalé das três armas com clareza espacial e acabamento da garagem do Maciota. Entradas exteriores e saídas interiores usam o indicador compacto compartilhado.
+- Mantenha [o checklist de migração](docs/interior-standard-checklist.md) com contagem de lugares e interiores distintos, fotos reais e validações. Não conte como concluído com checks obrigatórios pendentes.
+- As referências não dispensam validação física e de performance nem autorizam migrar ambientes fora do pedido.
+
 ## Regras permanentes da garagem
 
 - Maciota e o mecânico dele nunca podem morrer, em nenhuma circunstância: armas, explosões, fogo, atropelamentos ou eventos de missão. Preserve a ausência de rotinas de dano/morte nesses personagens; qualquer futura integração ao combate deve manter essa proteção.
@@ -28,4 +35,3 @@
 - Caso precise desfazer alterações:
   - Para reverter apenas a sua própria alteração, desfaça a edição manualmente no arquivo ou utilize `git stash` (NUNCA utilize `stash drop` ou descarte stash sem verificar o conteúdo).
   - Se houver conflito ou arquivo alterado por outra sessão, NUNCA tente resolver descartando ou sobrescrevendo: notifique o usuário imediatamente.
-

@@ -86,6 +86,8 @@ func run() -> void:
 	await physics_frame
 	grenade.explode()
 	await process_frame
+	var queued_remains: Node = actor.get_meta("explosion_remains", null)
+	while is_instance_valid(queued_remains) and queued_remains._build_index < queued_remains._build_plans.size(): await process_frame
 	check(actor.has_meta("explosion_remains"), "Interior grenade produces fragments")
 	if not actor.has_meta("explosion_remains"):
 		quit(1)

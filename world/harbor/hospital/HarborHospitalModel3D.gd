@@ -60,6 +60,7 @@ func _ready() -> void:
 	# Repeated, recessed windows with raised fins on the street frontage.
 	for x in [-110.0, -76.0, -42.0, -8.0, 26.0]:
 		for level in [1.4, 3.3]:
+			if level < 2.0 and x > -30.0: continue # Public doorway occupies this facade band.
 			var window_height := 1.0 if level > 3.0 else 1.15
 			box(Vector2(x, 115.4), Vector2(24, 1.4), level, window_height, charcoal)
 			box(Vector2(x, 116.3), Vector2(21, 0.8), level+0.09, window_height-0.19, glazing, self, true)
@@ -72,7 +73,8 @@ func _ready() -> void:
 	box(Vector2(-40, 116.5), Vector2(179, 2), 0.1, 0.35, Color("6c8182"))
 	# Public reception: native glazing around the existing playable south door.
 	box(Vector2(0, 116), Vector2(68, 3), 0, 1.9, charcoal)
-	box(Vector2(0, 118), Vector2(61, 1), 0.1, 1.7, glazing, self, true)
+	# The dark recess is revealed when the leaves slide. A second full-width
+	# fixed glass panel here made the entrance appear closed while opening.
 	for side in [-1.0, 1.0]:
 		var leaf := Node3D.new()
 		add_child(leaf)
@@ -121,17 +123,8 @@ func _ready() -> void:
 	box(Vector2(-4, -11), Vector2(44, 44), 5.27, 0.04, teal)
 	box(Vector2(-4, -11), Vector2(9, 30), 5.32, 0.03, Color("f0eddf"))
 	box(Vector2(-4, -11), Vector2(30, 9), 5.32, 0.03, Color("f0eddf"))
-	var title := Label3D.new()
-	title.name = "HospitalName"
-	title.text = "BAY MEDICAL"
-	title.font_size = 64
-	title.pixel_size = 0.006
-	title.position = floor_point(Vector2(-43, 117.7), 4.75)
-	title.modulate = Color("285d61")
-	title.outline_size = 0
 	var nameplate := box(Vector2(-43, 117.35), Vector2(76, 0.5), 4.4, 0.6, Color("eeeade"))
 	nameplate.name = "HospitalNameplate"
-	add_child(title)
 	# Side cross marks emergency admission without adding explanatory signage.
 	box(Vector2(108, -7), Vector2(2, 19), 2.7, 0.10, Color("e4ede5"))
 	box(Vector2(108, -7), Vector2(2, 5), 2.3, 0.92, Color("e4ede5"))

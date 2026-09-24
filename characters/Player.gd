@@ -67,6 +67,10 @@ var personal_loadout_enabled := false
 var _cheat_all_weapons := false
 var _cheat_sequence := ""
 var _cheat_last_key_msec := 0
+const ARSENAL_CHEAT_CODE := "dukenuke"
+const MONEY_CHEAT_CODE := "dirtybagmoney"
+const MONEY_CHEAT_REWARD := 100000
+const MAX_CHEAT_CODE_LENGTH := 13
 var personal_loadout: Dictionary = {}
 const PERSONAL_LOADOUT := preload("res://world/harbor/monaliza/PersonalLoadout.gd")
 
@@ -83,6 +87,10 @@ var weapon_ammo: Dictionary = {
 	"shotgun": {"clip": 0, "reserve": 0}
 }
 var weapon_wheel: WeaponWheel
+var weapon_customization: Dictionary = {}
+var weapon_flashlight: Node2D
+var weapon_laser: Node2D
+const WEAPON_CUSTOMIZATION = preload("res://guns/WeaponCustomization.gd")
 var primary_fire_was_pressed: bool = false
 const MELEE_SWING_DURATION := 0.22
 var _melee_swing_timer: float = 0.0
@@ -145,6 +153,10 @@ func _ready() -> void:
 	add_to_group("player")
 	z_index = 10
 	health = max_health
+	if collision_mask == 1:
+		collision_mask = 7
+	if collision_layer == 1:
+		collision_layer = 4
 	
 	for child in get_children():
 		if child is ColorRect:
@@ -154,6 +166,12 @@ func _ready() -> void:
 	visibility_changed.connect(_sync_3d_render_visibility)
 	_sync_3d_render_visibility()
 	_setup_weapons()
+	weapon_flashlight = preload("res://guns/WeaponFlashlight.gd").new()
+	weapon_flashlight.name = "WeaponFlashlight"
+	add_child(weapon_flashlight)
+	weapon_laser = preload("res://guns/WeaponLaser.gd").new()
+	weapon_laser.name = "WeaponLaser"
+	add_child(weapon_laser)
 	ski_controller = preload("res://scripts/player/PlayerSkiController.gd").new()
 	ski_controller.name = "PlayerSkiController"
 	add_child(ski_controller)
@@ -234,21 +252,7 @@ func _build_dante_3d_viewport() -> void:
 	viewport_3d.add_child(model_root)
 
 	# Sombra 3D no chÃƒÂ£o sob os pÃƒÂ©s do Dante
-	var shadow_mat = StandardMaterial3D.new()
-	shadow_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	shadow_mat.albedo_color = Color(0.02, 0.02, 0.05, 0.50)
-	shadow_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-
-	var shadow_mesh = MeshInstance3D.new()
-	var cyl_shadow = CylinderMesh.new()
-	cyl_shadow.top_radius = 0.28
-	cyl_shadow.bottom_radius = 0.28
-	cyl_shadow.height = 0.01
-	shadow_mesh.mesh = cyl_shadow
-	shadow_mesh.material_override = shadow_mat
-	shadow_mesh.position = Vector3(0.0, 0.01, 0.0)
-	model_root.add_child(shadow_mesh)
-	preload("res://systems/ContactShadow.gd").soften(shadow_mesh)
+	# The silhouette shadow already grounds Dante; no extra circular blob.
 
 	_rebuild_dante_costume()
 
@@ -333,6 +337,8 @@ func set_meshy_dante_enabled(enabled: bool) -> void:
 	_rebuild_dante_costume()
 
 func _update_equipped_weapon_3d_mesh() -> void:
+	if is_instance_valid(weapon_flashlight): weapon_flashlight.switch_off()
+	if is_instance_valid(weapon_laser): weapon_laser.configure()
 	if weapons_forbidden(): active_weapon_id = "fists"
 	_axe_attack_epoch += 1
 	if _reload_weapon != active_weapon_id: _cancel_reload()
@@ -348,6 +354,8 @@ func _update_equipped_weapon_3d_mesh() -> void:
 	weapon_mount_node.add_child(current_gun_mesh)
 
 	var flash_pos: Vector3 = preload("res://scripts/player/ArsenalWeapon3D.gd").build(current_gun_mesh, active_weapon_id)
+	WEAPON_CUSTOMIZATION.fit(current_gun_mesh, active_weapon_id, weapon_customization, flash_pos)
+	if WEAPON_CUSTOMIZATION.selected(weapon_customization,active_weapon_id,"muzzle") == "suppressor": flash_pos.z -= .145
 
 	muzzle_flash_3d = MeshInstance3D.new()
 	var sph_f = SphereMesh.new()
@@ -404,7 +412,7 @@ func _physics_process(delta: float) -> void:
 	fire_cooldown = maxf(0.0, fire_cooldown - delta)
 	_melee_swing_timer = maxf(0.0, _melee_swing_timer - delta)
 	var input_vector: Vector2 = Vector2.ZERO if (is_control_disabled or is_in_dialogue) else get_node("/root/GameInput").movement()
-	var is_sprinting: bool = false if (is_control_disabled or is_in_dialogue) else Input.is_action_pressed("sprint")
+	var is_sprinting: bool = false if (is_control_disabled or is_in_dialogue) else get_node("/root/GameInput").sprinting()
 	var current_speed: float = speed * SPRINT_MULTIPLIER if is_sprinting else speed
 	current_speed *= _movement_projection_scale(input_vector)
 
@@ -428,7 +436,7 @@ func _physics_process(delta: float) -> void:
 
 	# --- ROTAÇÃO 3D E ANIMAÇÃO ARTICULADA DO DANTE ---
 	var mouse_pos: Vector2 = get_node("/root/GameInput").aim_target(self)
-	var is_aiming: bool = Input.is_action_pressed("fire") or Input.is_action_pressed("aim")
+	var is_aiming: bool = Input.is_action_pressed("fire") or Input.is_action_pressed("aim") or (is_instance_valid(weapon_flashlight) and weapon_flashlight.enabled)
 	weapon_aim_active = Input.is_action_pressed("aim") and active_weapon_id not in ["fists","knife","axe","knuckles","bat","grenade"] and not is_control_disabled and not is_in_dialogue
 	var aim_dir: Vector2 = (mouse_pos - global_position).normalized() if is_aiming else (input_vector.normalized() if is_moving else Vector2.ZERO)
 
@@ -448,8 +456,9 @@ func _physics_process(delta: float) -> void:
 
 	if not is_control_disabled and not is_in_dialogue:
 		_handle_weapon_fire()
-		if Input.is_action_just_pressed("interact"):
+		if Input.is_action_just_pressed("vehicle_interact"):
 			if get_tree().get_nodes_in_group("weapon_store_open").is_empty():
+				get_node("/root/GameInput").reset_sprint_toggle()
 				try_enter_vehicle()
 
 func _movement_projection_scale(direction: Vector2) -> float:
@@ -465,9 +474,12 @@ func _movement_projection_scale(direction: Vector2) -> float:
 	return presentation.pixels_per_rig_unit(direction) / maxf(native_pixels, .001)
 
 func _gait_arm_swing() -> float:
-	# Align the opposing hand to the shorter sprint support interval.
+	# Human gait keeps the hands opposite the feet, but the arms do not need
+	# to follow the full leg excursion. Keep walking subtle and let running
+	# add only a moderate extra swing with a small lead into the next step.
 	var phase_lead := PI * 0.175 * _sprint_weight
-	return cos(walk_clock + phase_lead) * lerpf(0.38, 0.72, _sprint_weight) * _move_weight
+	var amplitude := lerpf(0.32, 0.55, _sprint_weight)
+	return cos(walk_clock + phase_lead) * amplitude * _move_weight
 
 func _advance_gait(travelled: float, delta: float, moving: bool, sprinting: bool) -> void:
 	# Project one model unit onto the same ground plane as the sprite. Camera
@@ -568,12 +580,14 @@ func _trigger_muzzle_flash_3d() -> void:
 		var epoch := _muzzle_flash_epoch
 		var heavy := active_weapon_id in ["magnum", "shotgun", "sawed_off", "rpg"]
 		muzzle_flash_3d.scale = Vector3.ONE * (1.35 if heavy else 0.8)
+		var suppressed: bool = WEAPON_CUSTOMIZATION.selected(weapon_customization,active_weapon_id,"muzzle") == "suppressor"
+		if suppressed: muzzle_flash_3d.scale *= .22
 		if active_weapon_id == "flamethrower":
 			muzzle_flash_3d.scale = Vector3(0.30, 0.30, 1.65)
 		elif active_weapon_id == "rpg":
 			muzzle_flash_3d.scale = Vector3(0.70, 0.70, 2.2)
 		muzzle_flash_3d.visible = true
-		muzzle_light_3d.visible = true
+		muzzle_light_3d.visible = not suppressed
 		var t = create_tween()
 		t.tween_interval(0.075 if active_weapon_id == "flamethrower" else (0.09 if active_weapon_id == "rpg" else (0.065 if heavy else 0.035)))
 		t.tween_callback(_finish_muzzle_flash.bind(epoch))
@@ -841,15 +855,16 @@ func _wasted() -> void:
 		return
 	if is_skiing: stop_skiing()
 	is_dead = true
-	# Falls pin the destination before vehicle cleanup or streamed-region changes.
-	# Other deaths retain the existing late selection after interior cleanup.
-	var recovery_position: Variant = _get_recovery_position() if has_meta("mountain_falling") else null
+	collision_layer = 0
+	for col in find_children("", "CollisionShape2D", true, false):
+		col.set_deferred("disabled", true)
+	for col in find_children("", "CollisionPolygon2D", true, false):
+		col.set_deferred("disabled", true)
 	_release_controlled_vehicle()
 	
-	var cliff_fall := has_meta("mountain_falling")
-	visible = not cliff_fall
+	visible = true
 	is_recovering = true
-	if not cliff_fall: _create_3d_blood_puddle()
+	_create_3d_blood_puddle()
 	set_physics_process(false)
 	_play_audio(ProceduralAudio.get_wasted_stream(), 0.0)
 	
@@ -857,7 +872,7 @@ func _wasted() -> void:
 	# morto (model_root.rotation nunca era tocado aqui). Agora ele desaba
 	# suavemente, mesmo angulo de "corpo caido" ja usado pelos NPCs em
 	# AnimatedPedestrian3D._die(), so que animado em vez de instantaneo.
-	if model_root and not cliff_fall:
+	if model_root:
 		_death_fall_tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		_death_fall_tween.tween_property(model_root, "rotation:x", PI * 0.42, 0.45)
 		_death_fall_tween.parallel().tween_property(model_root, "rotation:z", randf_range(-0.35, 0.35), 0.45)
@@ -900,7 +915,7 @@ func _wasted() -> void:
 	await get_tree().create_timer(2.2).timeout
 	flash.queue_free()
 	
-	_respawn_at_hospital(recovery_position)
+	_respawn_at_hospital()
 
 
 func arrest_and_respawn() -> void:
@@ -965,7 +980,6 @@ func _respawn_at_hospital(recovery_position: Variant = null) -> void:
 	if _death_fall_tween != null:
 		_death_fall_tween.kill()
 		_death_fall_tween = null
-	remove_meta("mountain_falling")
 	health = max_health
 	velocity = Vector2.ZERO
 	global_position = recovery_position if recovery_position is Vector2 else _get_recovery_position()
@@ -980,7 +994,10 @@ func _respawn_at_hospital(recovery_position: Variant = null) -> void:
 	# Respawn e teleporte: sem isso o jogador seria desenhado deslizando do lugar
 	# onde morreu/foi preso ate o hospital.
 	reset_physics_interpolation()
+	collision_layer = 4
 	for col in find_children("", "CollisionShape2D", true, false):
+		col.set_deferred("disabled", false)
+	for col in find_children("", "CollisionPolygon2D", true, false):
 		col.set_deferred("disabled", false)
 	show()
 	set_physics_process(true)
@@ -1045,12 +1062,12 @@ func _get_nearest_hospital_spawn() -> Node2D:
 			best_distance = distance
 	return nearest
 
-func _play_audio(stream: AudioStream, volume_db: float = -6.0) -> void:
+func _play_audio(stream: AudioStream, volume_db: float = -6.0, maximum_distance: float = 600.0) -> void:
 	var player = AudioStreamPlayer2D.new()
 	player.bus = &"SFX"
 	player.stream = stream
 	player.volume_db = volume_db
-	player.max_distance = 600.0
+	player.max_distance = maximum_distance
 	add_child(player)
 	player.play()
 	player.finished.connect(player.queue_free)
@@ -1114,7 +1131,11 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("reload"):
 		if not is_dead and not is_arrested and not is_recovering:
 			_reload_active_weapon()
-			get_viewport().set_input_as_handled()
+			# Square also interacts: leave it available when no reload can start.
+			if is_reloading():
+				# Physics-polled interactions must not also see this shared press.
+				if event.is_action_pressed("interact"): Input.action_release("interact")
+				get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("unarmed"):
 		if weapon_inventory.get("fists",false): equip_weapon("fists")
 		get_viewport().set_input_as_handled()
@@ -1150,12 +1171,16 @@ func _handle_cheat_key(event: InputEvent) -> bool:
 		_cheat_sequence = ""
 		return false
 	var letter := String.chr(code).to_lower()
-	_cheat_sequence = (_cheat_sequence + letter).right(8)
-	if _cheat_sequence != "dukenuke":
-		return false
-	_cheat_sequence = ""
-	_activate_arsenal_cheat()
-	return true
+	_cheat_sequence = (_cheat_sequence + letter).right(MAX_CHEAT_CODE_LENGTH)
+	if _cheat_sequence.ends_with(ARSENAL_CHEAT_CODE):
+		_cheat_sequence = ""
+		_activate_arsenal_cheat()
+		return true
+	if _cheat_sequence.ends_with(MONEY_CHEAT_CODE):
+		_cheat_sequence = ""
+		_activate_money_cheat()
+		return true
+	return false
 
 func _activate_arsenal_cheat() -> void:
 	_cancel_reload()
@@ -1166,6 +1191,13 @@ func _activate_arsenal_cheat() -> void:
 		weapon_ammo[id] = {"clip": capacity, "reserve": maxi(9999, int(weapon_ammo.get(id, {}).get("reserve", 0))) if capacity >= 0 else -1}
 	_refresh_weapon_ui()
 	_show_weapon_notice("Cheat ativado")
+
+func _activate_money_cheat() -> void:
+	money += MONEY_CHEAT_REWARD
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("set_money"):
+		hud.set_money(money)
+	_show_weapon_notice("Cheat ativado: +$100.000")
 
 ## Spatial membership also covers save restoration and clears after respawn.
 func weapons_forbidden() -> bool:
@@ -1208,7 +1240,7 @@ func _shoot_towards(target: Vector2) -> void:
 	var direction = global_position.direction_to(target)
 	if direction.length_squared() < 0.01:
 		return
-	var data := WEAPON_CATALOG.get_weapon(active_weapon_id)
+	var data := get_weapon_data(active_weapon_id)
 	if data.get("is_melee", false) == true:
 		fire_cooldown = float(data.get("fire_interval", fire_interval))
 		_perform_melee_attack(direction, data)
@@ -1222,7 +1254,7 @@ func _shoot_towards(target: Vector2) -> void:
 	ammo["clip"] = int(ammo.get("clip", 0)) - 1
 	weapon_ammo[active_weapon_id] = ammo
 	fire_cooldown = float(data.get("fire_interval", fire_interval))
-	combat_pose.on_attack(active_weapon_id)
+	combat_pose.on_attack(active_weapon_id, float(data.get("recoil_multiplier",1.0)))
 
 	# Disparo Especial: Granada de FragmentaÃƒÂ§ÃƒÂ£o FÃƒÂ­sica com Quique e FusÃƒÂ­vel
 	if (data.get("is_grenade", false) == true) or active_weapon_id == "grenade":
@@ -1263,6 +1295,7 @@ func _shoot_towards(target: Vector2) -> void:
 	var spread := float(data.get("spread", 0.0))
 	var is_explosive: bool = (data.get("is_explosive", false) == true)
 	var is_flame: bool = (data.get("is_flame", false) == true)
+	if is_explosive: preload("res://guns/combat/RocketBackblast.gd").spawn(self,muzzle_position,direction)
 	
 	for pellet_index in range(pellets):
 		var ratio := 0.0 if pellets == 1 else float(pellet_index) / float(pellets - 1) - 0.5
@@ -1272,6 +1305,7 @@ func _shoot_towards(target: Vector2) -> void:
 		bullet.owner_body = self
 		bullet.direction = shot_direction
 		bullet.configure_range(data)
+		bullet.set_meta("gunfire_hearing_radius", float(data.get("hearing_radius",240.0)))
 		bullet.damage = int(data.get("damage", 15))
 		bullet.speed = float(data.get("projectile_speed", 2000.0))
 		bullet.tracer_color = data.get("tracer_color", Color.WHITE)
@@ -1284,7 +1318,8 @@ func _shoot_towards(target: Vector2) -> void:
 	
 	# Som de tiro realista e encorpado com punch e sub-grave
 	var vol: float = float(data.get("audio_volume_db", -2.0))
-	_play_audio(ProceduralAudio.get_gunshot_stream(active_weapon_id), vol)
+	var suppressed: bool = data.get("suppressed",false)
+	_play_audio(ProceduralAudio.get_gunshot_stream(active_weapon_id, suppressed), vol - (9.0 if suppressed else 0.0), 220.0 if suppressed else 600.0)
 	
 	var effects := preload("res://guns/combat/CombatWorld.gd").effects_for(self)
 	if effects:
@@ -1347,6 +1382,7 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 	var is_stab := String(data.get("stance", "")) == "knife"
 	var is_axe := String(data.get("stance", "")) == "axe"
 	var is_bat := String(data.get("stance", "")) == "bat"
+	var is_punch := String(data.get("stance", "")) in ["unarmed", "knuckles"]
 	var attack_weapon := active_weapon_id
 	direction = direction.normalized()
 	var melee_range: float = float(data.get("melee_range", 46.0))
@@ -1360,7 +1396,11 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 		if epoch != _axe_attack_epoch or active_weapon_id != attack_weapon or not _reload_allowed(): return
 	var hit_anyone := false
 	var candidates := get_tree().get_nodes_in_group("damageable")
-	if is_stab:
+	if is_punch:
+		var first_body := preload("res://guns/combat/MeleeContact.gd").first_body(self, direction, melee_range, 0.35, candidates)
+		candidates.clear()
+		if first_body != null: candidates.append(first_body)
+	elif is_stab:
 		candidates = candidates.filter(func(n): return n is Node2D)
 		candidates.sort_custom(func(a, b): return global_position.distance_squared_to(a.global_position) < global_position.distance_squared_to(b.global_position))
 	for body in candidates:
@@ -1374,9 +1414,9 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 		# quem esta atras, so quem esta a frente na direcao do golpe.
 		if direction.dot(to_body / dist) < (0.82 if is_stab else 0.35):
 			continue
-		if is_stab or is_axe or is_bat:
+		if is_stab or is_punch or is_axe or is_bat:
 			if "health" in body and float(body.health) <= 0.0: continue
-			var ray := PhysicsRayQueryParameters2D.create(global_position, body.global_position, 1, [get_rid()])
+			var ray := PhysicsRayQueryParameters2D.create(global_position, body.global_position, 1 | 2 | 4, [get_rid()])
 			var obstruction := get_world_2d().direct_space_state.intersect_ray(ray)
 			if not obstruction.is_empty() and obstruction.collider != body: continue
 		if body.has_method("take_damage"):
@@ -1390,6 +1430,7 @@ func _perform_melee_attack(direction: Vector2, data: Dictionary) -> void:
 			if is_stab:
 				if preload("res://audio/combat/ImpactMaterial.gd").resolve(body) == &"flesh":
 					_play_audio(preload("res://audio/combat/KnifeAudio.gd").impact(combat_pose.knife_variant), -3.0)
+			if is_stab or is_punch:
 				break
 	if (is_axe or is_bat) and not hit_anyone:
 		var ray := PhysicsRayQueryParameters2D.create(global_position, global_position + direction * melee_range, 1 | 2, [get_rid()])
@@ -1419,11 +1460,11 @@ func _reload_allowed() -> bool:
 
 func _reload_active_weapon() -> void:
 	if is_reloading() or not _reload_allowed(): return
-	var data := WEAPON_CATALOG.get_weapon(active_weapon_id)
+	var data := get_weapon_data(active_weapon_id)
 	var ammo: Dictionary = weapon_ammo.get(active_weapon_id, {})
 	if int(data.get("magazine_size", -1)) <= 0 or int(ammo.get("reserve", 0)) <= 0 or int(ammo.get("clip", 0)) >= int(data.magazine_size): return
 	_reload_weapon = active_weapon_id
-	_reload_duration = preload("res://guns/combat/WeaponReload.gd").duration(active_weapon_id)
+	_reload_duration = preload("res://guns/combat/WeaponReload.gd").duration(active_weapon_id) * float(data.get("reload_multiplier",1.0))
 	_reload_elapsed = 0.0
 	if not is_instance_valid(_reload_audio):
 		_reload_audio = AudioStreamPlayer2D.new()
@@ -1435,7 +1476,7 @@ func _reload_active_weapon() -> void:
 	var sample := preload("res://audio/reload/ReloadAudioBank.gd").next_sample(active_weapon_id)
 	_reload_audio.stream = sample
 	if sample:
-		_reload_audio.pitch_scale = 1.0
+		_reload_audio.pitch_scale = 1.0 / float(data.get("reload_multiplier",1.0))
 		_reload_audio.play()
 	if is_instance_valid(_flamethrower_audio): _flamethrower_audio.stop()
 
@@ -1446,7 +1487,7 @@ func _process(delta: float) -> void:
 		return
 	_reload_elapsed += delta
 	if _reload_elapsed < _reload_duration: return
-	var data := WEAPON_CATALOG.get_weapon(_reload_weapon)
+	var data := get_weapon_data(_reload_weapon)
 	var ammo: Dictionary = weapon_ammo.get(_reload_weapon, {})
 	var moved := mini(maxi(0, int(data.get("magazine_size", 0)) - int(ammo.get("clip", 0))), maxi(0, int(ammo.get("reserve", 0))))
 	ammo["clip"] = int(ammo.get("clip", 0)) + moved
@@ -1534,7 +1575,7 @@ func car_loadout_ammo_quote() -> Dictionary:
 	if personal_loadout_enabled:
 		for id in personal_loadout.values():
 			if not weapon_inventory.get(id, false) or rounds.has(id): continue
-			var capacity := int(WEAPON_CATALOG.get_weapon(id).get("magazine_size", 0))
+			var capacity := int(get_weapon_data(id).get("magazine_size", 0))
 			if capacity <= 0: continue
 			var ammo: Dictionary = weapon_ammo.get(id, {})
 			var missing := maxi(0, capacity * 5 - int(ammo.get("reserve", 0)))
@@ -1601,7 +1642,7 @@ func try_enter_vehicle() -> void:
 		if not car.has_method("enter_vehicle"):
 			continue
 		# Cargo remains in the vehicle group at the truck's position.
-		if not car.is_visible_in_tree() or car.has_meta("tow_carried") or car.has_meta("forklift_carried") or car.has_meta("mountain_falling"):
+		if not car.is_visible_in_tree() or car.has_meta("tow_carried") or car.has_meta("forklift_carried"):
 			continue
 		if car.get("is_driven_by_player") == true or car.get("is_broken") == true or (car.get("health") != null and car.health <= 0):
 			continue
@@ -1611,6 +1652,65 @@ func try_enter_vehicle() -> void:
 			closest_car = car
 	if closest_car:
 		closest_car.enter_vehicle(self)
+
+func get_weapon_data(id: String) -> Dictionary:
+	return WEAPON_CUSTOMIZATION.effective_data(id,weapon_customization)
+
+func weapon_scope_active() -> bool:
+	return WEAPON_CUSTOMIZATION.selected(weapon_customization,active_weapon_id,"scope") != "none" and Input.is_action_pressed("aim") and _reload_allowed() and not get_meta("isolated_interior",false)
+
+func customize_weapon_part(id: String, slot: String, part: String) -> String:
+	if id not in WEAPON_CUSTOMIZATION.CUSTOMIZABLE: return "ARMA INCOMPATÍVEL"
+	if weapon_inventory.get(id,false) != true: return "COMPRE A ARMA PRIMEIRO"
+	if not WEAPON_CUSTOMIZATION.SLOTS.has(slot): return "MODIFICAÇÃO INVÁLIDA"
+	if slot == "flashlight":
+		if part not in ["none","flashlight"]: return "MODIFICAÇÃO INVÁLIDA"
+		return customize_weapon(id,"remove" if part == "none" else "install")
+	if part != "none" and (not WEAPON_CUSTOMIZATION.supports(id,part) or WEAPON_CUSTOMIZATION.PARTS[part].slot != slot): return "ARMA INCOMPATÍVEL"
+	var entry: Dictionary = weapon_customization.get(id,{}).duplicate(true)
+	var owned: Array = entry.get("owned_parts",[])
+	if part != "none" and part not in owned:
+		var price: int = WEAPON_CUSTOMIZATION.PARTS[part].price
+		if money < price: return "SALDO INSUFICIENTE"
+		money -= price
+		owned.append(part)
+	entry["owned_parts"] = owned
+	var parts: Dictionary = entry.get("parts",{})
+	if part == "none": parts.erase(slot)
+	else: parts[slot] = part
+	entry["parts"] = parts
+	weapon_customization[id] = entry
+	# Removing a larger magazine returns excess cartridges to reserve.
+	if slot == "magazine" and weapon_ammo.has(id):
+		var capacity := int(get_weapon_data(id).get("magazine_size",0))
+		var excess := maxi(0,int(weapon_ammo[id].get("clip",0))-capacity)
+		weapon_ammo[id]["clip"] = int(weapon_ammo[id].get("clip",0))-excess
+		weapon_ammo[id]["reserve"] = int(weapon_ammo[id].get("reserve",0))+excess
+	if active_weapon_id == id:
+		_cancel_reload()
+		_update_equipped_weapon_3d_mesh()
+	_refresh_weapon_ui()
+	return "PERSONALIZAÇÃO APLICADA"
+
+func customize_weapon(id: String, operation: String) -> String:
+	if id not in WEAPON_CUSTOMIZATION.COMPATIBLE: return "ARMA INCOMPATÍVEL"
+	if weapon_inventory.get(id, false) != true: return "COMPRE A ARMA PRIMEIRO"
+	var kit: Dictionary = weapon_customization.get(id, {}).duplicate(true)
+	if operation == "install":
+		if not kit.get("owned", false):
+			if money < WEAPON_CUSTOMIZATION.PRICE: return "SALDO INSUFICIENTE"
+			money -= WEAPON_CUSTOMIZATION.PRICE
+		kit["owned"] = true
+		kit["installed"] = true
+	elif operation == "remove":
+		if not kit.get("owned", false): return "KIT NÃO ADQUIRIDO"
+		kit["installed"] = false
+	else:
+		return "MODIFICAÇÃO INVÁLIDA"
+	weapon_customization[id] = kit
+	if active_weapon_id == id: _update_equipped_weapon_3d_mesh()
+	_refresh_weapon_ui()
+	return "PERSONALIZAÇÃO APLICADA"
 
 func serialize() -> Dictionary:
 	var personal := get_tree().get_first_node_in_group("personal_car_manager")
@@ -1629,6 +1729,7 @@ func serialize() -> Dictionary:
 		"money": money,
 		"active_weapon_id": active_weapon_id,
 		"weapon_inventory": weapon_inventory.duplicate(true),
+		"weapon_customization": weapon_customization.duplicate(true),
 		"personal_car_state": personal_car_state.duplicate(true),
 		"personal_loadout_enabled": personal_loadout_enabled,
 		"personal_loadout": personal_loadout.duplicate(true),
@@ -1654,6 +1755,8 @@ func restore(data: Dictionary) -> void:
 	_achievement_ready = false
 	
 	_release_controlled_vehicle()
+	weapon_customization = WEAPON_CUSTOMIZATION.normalize(data.get("weapon_customization", {}))
+	if is_instance_valid(weapon_flashlight): weapon_flashlight.switch_off()
 	
 	if data.has("position") and data["position"] is Array and data["position"].size() >= 2:
 		global_position = Vector2(float(data["position"][0]), float(data["position"][1]))

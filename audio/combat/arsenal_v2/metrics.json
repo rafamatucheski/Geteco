@@ -1,0 +1,272 @@
+{
+  "pistol_0": {
+    "seconds": 0.56,
+    "peak": 0.63,
+    "rms": 0.03878843771396032,
+    "clipped": 0
+  },
+  "pistol_1": {
+    "seconds": 0.56,
+    "peak": 0.63,
+    "rms": 0.04421930940909904,
+    "clipped": 0
+  },
+  "pistol_2": {
+    "seconds": 0.56,
+    "peak": 0.63,
+    "rms": 0.02908893064293216,
+    "clipped": 0
+  },
+  "pistol_3": {
+    "seconds": 0.56,
+    "peak": 0.63,
+    "rms": 0.038676642515085055,
+    "clipped": 0
+  },
+  "pistol_4": {
+    "seconds": 0.56,
+    "peak": 0.63,
+    "rms": 0.049868394819380234,
+    "clipped": 0
+  },
+  "suppressed_pistol_0": {
+    "seconds": 0.56,
+    "peak": 0.33,
+    "rms": 0.022615062427595322,
+    "clipped": 0
+  },
+  "suppressed_pistol_1": {
+    "seconds": 0.56,
+    "peak": 0.33,
+    "rms": 0.02300515344854605,
+    "clipped": 0
+  },
+  "suppressed_pistol_2": {
+    "seconds": 0.56,
+    "peak": 0.33,
+    "rms": 0.017215151846872348,
+    "clipped": 0
+  },
+  "suppressed_pistol_3": {
+    "seconds": 0.56,
+    "peak": 0.33,
+    "rms": 0.02128925960632304,
+    "clipped": 0
+  },
+  "suppressed_pistol_4": {
+    "seconds": 0.56,
+    "peak": 0.33,
+    "rms": 0.02698626625614225,
+    "clipped": 0
+  },
+  "magnum_0": {
+    "seconds": 0.95,
+    "peak": 0.63,
+    "rms": 0.041553332864378976,
+    "clipped": 0
+  },
+  "magnum_1": {
+    "seconds": 0.95,
+    "peak": 0.63,
+    "rms": 0.028759015498810336,
+    "clipped": 0
+  },
+  "magnum_2": {
+    "seconds": 0.95,
+    "peak": 0.63,
+    "rms": 0.03956329952936297,
+    "clipped": 0
+  },
+  "magnum_3": {
+    "seconds": 0.95,
+    "peak": 0.63,
+    "rms": 0.03751905854001256,
+    "clipped": 0
+  },
+  "magnum_4": {
+    "seconds": 0.95,
+    "peak": 0.63,
+    "rms": 0.04380174861337195,
+    "clipped": 0
+  },
+  "shotgun_0": {
+    "seconds": 0.93,
+    "peak": 0.67,
+    "rms": 0.049731430147752054,
+    "clipped": 0
+  },
+  "shotgun_1": {
+    "seconds": 0.93,
+    "peak": 0.67,
+    "rms": 0.04753263629859036,
+    "clipped": 0
+  },
+  "shotgun_2": {
+    "seconds": 0.93,
+    "peak": 0.67,
+    "rms": 0.043471599717226646,
+    "clipped": 0
+  },
+  "shotgun_3": {
+    "seconds": 0.93,
+    "peak": 0.67,
+    "rms": 0.04895286500749394,
+    "clipped": 0
+  },
+  "shotgun_4": {
+    "seconds": 0.93,
+    "peak": 0.6699999999999999,
+    "rms": 0.03708718047849562,
+    "clipped": 0
+  },
+  "suppressed_shotgun_0": {
+    "seconds": 0.93,
+    "peak": 0.33,
+    "rms": 0.026376323803600315,
+    "clipped": 0
+  },
+  "suppressed_shotgun_1": {
+    "seconds": 0.93,
+    "peak": 0.33,
+    "rms": 0.022921300905145894,
+    "clipped": 0
+  },
+  "suppressed_shotgun_2": {
+    "seconds": 0.93,
+    "peak": 0.33,
+    "rms": 0.023240937926467396,
+    "clipped": 0
+  },
+  "suppressed_shotgun_3": {
+    "seconds": 0.93,
+    "peak": 0.33,
+    "rms": 0.023588892819507965,
+    "clipped": 0
+  },
+  "suppressed_shotgun_4": {
+    "seconds": 0.93,
+    "peak": 0.33,
+    "rms": 0.017691750182590515,
+    "clipped": 0
+  },
+  "suppressed_smg_0": {
+    "seconds": 0.28,
+    "peak": 0.33,
+    "rms": 0.02968872565551861,
+    "clipped": 0
+  },
+  "suppressed_smg_1": {
+    "seconds": 0.28,
+    "peak": 0.33,
+    "rms": 0.022737275710147144,
+    "clipped": 0
+  },
+  "suppressed_smg_2": {
+    "seconds": 0.28,
+    "peak": 0.33,
+    "rms": 0.031078800042916226,
+    "clipped": 0
+  },
+  "suppressed_smg_3": {
+    "seconds": 0.28,
+    "peak": 0.33,
+    "rms": 0.02930509612916186,
+    "clipped": 0
+  },
+  "suppressed_smg_4": {
+    "seconds": 0.28,
+    "peak": 0.33,
+    "rms": 0.030272930162586937,
+    "clipped": 0
+  },
+  "suppressed_ak47_0": {
+    "seconds": 0.45,
+    "peak": 0.33,
+    "rms": 0.024400664557621566,
+    "clipped": 0
+  },
+  "suppressed_ak47_1": {
+    "seconds": 0.45,
+    "peak": 0.33,
+    "rms": 0.029117473617784558,
+    "clipped": 0
+  },
+  "suppressed_ak47_2": {
+    "seconds": 0.45,
+    "peak": 0.33,
+    "rms": 0.02593710912535112,
+    "clipped": 0
+  },
+  "suppressed_ak47_3": {
+    "seconds": 0.45,
+    "peak": 0.33,
+    "rms": 0.03509328117631805,
+    "clipped": 0
+  },
+  "suppressed_ak47_4": {
+    "seconds": 0.45,
+    "peak": 0.33,
+    "rms": 0.030986609790703137,
+    "clipped": 0
+  },
+  "suppressed_m4a1_0": {
+    "seconds": 0.34997732426303857,
+    "peak": 0.33,
+    "rms": 0.023895152585790662,
+    "clipped": 0
+  },
+  "suppressed_m4a1_1": {
+    "seconds": 0.34997732426303857,
+    "peak": 0.33,
+    "rms": 0.024079648836153666,
+    "clipped": 0
+  },
+  "suppressed_m4a1_2": {
+    "seconds": 0.34997732426303857,
+    "peak": 0.33,
+    "rms": 0.026453660567311705,
+    "clipped": 0
+  },
+  "suppressed_m4a1_3": {
+    "seconds": 0.34997732426303857,
+    "peak": 0.33,
+    "rms": 0.028227676323901007,
+    "clipped": 0
+  },
+  "suppressed_m4a1_4": {
+    "seconds": 0.34997732426303857,
+    "peak": 0.33,
+    "rms": 0.03148083949521438,
+    "clipped": 0
+  },
+  "suppressed_hunting_rifle_0": {
+    "seconds": 0.9,
+    "peak": 0.33,
+    "rms": 0.02165011993513653,
+    "clipped": 0
+  },
+  "suppressed_hunting_rifle_1": {
+    "seconds": 0.9,
+    "peak": 0.33,
+    "rms": 0.02240125245209132,
+    "clipped": 0
+  },
+  "suppressed_hunting_rifle_2": {
+    "seconds": 0.9,
+    "peak": 0.33,
+    "rms": 0.019923620548173485,
+    "clipped": 0
+  },
+  "suppressed_hunting_rifle_3": {
+    "seconds": 0.9,
+    "peak": 0.33,
+    "rms": 0.02103256659524399,
+    "clipped": 0
+  },
+  "suppressed_hunting_rifle_4": {
+    "seconds": 0.9,
+    "peak": 0.33,
+    "rms": 0.01821943077108572,
+    "clipped": 0
+  }
+}

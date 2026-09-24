@@ -10,6 +10,10 @@ var _gait_distance := 0.0
 func _create_model() -> Node3D:
 	return preload("res://world/harbor/cemetery/CemeteryResidentModel.gd").new()
 
+func _ready() -> void:
+	super._ready()
+	add_to_group("world_event_resident")
+
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		impact_velocity = preload("res://guns/combat/VehiclePersonImpact.gd").move_falling_body(self, impact_velocity, delta)
@@ -19,10 +23,11 @@ func _physics_process(delta: float) -> void:
 	var before := global_position
 	if route_index < route.size():
 		var goal := route[route_index]
-		velocity = global_position.direction_to(goal) * travel_speed
-		if global_position.distance_to(goal) < 7:
+		velocity = _navigation.movement(self, goal, travel_speed, delta)
+		var arrival_radius := 7.0 if route_index == route.size() - 1 else 14.0
+		if global_position.distance_to(goal) < arrival_radius:
 			route_index += 1
-		move_and_slide()
+		preload("res://characters/pedestrians/PersonMotion.gd").move_actor(self)
 	else:
 		velocity = Vector2.ZERO
 		finished = true
@@ -47,6 +52,22 @@ func set_route(points: PackedVector2Array) -> void:
 	route=points
 	route_index=0
 	finished=false
+
+func react_to_assault(origin: Vector2) -> void:
+	if is_dead: return
+	danger_response.remember(origin, global_position)
+	panic_timer = maxf(panic_timer, 9.0)
+
+func take_damage(amount: int, source: Variant = null) -> void:
+	var attacker := get_meta("combat_attacker", null) as Node2D
+	if is_instance_valid(attacker):
+		react_to_assault(attacker.global_position)
+		for witness in get_tree().get_nodes_in_group("world_event_resident"):
+			if witness == self or not is_instance_valid(witness) or not witness.has_method("react_to_assault"):
+				continue
+			if witness.get_world_2d() == get_world_2d() and witness.global_position.distance_to(global_position) <= 180.0:
+				witness.react_to_assault(attacker.global_position)
+	super.take_damage(amount, source)
 
 func arrest_and_respawn() -> void:
 	set_meta("ambient_crime",false)

@@ -7,8 +7,32 @@ class Counter:
 
 func run() -> void:
 	root.size = Vector2i(1280, 720)
+	var compact_visual := preload("res://characters/AnimatedPedestrian3D.gd").new()
+	compact_visual.defer_presentation = true
+	var compact_view := SubViewport.new()
+	root.add_child(compact_visual)
+	compact_view.size = Vector2i(96, 96)
+	compact_visual.viewport = compact_view
+	compact_visual.add_child(compact_view)
+	compact_visual.compact_presentation_for_sleep()
+	check(compact_view.size == Vector2i(48, 48), "Sleeping pedestrian presentation compacts to 48x48")
+	compact_visual.restore_presentation_after_sleep()
+	check(compact_view.size == Vector2i(48, 48), "Waking pedestrian defers its 3D target restore")
+	compact_visual.call("_update_viewport_render_state", 0.0)
+	check(compact_view.size == Vector2i(96, 96), "Visible pedestrian restores its 3D render target")
+	compact_visual.queue_free()
 	var world := Node2D.new()
 	root.add_child(world)
+	var burst_activity := ACTIVITY.new()
+	var burst_walkers: Array[Node2D] = []
+	for index in 80:
+		var burst_actor := actor(world, Vector2(9000 + index * 12, 9000), true)
+		burst_walkers.append(burst_actor)
+	burst_activity.update(world, Vector2.ZERO, [], burst_walkers)
+	check(int(burst_activity.stats.get("pending_transitions", 0)) > 0, "Distant population transitions are bounded per update")
+	burst_activity.restore_all()
+	for burst_actor in burst_walkers:
+		burst_actor.queue_free()
 	var activity := ACTIVITY.new()
 	var citizen := actor(world, Vector2(5000, 5000), true)
 	citizen.remove_from_group("authored_sidewalk_pedestrian")

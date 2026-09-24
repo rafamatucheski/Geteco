@@ -104,7 +104,7 @@ func _setup_interior_content() -> void:
 	_room_camera = camera
 	_room_sprite = sprite
 	var shop_sign := Label.new()
-	shop_sign.text = "ÚLTIMO ABRIGO  /  ROUPAS DE NEVE" if winter_stock else "UNION  /  ROUPAS E ACESSÓRIOS"
+	shop_sign.text = "ÚLTIMO ABRIGO" if winter_stock else "UNION"
 	shop_sign.position=Vector2(-200,-173)
 	shop_sign.size=Vector2(400,24)
 	shop_sign.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
@@ -151,6 +151,19 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(exit_door):
 		var prompt := exit_door.get_node_or_null("Prompt") as Label
 		if prompt and not prompt.text.is_empty(): prompt.text="E"
+
+func set_npc_rendering_active(active: bool) -> void:
+	super.set_npc_rendering_active(active)
+	if not active and is_instance_valid(_actor_scale):
+		_actor_scale.restore()
+		_actor_scale.queue_free()
+		_actor_scale = null
+
+func _exit_tree() -> void:
+	if is_instance_valid(_actor_scale):
+		_actor_scale.restore()
+		_actor_scale.queue_free()
+		_actor_scale = null
 
 func _unhandled_input(event: InputEvent) -> void:
 	var actor := get_tree().get_first_node_in_group("player") as Node2D

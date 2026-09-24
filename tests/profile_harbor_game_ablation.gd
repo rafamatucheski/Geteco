@@ -54,7 +54,9 @@ func _run() -> void:
 	var world := GAME.instantiate()
 	root.add_child(world)
 	current_scene = world
-	for i in 90: await process_frame
+	var checkpoint_deadline := Time.get_ticks_msec() + 120000
+	while not world.gameplay_ready and Time.get_ticks_msec() < checkpoint_deadline:
+		await process_frame
 	if not world.gameplay_ready or paused:
 		push_error("Ablation checkpoint did not become playable")
 		quit(1)

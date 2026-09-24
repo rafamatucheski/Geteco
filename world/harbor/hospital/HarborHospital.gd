@@ -4,6 +4,7 @@ extends "res://world/harbor/HarborBuilding.gd"
 var hospital_view: Node2D
 var emergency_door_open := false
 var emergency_door_amount := 0.0
+var public_door_amount := 0.0
 var public_entrance: Node2D
 var overhead_viewport: SubViewport
 var overhead_sprite: Sprite2D
@@ -100,7 +101,9 @@ func set_emergency_door_open(open: bool) -> void:
 func _process(delta: float) -> void:
 	emergency_door_amount = move_toward(emergency_door_amount, 1.0 if emergency_door_open else 0.0, delta*1.4)
 	hospital_view.model.set_door_amount(emergency_door_amount)
-	if is_instance_valid(public_entrance): hospital_view.model.set_public_door_amount(public_entrance.open_amount)
+	if is_instance_valid(public_entrance):
+		public_door_amount = public_entrance.open_amount
+		hospital_view.model.set_public_door_amount(public_door_amount)
 	hospital_view.viewport_3d.render_target_update_mode = SubViewport.UPDATE_ONCE
-	var public_finished := not is_instance_valid(public_entrance) or is_equal_approx(public_entrance.open_amount, 1.0 if public_entrance._door_open else 0.0)
+	var public_finished := not is_instance_valid(public_entrance) or is_equal_approx(public_door_amount, 1.0 if public_entrance._door_open else 0.0)
 	if public_finished and is_equal_approx(emergency_door_amount, 1.0 if emergency_door_open else 0.0): set_process(false)

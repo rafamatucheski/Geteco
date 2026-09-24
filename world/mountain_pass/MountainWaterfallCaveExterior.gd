@@ -1,6 +1,7 @@
 extends "res://world/mountain_pass/MountainProjectedExterior.gd"
 
 var entrance: BuildingEntrance
+var inline_room: Node2D
 var _visibility_clock := 0.0
 var _rendering := true
 
@@ -12,6 +13,8 @@ func _ready() -> void:
 	viewport_3d.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	depth_bounds = Rect2(-7.5,-5.0,15.0,10.0)
 	install_projected_solids()
+	for shape in solid_body.get_children():
+		if shape.name == "TunnelBack": shape.queue_free()
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -36,7 +39,16 @@ func install_entrance(manager: MountainInteriorManager) -> void:
 	entrance.position = project_floor(Vector2(0, 2.15))
 	entrance.destination_id = &"mountain_mystery_cave"
 	entrance.display_name = "CAVERNA DA QUEDA"
-	entrance.custom_prompt_text = "E"
+	entrance.handle_input_locally = false
+	entrance.show_entrance_marker = false
+	entrance.show_interaction_prompt = false
 	add_child(entrance)
 	entrance.get_node("Facade").hide()
-	manager.register_exterior_entrance(entrance, &"mountain_mystery_cave", to_global(project_floor(Vector2(0, 3.15))))
+	inline_room = manager.get_interior(&"mountain_mystery_cave")
+	inline_room.attach_inline_facade(self, entrance, manager)
+	inline_room.global_position = entrance.global_position - inline_room.project_floor(Vector2(0, 5.5))
+
+func set_inline_occupied(active: bool) -> void:
+	sprite_3d.visible = not active
+	viewport_3d.render_target_update_mode = SubViewport.UPDATE_DISABLED if active else SubViewport.UPDATE_ONCE
+	if is_instance_valid(solid_body): solid_body.collision_layer = 0 if active else 1

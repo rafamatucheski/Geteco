@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3]
+
+[sub_resource type="StandardMaterial3D" id="Gold"]
+albedo_color = Color(0.9451, 0.7686, 0.0588, 1)
+metallic = 0.72
+roughness = 0.15
+
+[sub_resource type="StandardMaterial3D" id="PurpleGem"]
+albedo_color = Color(0.6078, 0.3490, 0.7137, 1)
+roughness = 0.1
+
+[sub_resource type="CylinderMesh" id="Shaft"]
+material = SubResource("Gold")
+top_radius = 0.02048
+bottom_radius = 0.01792
+height = 0.9984
+radial_segments = 12
+
+[sub_resource type="SphereMesh" id="Gem"]
+material = SubResource("PurpleGem")
+radius = 0.0576
+height = 0.1152
+radial_segments = 12
+rings = 6
+
+[node name="MaciotaCane" type="Node3D"]
+metadata/source = "geteco_v2/assets/maciota/MaciotaModel.gd; original proportions scaled by 1.28"
+metadata/grip_origin = true
+
+[node name="Shaft" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.4864, 0)
+mesh = SubResource("Shaft")
+
+[node name="PurpleGem" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.0256, 0)
+mesh = SubResource("Gem")

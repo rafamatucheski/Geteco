@@ -8,6 +8,7 @@ uniform vec4 sunlight_tint = vec4(1.0);
 uniform vec4 fog_color = vec4(0.7, 0.8, 0.9, 1.0);
 uniform float saturation = 1.0;
 uniform float contrast = 1.0;
+uniform float exposure = 1.0;
 uniform float haze = 0.0;
 uniform vec2 world_origin = vec2(0.0);
 uniform vec2 world_axis_x = vec2(1280.0, 0.0);
@@ -29,5 +30,5 @@ void fragment() {
 	// Top-down atmosphere: distance from the actor is a readability mask, not 3D depth.
 	float outside_focus = smoothstep(85.0, 520.0, length(world - focus_world));
 	float air = haze * outside_focus * (0.25 + 0.95 * broad * detail);
-	COLOR = vec4(mix(graded, fog_color.rgb, clamp(air, 0.0, 0.24)), 1.0);
+	COLOR = vec4(mix(graded, fog_color.rgb, clamp(air, 0.0, 0.24)) * exposure, 1.0);
 }

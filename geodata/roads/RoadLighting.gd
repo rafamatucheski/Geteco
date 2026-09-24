@@ -11,7 +11,9 @@ const POST_SPACING := preload("res://geodata/roads/RoadPostSpacing.gd")
 # corners. Dynamic infill poles must obey the same clearance as authored ones.
 const ARTICULATED_TURN_CLEARANCES: Array[Rect2] = [
 	Rect2(500, 2250, 210, 75),
-	Rect2(2690, 275, 210, 75),
+	# Foundry -> Quay: reserve the complete 106x38 trailer hull and sweep
+	# margin, not only its approximate tail centreline.
+	Rect2(2680, 260, 330, 125),
 ]
 var ready_for_audit := false
 var mountain_road: Node2D
@@ -21,6 +23,7 @@ var _reserved: Array[Rect2] = []
 var _pools: Array[PointLight2D] = []
 var _pool_grid: Dictionary = {}
 var _poles: Array[Vector2] = []
+var _water_surfaces: Array[Node2D] = []
 var _created := 0
 
 func _ready() -> void:
@@ -61,7 +64,7 @@ func _build() -> void:
 		for i in access.curves().size():
 			var route: Curve2D = access.curves()[i]
 			_roads.append({"id":"north_works_%d" % i,"points":route.get_baked_points(),"width":access.WIDTH})
-			var count := ceili(route.get_baked_length()/125)
+			var count := ceili(route.get_baked_length()/200)
 			for station in count+1:
 				var offset := route.get_baked_length()*float(station)/count
 				var point := route.sample_baked(offset)
@@ -74,7 +77,7 @@ func _build() -> void:
 				strip.target_offset = -direction.orthogonal()*68
 				strip.tangent = direction
 				strip.always_on = access.TUNNEL.has_point(point)
-				strip.emits_ground_light = strip.always_on or station%2 == 0 or station == count
+				strip.emits_ground_light = true
 				add_child(strip)
 				# Adjacent battens share a longer wash along the narrow access.
 				strip.pool.scale.x *= 2.0
@@ -97,6 +100,10 @@ func _build() -> void:
 		for access in district.accesses: _reserved.append(access.bounds.grow(14))
 	if mountain_road == null:
 		_reserved.append_array(ARTICULATED_TURN_CLEARANCES)
+	else:
+		for water in get_tree().get_nodes_in_group("water_surface"):
+			if water is Node2D and world.is_ancestor_of(water):
+				_water_surfaces.append(water)
 	_clear_authored_poles()
 	_collect_sources()
 	report["before"] = coverage_audit()
@@ -175,6 +182,9 @@ func _place_pole(center: Vector2, direction: Vector2, width: float, index: int) 
 
 func _safe_pole(point: Vector2, existing: StreetLamp = null) -> bool:
 	if not POST_SPACING.is_clear(existing if existing != null else self, to_global(point)): return false
+	for water in _water_surfaces:
+		if is_instance_valid(water) and Geometry2D.is_point_in_polygon(water.to_local(to_global(point)), water.get("polygon")):
+			return false
 	for pole in _poles:
 		if pole.distance_squared_to(point) < 95*95: return false
 	for bounds in _reserved:

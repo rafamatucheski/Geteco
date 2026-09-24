@@ -22,6 +22,7 @@ uniform vec4 print_a : source_color = vec4(1.0);
 uniform vec4 print_b : source_color = vec4(1.0);
 uniform float print_scale = 30.0;
 uniform float hit_flash = 0.0;
+uniform vec3 shared_ambient_compensation = vec3(0.0);
 
 float hash21(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -85,6 +86,7 @@ void fragment() {
 	}
 	color = mix(color, vec3(0.85, 0.08, 0.08), clamp(hit_flash, 0.0, 1.0) * 0.65);
 	ALBEDO = color;
+	EMISSION = color * max(shared_ambient_compensation, vec3(0.0));
 	// glTF metallicRoughness: G = rugosidade, B = metálico.
 	ROUGHNESS = roughness;
 	METALLIC = metallic;

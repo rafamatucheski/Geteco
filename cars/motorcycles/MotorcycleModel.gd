@@ -23,6 +23,15 @@ var _handle_z := -0.48
 var _seat_y := 0.78
 
 func _ready() -> void:
+	_configure_style_dimensions()
+	var cache = preload("res://cars/VehicleGeometryCache.gd")
+	var restored := false
+	if get_child_count() == 0:
+		restored = cache.restore(self)
+		if not restored: build()
+	if restored: _build_accessories()
+	if rider == null and get_node_or_null("Rider") != null:
+		_bind_cached_accessories()
 	super._ready()
 	for part in originals.keys():
 		if part.has_meta("wheel_center"): originals.erase(part)
@@ -38,23 +47,7 @@ func build() -> void:
 	var alloy := mat("alloy", "56606b", 0.7, 0.35)
 	var black := mat("engine", "292e33", 0.55, 0.56)
 	var leather := mat("leather", "29292c", 0.0, 0.85)
-	if style == "cruiser":
-		_front_z = -1.03
-		_rear_z = 0.82
-		_radius = 0.34
-		_seat_y = 0.70
-		_handle_y = 1.10
-		_handle_z = -0.28
-	elif style == "sport":
-		_front_z = -0.85
-		_rear_z = 0.78
-		_handle_y = 0.96
-		_handle_z = -0.48
-	else:
-		_front_z = -0.76
-		_rear_z = 0.73
-		_radius = 0.30
-		_handle_z = -0.36
+	_configure_style_dimensions()
 	set_meta("steering_axis_position", Vector3(0,.88,-.48))
 	# Tubular frame, swingarm, footpegs and rear suspension.
 	for side in [-1.0, 1.0]:
@@ -118,9 +111,38 @@ func build() -> void:
 	_wheel(_front_z, true)
 	_wheel(_rear_z, false)
 	# Side stand is shown only when unoccupied.
+	_build_accessories()
+	# Cache the complete static presentation, including the generic rider and
+	# stand. They contain many procedural primitives but no per-instance script;
+	# restoring and rebinding their pivots is much cheaper than rebuilding them.
+	preload("res://cars/VehicleGeometryCache.gd").capture(self)
+
+func _configure_style_dimensions() -> void:
+	if style == "cruiser":
+		_front_z = -1.03
+		_rear_z = 0.82
+		_radius = 0.34
+		_seat_y = 0.70
+		_handle_y = 1.10
+		_handle_z = -0.28
+	elif style == "sport":
+		_front_z = -0.85
+		_rear_z = 0.78
+		_handle_y = 0.96
+		_handle_z = -0.48
+	else:
+		_front_z = -0.76
+		_rear_z = 0.73
+		_radius = 0.30
+		_handle_z = -0.36
+
+func _build_accessories() -> void:
+	if is_instance_valid(stand) or get_node_or_null("Stand") != null: return
 	stand = Node3D.new()
+	stand.name = "Stand"
 	add_child(stand)
 	var start := get_child_count()
+	var alloy: Material = materials.get("alloy", materials.get("chrome"))
 	tube([Vector3(-.12,.36,.16),Vector3(-.34,.025,.28)],.018,alloy)
 	_move_new_parts(start,stand)
 	_build_rider()
@@ -222,7 +244,35 @@ func _wheel(z: float, front: bool) -> void:
 func _move_new_parts(first: int, parent: Node3D) -> void:
 	var parts := get_children().slice(first)
 	for part in parts:
-		if part != parent: part.reparent(parent,true)
+		if part == parent:
+			continue
+		# Normal gameplay builds from _ready(), so the existing global-preserving
+		# reparent remains untouched. Regional prewarm deliberately calls build()
+		# before the model enters a tree; global_transform is invalid there. Preserve
+		# the exact model-space pose using only authored local transforms instead.
+		if is_inside_tree() and part.is_inside_tree() and parent.is_inside_tree():
+			part.reparent(parent, true)
+			continue
+		var part_3d := part as Node3D
+		if part_3d == null:
+			continue
+		var part_in_model := part_3d.transform
+		var parent_in_model := _local_transform_to_model(parent)
+		remove_child(part_3d)
+		parent.add_child(part_3d)
+		part_3d.transform = parent_in_model.affine_inverse() * part_in_model
+
+func _local_transform_to_model(node: Node3D) -> Transform3D:
+	var result := Transform3D.IDENTITY
+	var cursor: Node = node
+	while cursor != self:
+		var cursor_3d := cursor as Node3D
+		if cursor_3d == null or cursor_3d.get_parent() == null:
+			push_error("Motorcycle prewarm parent is outside the model hierarchy")
+			return Transform3D.IDENTITY
+		result = cursor_3d.transform * result
+		cursor = cursor_3d.get_parent()
+	return result
 
 func _build_rider() -> void:
 	rider = Node3D.new()
@@ -251,21 +301,29 @@ func _build_rider() -> void:
 	_move_new_parts(first,rider)
 	for side in [-1.0,1.0]:
 		var arm := Node3D.new()
+		arm.name = "RiderArmL" if side < 0.0 else "RiderArmR"
 		rider.add_child(arm)
 		var upper := _limb(arm,.066,rider_jacket)
+		upper.name = "Upper"
 		var lower := _limb(arm,.051,rider_jacket)
+		lower.name = "Lower"
 		first = get_child_count()
 		ell(Vector3.ZERO,Vector3(.10,.075,.11),gloves)
 		# Hand needs its own transform, preserved by the static mesh batcher.
 		var hand_pivot := Node3D.new()
+		hand_pivot.name = "Hand"
 		arm.add_child(hand_pivot)
 		_move_new_parts(first,hand_pivot)
 		_arm_parts.append({"upper":upper,"lower":lower,"hand":hand_pivot,"shoulder":shoulders+Vector3(side*.17,0,0),"side":side})
 		var leg := Node3D.new()
+		leg.name = "RiderLegL" if side < 0.0 else "RiderLegR"
 		rider.add_child(leg)
 		upper = _limb(leg,.070,jeans)
+		upper.name = "Upper"
 		lower = _limb(leg,.055,jeans)
+		lower.name = "Lower"
 		var boot_pivot := Node3D.new()
+		boot_pivot.name = "Boot"
 		leg.add_child(boot_pivot)
 		first = get_child_count()
 		box(Vector3(0,-.035,-.025),Vector3(.105,.10,.21),gloves)
@@ -273,6 +331,29 @@ func _build_rider() -> void:
 		_leg_parts.append({"upper":upper,"lower":lower,"boot":boot_pivot,"side":side})
 		if side < 0: left_leg = leg
 		else: right_leg = leg
+
+func _bind_cached_accessories() -> void:
+	if _arm_parts.size() == 2 and _leg_parts.size() == 2: return
+	rider = get_node_or_null("Rider") as Node3D
+	stand = get_node_or_null("Stand") as Node3D
+	if rider == null or stand == null: return
+	rider_jacket = materials.get("rider_jacket") as StandardMaterial3D
+	rider_helmet = materials.get("rider_helmet") as StandardMaterial3D
+	_arm_parts.clear()
+	_leg_parts.clear()
+	var waist := Vector3(0,_seat_y+.18,.28)
+	var shoulders := Vector3(0,_seat_y+.48,-.12 if style == "sport" else .12)
+	for side in [-1.0, 1.0]:
+		var arm_name := "RiderArmL" if side < 0.0 else "RiderArmR"
+		var arm := rider.get_node_or_null(arm_name) as Node3D
+		if arm != null:
+			_arm_parts.append({"upper": arm.get_node_or_null("Upper"), "lower": arm.get_node_or_null("Lower"), "hand": arm.get_node_or_null("Hand"), "shoulder": shoulders + Vector3(side*.17,0,0), "side": side})
+		var leg_name := "RiderLegL" if side < 0.0 else "RiderLegR"
+		var leg := rider.get_node_or_null(leg_name) as Node3D
+		if leg != null:
+			_leg_parts.append({"upper": leg.get_node_or_null("Upper"), "lower": leg.get_node_or_null("Lower"), "boot": leg.get_node_or_null("Boot"), "side": side})
+			if side < 0.0: left_leg = leg
+			else: right_leg = leg
 	_pose_limbs(0.0)
 
 func _limb(parent: Node3D, radius: float, material: Material) -> Node3D:

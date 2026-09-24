@@ -6,7 +6,7 @@ const RESIDENTS := [
 	[Vector2(5910,700),"LIA","trader",Color("648ea0")],
 	[Vector2(6280,665),"RAUL","logger",Color("ae5c43")],
 	[Vector2(7500,825),"BENTO","logger",Color("6b7950")],
-	[Vector2(8360,795),"INÊS","trader",Color("896b9b")],
+	[Vector2(8420,795),"INÊS","trader",Color("896b9b")],
 	[Vector2(7760,-95),"CAIO","ranger",Color("536c82")],
 	[Vector2(6530,-1870),"HELENA","ranger",Color("ba7645")],
 	[Vector2(6610,-1855),"OTTO","logger",Color("547b83")],

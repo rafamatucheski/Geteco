@@ -30,6 +30,7 @@ static var _mist_tex: Texture2D
 # Áudio de Vento Polar & Granizo
 var wind_player: AudioStreamPlayer
 var sheltered := false
+var region_active := true
 @export var dynamic_weather := true
 var weather_clock := 0.0
 const WEATHER_CYCLE := 240.0
@@ -65,6 +66,8 @@ func _ready() -> void:
 		advance_weather(0.0)
 
 func _process(_delta: float) -> void:
+	if not region_active:
+		return
 	if follow_target and is_instance_valid(follow_target):
 		global_position = follow_target.global_position
 
@@ -250,4 +253,17 @@ func set_sheltered(value: bool) -> void:
 		for particles in [hail_particles, ice_shard_particles, snow_blizzard_particles, frost_mist_particles]:
 			particles.emitting = false
 	else:
+		set_storm_state(current_state)
+
+func set_region_active(value: bool) -> void:
+	if region_active == value:
+		return
+	region_active = value
+	if not region_active:
+		visible = false
+		for particles in [hail_particles, ice_shard_particles, snow_blizzard_particles, frost_mist_particles]:
+			particles.emitting = false
+		return
+	visible = not sheltered
+	if not sheltered:
 		set_storm_state(current_state)

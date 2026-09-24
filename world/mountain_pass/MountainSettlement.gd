@@ -39,15 +39,20 @@ func _ready() -> void:
 		add_child(clearing)
 		GROUND.apply(clearing,"earth")
 		SOIL.polygon(clearing,"earth",28.0)
-		var cabin := _prop("LumberjackCabin3D", SITES[i], Color("654b36") if i % 2 == 0 else Color("435e69"))
+		var cabin := _prop("LumberjackCabin3D", SITES[i], Color("654b36") if i % 2 == 0 else Color("435e69"), true)
 		await _budget_pause()
 		var entrance: BuildingEntrance = preload("res://scripts/entrances/BuildingEntrance.tscn").instantiate()
 		entrance.name = "ForestCabinEntrance%d" % i
 		entrance.position = SITES[i] + cabin.project(cabin.model.entrance_local_position) + Vector2(0,12)
-		entrance.custom_prompt_text = "E"
+		entrance.destination_id = &"lumberjack_shelter" if i == 0 else StringName("lumberjack_shelter_%d" % i)
+		entrance.handle_input_locally = false
+		entrance.show_entrance_marker = false
+		entrance.show_interaction_prompt = false
 		add_child(entrance)
 		entrance.get_node("Facade").hide()
-		get_parent().interior_manager.register_exterior_entrance(entrance,&"lumberjack_shelter",entrance.global_position+Vector2(0,22))
+		var bunk_room: Node2D = get_parent().interior_manager.get_interior(entrance.destination_id)
+		bunk_room.attach_inline_facade(cabin, entrance, get_parent().interior_manager)
+		cabin.bind_inline_entrance(entrance, bunk_room)
 		_prop("CoveredWoodpile3D",SITES[i]+Vector2(70,-10),Color("594333"))
 		await _budget_pause()
 	var shelter := _prop("PatrolShelter3D",Vector2(6610,-1250),Color("3b575e"),true)
@@ -215,7 +220,7 @@ func _build_winter_stops() -> void:
 		var vehicle := ModernTrafficFactory.spawn_parked_vehicle(self,"WinterParking%d"%parking_index,parking_position,parking_angle,entry[1],0,Color("c8d1d3") if entry[1] == "polar_van" else Color("697b7d"))
 		vehicle.set_meta("mountain_parking_index",parking_index)
 		await _budget_pause()
-	preload("res://world/mountain_pass/transit/MountainWinterDressing.gd").install_pockets(self)
+	await preload("res://world/mountain_pass/transit/MountainWinterDressing.gd").install_pockets(self)
 
 func _roadside_apron_polygon(road: Node2D,pocket: Vector2) -> PackedVector2Array:
 	var polygon := PackedVector2Array([Vector2(-148,-135),Vector2(165,-135),Vector2(185,-115),Vector2(185,124),Vector2(165,145)])
@@ -242,5 +247,6 @@ func _prop(kind: String, point: Vector2, color: Color, open_front := false) -> N
 	prop.position = point
 	prop.open_front = open_front
 	add_child(prop)
-	BENCH_GEOMETRY.install_prop(prop,kind)
+	if not (kind == "LumberjackCabin3D" and open_front):
+		BENCH_GEOMETRY.install_prop(prop,kind)
 	return prop

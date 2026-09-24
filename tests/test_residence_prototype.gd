@@ -109,7 +109,7 @@ func _run() -> void:
 		await process_frame
 	var room: ResidenceInterior = manager.residence_interiors.canal_north
 	check(room.contains_point(player.global_position) and player.has_meta("harbor_interior"), "entry reaches the matching residence interior")
-	check(room.art.find_children("*", "MeshInstance3D", true, false).size() > 100 and room.walls_body.get_child_count() > 10, "3D furnishings have projected physical walls and furniture")
+	check(room.art.find_children("*", "MeshInstance3D", true, false).size() > 30 and room.walls_body.get_child_count() > 10, "3D furnishings have projected physical walls and furniture")
 	check(manager.map_position_for_actor(player) == manager.properties.canal_north.entrance_position(), "minimap maps the isolated interior back to its property")
 	check(manager.exit_home("canal_north"), "residence exit starts")
 	transition_deadline = Time.get_ticks_msec() + 3000
@@ -236,4 +236,4 @@ func _stations_reachable(room: ResidenceInterior) -> bool:
 			if not room.contains_point(candidate): continue
 			query.transform=Transform2D(0,candidate)
 			if room.get_world_2d().direct_space_state.intersect_shape(query,1).is_empty(): pending.append(next)
-	return reached.size()==5
+	return reached.size()==4

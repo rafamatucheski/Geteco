@@ -42,9 +42,10 @@ static func build_dante_rig(player: CharacterBody2D, outfit_id: String) -> void:
 	if not is_instance_valid(player.model_root):
 		return
 
-	# 1. Preservar o primeiro filho da raiz (a sombra 3D) e limpar geometria anterior
+	# O Player não cria mais uma sombra 3D nesta raiz. O primeiro filho agora é o
+	# TorsoNode; preservá-lo renomeia o novo torso ao trocar roupa ou carregar save.
 	var children: Array = player.model_root.get_children()
-	for i in range(children.size() - 1, 0, -1):
+	for i in range(children.size() - 1, -1, -1):
 		var c = children[i]
 		player.model_root.remove_child(c)
 		c.queue_free()

@@ -75,8 +75,12 @@ func run() -> void:
 		portrait.add_child(close)
 		close.projection=Camera3D.PROJECTION_ORTHOGONAL
 		close.size=.43
+		# Shared presentation worlds place each actor in an isolated slot. The
+		# portrait camera must follow that slot instead of always looking at the
+		# origin, otherwise every gallery column renders the first resident.
+		var slot_origin: Vector3 = actor.get_meta("presentation_world_origin", Vector3.ZERO)
 		var head_y: float=actor.head_node.global_position.y
-		close.look_at_from_position(Vector3(0,head_y+.025,3),Vector3(0,head_y,0))
+		close.look_at_from_position(slot_origin + Vector3(0,head_y+.025,3), slot_origin + Vector3(0,head_y,0))
 		var display=Sprite2D.new()
 		display.texture=portrait.get_texture()
 		display.scale=Vector2.ONE*.43

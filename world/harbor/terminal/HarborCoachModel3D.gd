@@ -7,11 +7,11 @@ var operator_name := "COSTA SUL"
 var fleet_number := "2407"
 
 func _ready() -> void:
-	var ivory := _mat(Color("bdbbb1"))
-	var paint := _mat(livery)
-	var dark := _mat(Color("172c37"), 0.28)
-	var rubber := _mat(Color("172026"))
-	var metal := _mat(Color("839196"), 0.35)
+	var ivory := _mat(Color("edf0ec"), 0.38)
+	var paint := _mat(livery, 0.35)
+	var dark := _mat(Color("16242c"), 0.18)
+	var rubber := _mat(Color("15191d"), 0.85)
+	var metal := _mat(Color("9aa5aa"), 0.3, false, 0.4)
 	var white := _mat(Color("ffeac1"), 0.25, true)
 	var red := _mat(Color("ed503b"), 0.3, true)
 	_box(Vector3(0, 1.54, 0), Vector3(2.55, 2.58, 11.50), ivory)
@@ -32,7 +32,7 @@ func _ready() -> void:
 		_box(Vector3(side * 1.49, 2.66, 5.45), Vector3(0.25, 0.44, 0.30), dark)
 		# Pillars interrupt the long dark window ribbon.
 		for i in 8:
-			_box(Vector3(side * 1.286, 2.89, -4.72 + i * 1.32), Vector3(0.05, 0.77, 0.10), ivory)
+			_box(Vector3(side * 1.282, 2.89, -4.72 + i * 1.32), Vector3(0.025, 0.64, 0.06), ivory)
 		for z in [-3.60, -2.45, 3.82]:
 			_wheel(Vector3(side * 1.27, 0.60, z), rubber, metal)
 		for i in 4:
@@ -46,18 +46,19 @@ func _ready() -> void:
 	_box(Vector3(-1.32, 1.48, DOOR_Z), Vector3(0.07, 2.24, 1.15), dark)
 	_box(Vector3(-1.37, 0.39, DOOR_Z), Vector3(0.19, 0.13, 1.19), metal)
 	_box(Vector3(-1.36, 1.51, DOOR_Z), Vector3(0.035, 2.10, 0.055), metal)
-	_box(Vector3(0, 3.56, -1.70), Vector3(1.83, 0.30, 2.72), ivory)
-	for i in 6:
-		_box(Vector3(0, 3.72, -2.68 + i * 0.37), Vector3(1.53, 0.025, 0.10), metal)
+	_box(Vector3(0, 3.52, -1.70), Vector3(1.78, 0.20, 2.60), ivory)
+	for i in 4:
+		_box(Vector3(0, 3.625, -2.35 + i * 0.45), Vector3(1.35, 0.015, 0.20), dark)
 	_text("HARBOR", Vector3(0, 3.05, 5.86), 40, Color("ffdc84"))
 	_text(fleet_number, Vector3(0.55, 1.73, 5.84), 33, Color("193d4b"))
 	var rear := _text(operator_name, Vector3(0, 2.00, -5.82), 43, livery)
 	rear.rotation.y = PI
 
-func _mat(color: Color, roughness := 0.75, glow := false) -> StandardMaterial3D:
+func _mat(color: Color, roughness := 0.75, glow := false, metallic := 0.0) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = roughness
+	material.metallic = metallic
 	material.emission_enabled = glow
 	material.emission = color
 	material.emission_energy_multiplier = 0.30
@@ -80,7 +81,7 @@ func _wheel(pos: Vector3, rubber: Material, metal: Material) -> void:
 		shape.top_radius = 0.58 if layer == 0 else 0.31
 		shape.bottom_radius = shape.top_radius
 		shape.height = 0.25 if layer == 0 else 0.27
-		shape.radial_segments = 16
+		shape.radial_segments = 24
 		wheel.mesh = shape
 		wheel.material_override = rubber if layer == 0 else metal
 		wheel.position = pos

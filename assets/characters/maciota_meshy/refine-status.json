@@ -1,0 +1,32 @@
+{
+  "id": "01a0c96f-7f53-72fb-b66c-f65e3e0125ef",
+  "type": "text-to-3d-refine",
+  "mode": "refine",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2261855234,
+  "prompt": "A flamboyant slender adult man wearing a WIDE BRIM FEDORA HAT and SUNGLASSES, holding a long WALKING CANE in his right hand. Full body character. The large fedora hat is essential, with a leopard print hatband. Dark sunglasses with thick gold frames cover his eyes. Thin black goatee. Elegant purple suit with black lapels, open bare chest neckline, gold necklace, NO NECKTIE. Purple trousers and dress shoes. Golden cane with a purple gemstone handle. Warm brown skin. Original charismatic Brazilian nightclub and garage owner, confident relaxed expression, natural human proportions, stylized realistic game character. Arms slightly apart, standing, feet apart. Hat, sunglasses and cane must be modeled as visible geometry. No base, no background, no text.",
+  "texture_prompt": "Deep purple tailored suit and wide brim fedora #6c3483, black satin lapels #17202a, tan leopard print hatband with dark spots, dark sunglasses with metallic gold frames, warm medium tan brown skin #a87858, thin black goatee, open neck chest, gold chain, purple trousers, polished dark purple leather shoes #4a235a. Cane entirely metallic gold #f1c40f with a purple gemstone handle. Elegant clean fabric, realistic restrained PBR, no text or logos.",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1790085924387,
+  "progress": 100,
+  "started_at": 1790085924394,
+  "finished_at": 1790086029470,
+  "task_error": null,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/model.glb?Expires=4943635200&Signature=F1YQx1HdN0KxVm77jLWo77q1ERjI088ALI2bYCq3yb~qlPjnDFH96eciOJnefMSgEQAO5FD~s0-7YHvl37QUWW2RgFNC0Moko4Z00jyN7JiPO1Fppx9wAeFsN287khS0HQu7SCPty1gcwcF2721ZjameeKoMbZ3f0yrv-11ZUAG2YAWn~XsP5z7Huko14iMSso7qv2P7Uobm2uYsYBUNJ0AJUrvx-EFeMnz4Uymf6jynt3MsFERvWlZytxTK8hY-VFfedmjHyGWgyvVFp11~XcJJJCthlUWVaSx5mOBjryv0ZZPfEYdlzoekKAOqZTBWgulfRTpMLBOOcJSE0hPxlQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/preview.png?Expires=4943635200&Signature=OtYd-ibuUAO5lm2gnPiJ5SPzfY~3RgjwO7LaSoWEPMBkcItsexzPyUatC83QOVcyrSErsCcFlzi9oKV~Iyag1oh~nG76SZmB06iWgX3ZuXE0AsWrc323n-iedkUtDW3dxgIbBlMh0MQC0ExwVvBuY3a9PH31QTKmrOeHZxi3lFw81FdQL8M54d5L~skWB46Mh04CB8YTTb4l1rI-iawrM6uVIIq0tu-FYvneTW3DWxqwtNLXp-H7-Q7a6oTYsT2d362Vv7Sz8VF~Rv3bgGOUynzp9GsQmj-S7lQmxOcre-JeQSDjOm4~6ddSawX5Ix3EIAfD7X7lin5eMKAbmEHVwA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [
+    {
+      "base_color": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/texture_0.png?Expires=4943635200&Signature=Jg7FSP6qfdASZIkgadMsNyg7AxI4iX-XozHP29FrQnHw0DjgUQ8oQc-5VxtS7s4RGD5lwi9NlaYYDSibyasYLlAcs6fusZKZx7aI6dOlV36h2N7Hi1YZWr9NBIE6-3ic9Zc1vDhWcnUtF2V6UBJ46OUlqPMRh6tKEqcS65w3uv09AWzma9Sc9nipWXz-oNWCseLlRm9~3rSbqygXsq0yK5mWjJzGb0mWcQHHINhHCRJVItxEy-eqHXAwdcFXnnaAOF088qHJmXUHDs5JpQvr5PY8nqtVXNPoO6X5~Fju2mC3cCofNwXA42HR0ow4o~17Buw0loj75fRT8Dd13G4hFg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "metallic": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/texture_0_metallic.png?Expires=4943635200&Signature=Ryl7qwJK4wShUsp4WuFzVWPMdxmo2icXCxf25ESMY71tdAV8V84OMiMZPrCVO2RqlXboo84tVUV-jHmvorcn8qjDuBUvfEdmrW3-kdHkKqlCXgdMYt6LKDFyA8gDgNvdi8DbOosr7NtdlJki1M-Zh0fXqMMTy2MPF3-RYdei0OOEuWhdiv6L1YNBfMG634zzxXMLyq2BIuoViTVElC1HU2xYcDxmJhokE~LGi2TgyjiCSxTo0ZfR4E82cLDBLofMQ48xq-DdEwCAv0X4VqUwVXQzkm1pN2WNvp57BH5WazUN10hR2ln0C9O3JcHxwNinP3YwxVPisbR-ig4Cg5aADA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "roughness": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/texture_0_roughness.png?Expires=4943635200&Signature=TU4BpTyo9z4UeSox6diCtrVrCg~2Xq-AS6WqYHiVVWJxB1rDR5bUjq30i0JbYqRS2qn1WFbwVJ6qSrjfMoc2WuQ3vJTpTj~ojIle7DEiQ5RpYvJO~gfWKdSYk10uy67QNBIptWhTrTy-qdL5Q3pnVQbsrM2lqrdPdg1nQg1kpwcrb-Rr95MKlRcZpd7ZiYf9k94RK9vcuzhPfWWKyyig5kcipalMFQ6hRjRrrgugjCaBGHBPKZhyzRgwDiL4~9Z3npbnzhft~5~0cUZu~1n9x6QBTJLHiBWAz-1Y-pa7GlswAoIzhpb8fP64~0UQrkdIjbrCYW4Vpe8Pk80IBFdMlg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "normal": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/texture_0_normal.png?Expires=4943635200&Signature=WBkK5Z2KyIAdCenhFeF8vu7l5W2nKf5US0DxCqftZwunwpjzmbL3EAJ2LYyijwLNO1cdCVgRFu9fxvtYudhkZMzA28-3YWXHCIANgsnR6ne68hCRpZVR-W4gKDdj0SL8WEowJOzm6mDLFpQ2XeemVaCm9uFNV9DchfRbvhKFRGfrSOg6dlS8hmZKUHr5NbyWYJAUqW-~Iyjs9DARpoHv1cq5KM6kJB182IDt1KVYH8ZN2UVPBd0poe6HVBsbYn6x1~pJsI475TEh-rIx7eAGmkys5ilGHqX70E7yRVWGCMZke6nVVi3aPqPTSQzsCTAir0oLea2nY457hUGsXii3yA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "emission": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96f-7f53-72fb-b66c-f65e3e0125ef/output/texture_0_emission.png?Expires=4943635200&Signature=ZDDyLq~8HtDqhK1Z~pIHOKsd6~15up-puAPY6YnprzxkPZNP9bqADeVBT1U1T20nyJYLTyHR~IwIJyrfVXzuaJxbkHQpEM187p1LtR4oXuuUIjH7zltg6OVXIErqqbO8OBWHFrvqDiS4kdEhWsLVtlFeRCjg2OvGltAyaYv1u-ODPdcFc~iJpnOEA4m9k9sKXf~ZsGK4cM2JgyKKRF0QPzsxrptWWaRVhgxB1tTxQ22jAn6BCMgvGTZ80ELQVpNRv5~MQMwgYIKGp0pQP7uJyNOhzwHfk8KRpZH2RasUIkznMPpf9WKm9qLGU5L2BOLMSNkCIAbYJK199Wng9Ctl1A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    }
+  ],
+  "remove_lighting": true,
+  "consumed_credits": 10
+}

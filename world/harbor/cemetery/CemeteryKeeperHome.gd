@@ -13,6 +13,7 @@ var _work_left := 20.0
 var _wake_left := 0.0
 var _was_inside := false
 var _night := false
+var _proximity_door_open := false
 var _door_tween: Tween
 var _wake_tween: Tween
 
@@ -48,6 +49,9 @@ func _ready() -> void:
 	entrance.position = project_floor(Vector2(0, 3.05))
 	entrance.display_name = "CASA DO COVEIRO"
 	entrance.custom_prompt_text = "E"
+	entrance.handle_input_locally = false
+	entrance.show_interaction_prompt = false
+	entrance.show_entrance_marker = false
 	entrance.open_duration = .4
 	add_child(entrance)
 	entrance.add_to_group("harbor_entrance")
@@ -100,15 +104,13 @@ func _build_home() -> void:
 	room = preload("res://world/harbor/cemetery/CemeteryKeeperRoom.gd").new()
 	room.name = "CemeteryKeeperInterior"
 	room.home = self
-	room.position = Vector2(66000, 20000)
+	room.position = global_position
 	manager.get_node("InteriorSpaces").add_child(room)
-	var path := String(world.get_path_to(entrance))
-	var id := StringName("harbor/" + path)
-	manager._door_configs[path] = {"interior": room, "spawn": room.spawn_point, "id": id}
-	entrance.destination_id = id
-	entrance.destination_requested.connect(manager._on_exterior_destination_requested.bind(room, room.spawn_point))
-	manager._bind_curtain(entrance)
-	manager._bind_exit_door(room.exit_door, id, room)
+	room.attach_inline_home(self)
+	var old_body := get_node_or_null("HouseFootprint") as StaticBody2D
+	if old_body:
+		old_body.collision_layer = 0
+		old_body.queue_free()
 	keeper = preload("res://world/harbor/cemetery/CemeteryKeeper.gd").new()
 	keeper.name = "Anselmo"
 	keeper.home = self
@@ -155,6 +157,18 @@ func closing_hour() -> float:
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(keeper) or not is_instance_valid(room): return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if is_instance_valid(player) and player.global_position.distance_to(Vector2(66000,20000)) < 500.0:
+		player.global_position = room.spawn_point.global_position
+		player.velocity = Vector2.ZERO
+		player.reset_physics_interpolation()
+	var door_near: bool = is_instance_valid(player) and player.visible and player.global_position.distance_to(entrance.global_position) < 62.0
+	var keeper_near: bool = keeper.global_position.distance_to(entrance.global_position) < 45.0
+	var should_open: bool = door_near or keeper_near or room.actor_inside()
+	if should_open != _proximity_door_open:
+		_proximity_door_open = should_open
+		if should_open: entrance.open_door()
+		else: entrance.close_door()
 	var inside: bool = room.actor_inside()
 	if is_sleep_time() != _night:
 		_night = is_sleep_time()
@@ -207,6 +221,12 @@ func _outside_approach() -> Vector2:
 func _on_route_finished() -> void:
 	match state:
 		"leaving_home":
+			if room._resident_presentations.has(keeper):
+				var presentation: Node = room._resident_presentations[keeper]
+				if is_instance_valid(presentation):
+					presentation.restore()
+					presentation.queue_free()
+				room._resident_presentations.erase(keeper)
 			keeper.reparent(self)
 			keeper.global_position = entrance.global_position + Vector2(0, 8)
 			keeper.reset_physics_interpolation()
@@ -225,6 +245,7 @@ func _on_route_finished() -> void:
 			keeper.position = room.project_floor(Vector2(0, 2.7))
 			keeper.reset_physics_interpolation()
 			keeper.set_visual_scale(38)
+			if room.can_process(): room.set_npc_rendering_active(true)
 			model.set_door_open(true)
 			_refresh_door_render()
 			_close_after_passage()
@@ -260,7 +281,7 @@ func disturb_keeper() -> void:
 	_wake_left = 1.6
 	keeper.walk_to(PackedVector2Array())
 	keeper.say("ANSELMO: Quem entrou?! Fora da minha casa!", 5)
-	room.show_message("ANSELMO: Eu avisei na porta. Fora da minha casa!")
+	room.show_message("ANSELMO: Fora da minha casa!")
 	keeper.set_sleeping(false)
 	keeper.model.rotation.x = -PI / 2
 	keeper.model.position.y = .68

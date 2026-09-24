@@ -15,6 +15,15 @@ static func mountain_weight(point: Vector2, origin: Vector2) -> float:
 	# Matches the authored eastbound bridge, including approach before the seam.
 	return smoothstep(origin.x + 2400.0, origin.x + 4200.0, point.x) * (1.0 - smoothstep(origin.y + 1700.0, origin.y + 2900.0, point.y))
 
+static func mountain_bridge_exposure(point: Vector2, hour: float) -> float:
+	# This elevated crossing is rendered mostly by unshaded canvas geometry.
+	# Grade it in the existing world pass so day concrete is not blown out and
+	# the nighttime palette is visible before the mountain biome takes over.
+	var along := smoothstep(6200.0, 6500.0, point.x) * (1.0 - smoothstep(8850.0, 9150.0, point.x))
+	var across := smoothstep(-5000.0, -4800.0, point.y) * (1.0 - smoothstep(-4300.0, -4100.0, point.y))
+	var daylight := smoothstep(0.22, 0.36, hour) * (1.0 - smoothstep(0.74, 0.88, hour))
+	return lerpf(1.0, lerpf(0.42, 0.88, daylight), along * across)
+
 static func summit_weight(local_point: Vector2) -> float:
 	return 1.0 - smoothstep(-1700.0, 250.0, local_point.y)
 

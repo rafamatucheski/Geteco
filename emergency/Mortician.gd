@@ -58,7 +58,10 @@ var body_bag_mesh: MeshInstance3D = null
 
 func _ready() -> void:
 	if not has_meta("medical_identity"):
-		set_meta("medical_identity",get_node("/root/CoronerCare").next_staff_identity())
+		# Morticians are no longer dispatched by the removed coroner/IML system.
+		# Keep a stable local identity for legacy scene/test construction without
+		# requiring a nonexistent autoload.
+		set_meta("medical_identity", "mortician_%s" % get_instance_id())
 	set_collision_mask_value(3, true)
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	platform_floor_layers = 0
@@ -548,7 +551,11 @@ func take_damage(amount: int, _is_player_attacker: bool = false) -> void:
 	if health <= 0 and not is_dead:
 		is_dead = true
 		velocity = Vector2.ZERO
-		if collision_shape: collision_shape.set_deferred("disabled", true)
+		collision_layer = 0
+		for c in find_children("", "CollisionShape2D", true, false):
+			(c as CollisionShape2D).set_deferred("disabled", true)
+		for c in find_children("", "CollisionPolygon2D", true, false):
+			(c as CollisionPolygon2D).set_deferred("disabled", true)
 		_start_fall()
 		get_node("/root/NPCMedicalCare").report_injury(self)
 		if not has_meta("medical_pending"): create_tween().tween_interval(10.0).finished.connect(queue_free)

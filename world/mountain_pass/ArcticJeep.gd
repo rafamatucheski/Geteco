@@ -29,6 +29,7 @@ func _enter_tree() -> void:
 		var camera_node := Camera2D.new()
 		camera_node.set_script(JEEP_CAMERA)
 		camera_node.name = "Camera"
+		camera_node.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 		camera_node.enabled = false
 		camera_node.ignore_rotation = true
 		add_child(camera_node)

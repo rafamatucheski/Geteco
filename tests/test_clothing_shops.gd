@@ -54,6 +54,8 @@ func run() -> void:
   root.get_texture().get_image().save_png("D:/geteco/clothing-shop-interior.png")
  manager._on_exit_door_requested(room.exit_door,player,&"",null,&"",entrance.destination_id)
  assert(player.global_position.distance_to(entrance.get_node("OutsideReturn").global_position)<1)
+ assert(player.sprite_3d_display.scale.x <= 0.35, "Player scale must be restored upon exiting city clothing shop")
+ assert(not player.has_meta("interior_movement_presentation"), "Movement presentation meta must be cleaned up")
  await world.get_node("ContinuousWorld").ensure_mountain()
  for i in 5: await process_frame
  assert(get_nodes_in_group("clothing_shop").size() >= 2)
@@ -91,6 +93,8 @@ func run() -> void:
  var return_pos=mountain_manager._actor_returns[player]
  mountain_manager._on_exit_requested(mountain_room.exit_door,player,&"",null,&"",&"mountain_outfitters")
  assert(player.global_position.distance_to(return_pos)<1)
+ assert(player.sprite_3d_display.scale.x <= 0.35, "Player scale must be restored upon exiting mountain clothing shop")
+ assert(not player.has_meta("interior_movement_presentation"), "Movement presentation meta must be cleaned up")
  player.global_position=Vector2(1890,280)
  stream._update_region()
  player.global_position=mountain_door.global_position+Vector2(0,24)

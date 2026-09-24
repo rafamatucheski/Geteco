@@ -36,16 +36,20 @@ func tick(car: CharacterBody2D, lane: Path2D, follow: PathFollow2D, delta: float
 		var zone: Dictionary = car._traffic_control_zone_motion(lane,follow)
 		if zone.get("must_clear_rail_crossing",false) or car._last_lane_motion_contract.get("reservation_granted",false) or car._last_lane_motion_contract.get("controlled",false): return false
 		if not lane.has_meta("traffic_road_width"): return false
-		# The city's sidewalk is explicitly authored, not an arbitrary permission
-		# to drive across land. Both sides and the complete curve are checked.
-		var edge := float(lane.get_meta("traffic_road_width"))*.5-absf(float(lane.get_meta("traffic_lane_offset",0)))
+		# The city's sidewalk is explicitly authored. Pick the outside edge of this
+		# lane from its authored offset and travel direction; reverse curves invert
+		# local Y, so a hardcoded positive/negative side can cross opposing lanes.
+		var lane_offset := float(lane.get_meta("traffic_lane_offset",0))
+		var travel_direction := float(lane.get_meta("traffic_direction",1))
+		var centre_side := signf(lane_offset * travel_direction)
+		var roadside_side := -centre_side if not is_zero_approx(centre_side) else -1.0
+		var edge := float(lane.get_meta("traffic_road_width"))*.5-absf(lane_offset)
 		var sidewalk := float(lane.get_meta("traffic_sidewalk_width",0))
 		# Reserve the corner radius, not just half the width: while steering,
 		# the nose swings farther outward than the final parallel parked body.
 		var turn_clearance: float = car.collision.shape.get_rect().size.length()*.5+4
-		var right := edge+sidewalk-turn_clearance
-		var left := -float(lane.get_meta("traffic_road_width"))*.5-absf(float(lane.get_meta("traffic_lane_offset",0)))-sidewalk+turn_clearance
-		offsets.assign([right,left])
+		var roadside := roadside_side * maxf(0.0, edge+sidewalk-turn_clearance)
+		offsets.assign([roadside])
 		side_index = 0
 		merging = false
 		_begin(car,lane,follow)

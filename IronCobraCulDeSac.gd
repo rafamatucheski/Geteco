@@ -120,30 +120,30 @@ func _make_barrel_node(at: Vector2) -> Node2D:
 	
 	# Partículas de Fogo & Brasas
 	var fire_particles = CPUParticles2D.new()
-	fire_particles.amount = 22
-	fire_particles.lifetime = 0.65
+	fire_particles.amount = 16
+	fire_particles.lifetime = 0.4
 	fire_particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	fire_particles.emission_rect_extents = Vector2(5, 5)
-	fire_particles.gravity = Vector2(0, -110)
+	fire_particles.emission_rect_extents = Vector2(4, 2)
+	fire_particles.gravity = Vector2(0, -22)
 	fire_particles.direction = Vector2(0, -1)
-	fire_particles.spread = 25.0
-	fire_particles.initial_velocity_min = 35.0
-	fire_particles.initial_velocity_max = 75.0
-	fire_particles.scale_amount_min = 2.0
-	fire_particles.scale_amount_max = 4.5
+	fire_particles.spread = 16.0
+	fire_particles.initial_velocity_min = 10.0
+	fire_particles.initial_velocity_max = 22.0
+	fire_particles.scale_amount_min = 1.2
+	fire_particles.scale_amount_max = 2.2
 	fire_particles.color = Color("#ff6b6b")
 	barrel.add_child(fire_particles)
 	
 	# Brilho de Luz de Fogo Quente
 	var glow = Polygon2D.new()
 	glow.polygon = PackedVector2Array([
-		Vector2(-18, -18), Vector2(18, -18), Vector2(18, 18), Vector2(-18, 18)
+		Vector2(-10, -10), Vector2(10, -10), Vector2(10, 10), Vector2(-10, 10)
 	])
 	glow.color = Color(1.0, 0.45, 0.1, 0.18)
 	barrel.add_child(glow)
 	
 	var tw = barrel.create_tween().set_loops()
-	tw.tween_property(glow, "scale", Vector2(1.25, 1.25), 0.18)
+	tw.tween_property(glow, "scale", Vector2(1.2, 1.2), 0.18)
 	tw.tween_property(glow, "scale", Vector2(0.85, 0.85), 0.18)
 	
 	return barrel

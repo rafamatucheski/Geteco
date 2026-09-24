@@ -13,6 +13,11 @@ var _bullets := 0
 var _near_police_peak := 0
 var _count_at := 0
 
+func _sample_kind(label: String) -> String:
+	# Historical filenames remain comparable; this fixture intentionally stands
+	# downtown while the live traffic and police move around the player.
+	return "stationary_downtown_" + ("calm" if label == "driving" else label)
+
 func _sample(output: String, label: String, seconds: float, car: Node2D) -> void:
 	if label == "warmup":
 		car.global_position = Vector2(1325, 1080)
@@ -23,6 +28,7 @@ func _sample(output: String, label: String, seconds: float, car: Node2D) -> void
 		while (car.get("is_driven_by_player") == true or (is_instance_valid(car.get("_boarding")) and car.get("_boarding").active)) and Time.get_ticks_msec() < deadline:
 			await process_frame
 		if car.get("is_driven_by_player") == true:
+			_sample_failed = true
 			push_error("Downtown checkpoint could not exit vehicle")
 			quit(1)
 			return
@@ -39,6 +45,7 @@ func _sample(output: String, label: String, seconds: float, car: Node2D) -> void
 		_incident_at = Time.get_ticks_msec() + 1000
 	await super._sample(output, label, seconds, _subject)
 	_tracking = false
+	if _sample_failed: return
 	var path := output.path_join(label + ".json")
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path))
 	data["checkpoint"] = "downtown"
@@ -51,6 +58,7 @@ func _sample(output: String, label: String, seconds: float, car: Node2D) -> void
 	data["police_near_700_peak"] = _near_police_peak
 	FileAccess.open(path, FileAccess.WRITE).store_string(JSON.stringify(data, "\t"))
 	if label != "warmup" and (_subject.get("is_dead") == true or paused):
+		_sample_failed = true
 		push_error("Downtown sample interrupted by death/pause")
 		quit(1)
 

@@ -241,6 +241,20 @@ func get_camera_rect() -> Rect2:
 func contains_point(point: Vector2) -> bool:
 	return get_camera_rect().has_point(point)
 
+func contains_actor(actor: Node2D) -> bool:
+	return is_instance_valid(actor) and is_visible_in_tree() and contains_point(actor.global_position)
+
+func add_cash_reward(model: Node3D, floor_position: Vector2, amount: int, reward_id: String) -> Area2D:
+	var reward := preload("res://world/mountain_pass/MountainCashPickup.gd").new()
+	reward.name = "RoomCash"
+	reward.pickup_id = reward_id
+	reward.amount = amount
+	reward.render_host = self
+	reward.position = call("project_floor", floor_position)
+	add_child(reward)
+	reward.install_model(model, Vector3(floor_position.x, .08, floor_position.y))
+	return reward
+
 ## Every interior NPC that composites a 3D rig into a Sprite2D (JagerNPC,
 ## HarborConversationalNPC) exposes its render target as `viewport_3d`. This
 ## interior is always instantiated far away in world space but never removed,
@@ -257,6 +271,12 @@ func set_npc_rendering_active(active: bool) -> void:
 		_resident_presentations.clear()
 	elif get("camera_3d") is Camera3D and get("sprite_3d") is Sprite2D:
 		for resident in find_children("*", "CharacterBody2D", true, false):
+			# Store fitting previews belong to their own viewport, not the room.
+			if resident.get_viewport() != get_viewport(): continue
+			var ancestor := resident.get_parent()
+			while ancestor != null and ancestor != self and not ancestor is Control and not ancestor is CanvasLayer:
+				ancestor = ancestor.get_parent()
+			if ancestor is Control or ancestor is CanvasLayer: continue
 			if _resident_presentations.has(resident): continue
 			var rig = resident.get("model_root")
 			if rig == null: rig = resident.get("model")

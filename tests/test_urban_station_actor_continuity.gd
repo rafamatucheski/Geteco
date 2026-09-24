@@ -29,6 +29,7 @@ func run() -> void:
 		station.rotation = angle
 		world.add_child(station)
 		for identity in range(-1, 5):
+			if "--player-only" in OS.get_cmdline_user_args() and identity != -1: continue
 			var actor: CharacterBody2D
 			if identity == -1:
 				actor = load("res://characters/Player.gd").new()

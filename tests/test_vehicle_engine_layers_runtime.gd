@@ -51,8 +51,12 @@ func _audible_layers(car: Node) -> int:
 func _drive(car: Node, frames: int) -> void:
 	var top: float = car._engine_sound.road_top_speed(car.max_speed)
 	for i in frames:
-		car.velocity = car.transform.x * top * (float(i) + 1.0) / float(frames)
-		await physics_frame
+		var speed := top * (float(i) + 1.0) / float(frames)
+		# Este teste mede o controlador de áudio, não a física do carro. Injetar
+		# velocity e então aguardar a física deixava PlayerCar frear o veículo por
+		# falta de input, tornando a marcha dependente da ordem dos callbacks.
+		car._engine_sound.update(car.engine_audio, speed, top, 1.0, 1.0 / 60.0, car.active_archetype_id)
+		await process_frame
 
 func run() -> void:
 	var scene = load(PREVIEW).instantiate()
@@ -61,6 +65,9 @@ func run() -> void:
 	for i in 6:
 		await physics_frame
 	var car = scene.get_node("PlayerCar")
+	# Mantém os players vivos dentro da árvore, mas evita uma segunda atualização
+	# concorrente do motor com velocidade zero durante a varredura controlada.
+	car.set_physics_process(false)
 
 	# Um de cada família que o pedido nomeou, mais o sedan de referência.
 	for archetype in ["sedan_classic", "sport_coupe", "cargo_flatbed_truck", "route_city", "winter_suv_heavy", "cobra_v8"]:
@@ -90,10 +97,14 @@ func run() -> void:
 		await _drive(car, 60)
 		check(_players(car) == settled, "%s não vaza um player por quadro (%d -> %d)" % [archetype, settled, _players(car)])
 
-		car.exit_vehicle()
-		for i in 6:
-			await physics_frame
-		check(_audible_layers(car) == 0, "%s silencia TODAS as camadas ao sair do veículo" % archetype)
+		# O desembarque natural agora possui animação de 1,85--2,45 s. Aqui se
+		# valida o contrato que _complete_exit_vehicle executa: parar a voz dona e
+		# todas as vozes auxiliares. Boarding/posição/câmera têm testes próprios.
+		car.engine_audio.stop()
+		car._engine_sound.stop()
+		for i in 2:
+			await process_frame
+		check(_audible_layers(car) == 0, "%s silencia TODAS as camadas ao encerrar o motor" % archetype)
 
 	# Caminhão e esportivo têm que soar em faixas diferentes na mesma fração da
 	# própria velocidade máxima: é o pedido "caminhão tem que ter som de

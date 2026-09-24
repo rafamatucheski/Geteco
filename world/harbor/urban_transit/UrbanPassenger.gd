@@ -18,8 +18,8 @@ func _update_viewport_render_state(delta: float) -> void:
 func allow_boarding(vehicle: Node2D) -> void:
 	for body in [vehicle]+vehicle.sections:
 		if not boarding_bodies.has(body): boarding_bodies.append(body)
-		add_collision_exception_with(body)
-		body.add_collision_exception_with(self)
+		preload("res://systems/CollisionExceptionLifetime.gd").add(self, body)
+		preload("res://systems/CollisionExceptionLifetime.gd").add(body, self)
 func restore_collisions() -> void:
 	for body in boarding_bodies:
 		if is_instance_valid(body):
@@ -33,8 +33,16 @@ func walk_route(points: PackedVector2Array, state: String) -> void:
 	set_destination(waypoints[0] if not waypoints.is_empty() else global_position,state)
 func _physics_process(delta: float) -> void:
 	if transit_state == "onboard": return
+	# Gate the transit-specific waypoint work before the shared pedestrian pass.
+	# Without this, every commuter still checked its route at 60 Hz even though
+	# ambient movement below was already limited to 30 Hz.
+	if not _prepare_ambient_physics_step(delta):
+		return
+	_ambient_step_prepared = true
+	delta = _ambient_prepared_delta
 	if not waypoints.is_empty() and global_position.distance_to(waypoints[0])<5:
 		waypoints.remove_at(0)
 		if not waypoints.is_empty(): set_destination(waypoints[0],transit_state)
 	if waypoints.is_empty() and transit_state in ["walking_to_activity","off_duty"]: restore_collisions()
 	super._physics_process(delta)
+	_ambient_step_prepared = false

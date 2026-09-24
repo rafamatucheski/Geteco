@@ -36,6 +36,16 @@ func blocked(point: Vector2, radius := 8.0) -> bool:
 	query.transform = Transform2D(0, point)
 	query.collision_mask = 1
 	return not world.get_world_2d().direct_space_state.intersect_shape(query).is_empty()
+func blocked_by(point: Vector2, radius: float, body: CollisionObject2D) -> bool:
+	var query := PhysicsShapeQueryParameters2D.new()
+	query.shape = CircleShape2D.new()
+	query.shape.radius = radius
+	query.transform = Transform2D(0, point)
+	query.collision_mask = 1
+	for hit in world.get_world_2d().direct_space_state.intersect_shape(query):
+		if hit.collider == body:
+			return true
+	return false
 func run() -> void:
 	create_timer(120).timeout.connect(func(): quit(2))
 	world = Node2D.new()
@@ -86,24 +96,57 @@ func run() -> void:
 	wall.queue_free()
 	SCENERY._init_dirt_roads()
 	SCENERY.build_lake_and_rapids(world)
-	var bridge := Node2D.new()
+	var bridge := StaticBody2D.new()
+	bridge.collision_layer = 1
+	bridge.collision_mask = 0
 	world.add_child(bridge)
 	SCENERY.build_detailed_footbridge(bridge)
+	preload("res://world/mountain_pass/MountainFootbridgeCollision.gd").install(bridge)
 	var shop := preload("res://world/mountain_pass/MountainGunShopFacade.gd").new()
 	shop.position = Vector2(7750,-220)
 	world.add_child(shop)
 	await frames(2)
-	check(blocked(Vector2(7145,100)), "Visible lake blocks walking and driving")
+	check(blocked(Vector2(7145,100)), "Deep visible lake blocks walking and driving")
+	check(not blocked(Vector2(6790,200)), "Shallow visible water is walkable")
 	check(not blocked(Vector2(7050,40)), "Footbridge deck stays walkable")
-	check(blocked(Vector2(7145,69)), "Footbridge rail stops sideways exits")
-	check(blocked(Vector2(6963,40), 20), "Entrance bollard blocks vehicle width")
-	check(not blocked(Vector2(6963,24), 9), "Pedestrian fits alongside bridge bollard")
+	check(blocked(Vector2(7315,69)), "Footbridge rail stops sideways exits")
+	check(blocked_by(Vector2(6928,40), 20, bridge), "Entrance bollard blocks vehicle width")
+	check(not blocked(Vector2(6895,40), 9), "Pedestrian fits through center of bridge entrance")
+	var walker := CharacterBody2D.new()
+	walker.collision_layer = 2
+	walker.collision_mask = 1
+	walker.position = Vector2(6900,40)
+	var walker_shape := CollisionShape2D.new()
+	var walker_circle := CircleShape2D.new()
+	walker_circle.radius = 9.0
+	walker_shape.shape = walker_circle
+	walker.add_child(walker_shape)
+	world.add_child(walker)
+	await frames(2)
+	check(walker.move_and_collide(Vector2(400,0)) == null, "Pedestrian physically crosses bridge center")
+	walker.position = Vector2(6950,40)
+	var rail_hit := walker.move_and_collide(Vector2(0,60))
+	check(rail_hit != null and rail_hit.get_collider() == bridge, "Pedestrian cannot pass through bridge side rail")
+	walker.queue_free()
 	var road: Curve2D = SCENERY.dirt_road_curves[1]
 	var access_clear := true
 	for sample in range(0, int(road.get_baked_length()), 12):
 		if blocked(road.sample_baked(sample), 35): access_clear = false
 	var main_road := preload("res://world/mountain_pass/MountainPassRoad.gd").new()
 	main_road._build_curve()
+	var vale: Curve2D = SCENERY.dirt_road_curves[0]
+	var vale_start := vale.get_point_position(0)
+	check(vale_start.distance_to(main_road.curve.get_closest_point(vale_start)) < 1.0, "East Vale dirt road joins highway center without a gap")
+	var bridge_landing := preload("res://world/mountain_pass/MountainLakeGeometry.gd").DECK.position + Vector2(0,26)
+	check(absf(bridge_landing.distance_to(main_road.curve.get_closest_point(bridge_landing)) - main_road.road_width * 0.5) < 2.0, "Bridge decking meets highway edge without covering driving lane")
+	var driveway: Array = preload("res://world/mountain_pass/MountainVillageLayout.gd").ACCESS_PATHS[0]
+	var vale_clear_of_walkway := true
+	for offset in range(0, 201, 20):
+		var point := vale.sample_baked(float(offset), true)
+		for i in range(driveway.size() - 1):
+			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, driveway[i], driveway[i + 1])) < 60.0:
+				vale_clear_of_walkway = false
+	check(vale_clear_of_walkway, "East Vale first stretch stays clear of village walkway")
 	var main_clear := true
 	for point in main_road.smooth_points:
 		if point.x > 6500 and point.y > -400 and point.y < 500 and blocked(point,74): main_clear = false
@@ -122,7 +165,14 @@ func run() -> void:
 	actor.position = Vector2(7145,100)
 	world.add_child(actor)
 	await frames(20)
-	check(not Geometry2D.is_point_in_polygon(actor.position, world.get_node("WaterSystemDetailed").water), "Old save inside water recovers to shore")
+	var water_system: Node2D = world.get_node("WaterSystemDetailed")
+	var deep_water: Node2D = water_system.get_node("DeepWaterBoundary")
+	check(not Geometry2D.is_point_in_polygon(actor.position, deep_water.water), "Old save inside deep water recovers to shallows")
+	actor.position = Vector2(6790, 200)
+	await frames(2)
+	var shallow_water: Node2D = water_system.get_node("AlpineLakeShallows")
+	check(shallow_water.is_water_at(actor), "Walkable shallow water uses the same shoreline as its visible surface")
+	check(preload("res://audio/footsteps/FootstepSurfaceResolver.gd").resolve(actor, false) == "water", "Shallow water makes real water footsteps")
 	actor.queue_free()
 	if "--capture" in OS.get_cmdline_user_args(): await capture()
 	world.queue_free()

@@ -30,8 +30,8 @@ func attach_section() -> CharacterBody2D:
 	system.add_child(part)
 	sections.append(part)
 	part.tree_exiting.connect(_on_section_exiting.bind(part))
-	add_collision_exception_with(part)
-	part.add_collision_exception_with(self)
+	preload("res://systems/CollisionExceptionLifetime.gd").add(self, part)
+	preload("res://systems/CollisionExceptionLifetime.gd").add(part, self)
 	for ray in ["FrontRay","FrontRayL","FrontRayR"]:
 		var r := get_node_or_null(ray)
 		if r: r.add_exception(part)
@@ -72,8 +72,12 @@ func _ready() -> void:
 	history.resize(HISTORY_CAPACITY)
 	_history_count = 240
 	for i in _history_count: history[i] = global_position-global_transform.x*float(i)*2
-	if not sections.is_empty() and _joints == null and system != null:
+	# attach_section() runs before the history is seeded. Reapply the section
+	# pose now, otherwise a reverse-facing spawn can begin folded through the
+	# lead body and the convoy sweep will correctly refuse every first step.
+	if not sections.is_empty():
 		_update_sections(0)
+	if not sections.is_empty() and _joints == null and system != null:
 		_joints = Node2D.new()
 		_joints.z_index = 9
 		system.add_child(_joints)

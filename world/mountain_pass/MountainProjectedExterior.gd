@@ -23,12 +23,12 @@ func _process(delta: float) -> void:
 	if _scan_clock < .12: return
 	_scan_clock = 0.0
 	for actor in _actors.keys():
-		if not is_instance_valid(actor) or _actors[actor].actor != actor or not actor.is_visible_in_tree() or not _contains_actor(actor) or actor.has_meta("mountain_interior") or actor.has_meta("mountain_lift_riding") or actor.has_meta("mountain_falling"):
+		if not is_instance_valid(actor) or _actors[actor].actor != actor or not actor.is_visible_in_tree() or not _contains_actor(actor) or actor.has_meta("mountain_interior") or actor.has_meta("mountain_lift_riding"):
 			_actors[actor].restore()
 			_actors[actor].queue_free()
 			_actors.erase(actor)
 	for actor in get_tree().get_nodes_in_group("player") + get_tree().get_nodes_in_group("winter_resident"):
-		if _actors.has(actor) or not actor.is_visible_in_tree() or actor.has_meta("interior_actor_presentation") or actor.has_meta("mountain_interior") or actor.has_meta("mountain_lift_riding") or actor.has_meta("mountain_falling"): continue
+		if _actors.has(actor) or not actor.is_visible_in_tree() or actor.has_meta("interior_actor_presentation") or actor.has_meta("mountain_interior") or actor.has_meta("mountain_lift_riding"): continue
 		if not _contains_actor(actor): continue
 		var helper := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
 		add_child(helper)

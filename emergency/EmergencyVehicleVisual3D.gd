@@ -16,6 +16,7 @@ var _last_flash := -1
 var lightbar := preload("res://emergency/EmergencyLightbar3D.gd").new()
 var render_requests := 0
 var _lamp_mounts: Array[Vector3] = []
+var _tail_lamp_mounts: Array[Vector3] = []
 var second_headlight: PointLight2D
 var wheel_rig := WHEEL_RIG.new()
 var _last_render_steer := INF
@@ -30,6 +31,7 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	viewport = SubViewport.new()
 	viewport.name = "Emergency3DWorld"
 	viewport.size = Vector2i(192, 192) if service == 0 else Vector2i(256, 256)
+	if service == 2: viewport.size = Vector2i(384, 384)
 	viewport.transparent_bg = true
 	viewport.own_world_3d = true
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -38,6 +40,11 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	viewport.add_child(model)
 	var bounds := AABB()
 	var first := true
+	var rear_lenses: Array[Material] = []
+	for material_key in ["tail", "taillight", "taillight_vert", "brake_light"]:
+		var rear_lens := model.materials.get(material_key) as Material
+		if rear_lens != null and not rear_lenses.has(rear_lens):
+			rear_lenses.append(rear_lens)
 	for mesh in model.get_children():
 		if not mesh is MeshInstance3D or mesh.mesh == null: continue
 		var box: AABB = mesh.transform * mesh.mesh.get_aabb()
@@ -45,6 +52,8 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 		first = false
 		if mesh.material_override == model.materials.get("headlight"):
 			_lamp_mounts.append(mesh.position)
+		if rear_lenses.has(mesh.material_override):
+			_tail_lamp_mounts.append(mesh.position)
 	var collision := vehicle.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	vehicle.set_meta("emergency_visual_half_size", Vector2(bounds.size.z,bounds.size.x)*PPM*.5)
 	if collision and collision.shape is RectangleShape2D:
@@ -87,16 +96,20 @@ func configure(owner_vehicle: CharacterBody2D, service: int) -> void:
 	viewport.add_child(sun)
 	vehicle.visual.texture = viewport.get_texture()
 	vehicle.visual.region_enabled = false
+	vehicle.visual.visible = true
 	vehicle.visual.scale = Vector2.ONE * (PPM * camera.size / float(viewport.size.x))
 	vehicle.visual.global_rotation = 0.0
 	vehicle.visual.modulate = Color.WHITE
 	preload("res://systems/ContactShadow.gd").add_vehicle(vehicle, Vector2(40,20) if motorcycle else Vector2(bounds.size.z, bounds.size.x) * PPM * 1.06)
 	_lamp_mounts.sort_custom(func(a: Vector3, b: Vector3): return a.x < b.x)
+	_tail_lamp_mounts.sort_custom(func(a: Vector3, b: Vector3): return a.x < b.x)
 	if vehicle.headlight and _lamp_mounts.size() >= 2:
 		_lamp_mounts = [_lamp_mounts[0], _lamp_mounts[-1]]
 		second_headlight = vehicle.headlight.duplicate()
 		second_headlight.name = "RightHeadlight"
 		vehicle.add_child(second_headlight)
+	if _tail_lamp_mounts.size() >= 2:
+		_tail_lamp_mounts = [_tail_lamp_mounts[0], _tail_lamp_mounts[-1]]
 	for light in [vehicle.headlight, second_headlight]:
 		if light:
 			light.offset = Vector2(95, 0)
@@ -160,6 +173,13 @@ func _process(delta: float) -> void:
 			var pixel := camera.unproject_position(model.to_global(_lamp_mounts[i]))
 			light.global_position = vehicle.visual.to_global(pixel - Vector2(viewport.size) * 0.5)
 		second_headlight.visible = vehicle.headlight.visible
+	if vehicle.brake_lights and not _tail_lamp_mounts.is_empty():
+		var projected_lamps := PackedVector2Array()
+		for i in mini(2, _tail_lamp_mounts.size()):
+			var rear_pixel: Vector2 = camera.unproject_position(model.to_global(_tail_lamp_mounts[i]))
+			var rear_global: Vector2 = vehicle.visual.to_global(rear_pixel - Vector2(viewport.size) * 0.5)
+			projected_lamps.append(vehicle.brake_lights.to_local(rear_global))
+		vehicle.brake_lights.set_lamp_positions(projected_lamps)
 	var screen: Vector2 = vehicle.get_canvas_transform() * vehicle.global_position
 	var on_screen := vehicle.is_visible_in_tree() and vehicle.get_viewport().get_visible_rect().grow(140).has_point(screen)
 	_clock += delta

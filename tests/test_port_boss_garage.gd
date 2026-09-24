@@ -9,7 +9,9 @@ func check(value: bool, message: String) -> void:
 		push_error(message)
 
 func run() -> void:
-	root.get_node("SaveManager")._save_dir = "D:/geteco/artifacts/port-boss-0913/test-saves/"
+	var output_dir := OS.get_temp_dir().path_join("geteco-port-boss-inline-0923")
+	DirAccess.make_dir_recursive_absolute(output_dir.path_join("test-saves"))
+	root.get_node("SaveManager")._save_dir = output_dir.path_join("test-saves")+"/"
 	root.get_node("SaveManager")._save_directory_ready = false
 	root.get_node("SaveManager").clear_pending_save()
 	for flag in ["harbor_arrival_seen","harbor_arrival_call_complete","harbor_maciota_met","harbor_delivery_complete"]:
@@ -29,12 +31,20 @@ func run() -> void:
 		var expected: bool = hour>=1 and hour<5
 		check(garage.enter()==expected,"Schedule boundary %s" % hour)
 		if expected:
+			p.global_position=garage.spawn_point.global_position
 			garage.cooldown=0
 			check(garage.leave(),"Exit allowed")
+			p.global_position=garage.EXTERIOR
 	world.weather.time_of_day=1.5/24
+	var bridge=world.get_node("CobraCampaign")
+	bridge.ledger.data.day_elapsed=fposmod(1.5/24.0-.35,1.0)*bridge.LEDGER.DAY_SECONDS
 	p.global_position=garage.EXTERIOR
 	garage.cooldown=0
 	check(garage.enter(),"Pedestrian enters")
+	p.global_position=garage.spawn_point.global_position
+	p.velocity=Vector2.ZERO
+	for i in 4: await physics_frame
+	check(garage.contains_point(p.global_position) and garage.active,"Pedestrian occupies physical garage")
 	check(garage.cars.size()==5,"Five actual drivable cars")
 	check(garage.boss.active_archetype_id=="porto_rosso","Exclusive model identity")
 	check(garage.boss.body_model.is_open_top(),"Open cockpit")
@@ -75,6 +85,10 @@ func run() -> void:
 	check(garage.data().car.health==car.health,"Boss state captured for disk save")
 	world.weather.time_of_day=5.1/24
 	garage.cooldown=0
+	car.rotation=0
+	car.global_position=garage.showroom.to_global(garage.showroom.project_floor(Vector2(8.4,0)))
+	car.velocity=Vector2.ZERO
+	for i in 4: await physics_frame
 	while not car._drive_input_armed: await physics_frame
 	Input.action_press("move_up")
 	var exit_deadline := Time.get_ticks_msec()+4500
@@ -177,19 +191,24 @@ func photo(garage: Node, filename: String, close: bool) -> void:
 	view.viewport_3d.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	await process_frame
 	await RenderingServer.frame_post_draw
-	view.viewport_3d.get_texture().get_image().save_png("D:/geteco/artifacts/port-boss-0913/"+filename+".png")
+	view.viewport_3d.get_texture().get_image().save_png(OS.get_temp_dir().path_join("geteco-port-boss-inline-0923").path_join(filename+".png"))
 	view.viewport_3d.size=old_size
 	view.camera_3d.transform=old_transform
 	view.camera_3d.size=old_zoom
 	paused=false
 
 func verify_solids(garage: Node,p: CharacterBody2D) -> void:
+	var solids: Array=garage.showroom.find_children("*","CollisionPolygon2D",true,false)
+	var solid_body := solids[0].get_parent() as StaticBody2D
+	var old_layer: int=solid_body.collision_layer
+	# The inline showroom overlaps district seawalls and the exterior shutter.
+	# Use a dedicated test layer to probe its authored footprints in isolation.
+	solid_body.collision_layer=1 << 29
 	for person in [p,garage.guards[0]]:
 		person.set_physics_process(false)
 		var original: Vector2=person.global_position
 		var mask: int=person.collision_mask
-		person.collision_mask=1
-		var solids: Array=garage.showroom.find_children("*","CollisionPolygon2D",true,false)
+		person.collision_mask=1 << 29
 		for shape in solids:
 			# Individual mesh footprint coverage. Integrated movement is tested separately.
 			for other in solids: other.disabled = other != shape
@@ -204,8 +223,9 @@ func verify_solids(garage: Node,p: CharacterBody2D) -> void:
 				var middle: Vector2=(a+b)*.5
 				var outward := Vector2((b-a).y,-(b-a).x).normalized()
 				if outward.dot(middle-center)<0: outward=-outward
-				person.global_position=middle+outward*12
-				var hit: KinematicCollision2D=person.move_and_collide(-outward*24,true)
+				# The compact facade brings thin walls within the actor's body radius.
+				person.global_position=middle+outward*28
+				var hit: KinematicCollision2D=person.move_and_collide(-outward*56,true)
 				var owner_matches := false
 				if hit!=null and hit.get_collider()==shape.get_parent():
 					owner_matches=hit.get_collider_shape()==shape
@@ -214,3 +234,4 @@ func verify_solids(garage: Node,p: CharacterBody2D) -> void:
 		person.global_position=original
 		person.collision_mask=mask
 		person.set_physics_process(true)
+	solid_body.collision_layer=old_layer

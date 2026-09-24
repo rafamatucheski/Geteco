@@ -6,15 +6,6 @@ const DEPOTS := {
 	"fire": {"path": "NorthDistrict/FireStationApron", "id": "harbor_north_fire"},
 	"police": {"path": "District/PatrolAccess", "id": "harbor_patrol"},
 	"ambulance": {"path": "District/ClinicVehicleAccess", "id": "harbor_clinic"},
-	# No standalone IML/morgue building is placed in the district yet (its
-	# interior exists as an unused template — see HarborMorgueInterior.gd).
-	# The coroner shares the clinic apron, the district's medical hub, so
-	# dispatch is real instead of silently failing (no depot was ever
-	# registered for "coroner" before, so request_dispatch("coroner", ...)
-	# always returned null -- the IML never actually responded to a death).
-	# Distinct id from "ambulance" (same path) so the two depot markers don't
-	# collide on node name (EmergencyDepotMarker.name = str(id)).
-	"coroner": {"path": "District/CoronerVehicleAccess", "id": "harbor_clinic_iml"},
 }
 var _world: Node2D
 var _requests: Dictionary = {}
@@ -87,7 +78,7 @@ func configure(world: Node2D) -> void:
 		var exit := _nearest_lane_point(departure + Vector2(-140, 0) if service == "fire" else departure)
 		if service == "police":
 			exit = _nearest_lane_point(Vector2(departure.x, preload("res://world/harbor/HarborLocalStreets.gd").PATROL_Y))
-		if service in ["ambulance", "coroner"]:
+		if service == "ambulance":
 			# The recessed yard exits east through Warehouse Way. Searching from
 			# its inner bays can pick Market Street and steer through the building.
 			exit = _nearest_lane_point(Vector2(2145, departure.y))
@@ -151,7 +142,7 @@ func _dispatch_unbatched(service_key: String, target: Node2D, _prefer_standby :=
 		vehicle.set_meta("harbor_director_id", get_instance_id())
 		if service_key == "police":
 			vehicle.set_meta("depot_departure_waypoints", preload("res://world/harbor/HarborLocalStreets.gd").police_departure(vehicle.global_position, target.global_position))
-		if service_key in ["ambulance", "coroner"] and target.global_position.x < 2145.0:
+		if service_key == "ambulance" and target.global_position.x < 2145.0:
 			# Depart through the south aisle for incidents west of the medical yard.
 			# Keep the original road gate for the existing hospital return routine.
 			vehicle.set_meta("depot_departure_waypoints", preload("res://world/harbor/HarborLocalStreets.gd").medical_departure(vehicle.global_position))

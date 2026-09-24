@@ -19,6 +19,7 @@ var driveway := PackedVector2Array()
 var walkway := PackedVector2Array()
 var parking_rects: Array[Rect2] = []
 var access_surface: Node2D
+var inline_room: Node2D
 
 func configure(definition: Dictionary) -> void:
 	property_id = definition.id

@@ -3,7 +3,12 @@ extends SceneTree
 const L := preload("res://world/harbor/HarborSouthPortLayout.gd")
 var failures: Array[String] = []
 var steps := 0
-func _initialize() -> void: call_deferred("_run")
+var _capture_root := ""
+func _initialize() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("out_dir="):
+			_capture_root = arg.trim_prefix("out_dir=")
+	call_deferred("_run")
 
 func _run() -> void:
 	root.size = Vector2i(1500,1400)
@@ -327,13 +332,22 @@ func _check(ok: bool,reason: String) -> void:
 func _capture(path: String) -> void:
 	for i in 8: await process_frame
 	await RenderingServer.frame_post_draw
-	_check(root.get_texture().get_image().save_png(path) == OK,"Screenshot saved: "+path)
+	var output := _capture_path(path)
+	_check(root.get_texture().get_image().save_png(output) == OK,"Screenshot saved: "+output)
 
 ## GETECO-PERF: se o item já foi pré-renderizado (HarborPortModelBaked), não
 ## existe viewport_3d ao vivo -- exporta a textura já bakeada (mesma imagem
 ## que o jogo realmente usa) em vez da renderização em tempo real.
 func _export_model_image(view: Node2D, path: String) -> void:
+	var output := _capture_path(path)
 	if view.get_script() == preload("res://world/harbor/HarborPortModelBaked.gd"):
-		_check(view.sprite_3d.texture.get_image().save_png(path) == OK,"Model image saved (baked): "+path)
+		_check(view.sprite_3d.texture.get_image().save_png(output) == OK,"Model image saved (baked): "+output)
 	else:
-		_check(view.viewport_3d.get_texture().get_image().save_png(path) == OK,"Model image saved (live): "+path)
+		_check(view.viewport_3d.get_texture().get_image().save_png(output) == OK,"Model image saved (live): "+output)
+
+
+func _capture_path(default_path: String) -> String:
+	if _capture_root.is_empty():
+		return default_path
+	DirAccess.make_dir_recursive_absolute(_capture_root)
+	return _capture_root.path_join(default_path.get_file())

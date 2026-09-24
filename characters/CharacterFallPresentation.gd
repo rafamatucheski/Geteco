@@ -20,9 +20,14 @@ var camera_transform := Transform3D.IDENTITY
 var camera_focus := Vector3.ZERO
 var camera_fov := 36.0
 var camera_size := 2.6
+var shared_atlas_camera := false
 var variant := 0
 var brace_end := 0.35
 var fall_start := 0.12
+var recovery_active := false
+var recovery_elapsed := 0.0
+var recovery_duration := 1.45
+var recovery_transform := Transform3D.IDENTITY
 
 ## Perfis escolhidos uma vez por queda; sem física ou sorteios por frame.
 func _vary_pose(key: String, pose: Vector3, resting: bool) -> Vector3:
@@ -47,20 +52,28 @@ func _vary_pose(key: String, pose: Vector3, resting: bool) -> Vector3:
 
 func start(actor: Node, model: Node3D, render: SubViewport, impact := Vector2.ZERO) -> void:
 	var care := actor.get_node_or_null("/root/NPCMedicalCare")
-	if care: care.report_injury(actor)
+	if care and actor.get("is_dead") != true: care.report_injury(actor)
 	if started or not is_instance_valid(model): return
 	started = true
 	active = true
+	recovery_active = false
+	recovery_elapsed = 0.0
 	elapsed = 0.0
 	rig = model
 	viewport = render
+	# A population atlas has one camera for several citizens. Framing a fallen
+	# body through that shared camera moves/crops every other atlas tile and was
+	# the source of the large coloured blocks seen around corpses.
+	shared_atlas_camera = actor.get("_presentation_atlas_active") == true
 	camera = viewport.get_camera_3d()
 	if camera:
 		camera_transform = camera.transform
 		camera_fov = camera.fov
 		camera_size = camera.size
 		var forward := -camera.basis.z
-		camera_focus = Vector3(0, camera.position.y - camera.position.z * forward.y / forward.z, 0) if absf(forward.z) > 0.001 else Vector3(0, 0, camera.position.z)
+		var world_origin: Vector3 = actor.get_meta("presentation_world_origin", Vector3.ZERO)
+		var camera_local := camera.position - world_origin
+		camera_focus = world_origin + (Vector3(0, camera_local.y - camera_local.z * forward.y / forward.z, 0) if absf(forward.z) > 0.001 else Vector3(0, 0, camera_local.z))
 	initial_transform = rig.transform
 	initial_rotation = rig.rotation
 	if impact.is_zero_approx(): impact = actor.get_meta("bullet_impulse", Vector2.ZERO)
@@ -70,7 +83,9 @@ func start(actor: Node, model: Node3D, render: SubViewport, impact := Vector2.ZE
 	brace_end = [0.35, 0.42, 0.28, 0.32][variant]
 	fall_start = [0.12, 0.16, 0.08, 0.10][variant]
 	yaw = -impact.angle() - PI * 0.5 if airborne else rig.rotation.y
-	shadow = viewport.get_node_or_null("GroundShadow") as MeshInstance3D
+	shadow = rig.find_child("GroundShadow", true, false) as MeshInstance3D
+	if shadow == null:
+		shadow = viewport.get_node_or_null("GroundShadow") as MeshInstance3D
 	if shadow == null:
 		shadow = MeshInstance3D.new()
 		shadow.name = "GroundShadow"
@@ -105,7 +120,7 @@ func start(actor: Node, model: Node3D, render: SubViewport, impact := Vector2.ZE
 		var joint := actor.get(key) as Node3D
 		if not is_instance_valid(joint): joint = rig.get(aliases.get(key, key)) as Node3D
 		if is_instance_valid(joint):
-			joints.append({"node": joint, "initial": joint.rotation, "brace": _vary_pose(key, poses[key][0], false), "rest": _vary_pose(key, poses[key][1], true)})
+			joints.append({"key": key, "node": joint, "initial": joint.rotation, "brace": _vary_pose(key, poses[key][0], false), "rest": _vary_pose(key, poses[key][1], true)})
 	# Os moradores da montanha/motoristas usam quatro articulações mais simples.
 	if joints.is_empty() and rig.get("limbs") is Array:
 		var limbs: Array = rig.get("limbs")
@@ -113,11 +128,14 @@ func start(actor: Node, model: Node3D, render: SubViewport, impact := Vector2.ZE
 			var joint := limbs[i] as Node3D
 			var side := -1.0 if i < 2 else 1.0
 			var key := ("left_" if side < 0 else "right_") + ("upper_arm" if i % 2 else "upper_leg")
-			joints.append({"node": joint, "initial": joint.rotation, "brace": _vary_pose(key, Vector3(-0.4, 0, side * 0.4), false), "rest": _vary_pose(key, Vector3(0.12, 0, side * (0.5 if i % 2 else 0.12)), true)})
+			joints.append({"key": key, "node": joint, "initial": joint.rotation, "brace": _vary_pose(key, Vector3(-0.4, 0, side * 0.4), false), "rest": _vary_pose(key, Vector3(0.12, 0, side * (0.5 if i % 2 else 0.12)), true)})
 	update(0.0)
 
 func update(delta: float) -> void:
 	if not active or not is_instance_valid(rig): return
+	if recovery_active:
+		_update_recovery(delta)
+		return
 	elapsed = minf(duration, elapsed + maxf(0.0, delta))
 	var progress := elapsed / duration
 	var fall := smoothstep(fall_start, 0.78, progress)
@@ -140,7 +158,7 @@ func update(delta: float) -> void:
 	shadow.material_override.albedo_color.a = initial_alpha * (1.0 - maxf(0.0, height) * 1.2)
 	# O enquadramento em pé mira o peito. No chão precisa mirar o corpo inteiro,
 	# senão cabeça e mãos desaparecem nas bordas do SubViewport.
-	if camera:
+	if camera and not shared_atlas_camera:
 		# O IML usa câmera vertical; seu eixo de cima original evita a
 		# singularidade de look_at com direção paralela ao eixo Y do mundo.
 		camera.look_at(camera_focus.lerp(Vector3(0, 0.20, 0), fall), camera_transform.basis.y.normalized())
@@ -148,6 +166,60 @@ func update(delta: float) -> void:
 		camera.size = lerpf(camera_size, maxf(camera_size, 2.6), fall)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	active = elapsed < duration
+
+## Levanta o mesmo rig que caiu. A pose passa por apoio lateral e joelho antes
+## de voltar ao repouso, evitando restaurar o personagem em um único frame.
+func begin_recovery(seconds := 1.45) -> void:
+	if not started or not is_instance_valid(rig) or recovery_active: return
+	recovery_active = true
+	active = true
+	recovery_elapsed = 0.0
+	recovery_duration = maxf(0.35, seconds)
+	recovery_transform = rig.transform
+	for pose in joints:
+		var joint := pose.node as Node3D
+		if is_instance_valid(joint): pose["recovery_start"] = joint.rotation
+
+func _update_recovery(delta: float) -> void:
+	recovery_elapsed = minf(recovery_duration, recovery_elapsed + maxf(0.0, delta))
+	var progress := recovery_elapsed / recovery_duration
+	var support := smoothstep(0.0, 0.28, progress)
+	var rise := smoothstep(0.20, 0.82, progress)
+	var settle := smoothstep(0.78, 1.0, progress)
+	var start_rotation := recovery_transform.basis.get_euler()
+	var supported_pitch := lerpf(start_rotation.x, 0.62, support)
+	var pitch := lerpf(supported_pitch, initial_rotation.x, rise)
+	pitch -= sin(settle * PI) * 0.055
+	var facing := lerp_angle(start_rotation.y, initial_rotation.y, rise)
+	rig.rotation = Vector3(pitch, facing, lerpf(start_rotation.z, initial_rotation.z, rise))
+	var upright := initial_transform.origin + Vector3(0, sin(rise * PI) * 0.07, 0)
+	rig.position = recovery_transform.origin.lerp(upright, rise)
+	for pose in joints:
+		var joint := pose.node as Node3D
+		if not is_instance_valid(joint): continue
+		var key := String(pose.get("key", ""))
+		var side := -1.0 if key.begins_with("left") else 1.0
+		var supported: Vector3 = pose.initial
+		if key.contains("arm"):
+			supported += Vector3(-0.82, 0.0, side * 0.42)
+		elif key.contains("leg"):
+			supported += Vector3(-0.72 if key.contains("upper") else 1.05, 0.0, side * 0.10)
+		var from: Vector3 = pose.get("recovery_start", pose.rest)
+		joint.rotation = from.lerp(supported, support).lerp(pose.initial, rise)
+	if is_instance_valid(shadow):
+		shadow.rotation = Vector3(0, facing, 0)
+		shadow.position = initial_shadow.origin
+		shadow.scale = Vector3(lerpf(1.05, 1.0, rise), 1.0, lerpf(2.8 * rig.scale.y, 1.0, rise))
+		shadow.material_override.albedo_color.a = initial_alpha
+	if is_instance_valid(camera) and not shared_atlas_camera:
+		var grounded := 1.0 - rise
+		camera.look_at(camera_focus.lerp(Vector3(0, 0.20, 0), grounded), camera_transform.basis.y.normalized())
+		camera.fov = lerpf(camera_fov, maxf(camera_fov, 40.0), grounded)
+		camera.size = lerpf(camera_size, maxf(camera_size, 2.6), grounded)
+	if is_instance_valid(viewport): viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	if recovery_elapsed >= recovery_duration:
+		recovery_active = false
+		active = false
 
 func reset() -> void:
 	if is_instance_valid(rig): rig.transform = initial_transform
@@ -157,11 +229,14 @@ func reset() -> void:
 		shadow.transform = initial_shadow
 		shadow.material_override.albedo_color.a = initial_alpha
 	if is_instance_valid(viewport): viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	if is_instance_valid(camera):
+	if is_instance_valid(camera) and not shared_atlas_camera:
 		camera.transform = camera_transform
 		camera.fov = camera_fov
 		camera.size = camera_size
 	joints.clear()
 	started = false
 	active = false
+	recovery_active = false
+	recovery_elapsed = 0.0
 	elapsed = 0.0
+	shared_atlas_camera = false

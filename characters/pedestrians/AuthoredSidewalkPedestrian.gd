@@ -18,6 +18,10 @@ var _route_direction := 1
 var _route_target_ready := false
 var _normal_walk_speed := 48.0
 var _spawn_distance := 0.0
+## Optional streaming restore position. It is applied during _ready(), after the
+## authored route has initialized, so a restored actor never renders once at the
+## default/route seed position before the population catalog state is applied.
+var initial_global_position: Variant = null
 var route_loop := false
 # Panic can leave the authored corridor. Rejoin a nearby accessible leg on foot.
 var _rejoining_route := false
@@ -79,8 +83,9 @@ func _ready() -> void:
 	# Offset lateral único para espalhar pedestres pela calçada (evita fila indiana)
 	lateral_offset = randf_range(-12.0, 12.0)
 	
-	# Cadências e velocidades de caminhada naturais e distintas (38 a 56 px/s)
-	_normal_walk_speed = clampf(randf_range(38.0, 56.0), 36.0, 58.0)
+	# A leitura isométrica fazia 38–56 px/s parecer uma corrida. Mantém variação
+	# entre pessoas, mas em uma faixa de caminhada urbana mais calma.
+	_normal_walk_speed = clampf(randf_range(32.0, 47.0), 30.0, 49.0)
 	base_walk_speed = _normal_walk_speed
 	var profile_roll := randf()
 	detour_bias *= 0.75 + profile_roll * 0.75
@@ -88,6 +93,8 @@ func _ready() -> void:
 	visit_cooldown = randf_range(14.0, 36.0) * (0.8 + randf() * 0.4)
 	
 	_place_at_route_distance(_spawn_distance)
+	if initial_global_position is Vector2:
+		global_position = initial_global_position
 	ambient_running_enabled = false
 	super._ready()
 	movement_navigation.grid_step = 12.0
@@ -121,6 +128,13 @@ func _validate_initial_spawn() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Gate before neighbor lookup, life routines and spacing. Previously only the
+	# base movement below was throttled, leaving the expensive authored layer at
+	# 60 Hz for every resident.
+	if not _prepare_ambient_physics_step(delta):
+		return
+	_ambient_step_prepared = true
+	delta = _ambient_prepared_delta
 	_life_clock += delta
 	_recovery_cooldown = maxf(0.0, _recovery_cooldown - delta)
 	_neighbor_refresh_counter += 1
@@ -135,10 +149,12 @@ func _physics_process(delta: float) -> void:
 		stuck_timer = 0.0
 		velocity = Vector2.ZERO
 		super._physics_process(delta)
+		_ambient_step_prepared = false
 		return
 		
 	base_walk_speed = _normal_walk_speed * _spacing_speed_factor()
 	super._physics_process(delta)
+	_ambient_step_prepared = false
 	if velocity.is_zero_approx() and locomotion_state in [&"walking", &"detour"]:
 		locomotion_state = &"waiting_person"
 	_enforce_sidewalk_guardrail()

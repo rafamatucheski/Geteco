@@ -53,6 +53,8 @@ var _phone_answered := false
 var _phone_audio: AudioStreamPlayer
 var story_arrival: Node
 var first_favors: RefCounted
+var _last_in_vehicle := false
+var _last_dead := false
 
 
 func configure(scene: Node2D) -> void:
@@ -439,6 +441,29 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func _is_player_in_vehicle() -> bool:
+	if not is_instance_valid(player):
+		return false
+	if player.has_method("is_driving") and player.call("is_driving"):
+		return true
+	var travel: Node = get_node_or_null("/root/RegionTravel")
+	if travel != null and travel.has_method("controlled_car") and travel.controlled_car() != null:
+		return true
+	for v in get_tree().get_nodes_in_group("vehicle"):
+		if not is_instance_valid(v):
+			continue
+		if v.get("is_driven_by_player") == true or v.has_meta("vehicle_boarding"):
+			return true
+	return false
+
+
+func _is_player_dead_or_dying() -> bool:
+	if not is_instance_valid(player):
+		return true
+	var h = player.get("health")
+	return player.get("is_dead") == true or player.get("is_recovering") == true or player.get("is_arrested") == true or (h != null and int(h) <= 0)
+
+
 func _process(delta: float) -> void:
 	if phase == "arrival_wait" and player.get("is_dead") != true:
 		_phone_wait += delta
@@ -446,6 +471,15 @@ func _process(delta: float) -> void:
 			_begin_phone()
 	if phase == "phone" and not _phone_answered and not _phone_audio.playing:
 		_phone_audio.play()
+	if is_instance_valid(player):
+		var in_veh := _is_player_in_vehicle()
+		var dead := _is_player_dead_or_dying()
+		if (in_veh or dead) and _obj_card != null and _obj_card.visible:
+			_obj_card.visible = false
+		elif (_last_in_vehicle and not in_veh) or (_last_dead and not dead):
+			_refresh_objective()
+		_last_in_vehicle = in_veh
+		_last_dead = dead
 	_refresh_clock += delta
 	if _refresh_clock >= 0.2 and is_instance_valid(player):
 		_refresh_clock = 0.0
@@ -522,7 +556,9 @@ func _refresh_objective() -> void:
 		var maciota_talking: bool = bool(maciota.get("is_talking")) if is_instance_valid(maciota) else false
 		var dialog_open: bool = _dialog.visible if is_instance_valid(_dialog) else false
 		var modal_open: bool = dialog_open or _owns_lock or board_open or maciota_talking or _is_any_interior_modal_open()
-		_obj_card.visible = not modal_open and player.visible and player.get("is_dead") != true and phase in ["police_visit", "police_exit", "yard_meeting", "tour_board", "meet_maciota", "board", "delivery_bank", "delivery_pickup", "delivery_return"]
+		var in_vehicle: bool = _is_player_in_vehicle()
+		var dead_or_dying: bool = _is_player_dead_or_dying()
+		_obj_card.visible = false # Keep mission guidance on the minimap, without a text overlay.
 
 
 func _lock_player() -> void:

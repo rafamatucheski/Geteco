@@ -1,0 +1,23 @@
+{
+  "id": "01a0c96b-aa26-73f5-bcf9-0a57a4957b83",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2391545076,
+  "prompt": "Full-body original male game character Jager Maciota, charismatic Brazilian garage owner, adult, slender elegant build, natural human proportions, warm medium tan skin, narrow face, neat thin black goatee. Tailored deep purple suit #6c3483 with black satin lapels, open neckline showing upper chest and thick gold chain, matching purple trousers, polished dark purple dress shoes. Wide-brim purple fedora with tan leopard-print band, dark sunglasses with gold frames. Confident composed expression. Gold walking cane with purple jewel held in right hand, clearly separated from leg. Relaxed A-pose, feet apart, complete hands and feet. Stylized realistic urban crime game art, clean readable silhouette, fabric folds, no base, no scenery, no text, no logos.",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1790085673836,
+  "progress": 100,
+  "started_at": 1790085673846,
+  "finished_at": 1790085734956,
+  "task_error": null,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96b-aa26-73f5-bcf9-0a57a4957b83/output/model.glb?Expires=4943635200&Signature=X66FWYOU2JjVNCpfuEQsAkHdkoA6CU8iGoiRsbYcWBjgV-X6RbGBFemO~Sf9iRTHy0xCVMA8a8-4eQBDNdNN7qp3ehpyYbr7iXc2Sq7opsIVEQwHKbMTc1BTaCtcBg7IL5e77MT9LG-nfRbM0neBfdXolvpLNEWYKP5Hbd-fUwkj1NlCe9-~YUyv815jDRTQeo1T7~ppJ4aTZ0iVDpgVdDjVHuOX6DDkGMTGhFjT4kaUnB4XDFIEPXc0yL8HZOSQAHiV6cJe~ls4ssfaoHNJTxJ3PUfob~yJvCyFIi2RSFXhq3JEYRzpAdjNgtj-dyeCytH~cKHdpK0IwbPjO1BG6Q__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/cefececc-5915-4ade-b732-d79e3b8a69fc/tasks/01a0c96b-aa26-73f5-bcf9-0a57a4957b83/output/preview.png?Expires=4943635200&Signature=DbVihY8iAp4XgHgm2-HC5sqPCB~Lx9LzpVB6UwZzU8424KoSHks3mpTA7WVmtkF41Jq3FoFnhlPZ3mJjT88RO3yzn9US6Gpqd5fOxNgXBNSuwbxjLuWn75-9rBGtb5HKN4sSIdFghE3IP3xqAK3A8qQP0wyDZBk5DBdREQuV2GvudEuXobMv5xFqa6vwP1guh8mmIO3Qi7RVNCYGWFi9adkhWHzCDnPrGVoXUXKgvuxB7uUxAcTKyUjzzvhsnnq3WpS8VMujq82emGnotssPWN9hTUU7N36M23HCZ2DCe88mAzYk-hvaJ4xbjyXPpjiqB8DA6WDZdNdnryek-zdr4A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20
+}

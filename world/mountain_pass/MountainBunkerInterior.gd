@@ -1,4 +1,4 @@
-extends "res://world/harbor/interiors/HarborInteriorBase.gd"
+extends "res://world/mountain_pass/MountainInlineSpecialRoom.gd"
 
 const MODEL := preload("res://world/mountain_pass/MountainBunker3D.gd")
 const VIEW_SIZE := Vector2i(1280, 960)
@@ -20,8 +20,11 @@ var _last_actor_position := Vector2.INF
 
 func _init() -> void:
 	interior_id = &"mountain_bunker"
-	display_name = "ESTAÇÃO ZERO / COVIL DOS LOBOS DE GELO"
+	display_name = "ESTAÇÃO ZERO"
 	room_size = Vector2(820, 490)
+	inline_scale = Vector2(.75, .75)
+	inline_pixels_per_metre = 18.0
+	inline_bounds = Rect2(-8.85, -5.8, 17.7, 11.6)
 
 # The 3D floor and projected solid geometry replace the rectangular base room.
 func _build_walls_and_floor() -> void:
@@ -42,23 +45,34 @@ func _setup_interior_content() -> void:
 	model = MODEL.new()
 	model.name = "StationZeroModel"
 	viewport_3d.add_child(model)
+	if inline_mode: model.scale = Vector3(inline_scale.x, 1, inline_scale.y)
 	camera_3d = Camera3D.new()
+	camera_3d.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	camera_3d.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera_3d.size = 17.5
 	viewport_3d.add_child(camera_3d)
-	camera_3d.position = Vector3(0, 20, 13)
+	camera_3d.position = Vector3(0, 18, 15)
 	camera_3d.look_at(Vector3(0, 0, 0))
+	camera_3d.force_update_transform()
+	camera_3d.reset_physics_interpolation()
 	camera_3d.current = true
 	sprite_3d = Sprite2D.new()
 	sprite_3d.name = "BunkerDisplay"
 	sprite_3d.texture = viewport_3d.get_texture()
 	sprite_3d.scale = Vector2.ONE * DISPLAY_SCALE
 	add_child(sprite_3d)
+	apply_inline_projection(sprite_3d, camera_3d, viewport_3d)
 	_build_projected_collisions()
-	_create_spawn_and_exit(project_floor(Vector2(0, 4.3)), project_floor(Vector2(0, 5.8)), &"bunker_exterior_return", "SAIR DA ESTAÇÃO ZERO")
-	exit_door.name = "ExitDoor"
-	exit_door.custom_prompt_text = "E"
-	exit_door.get_node("Facade").hide()
+	if inline_mode:
+		spawn_point = Marker2D.new()
+		spawn_point.name = "SpawnPoint"
+		spawn_point.position = project_floor(Vector2(0, 4.3))
+		add_child(spawn_point)
+	else:
+		_create_spawn_and_exit(project_floor(Vector2(0, 4.3)), project_floor(Vector2(0, 5.8)), &"bunker_exterior_return", "SAIR DA ESTAÇÃO ZERO")
+		exit_door.name = "ExitDoor"
+		exit_door.custom_prompt_text = "E"
+		exit_door.get_node("Facade").hide()
 	var boss_anchor := Marker2D.new()
 	boss_anchor.name = "Boss2Anchor"
 	boss_anchor.position = project_floor(Vector2(0, -2.5))
@@ -84,9 +98,22 @@ func _setup_interior_content() -> void:
 	room_camera.set_meta("mountain_fixed_framing", true)
 	add_child(room_camera)
 	_build_ui()
+	add_cash_reward(model, Vector2(1.8, 3.4), 1500, "mountain_bunker_cash_01")
+	if inline_mode:
+		var heat := Area2D.new()
+		heat.name = "StationHeaterHeat"
+		heat.add_to_group("heat_source")
+		var heater_shape := CollisionShape2D.new()
+		var circle := CircleShape2D.new()
+		circle.radius = 66.0
+		heater_shape.shape = circle
+		heater_shape.position = project_floor(Vector2(7.7, 2.8))
+		heat.add_child(heater_shape)
+		add_child(heat)
 
 func project_floor(point: Vector2) -> Vector2:
-	return (camera_3d.unproject_position(Vector3(point.x, 0, point.y)) - Vector2(VIEW_SIZE) * 0.5) * DISPLAY_SCALE
+	var floor := point * inline_scale if inline_mode else point
+	return sprite_3d.position + (camera_3d.unproject_position(Vector3(floor.x, 0, floor.y)) - Vector2(VIEW_SIZE) * 0.5) * sprite_3d.scale
 
 func _build_projected_collisions() -> void:
 	walls_body = StaticBody2D.new()
@@ -95,6 +122,7 @@ func _build_projected_collisions() -> void:
 	walls_body.collision_mask = 0
 	add_child(walls_body)
 	for footprint in model.footprints:
+		if inline_mode and footprint["id"] == "ExitThreshold": continue
 		var rect: Rect2 = footprint["rect"]
 		var polygon := CollisionPolygon2D.new()
 		polygon.name = String(footprint["id"])
@@ -105,10 +133,11 @@ func _build_projected_collisions() -> void:
 		walls_body.add_child(polygon)
 
 func set_npc_rendering_active(value: bool) -> void:
+	super.set_npc_rendering_active(value)
 	active = value
 	if room_camera:
-		room_camera.enabled = value
-		if value:
+		room_camera.enabled = value and not inline_mode
+		if value and not inline_mode:
 			room_camera.make_current()
 			_fit_camera()
 	set_process(value)
@@ -182,7 +211,7 @@ func _process(_delta: float) -> void:
 	elif local.distance_to(route_position) < 58:
 		hint.text = "[F] EXAMINAR MAPA DE ROTAS"
 	else:
-		hint.text = "ESTAÇÃO ZERO / ALOJAMENTO — COMANDO — RÁDIO"
+		hint.text = ""
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not active or not is_instance_valid(actor):

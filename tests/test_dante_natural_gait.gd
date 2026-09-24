@@ -25,6 +25,7 @@ func _run() -> void:
 	for sprinting in [false, true]:
 		var folded_knee := 0.0
 		var flight_frames := 0
+		var max_hand_height_gap := 0.0
 		for frame in 240:
 			player.walk_clock = frame * TAU / 120.0
 			player._update_locomotion(1.0 / 60.0, true, sprinting)
@@ -33,6 +34,7 @@ func _run() -> void:
 			if frame > 60 and absf(cos(player.walk_clock)) > 0.4:
 				var left_hand: Vector3 = player.left_lower_arm.to_global(Vector3(0, -0.20, 0))
 				var right_hand: Vector3 = player.right_lower_arm.to_global(Vector3(0, -0.20, 0))
+				max_hand_height_gap = maxf(max_hand_height_gap, absf(left_hand.y - right_hand.y))
 				var left_boot: Node3D = player.left_lower_leg.get_node("Foot")
 				var right_boot: Node3D = player.right_lower_leg.get_node("Foot")
 				check((left_hand.z - right_hand.z) * (left_boot.global_position.z - right_boot.global_position.z) < 0.0, "Arms oppose the same-side legs in both gaits")
@@ -57,6 +59,7 @@ func _run() -> void:
 		if sprinting:
 			check(folded_knee > PI * 0.5, "Sprint folds the recovering knee past a right angle")
 			check(flight_frames >= 18, "Sprint has sustained flight distinct from walking support")
+			check(max_hand_height_gap < 0.20, "Sprint arms keep a human-scale vertical swing")
 			print("RUN_SIGNATURE knee_degrees=", rad_to_deg(folded_knee), " flight_frames=", flight_frames, "/120")
 	for frame in 90:
 		player._update_locomotion(1.0 / 60.0, false, false)

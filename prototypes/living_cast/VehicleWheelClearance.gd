@@ -13,8 +13,14 @@ static var _content_keys: Dictionary = {}
 const CONTENT_KEY_LIMIT := 4096
 static var content_key_hits := 0
 static var content_key_invalidations := 0
+static var prepared_hits := 0
+const PREPARED_SIGNATURE_META := "vehicle_wheel_clearance_signature"
 
 static func carve(model: Node3D, wells: Array[Dictionary]) -> void:
+	var signature := _wells_signature(wells)
+	if model.has_meta(PREPARED_SIGNATURE_META) and int(model.get_meta(PREPARED_SIGNATURE_META)) == signature:
+		prepared_hits += 1
+		return
 	for part in model.get_children():
 		if not part is MeshInstance3D or part.has_meta("wheel_center") or part.mesh == null:
 			continue
@@ -42,6 +48,17 @@ static func carve(model: Node3D, wells: Array[Dictionary]) -> void:
 		# Damage/repair must use the carved geometry, or repairs close the wells.
 		if model.get("originals") is Dictionary and model.originals.has(part):
 			model.originals[part] = part.mesh
+	model.set_meta(PREPARED_SIGNATURE_META, signature)
+
+static func _wells_signature(wells: Array[Dictionary]) -> int:
+	var values: Array = []
+	for well in wells:
+		values.append([
+			well.get("center", Vector3.ZERO),
+			float(well.get("radius", 0.0)),
+			float(well.get("inner", 0.0)),
+		])
+	return hash(values)
 
 static func _content_key(source: Mesh, transform: Transform3D, relevant: Array[Dictionary]) -> String:
 	var prefix := str(transform, relevant)

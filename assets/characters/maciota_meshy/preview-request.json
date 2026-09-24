@@ -1,0 +1,12 @@
+{
+  "prompt": "Full-body original male game character Jager Maciota, charismatic Brazilian garage owner, adult, slender elegant build, natural human proportions, warm medium tan skin, narrow face, neat thin black goatee. Tailored deep purple suit #6c3483 with black satin lapels, open neckline showing upper chest and thick gold chain, matching purple trousers, polished dark purple dress shoes. Wide-brim purple fedora with tan leopard-print band, dark sunglasses with gold frames. Confident composed expression. Gold walking cane with purple jewel held in right hand, clearly separated from leg. Relaxed A-pose, feet apart, complete hands and feet. Stylized realistic urban crime game art, clean readable silhouette, fabric folds, no base, no scenery, no text, no logos.",
+  "topology": "triangle",
+  "target_polycount": 15000,
+  "should_remesh": true,
+  "pose_mode": "a-pose",
+  "target_formats": [
+    "glb"
+  ],
+  "ai_model": "meshy-6",
+  "mode": "preview"
+}

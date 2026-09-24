@@ -62,6 +62,7 @@ func _run() -> void:
 	player.collision_layer = 4
 	player.collision_mask = 7
 	player.speed = 100.0
+	player.position = Vector2(-52.0, 0.0)
 	var camera := Camera2D.new()
 	camera.name = "Camera"
 	camera.zoom = Vector2.ONE * 2.072
@@ -96,8 +97,9 @@ func _run() -> void:
 	await physics_frame
 	var initial: Dictionary = sewer.get_runtime_stats()
 	check(not initial.interior_loaded and not initial.inside, "closed cover keeps the underground scene unbuilt")
-	check(not sewer.is_processing(), "closed cover has no per-frame controller work")
-	check(sewer.request_interaction(player), "nearby production Player can open the cover")
+	check(sewer._surface_art.get_node_or_null("Prompt") == null, "surface has no orange marker or E prompt")
+	player.global_position = Vector2(-6.0, 0.0)
+	check(await wait_for_state(SEWER_SCRIPT.State.OPENING,1.0), "walking onto the cover starts descent without E")
 	check(sewer.get_runtime_stats().interior_loaded, "opening the cover builds the sewer on demand")
 	var original_scale: Vector2 = player.sprite_3d_display.scale
 	var original_material: Material = player.sprite_3d_display.material
@@ -119,7 +121,8 @@ func _run() -> void:
 	var entered: Dictionary = sewer.get_runtime_stats()
 	check(current_scene == starting_scene and player.get_parent() != world, "street stays resident while Dante moves to a separate scene instance")
 	check(entered.inside and entered.interior_visible, "sewer presentation is visible after descent")
-	check(entered.collision_bodies == 9, "compact sewer builds walls, channel, shelving, crates and cabinet collisions")
+	check(sewer._interior_overlay.get_node_or_null("ExitPrompt") == null, "ladder has no orange exit marker or E prompt")
+	check(entered.collision_bodies == 13, "sewer blocks walls, channel, shelving, crates, cabinet, barrels and raised pipes")
 	check(player.global_position.distance_to(sewer.global_position) < 1.0, "Dante stays on the same world coordinate through the descent")
 	check(player.visible and player.is_physics_processing() and not player.is_control_disabled, "Dante regains normal control underground")
 	check(entered.isolated_world and player.get_world_2d() != world.get_world_2d(), "underground collision has its own World2D, not a street collision layer")
@@ -129,6 +132,24 @@ func _run() -> void:
 	check(street_audio.volume_db <= -70.0, "street audio sources are inaudible underground")
 	check(not sewer._ambient_water.stream_paused and sewer._ambient_water.playing, "sewer water stays audible in its own instance")
 	check(sewer.contains_point(player.global_position), "production room scan recognizes the sewer interior")
+	check(player.has_meta("interior_actor_presentation"), "Dante shares the underground furniture depth buffer")
+	if DisplayServer.get_name() != "headless":
+		await verify_depth(player.get_meta("interior_actor_presentation"), "Dante")
+	var room_model: Node2D = sewer._interior_overlay.get_node("RoomModel")
+	var visitor := preload("res://characters/AnimatedPedestrian3D.gd").new() as CharacterBody2D
+	sewer._interior_overlay.add_child(visitor)
+	visitor.set_physics_process(false)
+	visitor.collision_mask = 1
+	visitor.global_position = player.global_position + Vector2(30, 0)
+	var visitor_depth := preload("res://systems/interiors/InteriorActorPresentation.gd").new()
+	sewer._interior_overlay.add_child(visitor_depth)
+	visitor_depth.configure(visitor, room_model.camera_3d, room_model.sprite_3d)
+	check(visitor.move_and_collide(Vector2(-250, 0)) != null, "underground wall blocks a visiting NPC")
+	if DisplayServer.get_name() != "headless":
+		await verify_depth(visitor_depth, "visiting NPC")
+	visitor_depth.restore()
+	visitor_depth.queue_free()
+	visitor.queue_free()
 	await verify_combat_isolation()
 
 	var before_walk := player.global_position
@@ -140,22 +161,17 @@ func _run() -> void:
 	check(player.global_position.x < sewer.global_position.x + SEWER_SCRIPT.INTERIOR_BOUNDS.end.x, "outer sewer wall contains Dante")
 
 	player.global_position = sewer.to_global(SEWER_SCRIPT.SECRET_POSITION + Vector2(-20.0, 0.0))
-	await frames(3)
-	var interact := InputEventKey.new()
-	interact.physical_keycode = KEY_E
-	interact.pressed = true
-	sewer._unhandled_input(interact)
-	check(player.world_pickups_collected.has(SEWER_SCRIPT.SECRET_PICKUP_ID), "E records the unique secret in Player save data")
+	for frame in 4: await physics_frame
+	check(player.world_pickups_collected.has(SEWER_SCRIPT.SECRET_PICKUP_ID), "walking over the secret records its unique pickup in Player save data")
 	check(player.weapon_inventory.get("sawed_off", false) == true, "secret stash grants the sawed-off shotgun")
 	check(player.weapon_ammo.get("sawed_off", {}).get("reserve", 0) >= 24, "secret weapon includes usable ammunition")
 	var serialized: Dictionary = player.serialize()
 	check(serialized.world_pickups_collected.has(SEWER_SCRIPT.SECRET_PICKUP_ID), "secret collection survives Player serialization")
-	check(Vector2(serialized.position[0], serialized.position[1]) == sewer.global_position, "saving underground records the safe surface return point")
+	check(Vector2(serialized.position[0], serialized.position[1]) == sewer.global_position + Vector2(0,20), "saving underground records a safe point beside the automatic cover")
 
 	player.global_position = sewer.global_position
 	await frames(2)
-	sewer._unhandled_input(interact)
-	check(await wait_for_state(SEWER_SCRIPT.State.SURFACE), "exit animation finishes after Dante replaces the cover")
+	check(await wait_for_state(SEWER_SCRIPT.State.SURFACE), "returning to the ladder exits without E and replaces the cover")
 	await frames(2)
 	var exited: Dictionary = sewer.get_runtime_stats()
 	check(current_scene == starting_scene, "exit also keeps the same active scene")
@@ -181,6 +197,54 @@ func _run() -> void:
 	await create_timer(0.05).timeout
 	quit(1 if not failures.is_empty() else 0)
 
+func verify_depth(adapter: Node, label: String) -> void:
+	adapter._update_scale()
+	adapter.set_process(false)
+	var room_model: Node2D = sewer._interior_overlay.get_node("RoomModel")
+	var camera: Camera3D = room_model.camera_3d
+	var view: SubViewport = room_model.view
+	var anchor: Node3D = adapter.anchor
+	var panel := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(4, 4, .2)
+	panel.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color("427766")
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	panel.material_override = material
+	view.add_child(panel)
+	panel.position = anchor.position + Vector3.UP + (camera.position - anchor.position).normalized() * 1.5
+	panel.look_at(camera.global_position)
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var hidden_actor: Image = view.get_texture().get_image()
+	anchor.hide()
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var hidden_empty: Image = view.get_texture().get_image()
+	var pixel: Vector2 = camera.unproject_position(anchor.position + Vector3.UP * .9)
+	check(changed_pixels(hidden_actor, hidden_empty, pixel) == 0, label + " is hidden by an opaque wall")
+	panel.hide()
+	anchor.show()
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var visible_actor: Image = view.get_texture().get_image()
+	anchor.hide()
+	await process_frame
+	await RenderingServer.frame_post_draw
+	var visible_empty: Image = view.get_texture().get_image()
+	check(changed_pixels(visible_actor, visible_empty, pixel) > 100, label + " is visible on open floor")
+	panel.queue_free()
+	anchor.show()
+	adapter.set_process(true)
+
+func changed_pixels(a: Image, b: Image, center: Vector2) -> int:
+	var changed := 0
+	for y in range(maxi(0, int(center.y) - 25), mini(a.get_height(), int(center.y) + 25)):
+		for x in range(maxi(0, int(center.x) - 20), mini(a.get_width(), int(center.x) + 20)):
+			if a.get_pixel(x, y) != b.get_pixel(x, y): changed += 1
+	return changed
+
 func verify_combat_isolation() -> void:
 	var room: Node2D = sewer._interior_overlay
 	var above := CombatTarget.new()
@@ -193,10 +257,12 @@ func verify_combat_isolation() -> void:
 	await physics_frame
 	var wanted := root.get_node("WantedManager")
 	var points: int = wanted.crime_points
+	player.weapon_inventory["pistol"] = true
 	player.weapon_ammo["pistol"] = {"clip": 10, "reserve": 30}
 	player.equip_weapon("pistol")
+	check(player.active_weapon_id == "pistol", "firearm fixture equips an owned pistol")
 	player._shoot_towards(below.global_position)
-	var shots := room.find_children("*", "Area2D", true, false)
+	var shots := room.find_children("*", "Area2D", true, false).filter(func(node): return node.has_signal("impact_resolved"))
 	check(not shots.is_empty() and shots[-1].get_world_2d() == below.get_world_2d(), "native firearm creates its projectile in the sewer World2D")
 	await create_timer(0.15).timeout
 	check(below.health < 1000 and above.health == 1000, "bullet hits underground target, not the street target at identical coordinates")
@@ -215,6 +281,9 @@ func verify_combat_isolation() -> void:
 	var before_melee := below.health
 	player._shoot_towards(below.global_position)
 	check(below.health < before_melee and above.health == 1000, "native melee cone cannot hit a street target")
+	# Let the real blast/melee impulse finish before placing the grenade target;
+	# otherwise it can be pushed behind the canal's protective wall mid-throw.
+	await create_timer(.8).timeout
 	player.global_position = sewer.global_position + Vector2(-40, 40)
 	below.global_position = sewer.global_position + Vector2(70, 40)
 	above.global_position = below.global_position
@@ -223,12 +292,17 @@ func verify_combat_isolation() -> void:
 	player.equip_weapon("grenade")
 	var before_grenade := below.health
 	player._shoot_towards(below.global_position)
+	await create_timer(preload("res://scripts/player/MeshyMeleePose.gd").GRENADE_RELEASE + .05).timeout
 	var grenades := room.find_children("*", "CharacterBody2D", true, false).filter(func(body): return body is GrenadeProjectile)
 	check(grenades.size() == 1 and grenades[0].get_world_2d() == below.get_world_2d(), "native grenade is created in the isolated physics space")
-	await create_timer(2.35).timeout
+	await create_timer(1.65).timeout
+	await create_timer(.7).timeout
 	check(below.health < before_grenade and above.health == 1000, "grenade blast is local to the sewer")
 	wanted.report_crime(30)
 	check(wanted.crime_points == points, "underground activity does not increase surface wanted level")
+	# The combat fixture teleports through the ladder radius. Resume its walk
+	# probe from a fresh interior visit rather than triggering a false exit.
+	sewer._exit_armed = false
 	player.global_position = sewer.global_position
 	above.queue_free()
 	below.queue_free()

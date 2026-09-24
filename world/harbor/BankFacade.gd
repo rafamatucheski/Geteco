@@ -90,6 +90,20 @@ static func draw_facade(host: Node2D, bounds: Rect2, dark: bool, rain: bool) -> 
 	if rain:
 		host.draw_line(Vector2(left+8,bounds.position.y+11),Vector2(right-8,bounds.position.y+11),Color(.7,.85,.86,.2),1)
 
+static func draw_inline_cutaway(host: Node2D, bounds: Rect2) -> void:
+	# The roof and tall street wall are gone while the player occupies the
+	# rendered bank. Low masonry keeps its original footprint legible.
+	var stone := Color("c7c6b5")
+	var shade := Color("92978b")
+	var bronze := Color("a49666")
+	host.draw_rect(Rect2(bounds.position.x, bounds.position.y, bounds.size.x, 6), stone)
+	host.draw_rect(Rect2(bounds.position.x, bounds.position.y, 6, bounds.size.y), stone)
+	host.draw_rect(Rect2(bounds.end.x - 6, bounds.position.y, 6, bounds.size.y), shade)
+	var front := bounds.end.y
+	host.draw_rect(Rect2(bounds.position.x, front - 8, -26.0 - bounds.position.x, 8), shade)
+	host.draw_rect(Rect2(26, front - 8, bounds.end.x - 26.0, 8), shade)
+	host.draw_line(Vector2(-24, front), Vector2(24, front), bronze, 2)
+
 static func _draw_column(host: Node2D, x: float, top: float, bottom: float, stone: Color, light: Color, shade: Color) -> void:
 	host.draw_colored_polygon(PackedVector2Array([Vector2(x+5,top+6),Vector2(x+12,top+9),Vector2(x+12,bottom),Vector2(x+5,bottom)]),Color(0.17,.22,.20,.25))
 	host.draw_rect(Rect2(x-6,top+7,12,bottom-top-12),stone)

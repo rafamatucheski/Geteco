@@ -1,5 +1,8 @@
 extends "res://world/mountain_pass/SummitSkiLodge3D.gd"
 
+var _left_door_parts: Array[MeshInstance3D] = []
+var _right_door_parts: Array[MeshInstance3D] = []
+
 func _ready() -> void:
 	var timber := _mat("timber",Color("493c32"))
 	var stone := _mat("stone",Color("535b60"))
@@ -28,9 +31,11 @@ func _ready() -> void:
 			_box("Cladding",Vector3(side*3.29,y,0),Vector3(.035,.022,3.7),iron)
 		var roof := _box("Roof",Vector3(side*1.7,3.55,0),Vector3(3.8,.20,4.7),iron,Vector3(0,0,-side*23))
 		_box("SnowRoof",roof.position+Vector3(0,.13,0),Vector3(3.8,.10,4.7),snow,Vector3(0,0,-side*23))
-	_box("Door",Vector3(0,1.18,1.82),Vector3(1.1,2.2,.14),iron).set_meta("interior_solid_id",&"ShopDoor")
-	_box("DoorGlass",Vector3(0,1.4,1.9),Vector3(.84,1.3,.035),glass)
-	_box("Handle",Vector3(.38,1.1,1.94),Vector3(.03,.25,.035),stone)
+	_left_door_parts.append(_box("DoorLeft",Vector3(-.275,1.18,1.82),Vector3(.55,2.2,.14),iron))
+	_right_door_parts.append(_box("DoorRight",Vector3(.275,1.18,1.82),Vector3(.55,2.2,.14),iron))
+	_left_door_parts.append(_box("DoorGlassLeft",Vector3(-.275,1.4,1.9),Vector3(.42,1.3,.035),glass))
+	_right_door_parts.append(_box("DoorGlassRight",Vector3(.275,1.4,1.9),Vector3(.42,1.3,.035),glass))
+	_right_door_parts.append(_box("Handle",Vector3(.43,1.1,1.94),Vector3(.03,.25,.035),stone))
 	_box("Threshold",Vector3(0,.035,2.25),Vector3(1.8,.07,.7),stone)
 	var label := Label3D.new()
 	label.text = "BOUTIQUE ALPINA"
@@ -39,3 +44,9 @@ func _ready() -> void:
 	label.position = Vector3(0,3.04,2.07)
 	label.modulate = Color("ddd5be")
 	add_child(label)
+
+func set_open_amount(amount: float) -> void:
+	for part in _left_door_parts:
+		part.position.x = -.275 - .57 * amount
+	for part in _right_door_parts:
+		part.position.x = (.43 if part.name == "Handle" else .275) + .57 * amount

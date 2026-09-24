@@ -96,7 +96,20 @@ static func get_skid_stream(vehicle_id: String = "") -> AudioStream:
 		return _cached_skid[key]
 	var stream := _resolve_vehicle_sound_stream(vehicle_id, "skid")
 	if stream == null:
-		stream = _generate_skid_stream(vehicle_id)
+		var family := preload("res://audio/VehicleEngineSound.gd").family_for_vehicle(vehicle_id)
+		var kind := "street"
+		if vehicle_id == "monaliza": kind = "monaliza"
+		elif family in ["truck", "bus", "fire_diesel", "diesel"]: kind = "heavy"
+		elif family in ["sport", "vq35", "m8_v8", "rosso_v12", "bike_sport"]: kind = "sport"
+		elif family == "muscle": kind = "muscle"
+		# The generated bank may be upgraded independently of its consumers.
+		# Keep the existing fallback until recorded skid entries are available.
+		var bank_script: Script = preload("res://audio/acoustic/AcousticBank.gd")
+		var bank_constants: Dictionary = bank_script.get_script_constant_map()
+		var recorded_skids: Dictionary = bank_constants.get("SKIDS", {})
+		stream = recorded_skids.get(kind)
+		if stream == null:
+			stream = _generate_skid_stream(vehicle_id)
 	_cached_skid[key] = stream
 	return stream
 
@@ -618,36 +631,7 @@ static func get_bullet_metal_hit_stream() -> AudioStream:
 static var _cached_explosion: AudioStream = null
 
 static func get_explosion_stream() -> AudioStream:
-	if ResourceLoader.exists("res://audio/explosion.wav"):
-		return load("res://audio/explosion.wav")
-	if _cached_explosion != null:
-		return _cached_explosion
-
-	var sample_rate := 22050
-	var duration := 1.4
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var sub_env := exp(-t * 3.5)
-		var noise_env := exp(-t * 5.0)
-		var sub_boom := sin(2.0 * PI * (65.0 - t * 25.0) * t) * sub_env * 0.9
-		var fireball_roar := randf_range(-0.8, 0.8) * noise_env * 0.7
-		var debris_clatter := randf_range(-0.4, 0.4) * exp(-maxf(0.0, t - 0.2) * 8.0) * 0.4
-		var sample := (sub_boom + fireball_roar + debris_clatter) * 0.85
-		var int_sample := clampi(int(sample * 32767.0), -32768, 32767)
-		data.encode_s16(i * 2, int_sample)
-
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.stereo = false
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_explosion = stream
-	return stream
+	return COMBAT_AUDIO.sound("explosion")
 
 # ==========================================
 # CHUVA (RAIN AMBIENCE LOOP SUAVE COM GOTAS)
@@ -833,7 +817,9 @@ static func get_knife_slash_stream() -> AudioStream:
 	_cached_knife_slash = stream
 	return stream
 
-static func get_gunshot_stream(weapon_id: String = "pistol") -> AudioStream:
+static func get_gunshot_stream(weapon_id: String = "pistol", _suppressed: bool = false) -> AudioStream:
+	if _suppressed and weapon_id in ["pistol","smg","shotgun","ak47","m4a1","hunting_rifle"]:
+		return COMBAT_AUDIO.sound("suppressed_"+weapon_id)
 	match weapon_id:
 		"hunting_rifle":
 			return COMBAT_AUDIO.sound("hunting_rifle")
@@ -923,29 +909,7 @@ static func get_gunshot_sawed_off_stream() -> AudioStream:
 
 # --- LANÇA-MÍSSEIS RPG (Disparo do foguete com propulsão sibilante) ---
 static func get_rpg_launch_stream() -> AudioStream:
-	if _cached_rpg_launch != null: return _cached_rpg_launch
-	var sample_rate := 22050
-	var duration := 0.65
-	var num_samples := int(sample_rate * duration)
-	var data := PackedByteArray()
-	data.resize(num_samples * 2)
-	var last_noise := 0.0
-	for i in range(num_samples):
-		var t := float(i) / float(sample_rate)
-		var whoosh := (0.4 + 0.6 * sin(2.0 * PI * (320.0 + 850.0 * t) * t)) * exp(-t * 6.0)
-		var raw_noise := randf_range(-1.0, 1.0)
-		last_noise = last_noise * 0.70 + raw_noise * 0.30
-		var jet := last_noise * exp(-t * 5.0) * 0.90
-		var sub := sin(2.0 * PI * 55.0 * t) * exp(-t * 12.0) * 0.80
-		var sample := tanh((whoosh + jet + sub) * 1.25) * 0.92
-		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = sample_rate
-	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	stream.data = data
-	_cached_rpg_launch = stream
-	return stream
+	return COMBAT_AUDIO.sound("rpg_launch")
 
 # --- LANÇA-CHAMAS (Sopro e rugido contínuo de gás e combustão de chamas) ---
 static func get_flamethrower_stream() -> AudioStream:
@@ -1003,7 +967,7 @@ static func get_ricochet_stream() -> AudioStream:
 		return load("res://audio/ricochet.wav")
 	if ResourceLoader.exists("res://audio/ricochet.ogg"):
 		return load("res://audio/ricochet.ogg")
-	return COMBAT_AUDIO.sound("metal")
+	return COMBAT_AUDIO.sound("ricochet")
 
 # ==========================================
 # AMBIÊNCIA CLIMÁTICA POR BIOMA (LOOPS)

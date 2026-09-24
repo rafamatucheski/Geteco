@@ -12,6 +12,8 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func run() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("out_dir="): output = arg.trim_prefix("out_dir=")
 	DirAccess.make_dir_recursive_absolute(output)
 	root.size = Vector2i(960, 540)
 	RenderingServer.set_default_clear_color(Color("273039"))
@@ -52,6 +54,13 @@ func run() -> void:
 			spawned.rotation = 0
 			spawned.position += Vector2(60, 0)
 			await capture("rocket-launch")
+			check(get_nodes_in_group("rocket_trails").size() == 1, "One bounded smoke wake follows rocket")
+			spawned._trigger_explosion(spawned.global_position)
+			var blast = get_nodes_in_group("explosion_visuals").back()
+			check(not blast.rocket_direction.is_zero_approx(), "RPG impact has directional presentation")
+			check(blast.fragments.size() <= 30, "RPG impact bounds fragment work")
+			await create_timer(.12).timeout
+			await capture("rocket-impact")
 			spawned.queue_free()
 			player.weapon_ammo[id].clip = 0
 			player.combat_pose.update(player, 1.0/60, true, false, 0)
@@ -72,6 +81,9 @@ func run() -> void:
 				if node is FlameJet: remaining += 1
 			check(remaining == 0, "flame packets finish after trigger release")
 	player._flamethrower_audio.stop()
+	await create_timer(1.2).timeout
+	check(get_nodes_in_group("rocket_trails").is_empty() and get_nodes_in_group("rocket_backblasts").is_empty(), "Rocket wake and backblast clean up after firing")
+	check(get_nodes_in_group("explosion_visuals").is_empty(), "RPG fireball finishes after its lifetime")
 	world.queue_free()
 	await process_frame
 	print("WEAPON_EFFECTS_REALISM failures=", failures.size())

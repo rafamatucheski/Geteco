@@ -1,10 +1,20 @@
 extends Node2D
 ## Variable anatomical fragments form one coroner incident.
 const MAX_REMAINS := 16
+const LIFETIME := 90.0
+const FADE_SECONDS := 5.0
+const BUILD_PIECES_PER_FRAME := 1
+const BUILD_BUDGET_USEC := 1800
+static var _build_queue: Array = []
+static var _last_build_frame := -1
 var pieces: Array[Node2D] = []
 var claims := {}
 var is_dead := true
 var elapsed := 0.0
+var _source_actor: Node2D
+var _build_plans: Array = []
+var _build_index := 0
+var _presentation_started := false
 
 class Piece extends CharacterBody2D:
 	var part_keys: Array = []
@@ -82,9 +92,6 @@ static func spawn(actor: Node2D, origin: Vector2, source: CollisionObject2D = nu
 	for i in plans.size():
 		var piece := Piece.new()
 		piece.part_keys = plans[i]
-		piece.fragment_model = preload("res://guns/combat/BodyFragmentMesh.gd").build(actor, plans[i])
-		var bounds: AABB = piece.fragment_model.get_meta("fragment_bounds")
-		piece.shadow_radius = clampf(bounds.size.length()*5.5, 2, 6)
 		var spread := lerpf(-1.4, 1.4, float(i)/maxf(1, plans.size()-1)) + rng.randf_range(-.32, .32)
 		piece.velocity = outward.rotated(spread) * rng.randf_range(95, 235)
 		piece.spin = rng.randf_range(-8, 8)
@@ -100,22 +107,59 @@ static func spawn(actor: Node2D, origin: Vector2, source: CollisionObject2D = nu
 			piece.age = 2.0
 		if source is PhysicsBody2D: piece.add_collision_exception_with(source)
 		remains.pieces.append(piece)
-	var visual: Node
-	if actor.has_meta("interior_actor_presentation"):
-		visual = preload("res://guns/combat/InteriorRemainsPresentation.gd").new()
-	else:
-		visual = preload("res://guns/combat/FragmentAtlasPresentation.gd").new()
-	remains.add_child(visual)
-	visual.configure(actor, remains)
-	actor.hide()
-	if actor.has_meta("interior_actor_presentation"):
-		var presentation: Node = actor.get_meta("interior_actor_presentation")
-		if is_instance_valid(presentation): presentation.anchor.hide()
-	actor.set_physics_process(false)
+	remains._source_actor = actor
+	remains._build_plans = plans
+	_build_queue.append(remains)
 	# Witnesses report the victim once; fragments never dispatch their own fleet.
 	if death_care and death_care.records().has(death_care.identity(actor)):
 		death_care.records()[death_care.identity(actor)].fragments = remains.custody_snapshot()
 	return remains
+
+func _build_one_piece() -> void:
+	if _build_index >= _build_plans.size(): return
+	var piece: Piece = pieces[_build_index]
+	if is_instance_valid(_source_actor):
+		piece.fragment_model = preload("res://guns/combat/BodyFragmentMesh.gd").build(_source_actor, _build_plans[_build_index])
+		var bounds: AABB = piece.fragment_model.get_meta("fragment_bounds")
+		piece.shadow_radius = clampf(bounds.size.length()*5.5, 2, 6)
+	_build_index += 1
+	if _build_index >= _build_plans.size(): _finish_presentation()
+
+func _finish_presentation() -> void:
+	if _presentation_started: return
+	_presentation_started = true
+	if not is_instance_valid(_source_actor): return
+	var visual: Node
+	if _source_actor.has_meta("interior_actor_presentation"):
+		visual = preload("res://guns/combat/InteriorRemainsPresentation.gd").new()
+	else:
+		visual = preload("res://guns/combat/FragmentAtlasPresentation.gd").new()
+	add_child(visual)
+	visual.configure(_source_actor, self)
+	_source_actor.hide()
+	if _source_actor.has_meta("interior_actor_presentation"):
+		var presentation: Node = _source_actor.get_meta("interior_actor_presentation")
+		if is_instance_valid(presentation): presentation.anchor.hide()
+	_source_actor.set_physics_process(false)
+
+func _pump_build_queue() -> void:
+	var frame := Engine.get_process_frames()
+	if frame == _last_build_frame: return
+	_last_build_frame = frame
+	var started := Time.get_ticks_usec()
+	var built := 0
+	while built < BUILD_PIECES_PER_FRAME and not _build_queue.is_empty():
+		var remains: Node2D = _build_queue[0]
+		if not is_instance_valid(remains) or remains.is_queued_for_deletion():
+			_build_queue.pop_front()
+			continue
+		if remains._build_index >= remains._build_plans.size():
+			_build_queue.pop_front()
+			continue
+		remains._build_one_piece()
+		built += 1
+		if remains._build_index >= remains._build_plans.size(): _build_queue.pop_front()
+		if Time.get_ticks_usec() - started >= BUILD_BUDGET_USEC: break
 
 func custody_snapshot() -> Array:
 	var snapshot := []
@@ -128,8 +172,32 @@ func _ready() -> void:
 	add_to_group("explosion_remains")
 
 func _process(delta: float) -> void:
+	_pump_build_queue()
 	elapsed += delta
-	if elapsed > 150.0 and not get_meta("medical_pending", false): queue_free()
+	# Dispatch can fail or remain pending indefinitely; it must not pin meshes.
+	modulate.a = minf(modulate.a, 1.0 - clampf((elapsed - LIFETIME) / FADE_SECONDS, 0.0, 1.0))
+	if elapsed >= LIFETIME + FADE_SECONDS:
+		set_meta("service_complete", true)
+		var care := get_node_or_null("/root/CoronerCare")
+		if care and is_instance_valid(_source_actor):
+			var key: String = care.identity(self)
+			if care.records().has(key):
+				care.records()[key].fragments = []
+				# Preserve bodies already in custody; expire only abandoned remains.
+				if not care.records()[key].phase in care.CUSTODY:
+					care.mark_unrecovered(_source_actor)
+		if is_instance_valid(_source_actor) and _source_actor.get("is_dead") == true and not _source_actor.is_in_group("player"):
+			_source_actor.queue_free()
+		queue_free()
+
+func _exit_tree() -> void:
+	_build_queue.erase(self)
+	if is_instance_valid(_source_actor) and _source_actor.has_meta("explosion_remains") and _source_actor.get_meta("explosion_remains") == self:
+		_source_actor.remove_meta("explosion_remains")
+	# A casualty may unload while its budgeted atlas is still being built.
+	for piece in pieces:
+		if is_instance_valid(piece) and is_instance_valid(piece.fragment_model) and piece.fragment_model.get_parent() == null:
+			piece.fragment_model.free()
 
 func collection_position(worker: Node2D) -> Vector2:
 	var key := worker.get_instance_id()
@@ -156,9 +224,9 @@ func collect_piece(worker: Node2D) -> bool:
 		pieces.erase(piece)
 		claims.erase(worker.get_instance_id())
 		piece.queue_free()
-		var care := get_node("/root/CoronerCare")
-		var key: String = care.identity(self)
-		if care.records().has(key):
+		var care := get_node_or_null("/root/CoronerCare")
+		var key: String = care.identity(self) if care else ""
+		if care and care.records().has(key):
 			care.records()[key].fragments = custody_snapshot()
 			care.records()[key].collected_parts = int(care.records()[key].get("collected_parts",0))+1
 	if pieces.is_empty():

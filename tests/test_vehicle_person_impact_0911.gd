@@ -52,6 +52,8 @@ func run() -> void:
 		check(coasting_distance > 0 and absf(car.position.x - before.x - coasting_distance) < 1.0 and absf(car.velocity.x - coasting_speed) < 1.0, id + " keeps moving with only normal coasting friction")
 		check(car._hit_stop_frames == 0 and get_nodes_in_group("crash_bursts").is_empty(), id + " no wall feedback")
 		check(actor.has_meta("vehicle_feedback_ms") and car.bloody_tires_timer > 0, id + " blood and body sound triggered")
+		var splashes := get_nodes_in_group("vehicle_splashes")
+		check(not splashes.is_empty() and splashes.back().scale.x <= 0.45, id + " blood splash stays compact")
 		var count := get_nodes_in_group("ground_blood").size()
 		IMPACT.hit(car, actor, Vector2(300,0))
 		check(get_nodes_in_group("ground_blood").size() == count, id + " contact not charged twice")

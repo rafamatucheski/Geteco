@@ -1,18 +1,18 @@
 extends Node2D
-## Static, road-aligned escarpments. The same lip defines visible and physical void.
+## Static, road-aligned escarpments used only as visual terrain.
 var road: Node2D
 var patches: Array[Dictionary] = []
-var hazard: Area2D
 
 func build(sections: Array[PackedVector2Array]) -> void:
 	z_index = -1
 	preload("res://world/mountain_pass/MountainGroundMaterials.gd").grain(self)
-	hazard = Area2D.new()
-	hazard.collision_layer = 0
-	hazard.collision_mask = 1 | 2 | 4 | 8
-	add_child(hazard)
-	hazard.body_entered.connect(func(_body): set_physics_process(true))
-	set_physics_process(false)
+	# The lake occupies the valley below this road bend. Cliff faces may end at
+	# its shore, but must never form a solid-looking wedge across the water.
+	var lake_shore := PackedVector2Array([
+		Vector2(6720, 350), Vector2(7200, 270), Vector2(7440, -140),
+		Vector2(7220, -300), Vector2(6940, -110), Vector2(6740, 140)
+	])
+	var lake_clearance := Geometry2D.offset_polygon(lake_shore, 24.0, Geometry2D.JOIN_ROUND)
 	for section in sections:
 		for i in range(0,section.size()-4,4):
 			var a := section[i]
@@ -30,6 +30,12 @@ func build(sections: Array[PackedVector2Array]) -> void:
 				if point.distance_to(road.curve.get_closest_point(point)) < 80.0: safe=false
 			if not safe: continue
 			var polygon := PackedVector2Array([a,b,foot_b,foot_a])
+			var crosses_lake := false
+			for shore in lake_clearance:
+				if not Geometry2D.intersect_polygons(polygon, shore).is_empty():
+					crosses_lake = true
+					break
+			if crosses_lake: continue
 			# Summit connections are paved ground, including the entire merged junction.
 			var overlaps_pavement := false
 			for surface in road.pavement:
@@ -37,9 +43,6 @@ func build(sections: Array[PackedVector2Array]) -> void:
 			if overlaps_pavement: continue
 			if Geometry2D.triangulate_polygon(polygon).is_empty(): continue
 			patches.append({"lip":PackedVector2Array([a,b]),"foot":PackedVector2Array([foot_a,foot_b]),"polygon":polygon,"normal":(na+nb).normalized()})
-			var shape := CollisionPolygon2D.new()
-			shape.polygon = polygon
-			hazard.add_child(shape)
 	queue_redraw()
 
 func _draw() -> void:
@@ -77,40 +80,3 @@ func _draw() -> void:
 			if layer in [1,3,5]: draw_polyline(top,Color(.15,.19,.19,.38-float(layer)*.04),1.2,true)
 		draw_line(a,b,Color("a99d86"),3.0,true)
 		draw_line(a+patch.normal*3,b+patch.normal*3,Color("42443b"),2.0,true)
-
-func _physics_process(_delta: float) -> void:
-	var bodies := hazard.get_overlapping_bodies().filter(func(body): return body is CharacterBody2D and (body.has_method("take_environment_damage") or body.is_in_group("vehicle")))
-	if bodies.is_empty():
-		set_physics_process(false)
-		return
-	for body in bodies:
-		if body.has_meta("mountain_falling"): continue
-		var point := to_local(body.global_position)
-		for patch in patches:
-			if Geometry2D.is_point_in_polygon(point,patch.polygon):
-				_on_body_entered(body,patch.normal)
-				break
-
-func _on_body_entered(body: Node2D, outward: Vector2) -> void:
-	if body.has_meta("mountain_falling") or not body is CharacterBody2D: return
-	if not body.has_method("take_environment_damage") and not body.is_in_group("vehicle"): return
-	if body.get("is_dead") == true or body.get("is_exploded") == true: return
-	_fall.call_deferred(body,outward)
-
-func _fall(body: Node2D, outward: Vector2) -> void:
-	if not is_instance_valid(body) or not _can_fall(body): return
-	if body.is_in_group("vehicle"):
-		body.set_meta("cliff_recovery_position", road.to_global(road.curve.get_closest_point(road.to_local(body.global_position))))
-	var effect := preload("res://world/mountain_pass/MountainCliffFall.gd").new()
-	effect.name = "MountainCliffFall"
-	get_tree().root.add_child(effect)
-	effect.begin(body, outward)
-
-func _can_fall(body: Node2D) -> bool:
-	if not body is CharacterBody2D or body.has_meta("mountain_falling"): return false
-	if not body.visible: return false
-	if body.get("is_dead") == true or body.get("is_exploded") == true: return false
-	if body.get("is_recovering") == true or body.get("is_arrested") == true: return false
-	if body.get("_respawn_grace_active") == true or body.has_meta("mountain_interior"): return false
-	if body.get("current_vehicle") != null or body.has_meta("mountain_lift_riding"): return false
-	return body.has_method("take_environment_damage") or body.is_in_group("vehicle")

@@ -6,7 +6,10 @@ extends Node
 const POOL_SIZE_POLICE = 7 # Three sedans, two SUVs and two motorcycle patrols.
 const POOL_SIZE_AMBULANCE = 2
 const POOL_SIZE_FIRE = 2
-const POOL_SIZE_CORONER = 2
+# Fatal casualties are bounded visual corpses; the unused IML/hearse fleet is
+# intentionally not instantiated.
+const POOL_SIZE_CORONER = 0
+const MAX_POOL_READY_WAIT_FRAMES := 120
 
 var _pool: Dictionary = {"police": [], "ambulance": [], "fire": [], "coroner": []}
 var _officer_reserve: Dictionary = {}
@@ -54,10 +57,16 @@ func _exit_tree() -> void:
 
 func prepare_presentations() -> void:
 	var batch := preload("res://ui/LoadingWorkBatch.gd").new()
-	# Called behind the loading screen. Pooling just the 2D shell leaves the
-	# expensive model/doors/wheels to be assembled on the first dispatch.
+	# Called behind the loading screen. Deferred pool members must be ready
+	# before gameplay, otherwise the first dispatch performs an indivisible
+	# 3D construction on the gameplay frame.
 	for fleet in _pool.values():
 		for vehicle in fleet:
+			if not is_instance_valid(vehicle): continue
+			var wait_frames := 0
+			while is_instance_valid(vehicle) and not vehicle.is_node_ready() and wait_frames < MAX_POOL_READY_WAIT_FRAMES:
+				await get_tree().process_frame
+				wait_frames += 1
 			if not is_instance_valid(vehicle) or not vehicle.is_node_ready(): continue
 			if vehicle.visual_3d != null: continue
 			await batch.checkpoint(get_tree())

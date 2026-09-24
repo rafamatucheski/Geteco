@@ -5,16 +5,25 @@ var view: Node2D
 var original_parent: Node
 var original_transform: Transform3D
 var original_shape: Shape2D
+var street_sprite: Sprite2D
+var street_shadow: CanvasItem
+var shadow_was_visible := false
+var collision_shape: CollisionShape2D
 var floor_bounds := Rect2()
 var last_transform := Transform2D(0,Vector2(INF,INF))
 
 func configure(vehicle: CharacterBody2D, room_view: Node2D) -> void:
 	car = vehicle
 	view = room_view
+	street_sprite = car.get_node_or_null("Visual") as Sprite2D
+	if street_sprite == null: street_sprite = car.get("sprite") as Sprite2D
+	street_shadow = car.get_node_or_null("ContactShadow") as CanvasItem
+	shadow_was_visible = is_instance_valid(street_shadow) and street_shadow.visible
+	collision_shape = car.get_node_or_null("Collision") as CollisionShape2D
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	original_parent = car.body_model.get_parent()
 	original_transform = car.body_model.transform
-	original_shape = car.collision.shape
+	original_shape = collision_shape.shape
 	var first := true
 	for mesh in car.body_model.find_children("*","MeshInstance3D",true,false):
 		if mesh.mesh == null: continue
@@ -28,8 +37,9 @@ func configure(vehicle: CharacterBody2D, room_view: Node2D) -> void:
 	car.set_meta("interior_vehicle_presentation",self)
 	car.tree_exiting.connect(restore,CONNECT_ONE_SHOT)
 	view.viewport_3d.tree_exiting.connect(restore,CONNECT_ONE_SHOT)
-	car.visual.hide()
-	car.collision.shape = ConvexPolygonShape2D.new()
+	street_sprite.hide()
+	if is_instance_valid(street_shadow): street_shadow.hide()
+	collision_shape.shape = ConvexPolygonShape2D.new()
 	process_priority = 150
 	sync()
 
@@ -39,8 +49,17 @@ func project_anchor(point: Vector3) -> Vector2:
 
 func sync() -> void:
 	if not is_instance_valid(car) or not is_instance_valid(view): return
-	car.visual.hide()
-	car.body_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if is_instance_valid(street_sprite) and street_sprite.visible: street_sprite.hide()
+	if is_instance_valid(street_shadow) and street_shadow.visible: street_shadow.hide()
+	if car.body_viewport.render_target_update_mode != SubViewport.UPDATE_DISABLED:
+		car.body_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	for light in [car.headlight,car.second_headlight]:
+		if is_instance_valid(light) and light.visible: light.hide()
+	# Parked vehicles keep the same collision footprint for thousands of frames.
+	# Reassigning ConvexPolygonShape2D.points on every frame forces physics work.
+	var relative_transform: Transform2D = view.global_transform.affine_inverse() * car.global_transform
+	if last_transform.is_equal_approx(relative_transform): return
+	last_transform = relative_transform
 	var p: Vector2 = view.unproject_floor(car.global_position)
 	car.body_model.position = Vector3(p.x,0,p.y)
 	# Use the same yaw contract as vehicle 3D updates to avoid frame-dependent
@@ -50,11 +69,7 @@ func sync() -> void:
 	for corner in [floor_bounds.position,Vector2(floor_bounds.end.x,floor_bounds.position.y),floor_bounds.end,Vector2(floor_bounds.position.x,floor_bounds.end.y)]:
 		var world: Vector3 = car.body_model.to_global(Vector3(corner.x,0,corner.y))
 		points.append(car.to_local(view.to_global(view.project_point(world))))
-	car.collision.shape.points = points
-	car.visual.hide()
-	car.body_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-	for light in [car.headlight,car.second_headlight]:
-		if is_instance_valid(light): light.hide()
+	collision_shape.shape.points = points
 
 func _process(_delta: float) -> void:
 	sync()
@@ -67,9 +82,10 @@ func restore() -> void:
 	if is_instance_valid(car.body_model) and is_instance_valid(original_parent):
 		car.body_model.reparent(original_parent,false)
 		car.body_model.transform = original_transform
-	car.collision.shape = original_shape
+	if is_instance_valid(collision_shape): collision_shape.shape = original_shape
 	car.remove_meta("interior_vehicle_presentation")
-	car.visual.show()
+	if is_instance_valid(street_sprite): street_sprite.show()
+	if is_instance_valid(street_shadow): street_shadow.visible = shadow_was_visible
 	car.body_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	car = null
 

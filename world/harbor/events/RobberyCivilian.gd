@@ -13,7 +13,7 @@ func _ready() -> void:
 		_navigation.grid_step=12.0
 func _create_model() -> Node3D:
 	if is_instance_valid(room) and room.is_bank: return preload("res://world/harbor/events/BankClerkModel.gd").new()
-	return preload("res://prototypes/living_cast/CivilianDriverModel.gd").new()
+	return preload("res://world/harbor/events/FuelCashierModel.gd").new()
 func frighten() -> void:
 	if frightened or is_dead: return
 	frightened=true

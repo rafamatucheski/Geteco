@@ -57,5 +57,6 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 16
-text = "E  ENTRAR"
+text = ""
 horizontal_alignment = 1
+

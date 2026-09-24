@@ -31,6 +31,13 @@ func run() -> void:
 	cabin = load("res://world/mountain_pass/MountainCabinInterior.gd").new()
 	cabin.position = Vector2(22500, 20000)
 	world.add_child(cabin)
+	var floor_left: Vector2 = cabin.project_floor(Vector2(-3, 0))
+	var floor_right: Vector2 = cabin.project_floor(Vector2(3, 0))
+	var floor_back: Vector2 = cabin.project_floor(Vector2(0, -3))
+	var floor_front: Vector2 = cabin.project_floor(Vector2(0, 3))
+	check(absf(floor_left.y - floor_right.y) < 0.01 and absf(floor_back.x - floor_front.x) < 0.01, "Cabin floor axes stay aligned with the screen, like Maciota's garage")
+	var back_width: float = cabin.project_floor(Vector2(3, -3)).distance_to(cabin.project_floor(Vector2(-3, -3)))
+	check(absf(back_width - floor_left.distance_to(floor_right)) < 0.01, "Cabin furniture keeps the same apparent scale at front and back")
 	var player = load("res://characters/Player.gd").new()
 	player.name = "Player"
 	player.collision_layer = 4
@@ -203,7 +210,7 @@ func run() -> void:
 		await process_frame
 		check(player.model_root.get_viewport() == room.viewport_3d and presentation.anchor.global_position.distance_to(previous) > .01, "Shared rig follows movement in " + script)
 		check(room.viewport_3d.render_target_update_mode == SubViewport.UPDATE_ALWAYS, "Occupied room renders its moving actor in " + script)
-		if script == "SummitSkiLodgeInterior":
+		if script in ["SummitSkiLodgeInterior", "MountainMysteryCaveInterior"]:
 			# Lighting changes must preserve full-body collision and depth for guests.
 			var visitor = load("res://characters/AnimatedPedestrian3D.gd").new()
 			world.add_child(visitor)
@@ -217,7 +224,8 @@ func run() -> void:
 				var helper: Node = pair[1]
 				var other: Node2D = visitor if walker == player else player
 				other.global_position = room.to_global(room.room_view.project_floor(Vector2(-6.8,0)))
-				for shape in room.walls_body.get_children():
+				var room_shapes: Array = room.walls_body.get_children() if room.walls_body != null else []
+				for shape in room_shapes:
 					if not shape.has_meta("model_floor_rect"): continue
 					var rect: Rect2 = shape.get_meta("model_floor_rect")
 					for direction in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN, Vector2(-1,-1), Vector2(1,-1), Vector2(-1,1), Vector2(1,1)]:

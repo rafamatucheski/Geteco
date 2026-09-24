@@ -16,11 +16,20 @@ extends RefCounted
 
 const PINE_SCRIPT := preload("res://world/mountain_pass/MountainPine3D.gd")
 const ROCK_SCRIPT := preload("res://geodata/nature/ProceduralUrbanRock.gd")
+const FOREST_STREAMER_SCRIPT := preload("res://world/mountain_pass/MountainForestStreamer.gd")
 const ENTRANCE_SCENE: PackedScene = preload("res://scripts/entrances/BuildingEntrance.tscn")
 const PICKUP_SCRIPT := preload("res://world/mountain_pass/MountainPickup.gd")
 const ARCTIC_JEEP_SCRIPT := preload("res://world/mountain_pass/ArcticJeep.gd")
 const SOIL := preload("res://world/mountain_pass/ForestGroundBlend.gd")
 const WATER_BANKS := preload("res://world/mountain_pass/MountainWaterBanks.gd")
+
+# Streaming must stay well below the whole-frame 16.67 ms budget because the
+# rest of MountainPass keeps running while the forest is materialized.
+const FOREST_STREAM_PLAN_BUDGET_USEC := 1200
+const FOREST_STREAM_BUILD_BUDGET_USEC := 1800
+const FOREST_STREAM_MAX_PLAN_ATTEMPTS := 32
+const FOREST_STREAM_MAX_INSTANCES := 2
+const FOREST_STREAM_ENTRY := Vector2(4780, 400)
 
 # Curvas das 3 estradinhas de terra
 static var dirt_road_curves: Array[Curve2D] = []
@@ -67,7 +76,7 @@ static func build_full_scenery(root_node: Node2D) -> void:
 	build_secret_mountain_lake(scenery_root, setpieces)
 	build_mountain_chalets(scenery_root, setpieces, interior_mgr)
 	build_mountain_ammunation(scenery_root, setpieces, interior_mgr)
-	await build_dense_pine_forest(scenery_root, road)
+	build_dense_pine_forest(scenery_root, road)
 	build_road_signage_and_chevrons(scenery_root)
 
 	if setpieces:
@@ -82,7 +91,7 @@ static func _init_dirt_roads() -> void:
 
 	# 1. Estrada dos Chales (East Vale Road)
 	var c1 := Curve2D.new()
-	c1.add_point(Vector2(6350, 560))
+	c1.add_point(Vector2(6250, 340))
 	c1.add_point(Vector2(6850, 690))
 	c1.add_point(Vector2(7350, 620))
 	c1.add_point(Vector2(7850, 580))
@@ -92,9 +101,9 @@ static func _init_dirt_roads() -> void:
 
 	# 2. Estrada da Ammu-Nation (Timber Ridge Cut)
 	var c2 := Curve2D.new()
-	c2.add_point(Vector2(6650, 120))
-	c2.add_point(Vector2(7150, -60))
-	c2.add_point(Vector2(7450, -160))
+	c2.add_point(Vector2(6950, -250))
+	c2.add_point(Vector2(7150, -350))
+	c2.add_point(Vector2(7450, -320))
 	c2.add_point(Vector2(7750, -220))
 	dirt_road_curves.append(c2)
 
@@ -294,6 +303,17 @@ static func build_lake_and_rapids(parent: Node2D) -> void:
 	])
 	water_system.add_child(deep_water)
 	WATER_BANKS.water(deep_water,28.0)
+	# Only the deep basin blocks actors. The visible shallow rim stays walkable
+	# and uses the same polygon for water footsteps, ripples and shoreline.
+	var depth := preload("res://world/mountain_pass/MountainLakeDepth.gd").new()
+	depth.name = "DeepWaterBoundary"
+	depth.water = deep_water.polygon
+	water_system.add_child(depth)
+	var shallow_steps := preload("res://world/mountain_pass/MountainLakeWater.gd").new()
+	shallow_steps.name = "AlpineLakeShallows"
+	shallow_steps.polygon = shallow_water.polygon
+	shallow_steps.dry_decks.append(preload("res://world/mountain_pass/MountainLakeGeometry.gd").DECK)
+	water_system.add_child(shallow_steps)
 
 	var stream := Line2D.new()
 	stream.width = 30.0
@@ -565,27 +585,17 @@ static func build_secret_mountain_lake(parent: Node2D, setpieces: Node2D, stream
 	oar.points = PackedVector2Array([Vector2(-90, 24), Vector2(-70, 52)])
 	island.add_child(oar)
 
-	# Pedras de travessia (stepping stones) com anéis de ondulação na água
+	# Walkable rocks keep their dry footprint; surface detail is static drawing.
+	var stone_index := 0
 	for step_pos in [Vector2(45, 105), Vector2(58, 75), Vector2(65, 50)]:
-		var ripple := Line2D.new()
-		ripple.width = 1.8
-		ripple.default_color = Color(0.6, 0.85, 0.95, 0.5)
-		var r_pts := PackedVector2Array()
-		for i in 10:
-			var a := TAU * float(i) / 10.0
-			r_pts.append(Vector2(cos(a) * 16.0, sin(a) * 12.0))
-		r_pts.append(r_pts[0])
-		ripple.points = r_pts
-		ripple.position = step_pos
-		secret_lake.add_child(ripple)
-		preload("res://geodata/nature/WaterPresentation.gd").apply(ripple, "foam")
-
-		var stone := Polygon2D.new()
-		stone.color = Color("#574f44")
+		var stone := preload("res://world/mountain_pass/MountainLakeSteppingStone.gd").new()
+		stone.name = "LakeSteppingStone%d" % stone_index
+		stone.variant = stone_index
 		stone.polygon = PackedVector2Array([Vector2(-12, -9), Vector2(11, -10), Vector2(13, 9), Vector2(-10, 10)])
 		stone.position = step_pos
 		secret_lake.add_child(stone)
 		water_effects.dry_islands.append(stone)
+		stone_index += 1
 
 	# O COFRE ABERTO / CAIXA MILITAR DE CONTRABANDO
 	var cache_box := Polygon2D.new()
@@ -688,6 +698,7 @@ static func _build_single_chalet(parent: Node2D, pos: Vector2, _size: Vector2, i
 	chalet.position = pos
 	chalet.model_script = preload("res://world/mountain_pass/art/winter_props/LumberjackCabin3D.gd")
 	chalet.paint = Color("68503c") if id != "RangerStation" else Color("45616a")
+	chalet.open_front = true
 	parent.add_child(chalet)
 	var yard := Polygon2D.new()
 	yard.name = "ChaletYard"
@@ -700,11 +711,16 @@ static func _build_single_chalet(parent: Node2D, pos: Vector2, _size: Vector2, i
 	door.name = "Door"
 	door.position = chalet.project(chalet.model.entrance_local_position)+Vector2(0,12)
 	door.display_name = title
-	door.destination_id = &"mountain_cabin"
-	door.custom_prompt_text = "E"
+	var cabin_id: StringName = &"mountain_cabin_encosta" if id == "TimberlineChalet" else (&"mountain_cabin_forest" if id == "RangerStation" else &"mountain_cabin")
+	door.destination_id = cabin_id
+	door.handle_input_locally = false
+	door.show_entrance_marker = false
+	door.show_interaction_prompt = false
 	chalet.add_child(door)
 	door.get_node("Facade").hide()
-	interior_mgr.register_exterior_entrance(door,&"mountain_cabin",door.global_position+Vector2(0,26))
+	var room: Node2D = interior_mgr.get_interior(cabin_id)
+	room.attach_inline_facade(chalet, door, interior_mgr)
+	chalet.bind_inline_entrance(door, room)
 	if has_vehicle:
 		var pickup = PICKUP_SCRIPT.new()
 		pickup.name = "ChaletRanchPickup3D"
@@ -731,9 +747,14 @@ static func build_mountain_ammunation(parent: Node2D, _setpieces: Node2D, interi
 
 # 6. Floresta Densa de Pinheiros (MountainPineTree)
 static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, streamed := false) -> void:
+	# Keep the editor/standalone construction path unchanged. The streamed path
+	# owns its deterministic plan so planning itself cannot monopolize a frame.
+	if streamed:
+		# Fire-and-continue is intentional: the planner yields every short slice
+		# and the regional build must not serialize all later systems behind it.
+		_build_dense_pine_forest_streamed(parent, road)
+		return
 	var rail_reservation := preload("res://geodata/rail/HarborMountainRailRoute.gd").new()
-	var chunk_started := Time.get_ticks_usec()
-	var chunk_trees := 0
 	var forest := Node2D.new()
 	forest.name = "DensePineForest"
 	forest.z_index = 6
@@ -785,12 +806,6 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 		var placed := 0
 		var attempts := 0
 		while placed < count and attempts < count * 6:
-			if streamed and (Time.get_ticks_usec() - chunk_started >= 6000):
-				await parent.get_tree().process_frame
-				if not is_instance_valid(parent) or not parent.is_inside_tree():
-					return
-				chunk_started = Time.get_ticks_usec()
-				chunk_trees = 0
 			attempts += 1
 			var angle := randf() * TAU
 			var dist := sqrt(randf()) * radius
@@ -801,7 +816,7 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 			if preload("res://world/mountain_pass/MountainVillageLayout.gd").is_reserved(pos): continue
 			if rail_reservation.is_mountain_reserved(pos): continue
 			for site in [Vector2(7940,850),Vector2(8610,700),Vector2(7660,-730),Vector2(6610,-1250),Vector2(6710,-1280)]:
-				if Rect2(site-Vector2(105,80),Vector2(230,160)).has_point(pos): reserved = true
+				if Rect2(site-Vector2(135,105),Vector2(270,275)).has_point(pos): reserved = true
 			if reserved: continue
 			if Rect2(5800, 440, 420, 460).has_point(pos) or Rect2(6750, -3170, 430, 380).has_point(pos):
 				continue
@@ -830,7 +845,6 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 					rock.base_color = Color("89979f") if is_snow else Color("61665a")
 					rock.set_meta("mountain_grove", true)
 					forest.add_child(rock)
-					chunk_trees += 1
 					placed += 1
 					continue
 			var pine = PINE_SCRIPT.new()
@@ -840,8 +854,125 @@ static func build_dense_pine_forest(parent: Node2D, road: MountainPassRoad, stre
 			pine.is_snowy = (is_snow and posmod(pine.variant_seed,7)!=0) or (not is_snow and pos.y < -650 and posmod(pine.variant_seed,5)==0)
 			if grove: pine.set_meta("mountain_grove", true)
 			forest.add_child(pine)
-			chunk_trees += 1
 			placed += 1
+
+static func _build_dense_pine_forest_streamed(parent: Node2D, road: MountainPassRoad) -> void:
+	var forest = FOREST_STREAMER_SCRIPT.new()
+	forest.name = "DensePineForest"
+	forest.z_index = 6
+	forest.set_meta("streamed_build_complete", false)
+	parent.add_child(forest)
+
+	var rail_reservation := preload("res://geodata/rail/HarborMountainRailRoute.gd").new()
+	var lake_bounds := Rect2(6680, -320, 800, 700)
+	var secret_lake_bounds := Rect2(5080, -1500, 740, 680)
+	var bunker_bounds := Rect2(6340, -2920, 320, 260)
+	var ammu_bounds := Rect2(7560, -320, 380, 260)
+	var cluster_configs: Array[Dictionary] = [
+		{"center": Vector2(4780, 180), "count": 25, "radius": 220.0, "snow": false},
+		{"center": Vector2(4780, 640), "count": 25, "radius": 220.0, "snow": false},
+		{"center": Vector2(5850, 680), "count": 28, "radius": 300.0, "snow": false},
+		{"center": Vector2(6750, 560), "count": 32, "radius": 280.0, "snow": false},
+		{"center": Vector2(7650, 750), "count": 30, "radius": 300.0, "snow": false},
+		{"center": Vector2(8500, 650), "count": 32, "radius": 320.0, "snow": false},
+		{"center": Vector2(8100, 100), "count": 30, "radius": 320.0, "snow": false},
+		{"center": Vector2(8300, -300), "count": 30, "radius": 340.0, "snow": false},
+		{"center": Vector2(7800, -800), "count": 28, "radius": 320.0, "snow": false},
+		{"center": Vector2(6450, -420), "count": 26, "radius": 260.0, "snow": false},
+		{"center": Vector2(5850, -820), "count": 24, "radius": 250.0, "snow": false},
+		{"center": Vector2(5450, -1150), "count": 32, "radius": 360.0, "snow": true},
+		{"center": Vector2(6750, -950), "count": 28, "radius": 280.0, "snow": false},
+		{"center": Vector2(6100, -1450), "count": 26, "radius": 280.0, "snow": true},
+		{"center": Vector2(7150, -1750), "count": 28, "radius": 300.0, "snow": true},
+		{"center": Vector2(5900, -2150), "count": 24, "radius": 260.0, "snow": true},
+		{"center": Vector2(6950, -2550), "count": 24, "radius": 240.0, "snow": true},
+		{"center": Vector2(6200, -2700), "count": 18, "radius": 220.0, "snow": true},
+		{"center": Vector2(6850, -2750), "count": 18, "radius": 220.0, "snow": true},
+		{"center": Vector2(5480, -360), "count": 34, "radius": 280.0, "snow": false, "grove": true},
+		{"center": Vector2(5750, -100), "count": 30, "radius": 245.0, "snow": false, "grove": true},
+		{"center": Vector2(5660, -650), "count": 26, "radius": 210.0, "snow": false, "grove": true},
+		{"center": Vector2(5200, -1830), "count": 30, "radius": 270.0, "snow": true, "grove": true},
+		{"center": Vector2(5700, -1770), "count": 32, "radius": 265.0, "snow": true, "grove": true},
+		{"center": Vector2(6070, -1870), "count": 24, "radius": 230.0, "snow": true, "grove": true},
+		{"center": Vector2(5470, -2390), "count": 26, "radius": 280.0, "snow": true, "grove": true},
+		{"center": Vector2(5930, -2490), "count": 24, "radius": 220.0, "snow": true, "grove": true}
+	]
+
+	var plan: Array[Dictionary] = []
+	var planned_positions: Array[Vector2] = []
+	var planning_frames := 1
+	var planning_peak_usec := 0
+	var attempts_in_frame := 0
+	var slice_started := Time.get_ticks_usec()
+	for cluster_index in cluster_configs.size():
+		var cfg := cluster_configs[cluster_index]
+		var center: Vector2 = cfg["center"]
+		var count: int = cfg["count"]
+		var radius: float = cfg["radius"]
+		var is_snow: bool = cfg["snow"]
+		var grove: bool = cfg.get("grove", false)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 9137 + cluster_index * 104729
+		var placed := 0
+		var attempts := 0
+		while placed < count and attempts < count * 6:
+			var elapsed := Time.get_ticks_usec() - slice_started
+			if attempts_in_frame >= FOREST_STREAM_MAX_PLAN_ATTEMPTS or elapsed >= FOREST_STREAM_PLAN_BUDGET_USEC:
+				planning_peak_usec = maxi(planning_peak_usec, elapsed)
+				planning_frames += 1
+				await parent.get_tree().process_frame
+				if not is_instance_valid(parent) or not parent.is_inside_tree() or not is_instance_valid(forest):
+					return
+				slice_started = Time.get_ticks_usec()
+				attempts_in_frame = 0
+			attempts += 1
+			attempts_in_frame += 1
+			var angle := rng.randf() * TAU
+			var dist := sqrt(rng.randf()) * radius
+			var pos := center + Vector2(cos(angle), sin(angle)) * dist
+			if _is_helipad_reserved(pos): continue
+			var reserved := false
+			if preload("res://world/mountain_pass/MountainVillageLayout.gd").is_reserved(pos): continue
+			if rail_reservation.is_mountain_reserved(pos): continue
+			for site in [Vector2(7940,850),Vector2(8610,700),Vector2(7660,-730),Vector2(6610,-1250),Vector2(6710,-1280)]:
+				if Rect2(site-Vector2(135,105),Vector2(270,275)).has_point(pos):
+					reserved = true
+					break
+			if reserved: continue
+			if Rect2(5800, 440, 420, 460).has_point(pos) or Rect2(6750, -3170, 430, 380).has_point(pos): continue
+			if Rect2(6910,-2860,480,440).has_point(pos): continue
+			if road and road.is_point_on_road(pos, 130.0): continue
+			if _is_point_on_dirt_road(pos, 42.0): continue
+			if lake_bounds.has_point(pos) or secret_lake_bounds.has_point(pos) or bunker_bounds.has_point(pos) or ammu_bounds.has_point(pos) or pos.distance_to(Vector2(6500, -2660)) < 165.0: continue
+			if pos.distance_to(Vector2(7480, 760)) < 125.0 or pos.distance_to(Vector2(8350, 730)) < 145.0 or pos.distance_to(Vector2(8460, 760)) < 95.0 or pos.distance_to(Vector2(6050, 780)) < 80.0: continue
+			if grove:
+				for neighbor_pos in planned_positions:
+					if neighbor_pos.distance_to(pos) < 85.0:
+						reserved = true
+						break
+				if reserved: continue
+			var item := {
+				"plan_id": plan.size(),
+				"position": pos,
+				"snow_region": is_snow,
+				"grove": grove,
+				"rock": grove and placed % 5 == 0,
+				"placed_index": placed,
+				"scale": rng.randf_range(0.65, 1.55),
+			}
+			plan.append(item)
+			planned_positions.append(pos)
+			placed += 1
+
+	planning_peak_usec = maxi(planning_peak_usec, Time.get_ticks_usec() - slice_started)
+	# Planning order preserves grove spacing. The runtime streamer chooses the
+	# materialization order from the live player/vehicle position and velocity.
+	forest.set_meta("stream_plan_count", plan.size())
+	forest.set_meta("stream_planning_frames", planning_frames)
+	forest.set_meta("stream_planning_peak_usec", planning_peak_usec)
+	# No distant visual or collision is created here. Configuration returns as
+	# soon as the deterministic plan is indexed; proximity drives all residency.
+	forest.configure(plan)
 
 static func _is_point_on_dirt_road(pos: Vector2, tolerance: float) -> bool:
 	for curve in dirt_road_curves:
@@ -900,7 +1031,7 @@ static func build_detailed_footbridge(bridge_node: Node2D) -> void:
 	if bridge_node == null:
 		return
 	
-	bridge_node.position = Vector2(7050, 40)
+	bridge_node.position = Vector2(7100, 40)
 	bridge_node.z_index = 4
 
 	for sy in [-20.0, 20.0]:
@@ -908,21 +1039,21 @@ static func build_detailed_footbridge(bridge_node: Node2D) -> void:
 		cable.width = 3.2
 		cable.default_color = Color("#636e72")
 		cable.points = PackedVector2Array([
-			Vector2(-95, sy), Vector2(-30, sy - 9),
-			Vector2(30, sy - 9), Vector2(95, sy)
+			Vector2(-180, sy), Vector2(-90, sy - 9),
+			Vector2(90, sy - 9), Vector2(220, sy)
 		])
 		bridge_node.add_child(cable)
 
-	for i in 18:
-		var t: float = float(i) / 17.0
-		var px: float = lerpf(-90.0, 90.0, t)
+	for i in 52:
+		var t: float = float(i) / 51.0
+		var px: float = lerpf(-215.0, 215.0, t)
 		var plank := Line2D.new()
 		plank.width = 8.5
 		plank.default_color = Color(0.44, 0.32, 0.20).lightened((i % 2) * 0.08)
 		plank.points = PackedVector2Array([Vector2(px, -20), Vector2(px, 20)])
 		bridge_node.add_child(plank)
 
-	for px in [-95.0, 95.0]:
+	for px in [-180.0, 220.0]:
 		for py in [-24.0, 24.0]:
 			var post := Polygon2D.new()
 			post.color = Color("#2d2015")

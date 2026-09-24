@@ -16,6 +16,9 @@ func check(ok: bool, message: String) -> void:
 		push_error(message)
 
 func run() -> void:
+	root.get_node("SaveManager")._save_dir = "user://cargo-loot-validation/"
+	root.get_node("SaveManager")._save_directory_ready = false
+	root.get_node("SaveManager").clear_pending_save()
 	var world := Node2D.new()
 	world.position = Vector2(4300, -4960)
 	root.add_child(world)

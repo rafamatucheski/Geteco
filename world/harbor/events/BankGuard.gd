@@ -16,6 +16,7 @@ func _ready() -> void:
 	remove_from_group("police_officer")
 	add_to_group("bank_security")
 	_rebuild_uniform()
+	model_root.scale = Vector3(.88, .94, .90)
 	var rig := get_node("NPCCombatRig")
 	rig.combat_pose=preload("res://world/harbor/events/BankGuardCombatPose.gd").new()
 	rig.combat_pose.update(rig,1.0,false,false,0.0)
@@ -37,7 +38,7 @@ func _rebuild_uniform() -> void:
 		PART.piece(torso_node,Vector3(.09,.04,.15),Vector3(side*.17,.22,0),Color("33363a"))
 	PART.piece(torso_node,Vector3(.055,.07,.025),Vector3(-.10,.15,-.16),Color("dabd72"))
 	PART.piece(torso_node,Vector3(.06,.11,.055),Vector3(.19,-.15,0),Color("20252c"))
-	PART.piece(head_node,Vector3(.29,.30,.27),Vector3(0,-.025,0),skin,true)
+	PART.piece(head_node,Vector3(.26,.28,.245),Vector3(0,-.025,0),skin,true)
 	PART.piece(head_node,Vector3(.055,.07,.06),Vector3(0,-.03,-.14),skin)
 	for side in [-1,1]:
 		eyes.append(PART.piece(head_node,Vector3(.035,.018,.02),Vector3(side*.065,.005,-.13),Color("22252b")))

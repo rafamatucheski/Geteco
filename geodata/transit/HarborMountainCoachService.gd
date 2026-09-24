@@ -34,6 +34,8 @@ var _clock := 0.0
 var _last_lane: Path2D
 var _connection_by_path: Dictionary = {}
 var _return_merge_committed := false
+var _route_retry_left := 0.0
+var _route_failure_reported := false
 
 func configure(harbor_world: Node2D, continuous_stream: Node) -> void:
 	world = harbor_world
@@ -132,17 +134,15 @@ func _initialize_service() -> void:
 		ped_col.disabled = false
 	state = "harbor_dwell"
 	dwell_elapsed = 0.0
-	# The city leg does not require a resident mountain scene. Prepare it ahead
-	# of this scheduled service or the player, not while parked at the terminal.
-	while is_inside_tree() and is_instance_valid(coach) and not coach._detached_from_lane and not stream.ready_for_crossing and not stream.building and coach.global_position.y >= -1000.0:
+	# The autonomous service must not make a distant region resident on the
+	# player's frame budget. ContinuousWorld owns the physical player-approach
+	# gate; an unobserved coach waits at the border until that gate prepares the
+	# mountain. When the player rides or follows the coach, the same physical
+	# approach naturally opens the gate with enough lead time.
+	while is_inside_tree() and is_instance_valid(coach) and not coach._detached_from_lane and not stream.ready_for_crossing:
 		await get_tree().create_timer(0.2).timeout
 	if not is_inside_tree() or not is_instance_valid(coach) or coach._detached_from_lane:
 		_initializing = false
-		return
-	stream.ensure_mountain()
-	while is_inside_tree() and not stream.ready_for_crossing:
-		await get_tree().process_frame
-	if not is_inside_tree():
 		return
 	mountain_lane = stream.mountain.get_node("MountainTraffic").lane
 	_build_access()
@@ -246,6 +246,7 @@ func _process(delta: float) -> void:
 		return
 	_clock += delta
 	dwell_elapsed += delta
+	_route_retry_left = maxf(0.0, _route_retry_left - delta)
 	if _clock < 0.1:
 		return
 	_clock = 0.0
@@ -257,9 +258,9 @@ func _process(delta: float) -> void:
 		_last_lane = lane
 		if lane == mountain_lane and state == "outbound":
 			state = "mountain_approach"
-		if lane == inbound_lane and state == "returning":
-			_plan_city(harbor_lane, harbor_offset)
-	if state == "harbor_dwell" and dwell_elapsed > STATION_DWELL:
+	if state == "returning" and lane == inbound_lane and city_legs.is_empty() and _route_retry_left <= 0.0 and network.can_process():
+		_plan_city(harbor_lane, harbor_offset)
+	if state == "harbor_dwell" and dwell_elapsed > STATION_DWELL and _route_retry_left <= 0.0 and network.can_process():
 		if _plan_city(outbound_lane, outbound_lane.curve.get_baked_length()):
 			coach.stop_lane = access_lane if access_lane != null else outbound_lane
 			coach.stop_offset = mountain_berth_offset if access_lane != null else outbound_lane.curve.get_baked_length() - 2.0
@@ -290,12 +291,18 @@ func _process(delta: float) -> void:
 		_transfer(follow, mountain_lane, mountain_exit_offset)
 	elif state == "returning" and lane == mountain_lane and follow.progress >= mountain_lane.curve.get_baked_length() - 0.75:
 		if _transfer(follow, inbound_lane, 0.0):
-			_plan_city(harbor_lane, harbor_offset)
+			city_legs.clear()
 
 func _plan_city(destination_lane: Path2D, offset: float) -> bool:
 	var follow := coach.get_parent() as PathFollow2D
+	var start_lane := follow.get_parent() as Path2D
+	# ContinuousWorld sleeps Harbor's RoadNetwork while the player is deep in
+	# the mountain. The router intentionally excludes sleeping lanes; wait for
+	# Harbor to wake instead of treating this as a missing directed connection.
+	if not network.can_process() or not start_lane.can_process() or not destination_lane.can_process():
+		return false
 	var planner := PLANNER.new()
-	planner.start_lane = follow.get_parent()
+	planner.start_lane = start_lane
 	planner.goal_lane = destination_lane
 	city_legs = planner.plan(coach, destination_lane.to_global(destination_lane.curve.sample_baked(offset, true)))
 	_connection_by_path.clear()
@@ -303,8 +310,13 @@ func _plan_city(destination_lane: Path2D, offset: float) -> bool:
 		if is_instance_valid(connection.path):
 			_connection_by_path[connection.path] = String(connection.connection_id)
 	if city_legs.is_empty():
-		push_warning("Regional coach waiting for a directed city route")
+		_route_retry_left = 1.0
+		if not _route_failure_reported:
+			push_warning("Regional coach waiting for a directed city route from %s to %s" % [planner.start_lane.name if is_instance_valid(planner.start_lane) else "missing", destination_lane.name])
+			_route_failure_reported = true
 		return false
+	_route_retry_left = 0.0
+	_route_failure_reported = false
 	return true
 
 func planned_connection(lane: Path2D, progress: float) -> String:
