@@ -1,0 +1,164 @@
+{
+  "ferrugem_met": [
+    {
+      "speaker": "Ferrugem",
+      "pt": "Maciota mandou a peça? É do carro de uma cliente, parado no ponto que marquei. O motor está ruim: leva no guincho amarelo do Neco até a baia dele. Não vende nem manda para a prensa. Quando descarregar, fala com Neco e volta aqui. A ordem de serviço foi aberta pelo teu irmão.",
+      "en": "Maciota sent the part? It's for a customer's car, stopped at the marked point. The engine's bad: use Neco's yellow flatbed to take it to his bay. Don't sell or crush it. After unloading, speak to Neco and come back. Your brother opened the work order.",
+      "source": "world/harbor/campaign/HarborStoryTow.gd",
+      "line": 68
+    }
+  ],
+  "neco_repair_received": [
+    {
+      "speaker": "Neco",
+      "pt": "Está recebido. Esse vai para reparo, não para a prensa. A cliente busca depois; pode deixar na baia que eu cuido disso. A ordem 017 tem a assinatura V. Ferraz e um pedido de motoristas para a rota da serra. Leva essa via ao Ferrugem; quero saber por que ele anda tão calado.",
+      "en": "Received. This one's for repair, not the press. The customer will collect it later; leave it in the bay and I'll handle it. Work order 017 has V. Ferraz's signature and a request for drivers on the mountain route. Take this copy to Ferrugem; I want to know why he's been so quiet.",
+      "source": "world/harbor/campaign/HarborStoryTow.gd",
+      "line": 84
+    }
+  ],
+  "ferrugem_work_order_received": [
+    {
+      "speaker": "Ferrugem",
+      "pt": "É a assinatura dele. Vicente procurava gente para dirigir fora de Harbor. O último motorista não fala com desconhecido. Hoje à noite tem a prova de rua: vence seguindo os portões marcados, e eu te dou acesso à turma. Obrigado por trazer o carro inteiro.",
+      "en": "That's his signature. Vicente was looking for drivers outside Harbor. His last driver won't talk to strangers. Tonight is the street trial: win by following the marked gates, and I'll introduce you to the crew. Thanks for bringing the car back in one piece.",
+      "source": "world/harbor/campaign/HarborStoryTow.gd",
+      "line": 88
+    }
+  ],
+  "resident_met": [
+    {
+      "speaker": "Moradora",
+      "pt": "Eles voltaram para cobrar. Não deixa que levem meu filho.",
+      "en": "They're collecting again. Don't let them take my son.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 145
+    }
+  ],
+  "resident_saved": [
+    {
+      "speaker": "Moradora",
+      "pt": "Você ficou. Ninguém fica. Eles guardam os registros no fundo da quadra.",
+      "en": "You stayed. Nobody stays. They keep the records behind the block.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 148
+    }
+  ],
+  "supply_records_collected": [
+    {
+      "speaker": "Dante",
+      "pt": "Rotas, pagamentos e uma reunião na oficina. É a ligação que faltava.",
+      "en": "Routes, payments and a meeting at the workshop. That's the missing link.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 154
+    }
+  ],
+  "transfer_document_collected": [
+    {
+      "speaker": "Dante",
+      "pt": "Uma transferência para fora de Harbor… e as iniciais dele. Isso não prova nada. Ainda.",
+      "en": "A transfer out of Harbor… and his initials. That proves nothing. Not yet.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 163
+    }
+  ],
+  "primeiro_giro_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "A peça está certa. O contato é Ferrugem, na oficina dos Cobras. Ele recebeu teu irmão procurando trabalho. Leva a peça até ele; o serviço já está no quadro.",
+      "en": "The part checks out. Your contact is Ferrugem at the Cobras workshop. He met your brother when he was looking for work. Take him the part; the job is on the board.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 532
+    }
+  ],
+  "cobra_contact_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "Ferrugem confirmou: teu irmão perguntou por um motorista da turma das corridas. A prova é tua chance de se aproximar deles. Já pode aceitar no quadro.",
+      "en": "Ferrugem confirmed your brother asked for a driver from the racing crew. The trial is your chance to get close to them. It is ready on the board.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 533
+    }
+  ],
+  "cobra_race_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "O motorista falou comigo: deixou teu irmão perto da casa de uma moradora em Ashbend. Os Cobras estão cobrando dela. Ajuda a mulher e pergunta o que viu.",
+      "en": "The driver called me: he dropped your brother near the home of a resident in Ashbend. The Cobras are extorting her. Help her and ask what she saw.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 534
+    }
+  ],
+  "cobra_collection_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "A moradora reconheceu teu irmão. Ele também perguntou pelos registros de carga. Ela indicou onde os Cobras guardam os papéis; vamos seguir essa pista.",
+      "en": "The resident recognized your brother. He also asked about cargo records. She told us where the Cobras keep their papers; let us follow that lead.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 535
+    }
+  ],
+  "cobra_supply_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "As datas desses registros batem com a passagem dele pelo cais. A autorização saiu da oficina da liderança. É lá que podemos descobrir qual carga ele acompanhou.",
+      "en": "The dates in those records match his visit to the docks. The authorization came from the leaders workshop. That is where we can learn which shipment he followed.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 536
+    }
+  ],
+  "cobra_finale_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "Uma transferência para fora de Harbor e as iniciais dele. Temos uma rota para investigar, mas ainda precisamos confirmar se ele embarcou. Guarda esse documento, Dante.",
+      "en": "A transfer out of Harbor and his initials. We have a route to investigate, but still need to confirm he boarded. Keep that document, Dante.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 537
+    }
+  ],
+  "cobra_contact_begin": [
+    {
+      "speaker": "Maciota",
+      "pt": "Leva a peça que você buscou para Ferrugem, na oficina dos Cobras. Ele falou com teu irmão. Usa a entrega para puxar conversa.",
+      "en": "Take the part you collected to Ferrugem at the Cobras workshop. He spoke to your brother. Use the delivery to start a conversation.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 542
+    }
+  ],
+  "cobra_race_begin": [
+    {
+      "speaker": "Maciota",
+      "pt": "Às 21h, Ferrugem fecha a praça para uma prova. O motorista que viu teu irmão quer saber se você dirige bem. Espere o trânsito sair e leve um carro à largada de Ashbend. Complete os quatro portões em 100 segundos. Pode cancelar ou tentar novamente sem pagar.",
+      "en": "At 9 pm, Ferrugem closes the square for a trial. The driver who saw your brother wants to know if you can drive. Let traffic leave, then bring a car to the Ashbend start. Complete four gates within 100 seconds. Cancelling or retrying costs nothing.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 543
+    }
+  ],
+  "cobra_collection_begin": [
+    {
+      "speaker": "Maciota",
+      "pt": "O motorista deixou teu irmão perto dessa moradora. Protege ela da cobrança dos Cobras; talvez aceite contar o que viu.",
+      "en": "The driver dropped your brother near the home of this resident. Protect her from the Cobras extortion; she may tell you what she saw.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 544
+    }
+  ],
+  "cobra_supply_begin": [
+    {
+      "speaker": "Maciota",
+      "pt": "Teu irmão procurava os mesmos registros. A moradora apontou os fundos da quadra. Recupera os papéis e corta o abastecimento dos cobradores.",
+      "en": "Your brother sought those same records. The resident pointed us behind the block. Recover the papers and cut the collectors supply.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 545
+    }
+  ],
+  "cobra_finale_begin": [
+    {
+      "speaker": "Maciota",
+      "pt": "A autorização da carga veio da liderança. Enfrenta os Cobras na oficina e procura o documento que liga teu irmão à transferência.",
+      "en": "The cargo authorization came from the leaders. Face the Cobras at their workshop and find the document linking your brother to the transfer.",
+      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "line": 546
+    }
+  ]
+}

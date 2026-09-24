@@ -1,0 +1,44 @@
+[
+  {
+    "source": "characters/OutfitCatalog.gd",
+    "target": "data/catalogs/OutfitCatalog.gd",
+    "sha256": "1600e16fdf29fed8ab6761a8c502a9ab670e81502ee4e0acac8a4a0392d8dcc3",
+    "status": "data_ported_runtime_adapters_required"
+  },
+  {
+    "source": "cars/VehicleCatalog.gd",
+    "target": "data/catalogs/VehicleCatalog.gd",
+    "sha256": "0c6b75b7f7846a753dcd85c3e03091842bddfe8b55701a4bbcb9dd1f1fea751d",
+    "status": "data_ported_runtime_adapters_required"
+  },
+  {
+    "source": "cars/motorcycles/MotorcycleCatalog.gd",
+    "target": "data/catalogs/MotorcycleCatalog.gd",
+    "sha256": "061b78a81f1debe08ae725321003e0b99d881af1891523bd580207996ed6f98a",
+    "status": "data_ported_runtime_adapters_required"
+  },
+  {
+    "source": "cars/RaceCatalog.gd",
+    "target": "data/catalogs/RaceCatalog.gd",
+    "sha256": "5074705828fc7668adf57151d61b9a2a2ddda533ca1ef7544387eb4b7003c009",
+    "status": "data_ported_runtime_adapters_required"
+  },
+  {
+    "source": "cars/DriftZoneCatalog.gd",
+    "target": "data/catalogs/DriftZoneCatalog.gd",
+    "sha256": "a5372f5ffbb313303553514d20a0bbb3431e6f5384a29c62af5a822f16096169",
+    "status": "data_ported_runtime_adapters_required"
+  },
+  {
+    "source": "economy/CollectibleCatalog.gd",
+    "target": "data/catalogs/CollectibleCatalog.gd",
+    "sha256": "d475a38976b45e83119ba8e1700a9a5bf5ffc62ec466a4360424cdcd1725919d",
+    "status": "data_ported_runtime_adapters_required"
+  },
+  {
+    "source": "economy/AchievementCatalog.gd",
+    "target": "data/catalogs/AchievementCatalog.gd",
+    "sha256": "0c7e7e1831c72f8f31ef62764a451d7639dba795648425c8d916ffc150cff328",
+    "status": "data_ported_runtime_adapters_required"
+  }
+]

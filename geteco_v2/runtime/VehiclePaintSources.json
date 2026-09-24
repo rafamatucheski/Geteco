@@ -1,0 +1,304 @@
+{
+  "american_dump_truck": {
+    "color": "943e32",
+    "metallic": 0.35,
+    "roughness": 0.35,
+    "source": "res://prototypes/living_cast/models/AmericanFlatbedModel.gd"
+  },
+  "american_tanker_truck": {
+    "color": "943e32",
+    "metallic": 0.35,
+    "roughness": 0.35,
+    "source": "res://prototypes/living_cast/models/AmericanFlatbedModel.gd"
+  },
+  "arctic_jeep": {
+    "color": "dce3df",
+    "metallic": 0.25,
+    "roughness": 0.42,
+    "source": "res://prototypes/living_cast/models/ArcticJeepModel.gd"
+  },
+  "atlas_crew_pickup": {
+    "color": "526979",
+    "metallic": 0.32,
+    "roughness": 0.28,
+    "source": "res://prototypes/living_cast/models/AtlasCrewPickupModel.gd"
+  },
+  "aurora_executive": {
+    "color": "35495f",
+    "metallic": 0.48,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/models/AuroraExecutiveModel.gd"
+  },
+  "beach_buggy": {
+    "color": "ef6c4d",
+    "metallic": 0.18,
+    "roughness": 0.28,
+    "source": "res://prototypes/living_cast/models/BeachBuggyModel.gd"
+  },
+  "beach_cabriolet": {
+    "color": "b83632",
+    "metallic": 0.25,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/CabrioletModel.gd"
+  },
+  "bike_cruiser": {
+    "color": "c7313a",
+    "metallic": 0.45,
+    "roughness": 0.24,
+    "source": "res://cars/motorcycles/MotorcycleModel.gd"
+  },
+  "bike_sport": {
+    "color": "c7313a",
+    "metallic": 0.45,
+    "roughness": 0.24,
+    "source": "res://cars/motorcycles/MotorcycleModel.gd"
+  },
+  "bike_urban": {
+    "color": "c7313a",
+    "metallic": 0.45,
+    "roughness": 0.24,
+    "source": "res://cars/motorcycles/MotorcycleModel.gd"
+  },
+  "boxrunner": {
+    "color": "ffffff",
+    "metallic": 0.25,
+    "roughness": 0.35,
+    "source": "res://prototypes/living_cast/models/BoxrunnerModel.gd"
+  },
+  "bravio_crew": {
+    "color": "3d6f63",
+    "metallic": 0.3,
+    "roughness": 0.31,
+    "source": "res://prototypes/living_cast/models/BravioCrewModel.gd"
+  },
+  "cargo_flatbed_truck": {
+    "color": "943e32",
+    "metallic": 0.35,
+    "roughness": 0.35,
+    "source": "res://prototypes/living_cast/models/AmericanFlatbedModel.gd"
+  },
+  "cobra_v8": {
+    "color": "49252d",
+    "metallic": 0.42,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/BossMuscleModel.gd"
+  },
+  "courier_van": {
+    "color": "ffffff",
+    "metallic": 0.25,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/CourierVanModel.gd"
+  },
+  "desert_jeep_4x4": {
+    "color": "dce3df",
+    "metallic": 0.25,
+    "roughness": 0.42,
+    "source": "res://prototypes/living_cast/models/ArcticJeepModel.gd"
+  },
+  "dock_delivery_van": {
+    "color": "e6e8e5",
+    "metallic": 0.18,
+    "roughness": 0.34,
+    "source": "res://prototypes/living_cast/models/DockDeliveryVanModel.gd"
+  },
+  "dune_buggy": {
+    "color": "e9a326",
+    "metallic": 0.24,
+    "roughness": 0.34,
+    "source": "res://prototypes/living_cast/models/DuneBuggyModel.gd"
+  },
+  "lumber_pickup_4x4": {
+    "color": "8e44ad",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/RanchSingleModel.gd"
+  },
+  "medic_box": {
+    "color": "f5f6fa",
+    "metallic": 0.2,
+    "roughness": 0.35,
+    "source": "res://prototypes/living_cast/models/MedicBoxModel.gd"
+  },
+  "metro_hatch": {
+    "color": "e74c3c",
+    "metallic": 0.28,
+    "roughness": 0.25,
+    "source": "res://prototypes/living_cast/models/MetroHatchModel.gd"
+  },
+  "monaliza": {
+    "color": "183b91",
+    "metallic": 0.65,
+    "roughness": 0.22,
+    "source": "res://world/harbor/monaliza/MonalizaModel.gd"
+  },
+  "muscle_classic": {
+    "color": "49252d",
+    "metallic": 0.42,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/BossMuscleModel.gd"
+  },
+  "nimbus_minivan": {
+    "color": "6d7f92",
+    "metallic": 0.32,
+    "roughness": 0.27,
+    "source": "res://prototypes/living_cast/models/NimbusMinivanModel.gd"
+  },
+  "nordic_estate": {
+    "color": "b39a65",
+    "metallic": 0.2,
+    "roughness": 0.4,
+    "source": "res://prototypes/living_cast/EstateBody.gd"
+  },
+  "orbita_micro": {
+    "color": "58a7d8",
+    "metallic": 0.24,
+    "roughness": 0.25,
+    "source": "res://prototypes/living_cast/models/OrbitaMicroModel.gd"
+  },
+  "polar_van": {
+    "color": "ffffff",
+    "metallic": 0.25,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/CourierVanModel.gd"
+  },
+  "police_cruiser": {
+    "color": "e5e9ed",
+    "metallic": 0.35,
+    "roughness": 0.28,
+    "source": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+    "color_source": "res://prototypes/living_cast/models/PoliceCruiserModel.gd"
+  },
+  "police_suv": {
+    "color": "e5e9ed",
+    "metallic": 0.3,
+    "roughness": 0.35,
+    "source": "res://prototypes/living_cast/models/PoliceSUVModel.gd"
+  },
+  "port_forklift": {
+    "color": "b83632",
+    "metallic": 0.25,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/CoupeDamageModel.gd"
+  },
+  "porto_rosso": {
+    "color": "e01824",
+    "metallic": 0.65,
+    "roughness": 0.19,
+    "source": "res://world/harbor/PortBossRoadsterModel.gd"
+  },
+  "ranch_pickup": {
+    "color": "8e44ad",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/RanchSingleModel.gd"
+  },
+  "ranch_single": {
+    "color": "8e44ad",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/RanchSingleModel.gd"
+  },
+  "rescue_pumper": {
+    "color": "c0392b",
+    "metallic": 0.35,
+    "roughness": 0.25,
+    "source": "res://prototypes/living_cast/models/RescuePumperModel.gd"
+  },
+  "route_city": {
+    "color": "2980b9",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/RouteCityModel.gd"
+  },
+  "sedan_classic": {
+    "color": "2c3e50",
+    "metallic": 0.35,
+    "roughness": 0.28,
+    "source": "res://prototypes/living_cast/models/UnionSedanModel.gd"
+  },
+  "sertao_trail_pickup": {
+    "color": "8b5941",
+    "metallic": 0.27,
+    "roughness": 0.34,
+    "source": "res://prototypes/living_cast/models/SertaoTrailPickupModel.gd"
+  },
+  "snow_plow_truck": {
+    "color": "e47a22",
+    "metallic": 0.28,
+    "roughness": 0.34,
+    "source": "res://prototypes/living_cast/models/SnowPlowModel.gd"
+  },
+  "sport_coupe": {
+    "color": "b83632",
+    "metallic": 0.25,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/CoupeDamageModel.gd"
+  },
+  "sport_estate": {
+    "color": "45566a",
+    "metallic": 0.45,
+    "roughness": 0.25,
+    "source": "res://prototypes/living_cast/EstateBody.gd"
+  },
+  "station_wagon": {
+    "color": "b39a65",
+    "metallic": 0.2,
+    "roughness": 0.4,
+    "source": "res://prototypes/living_cast/EstateBody.gd"
+  },
+  "summit_suv": {
+    "color": "2980b9",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/SummitSUVModel.gd"
+  },
+  "surf_woody_wagon": {
+    "color": "2d8f84",
+    "metallic": 0.2,
+    "roughness": 0.32,
+    "source": "res://prototypes/living_cast/models/WoodyWagonModel.gd"
+  },
+  "taxi_yellow": {
+    "color": "ffc526",
+    "metallic": 0.35,
+    "roughness": 0.28,
+    "source": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+    "color_source": "res://prototypes/living_cast/models/YellowCabModel.gd"
+  },
+  "towmaster": {
+    "color": "f39c12",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/TowmasterModel.gd"
+  },
+  "union_sedan": {
+    "color": "2c3e50",
+    "metallic": 0.35,
+    "roughness": 0.28,
+    "source": "res://prototypes/living_cast/models/UnionSedanModel.gd"
+  },
+  "vale_crossover": {
+    "color": "8e5b43",
+    "metallic": 0.28,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/ValeCrossoverModel.gd"
+  },
+  "vertice_midengine": {
+    "color": "d43b32",
+    "metallic": 0.42,
+    "roughness": 0.2,
+    "source": "res://prototypes/living_cast/models/VerticeMidEngineModel.gd"
+  },
+  "winter_suv_heavy": {
+    "color": "2980b9",
+    "metallic": 0.35,
+    "roughness": 0.3,
+    "source": "res://prototypes/living_cast/models/SummitSUVModel.gd"
+  },
+  "cobra_boss_ironback": {
+    "color": "49252d",
+    "metallic": 0.42,
+    "roughness": 0.24,
+    "source": "res://prototypes/living_cast/BossMuscleModel.gd"
+  }
+}

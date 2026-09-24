@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://runtime/atmosphere/AtmosphereProfile.gd" id="1"]
+[resource]
+script = ExtResource("1")
+label = "Sopé e floresta"
+shadow_tint = Color(0.86, 0.98, 1.04, 1)
+sunlight_tint = Color(1.015, 1.025, 0.98, 1)
+fog_color = Color(0.62, 0.75, 0.76, 1)
+haze = 0.13
+distant_haze = 0.46
+saturation = 0.88
+contrast = 1.025
+wind = Vector2(6, 2)

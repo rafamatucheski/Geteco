@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="" load_steps=2 format=3]
+[ext_resource type="Script" path="res://runtime/atmosphere/AtmosphereProfile.gd" id="1"]
+[resource]
+script = ExtResource("1")
+label = "Porto"
+shadow_tint = Color(0.91, 0.98, 1.065, 1)
+sunlight_tint = Color(1.025, 1.015, 0.985, 1)
+fog_color = Color(0.64, 0.74, 0.80, 1)
+haze = 0.075
+distant_haze = 0.36
+saturation = 0.92
+contrast = 1.045
+wind = Vector2(11, -3)

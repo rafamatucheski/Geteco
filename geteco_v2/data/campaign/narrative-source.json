@@ -1,0 +1,662 @@
+[
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 18,
+    "source_text": "[\"MACIOTA\", \"A Helena, do North Pier, liberou o pagamento de uma peça. Busca o comprovante no banco e leva ao porto. A encomenda está no ponto marcado.\", \"Helena at North Pier cleared payment for a part. Collect the receipt at the bank and take it to the port. The parcel is at the marked point.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 19,
+    "source_text": "[\"DANTE\", \"E isso me aproxima do Vicente?\", \"And this gets me closer to Vicente?\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 20,
+    "source_text": "[\"MACIOTA\", \"A peça é para Ferrugem. Teu irmão fazia serviço com ele. Faz essa entrega direito que eu te apresento. E trata bem a Helena: ela segurou as contas da oficina quando ninguém ajudou.\", \"The part is for Ferrugem. Your brother worked with him. Do this properly and I'll introduce you. Be kind to Helena: she kept the workshop afloat when nobody else helped.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 21,
+    "source_text": "[\"MACIOTA\", \"Já está tudo pago. Você não precisa gastar nem roubar nada. Banco, encomenda, depois volta falar comigo. Os 150 são pelo teu trabalho.\", \"It's already paid. You don't need to spend or steal anything. Bank, parcel, then come back to me. The 150 is for your work.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 27,
+    "source_text": "mission._set_phase(\"delivery_return\", text(\"Volte à garagem e fale com Maciota para entregar a peça.\", \"Return to the garage and speak to Maciota to deliver the part.\"), mission.entrance.global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 29,
+    "source_text": "mission._set_phase(\"delivery_pickup\", text(\"Vá ao porto. A pé, use a interação junto à encomenda para retirar a peça paga.\", \"Go to the port. On foot, interact beside the parcel to collect the paid part.\"), mission._pickup_position())"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 32,
+    "source_text": "mission._set_phase(\"delivery_bank\", text(\"Vá ao Banco North Pier. Guarde a arma e fale com Helena para retirar o comprovante.\", \"Go to North Pier Bank. Holster your weapon and speak to Helena to collect the receipt.\"), door.global_position if door else Vector2.ZERO)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 61,
+    "source_text": "mission.player._show_weapon_notice(text(\"Despiste a polícia antes de ligar para Maciota.\", \"Lose the police before calling Maciota.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 64,
+    "source_text": "[\"DANTE\", \"Maciota, o banco ficou sem atendimento depois da confusão. Não consigo pegar o comprovante.\", \"Maciota, the bank stopped serving customers after the incident. I can't collect the receipt.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 65,
+    "source_text": "[\"MACIOTA\", \"Sai daí. A transferência já foi feita; vou mandar a segunda via ao pessoal do porto. Retira a peça no ponto marcado e volta. Isso ainda não acabou bem para quem trabalha aí.\", \"Get out of there. The transfer went through; I'll send a duplicate to the port staff. Collect the part at the marked point and come back. The people working there are still dealing with the aftermath.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 70,
+    "source_text": "mission.player._show_weapon_notice(text(\"Guarde a arma para falar com Helena.\", \"Holster your weapon to speak to Helena.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 73,
+    "source_text": "[\"HELENA\", \"Você é o Dante? Maciota avisou. Aqui está o comprovante da peça. O porto só libera com ele.\", \"Are you Dante? Maciota called ahead. Here's the receipt for the part. The port needs it to release the parcel.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 74,
+    "source_text": "[\"DANTE\", \"Você conhece meu irmão, Vicente?\", \"Do you know my brother, Vicente?\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 75,
+    "source_text": "[\"HELENA\", \"Conheço o nome nas transferências da oficina. Ferrugem sabe mais. Só toma cuidado: tem gente cobrando duas vezes de quem já pagou uma.\", \"I know the name from the workshop's transfers. Ferrugem knows more. Just be careful: some people collect twice from those who already paid once.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 76,
+    "source_text": "[\"DANTE\", \"Vou entregar a peça. Obrigado, Helena.\", \"I'll deliver the part. Thank you, Helena.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 86,
+    "source_text": "[\"MACIOTA\", \"Peça e comprovante. Tudo certo. Aqui estão os 150. Você cumpriu o combinado.\", \"Part and receipt. All good. Here's your 150. You kept your word.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 87,
+    "source_text": "[\"DANTE\", \"A Helena falou de cobrança em dobro. É o pessoal do Ferrugem?\", \"Helena mentioned people collecting twice. Is that Ferrugem's crew?\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 88,
+    "source_text": "[\"MACIOTA\", \"É o bairro dos Cobras. Ferrugem cuida dos carros; outros cuidam de cobrar. Vou avisar que você vai. No quadro está o endereço. Leva a peça e pergunta pelo Vicente.\", \"It's Cobra territory. Ferrugem handles cars; others handle collections. I'll tell him you're coming. His address is on the board. Take the part and ask about Vicente.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 106,
+    "source_text": "mission.objective = text(\"Banco sem atendimento: saia e use a interação junto à fachada para ligar a Maciota. Despiste a polícia primeiro.\", \"Bank service unavailable: leave and interact by the facade to call Maciota. Lose the police first.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 29,
+    "source_text": "controller._say(\"Ferrugem\", tr_text(\"O guincho ainda não chegou ao pátio do Neco. Tente falar comigo novamente daqui a pouco.\", \"Neco's truck hasn't reached the yard yet. Speak to me again in a moment.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 32,
+    "source_text": "controller._say(\"Ferrugem\", tr_text(\"Termina o serviço de guincho que já está com você e volta aqui. Não vamos misturar os carros.\", \"Finish your current tow job and come back. We can't mix up the cars.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 46,
+    "source_text": "controller._say(\"Ferrugem\", tr_text(\"O carro foi removido da rua. Volte ao quadro e aceite o serviço de novo para eu confirmar outro ponto de coleta.\", \"The car was moved off the street. Return to the board and accept the job again so I can confirm another collection point.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 47,
+    "source_text": "controller.fail_mission(tr_text(\"Carro de recuperação indisponível. O serviço pode ser tentado novamente.\", \"Recovery car unavailable. You can retry the job.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 63,
+    "source_text": "controller._say(\"Dante\", tr_text(\"Preciso descer do carro para falar com Ferrugem.\", \"I need to get out to speak to Ferrugem.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 68,
+    "source_text": "controller._say(\"Ferrugem\", tr_text(\"Maciota mandou a peça? É do carro de uma cliente, parado no ponto que marquei. O motor está ruim: leva no guincho amarelo do Neco até a baia dele. Não vende nem manda para a prensa. Quando descarregar, fala com Neco e volta aqui. A ordem de serviço foi aberta pelo teu irmão.\", \"Maciota sent the part? It's for a customer's car, stopped at the marked point. The engine's bad: use Neco's yellow flatbed to take it to his bay. Don't sell or crush it. After unloading, speak to Neco and come back. Your brother opened the work order.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 78,
+    "source_text": "controller._say(\"Neco\", tr_text(\"Some com a polícia primeiro. Não vou receber carro com viatura no portão.\", \"Lose the police first. I won't take delivery with a patrol at my gate.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 84,
+    "source_text": "controller._say(\"Neco\", tr_text(\"Está recebido. Esse vai para reparo, não para a prensa. A cliente busca depois; pode deixar na baia que eu cuido disso. A ordem 017 tem a assinatura V. Ferraz e um pedido de motoristas para a rota da serra. Leva essa via ao Ferrugem; quero saber por que ele anda tão calado.\", \"Received. This one's for repair, not the press. The customer will collect it later; leave it in the bay and I'll handle it. Work order 017 has V. Ferraz's signature and a request for drivers on the mountain route. Take this copy to Ferrugem; I want to know why he's been so quiet.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 88,
+    "source_text": "controller._say(\"Ferrugem\", tr_text(\"É a assinatura dele. Vicente procurava gente para dirigir fora de Harbor. O último motorista não fala com desconhecido. Hoje à noite tem a prova de rua: vence seguindo os portões marcados, e eu te dou acesso à turma. Obrigado por trazer o carro inteiro.\", \"That's his signature. Vicente was looking for drivers outside Harbor. His last driver won't talk to strangers. Tonight is the street trial: win by following the marked gates, and I'll introduce you to the crew. Thanks for bringing the car back in one piece.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 99,
+    "source_text": "controller.fail_mission(tr_text(\"O carro da cliente foi destruído. Volte ao quadro para reorganizar a recuperação.\", \"The customer's car was destroyed. Return to the board to arrange another recovery.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 102,
+    "source_text": "controller.fail_mission(tr_text(\"O guincho foi destruído. Neco pode recuperá-lo; depois aceite o serviço novamente.\", \"The tow truck was destroyed. Neco can recover it; then accept the job again.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 126,
+    "source_text": "0: return tr_text(\"A pé, fale com Ferrugem na oficina sobre a peça e Vicente.\", \"On foot, speak to Ferrugem at the workshop about the part and Vicente.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 129,
+    "source_text": "return tr_text(\"Recupere o carro marcado: pare com a traseira do guincho junto dele e use a interação para carregar.\", \"Recover the marked car: stop with the flatbed's rear beside it and interact to load.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 130,
+    "source_text": "return tr_text(\"Entre no guincho amarelo do Neco marcado no GPS. Se estiver com outra carga, descarregue-a em local livre.\", \"Enter Neco's yellow tow truck marked on GPS. If it carries another car, unload it in a clear space.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 133,
+    "source_text": "return tr_text(\"Volte ao guincho carregado marcado no GPS. O carro da cliente continua na plataforma.\", \"Return to the loaded flatbed marked on GPS. The customer's car is still on its platform.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 134,
+    "source_text": "return tr_text(\"Leve o carro à baia do Neco. Pare, alinhe a traseira com a marca e use a interação para descarregar. Não use a prensa.\", \"Take the car to Neco's bay. Stop, align the rear with the marker and interact to unload. Do not use the press.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 135,
+    "source_text": "3: return tr_text(\"Carro descarregado. Saia do guincho e fale com Neco para receber a ordem de serviço.\", \"Car unloaded. Exit the truck and speak to Neco to receive the work order.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryTow.gd",
+    "line": 136,
+    "source_text": "4: return tr_text(\"Volte à oficina e fale com Ferrugem sobre a ordem 017 assinada por V. Ferraz.\", \"Return to the workshop and speak to Ferrugem about work order 017 signed by V. Ferraz.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 39,
+    "source_text": "say(\"Aqui é o ferro-velho do Neko. Sempre tem gente atrás de peça por aqui.\",\"This is Neko's scrapyard. People are always looking for parts here.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 40,
+    "source_text": "say(\"O porto vive de carga e de oficina. Muita gente se conhece por causa de carro.\",\"The port runs on cargo and workshops. Cars bring a lot of people together.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 41,
+    "source_text": "say(\"Mas tem quem misture trabalho com contrabando e corrida. É melhor saber com quem você está falando.\",\"Some mix work with smuggling and racing. You should know who you're talking to.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 42,
+    "source_text": "say(\"Minha garagem fica mais à frente. Lá a gente conversa com calma.\",\"My garage is up ahead. We can talk properly there.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 97,
+    "source_text": "mission._set_phase(\"police_exit\",say(\"Saia da delegacia.\",\"Leave the police station.\"),police.exit_door.global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 101,
+    "source_text": "mission._set_phase(\"police_visit\",say(\"Vá à delegacia perguntar pelo seu irmão.\",\"Ask about your brother at the police station.\"),world.get_node(\"District/Police/Entrance\").global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 108,
+    "source_text": "[\"DANTE\",\"Vim procurar meu irmão. Vicente Ferraz. Ele estava preso aqui.\",\"I'm looking for my brother. Vicente Ferraz. He was in custody here.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 110,
+    "source_text": "[\"DANTE\",\"Há meses? E vocês sabem onde ele está?\",\"Months ago? Do you know where he is?\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 112,
+    "source_text": "[\"DANTE\",\"Espera... contrabando? Eu não estou entendendo.\",\"Wait... smuggling? I don't understand.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 117,
+    "source_text": "[\"MACIOTA\",\"Maciota. E você?\",\"Maciota. And you?\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 118,
+    "source_text": "[\"DANTE\",\"Dante. Foi você que me ligou?\",\"Dante. Were you the one who called?\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 119,
+    "source_text": "[\"MACIOTA\",\"Fui eu, sim. Vamos dar uma volta.\",\"That was me. Let's go for a ride.\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 139,
+    "source_text": "mission._next.text = say(\"Continuar\",\"Continue\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 158,
+    "source_text": "mission._set_phase(\"police_exit\",say(\"Saia da delegacia.\",\"Leave the police station.\"),police.exit_door.global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 166,
+    "source_text": "mission._set_phase(\"arrival_wait\",say(\"Preciso entender o que aconteceu...\",\"I need to understand what happened...\"),Vector2.ZERO)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 171,
+    "source_text": "mission._set_phase(\"police_visit\",say(\"[E] Pergunte pelo seu irmão no balcão.\",\"[E] Ask about your brother at the desk.\"),world.get_node(\"District/Police/Entrance\").global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 176,
+    "source_text": "mission._set_phase(\"yard_meeting\",say(\"Encontre o contato no ferro-velho do Neko. [E] Conversar\",\"Meet the contact at Neko's scrapyard. [E] Talk\"),maciota.global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 185,
+    "source_text": "mission._text.text = say(\"Maciota: O caminho está bloqueado. Vamos esperar. [Esc] Descer\",\"Maciota: The road is blocked. Let's wait. [Esc] Get out\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 281,
+    "source_text": "mission._set_phase(\"tour_board\",say(\"Aguarde a rua liberar. [E] Tentar a volta\",\"Wait for the street to clear. [E] Try the ride\"),car.seat(1))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 354,
+    "source_text": "mission._set_phase(\"city_tour\",say(\"Conheça a cidade com Maciota.\",\"See the city with Maciota.\"),mission.entrance.global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 412,
+    "source_text": "mission._set_phase(\"tour_board\",say(\"[E] Aproxime-se da porta do passageiro para entrar.\",\"[E] Approach the passenger door to board.\"),car.seat(1))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 434,
+    "source_text": "say(\"Aqui é o ferro-velho do Neko. Sempre tem gente atrás de peça por aqui.\",\"This is Neko's scrapyard. People are always looking for parts here.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 435,
+    "source_text": "say(\"O porto vive de carga e de oficina. Muita gente se conhece por causa de carro.\",\"The port runs on cargo and workshops. Cars bring a lot of people together.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 436,
+    "source_text": "say(\"Mas tem quem misture trabalho com contrabando e corrida. É melhor saber com quem você está falando.\",\"Some mix work with smuggling and racing. You should know who you're talking to.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 437,
+    "source_text": "say(\"Minha garagem fica mais à frente. Lá a gente conversa com calma.\",\"My garage is up ahead. We can talk properly there.\"),"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 464,
+    "source_text": "mission._text.text = say(\"Aguarde um espaço livre para descer.\",\"Wait for a clear space to get out.\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 533,
+    "source_text": "mission._set_phase(\"meet_maciota\",say(\"Entre na garagem e converse com Maciota.\",\"Enter the garage and talk to Maciota.\"),mission.entrance.global_position)"
+  },
+  {
+    "source": "world/harbor/campaign/HarborStoryArrival.gd",
+    "line": 561,
+    "source_text": "mission._set_phase(\"tour_board\",say(\"[E] Voltar ao passageiro para continuar o passeio\",\"[E] Return to the passenger seat to continue the ride\"),car.seat(1))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 112,
+    "source_text": "fail_mission(_tr(\"A organização da prova está indisponível. Tente novamente pelo quadro do Maciota.\", \"The trial cannot be organized right now. Retry at Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 115,
+    "source_text": "_say(\"Maciota\", _briefing(id))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 126,
+    "source_text": "fail_mission(_tr(\"Ferrugem não pode mais receber a entrega. Reorganize a visita.\", \"Ferrugem can no longer receive the delivery. Arrange another visit.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 134,
+    "source_text": "_say(\"Dante\", _tr(\"Preciso descer do carro.\", \"I need to get out of the car.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 140,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Venha com um carro. A pickup da oficina está disponível.\", \"Bring a car. The workshop pickup is available.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 145,
+    "source_text": "_say(\"Moradora\", _tr(\"Eles voltaram para cobrar. Não deixa que levem meu filho.\", \"They're collecting again. Don't let them take my son.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 148,
+    "source_text": "_say(\"Moradora\", _tr(\"Você ficou. Ninguém fica. Eles guardam os registros no fundo da quadra.\", \"You stayed. Nobody stays. They keep the records behind the block.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 154,
+    "source_text": "_say(\"Dante\", _tr(\"Rotas, pagamentos e uma reunião na oficina. É a ligação que faltava.\", \"Routes, payments and a meeting at the workshop. That's the missing link.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 163,
+    "source_text": "_say(\"Dante\", _tr(\"Uma transferência para fora de Harbor… e as iniciais dele. Isso não prova nada. Ainda.\", \"A transfer out of Harbor… and his initials. That proves nothing. Not yet.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 176,
+    "source_text": "fail_mission(_tr(\"Você foi hospitalizado. A missão pode ser tentada novamente.\", \"You were hospitalized. You can retry the mission.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 179,
+    "source_text": "fail_mission(_tr(\"Você foi preso. Volte ao quadro do Maciota para tentar novamente.\", \"You were arrested. Return to Maciota's board to retry.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 182,
+    "source_text": "fail_mission(_tr(\"O contato morreu. A entrega falhou.\", \"Your contact died. The delivery failed.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 185,
+    "source_text": "fail_mission(_tr(\"A moradora morreu. A proteção falhou.\", \"The resident died. You failed to protect her.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 197,
+    "source_text": "fail_mission(_tr(\"Você recuou. Reorganize-se e tente de novo.\", \"You withdrew. Regroup and try again.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 202,
+    "source_text": "fail_mission(_tr(\"Encontro indisponível.\", \"Encounter unavailable.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 217,
+    "source_text": "_say(\"Dante\", _tr(\"Área segura. Vou conferir aqui.\", \"Area clear. I'll check here.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 221,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Estou fechando a entrada da praça. Ainda há %d carros saindo; espere fora do cruzamento. A contagem só começa com a pista livre. Pode cancelar pelo Diário [J], sem pagar.\", \"I'm closing the square entrance. %d cars are still leaving; wait clear of the junction. The countdown starts only when the route is clear. You can cancel in the Journal [J] at no cost.\") % _race_traffic.remaining)"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 225,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Esse carro não pode correr. Traga um carro funcionando até a largada [R].\", \"That car cannot race. Bring a working car to the starting line [R].\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 228,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Pare sobre a marca de largada, apontando para o primeiro portão ao norte, e aperte [R].\", \"Stop on the starting mark, facing the first gate to the north, and press [R].\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 231,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Vire o carro para o primeiro portão, ao norte. Pare e aperte [R] quando estiver alinhado.\", \"Point the car toward the first gate, to the north. Stop and press [R] when aligned.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 244,
+    "source_text": "fail_mission(_tr(\"A prova não está disponível. Volte ao quadro do Maciota para tentar novamente.\", \"The race is unavailable. Return to Maciota's board to retry.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 256,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Teu irmão também chegou calado. Vamos ver se dirige como ele. Fique parado até JÁ! Você tem 100 segundos: norte, leste, sul e chegada aqui. Cruze os quatro portões na ordem. Siga as setas pela faixa externa. Sem armas. Se sair do asfalto, volte pelo mesmo lugar em quatro segundos.\", \"Your brother was quiet too. Let's see if you drive like him. Stay still until GO! You have 100 seconds: north, east, south, then finish here. Cross all four gates in order. Follow the arrows in the outer lane. No weapons. If you leave the road, rejoin at the same place within four seconds.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 263,
+    "source_text": "fail_mission(_tr(\"Seu carro não pode continuar. Repare ou troque o carro e aceite a prova de novo no quadro do Maciota.\", \"Your car cannot continue. Repair or replace it and accept the race again at Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 267,
+    "source_text": "fail_mission(_tr(\"Você saiu do carro da prova. Volte ao quadro do Maciota para tentar novamente.\", \"You left your race car. Return to Maciota's board to retry.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 271,
+    "source_text": "fail_mission(_tr(\"Queimou a largada. Espere JÁ! na próxima tentativa pelo quadro do Maciota.\", \"False start. Wait for GO! on your next attempt from Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 289,
+    "source_text": "fail_mission(_tr(\"Percurso interrompido. Tente novamente pelo quadro do Maciota.\", \"Route interrupted. Retry at Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 300,
+    "source_text": "fail_mission(_tr(\"Você cortou o trajeto. Ao sair da pista, volte pelo mesmo lugar. Tente de novo no quadro do Maciota.\", \"You cut the route. When leaving the road, rejoin at the same place. Retry at Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 308,
+    "source_text": "fail_mission(_tr(\"Você abandonou o trajeto. A prova pode ser aceita de novo no quadro do Maciota.\", \"You left the route. Accept the race again at Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 315,
+    "source_text": "fail_mission(_tr(\"O tempo da prova acabou. Aceite novamente no quadro do Maciota.\", \"Race time expired. Accept again at Maciota's board.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 323,
+    "source_text": "_say(\"Ferrugem\", _tr(\"Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo.\", \"All right. You can drive. The driver will take Maciota's call. Your brother wanted out of Harbor, but he didn't look like he was running away.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 344,
+    "source_text": "_say(\"Maciota · telefone\", get_brother_clue(id))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 363,
+    "source_text": "_say(\"Dante\", reason)"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 422,
+    "source_text": "_say(\"Moradora\", _tr(\"Obrigada por parar para ouvir. O beco dá nos fundos da oficina. Quando precisar, eu distraio um deles.\", \"Thanks for stopping to listen. The alley leads behind the workshop. When you need it, I'll distract one of them.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 475,
+    "source_text": "fail_mission(_tr(\"Você rompeu o acordo ao atacar os moradores.\", \"You broke the agreement by attacking the locals.\"))"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 512,
+    "source_text": "\"cobra_contact\": return _story_tow.objective_text() if _story_tow != null else _tr(\"Oficina Cobra: entregue a peça e converse [E].\", \"Cobra workshop: deliver the part and talk [E].\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 516,
+    "source_text": "return _tr(\"Preparando praça · %d carros saindo. Aguarde fora da pista. Cancelar: Diário [J].\", \"Preparing square · %d cars leaving. Wait off the track. Cancel: Journal [J].\") % _race_traffic.remaining"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 517,
+    "source_text": "return _tr(\"Pare um carro na largada, apontando ao norte. Iniciar [R].\", \"Stop a car at the start, facing north. Start [R].\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 519,
+    "source_text": "return _tr(\"LARGADA EM %d · Fique parado até JÁ!\", \"START IN %d · Stay still until GO!\") % ceili(_countdown)"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 521,
+    "source_text": "return _tr(\"VOLTE À PISTA PELO MESMO LUGAR · %d s\", \"REJOIN THE ROAD AT THE SAME PLACE · %d s\") % ceili(RACE_RETURN_SECONDS - _outside_seconds)"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 523,
+    "source_text": "return _tr(\"CHEGADA · Portão 4/4 · Restam %d s.\", \"FINISH · Gate 4/4 · %d s left.\") % ceili(RACE_TIME_LIMIT - _race_elapsed)"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 524,
+    "source_text": "return _tr(\"Portão %d/4 · Restam %d s · Siga as setas pela faixa externa.\", \"Gate %d/4 · %d s left · Follow the outer-lane arrows.\") % [_checkpoint + 1, ceili(RACE_TIME_LIMIT - _race_elapsed)]"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 525,
+    "source_text": "\"cobra_collection\": return _tr(\"Proteja a moradora; depois fale com ela [E].\", \"Protect the resident, then talk to her [E].\") if stage > 0 else _tr(\"Ouça a moradora ameaçada [E].\", \"Hear the threatened resident [E].\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 526,
+    "source_text": "\"cobra_supply\": return _tr(\"Neutralize os cobradores e recolha os registros [E].\", \"Stop the collectors and recover the records [E].\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 527,
+    "source_text": "\"cobra_finale\": return _tr(\"Derrote a liderança e procure a pista na oficina [E].\", \"Defeat the leadership and search the workshop for a clue [E].\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 532,
+    "source_text": "\"primeiro_giro\": return _tr(\"A peça está certa. O contato é Ferrugem, na oficina dos Cobras. Ele recebeu teu irmão procurando trabalho. Leva a peça até ele; o serviço já está no quadro.\", \"The part checks out. Your contact is Ferrugem at the Cobras workshop. He met your brother when he was looking for work. Take him the part; the job is on the board.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 533,
+    "source_text": "\"cobra_contact\": return _tr(\"Ferrugem confirmou: teu irmão perguntou por um motorista da turma das corridas. A prova é tua chance de se aproximar deles. Já pode aceitar no quadro.\", \"Ferrugem confirmed your brother asked for a driver from the racing crew. The trial is your chance to get close to them. It is ready on the board.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 534,
+    "source_text": "\"cobra_race\": return _tr(\"O motorista falou comigo: deixou teu irmão perto da casa de uma moradora em Ashbend. Os Cobras estão cobrando dela. Ajuda a mulher e pergunta o que viu.\", \"The driver called me: he dropped your brother near the home of a resident in Ashbend. The Cobras are extorting her. Help her and ask what she saw.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 535,
+    "source_text": "\"cobra_collection\": return _tr(\"A moradora reconheceu teu irmão. Ele também perguntou pelos registros de carga. Ela indicou onde os Cobras guardam os papéis; vamos seguir essa pista.\", \"The resident recognized your brother. He also asked about cargo records. She told us where the Cobras keep their papers; let us follow that lead.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 536,
+    "source_text": "\"cobra_supply\": return _tr(\"As datas desses registros batem com a passagem dele pelo cais. A autorização saiu da oficina da liderança. É lá que podemos descobrir qual carga ele acompanhou.\", \"The dates in those records match his visit to the docks. The authorization came from the leaders workshop. That is where we can learn which shipment he followed.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 537,
+    "source_text": "\"cobra_finale\": return _tr(\"Uma transferência para fora de Harbor e as iniciais dele. Temos uma rota para investigar, mas ainda precisamos confirmar se ele embarcou. Guarda esse documento, Dante.\", \"A transfer out of Harbor and his initials. We have a route to investigate, but still need to confirm he boarded. Keep that document, Dante.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 542,
+    "source_text": "\"cobra_contact\": return _tr(\"Leva a peça que você buscou para Ferrugem, na oficina dos Cobras. Ele falou com teu irmão. Usa a entrega para puxar conversa.\", \"Take the part you collected to Ferrugem at the Cobras workshop. He spoke to your brother. Use the delivery to start a conversation.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 543,
+    "source_text": "\"cobra_race\": return _tr(\"Às 21h, Ferrugem fecha a praça para uma prova. O motorista que viu teu irmão quer saber se você dirige bem. Espere o trânsito sair e leve um carro à largada de Ashbend. Complete os quatro portões em 100 segundos. Pode cancelar ou tentar novamente sem pagar.\", \"At 9 pm, Ferrugem closes the square for a trial. The driver who saw your brother wants to know if you can drive. Let traffic leave, then bring a car to the Ashbend start. Complete four gates within 100 seconds. Cancelling or retrying costs nothing.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 544,
+    "source_text": "\"cobra_collection\": return _tr(\"O motorista deixou teu irmão perto dessa moradora. Protege ela da cobrança dos Cobras; talvez aceite contar o que viu.\", \"The driver dropped your brother near the home of this resident. Protect her from the Cobras extortion; she may tell you what she saw.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 545,
+    "source_text": "\"cobra_supply\": return _tr(\"Teu irmão procurava os mesmos registros. A moradora apontou os fundos da quadra. Recupera os papéis e corta o abastecimento dos cobradores.\", \"Your brother sought those same records. The resident pointed us behind the block. Recover the papers and cut the collectors supply.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 546,
+    "source_text": "\"cobra_finale\": return _tr(\"A autorização da carga veio da liderança. Enfrenta os Cobras na oficina e procura o documento que liga teu irmão à transferência.\", \"The cargo authorization came from the leaders. Face the Cobras at their workshop and find the document linking your brother to the transfer.\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 592,
+    "source_text": "var label := _tr(\"LARGADA [R]\", \"START [R]\")"
+  },
+  {
+    "source": "world/harbor/campaign/CobraCampaignController.gd",
+    "line": 594,
+    "source_text": "label = str(ceili(_countdown)) if _countdown > 0.0 else (_tr(\"JÁ!\", \"GO!\") if _race_elapsed < 1.0 else _tr(\"CHEGADA\", \"FINISH\"))"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 16,
+    "source_text": "[\"DANTE\", \"PHONE_LINE_1\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 17,
+    "source_text": "[\"MACIOTA\", \"PHONE_LINE_2\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 18,
+    "source_text": "[\"DANTE\", \"PHONE_LINE_3\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 19,
+    "source_text": "[\"MACIOTA\", \"PHONE_LINE_4\"],"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 91,
+    "source_text": "PHONE_LINES = [[\"DANTE\",\"ARRIVAL_V2_PHONE_1\"],[\"CONTATO\",\"ARRIVAL_V2_PHONE_2\"],[\"DANTE\",\"ARRIVAL_V2_PHONE_3\"],[\"CONTATO\",\"ARRIVAL_V2_PHONE_4\"]]"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 121,
+    "source_text": "_speaker.text = tr(\"PHONE_CALL_PREFIX\") + \" \" + PHONE_LINES[dialogue_index][0]"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 123,
+    "source_text": "_next.text = tr(\"PHONE_HANG_UP\") if dialogue_index == PHONE_LINES.size() - 1 else tr(\"PHONE_CONTINUE\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 312,
+    "source_text": "_phone_audio.stream = preload(\"res://ExpressiveVoice.gd\").line(line_text, \"dante\" if PHONE_LINES[dialogue_index][0] == \"DANTE\" else \"maciota\")"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 314,
+    "source_text": "_speaker.text = tr(\"PHONE_CALL_PREFIX\") + \" \" + PHONE_LINES[dialogue_index][0]"
+  },
+  {
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 316,
+    "source_text": "_next.text = tr(\"PHONE_HANG_UP\") if dialogue_index == PHONE_LINES.size() - 1 else tr(\"PHONE_CONTINUE\")"
+  }
+]

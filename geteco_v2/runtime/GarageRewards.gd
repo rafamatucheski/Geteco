@@ -1,0 +1,382 @@
+extends Node
+const STOCK := preload("res://world/places/PortBossStock.gd")
+const PLACES := preload("res://world/places/PlaceCatalog.gd")
+const EXTRA := preload("res://runtime/GarageRewardFleet.gd")
+const FLEET := preload("res://runtime/FleetCatalog.gd")
+const PORT_ID := "port_garage_stock_2"
+const IRONBACK := "cobra_boss_ironback"
+var session
+var data := {"version":1,"port_status":"parked","alarm_remaining":-1.0,"police_called":false,"vehicles":{}}
+var cars: Dictionary = {}
+var _clock := 0.0
+var _place := ""
+var _transition := false
+var guards
+var press_delivery
+
+func configure(owner_session) -> void:
+	session=owner_session
+	process_mode=Node.PROCESS_MODE_PAUSABLE
+	press_delivery=preload("res://runtime/NecoPressDelivery.gd").new()
+	add_child(press_delivery)
+	press_delivery.finished.connect(_press_finished)
+	guards=preload("res://runtime/garage_guards/Guards.gd").new()
+	add_child(guards)
+	guards.configure(self)
+	guards.restore(data.get("guards",[]))
+	on_location_changed()
+
+func raise_alarm() -> void:
+	if data.police_called or data.alarm_remaining>=0: return
+	data.alarm_remaining=15.0
+	session.show_message("Segurança alertada · polícia em 15s.")
+
+func can_enter(id: String) -> bool:
+	if id!="port_boss_garage": return true
+	var hour: float = float(session.state.world_state.get("time",.32))*24.0
+	return is_open(hour)
+static func is_open(hour: float) -> bool:
+	return is_finite(hour) and hour>=1 and hour<5
+
+func _authorized() -> bool:
+	var campaign: Dictionary=session.state.campaign.snapshot()
+	return session.state.campaign.cobra_status().get("defeated",false) and campaign.completed.has("cobra_finale")
+
+func _physics_process(delta: float) -> void:
+	if session==null or not session.ready_for_play or _transition: return
+	if not is_finite(delta) or delta<=0: return
+	if data.alarm_remaining>0 and not data.police_called:
+		data.alarm_remaining=maxf(0,float(data.alarm_remaining)-delta)
+		if data.alarm_remaining<=0:
+			data.police_called=true
+			var gameplay=session.world.gameplay
+			gameplay.register_crime(maxi(60,int(gameplay.STAR_THRESHOLDS[3])-int(gameplay.crime_points)),PLACES.get_definition("port_boss_garage").vehicle_return)
+			gameplay.dispatch_timer=0
+			session.save_game()
+	if session.state.place_id!=_place: on_location_changed()
+	var driving=session.world.driving
+	if driving.occupied and is_instance_valid(driving.car) and driving.car.vehicle_id==PORT_ID and data.port_status=="parked":
+		data.port_status="stolen"
+		raise_alarm()
+		session.save_game()
+	if cars.has(PORT_ID) and is_instance_valid(cars[PORT_ID]) and cars[PORT_ID].health<=0 and data.port_status in ["parked","stolen"]:
+		data.port_status="destroyed"
+		session.save_game()
+	_clock+=delta
+	if _clock<.5: return
+	_clock=0
+	_sync()
+
+func on_location_changed() -> void:
+	if session==null or _transition or not session.ready_for_play: return
+	_capture_all()
+	_place=session.state.place_id
+	_sync()
+
+func _origin(place: String) -> Vector3:
+	if place=="maciota": return session.world.maciota_place.to_global(session.world.maciota_place.interior_origin)
+	if place=="port_boss_garage" and is_instance_valid(session.room) and session.state.place_id==place: return session.room.global_position
+	return Vector3(0,0,-2400) if not place.is_empty() else Vector3.ZERO
+
+func _initial_record(archetype: String, point: Vector3, yaw: float, place: String) -> Dictionary:
+	var spec := _spec(archetype)
+	var palette: Array=spec.get("colors",["e01824ff"])
+	var paint: String=str(palette.pick_random()) if not palette.is_empty() else "e01824ff"
+	return {"archetype":archetype,"region_id":"harbor","place_id":place,"position":[point.x,point.y,point.z],"yaw":yaw,"health":float(spec.get("durability",100)),"paint":paint,"was_driven":false}
+
+func _sync() -> void:
+	if session==null or not session.ready_for_play: return
+	if session.state.place_id=="port_boss_garage" and not is_instance_valid(session.room): return
+	if is_instance_valid(guards): guards.sync()
+	if session.state.place_id=="port_boss_garage":
+		for source in STOCK.definitions():
+			if source.vehicle_id==PORT_ID and data.port_status in ["delivered","destroyed"]: continue
+			if not data.vehicles.has(source.vehicle_id): data.vehicles[source.vehicle_id]=_initial_record(source.archetype,source.local_position,source.yaw,"port_boss_garage")
+	if _authorized() and not data.vehicles.has(IRONBACK): data.vehicles[IRONBACK]=_initial_record(IRONBACK,Vector3(0,.04,0),-PI,"maciota")
+	for id in data.vehicles:
+		if id==IRONBACK and not _authorized(): continue
+		if id==PORT_ID and data.port_status=="delivered": continue
+		var record: Dictionary=data.vehicles[id]
+		if _residence_owns(id):
+			_bind_existing(id)
+			continue
+		if record.place_id!=session.state.place_id or record.region_id!=session.state.region_id:
+			if cars.has(id) and is_instance_valid(cars[id]): _suspend(cars[id])
+			continue
+		var point := Vector3(record.position[0],record.position[1],record.position[2])+_origin(record.place_id)
+		if record.place_id.is_empty() and point.distance_to(session.world.player.position)>120: continue
+		_bind_existing(id)
+		var car = cars.get(id)
+		if not is_instance_valid(car):
+			car=session.controller.spawn_vehicle(record.archetype,point,float(record.yaw))
+			if not is_instance_valid(car): continue
+			car.vehicle_id=id
+			if id=="personal_monaliza": car.add_to_group("personal_vehicle")
+			car.health=float(record.health)
+			car.paint_color=Color.html(record.paint)
+			car.set_meta("garage_reward",true)
+			car.set_meta("garage_place",record.place_id)
+			car.set_meta("garage_origin",_origin(record.place_id))
+			car.set_meta("region_id",record.region_id)
+			cars[id]=car
+			if record.was_driven and session.has_method("restore_garage_driver"):
+				_restore_driver(car,record)
+		elif car.get_meta("garage_suspended",false):
+			if not session.controller.vehicle_position_clear(car,point,float(record.yaw)): continue
+			car.place(point,float(record.yaw))
+			car.show()
+			car.collision_layer=4
+			car.collision_mask=7
+			car.set_physics_process(true)
+			car.remove_meta("garage_suspended")
+			car.add_to_group("drivable")
+			if not session.controller.vehicles.has(car): session.controller.vehicles.append(car)
+
+func _bind_existing(id: String) -> void:
+	for car in session.controller.vehicles:
+		if is_instance_valid(car) and car.vehicle_id==id:
+			cars[id]=car
+			car.set_meta("garage_reward",true)
+			if id=="personal_monaliza": car.add_to_group("personal_vehicle")
+			return
+
+func _restore_driver(car, record: Dictionary) -> void:
+	car.set_meta("garage_driver_pending",true)
+	var success: bool=await session.restore_garage_driver(car)
+	record.was_driven=false
+	if is_instance_valid(car): car.remove_meta("garage_driver_pending")
+	if not success: session.show_message("Veículo preservado. A saída está ocupada; você continua a pé.")
+
+func _residence_owns(id: String) -> bool:
+	if session.activities==null: return false
+	return session.activities.residence.data.stored_vehicle.get("garage_id","")==id
+
+func _suspend(car) -> void:
+	if session.world.driving.occupied and session.world.driving.car==car: return
+	car.hide()
+	car.set_physics_process(false)
+	car.collision_layer=0
+	car.collision_mask=0
+	car.remove_from_group("drivable")
+	car.set_meta("garage_suspended",true)
+	session.controller.vehicles.erase(car)
+
+func _capture_all() -> void:
+	if session==null: return
+	for id in cars:
+		var car=cars[id]
+		if not is_instance_valid(car) or car.get_meta("garage_suspended",false) or car.get_meta("garage_stored",false): continue
+		if car.get_meta("garage_driver_pending",false): continue
+		var place: String=car.get_meta("garage_place","")
+		var origin: Vector3=car.get_meta("garage_origin",Vector3.ZERO)
+		var point: Vector3=car.global_position-origin
+		data.vehicles[id]={"archetype":car.archetype,"region_id":car.get_meta("region_id","harbor"),"place_id":place,"position":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":maxf(0,car.health),"paint":car.paint_color.to_html(true),"was_driven":session.world.driving.occupied and session.world.driving.car==car}
+
+func nearest_action() -> Dictionary:
+	if session==null or _transition: return {}
+	var driving=session.world.driving
+	if driving.occupied:
+		var car=driving.car
+		if not is_instance_valid(car) or absf(car.speed)>.5: return {}
+		if not _can_register(car): return {}
+		if session.state.place_id in ["port_boss_garage","maciota"]:
+			var exit: Vector3=_origin("maciota")+Vector3(0,.04,4) if session.state.place_id=="maciota" else session.room.to_global(session.room.definition.vehicle_exit)
+			if car.position.distance_to(exit)<4.5: return _action("garage_vehicle_exit","Sair com veículo",exit)
+		elif session.state.place_id.is_empty() and session.state.region_id=="harbor":
+			for id in ["port_boss_garage","maciota"]:
+				var entry: Vector3=session.world.maciota_place.entry_position if id=="maciota" else PLACES.get_definition(id).vehicle_return
+				if car.position.distance_to(entry)<6 and can_enter(id): return _action("garage_vehicle_enter:"+id,"Entrar com veículo",entry)
+		return {}
+	if session.state.place_id=="maciota" and _authorized() and session.world.gameplay.stars==0 and session.state.campaign.active_id.is_empty():
+		var bay := _origin("maciota")+Vector3(0,.04,0)
+		if session.world.player.position.distance_to(bay)<180.0/16.0:
+			var car=cars.get(IRONBACK)
+			if is_instance_valid(car) and not car.controlled and car.position.distance_to(bay)<45.0/16.0 and car.health<car.max_health: return _action("ironback_repair","Reparar Ironback",bay)
+			if not _residence_owns(IRONBACK): return _action("ironback_recover","Recolher Ironback à baia",bay)
+	if _porto_deliverable(): return _action("porto_deliver","Entregar Porto Rosso · R$ 50.000",cars[PORT_ID].position)
+	return {}
+
+func _action(id: String,label: String,point: Vector3) -> Dictionary:
+	return {"id":"garage_reward","target":id,"label":label,"position":point}
+
+func perform(id: String) -> bool:
+	if id.is_empty() or nearest_action().get("target","")!=id: return false
+	if id.begins_with("garage_vehicle_enter:"):
+		_transfer(id.trim_prefix("garage_vehicle_enter:"),true)
+		return true
+	if id=="garage_vehicle_exit": _transfer(session.state.place_id,false); return true
+	if id=="porto_deliver": return _deliver_porto()
+	if id=="ironback_recover": return _recover_ironback()
+	if id=="ironback_repair":
+		cars[IRONBACK].repair()
+		session.save_game()
+		return true
+	return false
+
+func _transfer(place: String, entering: bool) -> void:
+	if not session.has_method("transfer_garage_vehicle"): session.show_message("Acesso de veículos indisponível."); return
+	var car=session.world.driving.car
+	_transition=true
+	var success: bool=await session.transfer_garage_vehicle(place,car,entering)
+	if success and is_instance_valid(car):
+		car.set_meta("garage_place",session.state.place_id)
+		car.set_meta("garage_origin",_origin(session.state.place_id))
+		car.set_meta("region_id",session.state.region_id)
+		register_guest(car)
+	_transition=false
+	on_location_changed()
+	if success: session.save_game()
+
+func _can_register(car) -> bool:
+	if not is_instance_valid(car): return false
+	if cars.get(car.vehicle_id)==car and data.vehicles.has(car.vehicle_id): return true
+	if car.get_meta("residence_vehicle",false) or car.has_meta("story_tow_authorized") or car.is_in_group("personal_vehicle") or car.vehicle_id in ["story_tow_vehicle","neco_tow_truck"]: return false
+	if _spec(car.archetype).is_empty() or car.archetype==IRONBACK: return false
+	var count := 0
+	for id in data.vehicles:
+		if is_guest_id(id): count+=1
+	return count<64
+
+func register_guest(car) -> bool:
+	if not _can_register(car): return false
+	if cars.get(car.vehicle_id)==car and data.vehicles.has(car.vehicle_id): return true
+	var serial := 1
+	for id in data.vehicles:
+		if is_guest_id(id): serial=maxi(serial,int(str(id).trim_prefix("garage_guest_"))+1)
+	var id := "garage_guest_%d"%serial
+	car.vehicle_id=id
+	cars[id]=car
+	data.vehicles[id]=_initial_record(car.archetype,car.position,car.rotation.y,session.state.place_id)
+	car.set_meta("garage_place",session.state.place_id)
+	car.set_meta("garage_origin",_origin(session.state.place_id))
+	car.set_meta("region_id",session.state.region_id)
+	car.set_meta("garage_reward",true)
+	_capture_all()
+	session.state.world_state.vehicles=[]
+	return true
+
+static func is_guest_id(id: Variant) -> bool:
+	if not id is String or not id.begins_with("garage_guest_"): return false
+	var suffix: String=id.trim_prefix("garage_guest_")
+	return suffix.is_valid_int() and int(suffix)>0 and int(suffix)<1000000000 and str(int(suffix))==suffix
+
+func _porto_deliverable() -> bool:
+	if data.port_status!="stolen" or session.state.region_id!="harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.gameplay.stars>0: return false
+	var car=cars.get(PORT_ID)
+	if not is_instance_valid(car) or car.health<=0 or car.controlled or absf(car.speed)>.5 or car.get_meta("garage_stored",false): return false
+	if session.activities==null or session.activities.salvage_available()<=0: return false
+	var bay: Vector3=session.mission_world.targets.neco_bay
+	return car.position.distance_to(bay)<52.0/16.0 and session.world.player.position.distance_to(car.position)<90.0/16.0
+
+func _deliver_porto() -> bool:
+	if _transition or not _porto_deliverable(): return false
+	_transition=true
+	if not press_delivery.begin(cars[PORT_ID]):
+		_transition=false
+		session.show_message("Libere a área da prensa para entregar o veículo.")
+		return false
+	return true
+
+func cancel_press_delivery() -> void:
+	if is_instance_valid(press_delivery): press_delivery.cancel()
+
+func _press_finished(completed: bool) -> void:
+	_transition=false
+	if completed:
+		if _porto_deliverable(): _commit_porto_delivery()
+		elif data.port_status=="stolen": session.show_message("Entrega interrompida. O veículo foi preservado na baia.")
+
+func _commit_porto_delivery() -> bool:
+	if data.port_status!="stolen": return false
+	var wallet: Dictionary=session.state.economy.snapshot()
+	if not session.state.economy.grant_reward("port_boss_porto_rosso",50000): return false
+	if not session.activities.record_external_delivery(): session.state.economy.restore_snapshot(wallet); return false
+	data.port_status="delivered"
+	session.activities.residence.release_garage_vehicle(PORT_ID)
+	var car=cars[PORT_ID]
+	_retain_delivered_body(car)
+	data.vehicles.erase(PORT_ID)
+	cars.erase(PORT_ID)
+	session.show_message("Neco pagou R$ 50.000.")
+	session.save_game()
+	return true
+
+func _retain_delivered_body(car) -> void:
+	_suspend(car)
+	car.vehicle_id="delivered_porto_rosso"
+	car.set_meta("garage_stored",true)
+
+func _recover_ironback() -> bool:
+	if not _authorized() or _residence_owns(IRONBACK): return false
+	var record: Dictionary=data.vehicles.get(IRONBACK,{})
+	if record.is_empty(): return false
+	var car=cars.get(IRONBACK)
+	if is_instance_valid(car) and car.controlled: return false
+	var bay := _origin("maciota")+Vector3(0,.04,0)
+	if not is_instance_valid(car):
+		car=session.controller.spawn_vehicle(IRONBACK,bay,-PI)
+		if not is_instance_valid(car): return false
+		car.vehicle_id=IRONBACK
+		car.health=float(record.health)
+		car.paint_color=Color.html(record.paint)
+		car.set_meta("garage_reward",true)
+		cars[IRONBACK]=car
+	elif not session.controller.vehicle_position_clear(car,bay,-PI): return false
+	car.place(bay,-PI)
+	car.set_meta("garage_place","maciota")
+	car.set_meta("garage_origin",_origin("maciota"))
+	car.set_meta("region_id","harbor")
+	car.remove_meta("garage_suspended")
+	car.show()
+	car.set_physics_process(true)
+	car.collision_layer=4
+	car.collision_mask=7
+	car.add_to_group("drivable")
+	if not session.controller.vehicles.has(car): session.controller.vehicles.append(car)
+	_capture_all()
+	session.save_game()
+	return true
+
+func snapshot() -> Dictionary:
+	_capture_all()
+	if is_instance_valid(guards): data.guards=guards.snapshot()
+	return data.duplicate(true)
+func restore_snapshot(saved: Dictionary) -> bool:
+	if not validate_snapshot(saved): return false
+	cancel_press_delivery()
+	data=saved.duplicate(true)
+	if is_instance_valid(guards): guards.restore(data.get("guards",[]))
+	return true
+static func _spec(id: String) -> Dictionary:
+	return EXTRA.spec(id) if id==IRONBACK else FLEET.spec(id)
+static func validate_snapshot(saved: Dictionary) -> bool:
+	if not preload("res://runtime/garage_guards/Guards.gd").validate(saved.get("guards",[])): return false
+	if saved.get("version")!=1 or saved.get("port_status") not in ["parked","stolen","delivered","destroyed"] or not saved.get("police_called") is bool or not saved.get("vehicles") is Dictionary: return false
+	var timer: Variant=saved.get("alarm_remaining")
+	if typeof(timer) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(timer)) or timer < -1 or timer > 15: return false
+	if saved.police_called and timer!=0: return false
+	var known := {IRONBACK:IRONBACK,"personal_monaliza":"monaliza"}
+	for stock in STOCK.definitions(): known[stock.vehicle_id]=stock.archetype
+	var guests := 0
+	var drivers := 0
+	for id in saved.vehicles:
+		var record: Variant=saved.vehicles[id]
+		if is_guest_id(id):
+			guests+=1
+			if guests>64 or not record is Dictionary or not record.get("archetype") is String or not FLEET.all().has(record.archetype): return false
+			known[id]=record.archetype
+		if not known.has(id): return false
+		if not record is Dictionary or record.get("archetype")!=known[id] or record.get("region_id") not in ["harbor","mountain"] or record.get("place_id") not in ["","maciota","port_boss_garage"]: return false
+		if not record.place_id.is_empty() and record.region_id!="harbor": return false
+		if not record.get("was_driven") is bool or not record.get("paint") is String or not Color.html_is_valid(record.paint): return false
+		if record.was_driven:
+			drivers+=1
+			if drivers>1: return false
+		if not record.get("position") is Array or record.position.size()!=3: return false
+		for value in record.position:
+			if typeof(value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(value)) or absf(float(value))>10000: return false
+		for key in ["yaw","health"]:
+			if typeof(record.get(key)) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(record[key])): return false
+		if record.health<0 or record.health>float(_spec(record.archetype).get("durability",100)): return false
+	if saved.port_status=="delivered" and saved.vehicles.has(PORT_ID): return false
+	return true

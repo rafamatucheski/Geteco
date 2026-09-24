@@ -1,0 +1,99 @@
+{
+  "begin": [
+    {
+      "speaker": "MACIOTA",
+      "pt": "A Helena, do North Pier, liberou o pagamento de uma peça. Busca o comprovante no banco e leva ao porto. A encomenda está no ponto marcado.",
+      "en": "Helena at North Pier cleared payment for a part. Collect the receipt at the bank and take it to the port. The parcel is at the marked point.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 18
+    },
+    {
+      "speaker": "DANTE",
+      "pt": "E isso me aproxima do Vicente?",
+      "en": "And this gets me closer to Vicente?",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 19
+    },
+    {
+      "speaker": "MACIOTA",
+      "pt": "A peça é para Ferrugem. Teu irmão fazia serviço com ele. Faz essa entrega direito que eu te apresento. E trata bem a Helena: ela segurou as contas da oficina quando ninguém ajudou.",
+      "en": "The part is for Ferrugem. Your brother worked with him. Do this properly and I'll introduce you. Be kind to Helena: she kept the workshop afloat when nobody else helped.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 20
+    },
+    {
+      "speaker": "MACIOTA",
+      "pt": "Já está tudo pago. Você não precisa gastar nem roubar nada. Banco, encomenda, depois volta falar comigo. Os 150 são pelo teu trabalho.",
+      "en": "It's already paid. You don't need to spend or steal anything. Bank, parcel, then come back to me. The 150 is for your work.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 21
+    }
+  ],
+  "interact": [
+    {
+      "speaker": "DANTE",
+      "pt": "Maciota, o banco ficou sem atendimento depois da confusão. Não consigo pegar o comprovante.",
+      "en": "Maciota, the bank stopped serving customers after the incident. I can't collect the receipt.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 64
+    },
+    {
+      "speaker": "MACIOTA",
+      "pt": "Sai daí. A transferência já foi feita; vou mandar a segunda via ao pessoal do porto. Retira a peça no ponto marcado e volta. Isso ainda não acabou bem para quem trabalha aí.",
+      "en": "Get out of there. The transfer went through; I'll send a duplicate to the port staff. Collect the part at the marked point and come back. The people working there are still dealing with the aftermath.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 65
+    },
+    {
+      "speaker": "HELENA",
+      "pt": "Você é o Dante? Maciota avisou. Aqui está o comprovante da peça. O porto só libera com ele.",
+      "en": "Are you Dante? Maciota called ahead. Here's the receipt for the part. The port needs it to release the parcel.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 73
+    },
+    {
+      "speaker": "DANTE",
+      "pt": "Você conhece meu irmão, Vicente?",
+      "en": "Do you know my brother, Vicente?",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 74
+    },
+    {
+      "speaker": "HELENA",
+      "pt": "Conheço o nome nas transferências da oficina. Ferrugem sabe mais. Só toma cuidado: tem gente cobrando duas vezes de quem já pagou uma.",
+      "en": "I know the name from the workshop's transfers. Ferrugem knows more. Just be careful: some people collect twice from those who already paid once.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 75
+    },
+    {
+      "speaker": "DANTE",
+      "pt": "Vou entregar a peça. Obrigado, Helena.",
+      "en": "I'll deliver the part. Thank you, Helena.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 76
+    }
+  ],
+  "finish_dialogue": [
+    {
+      "speaker": "MACIOTA",
+      "pt": "Peça e comprovante. Tudo certo. Aqui estão os 150. Você cumpriu o combinado.",
+      "en": "Part and receipt. All good. Here's your 150. You kept your word.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 86
+    },
+    {
+      "speaker": "DANTE",
+      "pt": "A Helena falou de cobrança em dobro. É o pessoal do Ferrugem?",
+      "en": "Helena mentioned people collecting twice. Is that Ferrugem's crew?",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 87
+    },
+    {
+      "speaker": "MACIOTA",
+      "pt": "É o bairro dos Cobras. Ferrugem cuida dos carros; outros cuidam de cobrar. Vou avisar que você vai. No quadro está o endereço. Leva a peça e pergunta pelo Vicente.",
+      "en": "It's Cobra territory. Ferrugem handles cars; others handle collections. I'll tell him you're coming. His address is on the board. Take the part and ask about Vicente.",
+      "source": "world/harbor/campaign/HarborFirstFavors.gd",
+      "line": 88
+    }
+  ]
+}

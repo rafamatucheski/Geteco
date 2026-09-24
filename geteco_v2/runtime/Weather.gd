@@ -1,0 +1,178 @@
+extends Node
+## V1 time/weather IDs, rendered by shared native 3D lights and local particles.
+var controller
+var time_of_day := .32
+var weather_state := 0
+var weather_timer := 120.0
+var clock := 0.0
+var precipitation: GPUParticles3D
+var rain_audio: AudioStreamPlayer
+var wind_audio: AudioStreamPlayer
+var hail: GPUParticles3D
+var snow: GPUParticles3D
+var mountain_weather: Dictionary = {}
+var atmosphere = preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd").new()
+var atmosphere_step := .2
+
+# Harbor V1 grades clear daylight almost neutrally and keeps blue shadow fill
+# (`profiles/harbor.tres`: sunlight 1.025/1.015/.985, shadow .91/.98/1.065).
+# These normalized 3D light colours preserve that authored relationship rather
+# than turning every pale urban material amber. Weather strength remains in the
+# shared light/environment; model materials are not rewritten here.
+const HARBOR_SUN_DAY := Color("fffdf5")
+const HARBOR_SUN_NIGHT := Color("afc0e8")
+const HARBOR_AMBIENT_DAY := Color("c0d0e2")
+const HARBOR_AMBIENT_NIGHT := Color("9baac6")
+const HARBOR_OVERCAST_LIGHT := Color("aebfca")
+const HARBOR_SKY_DAY := Color("829da6")
+const HARBOR_SKY_NIGHT := Color("111d30")
+const HARBOR_SKY_OVERCAST := Color("647985")
+func _exit_tree() -> void:
+	for channel in [rain_audio,wind_audio]:
+		if is_instance_valid(channel):
+			channel.stop()
+			channel.stream = null
+	for emitter in [precipitation,hail,snow]:
+		if is_instance_valid(emitter): emitter.queue_free()
+func _ready() -> void:
+	time_of_day = float(controller.state.world_state.get("time",.32))
+	weather_state = int(controller.state.world_state.get("weather",0))
+	precipitation = GPUParticles3D.new()
+	precipitation.amount = 600
+	precipitation.lifetime = 1.6
+	precipitation.visibility_aabb = AABB(Vector3(-18,-20,-18),Vector3(36,40,36))
+	var quad := QuadMesh.new()
+	quad.size = Vector2(.035,.35)
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(.6,.76,.85,.6)
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	quad.material = material
+	precipitation.draw_pass_1 = quad
+	var process := ParticleProcessMaterial.new()
+	process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	process.emission_box_extents = Vector3(16,1,16)
+	process.direction = Vector3(.1,-1,.05)
+	process.spread = 1
+	process.initial_velocity_min = 12
+	process.initial_velocity_max = 18
+	process.gravity = Vector3(0,-5,0)
+	precipitation.process_material = process
+	controller.world.add_child(precipitation)
+	# Separate hail keeps the original snow layer visible during the icy front.
+	hail = GPUParticles3D.new()
+	hail.amount = 300
+	hail.lifetime = .55
+	hail.visibility_aabb = precipitation.visibility_aabb
+	hail.draw_pass_1 = quad.duplicate(true)
+	hail.draw_pass_1.size = Vector2(.035,.16)
+	hail.draw_pass_1.material.albedo_color = Color(.85,.96,1,.9)
+	var hail_process := process.duplicate() as ParticleProcessMaterial
+	hail_process.direction = Vector3(-.65,-1,0).normalized()
+	hail_process.initial_velocity_min = 900.0/16.0
+	hail_process.initial_velocity_max = 1300.0/16.0
+	hail_process.spread = 5
+	hail_process.gravity = Vector3.ZERO
+	hail.process_material = hail_process
+	hail.emitting = false
+	controller.world.add_child(hail)
+	# Independent rain/snow emitters crossfade geographically. Reusing one mesh
+	# used to turn all living raindrops into snow at the logical region seam.
+	snow = GPUParticles3D.new()
+	snow.amount = 400
+	snow.lifetime = 2.2
+	snow.visibility_aabb = precipitation.visibility_aabb
+	snow.draw_pass_1 = quad.duplicate(true)
+	snow.draw_pass_1.size = Vector2(.09,.09)
+	var snow_process := process.duplicate() as ParticleProcessMaterial
+	snow_process.direction = Vector3(-.8,-.6,0).normalized()
+	snow_process.initial_velocity_min = 180.0/16.0
+	snow_process.initial_velocity_max = 380.0/16.0
+	snow_process.spread = 20
+	snow_process.gravity = Vector3(-200.0/16.0,-150.0/16.0,0)
+	snow.process_material = snow_process
+	snow.emitting = false
+	controller.world.add_child(snow)
+	rain_audio = AudioStreamPlayer.new()
+	rain_audio.stream = preload("res://audio/weather/rain_bed.wav")
+	rain_audio.volume_db = -24
+	add_child(rain_audio)
+	rain_audio.finished.connect(func(): if precipitation.emitting: rain_audio.play())
+	wind_audio = AudioStreamPlayer.new()
+	wind_audio.stream = preload("res://audio/regional/wind_0.ogg")
+	add_child(wind_audio)
+	wind_audio.finished.connect(func(): if atmosphere.weights.get("mountain",0.0)>0.001: wind_audio.play())
+	_update()
+func _process(delta: float) -> void:
+	if "--benchmark" not in OS.get_cmdline_user_args(): time_of_day = fposmod(time_of_day+delta/600.0,1.0)
+	# Harbor keeps its own weather. Mountain reads the persisted thermal clock.
+	if controller.state.region_id != "mountain":
+		weather_timer -= delta
+		if weather_timer <= 0:
+			weather_timer = randf_range(120,240)
+			weather_state = [0,0,3,1].pick_random()
+	precipitation.global_position = atmosphere.focus_position(controller)+Vector3.UP*10
+	hail.global_position = precipitation.global_position
+	snow.global_position = precipitation.global_position
+	clock += delta
+	if clock >= .2:
+		atmosphere_step = clock
+		clock = 0
+		_update()
+	controller.state.world_state.time = time_of_day
+	controller.state.world_state.weather = weather_state
+func _update() -> void:
+	var daylight := clampf(sin((time_of_day-.25)*TAU)*1.5+.25,0,1)
+	var inside: bool = not controller.state.place_id.is_empty()
+	var mountain: bool = controller.state.region_id == "mountain"
+	mountain_weather = {}
+	if controller.session != null and controller.session.cold != null:
+		mountain_weather = controller.session.cold.weather_sample()
+	var front: float = float(mountain_weather.get("front",0.0))
+	var focus: Vector3 = atmosphere.focus_position(controller)
+	var regional_weight: float = atmosphere.weights_at(focus).mountain
+	var clouds: float = lerpf(_harbor_overcast(),front,regional_weight)
+	if inside: clouds = front if mountain else _harbor_overcast()
+	# Preserve existing indoor base light; outdoor exposure follows the V1 clock.
+	if not inside:
+		daylight = atmosphere.daylight_at(time_of_day)
+	controller.sun.rotation_degrees.x = -15-daylight*55
+	controller.sun.light_energy = lerpf(.12,1.6,daylight)*lerpf(1.0,.58,clouds)
+	var clear_sun := HARBOR_SUN_NIGHT.lerp(HARBOR_SUN_DAY,daylight)
+	controller.sun.light_color = clear_sun.lerp(HARBOR_OVERCAST_LIGHT,clouds*.72)
+	var clear_ambient := HARBOR_AMBIENT_NIGHT.lerp(HARBOR_AMBIENT_DAY,daylight)
+	controller.environment.environment.ambient_light_color = clear_ambient.lerp(HARBOR_OVERCAST_LIGHT,clouds*.46)
+	controller.environment.environment.ambient_light_energy = lerpf(.32,.65,daylight)*lerpf(1.0,.82,clouds)
+	var clear_sky := HARBOR_SKY_NIGHT.lerp(HARBOR_SKY_DAY,daylight)
+	controller.environment.environment.background_color = clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
+	atmosphere.apply(controller,time_of_day,_harbor_overcast(),front,inside,atmosphere_step)
+	if controller.world.production != null:
+		var night_lights := 1.0-smoothstep(.25,.70,atmosphere.daylight_at(time_of_day))
+		if is_instance_valid(controller.world.production.connection):
+			controller.world.production.connection.set_night_lights(night_lights)
+		var mountain_region = controller.world.production.regions.get("mountain")
+		if is_instance_valid(mountain_region): mountain_region.set_night_lights(night_lights)
+	var covered: bool = inside or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false)
+	var storm_state: int = int(mountain_weather.get("state",0))
+	precipitation.amount_ratio = 1.0-regional_weight
+	precipitation.emitting = not covered and weather_state in [1,2] and regional_weight<.999
+	snow.emitting = not covered and storm_state>0 and regional_weight>.001
+	snow.amount_ratio = regional_weight*(150.0 if storm_state==1 else 260.0 if storm_state==3 else 400.0)/400.0
+	snow.speed_scale = lerpf(.45,1.15,front)
+	snow.draw_pass_1.material.albedo_color = Color(1,1,1,front*.9)
+	hail.emitting = not covered and storm_state==3 and regional_weight>.001
+	hail.amount_ratio = smoothstep(.85,1.0,front)*regional_weight
+	rain_audio.volume_db = linear_to_db(maxf(.001,(1.0-regional_weight)*db_to_linear(-24.0)))
+	if precipitation.emitting and not rain_audio.playing: rain_audio.play()
+	elif not precipitation.emitting: rain_audio.stop()
+	wind_audio.volume_db = lerpf(-30,-17,float(mountain_weather.get("intensity",0.0)))-(14.0 if covered else 0.0)+linear_to_db(maxf(.001,regional_weight))
+	if regional_weight>.001 and not wind_audio.playing: wind_audio.play()
+	elif regional_weight<=.001: wind_audio.stop()
+
+func _harbor_overcast() -> float:
+	match weather_state:
+		1: return .72 # V1 drizzle: cool, readable and visibly distinct from clear day.
+		2: return 1.0 # Explicit story storm; the natural Harbor cycle does not roll it.
+		3: return .52
+		_: return 0.0

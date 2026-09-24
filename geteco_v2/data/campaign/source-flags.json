@@ -1,0 +1,62 @@
+[
+  {
+    "id": "harbor_arrival_seen",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 130,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_arrival_seen\", true)"
+  },
+  {
+    "id": "harbor_campaign_active",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 134,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_campaign_active\", true)"
+  },
+  {
+    "id": "harbor_arrival_seen",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 241,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_arrival_seen\", true)"
+  },
+  {
+    "id": "harbor_arrival_call_complete",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 301,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_arrival_call_complete\", true)"
+  },
+  {
+    "id": "harbor_maciota_met",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 322,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_maciota_met\", true)"
+  },
+  {
+    "id": "harbor_delivery_started",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 337,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_delivery_started\", true)"
+  },
+  {
+    "id": "harbor_delivery_picked_up",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 351,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_delivery_picked_up\", true)"
+  },
+  {
+    "id": "harbor_delivery_complete",
+    "source": "world/harbor/campaign/HarborArrivalMission.gd",
+    "line": 372,
+    "source_text": "campaign.call(\"set_campaign_flag\", &\"harbor_delivery_complete\", true)"
+  },
+  {
+    "id": "harbor_first_favors_v3",
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 16,
+    "source_text": "mission.campaign.set_campaign_flag(&\"harbor_first_favors_v3\", true)"
+  },
+  {
+    "id": "harbor_delivery_receipt",
+    "source": "world/harbor/campaign/HarborFirstFavors.gd",
+    "line": 81,
+    "source_text": "mission.campaign.set_campaign_flag(&\"harbor_delivery_receipt\", true)"
+  }
+]

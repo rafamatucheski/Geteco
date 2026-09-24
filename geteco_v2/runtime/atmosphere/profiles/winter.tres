@@ -1,0 +1,13 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+[ext_resource type="Script" path="res://runtime/atmosphere/AtmosphereProfile.gd" id="1"]
+[resource]
+script = ExtResource("1")
+label = "Serra nevada"
+shadow_tint = Color(0.82, 0.94, 1.12, 1)
+sunlight_tint = Color(0.985, 1.01, 1.035, 1)
+fog_color = Color(0.73, 0.83, 0.91, 1)
+haze = 0.19
+distant_haze = 0.58
+saturation = 0.82
+contrast = 1.035
+wind = Vector2(-19, 5)
