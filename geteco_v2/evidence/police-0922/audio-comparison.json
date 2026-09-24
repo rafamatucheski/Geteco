@@ -1,0 +1,38 @@
+[
+  {
+    "sample": "pistol_0.wav",
+    "v1_sha256": "0d0be43a28d7d4ddc6fdc9667e890d2448f73ad680792985b05d25b586dcec91",
+    "v2_sha256": "0d0be43a28d7d4ddc6fdc9667e890d2448f73ad680792985b05d25b586dcec91",
+    "identical": true
+  },
+  {
+    "sample": "pistol_1.wav",
+    "v1_sha256": "404fc5a201ab44e72487e51c7bf97b0d75ff96933ef54d5b5d6b457f639bebfc",
+    "v2_sha256": "404fc5a201ab44e72487e51c7bf97b0d75ff96933ef54d5b5d6b457f639bebfc",
+    "identical": true
+  },
+  {
+    "sample": "pistol_2.wav",
+    "v1_sha256": "185f3d89425532e70267019228b369d665e2bad773c680ebe669fe082a8e0f6d",
+    "v2_sha256": "185f3d89425532e70267019228b369d665e2bad773c680ebe669fe082a8e0f6d",
+    "identical": true
+  },
+  {
+    "sample": "smg_0.wav",
+    "v1_sha256": "10da35bad5bdf3059d574876d8059045d96162534818ad6aecd6efd15c293bcb",
+    "v2_sha256": "10da35bad5bdf3059d574876d8059045d96162534818ad6aecd6efd15c293bcb",
+    "identical": true
+  },
+  {
+    "sample": "smg_1.wav",
+    "v1_sha256": "fce060c0c0b8e1de3a6d8577d7ef21842705aee42222db758165eac9f8ae5239",
+    "v2_sha256": "fce060c0c0b8e1de3a6d8577d7ef21842705aee42222db758165eac9f8ae5239",
+    "identical": true
+  },
+  {
+    "sample": "smg_2.wav",
+    "v1_sha256": "fc865c9a333a3991324f5c02fa939196ce86346fd90824456e44eb68130e2afe",
+    "v2_sha256": "fc865c9a333a3991324f5c02fa939196ce86346fd90824456e44eb68130e2afe",
+    "identical": true
+  }
+]

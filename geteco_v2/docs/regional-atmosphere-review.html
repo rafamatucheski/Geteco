@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Atmosfera — V1 para V2</title>
+<style>body{margin:32px auto;max-width:1500px;padding:0 20px;background:#151c22;color:#eef1f4;font:16px/1.5 system-ui}h1{font-size:30px}h2{margin-top:36px}section>div{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img{width:100%;display:block}figcaption{padding:8px 0;color:#b5c6cd}@media(max-width:800px){section>div{grid-template-columns:1fr}}</style>
+<h1>A atmosfera original no mundo 3D</h1><p>Capturas reais de Main, mesma câmera, horário e clima. População e trânsito ativos; os veículos e as pessoas podem estar em posições diferentes.</p>
+<main id="scenes"></main>
+<script>
+const scenes=[['port-day','Porto · manhã'],['port-sunset','Porto · entardecer'],['street-night','Rua · crepúsculo'],['street-rain','Rua · chuva'],['cemetery','Cemitério'],['bridge','Aproximação da serra'],['forest','Floresta'],['resort-snow','Resort · neve e granizo']];
+for(const [id,title] of scenes){const section=document.createElement('section');const heading=document.createElement('h2');heading.textContent=title;section.append(heading);const row=document.createElement('div');for(const [variant,label] of [['before','Antes'],['final','Depois']]){const fig=document.createElement('figure');const img=document.createElement('img');img.src=`../evidence/atmosphere-${variant}/${id}.png`;img.alt=`${title} — ${label}`;img.loading='lazy';const caption=document.createElement('figcaption');caption.textContent=label;fig.append(img,caption);row.append(fig)}section.append(row);document.querySelector('main').append(section)}
+</script></html>

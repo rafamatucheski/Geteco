@@ -1,0 +1,1357 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1807C8AF1A30E23EDF8C828A15C2D6A790A248C83B6123F466397A2E01AECF1B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\Activities.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CD17455B1862C496086107112A1C43D88AF23160E7B1378AA7AA67B269238A86",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\ActivityDefinitions.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F28AFEE2A2B7768F1CC5524DBFCE7D2552CF76E7C0453BBFFE67102394098282",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\Motorsport.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "EC950DC40877A5185D940841D968E11ECED0E10CD7C07F98878BBB10357B05BD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\MountainProgression.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "20AEB298B6113804047E232DB2862E439B97093B8214FAEB55AFAC850F30A521",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\MountainShadow.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2C93A1B5B26E5D96DFEA30033F60438E173EA1C64456283B02EC86EB42CA88E2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\MountainShadowModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D4F9A79DAEE8B01E871BB766B7E249A7BA6633C777F54E7E19B664E9C5E613C0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\Residence.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8F23B293457E21645F4F9EB94C28F18F85E30DDF6313B4F55011C40BE8AF478C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\test_activities.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D2E9C17CA799A8AE68B9E4A4881393E4774861F328F4F1EF6383447A139CAFC1",
+    "Path": "D:\\geteco\\game\\geteco_v2\\activities\\V1OptionalRewardPolicy.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "48B2BC2607EF97AD9437EFF1CCE50C373C3F53C20FC1262F765DFC9A3CAB173B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\ExpressiveVoice.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "51D0EF4454A36E0FDB8576523178E7787079BFFEADF3ADAFA051B25DC529A81B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\WorldAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FE5733A595193D316C2DD40470E53C1F092F5295815D61EF070EA62D9D5DD481",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\export_compat\\ImportedAudioLoader.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C21D98E68E7A7D93A90FD2C62BD331A47CB224FB2B44A8066E44BE6798B0C73A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\neco\\SalvageAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CBEEB124E1C5AD8C6AC68210EC0F7307C774EE1860D50DFA8859A6E390EFCF40",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\service_vehicles\\ServiceVehicleAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9401C8F6441DFF7C9BAB00933B42CEB816F8272E2F80DB152823A1DB8B93BB14",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\service_vehicles\\test_service_vehicle_audio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "03A08C02260A81FAE1BA88F9829627E49C41EF586B2F228431C79FE0EE31AFA8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\v1_ambience\\ActivityAudioBridge.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A9299AA6472E2D62841B0C3808D7F5D5AB7FED24C9B73B0A70DDF529D132CC05",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\v1_ambience\\AmbienceProfile.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F2154FC575F3A894459D239658C5F99D126CE61408D63D11648DD1C0E0482127",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\v1_ambience\\SurfaceResolver3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4D9DCBDB5E397C297B6AE59E4248F281BB8F1FB7009A32D20882797B21964178",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\v1_ambience\\V1AudioCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "06E035E7C03623E683667E1CB68F88C8A3730A1341CDDF878688B969C4EB28DC",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\vehicle_ambience\\NearbyVehicleAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C58E2DF1CB100E4D29783222D463B59DA9022818354100376924BB267F9EA388",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\vehicle_ambience\\test_nearby_vehicle_audio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "464434AF05CAE06C13B74E506721ED7627241A3D737643B542003E0447EA8EBE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\audio\\vehicle_ambience\\validate_vehicle_ambience.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7A953A066CCA2625782F30BA00AAC2D468993171FCB9324443279D9608EB4450",
+    "Path": "D:\\geteco\\game\\geteco_v2\\cutscenes\\opening\\scripts\\rcm_studio_card.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "43A0445170AA2E810D89014BFC1D1CF5270804FF32831D7290EFA9BD205AB4B3",
+    "Path": "D:\\geteco\\game\\geteco_v2\\cutscenes\\opening\\v3\\opening_audio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8FD189D613C2216573E8A92C77A0DC5E50838165393F69B538E212915D1F6089",
+    "Path": "D:\\geteco\\game\\geteco_v2\\cutscenes\\opening\\v3\\opening_controller.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D68BBF7259153A3F5A1BCF837AC45561FD80494872453F3FF87C37A825BA1F78",
+    "Path": "D:\\geteco\\game\\geteco_v2\\cutscenes\\opening\\v3\\opening_timeline.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E0D4483856EA75EDFDD28F335119EE84D20B4D35F1CD77815A0D44E268FAD069",
+    "Path": "D:\\geteco\\game\\geteco_v2\\cutscenes\\opening\\v3\\voice_timing.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CCF3B4CA5B555F87E3C1B9233B941F0DAE90D1A5B1C203D87ABA79C437EE5B6D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\GarageSequence.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C78C3C55ED6D2A3894E2B694C629EEF2FA75797963675A4BBBD2DAFC210DF286",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\campaign\\HarborMissions.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "BF3A3E3B2503879EC6F618371756FBA68ED0E4D740B0803C6946A0B7C9AE2E5A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\AchievementCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A4A35E4F6943C0CB3B49873DCE4D49C7F6EC8C2AEB8F127FB32DBBAEA0957919",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\CollectibleCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AB890A522AB3E3045D9C02A19B03AB3849441EC883A9ED4C5D53CA725131D65F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\DriftZoneCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FCCBC31622555A7B4F85141EEA8482E13F2A60892A304BE71555E4886284B3A8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\MotorcycleCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "94821B28CB139F81BBB60B2E5D283FB5225DEFB23D84C926F55ABEE4A987F7E7",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\OutfitCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "EC027687580844235899F84C28657F39B9552DC287FEE180D222E0546B28EEE8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\RaceCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C59A2844E2D1CF09820AC5F559D4FD9A0063B30386F562997BA3D73514C8E1FB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\ResidenceCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E600CECC596C56D66BFE3E1B5FD6CA4EB5F545832B66E8B0B438C946B302F56F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\ServiceCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D52D016925CE20A94799662DF5D4E38F2938E193F0B9859B760D3B6A498AF675",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\ServiceDialogue.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6D445A71E91D0D5FA4D3DE2684D7217F68AFEDD2D27D95D6B69EBCD908D8B6B0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\TowJobs.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D35619663FCAABA37DEF52892EE306F7FF588C99EE7F5E0682E09F5C1727E864",
+    "Path": "D:\\geteco\\game\\geteco_v2\\data\\catalogs\\VehicleCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "843FEB1D38560A7CB8C0443AF532BF0FD6B30D6C904716A17C92AA55B3C24164",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\ArsenalWeapon3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E2164F2B0714FE48E08AF55E62FAC235464AF134AD7AC63CDEE737D479E510F6",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\AxeSwingTrail.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "5FBF87529D182A8AC2CDD16D46810D479129A763B69F3383C59289A677B58D1A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\CobraAgent.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B8ACA5B1852500703B3C1E29C15D4BF955C0E91E4823AADF382568D1218126AB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\CombatAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "67AB5AAA47BFC8317A4A134A7CCB57003B36E7AFCAC4D8FD845B980491333B50",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\CombatEffects.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A4219BF9B8539B6D42E67CBE31929E3F0B04B4ADD378E0815218925CAD930ACD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\DamageProtection.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6CCD099DE37607B1F7664740F7A0F3D72A6DDAE3E24B9B62563EAE5BD7F065DA",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\Gameplay.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "95B68EAF115FC216FCD99A5D24E1B79A80F886179403BDC647636BFEDFE2F0CB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\NativeTrafficRoutes.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F956FF38313D2842B1D0448F79D27B2CECECC9D752DDE4AC62AAAA3E873CCDD5",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\PoliceAgent.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "92A41E60616C45DC9F2A384363705530E94E29F0FC2625317B4832BB17509B1E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\PoliceAppearance.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "658A85C2A5706A10B0C2A5D1C140246B1D9CF9E2DDB7414E95366C1F41F7EE93",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\PoliceModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DFCAD15A1AC0897DCD151C1B5A322A342528DF9021184D1F0D3E3FF01EB1D071",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\Projectile.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "947ACE01A615E030F5C55705019C6D7E0AE61B8F02086073C5746B2F7ECCBAD2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\VehicleBoardingPresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "39F5C00CAB9B17A8F2CDAED978FF176A6A780CB0815D78281448784218F4D847",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\VehicleDoorPresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D7963806A224B262E0F1EF69DE77348DD76DBF65A23A2EBC01B7C0D696225A4C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\VehicleEquipment.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4198DFC294A40006BF43A7209A54419368BEEC103BDA79B4F632361653F4B9EB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\VehicleEquipmentAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "91D3CC9556AD8DA0D480B930DE4375F50B6BADA79DF89641CB44BA1B24A15307",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponAttachmentVisuals.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B91DF3272520F9087C272EC77E3B94A7A871766B6F408BC7BDDE62BB8923D3C2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8579D2D9E0221B3802F1CB249692470BC2CA8F8B8A2EFDACD98E646AC3A9EAA4",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponCustomization.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FDCB9C43685FD48AE6EB3B37B16B344B268384708BFF1F5BAA366BAEC2AD50C6",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponFinish3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "55A94C815275DC69A56F9EA15A0FB865270751CE62EBBC18F1C430D2B822674C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponPoseData.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AFC91A2ED3938AD821A9F12957D7A3029614176711067E93C52E670381927105",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponPresentation3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "918246959FF8D073A93723BF0AF87A31205AEED18E09B073B088A1B4FA58DE61",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponRigPose.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C5171CFD9F56B26DE78836E6356127DA1E7A79EC566BC04E02F1B7CEF26E3A52",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\civilian_reactions\\CivilianDanger.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6D5192B7849C25A10EDEAB740F226E602B90A5DD66E6A61B7044F9B25CF33C09",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\civilian_reactions\\CivilianReactionDirector.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "5AFB5C37485889E97680A525294FDDA4EB4A7ADF12901A0FB45BF794B72957B4",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\civilian_reactions\\CivilianReactionPresenter.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "13AB8ABABD977E3FA001603680E436C43E780A1D0D13B4BB3B042D8730BFCAAE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchController.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4A1476072F4829021A206764F5A509B22B50D89D42C0F76B36F1DC57AD8E8C93",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchDriver.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FF7CFA53FAA6106B601D16AF3FD2B2A04338BC1E7C2459DC4FACC839FC3C171D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchIncidentBridge.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2CF174FE925AB79DD8DAADC3B1D9AE0ECDAE732A9B8F69E3F1A9C564F51F26CB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchOfficer.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B882E51A61BD40F8485BF7A4F2BF513973CE6E375B72C5A13CD9B3CDB745939E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchRoadRouter.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "BAD94F164429C5C3AB4D50BDC4C66E46ED860E6F76645D4C26D52C9DCA9AE84B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchRules.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2448A6A97F0B2556C7B1BE79255CB18DF3D5EB3C3CBBBF5C9B39E6D71E53B651",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchUnit.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B1873F9BDED49AB82538FE4C8E8CDEA87FEB8154C17A69F65AD3C4D38594D280",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\DispatchVehicle.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A14FB0605700A7ABB82D2449B0FEFA925ACF5BE3D6068FCCD9AE0F0CA6FFB51F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\overtaking\\OvertakeController.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2CC5682C1E321C15AC56E2F0CA5949A94DDD583F3BC81C539AEE589072966FE8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\overtaking\\OvertakePlanner.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C70B99DABF12027B37AFB9447960806B2C8CEC8FE903D97980DB1DA24DA69D88",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\dispatch\\overtaking\\OvertakeRules.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F09B93A9D456F306967836D39DD9A80DC7FAED291DB0898302C85ACCD9BFA293",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\emergency\\EmergencyManager.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3AB1DF8744D9C4524CC2EDE9F50B403FA0414269B0B6B9F60C4E04E304D30BB3",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\emergency\\Fire.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "477445526B1E88BB6130E42874DFEC745D1F5A187177712FC34E873DBB4DDB5D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\emergency\\FirefighterModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "178793C9FC6BF24A068590DDADB03C7013D06EF9A521E681D1AE548CDACC554B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\emergency\\MorticianModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4CAB103DA558ED6041534294810B2C2454AB5C048A5818B71E7B05DA1E5BBB57",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\emergency\\ParamedicModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F1227626648621DC9D95630BBE3B864558B2438A3EB09457CD375EF9277543AB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\emergency\\Responder.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "40B1EC7E1EBCCABF29DA4A407DCC4CDBBC9EA3D7498B095363B0F573EABC12F8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\routines_v1\\DockWorkerModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AA97DBEBDEDE1D882E18CE21BEF813E6E79F5C5A5B9C495E314FF28EE7C0358B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\routines_v1\\RoutineCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "494D1E106A7064098899394F34DF8D7C74C82BA0BD3DBB429AB6EF4CA97FD535",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\routines_v1\\RoutineDirector.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1F53A6A7DD32CCAECEC3A6C843D73CB3D3B8422D567033F1F2E6303F317265BE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\routines_v1\\RoutineValidation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A0EEA2D49F5030C714958800352F850268E012C612D647548590B0CABFF2C010",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\routines_v1\\RoutineVisualValidation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1A445E1F37D2BD025D78908A66B3EF0834CEE6F119F64A5298582CEA7CB612DC",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\routines_v1\\V1RoutineActor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2D04DAE3B47B02F06A50C44228FC91AAB0ED6305AEF70B2FD4A616FF1ED10D40",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\traffic_yield\\TrafficYieldController.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3999F63D3D267AABBC352F6E92EE6C641611D7DDFB2A97959B01B3DC30B26226",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\traffic_yield\\YieldAgent.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8B69739FB1778169B0775487BFD67CDFAE00EC0C848A6C6758228EB21D167A67",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\traffic_yield\\YieldRoadModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2B86A54AD2606E2C8B7F7453A48DBC8B1083F71F6AF6E19D3CA4F1A63F7A66A8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\traffic_yield\\YieldRules.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "EFDA729FAEE945CD070FD3FA86ACD6265BE0AF90D75B1558A740A3BB4CD2F42D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\urban_v1\\CemeteryOperations.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E33CE9E9FE3F3B7218C2910AE35BADC62E7B6435C24B66FFA2370D1BFC635CDF",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\urban_v1\\PortOperations.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "35A230AE407A538C1C21DC64722E2A18F9DF530A9465AA06FC0479F4EA514CA0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\urban_v1\\UrbanOperations.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2D5D910CCD492438158CC477297AFE88D19D0650F1C2003E75CA41D025777493",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\urban_v1\\UrbanRoutineActor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "06205574E8C96CDF151F2B7BEE0184CD56684DF7A5D7747BF93F1EA721BEC9D4",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\vehicle_effects\\VehicleEffectResources.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C4C4103F865BB9F3462CBADA053830CDB584856B8DF055330A52244705DFBE52",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\vehicle_effects\\VehicleEffects.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DDFF8DF9F9D5EEDC3FBCE8916D4E6C81510E5D0A5161DB16E39994B5E5A6F1FE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\vehicle_effects\\VehicleImpactEffects.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "155700E272BFD5D11B5CD048804C4B7CD3BA7E1B1E58EA5998E891AC40666CE1",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\vehicle_effects\\VehiclePowertrainEffects.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "5709268EE97709DFFD9D1018DBC1440AD07402468EBBA88B289EA48C213DE6B1",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\vehicle_effects\\VehicleSurfaceProbe.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "868D10E49CAAEB4558DE75B563AE3F49CD2FF5E0116D1B60F1AC135828308985",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\vehicle_effects\\VehicleTireEffects.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DEC579360A42AD475EBCE57D55AA96F9BB0A4FA35F868E1CD79106F66015B182",
+    "Path": "D:\\geteco\\game\\geteco_v2\\migration\\v1\\V1SaveConverter.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "57C5EE07031FC94768E31F088C3CCDF412297BD93D9548D615BE057199A559CC",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\Arrival.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "723BCABAEF5DAB79893CDFD6E4F32C42DC3FC9F5E2AA554E54572315C60DF1A5",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ArrivalActor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E3DA2A2BFF6C66107EAE87904F83CA590F29F11EC76DEB58E63B4D2F9A980066",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ArrivalCar.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D165A915A0FF4101E3CA1D31B00A004BA9E41E680A1A230B6EDA42F14FE86E39",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ArrivalDialogue.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "93857E0113F408F575AE8A08F3EFBB635D4F42A9DEE116F4DF8194938C357728",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\BankGuardModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B4812EF066C8A44D7F22D10520AC76C4430103C57491ECFC870A2BFDC0D91A11",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\BankLockpick.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E9CF64ECD5DBE3D5B37D4335808E04DE03EF988502C50FB266E9232FF4A6063E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\BankVaultTreasure.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FA7A122C3A21A7F64ABA78300F8E120C216FF920A70AA3D5FF9B670AA4ED6C9E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\CashierBaseModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B0AD7FDFBC1EF4CBA042D11204631EAC94FE83ECC3EF124253107EA4E4C0F1F2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ColdSurvival.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "72D714E4B832AD9378E9425FB5F7E597B11FD8F4C0ED43C36A55A419BEF45D91",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\FleetCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "43E1D0658614C13E3E479D417D7753BDE0C48C7A01EF5465BC11063846573270",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\FleetState.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B25EFA92A0F3FF16334724D0FBEE06404A24E16D0DB37124959BAE1BA5245617",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\FuelCashierModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "108706986146461909136A7F857BD2911F2BC80BF81331A4495EAE62367B2284",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\FullSession.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "16E658ECDB46F8E08DAA0ADB1D8D83942BC3F4A6BB5E27DFBA3528D6D712AB4D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\GameInput.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "63F3AF2E4403ED85F02B6D1E38871CF1F8AC87BBAB4F94CBF24CF75FDD94206D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\GameState.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E022585CC56C1465D51B5A23B149E90CBA5A286D502E8F28B7CD1F55C5262C05",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\GarageRewardFleet.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "823201BA0585D19220E272EE23D4378B7BD26ABEE5D17AA2F3CB49C4C4BF3C06",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\GarageRewards.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9BFFDE59756F801A8EFEB8E766910A6540555010C7AE24AE816537DCCC0CF060",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\HarborAmmunationCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8C735A5D3B316AD25DCC04C6710F0FD95D004C4CEA706C4D9DC37AF1ED05CACE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\HarborStorefronts.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7A43DF4EB164090A1555AC0295F69F9D262E35B04BA0301B7307C1283B3E8D33",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\HarborWeaponWorkbench.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "EBAA663977C30C1AAB74DEC84389761F29DAF36014FBC744CAD04DFD04F6F82C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\MissionWorld.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7072E55BCFDD38EA44B351CB88185616E2C9DA4D30238CC2CCBF56EB64D71428",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\NecoPressDelivery.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "BEF62617DF8B0687AFA0FFEF673DB60FBE8AE4709F195E0D4D285EBEC5CAD557",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\NorthgateServicePresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F2314D8BF7F379C09B766CE2259D67738D4325942E5D2DD72B45EA8510F6C56B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\OpeningPresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FEE196E04BDBEC2297B78E25E9B489354D275A2DA7EBE33A14853F9BB6025041",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\PassengerTransport.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "75C986924FC24E98B4D59FFAD699E15AF1FEA8B7FD3FF502583967C52B12268D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\PersonalCar.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3B85B98C9BF98D1432C4AC6D089539708D2EC28DAEB1F9B0D842AB8209139B30",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ProductionWorld.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6A302BFB1D37400BD8DC244F3754873F395E0A7D488C8166AD53F113E2EF7B37",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ResidenceServices.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "51F5945F7A9D768EC3E8B38A39C428B41F9F2C4C64EB2775F12880316B629643",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\Robberies.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AB33509DE86BF9910347F4C70851114FDBC4E9F8A54A0EC0944C931A2DA32C69",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\RobberyActor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F17F7FFA0E39DD021656EA54DB8F800B71EA51645CEE9018611118919CC72E23",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\SaveStore.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0A04EB75536D8B636AF16BD243E082CEB96E6C90EB783095B4A06B8CF0AF5514",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\Services.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "374B99631D4618B520A3F210708A46744CCED3A5E4CBAE8FED5E44B1D15963FD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\SessionLaunch.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D31B41A3537349FDC25E498D16DCCCDF04881F3BA1CDF7AC5D8AA046B8F9B1B9",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\Settings.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8904C5F633C18755459427A8C9B9E30EEF3A75BE800BC4100DA0DAA6B8EFB55F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\TrunkView.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "060365386A7421B30ACB3580F5FE125B69CB63D76F5C38FAA597C6C01BB7A59A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\UrbanTransitPresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C0AC5F191D0197E4FB3217335868C160B0869AE969718A29137C85E2785720ED",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\VehiclePaint.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "999588F41AF79D265FB4B1AFD0FA05A86D41FA6C7926AA14A70263227FFF7540",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\Weather.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8A3F98ADDE83A67A08A0367BFFA286A0E10BAA4DF0CEF3422EBA25D20B621890",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\atmosphere\\AtmospherePalette.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "481407A91771467B67CB63EE4D39A5C2EF60523DF5B049634790E5C7C9419887",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\atmosphere\\AtmosphereProfile.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "816514E90640548DBD06BE41922A9B5DCB07C145EE1844B6BC60A023E11411AC",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\atmosphere\\RegionalAtmosphere3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A5D69F7EA6E7A145CFB18CEBF8F3D137034BDF3E4F409BF99D6697BE727C8909",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\cold\\HearthEffects.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "45EA9597E8324358427D72E8A93DD4FF412A97B0581BBCDF46E7EB3E356611D7",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\cold\\HeatPresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F92BF029DE13A5ECF49354A8CE86D16794904C6025997120849ACE116E81BCD9",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\cold\\OriginalHeatSources.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "BCE6299CB277AEB25E688F832324A03FEDFF239200853A6A1A74353CD1B9C9D4",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\cold\\ResortBrazier.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B316CF12A26A0B14484B1FD333224B5AF666C51E1497DC70E3A4D999CD7F76D8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\cold\\ThermalState.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "48770D31927183B9DC11B73F925CDEEE27B7406C8AACFE4D30DF767E5A82E45D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\cold\\TransitBrazier.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D588988BEF421E0162366072E28CCBE1FA28FCCE96096163F83441ADA79DB1CD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\garage_guards\\Guard.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "015B645A67DCF2118E9204640DAC4019A44529A4E4207CDE48B299A574E9FD1A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\garage_guards\\Guards.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4BF0A0F68781369FE4444075894B9D2CB2553016B9B24353EB2EED7825C24FA5",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\garage_guards\\Shot.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FEFD970FBD4E47D571E5C9D17BF7FBBEE5206CB7E3107FF5FA53775995792F83",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\world\\OriginalWaterStep.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2E9648399058430811692B8C4F38BF0062BE17F8A091774E0201E7A856712005",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\world\\WaterSteps.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1701CD647AE88A2EDDE3CD39FDE9E61D1106AF9D4F2975E94CD9163E4239D3C2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\Actor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F61D1F5F25E8CB2C23B2C51EAAECDE326EE7263C33419F6F063E338D732E2240",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\CameraRig.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "8FBD43375B5D3DC066AB0E3B34A8013A8D5AFD30DE6F7EACC9B0882232529674",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\Driving.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4C1ACEE0B5C533DE100B05976077C7B5B3B72170C89770925C47E914432D40CA",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\PauseInput.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6A27694B0A1446137DDEB968D9D40178A812A694DC847C5723F25CE5BDB10818",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\RouteActivity.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6681255BEB84E4B4EACC4CAED7C9CEDC5B9708648FED478E7C30F597995A2D2F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\Street.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "023644A2FF08C1736A5E7C972DE3D97A938BE8A401F30A8DDDB3A4460C1CE80F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\Traffic.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C8ADEBDB8D8D044978DB4BF388D594C0BA7A93B042A627D2005ADC24DE6EF551",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\V2Session.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "48CEA2FFE7C7F68E5BCAB0AE6208CE00730B759C1BAF86209F4937EDDC058C79",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\Vehicle.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B5522E0AEB5B7557AD87642E0DF1A3A991EAA064FD783AB8D36390169C7F669C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\VehicleVisual.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "44D2AD4BEC6237328960A757E91B0F48AC98A200A8D10E7449435A02E5BD6688",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\World.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6823009D085FE15FD22168F8A74B5F3A44C06F819C59FBB3EE8FCC8A6F40CE55",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\Progression.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "135FE3F6C6311A44DE0AB1C67F906C540826F989768580EF40B2A9D8CE2DC6A0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\campaign\\CampaignRuntime.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A4F68BE0F27A45A6555EEA688ADB9228B49DE9158E57047C4B728399FDE8C451",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\campaign\\CanonicalCampaign.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1E5572594C240FC71897EE07312326AE2AAE1556F3F6AAA5C74A3527EB4424AD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\campaign\\CobraRaceProgress.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FCD95CE259602FC558C272E45182DDE33AA59CA9B583CA17016118BE40DE519A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\campaign\\OriginalDialogue.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2BA4499BCC985591CA5BE3C6BC5FC926C36065C6230BB8048FD90DBE32343A19",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\economy\\Economy.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0A31AD1AB913B986BB208695AA51D8E06B272D951947FBEBEEF834B1A0108DDD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\systems\\economy\\ResidenceRules.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C463AA0FA2A1253C235F39E394E6F3AEFEBE05AEAC7144715AEBED765735BFC1",
+    "Path": "D:\\geteco\\game\\geteco_v2\\tools\\bake_vehicles.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "671803C9739892B61E0688F2608B215A0884C770DA473041DDA44EA5572A8692",
+    "Path": "D:\\geteco\\game\\geteco_v2\\tools\\export_cobra_models.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C60E4B2E743EBDC4EA7D6F4B35253163BF0778CDE511D32F1B4E6841BAFD380A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\tools\\export_validation\\validate_dynamic_resources.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3C1E400908F2E2B32E4847EF7F843464BE2AF4D347531D73EC40089565798C0F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\ClassicGameplayHUD.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "16E0E97C8112671FD11B69080AE10424279260450E694A070F2D100F59441718",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\ClassicHUDPerformanceAB.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F70FAD185787C17CC41A08AC36A83BB4F866B65D17C51BA5B43334185C88162C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\ClassicHUDReviewCapture.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F8103CE4E7608EA0A40CCAEFA7D67EE5D7E215F7838379F0CD214D2D595C387F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\DoorAccessMarker.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3720914EC17641F91B1AE362CCDEF8D6EBEF0FF3CA6F0134915D331080BB12E9",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\GameplayHUD.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DC21347489DF081A503CFBB9072571AAFCB41C92E389133E8BB3F7E9C6C9C983",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\GameStyle.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C1DA67A5B55FEB9B18FAA75E63C640DD51E9C44F3E47EC97958734A5CBC970F8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\HUDReviewCapture.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AE6B64031A26A9547A1D3E288EE170E6E7212609AD097329681BC97B6429D9C1",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\MainMenu.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AF7AE84F775A4E6D821611EF91158CBC54BB0E0326D406DF3966E40D97CD30DB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\MenuAudio.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CB9E5BEE9B2B41D1B32A0F953967DE9974B4904BE519E7781353C4A028E9727F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\PauseMenu.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "AA1F0E2134943164BC76E3DC5ADE0D5372C2A4CFEAEA143DE9AD3EFA0175331B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\SettingsMenu.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9C66172C23B2F72A836BE72E43301C2196491267CEA60871DCA5A9710452463D",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\SunsetMenuPresentation.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "35692DEC449A80700A925A665DC0177CBA6C0AD316E7D3536AC67F5FF36EEEDD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\menu_presentation\\Demo.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "24020B0A69198694CDC8AE2D04C0C4F0B1B7278C41DDABE3698E6C4A225EC234",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\menu_presentation\\MenuAction.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B157E3867BD8C41205CAD8D522CCDCE8D01D7F7EF0E084B17F1491EC7A87508A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\menu_presentation\\MenuPanel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4EACC7B3A94670464AA4BB5A0818C7AD2917F8A47D024E4696D62A7CF1A2C314",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\menu_presentation\\MenuTheme.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C7D34104C24386ED8CF00B77E4460595A73AB52BAF37B6075A03DD903FC2B467",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\menu_presentation\\MenuVolume.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7C622917E59A7E36FBC9F328617A38C2A22500E9294F8DD9BF156D39ED19629E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\v1\\HarborMinimap3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7D4F4F6017886A14E893750935D20C8E7521DC6FBC5C0D2C7C05BF70BF10A7DA",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\v1\\InteractionKeycap.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CC92C0F2CBD60FC750B6A253DEBA5B6A079E77B84AC1FFFA58A4D6F3F74A4335",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\v1\\WeaponIcon3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D6B60E5C424D6AE6A2AB000543A5D4B48D2E1E75A76B713BDFB2C25322480518",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\v1\\WeatherIcon.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0CCD254482740C7BBC32D85FD1334F7683EB44FCC85BABA9B3D5485861210B42",
+    "Path": "D:\\geteco\\game\\geteco_v2\\ui\\v2\\WorldMap.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D7D0ECEF6180556A8E774ECBD44741329D8E507D71C3DE30287BB88D1507939B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\environmental_parity\\EnvironmentalParityFactory.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C6BAAFC52694A3EF69819B97AB85E3B8F93865E77D76BAC592671FB2E1880F49",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\environmental_parity\\MountainChairliftParity3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A8407A70E943F6418A26BF301E855FFD321E7E7629EE16AC13632364631BC8A2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\environmental_parity\\StaticSawmillWorkTruck3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "943E128C00C535055887CA135C5046A5BDCF474F456E3BF27914C3C76D0A6E09",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\harbor\\HarborAudioBank.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "ACAE46AB4015B981D8358F42A36CA07F6CC91DB94C808C26366D33C0463C24F3",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\harbor_route_detail\\HarborRouteDetail3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A812406A147D23140B35D908B8BC3C7B1C8DE66A3EB1267BFE47326C4A8EB488",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\harbor_route_detail\\HarborRouteDetailFactory.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DAE43927972375B7DF794B4878253B30D5434984D60F2E193DF7E733BF206DB8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\harbor_route_detail\\HarborRouteProps.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9D8156AD6D1FC809C03A7F7A2DFB03C72E92929B8FF5858B5C81CD700D071F3C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\maciota\\MaciotaPlace.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E1C6F07562952987216747D9685412A921385370C3812DADF9E139A9D948821E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\CoveredWoodpile3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4D15AD5E7DA344540E33A96D4F15FDB524EECE64E49C9B7704637E35C90F7692",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\LumberStack3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "13E10F43E3211CFB1DE4356ACF2563948C909B1326883CAF290962BABE416C05",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\MountainChalet3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "322ABD457629D7281EDA3F735AD888F5BD08663E0BFEF08E43995C439E9DC113",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\MountainDetailFactory.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "933E95BE6E5D5443F243FF8E65E9DB68CF60E0EFAD68BEE9F728C8A15A16C7AB",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\MountainTerminal3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0C23EE678B2F969131DC4805911473335CEE19F7001587D24422EA9FB6F6E9B2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\MountainVillage3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B87044B085909A295027D53EEF62F7E515729AEAC8B16E77E1C95056DD8E4393",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\OriginalCoveredWoodpile.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7F760A7285BB0570E5EB3B88754112A6231FAB1F32C869B27B29E3EC990B70C0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\OriginalVillageArchitecture.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "062360AA5AE18377E94E8E43F5EA665CAE8D707FE7172BA9F4A96BE902C48FA6",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\OriginalVillageLayout.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "095EB49F37E45CC2E910E65FD3A6020DC5279E62BD5230066F7F862AA0ADCDF3",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\SawmillFence3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "4DF38366EB0C277C5308442316088150446F496B70E96EBFFE0C710E4B2C54B3",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\SawmillShed3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C1B21B6C4FD7ACDA8F974071F02837F30139F1FC0186EF745E2E1A1B3839C01A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\SawmillYard3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B010B353D7E89FCCC0F1EA4D4FA733E1EF7BDFFCF62DCF2FD920E5A5C172CD2F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\mountain_detail\\VillageShopfront3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "EB0C1CB262F68F3ACE3D6C2785ED77A0755428564B6333922E4484631C9E9C9B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\neco_press\\NecoPress3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D7DDE5B6E3025F9F0653FB53924A3E238082AE56097AA67867B7AD2CFD4BA87F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\neco_press\\NecoPressFactory.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "D45F393DA06FB86D962A530E2F3AA11A06EE06060D4C557ACFD9931056D8492A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\AmmunationModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9F0FFE750DA891B20895824D1DF9E4DC47A27EF7506867D70453F3E9134FDD58",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\BunkerExteriorNative.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1B774C66178FB36FC14AB7F81B14344C3AF2E94C5A1069720A4D7C019E3D9091",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\CargoPlaneNative.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1703A28B5580D8F57F7FEE7F37CB36741C3E28054481C2E6B968C1AB5F9DB8BD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\MedicalResidentModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A2B71B4D3ACC154DFE7C9B312E1BDE82A1F06F86E894031E1E88E1966E9FCF9C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\NativePlace.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "46D1DA99CAB3D73521151A66DAC4B80E648075F0FF7EFAC24412DD3403F0C16A",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\NecoModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "014A9138303D8249A041DCF6F145CBB8F1F170C9927A3E44859AB7503259FBF2",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\OriginalResidents.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "710F73E38DDADF6B4F14B5ECE46ED588728D45FC7819CF4B9824051487704B1B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\PlaceCatalog.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B4CFEB6680CA70DA4EACF1442232685C12FDA8229A8D313256524D193BDCA3BD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\PortBossStock.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0A58F5CDC50572ED8052FAF8CB4153C15880610993D43BE40CEBDFB633D3B08F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\SalvageYardNative.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6DA55B183B175195418831B65A2A3573D00CFF9422A466BF319FA243111B38B9",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\ServiceResidentModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "53BCE256228B2E53CA17EB91229A35FCD1674EF8E5CE5B61D05696862C52399E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\places\\SewerModel.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DD71821B794931267837E03D209E87AB5FCBB2CE57066AB040F218FB4FBED760",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\CoastalProtection.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "5864CDC3F7915C8FE8910C811EA93842DCA49AD0165649394A75056308B65C5B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\HarborOcean.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A7B18D411EB7774781108C6C1439E2CCC53382E54FD94BE7CE44BEBF6D742AF7",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\HarborShoreWash.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E62596A79FB14B6A677FC5B141BCF412F45384896B862F4AA916815EE4DCBE1F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\MountainTerrain3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "B7AB4B50C20D8D55702E28217C3AE0F976BFF7734C336535BDFE69FF76923799",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\NativeLake.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "09A68FCBA32504BD26F7D55EE0304552344EA5C7E06AF8984FBE8264E047346C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\NativePine.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "407A955428E51CC7748B19A21A80835EE5051C6422D2B0BE0182786CCD2758F7",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\NativeRegion.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6EDC752898D8EDF063737A45A32C747EEFDADC353D881DEAB3E928E8E9EB45BE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\OriginalCemetery3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "F03A0FEC5EDEA5CEDB5407A89D29DAD8AF3EB865E435312B3CE67AA9CC0D90D4",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\OriginalSouthPort.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "458E445FB1F7CE69498DEEA6ACCAD52C3D569C03CCD64774795B058687F7F6F0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\OriginalSouthPortLayout.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "047EF123F0D9637A31CCF178A8004659C1CF30A8A22087FAFC9F36F28372B581",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\TerrainDressing3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "50D435DA573ED6493B0B84DD67D89914EF63FF8DDB16B22F606CC8253F1D1B43",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\regions\\WorldConnection3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "655A541353A7564999F64E77107D068E7D889DA461085D67D15DD88CC5A7928B",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborAreaDressing3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "143EB0FE11484C1D362728482C0F3382DED6C14E4169DB1DFD0452ABB32E265C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborBridge3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "522EFA92EA108B2BAA3A4DBECEEB53D94428FB758B442ED5F36C074A866CA1AE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborManholeExterior3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "310D6A4F77CF2D1305CD683D54E900A7154A320FD75585733468C4192E311129",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborProp3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "DB8DF86EDE9CC5062E63232E6F8C471033707A01DE1FD1AD6E5943597627C7E0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborPublicRealm3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "57EA226AE3BE7F0512ED827D6C3921531C9CA429A9FB44DCF4E334C0F0C9BE07",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborRestaurantTerrace3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C654059DB074B27060D0D8B15548F0450FF6326B2AAEF6D66392D3AB1065AEB0",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborRoadGeometry3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A7CCE175BCC84998CC5093E9B2425E22E747B24A175810568D5FA797AB8CD90C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborTerminalModel3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "5410F7B7370FEC78206665390292EEC615C0FA50DDBC7E93C0050EBB686C82F8",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborUrbanSurface3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "610DE325E5773C8B6CE64C4C49B64CF52CFA4E42F9CDA1403A81C6D9882B481F",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborV1BuildingProfile.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "046CABDE05AF8DD3CAC0B7BF1784950B49239141FE013CD7ED619ACE620C3BCE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\HarborV1BuildingProjection.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3BD81AA7986662E2C60457CC89A7C830D835D76EEF0053C9FC4FD7E8A8F67DF1",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\PortBossGarageExterior3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E77F0A2980CC88DDC0E9C77A1D85FA67B7FB366FEA96B3A4D972478FA8E3E96C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanBrownstoneBuilding.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "11BC7076DBA9602FEBC82F7A4413F6A341043FA2E2B181393A9D54B577D20C3E",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanBuildingBase.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "7603E0A8D8E2FC41C8B9755A6D382F6CAC7184227A6427CBC63C6E0227DD03DE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanBuildingFactory.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "2AB62CCB75DE477557D26CE24289351A6EBB9F8C5E44D65D0811F5143E1AFFAD",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanCobraHouse.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "E6DB09FE55FA6F7E1EC580091D21CCFE4505CD49494B0DA577E0D8DC9CBC6409",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanCommercialBuilding.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9AC511C0D2DDB04CCE6CD06DFF23F245AD74123725EE94AE53ABF61AF574D057",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanIndustrialBuilding.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "1ED430E4AA711B0EEC7B2C70AC6E30521E6E58F97F4445195514325901A47AA4",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanLandmarkFrontage3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "CB4DB0C44D0234F33142CB8CD4FE81FFF0926959DE02991902B07E7184EA0E76",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanLShapedBlock.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "0166D4BED278F46302302AF48421B90EBB535A92E572EC3E921A4D5DB5D3AC78",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanServiceBuilding.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "9B5E73349F5D0F374380FB1029F3B6280ACD7DB5478D3ADBF0E2C2EC0ECD6C56",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanShopfrontBuilding.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "C2E73F5A29F07E47AE1309AD3D72B336E6F2BDF43E5DE20496F9B8DFCB84B951",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanSignage.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "17BFFE447C20C69004412A3C8028B6E4415E22988B9D5C295CEEAF8A5FEAFDAE",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanStationModel3D.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "27F8A2F52E91C24D2542E5C1C0219E153B46AAB60F9E9C77FEE631D1395305FC",
+    "Path": "D:\\geteco\\game\\geteco_v2\\world\\urban_detail\\UrbanTransitStation3D.gd"
+  }
+]

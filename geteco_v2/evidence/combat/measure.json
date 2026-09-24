@@ -1,0 +1,29 @@
+{
+  "combat": {
+    "fps_mean": 60.0,
+    "frames": 1800,
+    "max_ms": 28.12,
+    "over_33_3ms": 0,
+    "over_66_7ms": 0,
+    "p50_ms": 16.66,
+    "p95_ms": 17.27,
+    "p99_ms": 18.74,
+    "seconds": 30.0
+  },
+  "first_visit": {
+    "first_explosion_ms": 16.82,
+    "first_shot_ms": 25.91
+  },
+  "idle": {
+    "fps_mean": 60.0,
+    "frames": 1801,
+    "max_ms": 18.34,
+    "over_33_3ms": 0,
+    "over_66_7ms": 0,
+    "p50_ms": 16.66,
+    "p95_ms": 17.17,
+    "p99_ms": 17.47,
+    "seconds": 30.02
+  },
+  "note": "janela real, [\"NVIDIA\", \"32.0.16.1047\"], vsync/limite do projeto, sem outros benchmarks; outra sessão do Godot (editor) pode estar aberta"
+}

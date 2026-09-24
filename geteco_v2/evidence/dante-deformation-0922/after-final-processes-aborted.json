@@ -1,0 +1,143 @@
+[
+  {
+    "time": "2026-09-22T14:08:17.6528285Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      }
+    ]
+  },
+  {
+    "time": "2026-09-22T14:08:18.1063116Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      },
+      {
+        "ProcessId": 59320,
+        "ParentProcessId": 61536,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 56896,
+        "ParentProcessId": 59320,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "time": "2026-09-22T14:08:19.4599487Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      },
+      {
+        "ProcessId": 59320,
+        "ParentProcessId": 61536,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 56896,
+        "ParentProcessId": 59320,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "time": "2026-09-22T14:08:20.8222804Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      },
+      {
+        "ProcessId": 59320,
+        "ParentProcessId": 61536,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 56896,
+        "ParentProcessId": 59320,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "time": "2026-09-22T14:08:22.2169754Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      },
+      {
+        "ProcessId": 59320,
+        "ParentProcessId": 61536,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 56896,
+        "ParentProcessId": 59320,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "time": "2026-09-22T14:08:23.6050607Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      },
+      {
+        "ProcessId": 59320,
+        "ParentProcessId": 61536,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 56896,
+        "ParentProcessId": 59320,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      }
+    ],
+    "concurrent": false
+  },
+  {
+    "time": "2026-09-22T14:08:24.9602627Z",
+    "processes": [
+      {
+        "ProcessId": 33204,
+        "ParentProcessId": 30524,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game/geteco_v2 --editor"
+      },
+      {
+        "ProcessId": 59320,
+        "ParentProcessId": 61536,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 56896,
+        "ParentProcessId": 59320,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:\\geteco\\game\\geteco_v2\" --script res://tests/capture_dante_deformation.gd -- --no-save --skip-arrival --population=24 --dante-label=after-final"
+      },
+      {
+        "ProcessId": 62872,
+        "ParentProcessId": 55064,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path C:\\Users\\rafae\\AppData\\Local\\Temp/geteco-maciota-meshy-review-20260922 --script C:\\Users\\rafae\\AppData\\Local\\Temp/geteco-maciota-meshy-review-20260922/review.gd -- D:/geteco/game/assets/characters/maciota_meshy/maciota-textured.glb D:/geteco/game/assets/characters/maciota_meshy/review-textured"
+      }
+    ],
+    "concurrent": true
+  }
+]

@@ -1,0 +1,17 @@
+# Maciota — primeiro lugar do Geteco V2
+
+Estado final: primeiro trecho implementado e validado pelo integrador. 1 lugar físico, 1 interior distinto com checks funcionais, físicos, visuais e desempenho estável registrados em [VALIDATION.md](VALIDATION.md). Não significa paridade com toda a missão V1. Os parágrafos abaixo preservam o histórico da entrega do agente e suas pendências naquele momento; fechamento integrado em VALIDATION.md.
+
+Reuso isolado de HarborGarageExterior3D (fachada MACIOTA e vizinho), MonalizaWorkshopProps3D (baia, elevador, bancada, escritório), WorkshopDetails3D (acabamento), construção visual de JagerNPC e WorkshopMechanicModel. A extração do Maciota mantém traje, bengala e chapéu originais; escala visual convertida para metros humanos. O mecânico mantém geometria original e somente seu construtor de peças, sem herdar a lógica/autoloads da montanha.
+
+MaciotaPlace usa um único World3D com exterior e interior distantes no mesmo espaço. Não cria SubViewport, Sprite2D, física 2D ou autoload legado. Sólidos nativos cobrem volumes completos dos móveis e portas; vigas altas não bloqueiam o chão. Paredes dianteiras têm corte visual com volume físico conservado. Câmera recomendada alinhada (0,18,15), tamanho 13; root controla transições/câmera/restrições de armas/persistência.
+
+API: exterior_origin/interior_origin configuráveis antes de add_child; entry_position, exterior_return, interior_spawn, exit_position, camera_target globais; camera_size, camera_offset; room_bounds/exterior_bounds locais; solid_bodies com interior_solid_id/local_bounds; maciota/mechanic refs; interaction_points globais (maciota, mechanic, workbench, part); set_interior_active(bool), set_part_available(bool). Residentes não possuem métodos de dano/morte. Bancada expõe ponto de aproximação e peça visível recolhível controlada pela integração.
+
+Validação proporcional: tests/test_maciota_world.gd verifica corpos inteiros em aproximações, varredura de parede/mesa, passagem do escritório, suspensão de sala vazia e ausência de rotinas de dano. Não comprova oclusão nem performance. Gates restantes: transição real com save, inventário/sem-armas integrado, capturas antes/depois reais, oclusão com controle positivo, escala ao lado de Dante, p50/p95/p99 renderizados na mesma máquina/cenário. Nenhuma aprovação de FPS inferida de headless.
+
+Validação executada em 21/09/2026: test_maciota_world.gd PASS failures=0. A verificação adicional dos residentes encontrou o mecânico sobre um prop; posição corrigida para (-2.9,0,-1.25), aproximação (-2.9,0,-.15), e caso reexecutado com sucesso. A execução headless informou restrições de escrita de logs/certificados do sandbox, mas concluiu o script com exit 0. Render/oclusão/FPS permanecem pendentes. Consolidação de malhas estáticas adiada até baseline render comparável.
+
+Revisão visual das capturas v2-interior-entry.png e v2-mechanic-part.png: escala dos moradores coerente ao lado de Dante; enquadramento ajustado para tamanho 13 com alvo elevado .55m. Removido visual do pátio externo legado de 50m, mantendo piso físico, e ocultado cilindro do portão alto no corte dianteiro. Essas correções aguardam nova captura integrada; nenhum benchmark concorrente executado.
+
+A captura de profundidade revelou juntas externas remanescentes: nomes duplicados de nós são renomeados pelo Godot, invalidando filtro por prefixo. Corrigido na criação das juntas pelo identificador autorado, ocultando todas, sem alterar colisões.

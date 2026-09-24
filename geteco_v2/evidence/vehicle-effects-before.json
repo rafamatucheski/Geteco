@@ -1,0 +1,14 @@
+{
+  "car_position": "(25.58609, 0.12, 103.2632)",
+  "effects_enabled": false,
+  "emitters": [],
+  "health": 80.0,
+  "label": "vehicle-effects-before",
+  "marks": 0,
+  "modes": [
+    "",
+    ""
+  ],
+  "save_error": 0,
+  "speed": 10.0
+}

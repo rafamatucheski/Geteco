@@ -1,0 +1,70 @@
+--- geteco_v2/scripts/Actor.gd (inicio desta tarefa)
++++ geteco_v2/scripts/Actor.gd (corrigido)
+@@ -257,6 +257,7 @@
+ 	for bone in mini(pose.size(), skeleton.get_bone_count()):
+ 		skeleton.set_bone_pose_position(bone, pose[bone][0] as Vector3)
+ 		skeleton.set_bone_pose_rotation(bone, pose[bone][1] as Quaternion)
++		skeleton.set_bone_pose_scale(bone, pose[bone][2] as Vector3)
+ 
+ func _pose_clip(clip: String, time: float) -> void:
+ 	if not animation.has_animation(clip): return
+@@ -290,13 +291,14 @@
+ 
+ func _capture_pose() -> Array:
+ 	var pose: Array = []
+-	for bone in skeleton.get_bone_count(): pose.append([skeleton.get_bone_pose_position(bone), skeleton.get_bone_pose_rotation(bone)])
++	for bone in skeleton.get_bone_count(): pose.append([skeleton.get_bone_pose_position(bone), skeleton.get_bone_pose_rotation(bone), skeleton.get_bone_pose_scale(bone)])
+ 	return pose
+ 
+ func _apply_blend(from_pose: Array, to_pose: Array, weight: float) -> void:
+ 	for bone in from_pose.size():
+ 		skeleton.set_bone_pose_position(bone, (from_pose[bone][0] as Vector3).lerp(to_pose[bone][0], weight))
+ 		skeleton.set_bone_pose_rotation(bone, (from_pose[bone][1] as Quaternion).slerp(to_pose[bone][1], weight))
++		skeleton.set_bone_pose_scale(bone, (from_pose[bone][2] as Vector3).lerp(to_pose[bone][2], weight))
+ 
+ ## Gameplay escreve um pacote pronto em espaÃ§o local do Actor. O pacote Ã©
+ ## aplicado depois da locomoÃ§Ã£o, para que pernas/corpo continuem animados e os
+@@ -324,7 +326,7 @@
+ 		var spine: int = _combat_bones.Spine
+ 		var spine_pose := skeleton.get_bone_global_pose(spine)
+ 		spine_pose.basis = Basis(Vector3.UP, torso_yaw) * spine_pose.basis
+-		skeleton.set_bone_global_pose(spine, spine_pose)
++		_set_combat_bone_rotation(spine, spine_pose.basis)
+ 	var right_grip := bool(combat_weapon_pose.get("right_grip", false))
+ 	var left_grip := bool(combat_weapon_pose.get("left_grip", false))
+ 	var right_shift_world := Vector3.ZERO
+@@ -410,10 +412,10 @@
+ 	if not current_normal.is_zero_approx() and not desired_normal.is_zero_approx():
+ 		var twist := atan2(axis_fore.dot(current_normal.cross(desired_normal)), current_normal.dot(desired_normal))
+ 		fore_pose.basis = Basis(axis_fore, clampf(twist, -1.2, 1.2)) * fore_pose.basis
+-		skeleton.set_bone_global_pose(fore, fore_pose)
++		_set_combat_bone_rotation(fore, fore_pose.basis)
+ 	var hand_pose := skeleton.get_bone_global_pose(hand)
+ 	hand_pose.basis = hand_basis
+-	skeleton.set_bone_global_pose(hand, hand_pose)
++	_set_combat_bone_rotation(hand, hand_pose.basis)
+ 
+ func _point_combat_bone(bone: int, child: int, target: Vector3) -> void:
+ 	var pose := skeleton.get_bone_global_pose(bone)
+@@ -421,7 +423,20 @@
+ 	var desired := (target - pose.origin).normalized()
+ 	if current.is_zero_approx() or desired.is_zero_approx(): return
+ 	pose.basis = Basis(Quaternion(current, desired)) * pose.basis
+-	skeleton.set_bone_global_pose(bone, pose)
++	_set_combat_bone_rotation(bone, pose.basis)
++
++## IK changes orientation only. Decomposing a global Transform3D back into a
++## local pose on each bilateral iteration feeds floating-point scale/shear
++## back into the next solve. Animation rotation tracks do not reset that scale;
++## over hundreds of frames it grows until the sleeves span the screen.
++## Keep authored translations/scales and convert only orthonormal rotations.
++func _set_combat_bone_rotation(bone: int, global_rotation: Basis) -> void:
++	var parent := skeleton.get_bone_parent(bone)
++	var parent_rotation := Basis.IDENTITY
++	if parent >= 0:
++		parent_rotation = skeleton.get_bone_global_pose(parent).basis.orthonormalized()
++	var local_rotation := parent_rotation.transposed() * global_rotation.orthonormalized()
++	skeleton.set_bone_pose_rotation(bone, local_rotation.get_rotation_quaternion().normalized())
+ 
+ func combat_palm_position(side: String) -> Vector3:
+ 	if skeleton == null or not _combat_bones.has(side + "Hand"): return global_position

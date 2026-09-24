@@ -1,0 +1,20 @@
+{
+	"failures": [],
+	"samples": {
+		"behind": {
+			"ratio": 0.848344880677444,
+			"with_desk": 1102,
+			"without_desk": 1299
+		},
+		"beside": {
+			"ratio": 1.02104442712393,
+			"with_desk": 1310,
+			"without_desk": 1283
+		},
+		"front": {
+			"ratio": 0.999236641221374,
+			"with_desk": 1309,
+			"without_desk": 1310
+		}
+	}
+}

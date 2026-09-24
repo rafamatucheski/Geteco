@@ -1,0 +1,7 @@
+{
+  "gameplay/PoliceAgent.gd": "f956ff38313d2842b1d0448f79d27b2cececc9d752dde4ac62aaaa3e873ccdd5",
+  "gameplay/PoliceModel.gd": "658a85c2a5706a10b0c2a5d1c140246b1d9cf9e2ddb7414e95366c1f41f7ee93",
+  "gameplay/PoliceAppearance.gd": "92a41e60616c45dc9f2a384363705530e94e29f0fc2625317b4832bb17509b1e",
+  "gameplay/Gameplay.gd": "6ccd099de37607b1f7664740f7a0f3d72a6ddae3e24b9b62563eae5bd7f065da",
+  "gameplay/CombatEffects.gd": "67ab5aaa47bfc8317a4a134a7ccb57003b36e7afcac4d8fd845b980491333b50"
+}

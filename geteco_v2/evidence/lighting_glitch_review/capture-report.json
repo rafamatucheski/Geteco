@@ -1,0 +1,1165 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "locations": [
+    {
+      "conditions": [
+        {
+          "frames": [
+            {
+              "camera_focus": "(46.875, 0.070039, 102.7375)",
+              "camera_heading": 0.0,
+              "camera_position": "(46.875, 28.07004, 124.7375)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(46.875, 0.0, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(46.875, 0.070039, 102.7375)",
+              "camera_heading": 0.0,
+              "camera_position": "(46.875, 28.07004, 124.7375)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(46.875, 0.0, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(48.29037, 0.052996, 104.1529)",
+              "camera_heading": 0.0,
+              "camera_position": "(48.29037, 28.053, 126.1529)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "camera-moving",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.37391, 0.039942, 105.2364)",
+              "camera_heading": 0.0,
+              "camera_position": "(49.37391, 28.03994, 127.2364)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "move-settled",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.37499, 0.039928, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(49.37499, 28.03993, 127.2375)",
+              "camera_size": 16.0351467132568,
+              "connection_loaded": false,
+              "label": "zoom-near",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.37499, 0.039928, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(49.37499, 28.03993, 127.2375)",
+              "camera_size": 45.9122314453125,
+              "connection_loaded": false,
+              "label": "zoom-far",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.375, 0.039928, 105.2375)",
+              "camera_heading": 1.5707963267949,
+              "camera_position": "(71.375, 28.03993, 105.2375)",
+              "camera_size": 28.0218162536621,
+              "connection_loaded": false,
+              "label": "rotated",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "day",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.0,
+            "mean_rgb_delta": 0.0,
+            "sample_count": 57600
+          },
+          "time": 0.36
+        },
+        {
+          "frames": [
+            {
+              "camera_focus": "(46.875, 0.040026, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(46.875, 28.04003, 127.2375)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(46.875, 0.0, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(46.875, 0.040026, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(46.875, 28.04003, 127.2375)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(46.875, 0.0, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(48.29828, 0.03997, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(48.29828, 28.03997, 127.2375)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "camera-moving",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.37396, 0.039928, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(49.37396, 28.03993, 127.2375)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "move-settled",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.37499, 0.039928, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(49.37499, 28.03993, 127.2375)",
+              "camera_size": 16.0360813140869,
+              "connection_loaded": false,
+              "label": "zoom-near",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.37499, 0.039928, 105.2375)",
+              "camera_heading": 0.0,
+              "camera_position": "(49.37499, 28.03993, 127.2375)",
+              "camera_size": 45.8970260620117,
+              "connection_loaded": false,
+              "label": "zoom-far",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(49.375, 0.039928, 105.2375)",
+              "camera_heading": 1.5707963267949,
+              "camera_position": "(71.375, 28.03993, 105.2375)",
+              "camera_size": 28.0222854614258,
+              "connection_loaded": false,
+              "label": "rotated",
+              "logical_region": "harbor",
+              "player": "(49.375, 0.039928, 105.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(0, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "night",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.0,
+            "mean_rgb_delta": 0.0,
+            "sample_count": 57600
+          },
+          "time": 0.84
+        }
+      ],
+      "heading": 0.0,
+      "id": "garage_exterior",
+      "move_end": "(49.375, 0.0, 105.2375)",
+      "position": "(46.875, 0.0, 105.2375)"
+    },
+    {
+      "conditions": [
+        {
+          "frames": [
+            {
+              "camera_focus": "(77.875, 0.039928, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(69.45596, 28.03993, 116.5629)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(77.875, 0.0, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(77.875, 0.039928, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(69.45596, 28.03993, 116.5629)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(77.875, 0.0, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(80.14146, 0.039984, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(71.72243, 28.03998, 116.5629)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "camera-moving",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87328, 0.040026, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(73.45424, 28.04003, 116.5629)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "move-settled",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87498, 0.040026, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(73.45594, 28.04003, 116.5629)",
+              "camera_size": 16.0403747558594,
+              "connection_loaded": false,
+              "label": "zoom-near",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87498, 0.040026, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(73.45595, 28.04003, 116.5629)",
+              "camera_size": 45.9122505187988,
+              "connection_loaded": false,
+              "label": "zoom-far",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87499, 0.040026, 96.2375)",
+              "camera_heading": 1.17809724509617,
+              "camera_position": "(102.2003, 28.04003, 104.6565)",
+              "camera_size": 28.0201892852783,
+              "connection_loaded": false,
+              "label": "rotated",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "day",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.00784313678741455,
+            "mean_rgb_delta": 0.000000544662276903788,
+            "sample_count": 57600
+          },
+          "time": 0.36
+        },
+        {
+          "frames": [
+            {
+              "camera_focus": "(77.875, 0.039928, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(69.45596, 28.03993, 116.5629)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(77.875, 0.0, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(77.875, 0.039928, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(69.45596, 28.03993, 116.5629)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(77.875, 0.0, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(80.06438, 0.040009, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(71.64535, 28.04001, 116.5629)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "camera-moving",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87343, 0.040026, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(73.45439, 28.04003, 116.5629)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "move-settled",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87498, 0.040026, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(73.45594, 28.04003, 116.5629)",
+              "camera_size": 16.0351467132568,
+              "connection_loaded": false,
+              "label": "zoom-near",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87498, 0.040026, 96.2375)",
+              "camera_heading": -0.392699081698724,
+              "camera_position": "(73.45595, 28.04003, 116.5629)",
+              "camera_size": 45.9122314453125,
+              "connection_loaded": false,
+              "label": "zoom-far",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(81.87499, 0.040026, 96.2375)",
+              "camera_heading": 1.17809724509617,
+              "camera_position": "(102.2003, 28.04003, 104.6565)",
+              "camera_size": 28.0227394104004,
+              "connection_loaded": false,
+              "label": "rotated",
+              "logical_region": "harbor",
+              "player": "(81.875, 0.040026, 96.2375)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(1, 1)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "night",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.00784313678741455,
+            "mean_rgb_delta": 0.000000136165569225947,
+            "sample_count": 57600
+          },
+          "time": 0.84
+        }
+      ],
+      "heading": -0.392699081698724,
+      "id": "nearby_streets",
+      "move_end": "(81.875, 0.0, 96.2375)",
+      "position": "(77.875, 0.0, 96.2375)"
+    },
+    {
+      "conditions": [
+        {
+          "frames": [
+            {
+              "camera_focus": "(243.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(252.169, 27.99099, 257.8253)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(243.75, 0.08, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(243.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(252.169, 27.99099, 257.8253)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(243.75, 0.08, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(246.5071, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(254.9261, 27.99099, 257.8253)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "camera-moving",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.7477, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(257.1668, 27.99099, 257.8253)",
+              "camera_size": 28.0,
+              "connection_loaded": false,
+              "label": "move-settled",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(257.169, 27.99099, 257.8253)",
+              "camera_size": 16.0351486206055,
+              "connection_loaded": false,
+              "label": "zoom-near",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(257.169, 27.99099, 257.8253)",
+              "camera_size": 45.9122314453125,
+              "connection_loaded": false,
+              "label": "zoom-far",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.75, -0.00901, 237.5)",
+              "camera_heading": 1.96349540849362,
+              "camera_position": "(269.0753, 27.99099, 229.081)",
+              "camera_size": 28.0214328765869,
+              "connection_loaded": false,
+              "label": "rotated",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "day",
+          "still_difference": {
+            "changed_ratio": 0.00135416666666667,
+            "changed_samples": 78,
+            "max_rgb_delta": 1.59215690940619,
+            "mean_rgb_delta": 0.00111485567745856,
+            "sample_count": 57600
+          },
+          "time": 0.36
+        },
+        {
+          "frames": [
+            {
+              "camera_focus": "(243.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(252.169, 27.99099, 257.8253)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(243.75, 0.08, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(243.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(252.169, 27.99099, 257.8253)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": false,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(243.75, 0.08, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(246.5746, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(254.9936, 27.99099, 257.8253)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "camera-moving",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.7479, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(257.167, 27.99099, 257.8253)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": false,
+              "label": "move-settled",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(257.169, 27.99099, 257.8253)",
+              "camera_size": 16.0351467132568,
+              "connection_loaded": false,
+              "label": "zoom-near",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.75, -0.00901, 237.5)",
+              "camera_heading": 0.392699081698724,
+              "camera_position": "(257.169, 27.99099, 257.8253)",
+              "camera_size": 45.9122314453125,
+              "connection_loaded": false,
+              "label": "zoom-far",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(248.75, -0.00901, 237.5)",
+              "camera_heading": 1.96349540849362,
+              "camera_position": "(269.0753, 27.99099, 229.081)",
+              "camera_size": 28.0193004608154,
+              "connection_loaded": false,
+              "label": "rotated",
+              "logical_region": "harbor",
+              "player": "(248.75, -0.00901, 237.5)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 12,
+                  "current_cell": "(3, 3)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "night",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.0235294103622437,
+            "mean_rgb_delta": 0.0000012935729076465,
+            "sample_count": 57600
+          },
+          "time": 0.84
+        }
+      ],
+      "heading": 0.392699081698724,
+      "id": "south_port",
+      "move_end": "(248.75, 0.08, 237.5)",
+      "position": "(243.75, 0.08, 237.5)"
+    },
+    {
+      "conditions": [
+        {
+          "frames": [
+            {
+              "camera_focus": "(452.0, 0.035651, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(430.0, 28.03565, -285.0)",
+              "camera_size": 28.0,
+              "connection_loaded": true,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(452.0, 0.08, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(452.0, 0.035651, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(430.0, 28.03565, -285.0)",
+              "camera_size": 28.0,
+              "connection_loaded": true,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(452.0, 0.08, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(456.3777, 0.037998, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(434.3777, 28.038, -285.0)",
+              "camera_size": 28.0,
+              "connection_loaded": true,
+              "label": "camera-moving",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4963, 0.040206, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(438.4963, 28.04021, -285.0)",
+              "camera_size": 28.0,
+              "connection_loaded": true,
+              "label": "move-settled",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4999, 0.040208, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(438.4999, 28.04021, -285.0)",
+              "camera_size": 16.0351486206055,
+              "connection_loaded": true,
+              "label": "zoom-near",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4999, 0.040208, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(438.4999, 28.04021, -285.0)",
+              "camera_size": 45.9122314453125,
+              "connection_loaded": true,
+              "label": "zoom-far",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4999, 0.040208, -285.0)",
+              "camera_heading": 0.0,
+              "camera_position": "(460.4999, 28.04021, -263.0)",
+              "camera_size": 28.0193004608154,
+              "connection_loaded": true,
+              "label": "rotated",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "day",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.0,
+            "mean_rgb_delta": 0.0,
+            "sample_count": 57600
+          },
+          "time": 0.36
+        },
+        {
+          "frames": [
+            {
+              "camera_focus": "(452.0, 0.035651, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(430.0, 28.03565, -285.0)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": true,
+              "label": "still-a",
+              "logical_region": "harbor",
+              "player": "(452.0, 0.08, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(452.0, 0.035651, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(430.0, 28.03565, -285.0)",
+              "camera_size": 28.0000038146973,
+              "connection_loaded": true,
+              "label": "still-b",
+              "logical_region": "harbor",
+              "player": "(452.0, 0.08, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(456.7672, 0.038207, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(434.7672, 28.03821, -285.0)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": true,
+              "label": "camera-moving",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4967, 0.040207, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(438.4967, 28.04021, -285.0)",
+              "camera_size": 28.0000019073486,
+              "connection_loaded": true,
+              "label": "move-settled",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4999, 0.040208, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(438.4999, 28.04021, -285.0)",
+              "camera_size": 16.0351486206055,
+              "connection_loaded": true,
+              "label": "zoom-near",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4999, 0.040208, -285.0)",
+              "camera_heading": -1.5707963267949,
+              "camera_position": "(438.4999, 28.04021, -285.0)",
+              "camera_size": 45.9122352600098,
+              "connection_loaded": true,
+              "label": "zoom-far",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            },
+            {
+              "camera_focus": "(460.4999, 0.040208, -285.0)",
+              "camera_heading": 0.0,
+              "camera_position": "(460.4999, 28.04021, -263.0)",
+              "camera_size": 28.0193023681641,
+              "connection_loaded": true,
+              "label": "rotated",
+              "logical_region": "mountain",
+              "player": "(460.5, 0.040208, -285.0)",
+              "regions": {
+                "harbor": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                },
+                "mountain": {
+                  "chunk_count": 9,
+                  "current_cell": "(7, -5)",
+                  "pending_chunks": 0
+                }
+              }
+            }
+          ],
+          "light": "night",
+          "still_difference": {
+            "changed_ratio": 0.0,
+            "changed_samples": 0,
+            "max_rgb_delta": 0.0,
+            "mean_rgb_delta": 0.0,
+            "sample_count": 57600
+          },
+          "time": 0.84
+        }
+      ],
+      "heading": -1.5707963267949,
+      "id": "mountain_transition",
+      "move_end": "(460.5, 0.08, -285.0)",
+      "position": "(452.0, 0.08, -285.0)"
+    }
+  ],
+  "renderer": "mobile",
+  "resolution": "(1280, 720)"
+}

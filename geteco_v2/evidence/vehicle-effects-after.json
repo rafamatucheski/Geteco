@@ -1,0 +1,16 @@
+{
+  "car_position": "(87.88367, 0.12, 77.38268)",
+  "effects_enabled": true,
+  "emitters": [
+    "NormalExhaust"
+  ],
+  "health": 110.0,
+  "label": "vehicle-effects-after",
+  "marks": 0,
+  "modes": [
+    "",
+    ""
+  ],
+  "save_error": 0,
+  "speed": 10.0
+}

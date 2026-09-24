@@ -1,0 +1,32 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "EEF8900A402766DAFD7C7EC5592ED6EEB2696B6F461FEED6CB7C43183C13DC28",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\Actor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "918246959FF8D073A93723BF0AF87A31205AEED18E09B073B088A1B4FA58DE61",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponRigPose.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "55A94C815275DC69A56F9EA15A0FB865270751CE62EBBC18F1C430D2B822674C",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\WeaponPoseData.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "377B8505EC1380D59AEE5FDC2E996A0FC0754C2B7A9343859EB99E346BC6ACAA",
+    "Path": "D:\\geteco\\game\\geteco_v2\\gameplay\\Gameplay.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "3B85B98C9BF98D1432C4AC6D089539708D2EC28DAEB1F9B0D842AB8209139B30",
+    "Path": "D:\\geteco\\game\\geteco_v2\\runtime\\ProductionWorld.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "44D2AD4BEC6237328960A757E91B0F48AC98A200A8D10E7449435A02E5BD6688",
+    "Path": "D:\\geteco\\game\\geteco_v2\\scripts\\World.gd"
+  }
+]

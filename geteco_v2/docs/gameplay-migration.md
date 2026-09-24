@@ -1,0 +1,56 @@
+# Combate e emergências — migração nativa V2
+
+## Reaproveitamento verificável
+
+Fontes V1: `guns/WeaponCatalog.gd` (16 armas, preços, dano, cadência, capacidade, descobertas), `scripts/player/ArsenalWeapon3D.gd`, `WeaponPresentation3D.gd`, `WeaponFinish3D.gd`, dados de empunhadura de `characters/PlayerCombatPose.gd`; `police/PoliceOfficer.gd` e `PoliceAppearance.gd` (malhas e uniformes), `police/WantedManager.gd` (seis patamares, limites de despacho e tempo de fuga). As geometrias foram extraídas para nós nativos, sem os SubViewports e corpos 2D. Alcances e velocidades legados são convertidos de unidades V1 para metros por **16**, conforme escala comum do projeto.
+
+Acessórios reaproveitam `guns/WeaponCustomization.gd` e `WeaponAttachmentVisuals.gd`: preços, compatibilidade, acabamentos, silenciador, carregador ampliado, empunhadura, coronha, luneta, lanterna e laser. Sons de armas usam amostras originais de `audio/acoustic`, `audio/combat/arsenal_v2` e `audio/combat`, com oito canais posicionais. Os eventos sem amostra copiada permanecem sem áudio, não recebem substitutos apresentados como originais. Atualização (rodada de paridade de combate): recarga, impactos, RPG e tiros silenciados agora têm as amostras V1 copiadas em `assets/gameplay/audio/`, e golpes, faca, taco, lança-chamas e arremesso usam as fórmulas procedurais V1 de `gameplay/CombatAudio.gd`; ver [combat-parity-v1.md](combat-parity-v1.md).
+
+Os modelos de paramédico, bombeiro e legista foram extraídos de `emergency/Paramedic.gd`, `Firefighter.gd` e `Mortician.gd`, incluindo maleta, esguicho, maca e saco. A política de incidentes usa os limites de `NPCMedicalCare.gd`: 24 registros, intervalo de despacho de 10 s e raio de resposta de 1100/16 m. Ambulância e caminhão usam `medic_box` e `rescue_pumper` do catálogo original. O legista usa a station wagon existente adaptada como veículo de serviço; a apresentação específica do carro funerário V1 ainda não foi portada.
+
+Os Cobras possuem três cenas originais independentes: vigia, cobrador e Takeshi. O exportador em `tools/export_cobra_models.gd` instancia `world/harbor/cobras/CobraResident.gd` / `CobraBoss.gd` no projeto V1 e preserva malhas, detalhes, articulações e armas; remove scripts e viewports. `CobraAgent.gd` usa saúde 80/80/110, pistola/escopeta/SMG, rajadas e recuo do chefe após 55% da vida. Atingir esses oponentes não gera procura por agressão ou disparo; ferir civis e policiais continua registrando crime.
+
+## Sistemas implementados
+
+- Hitscan 3D, dispersão, queda de dano pela distância, oito/dez projéteis de escopeta, fogo automático por chamada do controlador central e bloqueio de cadência. Munição e recarga transferem cartuchos pelo Economy real.
+- Corpo a corpo com volume 3D e teste de parede; granada com gravidade, quique, pavio e explosão; RPG com varredura por frame; explosões e fogo bloqueados por sólidos. Incêndios limitados a 12, com sete instâncias de malha por foco e dano a 2 Hz.
+- Todas as entradas de ataque, saque e recarga consultam o bloqueio central. Uma explosão lançada anteriormente não acompanha o jogador para a garagem. Maciota e mecânico não recebem rotinas de dano.
+- Vida, armadura, morte, respawn, busca policial por linha de visão, investigação da última posição conhecida, escalada e fuga. Polícia tem corpo nativo, colisão, navegação A* local limitada e cinco agentes ativos no máximo. O alvo passa a ser o veículo ocupado; o policial causa dano ao carro em vez de atirar através dele no motorista.
+- Armas originais na mão do esqueleto de Dante. Acessórios alteram a geometria e atributos reais; laser termina no primeiro sólido e lanterna usa uma única luz local, sem sombra. Compras têm recibo idempotente; configuração permanece no snapshot.
+- Socorristas caminham até o ferido; bombeiros extinguem o foco, legistas removem corpos fatais. Atendimento exige proximidade e linha de visão; funcionários retornam ao veículo. Há três equipes no máximo e prazo de 120 s para chamadas não atendidas. Veículos roubados pelo jogador não são apagados quando o serviço termina.
+
+## Integração
+
+`Gameplay.configure(world, player, camera, state)` antes de entrar na árvore. Input permanece no controlador raiz: `aim_from_screen`, `fire_at`, `reload_weapon`, `cycle_weapon`, `toggle_flashlight`. Interface recebe `changed`, `message`, `player_died`. Loja chama `buy_attachment` e `install_attachment`; loja/inventário devem consultar `weapon_data(id)` para atributos atuais.
+
+State fornece `owns_weapon`, `equipped_weapon`, `equip_weapon`, `get_ammo`, `consume_ammo`, `add_ammo`, `reload_weapon(id, capacity=-1)`, `grant_weapon`, `spend(amount, receipt_id)`, `can_attack` e `weapons_allowed`. Vida, procura e customização ficam em `Gameplay.snapshot()` e `restore_state()`. Emergência é criada internamente e oferece `report_injury(actor, fatal)`, `ignite(point, source, intensity)` e `extinguish(fire, amount)`.
+
+## Validação e limites materiais
+
+`tests/test_gameplay.gd`: **207 checks passaram** em Godot 4.7.2 headless (`evidence/gameplay-routes-tests.log`). Cobre todas as armas e suas malhas, colisão/oclusão, munição, garagem, morte, restauração inválida, polícia, projéteis, compras com Economy real, acessórios, estabilização médica com pelo menos 60 de vida, remoção de cadáver, extinção, modelos nativos de equipes e identidades/combate/legítima defesa dos três Cobras. Também cobre sessão ociosa de 180 s mantendo snapshot válido e despacho com viatura original, caminhada com colisões até o paciente e atendimento real. Este último revelou e corrigiu a navegação que tentava atravessar a própria ambulância: sólidos têm cache persistente, veículos têm consulta/caches locais a cada busca. Há 67 checks dos onze trajes e preservação de arma/esqueleto, mais oito do grafo viário. A importação resolveu os recursos de fonte e máscara. O encerramento imediato da suíte reportou 15 instâncias de áudio pendentes; o smoke integrado `full-smoke2.log` iniciou por 180 frames sem erro de script e reportou quatro instâncias/dois recursos de áudio no encerramento. O diagnóstico verbose identifica apenas streams/playbacks WAV/OGG retidos pelo áudio, nenhum nó ou malha. Encerramento explícito dos emissores resolveu uma execução OGG, mas a limpeza não é reproduzível em todo encerramento instantâneo. Isso ainda requer observação do ciclo de vida integrado, não aprovação de ausência de vazamentos.
+
+**Performance e aparência dependem da validação renderizada integrada pela raiz. Headless não certifica FPS.** Riscos novos: construção de armas/acessórios ao trocar, busca local limitada a 256 expansões por recálculo, grupos de emergência e áudio de primeira reprodução.
+
+Ainda não há paridade completa: combo/poses corporais de combate V1, zoom funcional de luneta, unidades policiais motorizadas especiais, helicóptero, rádio de despacho, navegação rodoviária do depósito até a ocorrência, transporte do paciente ao hospital e persistência de incidentes por residente entre regiões. Equipes surgem com viatura em posição livre próxima e fazem a aproximação final a pé. O fogo nativo tem apresentação nova simplificada, não reproduz ainda todos os efeitos V1. Esses itens permanecem migração pendente, não conclusão do jogo inteiro.
+
+## Vestuário do Dante
+
+`Actor.set_outfit(id)` integra os onze trajes originais ao mesmo Dante Meshy do protótipo. `assets/outfits` contém o shader V1, a máscara UV original, médias de luminância originais e as paletas/estampas/acessórios de `MeshyDanteAppearance.gd`. Os quatro construtores de geometria necessários foram extraídos de `DanteVisualAdapter.gd`; não há dependência externa no projeto V1. Trocar o traje mantém o esqueleto, a animação, a arma e o encaixe da mão; substitui apenas material e acessórios de roupa. IDs inválidos preservam o visual anterior.
+
+Limitação já presente no original: a malha principal mantém a mesma silhueta. Bermudas e regatas usam máscara de pele nas pernas/mangas; o sobretudo não ganha uma barra longa. O traje de ski conserva a roupa original; capacete/óculos do sistema V1 de ski são uma integração separada. Esses detalhes não são apresentados como remodelagem completa de roupas.
+
+Folha real dos onze trajes renderizada e inspecionada em Vulkan Mobile / RTX 4060 Laptop: [outfits-v2.png](../evidence/outfits-v2.png). Paletas, estampas, chapéus, gola, óculos, colar e demais acessórios foram conferidos. É revisão visual isolada; o benchmark de desempenho continua sendo responsabilidade da cena integrada.
+
+## Rotas de tráfego
+
+`NativeTrafficRoutes.configure(roads)` recebe as linhas de `NativeRegion` já convertidas para metros. Divide segmentos nos cruzamentos reais e monta um grafo dirigido; as faixas seguem a direita. Pontes e rodovias com identificadores inbound/outbound preservam mão única e usam o centro do corredor. Ruas estreitas de serviço não recebem tráfego ambiente de mão dupla.
+
+`route_near(point)` retorna uma `Curve3D` com curvas Bézier nos cruzamentos e um circuito por ruas conectadas quando ele existe. Sem circuito, retorna um trajeto aberto; `traffic_open` e `traffic_endpoint` orientam o controlador a terminar a viagem, sem voltar ao primeiro ponto no meio da rua. O ponto de criação e a direção devem ser projetados na curva antes da admissão física. Oito checks verificam fechamento, ausência de retorno imediato, interseção, permanência no corredor e mão única; direção física e performance da integração continuam sob validação da raiz.
+
+## Equipamentos dos veículos
+
+`VehicleEquipment.configure(car,world)` deve preceder a inclusão do nó na árvore, depois de o carro estar pronto. A raiz encaminha `handle_input(event,allowed)` e `set_input_enabled(bool)` conforme seus modais. Não há captura autônoma de input. Só o carro controlado e íntegro aceita faróis, buzina e sirene. `snapshot/restore_state` persiste as escolhas de faróis/sirene; buzina é transitória. Ao abandonar ou destruir o veículo, luzes e áudio desligam. R3 compartilhado entre as ações originais aciona sirene nos três veículos de emergência e buzina nos demais; H permanece buzina.
+
+Dois projetores nativos sem sombras partem das lentes originais identificadas pelos metadados dos modelos preparados ou pelos materiais exatos dos modelos procedurais; modelos sem identificação usam os limites da carroceria. Os materiais são duplicados por veículo para que uma viatura não anime todas as outras. A alternância de 160 ms e emissão 2.8 preserva `EmergencyLightbar3D`; somente police_cruiser, medic_box e rescue_pumper recebem sirene. Não foi adicionada geometria sobre portas ou teto. `VehicleEquipmentAudio` porta os osciladores V1 exatos: buzina dupla 435/545 Hz de 0.4 s e sirene contínua de três segundos, 650–1150 Hz; não há arquivos de produção V1 para esses sons, somente versões de revisão que não foram usadas.
+
+`tests/test_vehicle_equipment.gd`: **41 checks passaram**, sem erros ou avisos no encerramento (`evidence/vehicle-equipment-tests.log`). Verifica os quatro modelos, feixes físicos, elegibilidade das sirenes, reprodução, modais, saída/destruição e save inválido. O custo integrado de dois projetores e dois emissores por equipamento deve ser medido pela raiz; recomenda-se instalar equipamentos somente em carros utilizados. Isto não implementa condução policial autônoma.
