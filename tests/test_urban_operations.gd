@@ -231,7 +231,7 @@ func _cemetery_cycle() -> void:
 	check(cemetery.perform("cemetery_keeper"),"Keeper exposes the productive V1 secret conversation")
 	check(cemetery.secret_known and session.dialogue_open,"Secret knowledge changes only after the physical conversation")
 	session.close_menu()
-	check(session.leave_place(),"Keeper house exits through FullSession")
+	check(await session.leave_place(),"Keeper house exits through FullSession")
 	await settle()
 	check(actor_count("cemetery_keeper")==1 and actor_count("cemetery_storyteller")==1,"Yard return reconstructs each cemetery resident exactly once")
 	# Drive the adapter through the real EmergencyManager collection ledger.

@@ -3,6 +3,7 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
+const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
 var world
 var controller
 var weather
@@ -60,6 +61,7 @@ var death_presentation: CanvasLayer
 var sewer_hatch: Node3D
 var sewer_entry_origin := Vector3.ZERO
 var weapon_shop_entrance: Node
+var door_transition: CanvasLayer
 
 func _arrival_sequence_blocked() -> bool:
 	return arrival != null and (arrival.controls_locked or arrival.phase == "opening")
@@ -377,6 +379,8 @@ func _garage_restore_spawn(place: String, preferred: Vector3, candidate_room: No
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	state = controller.state
+	door_transition = DOOR_TRANSITION.new()
+	add_child(door_transition)
 	weapon_shop_entrance = preload("res://runtime/WeaponShopEntrance.gd").new()
 	weapon_shop_entrance.session = self
 	add_child(weapon_shop_entrance)
@@ -666,6 +670,28 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		_finish_transition(token)
 		show_message("Entrada bloqueada.")
 		return false
+	if autosave:
+		# The room is admitted before the visual handoff. The veil covers only
+		# the short teleport; the doorway and interior use their authored cameras.
+		if id not in ["harbor_ammunation", "mountain_gunshop"]:
+			var door_focus: Vector3 = world.player.global_position + Vector3.UP * 1.2
+			var close_size: float = maxf(8.0, world.camera.size * 0.78)
+			world.camera.focus_on_transition(door_focus, close_size, world.camera.STORE_FOCUS_OFFSET, 0.42)
+			await get_tree().create_timer(0.12).timeout
+		await door_transition.fade_to(1.0, 0.30)
+		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room):
+			_discard_place_candidate(candidate_room,owns_candidate)
+			controller.region.set_focus(world.player.global_position)
+			world.camera.clear_store_focus()
+			world.camera._process(0.0)
+			if id == "harbor_sewer" and sewer_entry_origin.is_finite():
+				world.player.teleport(sewer_entry_origin)
+				await _animate_sewer_hatch(0.0, token)
+				sewer_entry_origin = Vector3.ZERO
+			await door_transition.fade_to(0.0, 0.22)
+			world.player.input_locked = was_player_locked
+			_finish_transition(token)
+			return false
 	saved_heading = world.camera.heading
 	saved_size = world.camera.target_size
 	room = candidate_room
@@ -675,7 +701,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	state.checkpoint_id = local_access_id if not local_access_id.is_empty() else id
 	world.player.teleport(destination+Vector3.UP*.04)
 	anchor.position = room.camera_target
-	if id in ["harbor_ammunation", "mountain_gunshop"]: world.camera.clear_store_focus()
+	world.camera.clear_store_focus()
 	world.camera.target = anchor
 	world.camera.offset = Vector3(0,18,15)
 	world.camera.heading = 0
@@ -688,10 +714,11 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		await _animate_sewer_hatch(0.0, token)
 		sewer_hatch = null
 		sewer_entry_origin = Vector3.ZERO
-	world.player.input_locked = was_player_locked
 	if id != "maciota":
 		_install_service_npc()
 		_update_reward()
+	if autosave: await door_transition.fade_to(0.0, 0.34)
+	world.player.input_locked = was_player_locked
 	_finish_transition(token)
 	arrival.on_location_changed()
 	garage_rewards.on_location_changed()
@@ -721,6 +748,22 @@ func leave_place() -> bool:
 		_finish_transition(token)
 		show_message("Passagem ocupada. Aguarde.")
 		return false
+	var exit_focus: Vector3 = leaving_room.exit_position + Vector3.UP * 0.8
+	world.camera.focus_on_transition(exit_focus, maxf(6.0, world.camera.size * 0.82), world.camera.offset, 0.38)
+	await get_tree().create_timer(0.10).timeout
+	await door_transition.fade_to(1.0, 0.28)
+	leaving_return = _clear_return_point(state.place_id, return_point)
+	if not _owns_transition(token) or world.gameplay.health <= 0 or room != leaving_room or not leaving_return.is_finite():
+		world.camera.clear_store_focus()
+		world.camera._process(0.0)
+		await door_transition.fade_to(0.0, 0.22)
+		if is_instance_valid(sewer_hatch):
+			sewer_hatch.set_open_amount(0.0)
+			sewer_hatch = null
+		world.player.input_locked = was_player_locked
+		_finish_transition(token)
+		if not leaving_return.is_finite(): show_message("Passagem ocupada. Aguarde.")
+		return false
 	controller.region.set_focus(leaving_return)
 	if leaving_room == world.maciota_place: leaving_room.set_interior_active(false)
 	else: leaving_room.queue_free()
@@ -732,11 +775,16 @@ func leave_place() -> bool:
 		_close_sewer_hatch_after_exit(sewer_hatch)
 		sewer_hatch = null
 	world.camera.target = world.player
+	world.camera.clear_store_focus()
 	world.camera.offset = world.camera.EXTERIOR_OFFSET
 	world.camera.heading = saved_heading
 	world.camera.target_size = saved_size
 	world.camera.locked = false
 	world.camera.initialized = false
+	world.camera._process(0.0)
+	world.camera.reveal_exterior(world.player.global_position, maxf(8.0, saved_size * 0.78), saved_size, 0.42)
+	await door_transition.fade_to(0.0, 0.42)
+	world.camera.clear_store_focus()
 	world.player.input_locked = was_player_locked
 	_finish_transition(token)
 	close_menu()
@@ -972,7 +1020,7 @@ func interact() -> bool:
 		"v1_routine":
 			var routines = _routine_director()
 			return routines != null and routines.perform(str(action.target))
-		"exit": return leave_place()
+		"exit": return await leave_place()
 		"enter":
 			enter_place(action.place,true,str(action.access))
 			return true

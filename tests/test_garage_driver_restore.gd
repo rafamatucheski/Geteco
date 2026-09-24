@@ -43,7 +43,7 @@ func run() -> void:
 		if world.driving.occupied: check(world.driving.leave(),place+" physical disembark")
 		car.health = 0
 		check(not await session.restore_garage_driver(car),place+" destroyed car cannot board")
-		check(session.leave_place(),place+" physical exit")
+		check(await session.leave_place(),place+" physical exit")
 		world.driving.car = original_car
 		for vehicle in session.garage_rewards.cars.values():
 			if is_instance_valid(vehicle): vehicle.queue_free()

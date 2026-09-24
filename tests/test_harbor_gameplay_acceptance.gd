@@ -110,7 +110,8 @@ func enter_place(id: String) -> bool:
 		Input.action_press("move_up")
 		await frames(20)
 		Input.action_release("move_up")
-		return await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 180, "entrada caminhando: " + id)
+		if not await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 180, "entrada caminhando: " + id): return false
+		return await wait_until(func(): return not session.is_transition_blocked(), 180, "entrada revelada: " + id)
 	var point: Vector3
 	if id=="maciota": point=world.maciota_place.entry_position
 	else:
@@ -121,7 +122,8 @@ func enter_place(id: String) -> bool:
 	var offered:Dictionary=session.nearest()
 	check(offered.get("id","")=="enter" and offered.get("place","")==id,"entrada fisica oferecida: "+id,str(offered))
 	await press_key(KEY_E)
-	return await wait_until(func(): return state.place_id==id and is_instance_valid(session.room),180,"entrada conclui: "+id)
+	if not await wait_until(func(): return state.place_id==id and is_instance_valid(session.room),180,"entrada conclui: "+id): return false
+	return await wait_until(func(): return not session.is_transition_blocked(),180,"entrada revelada: "+id)
 
 func leave_place(id: String) -> bool:
 	if id == "harbor_ammunation":
@@ -130,11 +132,13 @@ func leave_place(id: String) -> bool:
 		Input.action_press("move_down")
 		await frames(16)
 		Input.action_release("move_down")
-		return await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id)
+		if not await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id): return false
+		return await wait_until(func(): return not session.is_transition_blocked(), 180, "saída revelada: " + id)
 	await place_player(session.room.exit_position)
 	check(session.nearest().get("id","")=="exit","saida fisica oferecida: "+id,str(session.nearest()))
 	await press_key(KEY_E)
-	return await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room),180,"saida conclui: "+id)
+	if not await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room),180,"saida conclui: "+id): return false
+	return await wait_until(func(): return not session.is_transition_blocked(),180,"saída revelada: "+id)
 
 func interact_at(point: Vector3, expected_id: String) -> bool:
 	await place_player(point)

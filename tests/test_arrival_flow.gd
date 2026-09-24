@@ -32,7 +32,7 @@ func run() -> void:
 		spoken += 1
 		session._advance_dialogue()
 	check(spoken == 5 and arrival.phase == "police_exit", "all five original police lines advance checkpoint")
-	check(session.leave_place(), "leave police physically")
+	check(await session.leave_place(), "leave police physically")
 	arrival._physics_process(4.1)
 	check(arrival.phase == "phone", "call follows exit and original four second wait")
 	check(session.interact(), "answer actual arrival phone")

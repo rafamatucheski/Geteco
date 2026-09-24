@@ -63,7 +63,7 @@ func run() -> void:
 	var player_screen: Vector2 = world.camera.unproject_position(world.player.position)
 	var visible_rect: Rect2 = world.camera.get_viewport().get_visible_rect()
 	check(visible_rect.has_point(player_screen),"Lodge entry spawn is visible in the productive frame: "+str(player_screen)+" / "+str(visible_rect))
-	check(world.session.leave_place(),"Leave the real ski lodge")
+	check(await world.session.leave_place(),"Leave the real ski lodge")
 	await frames(2)
 	check(not world.camera.locked and world.camera.target==world.player,"Exterior camera restored after lodge exit")
 

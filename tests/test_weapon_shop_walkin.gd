@@ -62,6 +62,7 @@ func check_branch(id: String) -> void:
 	check(zoom_observed, id + ": approach zoom begins")
 	check(await wait_until(func(): return session.state.place_id == id and is_instance_valid(session.room), 180), id + ": walking enters real shop")
 	if session.state.place_id != id: return
+	check(await wait_until(func(): return not session.is_transition_blocked(), 180), id + ": interior reveal finishes")
 	await capture(id + "-interior")
 	check(not world.camera._store_focus_active and world.camera.locked, id + ": room camera takes over")
 	world.player.teleport(session.room.interaction_points.service + Vector3.UP * 0.08)
@@ -71,9 +72,19 @@ func check_branch(id: String) -> void:
 	await frames(5)
 	check(session.nearest().get("id", "") != "exit", id + ": no E exit action")
 	Input.action_press("move_down")
-	await frames(16)
+	var exit_fade_observed := false
+	for frame in 16:
+		await physics_frame
+		exit_fade_observed = exit_fade_observed or session.door_transition.veil.modulate.a > 0.05
 	Input.action_release("move_down")
+	for frame in 60:
+		if exit_fade_observed or session.state.place_id.is_empty(): break
+		await physics_frame
+		exit_fade_observed = session.door_transition.veil.modulate.a > 0.05
+	check(exit_fade_observed, id + ": exit fades before returning outside")
 	check(await wait_until(func(): return session.state.place_id.is_empty() and not is_instance_valid(session.room), 180), id + ": walking exits shop")
+	check(await wait_until(func(): return not session.is_transition_blocked(), 180), id + ": exit reveal finishes")
+	check(not world.camera._store_focus_active and not world.camera.locked, id + ": exterior camera regains control")
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args() or "--skip-arrival" not in OS.get_cmdline_user_args():

@@ -1,5 +1,15 @@
 # Migração de interiores — checklist
 
+## Transição visual das portas V2 — em andamento em 24/09/2026
+
+Escopo: entradas e saídas a pé geridas por `FullSession`; as duas lojas de armas conservam a aproximação de fachada já existente e passam a usar a mesma revelação por fade. Restauração de save e transferência dirigida de garagem conservam seus fluxos próprios. A mudança não cria lugares físicos nem interiores distintos; as contagens de migração abaixo permanecem iguais.
+
+- [ ] Entrada comum: zoom delicado na porta, fade sobre a troca, sala revelada com câmera e escala autoradas; acesso inválido ou spawn bloqueado não inicia o efeito.
+- [ ] Saída comum: zoom na porta interna, fade, retorno à fachada utilizada e zoom para o tamanho e orientação externos anteriores; retorno bloqueado mantém jogador na sala.
+- [ ] Lojas de armas: caminhada sem E para entrar/sair, porta e zoom exterior existentes, fade integrado e controle liberado somente após a revelação.
+- [ ] Evidência visual real antes/depois em porta comum e nas duas lojas; conferir luz, legibilidade do personagem, marcador compartilhado, circulação, colisão e oclusão de jogador/NPC.
+- [ ] Frame time renderizado comparável na cena real, incluindo primeira visita e retorno, em sessão Godot isolada. Sem medição, desempenho e aprovação visual permanecem pendentes.
+
 ## Interiores físicos na campanha V1 — plano de 22/09/2026
 
 [Inventário completo e ordem de execução](inline-interior-migration-plan.md): 29 interiores distintos acessíveis no porto e na serra. No início deste plano havia 2 Ammu-Nation contínuos e 27 salas isoladas; agora são **29 concluídos** (15 na serra, 14 no porto) e **0 aguardando aprovação integral**. A contagem não inclui Northgate Auto, avião exterior nem necrotério sem acesso. A aprovação cobre circulação, colisão, oclusão, reentrada/save, fotos e frame time renderizado nos cenários registrados; as caudas transitórias ficam documentadas abaixo.

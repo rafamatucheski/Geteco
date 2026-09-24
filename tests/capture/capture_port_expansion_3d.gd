@@ -45,7 +45,7 @@ func run() -> void:
 	if await world.session.enter_place("santa_mare_hold",false):
 		for _index in 55: await process_frame
 		await _save("santa-mare-cargo-hold")
-		world.session.leave_place()
+		await world.session.leave_place()
 	else:
 		push_error("Santa Mare hold did not open during rendered capture")
 		quit(1)

@@ -61,6 +61,19 @@ func run() -> void:
 	camera.clear_store_focus()
 	camera._process(1.0/60.0)
 	check(not camera._store_focus_active, "Shop focus releases normal camera control")
+	var door_focus := Vector3(2, 1.2, -2)
+	camera.focus_on_transition(door_focus, 9.0, CAMERA.STORE_FOCUS_OFFSET, 0.4)
+	camera._process(0.4)
+	check(camera.focus.distance_to(door_focus) < 0.01 and absf(camera.size-9.0) < 0.01, "Door approach reaches its authored focus and size")
+	camera.clear_store_focus()
+	camera.offset = CAMERA.EXTERIOR_OFFSET
+	camera.heading = 0.0
+	camera.reveal_exterior(walker.global_position, 9.0, exterior_size, 0.4)
+	camera._process(0.2)
+	check(camera.size > 9.0 and camera.size < exterior_size, "Exterior reveal zooms out gradually")
+	camera._process(0.2)
+	check(absf(camera.size-exterior_size) < 0.01, "Exterior reveal restores the saved framing")
+	camera.clear_store_focus()
 
 	var vehicle := CameraTarget.new()
 	vehicle.position = Vector3(1,0,0)

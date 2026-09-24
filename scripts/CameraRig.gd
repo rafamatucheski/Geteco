@@ -62,6 +62,8 @@ var _store_size_from := 0.0
 var _store_size_to := 0.0
 var _store_focus_elapsed := 0.0
 var _store_focus_duration := 0.55
+var _store_offset_from := EXTERIOR_OFFSET
+var _store_offset_to := STORE_FOCUS_OFFSET
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -82,7 +84,7 @@ func _process(delta: float) -> void:
 		var eased := t * t * (3.0 - 2.0 * t)
 		focus = _store_focus_from.lerp(_store_focus_to, eased)
 		size = lerpf(_store_size_from, _store_size_to, eased)
-		global_position = focus + offset.lerp(STORE_FOCUS_OFFSET, eased).rotated(Vector3.UP, heading)
+		global_position = focus + _store_offset_from.lerp(_store_offset_to, eased).rotated(Vector3.UP, heading)
 		look_at(focus)
 		return
 	if not is_instance_valid(target): return
@@ -120,13 +122,26 @@ func _process(delta: float) -> void:
 	_was_locked = locked
 
 func focus_on_store(point: Vector3, final_size: float, duration: float) -> void:
+	focus_on_transition(point, final_size, STORE_FOCUS_OFFSET, duration)
+
+func focus_on_transition(point: Vector3, final_size: float, final_offset: Vector3, duration: float) -> void:
 	_store_focus_from = focus if initialized else (target.global_position if is_instance_valid(target) else point)
 	_store_focus_to = point
 	_store_size_from = size
 	_store_size_to = maxf(1.0, final_size)
+	_store_offset_from = (global_position - focus).rotated(Vector3.UP, -heading)
+	_store_offset_to = final_offset
 	_store_focus_elapsed = 0.0
 	_store_focus_duration = maxf(0.01, duration)
 	_store_focus_active = true
+
+func reveal_exterior(point: Vector3, close_size: float, final_size: float, duration: float) -> void:
+	focus = point
+	size = maxf(1.0, close_size)
+	global_position = focus + offset.rotated(Vector3.UP, heading)
+	look_at(focus)
+	initialized = true
+	focus_on_transition(point, final_size, offset, duration)
 
 func clear_store_focus() -> void:
 	_store_focus_active = false
