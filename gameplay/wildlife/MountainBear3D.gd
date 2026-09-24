@@ -29,6 +29,7 @@ const CUB_SPEED := 36.0 * PX
 const BITE_DAMAGE := 38.0
 const CHARGE_DAMAGE := 60.0
 const GRAVITY := 9.8
+const CONTACT_STOP := 1.7
 
 var controller
 var is_cub := false
@@ -109,6 +110,15 @@ func _physics_process(delta: float) -> void:
 	if is_cub: _update_cub(player, exposed, distance)
 	else: _update_adult(player, exposed, distance, flat_to_player, delta)
 	velocity.y = fall
+	# Encostou no jogador: para. O corpo do jogador colide com a camada 2, e a
+	# investida a 20 m/s empurrava o jogador junto, às vezes chão abaixo até o mar
+	# de Harbor sob Mountain (relato do jogador em 2026-09-24).
+	if distance < CONTACT_STOP and Vector2(velocity.x, velocity.z).dot(Vector2(flat_to_player.x, flat_to_player.z)) > 0.0:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		if state == State.CHARGE:
+			state = State.RECOVER
+			state_time = 0.7
 	move_and_slide()
 	if state == State.CHARGE and get_slide_collision_count() > 0:
 		for i in get_slide_collision_count():

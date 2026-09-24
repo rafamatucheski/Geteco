@@ -1,6 +1,7 @@
 extends RefCounted
 ## Metric XZ coordinates; NativeRegion owns the returned mesh and collision.
 const CATALOG = preload("res://world/places/PlaceCatalog.gd")
+const LAKE_BASINS := preload("res://world/regions/LakeBasins.gd")
 const STEP := 4.0
 const CELL := 64.0
 const BLEND := 28.0
@@ -40,6 +41,7 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 					var key := Vector2i(x,z)
 					if not _segments.has(key): _segments[key] = []
 					_segments[key].append({"a":a,"b":b,"radius":radius,"bed_radius":float(road.width)*0.5+4.0})
+	LAKE_BASINS.configure(roads)
 	_material = ShaderMaterial.new()
 	_material.shader = preload("res://world/regions/mountain_terrain.gdshader")
 
@@ -73,7 +75,7 @@ func height_at(point: Vector2) -> float:
 		var nearest := Geometry2D.get_closest_point_to_segment(point,segment.a,segment.b)
 		var beyond: float = point.distance_to(nearest)-float(segment.bed_radius)
 		bed = maxf(bed,1.0-smoothstep(0.0,4.0,beyond))
-	return weight*(broad*6.0+detail*1.5)-bed*0.055
+	return weight*(broad*6.0+detail*1.5)-bed*0.055-LAKE_BASINS.depth_at(point)
 
 func surface_height_at(point: Vector2) -> float:
 	# Same diagonal and interpolation as build_chunk, for trees/rocks without floating.

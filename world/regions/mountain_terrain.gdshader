@@ -93,6 +93,16 @@ void fragment() {
 	float cliff = smoothstep(0.12, 0.28, slope + (mid - 0.5) * 0.12);
 	color = mix(color, rock * (0.85 + fine * 0.25), cliff);
 	color *= 0.94 + fine * 0.08;
+	// Encosta da bacia dos lagos (terreno abaixo de 0): lama molhada na beira da
+	// água, sem neve, para a margem não ser uma linha seca cortando o capim.
+	// smoothstep com limites em ordem crescente: invertidos, o GLSL não define o
+	// resultado e a lama não aparecia sob a água rasa.
+	// Margem úmida começa acima da linha d'água (-0,2) e vira lama plena logo abaixo.
+	float wet = 1.0 - smoothstep(-0.3, 0.02, height + (fine - 0.5) * 0.06);
+	// Bem mais escura que o capim: a luz de inverno clareia ~2,5x e lama clara lia
+	// como capim sob a água.
+	vec3 mud = mix(vec3(0.085, 0.066, 0.045), vec3(0.05, 0.045, 0.035), smoothstep(0.1, 0.4, -height));
+	color = mix(color, mud * (0.9 + fine * 0.2), wet * 0.92);
 	ALBEDO = color;
 	// Relevo fino na iluminação: sem ele o chão é um plano liso e sem textura.
 	float e = 0.15;
@@ -103,7 +113,7 @@ void fragment() {
 	NORMAL_MAP = vec3(0.5 - bump.x, 0.5 - bump.y, 1.0);
 	NORMAL_MAP_DEPTH = 1.0;
 	float snowy = cover * (1.0 - cliff);
-	ROUGHNESS = mix(0.95, 0.6, snowy);
+	ROUGHNESS = mix(mix(0.95, 0.6, snowy), 0.35, wet);
 	SPECULAR = mix(0.2, 0.4, snowy);
 	// Cintilado de cristal de gelo: pontos minúsculos, só na neve.
 	float glitter = step(0.985, hash(floor(local_xz * 9.0))) * snowy;

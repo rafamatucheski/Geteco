@@ -7,16 +7,24 @@ const PINE = preload("res://world/regions/NativePine.gd")
 var water_polygon := PackedVector2Array()
 var dry_polygons: Array[PackedVector2Array] = []
 var materials: Dictionary = {}
+## Espelho d'água do lago alpino abaixo do chão, dentro da bacia de LakeBasins (0,6 m).
+const ALPINE_WATER_Y := -.2
 const WATER_SHADER := preload("res://world/regions/mountain_lake.gdshader")
 func _ready() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalLakeData.json"))[variant]
 	_collect_road_clearance()
 	if variant == "alpine":
-		_surface("AlpineShore",_points(data.lake_shore,Vector2(-7000,0)),.007,Color("3b3a2d"))
-		water_polygon = _points(data.shallow_water,Vector2(-7000,0))
-		water_polygon = _smooth(_clear_roads(water_polygon))
-		_surface("AlpineShallows",water_polygon,.042,Color("226274"),true)
-		_surface("AlpineDeepColor",_points(data.deep_water,Vector2(-7000,0)),.048,Color("1a4a58"),true)
+		# A margem agora é a encosta da bacia no próprio terreno (LakeBasins); a faixa
+		# plana marrom da V1 ficava pintada por cima e deixava o lago mal encaixado.
+		# Água cobre a margem inteira da V1; quem desenha a linha d'água é o terreno
+		# da bacia cruzando ALPINE_WATER_Y, e o shader clareia o raso pela profundidade
+		# real. A camada separada de água funda criava um segundo degrau de cor.
+		water_polygon = _smooth(_clear_roads(_points(data.lake_shore,Vector2(-7000,0))))
+		# A água nasce da própria bacia (LakeBasins): células de 2 m onde o terreno
+		# afunda. Recortar água e bacia por caminhos diferentes deixava véu de água
+		# sobre o capim ou buraco seco; assim as duas coincidem, e a borda da malha
+		# fica sempre sob o chão.
+		_basin_water()
 		for pair in [[Vector2(7380,-260),Vector2(7350,-235)],[Vector2(7350,-235),Vector2(7310,-207)],[Vector2(7310,-207),Vector2(7285,-157)],[Vector2(7285,-157),Vector2(7260,-115)]]:
 			_strip((pair[0]-Vector2(7000,0))*SCALE,(pair[1]-Vector2(7000,0))*SCALE,30*SCALE,.014,Color("1e5668"))
 	else:
@@ -117,7 +125,9 @@ func _surface(id: String,polygon: PackedVector2Array,height: float,color: Color,
 	mesh.material_override = _material(color,water)
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh)
-	if water and id.ends_with("Shallows"):
+	# Só a água com bacia no terreno lê a profundidade (ver mountain_lake.gdshader).
+	if id == "AlpineWater": mesh.set_instance_shader_parameter("depth_fade",1.0)
+	if water and id.ends_with("Shallows") and height > 0.0:
 		_water_edge(polygon,height,color.darkened(.28))
 func _add_water_triangle(surface: SurfaceTool,a: Vector2,b: Vector2,c: Vector2,height: float,n: int,row: int,column: int,upper: bool) -> void:
 	var p := a+(b-a)*(float(row)/n)+(c-a)*(float(column)/n)
@@ -216,3 +226,36 @@ static func _smooth(polygon: PackedVector2Array, iterations := 2) -> PackedVecto
 			next.append(a.lerp(b,.75))
 		result = next
 	return result
+
+func _basin_water() -> void:
+	var basins := preload("res://world/regions/LakeBasins.gd")
+	basins.depth_at(Vector2.ZERO) # carrega o contorno
+	var bounds: Rect2 = basins._bounds
+	if bounds.size == Vector2.ZERO: return
+	var cell := 2.0
+	var origin := Vector2(position.x, position.z)
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var y := ALPINE_WATER_Y
+	var x := bounds.position.x - cell
+	while x < bounds.end.x + cell:
+		var z := bounds.position.y - cell
+		while z < bounds.end.y + cell:
+			var corners := [Vector2(x, z), Vector2(x + cell, z), Vector2(x + cell, z + cell), Vector2(x, z + cell)]
+			var wet := false
+			for corner in corners:
+				if basins.depth_at(corner) > 0.0: wet = true
+			if wet:
+				for k in [0, 1, 2, 0, 2, 3]:
+					var c: Vector2 = corners[k] - origin
+					surface.add_vertex(Vector3(c.x, y, c.y))
+			z += cell
+		x += cell
+	surface.generate_normals()
+	var mesh := MeshInstance3D.new()
+	mesh.name = "AlpineWater"
+	mesh.mesh = surface.commit()
+	mesh.material_override = _material(Color("226274"), true)
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mesh)
+	mesh.set_instance_shader_parameter("depth_fade", 1.0)
