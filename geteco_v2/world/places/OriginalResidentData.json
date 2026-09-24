@@ -1,0 +1,190 @@
+[
+  {
+    "id": "police",
+    "name": "Sargento Morales",
+    "place_id": "harbor_police",
+    "model": "res://world/places/ServiceResidentModel.gd",
+    "position": [
+      -0.75,
+      0,
+      -0.1
+    ],
+    "dialogue": [
+      "Harbor Patrol, 1º Distrito. Mantenha as mãos onde eu possa vê-las, cidadão.",
+      "O cais de Breakwater tá tenso ultimamente. Carga sumindo dos contêineres e os Cobras de Ferro rondando.",
+      "Se você vir algo suspeito nos becos da Foundry Avenue, venha direto ao balcão.",
+      "Não toleramos rachas nem tiroteios no perímetro do porto. Considere isso um aviso amigável."
+    ],
+    "appearance": {
+      "title_color": "#68a8d3",
+      "shirt_color": "#1e3a8a",
+      "pants_color": "#0f172a",
+      "hat_color": "#1e3a8a",
+      "has_hat": true
+    },
+    "source": "world/harbor/interiors/HarborPoliceInterior.gd"
+  },
+  {
+    "id": "ribeiro",
+    "name": "Detetive Ribeiro",
+    "place_id": "harbor_police",
+    "model": "res://world/places/ServiceResidentModel.gd",
+    "position": [
+      -3.4,
+      0,
+      -4.2
+    ],
+    "dialogue": [
+      "Estamos mapeando a rede de receptação dos Cobras de Ferro no Píer Leste.",
+      "Motores adulterados, nitro contrabandeado... eles estão montando uma frota para disputas pesadas.",
+      "Aquele mural na parede não mente: cada foto tem ligação direta com os galpões do porto."
+    ],
+    "appearance": {
+      "title_color": "#f59e0b",
+      "shirt_color": "#374151",
+      "pants_color": "#1f2937",
+      "has_hat": false
+    },
+    "source": "world/harbor/interiors/HarborPoliceInterior.gd"
+  },
+  {
+    "id": "ferreira",
+    "name": "Policial Ferreira",
+    "place_id": "harbor_police",
+    "model": "res://world/places/ServiceResidentModel.gd",
+    "position": [
+      5.5,
+      0,
+      -1.2
+    ],
+    "dialogue": [
+      "Custódia temporária. Mantenha distância das grades, cidadão.",
+      "O suspeito ali dentro foi apanhado tentando desviar peças nos trilhos da ferrovia.",
+      "Delegacia não é ponto turístico. Faça o que veio fazer e siga seu caminho."
+    ],
+    "appearance": {
+      "title_color": "#60a5fa",
+      "shirt_color": "#1e3a8a",
+      "pants_color": "#0f172a",
+      "hat_color": "#1e3a8a",
+      "has_hat": true
+    },
+    "source": "world/harbor/interiors/HarborPoliceInterior.gd"
+  },
+  {
+    "id": "prisoner",
+    "name": "Dente de Ouro",
+    "place_id": "harbor_police",
+    "model": "res://world/places/ServiceResidentModel.gd",
+    "position": [
+      5.5,
+      0,
+      -3.8
+    ],
+    "dialogue": [
+      "Tá encarando o quê? Sai da frente da grade, moleque.",
+      "Eles acham que essas barras de ferro vão segurar os Cobras... logo, logo meu advogado chega.",
+      "Se você veio procurar o Vicente... aquele sumiu no mapa faz tempo, tá correndo em outro nível."
+    ],
+    "appearance": {
+      "title_color": "#f97316",
+      "shirt_color": "#ea580c",
+      "pants_color": "#c2410c",
+      "has_hat": false
+    },
+    "source": "world/harbor/interiors/HarborPoliceInterior.gd"
+  },
+  {
+    "id": "cida",
+    "name": "Dona Cida",
+    "place_id": "harbor_police",
+    "model": "res://world/places/ServiceResidentModel.gd",
+    "position": [
+      -2.4,
+      0,
+      4.3
+    ],
+    "dialogue": [
+      "Vim prestar queixa sobre umas corridas barulhentas no cais de madrugada.",
+      "Estou esperando há quase uma hora... esses policiais só correm atrás de caso grande.",
+      "Tome cuidado pelas ruas à noite, meu jovem. O porto não perdoa distrações."
+    ],
+    "appearance": {
+      "title_color": "#a78bfa",
+      "shirt_color": "#7c3aed",
+      "pants_color": "#2e1065",
+      "is_female": true,
+      "has_hat": false
+    },
+    "source": "world/harbor/interiors/HarborPoliceInterior.gd"
+  },
+  {
+    "id": "fire_station",
+    "name": "Capitão Rocha",
+    "place_id": "harbor_fire_station",
+    "model": "res://world/places/ServiceResidentModel.gd",
+    "position": [
+      0.0,
+      0,
+      -3.5714285714285716
+    ],
+    "dialogue": [
+      "Quartel 03 em alerta constante. O porto tem risco químico e contêineres inflamáveis 24 horas por dia.",
+      "Nossas três viaturas precisam de saída livre nas baias. Nunca obstrua o pátio externo de manobra.",
+      "Se soar o alarme, todo mundo se afasta dos portões e abre caminho pro caminhão.",
+      "Temos trajes de combate a incêndio nos armários à esquerda se você quiser verificar o equipamento."
+    ],
+    "appearance": {
+      "title_color": "#d97958",
+      "shirt_color": "#b91c1c",
+      "pants_color": "#1c1917",
+      "hat_color": "#fbbf24",
+      "has_hat": true
+    },
+    "source": "world/harbor/interiors/HarborFireStationInterior.gd"
+  },
+  {
+    "id": "hospital",
+    "name": "Enfermeira Clara",
+    "place_id": "harbor_hospital",
+    "model": "res://world/places/MedicalResidentModel.gd",
+    "position": [
+      -5.5,
+      0,
+      -3.8
+    ],
+    "dialogue": [
+      "Pode pegar a vida junto aos leitos. Vou cuidar de você.",
+      "Procure atendimento sempre que precisar."
+    ],
+    "appearance": {
+      "shirt_color": "65adae",
+      "pants_color": "34767e",
+      "skin_color": "b87b58",
+      "is_female": true
+    },
+    "source": "world/harbor/interiors/HarborHospitalInterior3D.gd"
+  },
+  {
+    "id": "hospital_miguel",
+    "name": "Dr. Miguel",
+    "place_id": "harbor_hospital",
+    "model": "res://world/places/MedicalResidentModel.gd",
+    "position": [
+      2.2,
+      0,
+      3.8
+    ],
+    "dialogue": [
+      "Pode pegar a vida junto aos leitos. Vou cuidar de você.",
+      "Procure atendimento sempre que precisar."
+    ],
+    "appearance": {
+      "shirt_color": "e5ece8",
+      "pants_color": "385264",
+      "skin_color": "dcad8e",
+      "is_female": false
+    },
+    "source": "world/harbor/interiors/HarborHospitalInterior3D.gd"
+  }
+]

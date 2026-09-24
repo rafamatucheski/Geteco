@@ -21,6 +21,7 @@ const ROOFS := preload("res://world/city_look/RoofSurfaces.gd")
 const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
+const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
@@ -430,6 +431,9 @@ static func _sidewalk_furniture(context: Dictionary, batches: Dictionary) -> voi
 					if kind in ["phone_booth", "bench_seat", "planter"]:
 						point = along + outward * (width * 0.5 + SIDEWALK - 0.7)
 						if _inside_building(context, point, 0.5): continue
+					# Both divided lanes share a structural bridge deck. Their inner
+					# "sidewalks" are the driving median, not a place for furniture.
+					if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
 					if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
 					_add(batches, kind, Vector3(point.x, 0.012, point.y), -outward)
 				s += FURNITURE_SPACING

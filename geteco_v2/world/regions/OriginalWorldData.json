@@ -1,0 +1,2906 @@
+{
+  "unit_scale": 0.0625,
+  "mountain_offset": [
+    4300,
+    -4960
+  ],
+  "harbor_roads": [
+    {
+      "id": "memorial_north",
+      "points": [
+        [
+          -1250.0,
+          1250.0
+        ],
+        [
+          400.0,
+          1250.0
+        ]
+      ],
+      "width": 100.0
+    },
+    {
+      "id": "memorial_west",
+      "points": [
+        [
+          -1250.0,
+          2200.0
+        ],
+        [
+          -1250.0,
+          1250.0
+        ]
+      ],
+      "width": 100.0
+    },
+    {
+      "id": "memorial_south",
+      "points": [
+        [
+          400.0,
+          2200.0
+        ],
+        [
+          -1250.0,
+          2200.0
+        ]
+      ],
+      "width": 100.0
+    },
+    {
+      "id": "foundry_avenue",
+      "points": [
+        [
+          400.0,
+          400.0
+        ],
+        [
+          6450.0,
+          400.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "market_street",
+      "points": [
+        [
+          400.0,
+          1250.0
+        ],
+        [
+          3000.0,
+          1250.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "dock_street",
+      "points": [
+        [
+          400.0,
+          2200.0
+        ],
+        [
+          3000.0,
+          2200.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "westgate_drive",
+      "points": [
+        [
+          400.0,
+          400.0
+        ],
+        [
+          400.0,
+          2200.0
+        ]
+      ],
+      "width": 110.0
+    },
+    {
+      "id": "union_avenue",
+      "points": [
+        [
+          1300.0,
+          400.0
+        ],
+        [
+          1300.0,
+          2200.0
+        ]
+      ],
+      "width": 130.0
+    },
+    {
+      "id": "warehouse_way",
+      "points": [
+        [
+          2200.0,
+          400.0
+        ],
+        [
+          2200.0,
+          2200.0
+        ]
+      ],
+      "width": 110.0
+    },
+    {
+      "id": "quay_boulevard",
+      "points": [
+        [
+          3000.0,
+          400.0
+        ],
+        [
+          3000.0,
+          2200.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "island_esplanade",
+      "points": [
+        [
+          4650.0,
+          -2000.0
+        ],
+        [
+          4650.0,
+          2200.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "east_union_avenue",
+      "points": [
+        [
+          5550.0,
+          -2000.0
+        ],
+        [
+          5550.0,
+          2200.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "eastgate_drive",
+      "points": [
+        [
+          6450.0,
+          -2000.0
+        ],
+        [
+          6450.0,
+          2200.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "island_market_street",
+      "points": [
+        [
+          4650.0,
+          1250.0
+        ],
+        [
+          6450.0,
+          1250.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "island_dock_street",
+      "points": [
+        [
+          4650.0,
+          2200.0
+        ],
+        [
+          6450.0,
+          2200.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "exchange_lane",
+      "points": [
+        [
+          4650.0,
+          1000.0
+        ],
+        [
+          5550.0,
+          1000.0
+        ]
+      ],
+      "width": 72.0
+    },
+    {
+      "id": "courtyard_lane",
+      "points": [
+        [
+          4650.0,
+          1790.0
+        ],
+        [
+          5550.0,
+          1790.0
+        ]
+      ],
+      "width": 72.0
+    },
+    {
+      "id": "northbank_neighborhood_street",
+      "points": [
+        [
+          4650.0,
+          -350.0
+        ],
+        [
+          6450.0,
+          -350.0
+        ]
+      ],
+      "width": 90.0
+    },
+    {
+      "id": "northbank_civic_avenue",
+      "points": [
+        [
+          4650.0,
+          -1100.0
+        ],
+        [
+          6450.0,
+          -1100.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "northbank_gateway_avenue",
+      "points": [
+        [
+          4650.0,
+          -2000.0
+        ],
+        [
+          6450.0,
+          -2000.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "map2_highway_inbound",
+      "points": [
+        [
+          5880.0,
+          -4200.0
+        ],
+        [
+          5880.0,
+          -2000.0
+        ]
+      ],
+      "width": 96.0
+    },
+    {
+      "id": "map2_highway_outbound",
+      "points": [
+        [
+          6120.0,
+          -2000.0
+        ],
+        [
+          6120.0,
+          -4200.0
+        ]
+      ],
+      "width": 96.0
+    },
+    {
+      "id": "map2_temporary_return",
+      "points": [
+        [
+          6120.0,
+          -4200.0
+        ],
+        [
+          5880.0,
+          -4200.0
+        ]
+      ],
+      "width": 96.0
+    },
+    {
+      "id": "westgate_service_lane",
+      "points": [
+        [
+          400,
+          1718
+        ],
+        [
+          1300,
+          1718
+        ]
+      ],
+      "width": 72
+    },
+    {
+      "id": "medical_garden_lane",
+      "points": [
+        [
+          1300,
+          1960
+        ],
+        [
+          2200,
+          1960
+        ]
+      ],
+      "width": 84
+    },
+    {
+      "id": "south_port_north",
+      "points": [
+        [
+          3750.0,
+          3600.0
+        ],
+        [
+          5750.0,
+          3600.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "south_port_east",
+      "points": [
+        [
+          5750.0,
+          3600.0
+        ],
+        [
+          5750.0,
+          5650.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "south_port_south",
+      "points": [
+        [
+          5750.0,
+          5650.0
+        ],
+        [
+          3750.0,
+          5650.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "south_port_west",
+      "points": [
+        [
+          3750.0,
+          5650.0
+        ],
+        [
+          3750.0,
+          3600.0
+        ]
+      ],
+      "width": 120.0
+    },
+    {
+      "id": "south_port_dispatch",
+      "points": [
+        [
+          3750.0,
+          4770.0
+        ],
+        [
+          5750.0,
+          4770.0
+        ]
+      ],
+      "width": 110.0
+    },
+    {
+      "id": "south_port_access",
+      "points": [
+        [
+          3000,
+          2200
+        ],
+        [
+          3180,
+          2200
+        ],
+        [
+          3310,
+          2330
+        ],
+        [
+          3310,
+          3600
+        ],
+        [
+          3750,
+          3600
+        ]
+      ],
+      "width": 100
+    },
+    {
+      "id": "mountain_bridge_outbound",
+      "points": [
+        [
+          6120.0,
+          -4200.0
+        ],
+        [
+          6120.599501493191,
+          -4218.31287618444
+        ],
+        [
+          6122.395438815333,
+          -4236.547333821614
+        ],
+        [
+          6125.3801214870955,
+          -4254.625290164516
+        ],
+        [
+          6129.540768639061,
+          -4272.469332628706
+        ],
+        [
+          6134.85956374137,
+          -4290.003050284885
+        ],
+        [
+          6141.31373089684,
+          -4307.151361062225
+        ],
+        [
+          6148.875632370848,
+          -4323.84083326132
+        ],
+        [
+          6157.512886940357,
+          -4340.0
+        ],
+        [
+          6167.188508555288,
+          -4355.559665245489
+        ],
+        [
+          6177.861064718454,
+          -4370.453200122442
+        ],
+        [
+          6189.484853905887,
+          -4384.61682822802
+        ],
+        [
+          6202.010101267767,
+          -4397.989898732233
+        ],
+        [
+          6215.38317177198,
+          -4410.515146094113
+        ],
+        [
+          6229.546799877558,
+          -4422.138935281546
+        ],
+        [
+          6244.440334754511,
+          -4432.811491444712
+        ],
+        [
+          6260.0,
+          -4442.487113059643
+        ],
+        [
+          6276.159166738679,
+          -4451.124367629152
+        ],
+        [
+          6292.848638937775,
+          -4458.68626910316
+        ],
+        [
+          6309.996949715115,
+          -4465.14043625863
+        ],
+        [
+          6327.530667371294,
+          -4470.459231360939
+        ],
+        [
+          6345.374709835484,
+          -4474.6198785129045
+        ],
+        [
+          6363.452666178386,
+          -4477.604561184667
+        ],
+        [
+          6381.68712381556,
+          -4479.400498506809
+        ],
+        [
+          6400.0,
+          -4480.0
+        ],
+        [
+          6437.5,
+          -4480.248119212963
+        ],
+        [
+          6475.0,
+          -4480.96412037037
+        ],
+        [
+          6512.5,
+          -4482.10546875
+        ],
+        [
+          6550.0,
+          -4483.62962962963
+        ],
+        [
+          6587.5,
+          -4485.494068287037
+        ],
+        [
+          6625.0,
+          -4487.65625
+        ],
+        [
+          6662.5,
+          -4490.0736400462965
+        ],
+        [
+          6700.0,
+          -4492.7037037037035
+        ],
+        [
+          6737.5,
+          -4495.50390625
+        ],
+        [
+          6775.0,
+          -4498.431712962963
+        ],
+        [
+          6812.5,
+          -4501.44458912037
+        ],
+        [
+          6850.0,
+          -4504.5
+        ],
+        [
+          6887.5,
+          -4507.55541087963
+        ],
+        [
+          6925.0,
+          -4510.568287037037
+        ],
+        [
+          6962.5,
+          -4513.49609375
+        ],
+        [
+          7000.0,
+          -4516.2962962962965
+        ],
+        [
+          7037.5,
+          -4518.9263599537035
+        ],
+        [
+          7075.0,
+          -4521.34375
+        ],
+        [
+          7112.5,
+          -4523.505931712963
+        ],
+        [
+          7150.0,
+          -4525.37037037037
+        ],
+        [
+          7187.5,
+          -4526.89453125
+        ],
+        [
+          7225.0,
+          -4528.03587962963
+        ],
+        [
+          7262.5,
+          -4528.751880787037
+        ],
+        [
+          7300.0,
+          -4529.0
+        ]
+      ],
+      "width": 62
+    },
+    {
+      "id": "mountain_bridge_inbound",
+      "points": [
+        [
+          7300.0,
+          -4591.0
+        ],
+        [
+          7266.666666666667,
+          -4591.248119212963
+        ],
+        [
+          7233.333333333333,
+          -4591.96412037037
+        ],
+        [
+          7200.0,
+          -4593.10546875
+        ],
+        [
+          7166.666666666667,
+          -4594.62962962963
+        ],
+        [
+          7133.333333333333,
+          -4596.494068287037
+        ],
+        [
+          7100.0,
+          -4598.65625
+        ],
+        [
+          7066.666666666667,
+          -4601.0736400462965
+        ],
+        [
+          7033.333333333333,
+          -4603.7037037037035
+        ],
+        [
+          7000.0,
+          -4606.50390625
+        ],
+        [
+          6966.666666666667,
+          -4609.431712962963
+        ],
+        [
+          6933.333333333333,
+          -4612.44458912037
+        ],
+        [
+          6900.0,
+          -4615.5
+        ],
+        [
+          6866.666666666667,
+          -4618.55541087963
+        ],
+        [
+          6833.333333333333,
+          -4621.568287037037
+        ],
+        [
+          6800.0,
+          -4624.49609375
+        ],
+        [
+          6766.666666666667,
+          -4627.2962962962965
+        ],
+        [
+          6733.333333333333,
+          -4629.9263599537035
+        ],
+        [
+          6700.0,
+          -4632.34375
+        ],
+        [
+          6666.666666666667,
+          -4634.505931712963
+        ],
+        [
+          6633.333333333333,
+          -4636.37037037037
+        ],
+        [
+          6600.0,
+          -4637.89453125
+        ],
+        [
+          6566.666666666667,
+          -4639.03587962963
+        ],
+        [
+          6533.333333333333,
+          -4639.751880787037
+        ],
+        [
+          6500.0,
+          -4640.0
+        ],
+        [
+          6240,
+          -4640
+        ],
+        [
+          6216.454873477149,
+          -4639.229212365897
+        ],
+        [
+          6193.010570800781,
+          -4636.920150094572
+        ],
+        [
+          6169.767484074194,
+          -4633.082700945163
+        ],
+        [
+          6146.8251437630925,
+          -4627.733297464065
+        ],
+        [
+          6124.281792490862,
+          -4620.894846618238
+        ],
+        [
+          6102.2339643485675,
+          -4612.596631704063
+        ],
+        [
+          6080.77607152116,
+          -4602.874186951768
+        ],
+        [
+          6060.0,
+          -4591.7691453623975
+        ],
+        [
+          6039.994716112943,
+          -4579.329060428916
+        ],
+        [
+          6020.845885556861,
+          -4565.607202504844
+        ],
+        [
+          6002.6355065639755,
+          -4550.662330692432
+        ],
+        [
+          5985.441558772843,
+          -4534.558441227157
+        ],
+        [
+          5969.337669307568,
+          -4517.3644934360245
+        ],
+        [
+          5954.392797495156,
+          -4499.154114443139
+        ],
+        [
+          5940.670939571084,
+          -4480.005283887057
+        ],
+        [
+          5928.2308546376025,
+          -4460.0
+        ],
+        [
+          5917.125813048232,
+          -4439.22392847884
+        ],
+        [
+          5907.403368295937,
+          -4417.7660356514325
+        ],
+        [
+          5899.105153381762,
+          -4395.718207509139
+        ],
+        [
+          5892.266702535935,
+          -4373.1748562369075
+        ],
+        [
+          5886.917299054837,
+          -4350.232515925806
+        ],
+        [
+          5883.079849905428,
+          -4326.989429199219
+        ],
+        [
+          5880.770787634103,
+          -4303.545126522852
+        ],
+        [
+          5880.0,
+          -4280.0
+        ],
+        [
+          5880,
+          -4200
+        ]
+      ],
+      "width": 62
+    },
+    {
+      "id": "cobra_approach",
+      "points": [
+        [
+          6450,
+          1700
+        ],
+        [
+          7400,
+          1700
+        ]
+      ],
+      "width": 84
+    },
+    {
+      "id": "cobra_court_northwest",
+      "points": [
+        [
+          7400.0,
+          1700.0
+        ],
+        [
+          7402.566541587857,
+          1660.8421423339846
+        ],
+        [
+          7410.22225211328,
+          1622.3542864692438
+        ],
+        [
+          7422.836140246614,
+          1585.194970290473
+        ],
+        [
+          7440.192378864668,
+          1550.0
+        ],
+        [
+          7461.993997912629,
+          1517.3715712973838
+        ],
+        [
+          7487.867965644035,
+          1487.8679656440358
+        ],
+        [
+          7517.3715712973835,
+          1461.9939979126295
+        ],
+        [
+          7550.0,
+          1440.1923788646684
+        ],
+        [
+          7585.194970290473,
+          1422.836140246614
+        ],
+        [
+          7622.354286469244,
+          1410.2222521132794
+        ],
+        [
+          7660.842142333984,
+          1402.5665415878568
+        ],
+        [
+          7700.0,
+          1400.0
+        ]
+      ],
+      "width": 84
+    },
+    {
+      "id": "cobra_court_northeast",
+      "points": [
+        [
+          7700.0,
+          1400.0
+        ],
+        [
+          7739.157857666015,
+          1402.5665415878568
+        ],
+        [
+          7777.645713530756,
+          1410.2222521132794
+        ],
+        [
+          7814.805029709527,
+          1422.836140246614
+        ],
+        [
+          7850.0,
+          1440.1923788646684
+        ],
+        [
+          7882.6284287026165,
+          1461.9939979126295
+        ],
+        [
+          7912.132034355965,
+          1487.8679656440356
+        ],
+        [
+          7938.006002087371,
+          1517.3715712973838
+        ],
+        [
+          7959.807621135332,
+          1549.9999999999998
+        ],
+        [
+          7977.163859753386,
+          1585.1949702904728
+        ],
+        [
+          7989.77774788672,
+          1622.3542864692438
+        ],
+        [
+          7997.433458412143,
+          1660.8421423339846
+        ],
+        [
+          8000.0,
+          1700.0
+        ]
+      ],
+      "width": 84
+    },
+    {
+      "id": "cobra_court_southeast",
+      "points": [
+        [
+          8000.0,
+          1700.0
+        ],
+        [
+          7997.433458412143,
+          1739.1578576660154
+        ],
+        [
+          7989.77774788672,
+          1777.645713530756
+        ],
+        [
+          7977.163859753386,
+          1814.805029709527
+        ],
+        [
+          7959.807621135332,
+          1850.0
+        ],
+        [
+          7938.006002087371,
+          1882.6284287026162
+        ],
+        [
+          7912.132034355965,
+          1912.1320343559642
+        ],
+        [
+          7882.6284287026165,
+          1938.0060020873705
+        ],
+        [
+          7850.0,
+          1959.8076211353314
+        ],
+        [
+          7814.805029709527,
+          1977.163859753386
+        ],
+        [
+          7777.645713530756,
+          1989.7777478867206
+        ],
+        [
+          7739.157857666016,
+          1997.4334584121432
+        ],
+        [
+          7700.0,
+          2000.0
+        ]
+      ],
+      "width": 84
+    },
+    {
+      "id": "cobra_court_southwest",
+      "points": [
+        [
+          7700.0,
+          2000.0
+        ],
+        [
+          7660.842142333985,
+          1997.4334584121432
+        ],
+        [
+          7622.354286469244,
+          1989.7777478867206
+        ],
+        [
+          7585.194970290473,
+          1977.163859753386
+        ],
+        [
+          7550.0,
+          1959.8076211353318
+        ],
+        [
+          7517.3715712973835,
+          1938.0060020873707
+        ],
+        [
+          7487.867965644036,
+          1912.1320343559646
+        ],
+        [
+          7461.993997912629,
+          1882.6284287026162
+        ],
+        [
+          7440.192378864668,
+          1850.0
+        ],
+        [
+          7422.836140246614,
+          1814.8050297095272
+        ],
+        [
+          7410.22225211328,
+          1777.6457135307562
+        ],
+        [
+          7402.566541587857,
+          1739.1578576660158
+        ],
+        [
+          7400.0,
+          1700.0
+        ]
+      ],
+      "width": 84
+    },
+    {
+      "id": "salvage_access",
+      "points": [
+        [
+          -1250,
+          1250
+        ],
+        [
+          -1250,
+          1000
+        ],
+        [
+          -750,
+          1000
+        ],
+        [
+          -750,
+          700
+        ]
+      ],
+      "width": 100
+    }
+  ],
+  "mountain_control_points": [
+    [
+      3000.0,
+      400.0
+    ],
+    [
+      3800.0,
+      400.0
+    ],
+    [
+      4650.0,
+      400.0
+    ],
+    [
+      4950.0,
+      400.0
+    ],
+    [
+      5800.0,
+      400.0
+    ],
+    [
+      6250.0,
+      340.0
+    ],
+    [
+      6650.0,
+      150.0
+    ],
+    [
+      6950.0,
+      -250.0
+    ],
+    [
+      6650.0,
+      -580.0
+    ],
+    [
+      6150.0,
+      -780.0
+    ],
+    [
+      6500.0,
+      -1050.0
+    ],
+    [
+      7000.0,
+      -1350.0
+    ],
+    [
+      6600.0,
+      -1700.0
+    ],
+    [
+      6250.0,
+      -2050.0
+    ],
+    [
+      6850.0,
+      -2450.0
+    ],
+    [
+      6500.0,
+      -2660.0
+    ]
+  ],
+  "harbor_buildings": [
+    {
+      "id": "NorthFrontage0",
+      "position": [
+        650.0,
+        140.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "bank_branch",
+      "name": "BANCO / NORTH PIER",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a9b9a5",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthFrontage1",
+      "position": [
+        990.0,
+        140.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "FOUNDRY FLATS",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a9b9a5",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthFrontage2",
+      "position": [
+        1550.0,
+        140.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "ROAST / COFFEE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a9b9a5",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthFrontage3",
+      "position": [
+        1890.0,
+        140.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "ROUPAS / UNION",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a9b9a5",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthFrontage4",
+      "position": [
+        2460.0,
+        140.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "office",
+      "name": "POSTO / CONVENIÃƒÆ’Ã…Â NCIA",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a9b9a5",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthFrontage5",
+      "position": [
+        2780.0,
+        140.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "office",
+      "name": "CUSTOMS HOUSE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a9b9a5",
+      "entrance_north": false
+    },
+    {
+      "id": "FoundryTerraceWest",
+      "position": [
+        621.0,
+        640.0
+      ],
+      "size": [
+        210.0,
+        230.0
+      ],
+      "kind": "rowhouse_terrace",
+      "name": "FOUNDRY TERRACES W",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a87d60",
+      "entrance_north": false
+    },
+    {
+      "id": "FoundryTerraceEast",
+      "position": [
+        855.0,
+        640.0
+      ],
+      "size": [
+        210.0,
+        230.0
+      ],
+      "kind": "rowhouse_terrace",
+      "name": "FOUNDRY TERRACES E",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#94765a",
+      "entrance_north": false
+    },
+    {
+      "id": "FoundryLofts",
+      "position": [
+        1077.0,
+        655.0
+      ],
+      "size": [
+        186.0,
+        260.0
+      ],
+      "kind": "l_shaped_block",
+      "name": "UNION LOFTS & WORKS",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#8b6e58",
+      "entrance_north": false
+    },
+    {
+      "id": "CornerDiner",
+      "position": [
+        621.0,
+        1040.0
+      ],
+      "size": [
+        210.0,
+        160.0
+      ],
+      "kind": "corner_shop",
+      "name": "ANCHOR DINER",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#e49d68",
+      "entrance_north": false
+    },
+    {
+      "id": "Laundry",
+      "position": [
+        845.0,
+        1045.0
+      ],
+      "size": [
+        170.0,
+        150.0
+      ],
+      "kind": "commercial_laundromat",
+      "name": "WASH / DRY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#4a8084",
+      "entrance_north": false
+    },
+    {
+      "id": "UnionWorkshop",
+      "position": [
+        1065.0,
+        1038.0
+      ],
+      "size": [
+        195.0,
+        164.0
+      ],
+      "kind": "artisan_workshop",
+      "name": "HARBOR BINDERY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#825a47",
+      "entrance_north": false
+    },
+    {
+      "id": "MarketHall",
+      "position": [
+        1750.0,
+        665.0
+      ],
+      "size": [
+        480.0,
+        220.0
+      ],
+      "kind": "warehouse_shop",
+      "name": "BREAKWATER MARKET",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#d1a866",
+      "entrance_north": false
+    },
+    {
+      "id": "ColdStorage",
+      "position": [
+        2600.0,
+        710.0
+      ],
+      "size": [
+        420.0,
+        280.0
+      ],
+      "kind": "warehouse",
+      "name": "COLD STORAGE  /  04",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#78afb6",
+      "entrance_north": false
+    },
+    {
+      "id": "Garage",
+      "position": [
+        790.0,
+        1495.0
+      ],
+      "size": [
+        390.0,
+        250.0
+      ],
+      "kind": "garage",
+      "name": "WESTGATE MOTOR CO.",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#e8b44f",
+      "entrance_north": false
+    },
+    {
+      "id": "Police",
+      "position": [
+        1080.0,
+        1950.0
+      ],
+      "size": [
+        190.0,
+        250.0
+      ],
+      "kind": "police_precinct",
+      "name": "HARBOR PATROL",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#68a8d3",
+      "entrance_north": false
+    },
+    {
+      "id": "Clinic",
+      "position": [
+        1800.0,
+        1530.0
+      ],
+      "size": [
+        260.0,
+        230.0
+      ],
+      "kind": "hospital",
+      "name": "BAY MEDICAL",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#78c7bd",
+      "entrance_north": false
+    },
+    {
+      "id": "Apartments",
+      "position": [
+        1550.0,
+        1530.0
+      ],
+      "size": [
+        185.0,
+        230.0
+      ],
+      "kind": "office",
+      "name": "UNION LOFTS",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#c89f85",
+      "entrance_north": false
+    },
+    {
+      "id": "FreightOffice",
+      "position": [
+        2520.0,
+        1510.0
+      ],
+      "size": [
+        285.0,
+        170.0
+      ],
+      "kind": "office",
+      "name": "PORT AUTHORITY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#c1b37c",
+      "entrance_north": false
+    },
+    {
+      "id": "FreightDepot",
+      "position": [
+        2570.0,
+        1930.0
+      ],
+      "size": [
+        330.0,
+        260.0
+      ],
+      "kind": "warehouse",
+      "name": "TRANSATLANTIC / 02",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#c97d57",
+      "entrance_north": false
+    },
+    {
+      "id": "ExchangeTower",
+      "position": [
+        5000.0,
+        720.0
+      ],
+      "size": [
+        300.0,
+        320.0
+      ],
+      "kind": "office",
+      "name": "NORTHBANK EXCHANGE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#83c6cc",
+      "entrance_north": false
+    },
+    {
+      "id": "CivicTower",
+      "position": [
+        5305.0,
+        680.0
+      ],
+      "size": [
+        170.0,
+        240.0
+      ],
+      "kind": "office",
+      "name": "HORIZON",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#aacacd",
+      "entrance_north": false
+    },
+    {
+      "id": "MaritimeMuseum",
+      "position": [
+        6020.0,
+        700.0
+      ],
+      "size": [
+        460.0,
+        250.0
+      ],
+      "kind": "office",
+      "name": "MARITIME MUSEUM",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#e0c9a1",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankHomes0",
+      "position": [
+        4900.0,
+        1510.0
+      ],
+      "size": [
+        160.0,
+        190.0
+      ],
+      "kind": "rowhouse_terrace",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#8b6254",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankHomes1",
+      "position": [
+        5120.0,
+        1510.0
+      ],
+      "size": [
+        180.0,
+        210.0
+      ],
+      "kind": "brownstone",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#aaa08b",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankHomes2",
+      "position": [
+        5330.0,
+        1510.0
+      ],
+      "size": [
+        180.0,
+        170.0
+      ],
+      "kind": "artisan_workshop",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#657679",
+      "entrance_north": false
+    },
+    {
+      "id": "IslandGrocer",
+      "position": [
+        4930.0,
+        1990.0
+      ],
+      "size": [
+        240.0,
+        170.0
+      ],
+      "kind": "corner_shop",
+      "name": "NORTHBANK GROCERY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#e0b975",
+      "entrance_north": false
+    },
+    {
+      "id": "IslandCinema",
+      "position": [
+        5270.0,
+        1990.0
+      ],
+      "size": [
+        240.0,
+        170.0
+      ],
+      "kind": "shop",
+      "name": "THE ORION / CINEMA",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#ce877e",
+      "entrance_north": false
+    },
+    {
+      "id": "Aquarium",
+      "position": [
+        6100.0,
+        1550.0
+      ],
+      "size": [
+        360.0,
+        270.0
+      ],
+      "kind": "office",
+      "name": "BAY AQUARIUM",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#73bfc6",
+      "entrance_north": false
+    },
+    {
+      "id": "PromenadeCafe",
+      "position": [
+        5790.0,
+        1515.0
+      ],
+      "size": [
+        170.0,
+        210.0
+      ],
+      "kind": "corner_shop",
+      "name": "TIDELINE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#deb976",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankFront0",
+      "position": [
+        4900.0,
+        145.0
+      ],
+      "size": [
+        260.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "BRIDGE HOUSE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#96b7b4",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankFront1",
+      "position": [
+        5290.0,
+        145.0
+      ],
+      "size": [
+        260.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "FOUNDERS CLUB",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#96b7b4",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankFront2",
+      "position": [
+        5840.0,
+        145.0
+      ],
+      "size": [
+        260.0,
+        180.0
+      ],
+      "kind": "office",
+      "name": "DESIGN WORKS",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#96b7b4",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthbankFront3",
+      "position": [
+        6200.0,
+        145.0
+      ],
+      "size": [
+        260.0,
+        180.0
+      ],
+      "kind": "office",
+      "name": "EASTGATE HOTEL",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#96b7b4",
+      "entrance_north": false
+    },
+    {
+      "id": "BridgeCourtWest",
+      "position": [
+        4925.0,
+        -2240.0
+      ],
+      "size": [
+        260.0,
+        175.0
+      ],
+      "kind": "brownstone",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#ac9275",
+      "entrance_north": false
+    },
+    {
+      "id": "BridgeCourtEast",
+      "position": [
+        5290.0,
+        -2240.0
+      ],
+      "size": [
+        245.0,
+        175.0
+      ],
+      "kind": "office",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a5ad9b",
+      "entrance_north": false
+    },
+    {
+      "id": "BridgeQuayHouse",
+      "position": [
+        6485.0,
+        -2195.0
+      ],
+      "size": [
+        225.0,
+        145.0
+      ],
+      "kind": "brownstone",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#b39c84",
+      "entrance_north": false
+    },
+    {
+      "id": "GatewayFlats",
+      "position": [
+        4915.0,
+        -1730.0
+      ],
+      "size": [
+        250.0,
+        220.0
+      ],
+      "kind": "brownstone",
+      "name": "GATEWAY FLATS",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#b6ac93",
+      "entrance_north": false
+    },
+    {
+      "id": "TransitHouse",
+      "position": [
+        5260.0,
+        -1730.0
+      ],
+      "size": [
+        230.0,
+        220.0
+      ],
+      "kind": "office",
+      "name": "TRANSIT HOUSE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#8ab6b9",
+      "entrance_north": false
+    },
+    {
+      "id": "MotorWorkshop",
+      "position": [
+        4925.0,
+        -1360.0
+      ],
+      "size": [
+        270.0,
+        210.0
+      ],
+      "kind": "garage",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#6bd2b2",
+      "entrance_north": false
+    },
+    {
+      "id": "RoadsideSupplies",
+      "position": [
+        5265.0,
+        -1360.0
+      ],
+      "size": [
+        230.0,
+        210.0
+      ],
+      "kind": "shop",
+      "name": "HARDWARE / SUPPLY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#bc9a74",
+      "entrance_north": false
+    },
+    {
+      "id": "ServiceLodge",
+      "position": [
+        5860.0,
+        -1740.0
+      ],
+      "size": [
+        300.0,
+        220.0
+      ],
+      "kind": "office",
+      "name": "THE GATEWAY LODGE",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#9baaae",
+      "entrance_north": false
+    },
+    {
+      "id": "ParcelOffice",
+      "position": [
+        6200.0,
+        -1740.0
+      ],
+      "size": [
+        200.0,
+        220.0
+      ],
+      "kind": "warehouse",
+      "name": "NORTH PARCEL",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#acaa84",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthFireStation",
+      "position": [
+        5880.0,
+        -1370.0
+      ],
+      "size": [
+        310.0,
+        220.0
+      ],
+      "kind": "fire_station",
+      "name": "NORTHGATE FIRE / 03",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#d97958",
+      "entrance_north": false
+    },
+    {
+      "id": "ServiceCafe",
+      "position": [
+        6200.0,
+        -1370.0
+      ],
+      "size": [
+        200.0,
+        220.0
+      ],
+      "kind": "corner_shop",
+      "name": "EARLY SHIFT",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#d7b477",
+      "entrance_north": false
+    },
+    {
+      "id": "CanalHomesWest",
+      "position": [
+        4915.0,
+        -860.0
+      ],
+      "size": [
+        250.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#b8a182",
+      "entrance_north": false
+    },
+    {
+      "id": "CanalHomesEast",
+      "position": [
+        5260.0,
+        -860.0
+      ],
+      "size": [
+        230.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#a6b2a0",
+      "entrance_north": false
+    },
+    {
+      "id": "NorthGrocer",
+      "position": [
+        4915.0,
+        -585.0
+      ],
+      "size": [
+        250.0,
+        160.0
+      ],
+      "kind": "corner_shop",
+      "name": "CANAL GROCERY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#d8bc78",
+      "entrance_north": false
+    },
+    {
+      "id": "CycleWorkshop",
+      "position": [
+        5260.0,
+        -585.0
+      ],
+      "size": [
+        230.0,
+        160.0
+      ],
+      "kind": "shop",
+      "name": "SPOKE / CYCLE CO.",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#82b8b4",
+      "entrance_north": false
+    },
+    {
+      "id": "GardenFlats",
+      "position": [
+        5875.0,
+        -860.0
+      ],
+      "size": [
+        310.0,
+        180.0
+      ],
+      "kind": "brownstone",
+      "name": "",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#bd9e84",
+      "entrance_north": false
+    },
+    {
+      "id": "UnionApartments",
+      "position": [
+        6220.0,
+        -860.0
+      ],
+      "size": [
+        210.0,
+        180.0
+      ],
+      "kind": "office",
+      "name": "NORTH UNION",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#9fbcc0",
+      "entrance_north": false
+    },
+    {
+      "id": "CommunityHall",
+      "position": [
+        5875.0,
+        -585.0
+      ],
+      "size": [
+        310.0,
+        160.0
+      ],
+      "kind": "office",
+      "name": "NORTHGATE HALL",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#c9b597",
+      "entrance_north": false
+    },
+    {
+      "id": "CornerPharmacy",
+      "position": [
+        6220.0,
+        -585.0
+      ],
+      "size": [
+        210.0,
+        160.0
+      ],
+      "kind": "shop",
+      "name": "CORNER PHARMACY",
+      "source": "world/harbor/HarborPreview.tscn",
+      "color": "#90bdb4",
+      "entrance_north": false
+    },
+    {
+      "id": "PorchHouse",
+      "position": [
+        7090.0,
+        1340.0
+      ],
+      "size": [
+        220.0,
+        160.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "72594b",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "Duplex",
+      "position": [
+        7535.0,
+        1142.5
+      ],
+      "size": [
+        250.0,
+        165.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "726d53",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "ShingleHouse",
+      "position": [
+        7962.5,
+        1187.5
+      ],
+      "size": [
+        225.0,
+        155.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "4e6260",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "CobraWorkshop",
+      "position": [
+        8340.0,
+        1517.5
+      ],
+      "size": [
+        220.0,
+        255.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "655343",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "CourtyardHouse",
+      "position": [
+        8352.5,
+        1975.0
+      ],
+      "size": [
+        205.0,
+        170.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "775e54",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "BrickDuplex",
+      "position": [
+        8000.0,
+        2255.0
+      ],
+      "size": [
+        260.0,
+        170.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "765043",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "TinRoofHouse",
+      "position": [
+        7550.0,
+        2242.5
+      ],
+      "size": [
+        220.0,
+        145.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "596454",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    },
+    {
+      "id": "CornerBungalow",
+      "position": [
+        7047.5,
+        2087.5
+      ],
+      "size": [
+        235.0,
+        155.0
+      ],
+      "kind": "cobra_house",
+      "name": "",
+      "color": "6c6759",
+      "source": "world/harbor/cobras/CobraNeighborhood.gd"
+    }
+  ],
+  "sources": [
+    "characters/pedestrians/CitizenDetails.gd",
+    "characters/pedestrians/CitizenFace.gd",
+    "characters/pedestrians/CitizenGeometry.gd",
+    "characters/pedestrians/CitizenMorphology.gd",
+    "characters/pedestrians/CitizenSculpt.gd",
+    "prototypes/harbor_art_pack/PortMeshOptimizer.gd",
+    "prototypes/harbor_art_pack/props/PortCargoCrate3D.gd",
+    "prototypes/harbor_art_pack/props/PortContainer40ft3D.gd",
+    "prototypes/harbor_art_pack/props/PortDrumClusterPallet3D.gd",
+    "prototypes/harbor_art_pack/props/PortPalletStack3D.gd",
+    "systems/interiors/InteriorSolidProjection.gd",
+    "world/harbor/HarborGarageExterior3D.gd",
+    "world/harbor/HarborPortModel3D.gd",
+    "world/harbor/cemetery/CemeteryPropBuilder.gd",
+    "world/harbor/interiors/ClothingInteriorArt3D.gd",
+    "world/harbor/interiors/FireStationArt3D.gd",
+    "world/harbor/interiors/FuelStoreArt3D.gd",
+    "world/harbor/interiors/HarborPoliceStation3D.gd",
+    "world/harbor/interiors/HospitalRoom3D.gd",
+    "world/mountain_pass/CaveDetailGeometry.gd",
+    "world/mountain_pass/CaveFloor.gdshader",
+    "world/mountain_pass/CaveRockGeometry.gd",
+    "world/mountain_pass/LumberjackBunkhouse3D.gd",
+    "world/mountain_pass/MountainBunker3D.gd",
+    "world/mountain_pass/MountainCabin3D.gd",
+    "world/mountain_pass/MountainCabinVariants3D.gd",
+    "world/mountain_pass/MountainGround.gdshader",
+    "world/mountain_pass/MountainGroundMaterials.gd",
+    "world/mountain_pass/MountainHearthEffects3D.gd",
+    "world/mountain_pass/MountainMysteryCaveInterior3D.gd",
+    "world/mountain_pass/MountainWheelRuts.gd",
+    "world/mountain_pass/SummitSkiLodge3D.gd",
+    "world/mountain_pass/SummitSkiLodgeInterior3D.gd",
+    "world/mountain_pass/art/winter_props/LumberjackCabin3D.gd"
+  ],
+  "harbor_land": [
+    [
+      -100,
+      -100,
+      3300,
+      2580
+    ],
+    [
+      4380,
+      -2400,
+      2380,
+      4880
+    ],
+    [
+      5700,
+      -4470,
+      600,
+      2120
+    ],
+    [
+      3200,
+      3200,
+      2900,
+      2800
+    ],
+    [
+      -1500,
+      1000,
+      1900,
+      1500
+    ],
+    [
+      6510,
+      960,
+      2010,
+      1450
+    ],
+    [
+      -1370,
+      10,
+      1270,
+      1120
+    ]
+  ],
+  "port_containers": [
+    {
+      "position": [
+        4155,
+        3922.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4155,
+        4008.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4155,
+        4094.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4675,
+        3922.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4675,
+        4008.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4675,
+        4094.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        5195,
+        3922.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        5195,
+        4008.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        5195,
+        4094.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4155,
+        4392.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4155,
+        4478.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4155,
+        4564.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4675,
+        4392.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4675,
+        4478.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        4675,
+        4564.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        5195,
+        4392.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        5195,
+        4478.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    },
+    {
+      "position": [
+        5195,
+        4564.5
+      ],
+      "size": [
+        330,
+        65
+      ]
+    }
+  ],
+  "forest_clusters": [
+    {
+      "center": [
+        4780.0,
+        180.0
+      ],
+      "count": 25,
+      "radius": 220.0,
+      "snow": false
+    },
+    {
+      "center": [
+        4780.0,
+        640.0
+      ],
+      "count": 25,
+      "radius": 220.0,
+      "snow": false
+    },
+    {
+      "center": [
+        5850.0,
+        680.0
+      ],
+      "count": 28,
+      "radius": 300.0,
+      "snow": false
+    },
+    {
+      "center": [
+        6750.0,
+        560.0
+      ],
+      "count": 32,
+      "radius": 280.0,
+      "snow": false
+    },
+    {
+      "center": [
+        7650.0,
+        750.0
+      ],
+      "count": 30,
+      "radius": 300.0,
+      "snow": false
+    },
+    {
+      "center": [
+        8500.0,
+        650.0
+      ],
+      "count": 32,
+      "radius": 320.0,
+      "snow": false
+    },
+    {
+      "center": [
+        8100.0,
+        100.0
+      ],
+      "count": 30,
+      "radius": 320.0,
+      "snow": false
+    },
+    {
+      "center": [
+        8300.0,
+        -300.0
+      ],
+      "count": 30,
+      "radius": 340.0,
+      "snow": false
+    },
+    {
+      "center": [
+        7800.0,
+        -800.0
+      ],
+      "count": 28,
+      "radius": 320.0,
+      "snow": false
+    },
+    {
+      "center": [
+        6450.0,
+        -420.0
+      ],
+      "count": 26,
+      "radius": 260.0,
+      "snow": false
+    },
+    {
+      "center": [
+        5850.0,
+        -820.0
+      ],
+      "count": 24,
+      "radius": 250.0,
+      "snow": false
+    },
+    {
+      "center": [
+        5450.0,
+        -1150.0
+      ],
+      "count": 32,
+      "radius": 360.0,
+      "snow": true
+    },
+    {
+      "center": [
+        6750.0,
+        -950.0
+      ],
+      "count": 28,
+      "radius": 280.0,
+      "snow": false
+    },
+    {
+      "center": [
+        6100.0,
+        -1450.0
+      ],
+      "count": 26,
+      "radius": 280.0,
+      "snow": true
+    },
+    {
+      "center": [
+        7150.0,
+        -1750.0
+      ],
+      "count": 28,
+      "radius": 300.0,
+      "snow": true
+    },
+    {
+      "center": [
+        5900.0,
+        -2150.0
+      ],
+      "count": 24,
+      "radius": 260.0,
+      "snow": true
+    },
+    {
+      "center": [
+        6950.0,
+        -2550.0
+      ],
+      "count": 24,
+      "radius": 240.0,
+      "snow": true
+    },
+    {
+      "center": [
+        6200.0,
+        -2700.0
+      ],
+      "count": 18,
+      "radius": 220.0,
+      "snow": true
+    },
+    {
+      "center": [
+        6850.0,
+        -2750.0
+      ],
+      "count": 18,
+      "radius": 220.0,
+      "snow": true
+    },
+    {
+      "center": [
+        5480.0,
+        -360.0
+      ],
+      "count": 34,
+      "radius": 280.0,
+      "snow": false
+    },
+    {
+      "center": [
+        5750.0,
+        -100.0
+      ],
+      "count": 30,
+      "radius": 245.0,
+      "snow": false
+    },
+    {
+      "center": [
+        5660.0,
+        -650.0
+      ],
+      "count": 26,
+      "radius": 210.0,
+      "snow": false
+    },
+    {
+      "center": [
+        5200.0,
+        -1830.0
+      ],
+      "count": 30,
+      "radius": 270.0,
+      "snow": true
+    },
+    {
+      "center": [
+        5700.0,
+        -1770.0
+      ],
+      "count": 32,
+      "radius": 265.0,
+      "snow": true
+    },
+    {
+      "center": [
+        6070.0,
+        -1870.0
+      ],
+      "count": 24,
+      "radius": 230.0,
+      "snow": true
+    },
+    {
+      "center": [
+        5470.0,
+        -2390.0
+      ],
+      "count": 26,
+      "radius": 280.0,
+      "snow": true
+    },
+    {
+      "center": [
+        5930.0,
+        -2490.0
+      ],
+      "count": 24,
+      "radius": 220.0,
+      "snow": true
+    }
+  ],
+  "ship_deck": [
+    [
+      3570,
+      680
+    ],
+    [
+      3645,
+      748
+    ],
+    [
+      3722,
+      862
+    ],
+    [
+      3768,
+      990
+    ],
+    [
+      3768,
+      2070
+    ],
+    [
+      3740,
+      2115
+    ],
+    [
+      3400,
+      2115
+    ],
+    [
+      3372,
+      2070
+    ],
+    [
+      3372,
+      990
+    ],
+    [
+      3418,
+      862
+    ],
+    [
+      3495,
+      748
+    ]
+  ],
+  "ship_cargo": [
+    {
+      "position": [
+        3460,
+        1052
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3570,
+        1052
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3680,
+        1052
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3460,
+        1164
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3570,
+        1164
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3680,
+        1164
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3460,
+        1276
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3570,
+        1276
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3680,
+        1276
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3460,
+        1388
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3570,
+        1388
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3680,
+        1388
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3460,
+        1500
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3570,
+        1500
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3680,
+        1500
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3460,
+        1612
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3570,
+        1612
+      ],
+      "size": [
+        60,
+        104
+      ]
+    },
+    {
+      "position": [
+        3680,
+        1612
+      ],
+      "size": [
+        60,
+        104
+      ]
+    }
+  ]
+}
