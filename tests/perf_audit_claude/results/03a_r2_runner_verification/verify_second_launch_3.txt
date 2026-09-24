@@ -1,1 +1,0 @@
-﻿REJECTED run=verify_second_launch_3 motivo=lock_ocupado lock_wait_s=0

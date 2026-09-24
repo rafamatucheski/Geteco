@@ -387,6 +387,4 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "VOLTAR"
 
-[connection signal="pressed" from="RootControl/SlotsModal/Margin/VBox/Actions/BtnCloseModal" to="." method="_on_close_modal_pressed"]
-[connection signal="pressed" from="RootControl/AchievementsModal/Margin/VBox/Actions2/BtnCloseAchievements" to="." method="_on_close_achievements_pressed"]
-[connection signal="pressed" from="RootControl/CollectiblesModal/Margin/VBox/Actions3/BtnCloseCollectibles" to="." method="_on_close_collectibles_pressed"]
+

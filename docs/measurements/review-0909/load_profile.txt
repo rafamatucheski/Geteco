@@ -1,4 +1,0 @@
-LOAD_PROFILE load_ms=5027 instantiate_ms=32 add_child_ms=4099 first180frames_ms=16777 total_ms=25935
-LOAD_PROFILE_SPIKES frame0=5326ms frame1=991ms frame2=961ms frame4=113ms frame5=213ms frame6=1260ms frame7=194ms frame8=613ms frame9=3380ms frame34=146ms frame35=573ms frame36=445ms frame37=437ms frame38=434ms frame40=211ms frame43=143ms frame44=152ms
-LOAD_PROFILE_NODES total=28955 MeshInstance3D=10878 CollisionShape2D=3995 Sprite2D=2892 Node3D=2283 StaticBody2D=1271 Node2D=942 Area2D=862 VisibleOnScreenNotifier2D=690 Polygon2D=586 PointLight2D=575 CollisionPolygon2D=520 Path2D=319 DirectionalLight3D=294 SubViewport=291 Camera3D=290 CharacterBody2D=282 WorldEnvironment=258 RayCast2D=225
-LOAD_PROFILE_MONITORS nodes=29818 orphans=0 draw_calls=1592 video_mem_mb=1933.0 static_mem_mb=810.3

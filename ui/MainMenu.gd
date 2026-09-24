@@ -1,257 +1,228 @@
 extends Control
-
-## Menu Principal do Jogo
-## Entrypoint declarado em project.godot (run/main_scene="res://ui/MainMenu.tscn")
-## Suporta: Novo Jogo, Carregar Jogo (com auditoria de slots), Configurações e Sair.
-
-const MAIN_GAME_SCENE: String = "res://world/harbor/HarborGame.tscn"
-const SCENE_ROUTE = preload("res://world/harbor/HarborSceneRoute.gd")
-const SETTINGS_SCENE: PackedScene = preload("res://ui/SettingsMenu.tscn")
-const MenuAudio = preload("res://ui/MenuAudio.gd")
-
+## V1 menu/presentation, with V2-only save routing and no legacy world autoloads.
+const STYLE = preload("res://ui/GameStyle.gd")
+const AUDIO = preload("res://ui/MenuAudio.gd")
+const V1_IMPORT = preload("res://migration/v1/V1SaveImport.gd")
 @onready var btn_new_game: Button = %BtnNewGame
 @onready var btn_load_game: Button = %BtnLoadGame
 @onready var btn_settings: Button = %BtnSettings
 @onready var btn_quit: Button = %BtnQuit
-
-@onready var load_panel: Control = %LoadPanel
-@onready var slot_list_container: VBoxContainer = %SlotListContainer
-@onready var label_load_status: Label = %LabelLoadStatus
 @onready var game_title: Label = %GameTitle
 @onready var sub_title: Label = %SubTitle
-@onready var load_panel_title: Label = %Title
-@onready var btn_close_load: Button = %BtnCloseLoad
-
-var _selected_slot_id: String = ""
-var _settings_instance: Control = null
-var _music_player: AudioStreamPlayer = null
-var _starting_game := false
 var btn_continue: Button
-var _latest_slot := ""
+var btn_import: Button
 var latest_save: Dictionary = {}
-const SAVE_TEXT = preload("res://ui/SavePresentation.gd")
-var _load_shade: ColorRect
-const STYLE = preload("res://ui/GameStyle.gd")
+var settings: Control
+var presentation: Control
+var shade: ColorRect
+var starting := false
+var selecting_new := false
+var direct_start_requested := false
+var pending_import: Dictionary = {}
+var selecting_import := false
+var import_dialog: FileDialog
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	load_panel.visible = false
-	_setup_continue()
-	_apply_static_text()
-	var presentation := preload("res://ui/SunsetMenuPresentation.gd").new()
+	get_tree().paused = false
+	var launch = get_node("/root/V2Launch")
+	if not launch.direct_start_consumed:
+		launch.direct_start_consumed = true
+		for flag in ["--sandbox", "--slice", "--no-save", "--skip-arrival"]:
+			if flag in OS.get_cmdline_user_args():
+				direct_start_requested = true
+				break
+	%LoadPanel.hide()
+	latest_save = get_node("/root/V2Launch").latest_slot()
+	btn_continue = Button.new()
+	btn_continue.text = "CONTINUAR"
+	btn_new_game.get_parent().add_child(btn_continue)
+	btn_continue.visible = not latest_save.is_empty()
+	btn_import = Button.new()
+	btn_import.text = "IMPORTAR SAVE DA V1"
+	btn_import.custom_minimum_size = btn_new_game.custom_minimum_size
+	btn_import.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	btn_new_game.get_parent().add_child(btn_import)
+	btn_new_game.get_parent().move_child(btn_import,btn_load_game.get_index()+1)
+	btn_continue.pressed.connect(func(): _start(str(latest_save.id), false))
+	btn_new_game.pressed.connect(func(): _show_slots(true))
+	btn_load_game.pressed.connect(func(): _show_slots(false))
+	btn_import.pressed.connect(_choose_v1_save)
+	btn_settings.pressed.connect(_open_settings)
+	btn_quit.pressed.connect(func(): get_tree().quit())
+	%BtnCloseLoad.pressed.connect(_close_slots)
+	import_dialog = FileDialog.new()
+	import_dialog.title = "Escolha um save produtivo da V1"
+	import_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	import_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	import_dialog.filters = PackedStringArray(["*.json ; Save Geteco V1"])
+	import_dialog.file_selected.connect(_inspect_v1_save)
+	import_dialog.canceled.connect(func():
+		_main_enabled(true)
+		btn_import.grab_focus())
+	add_child(import_dialog)
+	presentation = preload("res://ui/SunsetMenuPresentation.gd").new()
 	add_child(presentation)
 	move_child(presentation, get_node("LoadPanel").get_index())
 	presentation.install(self)
-	_load_shade = ColorRect.new()
-	_load_shade.color = Color(0.02,0.03,0.04,0.75)
-	_load_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_load_shade)
-	move_child(_load_shade,load_panel.get_index())
-	_load_shade.hide()
-	STYLE.apply(load_panel)
-	var loading := get_node("/root/GameLoading")
-	loading.failed.connect(_on_loading_failed)
-	# Harbor is both the new-game scene and the destination of current saves.
-	# Start its resource I/O after the menu's first setup cycle so Continue can
-	# reuse the in-flight result without touching or staging the player's save.
-	loading.call_deferred("prefetch", MAIN_GAME_SCENE)
-
-	# Conexões dos botões principais
-	btn_new_game.pressed.connect(_on_btn_new_game_pressed)
-	btn_load_game.pressed.connect(_on_btn_load_game_pressed)
-	btn_settings.pressed.connect(_on_btn_settings_pressed)
-	btn_quit.pressed.connect(_on_btn_quit_pressed)
-
-	# Áudio de interface e música de fundo
-	MenuAudio.hook_buttons(self)
-	_start_bg_music()
-
-	# Foco inicial para teclado / gamepad
-	(btn_continue if not _latest_slot.is_empty() else btn_new_game).grab_focus()
-
-	var sm = get_node_or_null("/root/SettingsManager")
-	if sm and not sm.language_changed.is_connected(_on_language_changed):
-		sm.language_changed.connect(_on_language_changed)
-
-func _apply_static_text() -> void:
-	sub_title.text = tr("MENU_SUBTITLE")
-	btn_new_game.text = tr("MENU_NEW_GAME")
-	btn_load_game.text = tr("MENU_LOAD_GAME")
-	btn_settings.text = tr("MENU_SETTINGS")
-	btn_quit.text = tr("MENU_QUIT")
-	load_panel_title.text = tr("MENU_LOAD_TITLE")
-	btn_close_load.text = tr("COMMON_CLOSE")
-	if btn_continue != null: btn_continue.text = _text("CONTINUAR", "CONTINUE")
-
-func _on_language_changed(_locale: String) -> void:
-	_apply_static_text()
-	if load_panel.visible:
-		_refresh_load_panel()
-
-func _start_bg_music() -> void:
-	if not _music_player or not is_instance_valid(_music_player):
-		_music_player = AudioStreamPlayer.new()
-		_music_player.name = "MenuMusicPlayer"
-		_music_player.bus = MenuAudio.get_music_bus_name()
-		_music_player.stream = MenuAudio.get_music_stream()
-		_music_player.volume_db = -10.0
-		_music_player.process_mode = Node.PROCESS_MODE_ALWAYS
-		add_child(_music_player)
-	if not _music_player.playing:
-		_music_player.play()
-
-func _stop_bg_music() -> void:
-	if _music_player and is_instance_valid(_music_player) and _music_player.playing:
-		_music_player.stop()
-
-func _on_btn_new_game_pressed() -> void:
-	if _starting_game: return
-	_starting_game = true
-	MenuAudio.play_start(self)
-	var pres = get_node_or_null("SunsetPresentation")
-	if pres and pres.has_method("play_start_transition") and DisplayServer.get_name() != "headless" and not get_node("/root/SettingsManager").reduce_motion:
-		await pres.play_start_transition()
-	get_node("/root/GameLoading").begin(MAIN_GAME_SCENE, true)
-
-func _on_btn_load_game_pressed() -> void:
-	if _starting_game: return
-	_refresh_load_panel()
-	load_panel.visible = true
-	_load_shade.show()
-	_set_main_buttons_disabled(true)
-	STYLE.trap_focus.call_deferred(load_panel)
-
-func _refresh_load_panel() -> void:
-	for child in slot_list_container.get_children():
-		child.queue_free()
-	
-	_selected_slot_id = ""
-	label_load_status.text = tr("MENU_LOAD_SELECT_SLOT")
-	label_load_status.add_theme_color_override("font_color", Color("#d2dae2"))
-
-	var sm = get_node_or_null("/root/SaveManager")
-	if not sm:
-		label_load_status.text = tr("MENU_ERROR_NO_SAVEMANAGER")
-		return
-	
-	var slots: Array[Dictionary] = sm.list_slots()
-	var any_valid := false
-	
-	for info in slots:
-		var slot_id: String = info.get("slot_id", "")
-		var exists: bool = info.get("exists", false)
-		var valid: bool = info.get("valid", false)
-		var err_text: String = info.get("error", "")
-		var date_str: String = info.get("date_string", "")
-		var summary: Dictionary = info.get("summary", {})
-		
-		var panel_btn := Button.new()
-		panel_btn.set_meta("save_slot",slot_id)
-		panel_btn.custom_minimum_size = Vector2(0, 52)
-		panel_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		
-		var text_content := ""
-		if not exists:
-			text_content = tr("MENU_SLOT_EMPTY") % SAVE_TEXT.slot_name(slot_id)
-			panel_btn.disabled = true
-		elif not valid:
-			text_content = tr("MENU_SLOT_INCOMPATIBLE") % [SAVE_TEXT.slot_name(slot_id), err_text]
-			panel_btn.disabled = true
-			panel_btn.add_theme_color_override("font_disabled_color", Color("#e74c3c"))
-		else:
-			any_valid = true
-			var money: int = int(summary.get("money", 0))
-			var stage: String = SAVE_TEXT.stage_name(String(summary.get("current_stage", "")),get_node("/root/CampaignState"))
-			var stars: int = int(summary.get("current_stars", 0))
-			var stars_str := ""
-			for s in range(stars): stars_str += "★"
-			
-			text_content = "%s · %s · $%d\n%s  %s" % [
-				SAVE_TEXT.slot_name(slot_id), date_str, money, stage, stars_str
-			]
-			panel_btn.add_theme_color_override("font_color", Color("#f1c40f"))
-			panel_btn.pressed.connect(func(): _select_and_load_slot(slot_id))
-		
-		panel_btn.text = text_content
-		STYLE.apply(panel_btn)
-		MenuAudio.hook_button(panel_btn, self)
-		slot_list_container.add_child(panel_btn)
-	
-	if not any_valid:
-		label_load_status.text = tr("MENU_NO_VALID_SAVES")
-
-func _select_and_load_slot(slot_id: String) -> void:
-	if _starting_game: return
-	var sm = get_node_or_null("/root/SaveManager")
-	if not sm:
-		label_load_status.text = tr("MENU_ERROR_NO_SAVEMANAGER")
-		return
-
-	var res: Dictionary = sm.load_game(slot_id)
-	if res.get("success", false):
-		_starting_game = true
-		MenuAudio.play_start(self)
-		_stop_bg_music()
-		label_load_status.text = tr("MENU_LOADING") % slot_id
-		var pres = get_node_or_null("SunsetPresentation")
-		if pres and pres.has_method("play_start_transition") and DisplayServer.get_name() != "headless" and not get_node("/root/SettingsManager").reduce_motion:
-			await pres.play_start_transition()
-		get_node("/root/GameLoading").begin(SCENE_ROUTE.for_save(res.get("data", {})))
+	shade = ColorRect.new()
+	shade.color = Color(0.02, 0.03, 0.04, 0.75)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(shade)
+	move_child(shade, %LoadPanel.get_index())
+	shade.hide()
+	settings = preload("res://ui/SettingsMenu.tscn").instantiate()
+	add_child(settings)
+	settings.hide()
+	settings.closed.connect(func():
+		_main_enabled(true)
+		btn_settings.grab_focus())
+	STYLE.apply(%LoadPanel)
+	AUDIO.hook_buttons(self)
+	var music := AudioStreamPlayer.new()
+	music.bus = AUDIO.get_music_bus_name()
+	music.stream = AUDIO.get_music_stream()
+	music.volume_db = -10
+	add_child(music)
+	if music.stream != null: music.play()
+	STYLE.trap_focus(self, false)
+	if direct_start_requested:
+		starting = true
+		_main_enabled(false)
+		shade.show()
+		sub_title.text = "ABRINDO O JOGO..."
+		_start_direct.call_deferred()
 	else:
-		label_load_status.text = tr("MENU_LOAD_FAILED") % res.get("error", tr("COMMON_UNKNOWN_ERROR"))
-		label_load_status.add_theme_color_override("font_color", Color("#e74c3c"))
+		(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
-func _on_close_load_panel_pressed() -> void:
-	load_panel.visible = false
-	_load_shade.hide()
-	_set_main_buttons_disabled(false)
-	btn_load_game.grab_focus()
+func _main_enabled(enabled: bool) -> void:
+	for button in [btn_continue, btn_new_game, btn_load_game, btn_import, btn_settings, btn_quit]: button.disabled = not enabled
 
-func _on_btn_settings_pressed() -> void:
-	if not _settings_instance or not is_instance_valid(_settings_instance):
-		_settings_instance = SETTINGS_SCENE.instantiate()
-		_settings_instance.closed.connect(_on_settings_closed)
-		add_child(_settings_instance)
-	_settings_instance.visible = true
-	_set_main_buttons_disabled(true)
+func _show_slots(new_game: bool) -> void:
+	if starting: return
+	selecting_new = new_game
+	selecting_import = false
+	_main_enabled(false)
+	for child in %SlotListContainer.get_children():
+		%SlotListContainer.remove_child(child)
+		child.queue_free()
+	%Title.text = "NOVO JOGO" if new_game else "CARREGAR JOGO"
+	%LabelLoadStatus.text = "Escolha um slot vazio. Os jogos existentes serão preservados." if new_game else "Escolha o progresso para continuar."
+	var enabled_options := 0
+	for row in get_node("/root/V2Launch").list_slots():
+		if new_game and row.id == "progress": continue
+		if not new_game and not row.exists: continue
+		var button := Button.new()
+		button.text = row.label
+		button.custom_minimum_size.y = 58
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.disabled = row.exists if new_game else not row.valid
+		if not button.disabled: enabled_options += 1
+		button.pressed.connect(func(): _start(str(row.id), new_game))
+		%SlotListContainer.add_child(button)
+		AUDIO.hook_button(button, self)
+	if enabled_options == 0:
+		%LabelLoadStatus.text = "Não há slot vazio disponível. Feche esta tela para preservar os jogos existentes." if new_game else "Não há progresso válido disponível para carregar."
+	shade.show()
+	%LoadPanel.show()
+	STYLE.apply(%LoadPanel)
+	STYLE.trap_focus(%LoadPanel)
 
-func _on_settings_closed() -> void:
-	_set_main_buttons_disabled(false)
-	btn_settings.grab_focus()
+func _close_slots() -> void:
+	if starting: return
+	%LoadPanel.hide()
+	shade.hide()
+	_main_enabled(true)
+	STYLE.trap_focus(self, false)
+	(btn_import if selecting_import else (btn_new_game if selecting_new else btn_load_game)).grab_focus()
 
-func _on_btn_quit_pressed() -> void:
-	btn_quit.disabled = true
-	await get_tree().create_timer(0.18).timeout
-	get_tree().quit()
+func _choose_v1_save() -> void:
+	if starting: return
+	_main_enabled(false)
+	import_dialog.popup_centered_ratio(.72)
 
-func _setup_continue() -> void:
-	var latest := 0
-	for slot in get_node("/root/SaveManager").list_slots():
-		if slot.valid and int(slot.timestamp) >= latest:
-			latest = int(slot.timestamp)
-			_latest_slot = slot.slot_id
-			latest_save = slot
-	btn_continue = Button.new()
-	btn_continue.name = "BtnContinue"
-	btn_continue.visible = not _latest_slot.is_empty()
-	add_child(btn_continue)
-	btn_continue.pressed.connect(func(): _select_and_load_slot(_latest_slot))
-	MenuAudio.hook_button(btn_continue,self)
+func _inspect_v1_save(path: String) -> void:
+	pending_import = V1_IMPORT.inspect(path)
+	selecting_import = true
+	selecting_new = false
+	for child in %SlotListContainer.get_children():
+		%SlotListContainer.remove_child(child)
+		child.queue_free()
+	shade.show()
+	%LoadPanel.show()
+	%Title.text = "IMPORTAR SAVE DA V1"
+	if int(pending_import.get("read_error",OK)) != OK:
+		%LabelLoadStatus.text = "O arquivo não pôde ser lido ou não contém um save V1 válido. Nenhum arquivo foi alterado."
+		STYLE.trap_focus(%LoadPanel)
+		return
+	if pending_import.get("ready_for_publication",false) != true:
+		%LabelLoadStatus.text = "Importação bloqueada com segurança: %d incompatibilidade(s), %d decisão(ões) e %d campo(s) sem conversão. O original foi preservado." % [pending_import.incompatibilities.size(),pending_import.decisions_required.size(),pending_import.unconverted_fields.size()]
+		STYLE.trap_focus(%LoadPanel)
+		return
+	%LabelLoadStatus.text = "Conversão validada. Escolha um slot vazio para criar uma cópia V2; o save V1 continuará intacto."
+	for row in get_node("/root/V2Launch").list_slots():
+		if row.id == "progress" or row.exists: continue
+		var button := Button.new()
+		button.text = "IMPORTAR PARA " + row.label.to_upper()
+		button.custom_minimum_size.y = 58
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.pressed.connect(func(): _publish_v1_import(str(row.id)))
+		%SlotListContainer.add_child(button)
+		AUDIO.hook_button(button,self)
+	if %SlotListContainer.get_child_count()==0:
+		%LabelLoadStatus.text = "Não há slot vazio. Nenhum save existente será sobrescrito."
+	STYLE.apply(%LoadPanel)
+	STYLE.trap_focus(%LoadPanel)
 
-func _set_main_buttons_disabled(value: bool) -> void:
-	for button in [btn_continue,btn_new_game,btn_load_game,btn_settings,btn_quit]:
-		button.disabled = value
+func _publish_v1_import(slot_id: String) -> void:
+	var error := V1_IMPORT.publish(pending_import,slot_id,get_node("/root/V2Launch"))
+	for child in %SlotListContainer.get_children(): child.queue_free()
+	if error == OK:
+		latest_save = get_node("/root/V2Launch").latest_slot()
+		btn_continue.visible = not latest_save.is_empty()
+		%Title.text = "IMPORTAÇÃO CONCLUÍDA"
+		%LabelLoadStatus.text = "A cópia V2 foi criada no slot escolhido. O arquivo V1 original não foi modificado."
+		pending_import = {}
+	else:
+		%Title.text = "IMPORTAÇÃO NÃO REALIZADA"
+		%LabelLoadStatus.text = "O slot deixou de estar vazio ou a publicação falhou (%d). Nenhum save existente foi sobrescrito." % error
+	STYLE.trap_focus(%LoadPanel)
+
+func _open_settings() -> void:
+	_main_enabled(false)
+	settings.show()
+	settings.open()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if load_panel.visible and event.is_action_pressed("ui_cancel"):
-		_on_close_load_panel_pressed()
-		get_viewport().set_input_as_handled()
+	if starting or not event.is_action_pressed("ui_cancel"): return
+	if settings != null and settings.visible: settings.close()
+	elif %LoadPanel.visible: _close_slots()
+	else: return
+	get_viewport().set_input_as_handled()
 
-func _on_loading_failed(_message: String) -> void:
-	_starting_game = false
-	_set_main_buttons_disabled(load_panel.visible)
-	if load_panel.visible: STYLE.trap_focus(load_panel)
-	_start_bg_music()
+func _start_direct() -> void:
+	var error := get_tree().change_scene_to_file("res://Main.tscn")
+	if error == OK: return
+	starting = false
+	shade.hide()
+	_main_enabled(true)
+	sub_title.text = "NÃO FOI POSSÍVEL ABRIR O JOGO (%d)" % error
+	STYLE.trap_focus(self,false)
+	(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
-func _text(pt: String,en: String) -> String:
-	return en if TranslationServer.get_locale().begins_with("en") else pt
+func _start(id: String, new_game: bool) -> void:
+	if starting: return
+	var error: Error = get_node("/root/V2Launch").prepare(id, new_game)
+	if error != OK:
+		_show_slots(new_game)
+		%LabelLoadStatus.text = "Este slot mudou ou não pode ser aberto. Escolha outro; nenhum save foi alterado."
+		return
+	starting = true
+	_main_enabled(false)
+	%LoadPanel.hide()
+	shade.show()
+	AUDIO.play_start(self)
+	error = get_tree().change_scene_to_file("res://Main.tscn")
+	if error != OK:
+		starting = false
+		_show_slots(new_game)
+		%LabelLoadStatus.text = "Não foi possível abrir o jogo (%d)." % error

@@ -387,18 +387,4 @@ theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
 theme_override_font_sizes/font_size = 14
 text = "SALVAR E VOLTAR"
 
-[connection signal="pressed" from="MainPanel/Margin/VBox/TabsBar/TabAudioBtn" to="." method="_on_tab_audio_btn_pressed"]
-[connection signal="pressed" from="MainPanel/Margin/VBox/TabsBar/TabVideoBtn" to="." method="_on_tab_video_btn_pressed"]
-[connection signal="pressed" from="MainPanel/Margin/VBox/TabsBar/TabControlsBtn" to="." method="_on_tab_controls_btn_pressed"]
-[connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MasterRow/SliderMaster" to="." method="_on_slider_master_value_changed"]
-[connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/MusicRow/SliderMusic" to="." method="_on_slider_music_value_changed"]
-[connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/SFXRow/SliderSFX" to="." method="_on_slider_sfx_value_changed"]
-[connection signal="value_changed" from="MainPanel/Margin/VBox/ContentContainer/PanelAudio/AmbientRow/SliderAmbient" to="." method="_on_slider_ambient_value_changed"]
-[connection signal="item_selected" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/LanguageRow/OptLanguage" to="." method="_on_opt_language_item_selected"]
-[connection signal="item_selected" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ModeRow/OptWindowMode" to="." method="_on_opt_window_mode_item_selected"]
-[connection signal="item_selected" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/ResRow/OptResolution" to="." method="_on_opt_resolution_item_selected"]
-[connection signal="toggled" from="MainPanel/Margin/VBox/ContentContainer/PanelVideo/VsyncRow/CheckVSync" to="." method="_on_check_vsync_toggled"]
-[connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnDefaults" to="." method="_on_btn_defaults_pressed"]
-[connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnBack" to="." method="_on_btn_back_pressed"]
-[connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnSave" to="." method="_on_btn_save_pressed"]
-[connection signal="pressed" from="MainPanel/Margin/VBox/BottomActions/BtnApply" to="." method="_on_btn_apply_pressed"]
+

@@ -2,7 +2,7 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://8meegktktcxj"
+uid="uid://plchxxxyghyp"
 path="res://.godot/imported/bumper_0.wav-157a8e407d65c6adb39094196b64597f.sample"
 
 [deps]
@@ -21,4 +21,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=0
+compress/mode=2

@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="64" viewBox="0 0 64 16">
-  <defs>
-    <linearGradient id="fade"><stop stop-color="white" stop-opacity="0"/><stop offset=".5" stop-color="white" stop-opacity=".16"/><stop offset="1" stop-color="white" stop-opacity=".7"/></linearGradient>
-    <linearGradient id="core"><stop stop-color="white" stop-opacity="0"/><stop offset=".65" stop-color="white" stop-opacity=".4"/><stop offset="1" stop-color="white" stop-opacity=".95"/></linearGradient>
-  </defs>
-  <path d="M0 8L53 1Q64 3 64 8Q64 13 53 15Z" fill="url(#fade)" opacity=".16"/>
-  <path d="M3 8L57 4Q64 5 64 8Q64 11 57 12Z" fill="url(#fade)" opacity=".35"/>
-  <path d="M8 8L62 6.5V9.5Z" fill="url(#core)"/>
-</svg>

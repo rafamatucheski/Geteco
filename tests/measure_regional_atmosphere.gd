@@ -1,117 +1,87 @@
-extends "res://tests/measure_game_frame_stability.gd"
-## Production world, fixed clock and reproducible camera route. Not a driving test.
-var _route_actor: Node2D
-var _route_camera: Camera2D
-var _route_curve: Curve2D
-var _route_origin := Vector2.ZERO
-var _route_start := 0.0
-var _route_end := 0.0
-var _route_elapsed := 0.0
-var _moving := false
-
-func _process(delta: float) -> bool:
-	if _moving:
-		_route_elapsed += delta
-		var distance := lerpf(_route_start, _route_end, clampf(_route_elapsed / 30.0, 0, 1))
-		_route_actor.global_position = _route_origin + _route_curve.sample_baked(distance, true)
-		_route_actor.reset_physics_interpolation()
-		_route_camera.global_position = _route_actor.global_position
-	return false
-
-func _run() -> void:
-	if DisplayServer.get_name() == "headless":
-		quit(1)
-		return
-	var output := "D:/geteco/artifacts/regional-atmosphere/after"
+extends "res://tests/measure.gd"
+## Same production scene and seeded conditions before/after. Never writes saves.
+func run() -> void:
+	if DisplayServer.get_name() == "headless": quit(2); return
+	seed(22092026)
+	var variant := "before"
+	var only := ""
+	var folder := ""
 	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("out_dir="): output = arg.trim_prefix("out_dir=")
-	DirAccess.make_dir_recursive_absolute(output.path_join("saves"))
-	var saves := root.get_node("SaveManager")
-	saves.set("_save_dir", output.path_join("saves") + "/")
-	saves.set("_save_directory_ready", false)
-	saves.clear_pending_save()
-	seed(14092026)
-	root.size = Vector2i(1280, 720)
-	root.content_scale_size = Vector2i(1280, 720)
-	if not OS.get_cmdline_user_args().has("--normal-cap"):
-		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
-		Engine.max_fps = 0
-	var campaign := root.get_node("CampaignState")
-	campaign.reset_campaign()
-	for flag in ["harbor_arrival_seen", "harbor_arrival_call_complete", "harbor_maciota_met", "harbor_delivery_complete"]:
-		campaign.set_campaign_flag(StringName(flag), true)
-	var world = load("res://world/harbor/HarborGame.tscn").instantiate()
+		if arg.begins_with("--variant="): variant = arg.trim_prefix("--variant=").validate_filename()
+		if arg.begins_with("--only="): only = arg.trim_prefix("--only=")
+		if arg.begins_with("--out-dir="): folder = arg.trim_prefix("--out-dir=")
+	if folder.is_empty(): folder = ProjectSettings.globalize_path("res://evidence/atmosphere-"+variant)
+	if DirAccess.make_dir_recursive_absolute(folder) != OK:
+		push_error("Cannot create atmosphere evidence directory: "+folder)
+		quit(2)
+		return
+	world = load("res://Main.tscn").instantiate()
+	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	current_scene = world
-	var deadline := Time.get_ticks_msec() + 90000
-	while (not world.gameplay_ready or not world.world_build_ready) and Time.get_ticks_msec() < deadline:
+	for i in 1800:
 		await process_frame
-	if not world.gameplay_ready or not world.world_build_ready or paused:
-		push_error("Atmosphere benchmark: gameplay did not become ready")
-		quit(1)
-		return
-	_scenario_world = world
-	_scenario_hour = 0.50
-	world.weather.weather_timer = 1000000.0
-	world.weather.set_weather(0)
-	_hold_scenario_clock()
-	_route_actor = world.get_node("Player")
-	_route_actor.set_physics_process(false)
-	_route_actor.set_process(false)
-	_route_camera = Camera2D.new()
-	_route_camera.zoom = Vector2.ONE * 1.8
-	_route_camera.set_meta("mountain_fixed_framing", true)
-	world.add_child(_route_camera)
-	_route_camera.make_current()
-	_place(Vector2(3100, 1750))
-	await _sample(output, "harbor-warmup", 10.0, _route_actor)
-	await _sample(output, "harbor-day", 30.0, _route_actor)
-	await _capture(output, "harbor-day")
-	var stream: Node = world.get_node("ContinuousWorld")
-	stream.ensure_mountain()
-	deadline = Time.get_ticks_msec() + 120000
-	while not stream.ready_for_crossing and Time.get_ticks_msec() < deadline: await process_frame
-	if not stream.ready_for_crossing:
-		push_error("Atmosphere benchmark: mountain did not become ready")
-		quit(1)
-		return
-	stream.mountain.storm_manager.dynamic_weather = false
-	stream.mountain.storm_manager.weather_clock = 0
-	stream.mountain.storm_manager.advance_weather(0)
-	_route_curve = Curve2D.new()
-	_route_curve.add_point(Vector2(6800, -4560))
-	_route_curve.add_point(Vector2(9100, -4560))
-	_route_start = 0
-	_route_end = _route_curve.get_baked_length()
-	_place(_route_curve.sample_baked(0))
-	await _sample(output, "bridge-warmup", 10.0, _route_actor)
-	_route_elapsed = 0
-	_moving = true
-	await _sample(output, "bridge-first-crossing", 30.0, _route_actor)
-	_moving = false
-	await _capture(output, "mountain-day")
-	_place(_route_curve.sample_baked(0))
-	await _sample(output, "bridge-return-warmup", 5.0, _route_actor)
-	_route_elapsed = 0
-	_moving = true
-	await _sample(output, "bridge-repeat", 30.0, _route_actor)
-	_moving = false
-	_scenario_hour = 0.90
-	_hold_scenario_clock()
-	stream.mountain.storm_manager.weather_clock = 120
-	stream.mountain.storm_manager.advance_weather(0)
-	_place(stream.mountain.to_global(Vector2(6650, 150)))
-	await _sample(output, "snow-night-warmup", 10.0, _route_actor)
-	await _sample(output, "snow-night", 30.0, _route_actor)
-	await _capture(output, "snow-night")
-	quit(0)
-
-func _place(point: Vector2) -> void:
-	_route_actor.global_position = point
-	_route_actor.reset_physics_interpolation()
-	_route_camera.global_position = point
-	_route_camera.reset_smoothing()
-
-func _capture(output: String, label: String) -> void:
-	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png(output.path_join(label + ".png"))
+		if world.session != null and world.session.weather != null: break
+	if world.session == null or world.session.weather == null: quit(1); return
+	world.player.controlled_automatically = true
+	world.camera.set_process_unhandled_input(false)
+	world.session.set_process_input(false)
+	world.diagnostic_label.hide()
+	world.session.cold.set_process(false)
+	var cases := [
+		["port-day",Vector3(243.75,.08,237.5),.36,0,0.0],
+		["port-sunset",Vector3(243.75,.08,237.5),.75,0,0.0],
+		["street-night",Vector3(77.875,.08,96.2375),.84,0,0.0],
+		["street-rain",Vector3(77.875,.08,96.2375),.36,1,0.0],
+		["cemetery",Vector3(-40.625,.08,108.75),.36,0,0.0],
+		["cemetery-night",Vector3(-40.625,.08,108.75),.90,0,0.0],
+		["bridge",Vector3(452,.08,-285),.36,0,0.0],
+		["forest",Vector3(640,.08,-267),.36,0,0.0],
+		["resort-snow",Vector3(718,.08,-479),.36,0,120.0],
+	]
+	var report := {"gpu":RenderingServer.get_video_adapter_name(),"engine":Engine.get_version_info().string,"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"seed":22092026,"cases":[]}
+	for entry in cases:
+		if not only.is_empty() and entry[0] not in only.split(","): continue
+		world.player.teleport(entry[1])
+		world.production._update_physical_residency(entry[1])
+		world.production._update_logical_region(entry[1])
+		world.camera.target_size = 32
+		world.camera.heading = 0
+		world.camera.initialized = false
+		world.session.weather.time_of_day = entry[2]
+		world.session.weather.weather_state = entry[3]
+		world.session.weather.weather_timer = 10000
+		world.session.cold.model.weather_clock = entry[4]
+		world.session.weather._update()
+		var warm: Array[float] = []
+		var measured: Array[float] = []
+		var last := Time.get_ticks_usec()
+		var begin := last
+		while Time.get_ticks_usec()-begin < 8000000:
+			await process_frame
+			var now := Time.get_ticks_usec()
+			warm.append((now-last)/1000.0)
+			last = now
+		begin = last
+		while Time.get_ticks_usec()-begin < 30000000:
+			await process_frame
+			var now := Time.get_ticks_usec()
+			measured.append((now-last)/1000.0)
+			last = now
+		await RenderingServer.frame_post_draw
+		if root.get_texture().get_image().save_png(folder+"/"+entry[0]+".png") != OK:
+			push_error("Cannot save atmosphere capture: "+folder)
+			quit(2)
+			return
+		var result := {"id":entry[0],"position":str(world.player.position),"population":world.people.size(),"summary":stats(measured),"warmup":stats(warm),"frames_ms":measured,"warmup_ms":warm}
+		report.cases.append(result)
+		print("ATMOSPHERE ",entry[0]," ",JSON.stringify(result.summary))
+		var file := FileAccess.open(folder+"/report.json",FileAccess.WRITE)
+		if file == null:
+			push_error("Cannot save atmosphere report: "+folder)
+			quit(2)
+			return
+		file.store_string(JSON.stringify(report,"\t"))
+		file.close()
+	world.queue_free()
+	await process_frame
+	quit()

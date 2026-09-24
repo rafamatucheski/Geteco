@@ -2,7 +2,7 @@
 
 importer="oggvorbisstr"
 type="AudioStreamOggVorbis"
-uid="uid://7sticwmhutu7"
+uid="uid://bjwkstribx5rx"
 path="res://.godot/imported/porto_reggae.ogg-95f170ca4957717df526ca22f8c26052.oggvorbisstr"
 
 [deps]
@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/porto_reggae.ogg-95f170ca4957717df526ca22f8c2
 
 [params]
 
-loop=true
+loop=false
 loop_offset=0
 bpm=0
 beat_count=0

@@ -94,3 +94,5 @@ static func _collect_focus(node: Node, controls: Array[Control]) -> void:
 	if node is Control and node.is_visible_in_tree() and node.focus_mode == Control.FOCUS_ALL:
 		if not (node is BaseButton and node.disabled): controls.append(node)
 	for child in node.get_children(): _collect_focus(child, controls)
+
+

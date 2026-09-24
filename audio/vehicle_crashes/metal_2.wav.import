@@ -2,7 +2,7 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://uhmdsy1rrnd6"
+uid="uid://b7llub7se6w"
 path="res://.godot/imported/metal_2.wav-0306a0cb10bd222dc0a1dbd02d1c7e96.sample"
 
 [deps]
@@ -21,4 +21,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=0
+compress/mode=2

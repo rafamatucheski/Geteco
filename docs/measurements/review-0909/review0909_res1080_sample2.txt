@@ -1,2 +1,0 @@
-REVIEW0909_PERF res=1080 sample=2 window_size=(3440, 1440) content_scale_size=(1920, 1080) content_scale_mode=2 renderer=NVIDIA GeForce RTX 4060 Laptop GPU api=1.4.341 load_ms=25978
-REVIEW0909_SAMPLE res=1080 sample=2 frames=1925 elapsed_s=60.1 avg_fps=32.0 median_fps=44.4 p95_fps=10.9 p99_fps=7.2 avg_ms=31.23 median_ms=22.55 p95_ms=92.03 p99_ms=139.70 worst_ms=193.24 best_ms=20.75 draw_calls=16418 physics_2d_active=8 subviewports=249.0 vehicles=58 pedestrians=66 emergency_active=4 t_process_ms=67.24 t_physics_ms=12.66

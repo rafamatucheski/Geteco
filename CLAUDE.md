@@ -1,21 +1,28 @@
 # Convenções para agentes de IA neste repositório
 
-Este projeto é trabalhado por **mais de um agente ao mesmo tempo** (Claude e Antigravity,
-em sessões separadas) além do desenvolvedor no editor do Godot. As regras abaixo existem
-para que trabalhos paralelos não se atropelem.
+Este projeto é trabalhado por **mais de um agente ao mesmo tempo** (Claude, Codex,
+Antigravity) além do desenvolvedor no editor do Godot. As regras abaixo existem para que
+trabalhos paralelos não se atropelem. Leia também [AGENTS.md](AGENTS.md) (regras de jogo,
+interiores, desempenho e Git) e [README.md](README.md).
 
-Leia primeiro o [README.md](README.md) para a estrutura de pastas, e
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para o mapa técnico.
+## Estrutura
 
-## Territórios
+A raiz do repositório **é o jogo** (a antiga V2, promovida em 2026-09-24). O projeto Godot
+é `project.godot` na raiz; todo caminho `res://` é relativo a ela.
 
-- **`prototypes/gameplay_repair_art_0909/`** é território do Antigravity. Não editar.
-- **`OLD/`** é arquivo morto: tem `.gdignore`, o Godot ignora a pasta inteira. Nada ali é
-  carregado pelo jogo. Só entra arquivo verificado como sem referência.
-- **`legacy/`** é a geração anterior do jogo e **não tem `.gdignore`**:
-  `legacy/Main.tscn` ainda é carregado em runtime para saves antigos
-  (`HarborSceneRoute.for_save()`). Não é código morto. Ao mexer ali, rode
-  `tests/test_legacy_save_route.gd`, que instancia a cena legada de verdade.
+- `runtime/`, `scripts/`, `systems/`, `data/`, `migration/`: sessão, mundo de produção,
+  save, progressão, catálogos e importação do save da V1.
+- `world/`: regiões Harbor/Mountain em streaming (`world/regions/NativeRegion.gd`),
+  cidade, lugares e a conexão da ponte.
+- `gameplay/`, `activities/`: combate, polícia, trânsito, rua, atividades.
+- `audio/`, `ui/`, `cutscenes/`, `assets/`: som, interface, abertura e arte.
+- `tests/`, `tools/`: testes e medições; ferramentas de exportação.
+- `docs/`: documentação; `evidence/`: relatórios de validação (só `.md`/`.json`/`.patch`
+  são versionados — capturas e vídeos ficam no disco, fora do Git).
+
+**A V1 não está mais em `main`.** O estado final dela está no ramo `v1-legado` e na tag
+`v1-final`. Ferramentas que ainda leem fontes da V1 (por exemplo
+`tests/urban_detail/export_v1_building_atlas.gd`) precisam daquele ramo.
 
 Antes de mover ou apagar qualquer coisa, confira se outra sessão está com o repositório
 aberto — arquivos novos com timestamp recente que você não criou são sinal disso.
@@ -32,95 +39,72 @@ GODOT="D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win
 "$GODOT" --path . --import                          # reimporta e reconstrói caches
 ```
 
+Também há `Jogar.cmd` (jogo) e `Editar.cmd` (editor).
+
 **Nunca use `--headless` para medir performance.** Em headless o Godot usa o driver de
-renderização dummy: FPS, draw calls e custo de GPU perdem o significado. As medições em
-`tests/measure_*` e `tests/profile_*` dependem de renderização real com Vulkan.
+renderização dummy: FPS, draw calls e custo de GPU perdem o significado.
+
+**Não inicie Godot enquanto houver outra instância, importação ou medição ativa** de outra
+sessão: medições concorrentes se contaminam (CPU, GPU e cache de shader compartilhados).
 
 ## Ao mover ou renomear arquivos
 
-O projeto referencia recursos por **string de caminho**, não por UID: são ~653
-`preload("res://...")` e ~903 `load("res://...")`, e dos `path=` em `.tscn` quase nenhum
-tem `uid=` como companheiro. Mover arquivo quebra referência de verdade.
+O projeto referencia recursos por **string de caminho** (`preload("res://...")`,
+`load("res://...")`, `path=` em `.tscn`). Mover arquivo quebra referência de verdade.
 
-Procedimento obrigatório:
-
-1. `git mv` (preserva histórico) e leve junto os companheiros `.uid` (scripts) e
-   `.import` (assets).
+1. `git mv` (preserva histórico) levando junto os companheiros `.uid` e `.import`.
 2. Substituir o caminho antigo pelo novo em todo `.gd`, `.tscn`, `.tres`, `.cfg` e
    `project.godot`.
+3. `"$GODOT" --path . --import` — o registro de `class_name` fica obsoleto depois de um
+   move e quebra a resolução de classes mesmo com todas as strings corretas.
+4. Carregar o jogo de verdade e rodar a verificação (abaixo).
 
-   Os passos 1 e 2 estão automatizados em `tools/move_folder_refactor.py` (tem
-   `--dry-run`); foi o que fez as movimentações de 2026-09-09.
-3. `python tools/check_references.py` — tem que voltar **0 quebras novas**.
-4. **`"$GODOT" --path . --import`** — o registro global de `class_name`
-   (`.godot/global_script_class_cache.cfg`) fica obsoleto depois de um move e quebra a
-   resolução de classes *mesmo com todas as strings corretas*. O verificador do passo 3
-   não pega isso; só o carregamento real pega.
-5. Carregar o jogo de verdade e rodar a suíte de verificação (abaixo).
+## Verificação
 
-## Suíte de verificação
-
-Depois de qualquer mudança estrutural:
+Depois de qualquer mudança estrutural, no mínimo:
 
 ```bash
-python tools/check_references.py
-"$GODOT" --path . --script res://tests/profile_load_time_0909.gd      # deve dar errors=0 / issues=0
-"$GODOT" --path . --script res://tests/test_menu_flow_integration.gd  # save/load + troca de cena
-"$GODOT" --path . --script res://tests/test_opening_cutscene_runtime.gd
-"$GODOT" --path . --script res://tests/test_pedestrian_life_routines.gd
-"$GODOT" --path . --script res://tests/test_pedestrian_render_lod.gd
+"$GODOT" --path . --script res://tests/test_regions.gd
+"$GODOT" --path . --script res://tests/test_bridge_approach_terrain.gd
+"$GODOT" --path . --script res://tests/test_native_driving.gd -- --no-save
+"$GODOT" --path . --script res://tests/cold/test_admission.gd
 ```
 
-`test_menu_flow_integration` é o mais valioso depois de mover arquivos: ele exercita
-save/load e troca de cena, que é onde caminho quebrado aparece.
+E abra o jogo (`Jogar.cmd`) para ver que ele carrega e anda.
 
 ## Git — cada agente commita o próprio trabalho
 
-Mais de um agente escreve neste repositório ao mesmo tempo. Trabalho não commitado no fim
-de uma sessão vira problema de quem chegar depois: em 2026-09-09 uma reestruturação teve
-que varrer para dentro do commit o sistema de reação de civis a tiroteio de outra sessão,
-porque ele já estava entrelaçado em `Bullet.gd` e `AnimatedPedestrian3D.gd` e separar
-exigiria staging parcial de hunks que não eram meus.
-
-Regras:
-
-1. **Commite antes de encerrar.** Não deixe seu trabalho pendente para o próximo agente
-   decidir o que fazer com ele.
+1. **Commite antes de encerrar.** Não deixe seu trabalho pendente para o próximo agente.
 2. **Stage explícito, nunca `git add -A` às cegas.** Adicione os arquivos que você mexeu.
    Se `git status` mostrar arquivo que você não criou e com timestamp recente, é outra
    sessão trabalhando — deixe fora do seu commit.
-3. **Rode a verificação antes** (seção acima). Commit que não carrega o jogo custa mais
-   caro do que commit atrasado.
-4. **Mensagem descritiva, em português, explicando o porquê.** Este repositório usa
-   mensagens longas: o que mudou, por que mudou, e o que foi verificado. Veja
-   `git log` para o padrão.
-5. **Ninguém dá push sem o usuário pedir.** O remoto `origin` existe mas está vazio — a
-   primeira publicação é decisão dele, não de agente.
+3. **Rode a verificação antes.** Commit que não carrega o jogo custa mais caro do que
+   commit atrasado.
+4. **Mensagem descritiva, em português, explicando o porquê**: o que mudou, por que mudou
+   e o que foi verificado. Veja `git log` para o padrão.
+5. **Ninguém dá push sem o usuário pedir.**
 6. **Nunca** `git reset --hard`, `push --force`, `checkout .` ou `clean -f` sem pedido
    explícito. Se precisar desfazer algo, prefira mover para o lado a destruir.
+7. Nunca versione `.secrets/`, exports `.pck`, caches de shader ou capturas/vídeos de
+   `evidence/` (o `.gitignore` já cobre).
 
 ## Saída de script
 
-Script que gera arquivo grava **dentro do projeto**, não em pasta absoluta fora dele:
-saída que não é versionada não é encontrada por quem clona o repositório. Ver
-`tests/profile_load_time_0909.gd` para o padrão (`res://` + `ProjectSettings.globalize_path`).
+Script que gera arquivo grava **dentro do projeto** (`res://` +
+`ProjectSettings.globalize_path`), não em pasta absoluta fora dele. Evidência de mídia vai
+para `evidence/` (fica no disco, fora do Git).
 
 ## Estilo
 
 - Comentários e mensagens de log em **português**; identificadores em **inglês**.
-- Testes são scripts `SceneTree` independentes, executados via `--script`. Não há
-  framework externo: cada arquivo imprime seu resultado e sai com código 0 ou 1.
-- Comentário explica **por quê**, não o quê. Vários comentários no código registram a
-  razão de uma escolha não óbvia (por exemplo, por que o coronel usa direção reta em vez
-  do roteador de faixas) — preserve esse tipo de contexto ao editar.
+- Testes são scripts `SceneTree` independentes, executados via `--script`: cada arquivo
+  imprime seu resultado e sai com código 0 ou 1.
+- Comentário explica **por quê**, não o quê. Preserve comentários que registram a razão
+  de uma escolha não óbvia (e a medição que a motivou).
 
 ## Honestidade de verificação
 
-Uma suíte verde **não** prova que o jogo está correto: ela prova que aqueles casos
-passaram. Vários defeitos reais desta base apareceram em partida de verdade com suítes
-aprovadas. Ao reportar resultado:
-
-- Diga o que foi medido e o que **não** foi.
-- Não apresente ausência de evidência como prova de ausência do problema.
-- Percentis de tempo de frame vão em **milissegundos**, não convertidos para FPS —
-  percentilar uma métrica invertida distorce a cauda.
+Uma suíte verde **não** prova que o jogo está correto: prova que aqueles casos passaram.
+Ao reportar resultado, diga o que foi medido e o que **não** foi; não apresente ausência de
+evidência como prova de ausência do problema; percentis de tempo de quadro vão em
+**milissegundos**.

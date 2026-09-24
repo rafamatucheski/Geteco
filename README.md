@@ -1,97 +1,96 @@
-# GETECO
+# Geteco V2
 
-Jogo de ação top-down em **Godot 4.7.2** (Forward+ / Vulkan), no espírito dos GTA 2D:
-uma cidade portuária viva com trânsito, pedestres, polícia com nível de procurado,
-serviços de emergência, lojas, missões e uma segunda região de montanha conectada por
-streaming contínuo.
+Migração estruturada para um mundo 3D nativo no Godot. Projeto independente, com o jogo anterior e o protótipo preservados. Primeiro trecho: bairro, carro, tráfego, garagem original do Maciota, conversas, tarefa curta e salvamento próprio. Plano e limites: [MIGRATION.md](docs/MIGRATION.md).
 
-Característica técnica central: **a física é 2D, mas a apresentação é 3D**. Personagens,
-veículos e vários props são modelos 3D renderizados dentro de `SubViewport`s e exibidos
-como sprites no mundo 2D. Isso explica muita coisa no código e no custo de carregamento
-(ver [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
+## Abrir
 
-## Como rodar
+- Dois cliques em **Jogar.cmd** para jogar.
+- **Editar.cmd** abre este projeto no editor Godot.
+- Também é possível importar o **project.godot desta pasta** no gerenciador do Godot e pressionar F5.
+- Em outra instalação, use `Open.ps1 -GodotPath 'caminho/do/Godot.exe'` ou configure `GODOT_EXE`.
 
-O jogo abre pelo menu, não direto no mundo. O entrypoint está declarado em
-`project.godot`:
+## Controles
 
-```
-run/main_scene="res://ui/MainMenu.tscn"
-```
-
-Abra o projeto no editor do Godot 4.7.2 e rode normalmente (F5), ou pela linha de comando:
-
-```bash
-"caminho/para/Godot_v4.7.2-stable_win64.exe" --path . 
-```
-
-O menu carrega `world/harbor/HarborGame.tscn`, que é o jogo de verdade.
-
-## Como rodar os testes
-
-Os testes são scripts `SceneTree` executados via `--script`. Não existe framework de
-teste externo: cada arquivo é um entrypoint independente que imprime seu resultado e sai
-com código 0 ou 1.
-
-```bash
-GODOT="caminho/para/Godot_v4.7.2-stable_win64_console.exe"
-"$GODOT" --path . --script res://tests/test_menu_flow_integration.gd
-```
-
-Use a versão `_console.exe` no Windows para capturar a saída no terminal.
-
-**Não use `--headless` para medir performance.** Em headless o Godot usa o driver de
-renderização dummy, então FPS, draw calls e custo de GPU deixam de ter significado. Os
-scripts de medição em `tests/` dependem de renderização real.
-
-Verificação de integridade de referências (rode antes e depois de mover arquivos):
-
-```bash
-python tools/check_references.py
-```
-
-## Estrutura de pastas
-
-### Vivo — o jogo que roda hoje
-
-| pasta | o que é |
+| Ação | Controle |
 |---|---|
-| `ui/` | Menus. `MainMenu.tscn` é o entrypoint do projeto |
-| `world/harbor/` | **O jogo principal.** `HarborGame.tscn` e tudo do distrito portuário: campanha, interiores, gangue das Cobras, eventos |
-| `world/mountain_pass/` | Segunda região, carregada por streaming quando o jogador se aproxima |
-| `world/shared/` | Infraestrutura compartilhada entre regiões: malha viária, pedestres, tráfego, combate, coletas, natureza, ferrovia e depósitos de emergência |
-| raiz (`*.gd`) | Sistemas globais: `Player`, `PlayerCar`, `WantedManager`, `EmergencyVehicle`, `PoliceOfficer`, `HUD`, `SaveManager` e os catálogos de armas/veículos/roupas |
-| `audio/`, `cutscenes/`, `data/` | Som, cutscene de abertura, dados de campanha |
-| `interiors/`, `missions/`, `scenes/`, `scripts/`, `assets/` | Peças menores usadas pelo jogo vivo |
+| Caminhar | WASD ou setas, em relação à câmera |
+| Correr | Shift |
+| Trocar arma (a pé) / sintonizar rádio (dirigindo) | Roda do mouse |
+| Girar a câmera exterior | Z / C |
+| Entrar, sair, conversar, coletar e avançar diálogo | E |
+| Salvar / carregar checkpoint | F5 / F9, fora do carro e diálogos |
+| Pausa, voltar ao início e sair | Esc |
+| Entrar / sair do carro dourado | F, próximo da porta / com o carro parado |
+| Acelerar / frear até engatar ré | W / S, dirigindo |
+| Virar o volante | A / D, dirigindo |
+| Frear | Espaço |
+| Repetir percurso experimental | R, somente iniciado com --sandbox |
+| Mostrar desempenho e população | F3 |
+| Diminuir / aumentar população | [ / ], com o painel F3 aberto |
 
-Dez scripts da raiz são **autoloads** (singletons globais) declarados em `project.godot` —
-a lista está em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Conteúdo
 
-### Legado — geração anterior, ainda carregável
+- Mundo 3D com uma câmera ortográfica principal, luz solar e sombras compartilhadas.
+- Dante original, com malha e animações importadas, controlado por CharacterBody3D.
+- Quatro quarteirões, cruzamento, ruas, calçadas, fachadas, árvores, bancos e postes.
+- Oito carros estacionados com a geometria preparada original do cupê e seus materiais.
+- Um cupê dourado dirigível, com aceleração, ré, freio, rodas animadas, luzes de freio e câmera antecipando o movimento.
+- Entrada pela proximidade da porta e saída com verificação do corpo inteiro. Se um lado estiver bloqueado, tenta o outro; se ambos estiverem bloqueados, permanece no carro.
+- Seis carros em duas rotas contínuas, freando diante de veículos, pedestres e sólidos.
+- Garagem acessível ao noroeste, com oficina e escritório originais, Maciota e mecânico protegidos, câmera fixa e sólidos nativos.
+- Tarefa inicial adaptada: falar com Maciota, conversar com o mecânico, pegar a peça ao lado da bancada e entregar. Autosave por etapa e transição.
+- Percurso de quatro paradas preservado no modo experimental `--sandbox`.
+- 24 moradores por padrão, com apresentação original do CivilianDriverModel e percursos físicos em volta dos quarteirões.
+- Colisões nos edifícios, bases, bancos, vasos, postes, carros, caixa e limites do mapa.
+- População ajustável até 96 para experimentação; não é promessa de desempenho universal.
 
-Tudo em `legacy/`: `Main.tscn`, os distritos antigos (`legacy/district/`) e o protótipo de
-origem (`legacy/city_demo/`).
+Somente a garagem é acessível; os outros edifícios são volumes de estudo. Apenas o carro dourado é dirigível. Condução arcade, sem suspensão, dano ou áudio de motor. Tráfego em rotas autoradas, ainda sem semáforos ou planejamento dinâmico. Campanha completa, combate, interface de inventário, clima e carregamento de regiões continuam no plano de migração. A tarefa curta não substitui a missão de chegada original. O bloqueio de armas é um contrato testado para os futuros sistemas de combate, ainda inexistentes nesta V2.
 
-**Não é código morto, e `legacy/` não tem `.gdignore`.**
-`HarborSceneRoute.for_save()` ainda carrega `legacy/Main.tscn` em runtime para saves
-antigos que não têm a flag `harbor_campaign_active`. Apagar ou tornar inacessível quebra
-save de jogador. `tests/test_legacy_save_route.gd` existe para garantir isso.
+## Isolamento
 
-### Apoio
+O arquivo `.gdignore` impede que o projeto pai importe esta pasta como parte do jogo atual. Projeto, cache e diretório de dados `GetecoV2` são próprios. O save mantém missão/inventário/localização por checkpoint, não posição exata nem estado do trânsito. Save inválido sem backup é preservado e bloqueia sobrescrita nessa sessão. Não usa autoloads nem saves V1. Não há referências de recursos para fora desta pasta.
 
-| pasta | o que é |
+Os modelos foram copiados como uma fotografia do estado existente em 21/09/2026. Alterar o original não altera automaticamente esta base, e vice-versa. O personagem e o cupê conservam os arquivos binários originais. O adaptador dos moradores conserva sua construção visual, compartilhando recursos geométricos e materiais.
+
+## Organização
+
+| Arquivo | Responsabilidade |
 |---|---|
-| `tests/` | Testes de regressão (`test_*.gd`), capturas de imagem (`capture_*.gd`) e auditorias pontuais (`audit_*`, `profile_*`, `diagnose_*`) |
-| `tools/` | Utilitários de manutenção do repositório |
-| `docs/` | Documentação estrutural; `docs/history/` guarda relatórios de sessão datados |
-| `prototypes/` | Trabalho de arte isolado, fora do mundo compartilhado |
-| `addons/` | `city_layout_editor` — plugin de editor habilitado |
-| `OLD/` | Arquivo morto. Tem `.gdignore`: o Godot ignora a pasta inteira |
+| Main.tscn / scripts/World.gd | Cena, população, luz e interface |
+| scripts/Street.gd | Geometria urbana estática agrupada e sólidos físicos |
+| scripts/Actor.gd | Movimento 3D, colisões e animação |
+| scripts/CameraRig.gd | Câmera ortográfica, seguimento interpolado, giro e enquadramento automático da V1 (sem zoom manual) |
+| scripts/Vehicle.gd / VehicleVisual.gd | Corpo 3D do veículo, condução, sensores, rodas e modelo compartilhado |
+| scripts/Driving.gd | Entrada, saída, troca de controles, câmera e interface |
+| scripts/Traffic.gd | Rotas e criação dos seis veículos de tráfego |
+| scripts/RouteActivity.gd | Percurso de paradas, marcador e indicação do destino |
+| assets/ | Cópias independentes dos modelos e adaptador visual |
+| tests/ | Validação funcional, profundidade e medição |
+| evidence/ | Capturas e resultados |
 
-## Convenções
+Não há SubViewport por pessoa ou carro, Sprite2D para apresentar modelos, ou física 2D. A geometria estática de mesma forma/material usa MultiMesh nesta pequena cena. Em uma cidade maior, o agrupamento deverá ser dividido por região para preservar o descarte fora da câmera.
 
-- Comentários e mensagens de log em português; identificadores em inglês.
-- Referências a recursos são **strings de caminho** (`preload("res://...")`), não UIDs.
-  Por isso mover arquivo exige atualizar as referências — use `tools/check_references.py`
-  para conferir.
-- Agentes de IA trabalhando neste repositório: leia [CLAUDE.md](CLAUDE.md).
+## Validação
+
+Na pasta deste projeto, usando o executável Godot 4.7.2:
+
+```powershell
+godot --headless --editor --import --quit
+godot --headless --script res://tests/test_progression.gd
+godot --headless --script res://tests/test_maciota_world.gd
+godot --headless --script res://tests/test_v2_session.gd -- --no-save
+godot --headless --fixed-fps 60 --script res://tests/validate_driving.gd -- --sandbox --no-save
+godot --script res://tests/capture_v2.gd -- --no-save
+./tests/Measure.ps1
+./tests/Measure.ps1 -Counts 96 -Prefix 'driving-' -Driving
+```
+
+`--fixed-fps` acelera apenas o roteiro funcional; seus números não medem desempenho. O teste renderizado fotografa o jogador na frente, atrás e ao lado da caixa, usando a imagem sem o ator e sem a caixa como controles.
+
+A medição abre a cena real deste protótipo, move Dante por uma rota com colisões e mantém os pedestres ativos. Cada população (0, 24, 96) recebe cinco segundos de aquecimento e pelo menos trinta segundos de amostra. Registra intervalos reais entre frames, p50/p95/p99, máximo, quadros lentos e processos externos. Por padrão, recusa outra execução do jogo. `-AllowConcurrent` permite apenas uma leitura preliminar identificada como concorrente.
+
+O objetivo inicial é 60 FPS na RTX 4060 Laptop, Mobile, 1280×720, MSAA 2×, VSync ligado. A matriz 0/24/96 avalia o acréscimo de população nesta cena, não a diferença entre motores ou entre o protótipo e o jogo completo. Consulte **SYSTEMS.md** para o comparativo antes/depois dos sistemas e **VALIDATION.md** para o registro histórico da primeira base.
+
+## Próxima etapa
+
+Validar a sensação do trecho Maciota com o usuário e avançar para o bairro de referência conforme `docs/MIGRATION.md`. Documentos SYSTEMS.md e VALIDATION.md são históricos herdados do protótipo; resultados específicos desta V2 ficam em `docs/VALIDATION.md`.

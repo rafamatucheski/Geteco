@@ -1,2 +1,0 @@
-﻿tree=D:/geteco/game head=9bd10e0 start=2026-09-15T19:27:29.9733766-03:00
-exit=0

@@ -1,6 +1,0 @@
-REVIEW0909_BISECT subviewport_count=249
-REVIEW0909_BISECT_PHASE phase=baseline_all_on frames=809 avg_fps=40.4 median_fps=44.8 p95_fps=23.8 avg_ms=24.74 median_ms=22.33 p95_ms=42.00 draw_calls=16635 t_process_ms=45.73 t_physics_ms=0.11
-REVIEW0909_BISECT_PHASE phase=pedestrians_disabled frames=681 avg_fps=34.0 median_fps=42.0 p95_fps=18.9 avg_ms=29.41 median_ms=23.78 p95_ms=52.97 draw_calls=16635 t_process_ms=44.66 t_physics_ms=0.08
-REVIEW0909_BISECT_PHASE phase=pedestrians_and_vehicles_disabled frames=689 avg_fps=34.4 median_fps=38.4 p95_fps=20.3 avg_ms=29.07 median_ms=26.04 p95_ms=49.26 draw_calls=16578 t_process_ms=47.75 t_physics_ms=88.79
-REVIEW0909_BISECT_PHASE phase=restored_all_on frames=415 avg_fps=20.7 median_fps=21.0 p95_fps=13.2 avg_ms=48.21 median_ms=47.53 p95_ms=75.80 draw_calls=13854 t_process_ms=49.77 t_physics_ms=8.10
-REVIEW0909_BISECT_PHASE phase=subviewports_paused_actors_on frames=397 avg_fps=19.8 median_fps=20.4 p95_fps=12.4 avg_ms=50.54 median_ms=49.00 p95_ms=80.59 draw_calls=13558 t_process_ms=60.57 t_physics_ms=8.59

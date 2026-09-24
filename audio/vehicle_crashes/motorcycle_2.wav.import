@@ -2,7 +2,7 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://bydj4cfsq2h38"
+uid="uid://cic26lxw2oydk"
 path="res://.godot/imported/motorcycle_2.wav-c13daae5426cc48081f644f83d07441b.sample"
 
 [deps]
@@ -21,4 +21,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=0
+compress/mode=2

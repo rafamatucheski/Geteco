@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://port_marked_car_set_d1_001"]
-
-[ext_resource type="Script" path="res://missions/district_one/PortMarkedCarSet.gd" id="1_port"]
-
-[node name="PortMarkedCarSet" type="Node2D"]
-script = ExtResource("1_port")

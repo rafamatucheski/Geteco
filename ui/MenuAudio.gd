@@ -132,7 +132,15 @@ static func get_start_stream() -> AudioStreamWAV:
 ## Original nostalgic street theme, pre-rendered to avoid synthesis on menu open.
 static func get_music_stream() -> AudioStreamWAV:
 	if _cached_music == null:
-		_cached_music = load("res://audio/menu/harbor_night_menu.wav").duplicate() as AudioStreamWAV
+		const MUSIC_PATH := "res://audio/menu/harbor_night_menu.wav"
+		if not ResourceLoader.exists(MUSIC_PATH):
+			push_warning("Música do menu ausente: " + MUSIC_PATH)
+			return null
+		var original := load(MUSIC_PATH) as AudioStreamWAV
+		if original == null:
+			push_warning("Não foi possível carregar a música do menu.")
+			return null
+		_cached_music = original.duplicate() as AudioStreamWAV
 		_cached_music.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		_cached_music.loop_begin = 0
 		# Imported WAV data may be compressed: byte count is not PCM frame count.

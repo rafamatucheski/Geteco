@@ -1,31 +1,26 @@
-# Godot 4 import cache - regenerated automatically, must never be versioned
 .godot/
-
-# Godot editor / OS junk
-.import/
-export.cfg
-export_presets.cfg
-*.translation
-.DS_Store
-Thumbs.db
-
-# Cache de bytecode do Python, gerado ao rodar scripts em tools/
-__pycache__/
-
-# Logs and local test scratch
 *.log
+*.tmp
 
-# Erros de execucao de teste (mesma natureza de *.log, que ja e ignorado)
+# Evidências de validação: só os relatórios (.md, .json, .patch) são versionados.
+# Capturas, vídeos e exports ficam no disco: ~1,7 GB em 2026-09-24, e o GitHub
+# recusa arquivos acima de 100 MB.
+evidence/**/*.png
+evidence/**/*.jpg
+evidence/**/*.jpeg
+evidence/**/*.webp
+evidence/**/*.gif
+evidence/**/*.exr
+evidence/**/*.avi
+evidence/**/*.mp4
+evidence/**/*.webm
+evidence/**/*.wav
+evidence/**/*.ogg
+evidence/export/
+
+# Exports do jogo e caches regeneráveis.
+*.pck
+*.cache
+.secrets/
 *.err
-
-# WAVs soltos das camadas de motor: saida de tests/measure_engine_families.gd,
-# regeneravel em segundos e pesada (30 arquivos de ~44 KB). O relatorio de texto
-# ao lado deles fica versionado.
-docs/measurements/engine_layers/
-
-# Cache de shader (Vulkan) dentro de app_userdata/ capturado por auditorias de
-# performance que rodam com --appdata isolado (tests/perf_audit_*/results/).
-# E lixo de engine regeneravel, igual ao .godot/ acima -- e em Windows os
-# nomes de arquivo do cache (hash + .vulkan.cache) somados ao caminho aninhado
-# passam do limite de 260 caracteres do git, quebrando o commit.
-shader_cache/
+__pycache__/

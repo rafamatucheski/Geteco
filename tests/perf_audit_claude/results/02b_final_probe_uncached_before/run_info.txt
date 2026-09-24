@@ -1,1 +1,0 @@
-﻿tree=C:/Users/rafae/AppData/Local/Temp/claude/D--geteco-game/1cf66dc9-cbb9-44ba-8a22-c22916568c5b/scratchpad/wt_02a_9bd10e0 head=9bd10e0 start=2026-09-15T19:52:48.5318356-03:00
