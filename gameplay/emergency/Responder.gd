@@ -15,7 +15,12 @@ var waypoint := 0
 var repath := 0.0
 var health := 60.0
 var dead := false
-var stream: MeshInstance3D
+## Mangueira: jato d'água balístico (WaterJet3D) das mãos do bombeiro até o fogo.
+## O caminhão estacionado perto também joga água pelo canhão do teto.
+var stream: Node3D
+var cannon: Node3D
+const WATER_JET := preload("res://gameplay/fx/WaterJet3D.gd")
+const CANNON_RANGE := 18.0
 
 func _ready() -> void:
 	collision_layer = 2
@@ -36,18 +41,13 @@ func _ready() -> void:
 	visual.is_stretcher_bearer = role != "fire"
 	add_child(visual)
 	if role != "fire": visual.stretcher_mesh.hide()
-	stream = MeshInstance3D.new()
-	var tube := CylinderMesh.new()
-	tube.top_radius = 0.025
-	tube.bottom_radius = 0.07
-	tube.height = 1
-	tube.radial_segments = 6
-	stream.mesh = tube
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color("b6d5e3")
-	stream.material_override = material
-	add_child(stream)
-	stream.hide()
+	if role == "fire":
+		stream = WATER_JET.new()
+		stream.flight_time = 0.45
+		add_child(stream)
+		cannon = WATER_JET.new()
+		cannon.flight_time = 0.9
+		add_child(cannon)
 
 func _physics_process(delta: float) -> void:
 	if dead: return
@@ -70,14 +70,9 @@ func _physics_process(delta: float) -> void:
 			var fire: Node3D = incident.get("actor")
 			if is_instance_valid(fire):
 				manager.extinguish(fire, delta * 0.3)
-				var start := global_position + Vector3.UP
-				var end := fire.global_position + Vector3.UP * 0.5
-				stream.show()
-				stream.global_position = (start + end) * 0.5
-				stream.scale = Vector3(1, start.distance_to(end), 1)
-				stream.global_basis = Basis(Quaternion(Vector3.UP, (end - start).normalized())).scaled(stream.scale)
+				_spray(fire, delta)
 			else:
-				stream.hide()
+				_stop_water()
 				mode = "return"
 		elif action_time > 4.0:
 			visual.stretcher_mesh.show()
@@ -124,5 +119,25 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	collision_mask = 0
 	var impact_dir: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
 	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, impact_dir)
-	stream.hide()
+	_stop_water()
 	manager.report_injury(self, true)
+
+func _spray(fire: Node3D, delta: float) -> void:
+	var target: Vector3 = fire.global_position + Vector3.UP * 0.2
+	var toward := target - global_position
+	toward.y = 0.0
+	if toward.length() > 0.1: visual.rotation.y = atan2(-toward.x, -toward.z)
+	var nozzle := global_position + Vector3.UP * 1.1 + toward.normalized() * 0.55
+	stream.aim(nozzle, target)
+	stream.set_active(true)
+	# Canhão do caminhão: se ele parou perto, ajuda a apagar.
+	if is_instance_valid(vehicle) and vehicle.global_position.distance_to(target) < CANNON_RANGE:
+		cannon.aim(vehicle.global_position + Vector3.UP * 3.0, target + Vector3(0.3, 0, -0.2))
+		cannon.set_active(true)
+		manager.extinguish(fire, delta * 0.3)
+	elif is_instance_valid(cannon):
+		cannon.set_active(false)
+
+func _stop_water() -> void:
+	if is_instance_valid(stream): stream.set_active(false)
+	if is_instance_valid(cannon): cannon.set_active(false)

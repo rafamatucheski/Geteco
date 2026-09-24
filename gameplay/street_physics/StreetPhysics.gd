@@ -522,32 +522,16 @@ func _scatter(point: Vector3, direction: Vector3, count: int, size: Vector2, col
 	tween.tween_callback(mesh.queue_free)
 
 
+## Hidrante quebrado: coluna d'água de verdade (WaterJet3D) caindo em volta, em
+## vez de esferas soltas. Apaga fogo que estiver no alcance (GEYSER_DOUSE_RADIUS).
+const GEYSER_DOUSE_RADIUS := 3.5
+
 func spawn_geyser(point: Vector3) -> void:
-	var jet := CPUParticles3D.new()
-	jet.amount = 90
-	jet.lifetime = 1.3
-	var drop := SphereMesh.new()
-	drop.radius = 0.06
-	drop.height = 0.12
-	drop.radial_segments = 6
-	drop.rings = 3
-	jet.mesh = drop
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.75, 0.87, 0.97, 0.7)
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.roughness = 0.05
-	material.metallic_specular = 1.0
-	jet.material_override = material
-	jet.direction = Vector3.UP
-	jet.spread = 9.0
-	jet.initial_velocity_min = 8.5
-	jet.initial_velocity_max = 11.0
-	jet.gravity = Vector3(0, -12, 0)
-	jet.scale_amount_min = 0.6
-	jet.scale_amount_max = 1.4
+	var jet = preload("res://gameplay/fx/WaterJet3D.gd").new()
+	jet.flight_time = 1.5
 	add_child(jet)
-	jet.global_position = point + Vector3.UP * 0.3
-	jet.emitting = true
+	jet.aim(point + Vector3.UP * 0.35, point + Vector3(0.9, 0.0, 0.4))
+	jet.set_active(true)
 	var puddle := MeshInstance3D.new()
 	var disc := CylinderMesh.new()
 	disc.top_radius = 1.0
@@ -581,10 +565,12 @@ func _update_geysers(delta: float) -> void:
 		var puddle = geyser.puddle
 		if is_instance_valid(jet):
 			var force := 1.0 - smoothstep(10.0, 14.0, age)
-			jet.initial_velocity_min = 8.5 * force
-			jet.initial_velocity_max = 11.0 * force
-			if age > 14.0: jet.emitting = false
+			jet.pressure = force
+			jet.flight_time = lerpf(0.6, 1.5, force)
+			jet.aim(jet.drops.global_position, jet.end_point)
+			if age > 14.0: jet.set_active(false)
 			if age > 16.0: jet.queue_free()
+			elif force > 0.2: _douse_near(jet.drops.global_position, delta * force)
 		if is_instance_valid(puddle):
 			var radius := lerpf(0.2, 3.2, smoothstep(0.0, 12.0, age))
 			puddle.scale = Vector3(radius, 1, radius)
@@ -592,3 +578,11 @@ func _update_geysers(delta: float) -> void:
 		if age > 60.0:
 			if is_instance_valid(puddle): puddle.queue_free()
 			_geysers.remove_at(index)
+
+func _douse_near(point: Vector3, amount: float) -> void:
+	var gameplay = controller.world.get("gameplay") if controller != null and controller.world != null else null
+	var emergency = gameplay.get("emergency") if gameplay != null else null
+	if emergency == null: return
+	for fire in emergency.fires:
+		if is_instance_valid(fire) and fire.global_position.distance_to(point) < GEYSER_DOUSE_RADIUS:
+			emergency.extinguish(fire, amount * 0.5)

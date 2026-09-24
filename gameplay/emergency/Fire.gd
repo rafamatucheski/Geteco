@@ -20,6 +20,9 @@ var smoke: GPUParticles3D
 var glow: MeshInstance3D
 var light: OmniLight3D
 var _shown_intensity := -1.0
+var _fade_from := -1.0
+const BURN_SECONDS := 15.0
+const FADE_SECONDS := 5.0
 
 func _ready() -> void:
 	flames = RESOURCES.emitter("GroundFlames", 40, 0.75, Vector2(0.55, 0.85), false)
@@ -140,7 +143,11 @@ func _apply_intensity() -> void:
 
 func _physics_process(delta: float) -> void:
 	age += delta
-	if age > 45: intensity -= delta * 0.1
+	# Fogo solto (arma, explosão) apaga sozinho: a partir de BURN_SECONDS mingua até
+	# sumir em FADE_SECONDS (pedido do jogador em 2026-09-24; antes queimava 45 s).
+	if age > BURN_SECONDS:
+		if _fade_from < 0.0: _fade_from = intensity
+		intensity -= delta * _fade_from / FADE_SECONDS
 	if intensity <= 0:
 		queue_free()
 		return
