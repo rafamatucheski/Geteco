@@ -7,7 +7,7 @@ const BLEND := 28.0
 const GRID_MARGIN := 6.0 # More than a grid diagonal: flat corridors survive triangulation.
 var _segments: Dictionary = {}
 var _clearings: Array[Rect2] = []
-var _material: StandardMaterial3D
+var _material: ShaderMaterial
 
 func configure(roads: Array, entries: Array, clearings: Array) -> void:
 	_segments.clear()
@@ -40,9 +40,8 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 					var key := Vector2i(x,z)
 					if not _segments.has(key): _segments[key] = []
 					_segments[key].append({"a":a,"b":b,"radius":radius,"bed_radius":float(road.width)*0.5+4.0})
-	_material = StandardMaterial3D.new()
-	_material.vertex_color_use_as_albedo = true
-	_material.roughness = 0.95
+	_material = ShaderMaterial.new()
+	_material.shader = preload("res://world/regions/mountain_terrain.gdshader")
 
 func _cell(point: Vector2) -> Vector2i:
 	return Vector2i(floori(point.x/CELL),floori(point.y/CELL))
@@ -127,6 +126,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	result.name = "MountainTerrain"
 	result.mesh = mesh
 	result.material_override = _material
+	result.set_instance_shader_parameter("origin",rect.position)
 	result.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(result)
 	var body := StaticBody3D.new()
