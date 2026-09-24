@@ -43,6 +43,14 @@ static func quad(size: Vector2, use_wisp := true) -> QuadMesh:
 	if _quads.has(key): return _quads[key]
 	var mesh := QuadMesh.new()
 	mesh.size = size
+	# Sem wisp = fogo (chama no corpo, motor em chamas, estouro do escape): chama
+	# procedural em vez de disco macio, que lia como bolha laranja.
+	if not use_wisp:
+		var flame := ShaderMaterial.new()
+		flame.shader = preload("res://gameplay/fx/flame_sprite.gdshader")
+		mesh.material = flame
+		_quads[key] = mesh
+		return mesh
 	var material := StandardMaterial3D.new()
 	material.albedo_texture = wisp_texture() if use_wisp else soft_texture()
 	material.albedo_color = Color.WHITE

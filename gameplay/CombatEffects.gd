@@ -117,32 +117,16 @@ func _ready() -> void:
 	drop_mesh.radial_segments = 6
 	drop_mesh.rings = 3
 	drop_mesh.material = drop_material
-	var flame_gradient := Gradient.new()
-	flame_gradient.offsets = PackedFloat32Array([0.0, 0.32, 0.72, 1.0])
-	# Núcleo preenchido; centro transparente produzia anéis/"bolhas" separados.
-	flame_gradient.colors = PackedColorArray([Color(1,1,0.86,1), Color(1,0.94,0.55,1), Color(1,0.32,0.025,0.78), Color(0.2,0.16,0.13,0)])
-	var flame_texture := GradientTexture2D.new()
-	flame_texture.gradient = flame_gradient
-	flame_texture.fill = GradientTexture2D.FILL_RADIAL
-	flame_texture.fill_from = Vector2(0.5, 0.5)
-	flame_texture.fill_to = Vector2(0.5, 0.0)
-	flame_texture.width = 64
-	flame_texture.height = 64
-	var flame_material := StandardMaterial3D.new()
-	flame_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	flame_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	flame_material.albedo_texture = flame_texture
-	# BILLBOARD_ENABLED descartava a escala por partícula: todo pacote de chama
-	# tinha 14 cm fixos. BILLBOARD_PARTICLES respeita a curva de crescimento.
-	flame_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	flame_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	flame_material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	flame_material.vertex_color_use_as_albedo = true
+	# Chama procedural (gameplay/fx/flame_sprite.gdshader): língua de fogo em gota
+	# com borda rasgada por ruído. O disco de gradiente radial anterior lia como
+	# bolinha, e a bola de fogo como bolhas (relato do jogador em 2026-09-24).
+	var flame_material := ShaderMaterial.new()
+	flame_material.shader = preload("res://gameplay/fx/flame_sprite.gdshader")
 	var flame_quad := QuadMesh.new()
-	flame_quad.size = Vector2(0.22, 0.22)
+	flame_quad.size = Vector2(0.34, 0.46)
 	flame_quad.material = flame_material
 	var fireball_quad := QuadMesh.new()
-	fireball_quad.size = Vector2(0.9, 0.9)
+	fireball_quad.size = Vector2(1.1, 1.4)
 	fireball_quad.material = flame_material
 	for material_name in IMPACT_COLORS:
 		var sparks: Array[CPUParticles3D] = []
@@ -160,7 +144,7 @@ func _ready() -> void:
 	_muzzle_smoke = _emitter(4, 0.6, _smoke_mesh, Color(0.65, 0.63, 0.60, 0.28), 0.6, 1.6, 24.0, 0.6, 0.4, 0.9, 2.4)
 	_blast_sparks = _emitter(28, 0.6, _spark_mesh, Color(1.0, 0.62, 0.15), 5.0, 11.0, 180.0, -8.0, 1.0, 2.2)
 	_blast_sparks.particle_flag_align_y = true
-	_blast_fire = _emitter(16, 0.55, fireball_quad, Color(1.0, 0.85, 0.6), 1.2, 4.0, 180.0, 1.5, 0.8, 1.6, 2.6)
+	_blast_fire = _emitter(28, 0.7, fireball_quad, Color(1.0, 0.85, 0.6), 1.2, 4.5, 180.0, 2.5, 0.8, 1.7, 2.4)
 	_blast_fire.color_ramp = _fire_ramp()
 	_blast_debris = _emitter(12, 1.1, _spark_mesh, Color(0.16, 0.14, 0.12), 4.0, 8.5, 70.0, -14.0, 1.4, 2.4)
 	_blast_debris.particle_flag_align_y = true
@@ -255,7 +239,7 @@ func _ready() -> void:
 		_tracers.append(tracer)
 		_tracer_state.append({"life": 0.0})
 	for index in MAX_FLAME_PACKETS:
-		var packet := _emitter(10, 0.34, flame_quad, Color.WHITE, 8.0, 12.0, 9.0, 1.6, 0.5, 1.1, 3.2)
+		var packet := _emitter(18, 0.38, flame_quad, Color.WHITE, 8.0, 12.0, 7.0, 2.2, 0.5, 1.1, 3.4)
 		packet.color_ramp = _fire_ramp()
 		_flame_packets.append(packet)
 	var tongue_mesh := _build_flame_tongue_mesh()
@@ -529,7 +513,8 @@ func flame(origin: Vector3, direction: Vector3, distance: float) -> void:
 	var span := clampf(distance * 0.20, 0.35, 2.5)
 	tongue.scale = Vector3(1.0, 1.0, span)
 	tongue.transparency = 0.0
-	tongue.visible = true
+	# A língua de aletas lia como cone sólido; o jato agora é só partícula de chama.
+	tongue.visible = false
 	_flame_tongue_state[index] = {
 		"life": 0.34, "duration": 0.34, "distance": distance, "span": span,
 		"origin": origin, "direction": direction.normalized(),
@@ -548,14 +533,17 @@ func backblast(muzzle: Vector3, aim: Vector3) -> void:
 ## Bola de fogo aditiva, fagulhas, detritos escuros, fumaça que sobe e se abre, clarão e marca de queimado.
 ## Antes só havia fagulhas e fumaça: `Gameplay.explode` não criava a esfera que o comentário prometia.
 func explosion(point: Vector3, radius: float) -> void:
-	var size := clampf(radius / 7.5, 0.6, 1.6)
-	_blast_fire.scale_amount_min = 0.8 * size
-	_blast_fire.scale_amount_max = 1.6 * size
-	_blast_fire.initial_velocity_max = 4.0 * size
-	_fire(_blast_fire, point + Vector3.UP * 0.4, Vector3.UP)
-	_fire(_blast_sparks, point + Vector3.UP * 0.3, Vector3.UP)
-	_fire(_blast_debris, point + Vector3.UP * 0.2, Vector3.UP)
-	_fire(_blast_smoke, point + Vector3.UP * 0.5, Vector3.UP)
+	# Bola de fogo do tamanho do raio: a de 6 m (granada) saía menor que um carro.
+	var size := clampf(radius / 5.0, 0.8, 2.2)
+	_blast_fire.scale_amount_min = 1.2 * size
+	_blast_fire.scale_amount_max = 2.2 * size
+	_blast_fire.initial_velocity_max = 4.5 * size
+	# Centro da bola de fogo acima do ponto: no carro o ponto fica dentro da
+	# carroceria, e a lataria escondia a explosão inteira.
+	_burst(_blast_fire, point + Vector3.UP * (0.6 + 0.8 * size))
+	_burst(_blast_sparks, point + Vector3.UP * 0.3)
+	_burst(_blast_debris, point + Vector3.UP * 0.2)
+	_burst(_blast_smoke, point + Vector3.UP * 0.5)
 	_blast_light.global_position = point + Vector3.UP * 1.0
 	_blast_light.omni_range = maxf(6.0, radius * 2.0)
 	_blast_light.light_energy = 8.0
@@ -563,6 +551,20 @@ func explosion(point: Vector3, radius: float) -> void:
 	_blast_light_time = 0.3
 	_scorch(point, clampf(radius * 0.45, 1.2, 3.5))
 	set_physics_process(true)
+
+## Cópia nova do emissor por explosão, posicionada antes de entrar na cena. O
+## emissor reaproveitado (em coordenadas de mundo) desenhava a explosão onde a
+## ANTERIOR tinha sido: o carro explodia e a bola de fogo aparecia metros ao lado
+## (capturas de 2026-09-24). Explosão é rara; a cópia se apaga sozinha.
+func _burst(template: CPUParticles3D, point: Vector3) -> void:
+	if not is_inside_tree(): return
+	var copy := template.duplicate() as CPUParticles3D
+	copy.transform = Transform3D(Basis.IDENTITY, point)
+	copy.emitting = false
+	add_child(copy)
+	copy.global_position = point
+	copy.emitting = true
+	get_tree().create_timer(copy.lifetime + 0.3).timeout.connect(copy.queue_free)
 
 func _scorch(point: Vector3, radius: float) -> void:
 	if not is_inside_tree(): return

@@ -178,7 +178,7 @@ static func _char(embers: bool) -> Texture2D:
 		noise.fractal_octaves = 4
 		var cracks := FastNoiseLite.new()
 		cracks.seed = 91
-		cracks.frequency = .05
+		cracks.frequency = .03
 		cracks.fractal_octaves = 2
 		var albedo := Image.create(128, 128, false, Image.FORMAT_RGB8)
 		var glow := Image.create(128, 128, false, Image.FORMAT_RGB8)
@@ -188,7 +188,9 @@ static func _char(embers: bool) -> Texture2D:
 				var tone := lerpf(.028, .2, ash)
 				albedo.set_pixel(x, y, Color(tone, tone * 1.01, tone * 1.06))
 				# Linhas finas onde o ruído cruza zero: rachaduras, não manchas.
-				var crack := 1.0 - smoothstep(.0, .014, absf(cracks.get_noise_2d(x, y)))
+				# Rachadura larga o bastante para ler como linha: com .014 cada uma tinha 1-2 px e
+				# a carcaça inteira virava pontinhos vermelhos cintilando (relato de 2026-09-24).
+				var crack := 1.0 - smoothstep(.0, .045, absf(cracks.get_noise_2d(x, y)))
 				glow.set_pixel(x, y, Color.WHITE * crack * (1.0 - ash))
 		albedo.generate_mipmaps()
 		glow.generate_mipmaps()
@@ -204,9 +206,7 @@ func _update_fire() -> void:
 		# e encolhe; a versão anterior usava quads grandes em alpha-mix que viravam
 		# um borrão laranja parado sobre o capô.
 		_fire = RESOURCES.emitter("EngineFire", 64, .55, Vector2(.55, .55), false)
-		var flame_mesh: QuadMesh = _fire.draw_pass_1.duplicate(true)
-		(flame_mesh.material as StandardMaterial3D).blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-		_fire.draw_pass_1 = flame_mesh
+		# O quad sem wisp já é a chama procedural aditiva (flame_sprite.gdshader).
 		var process := RESOURCES.particle_process()
 		process.emission_sphere_radius = .35
 		process.spread = 12.0
@@ -302,7 +302,7 @@ func wreck() -> void:
 	_ember.metallic = .3
 	_ember.roughness = .92
 	_ember.uv1_triplanar = true
-	_ember.uv1_scale = Vector3(.22, .22, .22)
+	_ember.uv1_scale = Vector3(.3, .3, .3)
 	# A brasa fica só nas rachaduras da máscara; emissão chapada deixava a carcaça laranja.
 	_ember.emission_enabled = true
 	_ember.emission = Color(.9, .22, .04)
@@ -369,6 +369,9 @@ func _step_wreck(delta: float) -> void:
 		_fire.amount_ratio = clampf(strength * 1.4, 0.0, 1.0)
 		_smoke.amount_ratio = clampf(strength * 2.0, .3, 1.0)
 		_fire_light.light_energy *= strength
+		# A brasa das rachaduras esfria junto com o fogo; acesa para sempre a carcaça
+		# ficava salpicada de vermelho.
+		if _ember != null: _ember.emission_energy_multiplier = 1.1 * strength
 		if _wreck_fire_time <= 0.0: _stop_fire()
 	if not _hop_active and _wreck_fire_time <= 0.0: set_physics_process(false)
 
