@@ -19,6 +19,8 @@ var dead := false
 ## O caminhão estacionado perto também joga água pelo canhão do teto.
 var stream: Node3D
 var cannon: Node3D
+var hose: Array[MeshInstance3D] = []
+const HOSE_SEGMENTS := 8
 const WATER_JET := preload("res://gameplay/fx/WaterJet3D.gd")
 const CANNON_RANGE := 18.0
 
@@ -47,7 +49,14 @@ func _ready() -> void:
 		add_child(stream)
 		cannon = WATER_JET.new()
 		cannon.flight_time = 0.9
+		cannon.drop_scale = 2.4
 		add_child(cannon)
+		# Mangueira deitada no chão, do caminhão até o bombeiro (o esguicho já é do modelo).
+		for i in HOSE_SEGMENTS:
+			var piece := _stick(0.05, 1.0, Color("7a1f1a"))
+			piece.top_level = true
+			piece.hide()
+			hose.append(piece)
 
 func _physics_process(delta: float) -> void:
 	if dead: return
@@ -127,12 +136,22 @@ func _spray(fire: Node3D, delta: float) -> void:
 	var toward := target - global_position
 	toward.y = 0.0
 	if toward.length() > 0.1: visual.rotation.y = atan2(-toward.x, -toward.z)
-	var nozzle := global_position + Vector3.UP * 1.1 + toward.normalized() * 0.55
-	stream.aim(nozzle, target)
+	# Braços para frente segurando o esguicho do modelo; o jato sai da ponta dele.
+	visual.right_upper_arm.rotation.x = 1.25
+	visual.left_upper_arm.rotation.x = 1.1
+	visual.left_upper_arm.rotation.z = -0.35
+	var muzzle: Vector3 = visual.hose_muzzle.global_position if visual.get("hose_muzzle") != null else global_position + Vector3.UP * 1.1
+	stream.aim(muzzle, target)
 	stream.set_active(true)
-	# Canhão do caminhão: se ele parou perto, ajuda a apagar.
-	if is_instance_valid(vehicle) and vehicle.global_position.distance_to(target) < CANNON_RANGE:
-		cannon.aim(vehicle.global_position + Vector3.UP * 3.0, target + Vector3(0.3, 0, -0.2))
+	if is_instance_valid(vehicle): _lay_hose(vehicle.to_global(Vector3(vehicle.half_width, 0.0, 1.5)), global_position)
+	# Canhão do teto: gira no pivô, mira no fogo e a água sai do bico.
+	var monitor: Node3D = vehicle.get_meta("fire_monitor", null) if is_instance_valid(vehicle) else null
+	var tip: Node3D = vehicle.get_meta("fire_monitor_tip", null) if is_instance_valid(vehicle) else null
+	if is_instance_valid(monitor) and is_instance_valid(tip) and vehicle.global_position.distance_to(target) < CANNON_RANGE:
+		var aim_point := target + Vector3.UP * 2.0
+		if monitor.global_position.distance_to(aim_point) > 0.5:
+			monitor.look_at(aim_point, Vector3.UP)
+		cannon.aim(tip.global_position, target + Vector3(0.3, 0, -0.2))
 		cannon.set_active(true)
 		manager.extinguish(fire, delta * 0.3)
 	elif is_instance_valid(cannon):
@@ -140,4 +159,46 @@ func _spray(fire: Node3D, delta: float) -> void:
 
 func _stop_water() -> void:
 	if is_instance_valid(stream): stream.set_active(false)
+	for piece in hose:
+		if is_instance_valid(piece): piece.hide()
+	if visual != null and visual.get("right_upper_arm") != null:
+		visual.right_upper_arm.rotation = Vector3.ZERO
+		visual.left_upper_arm.rotation = Vector3.ZERO
 	if is_instance_valid(cannon): cannon.set_active(false)
+
+func _stick(radius: float, length: float, color: Color) -> MeshInstance3D:
+	var item := MeshInstance3D.new()
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = length
+	mesh.radial_segments = 8
+	item.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.7
+	item.material_override = material
+	item.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(item)
+	return item
+
+## Mangueira no chão em curva suave (Bézier) do caminhão ao pé do bombeiro, em
+## segmentos colados ao chão; uma reta só parecia um cabo voando.
+func _lay_hose(pump: Vector3, foot: Vector3) -> void:
+	var ground := foot.y + 0.05
+	var a := Vector3(pump.x, ground, pump.z)
+	var b := Vector3(foot.x, ground, foot.z)
+	var along := b - a
+	if along.length() < 0.5: return
+	var bend := Vector3(-along.z, 0, along.x).normalized() * along.length() * 0.18
+	var control := (a + b) * 0.5 + bend
+	var previous := a
+	for i in HOSE_SEGMENTS:
+		var t := float(i + 1) / HOSE_SEGMENTS
+		var point := a.lerp(control, t).lerp(control.lerp(b, t), t)
+		var piece := hose[i]
+		var span := previous.distance_to(point)
+		if span > 0.01:
+			piece.show()
+			piece.global_transform = Transform3D(Basis.looking_at((point - previous) / span, Vector3.UP) * Basis(Vector3.RIGHT, -PI * 0.5) * Basis.from_scale(Vector3(1, span * 1.04, 1)), (previous + point) * 0.5)
+		previous = point

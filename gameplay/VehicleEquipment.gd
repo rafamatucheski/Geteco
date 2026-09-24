@@ -52,6 +52,7 @@ func configure(vehicle: CharacterBody3D, scene: Node) -> void:
 
 func _ready() -> void:
 	if not is_instance_valid(car): return
+	if car.archetype == "rescue_pumper": _rig_pumper()
 	var mounts: Array[Vector3] = []
 	var bar_mounts: Array[Vector3] = []
 	var materials := {}
@@ -368,3 +369,41 @@ func _exit_tree() -> void:
 	if is_instance_valid(npc_beam): npc_beam.queue_free()
 	if is_instance_valid(ground_pool): ground_pool.queue_free()
 	_npc_beams.erase(get_instance_id())
+
+## Caminhão de bombeiro (rescue_pumper.scn):
+## - As faixas amarelas em V da traseira ficavam no mesmo plano da porta (z 3,32)
+##   e brigavam no buffer de profundidade: pareciam riscos picotados. Saem 2 cm.
+## - O canhão do teto (base vermelha, cano, bico) era peça fixa. Cano e bico vão
+##   para um pivô sobre a base, que o bombeiro gira para mirar no fogo; a água sai
+##   do bico (meta "fire_monitor" / "fire_monitor_tip" no carro).
+func _rig_pumper() -> void:
+	var pivot := Node3D.new()
+	pivot.name = "FireMonitorPivot"
+	var parts: Array[MeshInstance3D] = []
+	var tip: MeshInstance3D
+	for part: MeshInstance3D in car.visual.find_children("*", "MeshInstance3D", true, false):
+		var material := part.get_active_material(0) as StandardMaterial3D
+		if material == null: continue
+		var box: AABB = car.global_transform.affine_inverse() * part.global_transform * part.get_aabb()
+		var color := material.albedo_color
+		if color.is_equal_approx(Color("f1c40f")) and box.position.z > 3.2:
+			part.global_position += car.global_basis.z * 0.02
+		# Cano e bico: finos, no teto, à frente da base (z < -1.4).
+		elif box.position.y > 2.3 and box.end.z < -1.4 and box.size.x < 0.3:
+			if color.is_equal_approx(Color("a82020")): continue
+			parts.append(part)
+			if box.position.z < -2.3: tip = part
+		elif color.is_equal_approx(Color("a82020")) and box.position.y > 2.1 and box.end.z < -1.3:
+			pivot.position = car.to_local(part.global_position) if pivot.position == Vector3.ZERO else pivot.position
+			var center := box.get_center()
+			pivot.set_meta("base_local", Vector3(center.x, box.end.y, center.z))
+	if parts.is_empty() or tip == null: return
+	car.add_child(pivot)
+	pivot.position = pivot.get_meta("base_local", pivot.position)
+	for part in parts:
+		var keep := part.global_transform
+		part.get_parent().remove_child(part)
+		pivot.add_child(part)
+		part.global_transform = keep
+	car.set_meta("fire_monitor", pivot)
+	car.set_meta("fire_monitor_tip", tip)

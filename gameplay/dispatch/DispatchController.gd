@@ -18,6 +18,9 @@ const VEHICLE := preload("res://gameplay/dispatch/DispatchVehicle.gd")
 # Cada candidato pode custar um plano de rota (~2,2 ms): 8 geravam picos de 22–53 ms
 # no quadro de despacho. Candidatos que falham voltam no próximo intervalo.
 const SPAWN_CANDIDATES_CHECKED := 3
+## Serviço (bombeiro/ambulância) compara mais pontos: a rota curta importa mais que
+## o custo de planejar alguns candidatos a mais, e o despacho é raro.
+const SPAWN_CANDIDATES_CHECKED_SERVICE := 8
 const MAX_WRECKS := 4
 
 var world: Node3D
@@ -561,15 +564,28 @@ func dispatch_service_to(key: int) -> RefCounted:
 	var candidates := _depot_candidates(service, point)
 	candidates.append_array(router.spawn_candidates(point, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
 	var checked := 0
+	# Escolhe a rota mais curta entre os candidatos checados. O primeiro válido às
+	# vezes nascia numa faixa apontada para longe e o caminhão dava a volta no
+	# quarteirão: 50 a 140 s para um incêndio a 33 m (sonda de 2026-09-24).
+	var best: Dictionary = {}
+	var best_length := INF
 	for candidate in candidates:
-		if checked >= SPAWN_CANDIDATES_CHECKED: break
+		if checked >= SPAWN_CANDIDATES_CHECKED_SERVICE: break
 		var start: Vector3 = candidate.point
 		if is_visible_to_player(start): continue
 		checked += 1
 		if not _space_clear(size, start, candidate.yaw, no_exclusions): continue
 		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
-		var plan: Dictionary = router.plan(start, point, heading)
-		if not plan.ok or plan.end_gap > RULES.FOOT_RANGE: continue
+		var candidate_plan: Dictionary = router.plan(start, point, heading)
+		if not candidate_plan.ok or candidate_plan.end_gap > RULES.FOOT_RANGE: continue
+		var length: float = candidate_plan.curve.get_baked_length()
+		if length < best_length:
+			best_length = length
+			best = {"candidate": candidate, "plan": candidate_plan}
+	if not best.is_empty():
+		var candidate: Dictionary = best.candidate
+		var plan: Dictionary = best.plan
+		var start: Vector3 = candidate.point
 		_serial += 1
 		var car := _create_vehicle(service, start, candidate.yaw)
 		var unit := _make_unit(service, car, RULES.SPEED_PATROL, RULES.STUCK_SERVICE)
