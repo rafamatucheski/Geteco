@@ -108,7 +108,8 @@ const GRENADE_MIN_THROW := 60.0 / 16.0
 const GRENADE_AIR_TIME := 1.08
 ## Fração do alcance pedido em que a granada toca o chão; o quique e o rolamento levam o resto.
 const GRENADE_LANDING_SHARE := 0.8
-const STAR_THRESHOLDS := [0, 12, 30, 60, 100, 160, 240]
+const STAR_THRESHOLDS := [0, 12, 30, 60, 140, 260, 420]
+const MAX_CRIME_POINTS := 600
 const MAX_ACTIVE := [0, 2, 3, 4, 5, 5, 5]
 const DEPLOYMENT := [0, 4, 6, 10, 14, 18, 22]
 const DISPATCH := [0.0, 10.0, 8.0, 6.0, 5.0, 4.0, 4.0]
@@ -204,6 +205,7 @@ var _police_kill_reported: Dictionary = {}
 var _flame_crime_clock := 0.0
 var _rig_pose := RIG_POSE.new()
 var _pose_frame: Dictionary = {}
+var _pending_contact: Dictionary = {}
 
 func configure(p_world: Node3D, p_player: CharacterBody3D, p_camera: Camera3D, p_state: RefCounted) -> void:
 	world = p_world
@@ -345,6 +347,7 @@ func _physics_process(delta: float) -> void:
 	_update_aim(delta)
 	_update_weapon_pose(delta)
 	_update_visual()
+	_update_contact()
 	_update_combat_clip(delta)
 	_update_swing(delta)
 	_update_recoil(delta)
@@ -450,7 +453,15 @@ func _build_muzzle_flash(id: String, muzzle: Vector3) -> void:
 	var data: Dictionary = CATALOG.WEAPONS.get(id, {})
 	if data.get("is_melee", false) or data.get("is_grenade", false): return
 	var tip := muzzle
-	if CUSTOM.selected(customization, id, "muzzle") == "suppressor": tip.z -= 0.145
+	if CUSTOM.selected(customization, id, "barrel") == "barrel_long":
+		tip.z -= preload("res://gameplay/WeaponAttachmentVisuals.gd").LONG_BARREL
+	match CUSTOM.selected(customization, id, "muzzle"):
+		"suppressor": tip.z -= 0.145
+		"compensator": tip.z -= 0.048
+		"choke_full": tip.z -= 0.04
+		"duckbill": tip.z -= 0.06
+		"flame_focus": tip.z -= 0.10
+		"flame_wide": tip.z -= 0.07
 	_muzzle_flash = MeshInstance3D.new()
 	_muzzle_flash.mesh = _directional_flash_mesh()
 	_muzzle_flash.material_override = _muzzle_material
@@ -733,27 +744,29 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 	return aim_point
 
 func fire_at(target: Vector3) -> bool:
-	if not attack_allowed() or cooldown > 0 or reload_timer > 0: return false
+	if not attack_allowed() or cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty(): return false
 	var id := equipped()
 	if id.is_empty(): id = "fists"
 	if not CATALOG.WEAPONS.has(id): return false
 	if id != "fists" and not state.owns_weapon(id): return false
 	var data: Dictionary = weapon_data(id)
 	var melee: bool = data.get("is_melee", false)
-	if not melee and not state.consume_ammo(id, 1):
+	var grenade: bool = data.get("is_grenade", false)
+	var has_ammo: bool = int(state.get_ammo(id).get("magazine", 0)) > 0 if grenade else true
+	if not melee and (not has_ammo or (not grenade and not state.consume_ammo(id, 1))):
 		# V1 (`Player._shoot_towards`): pente vazio recarrega sozinho quando há reserva.
 		cooldown = 0.25
 		if not reload_weapon(): message.emit("Sem munição.")
 		return false
 	cooldown = float(data.fire_interval)
 	_attack_serial += 1
-	_aim_hold = AIM_HOLD
+	_aim_hold = AIM_HOLD + float(RIG_POSE.MELEE_CONTACT.get(id, 0.0))
 	_rig_pose.attack(id, float(data.get("recoil_multiplier", 1.0)))
 	if not melee: _recoil = float(POSE.PROFILES.get(id, [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[2])
-	if not melee: weapon_fired.emit(id, player.global_position)
+	if not melee and not grenade: weapon_fired.emit(id, player.global_position)
 	if melee: _melee_swing_sound(id, data)
 	elif data.get("is_flame", false): _flame_sound()
-	elif data.get("is_grenade", false): _play_stream(AUDIO.grenade_throw(), player.global_position, 0.0)
+	elif grenade: pass # Som e munição acompanham a saída da mão.
 	else: _shot_sound(id, data)
 	if not melee and not data.get("is_grenade", false): _flash_muzzle(id)
 	aim_point = target
@@ -762,11 +775,20 @@ func fire_at(target: Vector3) -> bool:
 	direction.y = 0
 	if direction.length_squared() < 0.001: direction = Vector3.FORWARD
 	direction = direction.normalized()
+	if data.get("is_flame", false):
+		# O bico lido acima ainda está na pose do quadro anterior; girando a mira, o
+		# jato saía de lado ou de trás do Dante. Mantém altura e alcance do bico e o
+		# gira para a direção nova.
+		var reach := Vector2(origin.x - player.global_position.x, origin.z - player.global_position.z).length()
+		origin = Vector3(player.global_position.x, origin.y, player.global_position.z) + direction * reach
 	var defense_ray := PhysicsRayQueryParameters3D.create(origin, origin + direction * float(data.get("max_range", 420.0)) / 16.0, 7, [player.get_rid()])
 	var defense_hit := get_world_3d().direct_space_state.intersect_ray(defense_ray)
 	var self_defense: bool = not defense_hit.is_empty() and defense_hit.collider.get_meta("gameplay_role", "") == "cobra"
-	if is_instance_valid(player.visual): player.visual.rotation.y = atan2(-direction.x, -direction.z)
-	if data.get("is_grenade", false) or data.get("is_explosive", false):
+	if "combat_facing" in player: player.combat_facing = atan2(-direction.x, -direction.z)
+	elif is_instance_valid(player.visual): player.visual.rotation.y = atan2(-direction.x, -direction.z)
+	if grenade:
+		_pending_contact = {"id": id, "target": target, "data": data, "time": RIG_POSE.GRENADE_RELEASE, "self_defense": self_defense}
+	elif data.get("is_explosive", false):
 		var shot := PROJECTILE.new()
 		shot.controller = self
 		shot.shooter = player
@@ -794,7 +816,7 @@ func fire_at(target: Vector3) -> bool:
 		# `Attack`/`Punch_Forward_with_Both_Fists` do GLB moviam o corpo inteiro e
 		# ignoravam a arma na mão; ficam fora do golpe.
 		_start_swing(data, direction)
-		_melee(origin, direction, data)
+		_pending_contact = {"id": id, "target": target, "data": data, "time": float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))}
 	else:
 		_in_pellet_volley = true
 		if not data.get("is_flame", false): effects.shell(origin - direction * 0.12, direction, player.global_position.y)
@@ -829,14 +851,19 @@ func fire_at(target: Vector3) -> bool:
 					else:
 						_hit_effect(hit, float(amount), ray_direction)
 			if data.get("is_flame", false):
-				effects.flame(origin, ray_direction, origin.distance_to(end))
-				emergency.ignite(end, player, 0.3)
+				var reach := origin.distance_to(end)
+				# O jato visual segue a mira com leque curto; o espalhamento de ±0,2 rad
+				# do dano jogava cada pacote para um lado e a chama lia como borrifo.
+				effects.flame(origin, direction.slerp(ray_direction, 0.3), reach)
+				# Fogo no chão ao longo do fim do jato, não sempre na ponta do alcance:
+				# errando o alvo, cada disparo acendia um foco a 8,75 m em leque.
+				emergency.ignite(origin + ray_direction * reach * _rng.randf_range(0.55, 1.0), player, 0.3)
 			else:
 				effects.tracer(origin, end, float(data.get("projectile_speed", 920.0)) / 16.0, data.get("tracer_color", Color("ffe36b")), float(data.get("damage", 16.0)))
 		for entry in flesh_hits.values():
 			_hit_effect(entry.hit, entry.amount, entry.direction)
 		_in_pellet_volley = false
-	if not melee and not self_defense:
+	if not melee and not grenade and not self_defense:
 		if data.get("is_flame", false):
 			# Jato contínuo: a denúncia do disparo acompanha o tempo, não os 20 disparos por segundo.
 			if _flame_crime_clock <= 0.0:
@@ -846,6 +873,49 @@ func fire_at(target: Vector3) -> bool:
 			register_crime(1 if data.get("suppressed", false) else 4, player.global_position)
 	changed.emit()
 	return true
+
+## Resolve o contato na posição atual, uma vez, no mesmo tempo da pose. Pausa
+## congela ambos; troca de arma, morte, garagem e transição cancelam a ação.
+func _update_contact() -> void:
+	if _pending_contact.is_empty(): return
+	var id: String = _pending_contact.id
+	var current_id := equipped()
+	if current_id.is_empty(): current_id = "fists"
+	if not attack_allowed() or current_id != id:
+		_pending_contact.clear()
+		return
+	if _rig_pose.action_age + 0.00001 < float(_pending_contact.time): return
+	var contact := _pending_contact
+	_pending_contact = {}
+	var origin: Vector3 = player.global_position + Vector3.UP * 1.05
+	var direction: Vector3 = contact.target - origin
+	direction.y = 0.0
+	direction = direction.normalized() if direction.length_squared() > 0.001 else Vector3.FORWARD
+	if id != "grenade":
+		_melee(origin, direction, contact.data)
+		return
+	if not state.consume_ammo(id, 1): return
+	if player.has_method("combat_palm_position"): origin = player.combat_palm_position("Right")
+	var flat_target: Vector3 = contact.target - origin
+	flat_target.y = 0.0
+	direction = flat_target.normalized() if flat_target.length_squared() > 0.001 else direction
+	var shot := PROJECTILE.new()
+	shot.controller = self
+	shot.shooter = player
+	shot.grenade = true
+	shot.damage = contact.data.damage
+	shot.radius = float(contact.data.blast_radius) / 16.0
+	shot.fuse = GRENADE_FUSE
+	shot.hurt_shooter = true
+	var distance := clampf(flat_target.length(), GRENADE_MIN_THROW, float(contact.data.get("throw_range", 320.0)) / 16.0)
+	shot.velocity = direction * (distance * GRENADE_LANDING_SHARE / GRENADE_AIR_TIME)
+	shot.velocity.y = 5.5
+	add_child(shot)
+	shot.global_position = origin
+	_play_stream(AUDIO.grenade_throw(), origin, 0.0)
+	weapon_fired.emit(id, origin)
+	if not contact.self_defense: register_crime(4, player.global_position)
+	changed.emit()
 
 func _ignite_actor(actor: Node3D, source: Node) -> void:
 	if not is_instance_valid(actor) or actor.get("dead") == true: return
@@ -1114,8 +1184,11 @@ func activate_arsenal_cheat() -> bool:
 func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool = true) -> void:
 	# Explosives launched outside cannot cross the safe-zone boundary through a transition.
 	if source == player and not state.weapons_allowed(): return
+	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
 	_sound("explosion", point, EXPLOSION_VOLUME_DB)
+	traced = _trace_explosion_cost("audio",traced)
 	if emergency != null: emergency.ignite(point, source, 1.0)
+	traced = _trace_explosion_cost("ground_fire",traced)
 	var sphere := SphereShape3D.new()
 	sphere.radius = radius
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -1134,11 +1207,20 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 		var falloff := clampf(1.0 - point.distance_to(target) / radius, 0, 1)
 		_damage(actor, amount * falloff, source)
 		_hit_effect({"collider": actor, "position": target, "normal": Vector3.UP}, amount * falloff, (target - point).normalized())
+	traced = _trace_explosion_cost("damage",traced)
 	if is_instance_valid(effects): effects.explosion(point, radius)
+	traced = _trace_explosion_cost("particles",traced)
 	if is_instance_valid(player): _kick_camera(0.28 * clampf(1.0 - player.global_position.distance_to(point) / (radius * 4.0), 0.0, 1.0))
 	# Um único evento por detonação admitida. A origem e a autoria são as mesmas
 	# usadas pelo dano; `null` continua desconhecido e nunca vira jogador por inferência.
 	explosion_occurred.emit(point, radius, source)
+	_trace_explosion_cost("listeners",traced)
+
+func _trace_explosion_cost(stage: String, started: int) -> int:
+	if started == 0: return 0
+	var ended := Time.get_ticks_usec()
+	print("EXPLOSION_STAGE ",stage," ms=",float(ended-started)/1000.0)
+	return Time.get_ticks_usec()
 
 func damage_player(amount: float) -> void:
 	_apply_player_damage(amount, true)
@@ -1164,7 +1246,9 @@ func _apply_player_damage(amount: float, use_armor: bool) -> void:
 	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
 	armor -= absorbed
 	health = maxf(0, health - (amount - absorbed))
-	if health > 0.0: _pain_voice(player, amount)
+	if health > 0.0:
+		_pain_voice(player, amount)
+		if player.has_method("present_hit"): player.present_hit()
 	changed.emit()
 	if health == 0 and not _dead_notified:
 		_dead_notified = true
@@ -1191,7 +1275,7 @@ func respawn() -> void:
 func register_crime(points: int, point: Vector3) -> void:
 	if points <= 0 or not state.weapons_allowed(): return
 	var old_stars := stars
-	crime_points = mini(300, crime_points + points)
+	crime_points = mini(MAX_CRIME_POINTS, crime_points + points)
 	_update_stars()
 	last_known = point
 	last_known_valid = true
@@ -1279,8 +1363,8 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 		"damage": amount, "data": data, "source": weakref(officer), "rid": officer.get_rid(), "visual": token, "blocked": blocked})
 	visual.attack()
 	npc_gunfire.emit(origin, direction, officer)
-	# V1 PoliceOfficer uses pistol for patrol and SMG for every other tier.
-	_play_stream(AUDIO.gunfire_take("pistol" if int(officer.get("tier")) == 0 else "smg", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
+	# Match the weapon carried and fired by this dispatched officer.
+	_play_stream(AUDIO.gunfire_take(weapon_id, _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 
 func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
@@ -1482,6 +1566,7 @@ func spawn_officer() -> CharacterBody3D:
 	return null
 
 func on_region_changed() -> void:
+	_pending_contact.clear()
 	_police_rounds.clear()
 	_clear_combat_registers()
 	_swing_age = -1.0
@@ -1692,7 +1777,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	for key in ["health", "armor", "crime_points", "hidden_time"]:
 		if not data.has(key) or (typeof(data[key]) != TYPE_FLOAT and typeof(data[key]) != TYPE_INT) or not is_finite(float(data[key])): return false
 	if float(data.health) < 0 or float(data.health) > 100 or float(data.armor) < 0 or float(data.armor) > 100: return false
-	if float(data.crime_points) != floorf(float(data.crime_points)) or float(data.crime_points) < 0 or float(data.crime_points) > 300: return false
+	if float(data.crime_points) != floorf(float(data.crime_points)) or float(data.crime_points) < 0 or float(data.crime_points) > MAX_CRIME_POINTS: return false
 	if float(data.hidden_time) < 0 or float(data.hidden_time) > 120: return false
 	if data.has("customization") and not data.customization is Dictionary: return false
 	var restored_customization: Dictionary = CUSTOM.normalize(data.get("customization", {}))

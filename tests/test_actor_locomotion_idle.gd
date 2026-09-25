@@ -44,6 +44,12 @@ func pose_error(a: Array, b: Array) -> float:
 	var error := 0.0
 	for bone in mini(a.size(), b.size()):
 		error = maxf(error, (a[bone][0] as Vector3).distance_to(b[bone][0] as Vector3))
+		# Repouso vivo: só a coluna baixa respira (amplitude autoral 0,009 rad).
+		# Os demais ossos continuam obrigados a voltar à pose, sem passada presa.
+		if actor.skeleton.get_bone_name(bone) == "Spine02":
+			var breath := (a[bone][1] as Quaternion).angle_to(b[bone][1] as Quaternion)
+			if breath > 0.011: error = maxf(error, breath)
+			continue
 		error = maxf(error, (a[bone][1] as Quaternion).angle_to(b[bone][1] as Quaternion))
 	return error
 
@@ -122,7 +128,7 @@ func _run() -> void:
 	await frames(2)
 	check(actor._combat_weight > 0.0, "golpe entra pela camada de combate")
 	actor.combat_clip = ""
-	await frames(12)
+	await frames(45) # Inclui os dois passos do giro iniciado pela mira.
 	check(actor._combat_weight == 0.0 and actor.animation.current_animation == "Walking" and pose_error(actor._capture_pose(), actor._idle_pose) < 0.002, "golpe termina no repouso, não no último passo", "combat=%.3f anim=%s" % [actor._combat_weight, actor.animation.current_animation])
 
 	print("ACTOR_LOCOMOTION_IDLE checks=%d failures=%s" % [checks, failures])

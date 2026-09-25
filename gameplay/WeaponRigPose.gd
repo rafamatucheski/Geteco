@@ -27,6 +27,8 @@ const CROSS_GRIP_LEFT := ["smg", "shotgun", "sawed_off", "ak47", "m4a1", "huntin
 ## Ombro de referência do `MeshyMeleePose` (espaço V1) para o balanço do cabo ao andar.
 const MELEE_SHOULDER := Vector3(0.23, 1.18, -0.015)
 const GRENADE_RELEASE := 0.20
+## Instante de contato nas trajetórias abaixo; Gameplay usa o mesmo relógio.
+const MELEE_CONTACT := {"fists": 0.14, "knuckles": 0.16, "knife": 0.18, "bat": 0.36, "axe": 0.38}
 ## Repouso dos ossos no espaço do esqueleto do `dante.glb` (medido no GLB; o
 ## modelo é girado 180° dentro do Actor). Com eles o ombro sai da mesma conta
 ## que a V1 fazia em `sync_shoulders`: clavícula protraída 0,20 rad e tronco
@@ -39,6 +41,7 @@ const KNUCKLE_DURATION := 0.32
 
 var weapon_id := ""
 var action_age := 10.0
+var _attacked_id := ""
 var recoil := 0.0
 var equip_blend := 1.0
 var punch_left := false
@@ -52,10 +55,17 @@ var _carry_yaw := 0.0
 var _stance_yaw := 0.0
 var _move_weight := 0.0
 var _sprint_weight := 0.0
+var _guard_weight := 0.0
+var _right_solve_weight := 0.0
+var _left_solve_weight := 0.0
+var _display_basis := Basis.IDENTITY
+var _offhand_basis := Basis.IDENTITY
+var _support_weight := 0.0
 
 ## Mesmo contador da V1 (`PlayerCombatPose.on_attack`): cada golpe troca o lado do
 ## soco e a variação de faca/soqueira, então golpes seguidos não repetem a pose.
 func attack(id: String, recoil_multiplier: float = 1.0) -> void:
+	_attacked_id = id
 	var profile: Array = DATA.PROFILES.get(id, DATA.PROFILES.pistol)
 	recoil = minf(recoil + float(profile[2]) * recoil_multiplier, float(profile[2]) * 1.6 * recoil_multiplier)
 	action_age = 0.0
@@ -66,18 +76,25 @@ func attack(id: String, recoil_multiplier: float = 1.0) -> void:
 func reset() -> void:
 	weapon_id = ""
 	action_age = 10.0
+	_attacked_id = ""
 	recoil = 0.0
 	equip_blend = 1.0
 	melee_support_weight = 0.0
+	_guard_weight = 0.0
+	_right_solve_weight = 0.0
+	_left_solve_weight = 0.0
+	_support_weight = 0.0
 
 ## `rig` (opcional): "body_bob" (subida do quadril no passo, em metros do Actor)
 ## e "loaded" (granada ainda na mão).
 func update(id: String, delta: float, aiming: bool, reloading: bool, reload_progress: float, moving: bool, sprinting: bool, phase: float, rig: Dictionary = {}) -> Dictionary:
+	reloading = reloading and id in FIREARMS
 	if id != weapon_id:
 		weapon_id = id
+		_support_weight = 0.0
 		equip_blend = 0.0
 		recoil = 0.0
-		action_age = 10.0
+		if action_age != 0.0 or _attacked_id != id: action_age = 10.0
 		_carry_yaw = 0.0
 		if id in HANDGUNS: _right = Vector3(0.035, 0.96, -0.365)
 		elif id == "smg": _right = Vector3(0.02, 0.93, -0.28)
@@ -92,12 +109,14 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var walk_clock := phase * TAU
 	var arm_swing := cos(walk_clock + PI * 0.175 * run) * lerpf(0.32, 0.55, run) * _move_weight
 	var body_offset := Vector3(0, float(rig.get("body_bob", 0.0)) / V1_TO_V2, 0)
-	var engaged := aiming or action_age < 0.45
+	var engaged := aiming or action_age < (0.90 if id == "fists" else 0.45)
+	_guard_weight = move_toward(_guard_weight, 1.0 if engaged else 0.0, delta * (4.0 if id == "fists" and not engaged else 8.0))
 
 	var melee_pose: Dictionary = {}
 	if id in ["axe", "bat"]:
 		melee_pose = _shoulder_swing(id, action_age, walk_clock, _move_weight, run, body_offset)
 	melee_support_weight = float(melee_pose.support_weight) if not melee_pose.is_empty() else 0.0
+	if id in ["axe", "bat"]: melee_support_weight = 1.0
 	var melee_support_active := melee_support_weight > 0.995
 	# Postura de ombro: fuzil apoiado gira o tronco para a coronha encostar no
 	# ombro de tiro e o braço de apoio alcançar o guarda-mão.
@@ -105,6 +124,10 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var stance := -0.60 if (shouldered or id == "flamethrower") and engaged else 0.0
 	if id in LONG_GUNS and not engaged: stance = -0.30
 	if not melee_pose.is_empty(): stance = float(melee_pose.torso)
+	if id in ["fists", "knuckles", "knife"]:
+		var attack_weight := smoothstep(0.0, 0.12, action_age) * (1.0 - smoothstep(0.16, 0.38, action_age))
+		stance = (-0.12 + (0.38 if punch_left else -0.38) * attack_weight) * _guard_weight
+		if id == "knife": stance = -0.12 + attack_weight * 0.30
 	_stance_yaw = lerpf(_stance_yaw, stance, 1.0 - exp(-12.0 * delta))
 	var right_shoulder := _shoulder("Right", _stance_yaw) + body_offset
 	var left_shoulder := _shoulder("Left", _stance_yaw) + body_offset
@@ -181,27 +204,25 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var left_free := 0.0
 	var visible := id != "fists"
 	if id == "fists":
-		# Soco alternado da V1: uma mão vai ao alvo na altura do peito enquanto a
-		# outra fica baixa, junto ao quadril. Fora do golpe os braços voltam ao clipe.
-		var punching := action_age < 0.30
-		if engaged:
+		# Stable guard, alternating reach and recovery. Both elbows keep the
+		# same pole through contact; fingers do not select a different IK path.
+		var punching := action_age < 0.28
+		if _guard_weight > 0.0:
+			# O punho volta firme à guarda, sem herdar a inclinação de arma baixa.
+			gun_basis = Basis.IDENTITY
+			offhand_basis = Basis.IDENTITY
 			right_solve = true
 			left_solve = true
-			var relaxed_right := Vector3(0.215, 0.65, -0.025)
-			var relaxed_left := Vector3(-0.215, 0.65, -0.025)
-			if not punching:
-				relaxed_right += Vector3(0, 0, -arm_swing * 0.22) + body_offset
-				relaxed_left += Vector3(0, 0, arm_swing * 0.22) + body_offset
+			var relaxed_right := Vector3(0.15, 1.04, -0.23) + body_offset
+			var relaxed_left := Vector3(-0.15, 1.07, -0.26) + body_offset
 			hand = relaxed_right
 			left_target = relaxed_left
 			if punching:
-				var jab := sin(action_age / 0.30 * PI)
-				if punch_left: left_target = left_target.lerp(Vector3(-0.12, 1.06, -0.38), jab)
-				else: hand = hand.lerp(Vector3(0.12, 1.06, -0.38), jab)
-			right_fist = punching
-			left_fist = punching
-			right_free = 0.0 if punching and not punch_left else 1.0
-			left_free = 0.0 if punching and punch_left else 1.0
+				var jab := smoothstep(0.025, 0.12, action_age) * (1.0 - smoothstep(0.14, 0.28, action_age))
+				if punch_left: left_target = left_target.lerp(Vector3(-0.055, 1.09, -0.46) + body_offset, jab)
+				else: hand = hand.lerp(Vector3(0.055, 1.09, -0.46) + body_offset, jab)
+			right_fist = true
+			left_fist = true
 	elif id == "knuckles":
 		var pose := _knuckle_pose(knuckle_variant, action_age, engaged, arm_swing, run)
 		hand = pose.right
@@ -212,7 +233,11 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		right_fist = true
 		left_fist = true
 	elif id == "knife":
-		if engaged: hand = Vector3(0.21, 0.86, -0.16)
+		if engaged:
+			hand = Vector3(0.21, 1.0, -0.20)
+			left_target = Vector3(-0.16, 1.02, -0.24)
+			left_solve = true
+			left_fist = true
 		else:
 			# A faca carregada pende ao lado da coxa, com pouco vaivém do passo.
 			hand = Vector3(0.21, 0.66 if sprinting else 0.68, -0.11 - arm_swing * 0.12)
@@ -227,12 +252,13 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		var released := Vector3(0.12, 1.13, -0.38)
 		var follow := Vector3(0.10, 0.90, -0.37)
 		hand = ready
-		if action_age < GRENADE_RELEASE: hand = cocked.lerp(released, smoothstep(0.0, GRENADE_RELEASE, action_age))
+		if action_age < 0.08: hand = ready.lerp(cocked, smoothstep(0.0, 0.08, action_age))
+		elif action_age < GRENADE_RELEASE: hand = cocked.lerp(released, smoothstep(0.08, GRENADE_RELEASE, action_age))
 		elif action_age < 0.38: hand = released.lerp(follow, smoothstep(GRENADE_RELEASE, 0.38, action_age))
 		elif action_age < 0.70: hand = follow.lerp(ready, smoothstep(0.38, 0.70, action_age))
 		gun_basis = Basis(Vector3.RIGHT, -0.20)
 		visible = action_age < GRENADE_RELEASE or (action_age >= 0.70 and bool(rig.get("loaded", true)))
-		right_free = 1.0 if action_age >= 0.70 else 0.0
+		right_free = smoothstep(0.45, 0.70, action_age)
 	if id in ["axe", "bat"]:
 		hand = melee_pose.hand
 		gun_basis = melee_pose.basis
@@ -284,11 +310,19 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 				if left_target.z < -0.16: left_target += reload_hand - hand
 				hand = reload_hand
 
+	_display_basis = _follow_basis(_display_basis, gun_basis, delta)
+	_offhand_basis = _follow_basis(_offhand_basis, offhand_basis, delta)
+	gun_basis = _display_basis
+	offhand_basis = _offhand_basis
 	var blend := 1.0 - exp(-22.0 * delta)
+	# A curva do soco já tem aceleração e parada; outro filtro deixava a
+	# recuperação arrastada e o braço atrasado em relação ao tronco.
+	if id == "fists" and action_age < 0.90: blend = 1.0
 	# O passo já vem suavizado; filtrar de novo as mãos livres atrasava os
 	# braços em relação ao pé oposto.
 	if id in ["fists", "knuckles"] and not engaged and not reloading and equip_blend >= 1.0: blend = 1.0
-	_right = _right.lerp(hand, blend)
+	var hand_target := _right.lerp(hand, blend)
+	_right = _right.move_toward(hand_target, delta * 1.4) if id in ["axe", "bat"] else hand_target
 	_left = _left.lerp(left_target, blend)
 	if id in ["axe", "bat"] and melee_support_weight == 0.0 and equip_blend >= 1.0: _left = left_target
 	if id in HANDGUNS and (engaged or reloading or equip_blend < 1.0):
@@ -298,17 +332,21 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		_right.y = maxf(_right.y, 0.94)
 		_right.z = minf(_right.z, -0.33)
 	var pump_stroke := reload_pump if reloading else pump
-	var support_locked := support != Vector3.ZERO
-	if support_locked:
+	_support_weight = move_toward(_support_weight, 1.0 if support != Vector3.ZERO else 0.0, delta * 6.0)
+	if id in ["axe", "bat"]: _support_weight = melee_support_weight
+	var support_locked := support != Vector3.ZERO and _support_weight >= 0.999 and equip_blend >= 0.999
+	if support != Vector3.ZERO:
 		# O apoio sai da mão de tiro já suavizada: filtrar as duas palmas como
 		# pontos independentes fazia a mão esquerda deslizar pelo guarda-mão.
-		_left = _right + gun_basis * (support + Vector3(0, 0, pump_stroke))
+		_left = _left.lerp(_right + gun_basis * (support + Vector3(0, 0, pump_stroke)), _support_weight)
 
 	var left_grip := false
 	if id in ["axe", "bat"]: left_grip = melee_support_active
 	elif id in HANDGUNS: left_grip = engaged or reloading
 	elif id not in ["fists", "knuckles", "knife", "grenade"]: left_grip = not reloading and DATA.SUPPORT_GRIPS.has(id)
 	var right_grip := id != "fists" and not right_fist and not (id == "grenade" and not visible)
+	_right_solve_weight = move_toward(_right_solve_weight, 1.0 if right_solve else 0.0, delta * 10.0)
+	_left_solve_weight = move_toward(_left_solve_weight, 1.0 if left_solve or left_grip else 0.0, delta * 10.0)
 	var cross := Basis(Vector3.RIGHT, PI * 0.5)
 	var right_basis := gun_basis * (cross if id in CROSS_GRIP else Basis.IDENTITY)
 	var left_basis := offhand_basis if id == "knuckles" else gun_basis * (cross if id in CROSS_GRIP or id in CROSS_GRIP_LEFT else Basis.IDENTITY)
@@ -323,11 +361,13 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"gun_origin": right_v2 - model_basis * grip * scale,
 		"weapon_scale": scale,
 		"right_grip": right_grip, "left_grip": left_grip,
-		"right_solve": right_solve, "left_solve": left_solve or left_grip,
-		"left_weight": melee_support_weight if id in ["axe", "bat"] else 1.0,
+		"right_solve": _right_solve_weight > 0.0, "left_solve": _left_solve_weight > 0.0,
+		"right_weight": minf(_right_solve_weight, _guard_weight) if id == "fists" else _right_solve_weight,
+		"left_weight": minf(_left_solve_weight, melee_support_weight) if id in ["axe", "bat"] else (minf(_left_solve_weight, _guard_weight) if id == "fists" else _left_solve_weight),
 		"right_fist": right_fist, "left_fist": left_fist,
 		"right_free": right_free, "left_free": left_free,
 		"support_locked": support_locked,
+		"support_weight": _support_weight if support != Vector3.ZERO else 0.0,
 		# Ponto do apoio no espaço do modelo da arma (o machado da V1 aproxima as
 		# mãos: 12 cm do cabo, não o ponto de `SUPPORT_GRIPS`).
 		"support_point": grip + support + Vector3(0, 0, pump_stroke) if support_locked else DATA.SUPPORT_GRIPS.get(id, grip),
@@ -337,6 +377,12 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"pump": pump_stroke,
 		"slide": clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
 	}
+
+func _follow_basis(current: Basis, target: Basis, delta: float) -> Basis:
+	var a := current.orthonormalized().get_rotation_quaternion()
+	var b := target.orthonormalized().get_rotation_quaternion()
+	var angle := a.angle_to(b)
+	return Basis(a.slerp(b, minf(1.0, delta * 18.0 / maxf(angle, 0.0001))))
 
 ## Ombro (origem do osso Arm) no espaço V1 do Actor, depois da protração da
 ## clavícula e do giro de postura que `Actor._apply_combat_weapon_pose` aplica.
@@ -351,12 +397,12 @@ func _shoulder(side: String, yaw: float) -> Vector3:
 ## nunca num quadro-chave parado.
 func _shoulder_swing(id: String, age: float, gait_phase: float, movement: float, running: float, body_offset: Vector3) -> Dictionary:
 	var axe := id == "axe"
-	var load_end := 0.18 if axe else 0.14
-	var follow_end := 0.38 if axe else 0.34
-	var return_start := 0.49 if axe else 0.43
-	var end := 0.72 if axe else 0.58
-	var carry := Vector3(0.25, 1.10, -0.24)
-	var loaded := Vector3(0.19, 1.15, -0.25)
+	var load_end := 0.24 if axe else 0.22
+	var follow_end := 0.44 if axe else 0.40
+	var return_start := 0.55 if axe else 0.49
+	var end := 0.78 if axe else 0.66
+	var carry := Vector3(0.08, 1.05, -0.24)
+	var loaded := Vector3(0.05, 1.15, -0.25)
 	var follow := Vector3(-0.08, 0.87 if axe else 0.98, -0.37)
 	var clear := Vector3(0.27, 1.13, -0.32)
 	var roll := -PI / 2.0 if axe else 0.0

@@ -1,0 +1,1272 @@
+[
+  {
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      }
+    ],
+    "time": "2026-09-24T20:37:49.1769989Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:49.5428086Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:50.8950495Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:52.2895991Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:53.7076876Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:55.0521506Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:56.3939822Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:57.7771725Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:37:59.1808229Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:00.5191631Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:01.9070076Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:03.2847747Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:04.6649629Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:06.0407904Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:07.3753833Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:08.7531950Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:10.1185550Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:11.5127226Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:12.9095038Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:14.3211159Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:15.6771416Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:17.0260484Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:18.3736440Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:19.7746904Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:21.1510909Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:22.4643920Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:23.8022069Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:25.2184075Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:26.5792576Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:27.9677330Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:29.3577409Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:30.7519308Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:32.1362142Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:33.4671249Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:34.8485708Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:36.2119550Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:37.6172249Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:39.0038299Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:40.3883775Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:41.7721865Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:43.1183702Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:44.4102110Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:45.7773103Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:47.1848501Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:48.5708663Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:49.9537867Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:51.3196057Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:52.7181275Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:54.1006515Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:55.4821507Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:56.8558930Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:58.2427068Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:38:59.6261941Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:01.0130016Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:02.3791013Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:03.7754676Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:05.3513559Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:06.9075051Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:08.2741870Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:09.6840007Z"
+  },
+  {
+    "concurrent": false,
+    "processes": [
+      {
+        "ProcessId": 76560,
+        "ParentProcessId": 26432,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --editor"
+      },
+      {
+        "ProcessId": 53644,
+        "ParentProcessId": 90632,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      },
+      {
+        "ProcessId": 42412,
+        "ParentProcessId": 53644,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path \"D:/geteco/game\" --script res://evidence/dante-animation-fix-0924/measure.gd -- --no-save --skip-arrival --population=24 --dante-label=stable-after"
+      }
+    ],
+    "time": "2026-09-24T20:39:11.0774843Z"
+  }
+]

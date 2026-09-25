@@ -17,6 +17,7 @@ const MAX_SHELLS := 16
 const MAX_STAINS := 12
 const MAX_TRACERS := 32
 const MAX_FLAME_PACKETS := 8
+const FLAME_PACKET_LIFE := 0.38
 ## Emissores por efeito disparados em rodízio. Com um emissor só, cada chumbo da
 ## escopeta reiniciava o anterior e só o último respingo/faísca aparecia.
 const BURST_POOL := 4
@@ -152,7 +153,7 @@ func _ready() -> void:
 	_backblast = _emitter(6, 0.6, _smoke_mesh, Color(0.52, 0.48, 0.40, 0.3), 1.0, 2.6, 25.0, 0.0, 0.8, 1.6, 2.0)
 	_flame_light = OmniLight3D.new()
 	_flame_light.light_color = Color(1.0, 0.55, 0.18)
-	_flame_light.omni_range = 5.0
+	_flame_light.omni_range = 3.2
 	_flame_light.shadow_enabled = false
 	_flame_light.visible = false
 	add_child(_flame_light)
@@ -239,7 +240,9 @@ func _ready() -> void:
 		_tracers.append(tracer)
 		_tracer_state.append({"life": 0.0})
 	for index in MAX_FLAME_PACKETS:
-		var packet := _emitter(18, 0.38, flame_quad, Color.WHITE, 8.0, 12.0, 7.0, 2.2, 0.5, 1.1, 3.4)
+		# Chama pequena no bico que se abre até a ponta; crescer de 1,1 para 3,4× fazia
+		# folhas de quase 2 m que, sobre concreto claro, liam como névoa bege.
+		var packet := _emitter(22, FLAME_PACKET_LIFE, flame_quad, Color.WHITE, 8.0, 12.0, 5.0, 1.6, 0.35, 0.6, 2.6)
 		packet.color_ramp = _fire_ramp()
 		_flame_packets.append(packet)
 	var tongue_mesh := _build_flame_tongue_mesh()
@@ -502,8 +505,12 @@ func flame(origin: Vector3, direction: Vector3, distance: float) -> void:
 	var packet := _flame_packets[index]
 	var tongue := _flame_tongues[index]
 	_next_flame = (_next_flame + 1) % MAX_FLAME_PACKETS
-	packet.initial_velocity_min = maxf(6.0, distance / 0.32 * 0.70)
-	packet.initial_velocity_max = maxf(8.0, distance / 0.32)
+	# Velocidades de 25% a 100%: o pacote nasce já esticado do bico até o fim do
+	# jato. Com 70–100% todas as partículas saíam juntas a ~27 m/s e o bico ficava
+	# vazio — só o risco do clarão aparecia (vídeo do jogador em 2026-09-24).
+	var reach := maxf(distance, 1.5) / FLAME_PACKET_LIFE
+	packet.initial_velocity_min = reach * 0.25
+	packet.initial_velocity_max = reach
 	_fire(packet, origin, direction + Vector3.UP * 0.02)
 	tongue.global_position = origin
 	tongue.look_at(origin + direction.normalized(), Vector3.UP)
@@ -738,7 +745,9 @@ func _physics_process(delta: float) -> void:
 	if _flame_light_time > 0.0:
 		active = true
 		_flame_light_time -= delta
-		_flame_light.light_energy = randf_range(1.6, 2.6)
+		# Luz fraca: a 1,6–2,6 com alcance 5 m ela pintava um clarão bege no chão claro,
+		# maior que o próprio jato.
+		_flame_light.light_energy = randf_range(0.6, 1.0)
 		if _flame_light_time <= 0.0: _flame_light.visible = false
 	if _blast_light_time > 0.0:
 		active = true

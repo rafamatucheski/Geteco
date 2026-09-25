@@ -1,0 +1,22 @@
+[
+  {
+    "Algorithm": "SHA256",
+    "Hash": "6BB37D661B56700B830B1BD7A59E75C736C1F5212E8C2B1E037B9FA2ED992EE6",
+    "Path": "D:\\geteco\\game\\scripts\\Actor.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "FFCC9708CD00C42C00ED38B84E8F29AB9FBB59C571234AE30AA12455E2FBEF69",
+    "Path": "D:\\geteco\\game\\gameplay\\WeaponRigPose.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "851280BB0FF5A72A8095D0F124F727E88F1CEDDCB198F227864A7935B9DC649E",
+    "Path": "D:\\geteco\\game\\gameplay\\Gameplay.gd"
+  },
+  {
+    "Algorithm": "SHA256",
+    "Hash": "A8017A34DE7B59F48EF53B53111AC298D2E3D2F686BEF220D44BE8A082172AFE",
+    "Path": "D:\\geteco\\game\\gameplay\\VehicleBoardingPresentation.gd"
+  }
+]

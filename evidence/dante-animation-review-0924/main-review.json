@@ -1,0 +1,3774 @@
+{
+	"measurements": {
+		"axe2": {
+			"age": 0.15,
+			"bone": "RightHand",
+			"degrees": 141.691222482782,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		"fists0": {
+			"age": 0.35,
+			"bone": "LeftForeArm",
+			"degrees": 109.127981426045,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		"fists1": {
+			"age": 0.35,
+			"bone": "RightForeArm",
+			"degrees": 117.557473050594,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		"smg3": {
+			"age": 0.0333333333333333,
+			"bone": "RightHand",
+			"degrees": 3.84165355905201,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		}
+	},
+	"trace": [
+		{
+			"age": 0.0166666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0333333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 14.6398035613432,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.05,
+			"bone": "LeftForeArm",
+			"degrees": 31.9232420862237,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0666666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 35.5386080629786,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0833333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 31.6269109139881,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.1,
+			"bone": "LeftForeArm",
+			"degrees": 17.9542194504363,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.116666666666667,
+			"bone": "LeftArm",
+			"degrees": 10.0498378919192,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.133333333333333,
+			"bone": "LeftArm",
+			"degrees": 11.6073267821309,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.15,
+			"bone": "LeftArm",
+			"degrees": 11.262605427173,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.166666666666667,
+			"bone": "LeftArm",
+			"degrees": 9.38636270745428,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.183333333333333,
+			"bone": "LeftArm",
+			"degrees": 6.30801309711564,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.2,
+			"bone": "LeftArm",
+			"degrees": 2.24506887947462,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.216666666666667,
+			"bone": "LeftArm",
+			"degrees": 2.27382781786178,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.233333333333333,
+			"bone": "LeftArm",
+			"degrees": 6.43943276693585,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.25,
+			"bone": "LeftArm",
+			"degrees": 9.6967973665523,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.266666666666667,
+			"bone": "LeftArm",
+			"degrees": 11.7701303174136,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.283333333333333,
+			"bone": "LeftArm",
+			"degrees": 12.1760851720543,
+			"label": "fists0",
+			"left_fist": true,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.3,
+			"bone": "LeftForeArm",
+			"degrees": 11.4560730967346,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.316666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 36.6429028027025,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.333333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 10.8153962299455,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.35,
+			"bone": "LeftForeArm",
+			"degrees": 109.127981426045,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.366666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 10.398618940565,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.383333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 9.75005832792641,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.4,
+			"bone": "LeftForeArm",
+			"degrees": 9.71729476425151,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.416666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 12.2591607629292,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.433333333333333,
+			"bone": "LeftArm",
+			"degrees": 0.59610470645201,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.45,
+			"bone": "LeftArm",
+			"degrees": 0.405418204543125,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.466666666666667,
+			"bone": "LeftArm",
+			"degrees": 0.279764815207987,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.483333333333333,
+			"bone": "LeftArm",
+			"degrees": 0.193826654699372,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.5,
+			"bone": "LeftArm",
+			"degrees": 0.11869406690113,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.516666666666667,
+			"bone": "LeftArm",
+			"degrees": 0.068528041664785,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.533333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.55,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.566666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.583333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.6,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.616666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.633333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.65,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.666666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.683333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.700000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.716666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.733333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.750000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.766666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.783333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.800000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.816666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.833333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.850000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.866666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.883333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.900000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.916666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.933333333333335,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.950000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.966666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.983333333333335,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.0,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.01666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.03333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.05,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.06666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.08333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.1,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.11666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.13333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.15,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.16666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.18333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.2,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.21666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.23333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.25,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.26666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.28333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.3,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.31666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.33333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.35,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.36666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.38333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.4,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.41666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.43333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.45,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.46666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.48333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.5,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.51666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.53333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.55,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.56666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.58333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.6,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.61666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.63333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.65,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.66666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.68333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.7,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.71666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.73333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.75,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.76666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.78333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.8,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.81666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.83333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.85,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.86666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.88333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.9,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.91666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists0",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.0166666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.0333333333333333,
+			"bone": "RightForeArm",
+			"degrees": 24.0480954449015,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.05,
+			"bone": "RightForeArm",
+			"degrees": 29.1285335835295,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.0666666666666667,
+			"bone": "RightForeArm",
+			"degrees": 32.9973508049107,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.0833333333333333,
+			"bone": "RightForeArm",
+			"degrees": 30.7662592672423,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.1,
+			"bone": "RightForeArm",
+			"degrees": 18.8974532068895,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.116666666666667,
+			"bone": "RightArm",
+			"degrees": 10.2511389346851,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.133333333333333,
+			"bone": "RightArm",
+			"degrees": 11.8595315172336,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.15,
+			"bone": "RightArm",
+			"degrees": 11.4922620002782,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.166666666666667,
+			"bone": "RightArm",
+			"degrees": 9.53471100113237,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.183333333333333,
+			"bone": "RightArm",
+			"degrees": 6.37332208529883,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.2,
+			"bone": "RightArm",
+			"degrees": 2.25966734160846,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.216666666666667,
+			"bone": "RightArm",
+			"degrees": 2.28926916802788,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.233333333333333,
+			"bone": "RightArm",
+			"degrees": 6.5078883378923,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.25,
+			"bone": "RightArm",
+			"degrees": 9.85265203812824,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.266666666666667,
+			"bone": "RightArm",
+			"degrees": 12.0129623254278,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.283333333333333,
+			"bone": "RightArm",
+			"degrees": 12.4360148511083,
+			"label": "fists1",
+			"left_fist": true,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.3,
+			"bone": "RightForeArm",
+			"degrees": 12.5701939173532,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.316666666666667,
+			"bone": "RightForeArm",
+			"degrees": 40.2688111764413,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.333333333333333,
+			"bone": "RightForeArm",
+			"degrees": 10.6496155859582,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.35,
+			"bone": "RightForeArm",
+			"degrees": 117.557473050594,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.366666666666667,
+			"bone": "RightForeArm",
+			"degrees": 10.1951834636834,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.383333333333333,
+			"bone": "RightForeArm",
+			"degrees": 8.95449155378167,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.4,
+			"bone": "RightForeArm",
+			"degrees": 7.99134011193514,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.416666666666667,
+			"bone": "RightForeArm",
+			"degrees": 7.39626841823424,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.433333333333333,
+			"bone": "RightForeArm",
+			"degrees": 7.50069603422821,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.45,
+			"bone": "RightForeArm",
+			"degrees": 5.35210891286531,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.466666666666667,
+			"bone": "RightArm",
+			"degrees": 0.276953045106189,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.483333333333333,
+			"bone": "RightArm",
+			"degrees": 0.189745630010503,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.5,
+			"bone": "RightArm",
+			"degrees": 0.131221234148528,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.516666666666667,
+			"bone": "RightArm",
+			"degrees": 0.0884693258953794,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.533333333333333,
+			"bone": "RightArm",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.55,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.566666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.583333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.6,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.616666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.633333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.65,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.666666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.683333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.700000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.716666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.733333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.750000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.766666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.783333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.800000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.816666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.833333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.850000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.866666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.883333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.900000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.916666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.933333333333335,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.950000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.966666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.983333333333335,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.0,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.01666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.03333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.05,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.06666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.08333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.1,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.11666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.13333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.15,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.16666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.18333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.2,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.21666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.23333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.25,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.26666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.28333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.3,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.31666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.33333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.35,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.36666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.38333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.4,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.41666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.43333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.45,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.46666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.48333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.5,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.51666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.53333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.55,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.56666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.58333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.6,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.61666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.63333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.65,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.66666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.68333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.7,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.71666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.73333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.75,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.76666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.78333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.8,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.81666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.83333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.85,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.86666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.88333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.9,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 1.91666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "fists1",
+			"left_fist": false,
+			"left_free": 1.0
+		},
+		{
+			"age": 0.0166666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0333333333333333,
+			"bone": "LeftArm",
+			"degrees": 3.34117144761933,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.05,
+			"bone": "LeftArm",
+			"degrees": 8.79640597166808,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0666666666666667,
+			"bone": "LeftArm",
+			"degrees": 12.4222101850221,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0833333333333333,
+			"bone": "LeftArm",
+			"degrees": 14.3545150974483,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.1,
+			"bone": "LeftArm",
+			"degrees": 14.7860737699664,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.116666666666667,
+			"bone": "LeftArm",
+			"degrees": 13.7896815049767,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.133333333333333,
+			"bone": "LeftArm",
+			"degrees": 11.2479777232918,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.15,
+			"bone": "RightHand",
+			"degrees": 141.691222482782,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.166666666666667,
+			"bone": "LeftHand",
+			"degrees": 8.73558825975099,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.183333333333333,
+			"bone": "LeftHand",
+			"degrees": 5.87623158967588,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.2,
+			"bone": "RightArm",
+			"degrees": 3.05300128422485,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.216666666666667,
+			"bone": "LeftHand",
+			"degrees": 4.74020336418127,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.233333333333333,
+			"bone": "RightHand",
+			"degrees": 6.53543064883356,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.25,
+			"bone": "LeftForeArm",
+			"degrees": 18.5692609097231,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.266666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 18.882833186971,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.283333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 16.9556201805711,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.3,
+			"bone": "LeftForeArm",
+			"degrees": 13.7727648339498,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.316666666666667,
+			"bone": "RightForeArm",
+			"degrees": 10.788609935568,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.333333333333333,
+			"bone": "RightForeArm",
+			"degrees": 15.5378095126598,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.35,
+			"bone": "RightForeArm",
+			"degrees": 12.9451883782598,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.366666666666667,
+			"bone": "RightForeArm",
+			"degrees": 6.81782482006774,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.383333333333333,
+			"bone": "RightForeArm",
+			"degrees": 4.59456964381144,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.4,
+			"bone": "RightHand",
+			"degrees": 2.81605497828452,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.416666666666667,
+			"bone": "LeftHand",
+			"degrees": 75.1485962675534,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.433333333333333,
+			"bone": "RightHand",
+			"degrees": 19.6731834041372,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.45,
+			"bone": "RightHand",
+			"degrees": 22.5681215178067,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.466666666666667,
+			"bone": "RightHand",
+			"degrees": 20.1978853663667,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.483333333333333,
+			"bone": "RightHand",
+			"degrees": 141.476508656034,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.5,
+			"bone": "RightForeArm",
+			"degrees": 19.9541790941388,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.516666666666667,
+			"bone": "RightHand",
+			"degrees": 140.626341349664,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.533333333333333,
+			"bone": "RightHand",
+			"degrees": 5.4021814565575,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.55,
+			"bone": "RightHand",
+			"degrees": 4.53768697462992,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.566666666666667,
+			"bone": "RightHand",
+			"degrees": 4.94609215963531,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.583333333333333,
+			"bone": "RightHand",
+			"degrees": 5.63833268578975,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.6,
+			"bone": "RightHand",
+			"degrees": 6.30527760635305,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.616666666666667,
+			"bone": "RightHand",
+			"degrees": 139.835186877723,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.633333333333334,
+			"bone": "RightHand",
+			"degrees": 7.15030989112749,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.65,
+			"bone": "RightHand",
+			"degrees": 7.18605312482782,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.666666666666667,
+			"bone": "RightHand",
+			"degrees": 6.89028160121735,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.683333333333334,
+			"bone": "RightHand",
+			"degrees": 6.20409219578072,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.700000000000001,
+			"bone": "RightHand",
+			"degrees": 5.09369937778846,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.716666666666667,
+			"bone": "RightHand",
+			"degrees": 3.53822880847654,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.733333333333334,
+			"bone": "RightForeArm",
+			"degrees": 1.98780660273491,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.750000000000001,
+			"bone": "RightForeArm",
+			"degrees": 1.16297940490754,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.766666666666667,
+			"bone": "RightForeArm",
+			"degrees": 0.763101604359205,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.783333333333334,
+			"bone": "RightForeArm",
+			"degrees": 0.508219221658428,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.800000000000001,
+			"bone": "RightForeArm",
+			"degrees": 0.344917429411783,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.816666666666668,
+			"bone": "RightForeArm",
+			"degrees": 0.230699911181362,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.833333333333334,
+			"bone": "RightForeArm",
+			"degrees": 0.167858795743299,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.850000000000001,
+			"bone": "RightForeArm",
+			"degrees": 0.137056110009996,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.866666666666668,
+			"bone": "Spine",
+			"degrees": 0.104678325291172,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.883333333333334,
+			"bone": "Spine",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.900000000000001,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.916666666666668,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.933333333333335,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.950000000000001,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.966666666666668,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.983333333333335,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.0,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.01666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.03333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.05,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.06666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.08333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.1,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.11666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.13333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.15,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.16666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.18333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.2,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.21666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.23333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.25,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.26666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.28333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.3,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.31666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.33333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.35,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.36666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.38333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.4,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.41666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.43333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.45,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.46666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.48333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.5,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.51666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.53333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.55,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.56666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.58333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.6,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.61666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.63333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.65,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.66666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.68333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.7,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.71666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.73333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.75,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.76666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.78333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.8,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.81666666666667,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.83333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.85,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.86666666666666,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.88333333333333,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.9,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.91666666666666,
+			"bone": "LeftForeArm",
+			"degrees": 0.0791293690406109,
+			"label": "axe2",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0166666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0333333333333333,
+			"bone": "RightHand",
+			"degrees": 3.84165355905201,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.05,
+			"bone": "RightHand",
+			"degrees": 1.02182458108594,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0666666666666667,
+			"bone": "RightHand",
+			"degrees": 0.752774838581822,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.0833333333333333,
+			"bone": "RightHand",
+			"degrees": 0.553907691037965,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.1,
+			"bone": "RightHand",
+			"degrees": 0.41116911710257,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.116666666666667,
+			"bone": "RightHand",
+			"degrees": 0.303902436930547,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.133333333333333,
+			"bone": "RightHand",
+			"degrees": 0.216704813551366,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.15,
+			"bone": "RightHand",
+			"degrees": 0.153233399718958,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.166666666666667,
+			"bone": "RightHand",
+			"degrees": 0.11869406690113,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.183333333333333,
+			"bone": "RightHand",
+			"degrees": 0.0791293690406109,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.2,
+			"bone": "RightArm",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.216666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.233333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.25,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.266666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.283333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.3,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.316666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.333333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.35,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.366666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.383333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.4,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.416666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.433333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.45,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.466666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.483333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.5,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.516666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.533333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.55,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.566666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.583333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.6,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.616666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.633333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.65,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.666666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.683333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.700000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.716666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.733333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.750000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.766666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.783333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.800000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.816666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.833333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.850000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.866666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.883333333333334,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.900000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.916666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.933333333333335,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.950000000000001,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.966666666666668,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 0.983333333333335,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.0,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.01666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.03333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.05,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.06666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.08333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.1,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.11666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.13333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.15,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.16666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.18333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.2,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.21666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.23333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.25,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.26666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.28333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.3,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.31666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.33333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.35,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.36666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.38333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.4,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.41666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.43333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.45,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.46666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.48333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.5,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.51666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.53333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.55,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.56666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.58333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.6,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.61666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.63333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.65,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.66666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.68333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.7,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.71666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.73333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.75,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.76666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.78333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.8,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.81666666666667,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.83333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.85,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.86666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.88333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.9,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.91666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.93333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.95,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.96666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 1.98333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 2.0,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 2.01666666666666,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		},
+		{
+			"age": 2.03333333333333,
+			"bone": "RightToeBase",
+			"degrees": 0.0559529096807445,
+			"label": "smg3",
+			"left_fist": false,
+			"left_free": 0.0
+		}
+	]
+}

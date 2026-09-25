@@ -33,14 +33,18 @@ func _run() -> void:
 		check(finite_vector(muzzle), "%s possui bico/origem finito" % id)
 		pose.reset()
 		var frame: Dictionary
-		for tick in 20: frame = pose.update(id, 1.0 / 60.0, true, false, 0.0, false, false, 0.0)
+		# A pose e o esqueleto avançam juntos, como no Actor produtivo. Avançar
+		# apenas os alvos e saltar 20 quadros ignorava as transições dos braços.
+		for tick in 20:
+			frame = pose.update(id, 1.0 / 60.0, true, false, 0.0, false, false, 0.0)
+			actor._pose_locomotion(Vector3.ZERO, 0.0, Vector3.ZERO, 0.0)
+			actor.set_combat_weapon_pose(id, frame)
+			actor._apply_combat_weapon_pose()
 		check(finite_vector(frame.right) and finite_vector(frame.left) and finite_vector(frame.gun_origin), "%s produz postura finita" % id)
 		var grip: Vector3 = data.GRIPS.get(id, Vector3.ZERO)
 		check((frame.gun_origin + (frame.basis as Basis) * grip * float(frame.get("weapon_scale", 1.0))).distance_to(frame.right) < 0.0005, "%s alinha cabo e palma direita" % id)
 		if bool(frame.left_grip) and data.SUPPORT_GRIPS.has(id):
 			check((frame.gun_origin + (frame.basis as Basis) * (frame.get("support_point", data.SUPPORT_GRIPS[id]) as Vector3) * float(frame.get("weapon_scale", 1.0))).distance_to(frame.left) < 0.001, "%s alinha apoio e palma esquerda" % id)
-		actor.set_combat_weapon_pose(id, frame)
-		actor._apply_combat_weapon_pose()
 		model.global_transform = actor.combat_weapon_transform(grip)
 		check(actor.combat_palm_position("Right").distance_to(model.to_global(grip)) < 0.002, "%s mantém o modelo na palma real" % id)
 		if bool(frame.left_grip) and data.SUPPORT_GRIPS.has(id):
@@ -48,10 +52,12 @@ func _run() -> void:
 			check(support_distance < 0.080, "%s mantém o apoio no volume da mão real (%.3f m)" % [id, support_distance])
 		pose.attack(id)
 		var attacked: Dictionary
-		for attack_tick in 10: attacked = pose.update(id, 1.0 / 60.0, true, false, 0.0, false, false, 0.0)
+		for attack_tick in 10:
+			attacked = pose.update(id, 1.0 / 60.0, true, false, 0.0, false, false, 0.0)
+			actor._pose_locomotion(Vector3.ZERO, 0.0, Vector3.ZERO, 0.0)
+			actor.set_combat_weapon_pose(id, attacked)
+			actor._apply_combat_weapon_pose()
 		check(finite_vector(attacked.right) and finite_vector(attacked.gun_origin), "%s anima ataque sem alterar lógica" % id)
-		actor.set_combat_weapon_pose(id, attacked)
-		actor._apply_combat_weapon_pose()
 		model.global_transform = actor.combat_weapon_transform(grip)
 		if bool(attacked.left_grip) and data.SUPPORT_GRIPS.has(id):
 			var attack_support_distance := actor.combat_palm_position("Left").distance_to(model.to_global(attacked.get("support_point", data.SUPPORT_GRIPS[id])))

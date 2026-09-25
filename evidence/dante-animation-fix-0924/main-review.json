@@ -1,0 +1,50 @@
+{
+	"axe": {
+		"bone": "RightHand",
+		"clip": "Walking",
+		"degrees": 17.1887874709097,
+		"run": 0.0
+	},
+	"backfire": {
+		"bone": "RightForeArm",
+		"clip": "Walk_Backward_with_Gun",
+		"degrees": 17.1887413671328,
+		"run": 0.0
+	},
+	"fists": {
+		"bone": "LeftForeArm",
+		"clip": "Walking",
+		"degrees": 17.1887874709097,
+		"run": 0.0
+	},
+	"idle": {
+		"bone": "RightToeBase",
+		"clip": "Walking",
+		"degrees": 0.0559529096807445,
+		"run": 0.0
+	},
+	"run": {
+		"bone": "RightLeg",
+		"clip": "Running",
+		"degrees": 20.9778075922176,
+		"run": 0.986251412107961
+	},
+	"sidefire": {
+		"bone": "RightForeArm",
+		"clip": "Walk_Left_with_Gun",
+		"degrees": 17.1887413671328,
+		"run": 0.0
+	},
+	"turn": {
+		"bone": "RightLeg",
+		"clip": "Walking",
+		"degrees": 8.07754307567622,
+		"run": 0.0
+	},
+	"walk": {
+		"bone": "LeftToeBase",
+		"clip": "Walking",
+		"degrees": 17.5718518003207,
+		"run": 0.0
+	}
+}

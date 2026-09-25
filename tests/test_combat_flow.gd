@@ -165,7 +165,7 @@ func _run() -> void:
 	await shot("01_pistola_antes")
 	await point_mouse(npc.global_position)
 	Input.action_press("aim")
-	await frames(6)
+	await frames(24) # Giro e levantamento da arma são transições, não teleporte.
 	var flat: Vector3 = npc.global_position - player.global_position
 	flat.y = 0
 	var want_yaw := atan2(-flat.x, -flat.z)
@@ -216,8 +216,8 @@ func _run() -> void:
 		guard += 1
 	check(npc.dead and npc.health == 0.0, "NPC morre pelos disparos", "tiros=%d guard=%d" % [shots_taken, guard])
 	check(monotonic, "vida só diminui")
-	await frames(20)
-	check(npc.collision_layer == 0 and absf(npc.visual.rotation.z - PI / 2.0) < 0.01, "morte: corpo caído e sem colisão")
+	await frames(80)
+	check(npc.collision_layer == 0 and absf(npc.visual.rotation.x - PI / 2.0) < 0.05, "morte: corpo caído e sem colisão")
 	check(gameplay.stars >= 1 and gameplay.crime_points > 0, "crime escalou para procurado", "crime=%d estrelas=%d" % [gameplay.crime_points, gameplay.stars])
 	var incidents: Dictionary = gameplay.emergency.incidents
 	var roles: Array = []
@@ -264,9 +264,11 @@ func _run() -> void:
 		await frames(2)
 		Input.action_release("fire")
 		await frames(2)
-		check(is_equal_approx(before - victim.health, expected), "corpo a corpo %s: dano único" % id, "dano=%.1f esperado=%.1f" % [before - victim.health, expected])
+		check(victim.health == before, "corpo a corpo %s: antecipação antes do dano" % id)
 		# Golpe procedural da V1 (WeaponRigPose), sem clipe do GLB por cima.
 		check(gameplay._swing_age >= 0.0 and gameplay._rig_pose.action_age < 0.2 and player.combat_clip == "", "corpo a corpo %s: golpe procedural ativo" % id, "swing=%.2f clip=%s" % [gameplay._swing_age, player.combat_clip])
+		await frames(24)
+		check(is_equal_approx(before - victim.health, expected), "corpo a corpo %s: dano único no contato" % id, "dano=%.1f esperado=%.1f" % [before - victim.health, expected])
 		await frames(6)
 		await shot("06_melee_" + id)
 		await frames(60)
@@ -284,7 +286,7 @@ func _run() -> void:
 		Input.action_press("fire")
 		await frames(2)
 		Input.action_release("fire")
-		await frames(4)
+		await frames(28)
 		check((reach_victim.health < reach_before) == bool(case[2]), "alcance do %s a %.1f m: %s" % [case[0], case[1], "atinge" if case[2] else "não atinge"], "vida %.0f -> %.0f" % [reach_before, reach_victim.health])
 		discard(reach_victim)
 		await frames(3)
@@ -342,7 +344,7 @@ func _run() -> void:
 	check(target_grenade.health < g_before or target_grenade.dead, "granada explode perto do alvo mirado a 8 m", "vida=%.1f" % target_grenade.health)
 	await shot("09_granada")
 
-	# ---- 6b. locomoção armada: andar de costas em relação à mira, velocidade normal (sem reduzir movimento)
+	# ---- 6b. Recuo com passos próprios e velocidade controlada de combate.
 	state.equip_weapon("pistol")
 	await frames(2)
 	var walker := await spawn_npc(direction, 6.0)
@@ -358,15 +360,18 @@ func _run() -> void:
 	var move_y := back_dir.dot(back_vec.normalized())
 	var action := ("move_right" if move_x > 0 else "move_left") if absf(move_x) > absf(move_y) else ("move_down" if move_y > 0 else "move_up")
 	var start_pos: Vector3 = player.global_position
-	var start_phase: float = player.phase
 	Input.action_press(action)
 	await frames(24)
 	var speed_now: float = (player.global_position - start_pos).length() / (24.0 / 60.0)
-	check(gameplay.aiming and speed_now > 2.5, "recuando mirando: velocidade normal preservada", "%.2f m/s" % speed_now)
-	check(player.animation.current_animation in ["Walking", "Running"] and player.combat_stance == "gun", "recuando mirando: locomoção comum com fase invertida (clipe armado recusado por velocidade)", "anim=%s stance=%s" % [player.animation.current_animation, player.combat_stance])
-	var travelled_back: float = (player.global_position - start_pos).length()
-	var expected_back: float = fposmod(start_phase - travelled_back / 1.8, 1.0)
-	check(absf(player.phase - expected_back) < 0.12 or absf(absf(player.phase - expected_back) - 1.0) < 0.12, "fase da caminhada anda para trás (distância/1,8 m) enquanto recua", "fase %.2f -> %.2f esperado %.2f" % [start_phase, player.phase, expected_back])
+	check(gameplay.aiming and speed_now > 1.1 and speed_now < 2.0, "recuando mirando: passo controlado", "%.2f m/s" % speed_now)
+	check(player.animation.current_animation in ["Walk_Backward_with_Gun", "Walk_Left_with_Gun"] and player._run_weight == 0.0 and player._gait_direction.y < -0.65, "recuando mirando: mistura direcional sem corrida", "anim=%s direction=%s" % [player.animation.current_animation, player._gait_direction])
+	var forward_phase := true
+	for tick in 8:
+		var phase_before: float = player.phase
+		await physics_frame
+		var advance := fposmod(player.phase - phase_before, 1.0)
+		forward_phase = forward_phase and advance > 0.0 and advance < 0.06
+	check(forward_phase, "recuo toca o ciclo próprio para frente, sem inverter a corrida")
 	await shot("10_recuando_mirando")
 	Input.action_release(action)
 	Input.action_release("aim")
