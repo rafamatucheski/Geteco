@@ -40,7 +40,7 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 				for z in range(first.y,last.y+1):
 					var key := Vector2i(x,z)
 					if not _segments.has(key): _segments[key] = []
-					_segments[key].append({"a":a,"b":b,"radius":radius,"bed_radius":float(road.width)*0.5+4.0})
+					_segments[key].append({"a":a,"b":b,"radius":radius})
 	LAKE_BASINS.configure(roads)
 	_material = ShaderMaterial.new()
 	_material.shader = preload("res://world/regions/mountain_terrain.gdshader")
@@ -67,15 +67,9 @@ func height_at(point: Vector2) -> float:
 	# Fixed world-space waves: deterministic, continuous across loading boundaries.
 	var broad := 0.5+0.5*sin(point.x*0.025+sin(point.y*0.019))*cos(point.y*0.023)
 	var detail := 0.5+0.5*sin(point.x*0.075+0.7)*sin(point.y*0.068)
-	# The asphalt slab meets the Harbor bridge at y=0. Give it a small bed
-	# below that plane, including at 4 m mesh-grid corners, so terrain triangles
-	# never fight with road pixels or the road's physical top face.
-	var bed := 0.0
-	for segment in _segments.get(_cell(point),[]):
-		var nearest := Geometry2D.get_closest_point_to_segment(point,segment.a,segment.b)
-		var beyond: float = point.distance_to(nearest)-float(segment.bed_radius)
-		bed = maxf(bed,1.0-smoothstep(0.0,4.0,beyond))
-	return weight*(broad*6.0+detail*1.5)-bed*0.055-LAKE_BASINS.depth_at(point)
+	# The flat road reservation meets the physical road top at y=0. Lowering
+	# this terrain made a one-way curb at every narrow track edge.
+	return weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_at(point)
 
 func surface_height_at(point: Vector2) -> float:
 	# Same diagonal and interpolation as build_chunk, for trees/rocks without floating.

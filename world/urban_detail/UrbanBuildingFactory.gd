@@ -175,7 +175,7 @@ static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 	if building.has_method("set_door_amount"):
 		building.set_door_amount(1.0)
 	# The sewer hatch starts closed; its opening belongs to FullSession's entry.
-	if building.has_method("set_open_amount") and building.get_script() != HARBOR_MANHOLE_EXTERIOR and data.get("place_id", "") != "harbor_ammunation":
+	if building.has_method("set_open_amount") and building.get_script() != HARBOR_MANHOLE_EXTERIOR and data.get("place_id", "") not in ["harbor_ammunation", "harbor_police"]:
 		building.set_open_amount(1.0)
 	if building.has_method("set_door_open"):
 		building.set_door_open(true)
@@ -199,6 +199,7 @@ static func _build_hospital_facade(data: Dictionary, point: Vector3) -> Node3D:
 		return null
 	var model_script = load(HOSPITAL_MODEL_PATH)
 	var art: Node3D = model_script.new()
+	art.public_walkup_enabled = true
 	art.name = str(data.get("id", "HarborHospital"))
 	art.position = point
 	art.set_meta("_urban_data", data)

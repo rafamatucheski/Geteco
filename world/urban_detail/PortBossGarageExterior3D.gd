@@ -6,6 +6,8 @@ class_name PortBossGarageExterior3D
 ## V1 interaction marker is four metres west and the building extends west.
 
 func build() -> void:
+	# This restricted garage has no facade sign; its catalog name remains usable in menus.
+	proper_name = ""
 	height = 3.2
 	var wall := UrbanMaterials.material_for_color(Color("777c72"), 0.86)
 	var trim := UrbanMaterials.material_for_color(Color("94958a"), 0.82)

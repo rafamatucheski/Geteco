@@ -7,6 +7,12 @@ class_name UrbanLandmarkFrontage3D
 
 const V1_PUMP_OFFSET_X := 70.0 / 16.0
 const V1_PUMP_OFFSET_Z := 140.0 / 16.0
+var open_amount := 0.0
+var entrance_door: Node3D
+
+func set_open_amount(amount: float) -> void:
+	open_amount = clampf(amount, 0.0, 1.0)
+	if is_instance_valid(entrance_door): entrance_door.rotation.y = -PI * .5 * open_amount
 
 func build() -> void:
 	match building_id:
@@ -25,7 +31,9 @@ func _build_north_pier_bank() -> void:
 	var glass := UrbanMaterials.glass_window()
 	var front_z := building_size.y * 0.5
 
-	_build_recessed_shell(stone, 1.55, 0.78)
+	# The native transfer vestibule needs standing depth behind the real leaf.
+	# The previous back wall was only six centimetres behind its closed face.
+	_build_recessed_shell(stone, 1.55, 1.65)
 	add_roof_parapet(visuals_root, height, 0.34, 0.24, light_stone)
 	add_roof_gravel(visuals_root, height)
 
@@ -75,7 +83,7 @@ func _build_union_clothing() -> void:
 	var dark := UrbanMaterials.material_for_color(Color("172a2b"), 0.78)
 	var front_z := building_size.y * 0.5
 
-	_build_recessed_shell(masonry, 1.45, 0.82)
+	_build_recessed_shell(masonry, 1.45, 1.65)
 	add_roof_parapet(visuals_root, height, 0.42, 0.24, UrbanMaterials.trim_stone())
 	add_roof_gravel(visuals_root, height)
 	add_cornice(visuals_root, height - 0.08, 0.34, 0.34, true, trim)
@@ -100,6 +108,15 @@ func _build_union_clothing() -> void:
 
 	add_mesh_box(visuals_root, "UnionWelcomeMat", Vector3(0, 0.025, front_z + 0.86), Vector3(1.55, 0.05, 0.62), UrbanMaterials.material_for_color(Color("74644a"), 0.95))
 	_add_proper_name_sign(Vector3(0, 3.55, front_z + 0.34), Vector2(4.7, 0.60), dark)
+	var proper_name := Label3D.new()
+	proper_name.name = "UnionProperName"
+	proper_name.text = "Union"
+	proper_name.font_size = 96
+	proper_name.pixel_size = .006
+	proper_name.outline_size = 0
+	proper_name.modulate = Color("f5eedb")
+	proper_name.position = Vector3(0, 3.55, front_z + .40)
+	visuals_root.add_child(proper_name)
 
 func _build_fuel_store() -> void:
 	height = 5.2
@@ -110,7 +127,7 @@ func _build_fuel_store() -> void:
 	var pump_red := UrbanMaterials.material_for_color(Color("b65c43"), 0.68)
 	var front_z := building_size.y * 0.5
 
-	_build_recessed_shell(masonry, 1.45, 0.76)
+	_build_recessed_shell(masonry, 1.45, 1.65)
 	add_roof_parapet(visuals_root, height, 0.34, 0.24, trim)
 	add_roof_gravel(visuals_root, height)
 	add_mesh_box(visuals_root, "FuelStoreFascia", Vector3(0, 3.72, front_z + 0.14), Vector3(building_size.x - 0.52, 0.58, 0.20), trim)
@@ -146,10 +163,35 @@ func _build_recessed_shell(material: Material, door_width: float, recess_depth: 
 
 func _build_glazed_door(front_z: float, x: float, width: float, door_height: float, frame_mat: Material, glass_mat: Material, handle_mat: Material) -> void:
 	var door_z := front_z - 0.72
-	add_mesh_box(visuals_root, "LandmarkDoorFrame", Vector3(x, door_height * 0.5, door_z), Vector3(width + 0.22, door_height + 0.20, 0.12), frame_mat)
-	var pane := add_mesh_box(visuals_root, "LandmarkDoorGlass", Vector3(x, door_height * 0.5, door_z + 0.08), Vector3(width, door_height, 0.04), glass_mat)
+	_build_walkup_door(Vector3(x, 0, door_z), width, door_height, frame_mat, glass_mat, handle_mat)
+
+func _build_walkup_door(at: Vector3, width: float, door_height: float, frame_mat: Material, glass_mat: Material, handle_mat: Material) -> void:
+	for side in [-1.0, 1.0]:
+		add_solid_box(visuals_root, "BankDoorJamb", at + Vector3(side * (width * .5 + .055), door_height * .5, 0), Vector3(.11, door_height + .2, .12), frame_mat)
+	add_mesh_box(visuals_root, "BankDoorHeader", at + Vector3(0, door_height + .05, 0), Vector3(width + .22, .1, .12), frame_mat)
+	entrance_door = Node3D.new()
+	entrance_door.name = "EntranceDoorHinge"
+	entrance_door.position = at + Vector3(-width * .5, 0, 0)
+	visuals_root.add_child(entrance_door)
+	var pane := add_mesh_box(entrance_door, "EntranceDoorGlass", Vector3(width * .5, door_height * .5, 0), Vector3(width, door_height, .055), glass_mat)
 	pane.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_mesh_box(visuals_root, "LandmarkDoorHandle", Vector3(x + width * 0.34, 1.08, door_z + 0.14), Vector3(0.045, 0.34, 0.055), handle_mat)
+	for x in [.045, width - .045]:
+		add_mesh_box(entrance_door, "EntranceDoorLeafSide", Vector3(x, door_height * .5, 0), Vector3(.09, door_height, .10), frame_mat)
+	for y in [.045, door_height - .045]:
+		add_mesh_box(entrance_door, "EntranceDoorLeafRail", Vector3(width * .5, y, 0), Vector3(width, .09, .10), frame_mat)
+	add_mesh_box(entrance_door, "EntranceDoorHandle", Vector3(width * .84, 1.08, .1), Vector3(.045, .34, .055), handle_mat)
+	var body := StaticBody3D.new()
+	body.name = "BankDoorSolid"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(width, door_height, .10)
+	collision.shape = shape
+	collision.position = Vector3(width * .5, door_height * .5, 0)
+	body.add_child(collision)
+	entrance_door.add_child(body)
+	set_open_amount(open_amount)
 
 func _build_atm(at: Vector3, frame_mat: Material, body_mat: Material, screen_mat: Material, suffix: String) -> void:
 	add_mesh_box(visuals_root, "BankATMBody_" + suffix, at, Vector3(0.86, 1.55, 0.48), body_mat)

@@ -717,7 +717,9 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 		var size := Vector2(main_roof.size.x, main_roof.size.z)
 		var occupied := main_occupied
 		var has_billboard := false
-		if billboards < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
+		# These accessible storefronts identify themselves by their proper names;
+		# a random fuel-brand slogan above Union misidentifies the clothing shop.
+		if key not in ["NorthFrontage3", "NorthFrontage4"] and billboards < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
 			has_billboard = _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches)
 			if has_billboard: billboards += 1
 		# Fachada e telhado "vivos" (escada de incêndio, ar-condicionado, varal...).

@@ -3,6 +3,7 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
+const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
 var world
 var controller
 var weather
@@ -10,8 +11,12 @@ var state
 var room: Node3D
 var room_npc: CharacterBody3D
 var room_npcs: Array[CharacterBody3D] = []
+var static_service_actor: Node3D
 var anchor: Node3D
 var objective: Label
+var freight_active := false
+var freight_target := Vector3.INF
+var _restoring_saved_driver := false
 var stats: Label
 var thermal_status: Label
 var prompt: Label
@@ -21,6 +26,7 @@ var arrow: Label
 var panel: PanelContainer
 var column: VBoxContainer
 var modal := false
+var _service_menu_open := false
 var menu_closed := Callable()
 var dialogue_open := false
 var lines: Array = []
@@ -60,6 +66,10 @@ var death_presentation: CanvasLayer
 var sewer_hatch: Node3D
 var sewer_entry_origin := Vector3.ZERO
 var weapon_shop_entrance: Node
+var special_place_entrance: Node
+
+func _uses_walkup_access(id: String) -> bool:
+	return (weapon_shop_entrance != null and weapon_shop_entrance.handles_place(id)) or (special_place_entrance != null and special_place_entrance.handles_place(id))
 
 func _arrival_sequence_blocked() -> bool:
 	return arrival != null and (arrival.controls_locked or arrival.phase == "opening")
@@ -69,6 +79,9 @@ func is_transition_blocked() -> bool:
 
 func blocks_driving_change() -> bool:
 	return is_transition_blocked() or not ready_for_play
+
+func allows_saved_driver_animation() -> bool:
+	return _restoring_saved_driver and not ready_for_play and not modal and not is_transition_blocked()
 
 func _begin_transition(kind: String, _vehicle := false) -> int:
 	if not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1
@@ -94,6 +107,14 @@ func _refresh_routine_context() -> void:
 	var routines = _routine_director()
 	if routines != null: routines.refresh_context()
 	if urban_operations != null: urban_operations.refresh_context()
+
+func _sync_location_presentation() -> void:
+	if is_instance_valid(weather): weather._update()
+	prompt.text = ""
+	world.gameplay._update_visual()
+	var city_look := world.get_node_or_null("CityLook") as Node
+	if city_look != null: city_look._refresh_silhouette()
+	if world.hud.has_method("refresh_from_state"): world.hud.refresh_from_state()
 
 func _vehicle_transition_snapshot(car: CharacterBody3D) -> Dictionary:
 	return {
@@ -231,6 +252,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	car.set_meta("region_id",state.region_id)
 	car.place(destination,yaw)
 	world.player.teleport(destination)
+	_sync_location_presentation()
 	world.camera.initialized = false
 	world.camera._process(1)
 	car.input_locked = bool(snapshot.car_locked)
@@ -271,6 +293,9 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 	capsule.height = 1.7
 	for side in [-1,1]:
 		var point := car.to_global(Vector3(side*(car.half_width+.65),.05,.15))
+		# Long cabins sit beyond the reach of the generic car-side anchor.
+		if car.boarding_class() in ["truck", "bus"]:
+			point = car.driver_door_anchor(side) + car.global_basis.x * float(side) * .11 + Vector3.UP * .01
 		if not position_clear(point): continue
 		# Restoring a seated save may relocate the actor to a door only through
 		# a continuous clear walking corridor, never across a car or furniture.
@@ -308,6 +333,7 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 			world.camera.target = car if place.is_empty() else anchor
 			world.camera.locked = not place.is_empty()
 			state.set_location(state.region_id,place)
+			_sync_location_presentation()
 			# Release only the session gate while the existing body/door presentation
 			# owns input. Otherwise Driving sees our gate as an interruption and aborts
 			# the entry on its first frame.
@@ -317,7 +343,7 @@ func restore_garage_driver(car: CharacterBody3D) -> bool:
 				await get_tree().physics_frame
 				if not is_instance_valid(car) or car.health <= 0 or state.place_id != place or room != expected_room or world.gameplay.health <= 0:
 					world.driving.cancel_transition("garage_restore_invalidated")
-					_restore_vehicle_transition_snapshot(snapshot,car)
+					_restore_vehicle_transition_snapshot(snapshot,car if is_instance_valid(car) else null)
 					return false
 			if world.driving.is_body_transition_active():
 				world.driving.cancel_transition("garage_restore_timeout")
@@ -380,6 +406,9 @@ func _ready() -> void:
 	weapon_shop_entrance = preload("res://runtime/WeaponShopEntrance.gd").new()
 	weapon_shop_entrance.session = self
 	add_child(weapon_shop_entrance)
+	special_place_entrance = preload("res://runtime/SpecialPlaceEntrance.gd").new()
+	special_place_entrance.session = self
+	add_child(special_place_entrance)
 	anchor = Node3D.new()
 	world.add_child(anchor)
 	objective = _label(Vector2(530,24),20)
@@ -396,6 +425,9 @@ func _ready() -> void:
 	arrow.text = "▲"
 	arrow.modulate = Color("f39a38")
 	arrow.pivot_offset = Vector2(12,20)
+	# World-anchored HUD must follow the final camera every rendered frame,
+	# not the 10 Hz text refresh (which made the orange marker jump).
+	marker.update_position = _update_world_indicator
 	panel = PanelContainer.new()
 	panel.position = Vector2(330,110)
 	panel.custom_minimum_size = Vector2(620,440)
@@ -574,9 +606,16 @@ func _restore_outdoor_driver() -> void:
 	car.set_physics_process(true)
 	for side in [-1,1]:
 		var door := car.to_global(Vector3(side*(car.half_width+.65),.05,.15))
+		if car.boarding_class() in ["truck", "bus"]:
+			door = car.driver_door_anchor(side) + car.global_basis.x * float(side) * .11 + Vector3.UP * .01
 		if not position_clear(door): continue
 		world.player.teleport(door)
-		if await restore_garage_driver(car): return
+		# The saved driver is admitted before ready_for_play. Keep normal input
+		# gated, but allow its already-owned body animation to finish under the curtain.
+		_restoring_saved_driver = true
+		var restored := await restore_garage_driver(car)
+		_restoring_saved_driver = false
+		if restored: return
 	world.player.teleport(checkpoint)
 	controller.region.set_focus(checkpoint)
 
@@ -674,8 +713,9 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	state.set_location(state.region_id,id)
 	state.checkpoint_id = local_access_id if not local_access_id.is_empty() else id
 	world.player.teleport(destination+Vector3.UP*.04)
+	_sync_location_presentation()
 	anchor.position = room.camera_target
-	if id in ["harbor_ammunation", "mountain_gunshop"]: world.camera.clear_store_focus()
+	if _uses_walkup_access(id): world.camera.clear_store_focus()
 	world.camera.target = anchor
 	world.camera.offset = Vector3(0,18,15)
 	world.camera.heading = 0
@@ -728,6 +768,7 @@ func leave_place() -> bool:
 	room = null
 	state.set_location(state.region_id)
 	world.player.teleport(leaving_return+Vector3.UP*.08)
+	_sync_location_presentation()
 	if state.place_id.is_empty() and is_instance_valid(sewer_hatch):
 		_close_sewer_hatch_after_exit(sewer_hatch)
 		sewer_hatch = null
@@ -737,6 +778,7 @@ func leave_place() -> bool:
 	world.camera.target_size = saved_size
 	world.camera.locked = false
 	world.camera.initialized = false
+	world.camera._process(1)
 	world.player.input_locked = was_player_locked
 	_finish_transition(token)
 	close_menu()
@@ -792,7 +834,7 @@ func _animate_sewer_entry(token: int) -> void:
 	camera.target_size = 7.5
 	camera.locked = true
 	camera.initialized = false
-	sewer_hatch.set_open_amount(0.0)
+	# The proximity controller may already have opened the hatch.
 	var approach := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	approach.tween_property(actor, "global_position", grip, 0.35)
 	await approach.finished
@@ -843,6 +885,8 @@ func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 		outward = desired - world.maciota_place.entry_position
 	else:
 		var definition: Dictionary = PLACES.get_definition(place_id)
+		if weapon_shop_entrance != null and weapon_shop_entrance.handles_place(access_id):
+			definition = weapon_shop_entrance._definition_for(access_id)
 		if not definition.is_empty(): outward = desired - definition.exterior_position
 	outward.y = 0
 	if outward.length_squared() < .01: outward = Vector3.FORWARD
@@ -858,6 +902,9 @@ func sync_dispatch_location() -> void:
 		world.dispatch.player_position_override = return_point if not state.place_id.is_empty() else Vector3.INF
 
 func _install_service_npc() -> void:
+	# Vance is authored into the room's 3D art, rather than the NPC catalog.
+	static_service_actor = room.find_child("VanceMilitaryGunsmith", true, false) as Node3D
+	if is_instance_valid(static_service_actor): _install_workplace_reaction(static_service_actor, static_service_actor)
 	var residents: Array = room.definition.get("npcs",[])
 	if not residents.is_empty():
 		for definition in residents:
@@ -873,8 +920,10 @@ func _install_service_npc() -> void:
 			var original: Node = actor.visual.get_child(0)
 			actor.visual.remove_child(original)
 			original.queue_free()
-			actor.visual.add_child(preload("res://world/places/OriginalResidents.gd").create_model(definition))
+			var model: Node3D = preload("res://world/places/OriginalResidents.gd").create_model(definition)
+			actor.visual.add_child(model)
 			room_npcs.append(actor)
+			_install_workplace_reaction(actor, model)
 		room_npc = room_npcs[0] if not room_npcs.is_empty() else null
 		return
 	if str(room.definition.get("npc_model","")).is_empty(): return
@@ -891,19 +940,48 @@ func _install_service_npc() -> void:
 	room_npc.visual.add_child(model)
 	room_npc.visual.rotation.y = PI
 	room_npcs.append(room_npc)
+	_install_workplace_reaction(room_npc, model)
+
+func _install_workplace_reaction(actor: Node3D, model: Node3D) -> void:
+	var reaction: Node = WORKPLACE_REACTION.install(actor, model, world.gameplay)
+	if reaction != null and not reaction.threat_started.is_connected(_on_workplace_threat_started):
+		reaction.threat_started.connect(_on_workplace_threat_started)
+
+func _service_threatened(npc_id := "") -> bool:
+	if npc_id.is_empty() and is_instance_valid(static_service_actor) and static_service_actor.get_meta("workplace_threatened", false): return true
+	for actor in room_npcs:
+		if not is_instance_valid(actor) or not actor.is_visible_in_tree(): continue
+		if not npc_id.is_empty() and str(actor.get_meta("interior_npc_id", "")) != npc_id: continue
+		if actor.get_meta("workplace_threatened", false): return true
+	# Robberies replace the generic bank/fuel resident with their physical actors.
+	if npc_id.is_empty() and robberies != null:
+		for actor in robberies._actors:
+			if is_instance_valid(actor) and not actor.guard and actor.get_meta("workplace_threatened", false): return true
+	return false
+
+func _on_workplace_threat_started(actor: Node3D) -> void:
+	var local_staff: bool = actor == static_service_actor or room_npcs.has(actor) or (robberies != null and robberies._actors.has(actor))
+	if not local_staff: return
+	if _service_menu_open or (storefronts != null and storefronts.is_open()):
+		lines.clear()
+		dialogue_done = Callable()
+		close_menu()
+	prompt.text = ""
 
 func _clear_service_npcs() -> void:
+	static_service_actor = null
 	for actor in room_npcs:
 		if is_instance_valid(actor): actor.queue_free()
 	room_npcs.clear()
 	room_npc = null
 
 func nearest() -> Dictionary:
+	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
 	if passenger_transport != null and passenger_transport.riding: return passenger_transport.nearest_action()
 	var arrival_action: Dictionary = arrival.nearest_action()
 	if not arrival_action.is_empty(): return arrival_action
 	if not world.driving.occupied and not state.place_id.is_empty() and is_instance_valid(room):
-		if state.place_id not in ["harbor_ammunation", "mountain_gunshop"] and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair"}
+		if not _uses_walkup_access(state.place_id) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair"}
 	var personal_action: Dictionary = personal_car.nearest_action()
 	if not personal_action.is_empty(): return personal_action
 	var residence_action: Dictionary = residence_services.nearest_action()
@@ -917,11 +995,11 @@ func nearest() -> Dictionary:
 		return vehicle_action if not vehicle_action.is_empty() else activities.nearest_action()
 	var point: Vector3 = world.player.position
 	if not state.place_id.is_empty():
-		if state.place_id not in ["harbor_ammunation", "mountain_gunshop"] and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair"}
+		if not _uses_walkup_access(state.place_id) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair"}
 		var robbery_action: Dictionary = robberies.nearest_action()
 		if not robbery_action.is_empty(): return robbery_action
 		var original_action: Dictionary = services.nearest_action()
-		if not original_action.is_empty(): return original_action
+		if not original_action.is_empty() and not _service_threatened(str(original_action.get("target", ""))): return original_action
 		var urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
 		if not urban_action.is_empty(): return urban_action
 		var interior_routine_action: Dictionary = _routine_director().nearest_action() if _routine_director() != null else {}
@@ -940,7 +1018,8 @@ func nearest() -> Dictionary:
 			if state.place_id == "harbor_bank": primary_available = state.campaign.target_id() == "helena"
 			# A conveniência não tinha balcão de compras no V1: sua operação é o
 			# caixa do assalto. Não exponha um "Atender" que não produz resultado.
-			if primary_available and point.distance_to(service_point) < 1.5: return {"id":"service","label":"Atender"}
+			if primary_available and not _service_threatened() and point.distance_to(service_point) < 1.5:
+				return {"id":"service","label":"Falar com Vance" if state.place_id in ["harbor_ammunation", "mountain_gunshop"] else "Atender"}
 		return {}
 	var activity_action: Dictionary = activities.nearest_action()
 	if not activity_action.is_empty(): return activity_action
@@ -948,9 +1027,9 @@ func nearest() -> Dictionary:
 	if not urban_action.is_empty(): return urban_action
 	var outdoor_routine_action: Dictionary = _routine_director().nearest_action() if _routine_director() != null else {}
 	if not outdoor_routine_action.is_empty(): return outdoor_routine_action
-	if state.region_id == "harbor" and point.distance_to(world.maciota_place.entry_position) < 1.5: return {"id":"enter","place":"maciota","access":"maciota","label":"Entrar"}
+	if state.region_id == "harbor" and not _uses_walkup_access("maciota") and point.distance_to(world.maciota_place.entry_position) < 1.5: return {"id":"enter","place":"maciota","access":"maciota","label":"Entrar"}
 	for entry in controller.region.entries:
-		if entry.place_id in ["harbor_ammunation", "mountain_gunshop"]: continue
+		if _uses_walkup_access(entry.place_id): continue
 		if point.distance_to(entry.position) < 1.5: return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar"}
 	var mission_action: Dictionary = mission_world.nearest_action()
 	if not mission_action.is_empty(): return mission_action
@@ -967,7 +1046,11 @@ func interact() -> bool:
 		"personal_car": return personal_car.perform(action.target)
 		"garage_reward": return garage_rewards.perform(action.target)
 		"robbery": return robberies.perform(action.target)
-		"original_service": return services.perform(action.target)
+		"original_service":
+			if _service_threatened(str(action.target)): return false
+			var performed: bool = services.perform(action.target)
+			_service_menu_open = performed and modal and str(action.target) not in ["hospital_triage", "police_terminal", "fire_alarm"]
+			return performed
 		"urban_v1": return urban_operations != null and urban_operations.perform(str(action.target))
 		"v1_routine":
 			var routines = _routine_director()
@@ -987,7 +1070,9 @@ func interact() -> bool:
 			return true
 		"part": return _intro_interact("workbench")
 		"service":
-			if state.place_id == "harbor_bank" and mission_world.perform("helena"): return true
+			if state.place_id == "harbor_bank" and mission_world.perform("helena"):
+				_service_menu_open = modal
+				return true
 			show_services(room.definition.service)
 			return true
 	if activities.perform(str(action.get("target",""))): return true
@@ -1082,7 +1167,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("weapon_next") and not world.driving.occupied: world.gameplay.cycle_weapon(1)
 	elif event.is_action_pressed("weapon_flashlight"): _toggle_weapon_flashlight()
 	elif event is InputEventKey and event.pressed and not event.echo:
-		if event.physical_keycode == KEY_F5: save_game()
+		if event.physical_keycode == KEY_F5: save_game(true)
 		elif event.physical_keycode == KEY_F9: load_game()
 
 ## V1 `WeaponFlashlight._unhandled_input`: sem lanterna instalada na arma em mãos,
@@ -1099,7 +1184,8 @@ func _process(delta: float) -> void:
 	notice.visible = notice_time > 0
 	if not ready_for_play or get_tree().paused: return
 	weapon_shop_entrance.update(delta)
-	if is_instance_valid(world.driving.car.equipment): world.driving.car.equipment.set_input_enabled(not modal)
+	special_place_entrance.update(delta)
+	if is_instance_valid(world.driving.car) and is_instance_valid(world.driving.car.equipment): world.driving.car.equipment.set_input_enabled(not modal)
 	if not modal and not world.driving.occupied and not get_tree().paused:
 		var aim: Vector3 = world.gameplay.aim_from_screen(get_viewport().get_mouse_position())
 		var controls = get_node("/root/GameInput")
@@ -1128,12 +1214,20 @@ func _process(delta: float) -> void:
 	stats.text = "R$ %d   Vida %d   Colete %d\n%s   %s   %s" % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
 	objective.text = state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa")
 	if arrival.active: objective.text = arrival.objective_text
+	var freight: Dictionary = urban_operations.freight_status() if urban_operations != null else {}
+	freight_active = bool(freight.get("active", false)) and state.region_id == "harbor" and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active
+	freight_target = freight.get("target", Vector3.INF) if freight_active else Vector3.INF
+	if freight_active: objective.text = str(freight.get("objective", ""))
 	var action := nearest()
 	prompt.text = "" if modal or action.is_empty() else "E  "+str(action.label)
+
+func _update_world_indicator() -> void:
+	if not ready_for_play or not is_instance_valid(marker) or not is_instance_valid(arrow): return
 	var target: Vector3 = mission_world.target_position()
 	if state.intro.stage != "complete": target = world.maciota_place.entry_position
 	if arrival.active: target = arrival.target
-	if not state.place_id.is_empty():
+	if freight_active: target = freight_target
+	if not state.place_id.is_empty() and is_instance_valid(room):
 		target = room.exit_position
 		if state.place_id == "maciota":
 			var phase: String = state.intro.stage
@@ -1142,7 +1236,7 @@ func _process(delta: float) -> void:
 			elif phase == "collect_part": target = room.interaction_points.part
 		elif state.place_id == "harbor_bank" and state.campaign.target_id()=="helena": target = robberies.helena_position()
 	var maciota_exterior_marker: bool = state.place_id.is_empty() and target.is_equal_approx(world.maciota_place.entry_position)
-	var automatic_shop_exit: bool = state.place_id in ["harbor_ammunation", "mountain_gunshop"]
+	var automatic_shop_exit: bool = _uses_walkup_access(state.place_id) and is_instance_valid(room) and target.is_equal_approx(room.exit_position)
 	marker.visible = target.is_finite() and not maciota_exterior_marker and not automatic_shop_exit and not world.camera.is_position_behind(target)
 	if marker.visible: marker.position = world.camera.unproject_position(target+Vector3.UP*.06)
 	var screen: Vector2 = world.camera.unproject_position(target) if target.is_finite() else Vector2(640,360)
@@ -1151,6 +1245,7 @@ func _process(delta: float) -> void:
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
 func _menu(title: String) -> void:
+	_service_menu_open = false
 	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
 	for child in column.get_children():
 		column.remove_child(child)
@@ -1181,8 +1276,14 @@ func _button(text: String, action: Callable) -> void:
 		button.focus_neighbor_top = button.get_path_to(previous)
 		button.focus_previous = button.get_path_to(previous)
 	else:
-		button.grab_focus.call_deferred()
+		_focus_menu_button.call_deferred(weakref(button))
+func _focus_menu_button(reference: WeakRef) -> void:
+	var button := reference.get_ref() as Control
+	if not is_instance_valid(button) or button.is_queued_for_deletion(): return
+	if modal and button.is_inside_tree() and button.get_parent() == column and button.is_visible_in_tree():
+		button.grab_focus()
 func close_menu() -> void:
+	_service_menu_open = false
 	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
 	if menu_closed.is_valid(): menu_closed.call()
 	menu_closed = Callable()
@@ -1201,7 +1302,9 @@ func _advance_dialogue() -> void:
 		if dialogue_done.is_valid(): dialogue_done.call()
 		return
 	var line: Dictionary = lines.pop_front()
+	var continuing_service := _service_menu_open
 	_menu(str(line.get("speaker","")))
+	_service_menu_open = continuing_service
 	dialogue_open = true
 	var text := Label.new()
 	text.text = str(line.get("message",""))
@@ -1255,6 +1358,11 @@ func show_inventory() -> void:
 	_button("Configurações",show_settings)
 	_button("Voltar",close_menu)
 func show_services(service: String) -> void:
+	if _service_threatened(): return
+	_show_services_available(service)
+	_service_menu_open = modal
+
+func _show_services_available(service: String) -> void:
 	if service == "ski_rental":
 		mountain_progression.show_services()
 		return
@@ -1391,7 +1499,7 @@ func _collect_reward(source: Node3D) -> void:
 		source.set_reward_available(false,data.id)
 		# Coleta sem aviso na tela (como os drops de combate); só a falha avisa.
 		save_game()
-func save_game() -> bool:
+func save_game(notify_success := false) -> bool:
 	if is_transition_blocked():
 		show_message("Aguarde a conclusão da chegada, do resgate ou da transição para salvar.")
 		return false
@@ -1426,7 +1534,9 @@ func save_game() -> bool:
 	state.combat_state = world.gameplay.snapshot()
 	var result: Error = controller.store.save(state)
 	if result != OK: show_message("Não foi possível salvar (%d)."%result); return false
-	show_message("Progresso salvo.")
+	# Automatic persistence must not replace a service/mission message or cover
+	# the room on every crossing. Explicit saves still acknowledge success.
+	if notify_success: show_message("Progresso salvo.")
 	return true
 func load_game() -> void:
 	if is_transition_blocked():
@@ -1526,6 +1636,7 @@ func _show_v1_arrest_presentation() -> void:
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
 	arrest_pending = true
+	prompt.text = ""
 	if services != null and services.has_method("cancel_auto_service"): services.cancel_auto_service("player_arrest")
 	if is_instance_valid(world.driving) and world.driving.has_method("cancel_transition"): world.driving.cancel_transition("player_arrest")
 	if passenger_transport != null and passenger_transport.riding: passenger_transport._brake()
@@ -1539,12 +1650,26 @@ func _on_arrest() -> void:
 
 func _on_death() -> void:
 	if rescue_pending: return
+	# Falling out of the world and an invalid restored position reach this path
+	# directly, without damage_player. Establish the same dead state before any
+	# boarding cleanup or death presentation reads it.
+	world.gameplay.health = 0
 	if services != null and services.has_method("cancel_auto_service"): services.cancel_auto_service("player_death")
 	if is_instance_valid(world.driving) and world.driving.has_method("cancel_transition"): world.driving.cancel_transition("player_death")
+	world.player.input_locked = true
+	world.player.on_player_death()
+	# Damage may have posed death before Driving restored the on-foot capsule.
+	# Reassert the dead body's collision after cancelling that presentation.
+	world.player.collision_layer = 0
+	world.player.collision_mask = 0
+	world.player.set_physics_process(false)
+	world.gameplay.changed.emit()
 	var from_interior: bool = not state.place_id.is_empty() or is_instance_valid(room)
 	rescue_camera_heading = saved_heading if from_interior else world.camera.heading
 	rescue_camera_size = saved_size if from_interior else world.camera.target_size
 	rescue_pending = true
+	prompt.text = ""
+	world.hud.refresh_from_state()
 	if passenger_transport != null and passenger_transport.riding: passenger_transport._brake()
 	lines.clear()
 	dialogue_done = Callable()
@@ -1577,13 +1702,13 @@ func _respawn() -> void:
 		_finish_transition(token)
 		_menu("Local de custódia ocupado. Aguarde e tente novamente." if arrest_pending else "Local de resgate ocupado. Aguarde e tente novamente.")
 		_button("Tentar novamente",_respawn)
-		column.get_child(column.get_child_count()-1).grab_focus.call_deferred()
 		return
 	if world.driving.occupied:
 		world.driving.occupied = false
-		world.driving.car.controlled = false
-		world.driving.car.external_input = false
-		world.driving.car.throttle_input = 0
+		if is_instance_valid(world.driving.car):
+			world.driving.car.controlled = false
+			world.driving.car.external_input = false
+			world.driving.car.throttle_input = 0
 	if passenger_transport != null: passenger_transport.cancel_for_transition()
 	if is_instance_valid(room):
 		if room == world.maciota_place: room.set_interior_active(false)
@@ -1598,6 +1723,7 @@ func _respawn() -> void:
 	sync_dispatch_location()
 	if cold != null: cold.recover_after_rescue()
 	world.player.teleport(destination)
+	_sync_location_presentation()
 	world.player.collision_layer = 2
 	world.player.collision_mask = 7
 	world.player.show()
@@ -1609,6 +1735,7 @@ func _respawn() -> void:
 	world.camera.size = rescue_camera_size
 	world.camera.locked = false
 	world.camera.initialized = false
+	world.camera._process(1)
 	_refresh_routine_context()
 	rescue_pending = false
 	arrest_pending = false

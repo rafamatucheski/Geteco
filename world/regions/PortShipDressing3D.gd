@@ -140,7 +140,9 @@ func build_santa_mare(hull: PackedVector2Array) -> void:
 		_box(Vector3(x,-.85,194.94),Vector3(.48,1.2,.20),"182d33")
 		_box(Vector3(x,-.7,195.06),Vector3(.25,.25,.04),"93a9a4")
 	# Boarding hatch is in the clear lane between wheelhouse and cargo.
-	_box(Vector3(265.65,.055,186.25),Vector3(1.48,.11,1.48),"697a78")
+	var hold_hatch := preload("res://world/places/PortHoldHatch3D.gd").new()
+	hold_hatch.position = Vector3(264.91,.055,186.25)
+	add_child(hold_hatch)
 	_box(Vector3(264.9,.62,186.25),Vector3(.12,1.12,1.62),"b7a252")
 	_box(Vector3(265.65,.08,185.43),Vector3(1.65,.16,.12),"d2b458")
 	_box(Vector3(265.65,.08,187.07),Vector3(1.65,.16,.12),"d2b458")

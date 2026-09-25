@@ -5,6 +5,8 @@ const FLOOR_RATIO := 0.76822128
 var door_leaves: Array[Node3D] = []
 var public_leaves: Array[Node3D] = []
 var door_amount := 0.0
+var public_walkup_enabled := false
+var open_amount := 0.0
 var materials: Dictionary = {}
 const OVERHEAD_LAYER := 2
 
@@ -42,7 +44,15 @@ func _ready() -> void:
 	var charcoal := Color("35444a")
 	var glazing := Color("639da6")
 	# The east recess leaves a real, level corridor through the building footprint.
-	box(Vector2(-50, 0), Vector2(160, 230), 0, 5.0, ivory)
+	if public_walkup_enabled:
+		# Preserve the ward footprint, with a standing vestibule behind the
+		# public sliding leaves. Ambulance geometry is independent to the east.
+		box(Vector2(-50, -9.5), Vector2(160, 211), 0, 5.0, ivory)
+		var west_jamb := box(Vector2(-81, 105.5), Vector2(98, 19), 0, 5.0, ivory)
+		west_jamb.set_meta("interior_solid_id", "hospital_public_west_jamb")
+		box(Vector2(-1, 105.5), Vector2(62, 19), 2.1, 2.9, ivory)
+	else:
+		box(Vector2(-50, 0), Vector2(160, 230), 0, 5.0, ivory)
 	box(Vector2(80, -67.5), Vector2(100, 95), 0, 4.0, ivory)
 	box(Vector2(67.5, -7), Vector2(75, 26), 0, 4.0, ivory)
 	box(Vector2(67.5, 94.5), Vector2(75, 41), 0, 3.1, ivory)
@@ -70,9 +80,14 @@ func _ready() -> void:
 		box(Vector2(131.2, y), Vector2(0.6, 20), 1.4, 1.65, glazing, self, true)
 		box(Vector2(133, y-13), Vector2(5, 1.2), 0.4, 3.4, Color("c7cfca"))
 	box(Vector2(-40, 116.5), Vector2(179, 2), 2.9, 0.14, teal)
-	box(Vector2(-40, 116.5), Vector2(179, 2), 0.1, 0.35, Color("6c8182"))
+	if public_walkup_enabled:
+		box(Vector2(-81, 116.5), Vector2(97, 2), 0.1, 0.35, Color("6c8182"))
+		box(Vector2(41, 116.5), Vector2(17, 2), 0.1, 0.35, Color("6c8182"))
+	else:
+		box(Vector2(-40, 116.5), Vector2(179, 2), 0.1, 0.35, Color("6c8182"))
 	# Public reception: native glazing around the existing playable south door.
-	box(Vector2(0, 116), Vector2(68, 3), 0, 1.9, charcoal)
+	if not public_walkup_enabled:
+		box(Vector2(0, 116), Vector2(68, 3), 0, 1.9, charcoal)
 	# The dark recess is revealed when the leaves slide. A second full-width
 	# fixed glass panel here made the entrance appear closed while opening.
 	for side in [-1.0, 1.0]:
@@ -83,6 +98,7 @@ func _ready() -> void:
 		box(Vector2(0, 1), Vector2(26, 0.6), 0.16, 1.55, glazing, leaf, true)
 		box(Vector2(side*-10, 2), Vector2(1, 1), 0.67, 0.42, Color("dee5dc"), leaf)
 		public_leaves.append(leaf)
+		if public_walkup_enabled: _add_public_leaf_collision(leaf)
 	box(Vector2(0, 126), Vector2(81, 23), 2.05, 0.15, teal)
 	for x in [-37.0, 37.0]: box(Vector2(x, 134), Vector2(2, 2), 0, 2.05, Color("d7dfdb"))
 	# Ambulance canopy: cantilevered, so no column can trap the crew or stretcher.
@@ -148,3 +164,22 @@ func set_public_door_amount(amount: float) -> void:
 	for index in public_leaves.size():
 		var side := -1.0 if index == 0 else 1.0
 		public_leaves[index].position = floor_point(Vector2(side*(15+24*amount),120))
+
+func set_open_amount(amount: float) -> void:
+	if not public_walkup_enabled: return
+	open_amount = clampf(amount, 0.0, 1.0)
+	set_public_door_amount(open_amount)
+
+func _add_public_leaf_collision(leaf: Node3D) -> void:
+	var body := StaticBody3D.new()
+	body.name = "PublicDoorSolid"
+	body.set_meta("interior_solid_id", "hospital_public_door")
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(29.0 / PPM, 1.81, .12)
+	collision.shape = shape
+	collision.position.y = .905
+	body.add_child(collision)
+	leaf.add_child(body)

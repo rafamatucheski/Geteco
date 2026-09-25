@@ -91,6 +91,10 @@ func _ready() -> void:
 				mesh.mesh.height = 1.1
 				mesh.position.y = .55
 	interaction_points["service"] = to_global(definition.spawn+Vector3(0,0,-1))
+	if definition.id in ["harbor_ammunation", "mountain_gunshop"]:
+		# The service target belongs to the customer side of Vance's counter.
+		# Spawn-relative placement left it in the middle of the shop instead.
+		interaction_points["service"] = to_global(Vector3(1.7 if definition.id == "mountain_gunshop" else 0.0, 0, -.9))
 	for npc in definition.get("npcs",[]): interaction_points[npc.id] = to_global(npc.local_position)
 	_install_reward()
 func _rect_solid(id: String, rect: Rect2) -> void:

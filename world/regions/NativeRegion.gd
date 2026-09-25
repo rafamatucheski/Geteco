@@ -21,6 +21,7 @@ const CITY_DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const TERRAIN := preload("res://world/regions/MountainTerrain3D.gd")
 const DRESSING := preload("res://world/regions/TerrainDressing3D.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
+const WALKUP_DOOR := preload("res://world/places/WalkupFacadeDoor.gd")
 const DATA_PATH := "res://world/regions/OriginalWorldData.json"
 const CELL := 64.0
 const SCALE := 1.0/16.0
@@ -127,6 +128,7 @@ func release_chunks() -> void:
 	build_jobs.clear()
 	pending.clear()
 	for key in chunks.keys():
+		_suspend_chunk_vehicles(key)
 		_suspend_chunk_mechanisms(chunks[key])
 		chunks[key].queue_free()
 	chunks.clear()
@@ -217,6 +219,12 @@ func _prepare() -> void:
 			_add_road("mountain_track_%d"%roads.size(),branch,60*SCALE if roads.size()==1 else 3.25,"earth" if roads.size()==1 else "asphalt")
 		for definition in CATALOG.definitions():
 			if definition.region == region_id: _record(definition.exterior_position,{"kind":"mountain_place","data":definition})
+		# Three physical entrances share the bunkhouse interior, never their return origin.
+		for index in 2:
+			var shelter := CATALOG.get_definition("lumberjack_shelter")
+			shelter["access_id"] = "lumberjack_shelter_%d" % (index + 2)
+			shelter.exterior_position = CATALOG.shelter_access_exterior(index)
+			_record(shelter.exterior_position, {"kind":"mountain_place", "data":shelter})
 		for lamp_point in [Vector2(6340,500),Vector2(6910,755),Vector2(7140,-455)]:
 			var lamp_position := CATALOG._at(lamp_point,region_id)
 			_record(lamp_position,{"kind":"mountain_road_lamp","position":lamp_position})
@@ -342,12 +350,21 @@ func _trim_chunks(cell: Vector2i) -> void:
 	for key in chunks.keys():
 		if vehicle_support_cells.has(key): continue
 		if absi(key.x-cell.x)>retention_radius or absi(key.y-cell.y)>retention_radius:
+			_suspend_chunk_vehicles(key)
 			_suspend_chunk_mechanisms(chunks[key])
 			chunks[key].queue_free()
 			chunks.erase(key)
 			for index in range(build_jobs.size()-1,-1,-1):
 				if build_jobs[index].key == key: build_jobs.remove_at(index)
 	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift) and not lift.is_queued_for_deletion())
+
+func _suspend_chunk_vehicles(key: Vector2i) -> void:
+	# Suspend before removing support; ProductionWorld resumes after its ground check.
+	for car in get_tree().get_nodes_in_group("drivable"):
+		if car is CharacterBody3D and car.is_visible_in_tree() and car.is_physics_processing() and _cell(car.global_position) == key:
+			car.set_meta("awaiting_ground", true)
+			car.velocity.y = 0.0
+			car.set_physics_process(false)
 
 func _suspend_chunk_mechanisms(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk): return
@@ -500,6 +517,12 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 		if Time.get_ticks_usec()-began >= budget_usec: return int(job.stage) >= 4
 	return true
 
+## Sem células pendentes nem construção fatiada em andamento. Testes e ferramentas
+## que inspecionam o conteúdo das células vizinhas esperam por isto, não por um
+## número fixo de quadros (a construção é espalhada em até 3 ms por quadro).
+func is_streaming_idle() -> bool:
+	return pending.is_empty() and build_jobs.is_empty()
+
 ## Garante o chunk completo agora (colisão para quem vai pisar nele neste quadro).
 func _ensure_chunk(key: Vector2i) -> void:
 	if not chunks.has(key):
@@ -643,9 +666,12 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 					center = (road_a+road_b)*.5
 				# V1 backcountry bed is60px dirt, without asphalt markings/urban sidewalks.
 				var dirt := _box(chunk,"EastValeEarth",center+Vector3(0,.012,0),Vector3(record.width,.012,offset.length()+.10),Color("34291e"),true)
+				# The visible dirt sits above the terrain, but its physical top is
+				# level with the surrounding shoulder in both travel directions.
+				dirt.get_child(0).position.y = -.018
 				dirt.rotation.y = atan2(offset.x,offset.z)
 				return
-			var road_height := -.025 if mountain_pass_road else .025
+			var road_height := -.025
 			# Adjacent bridge slabs have the same top plane. Overlapping their ends
 			# produced bright transverse z-fighting bands on the crossing.
 			var road_length := offset.length() if mountain_pass_road else offset.length()+.10
@@ -654,9 +680,9 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			road.rotation.y = atan2(offset.x,offset.z)
 			road.visible = false
 			var rows: Array = chunk.get_meta("road_surface_rows",[])
-			rows.append({"left_a":record.left_a,"right_a":record.right_a,"left_b":record.left_b,"right_b":record.right_b,"top":.002 if mountain_pass_road else .052,"color":road_color})
+			rows.append({"left_a":record.left_a,"right_a":record.right_a,"left_b":record.left_b,"right_b":record.right_b,"top":.008,"color":road_color})
 			chunk.set_meta("road_surface_rows",rows)
-			var marking_height := .008 if mountain_pass_road else .058
+			var marking_height := .014
 			var line := _box(chunk,"CenterLine",center+Vector3(0,marking_height,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
 			line.rotation.y = road.rotation.y
 			# Rural pass/track shoulders are terrain. The generic 2.5 m sidewalks
@@ -743,25 +769,30 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 	if art != null:
 		art.set_meta("source_id",data.get("source",""))
 		art.set_meta("place_id",facade.get("place_id",""))
-		if facade.get("place_id", "") == "harbor_ammunation": art.add_to_group("v2_weapon_shop_facade")
+		if facade.get("place_id", "") in ["harbor_ammunation", "harbor_police", "harbor_bank", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station"]:
+			art.add_to_group("v2_walkin_facade")
+			if facade.place_id in ["harbor_bank", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station"]: art.set_open_amount(0.0)
 		if facade.has("entry_position"):
 			art.set_meta("entry_position",facade.entry_position)
 			art.set_meta("return_position",facade.return_position)
+		if facade.get("place_id", "") == "canal_north": WALKUP_DOOR.install(art, CATALOG.get_definition("canal_north"))
 
 func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 	if str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter":
 		var art = _held_load("res://assets/regions/source/world/mountain_pass/art/winter_props/LumberjackCabin3D.gd").new()
 		art.position = data.exterior_position
 		chunk.add_child(art)
-		_box(chunk,"CabinSolid",data.exterior_position+Vector3(0,1.3,0),Vector3(3.6,2.6,4.2),Color("00000000"),true).visible=false
+		WALKUP_DOOR.install(art, data)
 	elif data.id == "mountain_bunker":
 		var art = preload("res://world/places/BunkerExteriorNative.gd").new()
 		art.position = data.exterior_position
 		chunk.add_child(art)
+		WALKUP_DOOR.install(art, data)
 	elif data.id == "ski_lodge":
 		var art = _held_load("res://assets/regions/source/world/mountain_pass/SummitSkiLodge3D.gd").new()
 		art.position = data.exterior_position
 		chunk.add_child(art)
+		WALKUP_DOOR.install(art, data)
 	elif data.id in ["mountain_outfitters","mountain_boutique","mountain_village_outfitters","mountain_gunshop","mountain_mystery_cave"]:
 		_original_facade(chunk,data)
 	else:
@@ -783,7 +814,8 @@ func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 	if data.region == "harbor":
 		# Catalog-only residences/cemetery are not duplicated in harbor_buildings.
-		URBAN_FACTORY.populate_chunk(chunk,data)
+		var art := URBAN_FACTORY.populate_chunk(chunk,data)
+		if art != null: WALKUP_DOOR.install(art, data)
 		return
 	var path := ""
 	match str(data.id):
@@ -802,6 +834,7 @@ func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 	if data.id == "mountain_gunshop":
 		art.set_meta("place_id", data.id)
 		art.add_to_group("v2_weapon_shop_facade")
+		art.add_to_group("v2_walkin_facade")
 	if data.id == "harbor_hospital":
 		art.set_public_door_amount(1.0)
 		art.set_door_amount(1.0)
@@ -814,6 +847,7 @@ func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 		if center.y > 2.4 or bounds.size.y < .4: continue
 		if mesh.get_meta("interior_solid_id","") != "" or bounds.size.x > 2 and bounds.size.z > 2:
 			mesh.create_trimesh_collision()
+	WALKUP_DOOR.install(art, data)
 
 func _prepare_forest() -> void:
 	var rng := RandomNumberGenerator.new()

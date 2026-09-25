@@ -1,9 +1,26 @@
 extends RefCounted
 ## Original production identities. Coordinates retain V1 geography at 16 pixels/metre.
 const SCALE := 1.0 / 16.0
+const FIRE_STATION_DOOR_OFFSET := Vector3(310.0 / 16.0 * .12, 0, 220.0 / 32.0 + .06)
 const HARBOR_SEWER_OPENING := Rect2(1173.0, 2105.0, 18.0, 18.0)
 const MOUNTAIN_OFFSET := Vector2(4300,-4960)
 const SOURCE := "res://assets/regions/source/"
+const WALKUP_DOOR_Z := {"cabin":1.88, "shop":1.82, "residence":3.26, "keeper":2.8, "bunker":2.8625, "lodge":3.98}
+static func walkup_family(id: String) -> String:
+	if id.begins_with("mountain_cabin") or id.begins_with("lumberjack_shelter"): return "cabin"
+	if id in ["mountain_outfitters", "mountain_boutique", "mountain_village_outfitters"]: return "shop"
+	if id in ["westgate_garden", "quayside_house", "canal_north"]: return "residence"
+	if id == "cemetery_keeper": return "keeper"
+	if id == "mountain_bunker": return "bunker"
+	if id == "ski_lodge": return "lodge"
+	return ""
+
+static func walkup_door_z(family: String) -> float:
+	return WALKUP_DOOR_Z.get(family, 0.0)
+
+static func shelter_access_exterior(index: int) -> Vector3:
+	return _at([Vector2(8610,700), Vector2(7660,-730)][index], "mountain")
+
 static func _at(point: Vector2, region: String) -> Vector3:
 	if region == "mountain": point += MOUNTAIN_OFFSET
 	return Vector3(point.x,0,point.y)*SCALE
@@ -58,15 +75,18 @@ static func definitions() -> Array[Dictionary]:
 		var approach: Vector3 = exterior + Vector3(0,0,4)
 		var return_point: Vector3
 		if id in ["westgate_garden","quayside_house","canal_north"]: approach = exterior + Vector3(0,0,(120 if id == "westgate_garden" else 116)*SCALE)
-		elif id == "harbor_police": approach = _at(Vector2(1080,2120),region)
+		elif id == "harbor_police": approach = exterior + Vector3(0,0,8.95)
 		elif id == "harbor_hospital": approach = _at(Vector2(1800,1705),region)
-		elif id == "harbor_fire_station": approach = _at(Vector2(5880,-1198),region)
+		elif id == "harbor_fire_station": approach = exterior + FIRE_STATION_DOOR_OFFSET + Vector3(0,0,1.5)
 		elif id == "port_boss_garage": approach = exterior + Vector3(-4,0,0)
 		elif id == "harbor_sewer": approach = exterior
 		elif id == "santa_mare_hold": approach = exterior
 		elif id.begins_with("harbor_"): approach = exterior + Vector3(0,0,130*SCALE)
+		var walkup := walkup_family(id)
+		if not walkup.is_empty(): approach = exterior + Vector3(0, 0, walkup_door_z(walkup) + 1.5)
 		# PortBossGarage.leave() restores the actor at EXTERIOR exactly.
 		return_point = exterior if id == "port_boss_garage" else approach + Vector3(0,0,1)
+		if id == "harbor_police": return_point = approach
 		var reward: Dictionary = {}
 		if id.begins_with("mountain_cabin") and variant > 0: reward = {"id":id+"_cash_01","kind":"cash","amount":[0,5000,850,450,1200,650,1800][variant]}
 		if id == "mountain_bunker": reward = {"id":"mountain_bunker_cash_01","kind":"cash","amount":1500}
@@ -92,6 +112,9 @@ static func definitions() -> Array[Dictionary]:
 			definition["vehicle_exit"] = Vector3(0,.04,8)
 			definition["vehicle_return"] = definition.exterior_position + Vector3(0,.04,0)
 			definition["vehicle_return_yaw"] = -PI/2
+		if definition.id == "harbor_police":
+			definition.camera_size = 16.0
+			definition.camera_target = Vector3(0, .7, -.6)
 		definition["npc_model"] = ""
 		definition["npc_point"] = Vector3.ZERO
 		if definition.id == "harbor_bank":
@@ -124,6 +147,6 @@ static func access_points() -> Array[Dictionary]:
 	for definition in definitions():
 		points.append({"id":definition.id,"place_id":definition.id,"region":definition.region,"position":definition.entry_position,"return_position":definition.return_position})
 	for index in 2:
-		var position := _at([Vector2(8610,700),Vector2(7660,-730)][index],"mountain")+Vector3(0,0,3.4)
+		var position := shelter_access_exterior(index) + Vector3(0,0,walkup_door_z("cabin")+1.5)
 		points.append({"id":"lumberjack_shelter_%d"%(index+2),"place_id":"lumberjack_shelter","region":"mountain","position":position,"return_position":position+Vector3(0,0,1)})
 	return points

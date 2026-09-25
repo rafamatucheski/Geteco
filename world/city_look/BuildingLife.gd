@@ -380,6 +380,9 @@ static func _roof_neon(chunk: Node3D, building: UrbanBuildingBase, key: String, 
 	if roof_size.x < 6.0 or _roll(key + "|neon") > 0.6: return
 	var name := building.proper_name.to_upper()
 	var color: Color = NEON_COLORS[int(_roll(key + "|neonc") * NEON_COLORS.size()) % NEON_COLORS.size()]
+	if building.building_id == "NorthFrontage0":
+		name = "$"
+		color = Color("d8c46b")
 	var root := Node3D.new()
 	root.name = "RoofNeon_" + key
 	chunk.add_child(root)

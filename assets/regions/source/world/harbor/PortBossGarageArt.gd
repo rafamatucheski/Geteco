@@ -45,12 +45,15 @@ func _ready() -> void:
 	box("GuardDesk",Vector3(8.6,.43,6.8),Vector3(2.2,.86,.85),"3a474c")
 	box("GuardDesk",Vector3(8.6,1.08,6.8),Vector3(.55,.44,.18),"19242c")
 	for x in [-7.0,0.0,7.0]:
-		box("",Vector3(x,2.9,-7.65),Vector3(2.0,.08,.16),"e3e8cf")
+		# Spread the existing fixtures over the occupied floor. Rear-wall-only
+		# lights left the entrance and guard desk beyond their reach at night.
+		var lamp_z := 3.2 if x == 0.0 else -1.5
+		box("",Vector3(x,2.9,lamp_z),Vector3(2.0,.08,.16),"e3e8cf")
 		var lamp := OmniLight3D.new()
-		lamp.position = Vector3(x,2.7,-4)
+		lamp.position = Vector3(x,2.7,lamp_z)
 		lamp.light_color = Color("d8e2c5")
-		lamp.light_energy = .65
-		lamp.omni_range = 9
+		lamp.light_energy = .9
+		lamp.omni_range = 10
 		lamp.shadow_enabled = false
 		add_child(lamp)
 	# Thin concrete joints and irregular aggregate keep the floor in scale.
