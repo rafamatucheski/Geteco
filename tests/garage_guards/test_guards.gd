@@ -4,6 +4,8 @@ const Places := preload("res://world/places/PlaceCatalog.gd")
 var checks := 0
 var failures: Array[String]=[]
 class Gameplay extends RefCounted:
+	# O guarda avisa as reações de civis a cada tiro (Gameplay real tem o mesmo sinal).
+	signal npc_gunfire(origin: Vector3, direction: Vector3, shooter: Node3D)
 	var hits := 0
 	func _sound(_id,_point): pass
 	func _trace(_a,_b,_c,_d): pass
@@ -73,7 +75,10 @@ func run():
 	check(guard.position.is_equal_approx(Guards.POINTS[0]) and manager.actors[1].position.is_equal_approx(Guards.POINTS[1]),"Original two positions preserved")
 	check(guard.health==50 and guard.clip==12,"Original patrol health and pistol magazine")
 	check(guard.visual.mat_uniform.albedo_color==Color("454b42"),"Original private security uniform color")
-	check(guard.visual.scale.is_equal_approx(Vector3(.84,1,.90)*1.28) and guard.weapon.get_child_count()>0,"Original articulated rig proportions and mesh pistol")
+	# PoliceModel sorteia um biotipo (altura) por pessoa; o guarda mantém a proporção
+	# original 0,84 x 1 x 0,90 sobre esse biotipo.
+	var body_height: float = float(guard.visual.get_meta("police_appearance",{"height":1.0}).height)
+	check(guard.visual.scale.is_equal_approx(Vector3(.84,1,.90)*1.28*body_height) and guard.weapon.get_child_count()>0,"Original articulated rig proportions and mesh pistol")
 	check(guard.get_meta("local_security",false) and guard.get_meta("interior_actor",false),"Private guards use local alarm and avoid remote emergency dispatch")
 	check(not manager.alerted() and guard.can_see(player),"Guard sees nearby player without starting alarm")
 	var wall := StaticBody3D.new()

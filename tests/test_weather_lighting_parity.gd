@@ -12,6 +12,7 @@ class FakeSession extends Node:
 
 class FakeWorld extends Node3D:
 	var player: Node3D
+	var production: Node
 
 class FakeController extends Node:
 	var state := FakeState.new()
@@ -58,7 +59,7 @@ func run() -> void:
 	var clear_energy: float = controller.sun.light_energy
 	var clear_color: Color = controller.sun.light_color
 	var clear_background: Color = controller.environment.environment.background_color
-	check(clear_color.is_equal_approx(weather.HARBOR_SUN_DAY),"Clear Harbor daylight uses the measured near-neutral V1 highlight tint")
+	check(weather.HARBOR_SUN_DAY.is_equal_approx(Color("fffdf5")) and absf(clear_color.r-clear_color.g)<.04 and clear_color.b>=clear_color.r*.9,"Clear Harbor daylight keeps the authored near-neutral tint after atmospheric grading")
 	check(controller.sun.shadow_enabled,"Productive directional shadows remain enabled")
 	weather.weather_state = 1
 	weather._update()

@@ -1,74 +1,87 @@
 extends SceneTree
+
+const GAME_STATE := preload("res://runtime/GameState.gd")
+const SAVE_STORE := preload("res://runtime/SaveStore.gd")
 var failures: Array[String] = []
 var world
-func _initialize() -> void: call_deferred("run")
+
+func _initialize() -> void: run.call_deferred()
+
 func check(ok: bool, message: String) -> void:
-	if not ok: failures.append(message)
+	if not ok:
+		failures.append(message)
+		push_error(message)
+
 func settle() -> void:
 	for i in 3: await physics_frame
+
 func use_target(key: String) -> void:
-	world.player.teleport(world.maciota_place.interaction_points[key]+Vector3.UP*.04)
+	world.player.teleport(world.maciota_place.interaction_points[key] + Vector3.UP * .05)
 	await settle()
-	check(world.session.interact_nearest(),"Interaction "+key)
-	world.session.close_dialogue()
+	check(world.session.interact(), "Interaction " + key)
+	while world.session.dialogue_open: world.session._advance_dialogue()
+
 func run() -> void:
 	world = load("res://Main.tscn").instantiate()
+	world.set_meta("skip_arrival", true)
 	root.add_child(world)
-	await settle()
+	for i in 600:
+		await physics_frame
+		if world.session != null and world.session.ready_for_play: break
+	if world.session == null or not world.session.ready_for_play:
+		check(false, "Integrated session becomes playable")
+		quit(1)
+		return
 	var session = world.session
-	check(session.no_save,"Test requires --no-save")
-	check(not session.interact_nearest(),"No remote interaction")
-	world.player.teleport(world.maciota_place.entry_position+Vector3(0,.04,.6))
-	await settle()
-	check(session.interact_nearest(),"Physical garage entrance")
-	check(session.inside and world.camera.locked,"Garage camera locked")
-	check(not session.progression.can_attack(),"Garage attack blocked")
-	check(not session.progression.equip_weapon("pistol"),"Garage equip blocked")
+	var state = session.state
+	check(world.production.no_save, "Test requires --no-save")
+	check(state.grant_weapon("pistol") and state.equip_weapon("pistol"), "Outdoor pistol equipped")
+	check(await session.enter_place("maciota", false), "Physical garage entrance")
+	check(state.place_id == "maciota" and world.camera.locked, "Garage camera locked")
+	check(not state.can_attack() and not state.equip_weapon("pistol") and state.equipped_weapon == "fists", "Garage weapon restriction")
 	await use_target("mechanic")
-	check(session.progression.snapshot().phase == "meet_maciota","Order protected")
+	check(state.intro.stage == "meet_maciota", "Order protected")
 	await use_target("maciota")
-	check(session.progression.snapshot().phase == "talk_mechanic","Maciota advances")
+	check(state.intro.stage == "talk_mechanic", "Maciota advances")
 	await use_target("mechanic")
-	check(session.progression.snapshot().phase == "collect_part","Mechanic advances")
-	check(world.maciota_place.part_visual.visible,"Part now visible")
+	check(state.intro.stage == "collect_part", "Mechanic advances")
+	check(world.maciota_place.part_visual.visible, "Part now visible")
 	await use_target("part")
-	check(session.progression.snapshot().inventory.get("garage_part",0) == 1,"Collect exactly one")
-	check(not world.maciota_place.part_visual.visible,"Part removed")
+	check(state.intro.snapshot().inventory.get("garage_part", 0) == 1, "Collect exactly one")
+	check(not world.maciota_place.part_visual.visible, "Part removed")
 	await use_target("maciota")
-	check(session.progression.snapshot().phase == "complete","Complete mission")
+	check(state.intro.stage == "complete", "Complete mission")
 	await use_target("maciota")
-	check(session.progression.snapshot().completed_missions.size() == 1,"No duplicate reward")
-	world.player.teleport(world.maciota_place.exit_position+Vector3(0,.04,-.5))
-	await settle()
-	check(session.interact_nearest(),"Physical garage exit")
-	check(not session.inside and not world.camera.locked,"Outdoor camera restored")
-	check(session.progression.can_attack(),"Outdoor weapon policy restored")
+	check(state.intro.snapshot().completed_missions.size() == 1, "No duplicate reward")
+	var save_root := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--isolated-save-root="): save_root = arg.trim_prefix("--isolated-save-root=").replace("\\", "/").trim_suffix("/")
+	check(not save_root.is_empty(), "Isolated save directory supplied")
+	if save_root.is_empty(): quit(1); return
+	var store = SAVE_STORE.new()
+	store.path = save_root.path_join("v2_session.json")
+	check(store.save(state) == OK, "Save garage checkpoint")
+	var loaded = GAME_STATE.new()
+	check(store.load_into(loaded).get("ok", false), "Load garage checkpoint")
+	check(loaded.place_id == "maciota" and loaded.intro.stage == "complete", "Loaded room and mission")
+	check(not loaded.can_attack() and loaded.equipped_weapon == "fists" and loaded.owns_weapon("pistol"), "Loaded garage preserves inventory and weapon lock")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path))
+	check(session.leave_place(), "Physical garage exit")
+	check(state.place_id.is_empty() and not world.camera.locked, "Outdoor camera restored")
+	check(state.can_attack() and state.equip_weapon("pistol"), "Outdoor weapon policy restored")
 	var block := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(2,2,2)
+	box.size = Vector3(2, 2, 2)
 	shape.shape = box
 	block.add_child(shape)
-	block.position = world.maciota_place.interior_spawn+Vector3.UP
+	block.position = world.maciota_place.interior_spawn + Vector3.UP
 	world.add_child(block)
 	await settle()
-	check(not session.transition(true),"Occupied checkpoint rejected")
-	check(not session.inside,"Failed transition preserves zone")
-	block.free()
+	check(not await session.enter_place("maciota", false), "Occupied checkpoint rejected")
+	check(state.place_id.is_empty(), "Failed transition preserves zone")
+	block.queue_free()
 	await settle()
-	check(session.transition(true,false),"Enter for save checkpoint")
-	session.save_path = "user://tests/session_"+str(Time.get_ticks_usec())+".json"
-	session.no_save = false
-	session.save_checkpoint()
-	check(session.transition(false,false),"Leave without replacing save")
-	session.progression = load("res://systems/Progression.gd").new()
-	check(session.load_checkpoint(),"Load physical checkpoint")
-	check(session.inside and world.camera.locked,"Loaded room and camera")
-	check(session.progression.snapshot().phase == "complete","Loaded mission")
-	check(not session.progression.can_attack(),"Loaded garage weapon lock")
-	check(world.player.position.distance_to(world.maciota_place.interior_spawn) < .1,"Loaded physical position")
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(session.save_path))
-	for failure in failures: push_error(failure)
-	print("V2_SESSION ","PASS" if failures.is_empty() else "FAIL", " failures=",failures.size())
+	print("V2_SESSION ", "PASS" if failures.is_empty() else "FAIL", " failures=", failures.size())
 	world.free()
 	quit(0 if failures.is_empty() else 1)

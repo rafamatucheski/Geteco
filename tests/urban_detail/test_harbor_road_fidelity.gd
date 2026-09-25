@@ -29,7 +29,12 @@ func _run() -> void:
 		return
 	var region: Node3D = native_region_script.build_region("harbor",Vector3(715.0/16.0,0,1800.0/16.0))
 	root.add_child(region)
-	for frame in 32: await process_frame
+	# Os vizinhos são construídos em fatias; o número de quadros até completar
+	# depende da carga da máquina. Inspecione o anel somente após o streaming.
+	for frame in 600:
+		await process_frame
+		if region.is_streaming_idle(): break
+	check(region.is_streaming_idle(),"initial Harbor 3x3 streaming finishes before geometry checks")
 	check(region.roads.size()==39,"all 39 productive V1 road definitions are configured")
 	check(region.harbor_road_geometry.source_coverage_errors().is_empty(),"source road segments and junctions have complete geometry")
 	var detached_crossings:=0
@@ -83,13 +88,25 @@ func _run() -> void:
 	for index in samples.size():
 		var point: Vector2 = samples[index]
 		region.set_focus(Vector3(point.x,0.0,point.y))
-		for frame in 12: await process_frame
+		for frame in 600:
+			await process_frame
+			if region.is_streaming_idle(): break
+		check(region.is_streaming_idle(),"streaming finishes before collision ray %d"%index)
+		await physics_frame
 		var query := PhysicsRayQueryParameters3D.create(Vector3(point.x,8,point.y),Vector3(point.x,-2,point.y),1)
 		var hit := root.world_3d.direct_space_state.intersect_ray(query)
 		check(not hit.is_empty(),"collision ray %d reaches a physical surface"%index)
 		if not hit.is_empty():
-			var collider := hit.collider as Node
-			check(collider.name.begins_with("HarborRoad_202932"),"collision ray %d hits the road mesh before base land"%index)
+			var asphalt_hit := (hit.collider as Node).name.begins_with("HarborRoad_202932")
+			var exclusions: Array[RID] = []
+			for attempt in 32:
+				if asphalt_hit: break
+				exclusions.append((hit.collider as CollisionObject3D).get_rid())
+				query.exclude = exclusions
+				hit = root.world_3d.direct_space_state.intersect_ray(query)
+				if hit.is_empty(): break
+				asphalt_hit = (hit.collider as Node).name.begins_with("HarborRoad_202932")
+			check(asphalt_hit,"collision ray %d reaches the road collider despite coplanar land"%index)
 	var traversable_segments := 0
 	var expected_segments := 0
 	for road_value in region.roads:
@@ -100,14 +117,30 @@ func _run() -> void:
 			expected_segments += 1
 			var midpoint := points[segment_index].lerp(points[segment_index + 1], 0.5)
 			region.set_focus(midpoint)
-			for frame in 10: await process_frame
+			for frame in 600:
+				await process_frame
+				if region.is_streaming_idle(): break
 			await physics_frame
-			var query := PhysicsRayQueryParameters3D.create(midpoint + Vector3.UP * 8.0, midpoint - Vector3.UP * 2.0, 1)
-			var hit := root.world_3d.direct_space_state.intersect_ray(query)
-			if not hit.is_empty() and (hit.collider as Node).name.begins_with("HarborRoad_202932"):
+			# Asfalto e terreno compartilham y=0 para o carro não bater numa borda.
+			# Exclui superfícies sobrepostas até verificar o colisor da própria rua.
+			var exclusions: Array[RID] = []
+			var road_hit := false
+			var first_hit := ""
+			for attempt in 32:
+				var query := PhysicsRayQueryParameters3D.create(midpoint + Vector3.UP * 8.0, midpoint - Vector3.UP * 2.0, 1)
+				query.exclude = exclusions
+				var hit := root.world_3d.direct_space_state.intersect_ray(query)
+				if hit.is_empty(): break
+				var collider := hit.collider as CollisionObject3D
+				if attempt == 0: first_hit = collider.name
+				if collider.name.begins_with("HarborRoad_202932"):
+					road_hit = true
+					break
+				exclusions.append(collider.get_rid())
+			if road_hit:
 				traversable_segments += 1
 			else:
-				push_error("Missing road surface on %s segment %d" % [road.id, segment_index])
+				push_error("Missing road surface on %s segment %d point=%s first_hit=%s idle=%s" % [road.id, segment_index, midpoint, first_hit, region.is_streaming_idle()])
 	check(traversable_segments == expected_segments, "every productive V1 road segment remains physical while streamed")
 	var physical_accesses := 0
 	var access_points: PackedVector2Array = region.harbor_urban_surface.source_access_points()
@@ -115,7 +148,9 @@ func _run() -> void:
 		var access := access_points[access_index]
 		var point := Vector3(access.x, 0.0, access.y)
 		region.set_focus(point)
-		for frame in 10: await process_frame
+		for frame in 600:
+			await process_frame
+			if region.is_streaming_idle(): break
 		await physics_frame
 		var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 8.0, point - Vector3.UP * 2.0, 1)
 		if not root.world_3d.direct_space_state.intersect_ray(query).is_empty():

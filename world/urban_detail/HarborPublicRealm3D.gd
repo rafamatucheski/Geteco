@@ -73,12 +73,15 @@ func _disc(label: String, center: Vector3, radius: float, height: float, hex: St
 	return item
 
 func _build_union_plaza() -> void:
-	# Rect2(1440,1740,620,330), centred around the fountain anchor.
-	_box("UnionPlazaPaving", Vector3(0, 0.018, 4.375), Vector3(38.75, 0.036, 20.625), "aaa9a1")
-	for x in range(-18, 19, 3):
-		_box("UnionPlazaJoint", Vector3(float(x), 0.041, 4.375), Vector3(0.025, 0.012, 20.2), "8e8d86")
-	for z in range(-5, 15, 3):
-		_box("UnionPlazaJoint", Vector3(0, 0.041, float(z)), Vector3(38.3, 0.012, 0.025), "8e8d86")
+	# Rect2(1440,1740,620,330), centred around the fountain anchor. Na V1 as ruas
+	# eram pintadas por cima da praça; aqui a laje (topo 0.036) ficava acima do
+	# asfalto (0.026) e transformava a medical_garden_lane (z local 9.375) e a borda
+	# da union_avenue em calçada. A praça termina onde começa a calçada delas.
+	_box("UnionPlazaPaving", Vector3(1.3125, 0.018, -0.90625), Vector3(36.125, 0.036, 10.0625), "aaa9a1")
+	for x in range(-15, 19, 3):
+		_box("UnionPlazaJoint", Vector3(float(x), 0.041, -0.90625), Vector3(0.025, 0.012, 9.7), "8e8d86")
+	for z in range(-5, 4, 3):
+		_box("UnionPlazaJoint", Vector3(1.3125, 0.041, float(z)), Vector3(35.7, 0.012, 0.025), "8e8d86")
 	# V1 radii 60/51/40/13 px converted by 16 px/m.
 	_disc("UnionFountainBasin", Vector3(0, 0.30, 0), 3.75, 0.60, "7b8078", true)
 	_disc("UnionFountainPedestal", Vector3(0, 0.93, 0), 0.81, 0.62, "c4c4ad", true)

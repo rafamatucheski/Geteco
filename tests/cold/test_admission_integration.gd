@@ -19,6 +19,11 @@ func run() -> void:
 	check(cold!=null,"Main installs real ColdSurvival")
 	if cold==null: quit(1); return
 	check(world.production.travel("mountain"),"real mountain travel")
+	# travel() só admite o pedido; a chegada acontece alguns quadros depois e coloca o
+	# jogador no ponto de destino. Posicionar antes disso seria desfeito pela chegada.
+	for i in 600:
+		if not world.production.travel_busy: break
+		await physics_frame
 	cold.set_process(false)
 	var at := HEAT.to_world(Vector2(5980,715))
 	world.player.set_physics_process(false)

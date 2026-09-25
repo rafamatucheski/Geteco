@@ -27,7 +27,7 @@ func run() -> void:
 	check(gap_collision != null and gap_collision.find_child("HarborConnectorGapBody",true,false)!=null,"Seam owns one dedicated non-road support surface")
 	var polygon := CONNECTION.inner_gap_polygon()
 	check(polygon.size()==26,"Seam samples both V1 lane envelopes at 13 points")
-	check(is_equal_approx(polygon[0].x,7100.0*SCALE) and is_equal_approx(polygon[12].x,7300.0*SCALE),"Seam taper keeps exact V1 start/end")
+	check(is_equal_approx(polygon[0].x,6500.0*SCALE) and is_equal_approx(polygon[12].x,7300.0*SCALE),"Seam asphalt spans the original inbound lane end through the bridge junction")
 	var gap_point := (polygon[6]+polygon[19])*.5
 	var seam_ray := PhysicsRayQueryParameters3D.create(Vector3(gap_point.x,2,gap_point.y),Vector3(gap_point.x,-.2,gap_point.y),1)
 	var seam_hit := fixture.get_world_3d().direct_space_state.intersect_ray(seam_ray)

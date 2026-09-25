@@ -19,11 +19,19 @@ func run() -> void:
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://evidence/startup-world-fixed.png")
-	for menu in ["show_inventory","show_journal","show_map","show_settings","show_controls"]:
+	for menu in ["show_inventory","show_journal","show_map","show_controls"]:
 		world.session.call(menu)
 		await process_frame
 		check(world.session.panel.visible and world.session.column.get_child_count()>0,menu+" must display content")
 		world.session.close_menu()
+	# Configurações moraram no painel da sessão; hoje abrem a tela de configurações do
+	# menu de pausa (FullSession.show_settings -> PauseMenu.open_settings).
+	world.session.show_settings()
+	await process_frame
+	var pause_menu = world.pause_panel
+	check(is_instance_valid(pause_menu) and pause_menu.visible and is_instance_valid(pause_menu.settings) and pause_menu.settings.visible and pause_menu.settings.get_child_count()>0,"show_settings must display content")
+	pause_menu.resume_game()
+	await process_frame
 	world.session.show_inventory()
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw

@@ -75,6 +75,7 @@ func run() -> void:
 	var campaign_fixture: Dictionary = state.campaign.snapshot()
 	campaign_fixture.completed = ["primeiro_giro"]
 	campaign_fixture.claimed_rewards = ["primeiro_giro"]
+	check(state.economy.grant_reward("campaign:primeiro_giro", int(session.MISSIONS.MISSIONS.primeiro_giro.reward)), "Prepare paid first-delivery receipt")
 	for flag in session.MISSIONS.MISSIONS.primeiro_giro.sets_flags: campaign_fixture.flags[flag] = true
 	check(state.campaign.restore_snapshot(campaign_fixture) and state.campaign.begin("cobra_contact"),"Prepare unlocked towing mission")
 	check(session.mission_world.begin_tow_job({"story":true,"kind":"local"}),"Create physical mission cargo")

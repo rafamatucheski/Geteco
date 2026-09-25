@@ -44,7 +44,10 @@ func run() -> void:
 		check(not northstar.find_children("*","MeshInstance3D",true,false).is_empty(),"Northstar finish contains meshes")
 		check(northstar.find_children("*","StaticBody3D",true,false).is_empty(),"Northstar exterior scaffold does not add boarding collisions")
 	region.set_focus(Vector3(299,0,183))
-	for i in 16: await process_frame
+	# Vizinhos são construídos em fatias: espera o streaming assentar.
+	for i in 1200:
+		await process_frame
+		if region.is_streaming_idle(): break
 	var santa := region.find_child("SantaMareShipDetail3D",true,false)
 	check(santa != null,"Santa Mare has native 3D hull and scaffold")
 	check(region.find_children("QuaysideCraneRigging3D","Node3D",true,false).size() == 3,"Santa Mare keeps three detailed quay cranes")

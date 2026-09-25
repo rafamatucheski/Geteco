@@ -17,6 +17,7 @@ class Gameplay extends Node:
 class Driving extends Node:
 	var occupied := true
 	var car: CharacterBody3D
+	func is_body_transition_active() -> bool: return false
 
 class World extends Node3D:
 	var player: Node3D
@@ -55,6 +56,7 @@ func run() -> void:
 	var car := Vehicle.new()
 	car.archetype = "sport_coupe"
 	car.vehicle_id = "northgate_test"
+	car.controlled = true
 	world.add_child(player)
 	world.add_child(gameplay)
 	world.add_child(driving)

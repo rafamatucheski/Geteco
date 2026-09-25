@@ -76,7 +76,7 @@ func open_rescue() -> bool:
 	if overlay_opened: audio = session.death_presentation.get_node_or_null("WastedAudio") as AudioStreamPlayer
 	check(overlay_opened and label != null and label.text == "SE FODEU", "morte apresenta a mensagem da V1 antes do resgate")
 	check(audio != null and audio.stream != null and audio.playing, "morte toca a vinheta sonora da V1")
-	return await wait_until(func(): return session.rescue_pending and session.panel.visible, 180)
+	return overlay_opened and session.rescue_pending
 
 func _run() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -106,20 +106,18 @@ func _run() -> void:
 	check(modal_activated and not session.modal, "controle A/ui_accept ativa botão focado do modal")
 	if session.modal: session.close_menu()
 
-	check(await open_rescue(), "morte real abre o resgate para teclado")
+	check(await open_rescue(), "morte real apresenta a vinheta antes do resgate")
 	await frames(3)
-	check(is_instance_valid(focused_button()) and focused_button().text == "Continuar", "resgate entrega foco a Continuar")
-	await send_keyboard_accept()
-	check(await wait_until(func(): return not session.rescue_pending and not session.respawn_busy, 300), "Enter/ui_accept confirma o resgate")
-	await ensure_rescued()
+	check(session.rescue_pending and not session.modal, "vinheta mantém o resgate ativo sem abrir menu")
+	check(await wait_until(func(): return not session.rescue_pending and not session.respawn_busy, 300), "resgate automático devolve o jogador")
+	check(world.gameplay.health == 100.0 and not world.player.dead, "resgate restaura vida e movimento")
 	check(preload("res://runtime/GameState.gd").new().restore_snapshot(session.state.snapshot()), "estado posterior ao resgate permanece valido para salvar")
 
-	check(await open_rescue(), "segunda morte real abre o resgate para controle")
+	check(await open_rescue(), "segunda morte real apresenta a vinheta")
 	await frames(3)
-	check(is_instance_valid(focused_button()) and focused_button().text == "Continuar", "resgate recupera foco para controle")
-	await send_controller_accept()
-	check(await wait_until(func(): return not session.rescue_pending and not session.respawn_busy, 300), "controle A/ui_accept confirma o resgate")
-	await ensure_rescued()
+	check(session.rescue_pending and not session.modal, "segunda vinheta mantém o resgate ativo sem menu")
+	check(await wait_until(func(): return not session.rescue_pending and not session.respawn_busy, 300), "segundo resgate automático conclui")
+	check(world.gameplay.health == 100.0 and not world.player.dead, "segundo resgate restaura o jogador")
 
 	world.gameplay.stars = 1
 	world.gameplay.crime_points = 12

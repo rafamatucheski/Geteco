@@ -136,10 +136,19 @@ func _campaign() -> void:
 		while campaign.active_id != "":
 			var step := campaign.current_step()
 			var payload := {"target_id": step.target, "on_foot": true, "unarmed": true, "in_vehicle": true, "wanted_level": 0,
-				"encounter_cleared": true, "story_vehicle_alive": true, "correct_vehicle": true, "elapsed": elapsed}
+				"encounter_cleared": true, "story_vehicle_alive": true, "correct_vehicle": true, "elapsed": elapsed,
+				"tow_delivery_ready": true, "race_vehicle_id": RACE_CAR}
 			if step.has("checkpoint"): payload.checkpoint = step.checkpoint
-			_check(campaign.apply_event(step.event, payload).ok, "Original required action advances: " + str(step.event))
+			if step.event == "race_started": payload.race_position = RACE_START
+			var result: Dictionary = campaign.apply_event(step.event, payload)
+			if result.ok and step.event == "race_started":
+				_check(_drive_lap(campaign), "Physical lap completes the original race")
+				break
+			_check(result.ok, "Original required action advances: %s %s" % [step.event, result])
+			# Sem progresso a etapa nunca termina: falha registrada em vez de laço infinito.
+			if not result.ok: break
 			elapsed += 10.0
+		if campaign.active_id != "": break
 		_check(campaign.claim_reward(economy, id), "Reward claimed once: " + id)
 		_check(not campaign.claim_reward(economy, id), "Reward cannot duplicate: " + id)
 	_check(economy.balance == 1670, "Six original Harbor rewards total 1670")
@@ -157,11 +166,15 @@ func _campaign() -> void:
 	race_state.flags = {"harbor_delivery_complete": true, "cobra_contact_complete": true}
 	_check(race.restore_snapshot(race_state), "Valid pre-race checkpoint restored")
 	race.begin("cobra_race")
-	_check(race.apply_event("race_started", {"target_id": "ashbend_start", "in_vehicle": true, "elapsed": 0}).ok, "Race requires real vehicle")
+	_check(race.apply_event("race_started", {"target_id": "ashbend_start", "in_vehicle": true, "elapsed": 0}).reason == "race_vehicle_required", "Race start without a vehicle is refused")
+	_check(race.apply_event("race_started", {"target_id": "ashbend_start", "in_vehicle": true, "elapsed": 0, "race_vehicle_id": RACE_CAR, "race_position": RACE_START}).ok, "Race requires real vehicle")
 	_check(not race.apply_event("race_checkpoint", {"target_id": "ashbend_gate_0", "in_vehicle": true, "checkpoint": 1, "elapsed": 3}).ok, "Out-of-order gate rejected")
-	_check(race.apply_event("race_checkpoint", {"target_id": "ashbend_gate_0", "in_vehicle": true, "checkpoint": 0, "elapsed": 101}).reason == "race_timeout", "Original 100-second limit enforced")
+	_check(_lap_times_out(race), "Original 100-second limit enforced")
 	_check(race.active_id == "" and race.begin("cobra_race"), "Failed race retries without payment")
-	race.apply_event("race_started",{"target_id":"ashbend_start","in_vehicle":true,"elapsed":0})
+	race.apply_event("race_started",{"target_id":"ashbend_start","in_vehicle":true,"elapsed":0, "race_vehicle_id": RACE_CAR, "race_position": RACE_START})
+	# O relógio só corre depois da contagem parada na largada (save com contagem e
+	# relógio andando é estado impossível e é recusado na restauração).
+	_wait_countdown(race)
 	_check(race.advance_race(61.5,true).is_empty() and race.race_elapsed()==61.5,"Clock advances between physical gates")
 	var resumed := Campaign.new()
 	_check(resumed.restore_snapshot(_roundtrip(race.snapshot())) and resumed.race_elapsed()==61.5,"Mid-race reload preserves elapsed seconds")
@@ -172,6 +185,49 @@ func _campaign() -> void:
 	_check(resumed.advance_race(1.5,false)=="race_offtrack","Reload does not reset four-second abandonment grace")
 	_check(race.advance_race(.1,true).is_empty() and race.snapshot().race_outside==0,"Rejoining road resets abandonment timer")
 	_check(race.advance_race(.1,false,true)=="race_offtrack","Crossing inner garden fails immediately")
+
+# A corrida é física (CobraRaceProgress): contagem parada na largada, progresso pelo
+# ângulo percorrido na faixa e portões a cada quarto de volta. O teste faz a volta.
+const RACE := preload("res://systems/campaign/CobraRaceProgress.gd")
+const RACE_CAR := "test_race_car"
+var RACE_START: Vector2 = RACE.CENTER + Vector2.from_angle(PI) * RACE.LANE_RADIUS
+
+func _race_point(angle: float) -> Vector2:
+	return RACE.CENTER + Vector2.from_angle(angle) * RACE.LANE_RADIUS
+
+func _wait_countdown(campaign) -> void:
+	# Para exatamente no fim da contagem: passos extras já contariam como corrida.
+	for i in 60:
+		if float(campaign.race_status().get("countdown", 0.0)) <= 0.0: return
+		campaign.tick_race(.1, RACE_START, RACE_CAR, true)
+
+## Volta completa: envia cada portão quando a própria corrida o registra e a chegada.
+func _drive_lap(campaign) -> bool:
+	_wait_countdown(campaign)
+	var angle := PI
+	for tick in 600:
+		angle += .08
+		var result: Dictionary = campaign.tick_race(.1, _race_point(angle), RACE_CAR, true)
+		if not str(result.get("failure", "")).is_empty(): return false
+		if int(result.get("crossed", -1)) >= 0:
+			var step: Dictionary = campaign.current_step()
+			if not campaign.apply_event(step.event, {"target_id": step.target, "in_vehicle": true, "checkpoint": step.get("checkpoint", -1), "elapsed": campaign.race_elapsed()}).ok: return false
+		var status: Dictionary = campaign.race_status()
+		if int(status.get("checkpoint", 0)) == 4 and float(status.get("progress", 0.0)) >= TAU:
+			var finish: Dictionary = campaign.current_step()
+			return campaign.apply_event(finish.event, {"target_id": finish.target, "in_vehicle": true, "elapsed": campaign.race_elapsed()}).ok
+	return false
+
+## Volta lenta demais: a corrida expira aos 100 s sem pagar nada.
+func _lap_times_out(campaign) -> bool:
+	_wait_countdown(campaign)
+	var angle := PI
+	for tick in 200:
+		angle += .005
+		var result: Dictionary = campaign.tick_race(1.0, _race_point(angle), RACE_CAR, true)
+		if str(result.get("failure", "")) == "race_timeout": return campaign.active_id == ""
+		if not str(result.get("failure", "")).is_empty(): return false
+	return false
 
 func _canonical() -> void:
 	var campaign := Canonical.new()

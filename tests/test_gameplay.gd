@@ -69,6 +69,14 @@ func check(condition: bool, label: String) -> void:
 		failures.append(label)
 		push_error(label)
 
+func await_contact(gameplay) -> void:
+	# Melee damage and grenade release belong to the visible contact frame.
+	# Exercise normal physics until that bounded animation window completes.
+	for frame in 45:
+		if gameplay._pending_contact.is_empty(): return
+		await physics_frame
+	check(gameplay._pending_contact.is_empty(), "pending attack resolves within its animation")
+
 func run() -> void:
 	if "--outfit-sheet" in OS.get_cmdline_user_args():
 		await capture_outfits()
@@ -147,7 +155,9 @@ func run() -> void:
 	await physics_frame
 	gameplay.cooldown = 0
 	old_health = target.health
-	gameplay.fire_at(Vector3(0, 1, -2))
+	check(gameplay.fire_at(Vector3(0, 1, -2)), "melee starts collision attack")
+	check(target.health == old_health, "melee waits for visible contact")
+	await await_contact(gameplay)
 	check(target.health < old_health, "melee uses collision target")
 	gameplay.clear_wanted()
 	gameplay.register_crime(30, player.position)
@@ -184,16 +194,20 @@ func run() -> void:
 	target.position = Vector3(0, 0, -6)
 	await physics_frame
 	await physics_frame
+	var projectiles: Array[Node] = []
 	for id in CATALOG.ORDER:
 		state.equipped_weapon = id
 		gameplay.cooldown = 0
 		gameplay.reload_timer = 0
 		gameplay._update_visual()
 		check(gameplay.fire_at(Vector3(0, 1, -6)), "arsenal fires: " + id)
+		await await_contact(gameplay)
 		check(gameplay.visual_id == id, "original geometry equipped: " + id)
-	var projectiles: Array[Node] = []
-	for child in gameplay.get_children():
-		if child.get_script() == preload("res://gameplay/Projectile.gd"): projectiles.append(child)
+		for child in gameplay.get_children():
+			if child.get_script() == preload("res://gameplay/Projectile.gd") and not projectiles.has(child):
+				# Hold each launched projectile until its dedicated collision case below.
+				child.set_physics_process(false)
+				projectiles.append(child)
 	check(projectiles.size() == 2, "RPG and grenade use native projectiles")
 	for projectile in projectiles:
 		if projectile.grenade:
