@@ -162,7 +162,8 @@ func run() -> void:
 	gameplay.clear_wanted()
 	gameplay.register_crime(30, player.position)
 	check(gameplay.stars == 2, "V1 wanted thresholds")
-	gameplay.register_crime(210, player.position)
+	# Patamares 4/5/6 subiram para 140/260/420 pontos (polícia, 25/09/2026).
+	gameplay.register_crime(390, player.position)
 	check(gameplay.stars == 6, "six wanted levels")
 	gameplay.clear_wanted()
 	gameplay.register_crime(12, player.position)
@@ -243,8 +244,18 @@ func run() -> void:
 	check(gameplay.buy_attachment("pistol", "laser_green"), "laser can be purchased")
 	check(gameplay.buy_attachment("pistol", "flashlight"), "flashlight can be purchased")
 	check(gameplay.toggle_flashlight(), "owned lamp switches")
+	gameplay.aim_active = false
 	gameplay._update_visual()
-	check(gameplay.flashlight.visible and gameplay.laser.visible, "native lamp and laser active")
+	check(gameplay.flashlight.visible and not gameplay.laser.visible, "lamp on; laser off until aiming")
+	gameplay.aim_active = true
+	gameplay._update_visual()
+	check(gameplay.laser.visible, "laser appears while aiming")
+	var lens: Node3D = gameplay.gun.find_child("LaserLens", true, false)
+	var beam_start: Vector3 = gameplay.laser.global_position + gameplay.laser.global_basis.z.normalized() * gameplay.laser.scale.z * 0.5
+	check(lens != null and beam_start.distance_to(lens.global_position) < 0.05, "laser leaves the weapon's laser module")
+	var lamp_lens: Node3D = gameplay.gun.find_child("TacticalFlashlight", true, false).find_child("Lens", true, false)
+	check(gameplay.flashlight.global_position.distance_to(lamp_lens.global_position) < 0.02, "flashlight light sits on the mounted lamp lens")
+	gameplay.aim_active = false
 	check(not gameplay.buy_attachment("pistol", "scope_2x"), "incompatible scope rejected")
 	var custom_save: Dictionary = gameplay.snapshot()
 	check(gameplay.restore_state(custom_save), "customization survives validated snapshot")

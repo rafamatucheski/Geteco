@@ -455,8 +455,16 @@ func _knuckle_pose(variant: int, age: float, engaged: bool, swing: float, sprint
 	var right_basis := Basis.IDENTITY
 	var left_basis := Basis.IDENTITY
 	if not engaged and age >= KNUCKLE_DURATION:
-		right = Vector3(0.20, lerpf(0.72, 0.88, sprint), -0.10 - swing * 0.12)
-		left = Vector3(-0.20, lerpf(0.72, 0.88, sprint), -0.10 + swing * 0.12)
+		# Corrida de punhos fechados: cotovelo dobrado ao lado do corpo e bombeio
+		# para frente e para trás, com o punho inclinando no mesmo sentido. Antes as
+		# duas mãos ficavam paradas à frente do quadril (±12 cm) e o Dante corria de
+		# braços duros (feedback de 25/09/2026).
+		var height := lerpf(0.78, 0.93, sprint)
+		var pump := lerpf(0.26, 0.36, sprint)
+		right = Vector3(0.19, height + maxf(0.0, -swing) * 0.05, -0.05 - swing * pump)
+		left = Vector3(-0.19, height + maxf(0.0, swing) * 0.05, -0.05 + swing * pump)
+		right_basis = Basis(Vector3.RIGHT, swing * 0.55)
+		left_basis = Basis(Vector3.RIGHT, -swing * 0.55)
 	elif age < KNUCKLE_DURATION:
 		var reach := smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.14, KNUCKLE_DURATION, age))
 		var turn := reach * PI * 0.45

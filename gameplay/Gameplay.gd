@@ -244,9 +244,13 @@ func _ready() -> void:
 	emergency.configure(world, self)
 	add_child(emergency)
 	flashlight = SpotLight3D.new()
-	flashlight.spot_range = 16.0
-	flashlight.spot_angle = 26.0
-	flashlight.light_energy = 2.5
+	# Asfalto escuro reflete pouco: com 2,5 o facho mal aparecia na rua e só a
+	# calçada perto do Dante acendia (medido na Main à meia-noite, 25/09/2026).
+	flashlight.spot_range = 24.0
+	flashlight.spot_angle = 32.0
+	flashlight.spot_attenuation = 0.7
+	flashlight.light_energy = 7.0
+	flashlight.light_specular = 0.3
 	flashlight.shadow_enabled = false
 	gun.add_child(flashlight)
 	flashlight.hide()
@@ -372,6 +376,7 @@ func _update_visual() -> void:
 			var muzzle := ARSENAL.build(gun, id)
 			CUSTOM.fit(gun, id, customization, muzzle)
 			_build_muzzle_flash(id, muzzle)
+			_mount_flashlight()
 		if player.has_method("set_combat_weapon_mount"):
 			player.set_combat_weapon_mount(gun, POSE.GRIPS.get(id, Vector3.ZERO))
 	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true))
@@ -387,10 +392,16 @@ func _update_visual() -> void:
 	_update_left_knuckles(id)
 	flashlight.visible = gun.visible and flashlight_enabled and CUSTOM.installed(customization, id)
 	var laser_part := CUSTOM.selected(customization, id, "laser")
-	laser.visible = gun.visible and laser_part != "none"
+	# Laser só enquanto o jogador mira (botão de mirar), saindo do módulo na arma e
+	# seguindo o cano. Antes ficava sempre aceso e nascia do peito do Dante, na
+	# direção do mouse, desligado da arma (feedback de 25/09/2026).
+	var lens := gun.find_child("LaserLens", true, false) as Node3D
+	laser.visible = gun.visible and laser_part != "none" and aim_active and lens != null
 	if laser.visible:
-		var origin := player.global_position + Vector3.UP * 1.05
-		var direction := _aim_direction()
+		var origin := lens.global_position
+		var direction := -gun.global_basis.z
+		direction.y = 0.0
+		if direction.length_squared() < 0.001: direction = _aim_direction()
 		if direction.length_squared() < 0.001: direction = Vector3.FORWARD
 		var ray := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * 35, 7, [player.get_rid()])
 		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
@@ -399,6 +410,16 @@ func _update_visual() -> void:
 		laser.look_at(end)
 		laser.scale.z = maxf(0.01, origin.distance_to(end))
 		laser.material_override.albedo_color = Color("58e07c") if laser_part == "laser_green" else Color("e5493c")
+
+## Lanterna na lente da peça montada (WeaponCustomization.fit, "TacticalFlashlight"),
+## não na origem da arma. Inclinada para baixo: com a câmera alta, um facho reto na
+## altura da mão só tocava o chão como uma mancha pequena à frente do Dante.
+const FLASHLIGHT_TILT := -0.20
+func _mount_flashlight() -> void:
+	var mount := gun.find_child("TacticalFlashlight", true, false) as Node3D
+	var lens := mount.find_child("Lens", true, false) as Node3D if mount != null else null
+	flashlight.position = gun.to_local(lens.global_position) if lens != null else Vector3.ZERO
+	flashlight.rotation = Vector3(FLASHLIGHT_TILT, 0.0, 0.0)
 
 func _update_left_knuckles(id: String) -> void:
 	var wanted := id == "knuckles" and gun.visible and player.has_method("combat_left_palm_transform")
@@ -779,8 +800,16 @@ func fire_at(target: Vector3) -> bool:
 		# O bico lido acima ainda está na pose do quadro anterior; girando a mira, o
 		# jato saía de lado ou de trás do Dante. Mantém altura e alcance do bico e o
 		# gira para a direção nova.
-		var reach := Vector2(origin.x - player.global_position.x, origin.z - player.global_position.z).length()
-		origin = Vector3(player.global_position.x, origin.y, player.global_position.z) + direction * reach
+		# Gira o bico real em torno do Dante pelo quanto a mira mudou desde o quadro
+		# anterior. Antes o jato era recolocado no centro do corpo + direção x raio:
+		# perdia o deslocamento lateral e a altura da arma na cintura e nascia no
+		# ar à frente do peito, longe do lança-chamas (feedback de 25/09/2026).
+		var barrel := -gun.global_basis.z if is_instance_valid(gun) else direction
+		barrel.y = 0.0
+		if barrel.length_squared() > 0.0001:
+			var turn := barrel.normalized().signed_angle_to(direction, Vector3.UP)
+			var offset := origin - player.global_position
+			origin = player.global_position + offset.rotated(Vector3.UP, turn)
 	var defense_ray := PhysicsRayQueryParameters3D.create(origin, origin + direction * float(data.get("max_range", 420.0)) / 16.0, 7, [player.get_rid()])
 	var defense_hit := get_world_3d().direct_space_state.intersect_ray(defense_ray)
 	var self_defense: bool = not defense_hit.is_empty() and defense_hit.collider.get_meta("gameplay_role", "") == "cobra"
