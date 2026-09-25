@@ -73,7 +73,8 @@ func _process(delta: float) -> void:
 		label.text = "Entre no carro dourado · F"
 		arrow.hide()
 		return
-	var distance: float = world.driving.car.position.distance_to(points[stage])
+	var point: Vector3 = world.driving.car.position if is_instance_valid(world.driving.car) else world.player.position
+	var distance: float = point.distance_to(points[stage])
 	label.text = "Parada %d / %d · %d m · pare na marca" % [stage+1,points.size(),roundi(distance)]
 	var screen: Vector2 = world.camera.unproject_position(points[stage])
 	var dimensions := get_viewport().get_visible_rect().size

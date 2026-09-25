@@ -1,0 +1,26 @@
+[
+  {
+    "Path": "D:\\geteco\\game\\runtime\\WeaponShopEntrance.gd",
+    "Hash": "BE13031301E1365995BB7FBF0CD5548FB70EA41F021764396AECD187B3821ACB"
+  },
+  {
+    "Path": "D:\\geteco\\game\\world\\urban_detail\\UrbanLandmarkFrontage3D.gd",
+    "Hash": "86108D1755525C44BC13FFBAC35BFBB0D5504E3CD8C58EC90077B4D57C60C5DF"
+  },
+  {
+    "Path": "D:\\geteco\\game\\world\\regions\\NativeRegion.gd",
+    "Hash": "21D4C958CFDEAD3EC22EAA86F86A65E7A731911DA4D494796355731045956DCB"
+  },
+  {
+    "Path": "D:\\geteco\\game\\world\\urban_detail\\UrbanBuildingFactory.gd",
+    "Hash": "DD73B255922AEC473D7DF2B8ACCA27B1BAE3E511AF9707C14C2E76D8E8B6388D"
+  },
+  {
+    "Path": "D:\\geteco\\game\\assets\\regions\\source\\world\\harbor\\hospital\\HarborHospitalModel3D.gd",
+    "Hash": "F28A9DB9490F94604BFA9EB550D0166C0B96B44108F893D17C076849D5097370"
+  },
+  {
+    "Path": "D:\\geteco\\game\\tests\\test_video_phase3_access.gd",
+    "Hash": "9CC1077A6C11C2288F01C558A8B8B58E8D2DE8DB9F780E46A50ED26E96855DD9"
+  }
+]

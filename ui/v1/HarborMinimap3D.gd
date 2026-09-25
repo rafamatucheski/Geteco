@@ -66,10 +66,15 @@ func refresh() -> void:
 		hide()
 		return
 	var was_visible := visible
-	var blocked := bool(world.session.get("modal")) or get_tree().paused or bool(world.player.get("input_locked")) or not str(world.session.state.place_id).is_empty()
+	# Boarding temporarily owns movement but remains in the same outdoor world.
+	# Keep navigation stable through approach/door/seat, without revealing it in
+	# menus, rescue or unrelated scripted movement locks.
+	var boarding: bool = is_instance_valid(world.driving) and world.driving.is_body_transition_active()
+	var blocked := bool(world.session.get("modal")) or get_tree().paused or bool(world.session.get("rescue_pending")) or bool(world.session.get("arrest_pending")) or (bool(world.player.get("input_locked")) and not boarding) or not str(world.session.state.place_id).is_empty()
 	visible = not blocked
 	if not visible: return
 	var actor: Node3D = world.driving.car if is_instance_valid(world.driving) and bool(world.driving.get("occupied")) else world.player
+	if not is_instance_valid(actor): actor = world.player
 	center = Vector2(actor.global_position.x, actor.global_position.z)
 	_cache_region()
 	var velocity: Variant = actor.get("velocity")
@@ -83,6 +88,9 @@ func refresh() -> void:
 	if mission_world != null and mission_world.has_method("target_position"):
 		var target: Vector3 = mission_world.target_position()
 		if target.is_finite() and not target.is_zero_approx(): objective_target = Vector2(target.x, target.z)
+	if world.session.freight_active and world.session.freight_target.is_finite():
+		var delivery: Vector3 = world.session.freight_target
+		objective_target = Vector2(delivery.x, delivery.z)
 	if not was_visible or _redraw_required or center.distance_squared_to(_drawn_center) > 0.0004 or absf(angle_difference(heading, _drawn_heading)) > 0.01 or not objective_target.is_equal_approx(_drawn_objective):
 		_drawn_center = center
 		_drawn_heading = heading

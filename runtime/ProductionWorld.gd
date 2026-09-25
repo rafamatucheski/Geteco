@@ -194,7 +194,6 @@ func build() -> void:
 		session.sync_dispatch_location()
 		world.dispatch.set_physics_process(true)
 	if is_instance_valid(world.traffic_yield): world.traffic_yield.set_physics_process(true)
-	session.show_message("Geteco V2 · E interagir · J missões · M mapa · Tab inventário")
 
 ## Sob a cortina de carregamento: prepara a outra região e aquece os caches de
 ## texturas/malhas das duas (medido 2026-09-23: 2,5 s Harbor + 1,2 s Mountain),
@@ -203,6 +202,15 @@ func _prewarm_regions() -> void:
 	_hold_fleet_scenes()
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
+	# The existing carbonized textures cost ~4.5 ms on first use. Build their
+	# shared cache under the loading curtain, without creating fires or wrecks.
+	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
+	# Explosion takes and immutable fire presentation were built at detonation.
+	# Keep their bounded resources ready, without spawning a live incident.
+	var combat_audio = preload("res://gameplay/CombatAudio.gd")
+	for take in combat_audio.GUNFIRE_TAKES:
+		combat_audio.wav("explosion_%d.wav" % take)
+	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
 	if is_instance_valid(region): region.prewarm()
 	for id in ["harbor","mountain"]:
 		if regions.has(id): continue
@@ -359,8 +367,18 @@ func _persistent_vehicle_support() -> Dictionary:
 	var support := {"harbor":[],"mountain":[]}
 	for car in vehicles:
 		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible or not car.is_physics_processing(): continue
-		if _is_ambient_traffic(car): continue
-		if car != world.driving.car and car.vehicle_id not in ["neco_tow_truck","story_tow_vehicle"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false): continue
+		if _is_ambient_traffic(car) and car != world.driving.car: continue
+		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false)
+		if not persistent:
+			if car.traffic: continue
+			if car.global_position.distance_to(world.player.global_position) > 145:
+				# Retire before releasing its floor, not at the population tick up
+				# to .25 s later. Save owners must never see a falling parked car.
+				car.set_meta("distance_despawn", true)
+				car.set_physics_process(false)
+				car.queue_free()
+				continue
+		# Nearby parked cars need support too, including across a cell boundary.
 		var id: String = WORLD_CONNECTION.logical_region(car.global_position)
 		var radius: float = Vector2(car.half_width,car.half_length).length()+0.5
 		support[id].append({"position":car.global_position,"radius":radius})
@@ -474,10 +492,24 @@ func _restore_player_vehicle() -> void:
 	car.receive_damage(car.max_health-float(saved.health))
 
 func capture_player_vehicle() -> void:
+	# A missing selection must not erase another valid stored vehicle or cast a
+	# freed reference. Explicit removals retire their own snapshot separately.
+	if not is_instance_valid(world.driving.car): return
 	var car: CharacterBody3D = world.driving.car
 	if car.vehicle_id in ["story_tow_vehicle","neco_tow_truck"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false): return
 	state.world_state.vehicles = [preload("res://runtime/FleetState.gd").capture(car,state.region_id)]
 	state.world_state.vehicles[0].was_driven = world.driving.occupied
+
+func release_player_vehicle() -> void:
+	if not is_instance_valid(world.driving.car): return
+	var car: CharacterBody3D = world.driving.car
+	# queue_free during play is a deliberate removal, not a streamed/saved car.
+	# Keep unrelated garage/story snapshots and avoid reviving this body on load.
+	if car.is_queued_for_deletion() and not world.is_queued_for_deletion():
+		if starting_vehicle().get("vehicle_id", "") == car.vehicle_id:
+			state.world_state.vehicles = []
+		return
+	capture_player_vehicle()
 
 func nearest_road(point: Vector3) -> Vector3:
 	var closest := point
@@ -529,7 +561,7 @@ func _process(delta: float) -> void:
 	for index in range(vehicles.size()-1,-1,-1):
 		var car = vehicles[index]
 		if not is_instance_valid(car): vehicles.remove_at(index)
-		elif _is_ambient_traffic(car) and PORT_POLICY.contains_private_area(car.global_position):
+		elif _is_ambient_traffic(car) and car.traffic and car != world.driving.car and PORT_POLICY.contains_private_area(car.global_position):
 			vehicles.remove_at(index)
 			car.queue_free()
 		elif _is_ambient_traffic(car) and car.health <= 0.0 and car != world.driving.car and _wreck_expired(car) and car.global_position.distance_to(world.player.global_position) > 20.0 and not _on_screen(car.global_position,3.0):
@@ -553,6 +585,9 @@ func _process(delta: float) -> void:
 				car.set_physics_process(true)
 		elif not car.traffic and car != world.driving.car and car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false) and car.position.distance_to(world.player.position) > 145:
 			vehicles.remove_at(index)
+			# Owners of a parked snapshot can distinguish streaming cleanup from
+			# an explicit removal without keeping a distant physical body alive.
+			car.set_meta("distance_despawn", true)
 			car.queue_free()
 	# Trânsito e motoristas NPC ganham faróis e lanternas, que acendem sozinhos à
 	# noite (V1 `set_headlights`). Dois por ciclo, para o custo de montar as

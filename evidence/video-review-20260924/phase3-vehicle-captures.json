@@ -1,0 +1,107 @@
+{
+	"captures": [
+		{
+			"body_transition": true,
+			"camera": "(27.4075, 25.29864, 132.3637)",
+			"car": "(26.7, 0.000942, 107.1655)",
+			"file": "phase3-vehicle-moving_sedan-entry-020.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(25.11, 0.040942, 106.7749)",
+			"speed": 0.641666666666668,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"camera": "(26.70001, 25.30094, 132.3745)",
+			"car": "(26.7, 0.000942, 107.0745)",
+			"file": "phase3-vehicle-moving_sedan-entry-179.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(26.7, 0.000942, 107.0745)",
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"camera": "(26.448, 25.38094, 131.9921)",
+			"car": "(26.7, 0.000942, 107.0745)",
+			"file": "phase3-vehicle-moving_sedan-exit-020.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(26.448, 0.080942, 106.6921)",
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"camera": "(25.04, 25.29013, 131.9443)",
+			"car": "(26.7, 0.000942, 107.0745)",
+			"file": "phase3-vehicle-moving_sedan-exit-159.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(25.04, -0.009872, 106.6443)",
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"camera": "(27.40751, 25.29799, 134.4218)",
+			"car": "(26.70003, 0.000145, 108.8821)",
+			"file": "phase3-vehicle-fresh_impact_coupe-entry-020.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(25.06334, 0.040145, 108.4489)",
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"camera": "(26.70004, 25.30014, 134.1821)",
+			"car": "(26.70003, 0.000145, 108.8821)",
+			"file": "phase3-vehicle-fresh_impact_coupe-entry-179.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(26.70003, 0.000145, 108.8821)",
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"camera": "(26.45696, 25.38014, 133.814)",
+			"car": "(26.70003, 0.000145, 108.8821)",
+			"file": "phase3-vehicle-fresh_impact_coupe-exit-020.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(26.45696, 0.080145, 108.514)",
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"camera": "(25.06183, 25.29066, 133.7489)",
+			"car": "(26.70003, 0.000145, 108.8821)",
+			"file": "phase3-vehicle-fresh_impact_coupe-exit-159.png",
+			"floor": true,
+			"physics_active": true,
+			"pixel_size": "(2560, 1440)",
+			"player": "(25.06183, -0.009334, 108.4489)",
+			"speed": 0.0,
+			"traffic": false
+		}
+	],
+	"engine": "4.7.2-stable (official)",
+	"failures": [],
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"renderer": "mobile",
+	"resolution": "(3440, 1440)",
+	"scope": "Moving sedan theft and theft immediately after a real coupe collision; actual physics/streaming, normal camera. Setup teleports are outside the sampled transitions. Original under-terrain fall has not been reproduced.",
+	"type": "Main functional render, not benchmark"
+}

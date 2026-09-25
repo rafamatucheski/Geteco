@@ -148,13 +148,26 @@ func _apply_grade() -> void:
 
 
 func _refresh_silhouette() -> void:
+	if controller == null: return
 	var world = controller.get("world")
-	if world == null: return
+	if not is_instance_valid(world): return
+	var player: Node3D = world.get("player")
+	var vehicle := _silhouette_vehicle(world)
+	_silhouette_inside = not String(controller.state.place_id).is_empty()
+	_silhouette_player_id = player.get_instance_id() if is_instance_valid(player) else 0
+	_silhouette_vehicle_id = vehicle.get_instance_id() if is_instance_valid(vehicle) else 0
+	_silhouette_transition_id = _silhouette_transition(world)
+	_silhouette_player_visible = is_instance_valid(player) and player.is_visible_in_tree()
+	_silhouette_reference = vehicle if is_instance_valid(vehicle) else player
 	var targets: Array = []
-	if is_instance_valid(world.get("player")): targets.append(world.player)
-	var driving = world.get("driving")
-	if driving != null and driving.get("occupied") and is_instance_valid(driving.get("car")):
-		targets.append(driving.car)
+	# Interior furniture must occlude actors by real depth, including their feet.
+	if not _silhouette_inside:
+		if is_instance_valid(player): targets.append(player)
+		if is_instance_valid(vehicle): targets.append(vehicle)
+	var inverse := Transform3D.IDENTITY
+	if is_instance_valid(_silhouette_reference): inverse = _silhouette_reference.global_transform.affine_inverse()
+	var box := AABB()
+	var has_box := false
 	for target in targets:
 		var material: ShaderMaterial = _silhouettes.get(target)
 		if material == null:
@@ -163,20 +176,19 @@ func _refresh_silhouette() -> void:
 			_silhouettes[target] = material
 		# Modelos são reconstruídos (arma, roupa, dano); reaplicar é barato
 		# porque só toca instâncias que ainda não têm o overlay.
-		var inverse: Transform3D = target.global_transform.affine_inverse()
-		var box := AABB()
-		var has_box := false
 		for node in target.find_children("*", "GeometryInstance3D", true, false):
 			var geometry := node as GeometryInstance3D
-			if not geometry.visible or geometry is Label3D or geometry is GPUParticles3D or geometry is CPUParticles3D: continue
+			if not geometry.is_visible_in_tree() or geometry is Label3D or geometry is GPUParticles3D or geometry is CPUParticles3D: continue
 			var part: AABB = (inverse * geometry.global_transform) * geometry.get_aabb()
 			box = box.merge(part) if has_box else part
 			has_box = true
 			if geometry.material_overlay == null:
 				geometry.material_overlay = material
-		# Margem pequena: o depth buffer tem precisão finita e a borda do teto
-		# não pode cair "fora" da própria caixa.
-		box = box.grow(.08)
+	# One box encloses all visible pieces, so the rider cannot light up through
+	# the motorcycle and the motorcycle cannot light up through its rider.
+	box = box.grow(.08)
+	for target in targets:
+		var material: ShaderMaterial = _silhouettes[target]
 		material.set_shader_parameter("box_min", box.position)
 		material.set_shader_parameter("box_max", box.end)
 	for previous in _silhouette_targets:
@@ -193,9 +205,41 @@ func _refresh_silhouette() -> void:
 ## O transform muda todo frame (carro andando); a caixa local só muda quando
 ## o modelo é reconstruído, por isso fica no refresh de 4 Hz.
 func _follow_silhouettes() -> void:
+	if controller == null: return
+	var world = controller.get("world")
+	if not is_instance_valid(world): return
+	var player: Node3D = world.get("player")
+	var vehicle := _silhouette_vehicle(world)
+	var player_id := player.get_instance_id() if is_instance_valid(player) else 0
+	var vehicle_id := vehicle.get_instance_id() if is_instance_valid(vehicle) else 0
+	var transition_id := _silhouette_transition(world)
+	var player_visible := is_instance_valid(player) and player.is_visible_in_tree()
+	var inside := not String(controller.state.place_id).is_empty()
+	# Context changes refresh once immediately; ordinary frames only update
+	# uniforms. Mesh scans remain at 4 Hz while the context stays the same.
+	# Boarding can hide, pose and show the same player without changing IDs.
+	# Its completion must include the seated body in the self-occlusion box.
+	if inside != _silhouette_inside or player_id != _silhouette_player_id or vehicle_id != _silhouette_vehicle_id or player_visible != _silhouette_player_visible or transition_id != _silhouette_transition_id:
+		_refresh_silhouette()
+		return
+	if not is_instance_valid(_silhouette_reference): return
+	var inverse := Projection(_silhouette_reference.global_transform.affine_inverse())
 	for target in _silhouettes:
 		if is_instance_valid(target):
-			_silhouettes[target].set_shader_parameter("target_inverse", Projection(target.global_transform.affine_inverse()))
+			_silhouettes[target].set_shader_parameter("target_inverse", inverse)
+
+
+func _silhouette_vehicle(world: Node) -> Node3D:
+	var driving = world.get("driving")
+	if driving != null and driving.get("occupied") and is_instance_valid(driving.get("car")):
+		return driving.car
+	return null
+
+
+func _silhouette_transition(world: Node) -> int:
+	var driving = world.get("driving")
+	var transition = driving.get("transition") if driving != null else null
+	return transition.get_instance_id() if is_instance_valid(transition) else 0
 
 
 ## Letreiros de neon (Label3D, sem sombreamento): de dia cor chapada, à noite

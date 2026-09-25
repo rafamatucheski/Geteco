@@ -7,6 +7,7 @@ func _ready() -> void:
 	remove_from_group("drivable")
 	visual.queue_free()
 	wheels.clear()
+	steer_pivots.clear()
 	model = preload("res://assets/gameplay/MaciotaM8SedanModel.gd").new()
 	add_child(model)
 	visual = model

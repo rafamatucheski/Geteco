@@ -169,6 +169,7 @@ func _apply_car(t: float) -> float:
 		phase = "reach"
 		actor.global_position = _door
 		_pose_idle()
+		actor.pose_vehicle(0.0, 0.0, side, smoothstep(.22, .38, t))
 		_yaw = lerp_angle(yaws[0], yaws[1], smoothstep(.22, .38, t))
 		_drop = 0.0
 	else:
@@ -179,6 +180,7 @@ func _apply_car(t: float) -> float:
 		_yaw = yaws[1]
 		# Dobra os joelhos: o quadril desce até a altura do banco antes de sumir na porta.
 		_drop = -.42 * smoothstep(.38, .60, t)
+		actor.pose_vehicle(smoothstep(.38, .66, t))
 	return .80
 
 ## Caminhonete e caminhão: de frente para a cabine, sobe pelo estribo (ciclo de escada
@@ -205,6 +207,10 @@ func _apply_climb(t: float) -> float:
 		_pose_idle()
 		_yaw = lerp_angle(yaws[0], yaws[1], k)
 		_drop = -.36 * k
+		actor.pose_vehicle(k)
+		var seated: Array = actor._capture_pose()
+		_pose_transition(.60 if _kind == "truck" else .35)
+		actor._apply_blend(actor._capture_pose(), seated, smoothstep(0.0, .30, k))
 	return .84
 
 ## Ônibus: porta de serviço sem folha; sobe os degraus andando e vira para o volante.
@@ -220,6 +226,10 @@ func _apply_bus(t: float) -> float:
 	walk.y = 0
 	_yaw = lerp_angle(atan2(-walk.x, -walk.z), yaws[1], smoothstep(.6, .84, t))
 	_drop = -.3 * smoothstep(.72, .88, t)
+	if t > .72:
+		var walking: Array = actor._capture_pose()
+		actor.pose_vehicle(smoothstep(.72, .88, t))
+		actor._apply_blend(walking, actor._capture_pose(), smoothstep(.72, .84, t))
 	return .9
 
 ## Moto, buggy e empilhadeira: sem porta, passa a perna por cima e assenta.
@@ -231,6 +241,7 @@ func _apply_open(t: float) -> float:
 	_pose_idle()
 	_yaw = lerp_angle(yaws[0], yaws[1], smoothstep(.22, .5, t))
 	_drop = -.3 * smoothstep(.5, .85, t)
+	actor.pose_vehicle(smoothstep(.50, .85, t), sin(smoothstep(.22, .65, t) * PI), side, smoothstep(.22, .36, t))
 	return .92
 
 func _pose_idle() -> void:
@@ -255,8 +266,11 @@ func _begin_close_exit() -> void:
 
 func _pose_cycle(clip: String, normalized: float) -> void:
 	if not is_instance_valid(actor.animation) or not actor.animation.has_animation(clip): return
-	var animation: Animation = actor.animation.get_animation(clip)
-	actor._pose_clip(clip, fposmod(normalized, 1.0) * animation.length)
+	actor._pose_cycle(clip, normalized, actor.WALK_START if clip == "Walking" else 0.0)
+	var hip: Vector3 = actor.skeleton.get_bone_pose_position(actor.hips)
+	hip.x = actor.hip_rest.x
+	hip.z = actor.hip_rest.z
+	actor.skeleton.set_bone_pose_position(actor.hips, hip)
 
 func _pose_transition(normalized: float) -> void:
 	var clip := "Fast_Ladder_Climb"
@@ -271,6 +285,10 @@ func _finish_entry() -> void:
 		return
 	_finishing = true
 	active = false
+	# The crouch belongs to this presentation only. Keeping it on the hidden
+	# actor made the next exit use an already lowered baseline, sinking each trip.
+	actor.visual.position = _visual_position
+	actor.visual.rotation.y = _visual_yaw
 	actor.hide()
 	actor.global_position = vehicle.global_position
 	vehicle.animate_driver_door(side, false, 0.0)

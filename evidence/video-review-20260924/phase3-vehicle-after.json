@@ -1,0 +1,9233 @@
+{
+	"cases": [
+		{
+			"before": {
+				"ambient": true,
+				"position": "(26.7, 0.000219, 109.0)",
+				"slide": "(0.0, 0.0, 0.0)",
+				"stun": 0,
+				"traffic": true
+			},
+			"entry": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000219173263758421,
+				"min_y": 0.000219173263758421,
+				"traffic_resumed": false
+			},
+			"exit": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000145115831401199,
+				"min_y": 0.000145115831401199,
+				"traffic_resumed": false
+			},
+			"name": "stopped_coupe"
+		},
+		{
+			"before": {
+				"ambient": true,
+				"position": "(26.7, 0.000219, 109.0)",
+				"slide": "(0.0, 0.0, 0.0)",
+				"stun": 0,
+				"traffic": true
+			},
+			"entry": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.116129264235497,
+				"max_y": 0.000941826030611992,
+				"min_y": 0.000941769569180906,
+				"traffic_resumed": false
+			},
+			"exit": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000941801874432713,
+				"min_y": 0.000941801874432713,
+				"traffic_resumed": false
+			},
+			"name": "moving_sedan"
+		},
+		{
+			"before": {
+				"ambient": true,
+				"position": "(26.70003, 0.000145, 108.8821)",
+				"slide": "(0.0, 0.0, -6.63575)",
+				"stun": 2.38333333333333,
+				"traffic": false
+			},
+			"entry": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000145115831401199,
+				"min_y": 0.000145115831401199,
+				"traffic_resumed": false
+			},
+			"exit": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000145115831401199,
+				"min_y": 0.000145115831401199,
+				"traffic_resumed": false
+			},
+			"name": "fresh_impact_coupe"
+		},
+		{
+			"before": {
+				"ambient": true,
+				"position": "(26.70003, 0.000145, 105.6815)",
+				"slide": "(0.0, 0.0, 0.0)",
+				"stun": 1.18333333333334,
+				"traffic": false
+			},
+			"entry": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000145115831401199,
+				"min_y": 0.000145115831401199,
+				"traffic_resumed": false
+			},
+			"exit": {
+				"airborne_frames": 0,
+				"max_anchor_error": 0.0,
+				"max_step": 0.0,
+				"max_y": 0.000145115831401199,
+				"min_y": 0.000145115831401199,
+				"traffic_resumed": false
+			},
+			"name": "recovering_impact_coupe"
+		}
+	],
+	"checks": 78,
+	"failures": [],
+	"samples": [
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "entry",
+			"player": [
+				24.925910949707,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "entry",
+			"player": [
+				24.9260120391846,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "entry",
+			"player": [
+				24.9274597167969,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "entry",
+			"player": [
+				24.9333324432373,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "entry",
+			"player": [
+				24.9475708007813,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "entry",
+			"player": [
+				24.973388671875,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "entry",
+			"player": [
+				25.011344909668,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "entry",
+			"player": [
+				25.0574207305908,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "entry",
+			"player": [
+				25.10133934021,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "entry",
+			"player": [
+				25.1254634857178,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "entry",
+			"player": [
+				25.1259117126465,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "entry",
+			"player": [
+				25.1259117126465,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "entry",
+			"player": [
+				25.1259117126465,
+				0.04021917283535,
+				108.589736938477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "entry",
+			"player": [
+				25.1447925567627,
+				0.0407887659966946,
+				108.590385437012
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "entry",
+			"player": [
+				25.2595996856689,
+				0.0442522428929806,
+				108.594329833984
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "entry",
+			"player": [
+				25.452917098999,
+				0.0500842481851578,
+				108.600982666016
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "entry",
+			"player": [
+				25.6921806335449,
+				0.057302363216877,
+				108.60920715332
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "entry",
+			"player": [
+				25.937442779541,
+				0.0647014454007149,
+				108.617637634277
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "entry",
+			"player": [
+				26.1600151062012,
+				0.0714160054922104,
+				108.625289916992
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "entry",
+			"player": [
+				26.3307704925537,
+				0.0765673518180847,
+				108.631164550781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "entry",
+			"player": [
+				26.4302177429199,
+				0.0795674622058868,
+				108.634582519531
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "entry",
+			"player": [
+				26.4518203735352,
+				0.0802191719412804,
+				108.635322570801
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 162,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 165,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 168,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 171,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 174,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 177,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000219173263758421,
+				109.0
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "exit",
+			"player": [
+				26.4892749786377,
+				0.0797515586018562,
+				105.285049438477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "exit",
+			"player": [
+				26.4225463867188,
+				0.07771135866642,
+				105.273818969727
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "exit",
+			"player": [
+				26.3030738830566,
+				0.0740585774183273,
+				105.253715515137
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "exit",
+			"player": [
+				26.1400375366211,
+				0.069073848426342,
+				105.226272583008
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "exit",
+			"player": [
+				25.947114944458,
+				0.0631754100322723,
+				105.193801879883
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "exit",
+			"player": [
+				25.7416343688965,
+				0.0568930171430111,
+				105.159225463867
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "exit",
+			"player": [
+				25.5433139801025,
+				0.0508294776082039,
+				105.125846862793
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "exit",
+			"player": [
+				25.3727626800537,
+				0.0456150025129318,
+				105.097145080566
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "exit",
+			"player": [
+				25.2509250640869,
+				0.041889913380146,
+				105.076637268066
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "exit",
+			"player": [
+				25.1955451965332,
+				0.0401967503130436,
+				105.067314147949
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "exit",
+			"player": [
+				25.1899471282959,
+				0.0401451140642166,
+				105.066513061523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "exit",
+			"player": [
+				25.179069519043,
+				0.0401451140642166,
+				105.065063476563
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "exit",
+			"player": [
+				25.1655158996582,
+				0.0401451140642166,
+				105.063255310059
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "exit",
+			"player": [
+				25.1523513793945,
+				0.0401451140642166,
+				105.061508178711
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "exit",
+			"player": [
+				25.1414031982422,
+				0.0401451140642166,
+				105.060050964355
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "exit",
+			"player": [
+				25.1334400177002,
+				0.0401451140642166,
+				105.058990478516
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "exit",
+			"player": [
+				25.1284236907959,
+				0.0401451140642166,
+				105.058319091797
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "exit",
+			"player": [
+				25.1257915496826,
+				0.0401451140642166,
+				105.057968139648
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "exit",
+			"player": [
+				25.1247406005859,
+				0.0401451140642166,
+				105.057830810547
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "exit",
+			"player": [
+				25.1244869232178,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "stopped_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941789767239243,
+				108.88387298584
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409417897462845,
+				108.453674316406
+			],
+			"speed": 6.70833333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941776437684894,
+				108.54434967041
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409417748451233,
+				108.114151000977
+			],
+			"speed": 5.83333333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941822421737015,
+				108.226928710938
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418232738972,
+				107.796730041504
+			],
+			"speed": 4.95833333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.00094180932501331,
+				107.939445495605
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.040941808372736,
+				107.509246826172
+			],
+			"speed": 4.08333333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941795879043639,
+				107.686920166016
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409417934715748,
+				107.256721496582
+			],
+			"speed": 3.20833333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941782840527594,
+				107.472518920898
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409417822957039,
+				107.042320251465
+			],
+			"speed": 2.33333333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941769569180906,
+				107.298286437988
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409417673945427,
+				106.868087768555
+			],
+			"speed": 1.45833333333333,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941815262194723,
+				107.165512084961
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418158233166,
+				106.735313415527
+			],
+			"speed": 0.583333333333334,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "entry",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "entry",
+			"player": [
+				25.1133155822754,
+				0.0410409048199654,
+				106.644424438477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "entry",
+			"player": [
+				25.1959056854248,
+				0.0435099750757217,
+				106.647369384766
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "entry",
+			"player": [
+				25.3682231903076,
+				0.0486614480614662,
+				106.653526306152
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "entry",
+			"player": [
+				25.5971908569336,
+				0.0555065125226974,
+				106.66170501709
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "entry",
+			"player": [
+				25.8470821380615,
+				0.0629771500825882,
+				106.670631408691
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "entry",
+			"player": [
+				26.0832557678223,
+				0.0700376555323601,
+				106.679069519043
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "entry",
+			"player": [
+				26.2756290435791,
+				0.0757887288928032,
+				106.685943603516
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "entry",
+			"player": [
+				26.4015636444092,
+				0.0795535743236542,
+				106.690444946289
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "entry",
+			"player": [
+				26.447868347168,
+				0.0809378698468208,
+				106.692092895508
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "entry",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 162,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 165,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 168,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 171,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 174,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 177,
+			"phase": "entry",
+			"player": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "exit",
+			"player": [
+				26.4479999542236,
+				0.080941803753376,
+				106.692100524902
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "exit",
+			"player": [
+				26.43483543396,
+				0.0805482491850853,
+				106.691627502441
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "exit",
+			"player": [
+				26.3666019439697,
+				0.0785083994269371,
+				106.689193725586
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "exit",
+			"player": [
+				26.2444076538086,
+				0.0748553574085236,
+				106.684829711914
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "exit",
+			"player": [
+				26.0776653289795,
+				0.0698705315589905,
+				106.678871154785
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "exit",
+			"player": [
+				25.88037109375,
+				0.0639723390340805,
+				106.671821594238
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "exit",
+			"player": [
+				25.6702175140381,
+				0.0576897040009499,
+				106.66431427002
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "exit",
+			"player": [
+				25.4673957824707,
+				0.0516262799501419,
+				106.657066345215
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "exit",
+			"player": [
+				25.2931785583496,
+				0.0464179925620556,
+				106.650848388672
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "exit",
+			"player": [
+				25.1683673858643,
+				0.0426867119967937,
+				106.646385192871
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "exit",
+			"player": [
+				25.1117286682129,
+				0.0409934483468533,
+				106.64436340332
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "exit",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "exit",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "exit",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "exit",
+			"player": [
+				25.1100006103516,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "exit",
+			"player": [
+				25.1060562133789,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "exit",
+			"player": [
+				25.0950813293457,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "exit",
+			"player": [
+				25.0814094543457,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "exit",
+			"player": [
+				25.0681304931641,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "exit",
+			"player": [
+				25.0570850372314,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "exit",
+			"player": [
+				25.04905128479,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "exit",
+			"player": [
+				25.0439891815186,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "exit",
+			"player": [
+				25.0413341522217,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "exit",
+			"player": [
+				25.0402755737305,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "exit",
+			"player": [
+				25.040018081665,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				0.0409418009221554,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000007629395,
+				0.000941801874432713,
+				107.074501037598
+			],
+			"case": "moving_sedan",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "exit",
+			"player": [
+				25.0400009155273,
+				-0.00987200438976288,
+				106.644302368164
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "entry",
+			"player": [
+				24.9318408966064,
+				0.0401451140642166,
+				108.447090148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "entry",
+			"player": [
+				24.9319400787354,
+				0.0401451140642166,
+				108.447090148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "entry",
+			"player": [
+				24.9333896636963,
+				0.0401451140642166,
+				108.447113037109
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "entry",
+			"player": [
+				24.9392623901367,
+				0.0401451140642166,
+				108.447196960449
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "entry",
+			"player": [
+				24.9535007476807,
+				0.0401451140642166,
+				108.447395324707
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "entry",
+			"player": [
+				24.9793148040771,
+				0.0401451140642166,
+				108.44775390625
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "entry",
+			"player": [
+				25.0172672271729,
+				0.0401451140642166,
+				108.448280334473
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "entry",
+			"player": [
+				25.0633392333984,
+				0.0401451140642166,
+				108.448928833008
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "entry",
+			"player": [
+				25.107250213623,
+				0.0401451140642166,
+				108.44953918457
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "entry",
+			"player": [
+				25.1313724517822,
+				0.0401451140642166,
+				108.44987487793
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "entry",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "entry",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "entry",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "entry",
+			"player": [
+				25.150691986084,
+				0.0407147482037544,
+				108.450798034668
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "entry",
+			"player": [
+				25.2654361724854,
+				0.0441783778369427,
+				108.456344604492
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "entry",
+			"player": [
+				25.4586448669434,
+				0.0500104650855064,
+				108.465690612793
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "entry",
+			"player": [
+				25.6962738037109,
+				0.0571833923459053,
+				108.477180480957
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "entry",
+			"player": [
+				25.9428901672363,
+				0.0646276697516441,
+				108.489112854004
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "entry",
+			"player": [
+				26.1653327941895,
+				0.0713421851396561,
+				108.499870300293
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "entry",
+			"player": [
+				26.3359832763672,
+				0.0764933824539185,
+				108.508125305176
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "entry",
+			"player": [
+				26.4353713989258,
+				0.0794934406876564,
+				108.51293182373
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "entry",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 162,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 165,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 168,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 171,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 174,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 177,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "exit",
+			"player": [
+				26.4569606781006,
+				0.0801451131701469,
+				108.513977050781
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "exit",
+			"player": [
+				26.4439220428467,
+				0.0797515586018562,
+				108.513343811035
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "exit",
+			"player": [
+				26.3763465881348,
+				0.077711708843708,
+				108.510078430176
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "exit",
+			"player": [
+				26.2553253173828,
+				0.0740586668252945,
+				108.50422668457
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "exit",
+			"player": [
+				26.0901870727539,
+				0.069073848426342,
+				108.496238708496
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "exit",
+			"player": [
+				25.8947887420654,
+				0.063175655901432,
+				108.486785888672
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "exit",
+			"player": [
+				25.686653137207,
+				0.0568930171430111,
+				108.476715087891
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "exit",
+			"player": [
+				25.4857807159424,
+				0.0508295930922031,
+				108.467002868652
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "exit",
+			"player": [
+				25.3132381439209,
+				0.0456213057041168,
+				108.458656311035
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "exit",
+			"player": [
+				25.1896266937256,
+				0.041890025138855,
+				108.452674865723
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "exit",
+			"player": [
+				25.1335315704346,
+				0.0401967614889145,
+				108.449966430664
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "exit",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "exit",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "exit",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "exit",
+			"player": [
+				25.1318206787109,
+				0.0401451140642166,
+				108.449882507324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "exit",
+			"player": [
+				25.1278781890869,
+				0.0401451140642166,
+				108.449829101563
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "exit",
+			"player": [
+				25.1169033050537,
+				0.0401451140642166,
+				108.449676513672
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "exit",
+			"player": [
+				25.1032314300537,
+				0.0401451140642166,
+				108.449485778809
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "exit",
+			"player": [
+				25.0899543762207,
+				0.0401451140642166,
+				108.449295043945
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "exit",
+			"player": [
+				25.0789089202881,
+				0.0401451140642166,
+				108.449142456055
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "exit",
+			"player": [
+				25.0708751678467,
+				0.0401451140642166,
+				108.449035644531
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "exit",
+			"player": [
+				25.0658149719238,
+				0.0401451140642166,
+				108.448959350586
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "exit",
+			"player": [
+				25.063159942627,
+				0.0401451140642166,
+				108.448921203613
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "exit",
+			"player": [
+				25.0621013641357,
+				0.0401451140642166,
+				108.448913574219
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "exit",
+			"player": [
+				25.0618438720703,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				0.0401451140642166,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				108.88208770752
+			],
+			"case": "fresh_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "exit",
+			"player": [
+				25.0618267059326,
+				-0.00933405570685863,
+				108.448905944824
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "entry",
+			"player": [
+				24.9956073760986,
+				0.0401451140642166,
+				105.040634155273
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "entry",
+			"player": [
+				24.9957065582275,
+				0.0401451140642166,
+				105.040649414063
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "entry",
+			"player": [
+				24.997142791748,
+				0.0401451140642166,
+				105.040840148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "entry",
+			"player": [
+				25.0029640197754,
+				0.0401451140642166,
+				105.041610717773
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "entry",
+			"player": [
+				25.0170783996582,
+				0.0401451140642166,
+				105.043495178223
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "entry",
+			"player": [
+				25.0426692962646,
+				0.0401451140642166,
+				105.046897888184
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "entry",
+			"player": [
+				25.0802955627441,
+				0.0401451140642166,
+				105.051910400391
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "entry",
+			"player": [
+				25.1259670257568,
+				0.0401451140642166,
+				105.057991027832
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "entry",
+			"player": [
+				25.1695003509521,
+				0.0401451140642166,
+				105.063789367676
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "entry",
+			"player": [
+				25.1934127807617,
+				0.0401451140642166,
+				105.066970825195
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "entry",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "entry",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "entry",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "entry",
+			"player": [
+				25.2124881744385,
+				0.0407147482037544,
+				105.070167541504
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "entry",
+			"player": [
+				25.3257732391357,
+				0.0441783778369427,
+				105.089233398438
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "entry",
+			"player": [
+				25.5165252685547,
+				0.0500104650855064,
+				105.121337890625
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "entry",
+			"player": [
+				25.7511329650879,
+				0.0571833923459053,
+				105.160820007324
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "entry",
+			"player": [
+				25.9946136474609,
+				0.0646276697516441,
+				105.201797485352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "entry",
+			"player": [
+				26.2142276763916,
+				0.0713421851396561,
+				105.238761901855
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "entry",
+			"player": [
+				26.3827095031738,
+				0.0764933824539185,
+				105.267112731934
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "entry",
+			"player": [
+				26.4808330535889,
+				0.0794934406876564,
+				105.283630371094
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "entry",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 162,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 165,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 168,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 171,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 174,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 177,
+			"phase": "entry",
+			"player": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 0,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 3,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 6,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 9,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 12,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 15,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 18,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 21,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 24,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 27,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 30,
+			"phase": "exit",
+			"player": [
+				26.5021476745605,
+				0.0801451131701469,
+				105.287216186523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 33,
+			"phase": "exit",
+			"player": [
+				26.4892749786377,
+				0.0797515586018562,
+				105.285049438477
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 36,
+			"phase": "exit",
+			"player": [
+				26.4225578308105,
+				0.077711708843708,
+				105.273818969727
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 39,
+			"phase": "exit",
+			"player": [
+				26.3030757904053,
+				0.0740586668252945,
+				105.253715515137
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 42,
+			"phase": "exit",
+			"player": [
+				26.1400375366211,
+				0.069073848426342,
+				105.226272583008
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 45,
+			"phase": "exit",
+			"player": [
+				25.9471225738525,
+				0.063175655901432,
+				105.193809509277
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 48,
+			"phase": "exit",
+			"player": [
+				25.7416343688965,
+				0.0568930171430111,
+				105.159225463867
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 51,
+			"phase": "exit",
+			"player": [
+				25.5433177947998,
+				0.0508295930922031,
+				105.125846862793
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 54,
+			"phase": "exit",
+			"player": [
+				25.3729686737061,
+				0.0456213057041168,
+				105.097175598145
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 57,
+			"phase": "exit",
+			"player": [
+				25.2509288787842,
+				0.041890025138855,
+				105.076637268066
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 60,
+			"phase": "exit",
+			"player": [
+				25.1955471038818,
+				0.0401967614889145,
+				105.067314147949
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 63,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 66,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 69,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 72,
+			"phase": "exit",
+			"player": [
+				25.1938571929932,
+				0.0401451140642166,
+				105.067031860352
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 75,
+			"phase": "exit",
+			"player": [
+				25.1899490356445,
+				0.0401451140642166,
+				105.066513061523
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 78,
+			"phase": "exit",
+			"player": [
+				25.179069519043,
+				0.0401451140642166,
+				105.065063476563
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 81,
+			"phase": "exit",
+			"player": [
+				25.1655158996582,
+				0.0401451140642166,
+				105.063255310059
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 84,
+			"phase": "exit",
+			"player": [
+				25.1523532867432,
+				0.0401451140642166,
+				105.061508178711
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 87,
+			"phase": "exit",
+			"player": [
+				25.1414031982422,
+				0.0401451140642166,
+				105.060050964355
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 90,
+			"phase": "exit",
+			"player": [
+				25.1334400177002,
+				0.0401451140642166,
+				105.058990478516
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 93,
+			"phase": "exit",
+			"player": [
+				25.1284236907959,
+				0.0401451140642166,
+				105.058319091797
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 96,
+			"phase": "exit",
+			"player": [
+				25.1257915496826,
+				0.0401451140642166,
+				105.057968139648
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 99,
+			"phase": "exit",
+			"player": [
+				25.1247406005859,
+				0.0401451140642166,
+				105.057830810547
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 102,
+			"phase": "exit",
+			"player": [
+				25.1244869232178,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 105,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 108,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 111,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 114,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 117,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 120,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": true,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 123,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 126,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				0.0401451140642166,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 129,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 132,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 135,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 138,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 141,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 144,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 147,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 150,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 153,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 156,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		},
+		{
+			"body_transition": false,
+			"car": [
+				26.7000255584717,
+				0.000145115831401199,
+				105.681465148926
+			],
+			"case": "recovering_impact_coupe",
+			"crash_slide": "(0.0, 0.0, 0.0)",
+			"floor": true,
+			"frame": 159,
+			"phase": "exit",
+			"player": [
+				25.1244697570801,
+				-0.00933405570685863,
+				105.057792663574
+			],
+			"speed": 0.0,
+			"traffic": false
+		}
+	],
+	"type": "Main functional physics, not FPS benchmark"
+}

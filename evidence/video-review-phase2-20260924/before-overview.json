@@ -1,0 +1,42 @@
+{
+	"engine": "4.7.2-stable (official)",
+	"failures": [],
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"kind": "functional_photographs_not_benchmark",
+	"records": [
+		{
+			"camera": "(40.625, 13.4, 37.55)",
+			"id": "harbor_bank",
+			"image": "res://evidence/video-review-phase2-20260924/before-harbor_bank.png",
+			"player": "(40.625, -0.009876, 18.375)",
+			"prompt": "",
+			"size": 17.0
+		},
+		{
+			"camera": "(334.6875, 13.2, 392.175)",
+			"id": "port_boss_garage",
+			"image": "res://evidence/video-review-phase2-20260924/before-port_boss_garage.png",
+			"player": "(340.6875, -0.009876, 368.375)",
+			"prompt": "",
+			"size": 17.0
+		},
+		{
+			"camera": "(49.375, 13.4, 122.7375)",
+			"id": "maciota",
+			"image": "res://evidence/video-review-phase2-20260924/before-maciota.png",
+			"player": "(46.875, -0.009876, 102.7375)",
+			"prompt": "E  Entrar",
+			"size": 15.0
+		},
+		{
+			"camera": "(302.0, 13.0, 241.3)",
+			"id": "port-yard",
+			"image": "res://evidence/video-review-phase2-20260924/before-port-yard.png",
+			"player": "(300.0, -0.009876, 220.0)",
+			"prompt": "",
+			"size": 28.0
+		}
+	],
+	"renderer": "mobile",
+	"resolution": "(3440, 1440)"
+}

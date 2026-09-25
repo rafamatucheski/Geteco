@@ -256,6 +256,16 @@ func _process(delta: float) -> void:
 		_sync_status()
 		_layout()
 
+func refresh_from_state() -> void:
+	# Location changes must not wait for the 80 ms status timer: entering a
+	# weapon-free room should show the holstered weapon on its first frame.
+	if not _bound: _try_bind()
+	if not _bound: return
+	_sync_channels()
+	_sync_status()
+	_layout()
+	_status_clock = 0.0
+
 func _try_bind() -> void:
 	if world == null or not is_instance_valid(world): return
 	_session = world.get("session")
@@ -289,8 +299,8 @@ func _sync_channels() -> void:
 	var mission_active := false
 	if state != null:
 		# V1 keeps onboarding/arrival prose off-screen and guides it through the
-		# minimap. Only an authored active campaign uses the objective strip.
-		mission_active = str(state.campaign.active_id) != ""
+		# minimap. Authored campaigns and an accepted port delivery use the strip.
+		mission_active = str(state.campaign.active_id) != "" or bool(_session.get("freight_active"))
 	if objective_text in ["J  Missões · M  Mapa", "J Missions · M Map"]: objective_text = ""
 	objective_label.text = objective_text
 	objective_card.visible = not modal and mission_active and not objective_text.is_empty()
@@ -304,7 +314,7 @@ func _sync_channels() -> void:
 	elif float(_driving.get("status_time")) <= 0.0:
 		var driving_action := str(_legacy_driving_prompt.text).strip_edges()
 		if not driving_action.is_empty():
-			action_name = "exit_vehicle" if "Sair do carro" in driving_action else "vehicle_interact"
+			action_name = "exit_vehicle" if "Sair do carro" in driving_action or "Sair da moto" in driving_action else "vehicle_interact"
 			legacy_key = "F"
 			action_text = _strip_action_prefix(driving_action, legacy_key)
 	var entering_car := action_name == "vehicle_interact" and action_text == "Entrar no carro"

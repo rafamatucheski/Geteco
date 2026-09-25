@@ -1,0 +1,72 @@
+{
+  "capturedUtc": "2026-09-24T21:57:47.9309147Z",
+  "note": "Source hashes captured while other agents are authorized to begin. Not a frozen project or performance baseline.",
+  "files": [
+    {
+      "path": "runtime/FullSession.gd",
+      "sha256": "0582B2660B9143407AA49CD5F5CFB7C3616B77BE97F4B74AFBE6AA4D7EC204B2",
+      "lastWriteUtc": "2026-09-24T20:21:36.8311002Z",
+      "bytes": 76747
+    },
+    {
+      "path": "runtime/WeaponShopEntrance.gd",
+      "sha256": "7B5F68067021DFA6FCD88955C25701486F68F6BAA017F9D836C3370076D24258",
+      "lastWriteUtc": "2026-09-24T18:50:23.4517191Z",
+      "bytes": 5542
+    },
+    {
+      "path": "runtime/ProductionWorld.gd",
+      "sha256": "1767D40F1DA4E04BEB3C80F3484B3F809503634769634DE575DA4BB3BF0F9C22",
+      "lastWriteUtc": "2026-09-24T20:19:31.1701146Z",
+      "bytes": 41830
+    },
+    {
+      "path": "scripts/Actor.gd",
+      "sha256": "F55F230C34214DD513D0EDB8DCE59E44FE13CB05C5C0FCDFC01DC9D5178C9760",
+      "lastWriteUtc": "2026-09-24T21:04:22.4935737Z",
+      "bytes": 46886
+    },
+    {
+      "path": "scripts/Driving.gd",
+      "sha256": "6C02476D630BA084165296658680B58825C8A08C1006B8D30FDD1BCB7727F714",
+      "lastWriteUtc": "2026-09-24T20:40:56.1796874Z",
+      "bytes": 17169
+    },
+    {
+      "path": "scripts/Vehicle.gd",
+      "sha256": "A8E25BB7DADB0523EA2A13DACB72C82CDB61D0FEE9710089DCE954257A51DA14",
+      "lastWriteUtc": "2026-09-24T21:25:06.4740062Z",
+      "bytes": 22726
+    },
+    {
+      "path": "gameplay/Gameplay.gd",
+      "sha256": "4F4851260DA4EC25535F8CE376BE519EB485D07647FE871FFB7C63EA153F6CB7",
+      "lastWriteUtc": "2026-09-24T21:03:20.3088085Z",
+      "bytes": 89290
+    },
+    {
+      "path": "gameplay/VehicleBoardingPresentation.gd",
+      "sha256": "6D82CE3C14F0BACA02373FC3C03A1106120234021C38EDACA8A2240729B1CD4F",
+      "lastWriteUtc": "2026-09-24T20:18:50.2580354Z",
+      "bytes": 10946
+    },
+    {
+      "path": "world/places/PlaceCatalog.gd",
+      "sha256": "7AB183570B965E5CC5AF867A5885E66F9D405AB380565E71275F5454E762C256",
+      "lastWriteUtc": "2026-09-24T18:09:25.8558207Z",
+      "bytes": 10621
+    },
+    {
+      "path": "world/places/NativePlace.gd",
+      "sha256": "A2B71B4D3ACC154DFE7C9B312E1BDE82A1F06F86E894031E1E88E1966E9FCF9C",
+      "lastWriteUtc": "2026-09-21T14:53:14.8039880Z",
+      "bytes": 11444
+    },
+    {
+      "path": "project.godot",
+      "sha256": "0D821BF07B48C2CD1A18D7F76415E223F7204A403AD66E51A27249FEFCC3FFF0",
+      "lastWriteUtc": "2026-09-24T20:15:27.3113551Z",
+      "bytes": 1073
+    }
+  ]
+}

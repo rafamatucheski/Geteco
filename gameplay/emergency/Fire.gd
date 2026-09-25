@@ -8,6 +8,7 @@ extends Node3D
 ## tremula. Tudo escala com `intensity`. Dano e duração não mudaram.
 const MAX_LIT_FIRES := 6
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
+static var _visual_template: PackedScene
 
 var manager: Node3D
 var source: Node
@@ -25,6 +26,43 @@ const BURN_SECONDS := 15.0
 const FADE_SECONDS := 5.0
 
 func _ready() -> void:
+	_ensure_visuals()
+	# Only live incidents join the light budget; the cached template never runs.
+	add_to_group("ground_fire")
+	light.visible = get_tree().get_nodes_in_group("ground_fire").size() <= MAX_LIT_FIRES
+	_apply_intensity()
+
+static func prewarm_visuals() -> void:
+	if _visual_template != null: return
+	var prototype = load("res://gameplay/emergency/Fire.gd").new()
+	prototype._ensure_visuals()
+	prototype.free()
+
+func _ensure_visuals() -> void:
+	if _visual_template == null:
+		_build_visuals()
+		var template := Node3D.new()
+		for child in get_children():
+			var copy := child.duplicate(0)
+			template.add_child(copy)
+			copy.owner = template
+		_visual_template = PackedScene.new()
+		_visual_template.pack(template)
+		template.free()
+	else:
+		var instance := _visual_template.instantiate()
+		for child in instance.get_children():
+			child.owner = null
+			instance.remove_child(child)
+			add_child(child)
+		instance.free()
+		flames = get_node("GroundFlames")
+		embers = get_node("GroundEmbers")
+		smoke = get_node("GroundFireSmoke")
+		glow = get_node("GroundFireGlow")
+		light = get_node("GroundFireLight")
+
+func _build_visuals() -> void:
 	flames = RESOURCES.emitter("GroundFlames", 40, 0.75, Vector2(0.55, 0.85), false)
 	var flame_process := RESOURCES.particle_process()
 	flame_process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
@@ -103,6 +141,7 @@ func _ready() -> void:
 
 	# Brilho no chão: o fogo ilumina a própria marca de queimado.
 	glow = MeshInstance3D.new()
+	glow.name = "GroundFireGlow"
 	var quad := QuadMesh.new()
 	quad.size = Vector2(2.6, 2.6)
 	quad.orientation = PlaneMesh.FACE_Y
@@ -120,15 +159,12 @@ func _ready() -> void:
 	add_child(glow)
 
 	light = OmniLight3D.new()
+	light.name = "GroundFireLight"
 	light.light_color = Color(1.0, 0.55, 0.2)
 	light.omni_range = 5.5
 	light.shadow_enabled = false
 	light.position.y = 0.9
 	add_child(light)
-	# Luz dinâmica só para os primeiros focos: o lança-chamas acende vários em fila.
-	add_to_group("ground_fire")
-	light.visible = get_tree().get_nodes_in_group("ground_fire").size() <= MAX_LIT_FIRES
-	_apply_intensity()
 
 func _apply_intensity() -> void:
 	var strength := clampf(intensity, 0.0, 1.5)

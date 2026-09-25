@@ -76,13 +76,14 @@ func _physics_process(delta: float) -> void:
 	elif mode == "service":
 		action_time += delta
 		if role == "fire":
-			var fire: Node3D = incident.get("actor")
-			if is_instance_valid(fire):
+			var fire: Variant = incident.get("actor")
+			if is_instance_valid(fire) and not fire.is_queued_for_deletion():
 				manager.extinguish(fire, delta * 0.3)
-				_spray(fire, delta)
-			else:
+			if not is_instance_valid(fire) or fire.is_queued_for_deletion():
 				_stop_water()
 				mode = "return"
+			else:
+				_spray(fire, delta)
 		elif action_time > 4.0:
 			visual.stretcher_mesh.show()
 			if role == "mortician": visual.body_bag_mesh.show()
@@ -145,8 +146,8 @@ func _spray(fire: Node3D, delta: float) -> void:
 	stream.set_active(true)
 	if is_instance_valid(vehicle): _lay_hose(vehicle.to_global(Vector3(vehicle.half_width, 0.0, 1.5)), global_position)
 	# Canhão do teto: gira no pivô, mira no fogo e a água sai do bico.
-	var monitor: Node3D = vehicle.get_meta("fire_monitor", null) if is_instance_valid(vehicle) else null
-	var tip: Node3D = vehicle.get_meta("fire_monitor_tip", null) if is_instance_valid(vehicle) else null
+	var monitor: Node3D = vehicle.get_meta("fire_monitor") if is_instance_valid(vehicle) and vehicle.has_meta("fire_monitor") else null
+	var tip: Node3D = vehicle.get_meta("fire_monitor_tip") if is_instance_valid(vehicle) and vehicle.has_meta("fire_monitor_tip") else null
 	if is_instance_valid(monitor) and is_instance_valid(tip) and vehicle.global_position.distance_to(target) < CANNON_RANGE:
 		var aim_point := target + Vector3.UP * 2.0
 		if monitor.global_position.distance_to(aim_point) > 0.5:

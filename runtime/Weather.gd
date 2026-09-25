@@ -154,6 +154,11 @@ func _update() -> void:
 		var mountain_region = controller.world.production.regions.get("mountain")
 		if is_instance_valid(mountain_region): mountain_region.set_night_lights(night_lights)
 	var covered: bool = inside or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false)
+	# Stopping emission leaves living particles visible for up to 2.2 seconds.
+	# Hide those particles in the same frame as entering a covered place.
+	precipitation.visible = not covered
+	hail.visible = not covered
+	snow.visible = not covered
 	var storm_state: int = int(mountain_weather.get("state",0))
 	precipitation.amount_ratio = 1.0-regional_weight
 	precipitation.emitting = not covered and weather_state in [1,2] and regional_weight<.999

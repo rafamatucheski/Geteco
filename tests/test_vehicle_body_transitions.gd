@@ -29,8 +29,13 @@ func approach(side := -1) -> void:
 
 func run() -> void:
 	world = load("res://Main.tscn").instantiate()
+	world.set_meta("skip_arrival", true)
 	root.add_child(world)
-	await frames(10)
+	for i in 600:
+		await physics_frame
+		if world.session != null and world.session.ready_for_play: break
+	check(world.session != null and world.session.ready_for_play, "Session starts before vehicle transitions")
+	if not failures.is_empty(): quit(1); return
 	var driving = world.driving
 	var car = driving.car
 	await approach()

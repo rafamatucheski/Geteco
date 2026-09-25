@@ -14,7 +14,8 @@ uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
 // no intervalo near..far, 180 m). 0.004 ~= 0.7 m, evita que braço na frente
 // do tronco acenda a silhueta.
 uniform float bias = 0.004;
-// Caixa do próprio alvo (espaço local dele). A folga de profundidade não
+// Caixa do alvo ou conjunto piloto/veículo (espaço local da referência).
+// A folga de profundidade não
 // basta para veículo: bancos, chassi e rodas de um ônibus ficam metros atrás
 // do teto e o carro inteiro acendia em rua aberta. Se o que está na frente
 // cai dentro da caixa do alvo, é o próprio alvo se cobrindo, não um prédio.

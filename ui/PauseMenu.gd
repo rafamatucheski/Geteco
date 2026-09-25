@@ -14,7 +14,7 @@ func _ready() -> void:
 	STYLE.apply(%RootControl)
 	%BtnResume.pressed.connect(resume_game)
 	%BtnSaveGame.pressed.connect(func():
-		if world.session.save_game(): resume_game())
+		if world.session.save_game(true): resume_game())
 	%BtnLoadGame.pressed.connect(func():
 		resume_game()
 		world.session.load_game())

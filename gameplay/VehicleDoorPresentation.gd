@@ -46,6 +46,9 @@ func configure(owner_vehicle: CharacterBody3D) -> void:
 		panel.material_override = material
 		panel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		hinge.add_child(panel)
+		# The baked body already contains its closed door. A substitute leaf is
+		# needed only while opening; otherwise it becomes a second floating panel.
+		hinge.hide()
 		add_child(hinge)
 		hinges[side] = hinge
 
@@ -57,12 +60,15 @@ func set_open(side: int, opened: bool, duration := .28) -> void:
 	var previous: Tween = motions.get(side)
 	if is_instance_valid(previous): previous.kill()
 	var hinge: Node3D = hinges[side]
+	if not coupe_ready and opened: hinge.show()
 	var target := float(side) * (1.05 if coupe_ready else .72) if opened else 0.0
 	if duration <= 0.0:
 		hinge.rotation.y = target
+		if not coupe_ready: hinge.visible = opened
 		return
 	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(hinge, "rotation:y", target, duration)
+	if not coupe_ready and not opened: tween.tween_callback(hinge.hide)
 	motions[side] = tween
 
 func close_all(duration := .18) -> void:
