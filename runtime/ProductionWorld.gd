@@ -15,6 +15,7 @@ const TRAFFIC_TARGET := 40
 const POPULATION_SPAWN_MIN := 45.0
 const POPULATION_SPAWN_MAX := 95.0
 const POPULATION_DESPAWN := 120.0
+const CURTAIN := preload("res://runtime/StartupCurtain.gd")
 ## Trânsito sem progresso por esse tempo (fora de fila de sinal) sai de cena quando
 ## ninguém está olhando e ele não está perto do jogador.
 const STUCK_DESPAWN_SECONDS := 15.0
@@ -65,8 +66,15 @@ func build() -> void:
 		save_invalid = result.get("invalid",false)
 		loaded_save = result.get("ok",false)
 	state.world = world
-	var curtain = preload("res://runtime/StartupCurtain.gd").new()
-	world.add_child(curtain)
+	# O menu já abriu a tela de carregamento na raiz; o mundo a adota. Início direto
+	# (testes, --no-save pelo menu) cria a sua.
+	var curtain = CURTAIN.existing(get_tree())
+	if curtain != null: curtain.reparent(world)
+	else:
+		curtain = CURTAIN.new()
+		curtain.variant = CURTAIN.variant_for(state.region_id)
+		world.add_child(curtain)
+	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o porto") + "…")
 	environment = WorldEnvironment.new()
 	environment.environment = Environment.new()
 	environment.environment.background_mode = Environment.BG_COLOR
@@ -76,6 +84,11 @@ func build() -> void:
 	environment.environment.ambient_light_energy = .65
 	environment.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	world.add_child(environment)
+	# Brilho escolhido pelo jogador (Configurações > Vídeo), aplicado agora e a cada mudança.
+	var player_settings := get_node_or_null("/root/V2Settings")
+	if player_settings != null:
+		player_settings.apply_environment(environment.environment)
+		player_settings.applied.connect(_apply_player_settings)
 	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-52,-30,0)
 	sun.light_color = Color("fffdf5")
@@ -148,8 +161,10 @@ func build() -> void:
 		session.cold.prepare_collision_at(Vector3(saved_vehicle.position[0],saved_vehicle.position[1],saved_vehicle.position[2]))
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--population="): requested_population = clampi(arg.split("=")[1].to_int(),0,MAX_POPULATION)
+	curtain.set_stage(.3, "Assentando o terreno…")
 	for i in 12: await get_tree().physics_frame
-	_prewarm_regions()
+	await _prewarm_regions(curtain)
+	curtain.set_stage(.84, "Acendendo a cidade…")
 	var road_point := nearest_road(world.player.position)
 	world.driving.car.place(road_point+Vector3.UP*.12,road_yaw(road_point))
 	_restore_player_vehicle()
@@ -183,6 +198,7 @@ func build() -> void:
 	grass.controller = self
 	world.add_child(grass)
 	ready_for_play = true
+	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
 	curtain.lift()
 	set_population(requested_population)
@@ -198,7 +214,10 @@ func build() -> void:
 ## Sob a cortina de carregamento: prepara a outra região e aquece os caches de
 ## texturas/malhas das duas (medido 2026-09-23: 2,5 s Harbor + 1,2 s Mountain),
 ## para a primeira passagem por cada lugar não travar a direção.
-func _prewarm_regions() -> void:
+func _prewarm_regions(curtain: Node = null) -> void:
+	if curtain != null:
+		curtain.set_stage(.36, "Carregando veículos…")
+		await get_tree().process_frame
 	_hold_fleet_scenes()
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
@@ -211,9 +230,17 @@ func _prewarm_regions() -> void:
 	for take in combat_audio.GUNFIRE_TAKES:
 		combat_audio.wav("explosion_%d.wav" % take)
 	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
+	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
+	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
+	if curtain != null:
+		curtain.set_stage(.46, "Preparando texturas e prédios…")
+		await get_tree().process_frame
 	if is_instance_valid(region): region.prewarm()
 	for id in ["harbor","mountain"]:
 		if regions.has(id): continue
+		if curtain != null:
+			curtain.set_stage(.6 if id == "mountain" else .66, "Preparando " + ("a serra" if id == "mountain" else "o porto") + "…")
+			await get_tree().process_frame
 		var detached: Node3D = REGION.build_region(id)
 		if detached == null: continue
 		world.add_child(detached)
@@ -222,6 +249,9 @@ func _prewarm_regions() -> void:
 		world.remove_child(detached)
 		_region_cache[id] = detached
 	# Grafos de rota das três combinações residentes, sob a cortina.
+	if curtain != null:
+		curtain.set_stage(.76, "Traçando rotas do trânsito…")
+		await get_tree().process_frame
 	var live := regions.duplicate()
 	var all := live.duplicate()
 	for id in _region_cache: all[id] = _region_cache[id]
@@ -233,6 +263,9 @@ func _prewarm_regions() -> void:
 	regions = live
 	_configure_routes()
 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
+
+func _apply_player_settings() -> void:
+	if is_instance_valid(environment): get_node("/root/V2Settings").apply_environment(environment.environment)
 
 func _hold_fleet_scenes() -> void:
 	if not _fleet_scenes.is_empty(): return

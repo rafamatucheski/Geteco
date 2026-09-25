@@ -36,7 +36,8 @@ func list_slots() -> Array[Dictionary]:
 			if backup: label += " · Recuperar backup"
 			if temporary: label += " · Recuperar temporário"
 		result.append({"id": id, "path": path, "valid": not data.is_empty(), "exists": exists, "backup":backup,
-			"temporary":temporary,"modified": modified, "label": label})
+			"temporary":temporary,"modified": modified, "label": label,
+			"region": str(data.get("region_id", "harbor"))})
 	return result
 
 func latest_slot() -> Dictionary:

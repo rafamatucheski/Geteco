@@ -3,6 +3,7 @@ extends Control
 const STYLE = preload("res://ui/GameStyle.gd")
 const AUDIO = preload("res://ui/MenuAudio.gd")
 const V1_IMPORT = preload("res://migration/v1/V1SaveImport.gd")
+const CURTAIN = preload("res://runtime/StartupCurtain.gd")
 @onready var btn_new_game: Button = %BtnNewGame
 @onready var btn_load_game: Button = %BtnLoadGame
 @onready var btn_settings: Button = %BtnSettings
@@ -82,9 +83,13 @@ func _ready() -> void:
 	var music := AudioStreamPlayer.new()
 	music.bus = AUDIO.get_music_bus_name()
 	music.stream = AUDIO.get_music_stream()
-	music.volume_db = -10
+	music.name = "MenuMusic"
+	music.volume_db = -40
 	add_child(music)
-	if music.stream != null: music.play()
+	if music.stream != null:
+		music.play()
+		# Entra aos poucos com o fade da apresentação, em vez de começar no volume cheio.
+		create_tween().tween_property(music, "volume_db", -10.0, 2.4).set_trans(Tween.TRANS_SINE)
 	STYLE.trap_focus(self, false)
 	if direct_start_requested:
 		starting = true
@@ -210,6 +215,24 @@ func _start_direct() -> void:
 	STYLE.trap_focus(self,false)
 	(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
+## Abre a tela de carregamento na raiz (sobrevive à troca de cena) e deixa ela
+## desenhar antes do carregamento bloqueante da cena Main; a música sai em fade.
+func _show_loading(id: String, new_game: bool) -> void:
+	var region := "harbor"
+	if not new_game:
+		for row in get_node("/root/V2Launch").list_slots():
+			if row.id == id: region = str(row.get("region", "harbor"))
+	var curtain = CURTAIN.new()
+	curtain.variant = CURTAIN.variant_for(region)
+	get_tree().root.add_child(curtain)
+	curtain.set_stage(.04, "Abrindo o save…" if not new_game else "Começando uma nova história…")
+	var music := get_node_or_null("MenuMusic")
+	if music != null: create_tween().tween_property(music, "volume_db", -40.0, .35)
+	await get_tree().create_timer(.4).timeout
+	curtain.set_stage(.08, "Carregando o mundo…")
+	await get_tree().process_frame
+	await get_tree().process_frame
+
 func _start(id: String, new_game: bool) -> void:
 	if starting: return
 	var error: Error = get_node("/root/V2Launch").prepare(id, new_game)
@@ -222,8 +245,11 @@ func _start(id: String, new_game: bool) -> void:
 	%LoadPanel.hide()
 	shade.show()
 	AUDIO.play_start(self)
+	await _show_loading(id, new_game)
 	error = get_tree().change_scene_to_file("res://Main.tscn")
 	if error != OK:
+		var stale = CURTAIN.existing(get_tree())
+		if stale != null: stale.queue_free()
 		starting = false
 		_show_slots(new_game)
 		%LabelLoadStatus.text = "Não foi possível abrir o jogo (%d)." % error

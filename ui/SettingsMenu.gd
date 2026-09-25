@@ -1,165 +1,606 @@
 extends Control
-
-## V1 SettingsMenu layout. Barras de Música/SFX/Ambiente restauradas: V2Settings agora
-## mantém os barramentos "Music"/"SFX"/"Ambient" (`runtime/Settings.gd`), como o V1 fazia
-## em `systems/SettingsManager.gd`.
+## Configurações: Vídeo, Áudio e Controles. Montada em código com a identidade do menu
+## principal (Barlow, laranja #ff914d). Tudo é aplicado na hora para o jogador ver o
+## efeito; "Cancelar"/Esc volta ao estado de quando a tela abriu e "Salvar" grava.
+##
+## Histórico (25/09/2026): a versão anterior herdada da V1 escondia resolução e idioma,
+## tinha só janela/VSync/suavização em Vídeo, e os controles eram uma lista corrida de
+## botões "Ação · Tecla" que apagava a tecla secundária ao remapear e só aceitava teclado.
 signal closed
+
 const STYLE = preload("res://ui/GameStyle.gd")
-var aa: OptionButton
-var remap_action := ""
+const AUDIO = preload("res://ui/MenuAudio.gd")
+const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
+const ACCENT := Color("ff914d")
+const TEXT := Color("eee9df")
+const MUTED := Color("93a0a8")
+
+## Ações remapeáveis por grupo; `inventory` e `pause_game` aparecem fixas em Geral.
+const CONTROL_GROUPS := [
+	["A PÉ", ["move_up", "move_down", "move_left", "move_right", "sprint", "interact", "camera_left", "camera_right"]],
+	["VEÍCULO", ["vehicle_interact", "exit_vehicle", "handbrake", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "trunk"]],
+	["COMBATE", ["fire", "aim", "reload", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight"]],
+	["ARMAS RÁPIDAS", ["weapon_slot_1", "weapon_slot_2", "weapon_slot_3", "weapon_slot_4", "weapon_slot_5", "weapon_slot_6", "weapon_slot_7", "weapon_slot_8", "weapon_slot_9", "weapon_slot_10"]],
+	["GERAL", ["journal", "world_map", "inventory", "pause_game"]],
+]
+const FIXED_ACTIONS := {"inventory": "Tab", "pause_game": "Esc"}
+const EXTRA_LABELS := {"camera_left": "Girar câmera à esquerda", "camera_right": "Girar câmera à direita"}
+
 var snapshot: Dictionary = {}
+var remap_action := ""
+var remap_slot := 0
+var remap_button: Button
+var _tab := 0
+var _tabs: Array[Button] = []
+var _pages: Array[Control] = []
+var _status: Label
+var _panel: PanelContainer
+var _controls_list: VBoxContainer
+var _widgets := {}
 
 func _ready() -> void:
-	%AudioHint.hide()
-	%PanelVideo.get_node("LanguageRow").hide()
-	%PanelVideo.get_node("ResRow").hide()
-	%OptWindowMode.clear()
-	%OptWindowMode.add_item("Janela")
-	%OptWindowMode.add_item("Tela cheia")
-	aa = OptionButton.new()
-	for label in ["Suavização: desligada", "Suavização: 2×", "Suavização: 4×", "Suavização: 8×"]: aa.add_item(label)
-	%PanelVideo.add_child(aa)
-	%TabAudioBtn.pressed.connect(func(): _tab(0))
-	%TabVideoBtn.pressed.connect(func(): _tab(1))
-	%TabControlsBtn.pressed.connect(func(): _tab(2))
-	%SliderMaster.value_changed.connect(func(value):
-		%LabelMasterVal.text = "%d%%" % roundi(value * 100)
-		get_node("/root/V2Settings")._apply_bus_volume("Master", value))
-	%SliderMusic.value_changed.connect(func(value):
-		%LabelMusicVal.text = "%d%%" % roundi(value * 100)
-		get_node("/root/V2Settings")._apply_bus_volume("Music", value))
-	%SliderSFX.value_changed.connect(func(value):
-		%LabelSFXVal.text = "%d%%" % roundi(value * 100)
-		get_node("/root/V2Settings")._apply_bus_volume("SFX", value))
-	%SliderAmbient.value_changed.connect(func(value):
-		%LabelAmbientVal.text = "%d%%" % roundi(value * 100)
-		get_node("/root/V2Settings")._apply_bus_volume("Ambient", value))
-	%BtnBack.pressed.connect(close)
-	%BtnSave.pressed.connect(_save)
-	%BtnApply.hide()
-	%BtnDefaults.text = "Restaurar controles"
-	%BtnDefaults.pressed.connect(func():
-		get_node("/root/GameInput").reset_bindings()
-		_controls()
-		%SettingsStatus.text = "Controles restaurados. Salve para manter.")
-	STYLE.apply(self)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	var dimmer := ColorRect.new()
+	dimmer.color = Color(0.01, 0.02, 0.03, 0.78)
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(dimmer)
+	_panel = PanelContainer.new()
+	_panel.set_meta("preserve_panel_style", true)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.045, 0.06, 0.075, 0.97)
+	panel_style.border_color = Color(1, 1, 1, 0.07)
+	panel_style.set_border_width_all(1)
+	panel_style.border_width_left = 3
+	panel_style.border_color = ACCENT
+	panel_style.set_corner_radius_all(4)
+	panel_style.shadow_color = Color(0, 0, 0, 0.5)
+	panel_style.shadow_size = 24
+	for side in ["left", "right"]: panel_style.set("content_margin_" + side, 34)
+	for side in ["top", "bottom"]: panel_style.set("content_margin_" + side, 26)
+	_panel.add_theme_stylebox_override("panel", panel_style)
+	add_child(_panel)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 16)
+	_panel.add_child(column)
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 28)
+	column.add_child(header)
+	var title := _label("CONFIGURAÇÕES", 30, TEXT, DISPLAY_FONT)
+	header.add_child(title)
+	var tab_row := HBoxContainer.new()
+	tab_row.add_theme_constant_override("separation", 6)
+	tab_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tab_row.alignment = BoxContainer.ALIGNMENT_END
+	header.add_child(tab_row)
+	for index in 3:
+		var tab := Button.new()
+		tab.text = ["VÍDEO", "ÁUDIO", "CONTROLES"][index]
+		tab.toggle_mode = true
+		tab.focus_mode = Control.FOCUS_ALL
+		tab.add_theme_font_override("font", DISPLAY_FONT)
+		tab.add_theme_font_size_override("font_size", 18)
+		_style_tab(tab)
+		tab.pressed.connect(_select_tab.bind(index))
+		tab_row.add_child(tab)
+		_tabs.append(tab)
+	var rule := ColorRect.new()
+	rule.color = Color(1, 1, 1, 0.08)
+	rule.custom_minimum_size.y = 1
+	column.add_child(rule)
+	var stack := Control.new()
+	stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stack.clip_contents = true
+	column.add_child(stack)
+	for builder in [_build_video, _build_audio, _build_controls]:
+		var scroll := ScrollContainer.new()
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		# Respiro à direita para a barra de rolagem não encostar nos controles.
+		var gutter := MarginContainer.new()
+		gutter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		gutter.add_theme_constant_override("margin_right", 18)
+		scroll.add_child(gutter)
+		var page := VBoxContainer.new()
+		page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		page.add_theme_constant_override("separation", 6)
+		gutter.add_child(page)
+		stack.add_child(scroll)
+		builder.call(page)
+		_pages.append(scroll)
+	var footer := HBoxContainer.new()
+	footer.add_theme_constant_override("separation", 10)
+	column.add_child(footer)
+	_status = _label("", 16, MUTED, BODY_FONT)
+	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	footer.add_child(_status)
+	var defaults := _footer_button("PADRÕES DA ABA")
+	defaults.pressed.connect(_restore_tab_defaults)
+	footer.add_child(defaults)
+	var cancel := _footer_button("CANCELAR")
+	cancel.pressed.connect(close)
+	footer.add_child(cancel)
+	var save := _footer_button("SALVAR", true)
+	save.pressed.connect(_save)
+	footer.add_child(save)
+	resized.connect(_layout)
+	_layout()
+	AUDIO.hook_buttons(self)
+	get_node("/root/GameInput").bindings_changed.connect(func(): if is_visible_in_tree(): _refresh_controls())
+
+func _layout() -> void:
+	var width := clampf(size.x * 0.72, 760.0, 1180.0)
+	var height := clampf(size.y * 0.84, 520.0, 860.0)
+	width = minf(width, size.x - 32.0)
+	height = minf(height, size.y - 32.0)
+	_panel.size = Vector2(width, height)
+	_panel.position = (size - _panel.size) * 0.5
+
+# --- Construção ----------------------------------------------------------------------
+
+func _label(text: String, font_size: int, color: Color, font: Font) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", font)
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	return label
+
+func _style_tab(tab: Button) -> void:
+	var idle := StyleBoxFlat.new()
+	idle.bg_color = Color(0, 0, 0, 0)
+	idle.content_margin_left = 16
+	idle.content_margin_right = 16
+	idle.content_margin_top = 8
+	idle.content_margin_bottom = 8
+	var hot := idle.duplicate() as StyleBoxFlat
+	hot.bg_color = Color(1, 0.57, 0.3, 0.08)
+	var on := idle.duplicate() as StyleBoxFlat
+	on.bg_color = Color(1, 0.57, 0.3, 0.14)
+	on.border_width_bottom = 3
+	on.border_color = ACCENT
+	tab.add_theme_stylebox_override("normal", idle)
+	tab.add_theme_stylebox_override("hover", hot)
+	tab.add_theme_stylebox_override("pressed", on)
+	tab.add_theme_stylebox_override("hover_pressed", on)
+	var focus := idle.duplicate() as StyleBoxFlat
+	focus.border_width_bottom = 1
+	focus.border_color = ACCENT
+	tab.add_theme_stylebox_override("focus", focus)
+	tab.add_theme_color_override("font_color", MUTED)
+	tab.add_theme_color_override("font_hover_color", TEXT)
+	tab.add_theme_color_override("font_pressed_color", ACCENT)
+	tab.add_theme_color_override("font_hover_pressed_color", ACCENT)
+	tab.add_theme_color_override("font_focus_color", TEXT)
+
+func _field_style(active := false) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(1, 0.57, 0.3, 0.16) if active else Color(1, 1, 1, 0.045)
+	box.border_color = ACCENT if active else Color(1, 1, 1, 0.1)
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(3)
+	box.content_margin_left = 12
+	box.content_margin_right = 12
+	box.content_margin_top = 6
+	box.content_margin_bottom = 6
+	return box
+
+func _style_field(control: Control) -> void:
+	control.add_theme_font_override("font", BODY_FONT)
+	control.add_theme_font_size_override("font_size", 17)
+	control.add_theme_color_override("font_color", TEXT)
+	control.add_theme_color_override("font_hover_color", ACCENT)
+	control.add_theme_color_override("font_focus_color", ACCENT)
+	control.add_theme_color_override("font_disabled_color", Color(MUTED, 0.5))
+	if control is BaseButton:
+		control.add_theme_stylebox_override("normal", _field_style())
+		control.add_theme_stylebox_override("hover", _field_style(true))
+		control.add_theme_stylebox_override("pressed", _field_style(true))
+		control.add_theme_stylebox_override("focus", _field_style(true))
+		var off := _field_style()
+		off.bg_color = Color(1, 1, 1, 0.02)
+		control.add_theme_stylebox_override("disabled", off)
+
+func _footer_button(text: String, primary := false) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.focus_mode = Control.FOCUS_ALL
+	button.custom_minimum_size = Vector2(130, 42)
+	button.add_theme_font_override("font", DISPLAY_FONT)
+	button.add_theme_font_size_override("font_size", 17)
+	_style_field(button)
+	if primary:
+		var hot := _field_style(true)
+		hot.bg_color = Color(1, 0.57, 0.3, 0.3)
+		button.add_theme_stylebox_override("normal", _field_style(true))
+		button.add_theme_stylebox_override("hover", hot)
+		button.add_theme_color_override("font_color", Color.WHITE)
+	return button
+
+func _section(page: VBoxContainer, text: String) -> void:
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y = 8 if page.get_child_count() > 0 else 0
+	page.add_child(spacer)
+	var label := _label(text, 15, ACCENT, DISPLAY_FONT)
+	page.add_child(label)
+
+## Linha: nome e descrição à esquerda, controle à direita.
+func _row(page: VBoxContainer, title: String, description: String, control: Control) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 20)
+	row.custom_minimum_size.y = 50
+	var texts := VBoxContainer.new()
+	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	texts.alignment = BoxContainer.ALIGNMENT_CENTER
+	texts.add_theme_constant_override("separation", 0)
+	texts.add_child(_label(title, 19, TEXT, BODY_FONT))
+	if not description.is_empty():
+		var hint := _label(description, 14, MUTED, BODY_FONT)
+		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		texts.add_child(hint)
+	row.add_child(texts)
+	control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, 330)
+	control.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(control)
+	page.add_child(row)
+	var line := ColorRect.new()
+	line.color = Color(1, 1, 1, 0.04)
+	line.custom_minimum_size.y = 1
+	page.add_child(line)
+	return row
+
+func _options(items: Array, on_change: Callable) -> OptionButton:
+	var option := OptionButton.new()
+	for item in items: option.add_item(str(item))
+	option.focus_mode = Control.FOCUS_ALL
+	_style_field(option)
+	option.item_selected.connect(func(index: int): on_change.call(index))
+	return option
+
+func _toggle(on_change: Callable) -> CheckButton:
+	var toggle := CheckButton.new()
+	toggle.focus_mode = Control.FOCUS_ALL
+	toggle.alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	toggle.add_theme_font_override("font", BODY_FONT)
+	toggle.add_theme_color_override("font_color", MUTED)
+	toggle.toggled.connect(func(value: bool):
+		toggle.text = "Ligado" if value else "Desligado"
+		on_change.call(value))
+	return toggle
+
+## Slider com valor em texto à direita. `format` recebe o valor do slider.
+func _slider(minimum: float, maximum: float, step: float, format: Callable, on_change: Callable) -> HBoxContainer:
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	var slider := HSlider.new()
+	slider.min_value = minimum
+	slider.max_value = maximum
+	slider.step = step
+	slider.focus_mode = Control.FOCUS_ALL
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(1, 1, 1, 0.12)
+	track.content_margin_top = 2
+	track.content_margin_bottom = 2
+	track.set_corner_radius_all(2)
+	var fill := track.duplicate() as StyleBoxFlat
+	fill.bg_color = ACCENT
+	slider.add_theme_stylebox_override("slider", track)
+	slider.add_theme_stylebox_override("grabber_area", fill)
+	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
+	var value_label := _label("", 17, TEXT, DISPLAY_FONT)
+	value_label.custom_minimum_size.x = 56
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	slider.value_changed.connect(func(value: float):
+		value_label.text = format.call(value)
+		on_change.call(value))
+	box.add_child(slider)
+	box.add_child(value_label)
+	box.set_meta("slider", slider)
+	box.set_meta("value_label", value_label)
+	return box
+
+func _set_slider(box: HBoxContainer, value: float, format: Callable) -> void:
+	var slider: HSlider = box.get_meta("slider")
+	slider.set_value_no_signal(value)
+	(box.get_meta("value_label") as Label).text = format.call(value)
+
+func _percent(value: float) -> String:
+	return "%d%%" % roundi(value * 100.0)
+
+func _settings() -> Node:
+	return get_node("/root/V2Settings")
+
+func _build_video(page: VBoxContainer) -> void:
+	var s := _settings()
+	_section(page, "TELA")
+	_widgets.window_mode = _options(["Janela", "Tela cheia", "Tela cheia exclusiva"], func(index):
+		s.window_mode = index
+		_widgets.resolution.disabled = index != 0
+		s.apply_settings())
+	_row(page, "Modo de tela", "Exclusiva pode dar mais FPS; a comum troca de janela mais rápido.", _widgets.window_mode)
+	var resolutions := []
+	for value in s.RESOLUTIONS: resolutions.append("%d × %d" % [value.x, value.y])
+	_widgets.resolution = _options(resolutions, func(index):
+		s.resolution = index
+		s.apply_settings())
+	_row(page, "Resolução da janela", "Em tela cheia vale a resolução do monitor.", _widgets.resolution)
+	_widgets.vsync = _toggle(func(value):
+		s.vsync = value
+		s.apply_settings())
+	_row(page, "VSync", "Evita rasgos na imagem; pode somar um pouco de atraso.", _widgets.vsync)
+	var limits := []
+	for value in s.FPS_LIMITS: limits.append("Sem limite" if value == 0 else "%d FPS" % value)
+	_widgets.fps_limit = _options(limits, func(index):
+		s.fps_limit = index
+		s.apply_settings())
+	_row(page, "Limite de FPS", "", _widgets.fps_limit)
+	_widgets.show_fps = _toggle(func(value):
+		s.show_fps = value
+		s.apply_settings())
+	_row(page, "Mostrar FPS", "Contador no canto superior direito.", _widgets.show_fps)
+	_section(page, "QUALIDADE")
+	_widgets.render_scale = _slider(.5, 1.0, .05, _percent, func(value):
+		s.render_scale = value
+		s.apply_settings())
+	_row(page, "Escala de renderização", "Abaixo de 100% o 3D é desenhado menor e ampliado (FSR). A interface continua nítida.", _widgets.render_scale)
+	_widgets.msaa = _options(["Desligado", "2×", "4×", "8×"], func(index):
+		s.msaa = index
+		s.apply_settings())
+	_row(page, "Antisserrilhado (MSAA)", "Suaviza bordas; 4× e 8× custam bastante GPU.", _widgets.msaa)
+	_widgets.shadow_quality = _options(["Baixa", "Média", "Alta"], func(index):
+		s.shadow_quality = index
+		s.apply_settings())
+	_row(page, "Sombras", "Alta usa sombra suave e mais resolução.", _widgets.shadow_quality)
+	_widgets.brightness = _slider(.6, 1.6, .05, _percent, func(value):
+		s.brightness = value
+		s.apply_settings())
+	_row(page, "Brilho", "Ajuda nas noites escuras sem mudar o céu.", _widgets.brightness)
+
+func _build_audio(page: VBoxContainer) -> void:
+	var s := _settings()
+	_section(page, "VOLUME")
+	for entry in [["master_volume", "Master", "Volume geral", ""], ["music_volume", "Music", "Música", "Menu, rádio dos carros e trilha."], ["sfx_volume", "SFX", "Efeitos", "Tiros, motores, batidas e interface."], ["ambient_volume", "Ambient", "Ambiente", "Cidade, mar, chuva, vento e bichos."]]:
+		var key: String = entry[0]
+		var bus: String = entry[1]
+		var box := _slider(0.0, 1.0, .01, _percent, func(value):
+			s.set(key, value)
+			s._apply_bus_volume(bus, value))
+		# Soltar o slider de efeitos toca um clique no volume novo.
+		if key == "sfx_volume":
+			(box.get_meta("slider") as HSlider).drag_ended.connect(func(_changed): AUDIO.play_click(self))
+		_widgets[key] = box
+		_row(page, entry[2], entry[3], box)
+	_section(page, "OUTROS")
+	_widgets.mute_unfocused = _toggle(func(value): s.mute_unfocused = value)
+	_row(page, "Silenciar em segundo plano", "Sem som quando a janela do jogo perde o foco.", _widgets.mute_unfocused)
+
+func _build_controls(page: VBoxContainer) -> void:
+	var hint := _label("Clique numa tecla e pressione a nova (teclado ou mouse). Delete limpa, Esc cancela. Tecla repetida sai da outra ação.", 15, MUTED, BODY_FONT)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	page.add_child(hint)
+	_controls_list = VBoxContainer.new()
+	_controls_list.add_theme_constant_override("separation", 4)
+	page.add_child(_controls_list)
+
+func _refresh_controls() -> void:
+	var focused := get_viewport().gui_get_focus_owner()
+	var focus_key := str(focused.get_meta("binding_key", "")) if focused != null else ""
+	for child in _controls_list.get_children():
+		_controls_list.remove_child(child)
+		child.queue_free()
+	var controls := get_node("/root/GameInput")
+	for group in CONTROL_GROUPS:
+		_section(_controls_list, group[0])
+		var header := HBoxContainer.new()
+		header.add_theme_constant_override("separation", 10)
+		var spacer := Control.new()
+		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header.add_child(spacer)
+		for text in ["PRINCIPAL", "SECUNDÁRIA", "CONTROLE"]:
+			var column := _label(text, 12, MUTED, DISPLAY_FONT)
+			column.custom_minimum_size.x = 150 if text != "CONTROLE" else 90
+			column.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			header.add_child(column)
+		_controls_list.add_child(header)
+		for action in group[1]:
+			var row := HBoxContainer.new()
+			row.add_theme_constant_override("separation", 10)
+			row.custom_minimum_size.y = 40
+			var name_label := _label(EXTRA_LABELS.get(action, controls.label(action)), 18, TEXT, BODY_FONT)
+			name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(name_label)
+			var events: Array = controls.keyboard_events(action)
+			for slot in 2:
+				var key := Button.new()
+				key.custom_minimum_size = Vector2(150, 34)
+				key.focus_mode = Control.FOCUS_ALL
+				key.clip_text = true
+				_style_field(key)
+				key.add_theme_font_override("font", DISPLAY_FONT)
+				if FIXED_ACTIONS.has(action):
+					key.text = FIXED_ACTIONS[action] if slot == 0 else ""
+					key.disabled = true
+					key.tooltip_text = "Tecla fixa dos menus."
+				else:
+					key.text = controls.event_label(events[slot]) if slot < events.size() else "—"
+					if slot >= events.size(): key.add_theme_color_override("font_color", MUTED)
+					key.set_meta("binding_key", "%s:%d" % [action, slot])
+					key.pressed.connect(_begin_remap.bind(action, slot, key))
+				row.add_child(key)
+			var pad := _label(_pad_hint(action), 15, MUTED, DISPLAY_FONT)
+			pad.custom_minimum_size.x = 90
+			pad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			row.add_child(pad)
+			_controls_list.add_child(row)
+	AUDIO.hook_buttons(_controls_list, self)
+	if not focus_key.is_empty():
+		for button in _controls_list.find_children("*", "Button", true, false):
+			if str(button.get_meta("binding_key", "")) == focus_key:
+				button.grab_focus.call_deferred()
+				break
+
+func _pad_hint(action: String) -> String:
+	var controls := get_node("/root/GameInput")
+	# Sem botão de controle a dica cairia no teclado ("Z" na coluna do controle).
+	if not controls.PAD.has(action) and not action.begins_with("move_") and action not in ["fire", "aim"]: return ""
+	var was: bool = controls.using_gamepad
+	controls.using_gamepad = true
+	var text: String = controls.hint(action)
+	controls.using_gamepad = was
+	return "" if text == "—" or text.begins_with("—") else text
+
+# --- Comportamento ---------------------------------------------------------------------
 
 func open() -> void:
-	var settings = get_node("/root/V2Settings")
 	snapshot = _capture_snapshot()
-	%SliderMaster.value = settings.master_volume
-	%LabelMasterVal.text = "%d%%" % roundi(settings.master_volume * 100)
-	%SliderMusic.value = settings.music_volume
-	%LabelMusicVal.text = "%d%%" % roundi(settings.music_volume * 100)
-	%SliderSFX.value = settings.sfx_volume
-	%LabelSFXVal.text = "%d%%" % roundi(settings.sfx_volume * 100)
-	%SliderAmbient.value = settings.ambient_volume
-	%LabelAmbientVal.text = "%d%%" % roundi(settings.ambient_volume * 100)
-	%OptWindowMode.select(1 if settings.fullscreen else 0)
-	%CheckVSync.button_pressed = settings.vsync
-	aa.select(settings.msaa)
-	%SettingsStatus.text = ""
-	_controls()
-	_tab(0)
+	_load_widgets()
+	_status.text = ""
+	_select_tab(_tab)
 
-func _tab(index: int) -> void:
-	%PanelAudio.visible = index == 0
-	%PanelVideo.visible = index == 1
-	%PanelControls.visible = index == 2
-	STYLE.trap_focus(self)
+func _load_widgets() -> void:
+	var s := _settings()
+	_widgets.window_mode.select(s.window_mode)
+	_widgets.resolution.select(s.resolution)
+	_widgets.resolution.disabled = s.window_mode != 0
+	_widgets.vsync.set_pressed_no_signal(s.vsync)
+	_widgets.vsync.text = "Ligado" if s.vsync else "Desligado"
+	_widgets.fps_limit.select(s.fps_limit)
+	_widgets.show_fps.set_pressed_no_signal(s.show_fps)
+	_widgets.show_fps.text = "Ligado" if s.show_fps else "Desligado"
+	_set_slider(_widgets.render_scale, s.render_scale, _percent)
+	_widgets.msaa.select(s.msaa)
+	_widgets.shadow_quality.select(s.shadow_quality)
+	_set_slider(_widgets.brightness, s.brightness, _percent)
+	for key in ["master_volume", "music_volume", "sfx_volume", "ambient_volume"]:
+		_set_slider(_widgets[key], float(s.get(key)), _percent)
+	_widgets.mute_unfocused.set_pressed_no_signal(s.mute_unfocused)
+	_widgets.mute_unfocused.text = "Ligado" if s.mute_unfocused else "Desligado"
+	_refresh_controls()
 
-func _controls() -> void:
-	for child in %ControlsList.get_children():
-		%ControlsList.remove_child(child)
-		child.queue_free()
-	var controls = get_node("/root/GameInput")
-	for action in controls.KEYS:
-		if action in ["pause_game", "inventory"]: continue
-		var button := Button.new()
-		button.text = controls.label(action) + " · " + controls.hint(action, true)
-		button.pressed.connect(func():
-			remap_action = action
-			controls.remapping = true
-			%SettingsStatus.text = "Pressione uma tecla · Esc cancela")
-		%ControlsList.add_child(button)
-	STYLE.apply(%ControlsList)
+func _select_tab(index: int) -> void:
+	_cancel_remap()
+	_tab = index
+	for i in _tabs.size():
+		_tabs[i].set_pressed_no_signal(i == index)
+		_pages[i].visible = i == index
+	_trap_focus()
+	_tabs[index].grab_focus()
+
+## Foco circula entre as abas, a página visível e o rodapé.
+func _trap_focus() -> void:
+	STYLE.trap_focus(_panel, false)
+
+func _begin_remap(action: String, slot: int, button: Button) -> void:
+	_cancel_remap()
+	remap_action = action
+	remap_slot = slot
+	remap_button = button
+	button.text = "Pressione…"
+	button.add_theme_color_override("font_color", ACCENT)
+	get_node("/root/GameInput").remapping = true
+	_status.text = "Pressione a nova tecla ou botão do mouse para \"%s\". Delete limpa, Esc cancela." % get_node("/root/GameInput").label(action)
+
+func _cancel_remap() -> void:
+	if remap_action.is_empty(): return
+	remap_action = ""
+	remap_button = null
+	get_node("/root/GameInput").remapping = false
+	_refresh_controls()
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or remap_action.is_empty(): return
-	if not event is InputEventKey or not event.pressed or event.echo: return
+	if not event.is_pressed() or event.is_echo(): return
+	if not (event is InputEventKey or event is InputEventMouseButton): return
+	# O clique que abriu a captura chega como "released"; o próximo clique é a escolha.
 	get_viewport().set_input_as_handled()
-	var controls = get_node("/root/GameInput")
-	var canceled: bool = (event as InputEventKey).keycode == KEY_ESCAPE
-	if not canceled:
-		var error: String = controls.rebind(remap_action, event)
-		if not error.is_empty():
-			%SettingsStatus.text = error
-			return
+	var controls := get_node("/root/GameInput")
+	var action := remap_action
+	var slot := remap_slot
+	if event is InputEventKey and event.physical_keycode == KEY_ESCAPE:
+		_cancel_remap()
+		_status.text = "Remapeamento cancelado."
+		return
+	if event is InputEventKey and event.physical_keycode in [KEY_DELETE, KEY_BACKSPACE]:
+		remap_action = ""
+		controls.remapping = false
+		controls.clear_slot(action, slot)
+		_refresh_controls()
+		_status.text = "Tecla removida de \"%s\"." % controls.label(action)
+		return
+	var result: Dictionary = controls.rebind_slot(action, slot, event)
+	if not result.ok:
+		if not str(result.message).is_empty(): _status.text = result.message
+		return
 	remap_action = ""
 	controls.remapping = false
-	%SettingsStatus.text = "Remapeamento cancelado." if canceled else "Salve para manter as alterações."
-	_controls()
-	STYLE.trap_focus(self)
+	_refresh_controls()
+	_status.text = str(result.message) if not str(result.message).is_empty() else "\"%s\" agora usa %s." % [controls.label(action), controls.event_label(event)]
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or not event.is_action_pressed("ui_cancel") or event.is_echo(): return
-	get_viewport().set_input_as_handled()
-	if not remap_action.is_empty():
-		remap_action = ""
-		get_node("/root/GameInput").remapping = false
-		%SettingsStatus.text = "Remapeamento cancelado."
-		_controls()
-		STYLE.trap_focus(self)
-		return
-	close()
+	if not is_visible_in_tree() or event.is_echo(): return
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		close()
+	elif event is InputEventKey and event.pressed and event.physical_keycode in [KEY_Q, KEY_E] and remap_action.is_empty():
+		# Q/E trocam de aba, como nos menus de console.
+		get_viewport().set_input_as_handled()
+		_select_tab(posmod(_tab + (1 if event.physical_keycode == KEY_E else -1), _tabs.size()))
+
+func _restore_tab_defaults() -> void:
+	var s := _settings()
+	match _tab:
+		0:
+			s.window_mode = 0
+			s.resolution = 0
+			s.vsync = true
+			s.fps_limit = 1
+			s.show_fps = false
+			s.render_scale = 1.0
+			s.msaa = 1
+			s.shadow_quality = 1
+			s.brightness = 1.0
+		1:
+			s.master_volume = .8
+			s.music_volume = .8
+			s.sfx_volume = 1.0
+			s.ambient_volume = 1.0
+			s.mute_unfocused = false
+		2:
+			get_node("/root/GameInput").reset_bindings()
+	s.apply_settings()
+	_load_widgets()
+	_status.text = "Padrões restaurados nesta aba. Salve para manter."
 
 func _save() -> void:
-	var settings = get_node("/root/V2Settings")
-	settings.master_volume = %SliderMaster.value
-	settings.music_volume = %SliderMusic.value
-	settings.sfx_volume = %SliderSFX.value
-	settings.ambient_volume = %SliderAmbient.value
-	settings.fullscreen = %OptWindowMode.selected == 1
-	settings.vsync = %CheckVSync.button_pressed
-	settings.msaa = aa.selected
-	settings.apply_settings()
-	var result: Error = settings.save_settings()
+	_cancel_remap()
+	var result: Error = _settings().save_settings()
 	if result != OK:
-		%SettingsStatus.text = "Não foi possível salvar (%d)." % result
+		_status.text = "Não foi possível salvar (%d)." % result
 		return
 	snapshot = _capture_snapshot()
 	close()
 
 func close() -> void:
-	var controls = get_node("/root/GameInput")
+	_cancel_remap()
 	_restore_snapshot()
-	controls.remapping = false
-	remap_action = ""
 	hide()
 	closed.emit()
 
+const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps"]
+
 func _capture_snapshot() -> Dictionary:
-	var settings = get_node("/root/V2Settings")
-	return {
-		"master_volume": settings.master_volume,
-		"music_volume": settings.music_volume,
-		"sfx_volume": settings.sfx_volume,
-		"ambient_volume": settings.ambient_volume,
-		"fullscreen": settings.fullscreen,
-		"vsync": settings.vsync,
-		"msaa": settings.msaa,
-		"bindings": get_node("/root/GameInput").export_bindings().duplicate(true),
-	}
+	var s := _settings()
+	var result := {"bindings": get_node("/root/GameInput").export_bindings().duplicate(true)}
+	for key in SNAPSHOT_KEYS: result[key] = s.get(key)
+	return result
 
 func _restore_snapshot() -> void:
 	if snapshot.is_empty(): return
-	var settings = get_node("/root/V2Settings")
-	settings.master_volume = clampf(float(snapshot.get("master_volume",settings.master_volume)),0.0,1.0)
-	settings.music_volume = clampf(float(snapshot.get("music_volume",settings.music_volume)),0.0,1.0)
-	settings.sfx_volume = clampf(float(snapshot.get("sfx_volume",settings.sfx_volume)),0.0,1.0)
-	settings.ambient_volume = clampf(float(snapshot.get("ambient_volume",settings.ambient_volume)),0.0,1.0)
-	settings.fullscreen = bool(snapshot.get("fullscreen",settings.fullscreen))
-	settings.vsync = bool(snapshot.get("vsync",settings.vsync))
-	settings.msaa = clampi(int(snapshot.get("msaa",settings.msaa)),0,3)
-	settings.apply_settings()
-	get_node("/root/GameInput").import_bindings(snapshot.get("bindings",{}))
+	var s := _settings()
+	for key in SNAPSHOT_KEYS:
+		if snapshot.has(key): s.set(key, snapshot[key])
+	s.apply_settings()
+	get_node("/root/GameInput").import_bindings(snapshot.get("bindings", {}))

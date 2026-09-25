@@ -191,6 +191,75 @@ func rebind(action: String,event: InputEvent) -> String:
 	bindings_changed.emit()
 	return ""
 
+## Teclas e botões do mouse da ação, na ordem: [0] principal, [1] secundária.
+func keyboard_events(action: String) -> Array:
+	var result := []
+	for e in InputMap.action_get_events(action):
+		if e is InputEventKey or e is InputEventMouseButton: result.append(e)
+	return result
+
+## Remapeia a posição `slot` (0 principal, 1 secundária) da ação. Tecla que já era de
+## outra ação sai de lá (a tela avisa), em vez de recusar: antes o jogador precisava
+## descobrir e liberar a outra ação primeiro. Pares contextuais (F entra e sai do
+## carro) podem continuar compartilhando.
+## Devolve {"ok": bool, "message": String}.
+func rebind_slot(action: String, slot: int, event: InputEvent) -> Dictionary:
+	if event is InputEventKey and (event.physical_keycode if event.physical_keycode else event.keycode) in [KEY_ESCAPE,KEY_TAB,KEY_ENTER]:
+		return {"ok": false, "message": _text("Esc, Tab e Enter ficam reservados para os menus.","Esc, Tab and Enter are reserved for menus.")}
+	var stored: InputEvent
+	if event is InputEventKey:
+		stored = InputEventKey.new()
+		stored.physical_keycode = event.physical_keycode if event.physical_keycode else event.keycode
+	elif event is InputEventMouseButton:
+		stored = InputEventMouseButton.new()
+		stored.button_index = event.button_index
+	else:
+		return {"ok": false, "message": ""}
+	var message := ""
+	for other in KEYS:
+		if other == action or _binding_context_is_exclusive(action,other): continue
+		for existing in keyboard_events(other):
+			if existing.is_match(stored):
+				InputMap.action_erase_event(other, existing)
+				message = _text("%s saiu de \"%s\".","%s removed from \"%s\".") % [event_label(stored), label(other)]
+	var events := keyboard_events(action)
+	# A mesma tecla já está na outra posição desta ação: só troca a ordem.
+	for index in events.size():
+		if events[index].is_match(stored):
+			events.remove_at(index)
+			break
+	if slot < events.size(): events[slot] = stored
+	else: events.append(stored)
+	_clear_keyboard(action)
+	for e in events: InputMap.action_add_event(action, e)
+	bindings_changed.emit()
+	return {"ok": true, "message": message}
+
+func clear_slot(action: String, slot: int) -> void:
+	var events := keyboard_events(action)
+	if slot >= events.size(): return
+	InputMap.action_erase_event(action, events[slot])
+	bindings_changed.emit()
+
+const KEY_NAMES := {"Up": "↑", "Down": "↓", "Left": "←", "Right": "→", "Space": "Espaço", "Escape": "Esc", "BackSpace": "Backspace", "Ctrl": "Ctrl", "CapsLock": "Caps Lock", "PageUp": "Page Up", "PageDown": "Page Down"}
+
+func event_label(e: InputEvent) -> String:
+	if e is InputEventKey:
+		var key_name := _key_name(e)
+		return KEY_NAMES.get(key_name, key_name)
+	return _mouse_label(e)
+
+func _key_name(e: InputEventKey) -> String:
+	if not e.physical_keycode: return OS.get_keycode_string(e.keycode)
+	# Nome da tecla no layout do jogador (ABNT mostra Ç, não ;). Headless não tem layout.
+	if DisplayServer.get_name() == "headless": return OS.get_keycode_string(e.physical_keycode)
+	return OS.get_keycode_string(DisplayServer.keyboard_get_keycode_from_physical(e.physical_keycode))
+
+func _mouse_label(e: InputEvent) -> String:
+	if e is InputEventMouseButton:
+		return {1:_text("Mouse esq.","Left mouse"),2:_text("Mouse dir.","Right mouse"),3:_text("Botão do meio","Middle mouse"),4:_text("Roda ↑","Wheel ↑"),5:_text("Roda ↓","Wheel ↓"),8:_text("Mouse 4","Mouse 4"),9:_text("Mouse 5","Mouse 5")}.get(e.button_index,"Mouse %d" % e.button_index)
+	return ""
+
 func _binding_context_is_exclusive(first: String,second: String) -> bool:
 	for pair in CONTEXTUAL_BINDING_PAIRS:
 		if (pair[0] == first and pair[1] == second) or (pair[0] == second and pair[1] == first):
@@ -211,10 +280,7 @@ func hint(action: String,keyboard_only := false) -> String:
 		var button: int = int(PAD.get(action, UI_PAD.get(action, -1)))
 		if button >= 0: return _pad_button_hint(button, playstation)
 	var labels: Array[String] = []
-	for e in InputMap.action_get_events(action):
-		if e is InputEventKey: labels.append(OS.get_keycode_string(e.physical_keycode if e.physical_keycode else e.keycode))
-		elif e is InputEventMouseButton:
-			labels.append({1:_text("Mouse E","Mouse L"),2:_text("Mouse D","Mouse R"),4:"↑ Mouse",5:"↓ Mouse"}.get(e.button_index,"Mouse"))
+	for e in keyboard_events(action): labels.append(event_label(e))
 	return " / ".join(labels) if not labels.is_empty() else "—"
 
 func movement() -> Vector2:

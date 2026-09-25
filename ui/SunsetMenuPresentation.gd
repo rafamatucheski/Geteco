@@ -12,6 +12,10 @@ var source_menu: Control
 const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
 const MENU_ART: Texture2D = preload("res://ui/art/menu_harbor_bluehour.png")
+const LIVING_ART: Shader = preload("res://ui/art/living_art.gdshader")
+## Deslocamento máximo do parallax (fração da arte) com o mouse na borda da tela.
+const PARALLAX := 0.009
+var _parallax := Vector2.ZERO
 
 func install(menu: Control) -> void:
 	source_menu = menu
@@ -29,6 +33,10 @@ func install(menu: Control) -> void:
 	background.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# A arte parada parecia print (feedback de 25/09): água, luzes, chuva e câmera lenta.
+	var living := ShaderMaterial.new()
+	living.shader = LIVING_ART
+	background.material = living
 	add_child(background)
 	# A vinheta cria contraste sem esconder a nova arte autoral do porto.
 	cover = ColorRect.new()
@@ -102,6 +110,15 @@ func install(menu: Control) -> void:
 		btn.modulate.a = 0.0
 		intro_tween.tween_property(btn, "position:x", target_x, 0.42).set_delay(0.06 + i * 0.05)
 		intro_tween.tween_property(btn, "modulate:a", 1.0, 0.36).set_delay(0.06 + i * 0.05)
+
+func _process(delta: float) -> void:
+	if background == null or not background.material is ShaderMaterial: return
+	var target := Vector2.ZERO
+	if size.x > 0.0 and size.y > 0.0:
+		var mouse := get_local_mouse_position()
+		target = ((mouse / size) - Vector2(0.5, 0.5)).clamp(Vector2(-0.5, -0.5), Vector2(0.5, 0.5)) * 2.0 * PARALLAX
+	_parallax = _parallax.lerp(target, 1.0 - exp(-2.5 * delta))
+	(background.material as ShaderMaterial).set_shader_parameter("parallax", _parallax)
 
 func arrange() -> void:
 	# Preserva o enquadramento e centraliza qualquer recorte em telas não 16:9.
