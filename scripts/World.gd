@@ -28,6 +28,8 @@ var dispatch: Node3D
 var traffic_yield: Node
 
 func _ready() -> void:
+	# A mira usa a posição absoluta do mouse; ocultar preserva esse alvo.
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	seed(21092026)
 	if not "--sandbox" in OS.get_cmdline_user_args() and not "--slice" in OS.get_cmdline_user_args():
 		production = preload("res://runtime/ProductionWorld.gd").new()

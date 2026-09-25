@@ -1252,6 +1252,7 @@ func _menu(title: String) -> void:
 		child.queue_free()
 	modal = true
 	dialogue_open = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	world.player.input_locked = true
 	if world.driving.occupied: world.driving.car.input_locked = true
 	panel.show()
@@ -1290,6 +1291,7 @@ func close_menu() -> void:
 	modal = false
 	dialogue_open = false
 	panel.hide()
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (passenger_transport != null and passenger_transport.riding)
 	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked()
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:

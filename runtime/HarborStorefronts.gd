@@ -150,6 +150,7 @@ func _open_shell(title_text: String, shell_size := Vector2(880, 600)) -> void:
 
 func _finish_open() -> void:
 	session.modal = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	session.dialogue_open = false
 	session.world.player.input_locked = true
 	if is_instance_valid(session.world.driving.car): session.world.driving.car.input_locked = true

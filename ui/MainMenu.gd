@@ -24,6 +24,7 @@ var import_dialog: FileDialog
 
 func _ready() -> void:
 	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var launch = get_node("/root/V2Launch")
 	if not launch.direct_start_consumed:
 		launch.direct_start_consumed = true

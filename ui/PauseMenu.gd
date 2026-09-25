@@ -51,6 +51,7 @@ func toggle() -> void:
 
 func pause_game() -> void:
 	visible = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	%RootControl.show()
 	get_tree().paused = true
 	var has_session: bool = world.session != null and world.session.has_method("save_game")
@@ -74,6 +75,7 @@ func resume_game() -> void:
 	_close_collection()
 	visible = false
 	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 
 func open_settings() -> void:
 	%RootControl.hide()

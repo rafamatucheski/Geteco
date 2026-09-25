@@ -1,5 +1,10 @@
 extends Node
 ## Ações de jogo independentes dos atalhos de navegação dos menus.
+const MENU_CURSOR_SVG := """<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<path d="M2 2v23l5.8-4.4 4.9 9.1 4.5-2.4-4.8-8.8H23L2 2Z" fill="#101820" stroke="#101820" stroke-width="2" stroke-linejoin="round"/>
+<path d="M4.8 5.3v15.2l4.1-3.1 5.1 9.5 1.6-.9-5.1-9.4h6.3L4.8 5.3Z" fill="#efe7d8"/>
+<path d="M4.8 5.3v15.2l4.1-3.1 1.6-.8h6.3L4.8 5.3Z" fill="#ff914d"/>
+</svg>"""
 signal bindings_changed
 signal device_changed
 signal controller_connection_changed(device: int, connected: bool, controller_name: String)
@@ -86,6 +91,14 @@ const CONTEXTUAL_BINDING_PAIRS := [
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	var cursor_image := Image.new()
+	var cursor_error := cursor_image.load_svg_from_buffer(MENU_CURSOR_SVG.to_utf8_buffer())
+	if cursor_error == OK:
+		var cursor := ImageTexture.create_from_image(cursor_image)
+		Input.set_custom_mouse_cursor(cursor, Input.CURSOR_ARROW, Vector2(2, 2))
+		Input.set_custom_mouse_cursor(cursor, Input.CURSOR_POINTING_HAND, Vector2(2, 2))
+	else:
+		push_error("Ponteiro do menu não pôde ser criado (%d)." % cursor_error)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	var connected := Input.get_connected_joypads()
 	if not connected.is_empty(): active_joypad = connected[0]
