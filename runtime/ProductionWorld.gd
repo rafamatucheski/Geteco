@@ -15,6 +15,10 @@ const TRAFFIC_TARGET := 40
 const POPULATION_SPAWN_MIN := 45.0
 const POPULATION_SPAWN_MAX := 95.0
 const POPULATION_DESPAWN := 120.0
+## Trânsito sem progresso por esse tempo (fora de fila de sinal) sai de cena quando
+## ninguém está olhando e ele não está perto do jogador.
+const STUCK_DESPAWN_SECONDS := 15.0
+const STUCK_DESPAWN_DISTANCE := 30.0
 const TRAFFIC_CAR_TYPES := ["sport_coupe", "union_sedan", "courier_van", "ranch_single", "arctic_jeep", "nimbus_minivan"]
 const TRAFFIC_MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
 signal logical_region_changed(previous_region: String, next_region: String)
@@ -531,6 +535,11 @@ func _process(delta: float) -> void:
 		elif _is_ambient_traffic(car) and car.health <= 0.0 and car != world.driving.car and _wreck_expired(car) and car.global_position.distance_to(world.player.global_position) > 20.0 and not _on_screen(car.global_position,3.0):
 			# Carcaça de trânsito (traffic=false ao ser destruída) nunca saía de cena e
 			# travava cruzamentos. Some fora do quadro, depois de alguns segundos.
+			vehicles.remove_at(index)
+			car.queue_free()
+		elif _is_ambient_traffic(car) and car.traffic and car != world.driving.car and car.stuck_time > STUCK_DESPAWN_SECONDS and car.global_position.distance_to(world.player.global_position) > STUCK_DESPAWN_DISTANCE and not _on_screen(car.global_position,3.0):
+			# Travado sem saída (desvio impossível, impasse): some fora do quadro e o
+			# spawner repõe outro em ponto livre. Antes a fila ficava parada para sempre.
 			vehicles.remove_at(index)
 			car.queue_free()
 		elif _is_ambient_traffic(car) and car.traffic and car.global_position.distance_to(world.player.global_position) > POPULATION_DESPAWN and not _on_screen(car.global_position,3.0):

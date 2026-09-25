@@ -128,6 +128,18 @@ static func signal_amber() -> StandardMaterial3D:
 	return material
 
 
+## Lente do semáforo com fase: a cor vem da instância (TrafficJunctions.update_lenses).
+## Sem sombreamento para ler como luz própria de dia e de noite.
+static func signal_lens() -> StandardMaterial3D:
+	if _cache.has("signal_lens"): return _cache["signal_lens"]
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.vertex_color_use_as_albedo = true
+	material.albedo_color = Color.WHITE
+	_cache["signal_lens"] = material
+	return material
+
+
 static func set_signal_phase(on: bool) -> void:
 	signal_amber().emission_energy_multiplier = lerpf(1.6, 4.0, night) if on else 0.0
 

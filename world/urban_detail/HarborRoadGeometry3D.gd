@@ -192,6 +192,26 @@ func _junction_patch(junction: Dictionary, extra_width: float) -> PackedVector2A
 		var cap_center := center + direction * cutback
 		cap_points.append(cap_center - normal * half_width)
 		cap_points.append(cap_center + normal * half_width)
+	# O casco convexo só dos cortes chanfrava a quina externa de curvas em L (e a de
+	# ruas que terminam no cruzamento): a calçada virava uma diagonal e sobrava um
+	# triângulo de terreno. Cruzar as bordas de braços vizinhos devolve a quina em
+	# esquadro, como uma rua de verdade.
+	arms.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return (a.direction as Vector2).angle() < (b.direction as Vector2).angle())
+	for index in range(arms.size()):
+		var first: Dictionary = arms[index]
+		var second: Dictionary = arms[(index + 1) % arms.size()]
+		var first_direction := first.direction as Vector2
+		var second_direction := second.direction as Vector2
+		if absf(first_direction.cross(second_direction)) < 0.05: continue
+		var first_half := minf(float(first.half_width), core_limit)
+		var second_half := minf(float(second.half_width), core_limit)
+		# Com ângulos ordenados, orthogonal() gira -90°: o lado de "first" que encara
+		# "second" é -orthogonal() e o de "second" que encara "first" é +orthogonal().
+		var hit: Variant = Geometry2D.line_intersects_line(
+			center - first_direction.orthogonal() * first_half, first_direction,
+			center + second_direction.orthogonal() * second_half, second_direction)
+		if hit is Vector2 and center.distance_to(hit) <= core_limit * 2.0:
+			cap_points.append(hit)
 	return _counter_clockwise(Geometry2D.convex_hull(cap_points))
 
 

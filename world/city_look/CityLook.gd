@@ -14,11 +14,18 @@ const DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const SILHOUETTE_SHADER := preload("res://world/city_look/occluded_silhouette.gdshader")
 
+const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 var controller
-## Um material por alvo: cada um carrega a caixa do próprio dono para o
-## shader distinguir auto-oclusão (teto do ônibus) de prédio na frente.
+## Um material por alvo. Quem dirige compartilha a caixa do conjunto
+## piloto/veículo para não confundir a própria carroceria com um prédio.
 var _silhouettes := {}
 var _silhouette_targets: Array = []
+var _silhouette_reference: Node3D
+var _silhouette_player_id := 0
+var _silhouette_vehicle_id := 0
+var _silhouette_transition_id := 0
+var _silhouette_player_visible := false
+var _silhouette_inside := false
 var _clock := 0.0
 var _last_night := -1.0
 var _pools_visible := false
@@ -30,6 +37,7 @@ var _strobe_on := false
 var _tv_clock := 0.0
 var _tv_rng := RandomNumberGenerator.new()
 var _neon_night := -1.0
+var _signal_clock := 0.0
 
 
 func _ready() -> void:
@@ -45,6 +53,11 @@ func _process(delta: float) -> void:
 	if phase != _blink_on:
 		_blink_on = phase
 		MATERIALS.set_signal_phase(phase)
+	# Cores dos semáforos: 4x por segundo basta para a troca de fase.
+	_signal_clock -= delta
+	if _signal_clock <= 0.0:
+		_signal_clock = .25
+		JUNCTIONS.update_lenses()
 	# Giroflex da delegacia: alterna 3x por segundo, mais nervoso que o semáforo.
 	var strobe := fposmod(_blink, .34) < .17
 	if strobe != _strobe_on:

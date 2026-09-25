@@ -7,6 +7,10 @@ const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd
 const MAX_SPEED := 15.0
 const REVERSE_SPEED := 4.5
 const WHEELBASE := 2.5
+const WALL_DAMAGE_PER_SPEED := 0.65
+const WALL_DAMAGE_MAX_RATIO := 0.12
+const WALL_DAMAGE_COOLDOWN_SECONDS := 0.5
+var _last_wall_damage_frame := -1000000
 var paint_color := Color("d5a544"):
 	set(value):
 		if not is_finite(value.r) or not is_finite(value.g) or not is_finite(value.b): return
@@ -33,7 +37,14 @@ var body_height := 1.4
 signal damaged(amount: float)
 signal destroyed
 var controlled := false
-var traffic := false
+var traffic := false:
+	set(value):
+		traffic = value
+		for part in _motorcycle_rider_parts:
+			if is_instance_valid(part): part.visible = value
+var _motorcycle_rider_parts: Array[MeshInstance3D] = []
+var _motorcycle_seat := Vector3(0, -.05, .30)
+var _motorcycle_grips: Dictionary = {}
 var speed := 0.0
 var steering := 0.0
 var throttle_input := 0.0
@@ -65,11 +76,26 @@ var blocked_time := 0.0
 var unjam_time := 0.0
 var backoff_time := 0.0
 var junction_wait := false
+var junction_gap := INF
 var _junction_route: Curve3D
 var _junction_list: Array = []
 var _held_junction: Variant = null
 var _held_offset := 0.0
 var sensor_clock := 0.0
+## Tempo travado por obstáculo que não é sinal/PARE. A fila herda o do carro da frente,
+## então fila de semáforo vermelho fica em zero e ninguém "ultrapassa no vermelho".
+var stall_time := 0.0
+## Tempo sem sair do lugar (fora de fila de sinal). A limpeza da população lê isso.
+var stuck_time := 0.0
+var _stuck_anchor := 0.0
+## Desvio: -1 contramão (esquerda), +1 acostamento (direita), 0 na própria faixa.
+var bypass_side := 0.0
+var bypass_blend := 0.0
+var bypass_start := 0.0
+var bypass_retry := 0.0
+var _merging_back := false
+var _exit_blocked := false
+var _sense_tick := false
 var sensor_shape := BoxShape3D.new()
 var rotation_shape := BoxShape3D.new()
 
@@ -114,6 +140,7 @@ func _ready() -> void:
 	traced = _trace_ready("visual",traced)
 	visual.name = "Coupe"
 	add_child(visual)
+	_bind_motorcycle_rider()
 	_paint = preload("res://runtime/VehiclePaint.gd").new()
 	_paint.bind(visual,archetype)
 	if not _paint_requested:
@@ -209,12 +236,21 @@ func _physics_process(delta: float) -> void:
 	if is_on_wall():
 		speed = motion.dot(forward)/maxf(delta,0.001)
 		horizontal_velocity = Vector3(velocity.x,0,velocity.z)
-	if impact_speed > 6 and impact_speed-absf(speed) > 4:
-		receive_damage((impact_speed-absf(speed))*3.0)
+	var hit_vehicle := false
 	for index in get_slide_collision_count():
 		var target := get_slide_collision(index).get_collider()
+		if target is Node and target.is_in_group("drivable"):
+			hit_vehicle = true
+			continue # StreetPhysics applies car-to-car damage once per actual impact.
 		if impact_speed > 4 and target is Node and target.has_method("receive_damage") and target != self and not PROTECTION.is_protected(target):
 			target.receive_damage(impact_speed*4,self)
+	if is_on_wall() and not hit_vehicle and impact_speed > 6 and impact_speed-absf(speed) > 4:
+		# O contato pode durar vários quadros; cobrar a batida apenas uma vez.
+		# Tempo da simulação: uma pausa de compilação de shader não é outra batida.
+		var now := Engine.get_physics_frames()
+		if now-_last_wall_damage_frame >= ceili(WALL_DAMAGE_COOLDOWN_SECONDS * Engine.physics_ticks_per_second):
+			_last_wall_damage_frame = now
+			receive_damage(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO))
 	STREET.vehicle_post_move(self,incoming_velocity,delta)
 	wheel_spin += motion.dot(forward)/0.355
 	for pivot in wheels:
@@ -224,6 +260,56 @@ func _physics_process(delta: float) -> void:
 	if tail_material:
 		tail_material.emission_energy_multiplier = 2.5 if brake_input or blocked else 0.65
 	if is_instance_valid(effects): effects.physics_tick(delta,incoming_velocity)
+
+func stop_boarding_motion() -> void:
+	# The body animation uses fixed door/seat anchors. Speed alone left the
+	# smoothed horizontal velocity dragging the vehicle out from under them.
+	speed = 0.0
+	horizontal_velocity = Vector3.ZERO
+	velocity.x = 0.0
+	velocity.z = 0.0
+	# StreetPhysics keeps impact momentum outside velocity. Retaining it let a
+	# stopped car slide metres away from the fixed boarding anchors at 0 km/h.
+	for key in ["crash_slide", "crash_spin", "crash_stun"]:
+		if has_meta(key): remove_meta(key)
+	if handling != null: handling.reset()
+
+func _bind_motorcycle_rider() -> void:
+	if not archetype.begins_with("bike_"): return
+	# Prepared V1 bikes bake the pilot into sibling meshes. Separate only the
+	# authored pilot palette/accessories once, before paint and wheel reparenting.
+	for child in visual.get_children():
+		if not child is MeshInstance3D: continue
+		var part := child as MeshInstance3D
+		var material: Material = part.material_override if part.material_override else part.mesh.surface_get_material(0)
+		if not material is StandardMaterial3D: continue
+		var color: String = material.albedo_color.to_html(false)
+		var center: Vector3 = (part.transform * part.mesh.get_aabb()).get_center()
+		if color == "161b20" and part.get_meta("wheel_spins", true) == false and center.y > .85 and absf(center.x) > .25:
+			_motorcycle_grips["Left" if center.x < 0 else "Right"] = part
+		if part.has_meta("wheel_center"): continue
+		var body := color in ["41454d", "253043", "181b20", "cf5058", "101d29"]
+		var helmet_z := -.23 if archetype == "bike_sport" else .01
+		var helmet_stud := color == "b5c4ce" and absf(center.x) < .14 and center.y > 1.3 and absf(center.z - helmet_z) < .03
+		var stripe_z := .212 if archetype == "bike_sport" else .332
+		var jacket_stripe := color in ["d4dce0", "b5c4ce", "f1ede5"] and absf(center.x) < .02 and center.y > .95 and absf(center.z - stripe_z) < .02
+		if not body and not helmet_stud and not jacket_stripe: continue
+		_motorcycle_rider_parts.append(part)
+		part.visible = traffic
+		if color == "253043" and absf(center.x) < .01:
+			_motorcycle_seat = center - Vector3(0, .95, 0)
+
+func motorcycle_handholds() -> Dictionary:
+	var holds := {}
+	for side in _motorcycle_grips:
+		var part: MeshInstance3D = _motorcycle_grips[side]
+		if not is_instance_valid(part): continue
+		# The mesh is already a child of the steering pivot. Follow its actual
+		# presentation, including steer and vehicle yaw, without another scene scan.
+		var sign_side := -1.0 if side == "Left" else 1.0
+		var palm_basis: Basis = part.get_parent().global_basis.orthonormalized() * Basis(Vector3.BACK, -sign_side * PI * .5)
+		holds[side] = Transform3D(palm_basis, part.to_global(part.mesh.get_aabb().get_center()))
+	return holds
 
 func _drive_player(delta: float) -> void:
 	_handling_frame = false
@@ -310,22 +396,40 @@ func _release_junction() -> void:
 	if _held_junction != null: JUNCTIONS.release(_held_junction,get_instance_id())
 	_held_junction = null
 
-## Reserva de cruzamento: true = sem vez, parar antes do cruzamento.
+## Cruzamento à frente (TrafficJunctions): true = parar na faixa. `junction_gap` fica
+## com a distância da frente do carro até a faixa, para frear de forma progressiva.
 func _junction_gate(length: float, open: bool) -> bool:
+	junction_gap = INF
 	if route != _junction_route:
 		_release_junction()
 		_junction_route = route
 		_junction_list = JUNCTIONS.along(route)
 	if _held_junction != null and _route_ahead(_held_offset,length,open) < -JUNCTIONS.EXIT: _release_junction()
 	for junction in _junction_list:
-		var ahead := _route_ahead(float(junction.offset),length,open)
-		if ahead <= 0.0 or ahead > JUNCTIONS.APPROACH: continue
-		if _held_junction == junction.key: return false
-		if JUNCTIONS.try_enter(junction.key,get_instance_id()):
+		var offset := float(junction.offset)
+		var ahead := _route_ahead(offset,length,open)
+		if ahead <= -JUNCTIONS.EXIT or ahead > JUNCTIONS.APPROACH: continue
+		if _held_junction == junction.key:
+			if ahead <= 0.0: continue
+			return false
+		var gap := ahead-half_length-JUNCTIONS.stop_line(junction.key)
+		# Rumo de chegada: trecho da rota logo antes do centro (a curva começa depois).
+		var before := route.sample_baked(offset-6.0 if open else fposmod(offset-6.0,length),true)
+		var at := route.sample_baked(offset-1.0 if open else fposmod(offset-1.0,length),true)
+		# Não bloquear o cruzamento: com a saída ocupada por carro parado, quem entra
+		# fica no miolo e trava o eixo cruzado; era o nó que começava os engarrafamentos.
+		if gap > -1.5 and _sense_tick: _exit_blocked = _exit_occupied(offset,length,open)
+		if gap > -1.5 and _exit_blocked and _exit_wait < EXIT_WAIT_LIMIT:
+			_exit_wait += 1.0/Engine.physics_ticks_per_second
+			junction_gap = gap
+			return true
+		_exit_wait = 0.0
+		if JUNCTIONS.request(junction.key,get_instance_id(),at-before,gap,absf(speed)):
 			_release_junction()
 			_held_junction = junction.key
-			_held_offset = float(junction.offset)
+			_held_offset = offset
 			return false
+		junction_gap = gap
 		return true
 	return false
 
@@ -339,22 +443,37 @@ func _drive_traffic(delta: float) -> void:
 		speed = move_toward(speed,-1.5,8.0*delta)
 		return
 	sensor_clock -= delta
-	if sensor_clock <= 0:
+	_sense_tick = sensor_clock <= 0
+	if _sense_tick:
 		sensor_clock = 0.1
 		blocked = obstacle_ahead()
 		if unjam_time > 0.0 and blocked and blocker == get_meta("unjam_partner",null): blocked = false
+		if bypass_side != 0.0 and blocked and _body_speed(blocker) < 0.6 and _in_home_lane(blocker): blocked = false
 	unjam_time = maxf(0.0,unjam_time-delta)
+	bypass_retry = maxf(0.0,bypass_retry-delta)
 	blocked_time = blocked_time+delta if blocked else 0.0
+	stall_time = _stall_estimate()
+	# Sem progresso fora de fila de sinal: a limpeza tira o carro quando ninguém vê.
+	# Zera só com avanço real na rota; empurrar carcaça centímetro a centímetro não conta.
+	if absf(route_distance-_stuck_anchor) > 8.0:
+		stuck_time = 0.0
+		_stuck_anchor = route_distance
+	elif stall_time > 0.0 or unjam_time > 0.0 or bypass_side != 0.0: stuck_time += delta
+	if bypass_side != 0.0 and _sense_tick: _update_bypass()
 	if blocked_time > TRAFFIC_JAM_SECONDS:
 		var partner := _traffic_jam_partner()
 		if partner != null:
 			blocked_time = 0.0
-			if get_instance_id() < partner.get_instance_id():
+			# Quem está desviando pela contramão é o intruso: recua e deixa passar.
+			var i_yield: bool = bypass_side < 0.0 or (partner.get("bypass_side") == 0.0 and get_instance_id() > partner.get_instance_id())
+			if not i_yield:
 				unjam_time = 3.0
 				set_meta("unjam_partner",partner)
 			else:
 				backoff_time = 1.2
-		elif _pushable_obstacle(blocker):
+		elif bypass_retry <= 0.0 and bypass_side == 0.0 and stall_time > BYPASS_AFTER_SECONDS and _try_bypass():
+			blocked_time = 0.0
+		elif _pushable_obstacle(blocker) and (not _is_vehicle(blocker) or stall_time > BYPASS_AFTER_SECONDS*3.0):
 			# Adereço derrubado, lixeira, carcaça sem motorista: o trânsito empurrava
 			# nada e esperava para sempre. Segue devagar; a física de rua derruba o objeto.
 			blocked_time = 0.0
@@ -372,11 +491,21 @@ func _drive_traffic(delta: float) -> void:
 	var bend := absf((near_point-global_position).normalized().signed_angle_to((far_point-near_point).normalized(),Vector3.UP))
 	var desired_speed := lerpf(5.5,2.2,clampf(bend/1.0,0,1))
 	if unjam_time > 0.0: desired_speed = minf(desired_speed,2.5)
+	if bypass_side != 0.0: desired_speed = minf(desired_speed,BYPASS_SPEED)
 	if open: desired_speed = minf(desired_speed,maxf(0,(length-route_distance-1)*1.5))
-	var hold := blocked or junction_wait
-	speed = move_toward(speed,0.0 if hold else desired_speed,(12.0 if hold else 2.5)*delta)
+	# Sinal fechado: freia progressivamente até a faixa, em vez de travar a 12 m/s² a
+	# qualquer distância (o carro parava longe do cruzamento ou em cima da faixa).
+	if junction_wait: desired_speed = minf(desired_speed,sqrt(2.0*3.5*maxf(0.0,junction_gap-.4)))
+	var target_speed := 0.0 if blocked else desired_speed
+	var rate := 12.0 if blocked else (7.0 if target_speed < speed else 2.5)
+	speed = move_toward(speed,target_speed,rate*delta)
 	var lookahead := lerpf(3.5,1.7,clampf(bend,0,1))
 	var target := route.sample_baked(minf(route_distance+lookahead,length) if open else fposmod(route_distance+lookahead,length),true)
+	# Desvio: persegue a mesma rota deslocada para o lado, entrando e saindo aos poucos.
+	var blend_goal := 0.0 if _merging_back or bypass_side == 0.0 else 1.0
+	bypass_blend = move_toward(bypass_blend,blend_goal,delta/1.2)
+	if _merging_back and bypass_blend <= 0.0: _end_bypass()
+	if bypass_blend > 0.0: target += _route_right(route_distance+lookahead,length,open)*_bypass_shift()*bypass_blend
 	var direction := target-global_position
 	direction.y = 0
 	var desired := atan2(-direction.x,-direction.z)
@@ -384,6 +513,130 @@ func _drive_traffic(delta: float) -> void:
 	steering = clampf(angle_difference(rotation.y,desired),-0.48,0.48)
 	# Carro parado não esterça no lugar (e poupa a consulta de colisão por passo).
 	if absf(speed) > 0.2 and can_rotate(next_yaw): rotation.y = next_yaw
+
+## Desvio de obstáculo parado (viatura na faixa, carcaça, fila que não anda): antes o
+## trânsito só esperava, e um carro parado virava engarrafamento sem fim (2026-09-25).
+## Depois de BYPASS_AFTER_SECONDS travado, o carro procura a contramão (depois o
+## acostamento) livre por uns 25 m, contorna devagar e volta quando a própria faixa
+## está livre ao lado e à frente.
+const BYPASS_AFTER_SECONDS := 3.5
+const BYPASS_SPEED := 4.0
+const BYPASS_MAX_DISTANCE := 45.0
+const BYPASS_PROBES := [0.0, 5.0, 10.0, 16.0, 22.0]
+const MERGE_PROBES := [0.0, 4.0, 8.0]
+## Saída do cruzamento ocupada: espera isso no máximo. Carro estacionado perto da
+## saída não pode fechar a aproximação para sempre.
+const EXIT_WAIT_LIMIT := 8.0
+var _exit_wait := 0.0
+
+func _is_vehicle(target) -> bool:
+	return is_instance_valid(target) and target is Node and (target as Node).has_method("driver_seat_anchor")
+
+func _body_speed(target) -> float:
+	if not is_instance_valid(target): return 0.0
+	if _is_vehicle(target): return absf(float(target.get("speed")))
+	if target is CharacterBody3D: return (target as CharacterBody3D).velocity.length()
+	if target is RigidBody3D: return (target as RigidBody3D).linear_velocity.length()
+	return 0.0
+
+func _stall_estimate() -> float:
+	if junction_wait or not blocked or not is_instance_valid(blocker): return 0.0
+	if blocker is Node3D and blocker.get("traffic") == true:
+		var same_way := (-global_basis.z).dot(-(blocker as Node3D).global_basis.z) > 0.85
+		if same_way:
+			# Fila: vale o travamento de quem está na frente. Na fila do sinal ele é zero.
+			if blocker.get("junction_wait") == true or blocker.get("blocked") != true: return 0.0
+			return float(blocker.get("stall_time"))
+	if _body_speed(blocker) > 0.6: return 0.0
+	return blocked_time
+
+func _route_point(offset: float, length: float, open: bool) -> Vector3:
+	return route.sample_baked(clampf(offset,0.0,length) if open else fposmod(offset,length),true)
+
+func _route_right(offset: float, length: float, open: bool) -> Vector3:
+	var tangent := _route_point(offset+1.0,length,open)-_route_point(offset-1.0,length,open)
+	tangent.y = 0
+	if tangent.length_squared() < .0001: return global_basis.x
+	return tangent.normalized().cross(Vector3.UP)
+
+## Deslocamento lateral do desvio: faixa contrária inteira à esquerda; à direita só o
+## que cabe até o meio-fio.
+func _bypass_shift() -> float:
+	return -3.4 if bypass_side < 0.0 else 2.6
+
+## Casco livre na rota deslocada `shift` metros para a direita, a `probes` metros à frente.
+func _lane_clear(shift: float, probes: Array, mask := 7) -> bool:
+	var length := route.get_baked_length()
+	var open: bool = route.get_meta("traffic_open",false)
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = rotation_shape
+	query.collision_mask = mask
+	query.exclude = [get_rid()]
+	for distance in probes:
+		var at := route_distance+float(distance)
+		var right := _route_right(at,length,open)
+		var point := _route_point(at,length,open)+right*shift
+		query.transform = Transform3D(Basis(Vector3.UP,atan2(-right.z,right.x)),point+Vector3.UP*shape.position.y)
+		if not space.intersect_shape(query,1).is_empty(): return false
+	return true
+
+func _try_bypass() -> bool:
+	bypass_retry = 1.0
+	if route == null or str(get_meta("traffic_yield_state","")) != "": return false
+	var length := route.get_baked_length()
+	var open: bool = route.get_meta("traffic_open",false)
+	# Nunca desvia para dentro de um cruzamento: lá a contramão é a via cruzada.
+	for junction in _junction_list:
+		var ahead := _route_ahead(float(junction.offset),length,open)
+		if ahead > -JUNCTIONS.EXIT and ahead < 14.0: return false
+	for side in [-1.0, 1.0]:
+		bypass_side = side
+		if _lane_clear(_bypass_shift(),BYPASS_PROBES):
+			bypass_start = route_distance
+			_merging_back = false
+			return true
+	bypass_side = 0.0
+	return false
+
+## Corpo parado na faixa original (o que estamos contornando): o sensor frontal o
+## enxerga em diagonal durante o desvio e não deve frear o carro por isso.
+func _in_home_lane(target) -> bool:
+	if not target is Node3D: return false
+	var point: Vector3 = (target as Node3D).global_position
+	var length := route.get_baked_length()
+	var open: bool = route.get_meta("traffic_open",false)
+	var offset := route.get_closest_offset(point)
+	return absf((point-_route_point(offset,length,open)).dot(_route_right(offset,length,open))) < 1.7
+
+func _update_bypass() -> void:
+	if _merging_back: return
+	var length := route.get_baked_length()
+	var open: bool = route.get_meta("traffic_open",false)
+	var travelled := route_distance-bypass_start if open else fposmod(route_distance-bypass_start,length)
+	# Contramão fechada por quem vem de frente há muito tempo: desiste e volta.
+	if travelled > 4.0 and _lane_clear(0.0,MERGE_PROBES): _merging_back = true
+	elif travelled > BYPASS_MAX_DISTANCE or blocked_time > 6.0: _merging_back = true
+
+func _end_bypass() -> void:
+	bypass_side = 0.0
+	bypass_blend = 0.0
+	_merging_back = false
+	bypass_retry = 2.0
+
+## Carro parado logo depois do cruzamento, na nossa saída.
+func _exit_occupied(offset: float, length: float, open: bool) -> bool:
+	var at := offset+JUNCTIONS.EXIT+half_length+1.0
+	if open and at > length: return false
+	var right := _route_right(at,length,open)
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = rotation_shape
+	query.collision_mask = 4
+	query.exclude = [get_rid()]
+	query.transform = Transform3D(Basis(Vector3.UP,atan2(-right.z,right.x)),_route_point(at,length,open)+Vector3.UP*shape.position.y)
+	for hit in get_world_3d().direct_space_state.intersect_shape(query,4):
+		if _is_vehicle(hit.collider) and _body_speed(hit.collider) < 1.0: return true
+	return false
 
 func obstacle_ahead() -> bool:
 	var length := 2.2+speed*speed/20.0
@@ -439,6 +692,7 @@ func driver_door_anchor(side: int) -> Vector3:
 	return to_global(Vector3(float(side) * (half_width + .54), .04, _cab_z()))
 
 func driver_seat_anchor() -> Vector3:
+	if archetype.begins_with("bike_"): return to_global(_motorcycle_seat)
 	if boarding_class() == "bus":
 		return to_global(Vector3(-minf(.55, half_width * .4), .08 + boarding_step_height(), _cab_z() - .15))
 	if boarding_class() in ["truck", "tall"]:

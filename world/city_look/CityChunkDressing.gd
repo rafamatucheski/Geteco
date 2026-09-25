@@ -22,6 +22,7 @@ const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
@@ -142,8 +143,9 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			material = spec.material
 			shadows = false
 		elif kind == "signal_amber":
+			multimesh.use_colors = true
 			multimesh.mesh = _lens_mesh()
-			material = MATERIALS.signal_amber()
+			material = MATERIALS.signal_lens()
 			shadows = false
 		elif kind.begins_with("roofmat:"):
 			multimesh.mesh = _flat_quad()
@@ -181,6 +183,11 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		if not shadows: instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(instance)
 		built[kind] = multimesh
+		if kind == "signal_amber":
+			var lenses: Array = chunk.get_meta("signal_lenses", [])
+			for index in mini(lenses.size(), multimesh.instance_count):
+				JUNCTIONS.register_lens(multimesh, index, lenses[index][0], lenses[index][1])
+			chunk.remove_meta("signal_lenses")
 	_register_fragile(chunk, batches, built)
 
 
@@ -354,12 +361,13 @@ static func _lens_mesh() -> SphereMesh:
 
 
 # ---------------------------------------------------------------------------
-# 2. Cruzamentos: semáforo amarelo piscante onde há faixa de pedestre, placa
-# de PARE nos cruzamentos que a V1 deixou sem sinalização.
+# 2. Cruzamentos: semáforo onde há faixa de pedestre, placa de PARE nos
+# cruzamentos que a V1 deixou sem sinalização.
 #
-# O tráfego não tem lógica de fase de sinal; um semáforo vermelho/verde que os
-# carros ignoram ficaria errado. Amarelo piscante (atenção) é o que a rua real
-# usa quando o controlador não opera, e casa com o comportamento atual.
+# O semáforo é de verdade: cada poste registra o cruzamento e a faixa de parada em
+# TrafficJunctions, que alterna as fases e que o trânsito respeita. A lente mostra
+# a cor da aproximação que ela encara (antes piscava amarelo porque o trânsito
+# ignorava sinal).
 
 static func _junction_signage(context: Dictionary, batches: Dictionary, chunk: Node3D) -> void:
 	var geometry = context.geometry
@@ -391,6 +399,11 @@ static func _junction_signage(context: Dictionary, batches: Dictionary, chunk: N
 				var lens := point + basis * Vector3(-3.3, 4.55, 0.2)
 				if not batches.has("signal_amber"): batches["signal_amber"] = []
 				batches["signal_amber"].append(Transform3D(Basis.IDENTITY, lens))
+				var center3 := Vector3(center.x, 0.0, center.y)
+				JUNCTIONS.register_signal(center3, setback - 1.2)
+				var lenses: Array = chunk.get_meta("signal_lenses", [])
+				lenses.append([center3, Vector3(-d.x, 0.0, -d.y)])
+				chunk.set_meta("signal_lenses", lenses)
 			else:
 				_add(batches, "stop_sign", point, d)
 
