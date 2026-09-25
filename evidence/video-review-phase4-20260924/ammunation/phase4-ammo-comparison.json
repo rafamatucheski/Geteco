@@ -1,0 +1,668 @@
+{
+  "classification": "partial CPU optimization; first admission151.349ms/reentry114.780ms remain; FPS NOT certified",
+  "limits": [
+    "User game86396 and editor76560 remained active",
+    "Dynamic population at capture differs24/27 and vehicles26/30",
+    "FullSession hash changed concurrently; no Ammo art change in comparison",
+    "Limited60FPS and VSync enabled; GPU main viewport monitor only"
+  ],
+  "results": [
+    {
+      "phase": "first_entry",
+      "metric": "interval_ms",
+      "before_p95": 17.136,
+      "after_p95": 17.311,
+      "before_max": 186.219,
+      "after_max": 182.532,
+      "p95_change_pct": 1.0212418300653558
+    },
+    {
+      "phase": "first_entry",
+      "metric": "main_render_cpu_ms",
+      "before_p95": 1.10199999809265,
+      "after_p95": 1.16799998283386,
+      "before_max": 16.5179996490479,
+      "after_max": 18.4850006103516,
+      "p95_change_pct": 5.989109333524811
+    },
+    {
+      "phase": "first_entry",
+      "metric": "main_render_gpu_ms",
+      "before_p95": 3.51699995994568,
+      "after_p95": 3.68799996376038,
+      "before_max": 5.3600001335144,
+      "after_max": 5.59800004959106,
+      "p95_change_pct": 4.862098543138482
+    },
+    {
+      "phase": "first_entry",
+      "metric": "draw_calls",
+      "before_p95": 651.0,
+      "after_p95": 651.0,
+      "before_max": 651.0,
+      "after_max": 651.0,
+      "p95_change_pct": 0.0
+    },
+    {
+      "phase": "second_entry",
+      "metric": "interval_ms",
+      "before_p95": 17.004,
+      "after_p95": 18.036,
+      "before_max": 148.465,
+      "after_max": 147.525,
+      "p95_change_pct": 6.069160197600554
+    },
+    {
+      "phase": "second_entry",
+      "metric": "main_render_cpu_ms",
+      "before_p95": 1.10800004005432,
+      "after_p95": 1.14699995517731,
+      "before_max": 4.02799987792969,
+      "after_max": 4.08199977874756,
+      "p95_change_pct": 3.51984780804504
+    },
+    {
+      "phase": "second_entry",
+      "metric": "main_render_gpu_ms",
+      "before_p95": 3.83299994468689,
+      "after_p95": 4.71199989318848,
+      "before_max": 5.16699981689453,
+      "after_max": 5.67799997329712,
+      "p95_change_pct": 22.93242789424026
+    },
+    {
+      "phase": "second_entry",
+      "metric": "draw_calls",
+      "before_p95": 651.0,
+      "after_p95": 651.0,
+      "before_max": 651.0,
+      "after_max": 651.0,
+      "p95_change_pct": 0.0
+    },
+    {
+      "phase": "interior_steady_30s",
+      "metric": "interval_ms",
+      "before_p95": 17.257,
+      "after_p95": 17.481,
+      "before_max": 19.556,
+      "after_max": 21.588,
+      "p95_change_pct": 1.2980239902648183
+    },
+    {
+      "phase": "interior_steady_30s",
+      "metric": "main_render_cpu_ms",
+      "before_p95": 1.13699996471405,
+      "after_p95": 1.10199999809265,
+      "before_max": 1.65799999237061,
+      "after_max": 1.98500001430511,
+      "p95_change_pct": -3.0782733252065153
+    },
+    {
+      "phase": "interior_steady_30s",
+      "metric": "main_render_gpu_ms",
+      "before_p95": 4.13800001144409,
+      "after_p95": 4.17399978637695,
+      "before_max": 5.54899978637695,
+      "after_max": 5.26900005340576,
+      "p95_change_pct": 0.869980058803721
+    },
+    {
+      "phase": "interior_steady_30s",
+      "metric": "draw_calls",
+      "before_p95": 657.0,
+      "after_p95": 657.0,
+      "before_max": 657.0,
+      "after_max": 657.0,
+      "p95_change_pct": 0.0
+    }
+  ],
+  "before_construction": [
+    {
+      "adapter_after_art_ms": 2.188,
+      "art_ready_ms": 106.822,
+      "definition": "harbor_ammunation",
+      "load_before_model_ms": 4.169,
+      "native_ready_ms": 113.179,
+      "phase": "first_entry",
+      "room_start_usec": 55417343
+    },
+    {
+      "adapter_after_art_ms": 2.089,
+      "art_ready_ms": 103.815,
+      "definition": "harbor_ammunation",
+      "load_before_model_ms": 0.087,
+      "native_ready_ms": 105.991,
+      "phase": "second_entry",
+      "room_start_usec": 96458948
+    }
+  ],
+  "after_construction": [
+    {
+      "adapter_after_art_ms": 2.2,
+      "art_ready_ms": 96.63,
+      "definition": "harbor_ammunation",
+      "load_before_model_ms": 3.998,
+      "native_ready_ms": 102.828,
+      "phase": "first_entry",
+      "room_start_usec": 64506776
+    },
+    {
+      "adapter_after_art_ms": 2.086,
+      "art_ready_ms": 88.373,
+      "definition": "harbor_ammunation",
+      "load_before_model_ms": 0.094,
+      "native_ready_ms": 90.553,
+      "phase": "second_entry",
+      "room_start_usec": 105515920
+    }
+  ],
+  "before_context": {
+    "camera_size": 28.0,
+    "causal_headless": false,
+    "engine": "4.7.2-stable (official)",
+    "exterior_inventory": {
+      "lights": 90,
+      "materials": 1005,
+      "meshes": 6311,
+      "shadow_lights": 1,
+      "viewports": [],
+      "visible_lights": 1
+    },
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "interior_inventory": {
+      "lights": 90,
+      "materials": 1548,
+      "meshes": 6930,
+      "room_lights": 0,
+      "room_meshes": 630,
+      "shadow_lights": 1,
+      "viewports": [],
+      "visible_lights": 1
+    },
+    "max_fps": 60,
+    "msaa": 1,
+    "normal_settings": true,
+    "notes": "Main render CPU/GPU exclude unrelated viewports. TIME_PROCESS includes engine work and is not pure GDScript CPU. Wall intervals include pacing/waits; do not subtract overlapping monitors to infer wait time. First entry caches are process-cold, OS/driver caches may already be warm. Exclusivity verified externally; no personal save writes.",
+    "population": 24,
+    "renderer": "mobile",
+    "requested_population": 40,
+    "resolution": "(2560, 1440)",
+    "scene": "res://Main.tscn",
+    "seed": 21092026,
+    "time": 0.38,
+    "vehicles": 26,
+    "vsync": 1,
+    "weather": 0
+  },
+  "after_context": {
+    "camera_size": 28.0,
+    "causal_headless": false,
+    "engine": "4.7.2-stable (official)",
+    "exterior_inventory": {
+      "lights": 100,
+      "materials": 1046,
+      "meshes": 6653,
+      "shadow_lights": 1,
+      "viewports": [],
+      "visible_lights": 1
+    },
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "interior_inventory": {
+      "lights": 103,
+      "materials": 1592,
+      "meshes": 7298,
+      "room_lights": 0,
+      "room_meshes": 630,
+      "shadow_lights": 1,
+      "viewports": [],
+      "visible_lights": 1
+    },
+    "max_fps": 60,
+    "msaa": 1,
+    "normal_settings": true,
+    "notes": "Main render CPU/GPU exclude unrelated viewports. TIME_PROCESS includes engine work and is not pure GDScript CPU. Wall intervals include pacing/waits; do not subtract overlapping monitors to infer wait time. First entry caches are process-cold, OS/driver caches may already be warm. Exclusivity verified externally; no personal save writes.",
+    "population": 27,
+    "renderer": "mobile",
+    "requested_population": 40,
+    "resolution": "(2560, 1440)",
+    "scene": "res://Main.tscn",
+    "seed": 21092026,
+    "time": 0.38,
+    "vehicles": 30,
+    "vsync": 1,
+    "weather": 0
+  },
+  "before_hashes": {
+    "assets/regions/source/guns/ammunation/AmmunationArt.gd": "2c47d81f756716b94130fc5adfb70ecb9dba5ffd65527dfe7d7c7f5fdcab3eaa",
+    "runtime/FullSession.gd": "a862930c7633b656b06da200db2816067ca36dd224c58f209391166c908d2fc3",
+    "runtime/WeaponShopEntrance.gd": "be13031301e1365995bb7fbf0cd5548fb70ea41f021764396aecd187b3821acb",
+    "world/places/AmmunationModel.gd": "d45f393da06fb86d962a530e2f3aa11a06ee06060d4c557acfd9931056d8492a",
+    "world/places/NativePlace.gd": "67c6fa91dc4a65f4c35e5250eddf16030faba8d370961ed6d838f59e235ee200"
+  },
+  "after_hashes": {
+    "assets/regions/source/guns/ammunation/AmmunationArt.gd": "2c47d81f756716b94130fc5adfb70ecb9dba5ffd65527dfe7d7c7f5fdcab3eaa",
+    "assets/regions/source/scripts/player/WeaponFinish3D.gd": "1cbbdbbba2e591e420e88f86006ef2a9d729f5d00f81e6e7e64a823e54dc264b",
+    "runtime/FullSession.gd": "0ad7cc5d72f02cc79ae85721e960b8c60a3bf18691a62837033a0cd55ee024e6",
+    "runtime/WeaponShopEntrance.gd": "be13031301e1365995bb7fbf0cd5548fb70ea41f021764396aecd187b3821acb",
+    "world/places/AmmunationModel.gd": "d45f393da06fb86d962a530e2f3aa11a06ee06060d4c557acfd9931056d8492a",
+    "world/places/NativePlace.gd": "67c6fa91dc4a65f4c35e5250eddf16030faba8d370961ed6d838f59e235ee200"
+  },
+  "final_context": {
+    "camera_size": 28.0,
+    "causal_headless": false,
+    "engine": "4.7.2-stable (official)",
+    "exterior_inventory": {
+      "lights": 99,
+      "materials": 972,
+      "meshes": 6461,
+      "shadow_lights": 1,
+      "viewports": [],
+      "visible_lights": 1
+    },
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "interior_inventory": {
+      "lights": 102,
+      "materials": 1044,
+      "meshes": 7090,
+      "room_lights": 0,
+      "room_meshes": 614,
+      "shadow_lights": 1,
+      "viewports": [],
+      "visible_lights": 1
+    },
+    "max_fps": 60,
+    "msaa": 1,
+    "normal_settings": true,
+    "notes": "Main render CPU/GPU exclude unrelated viewports. TIME_PROCESS includes engine work and is not pure GDScript CPU. Wall intervals include pacing/waits; do not subtract overlapping monitors to infer wait time. First entry caches are process-cold, OS/driver caches may already be warm. Execution condition recorded explicitly; no personal save writes.",
+    "population": 28,
+    "renderer": "mobile",
+    "requested_population": 40,
+    "resolution": "(2560, 1440)",
+    "scene": "res://Main.tscn",
+    "seed": 21092026,
+    "time": 0.38,
+    "vehicles": 29,
+    "vsync": 1,
+    "weather": 0
+  },
+  "final_construction": [
+    {
+      "adapter_after_art_ms": 2.082,
+      "art_ready_ms": 77.552,
+      "definition": "harbor_ammunation",
+      "load_before_model_ms": 4.258,
+      "native_ready_ms": 83.892,
+      "phase": "first_entry",
+      "room_start_usec": 56711721
+    },
+    {
+      "adapter_after_art_ms": 2.043,
+      "art_ready_ms": 68.609,
+      "definition": "harbor_ammunation",
+      "load_before_model_ms": 0.093,
+      "native_ready_ms": 70.745,
+      "phase": "second_entry",
+      "room_start_usec": 97704522
+    }
+  ],
+  "final_hashes": {
+    "assets/regions/source/guns/ammunation/AmmunationArt.gd": "694954e0e8310dc6571482e3c0aedba78c6fa48b19e8e6ad5ba044f49af86888",
+    "assets/regions/source/scripts/player/WeaponFinish3D.gd": "510aa3240fd7a082a8eda563f68c7198096b9eca6e95a77cfc25db365bd797bf",
+    "runtime/FullSession.gd": "e21371de4766f1780a0bb7866b10b4c6ba2dbf5ce0d081eb005db7656348a205",
+    "runtime/WeaponShopEntrance.gd": "be13031301e1365995bb7fbf0cd5548fb70ea41f021764396aecd187b3821acb",
+    "world/places/AmmunationModel.gd": "d45f393da06fb86d962a530e2f3aa11a06ee06060d4c557acfd9931056d8492a",
+    "world/places/NativePlace.gd": "67c6fa91dc4a65f4c35e5250eddf16030faba8d370961ed6d838f59e235ee200"
+  },
+  "final_summaries": {
+    "exit": {
+      "draw_calls": {
+        "max": 635.0,
+        "mean": 398.89898989899,
+        "p50": 427.0,
+        "p95": 434.0,
+        "p99": 635.0,
+        "samples": 99
+      },
+      "interval_ms": {
+        "fps": 60.9869161503826,
+        "max": 21.492,
+        "mean": 16.3969595959596,
+        "over_33_3_ms": 0,
+        "over_66_7_ms": 0,
+        "p50": 16.659,
+        "p95": 17.206,
+        "p99": 20.972,
+        "samples": 99,
+        "seconds": 1.623299
+      },
+      "main_render_cpu_ms": {
+        "max": 1.48199999332428,
+        "mean": 0.848363637322127,
+        "p50": 0.842999994754791,
+        "p95": 1.09399998188019,
+        "p99": 1.1710000038147,
+        "samples": 99
+      },
+      "main_render_gpu_ms": {
+        "max": 11.5909996032715,
+        "mean": 4.28029293604571,
+        "p50": 3.5460000038147,
+        "p95": 8.63300037384033,
+        "p99": 11.5520000457764,
+        "samples": 99
+      },
+      "nodes": {
+        "max": 10337.0,
+        "mean": 9708.55555555555,
+        "p50": 9848.0,
+        "p95": 9928.0,
+        "p99": 10337.0,
+        "samples": 99
+      },
+      "physics_ms": {
+        "max": 9.377,
+        "mean": 7.21173737373737,
+        "p50": 5.855,
+        "p95": 9.377,
+        "p99": 9.377,
+        "samples": 99
+      },
+      "process_ms": {
+        "max": 85.17,
+        "mean": 55.6112222222222,
+        "p50": 85.17,
+        "p95": 85.17,
+        "p99": 85.17,
+        "samples": 99
+      },
+      "render_setup_cpu_ms": {
+        "max": 1.458,
+        "mean": 0.636959595959596,
+        "p50": 0.639,
+        "p95": 0.784,
+        "p99": 0.875,
+        "samples": 99
+      }
+    },
+    "first_entry": {
+      "draw_calls": {
+        "max": 635.0,
+        "mean": 510.857142857143,
+        "p50": 635.0,
+        "p95": 635.0,
+        "p99": 635.0,
+        "samples": 182
+      },
+      "interval_ms": {
+        "fps": 57.6377637561074,
+        "max": 151.349,
+        "mean": 17.3497362637363,
+        "over_33_3_ms": 2,
+        "over_66_7_ms": 1,
+        "p50": 16.67,
+        "p95": 17.453,
+        "p99": 18.184,
+        "samples": 182,
+        "seconds": 3.157652
+      },
+      "main_render_cpu_ms": {
+        "max": 16.3950004577637,
+        "mean": 0.834252753264301,
+        "p50": 0.732999980449677,
+        "p95": 0.971000015735626,
+        "p99": 1.37300002574921,
+        "samples": 182
+      },
+      "main_render_gpu_ms": {
+        "max": 5.54300022125244,
+        "mean": 2.04563735998594,
+        "p50": 1.61000001430511,
+        "p95": 3.87199997901917,
+        "p99": 4.99200010299683,
+        "samples": 182
+      },
+      "nodes": {
+        "max": 10365.0,
+        "mean": 10110.8626373626,
+        "p50": 10336.0,
+        "p95": 10336.0,
+        "p99": 10365.0,
+        "samples": 182
+      },
+      "physics_ms": {
+        "max": 13.171,
+        "mean": 8.57817582417583,
+        "p50": 7.583,
+        "p95": 13.171,
+        "p99": 13.171,
+        "samples": 182
+      },
+      "process_ms": {
+        "max": 116.147,
+        "mean": 44.3204725274725,
+        "p50": 14.274,
+        "p95": 116.147,
+        "p99": 116.147,
+        "samples": 182
+      },
+      "render_setup_cpu_ms": {
+        "max": 0.881,
+        "mean": 0.567115384615385,
+        "p50": 0.557,
+        "p95": 0.708,
+        "p99": 0.756,
+        "samples": 182
+      }
+    },
+    "interior_steady_30s": {
+      "draw_calls": {
+        "max": 641.0,
+        "mean": 637.681843420322,
+        "p50": 635.0,
+        "p95": 641.0,
+        "p99": 641.0,
+        "samples": 1801
+      },
+      "interval_ms": {
+        "fps": 60.0071282204395,
+        "max": 20.544,
+        "mean": 16.6646868406441,
+        "over_33_3_ms": 0,
+        "over_66_7_ms": 0,
+        "p50": 16.694,
+        "p95": 17.521,
+        "p99": 17.912,
+        "samples": 1801,
+        "seconds": 30.013101
+      },
+      "main_render_cpu_ms": {
+        "max": 1.54499995708466,
+        "mean": 0.756814547176827,
+        "p50": 0.736999988555908,
+        "p95": 0.908999979496002,
+        "p99": 1.03299999237061,
+        "samples": 1801
+      },
+      "main_render_gpu_ms": {
+        "max": 5.03200006484985,
+        "mean": 2.12549139260584,
+        "p50": 1.91999995708466,
+        "p95": 4.17999982833862,
+        "p99": 4.84299993515015,
+        "samples": 1801
+      },
+      "nodes": {
+        "max": 10337.0,
+        "mean": 10337.0,
+        "p50": 10337.0,
+        "p95": 10337.0,
+        "p99": 10337.0,
+        "samples": 1801
+      },
+      "physics_ms": {
+        "max": 11.214,
+        "mean": 6.55582787340368,
+        "p50": 6.343,
+        "p95": 9.563,
+        "p99": 11.214,
+        "samples": 1801
+      },
+      "process_ms": {
+        "max": 7.283,
+        "mean": 4.36788728484173,
+        "p50": 4.25,
+        "p95": 5.441,
+        "p99": 7.283,
+        "samples": 1801
+      },
+      "render_setup_cpu_ms": {
+        "max": 1.391,
+        "mean": 0.619347029428096,
+        "p50": 0.619,
+        "p95": 0.767,
+        "p99": 0.837,
+        "samples": 1801
+      }
+    },
+    "interior_warmup": {
+      "draw_calls": {
+        "max": 641.0,
+        "mean": 637.511627906977,
+        "p50": 635.0,
+        "p95": 641.0,
+        "p99": 641.0,
+        "samples": 301
+      },
+      "interval_ms": {
+        "fps": 60.0992256184829,
+        "max": 32.219,
+        "mean": 16.6391495016611,
+        "over_33_3_ms": 0,
+        "over_66_7_ms": 0,
+        "p50": 16.69,
+        "p95": 17.531,
+        "p99": 18.359,
+        "samples": 301,
+        "seconds": 5.008384
+      },
+      "main_render_cpu_ms": {
+        "max": 1.40699994564056,
+        "mean": 0.759239202321962,
+        "p50": 0.744000017642975,
+        "p95": 0.879999995231628,
+        "p99": 1.07400000095367,
+        "samples": 301
+      },
+      "main_render_gpu_ms": {
+        "max": 4.12900018692017,
+        "mean": 1.66250166069234,
+        "p50": 1.38399994373322,
+        "p95": 2.73900008201599,
+        "p99": 3.24000000953674,
+        "samples": 301
+      },
+      "nodes": {
+        "max": 10337.0,
+        "mean": 10336.7475083056,
+        "p50": 10337.0,
+        "p95": 10337.0,
+        "p99": 10337.0,
+        "samples": 301
+      },
+      "physics_ms": {
+        "max": 7.654,
+        "mean": 6.65274418604649,
+        "p50": 6.415,
+        "p95": 7.654,
+        "p99": 7.654,
+        "samples": 301
+      },
+      "process_ms": {
+        "max": 96.759,
+        "mean": 23.4639966777408,
+        "p50": 5.61,
+        "p95": 96.759,
+        "p99": 96.759,
+        "samples": 301
+      },
+      "render_setup_cpu_ms": {
+        "max": 0.952,
+        "mean": 0.627574750830565,
+        "p50": 0.618,
+        "p95": 0.768,
+        "p99": 0.838,
+        "samples": 301
+      }
+    },
+    "second_entry": {
+      "draw_calls": {
+        "max": 635.0,
+        "mean": 538.179347826087,
+        "p50": 635.0,
+        "p95": 635.0,
+        "p99": 635.0,
+        "samples": 184
+      },
+      "interval_ms": {
+        "fps": 58.6135848450754,
+        "max": 114.78,
+        "mean": 17.0608913043478,
+        "over_33_3_ms": 1,
+        "over_66_7_ms": 1,
+        "p50": 16.619,
+        "p95": 17.37,
+        "p99": 17.62,
+        "samples": 184,
+        "seconds": 3.139204
+      },
+      "main_render_cpu_ms": {
+        "max": 2.17000007629395,
+        "mean": 0.783445652088393,
+        "p50": 0.754000008106232,
+        "p95": 0.980000019073486,
+        "p99": 1.10199999809265,
+        "samples": 184
+      },
+      "main_render_gpu_ms": {
+        "max": 6.21400022506714,
+        "mean": 1.99309239212586,
+        "p50": 1.25,
+        "p95": 3.90700006484985,
+        "p99": 6.06899976730347,
+        "samples": 184
+      },
+      "nodes": {
+        "max": 10613.0,
+        "mean": 10400.0706521739,
+        "p50": 10613.0,
+        "p95": 10613.0,
+        "p99": 10613.0,
+        "samples": 184
+      },
+      "physics_ms": {
+        "max": 6.162,
+        "mean": 5.81983695652173,
+        "p50": 6.0,
+        "p95": 6.162,
+        "p99": 6.162,
+        "samples": 184
+      },
+      "process_ms": {
+        "max": 91.391,
+        "mean": 34.0436195652173,
+        "p50": 6.75,
+        "p95": 91.391,
+        "p99": 91.391,
+        "samples": 184
+      },
+      "render_setup_cpu_ms": {
+        "max": 0.952,
+        "mean": 0.648070652173913,
+        "p50": 0.639,
+        "p95": 0.834,
+        "p99": 0.887,
+        "samples": 184
+      }
+    }
+  }
+}

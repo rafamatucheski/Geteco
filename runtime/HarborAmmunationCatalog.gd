@@ -70,16 +70,24 @@ func _build_catalog() -> void:
 		button.custom_minimum_size.y = 34
 		var first: String = ["pistol", "shotgun", "knife", "grenade", "armor"][index]
 		button.pressed.connect(func(): selection = stock.find(first); change_selection(0))
+		button.toggle_mode = true
+		style_button(button)
 		categories.add_child(button)
 		category_buttons.append(button)
 	caption = Label.new()
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	caption.add_theme_font_size_override("font_size", 23)
+	caption.add_theme_color_override("font_color", ART.CREAM)
 	box.add_child(caption)
+	# Vídeo 24/09 (item 32): armas escuras sumiam no painel escuro. Um fundo
+	# 2D claro atrás do SubViewport transparente resolve sem custo 3D extra.
+	var stage := PanelContainer.new()
+	stage.add_theme_stylebox_override("panel", stage_style())
+	box.add_child(stage)
 	var container := SubViewportContainer.new()
 	container.custom_minimum_size = Vector2(720, 250)
 	container.stretch = true
-	box.add_child(container)
+	stage.add_child(container)
 	preview = SubViewport.new()
 	preview.size = Vector2i(720, 250)
 	preview.own_world_3d = true
@@ -107,6 +115,7 @@ func _build_catalog() -> void:
 	feedback = Label.new()
 	feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	feedback.custom_minimum_size.y = 56
+	feedback.add_theme_color_override("font_color", Color("e4ece8"))
 	box.add_child(feedback)
 	var row := HBoxContainer.new()
 	box.add_child(row)
@@ -115,6 +124,7 @@ func _build_catalog() -> void:
 		button.text = words
 		button.custom_minimum_size.y = 38
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		style_button(button)
 		row.add_child(button)
 		match words:
 			"◀ ANTERIOR": button.pressed.connect(func(): change_selection(-1))
@@ -126,6 +136,7 @@ func _build_catalog() -> void:
 	ammo_button = Button.new()
 	ammo_button.custom_minimum_size.y = 34
 	ammo_button.pressed.connect(purchase_ammo)
+	style_button(ammo_button)
 	box.add_child(ammo_button)
 	var customization_row := HBoxContainer.new()
 	customization_row.add_theme_constant_override("separation", 10)
@@ -145,6 +156,13 @@ func _build_catalog() -> void:
 	var personalize_hover := personalize_style.duplicate() as StyleBoxFlat
 	personalize_hover.bg_color = ART.RED
 	workbench_button.add_theme_stylebox_override("hover", personalize_hover)
+	workbench_button.add_theme_stylebox_override("focus", personalize_hover)
+	var personalize_disabled := personalize_style.duplicate() as StyleBoxFlat
+	personalize_disabled.bg_color = Color("3b2826")
+	personalize_disabled.border_color = Color("8a7b6a")
+	workbench_button.add_theme_stylebox_override("disabled", personalize_disabled)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: workbench_button.add_theme_color_override(key, ART.CREAM)
+	workbench_button.add_theme_color_override("font_disabled_color", Color("c2b8a6"))
 	workbench_button.pressed.connect(open_workbench)
 	customization_row.add_child(workbench_button)
 	customize_button = Button.new()
@@ -152,6 +170,7 @@ func _build_catalog() -> void:
 	customize_button.custom_minimum_size.y = 46
 	customize_button.add_theme_font_size_override("font_size", 14)
 	customize_button.pressed.connect(customize_flashlight)
+	style_button(customize_button)
 	customization_row.add_child(customize_button)
 	workbench = WORKBENCH.new()
 	workbench.configure(session)
@@ -159,7 +178,9 @@ func _build_catalog() -> void:
 	workbench.closed.connect(func():
 		panel.show()
 		preview.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
-		if active: change_selection(0))
+		if active:
+			change_selection(0)
+			workbench_button.grab_focus())
 	preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 func open_catalog() -> void:
@@ -226,23 +247,38 @@ func data() -> Dictionary:
 	if stock[selection] == "armor": return {"label":"COLETE BALÍSTICO", "price":500}
 	return session.world.gameplay.weapon_data(stock[selection])
 
+## Linha de preço/posse do título. Vídeo 24/09 (item 33): a pistola possuída
+## mostrava "$0" e a MP5 possuída "$1200", misturando tabela com posse. Arma já
+## possuída diz isso; preço zero é o item inicial do catálogo, não promoção.
+func price_status(item: Dictionary, owned: bool, armor: bool) -> String:
+	var price := int(item.get("price", 0))
+	if owned: return "PROTEÇÃO COMPLETA" if armor else "JÁ POSSUI"
+	return "ITEM INICIAL • $0" if price == 0 else "$%d" % price
+
 func refresh(notice := "") -> void:
 	var id: String = stock[selection]
 	var item := data()
-	caption.text = "%s   /   $%d" % [item.get("label", id), item.get("price", 0)]
 	var armor := id == "armor"
 	var owned: bool = session.world.gameplay.armor >= 100 if armor else session.state.economy.owns_weapon(id)
 	var unlocked: bool = armor or session.state.economy.is_weapon_unlocked(id)
-	buy.disabled = owned or not unlocked or session.state.economy.balance < int(item.get("price", 0))
-	buy.text = ("PROTEÇÃO COMPLETA" if armor else "JÁ POSSUI") if owned else ("BLOQUEADA" if not unlocked else "COMPRAR • $%d" % item.price)
+	var price := int(item.get("price", 0))
+	var short: bool = session.state.economy.balance < price
+	caption.text = "%s   /   %s" % [item.get("label", id), price_status(item, owned, armor)]
+	buy.disabled = owned or not unlocked or short
+	if owned: buy.text = "PROTEÇÃO COMPLETA" if armor else "JÁ POSSUI"
+	elif not unlocked: buy.text = "BLOQUEADA"
+	elif short: buy.text = "SALDO INSUFICIENTE • $%d" % price
+	else: buy.text = "COMPRAR • $%d" % price
 	var info := "Proteção: %d / 100 • Reposição de até 100 pontos" % session.world.gameplay.armor if armor else "Dano: %d • Capacidade: %d" % [item.get("damage", 0), maxi(0, item.get("magazine_size", 0))]
-	feedback.text = "Saldo: $%d  •  %s\nVance: %s" % [session.state.economy.balance, info, item.get("discovery_hint", "") if not unlocked else "Bem-vindo. Escolha uma categoria; eu te mostro o equipamento."]
+	var hint: String = item.get("discovery_hint", "") if not unlocked else "Bem-vindo. Escolha uma categoria; eu te mostro o equipamento."
+	if unlocked and not owned and short: hint = "Faltam $%d para esta compra." % (price - session.state.economy.balance)
+	feedback.text = "Saldo: $%d  •  %s\nVance: %s" % [session.state.economy.balance, info, hint]
 	if not notice.is_empty(): feedback.text = notice + "\nSaldo: $%d" % session.state.economy.balance
 	var rounds := maxi(0, int(item.get("magazine_size", 0))) * 2
-	var price := ammo_price(rounds)
+	var ammo_cost := ammo_price(rounds)
 	ammo_button.visible = rounds > 0 and not armor
-	ammo_button.text = "REPOR +%d %s • $%d" % [rounds, "GRANADAS" if id == "grenade" else "MUNIÇÕES", price]
-	ammo_button.disabled = not owned or session.state.economy.balance < price
+	ammo_button.text = "REPOR +%d %s • $%d" % [rounds, "GRANADAS" if id == "grenade" else "MUNIÇÕES", ammo_cost]
+	ammo_button.disabled = not owned or session.state.economy.balance < ammo_cost
 	var compatible := id in CUSTOM.COMPATIBLE
 	var customization: Dictionary = session.world.gameplay.customization
 	customize_button.visible = compatible
@@ -251,7 +287,15 @@ func refresh(notice := "") -> void:
 	customize_button.disabled = not owned or (not CUSTOM.owns(customization, id, "flashlight") and session.state.economy.balance < CUSTOM.PRICE)
 	customize_button.text = "REMOVER LANTERNA" if CUSTOM.installed(customization, id) else ("INSTALAR LANTERNA" if CUSTOM.owns(customization, id, "flashlight") else "INSTALAR LANTERNA • $%d" % CUSTOM.PRICE)
 	var category := 4 if armor else (3 if id in ["grenade", "rpg"] else (2 if id in ["knife", "knuckles", "bat", "axe"] else (0 if id in ["pistol", "magnum"] else 1)))
-	for i in category_buttons.size(): category_buttons[i].modulate = ART.CREAM if i == category else Color("8faaa3")
+	# Aba ativa por estado pressionado, não por modulate: o modulate cinza
+	# escurecia texto e fundo das abas inativas até ficarem ilegíveis.
+	for i in category_buttons.size(): category_buttons[i].set_pressed_no_signal(i == category)
+
+func style_button(button: Button) -> void:
+	WORKBENCH.style_button(button)
+
+func stage_style() -> StyleBoxFlat:
+	return WORKBENCH.stage_style()
 
 func ammo_price(rounds: int) -> int:
 	return maxi(40, rounds * (60 if stock[selection] in ["grenade", "rpg"] else 2))

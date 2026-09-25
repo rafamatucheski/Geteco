@@ -1,6 +1,9 @@
 extends RefCounted
 ## Small, shared model finishing pass. Gameplay anchors and moving parts stay intact.
 const GEO = preload("res://assets/regions/source/scripts/player/WeaponPresentation3D.gd")
+# Immutable local geometry, bounded independently of weapon instances.
+static var _bevel_meshes: Dictionary = {}
+const BEVEL_CACHE_LIMIT := 256
 
 static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 	if id == "fists": return
@@ -30,7 +33,9 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 		else:
 			for z in [-0.20,-0.176,-0.152,-0.128,-0.104]:
 				GEO._box(root,"ForeEndVent",Vector3(0,0.014,z),Vector3(0.048,0.018,0.008),rubber)
-				GEO._box(root,"RailTooth",Vector3(0,0.048,z),Vector3(0.034,0.009,0.009),steel)
+				# The SMG receiver ends at -.18; the rifle's forward tooth floats over its exposed barrel.
+				if id not in ["smg", "micro_smg"] or z >= -.18:
+					GEO._box(root,"RailTooth",Vector3(0,0.048,z),Vector3(0.034,0.009,0.009),steel)
 			GEO._box(root,"ButtPad",Vector3(0,0,0.247 if id == "m4a1" else 0.187),Vector3(0.044,0.095,0.008),rubber)
 			if id == "m4a1":
 				var lens := GEO._mat(Color("346269"),0.45,0.22)
@@ -103,6 +108,7 @@ static func _finish_meshes(root: Node) -> void:
 		_finish_meshes(child)
 
 static func _beveled_box(size: Vector3) -> ArrayMesh:
+	if _bevel_meshes.has(size): return _bevel_meshes[size]
 	var half := size * 0.5
 	var inset := minf(0.003, minf(size.x, minf(size.y,size.z)) * 0.18)
 	var core := half - Vector3.ONE * inset
@@ -140,7 +146,9 @@ static func _beveled_box(size: Vector3) -> ArrayMesh:
 					p[axis] = half[axis]
 					points.append(p*Vector3(x,y,z))
 				_face(st,points)
-	return st.commit()
+	var mesh := st.commit()
+	if _bevel_meshes.size() < BEVEL_CACHE_LIMIT: _bevel_meshes[size] = mesh
+	return mesh
 
 static func _face(st: SurfaceTool, points: Array[Vector3]) -> void:
 	var normal := (points[1]-points[0]).cross(points[2]-points[0]).normalized()
@@ -171,25 +179,62 @@ static func _batch_static(root: Node3D) -> void:
 			if material == null: continue
 			var key := material.get_instance_id()
 			if not batches.has(key):
-				var st := SurfaceTool.new()
-				st.begin(Mesh.PRIMITIVE_TRIANGLES)
-				st.set_material(material)
-				batches[key] = st
-			var st: SurfaceTool = batches[key]
+				var merged: Array = []
+				merged.resize(Mesh.ARRAY_MAX)
+				merged[Mesh.ARRAY_INDEX] = PackedInt32Array()
+				batches[key] = {"arrays": merged, "material": material}
+			var merged: Array = batches[key].arrays
 			var arrays: Array = child.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var previous_count: int = merged[Mesh.ARRAY_VERTEX].size() if merged[Mesh.ARRAY_VERTEX] != null else 0
+			# Transform shared vertices once, not once for each triangle corner.
+			arrays[Mesh.ARRAY_VERTEX] = transform * vertices
+			var normal_basis := transform.basis.inverse().transposed()
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+			for i in normals.size(): normals[i] = (normal_basis * normals[i]).normalized()
+			arrays[Mesh.ARRAY_NORMAL] = normals
+			if arrays[Mesh.ARRAY_TANGENT] != null:
+				var tangents: PackedFloat32Array = arrays[Mesh.ARRAY_TANGENT]
+				var handedness := -1.0 if transform.basis.determinant() < 0 else 1.0
+				for i in range(0, tangents.size(), 4):
+					var tangent := (transform.basis * Vector3(tangents[i], tangents[i+1], tangents[i+2])).normalized()
+					tangents[i] = tangent.x
+					tangents[i+1] = tangent.y
+					tangents[i+2] = tangent.z
+					tangents[i+3] *= handedness
+				arrays[Mesh.ARRAY_TANGENT] = tangents
+			# Keep optional UV/color data when a material combines primitive types.
+			for channel in Mesh.ARRAY_INDEX:
+				if arrays[channel] == null and merged[channel] == null: continue
+				var stride := 4 if channel in [Mesh.ARRAY_TANGENT, Mesh.ARRAY_BONES, Mesh.ARRAY_WEIGHTS] else 1
+				var destination = merged[channel]
+				if destination == null:
+					destination = arrays[channel].slice(0, 0)
+					destination.resize(previous_count * stride)
+					if channel == Mesh.ARRAY_COLOR: destination.fill(Color.WHITE)
+				var incoming = arrays[channel]
+				if incoming == null:
+					incoming = destination.slice(0, 0)
+					incoming.resize(vertices.size() * stride)
+					if channel == Mesh.ARRAY_COLOR: incoming.fill(Color.WHITE)
+				destination.append_array(incoming)
+				merged[channel] = destination
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
-			for i in (indices.size() if not indices.is_empty() else vertices.size()):
-				var idx: int = indices[i] if not indices.is_empty() else i
-				st.set_normal((transform.basis.inverse().transposed()*normals[idx]).normalized())
-				st.add_vertex(transform*vertices[idx])
+			var merged_indices: PackedInt32Array = merged[Mesh.ARRAY_INDEX]
+			if indices.is_empty():
+				for i in vertices.size(): merged_indices.append(previous_count + i)
+			else:
+				for index in indices: merged_indices.append(previous_count + index)
+			merged[Mesh.ARRAY_INDEX] = merged_indices
 		child.get_parent().remove_child(child)
 		child.free()
 	for key in batches:
 		var part := MeshInstance3D.new()
 		part.name = "FinishedMaterial_" + str(key)
-		part.mesh = batches[key].commit()
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, batches[key].arrays)
+		mesh.surface_set_material(0, batches[key].material)
+		part.mesh = mesh
 		root.add_child(part)
 
 static func _local_transform(node: Node3D, root: Node3D) -> Transform3D:

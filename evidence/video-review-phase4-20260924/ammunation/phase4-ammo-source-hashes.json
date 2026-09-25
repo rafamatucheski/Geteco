@@ -1,0 +1,8 @@
+{
+  "assets/regions/source/scripts/player/WeaponFinish3D.gd": "510aa3240fd7a082a8eda563f68c7198096b9eca6e95a77cfc25db365bd797bf",
+  "assets/regions/source/guns/ammunation/AmmunationArt.gd": "694954e0e8310dc6571482e3c0aedba78c6fa48b19e8e6ad5ba044f49af86888",
+  "tests/measure/video_phase4_ammunation.gd": "a7694615dfc1c69b0a87130c3f747efd4c9f7cb974cc1105ca61101270d5ebcd",
+  "tests/measure/video_phase4_art_cost.gd": "0417919b54811ebb6e1a6e2897f065135504410afc8beb5266ba27e109b33bf5",
+  "tests/test_video_phase4_weapon_batch.gd": "37d812835ce7b34fc76b463959c685787c08a5bb1b4e5f82ebc51b1c1d4f7203",
+  "tests/test_video_phase4_art_cache.gd": "c7c60989bdc6a5e1aa5b17485734728d30f09c4466daeb65dfdee51a296006aa"
+}

@@ -6,9 +6,44 @@ const RED = Color("a3322d")
 const INK = Color("222b2d")
 const CREAM = Color("eee1bf")
 const OLIVE = Color("626b46")
+# Shared immutable kit resources; callers request a unique material to mutate it.
+static var _box_meshes: Dictionary = {}
+static var _box_materials: Dictionary = {}
+static var _bevel_meshes: Dictionary = {}
+const GEOMETRY_CACHE_LIMIT := 256
+const MATERIAL_CACHE_LIMIT := 64
+# Item montado e já agrupado por WeaponFinish, mantido fora da árvore. Medição
+# 25/09 (evidence/claude-ammo-performance-20260925): as caixas da sala custavam
+# ~2,5 ms, mas remontar as armas expostas a cada visita custava ~80 ms. Cada
+# visita agora duplica os nós prontos; malhas e materiais seguem compartilhados
+# como nos caches acima (personalização duplica material antes de alterar).
+static var _item_templates: Dictionary = {}
+const ITEM_CACHE_LIMIT := 32
+# Mantém viva a variante de shader transparente do vidro do balcão. Cada sala
+# recebe cópia exclusiva; sem esta referência a variante era descartada junto
+# com a sala anterior e recompilada a cada entrada (~20 ms medidos em 25/09).
+static var _glass_template: StandardMaterial3D
 
-static func box(root: Node3D, size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	return P.piece(root, size, pos, color)
+static func box(root: Node3D, size: Vector3, pos: Vector3, color: Color, unique_material := false) -> MeshInstance3D:
+	var mesh: BoxMesh = _box_meshes.get(size)
+	if mesh == null:
+		mesh = BoxMesh.new()
+		mesh.size = size
+		if _box_meshes.size() < GEOMETRY_CACHE_LIMIT: _box_meshes[size] = mesh
+	# Color is the only variable material input: metallic=0, roughness=.85,
+	# opaque and no textures. Customization duplicates before recoloring.
+	var material: StandardMaterial3D = null if unique_material else _box_materials.get(color)
+	if material == null:
+		material = StandardMaterial3D.new()
+		material.albedo_color = color
+		material.roughness = .85
+		if not unique_material and _box_materials.size() < MATERIAL_CACHE_LIMIT: _box_materials[color] = material
+	var part := MeshInstance3D.new()
+	part.mesh = mesh
+	part.material_override = material
+	part.position = pos
+	root.add_child(part)
+	return part
 
 static func text(root: Node3D, words: String, pos: Vector3, pixels := .009, color := CREAM) -> Label3D:
 	var label := Label3D.new()
@@ -40,6 +75,56 @@ static func target(root: Node3D, pos: Vector3, radius: float) -> void:
 	box(root, Vector3(.025,radius*2.5,.025), pos, CREAM)
 
 static func item(root: Node3D, id: String) -> void:
+	var template: Dictionary = _item_templates.get(id, {})
+	if template.is_empty():
+		var built := Node3D.new()
+		_build_item(built, id)
+		var muzzle: Variant = built.get_meta("weapon_muzzle") if built.has_meta("weapon_muzzle") else null
+		if _item_templates.size() >= ITEM_CACHE_LIMIT:
+			_adopt_children(built, root)
+			if muzzle != null: root.set_meta("weapon_muzzle", muzzle)
+			return
+		# PackedScene guarda só recursos: nenhum nó ou instância de render fica
+		# viva fora da árvore entre visitas.
+		_own(built, built)
+		var scene := PackedScene.new()
+		scene.pack(built)
+		template = {"scene":scene, "muzzle":muzzle}
+		_item_templates[id] = template
+		_adopt_children(built, root)
+	else:
+		_adopt_children(template.scene.instantiate(), root)
+	if template.muzzle != null: root.set_meta("weapon_muzzle", template.muzzle)
+
+static func _own(node: Node, owner: Node) -> void:
+	for child in node.get_children():
+		child.owner = owner
+		_own(child, owner)
+
+static func _adopt_children(source: Node, root: Node3D) -> void:
+	for child in source.get_children():
+		source.remove_child(child)
+		_clear_owner(child)
+		root.add_child(child)
+	source.free()
+
+static func _clear_owner(node: Node) -> void:
+	node.owner = null
+	for child in node.get_children(): _clear_owner(child)
+
+## Aquece a Ammu-Nation fora da entrada (tela de carregamento/ociosidade):
+## monta uma sala descartável de cada variante, o que deixa prontos os modelos
+## das armas e retém as variantes de shader (caixas, vidro). Retorna o tempo
+## gasto; depois de aquecida, a chamada custa só a montagem leve da sala.
+static func prewarm() -> float:
+	var started := Time.get_ticks_usec()
+	for mountain in [false, true]:
+		var scratch := Node3D.new()
+		room(scratch, mountain)
+		scratch.free()
+	return (Time.get_ticks_usec() - started) / 1000.0
+
+static func _build_item(root: Node3D, id: String) -> void:
 	if id == "armor":
 		box(root,Vector3(.46,.48,.17),Vector3(0,0,0),OLIVE)
 		for side in [-1,1]:
@@ -68,7 +153,7 @@ static func item(root: Node3D, id: String) -> void:
 		root.add_child(ring)
 		return
 	if id in ["knife","axe","knuckles","bat","hunting_rifle","rpg"]: return
-	# Machined details at display scale: rails, ejection port, screws and trigger guard.
+	# Machined details at display scale: rails, ejection port and screws.
 	for side in [-1,1]:
 		box(root,Vector3(.006,.023,.055),Vector3(side*.026,.022,-.025),Color("111619"))
 		for z in [-.048,.015]:
@@ -76,8 +161,11 @@ static func item(root: Node3D, id: String) -> void:
 	if id in ["ak47","m4a1","smg"]:
 		for i in 7:
 			box(root,Vector3(.054,.007,.008),Vector3(0,.052,-.11+i*.018),INK)
-	box(root,Vector3(.012,.06,.012),Vector3(0,-.063,-.031),INK)
-	box(root,Vector3(.012,.012,.07),Vector3(0,-.091,.0),INK)
+	# Other firearms already include their fitted guard in the authored model.
+	# Adding this generic pair again leaves a loose U below the pistol grip.
+	if id == "flamethrower":
+		box(root,Vector3(.012,.06,.012),Vector3(0,-.063,-.031),INK)
+		box(root,Vector3(.012,.012,.07),Vector3(0,-.091,.0),INK)
 	if id in ["shotgun","sawed_off"]:
 		for i in 7: box(root,Vector3(.056,.055,.005),Vector3(0,-.01,-.21+i*.016),Color("69432b"))
 	if id in ["ak47","m4a1","smg"]:
@@ -91,6 +179,7 @@ static func item(root: Node3D, id: String) -> void:
 			P.piece(root,Vector3(.015,.015,.004),Vector3(sin(angle)*.020,.01+cos(angle)*.020,-.043),Color("111719"),true)
 
 static func bevel_box(size: Vector3) -> ArrayMesh:
+	if _bevel_meshes.has(size): return _bevel_meshes[size]
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var profile := [Vector2(-.35,-.5),Vector2(.35,-.5),Vector2(.5,-.35),Vector2(.5,.35),Vector2(.35,.5),Vector2(-.35,.5),Vector2(-.5,.35),Vector2(-.5,-.35)]
@@ -108,7 +197,9 @@ static func bevel_box(size: Vector3) -> ArrayMesh:
 	for i in range(1,7):
 		for vertex in [rings[0][0],rings[0][i+1],rings[0][i],rings[3][0],rings[3][i],rings[3][i+1]]: surface.add_vertex(vertex)
 	surface.generate_normals()
-	return surface.commit()
+	var mesh := surface.commit()
+	if _bevel_meshes.size() < GEOMETRY_CACHE_LIMIT: _bevel_meshes[size] = mesh
+	return mesh
 
 static func gunsmith(root: Node3D) -> Node3D:
 	var npc := Node3D.new()
@@ -118,14 +209,23 @@ static func gunsmith(root: Node3D) -> Node3D:
 	npc.scale = Vector3(.70, 1.8 / 1.91, .85)
 	root.add_child(npc)
 	var skin := Color("b78360")
+	var shield_pivots: Array = []
 	for side in [-1,1]:
 		box(npc,Vector3(.20,.76,.24),Vector3(side*.14,.51,0),OLIVE)
 		box(npc,Vector3(.23,.20,.36),Vector3(side*.14,.10,.07),INK)
 		box(npc,Vector3(.23,.22,.035),Vector3(side*.14,.54,.14),Color("48543c"))
-		var arm := box(npc,Vector3(.20,.48,.23),Vector3(side*.36,1.24,0),OLIVE)
+		# Keep the original meshes/rest pose; local joints let Vance shield his head.
+		var shoulder := Node3D.new()
+		shoulder.position = Vector3(side*.36,1.48,0)
+		npc.add_child(shoulder)
+		var arm := box(shoulder,Vector3(.20,.48,.23),Vector3(0,-.24,0),OLIVE)
 		arm.rotation.z = side*.10
-		box(npc,Vector3(.16,.27,.17),Vector3(side*.38,.94,.04),skin)
-		box(npc,Vector3(.17,.12,.20),Vector3(side*.38,.80,.07),INK)
+		var elbow := Node3D.new()
+		elbow.position = Vector3(side*.02,-.48,.04)
+		shoulder.add_child(elbow)
+		box(elbow,Vector3(.16,.27,.17),Vector3(0,-.06,0),skin)
+		box(elbow,Vector3(.17,.12,.20),Vector3(0,-.20,.03),INK)
+		shield_pivots.append({"shoulder":shoulder,"elbow":elbow,"side":side})
 		for row in 3:
 			box(npc,Vector3(.13,.055,.025),Vector3(side*.14,.35+row*.15,.128),Color("827b50"))
 	box(npc,Vector3(.56,.63,.34),Vector3(0,1.19,0),OLIVE)
@@ -147,6 +247,7 @@ static func gunsmith(root: Node3D) -> Node3D:
 	P.piece(npc,Vector3(.06,.08,.065),Vector3(0,1.67,.17),skin.lightened(.1),true)
 	box(npc,Vector3(.18,.045,.025),Vector3(0,1.60,.135),Color("56473b"))
 	text(npc,"VANCE",Vector3(.12,1.40,.24),.00055)
+	npc.set_meta("workplace_shield_pivots", shield_pivots)
 	return npc
 
 static func room(root: Node3D, mountain := false) -> void:
@@ -177,9 +278,14 @@ static func room(root: Node3D, mountain := false) -> void:
 	var counter_start := root.get_child_count()
 	box(root,Vector3(5,.64,1.1),Vector3(0,.32,-2.2),RED)
 	box(root,Vector3(5.12,.10,1.18),Vector3(0,.67,-2.2),INK)
-	var glass := box(root,Vector3(4.92,.32,.025),Vector3(0,.86,-1.64),Color("a5d2ca"))
-	glass.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glass.material_override.albedo_color.a = .18
+	var glass := box(root,Vector3(4.92,.32,.025),Vector3(0,.86,-1.64),Color("a5d2ca"),true)
+	if _glass_template == null:
+		_glass_template = glass.material_override.duplicate()
+		_glass_template.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_glass_template.albedo_color.a = .18
+		# get_rid() cria e retém a variante; um material sem RID não a segura.
+		_glass_template.get_rid()
+	glass.material_override = _glass_template.duplicate()
 	for x in [-2.5,0,2.5]: box(root,Vector3(.05,.4,1.12),Vector3(x,.87,-2.2),INK)
 	var top := box(root,Vector3(5.16,.04,1.2),Vector3(0,1.08,-2.2),Color("a5d2ca"))
 	top.material_override = glass.material_override

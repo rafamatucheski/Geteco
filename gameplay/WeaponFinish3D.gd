@@ -30,7 +30,9 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 		else:
 			for z in [-0.20,-0.176,-0.152,-0.128,-0.104]:
 				GEO._box(root,"ForeEndVent",Vector3(0,0.014,z),Vector3(0.048,0.018,0.008),rubber)
-				GEO._box(root,"RailTooth",Vector3(0,0.048,z),Vector3(0.034,0.009,0.009),steel)
+				# The SMG receiver ends at -.18; the rifle's forward tooth floats over its exposed barrel.
+				if id not in ["smg", "micro_smg"] or z >= -.18:
+					GEO._box(root,"RailTooth",Vector3(0,0.048,z),Vector3(0.034,0.009,0.009),steel)
 			GEO._box(root,"ButtPad",Vector3(0,0,0.247 if id == "m4a1" else 0.187),Vector3(0.044,0.095,0.008),rubber)
 			if id == "m4a1":
 				var lens := GEO._mat(Color("346269"),0.45,0.22)
