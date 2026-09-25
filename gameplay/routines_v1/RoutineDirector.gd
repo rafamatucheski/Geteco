@@ -139,6 +139,7 @@ func nearest_action() -> Dictionary:
 	for id in actors:
 		var actor = actors[id]
 		if not is_instance_valid(actor): continue
+		if actor.get_meta("workplace_threatened", false): continue
 		var lines: Array = actor.definition.get("lines",[])
 		if lines.is_empty(): continue
 		var distance: float = world.player.global_position.distance_to(actor.global_position)

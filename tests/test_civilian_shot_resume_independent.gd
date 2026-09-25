@@ -43,8 +43,11 @@ func aim_direction(direction: Vector3) -> void:
 	await frames(3)
 
 func real_shot() -> void:
+	# FullSession consome a borda de fire em _process. Garantir um quadro de
+	# _process com a tecla pressionada evita perdê-la entre quadros de física.
 	Input.action_press("fire")
-	await frames(2)
+	await process_frame
+	await process_frame
 	Input.action_release("fire")
 	await frames(2)
 
@@ -67,20 +70,28 @@ func _run() -> void:
 	# Population streaming begins after session readiness. Wait for the real
 	# producer instead of treating the first ready frame as an empty fixture.
 	await wait_until(func():
-		return world.people.any(func(person): return is_instance_valid(person) and person.route.size() > 1 and not person.controlled_automatically)
+		return world.people.any(func(person): return is_instance_valid(person) and person.route.size() > 1 and not person.controlled_automatically and posmod(int(person.identity), 20) < 11)
 	, 360)
 	for person in world.people:
-		if is_instance_valid(person) and person.route.size() > 1 and not person.controlled_automatically:
+		if is_instance_valid(person) and person.route.size() > 1 and not person.controlled_automatically and posmod(int(person.identity), 20) < 11:
 			witness = person
 			break
 	check(is_instance_valid(witness), "população produtiva fornece testemunha com rotina")
 	if not is_instance_valid(witness):
 		quit(1)
 		return
-	var direction := Vector3.RIGHT
-	var side := Vector3(0.0, 0.0, 1.0)
-	witness.teleport(ground(world.player.global_position + side * 4.0) + Vector3.UP * 0.08)
-	witness.controlled_automatically = false
+	# Aproxima o jogador da rota produtiva do civil. Mover o civil até o spawn
+	# deixava a rota original atrás de ruas e sólidos, tornando a retomada aleatória.
+	var route_forward: Vector3 = witness.route[1] - witness.route[0]
+	route_forward.y = 0.0
+	check(route_forward.length_squared() > 0.01, "testemunha possui trecho de rota válido")
+	if route_forward.length_squared() <= 0.01:
+		quit(1)
+		return
+	route_forward = route_forward.normalized()
+	var direction: Vector3 = route_forward.cross(Vector3.UP).normalized()
+	world.player.teleport(ground(witness.global_position - route_forward * 4.0) + Vector3.UP * 0.08)
+	await frames(4)
 	var route_before: PackedVector3Array = witness.route.duplicate()
 	var speed_before: float = witness.speed
 	var witness_id := witness.get_instance_id()
@@ -91,7 +102,8 @@ func _run() -> void:
 	await aim_direction(direction)
 	var ammo_before: int = int(world.session.state.get_ammo("pistol").magazine)
 	await real_shot()
-	check(int(world.session.state.get_ammo("pistol").magazine) == ammo_before - 1, "entrada fire produz disparo real e consome munição")
+	var ammo_after: int = int(world.session.state.get_ammo("pistol").magazine)
+	check(ammo_after == ammo_before - 1, "entrada fire produz disparo real e consome munição", "ammo=%d->%d attack_allowed=%s modal=%s" % [ammo_before, ammo_after, world.gameplay.attack_allowed(), world.session.modal])
 	check(await wait_until(func(): return director.reactors.has(witness_id), 90), "diretor produtivo percebe o tiro")
 	check(witness.controlled_automatically and witness.speed >= 5.0, "testemunha entra em fuga")
 	var flight_start := witness.global_position

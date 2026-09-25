@@ -50,12 +50,24 @@ func place_player(point: Vector3) -> void:
 	await frames(5)
 
 func enter_place(id: String) -> bool:
-	if id == "harbor_ammunation":
+	if session.weapon_shop_entrance.handles_place(id) and id not in ["harbor_ammunation", "harbor_police"]:
+		var definition: Dictionary = {} if id == "maciota" else PLACES.get_definition(id)
+		var door: Vector3 = session.weapon_shop_entrance._door_position(id, definition)
+		var inward: Vector3 = session.weapon_shop_entrance._inward(id)
+		var action := "move_left" if id == "port_boss_garage" else "move_up"
+		await place_player(door - inward * 1.8)
+		check(session.nearest().get("id", "") != "enter", id + " has no E entry")
+		Input.action_press(action)
+		var entered := await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 240, "entrada caminhando: " + id)
+		Input.action_release(action)
+		return entered
+	if id in ["harbor_ammunation", "harbor_police"]:
 		var facade: Vector3 = PLACES.get_definition(id).exterior_position
-		await place_player(facade + Vector3(0, 0, 6.92))
-		check(session.nearest().get("id", "") != "enter", "Ammu-Nation has no E entry")
+		var door_z := 250.0 / 32.0 + .35 if id == "harbor_police" else 5.8
+		await place_player(facade + Vector3(0, 0, door_z + (1.8 if id == "harbor_police" else 1.12)))
+		check(session.nearest().get("id", "") != "enter", id + " has no E entry")
 		Input.action_press("move_up")
-		await frames(20)
+		await frames(34 if id == "harbor_police" else 20)
 		Input.action_release("move_up")
 		return await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 180, "entrada caminhando: " + id)
 	var point: Vector3 = world.maciota_place.entry_position if id == "maciota" else PLACES.get_definition(id).entry_position
@@ -71,13 +83,16 @@ func leave_place(id: String) -> bool:
 		check(not session.modal, "cancelamento fecha menu: " + id)
 		if session.modal: session.close_menu()
 		await frames(3)
-	if id == "harbor_ammunation":
+	if session.weapon_shop_entrance.handles_place(id):
 		await place_player(session.room.exit_position + Vector3(0, 0, -0.53))
-		check(session.nearest().get("id", "") != "exit", "Ammu-Nation has no E exit")
+		check(session.nearest().get("id", "") != "exit", id + " has no E exit")
 		Input.action_press("move_down")
 		await frames(16)
 		Input.action_release("move_down")
-		return await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id)
+		var left := await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id)
+		if left:
+			await wait_until(func(): return not session.weapon_shop_entrance._leaving, 90, "zoom de saída termina: " + id)
+		return left
 	await place_player(session.room.exit_position)
 	check(session.nearest().get("id", "") == "exit", "saída oferecida: " + id, str(session.nearest()))
 	await press_key(KEY_E)

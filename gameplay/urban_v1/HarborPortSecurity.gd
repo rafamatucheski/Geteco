@@ -2,6 +2,7 @@ extends Node3D
 ## Portaria física do Porto Sul: acesso autorizado, cancela segura e alarme
 ## quando alguém cruza o perímetro fora do corredor liberado.
 const WORKER_MODEL := preload("res://gameplay/routines_v1/DockWorkerModel.gd")
+const PORT_LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
 const SCALE := 1.0 / 16.0
 const GATE_POINT := Vector2(3310.0, 3380.0)
 const GUARD_POINTS := [Vector2(3390,3340), Vector2(3430,3530), Vector2(3510,3540)]
@@ -25,6 +26,9 @@ var scan_clock := 0.0
 var _gate_parts: Array[Dictionary] = []
 var _staff: Array[Node3D] = []
 var _gate_visuals: Node3D
+var _ship_hull: PackedVector2Array = PORT_LAYOUT.ship_hull()
+var _talking_staff: Node3D
+var _conversation_content: Label
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -119,13 +123,20 @@ func _build_staff() -> void:
 		model.set_process(false)
 		model.set_physics_process(false)
 		_staff.append(guard)
+		var reaction := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(guard, model, session.world.gameplay)
+		if reaction != null: reaction.threat_started.connect(_staff_threatened)
+
+func _staff_threatened(staff: Node3D) -> void:
+	if staff == _talking_staff and session.modal and is_instance_valid(_conversation_content) and _conversation_content.is_inside_tree():
+		session.close_menu()
+		_talking_staff = null
 
 func nearest_action() -> Dictionary:
 	if not _available() or session.world.driving.occupied: return {}
 	var actor: Node3D = session.world.player
 	for guard in _staff:
-		if is_instance_valid(guard) and actor.global_position.distance_to(guard.global_position) <= GUARD_RANGE:
-			return {"id":"port_security","target":"south_port_checkpoint","label":"Conversar"}
+		if is_instance_valid(guard) and not guard.get_meta("workplace_threatened", false) and actor.global_position.distance_to(guard.global_position) <= GUARD_RANGE:
+			return {"id":"urban_v1","target":"south_port_checkpoint","label":"Conversar","position":guard.global_position}
 	return {}
 
 func perform(target: String) -> bool:
@@ -134,7 +145,12 @@ func perform(target: String) -> bool:
 		session.show_message("GUARDA: Sua passagem já está autorizada.")
 		return true
 	session._menu("Portaria")
+	for guard in _staff:
+		if guard.global_position.distance_to(session.world.player.global_position) <= GUARD_RANGE:
+			_talking_staff = guard
+			break
 	var speech := Label.new()
+	_conversation_content = speech
 	speech.text = "GUARDA: Por que você quer entrar no porto?\nSem autorização, a segurança será avisada."
 	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	speech.custom_minimum_size.x = 560
@@ -145,16 +161,43 @@ func perform(target: String) -> bool:
 
 func _pay_bribe() -> void:
 	if not _available() or authorized_entry or authorized_visit: return
+	if not session.modal or not is_instance_valid(_conversation_content) or not _conversation_content.is_inside_tree(): return
+	if not is_instance_valid(_talking_staff) or _talking_staff.get_meta("workplace_threatened", false): return
 	if not session.state.spend(100, "south_port_bribe:" + session._transaction()):
 		session.show_message("GUARDA: São R$ 100. Saldo insuficiente.")
 		return
-	authorized_entry = true
+	# Guards inside the yard can also authorize an already-present visitor.
+	authorized_visit = _inside_security_zone(_actor_position_now())
+	authorized_entry = not authorized_visit
+	exiting_port = false
 	_alerted_reset()
 	session.close_menu()
+	# The debit and the visit permission belong to the same saved game state.
+	session.save_game()
 	session.show_message("GUARDA: Pode entrar. A cancela está liberada.")
 
+func snapshot() -> Dictionary:
+	return {"version":1,"authorized_entry":authorized_entry,"authorized_visit":authorized_visit,"exiting_port":exiting_port}
+
+func restore_snapshot(data: Dictionary) -> bool:
+	if not validate_snapshot(data): return false
+	authorized_entry = data.authorized_entry
+	authorized_visit = data.authorized_visit
+	exiting_port = data.exiting_port
+	initialized = false
+	was_inside = false
+	scan_clock = 0.0
+	_alerted_reset()
+	return true
+
+static func validate_snapshot(data: Dictionary) -> bool:
+	return data.get("version") == 1 and data.get("authorized_entry") is bool \
+		and data.get("authorized_visit") is bool and data.get("exiting_port") is bool \
+		and not (data.authorized_entry and data.authorized_visit)
+
 func _process(delta: float) -> void:
-	if session == null or not is_instance_valid(session.world.player): return
+	# Loading restores the permission before the saved actor location is admitted.
+	if session == null or not session.ready_for_play or not is_instance_valid(session.world.player): return
 	# Entering a building must not revoke an open visit or close a gate on its user.
 	if not session.state.place_id.is_empty(): return
 	scan_clock -= delta
@@ -178,9 +221,10 @@ func _process(delta: float) -> void:
 	var inside := _inside_security_zone(point)
 	if not initialized:
 		was_inside = inside # A save que já deixou o jogador no porto não vira invasão.
+		if authorized_visit and not inside: exiting_port = true
 		initialized = true
 	elif inside and not was_inside:
-		if authorized_entry:
+		if authorized_entry or authorized_visit:
 			authorized_visit = true
 			authorized_entry = false
 			_alerted_reset()
@@ -253,7 +297,9 @@ func _set_gate(open: bool) -> void:
 func _inside_security_zone(point: Vector3) -> bool:
 	var authored := Vector2(point.x / SCALE, point.z / SCALE)
 	return (authored.x >= 3200.0 and authored.x <= 6100.0 and authored.y > 3400.0 and authored.y < 6000.0) \
-		or (authored.x > 3620.0 and authored.x < 6100.0 and authored.y >= 3200.0 and authored.y <= 3400.0)
+		or (authored.x > 3620.0 and authored.x < 6100.0 and authored.y >= 3200.0 and authored.y <= 3400.0) \
+		or Geometry2D.is_point_in_polygon(authored, _ship_hull) or PORT_LAYOUT.SHIP_GANGWAY.has_point(authored) \
+		or PORT_LAYOUT.PIERS[0].has_point(authored) or PORT_LAYOUT.PIERS[1].has_point(authored)
 
 func _available() -> bool:
 	return session != null and session.ready_for_play and session.state.region_id == "harbor" and session.state.place_id.is_empty() and session.world.gameplay.health > 0 and not session.is_transition_blocked()

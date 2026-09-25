@@ -98,11 +98,22 @@ func playing_audio_count(node: Node) -> int:
 	return count
 
 func place_player(point: Vector3) -> void:
-	world.production.region.set_focus(point)
+	if state == null or state.place_id.is_empty(): world.production.region.set_focus(point)
 	world.player.teleport(point+Vector3.UP*.08)
 	await frames(4)
 
 func enter_place(id: String) -> bool:
+	if session.weapon_shop_entrance.handles_place(id) and id != "harbor_ammunation":
+		var definition: Dictionary = {} if id == "maciota" else PLACES.get_definition(id)
+		var door: Vector3 = session.weapon_shop_entrance._door_position(id, definition)
+		var inward: Vector3 = session.weapon_shop_entrance._inward(id)
+		var action := "move_left" if id == "port_boss_garage" else "move_up"
+		await place_player(door - inward * 1.8)
+		check(session.nearest().get("id", "") != "enter", id + " sem E na entrada")
+		Input.action_press(action)
+		var entered := await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 240, "entrada caminhando: " + id)
+		Input.action_release(action)
+		return entered
 	if id == "harbor_ammunation":
 		var facade: Vector3 = PLACES.get_definition(id).exterior_position
 		await place_player(facade + Vector3(0, 0, 6.92))
@@ -124,13 +135,16 @@ func enter_place(id: String) -> bool:
 	return await wait_until(func(): return state.place_id==id and is_instance_valid(session.room),180,"entrada conclui: "+id)
 
 func leave_place(id: String) -> bool:
-	if id == "harbor_ammunation":
+	if session.weapon_shop_entrance.handles_place(id):
 		await place_player(session.room.exit_position + Vector3(0, 0, -0.53))
-		check(session.nearest().get("id", "") != "exit", "Ammu-Nation sem E na saída")
+		check(session.nearest().get("id", "") != "exit", id + " sem E na saída")
 		Input.action_press("move_down")
 		await frames(16)
 		Input.action_release("move_down")
-		return await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id)
+		var left:=await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id)
+		if left: await wait_until(func(): return not session.weapon_shop_entrance._leaving, 90, "zoom de saída termina: " + id)
+		if not left: print("AMMO_EXIT_DIAG ", "modal=",session.modal," blocked=",session.is_transition_blocked()," player=",world.player.global_position," exit=",session.room.exit_position," velocity=",world.player.velocity," return=",session.return_point," return_clear=",session.position_clear(session.return_point+Vector3.UP*.08)," car=",world.driving.car.global_position," notice=",session.notice.text)
+		return left
 	await place_player(session.room.exit_position)
 	check(session.nearest().get("id","")=="exit","saida fisica oferecida: "+id,str(session.nearest()))
 	await press_key(KEY_E)
@@ -192,21 +206,28 @@ func _run() -> void:
 	session=world.session; state=session.state; gameplay=world.gameplay
 	check(world.production.no_save,"sessao integrada recusa save pessoal","no_save=%s"%world.production.no_save)
 	check(world.player.visible and not world.player.input_locked and world.camera.current,"inicio libera jogador e camera")
+	await frames(120)
 	var baseline_render:=await render_signature("inicio jogavel")
 
 	var start:Vector3=world.player.global_position
-	Input.action_press("move_right"); await frames(45)
+	Input.action_press("move_right")
+	var walk_audio:=0
+	for sample in 45:
+		await physics_frame
+		walk_audio=maxi(walk_audio,playing_audio_count(world.player))
 	var walked:float=world.player.global_position.distance_to(start)
 	var walk_animation:String=world.player.animation.current_animation if is_instance_valid(world.player.animation) else ""
-	var walk_audio:=playing_audio_count(world.player)
 	Input.action_release("move_right"); await frames(3)
 	check(walked>1.4,"andar responde a entrada real","distance=%.2f"%walked)
 	check(walk_animation=="Walking","andar apresenta animacao de caminhada",walk_animation)
 	start=world.player.global_position
-	Input.action_press("move_right"); Input.action_press("sprint"); await frames(45)
+	Input.action_press("move_right"); Input.action_press("sprint")
+	var run_audio:=0
+	for sample in 45:
+		await physics_frame
+		run_audio=maxi(run_audio,playing_audio_count(world.player))
 	var ran:float=world.player.global_position.distance_to(start)
 	var run_animation:String=world.player.animation.current_animation if is_instance_valid(world.player.animation) else ""
-	var run_audio:=playing_audio_count(world.player)
 	Input.action_release("move_right"); Input.action_release("sprint"); await frames(3)
 	check(ran>walked*1.45,"correr e mais rapido que andar","walk=%.2f run=%.2f"%[walked,ran])
 	check(run_animation=="Running","correr apresenta animacao de corrida",run_animation)
@@ -228,13 +249,17 @@ func _run() -> void:
 	var road:=route.sample_baked(offset,true)
 	var road_direction:=route.sample_baked(offset+1.0,true)-road
 	car.place(road+Vector3.UP*.12,atan2(-road_direction.x,-road_direction.z))
-	for side in [-1.0,1.0]:
-		if world.driving.occupied: break
-		await place_player(car.to_global(Vector3(side*(car.half_width+.65),.04,.15)))
-		var event:=InputEventKey.new(); event.keycode=KEY_F; event.physical_keycode=KEY_F; event.pressed=true
-		Input.parse_input_event(event); Input.flush_buffered_events(); await frames(2)
-		check(car.has_meta("vehicle_boarding"),"embarque conserva fase de animacao do V1")
-		event=event.duplicate(); event.pressed=false; Input.parse_input_event(event); Input.flush_buffered_events(); await frames(2)
+	var boarding_ready:=false
+	for side in [-1,1]:
+		await place_player(car.driver_door_anchor(side)+car.global_basis.x*float(side)*.35)
+		if not world.driving.can_enter(): continue
+		boarding_ready=true
+		await press_key(KEY_F)
+		break
+	check(boarding_ready,"porta do motorista oferece embarque fisico")
+	check(world.driving.occupied and world.driving.is_body_transition_active(),"embarque conserva fase de animacao do V1")
+	if world.driving.is_body_transition_active():
+		await wait_until(func(): return not world.driving.is_body_transition_active(),240,"embarque termina")
 	check(world.driving.occupied and car.controlled and not world.player.visible,"entrar no carro por entrada real")
 	var car_start:=car.global_position; var wheel_before:float=car.wheel_spin
 	Input.action_press("move_up"); await frames(120)
@@ -248,6 +273,9 @@ func _run() -> void:
 	await hold(["handbrake"],150)
 	check(absf(car.speed)<=.5,"freio para o carro antes do desembarque","speed=%.3f"%car.speed)
 	await press_key(KEY_F)
+	check(world.driving.is_body_transition_active(),"desembarque inicia pela tecla real")
+	if world.driving.is_body_transition_active():
+		await wait_until(func(): return not world.driving.is_body_transition_active(),240,"desembarque termina")
 	check(not world.driving.occupied and world.player.visible and world.player.is_physics_processing(),"desembarcar restaura Dante")
 
 	if await enter_place("harbor_ammunation"):
@@ -263,12 +291,15 @@ func _run() -> void:
 		if not accepted_by_keyboard and is_instance_valid(pistol_button): await click_button(pistol_button)
 		check(state.owns_weapon("pistol") and state.equipped_weapon=="pistol","comprar/equipar por interacao de interface atualiza inventario")
 		session.close_menu(); await frames(2)
-		await leave_place("harbor_ammunation")
+		if not await leave_place("harbor_ammunation"):
+			quit(1); return
 
 	var direction:=combat_direction()
 	var civilian:=ACTOR.new(); civilian.identity=2; world.add_child(civilian)
 	civilian.global_position=ground(world.player.global_position+direction*6.0)
-	var witness:CharacterBody3D=world.people[0] if not world.people.is_empty() else null
+	var witness:CharacterBody3D=null
+	for person in world.people:
+		if is_instance_valid(person) and posmod(int(person.identity),20)<11: witness=person; break
 	if is_instance_valid(witness):
 		var side:=Vector3(-direction.z,0,direction.x)
 		witness.teleport(ground(world.player.global_position+side*4.0))
@@ -298,8 +329,8 @@ func _run() -> void:
 	while not civilian.dead and shot_guard<12:
 		await wait_weapon_ready(); await fire_at(civilian.global_position); shot_guard+=1
 	check(civilian.dead,"sequencia de disparos produz morte civil","additional_shots=%d"%shot_guard)
-	await frames(20)
-	check(absf(civilian.visual.rotation.z-PI/2.0)<.05 and civilian.collision_layer==0,"morte apresenta queda e remove colisao")
+	await frames(80)
+	check(absf(civilian.visual.rotation.x-PI/2.0)<.05 and civilian.collision_layer==0,"morte apresenta queda e remove colisao")
 	check(gameplay.stars>=1,"crime escala para procurado","stars=%d crime=%d"%[gameplay.stars,gameplay.crime_points])
 	if is_instance_valid(world.dispatch):
 		await wait_until(func(): return not world.dispatch.events_named("dispatched").is_empty() or int(world.dispatch.status().police)>0,900,"policia responde ao crime")
@@ -314,20 +345,31 @@ func _run() -> void:
 	await place_player(car.to_global(Vector3(car.half_width+.65,.04,.15))); await press_key(KEY_F)
 	check(world.driving.occupied,"entrar no carro para o servico")
 	var serviced_before:int=session.services.serviced_count
-	await wait_until(func(): return session.services.serviced_count>serviced_before,480,"Northgate conclui servico")
+	await wait_until(func(): return session.services.serviced_count>serviced_before,480,"Northgate cobra e repara")
+	await wait_until(func(): return not car.has_meta("pay_n_spray_busy"),180,"Northgate libera os controles após abrir a porta")
 	check(state.economy.balance==balance_before_service-100,"servico cobra R$ 100 uma vez","%d -> %d"%[balance_before_service,state.economy.balance])
 	check(is_equal_approx(car.health,car.max_health),"servico entrega reparo")
 	check(gameplay.stars==0,"servico limpa procurado como no V1")
 	check(session.notice_time>0.0 and "reparado" in session.notice.text.to_lower(),"HUD comunica resultado do servico",session.notice.text)
 	await render_signature("resultado Northgate")
-	await hold(["handbrake"],5); await press_key(KEY_F)
+	var bay_position:Vector3=car.global_position
+	await hold(["move_down"],90)
+	check(car.global_position.z>bay_position.z+3.0,"carro sai fisicamente da baia após o reparo","z=%.2f -> %.2f"%[bay_position.z,car.global_position.z])
+	await hold(["handbrake"],120)
+	check(absf(car.speed)<=.5,"carro para fora da baia antes do desembarque","speed=%.2f"%car.speed)
+	await press_key(KEY_F)
+	check(world.driving.is_body_transition_active(),"desembarque após serviço inicia")
+	if world.driving.is_body_transition_active():
+		await wait_until(func(): return not world.driving.is_body_transition_active(),240,"desembarque do servico termina")
 	check(not world.driving.occupied,"sair do carro depois do servico")
 
 	await press_key(KEY_J)
 	check(session.panel.visible,"diario de missoes abre por entrada real")
 	var mission_button:=find_button("Primeiro Giro")
 	check(is_instance_valid(mission_button),"diario oferece Primeiro Giro")
-	if is_instance_valid(mission_button): await click_button(mission_button)
+	if is_instance_valid(mission_button):
+		mission_button.grab_focus()
+		await press_key(KEY_ENTER)
 	await drain_dialogue(12)
 	check(state.campaign.active_id=="primeiro_giro" and state.campaign.step==0,"missao inicia com objetivo")
 	check("Banco" in session.objective.text or "North Pier" in session.objective.text,"HUD apresenta objetivo da missao",session.objective.text)
@@ -351,12 +393,12 @@ func _run() -> void:
 
 	var death_position:Vector3=world.player.global_position; var balance_before_death:int=state.economy.balance
 	world.player.receive_damage(500.0); await frames(3)
-	check(gameplay.health==0.0 and session.rescue_pending and session.panel.visible,"morte abre resgate e bloqueia controle")
+	var wasted:Label
+	if is_instance_valid(session.death_presentation): wasted=session.death_presentation.get_node_or_null("WastedLabel") as Label
+	check(gameplay.health==0.0 and session.rescue_pending and wasted!=null and wasted.text=="SE FODEU","morte mostra vinheta V1 e bloqueia controle")
 	await render_signature("tela de resgate")
-	var rescue_button:=find_button("Continuar")
-	check(is_instance_valid(rescue_button),"resgate oferece acao Continuar")
-	if is_instance_valid(rescue_button): await click_button(rescue_button)
-	await wait_until(func(): return not session.rescue_pending and not session.respawn_busy,240,"resgate conclui")
+	check(not session.modal,"resgate automático não exige menu")
+	await wait_until(func(): return not session.rescue_pending and not session.respawn_busy,240,"resgate automático conclui")
 	check(gameplay.health==100.0 and world.player.visible and not world.player.input_locked,"resgate restaura vida e controle")
 	check(world.player.global_position.distance_to(death_position)>2.0 and state.place_id.is_empty(),"resgate retorna ao ponto seguro exterior")
 	check(state.economy.balance==balance_before_death,"resgate V2 nao altera saldo","%d -> %d"%[balance_before_death,state.economy.balance])

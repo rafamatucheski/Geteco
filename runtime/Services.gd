@@ -118,6 +118,8 @@ func perform(service: String) -> bool:
 func _auto_eligible(car) -> bool:
 	if not is_instance_valid(car) or not session.state.place_id.is_empty() or session.state.region_id != "harbor": return false
 	if not session.world.driving.occupied or session.world.driving.car != car or session.world.gameplay.health<=0 or car.health<=0: return false
+	# Boarding owns temporary input locks; service starts only after the driver is seated.
+	if session.world.driving.is_body_transition_active() or not car.controlled or car.input_locked: return false
 	var relative: Vector3 = car.global_position-AUTO_ORIGIN
 	return absf(car.speed)<.15 and car.horizontal_velocity.length()<.2 and AUTO_BAY.has_point(Vector2(relative.x,relative.z))
 

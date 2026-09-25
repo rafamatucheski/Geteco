@@ -20,7 +20,13 @@ class Car extends CharacterBody3D:
 	var speed := 0.0
 	var horizontal_velocity := Vector3.ZERO
 	var vehicle_id := "test_car"
+	var controlled := true
+	var input_locked := false
 	func repair(): health=max_health
+class Driving extends RefCounted:
+	var occupied := false
+	var car: CharacterBody3D
+	func is_body_transition_active() -> bool: return false
 class Session extends RefCounted:
 	var world: Dictionary
 	var state: Dictionary
@@ -48,7 +54,9 @@ func _run():
 	var economy := Economy.new()
 	economy.grant_reward("test",1000)
 	session.state={"place_id":"harbor_hospital","region_id":"harbor","economy":economy}
-	session.world={"player":player,"gameplay":health,"driving":{"occupied":false,"car":car}}
+	var driving := Driving.new()
+	driving.car = car
+	session.world={"player":player,"gameplay":health,"driving":driving}
 	var services := Services.new()
 	root.add_child(services)
 	services.configure(session)

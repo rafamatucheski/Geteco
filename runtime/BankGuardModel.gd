@@ -14,21 +14,6 @@ func _body_look() -> Dictionary:
 		"accent": Color("2b2620"), "skin": Color("b98062") if uses_shotgun else Color("d6a582")}, true)
 	return look
 
-## O assalto (`RobberyActor`) pendura a arma direto no antebraço antigo e mira
-## girando `right_upper_arm`. O antebraço antigo fica invisível; a arma volta a
-## aparecer e a mão direita do corpo novo segue o cabo.
-func _install_body() -> void:
-	super._install_body()
-	if not is_instance_valid(body): return
-	for child in right_lower_arm.get_children():
-		if child is Node3D and not child is GeometryInstance3D and child != muzzle_flash_3d:
-			for geometry in child.find_children("*", "GeometryInstance3D", true, false): geometry.visible = true
-	body.hand_provider = func() -> Array:
-		for child in right_lower_arm.get_children():
-			if child is Node3D and not child is GeometryInstance3D and child != muzzle_flash_3d and child.is_visible_in_tree():
-				return [child.global_position, null]
-		return body.hand_targets
-
 func _clear_parts(parent: Node3D) -> void:
 	for child in parent.get_children():
 		if child is MeshInstance3D:

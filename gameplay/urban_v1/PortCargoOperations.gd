@@ -1,4 +1,5 @@
 extends Node3D
+signal work_truck_removed(index: int)
 ## Three V1 quay cranes transfer cargo between Santa Mare and the terminal.
 ## Cargo remains attached to the gantry cycle and blocks its landing pad only
 ## while resting on the ground, matching the original 48-second operation.
@@ -28,6 +29,7 @@ var unloaded_containers := 0
 var loaded_containers := 0
 var _work_shift_open := false
 var _vehicle_spawn_cursor := 0
+var freight
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -281,7 +283,7 @@ func _ensure_work_vehicles() -> void:
 			return
 		var index := slot - FORKLIFT_POINTS.size()
 		var state: Dictionary = work_trucks[index]
-		if is_instance_valid(state.truck) or state.phase == "interrupted": continue
+		if is_instance_valid(state.truck) or state.phase in ["interrupted", "freight", "freight_pending"]: continue
 		_spawn_work_truck(index)
 		_vehicle_spawn_cursor = posmod(slot + 1, 5)
 		return
@@ -320,10 +322,24 @@ func _spawn_work_truck(index: int) -> void:
 	vehicle.set_physics_process(active and _work_shift_open)
 	work_trucks[index].truck = vehicle
 	var state: Dictionary = work_trucks[index]
-	vehicle.destroyed.connect(func():
-		state.phase = "interrupted"
-		state.truck = null
-	)
+	_watch_work_truck(index, vehicle)
+
+func _watch_work_truck(index: int, vehicle: CharacterBody3D) -> void:
+	if vehicle.get_meta("port_cargo_watcher", 0) == get_instance_id(): return
+	vehicle.set_meta("port_cargo_watcher", get_instance_id())
+	if not vehicle.destroyed.is_connected(_work_truck_destroyed.bind(index)):
+		vehicle.destroyed.connect(_work_truck_destroyed.bind(index))
+	vehicle.tree_exiting.connect(_work_truck_exiting.bind(index, weakref(vehicle)))
+
+func _work_truck_exiting(index: int, reference: WeakRef) -> void:
+	var vehicle = reference.get_ref()
+	# Reparenting and world teardown are not a destroyed shipment.
+	if not is_inside_tree() or is_queued_for_deletion() or session.world.is_queued_for_deletion(): return
+	if is_instance_valid(vehicle) and vehicle.is_queued_for_deletion(): _work_truck_destroyed(index)
+
+func _work_truck_destroyed(index: int) -> void:
+	work_trucks[index].phase = "interrupted"
+	work_truck_removed.emit(index)
 
 func _sync_work_vehicle_visibility() -> void:
 	for vehicle in forklifts:
@@ -335,6 +351,7 @@ func _sync_work_vehicle_visibility() -> void:
 	for state in work_trucks:
 		var vehicle = state.truck
 		if not is_instance_valid(vehicle): continue
+		if state.phase in ["freight", "freight_pending", "interrupted"]: continue
 		var player_driving: bool = session.world.driving.occupied and session.world.driving.car == vehicle
 		if player_driving: continue
 		vehicle.visible = active
@@ -348,6 +365,7 @@ func _tick_truck(index: int, delta: float) -> void:
 	var state: Dictionary = work_trucks[index]
 	var vehicle = state.truck
 	if not is_instance_valid(vehicle): return
+	if state.phase in ["freight", "freight_pending"]: return
 	if session.world.driving.occupied and session.world.driving.car == vehicle or vehicle.controlled:
 		state.phase = "interrupted"
 		return
@@ -399,7 +417,7 @@ func _finish_truck_load(index: int) -> void:
 		state.phase = "interrupted"
 		return
 	state.loaded = true
-	state.remaining = 3.5
+	state.remaining = 30.0 if is_instance_valid(freight) and freight.bay_available(index) else 3.5
 	state.phase = "securing"
 	var visual: Node3D = cranes[index].visual
 	visual.reparent(vehicle,true)
@@ -424,6 +442,7 @@ func _reset_truck_load(index: int) -> void:
 
 func _tick_crane(index: int, delta: float) -> void:
 	var crane: Dictionary = cranes[index]
+	if not is_instance_valid(crane.visual): return
 	var before := float(crane.clock)
 	var after := before + delta
 	var phase := fposmod(after, CYCLE_SECONDS)
@@ -475,6 +494,9 @@ func cargo_pose(index: int, time: float) -> Dictionary:
 
 func _sync_crane(index: int) -> void:
 	var crane: Dictionary = cranes[index]
+	if not is_instance_valid(crane.visual):
+		(crane.collision as CollisionShape3D).set_deferred("disabled", true)
+		return
 	var truck_state: Dictionary = work_trucks[index]
 	if truck_state.loaded:
 		(crane.collision as CollisionShape3D).set_deferred("disabled", true)

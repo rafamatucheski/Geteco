@@ -57,6 +57,10 @@ func _run() -> void:
 		if world.session != null and world.session.ready_for_play: break
 	await frames(60)
 	player = world.player
+	# Congela a reposição ambiente enquanto a fixture controla world.people; sem isso,
+	# ProductionWorld adiciona testemunhas novas durante a rajada e altera a contagem.
+	var population_target: int = world.production.requested_population
+	world.production.requested_population = 0
 	# Quem já existia na sessão não interfere: fica fora de `people` durante o teste.
 	var original: Array = world.people.duplicate()
 	for person in original: person.set_physics_process(false)
@@ -126,7 +130,7 @@ func _run() -> void:
 		director.report_gunfire(origin, origin + Vector3.RIGHT * 30.0, null)
 		if shot % 30 == 0: await physics_frame
 	var state = director.reactors[near.get_instance_id()]
-	check("rajada: mesmo número de reatores", director.reactors.size() == count_before, "%d" % director.reactors.size())
+	check("rajada: reatores existentes não são duplicados; apenas novo civil pode entrar no raio", director.reactors.size() == count_before or (director.reactors.size() == count_before + 1 and director.reactors.has(far.get_instance_id())), "antes=%d depois=%d civil_longe=%s" % [count_before, director.reactors.size(), director.reactors.has(far.get_instance_id())])
 	check("rajada: memória deduplicada (<=4 ameaças)", state.danger.threats.size() <= 4 and state.danger.threats.size() == 1, "ameaças=%d" % state.danger.threats.size())
 	check("rajada: nada solto por reinício", director.stats.released == released_before, str(director.stats))
 
@@ -192,9 +196,14 @@ func _run() -> void:
 	var far_actor := spawn(Vector3(0, 0, -45))
 	director.report_gunfire(far_actor.global_position + Vector3(5, 0, 0), far_actor.global_position + Vector3(-25, 0, 0), null)
 	await frames(5)
-	far_actor.global_position = player.global_position + Vector3(300.0, 5.0, 0.0)
+	# O diretor solta acima de 110 m; a população produtiva remove acima de 120 m.
+	# Ficar entre os dois limites testa a suspensão sem liberar o ator da cena.
+	var far_actor_id: int = far_actor.get_instance_id()
+	far_actor.global_position = player.global_position + Vector3(115.0, 5.0, 0.0)
 	await frames(4)
-	check("distância: solto e velocidade restaurada", not director.reactors.has(far_actor.get_instance_id()) and not far_actor.controlled_automatically and is_equal_approx(far_actor.speed, 1.6), "speed=%.2f" % far_actor.speed)
+	var far_actor_valid: bool = is_instance_valid(far_actor)
+	var far_actor_speed: float = far_actor.speed if far_actor_valid else -1.0
+	check("distância: solto e velocidade restaurada", far_actor_valid and not director.reactors.has(far_actor_id) and not far_actor.controlled_automatically and is_equal_approx(far_actor_speed, 1.6), "válido=%s speed=%.2f" % [far_actor_valid, far_actor_speed])
 
 	# 8. Recuperação e retomada da rotina.
 	var walker := spawn(Vector3(20, 0, -50))
@@ -302,7 +311,9 @@ func _run() -> void:
 	for actor in made: discard(actor)
 	await frames(30)
 	check("seen_health encolhe quando civis somem", director.seen_health.size() <= world.people.size(), "seen=%d pessoas=%d" % [director.seen_health.size(), world.people.size()])
-	for person in original: world.people.append(person)
+	for person in original:
+		if is_instance_valid(person): world.people.append(person)
+	world.production.requested_population = population_target
 	print("STATS ", director.stats)
 	print("RESULT failures=", failures)
 	quit(1 if failures > 0 else 0)

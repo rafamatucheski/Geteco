@@ -61,6 +61,8 @@ func _ready() -> void:
 		activity = "pickup"
 		activity_left = .9
 		_sync_model(false)
+	if definition.get("kind", "") == "dock_worker" and get_parent().get("gameplay") != null:
+		preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(self, model, get_parent().gameplay)
 
 func _build_model() -> void:
 	if definition.get("kind","") == "dock_worker":

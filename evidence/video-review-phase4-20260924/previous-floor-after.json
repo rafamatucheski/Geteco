@@ -1,0 +1,315 @@
+{
+	"checks": 9,
+	"failures": [],
+	"final": {
+		"archetype": "sport_coupe",
+		"equipment": {},
+		"health": 80.0,
+		"paint": "ffffffff",
+		"position": [
+			46.875,
+			0.000219173263758421,
+			108.5
+		],
+		"region": "harbor",
+		"vehicle_id": "player_coupe",
+		"was_driven": false,
+		"yaw": -1.57079637050629
+	},
+	"initial": {
+		"archetype": "sport_coupe",
+		"equipment": {},
+		"health": 80.0,
+		"paint": "ffffffff",
+		"position": [
+			46.875,
+			0.000219173263758421,
+			108.5
+		],
+		"region": "harbor",
+		"vehicle_id": "player_coupe",
+		"was_driven": false,
+		"yaw": -1.57079637050629
+	},
+	"samples": [
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 37,
+			"ground": "/root/World3D/HarborNativeRegion/Chunk_0_1/HarborRoad_202932Solid",
+			"label": "startup_supported",
+			"on_floor": true,
+			"population_clock": 0.0833333333333333,
+			"queued": false,
+			"selected": true,
+			"vy": 0.0,
+			"y": 0.000219173263758421
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 69,
+			"ground": "/root/World3D/HarborNativeRegion/Chunk_0_1/HarborRoad_202932Solid",
+			"label": "before_selection_change",
+			"on_floor": true,
+			"population_clock": 0.0833333333333333,
+			"queued": false,
+			"selected": true,
+			"vy": 0.0,
+			"y": 0.000219173263758421
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 69,
+			"ground": "/root/World3D/HarborNativeRegion/Chunk_0_1/HarborRoad_202932Solid",
+			"label": "selection_changed",
+			"on_floor": true,
+			"population_clock": 0.0,
+			"queued": false,
+			"selected": false,
+			"vy": 0.0,
+			"y": 0.000219173263758421
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 70,
+			"ground": "",
+			"label": "after_00",
+			"on_floor": true,
+			"population_clock": 0.0166666666666667,
+			"queued": false,
+			"selected": false,
+			"vy": 0.0,
+			"y": 0.000219173263758421
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 71,
+			"ground": "",
+			"label": "after_01",
+			"on_floor": false,
+			"population_clock": 0.0333333333333333,
+			"queued": false,
+			"selected": false,
+			"vy": -1.0,
+			"y": -0.0164474938064814
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 72,
+			"ground": "",
+			"label": "after_02",
+			"on_floor": false,
+			"population_clock": 0.05,
+			"queued": false,
+			"selected": false,
+			"vy": -1.33333337306976,
+			"y": -0.0386697202920914
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 73,
+			"ground": "",
+			"label": "after_03",
+			"on_floor": false,
+			"population_clock": 0.0666666666666667,
+			"queued": false,
+			"selected": false,
+			"vy": -1.66666674613953,
+			"y": -0.0664474964141846
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 74,
+			"ground": "",
+			"label": "after_04",
+			"on_floor": false,
+			"population_clock": 0.0833333333333333,
+			"queued": false,
+			"selected": false,
+			"vy": -2.0,
+			"y": -0.0997808277606964
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 75,
+			"ground": "",
+			"label": "after_05",
+			"on_floor": false,
+			"population_clock": 0.1,
+			"queued": false,
+			"selected": false,
+			"vy": -2.33333325386047,
+			"y": -0.138669714331627
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 76,
+			"ground": "",
+			"label": "after_06",
+			"on_floor": false,
+			"population_clock": 0.116666666666667,
+			"queued": false,
+			"selected": false,
+			"vy": -2.66666650772095,
+			"y": -0.183114156126976
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 77,
+			"ground": "",
+			"label": "after_07",
+			"on_floor": false,
+			"population_clock": 0.133333333333333,
+			"queued": false,
+			"selected": false,
+			"vy": -2.99999976158142,
+			"y": -0.233114153146744
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 78,
+			"ground": "",
+			"label": "after_08",
+			"on_floor": false,
+			"population_clock": 0.15,
+			"queued": false,
+			"selected": false,
+			"vy": -3.33333301544189,
+			"y": -0.28866970539093
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 79,
+			"ground": "",
+			"label": "after_09",
+			"on_floor": false,
+			"population_clock": 0.166666666666667,
+			"queued": false,
+			"selected": false,
+			"vy": -3.66666626930237,
+			"y": -0.349780797958374
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 80,
+			"ground": "",
+			"label": "after_10",
+			"on_floor": false,
+			"population_clock": 0.183333333333333,
+			"queued": false,
+			"selected": false,
+			"vy": -3.99999952316284,
+			"y": -0.416447460651398
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 81,
+			"ground": "",
+			"label": "after_11",
+			"on_floor": false,
+			"population_clock": 0.2,
+			"queued": false,
+			"selected": false,
+			"vy": -4.33333301544189,
+			"y": -0.488669693470001
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 82,
+			"ground": "",
+			"label": "after_12",
+			"on_floor": false,
+			"population_clock": 0.216666666666667,
+			"queued": false,
+			"selected": false,
+			"vy": -4.66666650772095,
+			"y": -0.566447496414185
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 83,
+			"ground": "",
+			"label": "after_13",
+			"on_floor": false,
+			"population_clock": 0.233333333333333,
+			"queued": false,
+			"selected": false,
+			"vy": -5.0,
+			"y": -0.649780809879303
+		},
+		{
+			"alive": true,
+			"distance_despawn": false,
+			"frame": 84,
+			"ground": "",
+			"label": "after_14",
+			"on_floor": false,
+			"population_clock": 0.25,
+			"queued": false,
+			"selected": false,
+			"vy": -5.33333349227905,
+			"y": -0.738669693470001
+		},
+		{
+			"alive": false,
+			"frame": 85,
+			"label": "after_15"
+		},
+		{
+			"alive": false,
+			"frame": 86,
+			"label": "after_16"
+		},
+		{
+			"alive": false,
+			"frame": 87,
+			"label": "after_17"
+		},
+		{
+			"alive": false,
+			"frame": 88,
+			"label": "after_18"
+		},
+		{
+			"alive": false,
+			"frame": 89,
+			"label": "after_19"
+		},
+		{
+			"alive": false,
+			"frame": 90,
+			"label": "after_20"
+		},
+		{
+			"alive": false,
+			"frame": 91,
+			"label": "after_21"
+		},
+		{
+			"alive": false,
+			"frame": 92,
+			"label": "after_22"
+		},
+		{
+			"alive": false,
+			"frame": 93,
+			"label": "after_23"
+		}
+	]
+}

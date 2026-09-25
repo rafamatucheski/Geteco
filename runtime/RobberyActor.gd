@@ -32,11 +32,15 @@ func _ready() -> void:
 		visual.appearance_female=female
 	add_child(visual)
 	if guard:
-		weapon=Node3D.new()
-		visual.right_lower_arm.add_child(weapon)
-		weapon.position=Vector3(0,-.18,0)
-		preload("res://gameplay/ArsenalWeapon3D.gd").build(weapon,"shotgun" if shotgun else "pistol")
+		# Share the native barrel basis, grip targets and muzzle with the guard rig.
+		# Parenting a gun to the legacy forearm pointed it away from its target.
+		visual.equip("shotgun" if shotgun else "pistol")
+		weapon=visual.weapon
 	if health<=0: _fall()
+	elif not guard and heist != null:
+		var reaction := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(self, visual, heist.session.world.gameplay)
+		if reaction != null and heist.session.has_method("_on_workplace_threat_started"):
+			reaction.threat_started.connect(Callable(heist.session, "_on_workplace_threat_started"))
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if dead or amount<=0: return
 	health=maxf(0,health-amount)
@@ -55,19 +59,21 @@ func _physics_process(delta: float) -> void:
 	var direction := player.global_position-global_position
 	direction.y=0
 	var armed: bool = heist.session.state.equipped_weapon not in ["","fists"]
-	if armed or heist.data.bank_shots:
+	var aiming: bool = armed or heist.data.bank_shots
+	if aiming:
 		visual.rotation.y=atan2(-direction.x,-direction.z)
-		visual.right_upper_arm.rotation.x=-1.25
-		visual.left_upper_arm.rotation.x=-1.1
+	visual.update_pose(delta,aiming,false,0.0,0.0)
 	if not heist.data.bank_shots or gameplay.health<=0: return
 	cooldown=maxf(0,cooldown-delta)
 	if cooldown>0 or direction.length()>18: return
-	var origin := global_position+Vector3.UP*1.1
+	var origin: Vector3 = visual.muzzle_position()
 	var end := player.global_position+Vector3.UP
 	var query := PhysicsRayQueryParameters3D.create(origin,end,3,[get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty() or hit.collider!=player: return
 	cooldown=1.55 if shotgun else .8
+	visual.attack()
 	gameplay._trace(origin,end,.08,.012)
 	gameplay._sound("shotgun" if shotgun else "pistol",origin)
+	gameplay.npc_gunfire.emit(origin, (end - origin).normalized(), self)
 	gameplay.damage_player(24 if shotgun else 8)
