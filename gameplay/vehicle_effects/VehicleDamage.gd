@@ -15,11 +15,11 @@ extends Node
 
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
+const WRECK_BODY := preload("res://gameplay/vehicle_effects/VehicleWreckBody.gd")
 const BURN_RATIO := .2
 ## Segundos entre o limiar de fogo e a explosão, com o carro parado de levar tiro.
 const BURN_SECONDS := 3.5
 const WEAR_STAGES := 3
-const SAG := .14
 ## A carcaça continua queimando depois da explosão, com o fogo minguando até apagar.
 const WRECK_FIRE_SECONDS := 11.0
 const HOP_GRAVITY := 20.0
@@ -43,14 +43,10 @@ var _smoke: GPUParticles3D
 var _ember: StandardMaterial3D
 var _tween: Tween
 var _rng := RandomNumberGenerator.new()
-var _hop_active := false
-var _hop_height := 0.0
-var _hop_velocity := 0.0
-var _hop_tilt := Vector2.ZERO
-var _hop_spin := Vector2.ZERO
-var _hop_rest := Vector2.ZERO
-var _hop_bounces := 0
-var _hop_landed := false
+var _wreck_body: RigidBody3D
+var _driving_layer := 0
+var _driving_mask := 0
+var _driving_physics := false
 var _wreck_fire_time := 0.0
 
 func configure(car: CharacterBody3D) -> void:
@@ -333,24 +329,55 @@ func wreck() -> void:
 			part.set_surface_override_material(index, replacement[_role(part.get_active_material(index) as StandardMaterial3D, surface_key)])
 	_blast_hop()
 
-## Salto balístico do corpo. Antes era um tween fixo (sobe .75 m em .16 s e quica com
-## TRANS_BOUNCE): lia como desenho animado, com a mesma altura para moto e caminhão. Agora a
-## frente (onde fica o motor que pegou fogo) levanta primeiro, o corpo cai sob gravidade,
-## quica uma vez amortecido e assenta torto sobre os aros. Veículo pesado salta menos.
+## O impulso levanta a frente, mas é a colisão da carcaça que limita a queda e o
+## giro. Animar só o visual deixava a traseira atravessar o chão antes de quicar.
 func _blast_hop() -> void:
 	if is_instance_valid(_tween): _tween.kill()
 	var mass := 1.0
 	var handling = vehicle.get("handling")
 	if handling != null and handling.get("mass") != null: mass = maxf(.5, float(handling.mass))
 	var lift := 1.0 / sqrt(mass)
-	_hop_height = 0.0
-	_hop_velocity = _rng.randf_range(4.4, 5.4) * lift
-	_hop_tilt = Vector2.ZERO
-	_hop_spin = Vector2(_rng.randf_range(1.5, 2.3), _rng.randf_range(-1.3, 1.3)) * lift
-	_hop_rest = Vector2(_rng.randf_range(-.035, .035), _rng.randf_range(-.06, .06))
-	_hop_bounces = 0
-	_hop_landed = false
-	_hop_active = true
+	var launch := _rng.randf_range(4.4, 5.4) * lift
+	var spin := Vector3(_rng.randf_range(1.5, 2.3), 0, _rng.randf_range(-1.3, 1.3)) * lift
+	_driving_layer = vehicle.collision_layer
+	_driving_mask = vehicle.collision_mask
+	_driving_physics = vehicle.is_physics_processing()
+	vehicle.collision_layer = 0
+	vehicle.collision_mask = 0
+	vehicle.set_physics_process(false)
+	vehicle.controlled = false
+	vehicle.traffic = false
+	_wreck_body = WRECK_BODY.new()
+	_wreck_body.name = "WreckBody"
+	_wreck_body.vehicle = vehicle
+	_wreck_body.top_level = true
+	_wreck_body.collision_layer = _driving_layer
+	_wreck_body.collision_mask = _driving_mask
+	_wreck_body.mass = mass * 1000.0
+	_wreck_body.gravity_scale = HOP_GRAVITY / float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+	_wreck_body.continuous_cd = true
+	_wreck_body.linear_damp = 0.15
+	_wreck_body.angular_damp = 2.0
+	var material := PhysicsMaterial.new()
+	material.friction = 0.85
+	material.bounce = 0.1
+	_wreck_body.physics_material_override = material
+	# Mede a geometria uma vez. A caixa inclui frente, traseira e rodas, inclusive
+	# em modelos cujo centro não coincide com a origem do veículo.
+	var bounds := _wreck_bounds()
+	_wreck_body.configure_support(bounds)
+	var collider := CollisionShape3D.new()
+	var hull := BoxShape3D.new()
+	hull.size = bounds.size
+	collider.shape = hull
+	collider.position = bounds.get_center()
+	_wreck_body.add_child(collider)
+	var pose := vehicle.global_transform
+	vehicle.add_child(_wreck_body)
+	_wreck_body.global_transform = pose
+	_wreck_body.linear_velocity = vehicle.horizontal_velocity + Vector3.UP * launch
+	_wreck_body.angular_velocity = pose.basis * spin
+	_wreck_body.reset_physics_interpolation()
 	_wreck_fire_time = WRECK_FIRE_SECONDS
 	if is_instance_valid(STREET_PHYSICS.instance):
 		STREET_PHYSICS.instance.spawn_glass(vehicle.global_position + Vector3.UP * 1.0, Vector3.UP)
@@ -360,8 +387,20 @@ func _blast_hop() -> void:
 	_tween = vehicle.create_tween()
 	_tween.tween_property(_ember, "emission_energy_multiplier", 0.0, 7.0).set_trans(Tween.TRANS_SINE)
 
+func _wreck_bounds() -> AABB:
+	var bounds := AABB()
+	var first := true
+	var inverse := vehicle.global_transform.affine_inverse()
+	for mesh: MeshInstance3D in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
+		if mesh.mesh == null: continue
+		var box: AABB = (inverse * mesh.global_transform) * mesh.get_aabb()
+		bounds = box if first else bounds.merge(box)
+		first = false
+	if first:
+		return AABB(Vector3(-vehicle.half_width, 0, -vehicle.half_length), Vector3(vehicle.half_width * 2, vehicle.body_height, vehicle.half_length * 2))
+	return bounds
+
 func _step_wreck(delta: float) -> void:
-	if _hop_active: _step_hop(delta)
 	if _wreck_fire_time > 0.0:
 		_wreck_fire_time = maxf(0.0, _wreck_fire_time - delta)
 		var strength := _wreck_fire_time / WRECK_FIRE_SECONDS
@@ -373,39 +412,25 @@ func _step_wreck(delta: float) -> void:
 		# ficava salpicada de vermelho.
 		if _ember != null: _ember.emission_energy_multiplier = 1.1 * strength
 		if _wreck_fire_time <= 0.0: _stop_fire()
-	if not _hop_active and _wreck_fire_time <= 0.0: set_physics_process(false)
-
-func _step_hop(delta: float) -> void:
-	var visual: Node3D = vehicle.visual
-	if not is_instance_valid(visual):
-		_hop_active = false
-		return
-	if not _hop_landed:
-		_hop_velocity -= HOP_GRAVITY * delta
-		_hop_height += _hop_velocity * delta
-		_hop_tilt += _hop_spin * delta
-		# No ar a frente volta a cair: o giro perde força e inverte perto do pico.
-		_hop_spin -= _hop_tilt * 9.0 * delta
-		if _hop_height <= -SAG and _hop_velocity < 0.0:
-			_hop_height = -SAG
-			if _hop_bounces < 1 and _hop_velocity < -2.0:
-				_hop_bounces += 1
-				_hop_velocity = -_hop_velocity * .22
-				_hop_spin *= -.35
-			else:
-				_hop_velocity = 0.0
-				_hop_landed = true
-	else:
-		_hop_tilt = _hop_tilt.lerp(_hop_rest, 1.0 - exp(-7.0 * delta))
-		if _hop_tilt.distance_to(_hop_rest) < .002:
-			_hop_tilt = _hop_rest
-			_hop_active = false
-	visual.position.y = _hop_height
-	visual.rotation = Vector3(_hop_tilt.x, visual.rotation.y, _hop_tilt.y)
+	if _wreck_fire_time <= 0.0: set_physics_process(false)
 
 func restore() -> void:
 	if is_instance_valid(_tween): _tween.kill()
-	_hop_active = false
+	if is_instance_valid(_wreck_body):
+		vehicle.global_transform = _wreck_body.global_transform
+		_wreck_body.vehicle = null
+		_wreck_body.collision_layer = 0
+		_wreck_body.collision_mask = 0
+		_wreck_body.queue_free()
+		_wreck_body = null
+		var forward := -vehicle.global_basis.z
+		vehicle.global_rotation = Vector3(0, atan2(-forward.x, -forward.z), 0)
+		vehicle.velocity = Vector3.ZERO
+		vehicle.horizontal_velocity = Vector3.ZERO
+		vehicle.speed = 0.0
+		vehicle.collision_layer = _driving_layer
+		vehicle.collision_mask = _driving_mask
+		vehicle.set_physics_process(_driving_physics)
 	_wreck_fire_time = 0.0
 	if is_instance_valid(_fire): _fire.amount_ratio = 1.0
 	if is_instance_valid(_smoke): _smoke.amount_ratio = 1.0

@@ -35,9 +35,9 @@ func physics_tick(active: bool, incoming_velocity: Vector3) -> void:
 		if closing_speed < MIN_IMPACT_SPEED: continue
 		var collider := contact.get_collider()
 		var collider_id := collider.get_instance_id() if is_instance_valid(collider) else 0
-		present_impact(contact.get_position(),normal,closing_speed,collider_id)
+		present_impact(contact.get_position(),normal,closing_speed,collider_id,-1,collider)
 
-func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_id: int, now_msec := -1) -> bool:
+func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_id: int, now_msec := -1, collider: Object = null) -> bool:
 	if intensity < MIN_IMPACT_SPEED: return false
 	var now := Time.get_ticks_msec() if now_msec < 0 else now_msec
 	if now-last_global_msec < GLOBAL_COOLDOWN_MSEC: return false
@@ -63,7 +63,8 @@ func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_
 	emitter.restart()
 	burst_count += 1
 	if now_msec < 0 and is_instance_valid(vehicle):
-		CRASH_AUDIO.play(vehicle, instance_from_id(collider_id) if collider_id > 0 else null, point, intensity * 16.0)
+		# Cooldown keys may be position hashes for props, not Object instance IDs.
+		CRASH_AUDIO.play(vehicle, collider if is_instance_valid(collider) else null, point, intensity * 16.0)
 	return true
 
 func _ensure_emitter() -> void:

@@ -120,6 +120,7 @@ static func _wobble(item: Dictionary, flat: Vector3, director: Node) -> void:
 	var base := _base(item)
 	var axis := Vector3.UP.cross(flat).normalized()
 	var tween: Tween = director.create_tween()
+	tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_method(func(a: float): _set_transform(item, Transform3D(Basis(axis, a) * base.basis, base.origin)), 0.0, 0.09, 0.12)
 	tween.tween_method(func(a: float): _set_transform(item, Transform3D(Basis(axis, a) * base.basis, base.origin)), 0.09, 0.0, 0.35)
 
@@ -131,6 +132,7 @@ static func _topple(item: Dictionary, flat: Vector3, director: Node) -> void:
 	_disable_collision(item)
 	_kill_light(item)
 	var tween: Tween = director.create_tween()
+	tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	var rotate := func(a: float): _set_transform(item, Transform3D(Basis(axis, a) * base.basis, base.origin))
 	tween.tween_method(rotate, 0.0, PI * 0.49, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_callback(func(): director.play_prop_hit(base.origin + flat * 2.5, "metal", 3.0))

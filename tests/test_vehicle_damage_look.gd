@@ -22,6 +22,11 @@ func warm_dark(color: Color) -> bool:
 func run() -> void:
 	var world := Node3D.new()
 	root.add_child(world)
+	var floor_body := StaticBody3D.new()
+	var floor_shape := CollisionShape3D.new()
+	floor_shape.shape = WorldBoundaryShape3D.new()
+	floor_body.add_child(floor_shape)
+	world.add_child(floor_body)
 	for archetype: String in ["", "sport_coupe"]:
 		var car := VEHICLE.new()
 		car.archetype = archetype
@@ -62,7 +67,8 @@ func run() -> void:
 				if warm_dark(material.albedo_color): warm += 1
 				check(not material.albedo_color.is_equal_approx(Color("292728")), label + ": material chapado antigo não volta")
 		check(parts > 0 and warm == 0, label + ": nenhuma superfície da carcaça é marrom (%d/%d)" % [warm, parts])
-		check(car.visual.position.y < 0, label + ": carcaça assenta sobre os aros")
+		check(car.visual.position == Vector3.ZERO and is_instance_valid(car.damage_look._wreck_body),
+			label + ": carcaça acompanha a colisão física sem afundar o visual")
 
 		car.repair()
 		check(car.health == car.max_health and not car.damage_look.wrecked, label + ": reparo zera o dano")

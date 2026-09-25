@@ -19,6 +19,8 @@ const PERSON_MIN_SPEED := 60.0 / 16.0
 const LETHAL_SPEED := 200.0 / 16.0
 # Batida entre carros: velocidade de aproximação mínima para empurrar/rodar.
 const CRASH_MIN_CLOSING := 3.0
+const CRASH_DAMAGE_PER_SPEED := 0.5
+const CRASH_DAMAGE_MAX_RATIO := 0.12
 const CRASH_STUN := 2.4
 const SLIDE_FRICTION := 7.0
 # BodyWoundTrail da V1: 6 s sangrando, gota a cada 1,15 s se andou 28 px.
@@ -205,6 +207,9 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 const CRASH_RESTITUTION := 0.15
 
 func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
+	# Apply damage here, behind the pair cooldown, instead of every contact frame.
+	vehicle.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), other)
+	other.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), vehicle)
 	var into := -normal
 	var mine := _vehicle_mass(vehicle)
 	var theirs := _vehicle_mass(other)
