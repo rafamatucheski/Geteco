@@ -312,6 +312,7 @@ func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -
 		sides.assign([-1.0, 1.0] if taken.size() % 2 == 0 else [1.0, -1.0])
 		var door := -clampf(float(car.half_length) * .18, .30, .62)
 		longitudinal.assign([door, 0.3, -1.0, 1.4])
+		if car.archetype == "police_transport": longitudinal.assign([-1.1, 0.2, 1.5])
 	var reach: float = car.half_width + (0.9 if right_only else 0.75)
 	var excluded: Array[RID] = [car.get_rid()]
 	var capsule := CapsuleShape3D.new()
@@ -341,10 +342,10 @@ func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -
 
 # --- Criação de veículos e equipes ---------------------------------------------
 
-func _create_vehicle(service: String, point: Vector3, yaw: float) -> CharacterBody3D:
+func _create_vehicle(service: String, point: Vector3, yaw: float, archetype := "") -> CharacterBody3D:
 	var car := VEHICLE.new()
-	car.archetype = RULES.archetype_for(service)
-	car.paint_color = Color("202128") if service == "mortician" else Color.WHITE
+	car.archetype = archetype if not archetype.is_empty() else RULES.archetype_for(service)
+	car.paint_color = Color("202128") if service == "mortician" or car.archetype == "police_transport" else Color.WHITE
 	car.vehicle_id = "dispatch_%s_%d" % [service, _serial]
 	car.set_meta("dispatch_unit", true)
 	world.add_child(car)
@@ -361,11 +362,22 @@ func _create_vehicle(service: String, point: Vector3, yaw: float) -> CharacterBo
 	return car
 
 ## Chamado por Driving.gd quando o jogador começa a entrar numa viatura em serviço.
-func vehicle_stolen(car: CharacterBody3D, thief_side: int) -> bool:
+func vehicle_stolen(car: CharacterBody3D, _thief_side: int) -> bool:
 	for unit in units:
 		if unit.vehicle != car or unit.finished: continue
-		unit.surrender_vehicle(float(thief_side))
+		if not unit.is_police(): return false
+		# Reserve uma saída física para cada ocupante antes de transferir o carro.
+		# Se faltar espaço, ninguém é criado dentro de um sólido e o roubo não começa.
+		var exits: Array[Dictionary] = []
+		var reserved: Array[Vector3] = []
+		for index in unit.crew_remaining:
+			var exit: Dictionary = exit_point(car, reserved, false)
+			if exit.is_empty(): return false
+			exits.append(exit)
+			reserved.append(exit.point)
+		unit.surrender_vehicle(exits)
 		car.remove_meta("dispatch_unit")
+		car.player_damage_attribution = true
 		if is_instance_valid(gameplay): gameplay.register_crime(40, car.global_position)
 		return true
 	return false
@@ -390,7 +402,7 @@ func spawn_officer(unit: RefCounted, point: Vector3, side: float) -> CharacterBo
 	var officer := OFFICER.new()
 	officer.controller = gameplay
 	officer.dispatch_controller = self
-	officer.tier = clampi(gameplay.stars - 2, 0, 4)
+	officer.tier = RULES.officer_tier_for(unit.level, unit.variant)
 	officer.last_known = gameplay.last_known
 	officer.vehicle = unit.vehicle
 	officer.door_side = side
@@ -437,7 +449,11 @@ func adopt_wreck(car: CharacterBody3D) -> void:
 
 func _tidy_wrecks() -> void:
 	wrecks = wrecks.filter(func(car): return is_instance_valid(car))
+	var driving: Variant = world.get("driving") if is_instance_valid(world) else null
 	for car in wrecks.duplicate():
+		if car.controlled or (driving != null and driving.car == car):
+			wrecks.erase(car)
+			continue
 		var old: bool = _clock - float(car.get_meta("dispatch_wreck_at", _clock)) > 30.0
 		if (old or wrecks.size() > MAX_WRECKS) and is_unseen(car.global_position) and distance_to_player(car.global_position) > RULES.RECYCLE_DISTANCE:
 			wrecks.erase(car)
@@ -452,12 +468,15 @@ func _dispatch_police(delta: float) -> void:
 		_last_stars = 0
 		return
 	if _last_stars == 0: _police_clock = RULES.INITIAL_DELAY[stars]
+	elif stars > _last_stars: _police_clock = minf(_police_clock, RULES.INITIAL_DELAY[stars])
 	_last_stars = stars
 	_police_clock -= delta
 	if _police_clock > 0.0: return
 	# Como em WantedManager._process: o intervalo reinicia mesmo sem despachar.
 	_police_clock = RULES.INTERVAL[stars]
-	if deployed_this_pursuit >= RULES.DEPLOYMENT[stars] or not gameplay.last_known_valid: return
+	# High-alert reinforcements continue while the pursuit is active. Live-unit
+	# and foot-agent caps still apply; clearing the first wave must not empty 6 stars.
+	if (stars < 5 and deployed_this_pursuit >= RULES.DEPLOYMENT[stars]) or not gameplay.last_known_valid: return
 	if _active_police().size() >= RULES.MAX_ACTIVE[stars] or units.size() >= RULES.MAX_UNITS: return
 	var anchor: Vector3 = gameplay.last_known
 	if player_position_override != Vector3.INF:
@@ -469,7 +488,12 @@ func _dispatch_police(delta: float) -> void:
 
 ## Despacha uma viatura que nasce em faixa, fora da vista, a 32,5–112,5 m de `anchor`.
 func dispatch_police_to(anchor: Vector3) -> RefCounted:
-	var size := _archetype_size(RULES.archetype_for("police"))
+	var level: int = gameplay.stars
+	var tactical_limit := 2 if level >= 6 else 1
+	var tactical_count := _active_police().filter(func(u): return u.variant == "tactical").size()
+	var variant: String = RULES.variant_for(level, tactical_count < tactical_limit)
+	var archetype := "police_transport" if level >= 5 and variant == "tactical" else RULES.archetype_for("police")
+	var size := _archetype_size(archetype)
 	var checked := 0
 	var candidates := _depot_candidates("police", anchor)
 	candidates.append_array(router.spawn_candidates(anchor, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
@@ -484,11 +508,10 @@ func dispatch_police_to(anchor: Vector3) -> RefCounted:
 		if not plan.ok: continue
 		_serial += 1
 		deployed_this_pursuit += 1
-		var level: int = gameplay.stars
-		var elite := level >= 4 and not _has_active_tactical()
-		var variant: String = RULES.variant_for(level, elite)
-		var car := _create_vehicle("police", point, candidate.yaw)
+		var car := _create_vehicle("police", point, candidate.yaw, archetype)
 		var unit := _make_unit("police", car, RULES.speed_cap(variant), RULES.STUCK_POLICE)
+		unit.crew_capacity = RULES.OFFICERS_PER_VAN if archetype == "police_transport" else RULES.OFFICERS_PER_CAR
+		unit.crew_remaining = unit.crew_capacity
 		unit.serial = _serial
 		unit.level = level
 		unit.variant = variant

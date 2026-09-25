@@ -34,6 +34,7 @@ var role := 0
 var officers: Array = []
 ## Policiais ainda a bordo. A dupla é fixa: quem morreu fora da viatura não é reposto.
 var crew_remaining := RULES.OFFICERS_PER_CAR
+var crew_capacity := RULES.OFFICERS_PER_CAR
 var target_still := 0.0
 var resume_pursuit := false
 var _aim := 0.0
@@ -123,30 +124,31 @@ func finish(reason: String) -> void:
 	if is_instance_valid(crew) and reason != "left": crew.queue_free()
 	crew = null
 	if is_instance_valid(vehicle):
-		if wrecked and reason == "wrecked": controller.adopt_wreck(vehicle)
+		if (wrecked and reason == "wrecked") or reason == "crew_depleted": controller.adopt_wreck(vehicle)
 		else: vehicle.queue_free()
 	controller.emit_dispatch_event("unit_finished", {"unit": self, "reason": reason})
 
-## O jogador tomou a viatura parada. Quem ainda estava a bordo desce pela porta do
-## lado do ladrão (é arrancado do banco) e entra em combate; a equipe a pé fica e
-## continua a busca. A viatura passa a ser do jogador: não some nem volta à base.
-func surrender_vehicle(thief_side: float) -> void:
+## O jogador tomou a viatura parada. Todos os ocupantes saem por pontos livres;
+## policiais que já estavam a pé continuam a busca sob o ciclo de vida do Gameplay.
+## A viatura passa a ser do jogador: não some nem volta à base.
+func surrender_vehicle(exits: Array[Dictionary]) -> void:
 	if finished: return
 	if driver != null:
 		driver.discard_overtaking("stolen")
 		_detach_driver()
 	_set_siren(false)
 	_release_incident()
-	if is_police() and crew_remaining > 0 and is_instance_valid(vehicle):
-		# Arrancado pela porta do ladrão, caindo um pouco para trás dela para não nascer
-		# dentro do jogador que está entrando.
-		var point: Vector3 = vehicle.to_global(Vector3(thief_side * (vehicle.half_width + 0.8), 0.0, 0.7))
-		point.y = vehicle.global_position.y + 0.04
-		var officer: CharacterBody3D = controller.spawn_officer(self, point, thief_side)
+	for exit in exits:
+		var officer: CharacterBody3D = controller.spawn_officer(self, exit.point, float(exit.side))
 		officers.append(officer)
 		crew_remaining -= 1
 	for officer in officers:
-		if is_instance_valid(officer) and officer.mode == "return": officer.mode = "combat"
+		if not is_instance_valid(officer): continue
+		if officer.boarded.is_connected(on_officer_boarded): officer.boarded.disconnect(on_officer_boarded)
+		if officer.dead: continue
+		if officer.mode == "return": officer.mode = "combat"
+		if not controller.gameplay.police.has(officer): controller.gameplay.police.append(officer)
+	officers.clear()
 	finished = true
 	end_reason = "stolen"
 	controller.emit_dispatch_event("unit_finished", {"unit": self, "reason": "stolen"})
@@ -469,7 +471,20 @@ func _police_parked(delta: float) -> void:
 	if crew_remaining <= 0 and officers.is_empty():
 		_police_crew_depleted()
 		return
-	var free_slots: int = mini(crew_remaining, RULES.MAX_FOOT_OFFICERS - controller.foot_officer_count())
+	if _deploy_police_crew():
+		_set_siren(false)
+		_set_state("working")
+		return
+	# Keep blocking while no safe exit/slot is available.
+	if crew_remaining <= 0: return
+	if controller.gameplay.contact_age < 1.0 and _target_velocity(_target()).length() > 3.0 and _target_in_car(_target()):
+		_set_state("enroute")
+	elif state_age > 8.0:
+		_set_state("enroute")
+
+func _deploy_police_crew() -> bool:
+	var limit: int = RULES.FOOT_LIMIT[clampi(controller.gameplay.stars, 0, 6)]
+	var free_slots: int = mini(crew_remaining, limit - controller.foot_officer_count())
 	var deployed := false
 	var taken: Array[Vector3] = []
 	for index in maxi(0, free_slots):
@@ -480,21 +495,16 @@ func _police_parked(delta: float) -> void:
 		officers.append(officer)
 		crew_remaining -= 1
 		deployed = true
-	if deployed:
-		_set_siren(false)
-		_set_state("working")
-		return
-	# Sem saída livre ou sem vaga: a viatura continua cumprindo o bloqueio; se a
-	# situação mudar (alvo fugiu), volta à perseguição.
-	if controller.gameplay.contact_age < 1.0 and _target_velocity(_target()).length() > 3.0 and _target_in_car(_target()):
-		_set_state("enroute")
-	elif state_age > 8.0:
-		_set_state("enroute")
+	return deployed
 
 func _police_working(delta: float) -> void:
 	driver.hold(true)
 	driver.tick(delta)
 	officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
+	_exit_wait -= delta
+	if crew_remaining > 0 and _exit_wait <= 0.0 and driver.settled():
+		_exit_wait = .5
+		_deploy_police_crew()
 	if officers.is_empty():
 		# A dupla que desceu caiu. Sem ninguém a bordo a viatura não repõe policiais
 		# (o orçamento de despacho só se gasta com viaturas novas); se sobrou
@@ -508,7 +518,15 @@ func _police_working(delta: float) -> void:
 
 func _police_crew_depleted() -> void:
 	controller.emit_dispatch_event("crew_depleted", {"unit": self})
-	_begin_departure()
+	# Nobody remains to drive. Retain a stealable parked car, recycle only unseen.
+	vehicle.set_external_driver(false)
+	vehicle.speed = 0.0
+	vehicle.horizontal_velocity = Vector3.ZERO
+	vehicle.velocity.x = 0.0
+	vehicle.velocity.z = 0.0
+	vehicle.remove_meta("dispatch_unit")
+	vehicle.player_damage_attribution = true
+	finish("crew_depleted")
 
 func _begin_recall(resume: bool) -> void:
 	resume_pursuit = resume
@@ -534,6 +552,9 @@ func _police_recall(delta: float) -> void:
 			if is_instance_valid(officer): officer.queue_free()
 		officers.clear()
 		if resume_pursuit and controller.gameplay.stars > 0:
+			if crew_remaining <= 0:
+				_police_crew_depleted()
+				return
 			_set_siren(true)
 			_set_state("enroute")
 		else:
@@ -541,7 +562,7 @@ func _police_recall(delta: float) -> void:
 
 func on_officer_boarded(officer: CharacterBody3D) -> void:
 	officers.erase(officer)
-	crew_remaining = mini(RULES.OFFICERS_PER_CAR, crew_remaining + 1)
+	crew_remaining = mini(crew_capacity, crew_remaining + 1)
 	if is_instance_valid(officer): officer.queue_free()
 	controller.emit_dispatch_event("officer_boarded", {"unit": self})
 
@@ -690,6 +711,9 @@ func on_crew_released(released: CharacterBody3D) -> void:
 # --- Partida -----------------------------------------------------------------
 
 func _begin_departure() -> void:
+	if is_police() and crew_remaining <= 0 and officers.is_empty():
+		_police_crew_depleted()
+		return
 	_release_incident()
 	_set_siren(false)
 	_departure_clock = 0.0

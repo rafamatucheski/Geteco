@@ -5,6 +5,7 @@ var materials: Array[StandardMaterial3D] = []
 var original_color := Color.WHITE
 
 static func source_for(archetype: String) -> Dictionary:
+	if archetype == "police_transport": archetype = "courier_van"
 	if _sources.is_empty():
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://runtime/VehiclePaintSources.json"))
 		if parsed is Dictionary: _sources = parsed

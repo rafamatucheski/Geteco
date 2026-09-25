@@ -3,7 +3,11 @@ static var _data: Dictionary = {}
 static func all() -> Dictionary:
 	if _data.is_empty():
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://assets/fleet/catalog.json"))
-		if parsed is Dictionary: _data = parsed.vehicles
+		if parsed is Dictionary:
+			_data = parsed.vehicles
+			var transport: Dictionary = _data.courier_van.duplicate(true)
+			transport.merge({"id":"police_transport", "label":"Camburão tático", "colors":["202128ff"], "durability":380, "mass":2.6, "roof_prop":"none"}, true)
+			_data["police_transport"] = transport
 	return _data
 static func spec(id: String) -> Dictionary:
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
@@ -11,7 +15,10 @@ static func create(id: String) -> Node3D:
 	var definition := spec(id)
 	if definition.is_empty(): return null
 	var packed := load(definition.scene) as PackedScene
-	return packed.instantiate() if packed else null
+	if packed == null: return null
+	var model := packed.instantiate() as Node3D
+	if id == "police_transport": preload("res://gameplay/dispatch/PoliceTransportModel.gd").decorate(model)
+	return model
 static func default_paint(id: String, fallback := Color.WHITE) -> Color:
 	var colors: Array = spec(id).get("colors",[])
 	return Color.html(str(colors.pick_random())) if not colors.is_empty() else fallback

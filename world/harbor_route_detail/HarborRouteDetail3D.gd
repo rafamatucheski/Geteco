@@ -284,18 +284,20 @@ static func _build_connecting_streets() -> Node3D:
 	slab_union_n.position = Vector3(86.8, 0.0, 94.0)
 	zone.add_child(slab_union_n)
 	
-	var slab_union_s := HarborRouteProps.create_sidewalk_slab(Vector2(2.4, 22.0), 0.12)
-	slab_union_s.position = Vector3(86.8, 0.0, 116.0)
-	zone.add_child(slab_union_s)
+	# Medical Garden Lane crosses here (Z 119.875–125.125). The former
+	# continuous slab and curb cut across both lanes beside Harbor Patrol.
+	for span in [Vector2(105.0,119.4), Vector2(125.6,127.0)]:
+		var slab := HarborRouteProps.create_sidewalk_slab(Vector2(2.4, span.y-span.x), 0.12)
+		slab.position = Vector3(86.8, 0.0, (span.x+span.y)*.5)
+		zone.add_child(slab)
+		var curb := HarborRouteProps.create_curb_segment(span.y-span.x, 0.30, 0.14)
+		curb.position = Vector3(85.5, 0.0, (span.x+span.y)*.5)
+		zone.add_child(curb)
 	
 	# Curbs facing the Union Ave roadway (at X = 85.5)
 	var curb_union_n := HarborRouteProps.create_curb_segment(22.0, 0.30, 0.14)
 	curb_union_n.position = Vector3(85.5, 0.0, 94.0)
 	zone.add_child(curb_union_n)
-	
-	var curb_union_s := HarborRouteProps.create_curb_segment(22.0, 0.30, 0.14)
-	curb_union_s.position = Vector3(85.5, 0.0, 116.0)
-	zone.add_child(curb_union_s)
 	
 	# Streetlights spaced every ~20m along Union Avenue
 	var light_u1 := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(-90.0))

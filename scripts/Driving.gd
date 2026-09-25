@@ -54,7 +54,7 @@ func _player_alive() -> bool:
 func _entry_option(allow_transition := false) -> Dictionary:
 	if is_body_transition_active() or (not allow_transition and _external_transition_blocked()): return {}
 	if occupied or world.player.input_locked: return {}
-	var candidate: CharacterBody3D = car
+	var candidate: CharacterBody3D = car if is_instance_valid(car) else null
 	if not "--sandbox" in OS.get_cmdline_user_args():
 		candidate = null
 		var distance := 5.0
@@ -81,6 +81,7 @@ const JACK_MAX_SPEED := 11.0 # ~40 km/h
 const JACK_DOOR_REACH := 2.8 # a porta passa rápido: alcance maior que o 1,8 m parado
 const JACK_STOP_SECONDS := .4
 var _jacking := false
+var _jack_generation := 0
 
 func _speed_allows_entry(candidate: CharacterBody3D) -> bool:
 	if absf(candidate.speed) <= .5: return true
@@ -103,16 +104,22 @@ func interact(allow_transition := false) -> bool:
 	return _begin_entry(option.car,int(option.side))
 
 func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
+	var dispatch_car := bool(candidate.get_meta("dispatch_unit",false))
+	if dispatch_car:
+		if not is_instance_valid(world.get("dispatch")) or not world.dispatch.vehicle_stolen(candidate,side): return false
 	car = candidate
 	_watch_car(car)
 	_last_vehicle_position = car.global_position
 	occupied = true
-	if car.traffic:
+	# A crash temporarily suspends traffic. Its pending recovery still belongs
+	# to the NPC until theft transfers ownership, otherwise it resumes mid-entry.
+	if (car.traffic or car.get_meta("crash_was_traffic", false)) and not dispatch_car:
 		car.traffic = false
+		car.remove_meta("crash_was_traffic")
+		# It is now a persistent player vehicle, including after dismounting.
+		car.remove_meta("ambient_traffic")
 		if world.get("gameplay") != null: world.gameplay.register_crime(15,car.global_position)
 		_eject_civilian_driver(car,side)
-	elif car.get_meta("dispatch_unit",false) and is_instance_valid(world.get("dispatch")):
-		world.dispatch.vehicle_stolen(car,side)
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
@@ -136,23 +143,27 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 ## Jogador agarrado à porta enquanto o motorista freia; depois segue o roubo normal.
 func _grab_moving(side: int) -> void:
 	_jacking = true
+	_jack_generation += 1
+	var generation := _jack_generation
 	var start_speed: float = car.speed
 	var elapsed := 0.0
 	while elapsed < JACK_STOP_SECONDS:
 		await get_tree().physics_frame
-		if not is_instance_valid(car) or car.health <= 0 or not _player_alive():
+		if generation != _jack_generation or not _jacking or not occupied: return
+		if not is_instance_valid(car) or car.is_queued_for_deletion() or car.health <= 0 or not _player_alive():
 			_jacking = false
 			_force_detach("jack_failed")
 			return
 		elapsed += get_physics_process_delta_time()
 		car.speed = lerpf(start_speed, 0.0, clampf(elapsed / JACK_STOP_SECONDS, 0.0, 1.0))
 		var door: Vector3 = car.driver_door_anchor(side)
-		world.player.global_position = Vector3(door.x, world.player.global_position.y, door.z)
+		world.player.global_position = door
 	car.speed = 0.0
 	_jacking = false
 	_start_boarding(side)
 
 func _start_boarding(side: int) -> void:
+	car.stop_boarding_motion()
 	transition = BOARDING_PRESENTATION.new()
 	add_child(transition)
 	transition.entered.connect(_complete_entry)
@@ -204,6 +215,7 @@ func _complete_entry() -> void:
 	world.player.input_locked = false
 	world.player.hide()
 	world.player.teleport(car.global_position)
+	_update_mounted_player()
 
 func exit_position() -> Vector3:
 	if not is_instance_valid(car): return Vector3.INF
@@ -237,17 +249,18 @@ func leave() -> bool:
 		_message("Aguarde o serviço terminar")
 		return false
 	if absf(car.speed) > 0.5:
-		_message("Pare o carro para sair")
+		_message("Pare a moto para sair" if car.archetype.begins_with("bike_") else "Pare o carro para sair")
 		return false
 	var point := exit_position()
 	if not point.is_finite():
-		_message("Saída bloqueada — afaste o carro")
+		_message("Saída bloqueada — afaste a moto" if car.archetype.begins_with("bike_") else "Saída bloqueada — afaste o carro")
 		return false
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
 	car.throttle_input = 0
 	car.brake_input = true
+	car.stop_boarding_motion()
 	world.player.input_locked = true
 	world.player.set_physics_process(false)
 	world.player.collision_layer = 0
@@ -294,12 +307,16 @@ func _transition_cancelled(_reason: String, point: Vector3) -> void:
 	_restore_player_on_foot(point)
 
 func cancel_transition(reason := "cancelled") -> void:
-	if is_body_transition_active():
+	_jacking = false
+	_jack_generation += 1
+	if is_instance_valid(transition):
 		transition.abort(reason)
 		return
 	if occupied: _force_detach(reason)
 
 func _force_detach(_reason: String) -> void:
+	_jacking = false
+	_jack_generation += 1
 	var point := _last_vehicle_position
 	if is_instance_valid(car):
 		_last_vehicle_position = car.global_position
@@ -337,8 +354,7 @@ func _watch_car(candidate: CharacterBody3D) -> void:
 func _on_car_destroyed(candidate: CharacterBody3D) -> void:
 	if candidate != car or not (occupied or is_body_transition_active()): return
 	var gameplay = world.get("gameplay")
-	if is_body_transition_active(): transition.abort("vehicle_destroyed")
-	else: _force_detach("vehicle_destroyed")
+	cancel_transition("vehicle_destroyed")
 	if is_instance_valid(gameplay) and gameplay.has_method("damage_player"):
 		gameplay.damage_player(1000.0)
 
@@ -346,6 +362,11 @@ func _on_car_tree_exiting(candidate: CharacterBody3D) -> void:
 	if candidate != car: return
 	_last_vehicle_position = candidate.global_position
 	if occupied or is_body_transition_active(): cancel_transition("vehicle_removed")
+	# The persistence owner retires deliberate removals while this body is still
+	# valid; teardown/reparenting can capture without ever reading a freed ref.
+	if is_instance_valid(world.get("production")):
+		world.production.release_player_vehicle()
+	car = null
 
 func _message(text: String) -> void:
 	status = text
@@ -355,15 +376,17 @@ func _process(delta: float) -> void:
 	if is_body_transition_active():
 		if not is_instance_valid(car) or car.is_queued_for_deletion(): cancel_transition("vehicle_removed")
 		elif not _player_alive(): cancel_transition("death")
-		elif _external_transition_blocked(): cancel_transition("session_transition")
+		elif _external_transition_blocked() and not (is_instance_valid(world.get("session")) and world.session.has_method("allows_saved_driver_animation") and world.session.allows_saved_driver_animation()): cancel_transition("session_transition")
 	status_time = maxf(0,status_time-delta)
 	interface_clock += delta
 	if interface_clock < 0.1: return
 	interface_clock = 0
 	instructions.visible = not world.player.input_locked
 	var entry := {} if occupied else _entry_option()
-	var entry_label := "F  Arrombar viatura" if entry.get("car") != null and entry.car.get_meta("police_locked", false) else "F  Entrar no carro"
-	prompt.text = status if status_time > 0 else ("" if _external_transition_blocked() or is_body_transition_active() else ("F  Sair do carro" if occupied else (entry_label if not entry.is_empty() else "")))
+	# Carro comum não mostra aviso ao chegar perto (pedido do usuário); só a viatura trancada avisa que exige arrombar.
+	var entry_label := "F  Arrombar viatura" if entry.get("car") != null and entry.car.get_meta("police_locked", false) else ""
+	var exit_label := "F  Sair da moto" if is_instance_valid(car) and car.archetype.begins_with("bike_") else "F  Sair do carro"
+	prompt.text = status if status_time > 0 else ("" if _external_transition_blocked() or is_body_transition_active() else (exit_label if occupied else (entry_label if not entry.is_empty() else "")))
 	speed_label.text = "%02d km/h" % roundi(absf(car.speed)*3.6) if occupied and is_instance_valid(car) else ""
 	instructions.text = "W / S  acelerar / ré    A / D  virar    Espaço  frear    F  sair    Esc  pausa" if occupied else "WASD  mover    Shift  correr    E  interagir    F  carro    Z / C  girar    Esc  pausa"
 
@@ -371,3 +394,11 @@ func _physics_process(_delta: float) -> void:
 	if occupied and not is_body_transition_active() and is_instance_valid(car):
 		_last_vehicle_position = car.global_position
 		world.player.position = car.position
+		_update_mounted_player()
+
+func _update_mounted_player() -> void:
+	if not car.archetype.begins_with("bike_"): return
+	world.player.global_position = car.driver_seat_anchor()
+	world.player.visual.rotation.y = car.global_rotation.y
+	world.player.pose_vehicle(1.0, 0.0, -1, 1.0, car.motorcycle_handholds())
+	world.player.show()

@@ -10,10 +10,10 @@ extends RefCounted
 const PX := 16.0
 
 # --- Polícia (WantedManager) -------------------------------------------------
-const MAX_ACTIVE: Array[int] = [0, 2, 3, 4, 5, 5, 5]
-const DEPLOYMENT: Array[int] = [0, 4, 6, 10, 14, 18, 22]
+const MAX_ACTIVE: Array[int] = [0, 2, 3, 4, 5, 6, 8]
+const DEPLOYMENT: Array[int] = [0, 4, 6, 10, 18, 26, 40]
 const INITIAL_DELAY: Array[float] = [0.0, 6.0, 3.0, 1.0, 1.0, 1.0, 1.0]
-const INTERVAL: Array[float] = [0.0, 10.0, 8.0, 6.0, 5.0, 4.0, 4.0]
+const INTERVAL: Array[float] = [0.0, 10.0, 8.0, 6.0, 4.0, 3.0, 2.0]
 const SPAWN_MIN := 520.0 / PX
 const SPAWN_MAX := 1800.0 / PX
 const SIGHT_RANGE := 650.0 / PX
@@ -31,6 +31,8 @@ const FORMATION_SPACING: Array[float] = [130.0 / PX, 175.0 / PX, 175.0 / PX, 260
 const FORMATION_LEAD: Array[float] = [0.22, 0.42, 0.42, 0.70, 0.95]
 const FORMATION_FLANK := 32.0 / PX
 const OFFICERS_PER_CAR := 2
+const OFFICERS_PER_VAN := 6
+const FOOT_LIMIT: Array[int] = [0, 4, 6, 8, 10, 12, 16]
 
 # --- Emergência ---------------------------------------------------------------
 const MAX_INCIDENTS := 24
@@ -50,10 +52,9 @@ const RECYCLE_STUCK_SECONDS := 24.0
 
 # --- Limites próprios da V2 (nenhum tem equivalente na V1) ---------------------
 ## Teto absoluto de veículos de despacho vivos, somando todos os serviços.
-const MAX_UNITS := 8
-## Policiais a pé ao mesmo tempo. Igual ao teto de agentes de Gameplay.gd
-## (busca A* por agente); a viatura só desembarca o que couber.
-const MAX_FOOT_OFFICERS := 5
+const MAX_UNITS := 11
+## Absolute cap; FOOT_LIMIT scales the actual response with wanted level.
+const MAX_FOOT_OFFICERS := 16
 ## ProductionWorld remove veículos ambiente além de 145 m; suspendemos um pouco antes.
 const SUSPEND_DISTANCE := 130.0
 const RESUME_DISTANCE := 115.0
@@ -93,8 +94,18 @@ static func arrival_radius(service: String) -> float:
 		_: return ARRIVAL_MEDIC
 
 static func variant_for(level: int, elite: bool) -> String:
+	if level >= 5: return "tactical" if elite else "interceptor"
 	if level >= 4: return "tactical" if elite else "patrol"
 	return "interceptor" if level == 3 else "patrol"
+
+## O equipamento pertence à equipe despachada, não às estrelas no instante
+## do desembarque. Patrulhas enviadas antes da escalada mantêm seu equipamento.
+## PoliceModel.UnitTier: REGULAR, DETECTIVE, SWAT, FBI, ARMY.
+static func officer_tier_for(level: int, variant: String) -> int:
+	match variant:
+		"interceptor": return 1
+		"tactical": return clampi(level - 2, 2, 4)
+		_: return 0
 
 static func speed_cap(variant: String) -> float:
 	return SPEED_FAST if variant == "interceptor" else SPEED_PATROL

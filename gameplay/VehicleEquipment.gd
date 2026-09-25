@@ -68,13 +68,13 @@ func _ready() -> void:
 			if original.albedo_color.is_equal_approx(Color("f5f6fa")) and original.emission_enabled: key = "headlight"
 			# A SUV da PM usa as mesmas lentes do cruiser; sem ela aqui a viatura
 			# roubada do pátio não tinha giroflex nem sirene.
-			var police: bool = car.archetype in ["police_cruiser", "police_suv"]
+			var police: bool = car.archetype in ["police_cruiser", "police_suv", "police_transport"]
 			if (police or car.archetype == "rescue_pumper") and original.emission_enabled:
 				var left := Color("e83c42") if police else Color("e74c3c")
 				var right := Color("3689ef") if police else Color("f39c12")
 				if original.albedo_color.is_equal_approx(left): key = "bar_left"
 				if original.albedo_color.is_equal_approx(right): key = "bar_right"
-		if key in ["bar_left", "bar_right"] and car.archetype not in ["police_cruiser", "police_suv", "medic_box", "rescue_pumper"]: continue
+		if key in ["bar_left", "bar_right"] and car.archetype not in ["police_cruiser", "police_suv", "police_transport", "medic_box", "rescue_pumper"]: continue
 		var local := car.to_local(part.global_position)
 		if key not in ["bar_left", "bar_right"]: key = _lens_role(key, original, local)
 		if key == "": continue

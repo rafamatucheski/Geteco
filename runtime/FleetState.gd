@@ -17,5 +17,5 @@ static func validate(data: Dictionary) -> bool:
 	if not equipment is Dictionary: return false
 	if not equipment.is_empty():
 		if not equipment.get("headlights") is bool or not equipment.get("siren") is bool: return false
-		if equipment.siren and data.archetype not in ["police_cruiser","police_suv","medic_box","rescue_pumper"]: return false
+		if equipment.siren and data.archetype not in ["police_cruiser","police_suv","police_transport","medic_box","rescue_pumper"]: return false
 	return data.health>=0 and data.health<=float(FLEET.spec(data.archetype).get("durability",180))

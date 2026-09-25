@@ -4,7 +4,10 @@ const LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
 const SCALE := 16.0
 
 static func is_private_road(road: Dictionary) -> bool:
-	return str(road.get("id", "")).begins_with("south_port_")
+	var id := str(road.get("id", ""))
+	# Workshop/service access and Neco's dead-end yard are player destinations,
+	# not through routes for the ambient population.
+	return id.begins_with("south_port_") or id in ["salvage_access", "westgate_service_lane"]
 
 static func ambient_roads(roads: Array) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

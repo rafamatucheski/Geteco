@@ -89,7 +89,7 @@ func _pursuit_and_release() -> void:
 	check(unit.service == "police" and unit.vehicle.archetype == "police_cruiser", "veículo original police_cruiser")
 	var spawn_distance: float = Vector2(unit.vehicle.global_position.x - 30.0, unit.vehicle.global_position.z - 10.0).length()
 	check(spawn_distance >= RULES.SPAWN_MIN - 3.0 and spawn_distance <= RULES.SPAWN_MAX + 3.0, "nasce a 32,5–112,5 m do crime (%.0f m)" % spawn_distance)
-	check(not unit.vehicle.is_in_group("drivable"), "viatura de serviço não é oferecida para roubo pelo Driving.gd")
+	check(unit.vehicle.is_in_group("drivable") and unit.vehicle.get_meta("dispatch_unit", false), "viatura policial de serviço é dirigível e conserva vínculo com o despacho")
 	check(gameplay.dispatch_owned and gameplay.deployed == 0, "despacho embutido de Gameplay suprimido sem tocar o orçamento da procura")
 	check(gameplay.police.is_empty(), "nenhum policial nasce por teletransporte de Gameplay.spawn_officer")
 	tracker.vehicle = unit.vehicle
@@ -174,7 +174,9 @@ func _foot_agent_contract() -> void:
 	check(officer.global_position.distance_to(start) > 2.0, "policial a pé procura caminho ao perder contato")
 	check(gameplay.health == initial_health, "uma estrela sem agressão não autoriza tiro")
 	wall.queue_free()
-	officer.global_position = Vector3(2.5, 0, 0)
+	# A 2 m do jogador, a dispersão real de ±0,13 rad ainda acerta a cápsula
+	# de 0,30 m; a 5,5 m, o único tiro nesta janela podia errar por sorte.
+	officer.global_position = Vector3(6.0, 0, 0)
 	await _frames(5)
 	officer.receive_damage(1.0, bundle.player)
 	await _frames(90)
@@ -192,8 +194,8 @@ func _entity_limits() -> void:
 	var gameplay: Node3D = bundle.gameplay
 	var controller: Node3D = bundle.controller
 	await _frames(3)
-	gameplay.register_crime(300, bundle.player.global_position)
-	check(gameplay.stars == 6, "300 pontos = 6 estrelas")
+	gameplay.register_crime(420, bundle.player.global_position)
+	check(gameplay.stars == 6, "420 pontos = 6 estrelas")
 	var peak_units := 0
 	var peak_active := 0
 	var peak_foot := 0
@@ -252,14 +254,22 @@ func _blocked_road() -> void:
 	check(not crossed, "a viatura nunca atravessou a parede")
 	check(tracker.worst < 0.6, "nenhum salto de posição diante do obstáculo: %.2f m" % tracker.worst)
 	check(not controller.events_named("replanned").is_empty(), "o piloto pediu novo plano ao ficar preso")
-	check(not controller.events_named("route_blocked").is_empty(), "sem alternativa e longe do crime, a viatura desistiu da rota")
-	check(unit.finished or unit.state == "departing", "e passou a sair de cena, sem ficar presa para sempre (%s)" % unit.state)
+	# DispatchUnit.on_gave_up: perto do crime (até SPAWN_MAX) a viatura estaciona e a
+	# equipe termina a pé, para a perseguição não ser abandonada num cruzamento travado;
+	# longe dele, desiste da rota e sai de cena.
+	var anchor: Vector3 = bundle.player.global_position
+	var flat := Vector2(start_x - anchor.x, unit.vehicle.global_position.z - anchor.z).length() if is_instance_valid(unit.vehicle) else INF
+	if flat <= RULES.SPAWN_MAX:
+		check(unit.state in ["parked", "working"], "sem alternativa e perto do crime, a viatura estaciona e a equipe segue a pé (%s)" % unit.state)
+	else:
+		check(not controller.events_named("route_blocked").is_empty(), "sem alternativa e longe do crime, a viatura desistiu da rota")
+		check(unit.finished or unit.state == "departing", "e passou a sair de cena, sem ficar presa para sempre (%s)" % unit.state)
 	KIT.teardown(bundle)
 	done("blocked_road")
 
 func _crew_depleted() -> void:
 	# Morreu toda a dupla que desceu: a viatura não cria outra dupla nem gasta
-	# orçamento; parte, e uma reposição só nasce como viatura nova do orçamento.
+	# orçamento; fica parada, e reposição só nasce como viatura nova do orçamento.
 	var bundle := KIT.build(self, KIT.grid_roads(), Vector3(30, 0, 10))
 	var gameplay: Node3D = bundle.gameplay
 	var controller: Node3D = bundle.controller
@@ -298,7 +308,7 @@ func _crew_depleted() -> void:
 			left = true
 			break
 	check(not controller.events_named("crew_depleted").is_empty(), "viatura sem equipe foi reconhecida")
-	check(left, "viatura sem equipe parte em vez de recriar a dupla (%s)" % unit.state)
+	check(left and unit.end_reason == "crew_depleted" and is_instance_valid(unit.vehicle) and not unit.vehicle.controlled, "viatura sem equipe permanece parada e libera a vaga")
 	check(seen.size() == 2, "a viatura nunca teve mais de dois policiais (%d)" % seen.size())
 	# Cada ponto de orçamento corresponde a uma viatura despachada: repor a dupla
 	# escondida na mesma viatura gastaria orçamento sem gerar evento.
