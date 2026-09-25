@@ -14,6 +14,7 @@ Tudo o que entrou desde a promoção da V2 à raiz do repositório (24/09).
   postes de luz, lago alpino em bacia de verdade.
 - Chuva com poças dinâmicas da V1; chafariz do hospital com água de verdade.
 - Ursos da V1 de volta, com investida, filhotes e sons.
+- Noite com fases da lua (ciclo de 8 dias de jogo) e postes gerados nas calçadas.
 
 **Trânsito e veículos**
 - Semáforo com fases reais (verde, amarelo e vermelho geral) e PARE onde não há
@@ -44,6 +45,7 @@ Tudo o que entrou desde a promoção da V2 à raiz do repositório (24/09).
 
 **Interface**
 - Marca d'água de build alpha com versão e commit.
+- Cursor próprio nos menus, oculto durante o jogo.
 
 **Pendências conhecidas:** a queda original do veículo abaixo do mapa não foi
 reproduzida; a primeira entrada na Ammu-Nation ainda tem um quadro residual de
