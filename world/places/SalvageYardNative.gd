@@ -2,6 +2,10 @@ extends Node3D
 ## Original SalvageYard3D geometry extracted; crane/press share native world.
 const PICKUP := Vector3(-1,0,6)
 const PRESS := Vector3(7.2,0,-1.5)
+## Botão da prensa: poste ao lado da baia, fora da área de admissão da prensa.
+## Com um carro parado na baia (sob o gancho), apertar manda o carro para a prensa.
+const BUTTON := Vector3(-3.6,0,6.0)
+var button_cap: MeshInstance3D
 var stage: Node3D
 var hook: Node3D
 var boom: Node3D
@@ -248,9 +252,56 @@ func _build_crane() -> void:
 func _build_press() -> void:
 	press = preload("res://world/neco_press/NecoPressFactory.gd").create_press_at_salvage_yard()
 	stage.add_child(press)
+	_build_button()
 	# Compatibility reference only; no old static press or broad Press hull remains.
 	plate = press.get_node("RamAssembly")
 
+
+func _build_button() -> void:
+	var post := Node3D.new()
+	post.name = "NecoPressButton"
+	post.position = BUTTON
+	post.add_to_group("neco_press_button")
+	stage.add_child(post)
+	box(post,Vector3(0,.55,0),Vector3(.32,1.1,.32),"3a4541")
+	# Faixas zebradas de segurança no poste.
+	for index in 4: box(post,Vector3(0,.18+index*.24,0),Vector3(.335,.09,.335),"d9b640" if index%2==0 else "1f2624")
+	box(post,Vector3(0,1.14,0),Vector3(.46,.08,.46),"d9b640")
+	var cap_material := StandardMaterial3D.new()
+	cap_material.albedo_color = Color("c8322a")
+	cap_material.emission_enabled = true
+	cap_material.emission = Color("ff3b2e")
+	cap_material.emission_energy_multiplier = .35
+	button_cap = MeshInstance3D.new()
+	var mushroom := CylinderMesh.new()
+	mushroom.top_radius = .15
+	mushroom.bottom_radius = .17
+	mushroom.height = .1
+	button_cap.mesh = mushroom
+	button_cap.material_override = cap_material
+	button_cap.position = Vector3(0,1.23,0)
+	post.add_child(button_cap)
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var shape := CollisionShape3D.new()
+	var hull := BoxShape3D.new()
+	hull.size = Vector3(.46,1.3,.46)
+	shape.shape = hull
+	shape.position = Vector3(0,.65,0)
+	body.add_child(shape)
+	post.add_child(body)
+
+func button_point() -> Vector3: return to_global(BUTTON)
+
+## Afunda o cogumelo e pisca, para o aperto ler de longe.
+func press_button() -> void:
+	if not is_instance_valid(button_cap): return
+	var tween := create_tween()
+	tween.tween_property(button_cap,"position:y",1.19,.08)
+	tween.parallel().tween_property(button_cap.material_override,"emission_energy_multiplier",2.5,.08)
+	tween.tween_property(button_cap,"position:y",1.23,.25)
+	tween.parallel().tween_property(button_cap.material_override,"emission_energy_multiplier",.35,.6)
 
 func _update_crane() -> void:
 	var direction := Vector2(hook.position.x+5,hook.position.z+1)

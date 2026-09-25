@@ -141,6 +141,10 @@ func can_enter_home(id: String) -> bool:
 func salvage_available() -> int:
 	return maxi(0,6-int(_data.tow_delivered_today))
 
+## Recibo único da próxima entrega na prensa (o Economy recusa recibo repetido).
+func salvage_receipt(kind: String) -> String:
+	return "%s:day%d:%d" % [kind, int(_data.day), int(_data.tow_delivered_today) + 1]
+
 func record_external_delivery() -> bool:
 	if salvage_available()<=0: return false
 	_data.tow_delivered_today+=1

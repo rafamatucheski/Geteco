@@ -4,6 +4,9 @@ extends Node3D
 
 const SCALE := 1.0/16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
+const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
+## Portão norte do cemitério (OriginalCemetery3D, -350 px da V1): caminho do carro funerário.
+const CEMETERY_GATE := Vector2(0, -350) * (1.0/16.0)
 var zone_id := ""
 static var _materials: Dictionary = {}
 static var _box_meshes: Dictionary = {}
@@ -36,16 +39,26 @@ func _source_id() -> String:
 
 func _build_salvage() -> void:
 	# SalvageLocation.LAND and the exact V1 perimeter planting, local to (-750,550).
-	_box("SalvageMeadow",Vector3(15*SCALE,.006,10*SCALE),Vector3(1270*SCALE,.012,1120*SCALE),Color("46553e"))
+	# Gramado com textura e tufos 3D: antes era uma caixa de cor lisa (feedback de 25/09).
+	var meadow := _box("SalvageMeadow",Vector3(15*SCALE,.006,10*SCALE),Vector3(1270*SCALE,.012,1120*SCALE),Color("46553e"))
+	meadow.material_override = GRASS.ground_material()
 	_box("SalvageNorthWall",Vector3(15*SCALE,.34,-534*SCALE),Vector3(1270*SCALE,.68,12*SCALE),Color("9b9c8c"),true)
 	_box("SalvageWestWall",Vector3(-614*SCALE,.34,10*SCALE),Vector3(12*SCALE,.68,1120*SCALE),Color("9b9c8c"),true)
 	for index in 12:
 		var point: Vector2 = [Vector2(-500,-430),Vector2(-320,-465),Vector2(120,-460),Vector2(430,-465),Vector2(510,-410),Vector2(350,430),Vector2(440,430),Vector2(-565,-240),Vector2(-565,40),Vector2(575,-220),Vector2(575,80),Vector2(575,310)][index]
 		_tree(point*SCALE,1.0+float(index%3)*.09,index%3==1)
 	for point in [Vector2(-70,-445),Vector2(285,-430)]: _rock(point*SCALE,1.5)
-	# Connected V1 approach, below asphalt but above the generic land finish.
+	# Acesso de cascalho da V1: abaixo do asfalto (topo em 1 cm; a rua fica em 3 cm), só
+	# aparece como acostamento. Antes ficava por cima e pintava a rua de bege liso.
 	var route := [Vector2(-500,700),Vector2(-500,450),Vector2(0,450),Vector2(0,150)]
-	for index in range(route.size()-1): _beam("SalvageTrack",route[index]*SCALE,route[index+1]*SCALE,100*SCALE,.021,Color("a49a7a"))
+	var track_rects: Array = []
+	for index in range(route.size()-1):
+		var track := _beam("SalvageTrack",route[index]*SCALE,route[index+1]*SCALE,100*SCALE,.012,Color("8a8269"),false,.004)
+		track.material_override = GRASS.ground_material("gravel")
+		track_rects.append(Rect2(route[index]*SCALE,Vector2.ZERO).expand(route[index+1]*SCALE).grow(50*SCALE+.4))
+	var meadow_area := Rect2(Vector2(15-635,10-560)*SCALE,Vector2(1270,1120)*SCALE)
+	# Pátio de cascalho do SalvageYardNative (32 x 23 m, mesma origem) fica sem grama.
+	GRASS.scatter(self,meadow_area,track_rects+[Rect2(-17.5,-13,35,26)],.8,7501)
 
 func _build_cemetery_edge() -> void:
 	# The cemetery owns its inner floor. These four strips restore only the V1
@@ -54,13 +67,21 @@ func _build_cemetery_edge() -> void:
 	var inner := Vector2(780,700)*SCALE
 	var border_x := (outer.x-inner.x)*.5
 	var border_z := (outer.y-inner.y)*.5
-	_box("CemeteryNorthGreen",Vector3(0,.006,-(inner.y+border_z)*.5),Vector3(outer.x,.012,border_z),Color("445441"))
-	_box("CemeterySouthGreen",Vector3(0,.006,(inner.y+border_z)*.5),Vector3(outer.x,.012,border_z),Color("445441"))
-	_box("CemeteryWestGreen",Vector3(-(inner.x+border_x)*.5,.006,0),Vector3(border_x,.012,inner.y),Color("445441"))
-	_box("CemeteryEastGreen",Vector3((inner.x+border_x)*.5,.006,0),Vector3(border_x,.012,inner.y),Color("445441"))
+	for strip in [
+		["CemeteryNorthGreen",Vector3(0,.006,-(inner.y+border_z)*.5),Vector3(outer.x,.012,border_z)],
+		["CemeterySouthGreen",Vector3(0,.006,(inner.y+border_z)*.5),Vector3(outer.x,.012,border_z)],
+		["CemeteryWestGreen",Vector3(-(inner.x+border_x)*.5,.006,0),Vector3(border_x,.012,inner.y)],
+		["CemeteryEastGreen",Vector3((inner.x+border_x)*.5,.006,0),Vector3(border_x,.012,inner.y)]]:
+		var green := _box(strip[0],strip[1],strip[2],Color("445441"))
+		green.material_override = GRASS.ground_material()
+	# Faixa livre do portão até a rua: o carro funerário para a 90 px do portão.
+	var gate_lane := Rect2(CEMETERY_GATE.x-4.0,-outer.y*.5-1.0,8.0,outer.y*.5+CEMETERY_GATE.y+1.0)
+	GRASS.scatter(self,Rect2(-outer*.5,outer),[Rect2(-inner*.5,inner),gate_lane],.8,7502)
 	for index in 12:
 		var angle := TAU*float(index)/12.0
 		var point := Vector2(cos(angle)*outer.x*.44,sin(angle)*outer.y*.43)
+		# A árvore do norte ficava em cima do caminho do carro funerário, na frente do portão.
+		if gate_lane.grow(1.5).has_point(point): continue
 		_tree(point,.88+float(index%3)*.08,index%4==0)
 
 func _build_cobra() -> void:
@@ -260,6 +281,11 @@ func _surface_material(kind: String,color: Color)->StandardMaterial3D:
 		material.albedo_color=color
 		material.albedo_texture=GROUND.texture(kind)
 		material.texture_filter=BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		# Projeção no mundo: a caixa tem dezenas de metros e o UV da BoxMesh esticava
+		# um único ladrilho sobre ela inteira (lia como cor lisa).
+		material.uv1_triplanar=true
+		material.uv1_world_triplanar=true
+		material.uv1_scale=Vector3.ONE*(.22 if kind=="grass" else .3)
 		material.roughness=.92
 		_materials[key]=material
 	return _materials[key]

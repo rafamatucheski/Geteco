@@ -130,6 +130,21 @@ func edge_marker(point: Vector2) -> Vector2:
 	var factor := maxf(absf(offset.x) / (MAP_SIZE.x * 0.5 - 12), absf(offset.y) / (MAP_SIZE.y * 0.5 - 12))
 	return MAP_SIZE * 0.5 + offset / maxf(1.0, factor)
 
+## Selos de lugares fixos: letra num círculo laranja, presos à borda quando longe.
+## O "N" do norte fica no topo, sem círculo; o do Neco é selo, para não confundir.
+const LANDMARKS := [{"letter": "N", "region": "harbor", "point": Vector2(-750, 550) / 16.0}]
+
+func _draw_landmarks(target: Control) -> void:
+	var region := str(world.production.state.region_id) if world.production.get("state") != null else ""
+	for landmark in LANDMARKS:
+		if landmark.region != region: continue
+		var marker := edge_marker(landmark.point)
+		# Fora da plaquinha "N" da bússola, no topo central.
+		if absf(marker.x - MAP_SIZE.x * 0.5) < 18.0 and marker.y < 28.0: marker.y = 28.0
+		target.draw_circle(marker, 9, Color("101820"))
+		target.draw_circle(marker, 7.5, Color("ff914d"))
+		target.draw_string(ThemeDB.fallback_font, marker + Vector2(-4, 4.5), landmark.letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("101820"))
+
 func draw_map(target: Control) -> void:
 	target.draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("263940"))
 	if not is_instance_valid(world) or not is_instance_valid(world.production) or not is_instance_valid(world.production.region): return
@@ -147,6 +162,7 @@ func draw_map(target: Control) -> void:
 		if Rect2(Vector2(8, 8), MAP_SIZE - Vector2(16, 16)).has_point(marker):
 			target.draw_circle(marker, 5, Color("18262d"))
 			target.draw_circle(marker, 3, Color("e8b77d"))
+	_draw_landmarks(target)
 	if objective_target != Vector2.ZERO:
 		var marker := edge_marker(objective_target)
 		target.draw_circle(marker, 10, Color("101820"))

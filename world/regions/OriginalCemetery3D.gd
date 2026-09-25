@@ -5,6 +5,9 @@ const SOURCE_CENTER := Vector2(-650, 1740)
 const SCALE := 1.0 / 16.0
 const LOT_SIZE := Vector2(780, 700)
 const PINE := preload("res://world/regions/NativePine.gd")
+const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
+## Gramado e caminhos ganham textura projetada no mundo; antes eram cubos de cor lisa
+## e o cemitério lia como chão chapado (feedback de 25/09/2026).
 var batches: Dictionary = {}
 var solids: StaticBody3D
 
@@ -58,6 +61,23 @@ func _ready() -> void:
 		_box(base+Vector3.UP*1.3,Vector3(.10,2.6,.10),"444d49",true)
 		_box(base+Vector3.UP*2.65,Vector3(.28,.25,.28),"d3b487")
 	_flush()
+	_grass()
+
+## Tufos no gramado, fora dos caminhos, túmulos, bancos, árvores e muro.
+func _grass() -> void:
+	var lot := LOT_SIZE*SCALE
+	var keep_out: Array = [
+		Rect2(Vector2(-14,-350)*SCALE,Vector2(28,700)*SCALE).grow(.3),
+		Rect2(Vector2(-25,-490)*SCALE,Vector2(50,140)*SCALE).grow(.3),
+		Rect2(Vector2(-247,-178)*SCALE,Vector2(24,33)*SCALE).grow(.3),
+		Rect2(Vector2(-235,-157)*SCALE,Vector2(235,24)*SCALE).grow(.3)]
+	for x in [-290,-210,-130,130,210,290]:
+		for y in [-240,-160,-80,20,110,200]:
+			keep_out.append(Rect2(Vector2(x,y+12)*SCALE-Vector2(1.6,2.6),Vector2(3.2,5.0)))
+	for x in [-210,210]: keep_out.append(Rect2(Vector2(x-34,262)*SCALE,Vector2(68,36)*SCALE))
+	for x in [-350,350]:
+		for y in range(-270,291,140): keep_out.append(Rect2(Vector2(x,y)*SCALE-Vector2(.8,.8),Vector2(1.6,1.6)))
+	GRASS.scatter(self,Rect2(-lot*.5+Vector2(.8,.8),lot-Vector2(1.6,1.6)),keep_out,.8,7503,.002)
 
 func _path(point: Vector2, size: Vector2) -> void:
 	_box(Vector3(point.x*SCALE,.014,point.y*SCALE),Vector3(size.x*SCALE,.018,size.y*SCALE),"777366")
@@ -109,6 +129,8 @@ func _flush() -> void:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = Color(color)
 		material.roughness = .92
+		if color == "27362f": material = GRASS.ground_material()
+		elif color == "777366": material = GRASS.ground_material("gravel")
 		var cube := BoxMesh.new()
 		cube.size = Vector3.ONE
 		cube.material = material

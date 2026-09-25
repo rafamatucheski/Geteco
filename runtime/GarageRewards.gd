@@ -13,6 +13,16 @@ var _place := ""
 var _transition := false
 var guards
 var press_delivery
+## Carro comum em prensagem pelo botão do Neco (o Porto Rosso tem fluxo próprio).
+var _scrap_car
+var _scrap_layer := 0
+## Distância do botão para apertar, a pé.
+const BUTTON_REACH := 1.9
+## Carro "embaixo" = parado na baia sob o gancho (mesma tolerância da entrega do Porto Rosso).
+const BAY_REACH := 52.0/16.0
+## Veículos que o Neco não prensa: de história, da casa, de trabalho e de serviço.
+const PROTECTED_META := ["garage_reward","residence_vehicle","port_work_vehicle","secret_discovery_vehicle","dispatch_unit"]
+const PROTECTED_IDS := ["story_tow_vehicle","neco_tow_truck"]
 
 func configure(owner_session) -> void:
 	session=owner_session
@@ -194,7 +204,75 @@ func nearest_action() -> Dictionary:
 			if is_instance_valid(car) and not car.controlled and car.position.distance_to(bay)<45.0/16.0 and car.health<car.max_health: return _action("ironback_repair","Reparar Ironback",bay)
 			if not _residence_owns(IRONBACK): return _action("ironback_recover","Recolher Ironback à baia",bay)
 	if _porto_deliverable(): return _action("porto_deliver","Entregar Porto Rosso · R$ 50.000",cars[PORT_ID].position)
+	var yard := _neco_yard()
+	if yard != null and session.world.player.global_position.distance_to(yard.button_point()) < BUTTON_REACH:
+		var car = _car_on_bay(yard)
+		var label := "Acionar prensa"
+		if car != null and _scrappable(car): label = "Acionar prensa · R$ %d" % scrap_value(car)
+		return _action("neco_press",label,yard.button_point())
 	return {}
+
+## Pátio do Neco carregado (o chunk pode estar fora do streaming).
+func _neco_yard() -> Node3D:
+	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied: return null
+	for button in get_tree().get_nodes_in_group("neco_press_button"):
+		var yard := (button as Node).get_parent() as Node3D
+		if yard != null and yard.has_method("button_point"): return yard
+	return null
+
+## Carro parado na baia, sob o gancho do guindaste.
+func _car_on_bay(yard: Node3D):
+	var best = null
+	var best_distance := BAY_REACH
+	for body in get_tree().get_nodes_in_group("drivable"):
+		if not is_instance_valid(body) or body.is_queued_for_deletion() or not body.visible: continue
+		var distance: float = Vector2(body.global_position.x-yard.dock_point().x,body.global_position.z-yard.dock_point().z).length()
+		if distance < best_distance:
+			best = body
+			best_distance = distance
+	return best
+
+func _scrappable(car) -> bool:
+	if car.vehicle_id == PORT_ID or car.vehicle_id in PROTECTED_IDS: return false
+	for key in PROTECTED_META:
+		if car.get_meta(key,false): return false
+	return car.health > 0 and not car.controlled and absf(car.speed) <= .5
+
+## V1 ChopShopZone._reward: 450 + 3 por pixel de comprimento (16 px por metro).
+static func scrap_value(car) -> int:
+	return 450 + roundi(float(car.half_length) * 2.0 * 16.0 * 3.0)
+
+func _press_scrap(yard: Node3D) -> bool:
+	yard.press_button()
+	var car = _car_on_bay(yard)
+	if car == null:
+		session.show_message("Pare um carro na baia, embaixo do gancho, e aperte o botão.")
+		return true
+	if car.vehicle_id == PORT_ID:
+		if _porto_deliverable(): return _deliver_porto()
+		session.show_message("Esse carro é encomenda do chefe do porto; fale com o Neco.")
+		return true
+	if not _scrappable(car):
+		session.show_message("O Neco não prensa esse veículo." if car.health > 0 else "Carcaça queimada não vale sucata.")
+		return true
+	if session.world.gameplay.stars > 0:
+		session.show_message("Com a polícia atrás de você, o Neco não liga a prensa.")
+		return true
+	if session.activities == null or session.activities.salvage_available() <= 0:
+		session.show_message("A prensa já trabalhou demais hoje. Volte amanhã.")
+		return true
+	# A prensa só começa com a área de admissão livre de corpos; o carro sai da física
+	# durante a apresentação (ela esconde o casco e usa uma cópia das malhas).
+	_scrap_car = car
+	_scrap_layer = car.collision_layer
+	_transition = true
+	if not press_delivery.begin(car):
+		_transition = false
+		_scrap_car = null
+		session.show_message("Libere a área da prensa e tente de novo.")
+		return true
+	car.collision_layer = 0
+	return true
 
 func _action(id: String,label: String,point: Vector3) -> Dictionary:
 	return {"id":"garage_reward","target":id,"label":label,"position":point}
@@ -206,6 +284,9 @@ func perform(id: String) -> bool:
 		return true
 	if id=="garage_vehicle_exit": _transfer(session.state.place_id,false); return true
 	if id=="porto_deliver": return _deliver_porto()
+	if id=="neco_press":
+		var yard := _neco_yard()
+		return _press_scrap(yard) if yard != null else false
 	if id=="ironback_recover": return _recover_ironback()
 	if id=="ironback_repair":
 		cars[IRONBACK].repair()
@@ -282,9 +363,33 @@ func cancel_press_delivery() -> void:
 
 func _press_finished(completed: bool) -> void:
 	_transition=false
+	if _scrap_car != null:
+		_finish_scrap(completed)
+		return
 	if completed:
 		if _porto_deliverable(): _commit_porto_delivery()
 		elif data.port_status=="stolen": session.show_message("Entrega interrompida. O veículo foi preservado na baia.")
+
+func _finish_scrap(completed: bool) -> void:
+	var car = _scrap_car
+	_scrap_car = null
+	if not is_instance_valid(car): return
+	if not completed:
+		car.collision_layer = _scrap_layer
+		session.show_message("Prensa interrompida. O carro ficou na baia.")
+		return
+	var reward := scrap_value(car)
+	var wallet: Dictionary = session.state.economy.snapshot()
+	if not session.state.economy.grant_reward(session.activities.salvage_receipt("neco_scrap"),reward) or not session.activities.record_external_delivery():
+		session.state.economy.restore_snapshot(wallet)
+		car.collision_layer = _scrap_layer
+		session.show_message("O Neco não conseguiu pagar agora. O carro ficou na baia.")
+		return
+	# Remoção deliberada: se era o último carro dirigido, Driving/ProductionWorld
+	# soltam a referência e o snapshot do veículo do jogador.
+	car.queue_free()
+	session.show_message("Neco pagou R$ %d pela sucata." % reward)
+	session.save_game()
 
 func _commit_porto_delivery() -> bool:
 	if data.port_status!="stolen": return false
