@@ -27,6 +27,16 @@ const HARBOR_OVERCAST_LIGHT := Color("aebfca")
 const HARBOR_SKY_DAY := Color("829da6")
 const HARBOR_SKY_NIGHT := Color("111d30")
 const HARBOR_SKY_OVERCAST := Color("647985")
+# Fases da lua. Na vida real o ciclo leva 29,5 dias; com um dia de jogo de
+# 10 min isso daria ~5 h por ciclo, lento demais para perceber. Oito dias de
+# jogo (~80 min) deixam noites claras e escuras se alternarem numa sessão.
+const MOON_CYCLE_DAYS := 8.0
+# Lua nova quase não ilumina; lua cheia deixa a rua legível sem virar dia.
+const MOON_LIGHT_NEW := .05
+const MOON_LIGHT_FULL := .34
+const MOON_AMBIENT_NEW := .26
+const MOON_AMBIENT_FULL := .42
+const HARBOR_SKY_FULL_MOON := Color("1d2c47")
 func _exit_tree() -> void:
 	for channel in [rain_audio,wind_audio]:
 		if is_instance_valid(channel):
@@ -105,7 +115,11 @@ func _ready() -> void:
 	wind_audio.finished.connect(func(): if atmosphere.weights.get("mountain",0.0)>0.001: wind_audio.play())
 	_update()
 func _process(delta: float) -> void:
-	if "--benchmark" not in OS.get_cmdline_user_args(): time_of_day = fposmod(time_of_day+delta/600.0,1.0)
+	if "--benchmark" not in OS.get_cmdline_user_args():
+		var next_time := fposmod(time_of_day+delta/600.0,1.0)
+		# Virada da meia-noite conta um dia para a fase da lua (salvo no mundo).
+		if next_time < time_of_day: controller.state.world_state.moon_day = moon_day()+1
+		time_of_day = next_time
 	# Harbor keeps its own weather. Mountain reads the persisted thermal clock.
 	if controller.state.region_id != "mountain":
 		weather_timer -= delta
@@ -122,6 +136,16 @@ func _process(delta: float) -> void:
 		_update()
 	controller.state.world_state.time = time_of_day
 	controller.state.world_state.weather = weather_state
+## Dia do ciclo lunar. Save antigo sem o campo começa no quarto crescente,
+## para a primeira noite já ter alguma lua.
+func moon_day() -> int:
+	return int(controller.state.world_state.get("moon_day", 2))
+
+## Fração iluminada da lua (0 nova, 1 cheia), como a fase real: (1-cos)/2.
+func moon_illumination() -> float:
+	var phase := fposmod((float(moon_day())+time_of_day)/MOON_CYCLE_DAYS,1.0)
+	return (1.0-cos(phase*TAU))*.5
+
 func _update() -> void:
 	var daylight := clampf(sin((time_of_day-.25)*TAU)*1.5+.25,0,1)
 	var inside: bool = not controller.state.place_id.is_empty()
@@ -138,14 +162,18 @@ func _update() -> void:
 	if not inside:
 		daylight = atmosphere.daylight_at(time_of_day)
 	controller.sun.rotation_degrees.x = -15-daylight*55
-	controller.sun.light_energy = lerpf(.12,1.6,daylight)*lerpf(1.0,.58,clouds)
+	# De noite a luz direcional é a lua: a força segue a fase e as nuvens a
+	# encobrem mais do que encobrem o sol (céu fechado = noite escura).
+	var moon := moon_illumination()*(1.0-clouds*.75)
+	controller.sun.light_energy = lerpf(lerpf(MOON_LIGHT_NEW,MOON_LIGHT_FULL,moon),1.6,daylight)*lerpf(1.0,.58,clouds)
 	var clear_sun := HARBOR_SUN_NIGHT.lerp(HARBOR_SUN_DAY,daylight)
 	controller.sun.light_color = clear_sun.lerp(HARBOR_OVERCAST_LIGHT,clouds*.72)
 	var clear_ambient := HARBOR_AMBIENT_NIGHT.lerp(HARBOR_AMBIENT_DAY,daylight)
 	controller.environment.environment.ambient_light_color = clear_ambient.lerp(HARBOR_OVERCAST_LIGHT,clouds*.46)
-	controller.environment.environment.ambient_light_energy = lerpf(.32,.65,daylight)*lerpf(1.0,.82,clouds)
-	var clear_sky := HARBOR_SKY_NIGHT.lerp(HARBOR_SKY_DAY,daylight)
-	controller.environment.environment.background_color = clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
+	controller.environment.environment.ambient_light_energy = lerpf(lerpf(MOON_AMBIENT_NEW,MOON_AMBIENT_FULL,moon),.65,daylight)*lerpf(1.0,.82,clouds)
+	var clear_sky := HARBOR_SKY_NIGHT.lerp(HARBOR_SKY_FULL_MOON,moon).lerp(HARBOR_SKY_DAY,daylight)
+	# Isolated interiors are cutaway rooms, not floating platforms in the sky.
+	controller.environment.environment.background_color = Color("10151a") if inside else clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
 	atmosphere.apply(controller,time_of_day,_harbor_overcast(),front,inside,atmosphere_step)
 	if controller.world.production != null:
 		var night_lights := 1.0-smoothstep(.25,.70,atmosphere.daylight_at(time_of_day))

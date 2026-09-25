@@ -33,6 +33,16 @@ const SIDEWALK := 42.0 / 16.0
 const SEWER_ACCESS := Vector2(1182.0, 2114.0) / 16.0
 const SEWER_CLEARANCE := 2.0
 const FURNITURE_SPACING := 7.0
+# Postes de calçada gerados (2026-09-25: jogador achou a cidade escura demais;
+# só havia luz onde a arte autorada trazia um poste). Alterna os lados a cada
+# LAMP_SPACING, então cada calçada tem um poste a cada 2×LAMP_SPACING e as
+# manchas de luz (~11 m) se emendam em zigue-zague pela rua.
+const LAMP_SPACING := 18.0
+const LAMP_HEIGHT := 5.4
+const LAMP_ARM := 1.3
+# Poste autorado ou gerado mais perto que isso já ilumina o trecho.
+const LAMP_CLEARANCE := 9.0
+static var _lamp_meshes: Dictionary = {}
 const DECAL_Y := 0.034
 const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry",
 	# Mobília de calçada: sem sombra, lixeira/hidrante/jornaleiro pareciam soltos,
@@ -44,6 +54,7 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	var context := _context(region, rect)
 	var batches := {}
 	_night_pass(chunk, context)
+	_sidewalk_lamps(chunk, context)
 	STAIRS.build_chunk(chunk)
 	_texture_walls(chunk)
 	_face_ground_up(chunk)
@@ -234,6 +245,122 @@ static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
 		# Poste que o carro derruba apaga a própria mancha de luz.
 		for root in lamp_roots:
 			FRAGILE.register_node("lamp", root, chunk, {"multimesh": pool_instance.multimesh, "index": lamp_roots[root]})
+
+
+## Postes novos nas calçadas: haste+braço e cabeça em duas MultiMesh (a
+## cabeça usa o material emissivo compartilhado que CityLook acende à noite),
+## mais mancha de luz no chão como nos postes autorados. Nenhuma Light3D: o
+## custo é o de três MultiMesh por chunk. O carro derruba o poste (FragileProps
+## tipo "lamp") e a mancha daquele poste apaga.
+static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
+	var transforms: Array[Transform3D] = []
+	for road in context.roads:
+		var points: PackedVector2Array = road.points
+		var width: float = road.width
+		var travelled := 0.0
+		var step := 0
+		for index in points.size() - 1:
+			var a := points[index]
+			var b := points[index + 1]
+			var length := a.distance_to(b)
+			if length < 0.01: continue
+			var tangent := (b - a) / length
+			var normal := Vector2(tangent.y, -tangent.x)
+			var s := fposmod(-travelled, LAMP_SPACING)
+			step = int(round((travelled + s) / LAMP_SPACING))
+			while s < length:
+				var side := 1.0 if step % 2 == 0 else -1.0
+				step += 1
+				var outward: Vector2 = normal * side
+				var point := a + tangent * s + outward * (width * 0.5 + 0.45)
+				s += LAMP_SPACING
+				if not _in_chunk(context, point): continue
+				if _near_junction(context, point, 2.0) or _near_lamp(context, point, LAMP_CLEARANCE): continue
+				if _road_clearance(context, point) < 0.2 or _inside_building(context, point, 0.5): continue
+				if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
+				if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
+				context.lamps.append(point)
+				var yaw := atan2(-outward.x, -outward.y)
+				transforms.append(Transform3D(Basis(Vector3.UP, yaw), Vector3(point.x, 0.012, point.y)))
+			travelled += length
+	if transforms.is_empty(): return
+	var to_local := chunk.global_transform.affine_inverse()
+	var poles := _lamp_multimesh("pole", transforms.size())
+	var heads := _lamp_multimesh("head", transforms.size())
+	var pools := PackedVector3Array()
+	var pool_sizes := PackedFloat32Array()
+	for index in transforms.size():
+		var local := to_local * transforms[index]
+		poles.set_instance_transform(index, local)
+		heads.set_instance_transform(index, local)
+		var head := local * Vector3(0, LAMP_HEIGHT, LAMP_ARM)
+		pools.append(Vector3(head.x, local.origin.y + 0.05, head.z))
+		pool_sizes.append(clampf(LAMP_HEIGHT * 2.3, 6.0, 11.0))
+	var pole_instance := MultiMeshInstance3D.new()
+	pole_instance.name = "CityLook_sidewalk_lamp"
+	pole_instance.multimesh = poles
+	pole_instance.material_override = MATERIALS.flat(Color("4a5054"), 0.6)
+	chunk.add_child(pole_instance)
+	var head_instance := MultiMeshInstance3D.new()
+	head_instance.name = "CityLook_sidewalk_lamp_head"
+	head_instance.multimesh = heads
+	head_instance.material_override = MATERIALS.lamp_head()
+	head_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	chunk.add_child(head_instance)
+	var pool_instance := _light_pools(pools, pool_sizes)
+	pool_instance.name = "CitySidewalkLampPools"
+	chunk.add_child(pool_instance)
+	for index in transforms.size():
+		var base := poles.get_instance_transform(index)
+		# register_instance não recebe a mancha; o registro direto é o mesmo
+		# formato, com "pool" como register_node usa para apagar a luz.
+		FRAGILE._register({"kind": "lamp", "multimesh": poles, "index": index,
+			"extra": [{"multimesh": heads, "index": index, "offset": Transform3D.IDENTITY}],
+			"pool": {"multimesh": pool_instance.multimesh, "index": index},
+			"chunk": weakref(chunk), "base": base, "point": transforms[index].origin, "state": "standing"})
+
+
+static func _lamp_multimesh(part: String, count: int) -> MultiMesh:
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.mesh = _lamp_mesh(part)
+	multimesh.instance_count = count
+	return multimesh
+
+
+## Poste de rua moderno: base, haste, braço para o lado da via (+Z local) e
+## luminária achatada. Malhas compartilhadas por todos os chunks.
+static func _lamp_mesh(part: String) -> ArrayMesh:
+	if _lamp_meshes.has(part): return _lamp_meshes[part]
+	var tool := SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	if part == "pole":
+		_lamp_box(tool, Vector3(0, 0.2, 0), Vector3(0.34, 0.4, 0.34))
+		_lamp_box(tool, Vector3(0, LAMP_HEIGHT * 0.5, 0), Vector3(0.13, LAMP_HEIGHT, 0.13))
+		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - 0.05, LAMP_ARM * 0.5), Vector3(0.09, 0.09, LAMP_ARM))
+		_lamp_box(tool, Vector3(0, LAMP_HEIGHT + 0.03, LAMP_ARM + 0.02), Vector3(0.36, 0.1, 0.62))
+	else:
+		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - 0.04, LAMP_ARM + 0.02), Vector3(0.3, 0.05, 0.54))
+	tool.generate_normals()
+	var mesh := tool.commit()
+	_lamp_meshes[part] = mesh
+	return mesh
+
+
+static func _lamp_box(tool: SurfaceTool, center: Vector3, size: Vector3) -> void:
+	var h := size * 0.5
+	var faces := [
+		[Vector3(-1, -1, 1), Vector3(1, -1, 1), Vector3(1, 1, 1), Vector3(-1, 1, 1)],
+		[Vector3(1, -1, -1), Vector3(-1, -1, -1), Vector3(-1, 1, -1), Vector3(1, 1, -1)],
+		[Vector3(1, -1, 1), Vector3(1, -1, -1), Vector3(1, 1, -1), Vector3(1, 1, 1)],
+		[Vector3(-1, -1, -1), Vector3(-1, -1, 1), Vector3(-1, 1, 1), Vector3(-1, 1, -1)],
+		[Vector3(-1, 1, 1), Vector3(1, 1, 1), Vector3(1, 1, -1), Vector3(-1, 1, -1)],
+		[Vector3(-1, -1, -1), Vector3(1, -1, -1), Vector3(1, -1, 1), Vector3(-1, -1, 1)],
+	]
+	for face in faces:
+		var q: Array[Vector3] = []
+		for corner in face: q.append(center + corner * h)
+		for i in [0, 2, 1, 0, 3, 2]: tool.add_vertex(q[i])
 
 
 ## Altura aproximada da cabeça do poste acima do chão, ou 0 se a malha não é
