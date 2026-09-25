@@ -83,7 +83,10 @@ void fragment() {
 
 void light() {
 	// Sombra recebida suavizada: a ponte escurece a água, mas não recorta um "piso".
-	float shade = mix(1.0 - shadow_strength, 1.0, ATTENUATION);
+	// Só no sol: em lanterna, clarão de tiro e postes o ATTENUATION também traz a
+	// queda por distância e o recorte do cone. Suavizado, deixava 55% da luz passar
+	// sem queda e a lanterna acendia o mar inteiro de ciano (vídeo de 25/09/2026).
+	float shade = LIGHT_IS_DIRECTIONAL ? mix(1.0 - shadow_strength, 1.0, ATTENUATION) : ATTENUATION;
 	float lambert = max(dot(NORMAL, LIGHT), 0.0);
 	DIFFUSE_LIGHT += LIGHT_COLOR * lambert * shade * 0.9 / 3.14159265;
 	// Brilho de sol em pontos: lóbulo estreito nas facetas que acertam o ângulo.

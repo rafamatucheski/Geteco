@@ -249,8 +249,11 @@ func _ready() -> void:
 	flashlight.spot_range = 24.0
 	flashlight.spot_angle = 32.0
 	flashlight.spot_attenuation = 0.7
-	flashlight.light_energy = 7.0
-	flashlight.light_specular = 0.3
+	# Borda do cone suave: com 7,0 e borda dura, o facho rasante no concreto claro
+	# do cais virava uma cápsula branca estourada (vídeo de 25/09/2026).
+	flashlight.spot_angle_attenuation = 2.2
+	flashlight.light_energy = 5.0
+	flashlight.light_specular = 0.2
 	flashlight.shadow_enabled = false
 	gun.add_child(flashlight)
 	flashlight.hide()
