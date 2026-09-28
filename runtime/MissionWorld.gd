@@ -32,6 +32,8 @@ func _ready() -> void:
 
 func begin(id: String) -> bool:
 	if not session.state.campaign.available_missions().has(id): return false
+	# The restart checkpoint precedes acceptance and any mission-owned vehicle.
+	if not session.save_game(true): return false
 	if id == "cobra_contact":
 		if session.state.region_id != "harbor":
 			session.show_message("Volte a Harbor para preparar o guincho desta missão.")
@@ -194,7 +196,7 @@ func _event(event: String, target: String, extras := {}) -> bool:
 	if event == "neco_repair_received": finish_tow_job()
 	if str(result.get("completed","")) == "cobra_finale": _clear_encounter()
 	for id in session.state.campaign.snapshot().pending_rewards.keys(): session.state.campaign.claim_reward(session.state.economy,id)
-	session.save_game()
+	if session.state.campaign.active_id.is_empty(): session.save_game()
 	return true
 
 func _process(delta: float) -> void:

@@ -3,6 +3,8 @@ extends Node3D
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const FLEET = preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE = preload("res://audio/VehicleEngineProfile.gd")
+const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
+const BANKS := preload("res://audio/EngineBankCache.gd")
 const GROUP := &"service_vehicle_engine_mixer"
 const MAX_REGISTERED := 32
 const MAX_AUDIBLE := 6
@@ -225,6 +227,10 @@ func _mix(slot: Dictionary) -> void:
 	var blend := clampf(float(entry.rpm) - lower, 0, 1)
 	var camera := get_viewport().get_camera_3d()
 	var audio_height := camera.global_position.y - _listener.global_position.y if camera != null else 0.0
+	if entry.family == "tank":
+		TANK_AUDIO.mix_spatial(slot.players, vehicle, clampf((float(entry.rpm) - 0.6) / 5.4, 0.0, 1.0),
+			1.0, -23.0, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
+		return
 	# Parity preserves the shared sample across adjacent layer boundaries.
 	for layer in [lower, lower + 1]:
 		var player: AudioStreamPlayer3D = slot.players[layer % 2]
@@ -256,15 +262,10 @@ func _free_slots() -> void:
 	_slots.clear()
 
 func _has_bank(family: String) -> bool:
-	for index in 7:
-		if not ResourceLoader.exists("res://audio/acoustic/engine_%s_%d.wav" % [family, index]):
-			return false
-	return true
+	return BANKS.has_bank(family)
 
 func _load_bank(family: String) -> Array[AudioStreamWAV]:
-	var bank: Array[AudioStreamWAV] = []
-	if not _has_bank(family):
-		return bank
+	return BANKS.bank(family)
 	for index in 7:
 		var source := load("res://audio/acoustic/engine_%s_%d.wav" % [family, index]) as AudioStreamWAV
 		if source == null:

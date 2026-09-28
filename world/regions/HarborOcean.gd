@@ -20,6 +20,7 @@ static func surface_y(point: Vector2, shore: float = DEPTH_RANGE) -> float:
 	var across := 1.0-smoothstep(25.0,70.0,absf(point.y-BRIDGE_CENTER_Z))
 	return WATER_Y-BRIDGE_DROP*along*across*smoothstep(8.0,22.0,shore)
 const SHADER := preload("res://world/regions/harbor_ocean.gdshader")
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 var shores: Array[PackedVector2Array] = []
 var material: ShaderMaterial
 var shore_wash := preload("res://world/regions/HarborShoreWash.gd").new()
@@ -62,6 +63,8 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	for z in count:
 		for x in count:
 			var a := z*(count+1)+x
+			# Túnel do canal: o mar opaco não cobre a vala nem o tubo (tem lâmina própria).
+			if CANAL_TUNNEL.WATER_CUT.has_point(rect.position+rect.size*Vector2((x+.5)/count,(z+.5)/count)): continue
 			indices.append_array(PackedInt32Array([a,a+1,a+count+1,a+1,a+count+2,a+count+1]))
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)

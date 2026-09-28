@@ -37,6 +37,8 @@ const TIPS := [
 const TIP_SECONDS := 6.0
 
 var variant := 0
+## Sky preview already owns its loading cover; retain only stage bookkeeping.
+var stage_only := false
 var _root: Control
 var _art: TextureRect
 var _stage: Label
@@ -60,6 +62,9 @@ static func existing(tree: SceneTree) -> CanvasLayer:
 
 func _ready() -> void:
 	name = NODE_NAME
+	if stage_only:
+		set_process(false)
+		return
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_tip_index = randi() % TIPS.size()

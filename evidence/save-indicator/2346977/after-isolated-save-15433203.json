@@ -1,0 +1,314 @@
+{
+	"campaign": {
+		"active_id": "",
+		"claimed_rewards": [],
+		"completed": [],
+		"failure": "",
+		"flags": {},
+		"pending_rewards": {},
+		"race_elapsed": 0.0,
+		"race_outside": 0.0,
+		"race_run": {},
+		"step": 0,
+		"version": 1
+	},
+	"canonical_campaign": {
+		"completed_beats": [],
+		"completed_contracts": [],
+		"current_stage": "prologue_call",
+		"flags": {},
+		"regions": [
+			"central"
+		],
+		"territories": [
+			"mercado_velho"
+		],
+		"version": 1
+	},
+	"checkpoint_id": "maciota",
+	"combat": {
+		"armor": 0.0,
+		"crime_points": 0,
+		"customization": {},
+		"health": 100.0,
+		"hidden_time": 0.0
+	},
+	"economy": {
+		"achievements": [],
+		"balance": 0,
+		"collectibles": [],
+		"discoveries": [],
+		"equipped_weapon": "fists",
+		"inventory": {},
+		"outfit": "dante_classic",
+		"outfits": [
+			"dante_classic"
+		],
+		"transactions": {},
+		"version": 1,
+		"weapons": {
+			"fists": {
+				"magazine": -1,
+				"reserve": -1
+			}
+		}
+	},
+	"game": "geteco_v2",
+	"intro": {
+		"completed_missions": [],
+		"equipped_weapon": "",
+		"game": "geteco_v2",
+		"inventory": {},
+		"location_id": "harbor_street",
+		"mission_id": "harbor_arrival_v2",
+		"phase": "meet_maciota",
+		"schema_version": 1
+	},
+	"place_id": "",
+	"region_id": "harbor",
+	"schema_version": 3,
+	"world": {
+		"activities": {
+			"attempt": 0,
+			"day": 1,
+			"day_clock": 1.16666666666667,
+			"drift_best": {},
+			"drift_finished": 0,
+			"home": {
+				"active_home": "",
+				"purchases": 0,
+				"schema_version": 1,
+				"stored_vehicle": {}
+			},
+			"race_best": {},
+			"race_records": 0,
+			"races_finished": 0,
+			"tow_completed": 0,
+			"tow_contract": {},
+			"tow_delivered_today": 0,
+			"tow_serial": 0,
+			"tow_taken_today": 0,
+			"version": 1
+		},
+		"arrival": {
+			"caption": -1,
+			"flags": {},
+			"opening_completed": false,
+			"phase": "complete",
+			"version": 1
+		},
+		"cold": {
+			"damage_fraction": 0.0,
+			"exposure": 0.0,
+			"temperature": 100.0,
+			"version": 1,
+			"weather_clock": 0.0
+		},
+		"garage_rewards": {
+			"alarm_remaining": -1.0,
+			"guards": [],
+			"police_called": false,
+			"port_status": "parked",
+			"vehicles": {},
+			"version": 1
+		},
+		"mission_world": {
+			"cargo": {},
+			"job": {},
+			"loaded": false,
+			"truck": {},
+			"unloaded_at_bay": false,
+			"version": 1
+		},
+		"mountain_progression": {
+			"best": {},
+			"equipment": false,
+			"rental": false,
+			"rental_serial": 0,
+			"shadow_announced": false,
+			"version": 1
+		},
+		"outfit": "dante_classic",
+		"pedestrian": {
+			"position": [
+				46.875,
+				-0.0098763071000576,
+				102.737503051758
+			],
+			"region": "harbor"
+		},
+		"rain_intensity": 0.22,
+		"rewards": [],
+		"robberies": {
+			"aftermath": "",
+			"bank_alarm": false,
+			"bank_cash0": false,
+			"bank_cash1": false,
+			"bank_cash2": false,
+			"bank_cycle": 0,
+			"bank_dispatched": false,
+			"bank_shots": false,
+			"clerks": [
+				80.0,
+				80.0
+			],
+			"elapsed_days": 0.0,
+			"fuel_alarm": false,
+			"fuel_alarm_remaining": 30.0,
+			"fuel_dispatched": false,
+			"fuel_health": 80.0,
+			"fuel_initialized": false,
+			"fuel_register": false,
+			"fuel_resists": false,
+			"guards": [
+				50.0,
+				50.0
+			],
+			"keycard_available": false,
+			"keycard_position": [
+				-5.0,
+				0.0,
+				0.5
+			],
+			"keycard_taken": false,
+			"opening_remaining": 0.0,
+			"vault_open": false,
+			"version": 1
+		},
+		"services": {
+			"auto_serial": 0,
+			"hospital_cooldown": 0.0,
+			"last_vehicle": "",
+			"serviced_count": 0,
+			"version": 1
+		},
+		"time": 0.320928535185185,
+		"urban_operations": {
+			"cemetery": {
+				"cases": [],
+				"deaths": [],
+				"secret_known": false,
+				"serial": 0,
+				"storyteller_stop": 0,
+				"version": 1
+			},
+			"freight": {
+				"active_bay": -1,
+				"jobs": [
+					0,
+					0,
+					0
+				],
+				"previous_vehicle": {},
+				"truck": {},
+				"version": 1
+			},
+			"harbor_life": {
+				"guards": [
+					0.0,
+					0.0,
+					0.0
+				],
+				"loaders": [
+					0.0,
+					0.0
+				],
+				"terminal": {
+					"clock": 0.0,
+					"cooldown": [
+						0.0,
+						0.0
+					],
+					"departures": 0,
+					"fisher_dead": [
+						false,
+						false
+					],
+					"phase": "docked",
+					"spawned": 0
+				},
+				"workers": {}
+			},
+			"logistics": {
+				"clock": 601.006199583333,
+				"clock_phase": 0.320928535185185,
+				"trucks": [
+					{
+						"deliveries": 0,
+						"respawn_at": -1.0
+					},
+					{
+						"deliveries": 0,
+						"respawn_at": -1.0
+					},
+					{
+						"deliveries": 0,
+						"respawn_at": -1.0
+					}
+				],
+				"version": 1
+			},
+			"port": {
+				"boats": [
+					{
+						"clock": 0.0,
+						"id": "south_port_launch_00",
+						"load": 0,
+						"phase": "loading",
+						"position": [
+							398.75,
+							0.0,
+							231.25
+						],
+						"worker": {}
+					},
+					{
+						"clock": 0.0,
+						"id": "south_port_launch_01",
+						"load": 0,
+						"phase": "loading",
+						"position": [
+							398.75,
+							0.0,
+							266.25
+						],
+						"worker": {}
+					}
+				],
+				"version": 1
+			},
+			"security": {
+				"authorized_entry": false,
+				"authorized_visit": false,
+				"exiting_port": false,
+				"version": 1
+			},
+			"truckers_village": {
+				"belt": false,
+				"completed": false,
+				"crank": false,
+				"started": false,
+				"version": 1
+			},
+			"version": 1
+		},
+		"vehicles": [
+			{
+				"archetype": "sport_coupe",
+				"equipment": {},
+				"health": 80.0,
+				"paint": "ffffffff",
+				"position": [
+					46.875,
+					0.000219173263758421,
+					110.125
+				],
+				"region": "harbor",
+				"vehicle_id": "player_coupe",
+				"was_driven": false,
+				"yaw": -1.57079637050629
+			}
+		],
+		"weather": 0
+	}
+}

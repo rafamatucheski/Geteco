@@ -5,6 +5,7 @@ extends SceneTree
 const POLICE := preload("res://gameplay/PoliceAgent.gd")
 
 class FakeState extends RefCounted:
+	var place_id := ""
 	func weapons_allowed() -> bool: return true
 
 class FakePlayer extends CharacterBody3D:

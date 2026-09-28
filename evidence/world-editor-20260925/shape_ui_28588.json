@@ -1,0 +1,40 @@
+{
+	"regions": {
+		"harbor": {
+			"piece/cobra/cobra_footpath/2": {
+				"id": "piece/cobra/cobra_footpath/2",
+				"outline": [
+					[
+						-2.125,
+						4.78500366210938
+					],
+					[
+						0.375,
+						-5.21499633789063
+					],
+					[
+						2.125,
+						-4.78500366210938
+					],
+					[
+						-0.375,
+						5.21499633789063
+					]
+				],
+				"position": [
+					454.375,
+					85.625
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"stretch": [
+					0.5,
+					1.0
+				],
+				"type": "piece"
+			}
+		},
+		"mountain": {}
+	},
+	"version": 1
+}

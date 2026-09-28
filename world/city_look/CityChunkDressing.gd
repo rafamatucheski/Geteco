@@ -22,6 +22,7 @@ const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
 
@@ -129,6 +130,8 @@ static func _road_clearance(context: Dictionary, point: Vector2) -> float:
 
 
 static func _inside_building(context: Dictionary, point: Vector2, margin := 0.3) -> bool:
+	# Rampas e pórticos do Túnel do canal: nada de poste/banco na boca ou sobre a vala.
+	if CANAL_TUNNEL.reserves(point, margin): return true
 	for building in context.buildings:
 		if (building.rect as Rect2).grow(margin).has_point(point): return true
 	return false
@@ -977,6 +980,9 @@ static func _place_billboard(chunk: Node3D, building: UrbanBuildingBase, roof_y:
 ## autorais): só o acabamento da laje, sem adereços (não sabemos o que há lá).
 static func _other_roofs(chunk: Node3D, batches: Dictionary) -> void:
 	for child in chunk.get_children():
+		# Walk-in cargo owns a retractable roof; a chunk-wide slab would remain
+		# opaque over the player after its actual roof had disappeared.
+		if child.get_meta("native_dynamic_roof",false): continue
 		if not child is Node3D or child is UrbanBuildingBase or child is MultiMeshInstance3D: continue
 		if child.find_children("*", "MeshInstance3D", true, false).size() < 3: continue
 		var roof := ROOFS.find_roof(child)

@@ -2,6 +2,7 @@ extends Node
 ## Session adapter; root owns installation, persistent world.cold and HUD presentation.
 const THERMAL = preload("res://runtime/cold/ThermalState.gd")
 const SOURCES = preload("res://runtime/cold/OriginalHeatSources.gd")
+const CONNECTION = preload("res://world/regions/WorldConnection3D.gd")
 signal temperature_changed(current: float, maximum: float)
 signal hypothermia_started
 signal hypothermia_ended
@@ -10,6 +11,7 @@ var model = THERMAL.new()
 var context: Dictionary = {}
 var _hypothermic := false
 var active := true
+var _in_cold_zone := false
 var presentation: Node3D
 func configure(owner_session) -> void:
 	session = owner_session
@@ -24,6 +26,10 @@ func _process(delta: float) -> void:
 	var gameplay = session.world.gameplay
 	if gameplay.health<=0: return
 	model.weather_clock = fposmod(model.weather_clock+delta,240)
+	if not _cold_zone_active():
+		context.clear()
+		model.exposure = 0.0
+		return
 	context = sample_context()
 	var previous: float = model.temperature
 	var damage: int = model.tick(delta,context)
@@ -51,12 +57,27 @@ static func validate_snapshot(data: Dictionary) -> bool: return THERMAL.validate
 func restore(data: Dictionary) -> bool:
 	if not model.restore(data): return false
 	_hypothermic = model.temperature<=0
+	_in_cold_zone = false
 	return true
+func _cold_zone_active() -> bool:
+	if not is_instance_valid(session) or session.state.region_id != "mountain":
+		_in_cold_zone = false
+		return false
+	if not session.state.place_id.is_empty(): return true
+	var point: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
+	var weight := CONNECTION.mountain_weight(point)
+	# Both thresholds are on land. Walking back and forth at entry cannot flicker the HUD.
+	_in_cold_zone = weight > (0.10 if _in_cold_zone else 0.25)
+	return _in_cold_zone
 func status() -> Dictionary:
-	var visible: bool = is_instance_valid(session) and session.state.region_id=="mountain"
+	var visible := _cold_zone_active()
 	var key := "sheltered" if context.get("sheltered",false) else "heat" if context.get("heat",false) else "vehicle" if context.get("vehicle",false) else "grace" if model.exposure<=15 else "exposed"
 	if model.temperature<=0: key = "hypothermia"
 	var text: String = {"sheltered":"Aquecendo no abrigo","heat":"Aquecendo junto ao fogo","vehicle":"Aquecendo no veículo","grace":"Frio intenso","exposed":"Perdendo calor","hypothermia":"Hipotermia"}[key]
+	if key == "hypothermia": text = "Hipotermia: perdendo vida"
+	if key in ["grace", "exposed", "hypothermia"]:
+		text += "\nAqueça-se no abrigo, fogo ou veículo."
+		text += "\nRoupa: %d%% de proteção ao frio" % roundi(float(context.get("protection", 0.0)) * 100.0)
 	return {"visible":visible,"key":key,"text":text,"temperature":model.temperature,"maximum":100,"exposure":model.exposure,"heat_id":context.get("heat_id","")}
 
 func recover_after_rescue() -> void:

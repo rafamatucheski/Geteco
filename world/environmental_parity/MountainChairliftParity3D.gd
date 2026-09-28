@@ -112,7 +112,10 @@ func _build_station(node_name: String, cable_point: Vector3, is_base: bool) -> v
 	var concrete := _material(Color("74787a"), 0.92)
 	var steel := _material(Color("4b5961"), 0.55, 0.48)
 	var roof := _material(Color("34444b"), 0.72, 0.30)
-	_box(station, "Platform", Vector3(0, 0.18, 0), Vector3(7.6, 0.36, 6.0), concrete)
+	var platform := _box(station, "Platform", Vector3(0, 0.18, 0), Vector3(7.6, 0.36, 6.0), concrete)
+	if not is_base:
+		platform.create_trimesh_collision()
+		_build_walkup_ramp(station,concrete)
 	for x in [-3.1, 3.1]:
 		_box(station, "StationPost", Vector3(x, 3.3, 0), Vector3(0.26, 6.6, 0.26), steel)
 	_box(station, "StationRoof", Vector3(0, 6.65, 0), Vector3(7.8, 0.24, 6.2), roof)
@@ -131,6 +134,21 @@ func _build_station(node_name: String, cable_point: Vector3, is_base: bool) -> v
 		collision.position = Vector3(x, 3.3, 0)
 		body.add_child(collision)
 	station.add_child(body)
+
+func _build_walkup_ramp(station: Node3D, material: Material) -> void:
+	# Meet the 2.2 m trail at ground level and the existing platform at 36 cm.
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for point in [Vector3(-1.1,.36,3),Vector3(1.1,.36,3),Vector3(-1.1,0,4.8),
+		Vector3(1.1,.36,3),Vector3(1.1,0,4.8),Vector3(-1.1,0,4.8)]:
+		surface.set_normal(Vector3(0,1,.2).normalized())
+		surface.add_vertex(point)
+	var ramp := MeshInstance3D.new()
+	ramp.name = "WalkupRamp"
+	ramp.mesh = surface.commit()
+	ramp.material_override = material
+	station.add_child(ramp)
+	ramp.create_trimesh_collision()
 
 func _build_chair(index: int, with_rider: bool, rider_color: Color) -> Node3D:
 	var chair := Node3D.new()

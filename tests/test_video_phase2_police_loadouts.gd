@@ -6,6 +6,8 @@ extends SceneTree
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
 const AUDIO := preload("res://gameplay/CombatAudio.gd")
+class ExteriorState extends KIT.CombatState:
+	var place_id := ""
 var checks := 0
 var failures: Array[String] = []
 var cases_completed := 0
@@ -39,11 +41,16 @@ func run() -> void:
 
 func check_response(expected: Dictionary) -> void:
 	var bundle := KIT.build(self, KIT.grid_roads(), Vector3(0, .03, -8))
+	bundle.state = ExteriorState.new()
 	var game: Node3D = bundle.gameplay
+	game.state = bundle.state
 	var dispatch: Node3D = bundle.controller
 	game.set_physics_process(false)
 	dispatch.set_physics_process(false)
 	game.stars = int(expected.current)
+	# Weapon integration exercises an authorized response to witnessed violence;
+	# wanted stars alone intentionally no longer authorize firing.
+	game.police_case.confirmed(0, bundle.player.global_position, "gunfire")
 	game.last_known = bundle.player.global_position
 	game.last_known_valid = true
 	var car: CharacterBody3D = dispatch._create_vehicle("police", Vector3(20, .03, 0), 0.0)
@@ -102,7 +109,9 @@ func check_response(expected: Dictionary) -> void:
 
 func check_stolen_patrol() -> void:
 	var bundle := KIT.build(self, KIT.grid_roads(), Vector3(0, .03, -8))
+	bundle.state = ExteriorState.new()
 	var game: Node3D = bundle.gameplay
+	game.state = bundle.state
 	var dispatch: Node3D = bundle.controller
 	game.set_physics_process(false)
 	dispatch.set_physics_process(false)

@@ -1,3 +1,4 @@
+@tool
 extends RefCounted
 class_name HarborRoadGeometry3D
 
@@ -32,15 +33,22 @@ var _materials: Dictionary = {}
 var _crosswalk_white: Array[PackedVector2Array] = []
 var _crosswalk_tactile: Array[PackedVector2Array] = []
 var _crosswalk_stop: Array[PackedVector2Array] = []
+var _crossing_masks: Array[PackedVector2Array] = []
+var crossing_layout: Array[Dictionary] = []
+var _earth_polygons: Array[PackedVector2Array] = []
+var _earth_verge_triangles: Array = []
 
 
-func configure(source_roads: Array[Dictionary]) -> void:
+func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 	_roads.clear()
 	_junctions.clear()
 	_layers.clear()
 	_crosswalk_white.clear()
 	_crosswalk_tactile.clear()
 	_crosswalk_stop.clear()
+	_crossing_masks.clear()
+	_earth_polygons.clear()
+	_earth_verge_triangles.clear()
 	for source in source_roads:
 		if String(source.get("surface", "asphalt")) != "asphalt":
 			continue
@@ -51,17 +59,41 @@ func configure(source_roads: Array[Dictionary]) -> void:
 		if points.size() < 2:
 			continue
 		_roads.append({
-			"id": String(source.get("id", "road")),
+			"id": String(source.get("id", "road")).trim_prefix("road/"),
 			"points": points,
 			"width": float(source.get("width", 7.5)),
+			"lanes_per_direction": int(source.get("lanes_per_direction",1)),
+			"sidewalk_width": float(source.get("sidewalk_width",SIDEWALK_MARGIN)),
+			"crossings": source.get("crossings",true),
+			"crossing_offset": float(source.get("crossing_offset",0)),
+			"crossing_depth": float(source.get("crossing_depth",30.0*SOURCE_SCALE)),
+			"custom_crossing_depth": source.has("crossing_depth"),
+			"crossing_entries": source.get("crossing_entries",{}),
 		})
 	_discover_junctions()
+	if not surfaces:
+		_prepare_crosswalks()
+		return
 	_layers = [
 		_layer(SIDEWALK_COLOR, SIDEWALK_MARGIN * 2.0, 0.008),
 		_layer(CURB_COLOR, 10.0 * SOURCE_SCALE, 0.014),
 		_layer(ROAD_EDGE_COLOR, 4.0 * SOURCE_SCALE, 0.020),
 		_layer(ROAD_COLOR, 0.0, 0.026),
 	]
+	# Rural branches are real roads in the editor/traffic network. Their surface
+	# ends at the asphalt footprint, rather than painting over the junction.
+	for road in source_roads:
+		if road.get("surface","asphalt") != "earth": continue
+		var flat := PackedVector2Array()
+		for p in road.points: flat.append(Vector2(p.x,p.z))
+		for polygon in Geometry2D.offset_polyline(flat,float(road.width)*.5,Geometry2D.JOIN_ROUND,Geometry2D.END_BUTT):
+			var pieces: Array[PackedVector2Array] = [polygon]
+			for asphalt in _layers[-1].polygons:
+				var remainder: Array[PackedVector2Array] = []
+				for piece in pieces: remainder.append_array(Geometry2D.clip_polygons(piece,asphalt))
+				pieces = remainder
+			_earth_polygons.append_array(pieces)
+	_earth_verge_triangles = preload("res://world/urban_detail/RuralRoadVerge.gd").prepare(_earth_polygons)
 	_prepare_crosswalks()
 
 
@@ -69,6 +101,8 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	if _layers.is_empty():
 		return
 	var clip := _rect_polygon(rect)
+	preload("res://world/urban_detail/RuralRoadVerge.gd").build(parent,_earth_verge_triangles,clip)
+	_add_clipped_surface(parent,"HarborEarthRoad",_earth_polygons,clip,0.023,preload("res://world/urban_detail/RuralGroundMaterial.gd").material())
 	var sewer_opening := Rect2(CATALOG.HARBOR_SEWER_OPENING.position * SOURCE_SCALE, CATALOG.HARBOR_SEWER_OPENING.size * SOURCE_SCALE)
 	var opening_clip := _rect_polygon(sewer_opening) if rect.intersects(sewer_opening) else PackedVector2Array()
 	for layer in _layers:
@@ -106,9 +140,10 @@ func source_coverage_errors() -> PackedStringArray:
 func _layer(color: Color, extra_width: float, y: float) -> Dictionary:
 	var polygons: Array[PackedVector2Array] = []
 	for road in _roads:
+		var extra := float(road.sidewalk_width)*2 if is_equal_approx(extra_width,SIDEWALK_MARGIN*2) else extra_width
 		var surfaces := Geometry2D.offset_polyline(
 			road.points,
-			(float(road.width) + extra_width) * 0.5,
+			(float(road.width) + extra) * 0.5,
 			Geometry2D.JOIN_ROUND,
 			Geometry2D.END_BUTT
 		)
@@ -163,21 +198,12 @@ func _junction_patch(junction: Dictionary, extra_width: float) -> PackedVector2A
 	var cap_points := PackedVector2Array([center])
 	var largest_outer_half := 0.0
 	var arms: Array[Dictionary] = []
-	for road_index_value in junction.roads:
-		var road_index := int(road_index_value)
-		var road := _roads[road_index]
-		var points := road.points as PackedVector2Array
-		var location := _closest_segment(center, points)
-		if int(location.segment) < 0: continue
-		var a := points[int(location.segment)]
-		var b := points[int(location.segment) + 1]
-		var tangent := a.direction_to(b)
-		var half_width := (float(road.width) + extra_width) * 0.5
+	for crossing_arm in _crossing_arms(junction):
+		var road: Dictionary = crossing_arm.road
+		var extra := float(road.sidewalk_width)*2 if is_equal_approx(extra_width,SIDEWALK_MARGIN*2) else extra_width
+		var half_width := (float(crossing_arm.width) + extra) * 0.5
 		largest_outer_half = maxf(largest_outer_half, float(road.width) * 0.5 + SIDEWALK_MARGIN)
-		var at_start := center.distance_to(points[0]) <= 0.08
-		var at_end := center.distance_to(points[-1]) <= 0.08
-		if not at_end: _add_arm(arms, tangent, half_width)
-		if not at_start: _add_arm(arms, -tangent, half_width)
+		_add_arm(arms,crossing_arm.direction,half_width)
 	var widest := 0.0
 	for road_index_value in junction.roads:
 		widest = maxf(widest, float(_roads[int(road_index_value)].width))
@@ -224,21 +250,14 @@ func _add_arm(arms: Array[Dictionary], direction: Vector2, half_width: float) ->
 
 
 func _prepare_crosswalks() -> void:
-	for junction in _junctions:
-		var center := junction.position as Vector2
-		if _is_unsignalized(center): continue
-		var arms: Array[Dictionary] = _crossing_arms(junction)
-		if arms.size() < 3: continue
-		var widest := 0.0
-		for road_index_value in junction.roads:
-			widest=maxf(widest,float(_roads[int(road_index_value)].width))
-		var radius: float=widest*.68+14.0*SOURCE_SCALE
-		var setback: float=maxf(24.0*SOURCE_SCALE,radius-8.0*SOURCE_SCALE)
-		for arm in arms:
-			var direction:=arm.direction as Vector2
-			var road_width: float=float(arm.width)
-			var crossing_center: Vector2=center+direction*setback
-			_append_crossing(crossing_center,direction,road_width,30.0*SOURCE_SCALE,42.0*SOURCE_SCALE)
+	crossing_layout = preload("res://world/editing/WorldCrossingLayout.gd").build(self)
+	for junction in crossing_layout:
+		for entry in junction.entries:
+			if entry.enabled:
+				_append_crossing(entry.position,entry.direction,entry.width,entry.depth,entry.sidewalk,true,false)
+			if entry.stop_line:
+				var normal: Vector2 = entry.direction.orthogonal()
+				_crosswalk_stop.append(_quad(entry.stop_position+normal*entry.width*.25,entry.direction,3.0*SOURCE_SCALE,entry.width*.5))
 	# HarborSafety.gd authors exactly two unsignalized Ashbend crossings by
 	# road-relative fraction. They replace zebra fans at the ring topology seams.
 	_append_road_crossing("cobra_approach",0.78,26.0*SOURCE_SCALE,42.0*SOURCE_SCALE)
@@ -248,14 +267,20 @@ func _prepare_crosswalks() -> void:
 func _append_road_crossing(road_id: String, t: float, depth: float, sidewalk_reach: float) -> void:
 	for road in _roads:
 		if String(road.id).get_file()!=road_id: continue
+		if not road.crossings: return
 		var sample:=_sample_polyline(road.points as PackedVector2Array,t)
 		if sample.is_empty(): return
-		_append_crossing(sample.position,sample.tangent,float(road.width),depth,sidewalk_reach)
+		var points: PackedVector2Array = road.points
+		var wanted: Vector2 = sample.position+sample.tangent*float(road.crossing_offset)
+		var segment := int(_closest_segment(wanted,points).segment)
+		var center := Geometry2D.get_closest_point_to_segment(wanted,points[segment],points[segment+1])
+		_append_crossing(center,points[segment].direction_to(points[segment+1]),float(road.width),float(road.crossing_depth) if road.custom_crossing_depth else depth,float(road.sidewalk_width))
 		return
 
 
-func _append_crossing(center: Vector2,direction: Vector2,road_width: float,depth: float,sidewalk_reach: float)->void:
+func _append_crossing(center: Vector2,direction: Vector2,road_width: float,depth: float,sidewalk_reach: float,junction_crossing: bool = false, stops := true)->void:
 	var normal: Vector2=direction.orthogonal()
+	_crossing_masks.append(_quad(center,direction,depth+3.0,road_width))
 	var stripe_at: float=-road_width*.5+6.0*SOURCE_SCALE
 	var stripe_end: float=road_width*.5-6.0*SOURCE_SCALE
 	while stripe_at<=stripe_end+.0001:
@@ -264,9 +289,12 @@ func _append_crossing(center: Vector2,direction: Vector2,road_width: float,depth
 	for side in [-1.0,1.0]:
 		var tactile_offset:=minf(sidewalk_reach*.5,12.0*SOURCE_SCALE)
 		var pad_center: Vector2=center+normal*float(side)*(road_width*.5+tactile_offset)
-		_crosswalk_tactile.append(_quad(pad_center,direction,depth,12.0*SOURCE_SCALE))
+		if sidewalk_reach > .1: _crosswalk_tactile.append(_quad(pad_center,direction,depth,minf(sidewalk_reach,12.0*SOURCE_SCALE)))
+		# At a junction only the approaching lane stops, outside the crossing.
+		if not stops or (junction_crossing and side < 0): continue
 		var stop_center: Vector2=center+direction*float(side)*(depth*.5+16.0*SOURCE_SCALE)
-		_crosswalk_stop.append(_quad(stop_center,direction,3.0*SOURCE_SCALE,road_width))
+		stop_center += normal*float(side)*road_width*.25
+		_crosswalk_stop.append(_quad(stop_center,direction,3.0*SOURCE_SCALE,road_width*.5))
 
 
 func _sample_polyline(points: PackedVector2Array,t: float)->Dictionary:
@@ -288,25 +316,36 @@ func _sample_polyline(points: PackedVector2Array,t: float)->Dictionary:
 func _crossing_arms(junction: Dictionary) -> Array[Dictionary]:
 	var arms: Array[Dictionary] = []
 	var center: Vector2=junction.position as Vector2
-	for road_index_value in junction.roads:
+	var indices: Array = junction.roads.duplicate()
+	indices.sort_custom(func(a,b): return _roads[a].id < _roads[b].id)
+	for road_index_value in indices:
 		var road:=_roads[int(road_index_value)]
 		var points:=road.points as PackedVector2Array
-		var location: Dictionary=_closest_segment(center,points)
-		if int(location.segment)<0: continue
-		var tangent: Vector2=points[int(location.segment)].direction_to(points[int(location.segment)+1])
-		var at_start: bool=center.distance_to(points[0])<=.08
-		var at_end: bool=center.distance_to(points[-1])<=.08
-		if not at_end: _merge_crossing_arm(arms,tangent,float(road.width))
-		if not at_start: _merge_crossing_arm(arms,-tangent,float(road.width))
+		for i in range(points.size()-1):
+			if Geometry2D.get_closest_point_to_segment(center,points[i],points[i+1]).distance_to(center) > .08: continue
+			for side in [-1,1]:
+				var endpoint := points[i] if side < 0 else points[i+1]
+				var length := center.distance_to(endpoint)
+				if length <= .08: continue
+				var direction := center.direction_to(endpoint)
+				# Extra control points on a straight road do not shorten its approach.
+				var cursor := i if side < 0 else i+1
+				while cursor+side >= 0 and cursor+side < points.size():
+					var next := points[cursor+side]
+					if points[cursor].direction_to(next).dot(direction) < .9999: break
+					length += points[cursor].distance_to(next)
+					cursor += side
+				_merge_crossing_arm(arms,direction,float(road.width),road,side,length)
 	return arms
 
 
-func _merge_crossing_arm(arms: Array[Dictionary],direction: Vector2,width: float)->void:
+func _merge_crossing_arm(arms: Array[Dictionary],direction: Vector2,width: float,road: Dictionary,side := 1,length := 1000.0)->void:
 	for index in arms.size():
 		if (arms[index].direction as Vector2).dot(direction)>=.99862953475:
 			arms[index].width=maxf(float(arms[index].width),width)
+			arms[index].length=minf(float(arms[index].length),length)
 			return
-	arms.append({"direction":direction.normalized(),"width":width})
+	arms.append({"direction":direction.normalized(),"width":width,"road":road,"side":side,"length":length})
 
 
 func _is_unsignalized(metric_point: Vector2)->bool:
@@ -365,9 +404,14 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 					var from := a + direction * walked
 					var to := a + direction * (walked + step)
 					var midpoint := (from + to) * 0.5
-					if rect.grow(0.2).has_point(midpoint) and not _marking_hits_junction(midpoint):
+					if rect.grow(0.2).has_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
 						_add_mark(mark_parent, from, to, count)
 						count += 1
+						if int(road.get("lanes_per_direction",1)) == 2:
+							for side in [-1,1]:
+								var offset: Vector2 = Vector2(-direction.y,direction.x)*float(road.width)*.25*side
+								_add_mark(mark_parent,from+offset,to+offset,count,true)
+								count += 1
 				walked += maxf(step, 0.03)
 			travelled += segment_length
 	if count > 0: parent.add_child(mark_parent)
@@ -375,6 +419,8 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 
 
 func _marking_hits_junction(point: Vector2) -> bool:
+	for mask in _crossing_masks:
+		if Geometry2D.is_point_in_polygon(point,mask): return true
 	for junction in _junctions:
 		var widest := 0.0
 		for road_index_value in junction.roads:
@@ -384,14 +430,14 @@ func _marking_hits_junction(point: Vector2) -> bool:
 	return false
 
 
-func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int) -> void:
+func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int, same_direction := false) -> void:
 	var delta := to - from
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.name = "Dash_%04d" % index
 	var box := BoxMesh.new()
 	box.size = Vector3(3.0 * SOURCE_SCALE, 0.008, delta.length())
 	mesh_instance.mesh = box
-	mesh_instance.material_override = _material(LANE_COLOR)
+	mesh_instance.material_override = _material(CROSSWALK_COLOR if same_direction else LANE_COLOR)
 	mesh_instance.position = Vector3((from.x + to.x) * 0.5, 0.034, (from.y + to.y) * 0.5)
 	mesh_instance.rotation.y = atan2(delta.x, delta.y)
 	parent.add_child(mesh_instance)

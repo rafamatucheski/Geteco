@@ -51,7 +51,13 @@ void fragment() {
 	// Tufos e terra granulada: manchas pequenas escuras/claras e fios de capim.
 	ground *= 0.72 + d1 * 0.28 + d2 * 0.22 + d3 * 0.12;
 	ground = mix(ground, grass * 1.25, smoothstep(0.72, 0.9, d2) * 0.35);
-	float cover = ground_cover(p, fine, snow_amount);
+	// Escala média (2 a 12 m): vista de cima o capim lia como feltro liso
+	// (editor, 2026-09-26). Touceiras escuras e manchas de palha seca.
+	float clump = ground_noise(local_xz / 2.0, 32.0) * 0.6 + ground_noise(local_xz, 64.0) * 0.4;
+	ground *= 0.74 + clump * 0.42;
+	float straw = smoothstep(0.52, 0.78, ground_fbm(p + 53.0, 16.0) + (d1 - 0.5) * 0.15);
+	ground = mix(ground, vec3(0.40, 0.36, 0.21) * (0.8 + clump * 0.35), straw * 0.45);
+	float cover = ground_cover(p, fine, snow_amount) * ground_mountain_weight(local_xz + origin);
 	// Luz de inverno estoura a neve para quase branco; o contraste vem de manchas de
 	// sombra fria largas e de ondulações de vento (sastrugi) numa direção só.
 	vec3 snow = mix(snow_shade, snow_lit, smoothstep(0.3, 0.75, macro));

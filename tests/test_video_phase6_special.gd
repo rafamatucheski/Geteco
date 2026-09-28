@@ -70,12 +70,23 @@ func access(id: String) -> void:
 	world.player.teleport(door+Vector3(0,.08,2))
 	await frames(30)
 	check(session.nearest().get("id","") != "enter" and session.state.place_id.is_empty(),id+" proximity has no E and does not transfer")
-	if id != "mountain_mystery_cave":
+	if id == "santa_mare_hold":
 		check(is_instance_valid(helper.hatch) and helper.hatch.open_amount > .95,id+" actual hatch opens nearby")
+	if id == "harbor_sewer":
+		var hatch: Node3D = session._find_sewer_hatch()
+		check(is_instance_valid(hatch) and is_zero_approx(hatch.open_amount),"sewer stays closed nearby")
+		world.player.teleport(door+Vector3(0,.15,.3))
+		await frames(30)
+		check(session.state.place_id.is_empty() and not helper.busy,"standing on sewer does not enter automatically")
+		check(world.player.global_position.y > door.y-.1,"closed cover supports player")
+		var action: Dictionary = session.nearest()
+		check(action.get("place","") == id and action.get("silent",false),"sewer offers silent interaction")
+		check(session.prompt.text.is_empty(),"sewer has no hint")
+		check(session.interact(),"interaction enters sewer")
 	world.player.automatic_direction = Vector3.FORWARD
 	var entered := await until(func(): return session.state.place_id == id)
 	world.player.automatic_direction = Vector3.ZERO
-	check(entered,id+" walking enters")
+	check(entered,id+" enters by interaction" if id == "harbor_sewer" else id+" walking enters")
 	if not entered:
 		print("SPECIAL6_POSITION ",id," player=",world.player.global_position," door=",door," busy=",helper.busy)
 		return

@@ -44,6 +44,9 @@ func _ready() -> void:
 	name = "CityLook"
 	# Depois do Weather/atmosfera no quadro: a direção do sol é ajustada aqui.
 	process_priority = 100
+	var local_lighting := preload("res://world/city_look/CityLocalLighting.gd").new()
+	local_lighting.controller = controller
+	add_child(local_lighting)
 	_update(true)
 
 
@@ -153,7 +156,7 @@ func _refresh_silhouette() -> void:
 	if not is_instance_valid(world): return
 	var player: Node3D = world.get("player")
 	var vehicle := _silhouette_vehicle(world)
-	_silhouette_inside = not String(controller.state.place_id).is_empty()
+	_silhouette_inside = _uses_interior_depth()
 	_silhouette_player_id = player.get_instance_id() if is_instance_valid(player) else 0
 	_silhouette_vehicle_id = vehicle.get_instance_id() if is_instance_valid(vehicle) else 0
 	_silhouette_transition_id = _silhouette_transition(world)
@@ -191,6 +194,7 @@ func _refresh_silhouette() -> void:
 		var material: ShaderMaterial = _silhouettes[target]
 		material.set_shader_parameter("box_min", box.position)
 		material.set_shader_parameter("box_max", box.end)
+		material.set_shader_parameter("minimum_occluder_height", -1000.0 if is_instance_valid(vehicle) else 1.2)
 	for previous in _silhouette_targets:
 		if is_instance_valid(previous) and previous not in targets:
 			var material = _silhouettes.get(previous)
@@ -214,7 +218,7 @@ func _follow_silhouettes() -> void:
 	var vehicle_id := vehicle.get_instance_id() if is_instance_valid(vehicle) else 0
 	var transition_id := _silhouette_transition(world)
 	var player_visible := is_instance_valid(player) and player.is_visible_in_tree()
-	var inside := not String(controller.state.place_id).is_empty()
+	var inside := _uses_interior_depth()
 	# Context changes refresh once immediately; ordinary frames only update
 	# uniforms. Mesh scans remain at 4 Hz while the context stays the same.
 	# Boarding can hide, pose and show the same player without changing IDs.
@@ -227,6 +231,14 @@ func _follow_silhouettes() -> void:
 	for target in _silhouettes:
 		if is_instance_valid(target):
 			_silhouettes[target].set_shader_parameter("target_inverse", inverse)
+
+
+func _uses_interior_depth() -> bool:
+	if not String(controller.state.place_id).is_empty(): return true
+	# Continuous underground rooms keep the outdoor place id. Their active
+	# camera owns depth presentation, so the street outline must also yield.
+	var camera := get_viewport().get_camera_3d()
+	return is_instance_valid(camera) and bool(camera.get_meta("uses_interior_depth",false))
 
 
 func _silhouette_vehicle(world: Node) -> Node3D:

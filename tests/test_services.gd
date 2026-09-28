@@ -4,6 +4,7 @@ const Economy := preload("res://systems/economy/Economy.gd")
 var count := 0
 var failures: Array[String] = []
 class Health extends RefCounted:
+	signal weapon_fired(weapon_id: String, origin: Vector3)
 	var health := 100.0
 	var stars := 3
 	func heal(amount: float) -> bool:

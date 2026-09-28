@@ -1,0 +1,8 @@
+{
+	"clock": "09:26",
+	"hud": "res://ui/ClassicGameplayHUD.gd",
+	"interaction": "",
+	"minimap_rect": "[P: (24.0, 492.0), S: (156.0, 204.0)]",
+	"no_save": true,
+	"source": "Main.tscn current production render"
+}

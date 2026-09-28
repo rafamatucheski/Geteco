@@ -1,0 +1,102 @@
+{
+	"checks": 51,
+	"failures": [],
+	"records": [
+		{
+			"actor": "player",
+			"control_pixels": 2381,
+			"pose": "front",
+			"prop": "cargo",
+			"visible_pixels": 2381,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2388,
+			"pose": "behind",
+			"prop": "cargo",
+			"visible_pixels": 269,
+			"visible_ratio": 0.112646566164154
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2376,
+			"pose": "side",
+			"prop": "cargo",
+			"visible_pixels": 2376,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2354,
+			"pose": "front",
+			"prop": "rest_table",
+			"visible_pixels": 2353,
+			"visible_ratio": 0.999575191163976
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2359,
+			"pose": "behind",
+			"prop": "rest_table",
+			"visible_pixels": 1786,
+			"visible_ratio": 0.757100466299279
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2351,
+			"pose": "side",
+			"prop": "rest_table",
+			"visible_pixels": 2348,
+			"visible_ratio": 0.998723947256487
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1961,
+			"pose": "front",
+			"prop": "cargo",
+			"visible_pixels": 1961,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1963,
+			"pose": "behind",
+			"prop": "cargo",
+			"visible_pixels": 250,
+			"visible_ratio": 0.127356087620988
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1957,
+			"pose": "side",
+			"prop": "cargo",
+			"visible_pixels": 1957,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1934,
+			"pose": "front",
+			"prop": "rest_table",
+			"visible_pixels": 1933,
+			"visible_ratio": 0.999482936918304
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1926,
+			"pose": "behind",
+			"prop": "rest_table",
+			"visible_pixels": 1464,
+			"visible_ratio": 0.7601246105919
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1942,
+			"pose": "side",
+			"prop": "rest_table",
+			"visible_pixels": 1941,
+			"visible_ratio": 0.999485066941298
+		}
+	]
+}

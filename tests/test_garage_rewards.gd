@@ -27,7 +27,7 @@ class Controller extends RefCounted:
 	var world: Node3D
 	var vehicles: Array = []
 	var blocked := false
-	func spawn_vehicle(id,point,yaw):
+	func spawn_vehicle(id,point,yaw,_crush_ratio := 1.0):
 		if blocked: return null
 		var car := Car.new()
 		car.archetype=id

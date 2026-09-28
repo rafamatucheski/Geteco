@@ -1,0 +1,3 @@
+694954e0e8310dc6571482e3c0aedba78c6fa48b19e8e6ad5ba044f49af86888 *assets/regions/source/guns/ammunation/AmmunationArt.gd
+bcaa2723bec8c8edae92f15d9df30768d5a62ed238cf58043cd4250583133b8e *assets/regions/source/scripts/player/ArsenalWeapon3D.gd
+510aa3240fd7a082a8eda563f68c7198096b9eca6e95a77cfc25db365bd797bf *assets/regions/source/scripts/player/WeaponFinish3D.gd

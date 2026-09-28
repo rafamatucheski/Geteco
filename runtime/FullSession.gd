@@ -36,10 +36,13 @@ var return_point := Vector3.ZERO
 var saved_heading := 0.0
 var saved_size := 28.0
 var notice_time := 0.0
+var _reward_failures: Dictionary = {}
+var _reward_notice_id := ""
 var tick := 0.0
 var ready_for_play := false
 var mission_world
 var activities
+var motocross
 var services
 var storefronts
 var robberies
@@ -52,6 +55,8 @@ var mountain_progression
 var cold
 var passenger_transport
 var urban_operations
+var port_container_loot
+var field_inventory
 var action_serial := 0
 var rebinding_action := ""
 var vehicle_transition_busy := false
@@ -67,6 +72,8 @@ var sewer_hatch: Node3D
 var sewer_entry_origin := Vector3.ZERO
 var weapon_shop_entrance: Node
 var special_place_entrance: Node
+var last_save_error := ""
+var _checkpoint_retry: Timer
 
 func _uses_walkup_access(id: String) -> bool:
 	return (weapon_shop_entrance != null and weapon_shop_entrance.handles_place(id)) or (special_place_entrance != null and special_place_entrance.handles_place(id))
@@ -78,7 +85,7 @@ func is_transition_blocked() -> bool:
 	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or _arrival_sequence_blocked()
 
 func blocks_driving_change() -> bool:
-	return is_transition_blocked() or not ready_for_play
+	return is_transition_blocked() or not ready_for_play or (motocross != null and motocross.mounted)
 
 func allows_saved_driver_animation() -> bool:
 	return _restoring_saved_driver and not ready_for_play and not modal and not is_transition_blocked()
@@ -453,6 +460,9 @@ func _ready() -> void:
 	activities = preload("res://activities/Activities.gd").new()
 	world.add_child(activities)
 	activities.configure(self)
+	motocross = preload("res://activities/motocross/Motocross.gd").new()
+	world.add_child(motocross)
+	motocross.configure(self)
 	residence_services = preload("res://runtime/ResidenceServices.gd").new()
 	residence_services.configure(self)
 	mountain_progression = preload("res://activities/MountainProgression.gd").new()
@@ -492,6 +502,12 @@ func _ready() -> void:
 	urban_operations.configure(self)
 	world.add_child(urban_operations)
 	if state.world_state.has("urban_operations") and not urban_operations.restore_snapshot(state.world_state.urban_operations): controller.save_invalid = true
+	port_container_loot = preload("res://gameplay/urban_v1/PortContainerLoot.gd").new()
+	port_container_loot.configure(self)
+	world.add_child(port_container_loot)
+	field_inventory = preload("res://systems/inventory/FieldInventoryRuntime.gd").new()
+	world.add_child(field_inventory)
+	field_inventory.configure(self)
 	if not world.get_meta("skip_cold",false):
 		cold = preload("res://runtime/ColdSurvival.gd").new()
 		cold.configure(self)
@@ -509,6 +525,7 @@ func _label(point: Vector2,size_value: int) -> Label:
 
 func show_message(text: String) -> void:
 	if not is_instance_valid(notice): return
+	_reward_notice_id = ""
 	notice.text = text
 	notice_time = 5.0
 	notice.show()
@@ -624,7 +641,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	var definition := PLACES.get_definition(id)
 	if id == "maciota":
 		if state.region_id != "harbor": return false
-	elif definition.is_empty() or definition.get("region","") != state.region_id:
+	elif definition.is_empty() or (definition.get("region","") != state.region_id and not definition.get("any_region",false)):
 		show_message("Este acesso não pertence à região atual.")
 		return false
 	if autosave and garage_rewards != null and not garage_rewards.can_enter(id):
@@ -649,16 +666,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	var candidate_return := Vector3.ZERO
 	if id == "harbor_sewer":
 		sewer_hatch = _find_sewer_hatch()
-		if is_instance_valid(sewer_hatch):
-			world.player.input_locked = true
-			sewer_entry_origin = world.player.global_position
-			await _animate_sewer_entry(token)
-			if not _owns_transition(token) or world.gameplay.health <= 0:
-				world.player.teleport(sewer_entry_origin)
-				await _animate_sewer_hatch(0.0, token)
-				world.player.input_locked = was_player_locked
-				_finish_transition(token)
-				return false
+		sewer_entry_origin = world.player.global_position
 	if id == "maciota":
 		candidate_room = world.maciota_place
 		candidate_return = candidate_room.exterior_return
@@ -732,6 +740,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	if id != "maciota":
 		_install_service_npc()
 		_update_reward()
+	if room.has_method("on_session_entered"): room.on_session_entered(self)
 	_finish_transition(token)
 	arrival.on_location_changed()
 	garage_rewards.on_location_changed()
@@ -750,7 +759,7 @@ func leave_place() -> bool:
 		sewer_hatch = _find_sewer_hatch()
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
-			sewer_hatch.set_open_amount(1.0)
+			sewer_hatch.set_open_amount(0.0)
 	var leaving_return := _clear_return_point(state.place_id, return_point)
 	world.player.input_locked = true
 	if not leaving_return.is_finite():
@@ -804,76 +813,11 @@ func _find_sewer_hatch() -> Node3D:
 
 func _animate_sewer_hatch(amount: float, token: int) -> void:
 	if not is_instance_valid(sewer_hatch) or not sewer_hatch.has_method("set_open_amount"): return
-	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_method(func(value: float) -> void:
-		if _owns_transition(token) and is_instance_valid(sewer_hatch): sewer_hatch.set_open_amount(value), float(sewer_hatch.get("open_amount")), amount, 0.62)
-	await tween.finished
+	if _owns_transition(token): sewer_hatch.set_open_amount(0.0)
 
 func _close_sewer_hatch_after_exit(hatch: Node3D) -> void:
-	var tween := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_method(func(value: float) -> void:
-		if is_instance_valid(hatch): hatch.set_open_amount(value), 1.0, 0.0, 0.62)
+	if is_instance_valid(hatch): hatch.set_open_amount(0.0)
 
-func _animate_sewer_entry(token: int) -> void:
-	var actor: CharacterBody3D = world.player
-	var was_physics_processing := actor.is_physics_processing()
-	actor.set_physics_process(false)
-	var hatch_point := sewer_hatch.global_position
-	var standing_height := actor.global_position.y
-	var grip := Vector3(hatch_point.x - 0.65, standing_height, hatch_point.z)
-	var shaft := Vector3(hatch_point.x, standing_height, hatch_point.z)
-	var old_yaw: float = actor.visual.rotation.y
-	var camera: Camera3D = world.camera
-	var camera_target: Node3D = camera.target
-	var camera_size: float = camera.target_size
-	var camera_locked: bool = camera.locked
-	var focus := Node3D.new()
-	focus.position = hatch_point + Vector3.UP * 0.35
-	world.add_child(focus)
-	camera.target = focus
-	camera.target_size = 7.5
-	camera.locked = true
-	camera.initialized = false
-	# The proximity controller may already have opened the hatch.
-	var approach := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	approach.tween_property(actor, "global_position", grip, 0.35)
-	await approach.finished
-	if _owns_transition(token):
-		actor.visual.rotation.y = -PI / 2.0
-		var reach := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		reach.tween_method(_pose_sewer_ladder.bind(actor), 0.0, 0.18, 0.28)
-		await reach.finished
-	if _owns_transition(token):
-		var open := create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		open.tween_method(func(value: float) -> void:
-			if _owns_transition(token) and is_instance_valid(sewer_hatch): sewer_hatch.set_open_amount(value), 0.0, 1.0, 0.82)
-		open.tween_property(actor, "global_position", grip + Vector3(-0.15, 0.0, 0.0), 0.82)
-		open.tween_method(_pose_sewer_ladder.bind(actor), 0.18, 0.42, 0.82)
-		await open.finished
-	if _owns_transition(token):
-		var take_ladder := create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		take_ladder.tween_property(actor, "global_position", shaft, 0.38)
-		take_ladder.tween_method(_pose_sewer_ladder.bind(actor), 0.42, 0.56, 0.38)
-		await take_ladder.finished
-	if _owns_transition(token):
-		var descent := create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		descent.tween_property(actor, "global_position", shaft + Vector3.DOWN * 1.65, 1.16)
-		descent.tween_method(_pose_sewer_ladder.bind(actor), 0.56, 1.0, 1.16)
-		await descent.finished
-	actor.visual.rotation.y = old_yaw
-	camera.target = camera_target
-	camera.target_size = camera_size
-	camera.size = camera_size
-	camera.locked = camera_locked
-	camera.initialized = false
-	focus.queue_free()
-	actor.set_physics_process(was_physics_processing)
-
-func _pose_sewer_ladder(progress: float, actor: CharacterBody3D) -> void:
-	if not is_instance_valid(actor) or not is_instance_valid(actor.animation): return
-	var clip := "Fast_Ladder_Climb"
-	if actor.animation.has_animation(clip):
-		actor._pose_clip(clip, clampf(progress, 0.0, 1.0) * actor.animation.get_animation(clip).length)
 
 func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 	# Keep the authored V1 return first. A streamed pedestrian or a facade edge
@@ -916,6 +860,8 @@ func _install_service_npc() -> void:
 			actor.controlled_automatically = true
 			actor.position = point
 			actor.set_meta("interior_npc_id",definition.id)
+			# Story and service residents must survive every combat damage path.
+			if state.place_id == "harbor_police": actor.set_meta("invulnerable",true)
 			world.add_child(actor)
 			var original: Node = actor.visual.get_child(0)
 			actor.visual.remove_child(original)
@@ -977,6 +923,15 @@ func _clear_service_npcs() -> void:
 
 func nearest() -> Dictionary:
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	if field_inventory != null:
+		var supply_action: Dictionary = field_inventory.nearest_action()
+		if not supply_action.is_empty(): return supply_action
+	if motocross != null:
+		var mx_action: Dictionary = motocross.nearest_action()
+		if not mx_action.is_empty(): return mx_action
+	if port_container_loot != null:
+		var cargo_action: Dictionary = port_container_loot.nearest_action()
+		if not cargo_action.is_empty(): return cargo_action
 	if passenger_transport != null and passenger_transport.riding: return passenger_transport.nearest_action()
 	var arrival_action: Dictionary = arrival.nearest_action()
 	if not arrival_action.is_empty(): return arrival_action
@@ -1029,6 +984,8 @@ func nearest() -> Dictionary:
 	if not outdoor_routine_action.is_empty(): return outdoor_routine_action
 	if state.region_id == "harbor" and not _uses_walkup_access("maciota") and point.distance_to(world.maciota_place.entry_position) < 1.5: return {"id":"enter","place":"maciota","access":"maciota","label":"Entrar"}
 	for entry in controller.region.entries:
+		if entry.place_id == "harbor_sewer" and point.distance_to(entry.position) < 1.5:
+			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"","silent":true}
 		if _uses_walkup_access(entry.place_id): continue
 		if point.distance_to(entry.position) < 1.5: return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar"}
 	var mission_action: Dictionary = mission_world.nearest_action()
@@ -1038,9 +995,12 @@ func nearest() -> Dictionary:
 func interact() -> bool:
 	if modal or not ready_for_play: return false
 	var action := nearest()
+	if action.get("id","") == "motocross": return motocross.perform(str(action.target))
 	if str(action.get("id","")).begins_with("ski_"): return mountain_progression.perform(action.target)
 	if str(action.get("id","")).begins_with("arrival_"): return arrival.perform(action.id)
 	match str(action.get("id","")):
+		"field_inventory": return field_inventory.perform(str(action.target))
+		"port_container": return port_container_loot.perform(str(action.target))
 		"passenger_transport": return passenger_transport.perform(action.target)
 		"residence_services": return residence_services.perform("residence_services")
 		"personal_car": return personal_car.perform(action.target)
@@ -1051,7 +1011,7 @@ func interact() -> bool:
 			var performed: bool = services.perform(action.target)
 			_service_menu_open = performed and modal and str(action.target) not in ["hospital_triage", "police_terminal", "fire_alarm"]
 			return performed
-		"urban_v1": return urban_operations != null and urban_operations.perform(str(action.target))
+		"urban_v1": return _perform_urban_action(str(action.target))
 		"v1_routine":
 			var routines = _routine_director()
 			return routines != null and routines.perform(str(action.target))
@@ -1078,7 +1038,15 @@ func interact() -> bool:
 	if activities.perform(str(action.get("target",""))): return true
 	return mission_world.perform(str(action.get("target","")))
 
+func _perform_urban_action(target: String) -> bool:
+	if urban_operations == null: return false
+	var quest = urban_operations.get("village_quest")
+	if target == "truckers_village_tonico" and is_instance_valid(quest) and not quest.data.started:
+		if not save_game(true): return false
+	return urban_operations.perform(target)
+
 func _intro_interact(id: String) -> bool:
+	if id == "maciota" and state.intro.stage == "meet_maciota" and not save_game(true): return false
 	state.intro.set_location("harbor_garage")
 	var reply: Dictionary = state.intro.interact(id)
 	if not reply.ok: return false
@@ -1089,6 +1057,7 @@ func _intro_interact(id: String) -> bool:
 	return true
 
 func _input(event: InputEvent) -> void:
+	if port_container_loot != null and is_instance_valid(port_container_loot.minigame) and port_container_loot.minigame.active: return
 	if controller.travel_busy or not transition_kind.is_empty() or vehicle_transition_busy:
 		get_viewport().set_input_as_handled()
 		return
@@ -1117,6 +1086,10 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if modal:
+		if field_inventory != null and field_inventory.ui.visible and event.is_action_pressed("inventory"):
+			close_menu()
+			get_viewport().set_input_as_handled()
+			return
 		if storefronts != null and storefronts.is_open() and storefronts.handle_input(event):
 			get_viewport().set_input_as_handled()
 			return
@@ -1136,6 +1109,11 @@ func _input(event: InputEvent) -> void:
 		if event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle") or event.is_action_pressed("vehicle_interact"):
 			passenger_transport.request_exit()
 		# Leave pause available, but consume gameplay/menu/quick-save input in transit.
+		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()
+		return
+	if motocross != null and motocross.mounted:
+		if event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle"):
+			motocross.perform("quit" if motocross.active else "dismount")
 		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()
 		return
 	if world.driving.occupied and is_instance_valid(world.driving.car.equipment):
@@ -1202,6 +1180,7 @@ func _process(delta: float) -> void:
 	tick += delta
 	if tick < .1: return
 	tick = 0
+	_refresh_reward_feedback()
 	if not modal and not world.driving.occupied:
 		if not state.place_id.is_empty() and state.place_id != "maciota": _collect_reward(room)
 		elif state.place_id.is_empty():
@@ -1218,8 +1197,14 @@ func _process(delta: float) -> void:
 	freight_active = bool(freight.get("active", false)) and state.region_id == "harbor" and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active
 	freight_target = freight.get("target", Vector3.INF) if freight_active else Vector3.INF
 	if freight_active: objective.text = str(freight.get("objective", ""))
+	if urban_operations != null and is_instance_valid(urban_operations.village_quest) and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active and not freight_active:
+		var village_objective: String = urban_operations.village_quest.objective()
+		if not village_objective.is_empty(): objective.text = village_objective
 	var action := nearest()
-	prompt.text = "" if modal or action.is_empty() else "E  "+str(action.label)
+	var silent_exit: bool = action.get("id","") == "exit" and state.place_id == "vertice_undercroft"
+	prompt.text = "" if modal or action.is_empty() or action.get("silent",false) or silent_exit else "E  "+str(action.label)
+	if not modal and action.get("id","") == "port_container":
+		prompt.text = get_node("/root/GameInput").hint("interact")+"  "+str(action.label)
 
 func _update_world_indicator() -> void:
 	if not ready_for_play or not is_instance_valid(marker) or not is_instance_valid(arrow): return
@@ -1245,6 +1230,14 @@ func _update_world_indicator() -> void:
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
 func _menu(title: String) -> void:
+	if panel.has_meta("modal_preferred_size"): panel.remove_meta("modal_preferred_size")
+	var previous_map: Node = world.hud.get_node_or_null("MapUI")
+	if is_instance_valid(previous_map):
+		previous_map.queue_free()
+		menu_closed = Callable()
+	if field_inventory != null and field_inventory.ui.visible:
+		field_inventory.dismiss()
+		menu_closed = Callable()
 	_service_menu_open = false
 	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
 	for child in column.get_children():
@@ -1292,7 +1285,7 @@ func close_menu() -> void:
 	dialogue_open = false
 	panel.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (passenger_transport != null and passenger_transport.riding)
+	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted)
 	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked()
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	lines = dialogue_lines.duplicate(true)
@@ -1338,10 +1331,15 @@ func show_journal() -> void:
 				if not mission_world.begin(id):
 					close_menu()
 					return
-				if not dialogue_open: close_menu()
-				save_game())
+				if not dialogue_open: close_menu())
+	var secret_file: Variant = urban_operations.get("secret_file") if urban_operations != null else null
+	if is_instance_valid(secret_file) and secret_file.available():
+		_button("Arquivo de Vicente",secret_file.open_from_journal)
 	_button("Voltar",close_menu)
 func show_inventory() -> void:
+	if field_inventory != null:
+		field_inventory.open()
+		return
 	_menu("Inventário · R$ %d"%state.economy.balance)
 	for id in WEAPONS.ORDER:
 		if state.owns_weapon(id):
@@ -1460,30 +1458,22 @@ func show_settings() -> void:
 	world.pause_panel.pause_game()
 	world.pause_panel.open_settings()
 func show_controls() -> void:
-	_menu("Controles")
-	var controls = get_node("/root/GameInput")
-	for action in controls.KEYS:
-		if action in ["pause_game","inventory"]: continue
-		_button(controls.label(action)+" · "+controls.hint(action,true),func():
-			rebinding_action = action
-			controls.remapping = true
-			_menu("Pressione uma tecla · Esc cancela")
-			_button("Cancelar",func(): rebinding_action=""; controls.remapping=false; show_controls()))
-	_button("Voltar",show_settings)
+	show_settings()
+	world.pause_panel.settings._select_tab(2)
 func show_map() -> void:
 	_menu("Mapa")
 	var map = preload("res://ui/v2/WorldMap.gd").new()
 	map.controller = controller
-	map.custom_minimum_size = Vector2(550,360)
-	column.add_child(map)
-	_button("Voltar",close_menu)
+	world.hud.add_child(map)
+	panel.hide()
+	menu_closed = map.queue_free
 func _update_reward() -> void:
 	if room == null or room == world.maciota_place: return
 	for point in room.reward_points:
 		var data: Dictionary = point.get("reward",{})
 		if not data.is_empty(): room.set_reward_available(not state.world_state.rewards.has(data.id),data.id)
 func _collect_reward(source: Node3D) -> void:
-	if not is_instance_valid(source) or world.gameplay.health <= 0: return
+	if not is_instance_valid(source) or not source.is_visible_in_tree() or world.gameplay.health <= 0: return
 	for reward in source.reward_points:
 		var data: Dictionary = reward.get("reward",{})
 		if data.is_empty(): continue
@@ -1491,24 +1481,81 @@ func _collect_reward(source: Node3D) -> void:
 			source.set_reward_available(false,data.id)
 			continue
 		var point: Vector3 = reward.get("position",Vector3.ZERO)
-		if world.player.position.distance_to(point) > .8: continue
+		if world.player.global_position.distance_to(point) > .8: continue
+		if _reward_failures.has(data.id): continue
 		var result: Dictionary = state.economy.grant_world_reward(data)
 		if not result.ok:
 			var reason := str(result.get("reason","grant_failed"))
-			show_message("Carteira cheia." if reason == "wallet_full" else ("Espaço insuficiente para a recompensa." if reason in ["inventory_full","ammo_full"] else "Recompensa indisponível."))
+			var item_name := str(WEAPONS.WEAPONS.get(str(data.get("item", "")), {}).get("label", "Item")) if data.get("kind", "") == "weapon" else "Recompensa"
+			var explanation: String = {"already_owned":"Você já possui esta arma.", "wallet_full":"Carteira cheia.", "inventory_full":"Inventário cheio.", "ammo_full":"Munição no limite.", "invalid_reward":"Não foi possível coletar este item: dados inválidos.", "transaction_conflict":"Coleta bloqueada por conflito no registro da recompensa."}.get(reason, "Não foi possível concluir a coleta.")
+			show_message("%s: %s" % [item_name, explanation])
+			_reward_notice_id = str(data.id)
+			_reward_failures[data.id] = {"source":weakref(source), "position":point, "region":state.region_id, "place":state.place_id}
 			continue
 		if not state.world_state.rewards.has(data.id): state.world_state.rewards.append(data.id)
 		source.set_reward_available(false,data.id)
 		# Coleta sem aviso na tela (como os drops de combate); só a falha avisa.
 		save_game()
-func save_game(notify_success := false) -> bool:
-	if is_transition_blocked():
-		show_message("Aguarde a conclusão da chegada, do resgate ou da transição para salvar.")
-		return false
-	if controller.save_invalid: show_message("Save inválido preservado; salvamento bloqueado."); return false
-	if world.gameplay.health <= 0: return false
-	if controller.travel_busy or (passenger_transport != null and passenger_transport.riding):
-		show_message("Aguarde o desembarque para salvar.")
+func _refresh_reward_feedback() -> void:
+	# Uma falha por aproximação; não renove o aviso a cada tick nem após sair.
+	for id in _reward_failures.keys():
+		var failure: Dictionary = _reward_failures[id]
+		var source = failure.source.get_ref()
+		if is_instance_valid(source) and source.is_visible_in_tree() and failure.region == state.region_id and failure.place == state.place_id and not world.driving.occupied and world.player.global_position.distance_to(failure.position) <= .8: continue
+		_reward_failures.erase(id)
+		if _reward_notice_id == id:
+			_reward_notice_id = ""
+			notice_time = 0.0
+			notice.text = ""
+			notice.hide()
+func save_block_reason() -> String:
+	if controller.save_invalid: return "Save inválido preservado; salvamento bloqueado."
+	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."
+	if world.gameplay.health <= 0: return "Salvar indisponível enquanto o jogador estiver morto."
+	if world.gameplay.stars > 0: return "Perca todas as estrelas da polícia para salvar."
+	if not state.campaign.active_id.is_empty() or state.intro.stage not in ["meet_maciota", "complete"]:
+		return "Conclua ou encerre a missão para salvar um checkpoint."
+	if activities != null and not activities.can_rest(): return "Encerre a corrida ou o contrato de guincho para salvar."
+	if mountain_progression != null and not mountain_progression.race.mode.is_empty(): return "Encerre a prova de esqui para salvar."
+	if urban_operations != null:
+		var quest = urban_operations.get("village_quest")
+		if is_instance_valid(quest) and quest.data.started and not quest.data.completed:
+			return "Conclua a missão de Tonico para salvar um checkpoint."
+	if urban_operations != null and urban_operations.freight != null and urban_operations.freight.active_bay >= 0:
+		return "Encerre a entrega de carga para salvar."
+	if is_transition_blocked(): return "Conclua a chegada, o resgate ou a transição para salvar."
+	if passenger_transport != null and passenger_transport.riding: return "Aguarde o desembarque para salvar."
+	return ""
+
+func _queue_checkpoint() -> void:
+	if controller.no_save or controller.save_invalid: return
+	if _checkpoint_retry == null:
+		_checkpoint_retry = Timer.new()
+		_checkpoint_retry.process_mode = Node.PROCESS_MODE_PAUSABLE
+		_checkpoint_retry.wait_time = 1.0
+		_checkpoint_retry.one_shot = true
+		add_child(_checkpoint_retry)
+		_checkpoint_retry.timeout.connect(func(): save_game())
+	# Only one pending request; capture fresh state once saving becomes safe.
+	if _checkpoint_retry.is_stopped(): _checkpoint_retry.start()
+
+func _save_indicator() -> Control:
+	var indicator := get_node_or_null("SaveFeedback/Indicator")
+	if indicator == null:
+		var feedback := CanvasLayer.new()
+		feedback.name = "SaveFeedback"
+		feedback.layer = 125
+		add_child(feedback)
+		indicator = preload("res://ui/SaveIndicator.gd").new()
+		indicator.name = "Indicator"
+		feedback.add_child(indicator)
+	return indicator
+
+func save_game(manual := false) -> bool:
+	var blocked := save_block_reason()
+	if not blocked.is_empty():
+		if manual: _save_indicator().reject(blocked)
+		else: _queue_checkpoint()
 		return false
 	state.world_state.erase("pedestrian")
 	if state.place_id.is_empty() and not world.driving.occupied and not world.player.input_locked and position_clear(world.player.position):
@@ -1523,22 +1570,27 @@ func save_game(notify_success := false) -> bool:
 	if robberies != null: state.world_state.robberies = robberies.snapshot()
 	if services != null: state.world_state.services = services.snapshot()
 	if activities != null: state.world_state.activities = activities.snapshot()
+	if motocross != null: state.world_state.motocross = motocross.snapshot()
 	if mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()
 	if mission_world != null: state.world_state.mission_world = mission_world.snapshot()
 	if urban_operations != null:
 		var urban_snapshot: Dictionary = urban_operations.snapshot()
 		if not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(urban_snapshot):
 			controller.save_invalid = true
-			show_message("Estado urbano incompleto; salvamento bloqueado.")
+			last_save_error = "Estado urbano incompleto; salvamento bloqueado."
+			_save_indicator().reject(last_save_error)
 			return false
 		state.world_state.urban_operations = urban_snapshot
 	if controller.no_save: return true
 	state.combat_state = world.gameplay.snapshot()
 	var result: Error = controller.store.save(state)
-	if result != OK: show_message("Não foi possível salvar (%d)."%result); return false
-	# Automatic persistence must not replace a service/mission message or cover
-	# the room on every crossing. Explicit saves still acknowledge success.
-	if notify_success: show_message("Progresso salvo.")
+	if _checkpoint_retry != null: _checkpoint_retry.stop()
+	if result != OK:
+		last_save_error = "Não foi possível salvar (%d)." % result
+		_save_indicator().reject(last_save_error)
+		return false
+	last_save_error = ""
+	_save_indicator().acknowledge()
 	return true
 func load_game() -> void:
 	if is_transition_blocked():

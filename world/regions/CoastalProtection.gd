@@ -20,6 +20,9 @@ func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces
 	for row in data.harbor_land:
 		polygons.append(_rect(Rect2(float(row[0])/16,float(row[1])/16,float(row[2])/16,float(row[3])/16)))
 	polygons.append_array(extra)
+	# The public passenger quay supplies its own deck and guards. Union its
+	# footprint before extracting edges so the old walkway rail has a real opening.
+	polygons.append(_rect(Rect2(218,191.5,20,11)))
 	var ship := PackedVector2Array()
 	for p in data.ship_deck: ship.append(Vector2(p[0],p[1])/16.0)
 	polygons.append(ship)
@@ -101,6 +104,7 @@ func _extract() -> void:
 			_index(record)
 
 func _existing_guard(point: Vector2) -> bool:
+	if Rect2(217.9,191.4,20.2,11.2).has_point(point): return true
 	if point.x>=200 and point.x<=273.75 and point.y>=18.1 and point.y<=31.9: return true
 	if point.x>=405 and point.y < -270: return true
 	for polygon in existing_perimeters:

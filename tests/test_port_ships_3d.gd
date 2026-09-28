@@ -43,12 +43,22 @@ func run() -> void:
 	if northstar != null:
 		check(not northstar.find_children("*","MeshInstance3D",true,false).is_empty(),"Northstar finish contains meshes")
 		check(northstar.find_children("*","StaticBody3D",true,false).is_empty(),"Northstar exterior scaffold does not add boarding collisions")
+	if "--sky-prewarm" in OS.get_cmdline_user_args():
+		var resident_keys: Array = region.chunks.keys() + region.pending
+		await region.prewarm_incremental()
+		for key in resident_keys:
+			check(region.chunks.has(key),"Menu warm-up preserves resident cell %s" % key)
 	region.set_focus(Vector3(299,0,183))
 	# Vizinhos são construídos em fatias: espera o streaming assentar.
 	for i in 1200:
 		await process_frame
 		if region.is_streaming_idle(): break
 	var santa := region.find_child("SantaMareShipDetail3D",true,false)
+	var cargo := region.find_child("SantaMareCargo3D",true,false)
+	check(cargo != null,"Santa Mare cargo streams normally after optional menu warm-up")
+	if cargo != null:
+		check(not cargo.find_children("*","MeshInstance3D",true,false).is_empty(),"Santa Mare cargo keeps visible meshes")
+		check(not cargo.find_children("*","StaticBody3D",true,false).is_empty(),"Santa Mare cargo keeps physical collision")
 	check(santa != null,"Santa Mare has native 3D hull and scaffold")
 	check(region.find_children("QuaysideCraneRigging3D","Node3D",true,false).size() == 3,"Santa Mare keeps three detailed quay cranes")
 	var quayside_cranes := region.find_children("QuaysideCrane3D*","Node3D",true,false)

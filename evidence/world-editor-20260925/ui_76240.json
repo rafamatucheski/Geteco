@@ -1,0 +1,20 @@
+{
+	"regions": {
+		"harbor": {
+			"new/1790360317_413_3089858777": {
+				"id": "new/1790360317_413_3089858777",
+				"position": [
+					53.0,
+					112.0
+				],
+				"rotation": 0.0,
+				"scale": 1.0,
+				"snow": false,
+				"type": "tree",
+				"variant": 0
+			}
+		},
+		"mountain": {}
+	},
+	"version": 1
+}

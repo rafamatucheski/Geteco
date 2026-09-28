@@ -5,6 +5,7 @@ const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STEERING := preload("res://gameplay/crowd/PedestrianSteering.gd")
+const STEP := preload("res://gameplay/crowd/PedestrianStep3D.gd")
 ## Civis longe da câmera e fora de controle alheio andam em passo de LOD: física a cada LOD_STRIDE quadros com o
 ## delta acumulado. Mantém rota e posição coerentes e corta ~2/3 do custo de move_and_slide + pose de quem não se vê.
 const LOD_DISTANCE := 45.0
@@ -77,6 +78,12 @@ var _turn_to := 0.0
 var _turn_feet: Dictionary = {}
 var _idle_feet: Dictionary = {}
 var _hit_age := 1.0
+# Mola do tronco do jogador ao ser atingido (x = para trás, y = lateral), aplicada
+# nos ossos da coluna depois da pose. Antes o `visual` inteiro balançava pelos pés
+# e reiniciava a cada tiro: com rajada o Dante tremia.
+var _hit_lean := Vector2.ZERO
+var _hit_lean_velocity := Vector2.ZERO
+var _hit_lean_target := Vector2.ZERO
 var _traversal_roots: Dictionary = {}
 var _arm_blends: Dictionary = {}
 var _presented_arm_rotations: Dictionary = {}
@@ -91,6 +98,7 @@ const MOVING_SPEED_EPSILON := 0.12
 const WALK_START := 0.067
 func _ready() -> void:
 	set_meta("gameplay_role","player" if is_player else "civilian")
+	if not is_player: add_to_group("police_witness")
 	collision_layer = 2
 	collision_mask = 7
 	floor_snap_length = 0.3
@@ -128,6 +136,8 @@ func _ready() -> void:
 		model.appearance_variant = identity
 		model.coat_color = [Color("426c70"), Color("a35d42"), Color("d3c3a1"), Color("42556f"), Color("8e5362"), Color("70835d")][identity % 6]
 		model.pants_color = [Color("293849"), Color("484644"), Color("615342")][identity % 3]
+		if get_meta("region_id", "") == "mountain":
+			model.wardrobe_overrides = {"top":3, "bottom":0, "shoe":1, "hat":2, "bag":0}
 		model.rotation.y = PI
 		visual.add_child(model)
 	last_position = global_position
@@ -179,16 +189,23 @@ func _physics_process(delta: float) -> void:
 		direction = motion.normalized()
 		target_speed = motion.length()
 	if input_locked: direction = Vector3.ZERO
+	if is_player and has_meta("police_restraint_left"):
+		var restraint := maxf(0.0, float(get_meta("police_restraint_left")) - delta)
+		if restraint <= 0.0: remove_meta("police_restraint_left")
+		else:
+			set_meta("police_restraint_left", restraint)
+			target_speed *= 0.35
 	if is_player and not is_nan(combat_facing) and direction.length_squared() > 0.001:
 		# A braced backwards/side step is not a forward sprint played in reverse.
 		# Match actual displacement to the native directional clips' stride.
 		var forward := Vector3(-sin(combat_facing), 0, -cos(combat_facing))
 		var alignment := direction.normalized().dot(forward)
-		var combat_speed := lerpf(1.35, 1.65 if alignment < 0.0 else 2.5, absf(alignment))
+		var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
 		target_speed = minf(target_speed, combat_speed)
 	velocity.x = direction.x * target_speed * lod_scale
 	velocity.z = direction.z * target_speed * lod_scale
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta
+	STEP.try_step(self, Vector3(velocity.x, 0, velocity.z) * (delta / lod_scale))
 	move_and_slide()
 	if lod_scale != 1.0:
 		velocity.x /= lod_scale
@@ -202,7 +219,7 @@ func _physics_process(delta: float) -> void:
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z), 1.0 - exp(-14.0 * delta))
 	# Mirando/atacando, o corpo segue o rumo do disparo, não o do movimento.
 	if is_player and not is_nan(combat_facing):
-		visual.rotation.y = rotate_toward(visual.rotation.y, combat_facing, delta * 9.0)
+		visual.rotation.y = rotate_toward(visual.rotation.y, combat_facing, delta * 24.0)
 	if animation:
 		# Camada de combate: o clipe de golpe entra e sai com uma mistura curta de poses (nada de corte seco); sem
 		# clipe, só locomoção. A pose é sempre escolhida aqui; `Gameplay` só informa clipe e tempo.
@@ -229,7 +246,8 @@ func _physics_process(delta: float) -> void:
 			skeleton.set_bone_pose_position(hips, hip_position)
 		if is_player:
 			_hit_age += delta
-			visual.rotation.x = sin(_hit_age / 0.28 * PI) * 0.06 if _hit_age < 0.28 else 0.0
+			visual.rotation.x = 0.0
+			_apply_hit_lean(delta)
 			_apply_combat_weapon_pose()
 	else:
 		if visual.get_child(0).get("walking") != null: visual.get_child(0).walking = actual_speed > 0.1
@@ -425,12 +443,14 @@ func _pose_clip(clip: String, time: float) -> void:
 
 func pose_vehicle(sitting: float, stepping: float = 0.0, side: int = -1, reach: float = 1.0, handlebars: Dictionary = {}) -> void:
 	_apply_pose(_idle_pose)
-	if handlebars.size() == 2:
+	if handlebars.has("Left") and handlebars.has("Right"):
 		var center: Vector3 = visual.to_local((handlebars.Left.origin + handlebars.Right.origin) * .5)
 		if hips >= 0:
 			# Lean from the waist instead of stretching arm bones to a distant bar.
 			var toward := Vector3(center.x, 0, center.z).normalized()
-			var lean := clampf(Vector2(center.x, center.z).length() * 1.8, .5, 1.3)
+			var lean_mult = handlebars.get("lean_multiplier", 1.8)
+			var lean_min = handlebars.get("lean_min", 0.5)
+			var lean := clampf(Vector2(center.x, center.z).length() * lean_mult, lean_min, 1.3)
 			var bar_axis: Vector3 = visual.global_basis.orthonormalized().inverse() * (handlebars.Right.basis.y as Vector3)
 			var turn := atan2(-bar_axis.z, bar_axis.x)
 			var forward_lean := visual.global_basis.orthonormalized() * Basis(Vector3.UP.cross(toward), lean) * Basis(Vector3.UP, turn) * visual.global_basis.orthonormalized().inverse()
@@ -523,7 +543,9 @@ func _apply_combat_weapon_pose() -> void:
 	# ao repouso e a de cima recebe só o giro de postura. Senão o clipe de
 	# caminhada torce a camisa contra braços já resolvidos no espaço da mira.
 	var torso_yaw := float(pose.get("torso_yaw", 0.0))
-	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat"] and absf(torso_yaw) > 0.001:
+	# A passada já posiciona quadril e pés. O giro de ataque fica no tronco
+	# enquanto anda; aplicar o mesmo giro na raiz arrastava as duas pernas.
+	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat"] and absf(torso_yaw) > 0.001 and _locomotion_weight <= 0.0:
 		var chest_before: Basis = skeleton.get_bone_global_pose(_combat_bones.Spine02).basis
 		_set_combat_bone_rotation(hips, Basis(Vector3.UP, torso_yaw * 0.35) * skeleton.get_bone_global_pose(hips).basis)
 		_set_combat_bone_rotation(_combat_bones.Spine02, chest_before)
@@ -699,6 +721,10 @@ func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Ba
 	# pelas costelas quando as mãos se encontram à frente do peito.
 	var long_weapon := bool(combat_weapon_pose.get("long_weapon", combat_weapon_id in ["smg", "shotgun", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "axe", "bat"]))
 	var pole_world: Vector3 = visual.global_basis * Vector3(sign_side * (1.10 if long_weapon else 0.65), -1.5, -1.35 if long_weapon else -0.5)
+	# Granada: dobra posterior do cotovelo (+Z local), não o polo anterior
+	# das armas apoiadas. Mover só a mão não corrige o lado da articulação.
+	if combat_weapon_id == "grenade" and side == "Right":
+		pole_world = visual.global_basis * Vector3(0.35, -0.6, 1.5)
 	var pole := skeleton.global_basis.inverse() * pole_world
 	var bend := (pole - axis * pole.dot(axis)).normalized()
 	if _elbow_previous.has(side):
@@ -842,7 +868,8 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		var impact_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 		_fall_over(impact_dir)
 	else:
-		_flinch()
+		var push: Vector3 = (global_position - (source as Node3D).global_position) if source is Node3D else Vector3.ZERO
+		_flinch(push, amount)
 	var gameplay = get_parent().get("gameplay")
 	# A autoria continua no veículo real. A denúncia só é encaminhada depois de
 	# `dead` refletir o resultado deste impacto, inclusive no golpe fatal.
@@ -881,7 +908,41 @@ func on_player_death() -> void:
 		_fall_over(Vector3.BACK)
 
 func present_hit() -> void:
-	if is_player and not dead: _hit_age = 0.0
+	if not is_player or dead: return
+	_hit_age = 0.0
+	# Mesmo esquema do civil (CivilianModel.take_hit): alvo que decai + mola sem oscilação.
+	var room := 1.0 - clampf(_hit_lean_target.length() / 0.22, 0.0, 1.0)
+	_hit_lean_target = (_hit_lean_target + Vector2(0.13, randf_range(-0.05, 0.05)) * room).limit_length(0.22)
+
+func _apply_hit_lean(delta: float) -> void:
+	if _hit_lean == Vector2.ZERO and _hit_lean_velocity == Vector2.ZERO and _hit_lean_target == Vector2.ZERO: return
+	var remaining := minf(delta, 0.1)
+	while remaining > 0.0:
+		var dt := minf(remaining, 1.0 / 120.0)
+		_hit_lean_target *= exp(-dt / 0.3)
+		_hit_lean_velocity += (100.0 * (_hit_lean_target - _hit_lean) - 20.0 * _hit_lean_velocity) * dt
+		_hit_lean += _hit_lean_velocity * dt
+		remaining -= dt
+	if _hit_lean_target.length_squared() < 0.000001 and _hit_lean.length_squared() < 0.000001 and _hit_lean_velocity.length_squared() < 0.0001:
+		_hit_lean = Vector2.ZERO
+		_hit_lean_velocity = Vector2.ZERO
+		_hit_lean_target = Vector2.ZERO
+		return
+	if not is_instance_valid(skeleton): return
+	# Eixos do personagem no espaço do esqueleto (o modelo é girado 180°).
+	var to_skeleton := skeleton.global_basis.orthonormalized().inverse()
+	var right := (to_skeleton * visual.global_basis.x).normalized()
+	var forward := (to_skeleton * -visual.global_basis.z).normalized()
+	# Divide a curva entre a lombar e o peito: um osso só dobrava em quina.
+	for entry in [["Spine01", 0.45], ["Spine02", 0.55]]:
+		var bone: int = _combat_bones.get(entry[0], -1)
+		if bone < 0: continue
+		var weight: float = entry[1]
+		var turn := Basis(right, _hit_lean.x * weight) * Basis(forward, _hit_lean.y * weight)
+		var parent := skeleton.get_bone_parent(bone)
+		var parent_basis := skeleton.get_bone_global_pose(parent).basis.orthonormalized() if parent >= 0 else Basis.IDENTITY
+		var local := parent_basis.inverse() * turn * parent_basis
+		skeleton.set_bone_pose_rotation(bone, (Quaternion(local) * skeleton.get_bone_pose_rotation(bone)).normalized())
 
 func respawn_player() -> void:
 	if not is_player: return
@@ -896,6 +957,9 @@ func respawn_player() -> void:
 		_apply_pose(_idle_pose)
 	clear_combat_weapon_pose()
 	_hit_age = 1.0
+	_hit_lean = Vector2.ZERO
+	_hit_lean_velocity = Vector2.ZERO
+	_hit_lean_target = Vector2.ZERO
 	_presented_arm_rotations.clear()
 	_arm_blends.clear()
 	_feet_initialized = false
@@ -906,13 +970,19 @@ func respawn_player() -> void:
 	last_position = global_position
 	velocity = Vector3.ZERO
 
-## Reação curta ao ferimento (o civil se curva para trás e volta): só apresentação, o dano já foi aplicado acima.
-func _flinch() -> void:
+## Reação ao ferimento, só apresentação (o dano já foi aplicado acima). O tronco
+## do modelo recebe um impulso no sentido do tiro; o corpo inteiro não gira mais.
+func _flinch(push: Vector3 = Vector3.ZERO, amount: float = 20.0) -> void:
 	if not is_instance_valid(visual) or is_player: return
+	var model := visual.get_child(0) if visual.get_child_count() > 0 else null
+	if push.length_squared() < 0.0001: push = -visual.global_basis.z
+	if model != null and model.has_method("take_hit"):
+		model.take_hit(push, clampf(amount / 35.0, 0.3, 1.0))
+		return
 	if _reaction_tween != null: _reaction_tween.kill()
 	_reaction_tween = create_tween()
-	_reaction_tween.tween_property(visual, "rotation:x", -FLINCH_ANGLE, 0.06)
-	_reaction_tween.tween_property(visual, "rotation:x", 0.0, 0.14)
+	_reaction_tween.tween_property(visual, "rotation:x", -FLINCH_ANGLE * 0.5, 0.08).set_ease(Tween.EASE_OUT)
+	_reaction_tween.tween_property(visual, "rotation:x", 0.0, 0.25).set_ease(Tween.EASE_IN_OUT)
 
 func recover_from_injury() -> void:
 	if dead: return

@@ -18,7 +18,7 @@ void vertex() {
 	vec3 instance_world = MODEL_MATRIX[3].xyz;
 	vec2 local = instance_world.xz - origin;
 	vec2 p = ground_p(local, origin);
-	float cover = ground_cover(p, ground_fine(local), ground_altitude_snow(instance_world.z));
+	float cover = ground_cover(p, ground_fine(local), ground_altitude_snow(instance_world.z)) * ground_mountain_weight(instance_world.xz);
 	// Some na neve, e fica mais baixo perto da borda dela.
 	float keep = 1.0 - smoothstep(0.25, 0.55, cover);
 	tip = UV.y;

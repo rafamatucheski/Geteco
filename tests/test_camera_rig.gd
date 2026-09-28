@@ -41,6 +41,16 @@ func run() -> void:
 	camera._process(1.0/60.0)
 	check(is_equal_approx(camera.target_size,CAMERA.WALK_SIZE_CLOSE),"Walking framing starts at the projected V1 scale")
 	check(camera.focus.distance_to(walker.global_position)<.001,"Walking focus follows the interpolated actor without whole-target lag")
+	walker.position.y = .14
+	walker.reset_physics_interpolation()
+	camera._process(1.0/60.0)
+	check(camera.focus.y > 0.0 and camera.focus.y < .04, "Curb height changes are damped without moving the whole street in one frame")
+	for frame in 60: camera._process(1.0/60.0)
+	check(absf(camera.focus.y - .14) < .001, "Camera settles at the new pavement height")
+	walker.position.y = 0
+	walker.reset_physics_interpolation()
+	camera.initialized = false
+	camera._process(1.0/60.0)
 	stage.gameplay.aim_point = Vector3(30,0,0)
 	stage.gameplay.active = true
 	for frame in 180: camera._process(1.0/60.0)

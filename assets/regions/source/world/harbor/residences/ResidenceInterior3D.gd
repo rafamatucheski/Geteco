@@ -40,6 +40,7 @@ func _ready() -> void:
 	_wardrobe(wardrobe,wood)
 	_armory(armory,wood)
 	_lounge(lounge,fabric,wood)
+	_home_storage([Vector2(.5,-4.2),Vector2(.2,-2.1),Vector2(-.7,-4.2)][variant_index],wood)
 	if variant_index == 2:
 		box("OfficeDesk",Vector3(2.1,.12,.85),Vector3(.1,.79,-1.7),wood)
 		for x in [-.8,1]: box("DeskLeg",Vector3(.07,.75,.65),Vector3(x,.37,-1.7),"454e4b")
@@ -88,9 +89,26 @@ func _kitchen(p: Vector2,color: String) -> void:
 		for z in [-.22,.22]: cylinder("Burner",.12,.02,Vector3(p.x+x,1.01,p.y+z),"71817d")
 	cylinder("Plate",.22,.025,Vector3(p.x-.05,1,p.y+.2),"f0e6cf")
 	cylinder("Meal",.13,.06,Vector3(p.x-.05,1.04,p.y+.2),"be824b")
-	box("Refrigerator",Vector3(.8,1.9,.88),Vector3(p.x+signf(p.x)*1.75,.95,p.y),"c7cfc8")
+	var fridge_x := p.x+signf(p.x)*1.75
+	box("Refrigerator",Vector3(.8,1.9,.88),Vector3(fridge_x,.95,p.y),"c7cfc8")
+	box("FreezerDoor",Vector3(.74,.55,.04),Vector3(fridge_x,1.55,p.y+.46),"e2e5dc")
+	box("FridgeDoor",Vector3(.74,1.16,.04),Vector3(fridge_x,.65,p.y+.46),"dce0d7")
+	box("FridgeHandle",Vector3(.055,.38,.07),Vector3(fridge_x-.27,1.01,p.y+.51),"788783")
 	solid_rects["Kitchen"] = Rect2(p-Vector2(2.2,.65),Vector2(4.4,1.3))
-	station_points["food"] = p+Vector2(0,1.35)
+	station_points["food"] = Vector2(fridge_x,p.y+1.25)
+
+func _home_storage(p: Vector2,wood: String) -> void:
+	box("StorageChest",Vector3(1.2,.65,.75),Vector3(p.x,.325,p.y),wood)
+	box("ChestLid",Vector3(1.26,.09,.8),Vector3(p.x,.695,p.y),"76614e")
+	for x in [-.43,.43]: box("ChestStrap",Vector3(.07,.73,.81),Vector3(p.x+x,.37,p.y),"505951")
+	box("ChestLatch",Vector3(.13,.18,.04),Vector3(p.x,.56,p.y+.43),"b2a077")
+	solid_rects["StorageChest"] = Rect2(p-Vector2(.63,.43),Vector2(1.26,.86))
+	station_points["chest"] = p+Vector2(0,1.05)
+	box("SaveDesk",Vector3(1.05,.76,.55),Vector3(1.85,.38,4.5),wood)
+	box("SaveNotebook",Vector3(.4,.04,.3),Vector3(1.68,.79,4.47),"e9dfc6")
+	box("SavePen",Vector3(.02,.025,.21),Vector3(1.97,.795,4.46),"344c59")
+	solid_rects["SaveDesk"] = Rect2(1.325,4.225,1.05,.55)
+	station_points["save"] = Vector2(1.85,3.55)
 
 func _bedroom(p: Vector2,color: String) -> void:
 	box("BedroomRug",Vector3(3.55,.018,3.65),Vector3(p.x,.025,p.y),"b9b29b")

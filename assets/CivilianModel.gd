@@ -66,6 +66,47 @@ var _look_timer := 0.0
 var _talk_w := 0.0
 var _carry_w := 0.0
 var _owner_actor: Node
+# Reação ao tiro: mola amortecida no tronco (x = inclinação frente/trás,
+# y = lateral). Impactos de rajada somam na velocidade em vez de reiniciar;
+# o giro rígido do corpo inteiro pelos pés, reiniciado a cada acerto, fazia o
+# civil vibrar (relato de 2026-09-27).
+var _hit := Vector2.ZERO
+var _hit_velocity := Vector2.ZERO
+# Cada tiro empurra o alvo, que decai devagar; o tronco segue o alvo por mola
+# criticamente amortecida. Com a mola sozinha, cada acerto subia e descia o
+# tronco (6 inversões por rajada de 6 tiros = tremor).
+var _hit_target := Vector2.ZERO
+const HIT_STIFFNESS := 90.0
+const HIT_TARGET_DECAY := 0.3
+const HIT_MAX := 0.3
+
+## `direction`: sentido global do projétil; `strength` 0..1 pelo dano.
+func take_hit(direction: Vector3, strength: float) -> void:
+	var local := global_basis.inverse() * direction
+	local.y = 0.0
+	if local.length_squared() < 0.0001: local = Vector3(0, 0, -1)
+	local = local.normalized()
+	# Modelo: +Z é a frente do tronco; inclinação positiva em X leva o peito
+	# para +Z e rolagem positiva em Z leva o peito para -X.
+	var push := Vector2(local.z, -local.x) * lerpf(0.12, 0.22, clampf(strength, 0.0, 1.0))
+	# Saturação suave: a rajada aproxima do teto sem bater nele.
+	var room := 1.0 - clampf(_hit_target.length() / HIT_MAX, 0.0, 1.0)
+	_hit_target = (_hit_target + push * room).limit_length(HIT_MAX)
+
+func _step_hit(delta: float) -> void:
+	if _hit_target.length_squared() < 0.000001 and _hit.length_squared() < 0.000001 and _hit_velocity.length_squared() < 0.0001:
+		_hit = Vector2.ZERO
+		_hit_velocity = Vector2.ZERO
+		_hit_target = Vector2.ZERO
+		return
+	var remaining := minf(delta, 0.1)
+	var damping := 2.0 * sqrt(HIT_STIFFNESS)
+	while remaining > 0.0:
+		var dt := minf(remaining, 1.0 / 120.0)
+		_hit_target *= exp(-dt / HIT_TARGET_DECAY)
+		_hit_velocity += (HIT_STIFFNESS * (_hit_target - _hit) - damping * _hit_velocity) * dt
+		_hit += _hit_velocity * dt
+		remaining -= dt
 
 const PELVIS_Y := 0.94
 const HIP_DROP := -0.04
@@ -232,9 +273,12 @@ func _process(delta: float) -> void:
 		set_process(false)
 		return
 	_measure(delta)
+	_step_hit(delta)
 	_pending += delta
 	_frame += 1
-	var interval := _update_interval() if lod_enabled else 1
+	# Durante a reação a pose é todo quadro: pular quadros no LOD serrilhava a mola.
+	var reacting := _hit != Vector2.ZERO
+	var interval := _update_interval() if lod_enabled and not reacting else 1
 	if interval > 1 and (_frame + _stagger) % interval != 0: return
 	_pose(_pending)
 	_pending = 0.0
@@ -306,8 +350,9 @@ func _pose(dt: float) -> void:
 	shift += 0.022 * weight * idle
 	roll -= 0.03 * weight * idle
 	var tilt := lerpf(0.02, 0.09, rw) * mw
-	var pelvis_basis := Basis.from_euler(Vector3(tilt, yaw, roll))
-	var pelvis_position := Vector3(shift, PELVIS_Y - (0.008 + 0.015 * rw) * mw + bob, 0.0)
+	var pelvis_basis := Basis.from_euler(Vector3(tilt + _hit.x * 0.3, yaw, roll + _hit.y * 0.3))
+	# Joelho cede um pouco com o impacto.
+	var pelvis_position := Vector3(shift, PELVIS_Y - (0.008 + 0.015 * rw) * mw + bob - _hit.length() * 0.06, 0.0)
 	# Só a perna de apoio limita a altura da pelve: a do balanço está no ar e
 	# pode encolher. Incluí-la agachava o corredor no começo do balanço.
 	var leg_reach := (KIT.THIGH + KIT.SHIN) * 0.998
@@ -333,7 +378,7 @@ func _pose(dt: float) -> void:
 	var chest_yaw := -yaw * 1.7
 	var chest_roll := -roll * 0.85
 	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w + 0.1 * _sit()
-	spine.transform = Transform3D(Basis.from_euler(Vector3(chest_lean, chest_yaw, chest_roll)), SPINE_OFFSET)
+	spine.transform = Transform3D(Basis.from_euler(Vector3(chest_lean + _hit.x, chest_yaw, chest_roll + _hit.y)), SPINE_OFFSET)
 	var spine_model := pelvis.transform * spine.transform
 
 	_look_timer -= dt

@@ -1,7 +1,8 @@
 extends Control
 
 var weapon_id: String = "fists"
-var icon_textures: Dictionary = {}
+static var icon_textures: Dictionary = {}
+static var _texture_users := 0
 var _silhouette_material: ShaderMaterial
 @export var frameless := false
 
@@ -26,15 +27,22 @@ const ICON_DATA := {
 }
 
 func _ready() -> void:
+	_texture_users += 1
 	_load_textures()
 	if frameless:
 		var silhouette := ShaderMaterial.new()
 		silhouette.shader = FRAMELESS_SHADER
+		silhouette.set_shader_parameter("silhouette_color",preload("res://ui/GameStyle.gd").TEXT)
 		_silhouette_material = silhouette
 		material = null if weapon_id == "fists" else _silhouette_material
 	resized.connect(queue_redraw)
 
+func _exit_tree() -> void:
+	_texture_users = maxi(0,_texture_users-1)
+	if _texture_users==0: icon_textures.clear()
+
 func _load_textures() -> void:
+	if not icon_textures.is_empty(): return
 	for id in ICON_DATA:
 		var source: Dictionary = ICON_DATA[id]
 		var bytes := Marshalls.base64_to_raw(str(source.data))

@@ -47,14 +47,16 @@ static var owners: Dictionary = {}      # chave -> {instance_id: [eixo_a, desde_
 static var _signals: Dictionary = {}    # Vector2i -> [{center: Vector3, stop: float}]
 static var _lenses: Array = []          # [{mesh: WeakRef, index, center, heading, key, gen}]
 static var _generation := 0
+static var _approaches: Dictionary = {}
 
 static func key_of(point: Vector3) -> Vector3i:
 	return Vector3i(roundi(point.x * 2.0), 0, roundi(point.z * 2.0))
 
-static func configure(graph) -> void:
+static func configure(graph, layouts: Array = []) -> void:
 	junctions.clear()
 	axes.clear()
 	owners.clear()
+	_approaches.clear()
 	_generation += 1
 	if graph == null: return
 	var neighbours: Dictionary = {}
@@ -80,6 +82,14 @@ static func configure(graph) -> void:
 		# próximo do X do mundo, para que todos concordem sobre quem está no verde.
 		if absf(axis.x) < absf(axis.y): axis = axis.orthogonal()
 		axes[key] = axis
+	for key in junctions:
+		var center: Vector3 = junctions[key]
+		var nearest := 4.0
+		for layout in layouts:
+			var distance := Vector2(center.x,center.z).distance_to(layout.position)
+			if distance < nearest:
+				nearest = distance
+				_approaches[key] = layout.entries
 
 ## Cruzamentos ao longo de uma rota: [{key, offset}] ordenados pelo deslocamento.
 static func along(route: Curve3D) -> Array:
@@ -88,8 +98,27 @@ static func along(route: Curve3D) -> Array:
 	for key in junctions:
 		var center: Vector3 = junctions[key]
 		var offset := route.get_closest_offset(center)
-		if route.sample_baked(offset, true).distance_to(center) > 4.0: continue
-		result.append({"key": key, "offset": offset})
+		var radius := maxf(4.0,float(route.get_meta("junction_reach",4.0)))
+		for entry in _approaches.get(key,[]): radius = maxf(radius,float(entry.width)*.5)
+		if route.sample_baked(offset, true).distance_to(center) > radius: continue
+		var item := {"key": key, "offset": offset}
+		var length := route.get_baked_length()
+		var closed := route.get_point_position(0).distance_to(route.get_point_position(route.point_count-1)) < .1
+		var before := route.sample_baked(fposmod(offset-12.0,length) if closed else maxf(0,offset-12.0),true)
+		var approach := Vector2(before.x-center.x,before.z-center.z).normalized()
+		var score := .7
+		for entry in _approaches.get(key,[]):
+			var alignment: float = approach.dot(entry.direction)
+			if alignment <= score or not entry.fits: continue
+			var stop: Vector2 = entry.stop_position+entry.direction.orthogonal()*entry.width*.25
+			var stop_offset := route.get_closest_offset(Vector3(stop.x,center.y,stop.y))
+			var distance := fposmod(offset-stop_offset,length) if closed else offset-stop_offset
+			# Maximum legal street width/offset/depth can put the stop beyond 30 m.
+			if distance < .1 or distance > 45.0: continue
+			score = alignment
+			item.stop_offset = stop_offset
+			item.approach_distance = maxf(APPROACH,distance+12.0)
+		result.append(item)
 	result.sort_custom(func(a, b): return a.offset < b.offset)
 	return result
 

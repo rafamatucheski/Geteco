@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR"><meta charset="utf-8"><title>Geteco · estudo de HUD sobre captura real</title>
+<style>
+@font-face{font-family:Barlow;src:url('../../../assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf')}@font-face{font-family:Barlow;src:url('../../../assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf');font-weight:600}
+*{box-sizing:border-box}html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:#121a20}body{font-family:Barlow,Arial,sans-serif;color:#f3f0e8}.scene{position:absolute;inset:0;width:1280px;height:720px}.map{position:absolute;left:24px;bottom:24px;width:156px;height:184px;border-radius:10px;background:linear-gradient(145deg,rgba(32,43,48,.83),rgba(20,29,34,.91));backdrop-filter:blur(9px) saturate(.6);box-shadow:0 3px 12px #0003,inset 0 1px 0 #ffffff35,inset 1px 0 0 #ffffff10;overflow:hidden}.map svg{display:block;margin:4px;width:148px;height:148px}.footer{height:28px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#e3e5df}.time{display:flex;align-items:center;gap:5px}.time svg{width:13px;height:13px;margin:0}.north{font-size:11px;color:#c2c8c8}.destination{position:absolute;left:28px;bottom:217px;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:#fff9ed;text-shadow:0 1px 3px #000,0 0 8px #000b}.destination svg{width:12px;height:12px}.destination span{font-size:12px;color:#e6e9e8;font-weight:400;margin-left:3px}
+</style>
+<img class="scene" src="scene.png" alt="Captura real de Geteco diante da garagem do Maciota">
+<div class="destination"><svg viewBox="0 0 12 12"><path d="M6 1 11 6 6 11 1 6Z" fill="none" stroke="#e5b974" stroke-width="1.8"/></svg>Maciota<span>3 m</span></div>
+<div class="map">
+<!-- Geometria redesenhada a partir do minimapa desta captura, sem inventar uma rota. -->
+<svg viewBox="0 0 148 148" fill="none" aria-label="Minimapa, jogador junto de Maciota">
+<g fill="#dce3e5" opacity=".13"><path d="M51 6h20v16H51zM75 6h16v16H75zM95 6h19v16H95zM5 46h14v25H5zM0 65h22v33H0zM61 48h36v21H61zM97 86h19v24H97zM142 50h6v22h-6z"/></g>
+<g stroke="#d6d9d3" stroke-opacity=".65" stroke-linejoin="round"><path d="M40 0V125" stroke-width="6"/><path d="M126 0V125" stroke-width="4"/><path d="M0 33H148" stroke-width="3"/><path d="M40 81H126M126 101H148" stroke-width="2"/><path d="M0 130 25 125H148" stroke-width="6"/></g>
+<circle cx="12" cy="28" r="6.5" fill="#dba268"/><text x="12" y="31.5" text-anchor="middle" font-family="Barlow,Arial" font-size="10" font-weight="600" fill="#243036">N</text>
+<g fill="#dce3df" opacity=".55"><circle cx="106" cy="113" r="1.8"/><circle cx="115" cy="119" r="1.8"/></g>
+<path d="m74 66 5 5-5 5-5-5Z" fill="#e5b974" stroke="#243036" stroke-width="1.5"/>
+<path d="m82 76-14-6 4 6-4 6Z" fill="#f5f3e9" stroke="#26363c" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+<div class="footer"><div class="time"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" stroke="currentColor"/><path d="M8 0v2m0 12v2M0 8h2m12 0h2M2.3 2.3l1.4 1.4m8.6 8.6 1.4 1.4M2.3 13.7l1.4-1.4m8.6-8.6 1.4-1.4" stroke="currentColor"/></svg>09:26</div><div class="north">N ↑</div></div>
+</div>
+</html>

@@ -23,9 +23,11 @@ func run() -> void:
 		{"id":"south_port_west","width":7.5,"points":PackedVector3Array([Vector3(230,0,230),Vector3(230,0,350)])},
 		{"id":"generic_road_crossing_port","width":7.5,"points":PackedVector3Array([Vector3(180,0,350),Vector3(250,0,350)])},
 		{"id":"public_street","width":7.5,"points":PackedVector3Array([Vector3(80,0,80),Vector3(120,0,80)])},
+		{"id":"vertice_rural_access","width":9.0,"points":PackedVector3Array([Vector3(-120,0,70),Vector3(-340,0,-2)])},
 	]
 	var ambient := POLICY.ambient_roads(roads)
 	check(ambient.size()==1 and ambient[0].id=="public_street","Ambient traffic and pedestrians get only public roads")
+	check(POLICY.is_private_road(roads[-1]),"Remote company access stays open to routed freight but does not spawn through traffic at its dead end")
 	check(POLICY.segment_enters_private_area(Vector3(180,0,350),Vector3(250,0,350)),"Sidewalk clearance catches roads bordering the private apron")
 
 	var safe_route := Curve3D.new()

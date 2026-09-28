@@ -1,0 +1,43 @@
+extends RefCounted
+## Single aimed anti-vehicle round, four-second cadence and no splash damage.
+## The first physical obstruction stops it; civilian/protected bodies are never
+## selected as targets. Surrender or absence of force authorization resets aim.
+var cooldown := 4.0
+var aim := 0.0
+
+func tick(unit: RefCounted, delta: float, target: Node3D) -> void:
+	cooldown = maxf(0.0,cooldown-delta)
+	var gameplay: Node3D = unit.controller.gameplay
+	if target == null or unit.crew_remaining <= 0 or not gameplay.state.weapons_allowed() or not gameplay.has_method("police_force_authorized") or not gameplay.police_force_authorized() or gameplay.police_surrendering():
+		aim = 0.0
+		return
+	if not "horizontal_velocity" in target or not unit._sees_target(target):
+		aim = 0.0
+		return
+	var turret: Node3D = unit.vehicle.visual.get_node_or_null("TankTurret")
+	if turret == null: return
+	var direction := target.global_position-turret.global_position
+	direction.y = 0
+	if direction.length_squared() < 36.0: return
+	var desired: float = atan2(-direction.x,-direction.z)-unit.vehicle.rotation.y
+	turret.rotation.y = rotate_toward(turret.rotation.y,desired,delta*.8)
+	if absf(angle_difference(turret.rotation.y,desired)) > .12:
+		aim = 0.0
+		return
+	aim += delta
+	if aim < 1.4 or cooldown > 0: return
+	var origin := turret.to_global(Vector3(0,.28,-2.38))
+	var end: Vector3 = target.global_position+Vector3.UP*.8
+	var space: PhysicsDirectSpaceState3D = unit.vehicle.get_world_3d().direct_space_state
+	var bridge := PhysicsRayQueryParameters3D.create(unit.vehicle.global_position+Vector3.UP*1.5,origin,7,[unit.vehicle.get_rid()])
+	if not space.intersect_ray(bridge).is_empty(): return
+	var ray := PhysicsRayQueryParameters3D.create(origin,end,7,[unit.vehicle.get_rid()])
+	var hit := space.intersect_ray(ray)
+	if hit.is_empty() or hit.collider != target: return
+	cooldown = 4.0
+	aim = 0.0
+	gameplay._trace(origin,hit.position,.16,.11,Color("efc487"))
+	gameplay._sound("sniper",origin,-7.0)
+	gameplay._damage(target,32.0,unit.vehicle)
+	if is_instance_valid(gameplay.effects): gameplay.effects.muzzle_smoke(origin,origin.direction_to(end))
+	unit.controller.emit_dispatch_event("tank_fired",{"unit":unit,"point":hit.position})

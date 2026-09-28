@@ -17,6 +17,18 @@ var surface_solids: Dictionary = {}
 var active_solid := ""
 var service_material: StandardMaterial3D
 var collision_body: StaticBody3D
+var gate_open := false
+
+func set_boarding_gate(opened: bool) -> void:
+	if gate_open == opened: return
+	gate_open = opened
+	var shift := floor_point(Vector2(40,0))-floor_point(Vector2.ZERO)
+	for child in get_children():
+		if child is MeshInstance3D and str(child.get_meta("interior_solid_id","" )).begins_with("BoardingGate"):
+			child.position = shift*(-1 if str(child.get_meta("interior_solid_id")).ends_with("2") else 1) if opened else Vector3.ZERO
+	if is_instance_valid(collision_body):
+		for child in collision_body.get_children():
+			if child is CollisionShape3D and str(child.get_meta("interior_solid_id","" )).begins_with("BoardingGate"): child.set_deferred("disabled",opened)
 
 func build(angle: float = 0.0, is_terminal: bool = false) -> void:
 	orientation = angle
@@ -95,7 +107,9 @@ func _quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, key: String) -> void:
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		surfaces[key] = surface
-	for vertex in [a, b, c, a, c, d]:
+	# Godot front faces are clockwise. Outward winding also makes the platform
+	# support capsules from above instead of catching them inside its underside.
+	for vertex in [a, c, b, a, d, c]:
 		surfaces[key].add_vertex(vertex)
 
 func _box(rect: Rect2, bottom: float, box_h: float, key: String) -> void:
@@ -132,6 +146,7 @@ func _platform() -> void:
 	_box(Rect2(-157, 29, 314, 6), 0.20, 0.04, "edge")
 	for x in range(-147, 148, 6):
 		_box(Rect2(x, 24, 2, 2), 0.205, 0.025, "yellow")
+	active_solid = "AccessRamp"
 	_quad(floor_point(Vector2(155, -5), 0.20), floor_point(Vector2(155, 22), 0.20), floor_point(Vector2(193, 22)), floor_point(Vector2(193, -5)), "concrete")
 
 	for y in [-7.0, 24.0]:
@@ -165,7 +180,9 @@ func _tube() -> void:
 	for x in [-116.0, -58.0, 0.0, 58.0, 116.0]:
 		_box(Rect2(x - 10, -1, 20, 2), 2.79, 0.04, "edge")
 
-	for wall in [[Rect2(-148, -28, 3, 57), "TubeWestWall"], [Rect2(-145, 27, 247, 2), "TubeFrontWall"], [Rect2(140, 27, 15, 2), "TubeFrontEnd"], [Rect2(153, -28, 2, 22), "TubeEastBack"], [Rect2(153, 23, 2, 6), "TubeEastFront"], [Rect2(102, 27, 38, 2), "BoardingGate"]]:
+	var walls := [[Rect2(-148,-28,3,57),"TubeWestWall"],[Rect2(-145,27,5,2),"TubeFrontEnd"],[Rect2(-102,27,97.2,2),"TubeFrontWall0"],[Rect2(33.2,27,81.2,2),"TubeFrontWall1"],[Rect2(152.4,27,2.6,2),"TubeFrontEnd2"],[Rect2(153,-28,2,22),"TubeEastBack"],[Rect2(153,23,2,6),"TubeEastFront"]]
+	for index in 3: walls.append([Rect2([-121.0,14.2,133.4][index]-19,27,38,2),"BoardingGate%d" % index])
+	for wall in walls:
 		active_solid = wall[1]
 		_box(wall[0], 0.20, 0.30, "dark")
 		_box(wall[0], 0.50, 1.15, "glass")
@@ -227,5 +244,6 @@ func _create_solid_collision(p_mesh: Mesh, solid_name: String) -> void:
 	if shape != null:
 		var col := CollisionShape3D.new()
 		col.name = "Solid_" + solid_name
+		col.set_meta("interior_solid_id",solid_name)
 		col.shape = shape
 		collision_body.add_child(col)

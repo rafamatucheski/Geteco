@@ -22,6 +22,11 @@ var gate: Node3D
 var status: Label
 var _shadow_clock := 0.0
 var starts: Dictionary = {}
+var course_visuals: Node3D
+var lift: Node
+var _hud_clock := 0.0
+var _gate_target := Vector3(INF, INF, INF)
+var _ski_pose: Array = []
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -30,9 +35,17 @@ func configure(owner_session) -> void:
 		session.controller.save_invalid = true
 		session.show_message("Estado da serra inválido; save original preservado.")
 	session.world.player.ski_controller = self
+	lift = preload("res://activities/MountainSkiLift.gd").new()
+	lift.configure(self)
+	add_child(lift)
+	course_visuals = preload("res://activities/MountainSkiCourseVisuals.gd").new()
+	course_visuals.configure(self)
+	session.world.add_child(course_visuals)
 	status = Label.new()
-	status.position = Vector2(430,112)
+	status.position = Vector2(24,156)
 	status.add_theme_font_size_override("font_size",20)
+	status.add_theme_color_override("font_outline_color", Color("101820"))
+	status.add_theme_constant_override("outline_size", 5)
 	session.world.hud.add_child(status)
 	gate = session.activities._beacon(Vector3.ZERO,Color("74d9ff"),true)
 	gate.hide()
@@ -70,13 +83,13 @@ func show_services() -> void:
 				if not _at_counter(): session.close_menu(); return
 				data.equipment=true; session.close_menu(); _commit())
 	else:
-		session._button("Alugar roupa · R$ 250",func():
+		session._button("Alugar roupa, skis e bastões · R$ 250",func():
 			if not _at_counter() or data.rental: session.close_menu(); return
 			session.close_menu()
 			if not _open(): session.show_message("Locação: 08:00 às 18:00."); return
 			var serial: int = int(data.rental_serial)+1
 			if not session.state.economy.spend(250,"ski_rental:%d"%serial): session.show_message("Saldo insuficiente."); return
-			data.rental_serial=serial; data.rental=true
+			data.rental_serial=serial; data.rental=true; data.equipment=true
 			session.apply_outfit(); _commit())
 	session._button("Fechar",session.close_menu)
 	for child in session.column.get_children():
@@ -90,20 +103,24 @@ func _at_counter() -> bool:
 	return session.world.player.position.distance_to(session.room.interaction_points.service)<1.5
 
 func cancel_attempt() -> void:
+	if is_instance_valid(lift): lift.cancel()
 	_stop()
 
 func _outside() -> bool:
 	return session.state.region_id=="mountain" and session.state.place_id.is_empty() and not session.world.driving.occupied and session.world.gameplay.health>0 and session.state.campaign.active_id.is_empty()
 
 func nearest_action() -> Dictionary:
+	if is_instance_valid(lift) and lift.riding: return _action("ski_lift_skip", "Adiantar viagem", session.world.player.position)
 	if session==null or session.modal or session.controller.save_invalid or not _outside(): return {}
+	if session.world.player.input_locked: return {}
 	var point: Vector3 = session.world.player.position
 	if race.mode!="": return _action("ski_cancel","Cancelar prova",point)
-	if skiing: return _action("ski_remove","Retirar skis",point)
+	if is_instance_valid(lift) and lift.can_board(): return _action("ski_lift", "Teleférico para o cume", point)
 	for id in COURSES:
 		var start := Definitions.at(COURSES[id].start,"mountain")
 		if _flat(point).distance_to(start)<3.0:
 			return _action("ski_start:"+id,"Iniciar · "+str(COURSES[id].name),point)
+	if skiing: return _action("ski_remove","Retirar skis",point)
 	if data.equipment and _on_slope(point): return _action("ski_equip","Colocar skis",point)
 	return {}
 
@@ -113,6 +130,8 @@ func _action(id: String, label: String, point: Vector3) -> Dictionary:
 func perform(target: Variant) -> bool:
 	var id: String = str(target.get("target","")) if target is Dictionary else str(target)
 	if nearest_action().get("target","")!=id: return false
+	if id == "ski_lift_skip": lift.skip(); return true
+	if id == "ski_lift": return lift.board()
 	if id in ["ski_cancel","ski_remove"]: _stop(); return true
 	if not data.rental or not data.equipment:
 		session.show_message("Alugue a roupa e retire os skis no Summit."); return true
@@ -123,7 +142,10 @@ func perform(target: Variant) -> bool:
 	if not _open(): session.show_message("Pistas abertas das 08:00 às 18:00."); return true
 	if clue_count()<int(spec.clues): session.show_message("Encontre as três pistas da expedição."); return true
 	if session.world.player.velocity.length()>70.0/16.0: session.show_message("Pare junto à largada."); return true
+	if not session.save_game(true): return false
 	_equip()
+	heading = Definitions.at(spec.start,"mountain").direction_to(Definitions.at(spec.points[0],"mountain"))
+	session.world.player.visual.rotation.y = atan2(-heading.x,-heading.z)
 	var points := PackedVector3Array()
 	for point in spec.points: points.append(Definitions.at(point,"mountain"))
 	if race.begin_race(course_id,Definitions.at(spec.start,"mountain"),points,_flat(session.world.player.position)):
@@ -132,7 +154,8 @@ func perform(target: Variant) -> bool:
 	return true
 
 func _equip() -> void:
-	skiing=true; heading=Vector3.FORWARD; glide=Vector3.ZERO
+	skiing=true; heading=Vector3.FORWARD; glide=Vector3.ZERO; fall_time=0; turn_stress=0
+	session.world.player.visual.rotation.y = 0
 	session.state.equip_weapon("fists")
 	if not is_instance_valid(equipment_visual):
 		equipment_visual=Node3D.new()
@@ -150,13 +173,33 @@ func _equip() -> void:
 			shaft.top_radius=.013; shaft.bottom_radius=.013; shaft.height=1.15; shaft.radial_segments=6
 			pole.mesh=shaft; pole.position=Vector3(side*.4,.65,.18)
 			pole.rotation.x=.2; equipment_visual.add_child(pole)
-		equipment_visual.show()
+	equipment_visual.show()
+	_build_ski_pose()
+
+func _build_ski_pose() -> void:
+	var actor = session.world.player
+	if not is_instance_valid(actor.skeleton) or actor.hips < 0: return
+	actor._apply_pose(actor._idle_pose)
+	var hip: Vector3 = actor.skeleton.get_bone_pose_position(actor.hips)
+	hip.y -= .16
+	actor.skeleton.set_bone_pose_position(actor.hips,hip)
+	for side in ["Left","Right"]:
+		var sign_side := -1.0 if side == "Left" else 1.0
+		actor._solve_leg(side,actor.visual.to_global(Vector3(sign_side*.09,.07,0)))
+		actor._solve_combat_arm(side,Vector3(sign_side*.4,1.02,.06),Basis.IDENTITY,false,sign_side)
+	_ski_pose = actor._capture_pose()
+
+func _process(_delta: float) -> void:
+	if not skiing or _ski_pose.is_empty() or session.world.gameplay.health <= 0: return
+	var actor = session.world.player
+	actor._apply_pose(_ski_pose)
 
 func _stop() -> void:
 	skiing=false; race.cancel(); glide=Vector3.ZERO; fall_time=0; turn_stress=0
 	if is_instance_valid(equipment_visual): equipment_visual.hide()
 	if is_instance_valid(gate): gate.hide()
 	if is_instance_valid(status): status.text=""
+	_gate_target = Vector3(INF, INF, INF)
 
 func motion(delta: float, _walking_direction: Vector3) -> Vector3:
 	if not _outside() or session.modal or session.world.player.input_locked: return Vector3.ZERO
@@ -168,7 +211,7 @@ func motion(delta: float, _walking_direction: Vector3) -> Vector3:
 	if InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"): brake=1
 	var speed := glide.length()
 	var acceleration := 118.0/16.0*maxf(.12,heading.dot(Vector3.FORWARD))+maxf(0,-axis.y)*42.0/16.0
-	if Input.is_action_pressed("sprint") and speed<115.0/16.0: acceleration+=95.0/16.0
+	if get_node("/root/GameInput").sprinting() and speed<115.0/16.0: acceleration+=95.0/16.0
 	speed=clampf(speed+(acceleration-(18.0+brake*235.0)/16.0)*delta,0,455.0/16.0)
 	heading=heading.rotated(Vector3.UP,-axis.x*lerpf(2.05,.88,speed/(455.0/16.0))*delta).normalized()
 	glide=glide.lerp(heading*speed,1.0-exp(-4.8*delta))
@@ -189,15 +232,25 @@ func _physics_process(delta: float) -> void:
 		for index in session.world.player.get_slide_collision_count():
 			var hit: KinematicCollision3D = session.world.player.get_slide_collision(index)
 			var impact := maxf(0,glide.dot(-hit.get_normal()))*16.0
-			if impact>112: crash(clampi(roundi((impact-80)*.18),6,42)); break
+			if absf(hit.get_normal().y)<.65 and impact>112: crash(clampi(roundi((impact-80)*.18),6,42)); break
 		if session.state.equipped_weapon!="fists": session.state.equip_weapon("fists")
 	if race.mode!="":
 		race.update(delta,_flat(session.world.player.position),glide,heading,skiing)
 		if race.finished: _finish()
 		elif race.cancelled: _stop(); session.show_message("Prova cancelada.")
 		else:
-			gate.show(); gate.position=race.target_position()+Vector3.UP*(session.world.player.position.y+.05)
-			status.text="Largada em %d"%ceili(race.countdown) if race.countdown>0 else "Ski · %.1f s · %d/%d"%[race.elapsed,race.gate+1,race.points.size()]
+			_update_gate()
+	_hud_clock += delta
+	if skiing and _hud_clock >= .1:
+		_hud_clock = 0
+		var speed_text := "%d km/h" % roundi(glide.length()*3.6)
+		if race.mode != "":
+			var best := float(data.best.get(race.id, 0))
+			status.text = "Largada em %d" % ceili(race.countdown) if race.countdown > 0 else "%s · %.1f s · %d/%d · %s" % [COURSES[race.id].name,race.elapsed,race.gate+1,race.points.size(),speed_text]
+			if best > 0: status.text += "\nRecorde: %.2f s" % best
+		else:
+			status.text = "Ski · "+speed_text
+		status.text += "\n%s frear · %s impulso" % [get_node("/root/GameInput").hint("handbrake"),get_node("/root/GameInput").hint("sprint")]
 	_shadow_clock+=delta
 	if _shadow_clock>=.5:
 		_shadow_clock=0
@@ -226,7 +279,23 @@ func _finish() -> void:
 		return
 	if settlement.record: data.best[race.id]=race.elapsed
 	session.activities.refresh_achievements()
-	if _commit(): session.show_message("Prova concluída · +R$ %d"%int(settlement.amount))
+	if _commit(): session.show_message("%s · %.2f s · +R$ %d%s"%[spec.name,race.elapsed,int(settlement.amount)," · Novo recorde!" if settlement.record else ""])
+
+func _update_gate() -> void:
+	var target: Vector3 = race.target_position()
+	if target != _gate_target or not gate.visible:
+		var query := PhysicsRayQueryParameters3D.create(target+Vector3.UP*3,target-Vector3.UP*5,1)
+		var hit: Dictionary = session.world.get_world_3d().direct_space_state.intersect_ray(query)
+		gate.visible = not hit.is_empty()
+		if gate.visible:
+			gate.position = hit.position + Vector3.UP*.05
+			_gate_target = target
+
+func _exit_tree() -> void:
+	for node in starts.values():
+		if is_instance_valid(node): node.queue_free()
+	for node in [status, gate, equipment_visual, course_visuals, shadow]:
+		if is_instance_valid(node): node.queue_free()
 
 func on_collectible() -> String:
 	var announcement := ""

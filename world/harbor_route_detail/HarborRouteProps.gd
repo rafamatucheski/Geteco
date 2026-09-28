@@ -32,6 +32,8 @@ static func create_sidewalk_slab(size: Vector2, height: float = 0.14, mat: Stand
 	if with_collision:
 		var body := StaticBody3D.new()
 		body.name = "SlabCollision"
+		body.set_meta("pedestrian_step", true)
+		body.set_meta("pedestrian_step_top", height)
 		body.collision_layer = 1
 		body.collision_mask = 0
 		var col := CollisionShape3D.new()
@@ -63,6 +65,8 @@ static func create_curb_segment(length: float, width: float = 0.30, height: floa
 	
 	var body := StaticBody3D.new()
 	body.name = "CurbCollision"
+	body.set_meta("pedestrian_step", true)
+	body.set_meta("pedestrian_step_top", height)
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var col := CollisionShape3D.new()

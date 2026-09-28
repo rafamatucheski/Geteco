@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/inventory/item_data.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "mala_mao_grande"
+display_name = "Mala de Mão (Grande)"
+description = "Oferece um espaço massivo de 24 slots, mas ocupa uma de suas mãos. Você não poderá usar armas longas e seu recuo com pistolas será terrível."
+item_type = 4
+max_stack = 1
+backpack_capacity = 24
+is_hand_bag = true

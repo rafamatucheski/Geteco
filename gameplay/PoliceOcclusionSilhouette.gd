@@ -16,7 +16,7 @@ func _process(delta: float) -> void:
 	var active := not bool(officer.get("dead")) and officer.is_visible_in_tree()
 	if not is_instance_valid(gameplay) or gameplay.get("state") == null:
 		active = false
-	elif not String(gameplay.state.place_id).is_empty():
+	elif "place_id" in gameplay.state and not String(gameplay.state.place_id).is_empty():
 		active = false
 	var camera := officer.get_viewport().get_camera_3d()
 	if camera == null or camera.global_position.distance_squared_to(officer.global_position) > MAX_DISTANCE_SQUARED:

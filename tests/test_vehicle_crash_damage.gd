@@ -2,7 +2,10 @@ extends SceneTree
 ## A real vehicle collision must dent both cars without draining health every contact frame.
 
 const VEHICLE := preload("res://scripts/Vehicle.gd")
-const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
+class CollisionStreet extends "res://gameplay/street_physics/StreetPhysics.gd":
+	func _ready() -> void:
+		instance = self
+		set_physics_process(false)
 
 var failures: Array[String] = []
 
@@ -26,7 +29,7 @@ func run() -> void:
 	floor_shape.position.y = -0.1
 	floor.add_child(floor_shape)
 	world.add_child(floor)
-	var street := STREET.new()
+	var street := CollisionStreet.new()
 	world.add_child(street)
 	street.set_physics_process(false) # The fixture has no player to observe.
 	var striking := VEHICLE.new()
@@ -49,6 +52,8 @@ func run() -> void:
 			break
 	check(contact, "carros colidem e ambos recebem dano")
 	if contact:
+		check(striking.horizontal_velocity.z <= 0 and struck.horizontal_velocity.z < 0,
+			"batida traseira transfere movimento para frente sem ricochete")
 		print("CRASH_HEALTH striking=", striking.health, " struck=", struck.health)
 		check(striking.health < striking.max_health, "carro que bate também sofre dano")
 		check(striking.health > striking.max_health * 0.5 and struck.health > struck.max_health * 0.5,
@@ -109,5 +114,5 @@ func run() -> void:
 		"batida forte entre carros danifica ambos sem incêndio imediato")
 	world.queue_free()
 	await process_frame
-	print("VEHICLE_CRASH_DAMAGE checks=9 failures=", failures.size())
+	print("VEHICLE_CRASH_DAMAGE checks=10 failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

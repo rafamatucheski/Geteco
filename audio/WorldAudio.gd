@@ -5,6 +5,7 @@ const SURFACES := preload("res://audio/v1_ambience/SurfaceResolver3D.gd")
 const PROFILES := preload("res://audio/v1_ambience/AmbienceProfile.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
+const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
 const ROAD_SOUND := preload("res://audio/vehicle_fx/road.wav")
 const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
 const TURBO_SHIFT_SOUNDS := [preload("res://audio/vehicle_fx/turbo_shift_0.wav"), preload("res://audio/vehicle_fx/turbo_shift_1.wav"), preload("res://audio/vehicle_fx/turbo_shift_2.wav")]
@@ -37,6 +38,7 @@ var engine_last_throttle := 0.0
 var engine_fx_cooldown := 0.0
 var engine_fx_variant := 0
 var engine_was_moving_fast := false
+var tank_start_remaining := 0.0
 var road_audio: AudioStreamPlayer
 var shift_audio: AudioStreamPlayer
 var air_brake_audio: AudioStreamPlayer
@@ -206,7 +208,9 @@ func _update_radio(delta: float) -> void:
 		radio_focus = move_toward(radio_focus,.2 if dialogue else 1.0,delta*3.0)
 		radio.volume_db = RADIO_VOLUME_DB+linear_to_db(maxf(radio_focus,.001))
 	radio_notice_time = maxf(0.0,radio_notice_time-delta)
-	if is_instance_valid(radio_notice): radio_notice.visible = car != null and radio_notice_time > 0.0
+	if is_instance_valid(radio_notice):
+		radio_notice.visible = car != null and radio_notice_time > 0.0 and not get_tree().paused and not (world.session != null and world.session.modal)
+		radio_notice.modulate.a = clampf(minf(radio_notice_time/.18,(2.0-radio_notice_time)/.18),0,1)
 
 func _show_station() -> void:
 	if not is_instance_valid(radio_notice):
@@ -214,19 +218,23 @@ func _show_station() -> void:
 		layer.layer = 8
 		add_child(layer)
 		radio_notice = Label.new()
-		radio_notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-		radio_notice.position = Vector2(-230,82)
-		radio_notice.size = Vector2(460,58)
+		radio_notice.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		radio_notice.offset_left = -264
+		radio_notice.offset_right = -24
+		radio_notice.offset_top = 100
+		radio_notice.offset_bottom = 138
 		radio_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		radio_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		radio_notice.add_theme_font_size_override("font_size",18)
-		radio_notice.add_theme_color_override("font_color",Color("f2e2b9"))
-		radio_notice.add_theme_color_override("font_outline_color",Color("172022"))
-		radio_notice.add_theme_constant_override("outline_size",6)
+		var ui_style = preload("res://ui/GameStyle.gd")
+		radio_notice.add_theme_font_override("font",ui_style.STRONG)
+		radio_notice.add_theme_font_size_override("font_size",16)
+		radio_notice.add_theme_color_override("font_color",ui_style.TEXT)
+		radio_notice.add_theme_stylebox_override("normal",ui_style.compact(false,8))
 		layer.add_child(radio_notice)
 	radio_notice.text = STATION_NAMES[radio_index] if radio_index >= 0 else "RÁDIO DESLIGADO"
-	radio_notice_time = 3.0
+	radio_notice_time = 2.0
 	radio_notice.show()
+	radio_notice.modulate.a=0
 
 func _process(delta: float) -> void:
 	_update_ambience(delta)
@@ -267,6 +275,7 @@ func _process(delta: float) -> void:
 		return
 	var current_car: CharacterBody3D = world.driving.car
 	_sync_engine_family(current_car)
+	tank_start_remaining = maxf(0.0, tank_start_remaining - delta)
 	var tops: Array = ENGINE_PROFILE.GEAR_TOPS.get(family, ENGINE_PROFILE.GEAR_TOPS.street)
 	var nominal: Array = ENGINE_PROFILE.NOMINAL.get(family, ENGINE_PROFILE.NOMINAL.street)
 	var ratio := clampf(absf(current_car.speed) / maxf(float(current_car.max_forward_speed), 1.0), 0.0, 1.0)
@@ -285,7 +294,7 @@ func _process(delta: float) -> void:
 	elif engine_shift_cooldown <= 0.0:
 		if engine_gear < tops.size() and ratio > float(tops[engine_gear - 1]):
 			engine_gear += 1
-			engine_shift_cooldown = 0.25 if family in ["truck", "bus", "fire_diesel"] else 0.16
+			engine_shift_cooldown = 0.25 if family in ["truck", "bus", "fire_diesel", "tank"] else 0.16
 		elif engine_gear > 1 and ratio < float(tops[engine_gear - 2]) - 0.045:
 			engine_gear -= 1
 			engine_shift_cooldown = 0.16
@@ -308,6 +317,8 @@ func _process(delta: float) -> void:
 	var master := -20.0 + engine_load * 7.0 + engine_rpm * 6.5 + ratio * 1.5
 	if family == "vq35": master -= 5.0
 	if family == "electric": master -= 13.0
+	if family == "tank" and tank_start_remaining > 0.0:
+		master += linear_to_db(maxf(0.005, smoothstep(0.6, 2.1, TANK_AUDIO.START_SECONDS - tank_start_remaining)))
 	for index in 7:
 		var share := cos(blend * PI * 0.5) if index == lower else (sin(blend * PI * 0.5) if index == upper else 0.0)
 		var layer := layers[index]
@@ -333,10 +344,28 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 	engine_was_moving_fast = false
 	for channel in [road_audio, shift_audio, air_brake_audio]: if channel.playing: channel.stop()
 	var next_family: String = ENGINE_PROFILE.bank_family(archetype)
+	tank_start_remaining = 0.0
+	if next_family == "tank":
+		road_audio.stream = TANK_AUDIO.tracks_stream()
+		if TANK_AUDIO.claim_start(car):
+			shift_audio.stream = TANK_AUDIO.start_stream()
+			shift_audio.pitch_scale = 1.0
+			shift_audio.volume_db = -13.0
+			shift_audio.play()
+			tank_start_remaining = TANK_AUDIO.START_SECONDS
+	elif family == "tank":
+		var road_stream := ROAD_SOUND.duplicate() as AudioStreamWAV
+		road_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		road_stream.loop_end = maxi(1, roundi(road_stream.get_length() * road_stream.mix_rate) - 8)
+		road_audio.stream = road_stream
 	if next_family == family: return
 	family = next_family
 	for index in 7:
 		layers[index].stop()
+		if family == "tank":
+			var bank := TANK_AUDIO.engine_bank()
+			layers[index].stream = bank[index] if bank.size() == 7 else null
+			continue
 		var source := load("res://audio/acoustic/engine_%s_%d.wav"%[family,index])
 		if not source is AudioStreamWAV:
 			layers[index].stream = null
@@ -347,6 +376,16 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 		layers[index].stream = stream
 
 func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, ratio: float, throttle: float, previous_gear: int) -> void:
+	if family == "tank":
+		var gain := TANK_AUDIO.tracks_gain(float(car.speed))
+		if gain <= 0.001:
+			road_audio.stop()
+		else:
+			road_audio.pitch_scale = TANK_AUDIO.tracks_pitch(float(car.speed))
+			road_audio.volume_db = -17.0 + linear_to_db(gain)
+			if not road_audio.playing: road_audio.play()
+		engine_last_throttle = throttle
+		return
 	# V1 VehicleEngineSound._update_road: an absolute-speed cue independent of RPM.
 	if ratio < 0.04:
 		if road_audio.playing: road_audio.stop()

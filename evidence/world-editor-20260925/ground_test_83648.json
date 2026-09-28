@@ -1,0 +1,120 @@
+{
+	"regions": {
+		"harbor": {
+			"new/ground_boundary": {
+				"id": "new/ground_boundary",
+				"position": [
+					2560.0,
+					2560.0
+				],
+				"rotation": 37.0,
+				"size": [
+					32.0,
+					24.0
+				],
+				"surface": "grass",
+				"type": "ground"
+			},
+			"new/ground_test_0": {
+				"id": "new/ground_test_0",
+				"position": [
+					2500.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "grass",
+				"type": "ground"
+			},
+			"new/ground_test_1": {
+				"id": "new/ground_test_1",
+				"position": [
+					2520.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "earth",
+				"type": "ground"
+			},
+			"new/ground_test_2": {
+				"id": "new/ground_test_2",
+				"position": [
+					2540.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "sand",
+				"type": "ground"
+			},
+			"new/ground_test_3": {
+				"id": "new/ground_test_3",
+				"position": [
+					2560.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "gravel",
+				"type": "ground"
+			},
+			"new/ground_test_4": {
+				"id": "new/ground_test_4",
+				"position": [
+					2580.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "concrete",
+				"type": "ground"
+			},
+			"new/ground_test_5": {
+				"id": "new/ground_test_5",
+				"position": [
+					2600.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "asphalt",
+				"type": "ground"
+			},
+			"new/ground_test_6": {
+				"id": "new/ground_test_6",
+				"position": [
+					2620.0,
+					2500.0
+				],
+				"rotation": 31.0,
+				"size": [
+					8.0,
+					8.0
+				],
+				"surface": "pavers",
+				"type": "ground"
+			}
+		},
+		"mountain": {}
+	},
+	"version": 1
+}

@@ -27,6 +27,7 @@ const CROSS_GRIP_LEFT := ["smg", "shotgun", "sawed_off", "ak47", "m4a1", "huntin
 ## Ombro de referência do `MeshyMeleePose` (espaço V1) para o balanço do cabo ao andar.
 const MELEE_SHOULDER := Vector3(0.23, 1.18, -0.015)
 const GRENADE_RELEASE := 0.20
+const GRENADE_RECOVERY := 0.70
 ## Instante de contato nas trajetórias abaixo; Gameplay usa o mesmo relógio.
 const MELEE_CONTACT := {"fists": 0.14, "knuckles": 0.16, "knife": 0.18, "bat": 0.36, "axe": 0.38}
 ## Repouso dos ossos no espaço do esqueleto do `dante.glb` (medido no GLB; o
@@ -247,18 +248,20 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			hand += [Vector3(-0.035, 0.015, -0.23), Vector3(-0.12, 0.09, -0.16), Vector3(-0.055, -0.07, -0.20)][variant] * thrust
 			gun_basis = Basis(Vector3.UP, thrust * (0.45 if variant == 1 else 0.08)) * Basis(Vector3.FORWARD, thrust * (0.25 if variant == 2 else 0.05)) * gun_basis
 	elif id == "grenade":
-		var ready := Vector3(0.24, 0.72, -0.10)
-		var cocked := Vector3(0.25, 1.18, -0.12)
-		var released := Vector3(0.12, 1.13, -0.38)
-		var follow := Vector3(0.10, 0.90, -0.37)
+		var ready := Vector3(0.24, 0.72, -0.10 - arm_swing * 0.07) + body_offset
+		# Arremesso pela frente, abaixo do ombro e pelo lado direito.
+		# O alvo alto junto ao rosto elevava/torcia a manga contra a cabeça.
+		var cocked := Vector3(0.34, 0.94, -0.14) + body_offset
+		var released := Vector3(0.27, 0.99, -0.43) + body_offset
+		var follow := Vector3(0.25, 0.79, -0.35) + body_offset
 		hand = ready
 		if action_age < 0.08: hand = ready.lerp(cocked, smoothstep(0.0, 0.08, action_age))
 		elif action_age < GRENADE_RELEASE: hand = cocked.lerp(released, smoothstep(0.08, GRENADE_RELEASE, action_age))
 		elif action_age < 0.38: hand = released.lerp(follow, smoothstep(GRENADE_RELEASE, 0.38, action_age))
-		elif action_age < 0.70: hand = follow.lerp(ready, smoothstep(0.38, 0.70, action_age))
+		elif action_age < GRENADE_RECOVERY: hand = follow.lerp(ready, smoothstep(0.38, GRENADE_RECOVERY, action_age))
 		gun_basis = Basis(Vector3.RIGHT, -0.20)
-		visible = action_age < GRENADE_RELEASE or (action_age >= 0.70 and bool(rig.get("loaded", true)))
-		right_free = smoothstep(0.45, 0.70, action_age)
+		visible = action_age < GRENADE_RELEASE or (action_age >= GRENADE_RECOVERY and bool(rig.get("loaded", true)))
+		right_free = smoothstep(0.45, GRENADE_RECOVERY, action_age)
 	if id in ["axe", "bat"]:
 		hand = melee_pose.hand
 		gun_basis = melee_pose.basis

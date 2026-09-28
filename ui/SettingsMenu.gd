@@ -12,15 +12,15 @@ const STYLE = preload("res://ui/GameStyle.gd")
 const AUDIO = preload("res://ui/MenuAudio.gd")
 const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
-const ACCENT := Color("ff914d")
-const TEXT := Color("eee9df")
-const MUTED := Color("93a0a8")
+const ACCENT := STYLE.ACCENT
+const TEXT := STYLE.TEXT
+const MUTED := STYLE.MUTED
 
 ## Ações remapeáveis por grupo; `inventory` e `pause_game` aparecem fixas em Geral.
 const CONTROL_GROUPS := [
 	["A PÉ", ["move_up", "move_down", "move_left", "move_right", "sprint", "interact", "camera_left", "camera_right"]],
-	["VEÍCULO", ["vehicle_interact", "exit_vehicle", "handbrake", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "trunk"]],
-	["COMBATE", ["fire", "aim", "reload", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight"]],
+	["VEÍCULO", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "trunk", "tank_fire"]],
+	["COMBATE", ["fire", "aim", "reload", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight", "surrender"]],
 	["ARMAS RÁPIDAS", ["weapon_slot_1", "weapon_slot_2", "weapon_slot_3", "weapon_slot_4", "weapon_slot_5", "weapon_slot_6", "weapon_slot_7", "weapon_slot_8", "weapon_slot_9", "weapon_slot_10"]],
 	["GERAL", ["journal", "world_map", "inventory", "pause_game"]],
 ]
@@ -31,6 +31,10 @@ var snapshot: Dictionary = {}
 var remap_action := ""
 var remap_slot := 0
 var remap_button: Button
+var remap_gamepad := false
+var _pad_diagram: Control
+var _controller_status: Label
+var _layout_choice: OptionButton
 var _tab := 0
 var _tabs: Array[Button] = []
 var _pages: Array[Control] = []
@@ -48,12 +52,11 @@ func _ready() -> void:
 	_panel = PanelContainer.new()
 	_panel.set_meta("preserve_panel_style", true)
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.045, 0.06, 0.075, 0.97)
+	panel_style.bg_color = STYLE.GLASS
 	panel_style.border_color = Color(1, 1, 1, 0.07)
 	panel_style.set_border_width_all(1)
-	panel_style.border_width_left = 3
-	panel_style.border_color = ACCENT
-	panel_style.set_corner_radius_all(4)
+	panel_style.border_color = STYLE.LINE
+	panel_style.set_corner_radius_all(12)
 	panel_style.shadow_color = Color(0, 0, 0, 0.5)
 	panel_style.shadow_size = 24
 	for side in ["left", "right"]: panel_style.set("content_margin_" + side, 34)
@@ -95,6 +98,7 @@ func _ready() -> void:
 	for builder in [_build_video, _build_audio, _build_controls]:
 		var scroll := ScrollContainer.new()
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll.follow_focus = true
 		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		# Respiro à direita para a barra de rolagem não encostar nos controles.
 		var gutter := MarginContainer.new()
@@ -128,6 +132,7 @@ func _ready() -> void:
 	_layout()
 	AUDIO.hook_buttons(self)
 	get_node("/root/GameInput").bindings_changed.connect(func(): if is_visible_in_tree(): _refresh_controls())
+	get_node("/root/GameInput").device_changed.connect(_refresh_controller_diagram)
 
 func _layout() -> void:
 	var width := clampf(size.x * 0.72, 760.0, 1180.0)
@@ -155,9 +160,9 @@ func _style_tab(tab: Button) -> void:
 	idle.content_margin_top = 8
 	idle.content_margin_bottom = 8
 	var hot := idle.duplicate() as StyleBoxFlat
-	hot.bg_color = Color(1, 0.57, 0.3, 0.08)
+	hot.bg_color = Color(ACCENT, 0.08)
 	var on := idle.duplicate() as StyleBoxFlat
-	on.bg_color = Color(1, 0.57, 0.3, 0.14)
+	on.bg_color = Color(ACCENT, 0.14)
 	on.border_width_bottom = 3
 	on.border_color = ACCENT
 	tab.add_theme_stylebox_override("normal", idle)
@@ -176,7 +181,7 @@ func _style_tab(tab: Button) -> void:
 
 func _field_style(active := false) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
-	box.bg_color = Color(1, 0.57, 0.3, 0.16) if active else Color(1, 1, 1, 0.045)
+	box.bg_color = Color(ACCENT, 0.16) if active else STYLE.SURFACE
 	box.border_color = ACCENT if active else Color(1, 1, 1, 0.1)
 	box.set_border_width_all(1)
 	box.set_corner_radius_all(3)
@@ -212,7 +217,7 @@ func _footer_button(text: String, primary := false) -> Button:
 	_style_field(button)
 	if primary:
 		var hot := _field_style(true)
-		hot.bg_color = Color(1, 0.57, 0.3, 0.3)
+		hot.bg_color = Color(ACCENT, 0.3)
 		button.add_theme_stylebox_override("normal", _field_style(true))
 		button.add_theme_stylebox_override("hover", hot)
 		button.add_theme_color_override("font_color", Color.WHITE)
@@ -341,6 +346,10 @@ func _build_video(page: VBoxContainer) -> void:
 		s.show_fps = value
 		s.apply_settings())
 	_row(page, "Mostrar FPS", "Contador no canto superior direito.", _widgets.show_fps)
+	_widgets.camera_view = _options(["Original", "Diagonal (experimental)"], func(index):
+		s.camera_view = index
+		s.apply_settings())
+	_row(page, "Câmera", "Enquadramento dos exteriores.", _widgets.camera_view)
 	_section(page, "QUALIDADE")
 	_widgets.render_scale = _slider(.5, 1.0, .05, _percent, func(value):
 		s.render_scale = value
@@ -378,7 +387,32 @@ func _build_audio(page: VBoxContainer) -> void:
 	_row(page, "Silenciar em segundo plano", "Sem som quando a janela do jogo perde o foco.", _widgets.mute_unfocused)
 
 func _build_controls(page: VBoxContainer) -> void:
-	var hint := _label("Clique numa tecla e pressione a nova (teclado ou mouse). Delete limpa, Esc cancela. Tecla repetida sai da outra ação.", 15, MUTED, BODY_FONT)
+	var controls := get_node("/root/GameInput")
+	_layout_choice = _options(["Automático", "DualSense / PlayStation", "Xbox"],func(index): controls.set_controller_layout(index))
+	_row(page,"Símbolos do controle","Escolha DualSense se o controle aparecer com símbolos Xbox.",_layout_choice)
+	_controller_status = _label("",15,MUTED,BODY_FONT)
+	page.add_child(_controller_status)
+	var context := _options(["Mapa do controle · A pé", "Mapa do controle · Veículo"],func(index):
+		_pad_diagram.set("vehicle",index == 1)
+		_pad_diagram.queue_redraw())
+	var map_toolbar := HBoxContainer.new()
+	map_toolbar.add_theme_constant_override("separation",12)
+	context.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_toolbar.add_child(context)
+	var customize := _footer_button("PERSONALIZAR")
+	customize.pressed.connect(func():
+		for button in _controls_list.find_children("*","Button",true,false):
+			if not button.disabled:
+				button.grab_focus()
+				return)
+	map_toolbar.add_child(customize)
+	page.add_child(map_toolbar)
+	_pad_diagram = preload("res://ui/ControllerLayout.gd").new()
+	page.add_child(_pad_diagram)
+	var navigation := _label("Menus: ✕ / A confirma · ○ / B volta · direcional navega · Options/Menu pausa. Analógico direito aponta a mira.",14,MUTED,BODY_FONT)
+	navigation.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	page.add_child(navigation)
+	var hint := _label("Selecione uma tecla ou botão para trocar. Delete limpa; Esc cancela. No controle, Options cancela a captura. Comando repetido sai da outra ação, exceto usos compartilhados por contexto. Salve para manter.", 15, MUTED, BODY_FONT)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	page.add_child(hint)
 	_controls_list = VBoxContainer.new()
@@ -386,6 +420,7 @@ func _build_controls(page: VBoxContainer) -> void:
 	page.add_child(_controls_list)
 
 func _refresh_controls() -> void:
+	_refresh_controller_diagram()
 	var focused := get_viewport().gui_get_focus_owner()
 	var focus_key := str(focused.get_meta("binding_key", "")) if focused != null else ""
 	for child in _controls_list.get_children():
@@ -401,7 +436,7 @@ func _refresh_controls() -> void:
 		header.add_child(spacer)
 		for text in ["PRINCIPAL", "SECUNDÁRIA", "CONTROLE"]:
 			var column := _label(text, 12, MUTED, DISPLAY_FONT)
-			column.custom_minimum_size.x = 150 if text != "CONTROLE" else 90
+			column.custom_minimum_size.x = 120 if text != "CONTROLE" else 165
 			column.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			header.add_child(column)
 		_controls_list.add_child(header)
@@ -415,7 +450,7 @@ func _refresh_controls() -> void:
 			var events: Array = controls.keyboard_events(action)
 			for slot in 2:
 				var key := Button.new()
-				key.custom_minimum_size = Vector2(150, 34)
+				key.custom_minimum_size = Vector2(120, 34)
 				key.focus_mode = Control.FOCUS_ALL
 				key.clip_text = true
 				_style_field(key)
@@ -430,10 +465,31 @@ func _refresh_controls() -> void:
 					key.set_meta("binding_key", "%s:%d" % [action, slot])
 					key.pressed.connect(_begin_remap.bind(action, slot, key))
 				row.add_child(key)
-			var pad := _label(_pad_hint(action), 15, MUTED, DISPLAY_FONT)
-			pad.custom_minimum_size.x = 90
-			pad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			row.add_child(pad)
+			var pad := Button.new()
+			pad.text = controls.gamepad_hint(action)
+			pad.custom_minimum_size = Vector2(127,34)
+			pad.focus_mode = Control.FOCUS_ALL
+			pad.clip_text = true
+			pad.tooltip_text = pad.text
+			_style_field(pad)
+			pad.set_meta("binding_key",action+":pad")
+			pad.disabled = action == "pause_game"
+			pad.pressed.connect(_begin_remap.bind(action,0,pad,true))
+			var pad_cell := HBoxContainer.new()
+			pad_cell.add_theme_constant_override("separation",4)
+			pad_cell.add_child(pad)
+			var clear := Button.new()
+			clear.text = "−"
+			clear.tooltip_text = "Limpar botão de "+controls.label(action)
+			clear.custom_minimum_size = Vector2(34,34)
+			clear.disabled = action == "pause_game"
+			clear.set_meta("binding_key",action+":pad_clear")
+			_style_field(clear)
+			clear.pressed.connect(func():
+				controls.clear_gamepad(action)
+				_status.text = "Botão removido de \"%s\". Salve para manter." % controls.label(action))
+			pad_cell.add_child(clear)
+			row.add_child(pad_cell)
 			_controls_list.add_child(row)
 	AUDIO.hook_buttons(_controls_list, self)
 	if not focus_key.is_empty():
@@ -441,16 +497,18 @@ func _refresh_controls() -> void:
 			if str(button.get_meta("binding_key", "")) == focus_key:
 				button.grab_focus.call_deferred()
 				break
+	_trap_focus.call_deferred()
+
+func _refresh_controller_diagram() -> void:
+	if not is_instance_valid(_pad_diagram): return
+	var controls := get_node("/root/GameInput")
+	_layout_choice.select(controls.controller_layout)
+	var device: String = controls.controller_name()
+	_controller_status.text = "Conectado: "+device if not device.is_empty() else "Nenhum controle conectado · você pode consultar o layout."
+	_pad_diagram.queue_redraw()
 
 func _pad_hint(action: String) -> String:
-	var controls := get_node("/root/GameInput")
-	# Sem botão de controle a dica cairia no teclado ("Z" na coluna do controle).
-	if not controls.PAD.has(action) and not action.begins_with("move_") and action not in ["fire", "aim"]: return ""
-	var was: bool = controls.using_gamepad
-	controls.using_gamepad = true
-	var text: String = controls.hint(action)
-	controls.using_gamepad = was
-	return "" if text == "—" or text.begins_with("—") else text
+	return get_node("/root/GameInput").gamepad_hint(action)
 
 # --- Comportamento ---------------------------------------------------------------------
 
@@ -470,6 +528,7 @@ func _load_widgets() -> void:
 	_widgets.fps_limit.select(s.fps_limit)
 	_widgets.show_fps.set_pressed_no_signal(s.show_fps)
 	_widgets.show_fps.text = "Ligado" if s.show_fps else "Desligado"
+	_widgets.camera_view.select(s.camera_view)
 	_set_slider(_widgets.render_scale, s.render_scale, _percent)
 	_widgets.msaa.select(s.msaa)
 	_widgets.shadow_quality.select(s.shadow_quality)
@@ -493,15 +552,17 @@ func _select_tab(index: int) -> void:
 func _trap_focus() -> void:
 	STYLE.trap_focus(_panel, false)
 
-func _begin_remap(action: String, slot: int, button: Button) -> void:
+func _begin_remap(action: String, slot: int, button: Button, gamepad := false) -> void:
 	_cancel_remap()
 	remap_action = action
 	remap_slot = slot
 	remap_button = button
+	remap_gamepad = gamepad
 	button.text = "Pressione…"
 	button.add_theme_color_override("font_color", ACCENT)
 	get_node("/root/GameInput").remapping = true
 	_status.text = "Pressione a nova tecla ou botão do mouse para \"%s\". Delete limpa, Esc cancela." % get_node("/root/GameInput").label(action)
+	if gamepad: _status.text = "Pressione o novo botão ou gatilho para \"%s\". Options ou Esc cancela; Delete limpa." % get_node("/root/GameInput").label(action)
 
 func _cancel_remap() -> void:
 	if remap_action.is_empty(): return
@@ -512,25 +573,33 @@ func _cancel_remap() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or remap_action.is_empty(): return
-	if not event.is_pressed() or event.is_echo(): return
-	if not (event is InputEventKey or event is InputEventMouseButton): return
+	# Consume navigation while capturing, including stick motion and releases.
+	get_viewport().set_input_as_handled()
+	if event.is_echo(): return
+	if event is InputEventJoypadMotion:
+		if not remap_gamepad or absf(event.axis_value) < .65: return
+	elif not event.is_pressed(): return
 	# O clique que abriu a captura chega como "released"; o próximo clique é a escolha.
 	get_viewport().set_input_as_handled()
 	var controls := get_node("/root/GameInput")
 	var action := remap_action
 	var slot := remap_slot
-	if event is InputEventKey and event.physical_keycode == KEY_ESCAPE:
+	var keycode: int = (event.physical_keycode if event.physical_keycode else event.keycode) if event is InputEventKey else 0
+	if keycode == KEY_ESCAPE or (event is InputEventJoypadButton and event.button_index == JOY_BUTTON_START):
 		_cancel_remap()
 		_status.text = "Remapeamento cancelado."
 		return
-	if event is InputEventKey and event.physical_keycode in [KEY_DELETE, KEY_BACKSPACE]:
+	if keycode in [KEY_DELETE, KEY_BACKSPACE]:
 		remap_action = ""
 		controls.remapping = false
-		controls.clear_slot(action, slot)
+		if remap_gamepad: controls.clear_gamepad(action)
+		else: controls.clear_slot(action, slot)
 		_refresh_controls()
 		_status.text = "Tecla removida de \"%s\"." % controls.label(action)
 		return
-	var result: Dictionary = controls.rebind_slot(action, slot, event)
+	if remap_gamepad and not (event is InputEventJoypadButton or event is InputEventJoypadMotion): return
+	if not remap_gamepad and not (event is InputEventKey or event is InputEventMouseButton): return
+	var result: Dictionary = controls.rebind_gamepad(action,event) if remap_gamepad else controls.rebind_slot(action, slot, event)
 	if not result.ok:
 		if not str(result.message).is_empty(): _status.text = result.message
 		return
@@ -558,6 +627,7 @@ func _restore_tab_defaults() -> void:
 			s.vsync = true
 			s.fps_limit = 1
 			s.show_fps = false
+			s.camera_view = 0
 			s.render_scale = 1.0
 			s.msaa = 1
 			s.shadow_quality = 1
@@ -570,6 +640,7 @@ func _restore_tab_defaults() -> void:
 			s.mute_unfocused = false
 		2:
 			get_node("/root/GameInput").reset_bindings()
+			get_node("/root/GameInput").set_controller_layout(0)
 	s.apply_settings()
 	_load_widgets()
 	_status.text = "Padrões restaurados nesta aba. Salve para manter."
@@ -589,11 +660,13 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps"]
+const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()
 	var result := {"bindings": get_node("/root/GameInput").export_bindings().duplicate(true)}
+	result.gamepad_bindings = get_node("/root/GameInput").export_gamepad_bindings().duplicate(true)
+	result.controller_layout = get_node("/root/GameInput").controller_layout
 	for key in SNAPSHOT_KEYS: result[key] = s.get(key)
 	return result
 
@@ -604,3 +677,5 @@ func _restore_snapshot() -> void:
 		if snapshot.has(key): s.set(key, snapshot[key])
 	s.apply_settings()
 	get_node("/root/GameInput").import_bindings(snapshot.get("bindings", {}))
+	get_node("/root/GameInput").import_gamepad_bindings(snapshot.get("gamepad_bindings", {}))
+	get_node("/root/GameInput").set_controller_layout(int(snapshot.get("controller_layout",0)))

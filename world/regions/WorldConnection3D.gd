@@ -20,12 +20,22 @@ const LOGICAL_NORTH_LIMIT_Z := -2000.0 * UNIT
 const BRIDGE_HALF_WIDTH := 7.2
 const TUNNEL_CLEAR_HALF_WIDTH := 7.15
 const TRAFFIC_MERGE_X := SEAM.x + 12.0
+const MOUNTAIN_BLEND_END_X := TUNNEL_END_X + 20.0
+const MOUNTAIN_NORTH_FADE := Vector2(-203.75, -128.75)
 
 var _materials: Dictionary = {}
 var bridge_lamps: Array[OmniLight3D] = []
 
 static func logical_region(point: Vector3) -> String:
 	return "mountain" if point.x >= SEAM.x and point.z < LOGICAL_NORTH_LIMIT_Z else "harbor"
+
+static func mountain_weight(point: Vector3) -> float:
+	# Streaming starts over the sea; the climate starts on the eastern shore.
+	return smoothstep(BRIDGE_END_X, MOUNTAIN_BLEND_END_X, point.x) * (1.0 - smoothstep(MOUNTAIN_NORTH_FADE.x, MOUNTAIN_NORTH_FADE.y, point.z))
+
+static func configure_ground_material(material: ShaderMaterial) -> void:
+	material.set_shader_parameter("mountain_entry_x", Vector2(BRIDGE_END_X, MOUNTAIN_BLEND_END_X))
+	material.set_shader_parameter("mountain_north_fade", MOUNTAIN_NORTH_FADE)
 
 static func reserves_approach_for_driving(point: Vector2) -> bool:
 	return point.x >= HARBOR_CONNECTOR_X and point.x <= SEAM.x and absf(point.y-CENTER_Z) <= 11.0
@@ -102,7 +112,7 @@ func _build_bridge() -> void:
 	# duplicate either road collider.
 	_build_inner_gap(asphalt)
 	for side in [-1.0,1.0]:
-		_beam_between("HarborConnectorRail",Vector3(HARBOR_CONNECTOR_X,.68,CENTER_Z+side*10.5),Vector3(SEAM.x,.68,CENTER_Z+side*7.15),.20,1.18,steel,true)
+		_beam_between("HarborConnectorRail",Vector3(HARBOR_CONNECTOR_X,.68,CENTER_Z+side*10.5),Vector3(SEAM.x,.68,CENTER_Z+side*6.5),.20,1.18,steel,true)
 	for source_x in [6700.0,7040.0]:
 		var x: float = float(source_x)*UNIT
 		for side in [-1.0,1.0]:
@@ -113,10 +123,18 @@ func _build_bridge() -> void:
 	# it so their coplanar faces cannot alternate in the depth buffer.
 	_box("ContinuousBridgeDeck",Vector3((SEAM.x+BRIDGE_END_X)*.5,-.40,CENTER_Z),Vector3(length,.74,BRIDGE_HALF_WIDTH*2.0),concrete,true)
 	for side in [-1.0,1.0]:
-		_box("BridgeMargin",Vector3((SEAM.x+BRIDGE_END_X)*.5,.02,CENTER_Z+side*6.45),Vector3(length,.10,1.5),edge,true)
-		_box("BridgeGuardRail",Vector3((SEAM.x+TUNNEL_START_X)*.5,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(TUNNEL_START_X-SEAM.x,1.18,.18),steel,true)
+		# Continue Harbor's sidewalk edges before settling onto the wider bridge.
+		var shoulder := PackedVector2Array([
+			Vector2(SEAM.x,CENTER_Z+side*4.5), Vector2(TRAFFIC_MERGE_X,CENTER_Z+side*5.0),
+			Vector2(TRAFFIC_MERGE_X,CENTER_Z+side*BRIDGE_HALF_WIDTH), Vector2(SEAM.x,CENTER_Z+side*6.5)])
+		_polygon_mesh("BridgeMarginJoin",shoulder,.07,edge)
+		_box("BridgeMargin",Vector3((TRAFFIC_MERGE_X+BRIDGE_END_X)*.5,.02,CENTER_Z+side*6.1),Vector3(BRIDGE_END_X-TRAFFIC_MERGE_X,.10,2.2),edge,true)
+		_beam_between("BridgeRailJoin",Vector3(SEAM.x,.68,CENTER_Z+side*6.5),Vector3(TRAFFIC_MERGE_X,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),.20,1.18,steel,true)
+		_box("BridgeGuardRail",Vector3((TRAFFIC_MERGE_X+TUNNEL_START_X)*.5,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(TUNNEL_START_X-TRAFFIC_MERGE_X,1.18,.18),steel,true)
 		for x in range(int(SEAM.x*4.0),int(TUNNEL_START_X*4.0)+1,8):
-			_box("BridgeRailPost",Vector3(float(x)/4.0,.48,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(.16,.95,.22),steel)
+			var post_x := float(x)/4.0
+			var rail_width := lerpf(6.5,BRIDGE_HALF_WIDTH,clampf((post_x-SEAM.x)/(TRAFFIC_MERGE_X-SEAM.x),0.0,1.0))
+			_box("BridgeRailPost",Vector3(post_x,.48,CENTER_Z+side*rail_width),Vector3(.16,.95,.22),steel)
 	# Authored pylon positions: local x=3500 and 4060 in MountainPass.
 	for source_x in [7800.0,8360.0]:
 		var x: float = float(source_x)*UNIT
@@ -160,7 +178,8 @@ func _build_bridge_lamps(steel: StandardMaterial3D) -> void:
 	for index in 7:
 		var x := 460.0+float(index)*19.0
 		var side := -1.0 if index%2==0 else 1.0
-		var rail_z := CENTER_Z+side*BRIDGE_HALF_WIDTH
+		var rail_width := lerpf(6.5,BRIDGE_HALF_WIDTH,clampf((x-SEAM.x)/(TRAFFIC_MERGE_X-SEAM.x),0.0,1.0))
+		var rail_z := CENTER_Z+side*rail_width
 		# The pole grows from the guard rail; its head hangs above the outer
 		# shoulder, leaving the whole driving lane clear.
 		_box("BridgeLampPole",Vector3(x,2.72,rail_z),Vector3(.12,3.0,.12),steel)

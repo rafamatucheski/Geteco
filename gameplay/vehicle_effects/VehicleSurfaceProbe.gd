@@ -1,6 +1,7 @@
 extends RefCounted
 ## Wheel-local raycasts are the sole authority for ground contact and orientation.
 
+const RESOLVER := preload("res://audio/v1_ambience/SurfaceResolver3D.gd")
 const SNOW_EDGE_Z := (-1350.0-4960.0)/16.0
 
 static func sample(vehicle: CharacterBody3D, wheel_position: Vector3) -> Dictionary:
@@ -26,11 +27,17 @@ static func _surface_kind(collider: Object, point: Vector3) -> String:
 		cursor = cursor.get_parent()
 	if "road" in labels or "sidewalk" in labels or "gangway" in labels or "deck" in labels or "port" in labels:
 		return "hard"
+	# A encosta abaixo da neve é pasto (MountainGrass3D e o som de passos já a tratam assim).
 	if "mountainterrain" in labels:
-		return "snow" if point.z < SNOW_EDGE_Z else "dirt"
+		return "snow" if point.z < SNOW_EDGE_Z else "grass"
 	if "snow" in labels: return "snow"
+	if "grass" in labels or "meadow" in labels or "lawn" in labels: return "grass"
 	if "earth" in labels or "sawmill" in labels or "land" in labels or "shore" in labels:
 		return "dirt"
+	# Jardins e o cemitério do porto compartilham corpo de colisão com o chão pavimentado;
+	# os mesmos retângulos V1 que decidem o som de passos separam gramado de calçada.
+	var geographic: String = RESOLVER._geographic_surface("harbor",point)
+	if geographic in ["grass","dirt"]: return geographic
 	return "hard"
 
 static func _weather_wet(vehicle: Node) -> bool:

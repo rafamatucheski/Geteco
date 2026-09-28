@@ -22,6 +22,7 @@ var direct_start_requested := false
 var pending_import: Dictionary = {}
 var selecting_import := false
 var import_dialog: FileDialog
+var sky: Node
 
 func _ready() -> void:
 	get_tree().paused = false
@@ -98,6 +99,9 @@ func _ready() -> void:
 		sub_title.text = "ABRINDO O JOGO..."
 		_start_direct.call_deferred()
 	else:
+		sky = preload("res://ui/SkyMenu.gd").new()
+		add_child(sky)
+		sky.install(self)
 		(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
 func _main_enabled(enabled: bool) -> void:
@@ -243,6 +247,22 @@ func _start(id: String, new_game: bool) -> void:
 	starting = true
 	_main_enabled(false)
 	%LoadPanel.hide()
+	if sky != null:
+		if not new_game:
+			sky.begin_continue()
+			# Present the response to the click before save checks or replacement.
+			await get_tree().process_frame
+			await get_tree().process_frame
+			var path: String = get_node("/root/V2Launch").selected_path
+			if sky.preview_path != path or sky.preview_fingerprint != sky.fingerprint(path):
+				await sky.discard_preview()
+				sky.boot_path(path)
+			shade.hide()
+			AUDIO.play_start(self)
+			if await sky.continue_game(): return
+		# New game retains the authored opening. A failed sky load uses the
+		# existing loading/error flow, with no stranded preview world.
+		await sky.discard_preview()
 	shade.show()
 	AUDIO.play_start(self)
 	await _show_loading(id, new_game)
@@ -250,6 +270,7 @@ func _start(id: String, new_game: bool) -> void:
 	if error != OK:
 		var stale = CURTAIN.existing(get_tree())
 		if stale != null: stale.queue_free()
+		if sky != null: sky.cancel_continue()
 		starting = false
 		_show_slots(new_game)
 		%LabelLoadStatus.text = "Não foi possível abrir o jogo (%d)." % error

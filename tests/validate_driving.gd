@@ -44,9 +44,15 @@ func run() -> void:
 	await frames(75)
 	check(car.position.distance_to(origin) > 2,"Throttle must move vehicle")
 	check(car.speed > 3,"Vehicle must accelerate")
-	check(not driving.leave(),"Cannot exit a moving vehicle")
+	check(driving.leave(),"Can bail out of a moving vehicle")
 	accelerator.pressed = false
 	Input.parse_input_event(accelerator)
+	await wait_body_transition()
+	check(not driving.occupied and not world.player.input_locked,"Moving exit recovers on foot")
+	world.player.teleport(car.driver_door_anchor(-1))
+	await frames(2)
+	check(driving.interact(),"Can re-enter after recovering from moving exit")
+	await wait_body_transition()
 	var brake := InputEventKey.new()
 	brake.physical_keycode = KEY_SPACE
 	brake.pressed = true

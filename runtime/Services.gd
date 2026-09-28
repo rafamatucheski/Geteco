@@ -24,10 +24,13 @@ var _phase_elapsed := 0.0
 var _auto_saved := {}
 var _auto_committed := false
 var _presentation: Node3D
+var _police_notice_clock := 0.0
 
 func configure(owner_session) -> void:
 	session = owner_session
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	if is_instance_valid(session.world.gameplay):
+		session.world.gameplay.weapon_fired.connect(_on_precinct_weapon_fired)
 	if session.world is Node:
 		_presentation = preload("res://runtime/NorthgateServicePresentation.gd").new()
 		_presentation.position = AUTO_ORIGIN
@@ -35,6 +38,11 @@ func configure(owner_session) -> void:
 
 func _physics_process(delta: float) -> void:
 	if session == null or not session.ready_for_play or not is_finite(delta) or delta<=0: return
+	_police_notice_clock -= delta
+	if _police_notice_clock <= 0.0:
+		_police_notice_clock = .25
+		if session.state.place_id == "harbor_police" and session.world.gameplay.equipped() not in ["", "fists"]:
+			_report_precinct_threat(1)
 	if hospital_cooldown > 0: hospital_cooldown = maxf(0,hospital_cooldown-delta)
 	_update_cross()
 	var gameplay = session.world.gameplay
@@ -58,6 +66,19 @@ func _physics_process(delta: float) -> void:
 		session.save_game()
 	if not healing: _heal_accum = 0
 	_tick_auto(delta)
+
+func _on_precinct_weapon_fired(_weapon_id: String, _origin: Vector3) -> void:
+	_report_precinct_threat(2)
+
+func _report_precinct_threat(minimum_stars: int) -> void:
+	if session == null or not session.ready_for_play or session.state.place_id != "harbor_police": return
+	var gameplay = session.world.gameplay
+	if gameplay.health <= 0 or not session.world.player.visible: return
+	# Use the real entrance for responders; room coordinates belong to a separate space.
+	var point: Vector3 = session.return_point
+	var missing := maxi(0, int(gameplay.STAR_THRESHOLDS[minimum_stars]) - int(gameplay.crime_points))
+	if missing > 0: gameplay.register_crime(missing,point)
+	gameplay.report_civilian_call(point,point)
 
 func _near(local: Vector3, radius: float) -> bool:
 	return is_instance_valid(session.room) and session.world.player.global_position.distance_to(session.room.to_global(local))<=radius

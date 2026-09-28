@@ -2,6 +2,7 @@ extends Node
 ## Root forwards input after modal routing. No autonomous input polling.
 const AUDIO := preload("res://gameplay/VehicleEquipmentAudio.gd")
 const PROFILES := preload("res://gameplay/VehicleLightProfiles.gd")
+const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 ## Fachos reais (SpotLight) de NPC ao mesmo tempo, só nos carros mais próximos
 ## do jogador: iluminam pedestres e lataria em volta. O que se vê de cima é a
 ## mancha no chão (`ground_pool`), que custa quase nada. Medido em 22/09/2026
@@ -28,6 +29,11 @@ var input_enabled := true
 var lamps: Array[Dictionary] = []
 var lens_materials: Array[Dictionary] = []
 var tail_materials: Array[StandardMaterial3D] = []
+var _tail_colors: Array[Color] = []
+var _previous_speed := 0.0
+var _decelerating := false
+var _brake_hold := 0.0
+var _tail_state := -1
 ## Facho único de NPC, centrado entre os faróis (metade das luzes por carro).
 var npc_beam: SpotLight3D
 var profile: Dictionary = {}
@@ -47,6 +53,14 @@ var alarm_audio: AudioStreamPlayer3D
 ## Segundos restantes do alarme antifurto (V1 `TrafficVehicle.start_theft_alarm`).
 var alarm_remaining := 0.0
 var _phase := -2
+## Lanternas de teto da cabine (gabarito âmbar) dos caminhões. Só emissivas: acendem
+## junto com o farol e não custam luz dinâmica.
+var cab_markers: Array[MeshInstance3D] = []
+var _markers_lit := -1
+static var _marker_tops: Dictionary = {}
+static var _marker_mesh: BoxMesh
+static var _marker_on: StandardMaterial3D
+static var _marker_off: StandardMaterial3D
 
 func configure(vehicle: CharacterBody3D, scene: Node) -> void:
 	car = vehicle
@@ -59,40 +73,9 @@ func _ready() -> void:
 	var bar_mounts: Array[Vector3] = []
 	var materials := {}
 	for part in car.visual.find_children("*", "MeshInstance3D", true, false):
-		var key := ""
-		for metadata in part.get_meta_list():
-			if str(metadata).ends_with("material_key"): key = str(part.get_meta(metadata))
-		var original := part.material_override as StandardMaterial3D
-		if original == null: continue
-		if key == "": key = original.resource_name
-		# Older procedural exports retain their exact lens material, but no key tag.
-		if key == "" and is_equal_approx(original.roughness, .1):
-			if original.albedo_color.is_equal_approx(Color("f5f6fa")) and original.emission_enabled: key = "headlight"
-			# A SUV da PM usa as mesmas lentes do cruiser; sem ela aqui a viatura
-			# roubada do pátio não tinha giroflex nem sirene.
-			var police: bool = car.archetype in ["police_cruiser", "police_suv", "police_transport"]
-			if (police or car.archetype == "rescue_pumper") and original.emission_enabled:
-				var left := Color("e83c42") if police else Color("e74c3c")
-				var right := Color("3689ef") if police else Color("f39c12")
-				if original.albedo_color.is_equal_approx(left): key = "bar_left"
-				if original.albedo_color.is_equal_approx(right): key = "bar_right"
-		if key in ["bar_left", "bar_right"] and car.archetype not in ["police_cruiser", "police_suv", "police_transport", "medic_box", "rescue_pumper"]: continue
-		var local := car.to_local(part.global_position)
-		if key not in ["bar_left", "bar_right"]: key = _lens_role(key, original, local)
-		if key == "": continue
-		# O cupê original já anima a própria lanterna de freio (Vehicle.tail_material).
-		if key == "tail" and car.tail_material != null: continue
-		# Uma cópia por lente original: modelos com cores de lente diferentes mantêm a sua.
-		var side_id := -1 if local.x < 0 else (1 if local.x > 0 else 0)
-		var material_id := key + ":" + str(original.get_instance_id()) + (":" + str(side_id) if key == "headlight" else "")
-		if not materials.has(material_id):
-			materials[material_id] = original.duplicate()
-			if key == "headlight": lens_materials.append({"material": materials[material_id], "side": side_id})
-			elif key == "tail": tail_materials.append(materials[material_id])
-			else: beacons.append({"material": materials[material_id], "color": original.albedo_color, "side": 0 if key == "bar_left" else 1})
-		part.material_override = materials[material_id]
-		if key == "headlight": mounts.append(local)
-		elif key != "tail": bar_mounts.append(local)
+		if part.mesh == null or part.has_meta("wheel_center"): continue
+		for surface in (1 if part.material_override != null else part.mesh.get_surface_count()):
+			_bind_lens(part, surface, materials, mounts, bar_mounts)
 	# Some original procedural meshes have no material tags: derive mount from hull.
 	if mounts.is_empty():
 		mounts.assign([Vector3(-car.half_width * .7, .8, -car.half_length), Vector3(car.half_width * .7, .8, -car.half_length)])
@@ -110,10 +93,10 @@ func _ready() -> void:
 		lamps.append({"lamp": _projector(center / count, float(profile.energy), float(profile.angle)), "side": side})
 	var front := Vector3.ZERO
 	for mount in mounts: front += mount
-	# Facho central do NPC: uma luz com a soma aproximada das duas.
 	npc_beam = _projector(front / mounts.size(), float(profile.energy) * (1.0 if profile.single else 1.6), float(profile.angle) + (0.0 if profile.single else 8.0))
 	for item in lens_materials: item.material.emission = profile.color
 	ground_pool = _ground_pool(front / mounts.size())
+	_build_cab_markers()
 	if not bar_mounts.is_empty():
 		var center := Vector3.ZERO
 		for mount in bar_mounts: center += mount
@@ -127,10 +110,136 @@ func _ready() -> void:
 	horn_audio = _audio(43.75, -7)
 	siren_audio = _audio(56.25, -10)
 	siren_audio.unit_size = 5
-	# V1 ouvia o alarme a 1000 px (62,5 m) e 2 dB acima da sirene.
 	alarm_audio = _audio(62.5, 2)
 	alarm_audio.unit_size = 5
 	_refresh()
+
+## Cinco lanternas na borda dianteira do teto da cabine, como caminhão de verdade.
+## O topo da cabine sai dos vértices da própria malha (a frota tem formatos muito
+## diferentes: cara-chata, bicudo, guincho) e fica em cache por modelo.
+func _build_cab_markers() -> void:
+	if not car.has_method("boarding_class") or car.boarding_class() != "truck": return
+	var top: Dictionary = _marker_tops.get(car.archetype, {})
+	if top.is_empty():
+		top = _cab_top()
+		_marker_tops[car.archetype] = top
+	if top.is_empty(): return
+	if _marker_mesh == null:
+		_marker_mesh = BoxMesh.new()
+		_marker_mesh.size = Vector3(.13, .06, .07)
+		_marker_off = StandardMaterial3D.new()
+		_marker_off.albedo_color = Color(.55, .30, .06)
+		_marker_off.roughness = .35
+		_marker_on = StandardMaterial3D.new()
+		_marker_on.albedo_color = Color(1.0, .62, .18)
+		_marker_on.emission_enabled = true
+		_marker_on.emission = Color(1.0, .55, .12)
+		_marker_on.emission_energy_multiplier = 3.2
+	var half: float = top.half
+	for index in 5:
+		var marker := MeshInstance3D.new()
+		marker.name = "CabMarker%d" % index
+		marker.mesh = _marker_mesh
+		marker.material_override = _marker_off
+		marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		marker.position = Vector3(lerpf(-half, half, index / 4.0), top.y + .03, top.z + .05)
+		car.visual.add_child(marker)
+		cab_markers.append(marker)
+
+func _cab_top() -> Dictionary:
+	# Resultado idêntico ao laço antigo (todos os vértices, todas as peças), mas só
+	# desce a vértices nas poucas peças que a caixa delimitadora não descarta. O laço
+	# completo custava 70-150 ms na 1ª viatura de bombeiros da sessão (medido em
+	# tests/measure/probe_first_emergency.gd --action=vehicle). A caixa da peça
+	# transformada é um limite conservador: nenhum vértice sai dela.
+	var to_car := car.global_transform.affine_inverse()
+	var parts: Array[Dictionary] = []
+	for part: MeshInstance3D in car.visual.find_children("*", "MeshInstance3D", true, false):
+		if part.mesh == null or part.has_meta("wheel_center"): continue
+		var into_car := to_car * part.global_transform
+		parts.append({"part": part, "xf": into_car, "box": into_car * part.mesh.get_aabb(), "points": null})
+	if parts.is_empty(): return {}
+	# Frente exata: só peças cuja caixa ainda pode bater o menor z já visto.
+	parts.sort_custom(func(a, b): return a.box.position.z < b.box.position.z)
+	var front := INF
+	for entry in parts:
+		if entry.box.position.z >= front: break
+		for point in _car_points(entry): front = minf(front, point.z)
+	if not is_finite(front): return {}
+	# Cabine: faixa de 2,2 m a partir do para-choque; carroceria alta atrás fica de fora.
+	var cab_back := front + 2.2
+	var cab: Array[Dictionary] = []
+	for entry in parts:
+		if entry.box.position.z < cab_back: cab.append(entry)
+	# Teto exato: peças por altura decrescente, até nenhuma poder mais alcançar o teto.
+	cab.sort_custom(func(a, b): return a.box.end.y > b.box.end.y)
+	var roof := -INF
+	var scanned: Array[Dictionary] = []
+	for entry in cab:
+		if entry.box.end.y <= roof - .10: break
+		scanned.append(entry)
+		for point in _car_points(entry):
+			if point.z < cab_back: roof = maxf(roof, point.y)
+	var edge := INF
+	var width := 0.0
+	for entry in scanned:
+		for point in _car_points(entry):
+			if point.z < cab_back and point.y > roof - .10:
+				edge = minf(edge, point.z)
+				width = maxf(width, absf(point.x))
+	if not is_finite(edge) or width < .3: return {}
+	return {"y": roof, "z": edge, "half": minf(width - .12, car.half_width * .8)}
+
+## Vértices da peça no espaço do carro (transformação nativa do array inteiro), em cache.
+func _car_points(entry: Dictionary) -> PackedVector3Array:
+	if entry.points != null: return entry.points
+	var result := PackedVector3Array()
+	var mesh: Mesh = (entry.part as MeshInstance3D).mesh
+	for surface in mesh.get_surface_count():
+		var arrays := mesh.surface_get_arrays(surface)
+		if arrays.is_empty() or arrays[Mesh.ARRAY_VERTEX] == null: continue
+		result.append_array((entry.xf as Transform3D) * (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array))
+	entry.points = result
+	return result
+
+func _bind_lens(part: MeshInstance3D, surface: int, materials: Dictionary, mounts: Array[Vector3], bar_mounts: Array[Vector3]) -> void:
+	var key := SURFACES.key(part, surface)
+	var original := part.get_active_material(surface) as StandardMaterial3D
+	if original == null: return
+	# Older procedural exports retain their exact lens material, but no key tag.
+	if key == "" and is_equal_approx(original.roughness, .1):
+		if original.albedo_color.is_equal_approx(Color("f5f6fa")) and original.emission_enabled: key = "headlight"
+		# A SUV da PM usa as mesmas lentes do cruiser; sem ela aqui a viatura
+		# roubada do pátio não tinha giroflex nem sirene.
+		var police: bool = car.archetype in ["police_cruiser", "police_suv", "police_transport", "bike_police"]
+		if (police or car.archetype == "rescue_pumper") and original.emission_enabled:
+			var left := Color("e83c42") if police else Color("e74c3c")
+			var right := Color("3689ef") if police else Color("f39c12")
+			if original.albedo_color.is_equal_approx(left): key = "bar_left"
+			if original.albedo_color.is_equal_approx(right): key = "bar_right"
+	if key in ["bar_left", "bar_right"] and car.archetype not in ["police_cruiser", "police_suv", "police_transport", "bike_police", "medic_box", "rescue_pumper"]: return
+	if key not in ["bar_left","bar_right","rear_lens","brake_light","brake"] and not "headlight" in key and not "tail" in key:
+		if key != "" or not original.emission_enabled: return
+	# Flattened ArrayMeshes keep vertices away from their node origin.
+	var local: Vector3 = car.to_local(part.to_global(SURFACES.center(part, surface)))
+	if key not in ["bar_left", "bar_right"]: key = _lens_role(key, original, local)
+	if key == "": return
+	# Uma cópia por lente original: modelos com cores de lente diferentes mantêm a sua.
+	var side_id := -1 if local.x < 0 else (1 if local.x > 0 else 0)
+	var material_id := key + ":" + str(original.get_instance_id()) + (":" + str(side_id) if key == "headlight" else "")
+	if not materials.has(material_id):
+		materials[material_id] = original.duplicate()
+		if key == "headlight": lens_materials.append({"material": materials[material_id], "side": side_id})
+		elif key == "tail":
+			tail_materials.append(materials[material_id])
+			_tail_colors.append(original.albedo_color)
+			materials[material_id].emission = Color(1.0, .025, .012)
+		else: beacons.append({"material": materials[material_id], "color": original.albedo_color, "side": 0 if key == "bar_left" else 1})
+	if part.material_override != null: part.material_override = materials[material_id]
+	else: part.set_surface_override_material(surface, materials[material_id])
+	if key == "tail" and car.tail_material == original: car.tail_material = materials[material_id]
+	if key == "headlight": mounts.append(local)
+	elif key != "tail": bar_mounts.append(local)
 
 func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	var light := SpotLight3D.new()
@@ -200,8 +309,8 @@ static func _cone_texture() -> ImageTexture:
 ## frente é farol, vermelho atrás é lanterna. A posição exclui o luminoso do
 ## táxi e o giroflex, que ficam no teto, perto do centro.
 func _lens_role(key: String, material: StandardMaterial3D, local: Vector3) -> String:
-	if "headlight" in key: return "headlight"
-	if "tail" in key: return "tail"
+	if "headlight" in key: return "headlight" if local.z < 0 else ""
+	if "tail" in key or key in ["rear_lens", "brake_light", "brake"]: return "tail" if local.z > 0 else ""
 	if key != "" or not material.emission_enabled: return ""
 	var color := material.albedo_color
 	if local.z < -car.half_length * .35 and color.s < .35 and color.v > .8: return "headlight"
@@ -295,6 +404,11 @@ func stop_alarm() -> void:
 	changed.emit()
 
 func _process(delta: float) -> void:
+	if is_instance_valid(car):
+		_brake_hold = maxf(0.0,_brake_hold-delta)
+		if car.traffic and car.speed > .3 and (_previous_speed-car.speed) / maxf(delta,.001) > 1.0: _brake_hold = .15
+		_decelerating = _brake_hold > 0
+		_previous_speed = car.speed
 	if alarm_remaining > 0:
 		alarm_remaining = maxf(0, alarm_remaining - delta)
 		if alarm_remaining <= 0: changed.emit()
@@ -321,12 +435,21 @@ func _refresh() -> void:
 		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
 		item.material.emission_enabled = lit and not broken
 		item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0
+	var markers_lit := 1 if lit and car.health > 0 else 0
+	if markers_lit != _markers_lit:
+		_markers_lit = markers_lit
+		for marker in cab_markers: marker.material_override = _marker_on if markers_lit else _marker_off
 	# Lanterna traseira: acesa fraca à noite, forte na frenagem, apagada de dia.
 	# Carro estacionado sem motorista não "freia", mesmo com brake_input preso.
-	var braking: bool = car.health > 0 and (car.controlled or car.traffic) and (car.brake_input or car.blocked or (car.throttle_input < -.05 and car.speed > .5))
-	for material in tail_materials:
-		material.emission_enabled = lit or braking
-		material.emission_energy_multiplier = 2.5 if braking else (.9 if lit else 0.0)
+	var braking: bool = car.health > 0 and (car.controlled or car.traffic) and (car.brake_input or car.blocked or _decelerating or (car.throttle_input < -.05 and car.speed > .5))
+	var tail_state := 2 if braking else (1 if lit else 0)
+	if tail_state != _tail_state:
+		_tail_state = tail_state
+		for index in tail_materials.size():
+			var material := tail_materials[index]
+			material.emission_enabled = lit or braking
+			material.emission_energy_multiplier = 2.5 if braking else (.9 if lit else 0.0)
+			material.albedo_color = Color(1.0,.055,.025) if braking else _tail_colors[index]
 	var sounding := siren_on and occupied and not beacons.is_empty()
 	if is_instance_valid(siren_audio):
 		if sounding and not siren_audio.playing:
@@ -389,6 +512,8 @@ func _exit_tree() -> void:
 	for item in lamps:
 		if is_instance_valid(item.lamp): item.lamp.queue_free()
 	if is_instance_valid(halo): halo.queue_free()
+	for marker in cab_markers:
+		if is_instance_valid(marker): marker.queue_free()
 	if is_instance_valid(npc_beam): npc_beam.queue_free()
 	if is_instance_valid(ground_pool): ground_pool.queue_free()
 	_npc_beams.erase(get_instance_id())

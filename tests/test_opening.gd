@@ -13,6 +13,7 @@ func run() -> void:
 		presentation.completed.connect(func(was_skipped: bool): completions.append(was_skipped))
 		root.add_child(presentation)
 		check(paused and not presentation.film.show_studio_intro, "film pauses native world without extra studio card")
+		check(presentation.film.finish_before_travel,"native ferry opening ends before legacy bus journey")
 		for i in 3: await process_frame
 		check(presentation.film._textures.size() == 28, "complete imported image montage")
 		check(presentation.film._procedural_audio.players.size() == 3, "original voice music foley stems")
@@ -21,8 +22,9 @@ func run() -> void:
 			check(presentation.film._paused and presentation.film._skip_dialog.visible, "skip asks original confirmation")
 			presentation.film.skip()
 		else:
-			presentation.film.seek(timeline.TOTAL_DURATION_SECONDS - .01)
+			presentation.film.seek(55.0+timeline.E-.01)
 			presentation.film._process(.1)
+			check(presentation.film._shot_index==21,"ferry transition never displays legacy bus frame")
 		presentation.film._process(1)
 		check(not paused, "finish restores prior tree state")
 		await process_frame

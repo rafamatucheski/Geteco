@@ -1,6 +1,6 @@
 # Apresentação urbana: estações e rodoviária
 
-Implementado, **ainda não validado**. Nesta rodada não foram executados Godot, testes, capturas ou benchmarks, conforme solicitação. Não representa migração do serviço de transporte público.
+Registro histórico da primeira integração da arquitetura. A operação posterior da rodoviária está em [terminal-restoration.md](terminal-restoration.md); a linha 510, as avenidas duplicadas, os passageiros e as correções físicas dos tubos estão em [biarticulated-transit.md](biarticulated-transit.md). As limitações abaixo descrevem o lote original.
 
 `runtime/UrbanTransitPresentation.gd` recebe `configure(controller)` antes ou depois de entrar na árvore. `_ready()` e `refresh()` toleram a inicialização parcial. `on_region_changed()` remove a apresentação anterior e carrega a região atual. A ProductionWorld integra esses pontos. Dentro de ambientes, o foco é `session.return_point`, preservando os exteriores próximos.
 

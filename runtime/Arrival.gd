@@ -3,7 +3,7 @@ extends Node
 ## the rest of the nine-beat campaign stays independent from the Harbor arc.
 const DIALOGUE := preload("res://runtime/ArrivalDialogue.gd")
 const PARK := Vector3(-750, 0, 930) / 16.0
-const ARRIVAL := Vector3(1700, 0, 1130) / 16.0
+const ARRIVAL := Vector3(233,.18,194)
 const FLAGS := ["harbor_arrival_seen", "harbor_police_briefed", "harbor_arrival_call_complete", "harbor_city_tour_started", "harbor_city_tour_complete", "harbor_maciota_met"]
 const PHASES := ["new", "opening", "disembark", "police_visit", "police_exit", "arrival_wait", "phone", "yard_meeting", "tour_board", "tour_boarding", "city_tour", "meet_maciota", "complete"]
 signal changed
@@ -124,7 +124,7 @@ func _lock(value: bool) -> void:
 	if session != null: session.world.player.input_locked = value or session.modal or session.world.gameplay.health <= 0
 
 func _begin_disembark() -> void:
-	_set_phase("disembark", "Desça na rodoviária.", ARRIVAL)
+	_set_phase("disembark", "Desembarque no cais.", ARRIVAL)
 	_lock(true)
 	var player: CharacterBody3D = session.world.player
 	player.set_physics_process(false)
@@ -133,16 +133,10 @@ func _begin_disembark() -> void:
 	session.controller.region.set_focus(ARRIVAL)
 	for i in 3: await get_tree().physics_frame
 	if not active: return
-	if not is_instance_valid(bus):
-		bus = preload("res://scripts/Vehicle.gd").new()
-		bus.archetype = "route_city"
-		bus.position = Vector3(1700, 1, 1250) / 16.0
-		bus.rotation.y = -PI / 2
-		session.world.add_child(bus)
-		bus.remove_from_group("drivable")
-		bus.external_input = true
-		bus.brake_input = true
-	var door: Vector3 = bus.to_global(Vector3(-(bus.half_width + .55), .05, -2.31))
+	var terminal = session.urban_operations.passenger_terminal
+	terminal.prepare_arrival()
+	await get_tree().physics_frame
+	var door: Vector3 = terminal.ARRIVAL
 	if not session.position_clear(door):
 		_set_phase("disembark", "Aguarde um espaço livre para descer.", ARRIVAL)
 		player.show()
@@ -152,9 +146,10 @@ func _begin_disembark() -> void:
 	player.teleport(door)
 	player.show()
 	player.set_physics_process(true)
-	if not await _walk(player, Vector3(door.x, door.y, ARRIVAL.z)) or not await _walk(player, ARRIVAL + Vector3.UP * .06):
+	if not await _walk(player, ARRIVAL + Vector3.UP * .06, true):
 		_lock(false)
 		return
+	terminal.finish_arrival()
 	_milestone("harbor_arrival_seen")
 	_lock(false)
 	_police_visit()
@@ -269,11 +264,11 @@ func _board() -> void:
 	_milestone("harbor_city_tour_started")
 	_set_phase("city_tour", "Conheça a cidade com Maciota.", session.world.maciota_place.entry_position)
 
-func _walk(actor: CharacterBody3D, destination: Vector3) -> bool:
+func _walk(actor: CharacterBody3D, destination: Vector3, direct := false) -> bool:
 	var generation := _generation
 	var was_physics := actor.is_physics_processing()
 	actor.set_physics_process(false)
-	var path: PackedVector3Array = session.world.gameplay.find_path(actor.global_position, destination)
+	var path: PackedVector3Array = PackedVector3Array() if direct else session.world.gameplay.find_path(actor.global_position, destination)
 	if path.is_empty() or path[-1].distance_to(destination) > .05: path.append(destination)
 	var elapsed := 0.0
 	var stalled := 0.0

@@ -2,6 +2,10 @@ extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.g
 
 var variant_index := 0
 func _ready() -> void:
+	var parking := preload("res://world/places/ResidenceParking.gd").new()
+	parking.name = "ResidentialGarage"
+	parking.position = parking.placement(variant_index)
+	add_child(parking)
 	var variant: int = variant_index
 	var plaster: String = ["d3c4a5","b6c8c6","d8d9cd"][variant]
 	var timber: String = ["684a36","455d68","423d36"][variant]

@@ -7,7 +7,7 @@ static func is_private_road(road: Dictionary) -> bool:
 	var id := str(road.get("id", ""))
 	# Workshop/service access and Neco's dead-end yard are player destinations,
 	# not through routes for the ambient population.
-	return id.begins_with("south_port_") or id in ["salvage_access", "westgate_service_lane"]
+	return id.begins_with("south_port_") or id in ["salvage_access", "westgate_service_lane", "vertice_rural_access"]
 
 static func ambient_roads(roads: Array) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

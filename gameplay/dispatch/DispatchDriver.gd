@@ -251,7 +251,11 @@ func _track_stall(delta: float, desired: float, alpha: float) -> void:
 	# Obstáculo à frente (trânsito que anda) espera; obstáculo que não sai é tratado como travamento.
 	# Esperando a vez de ultrapassar um carro que cedeu: não é travamento, não recua nem replaneja.
 	var overtaking_wait: bool = overtake != null and (overtake.is_waiting() or overtake.is_active())
-	if blocked_ahead and remaining > 2.0 and absf(vehicle.speed) < 0.6 and not overtaking_wait:
+	# Já colado na fila: esperar o plano de ultrapassagem não cria a rampa que falta.
+	# Permite a recuperação normal, com sensor traseiro e tentativas limitadas.
+	var needs_room: bool = overtake != null and overtake.is_waiting() and overtake.last_reason == "no_room_to_swerve" and vehicle.archetype == "rescue_pumper"
+	if needs_room: overtaking_wait = false
+	if (blocked_ahead or needs_room) and remaining > 2.0 and absf(vehicle.speed) < 0.6 and not overtaking_wait:
 		blocked_wait += delta
 	else:
 		blocked_wait = maxf(0.0, blocked_wait - delta)
@@ -287,6 +291,8 @@ func _recover(alpha: float) -> void:
 	if _rear_clear():
 		reversing = true
 		_reverse_clock = REVERSE_SECONDS
+		if vehicle.archetype == "rescue_pumper" and overtake != null and overtake.is_waiting() and overtake.last_reason == "no_room_to_swerve":
+			_reverse_clock = 3.0
 		_reverse_steer = -signf(alpha) * 0.8 if absf(alpha) > 0.05 else 0.0
 
 func _reverse(delta: float) -> void:

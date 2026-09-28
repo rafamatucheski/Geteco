@@ -5,8 +5,11 @@ const Outfits := preload("res://data/catalogs/OutfitCatalog.gd")
 const Collectibles := preload("res://data/catalogs/CollectibleCatalog.gd")
 const Achievements := preload("res://data/catalogs/AchievementCatalog.gd")
 const Services := preload("res://data/catalogs/ServiceCatalog.gd")
+const GRID := preload("res://systems/inventory/GridInventory.gd")
+const INVENTORY_MIGRATION := preload("res://systems/inventory/InventoryMigration.gd")
 const LIMIT := 100000000
 const MAX_AMMO := 99999
+const SUPPLIES := {"lockpick":{"price":75}}
 const PERSONAL_SLOTS := {
 	"curta":["pistol","magnum","smg"],
 	"longa":["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
@@ -17,34 +20,42 @@ var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, 
 var balance: int:
 	get: return int(_data.balance)
 var equipped_weapon: String:
-	get: return _data.equipped_weapon
+	get: return _cheat_equipped if cheat_all_weapons and not _cheat_equipped.is_empty() else _data.equipped_weapon
 var outfit: String:
 	get: return _data.outfit
 var inventory: Dictionary:
-	get: return _data.inventory.duplicate(true)
+	get:
+		if not grid_enabled(): return _data.inventory.duplicate(true)
+		var carried := {}
+		for id in _data.inventory:
+			var amount := GRID.count(_data.grid_inventory,str(id))
+			if amount>0: carried[id]=amount
+		return carried
 
 func snapshot() -> Dictionary:
 	return _data.duplicate(true)
 
 func storefront(category: String) -> Array:
 	var result := []
-	var catalog: Dictionary = Weapons.WEAPONS if category == "weapon" else (Outfits.OUTFITS if category == "outfit" else {})
+	var catalog: Dictionary = Weapons.WEAPONS if category == "weapon" else (Outfits.OUTFITS if category == "outfit" else SUPPLIES if category == "supply" else {})
 	for id in catalog:
 		var row: Dictionary = catalog[id].duplicate(true)
 		row.id = id
-		row.owned = owns_weapon(id) if category == "weapon" else owns_outfit(id)
-		row.unlocked = is_weapon_unlocked(id) if category == "weapon" else (Outfits.ORDER.has(id) or owns_outfit(id))
+		row.owned = _data.weapons.has(id) if category == "weapon" else owns_outfit(id)
+		row.unlocked = is_weapon_unlocked(id) if category == "weapon" else (category == "supply" or Outfits.ORDER.has(id) or owns_outfit(id))
 		result.append(row)
 	return result
 
 func owns_weapon(id: String) -> bool:
-	return _data.weapons.has(id)
+	return _data.weapons.has(id) or _cheat_weapons.has(id)
 
 func grant_weapon(id: String) -> bool:
-	if not Weapons.WEAPONS.has(id) or owns_weapon(id): return false
+	if not Weapons.WEAPONS.has(id) or _data.weapons.has(id): return false
+	var before := _data.duplicate(true)
 	var spec: Dictionary = Weapons.WEAPONS[id]
 	_data.weapons[id] = {"magazine": int(spec.magazine_size), "reserve": int(spec.starting_reserve)}
 	_assign_personal_slot(id)
+	if grid_enabled() and not _grid_register_weapon(id): _data=before; return false
 	var discovery := str(spec.get("discovery_pickup", ""))
 	if discovery != "": discover(discovery)
 	return true
@@ -74,7 +85,7 @@ func purchase_body_armor(current_armor: Variant, maximum_armor: Variant, transac
 	return {"ok":true,"reason":"purchased","amount":price,"armor":int(maximum_armor)}
 
 func buy_ammo(id: String, rounds: int, transaction_id: String) -> bool:
-	if not owns_weapon(id) or rounds <= 0 or rounds > MAX_AMMO or not _valid_id(transaction_id) or transaction_id.length() > 110: return false
+	if not _data.weapons.has(id) or rounds <= 0 or rounds > MAX_AMMO or not _valid_id(transaction_id) or transaction_id.length() > 110: return false
 	var key := "ammo:" + transaction_id
 	if _data.transactions.has(key):
 		return _data.transactions[key].item == id and _data.transactions[key].get("rounds", 0) == rounds
@@ -82,30 +93,44 @@ func buy_ammo(id: String, rounds: int, transaction_id: String) -> bool:
 	# HarborAmmunationInterior._ammo_price; rounds vary with selected package.
 	var price := maxi(40, rounds * (60 if id in ["grenade", "rpg"] else 2))
 	if balance < price: return false
+	if grid_enabled() and not _grid_add_ammo(id,rounds): return false
 	_data.balance -= price
-	_data.weapons[id].reserve += rounds
+	if not grid_enabled(): _data.weapons[id].reserve += rounds
 	_data.transactions[key] = {"kind": "ammo", "item": id, "amount": price, "rounds": rounds}
 	return true
 
 func get_ammo(id: String) -> Dictionary:
-	return _data.weapons.get(id, {"magazine": 0, "reserve": 0}).duplicate(true)
+	if _cheat_weapons.has(id): return _cheat_weapons[id].duplicate(true)
+	var result: Dictionary = _data.weapons.get(id, {"magazine": 0, "reserve": 0}).duplicate(true)
+	if grid_enabled() and int(result.reserve)>=0:
+		result.reserve += GRID.count(_data.grid_inventory,"ammo:"+id,not cheat_all_weapons)
+	return result
 
 func equip_weapon(id: String) -> bool:
 	if not can_carry_weapon(id): return false
+	if cheat_all_weapons:
+		_cheat_equipped=id
+		return true
 	_data.equipped_weapon = id
 	return true
 
 func consume_ammo(id: String, amount: int = 1) -> bool:
 	if not can_carry_weapon(id) or amount <= 0: return false
+	if _cheat_weapons.has(id):
+		if int(_cheat_weapons[id].magazine)<0: return true
+		if int(_cheat_weapons[id].magazine)<amount: return false
+		_cheat_weapons[id].magazine-=amount
+		return true
 	if int(_data.weapons[id].magazine) == -1: return true
 	if int(_data.weapons[id].magazine) < amount: return false
 	_data.weapons[id].magazine -= amount
 	return true
 
 func add_ammo(id: String, amount: int) -> bool:
-	if not owns_weapon(id) or amount <= 0 or amount > MAX_AMMO: return false
+	if not _data.weapons.has(id) or amount <= 0 or amount > MAX_AMMO: return false
 	if int(_data.weapons[id].reserve) == -1: return false
 	if int(_data.weapons[id].reserve) > MAX_AMMO - amount: return false
+	if grid_enabled(): return _grid_add_ammo(id,amount)
 	_data.weapons[id].reserve += amount
 	return true
 
@@ -114,6 +139,14 @@ func reload_weapon(id: String, capacity: int = -1) -> bool:
 	if capacity == -1: capacity = int(Weapons.WEAPONS[id].magazine_size)
 	if capacity > _max_capacity(id): return false
 	if capacity < 0: return false
+	if _cheat_weapons.has(id):
+		if int(_cheat_weapons[id].magazine)>=capacity: return false
+		_cheat_weapons[id].magazine=capacity
+		return true
+	if grid_enabled():
+		capacity=mini(capacity,99)
+		var needed := mini(99-int(_data.weapons[id].magazine)-int(_data.weapons[id].reserve),GRID.count(_data.grid_inventory,"ammo:"+id))
+		if needed>0 and GRID.remove_carried(_data.grid_inventory,"ammo:"+id,needed): _data.weapons[id].reserve += needed
 	var rounds := mini(capacity - int(_data.weapons[id].magazine), int(_data.weapons[id].reserve))
 	if rounds <= 0: return false
 	_data.weapons[id].magazine += rounds
@@ -188,18 +221,26 @@ func purchase(category: String, id: String, transaction_id: String) -> Dictionar
 	if _data.transactions.has(receipt):
 		var old: Dictionary = _data.transactions[receipt]
 		return _result(old.kind == category and old.item == id, "already_applied" if old.kind == category and old.item == id else "transaction_conflict")
-	var catalog: Dictionary = Weapons.WEAPONS if category == "weapon" else (Outfits.OUTFITS if category == "outfit" else {})
+	var catalog: Dictionary = Weapons.WEAPONS if category == "weapon" else (Outfits.OUTFITS if category == "outfit" else SUPPLIES if category == "supply" else {})
 	if not catalog.has(id): return _result(false, "unknown_item")
+	if category == "supply" and int(_data.inventory.get(id,0)) >= 999: return _result(false,"inventory_full")
+	if category == "supply" and grid_enabled():
+		var candidate: Dictionary = _data.grid_inventory.duplicate(true)
+		if GRID.add_carried(candidate,id,1)!=0: return _result(false,"inventory_full")
 	if category == "outfit" and not Outfits.ORDER.has(id): return _result(false, "reward_only")
-	if (category == "weapon" and owns_weapon(id)) or (category == "outfit" and _data.outfits.has(id)):
+	if (category == "weapon" and _data.weapons.has(id)) or (category == "outfit" and _data.outfits.has(id)):
 		return _result(false, "already_owned")
 	if category == "weapon" and not is_weapon_unlocked(id): return _result(false, "discovery_required")
 	var price := int(catalog[id].price)
 	if price < 0 or balance < price: return _result(false, "insufficient_funds")
+	var before := _data.duplicate(true)
 	_data.balance -= price
 	if category == "weapon":
 		_data.weapons[id] = {"magazine": int(catalog[id].magazine_size), "reserve": int(catalog[id].starting_reserve)}
 		_assign_personal_slot(id)
+		if grid_enabled() and not _grid_register_weapon(id): _data=before; return _result(false,"inventory_full")
+	elif category == "supply":
+		grant_item(id)
 	else:
 		_data.outfits.append(id)
 	_data.transactions[receipt] = {"kind": category, "item": id, "amount": price}
@@ -237,11 +278,16 @@ func discover(id: String) -> bool:
 func grant_item(id: String, count: int = 1) -> bool:
 	if not _valid_id(id) or count <= 0 or count > 999: return false
 	if int(_data.inventory.get(id, 0)) + count > 999: return false
+	if grid_enabled():
+		var candidate: Dictionary = _data.grid_inventory.duplicate(true)
+		if GRID.add_carried(candidate,id,count)!=0: return false
+		_data.grid_inventory = candidate
 	_data.inventory[id] = int(_data.inventory.get(id, 0)) + count
 	return true
 
 func consume_item(id: String, count: int = 1) -> bool:
 	if count <= 0 or int(_data.inventory.get(id, 0)) < count: return false
+	if grid_enabled() and not GRID.remove_carried(_data.grid_inventory,id,count): return false
 	_data.inventory[id] -= count
 	if int(_data.inventory[id]) == 0: _data.inventory.erase(id)
 	return true
@@ -297,27 +343,19 @@ func enable_personal_loadout() -> void:
 	for id in _data.weapons: _assign_personal_slot(id)
 	if not can_carry_weapon(equipped_weapon): _data.equipped_weapon = "fists"
 
-## Cheat de arsenal do V1 (`Player._activate_arsenal_cheat`, digitar "dukenuke"). Fora de `_data` de propósito:
-## como o `_cheat_all_weapons` do V1, vale só para esta sessão e NUNCA entra no save (uma economia restaurada
-## nasce com ele desligado). Só o direito de carregar tudo é volátil; a posse e a munição concedidas ficam
-## no inventário normal e, portanto, no save.
+## Arsenal temporário: armas e tiros de debug nunca entram no inventário/save.
 const CHEAT_RESERVE := 9999
 var cheat_all_weapons := false
+var _cheat_weapons: Dictionary={}
+var _cheat_equipped:=""
 
-## Concede todas as armas do catálogo (menos punhos) sem cobrar, sem recibo, sem marcar descoberta e sem
-## mexer nos slots do porta-malas. Pente cheio e reserva mínima de 9999; melee fica com -1/-1. O que a arma
-## já tinha de reserva acima de 9999 é mantido.
 func activate_arsenal_cheat() -> void:
 	cheat_all_weapons = true
 	for id in Weapons.ORDER:
 		if id == "fists": continue
 		var spec: Dictionary = Weapons.WEAPONS[id]
 		var capacity := int(spec.magazine_size)
-		var entry: Dictionary = _data.weapons.get(id, {"magazine": capacity, "reserve": int(spec.starting_reserve)})
-		if capacity >= 0:
-			entry.magazine = capacity
-			entry.reserve = maxi(CHEAT_RESERVE, int(entry.reserve))
-		_data.weapons[id] = entry
+		_cheat_weapons[id]={"magazine":capacity,"reserve":CHEAT_RESERVE if capacity>=0 else -1}
 
 func can_carry_weapon(id: String) -> bool:
 	return owns_weapon(id) and (id == "fists" or cheat_all_weapons or not _data.get("personal_loadout_enabled",false) or id in _data.personal_loadout.values())
@@ -331,6 +369,13 @@ func _assign_personal_slot(id: String) -> void:
 func set_personal_slot(slot: String, id: String) -> bool:
 	if not _data.get("personal_loadout_enabled",false) or not PERSONAL_SLOTS.has(slot): return false
 	if id != "" and (id not in PERSONAL_SLOTS[slot] or not owns_weapon(id)): return false
+	if grid_enabled():
+		if _data.personal_loadout[slot]==id: return true
+		if id=="": return grid_store_weapon(str(_data.personal_loadout[slot]),"trunk")
+		for container in ["pockets","storage","trunk"]:
+			for i in _data.grid_inventory[container].size():
+				if _data.grid_inventory[container][i].id=="weapon:"+id: return grid_equip_weapon(container,i)
+		return false
 	_data.personal_loadout[slot] = id
 	if not can_carry_weapon(equipped_weapon): _data.equipped_weapon = "fists"
 	return true
@@ -346,6 +391,7 @@ func claim_monaliza_starter() -> bool:
 	# A residence may already have initialized the same slots. Keep its choices.
 	enable_personal_loadout()
 	_assign_personal_slot("pistol")
+	if grid_enabled(): _grid_register_weapon("pistol",true)
 	if not can_carry_weapon(equipped_weapon): _data.equipped_weapon = "fists"
 	return true
 
@@ -354,9 +400,19 @@ static func _integer(value: Variant, minimum: int, maximum: int) -> bool:
 
 func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
-	_data = data.duplicate(true)
+	var upgraded:=INVENTORY_MIGRATION.upgrade(data)
+	if not validate_snapshot(upgraded): return false
+	_data = upgraded
+	cheat_all_weapons=false; _cheat_weapons.clear(); _cheat_equipped=""
 	_data.version = 1
 	_data.balance = int(_data.balance)
+	if grid_enabled():
+		_data.grid_inventory.version=int(_data.grid_inventory.version)
+		_data.grid_inventory.serial=int(_data.grid_inventory.serial)
+		for container in ["pockets","storage","trunk"]: _normalize_grid_entries(_data.grid_inventory[container])
+		for drop in _data.grid_inventory.ground:
+			drop.uid=int(drop.uid)
+			_normalize_grid_entries(drop.entries)
 	for id in _data.weapons:
 		_data.weapons[id].magazine = int(_data.weapons[id].magazine)
 		_data.weapons[id].reserve = int(_data.weapons[id].reserve)
@@ -367,6 +423,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	return true
 
 static func validate_snapshot(data: Dictionary) -> bool:
+	if data.has("grid_inventory") and not GRID.validate(data.grid_inventory): return false
 	for key in ["version", "balance", "weapons", "equipped_weapon", "outfits", "outfit", "inventory", "discoveries", "collectibles", "achievements", "transactions"]:
 		if not data.has(key): return false
 	if not _integer(data.version, 1, 1) or not _integer(data.balance, 0, LIMIT): return false
@@ -411,8 +468,10 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	for id in data.transactions:
 		if not _valid_id(id) or not data.transactions[id] is Dictionary: return false
 		var entry: Dictionary = data.transactions[id]
-		if not entry.get("kind") in ["reward", "weapon", "outfit", "spend", "ammo"] or not _valid_id(entry.get("item")) or not _integer(entry.get("amount"), 0, LIMIT): return false
+		if not entry.get("kind") in ["reward", "weapon", "outfit", "spend", "ammo", "supply"] or not _valid_id(entry.get("item")) or not _integer(entry.get("amount"), 0, LIMIT): return false
 		match entry.kind:
+			"supply":
+				if not id.begins_with("purchase:") or not SUPPLIES.has(entry.item) or int(entry.amount) != int(SUPPLIES[entry.item].price): return false
 			"reward", "spend":
 				if id != str(entry.kind) + ":" + str(entry.item): return false
 			"weapon":
@@ -421,7 +480,158 @@ static func validate_snapshot(data: Dictionary) -> bool:
 				if not id.begins_with("purchase:") or not Outfits.OUTFITS.has(entry.item) or not data.outfits.has(entry.item): return false
 			"ammo":
 				if not id.begins_with("ammo:") or not Weapons.WEAPONS.has(entry.item) or not data.weapons.has(entry.item) or not _integer(entry.get("rounds"), 1, MAX_AMMO): return false
+	if data.has("grid_inventory") and not _validate_grid_ownership(data): return false
 	return true
+
+static func _validate_grid_ownership(data: Dictionary) -> bool:
+	var grid: Dictionary=data.grid_inventory
+	if not data.get("personal_loadout_enabled",false): return false
+	var totals: Dictionary={}
+	var entries: Array=[]
+	for container in ["pockets","storage","trunk"]: entries.append_array(grid[container])
+	for drop in grid.ground: entries.append_array(drop.entries)
+	for entry in entries:
+		var id:=str(entry.id)
+		totals[id]=int(totals.get(id,0))+int(entry.amount)
+		if id.begins_with("ammo:") and not data.weapons.has(id.trim_prefix("ammo:")): return false
+		if id.begins_with("weapon:") and not data.weapons.has(id.trim_prefix("weapon:")): return false
+	for id in data.weapons:
+		if id=="fists": continue
+		var owned: int=int(totals.get("weapon:"+str(id),0))+(1 if id in data.personal_loadout.values() else 0)
+		if owned!=1: return false
+		if int(data.weapons[id].magazine)>=0 and int(data.weapons[id].magazine)+int(data.weapons[id].reserve)>99: return false
+	for id in data.inventory:
+		if int(totals.get(id,0))!=int(data.inventory[id]): return false
+	for id in totals:
+		if not str(id).begins_with("weapon:") and not str(id).begins_with("ammo:") and not data.inventory.has(id): return false
+	return true
+
+static func _normalize_grid_entries(entries: Array) -> void:
+	for entry in entries:
+		for key in ["x","y","amount"]: entry[key]=int(entry[key])
 
 static func _result(ok: bool, reason: String) -> Dictionary:
 	return {"ok": ok, "reason": reason}
+
+func grid_enabled() -> bool:
+	return _data.has("grid_inventory")
+
+func grid_snapshot() -> Dictionary:
+	return _data.get("grid_inventory",GRID.empty()).duplicate(true)
+
+func enable_grid_inventory() -> void:
+	if grid_enabled():
+		_data=INVENTORY_MIGRATION.upgrade(_data)
+		return
+	_data=INVENTORY_MIGRATION.upgrade(_data)
+	enable_personal_loadout()
+	_data.grid_inventory=GRID.empty()
+	for id in _data.inventory:
+		var left := GRID.add_carried(_data.grid_inventory,str(id),int(_data.inventory[id]))
+		if left>0: INVENTORY_MIGRATION.store_remainder(_data.grid_inventory,str(id),left)
+	for id in _data.weapons:
+		if id!="fists": _grid_register_weapon(str(id),true)
+
+func _grid_register_weapon(id: String, migration := false) -> bool:
+	var grid: Dictionary = _data.grid_inventory
+	if id in _data.personal_loadout.values():
+		var groups: Array=[grid.pockets,grid.storage,grid.trunk]
+		for drop in grid.ground: groups.append(drop.entries)
+		for entries in groups:
+			for i in range(entries.size()-1,-1,-1):
+				if entries[i].id=="weapon:"+id: entries.remove_at(i)
+	if id not in _data.personal_loadout.values() and GRID.count(grid,"weapon:"+id,false)==0:
+		if migration: INVENTORY_MIGRATION.store_remainder(grid,"weapon:"+id,1)
+		elif GRID.add_carried(grid,"weapon:"+id,1)!=0: return false
+	var ammo: Dictionary = _data.weapons[id]
+	if int(ammo.magazine)<0: return true
+	var excess := maxi(0,int(ammo.magazine)+int(ammo.reserve)-99)
+	if excess==0: return true
+	var reserve_excess := mini(excess,int(ammo.reserve))
+	ammo.reserve-=reserve_excess
+	ammo.magazine-=excess-reserve_excess
+	# Legacy/starter ammo is never destroyed if the initial two pockets are full.
+	var left := GRID.add_carried(grid,"ammo:"+id,excess) if can_carry_weapon(id) else excess
+	if left>0:
+		if not migration: return false
+		INVENTORY_MIGRATION.store_remainder(grid,"ammo:"+id,left)
+	return true
+
+func _grid_add_ammo(id: String, amount: int) -> bool:
+	if not can_carry_weapon(id) and GRID.count(_data.grid_inventory,"weapon:"+id)==0: return false
+	var direct := mini(amount,maxi(0,99-int(_data.weapons[id].magazine)-int(_data.weapons[id].reserve)))
+	var candidate: Dictionary = _data.grid_inventory.duplicate(true)
+	if GRID.add_carried(candidate,"ammo:"+id,amount-direct)!=0: return false
+	_data.weapons[id].reserve+=direct
+	_data.grid_inventory=candidate
+	return true
+
+func grid_move(source: String, index: int, target: String, cell := Vector2i(-1,-1), rotate := false) -> bool:
+	if not grid_enabled(): return false
+	var candidate: Dictionary = _data.grid_inventory.duplicate(true)
+	if not GRID.move(candidate,source,index,target,cell,rotate): return false
+	_data.grid_inventory=candidate
+	return true
+
+func grid_equip_weapon(source: String, index: int) -> bool:
+	if not grid_enabled() or source not in ["pockets","storage","trunk"]: return false
+	var candidate: Dictionary = _data.grid_inventory.duplicate(true)
+	if index<0 or index>=candidate[source].size(): return false
+	var id: String = str(candidate[source][index].id).trim_prefix("weapon:")
+	if not owns_weapon(id): return false
+	var slot := ""
+	for key in PERSONAL_SLOTS:
+		if id in PERSONAL_SLOTS[key]: slot=key
+	if slot.is_empty(): return false
+	candidate[source].remove_at(index)
+	var old := str(_data.personal_loadout.get(slot,""))
+	if not old.is_empty() and GRID.add(candidate,source,"weapon:"+old,1)!=0: return false
+	_data.grid_inventory=candidate
+	_data.personal_loadout[slot]=id
+	if _data.equipped_weapon==old: _data.equipped_weapon="fists"
+	return true
+
+func grid_store_weapon(id: String, target: String) -> bool:
+	if not grid_enabled() or id=="fists" or not can_carry_weapon(id) or target not in ["pockets","storage","trunk"]: return false
+	if id not in _data.personal_loadout.values(): return false
+	var candidate: Dictionary = _data.grid_inventory.duplicate(true)
+	if GRID.add(candidate,target,"weapon:"+id,1)!=0: return false
+	for slot in _data.personal_loadout:
+		if _data.personal_loadout[slot]==id: _data.personal_loadout[slot]=""
+	_data.grid_inventory=candidate
+	if _data.equipped_weapon==id: _data.equipped_weapon="fists"
+	return true
+
+func grid_equip_bag(kind: String) -> bool:
+	if not grid_enabled() or kind not in ["backpack","handbag"] or _data.grid_inventory.bag!="": return false
+	_data.grid_inventory.bag=kind
+	if kind=="handbag" and equipped_weapon in GRID.LONG: _data.equipped_weapon="fists"
+	return true
+
+func grid_drop_bag(region: String, place: String, position: Vector3) -> int:
+	if not grid_enabled() or _data.grid_inventory.bag=="" or _data.grid_inventory.ground.size()>=512 or not position.is_finite(): return -1
+	var grid: Dictionary = _data.grid_inventory
+	grid.serial+=1
+	grid.ground.append({"uid":grid.serial,"bag":grid.bag,"region":region,"place":place,"position":[position.x,position.y,position.z],"entries":grid.storage.duplicate(true)})
+	grid.bag=""; grid.storage=[]
+	return int(grid.serial)
+
+func grid_recover_bag(uid: int) -> bool:
+	if not grid_enabled() or _data.grid_inventory.bag!="": return false
+	var grid: Dictionary = _data.grid_inventory
+	for i in grid.ground.size():
+		if int(grid.ground[i].uid)!=uid: continue
+		grid.bag=grid.ground[i].bag
+		grid.storage=grid.ground[i].entries.duplicate(true)
+		if grid.bag=="handbag" and equipped_weapon in GRID.LONG: _data.equipped_weapon="fists"
+		grid.ground.remove_at(i)
+		return true
+	return false
+
+func grid_handbag() -> bool:
+	return grid_enabled() and _data.grid_inventory.bag=="handbag"
+
+func grid_claim(id: String) -> bool:
+	if not grid_enabled() or id in _data.grid_inventory.claimed: return false
+	_data.grid_inventory.claimed.append(id)
+	return true

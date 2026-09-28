@@ -1,4 +1,5 @@
 extends Control
+const STYLE := preload("res://ui/GameStyle.gd")
 ## Presentation only; MainMenu retains save, settings and scene routing.
 var buttons: Array[Button] = []
 var motion: Dictionary = {}
@@ -51,14 +52,14 @@ func install(menu: Control) -> void:
 	add_child(cover)
 	menu.game_title.reparent(self)
 	menu.game_title.add_theme_font_override("font", DISPLAY_FONT)
-	menu.game_title.add_theme_color_override("font_color", Color("f5f1e8"))
+	menu.game_title.add_theme_color_override("font_color", STYLE.TEXT)
 	menu.game_title.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.68))
 	menu.game_title.add_theme_constant_override("shadow_offset_x", 0)
 	menu.game_title.add_theme_constant_override("shadow_offset_y", 4)
 	menu.game_title.add_theme_constant_override("outline_size", 1)
 	menu.sub_title.hide()
 	brand_accent = ColorRect.new()
-	brand_accent.color = Color("ff914d")
+	brand_accent.color = STYLE.ACCENT
 	brand_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(brand_accent)
 	buttons.assign([menu.btn_new_game, menu.btn_load_game, menu.btn_settings, menu.btn_quit])
@@ -72,18 +73,18 @@ func install(menu: Control) -> void:
 		normal.bg_color = Color(0,0,0,0)
 		normal.content_margin_left = 14
 		var active := normal.duplicate() as StyleBoxFlat
-		active.bg_color = Color(1,0.45,0.18,0.12)
+		active.bg_color = Color(STYLE.ACCENT,.12)
 		active.border_width_left = 3
-		active.border_color = Color("ff914d")
+		active.border_color = STYLE.ACCENT
 		var pressed := active.duplicate() as StyleBoxFlat
-		pressed.bg_color = Color(1,0.32,0.08,0.24)
+		pressed.bg_color = Color(STYLE.ACCENT,.24)
 		button.add_theme_stylebox_override("normal", normal)
 		button.add_theme_stylebox_override("hover", active)
 		button.add_theme_stylebox_override("focus", active)
 		button.add_theme_stylebox_override("pressed", pressed)
-		button.add_theme_color_override("font_color", Color("eee9df"))
-		button.add_theme_color_override("font_hover_color", Color("ff914d"))
-		button.add_theme_color_override("font_focus_color", Color("ff914d"))
+		button.add_theme_color_override("font_color", STYLE.TEXT)
+		button.add_theme_color_override("font_hover_color", STYLE.ACCENT)
+		button.add_theme_color_override("font_focus_color", STYLE.ACCENT)
 		button.add_theme_color_override("font_pressed_color", Color.WHITE)
 		button.mouse_entered.connect(func(): animate(button, true))
 		button.mouse_exited.connect(func(): animate(button, button.has_focus()))
@@ -96,7 +97,7 @@ func install(menu: Control) -> void:
 		resume_label = Label.new()
 		resume_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		resume_label.add_theme_font_override("font", BODY_FONT)
-		resume_label.add_theme_color_override("font_color",Color("a9b4bc"))
+		resume_label.add_theme_color_override("font_color",STYLE.MUTED)
 		resume_label.text = str(menu.latest_save.get("label", ""))
 		add_child(resume_label)
 	arrange()
@@ -178,4 +179,3 @@ func play_start_transition() -> void:
 	add_child(curtain)
 	tween.tween_property(curtain, "color:a", 1.0, 0.38).set_delay(0.05)
 	await tween.finished
-

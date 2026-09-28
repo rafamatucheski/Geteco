@@ -9,6 +9,8 @@ static func default_state() -> Dictionary:
 		"schema_version": SCHEMA_VERSION,
 		"active_home": "",
 		"stored_vehicle": {},
+		"stored_motorcycle": {},
+		"chest": {},
 		"purchases": 0,
 	}
 
@@ -24,6 +26,8 @@ static func normalize_state(value: Variant, properties: Dictionary) -> Dictionar
 	var stored: Variant = source.get("stored_vehicle", {})
 	if stored is Dictionary:
 		result["stored_vehicle"] = (stored as Dictionary).duplicate(true)
+	for key in ["stored_motorcycle","chest"]:
+		if source.get(key) is Dictionary: result[key] = source[key].duplicate(true)
 	result["purchases"] = maxi(0, int(source.get("purchases", 0)))
 	return result
 

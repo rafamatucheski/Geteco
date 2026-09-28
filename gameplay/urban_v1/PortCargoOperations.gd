@@ -5,6 +5,12 @@ signal work_truck_removed(index: int)
 ## while resting on the ground, matching the original 48-second operation.
 
 const LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
+const CONTAINER := preload("res://world/regions/ShippingContainer3D.gd")
+# Centro e topo da plataforma do cargo_flatbed_truck (assets/fleet, bed em
+# z −0,53…3,97, topo em y 1,06). O antigo half_length*.16 punha o contêiner
+# 1 m à frente, por cima da cabine.
+const TRUCK_BED_CENTER_Z := 1.72
+const TRUCK_BED_TOP := 1.07
 const PORT_SHIP_PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 const SCALE := 1.0 / 16.0
 const ACTIVE_DISTANCE := 150.0
@@ -56,15 +62,8 @@ func _build_crane(index: int) -> void:
 
 	var cargo := Node3D.new()
 	cargo.name = "MovingTransferCargo%d" % index
-	var container := MeshInstance3D.new()
-	var container_mesh := BoxMesh.new()
-	container_mesh.size = Vector3(5.85, 2.45, 2.45)
-	container.mesh = container_mesh
-	container.position.y = 1.225
-	var container_material := StandardMaterial3D.new()
-	container_material.albedo_color = [Color("ae5946"),Color("447f91"),Color("c09b52")][index]
-	container_material.roughness = .82
-	container.material_override = container_material
+	# Contêiner detalhado do tamanho da plataforma do caminhão (ShippingContainer3D).
+	var container := CONTAINER.create([Color("ae5946"),Color("447f91"),Color("c09b52")][index])
 	cargo.add_child(container)
 	add_child(cargo)
 	cargo.hide()
@@ -94,9 +93,9 @@ func _build_crane(index: int) -> void:
 	body.collision_mask = 0
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(5.85, 2.55, 2.45)
+	shape.size = Vector3(CONTAINER.LENGTH, CONTAINER.HEIGHT + .1, CONTAINER.WIDTH)
 	collision.shape = shape
-	collision.position.y = 1.275
+	collision.position.y = (CONTAINER.HEIGHT + .1) * .5
 	collision.disabled = true
 	body.add_child(collision)
 	add_child(body)
@@ -408,7 +407,7 @@ func _truck_mount_position(index: int) -> Vector3:
 	var state: Dictionary = work_trucks[index]
 	var vehicle = state.truck
 	if not is_instance_valid(vehicle): return cranes[index].quay
-	return vehicle.global_position + vehicle.global_basis * Vector3(0.0,0.0,vehicle.half_length*.16) + Vector3.UP*1.25
+	return vehicle.global_position + vehicle.global_basis * Vector3(0.0,0.0,TRUCK_BED_CENTER_Z) + Vector3.UP*TRUCK_BED_TOP
 
 func _finish_truck_load(index: int) -> void:
 	var state: Dictionary = work_trucks[index]
@@ -421,7 +420,7 @@ func _finish_truck_load(index: int) -> void:
 	state.phase = "securing"
 	var visual: Node3D = cranes[index].visual
 	visual.reparent(vehicle,true)
-	visual.position = Vector3(0.0,1.15,vehicle.half_length*.16)
+	visual.position = Vector3(0.0,TRUCK_BED_TOP,TRUCK_BED_CENTER_Z)
 	visual.rotation.y = PI*.5
 	visual.show()
 	vehicle.set_meta("port_container_loaded",true)
@@ -431,7 +430,7 @@ func _reset_truck_load(index: int) -> void:
 	var state: Dictionary = work_trucks[index]
 	var visual := cranes[index].visual as Node3D
 	if is_instance_valid(visual):
-		visual.reparent(self,true)
+		if visual.get_parent() != self: visual.reparent(self,true)
 		visual.visible = active
 	state.loaded = false
 	cranes[index].clock = 0.0

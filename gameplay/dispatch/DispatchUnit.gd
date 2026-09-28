@@ -10,6 +10,7 @@ extends RefCounted
 ## visão. Nenhum cronômetro daqui conclui atendimento.
 
 const RULES := preload("res://gameplay/dispatch/DispatchRules.gd")
+const TANK_WEAPON := preload("res://gameplay/police_response/ground/PoliceTankWeapon.gd")
 
 var controller: Node3D
 var service := ""
@@ -47,6 +48,8 @@ var _last_planned_goal := Vector3(INF, INF, INF)
 var _plan_clock := 0.0
 var _failed_plans := 0
 var _recall_age := 0.0
+var _tank_weapon: RefCounted
+var _moto_rider_visible := false
 
 # Serviço médico / bombeiros / legista
 var incident_id := 0
@@ -96,11 +99,21 @@ func tick(delta: float) -> void:
 	if _tick_suspension(delta): return
 	if vehicle.health <= 0.0 and not wrecked: _on_wrecked()
 	if wrecked:
+		_sync_motorcycle_rider()
 		_tick_wrecked(delta)
 		return
 	_track_recovery(delta)
 	if is_police(): _tick_police(delta)
 	else: _tick_service(delta)
+	_sync_motorcycle_rider()
+
+func _sync_motorcycle_rider() -> void:
+	if variant != "motorcycle" or not is_instance_valid(vehicle): return
+	var seated: bool = crew_remaining > 0 and not wrecked and not finished
+	if seated == _moto_rider_visible: return
+	_moto_rider_visible = seated
+	for part in vehicle._motorcycle_rider_parts:
+		if is_instance_valid(part): part.visible = seated
 
 func _set_state(next: String) -> void:
 	if state == next: return
@@ -112,6 +125,7 @@ func finish(reason: String) -> void:
 	if finished: return
 	finished = true
 	end_reason = reason
+	_sync_motorcycle_rider()
 	# Remoção imediata: o veículo será liberado, não há recuperação física a fazer.
 	if driver != null:
 		driver.discard_overtaking("removed:" + reason)
@@ -151,6 +165,7 @@ func surrender_vehicle(exits: Array[Dictionary]) -> void:
 	officers.clear()
 	finished = true
 	end_reason = "stolen"
+	_sync_motorcycle_rider()
 	controller.emit_dispatch_event("unit_finished", {"unit": self, "reason": "stolen"})
 
 ## Solta as ligações unidade <-> piloto <-> ultrapassagem (o controlador as cria em
@@ -181,7 +196,7 @@ func _set_siren(on: bool) -> void:
 	if not is_instance_valid(vehicle): return
 	var equipment: Node = vehicle.equipment
 	if equipment == null or not is_instance_valid(equipment): return
-	equipment.siren_on = on and siren_wanted and not wrecked
+	equipment.siren_on = on and siren_wanted and not wrecked and not equipment.beacons.is_empty()
 
 # --- Suspensão distante ------------------------------------------------------
 
@@ -294,13 +309,44 @@ func _tick_wrecked(_delta: float) -> void:
 func _tick_police(delta: float) -> void:
 	var gameplay: Node3D = controller.gameplay
 	if gameplay.stars == 0 and state in ["enroute", "parked", "working"]:
-		_begin_recall(false)
+		if controller.retain_investigator(self):
+			for officer in officers:
+				if is_instance_valid(officer) and not officer.dead: officer.begin_return(vehicle)
+			_set_state("investigating")
+		else: _begin_recall(false)
 	match state:
 		"enroute": _police_enroute(delta)
 		"parked": _police_parked(delta)
 		"working": _police_working(delta)
 		"recall": _police_recall(delta)
 		"departing": _tick_departing(delta)
+		"investigating": _police_investigating(delta)
+
+func _police_investigating(delta: float) -> void:
+	var gameplay: Node3D = controller.gameplay
+	if gameplay.stars > 0:
+		_set_siren(true)
+		_set_state("enroute")
+		return
+	if not gameplay.police_investigation_active():
+		_begin_recall(false)
+		return
+	officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
+	_set_siren(false)
+	if not officers.is_empty():
+		driver.hold(true)
+		driver.tick(delta)
+		return
+	var point: Vector3 = gameplay.police_investigation_point()
+	if not point.is_finite():
+		_begin_recall(false)
+		return
+	# Investigation deliberately never calls _sees_target or report_contact.
+	# The same crew visits the reported scene, not the hidden player's position.
+	var arrived := vehicle.global_position.distance_to(point) < 10.0
+	driver.hold(arrived)
+	if not arrived: _replan_towards(point,delta,4.0)
+	driver.tick(delta)
 
 func _target() -> Node3D:
 	if controller.player_position_override != Vector3.INF: return null
@@ -377,9 +423,15 @@ func _sees_target(target: Node3D) -> bool:
 ## patamares, alvo em veículo dirigido pelo jogador, equipe ainda a bordo.
 func _vehicle_combat(delta: float, target: Node3D) -> void:
 	var gameplay: Node3D = controller.gameplay
+	if variant == "tank":
+		if _tank_weapon == null: _tank_weapon = TANK_WEAPON.new()
+		_tank_weapon.tick(self,delta,target)
+		return
 	_shot_cooldown = maxf(0.0, _shot_cooldown - delta)
 	var driven: bool = controller.world.get("driving") != null and controller.world.driving.occupied
-	if gameplay.stars < 2 or not driven or target == null or crew_remaining < RULES.OFFICERS_PER_CAR or not officers.is_empty() or not gameplay.state.weapons_allowed():
+	var authorized: bool = gameplay.police_force_authorized() if gameplay.has_method("police_force_authorized") else gameplay.stars >= 2
+	var surrendering: bool = gameplay.has_method("police_surrendering") and gameplay.police_surrendering()
+	if not authorized or surrendering or not driven or target == null or crew_remaining < RULES.OFFICERS_PER_CAR or not officers.is_empty() or not gameplay.state.weapons_allowed():
 		_aim = 0.0
 		return
 	if vehicle.global_position.distance_to(target.global_position) > RULES.SHOT_RANGE or not _sees_target(target):
@@ -464,6 +516,13 @@ func on_overtake_state(next: String, reason: String) -> void:
 func _police_parked(delta: float) -> void:
 	driver.hold(true)
 	driver.tick(delta)
+	if variant == "tank" and controller.gameplay.stars > 0:
+		var target := _target()
+		var surrendering: bool = controller.gameplay.has_method("police_surrendering") and controller.gameplay.police_surrendering()
+		if not surrendering:
+			_vehicle_combat(delta,target)
+			if target != null and vehicle.global_position.distance_to(target.global_position) > 25.0: _set_state("enroute")
+			return
 	if driver.pending_recovery():
 		_set_state("enroute")
 		return

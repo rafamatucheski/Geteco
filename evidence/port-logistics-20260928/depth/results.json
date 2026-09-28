@@ -1,0 +1,103 @@
+{
+	"checks": 51,
+	"failures": [],
+	"records": [
+		{
+			"actor": "player",
+			"control_pixels": 1458,
+			"pose": "front",
+			"prop": "rack",
+			"visible_pixels": 1458,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 1454,
+			"pose": "behind",
+			"prop": "rack",
+			"visible_pixels": 50,
+			"visible_ratio": 0.0343878954607978
+		},
+		{
+			"actor": "player",
+			"control_pixels": 1455,
+			"pose": "side",
+			"prop": "rack",
+			"visible_pixels": 1455,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 1432,
+			"pose": "front",
+			"prop": "desk",
+			"visible_pixels": 1432,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 1437,
+			"pose": "behind",
+			"prop": "desk",
+			"visible_pixels": 1083,
+			"visible_ratio": 0.753653444676409
+		},
+		{
+			"actor": "player",
+			"control_pixels": 1410,
+			"pose": "side",
+			"prop": "desk",
+			"visible_pixels": 1410,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1246,
+			"pose": "front",
+			"prop": "rack",
+			"visible_pixels": 1246,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1238,
+			"pose": "behind",
+			"prop": "rack",
+			"visible_pixels": 48,
+			"visible_ratio": 0.0387722132471729
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1243,
+			"pose": "side",
+			"prop": "rack",
+			"visible_pixels": 1243,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1220,
+			"pose": "front",
+			"prop": "desk",
+			"visible_pixels": 1220,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1222,
+			"pose": "behind",
+			"prop": "desk",
+			"visible_pixels": 942,
+			"visible_ratio": 0.770867430441899
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1230,
+			"pose": "side",
+			"prop": "desk",
+			"visible_pixels": 1230,
+			"visible_ratio": 1.0
+		}
+	],
+	"renderer": "mobile"
+}

@@ -1,5 +1,267 @@
 # Migração de interiores — checklist
 
+## Casa 1 / porão / quartel subterrâneo — 28/09/2026
+
+A Casa 1 da Vila conserva o acesso existente e ganha um volume subterrâneo
+contínuo com porão, túnel e QG. O inventário passa a **58 lugares/acessos / 57
+interiores distintos**. Neste escopo: **0 certificados integralmente, 1 em
+validação, 0 não iniciados**. História e contrato técnico em
+[secret-headquarters.md](secret-headquarters.md).
+
+- [x] Parede traseira e chão recortados; caminhada física casa → anexo → porão.
+- [x] Estante e parede do porão abertas; landing do túnel alinhado sem instância.
+- [x] Sólidos marcados, móveis fora do corredor e guardas da Casa 1 autorizam
+  Dante após a entrega da pasta.
+- [x] Câmeras do porão e túnel usam camada subterrânea e excluem as coberturas.
+- [x] Estado, snapshot, pasta, quatro pistas, keypad, energia e primeira rota.
+- [x] Áudio de túnel, reverb temporário dos SFX, goteiras e três ratos suspensos.
+- [x] Contratos isolados: progressão **68/68**, pasta **32/32** e túnel **61/61**.
+- [x] Reforma 3D: alvenaria com juntas, arcos, poças irregulares, móveis
+  modelados, gerador, cama de campanha, luminárias e setor lacrado visível.
+- [x] Varredura física de jogador/NPC: **41/41**, incluindo estante/patamar, curvas, rampas,
+  consoles, portão e móveis. Contorno/câmera de interior: **25/25**.
+- [x] Fotos reais de casa, porão, túnel e QG; oclusão positiva/negativa de
+  Dante/NPC junto à mesa do QG. Evidências em `secret-headquarters-v2/review/`.
+- [ ] Retorno integrado completo após a correção final do pivô da estante.
+  A ida ao QG e a subida de volta pelo túnel passaram antes desse ajuste.
+- [ ] Travessia física integrada de jogador e NPC contra todos os novos sólidos.
+- [ ] Frame time antes/depois na cena real; processos Godot concorrentes impedem
+  comparação confiável nesta sessão.
+
+## Perseguição policial em interiores — 28/09/2026
+
+Visitantes policiais passam pela mesma fronteira de contexto usada pelo jogador,
+após entrada observada ou denúncia interior. Nenhuma sala, câmera, luz ou mobília
+foi criada ou reformada. Inventário global preservado em **58 lugares/acessos /
+56 interiores**; **zero novas certificações integrais**. A garagem do Maciota
+continua sem admissão policial e sem combate.
+
+- [x] Implementação: equipe existente, chegada à porta exterior, transferência
+  limitada a quatro visitantes, admissão por cápsula/piso livre e colisão nativa.
+- [x] Rig original no mundo 3D da sala, sem viewport ou sprite duplicado; navegação
+  usa os sólidos nativos e mantém máscara física; limpeza no descarregamento.
+- [x] `tests/police_response/test_tactics.gd`: **28/28** verificações headless,
+  incluindo LOS com controle positivo, movimento varrido, entrada obstruída,
+  admissão, busca, saída e proteção do Maciota. Log em
+  `evidence/police-response-20260928/tactics-headless.log`.
+- [x] Pose dos cinco escalões: **101/101** contratos headless de mãos no cabo e
+  guarda-mão, recarga, direção do cano, rapel/arnês e retorno à arma após aterrissar.
+  Log `evidence/police-response-20260928/officer-poses-headless.log`; ainda não
+  comprova qualidade visual, profundidade ou desempenho renderizado.
+- [x] Integração Main e fotos reais no percurso da Ammu-Nation: entrada e saída
+  pela FullSession, mesmo agente transferido, corpo fora dos sólidos e oclusão
+  à frente/atrás do expositor, com jogador e residente no mesmo buffer 3D.
+  Fotos novas após a correção da arma em `evidence/police-response-20260928/interior/`;
+  log `interior-final-render.log`. Uma amostra não certifica todas as plantas.
+- [ ] Fotos reais antes/depois e frame time comparável: baseline renderizado
+  bloqueado por processos Godot concorrentes de outra sessão; não há aprovação
+  de desempenho baseada apenas nos contratos headless ou nas fotos.
+
+## Casas compráveis: uso doméstico e garagem — 28/09/2026
+
+Westgate Garden, Quayside e Canal North: **3 lugares / 3 interiores existentes**,
+sem nova sala ou novo acesso. As três garagens abertas pertencem aos terrenos.
+Inventário global preservado em **58 lugares/acessos / 56 interiores**. Neste
+escopo: **0 certificados integralmente, 3 em validação, 0 não iniciados**.
+[Implementação, integração da mochila e evidências](residence-living.md).
+
+- [x] Propriedade bloqueia tanto a porta física quanto a admissão antes da compra.
+- [x] Guarda-roupa, geladeira, baú, cama, arsenal e save nos seus móveis; spawn e
+  aproximações livres nas três plantas. Saves de teste não usam a partida real.
+- [x] Colisão varrida de jogador/NPC contra os móveis, incluindo baú e mesa novos;
+  fotos reais separadas de profundidade com dois atores na sala.
+- [x] Carro e moto em slots separados: guardar após desembarque, retirar sem
+  duplicação, save completo e reconstrução dos dois veículos nas três casas.
+- [x] Baú bloqueado sem mochila; contrato de transferência e persistência validado
+  com provedor controlado. Arquivos da mochila em desenvolvimento preservados.
+- [ ] Integração com a mochila real: depende do provedor e da persistência dela.
+- [ ] Comparação de frame time sem concorrência: amostras de 30 s nos seis
+  cenários estão registradas, mas outras execuções Godot permaneceram abertas.
+- [ ] Certificação integral do ambiente: evidência local não recertifica todos
+  os obstáculos/ângulos nem substitui o gate de desempenho.
+
+## Contêineres térreos do porto — 28/09/2026
+
+18 lugares físicos / 18 volumes interiores distintos no próprio mapa, sem
+novos acessos de transferência no PlaceCatalog. Somados ao inventário anterior
+de 34 acessos / 32 interiores: **52 lugares/acessos e 50 interiores exploráveis**.
+Neste escopo: **0 certificados integralmente, 18 em andamento, 0 não iniciados**;
+os contêineres empilhados superiores continuam cenário. Não recertifica ambientes
+anteriores. [Implementação, evidências e pendências](port-container-lockpick.md).
+
+- [x] Lockpick na Ammu-Nation, quantidade persistente e minigame de ângulo/torque.
+- [x] Portas físicas, entrada caminhando, coleta, saída e reconstrução por streaming.
+- [x] Câmera superior com teto oculto; restauração de ângulo/zoom ao sair.
+- [x] Colisão de jogador/NPC e oclusão renderizada com controles positivos.
+- [x] Dinheiro, munição, armas, colete e vazios; recibos por carga sem duplicação.
+- [x] Reposição em 20 minutos, três layouts com colisão/oclusão e bloqueio por ocupantes.
+- [x] Ciclo e relógio salvos; testemunhas com linha de visão acionam viatura real.
+- [ ] Comparação renderizada de frame time antes/depois sem processos concorrentes.
+- [ ] Evidência visual anterior/final equivalente: fotos finais disponíveis;
+  captura inicial interrompida por falha de gravação, baseline a reconstruir.
+
+## Vila dos caminhoneiros / Posto do Tonico — 28/09/2026
+
+Seis casas acessíveis no próprio mundo, com seis interiores distintos; o
+balcão do posto é exterior. Somadas ao inventário de 52 lugares/acessos e
+50 interiores incluindo os contêineres: **58 lugares/acessos e 56 interiores**.
+Neste escopo: **0 certificados integralmente, 6 em andamento, 0 não iniciados**.
+[Escopo e evidências](truckers-village.md).
+
+- [x] Sólidos e aproximações: 328 verificações físicas; casas rotacionadas,
+  quintais, bombas, bancos, vegetação e balcão. Acesso a pé livre e veículos
+  bloqueados nos postes; tráfego termina no estacionamento externo.
+- [x] Missão exclusiva e recompensa única com guardas de alcance/vida.
+- [x] Fluxo integrado final de checkpoint e conserto do veículo; Main sem falhas,
+  29 checks de lógica aprovados. Checkpoint real apenas na conclusão.
+- [x] Fotos e oclusão renderizada separada para jogador/NPC; coberturas por
+  presença, paleta corrigida e revisão da borracharia aberta.
+- [x] Revisão country: três caminhantes mais Tonico, 47 checks de movimento
+  e combate; compra/assalto, 26 checks e fluxo Main real com menu, economia,
+  crime, persistência e dano. 18 árvores e capim/arbustos entre as casas.
+- [x] Seis portas físicas automáticas, mobiliário sólido, câmera interna e
+  restauração do exterior; 137 checks de interiores e passagem real em Main.
+- [x] Dois moradores de doze por casa, chamado dos vizinhos e persistência;
+  47 checks próprios, dano e alarme reais no Main.
+- [x] Sete veículos utilizáveis, admissão física e restauração sem duplicação.
+- [x] Dinheiro nas seis casas com recibos; 67 checks incluindo restauração,
+  jogador morto, fora da casa, região incorreta e tentativa de duplicação.
+- [x] Menu de balcão 350 × 210 validado após 45 frames, sem cortar botões.
+- [x] Fotos finais dos seis interiores e 36 controles de jogador/NPC à frente,
+  atrás e ao lado de móveis. Copas liberadas somente na câmera interna;
+  sólidos, troncos e oclusão física preservados. Pasta `homes-final/`.
+- [ ] Comparativo de performance aprovado; baseline renderizado disponível.
+
+## Terminal público de Harbor — 28/09/2026
+
+Um novo cais exterior com abrigo aberto e passarela, sem interior isolado novo:
+inventário de interiores mantido em **34 acessos / 32 interiores**; zero novas
+certificações integrais. [Escopo, fotos reais, testes e métricas](harbor-life-20260928.md).
+
+- [x] Travessia física barco → cais → passarela → cidade; colisão de banco,
+  barreiras e portão; posto dos pescadores apoiado e livre.
+- [x] Oclusão inspecionada separadamente, com personagem à frente, atrás e ao
+  lado do banco/abrigo. Capturas reais no registro.
+- [x] Ciclos de viagem, população limitada, dano, atropelamento, morte e retorno;
+  conservação de carga, save e regressões da abertura/garagem.
+- [ ] Ausência de regressão de performance: comparação renderizada executada,
+  com aumento de percentis e pico na chuva; aprovação pendente.
+
+## Iluminação externa e mapa 2D — 28/09/2026
+
+Sem novos lugares ou interiores: inventário mantido em 34 acessos / 32 interiores.
+As novas fontes usam os postes, torres do porto e luminárias elevadas da Vértice;
+nenhum acesso, móvel ou bloqueio de piso foi alterado. Interiores isolados não
+recebem o preenchimento exterior e desativam o novo conjunto de luzes.
+
+- Controlador: 26 checks aprovados de ciclo de vida/limites/transições;
+  regressão de clima, sombras, dia/noite aprovada. As validações físicas anteriores
+  permanecem aplicáveis à geometria de circulação, que não mudou.
+- Fotos reais antes/depois e amostras de Main:
+  `evidence/outdoor-lighting-20260928/{before,after,confirmation}/`.
+- Editor 2D: 24 checks funcionais aprovados; performance com pendência de
+  picos e limite preexistente, conforme `docs/world-editor.md`.
+- Métricas, limites e estado de performance em `docs/outdoor-lighting-20260928.md`.
+  Não se trata de nova certificação dos 32 interiores.
+
+## Delegacia — fachada e calçada — 28/09/2026
+
+Revisão de 1 acesso exterior existente: prédio de 18 × 10 m, ampliado para o
+lado da praça; plataforma, mobiliário e rampa limitados à borda Z=130,5 da
+Dock Street de 14 m. Sem novos lugares/salas: permanecem 34 acessos e 32
+interiores. Neste escopo: 1 acesso validado, 0 em andamento, 0 restante.
+O interior da delegacia conserva o acabamento e a câmera existentes.
+
+- Fotos reais: `evidence/police-frontage-20260928/before/benchmark.png` e
+  `after/benchmark.png`; entrada, interior e retorno em `access/`.
+- `test_police_frontage.gd`: porta fechada/aberta, caminhada de entrada e saída,
+  câmera/controle, spawn, policiais residentes, dimensões do editor, colisores
+  rígidos e varredura de sólidos da faixa liberada aprovados em Main.
+- `test_police_frontage_geometry.gd`: 22 checks aprovados, jogador e NPC sobem
+  e descem a rampa e são bloqueados pelo banco. Profundidade verificada à parte
+  com controles renderizados: ator visível à frente, parcialmente oculto atrás
+  do banco e totalmente oculto pela parede. Evidências em `geometry/`.
+- Performance: Main, RTX 4060 Laptop, Mobile, 1280×720, VSync desligado,
+  limite normal 144, seed/câmera/horário fixos, 8 s aquecimento + 30 s medidos.
+  Antes/depois: 110,52/131,52 FPS; p50 9,639/6,248 ms; p95 13,504/11,609 ms;
+  p99 23,207/12,947 ms; máximo 72,199/23,234 ms; >33,3 ms 18/0;
+  >66,7 ms 1/0. Sem regressão observada no cenário; resultado final abaixo
+  de 16,67 ms em p95/p99. Primeiro aquecimento tem picos de 469,7/544,2 ms:
+  não representa fluidez contínua desde o carregamento. Amostras em
+  `before/performance.json` e `after/performance.json`. Repositório compartilhado
+  recebeu trabalho concorrente durante a comparação; o ganho não é atribuído
+  exclusivamente a esta reforma. Sem certificação de outros horários/cenários.
+- Uma consulta inicial do teste precedia o registro físico do streaming;
+  sincronizada por dois ticks, mantendo a exigência de bloqueio da porta.
+  Avisos de Texture RID no encerramento também existem na medição anterior.
+
+## Vértice — ocupação do terreno e esconderijo — 28/09/2026
+
+A Vértice continua sendo **1 lugar físico**, agora com **2 interiores distintos**:
+galpão/escritório contínuo e esconderijo subterrâneo. O alçapão adiciona um acesso;
+o inventário passa de 33 acessos/31 interiores para **34 acessos / 32 interiores**.
+Os demais lugares permanecem inalterados. No escopo desta revisão são **2 ambientes
+validados / 0 em andamento / 0 restantes**, nos cenários e hardware registrados;
+isso não recertifica os outros 30 interiores nem altera seus estados anteriores.
+
+- Entrada e saída pelo fluxo existente de lugares, marcador compartilhado,
+  câmera alinhada, M4A1 flutuante, segundo achado e persistência: 33 checks em Main
+  aprovados em `test_vertice_hideout.gd`, incluindo nova sessão e reentrada.
+- Pátio, copa e embalagem: 413 checks físicos gerais, 62 sólidos e passagem
+  varrida de caminhões carregados pelas três docas. Oclusão geral: 51 checks.
+  Estações de embalagem: mais 49 checks físicos e 27 de profundidade com controles.
+- Subsolo: 114 checks de física/oclusão, com jogador e NPC, bancadas, armário,
+  cantos, piso, corredores e posições livres de acesso e recompensas.
+- Horários, portões, residentes e achados anteriores: regressão aprovada em
+  `test_vertice_company.gd`.
+- Comparação renderizada Main/RTX4060/Mobile/1280×720 aprovada para o orçamento
+  de regime estável: p95 pátio 8,410→8,461 ms; galpão 8,540→8,635 ms; noite
+  8,779→8,826 ms; copa com chuva 9,737→8,954 ms. Subsolo: p95 7,768 ms de dia e
+  7,674 ms à noite. Fotos reais antes/depois e medições em [Vértice](vertice-logistics.md).
+  Um pico isolado de 2,079 s na amostra intermediária não reapareceu na confirmação;
+  aquecimento ainda chegou a 485 ms. Não se declara ausência de engasgos.
+- Nenhuma alteração nas regras de Maciota.
+
+## Vértice — transportadora rural — 28/09/2026
+
+Registro histórico da primeira implantação; contagem e validação atuais na seção acima.
+
+Novo lugar além do Neko: **1 lugar físico / 1 interior contínuo**, com galpão e escritório no mesmo ambiente. Somado ao inventário de 32 acessos/30 interiores, passa a **33 acessos / 31 interiores distintos**. Este acréscimo está **em andamento**, com **zero novas certificações integrais** até fechar a validação integrada e de desempenho; os estados dos 30 interiores anteriores permanecem inalterados.
+
+- Física: 151 verificações aprovadas em `tests/test_port_depot.gd`, com jogador e NPC reais contra paredes, móveis, estantes e portas, além de corredores e pontos de recompensa.
+- Entrada contínua, horário 8h–18h, saída após fechamento, câmera, guarda e dois recibos únicos: `tests/test_vertice_company.gd` aprovado em Main.
+- Oclusão: `tests/test_vertice_depth.gd`, 51 verificações renderizadas aprovadas, com controles positivos; fotos reais e relatório em `evidence/port-logistics-20260928/depth/`.
+- Fotos finais reais e métricas: [exterior](../evidence/port-logistics-20260928/after/vertice-overview.png), [interior](../evidence/port-logistics-20260928/after/interior.png), [noite](../evidence/port-logistics-20260928/after-weather-fixed/night.png). Main/RTX4060/Mobile/1280×720: pátio142,10FPS/p959,830ms; interior141,50FPS/p959,653ms; noite143,99FPS/p958,096ms após corrigir reconstrução contínua de chunks. Física e oclusão aprovadas. A baseline histórica sofreu concorrência de outras sessões e não isola a alteração; comparação rigorosa permanece inconclusiva, portanto não contar como certificação integral concluída. Histórico e amostras brutas em [Vértice](vertice-logistics.md).
+
+## Saída dirigida do estacionamento do porto — 27/09/2026
+
+Sem novos lugares ou interiores; contagens de migração inalteradas. `GarageRewards` detecta o carro avançando pela rampa e solicita a transferência existente antes de acabar o piso. Mantém admissão física do casco no exterior e persistência; nenhuma mudança em câmera, escala, materiais, iluminação ou mobiliário.
+
+- Recompensas e regras existentes: `test_garage_rewards.gd`, 47 checks aprovados.
+- Novo `test_port_garage_drive_exit.gd`: integração pendente. A execução foi bloqueada por erros concorrentes de compilação e arquivos ausentes em `activities/MountainProgression.gd`; tentativas anteriores pararam no embarque. O teste agora começa sentado para isolar a saída, mantendo física e transferência reais.
+- Teste legado de transferência parou na criação do Ironback, antes do cenário afetado.
+- Apoio após saída, colisão integrada, fotos antes/depois, oclusão e comparação renderizada de frame time permanecem pendentes. Outras instâncias Godot abertas; nenhum benchmark ou aprovação de FPS desta correção.
+
+## Edição das fachadas de serviços — 26/09/2026
+
+O editor passa a permitir transformação e cor de oito fachadas existentes: delegacia, hospital, bombeiros, banco, Ammu-Nation, Union, Fuel e Canal North. Nenhum lugar físico ou interior distinto foi acrescentado; contagens anteriores permanecem. As salas, câmeras internas, móveis e residentes não foram reformados. A alteração transforma fachadas, seus sólidos e acessos exteriores. Maciota e Northgate Auto não entram nesta integração; a tentativa de incluir Maciota foi bloqueada pela revisão automática.
+
+- Controles, persistência em documento, entrada/retorno transformados e proteção de acessos vizinhos: `test_world_editor_service_controls.gd`, 46 checks (47 com prévia).
+- Fachadas ampliadas/giradas: `test_service_facade_physics.gd`, 32 checks de geometria, cor, cápsula de ator livre na porta aberta e corpos físicos rígidos. As dobradiças conservam base rígida; a persiana dos bombeiros mantém sua forma animada após a ampliação.
+- Delegacia em Main: `test_world_editor_service_buildings.gd` verifica porta fechada bloqueando, aberta liberando, caminhada para dentro, NPCs presentes, spawn, saída, retorno e controle. Capturas reais de exterior/interior/retorno em `evidence/service-editor-20260926/after/`; comparação exterior original em `before/benchmark.png`.
+- A visibilidade normal em 3D foi conferida nas capturas. Não foi repetida a certificação completa de oclusão de todos os móveis/NPCs das oito salas; não se marca nova migração ou aprovação integral desses interiores.
+- Performance exterior em Main: original/editada 143,82/143,94 FPS, p95 11,639/11,479 ms e p99 13,083/13,314 ms, sem frames estáveis acima de 33,3 ms, em amostras de 30 s após 8 s de aquecimento, Mobile/RTX 4060 Laptop/1280×720/limite 144. Comparativo dos cenários na implementação atual, não do código anterior; dados em `evidence/service-editor-20260926/{before,after}/performance.json`.
+
+## Retomada pelo menu aéreo — 25/09/2026
+
+Nenhum lugar ou interior novo; contagens e estados de migração permanecem inalterados. A câmera temporária do menu entrega a câmera interna já restaurada sob nuvens opacas, preservando enquadramento, alvo, posição e colisões. Save na garagem do Maciota conferido com bloqueio de armas e inventário preservado. Capturas e escopo de validação em [sky-menu-20260925.md](sky-menu-20260925.md); o comparativo isolado de performance permanece pendente. Isto não aprova novamente colisão/oclusão dos interiores existentes.
+
+Na correção subsequente, a prévia aguarda também a restauração do motorista salvo na garagem antes da revelação. Suíte renderizada: 113 verificações aprovadas, incluindo câmera interna, arma guardada e inventário preservado; capturas em `evidence/sky-menu-fixes-20260925/functional/`. Sem alterações em salas, mobiliário, sólidos ou contagens. Abertura ainda com picos de frame time; nenhuma nova certificação de performance dos interiores.
+
+## Isolamento da vegetação exterior — 25/09/2026
+
+Correção compartilhada de `MountainGrass3D`: restringir à superfície física do terreno carregado, respeitar as reservas de acessos/interiores e suspender a geração em salas ocupadas. Nenhuma sala, câmera, móvel ou colisão interna foi reformada; contagens de lugares e interiores permanecem inalteradas. Testes ficaram com o usuário por instrução explícita. Fotos antes/depois, travessia nos dois sentidos, cidade/interiores e comparação de frame time desta correção estão **pendentes**, sem nova aprovação dos ambientes.
+
 ## Interiores físicos na campanha V1 — plano de 22/09/2026
 
 [Inventário completo e ordem de execução](inline-interior-migration-plan.md): 29 interiores distintos acessíveis no porto e na serra. No início deste plano havia 2 Ammu-Nation contínuos e 27 salas isoladas. Em 22/09, os 29 estavam concluídos (15 na serra, 14 no porto); após a revisão da delegacia em 24/09, são **28 concluídos, 1 em validação (Harbor Patrol) e 0 ainda sem migração**. A contagem não inclui Northgate Auto, avião exterior nem necrotério sem acesso. A aprovação anterior cobria circulação, colisão, oclusão, reentrada/save, fotos e frame time renderizado nos cenários registrados; a nova câmera e porta da delegacia exigem validação atualizada.
@@ -459,3 +721,38 @@ As pendências numéricas de acessos registradas nos lotes anteriores são hist�
 ## Feedback jogando em 25/09 — indicador do Maciota
 
 Sem nova migração: permanecem **32 acessos / 30 interiores distintos**. Indicador compartilhado passa a acompanhar a câmera todo quadro, em vez do intervalo de 0,1 s dos textos. Smoke Main headless **6/6**, incluindo arma bloqueada na garagem. Visual e FPS aguardam o usuário; nenhuma nova certificação integral. [Registro das correções](feedback-20260925-police-traffic.md).
+
+## Organização espacial cidade–ponte–montanha — 25/09/2026
+
+Alteração dos acessos exteriores, sem migrar interiores: permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. Ramais e acostamentos recortados nas junções, retorno no heliporto, conexão de volta da vila, caminhos para estabelecimentos/teleférico e aproximação lateral da caverna. Alterações concorrentes de ponte, material e cache do minimapa preservadas.
+
+- [x] Implementação integrada; rotas de pedestres separadas do tráfego e incluídas na geometria do mapa.
+- [ ] Percursos a pé/com veículos, entrada/retorno e interações: testes deixados com o usuário por instrução explícita.
+- [ ] Colisão e oclusão, separadamente; continuidade visual do minimapa e capturas reais antes/depois.
+- [ ] Performance renderizada e comparação de frame time. Nenhum benchmark executado, nenhuma aprovação de FPS.
+
+[Escopo e pendências desta correção](route-spatial-20260925.md).
+
+## Rodoviária: prévia e operação exterior — 26/09/2026
+
+Sem interior novo: permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. Prédio restaurado na prévia 2D + 3D; quatro ônibus, dezesseis passageiros e duas cancelas integrados ao exterior. Ciclo físico e segundo embarque: 25 verificações aprovadas; cancelas: 10; suspensão e retorno: 5; prévia: 6. Chegada M00 preservada e testada. Capturas reais, escopo e métricas no [registro da rodoviária](terminal-restoration.md).
+
+Performance renderizada medida, mas estabilidade **pendente**: uma amostra apresentou travadas que não se repetiram na confirmação. Nenhuma certificação de interiores ou de estabilidade de FPS foi acrescentada.
+
+## Bueiro: entrada por interação — 27/09/2026
+
+Sem migração: permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. Tampa fechada por proximidade, entrada pela ação de interação (E), sem hint e sem animação de escada/deslocamento do personagem. Saída existente preservada.
+
+- [x] `tests/test_video_phase6_special.gd -- --no-save --skip-arrival`: 25 checks, zero falhas; inclui apoio sobre a tampa, proximidade sem entrada automática, interação silenciosa, spawn e retorno livres, controle liberado e regressão do porão/caverna.
+- [ ] Execução sem erros de subsistemas: o teste acima completou, mas registrou erro de inferência de `impact` em `gameplay/urban_v1/UrbanRoutineActor.gd:151`, fora desta alteração.
+- [ ] Capturas reais antes/depois e oclusão renderizada. Não verificadas nesta correção.
+- [ ] Comparação de frame time antes/depois: não medida; outras instâncias Godot ativas. Nenhuma aprovação de FPS.
+
+## Linha 510: seis plataformas exteriores — 28/09/2026
+
+Seis tubos existentes reformados, sem interior novo: permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. Cada plataforma recebeu três portões operacionais e correção do piso e da colisão da rampa. [Implementação e evidências](biarticulated-transit.md).
+
+- [x] Colisão: **60/60** verificações nas seis estações, incluindo piso superior, bancos, portões abertos/fechados, subida e descida pelas rampas.
+- [x] Viagem e interação: embarque, atendimento às seis estações com população e tráfego normais (**5/5**), passageiros físicos e restauração do jogador após desembarque; suspensão e retorno por região (**6/6**).
+- [x] Captura real de embarque, articulação em cruzamento noturno e inspeção individual de profundidade/oclusão nas seis plataformas. Fotos `station_0.png` a `station_5.png` no relatório; a estação Westgate foi recapturada após afastar a travessia.
+- [ ] Estabilidade de frame time: comparação renderizada executada, mas com processos concorrentes e travadas; desempenho **não aprovado**. Ver métricas e limitação no relatório.

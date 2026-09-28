@@ -1,0 +1,20 @@
+Truckers village country integration — observed execution summary
+Date: 2026-09-28
+Command:
+Godot_v4.7.2-stable_win64_console.exe --headless --path D:/geteco/game --script res://tests/test_truckers_village_integration.gd -- --no-save --skip-arrival --population=8 --isolated-save-root=D:/geteco/game/evidence/truckers-village-20260928/test-save
+
+Observed stdout (relevant lines):
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+Pré-aquecimento das regiões: 13696 ms
+TRUCKERS_VILLAGE_INTEGRATION failures=[]
+Exit code: 0
+
+No complete detailed stdout log was persisted for this execution. This summary
+transcribes the tool output, without rerunning the test. The sandbox also reported
+inability to write user://logs and read the Windows certificate store.
+
+Covered actual Main session interactions, original optional quest, partial
+snapshot compatibility/checkpoint restriction, completed save and restore,
+vehicle repair at the exterior parking area, native counter menu and purchase,
+register robbery, crime/checkpoint restriction, hostility snapshot/restore, and
+actual resident muzzle/LOS damage through Gameplay.damage_player.

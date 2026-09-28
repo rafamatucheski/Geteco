@@ -156,11 +156,11 @@ func check_saves() -> void:
 	manual.physical_keycode = KEY_F5
 	manual.pressed = true
 	session._input(manual)
-	check(session.notice.text == "Progresso salvo.", "manual F5 confirms successful save")
+	check(session.notice.text == "Mensagem funcional de controle" and session.get_node("SaveFeedback/Indicator").visible, "manual F5 confirms in corner without replacing notice")
 	session.show_message("Mensagem funcional de controle")
 	world.pause_panel.pause_game()
 	world.pause_panel.get_node("%BtnSaveGame").pressed.emit()
-	check(not paused and session.notice.text == "Progresso salvo.", "pause menu save confirms success and resumes")
+	check(not paused and session.notice.text == "Mensagem funcional de controle", "pause menu save resumes without central save message")
 	# A real filesystem error must still be reported for automatic saves.
 	isolated_store.path = output_dir.path_join("missing-parent-%d" % Time.get_ticks_usec()).path_join("blocked/progress.json")
 	var blocker_path: String = isolated_store.path.get_base_dir().get_base_dir()
@@ -169,7 +169,9 @@ func check_saves() -> void:
 		blocker.store_string("This file intentionally prevents creating the save directory.")
 		blocker.close()
 	check(blocker != null, "isolated filesystem failure fixture created")
-	check(not session.save_game() and session.notice.text.begins_with("Não foi possível salvar"), "automatic save failure remains visible")
+	check(not session.save_game() and session.last_save_error.begins_with("Não foi possível salvar") and session.get_node("SaveFeedback/Indicator").failed, "automatic save failure uses corner indicator")
+	check(session.notice.text == "Mensagem funcional de controle", "disk failure does not replace central gameplay notice")
+	await capture("save-error")
 	controller.no_save = true
 	controller.store = original_store
 

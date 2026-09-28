@@ -257,7 +257,7 @@ func _update_fire() -> void:
 		_fire_light.omni_range = 5.0
 		_fire_light.shadow_enabled = false
 		vehicle.add_child(_fire_light)
-	var hood: Vector3 = Vector3(0, .85, -vehicle.half_length * .58)
+	var hood: Vector3 = Vector3(0, minf(.85,vehicle.body_height*.8) if vehicle.has_meta("heavy_crush_ratio") else .85, -vehicle.half_length * .58)
 	_fire.global_position = vehicle.to_global(hood)
 	_fire.emitting = true
 	_smoke.global_position = _fire.global_position + Vector3.UP * .5
@@ -327,7 +327,27 @@ func wreck() -> void:
 			var surface_key: String = str(surface_keys[index]) if index < surface_keys.size() else key
 			_saved.append([part, index, part.get_surface_override_material(index)])
 			part.set_surface_override_material(index, replacement[_role(part.get_active_material(index) as StandardMaterial3D, surface_key)])
-	_blast_hop()
+	if vehicle.has_meta("heavy_crush_ratio"):
+		# A tank is supported by this hull. Replacing it with a jumping rigid
+		# body would push the tank up and undo the smooth drive-over collision.
+		vehicle.controlled = false
+		vehicle.traffic = false
+		vehicle.velocity = Vector3.ZERO
+		vehicle.horizontal_velocity = Vector3.ZERO
+		vehicle.speed = 0.0
+		_wreck_fire_time = 0.0
+		var world := vehicle.get_parent()
+		var gameplay: Variant = world.get("gameplay") if is_instance_valid(world) else null
+		# Live crush has an owner; a loaded wreck has none. Garage admission
+		# also blocks the residual flames/light, including the fallback path.
+		if vehicle.has_meta("heavy_crush_source") and (not is_instance_valid(gameplay) or gameplay.state == null or gameplay.state.weapons_allowed()):
+			_wreck_fire_time = WRECK_FIRE_SECONDS
+		if _wreck_fire_time > 0:
+			_update_fire()
+			set_physics_process(true)
+		else: _ember.emission_energy_multiplier = 0.0
+	else:
+		_blast_hop()
 
 ## O impulso levanta a frente, mas é a colisão da carcaça que limita a queda e o
 ## giro. Animar só o visual deixava a traseira atravessar o chão antes de quicar.

@@ -74,6 +74,9 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 	controller.sun.light_energy *= 1.0-0.16*bridge_day
 	env.ambient_light_energy *= 1.0-0.08*bridge_day
 	env.ambient_light_color *= current.shadow_tint
+	# Outdoor bounce keeps shaded sidewalks and actors readable. Weather resets
+	# the base energy each update; isolated interiors return above unchanged.
+	env.ambient_light_energy += lerpf(.12,.16,daylight_at(hour))
 	env.adjustment_enabled = true
 	env.adjustment_saturation = current.saturation
 	env.adjustment_contrast = current.contrast

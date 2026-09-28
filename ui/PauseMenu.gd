@@ -60,9 +60,10 @@ func pause_game() -> void:
 	if has_session:
 		var session = world.session
 		var in_transit: bool = session.controller.travel_busy or session.vehicle_transition_busy or session.respawn_busy or (session.passenger_transport != null and session.passenger_transport.riding)
-		%BtnSaveGame.disabled = in_transit or session.rescue_pending or session.controller.save_invalid or world.gameplay.health <= 0
+		var save_reason: String = session.save_block_reason()
+		%BtnSaveGame.disabled = not save_reason.is_empty()
 		%BtnLoadGame.disabled = in_transit or world.driving.occupied
-		%BtnSaveGame.tooltip_text = "Salvar indisponível durante viagem, resgate ou transição." if in_transit or session.rescue_pending else ""
+		%BtnSaveGame.tooltip_text = save_reason if not save_reason.is_empty() else session.last_save_error
 		%BtnLoadGame.tooltip_text = "Desembarque e conclua a transição antes de carregar." if in_transit or world.driving.occupied else ""
 	%BtnAchievements.disabled = not has_session
 	%BtnCollectibles.disabled = not has_session

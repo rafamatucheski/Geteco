@@ -5,6 +5,7 @@ var state := "sun"
 const INK := Color("d9e3e5")
 
 func _draw() -> void:
+	draw_set_transform(Vector2.ZERO, 0.0, size / 30.0)
 	var center := Vector2(15, 15)
 	match state:
 		"sun":

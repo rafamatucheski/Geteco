@@ -6,6 +6,7 @@ var police_door_bodies: Array[StaticBody3D] = []
 var fire_door_visual: Node3D
 var fire_door_body: StaticBody3D
 var fire_door_shape: BoxShape3D
+var fire_door_height := 3.8
 var open_amount := 0.0
 
 func set_open_amount(amount: float) -> void:
@@ -13,10 +14,10 @@ func set_open_amount(amount: float) -> void:
 		open_amount = clampf(amount, 0.0, 1.0)
 		if not is_instance_valid(fire_door_visual): return
 		# Sectional shutter stacks under its header; visual and solid rise together.
-		fire_door_visual.position.y = 3.8 * open_amount
+		fire_door_visual.position.y = fire_door_height * open_amount
 		fire_door_visual.scale.y = maxf(.001, 1.0 - open_amount)
-		fire_door_shape.size.y = maxf(.004, 3.8 * (1.0 - open_amount))
-		fire_door_body.position.y = 3.8 * open_amount
+		fire_door_shape.size.y = maxf(.004, fire_door_height * (1.0 - open_amount))
+		fire_door_body.position.y = fire_door_height * open_amount
 		fire_door_body.get_child(0).position.y = fire_door_shape.size.y * .5
 		return
 	if building_kind != "police_precinct" and building_id != "Police": return

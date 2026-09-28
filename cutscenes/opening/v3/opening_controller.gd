@@ -7,6 +7,7 @@ const Timeline=preload("res://cutscenes/opening/v3/opening_timeline.gd")
 @export var auto_start:=true
 @export var show_studio_intro:=false
 @export var allow_skip:=true
+@export var finish_before_travel := false
 @export var show_preview_hud:=false
 @export_range(.5,2,.05) var playback_speed:=1.0
 @export_file("*.tscn") var next_scene_path:=""
@@ -144,8 +145,8 @@ func _process(delta: float) -> void:
 			_procedural_audio.play_from(0); _shot_index=0
 		return
 	_total_elapsed=minf(Timeline.TOTAL_DURATION_SECONDS,_total_elapsed+delta*playback_speed)
-	_show_time(_total_elapsed)
-	if _total_elapsed>=Timeline.TOTAL_DURATION_SECONDS: _finish(false,.8)
+	_show_time(minf(_total_elapsed,55.0+Timeline.E-.001) if finish_before_travel else _total_elapsed)
+	if _total_elapsed >= (55.0+Timeline.E if finish_before_travel else Timeline.TOTAL_DURATION_SECONDS): _finish(false,.8)
 
 func _show_time(time: float) -> void:
 	_shot_index=Timeline.shot_at(time)

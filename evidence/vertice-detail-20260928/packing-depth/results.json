@@ -1,0 +1,54 @@
+{
+	"checks": 27,
+	"failures": [],
+	"records": [
+		{
+			"actor": "player",
+			"control_pixels": 2245,
+			"pose": "front",
+			"prop": "packing_station",
+			"visible_pixels": 2245,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2244,
+			"pose": "behind",
+			"prop": "packing_station",
+			"visible_pixels": 1288,
+			"visible_ratio": 0.57397504456328
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2246,
+			"pose": "side",
+			"prop": "packing_station",
+			"visible_pixels": 2246,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1915,
+			"pose": "front",
+			"prop": "packing_station",
+			"visible_pixels": 1915,
+			"visible_ratio": 1.0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1915,
+			"pose": "behind",
+			"prop": "packing_station",
+			"visible_pixels": 1124,
+			"visible_ratio": 0.586945169712794
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 1917,
+			"pose": "side",
+			"prop": "packing_station",
+			"visible_pixels": 1917,
+			"visible_ratio": 1.0
+		}
+	]
+}

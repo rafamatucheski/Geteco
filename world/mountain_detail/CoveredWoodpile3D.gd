@@ -54,7 +54,7 @@ func build() -> void:
 	
 	# Side and rear retaining rails
 	for side in [-1.0, 1.0]:
-		var sx := side * half_w * 0.85
+		var sx: float = side * half_w * 0.85
 		_add_box("SideRailLow", Vector3(sx, 0.50, 0), Vector3(0.08, 0.10, shelter_size.y * 0.85), beam_mat)
 		_add_box("SideRailMid", Vector3(sx, 1.05, 0), Vector3(0.08, 0.10, shelter_size.y * 0.85), beam_mat)
 	_add_box("BackRail", Vector3(0, 0.70, -half_d * 0.85), Vector3(shelter_size.x * 0.85, 0.10, 0.08), beam_mat)

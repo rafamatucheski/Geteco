@@ -1,0 +1,27 @@
+Compact counter HUD verification — 2026-09-28
+
+Cause of the earlier oversized rendered screenshot:
+ClassicGameplayHUD._layout_modal periodically replaced the panel minimum with
+640x480, after the original one-frame test. GameStyle's panel padding also added
+44px to the old scroll minimum, producing 394px width once HUD sizing was fixed.
+
+Fix:
+Both HUD adapters honor opt-in modal_preferred_size metadata. Only the Tonico
+counter sets it, uses a compact protected panel style and removes the scroll
+minimum. Closing restores prior metadata, style, margins and dimensions.
+All other modal menus retain their existing defaults.
+
+Observed execution (transcribed without rerun):
+Godot_v4.7.2-stable_win64_console.exe --headless --path D:/geteco/game --script res://tests/test_truckers_village_integration.gd -- --no-save --skip-arrival --population=8 --isolated-save-root=D:/geteco/game/evidence/truckers-village-20260928/test-save
+
+Pré-aquecimento das regiões: 4808 ms
+COUNTER_ACTUAL_BOUNDS_AFTER_45_FRAMES [P: (465.0, 255.0), S: (350.0, 210.0)]
+TRUCKERS_VILLAGE_INTEGRATION failures=[]
+Exit code: 0
+
+The complete Main integration passed: all three counter buttons fit entirely
+inside the scroll viewport; layout remains compact after 45 frames and closure
+restores other menus. All six-house, commerce, combat and quest checks also pass.
+No gameplay script errors were emitted in this final execution. Only sandbox
+user://log and certificate-store warnings preceded engine initialization.
+Rendered screenshot verification remains with the root agent.

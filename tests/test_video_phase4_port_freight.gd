@@ -3,6 +3,7 @@ extends SceneTree
 ## Use --capture only during the coordinated visual window, never as an FPS test.
 const FREIGHT := preload("res://gameplay/urban_v1/PortFreightDelivery.gd")
 const URBAN := preload("res://gameplay/urban_v1/UrbanOperations.gd")
+const HAUL := preload("res://gameplay/urban_v1/PortHaulRoutes.gd")
 const EVIDENCE := "res://evidence/video-review-phase4-20260924/"
 var OUTPUT := EVIDENCE
 var world
@@ -14,7 +15,9 @@ func _initialize() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--out="): OUTPUT = argument.trim_prefix("--out=").trim_suffix("/") + "/"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))
-	create_timer(230).timeout.connect(func(): push_error("FREIGHT timeout"); quit(3))
+	# The remote depot adds roughly 1 km of physical driving (~4–6 minutes),
+	# plus crane loading, boarding, a fresh Main reload and handback checks.
+	create_timer(900,true,false,true).timeout.connect(func(): push_error("FREIGHT timeout"); quit(3))
 	run.call_deferred()
 func frames(count: int) -> void:
 	for _i in count: await physics_frame
@@ -50,24 +53,66 @@ func saved_point(record: Dictionary) -> Vector3:
 	var p: Array = record.get("position", [0,0,0])
 	return Vector3(p[0],p[1],p[2])
 
-func drive_to(truck, target: Vector3, limit: int) -> bool:
+func drive_route(truck, route: Curve3D) -> bool:
 	truck.external_input = true
-	for frame in limit:
+	var length := route.get_baked_length()
+	var endpoint := route.get_point_position(route.point_count-1)
+	var progress := 0.0
+	var began := Time.get_ticks_msec()
+	# Bound the trip by its actual authored length: 2.5 m/s average allowance
+	# plus 90 seconds for junction queues, never more than nine real minutes.
+	var limit_ms := int(minf(540.0,length/2.5+90.0)*1000.0)
+	var frame := 0
+	var photographed := false
+	while Time.get_ticks_msec()-began < limit_ms:
+		if not is_instance_valid(truck) or truck.health<=0: return false
+		var final_offset: Vector3 = endpoint-truck.global_position
+		final_offset.y = 0
+		if progress > length-8.0 and final_offset.length()<1.4: return true
+		# Pure pursuit samples the real directed route. Physics, steering and
+		# streaming still move the occupied vehicle; no transforms are assigned.
+		var closest := route.get_closest_offset(truck.global_position)
+		progress = maxf(progress,minf(closest,progress+6.0))
+		var target := route.sample_baked(minf(length,progress+4.0),true)
 		var offset: Vector3 = target - truck.global_position
 		offset.y = 0
-		if offset.length() < 2.5: return true
 		var turn := wrapf(atan2(-offset.x, -offset.z) - truck.rotation.y, -PI, PI)
 		truck.steer_input = clampf(turn * 1.5, -1, 1)
 		var speed := 3.5 if absf(turn) > .5 else 5.5
+		if length-progress<8.0: speed = minf(speed,2.0)
 		truck.throttle_input = .6 if truck.speed < speed else 0.0
 		truck.brake_input = truck.speed > speed + .6
 		await physics_frame
-		if frame % 180 == 0: print("FREIGHT_DRIVE p=", truck.global_position, " target=", target, " speed=", truck.speed, " health=", truck.health)
-	print("FREIGHT_DRIVE blocked p=", truck.global_position, " target=", target)
+		frame += 1
+		if frame % 300 == 0: print("FREIGHT_DRIVE p=", truck.global_position, " progress=",progress,"/",length," target=", target, " speed=", truck.speed, " health=", truck.health)
+		if not photographed and progress>length*.4:
+			photographed = true
+			await photograph("route")
+	print("FREIGHT_DRIVE blocked p=", truck.global_position, " progress=",progress,"/",length)
 	for i in truck.get_slide_collision_count():
-		var hit = truck.get_slide_collision(i).get_collider()
-		print("FREIGHT_COLLIDER ", hit.get_path() if hit is Node else hit)
+		var contact = truck.get_slide_collision(i)
+		var hit = contact.get_collider()
+		print("FREIGHT_COLLIDER ", hit.get_path() if hit is Node else hit," point=",contact.get_position()," normal=",contact.get_normal()," yaw=",truck.rotation.y)
+		if hit is CharacterBody3D: print("FREIGHT_BLOCKING_VEHICLE id=",hit.get("vehicle_id")," archetype=",hit.get("archetype")," position=",hit.global_position)
 	return false
+
+func lifecycle_fixture(truck, depot: Vector3) -> void:
+	print("FREIGHT_LIFECYCLE_ONLY: destination fixture; this run does NOT validate physical travel")
+	truck.set_physics_process(false)
+	world.production.region.set_focus(depot)
+	for _i in 240:
+		await physics_frame
+		if world.production.region.prepare_collision_at(depot): break
+	truck.route = null
+	truck.velocity = Vector3.ZERO
+	truck.speed = 0.0
+	truck.throttle_input = 0
+	truck.steer_input = 0
+	truck.brake_input = true
+	truck.rotation.y = -PI*.5
+	truck.global_position = depot+Vector3.UP*.12
+	truck.set_physics_process(true)
+	await frames(30)
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
@@ -87,6 +132,9 @@ func run() -> void:
 	world.player.automatic_direction = Vector3.ZERO
 	world.player.input_locked = false
 	session.weather.time_of_day = .4
+	# Keep the fixture's business-hour clock in the persisted state too;
+	# otherwise a fresh Main restores the original 07:41 closed-company time.
+	session.state.world_state.time = .4
 	session.weather.set_process(false)
 	var ops = session.urban_operations
 	var cargo = ops.cargo_handling
@@ -134,7 +182,7 @@ func run() -> void:
 	check(session.interact() and freight.active_bay == bay, "explicit acceptance transfers this work truck")
 	check(entry.phase == "freight" and truck.get_meta("port_freight_claim", -1) == bay, "NPC route releases ownership until handback")
 	check(not freight.perform(FREIGHT.PREFIX + "0"), "one active freight rejects another acceptance")
-	check(session.save_game(), "active cargo is saved atomically with game state")
+	check(not session.save_game(), "active freight cannot replace a safe checkpoint")
 	var accepted: Dictionary = ops.snapshot()
 	var roundtrip: Dictionary = JSON.parse_string(JSON.stringify(accepted))
 	print("FREIGHT_SAVE validate direct=", URBAN.validate_snapshot(accepted), " JSON=", URBAN.validate_snapshot(roundtrip), " freight=", FREIGHT.validate_snapshot(roundtrip.freight), " port=", preload("res://gameplay/urban_v1/PortOperations.gd").validate_snapshot(roundtrip.port), " cemetery=", preload("res://gameplay/urban_v1/CemeteryOperations.gd").validate_snapshot(roundtrip.cemetery))
@@ -161,13 +209,16 @@ func run() -> void:
 	check(entry.phase == "freight", "player boarding no longer strands authorized cargo in interrupted phase")
 	await photograph("loaded")
 	world.camera.clear_store_focus()
-	# Drive around the waiting trucks, using the open paved yard and authored
-	# east freight road. Every metre uses Vehicle physics and collision.
-	var route := [Vector3(310,0,216), Vector3(346,0,219), Vector3(357,0,231), Vector3(357,0,341), Vector3(349,0,351.25), freight.depot_position(bay)]
-	for point in route:
-		check(await drive_to(truck, point, 2100), "physical truck route reaches " + str(point))
-		if not failures.is_empty(): await finish(); return
-		if point == route[2]: await photograph("route")
+	# Follow the same current street graph and rural access used by the fleet.
+	# Every metre still uses the occupied Vehicle's steering and collision.
+	var route: Curve3D = HAUL.journey(world.production.traffic_routes,truck.global_position,bay,false)
+	check(route != null and route.get_point_position(route.point_count-1).distance_to(depot)<.01,"directed freight route ends at the remote company's real dock")
+	if not failures.is_empty(): await finish(); return
+	if "--lifecycle-only" in OS.get_cmdline_user_args():
+		await lifecycle_fixture(truck,depot)
+	else:
+		check(await drive_route(truck,route),"player physically drives the complete port-to-company route")
+	if not failures.is_empty(): await finish(); return
 	truck.throttle_input = 0
 	truck.steer_input = 0
 	truck.brake_input = true
@@ -175,8 +226,14 @@ func run() -> void:
 	truck.external_input = false
 	check(truck.is_on_floor() and truck.health > 0 and entry.loaded, "arrival preserves floor support, truck and physical cargo")
 	check(not freight.perform("south_port_freight_deliver"), "payment requires explicit handback outside the vehicle")
-	check(session.save_game(), "in-vehicle freight saved outside the quay")
+	check(not session.save_game(), "in-vehicle freight cannot save outside the quay")
+	# Explicit legacy fixture: older mid-freight saves remain loadable, even
+	# though gameplay can no longer publish them under the checkpoint policy.
+	session.controller.capture_player_vehicle()
 	var saved_game: Dictionary = JSON.parse_string(JSON.stringify(session.state.snapshot()))
+	saved_game.world.erase("pedestrian")
+	saved_game.world.urban_operations = JSON.parse_string(JSON.stringify(ops.snapshot()))
+	saved_game.combat = world.gameplay.snapshot()
 	var checkpoint := FileAccess.open(OUTPUT + "phase4-port-depot-save.json", FileAccess.WRITE)
 	if checkpoint != null: checkpoint.store_string(JSON.stringify(saved_game)); checkpoint.close()
 	var saved_position: Vector3 = truck.global_position
@@ -209,7 +266,7 @@ func run() -> void:
 	var matching := matching_trucks(FREIGHT._vehicle_id(bay))
 	check(matching == 1 and world.driving.car == truck and world.driving.occupied, "fresh session adopts one saved driver vehicle without duplicate fleet")
 	check(entry.loaded and cargo.cranes[bay].visual.get_parent() == truck, "fresh-session load restores the same shipment")
-	check(ops.security.authorized_visit, "reload preserves the paid port visit")
+	check(ops.security.authorized_visit == saved_game.world.urban_operations.security.authorized_visit, "reload preserves the saved port-visit authorization state")
 	if not failures.is_empty(): await finish(); return
 	check(world.driving.leave(), "depot exit admitted")
 	check(await wait_transition(), "depot exit completes physically")
@@ -220,7 +277,7 @@ func run() -> void:
 	var returned_at: Vector3 = truck.global_position
 	check(session.interact() and session.state.economy.balance == balance + 300, "delivery pays exactly R$300")
 	check(freight.active_bay == -1 and freight.jobs[bay] == FREIGHT.DELIVERED and not entry.loaded, "delivery clears active cargo and persists completion")
-	check(entry.phase == "approach" and truck.traffic, "explicit return resumes the existing NPC circuit")
+	check(entry.phase == "returning" and truck.traffic and truck.route != null and truck.route.get_point_position(truck.route.point_count-1).distance_to(entry.stop)<.01, "explicit handback resumes the NPC route back to its port loading bay")
 	check(world.driving.car == null and not session.state.world_state.vehicles.any(func(record): return record.get("vehicle_id") == FREIGHT._vehicle_id(bay)), "returned work truck is no longer a duplicate personal-vehicle save")
 	check(session.state.world_state.vehicles.size() == 1 and session.state.world_state.vehicles[0].vehicle_id == previous_car.vehicle_id and saved_point(session.state.world_state.vehicles[0]).distance_to(saved_point(previous_car)) < .01, "fresh-session handback preserves the previous personal car and position")
 	check(not freight.perform("south_port_freight_deliver") and session.state.economy.balance == balance + 300, "repeated interaction cannot pay twice")
@@ -243,6 +300,12 @@ func run() -> void:
 	check(ops.restore_snapshot(legacy) and not freight.bay_available(bay), "legacy world markers reconcile completed economy receipts")
 	# Separate lifecycle branch: remove a different active truck, then replay its
 	# resulting save. No explosions or protected characters are used by this test.
+	# A fresh session at the remote company has not spawned the other port
+	# slots yet; visit their actual activation area before testing their loss.
+	await place_actor(Vector3(298,.1,219))
+	for _i in 600:
+		await physics_frame
+		if is_instance_valid(cargo.work_trucks[0].truck): break
 	var other = cargo.work_trucks[0].truck
 	if is_instance_valid(other):
 		var removed_job: Dictionary = freight.snapshot()

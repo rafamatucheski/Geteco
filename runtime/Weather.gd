@@ -1,5 +1,8 @@
 extends Node
 ## V1 time/weather IDs, rendered by shared native 3D lights and local particles.
+const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleTextures.gd")
+# Productive V1 HarborGame and MountainPass both override the manager to 24 min.
+const DAY_LENGTH_SECONDS := 1440.0
 var controller
 var time_of_day := .32
 var weather_state := 0
@@ -13,6 +16,12 @@ var snow: GPUParticles3D
 var mountain_weather: Dictionary = {}
 var atmosphere = preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd").new()
 var atmosphere_step := .2
+var weather_audio: Node
+var storm: Node
+var surface_effects: Node3D
+var rain_intensity := .22
+var _covered := false
+var _weather_rng := RandomNumberGenerator.new()
 
 # Harbor V1 grades clear daylight almost neutrally and keeps blue shadow fill
 # (`profiles/harbor.tres`: sunlight 1.025/1.015/.985, shadow .91/.98/1.065).
@@ -28,8 +37,8 @@ const HARBOR_SKY_DAY := Color("829da6")
 const HARBOR_SKY_NIGHT := Color("111d30")
 const HARBOR_SKY_OVERCAST := Color("647985")
 # Fases da lua. Na vida real o ciclo leva 29,5 dias; com um dia de jogo de
-# 10 min isso daria ~5 h por ciclo, lento demais para perceber. Oito dias de
-# jogo (~80 min) deixam noites claras e escuras se alternarem numa sessão.
+# 24 min isso daria ~12 h por ciclo. Oito dias de jogo (~192 min) preservam
+# o ciclo lunar curto da V2 sem acelerar o dia autorado na V1.
 const MOON_CYCLE_DAYS := 8.0
 # Lua nova quase não ilumina; lua cheia deixa a rua legível sem virar dia.
 const MOON_LIGHT_NEW := .05
@@ -38,23 +47,28 @@ const MOON_AMBIENT_NEW := .26
 const MOON_AMBIENT_FULL := .42
 const HARBOR_SKY_FULL_MOON := Color("1d2c47")
 func _exit_tree() -> void:
-	for channel in [rain_audio,wind_audio]:
+	for channel in [wind_audio]:
 		if is_instance_valid(channel):
 			channel.stop()
 			channel.stream = null
 	for emitter in [precipitation,hail,snow]:
 		if is_instance_valid(emitter): emitter.queue_free()
+	if is_instance_valid(surface_effects): surface_effects.queue_free()
+	PARTICLE_TEXTURES.release_cache()
 func _ready() -> void:
+	_weather_rng.randomize()
 	time_of_day = float(controller.state.world_state.get("time",.32))
 	weather_state = int(controller.state.world_state.get("weather",0))
+	rain_intensity = clampf(float(controller.state.world_state.get("rain_intensity",.22)),.14,.30)
 	precipitation = GPUParticles3D.new()
 	precipitation.amount = 600
 	precipitation.lifetime = 1.6
 	precipitation.visibility_aabb = AABB(Vector3(-18,-20,-18),Vector3(36,40,36))
 	var quad := QuadMesh.new()
-	quad.size = Vector2(.035,.35)
+	quad.size = Vector2(.07,.45)
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(.6,.76,.85,.6)
+	material.albedo_texture = PARTICLE_TEXTURES.texture("rain")
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
@@ -78,6 +92,7 @@ func _ready() -> void:
 	hail.draw_pass_1 = quad.duplicate(true)
 	hail.draw_pass_1.size = Vector2(.035,.16)
 	hail.draw_pass_1.material.albedo_color = Color(.85,.96,1,.9)
+	hail.draw_pass_1.material.albedo_texture = PARTICLE_TEXTURES.texture("hail")
 	var hail_process := process.duplicate() as ParticleProcessMaterial
 	hail_process.direction = Vector3(-.65,-1,0).normalized()
 	hail_process.initial_velocity_min = 900.0/16.0
@@ -95,6 +110,7 @@ func _ready() -> void:
 	snow.visibility_aabb = precipitation.visibility_aabb
 	snow.draw_pass_1 = quad.duplicate(true)
 	snow.draw_pass_1.size = Vector2(.09,.09)
+	snow.draw_pass_1.material.albedo_texture = PARTICLE_TEXTURES.texture("snow")
 	var snow_process := process.duplicate() as ParticleProcessMaterial
 	snow_process.direction = Vector3(-.8,-.6,0).normalized()
 	snow_process.initial_velocity_min = 180.0/16.0
@@ -104,19 +120,24 @@ func _ready() -> void:
 	snow.process_material = snow_process
 	snow.emitting = false
 	controller.world.add_child(snow)
-	rain_audio = AudioStreamPlayer.new()
-	rain_audio.stream = preload("res://audio/weather/rain_bed.wav")
-	rain_audio.volume_db = -24
-	add_child(rain_audio)
-	rain_audio.finished.connect(func(): if precipitation.emitting: rain_audio.play())
+	weather_audio = preload("res://audio/weather/WeatherAudioMixer.gd").new()
+	add_child(weather_audio)
+	rain_audio = weather_audio.layers[0]
+	storm = preload("res://runtime/atmosphere/StormPresentation.gd").new()
+	storm.weather = self
+	storm.mixer = weather_audio
+	add_child(storm)
+	surface_effects = preload("res://runtime/atmosphere/WeatherSurfaceEffects.gd").new()
+	controller.world.add_child(surface_effects)
 	wind_audio = AudioStreamPlayer.new()
 	wind_audio.stream = preload("res://audio/regional/wind_0.ogg")
+	if AudioServer.get_bus_index("Ambient")>=0: wind_audio.bus = &"Ambient"
 	add_child(wind_audio)
 	wind_audio.finished.connect(func(): if atmosphere.weights.get("mountain",0.0)>0.001: wind_audio.play())
 	_update()
 func _process(delta: float) -> void:
 	if "--benchmark" not in OS.get_cmdline_user_args():
-		var next_time := fposmod(time_of_day+delta/600.0,1.0)
+		var next_time := fposmod(time_of_day+delta/DAY_LENGTH_SECONDS,1.0)
 		# Virada da meia-noite conta um dia para a fase da lua (salvo no mundo).
 		if next_time < time_of_day: controller.state.world_state.moon_day = moon_day()+1
 		time_of_day = next_time
@@ -124,18 +145,24 @@ func _process(delta: float) -> void:
 	if controller.state.region_id != "mountain":
 		weather_timer -= delta
 		if weather_timer <= 0:
-			weather_timer = randf_range(120,240)
-			weather_state = [0,0,3,1].pick_random()
+			weather_timer = _weather_rng.randf_range(90,180)
+			var roll := _weather_rng.randf()
+			# Occasional heavy storms join the natural cycle; keep drizzle distinct.
+			weather_state = 0 if roll<.42 else 3 if roll<.70 else 1 if roll<.92 else 2
+			if weather_state==1: rain_intensity = _weather_rng.randf_range(.14,.30)
 	precipitation.global_position = atmosphere.focus_position(controller)+Vector3.UP*10
 	hail.global_position = precipitation.global_position
 	snow.global_position = precipitation.global_position
 	clock += delta
-	if clock >= .2:
+	var focus: Vector3 = atmosphere.focus_position(controller)
+	var covered: bool = not controller.state.place_id.is_empty() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
+	if clock >= .2 or covered!=_covered:
 		atmosphere_step = clock
 		clock = 0
 		_update()
 	controller.state.world_state.time = time_of_day
 	controller.state.world_state.weather = weather_state
+	controller.state.world_state.rain_intensity = rain_intensity
 ## Dia do ciclo lunar. Save antigo sem o campo começa no quarto crescente,
 ## para a primeira noite já ter alguma lua.
 func moon_day() -> int:
@@ -175,20 +202,34 @@ func _update() -> void:
 	# Isolated interiors are cutaway rooms, not floating platforms in the sky.
 	controller.environment.environment.background_color = Color("10151a") if inside else clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
 	atmosphere.apply(controller,time_of_day,_harbor_overcast(),front,inside,atmosphere_step)
+	# A storm closes the distant sky without hiding nearby streets or actors.
+	# Reuse the existing depth fog and lighting, fading out toward Mountain.
+	if not inside and weather_state == 2:
+		var storm_weight := 1.0-regional_weight
+		var env: Environment = controller.environment.environment
+		var storm_sky := Color("111923").lerp(Color("424e5b"),daylight)
+		env.background_color = env.background_color.lerp(storm_sky,storm_weight)
+		env.fog_light_color = env.fog_light_color.lerp(storm_sky,storm_weight*.8)
+		env.fog_sky_affect = lerpf(env.fog_sky_affect,.92,storm_weight)
+		controller.sun.light_energy *= lerpf(1.0,.72,storm_weight)
 	if controller.world.production != null:
 		var night_lights := 1.0-smoothstep(.25,.70,atmosphere.daylight_at(time_of_day))
 		if is_instance_valid(controller.world.production.connection):
 			controller.world.production.connection.set_night_lights(night_lights)
 		var mountain_region = controller.world.production.regions.get("mountain")
 		if is_instance_valid(mountain_region): mountain_region.set_night_lights(night_lights)
-	var covered: bool = inside or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false)
+	var covered: bool = inside or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
+	_covered = covered
 	# Stopping emission leaves living particles visible for up to 2.2 seconds.
 	# Hide those particles in the same frame as entering a covered place.
 	precipitation.visible = not covered
-	hail.visible = not covered
-	snow.visible = not covered
+	hail.visible = not covered and regional_weight > .001
+	snow.visible = not covered and regional_weight > .001
 	var storm_state: int = int(mountain_weather.get("state",0))
-	precipitation.amount_ratio = 1.0-regional_weight
+	var rain_strength := (1.0 if weather_state==2 else rain_intensity if weather_state==1 else 0.0)*(1.0-regional_weight)
+	precipitation.amount_ratio = rain_strength
+	precipitation.speed_scale = lerpf(.65,1.0,rain_strength)
+	precipitation.draw_pass_1.material.albedo_color.a = lerpf(.38,.65,rain_strength)
 	precipitation.emitting = not covered and weather_state in [1,2] and regional_weight<.999
 	snow.emitting = not covered and storm_state>0 and regional_weight>.001
 	snow.amount_ratio = regional_weight*(150.0 if storm_state==1 else 260.0 if storm_state==3 else 400.0)/400.0
@@ -196,9 +237,12 @@ func _update() -> void:
 	snow.draw_pass_1.material.albedo_color = Color(1,1,1,front*.9)
 	hail.emitting = not covered and storm_state==3 and regional_weight>.001
 	hail.amount_ratio = smoothstep(.85,1.0,front)*regional_weight
-	rain_audio.volume_db = linear_to_db(maxf(.001,(1.0-regional_weight)*db_to_linear(-24.0)))
-	if precipitation.emitting and not rain_audio.playing: rain_audio.play()
-	elif not precipitation.emitting: rain_audio.stop()
+	weather_audio.set_conditions(rain_strength,covered)
+	weather_audio.set_interior_silence(inside)
+	weather_audio.set_dialogue_focus(controller.session!=null and controller.session.get("dialogue_open")==true)
+	storm.sync(1.0-regional_weight,covered)
+	var palette: Dictionary = atmosphere.current
+	surface_effects.set_conditions(focus,hail.amount_ratio if hail.emitting else 0.0,float(palette.get("haze",0)),palette.get("fog_color",Color.WHITE),covered)
 	wind_audio.volume_db = lerpf(-30,-17,float(mountain_weather.get("intensity",0.0)))-(14.0 if covered else 0.0)+linear_to_db(maxf(.001,regional_weight))
 	if regional_weight>.001 and not wind_audio.playing: wind_audio.play()
 	elif regional_weight<=.001: wind_audio.stop()
@@ -206,6 +250,6 @@ func _update() -> void:
 func _harbor_overcast() -> float:
 	match weather_state:
 		1: return .72 # V1 drizzle: cool, readable and visibly distinct from clear day.
-		2: return 1.0 # Explicit story storm; the natural Harbor cycle does not roll it.
+		2: return 1.0 # Heavy storm, natural or explicitly activated.
 		3: return .52
 		_: return 0.0

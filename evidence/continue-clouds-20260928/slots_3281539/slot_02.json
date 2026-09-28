@@ -1,0 +1,71 @@
+{
+	"campaign": {
+		"active_id": "",
+		"claimed_rewards": [],
+		"completed": [],
+		"failure": "",
+		"flags": {},
+		"pending_rewards": {},
+		"race_elapsed": 0.0,
+		"race_outside": 0.0,
+		"race_run": {},
+		"step": 0,
+		"version": 1
+	},
+	"canonical_campaign": {
+		"completed_beats": [],
+		"completed_contracts": [],
+		"current_stage": "prologue_call",
+		"flags": {},
+		"regions": [
+			"central"
+		],
+		"territories": [
+			"mercado_velho"
+		],
+		"version": 1
+	},
+	"checkpoint_id": "maciota",
+	"combat": {},
+	"economy": {
+		"achievements": [],
+		"balance": 0,
+		"collectibles": [],
+		"discoveries": [],
+		"equipped_weapon": "fists",
+		"inventory": {},
+		"outfit": "dante_classic",
+		"outfits": [
+			"dante_classic"
+		],
+		"transactions": {},
+		"version": 1,
+		"weapons": {
+			"fists": {
+				"magazine": -1,
+				"reserve": -1
+			}
+		}
+	},
+	"game": "geteco_v2",
+	"intro": {
+		"completed_missions": [],
+		"equipped_weapon": "",
+		"game": "geteco_v2",
+		"inventory": {},
+		"location_id": "harbor_street",
+		"mission_id": "harbor_arrival_v2",
+		"phase": "meet_maciota",
+		"schema_version": 1
+	},
+	"place_id": "",
+	"region_id": "harbor",
+	"schema_version": 3,
+	"world": {
+		"outfit": "dante_classic",
+		"rewards": [],
+		"time": 0.45,
+		"vehicles": [],
+		"weather": 0
+	}
+}

@@ -11,9 +11,8 @@ static func blend(a: Dictionary, b: Dictionary, weight: float) -> Dictionary:
 		result[key] = lerp(a[key], b[key], clampf(weight, 0, 1))
 	return result
 
-static func mountain_weight(point: Vector2, origin: Vector2) -> float:
-	# Matches the authored eastbound bridge, including approach before the seam.
-	return smoothstep(origin.x + 2400.0, origin.x + 4200.0, point.x) * (1.0 - smoothstep(origin.y + 1700.0, origin.y + 2900.0, point.y))
+static func mountain_weight(point: Vector2, _origin: Vector2) -> float:
+	return preload("res://world/regions/WorldConnection3D.gd").mountain_weight(Vector3(point.x, 0, point.y) / 16.0)
 
 static func summit_weight(local_point: Vector2) -> float:
 	return 1.0 - smoothstep(-1700.0, 250.0, local_point.y)

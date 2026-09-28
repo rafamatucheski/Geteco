@@ -1,5 +1,10 @@
 # Chegada original em 3D nativo
 
+> Atualização de 28/09/2026: a chegada de ônibus descrita no relatório histórico
+> abaixo foi substituída pela chegada ao terminal de passageiros de Harbor.
+> A CGI termina antes da viagem de ônibus; Dante desembarca fisicamente do barco.
+> Ver [direção e implementação de Harbor](harbor-identidade-e-chegada.md).
+
 Fontes: `world/harbor/campaign/HarborArrivalMission.gd`, `HarborStoryArrival.gd`, `MaciotaTourCar.gd`, `MaciotaM8SedanModel.gd`, `HarborArrivalStop.gd`, `HarborTransitBus.gd`, `systems/Localization.gd` e a CGI produtiva `cutscenes/opening/OpeningCutscene.tscn`/`v3`. O V1 permanece intocado.
 
 ## Sequência e recursos

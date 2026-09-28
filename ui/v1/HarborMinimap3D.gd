@@ -6,18 +6,24 @@ class MapCanvas extends Control:
 	func _draw() -> void:
 		if is_instance_valid(minimap): minimap.draw_map(self)
 
-const MAP_SIZE := Vector2(184, 184)
+const STYLE := preload("res://ui/GameStyle.gd")
+const CARTOGRAPHY := preload("res://ui/hud/Cartography.gd")
+const MAP_SIZE := Vector2(180, 180)
 const PANEL_SIZE := MAP_SIZE + Vector2(8, 8)
-const SCALE := 1.92 # V1 0.12 px/source-unit, with the V2 1:16 world conversion.
+const SCALE := 1.54 # Preserve the previous ground coverage inside a smaller panel.
+const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
+const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 
 var world: Node
 var canvas: MapCanvas
 var caption: Label
+var compass_label: Label
 var center := Vector2.ZERO
 var heading := 0.0
 var objective_target := Vector2.ZERO
 var _tick := 0.0
-var _cached_region_id := 0
+var _cached_regions: Dictionary = {}
+var _cached_connection := false
 var _roads: Array[Dictionary] = []
 var _buildings: Array[Rect2] = []
 var _entries := PackedVector2Array()
@@ -25,39 +31,71 @@ var _drawn_center := Vector2(INF, INF)
 var _drawn_heading := INF
 var _drawn_objective := Vector2(INF, INF)
 var _redraw_required := true
+var map_scale := SCALE
+var _drawn_scale := SCALE
+var _refresh_delta := 0.033
+var _route_clock := 1.0
+var navigation := NAVIGATION.new()
+var route_points := PackedVector2Array()
+var background: Panel
 
 func _ready() -> void:
 	name = "Minimap"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = PANEL_SIZE
-	size = PANEL_SIZE
-	var background := ColorRect.new()
-	background.color = Color("08090b")
-	background.size = PANEL_SIZE
+	size = custom_minimum_size
+	background = Panel.new()
+	var frame := StyleBoxFlat.new()
+	frame.bg_color = STYLE.INK
+	frame.border_color = STYLE.ACCENT
+	frame.set_border_width_all(1)
+	frame.set_corner_radius_all(44)
+	frame.shadow_size = 4
+	frame.shadow_color = Color(0, 0, 0, .45)
+	background.add_theme_stylebox_override("panel", frame)
+	background.size = size
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(background)
+	background.clip_children = CanvasItem.CLIP_CHILDREN_AND_DRAW
 	var clip := Control.new()
 	clip.position = Vector2(4, 4)
 	clip.size = MAP_SIZE
 	clip.clip_contents = true
 	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(clip)
+	background.add_child(clip)
 	canvas = MapCanvas.new()
 	canvas.minimap = self
 	canvas.size = MAP_SIZE
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip.add_child(canvas)
 	caption = Label.new()
-	caption.position = Vector2(8, MAP_SIZE.y - 18)
-	caption.add_theme_font_size_override("font_size", 11)
-	caption.add_theme_color_override("font_color", Color("ffb565"))
+	caption.position = Vector2(7, PANEL_SIZE.y)
+	caption.size = Vector2(PANEL_SIZE.x - 14, 22)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption.add_theme_font_override("font", FONT)
+	caption.add_theme_font_size_override("font_size", 12)
+	caption.add_theme_color_override("font_color", Color("eee9e2"))
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	caption.text = "N ↑"
+	caption.hide()
 	add_child(caption)
+	compass_label = Label.new()
+	compass_label.name = "Compass"
+	compass_label.text = "N"
+	compass_label.position = Vector2(PANEL_SIZE.x*.5-9, -7)
+	compass_label.size = Vector2(18, 20)
+	compass_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	compass_label.add_theme_font_override("font", FONT)
+	compass_label.add_theme_font_size_override("font_size", 12)
+	compass_label.add_theme_color_override("font_color", STYLE.ACCENT)
+	compass_label.add_theme_stylebox_override("normal",STYLE.compact(false,6,Vector2(3,0)))
+	compass_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(compass_label)
 
 func _process(delta: float) -> void:
 	_tick += delta
-	if _tick < 0.1: return
+	_route_clock += delta
+	if _tick < 1.0 / 30.0: return
+	_refresh_delta = _tick
 	_tick = 0.0
 	refresh()
 
@@ -78,6 +116,9 @@ func refresh() -> void:
 	center = Vector2(actor.global_position.x, actor.global_position.z)
 	_cache_region()
 	var velocity: Variant = actor.get("velocity")
+	var speed := Vector2(velocity.x, velocity.z).length() if velocity is Vector3 else 0.0
+	var desired_scale := lerpf(SCALE, .85, clampf(speed / 24.0, 0, 1)) if actor != world.player else SCALE
+	map_scale = lerpf(map_scale, desired_scale, 1.0 - exp(-3.0 * _refresh_delta))
 	if velocity is Vector3 and Vector2(velocity.x, velocity.z).length() > 0.15:
 		heading = Vector2(velocity.x, velocity.z).angle()
 	elif actor != world.player:
@@ -85,35 +126,87 @@ func refresh() -> void:
 		heading = Vector2(forward.x, forward.z).angle()
 	objective_target = Vector2.ZERO
 	var mission_world: Variant = world.session.get("mission_world")
-	if mission_world != null and mission_world.has_method("target_position"):
+	var has_mission := str(world.session.state.intro.stage) != "complete" or not str(world.session.state.campaign.active_id).is_empty()
+	if has_mission and mission_world != null and mission_world.has_method("target_position"):
 		var target: Vector3 = mission_world.target_position()
 		if target.is_finite() and not target.is_zero_approx(): objective_target = Vector2(target.x, target.z)
 	if world.session.freight_active and world.session.freight_target.is_finite():
 		var delivery: Vector3 = world.session.freight_target
 		objective_target = Vector2(delivery.x, delivery.z)
-	if not was_visible or _redraw_required or center.distance_squared_to(_drawn_center) > 0.0004 or absf(angle_difference(heading, _drawn_heading)) > 0.01 or not objective_target.is_equal_approx(_drawn_objective):
+	_sync_navigation(actor)
+	if not was_visible or _redraw_required or center.distance_squared_to(_drawn_center) > 0.0025 or absf(angle_difference(heading, _drawn_heading)) > 0.01 or absf(map_scale - _drawn_scale) > .002 or not objective_target.is_equal_approx(_drawn_objective):
 		_drawn_center = center
 		_drawn_heading = heading
 		_drawn_objective = objective_target
+		_drawn_scale = map_scale
 		_redraw_required = false
 		canvas.queue_redraw()
 
+func _sync_navigation(actor: Node3D) -> void:
+	var has_target := objective_target != Vector2.ZERO
+	caption.hide()
+	# A quiet weather/clock row always sits below the map; navigation adds one
+	# row only while a destination exists. The actual map remains 156 px wide.
+	var extent := PANEL_SIZE
+	if size != extent:
+		custom_minimum_size = extent
+		size = extent
+		background.size = extent
+	if not has_target:
+		if not route_points.is_empty(): _redraw_required = true
+		navigation.clear()
+		route_points.clear()
+		return
+	if center.distance_to(objective_target) < 3.0:
+		if not route_points.is_empty(): _redraw_required = true
+		navigation.clear()
+		route_points.clear()
+		caption.text = "◇  %d m" % roundi(center.distance_to(objective_target))
+		return
+	if _route_clock >= .75 or not objective_target.is_equal_approx(_drawn_objective):
+		_route_clock = 0.0
+		var routes: RefCounted = world.production.traffic_routes
+		if routes != null:
+			var goal := Vector3(objective_target.x, actor.global_position.y, objective_target.y)
+			if navigation.update(routes, world.production._route_key(), actor.global_position, goal, actor != world.player, -actor.global_basis.z): _redraw_required = true
+	var remaining := navigation.remaining(center)
+	if remaining != route_points:
+		route_points = remaining
+		_redraw_required = true
+	var instruction := NAVIGATION.instruction(route_points, objective_target)
+	if instruction.is_empty():
+		caption.text = "◇  %d m" % roundi(center.distance_to(objective_target))
+	elif instruction.turn_distance >= 0:
+		caption.text = "%s %d m   ◇ %d m" % [instruction.turn, roundi(instruction.turn_distance), roundi(instruction.distance)]
+	else:
+		caption.text = "↑   ◇ %d m" % roundi(instruction.distance)
+
 func _cache_region() -> void:
-	var region: Node = world.production.region
-	if not is_instance_valid(region) or region.get_instance_id() == _cached_region_id: return
-	_cached_region_id = region.get_instance_id()
+	# Keep lightweight geography after streaming unloads its 3D region. The map
+	# must not replace half the crossing when the logical region changes.
+	for region: Node in world.production.regions.values():
+		if not is_instance_valid(region) or _cached_regions.has(region.region_id): continue
+		_cached_regions[region.region_id] = true
+		_cache_geography(region)
+	if not _cached_connection:
+		_cached_connection = true
+		for source in preload("res://world/regions/WorldConnection3D.gd").traffic_connectors():
+			_cache_road(source)
+
+func _cache_road(source: Dictionary) -> void:
+	var points := PackedVector2Array()
+	var bounds := Rect2()
+	for point: Vector3 in source.points:
+		var mapped := Vector2(point.x, point.z)
+		points.append(mapped)
+		bounds = Rect2(mapped, Vector2.ZERO) if points.size() == 1 else bounds.expand(mapped)
+	_roads.append({"points": points, "width": float(source.get("width", 2.0)), "bounds": bounds})
 	_redraw_required = true
-	_roads.clear()
-	_buildings.clear()
-	_entries.clear()
-	for source in region.roads:
-		var points := PackedVector2Array()
-		var bounds := Rect2()
-		for point: Vector3 in source.points:
-			var mapped := Vector2(point.x, point.z)
-			points.append(mapped)
-			bounds = Rect2(mapped, Vector2.ZERO) if points.size() == 1 else bounds.expand(mapped)
-		_roads.append({"points": points, "width": float(source.get("width", 2.0)), "bounds": bounds})
+
+func _cache_geography(region: Node) -> void:
+	_redraw_required = true
+	for source in region.map_routes():
+		_cache_road(source)
 	for source in region.buildings:
 		var point: Vector3 = source.position
 		var dimensions: Vector2 = source.size
@@ -123,53 +216,42 @@ func _cache_region() -> void:
 		_entries.append(Vector2(point.x, point.z))
 
 func project(point: Vector2) -> Vector2:
-	return MAP_SIZE * 0.5 + (point - center) * SCALE
+	return MAP_SIZE * 0.5 + (point - center) * map_scale
 
 func edge_marker(point: Vector2) -> Vector2:
 	var offset := project(point) - MAP_SIZE * 0.5
-	var factor := maxf(absf(offset.x) / (MAP_SIZE.x * 0.5 - 12), absf(offset.y) / (MAP_SIZE.y * 0.5 - 12))
+	var factor := offset.length() / (MAP_SIZE.x * .5 - 13)
 	return MAP_SIZE * 0.5 + offset / maxf(1.0, factor)
 
-## Selos de lugares fixos: letra num círculo laranja, presos à borda quando longe.
-## O "N" do norte fica no topo, sem círculo; o do Neco é selo, para não confundir.
-const LANDMARKS := [{"letter": "N", "region": "harbor", "point": Vector2(-750, 550) / 16.0}]
-
-func _draw_landmarks(target: Control) -> void:
-	var region := str(world.production.state.region_id) if world.production.get("state") != null else ""
-	for landmark in LANDMARKS:
-		if landmark.region != region: continue
-		var marker := edge_marker(landmark.point)
-		# Fora da plaquinha "N" da bússola, no topo central.
-		if absf(marker.x - MAP_SIZE.x * 0.5) < 18.0 and marker.y < 28.0: marker.y = 28.0
-		target.draw_circle(marker, 9, Color("101820"))
-		target.draw_circle(marker, 7.5, Color("ff914d"))
-		target.draw_string(ThemeDB.fallback_font, marker + Vector2(-4, 4.5), landmark.letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color("101820"))
-
 func draw_map(target: Control) -> void:
-	target.draw_rect(Rect2(Vector2.ZERO, MAP_SIZE), Color("263940"))
+	CARTOGRAPHY.contours(target,MAP_SIZE,center,map_scale)
 	if not is_instance_valid(world) or not is_instance_valid(world.production) or not is_instance_valid(world.production.region): return
-	var map_area := Rect2(center - MAP_SIZE / (2.0 * SCALE), MAP_SIZE / SCALE)
+	var map_area := Rect2(center - MAP_SIZE / (2.0 * map_scale), MAP_SIZE / map_scale)
 	for rect in _buildings:
-		if map_area.intersects(rect): target.draw_rect(Rect2(project(rect.position), rect.size * SCALE), Color("46595c"))
+		if map_area.intersects(rect): target.draw_rect(Rect2(project(rect.position), rect.size * map_scale), STYLE.LINE.darkened(.38))
 	for road in _roads:
-		if not map_area.intersects(road.bounds.grow(maxf(2.0 / SCALE, road.width))): continue
+		if not map_area.intersects(road.bounds.grow(maxf(2.0 / map_scale, road.width))): continue
 		var points := PackedVector2Array()
 		for point: Vector2 in road.points: points.append(project(point))
 		if points.size() > 1:
-			target.draw_polyline(points, Color("a8b4b0"), maxf(2.0, road.width * SCALE * 0.45), true)
-	for entry in _entries:
-		var marker := project(entry)
-		if Rect2(Vector2(8, 8), MAP_SIZE - Vector2(16, 16)).has_point(marker):
-			target.draw_circle(marker, 5, Color("18262d"))
-			target.draw_circle(marker, 3, Color("e8b77d"))
-	_draw_landmarks(target)
-	if objective_target != Vector2.ZERO:
+			target.draw_polyline(points, STYLE.MAP_ROAD, maxf(1.4, road.width * map_scale * 0.35), true)
+	if route_points.size() > 1:
+		# Clip segments before submitting, avoiding giant polylines outside HUD.
+		var bounds := Rect2(Vector2.ZERO, MAP_SIZE)
+		for i in route_points.size()-1:
+			var a := project(route_points[i])
+			var b := project(route_points[i+1])
+			if not bounds.intersects(Rect2(a, Vector2.ZERO).expand(b).grow(4), true): continue
+			target.draw_line(a, b, STYLE.INK, 4, true)
+			target.draw_line(a, b, STYLE.WAYPOINT, 1.5, true)
+	if objective_target != Vector2.ZERO and center.distance_to(objective_target) >= 3.0:
 		var marker := edge_marker(objective_target)
-		target.draw_circle(marker, 10, Color("101820"))
-		target.draw_colored_polygon(PackedVector2Array([marker + Vector2(0,-7), marker + Vector2(7,0), marker + Vector2(0,7), marker + Vector2(-7,0)]), Color("ffcf4d"))
+		target.draw_circle(marker, 8, STYLE.INK)
+		CARTOGRAPHY.diamond(target,marker)
 	var middle := MAP_SIZE * 0.5
 	var pointer := PackedVector2Array()
 	for point in [Vector2(8,0), Vector2(-5,-5), Vector2(-2,0), Vector2(-5,5)]: pointer.append(middle + point.rotated(heading))
-	target.draw_colored_polygon(pointer, Color.WHITE)
-	target.draw_rect(Rect2(Vector2(MAP_SIZE.x * 0.5 - 7, 1), Vector2(14, 16)), Color("101820"))
-	target.draw_string(ThemeDB.fallback_font, Vector2(MAP_SIZE.x * 0.5 - 5, 13), "N", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color.WHITE)
+	var outline := PackedVector2Array()
+	for point in pointer: outline.append(middle + (point-middle) * 1.3)
+	target.draw_colored_polygon(outline, STYLE.INK)
+	target.draw_colored_polygon(pointer, STYLE.COLD)

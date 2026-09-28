@@ -13,6 +13,7 @@ extends Node3D
 ## a região inteira quando Mountain está montada, e some junto com ela.
 
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const ROUTE_GEOMETRY := preload("res://world/mountain_detail/MountainRouteGeometry.gd")
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const PATH_INNER := 0.05
 const PATH_OUTER := 1.65
@@ -91,7 +92,9 @@ func _build(region) -> void:
 				since_lamp = 0.0
 				var at := a + along * travelled
 				if skip or _in_crossing(at): continue
-				_lamp_points.append(at + side * lamp_side * (half + LAMP_OFFSET))
+				var lamp_point := at + side * lamp_side * (half + LAMP_OFFSET)
+				if region.route_geometry.contains(lamp_point,.7): continue
+				_lamp_points.append(lamp_point)
 				lamp_side = -lamp_side
 			since_lamp += length - travelled
 	_paths = MeshInstance3D.new()
@@ -109,6 +112,7 @@ func _build(region) -> void:
 	_paths.mesh = mesh
 	var path_material := ShaderMaterial.new()
 	path_material.shader = preload("res://world/mountain_detail/mountain_footpath.gdshader")
+	CONNECTION.configure_ground_material(path_material)
 	_paths.material_override = path_material
 	_paths.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_paths)
@@ -185,21 +189,16 @@ func _update_lights() -> void:
 			light.visible = false
 
 func _add_strip(points: PackedVector3Array, half: float, s: float, vertices: PackedVector3Array, uvs: PackedVector2Array) -> void:
+	var inner_edges := ROUTE_GEOMETRY.edges(points,2.0*(half+PATH_INNER))
+	var outer_edges := ROUTE_GEOMETRY.edges(points,2.0*(half+PATH_OUTER))
 	var inner_prev := Vector3.INF
 	var outer_prev := Vector3.INF
 	var dist_prev := 0.0
 	var dist := 0.0
 	for i in points.size():
-		var incoming: Vector3 = (points[i] - points[maxi(0, i - 1)]).normalized() if i > 0 else (points[1] - points[0]).normalized()
-		var outgoing: Vector3 = (points[mini(points.size() - 1, i + 1)] - points[i]).normalized() if i < points.size() - 1 else incoming
-		var n_in := Vector3(incoming.z, 0, -incoming.x)
-		var n_out := Vector3(outgoing.z, 0, -outgoing.x)
-		var miter := (n_in + n_out).normalized()
-		if miter.is_zero_approx(): miter = n_out
-		var stretch := 1.0 / maxf(0.5, miter.dot(n_out))
 		if i > 0: dist += points[i].distance_to(points[i - 1])
-		var inner := points[i] + miter * s * (half + PATH_INNER) * stretch
-		var outer := points[i] + miter * s * (half + PATH_OUTER) * stretch
+		var inner: Vector3 = inner_edges[i].left if s > 0 else inner_edges[i].right
+		var outer: Vector3 = outer_edges[i].left if s > 0 else outer_edges[i].right
 		var crossing := _in_crossing(points[i])
 		if i > 0 and inner_prev != Vector3.INF and not crossing:
 			var quad := [inner_prev, inner, outer, inner_prev, outer, outer_prev]
@@ -207,10 +206,28 @@ func _add_strip(points: PackedVector3Array, half: float, s: float, vertices: Pac
 			var v0 := fmod(dist_prev, 64.0)
 			var v1 := v0 + dist - dist_prev
 			var quad_uv := [Vector2(0, v0), Vector2(0, v1), Vector2(1, v1), Vector2(0, v0), Vector2(1, v1), Vector2(1, v0)]
-			for k in 6:
-				var v: Vector3 = quad[k]
-				vertices.append(Vector3(v.x, PATH_Y, v.z))
-				uvs.append(quad_uv[k])
+			for triangle in 2:
+				var k := triangle*3
+				_append_clipped_triangle(quad[k],quad[k+1],quad[k+2],quad_uv[k],quad_uv[k+1],quad_uv[k+2],vertices,uvs)
 		inner_prev = Vector3.INF if crossing else inner
 		outer_prev = outer
 		dist_prev = dist
+
+func _append_clipped_triangle(a: Vector3, b: Vector3, c: Vector3, uv_a: Vector2, uv_b: Vector2, uv_c: Vector2, vertices: PackedVector3Array, uvs: PackedVector2Array) -> void:
+	var origin := Vector2(a.x,a.z)
+	var axis_b := Vector2(b.x,b.z)-origin
+	var axis_c := Vector2(c.x,c.z)-origin
+	var determinant := axis_b.cross(axis_c)
+	if absf(determinant) < .000001: return
+	var shape := PackedVector2Array([origin,origin+axis_b,origin+axis_c])
+	if Geometry2D.is_polygon_clockwise(shape): shape.reverse()
+	# Cut the actual polygons, including the main road shoulder at each branch.
+	# No fragment overlay or raised curb remains across the carriageway.
+	for piece in _region.route_geometry.outside_roads(shape):
+		for index in Geometry2D.triangulate_polygon(piece):
+			var point: Vector2 = piece[index]
+			var delta := point-origin
+			var weight_b := delta.cross(axis_c)/determinant
+			var weight_c := axis_b.cross(delta)/determinant
+			vertices.append(Vector3(point.x,PATH_Y,point.y))
+			uvs.append(uv_a+(uv_b-uv_a)*weight_b+(uv_c-uv_a)*weight_c)

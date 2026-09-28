@@ -2,6 +2,7 @@ extends Node
 var world: Node3D
 
 func _unhandled_input(event: InputEvent) -> void:
+	if world.has_meta("menu_preview"): return
 	if world.session != null:
 		var arrival = world.session.get("arrival")
 		if arrival != null and arrival.phase == "opening": return

@@ -10,6 +10,7 @@ class Player extends Node3D:
 	var input_locked := false
 
 class Gameplay extends Node:
+	signal weapon_fired(weapon_id: String, origin: Vector3)
 	var health := 100.0
 	var stars := 3
 	func clear_wanted() -> void: stars = 0

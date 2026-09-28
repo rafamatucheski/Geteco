@@ -1,5 +1,5 @@
 extends Node
-## Walk onto hatches or into the cave mouth; ordinary facades use their own doors.
+## Walk into the ship hold or cave; the sewer uses explicit interaction.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const IDS := ["harbor_sewer", "santa_mare_hold", "mountain_mystery_cave"]
 const ZOOM_SECONDS := .55
@@ -45,6 +45,7 @@ func update(delta: float) -> void:
 	var id := ""
 	var distance := INF
 	for candidate in IDS:
+		if candidate == "harbor_sewer": continue
 		if definitions[candidate].region != session.state.region_id: continue
 		var d := point.distance_squared_to(_door(candidate))
 		if d < distance: distance = d; id = candidate
@@ -66,8 +67,7 @@ func _update_hatch(id: String, opened: bool, delta: float) -> void:
 		hatch = null
 		hatch_id = id
 	if not is_instance_valid(hatch) and opened:
-		if id == "harbor_sewer": hatch = session._find_sewer_hatch()
-		elif id == "santa_mare_hold": hatch = get_tree().get_first_node_in_group("santa_mare_hold_hatch") as Node3D
+		if id == "santa_mare_hold": hatch = get_tree().get_first_node_in_group("santa_mare_hold_hatch") as Node3D
 	if is_instance_valid(hatch) and not busy:
 		hatch.set_open_amount(move_toward(float(hatch.get("open_amount")),1.0 if opened else 0.0,delta/.35))
 

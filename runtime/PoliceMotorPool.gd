@@ -29,9 +29,15 @@ var lockpick: CanvasLayer
 var target: CharacterBody3D
 var awaiting_release := false
 var _clock := 0.0
+var _editor_transform := Transform3D.IDENTITY
+var _editor_yaw := 0.0
 
 func configure(owner_session) -> void:
 	session = owner_session
+	var edit := preload("res://world/editing/WorldServiceBuildings.gd").row_for("harbor_police")
+	if edit.has("service_base"):
+		_editor_transform = preload("res://world/editing/WorldServiceBuildings.gd").transform_for(edit)
+		_editor_yaw = deg_to_rad(float(edit.rotation))
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	lockpick = LOCKPICK.new()
 	lockpick.lock_title = "VIATURA"
@@ -69,12 +75,12 @@ func _sync() -> void:
 		if is_instance_valid(car) and not car.is_queued_for_deletion(): continue
 		cars[index] = null
 		if restock[index] > 0: continue
-		var bay: Vector3 = BAYS[index].position
+		var bay: Vector3 = _editor_transform*BAYS[index].position
 		if player.global_position.distance_to(bay) > SPAWN_RADIUS: continue
 		cars[index] = _spawn(index)
 
 func _spawn(index: int) -> CharacterBody3D:
-	var bay: Vector3 = BAYS[index].position
+	var bay: Vector3 = _editor_transform*BAYS[index].position
 	var space: PhysicsDirectSpaceState3D = session.world.get_world_3d().direct_space_state
 	var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(bay + Vector3.UP * 8, bay - Vector3.UP * 4, 1))
 	# Chão ainda não carregado pelo streaming: tenta no próximo ciclo.
@@ -85,7 +91,7 @@ func _spawn(index: int) -> CharacterBody3D:
 	for other in get_tree().get_nodes_in_group("drivable"):
 		if other is Node3D and other.global_position.distance_to(bay) < 3.5: return null
 	var point: Vector3 = ground.position + Vector3.UP * .04
-	var car: CharacterBody3D = session.controller.spawn_vehicle(BAYS[index].archetype, point, YAW)
+	var car: CharacterBody3D = session.controller.spawn_vehicle(BAYS[index].archetype, point, YAW+_editor_yaw)
 	if car == null: return null
 	car.vehicle_id = "harbor_patrol_parked_%d" % index
 	car.set_meta("police_locked", true)

@@ -75,7 +75,8 @@ suspendem esses anexos; eles nunca são donos do save.
   serial: inteiro 0..10000000,
   secret_known: bool,
   storyteller_stop: inteiro 0..3,
-  cases: [CaseV1] // máximo 64
+  cases: [CaseV1], // máximo 64
+  deaths: [string] // opcional em saves antigos; máximo 386, sem repetição
 }
 
 CaseV1 = {
@@ -102,6 +103,18 @@ Agente funerário, carro funerário, visitantes, zelador, contador de histórias
 links de incidentes e áudio não são serializados. Restore encerra os anexos
 existentes, reconstrói sepulturas a partir do ledger e, se o local estiver ativo,
 retoma no máximo um funeral.
+
+`deaths` preserva as mortes de `keeper`, `storyteller` e participantes identificados
+por `<case identity>:cemetery_mortician` ou `<case identity>:cemetery_mourner_00..04`.
+IDs de participantes exigem um caso existente. Campo ausente significa nenhuma
+morte registrada, preservando saves V1 antigos. Visitantes mortos não reaparecem
+na retomada; a morte do agente interrompe o serviço daquele caso, que permanece
+na fila do necrotério sem ressuscitar o funcionário. Moradores mortos não são
+recriados pela entrada na casa, pelo streaming ou pela restauração do save.
+
+A chegada do funeral aguarda o portão e o carro ficarem fora da câmera; a saída
+aguarda todos os sobreviventes completarem o percurso e saírem da câmera.
+Violência interrompe a cerimônia sem registrar um sepultamento não concluído.
 
 Snapshots V1 antigos ou sintéticos com `serial` abaixo de uma identidade já
 ocupada continuam aceitos. O alocador avança até um `harbor_deceased:%08d` livre,

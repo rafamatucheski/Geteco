@@ -17,6 +17,7 @@ var caption: Label
 var feedback: Label
 var buy: Button
 var ammo_button: Button
+var lockpick_button: Button
 var customize_button: Button
 var workbench_button: Button
 var workbench: PanelContainer
@@ -85,11 +86,11 @@ func _build_catalog() -> void:
 	stage.add_theme_stylebox_override("panel", stage_style())
 	box.add_child(stage)
 	var container := SubViewportContainer.new()
-	container.custom_minimum_size = Vector2(720, 250)
+	container.custom_minimum_size = Vector2(720, 216)
 	container.stretch = true
 	stage.add_child(container)
 	preview = SubViewport.new()
-	preview.size = Vector2i(720, 250)
+	preview.size = Vector2i(720, 216)
 	preview.own_world_3d = true
 	preview.transparent_bg = true
 	preview.msaa_3d = Viewport.MSAA_4X
@@ -138,6 +139,11 @@ func _build_catalog() -> void:
 	ammo_button.pressed.connect(purchase_ammo)
 	style_button(ammo_button)
 	box.add_child(ammo_button)
+	lockpick_button = Button.new()
+	lockpick_button.custom_minimum_size.y = 34
+	lockpick_button.pressed.connect(purchase_lockpick)
+	style_button(lockpick_button)
+	box.add_child(lockpick_button)
 	var customization_row := HBoxContainer.new()
 	customization_row.add_theme_constant_override("separation", 10)
 	box.add_child(customization_row)
@@ -256,6 +262,10 @@ func price_status(item: Dictionary, owned: bool, armor: bool) -> String:
 	return "ITEM INICIAL • $0" if price == 0 else "$%d" % price
 
 func refresh(notice := "") -> void:
+	var count := int(session.state.economy.inventory.get("lockpick",0))
+	var lockpick_price := int(session.state.economy.SUPPLIES.lockpick.price)
+	lockpick_button.text = "COMPRAR LOCKPICK · R$ %d · INVENTÁRIO: %d" % [lockpick_price,count]
+	lockpick_button.disabled = count >= 999 or session.state.economy.balance < lockpick_price
 	var id: String = stock[selection]
 	var item := data()
 	var armor := id == "armor"
@@ -337,6 +347,12 @@ func purchase_ammo() -> void:
 		return
 	session.save_game()
 	refresh("MUNIÇÃO COMPRADA")
+
+func purchase_lockpick() -> void:
+	if not active: return
+	var result: Dictionary = session.state.economy.purchase("supply","lockpick",session._transaction())
+	if result.ok: session.save_game()
+	refresh("LOCKPICK COMPRADO" if result.ok else _reason(result.reason))
 
 func customize_flashlight() -> void:
 	if not active or customize_button.disabled or not customize_button.visible: return

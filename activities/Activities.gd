@@ -93,13 +93,17 @@ func nearest_action() -> Dictionary:
 		for id in Definitions.drifts(session.state.region_id):
 			var row: Dictionary = Definitions.drifts(session.state.region_id)[id]
 			options.append(_action("drift:"+id,"Drift · "+str(row.name),Definitions.at(row.pos)))
-		if residence.data.active_home != "": options.append(_action("home_store","Guardar veículo",residence.parking(residence.data.active_home),5.5))
+		if residence.data.active_home != "" and session.state.region_id == "harbor":
+			var slot: String = residence.vehicle_slot(world.driving.car.archetype)
+			options.append(_action("home_store","Guardar moto" if slot == "motorcycle" else "Guardar carro",residence.parking(residence.data.active_home,slot),4.5))
 	else:
 		if session.state.region_id == "harbor":
 			for id in Definitions.HOMES.PROPERTIES:
 				if not residence.can_enter(id): options.append(_action("home_buy:"+id,"Comprar casa · R$ %d"%int(residence.quote(id).get("due",0)),residence.entry(id),4.5))
-			if residence.data.active_home != "" and residence.data.stored_vehicle.get("status", "") == "stored":
-				options.append(_action("home_retrieve","Retirar veículo",residence.parking(residence.data.active_home),5.5))
+			if residence.data.active_home != "":
+				for slot in ["car","motorcycle"]:
+					if residence._record(slot).get("status", "") == "stored":
+						options.append(_action("home_retrieve:"+slot,"Retirar moto" if slot == "motorcycle" else "Retirar carro",residence.parking(residence.data.active_home,slot),5.5))
 			options.append(_action("tow_accept" if _data.tow_contract.is_empty() else "tow_deliver","Serviço de guincho" if _data.tow_contract.is_empty() else "Entregar reboque",_tow_service_position(),4.5))
 	var closest := {}
 	var distance := INF
@@ -126,10 +130,13 @@ func perform(target: Variant) -> bool:
 			if residence.buy(home): _commit(); session.show_message("Casa adquirida.")
 			else: session.show_message("Compra indisponível ou saldo insuficiente."))
 		return true
-	if id == "home_store" or id == "home_retrieve":
-		var success: bool = residence.store_vehicle() if id == "home_store" else residence.retrieve_vehicle()
+	if id == "home_store":
+		_store_home_vehicle()
+		return true
+	if id.begins_with("home_retrieve:"):
+		var success: bool = residence.retrieve_vehicle(id.trim_prefix("home_retrieve:"))
 		if success: _commit()
-		session.show_message("Veículo guardado." if success and id == "home_store" else "Veículo retirado." if success else "Pare o veículo e mantenha a vaga e a saída livres.")
+		session.show_message("Veículo retirado." if success else "Mantenha a vaga e a saída livres.")
 		return true
 	if id == "tow_accept": return _accept_tow()
 	if id == "tow_deliver": return _deliver_tow()
@@ -137,6 +144,11 @@ func perform(target: Variant) -> bool:
 
 func can_enter_home(id: String) -> bool:
 	return not Definitions.HOMES.PROPERTIES.has(id) or residence.can_enter(id)
+
+func _store_home_vehicle() -> void:
+	var success: bool = await residence.store_vehicle()
+	if success: _commit()
+	session.show_message("Veículo guardado." if success else "Pare na garagem; é permitido um carro e uma moto. Mantenha a saída livre.")
 
 func salvage_available() -> int:
 	return maxi(0,6-int(_data.tow_delivered_today))
@@ -163,9 +175,11 @@ func _start_motorsport(action: String) -> bool:
 		var spec: Dictionary = Definitions.races(session.state.region_id)[id]
 		var points := PackedVector3Array()
 		for point in spec.checkpoints: points.append(Definitions.at(point))
+		if not session.save_game(true): return false
 		started = motorsport.begin_race(id,Definitions.at(spec.start),points,car.position)
 	else:
 		var spec: Dictionary = Definitions.drifts(session.state.region_id)[id]
+		if not session.save_game(true): return false
 		started = motorsport.begin_drift(id,Definitions.at(spec.pos),float(spec.radius)/16.0,car.position)
 	if started:
 		_data.attempt += 1
@@ -279,6 +293,7 @@ func _accept_tow() -> bool:
 	if not is_instance_valid(session.mission_world) or not session.mission_world.has_method("begin_tow_job"): return false
 	job.token = "tow_%d"%(int(_data.tow_serial)+1)
 	job.index = index
+	if not session.save_game(true): return false
 	if not session.mission_world.begin_tow_job(job): session.show_message("Guincho indisponível. Termine a recuperação atual."); return true
 	_data.tow_serial += 1
 	_data.tow_taken_today += 1

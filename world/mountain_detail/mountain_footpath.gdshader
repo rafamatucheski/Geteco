@@ -1,5 +1,11 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_disabled;
+#include "res://world/regions/mountain_ground.gdshaderinc"
+varying float mountain_weight;
+
+void vertex() {
+	mountain_weight = ground_mountain_weight((MODEL_MATRIX * vec4(VERTEX, 1.0)).xz);
+}
 
 // Trilha de beira de estrada em Mountain: cascalho escuro com neve pisada, bordas
 // que se desfazem no terreno. UV.x = 0 junto ao asfalto, 1 do lado do mato;
@@ -26,6 +32,7 @@ void fragment() {
 	// Pisada no meio da trilha, neve acumulada nas margens.
 	float trodden = 1.0 - smoothstep(0.25, 0.5, abs(UV.x - 0.5));
 	vec3 color = mix(packed_snow, gravel, clamp(trodden * 0.8 + patches * 0.4 - 0.15, 0.0, 1.0));
+	color = mix(gravel, color, mountain_weight);
 	color *= 0.88 + grain * 0.22;
 	ALBEDO = color;
 	ROUGHNESS = 0.92;

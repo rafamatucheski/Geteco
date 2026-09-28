@@ -99,6 +99,7 @@ static func definitions() -> Array[Dictionary]:
 		result.append({"id":id,"original_name":row[1],"region":region,"source_id":row[4],"model":("res://world/places/"+str(row[4]).trim_prefix("@")+".gd") if str(row[4]).begins_with("@") else SOURCE+row[4],"exterior_position":exterior,"entry_position":approach,"return_position":return_point,"spawn":Vector3(0,0,row[6]),"exit":Vector3(0,0,row[7]),"camera_target":Vector3(0,.7,0),"camera_size":maxf(row[5].x*.82,row[5].y*1.25),"size":row[5],"variant":variant,"service":row[8],"reward":reward,"integration_status":"native_geometry_pending_gameplay"})
 
 	for definition in result:
+		preload("res://world/editing/WorldServiceBuildings.gd").update_definition(definition)
 		definition["npcs"] = preload("res://world/places/OriginalResidents.gd").for_place(definition.id)
 		definition["rewards"] = [] if definition.reward.is_empty() else [definition.reward.duplicate(true)]
 		if definition.id == "mountain_cabin":
@@ -131,6 +132,8 @@ static func definitions() -> Array[Dictionary]:
 				{"id":"santa_mare_hold_crew_01","name":"Lucas","model":"res://world/places/SantaMareCrewModel3D.gd","appearance":{},"local_position":Vector3(-1.4,0,1.1)},
 				{"id":"santa_mare_hold_crew_02","name":"Mara","model":"res://world/places/SantaMareCrewModel3D.gd","appearance":{},"local_position":Vector3(1.6,0,-2.5)},
 			]
+	result.append(preload("res://gameplay/urban_v1/VerticeUndercroftPlace.gd").definition_data())
+	result.append(preload("res://gameplay/urban_v1/MountainFortPlace.gd").definition_data())
 	return result
 static func get_definition(id: String) -> Dictionary:
 	for definition in definitions():
@@ -139,12 +142,21 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty(): return null
+	if id == "vertice_undercroft":
+		var hidden = preload("res://gameplay/urban_v1/VerticeUndercroftPlace.gd").new()
+		hidden.definition = definition
+		return hidden
+	if id == "mountain_fort":
+		var fort = preload("res://gameplay/urban_v1/MountainFortPlace.gd").new()
+		fort.definition = definition
+		return fort
 	var place = load("res://world/places/NativePlace.gd").new()
 	place.definition = definition
 	return place
 static func access_points() -> Array[Dictionary]:
 	var points: Array[Dictionary] = []
 	for definition in definitions():
+		if definition.get("hidden_access",false): continue
 		points.append({"id":definition.id,"place_id":definition.id,"region":definition.region,"position":definition.entry_position,"return_position":definition.return_position})
 	for index in 2:
 		var position := shelter_access_exterior(index) + Vector3(0,0,walkup_door_z("cabin")+1.5)

@@ -1,0 +1,1714 @@
+{
+	"failures": [],
+	"source": "cars/VehicleCatalog.gd",
+	"vehicles": {
+		"american_dump_truck": {
+			"acceleration": 490.0,
+			"bounds_center": [
+				0.0,
+				1.58500003814697,
+				-0.0500001907348633
+			],
+			"bounds_size": [
+				2.62000012397766,
+				3.17000007629395,
+				8.21999931335449
+			],
+			"braking": 800.0,
+			"colors": [
+				"a7472fff",
+				"d09b37ff",
+				"345d48ff"
+			],
+			"crop_index": 0,
+			"district": "industrial",
+			"drift_factor": 0.42,
+			"drivetrain": "rwd",
+			"durability": 350,
+			"engine_family": "truck",
+			"engine_pitch": 0.7,
+			"id": "american_dump_truck",
+			"label": "Ironridge Basculante",
+			"mass": 3.8,
+			"max_speed": 300.0,
+			"mesh_count": 137,
+			"model_class": "res://prototypes/living_cast/models/AmericanDumpModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/american_dump_truck.scn",
+			"target_length": 136.0,
+			"target_width": 42.0,
+			"turn_speed": 1.75
+		},
+		"american_tanker_truck": {
+			"acceleration": 470.0,
+			"bounds_center": [
+				0.0,
+				1.58500003814697,
+				-0.0649995803833008
+			],
+			"bounds_size": [
+				2.62000012397766,
+				3.17000007629395,
+				8.19000053405762
+			],
+			"braking": 780.0,
+			"colors": [
+				"284d79ff",
+				"913b32ff",
+				"ddd9c9ff"
+			],
+			"crop_index": 0,
+			"district": "industrial",
+			"drift_factor": 0.4,
+			"drivetrain": "rwd",
+			"durability": 330,
+			"engine_family": "truck",
+			"engine_pitch": 0.68,
+			"id": "american_tanker_truck",
+			"label": "Longhorn Caminhão Tanque",
+			"mass": 4.0,
+			"max_speed": 310.0,
+			"mesh_count": 133,
+			"model_class": "res://prototypes/living_cast/models/AmericanTankerModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/american_tanker_truck.scn",
+			"target_length": 136.0,
+			"target_width": 42.0,
+			"turn_speed": 1.7
+		},
+		"arctic_jeep": {
+			"acceleration": 440.0,
+			"bounds_center": [
+				0.0,
+				0.951864004135132,
+				0.0250000953674316
+			],
+			"bounds_size": [
+				2.30600023269653,
+				1.94372797012329,
+				4.78999996185303
+			],
+			"braking": 950.0,
+			"colors": [
+				"315b6bff",
+				"dce3dfff",
+				"6b7055ff",
+				"934c39ff"
+			],
+			"district": "forest",
+			"drift_factor": 0.88,
+			"drivetrain": "4x4",
+			"durability": 200,
+			"engine_pitch": 0.85,
+			"id": "arctic_jeep",
+			"label": "Arctic Trail 4x4",
+			"mass": 1.8,
+			"max_speed": 480.0,
+			"mesh_count": 77,
+			"model_class": "res://prototypes/living_cast/models/ArcticJeepModel.gd",
+			"roof_prop": "",
+			"scene": "res://assets/fleet/arctic_jeep.scn",
+			"target_length": 84.0,
+			"target_width": 38.0,
+			"turn_speed": 2.8
+		},
+		"aurora_executive": {
+			"acceleration": 910.0,
+			"bounds_center": [
+				0.0,
+				0.717499971389771,
+				0.00749993324279785
+			],
+			"bounds_size": [
+				2.25839591026306,
+				1.43499994277954,
+				5.38500022888184
+			],
+			"braking": 1180.0,
+			"colors": [
+				"35495fff",
+				"20262cff",
+				"7b858cff",
+				"dfddd6ff",
+				"68433bff"
+			],
+			"crop_index": 1,
+			"district": "city",
+			"drift_factor": 0.82,
+			"drivetrain": "rwd",
+			"durability": 160,
+			"engine_family": "street",
+			"engine_pitch": 0.96,
+			"id": "aurora_executive",
+			"label": "Aurora Executive L",
+			"mass": 1.65,
+			"max_speed": 540.0,
+			"mesh_count": 110,
+			"model_class": "res://prototypes/living_cast/models/AuroraExecutiveModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/aurora_executive.scn",
+			"target_length": 94.0,
+			"target_width": 37.0,
+			"turn_speed": 2.75
+		},
+		"beach_buggy": {
+			"acceleration": 980.0,
+			"bounds_center": [
+				0.0,
+				0.690999984741211,
+				-0.0349950790405273
+			],
+			"bounds_size": [
+				1.94599997997284,
+				1.32200002670288,
+				3.43000984191895
+			],
+			"braking": 1160.0,
+			"colors": [
+				"e17055ff",
+				"badc58ff",
+				"f9ca24ff"
+			],
+			"district": "beach",
+			"drift_factor": 1.18,
+			"drivetrain": "rwd",
+			"durability": 75,
+			"engine_family": "sport",
+			"engine_pitch": 1.3,
+			"id": "beach_buggy",
+			"label": "Tropic Buggy Praiano",
+			"mass": 0.75,
+			"max_speed": 490.0,
+			"mesh_count": 80,
+			"model_class": "res://prototypes/living_cast/models/BeachBuggyModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/beach_buggy.scn",
+			"target_length": 60.0,
+			"target_width": 34.0,
+			"turn_speed": 3.6
+		},
+		"beach_cabriolet": {
+			"acceleration": 1040.0,
+			"bounds_center": [
+				0.0,
+				0.665000021457672,
+				0.0182499885559082
+			],
+			"bounds_size": [
+				2.06817722320557,
+				1.32000005245209,
+				4.55850028991699
+			],
+			"braking": 1280.0,
+			"colors": [
+				"00cec9ff",
+				"fd79a8ff",
+				"ffeaa7ff",
+				"ffffffff",
+				"fab1a0ff"
+			],
+			"district": "beach",
+			"drift_factor": 1.05,
+			"drivetrain": "rwd",
+			"durability": 85,
+			"engine_pitch": 1.15,
+			"id": "beach_cabriolet",
+			"label": "Cabriolet Tropical Conversível",
+			"mass": 0.95,
+			"max_speed": 570.0,
+			"mesh_count": 150,
+			"model_class": "res://prototypes/living_cast/CabrioletModel.gd",
+			"roof_prop": "open_top",
+			"scene": "res://assets/fleet/beach_cabriolet.scn",
+			"target_length": 74.0,
+			"target_width": 33.0,
+			"turn_speed": 3.45
+		},
+		"bike_cruiser": {
+			"acceleration": 780.0,
+			"bounds_center": [
+				0.0,
+				0.787499964237213,
+				-0.101432204246521
+			],
+			"bounds_size": [
+				0.819125056266785,
+				1.57499992847443,
+				2.5371356010437
+			],
+			"braking": 1050.0,
+			"colors": [
+				"22262cff",
+				"8d2435ff",
+				"cb702aff",
+				"294d43ff",
+				"e7d8bbff"
+			],
+			"crop_index": 0,
+			"district": "city",
+			"drift_factor": 0.95,
+			"drivetrain": "motorcycle_rear",
+			"durability": 85,
+			"engine_family": "bike_cruiser",
+			"engine_pitch": 1.0,
+			"id": "bike_cruiser",
+			"label": "Ironhorse 1700",
+			"mass": 0.46,
+			"max_speed": 490.0,
+			"mesh_count": 216,
+			"model_class": "res://cars/motorcycles/CruiserMotorcycle.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/bike_cruiser.scn",
+			"target_length": 46.0,
+			"target_width": 18.0,
+			"turn_speed": 2.7,
+			"vehicle_kind": "motorcycle"
+		},
+		"bike_sport": {
+			"acceleration": 1100.0,
+			"bounds_center": [
+				0.0,
+				0.827499985694885,
+				-0.0306980609893799
+			],
+			"bounds_size": [
+				0.819125056266785,
+				1.65499997138977,
+				2.25860404968262
+			],
+			"braking": 1250.0,
+			"colors": [
+				"dc303dff",
+				"2165d9ff",
+				"d6ed35ff",
+				"e9edefff",
+				"1c242cff"
+			],
+			"crop_index": 0,
+			"district": "city",
+			"drift_factor": 0.96,
+			"drivetrain": "motorcycle_rear",
+			"durability": 65,
+			"engine_family": "bike_sport",
+			"engine_pitch": 1.0,
+			"id": "bike_sport",
+			"label": "Vortex RR 900",
+			"mass": 0.32,
+			"max_speed": 640.0,
+			"mesh_count": 230,
+			"model_class": "res://cars/motorcycles/SportMotorcycle.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/bike_sport.scn",
+			"target_length": 42.0,
+			"target_width": 15.0,
+			"turn_speed": 3.6,
+			"vehicle_kind": "motorcycle"
+		},
+		"bike_urban": {
+			"acceleration": 860.0,
+			"bounds_center": [
+				0.0,
+				0.827499985694885,
+				-0.0104532241821289
+			],
+			"bounds_size": [
+				0.819125056266785,
+				1.65499997138977,
+				2.09909343719482
+			],
+			"braking": 1100.0,
+			"colors": [
+				"245cabff",
+				"cd3437ff",
+				"ecebe3ff",
+				"34363cff",
+				"e3b72dff"
+			],
+			"crop_index": 0,
+			"district": "city",
+			"drift_factor": 0.97,
+			"drivetrain": "motorcycle_rear",
+			"durability": 55,
+			"engine_family": "bike_urban",
+			"engine_pitch": 1.0,
+			"id": "bike_urban",
+			"label": "Cometa City 250",
+			"mass": 0.24,
+			"max_speed": 440.0,
+			"mesh_count": 181,
+			"model_class": "res://cars/motorcycles/UrbanMotorcycle.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/bike_urban.scn",
+			"target_length": 39.0,
+			"target_width": 14.0,
+			"turn_speed": 4.0,
+			"vehicle_kind": "motorcycle"
+		},
+		"boxrunner": {
+			"acceleration": 690.0,
+			"bounds_center": [
+				0.0,
+				1.38750004768372,
+				-0.0649998188018799
+			],
+			"bounds_size": [
+				2.72000002861023,
+				2.77500009536743,
+				6.75
+			],
+			"braking": 920.0,
+			"colors": [
+				"ffffffff",
+				"34495eff",
+				"2c3e50ff",
+				"7f8c8dff"
+			],
+			"district": "industrial",
+			"drift_factor": 0.6,
+			"drivetrain": "rwd",
+			"durability": 200,
+			"engine_pitch": 0.82,
+			"id": "boxrunner",
+			"label": "Boxrunner Caminhão Baú Urbano",
+			"mass": 2.4,
+			"max_speed": 410.0,
+			"mesh_count": 106,
+			"model_class": "res://prototypes/living_cast/models/BoxrunnerModel.gd",
+			"roof_prop": "cab_deflector",
+			"scene": "res://assets/fleet/boxrunner.scn",
+			"target_length": 110.0,
+			"target_width": 39.0,
+			"turn_speed": 2.35
+		},
+		"bravio_crew": {
+			"acceleration": 820.0,
+			"bounds_center": [
+				0.0,
+				0.932500004768372,
+				0.00999999046325684
+			],
+			"bounds_size": [
+				2.71810436248779,
+				1.8050000667572,
+				5.79999971389771
+			],
+			"braking": 990.0,
+			"colors": [
+				"3d6f63ff",
+				"303943ff",
+				"8b4b3fff",
+				"d3d1c7ff",
+				"6f6655ff"
+			],
+			"crop_index": 5,
+			"district": "city",
+			"drift_factor": 0.7,
+			"drivetrain": "4x4",
+			"durability": 205,
+			"engine_family": "suv",
+			"engine_pitch": 0.86,
+			"id": "bravio_crew",
+			"label": "Bravio Cabine Dupla",
+			"mass": 1.95,
+			"max_speed": 460.0,
+			"mesh_count": 88,
+			"model_class": "res://prototypes/living_cast/models/BravioCrewModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/bravio_crew.scn",
+			"target_length": 98.0,
+			"target_width": 40.0,
+			"turn_speed": 2.45
+		},
+		"cargo_flatbed_truck": {
+			"acceleration": 560.0,
+			"bounds_center": [
+				0.0,
+				1.58500003814697,
+				-0.0649995803833008
+			],
+			"bounds_size": [
+				2.62000012397766,
+				3.17000007629395,
+				8.19000053405762
+			],
+			"braking": 820.0,
+			"colors": [
+				"800000ff",
+				"1e3799ff",
+				"1e824cff",
+				"2c3e50ff"
+			],
+			"district": "industrial",
+			"drift_factor": 0.45,
+			"drivetrain": "rwd",
+			"durability": 320,
+			"engine_pitch": 0.72,
+			"id": "cargo_flatbed_truck",
+			"label": "Caminhão Freight Cargo V12",
+			"mass": 3.2,
+			"max_speed": 320.0,
+			"mesh_count": 151,
+			"model_class": "res://prototypes/living_cast/models/AmericanFlatbedModel.gd",
+			"roof_prop": "exhaust_stacks",
+			"scene": "res://assets/fleet/cargo_flatbed_truck.scn",
+			"target_length": 118.0,
+			"target_width": 42.0,
+			"turn_speed": 1.85
+		},
+		"cobra_v8": {
+			"acceleration": 1150.0,
+			"bounds_center": [
+				0.0,
+				0.676564157009125,
+				0.00499987602233887
+			],
+			"bounds_size": [
+				2.23600006103516,
+				1.34312832355499,
+				5.06999969482422
+			],
+			"braking": 1300.0,
+			"colors": [
+				"1a0505ff",
+				"0f0f12ff",
+				"380b0bff",
+				"2c0808ff"
+			],
+			"district": "city",
+			"drift_factor": 1.2,
+			"drivetrain": "rwd",
+			"durability": 140,
+			"engine_pitch": 0.85,
+			"id": "cobra_v8",
+			"label": "Cobra V8 Custom (Cobras de Ferro)",
+			"mass": 1.2,
+			"max_speed": 610.0,
+			"mesh_count": 89,
+			"model_class": "res://prototypes/living_cast/BossMuscleModel.gd",
+			"roof_prop": "hood_scoop",
+			"scene": "res://assets/fleet/cobra_v8.scn",
+			"target_length": 80.0,
+			"target_width": 35.0,
+			"turn_speed": 3.45
+		},
+		"courier_van": {
+			"acceleration": 760.0,
+			"bounds_center": [
+				0.0,
+				1.11500000953674,
+				0.0499999523162842
+			],
+			"bounds_size": [
+				2.3199999332428,
+				2.21000003814697,
+				5.01999998092651
+			],
+			"braking": 990.0,
+			"colors": [
+				"ffffffff",
+				"f39c12ff",
+				"2980b9ff",
+				"bdc3c7ff"
+			],
+			"district": "city",
+			"drift_factor": 0.72,
+			"drivetrain": "fwd",
+			"durability": 140,
+			"engine_pitch": 0.92,
+			"id": "courier_van",
+			"label": "Courier Van Express",
+			"mass": 1.5,
+			"max_speed": 430.0,
+			"mesh_count": 93,
+			"model_class": "res://prototypes/living_cast/models/CourierVanModel.gd",
+			"roof_prop": "roof_rack",
+			"scene": "res://assets/fleet/courier_van.scn",
+			"target_length": 84.0,
+			"target_width": 36.0,
+			"turn_speed": 2.65
+		},
+		"desert_jeep_4x4": {
+			"acceleration": 860.0,
+			"bounds_center": [
+				0.0,
+				0.951864004135132,
+				0.0250000953674316
+			],
+			"bounds_size": [
+				2.30600023269653,
+				1.94372797012329,
+				4.78999996185303
+			],
+			"braking": 1100.0,
+			"colors": [
+				"ffffffff",
+				"d1ccc0ff"
+			],
+			"crop_index": 3,
+			"district": "desert",
+			"drift_factor": 0.7,
+			"drivetrain": "4x4",
+			"durability": 160,
+			"engine_pitch": 0.92,
+			"id": "desert_jeep_4x4",
+			"label": "Wrangler 4x4 Desértico",
+			"mass": 1.5,
+			"max_speed": 430.0,
+			"mesh_count": 77,
+			"model_class": "res://prototypes/living_cast/models/ArcticJeepModel.gd",
+			"roof_prop": "spare_wheel",
+			"scene": "res://assets/fleet/desert_jeep_4x4.scn",
+			"target_length": 86.0,
+			"target_width": 36.0,
+			"turn_speed": 2.75
+		},
+		"dock_delivery_van": {
+			"acceleration": 720.0,
+			"bounds_center": [
+				0.0,
+				0.954999983310699,
+				0.0
+			],
+			"bounds_size": [
+				2.47839593887329,
+				1.92999994754791,
+				5.38000011444092
+			],
+			"braking": 970.0,
+			"colors": [
+				"e6e8e5ff",
+				"d9a22eff",
+				"39709aff",
+				"798287ff"
+			],
+			"crop_index": 0,
+			"district": "industrial",
+			"drift_factor": 0.68,
+			"drivetrain": "fwd",
+			"durability": 160,
+			"engine_family": "diesel",
+			"engine_pitch": 0.88,
+			"id": "dock_delivery_van",
+			"label": "Dockline Delivery 2.2D",
+			"mass": 1.65,
+			"max_speed": 405.0,
+			"mesh_count": 93,
+			"model_class": "res://prototypes/living_cast/models/DockDeliveryVanModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/dock_delivery_van.scn",
+			"target_length": 88.0,
+			"target_width": 37.0,
+			"turn_speed": 2.5
+		},
+		"dune_buggy": {
+			"acceleration": 1050.0,
+			"bounds_center": [
+				0.0,
+				0.718342185020447,
+				-0.096250057220459
+			],
+			"bounds_size": [
+				2.00600004196167,
+				1.39668440818787,
+				3.20749998092651
+			],
+			"braking": 1250.0,
+			"colors": [
+				"ffffffff"
+			],
+			"crop_index": 4,
+			"district": "desert",
+			"drift_factor": 1.28,
+			"drivetrain": "rwd",
+			"durability": 70,
+			"engine_family": "sport",
+			"engine_pitch": 1.35,
+			"id": "dune_buggy",
+			"label": "Sandstorm Dune Buggy",
+			"mass": 0.7,
+			"max_speed": 510.0,
+			"mesh_count": 71,
+			"model_class": "res://prototypes/living_cast/models/DuneBuggyModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/dune_buggy.scn",
+			"target_length": 58.0,
+			"target_width": 33.0,
+			"turn_speed": 3.8
+		},
+		"lumber_pickup_4x4": {
+			"acceleration": 830.0,
+			"bounds_center": [
+				0.0,
+				0.897879421710968,
+				0.0475001335144043
+			],
+			"bounds_size": [
+				2.3199999332428,
+				1.75575888156891,
+				5.27500009536743
+			],
+			"braking": 1000.0,
+			"colors": [
+				"2d3436ff",
+				"4b4b4bff",
+				"27ae60ff",
+				"5352edff"
+			],
+			"district": "forest",
+			"drift_factor": 0.75,
+			"drivetrain": "4x4",
+			"durability": 180,
+			"engine_pitch": 0.88,
+			"id": "lumber_pickup_4x4",
+			"label": "Pickup Florestal Heavy Duty",
+			"mass": 1.6,
+			"max_speed": 430.0,
+			"mesh_count": 87,
+			"model_class": "res://prototypes/living_cast/models/RanchSingleModel.gd",
+			"roof_prop": "snorkel_bars",
+			"scene": "res://assets/fleet/lumber_pickup_4x4.scn",
+			"target_length": 90.0,
+			"target_width": 37.0,
+			"turn_speed": 2.7
+		},
+		"medic_box": {
+			"acceleration": 920.0,
+			"bounds_center": [
+				0.0,
+				1.16624999046326,
+				0.0149998664855957
+			],
+			"bounds_size": [
+				2.3600001335144,
+				2.29250001907349,
+				5.50999975204468
+			],
+			"braking": 1150.0,
+			"colors": [
+				"f5f6faff",
+				"ffffffff"
+			],
+			"district": "emergency",
+			"drift_factor": 0.65,
+			"drivetrain": "awd",
+			"durability": 160,
+			"engine_pitch": 1.05,
+			"id": "medic_box",
+			"label": "Medic Box Ambulância SAMU",
+			"mass": 1.95,
+			"max_speed": 510.0,
+			"mesh_count": 106,
+			"model_class": "res://prototypes/living_cast/models/MedicBoxModel.gd",
+			"roof_prop": "ambulance_lightbar",
+			"scene": "res://assets/fleet/medic_box.scn",
+			"target_length": 92.0,
+			"target_width": 38.0,
+			"turn_speed": 2.8
+		},
+		"metro_hatch": {
+			"acceleration": 1020.0,
+			"bounds_center": [
+				0.0,
+				0.804965615272522,
+				0.0149999856948853
+			],
+			"bounds_size": [
+				1.95999991893768,
+				1.56993126869202,
+				3.86999988555908
+			],
+			"braking": 1280.0,
+			"colors": [
+				"e74c3cff",
+				"f1c40fff",
+				"3498dbff",
+				"2ecc71ff",
+				"ecf0f1ff"
+			],
+			"district": "city",
+			"drift_factor": 1.1,
+			"drivetrain": "fwd",
+			"durability": 85,
+			"engine_pitch": 1.22,
+			"id": "metro_hatch",
+			"label": "Metro Hatchback Sport",
+			"mass": 0.85,
+			"max_speed": 520.0,
+			"mesh_count": 78,
+			"model_class": "res://prototypes/living_cast/models/MetroHatchModel.gd",
+			"roof_prop": "spoiler",
+			"scene": "res://assets/fleet/metro_hatch.scn",
+			"target_length": 68.0,
+			"target_width": 32.0,
+			"turn_speed": 3.65
+		},
+		"monaliza": {
+			"acceleration": 1380.0,
+			"bounds_center": [
+				0.0,
+				0.689999997615814,
+				0.0230002403259277
+			],
+			"bounds_size": [
+				2.23000001907349,
+				1.36000001430511,
+				4.78600025177002
+			],
+			"braking": 1350.0,
+			"colors": [
+				"183b91ff"
+			],
+			"crop_index": 4,
+			"district": "personal",
+			"drift_factor": 0.88,
+			"drivetrain": "awd",
+			"durability": 180,
+			"engine_family": "monaliza",
+			"engine_pitch": 1.0,
+			"id": "monaliza",
+			"label": "Monaliza GT Turbo",
+			"mass": 0.95,
+			"max_speed": 680.0,
+			"mesh_count": 277,
+			"model_class": "res://world/harbor/monaliza/MonalizaModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/monaliza.scn",
+			"target_length": 74.0,
+			"target_width": 33.0,
+			"turn_speed": 3.1
+		},
+		"muscle_classic": {
+			"acceleration": 1020.0,
+			"bounds_center": [
+				0.0,
+				0.676564157009125,
+				0.00499987602233887
+			],
+			"bounds_size": [
+				2.23600006103516,
+				1.34312832355499,
+				5.06999969482422
+			],
+			"braking": 1080.0,
+			"colors": [
+				"ffffffff"
+			],
+			"crop_index": 2,
+			"district": "desert",
+			"drift_factor": 1.25,
+			"drivetrain": "rwd",
+			"durability": 120,
+			"engine_pitch": 0.88,
+			"id": "muscle_classic",
+			"label": "Stallion V8 Hardtop",
+			"mass": 1.3,
+			"max_speed": 560.0,
+			"mesh_count": 89,
+			"model_class": "res://prototypes/living_cast/BossMuscleModel.gd",
+			"roof_prop": "hood_scoop",
+			"scene": "res://assets/fleet/muscle_classic.scn",
+			"target_length": 82.0,
+			"target_width": 35.0,
+			"turn_speed": 3.05
+		},
+		"nimbus_minivan": {
+			"acceleration": 780.0,
+			"bounds_center": [
+				0.0,
+				0.932500004768372,
+				0.0
+			],
+			"bounds_size": [
+				2.33839583396912,
+				1.82500004768372,
+				5.1100001335144
+			],
+			"braking": 1030.0,
+			"colors": [
+				"6d7f92ff",
+				"c8c9c4ff",
+				"6d5b4dff",
+				"3f5f6dff",
+				"8b3f49ff"
+			],
+			"crop_index": 0,
+			"district": "city",
+			"drift_factor": 0.72,
+			"drivetrain": "fwd",
+			"durability": 145,
+			"engine_family": "street",
+			"engine_pitch": 0.91,
+			"id": "nimbus_minivan",
+			"label": "Nimbus Family 7",
+			"mass": 1.55,
+			"max_speed": 455.0,
+			"mesh_count": 98,
+			"model_class": "res://prototypes/living_cast/models/NimbusMinivanModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/nimbus_minivan.scn",
+			"target_length": 87.0,
+			"target_width": 37.0,
+			"turn_speed": 2.7
+		},
+		"nordic_estate": {
+			"acceleration": 700.0,
+			"bounds_center": [
+				0.0,
+				0.843499958515167,
+				0.0
+			],
+			"bounds_size": [
+				2.23000001907349,
+				1.64699995517731,
+				5.25
+			],
+			"braking": 990.0,
+			"colors": [
+				"b69b66ff",
+				"456877ff",
+				"843c35ff",
+				"d8d5c4ff",
+				"456354ff"
+			],
+			"crop_index": 3,
+			"district": "city",
+			"drift_factor": 0.84,
+			"drivetrain": "rwd",
+			"durability": 175,
+			"engine_pitch": 0.93,
+			"id": "nordic_estate",
+			"label": "Nord 240 Estate",
+			"mass": 1.48,
+			"max_speed": 420.0,
+			"mesh_count": 115,
+			"model_class": "res://prototypes/living_cast/models/NordicEstateModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/nordic_estate.scn",
+			"target_length": 92.0,
+			"target_width": 34.0,
+			"turn_speed": 2.6
+		},
+		"orbita_micro": {
+			"acceleration": 940.0,
+			"bounds_center": [
+				0.0,
+				0.795000016689301,
+				-0.00999999046325684
+			],
+			"bounds_size": [
+				1.92876052856445,
+				1.55000007152557,
+				3.53999996185303
+			],
+			"braking": 1220.0,
+			"colors": [
+				"58a7d8ff",
+				"e6b84dff",
+				"d95c55ff",
+				"f1f3f2ff",
+				"62a66fff"
+			],
+			"crop_index": 2,
+			"district": "city",
+			"drift_factor": 0.96,
+			"drivetrain": "fwd",
+			"durability": 80,
+			"engine_family": "street",
+			"engine_pitch": 1.08,
+			"id": "orbita_micro",
+			"label": "Órbita City 1.0",
+			"mass": 0.72,
+			"max_speed": 460.0,
+			"mesh_count": 92,
+			"model_class": "res://prototypes/living_cast/models/OrbitaMicroModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/orbita_micro.scn",
+			"target_length": 64.0,
+			"target_width": 31.0,
+			"turn_speed": 3.85
+		},
+		"polar_van": {
+			"acceleration": 750.0,
+			"bounds_center": [
+				0.0,
+				1.11500000953674,
+				0.0499999523162842
+			],
+			"bounds_size": [
+				2.3199999332428,
+				2.21000003814697,
+				5.01999998092651
+			],
+			"braking": 980.0,
+			"colors": [
+				"ffffffff",
+				"81ececff",
+				"a4b0beff"
+			],
+			"district": "winter",
+			"drift_factor": 0.68,
+			"drivetrain": "fwd",
+			"durability": 160,
+			"engine_pitch": 0.92,
+			"id": "polar_van",
+			"label": "Furgão Ártico Térmico",
+			"mass": 1.7,
+			"max_speed": 410.0,
+			"mesh_count": 93,
+			"model_class": "res://prototypes/living_cast/models/CourierVanModel.gd",
+			"roof_prop": "vent_roof",
+			"scene": "res://assets/fleet/polar_van.scn",
+			"target_length": 86.0,
+			"target_width": 36.0,
+			"turn_speed": 2.5
+		},
+		"police_cruiser": {
+			"acceleration": 1100.0,
+			"bounds_center": [
+				0.0,
+				0.800000011920929,
+				0.00999999046325684
+			],
+			"bounds_size": [
+				2.09999990463257,
+				1.58000004291534,
+				4.77999973297119
+			],
+			"braking": 1400.0,
+			"colors": [
+				"ffffffff"
+			],
+			"district": "city",
+			"drift_factor": 0.95,
+			"drivetrain": "awd",
+			"durability": 170,
+			"engine_pitch": 1.12,
+			"id": "police_cruiser",
+			"label": "Viatura PM Interceptor",
+			"mass": 1.25,
+			"max_speed": 600.0,
+			"mesh_count": 94,
+			"model_class": "res://prototypes/living_cast/models/PoliceCruiserModel.gd",
+			"roof_prop": "police_lightbar",
+			"scene": "res://assets/fleet/police_cruiser.scn",
+			"target_length": 82.0,
+			"target_width": 36.0,
+			"texture": "res://assets/art/police_car.png",
+			"turn_speed": 3.4
+		},
+		"police_suv": {
+			"acceleration": 960.0,
+			"bounds_center": [
+				0.0,
+				1.0,
+				0.0
+			],
+			"bounds_size": [
+				2.45000004768372,
+				2.0,
+				5.35999965667725
+			],
+			"braking": 1300.0,
+			"colors": [
+				"e5e9edff"
+			],
+			"district": "city",
+			"drift_factor": 0.8,
+			"drivetrain": "awd",
+			"durability": 190,
+			"engine_pitch": 0.96,
+			"id": "police_suv",
+			"label": "Viatura PM SUV",
+			"mass": 1.65,
+			"max_speed": 540.0,
+			"mesh_count": 79,
+			"model_class": "res://prototypes/living_cast/models/PoliceSUVModel.gd",
+			"roof_prop": "police_lightbar",
+			"scene": "res://assets/fleet/police_suv.scn",
+			"target_length": 90.0,
+			"target_width": 40.0,
+			"turn_speed": 3.05
+		},
+		"port_forklift": {
+			"acceleration": 105.0,
+			"bounds_center": [
+				-0.0000000596046447753906,
+				1.12999999523163,
+				-0.0449999570846558
+			],
+			"bounds_size": [
+				1.27999997138977,
+				2.25999999046326,
+				3.63000011444092
+			],
+			"braking": 280.0,
+			"colors": [
+				"db7925ff"
+			],
+			"crop_index": 0,
+			"district": "industrial",
+			"drift_factor": 0.7,
+			"drivetrain": "fwd",
+			"durability": 180,
+			"engine_family": "diesel",
+			"engine_pitch": 0.8,
+			"id": "port_forklift",
+			"label": "Empilhadeira do cais",
+			"mass": 2.7,
+			"max_speed": 90.0,
+			"mesh_count": 48,
+			"model_class": "res://world/harbor/PortForkliftModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/port_forklift.scn",
+			"target_length": 60.0,
+			"target_width": 25.0,
+			"turn_speed": 2.5
+		},
+		"porto_rosso": {
+			"acceleration": 1600.0,
+			"bounds_center": [
+				0.0,
+				0.603999972343445,
+				-0.0124998092651367
+			],
+			"bounds_size": [
+				2.41600012779236,
+				1.28799998760223,
+				4.71500015258789
+			],
+			"braking": 1750.0,
+			"colors": [
+				"e01824ff"
+			],
+			"crop_index": 2,
+			"district": "exclusive",
+			"drift_factor": 0.82,
+			"drivetrain": "rwd",
+			"durability": 180,
+			"engine_pitch": 1.24,
+			"id": "porto_rosso",
+			"label": "Porto Rosso V12",
+			"mass": 1.32,
+			"max_speed": 820.0,
+			"mesh_count": 117,
+			"model_class": "res://world/harbor/PortBossRoadsterModel.gd",
+			"roof_prop": "",
+			"scene": "res://assets/fleet/porto_rosso.scn",
+			"target_length": 82.0,
+			"target_width": 39.0,
+			"turn_speed": 3.0
+		},
+		"ranch_pickup": {
+			"acceleration": 820.0,
+			"bounds_center": [
+				0.0,
+				0.897879421710968,
+				0.0475001335144043
+			],
+			"bounds_size": [
+				2.3199999332428,
+				1.75575888156891,
+				5.27500009536743
+			],
+			"braking": 960.0,
+			"colors": [
+				"ffffffff"
+			],
+			"crop_index": 5,
+			"district": "desert",
+			"drift_factor": 0.85,
+			"drivetrain": "rwd",
+			"durability": 175,
+			"engine_pitch": 0.86,
+			"id": "ranch_pickup",
+			"label": "Pickup V8 Rancho",
+			"mass": 1.65,
+			"max_speed": 420.0,
+			"mesh_count": 87,
+			"model_class": "res://prototypes/living_cast/models/RanchSingleModel.gd",
+			"roof_prop": "bed_bars",
+			"scene": "res://assets/fleet/ranch_pickup.scn",
+			"target_length": 88.0,
+			"target_width": 35.0,
+			"turn_speed": 2.6
+		},
+		"ranch_single": {
+			"acceleration": 850.0,
+			"bounds_center": [
+				0.0,
+				0.897879421710968,
+				0.0475001335144043
+			],
+			"bounds_size": [
+				2.3199999332428,
+				1.75575888156891,
+				5.27500009536743
+			],
+			"braking": 980.0,
+			"colors": [
+				"8e44adff",
+				"2c3e50ff",
+				"b53471ff",
+				"30336bff",
+				"dff9fbff"
+			],
+			"district": "desert",
+			"drift_factor": 0.88,
+			"drivetrain": "4x4",
+			"durability": 180,
+			"engine_pitch": 0.85,
+			"id": "ranch_single",
+			"label": "Ranch Single V8 4x4",
+			"mass": 1.65,
+			"max_speed": 450.0,
+			"mesh_count": 87,
+			"model_class": "res://prototypes/living_cast/models/RanchSingleModel.gd",
+			"roof_prop": "bed_bars",
+			"scene": "res://assets/fleet/ranch_single.scn",
+			"target_length": 88.0,
+			"target_width": 36.0,
+			"turn_speed": 2.6
+		},
+		"rescue_pumper": {
+			"acceleration": 680.0,
+			"bounds_center": [
+				0.0,
+				1.2849999666214,
+				-0.194999694824219
+			],
+			"bounds_size": [
+				3.0,
+				2.60999989509583,
+				8.69000053405762
+			],
+			"braking": 920.0,
+			"colors": [
+				"c0392bff",
+				"d63031ff"
+			],
+			"district": "emergency",
+			"drift_factor": 0.45,
+			"drivetrain": "rwd",
+			"durability": 320,
+			"engine_pitch": 0.74,
+			"id": "rescue_pumper",
+			"label": "Rescue Pumper (Corpo de Bombeiros)",
+			"mass": 4.8,
+			"max_speed": 380.0,
+			"mesh_count": 143,
+			"model_class": "res://prototypes/living_cast/models/RescuePumperModel.gd",
+			"roof_prop": "fire_lightbar",
+			"scene": "res://assets/fleet/rescue_pumper.scn",
+			"target_length": 128.0,
+			"target_width": 42.0,
+			"turn_speed": 2.1
+		},
+		"route_city": {
+			"acceleration": 520.0,
+			"bounds_center": [
+				0.0,
+				1.54999995231628,
+				0.0
+			],
+			"bounds_size": [
+				2.53600001335144,
+				3.09999990463257,
+				9.78000068664551
+			],
+			"braking": 780.0,
+			"colors": [
+				"2980b9ff",
+				"27ae60ff",
+				"d35400ff",
+				"8e44adff"
+			],
+			"district": "city",
+			"drift_factor": 0.4,
+			"drivetrain": "rwd",
+			"durability": 300,
+			"engine_pitch": 0.7,
+			"id": "route_city",
+			"label": "Route City Ônibus Urbano",
+			"mass": 4.2,
+			"max_speed": 340.0,
+			"mesh_count": 112,
+			"model_class": "res://prototypes/living_cast/models/RouteCityModel.gd",
+			"roof_prop": "ac_unit",
+			"scene": "res://assets/fleet/route_city.scn",
+			"target_length": 132.0,
+			"target_width": 42.0,
+			"turn_speed": 1.95
+		},
+		"sedan_classic": {
+			"acceleration": 880.0,
+			"bounds_center": [
+				0.0,
+				0.695000052452087,
+				0.00999999046325684
+			],
+			"bounds_size": [
+				2.09999990463257,
+				1.37000012397766,
+				4.77999973297119
+			],
+			"braking": 1150.0,
+			"colors": [
+				"ffffffff",
+				"f1f2f6ff",
+				"d2dae2ff"
+			],
+			"crop_index": 0,
+			"district": "city",
+			"drift_factor": 0.88,
+			"drivetrain": "fwd",
+			"durability": 100,
+			"engine_pitch": 1.0,
+			"id": "sedan_classic",
+			"label": "Sedan Premier 2.0",
+			"mass": 1.0,
+			"max_speed": 490.0,
+			"mesh_count": 96,
+			"model_class": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/sedan_classic.scn",
+			"target_length": 76.0,
+			"target_width": 32.0,
+			"turn_speed": 3.1
+		},
+		"snow_plow_truck": {
+			"acceleration": 600.0,
+			"bounds_center": [
+				0.0,
+				1.18499994277954,
+				-0.537499904632568
+			],
+			"bounds_size": [
+				3.44000005722046,
+				2.36999988555908,
+				7.125
+			],
+			"braking": 850.0,
+			"colors": [
+				"e67e22ff",
+				"f1c40fff"
+			],
+			"district": "winter",
+			"drift_factor": 0.5,
+			"drivetrain": "4x4",
+			"durability": 280,
+			"engine_family": "truck",
+			"engine_pitch": 0.76,
+			"id": "snow_plow_truck",
+			"label": "Limpa-Neves Industrial",
+			"mass": 3.0,
+			"max_speed": 340.0,
+			"mesh_count": 125,
+			"model_class": "res://prototypes/living_cast/models/SnowPlowModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/snow_plow_truck.scn",
+			"target_length": 112.0,
+			"target_width": 42.0,
+			"turn_speed": 2.05
+		},
+		"sport_coupe": {
+			"acceleration": 1180.0,
+			"bounds_center": [
+				0.0,
+				0.677500009536743,
+				0.0182499885559082
+			],
+			"bounds_size": [
+				2.06817722320557,
+				1.34500002861023,
+				4.55850028991699
+			],
+			"braking": 1450.0,
+			"colors": [
+				"ffffffff"
+			],
+			"crop_index": 4,
+			"district": "city",
+			"drift_factor": 1.15,
+			"drivetrain": "rwd",
+			"durability": 80,
+			"engine_pitch": 1.25,
+			"id": "sport_coupe",
+			"label": "Infernus GT Turbo",
+			"mass": 0.85,
+			"max_speed": 620.0,
+			"mesh_count": 173,
+			"model_class": "res://prototypes/living_cast/CoupeDamageModel.gd",
+			"roof_prop": "spoiler",
+			"scene": "res://assets/fleet/sport_coupe.scn",
+			"target_length": 72.0,
+			"target_width": 34.0,
+			"turn_speed": 3.65
+		},
+		"sport_estate": {
+			"acceleration": 1280.0,
+			"bounds_center": [
+				0.0,
+				0.743499994277954,
+				0.0150001049041748
+			],
+			"bounds_size": [
+				2.26099991798401,
+				1.48699998855591,
+				5.21000003814697
+			],
+			"braking": 1420.0,
+			"colors": [
+				"465c75ff",
+				"677178ff",
+				"263b34ff",
+				"d4d8ddff",
+				"571f2cff"
+			],
+			"crop_index": 3,
+			"district": "city",
+			"drift_factor": 0.87,
+			"drivetrain": "awd",
+			"durability": 185,
+			"engine_family": "muscle",
+			"engine_pitch": 0.87,
+			"id": "sport_estate",
+			"label": "Rhein R6 Avant",
+			"mass": 1.95,
+			"max_speed": 640.0,
+			"mesh_count": 108,
+			"model_class": "res://prototypes/living_cast/models/SportEstateModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/sport_estate.scn",
+			"target_length": 94.0,
+			"target_width": 38.0,
+			"turn_speed": 3.1
+		},
+		"station_wagon": {
+			"acceleration": 780.0,
+			"bounds_center": [
+				0.0,
+				0.843499958515167,
+				0.0
+			],
+			"bounds_size": [
+				2.23000001907349,
+				1.64699995517731,
+				5.25
+			],
+			"braking": 1020.0,
+			"colors": [
+				"ffffffff"
+			],
+			"crop_index": 3,
+			"district": "city",
+			"drift_factor": 0.8,
+			"drivetrain": "rwd",
+			"durability": 120,
+			"engine_pitch": 0.95,
+			"id": "station_wagon",
+			"label": "Perua Touring Classic",
+			"mass": 1.15,
+			"max_speed": 450.0,
+			"mesh_count": 115,
+			"model_class": "res://prototypes/living_cast/models/NordicEstateModel.gd",
+			"roof_prop": "roof_rack",
+			"scene": "res://assets/fleet/station_wagon.scn",
+			"target_length": 92.0,
+			"target_width": 32.0,
+			"turn_speed": 2.85
+		},
+		"summit_suv": {
+			"acceleration": 440.0,
+			"bounds_center": [
+				0.0,
+				1.0900000333786,
+				-0.115000009536743
+			],
+			"bounds_size": [
+				2.46000003814697,
+				2.22000002861023,
+				5.13000011444092
+			],
+			"braking": 950.0,
+			"colors": [
+				"315b6bff",
+				"dce3dfff",
+				"6b7055ff",
+				"934c39ff"
+			],
+			"district": "forest",
+			"drift_factor": 0.88,
+			"drivetrain": "awd",
+			"durability": 200,
+			"engine_pitch": 0.85,
+			"id": "summit_suv",
+			"label": "Summit SUV 4x4",
+			"mass": 1.8,
+			"max_speed": 480.0,
+			"mesh_count": 81,
+			"model_class": "res://prototypes/living_cast/models/SummitSUVModel.gd",
+			"roof_prop": "",
+			"scene": "res://assets/fleet/summit_suv.scn",
+			"target_length": 84.0,
+			"target_width": 38.0,
+			"turn_speed": 2.8
+		},
+		"surf_woody_wagon": {
+			"acceleration": 780.0,
+			"bounds_center": [
+				0.0,
+				0.970000028610229,
+				0.00499987602233887
+			],
+			"bounds_size": [
+				2.14861464500427,
+				1.94000005722046,
+				4.98999977111816
+			],
+			"braking": 980.0,
+			"colors": [
+				"16a085ff",
+				"e58e26ff",
+				"34495eff",
+				"786d56ff"
+			],
+			"district": "beach",
+			"drift_factor": 0.82,
+			"drivetrain": "rwd",
+			"durability": 115,
+			"engine_family": "street",
+			"engine_pitch": 0.95,
+			"id": "surf_woody_wagon",
+			"label": "Woody Wagon com Prancha de Surf",
+			"mass": 1.2,
+			"max_speed": 440.0,
+			"mesh_count": 117,
+			"model_class": "res://prototypes/living_cast/models/WoodyWagonModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/surf_woody_wagon.scn",
+			"target_length": 85.0,
+			"target_width": 33.0,
+			"turn_speed": 2.8
+		},
+		"taxi_yellow": {
+			"acceleration": 890.0,
+			"bounds_center": [
+				0.0,
+				0.860000014305115,
+				0.00999999046325684
+			],
+			"bounds_size": [
+				2.09999990463257,
+				1.70000004768372,
+				4.77999973297119
+			],
+			"braking": 1180.0,
+			"colors": [
+				"ffc526ff"
+			],
+			"crop_index": 1,
+			"district": "city",
+			"drift_factor": 0.85,
+			"drivetrain": "fwd",
+			"durability": 110,
+			"engine_pitch": 1.02,
+			"id": "taxi_yellow",
+			"label": "Táxi Metropolitano",
+			"mass": 1.05,
+			"max_speed": 480.0,
+			"mesh_count": 122,
+			"model_class": "res://prototypes/living_cast/models/YellowCabModel.gd",
+			"roof_prop": "taxi_sign",
+			"scene": "res://assets/fleet/taxi_yellow.scn",
+			"target_length": 78.0,
+			"target_width": 33.0,
+			"turn_speed": 3.2
+		},
+		"towmaster": {
+			"acceleration": 650.0,
+			"bounds_center": [
+				0.0,
+				1.10500001907349,
+				0.030040979385376
+			],
+			"bounds_size": [
+				2.8199999332428,
+				2.23000001907349,
+				7.34008169174194
+			],
+			"braking": 890.0,
+			"colors": [
+				"f39c12ff",
+				"f1c40fff",
+				"e67e22ff"
+			],
+			"district": "industrial",
+			"drift_factor": 0.55,
+			"drivetrain": "rwd",
+			"durability": 220,
+			"engine_pitch": 0.8,
+			"id": "towmaster",
+			"label": "Towmaster Guincho Plataforma",
+			"mass": 2.8,
+			"max_speed": 400.0,
+			"mesh_count": 99,
+			"model_class": "res://prototypes/living_cast/models/TowmasterModel.gd",
+			"roof_prop": "amber_beacon",
+			"scene": "res://assets/fleet/towmaster.scn",
+			"target_length": 116.0,
+			"target_width": 40.0,
+			"turn_speed": 2.25
+		},
+		"union_sedan": {
+			"acceleration": 870.0,
+			"bounds_center": [
+				0.0,
+				0.695000052452087,
+				0.00999999046325684
+			],
+			"bounds_size": [
+				2.09999990463257,
+				1.37000012397766,
+				4.77999973297119
+			],
+			"braking": 1120.0,
+			"colors": [
+				"2c3e50ff",
+				"7f8c8dff",
+				"1e272eff",
+				"34495eff",
+				"c0392bff"
+			],
+			"district": "city",
+			"drift_factor": 0.85,
+			"drivetrain": "rwd",
+			"durability": 110,
+			"engine_pitch": 1.0,
+			"id": "union_sedan",
+			"label": "Union Sedan Premier",
+			"mass": 1.1,
+			"max_speed": 490.0,
+			"mesh_count": 96,
+			"model_class": "res://prototypes/living_cast/models/UnionSedanModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/union_sedan.scn",
+			"target_length": 82.0,
+			"target_width": 34.0,
+			"turn_speed": 3.1
+		},
+		"vale_crossover": {
+			"acceleration": 900.0,
+			"bounds_center": [
+				0.0,
+				0.920494854450226,
+				-0.0162451267242432
+			],
+			"bounds_size": [
+				2.30846881866455,
+				1.78098976612091,
+				4.39250993728638
+			],
+			"braking": 1120.0,
+			"colors": [
+				"8e5b43ff",
+				"3b6e73ff",
+				"72785fff",
+				"d6d8d5ff",
+				"34414dff"
+			],
+			"crop_index": 3,
+			"district": "city",
+			"drift_factor": 0.78,
+			"drivetrain": "awd",
+			"durability": 145,
+			"engine_family": "suv",
+			"engine_pitch": 0.98,
+			"id": "vale_crossover",
+			"label": "Vale Cross AWD",
+			"mass": 1.35,
+			"max_speed": 500.0,
+			"mesh_count": 151,
+			"model_class": "res://prototypes/living_cast/models/ValeCrossoverModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/vale_crossover.scn",
+			"target_length": 79.0,
+			"target_width": 36.0,
+			"turn_speed": 3.15
+		},
+		"vertice_midengine": {
+			"acceleration": 1250.0,
+			"bounds_center": [
+				0.0,
+				0.587499976158142,
+				-0.0699999332427979
+			],
+			"bounds_size": [
+				2.47825002670288,
+				1.25499999523163,
+				4.71999979019165
+			],
+			"braking": 1420.0,
+			"colors": [
+				"d43b32ff",
+				"ef8b2cff",
+				"235b91ff",
+				"ddd9cdff",
+				"24262bff"
+			],
+			"crop_index": 4,
+			"district": "city",
+			"drift_factor": 1.08,
+			"drivetrain": "rwd",
+			"durability": 120,
+			"engine_family": "sport",
+			"engine_pitch": 1.24,
+			"id": "vertice_midengine",
+			"label": "Vértice MR",
+			"mass": 1.0,
+			"max_speed": 650.0,
+			"mesh_count": 103,
+			"model_class": "res://prototypes/living_cast/models/VerticeMidEngineModel.gd",
+			"roof_prop": "none",
+			"scene": "res://assets/fleet/vertice_midengine.scn",
+			"target_length": 76.0,
+			"target_width": 37.0,
+			"turn_speed": 3.5
+		},
+		"winter_suv_heavy": {
+			"acceleration": 800.0,
+			"bounds_center": [
+				0.0,
+				1.0900000333786,
+				-0.115000009536743
+			],
+			"bounds_size": [
+				2.46000003814697,
+				2.22000002861023,
+				5.13000011444092
+			],
+			"braking": 1080.0,
+			"colors": [
+				"f5f6faff",
+				"74b9ffff",
+				"2f3542ff",
+				"57606fff"
+			],
+			"district": "winter",
+			"drift_factor": 0.72,
+			"drivetrain": "awd",
+			"durability": 190,
+			"engine_pitch": 0.9,
+			"id": "winter_suv_heavy",
+			"label": "Mammoth SUV 4x4 Neve",
+			"mass": 1.85,
+			"max_speed": 440.0,
+			"mesh_count": 81,
+			"model_class": "res://prototypes/living_cast/models/SummitSUVModel.gd",
+			"roof_prop": "ski_rack",
+			"scene": "res://assets/fleet/winter_suv_heavy.scn",
+			"target_length": 90.0,
+			"target_width": 37.0,
+			"turn_speed": 2.6
+		}
+	}
+}

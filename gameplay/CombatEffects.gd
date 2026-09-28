@@ -61,8 +61,9 @@ var _next_shell := 0
 var _stains: Array[MeshInstance3D] = []
 var _stain_materials: Array[StandardMaterial3D] = []
 var _stain_age: Array[float] = []
+# Proporção x/z de cada mancha: a mesma textura redonda repetida parecia carimbo.
+var _stain_aspect: Array[Vector2] = []
 var _stain_target_radius: Array[float] = []
-var _next_stain := 0
 var _tracers: Array[MeshInstance3D] = []
 var _tracer_state: Array[Dictionary] = []
 var _next_tracer := 0
@@ -141,7 +142,8 @@ func _ready() -> void:
 		var drops := _emitter(14, 0.55, drop_mesh, BLOOD_COLOR, 2.2, 5.5, 26.0, -9.8, 0.7, 1.5)
 		drops.particle_flag_align_y = true
 		_blood.append(drops)
-		_blood_mist.append(_emitter(5, 0.32, _smoke_mesh, Color(0.42, 0.02, 0.015, 0.55), 0.3, 1.1, 40.0, -0.6, 0.35, 0.8, 2.2))
+		# Névoa curta e escura: a nuvem rosa de ~0,6 m lia como fumaça colorida.
+		_blood_mist.append(_emitter(4, 0.24, _smoke_mesh, Color(0.26, 0.01, 0.008, 0.5), 0.3, 1.0, 35.0, -1.2, 0.16, 0.36, 1.5))
 	_muzzle_smoke = _emitter(4, 0.6, _smoke_mesh, Color(0.65, 0.63, 0.60, 0.28), 0.6, 1.6, 24.0, 0.6, 0.4, 0.9, 2.4)
 	_blast_sparks = _emitter(28, 0.6, _spark_mesh, Color(1.0, 0.62, 0.15), 5.0, 11.0, 180.0, -8.0, 1.0, 2.2)
 	_blast_sparks.particle_flag_align_y = true
@@ -220,6 +222,7 @@ func _ready() -> void:
 		_stains.append(patch)
 		_stain_materials.append(mat)
 		_stain_age.append(-1.0)
+		_stain_aspect.append(Vector2.ONE)
 		_stain_target_radius.append(0.6)
 	# V1: o projétil tinha núcleo e cauda curta em movimento. O V2 mantém o
 	# acerto hitscan, mas a apresentação percorre a trajetória; não desenha uma
@@ -425,18 +428,34 @@ func stain(foot: Vector3, radius: float) -> void:
 	var ray := PhysicsRayQueryParameters3D.create(foot + Vector3.UP * 0.6, foot - Vector3.UP * 1.5, 1)
 	var hit := space.intersect_ray(ray)
 	if hit.is_empty(): return
-	var index := _next_stain
-	_next_stain = (_next_stain + 1) % MAX_STAINS
+	var index := _free_stain(radius)
 	var node := _stains[index]
 	var mat := _stain_materials[index]
 	_stain_age[index] = 0.0
 	_stain_target_radius[index] = radius
+	var stretch := randf_range(0.0, 0.35) if radius < 0.5 else randf_range(0.0, 0.15)
+	_stain_aspect[index] = Vector2(1.0 + stretch, 1.0 - stretch * 0.5)
 	var initial_r := radius * 0.2
 	node.global_transform = Transform3D(Basis.IDENTITY.scaled(Vector3(initial_r, 1.0, initial_r)), hit.position + Vector3.UP * 0.02)
 	node.rotation = Vector3(0.0, randf() * TAU, 0.0)
 	mat.albedo_color = Color(0.36, 0.015, 0.012, 0.92)
 	node.visible = true
 	set_physics_process(true)
+
+## Vaga para uma mancha nova: livre, senão o respingo mais velho; a poça grande
+## de um cadáver só é reciclada se todas as vagas forem poças.
+func _free_stain(radius: float) -> int:
+	var best := -1
+	var best_age := -1.0
+	for pass_index in 2:
+		for index in MAX_STAINS:
+			if _stain_age[index] < 0.0: return index
+			if pass_index == 0 and _stain_target_radius[index] >= 0.5 and radius < 0.5: continue
+			if _stain_age[index] > best_age:
+				best_age = _stain_age[index]
+				best = index
+		if best >= 0: return best
+	return 0
 
 ## Cápsula ejetada (V1 `_ShellCasing`): sai pelo lado direito da arma, sobe, quica até duas vezes e some.
 func shell(origin: Vector3, aim: Vector3, floor_y: float) -> void:
@@ -726,7 +745,7 @@ func _physics_process(delta: float) -> void:
 		var pool_t := clampf(age / 2.4, 0.0, 1.0)
 		var grow := lerpf(0.2, 1.0, smoothstep(0.0, 1.0, pool_t))
 		var cur_r: float = _stain_target_radius[index] * grow
-		_stains[index].scale = Vector3(cur_r, 1.0, cur_r)
+		_stains[index].scale = Vector3(cur_r * _stain_aspect[index].x, 1.0, cur_r * _stain_aspect[index].y)
 		var color_t := clampf(age / 3.0, 0.0, 1.0)
 		var base_color := Color(0.36, 0.015, 0.012).lerp(Color(0.14, 0.01, 0.01), color_t)
 		var alpha := 0.92

@@ -49,7 +49,7 @@ func _physics_process(delta: float) -> void:
 	if not is_instance_valid(_session) or gameplay.get("state") == null: return
 	_last_seen_age += delta
 	_entry_cooldown = maxf(0.0, _entry_cooldown - delta)
-	var place: String = str(gameplay.state.place_id)
+	var place: String = str(gameplay.state.place_id) if "place_id" in gameplay.state else ""
 	var region: String = str(gameplay.state.region_id)
 	var next_room := _session.get("room") as Node3D
 	if place != _place or next_room != _room or region != _region:

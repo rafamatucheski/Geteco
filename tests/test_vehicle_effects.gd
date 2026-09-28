@@ -43,6 +43,7 @@ func run() -> void:
 	root.add_child(world)
 	surface(world,"Road",Vector3(0,-.10,0),Vector3(10,.20,16))
 	surface(world,"Land",Vector3(14,-.10,0),Vector3(9,.20,12),.18)
+	surface(world,"Meadow",Vector3(0,-.10,20),Vector3(10,.20,10))
 	surface(world,"CrashWall",Vector3(0,1,-3),Vector3(6,2,.3))
 	var car := VEHICLE.new()
 	car.archetype = "sport_coupe"
@@ -94,6 +95,26 @@ func run() -> void:
 	tire.physics_tick(.06,true)
 	check("dirt" in tire.last_modes,"moving wheel contact on terrain selects bounded dust")
 	check(tire.marks.any(func(mark: Dictionary): return mark.kind=="dirt" and mark.na.dot(Vector3.UP)<.995),"terrain marks inherit the real inclined surface normal")
+	var grass_contact := SURFACE.sample(car,Vector3(0,.65,20))
+	check(not grass_contact.is_empty() and grass_contact.kind=="grass","meadow ray identifies grass")
+	tire.clear_all()
+	car.brake_input = false
+	car.place(Vector3(0,.12,20),0)
+	car.horizontal_velocity = Vector3(0,0,-6)
+	tire.physics_tick(.06,true)
+	car.position.z-=.36
+	tire.physics_tick(.06,true)
+	check("grass" in tire.last_modes,"rolling straight on grass throws turf")
+	check((tire.emitters[0].process_material as ParticleProcessMaterial).gravity.y<0,"turf falls back instead of floating like dust")
+	check(tire.marks.any(func(mark: Dictionary): return mark.kind=="grass" and int(mark.life)==tire.RUT_LIFETIME_MSEC),"straight driving on grass leaves a lasting rut without sliding")
+	var light_width: float = tire.marks.back().w
+	car.handling.mass = 6.0
+	tire.clear_all()
+	tire.physics_tick(.06,true)
+	car.position.z-=.36
+	tire.physics_tick(.06,true)
+	check(not tire.marks.is_empty() and float(tire.marks.back().w)>light_width,"heavier vehicle cuts a wider rut")
+	car.brake_input = true
 	var wet := slope_contact.duplicate()
 	wet.wet = true
 	tire._emit_surface(0,wet,"water",8,4)

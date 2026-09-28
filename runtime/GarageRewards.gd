@@ -72,10 +72,29 @@ func _physics_process(delta: float) -> void:
 	if cars.has(PORT_ID) and is_instance_valid(cars[PORT_ID]) and cars[PORT_ID].health<=0 and data.port_status in ["parked","stolen"]:
 		data.port_status="destroyed"
 		session.save_game()
+	if _drive_through_port_exit(driving): return
 	_clock+=delta
 	if _clock<.5: return
 	_clock=0
 	_sync()
+
+func _drive_through_port_exit(driving) -> bool:
+	if session.state.place_id != "port_boss_garage" or not driving.occupied: return false
+	if not session.has_method("transfer_garage_vehicle"): return false
+	if session.is_transition_blocked() or session.modal or not is_instance_valid(session.room): return false
+	var car = driving.car
+	if not is_instance_valid(car) or car.health <= 0 or car.input_locked: return false
+	var local: Vector3 = session.room.to_local(car.global_position)
+	var outward: Vector3 = session.room.global_basis.inverse() * car.horizontal_velocity
+	# Catch the nose before the rear wheels can leave the finite access ramp.
+	# Stop first: the existing transfer owns clearance checks and rollback.
+	var extent: float = absf(car.global_basis.z.z) * car.half_length + absf(car.global_basis.x.z) * car.half_width
+	if absf(local.x) > 3.0 or local.z + extent < 7.65 or outward.z <= .1: return false
+	car.speed = 0.0
+	car.horizontal_velocity = Vector3.ZERO
+	car.velocity = Vector3.ZERO
+	_transfer("port_boss_garage",false)
+	return true
 
 func on_location_changed() -> void:
 	if session==null or _transition or not session.ready_for_play: return
@@ -118,11 +137,11 @@ func _sync() -> void:
 		_bind_existing(id)
 		var car = cars.get(id)
 		if not is_instance_valid(car):
-			car=session.controller.spawn_vehicle(record.archetype,point,float(record.yaw))
+			car=session.controller.spawn_vehicle(record.archetype,point,float(record.yaw),float(record.get("heavy_crush_ratio",1.0)))
 			if not is_instance_valid(car): continue
 			car.vehicle_id=id
 			if id=="personal_monaliza": car.add_to_group("personal_vehicle")
-			car.health=float(record.health)
+			_restore_damage(car,record)
 			car.paint_color=Color.html(record.paint)
 			car.set_meta("garage_reward",true)
 			car.set_meta("garage_place",record.place_id)
@@ -142,6 +161,14 @@ func _sync() -> void:
 			car.add_to_group("drivable")
 			if not session.controller.vehicles.has(car): session.controller.vehicles.append(car)
 
+func _restore_damage(car: CharacterBody3D, record: Dictionary) -> void:
+	car.health=float(record.health)
+	var ratio := float(record.get("heavy_crush_ratio",1.0))
+	if ratio >= 1.0: return
+	preload("res://gameplay/street_physics/HeavyVehicleCrush.gd").apply_saved(car,ratio)
+	if car.health <= 0: car.set_meta("heavy_crush_exploded",true)
+	car.restore_health(car.health)
+
 func _bind_existing(id: String) -> void:
 	for car in session.controller.vehicles:
 		if is_instance_valid(car) and car.vehicle_id==id:
@@ -159,7 +186,7 @@ func _restore_driver(car, record: Dictionary) -> void:
 
 func _residence_owns(id: String) -> bool:
 	if session.activities==null: return false
-	return session.activities.residence.data.stored_vehicle.get("garage_id","")==id
+	return session.activities.residence.owns_garage_vehicle(id)
 
 func _suspend(car) -> void:
 	if session.world.driving.occupied and session.world.driving.car==car: return
@@ -181,6 +208,7 @@ func _capture_all() -> void:
 		var origin: Vector3=car.get_meta("garage_origin",Vector3.ZERO)
 		var point: Vector3=car.global_position-origin
 		data.vehicles[id]={"archetype":car.archetype,"region_id":car.get_meta("region_id","harbor"),"place_id":place,"position":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":maxf(0,car.health),"paint":car.paint_color.to_html(true),"was_driven":session.world.driving.occupied and session.world.driving.car==car}
+		data.vehicles[id]["heavy_crush_ratio"]=float(car.get_meta("heavy_crush_ratio",1.0))
 
 func nearest_action() -> Dictionary:
 	if session==null or _transition: return {}
@@ -419,10 +447,10 @@ func _recover_ironback() -> bool:
 	if is_instance_valid(car) and car.controlled: return false
 	var bay := _origin("maciota")+Vector3(0,.04,0)
 	if not is_instance_valid(car):
-		car=session.controller.spawn_vehicle(IRONBACK,bay,-PI)
+		car=session.controller.spawn_vehicle(IRONBACK,bay,-PI,float(record.get("heavy_crush_ratio",1.0)))
 		if not is_instance_valid(car): return false
 		car.vehicle_id=IRONBACK
-		car.health=float(record.health)
+		_restore_damage(car,record)
 		car.paint_color=Color.html(record.paint)
 		car.set_meta("garage_reward",true)
 		cars[IRONBACK]=car
@@ -483,5 +511,9 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 		for key in ["yaw","health"]:
 			if typeof(record.get(key)) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(record[key])): return false
 		if record.health<0 or record.health>float(_spec(record.archetype).get("durability",100)): return false
+		if record.has("heavy_crush_ratio"):
+			var ratio: Variant=record.heavy_crush_ratio
+			if typeof(ratio) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(ratio)): return false
+			if float(ratio)!=1.0 and (float(ratio)<0.18 or float(ratio)>0.55): return false
 	if saved.port_status=="delivered" and saved.vehicles.has(PORT_ID): return false
 	return true

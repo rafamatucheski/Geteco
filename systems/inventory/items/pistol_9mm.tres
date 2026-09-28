@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/inventory/item_data.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "pistol_9mm"
+display_name = "Pistola 9mm"
+description = "Uma pistola confiável de porte leve. Sempre vai para o coldre."
+item_type = 2
+max_stack = 1
+backpack_capacity = 0

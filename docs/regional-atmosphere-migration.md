@@ -109,6 +109,11 @@ capturadas (nenhum abrigo marcado, nevasca fotografada pela manhã).
 
 ## Limites restantes
 
+Atualização de 28/09: áudio em camadas, trovões/clarões, estilhaços e névoa local
+móvel foram tratados no [complemento de clima](weather-presentation-migration-20260928.md).
+As limitações abaixo registram o estado deste lote original de 22/09; consulte
+o complemento para validações e pendências atuais.
+
 Estilhaços de gelo no chão da V1 ainda não foram portados. A névoa nativa não
 reproduz o movimento de ruído da composição 2D. Este lote não certifica todos os
 horários, câmeras e rotas, nem desempenho universal, nem encerra a migração geral.

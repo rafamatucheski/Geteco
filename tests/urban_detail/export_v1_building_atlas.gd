@@ -3,9 +3,14 @@ extends SceneTree
 ## productive HarborBuilding/CobraResidence drawing code to transparent PNGs.
 ## The V2 runtime never creates a SubViewport for these source projections.
 
-const HARBOR_BUILDING := preload("res://world/harbor/HarborBuilding.gd")
-const HOSPITAL_BUILDING := preload("res://world/harbor/hospital/HarborHospital.gd")
-const COBRA_RESIDENCE := preload("res://world/harbor/cobras/CobraResidence.gd")
+const SOURCE_SCRIPTS := [
+	"res://world/harbor/HarborBuilding.gd",
+	"res://world/harbor/hospital/HarborHospital.gd",
+	"res://world/harbor/cobras/CobraResidence.gd",
+]
+var harbor_building: Script
+var hospital_building: Script
+var cobra_residence: Script
 const DATA_PATH := "res://world/regions/OriginalWorldData.json"
 const OUTPUT_PATH := "res://assets/regions/source/world/harbor/building_atlas"
 const MARGIN := 24
@@ -41,6 +46,21 @@ func _run() -> void:
 		push_error("V1 building atlas exporter refuses to run without --no-save")
 		quit(2)
 		return
+	# These sources only exist in V1. Do not preload them while the V2 editor
+	# scans this offline utility, or create output before validating its inputs.
+	for source_path in SOURCE_SCRIPTS:
+		if not ResourceLoader.exists(source_path):
+			push_error("V1 building atlas exporter requires the V1 project root; missing: %s" % source_path)
+			quit(2)
+			return
+	harbor_building = load(SOURCE_SCRIPTS[0]) as Script
+	hospital_building = load(SOURCE_SCRIPTS[1]) as Script
+	cobra_residence = load(SOURCE_SCRIPTS[2]) as Script
+	for source_script in [harbor_building, hospital_building, cobra_residence]:
+		if source_script == null or not source_script.can_instantiate():
+			push_error("Could not load V1 building atlas source scripts")
+			quit(2)
+			return
 	var make_result := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT_PATH))
 	if make_result != OK:
 		push_error("Could not create isolated atlas output: %s" % error_string(make_result))
@@ -75,14 +95,14 @@ func _export_building(data: Dictionary) -> bool:
 	root.add_child(viewport)
 	var drawing
 	if String(data.get("kind", "")) == "cobra_house":
-		drawing = COBRA_RESIDENCE.new()
+		drawing = cobra_residence.new()
 		drawing.name = building_id
 		drawing.size = size
 		drawing.variant = _cobra_variant(building_id)
 		drawing.wall_color = Color(String(data.get("color", "#72594b")))
 		drawing.position = Vector2(MARGIN, MARGIN)
 	else:
-		drawing = HOSPITAL_BUILDING.new() if building_id == "Clinic" else HARBOR_BUILDING.new()
+		drawing = hospital_building.new() if building_id == "Clinic" else harbor_building.new()
 		drawing.name = building_id
 		drawing.footprint = size
 		drawing.building_kind = String(data.get("kind", "office"))

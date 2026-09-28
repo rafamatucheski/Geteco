@@ -18,6 +18,13 @@ var serial := 0
 func configure(p_world: Node3D, p_gameplay: Node3D) -> void:
 	world = p_world
 	gameplay = p_gameplay
+	# Buzina, sirene e alarme são sintetizados em GDScript no 1º uso (sirene ~17 ms, medido
+	# em tests/measure/probe_first_emergency.gd --action=audio): o custo caía no quadro em
+	# que a primeira viatura de emergência ligava a sirene. Sai da carga do jogo.
+	var vehicle_audio := preload("res://gameplay/VehicleEquipmentAudio.gd")
+	vehicle_audio.horn_stream()
+	vehicle_audio.siren_stream()
+	vehicle_audio.alarm_stream()
 
 func reset_region() -> void:
 	# Incident actors/sources belong to the world: never delete them on travel.

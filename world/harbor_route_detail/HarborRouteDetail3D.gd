@@ -162,15 +162,16 @@ static func _build_rodoviaria_zone() -> Node3D:
 	curb_w.position = Vector3(97.75, 0.0, 74.55)
 	zone.add_child(curb_w)
 	
-	# 2. East Wing Slab (11.5m x 4.2m at Y = 0.12m, starting at X = 110.5)
-	var slab_e := HarborRouteProps.create_sidewalk_slab(Vector2(11.5, 4.2), 0.12)
-	slab_e.position = Vector3(116.25, 0.0, 72.4)
+	# Preserve the intercity exit lane centred at X=121.875. The former wing,
+	# bike rack and lamp occupied its swept coach hull and blocked the V1 route.
+	var slab_e := HarborRouteProps.create_sidewalk_slab(Vector2(8.5, 4.2), 0.12)
+	slab_e.position = Vector3(114.75, 0.0, 72.4)
 	zone.add_child(slab_e)
 	
 	# East Curb along Market St edge (Z = 74.55)
-	var curb_e := HarborRouteProps.create_curb_segment(11.5, 0.30, 0.14)
+	var curb_e := HarborRouteProps.create_curb_segment(8.5, 0.30, 0.14)
 	curb_e.rotation_degrees = Vector3(0, 90, 0)
-	curb_e.position = Vector3(116.25, 0.0, 74.55)
+	curb_e.position = Vector3(114.75, 0.0, 74.55)
 	zone.add_child(curb_e)
 	
 	# 3. Central Passenger Disembarking Level Crossing (X: 103.5 to 110.5, Z: 70.3 to 75.0)
@@ -222,7 +223,7 @@ static func _build_rodoviaria_zone() -> Node3D:
 	
 	# East Wing Amenities (X ≥ 113.0):
 	var planter_e := HarborRouteProps.create_planter_box(Vector3(1.8, 0.45, 0.85))
-	planter_e.position = Vector3(113.0, 0.12, 73.4)
+	planter_e.position = Vector3(112.8, 0.12, 73.4)
 	zone.add_child(planter_e)
 	
 	var bench_e := HarborRouteProps.create_bench(2.2)
@@ -234,11 +235,11 @@ static func _build_rodoviaria_zone() -> Node3D:
 	zone.add_child(bin_e)
 	
 	var light_e := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(90.0))
-	light_e.position = Vector3(120.5, 0.12, 73.8)
+	light_e.position = Vector3(118.5, 0.12, 73.8)
 	zone.add_child(light_e)
 	
 	var bike_rack := HarborRouteProps.create_bike_rack(4, 0.85)
-	bike_rack.position = Vector3(121.5, 0.12, 70.5)
+	bike_rack.position = Vector3(115.5, 0.12, 73.8)
 	zone.add_child(bike_rack)
 	
 	# Storm drain grate in street gutter outside west wing
@@ -331,72 +332,71 @@ static func _build_connecting_streets() -> Node3D:
 static func _build_delegacia_zone() -> Node3D:
 	var zone := Node3D.new()
 	
-	# Forecourt esplanade in front of police precinct (X: 59.0 to 76.0, Z: 129.5 to 133.9)
-	# The manhole needs an opening in both the visible slab and its collider.
-	var forecourt := Rect2(59.0, 129.5, 17.0, 4.4)
-	var opening := Rect2(PLACE_CATALOG.HARBOR_SEWER_OPENING.position * PLACE_CATALOG.SCALE, PLACE_CATALOG.HARBOR_SEWER_OPENING.size * PLACE_CATALOG.SCALE)
+	# Dock Street is now 14 m wide: its north asphalt edge is Z = 130.5.
+	# Keep every raised part behind that edge; the sewer opening remains in the road.
+	# Four paving panels preserve the editor's existing child IDs (crosswalk = 17).
 	for piece in [
-		Rect2(forecourt.position, Vector2(forecourt.size.x, opening.position.y - forecourt.position.y)),
-		Rect2(Vector2(forecourt.position.x, opening.end.y), Vector2(forecourt.size.x, forecourt.end.y - opening.end.y)),
-		Rect2(Vector2(forecourt.position.x, opening.position.y), Vector2(opening.position.x - forecourt.position.x, opening.size.y)),
-		Rect2(opening.end.x, opening.position.y, forecourt.end.x - opening.end.x, opening.size.y)
+		Rect2(56.0, 125.0, 10.0, 2.35),
+		Rect2(56.0, 127.35, 10.0, 2.35),
+		Rect2(66.0, 125.0, 10.0, 2.35),
+		Rect2(66.0, 127.35, 10.0, 2.35)
 	]:
 		if not piece.has_area(): continue
 		var slab := HarborRouteProps.create_sidewalk_slab(piece.size, 0.10)
 		slab.position = Vector3(piece.get_center().x, 0.0, piece.get_center().y)
 		zone.add_child(slab)
 	
-	# Curbs along Dock Street edge (Z = 134.1) are SPLIT into West and East wings:
-	var curb_w := HarborRouteProps.create_curb_segment(5.5, 0.30, 0.12, HarborRouteMaterials.curb_yellow_marking())
+	# Curbs flank the central accessible approach, entirely on the sidewalk.
+	var curb_w := HarborRouteProps.create_curb_segment(7.0, 0.30, 0.12, HarborRouteMaterials.curb_yellow_marking())
 	curb_w.rotation_degrees = Vector3(0, 90, 0)
-	curb_w.position = Vector3(61.75, 0.0, 134.1)
+	curb_w.position = Vector3(59.5, 0.0, 129.85)
 	zone.add_child(curb_w)
 	
-	var curb_e := HarborRouteProps.create_curb_segment(5.5, 0.30, 0.12, HarborRouteMaterials.curb_yellow_marking())
+	var curb_e := HarborRouteProps.create_curb_segment(7.0, 0.30, 0.12, HarborRouteMaterials.curb_yellow_marking())
 	curb_e.rotation_degrees = Vector3(0, 90, 0)
-	curb_e.position = Vector3(73.25, 0.0, 134.1)
+	curb_e.position = Vector3(72.5, 0.0, 129.85)
 	zone.add_child(curb_e)
 	
 	# Pedestrian curb ramp across central approach (span 6.0m, depth 0.80m, max_height 0.10m)
-	# Slopes from street Y = 0.0 (Z = 134.7) up to forecourt Y = 0.10 (Z = 133.9).
+	# Slopes from street Y = 0.0 (Z = 130.5) up to forecourt Y = 0.10 (Z = 129.7).
 	# Slope angle = atan2(0.10, 0.80) = 7.1°, smooth stepping for CharacterBody3D!
 	var p_ramp := HarborRouteProps.create_curb_ramp(6.0, 0.80, 0.10)
-	p_ramp.position = Vector3(67.5, 0.0, 134.3)
+	p_ramp.position = Vector3(66.0, 0.0, 130.1)
 	zone.add_child(p_ramp)
 	
 	# Institutional Police streetlights (Twin globe civic lamps with navy blue base)
 	var p_light_w := HarborRouteProps.create_streetlight(4.8, 1.2, "police", 0.0)
-	p_light_w.position = Vector3(60.0, 0.10, 133.0)
+	p_light_w.position = Vector3(57.0, 0.10, 128.8)
 	zone.add_child(p_light_w)
 	
 	var p_light_e := HarborRouteProps.create_streetlight(4.8, 1.2, "police", 0.0)
-	p_light_e.position = Vector3(75.0, 0.10, 133.0)
+	p_light_e.position = Vector3(75.0, 0.10, 128.8)
 	zone.add_child(p_light_e)
 	
 	# Anti-ram security bollards with police navy finish and reflective bands
-	# Flanking the entrance approach (X ≤ 63.5 and X ≥ 71.5), leaving an 8.0m open gap centered on entrance (67.5)!
-	var bollard_xs := [60.5, 62.0, 63.5, 71.5, 74.5]
+	# Flank the entrance, keeping the central six-metre ramp unobstructed.
+	var bollard_xs := [57.5, 59.0, 60.5, 71.5, 74.5]
 	for bx in bollard_xs:
 		var bollard := HarborRouteProps.create_bollard("police")
-		bollard.position = Vector3(bx, 0.10, 133.4)
+		bollard.position = Vector3(bx, 0.10, 129.1)
 		zone.add_child(bollard)
 	
 	# Public civic bench on the quiet west side of the forecourt
 	var bench := HarborRouteProps.create_bench(2.0)
-	bench.position = Vector3(61.5, 0.10, 130.2)
+	bench.position = Vector3(58.0, 0.10, 126.8)
 	bench.rotation_degrees = Vector3(0, 90, 0)
 	zone.add_child(bench)
 	
 	# Litter bin near east corner
 	var bin := HarborRouteProps.create_trash_bin()
-	bin.position = Vector3(74.0, 0.10, 130.8)
+	bin.position = Vector3(74.0, 0.10, 127.5)
 	zone.add_child(bin)
 	
 	# Keep the manhole beside the forecourt clear for the lid and ladder access.
 	
 	# Storm drain grate in street gutter beside the west curb wing (clear of pedestrian ramp)
 	var drain := HarborRouteProps.create_drain_grate()
-	drain.position = Vector3(63.5, 0.0, 134.4)
+	drain.position = Vector3(62.0, 0.0, 130.35)
 	zone.add_child(drain)
 	
 	# Crosswalk across Dock Street connecting to harbor quays

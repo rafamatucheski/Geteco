@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR"><meta charset="utf-8"><title>Geteco · estudo de HUD sobre captura real</title>
+<style>
+@font-face{font-family:Barlow;src:url('../../../assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf')}@font-face{font-family:Barlow;src:url('../../../assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf');font-weight:600}
+*{box-sizing:border-box}html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:#121a20}body{font-family:Barlow,Arial,sans-serif;color:#f3f0e8}.scene{position:absolute;inset:0;width:1280px;height:720px}.map{position:absolute;left:24px;bottom:24px;width:156px;height:184px;border-radius:10px;background:linear-gradient(145deg,rgba(32,43,48,.83),rgba(20,29,34,.91));backdrop-filter:blur(9px) saturate(.6);box-shadow:0 3px 12px #0003,inset 0 1px 0 #ffffff35,inset 1px 0 0 #ffffff10;overflow:hidden}.map svg{display:block;margin:4px;width:148px;height:148px}.footer{height:28px;padding:0 10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#e3e5df}.time{display:flex;align-items:center;gap:5px}.time svg{width:13px;height:13px;margin:0}.north{font-size:11px;color:#c2c8c8}.destination{position:absolute;left:28px;bottom:217px;display:flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:#fff9ed;text-shadow:0 1px 3px #000,0 0 8px #000b}.destination svg{width:12px;height:12px}.destination span{font-size:12px;color:#e6e9e8;font-weight:400;margin-left:3px}
+</style>
+<img class="scene" src="scene.png" alt="Captura real de Geteco diante da garagem do Maciota">
+<div class="destination"><svg viewBox="0 0 12 12"><path d="M6 1 11 6 6 11 1 6Z" fill="none" stroke="#e5b974" stroke-width="1.8"/></svg>Maciota<span>3 m</span></div>
+<div class="map">
+<!-- Geometria redesenhada a partir do minimapa desta captura, sem inventar uma rota. -->
+<svg viewBox="0 0 148 148" fill="none" aria-label="Minimapa, jogador junto de Maciota">
+<g fill="#dce3e5" opacity=".13"><path d="M51 6h20v16H51zM75 6h16v16H75zM95 6h19v16H95zM5 46h14v25H5zM0 65h22v33H0zM61 48h36v21H61zM97 86h19v24H97zM142 50h6v22h-6z"/></g>
+<g stroke="#d6d9d3" stroke-opacity=".65" stroke-linejoin="round"><path d="M40 0V125" stroke-width="6"/><path d="M126 0V125" stroke-width="4"/><path d="M0 33H148" stroke-width="3"/><path d="M40 81H126M126 101H148" stroke-width="2"/><path d="M0 130 25 125H148" stroke-width="6"/></g>
+<circle cx="12" cy="28" r="6.5" fill="#dba268"/><text x="12" y="31.5" text-anchor="middle" font-family="Barlow,Arial" font-size="10" font-weight="600" fill="#243036">N</text>
+<g fill="#dce3df" opacity=".55"><circle cx="106" cy="113" r="1.8"/><circle cx="115" cy="119" r="1.8"/></g>
+<path d="m74 66 5 5-5 5-5-5Z" fill="#e5b974" stroke="#243036" stroke-width="1.5"/>
+<path d="m82 76-14-6 4 6-4 6Z" fill="#f5f3e9" stroke="#26363c" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+<div class="footer"><div class="time"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="3" stroke="currentColor"/><path d="M8 0v2m0 12v2M0 8h2m12 0h2M2.3 2.3l1.4 1.4m8.6 8.6 1.4 1.4M2.3 13.7l1.4-1.4m8.6-8.6 1.4-1.4" stroke="currentColor"/></svg>09:26</div><div class="north">N ↑</div></div>
+</div>
+<style>
+.glass{background:linear-gradient(135deg,rgba(30,42,48,.79),rgba(19,29,35,.88));backdrop-filter:blur(9px) saturate(.6);border-radius:8px;box-shadow:0 2px 9px #0002,inset 0 1px 0 #ffffff24}
+.vitals{position:absolute;left:24px;bottom:246px;width:156px;padding:9px 10px;display:grid;gap:9px}.vital{display:flex;align-items:center;gap:8px;height:13px}.vital svg{width:13px;height:13px;flex-shrink:0}.track{width:92px;height:3px;background:#ffffff24;border-radius:2px;overflow:hidden}.fill{height:100%;border-radius:2px}.vital b{font-size:12px;font-weight:600;width:19px;text-align:right;font-variant-numeric:tabular-nums}.health{color:#f0c0af}.armor{color:#a2c7d5}
+.wallet{position:absolute;left:24px;top:24px;padding:7px 11px;display:flex;align-items:baseline;gap:6px;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}.wallet small{font-size:12px;font-weight:400;color:#c5d0cb}
+.wanted{position:absolute;right:24px;top:24px;padding:9px 12px;display:flex;align-items:center;gap:12px}.wanted-label{font-size:12px;font-weight:600;letter-spacing:.9px;color:#efb098}.levels{display:flex;gap:5px}.level{height:5px;width:14px;border-radius:1px;background:#ffffff26}.level.on{background:#e8a68c}
+.weapon{position:absolute;right:24px;bottom:24px;width:156px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:13px}.weapon svg{width:44px;height:30px;fill:#e7e8df}.ammo{display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums}.ammo strong{font-size:30px;line-height:1;font-weight:600}.ammo span{font-size:15px;color:#c3cccd}.ammo i{font-size:14px;font-style:normal;color:#849398}
+.interaction{position:absolute;left:674px;top:326px;display:flex;align-items:center;gap:7px;text-shadow:0 1px 3px #000,0 0 5px #000b;font-size:15px;font-weight:600}.key{display:grid;place-items:center;width:24px;height:25px;border-radius:5px;background:rgba(23,33,39,.8);box-shadow:inset 0 1px 0 #ffffff55,0 1px 4px #0005;backdrop-filter:blur(5px);font-size:14px;font-weight:600;text-shadow:none}
+</style>
+<!-- Estado demonstrativo de apresentação. Valores não extraídos do save. -->
+<div class="wallet glass"><small>R$</small>2.450</div>
+<div class="wanted glass" aria-label="Em busca, nível dois de seis"><span class="wanted-label">EM BUSCA</span><div class="levels"><i class="level on"></i><i class="level on"></i><i class="level"></i><i class="level"></i><i class="level"></i><i class="level"></i></div></div>
+<div class="vitals glass">
+<div class="vital health" aria-label="Vida 82 de 100"><svg viewBox="0 0 16 16"><path d="M8 14 2 8C-2 3 4-1 8 4c4-5 10-1 6 4Z" fill="currentColor"/></svg><div class="track"><div class="fill" style="width:82%;background:#e6b09e"></div></div><b>82</b></div>
+<div class="vital armor" aria-label="Colete 40 de 100"><svg viewBox="0 0 16 16"><path d="m8 1 6 2v5c0 3-3 5-6 7-3-2-6-4-6-7V3Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><div class="track"><div class="fill" style="width:40%;background:#9bbfcc"></div></div><b>40</b></div>
+</div>
+<div class="weapon glass" aria-label="Pistola, 12 cartuchos no carregador e 48 na reserva"><svg viewBox="0 0 60 36"><path d="M5 7h43V5h4v3h4v9H34l-4 6h-7l-4 11H8l6-18H6Z"/><path d="M25 18h7l-2 4h-6Z" fill="#29373c"/></svg><div class="ammo"><strong>12</strong><i>/</i><span>48</span></div></div>
+<div class="interaction"><span class="key">E</span><span>Entrar</span></div>
+</html>

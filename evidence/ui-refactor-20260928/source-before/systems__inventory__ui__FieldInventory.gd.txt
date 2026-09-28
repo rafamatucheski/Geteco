@@ -1,0 +1,116 @@
+extends Control
+const GRID := preload("res://systems/inventory/GridInventory.gd")
+const BOARD := preload("res://systems/inventory/ui/GridBoard.gd")
+const ICONS := preload("res://systems/inventory/InventoryIcons.gd")
+var adapter
+var selected_container := ""
+var selected_index := -1
+var equipment_id := ""
+var trunk_visible := false
+var body: HBoxContainer
+var details: VBoxContainer
+var card: PanelContainer
+var feedback: Label
+
+func _ready() -> void:
+	mouse_filter=Control.MOUSE_FILTER_IGNORE
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	theme=preload("res://ui/menu_presentation/MenuTheme.gd").create()
+	theme.default_font_size=14
+	hide()
+	get_viewport().size_changed.connect(_layout)
+
+func _layout() -> void:
+	if not is_instance_valid(card): return
+	var viewport := get_viewport_rect().size
+	card.position=Vector2(viewport.x-card.size.x-20,maxf(20,(viewport.y-card.size.y)*.5))
+
+func refresh() -> void:
+	if not visible: return
+	if is_instance_valid(card): remove_child(card); card.queue_free()
+	card=PanelContainer.new(); add_child(card); card.resized.connect(_layout)
+	var outer:=VBoxContainer.new(); outer.add_theme_constant_override("separation",9); card.add_child(outer)
+	var header:=HBoxContainer.new(); outer.add_child(header)
+	var title:=Label.new(); title.text="BAGAGEM"; title.size_flags_horizontal=Control.SIZE_EXPAND_FILL; header.add_child(title)
+	_button(header,"Monaliza",func(): trunk_visible=not trunk_visible; refresh())
+	_button(header,"×",adapter.close)
+	body=HBoxContainer.new(); body.add_theme_constant_override("separation",18); outer.add_child(body)
+	var left:=VBoxContainer.new(); left.custom_minimum_size.x=300; left.add_theme_constant_override("separation",7); body.add_child(left)
+	var loadout: Dictionary = adapter.economy().personal_loadout()
+	var weapons:=HBoxContainer.new(); left.add_child(weapons)
+	for slot in loadout:
+		var id:=str(loadout[slot])
+		if id.is_empty(): continue
+		var weapon:=Button.new(); weapon.icon=ICONS.get_icon(id); weapon.expand_icon=true
+		weapon.custom_minimum_size=Vector2(62,44); weapon.add_theme_constant_override("icon_max_width",56)
+		weapon.tooltip_text=str(GRID.spec("weapon:"+id).label)
+		weapon.pressed.connect(func(): equipment_id=id; selected_index=-1; _details())
+		weapons.add_child(weapon)
+	var snapshot: Dictionary = adapter.economy().grid_snapshot()
+	var pocket_row:=HBoxContainer.new(); left.add_child(pocket_row)
+	_label(pocket_row,"Bolsos  2",12)
+	var pockets:=BOARD.new(); pocket_row.add_child(pockets); pockets.configure(adapter,"pockets",snapshot,48); pockets.selected.connect(_select)
+	var kind:=str(snapshot.bag)
+	_label(left,"Mochila · 12 espaços" if kind=="backpack" else "Mala de mão · 24 espaços" if kind=="handbag" else "Sem bagagem equipada",16)
+	if not kind.is_empty():
+		var scroll:=ScrollContainer.new(); scroll.custom_minimum_size=Vector2(270,196); scroll.size_flags_horizontal=Control.SIZE_EXPAND_FILL; left.add_child(scroll)
+		var board:=BOARD.new(); scroll.add_child(board); board.configure(adapter,"storage",snapshot); board.selected.connect(_select)
+		var row:=HBoxContainer.new(); left.add_child(row)
+		_button(row,"Soltar bagagem",adapter.drop_bag)
+		if kind=="handbag": _label(left,"Uma mão ocupada · arma longa bloqueada",12)
+	else:
+		_label(left,"Encontre uma mochila ou mala no mundo.",12)
+	if trunk_visible:
+		var right:=VBoxContainer.new(); right.custom_minimum_size.x=225; body.add_child(right)
+		_label(right,"MONALIZA",16)
+		_label(right,"Porta-malas aberto" if adapter.trunk_access() else "Somente leitura · aproxime-se do porta-malas",11)
+		var scroll:=ScrollContainer.new(); scroll.custom_minimum_size=Vector2(232,290); right.add_child(scroll)
+		var board:=BOARD.new(); scroll.add_child(board); board.configure(adapter,"trunk",snapshot,54); board.selected.connect(_select)
+	details=VBoxContainer.new(); left.add_child(details)
+	feedback=Label.new(); feedback.custom_minimum_size.x=285; feedback.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	feedback.add_theme_font_size_override("font_size",12); feedback.add_theme_color_override("font_color",Color("f2bc75")); left.add_child(feedback)
+	_label(outer,"Tab / Esc  Fechar    Arraste para organizar",11)
+	_details()
+	_layout.call_deferred()
+
+func _select(container: String,index: int) -> void:
+	selected_container=container; selected_index=index; equipment_id=""; _details()
+
+func _details() -> void:
+	if not is_instance_valid(details): return
+	for child in details.get_children(): details.remove_child(child); child.queue_free()
+	var data: Dictionary = adapter.economy().grid_snapshot()
+	var id: String = "weapon:"+equipment_id if not equipment_id.is_empty() else ""
+	if selected_index>=0 and data.has(selected_container) and selected_index<data[selected_container].size(): id=str(data[selected_container][selected_index].id)
+	if id.is_empty(): _label(details,"Selecione um item",14); return
+	var spec:=GRID.spec(id)
+	_label(details,str(spec.label)+("  (quest)" if spec.get("quest",false) else ""),16)
+	var description:=_label(details,str(spec.get("description","")),12)
+	description.custom_minimum_size.x=285; description.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	if spec.has("weapon"):
+		var ammo: Dictionary = adapter.economy().snapshot().weapons[spec.weapon]
+		if int(ammo.magazine)>=0: _label(details,"Na arma  %d / 99"%(int(ammo.magazine)+int(ammo.reserve)),12)
+	var actions:=HBoxContainer.new(); details.add_child(actions)
+	var editable: bool = adapter.can_edit(selected_container) if equipment_id.is_empty() else true
+	if spec.has("heal"): _button(actions,"Usar",func(): adapter.consume(selected_container,selected_index),not editable)
+	if spec.has("weapon"):
+		_button(actions,"Equipar",func(): adapter.equip(selected_container,selected_index,equipment_id),not editable or not adapter.session.state.weapons_allowed())
+	if not equipment_id.is_empty():
+		_button(actions,"Guardar",func(): adapter.store_weapon(equipment_id,"storage"),data.bag=="")
+		if trunk_visible: _button(actions,"Porta-malas",func(): adapter.store_weapon(equipment_id,"trunk"),not adapter.trunk_access())
+	else:
+		if selected_container!="pockets": _button(actions,"Bolso",func(): adapter.move(selected_container,selected_index,"pockets"),not editable)
+		if selected_container!="storage": _button(actions,"Bagagem",func(): adapter.move(selected_container,selected_index,"storage"),not editable or data.bag=="")
+		if selected_container!="trunk" and trunk_visible: _button(actions,"Monaliza",func(): adapter.move(selected_container,selected_index,"trunk"),not adapter.trunk_access())
+		if int(spec.get("w",1))>1: _button(actions,"Girar",func(): adapter.rotate(selected_container,selected_index),not editable)
+	_layout.call_deferred()
+
+func say(text: String) -> void:
+	if is_instance_valid(feedback): feedback.text=text
+
+func _label(parent: Node,text: String,font_size: int) -> Label:
+	var label:=Label.new(); label.text=text; label.add_theme_font_size_override("font_size",font_size); parent.add_child(label); return label
+
+func _button(parent: Node,text: String,action: Callable,disabled := false) -> Button:
+	var button:=Button.new(); button.text=text; button.disabled=disabled
+	button.add_theme_font_size_override("font_size",12); button.custom_minimum_size.y=30; button.pressed.connect(action); parent.add_child(button); return button

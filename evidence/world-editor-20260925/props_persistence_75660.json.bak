@@ -1,0 +1,136 @@
+{
+	"regions": {
+		"harbor": {
+			"new/props_test_barrel": {
+				"color": "a98857",
+				"id": "new/props_test_barrel",
+				"model": "barrel",
+				"position": [
+					2515.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					0.649999976158142,
+					0.649999976158142
+				],
+				"type": "prop"
+			},
+			"new/props_test_barrier": {
+				"color": "a98857",
+				"id": "new/props_test_barrier",
+				"model": "barrier",
+				"position": [
+					2535.0,
+					2500.0
+				],
+				"rotation": 90.0,
+				"scale": 2.0,
+				"size": [
+					2.0,
+					0.5
+				],
+				"type": "prop"
+			},
+			"new/props_test_bin": {
+				"color": "a98857",
+				"id": "new/props_test_bin",
+				"model": "bin",
+				"position": [
+					2530.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					0.600000023841858,
+					0.600000023841858
+				],
+				"type": "prop"
+			},
+			"new/props_test_crate": {
+				"color": "a98857",
+				"id": "new/props_test_crate",
+				"model": "crate",
+				"position": [
+					2510.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					1.0,
+					1.0
+				],
+				"type": "prop"
+			},
+			"new/props_test_dumpster": {
+				"color": "a98857",
+				"id": "new/props_test_dumpster",
+				"model": "dumpster",
+				"position": [
+					2520.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					1.79999995231628,
+					1.0
+				],
+				"type": "prop"
+			},
+			"new/props_test_pallet": {
+				"color": "a98857",
+				"id": "new/props_test_pallet",
+				"model": "pallet",
+				"position": [
+					2500.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					1.20000004768372,
+					1.0
+				],
+				"type": "prop"
+			},
+			"new/props_test_pallet_stack": {
+				"color": "a98857",
+				"id": "new/props_test_pallet_stack",
+				"model": "pallet_stack",
+				"position": [
+					2505.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					1.20000004768372,
+					1.0
+				],
+				"type": "prop"
+			},
+			"new/props_test_trash_bags": {
+				"color": "a98857",
+				"id": "new/props_test_trash_bags",
+				"model": "trash_bags",
+				"position": [
+					2525.0,
+					2500.0
+				],
+				"rotation": 37.0,
+				"scale": 1.5,
+				"size": [
+					1.10000002384186,
+					0.850000023841858
+				],
+				"type": "prop"
+			}
+		},
+		"mountain": {}
+	},
+	"version": 1
+}

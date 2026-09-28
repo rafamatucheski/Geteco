@@ -2,6 +2,7 @@ extends Camera3D
 
 const SCOPE_SIZE_MULTIPLIER := 0.5
 const FOLLOW_RATE := 4.2
+const HEIGHT_FOLLOW_RATE := 10.0
 const V1_VIEWPORT_HEIGHT := 720.0
 const V1_PIXELS_PER_METRE := 16.0
 const V1_WALK_ZOOM_CLOSE := 2.072
@@ -19,6 +20,8 @@ const V1_SCOPE_LEAD := 250.0 / V1_PIXELS_PER_METRE
 # de "cidade de jogo" à la GTA Chinatown Wars. A distância ao foco (~35.8 m)
 # foi mantida para não mudar atenuação de áudio nem o near/far.
 const EXTERIOR_OFFSET := Vector3(0,25.3,25.3)
+const PREVIEW_OFFSET := Vector3(0, 21.8, 28.4)
+const PREVIEW_HEADING := PI / 4.0
 const STORE_FOCUS_OFFSET := Vector3(0,12.0,25.3)
 # Camera3D.size measures the vertical camera plane. The productive V1 zoom
 # measured visible ground, so compensate for the exterior pitch instead of
@@ -63,6 +66,15 @@ var _store_size_to := 0.0
 var _store_focus_elapsed := 0.0
 var _store_focus_duration := 0.55
 var _store_focus_reverse := false
+var preview_view := false
+var _preview_blend := 0.0
+var _container_blend := 0.0
+var _container_focus := Vector3.ZERO
+# Túnel do canal: 0 fora, 1 dentro. Aproxima o zoom quando o alvo desce a rampa,
+# para o carro (ou o Dante) ler bem sob o vidro/silhueta; volta suave ao sair.
+var _tunnel_blend := 0.0
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const TUNNEL_ZOOM := 0.62
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -72,19 +84,47 @@ func _ready() -> void:
 	far = 180.0
 	current = true
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	var settings := get_node_or_null("/root/V2Settings")
+	if settings != null:
+		settings.applied.connect(_read_camera_settings)
+		_read_camera_settings()
+	if "--camera-preview" in OS.get_cmdline_user_args(): set_preview_view(true)
+
+func _read_camera_settings() -> void:
+	var settings := get_node_or_null("/root/V2Settings")
+	if settings != null: set_preview_view(int(settings.get("camera_view")) == 1)
+
+func set_preview_view(enabled: bool) -> void:
+	preview_view = enabled
+
+func _exterior_view_offset() -> Vector3:
+	# Never change authored interior offsets, target, zoom, or heading.
+	if locked: return offset
+	var exterior := offset.lerp(PREVIEW_OFFSET.rotated(Vector3.UP, PREVIEW_HEADING), _preview_blend)
+	# Tiny Z offset keeps look_at's up vector non-collinear at the overhead view.
+	return exterior.lerp(Vector3(0,35,.15),_container_blend)
 
 func _process(delta: float) -> void:
+	var container_view := has_meta("port_container_focus") and not locked
+	if container_view: _container_focus = get_meta("port_container_focus")
+	if not get_tree().paused:
+		_container_blend = move_toward(_container_blend,1.0 if container_view else 0.0,maxf(0,delta)/.6)
+	if not locked and not get_tree().paused:
+		_preview_blend = move_toward(_preview_blend, 1.0 if preview_view else 0.0, maxf(0.0, delta) * 2.0)
 	_ensure_scope_reticle()
 	var scoped := _scope_active()
-	if is_instance_valid(scope_reticle): scope_reticle.visible = scoped
+	if is_instance_valid(scope_reticle):
+		var combat := _gameplay()
+		# Production sights follow the shot; do not overlay a second cross at screen centre.
+		scope_reticle.visible = scoped and not (combat != null and combat.has_method("aim_feedback_active"))
 	if _store_focus_active:
 		_store_focus_elapsed = minf(_store_focus_duration, _store_focus_elapsed + maxf(delta, 0.0))
 		var t := _store_focus_elapsed / _store_focus_duration
 		var eased := t * t * (3.0 - 2.0 * t)
 		focus = _store_focus_from.lerp(_store_focus_to, eased)
 		size = lerpf(_store_size_from, _store_size_to, eased)
-		var start_offset: Vector3 = STORE_FOCUS_OFFSET if _store_focus_reverse else offset
-		var end_offset: Vector3 = offset if _store_focus_reverse else STORE_FOCUS_OFFSET
+		var start_offset: Vector3 = STORE_FOCUS_OFFSET if _store_focus_reverse else _exterior_view_offset()
+		var end_offset: Vector3 = _exterior_view_offset() if _store_focus_reverse else STORE_FOCUS_OFFSET
 		global_position = focus + start_offset.lerp(end_offset, eased).rotated(Vector3.UP, heading)
 		look_at(focus)
 		return
@@ -96,6 +136,10 @@ func _process(delta: float) -> void:
 	var teleported := actual.distance_to(interpolated) > TARGET_TELEPORT_DISTANCE
 	var base := actual if teleported or locked else interpolated
 	var snap := not initialized or teleported or locked != _was_locked
+	# Small paving steps must not kick the entire street vertically. Keep
+	# horizontal tracking immediate and preserve snaps/locked interior framing.
+	if not snap and not target_changed and not locked and target is CharacterBody3D and not _is_vehicle_target():
+		base.y = lerpf(focus.y - _smoothed_lead.y, base.y, 1.0 - exp(-HEIGHT_FOLLOW_RATE * delta))
 	if target_changed:
 		if initialized and not snap and focus.distance_to(base) <= TARGET_TELEPORT_DISTANCE:
 			# V1 handed the old screen centre to the new actor camera. Retain that
@@ -111,14 +155,20 @@ func _process(delta: float) -> void:
 	# Physics interpolation already smooths the actor itself. Only lead is
 	# damped, matching V1 and avoiding a second full-target trail.
 	focus = base+_smoothed_lead
+	if not locked and _container_blend > 0:
+		focus = focus.lerp(_container_focus,_container_blend)
 	initialized = true
 	var base_size := _base_size()
 	var desired_size := base_size*SCOPE_SIZE_MULTIPLIER if scoped else base_size
+	if not locked: desired_size *= float(get_meta("port_container_zoom",1.0))
+	var in_tunnel := not locked and CANAL_TUNNEL.in_roadway(actual) and actual.y < -1.2
+	_tunnel_blend = move_toward(_tunnel_blend, 1.0 if in_tunnel else 0.0, delta * 1.4)
+	if _tunnel_blend > 0.0: desired_size *= lerpf(1.0, TUNNEL_ZOOM, smoothstep(0.0, 1.0, _tunnel_blend))
 	if snap or locked:
 		size = desired_size
 	else:
 		size = lerpf(size,desired_size,1.0-exp(-FOLLOW_RATE*delta))
-	global_position = focus + offset.rotated(Vector3.UP, heading)
+	global_position = focus + _exterior_view_offset().rotated(Vector3.UP, heading)
 	look_at(focus)
 	_was_locked = locked
 
@@ -196,6 +246,11 @@ func _desired_lead(base: Vector3,scoped: bool) -> Vector3:
 				var scoped_lead: Vector3 = aim-base
 				scoped_lead.y = 0.0
 				return scoped_lead.limit_length(V1_SCOPE_LEAD)
+	var combat := _gameplay()
+	if not _is_vehicle_target() and combat != null and combat.has_method("aim_feedback_active") and combat.aim_feedback_active():
+		var lead: Vector3 = combat.aim_point - base
+		lead.y = 0.0
+		return (lead * 0.3).limit_length(3.5)
 	var velocity := _flat_velocity()
 	if velocity.length_squared() <= .0001: return Vector3.ZERO
 	var limit := V1_DRIVE_LEAD if _is_vehicle_target() else V1_WALK_LEAD

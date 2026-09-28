@@ -21,7 +21,11 @@ var paint_color := Color("d5a544"):
 var _paint_requested := false
 var _paint: RefCounted
 var archetype := ""
-var vehicle_id := ""
+var vehicle_id := "":
+	set(value):
+		vehicle_id = value
+		if is_instance_valid(visual) and visual.has_node("TaxiLivery"):
+			visual.get_node("TaxiLivery").registration(value)
 var health := 180.0
 var horizontal_velocity := Vector3.ZERO
 var damage_look: Node
@@ -29,6 +33,8 @@ var equipment: Node
 var effects: Node
 var equipment_state: Dictionary = {}
 var max_health := 180.0
+var damage_resistance := 1.0
+var tank_cannon: Node3D
 var max_forward_speed := MAX_SPEED
 var drive_acceleration := 5.0
 var half_width := 1.04
@@ -135,6 +141,7 @@ func _ready() -> void:
 		var dimensions: Array = specification.bounds_size
 		hull.size = Vector3(maxf(.65,dimensions[0]*variant_scale.x),clampf(dimensions[1]*variant_scale.y,1.1,3.6),dimensions[2]*variant_scale.z)
 		max_health = float(specification.get("durability",180))
+		damage_resistance = clampf(float(specification.get("damage_resistance",1.0)), .05, 1.0)
 		health = max_health
 		max_forward_speed = clampf(float(specification.max_speed)/16.0,5,45)
 		drive_acceleration = clampf(float(specification.acceleration)/160.0,2.0,10.0)
@@ -202,6 +209,14 @@ func _ready() -> void:
 	damage_look.configure(self)
 	add_child(damage_look)
 	_trace_ready("damage_look",traced)
+	if archetype == "army_tank":
+		tank_cannon = preload("res://gameplay/police_response/ground/TankCannon.gd").new()
+		tank_cannon.name = "TankCannon"
+		tank_cannon.configure(self)
+		add_child(tank_cannon)
+		var cannon_controls := preload("res://gameplay/police_response/ground/TankDriverControls.gd").new()
+		cannon_controls.configure(self)
+		add_child(cannon_controls)
 
 func set_external_driver(active: bool) -> void:
 	external_input = active
@@ -277,7 +292,7 @@ func _physics_process(delta: float) -> void:
 		pivot.rotation = Vector3(wheel_spin,steering if pivot.get_meta("front") else 0.0,0)
 	for pivot in steer_pivots.values():
 		pivot.rotation.y = steering if pivot.get_meta("front") else 0.0
-	if tail_material:
+	if tail_material and not is_instance_valid(equipment):
 		tail_material.emission_energy_multiplier = 2.5 if brake_input or blocked else 0.65
 	if is_instance_valid(effects): effects.physics_tick(delta,incoming_velocity)
 
@@ -698,9 +713,15 @@ func obstacle_ahead() -> bool:
 	query.transform = Transform3D(global_basis,global_position-global_basis.z*(half_length+length/2)+Vector3.UP*0.8)
 	query.collision_mask = 7
 	query.exclude = [get_rid()]
-	var hits: Array[Dictionary] = get_world_3d().direct_space_state.intersect_shape(query,1)
-	blocker = hits[0].collider if not hits.is_empty() else null
-	return not hits.is_empty()
+	# Estrutura de rampa marcada `vehicle_ramp_structure` (túnel do canal): numa
+	# rampa de 12,5 % a caixa horizontal a 0,8 m entra no próprio piso e o carro
+	# freava sem nada à frente. Carros, pessoas e o resto do mundo continuam valendo.
+	blocker = null
+	for hit in get_world_3d().direct_space_state.intersect_shape(query,4):
+		if is_instance_valid(hit.collider) and hit.collider.has_meta("vehicle_ramp_structure"): continue
+		blocker = hit.collider
+		break
+	return blocker != null
 
 func place(point: Vector3, yaw: float) -> void:
 	global_position = point
@@ -779,7 +800,8 @@ func receive_impact(amount: float, local_point: Vector3, source: Node = null) ->
 	receive_damage(amount, source)
 
 func receive_damage(amount: float, _source: Node = null) -> void:
-	if amount <= 0 or health <= 0: return
+	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
+	amount *= damage_resistance
 	health = maxf(0,health-amount)
 	damaged.emit(amount)
 	# Aparência (desgaste, fogo no motor, carcaça) vive em VehicleDamage; a vida continua aqui.
@@ -790,6 +812,32 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 		if look: look.wreck()
 	elif look: look.refresh()
 
+func crush(source: Node3D) -> bool:
+	# The street solver has already installed the flattened, load-bearing hull.
+	if health <= 0 or not has_meta("heavy_crush_ratio") or PROTECTION.is_protected(self): return false
+	if is_instance_valid(source): set_meta("heavy_crush_source",weakref(source))
+	# Crushing is terminal even for a car with damage resistance.
+	receive_damage((health+1.0)/maxf(damage_resistance,.05),source)
+	# Production/dispatch cars explode from their destroyed listener. Vehicles
+	# built elsewhere use this fallback; Gameplay deduplicates both paths.
+	var world := get_parent()
+	var gameplay: Variant = world.get("gameplay") if is_instance_valid(world) else null
+	if is_instance_valid(gameplay) and not get_meta("heavy_crush_exploded",false):
+		gameplay.explode(global_position+Vector3.UP*.4,5.0,35.0,self,false)
+	return true
+
+func restore_health(saved_health: float) -> void:
+	# Loading damage must not apply armor again and silently heal the vehicle.
+	if not is_finite(saved_health): return
+	health = clampf(saved_health, 0.0, max_health)
+	if is_instance_valid(damage_look):
+		if health <= 0.0: damage_look.wreck()
+		else: damage_look.refresh()
+
 func repair() -> void:
+	STREET.vehicle_repaired(self)
+	for marker in ["heavy_crush_source","heavy_crush_exploded"]:
+		if has_meta(marker): remove_meta(marker)
+	preload("res://gameplay/police_response/ground/TirePuncture.gd").repair_vehicle(self)
 	health = max_health
 	if is_instance_valid(damage_look): damage_look.restore()

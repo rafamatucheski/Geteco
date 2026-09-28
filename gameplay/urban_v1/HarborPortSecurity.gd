@@ -29,6 +29,7 @@ var _gate_visuals: Node3D
 var _ship_hull: PackedVector2Array = PORT_LAYOUT.ship_hull()
 var _talking_staff: Node3D
 var _conversation_content: Label
+var _staff_respawn: Array[float] = [0.0,0.0,0.0]
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -109,22 +110,28 @@ func _build_gate() -> void:
 
 func _build_staff() -> void:
 	for index in GUARD_POINTS.size():
-		var guard := Node3D.new()
-		guard.name = "PortSecurityStaff%d" % index
-		guard.position = _world_point(GUARD_POINTS[index])
-		guard.add_to_group("port_staff")
-		guard.add_to_group("v1_routine_actor")
-		guard.set_meta("gameplay_role", "ambient_worker")
-		guard.set_meta("port_security_staff", true)
-		add_child(guard)
-		var model = WORKER_MODEL.new()
-		model.worker_index = 36 + index
-		guard.add_child(model)
-		model.set_process(false)
-		model.set_physics_process(false)
-		_staff.append(guard)
-		var reaction := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(guard, model, session.world.gameplay)
-		if reaction != null: reaction.threat_started.connect(_staff_threatened)
+		_staff.append(null)
+		_spawn_staff(index)
+
+func _spawn_staff(index: int) -> void:
+	var guard := preload("res://gameplay/urban_v1/PortWorker.gd").new()
+	guard.configure({"id":"PortSecurityStaff%d"%index,"position":_world_point(GUARD_POINTS[index]),"kind":"dock_worker","stationary":true,"worker_index":36+index})
+	guard.gameplay = session.world.gameplay
+	guard.add_to_group("port_staff")
+	guard.set_meta("port_security_staff",true)
+	guard.died.connect(_staff_died.bind(index))
+	add_child(guard)
+	_staff[index] = guard
+	var reaction := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(guard,guard.model,session.world.gameplay)
+	if reaction != null:
+		reaction.react_to_aim = true
+		reaction.threat_started.connect(_staff_threatened)
+
+func _staff_died(staff: CharacterBody3D, index: int) -> void:
+	_staff_threatened(staff)
+	_staff_respawn[index] = 180.0
+	get_tree().create_timer(60.0,false).timeout.connect(func():
+		if is_instance_valid(staff): staff.queue_free())
 
 func _staff_threatened(staff: Node3D) -> void:
 	if staff == _talking_staff and session.modal and is_instance_valid(_conversation_content) and _conversation_content.is_inside_tree():
@@ -135,7 +142,7 @@ func nearest_action() -> Dictionary:
 	if not _available() or session.world.driving.occupied: return {}
 	var actor: Node3D = session.world.player
 	for guard in _staff:
-		if is_instance_valid(guard) and not guard.get_meta("workplace_threatened", false) and actor.global_position.distance_to(guard.global_position) <= GUARD_RANGE:
+		if is_instance_valid(guard) and guard.get("dead") != true and not guard.get_meta("workplace_threatened", false) and actor.global_position.distance_to(guard.global_position) <= GUARD_RANGE:
 			return {"id":"urban_v1","target":"south_port_checkpoint","label":"Conversar","position":guard.global_position}
 	return {}
 
@@ -146,7 +153,7 @@ func perform(target: String) -> bool:
 		return true
 	session._menu("Portaria")
 	for guard in _staff:
-		if guard.global_position.distance_to(session.world.player.global_position) <= GUARD_RANGE:
+		if is_instance_valid(guard) and guard.get("dead") != true and guard.global_position.distance_to(session.world.player.global_position) <= GUARD_RANGE:
 			_talking_staff = guard
 			break
 	var speech := Label.new()
@@ -196,6 +203,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 		and not (data.authorized_entry and data.authorized_visit)
 
 func _process(delta: float) -> void:
+	for i in _staff_respawn.size(): _staff_respawn[i] = maxf(0,_staff_respawn[i]-delta)
 	# Loading restores the permission before the saved actor location is admitted.
 	if session == null or not session.ready_for_play or not is_instance_valid(session.world.player): return
 	# Entering a building must not revoke an open visit or close a gate on its user.
@@ -208,7 +216,8 @@ func _process(delta: float) -> void:
 	active = session.state.region_id == "harbor"
 	if active != _was_active:
 		_gate_visuals.visible = active
-		for staff in _staff: staff.visible = active
+		for staff in _staff:
+			if is_instance_valid(staff): staff.visible = active
 		for part in _gate_parts:
 			(part.collision as CollisionShape3D).set_deferred("disabled", not active or gate_open)
 		_was_active = active
@@ -218,6 +227,11 @@ func _process(delta: float) -> void:
 			(part.collision as CollisionShape3D).set_deferred("disabled", true)
 			(part.hinge as Node3D).rotation.y = 0.0
 		return
+	for i in _staff.size():
+		if is_instance_valid(_staff[i]): continue
+		if _staff_respawn[i]>0: continue
+		var spawn_point := _world_point(GUARD_POINTS[i])
+		if preload("res://gameplay/urban_v1/PortWorker.gd").safe_to_return(session.world,spawn_point) and session.position_clear(spawn_point+Vector3.UP*.04): _spawn_staff(i)
 	var inside := _inside_security_zone(point)
 	if not initialized:
 		was_inside = inside # A save que já deixou o jogador no porto não vira invasão.
@@ -242,7 +256,7 @@ func _process(delta: float) -> void:
 		_alerted_reset()
 	if authorized_entry and not inside and point.distance_to(_world_point(GATE_POINT)) > 24.0:
 		authorized_entry = false
-	var should_open := authorized_entry or authorized_visit or exiting_port or _emergency_near_gate()
+	var should_open := authorized_entry or authorized_visit or exiting_port or _emergency_near_gate() or _work_truck_near_gate()
 	if gate_open and _gate_occupied(): should_open = true
 	_set_gate(should_open)
 	if alerted:
@@ -284,6 +298,12 @@ func _emergency_near_gate() -> bool:
 		if is_instance_valid(vehicle) and vehicle is Node3D and vehicle.global_position.distance_to(_world_point(GATE_POINT)) <= 14.0: return true
 	return false
 
+func _work_truck_near_gate() -> bool:
+	for vehicle in get_tree().get_nodes_in_group("port_logistics_truck"):
+		if is_instance_valid(vehicle) and vehicle.health > 0 and vehicle.traffic and not vehicle.controlled and vehicle.global_position.distance_to(_world_point(GATE_POINT)) < 18:
+			return true
+	return false
+
 func _set_gate(open: bool) -> void:
 	if gate_open == open: return
 	gate_open = open
@@ -295,6 +315,8 @@ func _set_gate(open: bool) -> void:
 		hinge.rotation.y = -direction * PI * 0.48 if open else 0.0
 
 func _inside_security_zone(point: Vector3) -> bool:
+	# Public passenger quay has its own access to the city, outside freight security.
+	if Rect2(218,180,22.0,22.5).has_point(Vector2(point.x,point.z)): return false
 	var authored := Vector2(point.x / SCALE, point.z / SCALE)
 	return (authored.x >= 3200.0 and authored.x <= 6100.0 and authored.y > 3400.0 and authored.y < 6000.0) \
 		or (authored.x > 3620.0 and authored.x < 6100.0 and authored.y >= 3200.0 and authored.y <= 3400.0) \

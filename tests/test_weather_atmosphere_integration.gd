@@ -1,4 +1,5 @@
 extends SceneTree
+const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 var world
 var errors: Array[String] = []
 var checks := 0
@@ -38,9 +39,15 @@ func run() -> void:
 	check(env.fog_enabled and env.adjustment_enabled and weather.precipitation.emitting,"Exit restores rainy Harbor")
 	var origin: Vector3 = world.player.position
 	world.session.cold.model.weather_clock = 120
-	# Synchronous samples on either side of the actual seam; no fake timer or
-	# duplicate thermal state. This verifies presentation, not physical traversal.
-	for x in [456.24,456.26]:
+	# The current route starts streaming at sea, but its authored climate blend
+	# starts on the eastern shore. Check both boundaries, independently.
+	for x in [CONNECTION.SEAM.x-.01,CONNECTION.SEAM.x+.01]:
+		world.player.teleport(Vector3(x,.08,CONNECTION.CENTER_Z))
+		weather._update()
+		check(weather.precipitation.emitting and not weather.snow.emitting,"Logical seam retains Harbor rain over sea")
+		check(weather.weather_state==1,"Logical seam preserves saved weather")
+	var blend_point: float = CONNECTION.BRIDGE_END_X+10.0
+	for x in [blend_point-.01,blend_point+.01]:
 		world.player.teleport(Vector3(x,.08,-285))
 		weather._update()
 		check(weather.precipitation.emitting and weather.snow.emitting,"Rain/snow coexist across seam")

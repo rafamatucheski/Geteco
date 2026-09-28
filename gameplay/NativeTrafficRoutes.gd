@@ -1,4 +1,5 @@
 extends RefCounted
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 ## NativeRegion already supplies metres. Junctions are split where the authored
 ## centre-lines actually meet; no synthetic cross-block shortcuts or U-turns.
 var segments: Array[Dictionary] = []
@@ -24,7 +25,7 @@ func configure(roads: Array, minimum_width: float = 5.0) -> void:
 			var a: Vector3 = points[index]
 			var b: Vector3 = points[index + 1]
 			if a.distance_to(b) < 0.1: continue
-			segments.append({"a":a,"b":b,"width":width,"id":id,"one_way":one_way,"splits":[0.0,1.0]})
+			segments.append({"a":a,"b":b,"width":width,"id":id,"one_way":one_way,"lanes":int(road.get("lanes_per_direction",1)),"splits":[0.0,1.0]})
 	for first in segments.size():
 		var a: Dictionary = segments[first]
 		for second in range(first + 1, segments.size()):
@@ -74,16 +75,16 @@ func _vertex(point: Vector3) -> int:
 func _connect(from: int, to: int, segment: Dictionary) -> void:
 	for edge in edges[from]:
 		if edge.to == to: return
-	edges[from].append({"from":from,"to":to,"width":segment.width,"id":segment.id,"one_way":segment.one_way})
+	edges[from].append({"from":from,"to":to,"width":segment.width,"id":segment.id,"one_way":segment.one_way,"lanes":segment.get("lanes",1)})
 
-func route_near(point: Vector3) -> Curve3D:
+func route_near(point: Vector3, lane_index := 0) -> Curve3D:
 	if vertices.is_empty(): return null
 	var selected: Dictionary = {}
 	var distance := INF
 	for from in edges:
 		for edge in edges[from]:
 			var direction := (vertices[edge.to] - vertices[from]).normalized()
-			var offset := _lane_offset(direction, edge)
+			var offset := _lane_offset(direction, edge, lane_index)
 			var closest := Geometry3D.get_closest_point_to_segment(point, vertices[from] + offset, vertices[edge.to] + offset)
 			var separation := closest.distance_squared_to(point)
 			if separation < distance:
@@ -94,7 +95,9 @@ func route_near(point: Vector3) -> Curve3D:
 	var closed := not path.is_empty()
 	if not closed: path = _open_path(selected)
 	if path.size() < 2: return null
-	var curve := _curve(path, closed)
+	var curve := _curve(path, closed, lane_index)
+	curve.set_meta("lane_index",lane_index)
+	curve.set_meta("junction_reach",7.0 if lane_index>0 else 4.0)
 	curve.set_meta("traffic_open", not closed)
 	curve.set_meta("traffic_endpoint", curve.get_point_position(curve.get_point_count() - 1))
 	curve.set_meta("traffic_nodes", path)
@@ -206,8 +209,13 @@ func _edge(from: int, to: int) -> Dictionary:
 		if edge.to == to: return edge
 	return {}
 
-func _lane_offset(direction: Vector3, edge: Dictionary) -> Vector3:
-	return Vector3.ZERO if edge.one_way else direction.cross(Vector3.UP) * float(edge.width) * 0.25
+func _lane_offset(direction: Vector3, edge: Dictionary, lane_index := 0) -> Vector3:
+	var lanes := maxi(1,int(edge.get("lanes",1)))
+	var lane := clampi(lane_index,0,lanes-1)
+	var width := float(edge.width)
+	var offset := width/(2.0*lanes)*(lane+.5)
+	if edge.one_way: offset = width/lanes*(lane+.5)-width*.5
+	return direction.cross(Vector3.UP)*offset
 
 func _source_ids(path: Array[int]) -> Array[String]:
 	var result: Array[String] = []
@@ -216,7 +224,7 @@ func _source_ids(path: Array[int]) -> Array[String]:
 		if not result.has(id): result.append(id)
 	return result
 
-func _curve(path: Array[int], closed: bool) -> Curve3D:
+func _curve(path: Array[int], closed: bool, lane_index := 0) -> Curve3D:
 	var curve := Curve3D.new()
 	curve.bake_interval = 0.25
 	var nodes: Array[int] = path.duplicate()
@@ -225,11 +233,11 @@ func _curve(path: Array[int], closed: bool) -> Curve3D:
 		var at: Vector3 = vertices[nodes[index]]
 		if not closed and index == 0:
 			var direction := (vertices[nodes[1]] - at).normalized()
-			curve.add_point(at + _lane_offset(direction, _edge(nodes[0], nodes[1])))
+			curve.add_point(at + _lane_offset(direction, _edge(nodes[0], nodes[1]),lane_index))
 			continue
 		if not closed and index == nodes.size() - 1:
 			var direction := (at - vertices[nodes[index - 1]]).normalized()
-			curve.add_point(at + _lane_offset(direction, _edge(nodes[index - 1], nodes[index])))
+			curve.add_point(at + _lane_offset(direction, _edge(nodes[index - 1], nodes[index]),lane_index))
 			continue
 		var previous := nodes[posmod(index - 1, nodes.size())]
 		var next := nodes[(index + 1) % nodes.size()]
@@ -237,8 +245,8 @@ func _curve(path: Array[int], closed: bool) -> Curve3D:
 		var outgoing := (vertices[next] - at).normalized()
 		var first := _edge(previous, nodes[index])
 		var second := _edge(nodes[index], next)
-		var incoming_offset := _lane_offset(incoming, first)
-		var outgoing_offset := _lane_offset(outgoing, second)
+		var incoming_offset := _lane_offset(incoming, first,lane_index)
+		var outgoing_offset := _lane_offset(outgoing, second,lane_index)
 		var trim := minf(minf(at.distance_to(vertices[previous]), at.distance_to(vertices[next])) * 0.35, maxf(1.5, minf(first.width, second.width) * 0.5))
 		var entry := at - incoming * trim + incoming_offset
 		var exit := at + outgoing * trim + outgoing_offset
@@ -252,4 +260,13 @@ func _curve(path: Array[int], closed: bool) -> Curve3D:
 		curve.add_point(exit, -outgoing * second_handle, Vector3.ZERO)
 	if closed:
 		curve.add_point(curve.get_point_position(0), curve.get_point_in(0), curve.get_point_out(0))
+	var lane_sections := []
+	for index in range(path.size()-1):
+		var edge := _edge(path[index],path[index+1])
+		lane_sections.append({"a":vertices[path[index]],"b":vertices[path[index+1]],"lanes":edge.get("lanes",1),"width":edge.width})
+	curve.set_meta("lane_sections",lane_sections)
+	# Túnel do canal: curva acompanha a altura do piso da rampa (CanalTunnel3D).
+	CANAL_TUNNEL.follow_floor(curve)
+	curve.set_meta("lane_index",lane_index)
+	curve.set_meta("junction_reach",7.0 if lane_index>0 else 4.0)
 	return curve

@@ -3,7 +3,7 @@ extends Node3D
 ## converted once to the native V2 metre grid; workers move physical bodies and
 ## cargo is conserved instead of being a decorative animation.
 
-const WORKER := preload("res://gameplay/routines_v1/V1RoutineActor.gd")
+const WORKER := preload("res://gameplay/urban_v1/PortWorker.gd")
 const SCALE := 1.0 / 16.0
 const ACTIVE_DISTANCE := 92.0
 const BERTHS := [Vector3(6380, 0, 3700) * SCALE, Vector3(6380, 0, 4260) * SCALE]
@@ -15,6 +15,8 @@ var saved_workers: Array[Dictionary] = [{}, {}]
 var active := false
 var scan_clock := 0.0
 var materials: Dictionary = {}
+var worker_respawn: Array[float] = [0.0,0.0]
+var worker_was_dead: Array[bool] = [false,false]
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -65,11 +67,14 @@ func refresh_context() -> void:
 		else: _suspend_worker(index)
 
 func _process(delta: float) -> void:
+	for i in 2: worker_respawn[i] = maxf(0,worker_respawn[i]-delta)
 	if session == null or not is_instance_valid(session.world.player): return
 	scan_clock -= delta
 	if scan_clock <= 0:
 		scan_clock = .25
 		refresh_context()
+		if active:
+			for i in boats.size(): _ensure_worker(i)
 	if not active or not is_finite(delta) or delta <= 0: return
 	for index in boats.size(): _tick_boat(index, delta)
 
@@ -122,10 +127,13 @@ func _tick_boat(index: int, delta: float) -> void:
 func _ensure_worker(index: int) -> void:
 	var boat: Dictionary = boats[index]
 	if is_instance_valid(boat.worker):
-		boat.worker.set_physics_process(true)
+		if not boat.worker.get_meta("workplace_threatened",false) and not boat.worker.get_meta("street_down",false): boat.worker.set_physics_process(true)
 		return
+	if worker_respawn[index]>0: return
 	var berth: Vector3 = boat.berth
 	var source := Vector3(6120.0 * SCALE, 0, berth.z)
+	if worker_was_dead[index] and not WORKER.safe_to_return(session.world,source): return
+	if not session.position_clear(source+Vector3.UP*.06): return
 	var destination := Vector3((6315.0 if boat.phase == "loading" else 6180.0) * SCALE, 0, berth.z)
 	var route: Array[Vector3] = [source, Vector3(6160.0 * SCALE,0,berth.z), destination, Vector3(6160.0 * SCALE,0,berth.z + 18.0 * SCALE)]
 	var definition := {
@@ -138,6 +146,7 @@ func _ensure_worker(index: int) -> void:
 	}
 	var worker = WORKER.new()
 	worker.configure(definition, Callable(session,"position_clear"))
+	worker.died.connect(_loader_died.bind(index))
 	session.world.add_child(worker)
 	if not saved_workers[index].is_empty():
 		worker.restore_routine(saved_workers[index])
@@ -145,6 +154,23 @@ func _ensure_worker(index: int) -> void:
 		worker.crate_stock.assign([30 if boat.phase == "loading" else 3, 0])
 	boat.worker = worker
 	_set_stock(boat.stock_visual,int(worker.crate_stock[0]))
+
+func _loader_died(actor: CharacterBody3D, index: int) -> void:
+	worker_respawn[index] = 180.0
+	worker_was_dead[index] = true
+	# Return any held crate to its source; death must not create or erase freight.
+	var interrupted: Dictionary = actor.snapshot_routine()
+	if interrupted.carrying:
+		interrupted.crate_stock[int(interrupted.source_index)] += 1
+	interrupted.carrying = false
+	interrupted.activity = "return"
+	interrupted.route_index = int(interrupted.source_index)*2
+	interrupted.position = actor.home
+	interrupted.velocity = Vector3.ZERO
+	saved_workers[index] = interrupted
+	boats[index].worker = null
+	get_tree().create_timer(60.0,false).timeout.connect(func():
+		if is_instance_valid(actor): actor.queue_free())
 
 func _suspend_worker(index: int) -> void:
 	var boat: Dictionary = boats[index]

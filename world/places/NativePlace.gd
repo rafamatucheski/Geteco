@@ -91,6 +91,10 @@ func _ready() -> void:
 				mesh.mesh.height = 1.1
 				mesh.position.y = .55
 	interaction_points["service"] = to_global(definition.spawn+Vector3(0,0,-1))
+	if definition.get("service", "") == "residence":
+		for station in model.station_points:
+			var point: Vector2 = model.station_points[station]
+			interaction_points[station] = to_global(Vector3(point.x,0,point.y))
 	if definition.id in ["harbor_ammunation", "mountain_gunshop"]:
 		# The service target belongs to the customer side of Vance's counter.
 		# Spawn-relative placement left it in the middle of the shop instead.

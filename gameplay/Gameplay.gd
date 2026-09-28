@@ -3,6 +3,7 @@ extends Node3D
 signal changed
 signal message(text: String)
 signal player_died
+signal player_wounded(lethal: bool)
 signal player_arrested
 signal police_warning_issued
 signal crime_reported(points: int)
@@ -15,6 +16,7 @@ const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
+const POLICE_CASE = preload("res://gameplay/police_response/PoliceCaseDirector.gd")
 const PROJECTILE = preload("res://gameplay/Projectile.gd")
 const CUSTOM = preload("res://gameplay/WeaponCustomization.gd")
 const EMERGENCY = preload("res://gameplay/emergency/EmergencyManager.gd")
@@ -206,6 +208,9 @@ var _flame_crime_clock := 0.0
 var _rig_pose := RIG_POSE.new()
 var _pose_frame: Dictionary = {}
 var _pending_contact: Dictionary = {}
+var police_case: Node
+var police_air: Node3D
+var police_interiors: Node3D
 
 func configure(p_world: Node3D, p_player: CharacterBody3D, p_camera: Camera3D, p_state: RefCounted) -> void:
 	world = p_world
@@ -234,6 +239,24 @@ func _exit_tree() -> void:
 		voice.stream = null
 
 func _ready() -> void:
+	police_case = POLICE_CASE.new()
+	police_case.name = "PoliceCaseDirector"
+	police_case.configure(self)
+	add_child(police_case)
+	police_air = preload("res://gameplay/police_response/air_k9/PoliceAirK9Director.gd").new()
+	police_air.name = "PoliceAirK9Director"
+	police_air.configure(self)
+	add_child(police_air)
+	police_interiors = preload("res://gameplay/police_response/tactics/PoliceInteriorPursuit.gd").new()
+	police_interiors.name = "PoliceInteriorPursuit"
+	police_interiors.configure(self)
+	add_child(police_interiors)
+	var aim_layer := CanvasLayer.new()
+	aim_layer.layer = 5
+	add_child(aim_layer)
+	var reticle := preload("res://ui/AimReticle.gd").new()
+	reticle.gameplay = self
+	aim_layer.add_child(reticle)
 	_flash_material = StandardMaterial3D.new()
 	_flash_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_flash_material.albedo_color = Color("ffcc68")
@@ -334,10 +357,13 @@ func equipped() -> String:
 	return String(state.equipped_weapon) if state != null else ""
 
 func attack_allowed() -> bool:
-	return enabled and state != null and state.can_attack() and health > 0 and not get_tree().paused
+	return enabled and state != null and state.can_attack() and health > 0 and not get_tree().paused and not police_surrendering()
 
 func _physics_process(delta: float) -> void:
 	if state == null or not enabled: return
+	if InputMap.has_action("surrender") and Input.is_action_just_pressed("surrender"):
+		if police_surrendering(): police_case.cancel_surrender()
+		else: police_case.request_surrender()
 	_combat_clock += delta
 	_advance_police_rounds(delta)
 	cooldown = maxf(0, cooldown - delta)
@@ -448,7 +474,16 @@ func _update_weapon_pose(delta: float) -> void:
 	var progress := 0.0
 	if reload_timer > 0.0 and _reload_total > 0.0: progress = clampf(1.0 - reload_timer / _reload_total, 0.0, 1.0)
 	var rig: Dictionary = player.combat_rig_info() if player.has_method("combat_rig_info") else {}
-	if id == "grenade": rig.loaded = int(state.get_ammo(id).get("magazine", 0)) > 0
+	if id == "grenade":
+		# A próxima granada vem da reserva quando a mão termina a recuperação,
+		# inclusive ao equipar um save com a mão vazia. Sem recarga de pistola.
+		var ammo: Dictionary = state.get_ammo(id)
+		var recovered: bool = _rig_pose.weapon_id != id or _rig_pose.action_age + delta >= RIG_POSE.GRENADE_RECOVERY
+		if int(ammo.get("magazine", 0)) == 0 and int(ammo.get("reserve", 0)) > 0 and recovered and _pending_contact.is_empty() and reload_timer <= 0.0 and attack_allowed():
+			if state.reload_weapon(id, 1):
+				ammo = state.get_ammo(id)
+				changed.emit()
+		rig.loaded = int(ammo.get("magazine", 0)) > 0
 	_pose_frame = _rig_pose.update(id, delta, aiming, reload_timer > 0.0, progress, moving, sprinting, float(player.phase), rig)
 	if player.has_method("set_combat_weapon_pose"):
 		player.set_combat_weapon_pose(id, _pose_frame)
@@ -576,8 +611,10 @@ func _hit_effect(hit: Dictionary, amount: float, direction: Vector3) -> void:
 				victim.set_meta("v2_blood_pool", true)
 				var flat := Vector3(direction.x, 0.0, direction.z).normalized()
 				effects.stain(victim.global_position + flat * 0.7, 0.75)
-		elif amount >= 25.0 and randf() < 0.4:
-			effects.stain(hit.position, 0.35)
+		elif amount >= 18.0 and randf() < 0.5:
+			# Respingo cai adiante, no sentido do tiro, não sob o ponto do impacto.
+			var spray := Vector3(direction.x, 0.0, direction.z).normalized() * randf_range(0.6, 1.3)
+			effects.stain(hit.position + spray, randf_range(0.18, 0.3))
 	else:
 		effects.impact(hit.position, hit.normal, material, amount)
 
@@ -767,6 +804,24 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 	if hit is Vector3: aim_point = hit
 	return aim_point
 
+func aim_feedback_active() -> bool:
+	return aiming and equipped() not in NON_AIM_WEAPONS and attack_allowed() and _free_play_ok() and not player.input_locked
+
+## Same muzzle, horizontal trajectory, mask and range as the shot, without spread.
+func aim_feedback() -> Dictionary:
+	var origin := _muzzle_world_position()
+	var direction := aim_point - origin
+	direction.y = 0.0
+	if direction.length_squared() < 0.001: direction = Vector3.FORWARD
+	var distance := minf(direction.length(), float(weapon_data(equipped()).get("max_range", 420.0)) / 16.0)
+	# Keep the controller marker inside the useful field of view. Shots retain full range.
+	var controls := get_node_or_null("/root/GameInput")
+	if controls != null and (controls.using_gamepad or not controls.touch_aim.is_zero_approx()): distance = minf(distance, 10.0)
+	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * distance, 7, [player.get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	var blocked: bool = not hit.is_empty() and hit.collider is CollisionObject3D and (hit.collider.collision_layer & 1) != 0
+	return {"point": hit.get("position", query.to), "blocked": blocked}
+
 func fire_at(target: Vector3) -> bool:
 	if not attack_allowed() or cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty(): return false
 	var id := equipped()
@@ -785,8 +840,9 @@ func fire_at(target: Vector3) -> bool:
 	cooldown = float(data.fire_interval)
 	_attack_serial += 1
 	_aim_hold = AIM_HOLD + float(RIG_POSE.MELEE_CONTACT.get(id, 0.0))
-	_rig_pose.attack(id, float(data.get("recoil_multiplier", 1.0)))
-	if not melee: _recoil = float(POSE.PROFILES.get(id, [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[2])
+	var bag_recoil := 3.0 if state.get("economy") != null and state.economy.grid_handbag() and not melee else 1.0
+	_rig_pose.attack(id, float(data.get("recoil_multiplier", 1.0))*bag_recoil)
+	if not melee: _recoil = float(POSE.PROFILES.get(id, [Vector3.ZERO, Vector3.ZERO, 0.0, 12.0])[2])*bag_recoil
 	if not melee and not grenade: weapon_fired.emit(id, player.global_position)
 	if melee: _melee_swing_sound(id, data)
 	elif data.get("is_flame", false): _flame_sound()
@@ -900,9 +956,9 @@ func fire_at(target: Vector3) -> bool:
 			# Jato contínuo: a denúncia do disparo acompanha o tempo, não os 20 disparos por segundo.
 			if _flame_crime_clock <= 0.0:
 				_flame_crime_clock = FLAME_SHOT_CRIME_INTERVAL
-				register_crime(4, player.global_position)
+				report_observed_crime(4, player.global_position, "gunfire")
 		else:
-			register_crime(1 if data.get("suppressed", false) else 4, player.global_position)
+			report_observed_crime(1 if data.get("suppressed", false) else 4, player.global_position, "suppressed" if data.get("suppressed", false) else "gunfire")
 	changed.emit()
 	return true
 
@@ -946,7 +1002,7 @@ func _update_contact() -> void:
 	shot.global_position = origin
 	_play_stream(AUDIO.grenade_throw(), origin, 0.0)
 	weapon_fired.emit(id, origin)
-	if not contact.self_defense: register_crime(4, player.global_position)
+	if not contact.self_defense: report_observed_crime(4, player.global_position, "explosion")
 	changed.emit()
 
 func _ignite_actor(actor: Node3D, source: Node) -> void:
@@ -1040,7 +1096,7 @@ func report_vehicle_assault(victim: Node3D, vehicle: Node) -> void:
 		if new_contact: _report_police_assault(victim)
 		if victim.get("dead") == true: _report_police_killed(victim)
 		return
-	if new_contact: register_crime(25, victim.global_position)
+	if new_contact: report_observed_crime(25, victim.global_position, "vehicle_assault", victim)
 
 ## Registros por vítima são inteiros (ids de instância), não referências: mesmo assim expiram por tempo,
 ## saem quando o ator deixa de existir e são zerados na troca de região.
@@ -1090,7 +1146,7 @@ func _damage(actor: Object, amount: float, source: Node, continuous: bool = fals
 				if _crime_due(actor, continuous): _report_police_assault(actor as Node3D)
 				if killed: _report_police_killed(actor as Node3D)
 			elif _crime_due(actor, continuous):
-				register_crime(12, player.global_position)
+				report_observed_crime(12, player.global_position, "assault", actor as Node3D)
 
 ## V1 `ensure_minimum_wanted_level(2)`: ferir um policial nunca pode deixar o
 ## jogador abaixo de 30 pontos. Uma procura maior não recebe pontos artificiais
@@ -1098,7 +1154,8 @@ func _damage(actor: Object, amount: float, source: Node, continuous: bool = fals
 func _report_police_assault(victim: Node3D) -> void:
 	if not is_instance_valid(victim): return
 	var missing := maxi(0, STAR_THRESHOLDS[2] - crime_points)
-	if missing > 0: register_crime(missing, victim.global_position)
+	if missing > 0: register_crime(missing, victim.global_position, "police_assault")
+	elif police_case != null: police_case.confirmed(0, victim.global_position, "police_assault")
 
 ## V1 `report_officer_killed`: depois da agressão soma pelo menos 30 pontos e
 ## chega ao piso de 60. O id impede duplicação entre origens de dano.
@@ -1107,7 +1164,7 @@ func _report_police_killed(victim: Node3D) -> void:
 	var id := victim.get_instance_id()
 	if _police_kill_reported.has(id): return
 	_police_kill_reported[id] = true
-	register_crime(maxi(30, STAR_THRESHOLDS[3] - crime_points), victim.global_position)
+	register_crime(maxi(30, STAR_THRESHOLDS[3] - crime_points), victim.global_position, "police_killed")
 
 func reload_weapon() -> bool:
 	if not attack_allowed() or reload_timer > 0: return false
@@ -1201,8 +1258,8 @@ func handle_arsenal_input(event: InputEvent) -> bool:
 		if _cheat_buffer.ends_with(CHEAT_ARSENAL.left(length)): return true
 	return false
 
-## Concede o arsenal pelo Economy existente (`Economy.activate_arsenal_cheat`): posse e munição no
-## inventário normal, direito de carregar tudo só na sessão. Bloqueado onde atacar é bloqueado (garagem).
+## Ativa o arsenal temporário do Economy, sem gravar armas/munição no save.
+## Bloqueado onde atacar é bloqueado (garagem).
 func activate_arsenal_cheat() -> bool:
 	if not attack_allowed() or state == null or not "economy" in state: return false
 	reload_timer = 0.0
@@ -1216,10 +1273,23 @@ func activate_arsenal_cheat() -> bool:
 func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool = true) -> void:
 	# Explosives launched outside cannot cross the safe-zone boundary through a transition.
 	if source == player and not state.weapons_allowed(): return
+	var crusher: Node3D
+	var damage_source := source
+	var crushed := is_instance_valid(source) and source.has_meta("heavy_crush_ratio")
+	if crushed:
+		if source.get_meta("heavy_crush_exploded",false): return
+		# Shared by destroyed listeners and Vehicle.crush's fallback. Mark first
+		# so chained destruction cannot trigger the same wreck twice.
+		source.set_meta("heavy_crush_exploded",true)
+		if not state.weapons_allowed(): return
+		var owner_ref: Variant = source.get_meta("heavy_crush_source",null)
+		if owner_ref is WeakRef: crusher = owner_ref.get_ref() as Node3D
+		if is_instance_valid(crusher):
+			damage_source = player if crusher.has_method("is_player_damage_source") and crusher.is_player_damage_source() else crusher
 	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
 	_sound("explosion", point, EXPLOSION_VOLUME_DB)
 	traced = _trace_explosion_cost("audio",traced)
-	if emergency != null: emergency.ignite(point, source, 1.0)
+	if emergency != null: emergency.ignite(point, damage_source, 1.0)
 	traced = _trace_explosion_cost("ground_fire",traced)
 	var sphere := SphereShape3D.new()
 	sphere.radius = radius
@@ -1230,6 +1300,7 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 	var seen: Dictionary = {}
 	for result in get_world_3d().direct_space_state.intersect_shape(query, 64):
 		var actor: Node3D = result.collider
+		if is_instance_valid(crusher) and (actor == crusher or crusher.is_ancestor_of(actor)): continue
 		if not hurt_source and (actor == source or actor.get_parent() == source): continue
 		if seen.has(actor.get_instance_id()): continue
 		seen[actor.get_instance_id()] = true
@@ -1237,15 +1308,15 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 		var ray := PhysicsRayQueryParameters3D.create(point, target, 1)
 		if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): continue
 		var falloff := clampf(1.0 - point.distance_to(target) / radius, 0, 1)
-		_damage(actor, amount * falloff, source)
+		_damage(actor, amount * falloff, damage_source)
 		_hit_effect({"collider": actor, "position": target, "normal": Vector3.UP}, amount * falloff, (target - point).normalized())
 	traced = _trace_explosion_cost("damage",traced)
 	if is_instance_valid(effects): effects.explosion(point, radius)
 	traced = _trace_explosion_cost("particles",traced)
-	if is_instance_valid(player): _kick_camera(0.28 * clampf(1.0 - player.global_position.distance_to(point) / (radius * 4.0), 0.0, 1.0))
+	if is_instance_valid(player) and not (is_instance_valid(crusher) and damage_source == player): _kick_camera(0.28 * clampf(1.0 - player.global_position.distance_to(point) / (radius * 4.0), 0.0, 1.0))
 	# Um único evento por detonação admitida. A origem e a autoria são as mesmas
 	# usadas pelo dano; `null` continua desconhecido e nunca vira jogador por inferência.
-	explosion_occurred.emit(point, radius, source)
+	explosion_occurred.emit(point, radius, damage_source)
 	_trace_explosion_cost("listeners",traced)
 
 func _trace_explosion_cost(stage: String, started: int) -> int:
@@ -1262,7 +1333,7 @@ func damage_environment(amount: float) -> void:
 	_apply_player_damage(amount, false)
 
 func arrest_player() -> bool:
-	if health <= 0 or stars != 1 or state == null or not state.weapons_allowed() or player.input_locked: return false
+	if not police_can_arrest() or health <= 0 or state == null or not state.weapons_allowed() or player.input_locked: return false
 	player.input_locked = true
 	player_arrested.emit()
 	return true
@@ -1278,14 +1349,16 @@ func _apply_player_damage(amount: float, use_armor: bool) -> void:
 	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
 	armor -= absorbed
 	health = maxf(0, health - (amount - absorbed))
+	# Environmental damage is not an open wound, even when it is lethal.
+	if use_armor: player_wounded.emit(health <= 0.0)
 	if health > 0.0:
 		_pain_voice(player, amount)
-		if player.has_method("present_hit"): player.present_hit()
+		if use_armor and player.has_method("present_hit"): player.present_hit()
 	changed.emit()
 	if health == 0 and not _dead_notified:
 		_dead_notified = true
 		player.input_locked = true
-		if is_instance_valid(effects): effects.stain(player.global_position, 0.8)
+		if use_armor and is_instance_valid(effects): effects.stain(player.global_position, 0.8)
 		if player.has_method("on_player_death"): player.on_player_death()
 		player_died.emit()
 
@@ -1304,13 +1377,17 @@ func respawn() -> void:
 	clear_wanted()
 	changed.emit()
 
-func register_crime(points: int, point: Vector3) -> void:
-	if points <= 0 or not state.weapons_allowed(): return
+func register_crime(points: int, point: Vector3, kind: String = "reported", testimony: Dictionary = {}) -> void:
+	# A completed testimony describes an earlier crime. Entering a safe garage
+	# cannot retroactively erase it; safe areas still reject new local offenses.
+	if points <= 0 or (not state.weapons_allowed() and testimony.is_empty()): return
+	if police_case != null: police_case.confirmed(points, point, kind, testimony)
 	var old_stars := stars
 	crime_points = mini(MAX_CRIME_POINTS, crime_points + points)
 	_update_stars()
-	last_known = point
+	last_known = testimony.get("exterior", point)
 	last_known_valid = true
+	set_meta("police_contact_place_id", "" if not testimony.is_empty() else (String(state.place_id) if "place_id" in state else ""))
 	hidden_time = 0
 	if old_stars == 0 and stars > 0:
 		dispatch_timer = [0.0, 6.0, 3.0, 1.0, 1.0, 1.0, 1.0][stars]
@@ -1323,15 +1400,42 @@ func _update_stars() -> void:
 		if crime_points >= STAR_THRESHOLDS[level]: stars = level
 
 func report_contact(point: Vector3) -> void:
+	set_meta("police_contact_place_id", String(state.place_id) if "place_id" in state else "")
 	last_known = point
 	last_known_valid = true
 	contact_age = 0
 	hidden_time = 0
+	if police_case != null: police_case.descending = false
+
+func report_observed_crime(points: int, point: Vector3, kind: String = "theft", victim: Node3D = null) -> bool:
+	return police_case.observe(points, point, kind, victim) if police_case != null else false
+
+func police_force_authorized() -> bool:
+	return police_case != null and police_case.force_authorized()
+
+func police_surrendering() -> bool:
+	return police_case != null and police_case.surrendering
+
+func police_can_arrest() -> bool:
+	return stars > 0 and (police_surrendering() or (stars == 1 and not police_force_authorized()))
+
+func police_investigation_active() -> bool:
+	return police_case != null and police_case.investigation_active()
+
+func police_investigation_point() -> Vector3:
+	return police_case.case_point if police_case != null else last_known
+
+func police_k9_restraint(seconds: float = 1.2) -> void:
+	if health <= 0 or police_surrendering() or not state.weapons_allowed(): return
+	player.set_meta("police_restraint_left", clampf(seconds, 0.0, 2.0))
 
 ## A testemunha informa a posição observada e antecipa a primeira viatura.
 ## Não cria crime novo nem procura quando o jogador não é suspeito.
 func report_civilian_call(witness: Vector3, suspect: Vector3) -> bool:
 	if stars <= 0 or health <= 0: return false
+	if witness.distance_to(suspect) > 40.0: return false
+	var ray := PhysicsRayQueryParameters3D.create(witness + Vector3.UP * 1.4, suspect + Vector3.UP, 1)
+	if not get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): return false
 	report_contact(suspect)
 	if dispatch_owned:
 		var dispatcher: Variant = world.get("dispatch") if is_instance_valid(world) else null
@@ -1341,7 +1445,8 @@ func report_civilian_call(witness: Vector3, suspect: Vector3) -> bool:
 	return true
 
 func police_can_see(officer: CharacterBody3D) -> bool:
-	if "place_id" in state and not state.place_id.is_empty(): return false
+	var place := String(state.place_id) if "place_id" in state else ""
+	if String(officer.get_meta("police_place_id", "")) != place: return false
 	var suspect := pursuit_target()
 	if health <= 0 or not state.weapons_allowed() or not suspect.visible: return false
 	if officer.global_position.distance_to(suspect.global_position) > 26.875: return false
@@ -1375,6 +1480,7 @@ func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) ->
 	return true
 
 func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "pistol") -> void:
+	if police_surrendering(): return
 	if not police_can_see(officer): return
 	if _police_rounds.size() >= 128: return
 	var visual: Node3D = officer.get("visual")
@@ -1559,6 +1665,7 @@ func _impact_sound(collider: Object, point: Vector3, amount: float) -> void:
 	_play_stream(AUDIO.take("impact_" + material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
 
 func _update_police(delta: float) -> void:
+	if police_case != null: police_case.tick(delta)
 	police = police.filter(func(unit): return is_instance_valid(unit) and not unit.dead)
 	contact_age += delta
 	if crime_points > 0 and contact_age > 1.0: hidden_time += delta
@@ -1567,8 +1674,15 @@ func _update_police(delta: float) -> void:
 		crime_points = 0
 		changed.emit()
 	if stars == 0: return
-	if hidden_time > (120.0 if stars == 6 else 18.0 + stars * 5.0):
-		clear_wanted()
+	var evasion_seconds := 8.0 if police_case != null and police_case.descending else (120.0 if stars == 6 else 18.0 + stars * 5.0)
+	if hidden_time > evasion_seconds:
+		if stars <= 1: clear_wanted(true)
+		else:
+			crime_points = STAR_THRESHOLDS[stars - 1]
+			_update_stars()
+			hidden_time = 0.0
+			if police_case != null: police_case.descending = true
+			changed.emit()
 		return
 	dispatch_timer -= delta
 	if not dispatch_owned and dispatch_timer <= 0 and police.size() < MAX_ACTIVE[stars] and deployed < DEPLOYMENT[stars]:
@@ -1582,6 +1696,12 @@ func spawn_officer() -> CharacterBody3D:
 		var angle := _rng.randf_range(0, TAU)
 		var point := last_known + Vector3(cos(angle), 0, sin(angle)) * 16.0
 		point.y = last_known.y + 0.05
+		# No fundo do túnel do canal o círculo de 16 m cai quase todo dentro da
+		# terra: o policial nasce ao longo do eixo do túnel, no piso da rampa.
+		var tunnel := preload("res://world/urban_detail/CanalTunnel3D.gd")
+		if tunnel.below_grade(last_known):
+			point = Vector3(last_known.x + (16.0 if attempt % 2 == 0 else -16.0), 0.0, tunnel.CENTER_Z)
+			point.y = tunnel.floor_y(point.x) + 0.05
 		if not _clear_at(point): continue
 		var floor_ray := PhysicsRayQueryParameters3D.create(point + Vector3.UP, point - Vector3.UP * 2.0, 1)
 		var floor_hit := get_world_3d().direct_space_state.intersect_ray(floor_ray)
@@ -1598,6 +1718,10 @@ func spawn_officer() -> CharacterBody3D:
 	return null
 
 func on_region_changed() -> void:
+	if is_instance_valid(police_air): police_air.clear_response()
+	if police_case != null:
+		police_case.preserve_departing_witnesses()
+		police_case.cancel_surrender()
 	_pending_contact.clear()
 	_police_rounds.clear()
 	_clear_combat_registers()
@@ -1625,7 +1749,11 @@ func on_region_changed() -> void:
 	hidden_time = 0.0
 	_occupancy.clear()
 
-func clear_wanted() -> void:
+func clear_wanted(keep_investigation: bool = false) -> void:
+	# Escape leaves aircraft free to finish lowering the squad and fly away.
+	# Custody, respawn and save restoration explicitly end the old response.
+	if not keep_investigation and is_instance_valid(police_air): police_air.clear_response()
+	if police_case != null and not keep_investigation: police_case.reset()
 	stars = 0
 	crime_points = 0
 	hidden_time = 0
@@ -1663,6 +1791,13 @@ func find_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
 	return result
 
 func _find_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
+	# Túnel do canal: a grade abaixo roda numa altura só; entre rua e túnel o
+	# caminho passa pela boca e pela rampa (CanalTunnel3D.walking_path).
+	var tunnel_path: PackedVector3Array = preload("res://world/urban_detail/CanalTunnel3D.gd").walking_path(start,finish,_find_grid_path)
+	if not tunnel_path.is_empty(): return tunnel_path
+	return _find_grid_path(start,finish)
+
+func _find_grid_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
 	# Bounded local A* in native world metres. Static solid probes are cached;
 	# CharacterBody3D remains the final authority for dynamic collisions.
 	var from := Vector2i(roundi(start.x / 2), roundi(start.z / 2))
@@ -1803,9 +1938,12 @@ func clear_loot() -> void:
 	_loot.clear()
 
 func snapshot() -> Dictionary:
-	return {"health": health, "armor": armor, "crime_points": crime_points, "hidden_time": hidden_time, "customization": customization.duplicate(true)}
+	var result := {"health": health, "armor": armor, "crime_points": crime_points, "hidden_time": hidden_time, "customization": customization.duplicate(true)}
+	if police_case != null: result["police_case"] = police_case.snapshot()
+	return result
 
 static func validate_snapshot(data: Dictionary) -> bool:
+	if data.has("police_case") and (not data.police_case is Dictionary or not POLICE_CASE.validate(data.police_case)): return false
 	for key in ["health", "armor", "crime_points", "hidden_time"]:
 		if not data.has(key) or (typeof(data[key]) != TYPE_FLOAT and typeof(data[key]) != TYPE_INT) or not is_finite(float(data[key])): return false
 	if float(data.health) < 0 or float(data.health) > 100 or float(data.armor) < 0 or float(data.armor) > 100: return false
@@ -1823,6 +1961,7 @@ func restore_state(data: Dictionary) -> bool:
 	health = float(data.health)
 	armor = float(data.armor)
 	crime_points = int(data.crime_points)
+	if police_case != null: police_case.restore(data.get("police_case", {}))
 	hidden_time = float(data.hidden_time)
 	customization = restored_customization
 	visual_id = "@rebuild"

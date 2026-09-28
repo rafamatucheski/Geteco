@@ -1,0 +1,36 @@
+{
+	"regions": {
+		"harbor": {
+			"new/1790361743_776_289318763": {
+				"id": "new/1790361743_776_289318763",
+				"position": [
+					-190.0,
+					100.0
+				],
+				"rotation": 45,
+				"size": [
+					24.0,
+					12.0
+				],
+				"surface": "pavers",
+				"type": "ground"
+			},
+			"new/1790361747_042_2212057632": {
+				"id": "new/1790361747_042_2212057632",
+				"position": [
+					-160.0,
+					100.0
+				],
+				"rotation": 45,
+				"size": [
+					24.0,
+					12.0
+				],
+				"surface": "pavers",
+				"type": "ground"
+			}
+		},
+		"mountain": {}
+	},
+	"version": 1
+}

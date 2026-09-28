@@ -7,6 +7,7 @@ const NATURAL_GROUND := preload("res://world/regions/natural_ground.gdshader")
 const HARBOR_ROUTE_FACTORY := preload("res://world/harbor_route_detail/HarborRouteDetailFactory.gd")
 const HARBOR_PUBLIC_REALM := preload("res://world/urban_detail/HarborPublicRealm3D.gd")
 const HARBOR_BRIDGE := preload("res://world/urban_detail/HarborBridge3D.gd")
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const HARBOR_PROP := preload("res://world/urban_detail/HarborProp3D.gd")
 const SOUTH_PORT := preload("res://world/regions/OriginalSouthPort.gd")
 const SOUTH_PORT_LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
@@ -601,6 +602,8 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 				if region_id == "harbor":
 					if not job.has("dressing"): job.dressing = {"step": 0, "region": self, "chunk": chunk, "rect": rect}
 					if not CITY_DRESSING.build_chunk_step(job.dressing): continue
+					# Depois de todo o acabamento de chão: abre as rampas do Túnel do canal.
+					CANAL_TUNNEL.carve_chunk(chunk,rect)
 				elif region_id == "mountain":
 					_build_road_surfaces(chunk)
 					_apply_night_lights(chunk)
@@ -635,12 +638,17 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
 		var cemetery_floor := Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
 		var sewer_opening := Rect2(CATALOG.HARBOR_SEWER_OPENING.position * SCALE, CATALOG.HARBOR_SEWER_OPENING.size * SCALE)
+		var secret_cellar_opening := Rect2(-413.25,85.35,6.10,3.30)
 		for land in source_data.harbor_land:
 			var surface := rect.intersection(Rect2(land[0]*SCALE,land[1]*SCALE,land[2]*SCALE,land[3]*SCALE))
 			for piece in _rect_outside(surface, cemetery_floor):
-				for land_piece in _rect_outside(piece, sewer_opening):
-					_box(chunk,"Land",Vector3(land_piece.get_center().x,-.15,land_piece.get_center().y),Vector3(land_piece.size.x,.3,land_piece.size.y),Color("737b69"),true)
+				for sewer_piece in _rect_outside(piece, sewer_opening):
+					for cellar_piece in _rect_outside(sewer_piece, secret_cellar_opening):
+						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
+						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):
+							_box(chunk,"Land",Vector3(land_piece.get_center().x,-.15,land_piece.get_center().y),Vector3(land_piece.size.x,.3,land_piece.size.y),Color("737b69"),true)
 		harbor_ocean.build_chunk(chunk,rect)
+		CANAL_TUNNEL.build_chunk(chunk,rect)
 		coastal_protection.build_chunk(chunk,rect)
 		var clip := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
 		for polygon in extra_land:
@@ -689,6 +697,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			bridge.position=record.position
 			chunk.add_child(bridge)
 		"harbor_prop":
+			# Banco/árvore/poste do pátio da ilha caía dentro da rampa aberta do túnel.
+			if region_id == "harbor" and CANAL_TUNNEL.reserves(Vector2(record.position.x,record.position.z),0.8): return
 			var prop:=HARBOR_PROP.new()
 			prop.configure(record.data)
 			prop.position=record.position
@@ -770,11 +780,9 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		"building": _building(chunk,record.data)
 		"original_facade": _original_facade(chunk,record.data)
 		"container":
-			var art = _held_load("res://assets/regions/source/world/harbor/HarborPortModel3D.gd").new()
+			var art = _held_load("res://world/regions/LootablePortContainer.gd").new()
 			chunk.add_child(art)
-			art.position = record.position
-			art.build("containers",record.size.x,record.size.y,int(record.position.x))
-			_box(chunk,"ContainerSolid",record.position+Vector3(0,1.4,0),Vector3(record.size.x,2.8,record.size.y),Color("00000000"),true).visible=false
+			art.build(record.position,record.size)
 		"mountain_place": _mountain_place(chunk,record.data)
 
 func _mountain_owns_terrain(key: Vector2i) -> bool:

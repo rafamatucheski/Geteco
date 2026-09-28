@@ -22,6 +22,9 @@ uniform float bias = 0.004;
 uniform mat4 target_inverse = mat4(1.0);
 uniform vec3 box_min = vec3(0.0);
 uniform vec3 box_max = vec3(0.0);
+// On foot, low street furniture keeps real depth instead of drawing bright
+// shoes through a planter. Vehicle overlays retain their existing bounds.
+uniform float minimum_occluder_height = -1000.0;
 
 void fragment() {
 	float scene_depth = texture(depth_tex, SCREEN_UV).r;
@@ -32,6 +35,9 @@ void fragment() {
 	vec4 view = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, scene_depth, 1.0);
 	vec3 occluder = (INV_VIEW_MATRIX * vec4(view.xyz / view.w, 1.0)).xyz;
 	vec3 local = (target_inverse * vec4(occluder, 1.0)).xyz;
+	if (local.y < minimum_occluder_height) {
+		discard;
+	}
 	if (all(greaterThanEqual(local, box_min)) && all(lessThanEqual(local, box_max))) {
 		discard;
 	}

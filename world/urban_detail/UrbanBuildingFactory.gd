@@ -13,12 +13,21 @@ const LANDMARK_FRONTAGE := preload("res://world/urban_detail/UrbanLandmarkFronta
 const PORT_BOSS_EXTERIOR := preload("res://world/urban_detail/PortBossGarageExterior3D.gd")
 const HARBOR_MANHOLE_EXTERIOR := preload("res://world/urban_detail/HarborManholeExterior3D.gd")
 const V1_PROFILE := preload("res://world/urban_detail/HarborV1BuildingProfile.gd")
+const SKYLINE_BUILDING := preload("res://world/urban_detail/UrbanSkylineBuilding.gd")
+const LOWRISE_BUILDING := preload("res://world/urban_detail/UrbanLowriseBuilding.gd")
 const V1_HEIGHT_OVERRIDES := {
 	# HarborEastDistrict assigns these two silhouettes after instantiation.
 	# Keep their different skyline heights when converting 2D source pixels to metres.
 	"ExchangeTower": 128.0 / 16.0,
 	"CivicTower": 95.0 / 16.0,
 }
+
+static func resolved_height(data: Dictionary) -> float:
+	var normalized := data.duplicate()
+	var id := str(data.get("id",""))
+	if not normalized.has("variant_seed"): normalized.variant_seed = V1_PROFILE.variant_seed_for_id(id)
+	if not normalized.has("height_override") and V1_HEIGHT_OVERRIDES.has(id): normalized.height_override = V1_HEIGHT_OVERRIDES[id]
+	return UrbanBuildingBase.resolved_height(normalized)
 
 static func extract_position(data: Dictionary) -> Vector3:
 	if data.has("position"):
@@ -113,6 +122,12 @@ static func build_building(data: Dictionary) -> Node3D:
 		building = LANDMARK_FRONTAGE.new()
 	else:
 		match building_kind:
+			"house_gable", "house_duplex", "warehouse_sawtooth", "warehouse_loading":
+				building = LOWRISE_BUILDING.new()
+
+			"urban_setback", "urban_twin", "urban_slab", "urban_deco", "urban_infill", "urban_podium":
+				building = SKYLINE_BUILDING.new()
+
 			"brownstone", "rowhouse", "rowhouse_terrace":
 				building = UrbanBrownstoneBuilding.new()
 		

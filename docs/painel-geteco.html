@@ -1,0 +1,702 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Painel GETECO</title>
+<meta name="description" content="Kanban do GETECO V2 (0.3.0): o que está pronto, o que tem pendência, o que está em andamento e o backlog, com a avaliação de prédios destrutíveis.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Semi+Condensed:wght@600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f0e7; --surface:#ffffff; --surface-2:#efe9dc; --surface-3:#e5ddcb; --border:#ddd2ba;
+    --text:#241f16; --text-dim:#726a58; --text-faint:#a89d84; --accent:#bd5b26; --accent-ink:#ffffff;
+    --done:#2f7a45; --done-bg:#e2f0e2; --warn:#a56a0a; --warn-bg:#f6ecd6; --prog:#2c68a8; --prog-bg:#e2edf7; --back:#6d6455; --back-bg:#eae4d5;
+    --crit:#b3261e; --crit-bg:#f7dedb;
+    --tag-harbor:#a8501f; --tag-harbor-bg:#f4e2d3;
+    --tag-mountain:#1c7c86; --tag-mountain-bg:#dcf0f0;
+    --tag-veiculos:#8a6a10; --tag-veiculos-bg:#f3ecd4;
+    --tag-combate:#9c2f4c; --tag-combate-bg:#f5dde3;
+    --tag-policia:#33509c; --tag-policia-bg:#dde6f5;
+    --tag-lugares:#63459b; --tag-lugares-bg:#e9e0f5;
+    --tag-interface:#a83e83; --tag-interface-bg:#f5dded;
+    --tag-performance:#565c68; --tag-performance-bg:#e4e5e8;
+    --tag-mundo:#4a7a2a; --tag-mundo-bg:#e5f0dc;
+    --info:#2c68a8; --info-bg:#e2edf7;
+    --code-bg:#211d16; --code-text:#e9e2d2; --code-dim:#a89d84;
+    --shadow:0 1px 2px rgba(40,30,10,.06),0 6px 16px -8px rgba(40,30,10,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --bg:#14151a; --surface:#1c1e25; --surface-2:#242732; --surface-3:#2c2f3c; --border:#383c4a;
+      --text:#eee9de; --text-dim:#a6a9b8; --text-faint:#767a8c; --accent:#e08a4f; --accent-ink:#1a1208;
+      --done:#5cbb79; --done-bg:#1d3222; --warn:#e0a83f; --warn-bg:#3a2f14; --prog:#6fa8e0; --prog-bg:#182c3f; --back:#a3a0a3; --back-bg:#2b2b30;
+      --crit:#f08a80; --crit-bg:#3e1c1a;
+      --tag-harbor:#f0955c; --tag-harbor-bg:#3a2515; --tag-mountain:#5fd0d6; --tag-mountain-bg:#123234;
+      --tag-veiculos:#e0be5c; --tag-veiculos-bg:#3a3013; --tag-combate:#ec93ab; --tag-combate-bg:#3a1c26;
+      --tag-policia:#8fb3ef; --tag-policia-bg:#1c2740; --tag-lugares:#b79cee; --tag-lugares-bg:#2b2140;
+      --tag-interface:#ec9bd2; --tag-interface-bg:#391e33; --tag-performance:#b7bccb; --tag-performance-bg:#2a2d36;
+      --tag-mundo:#93d17a; --tag-mundo-bg:#20351a;
+      --info:#6fa8e0; --info-bg:#182c3f; --code-bg:#0e0f13; --code-text:#d9d3c4; --code-dim:#7c8092;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#14151a; --surface:#1c1e25; --surface-2:#242732; --surface-3:#2c2f3c; --border:#383c4a;
+    --text:#eee9de; --text-dim:#a6a9b8; --text-faint:#767a8c; --accent:#e08a4f; --accent-ink:#1a1208;
+    --done:#5cbb79; --done-bg:#1d3222; --warn:#e0a83f; --warn-bg:#3a2f14; --prog:#6fa8e0; --prog-bg:#182c3f; --back:#a3a0a3; --back-bg:#2b2b30;
+    --crit:#f08a80; --crit-bg:#3e1c1a;
+    --tag-harbor:#f0955c; --tag-harbor-bg:#3a2515; --tag-mountain:#5fd0d6; --tag-mountain-bg:#123234;
+    --tag-veiculos:#e0be5c; --tag-veiculos-bg:#3a3013; --tag-combate:#ec93ab; --tag-combate-bg:#3a1c26;
+    --tag-policia:#8fb3ef; --tag-policia-bg:#1c2740; --tag-lugares:#b79cee; --tag-lugares-bg:#2b2140;
+    --tag-interface:#ec9bd2; --tag-interface-bg:#391e33; --tag-performance:#b7bccb; --tag-performance-bg:#2a2d36;
+    --tag-mundo:#93d17a; --tag-mundo-bg:#20351a;
+    --info:#6fa8e0; --info-bg:#182c3f; --code-bg:#0e0f13; --code-text:#d9d3c4; --code-dim:#7c8092;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 24px -12px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--text); font-family:"Barlow",system-ui,sans-serif; padding-inline:20px; padding-block:28px 48px;}
+  h1,h2,h3{font-family:"Barlow Semi Condensed","Barlow",system-ui,sans-serif; text-wrap:balance; margin:0;}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+  .wrap{max-width:1180px; margin-inline:auto;}
+
+  header.top{display:flex; flex-wrap:wrap; gap:16px 28px; align-items:flex-end; justify-content:space-between; padding-bottom:18px; margin-bottom:22px; border-bottom:2px solid var(--border);}
+  .titleblock h1{font-size:clamp(1.7rem,3.4vw,2.4rem); font-weight:800; letter-spacing:.2px;}
+  .titleblock .sub{margin-top:6px; color:var(--text-dim); font-size:.95rem; max-width:60ch;}
+  .version{display:inline-block; margin-left:10px; vertical-align:middle; font-family:"JetBrains Mono",monospace; font-size:.8rem; font-weight:600; color:var(--accent-ink); background:var(--accent); border-radius:6px; padding:2px 8px;}
+  .meta{font-size:.78rem; color:var(--text-faint); text-align:right; line-height:1.5;}
+  .meta b{color:var(--text-dim); font-weight:600;}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px;}
+  .chip{font-family:"Barlow",sans-serif; font-weight:600; font-size:.82rem; padding:7px 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); cursor:pointer; transition:transform .12s ease, background .15s ease, color .15s ease;}
+  .chip:hover{transform:translateY(-1px);}
+  .chip.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .infobox{display:flex; gap:12px; align-items:flex-start; background:var(--info-bg); border:1px solid color-mix(in srgb,var(--info) 35%,transparent); border-radius:12px; padding:13px 16px; margin-bottom:22px; font-size:.85rem; line-height:1.55;}
+  .infobox b{color:var(--info);}
+  .infobox .ico{font-family:"JetBrains Mono",monospace; font-weight:600; color:var(--info); flex:none;}
+
+  .board{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; align-items:start;}
+  .col{background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:12px; min-width:0;}
+  .col-head{display:flex; align-items:center; gap:10px; padding:2px 4px 10px; border-bottom:2px solid var(--stripe);}
+  .col-dot{width:10px; height:10px; border-radius:50%; background:var(--stripe); flex:none;}
+  .col-head h2{font-size:1.05rem; font-weight:700;}
+  .col-count{margin-left:auto; font-size:.78rem; color:var(--text-faint); font-family:"JetBrains Mono",monospace;}
+  .col.done{--stripe:var(--done);} .col.warn{--stripe:var(--warn);} .col.prog{--stripe:var(--prog);} .col.back{--stripe:var(--back);}
+  .cards{display:flex; flex-direction:column; gap:10px;}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 13px 11px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:7px;}
+  .card.hidden-filter{display:none;}
+  .card.new{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent),var(--shadow);}
+  .card .newflag{align-self:flex-start; font-size:.62rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--accent-ink); background:var(--accent); border-radius:4px; padding:1px 6px;}
+  .card a.jump{font-size:.78rem; font-weight:700; color:var(--accent); text-decoration:none;}
+  .card a.jump:hover{text-decoration:underline;}
+  .tags{display:flex; flex-wrap:wrap; gap:5px;}
+  .tag{font-size:.66rem; font-weight:700; letter-spacing:.3px; text-transform:uppercase; padding:2px 8px; border-radius:999px;}
+  .tag-harbor{color:var(--tag-harbor); background:var(--tag-harbor-bg);}
+  .tag-mountain{color:var(--tag-mountain); background:var(--tag-mountain-bg);}
+  .tag-veiculos{color:var(--tag-veiculos); background:var(--tag-veiculos-bg);}
+  .tag-combate{color:var(--tag-combate); background:var(--tag-combate-bg);}
+  .tag-policia{color:var(--tag-policia); background:var(--tag-policia-bg);}
+  .tag-lugares{color:var(--tag-lugares); background:var(--tag-lugares-bg);}
+  .tag-interface{color:var(--tag-interface); background:var(--tag-interface-bg);}
+  .tag-performance{color:var(--tag-performance); background:var(--tag-performance-bg);}
+  .tag-mundo{color:var(--tag-mundo); background:var(--tag-mundo-bg);}
+  .card h3{font-size:.94rem; font-weight:700; line-height:1.3;}
+  .card p{margin:0; font-size:.82rem; line-height:1.5; color:var(--text-dim);}
+  .card .src{margin-top:2px; font-size:.68rem; color:var(--text-faint); border-top:1px dashed var(--border); padding-top:6px; overflow-wrap:anywhere;}
+
+  section.block{margin-top:34px; padding-top:24px; border-top:2px solid var(--border);}
+  section.block > h2{font-size:1.3rem; font-weight:700; margin-bottom:6px;}
+  section.block > .lead{color:var(--text-dim); font-size:.9rem; max-width:72ch; margin:0 0 18px; line-height:1.55;}
+
+  .verdict{display:flex; flex-wrap:wrap; gap:14px 28px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin-bottom:18px; box-shadow:var(--shadow);}
+  .verdict .big{font-family:"Barlow Semi Condensed",sans-serif; font-weight:700; font-size:1.45rem; color:var(--crit);}
+  .verdict .note{flex:1 1 320px; font-size:.86rem; color:var(--text-dim); line-height:1.55;}
+  .meter{display:inline-flex; gap:4px; vertical-align:middle;}
+  .meter i{width:16px; height:8px; border-radius:2px; background:var(--surface-3); display:block;}
+  .meter i.on{background:var(--lvl);}
+
+  .levels{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:14px;}
+  .level{background:var(--surface); border:1px solid var(--border); border-top:4px solid var(--lvl); border-radius:10px; padding:14px 15px; display:flex; flex-direction:column; gap:9px; box-shadow:var(--shadow);}
+  .level .head{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;}
+  .level .n{font-family:"JetBrains Mono",monospace; font-size:.74rem; color:var(--text-faint);}
+  .level h3{font-size:1rem; font-weight:700;}
+  .level .rating{display:flex; align-items:center; gap:8px; font-size:.76rem; font-weight:700; color:var(--lvl); text-transform:uppercase; letter-spacing:.3px;}
+  .level p{margin:0; font-size:.82rem; line-height:1.5; color:var(--text-dim);}
+  .level ul{margin:0; padding-left:17px; font-size:.8rem; line-height:1.55; color:var(--text-dim);}
+  .level .est{margin-top:auto; font-family:"JetBrains Mono",monospace; font-size:.74rem; color:var(--text); background:var(--surface-2); border-radius:6px; padding:6px 8px;}
+  .lvl1{--lvl:var(--done);} .lvl2{--lvl:var(--warn);} .lvl3{--lvl:var(--accent);} .lvl4{--lvl:var(--crit);}
+
+  .risks{margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px;}
+  @media (max-width:760px){.risks{grid-template-columns:1fr;}}
+  .panel{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; font-size:.84rem; line-height:1.55;}
+  .panel h3{font-size:.98rem; margin-bottom:8px;}
+  .panel ul{margin:0; padding-left:18px; color:var(--text-dim);}
+  .panel li{margin-bottom:5px;}
+  .panel li b{color:var(--text);}
+  .panel.reco{background:var(--done-bg); border-color:color-mix(in srgb,var(--done) 40%,transparent);}
+  .panel.reco h3{color:var(--done);}
+
+  .verify-grid{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:18px;}
+  @media (max-width:760px){.verify-grid{grid-template-columns:1fr;}}
+  .term{background:var(--code-bg); color:var(--code-text); border-radius:10px; padding:14px 16px; font-family:"JetBrains Mono",monospace; font-size:.76rem; line-height:1.75; overflow-x:auto; white-space:pre;}
+  .term .c{color:var(--code-dim);}
+  .honesty{background:var(--warn-bg); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); border-radius:10px; padding:14px 16px; font-size:.83rem; line-height:1.55;}
+  .honesty b{color:var(--warn);}
+  .honesty ul{margin:8px 0 0; padding-left:18px;}
+  .honesty li{margin-bottom:5px;}
+  footer.note{margin-top:28px; font-size:.74rem; color:var(--text-faint); line-height:1.6;}
+  @media (prefers-reduced-motion: reduce){.chip{transition:none;}}
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="titleblock">
+      <h1>Painel GETECO <span class="version">v0.3.0</span></h1>
+      <div class="sub">O que está de pé na V2, o que funciona com ressalva, o que está sendo mexido agora e o que ainda é plano, por área do jogo.</div>
+    </div>
+    <div class="meta">
+      Atualizado em <b>2026-09-28</b><br>
+      Fontes: <b>git log</b>, <b>docs/plano-*.md</b> (27–28/09), sessões de 26–28/09, <code class="mono">git status</code> local
+    </div>
+  </header>
+
+  <div class="chips" id="chips">
+    <button class="chip active" data-filter="all" id="f-all">Todas</button>
+    <button class="chip" data-filter="harbor" id="f-harbor">Harbor</button>
+    <button class="chip" data-filter="mountain" id="f-mountain">Mountain</button>
+    <button class="chip" data-filter="mundo" id="f-mundo">Mundo e clima</button>
+    <button class="chip" data-filter="veiculos" id="f-veiculos">Veículos e trânsito</button>
+    <button class="chip" data-filter="combate" id="f-combate">Dante e combate</button>
+    <button class="chip" data-filter="policia" id="f-policia">Polícia e emergência</button>
+    <button class="chip" data-filter="lugares" id="f-lugares">Lugares e interiores</button>
+    <button class="chip" data-filter="interface" id="f-interface">Interface</button>
+    <button class="chip" data-filter="performance" id="f-performance">Performance</button>
+  </div>
+
+  <div class="infobox">
+    <span class="ico">V2</span>
+    <div><b>O jogo agora é a V2, em 3D de verdade.</b> Desde 24/09 a raiz do repositório é a V2: mundo, personagens e veículos em 3D no Godot 4.7 (renderer Mobile), com Harbor e Mountain em streaming por chunks. A V1 (simulação 2D com modelos 3D em SubViewport) está congelada no ramo <code class="mono">v1-legado</code> e na tag <code class="mono">v1-final</code>. Os cards de 16/09 sobre a V1 saíram deste painel.</div>
+  </div>
+
+  <div class="board" id="board">
+
+    <!-- FEITO -->
+    <div class="col done">
+      <div class="col-head"><span class="col-dot"></span><h2>Feito e funcionando</h2><span class="col-count">23</span></div>
+      <div class="cards">
+
+        <div class="card new" data-areas="harbor veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-veiculos">Veículos</span></div>
+          <h3>Caminhões e empilhadeira detalhados</h3>
+          <p>Retrovisores, portas, faixa refletiva, para-barros e traseira em todos os pesados. Empilhadeira com correntes, cilindros, GLP e zebrado; tanque com losango de risco e passarela. +1 draw call por veículo.</p>
+          <div class="src mono">runtime/HeavyVehicleDetail.gd · docs/plano-veiculos-pesados-20260928.md</div>
+        </div>
+
+        <div class="card new" data-areas="harbor lugares">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-lugares">Maciota</span></div>
+          <h3>Fachada da Maciota com identidade</h3>
+          <p>Totem vertical com o nome em neon, vermelho de corrida, quadriculado no parapeito, neon laranja no portão e faixas no telhado. Tudo sem colisão; entrada de 6 m intacta.</p>
+          <div class="src mono">1fb2210 · 8 testes de garagem/Maciota</div>
+        </div>
+
+        <div class="card new" data-areas="harbor mundo">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-mundo">Mundo</span></div>
+          <h3>Passarela com pedestres de verdade</h3>
+          <p>Na market_street (x=126, z=78): tabuleiro a 5,6 m, escadas andáveis, guarda-corpo. Três civis sobem, atravessam e descem; novo objeto "Passarela" na biblioteca do MUNDO.</p>
+          <div class="src mono">test_footbridge · test_footbridge_crossers (5 rodadas)</div>
+        </div>
+
+        <div class="card new" data-areas="combate">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-combate">Combate</span></div>
+          <h3>Reação a tiro sem tremedeira</h3>
+          <p>Tronco inclina no sentido do tiro e a rajada soma numa inclinação contínua, em vez do corpo inteiro girar pelos pés. Névoa de sangue menor e escura, respingo no sentido do tiro.</p>
+          <div class="src mono">test_hit_reaction</div>
+        </div>
+
+        <div class="card new" data-areas="harbor mundo">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-mundo">Mundo</span></div>
+          <h3>Prédios novos do editor corrigidos</h3>
+          <p>Porta não nasce mais no meio das janelas; telhados com caixa d'água e ar-condicionado, escada de incêndio, passarela entre torres, chaminés e calhas.</p>
+          <div class="src mono">test_urban_asset_library 209/209</div>
+        </div>
+
+        <div class="card new" data-areas="mountain mundo">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-mountain">Mountain</span><span class="tag tag-mundo">Chão</span></div>
+          <h3>Chão com detalhe em vez de cor lisa</h3>
+          <p>Trilhas de terra, pátio da serraria e peças de chão do editor com terra, pedrinhas, umidade e neve; capim do terreno com touceiras e palha seca.</p>
+          <div class="src mono">world/regions/natural_ground.gdshader</div>
+        </div>
+
+        <div class="card new" data-areas="harbor mundo">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span></div>
+          <h3>Auditoria do mapa editado</h3>
+          <p>Três postes no meio da pista movidos, um poste duplicado removido, cinco trechos escuros iluminados, ruas que paravam antes do cruzamento ligadas e rotações tortas por arrasto acertadas.</p>
+          <div class="src mono">world_edits.json · backup .antes-auditoria-20260926</div>
+        </div>
+
+        <div class="card" data-areas="harbor mountain mundo">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-mountain">Mountain</span></div>
+          <h3>V2 é o jogo principal</h3>
+          <p>Regiões Harbor e Mountain em streaming, ponte com a emenda entre elas, save V2 com importação do save da V1. Versão 0.3.0 com marca d'água de build.</p>
+          <div class="src mono">0481ac9 · 3ebfa22 · CHANGELOG.md</div>
+        </div>
+
+        <div class="card" data-areas="veiculos harbor">
+          <div class="tags"><span class="tag tag-veiculos">Trânsito</span></div>
+          <h3>Semáforo e trânsito que não trava</h3>
+          <p>Semáforo com fases reais e PARE. O trânsito contorna viatura ou carcaça parada, não entra no cruzamento com a saída ocupada, e carro travado some fora da câmera.</p>
+          <div class="src mono">ddf5f93 · test_traffic_unstick 9/9</div>
+        </div>
+
+        <div class="card" data-areas="veiculos">
+          <div class="tags"><span class="tag tag-veiculos">Veículos</span></div>
+          <h3>Roubo, batida, explosão e carcaça</h3>
+          <p>Roubar carro e moto em movimento, embarque por porte, carcaça com colisão própria, dano de batida cobrado uma vez, fogo procedural. Embarque não desliza mais.</p>
+          <div class="src mono">1daa2ca · bb43c70 · e3d73b6</div>
+        </div>
+
+        <div class="card" data-areas="policia">
+          <div class="tags"><span class="tag tag-policia">Polícia</span></div>
+          <h3>Polícia até seis estrelas</h3>
+          <p>Camburão tático com seis agentes, reforço a cada 2 s, patamares 140/260/420, roubo de viatura com saída dos ocupantes, viatura sem equipe fica parada e dirigível.</p>
+          <div class="src mono">cb17ae0 · polícia/acessos 17/17</div>
+        </div>
+
+        <div class="card" data-areas="policia mundo">
+          <div class="tags"><span class="tag tag-policia">Emergência</span></div>
+          <h3>Bombeiros, hidrante e jato d'água</h3>
+          <p>Hidrante quebrado vira jato que apaga fogo, bombeiro com canhão que gira e mangueira no chão, fogo solto apaga em 20 s.</p>
+          <div class="src mono">c0cdfcd · 8bd083a</div>
+        </div>
+
+        <div class="card" data-areas="combate">
+          <div class="tags"><span class="tag tag-combate">Dante</span></div>
+          <h3>Animação e golpes do Dante</h3>
+          <p>Andar mirando em todas as direções, dano no contato do golpe, braços sem salto, granada gasta na soltura, corrida com soqueira natural.</p>
+          <div class="src mono">3570790 · d2c4649 · 417 checks</div>
+        </div>
+
+        <div class="card" data-areas="combate">
+          <div class="tags"><span class="tag tag-combate">Armas</span></div>
+          <h3>Laser, lanterna e lança-chamas presos à arma</h3>
+          <p>Laser só ao mirar e saindo do módulo, lanterna na lente com facho visível à noite, jato saindo do bico mesmo girando a mira.</p>
+          <div class="src mono">d2c4649 · test_gameplay 213/213</div>
+        </div>
+
+        <div class="card" data-areas="combate harbor lugares">
+          <div class="tags"><span class="tag tag-combate">Armas</span><span class="tag tag-lugares">Lugares</span></div>
+          <h3>Ammu-Nation: bancada e catálogo</h3>
+          <p>Descrição da peça certa, preço x posse, contraste em todos os estados, acessórios no lugar certo. Reentrada caiu de 60–80 ms para quase nada no cenário medido.</p>
+          <div class="src mono">73e980b</div>
+        </div>
+
+        <div class="card" data-areas="lugares harbor mountain">
+          <div class="tags"><span class="tag tag-lugares">Acessos</span></div>
+          <h3>Entrar caminhando em 25 lugares</h3>
+          <p>Porta física abre por proximidade, fachada com vão, zoom de entrada e saída, retorno pela porta usada. Banco, Maciota, bombeiros, chalés, lojas, residências, esgoto, porão e caverna.</p>
+          <div class="src mono">6ef0a8f</div>
+        </div>
+
+        <div class="card" data-areas="harbor lugares">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span></div>
+          <h3>Porto vivo</h3>
+          <p>Frete de entrega com caminhão, segurança que autoriza visitante, trabalhadores que recuam de tiro e voltam, guardas do banco mirando certo.</p>
+          <div class="src mono">a74929d</div>
+        </div>
+
+        <div class="card" data-areas="harbor">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span></div>
+          <h3>Pátio do Neco com botão da prensa</h3>
+          <p>Carro parado na baia + botão vermelho = prensa e pagamento pela sucata (sedã R$ 679). Rua de asfalto, grama 3D, selo "N" no minimapa.</p>
+          <div class="src mono">70c76a5 · fluxo da prensa 9/9</div>
+        </div>
+
+        <div class="card" data-areas="harbor mundo">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span></div>
+          <h3>Cemitério com grama e portão livre</h3>
+          <p>Gramado com textura e tufos 3D, caminhos de cascalho, e a árvore que tampava a vaga do carro funerário saiu.</p>
+          <div class="src mono">70c76a5</div>
+        </div>
+
+        <div class="card" data-areas="mountain mundo">
+          <div class="tags"><span class="tag tag-mountain">Mountain</span></div>
+          <h3>Montanha com relevo, capim e ursos</h3>
+          <p>Chão com textura e relevo, capim 3D, trilha, postes, lago alpino em bacia real, ursos da V1 com investida, filhotes e sons.</p>
+          <div class="src mono">26cece6…686e4d2</div>
+        </div>
+
+        <div class="card" data-areas="mundo">
+          <div class="tags"><span class="tag tag-mundo">Clima</span></div>
+          <h3>Mar, chuva e noite com lua</h3>
+          <p>Mar de Harbor com ondas e espuma nos pilares, poças dinâmicas, fases da lua em ciclo de 8 dias e postes gerados nas calçadas.</p>
+          <div class="src mono">c640ff1 · ae638b9 · 525cdb3</div>
+        </div>
+
+        <div class="card" data-areas="interface">
+          <div class="tags"><span class="tag tag-interface">Interface</span></div>
+          <h3>Configurações completas</h3>
+          <p>Vídeo com modo de tela, resolução, FPS, escala de render, sombras e brilho. Controles por grupo com tecla principal e secundária, mouse e troca em conflito.</p>
+          <div class="src mono">5ce3a1a · test_settings_menu 36/36</div>
+        </div>
+
+        <div class="card" data-areas="interface">
+          <div class="tags"><span class="tag tag-interface">Interface</span></div>
+          <h3>Menu vivo e loading com barra</h3>
+          <p>Fundo do menu com água, luzes, chuva e câmera lenta. Três telas de loading da V1 de volta, com dicas e barra seguindo as etapas reais do carregamento.</p>
+          <div class="src mono">5ce3a1a · test_loading_handoff</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PENDÊNCIA -->
+    <div class="col warn">
+      <div class="col-head"><span class="col-dot"></span><h2>Funciona, mas com pendência</h2><span class="col-count">11</span></div>
+      <div class="cards">
+
+        <div class="card new" data-areas="veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-veiculos">Veículos</span></div>
+          <h3>Cabine do caminhão quebrada no .scn</h3>
+          <p>Os modelos da frota foram regravados em 28/09 às 09:00 por outra sessão; no caminhão plataforma o capô e o teto ficaram em pé. Não foi causado pelo acabamento novo. Falta confirmar quem regravou.</p>
+          <div class="src mono">evidence/fleet-models/puro_cargo_flatbed_truck_fl.png</div>
+        </div>
+
+        <div class="card new" data-areas="harbor mundo">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Commits</span></div>
+          <h3>Trabalho de 26–28/09 sem commit</h3>
+          <p>Passarela, reação a tiro, chão e prédios dividem arquivos com trabalho não commitado do editor MUNDO (Codex). Só a fachada da Maciota foi commitada.</p>
+          <div class="src mono">git status · world/editing/ fora do Git</div>
+        </div>
+
+        <div class="card" data-areas="performance">
+          <div class="tags"><span class="tag tag-performance">Performance</span></div>
+          <h3>FPS da 0.3.0 não certificado</h3>
+          <p>Nenhuma medição isolada depois dos lotes de 24–25/09: sempre havia editor, jogo ou teste de outra sessão aberto. Grama 3D, postes, reforços em seis estrelas e o desvio do trânsito somam custo não medido.</p>
+          <div class="src mono">CHANGELOG · evidence/video-review-20260924/performance-status.md</div>
+        </div>
+
+        <div class="card" data-areas="performance">
+          <div class="tags"><span class="tag tag-performance">Performance</span></div>
+          <h3>Travamentos que o jogador sente</h3>
+          <p>Relatados em partida e deixados fora dos lotes de 25/09 por pedido. Explosões e primeira passagem por lugares ainda têm custo residual.</p>
+          <div class="src mono">docs/feedback-20260925-police-traffic.md</div>
+        </div>
+
+        <div class="card" data-areas="veiculos">
+          <div class="tags"><span class="tag tag-veiculos">Veículos</span></div>
+          <h3>Carro caindo abaixo do mapa (achado 07)</h3>
+          <p>Várias causas vizinhas foram corrigidas (piso na borda de célula, streaming, impulso residual), mas a queda original do vídeo nunca foi reproduzida.</p>
+          <div class="src mono">video-review-20260924-fourth-batch.md</div>
+        </div>
+
+        <div class="card" data-areas="lugares combate">
+          <div class="tags"><span class="tag tag-lugares">Ammu-Nation</span></div>
+          <h3>Primeira entrada na Ammu-Nation</h3>
+          <p>Reentrada resolvida, mas a primeira entrada ainda tem um quadro residual de ~60 ms de causa não identificada.</p>
+          <div class="src mono">docs/claude-ammo-performance-20260925.md</div>
+        </div>
+
+        <div class="card" data-areas="lugares">
+          <div class="tags"><span class="tag tag-lugares">Interiores</span></div>
+          <h3>Colisão e oclusão dos interiores</h3>
+          <p>Os acessos estão prontos, mas a cobertura completa de colisão, oclusão e circulação dentro de todos os interiores segue aberta.</p>
+          <div class="src mono">docs/interior-standard-checklist.md</div>
+        </div>
+
+        <div class="card" data-areas="veiculos harbor">
+          <div class="tags"><span class="tag tag-veiculos">Trânsito</span></div>
+          <h3>Trânsito testado só em pista reta</h3>
+          <p>O desvio e a limpeza passaram em pista sintética. Falta ver em rua curva, em cruzamento real e com a polícia de verdade.</p>
+          <div class="src mono">ddf5f93</div>
+        </div>
+
+        <div class="card" data-areas="interface">
+          <div class="tags"><span class="tag tag-interface">Interface</span></div>
+          <h3>Modo de tela e controle físico sem teste real</h3>
+          <p>Troca de janela e resolução no monitor, controle conectado e o gosto pelo fundo animado ficaram para validação jogando.</p>
+          <div class="src mono">5ce3a1a</div>
+        </div>
+
+        <div class="card" data-areas="harbor">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span></div>
+          <h3>Revisão do vídeo: 36 achados não fechados</h3>
+          <p>Seis lotes executados; seguem abertos revisão artística ampla, reação de atendentes a fogo, progressão de armas da polícia e letreiros.</p>
+          <div class="src mono">docs/video-review-20260924-action-plan.md</div>
+        </div>
+
+        <div class="card" data-areas="performance">
+          <div class="tags"><span class="tag tag-performance">Testes</span></div>
+          <h3>test_activities falhando</h3>
+          <p>Erro de acesso a <code class="mono">campaign</code> em Dictionary. Já falhava antes dos lotes de 25/09; causa ainda não investigada.</p>
+          <div class="src mono">activities/test_activities.gd</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- EM ANDAMENTO -->
+    <div class="col prog">
+      <div class="col-head"><span class="col-dot"></span><h2>Em andamento agora</h2><span class="col-count">3</span></div>
+      <div class="cards">
+
+        <div class="card new" data-areas="harbor mundo veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-mundo">Obras</span></div>
+          <h3>Túnel do canal</h3>
+          <p>Por baixo da água, da região da warehouse_way até a courtyard_lane, com portais, luz de túnel e câmera que mostra o carro lá dentro. Precisa passar por baixo da quay_boulevard sem criar cruzamento falso.</p>
+          <div class="src mono">docs/plano-passarela-tunel-elevado-20260927.md</div>
+        </div>
+
+        <div class="card" data-areas="mountain mundo interface">
+          <div class="tags"><span class="tag tag-mountain">Mountain</span><span class="tag tag-interface">HUD</span></div>
+          <h3>Sessão paralela com arquivos abertos</h3>
+          <p>~30 arquivos modificados e não commitados: montanha (capim, trilha, terreno, teleférico), clima, frio, câmera, HUD, minimapa, mapa-múndi e rotinas. Confirme autoria antes de tocar.</p>
+          <div class="src mono">git status · 25/09</div>
+        </div>
+
+        <div class="card" data-areas="performance">
+          <div class="tags"><span class="tag tag-performance">Performance</span></div>
+          <h3>Medição isolada de FPS</h3>
+          <p>Protocolo pronto (probe, cenários, sem outro Godot aberto), esperando uma janela com a máquina livre. Nunca em headless.</p>
+          <div class="src mono">evidence/video-review-20260924/performance-status.md</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- BACKLOG -->
+    <div class="col back">
+      <div class="col-head"><span class="col-dot"></span><h2>Backlog / planejado</h2><span class="col-count">10</span></div>
+      <div class="card new" data-areas="mundo lugares veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-green">COLETÁVEIS</span><span class="tag tag-yellow">VEÍCULOS</span></div>
+          <h3>10 fitas: esconderijo secreto do piloto</h3>
+          <p>Encontrar 10 fitas em qualquer ordem, com pistas visuais e progresso salvo. Completar a coleção libera um galpão secreto, carro exclusivo com nitro, pintura própria e faróis escamoteáveis, além de pista clandestina com saltos e desafio de tempo. Carro e acesso permanentes; fitas e troféu expostos no esconderijo.</p>
+          <p>Ideia registrada, não implementada. Locais e detalhes a definir; laboratório com disco voador é alternativa em aberto.</p>
+          <div class="src">docs/plano-coletaveis-20260928.md</div>
+        </div>
+
+        <div class="cards">
+
+        <div class="card new" data-areas="harbor veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-veiculos">Trem</span></div>
+          <h3>Trem de volta, em 3 etapas</h3>
+          <p>1) portar ferrovia e trem de carga da V1; 2) linha de passageiros Porto ↔ Cume; 3) embarque e viagem rápida. A etapa 2 espera os locais das estações, o preço da passagem e se o trem de carga continua separado.</p>
+          <div class="src mono">docs/plano-trem-20260928.md</div>
+        </div>
+
+        <div class="card new" data-areas="harbor mundo veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-mundo">Obras</span></div>
+          <h3>Ruas em níveis, elevado e viaduto</h3>
+          <p>Base comum (altura por ponto e cruzamento só no mesmo nível), elevado da rodovia até a foundry_avenue e viaduto sobre o trilho do porto sul.</p>
+          <div class="src mono">docs/plano-passarela-tunel-elevado-20260927.md</div>
+        </div>
+
+        <div class="card new" data-areas="veiculos">
+          <span class="newflag">Novo</span>
+          <div class="tags"><span class="tag tag-veiculos">Veículos</span></div>
+          <h3>Pesados: luzes, carga e desgaste</h3>
+          <p>Marcadores âmbar acesos à noite, carga visível sem duplicar a de gameplay, barro e ferrugem, e o mesmo kit para limpa-neve, van, bombeiro, ambulância e ônibus.</p>
+          <div class="src mono">docs/plano-veiculos-pesados-20260928.md</div>
+        </div>
+
+        <div class="card" data-areas="harbor lugares">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span></div>
+          <h3>Acessos e interiores restantes</h3>
+          <p>Os estabelecimentos que ainda não usam entrada caminhando e os interiores sem revisão completa.</p>
+          <div class="src mono">video-review-20260925-sixth-batch.md</div>
+        </div>
+
+        <div class="card" data-areas="veiculos harbor">
+          <div class="tags"><span class="tag tag-veiculos">Trânsito</span></div>
+          <h3>Trânsito: próxima camada</h3>
+          <p>Mudança de faixa em avenida, desvio de pedestre na faixa, fila de carro em sinal com seta e polícia estacionando no meio-fio.</p>
+          <div class="src mono">sugestões de 25/09</div>
+        </div>
+
+        <div class="card" data-areas="policia">
+          <div class="tags"><span class="tag tag-policia">Polícia</span></div>
+          <h3>Progressão de armas da polícia</h3>
+          <p>Armamento por nível de procurado além do camburão tático, com equilíbrio de dificuldade medido jogando.</p>
+          <div class="src mono">video-review-20260924-action-plan.md</div>
+        </div>
+
+        <div class="card" data-areas="mundo">
+          <div class="tags"><span class="tag tag-mundo">Mundo</span></div>
+          <h3>Grama e textura no resto do Harbor</h3>
+          <p>O que foi feito no Neco e no cemitério pode ir para os outros gramados e terrenos baldios, depois de medir o custo dos tufos.</p>
+          <div class="src mono">world/urban_detail/HarborGrassTufts.gd</div>
+        </div>
+
+        <div class="card" data-areas="combate">
+          <div class="tags"><span class="tag tag-combate">Campanha</span></div>
+          <h3>Campanha além do Harbor</h3>
+          <p>Deserto, Cidade 2 e Vegas seguem só no plano; elenco secundário sem modelo.</p>
+          <div class="src mono">docs/CAMPAIGN_MISSIONS.md</div>
+        </div>
+
+        <div class="card" data-areas="harbor mundo veiculos combate">
+          <div class="tags"><span class="tag tag-harbor">Harbor</span><span class="tag tag-mundo">Mundo</span></div>
+          <h3>Prédios destrutíveis</h3>
+          <p>Tiro, explosão e batida deixando marca nos prédios, até partes que caem. Complexidade <b>alta</b> no geral; dá para fazer em níveis, começando pelo dano de fachada.</p>
+          <a class="jump" href="#predios">Ver os 4 níveis e a recomendação ↓</a>
+          <div class="src mono">avaliação de 25/09 · UrbanBuildingFactory, CityChunkDressing</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <section class="block" id="predios">
+    <h2>Prédios destrutíveis: complexidade</h2>
+    <p class="lead">Avaliado em cima do código atual. O Harbor tem <b>61 prédios autorais</b> montados pela <code class="mono">UrbanBuildingFactory</code>, cada malha com colisão trimesh estática, carregados em chunks de streaming. Detalhes de telhado e fachada saem agrupados em MultiMesh por chunk, 25 fachadas têm porta ligada a interior, e o trânsito, os pedestres e o minimapa assumem que o prédio está sempre inteiro. Hoje nenhum prédio recebe dano.</p>
+
+    <div class="verdict">
+      <div>
+        <div class="big">Alta no geral</div>
+        <span class="meter" style="--lvl:var(--crit)" aria-label="4 de 5"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>
+      </div>
+      <div class="note">O problema não é quebrar a malha: é que o prédio vira <b>estado do mundo</b>. Precisa ser salvo, sobreviver ao streaming, não quebrar interior nem rota, e não derrubar o FPS no renderer Mobile. Feito em níveis, os dois primeiros são seguros e dão a maior parte da sensação.</div>
+    </div>
+
+    <div class="levels">
+      <div class="level lvl1">
+        <div class="head"><span class="n">nível 1</span><h3>Marcas na fachada</h3></div>
+        <div class="rating"><span class="meter"><i class="on"></i><i></i><i></i><i></i><i></i></span>Baixa</div>
+        <p>Buraco de bala, chamuscado de explosão e fuligem de fogo como decalques na parede. Nada muda na forma nem na colisão.</p>
+        <ul>
+          <li>Reaproveita o impacto que já existe no combate</li>
+          <li>Decalques com limite e reciclagem</li>
+          <li>Não precisa ir para o save</li>
+        </ul>
+        <div class="est">~1–2 dias · risco baixo</div>
+      </div>
+
+      <div class="level lvl2">
+        <div class="head"><span class="n">nível 2</span><h3>Peças soltas que quebram</h3></div>
+        <div class="rating"><span class="meter"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>Média</div>
+        <p>Vidros, letreiros, toldos, marquises, grades e caixas de ar-condicionado viram peças que estilhaçam ou caem, no mesmo esquema das lixeiras e postes derrubáveis.</p>
+        <ul>
+          <li>Tirar essas peças do MultiMesh do chunk</li>
+          <li>Estado por chunk para não "renascerem" na hora</li>
+          <li>Detritos com limite, como a física de rua</li>
+        </ul>
+        <div class="est">~1 semana · risco médio</div>
+      </div>
+
+      <div class="level lvl3">
+        <div class="head"><span class="n">nível 3</span><h3>Paredes com rombo</h3></div>
+        <div class="rating"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span>Alta</div>
+        <p>Explosão ou caminhão abre um buraco de verdade em prédios escolhidos: pedaços pré-fraturados trocam de lugar com a parede inteira e caem com física.</p>
+        <ul>
+          <li>Fraturar a malha de cada prédio eleito</li>
+          <li>Trocar a colisão trimesh ao vivo</li>
+          <li>Salvar o estado por prédio no save V2</li>
+          <li>Proteger interiores, portas e rotas</li>
+        </ul>
+        <div class="est">~3–4 semanas · só em alguns prédios</div>
+      </div>
+
+      <div class="level lvl4">
+        <div class="head"><span class="n">nível 4</span><h3>Desabamento total</h3></div>
+        <div class="rating"><span class="meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>Muito alta</div>
+        <p>Qualquer prédio desmorona como em Teardown ou Red Faction. Pede outra base: voxel ou fratura em tempo real, integridade estrutural e reconstrução de navegação.</p>
+        <ul>
+          <li>Motor de destruição dedicado</li>
+          <li>Trânsito, pedestres e minimapa recalculados</li>
+          <li>Custo de CPU e GPU fora do orçamento Mobile</li>
+        </ul>
+        <div class="est">meses · não recomendado agora</div>
+      </div>
+    </div>
+
+    <div class="risks">
+      <div class="panel">
+        <h3>O que torna difícil aqui</h3>
+        <ul>
+          <li><b>Streaming:</b> o chunk descarrega e recarrega; sem estado salvo o prédio volta inteiro.</li>
+          <li><b>Batching:</b> telhados e detalhes são MultiMesh por chunk; quebrar um pedaço exige tirá-lo do lote.</li>
+          <li><b>Colisão trimesh:</b> é gerada uma vez; mudar forma ao vivo custa caro.</li>
+          <li><b>Interiores:</b> 25 fachadas têm porta ligada a um interior separado; rombo não pode expor o vazio.</li>
+          <li><b>Rotas:</b> trânsito e pedestres assumem calçada e rua livres; entulho precisa entrar no desvio.</li>
+          <li><b>Performance:</b> FPS da 0.3.0 ainda não medido; detritos entram no mesmo orçamento.</li>
+        </ul>
+      </div>
+      <div class="panel reco">
+        <h3>Recomendação</h3>
+        <ul>
+          <li>Fazer <b>nível 1 + nível 2</b> em todos os prédios: resolve a sensação de mundo que reage a tiro e explosão, em cerca de uma semana e meia.</li>
+          <li>Guardar o <b>nível 3</b> para poucos prédios de história ou missão (posto, barracões do Neco, depósito do porto), com a fratura feita à mão.</li>
+          <li>Medir o FPS isolado <b>antes</b> de começar, para ter base de comparação.</li>
+          <li>Deixar o <b>nível 4</b> fora do escopo da V2.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Verificação padrão</h2>
+    <p class="lead">Cada teste é um <code class="mono">SceneTree</code> independente rodado com <code class="mono">--script</code>; imprime o resultado e sai com 0 ou 1. Rodar depois de qualquer mudança estrutural, e abrir o jogo pelo <code class="mono">Jogar.cmd</code>.</p>
+    <div class="verify-grid">
+      <div class="term">GODOT="D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe"
+
+"$GODOT" --path . --script res://tests/test_regions.gd
+"$GODOT" --path . --script res://tests/test_bridge_approach_terrain.gd
+"$GODOT" --path . --script res://tests/test_native_driving.gd -- --no-save
+"$GODOT" --path . --script res://tests/cold/test_admission.gd
+
+<span class="c"># combate precisa pular a chegada</span>
+"$GODOT" --path . --script res://tests/test_combat_flow.gd -- --no-save --skip-arrival</div>
+      <div class="honesty">
+        <b>Suíte verde não prova jogo certo.</b>
+        <ul>
+          <li>Nunca use <code class="mono">--headless</code> para medir performance: o driver dummy tira o sentido de FPS e draw calls.</li>
+          <li>Não rode Godot com outra instância, importação ou medição ativa: uma contamina a outra.</li>
+          <li>Tempo de quadro vai em <b>milissegundos</b>.</li>
+          <li><code class="mono">test_combat_flow</code> sem <code class="mono">--skip-arrival</code> falha por causa da chegada, não do combate.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer class="note">
+    Fotografia do projeto em 28/09/2026, não documento vivo. Mais de uma sessão (Claude, Codex, Antigravity, o editor do Godot) escreve no repositório ao mesmo tempo; peça uma atualização quando algo relevante mudar.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  try{
+    var chips = document.querySelectorAll('.chip');
+    var cards = document.querySelectorAll('.card');
+    chips.forEach(function(chip){
+      chip.addEventListener('click', function(){
+        chips.forEach(function(c){ c.classList.remove('active'); });
+        chip.classList.add('active');
+        var f = chip.getAttribute('data-filter');
+        cards.forEach(function(card){
+          var areas = (card.getAttribute('data-areas') || '').split(' ');
+          card.classList.toggle('hidden-filter', !(f === 'all' || areas.indexOf(f) !== -1));
+        });
+      });
+    });
+  }catch(e){}
+})();
+</script>
+
+</body></html>

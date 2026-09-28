@@ -56,7 +56,11 @@ func _build_ground_polygons() -> void:
 		Vector2(55, -100), Vector2(-55, -100)
 	])
 	
-	var earth_mat := MountainMaterials.dirt_earth()
+	# Terra batida procedural: o material liso lia como placa marrom vista de cima.
+	var earth_mat := ShaderMaterial.new()
+	earth_mat.shader = preload("res://world/regions/natural_ground.gdshader")
+	earth_mat.set_shader_parameter("base_color",Color("5c4a36"))
+	earth_mat.set_shader_parameter("uv_meters",4.0)
 	_create_flat_polygon("YardEarth", yard_poly, 0.024, earth_mat)
 	_create_flat_polygon("DrivewayEarth", driveway_poly, 0.024, earth_mat)
 

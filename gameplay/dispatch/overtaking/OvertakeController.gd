@@ -7,7 +7,8 @@ extends RefCounted
 ##   passing|returning -> recovering -> returning -> idle   (aborto, suspensão, pedido de parada)
 ##   holding_oncoming -> returning -> idle              (fora de "beside", com curva de retorno aprovada)
 ##
-## Só age sobre carros ambiente em `traffic_yield_state` held/pulling. O carro
+## Age sobre carros ambiente em `traffic_yield_state` held/pulling; bombeiros
+## com sirene também contornam filas paradas no mesmo sentido. O carro
 ## continua sendo executado pelo Vehicle: aqui só se escolhe a curva que o
 ## DispatchDriver segue e o teto de velocidade. Nada de teletransporte, ré
 ## improvisada ou `controlled`: o DispatchVehicle/Vehicle já tratam a atribuição
@@ -259,9 +260,20 @@ func _corridor() -> Dictionary:
 	for hit in vehicle.get_world_3d().direct_space_state.intersect_shape(query, 8):
 		var body: Object = hit.collider
 		if not is_instance_valid(body) or body == vehicle: continue
-		if str(body.get_meta("traffic_yield_state", "")) in RULES.YIELD_STATES: result.yielding.append(body)
+		if str(body.get_meta("traffic_yield_state", "")) in RULES.YIELD_STATES or _stopped_fire_blocker(body): result.yielding.append(body)
 		else: result.others.append(body)
 	return result
+
+## A fila pode estar parada antes de conseguir acostar para a sirene.
+## Só carros ambiente no mesmo sentido; jogador e tráfego contrário continuam obstáculos.
+func _stopped_fire_blocker(body: Object) -> bool:
+	if not _fire_response() or not body is CharacterBody3D: return false
+	if body.get("traffic") != true or body.get("controlled") == true: return false
+	if body.get("speed") == null or absf(float(body.get("speed"))) > RULES.STATIONARY_SPEED: return false
+	return (-body.global_basis.z).dot(-_driver.vehicle.global_basis.z) > 0.8
+
+func _fire_response() -> bool:
+	return _driver.vehicle.archetype == "rescue_pumper" and _siren_on()
 
 func _nearest_gap(blockers: Array) -> float:
 	var vehicle: CharacterBody3D = _driver.vehicle
@@ -296,6 +308,7 @@ func tick(delta: float) -> void:
 				# Chega de esperar: o piloto volta à recuperação normal (ré/novo plano).
 				wait_age = 0.0
 				_cooldown = RULES.WAIT_MAX
+				speed_limit = INF
 				_set_state("idle", "wait_timeout")
 			elif _driver.route != null and _eval <= 0.0:
 				_eval = RULES.EVAL_INTERVAL
@@ -326,12 +339,17 @@ func _try_start() -> void:
 	var yielding: Array = corridor.yielding
 	if yielding.is_empty():
 		if state == "waiting": _set_state("idle", "blockers_gone")
+		speed_limit = INF
 		wait_age = 0.0
 		return
 	var trigger := maxf(RULES.TRIGGER_MIN, absf(vehicle.speed) * RULES.TRIGGER_SECONDS + 8.0)
+	if _fire_response():
+		# O caminhão precisa começar a abrir antes que o sensor frontal mande parar.
+		trigger = maxf(trigger, RULES.ramp_length(RULES.MAX_SHIFT, absf(vehicle.speed)) + vehicle.half_length + 2.0)
 	if _nearest_gap(yielding) > trigger and not _driver.blocked_ahead:
 		# Ainda longe: nada a fazer, e o tempo de espera não corre.
 		if state == "waiting": _set_state("idle", "not_yet")
+		speed_limit = INF
 		wait_age = 0.0
 		return
 	if not corridor.others.is_empty():
@@ -366,6 +384,7 @@ func _siren_on() -> bool:
 
 func _wait(reason: String) -> void:
 	if state != "waiting": wait_age = 0.0
+	if _fire_response(): speed_limit = 0.0
 	_set_state("waiting", reason)
 
 # --- Durante o desvio -------------------------------------------------------------

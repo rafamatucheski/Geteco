@@ -82,6 +82,9 @@ func update(delta: float) -> void:
 			_blocked_entry_id = ""
 	if not near or _entering or _leaving or _reentry_remaining > 0.0 or _blocked_entry_id == id or _blocked():
 		return
+	# A locked home's physical door already blocks the body. Do not latch a
+	# failed crossing here: buying at the threshold must immediately allow entry.
+	if session.activities != null and not session.activities.can_enter_home(id): return
 	# Proximity opens the door; only an intentional inward crossing transfers.
 	if absf(local.dot(across)) > width or player.velocity.dot(inward) < .7: return
 	var outer := -.1 if id == "harbor_police" else -1.15 if id in ["harbor_ammunation", "mountain_gunshop"] else -.8
@@ -122,7 +125,9 @@ func _update_facade(id: String, near: bool, delta: float) -> void:
 				_door_amount = float(candidate.get("open_amount"))
 				break
 	if not is_instance_valid(_facade): return
-	var next := move_toward(_door_amount, 1.0 if near or _entering else 0.0, delta / .28)
+	# Ownership gates the physical hinge as well as admission into the room.
+	var owned: bool = session.activities == null or session.activities.can_enter_home(id)
+	var next := move_toward(_door_amount, 1.0 if owned and (near or _entering) else 0.0, delta / .28)
 	if not is_equal_approx(next, _door_amount):
 		_door_amount = next
 		_facade.set_open_amount(_door_amount)
@@ -186,7 +191,8 @@ func player_near_police(player: CharacterBody3D, definition: Dictionary) -> bool
 	return player.global_position.distance_to(_door_position("harbor_police", definition)) < 12.0
 
 func _inward(id: String) -> Vector3:
-	return Vector3.LEFT if id == "port_boss_garage" else Vector3.FORWARD
+	var direction := Vector3.LEFT if id == "port_boss_garage" else Vector3.FORWARD
+	return direction.rotated(Vector3.UP,float(_definition_for(id).get("editor_rotation",0)))
 
 func _half_width(id: String) -> float:
 	match PLACES.walkup_family(id):
@@ -209,6 +215,15 @@ func _close_size(id: String) -> float:
 	return 8.0 if id == "mountain_gunshop" else 14.0 if id in ["port_boss_garage", "harbor_fire_station"] else 11.0
 
 func _door_position(id: String, definition: Dictionary) -> Vector3:
+	if definition.has("editor_door_position"): return definition.editor_door_position
+	if definition.has("editor_transform"):
+		var original := definition.duplicate()
+		original.exterior_position = definition.editor_base_exterior
+		definition.editor_door_position = definition.editor_transform*_original_door_position(id,original)
+		return definition.editor_door_position
+	return _original_door_position(id,definition)
+
+func _original_door_position(id: String, definition: Dictionary) -> Vector3:
 	var family := PLACES.walkup_family(id)
 	if not family.is_empty(): return definition.exterior_position + Vector3(0, 0, PLACES.walkup_door_z(family))
 	if id == "maciota": return session.world.maciota_place.entry_position - Vector3(0, 0, .4875)

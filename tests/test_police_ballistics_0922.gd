@@ -1,6 +1,7 @@
 extends SceneTree
 class State extends RefCounted:
 	var allowed := true
+	var place_id := ""
 	func weapons_allowed() -> bool: return allowed
 class Target extends CharacterBody3D:
 	var health := 100.0

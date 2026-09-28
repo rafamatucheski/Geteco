@@ -1,0 +1,102 @@
+{
+	"checks": 114,
+	"failures": [],
+	"records": [
+		{
+			"actor": "player",
+			"control_pixels": 3775,
+			"pose": "front",
+			"prop": "workbench",
+			"ratio": 1.0,
+			"visible_pixels": 3775
+		},
+		{
+			"actor": "player",
+			"control_pixels": 3789,
+			"pose": "behind",
+			"prop": "workbench",
+			"ratio": 0.615729743995777,
+			"visible_pixels": 2333
+		},
+		{
+			"actor": "player",
+			"control_pixels": 3777,
+			"pose": "side",
+			"prop": "workbench",
+			"ratio": 1.0,
+			"visible_pixels": 3777
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2810,
+			"pose": "front",
+			"prop": "cabinet",
+			"ratio": 1.0,
+			"visible_pixels": 2810
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2810,
+			"pose": "behind",
+			"prop": "cabinet",
+			"ratio": 0.0,
+			"visible_pixels": 0
+		},
+		{
+			"actor": "player",
+			"control_pixels": 2805,
+			"pose": "side",
+			"prop": "cabinet",
+			"ratio": 1.0,
+			"visible_pixels": 2805
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 3393,
+			"pose": "front",
+			"prop": "workbench",
+			"ratio": 1.0,
+			"visible_pixels": 3393
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 3375,
+			"pose": "behind",
+			"prop": "workbench",
+			"ratio": 0.603259259259259,
+			"visible_pixels": 2036
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 3377,
+			"pose": "side",
+			"prop": "workbench",
+			"ratio": 1.0,
+			"visible_pixels": 3377
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 2344,
+			"pose": "front",
+			"prop": "cabinet",
+			"ratio": 1.0,
+			"visible_pixels": 2344
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 2341,
+			"pose": "behind",
+			"prop": "cabinet",
+			"ratio": 0.0,
+			"visible_pixels": 0
+		},
+		{
+			"actor": "npc",
+			"control_pixels": 2349,
+			"pose": "side",
+			"prop": "cabinet",
+			"ratio": 1.0,
+			"visible_pixels": 2349
+		}
+	]
+}

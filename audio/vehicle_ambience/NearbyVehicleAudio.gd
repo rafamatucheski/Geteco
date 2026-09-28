@@ -4,6 +4,8 @@ extends Node3D
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
+const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
+const BANKS := preload("res://audio/EngineBankCache.gd")
 const GROUP := &"nearby_vehicle_engine_mixer"
 const SERVICE_GROUP := &"service_vehicle_engine_mixer"
 const MAX_TRACKED := 96
@@ -45,6 +47,7 @@ func configure(world: Node, listener: Node3D) -> bool:
 	_world = world
 	_listener = listener
 	_selection_clock = 0.0
+	BANKS.prewarm.call_deferred(get_tree())
 	set_process(_enabled)
 	return true
 
@@ -133,6 +136,7 @@ func _select_nearby() -> void:
 
 func _discover_vehicles() -> Array:
 	var result: Array = get_tree().get_nodes_in_group(&"drivable")
+	result.append_array(get_tree().get_nodes_in_group(&"public_transport_vehicle"))
 	# Dispatch vehicles intentionally leave the drivable group. Its public unit list is
 	# the existing read-only bridge; no dispatch state is changed here.
 	var dispatch: Variant = _world.get("dispatch")
@@ -204,23 +208,8 @@ func _resolve_family(archetype: String) -> String:
 func _ensure_bank(family: String) -> bool:
 	if _banks.has(family):
 		return not (_banks[family] as Array).is_empty()
-	var bank: Array[AudioStreamWAV] = []
-	for index in 7:
-		var path := "res://audio/acoustic/engine_%s_%d.wav" % [family, index]
-		if not ResourceLoader.exists(path):
-			_banks[family] = []
-			return false
-		var source := load(path) as AudioStreamWAV
-		if source == null:
-			_banks[family] = []
-			return false
-		var stream := source.duplicate() as AudioStreamWAV
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_begin = 0
-		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
-		bank.append(stream)
-	_banks[family] = bank
-	return true
+	_banks[family] = BANKS.bank(family)
+	return not (_banks[family] as Array).is_empty()
 
 
 func _assign(id: int) -> void:
@@ -299,6 +288,10 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D) -> void
 	# while measuring attenuation from the same ground plane as the listener.
 	var camera := get_viewport().get_camera_3d()
 	var audio_height := camera.global_position.y - _listener.global_position.y if camera != null else 0.0
+	if state.family == "tank":
+		TANK_AUDIO.mix_spatial(slot.players, vehicle, clampf((float(state.rpm) - 0.6) / 5.4, 0.0, 1.0),
+			float(slot.gain), BASE_VOLUME_DB, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
+		return
 	for layer in [lower, lower + 1]:
 		var player: AudioStreamPlayer3D = slot.players[layer % 2]
 		var weight := 1.0 - blend if layer == lower else blend

@@ -7,6 +7,7 @@ const FOOTBRIDGE_CROSSERS := preload("res://gameplay/crowd/FootbridgeCrossers.gd
 var footbridge_crossers := FOOTBRIDGE_CROSSERS.new()
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const PORT_POLICY := preload("res://gameplay/urban_v1/HarborPortPolicy.gd")
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 # Orçamento medido em 2026-09-23 (RTX 4060 Laptop, 1280x720): 100 pedestres + 100 carros
 # + 3 estrelas custavam 25,8 ms de física/scripts por quadro e derrubavam para 34,5 FPS;
 # 40 pedestres mantiveram 59,8 FPS no mesmo cenário.
@@ -22,7 +23,7 @@ const CURTAIN := preload("res://runtime/StartupCurtain.gd")
 ## ninguém está olhando e ele não está perto do jogador.
 const STUCK_DESPAWN_SECONDS := 15.0
 const STUCK_DESPAWN_DISTANCE := 30.0
-const TRAFFIC_CAR_TYPES := ["sport_coupe", "union_sedan", "courier_van", "ranch_single", "arctic_jeep", "nimbus_minivan"]
+const TRAFFIC_CAR_TYPES := ["sport_coupe", "union_sedan", "courier_van", "ranch_single", "arctic_jeep", "nimbus_minivan", "taxi_yellow"]
 const TRAFFIC_MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
 signal logical_region_changed(previous_region: String, next_region: String)
 const CONNECTION_PRELOAD_DISTANCE := 240.0
@@ -410,6 +411,9 @@ func _resident_roads() -> Array:
 		result.append_array(regions[id].roads)
 	if regions.has("harbor") and regions.has("mountain"):
 		result.append_array(WORLD_CONNECTION.traffic_connectors())
+	# Túnel do canal: rua virtual só no grafo, com a altura do piso (ver CanalTunnel3D).
+	if regions.has("harbor") and is_instance_valid(regions.harbor):
+		result.append_array(preload("res://world/urban_detail/CanalTunnel3D.gd").traffic_roads(regions.harbor.roads))
 	return result
 
 ## Grafos de rota por conjunto de regiões residentes. configure() cruza todos os
@@ -584,7 +588,13 @@ func _restore_player_vehicle() -> void:
 	car.equipment_state = saved.get("equipment",{}).duplicate(true)
 	if saved.has("paint"): car.paint_color = Color.html(saved.paint)
 	if saved.has("vehicle_id"): car.vehicle_id = str(saved.vehicle_id)
+	if car.archetype == "taxi_yellow":
+		car.set_meta("taxi_stolen",true)
+		preload("res://runtime/TaxiService.gd").light(car,false)
 	car.set_meta("region_id",saved.region)
+	if float(saved.get("heavy_crush_ratio",1.0)) < 1.0:
+		preload("res://gameplay/street_physics/HeavyVehicleCrush.gd").apply_saved(car,float(saved.heavy_crush_ratio))
+		if float(saved.health) <= 0: car.set_meta("heavy_crush_exploded",true)
 	if saved.region != state.region_id or (point.distance_to(world.player.position)>75 and not saved.get("was_driven",false)):
 		car.place(point,float(saved.yaw))
 		car.set_meta("awaiting_ground",true)
@@ -592,7 +602,9 @@ func _restore_player_vehicle() -> void:
 		car.visible = saved.region == state.region_id
 	elif vehicle_position_clear(car,point,float(saved.yaw)):
 		car.place(point,float(saved.yaw))
-	car.receive_damage(car.max_health-float(saved.health))
+	car.restore_health(float(saved.health))
+	if int(saved.get("punctured_tires",0)) > 0:
+		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
 
 func capture_player_vehicle() -> void:
 	# A missing selection must not erase another valid stored vehicle or cast a
@@ -684,6 +696,9 @@ func _process(delta: float) -> void:
 			car.queue_free()
 		elif car.get_meta("region_id",state.region_id) != state.region_id: continue
 		elif car.has_meta("awaiting_ground"):
+			# Rampa do túnel do canal: o carro suspenso durante o streaming afundava
+			# até ~1 m no piso inclinado e nenhum raio achava chão. Volta à superfície.
+			if CANAL_TUNNEL.in_roadway(car.position): car.position.y = CANAL_TUNNEL.floor_y(car.position.x) + .05
 			if vehicle_position_clear(car,car.position,car.rotation.y):
 				car.remove_meta("awaiting_ground")
 				car.set_physics_process(true)
@@ -712,7 +727,9 @@ func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) ->
 	for x in [-car.half_width*.8,car.half_width*.8]:
 		for z in [-car.half_length*.8,car.half_length*.8]:
 			var support: Vector3 = point+basis*Vector3(x,0,z)
-			var ray := PhysicsRayQueryParameters3D.create(support+Vector3.UP*.3,support-Vector3.UP*.5,1)
+			# Começa a 0,6 m: numa rampa (túnel do canal) a quina da frente fica até
+			# ~0,3 m abaixo do piso e o raio de 0,3 m nascia dentro dele.
+			var ray := PhysicsRayQueryParameters3D.create(support+Vector3.UP*.6,support-Vector3.UP*.5,1)
 			if space.intersect_ray(ray).is_empty(): return false
 	if session != null and session.cold != null and not session.cold.prepare_collision_at(point): return false
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -720,10 +737,14 @@ func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) ->
 	query.transform = Transform3D(basis,point+basis*car.shape.position)
 	query.collision_mask = 7
 	query.exclude = [car.get_rid()]
-	if not space.intersect_shape(query,1).is_empty(): return false
+	# Caixa horizontal numa rampa (túnel do canal) entra ~28 cm no piso: sem esta
+	# exceção o carro suspenso ali nunca era liberado.
+	for hit in space.intersect_shape(query,4):
+		if is_instance_valid(hit.collider) and hit.collider.has_meta("vehicle_ramp_structure"): continue
+		return false
 	return true
 
-func spawn_vehicle(id: String, point: Vector3, yaw: float = 0.0) -> CharacterBody3D:
+func spawn_vehicle(id: String, point: Vector3, yaw: float = 0.0, crush_ratio: float = 1.0) -> CharacterBody3D:
 	if preload("res://runtime/FleetCatalog.gd").spec(id).is_empty(): return null
 	var car = VEHICLE.new()
 	car.archetype = id
@@ -734,6 +755,8 @@ func spawn_vehicle(id: String, point: Vector3, yaw: float = 0.0) -> CharacterBod
 	var traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	world.add_child(car)
 	_trace_cost("spawn_vehicle_add_child:"+id,traced)
+	if is_finite(crush_ratio) and crush_ratio >= .18 and crush_ratio <= .55:
+		preload("res://gameplay/street_physics/HeavyVehicleCrush.gd").apply_saved(car,crush_ratio)
 	traced = Time.get_ticks_usec() if traced != 0 else 0
 	var clear := vehicle_position_clear(car,point,yaw)
 	_trace_cost("spawn_vehicle_position_clear",traced)
@@ -851,6 +874,8 @@ func _create_citizen() -> void:
 	# da pista da outra: pedestre nunca nasce nem caminha sobre pista autorada.
 	for end in [point,point-along*8,point+along*8]:
 		if _on_carriageway(end): return
+		# Calçada da exchange_lane e bocas do Túnel do canal: a vala está aberta ali.
+		if CANAL_TUNNEL.reserves(Vector2(end.x,end.z),0.5): return
 	var pedestrian_route := PackedVector3Array([point-along*8,point+along*8])
 	if PORT_POLICY.contains_private_area(point) or PORT_POLICY.segment_enters_private_area(pedestrian_route[0],pedestrian_route[1]): return
 	if not session.position_clear(point+Vector3.UP*.06): return
@@ -880,6 +905,9 @@ func _create_traffic_vehicle() -> void:
 	for road_offset in roads.size():
 		if Time.get_ticks_usec()-began > 3000: return
 		var road: Dictionary = roads[(start+road_offset)%roads.size()]
+		# A rua do túnel só existe no grafo: a altura linear entre pontos não é a do
+		# piso, e o carro nascia no ar esperando chão. Carros entram pelas bocas.
+		if str(road.get("surface","")) == "tunnel": continue
 		var points: PackedVector3Array = road.get("points",PackedVector3Array())
 		for segment_index in range(points.size()-1):
 			var a: Vector3 = points[segment_index]
@@ -918,23 +946,25 @@ func _create_traffic_vehicle() -> void:
 			car.traffic = true
 			return
 
-func travel(region_id: String) -> bool:
+## `destination_override` leva a um ponto exato (ex.: saída do forte no esqui) em vez
+## do ponto de partida padrão da região.
+func travel(region_id: String,destination_override := Vector3.INF) -> bool:
 	if travel_busy or not session.ready_for_play or session.is_transition_blocked(): return false
 	if region_id not in ["harbor","mountain"] or region_id == state.region_id or world.driving.occupied or not state.place_id.is_empty(): return false
 	if session.passenger_transport.riding or world.gameplay.health <= 0: return false
 	travel_busy = true
-	_travel_checked(region_id)
+	_travel_checked(region_id,destination_override)
 	return true # Request admitted; completion owns the save after physical admission.
 
-func _travel_checked(region_id: String) -> void:
+func _travel_checked(region_id: String,destination_override := Vector3.INF) -> void:
 	var was_paused := get_tree().paused
 	var was_locked: bool = world.player.input_locked
 	session.ready_for_play = false
 	world.player.input_locked = true
 	get_tree().paused = true
 	var was_resident := regions.has(region_id) and is_instance_valid(regions[region_id])
-	var next_region: Node3D = _mount_region(region_id)
-	var destination: Vector3 = next_region.spawn_position+Vector3.UP*.12
+	var next_region: Node3D = _mount_region(region_id,destination_override)
+	var destination: Vector3 = (destination_override if destination_override.is_finite() else next_region.spawn_position)+Vector3.UP*.12
 	next_region.set_focus(destination)
 	# Keep the source region intact until the destination has synchronized collision.
 	for i in 3: await get_tree().physics_frame
@@ -971,7 +1001,7 @@ func _travel_checked(region_id: String) -> void:
 	state.world_state.erase("pedestrian")
 	world.player.teleport(destination)
 	_commit_logical_region(region_id)
-	region.set_focus(region.spawn_position)
+	region.set_focus(destination if destination_override.is_finite() else region.spawn_position)
 	_update_physical_residency(destination)
 	for vehicle in vehicles:
 		vehicle.visible = vehicle.get_meta("region_id","") == region_id and not vehicle.has_meta("tow_pending")

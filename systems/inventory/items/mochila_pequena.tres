@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/inventory/item_data.gd" id="1_itemdata"]
+
+[resource]
+script = ExtResource("1_itemdata")
+id = "mochila_pequena"
+display_name = "Mochila de Costas"
+description = "Uma mochila simples que você encontra. Adiciona 12 espaços de inventário e fica presa às suas costas."
+item_type = 4
+max_stack = 1
+backpack_capacity = 12

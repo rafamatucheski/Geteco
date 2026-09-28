@@ -61,8 +61,10 @@ func _ready() -> void:
 		activity = "pickup"
 		activity_left = .9
 		_sync_model(false)
-	if definition.get("kind", "") == "dock_worker" and get_parent().get("gameplay") != null:
-		preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(self, model, get_parent().gameplay)
+	# Ambient residents shelter from violence; they do not gain a combat/damage API.
+	if definition.get("kind", "") in ["dock_worker", "mountain_resident"] and get_parent().get("gameplay") != null:
+		var reaction = preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd").install(self, model, get_parent().gameplay)
+		if reaction != null: reaction.react_to_aim = definition.get("kind", "") == "mountain_resident"
 
 func _build_model() -> void:
 	if definition.get("kind","") == "dock_worker":
@@ -109,7 +111,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	var horizontal := Vector3(velocity.x,0,velocity.z)
 	if horizontal.length_squared() > .01:
-		model.rotation.y = lerp_angle(model.rotation.y,atan2(-horizontal.x,-horizontal.z),1.0-exp(-12.0*delta))
+		model.rotation.y = lerp_angle(model.rotation.y,_facing_yaw(horizontal),1.0-exp(-12.0*delta))
 	if activity == "work" and model.get("work_time") != null:
 		model.work_pose_active = true
 		model.work_target = Vector3(0,0,-.8)
@@ -117,6 +119,9 @@ func _physics_process(delta: float) -> void:
 	elif model.get("work_pose_active") != null:
 		model.work_pose_active = false
 	_sync_model(horizontal.length_squared() > .01)
+
+func _facing_yaw(direction: Vector3) -> float:
+	return atan2(-direction.x,-direction.z)
 
 func _tick_cargo_route(delta: float) -> void:
 	if activity in ["pickup","put_down","rest"]:

@@ -3,6 +3,7 @@ extends RefCounted
 static var _sources: Dictionary = {}
 var materials: Array[StandardMaterial3D] = []
 var original_color := Color.WHITE
+var roof_materials: Array[StandardMaterial3D] = []
 
 static func source_for(archetype: String) -> Dictionary:
 	if archetype == "police_transport": archetype = "courier_van"
@@ -13,6 +14,7 @@ static func source_for(archetype: String) -> Dictionary:
 
 func bind(root: Node3D, archetype: String) -> void:
 	materials.clear()
+	roof_materials.clear()
 	var source := source_for(archetype)
 	var copies: Dictionary = {}
 	for part: MeshInstance3D in root.find_children("*","MeshInstance3D",true,false):
@@ -24,13 +26,20 @@ func bind(root: Node3D, archetype: String) -> void:
 			elif str(metadata).ends_with("material_key"): key = str(part.get_meta(metadata))
 		if part.material_override != null:
 			var original := part.material_override as StandardMaterial3D
+			if key == "roof_paint":
+				part.material_override = _local(original,copies)
+				roof_materials.append(part.material_override)
+				continue
 			if _is_paint(original,key,source): part.material_override = _local(original,copies)
 			continue
 		for index in part.mesh.get_surface_count():
 			var original := part.get_active_material(index) as StandardMaterial3D
 			var surface_key: String = str(surface_keys[index]) if index < surface_keys.size() else key
 			if _is_paint(original,surface_key,source): part.set_surface_override_material(index,_local(original,copies))
-	if not materials.is_empty(): original_color = materials[0].albedo_color
+	for material in materials:
+		if material not in roof_materials:
+			original_color = material.albedo_color
+			break
 
 func _is_paint(material: StandardMaterial3D, key: String, source: Dictionary) -> bool:
 	if material == null: return false
@@ -50,4 +59,4 @@ func _local(original: StandardMaterial3D, copies: Dictionary) -> StandardMateria
 
 func apply(color: Color) -> void:
 	for material in materials:
-		material.albedo_color = Color(color.r,color.g,color.b,1.0)
+		material.albedo_color = preload("res://runtime/VehicleTwoTone.gd").roof_color(color) if material in roof_materials else Color(color.r,color.g,color.b,1.0)

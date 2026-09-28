@@ -50,17 +50,8 @@ static func door_point(car: CharacterBody3D, side: float = 1.0) -> Vector3:
 
 func _physics_process(delta: float) -> void:
 	if dead: return
-	if mode == "combat" and is_instance_valid(dispatch_controller) and dispatch_controller.player_position_override != Vector3.INF:
-		# An exterior squad waits outside. Interior technical coordinates are
-		# never a walk target or a line-of-sight shortcut between maps.
-		sees_player = false
-		last_known = dispatch_controller.player_position_override
-		navigation.clear()
-		velocity.x = 0
-		velocity.z = 0
-		velocity.y = -1.0 if is_on_floor() else velocity.y-20.0*delta
-		move_and_slide()
-		return
+	# PoliceAgent owns context boundaries: exterior crews approach an observed
+	# entrance, admitted visitors use native interior navigation and LOS.
 	if mode == "disembark":
 		_disembark(delta)
 		return

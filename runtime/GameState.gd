@@ -34,11 +34,13 @@ func grant_weapon(id: String) -> bool: return economy.grant_weapon(id)
 func equip_weapon(id: String) -> bool:
 	if id == "": id = "fists"
 	if id != "fists" and not weapons_allowed(): return false
+	if economy.grid_handbag() and id in preload("res://systems/inventory/GridInventory.gd").LONG: return false
 	if id != "fists" and is_instance_valid(world) and is_instance_valid(world.player.ski_controller) and world.player.ski_controller.skiing: return false
 	return economy.equip_weapon(id)
 func weapons_allowed() -> bool: return place_id != "maciota" and place_id != "harbor_garage"
 func can_attack() -> bool:
 	if not weapons_allowed(): return false
+	if economy.grid_handbag() and equipped_weapon in preload("res://systems/inventory/GridInventory.gd").LONG: return false
 	if is_instance_valid(world):
 		if is_instance_valid(world.player.ski_controller) and world.player.ski_controller.skiing: return false
 		if world.player.input_locked or world.driving.occupied: return false
@@ -88,6 +90,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.get("vehicles",[]).size() > 64: return false
 	for vehicle in data.world.get("vehicles",[]):
 		if not vehicle is Dictionary or not preload("res://runtime/FleetState.gd").validate(vehicle): return false
+	if data.world.has("motocross") and (not data.world.motocross is Dictionary or not preload("res://activities/motocross/MotocrossProgress.gd").validate_snapshot(data.world.motocross)): return false
+	if data.world.has("motocross") and not preload("res://activities/motocross/MotocrossProgress.gd").validate_wallet(data.world.motocross,data.economy): return false
 	if data.world.has("activities"):
 		if not data.world.activities is Dictionary: return false
 		if not preload("res://activities/Activities.gd").validate_snapshot(data.world.activities): return false
@@ -108,6 +112,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if data.world.garage_rewards.vehicles.has("personal_monaliza") and not data.campaign.completed.has("primeiro_giro"): return false
 	if data.world.has("cold"):
 		if not data.world.cold is Dictionary or not preload("res://runtime/ColdSurvival.gd").validate_snapshot(data.world.cold): return false
+	if data.world.has("port_containers") and not preload("res://gameplay/urban_v1/PortContainerState.gd").validate_snapshot(data.world.port_containers): return false
 	# Optional for compatibility with V2 saves written before port/cemetery state
 	# existed. Once present, both halves are mandatory and validated atomically.
 	if data.world.has("urban_operations"):

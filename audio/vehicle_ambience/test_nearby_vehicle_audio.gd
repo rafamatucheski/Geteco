@@ -91,7 +91,8 @@ func run() -> void:
 
 	cars[2].position = Vector3(60.0, 0.0, 0.0)
 	cars[3].engine_disabled = true
-	await _frames(25)
+	# Headless frames are not 1/60 s: observe selection plus the advertised fade.
+	await create_timer(MIXER.SELECTION_INTERVAL + MIXER.FADE_OUT_SECONDS + 0.05).timeout
 	var filtered: Dictionary = mixer.snapshot()
 	_check(cars[2].get_instance_id() not in filtered.audible_ids, "out-of-range vehicle is released")
 	_check(cars[3].get_instance_id() not in filtered.audible_ids, "disabled engine is released")

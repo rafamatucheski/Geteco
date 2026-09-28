@@ -29,6 +29,8 @@ var shadow_quality := 1
 ## Ajuste de brilho do mundo: 1,0 é o original.
 var brightness := 1.0
 var show_fps := false
+## 0 original, 1 diagonal exterior framing inspired by the compact HUD concept.
+var camera_view := 0
 
 const RESOLUTIONS := [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]
 const FPS_LIMITS := [30, 60, 120, 144, 0]
@@ -70,6 +72,7 @@ func _ready() -> void:
 		shadow_quality = clampi(int(config.get_value("display","shadow_quality",1)),0,2)
 		brightness = clampf(float(config.get_value("display","brightness",1.0)),.6,1.6)
 		show_fps = bool(config.get_value("display","show_fps",false))
+		camera_view = clampi(int(config.get_value("display","camera_view",0)), 0, 1)
 	apply_settings()
 
 ## Cria "Music", "SFX" e "Ambient" se ainda não existirem (idempotente: chamado tanto no
@@ -180,5 +183,8 @@ func save_settings() -> Error:
 	config.set_value("display","shadow_quality",shadow_quality)
 	config.set_value("display","brightness",brightness)
 	config.set_value("display","show_fps",show_fps)
+	config.set_value("display","camera_view",camera_view)
 	config.set_value("controls","bindings",get_node("/root/GameInput").export_bindings())
+	config.set_value("controls","gamepad_bindings",get_node("/root/GameInput").export_gamepad_bindings())
+	config.set_value("controls","controller_layout",get_node("/root/GameInput").controller_layout)
 	return config.save("user://settings.cfg")

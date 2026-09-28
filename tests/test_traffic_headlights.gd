@@ -33,7 +33,7 @@ func spawn(world: FakeWorld, id: String, point: Vector3) -> CharacterBody3D:
 	return car
 
 func lens_on(car) -> bool:
-	return not car.equipment.lens_materials.is_empty() and car.equipment.lens_materials[0].emission_enabled
+	return not car.equipment.lens_materials.is_empty() and car.equipment.lens_materials[0].material.emission_enabled
 
 func run() -> void:
 	var world := FakeWorld.new()
@@ -48,7 +48,7 @@ func run() -> void:
 		# O cupê anima a própria lanterna (Vehicle.tail_material); o Arctic Trail
 		# não tem lente traseira emissiva no modelo original.
 		if id not in ["sport_coupe", "arctic_jeep"]: check(not equipment.tail_materials.is_empty(), id + ": lanterna traseira encontrada")
-	check(cars.taxi_yellow.equipment.lens_materials.size() == 1, "Luminoso do táxi no teto não vira farol")
+	check(cars.taxi_yellow.equipment.lens_materials.size() == 2 and cars.taxi_yellow.equipment.lamps[0].lamp.position.z < -1 and cars.taxi_yellow.equipment.lamps[1].lamp.position.z < -1, "Luminoso do táxi no teto não vira farol")
 	check(cars.bike_sport.equipment.lamps.size() == 1, "Moto tem um farol só")
 	check(cars.route_city.equipment.lamps.size() == 2 and cars.union_sedan.equipment.lamps.size() == 2, "Carros e ônibus têm par de projetores")
 
@@ -64,7 +64,7 @@ func run() -> void:
 	var families := {}
 	for id in TRAFFIC: families[PROFILES.family(id)] = true
 	check(families.size() >= 5, "Trânsito cobre pelo menos cinco famílias de farol")
-	check(cars.sedan_classic.equipment.lens_materials[0].emission.is_equal_approx(PROFILES.FAMILIES.classic.color), "Lente do clássico brilha na cor do perfil")
+	check(cars.sedan_classic.equipment.lens_materials[0].material.emission.is_equal_approx(PROFILES.FAMILIES.classic.color), "Lente do clássico brilha na cor do perfil")
 
 	await process_frame
 	check(not lens_on(cars.union_sedan) and not cars.union_sedan.equipment.npc_beam.visible, "De dia o trânsito anda apagado")
@@ -88,7 +88,7 @@ func run() -> void:
 		if index < EQUIPMENT.npc_beam_budget and not beam.visible: nearest_lit = false
 	check(beams == EQUIPMENT.npc_beam_budget, "Só %d fachos reais de NPC (%d acesos)" % [EQUIPMENT.npc_beam_budget, beams])
 	check(nearest_lit, "Os fachos ficam com os carros mais próximos do jogador")
-	check(not cars.union_sedan.equipment.lamps[0].visible, "NPC usa o facho central, não o par do jogador")
+	check(not cars.union_sedan.equipment.lamps[0].lamp.visible, "NPC usa o facho central, não o par do jogador")
 	world.player.position = Vector3(66, 0, 0)
 	await process_frame
 	await process_frame
@@ -123,7 +123,7 @@ func run() -> void:
 	taken.traffic = false
 	taken.controlled = true
 	await process_frame
-	check(taken.equipment.headlights_on and taken.equipment.lamps[0].visible and not taken.equipment.npc_beam.visible, "Carro roubado aceso segue com os faróis do jogador")
+	check(taken.equipment.headlights_on and taken.equipment.lamps[0].lamp.visible and not taken.equipment.npc_beam.visible, "Carro roubado aceso segue com os faróis do jogador")
 
 	world.free()
 	await process_frame

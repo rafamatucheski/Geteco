@@ -1,5 +1,6 @@
 extends Node3D
 ## Original SalvageYard3D geometry extracted; crane/press share native world.
+const EDIT_PIECES := preload("res://world/editing/WorldEditPieces.gd")
 const PICKUP := Vector3(-1,0,6)
 const PRESS := Vector3(7.2,0,-1.5)
 ## Botão da prensa: poste ao lado da baia, fora da área de admissão da prensa.
@@ -33,6 +34,7 @@ func _ready() -> void:
 		collision.shape = shape
 		body.add_child(collision)
 		add_child(body)
+		if entry.has("piece"): body.reparent(entry.piece,true)
 	for label in find_children("*","Label3D",true,false): label.hide()
 func projected(point: Vector3) -> Vector2: return Vector2(point.x,point.z)
 func npc_point() -> Vector3: return global_position+Vector3(-6,0,8.7)
@@ -42,7 +44,14 @@ func _solid_group(id: String, nodes: Array) -> void:
 	var points := PackedVector2Array()
 	for node in nodes: _mesh_points(node, points)
 	if points.size() >= 3:
-		solids.append({"id":id,"polygon":Geometry2D.convex_hull(points)})
+		var piece := EDIT_PIECES.group(self,nodes,"neco/"+id,_piece_label(id),id == "CraneTower")
+		solids.append({"id":id,"polygon":Geometry2D.convex_hull(points),"piece":piece})
+
+func _piece_label(id: String) -> String:
+	var names := {"Office":"Escritório", "Container":"Contêiner", "Barrel":"Barril", "Wreck":"Carcaça", "Tire":"Pneu", "Engine":"Motor", "ScrapBeams":"Vigas de sucata", "CraneTower":"Guindaste (operação)"}
+	for key in names:
+		if id.begins_with(key): return "Neko / "+names[key]+" "+id.trim_prefix(key)
+	return "Neko / "+id
 
 func _mesh_points(node: Node, points: PackedVector2Array) -> void:
 	if node is MeshInstance3D:
@@ -93,8 +102,10 @@ func cylinder(parent: Node3D, at: Vector3, radius: float, height: float, color: 
 	return part
 
 func _build() -> void:
-	box(stage,Vector3(0,-.14,0),Vector3(32,.22,23),"706a56")
-	box(stage,Vector3(2,-.01,3),Vector3(16,.08,17),"888c7f")
+	var ground := box(stage,Vector3(0,-.14,0),Vector3(32,.22,23),"706a56")
+	EDIT_PIECES.group(self,[ground],"neco/gravel","Neko / Piso de cascalho")
+	var pad := box(stage,Vector3(2,-.01,3),Vector3(16,.08,17),"888c7f")
+	EDIT_PIECES.group(self,[pad],"neco/concrete","Neko / Piso de concreto")
 	# Wheel tracks, cracks, oil spills and a marked delivery pad.
 	for x in [-2.0,0.0]:
 		box(stage,Vector3(x,.04,8),Vector3(.14,.012,6),"5b5c52")
@@ -126,19 +137,21 @@ func _build() -> void:
 		_solid_since("Container%d" % int(x), first)
 	first = stage.get_child_count()
 	for i in 9:
+		first = stage.get_child_count()
 		var p := Vector3(12+(i%3)*.65,.5,3+(i/3)*.7)
 		cylinder(stage,p,.28,1,"a65a35" if i%3 == 0 else "3d686b" if i%3 == 1 else "b8a265")
 		for y in [-.28,.28]: cylinder(stage,p+Vector3(0,y,0),.29,.04,"4a4c41")
-	_solid_since("Barrels", first)
+		_solid_since("Barrel%d" % i, first)
 	# Recognisable stripped bodies: hollow passenger cells, missing doors,
 	# bent hoods, independent wheels and mismatched metal panels.
 	for i in 8:
 		var colors := ["9a3d32","527e86","c4a44b","b9b7a0","5d7152","604d7f","33546b","bf7750"]
 		var p := Vector3(-12+(i%3)*4.0,.22+(i/3)*.15,-3+(i/3)*2.8)
 		if i >= 6: p = Vector3(11,.25+(i-6)*.95,-6)
-		_wreck(p,colors[i],float(i)*.19-.6)
+		_wreck(p,colors[i],float(i)*.19-.6,i)
 	first = stage.get_child_count()
 	for i in 12:
+		first = stage.get_child_count()
 		var p := Vector3(13+(i%2)*.8,.20+(i/4)*.3,7+(i%4)*.5)
 		var tire := TorusMesh.new()
 		tire.inner_radius=.19
@@ -150,12 +163,14 @@ func _build() -> void:
 		part.position=p
 		part.material_override=_mat("252d2c")
 		stage.add_child(part)
-	_solid_since("Tires", first)
+		_solid_since("Tire%d" % i, first)
 	first = stage.get_child_count()
 	for i in 6:
+		first = stage.get_child_count()
 		box(stage,Vector3(-14,.22,6-i*.8),Vector3(.55,.45,.55),"64706c")
-	_solid_since("Engines", first)
+		_solid_since("Engine%d" % i, first)
 	# Two-sided fence with a wide southern vehicle gate.
+	first = stage.get_child_count()
 	for x in range(-16,17,2):
 		_fence_post(Vector3(x,0,-11.5))
 		if abs(x)>3: _fence_post(Vector3(x,0,11.5))
@@ -167,13 +182,18 @@ func _build() -> void:
 		for x in [-16,16]: box(stage,Vector3(x,y,0),Vector3(.05,.05,23),"797565")
 		for x in [-10,10]: box(stage,Vector3(x,y,11.5),Vector3(12,.05,.05),"797565")
 	for x in [-3.9,3.9]: box(stage,Vector3(x,1.45,11.5),Vector3(.17,2.9,.17),"7a6c4d")
-	# Same endpoints drive the fence meshes and the continuous physical walls.
-	for rect in [Rect2(-16.12,-11.62,32.24,.24),Rect2(-16.12,-11.62,.24,23.24),Rect2(15.88,-11.62,.24,23.24),Rect2(-16.12,11.38,12.24,.24),Rect2(3.88,11.38,12.24,.24)]:
-		var points := PackedVector2Array()
-		for p in [rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)]:
-			points.append(projected(Vector3(p.x,0,p.y)))
-			points.append(projected(Vector3(p.x,1.6,p.y)))
-		solids.append({"id":"Fence%d" % solids.size(),"polygon":Geometry2D.convex_hull(points)})
+	# Keep each continuous fence span's existing mesh and collider together.
+	var fence_nodes := {"north":[],"west":[],"east":[],"south_west":[],"south_east":[]}
+	for node in stage.get_children().slice(first):
+		var p: Vector3 = node.position
+		var key := "north" if is_equal_approx(p.z,-11.5) else "south_west" if is_equal_approx(p.z,11.5) and p.x < 0 else "south_east" if is_equal_approx(p.z,11.5) else "west" if p.x < 0 else "east"
+		fence_nodes[key].append(node)
+	var rects := {"north":Rect2(-16.12,-11.62,32.24,.24),"west":Rect2(-16.12,-11.62,.24,23.24),"east":Rect2(15.88,-11.62,.24,23.24),"south_west":Rect2(-16.12,11.38,12.24,.24),"south_east":Rect2(3.88,11.38,12.24,.24)}
+	for key in rects:
+		var rect: Rect2 = rects[key]
+		var points := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
+		var piece := EDIT_PIECES.group(self,fence_nodes[key],"neco/fence_"+key,"Neko / Cerca "+key)
+		solids.append({"id":"Fence_"+key,"polygon":points,"piece":piece})
 	_build_crane()
 	_build_press()
 	# Loose panels, oily engine blocks and scrap beams break up clean surfaces.
@@ -192,7 +212,7 @@ func _build() -> void:
 func _fence_post(p: Vector3) -> void:
 	box(stage,p+Vector3(0,.8,0),Vector3(.11,1.6,.11),"777562")
 
-func _wreck(p: Vector3, color: String, angle: float) -> void:
+func _wreck(p: Vector3, color: String, angle: float, index: int) -> void:
 	var car := Node3D.new()
 	car.position=p
 	car.rotation.y=angle
@@ -213,7 +233,7 @@ func _wreck(p: Vector3, color: String, angle: float) -> void:
 	for z in [-1,1]:
 		var wheel := cylinder(car,Vector3(.86,.2,z),.31,.19,"232a29")
 		wheel.rotation.z=PI*.5
-	_solid_group("Wreck%d" % solids.size(), [car])
+	_solid_group("Wreck%d" % index, [car])
 
 func _label(parent: Node3D, text: String, p: Vector3, size: int, color: Color, flat := false) -> void:
 	var label := Label3D.new()
@@ -252,6 +272,7 @@ func _build_crane() -> void:
 func _build_press() -> void:
 	press = preload("res://world/neco_press/NecoPressFactory.gd").create_press_at_salvage_yard()
 	stage.add_child(press)
+	EDIT_PIECES.mark(press,"neco/press","Neko / Prensa (operação)",true)
 	_build_button()
 	# Compatibility reference only; no old static press or broad Press hull remains.
 	plate = press.get_node("RamAssembly")
@@ -263,6 +284,7 @@ func _build_button() -> void:
 	post.position = BUTTON
 	post.add_to_group("neco_press_button")
 	stage.add_child(post)
+	EDIT_PIECES.mark(post,"neco/button","Neko / Botão da prensa (operação)",true)
 	box(post,Vector3(0,.55,0),Vector3(.32,1.1,.32),"3a4541")
 	# Faixas zebradas de segurança no poste.
 	for index in 4: box(post,Vector3(0,.18+index*.24,0),Vector3(.335,.09,.335),"d9b640" if index%2==0 else "1f2624")

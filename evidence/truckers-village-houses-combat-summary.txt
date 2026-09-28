@@ -1,0 +1,48 @@
+Truckers village houses / compact counter / shotgun residents
+Date: 2026-09-28
+These are transcribed tool results; tests were not rerun to create this file.
+
+Commands use Godot_v4.7.2-stable_win64_console.exe --headless --path D:/geteco/game.
+
+1. --script res://tests/test_truckers_village_integration.gd -- --no-save --skip-arrival --population=8 --isolated-save-root=D:/geteco/game/evidence/truckers-village-20260928/test-save
+   Observed: Pré-aquecimento das regiões: 4522 ms
+   Observed: TRUCKERS_VILLAGE_INTEGRATION failures=[]
+   Exit code: 0
+   Covered all six native house doorways and walking admission, two real shotgun
+   residents per house, all twelve resident body-clearance/support checks,
+   group hostility on entry, actual pistol shot through Gameplay, original
+   quest/save/repair, commerce/robbery, compact menu <=360x220 and restoration
+   of other menus' default dimensions.
+   Remaining cleanup diagnostic: AudioServer.set_bus_mute(-1) from
+   TruckersVillageHomes._exit_tree -> weather._update, reported to geometry owner.
+
+2. --script res://tests/test_truckers_village_house_guards.gd -- --no-save
+   Observed: TRUCKERS_VILLAGE_HOUSE_GUARDS checks=47 failures=[]
+   Exit code: 0
+   Covered six homes/two occupants, only current pair active, outdoor alarm,
+   dead inhabitants cannot alert, saved deaths persist, invalid health rejected,
+   actual multi-pellet shotgun raycasts, hit-dependent damage, cooldown, wall and
+   vehicle occlusion, bounded range.
+
+3. --script res://tests/test_truckers_village_residents.gd -- --no-save
+   Observed: TRUCKERS_VILLAGE_RESIDENTS checks=47 failures=[]
+   Exit code: 0
+   Existing outdoor movement, physical route, gait, lifecycle, pistol LOS,
+   cooldown, world/vehicle blockers, range and death regression passed.
+
+4. --script res://tests/test_truckers_village_commerce.gd -- --no-save
+   Observed: TRUCKERS_VILLAGE_COMMERCE checks=26 failures=[]
+   Exit code: 0
+
+5. --script res://tests/test_truckers_village_quest.gd -- --no-save
+   Observed: Truckers village quest: 29 checks, 0 failures
+   Exit code: 0
+
+No complete detailed stdout log was persisted for these executions. Sandbox
+diagnostics also reported inability to write user://logs and read the Windows
+certificate store. No functional assertion was ignored. Earlier integration
+fixture failures were resolved by waiting two physics frames after teleport for
+broadphase synchronization and separating ground-contact margin from body
+clearance (2.5cm upward query offset plus independent floor-support ray).
+
+These headless results do not certify rendered occlusion, image quality or FPS.

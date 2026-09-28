@@ -71,6 +71,7 @@ func perform(target: String) -> bool:
 	if action.is_empty() or action.target != target: return false
 	if target == "south_port_freight_deliver": return _deliver()
 	if not target.begins_with(PREFIX): return false
+	if not session.save_game(true): return false
 	session.controller.capture_player_vehicle()
 	previous_vehicle = session.controller.starting_vehicle().duplicate(true)
 	var previous = session.world.driving.car
@@ -90,6 +91,7 @@ func perform(target: String) -> bool:
 	return true
 
 func depot_position(index: int) -> Vector3:
+	if cargo.has_method("start_journey"): return preload("res://gameplay/urban_v1/PortHaulRoutes.gd").dock(index)
 	return cargo.truck_route.sample_baked(float(cargo.work_trucks[index].depot_offset), true)
 
 func freight_status() -> Dictionary:
@@ -104,7 +106,11 @@ func freight_status() -> Dictionary:
 	return {"active":true, "objective":objective, "target":depot if driving else vehicle.global_position}
 
 func _can_deliver(vehicle) -> bool:
-	if not _reachable(vehicle) or vehicle.controlled or not security.authorized_visit: return false
+	if cargo.has_method("start_journey") and not cargo.depot.business_open(): return false
+	# An accepted shipment remains authorized after leaving the port perimeter.
+	# The new destination is outside that perimeter; its visit flag is revoked
+	# normally by security when the player drives out of the checkpoint.
+	if not _reachable(vehicle) or vehicle.controlled or active_bay < 0: return false
 	if vehicle.vehicle_id != _vehicle_id(active_bay) or not cargo.work_trucks[active_bay].loaded: return false
 	var visual = cargo.cranes[active_bay].visual
 	if not is_instance_valid(visual) or visual.get_parent() != vehicle: return false
@@ -128,6 +134,12 @@ func _deliver() -> bool:
 	vehicle.route_distance = cargo.truck_route.get_closest_offset(vehicle.global_position)
 	vehicle.traffic = cargo.active and cargo._shift_open()
 	vehicle.brake_input = not vehicle.traffic
+	if cargo.has_method("start_journey"):
+		entry.phase = "return_wait"
+		entry.remaining = 0.0
+		vehicle.traffic = false
+		vehicle.brake_input = true
+		cargo.start_journey(index,true)
 	# Handback also releases the player's saved selection. Otherwise the generic
 	# fleet restore and the port NPC spawner would create the same truck twice.
 	if session.world.driving.car == vehicle: session.world.driving.car = null

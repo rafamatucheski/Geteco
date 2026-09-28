@@ -19,6 +19,8 @@ var _start := Vector3.ZERO
 var _door := Vector3.ZERO
 var _seat := Vector3.ZERO
 var _landing := Vector3.ZERO
+## Canto por onde o corpo contorna a lataria até a porta (ou da porta até o chão).
+var _corner := Vector3.ZERO
 var _motion: Tween
 var _visual_yaw := 0.0
 var _visual_position := Vector3.ZERO
@@ -36,6 +38,7 @@ func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterB
 	_door = vehicle.driver_door_anchor(side)
 	_seat = vehicle.driver_seat_anchor()
 	_landing = _start
+	_corner = _outside_corner(_start)
 	_visual_yaw = actor.visual.rotation.y
 	_visual_position = actor.visual.position
 	active = true
@@ -58,6 +61,7 @@ func begin_exit(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBo
 	_landing = destination
 	_door = vehicle.driver_door_anchor(side)
 	_seat = vehicle.driver_seat_anchor()
+	_corner = _outside_corner(_start)
 	_visual_yaw = actor.visual.rotation.y
 	_visual_position = actor.visual.position
 	progress = 1.0
@@ -127,18 +131,14 @@ func _apply() -> void:
 		actor.show()
 		return
 	var t := clampf(progress, 0.0, 1.0)
-	var toward := vehicle.global_position - actor.global_position
-	toward.y = 0
-	var face_car := atan2(-toward.x, -toward.z) if toward.length_squared() > .001 else vehicle.global_rotation.y
-	var face_forward := vehicle.global_rotation.y
+	var face_car: float = _car_yaws()[0]
 	var yaw := face_car
 	var drop := 0.0
 	var hidden_after := .82
 	if t < .22:
 		phase = "approach"
-		actor.global_position = _start.lerp(_door, smoothstep(0.0, .22, t))
+		var walk := _walk_along(smoothstep(0.0, .22, t))
 		_pose_cycle("Walking", t / .22 * 1.5)
-		var walk := _door - _start
 		walk.y = 0
 		if walk.length_squared() > .01: yaw = lerp_angle(atan2(-walk.x, -walk.z), face_car, smoothstep(.12, .22, t))
 	else:
@@ -156,11 +156,41 @@ func _apply() -> void:
 var _yaw := 0.0
 var _drop := 0.0
 
+## De frente para a porta, perpendicular à lateral. Antes mirava o centro do veículo:
+## no caminhão a cabine fica na ponta, e o corpo parava na porta olhando para a carga.
 func _car_yaws() -> Array:
-	var toward := vehicle.global_position - actor.global_position
-	toward.y = 0
-	var face_car := atan2(-toward.x, -toward.z) if toward.length_squared() > .001 else vehicle.global_rotation.y
-	return [face_car, vehicle.global_rotation.y]
+	var inward := -vehicle.global_basis.x * float(side)
+	return [atan2(-inward.x, -inward.z), vehicle.global_rotation.y]
+
+## Ponto de fora da lataria alinhado à porta. Quem está na frente ou atrás do veículo
+## vai primeiro até a lateral e depois acompanha a lataria, em vez de atravessá-la.
+func _outside_corner(from: Vector3) -> Vector3:
+	var local: Vector3 = vehicle.to_local(from)
+	var door_local: Vector3 = vehicle.to_local(_door)
+	var lateral := absf(door_local.x)
+	if signf(local.x) == float(side) and absf(local.x) >= float(vehicle.half_width) + .10: return _door.lerp(from, .5)
+	var margin := float(vehicle.half_length) + .45
+	var z := clampf(local.z, -margin, margin)
+	if absf(local.z) < margin:
+		# Do lado errado e ao lado da lataria: contorna pela ponta mais próxima da porta.
+		z = -margin if door_local.z < 0 else margin
+	var corner: Vector3 = vehicle.to_global(Vector3(float(side) * lateral, door_local.y, z))
+	corner.y = _door.y
+	return corner
+
+## Caminho em dois trechos (início → canto → porta), com velocidade constante.
+func _walk_along(k: float) -> Vector3:
+	var first := _start.distance_to(_corner)
+	var total := first + _corner.distance_to(_door)
+	if total < .001:
+		actor.global_position = _door
+		return Vector3.ZERO
+	var travelled := k * total
+	if travelled <= first:
+		actor.global_position = _start.lerp(_corner, travelled / maxf(first, .001))
+		return _corner - _start
+	actor.global_position = _corner.lerp(_door, (travelled - first) / maxf(total - first, .001))
+	return _door - _corner
 
 ## Carro baixo: para na porta, vira de costas para o banco, abaixa e desliza sentado.
 func _apply_car(t: float) -> float:

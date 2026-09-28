@@ -1,6 +1,7 @@
 extends RefCounted
 ## Narrow, static shoreline strips. GPU animates the wash; no frame callbacks.
 const WIDTH := 1.7
+const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 var strips: Array[Dictionary] = []
 var material: ShaderMaterial
 
@@ -30,6 +31,19 @@ func configure(polygons: Array[PackedVector2Array]) -> void:
 				var quad := PackedVector2Array([start,end,end+outward*width,start+outward*width])
 				strips.append({"quad":quad,"origin":a,"tangent":tangent,"normal":outward,"bounds":_bounds(quad)})
 
+# O mar é recortado sobre o Túnel do canal (WATER_CUT), mas a espuma não era: as faixas
+# animadas em y=-0,925 ficavam por cima do teto de vidro e da lâmina de água do tubo e
+# apareciam como leques claros "piscando" na parede norte conforme a câmera andava.
+static func _outside_canal_cut(pieces: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
+	var cut: Rect2 = CANAL_TUNNEL.WATER_CUT
+	var cut_polygon := PackedVector2Array([cut.position,Vector2(cut.end.x,cut.position.y),cut.end,Vector2(cut.position.x,cut.end.y)])
+	var result: Array[PackedVector2Array] = []
+	for piece in pieces:
+		for outside in Geometry2D.clip_polygons(piece,cut_polygon):
+			# Faixa estreita contra retângulo de 20 m: o recorte nunca gera furo.
+			if outside.size() >= 3: result.append(outside)
+	return result
+
 func _on_land(point: Vector2, polygons: Array[PackedVector2Array]) -> bool:
 	for polygon in polygons:
 		if Geometry2D.is_point_in_polygon(point,polygon): return true
@@ -48,7 +62,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	var indices := PackedInt32Array()
 	for strip in strips:
 		if not rect.intersects(strip.bounds): continue
-		for piece in Geometry2D.intersect_polygons(strip.quad,clip):
+		for piece in _outside_canal_cut(Geometry2D.intersect_polygons(strip.quad,clip)):
 			var base := vertices.size()
 			for point in piece:
 				vertices.append(Vector3(point.x,-0.925,point.y))

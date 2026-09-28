@@ -27,3 +27,13 @@ __pycache__/
 
 # Relatórios de cada execução da suíte (tests/run_suite.ps1): mudam a cada rodada.
 evidence/test-suite/
+
+# Artefatos locais de revisão e distribuição; preservar fora do histórico.
+evidence/**/chrome-profile/
+evidence/**/baseline-project/
+builds/
+*.apk
+*.aab
+*.keystore
+*.jks
+.godot/export_credentials.cfg

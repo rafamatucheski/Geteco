@@ -4,6 +4,10 @@
 (setembro de 2026); cada um registra decisões, medições e limites de uma área. Quando um
 documento cita `geteco_v2/`, leia como a raiz atual do repositório.
 
+## Direção do jogo
+
+- [Harbor — nome escolhido e conceito da chegada de barco](harbor-identidade-e-chegada.md)
+
 ## Padrões obrigatórios
 
 - [Padrão de interiores — Chalé + Maciota](interior-standard.md) e [checklist](interior-standard-checklist.md)

@@ -33,39 +33,48 @@ func setup(p_data: Dictionary) -> void:
 	base_color = v1_palette.front
 	proper_name = str(data.original_name) if data.has("original_name") else UrbanSignage.extract_proper_name(building_id, str(data.get("name", "")))
 	
+	height = resolved_height(data)
+
+static func resolved_height(source: Dictionary) -> float:
+	var data := source
+	var building_id := str(data.get("id",""))
+	var building_kind := str(data.get("kind","office"))
+	var variant_seed := int(data.get("variant_seed",0))
+	var value := 4.5
 	# Existing vertical conversion remains unchanged unless V1 publishes an
 	# explicit override (Exchange/Civic). Generic heights are still an open
 	# fidelity item and are not guessed from screen-space extrusion here.
 	if data.has("height_override"):
-		height = float(data.height_override)
+		value = float(data.height_override)
 	elif building_kind in ["brownstone", "rowhouse", "rowhouse_terrace", "l_shaped_block"]:
-		height = 6.8
+		value = 6.8
 	elif building_kind in ["office", "police_precinct"]:
-		height = 7.5
+		value = 7.5
 	elif building_kind in ["hospital"]:
-		height = 8.0
+		value = 8.0
 	elif building_kind in ["warehouse", "warehouse_shop"]:
-		height = 5.2
+		value = 5.2
 	elif building_kind in ["fire_station"]:
-		height = 6.2
+		value = 6.2
 	elif building_kind in ["cobra_house"]:
-		height = 3.6
+		value = 3.6
 	elif building_kind in ["garage"]:
-		height = 4.2
+		value = 4.2
 	else:
-		height = 4.6
+		value = 4.6
 
 	# Sem isso todo prédio do mesmo tipo tinha a mesma altura exata lado a
 	# lado, o que lê como fileira repetida em vez de skyline de cidade.
 	# Só entra quando a V1 não publicou uma altura autorada explícita.
 	if not data.has("height_override"):
-		height *= _height_variance_factor()
+		value *= _height_variance_factor(building_id,building_kind,variant_seed)
+	return value
 
 ## Fator determinístico (mesmo prédio sempre gera o mesmo resultado) que
 ## varia a altura por tipo: torres comerciais variam bastante (baixinha a
 ## bem mais alta que a vizinha), residências baixas variam pouco para não
 ## quebrar a linha de cornija da quadra.
-func _height_variance_factor() -> float:
+static func _height_variance_factor(building_id: String, building_kind: String, variant_seed: int) -> float:
 	var h := hash(building_id + "|height|" + str(variant_seed))
 	var t := (h % 1000) / 1000.0 # 0.0..1.0 determinístico
 	match building_kind:

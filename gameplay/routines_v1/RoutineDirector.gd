@@ -4,6 +4,7 @@ extends Node
 
 const CATALOG := preload("res://gameplay/routines_v1/RoutineCatalog.gd")
 const ACTOR := preload("res://gameplay/routines_v1/V1RoutineActor.gd")
+const PORT_WORKER := preload("res://gameplay/urban_v1/PortWorker.gd")
 const SCAN_INTERVAL := .25
 const ACTIVATE_DISTANCE := 48.0
 const RELEASE_DISTANCE := 62.0
@@ -17,6 +18,7 @@ var actors: Dictionary = {}
 var suspended_states: Dictionary = {}
 var scan_clock := 0.0
 var context_key := ""
+var port_respawn: Dictionary = {}
 
 func configure(owner_world, owner_session, owner_controller) -> void:
 	world = owner_world
@@ -36,6 +38,7 @@ func _exit_tree() -> void:
 	suspended_states.clear()
 
 func _process(delta: float) -> void:
+	for id in port_respawn: port_respawn[id] = maxf(0.0,float(port_respawn[id])-delta)
 	if session == null or world == null or not is_instance_valid(world.player): return
 	scan_clock -= delta
 	if scan_clock > 0: return
@@ -99,6 +102,8 @@ func _shift_active(definition: Dictionary) -> bool:
 
 func _spawn(definition: Dictionary) -> void:
 	var id: String = str(definition.id)
+	if port_respawn.has(id):
+		if float(port_respawn[id]) > 0 or not PORT_WORKER.safe_to_return(world,definition.position): return
 	if _tree_has(id): return
 	var state: Dictionary = suspended_states.get(id, {})
 	var restore_position := str(definition.get("place_id", "")).is_empty()
@@ -109,20 +114,30 @@ func _spawn(definition: Dictionary) -> void:
 		point = definition.position
 		restore_position = false
 		if not point.is_finite() or not session.position_clear(point+Vector3.UP*.04): return
-	var actor = ACTOR.new()
+	var actor = PORT_WORKER.new() if definition.get("kind", "") == "dock_worker" else ACTOR.new()
 	actor.configure(definition,Callable(session,"position_clear"))
+	if definition.get("kind", "") == "dock_worker": actor.died.connect(_port_worker_died.bind(id))
 	actor.position = point+Vector3.UP*.04
 	world.add_child(actor)
 	if not state.is_empty():
 		actor.restore_routine(state, restore_position)
 		if not restore_position: actor.velocity.y = 0.0
 	actors[id] = actor
+	port_respawn.erase(id)
 
 func _suspend(id: String, actor) -> void:
-	if is_instance_valid(actor) and actor.has_method("snapshot_routine"):
+	if is_instance_valid(actor) and actor.get("dead") != true and actor.has_method("snapshot_routine"):
 		suspended_states[id] = actor.snapshot_routine()
 	if is_instance_valid(actor): actor.queue_free()
 	actors.erase(id)
+
+func _port_worker_died(actor: CharacterBody3D, id: String) -> void:
+	port_respawn[id] = 180.0
+	suspended_states.erase(id)
+	actors.erase(id)
+	# Emergency services may remove the corpse earlier; otherwise release it after a minute.
+	get_tree().create_timer(60.0,false).timeout.connect(func():
+		if is_instance_valid(actor): actor.queue_free())
 
 func _tree_has(id: String) -> bool:
 	for node in get_tree().get_nodes_in_group("v1_routine_actor"):
@@ -134,6 +149,7 @@ func _clear_all() -> void:
 
 func nearest_action() -> Dictionary:
 	if session == null or world == null or world.driving.occupied: return {}
+	if world.gameplay.aim_active or Input.is_action_pressed("fire"): return {}
 	var best := {}
 	var nearest := INF
 	for id in actors:

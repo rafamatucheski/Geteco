@@ -7,6 +7,13 @@
 // Mobile a coordenada de mundo (x > 600 m) perde precisão e o ruído vira blocos.
 
 const float GROUND_PERIOD = 256.0;
+uniform vec2 mountain_entry_x = vec2(559.375, 651.25);
+uniform vec2 mountain_north_fade = vec2(-203.75, -128.75);
+
+float ground_mountain_weight(vec2 world_xz) {
+	return smoothstep(mountain_entry_x.x, mountain_entry_x.y, world_xz.x)
+		* (1.0 - smoothstep(mountain_north_fade.x, mountain_north_fade.y, world_xz.y));
+}
 
 float ground_hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);

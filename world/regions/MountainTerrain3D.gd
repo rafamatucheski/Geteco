@@ -6,13 +6,20 @@ const STEP := 4.0
 const CELL := 64.0
 const BLEND := 28.0
 const GRID_MARGIN := 6.0 # More than a grid diagonal: flat corridors survive triangulation.
+const HEIGHT_SAMPLE_LIMIT := 32768
 var _segments: Dictionary = {}
 var _clearings: Array[Rect2] = []
 var _material: ShaderMaterial
+var _height_samples: Dictionary = {}
+var _height_sample_order: Array[Vector2] = []
+var _height_sample_next := 0
 
 func configure(roads: Array, entries: Array, clearings: Array) -> void:
 	_segments.clear()
 	_clearings.clear()
+	_height_samples.clear()
+	_height_sample_order.clear()
+	_height_sample_next = 0
 	# Authored V1 scenery footprints, deliberately flat until their gameplay adopts height.
 	for original in [Rect2(6680,-320,800,700), Rect2(5080,-1500,740,680),
 		Rect2(7310,-2010,690,720), Rect2(6100,350,510,430),
@@ -44,6 +51,7 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 	LAKE_BASINS.configure(roads)
 	_material = ShaderMaterial.new()
 	_material.shader = preload("res://world/regions/mountain_terrain.gdshader")
+	preload("res://world/regions/WorldConnection3D.gd").configure_ground_material(_material)
 
 func _cell(point: Vector2) -> Vector2i:
 	return Vector2i(floori(point.x/CELL),floori(point.y/CELL))
@@ -63,6 +71,20 @@ func is_reserved(point: Vector2, radius: float = 0.0) -> bool:
 	return _clearance(point) <= maxf(0.0,radius)
 
 func height_at(point: Vector2) -> float:
+	# Terrain, normals and ground dressing repeatedly sample the same points.
+	# Keep the exact result; FIFO eviction bounds memory during long journeys.
+	if _height_samples.has(point): return _height_samples[point]
+	var height := _calculate_height(point)
+	if _height_sample_order.size() < HEIGHT_SAMPLE_LIMIT:
+		_height_sample_order.append(point)
+	else:
+		_height_samples.erase(_height_sample_order[_height_sample_next])
+		_height_sample_order[_height_sample_next] = point
+		_height_sample_next = (_height_sample_next + 1) % HEIGHT_SAMPLE_LIMIT
+	_height_samples[point] = height
+	return height
+
+func _calculate_height(point: Vector2) -> float:
 	var weight := smoothstep(0.0,BLEND,_clearance(point))
 	# Fixed world-space waves: deterministic, continuous across loading boundaries.
 	var broad := 0.5+0.5*sin(point.x*0.025+sin(point.y*0.019))*cos(point.y*0.023)
@@ -126,6 +148,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	result.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(result)
 	var body := StaticBody3D.new()
+	body.set_meta("mountain_terrain", true)
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()

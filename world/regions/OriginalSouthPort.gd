@@ -46,6 +46,13 @@ static func mount(parent: Node3D, record: Dictionary) -> Node3D:
 			if body is StaticBody3D:
 				body.collision_layer = 1
 				body.collision_mask = 0
+	if record.model_kind == "floodlight":
+		art.add_to_group(&"city_local_light_source")
+		art.set_meta("local_light", {"offset":Vector3(0,8.3,0),"range":20.0,"energy":14.0,"color":Color("ffc078"),"camera_safe":true})
+		var lamp_material: StandardMaterial3D = art.material("e5eff4")
+		lamp_material.emission_enabled = true
+		lamp_material.emission = Color("ffd09a")
+		lamp_material.emission_energy_multiplier = .8
 	if record.model_kind == "crane":
 		var rigging := PORT_SHIP_DRESSING.new()
 		art.add_child(rigging)

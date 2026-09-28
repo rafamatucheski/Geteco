@@ -1,0 +1,31 @@
+{
+	"accepted": 5,
+	"attempts": 5,
+	"outcomes": [
+		{
+			"health": 91.4,
+			"occupied": false,
+			"walking": true
+		},
+		{
+			"health": 91.4,
+			"occupied": false,
+			"walking": true
+		},
+		{
+			"health": 91.4,
+			"occupied": false,
+			"walking": true
+		},
+		{
+			"health": 91.4,
+			"occupied": false,
+			"walking": true
+		},
+		{
+			"health": 91.4,
+			"occupied": false,
+			"walking": true
+		}
+	]
+}

@@ -27,6 +27,8 @@ var _hand_provider := Callable()
 var _hand_targets: Array = [null, null]
 var _pose_owned := false
 var _static_pose: Array[Dictionary] = []
+var react_to_aim := false
+var _model_activity := ""
 
 static func install(owner_actor: Node3D, owner_model: Node3D, owner_gameplay: Node) -> Node:
 	if not is_instance_valid(owner_actor) or not is_instance_valid(owner_model) or not is_instance_valid(owner_gameplay): return null
@@ -54,6 +56,9 @@ func _eligible() -> bool:
 		and actor.get("dead") != true and not PROTECTION.is_protected(actor)
 
 func _weapon_fired(weapon_id: String, origin: Vector3) -> void:
+	if react_to_aim and gameplay.weapon_data(weapon_id).get("is_melee", false):
+		_notice(origin, 2.5)
+		return
 	if weapon_id in ["fists", "grenade"]: return
 	var data: Dictionary = gameplay.weapon_data(weapon_id)
 	var radius := 13.0 if data.get("suppressed", false) else HEARING_RADIUS
@@ -83,6 +88,10 @@ func _notice(origin: Vector3, radius: float) -> void:
 	actor.set_physics_process(false)
 	actor.set_process(false)
 	actor.set_meta("workplace_threatened", true)
+	if model.get("activity") != null:
+		_model_activity = str(model.activity)
+		model.activity = "shield"
+	if model.get("work_pose_active") != null: model.work_pose_active = false
 	if actor is CharacterBody3D: actor.velocity = Vector3.ZERO
 	_claim_pose()
 	set_physics_process(true)
@@ -96,6 +105,13 @@ func _process(delta: float) -> void:
 		if active: _release(is_instance_valid(actor) and actor.get("dead") != true)
 		return
 	if active and not _pose_owned: _claim_pose() # RigBodySwap can finish deferred.
+	if react_to_aim and gameplay.aim_active and is_instance_valid(gameplay.player):
+		var origin: Vector3 = gameplay.player.global_position + Vector3.UP
+		var offset: Vector3 = actor.global_position + Vector3.UP - origin
+		var direction: Vector3 = gameplay._aim_direction()
+		if offset.length_squared() <= 144.0 and direction.normalized().dot(offset.normalized()) > .94:
+			var ray := PhysicsRayQueryParameters3D.create(origin, actor.global_position + Vector3.UP, 1)
+			if actor.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): _notice(origin, 12.0)
 	if actor.get_meta("v2_burning", false): _notice(actor.global_position, 1.0)
 	var emergency: Node = gameplay.get("emergency")
 	if emergency == null: return
@@ -129,6 +145,12 @@ func _physics_process(delta: float) -> void:
 			actor.velocity.z = 0.0
 		actor.velocity.y = -1.0 if actor.is_on_floor() else actor.velocity.y - 20.0 * delta
 		actor.move_and_slide()
+		if react_to_aim:
+			var horizontal := Vector3(actor.velocity.x, 0, actor.velocity.z)
+			if model.get("walking") != null: model.walking = horizontal.length_squared() > .01
+			if model.get("motion_speed") != null: model.motion_speed = horizontal.length()
+			if horizontal.length_squared() > .01:
+				model.rotation.y = actor._facing_yaw(horizontal) if actor.has_method("_facing_yaw") else atan2(-horizontal.x, -horizontal.z)
 		if returning and offset.length() < .06: _release(true)
 	elif returning:
 		_release(true)
@@ -189,6 +211,10 @@ func _release(resume: bool) -> void:
 	_pose_owned = false
 	if is_instance_valid(actor):
 		actor.remove_meta("workplace_threatened")
+		if is_instance_valid(model) and model.get("activity") != null: model.activity = _model_activity
+		if react_to_aim and is_instance_valid(model):
+			if model.get("walking") != null: model.walking = false
+			if model.get("motion_speed") != null: model.motion_speed = 0.0
 		if actor is CharacterBody3D: actor.velocity = Vector3.ZERO
 		if resume:
 			actor.set_physics_process(_actor_physics)

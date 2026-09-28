@@ -200,7 +200,8 @@ func _run() -> void:
 	check(gameplay.crime_points > crime_before, "disparo em civil gera crime", "%d -> %d" % [crime_before, gameplay.crime_points])
 	check(gameplay.effects._tracers.any(func(node): return node.visible), "trajetória da pistola usa cauda móvel visível")
 	await frames(4)
-	check(absf(npc.visual.rotation.x) > 0.02, "ferimento: o civil reage (curva-se) sem perder o dano único", "rot.x=%.3f" % npc.visual.rotation.x)
+	var civilian_model: Node = npc.visual.get_child(0)
+	check(civilian_model._hit.length() > 0.02, "ferimento: o tronco do civil reage sem perder o dano único", "inclinação=%s" % civilian_model._hit)
 	await shot("03_pistola_acerto")
 
 	# ---- 2. continuar até morrer
@@ -345,6 +346,8 @@ func _run() -> void:
 	await shot("09_granada")
 
 	# ---- 6b. Recuo com passos próprios e velocidade controlada de combate.
+	# Keep faster strafing away from the automatic garage entrance during this fixture.
+	player.teleport(ground(player.global_position + direction * 5.0))
 	state.equip_weapon("pistol")
 	await frames(2)
 	var walker := await spawn_npc(direction, 6.0)
@@ -363,7 +366,7 @@ func _run() -> void:
 	Input.action_press(action)
 	await frames(24)
 	var speed_now: float = (player.global_position - start_pos).length() / (24.0 / 60.0)
-	check(gameplay.aiming and speed_now > 1.1 and speed_now < 2.0, "recuando mirando: passo controlado", "%.2f m/s" % speed_now)
+	check(gameplay.aiming and speed_now > 2.2 and speed_now < 2.6, "recuando mirando: passo ágil abaixo da caminhada livre", "%.2f m/s" % speed_now)
 	check(player.animation.current_animation in ["Walk_Backward_with_Gun", "Walk_Left_with_Gun"] and player._run_weight == 0.0 and player._gait_direction.y < -0.65, "recuando mirando: mistura direcional sem corrida", "anim=%s direction=%s" % [player.animation.current_animation, player._gait_direction])
 	var forward_phase := true
 	for tick in 8:
@@ -428,6 +431,9 @@ func _run() -> void:
 	check(player.combat_clip == "" and is_nan(player.combat_facing) and not gameplay.aiming, "troca de região zera camada de combate")
 	check(not gameplay._pain_pool.any(func(voice): return voice.playing) or true, "vozes de dor não travam")
 	# ---- 9. interrupções no meio do golpe: entrada travada (transição/veículo/menu) e descarregamento
+	# Restoring intentionally clears the arsenal cheat. Owned weapons now have
+	# a physical location, so prepare the carried slot before testing animation.
+	if state.economy.grid_enabled(): check(state.economy.set_personal_slot("corpo","axe"), "fixture: machado no equipamento após restaurar")
 	state.equip_weapon("axe")
 	await frames(2)
 	var interrupt_victim := await spawn_npc(direction, 1.4)
@@ -444,6 +450,7 @@ func _run() -> void:
 	player.input_locked = false
 	discard(interrupt_victim)
 	await wait_cooldown()
+	if state.economy.grid_enabled(): check(state.economy.set_personal_slot("corpo","knife"), "fixture: faca no equipamento após restaurar")
 	state.equip_weapon("knife")
 	await frames(2)
 	var unload_victim := await spawn_npc(direction, 1.2)

@@ -64,7 +64,7 @@ static func _point(rect: Rect2, rng: RandomNumberGenerator) -> Vector2:
 
 static func _snow(point: Vector2) -> bool:
 	# Keep the original mountain's northern snow biome, independent of chunk borders.
-	return point.y < (-1350.0 + CATALOG.MOUNTAIN_OFFSET.y) / 16.0
+	return preload("res://world/regions/WorldConnection3D.gd").mountain_weight(Vector3(point.x, 0, point.y)) >= 0.5 and point.y < (-1350.0 + CATALOG.MOUNTAIN_OFFSET.y) / 16.0
 
 static func _gentle(point: Vector2, y: float, height_at: Callable, radius: float, tolerance: float) -> bool:
 	for axis in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:

@@ -1,6 +1,7 @@
 extends Node
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const BOARDING_PRESENTATION := preload("res://gameplay/VehicleBoardingPresentation.gd")
+const BAILOUT := preload("res://gameplay/VehicleBailout.gd")
 var world
 var car: CharacterBody3D
 var occupied := false
@@ -67,12 +68,15 @@ func _entry_option(allow_transition := false) -> Dictionary:
 				distance = separation
 	if not is_instance_valid(candidate) or not _speed_allows_entry(candidate) or candidate.health <= 0: return {}
 	var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 1.8
+	var best := {}
 	for side in (candidate.boarding_sides() if candidate.has_method("boarding_sides") else [-1,1]):
 		var door: Vector3 = candidate.driver_door_anchor(side) if candidate.has_method("driver_door_anchor") else candidate.to_global(Vector3(side*(candidate.half_width+.51),0,0.15))
-		if world.player.position.distance_to(door) > reach: continue
+		var gap: float = world.player.position.distance_to(door)
+		if gap > reach or (not best.is_empty() and gap >= float(best.gap)): continue
 		var ray := PhysicsRayQueryParameters3D.create(world.player.position+Vector3.UP*.9,door+Vector3.UP*.9,7,[world.player.get_rid(),candidate.get_rid()])
-		if world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): return {"car":candidate,"side":side,"door":door}
-	return {}
+		if world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): best = {"car":candidate,"side":side,"door":door,"gap":gap}
+	# A porta mais perto de quem aperta, não a primeira da lista (sempre a esquerda).
+	return best
 
 ## Roubo em movimento, como no GTA: carro ou moto do trânsito andando até
 ## JACK_MAX_SPEED pode ser agarrado pela porta. Carro parado continua igual; viatura
@@ -101,12 +105,21 @@ func interact(allow_transition := false) -> bool:
 	# Viatura trancada do pátio da delegacia: a porta só abre pelo lockpick do dono.
 	var lock_handler: Callable = option.car.get_meta("lockpick_handler", Callable())
 	if lock_handler.is_valid(): return bool(lock_handler.call(option.car))
+	if option.car.archetype == "taxi_yellow" and is_instance_valid(world.get("session")):
+		var passenger = world.session.get("passenger_transport")
+		if passenger != null and passenger.taxis != null and passenger.taxis.offer(option.car,int(option.side)): return true
 	return _begin_entry(option.car,int(option.side))
 
 func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	var dispatch_car := bool(candidate.get_meta("dispatch_unit",false))
 	if dispatch_car:
 		if not is_instance_valid(world.get("dispatch")) or not world.dispatch.vehicle_stolen(candidate,side): return false
+	if candidate.archetype == "taxi_yellow":
+		var passenger = world.session.get("passenger_transport") if is_instance_valid(world.get("session")) else null
+		if passenger != null and passenger.taxis != null: passenger.taxis.driver_entry(candidate)
+		else:
+			candidate.set_meta("taxi_stolen",true)
+			preload("res://runtime/TaxiService.gd").light(candidate,false)
 	car = candidate
 	_watch_car(car)
 	_last_vehicle_position = car.global_position
@@ -118,7 +131,7 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 		car.remove_meta("crash_was_traffic")
 		# It is now a persistent player vehicle, including after dismounting.
 		car.remove_meta("ambient_traffic")
-		if world.get("gameplay") != null: world.gameplay.register_crime(15,car.global_position)
+		if world.get("gameplay") != null: world.gameplay.report_observed_crime(15,car.global_position,"theft",car)
 		_eject_civilian_driver(car,side)
 	car.controlled = false
 	car.external_input = false
@@ -217,14 +230,22 @@ func _complete_entry() -> void:
 	world.player.teleport(car.global_position)
 	_update_mounted_player()
 
-func exit_position() -> Vector3:
+func exit_position(moving := false) -> Vector3:
 	if not is_instance_valid(car): return Vector3.INF
 	for side in (car.boarding_sides() if car.has_method("boarding_sides") else [-1,1]):
-		for offset in [car._cab_z() if car.has_method("_cab_z") else -clampf(car.half_length*.18,.30,.62),-1.1,1.1]:
-			var point := car.to_global(Vector3(side*(car.half_width+.61),0,offset))
+		# Alternativas perto da porta da cabine; antes eram fixas no meio do chassi e o
+		# motorista do caminhão descia pela lateral da carga.
+		var cab: float = car._cab_z() if car.has_method("_cab_z") else -clampf(car.half_length*.18,.30,.62)
+		for offset in [cab,cab+1.1,cab-1.1]:
+			var point := car.to_global(Vector3(side*(car.half_width+(.85 if moving else .61)),0,offset))
 			point.y = car.position.y+.04
 			var query := PhysicsShapeQueryParameters3D.new()
 			query.shape = exit_capsule
+			if moving:
+				var hull := CapsuleShape3D.new()
+				hull.radius = .65
+				hull.height = 1.72
+				query.shape = hull
 			query.collision_mask = 7
 			query.exclude = [world.player.get_rid()]
 			query.transform = Transform3D(Basis.IDENTITY,point+Vector3.UP*0.87)
@@ -248,13 +269,13 @@ func leave() -> bool:
 	if car.input_locked:
 		_message("Aguarde o serviço terminar")
 		return false
-	if absf(car.speed) > 0.5:
-		_message("Pare a moto para sair" if car.archetype.begins_with("bike_") else "Pare o carro para sair")
-		return false
-	var point := exit_position()
+	var momentum: Vector3 = car.horizontal_velocity
+	var moving := momentum.length() > BAILOUT.MIN_SPEED
+	var point := exit_position(moving)
 	if not point.is_finite():
 		_message("Saída bloqueada — afaste a moto" if car.archetype.begins_with("bike_") else "Saída bloqueada — afaste o carro")
 		return false
+	if moving: return _begin_bailout(point,momentum)
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
@@ -272,6 +293,27 @@ func leave() -> bool:
 	transition.exited.connect(_complete_exit)
 	transition.cancelled.connect(_transition_cancelled)
 	transition.begin_exit(world,car,world.player,point,side)
+	if not world.camera.locked:
+		world.camera.target = world.player
+		world.camera.initialized = false
+	return true
+
+func _begin_bailout(point: Vector3, momentum: Vector3) -> bool:
+	var side := -1 if car.to_local(point).x < 0 else 1
+	car.controlled = false
+	car.external_input = false
+	car.input_locked = false
+	car.throttle_input = 0
+	car.steer_input = 0
+	car.brake_input = false
+	occupied = false
+	world.player.collision_layer = _player_layer
+	world.player.collision_mask = _player_mask
+	transition = BAILOUT.new()
+	add_child(transition)
+	transition.exited.connect(_complete_exit)
+	transition.cancelled.connect(_transition_cancelled)
+	transition.begin(world,car,world.player,point,momentum,side)
 	if not world.camera.locked:
 		world.camera.target = world.player
 		world.camera.initialized = false
@@ -352,6 +394,7 @@ func _watch_car(candidate: CharacterBody3D) -> void:
 ## Quem está no carro tem a colisão desligada, então a esfera de `Gameplay.explode` não o
 ## encontrava e o jogador saía vivo da explosão. Aqui ele é jogado para fora e morre.
 func _on_car_destroyed(candidate: CharacterBody3D) -> void:
+	if transition is BAILOUT: return # Dante has already left the vehicle.
 	if candidate != car or not (occupied or is_body_transition_active()): return
 	var gameplay = world.get("gameplay")
 	cancel_transition("vehicle_destroyed")
@@ -361,7 +404,7 @@ func _on_car_destroyed(candidate: CharacterBody3D) -> void:
 func _on_car_tree_exiting(candidate: CharacterBody3D) -> void:
 	if candidate != car: return
 	_last_vehicle_position = candidate.global_position
-	if occupied or is_body_transition_active(): cancel_transition("vehicle_removed")
+	if occupied or (is_body_transition_active() and not transition is BAILOUT): cancel_transition("vehicle_removed")
 	# The persistence owner retires deliberate removals while this body is still
 	# valid; teardown/reparenting can capture without ever reading a freed ref.
 	if is_instance_valid(world.get("production")):
@@ -374,7 +417,7 @@ func _message(text: String) -> void:
 
 func _process(delta: float) -> void:
 	if is_body_transition_active():
-		if not is_instance_valid(car) or car.is_queued_for_deletion(): cancel_transition("vehicle_removed")
+		if (not is_instance_valid(car) or car.is_queued_for_deletion()) and not transition is BAILOUT: cancel_transition("vehicle_removed")
 		elif not _player_alive(): cancel_transition("death")
 		elif _external_transition_blocked() and not (is_instance_valid(world.get("session")) and world.session.has_method("allows_saved_driver_animation") and world.session.allows_saved_driver_animation()): cancel_transition("session_transition")
 	status_time = maxf(0,status_time-delta)

@@ -67,6 +67,9 @@ func perform(target: String) -> bool:
 	return true
 
 func _open_trunk() -> void:
+	if session.field_inventory != null:
+		session.field_inventory.open(true)
+		return
 	session._menu("Porta-malas · Monaliza")
 	session.menu_closed = _close_trunk_view
 	var economy = session.state.economy

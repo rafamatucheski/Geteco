@@ -15,12 +15,18 @@ const OFFICER := preload("res://gameplay/dispatch/DispatchOfficer.gd")
 const BRIDGE := preload("res://gameplay/dispatch/DispatchIncidentBridge.gd")
 const RESPONDER := preload("res://gameplay/emergency/Responder.gd")
 const VEHICLE := preload("res://gameplay/dispatch/DispatchVehicle.gd")
+const ROADBLOCKS := preload("res://gameplay/police_response/ground/PoliceRoadblocks.gd")
 # Cada candidato pode custar um plano de rota (~2,2 ms): 8 geravam picos de 22–53 ms
 # no quadro de despacho. Candidatos que falham voltam no próximo intervalo.
 const SPAWN_CANDIDATES_CHECKED := 3
+## Clearance is cheap; a blocked nearby spawn must not starve a wider tank or
+## ambulance forever. Route planning retains the original three-plan budget.
+const POLICE_CLEARANCE_CANDIDATES := 8
 ## Serviço (bombeiro/ambulância) compara mais pontos: a rota curta importa mais que
 ## o custo de planejar alguns candidatos a mais, e o despacho é raro.
 const SPAWN_CANDIDATES_CHECKED_SERVICE := 8
+## Candidatos planejados por quadro na busca de ponto de partida da emergência.
+const SERVICE_SEARCH_BUDGET := 2
 const MAX_WRECKS := 4
 
 var world: Node3D
@@ -47,11 +53,15 @@ var no_exclusions: Array[RID] = []
 var _serial := 0
 var _police_clock := 0.0
 var _last_stars := 0
+var _search_pending := false
 var _service_clock := 0.0
 var _scan_clock := 0.0
 var _wreck_clock := 0.0
 var _clock := 0.0
 var _prepared_ground_cells: Dictionary = {}
+var roadblocks: RefCounted
+var investigation_unit: RefCounted
+var _investigation_clock := 0.0
 
 func configure(p_world: Node3D, p_gameplay: Node3D, p_routes: RefCounted) -> void:
 	world = p_world
@@ -59,6 +69,8 @@ func configure(p_world: Node3D, p_gameplay: Node3D, p_routes: RefCounted) -> voi
 	routes = p_routes
 	router = ROUTER.new()
 	router.configure(routes)
+	roadblocks = ROADBLOCKS.new()
+	roadblocks.configure(self)
 	claim_dispatch()
 
 func _ready() -> void:
@@ -124,6 +136,7 @@ func _physics_process(delta: float) -> void:
 			_prepared_ground_cells.erase(unit.get_instance_id())
 			units.erase(unit)
 	_dispatch_police(delta)
+	if roadblocks != null: roadblocks.tick(delta)
 	_dispatch_emergency(delta)
 	_wreck_clock -= delta
 	if _wreck_clock <= 0.0:
@@ -176,6 +189,8 @@ func set_enabled(value: bool, release_ownership := true) -> void:
 ## Redirecionar/cancelar com o veículo em jogo (`cancel_incident`, fim da procura,
 ## partida) passa por `driver.cancel_overtaking`, que recupera fisicamente.
 func dismiss_all(reason: String) -> void:
+	if roadblocks != null: roadblocks.clear()
+	investigation_unit = null
 	for unit in units.duplicate(): unit.finish(reason)
 	units.clear()
 	# Corpos já filtrados de uma equipe continuam filhos do controlador durante
@@ -225,13 +240,26 @@ func is_unseen(point: Vector3) -> bool:
 	return not is_visible_to_player(point)
 
 func foot_officer_count() -> int:
-	var count := 0
+	var count := int(gameplay.get_meta("police_air_reserved_slots",0))
 	for officer in gameplay.police:
 		if is_instance_valid(officer) and not officer.dead: count += 1
 	for unit in units:
 		for officer in unit.officers:
 			if is_instance_valid(officer) and not officer.dead: count += 1
 	return count
+
+## Transfer ownership without replenishing the crew. The interior controller
+## adds this same physical agent to Gameplay.police after a collision-safe entry.
+func take_agent_for_interior(officer: CharacterBody3D) -> bool:
+	for unit in units:
+		if not unit.officers.has(officer): continue
+		unit.officers.erase(officer)
+		unit.driver.ignore.erase(officer.get_rid())
+		if officer.boarded.is_connected(unit.on_officer_boarded): officer.boarded.disconnect(unit.on_officer_boarded)
+		officer.dispatch_controller = null
+		officer.vehicle = null
+		return true
+	return false
 
 ## Unidades encalhadas (partindo com recuperação física pendente há STRANDED_SLOT_SECONDS)
 ## cuja vaga de perfil é liberada, as mais antigas primeiro e no máximo
@@ -330,7 +358,14 @@ func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -
 			query.transform = Transform3D(Basis.IDENTITY, point + Vector3.UP * 0.9)
 			query.collision_mask = 7
 			query.exclude = excluded
-			if not space.intersect_shape(query, 1).is_empty(): continue
+			# Meio-fio e parede do túnel do canal ficam a menos de 1 m da porta: sem
+			# esta exceção a equipe nunca descia lá dentro ("no_exit" e a viatura ia embora).
+			var blocked := false
+			for hit in space.intersect_shape(query, 4):
+				if is_instance_valid(hit.collider) and hit.collider.has_meta("vehicle_ramp_structure"): continue
+				blocked = true
+				break
+			if blocked: continue
 			var sight := PhysicsRayQueryParameters3D.create(car.global_position + Vector3.UP * 0.9, point + Vector3.UP * 0.9, 1)
 			if not space.intersect_ray(sight).is_empty(): continue
 			var crowded := false
@@ -346,6 +381,7 @@ func _create_vehicle(service: String, point: Vector3, yaw: float, archetype := "
 	var car := VEHICLE.new()
 	car.archetype = archetype if not archetype.is_empty() else RULES.archetype_for(service)
 	car.paint_color = Color("202128") if service == "mortician" or car.archetype == "police_transport" else Color.WHITE
+	if car.archetype == "army_tank": car.paint_color = Color("64704e")
 	car.vehicle_id = "dispatch_%s_%d" % [service, _serial]
 	car.set_meta("dispatch_unit", true)
 	world.add_child(car)
@@ -466,7 +502,18 @@ func _dispatch_police(delta: float) -> void:
 	if stars <= 0:
 		deployed_this_pursuit = 0
 		_last_stars = 0
+		_investigation_clock = maxf(0.0, _investigation_clock - delta)
+		if gameplay.has_method("police_investigation_active") and gameplay.police_investigation_active() and _investigation_clock <= 0.0:
+			_investigation_clock = 20.0
+			if (investigation_unit == null or investigation_unit.finished) and _active_police().is_empty():
+				var responder := dispatch_police_to(gameplay.police_investigation_point(), true)
+				if responder != null:
+					investigation_unit = responder
+					responder._set_siren(false)
+					responder._set_state("investigating")
 		return
+	investigation_unit = null
+	if gameplay.has_method("police_surrendering") and gameplay.police_surrendering(): return
 	if _last_stars == 0: _police_clock = RULES.INITIAL_DELAY[stars]
 	elif stars > _last_stars: _police_clock = minf(_police_clock, RULES.INITIAL_DELAY[stars])
 	_last_stars = stars
@@ -487,30 +534,34 @@ func _dispatch_police(delta: float) -> void:
 	dispatch_police_to(anchor)
 
 ## Despacha uma viatura que nasce em faixa, fora da vista, a 32,5–112,5 m de `anchor`.
-func dispatch_police_to(anchor: Vector3) -> RefCounted:
-	var level: int = gameplay.stars
-	var tactical_limit := 2 if level >= 6 else 1
-	var tactical_count := _active_police().filter(func(u): return u.variant == "tactical").size()
-	var variant: String = RULES.variant_for(level, tactical_count < tactical_limit)
-	var archetype := "police_transport" if level >= 5 and variant == "tactical" else RULES.archetype_for("police")
+func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCounted:
+	var level: int = 1 if investigation else gameplay.stars
+	if level <= 0 or units.size() >= RULES.MAX_UNITS or _active_police().size() >= RULES.MAX_ACTIVE[clampi(level,0,6)]: return null
+	var variant := "patrol" if investigation else RULES.response_variant(level, units.filter(func(u): return u.is_police() and not u.finished))
+	var archetype := RULES.response_archetype(level,variant)
 	var size := _archetype_size(archetype)
 	var checked := 0
+	var planned := 0
+	var occupied := 0
 	var candidates := _depot_candidates("police", anchor)
 	candidates.append_array(router.spawn_candidates(anchor, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
 	for candidate in candidates:
-		if checked >= SPAWN_CANDIDATES_CHECKED: break
+		if checked >= POLICE_CLEARANCE_CANDIDATES or planned >= SPAWN_CANDIDATES_CHECKED: break
 		var point: Vector3 = candidate.point
 		if is_visible_to_player(point): continue
 		checked += 1
-		if not _space_clear(size, point, candidate.yaw, no_exclusions): continue
+		if not _space_clear(size, point, candidate.yaw, no_exclusions):
+			occupied += 1
+			continue
 		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
+		planned += 1
 		var plan: Dictionary = router.plan(point, anchor, heading)
 		if not plan.ok: continue
 		_serial += 1
 		deployed_this_pursuit += 1
 		var car := _create_vehicle("police", point, candidate.yaw, archetype)
 		var unit := _make_unit("police", car, RULES.speed_cap(variant), RULES.STUCK_POLICE)
-		unit.crew_capacity = RULES.OFFICERS_PER_VAN if archetype == "police_transport" else RULES.OFFICERS_PER_CAR
+		unit.crew_capacity = RULES.crew_size(archetype)
 		unit.crew_remaining = unit.crew_capacity
 		unit.serial = _serial
 		unit.level = level
@@ -521,8 +572,15 @@ func dispatch_police_to(anchor: Vector3) -> RefCounted:
 		unit.set_siren_on()
 		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "variant": variant})
 		return unit
-	emit_dispatch_event("spawn_failed", {"service": "police", "checked": checked})
+	emit_dispatch_event("spawn_failed", {"service": "police", "checked": checked, "occupied": occupied, "planned": planned, "archetype": archetype})
 	return null
+
+func retain_investigator(unit: RefCounted) -> bool:
+	if not gameplay.has_method("police_investigation_active") or not gameplay.police_investigation_active(): return false
+	if unit.variant in ["tank","motorcycle"] or unit.wrecked or unit.finished: return false
+	if unit.crew_remaining <= 0 and unit.officers.all(func(o): return not is_instance_valid(o) or o.dead): return false
+	if investigation_unit == null or investigation_unit.finished: investigation_unit = unit
+	return investigation_unit == unit
 
 func _has_active_tactical() -> bool:
 	for unit in _active_police():
@@ -551,11 +609,14 @@ func _dispatch_emergency(delta: float) -> void:
 			continue
 		if record.assigned or record.role not in ["medic", "mortician", "fire"]: continue
 		if distance_to_player(actor.global_position) > RULES.RESPONSE_RADIUS: continue
-		if record.age > best_age:
-			best_age = record.age
+		# Uma busca já em andamento tem prioridade, para não trocar de ocorrência no meio.
+		var priority: float = record.age + (100000.0 if record.has("search") else 0.0)
+		if priority > best_age:
+			best_age = priority
 			best_key = key
 	if best_key < 0: return
-	if dispatch_service_to(best_key) != null: _service_clock = RULES.DISPATCH_COOLDOWN
+	if dispatch_service_to(best_key, SERVICE_SEARCH_BUDGET) != null: _service_clock = RULES.DISPATCH_COOLDOWN
+	elif _search_pending: _scan_clock = 0.0
 	else: _service_clock = 3.0
 
 ## Garagens registradas com set_depots, projetadas na faixa mais próxima.
@@ -570,12 +631,19 @@ func _depot_candidates(service: String, target: Vector3) -> Array[Dictionary]:
 
 ## Despacha a viatura da ocorrência `key` do EmergencyManager, sem teleporte:
 ## nasce em garagem (`depots`) ou faixa fora da vista e chega dirigindo.
-func dispatch_service_to(key: int) -> RefCounted:
+func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
+	# `budget` >= 0 reparte a busca de ponto de partida em vários quadros: no máx. `budget`
+	# candidatos planejados por chamada, com o estado guardado em `record.search`.
+	# Tudo num quadro só custava 40-80 ms na 1ª ocorrência (varredura do grafo de ruas +
+	# até 8 planos de rota; tests/measure/probe_first_emergency.gd). Sem orçamento (-1)
+	# roda até o fim na hora, como antes.
+	_search_pending = false
 	var emergency: Node3D = gameplay.emergency
 	if not emergency.incidents.has(key): return null
 	var record: Dictionary = emergency.incidents[key]
 	var actor: Variant = record.get("actor")
 	if record.assigned or not is_instance_valid(actor) or actor.is_queued_for_deletion():
+		record.erase("search")
 		if not is_instance_valid(actor) or actor.is_queued_for_deletion():
 			emergency.incidents.erase(key)
 			if is_instance_valid(bridge): bridge.roles.erase(key)
@@ -584,27 +652,46 @@ func dispatch_service_to(key: int) -> RefCounted:
 	var service: String = record.role
 	var point: Vector3 = actor.global_position
 	var size := _archetype_size(RULES.archetype_for(service))
-	var candidates := _depot_candidates(service, point)
-	candidates.append_array(router.spawn_candidates(point, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
-	var checked := 0
+	var state: Dictionary = record.get("search", {})
+	if state.is_empty():
+		var found := _depot_candidates(service, point)
+		found.append_array(router.spawn_candidates(point, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
+		state = {"candidates": found, "index": 0, "checked": 0, "best": {}, "best_length": INF}
+		if budget >= 0:
+			# A coleta de candidatos já é o trabalho deste quadro.
+			record.search = state
+			_search_pending = true
+			return null
+	var candidates: Array = state.candidates
+	var work := 0
 	# Escolhe a rota mais curta entre os candidatos checados. O primeiro válido às
 	# vezes nascia numa faixa apontada para longe e o caminhão dava a volta no
 	# quarteirão: 50 a 140 s para um incêndio a 33 m (sonda de 2026-09-24).
-	var best: Dictionary = {}
-	var best_length := INF
-	for candidate in candidates:
-		if checked >= SPAWN_CANDIDATES_CHECKED_SERVICE: break
+	while state.index < candidates.size() and state.checked < SPAWN_CANDIDATES_CHECKED_SERVICE:
+		if budget >= 0 and work >= budget:
+			record.search = state
+			_search_pending = true
+			return null
+		var candidate: Dictionary = candidates[state.index]
+		state.index += 1
 		var start: Vector3 = candidate.point
 		if is_visible_to_player(start): continue
-		checked += 1
+		state.checked += 1
+		work += 1
 		if not _space_clear(size, start, candidate.yaw, no_exclusions): continue
 		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
 		var candidate_plan: Dictionary = router.plan(start, point, heading)
 		if not candidate_plan.ok or candidate_plan.end_gap > RULES.FOOT_RANGE: continue
 		var length: float = candidate_plan.curve.get_baked_length()
-		if length < best_length:
-			best_length = length
-			best = {"candidate": candidate, "plan": candidate_plan}
+		if length < state.best_length:
+			state.best_length = length
+			state.best = {"candidate": candidate, "plan": candidate_plan}
+	record.erase("search")
+	var best: Dictionary = state.best
+	if not best.is_empty() and budget >= 0:
+		# O ponto foi escolhido quadros atrás: confirma que ainda está livre e fora da vista.
+		var chosen: Dictionary = best.candidate
+		if is_visible_to_player(chosen.point) or not _space_clear(size, chosen.point, chosen.yaw, no_exclusions): best = {}
 	if not best.is_empty():
 		var candidate: Dictionary = best.candidate
 		var plan: Dictionary = best.plan
@@ -622,5 +709,5 @@ func dispatch_service_to(key: int) -> RefCounted:
 		record.crew = car
 		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "end_gap": plan.end_gap})
 		return unit
-	emit_dispatch_event("spawn_failed", {"service": service, "checked": checked, "incident": key})
+	emit_dispatch_event("spawn_failed", {"service": service, "checked": state.checked, "incident": key})
 	return null

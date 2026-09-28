@@ -18,6 +18,7 @@ const STORIES := [
 	"Samuel guardava cartas que nunca enviou. Dizia que algumas verdades precisavam esperar. Uma delas desapareceu.",
 ]
 const CASE_PHASES := ["discovered","dispatched","collection","morgue","burial","buried","unrecovered"]
+const GUEST_NAMES := ["Lúcia", "Raul", "Otávio", "Marta", "Vicente"]
 
 var session
 var cases: Dictionary = {}
@@ -39,6 +40,31 @@ var trip_phase := "idle"
 var trip_clock := 0.0
 var graves: Dictionary = {}
 var wind: AudioStreamPlayer3D
+var deaths: Dictionary = {}
+var quiet_left := 0.0
+var bodies: Array[Node] = []
+
+func _alive(actor: Node) -> bool:
+	return is_instance_valid(actor) and not actor.dead and not actor.is_queued_for_deletion()
+
+func _aisle_route(actor: Node3D, target: Vector3, lane_offset := 0.0) -> PackedVector3Array:
+	return PackedVector3Array([Vector3(CENTER.x+lane_offset, .04, actor.global_position.z), Vector3(CENTER.x+lane_offset, .04, target.z), target])
+
+func _arrival_visible() -> bool:
+	var camera := get_viewport().get_camera_3d()
+	if not is_instance_valid(camera): return false
+	for origin in [GATE, HEARSE_STOP, (GATE + HEARSE_STOP) * .5]:
+		for offset in [Vector3.ZERO, Vector3(-2,0,-2), Vector3(2,0,-2), Vector3(-2,0,2), Vector3(2,0,2)]:
+			if camera.is_position_in_frustum(origin + offset + Vector3.UP): return true
+	return false
+
+func _departure_visible() -> bool:
+	if _arrival_visible(): return true
+	var camera := get_viewport().get_camera_3d()
+	if not is_instance_valid(camera): return false
+	for actor in mourners:
+		if _alive(actor) and camera.is_position_in_frustum(actor.global_position + Vector3.UP): return true
+	return _alive(mortician) and camera.is_position_in_frustum(mortician.global_position + Vector3.UP)
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -74,6 +100,8 @@ func _exit_tree() -> void:
 	trip_clock = 0.0
 	incident_links.clear()
 	active = false
+	for body in bodies: _free_actor(body)
+	bodies.clear()
 
 func refresh_context() -> void:
 	if session == null or session.state == null: return
@@ -100,6 +128,13 @@ func _process(delta: float) -> void:
 		_observe_emergency()
 		refresh_context()
 	if not active or not is_finite(delta) or delta <= 0: return
+	quiet_left = maxf(0.0, quiet_left - delta)
+	if quiet_left == 0.0:
+		for resident in [keeper, storyteller]:
+			if _alive(resident) and resident.frightened and resident.finished():
+				resident.frightened = false
+				if resident == storyteller: _story_route()
+				else: resident.set_route(_aisle_route(resident, KEEPER_WORK + Vector3.UP * .04))
 	_tick_storyteller(delta)
 	_tick_trip(delta)
 
@@ -160,20 +195,28 @@ func _sync_residents(in_house: bool) -> void:
 		_free_actor(storyteller)
 		storyteller = null
 		if not is_instance_valid(session.room): return
+		if deaths.has("keeper"): return
 		if not is_instance_valid(keeper):
 			keeper = _actor("keeper","ANSELMO")
-		keeper.position = session.room.to_global(Vector3(-2.35,.04,-2.15))
-		keeper.set_route(PackedVector3Array())
-		keeper.set_working(false)
+		if keeper.dead or keeper.frightened: return
+		if keeper.get_meta("keeper_room", 0) != session.room.get_instance_id():
+			# Leave room for the .30 m capsule in front of the workbench.
+			# Context scans must not undo physical movement every quarter second.
+			keeper.global_position = session.room.to_global(Vector3(-2.35,.04,-1.85))
+			keeper.velocity = Vector3.ZERO
+			keeper.reset_physics_interpolation()
+			keeper.set_route(PackedVector3Array())
+			keeper.set_working(false)
+			keeper.set_meta("keeper_room", session.room.get_instance_id())
 		return
 	if is_instance_valid(keeper) and keeper.global_position.distance_to(CENTER)>90:
 		_free_actor(keeper)
 		keeper = null
-	if not is_instance_valid(keeper):
+	if not is_instance_valid(keeper) and not deaths.has("keeper"):
 		keeper = _actor("keeper","ANSELMO")
 		keeper.position = KEEPER_WORK+Vector3.UP*.04
 		keeper.set_working(true)
-	if not is_instance_valid(storyteller):
+	if not is_instance_valid(storyteller) and not deaths.has("storyteller"):
 		storyteller = _actor("storyteller","ELIAS")
 		storyteller.position = CENTER+Vector3(0,0,-280)*SCALE+Vector3.UP*.04
 		_story_route()
@@ -182,10 +225,38 @@ func _actor(role: String, display_name: String, shirt_override := Color.TRANSPAR
 	var actor = ACTOR.new()
 	actor.configure(role,display_name,shirt_override)
 	session.world.add_child(actor)
+	actor.bind_combat(session.world.gameplay)
+	actor.died.connect(_actor_died)
+	actor.threatened.connect(_actor_threatened)
 	return actor
 
+func _death_key(actor: Node) -> String:
+	if actor.role in ["keeper", "storyteller"]: return actor.role
+	return str(actor.get_meta("funeral_identity", trip_identity)) + ":" + str(actor.get_meta("persistent_id", ""))
+
+func _actor_died(actor: CharacterBody3D) -> void:
+	deaths[_death_key(actor)] = true
+	_actor_threatened(actor)
+
+func _actor_threatened(_actor: CharacterBody3D) -> void:
+	quiet_left = 30.0
+	if not trip_identity.is_empty() and trip_phase != "returning":
+		if cases[trip_identity].phase == "burial": cases[trip_identity].phase = "morgue"
+		trip_phase = "returning"
+		_send_funeral_home()
+	for resident in [keeper, storyteller]:
+		if not _alive(resident): continue
+		resident.frightened = true
+		resident.speech.hide()
+		if session.state.place_id.is_empty():
+			var side := -1.0 if resident == keeper else 1.0
+			var escape := _aisle_route(resident, GATE + Vector3(side * .65, .04, -1.2))
+			escape.append(GATE + Vector3(side * 4.5, .04, -1.2))
+			resident.set_route(escape)
+		else: resident.set_route(PackedVector3Array())
+
 func _story_route() -> void:
-	if not is_instance_valid(storyteller): return
+	if not _alive(storyteller) or storyteller.frightened: return
 	var target: Vector3 = CENTER+STORY_STOPS[storyteller_stop]*SCALE+Vector3.UP*.04
 	# V1 keeps Elias on the central aisle before he turns toward a grave.
 	storyteller.set_route(PackedVector3Array([
@@ -197,7 +268,7 @@ func _story_route() -> void:
 	storyteller_told = false
 
 func _tick_storyteller(delta: float) -> void:
-	if not is_instance_valid(storyteller) or not storyteller.finished(): return
+	if not _alive(storyteller) or storyteller.frightened or not storyteller.finished(): return
 	storyteller_wait += delta
 	var nearby: bool = session.state.place_id.is_empty() and session.world.player.global_position.distance_to(storyteller.global_position)<8.45
 	if nearby and not storyteller_told:
@@ -211,7 +282,7 @@ func _tick_storyteller(delta: float) -> void:
 		_story_route()
 
 func nearest_action() -> Dictionary:
-	if not active or session.world.driving.occupied or not is_instance_valid(keeper): return {}
+	if not active or session.world.driving.occupied or not _alive(keeper) or keeper.frightened: return {}
 	if session.world.player.global_position.distance_to(keeper.global_position)>1.7: return {}
 	return {"id":"urban_v1","target":"cemetery_keeper","label":"Conversar","position":keeper.global_position}
 
@@ -223,10 +294,12 @@ func perform(target: String) -> bool:
 
 func _try_start_trip() -> void:
 	if not active or not trip_identity.is_empty() or session.state.place_id != "": return
+	if quiet_left > 0.0 or _arrival_visible(): return
 	var identities: Array = cases.keys()
 	identities.sort()
 	for identity in identities:
 		if cases[identity].phase != "morgue": continue
+		if deaths.has(str(identity) + ":cemetery_mortician"): continue
 		_start_trip(identity)
 		return
 
@@ -251,18 +324,29 @@ func _start_trip(identity: String) -> void:
 	session.world.add_child(hearse)
 	hearse.place(HEARSE_STOP+Vector3.UP*.04,0)
 	mortician = _actor("mortician","Agente funerário")
-	mortician.position = HEARSE_STOP+Vector3(.9,.04,0)
+	mortician.set_meta("funeral_identity", identity)
+	mortician.position = HEARSE_STOP+Vector3(1.5,.04,0)
 	var point := _plot_position(plot)
-	mortician.set_route(PackedVector3Array([GATE+Vector3.UP*.04,point+Vector3(-1.5,.04,0)]))
-	if is_instance_valid(keeper): keeper.set_route(PackedVector3Array([point+Vector3(1.5,.04,0)]))
+	var plot_side := signf(point.x - CENTER.x)
+	mortician.attention = point
+	mortician.has_attention = true
+	mortician.set_route(PackedVector3Array([GATE+Vector3(1.5,.04,-2), GATE+Vector3.UP*.04, Vector3(CENTER.x,.04,point.z), point+Vector3(plot_side*1.5,.04,0)]))
+	if _alive(keeper): keeper.set_route(_aisle_route(keeper, point+Vector3(0,.04,-1.6)))
 	# HarborWorldEvents creates five staggered funeral guests in production V1.
 	# They remain attachments to this one ledger-owned funeral, never save owners.
 	for index in 5:
-		var mourner = _actor("mourner","Visitante",Color("343543") if index%2 else Color("45434b"))
+		if deaths.has(identity + ":cemetery_mourner_%02d" % index): continue
+		var mourner = _actor("mourner",GUEST_NAMES[index],Color("343543") if index%2 else Color("45434b"))
 		mourner.set_meta("persistent_id","cemetery_mourner_%02d" % index)
-		var lane := -0.9 if index%2==0 else 0.9
-		mourner.position = GATE+Vector3(lane,.04,-1.5-index*.65)
-		mourner.set_route(PackedVector3Array([GATE+Vector3(lane,.04,1.2),point+Vector3(-1.1+float(index%3)*1.1,.04,1.0+float(index/3)*1.1)]))
+		mourner.set_meta("funeral_identity", identity)
+		mourner.attention = point
+		mourner.has_attention = true
+		var lane := -0.65 if index%2==0 else 0.65
+		mourner.position = GATE+Vector3(signf(lane)*1.6,.04,-1.8-index*.85)
+		mourner.departure_delay = .8 + index * .65
+		# Keep the central aisle free even for the two plots nearest its edge.
+		var target := Vector3(CENTER.x+plot_side*(5.8-float(index%3)*1.1),.04,point.z+1.8+float(index/3)*1.1)
+		mourner.set_route(PackedVector3Array([GATE+Vector3(signf(lane)*1.6,.04,-1.2), GATE+Vector3(lane,.04,1.2), Vector3(CENTER.x+lane,.04,target.z), target]))
 		mourners.append(mourner)
 
 func _tick_trip(delta: float) -> void:
@@ -272,7 +356,7 @@ func _tick_trip(delta: float) -> void:
 		return
 	match trip_phase:
 		"arriving":
-			if is_instance_valid(mortician) and mortician.finished():
+			if _alive(mortician) and mortician.finished() and _guests_finished():
 				trip_phase = "working"
 				trip_clock = 0
 				mortician.set_working(true)
@@ -281,7 +365,12 @@ func _tick_trip(delta: float) -> void:
 			trip_clock += delta
 			if trip_clock >= 5.0: _finish_burial()
 		"returning":
-			if not is_instance_valid(mortician) or mortician.finished(): _complete_trip()
+			if (not _alive(mortician) or mortician.finished()) and _guests_finished() and not _departure_visible(): _complete_trip()
+
+func _guests_finished() -> bool:
+	for mourner in mourners:
+		if _alive(mourner) and not mourner.finished(): return false
+	return true
 
 func _finish_burial() -> void:
 	var identity := trip_identity
@@ -289,22 +378,35 @@ func _finish_burial() -> void:
 	_build_grave(identity)
 	trip_phase = "returning"
 	trip_clock = 0
-	if is_instance_valid(mortician):
-		mortician.set_working(false)
-		mortician.set_route(PackedVector3Array([GATE+Vector3.UP*.04,HEARSE_STOP+Vector3(.9,.04,0)]))
-	if is_instance_valid(keeper):
+	_send_funeral_home()
+	if _alive(keeper):
 		keeper.set_working(false)
-		keeper.set_route(PackedVector3Array([KEEPER_WORK+Vector3.UP*.04]))
+		var opposite_lane := -signf(_plot_position(int(cases[identity].plot)).x - CENTER.x) * .85
+		keeper.set_route(_aisle_route(keeper, KEEPER_WORK+Vector3.UP*.04, opposite_lane))
+
+func _send_funeral_home() -> void:
+	if _alive(mortician):
+		mortician.set_working(false)
+		mortician.has_attention = false
+		mortician.frightened = quiet_left > 0.0
+		mortician.carrying_body = false
+		var rear_clearance: float = hearse.half_length + .75 if is_instance_valid(hearse) else 3.05
+		mortician.set_route(_aisle_route(mortician, HEARSE_STOP+Vector3(0,.04,rear_clearance)))
 	for index in mourners.size():
 		var mourner = mourners[index]
-		if is_instance_valid(mourner):
-			var lane := -0.9 if index%2==0 else 0.9
-			mourner.set_route(PackedVector3Array([GATE+Vector3(lane,.04,1.2),GATE+Vector3(lane,.04,-3.5)]))
+		if _alive(mourner):
+			mourner.has_attention = false
+			mourner.frightened = quiet_left > 0.0
+			var lane := -.85 if mourner.global_position.x < CENTER.x else .85
+			# Leave the walking lane before waiting. Arrival order can change when
+			# visitors avoid each other, so merely reversing queue slots is unsafe.
+			var stop_z := -2.0 - index * .85
+			mourner.set_route(PackedVector3Array([Vector3(CENTER.x+lane,.04,mourner.global_position.z-.75),GATE+Vector3(lane,.04,1.2),GATE+Vector3(signf(lane)*1.6,.04,-1.2),GATE+Vector3(signf(lane)*1.6,.04,stop_z),GATE+Vector3(signf(lane)*3.2,.04,stop_z)]))
 
 func _complete_trip() -> void:
-	_free_actor(mortician)
+	_release_guest(mortician)
 	mortician = null
-	for mourner in mourners: _free_actor(mourner)
+	for mourner in mourners: _release_guest(mourner)
 	mourners.clear()
 	if is_instance_valid(hearse): hearse.queue_free()
 	hearse = null
@@ -312,6 +414,12 @@ func _complete_trip() -> void:
 	trip_phase = "idle"
 	trip_clock = 0
 	_try_start_trip()
+
+func _release_guest(actor: Node) -> void:
+	if not is_instance_valid(actor): return
+	if actor.dead and active:
+		bodies.append(actor)
+	else: _free_actor(actor)
 
 func _interrupt_trip() -> void:
 	if cases.has(trip_identity) and cases[trip_identity].phase == "burial": cases[trip_identity].phase = "morgue"
@@ -368,6 +476,8 @@ func _deactivate() -> void:
 	_free_actor(keeper)
 	keeper = null
 	if not trip_identity.is_empty(): _interrupt_trip()
+	for body in bodies: _free_actor(body)
+	bodies.clear()
 
 func _free_actor(actor: Node) -> void:
 	if is_instance_valid(actor): actor.queue_free()
@@ -385,10 +495,19 @@ func snapshot() -> Dictionary:
 		if phase in ["collection","burial"]: phase = "morgue"
 		elif phase in ["discovered","dispatched"]: phase = "unrecovered"
 		records.append({"identity":identity,"name":str(source.name),"phase":phase,"plot":int(source.plot)})
-	return {"version":1,"serial":serial,"secret_known":secret_known,"storyteller_stop":storyteller_stop,"cases":records}
+	return {"version":1,"serial":serial,"secret_known":secret_known,"storyteller_stop":storyteller_stop,"cases":records,"deaths":deaths.keys()}
 
 func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
+	_free_actor(keeper)
+	keeper = null
+	_free_actor(storyteller)
+	storyteller = null
+	for body in bodies: _free_actor(body)
+	bodies.clear()
+	deaths.clear()
+	for identity in data.get("deaths", []): deaths[identity] = true
+	quiet_left = 0.0
 	# Runtime funeral actors are attachments, never save owners. A restore first
 	# tears them down and reconstructs only from the case ledger.
 	_free_actor(mortician)
@@ -411,7 +530,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if is_instance_valid(grave): grave.queue_free()
 	graves.clear()
 	_restore_graves()
-	if active: _try_start_trip()
+	if active: refresh_context()
 	return true
 
 static func validate_snapshot(data: Dictionary) -> bool:
@@ -432,4 +551,17 @@ static func validate_snapshot(data: Dictionary) -> bool:
 		if record.phase == "buried" and plot < 0: return false
 		identities[record.identity] = true
 		if plot >= 0: plots[plot] = true
+	var saved_deaths: Variant = data.get("deaths", [])
+	if not saved_deaths is Array or saved_deaths.size() > 386: return false
+	var seen := {}
+	for identity in saved_deaths:
+		if not identity is String or seen.has(identity): return false
+		if identity not in ["keeper", "storyteller"]:
+			var valid := false
+			for case_id in identities:
+				if identity == case_id + ":cemetery_mortician": valid = true
+				for index in 5:
+					if identity == case_id + ":cemetery_mourner_%02d" % index: valid = true
+			if not valid: return false
+		seen[identity] = true
 	return true

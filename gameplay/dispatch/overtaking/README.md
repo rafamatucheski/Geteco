@@ -4,13 +4,22 @@ Fecha a interação entre `gameplay/traffic_yield/` (o carro ambiente encosta e
 para: `Vehicle.get_meta("traffic_yield_state")` = `held` | `pulling`) e o
 `DispatchDriver`: a viatura desvia **à esquerda**, passa e volta à faixa.
 
-> **Estado: escrito, NÃO executado.** Testes e medições ficam pendentes
-> explicitamente (nenhum foi escrito ou rodado nesta etapa, e os testes de
-> `tests/dispatch/` não cobrem nada deste módulo). Espere erros de sintaxe e de
-> calibração na primeira execução. **Não há promessa de passagem universal**: em
-> rua estreita, com tráfego contrário, cruzamento ou curva, a viatura espera e
-> reavalia. Tudo abaixo descreve o que o código faz **por leitura**, não o que foi
-> observado rodando.
+> **Validação parcial em 28/09/2026:** `tests/dispatch/test_fire_traffic.gd`
+> passou 25 verificações headless com o caminhão e a física reais: fila de dois
+> carros, recuperação com ré, chegada ao destino sem dano, contramão ocupada,
+> sensor traseiro, sirene e exclusão do carro controlado pelo jogador.
+> Performance e revisão visual na cena real continuam pendentes: havia duas
+> instâncias do Godot abertas, impedindo um comparativo isolado antes/depois.
+> Esses testes não certificam os demais estados do módulo nem passagem universal
+> em ruas estreitas, cruzamentos ou curvas.
+
+O bombeiro com sirene reconhece também carros ambiente parados no mesmo sentido,
+mesmo antes de cederem passagem. Antecipa o planejamento pelo espaço da rampa e
+freia enquanto aguarda uma manobra válida. Se já estiver perto demais, permite
+uma ré de até 3 segundos, com sensor traseiro contínuo e as tentativas limitadas
+do piloto. Todo desvio continua dependendo da varredura de casco e pista livre.
+
+Teste dirigido: `godot --headless --path . --script res://tests/dispatch/test_fire_traffic.gd -- --no-save`.
 
 ## Divisão de responsabilidades
 

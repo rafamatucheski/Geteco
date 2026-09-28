@@ -99,6 +99,9 @@ func apply_sources(sources: Array[Dictionary], focus: Vector3, night: float) -> 
 			for index in lights.size():
 				if index not in assignments.values(): assignments[item.id] = index; break
 		var light := lights[assignments[item.id]]
+		# Orthographic harbor camera sits farther than the old 50 m fade cutoff.
+		# The existing focus-ranked pool already culls these authored fittings.
+		light.distance_fade_enabled = not bool(item.get("camera_safe",false))
 		light.global_position = item.point
 		light.omni_range = item.get("range",14.0)
 		light.light_color = item.get("color",Color("ffe4ba"))

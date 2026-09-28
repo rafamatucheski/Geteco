@@ -1,0 +1,17 @@
+<style>
+.glass{background:linear-gradient(135deg,rgba(30,42,48,.79),rgba(19,29,35,.88));backdrop-filter:blur(9px) saturate(.6);border-radius:8px;box-shadow:0 2px 9px #0002,inset 0 1px 0 #ffffff24}
+.vitals{position:absolute;left:24px;bottom:246px;width:156px;padding:9px 10px;display:grid;gap:9px}.vital{display:flex;align-items:center;gap:8px;height:13px}.vital svg{width:13px;height:13px;flex-shrink:0}.track{width:92px;height:3px;background:#ffffff24;border-radius:2px;overflow:hidden}.fill{height:100%;border-radius:2px}.vital b{font-size:12px;font-weight:600;width:19px;text-align:right;font-variant-numeric:tabular-nums}.health{color:#f0c0af}.armor{color:#a2c7d5}
+.wallet{position:absolute;left:24px;top:24px;padding:7px 11px;display:flex;align-items:baseline;gap:6px;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}.wallet small{font-size:12px;font-weight:400;color:#c5d0cb}
+.wanted{position:absolute;right:24px;top:24px;padding:9px 12px;display:flex;align-items:center;gap:12px}.wanted-label{font-size:12px;font-weight:600;letter-spacing:.9px;color:#efb098}.levels{display:flex;gap:5px}.level{height:5px;width:14px;border-radius:1px;background:#ffffff26}.level.on{background:#e8a68c}
+.weapon{position:absolute;right:24px;bottom:24px;width:156px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:13px}.weapon svg{width:44px;height:30px;fill:#e7e8df}.ammo{display:flex;align-items:baseline;gap:6px;font-variant-numeric:tabular-nums}.ammo strong{font-size:30px;line-height:1;font-weight:600}.ammo span{font-size:15px;color:#c3cccd}.ammo i{font-size:14px;font-style:normal;color:#849398}
+.interaction{position:absolute;left:674px;top:326px;display:flex;align-items:center;gap:7px;text-shadow:0 1px 3px #000,0 0 5px #000b;font-size:15px;font-weight:600}.key{display:grid;place-items:center;width:24px;height:25px;border-radius:5px;background:rgba(23,33,39,.8);box-shadow:inset 0 1px 0 #ffffff55,0 1px 4px #0005;backdrop-filter:blur(5px);font-size:14px;font-weight:600;text-shadow:none}
+</style>
+<!-- Estado demonstrativo de apresentação. Valores não extraídos do save. -->
+<div class="wallet glass"><small>R$</small>2.450</div>
+<div class="wanted glass" aria-label="Em busca, nível dois de seis"><span class="wanted-label">EM BUSCA</span><div class="levels"><i class="level on"></i><i class="level on"></i><i class="level"></i><i class="level"></i><i class="level"></i><i class="level"></i></div></div>
+<div class="vitals glass">
+<div class="vital health" aria-label="Vida 82 de 100"><svg viewBox="0 0 16 16"><path d="M8 14 2 8C-2 3 4-1 8 4c4-5 10-1 6 4Z" fill="currentColor"/></svg><div class="track"><div class="fill" style="width:82%;background:#e6b09e"></div></div><b>82</b></div>
+<div class="vital armor" aria-label="Colete 40 de 100"><svg viewBox="0 0 16 16"><path d="m8 1 6 2v5c0 3-3 5-6 7-3-2-6-4-6-7V3Z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg><div class="track"><div class="fill" style="width:40%;background:#9bbfcc"></div></div><b>40</b></div>
+</div>
+<div class="weapon glass" aria-label="Pistola, 12 cartuchos no carregador e 48 na reserva"><svg viewBox="0 0 60 36"><path d="M5 7h43V5h4v3h4v9H34l-4 6h-7l-4 11H8l6-18H6Z"/><path d="M25 18h7l-2 4h-6Z" fill="#29373c"/></svg><div class="ammo"><strong>12</strong><i>/</i><span>48</span></div></div>
+<div class="interaction"><span class="key">E</span><span>Entrar</span></div>

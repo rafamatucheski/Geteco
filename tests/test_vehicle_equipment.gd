@@ -22,7 +22,7 @@ func run() -> void:
 		car.add_child(equipment)
 		check(not equipment.toggle_headlights() and not equipment.honk(), id + " unoccupied input blocked")
 		car.controlled = true
-		check(equipment.toggle_headlights() and equipment.lamps.size() == 2 and equipment.lamps[0].visible, id + " physical paired beams")
+		check(equipment.toggle_headlights() and equipment.lamps.size() == 2 and equipment.lamps[0].lamp.visible, id + " physical paired beams")
 		var emergency: bool = id != "coupe"
 		check(equipment.toggle_siren() == emergency, id + " original lightbar availability")
 		if emergency:
@@ -35,11 +35,11 @@ func run() -> void:
 		check(not equipment.toggle_headlights() and not equipment.honk() and not equipment.toggle_siren(), id + " modal blocks controls")
 		car.controlled = false
 		equipment._refresh()
-		check(not equipment.lamps[0].visible and not equipment.horn_audio.playing and not equipment.siren_audio.playing, id + " exit stops equipment")
+		check(not equipment.lamps[0].lamp.visible and not equipment.horn_audio.playing and not equipment.siren_audio.playing, id + " exit stops equipment")
 		car.controlled = true
 		car.health = 0
 		equipment._refresh()
-		check(not equipment.lamps[0].visible and not equipment.siren_audio.playing, id + " destroyed has no equipment")
+		check(not equipment.lamps[0].lamp.visible and not equipment.siren_audio.playing, id + " destroyed has no equipment")
 		car.free()
 	var audio := preload("res://gameplay/VehicleEquipmentAudio.gd")
 	check(audio.horn_stream().data.size() == 17640, "original 0.4 second horn")

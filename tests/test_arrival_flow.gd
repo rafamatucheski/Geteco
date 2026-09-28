@@ -20,7 +20,7 @@ func run() -> void:
 		await physics_frame
 		if arrival.phase == "police_visit" or (arrival.phase == "disembark" and not arrival.controls_locked): break
 	print("DISEMBARK phase=", arrival.phase, " player=", world.player.global_position)
-	check(arrival.phase == "police_visit", "player physically exits original urban coach")
+	check(arrival.phase == "police_visit", "player physically exits ferry onto public quay")
 	check(arrival.flags.get("harbor_arrival_seen", false), "arrival flag after completed physical exit")
 	check(world.player.visible and not world.player.input_locked, "visible controllable player after arrival")
 	check(await session.enter_place("harbor_police", false), "enter original police station")
