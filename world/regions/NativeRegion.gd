@@ -3,6 +3,7 @@ extends Node3D
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
 const MOUNTAIN_SHADOW := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 const URBAN_FACTORY := preload("res://world/urban_detail/UrbanBuildingFactory.gd")
+const NATURAL_GROUND := preload("res://world/regions/natural_ground.gdshader")
 const HARBOR_ROUTE_FACTORY := preload("res://world/harbor_route_detail/HarborRouteDetailFactory.gd")
 const HARBOR_PUBLIC_REALM := preload("res://world/urban_detail/HarborPublicRealm3D.gd")
 const HARBOR_BRIDGE := preload("res://world/urban_detail/HarborBridge3D.gd")
@@ -19,6 +20,8 @@ const HARBOR_ROAD_GEOMETRY := preload("res://world/urban_detail/HarborRoadGeomet
 const HARBOR_URBAN_SURFACE := preload("res://world/urban_detail/HarborUrbanSurface3D.gd")
 const CITY_DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const TERRAIN := preload("res://world/regions/MountainTerrain3D.gd")
+const ROUTE_GEOMETRY := preload("res://world/mountain_detail/MountainRouteGeometry.gd")
+const ROUTE_LAYOUT := preload("res://world/mountain_detail/MountainRouteLayout.gd")
 const DRESSING := preload("res://world/regions/TerrainDressing3D.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const WALKUP_DOOR := preload("res://world/places/WalkupFacadeDoor.gd")
@@ -37,6 +40,8 @@ var region_id := "harbor"
 var chunks: Dictionary = {}
 var records: Dictionary = {}
 var roads: Array[Dictionary] = []
+var walkways: Array[Dictionary] = []
+var route_geometry := ROUTE_GEOMETRY.new()
 var buildings: Array[Dictionary] = []
 var entries: Array[Dictionary] = []
 var source_data: Dictionary
@@ -99,6 +104,26 @@ func prewarm() -> void:
 		_suspend_chunk_mechanisms(chunk)
 		chunks.erase(key)
 		chunk.free()
+	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
+
+## Warm shared resources using the existing streaming budget and resident cells.
+## The menu must keep drawing/input alive while these offscreen cells warm up.
+func prewarm_incremental() -> void:
+	# Finish resident jobs first. Otherwise an offscreen warm-up cell could
+	# consume a pending resident key, then discard geometry the camera needs.
+	while not is_streaming_idle():
+		await get_tree().process_frame
+	for key in records.keys():
+		if chunks.has(key): continue
+		_build_chunk(key, false, true)
+		var chunk: Node3D = chunks[key]
+		while build_jobs.any(func(job): return job.key == key):
+			await get_tree().process_frame
+		_hold_file_resources(chunk)
+		_suspend_chunk_mechanisms(chunk)
+		chunks.erase(key)
+		chunk.queue_free()
+		await get_tree().process_frame
 	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
 
 ## Recursos vindos de arquivo (scripts, malhas, materiais, fontes) usados pelo chunk
@@ -245,6 +270,7 @@ func _prepare() -> void:
 		for record in MOUNTAIN_FACTORY.get_environmental_records():
 			_record(record.position,record)
 		_prepare_forest()
+		_revise_mountain_routes()
 	for entry in CATALOG.access_points():
 		if entry.region == region_id: entries.append(entry)
 	if region_id == "harbor":
@@ -260,7 +286,7 @@ func _prepare() -> void:
 		terrain = TERRAIN.new()
 		var reservations: Array = CATALOG.definitions().duplicate()
 		reservations.append_array(entries)
-		var terrain_roads: Array[Dictionary] = roads.duplicate()
+		var terrain_roads: Array[Dictionary] = roads + walkways
 		# These Harbor routes enter Mountain's resident terrain at the northbank
 		# gateway. Reserve the authored roadway so its hillside mesh/collider
 		# cannot rise into the approach while both regions are loaded.
@@ -271,6 +297,44 @@ func _prepare() -> void:
 				avenue_points.append(CATALOG._at(Vector2(point[0],point[1]),"harbor"))
 			terrain_roads.append({"id":avenue.id,"points":avenue_points,"width":float(avenue.width)*SCALE})
 		terrain.configure(terrain_roads,reservations,[])
+func map_routes() -> Array[Dictionary]:
+	return roads + walkways
+
+func _revise_mountain_routes() -> void:
+	# Generate the original forest first, then clear only the changed corridors.
+	# Rejection during seeded placement would move trees throughout the region.
+	for key in records:
+		records[key] = records[key].filter(func(record): return record.kind != "road")
+	roads.clear()
+	var main := ROUTE_LAYOUT.main_route(source_data.mountain_control_points)
+	_add_road("mountain_pass",main,140*SCALE)
+	for road in ROUTE_LAYOUT.branches(main):
+		_add_road(road.id,road.points,road.width,road.surface)
+	walkways = ROUTE_LAYOUT.paths()
+	for path in walkways:
+		if path.id in ["cave_trail","forest_shop_walk"]: path.points = ROUTE_LAYOUT.snap_start(path.points,main)
+		_record_path(path)
+	route_geometry.configure(roads + walkways)
+	for key in records:
+		records[key] = records[key].filter(func(record):
+			return record.kind != "tree" or not route_geometry.contains(record.position,3.0))
+	var cover := CATALOG._at(Vector2(6190,-95),region_id)
+	_record(cover,{"kind":"cave_approach","position":cover})
+
+func _record_path(path: Dictionary) -> void:
+	var points: PackedVector3Array = path.points
+	var outline := ROUTE_GEOMETRY.edges(points,float(path.width))
+	for i in range(points.size()-1):
+		var steps := maxi(1,ceili(points[i].distance_to(points[i+1])/16.0))
+		for step in steps:
+			var start := float(step)/steps
+			var finish := float(step+1)/steps
+			var a := points[i].lerp(points[i+1],start)
+			var b := points[i].lerp(points[i+1],finish)
+			_record((a+b)*.5,{"kind":"road","road_id":path.id,"a":a,"b":b,"width":path.width,"surface":"footpath",
+				"left_a":outline[i].left.lerp(outline[i+1].left,start),"right_a":outline[i].right.lerp(outline[i+1].right,start),
+				"left_b":outline[i].left.lerp(outline[i+1].left,finish),"right_b":outline[i].right.lerp(outline[i+1].right,finish)})
+
 func _add_road(id: String,points: PackedVector3Array,width: float,surface: String = "asphalt") -> void:
 	roads.append({"id":id,"points":points,"width":width,"surface":surface})
 	var edges: Array[Dictionary] = []
@@ -283,7 +347,12 @@ func _add_road(id: String,points: PackedVector3Array,width: float,surface: Strin
 			var miter := (previous_normal+next_normal).normalized()
 			if miter.is_zero_approx(): miter = next_normal
 			var reach := width*.5/maxf(.45,miter.dot(next_normal))
+			if id == "mountain_pass":
+				# Match the two 3.875 m Harbor lanes, easing to the authored pass width.
+				var join := smoothstep(WORLD_CONNECTION.SEAM.x, WORLD_CONNECTION.TRAFFIC_MERGE_X, points[point_index].x)
+				reach *= lerpf(7.75 / width, 1.0, join)
 			edges.append({"left":points[point_index]+miter*reach,"right":points[point_index]-miter*reach})
+	if region_id == "mountain" and id != "mountain_pass": edges = ROUTE_GEOMETRY.edges(points,width)
 	for i in range(points.size()-1):
 		var distance := points[i].distance_to(points[i+1])
 		var steps := maxi(1,ceili(distance/16.0))
@@ -435,23 +504,38 @@ func _build_road_surfaces(chunk: Node3D) -> void:
 		if not by_color.has(color): by_color[color] = PackedVector3Array()
 		var vertices: PackedVector3Array = by_color[color]
 		var y: float = row.top
-		var left_a: Vector3 = row.left_a+Vector3.UP*y
-		var right_a: Vector3 = row.right_a+Vector3.UP*y
-		var left_b: Vector3 = row.left_b+Vector3.UP*y
-		var right_b: Vector3 = row.right_b+Vector3.UP*y
-		vertices.append_array(PackedVector3Array([left_a,left_b,right_a,right_a,left_b,right_b]))
+		var polygon: PackedVector2Array = row.polygon
+		for index in Geometry2D.triangulate_polygon(polygon):
+			var point := polygon[index]
+			vertices.append(Vector3(point.x,y,point.y))
 		by_color[color] = vertices
 	for color in by_color:
+		if by_color[color].is_empty(): continue
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		for vertex in by_color[color]: surface.add_vertex(vertex)
+		for vertex in by_color[color]:
+			surface.set_uv(Vector2(vertex.x, vertex.z) / 4.0)
+			surface.add_vertex(vertex)
 		surface.generate_normals()
 		var mesh := MeshInstance3D.new()
 		mesh.name = "RoadSurface"
 		mesh.mesh = surface.commit()
-		mesh.material_override = _material(color)
+		if color == HARBOR_ROAD_GEOMETRY.ROAD_COLOR:
+			if harbor_road_geometry == null: harbor_road_geometry = HARBOR_ROAD_GEOMETRY.new()
+			mesh.material_override = harbor_road_geometry._material(color)
+		else:
+			# Estrada de terra ganha o mesmo chão procedural das peças do editor.
+			var dirt := ShaderMaterial.new()
+			dirt.shader = NATURAL_GROUND
+			dirt.set_shader_parameter("base_color",color)
+			dirt.set_shader_parameter("uv_meters",4.0)
+			mesh.material_override = dirt
+			mesh.set_instance_shader_parameter("uv_origin",(Vector2(by_color[color][0].x,by_color[color][0].z)/256.0).floor()*64.0)
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(mesh)
+		# Support uses the same outline as the surface, at terrain height.
+		mesh.create_trimesh_collision()
+		mesh.get_child(0).position.y = -.026
 	chunk.remove_meta("road_surface_rows")
 
 ## The cemetery provides its own floor and collision at y=0. Harbor land has
@@ -471,12 +555,12 @@ func _rect_outside(surface: Rect2, hole: Rect2) -> Array[Rect2]:
 		pieces.append(Rect2(Vector2(overlap.end.x, overlap.position.y), Vector2(surface.end.x - overlap.end.x, overlap.size.y)))
 	return pieces
 
-func _build_chunk(key: Vector2i, immediate := true) -> void:
+func _build_chunk(key: Vector2i, immediate := true, warming := false) -> void:
 	var chunk := Node3D.new()
 	chunk.name = "Chunk_%d_%d"%[key.x,key.y]
 	add_child(chunk)
 	chunks[key] = chunk
-	var job := {"key":key,"chunk":chunk,"rect":Rect2(key.x*CELL,key.y*CELL,CELL,CELL),"stage":0,"index":0}
+	var job := {"key":key,"chunk":chunk,"rect":Rect2(key.x*CELL,key.y*CELL,CELL,CELL),"stage":0,"index":0,"warming":warming}
 	if immediate: _run_build_job(job,INF)
 	else: build_jobs.append(job)
 
@@ -502,17 +586,26 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 				job.stage = 2
 			2:
 				if int(job.index) < chunk_records.size():
-					_build_record(chunk,chunk_records[int(job.index)])
+					var record: Dictionary = chunk_records[int(job.index)]
+					# This batch regenerates fourteen containers and normals every time
+					# (~1.7 s); none of its geometry survives discarded warm-up cells.
+					# Shared paints are warmed by the other port records. Live streaming
+					# always builds the full cargo and its original collision.
+					if not (job.get("warming", false) and record.kind == "south_port_model" and record.model_kind == "ship_cargo"):
+						_build_record(chunk,record)
 					job.index = int(job.index)+1
 				else: job.stage = 3
 			3:
 				# Acabamento "cidade de jogo" (luz noturna, mobiliário, chão, telhados).
 				# Só acrescenta/troca material depois que a fonte V1 já montou o chunk.
-				if region_id == "harbor": CITY_DRESSING.build_chunk(self,chunk,rect)
+				if region_id == "harbor":
+					if not job.has("dressing"): job.dressing = {"step": 0, "region": self, "chunk": chunk, "rect": rect}
+					if not CITY_DRESSING.build_chunk_step(job.dressing): continue
 				elif region_id == "mountain":
 					_build_road_surfaces(chunk)
 					_apply_night_lights(chunk)
 				job.stage = 4
+				chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
 			_: return true
 		if Time.get_ticks_usec()-began >= budget_usec: return int(job.stage) >= 4
 	return true
@@ -622,6 +715,10 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			if terrain != null: tree.position.y = terrain.surface_height_at(Vector2(tree.position.x,tree.position.z))
 			chunk.add_child(tree)
 			_box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true).visible=false
+		"cave_approach":
+			var cover := preload("res://world/mountain_detail/MountainCaveApproach.gd").new()
+			cover.position = record.position
+			chunk.add_child(cover)
 		"mountain_road_lamp":
 			var lamp = preload("res://world/mountain_detail/MountainRoadLamp3D.gd").new()
 			lamp.position = record.position
@@ -657,34 +754,17 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 				road_a -= (road_b-road_a).normalized()*5.0
 			var offset: Vector3 = road_b-road_a
 			var center: Vector3 = (road_a+road_b)*.5
-			if record.get("surface","") == "earth":
-				# The first East Vale slab begins at the edge of the 8.75 m pass.
-				# Its route node remains on the pass axis for navigation/terrain.
-				if road_a.distance_to(CATALOG._at(Vector2(6250,340),"mountain")) < 0.1:
-					road_a += (road_b-road_a).normalized()*5.25
-					offset = road_b-road_a
-					center = (road_a+road_b)*.5
-				# V1 backcountry bed is60px dirt, without asphalt markings/urban sidewalks.
-				var dirt := _box(chunk,"EastValeEarth",center+Vector3(0,.012,0),Vector3(record.width,.012,offset.length()+.10),Color("34291e"),true)
-				# The visible dirt sits above the terrain, but its physical top is
-				# level with the surrounding shoulder in both travel directions.
-				dirt.get_child(0).position.y = -.018
-				dirt.rotation.y = atan2(offset.x,offset.z)
-				return
-			var road_height := -.025
-			# Adjacent bridge slabs have the same top plane. Overlapping their ends
-			# produced bright transverse z-fighting bands on the crossing.
-			var road_length := offset.length() if mountain_pass_road else offset.length()+.10
-			var road_color := Color("202932") if mountain_pass_road and center.x <= WORLD_CONNECTION.TUNNEL_START_X else Color("343d42")
-			var road := _box(chunk,"Road",center+Vector3(0,road_height,0),Vector3(record.width,.05,road_length),road_color,true)
-			road.rotation.y = atan2(offset.x,offset.z)
-			road.visible = false
+			var surface_kind: String = record.get("surface","asphalt")
+			var road_color := HARBOR_ROAD_GEOMETRY.ROAD_COLOR if surface_kind == "asphalt" else Color("544a3b")
+			var shape := ROUTE_GEOMETRY.polygon(record.left_a,record.left_b,record.right_b,record.right_a)
+			var pieces := route_geometry.outside_roads(shape,record.road_id,true)
 			var rows: Array = chunk.get_meta("road_surface_rows",[])
-			rows.append({"left_a":record.left_a,"right_a":record.right_a,"left_b":record.left_b,"right_b":record.right_b,"top":.008,"color":road_color})
+			for piece in pieces: rows.append({"polygon":piece,"top":.026,"color":road_color})
 			chunk.set_meta("road_surface_rows",rows)
-			var marking_height := .014
-			var line := _box(chunk,"CenterLine",center+Vector3(0,marking_height,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
-			line.rotation.y = road.rotation.y
+			# Only the main two-lane pass needs a centre stripe.
+			if mountain_pass_road:
+				var line := _box(chunk,"CenterLine",center+Vector3(0,.034,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
+				line.rotation.y = atan2(offset.x,offset.z)
 			# Rural pass/track shoulders are terrain. The generic 2.5 m sidewalks
 			# crossed junction asphalt and made wide floating ribbons on the bends.
 		"building": _building(chunk,record.data)

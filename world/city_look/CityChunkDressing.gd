@@ -8,9 +8,9 @@ extends RefCounted
 ## Quem quiser desligar tudo remove a chamada em NativeRegion._build_chunk.
 ##
 ## Tudo que é repetido (hidrante, lixeira, mancha de óleo, ar-condicionado)
-## sai em MultiMesh por tipo e por chunk. Os adereços são só visuais, sem
-## colisão: não entram no caminho de pedestres/tráfego nem mudam a física que
-## os testes de fidelidade conferem.
+## sai em MultiMesh por tipo e por chunk. Jardineiras têm colisão estática;
+## mobília quebrável é registrada em FragileProps3D. Decalques e detalhes de
+## telhado permanecem apenas visuais.
 
 const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
 const KIT := preload("res://world/city_look/CityPropKit.gd")
@@ -64,6 +64,27 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	_road_wear(context, batches)
 	_rooftops(chunk, context, batches)
 	_flush(chunk, batches)
+
+
+static func build_chunk_step(state: Dictionary) -> bool:
+	if not state.has("step"): state.step = 0
+	match state.step:
+		0:
+			state.context = _context(state.region, state.rect)
+			state.batches = {}
+		1: _night_pass(state.chunk, state.context)
+		2: _sidewalk_lamps(state.chunk, state.context)
+		3: STAIRS.build_chunk(state.chunk)
+		4: _texture_walls(state.chunk)
+		5: _face_ground_up(state.chunk)
+		6: _junction_signage(state.context, state.batches, state.chunk)
+		7: _sidewalk_furniture(state.context, state.batches)
+		8: _building_surroundings(state.context, state.batches)
+		9: _road_wear(state.context, state.batches)
+		10: _rooftops(state.chunk, state.context, state.batches)
+		11: _flush(state.chunk, state.batches)
+	state.step += 1
+	return state.step > 11
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +221,21 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 				JUNCTIONS.register_lens(multimesh, index, lenses[index][0], lenses[index][1])
 			chunk.remove_meta("signal_lenses")
 	_register_fragile(chunk, batches, built)
+	# Planters keep their batched mesh; one static compound body per chunk
+	# provides the exact stone footprint, removed with the streamed chunk.
+	if batches.has("planter"):
+		var body := StaticBody3D.new()
+		body.name = "CityPlanterSolids"
+		body.collision_layer = 1
+		body.collision_mask = 0
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(1.1, .5, 1.1)
+		for placement: Transform3D in batches.planter:
+			var collision := CollisionShape3D.new()
+			collision.shape = shape
+			collision.transform = chunk.global_transform.affine_inverse() * placement * Transform3D(Basis.IDENTITY, Vector3(0, .25, 0))
+			body.add_child(collision)
+		chunk.add_child(body)
 
 
 ## Mobília e semáforo viram quebráveis (StreetPhysics). A lente do semáforo é
