@@ -32,6 +32,8 @@ const FORMATION_LEAD: Array[float] = [0.22, 0.42, 0.42, 0.70, 0.95]
 const FORMATION_FLANK := 32.0 / PX
 const OFFICERS_PER_CAR := 2
 const OFFICERS_PER_VAN := 6
+const MAX_MOTORCYCLES := 1
+const MAX_TANKS := 1
 const FOOT_LIMIT: Array[int] = [0, 4, 6, 8, 10, 12, 16]
 
 # --- Emergência ---------------------------------------------------------------
@@ -103,12 +105,39 @@ static func variant_for(level: int, elite: bool) -> String:
 ## PoliceModel.UnitTier: REGULAR, DETECTIVE, SWAT, FBI, ARMY.
 static func officer_tier_for(level: int, variant: String) -> int:
 	match variant:
+		"tank": return 4
+		"motorcycle": return 0
 		"interceptor": return 1
 		"tactical": return clampi(level - 2, 2, 4)
 		_: return 0
 
 static func speed_cap(variant: String) -> float:
+	if variant == "tank": return 10.0
+	if variant == "motorcycle": return 19.0
 	return SPEED_FAST if variant == "interceptor" else SPEED_PATROL
+
+## New special vehicles share the existing live-unit budget. The first response
+## remains a full patrol/tactical crew; motorcycles and armor support that crew.
+static func response_variant(level: int, active: Array) -> String:
+	var tactical := 0
+	var motorcycles := 0
+	var tanks := 0
+	for unit in active:
+		if unit.variant == "tactical": tactical += 1
+		elif unit.variant == "motorcycle": motorcycles += 1
+		elif unit.variant == "tank": tanks += 1
+	if level in [2,3] and not active.is_empty() and motorcycles < MAX_MOTORCYCLES: return "motorcycle"
+	if level >= 6 and tactical >= 1 and tanks < MAX_TANKS: return "tank"
+	return variant_for(level,tactical < (2 if level >= 6 else 1))
+
+static func response_archetype(level: int, variant: String) -> String:
+	if variant == "motorcycle": return "bike_police"
+	if variant == "tank": return "army_tank"
+	return "police_transport" if level >= 5 and variant == "tactical" else "police_cruiser"
+
+static func crew_size(archetype: String) -> int:
+	if archetype == "bike_police": return 1
+	return OFFICERS_PER_VAN if archetype == "police_transport" else OFFICERS_PER_CAR
 
 static func pursuit_role(serial: int) -> int:
 	return posmod(serial, 5)

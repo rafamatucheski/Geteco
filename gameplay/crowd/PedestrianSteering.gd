@@ -39,7 +39,11 @@ func steer(body: CharacterBody3D, desired: Vector3, delta: float) -> Vector3:
 	# Colisões do quadro anterior: outro corpo na frente dispara o passo lateral. Contra parede quase perpendicular
 	# o move_and_slide zera o movimento e a lista de colisões pode trazer só a normal do chão; a normal de parede
 	# agregada é o sinal confiável nesse caso.
-	if body.is_on_wall():
+	var paving_contact := false
+	for index in body.get_slide_collision_count():
+		var other := body.get_slide_collision(index).get_collider() as StaticBody3D
+		if other != null and other.get_meta("pedestrian_step", false): paving_contact = true
+	if body.is_on_wall() and not paving_contact:
 		var wall := body.get_wall_normal()
 		wall.y = 0.0
 		if wall.dot(desired) < -0.35:
@@ -50,6 +54,7 @@ func steer(body: CharacterBody3D, desired: Vector3, delta: float) -> Vector3:
 		var collision := body.get_slide_collision(index)
 		var other := collision.get_collider()
 		if not other is PhysicsBody3D: continue
+		if other.get_meta("pedestrian_step", false): continue
 		var push := -collision.get_normal()
 		push.y = 0.0
 		if push.dot(desired) > 0.35:

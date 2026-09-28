@@ -8,6 +8,20 @@ static func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 	material.roughness = roughness
 	return material
 
+## build() leva 16-22 ms por chamada (medido em tests/measure/probe_police_model_cost.gd)
+## e é chamado por cada policial e por cada loot de arma. A arma é montada uma vez por
+## id e copiada; duplicate() compartilha malhas e materiais entre as cópias.
+static var _templates: Dictionary = {}
+
+static func build_cached(root: Node3D, id: String) -> Vector3:
+	if not _templates.has(id):
+		var template := Node3D.new()
+		_templates[id] = {"node": template, "tip": build(template, id)}
+	var entry: Dictionary = _templates[id]
+	for child in (entry.node as Node3D).get_children():
+		root.add_child(child.duplicate())
+	return entry.tip
+
 static func build(root: Node3D, id: String) -> Vector3:
 	var mat_chrome := StandardMaterial3D.new()
 	mat_chrome.albedo_color = Color(0.56, 0.60, 0.65)

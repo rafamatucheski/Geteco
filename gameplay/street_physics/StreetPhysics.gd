@@ -13,6 +13,8 @@ const FLIGHT := preload("res://gameplay/street_physics/BodyFlight3D.gd")
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const BLOOD := preload("res://gameplay/street_physics/GroundBlood3D.gd")
 const TRACKS := preload("res://gameplay/street_physics/BloodTracks3D.gd")
+const CRUSH := preload("res://gameplay/street_physics/HeavyVehicleCrush.gd")
+const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 
 # V1 VehiclePersonImpact: MIN_SPEED 60 px/s, letal a partir de 200 px/s.
 const PERSON_MIN_SPEED := 60.0 / 16.0
@@ -86,6 +88,10 @@ static func vehicle_post_move(vehicle: CharacterBody3D, incoming: Vector3, delta
 	if is_instance_valid(instance): instance._post_move(vehicle, incoming, delta)
 
 
+static func vehicle_repaired(vehicle: CharacterBody3D) -> void:
+	CRUSH.restore(vehicle)
+
+
 # ---------------------------------------------------------------------------
 # Antes do move_and_slide: pessoas e objetos quebráveis no caminho.
 
@@ -96,6 +102,10 @@ func _pre_move(vehicle: CharacterBody3D, delta: float) -> void:
 	var motion := planar * delta
 	_hit_people(vehicle, planar, motion)
 	_hit_props(vehicle, planar, motion)
+	var crushed := CRUSH.prepare(vehicle, planar, delta)
+	if is_instance_valid(crushed):
+		play("impact_metal", crushed.global_position, 1.0, 0.72)
+		play("impact_glass", crushed.global_position, -4.0)
 
 
 ## Varre a forma real do carro (V1 prepare_motion): pessoa atingida acima do
@@ -114,29 +124,30 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 		var contact := KinematicCollision3D.new()
 		if not vehicle.test_move(vehicle.global_transform, motion, contact): return
 		var person := contact.get_collider() as CharacterBody3D
-		if not _is_person(person) or person == player: return
+		if not _is_person(person) or person == player or PROTECTION.is_protected(person): return
 		if person.get("dead") == true or person.has_meta("street_down"):
 			_except(vehicle, person)
 			continue
 		var toward := person.global_position - vehicle.global_position
 		toward.y = 0
 		var closing := planar.dot(toward.normalized()) if toward.length_squared() > 0.0001 else planar.length()
-		if closing < PERSON_MIN_SPEED: return
+		var minimum := 1.8 if _vehicle_mass(vehicle) >= CRUSH.HEAVY_MASS else PERSON_MIN_SPEED
+		if closing < minimum: return
 		_except(vehicle, person)
 		var lethal := planar.length() >= LETHAL_SPEED
 		FLIGHT.launch(person, planar, lethal, self, vehicle)
-		# O carro sente o corpo, mas atravessa (V1: não perde a velocidade toda).
-		_scale_vehicle_speed(vehicle, 0.88)
+		var response := CRUSH.light_impact_response(vehicle, planar.length())
+		_scale_vehicle_speed(vehicle, 1.0 - 0.12 * response)
 		var point := person.global_position + Vector3.UP * 0.9
 		var gameplay = controller.world.get("gameplay") if controller != null else null
 		if gameplay != null and is_instance_valid(gameplay.get("effects")):
 			gameplay.effects.blood(point, planar.normalized(), 40.0 if lethal else 18.0)
-		blood.spawn_splatter(person.global_position, planar, clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0))
-		tracks.soak(vehicle, TRACKS.TIRE_DISTANCE)
+		if is_instance_valid(blood): blood.spawn_splatter(person.global_position, planar, clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0))
+		if is_instance_valid(tracks): tracks.soak(vehicle, TRACKS.TIRE_DISTANCE)
 		play("impact_flesh", point, lerpf(-6.0, 0.0, clampf(planar.length() / LETHAL_SPEED, 0, 1)))
 		play("impact_metal", point, -10.0, 0.8)
 		if not lethal: play("panic", point, -4.0)
-		_shake_if_player(vehicle, 0.18 if lethal else 0.1)
+		if response > 0.01: _shake_if_player(vehicle, (0.18 if lethal else 0.1) * response)
 
 
 func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
@@ -153,12 +164,14 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 		if closing <= 0.0: continue
 		if FRAGILE.hit(item, closing, planar, self):
 			var spec: Dictionary = FRAGILE.spec(item)
-			_scale_vehicle_speed(vehicle, 1.0 - float(spec.drag))
-			if float(spec.damage) > 0 and vehicle.has_method("receive_damage"): vehicle.receive_damage(float(spec.damage) * clampf(closing / 8.0, 0.5, 1.5))
+			var response := CRUSH.light_impact_response(vehicle, planar.length())
+			_scale_vehicle_speed(vehicle, 1.0 - float(spec.drag) * response)
+			if response > 0.01 and float(spec.damage) > 0 and vehicle.has_method("receive_damage"):
+				vehicle.receive_damage(float(spec.damage) * clampf(closing / 8.0, 0.5, 1.5) * response)
 			var effects = vehicle.get("effects")
 			if is_instance_valid(effects) and is_instance_valid(effects.get("impact_effects")):
 				effects.impact_effects.present_impact(item.point + Vector3.UP * 0.6, -toward.normalized(), closing, hash(item.point))
-			if spec.family == "post": _shake_if_player(vehicle, 0.12)
+			if spec.family == "post" and response > 0.01: _shake_if_player(vehicle, 0.12 * response)
 
 
 func _scale_vehicle_speed(vehicle: CharacterBody3D, factor: float) -> void:
@@ -186,6 +199,7 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 		var collision := vehicle.get_slide_collision(index)
 		var other := collision.get_collider() as CharacterBody3D
 		if other == null or other == vehicle or other.get("horizontal_velocity") == null: continue
+		if CRUSH.is_riding(vehicle, other) or CRUSH.is_riding(other, vehicle): continue
 		var normal := collision.get_normal()
 		normal.y = 0
 		if normal.length_squared() < 0.0001: continue
@@ -199,16 +213,17 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 		_crash_pairs[key] = now
 		_crash(vehicle, other, normal, closing, collision.get_position(), incoming)
 	_update_slide(vehicle, delta)
+	CRUSH.finish_move(vehicle, incoming, delta)
 
 
-## Batida como troca de momento entre as massas do catálogo (`handling.mass`), com pouca
-## restituição. Antes o atingido ganhava 60% da velocidade de aproximação e quem bateu
-## parava seco e ainda recuava: o carro atingido parecia repelido, sem contato. Agora
-## quem bate conserva o que sobra do momento e acompanha o outro; caminhão empurra carro
-## e carro quase não move caminhão. A rotação continua vindo do ponto de contato.
-const CRASH_RESTITUTION := 0.15
+## Impacto quase inelástico: a carroceria absorve energia. Os dois carros recebem
+## a velocidade resultante no mesmo estado usado pela direção e pelas colisões;
+## um deslocamento extra por fora fazia o atingido recuar como uma mola.
+const CRASH_RESTITUTION := 0.03
 
 func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
+	# Alvos protegidos continuam sendo sólidos, sem dano nem impulso disfarçado.
+	if PROTECTION.is_protected(other): return
 	# Apply damage here, behind the pair cooldown, instead of every contact frame.
 	vehicle.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), other)
 	other.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), vehicle)
@@ -220,12 +235,13 @@ func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, c
 	var lever: Vector3 = point - other.global_position
 	lever.y = 0
 	var spin := clampf(lever.cross(push).y * 0.12, -3.5, 3.5)
-	_add_slide(other, push, spin)
+	var other_after: Vector3 = other.get("horizontal_velocity") + push
+	_set_impact_velocity(other, other_after)
+	_add_slide(other, Vector3.ZERO, spin)
 	# O move_and_slide já zerou a velocidade de quem bateu contra o corpo cinemático;
 	# devolve a parte que o momento preserva, sem empurrão para trás.
 	var after := incoming - into * impulse / mine
-	vehicle.set("horizontal_velocity", after)
-	vehicle.set("speed", after.dot(-vehicle.global_basis.z))
+	_set_impact_velocity(vehicle, after)
 	var self_lever: Vector3 = point - vehicle.global_position
 	self_lever.y = 0
 	_add_slide(vehicle, Vector3.ZERO, clampf(self_lever.cross(into * impulse / mine).y * 0.04, -1.2, 1.2))
@@ -237,13 +253,15 @@ func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, c
 	_shake_if_player(other, clampf(closing / 30.0, 0.08, 0.35))
 
 
+static func _set_impact_velocity(vehicle: CharacterBody3D, planar: Vector3) -> void:
+	vehicle.set("horizontal_velocity", planar)
+	vehicle.set("speed", planar.dot(-vehicle.global_basis.z))
+	vehicle.velocity.x = planar.x
+	vehicle.velocity.z = planar.z
+
+
 static func _vehicle_mass(vehicle: Node) -> float:
-	var handling = vehicle.get("handling")
-	if handling != null and handling.get("mass") != null: return clampf(float(handling.mass), 0.3, 8.0)
-	var width = vehicle.get("half_width")
-	var length = vehicle.get("half_length")
-	if width == null or length == null: return 1.0
-	return clampf(float(width) * float(length) * 0.35, 0.3, 8.0)
+	return CRUSH.mass(vehicle)
 
 
 func _add_slide(vehicle: CharacterBody3D, push: Vector3, spin: float) -> void:
@@ -286,6 +304,7 @@ func _update_slide(vehicle: CharacterBody3D, delta: float) -> void:
 # Pouso do atropelado: dano, queda, poça, socorro.
 
 func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_speed: float, heading: Vector3) -> void:
+	if PROTECTION.is_protected(actor): return
 	actor.set_meta("street_vehicle_hit", true)
 	var health: float = float(actor.get("health"))
 	if lethal:

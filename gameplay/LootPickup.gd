@@ -30,6 +30,7 @@ var _icon: Node3D
 var _halo: MeshInstance3D
 var _halo_material: StandardMaterial3D
 var _glow_material: StandardMaterial3D
+var _disc_material: StandardMaterial3D
 
 func setup(p_kind: String, p_weapon: String = "", p_amount: int = 0) -> void:
 	kind = p_kind
@@ -41,6 +42,7 @@ func _ready() -> void:
 	_phase = randf() * TAU
 	var tint := halo_color()
 	var disc_material := StandardMaterial3D.new()
+	_disc_material = disc_material
 	disc_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	disc_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	disc_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
@@ -83,7 +85,7 @@ func _ready() -> void:
 	_icon.add_child(model)
 	if kind == "armor": _build_vest(model)
 	else:
-		ARSENAL.build(model, weapon_id)
+		ARSENAL.build_cached(model, weapon_id)
 		# Deitada de lado e centrada no giro, como a silhueta da V1.
 		model.rotation = Vector3(0, 0, PI * 0.5)
 		model.position = -_model_center(model).rotated(Vector3.BACK, PI * 0.5)
@@ -114,6 +116,7 @@ func advance(delta: float) -> bool:
 	var alive := 1.0 - fading
 	_glow_material.albedo_color.a = (0.10 + 0.45 * pulse) * alive
 	_halo_material.albedo_color.a = halo_color().a * (0.65 + 0.9 * pulse) * alive
+	_disc_material.albedo_color.a = halo_color().a * 0.45 * alive
 	_halo.scale = Vector3(1.0 + sin(_age * 2.5) * 0.12, 0.08, 1.0 + sin(_age * 2.5) * 0.12)
 	_icon.visible = alive > 0.02 and (fading < 0.35 or pulse > 0.25)
 	return _age < LIFETIME + FADE_TIME
@@ -125,12 +128,16 @@ func can_collect(point: Vector3) -> bool:
 
 ## Encolhe e some (V1: escala 0,2 e alfa 0 em 0,25 s).
 func collect() -> void:
+	if consumed: return
 	consumed = true
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(_icon, "scale", Vector3.ONE * _icon_scale * 0.2, 0.25)
 	tween.tween_property(_icon, "position:y", ICON_HEIGHT + 0.5, 0.25)
 	tween.tween_property(_halo_material, "albedo_color:a", 0.0, 0.25)
 	tween.tween_property(_glow_material, "albedo_color:a", 0.0, 0.25)
+	tween.tween_property(_disc_material, "albedo_color:a", 0.0, 0.25)
+	for mesh in _icon.find_children("*", "GeometryInstance3D", true, false):
+		tween.tween_property(mesh, "transparency", 1.0, 0.25)
 	tween.chain().tween_callback(queue_free)
 
 ## Cor do halo por família, a mesma da V1.

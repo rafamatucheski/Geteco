@@ -82,6 +82,7 @@ static func spec(item: Dictionary) -> Dictionary:
 ## Choque do carro. Retorna true se o item cedeu (o carro deve atravessar).
 static func hit(item: Dictionary, speed: float, direction: Vector3, director: Node) -> bool:
 	if item.state != "standing" or speed < WOBBLE_SPEED: return false
+	if item.has("root") and preload("res://gameplay/DamageProtection.gd").is_protected(item.root.get_ref()): return false
 	var flat := Vector3(direction.x, 0, direction.z)
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
 	var family: String = spec(item).family

@@ -26,13 +26,22 @@ var hand := Vector3(0.19, 0.84, -0.20)
 var left_hand := Vector3(-0.215, 0.655, -0.055)
 var gun_basis := Basis.IDENTITY
 var appearance_index := -1
+var rappel_equipment: Node3D
+var rappel_harness: Marker3D
+var rappel_pose_active := false
+var _body_aim_weight := 0.0
+var _body_reloading := false
+var _body_reload_progress := 0.0
+var _weapon_hand_contacts: Array = [null, null]
+static var _equipment_meshes: Dictionary = {}
+const BODY_KIT = preload("res://assets/civilians/CivilianMeshKit.gd")
 
 func equip(id: String) -> void:
 	weapon_id = id
 	weapon = Node3D.new()
 	weapon.name = "PoliceWeapon"
 	add_child(weapon)
-	var tip := preload("res://gameplay/ArsenalWeapon3D.gd").build(weapon, id)
+	var tip := preload("res://gameplay/ArsenalWeapon3D.gd").build_cached(weapon, id)
 	muzzle_flash_3d.reparent(weapon)
 	muzzle_flash_3d.position = tip
 	update_pose(1.0, false, false, 0.0, 0.0)
@@ -46,10 +55,21 @@ func attack() -> void:
 	muzzle_flash_3d.show()
 
 func update_pose(delta: float, aiming: bool, reloading: bool, progress: float, gait: float) -> void:
+	if rappel_pose_active: return
 	if not is_instance_valid(weapon): return
 	flash_time = maxf(0.0, flash_time - delta)
 	muzzle_flash_3d.visible = flash_time > 0.0
 	recoil *= exp(-float(POSE_DATA.PROFILES[weapon_id][3]) * delta)
+	if is_instance_valid(body):
+		_body_aim_weight = lerpf(_body_aim_weight, 1.0 if aiming else 0.0, 1.0 - exp(-14.0 * delta))
+		_body_reloading = reloading
+		_body_reload_progress = clampf(progress, 0.0, 1.0)
+		# The visible rig is forward +Z, in metres; the retained legacy rig is
+		# forward -Z with a different height and shorter arms. Mixing these spaces
+		# put the rifle at the back of the head and stretched the visible hands.
+		body.hand_provider = _body_weapon_targets
+		body.hand_targets = _body_weapon_targets()
+		return
 	var pistol := weapon_id == "pistol"
 	var target := Vector3(0.035, 1.09, -0.32) if aiming else Vector3(0.19, 0.84, -0.20)
 	var pitch := 0.0 if aiming else -0.75
@@ -319,6 +339,180 @@ func _install_body() -> void:
 	var keep: Array = [muzzle_flash_3d]
 	if is_instance_valid(weapon): keep.append(weapon)
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, _body_look(), keep)
+	if tier >= UnitTier.SWAT: _install_tactical_equipment()
+	body.hand_provider = _body_weapon_targets
+	if is_instance_valid(weapon):
+		body.hand_targets = _body_weapon_targets()
+		body._pose(0.0)
+
+func _body_weapon_targets() -> Array:
+	if not is_instance_valid(body) or not is_instance_valid(weapon) or rappel_pose_active: return [null, null]
+	var pistol := weapon_id == "pistol"
+	var spine_model: Transform3D = body.pelvis.transform * body.spine.transform
+	var right_shoulder: Vector3 = spine_model * body._shoulders[0]
+	var left_shoulder: Vector3 = spine_model * body._shoulders[1]
+	var ready_grip := Vector3(-.20, .93, .12) if pistol else Vector3(-.15, 1.16, .26)
+	var aim_grip := Vector3(-.075, 1.34, .40)
+	var pitch := lerpf(-.95 if pistol else -.43, 0.0, _body_aim_weight) + recoil
+	var yaw := PI + lerpf(.0 if pistol else -.22, 0.0, _body_aim_weight)
+	var desired_basis := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch)
+	if not pistol:
+		var stock_offset: Vector3 = desired_basis * (POSE_DATA.STOCK_ENDS[weapon_id] - POSE_DATA.GRIPS[weapon_id])
+		aim_grip = right_shoulder - stock_offset + Vector3(.015, -.035, .02)
+	var grip := ready_grip.lerp(aim_grip, _body_aim_weight)
+	grip.z -= recoil * .12
+	var support_offset: Vector3 = desired_basis * (POSE_DATA.SUPPORT_GRIPS[weapon_id] - POSE_DATA.GRIPS[weapon_id])
+	var supports := not pistol or _body_aim_weight > .35
+	if supports:
+		# Both hands and the single weapon share one rigid frame. Fit that frame
+		# to both anatomical reach spheres instead of solving two unrelated arms.
+		for iteration in 8:
+			grip = right_shoulder + (grip - right_shoulder).limit_length(.594)
+			grip = left_shoulder - support_offset + (grip + support_offset - left_shoulder).limit_length(.594)
+	else:
+		grip = right_shoulder + (grip - right_shoulder).limit_length(.594)
+	var left_target: Variant = grip + support_offset if supports else null
+	if _body_reloading:
+		var progress := _body_reload_progress
+		var weight := smoothstep(0.0, .10, progress) * (1.0 - smoothstep(.88, 1.0, progress))
+		var belt := Vector3(.19, .98, .13)
+		var magazine := grip + desired_basis * Vector3(.035, -.06, -.025)
+		var fetch := smoothstep(.08, .23, progress) * (1.0 - smoothstep(.32, .50, progress))
+		var service := magazine.lerp(belt, fetch)
+		var rack := smoothstep(.60, .69, progress) * (1.0 - smoothstep(.79, .90, progress))
+		service = service.lerp(grip + desired_basis * Vector3(.03, .10, -.055), rack)
+		left_target = (grip + support_offset).lerp(service, weight)
+		left_target = left_shoulder + ((left_target as Vector3) - left_shoulder).limit_length(.594)
+	var world_basis := body.global_basis * desired_basis
+	var world_grip := body.to_global(grip)
+	weapon.global_transform = Transform3D(world_basis, world_grip - world_basis * POSE_DATA.GRIPS[weapon_id])
+	_weapon_hand_contacts = [world_grip, body.to_global(left_target) if left_target is Vector3 else null]
+	return _weapon_hand_contacts.duplicate()
+
+func weapon_hand_contacts() -> Array:
+	return _weapon_hand_contacts.duplicate()
+
+## Equipment is merged into the articulated native body meshes. Each joint
+## retains its original draw surface instead of adding dozens of tiny nodes.
+func _install_tactical_equipment() -> void:
+	if not is_instance_valid(body) or is_instance_valid(rappel_equipment): return
+	var palette := {"top_color": _uniform_base_color, "accent_color": Color("343b40") if tier != UnitTier.ARMY else Color("4b5134")}
+	for joint in [body.spine, body.pelvis, body.head_node]:
+		var part := "chest" if joint == body.spine else ("belt" if joint == body.pelvis else "helmet")
+		_merge_equipment(joint, part)
+		for key in palette: joint.set_instance_shader_parameter(key, palette[key])
+	for i in 2:
+		_merge_equipment(body.forearms[i], "glove")
+		_merge_equipment(body.thighs[i], "thigh")
+		_merge_equipment(body.shins[i], "knee")
+	rappel_equipment = Node3D.new()
+	rappel_equipment.name = "RappelHarness"
+	body.pelvis.add_child(rappel_equipment)
+	rappel_harness = Marker3D.new()
+	rappel_harness.name = "DescenderAttachment"
+	rappel_harness.position = Vector3(.015, -.025, .174)
+	rappel_equipment.add_child(rappel_harness)
+	# The same geometry is already part of the rig at all times; this marker
+	# names the real attachment for rope simulation and tests.
+	rappel_harness.set_meta("load_bearing_attachment", true)
+
+func _merge_equipment(joint: MeshInstance3D, part: String) -> void:
+	var key := "%d|%s|%d" % [tier, part, joint.mesh.get_rid().get_id()]
+	if not _equipment_meshes.has(key):
+		var b = BODY_KIT._builder()
+		_build_equipment(b, part)
+		var extra: ArrayMesh = b.commit()
+		var original: Array = joint.mesh.surface_get_arrays(0)
+		var addition: Array = extra.surface_get_arrays(0)
+		var offset: int = original[Mesh.ARRAY_VERTEX].size()
+		# Godot returns generated tangents on readback even though this rigid
+		# cloth shader uses vertex normals only. The old tangent stream cannot
+		# keep its old vertex count after equipment vertices are appended.
+		original[Mesh.ARRAY_TANGENT] = null
+		for channel in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_COLOR]:
+			var stream: Variant = original[channel]
+			stream.append_array(addition[channel])
+			original[channel] = stream
+		var indices: PackedInt32Array = original[Mesh.ARRAY_INDEX]
+		for index in addition[Mesh.ARRAY_INDEX]: indices.append(int(index) + offset)
+		original[Mesh.ARRAY_INDEX] = indices
+		var merged := ArrayMesh.new()
+		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, original)
+		merged.surface_set_material(0, BODY_KIT.material())
+		for surface in range(1, joint.mesh.get_surface_count()):
+			merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, joint.mesh.surface_get_arrays(surface))
+			merged.surface_set_material(surface, joint.mesh.surface_get_material(surface))
+		_equipment_meshes[key] = merged
+	joint.mesh = _equipment_meshes[key]
+
+func _build_equipment(b: RefCounted, part: String) -> void:
+	var cloth := BODY_KIT.SLOT_ACCENT
+	var dark := BODY_KIT.SLOT_SHOE
+	var metal := BODY_KIT.SLOT_METAL
+	match part:
+		"chest":
+			# Shaped front/back plates, padded shoulders and sewn webbing rows.
+			for side in [-1.0, 1.0]:
+				var front := .187 if side > 0 else -.168
+				b.loft([[.31,.125,.017,cloth,front,4.0],[.255,.172,.028,cloth,front,4.0],[.065,.177,.026,cloth,front,4.0],[.018,.14,.020,cloth,front,4.0]],cloth,Transform3D.IDENTITY,12)
+			for side in [-1.0, 1.0]:
+				b.ellipsoid(Vector3(side*.12,.34,.014),Vector3(.040,.025,.145),cloth,Basis.IDENTITY,8,4)
+				for y in [.08,.125,.17]:
+					_equipment_box(b,Vector3(side*.09,y,.221),Vector3(.14,.012,.014),dark)
+			# Three soft magazine pouches with angular fabric flaps.
+			for x in [-.116,0.0,.116]:
+				b.loft([[.15,.042,.03,cloth,.241,4.0],[.135,.047,.037,cloth,.241,4.0],[.01,.047,.036,cloth,.241,4.0],[-.005,.038,.025,cloth,.241,4.0]],cloth,Transform3D(Basis.IDENTITY,Vector3(x,0,0)),8)
+				_equipment_box(b,Vector3(x,.14,.279),Vector3(.07,.032,.01),dark)
+			# Radio, aerial, shoulder microphone; upper plate and back panel seams.
+			_equipment_box(b,Vector3(-.158,.255,.215),Vector3(.065,.10,.065),dark)
+			_equipment_box(b,Vector3(-.174,.355,.222),Vector3(.009,.15,.009),dark)
+			_equipment_box(b,Vector3(.12,.30,.213),Vector3(.04,.05,.023),dark)
+			_equipment_box(b,Vector3(.03,.255,.217),Vector3(.12,.047,.01),BODY_KIT.SLOT_INNER)
+			b.loft([[.35,.018,.008,dark],[-.12,.018,.008,dark]],dark,Transform3D(Basis(Vector3.FORWARD,-.50),Vector3(-.03,0,.289)),6)
+		"belt":
+			# Waist webbing follows the pelvis; descender buckle stands forward.
+			b.loft([[.026,.182,.144,dark,0.0,3.0],[-.033,.181,.146,dark,0.0,3.0]],dark,Transform3D.IDENTITY,16,false,false)
+			_equipment_box(b,Vector3(.015,-.018,.16),Vector3(.071,.062,.026),metal)
+			_equipment_box(b,Vector3(.015,-.018,.177),Vector3(.033,.036,.012),dark)
+			for side in [-1.0,1.0]:
+				_equipment_box(b,Vector3(side*.18,-.032,-.025),Vector3(.075,.10,.095),cloth)
+				var strap := Transform3D(Basis(Vector3.FORWARD,side*.28),Vector3(side*.11,-.09,.123))
+				b.loft([[.04,.020,.01,dark,0.0,3.5],[-.1,.020,.01,dark,0.0,3.5]],dark,strap,6)
+		"helmet":
+			# Rails, headset, NVG bracket and chin restraint fit the anatomical head.
+			if tier != UnitTier.FBI:
+				for side in [-1.0,1.0]:
+					_equipment_box(b,Vector3(side*.118,.177,-.005),Vector3(.028,.042,.105),dark)
+					b.ellipsoid(Vector3(side*.123,.10,-.016),Vector3(.027,.053,.041),cloth,Basis.IDENTITY,8,5)
+					_equipment_box(b,Vector3(side*.079,.046,.025),Vector3(.012,.081,.018),dark)
+				_equipment_box(b,Vector3(0,.23,.122),Vector3(.045,.055,.025),metal)
+				_equipment_box(b,Vector3(0,.04,.076),Vector3(.11,.014,.021),dark)
+			else:
+				b.ellipsoid(Vector3(.113,.095,-.018),Vector3(.012,.024,.014),dark,Basis.IDENTITY,6,4)
+		"glove":
+			# Layered cuff, glove palm/knuckles and curled leather fingers.
+			b.loft([[-.21,.037,.035,dark],[-.255,.034,.032,dark]],dark,Transform3D.IDENTITY,10)
+			b.ellipsoid(Vector3(0,-.306,.007),Vector3(.030,.062,.047),dark,Basis.IDENTITY,10,6)
+			b.ellipsoid(Vector3(0,-.350,.015),Vector3(.028,.033,.040),dark,Basis(Vector3.RIGHT,-.5),8,5)
+			for z in [-.022,.003,.028]:
+				b.ellipsoid(Vector3(.019,-.299,z),Vector3(.017,.011,.010),cloth,Basis.IDENTITY,6,4)
+		"thigh":
+			b.loft([[-.09,.10,.096,dark],[-.128,.098,.095,dark]],dark,Transform3D.IDENTITY,12,false,false)
+			_equipment_box(b,Vector3(.065,-.205,.02),Vector3(.055,.125,.10),cloth)
+			for y in [-.18,-.285]:
+				b.ellipsoid(Vector3(0,y,.072),Vector3(.075,.018,.013),BODY_KIT.SLOT_BOTTOM,Basis(Vector3.FORWARD,.18),8,4)
+		"knee":
+			b.ellipsoid(Vector3(0,-.018,.051),Vector3(.070,.087,.034),dark,Basis.IDENTITY,10,6)
+			b.ellipsoid(Vector3(0,-.018,.075),Vector3(.047,.064,.015),cloth,Basis.IDENTITY,8,5)
+			b.loft([[-.20,.059,.06,dark],[-.23,.058,.059,dark]],dark,Transform3D.IDENTITY,10,false,false)
+			for y in [-.29,-.34,-.375]:
+				_equipment_box(b,Vector3(0,y,.046),Vector3(.06,.014,.018),dark)
+
+func _equipment_box(b: RefCounted, point: Vector3, size: Vector3, slot: int) -> void:
+	# Bevelled loft rather than a sharp placeholder box.
+	var half := size * .5
+	var bevel := minf(.006, minf(half.z, minf(half.x, half.y)) * .3)
+	b.loft([[half.y,half.x-bevel,half.z-bevel,slot,0.0,4.0],[half.y-bevel,half.x,half.z,slot,0.0,4.0],[-half.y+bevel,half.x,half.z,slot,0.0,4.0],[-half.y,half.x-bevel,half.z-bevel,slot,0.0,4.0]],slot,Transform3D(Basis.IDENTITY,point),8)
 
 ## Farda por escalão, com o perfil persistente (pele, cabelo, biotipo) do PoliceAppearance.
 func _body_look() -> Dictionary:

@@ -38,6 +38,7 @@ var impact_speed := 0.0
 ## do voo. Crime e socorro saem pelo receive_damage normal, com o carro como
 ## fonte, então a autoria (jogador x tráfego) continua a mesma.
 static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal: bool, p_director: Node, p_source: Node) -> Node:
+	if preload("res://gameplay/DamageProtection.gd").is_protected(p_actor): return null
 	var existing := p_actor.get_node_or_null("BodyFlight3D")
 	if existing != null: existing.queue_free()
 	var flight = load("res://gameplay/street_physics/BodyFlight3D.gd").new()
