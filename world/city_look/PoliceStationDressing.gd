@@ -16,6 +16,7 @@ extends RefCounted
 
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
+const AIRFRAME := preload("res://gameplay/police_response/air_k9/PoliceHelicopterArt.gd")
 const FONT_PATH := "res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf"
 
 const NAVY := Color("1d2c4a")
@@ -35,7 +36,7 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 	var glow := {"lightbox": [], "globe": [], "neon": [], "red": [], "blue": [], "pad": []}
 	var obstacles := _ground_obstacles(chunk, building)
 	_facade(t, glow, building, hw, hz, ex, obstacles)
-	_roof(t, glow, hw, hz, local_roof, roof_center, roof_size, occupied, batches, building)
+	var pad := _roof(t, glow, hw, hz, local_roof, roof_center, roof_size, occupied, batches, building)
 	t.generate_normals()
 	var mesh := MeshInstance3D.new()
 	mesh.name = "PoliceStationDetail"
@@ -47,6 +48,23 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 		if glow[key].is_empty(): continue
 		chunk.add_child(_emissive(key, glow[key], building.global_transform))
 	_labels(chunk, building, hw, hz, ex)
+	if pad.x < INF: _park_helicopter(chunk, building, local_roof, pad)
+
+
+## Helicóptero estacionado no heliponto: a mesma fuselagem da resposta aérea, parada,
+## sem luz nem colisão. Reaproveita a matriz em cache, então custa só uma cópia de nós.
+static func _park_helicopter(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, pad: Vector3) -> void:
+	var parked := Node3D.new()
+	parked.name = "ParkedHelicopter"
+	chunk.add_child(parked)
+	var rig := AIRFRAME.build(parked)
+	# Pás paradas e levemente desalinhadas, como quem pousou e desligou.
+	(rig.rotor as Node3D).rotation.y = 0.35
+	(rig.tail_rotor as Node3D).rotation.x = 0.6
+	# O rotor de 5,15 m de raio cabe no disco; o patim mais baixo fica a 1,69 m do centro.
+	var fit := minf(1.0, pad.z * 0.95 / 5.15)
+	var basis := Basis(Vector3.UP, -0.5 * PI).scaled(Vector3.ONE * fit)
+	parked.global_transform = building.global_transform * Transform3D(basis, Vector3(pad.x, roof_y + 0.05 + 1.69 * fit, pad.y))
 
 
 # ---------------------------------------------------------------------------
@@ -153,7 +171,7 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 		KIT.box(t, Vector3(bay_x - bay_w * 0.5 + 0.3 + i * 0.6, 0.035, hz + 1.2), Vector3(0.3, 0.01, 2.2), Color("d9b43a"), 0.6)
 
 
-static func _roof(t: SurfaceTool, glow: Dictionary, hw: float, hz: float, roof_y: float, center: Vector2, size: Vector2, occupied: Array, batches: Dictionary, building: UrbanBuildingBase) -> void:
+static func _roof(t: SurfaceTool, glow: Dictionary, hw: float, hz: float, roof_y: float, center: Vector2, size: Vector2, occupied: Array, batches: Dictionary, building: UrbanBuildingBase) -> Vector3:
 	var xf := building.global_transform
 	# Heliponto: o maior disco que cabe longe dos obstáculos.
 	# Heliponto: o maior disco (4,8 m → 2,4 m) que cabe longe dos obstáculos.
@@ -208,6 +226,7 @@ static func _roof(t: SurfaceTool, glow: Dictionary, hw: float, hz: float, roof_y
 		KIT.box(t, Vector3(dish.x, roof_y + 0.35, dish.y), Vector3(0.08, 0.7, 0.08), Color("6c7274"))
 		KIT.cylinder(t, Vector3(dish.x, roof_y + 0.6, dish.y + 0.08), 0.05, 0.08, Color("e3e4df"), 12, 0.5)
 		occupied.append({"point": dish, "radius": 0.7})
+	return Vector3(pad.x, pad.y, radius) if pad.is_finite() else Vector3.INF
 
 
 # ---------------------------------------------------------------------------

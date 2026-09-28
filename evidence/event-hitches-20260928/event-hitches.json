@@ -1,0 +1,56 @@
+{
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"renderer": "mobile",
+	"results": [
+		{
+			"event": "heli_find_zone_cold",
+			"sync_call_ms": 0.22,
+			"worst_next_12_frames_ms": 12.84
+		},
+		{
+			"event": "heli_launch_cold",
+			"sync_call_ms": 5.31,
+			"worst_next_12_frames_ms": 10.05
+		},
+		{
+			"event": "officer_squad4_cold",
+			"sync_call_ms": 7.25,
+			"worst_next_12_frames_ms": 40.78
+		},
+		{
+			"event": "officer_kill_loot_x4_cold",
+			"sync_call_ms": 10.9,
+			"worst_next_12_frames_ms": 31.43
+		},
+		{
+			"event": "explosion_cold",
+			"sync_call_ms": 1.31,
+			"worst_next_12_frames_ms": 12.87
+		},
+		{
+			"event": "heli_find_zone_warm",
+			"sync_call_ms": 0.31,
+			"worst_next_12_frames_ms": 13.93
+		},
+		{
+			"event": "heli_launch_warm",
+			"sync_call_ms": 1.95,
+			"worst_next_12_frames_ms": 10.52
+		},
+		{
+			"event": "officer_squad4_warm",
+			"sync_call_ms": 6.94,
+			"worst_next_12_frames_ms": 13.43
+		},
+		{
+			"event": "officer_kill_loot_x4_warm",
+			"sync_call_ms": 0.75,
+			"worst_next_12_frames_ms": 13.41
+		},
+		{
+			"event": "explosion_warm",
+			"sync_call_ms": 1.19,
+			"worst_next_12_frames_ms": 10.95
+		}
+	]
+}
