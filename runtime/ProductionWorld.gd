@@ -1,8 +1,10 @@
 extends Node
-const REGION := preload("res://world/regions/NativeRegion.gd")
+const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
+const FOOTBRIDGE_CROSSERS := preload("res://gameplay/crowd/FootbridgeCrossers.gd")
+var footbridge_crossers := FOOTBRIDGE_CROSSERS.new()
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const PORT_POLICY := preload("res://gameplay/urban_v1/HarborPortPolicy.gd")
 # Orçamento medido em 2026-09-23 (RTX 4060 Laptop, 1280x720): 100 pedestres + 100 carros
@@ -61,10 +63,13 @@ func build() -> void:
 	no_save = "--no-save" in OS.get_cmdline_user_args()
 	var launch = get_node_or_null("/root/V2Launch")
 	if launch != null: store.path = launch.selected_path
-	if not no_save:
+	if world.has_meta("menu_save_path"): store.path = str(world.get_meta("menu_save_path"))
+	if not no_save or world.has_meta("menu_save_path"):
 		var result: Dictionary = store.load_into(state)
 		save_invalid = result.get("invalid",false)
 		loaded_save = result.get("ok",false)
+	# The menu may read a journey, but must never persist preview-time changes.
+	if world.has_meta("menu_preview"): no_save = true
 	state.world = world
 	# O menu já abriu a tela de carregamento na raiz; o mundo a adota. Início direto
 	# (testes, --no-save pelo menu) cria a sua.
@@ -72,9 +77,12 @@ func build() -> void:
 	if curtain != null: curtain.reparent(world)
 	else:
 		curtain = CURTAIN.new()
+		curtain.stage_only = world.has_meta("menu_preview")
 		curtain.variant = CURTAIN.variant_for(state.region_id)
 		world.add_child(curtain)
 	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o porto") + "…")
+	if world.has_meta("menu_preview"):
+		await _hold_fleet_scenes_incremental()
 	environment = WorldEnvironment.new()
 	environment.environment = Environment.new()
 	environment.environment.background_mode = Environment.BG_COLOR
@@ -100,14 +108,17 @@ func build() -> void:
 	world.maciota_place.exterior_origin = Vector3(790.0/16,0,1495.0/16)
 	world.maciota_place.interior_origin = Vector3(0,0,-2000)
 	world.add_child(world.maciota_place)
+	if world.has_meta("menu_preview"): await get_tree().process_frame
 	region = _mount_region(state.region_id)
 	var startup_position := _startup_position()
 	region.set_focus(startup_position)
 	world.street = region
 	_refresh_route_consumers()
+	if world.has_meta("menu_preview"): await get_tree().process_frame
 	world.player = ACTOR.new()
 	world.player.is_player = true
 	world.player.name = "Dante"
+	if world.has_meta("menu_preview"): world.player.controlled_automatically = true
 	world.player.position = startup_position
 	region.set_focus(world.player.position)
 	world.add_child(world.player)
@@ -200,11 +211,14 @@ func build() -> void:
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
-	curtain.lift()
+	if not world.has_meta("menu_preview"): curtain.lift()
 	set_population(requested_population)
 	world_audio = _audio()
 	world.add_child(world_audio)
 	_update_chairlift_schedule()
+	if world.has_meta("menu_preview"):
+		await world.get_meta("menu_preview").hold_world(world)
+		if world.is_queued_for_deletion(): return
 	session.arrival.start_or_resume(loaded_save or "--skip-arrival" in OS.get_cmdline_user_args() or world.get_meta("skip_arrival",false))
 	if is_instance_valid(world.dispatch):
 		session.sync_dispatch_location()
@@ -215,12 +229,18 @@ func build() -> void:
 ## texturas/malhas das duas (medido 2026-09-23: 2,5 s Harbor + 1,2 s Mountain),
 ## para a primeira passagem por cada lugar não travar a direção.
 func _prewarm_regions(curtain: Node = null) -> void:
+	var incremental: bool = world.has_meta("menu_preview")
 	if curtain != null:
 		curtain.set_stage(.36, "Carregando veículos…")
 		await get_tree().process_frame
 	_hold_fleet_scenes()
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
+	
+	if curtain != null:
+		curtain.set_stage(.40, "Compilando shaders do tráfego…")
+		await get_tree().process_frame
+	await _prewarm_fleet_shaders(incremental)
 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
 	# shared cache under the loading curtain, without creating fires or wrecks.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
@@ -229,13 +249,16 @@ func _prewarm_regions(curtain: Node = null) -> void:
 	var combat_audio = preload("res://gameplay/CombatAudio.gd")
 	for take in combat_audio.GUNFIRE_TAKES:
 		combat_audio.wav("explosion_%d.wav" % take)
+		if incremental: await get_tree().process_frame
 	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
 	if curtain != null:
 		curtain.set_stage(.46, "Preparando texturas e prédios…")
 		await get_tree().process_frame
-	if is_instance_valid(region): region.prewarm()
+	if is_instance_valid(region):
+		if incremental: await region.prewarm_incremental()
+		else: region.prewarm()
 	for id in ["harbor","mountain"]:
 		if regions.has(id): continue
 		if curtain != null:
@@ -244,7 +267,8 @@ func _prewarm_regions(curtain: Node = null) -> void:
 		var detached: Node3D = REGION.build_region(id)
 		if detached == null: continue
 		world.add_child(detached)
-		detached.prewarm()
+		if incremental: await detached.prewarm_incremental()
+		else: detached.prewarm()
 		detached.release_chunks()
 		world.remove_child(detached)
 		_region_cache[id] = detached
@@ -260,6 +284,7 @@ func _prewarm_regions(curtain: Node = null) -> void:
 		for id in combo:
 			if all.has(id): regions[id] = all[id]
 		if regions.size() == combo.size(): _configure_routes()
+		if incremental: await get_tree().process_frame
 	regions = live
 	_configure_routes()
 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
@@ -275,6 +300,40 @@ func _hold_fleet_scenes() -> void:
 		if definition.has("scene"):
 			var scene := load(definition.scene)
 			if scene != null: _fleet_scenes.append(scene)
+
+func _prewarm_fleet_shaders(incremental: bool) -> void:
+	if _fleet_scenes.is_empty(): return
+	var rig := Node3D.new()
+	var cam := Camera3D.new()
+	rig.add_child(cam)
+	world.add_child(rig)
+	for scene in _fleet_scenes:
+		var instance = scene.instantiate()
+		instance.position = Vector3(0, 0, -5)
+		rig.add_child(instance)
+		if incremental: await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	rig.queue_free()
+
+func _hold_fleet_scenes_incremental() -> void:
+	if not _fleet_scenes.is_empty(): return
+	var ids: Array = TRAFFIC_CAR_TYPES + TRAFFIC_MOTORCYCLE_TYPES + ["police_cruiser", "medic_box", "rescue_pumper", "station_wagon"]
+	ids.append(str(starting_vehicle().get("archetype", "sport_coupe")))
+	for record in state.world_state.get("garage_rewards", {}).get("vehicles", {}).values():
+		ids.append(str(record.get("archetype", "")))
+	var paths: Array[String] = []
+	for id in ids:
+		var definition: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(id)
+		var path := str(definition.get("scene", ""))
+		if path.is_empty() or path in paths: continue
+		if ResourceLoader.load_threaded_request(path) == OK: paths.append(path)
+	for path in paths:
+		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+			_fleet_scenes.append(ResourceLoader.load_threaded_get(path))
+		await get_tree().process_frame
 
 func _exit_tree() -> void:
 	for cached in _region_cache.values():
@@ -391,13 +450,24 @@ func _refresh_route_consumers() -> void:
 	if traffic_routes == null: return
 	var traced := Time.get_ticks_usec() if is_instance_valid(world) and world.get_meta("benchmark_trace",false) else 0
 	_configure_routes()
-	preload("res://gameplay/traffic_junctions/TrafficJunctions.gd").configure(ambient_traffic_routes)
+	var layouts: Array = []
+	if regions.has("harbor") and regions.harbor.harbor_road_geometry != null:
+		layouts = regions.harbor.harbor_road_geometry.crossing_layout
+	preload("res://gameplay/traffic_junctions/TrafficJunctions.gd").configure(ambient_traffic_routes,layouts)
 	_trace_cost("route_graphs",traced)
 	if is_instance_valid(world) and is_instance_valid(world.dispatch): world.dispatch.refresh_roads()
 	if is_instance_valid(world) and is_instance_valid(world.traffic_yield): world.traffic_yield.refresh_roads(traffic_routes)
 
 func _persistent_vehicle_support() -> Dictionary:
 	var support := {"harbor":[],"mountain":[]}
+	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
+		for bus in urban_transit.urban_service.fleet:
+			if not bus.active: continue
+			for index in bus.sections.size():
+				support.harbor.append({"position":bus.sections[index].global_position,"radius":bus.LENGTHS[index]*.5+1.0})
+			# Retain the admitted look-ahead cell as well as the current hull.
+			# Otherwise streaming can evict it before the next physics step.
+			support.harbor.append({"position":bus.global_position-bus.global_basis.z*8,"radius":2.0})
 	for car in vehicles:
 		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible or not car.is_physics_processing(): continue
 		if _is_ambient_traffic(car) and car != world.driving.car: continue
@@ -590,6 +660,7 @@ func _process(delta: float) -> void:
 			world.people.remove_at(index)
 			actor.queue_free()
 	if world.people.size() < requested_population: _spawn_citizen()
+	footbridge_crossers.update(world, world.player.position, state.region_id)
 	if _ambient_traffic_count() < TRAFFIC_TARGET and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
 	for index in range(vehicles.size()-1,-1,-1):
 		var car = vehicles[index]
@@ -692,7 +763,7 @@ func _is_ambient_traffic(car: Variant) -> bool:
 func _repath_ambient_traffic() -> void:
 	for car in vehicles:
 		if not _is_ambient_traffic(car) or not car.traffic or car.health <= 0.0: continue
-		var route: Curve3D = ambient_traffic_routes.route_near(car.global_position)
+		var route: Curve3D = ambient_traffic_routes.route_near(car.global_position,int(car.route.get_meta("lane_index",0)) if car.route!=null else 0)
 		if route == null or route.get_baked_length() < 12.0 or not PORT_POLICY.route_is_ambient_safe(route):
 			car.queue_free()
 			continue
@@ -815,7 +886,8 @@ func _create_traffic_vehicle() -> void:
 			var b: Vector3 = points[segment_index+1]
 			if a.distance_to(b) < 16: continue
 			var direction := (b-a).normalized()
-			var lane := direction.cross(Vector3.UP)*float(road.get("width",7.5))*.25
+			var lane_index := randi_range(0,int(road.get("lanes_per_direction",1))-1)
+			var lane := ambient_traffic_routes._lane_offset(direction,{"width":road.get("width",7.5),"one_way":str(road.id).contains("inbound") or str(road.id).contains("outbound"),"lanes":road.get("lanes_per_direction",1)},lane_index)
 			var point := a.lerp(b,randf_range(.25,.75))+lane
 			if not _spawn_point_allowed(point,3.0): continue
 			var occupied := false
@@ -827,7 +899,7 @@ func _create_traffic_vehicle() -> void:
 			if route_attempts >= 2: return
 			route_attempts += 1
 			var traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-			var route: Curve3D = ambient_traffic_routes.route_near(point)
+			var route: Curve3D = ambient_traffic_routes.route_near(point,lane_index)
 			var safe := route != null and route.get_baked_length() >= 12 and PORT_POLICY.route_is_ambient_safe(route)
 			_trace_cost("traffic_spawn_route",traced)
 			if not safe: continue
