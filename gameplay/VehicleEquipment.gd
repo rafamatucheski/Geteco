@@ -22,9 +22,11 @@ var car: CharacterBody3D
 var world: Node
 var headlights_on := false
 var siren_on := false
+var broken_left := false
+var broken_right := false
 var input_enabled := true
-var lamps: Array[SpotLight3D] = []
-var lens_materials: Array[StandardMaterial3D] = []
+var lamps: Array[Dictionary] = []
+var lens_materials: Array[Dictionary] = []
 var tail_materials: Array[StandardMaterial3D] = []
 ## Facho único de NPC, centrado entre os faróis (metade das luzes por carro).
 var npc_beam: SpotLight3D
@@ -81,10 +83,11 @@ func _ready() -> void:
 		# O cupê original já anima a própria lanterna de freio (Vehicle.tail_material).
 		if key == "tail" and car.tail_material != null: continue
 		# Uma cópia por lente original: modelos com cores de lente diferentes mantêm a sua.
-		var material_id := key + ":" + str(original.get_instance_id())
+		var side_id := -1 if local.x < 0 else (1 if local.x > 0 else 0)
+		var material_id := key + ":" + str(original.get_instance_id()) + (":" + str(side_id) if key == "headlight" else "")
 		if not materials.has(material_id):
 			materials[material_id] = original.duplicate()
-			if key == "headlight": lens_materials.append(materials[material_id])
+			if key == "headlight": lens_materials.append({"material": materials[material_id], "side": side_id})
 			elif key == "tail": tail_materials.append(materials[material_id])
 			else: beacons.append({"material": materials[material_id], "color": original.albedo_color, "side": 0 if key == "bar_left" else 1})
 		part.material_override = materials[material_id]
@@ -104,12 +107,12 @@ func _ready() -> void:
 				center += mount
 				count += 1
 		if count == 0: continue
-		lamps.append(_projector(center / count, float(profile.energy), float(profile.angle)))
+		lamps.append({"lamp": _projector(center / count, float(profile.energy), float(profile.angle)), "side": side})
 	var front := Vector3.ZERO
 	for mount in mounts: front += mount
 	# Facho central do NPC: uma luz com a soma aproximada das duas.
 	npc_beam = _projector(front / mounts.size(), float(profile.energy) * (1.0 if profile.single else 1.6), float(profile.angle) + (0.0 if profile.single else 8.0))
-	for material in lens_materials: material.emission = profile.color
+	for item in lens_materials: item.material.emission = profile.color
 	ground_pool = _ground_pool(front / mounts.size())
 	if not bar_mounts.is_empty():
 		var center := Vector3.ZERO
@@ -309,12 +312,15 @@ func _refresh() -> void:
 	if was_auto and not auto_lit and occupied and not car.external_input: headlights_on = true
 	var driver_lit: bool = (headlights_on and occupied and not npc_driven()) or alarm_blink
 	var lit: bool = driver_lit or auto_lit
-	for lamp in lamps: lamp.visible = driver_lit
-	if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed()
-	if is_instance_valid(ground_pool): ground_pool.visible = lit and car.health > 0
-	for material in lens_materials:
-		material.emission_enabled = lit
-		material.emission_energy_multiplier = 1.35 if lit else 0
+	for item in lamps:
+		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
+		item.lamp.visible = driver_lit and not broken
+	if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed() and not (broken_left and broken_right)
+	if is_instance_valid(ground_pool): ground_pool.visible = lit and car.health > 0 and not (broken_left and broken_right)
+	for item in lens_materials:
+		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
+		item.material.emission_enabled = lit and not broken
+		item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0
 	# Lanterna traseira: acesa fraca à noite, forte na frenagem, apagada de dia.
 	# Carro estacionado sem motorista não "freia", mesmo com brake_input preso.
 	var braking: bool = car.health > 0 and (car.controlled or car.traffic) and (car.brake_input or car.blocked or (car.throttle_input < -.05 and car.speed > .5))
@@ -350,6 +356,20 @@ func _refresh() -> void:
 		beacon.material.emission_enabled = active
 		beacon.material.emission_energy_multiplier = 2.8 if active else 0
 
+func receive_impact(local_point: Vector3, severity: float) -> void:
+	if severity < 3.0: return
+	var changed_now := false
+	if local_point.z < -car.half_length * 0.4:
+		if local_point.x < 0.2 and not broken_left:
+			broken_left = true
+			changed_now = true
+		if local_point.x > -0.2 and not broken_right:
+			broken_right = true
+			changed_now = true
+	if changed_now:
+		_refresh()
+		changed.emit()
+
 func snapshot() -> Dictionary: return {"headlights": headlights_on, "siren": siren_on}
 
 func restore_state(data: Dictionary) -> bool:
@@ -366,8 +386,8 @@ func _exit_tree() -> void:
 			emitter.stop()
 			emitter.stream = null
 			emitter.queue_free()
-	for lamp in lamps:
-		if is_instance_valid(lamp): lamp.queue_free()
+	for item in lamps:
+		if is_instance_valid(item.lamp): item.lamp.queue_free()
 	if is_instance_valid(halo): halo.queue_free()
 	if is_instance_valid(npc_beam): npc_beam.queue_free()
 	if is_instance_valid(ground_pool): ground_pool.queue_free()

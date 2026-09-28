@@ -93,6 +93,7 @@ var bypass_side := 0.0
 var bypass_blend := 0.0
 var bypass_start := 0.0
 var bypass_retry := 0.0
+var bypass_lane_shift := NAN
 var _merging_back := false
 var _exit_blocked := false
 var _sense_tick := false
@@ -119,9 +120,20 @@ func _ready() -> void:
 	var hull := BoxShape3D.new()
 	hull.size = Vector3(2.08,1.4,4.6)
 	var specification: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(archetype)
+	var variant_scale := Vector3.ONE
+	var variant_lift := 0.0
 	if not specification.is_empty():
+		match archetype:
+			"desert_jeep_4x4": variant_scale = Vector3(1.1, 1.05, 1.05)
+			"polar_van": variant_scale = Vector3(1.0, 1.1, 1.1)
+			"lumber_pickup_4x4": variant_scale = Vector3(1.0, 1.15, 1.0)
+			"ranch_pickup": variant_scale = Vector3(1.0, 1.05, 1.0)
+			"station_wagon": variant_scale = Vector3(1.05, 1.0, 1.05)
+			"winter_suv_heavy": variant_scale = Vector3(1.08, 1.08, 1.08)
+			"muscle_classic": variant_scale = Vector3(1.05, 0.95, 1.05)
+		
 		var dimensions: Array = specification.bounds_size
-		hull.size = Vector3(maxf(.65,dimensions[0]),clampf(dimensions[1],1.1,3.6),dimensions[2])
+		hull.size = Vector3(maxf(.65,dimensions[0]*variant_scale.x),clampf(dimensions[1]*variant_scale.y,1.1,3.6),dimensions[2]*variant_scale.z)
 		max_health = float(specification.get("durability",180))
 		health = max_health
 		max_forward_speed = clampf(float(specification.max_speed)/16.0,5,45)
@@ -137,6 +149,8 @@ func _ready() -> void:
 	sensor_shape.size = Vector3(hull.size.x+.07,1.2,1)
 	traced = _trace_ready("spec",traced)
 	visual = preload("res://runtime/FleetCatalog.gd").create(archetype) if not specification.is_empty() else VISUAL.create(paint_color)
+	if variant_scale != Vector3.ONE:
+		visual.scale = variant_scale
 	traced = _trace_ready("visual",traced)
 	visual.name = "Coupe"
 	add_child(visual)
@@ -250,7 +264,13 @@ func _physics_process(delta: float) -> void:
 		var now := Engine.get_physics_frames()
 		if now-_last_wall_damage_frame >= ceili(WALL_DAMAGE_COOLDOWN_SECONDS * Engine.physics_ticks_per_second):
 			_last_wall_damage_frame = now
-			receive_damage(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO))
+			var local_pt := Vector3(0, 0, -half_length)
+			for i in get_slide_collision_count():
+				var coll := get_slide_collision(i)
+				if not (coll.get_collider() is CharacterBody3D):
+					local_pt = to_local(coll.get_position())
+					break
+			receive_impact(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO), local_pt)
 	STREET.vehicle_post_move(self,incoming_velocity,delta)
 	wheel_spin += motion.dot(forward)/0.355
 	for pivot in wheels:
@@ -309,6 +329,16 @@ func motorcycle_handholds() -> Dictionary:
 		var sign_side := -1.0 if side == "Left" else 1.0
 		var palm_basis: Basis = part.get_parent().global_basis.orthonormalized() * Basis(Vector3.BACK, -sign_side * PI * .5)
 		holds[side] = Transform3D(palm_basis, part.to_global(part.mesh.get_aabb().get_center()))
+	if not holds.is_empty():
+		if archetype == "bike_sport":
+			holds["lean_multiplier"] = 1.8
+			holds["lean_min"] = 0.5
+		elif archetype == "bike_urban":
+			holds["lean_multiplier"] = 0.5
+			holds["lean_min"] = 0.1
+		else: # cruiser or default
+			holds["lean_multiplier"] = 0.5
+			holds["lean_min"] = 0.2
 	return holds
 
 func _drive_player(delta: float) -> void:
@@ -408,11 +438,12 @@ func _junction_gate(length: float, open: bool) -> bool:
 	for junction in _junction_list:
 		var offset := float(junction.offset)
 		var ahead := _route_ahead(offset,length,open)
-		if ahead <= -JUNCTIONS.EXIT or ahead > JUNCTIONS.APPROACH: continue
+		if ahead <= -JUNCTIONS.EXIT or ahead > float(junction.get("approach_distance",JUNCTIONS.APPROACH)): continue
 		if _held_junction == junction.key:
 			if ahead <= 0.0: continue
 			return false
 		var gap := ahead-half_length-JUNCTIONS.stop_line(junction.key)
+		if junction.has("stop_offset"): gap = _route_ahead(float(junction.stop_offset),length,open)-half_length
 		# Rumo de chegada: trecho da rota logo antes do centro (a curva começa depois).
 		var before := route.sample_baked(offset-6.0 if open else fposmod(offset-6.0,length),true)
 		var at := route.sample_baked(offset-1.0 if open else fposmod(offset-1.0,length),true)
@@ -541,6 +572,7 @@ func _body_speed(target) -> float:
 
 func _stall_estimate() -> float:
 	if junction_wait or not blocked or not is_instance_valid(blocker): return 0.0
+	if blocker.has_method("is_servicing_stop") and blocker.is_servicing_stop(): return blocked_time
 	if blocker is Node3D and blocker.get("traffic") == true:
 		var same_way := (-global_basis.z).dot(-(blocker as Node3D).global_basis.z) > 0.85
 		if same_way:
@@ -562,6 +594,7 @@ func _route_right(offset: float, length: float, open: bool) -> Vector3:
 ## Deslocamento lateral do desvio: faixa contrária inteira à esquerda; à direita só o
 ## que cabe até o meio-fio.
 func _bypass_shift() -> float:
+	if not is_nan(bypass_lane_shift): return bypass_lane_shift
 	return -3.4 if bypass_side < 0.0 else 2.6
 
 ## Casco livre na rota deslocada `shift` metros para a direita, a `probes` metros à frente.
@@ -590,6 +623,24 @@ func _try_bypass() -> bool:
 	for junction in _junction_list:
 		var ahead := _route_ahead(float(junction.offset),length,open)
 		if ahead > -JUNCTIONS.EXIT and ahead < 14.0: return false
+	# On a four-lane avenue, use only the adjacent lane travelling in the same
+	# direction. Look behind as well as ahead before merging around a stopped bus.
+	var nearest := INF
+	var profile := {}
+	for section in route.get_meta("lane_sections",[]):
+		var a: Vector3 = section.a
+		var b: Vector3 = section.b
+		if a.direction_to(b).dot(-global_basis.z)<.7: continue
+		var separation := Geometry3D.get_closest_point_to_segment(global_position,a,b).distance_squared_to(global_position)
+		if separation<nearest: nearest=separation; profile=section
+	if int(profile.get("lanes",1))==2:
+		bypass_side = 1.0 if int(route.get_meta("lane_index",0))==0 else -1.0
+		bypass_lane_shift = bypass_side*float(profile.width)*.25
+		if _lane_clear(bypass_lane_shift,[-8.0,-4.0,0.0,5.0,10.0,16.0,22.0]):
+			bypass_start=route_distance; _merging_back=false
+			return true
+		bypass_side=0; bypass_lane_shift=NAN
+		return false
 	for side in [-1.0, 1.0]:
 		bypass_side = side
 		if _lane_clear(_bypass_shift(),BYPASS_PROBES):
@@ -619,6 +670,7 @@ func _update_bypass() -> void:
 	elif travelled > BYPASS_MAX_DISTANCE or blocked_time > 6.0: _merging_back = true
 
 func _end_bypass() -> void:
+	bypass_lane_shift = NAN
 	bypass_side = 0.0
 	bypass_blend = 0.0
 	_merging_back = false
@@ -720,6 +772,11 @@ func ensure_equipment(world: Node) -> Node:
 	add_child(equipment)
 	if not equipment_state.is_empty(): equipment.restore_state(equipment_state)
 	return equipment
+
+func receive_impact(amount: float, local_point: Vector3, source: Node = null) -> void:
+	if is_instance_valid(equipment) and equipment.has_method('receive_impact'):
+		equipment.receive_impact(local_point, amount)
+	receive_damage(amount, source)
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if amount <= 0 or health <= 0: return

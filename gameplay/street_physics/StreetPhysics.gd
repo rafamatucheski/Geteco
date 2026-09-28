@@ -44,7 +44,8 @@ var _audio_next := 0
 var _streams := {}
 var _geysers: Array[Dictionary] = []
 var _litter: Array[Node3D] = []
-var _player_health := -1.0
+var _player_wound_pending := false
+var _player_wound_lethal := false
 var _people_cache: Array = []
 
 
@@ -53,6 +54,7 @@ func _ready() -> void:
 	instance = self
 	blood = BLOOD.new()
 	add_child(blood)
+	controller.world.gameplay.player_wounded.connect(_on_player_wounded)
 	tracks = TRACKS.new()
 	tracks.director = self
 	add_child(tracks)
@@ -413,18 +415,24 @@ func _watch_people() -> void:
 	_watch_player()
 
 
-## Jogador: a vida mora no Gameplay, não no Actor.
+## Só ferimentos físicos iniciam sangue; frio não cria nem renova o rastro.
+func _on_player_wounded(lethal: bool) -> void:
+	_player_wound_pending = true
+	_player_wound_lethal = _player_wound_lethal or lethal
+
 func _watch_player() -> void:
-	var gameplay = controller.world.get("gameplay")
+	# Preserve the existing 0.2 s budget even for multiple pellets in one shot.
+	if not _player_wound_pending: return
+	var lethal := _player_wound_lethal
+	_player_wound_pending = false
+	_player_wound_lethal = false
 	var player = controller.world.get("player")
-	if gameplay == null or not is_instance_valid(player): return
-	var health := float(gameplay.get("health"))
-	if _player_health >= 0.0 and health < _player_health - 0.01 and health > 0.0:
+	if not is_instance_valid(player): return
+	if not lethal:
 		blood.spawn_pool(player.global_position, false)
 		_wound(player)
-	elif _player_health > 0.0 and health <= 0.0:
+	else:
 		blood.spawn_pool(player.global_position, true)
-	_player_health = health
 
 
 func _counts_as_corpse(person: Node) -> bool:
