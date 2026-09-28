@@ -138,6 +138,9 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	light.spot_range = float(profile.range)
 	light.spot_angle = angle
 	light.shadow_enabled = false
+	light.distance_fade_enabled = true
+	light.distance_fade_begin = 35.0
+	light.distance_fade_length = 15.0
 	light.hide()
 	car.add_child(light)
 	return light
