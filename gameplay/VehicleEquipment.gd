@@ -3,6 +3,7 @@ extends Node
 const AUDIO := preload("res://gameplay/VehicleEquipmentAudio.gd")
 const PROFILES := preload("res://gameplay/VehicleLightProfiles.gd")
 const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
+const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 ## Fachos reais (SpotLight) de NPC ao mesmo tempo, só nos carros mais próximos
 ## do jogador: iluminam pedestres e lataria em volta. O que se vê de cima é a
 ## mancha no chão (`ground_pool`), que custa quase nada. Medido em 22/09/2026
@@ -366,7 +367,8 @@ func handle_input(event: InputEvent, allowed: bool = true) -> bool:
 	if event.is_action_pressed("headlights", false): return toggle_headlights()
 	# Shared R3 binds siren on emergency vehicles and horn on ordinary vehicles.
 	if not beacons.is_empty() and event.is_action_pressed("siren_toggle", false): return toggle_siren()
-	if event.is_action_pressed("horn", false): return honk()
+	# Dentro do carro a tecla da lanterna da arma (G) não serve para nada: buzina também.
+	if event.is_action_pressed("horn", false) or event.is_action_pressed("weapon_flashlight", false): return honk()
 	return false
 
 func toggle_headlights() -> bool:
@@ -385,7 +387,13 @@ func toggle_siren() -> bool:
 
 func honk() -> bool:
 	if not can_operate() or horn_audio.playing: return false
-	horn_audio.stream = AUDIO.horn_stream()
+	var archetype := str(car.archetype)
+	var family: String = ENGINE_PROFILE.family(archetype)
+	horn_audio.stream = AUDIO.horn_stream(family,archetype)
+	# Buzina de ar (caminhão, ônibus, bombeiro, blindado) é mais alta e se ouve de mais longe.
+	var heavy: bool = AUDIO.is_heavy_horn(family)
+	horn_audio.volume_db = -3.0 if heavy else -7.0
+	horn_audio.max_distance = 70.0 if heavy else 43.75
 	horn_audio.play()
 	return true
 

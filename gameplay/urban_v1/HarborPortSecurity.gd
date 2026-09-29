@@ -238,7 +238,8 @@ func _process(delta: float) -> void:
 		if authorized_visit and not inside: exiting_port = true
 		initialized = true
 	elif inside and not was_inside:
-		if authorized_entry or authorized_visit:
+		# Quem dirige o caminhão de carga do porto entra a serviço: sem alarme nem propina.
+		if authorized_entry or authorized_visit or _driven_work_truck() != null:
 			authorized_visit = true
 			authorized_entry = false
 			_alerted_reset()
@@ -256,7 +257,7 @@ func _process(delta: float) -> void:
 		_alerted_reset()
 	if authorized_entry and not inside and point.distance_to(_world_point(GATE_POINT)) > 24.0:
 		authorized_entry = false
-	var should_open := authorized_entry or authorized_visit or exiting_port or _emergency_near_gate() or _work_truck_near_gate()
+	var should_open := authorized_entry or authorized_visit or exiting_port or _emergency_near_gate() or _work_truck_near_gate() or _driven_work_truck_near_gate()
 	if gate_open and _gate_occupied(): should_open = true
 	_set_gate(should_open)
 	if alerted:
@@ -303,6 +304,16 @@ func _work_truck_near_gate() -> bool:
 		if is_instance_valid(vehicle) and vehicle.health > 0 and vehicle.traffic and not vehicle.controlled and vehicle.global_position.distance_to(_world_point(GATE_POINT)) < 18:
 			return true
 	return false
+
+## Caminhão de carga do porto com o jogador ao volante (meta `port_work_vehicle`).
+func _driven_work_truck() -> CharacterBody3D:
+	var driving = session.world.driving
+	if not driving.occupied or not is_instance_valid(driving.car): return null
+	return driving.car if driving.car.get_meta("port_work_vehicle",false) else null
+
+func _driven_work_truck_near_gate() -> bool:
+	var truck := _driven_work_truck()
+	return truck != null and truck.health > 0 and truck.global_position.distance_to(_world_point(GATE_POINT)) < 18
 
 func _set_gate(open: bool) -> void:
 	if gate_open == open: return

@@ -4,19 +4,70 @@ static var horn: AudioStreamWAV
 static var siren: AudioStreamWAV
 static var alarm: AudioStreamWAV
 
-static func horn_stream() -> AudioStreamWAV:
-	if horn: return horn
+## Buzina por família de motor (`VehicleEngineProfile.family`): tons, duração, ataque,
+## harmônicos e saturação. "street" é o oscilador original da V1; caminhão, ônibus e
+## bombeiro usam buzina de ar (acorde grave, longa, saturada); moto é um bipe agudo curto.
+const HORN_PROFILES := {
+	"street": {"tones": [435.0, 545.0], "length": .40, "attack": .03, "release": .05, "harmonics": 0.0, "drive": 0.0},
+	"electric": {"tones": [600.0, 760.0], "length": .30, "attack": .02, "release": .05, "harmonics": 0.0, "drive": 0.0},
+	"suv": {"tones": [370.0, 466.0], "length": .45, "attack": .03, "release": .06, "harmonics": .20, "drive": 1.1},
+	"muscle": {"tones": [392.0, 494.0], "length": .45, "attack": .03, "release": .06, "harmonics": .28, "drive": 1.3},
+	"diesel": {"tones": [330.0, 415.0], "length": .50, "attack": .04, "release": .07, "harmonics": .32, "drive": 1.4},
+	"sport": {"tones": [510.0, 640.0], "length": .32, "attack": .02, "release": .05, "harmonics": .18, "drive": 1.1},
+	"vq35": {"tones": [520.0, 655.0], "length": .32, "attack": .02, "release": .05, "harmonics": .18, "drive": 1.1},
+	"m8_v8": {"tones": [500.0, 630.0], "length": .34, "attack": .02, "release": .05, "harmonics": .22, "drive": 1.2},
+	"rosso_v12": {"tones": [560.0, 700.0], "length": .30, "attack": .02, "release": .05, "harmonics": .15, "drive": 1.0},
+	"police": {"tones": [500.0, 630.0], "length": .30, "attack": .02, "release": .05, "harmonics": .20, "drive": 1.2},
+	"ambulance": {"tones": [420.0, 530.0], "length": .50, "attack": .03, "release": .06, "harmonics": .22, "drive": 1.2},
+	"truck": {"tones": [165.0, 208.0, 247.0], "length": .95, "attack": .06, "release": .14, "harmonics": .55, "drive": 1.9},
+	"bus": {"tones": [155.0, 196.0, 233.0], "length": .90, "attack": .06, "release": .14, "harmonics": .50, "drive": 1.8},
+	"fire_diesel": {"tones": [150.0, 190.0, 225.0, 300.0], "length": 1.10, "attack": .07, "release": .16, "harmonics": .55, "drive": 2.0},
+	"tank": {"tones": [196.0, 207.0], "length": .80, "attack": .04, "release": .10, "harmonics": .70, "drive": 2.6},
+	"bike_urban": {"tones": [740.0, 930.0], "length": .22, "attack": .015, "release": .04, "harmonics": .10, "drive": 0.0},
+	"bike_sport": {"tones": [820.0, 1030.0], "length": .20, "attack": .015, "release": .04, "harmonics": .10, "drive": 0.0},
+	"bike_cruiser": {"tones": [560.0, 700.0], "length": .30, "attack": .02, "release": .05, "harmonics": .15, "drive": 0.0},
+}
+## Famílias de buzina de ar: mais alta e com alcance maior que a de carro.
+const HEAVY_HORNS := ["truck", "bus", "fire_diesel", "tank"]
+static var horns: Dictionary = {}
+
+static func is_heavy_horn(family: String) -> bool:
+	return family in HEAVY_HORNS
+
+## `archetype` desafina de -4 % a +4 % de forma estável: dois modelos da mesma família
+## não soam idênticos. Sem arquétipo (chamada antiga) sai o oscilador original.
+static func horn_stream(family: String = "street", archetype: String = "") -> AudioStreamWAV:
+	if not HORN_PROFILES.has(family): family = "street"
+	var key := family + "|" + archetype
+	if horns.has(key): return horns[key]
+	var profile: Dictionary = HORN_PROFILES[family]
+	var detune := 1.0 if archetype.is_empty() else 1.0 + float(archetype.hash() % 9 - 4) * .01
+	var tones: Array = profile.tones
+	var length: float = profile.length
+	var samples := int(length * 22050.0)
+	var attack: float = profile.attack
+	var release: float = profile.release
+	var harmonics: float = profile.harmonics
+	var drive: float = profile.drive
+	var level := .5 if family in HEAVY_HORNS else .4
 	var data := PackedByteArray()
-	data.resize(8820 * 2)
-	for i in 8820:
+	data.resize(samples * 2)
+	for i in samples:
 		var t := float(i) / 22050.0
 		var env := 1.0
-		if t < .03: env = t / .03
-		elif t > .35: env = (.4 - t) / .05
-		var sample := (sin(TAU * 435 * t) * .5 + sin(TAU * 545 * t) * .5) * env * .4
+		if t < attack: env = t / attack
+		elif t > length - release: env = maxf(0.0, (length - t) / release)
+		var mix := 0.0
+		for tone in tones:
+			var phase := TAU * float(tone) * detune * t
+			mix += sin(phase) + harmonics * sin(phase * 2.0) + harmonics * .5 * sin(phase * 3.0)
+		mix /= float(tones.size())
+		var sample := (tanh(mix * drive) if drive > 0.0 else mix) * env * level
 		data.encode_s16(i * 2, clampi(int(sample * 32767), -32768, 32767))
-	horn = _stream(data)
-	return horn
+	var stream := _stream(data)
+	horns[key] = stream
+	if family == "street" and archetype.is_empty(): horn = stream
+	return stream
 
 static func siren_stream() -> AudioStreamWAV:
 	if siren: return siren
