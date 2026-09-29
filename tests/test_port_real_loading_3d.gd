@@ -26,7 +26,9 @@ func run() -> void:
 	var session = world.session
 	check(world.production.no_save,"Loading observation does not touch personal save")
 	session.weather.time_of_day = .4
-	session.urban_operations.security.set_process(false)
+	# A portaria precisa continuar rodando: sem ela a cancela fica fechada e os caminhões
+	# de carga travam nela para sempre. A visita autorizada evita o alarme de invasão.
+	session.urban_operations.security.authorized_visit = true
 	world.player.set_physics_process(false)
 	world.player.collision_layer = 0
 	world.player.collision_mask = 0
@@ -36,8 +38,8 @@ func run() -> void:
 	var logistics = session.urban_operations.cargo_handling
 	var saw_carried_crate := false
 	var saw_loaded_truck := false
-	var saw_depot_return := false
-	for _frame in 6500:
+	var saw_gate_crossed := false
+	for _frame in 9000:
 		await physics_frame
 		if _frame % 20 == 0:
 			for actor in get_nodes_in_group("v1_routine_actor"):
@@ -46,12 +48,13 @@ func run() -> void:
 			for state in logistics.work_trucks:
 				if state.loaded and is_instance_valid(state.truck) and state.truck.get_meta("port_container_loaded",false):
 					saw_loaded_truck = true
-				# Depois da entrega o caminhão faz a viagem de volta (return_wait → returning → waiting).
-					if int(state.deliveries) > 0 and state.phase in ["return_wait","returning","waiting","approach"]: saw_depot_return = true
-		if saw_loaded_truck and saw_carried_crate and saw_depot_return: break
+				# Carregado, o caminhão atravessa a cancela (z 211) rumo ao armazém. O ciclo
+				# completo (entrega e volta) leva ~30 000 quadros; a rota é coberta por test_port_haul_route.
+				if state.loaded and state.phase == "departed" and is_instance_valid(state.truck) and state.truck.global_position.z < 195.0: saw_gate_crossed = true
+		if saw_loaded_truck and saw_carried_crate and saw_gate_crossed: break
 	check(saw_carried_crate,"Quay worker physically carries a 3D crate")
 	check(saw_loaded_truck,"An unforced crane cycle loads a truck in the real scene")
-	check(saw_depot_return,"Loaded truck reaches the warehouse, unloads and starts its return trip")
+	check(saw_gate_crossed,"Loaded truck passes the open freight gate on its way to the warehouse")
 	for index in logistics.work_trucks.size():
 		var state: Dictionary = logistics.work_trucks[index]
 		print("REAL_PORT_TRUCK ",index," phase=",state.phase," loaded=",state.loaded," position=",state.truck.global_position if is_instance_valid(state.truck) else "missing")

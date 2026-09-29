@@ -35,7 +35,11 @@ static func journey(graph: RefCounted, start: Vector3, index: int, returning: bo
 	var cursor := street_start
 	# Memorial South avoids the edited bus tube on Market Street. The police
 	# apron clearance below keeps this wider chassis off its raised gutter.
-	var checkpoints := [via,street_end] if returning else [via,Vector3(-20,0,140.4),street_end]
+	# O ponto de passagem fica NA faixa de ida (z≈137,8), não no eixo da rua (140,4): no eixo
+	# o roteador escolhia a faixa de volta (mais próxima), fazia retorno até lá e outro de novo
+	# para seguir a oeste. A rota passava duas vezes pelo mesmo trecho e o caminhão, que mede o
+	# progresso pelo ponto mais próximo, ficava girando ali para sempre (medido 2026-09-29).
+	var checkpoints := [via,street_end] if returning else [via,Vector3(-20,0,137.8),street_end]
 	for target in checkpoints:
 		var plan := router.plan(cursor,target,heading)
 		if not plan.get("ok",false) or float(plan.get("end_gap",INF)) > 8: return null
