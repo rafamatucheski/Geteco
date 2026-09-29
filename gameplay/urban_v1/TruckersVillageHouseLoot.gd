@@ -1,5 +1,6 @@
 extends Node
 ## Each interior owns one finite stash; the economy receipt survives reloads.
+const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const CASH := [120,180,150,220,250,5000]
 var session
 var homes: Node3D
@@ -17,9 +18,10 @@ func _process(delta: float) -> void:
 		var stash: Node3D = homes.homes[i].loot
 		var id := "tonico_home_stash_%d"%i
 		var taken: bool = receipts.has("reward:"+id)
-		stash.visible=not taken
+		stash.call("set_available",not taken)
 		if taken or session.world.gameplay.health<=0 or session.world.player.get("dead")==true or session.world.driving.occupied: continue
 		if homes.current_home!=i or homes.house_at(session.world.player.global_position)!=i or session.world.player.global_position.distance_to(stash.global_position)>1.3: continue
 		if session.state.economy.grant_reward(id,CASH[i]):
-			stash.visible=false
+			REWARD_AUDIO.play(self,"cash")
+			stash.call("set_available",false,true)
 			session.show_message("Encontrou R$ %d."%CASH[i])

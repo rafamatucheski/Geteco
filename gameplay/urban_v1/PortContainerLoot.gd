@@ -1,5 +1,6 @@
 extends Node
 const STATE := preload("res://gameplay/urban_v1/PortContainerState.gd")
+const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 var session
 var records: Dictionary = {}
 var pending: Node3D
@@ -150,6 +151,8 @@ func collect(container: Node3D) -> bool:
 	var reward := STATE.loot(container.cargo_id,row.cycle)
 	var receipt: String = STATE.receipt(container.cargo_id,row.cycle)
 	var message := "Contêiner vazio"
+	# Só toca som quando algo entrou de fato (nem "Já recolhido", nem contêiner vazio).
+	var cue := ""
 	if wallet.snapshot().transactions.has("reward:"+receipt):
 		message = "Já recolhido"
 	elif reward.kind == "cash":
@@ -157,6 +160,7 @@ func collect(container: Node3D) -> bool:
 			session.show_message("Sem espaço na carteira")
 			return false
 		message = "+R$ %d" % reward.amount
+		cue = "cash"
 	elif reward.kind == "armor":
 		if session.world.gameplay.armor >= 100.0:
 			session.show_message("Colete cheio")
@@ -165,6 +169,7 @@ func collect(container: Node3D) -> bool:
 		session.world.gameplay.armor = minf(100.0,session.world.gameplay.armor+reward.amount)
 		session.world.gameplay.changed.emit()
 		message = "Colete recolhido"
+		cue = "pickup"
 	elif reward.kind == "weapon":
 		var before: Dictionary = wallet.snapshot()
 		var owned: bool = wallet.owns_weapon(reward.weapon)
@@ -176,6 +181,7 @@ func collect(container: Node3D) -> bool:
 			wallet.restore_snapshot(before)
 			return false
 		message = "+%d munições" % reward.amount if owned else "Arma recolhida: "+str(wallet.Weapons.WEAPONS[reward.weapon].label)
+		cue = "weapon"
 		session.world.gameplay.changed.emit()
 	elif reward.kind == "ammo":
 		var before: Dictionary = wallet.snapshot()
@@ -186,12 +192,14 @@ func collect(container: Node3D) -> bool:
 			wallet.restore_snapshot(before)
 			return false
 		message = "+%d munições de pistola" % reward.amount
+		cue = "weapon"
 	else:
 		if not wallet.grant_reward(receipt,0): return false
 	row.opened = true
 	row.looted = true
 	records[container.cargo_id] = row
 	container.apply_state(records[container.cargo_id])
+	if not cue.is_empty(): REWARD_AUDIO.play(self,cue)
 	session.show_message(message)
 	report_witnessed_theft()
 	_persist()

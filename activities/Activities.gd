@@ -3,6 +3,10 @@ const Definitions := preload("res://activities/ActivityDefinitions.gd")
 const Motorsport := preload("res://activities/Motorsport.gd")
 const Residence := preload("res://activities/Residence.gd")
 const TowJobs := preload("res://data/catalogs/TowJobs.gd")
+const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
+const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+## Frase de descoberta da V1: a conquista espera ela terminar (1,15 s) para não sobrepor.
+const DISCOVERY_CUE_SECONDS := 1.15
 var session
 var motorsport = Motorsport.new()
 var residence = Residence.new()
@@ -14,6 +18,7 @@ var _place := ""
 var _clock := 0.0
 var _visuals: Array[Node3D] = []
 var _pickups: Dictionary = {}
+var _discovery_cue_end_msec := 0
 var _gate: Node3D
 var _status: Label
 var _tow_recovered := false
@@ -236,21 +241,32 @@ func _create_pickup(id: String, point: Vector3) -> void:
 	sphere.radius = .8
 	shape.shape = sphere
 	area.add_child(shape)
+	# Mesma apresentação do pickup da V1 (gira, flutua, halo e absorção). O halo
+	# fica no chão: a área é elevada até .35 m depois do "grounded" acima.
+	var holder := PICKUP.new()
+	holder.name = "PickupPresentation"
+	holder.position.y = -.35
+	area.add_child(holder)
+	var art := Node3D.new()
 	var mesh := MeshInstance3D.new()
 	var item := BoxMesh.new()
 	item.size = Vector3(.27,.1,.19) if id != "mountain_expedition_pack" else Vector3(.35,.4,.25)
 	mesh.mesh = item
+	mesh.position.y = .26
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color("b6a57d")
 	mesh.material_override = material
-	area.add_child(mesh)
+	art.add_child(mesh)
+	holder.configure(art,id)
 	area.body_entered.connect(func(body):
 		if body != session.world.player or session.world.driving.occupied or session.modal: return
 		if session.state.economy.collect(id):
 			area.set_deferred("monitoring",false)
-			area.hide()
 			_pickups.erase(id)
-			area.queue_free()
+			holder.collect()
+			get_tree().create_timer(.4).timeout.connect(func(): if is_instance_valid(area): area.queue_free())
+			REWARD_AUDIO.play(self,"collectible")
+			_discovery_cue_end_msec = Time.get_ticks_msec()+int(DISCOVERY_CUE_SECONDS*1000.0)
 			_achievements()
 			var announcement := ""
 			if session.mountain_progression != null: announcement = session.mountain_progression.on_collectible()
@@ -382,7 +398,11 @@ func refresh_achievements() -> void:
 	stats.merge({"races":_data.races_finished,"bests":_data.race_records,
 		"best_drift_score":best,"armor":session.world.gameplay.armor,"wanted_stars":session.world.gameplay.stars})
 	if session.mountain_progression != null: stats.merge(session.mountain_progression.stats(),true)
-	session.state.economy.evaluate_achievements(stats)
+	var unlocked: Array = session.state.economy.evaluate_achievements(stats)
+	if unlocked.is_empty(): return
+	var wait := maxf(0.0,float(_discovery_cue_end_msec-Time.get_ticks_msec())/1000.0)
+	if wait <= 0.0: REWARD_AUDIO.play(self,"achievement")
+	else: get_tree().create_timer(wait).timeout.connect(Callable(REWARD_AUDIO,"play").bind(self,"achievement"))
 
 func _commit() -> bool:
 	session.state.world_state.activities = snapshot()

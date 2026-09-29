@@ -66,6 +66,8 @@ func run() -> void:
 		session.world.driving.occupied=false
 		tick(loot)
 		check(session.state.economy.balance==before+LOOT.CASH[i],"Exact house%d reward R$%d"%[i,LOOT.CASH[i]])
+		check(stash.consumed,"Collected house%d stash starts absorbing"%i)
+		await create_timer(.35).timeout
 		check(not stash.visible,"Collected house%d stash disappears"%i)
 		before=session.state.economy.balance
 		tick(loot)

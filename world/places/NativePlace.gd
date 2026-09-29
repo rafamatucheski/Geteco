@@ -1,4 +1,5 @@
 extends Node3D
+const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 ## Native room adapter; geometry remains authored in original metre coordinates.
 var definition: Dictionary
 var model: Node3D
@@ -7,6 +8,9 @@ var solid_bounds: Array[AABB] = []
 var vault_pivot: Node3D
 var vault_bodies: Array[StaticBody3D] = []
 var reward_visual: Node3D
+## Verdadeiro em lugares que animam a própria arma (ex.: esconderijo da Vértice);
+## o resto das recompensas do lugar continua com a apresentação de coleta.
+var own_weapon_presentation := false
 var reward_points: Array[Dictionary] = []
 var interaction_points: Dictionary = {}
 var spawn_position: Vector3:
@@ -134,36 +138,47 @@ func _install_reward() -> void:
 		var local: Vector3 = item.get("local_position",definition.spawn+Vector3(.8,0,0))
 		if not is_floor_clear(local): local = definition.spawn+Vector3(-.8,0,0)
 		if not is_floor_clear(local): continue
-		var visual := Node3D.new()
+		var pickup_presentation: bool = not (own_weapon_presentation and item.kind == "weapon")
+		var visual: Node3D = PICKUP.new() if pickup_presentation else Node3D.new()
 		visual.name = str(item.id)
 		visual.position = local
 		add_child(visual)
+		# Com apresentação de coleta, o modelo fica dentro de `art` (que gira e flutua);
+		# `PickupPresentation.lift` (.09) já eleva `art`, então a peça desce esse tanto.
+		var art: Node3D = Node3D.new() if pickup_presentation else visual
+		var lift := .09 if pickup_presentation else 0.0
 		if item.kind == "weapon":
 			var weapon := Node3D.new()
 			weapon.rotation.z = PI*.5
-			weapon.position.y = .25
-			visual.add_child(weapon)
+			weapon.position.y = .25-lift
+			art.add_child(weapon)
 			preload("res://assets/regions/source/scripts/player/ArsenalWeapon3D.gd").build(weapon,item.item)
 		else:
 			var mesh := MeshInstance3D.new()
 			var box := BoxMesh.new()
 			box.size = Vector3(.32,.2,.22)
 			mesh.mesh = box
-			mesh.position.y = .2
+			mesh.position.y = .2-lift
 			var surface := StandardMaterial3D.new()
 			surface.albedo_color = Color("b79655")
 			mesh.material_override = surface
-			visual.add_child(mesh)
+			art.add_child(mesh)
+		if pickup_presentation: visual.call("configure",art,str(item.get("item",item.kind)))
 		var data: Dictionary = item.duplicate(true)
 		data["reward"] = item.duplicate(true)
 		data["position"] = to_global(local)
 		data["visual"] = visual
 		reward_points.append(data)
 		if reward_visual == null: reward_visual = visual
-func set_reward_available(available: bool,id: String = "") -> void:
+## `animate` só na coleta de verdade (absorção de 0,25 s da V1); reconciliar recibos
+## ao carregar continua escondendo na hora.
+func set_reward_available(available: bool,id: String = "",animate := false) -> void:
 	for point in reward_points:
 		if id.is_empty() or point.id == id:
-			if is_instance_valid(point.visual): point.visual.visible = available
+			var visual: Node3D = point.visual
+			if not is_instance_valid(visual): continue
+			if visual.has_method("set_available"): visual.call("set_available",available,animate)
+			else: visual.visible = available
 func set_active(value: bool) -> void:
 	active = value
 	visible = value

@@ -81,6 +81,8 @@ func run() -> void:
 			await settle(3)
 			session._collect_reward(session.room)
 			check(session.state.world_state.rewards.has("santa_mare_hidden_chest_01"),"Chest grants its treasure once")
+			check(treasure.visual.consumed,"Collected treasure starts its absorption")
+			await create_timer(.35).timeout
 			check(not treasure.visual.visible,"Collected treasure vanishes without blocking the aisle")
 		check(session.leave_place(),"Hold returns to ship deck")
 		check(world.player.global_position.distance_to(hatch) < 2.0,"Exit returns to original hatch")

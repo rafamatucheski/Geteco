@@ -1,6 +1,7 @@
 extends Node3D
 ## Six native 3D walk-in homes. Player, residents, architecture and furniture
 ## share one depth buffer and physical world; no sprite/projection workaround.
+const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 signal house_entered(index: int)
 signal house_exited(index: int)
 var homes: Array[Dictionary] = []
@@ -46,16 +47,19 @@ func build(village: Node3D,layout: Array) -> void:
 		homes.append(room)
 		_shell(room,Color(layout[i][1]))
 		_furnish(room,i)
-		var find := Node3D.new()
+		# Mesmo pickup da V1 (gira, flutua, halo, absorção); o dinheiro fica em `art`.
+		var find: Node3D = PICKUP.new()
 		find.name = "CashFind"
 		find.position = Vector3(1.5,.055,-3)
 		home.add_child(find)
+		var art := Node3D.new()
 		var money := MeshInstance3D.new()
 		var cash := BoxMesh.new()
 		cash.size = Vector3(.25,.05,.15)
 		money.mesh = cash
 		money.material_override = _material("809075")
-		find.add_child(money)
+		art.add_child(money)
+		find.call("configure",art,"cash")
 		room.loot = find
 		room.solid_end = solids.size()
 		occupant_points.append(home.to_global(Vector3(-1.5,0,-1)))
@@ -93,7 +97,7 @@ func set_region_active(value: bool) -> void:
 	if not value: _set_inside(-1)
 
 func set_loot_collected(index: int,collected: bool) -> void:
-	if index>=0 and index<homes.size(): homes[index].loot.visible = not collected
+	if index>=0 and index<homes.size(): homes[index].loot.set_available(not collected)
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player): return

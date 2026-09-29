@@ -1,4 +1,5 @@
 extends Node3D
+const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 ## Original aircraft and original aisle/treasure geometry in the shared native world.
 var model: Node3D
 var reward_points: Array[Dictionary] = []
@@ -28,21 +29,39 @@ func _ready() -> void:
 	_queue_presentation_stages()
 	for job in _presentation_jobs:
 		job.call()
+	# Arma e baú ganham a apresentação de coleta da V1. O baú é grande demais para
+	# girar: só halo maior e absorção; a arma gira e flutua como qualquer pickup.
+	var weapon_holder := PICKUP.new()
+	weapon_holder.name = "SmgPickup"
+	weapon_holder.position = Vector3(-.55,.39,-7.35)
+	model.add_child(weapon_holder)
+	var weapon_art := Node3D.new()
 	var weapon := Node3D.new()
-	weapon.position = Vector3(-.55,.48,-7.35)
 	weapon.rotation.z = PI*.5
-	model.add_child(weapon)
+	weapon_art.add_child(weapon)
+	weapon_holder.configure(weapon_art,"smg")
 	preload("res://assets/regions/source/scripts/player/ArsenalWeapon3D.gd").build(weapon,"smg")
-	for entry in [[{"id":"mountain_cargo_plane_treasure_01","kind":"cash","amount":1800},Vector3(.55,.215,-6.7),treasure_model],[{"id":"mountain_cargo_plane_smg_01","kind":"weapon","item":"smg","amount":1,"ammo":20},Vector3(-.55,.215,-7.35),weapon]]:
+	var treasure_holder := PICKUP.new()
+	treasure_holder.name = "TreasurePickup"
+	treasure_holder.position = treasure_model.position
+	model.add_child(treasure_holder)
+	treasure_model.position = Vector3.ZERO
+	model.remove_child(treasure_model)
+	treasure_holder.configure(treasure_model,"cash")
+	treasure_holder.spin_speed = 0.0
+	treasure_holder.bob_height = 0.0
+	treasure_holder.lift = 0.0
+	treasure_holder.halo_scale = 2.3
+	for entry in [[{"id":"mountain_cargo_plane_treasure_01","kind":"cash","amount":1800},Vector3(.55,.215,-6.7),treasure_holder],[{"id":"mountain_cargo_plane_smg_01","kind":"weapon","item":"smg","amount":1,"ammo":20},Vector3(-.55,.215,-7.35),weapon_holder]]:
 		var point: Dictionary = entry[0].duplicate(true)
 		point["reward"] = entry[0].duplicate(true)
 		point["position"] = to_global(entry[1])
 		point["visual"] = entry[2]
 		reward_points.append(point)
 	add_to_group("native_world_rewards")
-func set_reward_available(available: bool,id: String = "") -> void:
+func set_reward_available(available: bool,id: String = "",animate := false) -> void:
 	for point in reward_points:
-		if id.is_empty() or point.id == id: point.visual.visible = available
+		if id.is_empty() or point.id == id: point.visual.set_available(available,animate)
 func _floor_box(center: Vector3,size: Vector3) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.position = center

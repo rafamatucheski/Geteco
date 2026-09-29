@@ -3,6 +3,7 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
+const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
 var world
 var controller
@@ -1493,7 +1494,9 @@ func _collect_reward(source: Node3D) -> void:
 			_reward_failures[data.id] = {"source":weakref(source), "position":point, "region":state.region_id, "place":state.place_id}
 			continue
 		if not state.world_state.rewards.has(data.id): state.world_state.rewards.append(data.id)
-		source.set_reward_available(false,data.id)
+		if result.get("changed",true):
+			REWARD_AUDIO.play(self,REWARD_AUDIO.kind_for_reward(str(data.get("kind",""))))
+		source.set_reward_available(false,data.id,true)
 		# Coleta sem aviso na tela (como os drops de combate); só a falha avisa.
 		save_game()
 func _refresh_reward_feedback() -> void:

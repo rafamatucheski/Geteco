@@ -25,6 +25,8 @@ func _ready() -> void:
 	solid_bodies.append(model.floor_body)
 	model.set_cutaway(true)
 	interaction_points["service"] = spawn_position
+	# A arma daqui já flutua/gira com anel próprio (_process abaixo).
+	own_weapon_presentation = true
 	_install_reward()
 	for point in reward_points:
 		if point.reward.kind != "weapon": continue
