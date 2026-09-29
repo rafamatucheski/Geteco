@@ -52,7 +52,7 @@ func run() -> void:
 	await approach()
 	check(driving.interact(),"normal entry starts")
 	check(await wait_transition(),"normal entry animation completes")
-	check(driving.occupied and not world.player.visible and car.controlled and not car.input_locked,"normal entry settles hidden occupant and enables driving only at the seat")
+	check(driving.occupied and world.player.visible and world.player.seated and car.controlled and not car.input_locked,"normal entry settles the visible seated occupant and enables driving only at the seat")
 	car.speed=0
 	car.velocity=Vector3.ZERO
 	check(driving.leave(),"normal stopped exit starts")

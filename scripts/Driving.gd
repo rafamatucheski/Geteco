@@ -2,6 +2,7 @@ extends Node
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const BOARDING_PRESENTATION := preload("res://gameplay/VehicleBoardingPresentation.gd")
 const BAILOUT := preload("res://gameplay/VehicleBailout.gd")
+const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 var world
 var car: CharacterBody3D
 var occupied := false
@@ -16,8 +17,13 @@ var exit_capsule := CapsuleShape3D.new()
 var _player_layer := 2
 var _player_mask := 7
 var _last_vehicle_position := Vector3.ZERO
+## Veículo ao alcance cuja porta está sendo preparada aos poucos (ver Vehicle.warm_doors).
+var _door_warm_car: CharacterBody3D
 
 func _ready() -> void:
+	# O motorista sentado é presa ao transform do carro: tem de rodar depois de todos os
+	# veículos (prioridade 0), senão lê a posição do tique anterior e atrasa ~25 cm a 15 m/s.
+	process_physics_priority = 20
 	car = VEHICLE.new()
 	if is_instance_valid(world.production): car.archetype = str(world.production.starting_vehicle().get("archetype","sport_coupe"))
 	car.name = "PlayerCoupe"
@@ -137,6 +143,11 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	car.external_input = false
 	car.input_locked = true
 	if is_instance_valid(world.production): car.ensure_equipment(world)
+	# A folha da porta é recortada do casco ANTES de vidro e teto ficarem translúcidos: o
+	# recorte precisa das malhas originais, e o vidro trocado depois vale também para a folha
+	# (VehicleInterior percorre as peças recursivamente).
+	if car.has_method("finish_doors"): car.finish_doors()
+	if car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.open_view(car)
 	car.brake_input = true
 	car.throttle_input = 0
 	_player_layer = world.player.collision_layer
@@ -183,6 +194,9 @@ func _start_boarding(side: int) -> void:
 	transition.exited.connect(_complete_exit)
 	transition.cancelled.connect(_transition_cancelled)
 	transition.begin_entry(world,car,world.player,side)
+	# Interior já na abertura da porta (a porta acabou de ser criada, então o recorte da lataria já
+	# aconteceu e não pega os triângulos do interior): dá para ver o banco antes de sentar.
+	if car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.attach(car)
 
 ## Carro de trânsito tem motorista. Antes o roubo só tirava o carro da faixa e ninguém
 ## saía dele. O motorista desce pela porta dele assim que o ladrão abre a do lado de
@@ -226,8 +240,16 @@ func _complete_entry() -> void:
 	car.input_locked = false
 	car.brake_input = false
 	world.player.input_locked = false
-	world.player.hide()
-	world.player.teleport(car.global_position)
+	if car.has_method("shows_seated_driver") and car.shows_seated_driver() and car.is_inside_tree():
+		# Continua visível: sentado ao volante, mãos no volante, dentro do interior do veículo.
+		INTERIOR.attach(car)
+		# A apresentação de embarque já assentou o corpo (misturando da animação para o banco); sem
+		# ela (cancelamentos, testes) assenta aqui.
+		if not world.player.seated: INTERIOR.seat_driver(world.player, car, 0.0)
+		world.player.show()
+	else:
+		world.player.hide()
+		world.player.teleport(car.global_position)
 	_update_mounted_player()
 
 func exit_position(moving := false) -> Vector3:
@@ -236,8 +258,16 @@ func exit_position(moving := false) -> Vector3:
 		# Alternativas perto da porta da cabine; antes eram fixas no meio do chassi e o
 		# motorista do caminhão descia pela lateral da carga.
 		var cab: float = car._cab_z() if car.has_method("_cab_z") else -clampf(car.half_length*.18,.30,.62)
+		# Primeira opção: o ponto de espera fora do arco da folha (atrás do vão), onde a porta
+		# fecha sem tocar em ninguém. As demais são as alternativas de sempre.
+		var candidates: Array[Vector3] = []
+		var layout: Dictionary = car.door_layout(side) if not moving and car.has_method("door_layout") else {}
+		if not layout.is_empty(): candidates.append(Vector3(layout.stand.x,0,layout.stand.z))
 		for offset in [cab,cab+1.1,cab-1.1]:
-			var point := car.to_global(Vector3(side*(car.half_width+(.85 if moving else .61)),0,offset))
+			candidates.append(Vector3(side*(car.half_width+(.85 if moving else .61)),0,offset))
+		for candidate in candidates:
+			var offset: float = candidate.z
+			var point := car.to_global(candidate)
 			point.y = car.position.y+.04
 			var query := PhysicsShapeQueryParameters3D.new()
 			query.shape = exit_capsule
@@ -299,6 +329,8 @@ func leave() -> bool:
 	return true
 
 func _begin_bailout(point: Vector3, momentum: Vector3) -> bool:
+	# O salto captura a linha de base do visual: o corpo sai do banco antes, sem deslocamento.
+	world.player.release_seated(false)
 	var side := -1 if car.to_local(point).x < 0 else 1
 	car.controlled = false
 	car.external_input = false
@@ -394,6 +426,9 @@ func _watch_car(candidate: CharacterBody3D) -> void:
 ## Quem está no carro tem a colisão desligada, então a esfera de `Gameplay.explode` não o
 ## encontrava e o jogador saía vivo da explosão. Aqui ele é jogado para fora e morre.
 func _on_car_destroyed(candidate: CharacterBody3D) -> void:
+	# O dano do veículo troca materiais por papel logo depois deste sinal: o teto recortado
+	# volta ao casco antes disso (ver VehicleInterior).
+	INTERIOR.close_view(candidate)
 	if transition is BAILOUT: return # Dante has already left the vehicle.
 	if candidate != car or not (occupied or is_body_transition_active()): return
 	var gameplay = world.get("gameplay")
@@ -426,6 +461,10 @@ func _process(delta: float) -> void:
 	interface_clock = 0
 	instructions.visible = not world.player.input_locked
 	var entry := {} if occupied else _entry_option()
+	# Chegou perto de um veículo: prepara, quadro a quadro, o custo de primeira vez do interior.
+	if not entry.is_empty() and entry.car.has_method("shows_seated_driver") and entry.car.shows_seated_driver(): INTERIOR.prewarm(entry.car)
+	# Idem para a porta: o recorte da folha custa dezenas de ms; é feito aos poucos, quadro a quadro.
+	_door_warm_car = entry.car if not entry.is_empty() and entry.car.has_method("warm_doors") else null
 	# Carro comum não mostra aviso ao chegar perto (pedido do usuário); só a viatura trancada avisa que exige arrombar.
 	var entry_label := "F  Arrombar viatura" if entry.get("car") != null and entry.car.get_meta("police_locked", false) else ""
 	# Dirigindo não mostra "F Sair do carro" nem velocímetro (pedido do usuário, 25/09):
@@ -435,13 +474,17 @@ func _process(delta: float) -> void:
 	instructions.text = "W / S  acelerar / ré    A / D  virar    Espaço  frear    F  sair    Esc  pausa" if occupied else "WASD  mover    Shift  correr    E  interagir    F  carro    Z / C  girar    Esc  pausa"
 
 func _physics_process(_delta: float) -> void:
+	if is_instance_valid(_door_warm_car) and not occupied and not is_body_transition_active():
+		if _door_warm_car.warm_doors(2500): _door_warm_car = null
 	if occupied and not is_body_transition_active() and is_instance_valid(car):
 		_last_vehicle_position = car.global_position
 		world.player.position = car.position
 		_update_mounted_player()
 
 func _update_mounted_player() -> void:
-	if not car.archetype.begins_with("bike_"): return
+	if not car.archetype.begins_with("bike_"):
+		if world.player.seated: INTERIOR.follow(world.player, car, get_physics_process_delta_time())
+		return
 	world.player.global_position = car.driver_seat_anchor()
 	world.player.visual.rotation.y = car.global_rotation.y
 	world.player.pose_vehicle(1.0, 0.0, -1, 1.0, car.motorcycle_handholds())

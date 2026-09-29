@@ -492,6 +492,68 @@ func _fit_motorcycle_reach(handlebars: Dictionary) -> void:
 	var local_shift := parent_basis.inverse() * skeleton.global_basis.inverse() * shift
 	skeleton.set_bone_pose_position(hips, skeleton.get_bone_pose_position(hips) + local_shift)
 
+## Motorista sentado (carro, picape, caminhão, ônibus, buggy, empilhadeira). Aditivo: a
+## moto continua em `pose_vehicle` com guidão. `VehicleInterior` decide onde o Actor fica e
+## quais são os alvos; aqui só se reclina o tronco e se resolve a perna/braço a cada alvo.
+var seated := false
+
+## Repouso reclinado. `recline` em rad, positivo = encosto para trás. Devolve o centro do
+## quadril no espaço do próprio Actor, para o chamador posicionar o corpo no banco.
+func pose_seated_base(recline: float) -> Vector3:
+	seated = true
+	if not is_instance_valid(skeleton) or _idle_pose.is_empty(): return Vector3(0, 0.77, 0)
+	_apply_pose(_idle_pose)
+	if hips >= 0 and absf(recline) > 0.001:
+		# Gira só o tronco a partir do quadril: o eixo vem do visual (o modelo é girado 180°).
+		var visual_basis := visual.global_basis.orthonormalized()
+		var skeleton_basis := skeleton.global_basis.orthonormalized()
+		var turn := skeleton_basis.inverse() * (visual_basis * Basis(Vector3.RIGHT, recline) * visual_basis.inverse()) * skeleton_basis
+		_set_combat_bone_rotation(hips, turn * skeleton.get_bone_global_pose(hips).basis)
+	var left := skeleton.to_global(skeleton.get_bone_global_pose(_combat_bones["LeftUpLeg"]).origin)
+	var right := skeleton.to_global(skeleton.get_bone_global_pose(_combat_bones["RightUpLeg"]).origin)
+	return to_local((left + right) * 0.5)
+
+## `feet`: pé (tornozelo) por lado, no espaço do Actor (metros, sem a escala do visual).
+## `hands`: Transform3D da palma por lado, também no espaço do Actor (mesma convenção da
+## empunhadura do guidão da moto: Y ao longo do que se agarra, Z para trás). Lado sem mão
+## fica solto.
+func pose_seated_limbs(feet: Dictionary, hands: Dictionary) -> void:
+	if not is_instance_valid(skeleton) or _combat_bones.is_empty(): return
+	# O polo do cotovelo vem do quadro anterior; sem isto a primeira solução ficava presa
+	# ao último gesto de combate e o braço não chegava à mão.
+	_elbow_previous.clear()
+	_pose_delta = 1.0
+	for limb in ["Left", "Right"]:
+		var sign_side := -1.0 if limb == "Left" else 1.0
+		if feet.has(limb): _solve_leg(limb, to_global(feet[limb]))
+		if hands.has(limb):
+			var hold: Transform3D = hands[limb]
+			# `_solve_combat_arm` espera o alvo no espaço do visual (que pode estar escalado).
+			_solve_combat_arm(limb, visual.to_local(to_global(hold.origin)), hold.basis, true, sign_side)
+	# Mão fechada no que segura: o blend shape vai direto, sem o move_toward do quadro.
+	if is_instance_valid(_combat_skin) and _combat_skin.get_blend_shape_count() >= 2:
+		_combat_skin.set_blend_shape_value(0, 1.0 if hands.has("Right") else 0.18)
+		_combat_skin.set_blend_shape_value(1, 1.0 if hands.has("Left") else 0.18)
+	_pose_delta = 1.0 / 60.0
+
+## Volta o corpo ao mundo de pé. Chamado por `teleport`: todo caminho de saída do veículo
+## (porta, salto, resgate, morte) passa por lá.
+func release_seated(keep_yaw := false) -> void:
+	if not seated: return
+	seated = false
+	# `keep_yaw`: a animação de saída gira o visual por conta própria; a guinada do veículo
+	# passa do corpo (que estava preso à base do carro) para o visual, sem o corpo girar duas vezes.
+	var yaw := global_rotation.y
+	global_basis = Basis.IDENTITY
+	visual.rotation = Vector3(0, yaw, 0) if keep_yaw else Vector3.ZERO
+	visual.scale = Vector3.ONE
+	visual.position = Vector3.ZERO
+	remove_meta("seated_state")
+	if is_instance_valid(_combat_skin) and _combat_skin.get_blend_shape_count() >= 2:
+		_combat_skin.set_blend_shape_value(0, 0.0)
+		_combat_skin.set_blend_shape_value(1, 0.0)
+	if is_inside_tree(): reset_physics_interpolation()
+
 func _capture_pose() -> Array:
 	var pose: Array = []
 	for bone in skeleton.get_bone_count(): pose.append([skeleton.get_bone_pose_position(bone), skeleton.get_bone_pose_rotation(bone), skeleton.get_bone_pose_scale(bone)])
@@ -829,6 +891,7 @@ func combat_rig_info() -> Dictionary:
 	return {"body_bob": (skeleton.get_bone_pose_position(hips).y - hip_rest.y) * skeleton.global_basis.get_scale().y / maxf(visual.global_basis.get_scale().y, 0.001)}
 
 func teleport(point: Vector3) -> void:
+	release_seated()
 	global_position = point
 	last_position = point
 	velocity = Vector3.ZERO

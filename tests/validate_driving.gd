@@ -34,7 +34,7 @@ func run() -> void:
 	await frames(2)
 	check(driving.interact(),"Can enter next to a door")
 	await wait_body_transition()
-	check(driving.occupied and not world.player.visible and world.player.collision_layer == 0,"Driver must leave exterior collision and presentation")
+	check(driving.occupied and world.player.visible and world.player.seated and world.player.collision_layer == 0,"Driver must leave exterior collision and sit visible in the cabin")
 	check(world.camera.target == car,"Camera must follow occupied vehicle")
 	var accelerator := InputEventKey.new()
 	accelerator.physical_keycode = KEY_W

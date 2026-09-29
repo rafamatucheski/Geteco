@@ -4,6 +4,7 @@ const VISUAL := preload("res://scripts/VehicleVisual.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
+const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const MAX_SPEED := 15.0
 const REVERSE_SPEED := 4.5
 const WHEELBASE := 2.5
@@ -739,6 +740,10 @@ func place(point: Vector3, yaw: float) -> void:
 func boarding_class() -> String:
 	if archetype.begins_with("bike_") or archetype in ["port_forklift", "beach_buggy", "dune_buggy"]: return "open"
 	if archetype == "route_city": return "bus"
+	# A tabela de portas manda quando tem opinião: vans e picapes têm casco alto sem serem
+	# caminhões, e a classe decide o degrau, o banco e o ritmo da entrada.
+	var listed: Dictionary = DOOR_SPECS.row(archetype)
+	if listed.has("class"): return str(listed["class"])
 	if body_height >= 2.35: return "truck"
 	if body_height >= 1.75: return "tall"
 	return "car"
@@ -755,33 +760,82 @@ func boarding_step_height() -> float:
 		"tall": return .32
 	return 0.0
 
+## Centro do vão da porta (eixo Z do veículo). Vem da tabela por modelo: antes vinha de uma
+## fração do comprimento do casco, e em van, ambulância e caminhão ficava no meio da carga.
 func _cab_z() -> float:
+	var row := DOOR_SPECS.row(archetype)
+	if not row.is_empty() and boarding_class() in ["car", "tall", "truck"] and is_instance_valid(visual):
+		return (float(row.zf) + float(row.zr)) * .5 * visual.scale.z
 	match boarding_class():
 		"bus": return -(half_length - .8)
 		"truck": return -(half_length - 1.3)
 	return -clampf(half_length * .18, .30, .62)
 
+## Banco no meio do vão, um palmo à frente do centro. Tabela por modelo (VehicleDoorSpecs).
+func _door_seat_z() -> float:
+	var row := DOOR_SPECS.row(archetype)
+	if row.is_empty() or not is_instance_valid(visual): return _cab_z() + .15
+	return ((float(row.zf) + float(row.zr)) * .5 - .06) * visual.scale.z
+
 func driver_door_anchor(side: int) -> Vector3:
 	return to_global(Vector3(float(side) * (half_width + .54), .04, _cab_z()))
 
+## O piloto aparece sentado ao volante (carro, caminhão, ônibus, buggy, empilhadeira).
+## Moto usa a pose de guidão; blindado tem escotilha e piloto próprios. Ver VehicleInterior.
+func shows_seated_driver() -> bool:
+	return preload("res://gameplay/VehicleInterior.gd").shows_driver(self)
+
+## Quanto o corpo desce do porte de pé até o banco desta cabine (m).
+func seated_drop() -> float:
+	return preload("res://gameplay/VehicleInterior.gd").seated_drop(self)
+
 func driver_seat_anchor() -> Vector3:
 	if archetype.begins_with("bike_"): return to_global(_motorcycle_seat)
+	# Buggy e empilhadeira não têm porta nem linha no VehicleDoorSpecs: o banco vem do interior.
+	var open_seat: Vector3 = preload("res://gameplay/VehicleInterior.gd").open_seat_local(self)
+	if open_seat.is_finite(): return to_global(open_seat)
 	if boarding_class() == "bus":
 		return to_global(Vector3(-minf(.55, half_width * .4), .08 + boarding_step_height(), _cab_z() - .15))
 	if boarding_class() in ["truck", "tall"]:
-		return to_global(Vector3(-minf(.45, half_width * .3), .08 + boarding_step_height(), _cab_z() + .15))
-	var seat_z := -clampf(half_length * .16, .26, .55)
+		return to_global(Vector3(-minf(.45, half_width * .3), .08 + boarding_step_height(), _door_seat_z()))
+	var seat_z := _door_seat_z() if DOOR_SPECS.has_row(archetype) else -clampf(half_length * .16, .26, .55)
 	return to_global(Vector3(-minf(.28, half_width * .24), .08, seat_z))
+
+## Geometria de embarque deste lado (ponto de espera fora do arco da folha, portão no
+## vão, ponto de agarrar, ponta da folha aberta), em coordenadas do veículo. Vazio para
+## veículo sem porta (moto, buggy, empilhadeira) e para o ônibus.
+func door_layout(side: int) -> Dictionary:
+	_ensure_door_presentation()
+	if not is_instance_valid(door_presentation) or not door_presentation.ready_for_boarding: return {}
+	return door_presentation.layouts.get(side, {})
 
 func animate_driver_door(side: int, opened: bool, duration := .28) -> void:
 	_ensure_door_presentation()
 	if is_instance_valid(door_presentation): door_presentation.set_open(side, opened, duration)
 
 func _ensure_door_presentation() -> void:
-	if is_instance_valid(door_presentation) or boarding_class() in ["open", "bus"]: return
-	door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
-	visual.add_child(door_presentation)
-	door_presentation.configure(self)
+	if boarding_class() in ["open", "bus"]: return
+	if not is_instance_valid(door_presentation):
+		door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
+		visual.add_child(door_presentation)
+		door_presentation.configure(self)
+	else:
+		door_presentation.finish_now()
+
+## Termina agora a porta que estiver sendo preparada. Deve rodar ANTES de qualquer módulo
+## trocar as malhas do casco (interior, teto translúcido): o recorte parte das originais.
+func finish_doors() -> void:
+	_ensure_door_presentation()
+
+## Prepara a porta aos poucos, antes de alguém precisar dela (o recorte custa dezenas de ms de
+## uma vez). Chamado quadro a quadro enquanto o jogador está perto; true quando pronta.
+func warm_doors(budget_usec := 2500) -> bool:
+	if boarding_class() in ["open", "bus"]: return true
+	if not is_instance_valid(door_presentation):
+		door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
+		visual.add_child(door_presentation)
+		door_presentation.configure(self, true)
+	return door_presentation.advance(budget_usec)
 
 func camera_lookahead() -> Vector3:
 	return -global_basis.z*clampf(speed*0.4,-2.0,6.0)

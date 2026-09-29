@@ -260,7 +260,7 @@ func _run() -> void:
 	check(world.driving.occupied and world.driving.is_body_transition_active(),"embarque conserva fase de animacao do V1")
 	if world.driving.is_body_transition_active():
 		await wait_until(func(): return not world.driving.is_body_transition_active(),240,"embarque termina")
-	check(world.driving.occupied and car.controlled and not world.player.visible,"entrar no carro por entrada real")
+	check(world.driving.occupied and car.controlled and world.player.visible and world.player.seated,"entrar no carro por entrada real (piloto sentado visivel)")
 	var car_start:=car.global_position; var wheel_before:float=car.wheel_spin
 	Input.action_press("move_up"); await frames(120)
 	var driven:=car.global_position.distance_to(car_start)

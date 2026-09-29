@@ -48,8 +48,9 @@ func run() -> void:
 		await frames(2)
 		check(driving.interact(), "car entry %d admitted" % cycle)
 		check(await wait_transition(), "car entry %d finishes" % cycle)
-		check(world.player.visual.position.is_equal_approx(original_visual), "entry clears temporary visual crouch %d" % cycle)
-		check(not world.player.visible, "enclosed vehicle still hides seated body")
+		# Sentado, o visual fica no banco (VehicleInterior); a linha de base volta na saída (abaixo).
+		check(world.player.visual.position.is_equal_approx(original_visual) or world.player.seated, "entry clears temporary visual crouch %d" % cycle)
+		check(world.player.visible and world.player.seated, "enclosed vehicle shows the seated driver through the glass")
 		original.stop_boarding_motion()
 		check(driving.leave(), "car exit %d admitted" % cycle)
 		check(await wait_transition(), "car exit %d finishes" % cycle)

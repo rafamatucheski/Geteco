@@ -53,7 +53,7 @@ func run() -> void:
 	check(await wait_transition(),"entry finishes")
 	await frames(3)
 	await capture("v2-vehicle-entry-100-seated")
-	check(world.driving.occupied and not world.player.visible and car.controlled,"seated result")
+	check(world.driving.occupied and world.player.visible and world.player.seated and car.controlled,"seated result")
 
 	car.speed = 0
 	car.velocity = Vector3.ZERO
