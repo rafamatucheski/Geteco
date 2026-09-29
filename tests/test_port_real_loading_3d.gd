@@ -46,11 +46,12 @@ func run() -> void:
 			for state in logistics.work_trucks:
 				if state.loaded and is_instance_valid(state.truck) and state.truck.get_meta("port_container_loaded",false):
 					saw_loaded_truck = true
-				if int(state.deliveries) > 0 and state.phase == "approach": saw_depot_return = true
+				# Depois da entrega o caminhão faz a viagem de volta (return_wait → returning → waiting).
+					if int(state.deliveries) > 0 and state.phase in ["return_wait","returning","waiting","approach"]: saw_depot_return = true
 		if saw_loaded_truck and saw_carried_crate and saw_depot_return: break
 	check(saw_carried_crate,"Quay worker physically carries a 3D crate")
 	check(saw_loaded_truck,"An unforced crane cycle loads a truck in the real scene")
-	check(saw_depot_return,"Loaded truck reaches the warehouse, unloads and returns to approach")
+	check(saw_depot_return,"Loaded truck reaches the warehouse, unloads and starts its return trip")
 	for index in logistics.work_trucks.size():
 		var state: Dictionary = logistics.work_trucks[index]
 		print("REAL_PORT_TRUCK ",index," phase=",state.phase," loaded=",state.loaded," position=",state.truck.global_position if is_instance_valid(state.truck) else "missing")

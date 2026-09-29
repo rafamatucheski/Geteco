@@ -57,7 +57,7 @@ func run() -> void:
 	first_state.remaining = .01
 	first_state.truck.speed = 0.0
 	logistics._tick_truck(0,.05)
-	check(not first_state.loaded and int(first_state.deliveries) == 1 and first_state.phase == "approach","Depot unload returns the carrier to the next circuit")
+	check(not first_state.loaded and int(first_state.deliveries) == 1 and first_state.phase == "return_wait","Depot unload sends the carrier back on its return trip")
 	var hatch := Vector3(4250.0/16.0,.08,2980.0/16.0)
 	world.player.teleport(hatch)
 	world.production.region.set_focus(hatch)
