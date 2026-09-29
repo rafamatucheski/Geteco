@@ -40,7 +40,9 @@ static func mount(parent: Node3D, record: Dictionary) -> Node3D:
 	art.set_meta("source_id","world/harbor/HarborSouthPort.gd:"+str(record.id))
 	# Collision follows final batched meshes, including crane legs rather than its whole AABB.
 	for mesh in art.find_children("*","MeshInstance3D",true,false):
-		if mesh.mesh == null: continue
+		# O otimizador enfileira as malhas originais para remoção; gerar colisão nelas
+		# custava ~500 ms por build do navio e some no fim do quadro de qualquer jeito.
+		if mesh.mesh == null or mesh.is_queued_for_deletion(): continue
 		mesh.create_trimesh_collision()
 		for body in mesh.get_children():
 			if body is StaticBody3D:

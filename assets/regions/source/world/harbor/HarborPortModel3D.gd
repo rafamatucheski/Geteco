@@ -9,7 +9,18 @@ var solid_floor_bounds: Dictionary = {}
 var hoist_start := Vector3.ZERO
 var hoist_end := Vector3.ZERO
 
+## O navio de carga (14 contêineres, ~1900 caixas) leva ~450 ms só para juntar as
+## malhas, e o chunk (4,2) é reconstruído toda vez que a retenção o solta e um veículo
+## volta a pedir o piso (medido 2026-09-29: 1,07–1,33 s por build síncrono). O resultado
+## agrupado depende só dos argumentos: guarda as malhas finais e reaproveita os recursos
+## (os nós continuam novos por instância).
+static var _batch_cache: Dictionary = {}
+
 func build(kind: String, width: float, depth: float, variant: int) -> void:
+	var cache_key := "%s/%.3f/%.3f/%d" % [kind,width,depth,variant]
+	if kind == "ship_cargo" and _batch_cache.has(cache_key):
+		_restore_batches(_batch_cache[cache_key])
+		return
 	match kind:
 		"containers": _containers(width,depth,variant)
 		"transfer_cargo":
@@ -32,6 +43,27 @@ func build(kind: String, width: float, depth: float, variant: int) -> void:
 		surface.generate_normals()
 		batch.mesh = surface.commit()
 		_preserve_hard_edges(batch)
+	if kind == "ship_cargo": _batch_cache[cache_key] = _capture_batches()
+
+func _capture_batches() -> Dictionary:
+	var batches: Array = []
+	for batch in get_node("BatchedStaticGeometry").get_children():
+		batches.append({"name":batch.name,"mesh":batch.mesh,"material":batch.material_override})
+	return {"height":height,"bounds":solid_floor_bounds,"stats":mesh_stats,"batches":batches}
+
+func _restore_batches(data: Dictionary) -> void:
+	height = float(data.height)
+	solid_floor_bounds = data.bounds.duplicate(true)
+	mesh_stats = data.stats.duplicate(true)
+	var container := Node3D.new()
+	container.name = "BatchedStaticGeometry"
+	add_child(container)
+	for entry in data.batches:
+		var batch := MeshInstance3D.new()
+		batch.name = entry.name
+		batch.mesh = entry.mesh
+		batch.material_override = entry.material
+		container.add_child(batch)
 
 func _preserve_hard_edges(batch: MeshInstance3D) -> void:
 	# Average only indexed neighbours, never unrelated faces at the same position.
