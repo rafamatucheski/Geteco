@@ -290,7 +290,7 @@ func _process(delta: float) -> void:
 	var tops: Array = ENGINE_PROFILE.GEAR_TOPS.get(family, ENGINE_PROFILE.GEAR_TOPS.street)
 	var nominal: Array = ENGINE_PROFILE.NOMINAL.get(family, ENGINE_PROFILE.NOMINAL.street)
 	var ratio := clampf(absf(current_car.speed) / maxf(float(current_car.max_forward_speed), 1.0), 0.0, 1.0)
-	var throttle := absf(float(current_car.throttle_input))
+	var throttle := ENGINE_PROFILE.drive_load(float(current_car.speed), float(current_car.throttle_input), bool(current_car.brake_input))
 	if family == "electric" and ratio < 0.02 and throttle < 0.01:
 		for layer in layers: if layer.playing: layer.stop()
 		if road_audio.playing: road_audio.stop()
@@ -314,7 +314,10 @@ func _process(delta: float) -> void:
 	var top_fraction := lerpf(0.86, 1.0, float(engine_gear - 1) / maxf(float(tops.size() - 1), 1.0))
 	if engine_gear == tops.size(): top_fraction = 0.87
 	var target := maxf(idle, clampf(ratio / maxf(gear_top, 0.01) * top_fraction, 0.0, 1.0))
-	if ratio < 0.03: target = maxf(target, idle + engine_load * (1.0 - idle) * 0.62)
+	if family != "tank" and family != "electric":
+		target = ENGINE_PROFILE.loaded_rpm(target, idle, engine_load, ratio)
+	elif ratio < 0.03:
+		target = maxf(target, idle + engine_load * (1.0 - idle) * 0.62)
 	engine_rpm = lerpf(engine_rpm, target, 1.0 - exp(-delta * (18.0 if ratio > 0.03 else 8.0)))
 	var spec: Dictionary = FLEET.spec(engine_archetype)
 	_update_vehicle_foley(current_car, spec, ratio, throttle, previous_gear)
@@ -397,14 +400,8 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, ratio: float,
 			if not road_audio.playing: road_audio.play()
 		engine_last_throttle = throttle
 		return
-	# V1 VehicleEngineSound._update_road: an absolute-speed cue independent of RPM.
-	if ratio < 0.04:
-		if road_audio.playing: road_audio.stop()
-	else:
-		var heavy := family in ["truck", "bus", "fire_diesel"]
-		road_audio.pitch_scale = clampf((0.72 + ratio * 0.85) * (0.78 if heavy else 1.0), 0.4, 2.0)
-		road_audio.volume_db = -42.0 + ratio * 21.0 + (3.0 if heavy else 0.0)
-		if not road_audio.playing: road_audio.play()
+	# TireEffects owns surface-aware rolling audio, including coasting with engine off.
+	if road_audio.playing: road_audio.stop()
 	var heavy_turbo := family in ["bus", "fire_diesel"]
 	var sport_turbo := bool(spec.get("turbo_audio", false))
 	if sport_turbo:

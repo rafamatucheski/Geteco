@@ -25,19 +25,22 @@ static func _surface_kind(collider: Object, point: Vector3) -> String:
 		if cursor.has_meta("vehicle_surface"): return str(cursor.get_meta("vehicle_surface"))
 		labels += " "+str(cursor.name).to_lower()
 		cursor = cursor.get_parent()
-	if "road" in labels or "sidewalk" in labels or "gangway" in labels or "deck" in labels or "port" in labels:
+	if "earthroad" in labels or "dirtroad" in labels: return "dirt"
+	if "road" in labels or "sidewalk" in labels or "gangway" in labels or "deck" in labels:
 		return "hard"
 	# A encosta abaixo da neve é pasto (MountainGrass3D e o som de passos já a tratam assim).
 	if "mountainterrain" in labels:
 		return "snow" if point.z < SNOW_EDGE_Z else "grass"
 	if "snow" in labels: return "snow"
 	if "grass" in labels or "meadow" in labels or "lawn" in labels: return "grass"
-	if "earth" in labels or "sawmill" in labels or "land" in labels or "shore" in labels:
+	if "earth" in labels or "sawmill" in labels or "shore" in labels:
 		return "dirt"
 	# Jardins e o cemitério do porto compartilham corpo de colisão com o chão pavimentado;
 	# os mesmos retângulos V1 que decidem o som de passos separam gramado de calçada.
 	var geographic: String = RESOLVER._geographic_surface("harbor",point)
 	if geographic in ["grass","dirt"]: return geographic
+	if "port" in labels: return "hard"
+	if "land" in labels: return "dirt"
 	return "hard"
 
 static func _weather_wet(vehicle: Node) -> bool:

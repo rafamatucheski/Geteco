@@ -520,6 +520,7 @@ func _build_road_surfaces(chunk: Node3D) -> void:
 		surface.generate_normals()
 		var mesh := MeshInstance3D.new()
 		mesh.name = "RoadSurface"
+		mesh.set_meta("vehicle_surface", "hard" if color == HARBOR_ROAD_GEOMETRY.ROAD_COLOR else "dirt")
 		mesh.mesh = surface.commit()
 		if color == HARBOR_ROAD_GEOMETRY.ROAD_COLOR:
 			if harbor_road_geometry == null: harbor_road_geometry = HARBOR_ROAD_GEOMETRY.new()

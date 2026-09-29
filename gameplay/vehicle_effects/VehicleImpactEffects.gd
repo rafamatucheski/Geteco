@@ -32,8 +32,12 @@ func physics_tick(active: bool, incoming_velocity: Vector3) -> void:
 		var contact := vehicle.get_slide_collision(index)
 		var normal: Vector3 = contact.get_normal()
 		var closing_speed := maxf(0,-incoming_velocity.dot(normal))
-		if closing_speed < MIN_IMPACT_SPEED: continue
 		var collider := contact.get_collider()
+		if closing_speed < MIN_IMPACT_SPEED:
+			# Light parking contacts still make a bumper sound, without a spark burst.
+			if closing_speed >= .75:
+				CRASH_AUDIO.play(vehicle, collider, contact.get_position(), closing_speed * 16.0)
+			continue
 		var collider_id := collider.get_instance_id() if is_instance_valid(collider) else 0
 		present_impact(contact.get_position(),normal,closing_speed,collider_id,-1,collider)
 

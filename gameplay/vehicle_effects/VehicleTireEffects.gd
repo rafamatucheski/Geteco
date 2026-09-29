@@ -4,6 +4,7 @@ extends Node
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const SURFACE := preload("res://gameplay/vehicle_effects/VehicleSurfaceProbe.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
+const ROAD_AUDIO := preload("res://audio/VehicleRoadAudio.gd")
 const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const MAX_MARK_SEGMENTS := 320
 const MARK_LIFETIME_MSEC := 10000
@@ -22,6 +23,7 @@ var last_modes: Array[String] = ["",""]
 var mark_mesh: MeshInstance3D
 var geometry := ImmediateMesh.new()
 var skid_audio: AudioStreamPlayer3D
+var road_mixer: Node
 var _probe_clock := 0.0
 var _redraw_clock := 0.0
 
@@ -59,7 +61,18 @@ func physics_tick(delta: float, active: bool) -> void:
 		if not contact.is_empty() and bool(contact.wet): any_wet = true
 	var skid_threshold := 3.125 if any_wet else 5.625
 	var sliding: bool = lateral_speed > skid_threshold or (vehicle.controlled and vehicle.brake_input and road_speed > 3.75)
-	_update_skid_audio(sliding and road_speed > 2.5, road_speed, lateral_speed)
+	var hard_contact := false
+	for contact in contacts:
+		if not contact.is_empty() and contact.kind == "hard": hard_contact = true
+	_update_skid_audio(sliding and hard_contact and road_speed > 2.5, road_speed, lateral_speed)
+	if vehicle.controlled and ENGINE_PROFILE.family(str(vehicle.archetype)) != "tank":
+		if not is_instance_valid(road_mixer):
+			road_mixer = ROAD_AUDIO.new()
+			road_mixer.vehicle = vehicle
+			add_child(road_mixer)
+		road_mixer.update_contacts(contacts, road_speed, sliding, PROBE_INTERVAL)
+	elif is_instance_valid(road_mixer):
+		road_mixer.stop()
 	for side in 2:
 		var contact: Dictionary = contacts[side]
 		if contact.is_empty():
@@ -152,6 +165,7 @@ func _set_emitting(side: int, value: bool) -> void:
 func _stop_emitters() -> void:
 	for emitter in emitters: emitter.emitting = false
 	if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
+	if is_instance_valid(road_mixer): road_mixer.stop()
 
 func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) -> void:
 	if not audible:
