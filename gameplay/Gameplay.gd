@@ -451,7 +451,8 @@ func _mount_flashlight() -> void:
 	flashlight.rotation = Vector3(FLASHLIGHT_TILT, 0.0, 0.0)
 
 func _update_left_knuckles(id: String) -> void:
-	var wanted := id == "knuckles" and gun.visible and player.has_method("combat_left_palm_transform")
+	# Com a mala na mão esquerda não há soqueira esquerda.
+	var wanted := id == "knuckles" and gun.visible and player.has_method("combat_left_palm_transform") and not bool(_pose_frame.get("bag_carry", false))
 	if not wanted:
 		if is_instance_valid(_left_knuckles): _left_knuckles.visible = false
 		return
@@ -474,6 +475,7 @@ func _update_weapon_pose(delta: float) -> void:
 	var progress := 0.0
 	if reload_timer > 0.0 and _reload_total > 0.0: progress = clampf(1.0 - reload_timer / _reload_total, 0.0, 1.0)
 	var rig: Dictionary = player.combat_rig_info() if player.has_method("combat_rig_info") else {}
+	rig["bag_carry"] = state.get("economy") != null and state.economy.grid_handbag()
 	if id == "grenade":
 		# A próxima granada vem da reserva quando a mão termina a recuperação,
 		# inclusive ao equipar um save com a mão vazia. Sem recarga de pistola.

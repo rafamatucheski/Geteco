@@ -22,6 +22,16 @@ const DUFFEL_RADIUS := .16
 const DUFFEL_LENGTH := .74
 const DUFFEL_HANDLE_TOP := .42
 const HAND_OUTWARD := .09
+# Balanço: a mala é um pêndulo preso à mão. A alça acelera, o corpo da mala fica para trás
+# e volta amortecido (frequência de g/L com L = altura da alça); parado, não balança.
+const SWAY_FREQUENCY := 4.8
+const SWAY_DAMPING := 3.4
+const SWAY_LIMIT := .5
+const SWAY_MAX_ACCELERATION := 40.0
+var _sway := Vector2.ZERO
+var _sway_velocity := Vector2.ZERO
+var _handle_world := Vector3.INF
+var _handle_velocity := Vector3.ZERO
 
 func _process(_delta: float) -> void:
 	# A mala pende da mão a cada quadro; o carry de 4 Hz do inventário não basta e a
@@ -29,7 +39,28 @@ func _process(_delta: float) -> void:
 	if kind!="handbag" or opened or hand_bone<0: return
 	if pose_tween!=null and pose_tween.is_running(): return
 	var hang:=_hand_hang()
-	position=hang[0]; rotation=Vector3(0,hang[1],0)
+	_swing(hang,_delta)
+
+## Coloca a mala pendurada na alça (posição da mão) e a inclina pelo balanço.
+func _swing(hang: Array, delta: float) -> void:
+	var handle: Vector3=hang[0]+Vector3(0,DUFFEL_HANDLE_TOP,0)
+	var handle_now:=actor_space.to_global(handle)
+	if _handle_world.is_finite() and delta>0.0001:
+		var velocity:=(handle_now-_handle_world)/delta
+		var acceleration:=(velocity-_handle_velocity)/delta
+		_handle_velocity=velocity
+		# Teleporte ou primeiro quadro: aceleração absurda vira balanço zero.
+		if acceleration.length()<=SWAY_MAX_ACCELERATION*4.0:
+			var local:=actor_space.global_basis.orthonormalized().inverse()*acceleration
+			var push:=Vector2(local.x,local.z).limit_length(SWAY_MAX_ACCELERATION)/DUFFEL_HANDLE_TOP
+			_sway_velocity+=(-push-_sway*SWAY_FREQUENCY*SWAY_FREQUENCY-_sway_velocity*SWAY_DAMPING)*delta
+			_sway=(_sway+_sway_velocity*delta).limit_length(SWAY_LIMIT)
+		else:
+			_sway=Vector2.ZERO; _sway_velocity=Vector2.ZERO
+	_handle_world=handle_now
+	var tilt:=Quaternion(Vector3.DOWN,Vector3(_sway.x,-1.0,_sway.y).normalized())
+	var basis:=Basis(tilt)*Basis(Vector3.UP,hang[1])
+	transform=Transform3D(basis,handle-basis*Vector3(0,DUFFEL_HANDLE_TOP,0))
 
 func _hand_hang() -> Array:
 	# [posição local, yaw]: a mala desce reta da palma, com a face lisa junto à perna

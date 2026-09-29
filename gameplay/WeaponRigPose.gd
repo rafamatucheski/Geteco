@@ -62,6 +62,14 @@ var _left_solve_weight := 0.0
 var _display_basis := Basis.IDENTITY
 var _offhand_basis := Basis.IDENTITY
 var _support_weight := 0.0
+## Mala de mão na mão esquerda: o braço esquerdo fica no carregamento (não vai ao apoio da
+## pistola, à munição nem ao soco) e só o direito trabalha. Ver `_bag_carry_hand`.
+var bag_carry := false
+var _bag_weight := 0.0
+## Orientação da palma que segura a alça: mão pendurada, dedos fechados em volta da alça
+## (escolhida entre 8 candidatas em captura, 2026-09-29; as outras deixavam a palma
+## aberta para cima ou os dedos apontando para o chão).
+static var bag_palm_basis := Basis(Vector3.BACK, PI * 0.5)
 
 ## Mesmo contador da V1 (`PlayerCombatPose.on_attack`): cada golpe troca o lado do
 ## soco e a variação de faca/soqueira, então golpes seguidos não repetem a pose.
@@ -72,7 +80,8 @@ func attack(id: String, recoil_multiplier: float = 1.0) -> void:
 	action_age = 0.0
 	if id == "knife": knife_variant = (knife_variant + 1) % 3
 	if id == "knuckles": knuckle_variant = (knuckle_variant + 1) % 4
-	if id in ["fists", "knuckles"]: punch_left = not punch_left
+	# Com a mala na mão esquerda só a direita soca.
+	if id in ["fists", "knuckles"]: punch_left = not punch_left and not bag_carry
 
 func reset() -> void:
 	weapon_id = ""
@@ -111,6 +120,9 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var arm_swing := cos(walk_clock + PI * 0.175 * run) * lerpf(0.32, 0.55, run) * _move_weight
 	var body_offset := Vector3(0, float(rig.get("body_bob", 0.0)) / V1_TO_V2, 0)
 	var engaged := aiming or action_age < (0.90 if id == "fists" else 0.45)
+	# Armas de duas mãos já são negadas com a mala; o resto usa uma mão só.
+	bag_carry = bool(rig.get("bag_carry", false)) and id not in LONG_GUNS and id not in ["axe", "bat", "rpg", "flamethrower", "sawed_off"]
+	_bag_weight = move_toward(_bag_weight, 1.0 if bag_carry else 0.0, delta * 8.0)
 	_guard_weight = move_toward(_guard_weight, 1.0 if engaged else 0.0, delta * (4.0 if id == "fists" and not engaged else 8.0))
 
 	var melee_pose: Dictionary = {}
@@ -313,6 +325,15 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 				if left_target.z < -0.16: left_target += reload_hand - hand
 				hand = reload_hand
 
+	var carry_left_basis := bag_palm_basis
+	if bag_carry:
+		# Mão da mala: sem apoio na arma, sem guarda de soco, sem ir buscar munição.
+		support = Vector3.ZERO
+		left_solve = true
+		left_fist = false
+		left_free = 0.0
+		left_target = _bag_carry_hand(arm_swing, run, body_offset)
+		offhand_basis = carry_left_basis
 	_display_basis = _follow_basis(_display_basis, gun_basis, delta)
 	_offhand_basis = _follow_basis(_offhand_basis, offhand_basis, delta)
 	gun_basis = _display_basis
@@ -344,7 +365,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		_left = _left.lerp(_right + gun_basis * (support + Vector3(0, 0, pump_stroke)), _support_weight)
 
 	var left_grip := false
-	if id in ["axe", "bat"]: left_grip = melee_support_active
+	if bag_carry: left_grip = true # dedos fechados na alça
+	elif id in ["axe", "bat"]: left_grip = melee_support_active
 	elif id in HANDGUNS: left_grip = engaged or reloading
 	elif id not in ["fists", "knuckles", "knife", "grenade"]: left_grip = not reloading and DATA.SUPPORT_GRIPS.has(id)
 	var right_grip := id != "fists" and not right_fist and not (id == "grenade" and not visible)
@@ -352,7 +374,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	_left_solve_weight = move_toward(_left_solve_weight, 1.0 if left_solve or left_grip else 0.0, delta * 10.0)
 	var cross := Basis(Vector3.RIGHT, PI * 0.5)
 	var right_basis := gun_basis * (cross if id in CROSS_GRIP else Basis.IDENTITY)
-	var left_basis := offhand_basis if id == "knuckles" else gun_basis * (cross if id in CROSS_GRIP or id in CROSS_GRIP_LEFT else Basis.IDENTITY)
+	var left_basis := offhand_basis if id == "knuckles" or bag_carry else gun_basis * (cross if id in CROSS_GRIP or id in CROSS_GRIP_LEFT else Basis.IDENTITY)
 	# Soqueira: a fileira de anéis segue o eixo Y da palma calibrada nos dois punhos.
 	var model_basis := gun_basis * Basis(Vector3.BACK, PI * 0.5) if id == "knuckles" else gun_basis
 	var scale := V1_TO_V2
@@ -376,10 +398,17 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"support_point": grip + support + Vector3(0, 0, pump_stroke) if support_locked else DATA.SUPPORT_GRIPS.get(id, grip),
 		"long_weapon": long_gun or id in ["axe", "bat"],
 		"armed": id != "fists",
+		"bag_carry": bag_carry,
 		"visible": visible, "engaged": engaged, "torso_yaw": _stance_yaw,
 		"pump": pump_stroke,
 		"slide": clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
 	}
+
+## Palma esquerda com a mala: braço quase reto ao lado da coxa, com pouquíssimo vaivém
+## (a mala pesa) e um leve recuo na corrida. Espaço da V1, como as outras poses.
+func _bag_carry_hand(arm_swing: float, run: float, body_offset: Vector3) -> Vector3:
+	var hand := Vector3(-0.245 - 0.02 * run, 0.60 + 0.05 * run, -0.03 + arm_swing * 0.05)
+	return hand + body_offset * 0.5
 
 func _follow_basis(current: Basis, target: Basis, delta: float) -> Basis:
 	var a := current.orthonormalized().get_rotation_quaternion()
