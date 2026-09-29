@@ -5,6 +5,9 @@ var pose_tween: Tween
 var carry_space: Node3D
 var actor_space: Node3D
 var straps: Node3D
+var hand_skeleton: Skeleton3D
+var hand_bone := -1
+var opened := false
 const BACKPACK_COLOR := Color("6d4d37")
 
 static func pickup_size(bag_kind: String) -> Vector3:
@@ -12,6 +15,26 @@ static func pickup_size(bag_kind: String) -> Vector3:
 
 func rest_position() -> Vector3:
 	return Vector3(0,.98,.22) if kind=="backpack" else Vector3(.46,.20,0)
+
+# Alça da mala fica ~.03 acima da tampa (y=.625 no espaço da mala); a mão a segura ali.
+const HANDLE_HEIGHT := .60
+const HAND_OUTWARD := .11
+
+func _process(_delta: float) -> void:
+	# A mala pende da mão a cada quadro; o carry de 4 Hz do inventário não basta e a
+	# deixava parada num ponto fixo ao lado do corpo enquanto o boneco andava.
+	if kind!="handbag" or opened or hand_bone<0: return
+	if pose_tween!=null and pose_tween.is_running(): return
+	var hang:=_hand_hang()
+	position=hang[0]; rotation=Vector3(0,hang[1],0)
+
+func _hand_hang() -> Array:
+	# [posição local, yaw]: a mala desce reta da palma, com a face lisa junto à perna
+	# e o lado dos bolsos para fora, seja qual for o braço animado.
+	var pose:=hand_skeleton.get_bone_global_pose(hand_bone)
+	var palm:Vector3=actor_space.to_local(hand_skeleton.to_global(pose*Vector3(0,.065,0)))
+	var side:=1.0 if palm.x>=0 else -1.0
+	return [Vector3(palm.x+side*HAND_OUTWARD,palm.y-HANDLE_HEIGHT,palm.z),-side*PI*.5]
 
 func _ready() -> void:
 	if kind=="backpack":
@@ -80,15 +103,20 @@ func _box(dimensions: Vector3, at: Vector3, color: Color, parent: Node3D = self)
 	var mat := StandardMaterial3D.new(); mat.albedo_color=color; mat.roughness=.95; mesh.material_override=mat
 	mesh.position=at; parent.add_child(mesh)
 
-func set_open(opened: bool, carried := true) -> void:
-	set_worn(carried and not opened)
+func set_open(open: bool, carried := true) -> void:
+	opened=open
+	set_worn(carried and not open)
 	if pose_tween!=null: pose_tween.kill()
 	pose_tween=create_tween().set_parallel(true)
-	pose_tween.tween_property(lid,"rotation:x",-1.4 if opened else 0.0,.22)
+	pose_tween.tween_property(lid,"rotation:x",-1.4 if open else 0.0,.22)
 	if carried:
 		if kind=="backpack" and is_instance_valid(carry_space):
 			# Opening leaves the bone socket; closing returns to its animated space.
-			reparent(actor_space if opened else carry_space,true)
-		pose_tween.tween_property(self,"position",Vector3(0,.55,-.55) if opened else rest_position(),.25).set_trans(Tween.TRANS_QUAD)
+			reparent(actor_space if open else carry_space,true)
+		var rest_at:=rest_position()
 		var rest_rotation:=Vector3(0,PI,0) if kind=="backpack" else Vector3.ZERO
-		pose_tween.tween_property(self,"rotation",Vector3(-.18,0,0) if opened else rest_rotation,.25)
+		if kind=="handbag" and hand_bone>=0:
+			var hang:=_hand_hang()
+			rest_at=hang[0]; rest_rotation=Vector3(0,hang[1],0)
+		pose_tween.tween_property(self,"position",Vector3(0,.55,-.55) if open else rest_at,.25).set_trans(Tween.TRANS_QUAD)
+		pose_tween.tween_property(self,"rotation",Vector3(-.18,0,0) if open else rest_rotation,.25)

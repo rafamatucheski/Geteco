@@ -149,6 +149,11 @@ func _update_carried() -> void:
 					space.transform=skeleton.get_bone_global_rest(bone).affine_inverse()*skeleton.global_transform.affine_inverse()*session.world.player.visual.global_transform
 					carried_mount.add_child(space); carried.reparent(space,false); carried.carry_space=space
 				carried.rotation.y=PI
+			elif kind=="handbag":
+				# Mão esquerda: a direita fica livre para a arma curta.
+				var skeleton: Skeleton3D=session.world.player.skeleton
+				var hand: int=skeleton.find_bone("LeftHand") if skeleton!=null else -1
+				if hand>=0: carried.hand_skeleton=skeleton; carried.hand_bone=hand
 			carried.position=carried.rest_position()
 			carried.set_worn(true)
 	if is_instance_valid(carried): carried.visible=session.world.player.visible and not session.world.driving.occupied
