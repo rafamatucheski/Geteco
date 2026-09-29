@@ -459,7 +459,10 @@ func _process(delta: float) -> void:
 	interface_clock += delta
 	if interface_clock < 0.1: return
 	interface_clock = 0
-	instructions.visible = not world.player.input_locked
+	# A linha de ajuda antiga ("WASD mover  Shift correr ...") fica sempre oculta: o ContextualHUDManager
+	# a esconde a cada 80 ms e este laço a reexibia a cada 100 ms, o que a fazia piscar no topo da tela.
+	# Os controles aparecem no HUD contextual; não reexibir aqui.
+	instructions.visible = false
 	var entry := {} if occupied else _entry_option()
 	# Chegou perto de um veículo: prepara, quadro a quadro, o custo de primeira vez do interior.
 	if not entry.is_empty() and entry.car.has_method("shows_seated_driver") and entry.car.shows_seated_driver(): INTERIOR.prewarm(entry.car)
