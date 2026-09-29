@@ -9,6 +9,7 @@ static var _hulls: Dictionary = {}
 static func decorate(id: String, model: Node3D) -> void:
 	if id.begins_with("bike_") or id == "army_tank": return
 	_fix_hull(id, model)
+	_door_lines(id, model)
 	merge_parts(model)
 
 static func _fix_hull(id: String, model: Node3D) -> void:
@@ -152,8 +153,11 @@ static func merge_parts(model: Node3D) -> void:
 	for part: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		if part.mesh == null or part.has_meta("wheel_center") or not part.get_meta_list().is_empty(): continue
 		var material := part.material_override as StandardMaterial3D
-		if material == null or material.emission_enabled or material.resource_name in ["paint", "glass"]: continue
-		var key := "fixo|%s|%s|%s|%s" % [material.albedo_color.to_html(), material.metallic, material.roughness, material.resource_name]
+		if material == null: continue
+		# Luz: lado esquerdo e direito ficam separados (o equipamento decide o lado pela posição).
+		var side := ""
+		if material.emission_enabled: side = "L" if part.transform.origin.x + part.mesh.get_aabb().get_center().x < 0.0 else "R"
+		var key := "fixo|%s|%s|%s|%s|%s|%s" % [material.albedo_color.to_html(), material.metallic, material.roughness, material.resource_name, side, material.get_instance_id()]
 		if not groups.has(key): groups[key] = []
 		groups[key].append(part)
 	for key in groups:
@@ -185,3 +189,80 @@ static func merge_parts(model: Node3D) -> void:
 		for index in range(1, parts.size()):
 			(parts[index] as MeshInstance3D).get_parent().remove_child(parts[index])
 			(parts[index] as MeshInstance3D).free()
+
+# --- Linhas de porta (só onde há medida em VehicleDoorSpecs) ---------------------------
+
+static var _doors: Dictionary = {}
+
+static func _door_lines(id: String, model: Node3D) -> void:
+	var specs := preload("res://data/catalogs/VehicleDoorSpecs.gd")
+	if not specs.has_row(id): return
+	if not _doors.has(id):
+		_doors[id] = null
+		var hull := _find_hull(model)
+		if hull == null: return
+		var row: Dictionary = specs.row(id)
+		if not (row.has("zf") and row.has("zr") and row.has("sill") and row.has("belt")): return
+		var v: PackedVector3Array = hull.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		var idx: Variant = hull.mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX]
+		var tris := PackedVector3Array()
+		if idx != null and (idx as PackedInt32Array).size() > 0:
+			for i in idx: tris.append(hull.transform * v[i])
+		else:
+			for p in v: tris.append(hull.transform * p)
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var zf: float = row.zf
+		var zr: float = row.zr
+		var span := zr - zf
+		var lines: Array = [zf, zr, zr + span * 0.95] if span > 0.4 else [zf, zr]
+		for side in [-1.0, 1.0]:
+			for z in lines:
+				_ribbon(st, tris, side, float(row.sill) + 0.02, float(row.belt) - 0.02, z, true)
+			_ribbon(st, tris, side, float(row.sill) + 0.03, float(row.sill) + 0.03, zf, false, lines[lines.size() - 1] - zf)
+		var material := StandardMaterial3D.new()
+		material.resource_name = "trim_dark"
+		material.albedo_color = Color(0.035, 0.045, 0.055)
+		material.roughness = 0.55
+		st.set_material(material)
+		var mesh := st.commit()
+		if mesh.get_surface_count() > 0: _doors[id] = mesh
+	if _doors[id] == null: return
+	var node := MeshInstance3D.new()
+	node.name = "DoorLines"
+	node.mesh = _doors[id]
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	model.add_child(node)
+
+static func _hull_x(tris: PackedVector3Array, side: float, y: float, z: float) -> float:
+	var origin := Vector3(side * 4.0, y, z)
+	var best := INF
+	for t in range(0, tris.size(), 3):
+		var hit: Variant = Geometry3D.ray_intersects_triangle(origin, Vector3(-side, 0, 0), tris[t], tris[t + 1], tris[t + 2])
+		if hit != null: best = minf(best, (hit as Vector3).distance_to(origin))
+	return side * (4.0 - best) if best < INF else NAN
+
+static func _ribbon(st: SurfaceTool, tris: PackedVector3Array, side: float, y0: float, y1: float, z: float, vertical: bool, length := 0.0) -> void:
+	var steps := 7
+	var last_a := Vector3.INF
+	var last_b := Vector3.INF
+	for i in steps + 1:
+		var f := float(i) / float(steps)
+		var y := lerpf(y0, y1, f) if vertical else y0
+		var zz := z if vertical else z + length * f
+		var dy := 0.0 if vertical else 0.007
+		var dz := 0.007 if vertical else 0.0
+		var xa := _hull_x(tris, side, y - dy, zz - dz)
+		var xb := _hull_x(tris, side, y + dy, zz + dz)
+		if is_nan(xa) or is_nan(xb):
+			last_a = Vector3.INF
+			continue
+		var a := Vector3(xa + side * 0.004, y - dy, zz - dz)
+		var b := Vector3(xb + side * 0.004, y + dy, zz + dz)
+		if last_a != Vector3.INF:
+			var quad := [last_a, last_b, b, a] if side > 0 else [last_a, a, b, last_b]
+			for k in [0, 1, 2, 0, 2, 3]:
+				st.set_normal(Vector3(side, 0, 0))
+				st.add_vertex(quad[k])
+		last_a = a
+		last_b = b
