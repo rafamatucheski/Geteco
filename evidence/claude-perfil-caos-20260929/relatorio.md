@@ -69,3 +69,27 @@ Não verifiquei visualmente a fumaça de escapamento/derrapagem em jogo.
 - Próximos custos por passo, em ordem: direção do trânsito (~1,4 ms), `move_and_slide` + `pre_move` (~1,5 ms; `pre_move`
   percorre todas as pessoas por carro), atores (~2 ms), criação de emissores no primeiro uso (picos de 8–13 ms).
 - Não medi o passo nativo da física (colisões/ilhas: ~70 corpos ativos, 300–390 pares); é a fatia que falta para fechar a conta.
+
+## Densidade dinâmica de pedestres e trânsito (implementada depois do perfil acima)
+
+Motivo: o maior bloco de custo do passo de física é a quantidade de carros (~0,1 ms/passo cada) e pessoas (~0,05) em cena,
+e o teto era fixo (40 + 40) mesmo com 10 unidades de emergência ativas. Agora `ProductionWorld` reduz o teto conforme a carga:
+−7 % por unidade de despacho (piso de 40 %; máx. 60 % a partir de 4 estrelas). Cai em ~1,5 s e volta em ~7,5 s; quem passa do
+teto sai um por vez, o mais longe possível e fora do quadro; ninguém novo nasce acima dele. Interruptor de medição: `--no-density`.
+
+No caos os carros civis caem de ~46 para ~22 e as pessoas de 40 para 31–35 (confirmado nas 5 execuções ligadas).
+
+A/B no caos de 35 s, 5 execuções de cada lado, ordem intercalada/embaralhada, sem instrumentação:
+
+| | FPS (mediana / média) | p95 mediana | p99 mediana | máx. mediano | >33 ms mediana |
+|---|---:|---:|---:|---:|---:|
+| ligada | 58,6 / 55,5 | 19,0 | 29,1 | 127 ms | 13 |
+| desligada | 55,4 / 52,8 | 26,9 | 32,6 | 162 ms | 18 |
+
+Mann-Whitney (U de 25; 12,5 = sem efeito): FPS 17, p95 8, p99 6, >33 ms 9, **máximo 1**. Direção favorável em todas as métricas,
+mas só o quadro máximo é claramente consistente; FPS/p95/p99 ficam dentro do ruído. A máquina estava com Chrome/Teams/OneDrive ativos e a
+mesma configuração variou de 41 a 59 FPS no caos e de 36 a 60 na cessação. Nas fases sem emergência (onde a função não age) duas
+execuções "ligadas" foram ruins e três "desligadas" ficaram em 60 FPS: isso é ruído, não efeito da função (o teto ficou em 1,0 e nada foi removido).
+
+Conclusão honesta: o mecanismo é real e o efeito medido é pequeno-a-moderado e favorável, **não provado com folga** por FPS.
+Custo: rua mais vazia durante perseguições (como no GTA). Não medi visualmente se o vazio incomoda.

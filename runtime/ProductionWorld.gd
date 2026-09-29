@@ -13,6 +13,16 @@ const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 # 40 pedestres mantiveram 59,8 FPS no mesmo cenário.
 const MAX_POPULATION := 40
 const TRAFFIC_TARGET := 40
+# Densidade dinâmica, como no GTA: com emergência em cena o teto de pedestres e de trânsito
+# civil cai para sobrar orçamento de física à polícia (45 carros ≈ 4–5 ms e 41 pessoas ≈ 2 ms
+# por passo no caos, medido 2026-09-29). Cai rápido, volta devagar; quem passa do teto some
+# fora do quadro, um por vez, e ninguém novo nasce acima dele.
+const DENSITY_PER_UNIT := 0.07
+const DENSITY_MIN := 0.4
+const DENSITY_STARS := 4
+const DENSITY_STARS_SCALE := 0.6
+const DENSITY_TRIM_MIN_DISTANCE := 30.0
+var density_scale := 1.0
 # Como em GTA: gente e trânsito ambiente nascem e somem num anel em volta do jogador,
 # sempre fora do quadro da câmera, para nada aparecer ou desaparecer na tela.
 const POPULATION_SPAWN_MIN := 45.0
@@ -664,6 +674,7 @@ func _process(delta: float) -> void:
 	population_clock += delta
 	if population_clock < .25 or not state.place_id.is_empty(): return
 	population_clock = 0
+	_update_density()
 	_update_mobile_region_metadata()
 	for index in range(world.people.size()-1,-1,-1):
 		var actor = world.people[index]
@@ -677,6 +688,7 @@ func _process(delta: float) -> void:
 	# Replenishment and equipment creation used to accumulate in this same
 	# quarter-second tick. Each may instantiate meshes/materials; admit one job
 	# per later frame, preserving population targets and all vehicle equipment.
+	_trim_density()
 	if _population_jobs.is_empty(): _population_jobs.assign(["citizen","traffic","equipment","equipment"])
 	footbridge_crossers.update(world, world.player.position, state.region_id)
 	for index in range(vehicles.size()-1,-1,-1):
@@ -715,15 +727,73 @@ func _process(delta: float) -> void:
 			car.queue_free()
 	world.population = world.people.size()
 
+## Alvo da densidade: cada unidade de despacho em cena tira `DENSITY_PER_UNIT`, e de
+## `DENSITY_STARS` estrelas para cima o teto não passa de `DENSITY_STARS_SCALE`.
+static func density_target(dispatch_units: int, stars: int) -> float:
+	var target := clampf(1.0-float(dispatch_units)*DENSITY_PER_UNIT,DENSITY_MIN,1.0)
+	if stars >= DENSITY_STARS: target = minf(target,DENSITY_STARS_SCALE)
+	return target
+
+func _update_density() -> void:
+	var units := 0
+	if is_instance_valid(world.dispatch): units = world.dispatch.units.size()
+	var stars := 0
+	if is_instance_valid(world.gameplay): stars = int(world.gameplay.stars)
+	var target := density_target(units,stars)
+	# Interruptor para comparar com/sem a densidade dinâmica em medições.
+	if "--no-density" in OS.get_cmdline_user_args(): target = 1.0
+	# Chamado a cada 0,25 s: 1,0 -> 0,4 em ~1,5 s; volta em ~7,5 s (sem pisca-pisca com
+	# viaturas entrando e saindo).
+	density_scale = move_toward(density_scale,target,.1 if target < density_scale else .02)
+
+func _population_cap() -> int:
+	return ceili(float(requested_population)*density_scale)
+
+func _traffic_cap() -> int:
+	return ceili(float(TRAFFIC_TARGET)*density_scale)
+
+## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
+## do quadro, enquanto houver mais que o teto atual.
+func _trim_density() -> void:
+	var origin: Vector3 = world.player.position
+	if world.people.size() > _population_cap():
+		var worst := -1
+		var farthest := DENSITY_TRIM_MIN_DISTANCE
+		for index in world.people.size():
+			var actor = world.people[index]
+			if not is_instance_valid(actor): continue
+			var distance: float = actor.position.distance_to(origin)
+			if distance > farthest and not _on_screen(actor.global_position,1.0):
+				farthest = distance
+				worst = index
+		if worst >= 0:
+			var removed = world.people[worst]
+			world.people.remove_at(worst)
+			removed.queue_free()
+	if _ambient_traffic_count() > _traffic_cap():
+		var worst_car := -1
+		var farthest_car := DENSITY_TRIM_MIN_DISTANCE
+		for index in vehicles.size():
+			var car = vehicles[index]
+			if not _is_ambient_traffic(car) or not car.traffic or car.health <= 0.0 or car == world.driving.car: continue
+			var distance: float = car.global_position.distance_to(origin)
+			if distance > farthest_car and not _on_screen(car.global_position,3.0):
+				farthest_car = distance
+				worst_car = index
+		if worst_car >= 0:
+			var removed_car = vehicles[worst_car]
+			vehicles.remove_at(worst_car)
+			removed_car.queue_free()
+
 func _service_population_job() -> void:
 	if _population_jobs.is_empty(): return
 	var job: String = _population_jobs.pop_front()
 	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	match job:
 		"citizen":
-			if world.people.size() < requested_population: _spawn_citizen()
+			if world.people.size() < _population_cap(): _spawn_citizen()
 		"traffic":
-			if _ambient_traffic_count() < TRAFFIC_TARGET and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
+			if _ambient_traffic_count() < _traffic_cap() and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
 		"equipment":
 			for car in vehicles:
 				if not is_instance_valid(car) or car.is_queued_for_deletion() or is_instance_valid(car.equipment): continue
