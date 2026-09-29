@@ -10,6 +10,8 @@ var damage_smoke: GPUParticles3D
 var backfire: GPUParticles3D
 var previous_throttle := 0.0
 var rng := RandomNumberGenerator.new()
+var _update_clock := 0.0
+var _was_idle := false
 
 func configure(car: CharacterBody3D) -> void:
 	vehicle = car
@@ -32,7 +34,16 @@ func physics_tick(active: bool) -> void:
 	var health_ratio: float = vehicle.health/maxf(1,vehicle.max_health)
 	if engine_running:
 		_ensure_exhaust()
-		_update_exhaust(throttle)
+		# Cada _update_* regrava ~9 propriedades do material de partículas; a 60 Hz
+		# custava ~0,2 ms/passo em 25 carros (medido 2026-09-29, caos). Fumaça muda devagar:
+		# 10 Hz basta, e o arranque (punch) ou a troca marcha-lenta/andando força a hora.
+		_update_clock -= 1.0/Engine.physics_ticks_per_second
+		var punch: bool = (throttle - previous_throttle) > 0.18 and throttle > 0.3
+		var idle_now: bool = absf(vehicle.speed) < 0.6 and absf(throttle) < 0.05
+		if _update_clock <= 0.0 or punch or idle_now != _was_idle:
+			_update_clock = .1
+			_was_idle = idle_now
+			_update_exhaust(throttle)
 	elif is_instance_valid(exhaust): exhaust.emitting = false
 	if health_ratio < .5 and vehicle.health > 0:
 		_ensure_damage_smoke()

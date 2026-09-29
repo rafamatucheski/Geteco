@@ -26,6 +26,8 @@ var skid_audio: AudioStreamPlayer3D
 var road_mixer: Node
 var _probe_clock := 0.0
 var _redraw_clock := 0.0
+var _expire_clock := 0.0
+var _idle := false
 
 func configure(car: CharacterBody3D) -> void:
 	vehicle = car
@@ -40,13 +42,22 @@ func _exit_tree() -> void:
 	geometry.clear_surfaces()
 
 func physics_tick(delta: float, active: bool) -> void:
-	_expire_marks()
+	# Validade das marcas é de segundos: varrer a lista todo passo de física custava
+	# ~0,2 ms/passo em 25 carros (medido 2026-09-29, caos), quase sempre com lista vazia.
+	_expire_clock -= delta
+	if _expire_clock <= 0.0:
+		_expire_clock = .25
+		_expire_marks()
 	_redraw_clock -= delta
 	if not active:
-		_stop_emitters()
-		last_contacts = [{},{}]
+		# Parar emissores e zerar contatos uma vez ao ficar inativo, não a cada passo.
+		if not _idle:
+			_stop_emitters()
+			last_contacts = [{},{}]
+			_idle = true
 		if _redraw_clock <= 0: _redraw_marks()
 		return
+	_idle = false
 	_probe_clock -= delta
 	if _probe_clock > 0:
 		if _redraw_clock <= 0: _redraw_marks()
@@ -225,6 +236,7 @@ func _ensure_mark_mesh() -> void:
 	mark_mesh.global_transform = Transform3D.IDENTITY
 
 func _expire_marks() -> void:
+	if marks.is_empty(): return
 	var now := Time.get_ticks_msec()
 	marks = marks.filter(func(mark: Dictionary): return now-int(mark.born)<int(mark.life))
 
