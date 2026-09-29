@@ -71,6 +71,19 @@ para as próximas sessões, na ordem abaixo. Coordenadas em metros do editor (X,
   usa o túnel. Chão/mar/calçadas recortados por `CanalTunnel3D.carve_chunk`/`outside_land`
   e `HarborOcean` (WATER_CUT). Teste: `tests/test_canal_tunnel.gd -- --no-save`.
 - Pendências: NPC/polícia no túnel, mapa/minimapa, campo "altura" no editor.
+- **Câmera no túnel (28/09):** `scripts/CameraRig.gd` cresce `_tunnel_blend` com a
+  profundidade do alvo (0,6→3,2 m) e, junto com o zoom, levanta a inclinação para 70°
+  (`TUNNEL_OFFSET`, mesma distância ao foco). A 45° o chão ao sul da vala tapava o carro
+  a partir de ~4,3 m de fundo. `world/urban_detail/TunnelCutaway.gd` deixa translúcido
+  (alfa 0,14) o que fica entre a câmera e o tubo — laje/teto do trecho coberto, Northstar
+  sobre o canal, prédios, postes, letreiros — e devolve tudo ao sair. No renderizador
+  Mobile `GeometryInstance3D.transparency` não funciona: usa uma cópia do material por
+  material de origem, com um alfa só atualizado por quadro; `ShaderMaterial` (mar, atores)
+  fica de fora. Rescan a cada 0,4 s (~0,6 ms, pior 1,2 ms; medido com outras instâncias do
+  Godot abertas, não é medição de desempenho limpa). Testes: `tests/test_tunnel_cutaway.gd`
+  (sintético) e `tests/test_tunnel_camera.gd -- --no-save` (jogo real). Não coberto: carros
+  de trânsito sobre o cais continuam opacos; materiais de origem que mudam durante o corte
+  (luz noturna, chuva) só aparecem na cópia na próxima entrada.
 
 ### Plano original
 

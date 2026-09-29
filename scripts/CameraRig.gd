@@ -70,11 +70,23 @@ var preview_view := false
 var _preview_blend := 0.0
 var _container_blend := 0.0
 var _container_focus := Vector3.ZERO
-# Túnel do canal: 0 fora, 1 dentro. Aproxima o zoom quando o alvo desce a rampa,
-# para o carro (ou o Dante) ler bem sob o vidro/silhueta; volta suave ao sair.
+# Túnel do canal: 0 fora, 1 no fundo (cresce com a profundidade do alvo na rampa).
+# Aproxima o zoom, levanta a inclinação e apaga a cidade que tapa o tubo; volta suave ao sair.
 var _tunnel_blend := 0.0
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 const TUNNEL_ZOOM := 0.62
+# 70° de inclinação, mesma distância ao foco do EXTERIOR_OFFSET (~35,8 m: áudio e
+# near/far intactos). A 45° o chão ao sul da vala tapava o carro assim que o piso
+# passava de ~4,3 m de profundidade (a linha de visada só sai do chão 6 m ao sul);
+# a 70° o fundo da vala (−6 m) fica visível a partir de 2,2 m da borda sul.
+const TUNNEL_OFFSET := Vector3(0, 33.6, 12.2)
+const TUNNEL_DEPTH_START := 0.6
+const TUNNEL_DEPTH_FULL := 3.2
+const TUNNEL_BLEND_RATE := 1.6
+# O corte da cidade só começa depois que a câmera já está bem inclinada.
+const TUNNEL_CUTAWAY_START := 0.3
+var _cutaway := TUNNEL_CUTAWAY.new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -101,6 +113,7 @@ func _exterior_view_offset() -> Vector3:
 	# Never change authored interior offsets, target, zoom, or heading.
 	if locked: return offset
 	var exterior := offset.lerp(PREVIEW_OFFSET.rotated(Vector3.UP, PREVIEW_HEADING), _preview_blend)
+	exterior = exterior.lerp(TUNNEL_OFFSET, smoothstep(0.0, 1.0, _tunnel_blend))
 	# Tiny Z offset keeps look_at's up vector non-collinear at the overhead view.
 	return exterior.lerp(Vector3(0,35,.15),_container_blend)
 
@@ -161,9 +174,12 @@ func _process(delta: float) -> void:
 	var base_size := _base_size()
 	var desired_size := base_size*SCOPE_SIZE_MULTIPLIER if scoped else base_size
 	if not locked: desired_size *= float(get_meta("port_container_zoom",1.0))
-	var in_tunnel := not locked and CANAL_TUNNEL.in_roadway(actual) and actual.y < -1.2
-	_tunnel_blend = move_toward(_tunnel_blend, 1.0 if in_tunnel else 0.0, delta * 1.4)
+	var tunnel_depth := 0.0
+	if not locked and CANAL_TUNNEL.in_roadway(actual):
+		tunnel_depth = smoothstep(TUNNEL_DEPTH_START, TUNNEL_DEPTH_FULL, -actual.y)
+	_tunnel_blend = move_toward(_tunnel_blend, tunnel_depth, delta * TUNNEL_BLEND_RATE)
 	if _tunnel_blend > 0.0: desired_size *= lerpf(1.0, TUNNEL_ZOOM, smoothstep(0.0, 1.0, _tunnel_blend))
+	_update_cutaway()
 	if snap or locked:
 		size = desired_size
 	else:
@@ -171,6 +187,25 @@ func _process(delta: float) -> void:
 	global_position = focus + _exterior_view_offset().rotated(Vector3.UP, heading)
 	look_at(focus)
 	_was_locked = locked
+
+## Apaga a cidade entre a câmera e o tubo enquanto o alvo está fundo no túnel.
+func _update_cutaway() -> void:
+	var strength := clampf((_tunnel_blend - TUNNEL_CUTAWAY_START) / (1.0 - TUNNEL_CUTAWAY_START), 0.0, 1.0)
+	var aspect := get_viewport().get_visible_rect().size.aspect() if is_inside_tree() else 1.78
+	# Meia largura visível + folga: quem entra na janela já está apagado antes de aparecer.
+	var half_width := size * aspect * 0.5 + 16.0
+	var chunks: Array = []
+	if strength > 0.0:
+		var world := get_parent()
+		var production: Variant = world.get("production") if world != null else null
+		var regions: Variant = production.get("regions") if production is Node else null
+		var harbor: Variant = regions.get("harbor") if regions is Dictionary else null
+		if harbor is Node and is_instance_valid(harbor):
+			# Só os chunks sob a janela do túnel (e a faixa ao sul que a varredura alcança).
+			var reach := Rect2(focus.x - half_width, CANAL_TUNNEL.outer_north() - 4.0, half_width * 2.0, CANAL_TUNNEL.outer_south() - CANAL_TUNNEL.outer_north() + 40.0)
+			for key in harbor.chunks:
+				if Rect2(Vector2(key) * harbor.CELL, Vector2.ONE * harbor.CELL).intersects(reach): chunks.append(harbor.chunks[key])
+	_cutaway.update(chunks, focus, global_position - focus, half_width, smoothstep(0.0, 1.0, strength), get_process_delta_time())
 
 func focus_on_store(point: Vector3, final_size: float, duration: float) -> void:
 	_store_focus_reverse = false
@@ -312,6 +347,7 @@ func _ensure_scope_reticle() -> void:
 	scope_reticle.hide()
 
 func _exit_tree() -> void:
+	_cutaway.release()
 	if is_instance_valid(scope_reticle):
 		scope_reticle.hide()
 		scope_reticle.queue_free()
