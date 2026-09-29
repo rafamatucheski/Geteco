@@ -1167,7 +1167,7 @@ func _process(delta: float) -> void:
 	if not modal and not world.driving.occupied and not get_tree().paused:
 		var aim: Vector3 = world.gameplay.aim_from_screen(get_viewport().get_mouse_position())
 		var controls = get_node("/root/GameInput")
-		if controls.using_gamepad or not controls.touch_aim.is_zero_approx():
+		if controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx():
 			aim = controls.aim_target_3d(world.player,world.camera,delta)
 			# Robbery intimidation and every non-shot aim consumer read the same
 			# authoritative world point as firearm presentation. Previously only the

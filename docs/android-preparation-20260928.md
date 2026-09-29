@@ -1,5 +1,10 @@
 # Consolidação e preparação Android — 28/09/2026
 
+> Atualização posterior: templates oficiais instalados com SHA-512 verificado,
+> controles Android implementados e primeiro APK assinado gerado. O registro
+> abaixo preserva as pendências do checkpoint inicial; os resultados atuais
+> ficam em `evidence/android-20260928/REPORT.md`.
+
 Alvo informado: Samsung Galaxy Z Fold7 com a atualização Android mais recente
 disponível no aparelho. A versão exata do sistema ainda não foi coletada.
 

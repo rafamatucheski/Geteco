@@ -159,6 +159,13 @@ func _build_hud() -> void:
 	handler.world = self
 	handler.process_mode = Node.PROCESS_MODE_ALWAYS
 	hud.add_child(handler)
+	if not has_meta("menu_preview") and (OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()):
+		var touch_layer := CanvasLayer.new()
+		touch_layer.layer = 90
+		add_child(touch_layer)
+		var touch := preload("res://ui/AndroidControls.gd").new()
+		touch.world = self
+		touch_layer.add_child(touch)
 
 func _toggle_pause() -> void:
 	if session != null and session.get("modal") == true: return

@@ -91,6 +91,8 @@ func step(delta: float, direction: float, torque: bool) -> void:
 
 func _input(event: InputEvent) -> void:
 	if not active: return
+	# Raw touches belong to the mobile controls; their actions arrive separately.
+	if event is InputEventScreenTouch or event is InputEventScreenDrag: return
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
 		finish("cancelled")
 	elif event is InputEventMouseMotion and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not Input.is_action_pressed("interact") and turn < .02:
@@ -110,6 +112,8 @@ func _refresh() -> void:
 	var right: String = controls.hint("move_right") if controls != null else "D"
 	var action: String = controls.hint("interact") if controls != null else "E"
 	instructions.text = "Mouse ou %s / %s — ajustar gazua\nSegure %s ou clique — girar · ESC / Voltar — sair" % [left,right,action]
+	if controls != null and controls.get_meta("touch_controls_active", false):
+		instructions.text = "‹ / › — ajustar gazua\nSegure Girar · Voltar — sair"
 	view.queue_redraw()
 
 func _draw_lock() -> void:

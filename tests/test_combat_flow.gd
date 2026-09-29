@@ -146,6 +146,7 @@ func _run() -> void:
 	# A fixture já documenta `--seed=N`; aplique-a ao RNG que realmente decide
 	# a dispersão. `Gameplay.configure()` usa randomize(), então o argumento era
 	# antes apenas decorativo e a asserção de vários chumbos era intermitente.
+	gameplay._rng.seed = 7
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--seed="): gameplay._rng.seed = argument.trim_prefix("--seed=").to_int()
 	var messages: Array[String] = []
@@ -197,12 +198,15 @@ func _run() -> void:
 	var dealt: float = health_before - npc.health
 	check(is_equal_approx(dealt, 16.0), "um disparo da pistola tira exatamente 16 (dano único)", "dano=%.2f" % dealt)
 	check(int(state.get_ammo("pistol").magazine) == 11, "um disparo consome uma munição", str(state.get_ammo("pistol")))
-	check(gameplay.crime_points > crime_before, "disparo em civil gera crime", "%d -> %d" % [crime_before, gameplay.crime_points])
+	check(not gameplay.police_case.pending.is_empty(), "disparo percebido inicia denúncia")
 	check(gameplay.effects._tracers.any(func(node): return node.visible), "trajetória da pistola usa cauda móvel visível")
 	await frames(4)
 	var civilian_model: Node = npc.visual.get_child(0)
 	check(civilian_model._hit.length() > 0.02, "ferimento: o tronco do civil reage sem perder o dano único", "inclinação=%s" % civilian_model._hit)
 	await shot("03_pistola_acerto")
+	# A vítima viva conclui a chamada de 2,5 s antes dos disparos fatais.
+	await create_timer(3.0).timeout
+	check(gameplay.crime_points > crime_before, "denúncia concluída gera crime", "%d -> %d" % [crime_before, gameplay.crime_points])
 
 	# ---- 2. continuar até morrer
 	var guard := 0
@@ -244,6 +248,7 @@ func _run() -> void:
 		if is_instance_valid(other) and other.health < civilians_before[other]: victims += 1
 	var shotgun_dealt: float = h0 - npc2.health
 	check(shotgun_dealt > 8.0 and int(shotgun_dealt) % 8 == 0, "escopeta: vários chumbos acertam (múltiplos de 8)", "dano=%.1f" % shotgun_dealt)
+	await create_timer(3.0).timeout
 	check(gameplay.crime_points - crime0 == 4 + 12 * victims, "escopeta: uma denúncia por vítima ferida e uma pelo disparo (4 + 12 por vítima)", "delta=%d vítimas=%d" % [gameplay.crime_points - crime0, victims])
 	await shot("05_escopeta")
 	discard(npc2)
@@ -383,6 +388,9 @@ func _run() -> void:
 	await frames(3)
 
 	# ---- 7. garagem (entrada real), restauração de save e proteção
+	# O cheat é temporário e não concede posse persistente. A restauração deve
+	# receber uma pistola realmente adquirida, com equipamento e grade coerentes.
+	check(state.economy.grant_weapon("pistol"), "fixture: pistola persistente adquirida")
 	var owned_before: bool = state.owns_weapon("rpg")
 	state.equip_weapon("pistol")
 	gameplay.clear_wanted()
@@ -431,8 +439,9 @@ func _run() -> void:
 	check(player.combat_clip == "" and is_nan(player.combat_facing) and not gameplay.aiming, "troca de região zera camada de combate")
 	check(not gameplay._pain_pool.any(func(voice): return voice.playing) or true, "vozes de dor não travam")
 	# ---- 9. interrupções no meio do golpe: entrada travada (transição/veículo/menu) e descarregamento
-	# Restoring intentionally clears the arsenal cheat. Owned weapons now have
-	# a physical location, so prepare the carried slot before testing animation.
+	# A restauração limpa o arsenal temporário; adquirir as armas é pré-requisito.
+	check(not state.economy.cheat_all_weapons, "restauração elimina arsenal temporário")
+	check(state.economy.grant_weapon("axe"), "fixture: machado persistente adquirido")
 	if state.economy.grid_enabled(): check(state.economy.set_personal_slot("corpo","axe"), "fixture: machado no equipamento após restaurar")
 	state.equip_weapon("axe")
 	await frames(2)
@@ -450,6 +459,7 @@ func _run() -> void:
 	player.input_locked = false
 	discard(interrupt_victim)
 	await wait_cooldown()
+	check(state.economy.grant_weapon("knife"), "fixture: faca persistente adquirida")
 	if state.economy.grid_enabled(): check(state.economy.set_personal_slot("corpo","knife"), "fixture: faca no equipamento após restaurar")
 	state.equip_weapon("knife")
 	await frames(2)

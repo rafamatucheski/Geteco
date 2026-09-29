@@ -102,10 +102,12 @@ func apply_settings() -> void:
 	_update_fps_overlay()
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
-		match window_mode:
-			1: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-			2: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
-			_: _apply_windowed()
+		# Android owns the surface size, including fold/unfold transitions.
+		if not OS.has_feature("android"):
+			match window_mode:
+				1: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+				2: DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+				_: _apply_windowed()
 	applied.emit()
 
 func _apply_windowed() -> void:

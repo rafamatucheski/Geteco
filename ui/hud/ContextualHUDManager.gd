@@ -163,6 +163,13 @@ func _layout() -> void:
 	_anchor(minimap,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y,minimap.size.x,minimap.size.y))
 	_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(margin,122,minf(320,view.x-48),0))
 	_anchor(speed_label,Control.PRESET_BOTTOM_RIGHT,Rect2(-220-margin,-margin-148,220,30))
+	var touch := OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
+	if touch:
+		# Reserve both lower corners for thumbs; keep navigation and ammo readable.
+		_anchor(minimap,Control.PRESET_TOP_LEFT,Rect2(margin,110,minimap.size.x,minimap.size.y))
+		_anchor(_lower_right,Control.PRESET_TOP_RIGHT,Rect2(-264-margin,112,264,112))
+		_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(view.x*.5-160,108,minf(320,view.x-48),0))
+		backpack.get_parent().hide()
 	_layout_modal()
 
 func _style_modal_if_needed() -> void:

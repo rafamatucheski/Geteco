@@ -78,6 +78,7 @@ func _layout() -> void:
 func _update_hints() -> void:
 	var controls := get_node("/root/GameInput")
 	_hints.text="%s  mover   ·   %s / %s  zoom   ·   %s  selecionar"%[controls.prompt("move_up"),controls.prompt("weapon_previous"),controls.prompt("weapon_next"),controls.prompt("ui_accept")] if controls.using_gamepad else "Arrastar  mover   ·   Roda  zoom   ·   Clique  selecionar"
+	if controls.get_meta("touch_controls_active",false): _hints.text="Arraste para mover · + / − para zoom · Toque para selecionar"
 func recenter() -> void:
 	if controller==null: return
 	var point: Vector3=controller.world.player.global_position

@@ -3,8 +3,11 @@ extends "res://tests/measure/measure.gd"
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	var variant := "before"
+	var scenarios: Array[String] = ["closed", "open", "map"]
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--variant="): variant = arg.trim_prefix("--variant=").validate_filename()
+		if arg == "--closed-only": scenarios = ["closed"]
+		if arg == "--overlay-ab": scenarios = ["overlay-off", "overlay-on", "overlay-off-return"]
 	seed(28092026)
 	for action in InputMap.get_actions(): InputMap.action_erase_events(action)
 	world = load("res://Main.tscn").instantiate()
@@ -35,7 +38,9 @@ func run() -> void:
 		economy.grid_store_weapon("hunting_rifle","storage")
 	var folder := "res://evidence/ui-refactor-20260928/"+variant
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
-	for scenario in ["closed","open","map"]:
+	for scenario in scenarios:
+		if scenario.begins_with("overlay-"):
+			world.find_child("AndroidControls",true,false).visible = scenario == "overlay-on"
 		if scenario == "open": world.session.show_inventory()
 		if scenario == "map": world.session.close_menu(); world.session.show_map()
 		var warm: Array[float] = []

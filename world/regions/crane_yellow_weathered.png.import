@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cf4gk5yourglt"
 path.s3tc="res://.godot/imported/crane_yellow_weathered.png-66f09fcae28f1032c1c34754a23f6f86.s3tc.ctex"
+path.etc2="res://.godot/imported/crane_yellow_weathered.png-66f09fcae28f1032c1c34754a23f6f86.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://world/regions/crane_yellow_weathered.png"
-dest_files=["res://.godot/imported/crane_yellow_weathered.png-66f09fcae28f1032c1c34754a23f6f86.s3tc.ctex"]
+dest_files=["res://.godot/imported/crane_yellow_weathered.png-66f09fcae28f1032c1c34754a23f6f86.s3tc.ctex", "res://.godot/imported/crane_yellow_weathered.png-66f09fcae28f1032c1c34754a23f6f86.etc2.ctex"]
 
 [params]
 

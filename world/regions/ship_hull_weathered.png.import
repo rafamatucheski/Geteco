@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dqfnrdwed1f8o"
 path.s3tc="res://.godot/imported/ship_hull_weathered.png-b65aeb865ecf29c267e89b219b6f026d.s3tc.ctex"
+path.etc2="res://.godot/imported/ship_hull_weathered.png-b65aeb865ecf29c267e89b219b6f026d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://world/regions/ship_hull_weathered.png"
-dest_files=["res://.godot/imported/ship_hull_weathered.png-b65aeb865ecf29c267e89b219b6f026d.s3tc.ctex"]
+dest_files=["res://.godot/imported/ship_hull_weathered.png-b65aeb865ecf29c267e89b219b6f026d.s3tc.ctex", "res://.godot/imported/ship_hull_weathered.png-b65aeb865ecf29c267e89b219b6f026d.etc2.ctex"]
 
 [params]
 

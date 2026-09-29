@@ -34,6 +34,7 @@ foreach ($test in $tests) {
     $saveRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('geteco-suite-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $saveRoot | Out-Null
     $godotArgs = @('--path', ('"' + $root + '"'), '--script', "res://$relative", '--', '--no-save', '--skip-arrival', ('"--isolated-save-root=' + $saveRoot + '"'))
+    if ($test.BaseName -eq 'test_android_controls') { $godotArgs += '--touch-controls' }
     if ($test.BaseName -in @('test_harbor_gameplay_acceptance', 'test_urban_asset_library', 'test_vertice_depth', 'test_vertice_site_depth', 'test_vertice_undercroft_geometry', 'test_vertice_packing_depth', 'test_police_frontage_geometry')) {
         $process = Start-Process -FilePath $GodotPath -ArgumentList ($godotArgs + '--population=8') `
             -WindowStyle Hidden -PassThru -RedirectStandardOutput $log -RedirectStandardError "$log.err"

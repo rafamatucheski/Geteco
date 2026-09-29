@@ -283,8 +283,14 @@ func _physics_process(delta: float) -> void:
 	if autopilot and active: _drive_ai(racers[0],delta)
 	else:
 		var throttle := maxf(Input.get_action_strength("move_up"),Input.get_action_strength("accelerate"))-maxf(Input.get_action_strength("move_down"),Input.get_action_strength("brake"))
-		player_bike.drive(throttle,Input.get_axis("move_right","move_left"),Input.is_action_pressed("handbrake"))
-		player_bike.air_lean = Input.get_axis("move_up","move_down")*.45
+		var steering := Input.get_axis("move_right","move_left")
+		var lean := Input.get_axis("move_up","move_down")
+		var touch: Vector2 = get_node("/root/GameInput").touch_move
+		if not touch.is_zero_approx():
+			steering = -touch.x
+			lean = touch.y
+		player_bike.drive(throttle,steering,Input.is_action_pressed("handbrake"))
+		player_bike.air_lean = lean*.45
 	if not active:
 		if is_instance_valid(rental_bike) and (player_bike.position.distance_to(COURSE.ENTRY) > 180 or player_bike.position.y < -4): player_bike.reset_to(track.pose(0))
 		_status.text = ("Treino · %d km/h · E devolver" if is_instance_valid(rental_bike) else "Motocross · %d km/h · E descer")%int(absf(player_bike.speed)*3.6)

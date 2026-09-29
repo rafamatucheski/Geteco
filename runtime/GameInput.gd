@@ -399,6 +399,10 @@ func hint(action: String,keyboard_only := false) -> String:
 
 ## One prompt for the active device; bindings/settings still show all alternatives.
 func prompt(action: String) -> String:
+	if get_meta("touch_controls_active", false):
+		if action == "ui_accept": return "Confirmar"
+		if action == "ui_cancel": return "Voltar"
+		return str(LABELS.get(action, [action])[0])
 	return hint(action).get_slice(" / ",0)
 
 func movement() -> Vector2:

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bprvrhwpdlipp"
 path.s3tc="res://.godot/imported/ship_deck_nonslip.png-811cac45de30aab80f2e7e5f87bc085e.s3tc.ctex"
+path.etc2="res://.godot/imported/ship_deck_nonslip.png-811cac45de30aab80f2e7e5f87bc085e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://world/regions/ship_deck_nonslip.png"
-dest_files=["res://.godot/imported/ship_deck_nonslip.png-811cac45de30aab80f2e7e5f87bc085e.s3tc.ctex"]
+dest_files=["res://.godot/imported/ship_deck_nonslip.png-811cac45de30aab80f2e7e5f87bc085e.s3tc.ctex", "res://.godot/imported/ship_deck_nonslip.png-811cac45de30aab80f2e7e5f87bc085e.etc2.ctex"]
 
 [params]
 

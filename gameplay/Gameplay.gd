@@ -640,7 +640,7 @@ func _present(facing: float, clip: String, clip_time: float, stance: String = ""
 ## Assim o rumo do corpo e o rumo do disparo (`fire_at(target)`) saem da mesma direção.
 func _aim_direction() -> Vector3:
 	var controls: Node = get_node_or_null("/root/GameInput")
-	if controls != null and is_instance_valid(camera) and (controls.using_gamepad or not controls.touch_aim.is_zero_approx()):
+	if controls != null and is_instance_valid(camera) and (controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx()):
 		var stick: Vector2 = controls.touch_aim if not controls.touch_aim.is_zero_approx() else controls.aim_direction
 		var right := camera.global_basis.x
 		var down := camera.global_basis.z
@@ -816,7 +816,7 @@ func aim_feedback() -> Dictionary:
 	var distance := minf(direction.length(), float(weapon_data(equipped()).get("max_range", 420.0)) / 16.0)
 	# Keep the controller marker inside the useful field of view. Shots retain full range.
 	var controls := get_node_or_null("/root/GameInput")
-	if controls != null and (controls.using_gamepad or not controls.touch_aim.is_zero_approx()): distance = minf(distance, 10.0)
+	if controls != null and (controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx()): distance = minf(distance, 10.0)
 	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * distance, 7, [player.get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	var blocked: bool = not hit.is_empty() and hit.collider is CollisionObject3D and (hit.collider.collision_layer & 1) != 0

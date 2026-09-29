@@ -154,9 +154,11 @@ func _update_hints() -> void:
 	if not is_instance_valid(device_hint): return
 	var controls := get_node("/root/GameInput")
 	device_hint.text=("%s  selecionar   ·   %s  fechar"%[controls.prompt("ui_accept"),controls.prompt("ui_cancel")]) if controls.using_gamepad else "%s  fechar   ·   Arrastar  mover   ·   Clique direito  usar"%controls.prompt("inventory")
+	if controls.get_meta("touch_controls_active",false): device_hint.text="Toque para selecionar · Arraste para mover"
 	if is_instance_valid(drop_button):
 		var kind: String=adapter.economy().grid_snapshot().bag
 		drop_button.text=("Soltar mochila" if kind=="backpack" else "Soltar mala")+("" if controls.using_gamepad else "     G")
+		if controls.get_meta("touch_controls_active",false): drop_button.text="Soltar mochila" if kind=="backpack" else "Soltar mala"
 
 func _wardrobe(parent: Control) -> void:
 	_label(parent,"ROUPAS",11).modulate=STYLE.MUTED
