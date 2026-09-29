@@ -53,7 +53,7 @@ func run() -> void:
 		var hang: Array=bag._hand_hang()
 		var handle_world: Vector3=actor.visual.to_global(bag.position+Vector3(0,bag.HANDLE_HEIGHT,0))
 		var palm: Vector3=actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(bag.hand_bone)*Vector3(0,.065,0))
-		check(handle_world.distance_to(palm)<.16,clip+": handle stays in the hand ("+str(snappedf(handle_world.distance_to(palm),.001))+")")
+		check(handle_world.distance_to(palm)<.12,clip+": handle stays in the hand ("+str(snappedf(handle_world.distance_to(palm),.001))+")")
 		check(bag.position.distance_to(hang[0])<.001,clip+": bag tracks the hand every frame")
 		check(bag.global_position.y>actor.global_position.y-.05 and bag.global_position.y<actor.global_position.y+.6,clip+": hangs above the ground, not dragged")
 		if previous!=Vector3.INF and not bag.position.is_equal_approx(previous): moved=true

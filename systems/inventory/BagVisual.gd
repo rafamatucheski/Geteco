@@ -11,14 +11,17 @@ var opened := false
 const BACKPACK_COLOR := Color("6d4d37")
 
 static func pickup_size(bag_kind: String) -> Vector3:
-	return Vector3(.34,.44,.26) if bag_kind=="backpack" else Vector3(.66,.63,.34)
+	return Vector3(.34,.44,.26) if bag_kind=="backpack" else Vector3(.78,.44,.32)
 
 func rest_position() -> Vector3:
 	return Vector3(0,.98,.22) if kind=="backpack" else Vector3(.46,.20,0)
 
-# Alça da mala fica ~.03 acima da tampa (y=.625 no espaço da mala); a mão a segura ali.
-const HANDLE_HEIGHT := .60
-const HAND_OUTWARD := .11
+# O punho das alças fica em DUFFEL_HANDLE_TOP na mala; a mão o segura ali.
+const HANDLE_HEIGHT := .41
+const DUFFEL_RADIUS := .16
+const DUFFEL_LENGTH := .74
+const DUFFEL_HANDLE_TOP := .42
+const HAND_OUTWARD := .09
 
 func _process(_delta: float) -> void:
 	# A mala pende da mão a cada quadro; o carry de 4 Hz do inventário não basta e a
@@ -40,17 +43,43 @@ func _ready() -> void:
 	if kind=="backpack":
 		_build_backpack()
 		return
-	var fabric := Color("826044")
-	var width := .62
-	_box(Vector3(width,.48,.25),Vector3(0,.26,0),fabric)
-	_box(Vector3(width*.85,.22,.065),Vector3(0,.20,-.15),fabric.darkened(.18))
+	_build_duffel()
+
+func _build_duffel() -> void:
+	# Bolsa de viagem de pano preto: corpo cilíndrico deitado no eixo X (comprido),
+	# duas alças que se encontram no punho e zíper no topo.
+	var cloth := Color("1d1f22")
+	var trim := Color("34373b")
+	var radius := DUFFEL_RADIUS
+	var body := MeshInstance3D.new()
+	var cylinder := CylinderMesh.new(); cylinder.top_radius=radius; cylinder.bottom_radius=radius; cylinder.height=DUFFEL_LENGTH; cylinder.radial_segments=14; cylinder.rings=1
+	body.mesh=cylinder; body.rotation.z=PI*.5; body.position=Vector3(0,radius,0); body.scale=Vector3(1,1,1.0)
+	var material := StandardMaterial3D.new(); material.albedo_color=cloth; material.roughness=1
+	body.material_override=material; add_child(body)
+	# Bolsos das pontas e faixa lateral, em pano um tom acima do corpo.
 	for side in [-1,1]:
-		_box(Vector3(.036,.47,.028),Vector3(side*width*.28,.27,-.14),Color("383f36"))
-		_box(Vector3(.06,.047,.032),Vector3(side*width*.28,.34,-.16),Color("b3a584"))
-		_box(Vector3(.034,.11,.03),Vector3(side*.07,.57,0),Color("373c35"))
-	_box(Vector3(.17,.032,.03),Vector3(0,.625,0),Color("4e5144"))
-	lid=Node3D.new(); lid.position=Vector3(0,.51,.11); add_child(lid)
-	_box(Vector3(width,.055,.27),Vector3(0,0,-.11),fabric.lightened(.12),lid)
+		_soft_box(Vector3(.09,.20,.22),Vector3(side*(DUFFEL_LENGTH*.5+.02),radius,0),trim)
+		_box(Vector3(.045,.02,.26),Vector3(side*.20,radius*2-.03,0),trim)
+	_box(Vector3(DUFFEL_LENGTH*.72,.10,.02),Vector3(0,radius-.01,-radius+.005),trim)
+	_box(Vector3(.10,.02,.024),Vector3(.10,radius-.01,-radius-.005),Color("8b8f94"))
+	# Zíper ao longo do topo.
+	_box(Vector3(DUFFEL_LENGTH*.86,.014,.016),Vector3(0,radius*2-.004,0),Color("6c7076"))
+	# Alças: dois braços em "V" invertido, unidos por um punho de pano no ápice.
+	var top := Vector3(0,DUFFEL_HANDLE_TOP,0)
+	for side in [-1,1]:
+		_bar(Vector3(side*.17,radius*2-.02,0),top,.026,cloth.lightened(.06))
+	_box(Vector3(.11,.034,.045),top,cloth.lightened(.14))
+	lid=Node3D.new(); lid.position=Vector3(0,radius*2-.02,.06); add_child(lid)
+	_box(Vector3(DUFFEL_LENGTH*.8,.02,.13),Vector3(0,0,-.055),cloth.lightened(.05),lid)
+
+func _bar(from: Vector3, to: Vector3, thickness: float, color: Color) -> void:
+	# Tira fina entre dois pontos (alça de pano).
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new(); box.size=Vector3(thickness,from.distance_to(to),thickness*.55); mesh.mesh=box
+	var mat := StandardMaterial3D.new(); mat.albedo_color=color; mat.roughness=1; mesh.material_override=mat
+	mesh.position=(from+to)*.5
+	mesh.basis=Basis(Quaternion(Vector3.UP,(to-from).normalized()))
+	add_child(mesh)
 
 func _build_backpack() -> void:
 	# Compact canvas bag: softened silhouette, shallow pocket and quiet hardware.
