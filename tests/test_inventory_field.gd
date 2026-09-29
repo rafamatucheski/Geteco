@@ -17,6 +17,7 @@ func shot(name: String) -> void:
 	root.get_texture().get_image().save_png(out+"/"+name+".png")
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	root.size = Vector2i(1280,720)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	world=load("res://Main.tscn").instantiate(); world.set_meta("skip_arrival",true); root.add_child(world); current_scene=world
 	for i in 2400:
@@ -28,23 +29,50 @@ func run() -> void:
 	var field=session.field_inventory
 	var economy=session.state.economy
 	check(field!=null and economy.grid_enabled(),"spatial inventory installed in Main")
-	var source: Dictionary=field.sources[3]
+	check(economy.grid_snapshot().bag=="" and GRID.dimensions(economy.grid_snapshot(),"pockets")==Vector2i(2,1),"new game starts with two pockets only")
+	check(field.sources.all(func(row): return row.item not in ["backpack","handbag"]),"no free bags scattered around shops")
+	check(not session.personal_car.discover_backpack(),"backpack unavailable before earning Monaliza")
+	var campaign_data: Dictionary = session.state.campaign.snapshot()
+	var first_mission: Dictionary = preload("res://data/campaign/HarborMissions.gd").MISSIONS.primeiro_giro
+	campaign_data.completed.append("primeiro_giro")
+	campaign_data.pending_rewards.primeiro_giro = first_mission.reward
+	for flag in first_mission.sets_flags: campaign_data.flags[flag] = true
+	check(session.state.campaign.restore_snapshot(campaign_data),"earned-car fixture has valid completed first mission")
+	var initial = world.driving.car
+	initial.collision_layer=0; initial.collision_mask=0; initial.set_physics_process(false); initial.hide()
+	var personal = world.production.spawn_vehicle("monaliza",initial.position,initial.rotation.y)
+	check(personal!=null,"real Monaliza spawned for discovery")
+	if personal==null: world.free(); quit(1); return
+	personal.set_meta("garage_reward",true)
+	personal.vehicle_id="personal_monaliza"; personal.controlled=false; personal.external_input=false; personal.speed=0
+	session.garage_rewards.cars.personal_monaliza=personal
+	session.garage_rewards.data.vehicles.personal_monaliza=session.garage_rewards._initial_record("monaliza",personal.position,personal.rotation.y,"")
+	world.player.teleport(personal.global_position+Vector3(12,.05,0)); await frames()
+	check(not session.personal_car.discover_backpack(),"remote backpack discovery rejected")
+	world.player.teleport(session.personal_car._rear()+Vector3(0,.05,.8)); await frames()
+	check(session.personal_car.perform("trunk"),"opening real Monaliza trunk discovers backpack")
+	check(economy.grid_snapshot().bag=="backpack","Monaliza equips the first backpack")
+	check(not session.personal_car.discover_backpack(),"Monaliza discovery is one-time")
+	var discovery_save=preload("res://runtime/GameState.gd").new()
+	check(discovery_save.restore_snapshot(JSON.parse_string(JSON.stringify(session.state.snapshot()))) and "monaliza_backpack" in discovery_save.economy.grid_snapshot().claimed,"discovery receipt survives save/load")
+	field.close()
+	var source: Dictionary=field.sources[0]
 	world.player.teleport(source.point+Vector3(0,.1,.7)); world.production.region.set_focus(world.player.position)
 	await frames(90)
 	field._refresh_world()
-	check(field.pickups.has(source.key),"authored backpack exists near clothing store")
+	check(field.pickups.has(source.key),"authored food supply remains available")
 	var supply: Node3D = field.pickups[source.key].node
 	var original_angle: float = supply.art.rotation.y
 	var anchor: Vector3 = supply.global_position
 	await frames(12)
 	check(not is_equal_approx(supply.art.rotation.y,original_angle) and supply.global_position==anchor,"pickup art rotates without moving the physical ground anchor")
-	check(field.perform(source.key),"world interaction equips backpack")
+	check(field.perform(source.key),"world interaction collects supply")
 	check(supply.consumed and not field.pickups.has(source.key),"successful pickup starts absorption and removes interaction immediately")
 	check(field.pickup_voice.stream!=null and field.pickup_voice.playing,"successful pickup plays the original V1 reward audio")
 	check(not field.perform(source.key),"pickup cannot be collected twice during absorption")
 	await create_timer(.35).timeout
 	check(not is_instance_valid(supply),"absorption releases its visual after the V1 quarter-second tail")
-	check(economy.grid_snapshot().bag=="backpack","backpack equipped from world, not a mock")
+	check(economy.grid_snapshot().bag=="backpack","food pickup preserves discovered backpack")
 	check(not economy.grid_equip_bag("handbag"),"handbag cannot replace backpack silently")
 	economy.grant_weapon("pistol"); economy.grant_weapon("hunting_rifle")
 	economy.add_ammo("pistol",126); economy.grant_item("apple",3); economy.grant_item("water"); economy.grant_item("garage_part")
@@ -74,11 +102,14 @@ func run() -> void:
 	check(not field.ui.visible and not session.modal and not world.player.input_locked,"close restores gameplay")
 	var content: Array=economy.grid_snapshot().storage
 	check(field.drop_bag(),"drop finds collision-free ground")
+	check(not session.personal_car.discover_backpack(),"dropping backpack cannot duplicate discovery")
 	await frames()
 	var drop: Dictionary=economy.grid_snapshot().ground.back()
 	check(drop.entries==content and economy.grid_snapshot().storage.is_empty(),"drop preserves spatial contents")
 	var restored=preload("res://runtime/GameState.gd").new()
-	check(restored.restore_snapshot(JSON.parse_string(JSON.stringify(session.state.snapshot()))),"whole GameState restores dropped bag")
+	var restored_ok: bool = restored.restore_snapshot(JSON.parse_string(JSON.stringify(session.state.snapshot())))
+	check(restored_ok,"whole GameState restores dropped bag")
+	if not restored_ok: world.free(); quit(1); return
 	var restored_drop: Dictionary=restored.economy.grid_snapshot().ground.back()
 	var restored_point:=Vector3(restored_drop.position[0],restored_drop.position[1],restored_drop.position[2])
 	var saved_point:=Vector3(drop.position[0],drop.position[1],drop.position[2])
@@ -95,7 +126,7 @@ func run() -> void:
 	check(field.perform(key),"recover dropped bag by physical interaction")
 	check(economy.grid_snapshot().storage==content and economy.grid_snapshot().ground.is_empty(),"recover exactly once")
 	# Physical trunk access uses the real vehicle rear and occlusion query.
-	var car=world.driving.car
+	var car=session.personal_car._car()
 	car.vehicle_id="personal_monaliza"; car.controlled=false; car.external_input=false; car.speed=0
 	session.garage_rewards.cars.personal_monaliza=car
 	session.garage_rewards.data.vehicles.personal_monaliza=session.garage_rewards._initial_record("monaliza",car.position,car.rotation.y,"")

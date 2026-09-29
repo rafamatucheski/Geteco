@@ -11,6 +11,7 @@ func run() -> void:
 	seed(28092026)
 	for action in InputMap.get_actions(): InputMap.action_erase_events(action)
 	world = load("res://Main.tscn").instantiate()
+	world.set_meta("benchmark_trace", true)
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
 	current_scene = world
@@ -48,16 +49,20 @@ func run() -> void:
 		var start := Time.get_ticks_usec()
 		var last := start
 		var total := 0.0
+		var monitors: Array = []
 		while total < 30000:
 			await process_frame
 			var now := Time.get_ticks_usec()
 			var ms := (now-last)/1000.0
 			if now-start < 8000000: warm.append(ms)
-			else: frames.append(ms); total += ms
+			else:
+				frames.append(ms); total += ms
+				if ms > 33.3: monitors.append({"at_usec":now,"frame_ms":ms,"cpu_ms":Performance.get_monitor(Performance.TIME_PROCESS)*1000,"physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000})
 			last = now
 		
 		var report := {"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"summary":stats(frames),"frames_ms":frames,"warmup_ms":warm,"comparison_caveat":"Concurrent Godot processes detected before baseline; diagnostic only unless environment is isolated."}
 		FileAccess.open(folder+"/"+scenario+".json",FileAccess.WRITE).store_string(JSON.stringify(report))
+		FileAccess.open(folder+"/trace.json",FileAccess.WRITE).store_string(JSON.stringify({"slow_frames":monitors,"costs":world.get_meta("perf_costs",[])}))
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(folder+"/"+scenario+".png")
 		print("INVENTORY_BENCH ",scenario," ",JSON.stringify(report.summary))

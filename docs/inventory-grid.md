@@ -3,6 +3,7 @@
 ## Regras confirmadas
 
 - Dois bolsos iniciais, mais doze células na mochila (4 × 3). A mala oferece 24 (4 × 6), conforme a capacidade da implementação anterior. Apenas uma bagagem pode estar equipada.
+- A mochila inicial é descoberta uma única vez ao abrir o porta-malas da Monaliza conquistada no Primeiro Giro. Não há mochilas/malas gratuitas nas lojas ou na montanha. Saves antigos mantêm sua bagagem e os itens de migração.
 - Armas longas **guardadas na grade** ocupam 4 × 1. Armas equipadas no corpo ficam no equipamento; demais armas guardadas ocupam 2 × 1. Arraste posiciona por célula; giro exige um retângulo livre que caiba na grade.
 - Até 99 tiros vinculados a cada arma, somando carregador e reserva junto da arma. O carregador mantém o tamanho do catálogo, limitado a 99. A munição adicional usa pilhas de até 99 em células de 1 × 1; comprar sem espaço cancela a transação integralmente.
 - A Monaliza pode ser consultada à distância. Todas as mutações pelo adaptador exigem a checagem real de distância, obstrução, velocidade e estado do veículo em `PersonalCar._near_trunk()`. Manter uma tela antiga aberta não preserva o acesso.

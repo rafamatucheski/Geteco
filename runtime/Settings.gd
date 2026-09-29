@@ -47,6 +47,9 @@ var fullscreen: bool:
 var _fps_layer: CanvasLayer
 var _fps_label: Label
 var _focus_muted := false
+var _fps_previous_usec := 0
+var _fps_clock := 0.0
+var _fps_peak := 0.0
 
 func _enter_tree() -> void:
 	_setup_audio_buses()
@@ -141,6 +144,9 @@ func _notification(what: int) -> void:
 		AudioServer.set_bus_mute(0, false)
 
 func _update_fps_overlay() -> void:
+	_fps_previous_usec = 0
+	_fps_clock = 0.0
+	_fps_peak = 0.0
 	if show_fps and _fps_layer == null:
 		_fps_layer = CanvasLayer.new()
 		_fps_layer.layer = 127
@@ -149,8 +155,8 @@ func _update_fps_overlay() -> void:
 		_fps_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, .8))
 		_fps_label.add_theme_constant_override("outline_size", 4)
 		_fps_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-		_fps_label.position = Vector2(-150, 8)
-		_fps_label.size = Vector2(140, 20)
+		_fps_label.position = Vector2(-260, 8)
+		_fps_label.size = Vector2(250, 20)
 		_fps_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		_fps_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_fps_layer.add_child(_fps_label)
@@ -163,8 +169,15 @@ func _update_fps_overlay() -> void:
 
 func _process(_delta: float) -> void:
 	if _fps_label == null: return
+	var now := Time.get_ticks_usec()
+	if _fps_previous_usec > 0: _fps_peak = maxf(_fps_peak, (now - _fps_previous_usec) / 1000.0)
+	_fps_previous_usec = now
+	_fps_clock += _delta
+	if _fps_clock < 1.0: return
 	var fps := Engine.get_frames_per_second()
-	_fps_label.text = "%d FPS · %.1f ms" % [fps, 1000.0 / maxf(fps, 1.0)]
+	_fps_label.text = "%d FPS · pico %.1f ms" % [fps, _fps_peak]
+	_fps_clock = 0.0
+	_fps_peak = 0.0
 
 func root_view() -> Window: return get_tree().root
 

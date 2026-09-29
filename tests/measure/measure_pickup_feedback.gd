@@ -25,7 +25,7 @@ func run() -> void:
 	world.session.weather.weather_state = 0
 	world.session.weather._update()
 	var field = world.session.field_inventory
-	var source: Dictionary = field.sources[3]
+	var source: Dictionary = field.sources[0]
 	world.player.teleport(source.point+Vector3(0,.1,2))
 	world.production.region.set_focus(world.player.position)
 	world.camera.target_size = 14

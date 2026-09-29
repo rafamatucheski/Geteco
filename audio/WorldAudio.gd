@@ -150,6 +150,14 @@ func _make_bed(id: String, stream: AudioStream) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo() or not world.driving.occupied: return
 	var direction := 0
+	if event.is_action_pressed("radio_toggle"):
+		if get_tree().paused or not _radio_tunable(): return
+		if radio_index >= 0:
+			if is_instance_valid(radio_car): radio_car.set_meta("radio_last_station", radio_index)
+			_set_station(-1)
+		else: _set_station(clampi(int(radio_car.get_meta("radio_last_station",0)) if is_instance_valid(radio_car) else 0,0,STATIONS.size()-1))
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN]:
 		direction = 1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else -1
 	elif event.is_action_pressed("radio_next"):
@@ -172,7 +180,10 @@ func _radio_tunable() -> bool:
 func _cycle_radio(direction: int) -> void:
 	var slot := radio_index if radio_index >= 0 else STATIONS.size()
 	slot = posmod(slot+direction,STATIONS.size()+1)
-	radio_index = slot if slot < STATIONS.size() else -1
+	_set_station(slot if slot < STATIONS.size() else -1)
+
+func _set_station(index: int) -> void:
+	radio_index = index
 	# Cada carro guarda a própria estação, como `radio_index` em PlayerCar/TrafficVehicle na V1.
 	if is_instance_valid(radio_car):
 		radio_car.set_meta(&"radio_index",radio_index)

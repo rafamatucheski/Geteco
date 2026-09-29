@@ -18,6 +18,7 @@ var remapping := false
 var controller_layout := 0
 var _sprint_pad_down := false
 var touch_move := Vector2.ZERO
+var touch_sprint := false
 var touch_aim := Vector2.ZERO
 const AIM_STICK_DEADZONE := 0.20
 const AIM_TURN_SPEED_MIN := 3.0
@@ -31,7 +32,7 @@ const KEYS := {
 	"move_left": [KEY_A,KEY_LEFT], "move_right": [KEY_D,KEY_RIGHT],
 	"sprint": [KEY_SHIFT], "interact": [KEY_E], "vehicle_interact": [KEY_F], "exit_vehicle": [KEY_F,KEY_ENTER],
 	"handbrake": [KEY_SPACE], "horn": [KEY_H], "headlights": [KEY_L],
-	"radio_next": [KEY_R], "radio_previous": [], "reload": [KEY_R], "journal": [KEY_J], "trunk": [KEY_T],
+	"radio_next": [KEY_R], "radio_previous": [], "radio_toggle": [], "reload": [KEY_R], "journal": [KEY_J], "trunk": [KEY_T],
 	"weapon_next": [KEY_Q], "weapon_previous": [], "unarmed": [KEY_X],
 	"fire": [], "aim": [], "accelerate": [], "brake": [], "pause_game": [KEY_ESCAPE], "world_map": [KEY_M],
 	"siren_toggle": [],
@@ -62,7 +63,7 @@ const LABELS := {
 	"exit_vehicle": ["Sair do veículo","Exit vehicle"], "handbrake": ["Freio de mão","Handbrake"],
 	"horn": ["Buzina","Horn"], "headlights": ["Faróis","Headlights"],
 	"reload": ["Recarregar","Reload"], "radio_next": ["Próxima rádio","Next radio"],
-	"radio_previous": ["Rádio anterior","Previous radio"], "journal": ["Diário","Journal"],
+	"radio_previous": ["Rádio anterior","Previous radio"], "radio_toggle": ["Ligar/desligar rádio","Toggle radio"], "journal": ["Diário","Journal"],
 	"trunk": ["Porta-malas","Trunk"], "weapon_next": ["Próxima arma","Next weapon"],
 	"weapon_previous": ["Arma anterior","Previous weapon"], "unarmed": ["Mãos livres","Unarmed"],
 	"fire": ["Atacar / Disparar","Attack / Fire"], "aim": ["Mirar","Aim"],
@@ -414,6 +415,7 @@ func vehicle_input() -> Vector2:
 	return Vector2(Input.get_axis("move_left","move_right"),Input.get_action_strength("accelerate")-Input.get_action_strength("brake"))
 
 func sprinting() -> bool:
+	if not touch_move.is_zero_approx(): return touch_sprint
 	return sprint_toggled if using_gamepad else Input.is_action_pressed("sprint")
 
 func reset_sprint_toggle() -> void:

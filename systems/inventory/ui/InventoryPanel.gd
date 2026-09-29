@@ -42,7 +42,7 @@ func refresh() -> void:
 	screen_scroll=ScrollContainer.new(); screen_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; screen_scroll.follow_focus=true; card.add_child(screen_scroll)
 	var outer:=_column(screen_scroll,10); content_column=outer
 	var header:=_row(outer)
-	_label(header,"MOCHILA",18).size_flags_horizontal=SIZE_EXPAND_FILL
+	_label(header,"INVENTÁRIO",18).size_flags_horizontal=SIZE_EXPAND_FILL
 	_button(header,"Roupas",func(): wardrobe_visible=not wardrobe_visible; selected_outfit=""; refresh())
 	var trunk:=_button(header,"Monaliza",func(): trunk_visible=not trunk_visible; refresh())
 	trunk.name="ToggleTrunk"; trunk.tooltip_text="Armas e munição • acesso pelo porta-malas"; trunk.modulate=GOLD if trunk_visible else Color.WHITE
@@ -66,6 +66,7 @@ func refresh() -> void:
 	_board(pockets,"pockets",snapshot,44)
 	var kind:=str(snapshot.bag)
 	var bag_header:=_row(left)
+	bag_header.visible = not kind.is_empty()
 	_icon(bag_header,"case" if kind=="handbag" else "bag",32)
 	_label(bag_header,"Mala" if kind=="handbag" else "Mochila" if kind=="backpack" else "Sem mochila",17).size_flags_horizontal=SIZE_EXPAND_FILL
 	if not kind.is_empty():
@@ -77,8 +78,6 @@ func refresh() -> void:
 		drop_button.add_theme_font_size_override("font_size",15)
 		drop_button.add_theme_stylebox_override("normal",STYLE.button())
 		drop_button.tooltip_text="Deixa a bagagem e seu conteúdo no chão. Você pode pegá-la novamente."
-	else:
-		var empty:=_column(left,4); empty.custom_minimum_size.y=80; _icon(empty,"bag",52).modulate=STYLE.MUTED
 	if wardrobe_visible: _wardrobe(left)
 	if trunk_visible:
 		var right:=_column(body,8); right.custom_minimum_size.x=240

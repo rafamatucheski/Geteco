@@ -23,7 +23,7 @@ func configure(owner_session) -> void:
 	economy().enable_grid_inventory()
 	ui=preload("res://systems/inventory/ui/InventoryPanel.gd").new()
 	ui.adapter=self; session.world.hud.add_child(ui)
-	for row in [["harbor_fuel","water"],["harbor_fuel","sandwich"],["harbor_hospital","apple"],["harbor_clothing","backpack"],["harbor_ammunation","handbag"],["mountain_cabin","apple"],["ski_lodge","water"],["mountain_outfitters","backpack"]]:
+	for row in [["harbor_fuel","water"],["harbor_fuel","sandwich"],["harbor_hospital","apple"],["mountain_cabin","apple"],["ski_lodge","water"]]:
 		var definition:=PLACES.get_definition(row[0])
 		var offset:=Vector3(-1.3,0,.3) if row[1] in ["water","backpack","apple"] else Vector3(1.3,0,.3)
 		sources.append({"key":"supply_"+row[0]+"_"+row[1],"item":row[1],"region":definition.region,"place":"","point":definition.return_position+offset})

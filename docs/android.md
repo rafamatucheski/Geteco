@@ -1,10 +1,10 @@
 # Harbor no Android
 
-Alvo inicial: Galaxy Z Fold7. APK ARM64, pacote `com.geteco.harbor`, versão 0.3.0.
+Alvo inicial: Galaxy Z Fold7. APK ARM64, pacote `com.geteco.harbor`, versão 0.3.1.
 
 ## Instalar
 
-1. Copie `builds/android/harbor-0.3.0-debug.apk` para o celular.
+1. Copie `builds/android/harbor-0.3.1-debug.apk` para o celular e instale sobre a versão anterior.
 2. Abra o arquivo no aplicativo Meus Arquivos e permita a instalação por esse
    aplicativo quando o Android solicitar.
 3. Abra Harbor. Jogue em paisagem; a interface se adapta ao tamanho disponível.
@@ -15,11 +15,12 @@ desinstalar. Não é uma publicação na Play Store.
 
 ## Controles
 
-- Analógico esquerdo: andar ou virar o veículo. Segure Correr para correr.
+- Analógico esquerdo: andar no curso interno, correr ao puxar até a borda; dirigindo, vira o veículo.
 - Analógico direito: mirar. Atacar dispara ou executa o ataque equipado.
 - Ação: interagir; Entrar/Sair: veículo. Recarregar e Arma fazem as ações indicadas.
 - Dirigindo: Acelerar, Frear/Ré e Freio mão, com direção simultânea.
-- Pausa, Mapa e Mochila ficam no alto. `•••` abre comandos secundários, incluindo
+- Dirigindo, Rádio ‹/› muda a estação; Liga/desliga desliga diretamente e retoma a última estação.
+- Pausa, Mapa e Inventário ficam no alto. `•••` abre comandos secundários, incluindo
   câmera, bagagem, diário, lanterna, rendição e os acessórios dos veículos.
 - Inventário: toque no item e nos botões de ação ou arraste para mover.
 - Mapa: arraste para mover, use `+`/`−` para zoom e toque para selecionar.
@@ -28,6 +29,23 @@ desinstalar. Não é uma publicação na Play Store.
   jogabilidade quando ela está ativa. Redimensionar a tela também libera toques.
 
 A garagem preserva suas restrições: não há ataque ou troca de arma disponível.
+
+Novo jogo começa com dois bolsos. A primeira mochila é recolhida ao abrir fisicamente
+o porta-malas da Monaliza conquistada no Primeiro Giro, uma vez por save. Bolsas já
+possuídas e malas de recuperação de saves antigos preservam seus itens.
+
+## Travadas no aparelho
+
+O contador opcional mostra o maior intervalo real entre quadros a cada segundo,
+além do FPS médio. O Android registra até 128 pausas acima de 50 ms em memória,
+com posição, CPU e física. Ao pausar/abrir menu ou colocar o app em segundo plano,
+grava `user://frame-stalls.json`; não escreve no disco durante a jogabilidade.
+O registro não mede separadamente GPU/driver e não certifica a causa da pausa.
+Em APK debug, com depuração USB autorizada, o arquivo pode ser lido com:
+
+```powershell
+adb shell run-as com.geteco.harbor cat files/frame-stalls.json
+```
 
 ## Build reproduzível
 

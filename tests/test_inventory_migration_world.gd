@@ -20,7 +20,7 @@ func run() -> void:
 	check(e.restore_snapshot(legacy.snapshot()),"legacy non-spatial supplies restore")
 	e.enable_grid_inventory()
 	check(e.grid_snapshot().trunk.is_empty() and GRID.count(e.grid_snapshot(),"first_aid",false)==25,"migration preserves all supplies outside Monaliza")
-	var source: Dictionary=field.sources[3]
+	var source: Dictionary=field.sources[0]
 	world.player.teleport(source.point+Vector3(0,.1,2)); world.production.region.set_focus(world.player.position)
 	for i in 120: await physics_frame
 	field._refresh_world()

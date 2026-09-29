@@ -21,7 +21,7 @@ if (-not (Test-Path -LiteralPath $template)) {
 }
 Write-Host "Template: $template"
 if ($CheckOnly) { return }
-$output = Join-Path $root 'builds\android\harbor-0.3.0-debug.apk'
+$output = Join-Path $root 'builds\android\harbor-0.3.1-debug.apk'
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $output) | Out-Null
 & $GodotPath --headless --path $root --export-debug 'Harbor Android' $output
 if ($LASTEXITCODE -ne 0) { throw "Exportação falhou ($LASTEXITCODE). Consulte os erros do Godot acima." }

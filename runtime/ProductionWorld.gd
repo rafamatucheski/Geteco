@@ -43,6 +43,7 @@ var loaded_save := false
 var ready_for_play := false
 var travel_busy := false
 var population_clock := 0.0
+var _population_jobs: Array[String] = []
 var requested_population := MAX_POPULATION
 var session
 var urban_transit: Node3D
@@ -658,6 +659,8 @@ func _process(delta: float) -> void:
 		var focus := _physical_focus()
 		_update_physical_residency(focus)
 		_update_logical_region(focus)
+	if state.place_id.is_empty(): _service_population_job()
+	else: _population_jobs.clear()
 	population_clock += delta
 	if population_clock < .25 or not state.place_id.is_empty(): return
 	population_clock = 0
@@ -671,9 +674,11 @@ func _process(delta: float) -> void:
 		elif actor.position.distance_to(world.player.position) > POPULATION_DESPAWN and not _on_screen(actor.global_position,1.0):
 			world.people.remove_at(index)
 			actor.queue_free()
-	if world.people.size() < requested_population: _spawn_citizen()
+	# Replenishment and equipment creation used to accumulate in this same
+	# quarter-second tick. Each may instantiate meshes/materials; admit one job
+	# per later frame, preserving population targets and all vehicle equipment.
+	if _population_jobs.is_empty(): _population_jobs.assign(["citizen","traffic","equipment","equipment"])
 	footbridge_crossers.update(world, world.player.position, state.region_id)
-	if _ambient_traffic_count() < TRAFFIC_TARGET and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
 	for index in range(vehicles.size()-1,-1,-1):
 		var car = vehicles[index]
 		if not is_instance_valid(car): vehicles.remove_at(index)
@@ -708,17 +713,24 @@ func _process(delta: float) -> void:
 			# an explicit removal without keeping a distant physical body alive.
 			car.set_meta("distance_despawn", true)
 			car.queue_free()
-	# Trânsito e motoristas NPC ganham faróis e lanternas, que acendem sozinhos à
-	# noite (V1 `set_headlights`). Dois por ciclo, para o custo de montar as
-	# lentes não cair inteiro num quadro só.
-	var equipped := 0
-	for car in vehicles:
-		if equipped >= 2: break
-		if not is_instance_valid(car) or is_instance_valid(car.equipment): continue
-		if car.traffic or (car.controlled and car.external_input):
-			car.ensure_equipment(world)
-			equipped += 1
 	world.population = world.people.size()
+
+func _service_population_job() -> void:
+	if _population_jobs.is_empty(): return
+	var job: String = _population_jobs.pop_front()
+	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	match job:
+		"citizen":
+			if world.people.size() < requested_population: _spawn_citizen()
+		"traffic":
+			if _ambient_traffic_count() < TRAFFIC_TARGET and not "--no-traffic" in OS.get_cmdline_user_args(): _spawn_vehicle()
+		"equipment":
+			for car in vehicles:
+				if not is_instance_valid(car) or car.is_queued_for_deletion() or is_instance_valid(car.equipment): continue
+				if car.traffic or (car.controlled and car.external_input):
+					car.ensure_equipment(world)
+					break
+	_trace_cost("population_job:"+job,began)
 
 func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) -> bool:
 	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state

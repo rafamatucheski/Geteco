@@ -3,6 +3,7 @@ extends Node
 ## No second vehicle snapshot: GarageRewards persists identity, location and damage.
 const ID := "personal_monaliza"
 const FEES := 50
+const BACKPACK_CLAIM := "monaliza_backpack"
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const TRUNK_VIEW := preload("res://runtime/TrunkView.gd")
 var session
@@ -55,15 +56,27 @@ func perform(target: String) -> bool:
 	if nearest_action().get("target","")!=target: return false
 	_menu_health = session.world.gameplay.health
 	if target=="trunk":
+		var found_backpack := discover_backpack()
 		if session.state.economy.claim_monaliza_starter():
 			# Go through GameState: the garage still refuses drawing any weapon.
 			if session.state.equipped_weapon=="fists": session.state.equip_weapon("pistol")
 			session.save_game()
+		elif found_backpack: session.save_game()
+		if found_backpack: session.show_message("Mochila recolhida na Monaliza.")
 		if session.state.economy.personal_loadout().is_empty():
 			session.show_message("Libere espaço na reserva da pistola para recolher a maleta.")
 			return true
 		_open_trunk()
 	else: _open_service()
+	return true
+
+func discover_backpack() -> bool:
+	if not _available() or not _near_trunk() or session.world.driving.occupied or session.world.gameplay.health <= 0 or session.is_transition_blocked(): return false
+	var economy = session.state.economy
+	if not economy.grid_enabled() or BACKPACK_CLAIM in economy._data.grid_inventory.claimed: return false
+	# Existing saves keep their bag and contents; discovery waits for free hands.
+	if not economy.grid_equip_bag("backpack"): return false
+	economy.grid_claim(BACKPACK_CLAIM)
 	return true
 
 func _open_trunk() -> void:
