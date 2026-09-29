@@ -30,6 +30,7 @@ static func create(id: String) -> Node3D:
 	preload("res://runtime/VehicleFinish.gd").decorate(id, model)
 	preload("res://runtime/VehicleTwoTone.gd").decorate(id, model)
 	if id == "taxi_yellow": preload("res://runtime/TaxiLivery.gd").decorate(model)
+	if id == "aurora_executive": preload("res://runtime/AuroraExecutiveDetail.gd").decorate(model)
 	return model
 static func default_paint(id: String, fallback := Color.WHITE) -> Color:
 	if id in preload("res://runtime/VehicleTwoTone.gd").MODELS:

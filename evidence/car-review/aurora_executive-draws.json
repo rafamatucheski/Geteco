@@ -1,0 +1,15 @@
+{
+	"copies": 20,
+	"fabrica": {
+		"draw_calls": 2817.0,
+		"meshes_por_carro": 110,
+		"primitives": 1227330.0
+	},
+	"id": "aurora_executive",
+	"jogo": {
+		"draw_calls": 1401.0,
+		"meshes_por_carro": 55,
+		"primitives": 1231710.0
+	},
+	"resolution": "(1920, 1080)"
+}
