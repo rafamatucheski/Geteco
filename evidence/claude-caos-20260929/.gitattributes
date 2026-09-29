@@ -1,0 +1,2 @@
+# Patches precisam ficar em LF: git apply compara com o conteúdo normalizado do índice.
+*.patch -text

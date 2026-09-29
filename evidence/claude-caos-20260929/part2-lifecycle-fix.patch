@@ -1,0 +1,58 @@
+diff --git a/gameplay/dispatch/DispatchUnit.gd b/gameplay/dispatch/DispatchUnit.gd
+index 1fc421e..c04b227 100644
+--- a/gameplay/dispatch/DispatchUnit.gd
++++ b/gameplay/dispatch/DispatchUnit.gd
+@@ -56,6 +56,8 @@ var incident_id := 0
+ var actor: Node3D
+ var crew: CharacterBody3D
+ var retasked := false
++## A perda da fonte da ocorrência já foi tratada (ver `_service_working`).
++var _actor_loss_handled := false
+ var _exit_wait := 0.0
+ var _check_clock := 0.0
+ 
+@@ -717,9 +719,16 @@ func _service_working(delta: float) -> void:
+ 	# Se a entidade fonte saiu da árvore, não deixe a unidade depender do próximo
+ 	# scan do EmergencyManager ou de uma referência já liberada no Responder.
+ 	if not is_instance_valid(actor) or actor.is_queued_for_deletion():
+-		controller.emit_dispatch_event("incident_invalid", {"unit": self, "reason": "actor_removed"})
+-		_begin_departure()
+-		return
++		# Uma vez só. Com a equipe ainda a pé `_begin_departure` mantém o estado "working"
++		# (ela volta andando): repetido a cada quadro físico, reemitia o evento (centenas por
++		# atendimento, esvaziando o registro de 64), zerava `crew.age` sem parar e escondia
++		# equipe morta ou presa, que nunca chegava aos testes abaixo. Depois da primeira
++		# detecção valem só o teste de equipe e o prazo total do atendimento.
++		if not _actor_loss_handled:
++			_actor_loss_handled = true
++			controller.emit_dispatch_event("incident_invalid", {"unit": self, "reason": "actor_removed"})
++			_begin_departure()
++			return
+ 	if not is_instance_valid(crew) or crew.dead:
+ 		controller.emit_dispatch_event("crew_lost", {"unit": self})
+ 		# Solta a ocorrência enquanto `crew` ainda identifica o dono do registro.
+diff --git a/tests/dispatch/test_dispatch_emergency.gd b/tests/dispatch/test_dispatch_emergency.gd
+index a301f72..851aa5f 100644
+--- a/tests/dispatch/test_dispatch_emergency.gd
++++ b/tests/dispatch/test_dispatch_emergency.gd
+@@ -98,6 +98,10 @@ func _service(role: String) -> void:
+ 	var crew_position := Vector3.ZERO
+ 	var incident_closed := false
+ 	var boarded := false
++	# Contador em Dictionary: a lambda captura variáveis locais por valor.
++	var notices := {"incident_invalid": 0}
++	controller.dispatch_event.connect(func(event_name: String, data: Dictionary):
++		if event_name == "incident_invalid" and data.get("unit") == unit: notices.incident_invalid += 1)
+ 	for tick in 7200:
+ 		await physics_frame
+ 		if is_instance_valid(unit.vehicle):
+@@ -129,6 +133,9 @@ func _service(role: String) -> void:
+ 	if role == "mortician": check(not is_instance_valid(actor) or actor.is_queued_for_deletion(), "corpo removido pelo legista")
+ 	if role == "fire": check(not is_instance_valid(actor) or actor.is_queued_for_deletion() or actor.intensity <= 0.0, "fogo extinto")
+ 	check(boarded, "equipe embarcou de volta na viatura")
++	# Fogo extinto e corpo removido tiram a fonte da ocorrência com a equipe ainda a pé; o
++	# aviso era repetido a cada quadro físico durante todo o retorno.
++	check(notices.incident_invalid <= 1, "fonte da ocorrência perdida é notificada uma vez, não a cada quadro (%s: %d)" % [role, notices.incident_invalid])
+ 	check(unit.finished and unit.end_reason == "left", "viatura partiu dirigindo (%s)" % unit.end_reason)
+ 	check(controller.units.is_empty(), "controlador liberou a unidade")
+ 	check(not is_instance_valid(unit.crew), "nenhum socorrista fica na cena")

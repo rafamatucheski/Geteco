@@ -1,0 +1,27 @@
+{
+  "revision": "622ea480c6169bfe08299005b095f36119e0e72a",
+  "nota": "Hashes SHA-256 dos bytes em disco em 2026-09-29 (arquivos mistos CRLF/LF; o indice do Git guarda LF). Nenhum arquivo base tem alteração local não commitada (git status limpo para eles). Os patches são LF e aplicam com `git apply` (core.autocrlf=true) sobre estes bytes; conferir os hashes antes.",
+  "arquivos_base_limpos_no_git": true,
+  "base": {
+    "gameplay/dispatch/DispatchController.gd": "fa093377d943a84b961a9deb1ba03b6c0f6388301e2cae7d65c5de3dada4f523",
+    "gameplay/dispatch/DispatchUnit.gd": "f5745084bcf91cc08636e8fedc963af2223aad5272e2e3e0ebf62fe17953c337",
+    "gameplay/dispatch/DispatchDriver.gd": "406155ddac271bef3511e5b4462e153d7ff347ca28f993289ba417d294af97b7",
+    "gameplay/police_response/ground/PoliceRoadblocks.gd": "25d014b68f772ed3ab9365a5ad18700e2cac7f17d2ba40ce0abb7b45ebeb13a8",
+    "gameplay/police_response/air_k9/PoliceAirK9Director.gd": "36801325327fdcf51d196fc08b7a9025748f939483fd376f32da6fa633fcf648",
+    "tests/dispatch/test_dispatch_emergency.gd": "11c57807cc050cd46c72e47ec24d2a69ddec14bff11271ea0d7b8dde8e5b1503"
+  },
+  "arquivos_novos_nao_existem_na_base": [
+    "gameplay/dispatch/DispatchTrace.gd",
+    "tests/dispatch/measure_chaos_attribution.gd"
+  ],
+  "patches": {
+    "changes.patch": "9532a24369fc1ac77a1cdbfbdd982a42d44747c422c467a5d6154fc649c55fdf",
+    "part1-instrumentation.patch": "868b1e0f1f2599ba69f5060650f5df85ae34c71d2f95f749c82c3901c31df093",
+    "part2-lifecycle-fix.patch": "33e1b7db3d42143fa5e4cb75ea9cd75941215230c99ab68831fc46e3607bb86f"
+  },
+  "cobertura_dos_patches": {
+    "changes.patch": "part1 + part2 juntos (aplicar SÓ este, ou as duas partes em ordem)",
+    "part1-instrumentation.patch": "DispatchTrace.gd (novo), ganchos em DispatchController/Unit/Driver, PoliceRoadblocks, PoliceAirK9Director, measure_chaos_attribution.gd (novo)",
+    "part2-lifecycle-fix.patch": "DispatchUnit._service_working (evento por quadro) + verificação em test_dispatch_emergency.gd; independente da parte 1"
+  }
+}
