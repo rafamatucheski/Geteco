@@ -11,6 +11,12 @@ var _materials := {}
 var wetness := 0.0
 var _soil_materials: Array[ShaderMaterial] = []
 var _terrain_heights := PackedFloat32Array()
+## Shoulder outer-edge heights per side, cached from the mesh build so props can
+## be supported on the exact sloped surface without repeating route searches.
+var _outer_heights := {}
+var stake_tops: Array[PackedVector3Array] = []
+var start_gate: Node3D
+var trackside: Node3D
 static var _soil_texture: NoiseTexture2D
 
 func _init() -> void:
@@ -79,9 +85,19 @@ func _ready() -> void:
 	scenery.course = self
 	add_child(scenery)
 	add_child(load("res://activities/motocross/MotocrossPaddock.gd").new())
+	start_gate = preload("res://activities/motocross/MotocrossStartGate.gd").new()
+	start_gate.course = self
+	add_child(start_gate)
+	trackside = preload("res://activities/motocross/MotocrossTrackside.gd").new()
+	trackside.course = self
+	add_child(trackside)
 	var grass := preload("res://activities/motocross/MotocrossGroundDetail.gd").new()
 	grass.course = self
 	add_child(grass)
+
+## Race-control board text; the controller writes it at a few hertz.
+func set_board(title: String, detail: String) -> void:
+	if is_instance_valid(trackside): trackside.set_board(title,detail)
 
 func set_wetness(value: float) -> void:
 	wetness = clampf(value,0,1)
@@ -205,14 +221,56 @@ func _build_ribbon() -> void:
 				st.add_vertex(corners[corner])
 	_mesh(st,"DirtTrack",true)
 
-func _bank(index: int, lateral: float) -> float:
+## Height of the rendered/collision clay at a lateral offset from the route,
+## following the six-band banked cross-section rather than the flat centerline.
+func ribbon_height(distance: float, lateral: float) -> float:
 	var n := points.size()-1
-	index = index%n
+	var index := fposmod(distance,length)/length*n
+	var i := mini(floori(index),n-1)
+	var t := clampf(lateral/HALF_WIDTH,-1.0,1.0)
+	var band := clampi(floori((t+1.0)*3.0),0,5)
+	var left := float(band)/3.0-1.0
+	var u := (t-left)*3.0
+	var near := points[i].y+lerpf(_bank(i,left),_bank(i,left+1.0/3.0),u)
+	var far := points[i+1].y+lerpf(_bank(i+1,left),_bank(i+1,left+1.0/3.0),u)
+	return lerpf(near,far,index-float(i))
+
+## Visible ground at any lateral offset: clay, sculpted shoulder or quarry hill.
+func ground_height(distance: float, lateral: float) -> float:
+	var reach := absf(lateral)
+	if reach <= HALF_WIDTH: return ribbon_height(distance,lateral)
+	var n := points.size()-1
+	var index := fposmod(distance,length)/length*n
+	var i := mini(floori(index),n-1)
+	var direction := signf(lateral)
+	var heights: Array[float] = []
+	for k in [i,i+1]:
+		var wrapped: int = k%n
+		var side := (points[(wrapped+1)%n]-points[posmod(wrapped-1,n)]).cross(Vector3.UP).normalized()
+		var at: Vector3 = points[k]+side*lateral
+		if reach >= HALF_WIDTH+3.0:
+			heights.append(surface_height(Vector2(at.x,at.z)))
+			continue
+		var outer_y: float
+		if _outer_heights.has(direction): outer_y = _outer_heights[direction][k]
+		else:
+			var outer: Vector3 = points[k]+side*(HALF_WIDTH+3.0)*direction
+			outer_y = _height(Vector2(outer.x,outer.z))
+		heights.append(lerpf(points[k].y+_bank(k,direction),outer_y,(reach-HALF_WIDTH)/3.0))
+	return lerpf(heights[0],heights[1],index-float(i))
+
+## Signed heading change over ±4.5 m; positive turns left (outside is +x of pose).
+func turn_at(index: int) -> float:
+	var n := points.size()-1
+	index = posmod(index,n)
 	var incoming := points[index]-points[posmod(index-3,n)]
 	var outgoing := points[(index+3)%n]-points[index]
 	incoming.y = 0
 	outgoing.y = 0
-	var curvature := incoming.signed_angle_to(outgoing,Vector3.UP)
+	return incoming.signed_angle_to(outgoing,Vector3.UP)
+
+func _bank(index: int, lateral: float) -> float:
+	var curvature := turn_at(index)
 	var outer := maxf(0,signf(curvature)*lateral)
 	return pow(outer,2.2)*clampf(absf(curvature)*4,0,1.6)
 
@@ -223,6 +281,8 @@ func _build_shoulders() -> void:
 	surface.set_color(Color(0,0,0))
 	var sections: Array = []
 	var n := points.size()-1
+	var outer_left := PackedFloat32Array()
+	var outer_right := PackedFloat32Array()
 	for i in points.size():
 		var index := i%n
 		var side := (points[(index+1)%n]-points[posmod(index-1,n)]).cross(Vector3.UP).normalized()
@@ -231,9 +291,12 @@ func _build_shoulders() -> void:
 			var inner: Vector3 = points[i]+side*HALF_WIDTH*direction+Vector3.UP*_bank(i,direction)
 			var outer: Vector3 = points[i]+side*(HALF_WIDTH+3.0)*direction
 			outer.y = _height(Vector2(outer.x,outer.z))
+			if direction < 0: outer_left.append(outer.y)
+			else: outer_right.append(outer.y)
 			section.append(inner)
 			section.append(outer)
 		sections.append(section)
+	_outer_heights = {-1.0:outer_left,1.0:outer_right}
 	for i in range(n):
 		for side in [0,2]:
 			var a: Vector3 = sections[i][side]
@@ -278,14 +341,65 @@ func _box(title: String, p: Vector3, size: Vector3, color: Color, solid := false
 		visual.add_child(body)
 	return visual
 
+func _stake_point(index: int, direction: float) -> Vector3:
+	var n := points.size()-1
+	var wrapped := index%n
+	var side := (points[(wrapped+1)%n]-points[posmod(wrapped-1,n)]).cross(Vector3.UP).normalized()
+	var at: Vector3 = points[wrapped]+side*(HALF_WIDTH+.45)*direction
+	var distance := float(wrapped)/float(n)*length
+	# Lowest point across the (world-aligned, so up to 11 cm diagonal) footprint
+	# on the sloped shoulder: no stake hangs over a falling hillside or perches
+	# on the berm crest. The post itself is sunk another 5 cm below this.
+	at.y = INF
+	for along in [-.12,.12]:
+		for reach in [.33,.57]: at.y = minf(at.y,ground_height(distance+along,(HALF_WIDTH+reach)*direction))
+	return at
+
 func _build_props() -> void:
-	for i in range(0,points.size()-1,7):
-		var p := points[i]
-		var side := (points[i+1]-p).cross(Vector3.UP).normalized()
-		for sign_value in [-1,1]:
-			var edge: Vector3 = p+side*(HALF_WIDTH+.45)*sign_value
-			edge.y += _bank(i,float(sign_value))
-			_box("CourseStake",edge+Vector3.UP*.45,Vector3(.16,.9,.16),Color("e7e1c6"),true)
+	# Stakes carry the course tape. Straight tape between them must not cut the
+	# riding width on corners, so spacing tightens where the edge bends.
+	var n := points.size()-1
+	var stakes := MultiMesh.new()
+	stakes.transform_format = MultiMesh.TRANSFORM_3D
+	var stake_mesh := BoxMesh.new()
+	stake_mesh.size = Vector3(.16,.9,.16)
+	stakes.mesh = stake_mesh
+	var stake_transforms: Array[Transform3D] = []
+	var stake_body := StaticBody3D.new()
+	stake_body.name = "CourseStakes"
+	stake_body.collision_layer = 1
+	stake_body.collision_mask = 0
+	var stake_shape := BoxShape3D.new()
+	stake_shape.size = stake_mesh.size
+	for direction in [-1.0,1.0]:
+		var edges := PackedVector3Array()
+		for index in n+1: edges.append(_stake_point(index,direction))
+		var row := PackedVector3Array([edges[0]])
+		var last := 0
+		for index in range(1,n):
+			var arc := float(index+1-last)*length/float(n)
+			var bends := false
+			for between in range(last+1,index+1):
+				var chord := Geometry3D.get_closest_point_to_segment(edges[between],edges[last],edges[index+1])
+				if Vector2(edges[between].x-chord.x,edges[between].z-chord.z).length() > .22: bends = true; break
+			if arc > 10.5 or bends or index+1 >= n:
+				row.append(edges[index])
+				last = index
+		stake_tops.append(row)
+		for base in row:
+			stake_transforms.append(Transform3D(Basis.IDENTITY,base+Vector3.UP*.4))
+			var shape := CollisionShape3D.new()
+			shape.shape = stake_shape
+			shape.position = base+Vector3.UP*.4
+			stake_body.add_child(shape)
+	stakes.instance_count = stake_transforms.size()
+	for i in stake_transforms.size(): stakes.set_instance_transform(i,stake_transforms[i])
+	var stake_visual := MultiMeshInstance3D.new()
+	stake_visual.name = "CourseStake"
+	stake_visual.multimesh = stakes
+	stake_visual.material_override = _material(Color("e7e1c6"))
+	add_child(stake_visual)
+	add_child(stake_body)
 	var start_pose := pose(0)
 	start_pose.origin = sample(0)
 	var gate := Node3D.new()
@@ -329,6 +443,10 @@ func _dress_quarry() -> void:
 		var point := BOUNDS.position+Vector2(rng.randf(),rng.randf())*BOUNDS.size
 		if float(nearest(Vector3(point.x,0,point.y)).lateral) < HALF_WIDTH+4: continue
 		if point.distance_to(Vector2(ENTRY.x,ENTRY.z)) < 10: continue
+		if point.distance_to(preload("res://activities/motocross/MotocrossTrackside.gd").BLEACHER_CENTER) < 7.5:
+			# Same two draws as a placed rock: every other rock keeps its spot.
+			rng.randf_range(.65,2.1); rng.randf()
+			continue
 		var radius := rng.randf_range(.65,2.1)
 		var p := Vector3(point.x,_height(point)+radius*.3,point.y)
 		transforms.append(Transform3D(Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3(radius,radius*.65,radius*.8)),p))

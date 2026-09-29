@@ -5,7 +5,18 @@ const LEVELS := [
 	{"name":"Intermediário","fee":200,"bonus":80,"laps":2,"rivals":4,"speed":12.5,"width":8.0},
 	{"name":"Avançado","fee":350,"bonus":140,"laps":3,"rivals":5,"speed":14.0,"width":7.0},
 	{"name":"Expert","fee":500,"bonus":200,"laps":3,"rivals":5,"speed":15.5,"width":6.5}]
-var data := {"version":1,"serial":0,"active":-1,"unlocked":0,"wins":[0,0,0,0],"owned":false,"rental_serial":0,"bike_model":0}
+## A 402 m lap at the fastest model's 18 m/s is ~22 s; anything under this is
+## a timing fault or an edited save, never a real record.
+const MIN_LAP := 15.0
+var data := {"version":1,"serial":0,"active":-1,"unlocked":0,"wins":[0,0,0,0],"owned":false,"rental_serial":0,"bike_model":0,"best_lap":0.0}
+
+## Race and practice laps share one track record. Returns true for a new best.
+func record_lap(seconds: float) -> bool:
+	if not is_finite(seconds) or seconds < MIN_LAP or seconds > 3600.0: return false
+	var best := float(data.get("best_lap",0.0))
+	if best > 0.0 and seconds >= best: return false
+	data.best_lap = seconds
+	return true
 
 func rent(wallet) -> bool:
 	if data.active != -1: return false
@@ -41,9 +52,12 @@ func restore_snapshot(value: Dictionary) -> bool:
 	data = value.duplicate(true)
 	if not data.has("rental_serial"): data.rental_serial = 0
 	if not data.has("bike_model"): data.bike_model = 0
+	if not data.has("best_lap"): data.best_lap = 0.0
 	return true
 
 static func validate_snapshot(value: Dictionary) -> bool:
+	var best_lap: Variant = value.get("best_lap",0.0)
+	if typeof(best_lap) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(best_lap)) or (float(best_lap) != 0.0 and (float(best_lap) < MIN_LAP or float(best_lap) > 3600.0)): return false
 	var model: Variant = value.get("bike_model",0)
 	if typeof(model) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(model)) or model < 0 or model > 2 or float(model) != floor(float(model)): return false
 	var rental: Variant = value.get("rental_serial",0)

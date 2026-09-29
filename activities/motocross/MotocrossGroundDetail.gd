@@ -2,7 +2,8 @@ extends Node3D
 ## Bounded, spatially culled grass. Same blade geometry/material as Harbor.
 const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
 const AREA := Rect2(-247,-147,160,125)
-const CLEAR := [Rect2(-238,-39,13,9),Rect2(-237,-31,7,6),Rect2(-217,-38,6,13),Rect2(-229,-40,9,18)]
+# Paddock furniture, the mechanic's tent and the bleacher's worn footprint.
+const CLEAR := [Rect2(-238,-39,13,9),Rect2(-237,-31,7,6),Rect2(-217,-38,6,13),Rect2(-229,-40,9,18),Rect2(-222.5,-33,6,5.5),Rect2(-211,-68.5,10,6.5)]
 var course: Node3D
 var tuft_count := 0
 static var _ground: ShaderMaterial

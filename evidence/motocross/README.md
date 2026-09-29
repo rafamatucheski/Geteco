@@ -1,5 +1,41 @@
 # Validação de motocross — 28/09/2026
 
+## Dia de corrida — 29/09/2026
+
+Mudanças: grade de largada com giro (holeshot/empinada/largada lenta), nota de pouso com dica de inclinação no HUD, cronometragem por ponto de controle, diferença para o rival à frente, anúncios, etiquetas dos rivais, cartão de classificação não modal, recorde da pista salvo (`best_lap`) e treino cronometrado. No local: estacas refeitas e fita, fardos nos escapes das curvas fechadas, arquibancada com cinco torcedores e placar da direção de prova, faixas na reta, tenda de mecânico no pátio. Descrição de jogo em `docs/motocross.md`.
+
+Revisão de terrenos pela skill `docs/skills/validar-terrenos-pisos` (as skills `performance-do-jogo` e `testes-com-criterio` citadas por ela não existem neste checkout; foram aplicados os critérios do CLAUDE.md). Todo apoio foi medido com raios contra a colisão real do circuito montado (`tests/test_motocross_raceday.gd`, 28/28).
+
+| Trecho | Visual | Física | Temporal | Performance |
+|---|---|---|---|---|
+| Estacas e fita (pista toda) | aprovado (`raceday-after-grid`, `-straight`, `-hairpin-*`, `-berm-stakes-close`) | aprovado: 109 estacas, nenhum canto com mais de 2,5 mm de folga; enterramento máximo 35 cm no pé voltado para a face íngreme da berma do grampo oeste; fita nunca a menos de 0,23 m além da largura de pilotagem | não executado | ver abaixo |
+| Fardos (4 curvas, 31 fardos) | aprovado (`-hairpin-west`, `-hairpin-east`, `-grid`) | aprovado: sem folga sob nenhum canto, assento máximo 5 cm; 16 pontos descartados por declive >28 cm e 5 por reserva | não executado | ver abaixo |
+| Arquibancada, placar, torcida | aprovado após correção (`-straight`, `-bleacher-close`) | aprovado: pés dos 5 torcedores a <2,5 cm do degrau, corpos sem interseção, passarela com colisão no topo visível, nenhum tronco/pedra no volume | não executado | ver abaixo |
+| Grade de largada | aprovado (`-gate-close`, `-countdown-hud`) | barras abaixadas a no máximo 1,4 cm da argila inclinada; sem colisão por projeto (as motos ficam presas pelo controle) | animação de subida/queda conferida no teste; sem vídeo | ver abaixo |
+| Tenda do mecânico | aprovado (`-paddock`, `-results`) | aprovado: pés sobre o piso do pátio a 13 cm; corredor físico do pátio 24/24 | não executado | ver abaixo |
+
+**Defeitos encontrados e corrigidos.** (1) As estacas antigas ficavam na altura da crista da berma, não no talude onde estavam: **109 de 109 flutuavam mais de 2 cm, a pior 57 cm**. Agora ficam no ponto mais baixo da base, afundadas 5 cm, e são adensadas nas curvas para a fita reta não cortar a pista. (2) Primeira posição da arquibancada tinha um tronco dentro dela; (3) o placar ficava escondido sob outra copa; (4) uma pedra da pedreira atravessava a nova arquibancada; (5) a arquibancada virada para o norte mostrava só as costas à câmera de jogo. A arquibancada foi para o lado interno da reta, virada para o sul, a 4,3 m do tronco mais próximo; o placar fica atrás da última fileira; a pedra é pulada com os mesmos sorteios, então nenhuma outra pedra muda de lugar. Os testes cobrem os defeitos 1 a 4.
+
+Capturas `raceday-after-*.png` (1920×1080, dia seco, Main, `--no-save`) são revisão visual, **não benchmark**: o contador do canto inclui a gravação dos PNG. Não há captura "antes" nova: o modo automático bloqueou restaurar temporariamente os arquivos do HEAD. Como referência anterior valem `finish-confirm-paddock-*.png` (mesmo código de motocross do HEAD). Chuva, noite e vídeo não foram capturados.
+
+**Desempenho** (Main, Godot 4.7.2, Vulkan Mobile, RTX 4060 Laptop, 1920×1080, VSync 0, limite 144 FPS; 5 s de aquecimento e 30 s medidos). A/B no mesmo build: `--without-raceday` remove em runtime arquibancada/torcida, fita, fardos, faixas, placar e grade (a tenda e as estacas em MultiMesh ficam). Não foi possível confirmar que nenhuma outra sessão rodava Godot durante as medições; por isso as rodadas foram intercaladas.
+
+| JSON | Cenário | p50 ms | p95 ms | p99 ms | Máx. ms | >33,3 ms | Draw calls |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `raceday-static-on1` | câmera parada na reta, com | 6,970 | 10,617 | 10,981 | 14,7 | 0 | 418 |
+| `raceday-static-off1` | idem, sem | 6,991 | 10,639 | 11,099 | 14,1 | 0 | 330 |
+| `raceday-static-on2` | com | 6,991 | 10,445 | 10,927 | 41,6 | 3 | 418 |
+| `raceday-static-off2` | sem | 6,972 | 11,210 | 14,639 | 24,1 | 0 | 330 |
+| `raceday-race-on1` | Expert, 6 motos, com (antes de congelar a pose da torcida) | 6,822 | 11,465 | 12,816 | 33,0 | 0 | 397 |
+| `raceday-race-off1` | idem, sem | 6,975 | 11,044 | 11,631 | 31,9 | 0 | 310 |
+| `raceday-race-on2` | Expert, com (pose congelada) | 6,972 | 11,070 | 11,704 | 30,0 | 0 | 397 |
+| `raceday-race-off2` | Expert, sem | 6,961 | 11,233 | 12,256 | 64,4 | 1 | 310 |
+| `raceday-race-on3` / `off3` | **contaminadas**: 31 e 16 quadros >33 ms, máx. 98,9 e 234,8 ms, p50 caiu para 6,1 ms nos dois lados | — | — | — | — | — | — |
+
+Leitura: parado, sem diferença mensurável (a variação entre rodadas iguais supera a diferença com/sem). O primeiro par de corrida teve +3,8% no p95 e +10,2% no p99; a CPU de processo indicava a IK dos torcedores rodando a cada 1–2 quadros. Depois de congelar a pose assentada (reativa com tiro ou impacto), o par limpo seguinte ficou igual ou melhor que o lado sem a decoração. **Isso é uma amostra limpa, não certificação**: sem ambiente isolado, desempenho fica "sem regressão observada, não certificado". Custo fixo conhecido: +87 a +88 draw calls quando a arquibancada está em quadro (malhas dos cinco CivilianModel), relevante para o Android e ainda não medido lá.
+
+Testes (29/09): `test_motocross_raceday` 28/28; `test_motocross_session` 44/44 (Main, `--no-save`; inclui grade subindo e caindo, holeshot, cartão de resultado, recorde e volta de treino); `test_motocross_combat` 10/10 (15 espectadores, torcida ligada ao combate); `start` 8/8; `ambient` 13/13; `progress` 27; `bike` 20/20; `pilot` 12/12; `contact` 5/5; `launch` 4/4; `models` 10/10; `art` 14/14; `spectators` 15/15; `scenery` 24/24. Verificação do CLAUDE.md: `test_regions`, `test_bridge_approach_terrain`, `test_native_driving --no-save` e `cold/test_admission` 11/11 aprovados. Os testes não certificam FPS nem aparência.
+
 ## Acabamento, terreno contínuo, combate e saltos — revisão final
 
 Correções: faces exteriores dos troncos e raízes no solo; altura das árvores correspondente às faces físicas do morro; grama agrupada por células; textura em coordenadas globais compartilhada entre mata e parque; clareira única com acesso, locadora, mesa e motos, substituindo as bases retangulares. NPCs usam CivilianModel e os sinais reais de combate. Rampas conservam velocidade vertical, com postura aérea e compressão no pouso. HUD nativo concentra posição/volta/tempo e velocidade/estado/integridade.

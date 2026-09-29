@@ -22,7 +22,9 @@ func run() -> void:
 	world.production.region.set_focus(world.player.position)
 	for i in 180: await physics_frame
 	var actors := get_nodes_in_group("motocross_spectator")
-	check(actors.size()==10,"actual park has keeper, three drinkers and six boat spectators")
+	check(actors.size()==15,"actual park has keeper, three drinkers, six boat spectators and five bleacher fans")
+	var fan = get_first_node_in_group("motocross_course").trackside.fans[0]
+	check(fan.gameplay==world.gameplay,"bleacher fans are bound to the real combat signals")
 	var venue = get_first_node_in_group("motocross_paddock")
 	var npc = venue.drinkers[0]
 	check(npc.model.get_script()==preload("res://assets/CivilianModel.gd"),"park resident uses the normal CivilianModel")

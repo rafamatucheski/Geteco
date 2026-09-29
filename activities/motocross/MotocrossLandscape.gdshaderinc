@@ -11,6 +11,9 @@ vec3 landscape_color(vec2 p) {
 	float yard = max(clearing_ellipse(irregular,vec2(-224.5,-34.5),vec2(12.5,8.0)),
 		max(clearing_ellipse(irregular,vec2(-233.5,-28),vec2(5,4.7)),
 		clearing_ellipse(irregular,vec2(-214,-32),vec2(4.3,9.5))));
+	// Fans trample the grass between the infield bleacher and the straight
+	// (MotocrossTrackside.BLEACHER_CENTER, facing south).
+	yard = max(yard,clearing_ellipse(irregular,vec2(-206.2,-63.4),vec2(5.4,1.9))*(.55+noise*.5));
 	float trail = (1.0-smoothstep(1.4,3.5,abs(p.x+225.0+sin(p.y*.17)*.3)+noise))
 		*smoothstep(-41.0,-33.0,p.y)*(1.0-smoothstep(20.0,24.0,p.y));
 	return mix(grass,earth,clamp(max(yard,trail),0.0,1.0));

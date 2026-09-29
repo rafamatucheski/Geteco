@@ -6,6 +6,7 @@ var _lights: Array[SpotLight3D] = []
 var _lenses: Array[StandardMaterial3D] = []
 var _solids: StaticBody3D
 var tower_position := Vector3(-186,0,-111)
+var tree_points := PackedVector3Array()
 
 func _ready() -> void:
 	name = "MotocrossScenery"
@@ -69,6 +70,7 @@ func _trees() -> void:
 			if float(course.nearest(at).lateral) < 8.5: continue
 			var point := Vector2(at.x,at.z)
 			at.y = course.surface_height(point)-.08
+			tree_points.append(at)
 			var tree := preload("res://world/regions/NativePine.gd").create(4,false)
 			tree.name = "ShadeTree"
 			tree.position = at

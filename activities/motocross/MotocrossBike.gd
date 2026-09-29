@@ -5,6 +5,15 @@ extends CharacterBody3D
 
 signal crashed(damage: float)
 signal recovered
+## quality: "perfect", "clean" or "rough"; only jumps with real flight time.
+signal landed(quality: String, air_time: float)
+
+# Calibrated on the real circuit: riders who leave the pitch alone touch down
+# 0.27-0.46 rad off the landing face (whoops included), so they stay "clean";
+# only an actively matched attitude is perfect, only a badly wrong one rough.
+const LANDING_MIN_AIR := .38
+const LANDING_PERFECT := .14
+const LANDING_ROUGH := .50
 
 var paint_color := Color("e87823")
 var rider_color := Color("e4e9ef")
@@ -53,6 +62,18 @@ var _suspension := 0.0
 var _ramp_up := 0.0
 var _ramp_age := 1.0
 var jump_count := 0
+var perfect_landings := 0
+var rough_landings := 0
+var last_landing_error := 0.0
+## Player only: pitch minus the slope of the ground under the bike while in the
+## air (positive = nose too high). Drives the HUD attitude cue.
+var air_attitude_error := 0.0
+## Start-gate result timers: surge, bogged engine, or front wheel in the air.
+var launch_boost := 0.0
+var launch_bog := 0.0
+var wheelie := 0.0
+var landing_boost := 0.0
+var _wheelie_pitch := 0.0
 var dead := false
 var _combat: Node
 var _threat_time := 0.0
@@ -144,9 +165,16 @@ func reset_to(where: Transform3D) -> void:
 	_recovery_grace = 1.3
 	_throttle = 0.0
 	_steering = 0.0
+	launch_boost = 0.0
+	launch_bog = 0.0
+	wheelie = 0.0
+	landing_boost = 0.0
+	_wheelie_pitch = 0.0
 	crash_state = "riding"
 	_state_time = 0.0
-	if is_instance_valid(visual): visual.rotation = Vector3.ZERO
+	if is_instance_valid(visual):
+		visual.rotation = Vector3.ZERO
+		visual.position = Vector3.ZERO
 	if is_instance_valid(rider): _seat_rider()
 	reset_physics_interpolation()
 
@@ -158,6 +186,11 @@ func crash(severity: float = 0.5) -> void:
 	crash_count += 1
 	crash_state = "fallen"
 	_state_time = 0.0
+	launch_boost = 0.0
+	wheelie = 0.0
+	landing_boost = 0.0
+	_wheelie_pitch = 0.0
+	visual.position = Vector3.ZERO
 	_hurt_duration = 1.6 + force * 1.5 + (100.0 - health) * 0.007
 	_crash_side = -1.0 if _steering > 0.0 else 1.0
 	rider.top_level = true
@@ -180,6 +213,10 @@ func _physics_process(delta: float) -> void:
 	_suspension = move_toward(_suspension,0.0,delta*.22)
 	_ramp_age += delta
 	_threat_time = maxf(0.0,_threat_time-delta)
+	launch_boost = maxf(0.0,launch_boost-delta)
+	launch_bog = maxf(0.0,launch_bog-delta)
+	wheelie = maxf(0.0,wheelie-delta)
+	landing_boost = maxf(0.0,landing_boost-delta)
 	var grounded := is_on_floor()
 	var incoming_y := velocity.y
 	var before := global_position
@@ -189,6 +226,14 @@ func _physics_process(delta: float) -> void:
 		var target := _throttle * (max_speed * mud_speed if _throttle >= 0.0 else 3.2)
 		if _threat_time>0 and not is_player: target *= .68
 		var rate := acceleration * lerpf(1.0, 0.70, wetness) if absf(_throttle) > 0.01 else lerpf(2.3, 3.8, wetness)
+		if _throttle > 0.0:
+			# A matched landing carries the rider briefly past the normal pace.
+			if landing_boost > 0.0:
+				target *= 1.12
+				rate *= 1.5
+			if wheelie > 0.0: rate *= .35
+			elif launch_boost > 0.0: rate *= 1.75
+			elif launch_bog > 0.0: rate *= .55
 		if _brake:
 			target = 0.0
 			rate = lerpf(17.0, 11.0, wetness)
@@ -221,6 +266,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.y -= 20.0 * delta
 		_air_time += delta
+		if is_player and _air_time > .1: _sample_ground_below()
 	velocity.x = motion.x
 	velocity.z = motion.z
 	var impact_speed := absf(speed)
@@ -260,6 +306,8 @@ func _physics_process(delta: float) -> void:
 		# Proper ramp landings are forgiving; nose-diving and very hard falls hurt.
 		if incoming_y < -11.0 or (incoming_y < -6.0 and absf(_pitch) > 0.85):
 			crash(clampf((-incoming_y - 5.0) / 12.0, 0.1, 1.0))
+		elif _air_time >= LANDING_MIN_AIR:
+			_grade_landing()
 	_front.rotation.y = lerpf(_front.rotation.y,_steering*.4 if crash_state=="riding" else .5,minf(1.0,delta*14.0))
 	if crash_state != "riding":
 		if race_enabled: _update_recovery(delta)
@@ -267,6 +315,39 @@ func _physics_process(delta: float) -> void:
 		_pose_riding(delta)
 	_wheel_angle -= speed * delta / 0.36
 	for wheel in _wheels: wheel.rotation.x = _wheel_angle
+
+func launch(quality: String) -> void:
+	match quality:
+		"holeshot":
+			launch_boost = 1.5
+			speed = maxf(speed, 3.2)
+		"wheelie": wheelie = .8
+		"bog": launch_bog = 1.1
+
+func _grade_landing() -> void:
+	# `_pitch` still holds the in-flight attitude; compare it with the face the
+	# tires just met. Leaning (W/S in the air) is what changes this match.
+	var normal := get_floor_normal()
+	var slope := atan2(-normal.dot(-global_basis.z), maxf(.05, normal.y))
+	last_landing_error = absf(_pitch - slope)
+	var quality := "clean"
+	if last_landing_error <= LANDING_PERFECT:
+		quality = "perfect"
+		perfect_landings += 1
+		landing_boost = 1.3
+	elif last_landing_error >= LANDING_ROUGH:
+		quality = "rough"
+		rough_landings += 1
+		speed *= .85
+		_suspension = -.07
+	landed.emit(quality, _air_time)
+
+func _sample_ground_below() -> void:
+	var query := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*.2,global_position-Vector3.UP*14.0,1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty(): return
+	var normal: Vector3 = hit.normal
+	air_attitude_error = _pitch-atan2(-normal.dot(-global_basis.z),maxf(.05,normal.y))
 
 func _receive_contact(normal: Vector3,strength: float) -> void:
 	_contact_cooldown = .35
@@ -283,9 +364,17 @@ func _pose_riding(delta: float) -> void:
 	var forward := -global_basis.z
 	var slope := atan2(-_ground_normal.dot(forward),maxf(.05,_ground_normal.y))
 	var flight_pitch := atan2(velocity.y,maxf(3.0,absf(speed)))*.8
-	var desired_pitch := slope if is_on_floor() else lerpf(_pitch,flight_pitch,minf(1.0,delta*3.0)) + clampf(air_lean, -1.0, 1.0) * delta * 1.8
+	var desired_pitch := slope if is_on_floor() else lerpf(_pitch,flight_pitch,minf(1.0,delta*3.0))
 	_pitch = lerpf(_pitch, clampf(desired_pitch, -1.1, 1.1), minf(1.0, delta * 10.0))
-	visual.rotation.x = _pitch
+	# Rider lean acts directly on the attitude. Inside the double lerp above it
+	# was damped to ~0.24 rad/s and could not square a 0.4 s flight to a face.
+	if not is_on_floor(): _pitch = clampf(_pitch + clampf(air_lean, -1.0, 1.0) * delta * 2.4, -1.1, 1.1)
+	var wheelie_goal := .40 if wheelie > 0.0 and is_on_floor() else 0.0
+	_wheelie_pitch = lerpf(_wheelie_pitch, wheelie_goal, minf(1.0, delta * (8.0 if wheelie_goal > 0.0 else 4.0)))
+	visual.rotation.x = _pitch + _wheelie_pitch
+	# The wheelie pivots on the rear tire patch instead of sinking it into the ground.
+	var pivot := Vector3(0, 0, .83)
+	visual.position = pivot - Basis(Vector3.RIGHT, _wheelie_pitch) * pivot
 	var slip := clampf(_planar_velocity.dot(global_basis.x)*.035,-.10,.10)
 	visual.rotation.z = lerpf(visual.rotation.z, _steering * clampf(absf(speed) / maxf(0.1, max_speed), 0.0, 1.0) * 0.32+slip+_contact_roll, minf(1.0, delta * 9.0))
 	var lift := .035*smoothstep(.05,.22,_air_time)

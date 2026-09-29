@@ -22,6 +22,10 @@ var jersey := Color("d86729")
 var deck: Node3D
 var bounds := Rect2()
 var flee_radius := 9.0
+## Still actors settle their seated pose, then stop the model's per-frame IK
+## until a threat or hit needs animation again (bleacher fans).
+var still := false
+var _settle := .6
 var state := "watching"
 var _shape: CollisionShape3D
 var _upright: CapsuleShape3D
@@ -47,6 +51,7 @@ func configure(options: Dictionary) -> void:
 	deck = options.get("deck")
 	bounds = options.get("bounds", Rect2())
 	flee_radius = clampf(float(options.get("flee_radius", 9.0)), .5, 15.0)
+	still = bool(options.get("still", false))
 
 func _ready() -> void:
 	add_to_group("motocross_spectator")
@@ -96,6 +101,13 @@ func _ready() -> void:
 	if drinking: _build_bottle()
 	# Idle actors need no physics loop. CivilianModel keeps its existing pose LOD.
 	set_physics_process(false)
+	set_process(still)
+
+func _process(delta: float) -> void:
+	_settle -= delta
+	if _settle > 0.0: return
+	set_process(false)
+	if not frightened and not dead and model._hit == Vector2.ZERO: model.set_process(false)
 
 func bind_combat(owner_gameplay: Node) -> void:
 	if gameplay == owner_gameplay: return
@@ -127,6 +139,7 @@ func notice_threat(origin: Vector3, radius := 30.0) -> void:
 	if dead or not is_inside_tree() or global_position.distance_squared_to(origin) > radius * radius: return
 	_threat = origin
 	_quiet = 7.0
+	if not dead: model.set_process(true)
 	_think = 0.0
 	if not frightened:
 		frightened = true
@@ -259,6 +272,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		FALL.apply_fall(self, visual, impact)
 		died.emit(self)
 	else:
+		model.set_process(true)
 		model.take_hit(impact, clampf(amount / 35.0, .3, 1.0))
 		notice_threat((source as Node3D).global_position if source is Node3D else global_position, INF)
 	if is_instance_valid(gameplay):

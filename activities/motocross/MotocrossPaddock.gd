@@ -16,6 +16,7 @@ func _ready() -> void:
 	add_to_group("motocross_paddock")
 	_build_hut()
 	_build_seating()
+	_build_tent()
 	_flush(self)
 	_build_parked_bikes()
 
@@ -101,6 +102,54 @@ func _build_seating() -> void:
 	_box(Vector3(0.70, 0.46, 0.48), center + Vector3(2.2, 0.23, 0.05), _material(Color("597069")))
 	_box(Vector3(0.74, 0.08, 0.51), center + Vector3(2.2, 0.49, 0.05), _material(Color("e4dfc6")))
 	_solid("RiderCooler", center + Vector3(2.2, 0.26, 0.05), Vector3(0.74, 0.54, 0.51))
+
+func _build_tent() -> void:
+	# Mechanic's pop-up canopy on the yard floor (13 cm), east of the counter and
+	# clear of the service corridor at z=-35 and the parked bikes at x=-214.
+	var center := Vector3(-219.5, 0.13, -30.5)
+	var frame := _material(Color("c9ccc6"), 0.4)
+	var canvas := _material(Color("2f6f9a"))
+	var trim := _material(Color("e4dfc9"))
+	for x in [-1.45, 1.45]:
+		for z in [-1.45, 1.45]:
+			_bar(center + Vector3(x, 0.0, z), center + Vector3(x, 2.32, z), 0.028, frame)
+			_box(Vector3(0.16, 0.03, 0.16), center + Vector3(x, 0.015, z), frame)
+			_solid("TentLeg", center + Vector3(x, 1.16, z), Vector3(0.06, 2.32, 0.06))
+	for side in [-1.0, 1.0]:
+		_box(Vector3(3.14, 0.04, 1.62), center + Vector3(0, 2.52, side * 0.76), canvas, Vector3(side * 0.26, 0, 0))
+		_box(Vector3(3.14, 0.24, 0.02), center + Vector3(0, 2.22, side * 1.5), canvas)
+		_box(Vector3(0.02, 0.24, 3.0), center + Vector3(side * 1.52, 2.22, 0), canvas)
+	_box(Vector3(3.2, 0.05, 0.05), center + Vector3(0, 2.34, -1.5), trim)
+	# Folding work table with tools, a helmet and a spare-parts crate.
+	var table := center + Vector3(-0.35, 0.0, -0.95)
+	_box(Vector3(1.6, 0.045, 0.66), table + Vector3(0, 0.76, 0), _material(Color("d3cfc2")))
+	for x in [-0.72, 0.72]:
+		for z in [-0.26, 0.26]: _bar(table + Vector3(x, 0.0, z), table + Vector3(x, 0.74, z), 0.018, frame)
+	_solid("TentTable", table + Vector3(0, 0.39, 0), Vector3(1.6, 0.78, 0.66))
+	var dark := _material(Color("2a3031"))
+	_box(Vector3(0.34, 0.035, 0.05), table + Vector3(-0.45, 0.8, 0.08), dark, Vector3(0, 0.4, 0))
+	_box(Vector3(0.26, 0.035, 0.04), table + Vector3(-0.2, 0.8, -0.1), _material(Color("b8342c")), Vector3(0, -0.3, 0))
+	_box(Vector3(0.42, 0.2, 0.28), table + Vector3(0.45, 0.885, 0.02), _material(Color("596a5c")))
+	_helmet(self, table + Vector3(0.05, 1.0, 0.1), _material(Color("e1b43d")))
+	# Rolling tool chest and fuel cans against the back of the tent.
+	var chest := center + Vector3(0.95, 0.0, 0.85)
+	var red := _material(Color("b3372d"), 0.2)
+	_box(Vector3(0.78, 0.96, 0.5), chest + Vector3(0, 0.52, 0), red)
+	for drawer in 4: _box(Vector3(0.66, 0.02, 0.02), chest + Vector3(0, 0.3 + float(drawer) * 0.17, -0.26), trim)
+	for x in [-0.3, 0.3]: _ellipsoid(chest + Vector3(x, 0.045, -0.18), Vector3(0.045, 0.045, 0.045), dark)
+	_solid("ToolChest", chest + Vector3(0, 0.52, 0), Vector3(0.78, 0.96, 0.5))
+	for index in 2:
+		var can := center + Vector3(-1.1 + float(index) * 0.3, 0.0, 1.05)
+		_box(Vector3(0.22, 0.34, 0.15), can + Vector3(0, 0.17, 0), red if index == 0 else _material(Color("d8a834")))
+		_bar(can + Vector3(0.05, 0.34, 0), can + Vector3(0.1, 0.43, 0), 0.016, dark)
+	_solid("FuelCans", center + Vector3(-0.95, 0.17, 1.05), Vector3(0.55, 0.34, 0.2))
+	# Spare wheels stacked flat on the tent floor.
+	for level in 2:
+		_bar(center + Vector3(-1.0, float(level) * 0.12, -0.05), center + Vector3(-1.0, float(level) * 0.12 + 0.11, -0.05), 0.35, dark)
+		_bar(center + Vector3(-1.0, float(level) * 0.12 - 0.002, -0.05), center + Vector3(-1.0, float(level) * 0.12 + 0.112, -0.05), 0.15, _material(Color("9da6a3"), 0.6))
+	_solid("SpareWheels", center + Vector3(-1.0, 0.12, -0.05), Vector3(0.7, 0.24, 0.7))
+	_box(Vector3(0.32, 0.36, 0.26), center + Vector3(0.2, 0.18, 0.35), _material(Color("d0762c")))
+	_solid("BikeStand", center + Vector3(0.2, 0.18, 0.35), Vector3(0.32, 0.36, 0.26))
 
 func _build_parked_bikes() -> void:
 	for index in 3:

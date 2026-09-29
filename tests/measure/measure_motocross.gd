@@ -8,6 +8,9 @@ var model := 0
 var full_moon := false
 var paddock_focus := false
 var jump_photo := false
+## A/B of the race-day dressing in the same build: frees the trackside node
+## (tape, bales, bleacher fans, banners, board) and the start gate at runtime.
+var without_raceday := false
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	label = "before"
@@ -21,6 +24,7 @@ func run() -> void:
 		if arg == "--full-moon": full_moon = true
 		if arg == "--paddock": paddock_focus = true
 		if arg == "--jump-photo": jump_photo = true
+		if arg == "--without-raceday": without_raceday = true
 		if arg.begins_with("--model="): model = clampi(arg.trim_prefix("--model=").to_int(),0,2)
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
@@ -50,6 +54,11 @@ func run() -> void:
 	route = PackedVector3Array([Vector3(-215,.2,-57)])
 	if paddock_focus: route = PackedVector3Array([Vector3(-226,.2,-30)])
 	for i in 300: await physics_frame
+	if without_raceday:
+		for course in get_nodes_in_group("motocross_course"):
+			for part in [course.get("trackside"),course.get("start_gate")]:
+				if is_instance_valid(part): part.free()
+		for i in 30: await physics_frame
 	if racing:
 		world.session.state.intro.stage = "complete"
 		world.session.state.economy.grant_reward("mx_benchmark",1000)
@@ -87,6 +96,7 @@ func finish() -> void:
 		report.pilots.append({"name":row.bike.rider_name,"crashes":row.bike.crash_count,"passes":pilot.get("overtake_attempts",0),"braking":pilot.get("brake_frames",0),"accelerating":pilot.get("accelerate_frames",0),"lane_min":pilot.get("lane_min",0),"lane_max":pilot.get("lane_max",0)})
 	if world.session.motocross.get("ambient") != null: report["ambient_riders"] = world.session.motocross.ambient.rows.size()
 	report["model"] = model
+	report["without_raceday"] = without_raceday
 	report["marks"] = world.session.motocross.surface_effects.mark_count
 	report["cpu_process"] = stats(cpu)
 	report["physics"] = stats(physics)

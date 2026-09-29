@@ -41,6 +41,8 @@ func run() -> void:
 	check(mx.racers.size()==4 and mx.mounted and not world.player.visible,"jogador monta com três adversários")
 	check(mx.ambient.rows.is_empty() and mx.player_bike.profile_id==2 and mx.player_bike.turn_response>1,"moto escolhida entra na prova sem pilotos decorativos")
 	check(mx.start_shot.active and world.get_viewport().get_camera_3d()==mx.start_shot.camera,"largada abre câmera de montagem")
+	var gate: Node3D = mx._course_gate()
+	check(gate != null and gate.raised and mx.racers[1].bike.get_node_or_null("RiderTag") != null,"grade de largada sobe e rivais recebem etiqueta")
 	var intro_before: float = mx.start_shot.elapsed
 	session._menu("Pausa da montagem")
 	await frames(20)
@@ -51,6 +53,7 @@ func run() -> void:
 	check(not session.state.can_attack() and not session.save_block_reason().is_empty(),"montaria bloqueia ataque e save intermediário")
 	await frames(270)
 	check(not mx.start_shot.active and world.get_viewport().get_camera_3d()==world.camera,"montagem devolve câmera antes da corrida")
+	check(mx.countdown == 0 and not gate.raised and not mx.launch_result.is_empty(),"grade cai dentro dos 3 s de largada e avalia o giro")
 	var gate_before: int = mx.racers[0].gate
 	mx.player_bike.position = Vector3(-270,1,-100)
 	await frames(85)
@@ -78,6 +81,10 @@ func run() -> void:
 		await physics_frame
 		if not mx.active: break
 	check(not mx.active and mx.progress.data.wins[0]==1,"duas voltas reais liquidam vitória")
+	check(mx.launch_result=="holeshot","giro mantido na faixa verde dá holeshot")
+	check(mx._status.results_card.visible and mx._status.results_title.text=="VITÓRIA" and mx._status.results_rows.get_child_count()==4,"cartão de resultado lista os quatro pilotos sem menu modal")
+	check(float(mx.progress.data.best_lap) > 15.0 and not session.modal,"volta real grava recorde da pista")
+	check(mx._course().trackside.board_detail.text.begins_with("RECORDE"),"placar mostra o recorde depois da prova")
 	check(session.state.economy.balance==1940,"vitória real retorna entrada mais lucro40")
 	check(mx.progress.data.unlocked==1,"vitória real libera intermediário")
 	# Ownership is tested with the real ledger; mounting and dismounting use real world geometry.
@@ -105,6 +112,19 @@ func run() -> void:
 	await frames(20)
 	check(mx.mounted and not mx.active and is_instance_valid(mx.rental_bike) and mx.rental_bike.profile_id==1 and mx.ambient.rows.is_empty(),"aluguel usa modelo de arrancada sem pilotos decorativos")
 	check(mx.dismount() and not is_instance_valid(mx.rental_bike),"devolução retira moto alugada")
+	world.player.teleport(COURSE.ENTRY+Vector3(1,0,1))
+	check(mx.rent_bike(),"segundo aluguel para treino cronometrado")
+	mx.practice_autopilot = true
+	for i in 60*80:
+		await physics_frame
+		if int(mx.practice.get("laps",0)) >= 1: break
+	check(int(mx.practice.laps) >= 1 and float(mx.practice.best) > 15.0,"treino cronometra uma volta completa a partir da linha")
+	check(mx._course().trackside.board_title.text=="TREINO","placar acompanha o treino")
+	mx.practice_autopilot = false
+	for i in 900:
+		await physics_frame
+		if absf(mx.player_bike.speed) < .5: break
+	check(mx.dismount() and not mx.mounted,"treino termina com devolução normal")
 	world.queue_free()
 	await process_frame
 	print("MOTOCROSS_SESSION_RESULT checks=",checks," failures=",failures)
