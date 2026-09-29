@@ -28,6 +28,13 @@ static func start_stream() -> AudioStreamWAV:
 static func tracks_stream() -> AudioStreamWAV:
 	return _stream("tracks", true)
 
+## Quadros de áudio do recurso. `data.size() / 2` só vale para PCM de 16 bits: os WAVs entram
+## como QOA (`compress/mode=2`), cujos bytes são ~1/5 das amostras, e o laço do motor e das
+## esteiras fechava aos 0,4 s de um som de 2 s.
+static func frame_count(stream: AudioStreamWAV) -> int:
+	if stream.format == AudioStreamWAV.FORMAT_16_BITS: return stream.data.size() / (4 if stream.stereo else 2)
+	return roundi(stream.get_length() * stream.mix_rate)
+
 static func _stream(id: String, looped: bool) -> AudioStreamWAV:
 	if _cache.has(id): return _cache[id]
 	var path := "res://audio/tank/%s.wav" % id
@@ -43,7 +50,7 @@ static func _stream(id: String, looped: bool) -> AudioStreamWAV:
 	var stream := source.duplicate() as AudioStreamWAV
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD if looped else AudioStreamWAV.LOOP_DISABLED
 	stream.loop_begin = 0
-	stream.loop_end = stream.data.size() / 2
+	stream.loop_end = frame_count(stream)
 	_cache[id] = stream
 	return stream
 

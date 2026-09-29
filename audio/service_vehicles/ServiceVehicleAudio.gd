@@ -266,13 +266,3 @@ func _has_bank(family: String) -> bool:
 
 func _load_bank(family: String) -> Array[AudioStreamWAV]:
 	return BANKS.bank(family)
-	for index in 7:
-		var source := load("res://audio/acoustic/engine_%s_%d.wav" % [family, index]) as AudioStreamWAV
-		if source == null:
-			return []
-		var stream := source.duplicate() as AudioStreamWAV
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_begin = 0
-		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
-		bank.append(stream)
-	return bank

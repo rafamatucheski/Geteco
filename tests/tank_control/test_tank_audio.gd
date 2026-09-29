@@ -49,18 +49,25 @@ func _check(condition: bool, label: String) -> void:
 		failures += 1
 		push_error(label)
 
+## Os WAVs entram no projeto como QOA (`compress/mode=2` nos .import, decisão do export): o dado
+## importado não é PCM, então pico e RMS só dá para medir quando o formato é 16 bits. Em QOA
+## valem mono, duração, laço e o tamanho do laço em amostras; a checagem de clipping fica
+## para o WAV de origem (audio/tank/generate*), não para o recurso importado.
 func _pcm_ok(stream: AudioStreamWAV, looped: bool) -> bool:
-	if stream == null or stream.format != AudioStreamWAV.FORMAT_16_BITS or stream.stereo: return false
-	var peak := 0.0
-	var power := 0.0
-	var samples := stream.data.size() / 2
-	for index in samples:
-		var sample := float(stream.data.decode_s16(index * 2)) / 32768.0
-		peak = maxf(peak, absf(sample))
-		power += sample * sample
-	return peak < 0.96 and sqrt(power / samples) > 0.04 and stream.get_length() >= 2.0 \
-		and stream.loop_mode == (AudioStreamWAV.LOOP_FORWARD if looped else AudioStreamWAV.LOOP_DISABLED) \
-		and (not looped or stream.loop_end == samples)
+	if stream == null or stream.stereo: return false
+	var compressed := stream.format == AudioStreamWAV.FORMAT_QOA
+	if not compressed and stream.format != AudioStreamWAV.FORMAT_16_BITS: return false
+	var samples := roundi(stream.get_length() * stream.mix_rate) if compressed else stream.data.size() / 2
+	var loudness := true
+	if not compressed:
+		var peak := 0.0
+		var power := 0.0
+		for index in samples:
+			var sample := float(stream.data.decode_s16(index * 2)) / 32768.0
+			peak = maxf(peak, absf(sample))
+			power += sample * sample
+		loudness = peak < 0.96 and sqrt(power / samples) > 0.04
+	return loudness and stream.get_length() >= 2.0 		and stream.loop_mode == (AudioStreamWAV.LOOP_FORWARD if looped else AudioStreamWAV.LOOP_DISABLED) 		and (not looped or absi(stream.loop_end - samples) <= 8)
 
 func _run() -> void:
 	_check(PROFILE.bank_family("army_tank") == "tank", "fleet tank selects its own family")
