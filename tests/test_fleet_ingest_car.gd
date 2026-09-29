@@ -17,7 +17,7 @@ func check(condition: bool, label: String) -> void:
 func run() -> void:
 	var scene_path := "res://assets/fleet/incoming/mirage_test.scn"
 	var spec: Dictionary = CATALOG.spec("metro_hatch").duplicate(true)
-	spec.merge({"id": "mirage_test", "scene": scene_path, "bounds_size": [1.9, 1.23, 4.2], "bounds_center": [0, 0.62, 0], "colors": ["ffffffff"], "mesh_count": 6, "roof_prop": "none"}, true)
+	spec.merge({"id": "mirage_test", "scene": scene_path, "bounds_size": [1.9, 1.23, 4.2], "bounds_center": [0, 0.62, 0], "colors": ["ffffffff"], "mesh_count": 8, "roof_prop": "none"}, true)
 	CATALOG.all()["mirage_test"] = spec
 	var world := Node3D.new()
 	root.add_child(world)
@@ -36,13 +36,18 @@ func run() -> void:
 	car.position = Vector3(0, 0.1, 0)
 	for _i in 30: await physics_frame
 	var parts := car.visual.find_children("*", "MeshInstance3D", true, false)
-	check(parts.size() == 6, "carro tem 6 peças (carroceria, lâmpadas e 4 rodas), tem %d" % parts.size())
+	check(parts.size() == 8, "carro tem 8 peças (carroceria, vidro, faróis, lanternas e 4 rodas), tem %d" % parts.size())
 	check(car.wheels.size() == 4, "quatro pivôs de roda registrados (%d)" % car.wheels.size())
 	var painted := 0
 	for part in parts:
 		var m: Material = (part as MeshInstance3D).material_override if (part as MeshInstance3D).material_override else (part as MeshInstance3D).mesh.surface_get_material(0)
 		if m is StandardMaterial3D and m.resource_name == "paint": painted += 1
 	check(painted == 1 and car._paint.materials.size() == 1, "só a carroceria recebe tinta (%d material)" % car._paint.materials.size())
+	var roles: Array[String] = []
+	for part in parts:
+		var role: Material = (part as MeshInstance3D).mesh.surface_get_material(0)
+		roles.append(role.resource_name)
+	check("glass" in roles and "headlight" in roles and "tail" in roles, "vidro, farol e lanterna reconhecíveis pelo nome do material %s" % str(roles))
 	car.paint_color = Color("c8412f")
 	var tinted := false
 	for material in car._paint.materials: tinted = tinted or material.albedo_color.is_equal_approx(Color("c8412f"))

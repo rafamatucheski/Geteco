@@ -124,25 +124,74 @@ func run() -> void:
 	rubber.metallic = 0.05
 	var root_node := Node3D.new()
 	root_node.name = "MirageTest"
-	# Faróis e lanternas: peças pequenas nas pontas. Ficam fora da carroceria para a tinta
-	# do jogo não pintá-las e, depois, poderem acender.
-	var lamp_tris: Array = []
+	# Faróis (ponta da frente) e lanternas (ponta de trás): peças pequenas soltas na malha.
+	# Ficam fora da carroceria para a tinta do jogo não pintá-las e para o sistema de
+	# equipamento (`VehicleEquipment`) achá-las pelo nome do material: "headlight" e "tail".
+	var front_sign := float(args.get("front_sign", "")) if args.has("front_sign") else (-1.0 if str(args.get("front", "-x")).begins_with("-") else 1.0)
+	var head_tris: Array = []
+	var tail_tris: Array = []
 	var body_tris: Array = []
 	var long_axis_is_x := extent.x > extent.z
 	for c in comps:
 		if assigned.has(c): continue
-		var along: float = absf(c.center.x if long_axis_is_x else c.center.z)
-		if c.tris.size() < 250 and along > 0.38 * raw_length: lamp_tris.append_array(c.tris)
+		var along: float = (c.center.x if long_axis_is_x else c.center.z) * front_sign
+		if c.tris.size() < 250 and absf(along) > 0.38 * raw_length:
+			if along > 0.0: head_tris.append_array(c.tris)
+			else: tail_tris.append_array(c.tris)
 		else: body_tris.append_array(c.tris)
+	# Vidros: triângulos da carroceria, acima da linha da cintura e longe da borda, cujas
+	# amostras de textura não são tinta azul (o interior pintado nas janelas abertas).
+	var glass_tris: Array = []
+	var atlas := (source.mesh.surface_get_material(0) as BaseMaterial3D).albedo_texture.get_image() if source.mesh.surface_get_material(0) is BaseMaterial3D else null
+	if atlas != null and atlas.is_compressed(): atlas.decompress()
+	var belt := float(args.get("belt", 0.03))
+	var kept: Array = []
+	for t in body_tris:
+		var high := 0
+		var lateral := 0.0
+		for k in 3:
+			var p := positions[indices[t + k]]
+			high += 1 if p.y > belt * extent.x / 1.0 else 0
+			lateral = maxf(lateral, absf(p.z if long_axis_is_x else p.x))
+		var glassy := false
+		if atlas != null and high == 3 and lateral < 0.42 * (extent.z if long_axis_is_x else extent.x):
+			var non_blue := 0
+			var samples := 0
+			var pts: Array[Vector2] = []
+			for k in 3: pts.append(uvs[indices[t + k]])
+			pts.append((pts[0] + pts[1] + pts[2]) / 3.0)
+			for k in 3: pts.append((pts[k] + pts[(k + 1) % 3]) * 0.5)
+			for uv in pts:
+				var px := atlas.get_pixel(clampi(int(uv.x * atlas.get_width()), 0, atlas.get_width() - 1), clampi(int(uv.y * atlas.get_height()), 0, atlas.get_height() - 1))
+				samples += 1
+				if not (px.b > px.r * 1.25 and px.b > px.g * 1.05 and px.b > 0.16): non_blue += 1
+			glassy = non_blue >= int(args.get("glass_min", 3))
+		if glassy: glass_tris.append(t)
+		else: kept.append(t)
+	body_tris = kept
+	print("INGEST corpo=", body_tris.size(), " vidro=", glass_tris.size(), " faróis=", head_tris.size(), " lanternas=", tail_tris.size(), " tris")
 	var transform_point := func(p: Vector3) -> Vector3: return basis * p * scale_factor + offset
-	var body := _mesh_node("Body", body_tris, indices, positions, normals, uvs, basis, transform_point, paint)
-	root_node.add_child(body)
-	var lamp_material := rubber.duplicate() as StandardMaterial3D
-	lamp_material.resource_name = "lamp"
-	lamp_material.roughness = 0.25
-	if not lamp_tris.is_empty():
-		root_node.add_child(_mesh_node("Lamps", lamp_tris, indices, positions, normals, uvs, basis, transform_point, lamp_material))
-	print("INGEST corpo=", body_tris.size(), " lâmpadas=", lamp_tris.size(), " tris")
+	root_node.add_child(_mesh_node("Body", body_tris, indices, positions, normals, uvs, basis, transform_point, paint))
+	if not glass_tris.is_empty():
+		var glass := StandardMaterial3D.new()
+		glass.resource_name = "glass"
+		glass.albedo_color = Color(0.035, 0.06, 0.075)
+		glass.roughness = 0.12
+		glass.metallic = 0.25
+		root_node.add_child(_mesh_node("Glass", glass_tris, indices, positions, normals, uvs, basis, transform_point, glass))
+	if not head_tris.is_empty():
+		var lens := rubber.duplicate() as StandardMaterial3D
+		lens.resource_name = "headlight"
+		lens.roughness = 0.2
+		lens.emission = Color(1, 0.92, 0.78)
+		root_node.add_child(_mesh_node("Headlights", head_tris, indices, positions, normals, uvs, basis, transform_point, lens))
+	if not tail_tris.is_empty():
+		var tail := StandardMaterial3D.new()
+		tail.resource_name = "tail"
+		tail.albedo_color = Color(0.62, 0.035, 0.03)
+		tail.roughness = 0.3
+		tail.emission = Color(1.0, 0.025, 0.012)
+		root_node.add_child(_mesh_node("Taillights", tail_tris, indices, positions, normals, uvs, basis, transform_point, tail))
 	var names := ["Wheel_A", "Wheel_B", "Wheel_C", "Wheel_D"]
 	for w in 4:
 		var tris_w: Array = []
