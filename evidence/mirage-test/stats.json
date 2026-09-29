@@ -1,0 +1,52 @@
+{
+	"draws_20_cars": {
+		"aurora_executive": {
+			"draw_calls": 2206.0,
+			"primitives": 1210948.0
+		},
+		"metro_hatch": {
+			"draw_calls": 1466.0,
+			"primitives": 1551418.0
+		},
+		"mirage": {
+			"draw_calls": 126.0,
+			"primitives": 304798.0
+		},
+		"sport_coupe": {
+			"draw_calls": 766.0,
+			"primitives": 4877478.0
+		}
+	},
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"models": {
+		"aurora_executive": {
+			"parts": 110,
+			"tris": 15296
+		},
+		"metro_hatch": {
+			"parts": 74,
+			"tris": 19464
+		},
+		"mirage": {
+			"parts": 6,
+			"tris": 3807
+		},
+		"mirage_2f6fb5": {
+			"parts": 6,
+			"tris": 3807
+		},
+		"mirage_c8412f": {
+			"parts": 6,
+			"tris": 3807
+		},
+		"mirage_e0b53a": {
+			"parts": 6,
+			"tris": 3807
+		},
+		"sport_coupe": {
+			"parts": 38,
+			"tris": 61039
+		}
+	},
+	"resolution": "(1920, 1080)"
+}
