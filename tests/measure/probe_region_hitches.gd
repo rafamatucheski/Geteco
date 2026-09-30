@@ -20,6 +20,7 @@ var script_ms_by_path := {}
 var frame_index := 0
 var prev_pre := 0
 var prev_post := 0
+var burst_snapshot := {}
 
 func _initialize() -> void:
 	physics_frame.connect(func():
@@ -81,7 +82,7 @@ func run() -> void:
 	var args := OS.get_cmdline_user_args()
 	if DisplayServer.get_name() == "headless" or "--no-save" not in args or "--skip-arrival" not in args: quit(2); return
 	_beat_thread.start(_beat_loop)
-	create_timer(420.0).timeout.connect(func(): push_error("PROBE_TIMEOUT"); quit(2))
+	create_timer(420.0 * maxf(1.0, float(_laps_arg(args)))).timeout.connect(func(): push_error("PROBE_TIMEOUT"); quit(2))
 	root.size = Vector2i(1280, 720)
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("benchmark_trace", true)
@@ -97,6 +98,9 @@ func run() -> void:
 	for i in 240: await process_frame
 	var start: Vector3 = world.player.position
 	var waypoints := [start, Vector3(SEAM.x - 900.0, 0, SEAM.z), Vector3(SEAM.x - 250.0, 0, SEAM.z), SEAM, Vector3(SEAM.x + 300.0, 0, SEAM.z), Vector3(SEAM.x + 900.0, 0, SEAM.z - 200.0), SEAM, Vector3(SEAM.x - 400.0, 0, SEAM.z), start, Vector3(SEAM.x - 900.0, 0, SEAM.z), Vector3(SEAM.x - 250.0, 0, SEAM.z), SEAM, Vector3(SEAM.x + 300.0, 0, SEAM.z), Vector3(SEAM.x + 900.0, 0, SEAM.z - 200.0), SEAM, Vector3(SEAM.x - 400.0, 0, SEAM.z)]
+	var laps := _laps_arg(args)
+	var loop_points: Array = waypoints.slice(1)
+	for lap in laps - 1: waypoints.append_array(loop_points)
 	var position := start
 	var y := start.y
 	Engine.set_meta("slow_stream_records", [])
@@ -125,9 +129,11 @@ func run() -> void:
 		frame_index += 1
 		var slow_scripts := {}
 		if "--per-script" in args:
-			if frame_index % 30 == 1: adopt_processing_nodes()
+			if frame_index % 5 == 1: adopt_processing_nodes()
 			slow_scripts = run_timed_processes(1.0 / 60.0)
 		var tally_before := tally() if ("--diff-nodes" in args and position.x < -60.0 and position.x > -100.0) else {}
+		if "--burst" in args and frame_index % 10 == 1: burst_snapshot = tally()
+		var nodes_before := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 		var saved_process := t_process
 		await process_frame
 		prev_process = saved_process
@@ -138,6 +144,9 @@ func run() -> void:
 		previous = now
 		elapsed += frame_ms / 1000.0
 		frames.append(frame_ms)
+		if "--burst" in args:
+			var jump := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)) - nodes_before
+			if jump >= 80 or frame_ms > 300.0: print("BURST frame=%d t=%.1fs %.0f ms nodes%+d at (%.0f,%.0f) diff: %s" % [frame_index, elapsed, frame_ms, jump, position.x, position.z, diff_top(burst_snapshot, tally())])
 		var slow_now: Array = Engine.get_meta("slow_stream_records", [])
 		var new_records: Array = slow_now.slice(seen_records)
 		seen_records = slow_now.size()
@@ -156,6 +165,7 @@ func run() -> void:
 			# Fases do quadro ANTERIOR (o intervalo medido acaba de fechar): scripts, desenho e o resto
 			# (física + espera de apresentação/GPU) até este process_frame.
 			labels.append("fases: scripts=%.0f desenho=%.0f fisica_e_espera=%.0f" % [float(prev_pre - prev_process) / 1000.0, float(prev_post - prev_pre) / 1000.0, float(t_process - prev_post) / 1000.0])
+			labels.append("espera_ate_fisica=%.0f fisica_ate_process=%.0f (apresentacao/sistema x fisica)" % [float(t_physics - prev_post) / 1000.0 if t_physics > prev_post else -1.0, float(t_process - t_physics) / 1000.0 if t_process > t_physics else -1.0])
 			if not new_records.is_empty(): labels.append("registros novos: " + str(new_records))
 			spikes.append({"t": snappedf(elapsed, 0.01), "frame_ms": snappedf(frame_ms, 0.1), "x": snappedf(position.x, 1.0), "z": snappedf(position.z, 1.0), "waypoint": stage, "labels": labels})
 			print("SPIKE t=%.1fs %.0f ms at (%.0f,%.0f) wp=%d %s" % [elapsed, frame_ms, position.x, position.z, stage, str(labels)])
@@ -189,3 +199,7 @@ func _beat_loop() -> void:
 		var now := Time.get_ticks_usec()
 		if now - last >= 150000: _beat_gaps.append("%.0f ms em t=%d" % [float(now - last) / 1000.0, now / 1000])
 		last = now
+
+func _laps_arg(args: PackedStringArray) -> int:
+	for arg in args: if arg.begins_with("--laps="): return int(arg.trim_prefix("--laps="))
+	return 1

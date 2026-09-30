@@ -140,6 +140,9 @@ func _run_step() -> void:
 	step.call()
 	var costs: Dictionary = Engine.get_meta("motocross_build_ms",{})
 	costs[str(step.get_method())] = _lap(began)
+	if Engine.has_meta("slow_stream_records") and _lap(began) >= 60.0:
+		var slow: Array = Engine.get_meta("slow_stream_records")
+		slow.append("PROCESS motocross %s %.0f ms" % [step.get_method(), _lap(began)])
 	Engine.set_meta("motocross_build_ms",costs)
 	if _steps.is_empty():
 		complete = true
