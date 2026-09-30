@@ -484,6 +484,7 @@ func _process(_delta: float) -> void:
 ## em fatias de `RETIRE_BUDGET_USEC` por quadro.
 const RETIRE_BUDGET_USEC := 1500.0
 var _retiring: Array[Node3D] = []
+var _retire_stack: Array[Node] = []
 
 func _retire_chunk(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return
@@ -497,11 +498,28 @@ func _drain_retired() -> void:
 		var chunk: Node3D = _retiring[0]
 		if not is_instance_valid(chunk):
 			_retiring.pop_front()
+			_retire_stack.clear()
 			continue
-		while chunk.get_child_count() > 0:
-			var child := chunk.get_child(chunk.get_child_count()-1)
-			chunk.remove_child(child)
-			child.free()
+		if _retire_stack.is_empty(): _retire_stack.append(chunk)
+		# Desce até subárvores pequenas antes de liberar: um filho do chunk (prédio, pátio)
+		# pode ter centenas de nós, e liberá-lo inteiro custava 100+ ms num quadro só.
+		while not _retire_stack.is_empty():
+			var top: Node = _retire_stack.back()
+			if not is_instance_valid(top):
+				_retire_stack.pop_back()
+				continue
+			var count := top.get_child_count()
+			if count == 0:
+				_retire_stack.pop_back()
+				if top != chunk:
+					top.get_parent().remove_child(top)
+					top.free()
+			else:
+				var last := top.get_child(count-1)
+				if last.get_child_count() > 4: _retire_stack.append(last)
+				else:
+					top.remove_child(last)
+					last.free()
 			if Time.get_ticks_usec()-began >= RETIRE_BUDGET_USEC: return
 		chunk.queue_free()
 		_retiring.pop_front()
@@ -621,7 +639,10 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 			1:
 				# Vegetação/pedras do terreno: passo próprio, o terreno sozinho já custa 40–95 ms.
 				if region_id == "mountain" and _mountain_owns_terrain(key):
-					chunk.add_child(DRESSING.build_chunk(rect,region_id,terrain.surface_height_at,_dressing_reserved))
+					if not job.has("terrain_dressing"): job.terrain_dressing = DRESSING.begin(rect,region_id,terrain.surface_height_at,_dressing_reserved)
+					if not DRESSING.step(job.terrain_dressing,maxf(1500.0,budget_usec-(Time.get_ticks_usec()-began))): return false
+					chunk.add_child(job.terrain_dressing.root)
+					job.erase("terrain_dressing")
 				job.stage = 2
 			2:
 				if int(job.index) < chunk_records.size():

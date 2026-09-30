@@ -9,7 +9,48 @@ var world: Node3D
 var spikes: Array[Dictionary] = []
 var frames: Array[float] = []
 
-func _initialize() -> void: run.call_deferred()
+var t_physics := 0
+var t_process := 0
+var t_pre := 0
+var t_post := 0
+var t_first_physics := 0
+var prev_process := 0
+var timed_nodes: Array[Node] = []
+var script_ms_by_path := {}
+var frame_index := 0
+var prev_pre := 0
+var prev_post := 0
+
+func _initialize() -> void:
+	physics_frame.connect(func():
+		if t_first_physics == 0 or t_first_physics < t_post: t_first_physics = Time.get_ticks_usec()
+		t_physics = Time.get_ticks_usec())
+	process_frame.connect(func(): t_process = Time.get_ticks_usec())
+	RenderingServer.frame_pre_draw.connect(func(): t_pre = Time.get_ticks_usec())
+	RenderingServer.frame_post_draw.connect(func(): t_post = Time.get_ticks_usec())
+	run.call_deferred()
+
+## Cada nó com _process passa a ser chamado por aqui, cronometrado (--per-script).
+func adopt_processing_nodes() -> void:
+	var stack: Array[Node] = [world]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		for child in node.get_children(): stack.append(child)
+		if node.get_script() != null and node.is_processing() and node.has_method("_process") and node not in timed_nodes and node != self:
+			timed_nodes.append(node)
+			node.set_process(false)
+
+func run_timed_processes(delta: float) -> Dictionary:
+	var slow := {}
+	for node in timed_nodes:
+		if not is_instance_valid(node) or not node.is_inside_tree(): continue
+		var began := Time.get_ticks_usec()
+		node._process(delta)
+		var ms := float(Time.get_ticks_usec() - began) / 1000.0
+		if ms >= 3.0:
+			var path: String = (node.get_script() as Script).resource_path
+			slow[path] = float(slow.get(path, 0.0)) + ms
+	return slow
 
 func ground(point: Vector3, fallback: float) -> float:
 	var query := PhysicsRayQueryParameters3D.create(Vector3(point.x, 400.0, point.z), Vector3(point.x, -50.0, point.z), 1)
@@ -55,7 +96,16 @@ func run() -> void:
 		position.y = y
 		world.player.teleport(position)
 		world.production.region.set_focus(position) if world.production.region != null else null
+		frame_index += 1
+		var slow_scripts := {}
+		if "--per-script" in args:
+			if frame_index % 30 == 1: adopt_processing_nodes()
+			slow_scripts = run_timed_processes(1.0 / 60.0)
+		var saved_process := t_process
 		await process_frame
+		prev_process = saved_process
+		prev_pre = t_pre
+		prev_post = t_post
 		var now := Time.get_ticks_usec()
 		var frame_ms := float(now - previous) / 1000.0
 		previous = now
@@ -73,6 +123,10 @@ func run() -> void:
 			var rid := root.get_viewport_rid()
 			var split := "process=%.1f physics=%.1f render_cpu=%.1f render_gpu=%.1f nodes%+d draw=%d" % [Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, RenderingServer.viewport_get_measured_render_time_cpu(rid), RenderingServer.viewport_get_measured_render_time_gpu(rid), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT) - last_nodes), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))]
 			labels.append(split)
+			if not slow_scripts.is_empty(): labels.append("scripts lentos: " + str(slow_scripts))
+			# Fases do quadro ANTERIOR (o intervalo medido acaba de fechar): scripts, desenho e o resto
+			# (física + espera de apresentação/GPU) até este process_frame.
+			labels.append("fases: scripts=%.0f desenho=%.0f fisica_e_espera=%.0f" % [float(prev_pre - prev_process) / 1000.0, float(prev_post - prev_pre) / 1000.0, float(t_process - prev_post) / 1000.0])
 			if not new_records.is_empty(): labels.append("registros novos: " + str(new_records))
 			spikes.append({"t": snappedf(elapsed, 0.01), "frame_ms": snappedf(frame_ms, 0.1), "x": snappedf(position.x, 1.0), "z": snappedf(position.z, 1.0), "waypoint": stage, "labels": labels})
 			print("SPIKE t=%.1fs %.0f ms at (%.0f,%.0f) wp=%d %s" % [elapsed, frame_ms, position.x, position.z, stage, str(labels)])
@@ -80,6 +134,7 @@ func run() -> void:
 	var summary := {"frames": frames.size(), "p50": frames[frames.size() / 2], "p95": frames[int(frames.size() * 0.95)], "p99": frames[int(frames.size() * 0.99)], "max": frames[-1], "over_40": spikes.size()}
 	print("PROBE_SUMMARY ", JSON.stringify(summary))
 	print("MOTOCROSS_BUILD ", str(Engine.get_meta("motocross_build_ms", {})))
+	print("PROCESS_LOG ", str(Engine.get_meta("slow_stream_records", []).filter(func(x): return str(x).begins_with("PROCESS") or str(x).begins_with("ETAPA"))))
 	print("SLOW_RECORDS ", str(Engine.get_meta("slow_stream_records", [])))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://evidence/region-hitches"))
 	var label := "run"

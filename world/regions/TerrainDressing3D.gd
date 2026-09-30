@@ -11,53 +11,84 @@ static var _rock: SphereMesh
 static var _materials: Dictionary = {}
 
 static func build_chunk(rect: Rect2, region_id: String, height_at: Callable, is_reserved: Callable) -> Node3D:
+	var job := begin(rect, region_id, height_at, is_reserved)
+	step(job, INF)
+	return job.root
+
+## Versão retomável: `begin` prepara o trabalho e `step` avança até `budget_usec`, devolvendo
+## true ao terminar (`job.root` é o resultado). O terreno de uma célula custava 40-95 ms num
+## quadro só (centenas de alturas e reservas). A sequência de sorteios é a mesma de antes.
+static func begin(rect: Rect2, region_id: String, height_at: Callable, is_reserved: Callable) -> Dictionary:
 	var root := Node3D.new()
 	root.name = "TerrainDressing3D"
+	var job := {"root": root, "phase": 0, "index": 0, "rect": rect, "height_at": height_at, "is_reserved": is_reserved,
+		"grass": [] as Array[Transform3D], "stones": [] as Array[Transform3D], "snow_stones": [] as Array[Transform3D],
+		"large": [] as Array[Transform3D], "snow_large": [] as Array[Transform3D]}
 	# A missing reservation provider must never put solids across authored gameplay.
 	if region_id != "mountain" or not height_at.is_valid() or not is_reserved.is_valid() or not rect.has_area():
-		return root
+		job.phase = 3
+		return job
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 73013 + floori(rect.position.x / CELL) * 73856093 + floori(rect.position.y / CELL) * 19349663
-	var area_ratio := clampf(rect.get_area() / (CELL * CELL), 0.0, 1.0)
-	var grass: Array[Transform3D] = []
-	var stones: Array[Transform3D] = []
-	var snow_stones: Array[Transform3D] = []
-	var large: Array[Transform3D] = []
-	var snow_large: Array[Transform3D] = []
-	for i in ceili(MAX_GRASS * area_ratio):
+	job.rng = rng
+	job.area_ratio = clampf(rect.get_area() / (CELL * CELL), 0.0, 1.0)
+	job.grass_count = ceili(MAX_GRASS * float(job.area_ratio))
+	job.rock_count = ceili((MAX_PEBBLES + MAX_ROCKS) * float(job.area_ratio))
+	job.solid_count = ceili(MAX_ROCKS * float(job.area_ratio))
+	return job
+
+static func step(job: Dictionary, budget_usec: float) -> bool:
+	var began := Time.get_ticks_usec()
+	var rect: Rect2 = job.rect
+	var rng: RandomNumberGenerator = job.get("rng")
+	var height_at: Callable = job.height_at
+	var is_reserved: Callable = job.is_reserved
+	var root: Node3D = job.root
+	while int(job.phase) == 0 and int(job.index) < int(job.grass_count):
+		job.index = int(job.index) + 1
 		var point := _point(rect, rng)
-		if _snow(point) or bool(is_reserved.call(point, 0.65)): continue
-		var y := float(height_at.call(point))
-		if not is_finite(y) or not _gentle(point, y, height_at, 0.5, 0.35): continue
-		var size := rng.randf_range(0.65, 1.3)
-		grass.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(size, size, size)), Vector3(point.x, y - 0.03, point.y)))
-	for i in ceili((MAX_PEBBLES + MAX_ROCKS) * area_ratio):
-		var solid := i < ceili(MAX_ROCKS * area_ratio)
+		if not (_snow(point) or bool(is_reserved.call(point, 0.65))):
+			var y := float(height_at.call(point))
+			if is_finite(y) and _gentle(point, y, height_at, 0.5, 0.35):
+				var size := rng.randf_range(0.65, 1.3)
+				job.grass.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(size, size, size)), Vector3(point.x, y - 0.03, point.y)))
+		if Time.get_ticks_usec() - began >= budget_usec: return false
+	if int(job.phase) == 0:
+		job.phase = 1
+		job.index = 0
+	while int(job.phase) == 1 and int(job.index) < int(job.rock_count):
+		var i := int(job.index)
+		job.index = i + 1
+		var solid := i < int(job.solid_count)
 		var point := _point(rect, rng)
 		var radius := rng.randf_range(0.55, 0.95) if solid else rng.randf_range(0.08, 0.19)
 		# Keep full footprint inside this chunk and outside entrances, roads and water.
-		if not rect.grow(-radius).has_point(point) or bool(is_reserved.call(point, radius + 0.6)): continue
-		var y := float(height_at.call(point))
-		if not is_finite(y) or not _gentle(point, y, height_at, radius, 0.25): continue
-		var height := radius * rng.randf_range(0.55, 1.0)
-		var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(radius, height, radius * 0.8))
-		var transform := Transform3D(basis, Vector3(point.x, y + height * 0.65, point.y))
-		if solid:
-			if _snow(point): snow_large.append(transform)
-			else: large.append(transform)
-			_solid(root, transform)
-		else:
-			if _snow(point): snow_stones.append(transform)
-			else: stones.append(transform)
-	_batch(root, "Grass", _grass_mesh(), grass, Color("586643"), false)
-	_batch(root, "Pebbles", _rock_mesh(), stones, Color("726e5b"), false)
-	_batch(root, "SnowPebbles", _rock_mesh(), snow_stones, Color("bbc9cc"), false)
-	_batch(root, "Rocks", _rock_mesh(), large, Color("646b62"), true)
-	_batch(root, "SnowRocks", _rock_mesh(), snow_large, Color("b8c6cb"), true)
-	root.set_meta("grass_count", grass.size())
-	root.set_meta("pebble_count", stones.size() + snow_stones.size())
-	root.set_meta("solid_rock_count", large.size() + snow_large.size())
-	return root
+		if rect.grow(-radius).has_point(point) and not bool(is_reserved.call(point, radius + 0.6)):
+			var y := float(height_at.call(point))
+			if is_finite(y) and _gentle(point, y, height_at, radius, 0.25):
+				var height := radius * rng.randf_range(0.55, 1.0)
+				var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(radius, height, radius * 0.8))
+				var transform := Transform3D(basis, Vector3(point.x, y + height * 0.65, point.y))
+				if solid:
+					if _snow(point): job.snow_large.append(transform)
+					else: job.large.append(transform)
+					_solid(root, transform)
+				else:
+					if _snow(point): job.snow_stones.append(transform)
+					else: job.stones.append(transform)
+		if Time.get_ticks_usec() - began >= budget_usec: return false
+	if int(job.phase) == 1: job.phase = 2
+	if int(job.phase) == 2:
+		_batch(root, "Grass", _grass_mesh(), job.grass, Color("586643"), false)
+		_batch(root, "Pebbles", _rock_mesh(), job.stones, Color("726e5b"), false)
+		_batch(root, "SnowPebbles", _rock_mesh(), job.snow_stones, Color("bbc9cc"), false)
+		_batch(root, "Rocks", _rock_mesh(), job.large, Color("646b62"), true)
+		_batch(root, "SnowRocks", _rock_mesh(), job.snow_large, Color("b8c6cb"), true)
+		root.set_meta("grass_count", job.grass.size())
+		root.set_meta("pebble_count", job.stones.size() + job.snow_stones.size())
+		root.set_meta("solid_rock_count", job.large.size() + job.snow_large.size())
+		job.phase = 3
+	return true
 
 static func _point(rect: Rect2, rng: RandomNumberGenerator) -> Vector2:
 	return rect.position + Vector2(rng.randf() * rect.size.x, rng.randf() * rect.size.y)
