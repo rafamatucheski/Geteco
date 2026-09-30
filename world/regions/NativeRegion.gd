@@ -418,7 +418,7 @@ func set_vehicle_support(vehicles_to_support: Array) -> void:
 	vehicle_support_cells = next_cells
 	for key in vehicle_support_cells:
 		pending.erase(key)
-		_ensure_chunk(key)
+		_ensure_chunk_surfaces(key)
 	if current_cell.x < 100000: _trim_chunks(current_cell)
 
 func _trim_chunks(cell: Vector2i) -> void:
@@ -484,7 +484,7 @@ func _process(_delta: float) -> void:
 ## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
-const CACHED_RECORDS := ["mountain_village","sawmill_yard"]
+const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm"]
 static var _record_cache: Dictionary = {}
 
 func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:

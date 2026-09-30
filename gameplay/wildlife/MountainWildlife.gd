@@ -22,6 +22,7 @@ func _ready() -> void:
 	name = "MountainWildlife"
 
 func _process(delta: float) -> void:
+	_advance_queue()
 	_clock += delta
 	if _clock < 0.5: return
 	_clock = 0.0
@@ -38,27 +39,46 @@ func _ground(region, point: Vector3) -> Vector3:
 	var y: float = terrain.surface_height_at(Vector2(point.x, point.z)) if terrain != null else 0.0
 	return Vector3(point.x, y + 0.2, point.z)
 
+## Uma toca (mãe e filhotes) nascia toda no mesmo quadro: cada urso monta modelo e áudio, 40-50 ms
+## por toca. Agora um urso por quadro; a mãe sai primeiro e os filhotes a seguem.
+var _queue: Array[Dictionary] = []
+
 func _spawn(den: Dictionary, home: Vector3, region) -> void:
-	var bears: Array = []
-	var mother := BEAR.new()
-	mother.name = "ForestBear_" + String(den.id)
-	mother.controller = controller
-	mother.home = home
-	add_child(mother)
-	mother.global_position = _ground(region, home)
-	bears.append(mother)
-	for offset: Vector2 in den.cubs:
-		var cub := BEAR.new()
-		cub.name = "BearCub_" + String(den.id) + "_" + str(bears.size())
-		cub.controller = controller
-		cub.is_cub = true
-		cub.family_guardian = mother
-		cub.family_offset = Vector3(offset.x, 0, offset.y) / 16.0
-		cub.home = home + cub.family_offset
-		add_child(cub)
-		cub.global_position = _ground(region, cub.home)
-		bears.append(cub)
-	_spawned[den.id] = bears
+	_spawned[den.id] = []
+	_queue.append({"den": den, "home": home, "region": region, "step": 0})
+
+func _advance_queue() -> void:
+	while not _queue.is_empty():
+		var job: Dictionary = _queue[0]
+		var den: Dictionary = job.den
+		if not _spawned.has(den.id) or not is_instance_valid(job.region):
+			_queue.pop_front()
+			continue
+		var bears: Array = _spawned[den.id]
+		var step := int(job.step)
+		if step == 0:
+			var mother := BEAR.new()
+			mother.name = "ForestBear_" + String(den.id)
+			mother.controller = controller
+			mother.home = job.home
+			add_child(mother)
+			mother.global_position = _ground(job.region, job.home)
+			bears.append(mother)
+		else:
+			var offset: Vector2 = den.cubs[step-1]
+			var cub := BEAR.new()
+			cub.name = "BearCub_" + String(den.id) + "_" + str(bears.size())
+			cub.controller = controller
+			cub.is_cub = true
+			cub.family_guardian = bears[0]
+			cub.family_offset = Vector3(offset.x, 0, offset.y) / 16.0
+			cub.home = job.home + cub.family_offset
+			add_child(cub)
+			cub.global_position = _ground(job.region, cub.home)
+			bears.append(cub)
+		job.step = step + 1
+		if int(job.step) > den.cubs.size(): _queue.pop_front()
+		return
 
 func _despawn(id: String) -> void:
 	for bear in _spawned[id]:

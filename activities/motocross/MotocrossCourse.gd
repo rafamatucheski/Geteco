@@ -124,8 +124,13 @@ func _process(_delta: float) -> void:
 	if _steps.is_empty(): return
 	_run_step()
 
+var _finishing := false
+
 func finish_build() -> void:
+	_finishing = true
 	while not _steps.is_empty(): _run_step()
+	if is_instance_valid(_scenery_node): _scenery_node.finish_build()
+	if is_instance_valid(trackside): trackside.finish_build()
 	if is_instance_valid(_paddock_node): _paddock_node.finish_build()
 	if is_instance_valid(_grass_node): _grass_node.finish_build()
 
@@ -152,10 +157,13 @@ func _step_terrain_mesh() -> void:
 	_mesh(_terrain_surface,"QuarryHills",true)
 	_terrain_surface = null
 
+var _scenery_node: Node
+
 func _step_scenery() -> void:
 	var scenery := preload("res://activities/motocross/MotocrossScenery.gd").new()
 	scenery.course = self
 	add_child(scenery)
+	_scenery_node = scenery
 
 var _paddock_node: Node
 
@@ -164,6 +172,12 @@ func _step_paddock() -> void:
 	add_child(_paddock_node)
 
 func _step_trackside() -> void:
+	# A beira de pista lê as árvores e a torre do cenário: espera ele terminar.
+	if is_instance_valid(_scenery_node) and not _scenery_node.complete:
+		if _finishing: _scenery_node.finish_build()
+		else:
+			_steps.push_front(_step_trackside)
+			return
 	start_gate = preload("res://activities/motocross/MotocrossStartGate.gd").new()
 	start_gate.course = self
 	add_child(start_gate)

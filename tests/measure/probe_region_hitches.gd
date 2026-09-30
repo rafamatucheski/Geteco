@@ -52,6 +52,26 @@ func run_timed_processes(delta: float) -> Dictionary:
 			slow[path] = float(slow.get(path, 0.0)) + ms
 	return slow
 
+func tally() -> Dictionary:
+	var counts := {}
+	var stack: Array[Node] = [world]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		for child in node.get_children(): stack.append(child)
+		var script: Script = node.get_script()
+		var key: String = script.resource_path.get_file() if script != null else node.get_class()
+		var parent_name := str(node.get_parent().name) if node.get_parent() != null else ""
+		key += " <" + parent_name.left(24) + ">"
+		counts[key] = int(counts.get(key, 0)) + 1
+	return counts
+
+func diff_top(before: Dictionary, after: Dictionary) -> String:
+	var rows := []
+	for key in after: if int(after[key]) - int(before.get(key, 0)) >= 8: rows.append([int(after[key]) - int(before.get(key, 0)), key])
+	for key in before: if int(before[key]) - int(after.get(key, 0)) >= 8: rows.append([int(after.get(key, 0)) - int(before[key]), key])
+	rows.sort_custom(func(a, b): return absi(a[0]) > absi(b[0]))
+	return str(rows.slice(0, 6))
+
 func ground(point: Vector3, fallback: float) -> float:
 	var query := PhysicsRayQueryParameters3D.create(Vector3(point.x, 400.0, point.z), Vector3(point.x, -50.0, point.z), 1)
 	var hit := world.get_world_3d().direct_space_state.intersect_ray(query)
@@ -101,6 +121,7 @@ func run() -> void:
 		if "--per-script" in args:
 			if frame_index % 30 == 1: adopt_processing_nodes()
 			slow_scripts = run_timed_processes(1.0 / 60.0)
+		var tally_before := tally() if ("--diff-nodes" in args and position.x < -60.0 and position.x > -100.0) else {}
 		var saved_process := t_process
 		await process_frame
 		prev_process = saved_process
@@ -123,6 +144,7 @@ func run() -> void:
 			var rid := root.get_viewport_rid()
 			var split := "process=%.1f physics=%.1f render_cpu=%.1f render_gpu=%.1f nodes%+d draw=%d" % [Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, RenderingServer.viewport_get_measured_render_time_cpu(rid), RenderingServer.viewport_get_measured_render_time_gpu(rid), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT) - last_nodes), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))]
 			labels.append(split)
+			if not tally_before.is_empty(): labels.append("nos: " + diff_top(tally_before, tally()))
 			if not slow_scripts.is_empty(): labels.append("scripts lentos: " + str(slow_scripts))
 			# Fases do quadro ANTERIOR (o intervalo medido acaba de fechar): scripts, desenho e o resto
 			# (física + espera de apresentação/GPU) até este process_frame.

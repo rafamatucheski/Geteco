@@ -39,12 +39,24 @@ func _ready() -> void:
 	if scenery != null:
 		for point in scenery.tree_points: _reserved.append(Vector3(point.x,2.2,point.z))
 		_reserved.append(Vector3(scenery.tower_position.x,3.5,scenery.tower_position.z))
-	_tape()
-	_bleacher()
-	_board()
-	_banners()
-	_hay_bales()
-	_flush()
+	_steps = [_tape,_bleacher,_board,_banners,_hay_bales,_flush]
+	set_process(true)
+
+var _steps: Array[Callable] = []
+var complete := false
+
+## Fita, arquibancada (5 torcedores), placar, faixas e fardos em quadros separados; o
+## `_flush` (malhas em lote) por último. `finish_build` conclui na hora (testes).
+func _process(_delta: float) -> void:
+	if _steps.is_empty(): return
+	(_steps.pop_front() as Callable).call()
+	if _steps.is_empty():
+		complete = true
+		set_process(false)
+
+func finish_build() -> void:
+	while not _steps.is_empty(): (_steps.pop_front() as Callable).call()
+	complete = true
 
 func set_board(title: String, detail: String) -> void:
 	if is_instance_valid(board_title) and board_title.text != title: board_title.text = title

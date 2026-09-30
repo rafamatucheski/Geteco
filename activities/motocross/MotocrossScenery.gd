@@ -15,9 +15,24 @@ func _ready() -> void:
 	_solids.collision_layer = 1
 	_solids.collision_mask = 0
 	add_child(_solids)
-	_trees()
-	_tower()
-	_spectator_shore()
+	_steps = [_trees,_tower,func(): _shore_boat(0),func(): _shore_boat(1),func(): _shore_boat(2)]
+	set_process(true)
+
+var _steps: Array[Callable] = []
+var complete := false
+
+## Árvores, torre e cada barco (com seus torcedores) saem em quadros separados: montar tudo
+## junto custava 40-60 ms. `finish_build` conclui na hora (testes).
+func _process(_delta: float) -> void:
+	if _steps.is_empty(): return
+	(_steps.pop_front() as Callable).call()
+	if _steps.is_empty():
+		complete = true
+		set_process(false)
+
+func finish_build() -> void:
+	while not _steps.is_empty(): (_steps.pop_front() as Callable).call()
+	complete = true
 
 func _mat(color: Color) -> StandardMaterial3D:
 	if not _materials.has(color):
@@ -137,17 +152,16 @@ func set_lighting(night: float, viewer: Vector3) -> void:
 		light.light_energy = 10.0*night
 	for lens in _lenses: lens.emission_energy_multiplier = night*2.5
 
-func _spectator_shore() -> void:
+func _shore_boat(i: int) -> void:
 	# Moored in real water east of Harbor's rural shoreline (x = -80).
-	for i in 3:
-		var boat := Node3D.new()
-		boat.name = "SpectatorBoat%d"%i
-		boat.position = Vector3(-74,-.72,-113+float(i)*23)
-		add_child(boat)
-		_boat(boat,[Color("dbc9a8"),Color("497b89"),Color("914d34")][i])
-		for j in 2: _spectator(boat,Vector3(float(j)*1.3-.65,.57,.6-float(j)*1.2),[Color("dd7637"),Color("497dae"),Color("d4bd51")][(i+j)%3])
-		_beam(Vector3(-79,.5,boat.position.z-2),boat.position+Vector3(-1.3,.65,-2),.025,Color("b9aa80"))
-		_beam(Vector3(-79,.5,boat.position.z+2),boat.position+Vector3(-1.3,.65,2),.025,Color("b9aa80"))
+	var boat := Node3D.new()
+	boat.name = "SpectatorBoat%d"%i
+	boat.position = Vector3(-74,-.72,-113+float(i)*23)
+	add_child(boat)
+	_boat(boat,[Color("dbc9a8"),Color("497b89"),Color("914d34")][i])
+	for j in 2: _spectator(boat,Vector3(float(j)*1.3-.65,.57,.6-float(j)*1.2),[Color("dd7637"),Color("497dae"),Color("d4bd51")][(i+j)%3])
+	_beam(Vector3(-79,.5,boat.position.z-2),boat.position+Vector3(-1.3,.65,-2),.025,Color("b9aa80"))
+	_beam(Vector3(-79,.5,boat.position.z+2),boat.position+Vector3(-1.3,.65,2),.025,Color("b9aa80"))
 
 func _boat(boat: Node3D, color: Color) -> void:
 	var outline := PackedVector2Array([Vector2(-1.55,3),Vector2(1.55,3),Vector2(1.55,-1.8),Vector2(.85,-3.1),Vector2(0,-3.8),Vector2(-.85,-3.1),Vector2(-1.55,-1.8)])
