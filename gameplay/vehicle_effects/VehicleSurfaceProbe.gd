@@ -14,8 +14,9 @@ static func sample(vehicle: CharacterBody3D, wheel_position: Vector3) -> Diction
 	if normal.dot(Vector3.UP) < .45: return {}
 	var point: Vector3 = hit.position
 	var kind := _surface_kind(hit.collider,point)
-	if _inside_water(vehicle,point): kind = "water"
-	return {"point":point,"normal":normal.normalized(),"kind":kind,"wet":kind=="water" or _weather_wet(vehicle)}
+	var level := water_level(vehicle,point)
+	if not is_nan(level): kind = "water"
+	return {"point":point,"normal":normal.normalized(),"kind":kind,"wet":kind=="water" or _weather_wet(vehicle),"water_y":level}
 
 static func _surface_kind(collider: Object, point: Vector3) -> String:
 	var cursor := collider as Node
@@ -58,7 +59,13 @@ static func _weather_wet(vehicle: Node) -> bool:
 	return int(weather.get("weather_state")) in [1,2]
 
 static func _inside_water(vehicle: Node, point: Vector3) -> bool:
+	return not is_nan(water_level(vehicle,point))
+
+## Altura do espelho d'água sob `point`, ou NAN fora de qualquer lago. O respingo nasce aí, não
+## no fundo da bacia (0,2–0,6 m abaixo), senão a água cobre as partículas.
+static func water_level(vehicle: Node, point: Vector3) -> float:
 	for candidate in vehicle.get_tree().get_nodes_in_group("native_water_surface"):
 		if candidate is Node3D and candidate.is_visible_in_tree() and candidate.has_method("contains_water"):
-			if absf(point.y-candidate.global_position.y)<.8 and candidate.contains_water(point): return true
-	return false
+			if absf(point.y-candidate.global_position.y)<.8 and candidate.contains_water(point):
+				return candidate.global_position.y+(float(candidate.ALPINE_WATER_Y) if str(candidate.get("variant")) == "alpine" else .05)
+	return NAN

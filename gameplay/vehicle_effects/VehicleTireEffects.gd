@@ -88,17 +88,22 @@ func physics_tick(delta: float, active: bool) -> void:
 		var contact: Dictionary = contacts[side]
 		if contact.is_empty():
 			_set_emitting(side,false)
+			if side < droplets.size(): droplets[side].emitting = false
 			last_modes[side] = ""
 			last_contacts[side] = {}
 			continue
 		var kind: String = contact.kind
 		var mode := ""
-		if bool(contact.wet) and road_speed > 3.0: mode = "water"
+		# Lago de verdade (não só pista molhada): respingo grosso e gotas em arco.
+		if kind == "water" and road_speed > 1.5: mode = "lake"
+		elif bool(contact.wet) and road_speed > 3.0: mode = "water"
 		elif kind in SOFT_KINDS and road_speed > 2.5: mode = kind
 		elif sliding and kind == "hard": mode = "smoke"
+		var splash_in: bool = mode == "lake" and last_modes[side] != "lake" and road_speed > 4.0
 		last_modes[side] = mode
 		if mode.is_empty(): _set_emitting(side,false)
 		else: _emit_surface(side,contact,mode,road_speed,lateral_speed)
+		_update_droplets(side,contact,mode == "lake",splash_in,road_speed)
 		if sliding and road_speed > 2.5: _append_mark(side,contact,kind,false)
 		elif kind in SOFT_KINDS and road_speed > .8: _append_mark(side,contact,kind,true)
 		else: last_contacts[side] = contact
@@ -137,7 +142,15 @@ func _emit_surface(side: int, contact: Dictionary, mode: String, road_speed: flo
 	process.gravity = Vector3(0,-2.5,0) if mode == "water" else (Vector3(0,-7.5,0) if mode == "grass" else Vector3(0,.28,0))
 	process.initial_velocity_min = .9 if mode == "water" else .45
 	process.initial_velocity_max = 2.7 if mode == "water" else 1.65
-	if mode == "water":
+	if mode == "lake":
+		# Lago: névoa de respingo maior e mais rápida que a pista molhada; as gotas vão no emissor à parte.
+		process.gravity = Vector3(0,-4.0,0)
+		process.initial_velocity_min = 1.4
+		process.initial_velocity_max = 3.8
+		process.scale_min = 1.2
+		process.scale_max = 2.4
+		process.color = Color(.80,.92,1.0,.85)
+	elif mode == "water":
 		process.scale_min = .45
 		process.scale_max = .9
 		process.color = Color(.75,.86,1,.62)
@@ -165,7 +178,7 @@ func _emit_surface(side: int, contact: Dictionary, mode: String, road_speed: flo
 		process.angle_max = 360.0
 		process.angular_velocity_min = -2.2
 		process.angular_velocity_max = 2.2
-	emitter.global_position = contact.point+normal*.035
+	emitter.global_position = _emission_point(contact,mode == "lake")+normal*.035
 	var soft_boost := heft*.35 if mode in SOFT_KINDS else 0.0
 	emitter.amount_ratio = clampf(.22+road_speed/18.0+lateral_speed/20.0+soft_boost,.22,1.0)
 	emitter.emitting = true
@@ -175,6 +188,7 @@ func _set_emitting(side: int, value: bool) -> void:
 
 func _stop_emitters() -> void:
 	for emitter in emitters: emitter.emitting = false
+	for emitter in droplets: emitter.emitting = false
 	if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
 	if is_instance_valid(road_mixer): road_mixer.stop()
 
@@ -278,3 +292,46 @@ func clear_all() -> void:
 	last_modes = ["",""]
 	geometry.clear_surfaces()
 	if is_instance_valid(mark_mesh): mark_mesh.visible = false
+
+## Gotas do lago: arco curto com gravidade cheia, por roda. Criadas só na primeira vez que o
+## veículo toca um lago, então quem nunca molha a roda não paga emissor nenhum. Ao entrar na
+## água com velocidade, a roda solta uma rajada única (splash_in).
+var droplets: Array[GPUParticles3D] = []
+
+func _update_droplets(side: int, contact: Dictionary, active: bool, splash_in: bool, road_speed: float) -> void:
+	if not active:
+		if side < droplets.size(): droplets[side].emitting = false
+		return
+	if droplets.is_empty():
+		for index in 2:
+			var emitter := RESOURCES.emitter("RearWheelDroplets%d"%index,64,.9,Vector2(.3,.3))
+			var process := RESOURCES.particle_process(false)
+			process.spread = 58
+			process.gravity = Vector3(0,-9.8,0)
+			process.scale_min = .55
+			process.scale_max = 1.2
+			process.color = Color(.86,.94,1.0,.9)
+			emitter.process_material = process
+			vehicle.add_child(emitter)
+			emitter.top_level = true
+			droplets.append(emitter)
+	var emitter := droplets[side]
+	var process := emitter.process_material as ParticleProcessMaterial
+	var wake := -Vector3(vehicle.horizontal_velocity.x,0,vehicle.horizontal_velocity.z).normalized()
+	var normal: Vector3 = contact.normal
+	process.direction = (normal*.9+wake*.5+vehicle.global_basis.x*(-.2 if side == 0 else .2)).normalized()
+	process.initial_velocity_min = 1.8+road_speed*.12
+	process.initial_velocity_max = 3.6+road_speed*.3
+	emitter.global_position = _emission_point(contact,true)+normal*.05
+	emitter.amount_ratio = clampf(.25+road_speed/14.0,.25,1.0)
+	emitter.emitting = true
+	# Rajada de entrada: reinicia o emissor com a taxa cheia por um instante.
+	if splash_in:
+		emitter.amount_ratio = 1.0
+		emitter.restart()
+
+## Em lago o respingo sai do espelho d'água; o ponto de contato fica no fundo da bacia, sob a água.
+func _emission_point(contact: Dictionary, lake: bool) -> Vector3:
+	var point: Vector3 = contact.point
+	if lake and contact.has("water_y") and not is_nan(float(contact.water_y)): point.y = maxf(point.y,float(contact.water_y)+.18)
+	return point
