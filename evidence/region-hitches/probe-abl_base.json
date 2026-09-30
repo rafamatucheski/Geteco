@@ -1,0 +1,6920 @@
+{
+	"costs": [
+		{
+			"duration_usec": 41769,
+			"label": "route_graphs",
+			"start_usec": 7959448
+		},
+		{
+			"duration_usec": 1001093,
+			"label": "mount_region:harbor",
+			"start_usec": 7000140
+		},
+		{
+			"duration_usec": 101893,
+			"label": "vehicle_ready_visual:sport_coupe",
+			"start_usec": 8104420
+		},
+		{
+			"duration_usec": 96465,
+			"label": "vehicle_ready_visual:cargo_flatbed_truck",
+			"start_usec": 17869505
+		},
+		{
+			"duration_usec": 97069,
+			"label": "spawn_vehicle_add_child:cargo_flatbed_truck",
+			"start_usec": 17869475
+		},
+		{
+			"duration_usec": 3179,
+			"label": "vehicle_ready_visual:cargo_flatbed_truck",
+			"start_usec": 18242314
+		},
+		{
+			"duration_usec": 3706,
+			"label": "spawn_vehicle_add_child:cargo_flatbed_truck",
+			"start_usec": 18242282
+		},
+		{
+			"duration_usec": 4848,
+			"label": "vehicle_ready_visual:bike_urban",
+			"start_usec": 18334953
+		},
+		{
+			"duration_usec": 6109,
+			"label": "spawn_vehicle_add_child:bike_urban",
+			"start_usec": 18334918
+		},
+		{
+			"duration_usec": 6213,
+			"label": "traffic_spawn_vehicle:bike_urban",
+			"start_usec": 18334876
+		},
+		{
+			"duration_usec": 7356,
+			"label": "traffic_spawn",
+			"start_usec": 18333751
+		},
+		{
+			"duration_usec": 7369,
+			"label": "population_job:traffic",
+			"start_usec": 18333740
+		},
+		{
+			"duration_usec": 7212,
+			"label": "population_job:equipment",
+			"start_usec": 18369881
+		},
+		{
+			"duration_usec": 51398,
+			"label": "vehicle_ready_visual:police_cruiser",
+			"start_usec": 18454922
+		},
+		{
+			"duration_usec": 51897,
+			"label": "spawn_vehicle_add_child:police_cruiser",
+			"start_usec": 18454891
+		},
+		{
+			"duration_usec": 39270,
+			"label": "vehicle_ready_visual:police_suv",
+			"start_usec": 18508721
+		},
+		{
+			"duration_usec": 39782,
+			"label": "spawn_vehicle_add_child:police_suv",
+			"start_usec": 18508687
+		},
+		{
+			"duration_usec": 3901,
+			"label": "vehicle_ready_visual:cargo_flatbed_truck",
+			"start_usec": 18686321
+		},
+		{
+			"duration_usec": 4481,
+			"label": "spawn_vehicle_add_child:cargo_flatbed_truck",
+			"start_usec": 18686267
+		},
+		{
+			"duration_usec": 2162,
+			"label": "traffic_spawn_route",
+			"start_usec": 18775599
+		},
+		{
+			"duration_usec": 8135,
+			"label": "vehicle_ready_visual:nimbus_minivan",
+			"start_usec": 18777854
+		},
+		{
+			"duration_usec": 8573,
+			"label": "spawn_vehicle_add_child:nimbus_minivan",
+			"start_usec": 18777815
+		},
+		{
+			"duration_usec": 8668,
+			"label": "traffic_spawn_vehicle:nimbus_minivan",
+			"start_usec": 18777775
+		},
+		{
+			"duration_usec": 10961,
+			"label": "traffic_spawn",
+			"start_usec": 18775499
+		},
+		{
+			"duration_usec": 10973,
+			"label": "population_job:traffic",
+			"start_usec": 18775489
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 51,
+			"duration_usec": 1006632,
+			"engine_physics_ticks": 50,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 21.0,
+				"collision_pairs": 86.0,
+				"islands": 17.0
+			},
+			"physics_process_max_ms": 230.165,
+			"physics_ticks": 51,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 51,
+					"sum_us": 751
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 51,
+					"sum_us": 70
+				},
+				"police.dispatch_step": {
+					"max_us": 13,
+					"n": 51,
+					"sum_us": 172
+				},
+				"roadblocks.tick": {
+					"max_us": 8,
+					"n": 51,
+					"sum_us": 229
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 17857137
+		},
+		{
+			"duration_usec": 20537,
+			"label": "vehicle_ready_visual:ranch_single",
+			"start_usec": 19045387
+		},
+		{
+			"duration_usec": 20944,
+			"label": "spawn_vehicle_add_child:ranch_single",
+			"start_usec": 19045348
+		},
+		{
+			"duration_usec": 21049,
+			"label": "traffic_spawn_vehicle:ranch_single",
+			"start_usec": 19045307
+		},
+		{
+			"duration_usec": 22106,
+			"label": "traffic_spawn",
+			"start_usec": 19044260
+		},
+		{
+			"duration_usec": 22118,
+			"label": "population_job:traffic",
+			"start_usec": 19044250
+		},
+		{
+			"duration_usec": 7607,
+			"label": "population_job:equipment",
+			"start_usec": 19074938
+		},
+		{
+			"duration_usec": 12767,
+			"label": "population_job:equipment",
+			"start_usec": 19089117
+		},
+		{
+			"duration_usec": 2859,
+			"label": "population_spawn",
+			"start_usec": 19540973
+		},
+		{
+			"duration_usec": 2867,
+			"label": "population_job:citizen",
+			"start_usec": 19540970
+		},
+		{
+			"duration_usec": 8831,
+			"label": "vehicle_ready_visual:courier_van",
+			"start_usec": 19549021
+		},
+		{
+			"duration_usec": 9254,
+			"label": "spawn_vehicle_add_child:courier_van",
+			"start_usec": 19548982
+		},
+		{
+			"duration_usec": 9329,
+			"label": "traffic_spawn_vehicle:courier_van",
+			"start_usec": 19548937
+		},
+		{
+			"duration_usec": 10686,
+			"label": "traffic_spawn",
+			"start_usec": 19547589
+		},
+		{
+			"duration_usec": 10699,
+			"label": "population_job:traffic",
+			"start_usec": 19547578
+		},
+		{
+			"duration_usec": 2268,
+			"label": "traffic_spawn_route",
+			"start_usec": 19798770
+		},
+		{
+			"duration_usec": 3498,
+			"label": "traffic_spawn",
+			"start_usec": 19798683
+		},
+		{
+			"duration_usec": 3514,
+			"label": "population_job:traffic",
+			"start_usec": 19798671
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1011411,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 123.0,
+				"islands": 20.0
+			},
+			"physics_process_max_ms": 120.395,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1127
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 96
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 281
+				},
+				"roadblocks.tick": {
+					"max_us": 20,
+					"n": 61,
+					"sum_us": 348
+				}
+			},
+			"start_usec": 18863769
+		},
+		{
+			"duration_usec": 2534,
+			"label": "traffic_spawn",
+			"start_usec": 20058652
+		},
+		{
+			"duration_usec": 2552,
+			"label": "population_job:traffic",
+			"start_usec": 20058639
+		},
+		{
+			"duration_usec": 3072,
+			"label": "traffic_spawn",
+			"start_usec": 20314796
+		},
+		{
+			"duration_usec": 3091,
+			"label": "population_job:traffic",
+			"start_usec": 20314782
+		},
+		{
+			"duration_usec": 2471,
+			"label": "traffic_spawn",
+			"start_usec": 20826502
+		},
+		{
+			"duration_usec": 2489,
+			"label": "population_job:traffic",
+			"start_usec": 20826488
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013847,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 23.0,
+				"collision_pairs": 129.0,
+				"islands": 19.0
+			},
+			"physics_process_max_ms": 3.443,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 182,
+					"n": 61,
+					"sum_us": 1333
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 306
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 348
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 19875180
+		},
+		{
+			"duration_usec": 4270,
+			"label": "vehicle_ready_visual:bike_cruiser",
+			"start_usec": 21099230
+		},
+		{
+			"duration_usec": 5623,
+			"label": "spawn_vehicle_add_child:bike_cruiser",
+			"start_usec": 21099187
+		},
+		{
+			"duration_usec": 5721,
+			"label": "traffic_spawn_vehicle:bike_cruiser",
+			"start_usec": 21099144
+		},
+		{
+			"duration_usec": 7143,
+			"label": "traffic_spawn",
+			"start_usec": 21097737
+		},
+		{
+			"duration_usec": 7160,
+			"label": "population_job:traffic",
+			"start_usec": 21097722
+		},
+		{
+			"duration_usec": 2268,
+			"label": "traffic_spawn",
+			"start_usec": 21334741
+		},
+		{
+			"duration_usec": 2286,
+			"label": "population_job:traffic",
+			"start_usec": 21334727
+		},
+		{
+			"duration_usec": 2002,
+			"label": "population_spawn",
+			"start_usec": 21603052
+		},
+		{
+			"duration_usec": 2009,
+			"label": "population_job:citizen",
+			"start_usec": 21603049
+		},
+		{
+			"duration_usec": 7504,
+			"label": "vehicle_ready_visual:bike_sport",
+			"start_usec": 21626586
+		},
+		{
+			"duration_usec": 8977,
+			"label": "spawn_vehicle_add_child:bike_sport",
+			"start_usec": 21626548
+		},
+		{
+			"duration_usec": 9082,
+			"label": "traffic_spawn_vehicle:bike_sport",
+			"start_usec": 21626506
+		},
+		{
+			"duration_usec": 9832,
+			"label": "traffic_spawn",
+			"start_usec": 21625773
+		},
+		{
+			"duration_usec": 9851,
+			"label": "population_job:traffic",
+			"start_usec": 21625756
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000868,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 19.0,
+				"collision_pairs": 111.0,
+				"islands": 19.0
+			},
+			"physics_process_max_ms": 4.85,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 54,
+					"n": 60,
+					"sum_us": 1161
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 24,
+					"n": 60,
+					"sum_us": 277
+				},
+				"roadblocks.tick": {
+					"max_us": 15,
+					"n": 60,
+					"sum_us": 326
+				}
+			},
+			"start_usec": 20889027
+		},
+		{
+			"duration_usec": 32550,
+			"label": "vehicle_ready_visual:union_sedan",
+			"start_usec": 22099206
+		},
+		{
+			"duration_usec": 33151,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 22099163
+		},
+		{
+			"duration_usec": 33263,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 22099115
+		},
+		{
+			"duration_usec": 34132,
+			"label": "traffic_spawn",
+			"start_usec": 22098256
+		},
+		{
+			"duration_usec": 34147,
+			"label": "population_job:traffic",
+			"start_usec": 22098243
+		},
+		{
+			"duration_usec": 4957,
+			"label": "vehicle_ready_visual:arctic_jeep",
+			"start_usec": 22353449
+		},
+		{
+			"duration_usec": 5378,
+			"label": "spawn_vehicle_add_child:arctic_jeep",
+			"start_usec": 22353388
+		},
+		{
+			"duration_usec": 5497,
+			"label": "traffic_spawn_vehicle:arctic_jeep",
+			"start_usec": 22353337
+		},
+		{
+			"duration_usec": 6755,
+			"label": "traffic_spawn",
+			"start_usec": 22352090
+		},
+		{
+			"duration_usec": 6770,
+			"label": "population_job:traffic",
+			"start_usec": 22352077
+		},
+		{
+			"duration_usec": 2829,
+			"label": "population_spawn",
+			"start_usec": 22860288
+		},
+		{
+			"duration_usec": 2837,
+			"label": "population_job:citizen",
+			"start_usec": 22860285
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1017061,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 12.0,
+				"collision_pairs": 81.0,
+				"islands": 12.0
+			},
+			"physics_process_max_ms": 4.033,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1141
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 261
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 347
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 21889895
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 55,
+			"duration_usec": 1051237,
+			"engine_physics_ticks": 55,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 12.0,
+				"collision_pairs": 44.0,
+				"islands": 11.0
+			},
+			"physics_process_max_ms": 3.398,
+			"physics_ticks": 55,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 55,
+					"sum_us": 970
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 55,
+					"sum_us": 92
+				},
+				"police.dispatch_step": {
+					"max_us": 5,
+					"n": 55,
+					"sum_us": 220
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 55,
+					"sum_us": 281
+				}
+			},
+			"start_usec": 22906956
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 68,
+			"duration_usec": 1013773,
+			"engine_physics_ticks": 68,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 82.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 84.424,
+			"physics_ticks": 68,
+			"spans": {
+				"controller.tick": {
+					"max_us": 26,
+					"n": 68,
+					"sum_us": 1152
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 68,
+					"sum_us": 105
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 68,
+					"sum_us": 263
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 68,
+					"sum_us": 350
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 23958193
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1004191,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 95.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 18.193,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 38,
+					"n": 60,
+					"sum_us": 1113
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 89
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 255
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 320
+				}
+			},
+			"start_usec": 24971966
+		},
+		{
+			"duration_usec": 18450,
+			"label": "vehicle_ready_visual:port_forklift",
+			"start_usec": 26415412
+		},
+		{
+			"duration_usec": 18721,
+			"label": "spawn_vehicle_add_child:port_forklift",
+			"start_usec": 26415379
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1010684,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 110.0,
+				"islands": 21.0
+			},
+			"physics_process_max_ms": 2.408,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1122
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 261
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 323
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 25976157
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1003925,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 108.0,
+				"islands": 21.0
+			},
+			"physics_process_max_ms": 32.229,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 60,
+					"sum_us": 1157
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 270
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 340
+				}
+			},
+			"start_usec": 26986841
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013736,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 107.0,
+				"islands": 20.0
+			},
+			"physics_process_max_ms": 3.259,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1115
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 262
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 338
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 27990766
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1019469,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 27.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 2.757,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 36,
+					"n": 61,
+					"sum_us": 1202
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 16,
+					"n": 61,
+					"sum_us": 278
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 391
+				}
+			},
+			"start_usec": 29004502
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1017424,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.364,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1151
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 104
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 277
+				},
+				"roadblocks.tick": {
+					"max_us": 13,
+					"n": 61,
+					"sum_us": 339
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 30023971
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013808,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.309,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1161
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 290
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 342
+				}
+			},
+			"start_usec": 31041395
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020808,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.266,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1167
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 107
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 293
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 354
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 32055203
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013992,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.418,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1161
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 276
+				},
+				"roadblocks.tick": {
+					"max_us": 15,
+					"n": 61,
+					"sum_us": 354
+				}
+			},
+			"start_usec": 33076011
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013641,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.293,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1123
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 107
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 268
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 337
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 34090003
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020787,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.256,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1191
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 286
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 361
+				}
+			},
+			"start_usec": 35103644
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000028,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.356,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 115,
+					"n": 60,
+					"sum_us": 1286
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 60,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 28,
+					"n": 60,
+					"sum_us": 293
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 380
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 36124431
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013665,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.306,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1129
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 106
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 273
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 336
+				}
+			},
+			"start_usec": 37124459
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020775,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.291,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1112
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 262
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 338
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 38138124
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013967,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.307,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1120
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 266
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 339
+				}
+			},
+			"start_usec": 39158899
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000182,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.278,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 46,
+					"n": 60,
+					"sum_us": 1158
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 112
+				},
+				"police.dispatch_step": {
+					"max_us": 23,
+					"n": 60,
+					"sum_us": 290
+				},
+				"roadblocks.tick": {
+					"max_us": 8,
+					"n": 60,
+					"sum_us": 325
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 40172866
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013790,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.365,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1152
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 99
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 262
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 345
+				}
+			},
+			"start_usec": 41173048
+		},
+		{
+			"duration_usec": 28976,
+			"label": "world_connection",
+			"start_usec": 42522695
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1004902,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.356,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 49,
+					"n": 60,
+					"sum_us": 1128
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 95
+				},
+				"police.dispatch_step": {
+					"max_us": 5,
+					"n": 60,
+					"sum_us": 255
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 335
+				},
+				"wrecks.tidy": {
+					"max_us": 2,
+					"n": 1,
+					"sum_us": 2
+				}
+			},
+			"start_usec": 42186838
+		},
+		{
+			"duration_usec": 2630,
+			"label": "traffic_spawn",
+			"start_usec": 44202291
+		},
+		{
+			"duration_usec": 2643,
+			"label": "population_job:traffic",
+			"start_usec": 44202282
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1017620,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 6.0,
+				"collision_pairs": 24.0,
+				"islands": 5.0
+			},
+			"physics_process_max_ms": 1.426,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1106
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 108
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 265
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 330
+				}
+			},
+			"start_usec": 43191740
+		},
+		{
+			"duration_usec": 2221,
+			"label": "traffic_spawn_route",
+			"start_usec": 44455538
+		},
+		{
+			"duration_usec": 3094,
+			"label": "traffic_spawn",
+			"start_usec": 44455490
+		},
+		{
+			"duration_usec": 3108,
+			"label": "population_job:traffic",
+			"start_usec": 44455480
+		},
+		{
+			"duration_usec": 2840,
+			"label": "spawn_vehicle_add_child:bike_sport",
+			"start_usec": 45213201
+		},
+		{
+			"duration_usec": 2941,
+			"label": "traffic_spawn_vehicle:bike_sport",
+			"start_usec": 45213152
+		},
+		{
+			"duration_usec": 4959,
+			"label": "traffic_spawn",
+			"start_usec": 45211148
+		},
+		{
+			"duration_usec": 4973,
+			"label": "population_job:traffic",
+			"start_usec": 45211136
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1010377,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 8.0,
+				"collision_pairs": 31.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 1.851,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1149
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 116
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 267
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 334
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 44209360
+		},
+		{
+			"duration_usec": 3283,
+			"label": "population_spawn",
+			"start_usec": 45966956
+		},
+		{
+			"duration_usec": 3291,
+			"label": "population_job:citizen",
+			"start_usec": 45966953
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1004248,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 42.0,
+				"islands": 11.0
+			},
+			"physics_process_max_ms": 2.135,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 60,
+					"sum_us": 1142
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 60,
+					"sum_us": 263
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 343
+				}
+			},
+			"start_usec": 45219737
+		},
+		{
+			"duration_usec": 3360,
+			"label": "population_spawn",
+			"start_usec": 46225687
+		},
+		{
+			"duration_usec": 3367,
+			"label": "population_job:citizen",
+			"start_usec": 46225684
+		},
+		{
+			"duration_usec": 2214,
+			"label": "population_spawn",
+			"start_usec": 46989381
+		},
+		{
+			"duration_usec": 2222,
+			"label": "population_job:citizen",
+			"start_usec": 46989378
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000308,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 8.0,
+				"collision_pairs": 27.0,
+				"islands": 7.0
+			},
+			"physics_process_max_ms": 10.797,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 60,
+					"sum_us": 1126
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 60,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 5,
+					"n": 60,
+					"sum_us": 256
+				},
+				"roadblocks.tick": {
+					"max_us": 6,
+					"n": 60,
+					"sum_us": 320
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 46223985
+		},
+		{
+			"duration_usec": 2951,
+			"label": "population_spawn",
+			"start_usec": 47756026
+		},
+		{
+			"duration_usec": 2961,
+			"label": "population_job:citizen",
+			"start_usec": 47756021
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1018097,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 7.0,
+				"collision_pairs": 27.0,
+				"islands": 7.0
+			},
+			"physics_process_max_ms": 11.941,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 27,
+					"n": 61,
+					"sum_us": 1128
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 280
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 342
+				}
+			},
+			"start_usec": 47224293
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1015499,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 8.0,
+				"collision_pairs": 35.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 16.11,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1106
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 256
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 346
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 48242390
+		},
+		{
+			"duration_usec": 2666,
+			"label": "population_spawn",
+			"start_usec": 49272761
+		},
+		{
+			"duration_usec": 2674,
+			"label": "population_job:citizen",
+			"start_usec": 49272758
+		},
+		{
+			"duration_usec": 2586,
+			"label": "traffic_spawn_route",
+			"start_usec": 49278699
+		},
+		{
+			"duration_usec": 3156,
+			"label": "spawn_vehicle_add_child:bike_sport",
+			"start_usec": 49281358
+		},
+		{
+			"duration_usec": 3307,
+			"label": "traffic_spawn_vehicle:bike_sport",
+			"start_usec": 49281298
+		},
+		{
+			"duration_usec": 6016,
+			"label": "traffic_spawn",
+			"start_usec": 49278605
+		},
+		{
+			"duration_usec": 6032,
+			"label": "population_job:traffic",
+			"start_usec": 49278591
+		},
+		{
+			"duration_usec": 2548,
+			"label": "traffic_spawn_route",
+			"start_usec": 49537999
+		},
+		{
+			"duration_usec": 3526,
+			"label": "traffic_spawn",
+			"start_usec": 49537834
+		},
+		{
+			"duration_usec": 3542,
+			"label": "population_job:traffic",
+			"start_usec": 49537823
+		},
+		{
+			"duration_usec": 2567,
+			"label": "traffic_spawn_route",
+			"start_usec": 49788606
+		},
+		{
+			"duration_usec": 3810,
+			"label": "traffic_spawn",
+			"start_usec": 49788450
+		},
+		{
+			"duration_usec": 3825,
+			"label": "population_job:traffic",
+			"start_usec": 49788438
+		},
+		{
+			"duration_usec": 2881,
+			"label": "traffic_spawn_route",
+			"start_usec": 50043662
+		},
+		{
+			"duration_usec": 2519,
+			"label": "traffic_spawn_route",
+			"start_usec": 50047745
+		},
+		{
+			"duration_usec": 7645,
+			"label": "traffic_spawn",
+			"start_usec": 50043546
+		},
+		{
+			"duration_usec": 7661,
+			"label": "population_job:traffic",
+			"start_usec": 50043534
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1014869,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 9.0,
+				"collision_pairs": 45.0,
+				"islands": 9.0
+			},
+			"physics_process_max_ms": 11.42,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 137,
+					"n": 61,
+					"sum_us": 1253
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 114,
+					"n": 61,
+					"sum_us": 379
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 331
+				}
+			},
+			"start_usec": 49257889
+		},
+		{
+			"duration_usec": 2541,
+			"label": "traffic_spawn_route",
+			"start_usec": 50300472
+		},
+		{
+			"duration_usec": 28340,
+			"label": "vehicle_ready_visual:taxi_yellow",
+			"start_usec": 50303130
+		},
+		{
+			"duration_usec": 28959,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 50303082
+		},
+		{
+			"duration_usec": 29095,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 50303025
+		},
+		{
+			"duration_usec": 31731,
+			"label": "traffic_spawn",
+			"start_usec": 50300437
+		},
+		{
+			"duration_usec": 31748,
+			"label": "population_job:traffic",
+			"start_usec": 50300423
+		},
+		{
+			"duration_usec": 2690,
+			"label": "traffic_spawn_route",
+			"start_usec": 50555089
+		},
+		{
+			"duration_usec": 2316,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 50557841
+		},
+		{
+			"duration_usec": 2438,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 50557792
+		},
+		{
+			"duration_usec": 2453,
+			"label": "traffic_spawn_route",
+			"start_usec": 50560255
+		},
+		{
+			"duration_usec": 9415,
+			"label": "traffic_spawn",
+			"start_usec": 50555063
+		},
+		{
+			"duration_usec": 9433,
+			"label": "population_job:traffic",
+			"start_usec": 50555047
+		},
+		{
+			"duration_usec": 2595,
+			"label": "traffic_spawn_route",
+			"start_usec": 50807534
+		},
+		{
+			"duration_usec": 2452,
+			"label": "spawn_vehicle_add_child:bike_urban",
+			"start_usec": 50810188
+		},
+		{
+			"duration_usec": 2575,
+			"label": "traffic_spawn_vehicle:bike_urban",
+			"start_usec": 50810142
+		},
+		{
+			"duration_usec": 5283,
+			"label": "traffic_spawn",
+			"start_usec": 50807449
+		},
+		{
+			"duration_usec": 5301,
+			"label": "population_job:traffic",
+			"start_usec": 50807432
+		},
+		{
+			"duration_usec": 2529,
+			"label": "traffic_spawn_route",
+			"start_usec": 51062751
+		},
+		{
+			"duration_usec": 2393,
+			"label": "traffic_spawn_route",
+			"start_usec": 51066381
+		},
+		{
+			"duration_usec": 2025,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 51068822
+		},
+		{
+			"duration_usec": 2114,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 51068786
+		},
+		{
+			"duration_usec": 8231,
+			"label": "traffic_spawn",
+			"start_usec": 51062681
+		},
+		{
+			"duration_usec": 8246,
+			"label": "population_job:traffic",
+			"start_usec": 51062667
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1007470,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 15.0,
+				"collision_pairs": 44.0,
+				"islands": 13.0
+			},
+			"physics_process_max_ms": 9.521,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 70,
+					"n": 60,
+					"sum_us": 1210
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 97
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 274
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 328
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 50272758
+		},
+		{
+			"duration_usec": 2525,
+			"label": "traffic_spawn_route",
+			"start_usec": 51368590
+		},
+		{
+			"duration_usec": 2335,
+			"label": "traffic_spawn_route",
+			"start_usec": 51372394
+		},
+		{
+			"duration_usec": 7403,
+			"label": "traffic_spawn",
+			"start_usec": 51368365
+		},
+		{
+			"duration_usec": 7422,
+			"label": "population_job:traffic",
+			"start_usec": 51368350
+		},
+		{
+			"duration_usec": 3706,
+			"label": "population_spawn",
+			"start_usec": 51598114
+		},
+		{
+			"duration_usec": 3715,
+			"label": "population_job:citizen",
+			"start_usec": 51598111
+		},
+		{
+			"duration_usec": 2499,
+			"label": "traffic_spawn_route",
+			"start_usec": 51623860
+		},
+		{
+			"duration_usec": 2326,
+			"label": "traffic_spawn_route",
+			"start_usec": 51627531
+		},
+		{
+			"duration_usec": 6927,
+			"label": "traffic_spawn",
+			"start_usec": 51623774
+		},
+		{
+			"duration_usec": 6944,
+			"label": "population_job:traffic",
+			"start_usec": 51623760
+		},
+		{
+			"duration_usec": 2401,
+			"label": "traffic_spawn_route",
+			"start_usec": 51901807
+		},
+		{
+			"duration_usec": 2783,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 51904266
+		},
+		{
+			"duration_usec": 2902,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 51904219
+		},
+		{
+			"duration_usec": 2258,
+			"label": "traffic_spawn_route",
+			"start_usec": 51907140
+		},
+		{
+			"duration_usec": 8636,
+			"label": "traffic_spawn",
+			"start_usec": 51901558
+		},
+		{
+			"duration_usec": 8658,
+			"label": "population_job:traffic",
+			"start_usec": 51901539
+		},
+		{
+			"duration_usec": 2526,
+			"label": "traffic_spawn_route",
+			"start_usec": 52144862
+		},
+		{
+			"duration_usec": 2389,
+			"label": "traffic_spawn_route",
+			"start_usec": 52148295
+		},
+		{
+			"duration_usec": 7029,
+			"label": "traffic_spawn",
+			"start_usec": 52144804
+		},
+		{
+			"duration_usec": 7047,
+			"label": "population_job:traffic",
+			"start_usec": 52144790
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1010646,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 13.0,
+				"collision_pairs": 71.0,
+				"islands": 13.0
+			},
+			"physics_process_max_ms": 7.528,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 147,
+					"n": 61,
+					"sum_us": 1255
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 108
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 266
+				},
+				"roadblocks.tick": {
+					"max_us": 132,
+					"n": 61,
+					"sum_us": 449
+				}
+			},
+			"start_usec": 51280228
+		},
+		{
+			"duration_usec": 2043,
+			"label": "traffic_spawn",
+			"start_usec": 52392946
+		},
+		{
+			"duration_usec": 2060,
+			"label": "population_job:traffic",
+			"start_usec": 52392933
+		},
+		{
+			"duration_usec": 2701,
+			"label": "traffic_spawn_route",
+			"start_usec": 52660404
+		},
+		{
+			"duration_usec": 4103,
+			"label": "traffic_spawn",
+			"start_usec": 52660248
+		},
+		{
+			"duration_usec": 4120,
+			"label": "population_job:traffic",
+			"start_usec": 52660234
+		},
+		{
+			"duration_usec": 2832,
+			"label": "traffic_spawn_route",
+			"start_usec": 52913112
+		},
+		{
+			"duration_usec": 4290,
+			"label": "traffic_spawn",
+			"start_usec": 52912955
+		},
+		{
+			"duration_usec": 4308,
+			"label": "population_job:traffic",
+			"start_usec": 52912941
+		},
+		{
+			"duration_usec": 2745,
+			"label": "traffic_spawn_route",
+			"start_usec": 53163022
+		},
+		{
+			"duration_usec": 2649,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 53165835
+		},
+		{
+			"duration_usec": 2786,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 53165781
+		},
+		{
+			"duration_usec": 5698,
+			"label": "traffic_spawn",
+			"start_usec": 53162882
+		},
+		{
+			"duration_usec": 5716,
+			"label": "population_job:traffic",
+			"start_usec": 53162866
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1001030,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 25.0,
+				"collision_pairs": 95.0,
+				"islands": 23.0
+			},
+			"physics_process_max_ms": 9.434,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 54,
+					"n": 60,
+					"sum_us": 1157
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 60,
+					"sum_us": 110
+				},
+				"police.dispatch_step": {
+					"max_us": 22,
+					"n": 60,
+					"sum_us": 286
+				},
+				"roadblocks.tick": {
+					"max_us": 16,
+					"n": 60,
+					"sum_us": 345
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 52290874
+		},
+		{
+			"duration_usec": 2498,
+			"label": "traffic_spawn_route",
+			"start_usec": 53417286
+		},
+		{
+			"duration_usec": 2399,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 53419852
+		},
+		{
+			"duration_usec": 2537,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 53419797
+		},
+		{
+			"duration_usec": 5189,
+			"label": "traffic_spawn",
+			"start_usec": 53417158
+		},
+		{
+			"duration_usec": 5207,
+			"label": "population_job:traffic",
+			"start_usec": 53417143
+		},
+		{
+			"duration_usec": 2646,
+			"label": "traffic_spawn_route",
+			"start_usec": 53685620
+		},
+		{
+			"duration_usec": 2527,
+			"label": "spawn_vehicle_add_child:bike_urban",
+			"start_usec": 53688336
+		},
+		{
+			"duration_usec": 2660,
+			"label": "traffic_spawn_vehicle:bike_urban",
+			"start_usec": 53688280
+		},
+		{
+			"duration_usec": 2448,
+			"label": "traffic_spawn_route",
+			"start_usec": 53690964
+		},
+		{
+			"duration_usec": 8842,
+			"label": "traffic_spawn",
+			"start_usec": 53685571
+		},
+		{
+			"duration_usec": 8859,
+			"label": "population_job:traffic",
+			"start_usec": 53685558
+		},
+		{
+			"duration_usec": 2579,
+			"label": "traffic_spawn_route",
+			"start_usec": 53922738
+		},
+		{
+			"duration_usec": 2359,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 53925379
+		},
+		{
+			"duration_usec": 2480,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 53925330
+		},
+		{
+			"duration_usec": 2271,
+			"label": "traffic_spawn_route",
+			"start_usec": 53927834
+		},
+		{
+			"duration_usec": 9500,
+			"label": "traffic_spawn",
+			"start_usec": 53922640
+		},
+		{
+			"duration_usec": 9520,
+			"label": "population_job:traffic",
+			"start_usec": 53922625
+		},
+		{
+			"duration_usec": 2402,
+			"label": "population_spawn",
+			"start_usec": 54180261
+		},
+		{
+			"duration_usec": 2409,
+			"label": "population_job:citizen",
+			"start_usec": 54180258
+		},
+		{
+			"duration_usec": 2633,
+			"label": "traffic_spawn_route",
+			"start_usec": 54187878
+		},
+		{
+			"duration_usec": 2227,
+			"label": "traffic_spawn_route",
+			"start_usec": 54191356
+		},
+		{
+			"duration_usec": 6541,
+			"label": "traffic_spawn",
+			"start_usec": 54187842
+		},
+		{
+			"duration_usec": 6560,
+			"label": "population_job:traffic",
+			"start_usec": 54187827
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1016912,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 15.0,
+				"collision_pairs": 62.0,
+				"islands": 13.0
+			},
+			"physics_process_max_ms": 59.359,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1179
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 115
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 284
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 353
+				}
+			},
+			"start_usec": 53291904
+		},
+		{
+			"duration_usec": 2546,
+			"label": "traffic_spawn_route",
+			"start_usec": 54442403
+		},
+		{
+			"duration_usec": 3682,
+			"label": "traffic_spawn",
+			"start_usec": 54442318
+		},
+		{
+			"duration_usec": 3700,
+			"label": "population_job:traffic",
+			"start_usec": 54442304
+		},
+		{
+			"duration_usec": 2510,
+			"label": "traffic_spawn_route",
+			"start_usec": 54693969
+		},
+		{
+			"duration_usec": 3836,
+			"label": "traffic_spawn",
+			"start_usec": 54693840
+		},
+		{
+			"duration_usec": 3854,
+			"label": "population_job:traffic",
+			"start_usec": 54693826
+		},
+		{
+			"duration_usec": 2595,
+			"label": "traffic_spawn_route",
+			"start_usec": 54948775
+		},
+		{
+			"duration_usec": 3665,
+			"label": "traffic_spawn",
+			"start_usec": 54948716
+		},
+		{
+			"duration_usec": 3681,
+			"label": "population_job:traffic",
+			"start_usec": 54948703
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1001242,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 59.0,
+				"islands": 11.0
+			},
+			"physics_process_max_ms": 7.937,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 156,
+					"n": 60,
+					"sum_us": 1283
+				},
+				"emergency.dispatch_step": {
+					"max_us": 24,
+					"n": 60,
+					"sum_us": 118
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 60,
+					"sum_us": 259
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 60,
+					"sum_us": 343
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 54308816
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1014373,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 6.0,
+				"collision_pairs": 46.0,
+				"islands": 6.0
+			},
+			"physics_process_max_ms": 7.683,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 27,
+					"n": 61,
+					"sum_us": 1095
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 104
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 266
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 330
+				}
+			},
+			"start_usec": 55310058
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000139,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 7.275,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 41,
+					"n": 60,
+					"sum_us": 1150
+				},
+				"emergency.dispatch_step": {
+					"max_us": 24,
+					"n": 60,
+					"sum_us": 125
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 60,
+					"sum_us": 260
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 330
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 56324431
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000187,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.74,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 60,
+					"sum_us": 1144
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 60,
+					"sum_us": 92
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 60,
+					"sum_us": 270
+				},
+				"roadblocks.tick": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 339
+				}
+			},
+			"start_usec": 57324570
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013609,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.741,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 28,
+					"n": 61,
+					"sum_us": 1190
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 282
+				},
+				"roadblocks.tick": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 357
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 58324757
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1002427,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.76,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 28,
+					"n": 60,
+					"sum_us": 1141
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 110
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 60,
+					"sum_us": 277
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 341
+				}
+			},
+			"start_usec": 59338366
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000339,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.96,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 60,
+					"sum_us": 1106
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 60,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 60,
+					"sum_us": 265
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 328
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 60340793
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1017565,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 7.185,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 60,
+					"n": 61,
+					"sum_us": 1184
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 45,
+					"n": 61,
+					"sum_us": 315
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 344
+				}
+			},
+			"start_usec": 61341132
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1016855,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 39.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.591,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1155
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 107
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 278
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 337
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 62358697
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013829,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.584,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1155
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 276
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 346
+				}
+			},
+			"start_usec": 63375552
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013820,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.558,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 41,
+					"n": 61,
+					"sum_us": 1182
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 104
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 269
+				},
+				"roadblocks.tick": {
+					"max_us": 28,
+					"n": 61,
+					"sum_us": 386
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 64389381
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1004675,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.656,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 60,
+					"sum_us": 1176
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 60,
+					"sum_us": 305
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 60,
+					"sum_us": 353
+				}
+			},
+			"start_usec": 65403201
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1017118,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 39.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.753,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1157
+				},
+				"emergency.dispatch_step": {
+					"max_us": 13,
+					"n": 61,
+					"sum_us": 111
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 275
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 346
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 66407876
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1010866,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.778,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1166
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 106
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 286
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 348
+				}
+			},
+			"start_usec": 67424994
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000934,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 6.811,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 43,
+					"n": 60,
+					"sum_us": 1163
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 94
+				},
+				"police.dispatch_step": {
+					"max_us": 29,
+					"n": 60,
+					"sum_us": 290
+				},
+				"roadblocks.tick": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 338
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 68435860
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020517,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 38.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 7.292,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1128
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 96
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 274
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 351
+				}
+			},
+			"start_usec": 69436794
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1074432,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 2.0,
+				"collision_pairs": 41.0,
+				"islands": 2.0
+			},
+			"physics_process_max_ms": 8.041,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 134,
+					"n": 61,
+					"sum_us": 1275
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 280
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 344
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 70457311
+		},
+		{
+			"duration_usec": 2812,
+			"label": "traffic_spawn_route",
+			"start_usec": 72341389
+		},
+		{
+			"duration_usec": 4255,
+			"label": "traffic_spawn",
+			"start_usec": 72341311
+		},
+		{
+			"duration_usec": 4271,
+			"label": "population_job:traffic",
+			"start_usec": 72341299
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 63,
+			"duration_usec": 1058392,
+			"engine_physics_ticks": 63,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 6.0,
+				"collision_pairs": 55.0,
+				"islands": 6.0
+			},
+			"physics_process_max_ms": 8.137,
+			"physics_ticks": 63,
+			"spans": {
+				"controller.tick": {
+					"max_us": 44,
+					"n": 63,
+					"sum_us": 1141
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 63,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 63,
+					"sum_us": 269
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 63,
+					"sum_us": 346
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 71531743
+		},
+		{
+			"duration_usec": 2564,
+			"label": "traffic_spawn_route",
+			"start_usec": 72635586
+		},
+		{
+			"duration_usec": 3657,
+			"label": "traffic_spawn",
+			"start_usec": 72635512
+		},
+		{
+			"duration_usec": 3675,
+			"label": "population_job:traffic",
+			"start_usec": 72635498
+		},
+		{
+			"duration_usec": 2420,
+			"label": "traffic_spawn_route",
+			"start_usec": 72863157
+		},
+		{
+			"duration_usec": 2380,
+			"label": "traffic_spawn_route",
+			"start_usec": 72866648
+		},
+		{
+			"duration_usec": 6962,
+			"label": "traffic_spawn",
+			"start_usec": 72863091
+		},
+		{
+			"duration_usec": 6980,
+			"label": "population_job:traffic",
+			"start_usec": 72863077
+		},
+		{
+			"duration_usec": 2543,
+			"label": "traffic_spawn_route",
+			"start_usec": 73110298
+		},
+		{
+			"duration_usec": 2263,
+			"label": "traffic_spawn_route",
+			"start_usec": 73113948
+		},
+		{
+			"duration_usec": 6975,
+			"label": "traffic_spawn",
+			"start_usec": 73110219
+		},
+		{
+			"duration_usec": 6993,
+			"label": "population_job:traffic",
+			"start_usec": 73110205
+		},
+		{
+			"duration_usec": 2565,
+			"label": "traffic_spawn_route",
+			"start_usec": 73367284
+		},
+		{
+			"duration_usec": 2270,
+			"label": "traffic_spawn_route",
+			"start_usec": 73370888
+		},
+		{
+			"duration_usec": 6899,
+			"label": "traffic_spawn",
+			"start_usec": 73367147
+		},
+		{
+			"duration_usec": 6918,
+			"label": "population_job:traffic",
+			"start_usec": 73367132
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 65,
+			"duration_usec": 1013351,
+			"engine_physics_ticks": 65,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 7.0,
+				"collision_pairs": 68.0,
+				"islands": 7.0
+			},
+			"physics_process_max_ms": 8.165,
+			"physics_ticks": 65,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 65,
+					"sum_us": 1208
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 65,
+					"sum_us": 116
+				},
+				"police.dispatch_step": {
+					"max_us": 11,
+					"n": 65,
+					"sum_us": 292
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 65,
+					"sum_us": 351
+				}
+			},
+			"start_usec": 72590135
+		},
+		{
+			"duration_usec": 2597,
+			"label": "traffic_spawn_route",
+			"start_usec": 73628220
+		},
+		{
+			"duration_usec": 2285,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 73630896
+		},
+		{
+			"duration_usec": 2426,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 73630833
+		},
+		{
+			"duration_usec": 5130,
+			"label": "traffic_spawn",
+			"start_usec": 73628138
+		},
+		{
+			"duration_usec": 5151,
+			"label": "population_job:traffic",
+			"start_usec": 73628119
+		},
+		{
+			"duration_usec": 2416,
+			"label": "traffic_spawn_route",
+			"start_usec": 73933092
+		},
+		{
+			"duration_usec": 2040,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 73935564
+		},
+		{
+			"duration_usec": 2169,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 73935520
+		},
+		{
+			"duration_usec": 2278,
+			"label": "traffic_spawn_route",
+			"start_usec": 73937714
+		},
+		{
+			"duration_usec": 7718,
+			"label": "traffic_spawn",
+			"start_usec": 73933008
+		},
+		{
+			"duration_usec": 7737,
+			"label": "population_job:traffic",
+			"start_usec": 73932993
+		},
+		{
+			"duration_usec": 2586,
+			"label": "traffic_spawn_route",
+			"start_usec": 74132640
+		},
+		{
+			"duration_usec": 2408,
+			"label": "traffic_spawn_route",
+			"start_usec": 74136161
+		},
+		{
+			"duration_usec": 2372,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 74138617
+		},
+		{
+			"duration_usec": 2478,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 74138580
+		},
+		{
+			"duration_usec": 8509,
+			"label": "traffic_spawn",
+			"start_usec": 74132585
+		},
+		{
+			"duration_usec": 8526,
+			"label": "population_job:traffic",
+			"start_usec": 74132570
+		},
+		{
+			"duration_usec": 2721,
+			"label": "traffic_spawn_route",
+			"start_usec": 74379996
+		},
+		{
+			"duration_usec": 2332,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 74382782
+		},
+		{
+			"duration_usec": 2458,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 74382729
+		},
+		{
+			"duration_usec": 5253,
+			"label": "traffic_spawn",
+			"start_usec": 74379947
+		},
+		{
+			"duration_usec": 5269,
+			"label": "population_job:traffic",
+			"start_usec": 74379933
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1005598,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 12.0,
+				"collision_pairs": 84.0,
+				"islands": 11.0
+			},
+			"physics_process_max_ms": 9.145,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 60,
+					"sum_us": 1101
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 88
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 254
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 60,
+					"sum_us": 349
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 73603486
+		},
+		{
+			"duration_usec": 2000,
+			"label": "population_job:citizen",
+			"start_usec": 74629865
+		},
+		{
+			"duration_usec": 2545,
+			"label": "traffic_spawn_route",
+			"start_usec": 74644104
+		},
+		{
+			"duration_usec": 3521,
+			"label": "traffic_spawn",
+			"start_usec": 74644054
+		},
+		{
+			"duration_usec": 3541,
+			"label": "population_job:traffic",
+			"start_usec": 74644038
+		},
+		{
+			"duration_usec": 2569,
+			"label": "traffic_spawn_route",
+			"start_usec": 74892852
+		},
+		{
+			"duration_usec": 2190,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 74895483
+		},
+		{
+			"duration_usec": 2311,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 74895432
+		},
+		{
+			"duration_usec": 2570,
+			"label": "traffic_spawn_route",
+			"start_usec": 74897764
+		},
+		{
+			"duration_usec": 8346,
+			"label": "traffic_spawn",
+			"start_usec": 74892828
+		},
+		{
+			"duration_usec": 8372,
+			"label": "population_job:traffic",
+			"start_usec": 74892812
+		},
+		{
+			"duration_usec": 2752,
+			"label": "traffic_spawn_route",
+			"start_usec": 75180892
+		},
+		{
+			"duration_usec": 2335,
+			"label": "traffic_spawn_route",
+			"start_usec": 75184355
+		},
+		{
+			"duration_usec": 6903,
+			"label": "traffic_spawn",
+			"start_usec": 75180808
+		},
+		{
+			"duration_usec": 6924,
+			"label": "population_job:traffic",
+			"start_usec": 75180791
+		},
+		{
+			"duration_usec": 9793,
+			"label": "world_connection",
+			"start_usec": 75339446
+		},
+		{
+			"duration_usec": 2219,
+			"label": "traffic_spawn",
+			"start_usec": 75446160
+		},
+		{
+			"duration_usec": 2239,
+			"label": "population_job:traffic",
+			"start_usec": 75446144
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1010465,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 13.0,
+				"collision_pairs": 57.0,
+				"islands": 12.0
+			},
+			"physics_process_max_ms": 13.034,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1134
+				},
+				"emergency.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 272
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 349
+				}
+			},
+			"start_usec": 74609084
+		},
+		{
+			"duration_usec": 2387,
+			"label": "traffic_spawn_route",
+			"start_usec": 75682136
+		},
+		{
+			"duration_usec": 2447,
+			"label": "traffic_spawn_route",
+			"start_usec": 75685449
+		},
+		{
+			"duration_usec": 2033,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 75687907
+		},
+		{
+			"duration_usec": 7989,
+			"label": "traffic_spawn",
+			"start_usec": 75681997
+		},
+		{
+			"duration_usec": 8007,
+			"label": "population_job:traffic",
+			"start_usec": 75681982
+		},
+		{
+			"duration_usec": 2582,
+			"label": "traffic_spawn_route",
+			"start_usec": 75940449
+		},
+		{
+			"duration_usec": 2293,
+			"label": "traffic_spawn_route",
+			"start_usec": 75944306
+		},
+		{
+			"duration_usec": 8222,
+			"label": "traffic_spawn",
+			"start_usec": 75940371
+		},
+		{
+			"duration_usec": 8242,
+			"label": "population_job:traffic",
+			"start_usec": 75940354
+		},
+		{
+			"duration_usec": 2551,
+			"label": "traffic_spawn_route",
+			"start_usec": 76207654
+		},
+		{
+			"duration_usec": 2422,
+			"label": "traffic_spawn_route",
+			"start_usec": 76210937
+		},
+		{
+			"duration_usec": 2680,
+			"label": "spawn_vehicle_add_child:bike_sport",
+			"start_usec": 76213406
+		},
+		{
+			"duration_usec": 2777,
+			"label": "traffic_spawn_vehicle:bike_sport",
+			"start_usec": 76213370
+		},
+		{
+			"duration_usec": 8690,
+			"label": "traffic_spawn",
+			"start_usec": 76207498
+		},
+		{
+			"duration_usec": 8709,
+			"label": "population_job:traffic",
+			"start_usec": 76207481
+		},
+		{
+			"duration_usec": 2728,
+			"label": "traffic_spawn_route",
+			"start_usec": 76497742
+		},
+		{
+			"duration_usec": 2308,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 76500525
+		},
+		{
+			"duration_usec": 2435,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 76500482
+		},
+		{
+			"duration_usec": 2435,
+			"label": "traffic_spawn_route",
+			"start_usec": 76502939
+		},
+		{
+			"duration_usec": 8733,
+			"label": "traffic_spawn",
+			"start_usec": 76497610
+		},
+		{
+			"duration_usec": 8751,
+			"label": "population_job:traffic",
+			"start_usec": 76497596
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1002817,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 10.0,
+				"collision_pairs": 33.0,
+				"islands": 6.0
+			},
+			"physics_process_max_ms": 15.144,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 87,
+					"n": 60,
+					"sum_us": 1176
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 99
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 271
+				},
+				"roadblocks.tick": {
+					"max_us": 72,
+					"n": 60,
+					"sum_us": 394
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 75619549
+		},
+		{
+			"duration_usec": 2638,
+			"label": "traffic_spawn_route",
+			"start_usec": 76698661
+		},
+		{
+			"duration_usec": 3772,
+			"label": "traffic_spawn",
+			"start_usec": 76698602
+		},
+		{
+			"duration_usec": 3789,
+			"label": "population_job:traffic",
+			"start_usec": 76698589
+		},
+		{
+			"duration_usec": 2507,
+			"label": "traffic_spawn_route",
+			"start_usec": 77006587
+		},
+		{
+			"duration_usec": 3300,
+			"label": "traffic_spawn",
+			"start_usec": 77006535
+		},
+		{
+			"duration_usec": 3318,
+			"label": "population_job:traffic",
+			"start_usec": 77006520
+		},
+		{
+			"duration_usec": 2616,
+			"label": "traffic_spawn_route",
+			"start_usec": 77210956
+		},
+		{
+			"duration_usec": 3826,
+			"label": "traffic_spawn",
+			"start_usec": 77210865
+		},
+		{
+			"duration_usec": 3844,
+			"label": "population_job:traffic",
+			"start_usec": 77210851
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1018383,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 10.0,
+				"collision_pairs": 44.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 16.838,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 39,
+					"n": 61,
+					"sum_us": 1174
+				},
+				"emergency.dispatch_step": {
+					"max_us": 24,
+					"n": 61,
+					"sum_us": 111
+				},
+				"police.dispatch_step": {
+					"max_us": 22,
+					"n": 61,
+					"sum_us": 284
+				},
+				"roadblocks.tick": {
+					"max_us": 26,
+					"n": 61,
+					"sum_us": 354
+				}
+			},
+			"start_usec": 76622366
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1017785,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 19.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 15.15,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 42,
+					"n": 61,
+					"sum_us": 1161
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 13,
+					"n": 61,
+					"sum_us": 274
+				},
+				"roadblocks.tick": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 331
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 77640749
+		},
+		{
+			"duration_usec": 2241,
+			"label": "traffic_spawn_route",
+			"start_usec": 79259568
+		},
+		{
+			"duration_usec": 3341,
+			"label": "traffic_spawn",
+			"start_usec": 79259451
+		},
+		{
+			"duration_usec": 3357,
+			"label": "population_job:traffic",
+			"start_usec": 79259439
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1016814,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 6.0,
+				"collision_pairs": 28.0,
+				"islands": 6.0
+			},
+			"physics_process_max_ms": 11.358,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 27,
+					"n": 61,
+					"sum_us": 1119
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 260
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 339
+				}
+			},
+			"start_usec": 78658534
+		},
+		{
+			"duration_usec": 2381,
+			"label": "spawn_vehicle_add_child:bike_urban",
+			"start_usec": 80585844
+		},
+		{
+			"duration_usec": 2494,
+			"label": "traffic_spawn_vehicle:bike_urban",
+			"start_usec": 80585791
+		},
+		{
+			"duration_usec": 4352,
+			"label": "traffic_spawn",
+			"start_usec": 80583950
+		},
+		{
+			"duration_usec": 4374,
+			"label": "population_job:traffic",
+			"start_usec": 80583930
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1012851,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 10.0,
+				"collision_pairs": 44.0,
+				"islands": 10.0
+			},
+			"physics_process_max_ms": 20.531,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 48,
+					"n": 60,
+					"sum_us": 1073
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 5,
+					"n": 60,
+					"sum_us": 242
+				},
+				"roadblocks.tick": {
+					"max_us": 33,
+					"n": 60,
+					"sum_us": 329
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 79675348
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1004052,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 9.0,
+				"collision_pairs": 33.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 2.002,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 51,
+					"n": 60,
+					"sum_us": 1152
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 60,
+					"sum_us": 127
+				},
+				"police.dispatch_step": {
+					"max_us": 5,
+					"n": 60,
+					"sum_us": 249
+				},
+				"roadblocks.tick": {
+					"max_us": 21,
+					"n": 60,
+					"sum_us": 346
+				}
+			},
+			"start_usec": 80688199
+		},
+		{
+			"duration_usec": 2054,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 81867589
+		},
+		{
+			"duration_usec": 2179,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 81867533
+		},
+		{
+			"duration_usec": 4000,
+			"label": "traffic_spawn",
+			"start_usec": 81865721
+		},
+		{
+			"duration_usec": 4018,
+			"label": "population_job:traffic",
+			"start_usec": 81865705
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1014600,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 39.0,
+				"islands": 10.0
+			},
+			"physics_process_max_ms": 5.422,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 36,
+					"n": 61,
+					"sum_us": 1180
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 114
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 277
+				},
+				"roadblocks.tick": {
+					"max_us": 22,
+					"n": 61,
+					"sum_us": 344
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 81692251
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1001640,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 2.376,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 42,
+					"n": 60,
+					"sum_us": 1136
+				},
+				"emergency.dispatch_step": {
+					"max_us": 22,
+					"n": 60,
+					"sum_us": 119
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 60,
+					"sum_us": 275
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 336
+				}
+			},
+			"start_usec": 82706851
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1016725,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 2.169,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 53,
+					"n": 61,
+					"sum_us": 1201
+				},
+				"emergency.dispatch_step": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 125
+				},
+				"police.dispatch_step": {
+					"max_us": 16,
+					"n": 61,
+					"sum_us": 274
+				},
+				"roadblocks.tick": {
+					"max_us": 13,
+					"n": 61,
+					"sum_us": 351
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 83708491
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013871,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.231,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 38,
+					"n": 61,
+					"sum_us": 1213
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 121
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 287
+				},
+				"roadblocks.tick": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 355
+				}
+			},
+			"start_usec": 84725216
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1004471,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.463,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 60,
+					"sum_us": 1113
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 92
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 60,
+					"sum_us": 264
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 341
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 85739087
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1010704,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.311,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 38,
+					"n": 61,
+					"sum_us": 1138
+				},
+				"emergency.dispatch_step": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 110
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 279
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 337
+				}
+			},
+			"start_usec": 86743558
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020611,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.232,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1115
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 96
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 274
+				},
+				"roadblocks.tick": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 349
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 87754262
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1015381,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.335,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 41,
+					"n": 61,
+					"sum_us": 1173
+				},
+				"emergency.dispatch_step": {
+					"max_us": 24,
+					"n": 61,
+					"sum_us": 115
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 270
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 356
+				}
+			},
+			"start_usec": 88774873
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1028525,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 42.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.203,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1169
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 274
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 362
+				},
+				"wrecks.tidy": {
+					"max_us": 5,
+					"n": 1,
+					"sum_us": 5
+				}
+			},
+			"start_usec": 89790254
+		},
+		{
+			"duration_usec": 2472,
+			"label": "spawn_vehicle_add_child:bike_urban",
+			"start_usec": 91319976
+		},
+		{
+			"duration_usec": 2587,
+			"label": "traffic_spawn_vehicle:bike_urban",
+			"start_usec": 91319926
+		},
+		{
+			"duration_usec": 3862,
+			"label": "traffic_spawn",
+			"start_usec": 91318669
+		},
+		{
+			"duration_usec": 3875,
+			"label": "population_job:traffic",
+			"start_usec": 91318658
+		},
+		{
+			"duration_usec": 2277,
+			"label": "traffic_spawn",
+			"start_usec": 91629287
+		},
+		{
+			"duration_usec": 2292,
+			"label": "population_job:traffic",
+			"start_usec": 91629276
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1005220,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 17.0,
+				"collision_pairs": 60.0,
+				"islands": 9.0
+			},
+			"physics_process_max_ms": 1.251,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 37,
+					"n": 61,
+					"sum_us": 1130
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 99
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 262
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 332
+				}
+			},
+			"start_usec": 90818779
+		},
+		{
+			"duration_usec": 2168,
+			"label": "traffic_spawn_route",
+			"start_usec": 91830990
+		},
+		{
+			"duration_usec": 3226,
+			"label": "traffic_spawn",
+			"start_usec": 91830906
+		},
+		{
+			"duration_usec": 3242,
+			"label": "population_job:traffic",
+			"start_usec": 91830894
+		},
+		{
+			"duration_usec": 3137,
+			"label": "vehicle_ready_visual:police_suv",
+			"start_usec": 91836761
+		},
+		{
+			"duration_usec": 3544,
+			"label": "spawn_vehicle_add_child:police_suv",
+			"start_usec": 91836737
+		},
+		{
+			"duration_usec": 2202,
+			"label": "traffic_spawn_route",
+			"start_usec": 92103858
+		},
+		{
+			"duration_usec": 2139,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 92106129
+		},
+		{
+			"duration_usec": 2244,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 92106078
+		},
+		{
+			"duration_usec": 4536,
+			"label": "traffic_spawn",
+			"start_usec": 92103795
+		},
+		{
+			"duration_usec": 4560,
+			"label": "population_job:traffic",
+			"start_usec": 92103773
+		},
+		{
+			"duration_usec": 2572,
+			"label": "traffic_spawn",
+			"start_usec": 92344294
+		},
+		{
+			"duration_usec": 2591,
+			"label": "population_job:traffic",
+			"start_usec": 92344279
+		},
+		{
+			"duration_usec": 2205,
+			"label": "traffic_spawn",
+			"start_usec": 92617788
+		},
+		{
+			"duration_usec": 2224,
+			"label": "population_job:traffic",
+			"start_usec": 92617774
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1018616,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 29.0,
+				"collision_pairs": 102.0,
+				"islands": 19.0
+			},
+			"physics_process_max_ms": 2.197,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1143
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 94
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 273
+				},
+				"roadblocks.tick": {
+					"max_us": 20,
+					"n": 61,
+					"sum_us": 352
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 91823999
+		},
+		{
+			"duration_usec": 2667,
+			"label": "traffic_spawn",
+			"start_usec": 92849756
+		},
+		{
+			"duration_usec": 2687,
+			"label": "population_job:traffic",
+			"start_usec": 92849741
+		},
+		{
+			"duration_usec": 2246,
+			"label": "traffic_spawn",
+			"start_usec": 93109113
+		},
+		{
+			"duration_usec": 2267,
+			"label": "population_job:traffic",
+			"start_usec": 93109096
+		},
+		{
+			"duration_usec": 2488,
+			"label": "traffic_spawn",
+			"start_usec": 93363374
+		},
+		{
+			"duration_usec": 2509,
+			"label": "population_job:traffic",
+			"start_usec": 93363358
+		},
+		{
+			"duration_usec": 2447,
+			"label": "traffic_spawn",
+			"start_usec": 93613508
+		},
+		{
+			"duration_usec": 2467,
+			"label": "population_job:traffic",
+			"start_usec": 93613492
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013697,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 29.0,
+				"collision_pairs": 105.0,
+				"islands": 19.0
+			},
+			"physics_process_max_ms": 6.654,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1162
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 105
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 273
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 353
+				}
+			},
+			"start_usec": 92842615
+		},
+		{
+			"duration_usec": 2171,
+			"label": "traffic_spawn",
+			"start_usec": 93888833
+		},
+		{
+			"duration_usec": 2194,
+			"label": "population_job:traffic",
+			"start_usec": 93888815
+		},
+		{
+			"duration_usec": 2532,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 94127865
+		},
+		{
+			"duration_usec": 2615,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 94127822
+		},
+		{
+			"duration_usec": 3356,
+			"label": "traffic_spawn",
+			"start_usec": 94127094
+		},
+		{
+			"duration_usec": 3374,
+			"label": "population_job:traffic",
+			"start_usec": 94127078
+		},
+		{
+			"duration_usec": 2052,
+			"label": "vehicle_ready_visual:taxi_yellow",
+			"start_usec": 94379203
+		},
+		{
+			"duration_usec": 2658,
+			"label": "spawn_vehicle_add_child:taxi_yellow",
+			"start_usec": 94379152
+		},
+		{
+			"duration_usec": 2777,
+			"label": "traffic_spawn_vehicle:taxi_yellow",
+			"start_usec": 94379098
+		},
+		{
+			"duration_usec": 4024,
+			"label": "traffic_spawn",
+			"start_usec": 94377865
+		},
+		{
+			"duration_usec": 4042,
+			"label": "population_job:traffic",
+			"start_usec": 94377849
+		},
+		{
+			"duration_usec": 2044,
+			"label": "traffic_spawn",
+			"start_usec": 94627362
+		},
+		{
+			"duration_usec": 2063,
+			"label": "population_job:traffic",
+			"start_usec": 94627347
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000119,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 22.0,
+				"collision_pairs": 95.0,
+				"islands": 20.0
+			},
+			"physics_process_max_ms": 3.256,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 42,
+					"n": 60,
+					"sum_us": 1165
+				},
+				"emergency.dispatch_step": {
+					"max_us": 15,
+					"n": 60,
+					"sum_us": 105
+				},
+				"police.dispatch_step": {
+					"max_us": 25,
+					"n": 60,
+					"sum_us": 283
+				},
+				"roadblocks.tick": {
+					"max_us": 23,
+					"n": 60,
+					"sum_us": 342
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 93856312
+		},
+		{
+			"duration_usec": 2145,
+			"label": "traffic_spawn",
+			"start_usec": 94884888
+		},
+		{
+			"duration_usec": 2165,
+			"label": "population_job:traffic",
+			"start_usec": 94884872
+		},
+		{
+			"duration_usec": 2266,
+			"label": "traffic_spawn_route",
+			"start_usec": 95143423
+		},
+		{
+			"duration_usec": 2477,
+			"label": "spawn_vehicle_add_child:bike_urban",
+			"start_usec": 95145752
+		},
+		{
+			"duration_usec": 2579,
+			"label": "traffic_spawn_vehicle:bike_urban",
+			"start_usec": 95145706
+		},
+		{
+			"duration_usec": 4975,
+			"label": "traffic_spawn",
+			"start_usec": 95143332
+		},
+		{
+			"duration_usec": 4994,
+			"label": "population_job:traffic",
+			"start_usec": 95143316
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000585,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 12.0,
+				"collision_pairs": 50.0,
+				"islands": 12.0
+			},
+			"physics_process_max_ms": 3.837,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 60,
+					"sum_us": 1091
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 7,
+					"n": 60,
+					"sum_us": 254
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 331
+				}
+			},
+			"start_usec": 94856431
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000525,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 12.0,
+				"collision_pairs": 83.0,
+				"islands": 10.0
+			},
+			"physics_process_max_ms": 2.925,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 59,
+					"n": 60,
+					"sum_us": 1098
+				},
+				"emergency.dispatch_step": {
+					"max_us": 15,
+					"n": 60,
+					"sum_us": 99
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 254
+				},
+				"roadblocks.tick": {
+					"max_us": 47,
+					"n": 60,
+					"sum_us": 345
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 95857016
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000099,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 96.0,
+				"islands": 8.0
+			},
+			"physics_process_max_ms": 18.157,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 97,
+					"n": 60,
+					"sum_us": 1193
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 93
+				},
+				"police.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 282
+				},
+				"roadblocks.tick": {
+					"max_us": 14,
+					"n": 60,
+					"sum_us": 340
+				}
+			},
+			"start_usec": 96857541
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1016423,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 110.0,
+				"islands": 21.0
+			},
+			"physics_process_max_ms": 18.68,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1126
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 258
+				},
+				"roadblocks.tick": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 329
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 97857640
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1018449,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 109.0,
+				"islands": 21.0
+			},
+			"physics_process_max_ms": 13.326,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1115
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 99
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 256
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 345
+				}
+			},
+			"start_usec": 98874063
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1015187,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 24.0,
+				"collision_pairs": 107.0,
+				"islands": 20.0
+			},
+			"physics_process_max_ms": 2.95,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1141
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 99
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 286
+				},
+				"roadblocks.tick": {
+					"max_us": 13,
+					"n": 61,
+					"sum_us": 348
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 99892512
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1018327,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 18.0,
+				"collision_pairs": 37.0,
+				"islands": 17.0
+			},
+			"physics_process_max_ms": 2.748,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1126
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 110
+				},
+				"police.dispatch_step": {
+					"max_us": 6,
+					"n": 61,
+					"sum_us": 260
+				},
+				"roadblocks.tick": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 325
+				}
+			},
+			"start_usec": 100907699
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013836,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 27.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 2.755,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 33,
+					"n": 61,
+					"sum_us": 1204
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 106
+				},
+				"police.dispatch_step": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 268
+				},
+				"roadblocks.tick": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 350
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 101926026
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000235,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.224,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 60,
+					"sum_us": 1131
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 97
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 60,
+					"sum_us": 276
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 346
+				}
+			},
+			"start_usec": 102939862
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1015080,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 4.0,
+				"collision_pairs": 22.0,
+				"islands": 3.0
+			},
+			"physics_process_max_ms": 1.482,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 41,
+					"n": 61,
+					"sum_us": 1222
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 111
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 61,
+					"sum_us": 292
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 360
+				},
+				"wrecks.tidy": {
+					"max_us": 2,
+					"n": 1,
+					"sum_us": 2
+				}
+			},
+			"start_usec": 103940097
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020811,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 22.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 13.473,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 35,
+					"n": 61,
+					"sum_us": 1158
+				},
+				"emergency.dispatch_step": {
+					"max_us": 14,
+					"n": 61,
+					"sum_us": 116
+				},
+				"police.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 285
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 342
+				}
+			},
+			"start_usec": 104955177
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013930,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 11.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.405,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1197
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 106
+				},
+				"police.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 283
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 364
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 105975988
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013813,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 11.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.899,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 61,
+					"sum_us": 1169
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 102
+				},
+				"police.dispatch_step": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 279
+				},
+				"roadblocks.tick": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 346
+				}
+			},
+			"start_usec": 106989918
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1020669,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 11.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.394,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 32,
+					"n": 61,
+					"sum_us": 1135
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 100
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 256
+				},
+				"roadblocks.tick": {
+					"max_us": 19,
+					"n": 61,
+					"sum_us": 349
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 108003731
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000079,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 10.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.4,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 29,
+					"n": 60,
+					"sum_us": 1119
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 267
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 343
+				}
+			},
+			"start_usec": 109024400
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1013710,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 5.0,
+				"collision_pairs": 10.0,
+				"islands": 4.0
+			},
+			"physics_process_max_ms": 1.469,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 61,
+					"sum_us": 1146
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 107
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 290
+				},
+				"roadblocks.tick": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 336
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 110024479
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000820,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 4.0,
+				"collision_pairs": 10.0,
+				"islands": 3.0
+			},
+			"physics_process_max_ms": 1.313,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 35,
+					"n": 60,
+					"sum_us": 1136
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 98
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 262
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 338
+				}
+			},
+			"start_usec": 111038189
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000051,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 4.0,
+				"collision_pairs": 10.0,
+				"islands": 3.0
+			},
+			"physics_process_max_ms": 1.233,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 60,
+					"sum_us": 1153
+				},
+				"emergency.dispatch_step": {
+					"max_us": 13,
+					"n": 60,
+					"sum_us": 104
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 60,
+					"sum_us": 264
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 362
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 112039009
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000989,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 4.0,
+				"collision_pairs": 10.0,
+				"islands": 3.0
+			},
+			"physics_process_max_ms": 1.246,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 35,
+					"n": 60,
+					"sum_us": 1138
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 273
+				},
+				"roadblocks.tick": {
+					"max_us": 13,
+					"n": 60,
+					"sum_us": 337
+				}
+			},
+			"start_usec": 113039060
+		},
+		{
+			"duration_usec": 9732,
+			"label": "world_connection",
+			"start_usec": 114825260
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000209,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 4.0,
+				"collision_pairs": 10.0,
+				"islands": 3.0
+			},
+			"physics_process_max_ms": 2.319,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 84,
+					"n": 60,
+					"sum_us": 1270
+				},
+				"emergency.dispatch_step": {
+					"max_us": 12,
+					"n": 60,
+					"sum_us": 110
+				},
+				"police.dispatch_step": {
+					"max_us": 13,
+					"n": 60,
+					"sum_us": 295
+				},
+				"roadblocks.tick": {
+					"max_us": 45,
+					"n": 60,
+					"sum_us": 411
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 114040049
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1018204,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 4.0,
+				"collision_pairs": 10.0,
+				"islands": 3.0
+			},
+			"physics_process_max_ms": 2.505,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 44,
+					"n": 61,
+					"sum_us": 1219
+				},
+				"emergency.dispatch_step": {
+					"max_us": 15,
+					"n": 61,
+					"sum_us": 112
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 293
+				},
+				"roadblocks.tick": {
+					"max_us": 13,
+					"n": 61,
+					"sum_us": 359
+				}
+			},
+			"start_usec": 115040258
+		},
+		{
+			"duration_usec": 2174,
+			"label": "traffic_spawn_route",
+			"start_usec": 116412615
+		},
+		{
+			"duration_usec": 3046,
+			"label": "traffic_spawn",
+			"start_usec": 116412462
+		},
+		{
+			"duration_usec": 3060,
+			"label": "population_job:traffic",
+			"start_usec": 116412452
+		},
+		{
+			"duration_usec": 2884,
+			"label": "traffic_spawn",
+			"start_usec": 116664007
+		},
+		{
+			"duration_usec": 2899,
+			"label": "population_job:traffic",
+			"start_usec": 116663996
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1015434,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 7.0,
+				"collision_pairs": 17.0,
+				"islands": 6.0
+			},
+			"physics_process_max_ms": 1.898,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 61,
+					"sum_us": 1165
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 61,
+					"sum_us": 112
+				},
+				"police.dispatch_step": {
+					"max_us": 8,
+					"n": 61,
+					"sum_us": 265
+				},
+				"roadblocks.tick": {
+					"max_us": 17,
+					"n": 61,
+					"sum_us": 355
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 116058462
+		},
+		{
+			"duration_usec": 2892,
+			"label": "traffic_spawn",
+			"start_usec": 117177882
+		},
+		{
+			"duration_usec": 2907,
+			"label": "population_job:traffic",
+			"start_usec": 117177870
+		},
+		{
+			"duration_usec": 2347,
+			"label": "population_spawn",
+			"start_usec": 117692947
+		},
+		{
+			"duration_usec": 2355,
+			"label": "population_job:citizen",
+			"start_usec": 117692944
+		},
+		{
+			"duration_usec": 2078,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 117946022
+		},
+		{
+			"duration_usec": 3970,
+			"label": "traffic_spawn",
+			"start_usec": 117944141
+		},
+		{
+			"duration_usec": 3985,
+			"label": "population_job:traffic",
+			"start_usec": 117944128
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1000125,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 38.0,
+				"islands": 11.0
+			},
+			"physics_process_max_ms": 18.497,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 31,
+					"n": 60,
+					"sum_us": 1131
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 60,
+					"sum_us": 103
+				},
+				"police.dispatch_step": {
+					"max_us": 17,
+					"n": 60,
+					"sum_us": 272
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 60,
+					"sum_us": 334
+				}
+			},
+			"start_usec": 117073896
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1012549,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 10.0,
+				"collision_pairs": 31.0,
+				"islands": 9.0
+			},
+			"physics_process_max_ms": 11.244,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 56,
+					"n": 61,
+					"sum_us": 1174
+				},
+				"emergency.dispatch_step": {
+					"max_us": 10,
+					"n": 61,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 41,
+					"n": 61,
+					"sum_us": 312
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 326
+				},
+				"wrecks.tidy": {
+					"max_us": 3,
+					"n": 1,
+					"sum_us": 3
+				}
+			},
+			"start_usec": 118074021
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 60,
+			"duration_usec": 1003250,
+			"engine_physics_ticks": 60,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 6.0,
+				"collision_pairs": 29.0,
+				"islands": 6.0
+			},
+			"physics_process_max_ms": 12.098,
+			"physics_ticks": 60,
+			"spans": {
+				"controller.tick": {
+					"max_us": 30,
+					"n": 60,
+					"sum_us": 1114
+				},
+				"emergency.dispatch_step": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 101
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 60,
+					"sum_us": 265
+				},
+				"roadblocks.tick": {
+					"max_us": 11,
+					"n": 60,
+					"sum_us": 336
+				}
+			},
+			"start_usec": 119086570
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 59,
+			"duration_usec": 1001392,
+			"engine_physics_ticks": 59,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 7.0,
+				"collision_pairs": 36.0,
+				"islands": 7.0
+			},
+			"physics_process_max_ms": 16.203,
+			"physics_ticks": 59,
+			"spans": {
+				"controller.tick": {
+					"max_us": 141,
+					"n": 59,
+					"sum_us": 1228
+				},
+				"emergency.dispatch_step": {
+					"max_us": 117,
+					"n": 59,
+					"sum_us": 218
+				},
+				"police.dispatch_step": {
+					"max_us": 9,
+					"n": 59,
+					"sum_us": 264
+				},
+				"roadblocks.tick": {
+					"max_us": 18,
+					"n": 59,
+					"sum_us": 334
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 120089820
+		},
+		{
+			"duration_usec": 2539,
+			"label": "traffic_spawn_route",
+			"start_usec": 121507437
+		},
+		{
+			"duration_usec": 3525,
+			"label": "traffic_spawn",
+			"start_usec": 121507385
+		},
+		{
+			"duration_usec": 3541,
+			"label": "population_job:traffic",
+			"start_usec": 121507373
+		},
+		{
+			"duration_usec": 2824,
+			"label": "traffic_spawn_route",
+			"start_usec": 121768011
+		},
+		{
+			"duration_usec": 2027,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 121770896
+		},
+		{
+			"duration_usec": 2148,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 121770848
+		},
+		{
+			"duration_usec": 5118,
+			"label": "traffic_spawn",
+			"start_usec": 121767922
+		},
+		{
+			"duration_usec": 5131,
+			"label": "population_job:traffic",
+			"start_usec": 121767911
+		},
+		{
+			"duration_usec": 2901,
+			"label": "traffic_spawn_route",
+			"start_usec": 122026799
+		},
+		{
+			"duration_usec": 2382,
+			"label": "traffic_spawn_route",
+			"start_usec": 122030529
+		},
+		{
+			"duration_usec": 6864,
+			"label": "traffic_spawn",
+			"start_usec": 122026646
+		},
+		{
+			"duration_usec": 6878,
+			"label": "population_job:traffic",
+			"start_usec": 122026636
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 62,
+			"duration_usec": 1017701,
+			"engine_physics_ticks": 62,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 11.0,
+				"collision_pairs": 38.0,
+				"islands": 11.0
+			},
+			"physics_process_max_ms": 14.173,
+			"physics_ticks": 62,
+			"spans": {
+				"controller.tick": {
+					"max_us": 43,
+					"n": 62,
+					"sum_us": 1183
+				},
+				"emergency.dispatch_step": {
+					"max_us": 11,
+					"n": 62,
+					"sum_us": 104
+				},
+				"police.dispatch_step": {
+					"max_us": 16,
+					"n": 62,
+					"sum_us": 290
+				},
+				"roadblocks.tick": {
+					"max_us": 10,
+					"n": 62,
+					"sum_us": 349
+				}
+			},
+			"start_usec": 121091212
+		},
+		{
+			"duration_usec": 2741,
+			"label": "traffic_spawn_route",
+			"start_usec": 122305677
+		},
+		{
+			"duration_usec": 2291,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 122308493
+		},
+		{
+			"duration_usec": 2434,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 122308434
+		},
+		{
+			"duration_usec": 5323,
+			"label": "traffic_spawn",
+			"start_usec": 122305601
+		},
+		{
+			"duration_usec": 5340,
+			"label": "population_job:traffic",
+			"start_usec": 122305587
+		},
+		{
+			"duration_usec": 3010,
+			"label": "traffic_spawn_route",
+			"start_usec": 122527443
+		},
+		{
+			"duration_usec": 4187,
+			"label": "traffic_spawn",
+			"start_usec": 122527342
+		},
+		{
+			"duration_usec": 4202,
+			"label": "population_job:traffic",
+			"start_usec": 122527331
+		},
+		{
+			"duration_usec": 2546,
+			"label": "traffic_spawn_route",
+			"start_usec": 122782161
+		},
+		{
+			"duration_usec": 3074,
+			"label": "spawn_vehicle_add_child:bike_sport",
+			"start_usec": 122784801
+		},
+		{
+			"duration_usec": 3240,
+			"label": "traffic_spawn_vehicle:bike_sport",
+			"start_usec": 122784720
+		},
+		{
+			"duration_usec": 2491,
+			"label": "traffic_spawn_route",
+			"start_usec": 122787986
+		},
+		{
+			"duration_usec": 9227,
+			"label": "traffic_spawn",
+			"start_usec": 122782095
+		},
+		{
+			"duration_usec": 9245,
+			"label": "population_job:traffic",
+			"start_usec": 122782081
+		},
+		{
+			"duration_usec": 2485,
+			"label": "traffic_spawn_route",
+			"start_usec": 123033311
+		},
+		{
+			"duration_usec": 2803,
+			"label": "spawn_vehicle_add_child:bike_sport",
+			"start_usec": 123035863
+		},
+		{
+			"duration_usec": 2934,
+			"label": "traffic_spawn_vehicle:bike_sport",
+			"start_usec": 123035810
+		},
+		{
+			"duration_usec": 5527,
+			"label": "traffic_spawn",
+			"start_usec": 123033232
+		},
+		{
+			"duration_usec": 5543,
+			"label": "population_job:traffic",
+			"start_usec": 123033218
+		},
+		{
+			"census": {
+				"foot_officers": 0,
+				"units": 0,
+				"wrecks": 0
+			},
+			"controller_ticks": 61,
+			"duration_usec": 1014718,
+			"engine_physics_ticks": 61,
+			"label": "dispatch.summary",
+			"phys3d": {
+				"active_objects": 9.0,
+				"collision_pairs": 46.0,
+				"islands": 9.0
+			},
+			"physics_process_max_ms": 10.015,
+			"physics_ticks": 61,
+			"spans": {
+				"controller.tick": {
+					"max_us": 94,
+					"n": 61,
+					"sum_us": 1209
+				},
+				"emergency.dispatch_step": {
+					"max_us": 9,
+					"n": 61,
+					"sum_us": 105
+				},
+				"police.dispatch_step": {
+					"max_us": 12,
+					"n": 61,
+					"sum_us": 285
+				},
+				"roadblocks.tick": {
+					"max_us": 7,
+					"n": 61,
+					"sum_us": 335
+				},
+				"wrecks.tidy": {
+					"max_us": 4,
+					"n": 1,
+					"sum_us": 4
+				}
+			},
+			"start_usec": 122108913
+		},
+		{
+			"duration_usec": 2611,
+			"label": "traffic_spawn_route",
+			"start_usec": 123283237
+		},
+		{
+			"duration_usec": 2282,
+			"label": "traffic_spawn_route",
+			"start_usec": 123286579
+		},
+		{
+			"duration_usec": 6417,
+			"label": "traffic_spawn",
+			"start_usec": 123283190
+		},
+		{
+			"duration_usec": 6449,
+			"label": "population_job:traffic",
+			"start_usec": 123283177
+		},
+		{
+			"duration_usec": 2778,
+			"label": "traffic_spawn_route",
+			"start_usec": 123591597
+		},
+		{
+			"duration_usec": 3066,
+			"label": "spawn_vehicle_add_child:bike_cruiser",
+			"start_usec": 123594437
+		},
+		{
+			"duration_usec": 3208,
+			"label": "traffic_spawn_vehicle:bike_cruiser",
+			"start_usec": 123594388
+		},
+		{
+			"duration_usec": 2468,
+			"label": "traffic_spawn_route",
+			"start_usec": 123597646
+		},
+		{
+			"duration_usec": 2477,
+			"label": "spawn_vehicle_add_child:union_sedan",
+			"start_usec": 123600167
+		},
+		{
+			"duration_usec": 2591,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 123600125
+		},
+		{
+			"duration_usec": 11314,
+			"label": "traffic_spawn",
+			"start_usec": 123591430
+		},
+		{
+			"duration_usec": 11333,
+			"label": "population_job:traffic",
+			"start_usec": 123591413
+		},
+		{
+			"duration_usec": 2341,
+			"label": "traffic_spawn_route",
+			"start_usec": 123843694
+		},
+		{
+			"duration_usec": 2111,
+			"label": "traffic_spawn_vehicle:union_sedan",
+			"start_usec": 123846048
+		},
+		{
+			"duration_usec": 4660,
+			"label": "traffic_spawn",
+			"start_usec": 123843539
+		},
+		{
+			"duration_usec": 4679,
+			"label": "population_job:traffic",
+			"start_usec": 123843522
+		},
+		{
+			"duration_usec": 2501,
+			"label": "traffic_spawn_route",
+			"start_usec": 124098881
+		},
+		{
+			"duration_usec": 2456,
+			"label": "traffic_spawn_route",
+			"start_usec": 124103368
+		},
+		{
+			"duration_usec": 7955,
+			"label": "traffic_spawn",
+			"start_usec": 124098777
+		}
+	],
+	"spikes": [
+		{
+			"frame_ms": 42.7,
+			"labels": [
+				"vehicle_ready_visual:union_sedan 32.5 ms",
+				"spawn_vehicle_add_child:union_sedan 33.2 ms",
+				"traffic_spawn_vehicle:union_sedan 33.3 ms",
+				"traffic_spawn 34.1 ms",
+				"population_job:traffic 34.1 ms",
+				"process=25.1 physics=4.0 render_cpu=0.8 render_gpu=0.9 nodes+52 draw=200"
+			],
+			"t": 1.57,
+			"waypoint": 1,
+			"x": -20.0,
+			"z": 50.0
+		},
+		{
+			"frame_ms": 70.1,
+			"labels": [
+				"process=37.4 physics=3.4 render_cpu=0.6 render_gpu=0.9 nodes+0 draw=139"
+			],
+			"t": 3.01,
+			"waypoint": 1,
+			"x": -84.0,
+			"z": -1.0
+		},
+		{
+			"frame_ms": 59.9,
+			"labels": [
+				"process=37.4 physics=3.4 render_cpu=0.5 render_gpu=0.9 nodes+3 draw=138"
+			],
+			"t": 3.07,
+			"waypoint": 1,
+			"x": -85.0,
+			"z": -1.0
+		},
+		{
+			"frame_ms": 93.2,
+			"labels": [
+				"process=37.4 physics=3.4 render_cpu=0.6 render_gpu=1.1 nodes+385 draw=190"
+			],
+			"t": 3.22,
+			"waypoint": 1,
+			"x": -86.0,
+			"z": -2.0
+		},
+		{
+			"frame_ms": 143.1,
+			"labels": [
+				"process=37.4 physics=3.4 render_cpu=0.9 render_gpu=1.1 nodes+191 draw=194"
+			],
+			"t": 3.4,
+			"waypoint": 1,
+			"x": -87.0,
+			"z": -3.0
+		},
+		{
+			"frame_ms": 41.3,
+			"labels": [
+				"process=37.4 physics=3.4 render_cpu=1.0 render_gpu=1.2 nodes+207 draw=191"
+			],
+			"t": 3.44,
+			"waypoint": 1,
+			"x": -87.0,
+			"z": -3.0
+		},
+		{
+			"frame_ms": 63.9,
+			"labels": [
+				"process=131.7 physics=84.4 render_cpu=0.6 render_gpu=1.2 nodes+200 draw=192"
+			],
+			"t": 3.54,
+			"waypoint": 1,
+			"x": -88.0,
+			"z": -4.0
+		},
+		{
+			"frame_ms": 48.3,
+			"labels": [
+				"process=10.7 physics=1.4 render_cpu=0.4 render_gpu=1.1 nodes+5 draw=87"
+			],
+			"t": 22.18,
+			"waypoint": 3,
+			"x": 226.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 50.9,
+			"labels": [
+				"process=18.8 physics=11.9 render_cpu=0.6 render_gpu=1.5 nodes+257 draw=207",
+				"registros novos: [\"mountain_place/ 11 ms\"]"
+			],
+			"t": 28.33,
+			"waypoint": 4,
+			"x": 577.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 48.3,
+			"labels": [
+				"process=18.8 physics=11.9 render_cpu=1.1 render_gpu=1.6 nodes+1007 draw=213",
+				"registros novos: [\"sawmill_yard/ 38 ms\"]"
+			],
+			"t": 28.41,
+			"waypoint": 4,
+			"x": 577.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 49.4,
+			"labels": [
+				"traffic_spawn_route 2.5 ms",
+				"vehicle_ready_visual:taxi_yellow 28.3 ms",
+				"spawn_vehicle_add_child:taxi_yellow 29.0 ms",
+				"traffic_spawn_vehicle:taxi_yellow 29.1 ms",
+				"traffic_spawn 31.7 ms",
+				"population_job:traffic 31.7 ms",
+				"process=19.3 physics=11.4 render_cpu=1.3 render_gpu=1.6 nodes-3 draw=760"
+			],
+			"t": 29.78,
+			"waypoint": 4,
+			"x": 650.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 97.3,
+			"labels": [
+				"process=36.5 physics=9.5 render_cpu=0.8 render_gpu=1.5 nodes+90 draw=325"
+			],
+			"t": 31.31,
+			"waypoint": 4,
+			"x": 715.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 63.7,
+			"labels": [
+				"process=14.9 physics=9.4 render_cpu=0.8 render_gpu=1.7 nodes+4 draw=228"
+			],
+			"t": 32.54,
+			"waypoint": 5,
+			"x": 779.0,
+			"z": -295.0
+		},
+		{
+			"frame_ms": 67.2,
+			"labels": [
+				"process=12.3 physics=8.0 render_cpu=0.4 render_gpu=1.5 nodes+356 draw=121"
+			],
+			"t": 50.96,
+			"waypoint": 6,
+			"x": 882.0,
+			"z": -379.0
+		},
+		{
+			"frame_ms": 98.3,
+			"labels": [
+				"process=63.0 physics=8.1 render_cpu=1.0 render_gpu=1.6 nodes+453 draw=144",
+				"registros novos: [\"mountain_village/ 71 ms\"]"
+			],
+			"t": 52.04,
+			"waypoint": 6,
+			"x": 828.0,
+			"z": -367.0
+		},
+		{
+			"frame_ms": 53.7,
+			"labels": [
+				"process=76.2 physics=8.2 render_cpu=1.8 render_gpu=1.6 nodes+37 draw=357"
+			],
+			"t": 53.24,
+			"waypoint": 6,
+			"x": 766.0,
+			"z": -354.0
+		},
+		{
+			"frame_ms": 47.7,
+			"labels": [
+				"process=76.2 physics=8.2 render_cpu=1.7 render_gpu=1.6 nodes+1007 draw=400",
+				"registros novos: [\"sawmill_yard/ 35 ms\"]"
+			],
+			"t": 53.36,
+			"waypoint": 6,
+			"x": 764.0,
+			"z": -353.0
+		},
+		{
+			"frame_ms": 41.9,
+			"labels": [
+				"process=30.9 physics=15.1 render_cpu=0.8 render_gpu=1.9 nodes-317 draw=282"
+			],
+			"t": 55.9,
+			"waypoint": 6,
+			"x": 639.0,
+			"z": -325.0
+		},
+		{
+			"frame_ms": 143.0,
+			"labels": [
+				"process=14.5 physics=11.4 render_cpu=0.7 render_gpu=1.5 nodes+927 draw=195",
+				"registros novos: [\"south_port_model/office 9 ms\", \"south_port_model/loose_cargo 11 ms\", \"south_port_model/crane 17 ms\", \"south_port_model/crane 17 ms\", \"south_port_model/crane 19 ms\"]"
+			],
+			"t": 59.5,
+			"waypoint": 7,
+			"x": 454.0,
+			"z": -287.0
+		},
+		{
+			"frame_ms": 55.6,
+			"labels": [
+				"process=14.5 physics=2.0 render_cpu=0.6 render_gpu=1.7 nodes+15 draw=179"
+			],
+			"t": 60.63,
+			"waypoint": 7,
+			"x": 392.0,
+			"z": -286.0
+		},
+		{
+			"frame_ms": 70.7,
+			"labels": [
+				"process=15.3 physics=3.8 render_cpu=0.5 render_gpu=0.9 nodes+0 draw=137"
+			],
+			"t": 75.41,
+			"waypoint": 9,
+			"x": -77.0,
+			"z": -1.0
+		},
+		{
+			"frame_ms": 124.5,
+			"labels": [
+				"process=65.0 physics=2.9 render_cpu=0.8 render_gpu=1.1 nodes+257 draw=196"
+			],
+			"t": 75.63,
+			"waypoint": 9,
+			"x": -79.0,
+			"z": -3.0
+		},
+		{
+			"frame_ms": 43.8,
+			"labels": [
+				"process=65.0 physics=2.9 render_cpu=0.9 render_gpu=1.1 nodes+331 draw=196"
+			],
+			"t": 75.67,
+			"waypoint": 9,
+			"x": -80.0,
+			"z": -3.0
+		},
+		{
+			"frame_ms": 57.5,
+			"labels": [
+				"process=65.0 physics=2.9 render_cpu=0.6 render_gpu=1.2 nodes+200 draw=194"
+			],
+			"t": 75.76,
+			"waypoint": 9,
+			"x": -81.0,
+			"z": -4.0
+		},
+		{
+			"frame_ms": 80.4,
+			"labels": [
+				"process=12.2 physics=16.2 render_cpu=1.0 render_gpu=1.5 nodes+1010 draw=218",
+				"registros novos: [\"sawmill_yard/ 39 ms\"]"
+			],
+			"t": 100.6,
+			"waypoint": 12,
+			"x": 577.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 62.7,
+			"labels": [
+				"process=30.9 physics=7.9 render_cpu=0.8 render_gpu=1.4 nodes+90 draw=334"
+			],
+			"t": 103.51,
+			"waypoint": 12,
+			"x": 719.0,
+			"z": -285.0
+		},
+		{
+			"frame_ms": 65.6,
+			"labels": [
+				"process=12.4 physics=7.0 render_cpu=0.5 render_gpu=1.5 nodes+26 draw=116"
+			],
+			"t": 122.68,
+			"waypoint": 14,
+			"x": 896.0,
+			"z": -382.0
+		},
+		{
+			"frame_ms": 94.3,
+			"labels": [
+				"process=63.1 physics=8.1 render_cpu=1.1 render_gpu=1.6 nodes+458 draw=144"
+			],
+			"t": 124.05,
+			"waypoint": 14,
+			"x": 828.0,
+			"z": -367.0
+		},
+		{
+			"frame_ms": 49.7,
+			"labels": [
+				"process=80.1 physics=8.6 render_cpu=1.8 render_gpu=1.6 nodes+42 draw=347"
+			],
+			"t": 125.24,
+			"waypoint": 14,
+			"x": 766.0,
+			"z": -354.0
+		},
+		{
+			"frame_ms": 49.7,
+			"labels": [
+				"process=80.1 physics=8.6 render_cpu=1.7 render_gpu=1.6 nodes+1007 draw=400"
+			],
+			"t": 125.38,
+			"waypoint": 14,
+			"x": 764.0,
+			"z": -353.0
+		},
+		{
+			"frame_ms": 42.2,
+			"labels": [
+				"process=30.7 physics=14.5 render_cpu=0.8 render_gpu=1.9 nodes-382 draw=286"
+			],
+			"t": 127.84,
+			"waypoint": 14,
+			"x": 639.0,
+			"z": -326.0
+		},
+		{
+			"frame_ms": 94.3,
+			"labels": [
+				"process=16.0 physics=12.0 render_cpu=0.6 render_gpu=1.5 nodes+770 draw=168"
+			],
+			"t": 131.47,
+			"waypoint": 15,
+			"x": 454.0,
+			"z": -287.0
+		}
+	],
+	"summary": {
+		"frames": 18863,
+		"max": 143.113,
+		"over_40": 32,
+		"p50": 6.953,
+		"p95": 11.933,
+		"p99": 19.347
+	}
+}
