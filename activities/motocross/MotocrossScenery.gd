@@ -147,7 +147,9 @@ func _tower() -> void:
 
 func set_lighting(night: float, viewer: Vector3) -> void:
 	var nearby := viewer.distance_squared_to(tower_position) < 210*210
+	# O chunk sai em fatias (`_drain_retired`): o nó ainda está no grupo enquanto as luzes já foram liberadas.
 	for light in _lights:
+		if not is_instance_valid(light): continue
 		light.visible = night > .03 and nearby
 		light.light_energy = 10.0*night
 	for lens in _lenses: lens.emission_energy_multiplier = night*2.5

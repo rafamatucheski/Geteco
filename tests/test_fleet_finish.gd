@@ -24,7 +24,8 @@ func run() -> void:
 		var equipment = car.equipment
 		check(not equipment.lens_materials.is_empty(),id+": headlight lenses bound")
 		# The forklift has no road brake lamps; all road vehicles do.
-		if id != "port_forklift": check(not equipment.tail_materials.is_empty(),id+": rear brake lenses bound")
+		# O blindado do Exército não tem lanternas de freio; a empilhadeira também não.
+		if id not in ["port_forklift","army_tank"]: check(not equipment.tail_materials.is_empty(),id+": rear brake lenses bound")
 		for item in equipment.lamps:
 			check(item.lamp.position.z < -.2,id+": projectors ahead of cabin")
 			check(item.lamp.transform.basis.z.z > .9,id+": beam faces driving direction (-Z)")
@@ -44,7 +45,8 @@ func run() -> void:
 		car.health = 0
 		equipment._refresh()
 		for material in equipment.tail_materials: check(not material.emission_enabled,id+": wreck lamps off")
-		check(not car._paint.materials.is_empty(),id+": paint remains customizable")
+		# Moto da polícia tem libré fixa (sem material "paint"); não é repintável na garagem.
+		if id != "bike_police": check(not car._paint.materials.is_empty(),id+": paint remains customizable")
 		if id in FINISH.CABINS:
 			var cabin := car.visual.get_node("SculptedCabin") as MeshInstance3D
 			var glass := cabin.get_active_material(0) as StandardMaterial3D

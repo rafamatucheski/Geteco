@@ -22,7 +22,7 @@ func _run() -> void:
 	if alpine != null:
 		check(alpine.contains_water(wet_point),"feet inside alpine water polygon")
 		check(not alpine.contains_water(dry_point),"Ammu-Nation access remains dry")
-		var surface := alpine.get_node_or_null("AlpineShallows") as MeshInstance3D
+		var surface := alpine.get_node_or_null("AlpineWater") as MeshInstance3D
 		check(surface != null and surface.material_override is ShaderMaterial,"water is a shaded geometric surface")
 		if surface != null and surface.mesh != null:
 			check(surface.mesh.get_faces().size() > 100,"water has wave-ready tessellation")
@@ -42,7 +42,9 @@ func _run() -> void:
 		actor.velocity.y -= 9.8/60.0
 		actor.move_and_slide()
 	check(actor.is_on_floor(),"actor lands on walkable ground beneath water")
-	check(actor.global_position.distance_to(wet_point) < .25,"actor feet remain within shallow water depth")
+	# O lago virou bacia (LakeBasins, 0,6 m): o chão fica até 0,6 m abaixo do ponto nominal, nunca acima.
+	var feet_dy := actor.global_position.y-wet_point.y
+	check(feet_dy > -.65 and feet_dy < .25 and Vector2(actor.global_position.x-wet_point.x,actor.global_position.z-wet_point.z).length() < .25,"actor feet remain within shallow water depth")
 	var steps = WATER_STEPS.new()
 	root.add_child(steps)
 	check(steps.actor_step(actor,false,false),"water step emits wet contact")
