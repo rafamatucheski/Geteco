@@ -170,6 +170,9 @@ static func merge_parts(model: Node3D, id := "") -> void:
 		if part.mesh == null or part.has_meta("wheel_center") or not part.get_meta_list().is_empty(): continue
 		var material := part.material_override as StandardMaterial3D
 		if material == null: continue
+		# Tinta fica solta (a pintura e o dano procuram por ela); fundida, a SUV da polícia
+		# perdia o teto e as laterais brancas.
+		if material.resource_name == "paint": continue
 		# Luz: lado esquerdo e direito ficam separados (o equipamento decide o lado pela posição).
 		var side := ""
 		if material.emission_enabled: side = "L" if part.transform.origin.x + part.mesh.get_aabb().get_center().x < 0.0 else "R"

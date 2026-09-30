@@ -20,6 +20,10 @@ const BAYS := [
 const YAW := PI
 const SPAWN_RADIUS := 120.0
 const RESTOCK_SECONDS := 45.0
+## O editor do mundo escala a delegacia (hoje Z x0,64): as vagas ficavam a 4,8 m e a SUV nascia
+## dentro da viatura, era empurrada pela física e parava com a frente na rua. Distância mínima
+## entre os centros: meio comprimento de cada uma (2,2 + 2,7) mais folga para abrir a porta.
+const MIN_BAY_GAP := 6.5
 ## V1 `VehicleLockpick.can_complete`: até 100 px (6,25 m) entre ator e viatura.
 const LOCK_REACH := 100.0 / 16.0
 var session
@@ -67,6 +71,14 @@ func _process(delta: float) -> void:
 	_clock = 0
 	_sync()
 
+func _bay_position(index: int) -> Vector3:
+	var bay: Vector3 = _editor_transform*BAYS[index].position
+	if index == 0: return bay
+	var first: Vector3 = _editor_transform*BAYS[0].position
+	var away: Vector3 = bay - first
+	if away.length() >= MIN_BAY_GAP: return bay
+	return first + away.normalized()*MIN_BAY_GAP
+
 func _sync() -> void:
 	if session.is_transition_blocked() or session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return
 	var player: CharacterBody3D = session.world.player
@@ -75,12 +87,12 @@ func _sync() -> void:
 		if is_instance_valid(car) and not car.is_queued_for_deletion(): continue
 		cars[index] = null
 		if restock[index] > 0: continue
-		var bay: Vector3 = _editor_transform*BAYS[index].position
+		var bay := _bay_position(index)
 		if player.global_position.distance_to(bay) > SPAWN_RADIUS: continue
 		cars[index] = _spawn(index)
 
 func _spawn(index: int) -> CharacterBody3D:
-	var bay: Vector3 = _editor_transform*BAYS[index].position
+	var bay := _bay_position(index)
 	var space: PhysicsDirectSpaceState3D = session.world.get_world_3d().direct_space_state
 	var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(bay + Vector3.UP * 8, bay - Vector3.UP * 4, 1))
 	# Chão ainda não carregado pelo streaming: tenta no próximo ciclo.
