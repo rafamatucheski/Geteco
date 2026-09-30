@@ -7,10 +7,10 @@ const SMOOTH_ANGLE := 62.0
 static var _hulls: Dictionary = {}
 
 static func decorate(id: String, model: Node3D) -> void:
-	if id.begins_with("bike_") or id == "army_tank": return
+	if id.begins_with("bike_") or id == "army_tank" or "--no-fleet-pass" in OS.get_cmdline_user_args(): return
 	_fix_hull(id, model)
 	_door_lines(id, model)
-	merge_parts(model)
+	merge_parts(model, id)
 
 static func _fix_hull(id: String, model: Node3D) -> void:
 	if _hulls.has(id):
@@ -139,7 +139,23 @@ static func _rebuilt(source: Mesh, center: Vector3, radii: Vector3) -> ArrayMesh
 ## As 4 rodas eram ~18 peças cada (pneu, aro, 12 raios, tampa...). Junta as que têm o
 ## mesmo material dentro de cada roda; peças de portas, vidro, luz e tinta ficam soltas
 ## (os outros sistemas as procuram por nome, meta ou material).
-static func merge_parts(model: Node3D) -> void:
+static var _plans: Dictionary = {}
+
+static func merge_parts(model: Node3D, id := "") -> void:
+	# Custo por carro nascido: a 1ª vez monta as malhas fundidas; as seguintes só as aplicam.
+	if id != "" and _plans.has(id):
+		var parts := model.find_children("*", "MeshInstance3D", true, false)
+		for step: Dictionary in _plans[id]:
+			var first: MeshInstance3D = parts[step.first]
+			first.mesh = step.mesh
+			first.transform = Transform3D.IDENTITY
+			for index in step.others:
+				var other: MeshInstance3D = parts[index]
+				other.get_parent().remove_child(other)
+				other.free()
+		return
+	var plan: Array = []
+	var all_parts := model.find_children("*", "MeshInstance3D", true, false)
 	var groups := {}
 	for part: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
 		if part.mesh == null or not part.has_meta("wheel_center"): continue
@@ -184,11 +200,15 @@ static func merge_parts(model: Node3D) -> void:
 			print("AURORA_MERGE_SKIPPED ", key, " ", got, " vs ", expected)
 			continue
 		var first: MeshInstance3D = parts[0]
+		var others: Array = []
+		for index in range(1, parts.size()): others.append(all_parts.find(parts[index]))
+		plan.append({"first": all_parts.find(first), "others": others, "mesh": merged})
 		first.mesh = merged
 		first.transform = Transform3D.IDENTITY
 		for index in range(1, parts.size()):
 			(parts[index] as MeshInstance3D).get_parent().remove_child(parts[index])
 			(parts[index] as MeshInstance3D).free()
+	if id != "": _plans[id] = plan
 
 # --- Linhas de porta (só onde há medida em VehicleDoorSpecs) ---------------------------
 
