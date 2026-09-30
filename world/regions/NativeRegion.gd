@@ -103,6 +103,7 @@ func prewarm() -> void:
 		var chunk: Node3D = chunks[key]
 		_hold_file_resources(chunk)
 		_suspend_chunk_mechanisms(chunk)
+		_detach_cached_records(chunk)
 		chunks.erase(key)
 		chunk.free()
 	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
@@ -122,6 +123,7 @@ func prewarm_incremental() -> void:
 			await get_tree().process_frame
 		_hold_file_resources(chunk)
 		_suspend_chunk_mechanisms(chunk)
+		_detach_cached_records(chunk)
 		chunks.erase(key)
 		chunk.queue_free()
 		await get_tree().process_frame
@@ -479,6 +481,40 @@ func _process(_delta: float) -> void:
 		if _run_build_job(build_jobs[0],left): build_jobs.pop_front()
 		if Time.get_ticks_usec()-began >= budget: return
 
+## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
+## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
+## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
+const CACHED_RECORDS := ["mountain_village","sawmill_yard"]
+static var _record_cache: Dictionary = {}
+
+func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
+	if str(record.kind) not in CACHED_RECORDS:
+		_build_record(chunk,record)
+		return
+	var key := "%s|%s|%s"%[region_id,str(record.kind),str(record.get("position",Vector3.ZERO))]
+	if _record_cache.has(key):
+		var nodes: Array = _record_cache[key]
+		var usable := not nodes.is_empty()
+		for node in nodes:
+			if not is_instance_valid(node) or node.get_parent() != null: usable = false
+		if usable:
+			for node in nodes: chunk.add_child(node)
+			return
+	var before := chunk.get_child_count()
+	_build_record(chunk,record)
+	var built: Array = []
+	for index in range(before,chunk.get_child_count()):
+		var node := chunk.get_child(index)
+		node.set_meta("record_cache_key",key)
+		built.append(node)
+	_record_cache[key] = built
+
+## Tira do chunk os nós em cache antes de liberá-lo, para que sobrevivam.
+func _detach_cached_records(chunk: Node3D) -> void:
+	if not is_instance_valid(chunk): return
+	for child in chunk.get_children():
+		if child.has_meta("record_cache_key"): chunk.remove_child(child)
+
 ## Chunk que sai do raio de retenção: liberar 1000-3000 nós de uma vez custava 40-150 ms
 ## num quadro (medido dirigindo). O chunk é tirado da lista já e seus filhos são liberados
 ## em fatias de `RETIRE_BUDGET_USEC` por quadro.
@@ -488,6 +524,7 @@ var _retire_stack: Array[Node] = []
 
 func _retire_chunk(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return
+	_detach_cached_records(chunk)
 	chunk.hide()
 	_retiring.append(chunk)
 
@@ -653,7 +690,7 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					# always builds the full cargo and its original collision.
 					if not (job.get("warming", false) and record.kind == "south_port_model" and record.model_kind == "ship_cargo"):
 						var record_began := Time.get_ticks_usec()
-						_build_record(chunk,record)
+						_build_record_cached(chunk,record)
 						var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
 						if record_ms >= 8.0:
 							var slow: Array = Engine.get_meta("slow_stream_records",[])
