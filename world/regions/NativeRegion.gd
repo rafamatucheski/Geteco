@@ -397,7 +397,7 @@ func prepare_collision_at(point: Vector3) -> bool:
 	# physics instead of letting them drive over a road whose streamed floor is
 	# still absent.
 	var key := _cell(point)
-	_ensure_chunk(key)
+	_ensure_chunk_surfaces(key)
 	return chunks.has(key)
 
 func set_retention_radius(value: int) -> void:
@@ -435,6 +435,9 @@ func _suspend_chunk_vehicles(key: Vector2i) -> void:
 	# Suspend before removing support; ProductionWorld resumes after its ground check.
 	for car in get_tree().get_nodes_in_group("drivable"):
 		if car is CharacterBody3D and car.is_visible_in_tree() and car.is_physics_processing() and _cell(car.global_position) == key:
+			# Células de Harbor e Mountain se sobrepõem na costura: cada região só suspende o
+			# que está do seu lado (tests/test_region_vehicle_suspension.gd).
+			if WORLD_CONNECTION.logical_region(car.global_position) != region_id: continue
 			car.set_meta("awaiting_ground", true)
 			car.velocity.y = 0.0
 			car.set_physics_process(false)
@@ -659,6 +662,24 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 ## número fixo de quadros (a construção é espalhada em até 3 ms por quadro).
 func is_streaming_idle() -> bool:
 	return pending.is_empty() and build_jobs.is_empty()
+
+## Só o chão e a colisão das superfícies (estágio 0) saem já; o resto do chunk vai para a
+## frente da fila fatiada. Quem só precisa de chão firme (veículo que vai nascer ou andar
+## ali) não deve pagar o chunk inteiro: `_ground_ready` custava 41-73 ms por chamada.
+func _ensure_chunk_surfaces(key: Vector2i) -> void:
+	if chunks.has(key):
+		for index in range(build_jobs.size()):
+			if build_jobs[index].key == key:
+				if index > 0:
+					var job: Dictionary = build_jobs[index]
+					build_jobs.remove_at(index)
+					build_jobs.push_front(job)
+				return
+		return
+	_build_chunk(key,false)
+	var created: Dictionary = build_jobs.pop_back()
+	build_jobs.push_front(created)
+	_run_build_job(created,0.0)
 
 ## Garante o chunk completo agora (colisão para quem vai pisar nele neste quadro).
 func _ensure_chunk(key: Vector2i) -> void:

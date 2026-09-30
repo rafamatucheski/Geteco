@@ -34,9 +34,11 @@ func run() -> void:
 	world.player.controlled_automatically = false
 	for i in 240: await process_frame
 	var start: Vector3 = world.player.position
-	var waypoints := [start, Vector3(SEAM.x - 900.0, 0, SEAM.z), Vector3(SEAM.x - 250.0, 0, SEAM.z), SEAM, Vector3(SEAM.x + 300.0, 0, SEAM.z), Vector3(SEAM.x + 900.0, 0, SEAM.z - 200.0), SEAM, Vector3(SEAM.x - 400.0, 0, SEAM.z)]
+	var waypoints := [start, Vector3(SEAM.x - 900.0, 0, SEAM.z), Vector3(SEAM.x - 250.0, 0, SEAM.z), SEAM, Vector3(SEAM.x + 300.0, 0, SEAM.z), Vector3(SEAM.x + 900.0, 0, SEAM.z - 200.0), SEAM, Vector3(SEAM.x - 400.0, 0, SEAM.z), start, Vector3(SEAM.x - 900.0, 0, SEAM.z), Vector3(SEAM.x - 250.0, 0, SEAM.z), SEAM, Vector3(SEAM.x + 300.0, 0, SEAM.z), Vector3(SEAM.x + 900.0, 0, SEAM.z - 200.0), SEAM, Vector3(SEAM.x - 400.0, 0, SEAM.z)]
 	var position := start
 	var y := start.y
+	Engine.set_meta("slow_stream_records", [])
+	var seen_records := 0
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
 	var last_nodes := Performance.get_monitor(Performance.OBJECT_NODE_COUNT)
 	var previous := Time.get_ticks_usec()
@@ -59,6 +61,9 @@ func run() -> void:
 		previous = now
 		elapsed += frame_ms / 1000.0
 		frames.append(frame_ms)
+		var slow_now: Array = Engine.get_meta("slow_stream_records", [])
+		var new_records: Array = slow_now.slice(seen_records)
+		seen_records = slow_now.size()
 		if frame_ms <= 40.0: last_nodes = Performance.get_monitor(Performance.OBJECT_NODE_COUNT)
 		if frame_ms > 40.0:
 			var labels := []
@@ -68,6 +73,7 @@ func run() -> void:
 			var rid := root.get_viewport_rid()
 			var split := "process=%.1f physics=%.1f render_cpu=%.1f render_gpu=%.1f nodes%+d draw=%d" % [Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, RenderingServer.viewport_get_measured_render_time_cpu(rid), RenderingServer.viewport_get_measured_render_time_gpu(rid), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT) - last_nodes), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))]
 			labels.append(split)
+			if not new_records.is_empty(): labels.append("registros novos: " + str(new_records))
 			spikes.append({"t": snappedf(elapsed, 0.01), "frame_ms": snappedf(frame_ms, 0.1), "x": snappedf(position.x, 1.0), "z": snappedf(position.z, 1.0), "waypoint": stage, "labels": labels})
 			print("SPIKE t=%.1fs %.0f ms at (%.0f,%.0f) wp=%d %s" % [elapsed, frame_ms, position.x, position.z, stage, str(labels)])
 	frames.sort()
