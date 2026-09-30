@@ -465,7 +465,9 @@ func _apply_night_lights(chunk: Node3D) -> void:
 		if light.is_in_group("mountain_night_light"):
 			light.light_energy = float(light.get_meta("night_energy",1.0))*mountain_night_level
 func _process(_delta: float) -> void:
+	var drain_began := Time.get_ticks_usec()
 	_drain_retired()
+	_note_slow("liberação", drain_began, 100000)
 	var began := Time.get_ticks_usec()
 	# Com fila grande (dirigindo rápido) a construção ganha mais tempo por quadro, senão
 	# o chunk em que o carro entra ainda não existe e `set_focus` o constrói inteiro de uma vez.
@@ -475,16 +477,21 @@ func _process(_delta: float) -> void:
 			if pending.is_empty(): return
 			var key: Vector2i = pending.pop_front()
 			if chunks.has(key): continue
+			var chunk_began := Time.get_ticks_usec()
 			_build_chunk(key,false)
+			_note_slow("novo chunk",chunk_began,50000)
 		var left: float = budget-(Time.get_ticks_usec()-began)
 		if left <= 0.0: return
-		if _run_build_job(build_jobs[0],left): build_jobs.pop_front()
+		var job_began := Time.get_ticks_usec()
+		var job_done := _run_build_job(build_jobs[0],left)
+		_note_slow("etapa estágio %d"%int(build_jobs[0].stage),job_began,100000)
+		if job_done: build_jobs.pop_front()
 		if Time.get_ticks_usec()-began >= budget: return
 
 ## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
-const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm"]
+const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm","lake"]
 static var _record_cache: Dictionary = {}
 
 func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
@@ -1203,3 +1210,12 @@ func _build_sawmill_yard(chunk: Node3D) -> void:
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(mesh)
 		mesh.create_trimesh_collision()
+
+## Registra em `slow_stream_records` uma etapa do streaming que passou de `limit_usec`
+## (só para diagnóstico com a sonda; não tem efeito sem a meta).
+func _note_slow(what: String, since_usec: int, limit_usec: int) -> void:
+	var spent := Time.get_ticks_usec()-since_usec
+	if spent < limit_usec or not Engine.has_meta("slow_stream_records"): return
+	var slow: Array = Engine.get_meta("slow_stream_records")
+	slow.append("PROCESS %s %.0f ms"%[what,spent/1000.0])
+	Engine.set_meta("slow_stream_records",slow)

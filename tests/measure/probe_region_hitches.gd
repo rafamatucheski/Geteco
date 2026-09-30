@@ -80,6 +80,7 @@ func ground(point: Vector3, fallback: float) -> float:
 func run() -> void:
 	var args := OS.get_cmdline_user_args()
 	if DisplayServer.get_name() == "headless" or "--no-save" not in args or "--skip-arrival" not in args: quit(2); return
+	_beat_thread.start(_beat_loop)
 	create_timer(420.0).timeout.connect(func(): push_error("PROBE_TIMEOUT"); quit(2))
 	root.size = Vector2i(1280, 720)
 	world = load("res://Main.tscn").instantiate()
@@ -112,10 +113,15 @@ func run() -> void:
 			stage += 1
 			continue
 		position += flat.normalized() * minf(flat.length(), 25.0 / 60.0)
+		var t_a := Time.get_ticks_usec()
 		y = ground(position, y)
 		position.y = y
+		var t_b := Time.get_ticks_usec()
 		world.player.teleport(position)
+		var t_c := Time.get_ticks_usec()
 		world.production.region.set_focus(position) if world.production.region != null else null
+		var t_d := Time.get_ticks_usec()
+		var probe_own := "sonda: raio=%.0f teleporte=%.0f foco=%.0f" % [float(t_b - t_a) / 1000.0, float(t_c - t_b) / 1000.0, float(t_d - t_c) / 1000.0]
 		frame_index += 1
 		var slow_scripts := {}
 		if "--per-script" in args:
@@ -144,6 +150,7 @@ func run() -> void:
 			var rid := root.get_viewport_rid()
 			var split := "process=%.1f physics=%.1f render_cpu=%.1f render_gpu=%.1f nodes%+d draw=%d" % [Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, RenderingServer.viewport_get_measured_render_time_cpu(rid), RenderingServer.viewport_get_measured_render_time_gpu(rid), int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT) - last_nodes), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))]
 			labels.append(split)
+			labels.append(probe_own)
 			if not tally_before.is_empty(): labels.append("nos: " + diff_top(tally_before, tally()))
 			if not slow_scripts.is_empty(): labels.append("scripts lentos: " + str(slow_scripts))
 			# Fases do quadro ANTERIOR (o intervalo medido acaba de fechar): scripts, desenho e o resto
@@ -152,6 +159,7 @@ func run() -> void:
 			if not new_records.is_empty(): labels.append("registros novos: " + str(new_records))
 			spikes.append({"t": snappedf(elapsed, 0.01), "frame_ms": snappedf(frame_ms, 0.1), "x": snappedf(position.x, 1.0), "z": snappedf(position.z, 1.0), "waypoint": stage, "labels": labels})
 			print("SPIKE t=%.1fs %.0f ms at (%.0f,%.0f) wp=%d %s" % [elapsed, frame_ms, position.x, position.z, stage, str(labels)])
+			if frame_ms > 300.0: print("  fim do quadro em t=", now / 1000, " ms; batimento: ", str(_beat_gaps.slice(-3)))
 	frames.sort()
 	var summary := {"frames": frames.size(), "p50": frames[frames.size() / 2], "p95": frames[int(frames.size() * 0.95)], "p99": frames[int(frames.size() * 0.99)], "max": frames[-1], "over_40": spikes.size()}
 	print("PROBE_SUMMARY ", JSON.stringify(summary))
@@ -165,4 +173,19 @@ func run() -> void:
 	var file := FileAccess.open("res://evidence/region-hitches/probe-%s.json" % label, FileAccess.WRITE)
 	file.store_string(JSON.stringify({"summary": summary, "spikes": spikes, "costs": world.get_meta("perf_costs", [])}, "\t"))
 	file.close()
+	_beat_run = false
+	_beat_thread.wait_to_finish()
 	quit(0)
+
+## Batimento em outra thread: se ela também para junto com o quadro, o processo inteiro foi
+## suspenso pelo sistema (antivírus, disco, outro processo); se só o quadro para, é trava interna.
+var _beat_thread := Thread.new()
+var _beat_run := true
+var _beat_gaps: Array = []
+func _beat_loop() -> void:
+	var last := Time.get_ticks_usec()
+	while _beat_run:
+		OS.delay_usec(1000)
+		var now := Time.get_ticks_usec()
+		if now - last >= 150000: _beat_gaps.append("%.0f ms em t=%d" % [float(now - last) / 1000.0, now / 1000])
+		last = now

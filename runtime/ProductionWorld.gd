@@ -70,6 +70,7 @@ var _region_cache: Dictionary = {}
 ## nascimento; quando o último carro de um modelo saía de cena, o recurso era liberado
 ## e o próximo nascimento relia o arquivo: 1,7 s num quadro (medido 2026-09-23).
 var _fleet_scenes: Array[Resource] = []
+var _fleet_extra: Array[Resource] = []
 
 func build() -> void:
 	no_save = "--no-save" in OS.get_cmdline_user_args()
@@ -346,6 +347,7 @@ func _hold_fleet_scenes_incremental() -> void:
 		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
 			_fleet_scenes.append(ResourceLoader.load_threaded_get(path))
 		await get_tree().process_frame
+	_request_remaining_fleet_scenes(paths)
 
 func _exit_tree() -> void:
 	for cached in _region_cache.values():
@@ -1097,3 +1099,18 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	world.player.input_locked = was_locked
 	get_tree().paused = was_paused
 	session.save_game()
+
+## Os demais modelos da frota (polícia, empilhadeira, viaturas do porto...) eram lidos do disco
+## na hora em que nasciam: 650 ms num quadro (medido: `port_forklift`, `PoliceMotorPool`). São
+## poucos MB no total; a leitura corre em segundo plano e o carregamento posterior acha em cache.
+func _request_remaining_fleet_scenes(already: Array[String]) -> void:
+	var extra: Array[String] = []
+	for id in preload("res://runtime/FleetCatalog.gd").all():
+		var path := str(preload("res://runtime/FleetCatalog.gd").spec(id).get("scene", ""))
+		if path.is_empty() or path in already or path in extra: continue
+		if ResourceLoader.load_threaded_request(path) == OK: extra.append(path)
+	for path in extra:
+		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await get_tree().process_frame
+		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+			_fleet_extra.append(ResourceLoader.load_threaded_get(path))
