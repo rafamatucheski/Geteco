@@ -26,7 +26,7 @@ static func bank(family: String) -> Array[AudioStreamWAV]:
 		result = TANK_AUDIO.engine_bank()
 	elif has_bank(family):
 		for index in 7:
-			var source := load("res://audio/acoustic/engine_%s_%d.wav" % [family, index]) as AudioStreamWAV
+			var source := _fetch("res://audio/acoustic/engine_%s_%d.wav" % [family, index]) as AudioStreamWAV
 			if source == null:
 				result.clear()
 				break
@@ -38,13 +38,55 @@ static func bank(family: String) -> Array[AudioStreamWAV]:
 	_banks[family] = result
 	return result
 
-## Carrega as famílias das viaturas de emergência, uma por quadro, sob a tela de carga.
+## Famílias com as 7 camadas no disco.
+static func all_families() -> Array[String]:
+	var result: Array[String] = []
+	var dir := DirAccess.open("res://audio/acoustic")
+	if dir == null: return result
+	for file in dir.get_files():
+		if file.begins_with("engine_") and file.ends_with("_0.wav"):
+			var family := file.trim_prefix("engine_").trim_suffix("_0.wav")
+			if has_bank(family): result.append(family)
+	return result
+
+## Lê o WAV: se já foi pedido em segundo plano, espera só o que faltar; senão, carrega agora.
+## Cada família custava 60-130 ms de `load` síncrono no quadro em que aparecia (17 famílias,
+## 1,4 s no total): o pico de ~1 s do começo do jogo e uma parada a cada modelo novo de carro.
+static func _fetch(path: String) -> Resource:
+	var status := ResourceLoader.load_threaded_get_status(path)
+	if status == ResourceLoader.THREAD_LOAD_LOADED or status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		return ResourceLoader.load_threaded_get(path)
+	return load(path)
+
+static func _request_family(family: String) -> void:
+	for index in 7:
+		var path := "res://audio/acoustic/engine_%s_%d.wav" % [family, index]
+		if ResourceLoader.exists(path): ResourceLoader.load_threaded_request(path)
+
+static func _family_loaded(family: String) -> bool:
+	for index in 7:
+		var path := "res://audio/acoustic/engine_%s_%d.wav" % [family, index]
+		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS: return false
+	return true
+
+## Todas as famílias: a leitura dos WAV corre em segundo plano e cada banco é montado (cópia
+## dos 7 fluxos) num quadro, com prioridade para as viaturas de emergência e `street`.
 static func prewarm(tree: SceneTree) -> void:
 	if _warming or "--no-prewarm" in OS.get_cmdline_user_args(): return
 	_warming = true
+	var order: Array[String] = []
 	for archetype in PREWARM_ARCHETYPES:
 		var family: String = ENGINE_PROFILE.bank_family(archetype)
-		if not _banks.has(family): bank(family)
+		if family not in order: order.append(family)
+	if "street" not in order: order.append("street")
+	for family in all_families():
+		if family not in order: order.append(family)
+	for family in order: if has_bank(family) and not _banks.has(family): _request_family(family)
+	for family in order:
+		if _banks.has(family): continue
+		var waited := 0
+		while not _family_loaded(family) and waited < 600:
+			await tree.process_frame
+			waited += 1
+		bank(family)
 		await tree.process_frame
-	# `street` é o recuo das famílias sem áudio próprio.
-	if not _banks.has("street"): bank("street")
