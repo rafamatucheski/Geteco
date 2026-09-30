@@ -11,14 +11,24 @@ var _batches: Dictionary = {}
 func configure(actor: Node3D = null) -> void:
 	player = actor
 
+var _steps: Array[Callable] = []
+
+## O pátio custava ~190 ms num quadro (casinha, mesa, tenda, 3 motos, 4 pessoas): agora uma
+## etapa por quadro; `finish_build` termina tudo na hora (testes).
 func _ready() -> void:
 	name = "MotocrossPaddock"
 	add_to_group("motocross_paddock")
-	_build_hut()
-	_build_seating()
-	_build_tent()
-	_flush(self)
-	_build_parked_bikes()
+	_steps = [_build_hut,_build_seating,_build_tent,func(): _flush(self),_build_parked_bikes]
+	set_process(true)
+
+func _process(_delta: float) -> void:
+	if _steps.is_empty():
+		set_process(false)
+		return
+	(_steps.pop_front() as Callable).call()
+
+func finish_build() -> void:
+	while not _steps.is_empty(): (_steps.pop_front() as Callable).call()
 
 func _build_hut() -> void:
 	var timber := _finish_material(Color("826044"))

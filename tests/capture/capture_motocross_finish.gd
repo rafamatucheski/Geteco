@@ -20,6 +20,7 @@ func run() -> void:
 	world.add_child(sun)
 	var course := preload("res://activities/motocross/MotocrossCourse.gd").new()
 	world.add_child(course)
+	course.finish_build()
 	var forest := preload("res://gameplay/urban_v1/FreightOutskirts.gd").new()
 	world.add_child(forest)
 	var camera := Camera3D.new()

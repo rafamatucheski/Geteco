@@ -105,6 +105,7 @@ func connected_yard_checks(course: Node3D, paddock: Node3D) -> void:
 func run() -> void:
 	var course := COURSE.new()
 	root.add_child(course)
+	course.finish_build()
 	for _i in 5: await physics_frame
 	var scenery: Node3D = course.get_node("MotocrossScenery")
 	var paddock: Node3D = course.get_node("MotocrossPaddock")

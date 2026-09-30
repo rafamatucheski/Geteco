@@ -67,6 +67,7 @@ func run() -> void:
 	floor_body.free()
 	var course = COURSE.new()
 	world.add_child(course)
+	course.finish_build()
 	await frames(4)
 	var surface_misses := 0
 	for index in 20:

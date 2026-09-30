@@ -27,6 +27,7 @@ func run() -> void:
 	root.add_child(world)
 	var course := COURSE.new()
 	world.add_child(course)
+	course.finish_build()
 	var bike := InputBike.new()
 	var lead := InputBike.new()
 	var blocker := InputBike.new()

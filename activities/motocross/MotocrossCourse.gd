@@ -38,6 +38,7 @@ func _init() -> void:
 			p.y += sin((fraction-.80)/.11*PI*6)*.75
 		points.append(p)
 	for i in 32: gates.append(sample(float(i)*length/32.0))
+	_build_grid()
 
 func _jump(fraction: float, start: float, span: float, height: float) -> float:
 	var t := (fraction-start)/span
@@ -57,43 +58,128 @@ func pose(distance: float, lane := 0.0) -> Transform3D:
 	var basis := Basis(Vector3.UP,atan2(-direction.x,-direction.z))
 	return Transform3D(basis,p+basis.x*lane+Vector3.UP*.15)
 
+const GRID_CELL := 12.0
+var _grid: Dictionary = {}
+
+## Segmentos da rota por célula de 8 m: `nearest` era uma varredura de todos os ~380
+## segmentos e é chamado ~20 mil vezes ao montar terreno e grama (1,1 s de um quadro só).
+func _build_grid() -> void:
+	_grid.clear()
+	for i in range(points.size()-1):
+		var a := points[i]
+		var b := points[i+1]
+		var lo := Vector2i(floori(minf(a.x,b.x)/GRID_CELL),floori(minf(a.z,b.z)/GRID_CELL))
+		var hi := Vector2i(floori(maxf(a.x,b.x)/GRID_CELL),floori(maxf(a.z,b.z)/GRID_CELL))
+		for x in range(lo.x,hi.x+1):
+			for z in range(lo.y,hi.y+1):
+				var key := Vector2i(x,z)
+				if not _grid.has(key): _grid[key] = []
+				_grid[key].append(i)
+
 func nearest(point: Vector3) -> Dictionary:
 	var best := INF
 	var distance := 0.0
 	var closest := Vector3.ZERO
-	for i in range(points.size()-1):
-		var a := Vector2(points[i].x,points[i].z)
-		var b := Vector2(points[i+1].x,points[i+1].z)
-		var p := Vector2(point.x,point.z)
-		var t := clampf((p-a).dot(b-a)/maxf(.001,(b-a).length_squared()),0,1)
-		var d := p.distance_squared_to(a.lerp(b,t))
-		if d < best:
-			best = d
-			closest = points[i].lerp(points[i+1],t)
-			distance = (float(i)+t)/float(points.size()-1)*length
+	var p := Vector2(point.x,point.z)
+	var cell := Vector2i(floori(point.x/GRID_CELL),floori(point.z/GRID_CELL))
+	var ring := 0
+	while ring <= 60:
+		for x in range(cell.x-ring,cell.x+ring+1):
+			# Só o perímetro do anel: o interior já foi visto nos anéis anteriores.
+			var edge := absi(x-cell.x) == ring
+			var z_step := 1 if (edge or ring == 0) else 2*ring
+			for z in range(cell.y-ring,cell.y+ring+1,z_step):
+				var bucket: Variant = _grid.get(Vector2i(x,z))
+				if bucket == null: continue
+				for i in bucket:
+					var a := Vector2(points[i].x,points[i].z)
+					var b := Vector2(points[i+1].x,points[i+1].z)
+					var t := clampf((p-a).dot(b-a)/maxf(.001,(b-a).length_squared()),0,1)
+					var d := p.distance_squared_to(a.lerp(b,t))
+					if d < best:
+						best = d
+						closest = points[i].lerp(points[i+1],t)
+						distance = (float(i)+t)/float(points.size()-1)*length
+		# Qualquer segmento além do anel `ring` está a pelo menos `ring * GRID_CELL`.
+		if best < INF and best <= pow(float(ring)*GRID_CELL,2.0): break
+		ring += 1
 	return {"distance":distance,"lateral":sqrt(best),"point":closest}
 
+signal built
+var complete := false
+var _steps: Array[Callable] = []
+
+## A pista inteira custava ~1,4 s montada de uma vez dentro do registro do chunk (o pico
+## de 1,3 s ao passar perto do parque). Agora cada etapa roda num quadro; `finish_build`
+## termina tudo na hora (testes, capturas). Quem usa a pista sem checar `complete` só vê
+## as peças das etapas já feitas.
 func _ready() -> void:
 	name = "VerticeMotocrossCourse"
 	add_to_group("motocross_course")
+	_steps = [_step_terrain,_build_ribbon,_build_shoulders,_build_props,_dress_quarry,_step_scenery,_step_paddock,_step_trackside,_step_grass]
+	Engine.set_meta("motocross_build_ms",{})
+	set_process(true)
+
+func _process(_delta: float) -> void:
+	if _steps.is_empty(): return
+	_run_step()
+
+func finish_build() -> void:
+	while not _steps.is_empty(): _run_step()
+	if is_instance_valid(_paddock_node): _paddock_node.finish_build()
+	if is_instance_valid(_grass_node): _grass_node.finish_build()
+
+func _run_step() -> void:
+	var step: Callable = _steps.pop_front()
+	var began := Time.get_ticks_usec()
+	step.call()
+	var costs: Dictionary = Engine.get_meta("motocross_build_ms",{})
+	costs[str(step.get_method())] = _lap(began)
+	Engine.set_meta("motocross_build_ms",costs)
+	if _steps.is_empty():
+		complete = true
+		set_process(false)
+		built.emit()
+
+var _terrain_surface: SurfaceTool
+
+func _step_terrain() -> void:
 	_build_terrain()
-	_build_ribbon()
-	_build_shoulders()
-	_build_props()
-	_dress_quarry()
+	# Malha e colisão do terreno (normais, commit, trimesh) no quadro seguinte.
+	_steps.push_front(_step_terrain_mesh)
+
+func _step_terrain_mesh() -> void:
+	_mesh(_terrain_surface,"QuarryHills",true)
+	_terrain_surface = null
+
+func _step_scenery() -> void:
 	var scenery := preload("res://activities/motocross/MotocrossScenery.gd").new()
 	scenery.course = self
 	add_child(scenery)
-	add_child(load("res://activities/motocross/MotocrossPaddock.gd").new())
+
+var _paddock_node: Node
+
+func _step_paddock() -> void:
+	_paddock_node = load("res://activities/motocross/MotocrossPaddock.gd").new()
+	add_child(_paddock_node)
+
+func _step_trackside() -> void:
 	start_gate = preload("res://activities/motocross/MotocrossStartGate.gd").new()
 	start_gate.course = self
 	add_child(start_gate)
 	trackside = preload("res://activities/motocross/MotocrossTrackside.gd").new()
 	trackside.course = self
 	add_child(trackside)
+
+func _step_grass() -> void:
 	var grass := preload("res://activities/motocross/MotocrossGroundDetail.gd").new()
 	grass.course = self
 	add_child(grass)
+	_grass_node = grass
+
+var _grass_node: Node
+
+func _lap(since: int) -> float: return snappedf(float(Time.get_ticks_usec()-since)/1000.0,0.1)
 
 ## Race-control board text; the controller writes it at a few hertz.
 func set_board(title: String, detail: String) -> void:
@@ -182,7 +268,7 @@ func _build_terrain() -> void:
 			for i in [a,a+1,a+nx+1,a+1,a+nx+2,a+nx+1]:
 				st.set_color(colors[i])
 				st.add_vertex(vertices[i])
-	_mesh(st,"QuarryHills",true)
+	_terrain_surface = st
 
 func surface_height(point: Vector2) -> float:
 	if not BOUNDS.has_point(point) or _terrain_heights.is_empty(): return 0.0

@@ -50,29 +50,55 @@ func _yard() -> void:
 	var shape := CollisionShape3D.new(); shape.shape = mesh.create_trimesh_shape()
 	body.add_child(shape); add_child(body)
 
+var _rng := RandomNumberGenerator.new()
+var _cells: Array[Vector2i] = []
+var _cell_index := 0
+var _attempt := 0
+var _pending: Array[Transform3D] = []
+
+## O piso do pátio sai no _ready; os tufos (~15 mil tentativas) saem em fatias de 2 ms por
+## quadro, com a mesma sequência de sorteios de antes, então o desenho é idêntico.
 func _ready() -> void:
 	name = "MotocrossGrass"
 	_yard()
-	var rng := RandomNumberGenerator.new(); rng.seed = 38491
+	_rng.seed = 38491
 	for z in range(-147,-22,24):
-		for x in range(-247,-87,24):
-			var transforms: Array[Transform3D] = []
-			for attempt in 440:
-				var p := Vector2(x+rng.randf()*24,z+rng.randf()*24)
-				if not AREA.has_point(p): continue
-				var blocked := false
-				for rect in CLEAR:
-					if rect.grow(.6).has_point(p): blocked = true; break
-				if blocked: continue
-				var near: Dictionary = course.nearest(Vector3(p.x,0,p.y))
-				if float(near.lateral)<course.HALF_WIDTH+1.2: continue
-				var height: float = yard_height(p) if Rect2(-242,-43,36,67).has_point(p) else course.surface_height(p)
-				var scale_value := rng.randf_range(.65,1.4)
-				transforms.append(Transform3D(Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3.ONE*scale_value),Vector3(p.x-x,height-.025,p.y-z)))
-			if transforms.is_empty(): continue
+		for x in range(-247,-87,24): _cells.append(Vector2i(x,z))
+	set_process(true)
+
+func finish_build() -> void:
+	while _cell_index < _cells.size(): _slice(INF)
+
+func _process(_delta: float) -> void:
+	if _cell_index >= _cells.size():
+		set_process(false)
+		return
+	_slice(2000.0)
+
+func _slice(budget_usec: float) -> void:
+	var began := Time.get_ticks_usec()
+	while _cell_index < _cells.size():
+		var cell := _cells[_cell_index]
+		var x := cell.x
+		var z := cell.y
+		while _attempt < 440:
+			_attempt += 1
+			var p := Vector2(x+_rng.randf()*24,z+_rng.randf()*24)
+			if not AREA.has_point(p): continue
+			var blocked := false
+			for rect in CLEAR:
+				if rect.grow(.6).has_point(p): blocked = true; break
+			if blocked: continue
+			var near: Dictionary = course.nearest(Vector3(p.x,0,p.y))
+			if float(near.lateral)<course.HALF_WIDTH+1.2: continue
+			var height: float = yard_height(p) if Rect2(-242,-43,36,67).has_point(p) else course.surface_height(p)
+			var scale_value := _rng.randf_range(.65,1.4)
+			_pending.append(Transform3D(Basis(Vector3.UP,_rng.randf()*TAU).scaled(Vector3.ONE*scale_value),Vector3(p.x-x,height-.025,p.y-z)))
+			if _attempt % 20 == 0 and Time.get_ticks_usec()-began >= budget_usec: return
+		if not _pending.is_empty():
 			var mm := MultiMesh.new(); mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = GRASS._tuft_mesh(); mm.instance_count = transforms.size()
-			for i in transforms.size(): mm.set_instance_transform(i,transforms[i])
+			mm.mesh = GRASS._tuft_mesh(); mm.instance_count = _pending.size()
+			for i in _pending.size(): mm.set_instance_transform(i,_pending[i])
 			var display := MultiMeshInstance3D.new()
 			display.multimesh = mm
 			display.material_override = grass_material()
@@ -81,4 +107,8 @@ func _ready() -> void:
 			display.visibility_range_end_margin = 15
 			display.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(display)
-			tuft_count += transforms.size()
+			tuft_count += _pending.size()
+		_pending = []
+		_attempt = 0
+		_cell_index += 1
+		if Time.get_ticks_usec()-began >= budget_usec: return

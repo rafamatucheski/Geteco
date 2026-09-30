@@ -156,13 +156,16 @@ func release_chunks() -> void:
 	for key in chunks.keys():
 		_suspend_chunk_vehicles(key)
 		_suspend_chunk_mechanisms(chunks[key])
-		chunks[key].queue_free()
+		_retire_chunk(chunks[key])
 	chunks.clear()
 	vehicle_support_cells.clear()
 	current_cell = Vector2i(100000,100000)
 	chairlifts.clear()
 
 func _exit_tree() -> void:
+	for chunk in _retiring:
+		if is_instance_valid(chunk): chunk.free()
+	_retiring.clear()
 	for chunk in chunks.values(): _suspend_chunk_mechanisms(chunk)
 func _cell(point: Vector3) -> Vector2i: return Vector2i(floori(point.x/CELL),floori(point.z/CELL))
 func _record(point: Vector3, item: Dictionary) -> void:
@@ -422,7 +425,7 @@ func _trim_chunks(cell: Vector2i) -> void:
 		if absi(key.x-cell.x)>retention_radius or absi(key.y-cell.y)>retention_radius:
 			_suspend_chunk_vehicles(key)
 			_suspend_chunk_mechanisms(chunks[key])
-			chunks[key].queue_free()
+			_retire_chunk(chunks[key])
 			chunks.erase(key)
 			for index in range(build_jobs.size()-1,-1,-1):
 				if build_jobs[index].key == key: build_jobs.remove_at(index)
@@ -457,17 +460,48 @@ func _apply_night_lights(chunk: Node3D) -> void:
 		if light.is_in_group("mountain_night_light"):
 			light.light_energy = float(light.get_meta("night_energy",1.0))*mountain_night_level
 func _process(_delta: float) -> void:
+	_drain_retired()
 	var began := Time.get_ticks_usec()
+	# Com fila grande (dirigindo rápido) a construção ganha mais tempo por quadro, senão
+	# o chunk em que o carro entra ainda não existe e `set_focus` o constrói inteiro de uma vez.
+	var budget := BUILD_BUDGET_USEC if pending.size()+build_jobs.size() < 4 else BUILD_BUDGET_USEC*2.0
 	while true:
 		if build_jobs.is_empty():
 			if pending.is_empty(): return
 			var key: Vector2i = pending.pop_front()
 			if chunks.has(key): continue
 			_build_chunk(key,false)
-		var left: float = BUILD_BUDGET_USEC-(Time.get_ticks_usec()-began)
+		var left: float = budget-(Time.get_ticks_usec()-began)
 		if left <= 0.0: return
 		if _run_build_job(build_jobs[0],left): build_jobs.pop_front()
-		if Time.get_ticks_usec()-began >= BUILD_BUDGET_USEC: return
+		if Time.get_ticks_usec()-began >= budget: return
+
+## Chunk que sai do raio de retenção: liberar 1000-3000 nós de uma vez custava 40-150 ms
+## num quadro (medido dirigindo). O chunk é tirado da lista já e seus filhos são liberados
+## em fatias de `RETIRE_BUDGET_USEC` por quadro.
+const RETIRE_BUDGET_USEC := 1500.0
+var _retiring: Array[Node3D] = []
+
+func _retire_chunk(chunk: Node3D) -> void:
+	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return
+	chunk.hide()
+	_retiring.append(chunk)
+
+func _drain_retired() -> void:
+	if _retiring.is_empty(): return
+	var began := Time.get_ticks_usec()
+	while not _retiring.is_empty():
+		var chunk: Node3D = _retiring[0]
+		if not is_instance_valid(chunk):
+			_retiring.pop_front()
+			continue
+		while chunk.get_child_count() > 0:
+			var child := chunk.get_child(chunk.get_child_count()-1)
+			chunk.remove_child(child)
+			child.free()
+			if Time.get_ticks_usec()-began >= RETIRE_BUDGET_USEC: return
+		chunk.queue_free()
+		_retiring.pop_front()
 func _material(color: Color) -> StandardMaterial3D:
 	if materials.has(color): return materials[color]
 	var material := StandardMaterial3D.new()
@@ -594,7 +628,13 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					# Shared paints are warmed by the other port records. Live streaming
 					# always builds the full cargo and its original collision.
 					if not (job.get("warming", false) and record.kind == "south_port_model" and record.model_kind == "ship_cargo"):
+						var record_began := Time.get_ticks_usec()
 						_build_record(chunk,record)
+						var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
+						if record_ms >= 8.0:
+							var slow: Array = Engine.get_meta("slow_stream_records",[])
+							if slow.size() < 64: slow.append("%s/%s %.0f ms"%[record.get("kind","?"),record.get("model_kind",record.get("zone_id","")),record_ms])
+							Engine.set_meta("slow_stream_records",slow)
 					job.index = int(job.index)+1
 				else: job.stage = 3
 			3:

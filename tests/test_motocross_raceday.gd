@@ -30,6 +30,7 @@ func ground(world: World3D, point: Vector3, exclude: Array[RID] = [], rise := 3.
 func run() -> void:
 	var course := COURSE.new()
 	root.add_child(course)
+	course.finish_build()
 	await frames(5)
 	var world := course.get_world_3d()
 	var trackside: Node3D = course.trackside
@@ -248,6 +249,7 @@ func launch_checks() -> void:
 func landing_checks() -> void:
 	var course := COURSE.new()
 	root.add_child(course)
+	course.finish_build()
 	await frames(4)
 	var results := {}
 	for policy in ["none","cue"]:

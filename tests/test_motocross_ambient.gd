@@ -44,6 +44,7 @@ func run() -> void:
 	check(ambient.rows.is_empty(), "no riders spawn before the physical course streams in")
 	var course := COURSE.new()
 	world.add_child(course)
+	course.finish_build()
 	await step(120)
 	check(ambient.rows.size() == 3, "nearby park activates at most three practice riders")
 	var start: Vector3 = ambient.rows[0].bike.position

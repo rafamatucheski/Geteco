@@ -8,6 +8,7 @@ func verify(ok: bool,label: String) -> void:
 	if not ok: failures.append(label); push_error(label)
 func run() -> void:
 	var course := COURSE.new(); root.add_child(course)
+	course.finish_build()
 	var bike := BIKE.new(); root.add_child(bike)
 	bike.max_speed = 17
 	bike.reset_to(course.pose(course.length*.32))
