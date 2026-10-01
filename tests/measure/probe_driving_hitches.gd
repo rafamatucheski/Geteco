@@ -27,10 +27,41 @@ func _initialize() -> void:
 	physics_frame.connect(func():
 		t_physics = Time.get_ticks_usec()
 		if "--per-physics" in OS.get_cmdline_user_args(): run_adopted_physics())
-	process_frame.connect(func(): t_process = Time.get_ticks_usec())
+	process_frame.connect(func():
+		t_process = Time.get_ticks_usec()
+		if "--per-script" in OS.get_cmdline_user_args() and world != null:
+			script_frame += 1
+			if script_frame % 5 == 1: adopt_processing_nodes()
+			var slow := run_timed_processes(1.0 / 60.0)
+			if not slow.is_empty(): script_slow.append([t_process, slow]))
 	RenderingServer.frame_pre_draw.connect(func(): t_pre = Time.get_ticks_usec())
 	RenderingServer.frame_post_draw.connect(func(): t_post = Time.get_ticks_usec())
 	run.call_deferred()
+
+## --per-script: todo nó com _process passa a ser chamado daqui, cronometrado; o que passa de
+## 3 ms entra em `script_slow` com o instante, para o quadro lento listar quem custou.
+var timed_nodes: Array[Node] = []
+var script_slow: Array = []
+var script_frame := 0
+
+func adopt_processing_nodes() -> void:
+	var stack: Array[Node] = [world]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		for child in node.get_children(): stack.append(child)
+		if node.get_script() != null and node.is_processing() and node.has_method("_process") and node not in timed_nodes:
+			timed_nodes.append(node)
+			node.set_process(false)
+
+func run_timed_processes(delta: float) -> Dictionary:
+	var slow := {}
+	for node in timed_nodes:
+		if not is_instance_valid(node) or not node.is_inside_tree(): continue
+		var began := Time.get_ticks_usec()
+		node._process(delta)
+		var ms := float(Time.get_ticks_usec() - began) / 1000.0
+		if ms >= 3.0: slow[(node.get_script() as Script).resource_path.get_file()] = snappedf(ms, 0.1)
+	return slow
 
 func arg_float(name: String, fallback: float) -> float:
 	for arg in OS.get_cmdline_user_args():
@@ -94,6 +125,10 @@ func run() -> void:
 		car.speed = speed
 		car.throttle_input = 1.0
 		var saved_process := t_process
+		# O carro arranca durante a animação de embarque e o jogador ficava para trás (ou
+		# desembarcava), então população, polícia do pátio e estações mediam o lugar errado.
+		# Dirigindo de verdade o jogador acompanha o carro; aqui ele é mantido junto dele.
+		if world.player.global_position.distance_to(car.global_position) > 3.0: world.player.teleport(car.global_position)
 		await process_frame
 		var prev_pre := t_pre
 		var prev_post := t_post
@@ -119,6 +154,10 @@ func run() -> void:
 			for entry in physics_slow:
 				if int(entry[0]) >= now - int(frame_ms * 1000.0) - 2000: slow_physics.append(entry[1])
 			if not slow_physics.is_empty(): labels.append("fisica lenta: " + str(slow_physics))
+			var slow_scripts := []
+			for entry in script_slow:
+				if int(entry[0]) >= now - int(frame_ms * 1000.0) - 2000: slow_scripts.append(entry[1])
+			if not slow_scripts.is_empty(): labels.append("scripts lentos: " + str(slow_scripts))
 			labels.append("fisica_monitor=%.1f ms objetos=%d pares=%d ilhas=%d" % [Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, int(Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS)), int(Performance.get_monitor(Performance.PHYSICS_3D_COLLISION_PAIRS)), int(Performance.get_monitor(Performance.PHYSICS_3D_ISLAND_COUNT))])
 			labels.append("fases: scripts=%.0f desenho=%.0f espera_fisica=%.0f batimento=%s" % [float(prev_pre - saved_process) / 1000.0, float(prev_post - prev_pre) / 1000.0, float(t_process - prev_post) / 1000.0, str(beat_gaps.slice(-2))])
 			spikes.append({"t": snappedf(elapsed, 0.01), "frame_ms": snappedf(frame_ms, 0.1), "x": snappedf(car.global_position.x, 1.0), "z": snappedf(car.global_position.z, 1.0), "labels": labels})
