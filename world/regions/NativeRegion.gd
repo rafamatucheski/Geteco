@@ -494,7 +494,7 @@ func _process(_delta: float) -> void:
 ## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
-const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm","lake"]
+const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm","lake","ship"]
 static var _record_cache: Dictionary = {}
 
 func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:

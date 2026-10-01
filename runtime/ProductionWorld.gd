@@ -315,7 +315,22 @@ func _hold_fleet_scenes() -> void:
 			var scene := load(definition.scene)
 			if scene != null: _fleet_scenes.append(scene)
 
+## Populate the existing per-model merge plans before the first dispatch.
+## Raw PackedScene shader warm-up does not run FleetCatalog decorators.
+func _prewarm_dispatch_models() -> void:
+	var fleet := preload("res://runtime/FleetCatalog.gd")
+	var rules := preload("res://gameplay/dispatch/DispatchRules.gd")
+	var traced := Time.get_ticks_usec() if is_instance_valid(world) and world.get_meta("benchmark_trace",false) else 0
+	for id in rules.ARCHETYPES.values():
+		var model_traced := Time.get_ticks_usec() if traced else 0
+		var model: Node3D = fleet.create(str(id))
+		if model != null: model.free()
+		_trace_cost("prewarm_dispatch_model:"+str(id),model_traced)
+		await get_tree().process_frame
+	_trace_cost("startup:dispatch_models",traced)
+
 func _prewarm_fleet_shaders(incremental: bool) -> void:
+	await _prewarm_dispatch_models()
 	if _fleet_scenes.is_empty(): return
 	var rig := Node3D.new()
 	var cam := Camera3D.new()
