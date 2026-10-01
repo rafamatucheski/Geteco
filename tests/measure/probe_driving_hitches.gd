@@ -86,6 +86,24 @@ func run() -> void:
 	world.session.state.intro.stage = "complete"
 	for i in 240: await process_frame
 	var car: CharacterBody3D = world.driving.car
+	# --list-nodes imprime os sistemas do mundo; --disable=A,B desliga o _process/_physics_process
+	# deles (bisseção de custo: o pico some quando o culpado está na lista).
+	if "--list-nodes" in args:
+		for node in world.get_children(): print("NODE ", node.name, " ", (node.get_script() as Script).resource_path if node.get_script() != null else "-")
+	for arg in args:
+		if arg.begins_with("--disable-script="):
+			var parts := arg.trim_prefix("--disable-script=").split(",")
+			for node in world.get_children():
+				var script_path := (node.get_script() as Script).resource_path if node.get_script() != null else ""
+				for part in parts:
+					if not part.is_empty() and script_path.contains(part):
+						node.process_mode = Node.PROCESS_MODE_DISABLED
+						print("DESLIGADO ", script_path)
+		if arg.begins_with("--disable="):
+			for node_name in arg.trim_prefix("--disable=").split(","):
+				var target := world.get_node_or_null(node_name)
+				if target != null: target.process_mode = Node.PROCESS_MODE_DISABLED
+				else: print("DISABLE não achou ", node_name)
 	var start := Vector3(arg_float("--from", SEAM.x - 900.0), 0.0, SEAM.z)
 	var ground_hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(start.x, 400, start.z), Vector3(start.x, -50, start.z), 1))
 	start.y = (float(ground_hit.position.y) if not ground_hit.is_empty() else 0.0) + .5

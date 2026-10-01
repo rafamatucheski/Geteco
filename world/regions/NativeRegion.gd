@@ -51,7 +51,10 @@ var initial_focus := Vector3.INF
 var pending: Array[Vector2i] = []
 var build_jobs: Array[Dictionary] = []
 # Orçamento de construção fatiada por quadro (µs); um passo sozinho pode excedê-lo.
-const BUILD_BUDGET_USEC := 3000.0
+# 1 ms (era 3 ms): a 30 m/s pela ponte porto-montanha o pior quadro caiu de 62-159 ms para
+# 46-57 ms e o p99 de ~10 ms para ~4,8 ms (tests/measure/probe_driving_hitches.gd, 2 execuções
+# cada). A 45 m/s não mudou. Com a fila grande o orçamento dobra (ver _process).
+const BUILD_BUDGET_USEC := 1000.0
 var current_cell := Vector2i(100000,100000)
 var retention_radius := 2
 var vehicle_support_cells: Dictionary = {}
