@@ -230,7 +230,61 @@ func set_external_driver(active: bool) -> void:
 func is_player_damage_source() -> bool:
 	return player_damage_attribution and controlled and not external_input
 
+## Veículo que não é trânsito, está parado no chão e ninguém o conduz (estacionado, viatura
+## parada na cena): não tem o que simular. Medido no passo de física: ~68 µs por carro parado
+## (direção, move_and_slide, efeitos), 6 deles somavam 0,4 ms por passo. Acorda por qualquer
+## sinal: velocidade, aceleração pedida, batida (`crash_*`), suspensão do streaming, dano,
+## condutor. `is_on_floor()` exige que já tenha pousado.
+func _is_resting() -> bool:
+	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground")
+
+## Trânsito ambiente longe da câmera roda menos passos: a 60-110 m um a cada 2, além disso um a cada 4,
+## escalonados por carro. O passo executado usa o tempo acumulado e o move_and_slide anda a mesma
+## distância (a velocidade horizontal é multiplicada só durante a chamada), então o movimento é o
+## mesmo, só mais grosso, onde ninguém enxerga. Perto da câmera, controlado, batido, destruído ou
+## suspenso pelo streaming: passo normal.
+const LOD_NEAR := 60.0
+const LOD_FAR := 110.0
+static var _lod_camera: Camera3D
+static var _lod_camera_frame := -1
+var _lod_skipped := -1
+var _lod_pending := 0.0
+
+func _lod_stride() -> int:
+	var frame := Engine.get_physics_frames()
+	if _lod_camera_frame != frame:
+		_lod_camera_frame = frame
+		_lod_camera = get_viewport().get_camera_3d()
+	if not is_instance_valid(_lod_camera): return 1
+	var distance_squared := _lod_camera.global_position.distance_squared_to(global_position)
+	if distance_squared > LOD_FAR*LOD_FAR: return 4
+	return 2 if distance_squared > LOD_NEAR*LOD_NEAR else 1
+
+## 0 = pular este passo; senão, quantos passos do motor o passo executado representa.
+func _lod_gate(delta: float) -> float:
+	if not traffic or controlled or health <= 0 or not is_on_floor() or has_meta("crash_stun") or has_meta("awaiting_ground"):
+		_lod_skipped = -1
+		_lod_pending = 0.0
+		return 1.0
+	var stride := _lod_stride()
+	if stride == 1:
+		_lod_skipped = -1
+		_lod_pending = 0.0
+		return 1.0
+	if _lod_skipped < 0: _lod_skipped = get_instance_id() % stride
+	_lod_pending += delta
+	_lod_skipped += 1
+	if _lod_skipped < stride: return 0.0
+	var steps := _lod_pending/maxf(delta,0.0001)
+	_lod_skipped = 0
+	_lod_pending = 0.0
+	return steps
+
 func _physics_process(delta: float) -> void:
+	if _is_resting(): return
+	var lod := _lod_gate(delta)
+	if lod == 0.0: return
+	delta *= lod
 	if health <= 0:
 		controlled = false
 		traffic = false
@@ -258,7 +312,13 @@ func _physics_process(delta: float) -> void:
 	# atravessa o que cedeu); batida carro x carro e deslize depois.
 	STREET.vehicle_pre_move(self,delta)
 	var incoming_velocity := Vector3(velocity.x,0,velocity.z)
+	if lod != 1.0:
+		velocity.x *= lod
+		velocity.z *= lod
 	move_and_slide()
+	if lod != 1.0:
+		velocity.x /= lod
+		velocity.z /= lod
 	var motion := global_position-previous
 	motion.y = 0
 	distance_travelled += motion.length()
@@ -397,13 +457,17 @@ func _wetness() -> float:
 	var weather = session.get("weather") if session != null else null
 	return 1.0 if weather != null and int(weather.weather_state) in [1, 2] else 0.0
 
+## A consulta é reaproveitada: alocar uma PhysicsShapeQueryParameters3D (e o array `exclude`) por
+## carro por passo era custo à toa. O formato é reatribuído porque o esmagamento pesado o troca.
+var _rotation_query: PhysicsShapeQueryParameters3D
 func can_rotate(yaw: float) -> bool:
-	var query := PhysicsShapeQueryParameters3D.new()
-	query.shape = rotation_shape
-	query.transform = Transform3D(Basis(Vector3.UP,yaw),global_position+Vector3.UP*shape.position.y)
-	query.collision_mask = 7
-	query.exclude = [get_rid()]
-	return get_world_3d().direct_space_state.intersect_shape(query,1).is_empty()
+	if _rotation_query == null:
+		_rotation_query = PhysicsShapeQueryParameters3D.new()
+		_rotation_query.collision_mask = 7
+		_rotation_query.exclude = [get_rid()]
+	_rotation_query.shape = rotation_shape
+	_rotation_query.transform = Transform3D(Basis(Vector3.UP,yaw),global_position+Vector3.UP*shape.position.y)
+	return get_world_3d().direct_space_state.intersect_shape(_rotation_query,1).is_empty()
 
 ## Impasse de cruzamento: sem prioridade de via, dois carros de direções cruzadas
 ## entravam no sensor um do outro e paravam para sempre (engarrafamento de 2026-09-23).
