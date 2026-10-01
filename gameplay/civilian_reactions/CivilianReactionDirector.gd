@@ -229,13 +229,17 @@ func _alert(person: CharacterBody3D, origin: Vector3, end: Vector3, source: Vari
 				presenter.show_phone(person)
 			_:
 				presenter.scream(person) # sem balão: o grito e a corrida já dizem o que houve
+	var was_panicking: bool = state.phase == "panic"
 	if state.phase == "horn": state.phase = "panic"; presenter.scream(person)
 	elif state.phase == "recover": state.phase = "panic"
 	if is_instance_valid(source) and source is Node3D: state.source = weakref(source)
 	stats.alerts += 1
 	state.danger.remember(origin, end)
-	if state.phase == "panic": state.timer = randf_range(PANIC_TIME.x, PANIC_TIME.y)
-	state.replan = 0.0 if state.target == Vector3.ZERO else state.replan
+	if state.phase == "panic":
+		state.timer = randf_range(PANIC_TIME.x, PANIC_TIME.y)
+		# Renew danger during an active panic without bypassing a failed-search retry.
+		# Entering panic from another phase still reacts immediately.
+		if not was_panicking: state.replan = 0.0
 
 func _begin(person: CharacterBody3D, phase: String) -> Dictionary:
 	if reactors.size() >= MAX_REACTORS and not reactors.has(person.get_instance_id()): return {}
@@ -377,7 +381,9 @@ func _steer_panic(person: CharacterBody3D, state: Dictionary, delta: float) -> v
 			state.replan = 0.0
 			state.target = Vector3.ZERO
 			stats.stuck_replans += 1
-	if state.replan <= 0.0 or state.target == Vector3.ZERO or person.global_position.distance_to(state.target) < 0.8:
+	# ZERO means the previous search found no escape, not a reached waypoint.
+	# Retry it on the same bounded cadence; actual arrivals still replan at once.
+	if state.replan <= 0.0 or (state.target != Vector3.ZERO and person.global_position.distance_to(state.target) < 0.8):
 		state.replan = REPLAN_INTERVAL
 		state.target = state.danger.choose_escape(person, state.blocked)
 	if state.target == Vector3.ZERO: person.set("automatic_direction", Vector3.ZERO) # encurralado: fica, o pânico expira

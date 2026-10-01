@@ -28,6 +28,31 @@ static var _wav: Dictionary = {}
 static var _generated: Dictionary = {}
 static var _reload_seconds: Dictionary = {}
 
+## Retain imported reload banks while the loading curtain is still active.
+## Request one weapon's three takes together and fetch only after loading ends.
+static func prewarm_reload_banks(tree: SceneTree) -> void:
+	for weapon_id in RELOAD_WEAPONS:
+		var pending: Array[String] = []
+		for index in RELOAD_TAKES:
+			var key := "reload/%s_%d.wav" % [weapon_id, index]
+			if _wav.has(key): continue
+			var path := AUDIO_DIR + key
+			if not ResourceLoader.exists(path, "AudioStream") or ResourceLoader.has_cached(path):
+				wav(key)
+			elif ResourceLoader.load_threaded_request(path, "AudioStream") == OK:
+				pending.append(key)
+			else:
+				wav(key)
+		for key in pending:
+			var path := AUDIO_DIR + key
+			while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+				await tree.process_frame
+			if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+				_wav[key] = ResourceLoader.load_threaded_get(path) as AudioStream
+			else:
+				wav(key)
+		reload_seconds(weapon_id)
+
 ## WAV do disco, com cache. Nulo se o arquivo não existir.
 static func wav(relative_path: String) -> AudioStream:
 	if _wav.has(relative_path): return _wav[relative_path]

@@ -260,6 +260,7 @@ func _prewarm_regions(curtain: Node = null) -> void:
 	# Explosion takes and immutable fire presentation were built at detonation.
 	# Keep their bounded resources ready, without spawning a live incident.
 	var combat_audio = preload("res://gameplay/CombatAudio.gd")
+	await combat_audio.prewarm_reload_banks(get_tree())
 	for take in combat_audio.GUNFIRE_TAKES:
 		combat_audio.wav("explosion_%d.wav" % take)
 		if incremental: await get_tree().process_frame
