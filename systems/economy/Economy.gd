@@ -35,6 +35,10 @@ var inventory: Dictionary:
 func snapshot() -> Dictionary:
 	return _data.duplicate(true)
 
+## Read receipt membership without exposing or copying the wallet/inventory.
+func has_reward_receipt(receipt_id: String) -> bool:
+	return _data.transactions.has("reward:" + receipt_id)
+
 func storefront(category: String) -> Array:
 	var result := []
 	var catalog: Dictionary = Weapons.WEAPONS if category == "weapon" else (Outfits.OUTFITS if category == "outfit" else SUPPLIES if category == "supply" else {})

@@ -13,11 +13,10 @@ func _process(delta: float) -> void:
 	if _scan>0 or session==null or not session.ready_for_play or not is_instance_valid(homes): return
 	_scan=.2
 	if session.state.region_id!="harbor" or not session.state.place_id.is_empty(): return
-	var receipts: Dictionary = session.state.economy.snapshot().transactions
 	for i in homes.homes.size():
 		var stash: Node3D = homes.homes[i].loot
 		var id := "tonico_home_stash_%d"%i
-		var taken: bool = receipts.has("reward:"+id)
+		var taken: bool = session.state.economy.has_reward_receipt(id)
 		stash.call("set_available",not taken)
 		if taken or session.world.gameplay.health<=0 or session.world.player.get("dead")==true or session.world.driving.occupied: continue
 		if homes.current_home!=i or homes.house_at(session.world.player.global_position)!=i or session.world.player.global_position.distance_to(stash.global_position)>1.3: continue
