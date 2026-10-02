@@ -1,5 +1,5 @@
 extends Node
-## Prepares the real saved session behind a static menu and hands it over by fade.
+## Loads the selected session only after the click, under the opaque loading screen.
 signal boot_finished
 signal released
 const MAIN := "res://Main.tscn"
@@ -30,8 +30,8 @@ func install(source: Control) -> void:
 		if child is Control: child.reparent(ui_layer)
 	loading_cover = menu.presentation.background
 	set_process(false)
-	if not menu.latest_save.is_empty() and "--no-save" not in OS.get_cmdline_user_args():
-		boot_path(str(menu.latest_save.path))
+	# Listing saves must not instantiate or warm the world behind an idle menu.
+	# MainMenu starts boot_path only after begin_continue has covered the interface.
 
 static func fingerprint(path: String) -> String:
 	var result := ""

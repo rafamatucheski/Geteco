@@ -26,13 +26,16 @@ func run() -> void:
 		var store = load("res://runtime/SaveStore.gd").new()
 		store.path = launch.slot_path(id)
 		check(store.save(state) == OK, id + " isolated fixture saved")
-	for replace_pending in [false, true]:
-		var label := "different-slot" if replace_pending else "same-slot"
+	for label in ["cold-click", "same-slot", "different-slot"]:
+		var replace_pending: bool = label == "different-slot"
 		var menu = load("res://ui/MainMenu.tscn").instantiate()
 		root.add_child(menu)
 		current_scene = menu
-		menu.sky.boot_path(launch.slot_path("slot_01"))
-		check(menu.sky.loading, label + " click precedes world readiness")
+		if label != "cold-click":
+			menu.sky.boot_path(launch.slot_path("slot_01"))
+			check(menu.sky.loading, label + " click precedes world readiness")
+		else:
+			check(not menu.sky.loading and not is_instance_valid(menu.sky.world), "cold menu has no world before click")
 		var slot := "slot_02" if replace_pending else "slot_01"
 		var hash_before := FileAccess.get_sha256(launch.slot_path(slot))
 		menu._start(slot, false)
@@ -44,11 +47,16 @@ func run() -> void:
 		var lost_cover := false
 		var returned_ui := false
 		var menu_hidden := false
+		var observed_start := false
 		while is_instance_valid(menu) and Time.get_ticks_msec() < finish:
 			await process_frame
 			if not is_instance_valid(menu): break
 			if menu.sky.loading:
 				lost_cover = lost_cover or not menu.sky.loading_cover.is_visible_in_tree()
+				if label == "cold-click" and not observed_start:
+					observed_start = true
+					check(not menu.sky.ui_layer.visible and menu.sky.curtain._root.modulate.a >= .999,
+						"world loading starts only after the loading screen becomes opaque")
 			returned_ui = returned_ui or (menu_hidden and menu.sky.ui_layer.visible)
 			menu_hidden = menu_hidden or not menu.sky.ui_layer.visible
 			if not sampled and Time.get_ticks_msec() > started + 400:
@@ -59,6 +67,7 @@ func run() -> void:
 					root.get_texture().get_image().save_png(OUTPUT.path_join(label + "-loading.png"))
 		check(not lost_cover and not returned_ui, label + " no menu flash or missing cover during replacement")
 		check(sampled, label + " observed static loading phase")
+		if label == "cold-click": check(observed_start, "cold click actually starts world loading")
 		check(not is_instance_valid(menu), label + " reaches gameplay within deadline")
 		if is_instance_valid(menu):
 			quit(1)

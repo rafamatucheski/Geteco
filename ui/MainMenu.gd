@@ -251,9 +251,9 @@ func _start(id: String, new_game: bool) -> void:
 	_main_enabled(false)
 	%LoadPanel.hide()
 	if sky != null:
-		sky.begin_continue()
+		await sky.begin_continue()
 		if not new_game:
-			# Present the response to the click before save checks or replacement.
+			# Draw the fully opaque loading screen before any world loading starts.
 			await get_tree().process_frame
 			await get_tree().process_frame
 			var path: String = get_node("/root/V2Launch").selected_path
