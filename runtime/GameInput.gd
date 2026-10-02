@@ -26,6 +26,7 @@ const AIM_TURN_SPEED_MIN := 3.0
 const AIM_TURN_SPEED_MAX := 20.0
 const AIM_RESPONSE_CURVE := 1.25
 const KEYS := {
+	"skate_ollie": [KEY_SPACE], "skate_flip": [KEY_Q], "skate_shove": [KEY_R],
 	"tank_fire": [],
 	"surrender": [KEY_K],
 	"camera_left": [KEY_Z], "camera_right": [KEY_C], "inventory": [KEY_TAB], "weapon_flashlight": [KEY_G],
@@ -50,6 +51,9 @@ const KEYS := {
 
 }
 const LABELS := {
+	"skate_ollie": ["Skate: ollie", "Skate: ollie"],
+	"skate_flip": ["Skate: kickflip", "Skate: kickflip"],
+	"skate_shove": ["Skate: shove-it", "Skate: shove-it"],
 	"inventory": ["Inventário", "Inventory"],
 	"camera_left": ["Girar câmera à esquerda", "Rotate camera left"],
 	"camera_right": ["Girar câmera à direita", "Rotate camera right"],
@@ -73,6 +77,7 @@ const LABELS := {
 	"siren_toggle": ["Sirene", "Siren"],
 }
 const PAD := {
+	"skate_ollie": JOY_BUTTON_A, "skate_flip": JOY_BUTTON_RIGHT_SHOULDER, "skate_shove": JOY_BUTTON_LEFT_SHOULDER,
 	"inventory": JOY_BUTTON_DPAD_LEFT,
 	"tank_fire": JOY_BUTTON_B,
 	"interact": JOY_BUTTON_X, "vehicle_interact": JOY_BUTTON_Y,

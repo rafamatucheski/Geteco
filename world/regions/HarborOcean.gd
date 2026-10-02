@@ -65,6 +65,9 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 			var a := z*(count+1)+x
 			# Túnel do canal: o mar opaco não cobre a vala nem o tubo (tem lâmina própria).
 			if CANAL_TUNNEL.WATER_CUT.has_point(rect.position+rect.size*Vector2((x+.5)/count,(z+.5)/count)): continue
+			# The dry skate bowl is below sea level; no ocean triangles under it.
+			var tile := Rect2(rect.position + rect.size * Vector2(float(x)/count, float(z)/count), rect.size / count)
+			if preload("res://activities/skate/SkateParkLayout.gd").enabled() and tile.intersects(preload("res://activities/skate/SkateParkLayout.gd").FOOTPRINT): continue
 			indices.append_array(PackedInt32Array([a,a+1,a+count+1,a+1,a+count+2,a+count+1]))
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)

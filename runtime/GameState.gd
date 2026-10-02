@@ -92,6 +92,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if not vehicle is Dictionary or not preload("res://runtime/FleetState.gd").validate(vehicle): return false
 	if data.world.has("motocross") and (not data.world.motocross is Dictionary or not preload("res://activities/motocross/MotocrossProgress.gd").validate_snapshot(data.world.motocross)): return false
 	if data.world.has("motocross") and not preload("res://activities/motocross/MotocrossProgress.gd").validate_wallet(data.world.motocross,data.economy): return false
+	if data.world.has("skate") and (not data.world.skate is Dictionary or not preload("res://activities/skate/Skate.gd").validate_snapshot(data.world.skate)): return false
 	if data.world.has("activities"):
 		if not data.world.activities is Dictionary: return false
 		if not preload("res://activities/Activities.gd").validate_snapshot(data.world.activities): return false

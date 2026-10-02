@@ -151,6 +151,9 @@ static func _roll(key: String) -> float:
 
 
 static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vector2, scale := 1.0) -> void:
+	# Keep the authored skate transitions and landings clear of generated refuse.
+	var skate_layout := preload("res://activities/skate/SkateParkLayout.gd")
+	if kind in ["dumpster", "trash_bags"] and skate_layout.enabled() and skate_layout.FOOTPRINT.grow(.7).has_point(Vector2(point.x, point.z)): return
 	# forward: direção (x,z) para onde a frente (+Z local) do adereço aponta.
 	var yaw := atan2(forward.x, forward.y)
 	var basis := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale)

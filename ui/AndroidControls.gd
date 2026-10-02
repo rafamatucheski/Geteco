@@ -12,6 +12,7 @@ var playable := false
 var driving := false
 var passenger := false
 var motocross := false
+var skating := false
 var extra := false
 var _context := ""
 var _layout_extra := false
@@ -42,7 +43,8 @@ func _refresh() -> void:
 	var paused := get_tree().paused
 	var riding: bool = (session.passenger_transport != null and session.passenger_transport.riding) or (session.arrival != null and session.arrival.riding)
 	var on_bike: bool = session.motocross != null and session.motocross.mounted
-	var active: bool = session.ready_for_play and not session.modal and not paused and (not world.player.input_locked or riding or on_bike)
+	var on_skate: bool = session.skate != null and session.skate.mounted
+	var active: bool = session.ready_for_play and not session.modal and not paused and (not world.player.input_locked or riding or on_bike or on_skate)
 	var in_car: bool = world.driving.occupied or on_bike
 	var lockpick: bool = session.port_container_loot != null and is_instance_valid(session.port_container_loot.minigame) and session.port_container_loot.minigame.active
 	var bank_lock: bool = session.robberies != null and is_instance_valid(session.robberies.lockpick) and session.robberies.lockpick.active
@@ -55,7 +57,7 @@ func _refresh() -> void:
 		if physical.size.x > 0 and physical.size.y > 0:
 			var inverse := get_viewport().get_screen_transform().affine_inverse()
 			safe = safe.intersection(Rect2(inverse * Vector2(physical.position), inverse.basis_xform(Vector2(physical.size))))
-	var context := str([active, in_car, riding, on_bike, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
+	var context := str([active, in_car, riding, on_bike, on_skate, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
 	if context == _context and extra == _layout_extra: return
 	# Expanding options must not release a finger still steering or accelerating.
 	if context != _context: release_all()
@@ -68,6 +70,7 @@ func _refresh() -> void:
 	driving = in_car
 	passenger = riding
 	motocross = on_bike
+	skating = on_skate
 	_safe = safe
 	unit = minf(safe.size.x / 1280.0, safe.size.y / 720.0)
 	radius = 76.0 * unit
@@ -90,6 +93,14 @@ func _refresh() -> void:
 		queue_redraw()
 		return
 	_button("pause_game", "Pausa", top + Vector2(-180, 0) * unit, Vector2(100, 52))
+	if skating:
+		var bottom := safe.end - Vector2(160, 70) * unit
+		_button("skate_ollie", "Ollie", bottom + Vector2(0, -145) * unit, Vector2(112, 68))
+		_button("skate_flip", "Flip", bottom + Vector2(-130, -70) * unit, Vector2(112, 68))
+		_button("skate_shove", "Shove-it", bottom + Vector2(0, -70) * unit, Vector2(112, 68))
+		_button("exit_vehicle", "Descer", bottom, Vector2(112, 68))
+		queue_redraw()
+		return
 	if passenger:
 		_button("exit_vehicle", "Desembarcar", safe.position + Vector2(safe.size.x * .5, safe.size.y - 48 * unit), Vector2(180, 68))
 		queue_redraw()
@@ -144,7 +155,7 @@ func _input(event: InputEvent) -> void:
 			if buttons[key].rect.has_point(point): action = key; break
 		if action.is_empty() and playable and not passenger:
 			if point.distance_to(move_center) < radius * 1.3: action = "move_stick"
-			elif not driving and point.distance_to(aim_center) < radius * 1.3 and world.session.state.weapons_allowed(): action = "aim_stick"
+			elif not driving and not skating and point.distance_to(aim_center) < radius * 1.3 and world.session.state.weapons_allowed(): action = "aim_stick"
 		if action.is_empty(): return
 		get_viewport().set_input_as_handled()
 		if action == "more":
@@ -229,7 +240,7 @@ func _draw() -> void:
 	if playable and not passenger:
 		_stick(move_center, controls.touch_move, "Direção" if driving else "Correr" if controls.touch_sprint else "Andar", font, font_size)
 		if not driving: draw_arc(move_center, radius * .85, 0, TAU, 48, Color(1,.6,.25,.7), unit, true)
-		if not driving and world.session.state.weapons_allowed(): _stick(aim_center, controls.touch_aim, "Mirar", font, font_size)
+		if not driving and not skating and world.session.state.weapons_allowed(): _stick(aim_center, controls.touch_aim, "Mirar", font, font_size)
 
 func _style(held: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

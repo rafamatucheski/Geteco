@@ -573,6 +573,9 @@ func _retire_chunk(chunk: Node3D) -> void:
 	_detach_cached_records(chunk)
 	STALL_WORK.finish("retire.detach_cached_records", stall_began, {"region": region_id})
 	stall_began = STALL_WORK.begin()
+	# Leaf-by-leaf disposal spans frames. Retired rigs must stop animating
+	# before a joint is freed while its model still exists in the scene tree.
+	chunk.process_mode = Node.PROCESS_MODE_DISABLED
 	chunk.hide()
 	_retiring.append(chunk)
 	STALL_WORK.finish("retire.hide_and_enqueue", stall_began, {"region": region_id})
@@ -643,7 +646,7 @@ func _box(parent: Node3D,label: String,point: Vector3,size: Vector3,color: Color
 		mesh.add_child(body)
 	return mesh
 
-func _build_road_surfaces(chunk: Node3D) -> void:
+func _build_road_surfaces(chunk: Node3D, rect: Rect2) -> void:
 	var rows: Array = chunk.get_meta("road_surface_rows",[])
 	if rows.is_empty(): return
 	var by_color: Dictionary = {}
@@ -678,14 +681,85 @@ func _build_road_surfaces(chunk: Node3D) -> void:
 			dirt.shader = NATURAL_GROUND
 			dirt.set_shader_parameter("base_color",color)
 			dirt.set_shader_parameter("uv_meters",4.0)
+			dirt.set_shader_parameter("base_color",Color("5d4e3d"))
+			dirt.set_shader_parameter("surface_softness",.6)
 			mesh.material_override = dirt
 			mesh.set_instance_shader_parameter("uv_origin",(Vector2(by_color[color][0].x,by_color[color][0].z)/256.0).floor()*64.0)
+			# Preserve the authored support exactly; replace only the hard cutout
+			# with a wider visual shoulder that dissolves into the real ground.
+			mesh.hide()
+			_build_soft_road_surface(chunk,rect,dirt)
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(mesh)
 		# Support uses the same outline as the surface, at terrain height.
 		mesh.create_trimesh_collision()
 		mesh.get_child(0).position.y = -.026
 	chunk.remove_meta("road_surface_rows")
+
+func _build_soft_road_surface(chunk: Node3D, rect: Rect2, material: ShaderMaterial) -> void:
+	const SHOULDER := 1.4
+	var boundary := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
+	var paved: Dictionary = {}
+	for road in roads+walkways:
+		if road.get("surface","asphalt") == "asphalt": paved[road.id] = true
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var count := 0
+	var first := Vector2.ZERO
+	for road in roads+walkways:
+		if road.get("surface","asphalt") == "asphalt": continue
+		var points: PackedVector3Array = road.points
+		var reach: float = float(road.width)*.5+SHOULDER
+		var edges := ROUTE_GEOMETRY.edges(points,float(road.width)+SHOULDER*2.0)
+		for index in range(edges.size()-1):
+			var shape := ROUTE_GEOMETRY.polygon(edges[index].left,edges[index+1].left,edges[index+1].right,edges[index].right)
+			if not ROUTE_GEOMETRY.bounds(shape).intersects(rect): continue
+			var pieces: Array[PackedVector2Array] = []
+			for part in Geometry2D.intersect_polygons(shape,boundary): pieces.append(part)
+			# Never paint loose soil over an asphalt lane or its intentional edge.
+			for footprint in route_geometry.footprints:
+				if not paved.has(footprint.id) or not footprint.bounds.intersects(rect): continue
+				var remaining: Array[PackedVector2Array] = []
+				for piece in pieces:
+					for part in Geometry2D.clip_polygons(piece,footprint.polygon):
+						if part.size()>=3: remaining.append(part)
+				pieces = remaining
+			for piece in pieces:
+				if Geometry2D.is_polygon_clockwise(piece): piece.reverse()
+				# Triangulate first: clipping a winding asphalt edge can leave a
+				# concave piece. Mid-edge samples retain the opaque path axis.
+				var triangles := Geometry2D.triangulate_polygon(piece)
+				var samples := PackedVector2Array()
+				for triangle in range(0,triangles.size(),3):
+					var a := piece[triangles[triangle]]
+					var b := piece[triangles[triangle+1]]
+					var c := piece[triangles[triangle+2]]
+					var ab := (a+b)*.5
+					var bc := (b+c)*.5
+					var ca := (c+a)*.5
+					samples.append_array(PackedVector2Array([a,ab,ca,ab,b,bc,ca,bc,c,ab,bc,ca]))
+				for point in samples:
+					var distance := INF
+					for segment in range(points.size()-1):
+						var a := Vector2(points[segment].x,points[segment].z)
+						var b := Vector2(points[segment+1].x,points[segment+1].z)
+						distance = minf(distance,point.distance_to(Geometry2D.get_closest_point_to_segment(point,a,b)))
+					var alpha := clampf(1.0-distance/reach,0.0,1.0)
+					surface.set_normal(Vector3.UP)
+					surface.set_uv(point/4.0)
+					surface.set_color(Color(1,1,1,alpha))
+					surface.add_vertex(Vector3(point.x,.026,point.y))
+					if count == 0: first = point
+					count += 1
+	if count == 0: return
+	var soft := MeshInstance3D.new()
+	soft.name = "SoftMountainTrail"
+	soft.mesh = surface.commit()
+	material.set_shader_parameter("edge_alpha",true)
+	soft.material_override = material
+	soft.set_instance_shader_parameter("uv_origin",(first/256.0).floor()*64.0)
+	soft.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	chunk.add_child(soft)
 
 ## The cemetery provides its own floor and collision at y=0. Harbor land has
 ## the same top face there; drawing both causes depth fighting and light flicker.
@@ -765,7 +839,7 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					# Depois de todo o acabamento de chão: abre as rampas do Túnel do canal.
 					CANAL_TUNNEL.carve_chunk(chunk,rect)
 				elif region_id == "mountain":
-					_build_road_surfaces(chunk)
+					_build_road_surfaces(chunk,rect)
 					_apply_night_lights(chunk)
 				job.stage = 4
 				chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
@@ -824,9 +898,13 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 					for cellar_piece in _rect_outside(sewer_piece, secret_cellar_opening):
 						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
 						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):
-							_box(chunk,"Land",Vector3(land_piece.get_center().x,-.15,land_piece.get_center().y),Vector3(land_piece.size.x,.3,land_piece.size.y),Color("737b69"),true)
+							for skate_piece in preload("res://activities/skate/SkateParkLayout.gd").outside(land_piece):
+								_box(chunk,"Land",Vector3(skate_piece.get_center().x,-.15,skate_piece.get_center().y),Vector3(skate_piece.size.x,.3,skate_piece.size.y),Color("737b69"),true)
 		harbor_ocean.build_chunk(chunk,rect)
 		CANAL_TUNNEL.build_chunk(chunk,rect)
+		var skate_center := preload("res://activities/skate/SkateParkLayout.gd").CENTER
+		if preload("res://activities/skate/SkateParkLayout.gd").enabled() and rect.has_point(Vector2(skate_center.x, skate_center.z)):
+			chunk.add_child(preload("res://activities/skate/SkatePark.gd").new())
 		coastal_protection.build_chunk(chunk,rect)
 		var clip := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
 		for polygon in extra_land:
@@ -877,6 +955,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		"harbor_prop":
 			# Banco/árvore/poste do pátio da ilha caía dentro da rampa aberta do túnel.
 			if region_id == "harbor" and CANAL_TUNNEL.reserves(Vector2(record.position.x,record.position.z),0.8): return
+			var skate_layout := preload("res://activities/skate/SkateParkLayout.gd")
+			if region_id == "harbor" and skate_layout.enabled() and skate_layout.FOOTPRINT.grow(.3).has_point(Vector2(record.position.x, record.position.z)): return
 			var prop:=HARBOR_PROP.new()
 			prop.configure(record.data)
 			prop.position=record.position
@@ -913,7 +993,6 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			if terrain != null: lamp.position.y = terrain.surface_height_at(Vector2(lamp.position.x,lamp.position.z))
 			chunk.add_child(lamp)
 		"sawmill_yard":
-			_build_sawmill_yard(chunk)
 			MOUNTAIN_FACTORY.populate_sawmill_chunk(chunk,record)
 		"mountain_village": MOUNTAIN_FACTORY.populate_village_chunk(chunk,record)
 		"environmental_parity":
@@ -1151,7 +1230,7 @@ func _prepare_forest() -> void:
 		records[key] = records[key].filter(func(record):
 			if record.kind != "tree": return true
 			var original := Vector2(record.position.x,record.position.z)/SCALE-CATALOG.MOUNTAIN_OFFSET
-			return not _helipad_reserved(original) and not preload("res://world/mountain_detail/OriginalVillageLayout.gd").is_reserved(original))
+			return not _helipad_reserved(original) and not _fort_exit_reserved(Vector2(record.position.x,record.position.z)) and not preload("res://world/mountain_detail/OriginalVillageLayout.gd").is_reserved(original))
 
 func _build_ship(chunk: Node3D) -> void:
 	var outline := PackedVector2Array()
@@ -1236,32 +1315,17 @@ func _ship_rail(chunk: Node3D,a: Vector2,b: Vector2) -> void:
 	rail.rotation.y = atan2(delta.x,delta.y)
 
 static func _helipad_reserved(point: Vector2) -> bool:
-	# Exact MountainSceneryBuilder._is_helipad_reserved, including canopy/corridor clearance.
-	if point.distance_to(Vector2(6335,-2795))<125: return true
-	var walk := PackedVector2Array([Vector2(6335,-2765),Vector2(6335,-2735),Vector2(6365,-2720),Vector2(6440,-2720)])
+	# New landing apron and access corridor, including the pine canopy footprint.
+	if point.distance_to(Vector2(6180,-2832))<125: return true
+	var walk := PackedVector2Array([Vector2(6410,-2660),Vector2(6270,-2720),Vector2(6180,-2770),Vector2(6180,-2782.4)])
 	for i in range(walk.size()-1):
 		if point.distance_to(Geometry2D.get_closest_point_to_segment(point,walk[i],walk[i+1]))<65: return true
 	return false
-func _build_sawmill_yard(chunk: Node3D) -> void:
-	# Original yard polygons overlay the earth road in V1(z1 over z0); no source moved.
-	var origin := CATALOG._at(Vector2(6350,560),"mountain")
-	var polygons := [PackedVector2Array([Vector2(-180,-110),Vector2(180,-110),Vector2(200,130),Vector2(-170,140)]),PackedVector2Array([Vector2(-35,-165),Vector2(35,-165),Vector2(55,-100),Vector2(-55,-100)])]
-	for i in polygons.size():
-		var surface := SurfaceTool.new()
-		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		for index in Geometry2D.triangulate_polygon(polygons[i]):
-			var point: Vector2 = polygons[i][index]*SCALE
-			surface.add_vertex(Vector3(point.x,.024,point.y))
-		surface.generate_normals()
-		var mesh := MeshInstance3D.new()
-		mesh.name = "OriginalSawmillYard" if i==0 else "OriginalSawmillDriveway"
-		mesh.mesh = surface.commit()
-		mesh.material_override = _material(Color("382e22"))
-		mesh.position = origin
-		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		chunk.add_child(mesh)
-		mesh.create_trimesh_collision()
 
+static func _fort_exit_reserved(point: Vector2) -> bool:
+	var position: Vector3 = preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd").WORLD_POSITION
+	# Reserve the formation and its full entrance approach before tree placement.
+	return Rect2(Vector2(position.x-6.5,position.z-6.5),Vector2(13.0,13.0)).has_point(point)
 ## Registra em `slow_stream_records` uma etapa do streaming que passou de `limit_usec`
 ## (só para diagnóstico com a sonda; não tem efeito sem a meta).
 func _note_slow(what: String, since_usec: int, limit_usec: int) -> void:

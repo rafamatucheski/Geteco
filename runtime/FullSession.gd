@@ -44,6 +44,7 @@ var ready_for_play := false
 var mission_world
 var activities
 var motocross
+var skate
 var services
 var storefronts
 var robberies
@@ -86,7 +87,7 @@ func is_transition_blocked() -> bool:
 	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or _arrival_sequence_blocked()
 
 func blocks_driving_change() -> bool:
-	return is_transition_blocked() or not ready_for_play or (motocross != null and motocross.mounted)
+	return is_transition_blocked() or not ready_for_play or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
 
 func allows_saved_driver_animation() -> bool:
 	return _restoring_saved_driver and not ready_for_play and not modal and not is_transition_blocked()
@@ -477,6 +478,9 @@ func _ready() -> void:
 	motocross = preload("res://activities/motocross/Motocross.gd").new()
 	world.add_child(motocross)
 	motocross.configure(self)
+	skate = preload("res://activities/skate/Skate.gd").new()
+	world.add_child(skate)
+	skate.configure(self)
 	residence_services = preload("res://runtime/ResidenceServices.gd").new()
 	residence_services.configure(self)
 	mountain_progression = preload("res://activities/MountainProgression.gd").new()
@@ -959,6 +963,9 @@ func _clear_service_npcs() -> void:
 
 func nearest() -> Dictionary:
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	if skate != null:
+		var skate_action: Dictionary = skate.nearest_action()
+		if not skate_action.is_empty(): return skate_action
 	if field_inventory != null:
 		var supply_action: Dictionary = field_inventory.nearest_action()
 		if not supply_action.is_empty(): return supply_action
@@ -1031,6 +1038,7 @@ func nearest() -> Dictionary:
 func interact() -> bool:
 	if modal or not ready_for_play: return false
 	var action := nearest()
+	if action.get("id", "") == "skate": return skate.perform(str(action.target))
 	if action.get("id","") == "motocross": return motocross.perform(str(action.target))
 	if str(action.get("id","")).begins_with("ski_"): return mountain_progression.perform(action.target)
 	if str(action.get("id","")).begins_with("arrival_"): return arrival.perform(action.id)
@@ -1142,6 +1150,10 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if get_tree().paused: return
+	if skate != null and skate.controls_locked():
+		if not skate.recovering: skate.handle_input(event)
+		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()
+		return
 	if passenger_transport != null and passenger_transport.riding:
 		if event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle") or event.is_action_pressed("vehicle_interact"):
 			passenger_transport.request_exit()
@@ -1324,7 +1336,7 @@ func close_menu() -> void:
 	dialogue_open = false
 	panel.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted)
+	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
 	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked()
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	lines = dialogue_lines.duplicate(true)
@@ -1550,6 +1562,7 @@ func _refresh_reward_feedback() -> void:
 			notice.text = ""
 			notice.hide()
 func save_block_reason() -> String:
+	if skate != null and skate.controls_locked(): return "Desça do skate e se recupere para salvar."
 	if controller.save_invalid: return "Save inválido preservado; salvamento bloqueado."
 	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."
 	if world.gameplay.health <= 0: return "Salvar indisponível enquanto o jogador estiver morto."
@@ -1613,6 +1626,7 @@ func save_game(manual := false) -> bool:
 	if services != null: state.world_state.services = services.snapshot()
 	if activities != null: state.world_state.activities = activities.snapshot()
 	if motocross != null: state.world_state.motocross = motocross.snapshot()
+	if skate != null: state.world_state.skate = skate.snapshot()
 	if mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()
 	if mission_world != null: state.world_state.mission_world = mission_world.snapshot()
 	if urban_operations != null:

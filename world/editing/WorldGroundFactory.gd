@@ -90,6 +90,9 @@ static func uncovered(polygon: PackedVector2Array, masks: Array) -> Array[Packed
 		parts = next
 	return parts
 static func create(row: Dictionary, clip: Rect2, height: Callable = Callable(), masks: Array = []) -> MeshInstance3D:
+	masks = masks.duplicate()
+	var skate_rect := preload("res://activities/skate/SkateParkLayout.gd").FOOTPRINT
+	if preload("res://activities/skate/SkateParkLayout.gd").enabled(): masks.append(PackedVector2Array([skate_rect.position, Vector2(skate_rect.end.x, skate_rect.position.y), skate_rect.end, Vector2(skate_rect.position.x, skate_rect.end.y)]))
 	var polygon := footprint(row)
 	var rect := bounds(row).intersection(clip)
 	if not rect.has_area(): return null
