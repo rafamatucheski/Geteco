@@ -37,6 +37,12 @@ func run() -> void:
 		quit(1)
 		return
 	await frames(5)
+	world.hud.minimap.refresh()
+	check(world.hud.minimap.visible, "minimapa permanece visível ao montar")
+	session.modal = true
+	world.hud.minimap.refresh()
+	check(not world.hud.minimap.visible, "modal ainda oculta minimapa no skate")
+	session.modal = false
 	check(world.player.visible and not world.player.is_physics_processing(), "Dante visível controlado pelo skate")
 	var touch = world.find_child("AndroidControls", true, false)
 	if touch != null:
@@ -50,6 +56,8 @@ func run() -> void:
 	board.bail(9)
 	await frames(1)
 	check(skate.recovering and world.gameplay.health < before, "queda tira vida e separa corpo do shape")
+	world.hud.minimap.refresh()
+	check(world.hud.minimap.visible, "queda preserva navegação")
 	await frames(150)
 	check(not skate.controls_locked() and world.player.is_physics_processing() and world.player.collision_layer == 2, "recuperação devolve controles e colisão")
 	world.player.teleport(board.position + Vector3(.8, .1, 0))

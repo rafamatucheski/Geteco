@@ -74,7 +74,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	if not riding or not is_finite(amount) or amount <= 0: return
 	# Preserve Actor's combat reporting and civilian injury/emergency contract.
 	if is_instance_valid(rider) and not rider.is_player: rider.receive_damage(amount, source)
-	bail(0 if is_instance_valid(rider) and not rider.is_player else amount)
+	bail(0.0 if is_instance_valid(rider) and not rider.is_player else amount)
 
 func bail(damage: float) -> void:
 	if not riding: return
@@ -135,7 +135,7 @@ func _physics_process(delta: float) -> void:
 		if not trick.is_empty():
 			trick_time += delta
 			var progress := minf(1, trick_time / trick_duration())
-			deck.rotation = Vector3(0, TAU * progress if trick == "shove" else 0, TAU * progress if trick == "flip" else 0)
+			deck.rotation = Vector3(0.0, TAU * progress if trick == "shove" else 0.0, TAU * progress if trick == "flip" else 0.0)
 			if progress >= 1:
 				trick_total += 100 if trick == "flip" else 75
 				trick = ""

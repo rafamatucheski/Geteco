@@ -7,6 +7,7 @@ var countdown := 0.0
 var gate := 0
 var points := PackedVector3Array()
 var start := Vector3.ZERO
+var staging_start := Vector3.ZERO
 var previous := Vector3.ZERO
 var score := 0.0
 var combo := 1.0
@@ -16,12 +17,16 @@ var radius := 0.0
 var finished := false
 var cancelled := false
 
-func begin_race(race_id: String, origin: Vector3, checkpoints: PackedVector3Array, current: Vector3) -> bool:
-	if mode != "" or checkpoints.is_empty() or current.distance_to(origin) >= 60.0/16.0: return false
+func begin_race(race_id: String, origin: Vector3, checkpoints: PackedVector3Array, current: Vector3, admission_point: Vector3 = Vector3.INF, admission_range: float = 60.0/16.0) -> bool:
+	# A curbside contact can admit the car off the old start marker without
+	# moving the authored finish line. Existing callers retain their start radius.
+	var entry := admission_point if admission_point.is_finite() else origin
+	if mode != "" or checkpoints.is_empty() or current.distance_to(entry) >= admission_range: return false
 	_reset()
 	mode = "race"
 	id = race_id
 	start = origin
+	staging_start = current if admission_point.is_finite() else origin
 	points = checkpoints.duplicate()
 	points.append(origin)
 	previous = current
@@ -64,7 +69,7 @@ func update(delta: float, position: Vector3, velocity: Vector3, forward: Vector3
 		return
 	if mode == "race":
 		if countdown > 0:
-			if position.distance_to(start) > 65.0/16.0:
+			if position.distance_to(staging_start) > 65.0/16.0:
 				cancel()
 				return
 			countdown = maxf(0,countdown-delta)
@@ -104,5 +109,5 @@ func update(delta: float, position: Vector3, velocity: Vector3, forward: Vector3
 	previous = position
 
 func target_position() -> Vector3:
-	if mode == "race": return start if countdown > 0 else points[gate]
+	if mode == "race": return staging_start if countdown > 0 else points[gate]
 	return start

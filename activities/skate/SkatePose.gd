@@ -4,10 +4,9 @@ const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 const MODEL := preload("res://activities/skate/SkateModel.gd")
 
 static func feet(board) -> Array[Vector3]:
-	# Sole contacts, not ankle joints: Dante's boots and civilian shoes have
-	# different ankle heights. Feet point sideways across the narrow deck.
-	var front := Vector3(0, MODEL.DECK_HEIGHT, -.19)
-	var back := Vector3(0, MODEL.DECK_HEIGHT, .20)
+	# Staggered stance, with both feet and the torso facing the nose.
+	var front := Vector3(-.065, MODEL.DECK_HEIGHT, -.16)
+	var back := Vector3(.065, MODEL.DECK_HEIGHT, .16)
 	if board.pushing:
 		var phase: float = board.push_phase
 		# Approach, sole contact, backward push, then lift back onto the tail.
@@ -25,7 +24,7 @@ static func feet(board) -> Array[Vector3]:
 static func apply(actor, board) -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(actor.visual): return
 	actor.visual.position = Vector3.ZERO
-	actor.visual.basis = board.global_basis * board.visual.basis * Basis(Vector3.UP, -PI * .5)
+	actor.visual.global_basis = board.global_basis * board.visual.basis
 	var targets := feet(board)
 	var push_weight := sin(clampf(board.push_phase / .18, 0, 1) * PI * .5) if board.pushing else 0.0
 	if board.pushing and board.push_phase > .65: push_weight *= 1 - smoothstep(.65, 1, board.push_phase)
@@ -60,14 +59,41 @@ static func apply(actor, board) -> void:
 			var ankle: Vector3 = targets[index] + Vector3.UP * KIT.ANKLE_HEIGHT * height
 			var target: Vector3 = model.to_local(board.visual.to_global(ankle))
 			model._place_leg(index, basis, pelvis_position, target, 0)
-		model.spine.rotation = Vector3(.05, -.25, -board.lean * .5)
+		model.spine.rotation = Vector3(-.08 - .1 * push_weight, 0, -board.lean * .5)
 		for index in 2:
 			model.upper_arms[index].rotation = Vector3(-.12, 0, -.45 if index == 0 else .45)
 			model.forearms[index].rotation.x = -.25
+
+static func fall(actor, age: float, heading: float) -> void:
+	# Brace, absorb the impact, then get up through a crouch. Physics remains
+	# owned by the swept player capsule; no free-running animation tween.
+	var impact := smoothstep(0, .45, age)
+	var rise := smoothstep(.95, 2.1, age)
+	var weight := impact * (1 - rise)
+	actor.visual.rotation = Vector3(-1.25 * weight, heading, .18 * weight)
+	actor.visual.position = Vector3(0, .30 * weight, 0)
+	var brace := smoothstep(0, .18, age) * (1 - rise)
+	if not actor.is_player:
+		var model = actor.visual.get_child(0)
+		model.pelvis.position = Vector3(0, model.PELVIS_Y, 0)
+		model.spine.rotation = Vector3(-.22 * weight, 0, 0)
+		for side in 2:
+			model.thighs[side].rotation = Vector3(-(.65 if side == 0 else .4) * weight, 0, 0)
+			model.shins[side].rotation = Vector3((1.15 if side == 0 else .85) * weight, 0, 0)
+			model.upper_arms[side].rotation = Vector3(-.9 * brace, 0, (-.3 if side == 0 else .3) * brace)
+			model.forearms[side].rotation = Vector3(-.6 * brace, 0, 0)
+		return
+	actor._apply_pose(actor._idle_pose)
+	for entry in [["Spine02", -.22 * weight], ["LeftUpLeg", -.65 * weight], ["RightUpLeg", -.40 * weight], ["LeftLeg", 1.15 * weight], ["RightLeg", .85 * weight], ["LeftArm", -.85 * brace], ["RightArm", -1.05 * brace], ["LeftForeArm", -.55 * brace], ["RightForeArm", -.70 * brace]]:
+		var bone: int = actor._combat_bones.get(entry[0], -1)
+		if bone < 0: continue
+		var pose: Basis = actor.skeleton.get_bone_global_pose(bone).basis
+		actor._set_combat_bone_rotation(bone, Basis(Vector3.RIGHT, float(entry[1])) * pose)
 
 static func restore(actor) -> void:
 	if not is_instance_valid(actor): return
 	actor.visual.position = Vector3.ZERO
 	actor.visual.rotation.x = 0
 	actor.visual.rotation.z = 0
+	if actor.is_player: actor._apply_pose(actor._idle_pose)
 	if not actor.is_player and actor.visual.get_child_count() > 0: actor.visual.get_child(0).set_process(true)

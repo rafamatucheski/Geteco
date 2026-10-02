@@ -12,11 +12,11 @@ static func races(region: String) -> Dictionary:
 	# street coordinates here; at() performs the sole pixels-to-metres conversion.
 	return {
 		"harbor_docks": {"id":"harbor_docks","name":"VOLTA DO PORTO","length_label":"CURTA",
-			"start":Vector2(1100,2200),
+			"start":Vector2(1100,2200),"phone":Vector2(1052,2332),"phone_yaw":PI,
 			"checkpoints":[Vector2(2200,2130),Vector2(2270,1250),Vector2(3000,1320),Vector2(2930,2200)],
 			"reward":400,"best_time_bonus":200},
 		"harbor_foundry": {"id":"harbor_foundry","name":"CIRCUITO FOUNDRY","length_label":"MÉDIA",
-			"start":Vector2(400,1050),
+			"start":Vector2(400,1050),"phone":Vector2(268,1002),"phone_yaw":PI/2,
 			"checkpoints":[Vector2(470,400),Vector2(2200,470),Vector2(2130,1250),Vector2(400,1180)],
 			"reward":650,"best_time_bonus":300}}
 static func drifts(region: String) -> Dictionary:

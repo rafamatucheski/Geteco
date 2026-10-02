@@ -5,6 +5,7 @@ const Residence := preload("res://activities/Residence.gd")
 const TowJobs := preload("res://data/catalogs/TowJobs.gd")
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+const PHONE := preload("res://activities/RacePhone.gd")
 ## Frase de descoberta da V1: a conquista espera ela terminar (1,15 s) para não sobrepor.
 const DISCOVERY_CUE_SECONDS := 1.15
 var session
@@ -17,6 +18,7 @@ var _region := ""
 var _place := ""
 var _clock := 0.0
 var _visuals: Array[Node3D] = []
+var _phones: Dictionary = {}
 var _pickups: Dictionary = {}
 var _discovery_cue_end_msec := 0
 var _gate: Node3D
@@ -88,13 +90,13 @@ func nearest_action() -> Dictionary:
 	if session == null or session.modal or not session.state.place_id.is_empty(): return {}
 	var world = session.world
 	var point: Vector3 = world.driving.car.position if world.driving.occupied else world.player.position
+	if world.gameplay.health <= 0: return {}
 	var options: Array = []
 	if motorsport.mode != "": return {"id":"activity_cancel","target":"activity_cancel","label":"Cancelar tentativa","position":point}
 	if session.state.campaign.active_id != "": return {}
+	for id in Definitions.races(session.state.region_id):
+		options.append(_action("race:"+id,"Atender telefone",_phone_position(id),PHONE.RANGE))
 	if world.driving.occupied:
-		for id in Definitions.races(session.state.region_id):
-			var row: Dictionary = Definitions.races(session.state.region_id)[id]
-			options.append(_action("race:"+id,"Correr · "+str(row.name),Definitions.at(row.start)))
 		for id in Definitions.drifts(session.state.region_id):
 			var row: Dictionary = Definitions.drifts(session.state.region_id)[id]
 			options.append(_action("drift:"+id,"Drift · "+str(row.name),Definitions.at(row.pos)))
@@ -124,7 +126,10 @@ func perform(target: Variant) -> bool:
 	var action := nearest_action()
 	if action.get("target", "") != id: return false
 	if id == "activity_cancel": motorsport.cancel(); _gate.hide(); return true
-	if id.begins_with("race:") or id.begins_with("drift:"):
+	if id.begins_with("race:"):
+		_open_race_phone(id)
+		return true
+	if id.begins_with("drift:"):
 		return _start_motorsport(id)
 	if id.begins_with("home_buy:"):
 		var home := id.trim_prefix("home_buy:")
@@ -146,6 +151,26 @@ func perform(target: Variant) -> bool:
 	if id == "tow_accept": return _accept_tow()
 	if id == "tow_deliver": return _deliver_tow()
 	return false
+
+func _phone_position(id: String) -> Vector3:
+	var spec: Dictionary = Definitions.races(session.state.region_id)[id]
+	return Definitions.at(spec.get("phone",spec.start+Vector2(-24,0)))
+
+func _phone_available() -> bool:
+	return session.state.place_id.is_empty() and session.state.campaign.active_id.is_empty() and motorsport.mode.is_empty()
+
+func _open_race_phone(action: String) -> void:
+	var id := action.get_slice(":",1)
+	var spec: Dictionary = Definitions.races(session.state.region_id)[id]
+	if _phones.has(id): _phones[id].silence()
+	session._menu(str(spec.name))
+	var details := Label.new()
+	details.text = "%s · Prêmio R$ %d"%[spec.length_label,int(spec.reward)]
+	session.column.add_child(details)
+	session._button("Entrar na corrida",func():
+		session.close_menu()
+		if nearest_action().get("target","") == action: _start_motorsport(action))
+	session._button("Desligar",session.close_menu)
 
 func can_enter_home(id: String) -> bool:
 	return not Definitions.HOMES.PROPERTIES.has(id) or residence.can_enter(id)
@@ -169,7 +194,9 @@ func record_external_delivery() -> bool:
 
 func _start_motorsport(action: String) -> bool:
 	var car = session.world.driving.car
-	if not session.world.driving.occupied or absf(car.speed) >= 25.0/16.0: session.show_message("Pare com o carro na marca."); return true
+	if not session.world.driving.occupied or absf(car.speed) >= 25.0/16.0:
+		session.show_message("Pare com o carro junto ao telefone." if action.begins_with("race:") else "Pare com o carro na marca.")
+		return true
 	_driver = car
 	var id := action.get_slice(":",1)
 	var started := false
@@ -181,7 +208,8 @@ func _start_motorsport(action: String) -> bool:
 		var points := PackedVector3Array()
 		for point in spec.checkpoints: points.append(Definitions.at(point))
 		if not session.save_game(true): return false
-		started = motorsport.begin_race(id,Definitions.at(spec.start),points,car.position)
+		started = motorsport.begin_race(id,Definitions.at(spec.start),points,car.position,_phone_position(id),PHONE.RANGE)
+		if not started: session.show_message("Aproxime o carro da largada junto ao telefone.")
 	else:
 		var spec: Dictionary = Definitions.drifts(session.state.region_id)[id]
 		if not session.save_game(true): return false
@@ -216,10 +244,24 @@ func _rebuild() -> void:
 	for area in _pickups.values():
 		if is_instance_valid(area): area.queue_free()
 	_visuals.clear()
+	_phones.clear()
 	_pickups.clear()
 	if _place == "":
 		for definition in Definitions.drifts(_region).values(): _visuals.append(_beacon(Definitions.at(definition.pos),Color("d7a958")))
-		for definition in Definitions.races(_region).values(): _visuals.append(_beacon(Definitions.at(definition.start),Color("74d9ff")))
+		for id in Definitions.races(_region):
+			var phone := PHONE.new()
+			phone.configure(session,_phone_position(id),_phone_available)
+			phone.rotation.y = float(Definitions.races(_region)[id].get("phone_yaw",0))
+			session.world.add_child(phone)
+			_visuals.append(phone)
+			_phones[id] = phone
+		if _region == "harbor":
+			var mission = session.mission_world
+			var phone := PHONE.new()
+			phone.configure(session,mission.race_phone_position(),mission.race_phone_available)
+			phone.rotation.y = PI/2
+			session.world.add_child(phone)
+			_visuals.append(phone)
 	var found: Array = session.state.economy.snapshot().collectibles
 	for entry in Definitions.collectibles():
 		if entry.region != _region or entry.place != _place or found.has(entry.id): continue

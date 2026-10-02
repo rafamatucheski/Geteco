@@ -445,6 +445,8 @@ func _ready() -> void:
 	thermal_status.hide()
 	prompt = _label(Vector2(26,590),20)
 	notice = _label(Vector2(26,550),18)
+	# Message source only; ContextualHUDManager owns the visible notification.
+	notice.hide()
 	marker = preload("res://ui/DoorAccessMarker.gd").new()
 	world.hud.add_child(marker)
 	arrow = _label(Vector2.ZERO,30)
@@ -550,8 +552,6 @@ func show_message(text: String) -> void:
 	_reward_notice_id = ""
 	notice.text = text
 	notice_time = 5.0
-	notice.show()
-	notice.move_to_front()
 
 func position_clear(point: Vector3) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -1256,7 +1256,6 @@ func _toggle_weapon_flashlight() -> void:
 
 func _process(delta: float) -> void:
 	notice_time = maxf(0.0,notice_time-delta)
-	notice.visible = notice_time > 0
 	if not ready_for_play or get_tree().paused: return
 	weapon_shop_entrance.update(delta)
 	special_place_entrance.update(delta)

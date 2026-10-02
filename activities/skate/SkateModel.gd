@@ -167,7 +167,7 @@ func _commit(surface: SurfaceTool, title: String, metallic: bool, target_parent:
 	mat.vertex_color_use_as_albedo = true
 	mat.vertex_color_is_srgb = true
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.metallic = .75 if metallic else 0
+	mat.metallic = .75 if metallic else 0.0
 	mat.roughness = .32 if metallic else .85
 	art.material_override = mat
 	(target_parent if target_parent != null else self).add_child(art)

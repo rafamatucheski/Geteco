@@ -13,6 +13,7 @@ var player_board: CharacterBody3D
 var parked: CharacterBody3D
 var boards: Array[CharacterBody3D] = []
 var ambient: Array[Dictionary] = []
+var _fallen: Array[Dictionary] = []
 var _park_people: Array[WeakRef] = []
 var hud: Label
 var _clock := 0.0
@@ -21,7 +22,6 @@ var _layer := 2
 var _mask := 7
 var _camera_size := 28.0
 var _last_heading := 0.0
-var _outfit_color := Color("d36c3e")
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -34,7 +34,7 @@ func configure(owner_session) -> void:
 		owned = bool(saved.get("owned", false))
 		best = int(saved.get("best", 0))
 	hud = Label.new()
-	hud.position = Vector2(22, 530)
+	hud.position = Vector2(230, 620)
 	hud.add_theme_font_size_override("font_size", 18)
 	hud.add_theme_color_override("font_outline_color", Color.BLACK)
 	hud.add_theme_constant_override("outline_size", 5)
@@ -177,10 +177,11 @@ func _landed(points: int, title: String) -> void:
 func _player_bailed(damage: float) -> void:
 	if not mounted: return
 	var player = session.world.player
-	player.velocity = player_board.velocity * .55
-	player.velocity.y = 1.4
+	player.velocity = -player_board.global_basis.z * player_board.speed * .55
+	player.velocity.y = maxf(0, player_board.velocity.y) * .3
 	_release_board()
 	recovering = true
+	hud.text = ""
 	_recovery_time = 0
 	player.input_locked = true
 	score = 0
@@ -210,10 +211,8 @@ func _physics_process(delta: float) -> void:
 		player.velocity.x = move_toward(player.velocity.x, 0, delta * 5)
 		player.velocity.z = move_toward(player.velocity.z, 0, delta * 5)
 		player.move_and_slide()
-		var roll := smoothstep(0, .3, _recovery_time) * (1 - smoothstep(1.3, 2.1, _recovery_time))
-		player.visual.rotation = Vector3(0, _last_heading, roll * 1.45)
-		player.visual.position.y = .28 * roll
-		if _recovery_time >= 2.1: _finish_recovery()
+		POSE.fall(player, _recovery_time, _last_heading)
+		if _recovery_time >= 2.1 and player.is_on_floor(): _finish_recovery()
 	elif mounted:
 		if not is_instance_valid(player_board):
 			_release_board()
@@ -237,6 +236,7 @@ func _physics_process(delta: float) -> void:
 		_clock = 0
 		_update_population()
 	_update_ambient(delta)
+	_update_fallen(delta)
 
 func _update_population() -> void:
 	boards = boards.filter(func(b): return is_instance_valid(b) and not b.is_queued_for_deletion())
@@ -257,16 +257,29 @@ func _update_population() -> void:
 				_park_people.append(weakref(actor))
 				var board := _new_board(actor.position, Color("487d9b") if i == 0 else Color("c3a842"))
 				_attach_ambient(actor, board, true)
-	else:
-		_clear_ambient()
+	# Retire only distant riders: street skaters must survive leaving the park.
+	for row in ambient.duplicate():
+		if not is_instance_valid(row.actor) or row.actor.position.distance_to(p) > (80 if row.park else 100):
+			_retire_ambient(row)
+	for ref in _park_people.duplicate():
+		var actor = ref.get_ref()
+		if not is_instance_valid(actor): _park_people.erase(ref)
+		elif actor.position.distance_to(p) > 80:
+			actor.queue_free()
+			_park_people.erase(ref)
 	# Occasionally borrow an ordinary, healthy street pedestrian's existing route.
-	if ambient.size() < 3 and p.distance_to(LAYOUT.CENTER) < 130:
+	var street_count := 0
+	for row in ambient:
+		if not row.park: street_count += 1
+	street_count += _fallen.size()
+	if street_count < 3:
 		for actor in session.world.people:
 			if not is_instance_valid(actor) or actor.dead or actor.health < 100 or actor.route.size() < 2 or actor.input_locked or not actor.is_physics_processing(): continue
-			if actor.identity % 13 != 0 or actor.position.distance_to(p) > 45: continue
+			if actor.identity % 5 != 0 or actor.position.distance_to(p) > 85 or not actor.is_on_floor(): continue
 			if actor.has_meta("skate_used"): continue
 			actor.set_meta("skate_used", true)
-			var board := _new_board(actor.position)
+			var palette := [Color("d36c3e"), Color("487d9b"), Color("c3a842"), Color("79559b"), Color("44866a")]
+			var board := _new_board(actor.position, palette[(actor.identity / 5) % palette.size()])
 			_attach_ambient(actor, board, false)
 			break
 	for board in boards.duplicate():
@@ -289,7 +302,8 @@ func _attach_ambient(actor, board, park: bool) -> void:
 	var waypoint: int = int(actor.waypoint) % route.size()
 	if park: waypoint = 1
 	if park and actor.identity % 2 == 1: waypoint = 13
-	ambient.append({"actor": actor, "board": board, "route": route, "waypoint": waypoint, "health": actor.health, "park": park, "stalled": 0.0})
+	board._push_clock = fposmod(actor.identity * .173, .72)
+	ambient.append({"actor": actor, "board": board, "route": route, "waypoint": waypoint, "health": actor.health, "park": park, "stalled": 0.0, "pace": 2.2 if park else 2.7 + (actor.identity % 4) * .45})
 	board.rotation.y = atan2(-(route[waypoint] - actor.position).x, -(route[waypoint] - actor.position).z)
 
 func _park_route() -> PackedVector3Array:
@@ -303,7 +317,7 @@ func _park_route() -> PackedVector3Array:
 func _update_ambient(delta: float) -> void:
 	for row in ambient.duplicate():
 		if not is_instance_valid(row.actor) or not is_instance_valid(row.board):
-			ambient.erase(row)
+			_retire_ambient(row)
 			continue
 		if row.actor.dead or row.actor.health < row.health:
 			row.board.bail(0)
@@ -316,7 +330,7 @@ func _update_ambient(delta: float) -> void:
 		toward.y = 0
 		if toward.length() < (.65 if row.park else 1.5): row.waypoint = (int(row.waypoint) + 1) % row.route.size()
 		var angle := angle_difference(row.board.rotation.y, atan2(-toward.x, -toward.z))
-		var pace := 2.2 if row.park else 3.8
+		var pace: float = row.pace
 		row.board.drive(1 if row.board.speed < pace else 0, clampf(angle * 2, -1, 1), (absf(angle) > .65 and row.board.speed > 1.5) or row.board.speed > pace + .7)
 		row.stalled = float(row.stalled) + delta if row.board.speed < .4 else 0.0
 		if row.stalled > 4: row.board.bail(0); continue
@@ -329,30 +343,57 @@ func _ambient_bail(actor, board, damage: float) -> void:
 		ambient.erase(row)
 		board.rider = null
 		if is_instance_valid(actor):
-			POSE.restore(actor)
 			if not actor.dead:
-				actor.set_physics_process(true)
+				POSE.restore(actor)
 				if damage > 0: actor.receive_damage(damage, board)
-				actor._fall_over(-board.global_basis.z)
+				if actor.dead: continue
+				actor.set_physics_process(false)
+				actor.visual.get_child(0).set_process(false)
+				actor.velocity = -board.global_basis.z * board.speed * .45
 				actor.input_locked = true
-				var release: SceneTreeTimer = actor.get_tree().create_timer(2.1)
-				release.timeout.connect(func():
-					if is_instance_valid(actor) and not actor.dead:
-						POSE.restore(actor)
-						actor.input_locked = false)
+				_fallen.append({"actor": actor, "age": 0.0, "heading": board.rotation.y, "park": row.park})
 		# Board remains physical and collectible; ownership only changes on pickup.
 
+func _update_fallen(delta: float) -> void:
+	if session.modal: return
+	for row in _fallen.duplicate():
+		var actor = row.actor
+		if not is_instance_valid(actor) or actor.dead:
+			_fallen.erase(row)
+			continue
+		row.age += delta
+		actor.velocity.y -= 20 * delta
+		actor.velocity.x = move_toward(actor.velocity.x, 0, 5 * delta)
+		actor.velocity.z = move_toward(actor.velocity.z, 0, 5 * delta)
+		actor.move_and_slide()
+		POSE.fall(actor, row.age, row.heading)
+		if row.age >= 2.1 and actor.is_on_floor():
+			POSE.restore(actor)
+			actor.input_locked = false
+			actor.set_physics_process(true)
+			_fallen.erase(row)
+
+func _retire_ambient(row: Dictionary) -> void:
+	if is_instance_valid(row.actor):
+		if row.park: row.actor.queue_free()
+		elif not row.actor.dead:
+			POSE.restore(row.actor)
+			row.actor.waypoint = int(row.waypoint)
+			row.actor.set_physics_process(true)
+	if is_instance_valid(row.board):
+		boards.erase(row.board)
+		row.board.queue_free()
+	ambient.erase(row)
+
 func _clear_ambient() -> void:
-	for row in ambient:
-		if is_instance_valid(row.actor):
-			if row.park: row.actor.queue_free()
-			else:
-				POSE.restore(row.actor)
-				if not row.actor.dead: row.actor.set_physics_process(true)
-		if is_instance_valid(row.board):
-			boards.erase(row.board)
-			row.board.queue_free()
-	ambient.clear()
+	for row in ambient.duplicate():
+		_retire_ambient(row)
+	for row in _fallen:
+		if not is_instance_valid(row.actor) or row.actor.dead: continue
+		POSE.restore(row.actor)
+		row.actor.input_locked = false
+		row.actor.set_physics_process(true)
+	_fallen.clear()
 	for ref in _park_people:
 		var actor = ref.get_ref()
 		if is_instance_valid(actor): actor.queue_free()

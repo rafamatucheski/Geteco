@@ -125,6 +125,8 @@ func target_position() -> Vector3:
 
 func nearest_action() -> Dictionary:
 	var local_position: Vector3 = session.world.player.position
+	if race_phone_available() and local_position.distance_to(race_phone_position()) <= preload("res://activities/RacePhone.gd").RANGE:
+		return {"id":"mission","target":"race_start","label":"Atender telefone"}
 	var berth := Vector3(1930,0,1220)*UNIT if session.state.region_id == "harbor" else preload("res://world/places/PlaceCatalog.gd")._at(Vector2(7500,-1760),"mountain")
 	if local_position.distance_to(berth) < 3: return {"id":"mission","target":"travel","label":"Viajar para "+("a serra" if session.state.region_id == "harbor" else "o porto")}
 	if session.state.region_id != "harbor": return {}
@@ -142,7 +144,7 @@ func nearest_action() -> Dictionary:
 		return {"id":"mission","target":"tow_toggle","label":"Descarregar" if loaded else "Carregar guincho"}
 	return {}
 func nearest_vehicle_action() -> Dictionary:
-	if _can_start_race(): return {"id":"mission","target":"race_start","label":"Preparar corrida · fique parado"}
+	if _can_start_race(): return {"id":"mission","target":"race_start","label":"Atender telefone"}
 	if is_instance_valid(truck) and session.world.driving.car == truck and absf(truck.speed)<.3:
 		return {"id":"mission","target":"tow_toggle","label":"Descarregar" if loaded else "Carregar guincho"}
 	return {}
@@ -151,10 +153,18 @@ func perform(id: String) -> bool:
 	if id == "tow_recover": return _recover_tow_truck()
 	if id == "tow_recover_cargo": return _recover_tow_cargo()
 	if id=="race_start":
-		if not _can_start_race(): return false
-		var car=session.world.driving.car
-		if not _event("race_started","ashbend_start",{"race_vehicle_id":car.vehicle_id,"race_position":Vector2(car.position.x,car.position.z)}): return false
-		session.show_message("Fique parado até JÁ! · 3")
+		var subject: Node3D = session.world.driving.car if session.world.driving.occupied else session.world.player
+		if not race_phone_available() or subject.position.distance_to(race_phone_position()) > preload("res://activities/RacePhone.gd").RANGE: return false
+		session._menu("Corrida dos Cobras")
+		session._button("Entrar na corrida",func():
+			session.close_menu()
+			if not _can_start_race():
+				session.show_message("Pare com o carro junto ao telefone, apontando para o norte.")
+				return
+			var car=session.world.driving.car
+			if _event("race_started","ashbend_start",{"race_vehicle_id":car.vehicle_id,"race_position":Vector2(car.position.x,car.position.z)}):
+				session.show_message("Fique parado até JÁ! · 3"))
+		session._button("Desligar",session.close_menu)
 		return true
 	if id == "travel":
 		if session.controller.travel("mountain" if session.state.region_id == "harbor" else "harbor"):
@@ -263,12 +273,18 @@ func _finish_race() -> void:
 	if _event("race_finished","ashbend_finish"):
 		session.show_dialogue([{"speaker":"Ferrugem","message":"Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo."}])
 
+func race_phone_position() -> Vector3:
+	return targets.ashbend_start+Vector3(-4.2,0,4.0)
+
+func race_phone_available() -> bool:
+	return session.world.gameplay.health > 0 and not session.state.campaign.is_suspended() and session.state.campaign.active_id == "cobra_race" and session.state.campaign.step == 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty()
+
 func _can_start_race() -> bool:
-	if session.state.campaign.is_suspended() or session.state.campaign.active_id!="cobra_race" or session.state.campaign.step!=0 or session.state.region_id!="harbor" or not session.state.place_id.is_empty(): return false
+	if not race_phone_available(): return false
 	var driving=session.world.driving
 	if not driving.occupied or not is_instance_valid(driving.car) or driving.car.health<=0: return false
 	var car=driving.car
-	return car.position.distance_to(targets.ashbend_start)<85.0*UNIT and car.horizontal_velocity.length()<=20.0*UNIT and (-car.global_basis.z).dot(Vector3.FORWARD)>=.65
+	return car.position.distance_to(race_phone_position()) <= preload("res://activities/RacePhone.gd").RANGE and car.position.distance_to(targets.ashbend_start)<85.0*UNIT and car.horizontal_velocity.length()<=20.0*UNIT and (-car.global_basis.z).dot(Vector3.FORWARD)>=.65
 
 func _spawn_near_actors() -> void:
 	for id in ["ferrugem","ashbend_resident","neco"]:

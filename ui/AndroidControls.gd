@@ -94,11 +94,11 @@ func _refresh() -> void:
 		return
 	_button("pause_game", "Pausa", top + Vector2(-180, 0) * unit, Vector2(100, 52))
 	if skating:
-		var bottom := safe.end - Vector2(160, 70) * unit
-		_button("skate_ollie", "Ollie", bottom + Vector2(0, -145) * unit, Vector2(112, 68))
-		_button("skate_flip", "Flip", bottom + Vector2(-130, -70) * unit, Vector2(112, 68))
-		_button("skate_shove", "Shove-it", bottom + Vector2(0, -70) * unit, Vector2(112, 68))
-		_button("exit_vehicle", "Descer", bottom, Vector2(112, 68))
+		var skate_bottom := safe.end - Vector2(160, 70) * unit
+		_button("skate_ollie", "Ollie", skate_bottom + Vector2(0, -145) * unit, Vector2(112, 68))
+		_button("skate_flip", "Flip", skate_bottom + Vector2(-130, -70) * unit, Vector2(112, 68))
+		_button("skate_shove", "Shove-it", skate_bottom + Vector2(0, -70) * unit, Vector2(112, 68))
+		_button("exit_vehicle", "Descer", skate_bottom, Vector2(112, 68))
 		queue_redraw()
 		return
 	if passenger:

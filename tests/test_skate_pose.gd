@@ -34,6 +34,7 @@ func run():
 			board.airborne = false
 			actor.global_position = board.global_position
 			POSE.apply(actor, board)
+			check((-actor.visual.global_basis.z).dot(-board.visual.global_basis.z) > .999, "rider faces the nose")
 			var soles = POSE.feet(board)
 			for index in 2:
 				var label = "%s sample%s leg%s" % [identity, sample, index]
@@ -54,7 +55,7 @@ func run():
 					hip = model.thighs[index].global_position
 				check(foot.distance_to(board.visual.to_global(expected)) < .012, label + " ankle reaches contact")
 				var local_knee = board.visual.to_local(knee)
-				check(local_knee.x > -.025, label + " knee bends toward toes")
+				check(local_knee.z < maxf(board.visual.to_local(hip).z, board.visual.to_local(foot).z) + .025, label + " knee bends toward forward-facing toes")
 				check(knee.distance_to(hip) > .3 and foot.distance_to(knee) > .3, label + " authored leg lengths")
 				check((board.visual.to_local(foot).z < .01) if index == 0 else true, label + " front leg never crosses rear")
 		for sample in 12:
@@ -75,6 +76,10 @@ func run():
 					foot = model.feet[index].global_position
 				check(foot.distance_to(board.visual.to_global(expected)) < .012, "air tuck keeps ankle reachable")
 			check(actor.visual.basis.get_scale().distance_to(Vector3.ONE) < .001, "air pose keeps unit visual scale")
+		POSE.fall(actor, .55, .7)
+		check(actor.visual.rotation.x < -.8 and actor.visual.position.y > .1, "fall absorbs impact toward direction of travel")
+		POSE.fall(actor, 2.1, .7)
+		check(absf(actor.visual.rotation.x) < .001 and actor.visual.position.length() < .001, "recovery returns to upright position")
 		POSE.restore(actor)
 		check(absf(actor.visual.rotation.x) < .001 and absf(actor.visual.rotation.z) < .001, "dismount removes slope tilt")
 		actor.free()
