@@ -71,6 +71,7 @@ func run() -> void:
 		fixture.player.input_locked = true
 		driving.car = car
 		driving.occupied = true
+		var body_before := _body_snapshot(car)
 		INTERIOR.attach(car)
 		driving._complete_entry()
 		INTERIOR.follow(fixture.player, car, 1.0) # termina a mistura (sem árvore, o delta do Driving é 0)
@@ -100,7 +101,7 @@ func run() -> void:
 		check(mesh.get_surface_count() <= 2 and triangles > 100 and triangles < 6000, label + " interior é uma malha só (opaca + forro translúcido) com detalhe e orçamento (%d triângulos)" % triangles)
 		check(car.visual.find_children("*", "MeshInstance3D", true, false).filter(func(m): return m.name == "Interior").size() == 1, label + " um único nó de interior")
 		_check_glass(car, label)
-		_check_roof(car, s, label)
+		_check_roof(car, body_before, label)
 		# Sair: o corpo volta ao mundo sem resíduo.
 		var before_hips: Vector3 = fixture.player.skeleton.get_bone_pose_position(fixture.player.hips)
 		driving.occupied = false
@@ -174,14 +175,39 @@ func _translucent_glass_count(car) -> int:
 			if override is StandardMaterial3D and override.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED: count += 1
 	return count
 
-## Teto translúcido nos fechados (recorte, peça de teto ou material próprio); ao destruir o veículo
-## o casco volta inteiro antes do dano trocar os materiais.
-func _check_roof(car, s: Dictionary, label: String) -> void:
+## Entrar preserva a geometria e a opacidade da carroceria; só o vidro pode mudar.
+func _body_snapshot(car) -> Array:
+	var state: Array = []
+	for part in car.visual.find_children("*", "MeshInstance3D", true, false):
+		if part.mesh == null or part.name in ["Interior", "WarmUp"]: continue
+		var materials: Array = []
+		for surface in part.mesh.get_surface_count():
+			var material: Material = part.get_active_material(surface)
+			if material is StandardMaterial3D and not INTERIOR._is_glass(part, surface, material):
+				materials.append([surface, material, material.transparency, material.albedo_texture, material.albedo_color.a])
+		state.append([part, part.mesh, materials])
+	return state
+
+func _check_body_unchanged(car, before: Array, label: String) -> void:
+	var unchanged := true
+	for entry in before:
+		var part: MeshInstance3D = entry[0]
+		unchanged = unchanged and part.mesh == entry[1]
+		for saved in entry[2]:
+			var material: StandardMaterial3D = part.get_active_material(saved[0])
+			unchanged = unchanged and material == saved[1] and material.transparency == saved[2] and material.albedo_texture == saved[3] and is_equal_approx(material.albedo_color.a, saved[4])
+	check(unchanged, label + " carroceria conserva malha, material e opacidade")
+
+func _check_roof(car, before: Array, label: String) -> void:
 	var view: Dictionary = car.get_meta("interior_view", {})
-	check(not view.is_empty(), label + " vista aberta (vidro e teto) registrada")
-	if not bool(s.open_top):
-		var count: int = view.get("roofs", []).size() + view.get("slabs", []).size() + view.get("alpha_materials", []).size()
-		check(count > 0, label + " teto translúcido no veículo conduzido (%d peças)" % count)
+	check(not view.is_empty(), label + " vista dos vidros registrada")
+	_check_body_unchanged(car, before, label + " ao entrar")
+	INTERIOR.set_low_camera_roof(car, true)
+	INTERIOR.set_low_camera_roof(car, false)
+	_check_body_unchanged(car, before, label + " ao mudar câmera")
+	if car._paint != null:
+		car._paint.apply(Color("b72934"))
+		_check_body_unchanged(car, before, label + " ao repintar")
 	var cut_meshes: Array = []
 	for entry in view.get("parts", []): cut_meshes.append(entry[1])
 	INTERIOR.close_view(car)
@@ -192,6 +218,7 @@ func _check_roof(car, s: Dictionary, label: String) -> void:
 	check(leftover.is_empty(), label + " close_view remove o teto recortado")
 	# Reabre para o restante do teste (saída, vidro).
 	INTERIOR.attach(car)
+	_check_body_unchanged(car, before, label + " ao reentrar")
 
 func _check_glass(car, label: String) -> void:
 	# Toda cabine fechada com vidro medido tem que ter vidro translúcido; buggy e empilhadeira não têm.

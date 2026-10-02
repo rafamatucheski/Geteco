@@ -17,8 +17,15 @@ uniform float pulse_spacing = 14.0;
 void fragment() {
 	float h = UV.y;
 	float row = floor(h / 0.15);
-	vec2 cell = fract(vec2(UV.x / 0.30 + mod(row, 2.0) * 0.5, h / 0.15));
-	float grout = clamp(step(cell.x, 0.05) + step(cell.y, 0.09), 0.0, 1.0);
+	vec2 grid = vec2(UV.x / 0.30, h / 0.15);
+	vec2 cell = fract(grid + vec2(mod(row, 2.0) * 0.5, 0.0));
+	// Filtrar juntas menores que um pixel: bordas duras cintilavam na perspectiva.
+	vec2 footprint = max(fwidth(grid), vec2(0.0001));
+	vec2 edge = min(cell, 1.0 - cell);
+	vec2 joint = 1.0 - smoothstep(vec2(0.025, 0.045) - footprint * 0.5,
+		vec2(0.025, 0.045) + footprint * 0.5, edge);
+	joint = mix(joint, vec2(0.05, 0.09), smoothstep(vec2(0.25), vec2(1.0), footprint));
+	float grout = 1.0 - (1.0 - joint.x) * (1.0 - joint.y);
 	vec3 color = mix(tile_color, grout_color, grout);
 	// Sujeira de pneu e água perto do piso.
 	color *= mix(0.62, 1.0, smoothstep(0.0, 0.9, h));

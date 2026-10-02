@@ -289,9 +289,8 @@ static func _open_glass(vehicle: Node3D) -> void:
 static var profile: Dictionary = {}
 static var _warmed: Dictionary = {}
 
-## Vidro e teto translúcidos. Chame ANTES de a apresentação de porta recortar o casco: a folha
-## da porta reaproveita o material do vidro que houver (vira folha translúcida) e recorta a
-## lataria já sem o teto. Idempotente.
+## Abre apenas os vidros para mostrar o motorista. O teto conserva a malha e a pintura
+## opacas do modelo, inclusive após entrar, repintar ou mudar a câmera. Idempotente.
 static func open_view(vehicle: Node3D) -> void:
 	var s := spec(vehicle)
 	if s.is_empty() or vehicle.get("visual") == null or vehicle.has_meta("interior_view"): return
@@ -299,8 +298,7 @@ static func open_view(vehicle: Node3D) -> void:
 	vehicle.set_meta("interior_view", {"parts": [], "roofs": [], "alpha_materials": [], "slabs": []})
 	_open_glass(vehicle)
 	var after_glass := Time.get_ticks_usec()
-	if not bool(s.open_top): _open_roof(vehicle, s)
-	profile = {"vidro_ms": (after_glass - began) / 1000.0, "teto_ms": (Time.get_ticks_usec() - after_glass) / 1000.0}
+	profile = {"vidro_ms": (after_glass - began) / 1000.0, "teto_ms": 0.0}
 	# Carcaça: o dano troca materiais por papel e não conhece o teto recortado; `Driving` chama
 	# `close_view` ao receber `destroyed` (antes do `wreck`), que devolve o casco inteiro.
 
@@ -325,8 +323,8 @@ static func attach(vehicle: Node3D) -> void:
 	open_view(vehicle)
 
 ## Prepara, quadro a quadro, o que custa caro na primeira vez de cada arquétipo (medida da
-## cabine, malha do interior, variantes de material translúcido e o corte do teto, que lê a
-## malha de volta da GPU): chame quando o jogador chega perto do veículo, para o custo cair
+## cabine, malha do interior e variantes de material do vidro): chame quando o jogador chega
+## perto do veículo, para o custo cair
 ## enquanto ele anda e não na abertura da porta. Só enche caches; não muda a cena.
 static func prewarm(vehicle: Node3D) -> void:
 	var id := str(vehicle.get("archetype"))
@@ -350,22 +348,6 @@ static func prewarm(vehicle: Node3D) -> void:
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
 			if material is StandardMaterial3D and _is_glass(part, surface, material): warm.append([mesh, see_through(material)])
-	_roof_alpha_texture()
-	var candidates: Array = [] if bool(s.open_top) else _roof_candidates(vehicle, s)
-	var to_car := vehicle.global_transform.affine_inverse()
-	for candidate in candidates:
-		var part: MeshInstance3D = candidate.part
-		var roof_mesh: Mesh = part.mesh
-		if candidate.kind == "cut":
-			# O corte lê a malha de volta da GPU: um quadro só para ele.
-			await tree.process_frame
-			if not is_instance_valid(vehicle) or not vehicle.is_inside_tree() or not is_instance_valid(part): return
-			var cut := _cut_roof(part, candidate.surface, to_car * part.global_transform, s, _cut_key(part, candidate.surface, id))
-			if cut.is_empty(): continue
-			roof_mesh = cut.roof
-		# A variante translúcida do teto (mesma configuração do material final) com a malha que
-		# ela vai vestir: o sombreador e o pipeline dependem do formato da malha.
-		warm.append([roof_mesh, _roof_variant(vehicle, candidate.material)])
 	await _warm_materials(vehicle, warm)
 
 ## O Godot só monta o sombreador e o pipeline de um material na primeira vez que uma instância
@@ -392,6 +374,7 @@ static func _warm_materials(vehicle: Node3D, entries: Array) -> void:
 
 ## Devolve o teto ao casco (explosão do veículo). O vidro fica: o dano já o estoura.
 static func close_view(vehicle: Node3D) -> void:
+	set_low_camera_roof(vehicle, false)
 	var view: Dictionary = vehicle.get_meta("interior_view", {})
 	if view.is_empty(): return
 	for entry in view.parts:
@@ -410,6 +393,45 @@ static func close_view(vehicle: Node3D) -> void:
 			paint.materials.erase(material)
 			paint.roof_materials.erase(material)
 	vehicle.remove_meta("interior_view")
+
+## A câmera traseira precisa da carroceria fechada; não refazer cortes das portas.
+static func set_low_camera_roof(vehicle: Node3D, solid: bool) -> void:
+	var view: Dictionary = vehicle.get_meta("interior_view", {})
+	if view.is_empty() or bool(view.get("low_camera_roof", false)) == solid: return
+	view["low_camera_roof"] = solid
+	# A cobertura do cupê também tem vidro; o alfa da vista superior abria buracos
+	# e deixava interior/motorista sobrepostos na visão traseira.
+	if solid:
+		var glazing: Array = []
+		for part in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
+			if part.mesh == null or part.name in ["Interior", "RoofCut", "WarmUp"]: continue
+			for surface in (1 if part.material_override != null else part.mesh.get_surface_count()):
+				var original: Material = part.get_active_material(surface)
+				if not original is StandardMaterial3D or not _is_glass(part, surface, original): continue
+				var opaque := original.duplicate() as StandardMaterial3D
+				opaque.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+				var color := opaque.albedo_color
+				color.a = 1.0
+				opaque.albedo_color = color
+				var slot: int = -1 if part.material_override != null else surface
+				glazing.append([part, slot, part.material_override if slot == -1 else part.get_surface_override_material(slot)])
+				if slot == -1: part.material_override = opaque
+				else: part.set_surface_override_material(slot, opaque)
+		view["low_camera_glazing"] = glazing
+	else:
+		for entry in view.get("low_camera_glazing", []):
+			if not is_instance_valid(entry[0]): continue
+			if entry[1] == -1: entry[0].material_override = entry[2]
+			else: entry[0].set_surface_override_material(entry[1], entry[2])
+		view.erase("low_camera_glazing")
+	var materials: Array = view.alpha_materials.duplicate()
+	for roof in view.roofs:
+		if is_instance_valid(roof) and roof.material_override not in materials:
+			materials.append(roof.material_override)
+	for material in materials:
+		if not material is StandardMaterial3D: continue
+		material.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED if solid else BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.albedo_texture = null if solid else _roof_alpha_texture()
 
 static var _roof_texture: ImageTexture
 static var _roof_cuts: Dictionary = {}

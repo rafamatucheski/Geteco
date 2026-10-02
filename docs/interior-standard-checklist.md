@@ -1,5 +1,41 @@
 # Migração de interiores — checklist
 
+## Montanha: acabamento visual a partir da imagem anotada — 02/10/2026
+
+Removidos o pequeno piso de entrada acima da cabine e a mancha amarela da serraria. Terra dos caminhos e pátio dessaturada, com menor granulação/relevo e transições largas de transparência para o terreno/neve. Apoio original do pátio e dos caminhos preservado; piso curto removido intencionalmente. Sem novos lugares/interiores.
+
+Conferência somente visual por captura do jogo, sem testes ou benchmarks novos, conforme pedido explícito do usuário. Os resultados da etapa abaixo são anteriores a este acabamento e não certificam esta versão.
+
+[Captura final](../../artifacts/mountain-review-1001/visual-soft-final/sawmill.png).
+
+## Montanha: saída secreta, heliponto e estações — 02/10/2026
+
+Revisão localizada dos exteriores e acessos existentes; sem novos lugares/interiores ou certificação integral. Inventário preservado. Saída secreta menor e afastada, heliponto reposicionado, estações completas com rampas e suporte físico, piso duplicado da serraria removido.
+
+- [x] Mapa editável real: 48 verificações físicas e de profundidade da saída/heliponto, incluindo jogador e NPC, controle visível e oclusão.
+- [x] Estações: 50 verificações com jogador/NPC, colisão derivada das malhas e profundidade renderizada.
+- [x] Entrada, combate, subida, abertura/fechamento e retorno da saída secreta no jogo real: 18 verificações.
+- [x] Terreno, estradas, serraria, circulação física e descarregamento/retorno: 723 verificações; contrato adicional de malha, emendas e colisão: 107.
+- [x] Aposentadoria de chunks: processamento desativado antes da desmontagem; regressão de animação e cache coberta por 7 verificações, orçamento e restauração por 18.
+- [x] Inspeção renderizada em 14 pontos e sequência de 30 segundos, sem erros de script; 687 capturas, maior lacuna de 1,56 s, sem certificação temporal integral.
+- [x] Serraria: removida duplicação e aplicado pré-passe de profundidade local, mantendo bordas suaves. Comparativo final controlado: p95 5,999 → 5,774 ms, média 323,9 → 362,2 FPS, zero quadros acima de 33 ms.
+- [ ] Desempenho integral: p99 da serraria oscilou 7,121 → 9,516 ms no comparativo final; medições anteriores em movimento tiveram picos. Sem certificação de ausência de regressão de cauda, chuva/noite ou de todo o mapa.
+
+[Fotos antes/depois e resultados](../../artifacts/mountain-review-1001/revisao-montanha.html).
+
+## Túnel do canal: câmera traseira do carro e personagem — 01/10/2026
+
+Ajuste local solicitado: perspectiva atrás do veículo ou personagem no túnel, acompanhando seu rumo e retornando à câmera de rua na saída. Nenhum lugar ou interior criado, nenhuma migração ou nova certificação integral; contagens do inventário preservadas.
+
+- [x] Cena real renderizada: perspectiva nos dois sentidos, lente sob o teto, carro visível, teto/cidade sólidos no interior e restauração da projeção, inclinação e zoom de rua.
+- [x] Glitches locais: afastamento entre concreto e azulejo, filtragem de juntas, fechamento/restauração da cobertura do cupê e água exterior ao vidro sul. Fotos e sequência de 30 s registradas.
+- [x] Extensão a pé: desembarque real, giro parado nos dois sentidos, enquadramento atrás do personagem e restauração da câmera/materiais na saída. Carro estacionado permanece fechado na vista baixa.
+- [x] Travessia física completa: carro desce, cruza e sai na ilha; zero contatos com paredes/teto, sem buracos no piso. Cais superior continua transitável.
+- [ ] Comparativo isolado de frame time: pendente, outras instâncias Godot abertas. Capturas e contador de FPS não certificam desempenho.
+- [ ] Cobertura adicional: chuva/noite, NPCs em oclusão, combate/mira e movimento prolongado a pé, entrada oeste em movimento. Sequência da saída leste tem lacunas de até 91 ms, sem certificação temporal integral.
+
+[Fotos e escopo da validação](../evidence/tunnel-chase-20261001/report.md).
+
 ## Contêineres do porto: estabilidade exterior — 29/09/2026
 
 Correção localizada nas nervuras dos tetos dos 18 contêineres acessíveis e no modelo superior. Sem criar lugares/interiores ou migrar ambientes: contagens anteriores preservadas, zero novas certificações integrais. Colisões, circulação, câmera interior, portas e recompensas mantidas.

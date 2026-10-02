@@ -71,8 +71,16 @@ var _preview_blend := 0.0
 var _container_blend := 0.0
 var _container_focus := Vector3.ZERO
 # Túnel do canal: 0 fora, 1 no fundo (cresce com a profundidade do alvo na rampa).
-# Aproxima o zoom, levanta a inclinação e apaga a cidade que tapa o tubo; volta suave ao sair.
+# Perspectiva traseira no túnel, dirigindo ou a pé; visão normal na rua.
 var _tunnel_blend := 0.0
+var _tunnel_chase_blend := 0.0
+var _tunnel_chase_heading := 0.0
+var _tunnel_chase_distance := 6.0
+const TUNNEL_CHASE_FOV := 70.0
+const TUNNEL_CHASE_HEIGHT := 2.4
+const TUNNEL_CHASE_DISTANCE := 6.0
+const VEHICLE_INTERIOR := preload("res://gameplay/VehicleInterior.gd")
+var _chase_roof_vehicle: Node3D
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 const TUNNEL_ZOOM := 0.62
@@ -179,18 +187,67 @@ func _process(delta: float) -> void:
 		tunnel_depth = smoothstep(TUNNEL_DEPTH_START, TUNNEL_DEPTH_FULL, -actual.y)
 	_tunnel_blend = move_toward(_tunnel_blend, tunnel_depth, delta * TUNNEL_BLEND_RATE)
 	if _tunnel_blend > 0.0: desired_size *= lerpf(1.0, TUNNEL_ZOOM, smoothstep(0.0, 1.0, _tunnel_blend))
-	_update_cutaway()
 	if snap or locked:
 		size = desired_size
 	else:
 		size = lerpf(size,desired_size,1.0-exp(-FOLLOW_RATE*delta))
 	global_position = focus + _exterior_view_offset().rotated(Vector3.UP, heading)
 	look_at(focus)
+	_update_tunnel_chase(actual, delta, snap)
+	_update_cutaway()
 	_was_locked = locked
+
+## Perspectiva atrás do veículo ou personagem; a rua conserva seu enquadramento.
+func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
+	var vehicle := _is_vehicle_target() and not locked and _container_blend < 0.001
+	var actor_visual: Node3D = target.get("visual") if not _is_vehicle_target() and &"visual" in target else null
+	var pedestrian := is_instance_valid(actor_visual) and not locked and _container_blend < 0.001
+	var desired := _tunnel_blend if vehicle or pedestrian else 0.0
+	_tunnel_chase_blend = move_toward(_tunnel_chase_blend, desired, delta * 2.4)
+	if locked:
+		_tunnel_chase_blend = 0.0
+	var blend := smoothstep(0.0, 1.0, _tunnel_chase_blend)
+	# Ao desembarcar, conservar o carro fechado enquanto a câmera continua baixa.
+	if is_instance_valid(_chase_roof_vehicle) and (locked or _container_blend > 0.001 or _tunnel_chase_blend < 0.65 or (vehicle and _chase_roof_vehicle != target)):
+		VEHICLE_INTERIOR.set_low_camera_roof(_chase_roof_vehicle, false)
+		_chase_roof_vehicle = null
+	if vehicle and _tunnel_chase_blend > 0.8:
+		VEHICLE_INTERIOR.set_low_camera_roof(target, true)
+		_chase_roof_vehicle = target
+	if vehicle or pedestrian:
+		var facing: Node3D = target if vehicle else actor_visual
+		var facing_heading := facing.get_global_transform_interpolated().basis.get_euler().y
+		_tunnel_chase_heading = facing_heading if snap or blend <= 0.001 else lerp_angle(_tunnel_chase_heading, facing_heading, 1.0 - exp(-6.0 * delta))
+	var distance := TUNNEL_CHASE_DISTANCE + _target_number(&"half_length", 2.3) - 2.3 if vehicle else 4.0
+	_tunnel_chase_distance = distance if snap or blend <= 0.001 else lerpf(_tunnel_chase_distance, distance, 1.0 - exp(-4.2 * delta))
+	if blend <= 0.001:
+		projection = Camera3D.PROJECTION_ORTHOGONAL
+		return
+	var rear := Vector3.BACK.rotated(Vector3.UP, _tunnel_chase_heading)
+	var base := target.get_global_transform_interpolated().origin
+	if snap: base = actual
+	var chase := base + rear * _tunnel_chase_distance + Vector3.UP * (TUNNEL_CHASE_HEIGHT if vehicle else 2.2)
+	# A rampa sobe atrás do carro. Não deixar a lente abaixo do piso nem no teto.
+	chase.y = maxf(chase.y, CANAL_TUNNEL.floor_y(chase.x) + 1.6)
+	var ceiling := CANAL_TUNNEL.ceiling_y(chase.x)
+	if is_finite(ceiling): chase.y = minf(chase.y, ceiling - 0.4)
+	var eye := base + Vector3.UP * 1.3
+	if target is CollisionObject3D:
+		var query := PhysicsRayQueryParameters3D.create(eye, chase, 1, [target.get_rid()])
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty(): chase = hit.position + hit.normal * 0.35
+	var street_position := global_position
+	var street_fov := rad_to_deg(2.0 * atan(size * 0.5 / maxf(0.1, street_position.distance_to(focus))))
+	projection = Camera3D.PROJECTION_PERSPECTIVE
+	fov = lerpf(street_fov, TUNNEL_CHASE_FOV, blend)
+	global_position = street_position.lerp(chase, blend)
+	look_at(focus.lerp(eye - rear * (3.0 if vehicle else 1.4), blend))
 
 ## Apaga a cidade entre a câmera e o tubo enquanto o alvo está fundo no túnel.
 func _update_cutaway() -> void:
 	var strength := clampf((_tunnel_blend - TUNNEL_CUTAWAY_START) / (1.0 - TUNNEL_CUTAWAY_START), 0.0, 1.0)
+	# No interior do tubo a lente já está sob o teto: restaurar sua profundidade.
+	strength *= 1.0 - smoothstep(0.65, 1.0, _tunnel_chase_blend)
 	CANAL_TUNNEL.set_camera_reveal(smoothstep(0.0, 1.0, strength))
 	var aspect := get_viewport().get_visible_rect().size.aspect() if is_inside_tree() else 1.78
 	# Meia largura visível + folga: quem entra na janela já está apagado antes de aparecer.
@@ -348,6 +405,7 @@ func _ensure_scope_reticle() -> void:
 	scope_reticle.hide()
 
 func _exit_tree() -> void:
+	if is_instance_valid(_chase_roof_vehicle): VEHICLE_INTERIOR.set_low_camera_roof(_chase_roof_vehicle, false)
 	_cutaway.release()
 	CANAL_TUNNEL.set_camera_reveal(0.0)
 	if is_instance_valid(scope_reticle):

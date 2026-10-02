@@ -1,6 +1,6 @@
 extends SceneTree
 ## Câmera no Túnel do canal, no Main.tscn real (renderizado, nunca headless): ao descer, a
-## inclinação sobe (45° ou 37,5°, conforme a opção de câmera) para ~70°, o zoom fecha e a cidade sobre o tubo é apagada; ao
+## visão passa a perspectiva atrás do veículo, com teto sólido; ao
 ## voltar à rua tudo se desfaz (sem nó apagado sobrando, inclinação original).
 ## Uso: "$GODOT" --path . --script res://tests/test_tunnel_camera.gd -- --no-save
 const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
@@ -61,9 +61,18 @@ func run() -> void:
 	car.place(deep, -PI * 0.5)
 	await settle(world, 240)
 	check(camera._tunnel_blend > 0.99, "No fundo a mistura chega a 1 (%.2f)" % camera._tunnel_blend)
-	check(absf(pitch_degrees(camera) - 70.0) < 1.5, "No fundo a inclinação é ~70° (%.1f)" % pitch_degrees(camera))
+	check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "Dentro do túnel o carro usa perspectiva")
+	check(pitch_degrees(camera) < 25.0, "Visão baixa atrás do carro (%.1f°)" % pitch_degrees(camera))
+	check((camera.global_position - car.global_position).dot(car.global_basis.z) > 3.0, "Lente atrás do carro indo para leste")
+	check(camera.global_position.y < TUNNEL.ceiling_y(camera.global_position.x), "Lente abaixo do teto")
 	check(camera.size < size_outside * 0.75, "No fundo o zoom fecha (%.1f -> %.1f)" % [size_outside, camera.size])
-	check(camera._cutaway.faded_count() > 10, "No fundo a cidade sobre o tubo é apagada (%d nós)" % camera._cutaway.faded_count())
+	check(camera._cutaway.faded_count() == 0, "Visão traseira conserva teto e cidade sólidos")
+	check(car.get_meta("interior_view", {}).get("low_camera_roof", false), "Carro fechado na visão traseira")
+	await capture("after-east")
+	car.place(deep, PI * 0.5)
+	await settle(world, 180)
+	check((camera.global_position - car.global_position).dot(car.global_basis.z) > 3.0, "Lente atrás do carro indo para oeste")
+	await capture("after-west")
 	# O carro do jogador não está nos chunks: nunca vira alfa.
 	var car_faded := false
 	for node in car.find_children("*", "MeshInstance3D", true, false):
@@ -76,8 +85,42 @@ func run() -> void:
 	car.place(Vector3(141.0, 0.12, 63.0), -PI * 0.5)
 	await settle(world, 240)
 	check(camera._tunnel_blend == 0.0, "De volta à rua a mistura zera (%.2f)" % camera._tunnel_blend)
+	check(camera.projection == Camera3D.PROJECTION_ORTHOGONAL, "Saída restaura projeção de rua")
 	check(camera._cutaway.faded_count() == 0, "De volta à rua nada fica apagado (%d)" % camera._cutaway.faded_count())
 	check(absf(pitch_degrees(camera) - street_pitch) < 1.0, "De volta à rua a inclinação volta a %.1f° (%.1f)" % [street_pitch, pitch_degrees(camera)])
+	check(absf(camera.size - size_outside) < 0.1, "Saída restaura zoom de rua")
+	check(not car.get_meta("interior_view", {}).get("low_camera_roof", false), "Saída restaura visual do motorista na câmera de cima")
+	await capture("after-street")
+
+	# Desembarque real no túnel: perspectiva acompanha o ator, cujo corpo não gira.
+	car.place(deep, -PI * 0.5)
+	await settle(world, 180)
+	for i in 600:
+		await physics_frame
+		if world.driving.transition == null and world.driving.occupied: break
+	check(world.driving.interact(true), "Desembarque aceito dentro do túnel")
+	for i in 600:
+		await physics_frame
+		if world.driving.transition == null and not world.driving.occupied: break
+	check(not world.driving.occupied and camera.target == world.player, "Desembarque transfere câmera para o personagem")
+	check(car.get_meta("interior_view", {}).get("low_camera_roof", false), "Carro estacionado conserva cobertura fechada na vista baixa")
+	world.player.input_locked = true
+	for facing in [-PI * .5, PI * .5]:
+		world.player.visual.rotation.y = facing
+		await settle(world, 180)
+		check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "A pé no túnel continua em perspectiva")
+		var rear: Vector3 = world.player.visual.global_basis.z
+		var behind: Vector3 = camera.global_position - world.player.global_position
+		behind.y = 0.0
+		check(behind.normalized().dot(rear) > .98, "Câmera gira para ficar atrás do personagem parado")
+		check(camera.global_position.y < TUNNEL.ceiling_y(camera.global_position.x), "A pé lente permanece abaixo do teto")
+		await capture("on-foot-east" if facing < 0.0 else "on-foot-west")
+	world.player.teleport(Vector3(141.0, .12, 63.0))
+	await settle(world, 180)
+	check(camera.projection == Camera3D.PROJECTION_ORTHOGONAL, "Saída a pé restaura câmera de rua")
+	check(camera._cutaway.faded_count() == 0, "Saída a pé restaura materiais")
+	check(not car.get_meta("interior_view", {}).get("low_camera_roof", false), "Saída a pé restaura apresentação do carro estacionado")
+	world.player.input_locked = false
 
 	world.queue_free()
 	await process_frame
@@ -87,3 +130,7 @@ func run() -> void:
 	else:
 		print("TUNNEL_CAMERA_FALHOU ", failures.size())
 		quit(1)
+
+func capture(label: String) -> void:
+	await RenderingServer.frame_post_draw
+	check(root.get_texture().get_image().save_png("res://evidence/tunnel-chase-20261001/%s.png" % label) == OK, "Captura " + label)

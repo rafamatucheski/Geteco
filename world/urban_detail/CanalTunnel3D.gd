@@ -18,6 +18,7 @@ extends RefCounted
 ## a 10 % o vão livre sob o cais ficaria abaixo de 3 m. 12,5 % dá 3,6 m na boca oeste.
 
 const WALL_SHADER := preload("res://world/urban_detail/canal_tunnel_wall.gdshader")
+const WATER_DEPTH_SHADER := preload("res://world/urban_detail/canal_tunnel_water_depth.gdshader")
 const CITY := preload("res://world/city_look/CityLookMaterials.gd")
 
 const CENTER_Z := 63.0
@@ -504,8 +505,15 @@ func _sections_boxes(x0: float, x1: float) -> void:
 				# Lâmina de água translúcida no lugar do mar recortado, fundo e laje de base.
 				_box("water", Vector3(mid, WATER_Y, CANAL_SHEET.get_center().y), Vector3(length, 0.004, CANAL_SHEET.size.y))
 				_box("seabed", Vector3(mid, -7.3, CANAL_SHEET.get_center().y), Vector3(length, 0.3, CANAL_SHEET.size.y))
+				# Água submersa do lado externo do vidro sul, sem ocupar a pista.
+				var water_bottom := -7.15
+				var water_top := WATER_Y - 0.02
+				var water_near := outer_s + 0.05
+				var water_far := CANAL_SHEET.end.y
+				_box("water_depth", Vector3(mid, (water_bottom + water_top) * 0.5, (water_near + water_far) * 0.5), Vector3(length, water_top - water_bottom, water_far - water_near))
 				_box("concrete_dark", Vector3(mid, -DEPTH - 0.3, CENTER_Z), Vector3(length, 0.6, width))
-				_box("concrete_dark", Vector3(mid, (-DEPTH + CANAL_CEILING) * 0.5, outer_n + WALL * 0.5), Vector3(length, CANAL_CEILING + DEPTH, WALL))
+				# Folga atrás do azulejo: faces coplanares disputavam profundidade.
+				_box("concrete_dark", Vector3(mid, (-DEPTH + CANAL_CEILING) * 0.5, outer_n + (WALL - 0.04) * 0.5), Vector3(length, CANAL_CEILING + DEPTH, WALL - 0.04))
 			"open":
 				for side in [[outer_n + WALL * 0.5, false], [outer_s - WALL * 0.5, true]]:
 					var z: float = side[0]
@@ -738,7 +746,7 @@ func _flush() -> void:
 		instance.name = "CanalTunnelBatch_" + id
 		instance.multimesh = multimesh
 		instance.material_override = material(id)
-		if id in ["glass", "water", "seabed", "ceiling_lamp", "cat_eye", "neon_teal", "neon_orange", "roof_top", "hazard"]:
+		if id in ["glass", "water", "water_depth", "seabed", "ceiling_lamp", "cat_eye", "neon_teal", "neon_orange", "roof_top", "hazard"]:
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_root.add_child(instance)
 	_flush_floor(_x0, _x1)
@@ -757,6 +765,10 @@ static func material(id: String) -> Material:
 	if _materials.has(id): return _materials[id]
 	var result: Material
 	match id:
+		"water_depth":
+			var water_shader := ShaderMaterial.new()
+			water_shader.shader = WATER_DEPTH_SHADER
+			result = water_shader
 		"wall_north", "wall_south":
 			var shader := ShaderMaterial.new()
 			shader.shader = WALL_SHADER
