@@ -1,9 +1,7 @@
 @echo off
-rem Roda a verificacao minima do CLAUDE.md duas vezes: com o Godot PADRAO (caminho GDScript, sem C#)
-rem e com o Godot MONO (caminho C#). Mostra OK/FALHOU por teste e grava tudo em
-rem evidence\csharp-router\verificacao.txt. Feche os editores do Godot antes.
+rem Verifica o projeto no Godot .NET e grava os resultados em evidence\csharp-router.
+rem Encerre o jogo antes; o editor pode permanecer aberto.
 setlocal enabledelayedexpansion
-set "GODOT_PADRAO=D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe"
 set "GODOT_MONO=D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe"
 set "SAIDA=%~dp0evidence\csharp-router\verificacao.txt"
 cd /d "%~dp0"
@@ -11,14 +9,14 @@ if not exist "evidence\csharp-router" mkdir "evidence\csharp-router"
 echo Verificacao iniciada em %date% %time% > "%SAIDA%"
 set FALHAS=0
 
-echo Compilando o C#...
-dotnet build Harbor.csproj --no-restore >> "%SAIDA%" 2>&1
+echo Preparando o Godot .NET e compilando o C#...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Open.ps1" -PrepareOnly -GodotPath "%GODOT_MONO%" >> "%SAIDA%" 2>&1
 if errorlevel 1 (
-  echo [FALHOU] dotnet build - veja %SAIDA%
-  set /a FALHAS+=1
+  echo [FALHOU] preparacao do projeto - veja %SAIDA%
+  pause
+  exit /b 1
 )
 
-call :rodar "PADRAO" "%GODOT_PADRAO%"
 call :rodar "MONO  " "%GODOT_MONO%"
 
 echo.

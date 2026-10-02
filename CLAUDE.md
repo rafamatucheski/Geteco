@@ -29,11 +29,14 @@ aberto — arquivos novos com timestamp recente que você não criou são sinal 
 
 ## Godot: como rodar
 
+O projeto usa GDScript e C#. Use sempre **Godot 4.7.2 .NET (mono)**.
+Compile `Harbor.csproj` antes dos testes diretos (`dotnet build Harbor.csproj`);
+`Jogar.cmd`, `Editar.cmd` e os runners principais fazem isso automaticamente.
 O binário fica fora do repositório. Use a variante `_console.exe` no Windows para capturar
 saída no terminal.
 
 ```bash
-GODOT="D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe"
+GODOT="D:/Downloads Chrome/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64_console.exe"
 
 "$GODOT" --path . --script res://tests/<nome>.gd   # roda um teste
 "$GODOT" --path . --import                          # reimporta e reconstrói caches

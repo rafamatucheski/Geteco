@@ -14,6 +14,7 @@ $reportDir = Join-Path $root 'evidence\test-suite'
 $tests = @(Get-SelectedTests $root $Filter $Only $Impact)
 $GodotPath = Resolve-GodotEngine $GodotPath
 $running = @(Assert-GodotExclusive -AllowConcurrent:$AllowConcurrent)
+Build-ProjectCSharp $root $GodotPath
 $selected = @($tests | ForEach-Object { $_.FullName.Substring($root.Length + 1).Replace('\','/') })
 $sources = @('tests/run_suite.ps1','tests/Runner.Common.ps1') + $selected
 $metadata = New-RunnerMetadata $root $GodotPath @{ Runner = 'suite'; Filter = $Filter; Only = $Only; Impact = $Impact; TimeoutSec = $TimeoutSec; AllowConcurrent = [bool]$AllowConcurrent; ConcurrentProcessIds = @($running | ForEach-Object ProcessId); Selected = $selected } $sources
@@ -27,7 +28,7 @@ foreach ($test in $tests) {
     New-Item -ItemType Directory -Path $saveRoot | Out-Null
     $godotArgs = @('--path', ('"' + $root + '"'), '--script', "res://$relative", '--', '--no-save', '--skip-arrival', ('"--isolated-save-root=' + $saveRoot + '"'))
     if ($test.BaseName -eq 'test_android_controls') { $godotArgs += '--touch-controls' }
-    $rendered = $test.BaseName -in @('test_harbor_gameplay_acceptance','test_urban_asset_library','test_vertice_depth','test_vertice_site_depth','test_vertice_undercroft_geometry','test_vertice_packing_depth','test_police_frontage_geometry')
+    $rendered = $test.BaseName -in @('test_destroyed_cleanup','test_harbor_gameplay_acceptance','test_urban_asset_library','test_vertice_depth','test_vertice_site_depth','test_vertice_undercroft_geometry','test_vertice_packing_depth','test_police_frontage_geometry')
     $effectiveArgs = if ($rendered) { @($godotArgs + '--population=8') } else { @('--headless') + $godotArgs }
     $process = $null
     $problems = @()

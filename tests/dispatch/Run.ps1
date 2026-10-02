@@ -10,6 +10,7 @@ $ErrorActionPreference = 'Stop'
 $project = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $engine = Resolve-GodotEngine $GodotPath
 $running = @(Assert-GodotExclusive -AllowConcurrent:$AllowConcurrent)
+Build-ProjectCSharp $project $engine
 $manifest = Get-DispatchManifest
 $names = if ($Suite -eq 'all') { @('rules','police','emergency','lifecycle') } elseif ($Suite -in @('import','measure')) { @() } else { @($Suite) }
 $selected = @($names | ForEach-Object { "tests/dispatch/$($manifest[$_].script).gd" })

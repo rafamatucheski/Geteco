@@ -1,6 +1,6 @@
 # Geteco
 
-Jogo de mundo aberto em 3D nativo no Godot 4.7: Harbor (cidade e porto) e Mountain
+Jogo de mundo aberto em 3D nativo no Godot 4.7.2 .NET, com GDScript e C#: Harbor (cidade e porto) e Mountain
 (serra, vilarejo e serraria), ligados por uma ponte com túnel, com direção, trânsito,
 pedestres, combate, polícia, campanha, economia e save próprios.
 
@@ -10,9 +10,9 @@ Este repositório é o jogo principal. Ele nasceu como a "V2", uma migração da
 
 ## Abrir
 
-- Dois cliques em **Jogar.cmd** para jogar; **Editar.cmd** abre o projeto no editor.
-- Também é possível importar o `project.godot` no gerenciador do Godot e pressionar F5.
-- Em outra instalação, use `Open.ps1 -GodotPath 'caminho/do/Godot.exe'` ou defina `GODOT_EXE`.
+- Dois cliques em **Jogar.cmd** para jogar; **Editar.cmd** abre o editor .NET. Ambos compilam os scripts C# antes de abrir.
+- Também é possível importar o `project.godot` no gerenciador do **Godot .NET (mono)** e pressionar F5. Use o SDK .NET 10 para compilar `Harbor.csproj`.
+- Em outra instalação, use `Open.ps1 -GodotPath 'caminho/do/Godot_mono.exe'` ou defina `GODOT_EXE`.
 - O save fica em `user://GetecoV2` (a pasta de dados do projeto não mudou com a promoção).
 
 ## Controles

@@ -1,7 +1,7 @@
 param([switch]$Control)
 $ErrorActionPreference='Stop'
 $guardRoot=Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$guardEngine='D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
+$guardEngine='D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe'
 $guardLabel=if($Control){'garage-guards-control'}else{'garage-guards-product'}
 $guardExisting=@(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" | Select-Object ProcessId,ParentProcessId,CommandLine)
 if(@($guardExisting | Where-Object {$_.CommandLine -notmatch '(^|\s)--editor(\s|$)'}).Count -gt 0){throw 'Outro jogo ativo; medição recusada.'}

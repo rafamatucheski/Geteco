@@ -1,7 +1,7 @@
 param([switch]$AllowConcurrent, [int[]]$Counts = @(0,24,96), [string]$Prefix = '', [switch]$Driving, [switch]$Interior, [switch]$Sandbox, [switch]$Native, [switch]$Combat, [switch]$TraceRuntime)
 $ErrorActionPreference = 'Stop'
 $prototypeRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$engine = 'D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
+$engine = 'D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe'
 if ($Prefix -notmatch '^[a-zA-Z0-9-]*$') { throw 'Prefixo inválido.' }
 foreach ($count in $Counts) {
     $existing = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" | Select-Object ProcessId,ParentProcessId,CommandLine)

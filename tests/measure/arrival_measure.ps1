@@ -1,7 +1,7 @@
 param([switch]$Cgi, [string]$Label = '')
 $ErrorActionPreference = 'Stop'
 $arrivalRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$arrivalEngine = 'D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
+$arrivalEngine = 'D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe'
 $arrivalLabel = if ($Cgi) { 'arrival-cgi' } else { 'arrival-tour' }
 if ($Label -ne '') {
     if ($Label -notmatch '^[a-zA-Z0-9-]+$') { throw 'Identificador inválido.' }

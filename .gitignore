@@ -2,7 +2,8 @@
 *.log
 *.tmp
 
-# Evidências de validação: só os relatórios (.md, .json, .patch) são versionados.
+# Evidências de validação: relatórios relevantes (.md, .json, .patch) são
+# selecionados explicitamente com git add -f; execuções e cópias ficam locais.
 # Capturas, vídeos e exports ficam no disco: ~1,7 GB em 2026-09-24, e o GitHub
 # recusa arquivos acima de 100 MB.
 evidence/**/*.png
@@ -43,3 +44,7 @@ evidence/sol61-fluidity-ab-20261001/before/
 evidence/sol61-fluidity-ab-20261001/after/
 evidence/sol61-fluidity-ab-20261001/runs/*/project/
 evidence/auditoria-viaria/20260929-correcoes/perf-projects/
+
+# Evita incluir milhares de relatórios brutos e snapshots em commits do jogo.
+# Relatórios já versionados continuam sendo acompanhados normalmente.
+/evidence/

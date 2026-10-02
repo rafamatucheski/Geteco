@@ -1,3 +1,11 @@
+## Motor do projeto: Godot .NET e C#
+
+- O projeto usa GDScript e C#; use sempre **Godot 4.7.2 .NET (mono)** para editar, executar e validar. A edição comum sem .NET não é o ambiente do projeto.
+- Instalação local: `D:/Downloads Chrome/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64`.
+- `Editar.cmd` e `Jogar.cmd` preparam e compilam `Harbor.csproj` antes de abrir. No editor .NET, F5 executa esse mesmo projeto com os scripts C# compilados.
+- Para testes diretos, compile `Harbor.csproj` antes de iniciar o motor; use a variante `_console.exe` dessa instalação para capturar logs. Os runners principais fazem essa compilação automaticamente.
+- Preserve a coexistência GDScript/C#; não converta sistemas sem necessidade do pedido. Não valide silenciosamente pelo fallback GDScript quando o teste exigir o caminho C#.
+
 # Preferências visuais do projeto
 
 ## Padrão obrigatório de interiores

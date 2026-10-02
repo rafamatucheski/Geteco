@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 if (-not $GodotPath) {
-    $GodotPath = 'D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
+    $GodotPath = 'D:\Downloads Chrome\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe'
 }
 if (-not (Test-Path -LiteralPath $GodotPath)) { throw 'Defina GODOT_EXE ou -GodotPath com o executável Godot.' }
 $version = (& $GodotPath --version | Select-Object -Last 1).Trim()

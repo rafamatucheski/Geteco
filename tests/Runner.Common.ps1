@@ -1,3 +1,4 @@
+. (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools\Godot.ps1')
 # Contrato de despacho compartilhado pelos dois runners. Nao executa processos.
 function Get-DispatchManifest {
     return @{
@@ -13,8 +14,8 @@ function Get-GodotResultProblems([string]$Script, [int]$Code, [string]$Text) {
     $problems = @()
     if ($Code -ne 0) { $problems += "codigo de saida $Code" }
     foreach ($line in ($Text -split "`n")) {
-        if ($line -match 'SCRIPT ERROR|Parse Error|Compile Error|Cannot infer|Invalid (call|access|assignment)|Identifier .* not declared|Failed to load script') {
-            $problems += "erro de script: $($line.Trim())"
+        if ($line -match '^\s*ERROR:|SCRIPT ERROR|Parse Error|Compile Error|Cannot infer|Invalid (call|access|assignment)|Identifier .* not declared|Failed to load script') {
+            $problems += "erro do Godot: $($line.Trim())"
         }
     }
     $name = [IO.Path]::GetFileNameWithoutExtension($Script)
@@ -142,10 +143,7 @@ function Save-RunnerReport([string]$ReportDir, [object[]]$Results, [System.Colle
 }
 
 function Resolve-GodotEngine([string]$Requested) {
-    if ($Requested) { return $Requested }
-    $installed = 'D:\Downloads Chrome\Godot_v4.7.2-stable_win64.exe\Godot_v4.7.2-stable_win64_console.exe'
-    if (Test-Path -LiteralPath $installed) { return $installed }
-    throw 'Defina GODOT_EXE ou -GodotPath com o caminho do Godot (_console.exe).'
+    return Resolve-ProjectGodot $Requested
 }
 
 function Assert-GodotExclusive([switch]$AllowConcurrent) {

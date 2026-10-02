@@ -1,7 +1,7 @@
 param([string]$Label = 'before', [switch]$Baseline)
 $ErrorActionPreference = 'Stop'
 $danteRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$danteEngine = 'D:/Downloads Chrome/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64_console.exe'
+$danteEngine = 'D:/Downloads Chrome/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64_console.exe'
 $danteOutput = Join-Path $danteRoot 'evidence/dante-deformation-0922'
 $danteHashes = Get-ChildItem -LiteralPath $danteRoot -Recurse -File -Filter '*.gd' | Where-Object { $_.FullName -notmatch '\\(evidence|tests|assets|\.godot)\\' } | Get-FileHash
 $danteHashes | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $danteOutput "$Label-source-hashes.json")
