@@ -252,7 +252,7 @@ func _plan_navigation(goal: Vector3) -> bool:
 			if candidate < distance:
 				distance = candidate
 				nearest = index
-		if nearest > 0 and _tactics.segment_clear(self, global_position, navigation[nearest]): nav_index = nearest
+		if nearest > 0 and distance <= 1.0 and absf(navigation[nearest].y - global_position.y) <= .3 and _tactics.segment_clear(self, global_position, navigation[nearest]): nav_index = nearest
 	return true
 
 func _cancel_navigation() -> void:
