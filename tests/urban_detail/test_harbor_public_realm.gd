@@ -61,6 +61,12 @@ func run() -> void:
 	check(probe.move_and_collide(Vector3(4, 0, 0), true) != null, "Union fountain basin physically blocks pedestrian traversal")
 	probe.position = Vector3(-10, 0, 8)
 	check(probe.move_and_collide(Vector3(8, 0, 0), true) == null, "Union Plaza paving remains freely walkable away from the fountain")
+	var bench := promenade_west.find_child("PublicBench", true, false) as Node3D
+	for offset in [Vector3(0,0,2),Vector3(0,0,-2),Vector3(3,0,0),Vector3(-3,0,0)]:
+		probe.position = bench.global_position + offset
+		check(probe.move_and_collide(-offset, true) != null, "Promenade bench blocks traversal from %s" % offset)
+	probe.position = bench.global_position + Vector3(-3,0,1.2)
+	check(probe.move_and_collide(Vector3(6,0,0), true) == null, "Path beside the bench stays open")
 
 	print("HARBOR_PUBLIC_REALM_%s checks=%d failures=%d" % ["PASS" if failures.is_empty() else "FAIL", checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

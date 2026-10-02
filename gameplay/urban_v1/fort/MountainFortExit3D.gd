@@ -1,8 +1,9 @@
 extends Node3D
 ## Discreet natural rock entrance; the moving slab and rocks own native 3D depth.
-const WORLD_POSITION := Vector3(762.0,0.0,-493.0)
+const WORLD_POSITION := Vector3(740.0,0.0,-880.0)
+const FORM_SIZE := Vector3(.70,.90,.80)
 const ACTIVE_DISTANCE := 170.0
-const SLIDE := 2.6
+const SLIDE := 1.82
 const STONE := ["5f6664","6b706c","555b58","747a75"]
 var session
 var slab: Node3D
@@ -61,7 +62,8 @@ func set_open(open: bool,animate := true) -> void:
 	_tween.tween_callback(func(): dust.emitting = false)
 
 func _build() -> void:
-	# Seven compact, faceted masses leave a 1.9 m opening and its approach clear.
+	# Authored dimensions below are baked to a 1.34 m wide, 2.05 m tall passage.
+	# Bake geometry before creating collision: physics bodies retain unit scale.
 	for spec in [
 		[Vector3(-2.05,1.3,-1.65),Vector3(2.65,2.6,2.7),.22],
 		[Vector3(2.15,1.38,-1.7),Vector3(2.7,2.76,2.6),-.25],
@@ -114,6 +116,8 @@ func _build() -> void:
 	add_child(dust)
 
 func _rock(at: Vector3,size: Vector3,yaw: float) -> void:
+	at *= FORM_SIZE
+	size *= FORM_SIZE
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var rings: Array[PackedVector3Array] = []
@@ -154,6 +158,8 @@ func _face(surface: SurfaceTool,a: Vector3,b: Vector3,c: Vector3,color: Color) -
 	for point in [a,c,b]: surface.add_vertex(point)
 
 func _box(parent: Node3D,at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO,solid := false) -> MeshInstance3D:
+	at *= FORM_SIZE
+	size *= FORM_SIZE
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var display := MeshInstance3D.new()

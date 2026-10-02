@@ -98,8 +98,9 @@ func _ready() -> void:
 	for x in [-0.9,0.9]:
 		for z in [-0.1,0.8]: box(self,Vector3(x,0.40,z),Vector3(0.09,0.8,0.09),timber)
 	for z in [-0.6,1.3]:
-		box(self,Vector3(0,0.45,z),Vector3(2.2,0.12,0.32),timber)
-		for x in [-0.9,0.9]: box(self,Vector3(x,0.22,z),Vector3(0.12,0.45,0.25),dark)
+		var seat := preload("res://world/urban_detail/BenchFinish.gd").create(2.2, .32, .51, 0.0, Color("725440"), Color("3d3933"))
+		seat.position = Vector3(0,0,z)
+		add_child(seat)
 	box(self,Vector3(0.2,0.885,0.3),Vector3(0.80,0.015,0.60),cream)
 	for i in 4: box(self,Vector3(0.2,0.90,0.1+i*0.10),Vector3(0.64,0.01,0.012),mat("6b8674"))
 	for x in [-0.72,0.75]: cylinder(self,Vector3(x,0.96,0.65),0.07,0.15,mat("b1c4b8"))

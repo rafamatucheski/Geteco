@@ -108,10 +108,13 @@ func refresh() -> void:
 	# Keep navigation stable through approach/door/seat, without revealing it in
 	# menus, rescue or unrelated scripted movement locks.
 	var boarding: bool = is_instance_valid(world.driving) and world.driving.is_body_transition_active()
-	var blocked := bool(world.session.get("modal")) or get_tree().paused or bool(world.session.get("rescue_pending")) or bool(world.session.get("arrest_pending")) or (bool(world.player.get("input_locked")) and not boarding) or not str(world.session.state.place_id).is_empty()
+	var skate: Variant = world.session.get("skate")
+	var skating: bool = is_instance_valid(skate) and skate.controls_locked()
+	var blocked := bool(world.session.get("modal")) or get_tree().paused or bool(world.session.get("rescue_pending")) or bool(world.session.get("arrest_pending")) or (bool(world.player.get("input_locked")) and not boarding and not skating) or not str(world.session.state.place_id).is_empty()
 	visible = not blocked
 	if not visible: return
 	var actor: Node3D = world.driving.car if is_instance_valid(world.driving) and bool(world.driving.get("occupied")) else world.player
+	if skating and skate.mounted and is_instance_valid(skate.player_board): actor = skate.player_board
 	if not is_instance_valid(actor): actor = world.player
 	center = Vector2(actor.global_position.x, actor.global_position.z)
 	_cache_region()

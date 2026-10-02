@@ -496,6 +496,8 @@ func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Ar
 
 
 func _material(color: Color) -> StandardMaterial3D:
+	if color == SIDEWALK_COLOR:
+		return preload("res://world/urban_detail/PromenadePaving.gd").material(color)
 	var key := color.to_html()
 	if _materials.has(key): return _materials[key]
 	var material := StandardMaterial3D.new()

@@ -23,16 +23,23 @@ func build(kind: String) -> void:
 			@warning_ignore("integer_division")
 			_box("Ski",Vector3(-.63+i*.25,.85,.14),Vector3(.10,1.7,.045),_mat("ski%d"%i,[Color("a74738"),Color("4d7181"),Color("b29a5a")][i/2]),Vector3(-9,0,2))
 	else:
-		_cylinder("StoneBase",Vector3(0,.12,0),.72,.24,stone).set_meta("interior_solid_id",&"Brazier")
-		var bowl := _cylinder("IronBowl",Vector3(0,.42,0),.58,.35,iron)
-		bowl.mesh.bottom_radius = .30
+		_cylinder("StoneBase",Vector3(0,.12,0),.72,.24,preload("res://world/places/ShopInteriorMaterials.gd").material("stone",Color("5b666c"))).set_meta("interior_solid_id",&"Brazier")
+		var bowl := preload("res://runtime/cold/FireArt.gd").bowl()
+		bowl.position.y = .21
+		add_child(bowl)
 		bowl.set_meta("interior_solid_id",&"Brazier")
-		_cylinder("Embers",Vector3(0,.60,0),.48,.025,_mat("embers",Color("bd6134"),.8,0,.5))
-		for i in 5:
-			var flame := _cylinder("Flame",Vector3(sin(i*2.4)*.24,.74,cos(i*2.4)*.24),.10,.29,amber)
-			flame.mesh.top_radius = .0
+		var fuel := preload("res://runtime/cold/FireArt.gd").fuel()
+		fuel.position.y = .53
+		add_child(fuel)
+		var flame := preload("res://runtime/cold/HearthEffects.gd").new()
+		flame.position.y = .58
+		flame.scale = Vector3.ONE * 1.5
+		flame.smoke_height = .8
+		add_child(flame)
 		for side in [-1,1]:
 			var id := StringName("Bench%d"%side)
-			_box("Seat",Vector3(side*1.9,.46,0),Vector3(.55,.12,1.6),wood).set_meta("interior_solid_id",id)
-			_box("Back",Vector3(side*2.15,.83,0),Vector3(.10,.62,1.6),wood).set_meta("interior_solid_id",id)
-			for end in [-1,1]: _box("Leg",Vector3(side*1.9,.23,end*.6),Vector3(.42,.46,.1),iron).set_meta("interior_solid_id",id)
+			var bench := preload("res://world/urban_detail/BenchFinish.gd").create(1.6,.65,.52,1.14)
+			bench.position = Vector3(side*2,0,0)
+			bench.rotation.y = -side*PI/2
+			bench.set_meta("interior_solid_id",id)
+			add_child(bench)

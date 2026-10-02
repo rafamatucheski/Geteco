@@ -95,6 +95,9 @@ func _ready() -> void:
 				mesh.mesh.height = 1.1
 				mesh.position.y = .55
 	interaction_points["service"] = to_global(definition.spawn+Vector3(0,0,-1))
+	if definition.id in ["mountain_outfitters", "mountain_boutique", "mountain_village_outfitters"]:
+		var counter: Vector2 = model.counter
+		interaction_points["service"] = to_global(Vector3(counter.x, 0, counter.y + 1.15))
 	if definition.get("service", "") == "residence":
 		for station in model.station_points:
 			var point: Vector2 = model.station_points[station]

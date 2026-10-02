@@ -894,6 +894,8 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 ## unidade é um volume próprio, nenhum cobre 60% da planta), o topo de cada
 ## unidade. Sem isto os telhados dessas fileiras ficavam de cor chapada.
 static func _roof_slabs(building: UrbanBuildingBase) -> Array:
+	# Pitched roofs own their finish; a generic slab cut through Cobra houses.
+	if building.building_kind == "cobra_house": return []
 	var single := _roof_box(building)
 	if single.size != Vector3.ZERO: return [single]
 	var result := []

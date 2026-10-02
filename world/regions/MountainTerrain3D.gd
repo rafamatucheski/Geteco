@@ -10,11 +10,13 @@ const HEIGHT_SAMPLE_LIMIT := 32768
 var _segments: Dictionary = {}
 var _clearings: Array[Rect2] = []
 var _material: ShaderMaterial
+var _trail_blend := preload("res://world/regions/MountainTrailBlend.gd").new()
 var _height_samples: Dictionary = {}
 var _height_sample_order: Array[Vector2] = []
 var _height_sample_next := 0
 
 func configure(roads: Array, entries: Array, clearings: Array) -> void:
+	_trail_blend.configure(roads)
 	_segments.clear()
 	_clearings.clear()
 	_height_samples.clear()
@@ -27,6 +29,10 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 		_clearings.append(Rect2((original.position+CATALOG.MOUNTAIN_OFFSET)/16.0,original.size/16.0).grow(GRID_MARGIN))
 	for clearing in clearings:
 		if clearing is Rect2: _clearings.append(clearing.grow(GRID_MARGIN))
+	# Keep the remote secret exit and its approach supported by the terrain itself.
+	# The existing blend joins this small clearing smoothly to the snowy hillside.
+	var secret_exit: Vector3 = preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd").WORLD_POSITION
+	_clearings.append(Rect2(Vector2(secret_exit.x-4.0,secret_exit.z-4.0),Vector2(8.0,9.0)).grow(GRID_MARGIN))
 	for entry in entries:
 		if entry.get("region","mountain") != "mountain": continue
 		for field in ["position","exterior_position","entry_position","return_position"]:
@@ -143,7 +149,9 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	var result := MeshInstance3D.new()
 	result.name = "MountainTerrain"
 	result.mesh = mesh
-	result.material_override = _material
+	var chunk_material := _material.duplicate() as ShaderMaterial
+	chunk_material.set_shader_parameter("trail_mask",ImageTexture.create_from_image(_trail_blend.image_for(rect)))
+	result.material_override = chunk_material
 	result.set_instance_shader_parameter("origin",rect.position)
 	result.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(result)

@@ -364,6 +364,8 @@ func _build_holding_cells() -> void:
 	var cell_steel_mat := _mat("cell_steel", Color("#21262d"), 0.7, 0.35)
 	var lock_mat := _mat("cell_lock", Color("#d4ac0d"), 0.8, 0.2)
 	var bench_mat := _mat("cell_bench", Color("#34495e"), 0.0, 0.8)
+	bench_mat.albedo_texture = preload("res://assets/regions/source/world/harbor/UrbanGround.gd").texture("concrete")
+	bench_mat.uv1_triplanar = true
 	var inox_mat := _mat("stainless_steel", Color("#7f8c8d"), 0.85, 0.2)
 
 	# Corredor das celas: Z de -7.5 a -1.5, X de 4.0 a 10.8

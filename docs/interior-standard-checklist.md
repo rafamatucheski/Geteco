@@ -1,5 +1,48 @@
 # Migração de interiores — checklist
 
+## Prédios vizinhos das lojas da montanha — 02/10/2026
+
+Complemento exterior em **3 famílias de fachada**: Summit, chalés e lojas. Modelos compartilhados atualizam instâncias existentes; nenhum lugar/interior criado. Contagens globais preservadas; zero novas certificações integrais.
+
+- [x] Telhados acima das paredes, frontões triangulares e cumeeiras fechadas.
+- [x] Janelas visíveis nas laterais e fundos; vidros antigos retirados de dentro das paredes.
+- [x] Madeira/pedra texturizadas, molduras e peitoris; sem novas luzes dinâmicas.
+- [x] 71 checks de geometria, vidro, portas e paredes aprovados; C# compilado.
+- [x] Capturas reais antes/depois por quatro lados de três fachadas representativas.
+- [ ] Performance isolada: outra sessão iniciou captura durante a base; comparação inconclusiva.
+- [ ] Certificação ampliada de interiores, NPCs e estabilidade temporal não realizada neste complemento exterior.
+
+[Causas, correções, imagens e limites](../evidence/mountain-neighbors-20261002/review.md).
+
+## Lojas de roupas da montanha — 02/10/2026
+
+Boutique Alpina, Casacos da Vila e Último Abrigo: **3 lugares físicos / 3 interiores distintos**, todos reformados; **0 certificados integralmente / 3 em validação / 0 não iniciados neste lote**. Nenhum lugar ou interior criado; inventário global preservado.
+
+- [x] Fachadas com madeira/pedra texturizadas, paletas próprias e somente nome do estabelecimento.
+- [x] Manequins modernos proporcionais com casacos, vendedores reais e atendimento junto ao caixa.
+- [x] Circulação, spawn, jogador/NPC, sólidos e portas: 652 checks físicos aprovados.
+- [x] Oclusão nos balcões com jogador e vendedor, frente/trás/lado e controles positivos: 36 checks renderizados aprovados.
+- [x] Caminhada real até compra, menu, saída/limpeza e reentrada nas três lojas: 18 checks Main aprovados.
+- [x] Fotos reais antes/depois das três fachadas/interiores; acabamento final inspecionado.
+- [ ] Comparativo isolado de frame time: base contaminada por jogos iniciados por outras sessões; desempenho não aprovado.
+- [ ] Certificação ampliada: travessia contínua de todos limiares, save/load, oclusão de cada móvel e cenários adicionais não cobertos.
+
+[Revisão, fotos e limites das evidências](../evidence/mountain-shops-20261002/review.md).
+
+## Saída secreta da montanha: isolamento e redução — 02/10/2026
+
+Revisão do mesmo acesso exterior, sem novos lugares ou interiores e sem alterar as contagens de migração. Posição alterada de `(762, 0, -493)` para `(740, 0, -880)`: aproximadamente 399 m do resort. Formação 30% mais estreita, 20% menos profunda e 10% mais baixa; vão útil de aproximadamente 1,34 × 2,05 m. Malhas e colisões reduzidas juntas, com escala física unitária. Clareira local no terreno existente apoia o acesso e preserva a transição suave para a neve. Sem novos textos, luzes ou mudanças de câmera.
+
+- [x] Godot 4.7.2 .NET, C# compilado sem erros ou avisos.
+- [x] 48 verificações renderizadas do exterior: passagem aberta, bloqueio fechado, rochas, spawn, jogador/NPC e oclusão com controles positivos.
+- [x] Contrato de terreno: 107 verificações sem falhas; apoio físico no novo ponto também conferido pelo teste do exterior.
+- [x] Fotos comparáveis da estrutura: [antes](../evidence/secret-exit-20261002/before/actor0-front.png) e [depois](../evidence/secret-exit-20261002/after/actor0-front.png).
+- [x] Fluxo integrado: 18 verificações aprovadas (subida, chegada no piso, abertura/fechamento, reentrada e retorno). [Foto no gameplay](../evidence/secret-exit-20261002/gameplay/02-laje-fechada.png). A primeira execução parou antes do gameplay porque o fixture aguardava apenas 420 ticks físicos, enquanto o pré-aquecimento levou 17,5 s. Espera corrigida para prontidão real com limite de 60 s, preservando as verificações funcionais.
+- [ ] A execução integrada registrou erros de normalização de Basis em `BodyImpactPose3D.gd:40`, chamado por `CharacterFallPresentation3D.gd:123`, durante combate. Esses arquivos não foram alterados nesta revisão; as 18 verificações de acesso passaram, mas a execução não foi livre de erros.
+- [ ] Desempenho antes/depois não medido: outras sessões de gameplay/medição em execução. Não atribuir FPS das capturas a esta revisão. Sem nova certificação integral ou temporal do terreno.
+
+Evidências: `evidence/secret-exit-20261002/`.
+
 ## Montanha: acabamento visual a partir da imagem anotada — 02/10/2026
 
 Removidos o pequeno piso de entrada acima da cabine e a mancha amarela da serraria. Terra dos caminhos e pátio dessaturada, com menor granulação/relevo e transições largas de transparência para o terreno/neve. Apoio original do pátio e dos caminhos preservado; piso curto removido intencionalmente. Sem novos lugares/interiores.
@@ -804,3 +847,14 @@ Seis tubos existentes reformados, sem interior novo: permanecem **32 acessos / 3
 - [x] Viagem e interação: embarque, atendimento às seis estações com população e tráfego normais (**5/5**), passageiros físicos e restauração do jogador após desembarque; suspensão e retorno por região (**6/6**).
 - [x] Captura real de embarque, articulação em cruzamento noturno e inspeção individual de profundidade/oclusão nas seis plataformas. Fotos `station_0.png` a `station_5.png` no relatório; a estação Westgate foi recapturada após afastar a travessia.
 - [ ] Estabilidade de frame time: comparação renderizada executada, mas com processos concorrentes e travadas; desempenho **não aprovado**. Ver métricas e limitação no relatório.
+
+## Bancos, fogueiras e terreno — 02/10/2026
+
+Revisão transversal dos objetos existentes, sem novo acesso/interior: permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. Bancos mantêm escala, orientação e função de cada ambiente; dez interiores usam a chama compartilhada das lareiras, preservando arquitetura e regras. [Escopo, inventário e evidências reais](../evidence/world-props-ground-20261002/review.md).
+
+- [x] Padronização de treze famílias de bancos, com preservação dos estilos já acabados; sete fontes de calor exteriores com lenha, brasas e chama compartilhadas.
+- [x] Terreno: união visual de trilhas/acostamentos no chão nativo; 552 verificações da mistura e 107 do contrato físico, sem falhas.
+- [x] Bancos: dimensões e colisão avaliadas separadamente; revisão física em 24 bancos de famílias distintas. Fogo: integração, admissão e comportamento térmico verificados.
+- [x] Evidência temporal real: resort dia/noite e lareira Summit, 30 s por cenário. Cobertura limitada a esses cenários; não certifica todas as lareiras.
+- [ ] Certificação integral de colisão/oclusão de todos os interiores: esta revisão de objetos não equivale a uma migração completa de cada sala.
+- [ ] Aprovação de performance: comparação antes/depois renderizada, com interferência de outras sessões registrada; resultado não isolado.

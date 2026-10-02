@@ -33,6 +33,8 @@ func _ready() -> void:
  box("",Vector3(8.6,3.0,front+.13),Vector3(.1,5.8,.1),"414f51")
  box("",Vector3(7.4,6.65,center_z-1),Vector3(.8,.8,.8),"735b50")
  EXTERIOR_LIFE.build(self)
+ preload("res://assets/maciota/GarageWallDetails.gd").build(self)
+ add_child(preload("res://assets/maciota/GarageBackyard.gd").new())
 func box(id: String, at: Vector3, size: Vector3, color: String) -> void:
  var part := MeshInstance3D.new()
  var mesh := BoxMesh.new()

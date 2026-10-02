@@ -55,7 +55,10 @@ static func steel_galvanized() -> StandardMaterial3D:
 
 ## Treated hardwood slats for transit benches (#8b5e3c)
 static func bench_wood() -> StandardMaterial3D:
-	return get_mat("bench_wood", Color("#8b5e3c"), 0.75, 0.0)
+	var result := get_mat("bench_wood", Color("#8b5e3c"), 0.75, 0.0)
+	result.albedo_texture = preload("res://world/places/ShopInteriorMaterials.gd").texture("wood")
+	result.uv1_triplanar = true
+	return result
 
 ## High-durability waste hopper / litter bin dark grey (#3c4447)
 static func trash_bin_metal() -> StandardMaterial3D:

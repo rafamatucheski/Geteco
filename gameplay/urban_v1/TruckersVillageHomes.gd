@@ -347,9 +347,9 @@ func _partition(room: Dictionary,at: Vector3,size: Vector3) -> void:
 	_solid(room,"BedroomPartition",at,size)
 
 func _bench(room: Dictionary,at: Vector3) -> void:
-	_box(room.root,at+Vector3(0,.48,0),Vector3(2.2,.14,.58),"766449")
-	_box(room.root,at+Vector3(0,.88,-.25),Vector3(2.2,.6,.09),"827052")
-	for x in [-.8,.8]: _box(room.root,at+Vector3(x,.23,0),Vector3(.13,.46,.45),"5b5845")
+	var seat := preload("res://world/urban_detail/BenchFinish.gd").create(2.2, .65, .55, 1.1, Color("766449"), Color("5b5845"))
+	seat.position = at
+	room.root.add_child(seat)
 	_solid(room,"PorchBench",at+Vector3(0,.55,0),Vector3(2.2,1.1,.65))
 
 func _light(parent: Node3D,at: Vector3,color: String) -> void:

@@ -46,10 +46,10 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for _frame in 420:
-		await physics_frame
-		if world.session != null and world.session.ready_for_play: break
-	if world.session == null or not world.session.ready_for_play:
+	# Production now prewarms regions before play; 420 physics ticks (7 s) can
+	# expire during that startup. Wait for real readiness with a wall-clock bound.
+	var ready := await until(func(): return world.session != null and world.session.ready_for_play,60.0)
+	if not ready:
 		push_error("FORT_ASCENT Main did not become ready")
 		quit(1)
 		return
@@ -102,7 +102,7 @@ func run() -> void:
 	await frames(30)
 	var arrival: Vector3 = exit_node.arrival_global()
 	check(world.player.global_position.distance_to(arrival) < 2.5,"jogador sai diante da laje (%.1f m)"%world.player.global_position.distance_to(arrival))
-	check(exit_node.visible and exit_node.slab_open and exit_node.slab.position.x > 2.0,"laje aberta ao sair")
+	check(exit_node.visible and exit_node.slab_open and exit_node.slab.position.x > 1.5,"laje aberta ao sair, livre da passagem menor")
 	check(absf(world.player.global_position.y-exit_node.global_position.y) < 1.0,"jogador pisa o solo da serra")
 	await shot("01-saida-aberta")
 	await frames(60*9)

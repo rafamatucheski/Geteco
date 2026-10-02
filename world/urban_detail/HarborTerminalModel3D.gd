@@ -216,11 +216,9 @@ func _build_guardhouse() -> void:
 			_box_at(Vector2(x + side, 125), 1.7, Vector3(0.1, 3.4, 0.1), "metal")
 
 func _bench(point: Vector2) -> void:
-	_box_at(point, 0.53, Vector3(1.9, 0.12, 0.48), "wood")
-	_box_at(point + Vector2(0, -3), 0.86, Vector3(1.9, 0.51, 0.09), "wood")
-	for x in [-0.73, 0.73]:
-		var leg := _box_at(point, 0.24, Vector3(0.09, 0.46, 0.43), "metal")
-		leg.position.x += x
+	var seat := preload("res://world/urban_detail/BenchFinish.gd").create(1.9, .48, .59, 1.115)
+	seat.position = floor_from_local(point)
+	add_child(seat)
 	_add_rect_solid(Rect2(point - Vector2(18, 5), Vector2(36, 10)), 0.86, "WaitingBench")
 
 func _add_rect_solid(rect: Rect2, solid_h: float, label: String) -> void:

@@ -48,16 +48,20 @@ func _ready() -> void:
 		_surface("SmugglerCampsite",camp,.08,Color("382e22")) # Dry shelf above the moving shallow water.
 		for point in [Vector2(120,220),Vector2(135,235)]: _box(self,Vector3(point.x*SCALE,.4,point.y*SCALE),Vector3(1.5,.8,1.25),Color("59402b"),true)
 		var fire_center := Vector2(205,160)*SCALE
-		for i in 12:
-			var at := fire_center+Vector2.from_angle(TAU*i/12)*14*SCALE
-			_box(self,Vector3(at.x,.10,at.y),Vector3(.24,.2,.22),Color("57606f"))
-		_box(self,Vector3(fire_center.x,.08,fire_center.y),Vector3(.7,.12,.6),Color("ae5429"))
 		var heat := Marker3D.new()
 		heat.name = "OriginalCampHeatSource"
 		heat.position = Vector3(fire_center.x,0,fire_center.y)
 		heat.set_meta("radius",180*SCALE)
 		heat.add_to_group("native_heat_source")
 		add_child(heat)
+		heat.set_meta("native_heat_source", "smuggler_camp")
+		heat.set_meta("native_heat_flame_offset", Vector3(0,.20,0))
+		var ring := preload("res://runtime/cold/FireArt.gd").stone_ring()
+		ring.position.y = .08
+		heat.add_child(ring)
+		var fuel := preload("res://runtime/cold/FireArt.gd").fuel()
+		fuel.position.y = .08
+		heat.add_child(fuel)
 		var positions := [Vector2(-135,-75),Vector2(95,-60),Vector2(-95,65),Vector2(45,80),Vector2(-54,-177),Vector2(-31,-168),Vector2(-66,-158)]
 		for i in positions.size(): _ice(positions[i],i,[.85,.6,1.0,.55,.8,.5,.4][i])
 		for point in [Vector2(45,105),Vector2(58,75),Vector2(65,50)]:

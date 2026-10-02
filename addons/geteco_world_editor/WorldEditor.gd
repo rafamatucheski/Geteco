@@ -126,7 +126,7 @@ func _ready() -> void:
 	rotation_toggle.tooltip_text = "Ativar/desativar o círculo verde de rotação"
 	var add := MenuButton.new()
 	add.text = "Adicionar"
-	for label in ["Árvore","Prédio","Rua","Luz","Terreno / grama"]: add.get_popup().add_item(label)
+	for label in ["Árvore","Prédio","Rua","Poste com braço lateral","Terreno / grama"]: add.get_popup().add_item(label)
 	add.get_popup().id_pressed.connect(func(index):
 		placement_template.clear()
 		canvas.armed = ["tree","building","road","light","ground"][index]
@@ -409,13 +409,13 @@ func _select(id: String) -> void:
 		_button(properties,"Ver este local em 3D",_preview)
 		return
 	var transform_hint := Label.new()
-	transform_hint.text = "Arraste as setas X/Z para mover." if row.type == "light" or row.get("paving",false) or not canvas.rotation_enabled else "Arraste as setas X/Z para mover.\nAnel Y: girar · Shift: passos de 15°."
+	transform_hint.text = "Arraste as setas X/Z para mover." if row.get("paving",false) or not canvas.rotation_enabled else "Arraste as setas X/Z para mover.\nAnel Y: girar · Shift: passos de 15°."
 	transform_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	properties.add_child(transform_hint)
 	if row.type != "road":
 		_number("X (m)",float(row.position[0]),-10000,10000,func(value): _set_array("position",0,value))
 		_number("Z (m)",float(row.position[1]),-10000,10000,func(value): _set_array("position",1,value))
-		if row.type != "light" and not row.get("paving",false): _number("Rotação (°)",float(row.get("rotation",0)),-360,360,func(value): _set_value("rotation",value))
+		if not row.get("paving",false): _number("Rotação (°)",float(row.get("rotation",0)),-360,360,func(value): _set_value("rotation",value))
 	match str(row.type):
 		"tree":
 			_number("Escala",float(row.scale),.25,3,func(value): _set_value("scale",value),.05)

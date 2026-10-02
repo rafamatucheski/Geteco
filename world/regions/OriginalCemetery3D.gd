@@ -53,9 +53,13 @@ func _ready() -> void:
 			_solid(tree.position+Vector3.UP*1.25,Vector3(.4,2.5,.4))
 	for x in [-210,210]:
 		var point := Vector3(x*SCALE,0,280*SCALE)
-		_box(point+Vector3.UP*.47,Vector3(60*SCALE,.14,12*SCALE),"514d43",true)
-		_box(point+Vector3(0,.84,.32),Vector3(60*SCALE,.6,.12),"514d43",true)
-		for side in [-1,1]: _box(point+Vector3(side*1.25,.22,0),Vector3(.14,.44,.6),"444d49",true)
+		var seat := preload("res://world/urban_detail/BenchFinish.gd").create(60*SCALE, 12*SCALE, .54, 1.14, Color("756c54"), Color("444d49"))
+		seat.position = point
+		seat.rotation.y = PI
+		add_child(seat)
+		_solid(point+Vector3.UP*.47,Vector3(60*SCALE,.14,12*SCALE))
+		_solid(point+Vector3(0,.84,.32),Vector3(60*SCALE,.6,.12))
+		for side in [-1,1]: _solid(point+Vector3(side*1.25,.22,0),Vector3(.14,.44,.6))
 	for point in [Vector2(-35,-340),Vector2(35,-340),Vector2(-40,50),Vector2(40,280)]:
 		var base := Vector3(point.x*SCALE,0,point.y*SCALE)
 		_box(base+Vector3.UP*1.3,Vector3(.10,2.6,.10),"444d49",true)

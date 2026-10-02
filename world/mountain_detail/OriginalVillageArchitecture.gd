@@ -30,14 +30,9 @@ static func floor_from_local(point: Vector2) -> Vector3:
 	return Vector3(point.x / PPM, 0, point.y / (PPM * FLOOR_Y))
 
 func _ground() -> void:
-	# The small settlement is plowed around buildings; natural forest resumes
-	# outside this irregular snowy clearing. Bus access pavement is service-owned.
-	var outline := PackedVector2Array([Vector2(7340,-1720), Vector2(7580,-1733), Vector2(7885,-1720), Vector2(7955,-1600), Vector2(7960,-1370), Vector2(7860,-1325), Vector2(7640,-1345), Vector2(7360,-1385), Vector2(7315,-1510)])
-	_polygon(outline, 0.002, "snow_edge")
-	for i in outline.size():
-		var toward: Vector2 = (Vector2(7630,-1540) - outline[i]).normalized() * 11.0
-		outline[i] += toward
-	_polygon(outline, 0.014, "snow")
+	# Native terrain supplies continuous snow and physical support. Two raised
+	# snow polygons used to leave an abrupt artificial border around the village.
+	# Keep the built paving, plaza and bus berth as deliberate hard surfaces.
 	var paths: Array = [LAYOUT.BUS_TO_PLAZA, LAYOUT.PLAZA_TO_SHOP, LAYOUT.PLAZA_TO_WAIT]
 	for i in 4:
 		paths.append(LAYOUT.cabin_route(i))
@@ -47,7 +42,7 @@ func _ground() -> void:
 		for i in range(path.size() - 1):
 			_ground_line(path[i], path[i+1], 34.0, "paving")
 			_ground_line(path[i], path[i+1], 25.0, "stone")
-	_slab(Rect2(7592, -1624, 108, 108), 0.035, 0.06, "paving")
+	_slab(Rect2(7592, -1624, 108, 108), 0.035, 0.06, "stone")
 	for x in range(7600, 7698, 16):
 		_ground_line(Vector2(x, -1618), Vector2(x, -1523), 0.8, "stone")
 	for y in range(-1618, -1520, 16):
@@ -206,10 +201,10 @@ func _roof(point: Vector2, width: float, depth: float, height: float, pitch: flo
 
 func _bench(point: Vector2, width: float) -> void:
 	var mesh_start := get_child_count()
-	_box(point,0.55,Vector3(width,0.12,0.46),"wood")
-	_box(point+Vector2(0,-3),0.88,Vector3(width,0.47,0.1),"wood")
-	for side in [-1.0,1.0]:
-		_box(point+Vector2(side*width*PPM*0.38,0),0.27,Vector3(0.12,0.53,0.4),"trim")
+	var seat := preload("res://world/urban_detail/BenchFinish.gd").create(width, .46, .55, 1.115)
+	seat.position = floor_from_local(point-LAYOUT.ORIGIN)
+	add_child(seat)
+	preload("res://world/urban_detail/BenchFinish.gd").add_collision(seat, "VillageBench")
 	_solid(Rect2(point-Vector2(width*PPM*0.5,5),Vector2(width*PPM,10)),"VillageBench")
 	_record_volume(solids.size()-1,mesh_start)
 	solids[-1]["seats"] = [point+Vector2(-8,0),point+Vector2(8,0)]

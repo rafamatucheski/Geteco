@@ -86,6 +86,7 @@ const TUNNEL_CHASE_DISTANCE := 6.0
 const VEHICLE_INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 var _chase_roof_vehicle: Node3D
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const MOUNTAIN_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 const TUNNEL_ZOOM := 0.62
 # 70° de inclinação, mesma distância ao foco do EXTERIOR_OFFSET (~35,8 m: áudio e
@@ -209,8 +210,12 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	var vehicle := _is_vehicle_target() and not locked and _container_blend < 0.001
 	var actor_visual: Node3D = target.get("visual") if not _is_vehicle_target() and &"visual" in target else null
 	var pedestrian := is_instance_valid(actor_visual) and not locked and _container_blend < 0.001
-	var desired := _tunnel_blend if vehicle or pedestrian else 0.0
+	var mountain_weight := MOUNTAIN_CONNECTION.tunnel_camera_weight(actual)
+	var desired := maxf(_tunnel_blend,mountain_weight) if vehicle or pedestrian else 0.0
 	_tunnel_chase_blend = move_toward(_tunnel_chase_blend, desired, delta * 2.4)
+	if snap: _tunnel_chase_blend = desired
+	# A solid roof cannot tolerate an overhead camera after a fast entry.
+	if mountain_weight >= 1.0 and desired > 0.0: _tunnel_chase_blend = 1.0
 	if locked:
 		_tunnel_chase_blend = 0.0
 	var blend := smoothstep(0.0, 1.0, _tunnel_chase_blend)

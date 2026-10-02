@@ -163,9 +163,7 @@ static func _bollard(t: SurfaceTool) -> void:
 
 
 static func _bench_seat(t: SurfaceTool) -> void:
-	for x in [-.7, .7]: box(t, Vector3(x, .22, 0), Vector3(.08, .44, .44), Color("2c3134"))
-	box(t, Vector3(0, .46, 0), Vector3(1.7, .06, .44), Color("7a5a3a"))
-	box(t, Vector3(0, .78, -.2), Vector3(1.7, .3, .05), Color("7a5a3a"))
+	preload("res://world/urban_detail/BenchFinish.gd").append_to(t, 1.7, .44, .49, .93)
 
 
 static func _planter(t: SurfaceTool) -> void:

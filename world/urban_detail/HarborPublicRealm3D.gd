@@ -43,6 +43,8 @@ func _box(label: String, center: Vector3, size: Vector3, hex: String) -> MeshIns
 	item.mesh = mesh
 	item.position = center
 	item.material_override = _material(hex)
+	if label == "NorthbankPromenade":
+		item.material_override = preload("res://world/urban_detail/PromenadePaving.gd").material(Color("b6b0a0"), true)
 	add_child(item)
 	return item
 
@@ -129,9 +131,21 @@ func _build_promenade(east: bool) -> void:
 func _planter(center: Vector3, size: Vector2, variant: int) -> void:
 	_box("PromenadePlanterCurb", center, Vector3(size.x, 0.44, size.y), "9d9685")
 	_box("PromenadePlanterBed", center + Vector3(0, 0.24, 0), Vector3(size.x - 0.38, 0.10, size.y - 0.38), ["3d463a", "464b38", "3b4740", "444a37"][variant])
+	for side in [-1.0, 1.0]:
+		_box("PlanterRim", center + Vector3(0,.24,side*(size.y*.5-.09)), Vector3(size.x,.10,.18), "b5ae9a")
+		_box("PlanterRim", center + Vector3(side*(size.x*.5-.09),.24,0), Vector3(.18,.10,size.y-.36), "b5ae9a")
 	for i in 5:
 		var px := -size.x * 0.34 + float(i) * size.x * 0.17
-		_disc("PromenadeShrub", center + Vector3(px, 0.55 + float(i % 2) * 0.08, (-0.18 if i % 2 == 0 else 0.18) * size.y), 0.42 + float((i + variant) % 3) * 0.10, 0.7, "557252")
+		var shrub := MeshInstance3D.new()
+		shrub.name = "PromenadeShrub"
+		shrub.mesh = preload("res://world/urban_detail/CoastalFoliage.gd").mesh(i + variant)
+		var radius := 0.52 + float((i + variant) % 3) * 0.10
+		shrub.scale = Vector3(radius, .48 + float(i % 2) * .08, radius * .92)
+		shrub.position = center + Vector3(px, .68, (-.18 if i % 2 == 0 else .18) * size.y)
+		shrub.rotation.y = float(i + variant) * 1.37
+		shrub.material_override = _material(["557252", "617a50", "48694f"][(i + variant) % 3])
+		(shrub.material_override as StandardMaterial3D).vertex_color_use_as_albedo = true
+		add_child(shrub)
 
 func _bench(point: Vector3, angle: float) -> void:
 	var root := Node3D.new()
@@ -139,16 +153,18 @@ func _bench(point: Vector3, angle: float) -> void:
 	root.position = point
 	root.rotation.y = angle
 	add_child(root)
-	var seat := _box("BenchSeat", Vector3.ZERO, Vector3(2.8, 0.16, 0.48), "765139")
-	seat.reparent(root, true)
-	seat.position = Vector3(0, 0.55, 0)
-	var back := _box("BenchBack", Vector3.ZERO, Vector3(2.8, 0.75, 0.14), "765139")
-	back.reparent(root, true)
-	back.position = Vector3(0, 0.90, -0.22)
-	for side in [-1.1, 1.1]:
-		var leg := _box("BenchLeg", Vector3.ZERO, Vector3(0.14, 0.55, 0.32), "343d42")
-		leg.reparent(root, true)
-		leg.position = Vector3(side, 0.28, 0)
+	root.add_child(preload("res://world/urban_detail/StreetBench.gd").create(2.8,.62))
+	var body := StaticBody3D.new()
+	body.name = "BenchSolid"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var collider := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(2.8,1.12,.72)
+	collider.shape = shape
+	collider.position = Vector3(0,.56,0)
+	body.add_child(collider)
+	root.add_child(body)
 
 func _build_compass() -> void:
 	_disc("MuseumCompassOuter", Vector3(0, 0.07, 0), 2.875, 0.14, "8c9589")

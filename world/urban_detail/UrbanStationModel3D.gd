@@ -192,8 +192,10 @@ func _tube() -> void:
 func _furniture() -> void:
 	for x in [-113.0, -65.0, -17.0]:
 		active_solid = "StationBench%s" % x
-		_box(Rect2(x, -20, 24, 8), 0.53, 0.12, "seat")
-		_box(Rect2(x, -22, 24, 2), 0.6, 0.43, "seat")
+		for slat in 4:
+			_box(Rect2(x, -20+slat*2.0, 24, 1.8), 0.53, 0.12, "seat")
+		for slat in 3:
+			_box(Rect2(x, -22, 24, 2), 0.6+slat*.15, 0.13, "seat")
 		for leg in [x + 3, x + 20]:
 			_box(Rect2(leg, -18, 1.8, 5), 0.2, 0.34, "dark")
 	

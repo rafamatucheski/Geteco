@@ -688,7 +688,7 @@ func _build_road_surfaces(chunk: Node3D, rect: Rect2) -> void:
 			# Preserve the authored support exactly; replace only the hard cutout
 			# with a wider visual shoulder that dissolves into the real ground.
 			mesh.hide()
-			_build_soft_road_surface(chunk,rect,dirt)
+			if terrain == null: _build_soft_road_surface(chunk,rect,dirt)
 		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		chunk.add_child(mesh)
 		# Support uses the same outline as the surface, at terrain height.
@@ -1323,9 +1323,9 @@ static func _helipad_reserved(point: Vector2) -> bool:
 	return false
 
 static func _fort_exit_reserved(point: Vector2) -> bool:
-	var position: Vector3 = preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd").WORLD_POSITION
+	var exit_position: Vector3 = preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd").WORLD_POSITION
 	# Reserve the formation and its full entrance approach before tree placement.
-	return Rect2(Vector2(position.x-6.5,position.z-6.5),Vector2(13.0,13.0)).has_point(point)
+	return Rect2(Vector2(exit_position.x-6.5,exit_position.z-6.5),Vector2(13.0,13.0)).has_point(point)
 ## Registra em `slow_stream_records` uma etapa do streaming que passou de `limit_usec`
 ## (só para diagnóstico com a sonda; não tem efeito sem a meta).
 func _note_slow(what: String, since_usec: int, limit_usec: int) -> void:

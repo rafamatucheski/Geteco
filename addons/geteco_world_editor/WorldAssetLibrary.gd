@@ -54,5 +54,5 @@ static func build(catalog: Dictionary) -> Array[Dictionary]:
 		var row := DATA.new_entity("road",Vector2.ZERO)
 		row.surface = surface
 		result.append(entry("Rua de asfalto" if surface == "asphalt" else "Rua de terra",row,"via estrada caminho"))
-	result.append(entry("Poste de luz quente",DATA.new_entity("light",Vector2.ZERO),"luz iluminacao"))
+	result.append(entry("Poste de rua com braço lateral",DATA.new_entity("light",Vector2.ZERO),"luz iluminacao quente poste braco lateral"))
 	return result

@@ -1104,8 +1104,8 @@
 			"piece/cobra/cobra_footpath/12": {
 				"id": "piece/cobra/cobra_footpath/12",
 				"position": [
-					484.0,
-					140.0
+					484.375,
+					138.75
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
@@ -1113,27 +1113,9 @@
 			},
 			"piece/cobra/cobra_footpath/2": {
 				"id": "piece/cobra/cobra_footpath/2",
-				"outline": [
-					[
-						-2.125,
-						4.78500366210938
-					],
-					[
-						2.08743381500244,
-						-5.97014427185059
-					],
-					[
-						5.07250595092773,
-						-4.92642688751221
-					],
-					[
-						-0.375,
-						5.21499633789063
-					]
-				],
 				"position": [
-					454.0,
-					86.0
+					454.375,
+					85.625
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
@@ -1143,7 +1125,7 @@
 				"id": "piece/cobra/cobra_footpath/7",
 				"position": [
 					453.125,
-					123.0
+					121.875
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
@@ -1151,24 +1133,6 @@
 			},
 			"piece/cobra/cobra_footpath_edge/2": {
 				"id": "piece/cobra/cobra_footpath_edge/2",
-				"outline": [
-					[
-						-2.34500122070313,
-						4.72499847412109
-					],
-					[
-						1.625,
-						-5.625
-					],
-					[
-						4.625,
-						-4.625
-					],
-					[
-						-0.154998779296875,
-						5.27500152587891
-					]
-				],
 				"position": [
 					454.375,
 					85.625

@@ -1,5 +1,8 @@
 extends Node3D
 
+const FINISH := preload("res://world/places/FacadeFinish.gd")
+const SURFACES := preload("res://world/places/ShopInteriorMaterials.gd")
+
 ## Abrigo / Microchalé de Lenhador (Lumberjack Work Shelter 3D):
 ## Refúgio rústico e oficina de corte de madeira em escala métrica humana (1:1).
 ## Diferenciado de um chalé residencial: apresenta ferramentas de lenhador (serra traçadeira de dois homens,
@@ -39,6 +42,13 @@ func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.
 	m.roughness = roughness
 	m.metallic = metallic
 	m.shading_mode = StandardMaterial3D.SHADING_MODE_PER_PIXEL
+	if id.begins_with("wood") or id in ["door_leaf", "handle_wood", "bark", "cut_end"]:
+		m.albedo_texture = SURFACES.texture("wood")
+		m.uv1_triplanar = true
+		m.uv1_scale = Vector3.ONE * 1.4
+	elif id in ["stone", "stone_moss"]:
+		m.albedo_texture = SURFACES.texture("stone")
+		m.uv1_triplanar = true
 	_materials[id] = m
 	return m
 
@@ -125,13 +135,11 @@ func _build_cabin() -> void:
 		for y_step in [0.65, 1.25, 1.85]:
 			_add_box(Vector3(sx + (0.07 if sx > 0 else -0.07), y_step, 0.0), Vector3(0.04, 0.06, 3.62), wood_trim)
 
-	# Janela Pequena de Vigia na Parede Direita (+X) com Grades Rústicas
-	_add_box(Vector3(1.72, 1.35, 0.20), Vector3(0.06, 0.85, 0.75), wood_trim)
-	_add_box(Vector3(1.65, 1.35, 0.20), Vector3(0.02, 0.70, 0.60), glass_mat)
-	_add_box(Vector3(1.73, 1.35, 0.20), Vector3(0.07, 0.70, 0.04), wood_trim)
-	_add_box(Vector3(1.73, 1.35, 0.20), Vector3(0.07, 0.04, 0.60), wood_trim)
-	_add_box(Vector3(1.74, 0.89, 0.20), Vector3(0.12, 0.05, 0.82), wood_trim)
-	_add_box(Vector3(1.74, 0.93, 0.20), Vector3(0.10, 0.03, 0.78), snow_mat)
+	# Glass is outside the cladding, not buried inside the opaque wall.
+	# The left opening stays forward of the tools and stored logs.
+	FINISH.window(self, Vector3(1.75, 1.52, .35), PI/2, .90, 1.0, wood_trim, glass_mat)
+	FINISH.window(self, Vector3(-1.75, 1.55, 1.0), -PI/2, .85, .95, wood_trim, glass_mat)
+	FINISH.window(self, Vector3(0, 1.55, -2.01), PI, 1.15, .95, wood_trim, glass_mat)
 
 	# 4. Parede Frontal (+Z = 1.90) com Vão da Porta
 	_add_box(Vector3(-1.05, 0.18 + wall_h * 0.5, 1.90), Vector3(1.00, wall_h, 0.14), wood_main)
@@ -160,7 +168,8 @@ func _build_cabin() -> void:
 	# ==============================================================================
 	# Banco rústico de meia-tora na fachada frontal, à esquerda da porta (X = -1.15, Z = 2.15)
 	# Fora do vão livre da porta (+Z = 2.1, X = 0.0), permitindo acesso desimpedido
-	_add_cyl(Vector3(-1.15, 0.44, 2.15), 0.16, 0.90, wood_trim, Vector3(0, 0, 90)) # Assento de meia tora
+	var seat_finish := preload("res://world/places/ShopInteriorMaterials.gd").material("wood", Color("66503e"))
+	_add_cyl(Vector3(-1.15, 0.44, 2.15), 0.16, 0.90, seat_finish, Vector3(0, 0, 90)) # Assento de meia tora
 	_add_cyl(Vector3(-1.45, 0.22, 2.15), 0.08, 0.44, wood_trim)                     # Pé esquerdo
 	_add_cyl(Vector3(-0.85, 0.22, 2.15), 0.08, 0.44, wood_trim)                     # Pé direito
 	_add_box(Vector3(-1.15, 0.48, 2.15), Vector3(0.85, 0.03, 0.26), snow_mat)      # Neve rala no banco
@@ -222,9 +231,7 @@ func _build_cabin() -> void:
 
 	# 8. OITÃO / EMPENA TRIANGULAR
 	for fz in [-1.90, 1.90]:
-		_add_box(Vector3(0.0, 2.65, fz), Vector3(2.30, 0.45, 0.12), wood_main)
-		_add_box(Vector3(0.0, 3.00, fz), Vector3(1.30, 0.35, 0.12), wood_main)
-		_add_box(Vector3(0.0, 3.25, fz), Vector3(0.50, 0.25, 0.12), wood_main)
+		FINISH.gable(self, "CabinGable", 1.90, 2.43, 3.69, fz, .12, wood_main)
 
 	# 9. TELHADO RÚSTICO DE TÁBUAS COM CAIBROS E BEIRAIS VOLUMÉTRICOS
 	var roof_thick := _mat("roof_wood", Color("#261b12"), 0.90)
@@ -232,31 +239,31 @@ func _build_cabin() -> void:
 	var slope_w: float = 2.28
 
 	# Águas do telhado (caimento a 33.5 graus)
-	_add_box(Vector3(-0.95, 2.88, 0.0), Vector3(slope_w, 0.10, roof_len), roof_thick, Vector3(0, 0, 33.5))
-	_add_box(Vector3(0.95, 2.88, 0.0), Vector3(slope_w, 0.10, roof_len), roof_thick, Vector3(0, 0, -33.5))
+	for side in [-1.0, 1.0]:
+		_add_box(Vector3(side*.95, 3.13, 0), Vector3(slope_w, .10, roof_len), roof_thick, Vector3(0, 0, -side*33.5)).set_meta("exterior_part", "roof_slope")
 
 	# Cumeeira de tora grossa
-	_add_box(Vector3(0.0, 3.52, 0.0), Vector3(0.20, 0.16, roof_len + 0.10), wood_trim)
+	_add_box(Vector3(0.0, 3.80, 0.0), Vector3(0.20, 0.16, roof_len + 0.10), wood_trim)
 
 	# Caibros aparentes sob o beiral
 	for bz in [-2.05, 2.05]:
 		for rx in [-1.6, -0.8, 0.0, 0.8, 1.6]:
-			var ry: float = 3.40 - absf(rx) * 0.65
+			var ry: float = 3.65 - absf(rx) * 0.65
 			_add_box(Vector3(rx, ry - 0.10, bz), Vector3(0.08, 0.10, 0.26), wood_trim)
 
 	# 10. NEVE LOCALIZADA VOLUMÉTRICA NO TELHADO
-	_add_box(Vector3(-0.95, 2.96, 0.0), Vector3(slope_w * 0.98, 0.08, roof_len * 0.98), snow_mat, Vector3(0, 0, 33.5))
-	_add_box(Vector3(0.95, 2.96, 0.0), Vector3(slope_w * 0.98, 0.08, roof_len * 0.98), snow_mat, Vector3(0, 0, -33.5))
-	_add_box(Vector3(0.0, 3.61, 0.0), Vector3(0.32, 0.10, roof_len), snow_mat)
+	for side in [-1.0, 1.0]:
+		_add_box(Vector3(side*.95, 3.25, 0), Vector3(slope_w*.98, .08, roof_len*.98), snow_mat, Vector3(0, 0, -side*33.5)).set_meta("exterior_part", "roof_snow")
+	_add_box(Vector3(0.0, 3.91, 0.0), Vector3(0.32, 0.10, roof_len), snow_mat)
 
 	# Beirais de neve pendentes (snow drifts)
 	for sx in [-1.88, 1.88]:
-		_add_box(Vector3(sx, 2.22, 0.0), Vector3(0.12, 0.08, roof_len * 0.95), snow_mat)
+		_add_box(Vector3(sx, 2.62, 0.0), Vector3(0.12, 0.08, roof_len * 0.95), snow_mat)
 
 	# 11. CHAMINÉ DE TUBO DE FOGÃO COM FULIGEM (Y = 3.35, Z = -0.80)
 	var soot_mat := _mat("soot", Color("#111113"), 0.5, 0.7)
 	_add_cyl(Vector3(-0.75, 3.35, -0.80), 0.10, 1.10, iron_mat)
 	_add_cyl(Vector3(-0.75, 3.75, -0.80), 0.105, 0.35, soot_mat) # Fuligem na ponta superior
-	_add_box(Vector3(-0.75, 3.02, -0.80), Vector3(0.32, 0.08, 0.32), iron_mat)
+	_add_box(Vector3(-0.75, 3.28, -0.80), Vector3(0.32, 0.08, 0.32), iron_mat)
 	_add_cyl(Vector3(-0.75, 3.92, -0.80), 0.18, 0.06, iron_mat)
 	_add_cyl(Vector3(-0.75, 3.96, -0.80), 0.16, 0.04, snow_mat)

@@ -213,7 +213,8 @@ static func chest_mesh(p: Dictionary, top: int, backpack: bool, strap: int) -> A
 				b.ellipsoid(Vector3(side * .058, .175, ch.y - .018), Vector3(.064, .058, .052), SLOT_TOP, Basis(Vector3.RIGHT, .35), 8, 5)
 		if p.belly > 0.0:
 			b.ellipsoid(Vector3(0, .02, waist.y + .01), Vector3(waist.x * .85, .13, .07), SLOT_TOP, Basis.IDENTITY, 10, 5)
-		var front: float = ch.y + bulk
+		var duty_belly: float = p.belly if p.get("duty_fit", false) else 0.0
+		var front: float = ch.y + bulk + duty_belly * .6
 		match top:
 			6, 8: # farda: gola, bolsos no peito, distintivo, platinas.
 				b.loft([[.43, .07, .064, SLOT_TOP, -.01], [.385, .1, .086, SLOT_TOP, -.01]], SLOT_TOP, Transform3D.IDENTITY, 12, false, false, .9)
@@ -223,9 +224,9 @@ static func chest_mesh(p: Dictionary, top: int, backpack: bool, strap: int) -> A
 				b.ellipsoid(Vector3(-.07, .25, front + .004), Vector3(.022, .026, .008), SLOT_METAL, Basis.IDENTITY, 6, 4)
 				if top == 8:
 					# Colete balístico com bolsas de carregador.
-					b.loft([[.3, sh - .03, ch.y + .05, SLOT_ACCENT, 0.0, 3.2], [.0, waist.x + .05, waist.y + .06, SLOT_ACCENT, 0.0, 3.2], [-.07, waist.x + .05, waist.y + .06, SLOT_ACCENT, 0.0, 3.2]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, true, .9)
+					b.loft([[.3, sh - .03, ch.y + .05 + duty_belly * .4, SLOT_ACCENT, 0.0, 3.2], [.0, waist.x + .05, waist.y + .06 + duty_belly, SLOT_ACCENT, duty_belly * .5, 3.2], [-.07, waist.x + .05, waist.y + .06 + duty_belly, SLOT_ACCENT, duty_belly * .4, 3.2]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, true, .9)
 					for x in [-.08, 0.0, .08]:
-						b.ellipsoid(Vector3(x, .02, front + .07), Vector3(.034, .05, .025), SLOT_ACCENT, Basis.IDENTITY, 6, 4, .75)
+						b.ellipsoid(Vector3(x, .02, maxf(front + .07, waist.y + .085 + duty_belly * 1.5) if p.get("duty_fit", false) else front + .07), Vector3(.034, .05, .025), SLOT_ACCENT, Basis.IDENTITY, 6, 4, .75)
 			7: # casaco de bombeiro: gola alta e faixas refletivas.
 				b.loft([[.45, .085, .08, SLOT_TOP], [.38, .12, .1, SLOT_TOP]], SLOT_TOP, Transform3D.IDENTITY, 12, false, false, .9)
 				for y in [.08, -.3]:
@@ -290,7 +291,7 @@ static func pelvis_mesh(p: Dictionary, top: int, bottom: int, bag: int) -> Array
 		for side in [-1.0, 1.0]:
 			b.ellipsoid(Vector3(side * .06, -.05, -hip.y + .045), Vector3(.068, .075, .05), lower_slot, Basis.IDENTITY, 8, 5)
 		if tucked:
-			b.ellipsoid(Vector3(0, .07, waist.y + .018), Vector3(.03, .02, .012), SLOT_METAL, Basis.IDENTITY, 6, 3)
+			b.ellipsoid(Vector3(0, .07, waist.y + .018 + (p.belly * .45 if p.get("duty_fit", false) else 0.0)), Vector3(.03, .02, .012), SLOT_METAL, Basis.IDENTITY, 6, 3)
 		if bag != 0:
 			b.ellipsoid(Vector3(bag * (hip.x + .045), -.02, .03), Vector3(.045, .105, .13), SLOT_ACCENT, Basis.IDENTITY, 8, 5)
 			b.ellipsoid(Vector3(bag * (hip.x + .05), .06, .03), Vector3(.047, .03, .132), SLOT_ACCENT, Basis.IDENTITY, 8, 4, .75)
@@ -401,7 +402,8 @@ static func upper_arm_mesh(p: Dictionary, top: int) -> ArrayMesh:
 
 ## Antebraço + mão (pulso rígido). Palma voltada para o corpo.
 static func forearm_mesh(p: Dictionary, top: int, side: float) -> ArrayMesh:
-	var key := "farm|%.3f|%d|%d" % [p.limb, top, int(side)]
+	var duty_hand: bool = p.get("duty_fit", false)
+	var key := "farm|%.3f|%d|%d|%s" % [p.limb, top, int(side), duty_hand]
 	return cached(key, func() -> ArrayMesh:
 		var b := _builder()
 		var k: float = p.limb * (1.0 if not p.bust else .9)
@@ -416,10 +418,14 @@ static func forearm_mesh(p: Dictionary, top: int, side: float) -> ArrayMesh:
 			[-.235, .029 * k, .026 * k, SLOT_SKIN],
 			[-.25, .028 * k, .025 * k, SLOT_SKIN],
 		]
+		if duty_hand:
+			# Continue the wrist inside the palm. The old slim palm started below
+			# the cuff, leaving daylight between arm and weapon-holding hand.
+			rings.append([-.285, .025 * k, .025 * k, SLOT_SKIN])
 		b.loft(rings, slot, Transform3D.IDENTITY, 10)
 		# Mão levemente fechada: palma, dedos curvados e polegar à frente.
-		b.ellipsoid(Vector3(side * -.004, -.305, .006), Vector3(.024, .058, .044) * k, SLOT_SKIN, Basis(Vector3.RIGHT, -.12), 8, 5)
-		b.ellipsoid(Vector3(side * -.012, -.35, .012), Vector3(.022, .032, .038) * k, SLOT_SKIN, Basis(Vector3.RIGHT, -.5), 6, 4, .95)
+		b.ellipsoid(Vector3(side * -.004, -.305, .006), Vector3(.030 if duty_hand else .024, .058, .044) * k, SLOT_SKIN, Basis(Vector3.RIGHT, -.12), 8, 5)
+		b.ellipsoid(Vector3(side * -.012, -.33 if duty_hand else -.35, .018 if duty_hand else .012), Vector3(.026 if duty_hand else .022, .032, .038) * k, SLOT_SKIN, Basis(Vector3.RIGHT, -.5), 6, 4, .95)
 		b.ellipsoid(Vector3(side * -.018, -.29, .042), Vector3(.014, .036, .014) * k, SLOT_SKIN, Basis(Vector3.FORWARD, side * .3), 6, 4)
 		return b.commit())
 
@@ -490,10 +496,11 @@ static func head_mesh(female: bool, hair: int, beard: int, hat: int, glasses: bo
 				b.ellipsoid(Vector3(0, .232, -.012), Vector3(.112, .1, .124), SLOT_ACCENT, Basis.IDENTITY, 12, 7)
 				b.loft([[.21, .113, .124, SLOT_ACCENT, -.012], [.17, .113, .125, SLOT_ACCENT, -.012]], SLOT_ACCENT, Transform3D.IDENTITY, 14, false, false, .82)
 			4: # quepe de polícia: copa larga, faixa, pala e emblema.
-				b.loft([[.29, .118, .13, SLOT_ACCENT, 0.0, 2.2], [.25, .112, .122, SLOT_ACCENT, 0.0, 2.2], [.215, .108, .118, SLOT_ACCENT]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, false)
-				b.loft([[.225, .11, .12, SLOT_EYE, -.004], [.2, .108, .118, SLOT_EYE, -.004]], SLOT_EYE, Transform3D.IDENTITY, 14, false, false)
-				b.ellipsoid(Vector3(0, .205, .115), Vector3(.08, .01, .06), SLOT_EYE, Basis(Vector3.RIGHT, .25), 10, 3)
-				b.ellipsoid(Vector3(0, .255, .128), Vector3(.02, .022, .006), SLOT_METAL, Basis.IDENTITY, 6, 4)
+				# Closed crown clears both scalp (.287 m) and short hair (.31 m).
+				b.loft([[.335, .12, .135, SLOT_ACCENT, -.008, 2.2], [.28, .116, .13, SLOT_ACCENT, -.008, 2.2], [.235, .112, .126, SLOT_ACCENT, -.008]], SLOT_ACCENT, Transform3D.IDENTITY, 14, true, false)
+				b.loft([[.245, .114, .128, SLOT_EYE, -.008], [.222, .112, .126, SLOT_EYE, -.008]], SLOT_EYE, Transform3D.IDENTITY, 14, false, false)
+				b.ellipsoid(Vector3(0, .225, .12), Vector3(.085, .01, .065), SLOT_EYE, Basis(Vector3.RIGHT, .18), 10, 3)
+				b.ellipsoid(Vector3(0, .285, .128), Vector3(.02, .022, .006), SLOT_METAL, Basis.IDENTITY, 6, 4)
 			5: # capacete de bombeiro: domo com crista e aba larga caída atrás.
 				b.ellipsoid(Vector3(0, .24, -.01), Vector3(.12, .11, .135), SLOT_ACCENT, Basis.IDENTITY, 12, 7)
 				b.ellipsoid(Vector3(0, .31, -.01), Vector3(.02, .03, .12), SLOT_ACCENT, Basis.IDENTITY, 6, 4, .85)

@@ -3,16 +3,12 @@ func _ready() -> void:
 	var iron := StandardMaterial3D.new()
 	iron.albedo_color = Color("38434a")
 	iron.roughness = 0.8
-	var bowl := MeshInstance3D.new()
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = 0.66
-	mesh.bottom_radius = 0.39
-	mesh.height = 0.46
-	mesh.radial_segments = 16
-	bowl.mesh = mesh
-	bowl.material_override = iron
-	bowl.position.y = 0.61
+	var bowl := preload("res://runtime/cold/FireArt.gd").bowl()
+	bowl.position.y = .38
 	add_child(bowl)
+	var fuel := preload("res://runtime/cold/FireArt.gd").fuel()
+	fuel.position.y = .72
+	add_child(fuel)
 	for side in [-1.0,1.0]:
 		var leg := MeshInstance3D.new()
 		var box := BoxMesh.new()

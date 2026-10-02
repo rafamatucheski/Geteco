@@ -78,7 +78,7 @@ func run() -> void:
 	var bench := find_piece(edited,"cobra/banco/0")
 	check(bench != null, "Bench is a coherent individually movable piece")
 	var bench_shapes := shapes_in(bench)
-	check(bench_shapes.size() == 2, "Bench seat and back solids share its transform")
+	check(bench_shapes.size() == 4, "Bench seat, back and both supporting legs share its transform")
 	var shape := bench_shapes[0]
 	var body := shape.get_parent()
 	var old_point := shape.global_position

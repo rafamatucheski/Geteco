@@ -14,6 +14,7 @@ render_mode diffuse_lambert, specular_schlick_ggx;
 #include "res://world/regions/mountain_ground.gdshaderinc"
 
 instance uniform vec2 origin = vec2(0.0);
+uniform sampler2D trail_mask : filter_linear, repeat_disable;
 uniform vec3 earth_dark : source_color = vec3(0.17, 0.19, 0.13);
 uniform vec3 grass : source_color = vec3(0.24, 0.31, 0.18);
 uniform vec3 rock : source_color = vec3(0.42, 0.43, 0.43);
@@ -85,6 +86,13 @@ void fragment() {
 	float wet = 1.0 - smoothstep(-0.3, 0.02, height + (fine - 0.5) * 0.06);
 	vec3 mud = mix(vec3(0.085, 0.066, 0.045), vec3(0.05, 0.045, 0.035), smoothstep(0.1, 0.4, -height));
 	color = mix(color, mud * (0.85 + d1 * 0.2 + d2 * 0.1), wet * 0.92);
+	// The trail is part of this opaque surface, with one maximum-union mask.
+	// Pixel centers include both chunk borders, so adjacent chunks sample identically.
+	float trail = texture(trail_mask, (local_xz * 2.0 + 0.5) / 129.0).r;
+	float wear = smoothstep(0.03, 0.92, trail + (mid - 0.5) * 0.23 * trail);
+	vec3 packed = mix(vec3(0.23,0.19,0.14), vec3(0.43,0.43,0.39), snow_amount * 0.55);
+	packed *= 0.85 + d1 * 0.14 + d2 * 0.13;
+	color = mix(color, packed, wear * 0.88);
 	ALBEDO = color;
 	// Relevo fino na iluminação, também com a camada de perto.
 	float e = 0.1;
@@ -94,7 +102,7 @@ void fragment() {
 	vec2 bump = vec2(hx - h0, hz - h0) / e * 0.07;
 	NORMAL_MAP = vec3(0.5 - bump.x, 0.5 - bump.y, 1.0);
 	NORMAL_MAP_DEPTH = 1.0;
-	float snowy = cover * (1.0 - cliff);
+	float snowy = cover * (1.0 - cliff) * (1.0 - wear * 0.8);
 	ROUGHNESS = mix(mix(0.95, 0.6, snowy), 0.35, wet);
 	SPECULAR = mix(0.2, 0.4, snowy);
 	// Cintilado de cristal de gelo: pontos minúsculos, só na neve.

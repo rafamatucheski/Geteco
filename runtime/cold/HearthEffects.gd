@@ -9,22 +9,11 @@ var flames: Array[MeshInstance3D] = []
 var wisps: Array[MeshInstance3D] = []
 
 func _ready() -> void:
-	var flame_mat := StandardMaterial3D.new()
-	flame_mat.albedo_color = Color(1, 0.48, 0.10, 0.8)
-	flame_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	flame_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	flame_mat.emission_enabled = true
-	flame_mat.emission = Color(1, 0.38, 0.06)
-	flame_mat.emission_energy_multiplier = 0.7
+	var flame_mat := preload("res://runtime/cold/FireArt.gd").flame_material()
 	if show_flames:
 		for i in 5:
 			var flame := MeshInstance3D.new()
-			var mesh := SphereMesh.new()
-			mesh.radius = 0.07
-			mesh.height = 0.35
-			mesh.radial_segments = 8
-			mesh.rings = 4
-			flame.mesh = mesh
+			flame.mesh = preload("res://runtime/cold/FireArt.gd").flame_mesh()
 			flame.material_override = flame_mat
 			flame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			flame.position = Vector3((i - 2) * 0.065, 0.16, sin(i * 2.0) * 0.05)

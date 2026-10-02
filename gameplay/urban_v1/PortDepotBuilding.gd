@@ -201,8 +201,12 @@ func _build_office() -> void:
 	_box("FileCabinets", Vector3(40.9, 1.05, 3), Vector3(1.2, 2.1, 3), "shutter", true)
 	for y in [.45, 1.05, 1.65]:
 		_box("CabinetHandles", Vector3(40.25, y, 3), Vector3(.08, .07, 2.4), "steel")
-	_box("BenchSeat", Vector3(29.15, .43, 25), Vector3(.75, .86, 3), "wood", true)
-	_box("BenchBack", Vector3(28.85, 1.1, 25), Vector3(.12, .7, 3), "wood", true)
+	var waiting_bench := preload("res://world/urban_detail/BenchFinish.gd").create(3.0, .75, .52, 1.45)
+	waiting_bench.position = Vector3(29.15,0,25)
+	waiting_bench.rotation.y = PI*.5
+	add_child(waiting_bench)
+	_solid("BenchSeat", Vector3(29.15,.43,25), Vector3(.75,.86,3), self)
+	_solid("BenchBack", Vector3(28.85,1.1,25), Vector3(.12,.7,3), self)
 	_box("Doormat", Vector3(35, .02, 28.9), Vector3(2.5, .035, 1.4), "rubber")
 
 func _build_storage() -> void:

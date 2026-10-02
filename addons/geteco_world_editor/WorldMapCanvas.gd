@@ -188,6 +188,10 @@ func _draw_foreground() -> void:
 				draw_circle(p,radius,Color("c4d8cc") if row.get("snow",false) else Color("56886c"))
 				if active: draw_arc(p,radius+3,0,TAU,24,Color("e7c678"),2,true)
 			"light":
+				var angle := deg_to_rad(float(row.get("rotation",0)))
+				var arm_tip := p + Vector2(sin(angle),cos(angle)) * maxf(7,1.3*zoom)
+				draw_line(p,arm_tip,Color("b5babe"),2,true)
+				draw_circle(arm_tip,2.5,Color(row.get("color","ffe0ab")))
 				if active: draw_circle(p,float(row.range)*zoom,Color(1,.85,.4,.10))
 				draw_circle(p,clampf(zoom*1.25,1.2,5),Color(row.get("color","ffe0ab")))
 				if active: draw_arc(p,9,0,TAU,20,Color("e7c678"),2,true)
@@ -387,7 +391,7 @@ func gizmo_hit(at: Vector2) -> String:
 	if row.type in ["piece","ground","building","prop"] and offset.distance_to(RESIZE_OFFSET) < 11: return "resize"
 	if offset.x >= 18 and offset.x <= AXIS_LENGTH+9 and absf(offset.y) <= 9: return "x"
 	if offset.y >= 18 and offset.y <= AXIS_LENGTH+9 and absf(offset.x) <= 9: return "z"
-	if rotation_enabled and row.type != "light" and not row.get("paving",false) and absf(offset.length()-ROTATE_RADIUS) <= 7: return "rotate"
+	if rotation_enabled and not row.get("paving",false) and absf(offset.length()-ROTATE_RADIUS) <= 7: return "rotate"
 	return ""
 
 func _start_drag(at: Vector2,axis: String) -> void:
@@ -514,7 +518,7 @@ func _draw_gizmo() -> void:
 	var red := Color("ff7771")
 	var blue := Color("78bcff")
 	var green := Color("85d9a0")
-	if rotation_enabled and row.type != "light" and not row.get("paving",false):
+	if rotation_enabled and not row.get("paving",false):
 		draw_arc(origin,ROTATE_RADIUS,0,TAU,96,Color("142027"),6,true)
 		draw_arc(origin,ROTATE_RADIUS,0,TAU,96,green,3 if drag_axis == "rotate" else 2,true)
 		draw_circle(origin+Vector2(-ROTATE_RADIUS,0),5,green)

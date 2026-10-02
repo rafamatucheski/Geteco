@@ -88,19 +88,28 @@ func _ready()->void:
 func _tree(style:int,scale_factor:float,color:Color)->void:
 	var trunk_h:=(3.0 if style!=2 else 3.6)*scale_factor
 	_cylinder("TreeTrunk",.22*scale_factor,trunk_h,Vector3(0,trunk_h*.5,0),Color("66513a"),true)
+	# Retain the existing collision envelope; replace only its visual mesh.
+	var wood := get_child(get_child_count()-1) as MeshInstance3D
+	wood.mesh=preload("res://world/urban_detail/StreetTreeWood.gd").mesh()
+	wood.position=Vector3.ZERO
+	wood.scale=Vector3(scale_factor,trunk_h/3.0,scale_factor)
+	wood.material_override=preload("res://world/city_look/CityPropKit.gd").material()
+	var variation := posmod(int(definition.point.x*7+definition.point.y*13),7)
+	wood.rotation.y=float(variation)*.83
 	var crown_centers:=[Vector3(-.58,0,0),Vector3(.48,.20,.12),Vector3(0,.44,-.34),Vector3(.08,-.10,.58)]
-	if style==2: crown_centers=[Vector3(0,.2,0),Vector3(0,.85,0),Vector3(0,1.45,0)]
+	if style==2: crown_centers=[Vector3(-.22,.20,.08),Vector3(.27,.80,-.16),Vector3(-.08,1.40,.10)]
 	for index in crown_centers.size():
 		var crown:=MeshInstance3D.new()
 		crown.name="TreeCanopy"
-		var mesh:=SphereMesh.new()
-		mesh.radius=(1.05 if style!=2 else 1.22-index*.16)*scale_factor
-		mesh.height=mesh.radius*1.8
-		mesh.radial_segments=8
-		mesh.rings=4
-		crown.mesh=mesh
+		crown.mesh=preload("res://world/urban_detail/StreetTreeCanopy.gd").mesh(index + style + variation)
+		var radius := (1.05 if style!=2 else 1.22-index*.16)*scale_factor
+		crown.scale=Vector3(radius, radius * (1.03 if style==2 else .87), radius * .94)
+		crown.scale *= Vector3(1.0+float(variation%3)*.07, .88+float(variation%4)*.06,1.0)
+		crown.rotation.y=float(index * 2 + style) * .73
+		crown.rotation.y+=float(variation)*.61
 		crown.position=Vector3(0,trunk_h+.62*scale_factor,0)+(crown_centers[index] as Vector3)*scale_factor
 		crown.material_override=_material(color.lightened(.06*float(index%3)))
+		(crown.material_override as StandardMaterial3D).vertex_color_use_as_albedo=true
 		add_child(crown)
 
 func _rock()->void:
@@ -109,9 +118,8 @@ func _rock()->void:
 	_box("RockFacet",Vector3(-.18,.76,.05),Vector3(.72,.08,.62),Color("9aa08e"))
 
 func _bench()->void:
-	_box("BenchSeat",Vector3(0,.52,0),Vector3(4.06,.18,1.18),Color("bd9b69"),true)
-	_box("BenchBack",Vector3(0,.98,-.48),Vector3(4.06,.82,.14),Color("463b30"),true)
-	for x in [-1.75,0.0,1.75]: _box("BenchLeg",Vector3(x,.25,0),Vector3(.16,.5,.72),Color("26221d"),true)
+	add_child(preload("res://world/urban_detail/StreetBench.gd").create(4.06,1.18))
+	_solid(Vector3(0,.56,0),Vector3(4.06,1.12,1.28))
 
 func _lamp()->void:
 	_cylinder("StreetLampPost",.09,3.2,Vector3(0,1.6,0),Color("3f4745"),true)

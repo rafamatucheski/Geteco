@@ -39,7 +39,7 @@ static func definitions() -> Array[Dictionary]:
 		["lumberjack_shelter","Abrigo dos Lenhadores","mountain",Vector2(7940,850),"world/mountain_pass/LumberjackBunkhouse3D.gd",Vector2(10,9.6),3.0,4.15,"shelter"],
 		["ski_lodge","Summit","mountain",Vector2(7140,-2760),"world/mountain_pass/SummitSkiLodgeInterior3D.gd",Vector2(16,10),4.0,4.8,"ski_rental"],
 		["mountain_mystery_cave","Caverna da Queda","mountain",Vector2(6200,-320),"world/mountain_pass/MountainMysteryCaveInterior3D.gd",Vector2(16,12),4.0,5.0,"expedition"],
-		["mountain_outfitters","Ãšltimo Abrigo","mountain",Vector2(5980,650),"world/harbor/interiors/ClothingInteriorArt3D.gd",Vector2(13,9),3.0,4.0,"clothing"],
+		["mountain_outfitters","Último Abrigo","mountain",Vector2(5980,650),"world/harbor/interiors/ClothingInteriorArt3D.gd",Vector2(13,9),3.0,4.0,"clothing"],
 		["mountain_boutique","Boutique Alpina","mountain",Vector2(7400,-2735),"world/harbor/interiors/ClothingInteriorArt3D.gd",Vector2(13,9),3.0,4.0,"clothing"],
 		["mountain_village_outfitters","Casacos da Vila","mountain",Vector2(7790,-1640),"world/harbor/interiors/ClothingInteriorArt3D.gd",Vector2(13,9),3.0,4.0,"clothing"],
 	]

@@ -128,9 +128,10 @@ func _build_room() -> void:
 		for y in [1.02,1.4]:
 			_box("SkiBinding",Vector3(x,y,-4.68),Vector3(.20,.15,.15),dark)
 	_solid_id = &"BootBench"
-	_box("BenchSeat",Vector3(4.8,.51,-1.9),Vector3(4.6,.16,.9),endgrain)
-	for x in [2.8,6.8]:
-		_box("BenchLeg",Vector3(x,.24,-1.9),Vector3(.16,.48,.76),dark)
+	var boot_bench := preload("res://world/urban_detail/BenchFinish.gd").create(4.6, .9, .59)
+	boot_bench.position = Vector3(4.8,0,-1.9)
+	boot_bench.set_meta("interior_solid_id", &"BootBench")
+	add_child(boot_bench)
 	for x in [3.3,4.3,5.3,6.3]:
 		_box("BootToe",Vector3(x,.69,-1.83),Vector3(.32,.20,.51),dark)
 		_box("BootCuff",Vector3(x,.9,-2.00),Vector3(.29,.43,.27),dark,Vector3(-8,0,0))

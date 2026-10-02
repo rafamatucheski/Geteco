@@ -1,5 +1,6 @@
 extends UrbanBuildingBase
 class_name UrbanCobraHouse
+const FINISH := preload("res://world/urban_detail/CobraMaterials.gd")
 
 ## Reconstructs the 8 residential bungalows of the Cobra gang quarter in East Harbor.
 ## Features pitched corrugated tin/shingle roofs with overhanging eaves, covered wooden front porches,
@@ -15,9 +16,9 @@ func build() -> void:
 	var house_center_z := -half_d + house_depth * 0.5
 	var house_front_z := house_center_z + house_depth * 0.5
 	
-	var wall_mat := UrbanMaterials.material_for_color(base_color, 0.86)
-	var roof_mat := UrbanMaterials.roof_tin_rusty() if building_id in ["TinRoofHouse", "PorchHouse", "CobraWorkshop"] else UrbanMaterials.roof_shingle()
-	var wood_mat := UrbanMaterials.wood_porch()
+	var wall_mat := UrbanMaterials.textured_wall(base_color.darkened(.24), 0.9)
+	var roof_mat := FINISH.surface("metal",Color("514437")) if building_id in ["TinRoofHouse", "PorchHouse", "CobraWorkshop"] else FINISH.surface("shingle",Color("293d32"))
+	var wood_mat := FINISH.surface("wood",Color("4d4333"))
 	UrbanMaterials.trim_stone()
 	
 	# Main enclosed house volume (solid collision)
@@ -50,20 +51,17 @@ func _build_authored_identity(house_center_z: float, house_front_z: float, house
 			for side in [-1.0,1.0]: add_mesh_box(visuals_root,"DuplexEntryCanopy",Vector3(side*building_size.x*.23,2.45,house_front_z+.55),Vector3(building_size.x*.34,.12,1.15),metal)
 		"CobraWorkshop":
 			add_solid_box(visuals_root,"WorkshopRearBay",Vector3(0,1.65,house_center_z-house_depth*.42),Vector3(building_size.x*.82,3.3,house_depth*.36),UrbanMaterials.material_for_color(Color("4d5047")))
-			add_mesh_box(visuals_root,"WorkshopForecourtAwning",Vector3(0,2.75,house_front_z+1.25),Vector3(building_size.x+1.0,.16,2.5),UrbanMaterials.roof_tin_rusty())
+			add_mesh_box(visuals_root,"WorkshopForecourtAwning",Vector3(0,2.75,house_front_z+1.25),Vector3(building_size.x+1.0,.16,2.5),FINISH.surface("metal",Color("514437")))
 			for x in [-building_size.x*.43,building_size.x*.43]: add_mesh_box(visuals_root,"WorkshopAwningPost",Vector3(x,1.38,house_front_z+2.1),Vector3(.13,2.75,.13),dark)
 		"CourtyardHouse":
 			add_solid_box(visuals_root,"CourtyardWing",Vector3(-building_size.x*.38,1.45,house_center_z-house_depth*.18),Vector3(building_size.x*.36,2.9,house_depth*.68),UrbanMaterials.material_for_color(base_color.darkened(.08)))
 			add_mesh_box(visuals_root,"CourtyardWingRoof",Vector3(-building_size.x*.38,3.02,house_center_z-house_depth*.18),Vector3(building_size.x*.42,.18,house_depth*.76),UrbanMaterials.roof_shingle())
 		"TinRoofHouse":
-			for rib in 7:
-				var x := lerpf(-building_size.x*.43,building_size.x*.43,float(rib)/6.0)
-				add_mesh_box(visuals_root,"TinRoofRib",Vector3(x,height+1.12,house_center_z),Vector3(.055,.06,house_depth+1.0),metal)
+			pass # Corrugation now follows both roof slopes in the shared material.
 		"ShingleHouse":
-			for row in 5:
-				add_mesh_box(visuals_root,"ShingleCourse",Vector3(0,height+.42+row*.22,house_center_z+(2-row)*.22),Vector3(building_size.x+.65,.055,house_depth*.18),dark)
+			pass # Courses are on the shingles, not floating horizontal bars.
 		"PorchHouse":
-			add_mesh_box(visuals_root,"PorchHouseShade",Vector3(0,2.62,house_front_z+1.15),Vector3(building_size.x+.7,.14,2.25),UrbanMaterials.roof_tin_rusty())
+			add_mesh_box(visuals_root,"PorchHouseShade",Vector3(0,2.62,house_front_z+1.15),Vector3(building_size.x+.7,.14,2.25),FINISH.surface("metal",Color("514437")))
 		"CornerBungalow":
 			add_mesh_box(visuals_root,"CornerBungalowSideShade",Vector3(building_size.x*.42,2.35,house_center_z),Vector3(1.35,.12,house_depth*.72),UrbanMaterials.roof_shingle())
 
@@ -76,21 +74,32 @@ func _build_pitched_roof(center_z: float, depth: float, roof_mat: StandardMateri
 	# Sloped roof planes (front and rear slopes)
 	var half_rd := roof_d * 0.5
 	var slope_y := height + pitch_h * 0.5
+	var pitch := atan2(pitch_h,half_rd)
+	var slope_length := sqrt(half_rd*half_rd+pitch_h*pitch_h)
 	
 	# Front slope
-	var front_slope := add_mesh_box(visuals_root, "RoofFrontSlope", Vector3(0, slope_y, center_z + half_rd * 0.5), Vector3(roof_w, 0.08, half_rd), roof_mat)
-	front_slope.rotation.x = -0.38
+	var front_slope := add_mesh_box(visuals_root, "RoofFrontSlope", Vector3(0, slope_y, center_z + half_rd * 0.5), Vector3(roof_w, 0.08, slope_length), roof_mat)
+	front_slope.rotation.x = pitch
 	
 	# Rear slope
-	var rear_slope := add_mesh_box(visuals_root, "RoofRearSlope", Vector3(0, slope_y, center_z - half_rd * 0.5), Vector3(roof_w, 0.08, half_rd), roof_mat)
-	rear_slope.rotation.x = 0.38
+	var rear_slope := add_mesh_box(visuals_root, "RoofRearSlope", Vector3(0, slope_y, center_z - half_rd * 0.5), Vector3(roof_w, 0.08, slope_length), roof_mat)
+	rear_slope.rotation.x = -pitch
 	
 	# Ridge cap
 	add_mesh_box(visuals_root, "RoofRidge", Vector3(0, height + pitch_h + 0.04, center_z), Vector3(roof_w + 0.08, 0.10, 0.22), UrbanMaterials.metal_dark())
 	
-	# Gable end triangles / side fascia boards
+	# Triangular ends close the roof; rectangular fascia used to intersect it.
 	for side in [-building_size.x * 0.5 - 0.02, building_size.x * 0.5 + 0.02]:
-		add_mesh_box(visuals_root, "GableTrim", Vector3(side, height + pitch_h * 0.45, center_z), Vector3(0.08, pitch_h * 0.9, depth), UrbanMaterials.trim_dark())
+		var tool := SurfaceTool.new()
+		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var vertices := [Vector3(side,height,center_z-half_rd),Vector3(side,height+pitch_h,center_z),Vector3(side,height,center_z+half_rd)]
+		for index in ([0,1,2] if side<0 else [2,1,0]): tool.add_vertex(vertices[index])
+		tool.generate_normals()
+		var gable := MeshInstance3D.new()
+		gable.name = "GableTrim"
+		gable.mesh = tool.commit()
+		gable.material_override = FINISH.surface("wood",Color("59604a"))
+		visuals_root.add_child(gable)
 
 func _build_porch(house_front_z: float, porch_depth: float, wood_mat: StandardMaterial3D, roof_mat: StandardMaterial3D) -> void:
 	var porch := Node3D.new()

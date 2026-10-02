@@ -23,6 +23,12 @@ const TRAFFIC_MERGE_X := SEAM.x + 12.0
 const MOUNTAIN_BLEND_END_X := TUNNEL_END_X + 20.0
 const MOUNTAIN_NORTH_FADE := Vector2(-203.75, -128.75)
 
+static func tunnel_camera_weight(point: Vector3) -> float:
+	if absf(point.z-CENTER_Z) > TUNNEL_CLEAR_HALF_WIDTH or point.y > 4.4: return 0.0
+	var approach := maxf(TUNNEL_START_X-point.x,point.x-TUNNEL_END_X)
+	# Lower the camera before the portal; keep it low until clear of the roof.
+	return 1.0-smoothstep(8.0,24.0,approach)
+
 var _materials: Dictionary = {}
 var bridge_lamps: Array[OmniLight3D] = []
 
@@ -265,23 +271,46 @@ func _build_tunnel() -> void:
 	var rock := _material("tunnel_rock",Color("454b47"))
 	var lining := _material("tunnel_lining",Color("777b72"))
 	var steel := _material("tunnel_steel",Color("a4afa8"),.62,.18)
+	var road_geometry := preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()
+	var paving := road_geometry._material(road_geometry.SIDEWALK_COLOR).duplicate() as StandardMaterial3D
+	paving.uv1_triplanar = true
+	paving.uv1_world_triplanar = true
+	paving.uv1_scale = Vector3.ONE * .5
 	var length := TUNNEL_END_X-TUNNEL_START_X
+	var road_half_width := 140.0 * UNIT * .5
+	var pavement_width := TUNNEL_CLEAR_HALF_WIDTH-road_half_width
 	for side in [-1.0,1.0]:
-		var wall := _box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.0,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.0,1.1),rock,true)
-		# O paredão contínuo projetava um bloco retangular sobre neve e estrada.
-		# Pilares e entorno ainda recebem sombra; a contenção física permanece.
-		wall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		# A parede voltada à câmera atravessava visualmente a neve e a estrada
-		# como um retângulo escuro. O volume de colisão continua ativo no corte.
-		if side > 0.0: wall.visible = false
+		# The rural shoulder continues underneath this structure. Cover it up to
+		# the lining with a supported, walkable pavement, flush with bridge margins.
+		_box("TunnelSidewalk",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,-.015,CENTER_Z+side*(road_half_width+pavement_width*.5)),Vector3(length+1.15,.17,pavement_width),paving,true)
+		_box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.2,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.4,1.1),rock,true)
 		_box("TunnelCurb",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,.22,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(length,.44,.45),lining,true)
-	# Sparse overhead ribs make the enclosure readable without an opaque slab
-	# hiding the road from the production camera.
+	_box("TunnelRoof",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,4.65,CENTER_Z),Vector3(length,.5,TUNNEL_CLEAR_HALF_WIDTH*2.0+2.2),lining,true)
+	# Continuous enclosure; the gameplay camera follows the actor inside it.
 	var rib_count := ceili(length/11.0)
 	for index in rib_count+1:
 		var x := lerpf(TUNNEL_START_X,TUNNEL_END_X,float(index)/rib_count)
 		var rib := _box("TunnelRoofRib",Vector3(x,4.25,CENTER_Z),Vector3(.20,.30,TUNNEL_CLEAR_HALF_WIDTH*2.0+1.1),steel,true)
 		rib.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		if index > 0 and index < rib_count:
+			for side in [-1.0,1.0]:
+				# Crossbeams bear on the curb through their vertical supports.
+				_box("TunnelRibSupport",Vector3(x,2.42,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(.20,3.96,.30),steel,true)
+	var glass := _material("tunnel_lamp",Color("e8dec4"))
+	glass.emission_enabled = true
+	glass.emission = Color("ffe5b3")
+	glass.emission_energy_multiplier = 1.0
+	for index in rib_count:
+		var x := lerpf(TUNNEL_START_X,TUNNEL_END_X,(float(index)+.5)/rib_count)
+		_box("TunnelCeilingLamp",Vector3(x,4.30,CENTER_Z),Vector3(1.2,.12,.45),glass)
+		var lamp := OmniLight3D.new()
+		lamp.name = "TunnelInteriorLight"
+		lamp.position = Vector3(x,3.95,CENTER_Z)
+		lamp.light_color = Color("ffe9c5")
+		lamp.light_energy = 1.3
+		lamp.omni_range = 10.0
+		lamp.shadow_enabled = true
+		add_child(lamp)
 	for x in [TUNNEL_START_X,TUNNEL_END_X]:
 		for side in [-1.0,1.0]:
 			_box("TunnelPortalPier",Vector3(x,2.35,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.25)),Vector3(1.15,4.7,1.45),lining,true)

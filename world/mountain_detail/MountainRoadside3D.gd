@@ -77,7 +77,8 @@ func _build(region) -> void:
 		# Faixa contínua com emenda em ângulo (miter) em cada vértice: quadriláteros
 		# soltos por trecho se sobrepunham nas curvas e pareciam remendos (relato do
 		# jogador em 2026-09-24).
-		for s in [-1.0, 1.0]: _add_strip(points, half, s, vertices, uvs)
+		if region.terrain == null:
+			for s in [-1.0, 1.0]: _add_strip(points, half, s, vertices, uvs)
 		for i in range(points.size() - 1):
 			var a := points[i]
 			var b := points[i + 1]
@@ -115,6 +116,8 @@ func _build(region) -> void:
 	CONNECTION.configure_ground_material(path_material)
 	_paths.material_override = path_material
 	_paths.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Native terrain now blends this shoulder into the same opaque ground surface.
+	_paths.visible = region.terrain == null
 	add_child(_paths)
 	_build_lamps()
 

@@ -306,9 +306,9 @@ func _part(id: String,at: Vector3) -> void:
 	holder.add_child(mesh)
 
 func _bench(at: Vector3) -> void:
-	_box(at+Vector3(0,.48,0),Vector3(2.2,.14,.58),"766449")
-	_box(at+Vector3(0,.88,-.25),Vector3(2.2,.6,.09),"827052")
-	for x in [-.8,.8]: _box(at+Vector3(x,.23,0),Vector3(.13,.46,.45),"5b5845")
+	var seat := preload("res://world/urban_detail/BenchFinish.gd").create(2.2, .65, .55, 1.1, Color("766449"), Color("5b5845"))
+	seat.transform = _author_transform * Transform3D(Basis.IDENTITY, at)
+	self.add_child(seat)
 	_solid("WoodenBench",at+Vector3(0,.55,0),Vector3(2.2,1.1,.65))
 
 func _lamp(at: Vector3) -> void:

@@ -71,23 +71,9 @@ func _discard(id: String) -> void:
 	visuals.erase(id)
 	provider_ids.erase(id)
 func _campfire() -> Node3D:
-	# Native reconstruction of MountainCampfire2D: three crossed logs, original flame palette.
 	var node := Node3D.new()
-	var wood := StandardMaterial3D.new()
-	wood.albedo_color = Color("493126")
-	wood.roughness = .95
-	for i in 3:
-		var local_log := MeshInstance3D.new()
-		var mesh := CylinderMesh.new()
-		mesh.top_radius = .125
-		mesh.bottom_radius = .125
-		mesh.height = 1.25
-		mesh.radial_segments = 8
-		local_log.mesh = mesh
-		local_log.material_override = wood
-		local_log.position.y = .14
-		local_log.rotation = Vector3(PI/2,i*1.05+.2,0)
-		node.add_child(local_log)
+	node.add_child(preload("res://runtime/cold/FireArt.gd").stone_ring())
+	node.add_child(preload("res://runtime/cold/FireArt.gd").fuel())
 	var flame := preload("res://runtime/cold/HearthEffects.gd").new()
 	flame.position.y = .15
 	flame.scale = Vector3.ONE*1.5

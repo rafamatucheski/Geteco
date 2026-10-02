@@ -10,6 +10,9 @@ func mat(color: String, metal := 0.0) -> StandardMaterial3D:
 	material.albedo_color = Color(color)
 	material.roughness = .72
 	material.metallic = metal
+	if color in ["886e50", "a79777"]:
+		material.albedo_texture = preload("res://world/places/ShopInteriorMaterials.gd").texture("wood")
+		material.uv1_triplanar = true
 	materials[color] = material
 	return material
 
@@ -246,7 +249,8 @@ func terminal() -> void:
 		for z in [197.4,200.4]: box(Vector3(x,1.5,z),Vector3(.16,2.8,.16),"34494c",true)
 	box(Vector3(232.5,2.97,198.9),Vector3(7.7,.18,3.6),"325760",true)
 	for x in [230.4,234.4]:
-		box(Vector3(x,.59,200),Vector3(2,.10,.65),"886e50")
+		for slat in 4:
+			box(Vector3(x,.59,199.75625+slat*.1625),Vector3(2,.10,.1495),"886e50")
 		collider(Vector3(x,.58,200),Vector3(2,.9,.78))
 		for i in 5: box(Vector3(x,.65+i*.12,200.35),Vector3(2,.065,.08),"a79777")
 		for side in [-.7,.7]: box(Vector3(x+side,.3,200),Vector3(.09,.4,.55),"34494c")

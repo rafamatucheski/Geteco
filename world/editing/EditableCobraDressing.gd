@@ -4,17 +4,37 @@ extends "res://world/urban_detail/HarborAreaDressing3D.gd"
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 var _piece_depth := 0
 var _pieces: Array[Dictionary] = []
+var _grass_anchor: Node3D
 
 func _ready() -> void:
 	super._ready()
 	for child in get_children():
 		if child.name == "CobraCommunalGarden": _track_piece("Jardim", [child], [])
+		if child.name == "CobraWildGrass": _track_piece("Vegetação", [child], [])
+		if str(child.name).begins_with("CobraPathCorners"): _track_piece(str(child.name),[child],[])
 	_publish_pieces()
 
 func _tree(point: Vector2, scale_factor: float, dry: bool) -> void:
 	var start := _begin_piece()
 	super._tree(point, scale_factor, dry)
 	_end_piece("Árvore", start)
+
+func _scatter_grass() -> void:
+	# WorldEditPieces applies saved outlines/transforms immediately after ready.
+	_grass_anchor = Node3D.new()
+	_grass_anchor.name = "CobraWildGrass"
+	add_child(_grass_anchor)
+	_refresh_grass.call_deferred()
+
+func _refresh_grass() -> void:
+	if not is_instance_valid(_grass_anchor): return
+	var has_land := false
+	for mesh in find_children("*","MeshInstance3D",true,false):
+		if mesh.get_meta("cobra_surface_label","")=="CobraDryMeadow": has_land=true; break
+	# A copy containing just a relocated path must not reproduce the whole meadow.
+	if not has_land: return
+	var grass := preload("res://world/urban_detail/CobraVegetation.gd").scatter(self)
+	grass.reparent(_grass_anchor,true)
 
 func _rock(point: Vector2, scale_factor: float) -> void:
 	var start := _begin_piece()

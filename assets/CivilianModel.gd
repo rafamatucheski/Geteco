@@ -38,6 +38,7 @@ var hand_provider: Callable
 var pelvis: MeshInstance3D
 var spine: MeshInstance3D
 var head_node: MeshInstance3D
+var _head_scale := Vector3.ONE
 var thighs: Array[MeshInstance3D] = []
 var shins: Array[MeshInstance3D] = []
 var feet: Array[MeshInstance3D] = []
@@ -202,10 +203,15 @@ static func _pick(rng: RandomNumberGenerator, values: Array, weights: Array) -> 
 func _build_rig() -> void:
 	var w := wardrobe
 	var profile := KIT.build_profile(w.female, w.build)
+	# Service uniforms can retain authored proportions instead of rounding them
+	# to the three generic civilian builds. Generated meshes remain cached.
+	profile.merge(w.get("body_profile", {}), true)
 	scale = Vector3.ONE * float(w.height)
 	pelvis = _joint(self, "Pelvis", Vector3(0, PELVIS_Y, 0), KIT.pelvis_mesh(profile, w.top, w.bottom, w.bag))
 	spine = _joint(pelvis, "Spine", SPINE_OFFSET, KIT.chest_mesh(profile, w.top, w.backpack, -w.bag))
 	head_node = _joint(spine, "Head", NECK, KIT.head_mesh(w.female, w.hair, w.beard, w.hat, w.glasses))
+	_head_scale = w.get("head_scale", Vector3.ONE)
+	head_node.scale = _head_scale
 	var hip_x: float = profile.hip.x * 0.6
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
@@ -393,7 +399,7 @@ func _pose(dt: float) -> void:
 	var head_yaw := -(yaw + chest_yaw) * 0.85 + _look * (1.0 - 0.7 * rw)
 	var head_pitch := -(tilt + chest_lean) * 0.75 + 0.05 + nod + 0.12 * _carry_w
 	var head_roll := -(roll + chest_roll) * 0.8
-	head_node.transform = Transform3D(Basis.from_euler(Vector3(head_pitch, head_yaw, head_roll)), NECK)
+	head_node.transform = Transform3D(Basis.from_euler(Vector3(head_pitch, head_yaw, head_roll)) * Basis.from_scale(_head_scale), NECK)
 
 	# Braços em oposição às pernas; na corrida cotovelo a ~90° e balanço cruzando
 	# levemente à frente do corpo. Parado: pendem com leve dobra.

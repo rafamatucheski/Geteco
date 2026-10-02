@@ -112,13 +112,52 @@ static func build_light(region: Node, chunk: Node3D, record: Dictionary) -> void
 	lamp.name = "EditorLamp"
 	lamp.set_meta("editor_id", row.id)
 	lamp.position = record.position
+	lamp.rotation.y = deg_to_rad(float(row.get("rotation", 0.0)))
 	if region.terrain != null: lamp.position.y = region.terrain.surface_height_at(Vector2(lamp.position.x, lamp.position.z))
 	chunk.add_child(lamp)
-	region._box(lamp, "Pole", Vector3(0, row.height*.5, 0), Vector3(.18, row.height, .18), Color("403e37"), true)
-	var glass: MeshInstance3D = region._box(lamp, "Lamp", Vector3(0, row.height, 0), Vector3(.5, .3, .5), Color(row.color))
+	# Same cached mast, lateral arm and housing as the normal street lamps.
+	# Keep editor-owned light names: the city night pass must not add another source.
+	var height_scale := float(row.height) / CITY_DRESSING.LAMP_HEIGHT
+	var pole := MeshInstance3D.new()
+	pole.name = "Pole"
+	pole.mesh = CITY_DRESSING._lamp_mesh("pole")
+	pole.scale.y = height_scale
+	pole.material_override = preload("res://world/city_look/CityLookMaterials.gd").flat(Color("4a5054"), .6)
+	lamp.add_child(pole)
+	var glass := MeshInstance3D.new()
+	glass.name = "Lamp"
+	glass.mesh = CITY_DRESSING._lamp_mesh("head")
+	glass.scale.y = height_scale
+	var lens_material := StandardMaterial3D.new()
+	lens_material.albedo_color = Color(row.color)
+	glass.material_override = lens_material
 	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	lamp.add_child(glass)
+	var body := StaticBody3D.new()
+	body.name = "PoleSolid"
+	body.collision_layer = 1
+	body.collision_mask = 0
+	for size in [Vector3(.18, float(row.height), .18), Vector3(.34, .4 * height_scale, .34)]:
+		var collider := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = size
+		collider.shape = shape
+		collider.position.y = size.y * .5
+		body.add_child(collider)
+	# A lowered editor lamp still has a solid arm/head; normal street height
+	# leaves pedestrians free to walk beneath them.
+	for part in [
+		[Vector3(0, (CITY_DRESSING.LAMP_HEIGHT-.05)*height_scale, CITY_DRESSING.LAMP_ARM*.5), Vector3(.09,.09*height_scale,CITY_DRESSING.LAMP_ARM)],
+		[Vector3(0, (CITY_DRESSING.LAMP_HEIGHT+.03)*height_scale, CITY_DRESSING.LAMP_ARM+.02), Vector3(.36,.1*height_scale,.62)]]:
+		var collider := CollisionShape3D.new()
+		var shape := BoxShape3D.new()
+		shape.size = part[1]
+		collider.shape = shape
+		collider.position = part[0]
+		body.add_child(collider)
+	lamp.add_child(body)
 	var light := OmniLight3D.new()
-	light.position.y = float(row.height)
+	light.position = Vector3(0, (CITY_DRESSING.LAMP_HEIGHT - .04) * height_scale, CITY_DRESSING.LAMP_ARM + .02)
 	light.light_color = Color(row.color)
 	light.omni_range = float(row.range)
 	light.light_energy = float(row.energy)
