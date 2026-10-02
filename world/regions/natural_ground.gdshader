@@ -17,6 +17,8 @@ uniform vec3 base_color : source_color = vec3(0.54, 0.44, 0.33);
 // Metros por unidade de UV da malha.
 uniform float uv_meters = 2.0;
 uniform bool edge_alpha = false;
+// Mountain footpaths and working yards use quieter soil and wider snow blends.
+uniform float surface_softness : hint_range(0.0, 1.0) = 0.0;
 instance uniform vec2 uv_origin = vec2(0.0);
 
 varying vec2 q;
@@ -86,11 +88,29 @@ void fragment() {
 		bump_scale = 0.07;
 	}
 
+	// Quiet broad soil patches instead of sharp pebbles and high contrast ruts.
+	vec3 quiet_soil = mix(base_color, vec3(0.20, 0.18, 0.14), 0.3);
+	quiet_soil *= 0.90 + macro * 0.12 + mid * 0.07;
+	color = mix(color, quiet_soil, surface_softness);
+	bump_scale *= 1.0 - surface_softness * 0.88;
 	// Neve assentada nas manchas altas, só em Mountain (mesma cobertura do terreno).
 	float snow = smoothstep(0.62, 0.72, macro * 0.55 + mid * 0.3 + fine * 0.15) * mountain * (kind == 1 ? 0.55 : 0.8);
+	float quiet_snow = smoothstep(0.36, 0.78, macro * 0.6 + mid * 0.4) * mountain * 0.55;
+	snow = mix(snow, quiet_snow, surface_softness);
+	// Borda das malhas com alfa: capim ralo e neve acumulada na transição, para a
+	// terra não terminar num corte limpo sobre o terreno.
+	if (edge_alpha) {
+		float rim = 1.0 - smoothstep(0.3, 0.9, COLOR.a);
+		float grass_rim = smoothstep(0.35, 0.7, mid * 0.5 + fine * 0.5) * rim * surface_softness;
+		color = mix(color, vec3(0.30, 0.34, 0.22), grass_rim * 0.55);
+		snow = max(snow, rim * smoothstep(0.3, 0.7, macro) * mountain * surface_softness * 0.85);
+	}
 	color = mix(color, vec3(0.86, 0.89, 0.93) * (0.92 + grain * 0.08), snow);
 	ALBEDO = color;
-	if (edge_alpha) ALPHA = COLOR.a;
+	if (edge_alpha) {
+		float soft_edge = smoothstep(0.04, 0.94, COLOR.a + (macro - 0.5) * 0.13);
+		ALPHA = mix(COLOR.a, soft_edge, surface_softness);
+	}
 	ROUGHNESS = mix(rough, 0.6, snow);
 	SPECULAR = 0.25;
 

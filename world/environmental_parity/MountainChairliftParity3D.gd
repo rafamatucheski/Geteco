@@ -94,15 +94,15 @@ func _build_tower(index: int) -> void:
 	var steel := _material(Color("637078"), 0.48, 0.60)
 	var dark := _material(Color("262f36"), 0.66, 0.48)
 	var concrete := _material(Color("585c60"), 0.94)
-	_box(tower, "ConcreteBase", Vector3(0, 0.25, 0), Vector3(1.8, 0.5, 1.8), concrete)
+	var base := _box(tower, "ConcreteBase", Vector3(0, 0.25, 0), Vector3(1.8, 0.5, 1.8), concrete)
+	_add_box_collision(base)
 	_cylinder(tower, "Pylon", Vector3(0, 4.0, 0), 0.38, 7.5, steel)
 	_box(tower, "ServicePlatform", Vector3(0, 7.4, 0), Vector3(1.4, 0.10, 1.4), dark)
 	_box(tower, "Crossarm", Vector3(0, 7.8, 0), Vector3(4.8, 0.45, 0.45), steel)
-	for side in [-2.1, 2.1]:
+	for side in [-.875, .875]:
 		for sheave_index in 4:
 			var sheave := _cylinder(tower, "Sheave", Vector3(side, 7.95, (float(sheave_index) - 1.5) * 0.24), 0.14, 0.08, dark)
-			sheave.rotation_degrees = Vector3(90, 0, 0)
-	_add_tower_collision(tower)
+			sheave.rotation_degrees = Vector3(0, 0, 90)
 
 func _build_station(node_name: String, cable_point: Vector3, is_base: bool) -> void:
 	var station := Node3D.new()
@@ -113,27 +113,37 @@ func _build_station(node_name: String, cable_point: Vector3, is_base: bool) -> v
 	var steel := _material(Color("4b5961"), 0.55, 0.48)
 	var roof := _material(Color("34444b"), 0.72, 0.30)
 	var platform := _box(station, "Platform", Vector3(0, 0.18, 0), Vector3(7.6, 0.36, 6.0), concrete)
-	if not is_base:
-		platform.create_trimesh_collision()
-		_build_walkup_ramp(station,concrete)
+	# Both terminals are walkable: the northern/base terminal previously had
+	# a raised visual slab without support or a ramp, unlike the other end.
+	_add_box_collision(platform)
+	_build_walkup_ramp(station,concrete)
 	for x in [-3.1, 3.1]:
-		_box(station, "StationPost", Vector3(x, 3.3, 0), Vector3(0.26, 6.6, 0.26), steel)
-	_box(station, "StationRoof", Vector3(0, 6.65, 0), Vector3(7.8, 0.24, 6.2), roof)
-	var wheel := _cylinder(station, "BullWheel", Vector3(0, 5.65, 0), 1.35, 0.28, steel)
-	wheel.rotation_degrees = Vector3(90, 0, 0)
+		var post := _box(station, "StationPost", Vector3(x, 3.3, 0), Vector3(0.26, 6.6, 0.26), steel)
+		_add_box_collision(post)
+	for z in [-2.65, 2.65]:
+		_box(station, "RoofCrossbeam", Vector3(0, 6.48, z), Vector3(6.5, .22, .24), steel)
+	_build_station_roof(station, roof)
+	# Horizontal return wheel shares the real cable height and lane separation.
+	# The previous upright disk sat 2.35 m below the cable with no connection.
+	_cylinder(station, "BullWheel", Vector3(0, 8.0, 0), .875, .20, steel)
+	_cylinder(station, "WheelAxle", Vector3(0, 7.73, 0), .13, .70, steel)
+	_box(station, "WheelBearing", Vector3(0, 7.47, 0), Vector3(.55, .14, .55), steel)
 	station.set_meta("station_role", "base" if is_base else "summit")
-	var body := StaticBody3D.new()
-	body.name = "StationPostsSolid"
-	body.collision_layer = 1
-	body.collision_mask = 0
-	for x in [-3.1, 3.1]:
-		var collision := CollisionShape3D.new()
-		var shape := BoxShape3D.new()
-		shape.size = Vector3(0.5, 6.6, 0.5)
-		collision.shape = shape
-		collision.position = Vector3(x, 3.3, 0)
-		body.add_child(collision)
-	station.add_child(body)
+
+func _build_station_roof(station: Node3D, roof: Material) -> void:
+	# Complete pitched shelter: two slopes, an enclosed edge and snow ridge,
+	# instead of an unfinished flat square. Keep the 7.8 x 6.2 m footprint.
+	var snow := _material(Color("dbe5e8"), .94)
+	var trim := _material(Color("3b4c55"), .74, .18)
+	var pitch := atan2(.80, 3.9)
+	var panel_width := Vector2(3.9, .8).length()
+	for side in [-1.0, 1.0]:
+		var panel := _box(station, "StationRoofSlope", Vector3(side*1.95, 7.08, 0), Vector3(panel_width, .16, 6.2), roof)
+		panel.rotation.z = -side*pitch
+		var cap := _box(station, "RoofSnow", Vector3(side*1.95, 7.19, 0), Vector3(panel_width+.02, .06, 6.22), snow)
+		cap.rotation.z = panel.rotation.z
+		_box(station, "EaveTrim", Vector3(side*3.9, 6.68, 0), Vector3(.10, .22, 6.24), trim)
+	_box(station, "SnowRidge", Vector3(0, 7.63, 0), Vector3(.20, .12, 6.24), snow)
 
 func _build_walkup_ramp(station: Node3D, material: Material) -> void:
 	# Meet the 2.2 m trail at ground level and the existing platform at 36 cm.
@@ -190,18 +200,19 @@ func _sample_cable(progress: float) -> Vector3:
 		remaining -= length
 	return _cable_points[0]
 
-func _add_tower_collision(tower: Node3D) -> void:
+func _add_box_collision(mesh: MeshInstance3D) -> void:
+	# Read the rendered volume and inherit its transform; no duplicate bounds.
+	var geometry := mesh.mesh as BoxMesh
 	var body := StaticBody3D.new()
-	body.name = "TowerBaseSolid"
+	body.name = "GeometrySolid"
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(1.8, 0.5, 1.8)
+	shape.size = geometry.size
 	collision.shape = shape
-	collision.position = Vector3(0, 0.25, 0)
 	body.add_child(collision)
-	tower.add_child(body)
+	mesh.add_child(body)
 
 func _cylinder_between(parent: Node3D, node_name: String, a: Vector3, b: Vector3, radius: float, material: Material) -> MeshInstance3D:
 	var delta := b - a

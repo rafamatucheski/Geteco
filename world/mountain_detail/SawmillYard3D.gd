@@ -3,12 +3,13 @@ class_name SawmillYard3D
 
 ## Complete 3D exterior presentation of the Mountain Pass Sawmill / Logging Camp.
 ## Positioned at mountain coordinates (6350, 560), matching V1 geography at 16 px/metre.
-## Assembles the cutting shed, strapped lumber stacks, covered log piles, sawdust mound,
+## Assembles the cutting shed, strapped lumber stacks and covered log piles,
 ## rustic perimeter fences, campfire ring, and truck parking bay.
 ## Guarantees 100% unblocked transit along the main driveway and pedestrian work paths.
 
 const SCALE := 1.0 / 16.0
 const SHADOW_FINISH := preload("res://world/mountain_detail/MountainShadowFinish.gd")
+static var _ground_shader: Shader
 
 # Sub-components
 var cutting_shed: SawmillShed3D
@@ -36,9 +37,6 @@ func build_sawmill_yard() -> void:
 	# 5. Strapped Sawn Lumber Stacks at original points (SawmillYardDetails.gd)
 	_build_lumber_stacks()
 	
-	# 6. Walkable Sawdust & Woodchip Mound at original point (-30, 81)
-	_build_sawdust_area()
-	
 	# 7. Campfire Stone Ring and Seating Logs at original point (90, 20)
 	# HeatPresentation owns the original fire and collider.
 	
@@ -46,38 +44,49 @@ func build_sawmill_yard() -> void:
 	# No perimeter fences are authored by V1 build_detailed_sawmill.
 
 func _build_ground_polygons() -> void:
-	# Matches the two polygons from NativeRegion.gd:389 / V1 build_detailed_sawmill
+	# The yard owns its original footprint; the short driveway plate was removed.
 	var yard_poly := PackedVector2Array([
 		Vector2(-180, -110), Vector2(180, -110),
 		Vector2(200, 130), Vector2(-170, 140)
 	])
-	var driveway_poly := PackedVector2Array([
-		Vector2(-35, -165), Vector2(35, -165),
-		Vector2(55, -100), Vector2(-55, -100)
-	])
 	
 	# Terra batida procedural: o material liso lia como placa marrom vista de cima.
 	var earth_mat := ShaderMaterial.new()
-	earth_mat.shader = preload("res://world/regions/natural_ground.gdshader")
-	earth_mat.set_shader_parameter("base_color",Color("5c4a36"))
+	if _ground_shader == null:
+		_ground_shader = Shader.new()
+		# Opaque interior pixels occlude the expensive terrain underneath, while
+		# the perimeter keeps its existing alpha blend. Compile once for this place.
+		_ground_shader.code = preload("res://world/regions/natural_ground.gdshader").code.replace(
+			"render_mode diffuse_lambert, specular_schlick_ggx;",
+			"render_mode diffuse_lambert, specular_schlick_ggx, depth_prepass_alpha;")
+	earth_mat.shader = _ground_shader
+	earth_mat.set_shader_parameter("base_color",Color("5d4e3d"))
 	earth_mat.set_shader_parameter("uv_meters",4.0)
 	earth_mat.set_shader_parameter("edge_alpha",true)
+	earth_mat.set_shader_parameter("surface_softness",0.55)
 	_create_flat_polygon("OriginalSawmillYard", yard_poly, 0.024, earth_mat)
-	_create_flat_polygon("OriginalSawmillDriveway", driveway_poly, 0.024, earth_mat)
 
 func _create_flat_polygon(node_name: String, polygon: PackedVector2Array, height: float, mat: Material) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var center := Vector2.ZERO
 	for point in polygon: center += point / polygon.size()
+	# Subdivide the unchanged physical boundary and vary the inner blend edge.
+	# The broad, uneven fade avoids a rectangular dirt plate against the snow.
+	var perimeter := PackedVector2Array()
+	for i in polygon.size():
+		for step in 4:
+			perimeter.append(polygon[i].lerp(polygon[(i+1)%polygon.size()], float(step)/4.0))
 	var inset := PackedVector2Array()
-	for point in polygon: inset.append(center.lerp(point,0.78))
+	var inner_scale := [0.66,0.72,0.64,0.70,0.67,0.76,0.69,0.65,
+		0.73,0.67,0.75,0.68,0.64,0.71,0.66,0.74]
+	for i in perimeter.size(): inset.append(center.lerp(perimeter[i],inner_scale[i]))
 	for idx in Geometry2D.triangulate_polygon(inset):
 		_ground_vertex(st,inset[idx],height,1.0)
-	for i in polygon.size():
-		var next := (i+1)%polygon.size()
-		for item in [[inset[i],1.0],[polygon[i],0.0],[polygon[next],0.0],
-				[inset[i],1.0],[polygon[next],0.0],[inset[next],1.0]]:
+	for i in perimeter.size():
+		var next := (i+1)%perimeter.size()
+		for item in [[inset[i],1.0],[perimeter[i],0.0],[perimeter[next],0.0],
+				[inset[i],1.0],[perimeter[next],0.0],[inset[next],1.0]]:
 			_ground_vertex(st,item[0],height,item[1])
 	
 	var mesh_inst := MeshInstance3D.new()
@@ -86,6 +95,13 @@ func _create_flat_polygon(node_name: String, polygon: PackedVector2Array, height
 	mesh_inst.material_override = mat
 	mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh_inst)
+	# The visible triangulated footprint also owns the floor. A second opaque
+	# copy at the same height used to fight this shader and hide its soft edges.
+	mesh_inst.create_trimesh_collision()
+	for body in mesh_inst.get_children():
+		if body is StaticBody3D:
+			body.collision_layer = 1
+			body.collision_mask = 0
 
 func _ground_vertex(st: SurfaceTool, point: Vector2, height: float, alpha: float) -> void:
 	var local := point*SCALE

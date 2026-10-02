@@ -53,7 +53,7 @@ static func paths() -> Array[Dictionary]:
 		["cave_trail",1.6,[Vector2(6120,320),Vector2(5910,220),Vector2(5850,20),Vector2(5890,-160),Vector2(6020,-215),Vector2(6130,-200),Vector2(6200,-240)]],
 		["forest_shop_walk",1.8,[Vector2(6030,380),Vector2(5860,490),Vector2(5860,710),Vector2(5980,719),Vector2(5980,703)]],
 		["forest_cabin_walk",1.6,[Vector2(5980,719),Vector2(6120,725),Vector2(6120,850),Vector2(6050,850),Vector2(6050,834)]],
-		["helipad_walk",1.8,[Vector2(6410,-2660),Vector2(6440,-2720),Vector2(6365,-2720),Vector2(6335,-2735),Vector2(6335,-2765)]],
+		["helipad_walk",1.8,[Vector2(6410,-2660),Vector2(6270,-2720),Vector2(6180,-2770),Vector2(6180,-2782.4)]],
 		["bunker_walk",1.8,[Vector2(6500,-2750),Vector2(6500,-2820)]],
 		["lift_walk",2.2,[Vector2(7000,-2494),Vector2(6960,-2630),Vector2(6820,-2780),Vector2(6820,-2920),Vector2(6880,-2920),Vector2(6880,-2938.2)]],
 		["summit_shop_walk",1.8,[Vector2(7140,-2678),Vector2(7250,-2678),Vector2(7400,-2678),Vector2(7400,-2682)]],

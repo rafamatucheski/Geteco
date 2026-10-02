@@ -2194,22 +2194,26 @@
 				"width": 1.25
 			},
 			"path/helipad_walk": {
-				"deleted": true,
+				"deleted": false,
 				"id": "path/helipad_walk",
 				"label": "helipad_walk",
 				"pathway": true,
 				"points": [
 					[
-						667.0,
-						-473.0
+						669.375,
+						-476.25
 					],
 					[
-						663.0,
-						-477.0
+						660.625,
+						-480.0
 					],
 					[
-						663.0,
-						-482.0
+						655.0,
+						-483.125
+					],
+					[
+						655.0,
+						-483.9
 					]
 				],
 				"surface": "earth",

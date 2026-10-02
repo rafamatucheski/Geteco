@@ -18,21 +18,13 @@ func _ready() -> void:
 	_beam(radar+Vector3(-24*S,2.1,0),radar+Vector3(0,1.2,0),.20,Color("ecf0f1"))
 	_beam(radar+Vector3(24*S,2.1,0),radar+Vector3(0,1.2,0),.20,Color("ecf0f1"))
 	var helipad = preload("res://assets/regions/source/world/mountain_pass/MountainHelipad3D.gd").new()
-	helipad.position = Vector3(-165*S,0,95*S)
+	helipad.name = "MountainHelipad"
+	# Separate landing clearance from the bunker entrance and road turnaround.
+	helipad.position = Vector3(-20,0,3.625)
 	add_child(helipad)
 	for mesh in helipad.find_children("*","MeshInstance3D",true,false):
 		if mesh.get_meta("interior_solid_id","") != "": mesh.create_trimesh_collision()
-	var path := Curve2D.new()
-	path.bake_interval = 8
-	path.add_point(Vector2(-165,35),Vector2.ZERO,Vector2(0,20))
-	path.add_point(Vector2(-143,73),Vector2(-18,-2),Vector2(23,3))
-	path.add_point(Vector2(-66,79),Vector2(-24,0),Vector2.ZERO)
-	var points := path.get_baked_points()
-	for i in points.size()-1:
-		var a := Vector3(points[i].x*S,.018,(points[i].y+90)*S)
-		var b := Vector3(points[i+1].x*S,.018,(points[i+1].y+90)*S)
-		var slab := _box("OriginalAccessSlab",(a+b)*.5,Vector3(19*S,.03,a.distance_to(b)),Color("aab6b8"))
-		slab.rotation.y = atan2(b.x-a.x,b.z-a.z)
+	# The region's connected footpath owns the approach. No slabs across the road.
 func _beam(a: Vector3,b: Vector3,width: float,color: Color) -> void:
 	var beam := _box("OriginalAntenna",(a+b)*.5,Vector3(width,a.distance_to(b),width),color)
 	beam.quaternion = Quaternion(Vector3.UP,(b-a).normalized())
