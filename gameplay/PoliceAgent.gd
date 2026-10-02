@@ -212,7 +212,9 @@ func _interior_pursuit() -> Node3D:
 
 func _plan_navigation(goal: Vector3) -> bool:
 	_navigation_replan_interval = 1.2
-	if _tactics.segment_clear(self, global_position, goal):
+	# A pending request is polled every physics tick. Its direct-path sweep was
+	# already made on admission; repeating it here would escape the search budget.
+	if not _navigation_waiting and _tactics.segment_clear(self, global_position, goal):
 		_cancel_navigation()
 		navigation = PackedVector3Array([goal])
 		nav_index = 0

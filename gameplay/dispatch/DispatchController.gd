@@ -561,6 +561,11 @@ func _tidy_wrecks() -> void:
 			wrecks.erase(car)
 			continue
 		var old: bool = _clock - float(car.get_meta("dispatch_wreck_at", _clock)) > 30.0
+		# Carcaça some em 30 s mesmo à vista, com o fade do Vehicle. Só a viatura
+		# inteira abandonada (vida > 0) fica para ser roubada, e a que ainda tem equipe a pé.
+		if old and car.health <= 0.0 and car.get_meta("wreck_hold", false) != true and float(car.get("_wreck_fade")) < 0.0:
+			car.call("_begin_wreck_fade")
+			continue
 		if (old or wrecks.size() > MAX_WRECKS) and is_unseen(car.global_position) and distance_to_player(car.global_position) > RULES.RECYCLE_DISTANCE:
 			wrecks.erase(car)
 			car.queue_free()
@@ -693,6 +698,11 @@ func _dispatch_emergency(delta: float) -> void:
 			emit_dispatch_event("incident_invalid", {"incident": key, "reason": "actor_removed"})
 			continue
 		if record.assigned or record.role not in ["medic", "mortician", "fire"]: continue
+		if record.role == "mortician" and not emergency.mortician_dispatch_allowed(key):
+			# Se as estrelas subirem durante a busca, abandonamos os candidatos.
+			# A ocorrência permanece disponível para quando a situação acalmar.
+			record.erase("search")
+			continue
 		# Um caminhão de bombeiros por vez, só depois de 10-15 s de fogo, e 30-45 s de pausa se o anterior foi destruído.
 		if record.role == "fire":
 			if fire_trucks >= RULES.MAX_FIRE_TRUCKS or _clock < _fire_lockout_until: continue
@@ -803,6 +813,7 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 		unit.set_siren_on()
 		record.assigned = true
 		record.crew = car
+		if service == "mortician": emergency.mortician_clock = RULES.MORTICIAN_COOLDOWN
 		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "end_gap": plan.end_gap})
 		return unit
 	emit_dispatch_event("spawn_failed", {"service": service, "checked": state.checked, "incident": key})

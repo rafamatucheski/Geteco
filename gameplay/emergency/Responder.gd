@@ -15,6 +15,41 @@ var waypoint := 0
 var repath := 0.0
 var health := 60.0
 var dead := false
+var escape_origin := Vector3.ZERO
+
+func begin_escape(threat: Vector3) -> void:
+	if dead or mode == "flee": return
+	var record: Dictionary = manager.incidents.get(incident_id, {})
+	if record.get("crew") == vehicle or record.get("crew") == self:
+		record.assigned = false
+		record.erase("crew")
+	mode = "flee"
+	age = 0.0
+	action_time = 0.0
+	escape_origin = global_position
+	var away := global_position - threat
+	away.y = 0.0
+	if away.length_squared() < 0.01: away = Vector3.RIGHT
+	away = away.normalized()
+	# A grade usa células de 2 m e pode pular um corpo entre duas células.
+	# Escolhe uma saída física curta antes de pedir a rota longa de fuga.
+	var escape_step := Vector3.ZERO
+	for angle in [0.0, PI / 4.0, -PI / 4.0, PI / 2.0, -PI / 2.0]:
+		var heading := away.rotated(Vector3.UP, angle)
+		var probe := PhysicsTestMotionParameters3D.new()
+		probe.from = global_transform
+		probe.motion = heading * 2.5
+		if not PhysicsServer3D.body_test_motion(get_rid(), probe):
+			away = heading
+			escape_step = global_position + probe.motion
+			break
+	destination = global_position + away * 24.0
+	path = PackedVector3Array([escape_step]) if escape_step != Vector3.ZERO else PackedVector3Array()
+	waypoint = 0
+	repath = 1.5 if not path.is_empty() else 0.0
+	if is_instance_valid(visual):
+		visual.stretcher_mesh.hide()
+		visual.body_bag_mesh.hide()
 ## Mangueira: jato d'água balístico (WaterJet3D) das mãos do bombeiro até o fogo.
 ## O caminhão estacionado perto também joga água pelo canhão do teto.
 var stream: Node3D
@@ -60,11 +95,18 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if dead: return
+	if role == "mortician" and mode != "flee" and (not is_instance_valid(vehicle) or vehicle.health <= 0.0 or (vehicle.controlled and not vehicle.external_input)):
+		begin_escape(vehicle.global_position if is_instance_valid(vehicle) else destination)
 	age += delta
 	if age > 120:
 		manager.release(self)
 		return
 	var incident: Dictionary = manager.incidents.get(incident_id, {})
+	if mode == "flee":
+		var camera := get_viewport().get_camera_3d()
+		if global_position.distance_to(escape_origin) > 12.0 and (camera == null or not camera.is_position_in_frustum(global_position + Vector3.UP)):
+			manager.release(self)
+			return
 	if mode == "approach" and incident.is_empty(): mode = "return"
 	if mode == "approach":
 		if is_instance_valid(incident.get("actor")): destination = incident.actor.global_position
@@ -112,8 +154,9 @@ func _physics_process(delta: float) -> void:
 		direction.y = 0
 		direction = direction.normalized()
 	if direction.length_squared() > 0.01: visual.rotation.y = atan2(-direction.x, -direction.z)
-	velocity.x = direction.x * 3.0
-	velocity.z = direction.z * 3.0
+	var walk_speed := 5.0 if mode == "flee" else 3.0
+	velocity.x = direction.x * walk_speed
+	velocity.z = direction.z * walk_speed
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
 	move_and_slide()
 	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
@@ -123,7 +166,9 @@ func _physics_process(delta: float) -> void:
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if dead: return
 	health -= amount
-	if health > 0: return
+	if health > 0:
+		if role == "mortician": begin_escape(_source.global_position if _source is Node3D else global_position)
+		return
 	dead = true
 	collision_layer = 0
 	collision_mask = 0

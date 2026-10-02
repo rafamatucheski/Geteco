@@ -5,6 +5,7 @@ extends Node
 const CATALOG := preload("res://gameplay/routines_v1/RoutineCatalog.gd")
 const ACTOR := preload("res://gameplay/routines_v1/V1RoutineActor.gd")
 const PORT_WORKER := preload("res://gameplay/urban_v1/PortWorker.gd")
+const MOUNTAIN_RESIDENT := preload("res://gameplay/routines_v1/MountainResident.gd")
 const SCAN_INTERVAL := .25
 const ACTIVATE_DISTANCE := 48.0
 const RELEASE_DISTANCE := 62.0
@@ -114,9 +115,10 @@ func _spawn(definition: Dictionary) -> void:
 		point = definition.position
 		restore_position = false
 		if not point.is_finite() or not session.position_clear(point+Vector3.UP*.04): return
-	var actor = PORT_WORKER.new() if definition.get("kind", "") == "dock_worker" else ACTOR.new()
+	var kind: String = definition.get("kind", "")
+	var actor = PORT_WORKER.new() if kind == "dock_worker" else (MOUNTAIN_RESIDENT.new() if kind == "mountain_resident" else ACTOR.new())
 	actor.configure(definition,Callable(session,"position_clear"))
-	if definition.get("kind", "") == "dock_worker": actor.died.connect(_port_worker_died.bind(id))
+	if kind in ["dock_worker", "mountain_resident"]: actor.died.connect(_port_worker_died.bind(id))
 	actor.position = point+Vector3.UP*.04
 	world.add_child(actor)
 	if not state.is_empty():

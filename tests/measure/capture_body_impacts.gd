@@ -9,6 +9,7 @@ var capture_seen_victims: Dictionary = {}
 var capture_seen_attempts := 0
 var capture_busy := false
 var capture_errors := 0
+var pending_images: Array[Dictionary] = []
 
 func _process(delta: float) -> bool:
 	var result := super._process(delta)
@@ -59,15 +60,16 @@ func _capture_one(job: Dictionary) -> void:
 	var captured_at := Time.get_ticks_usec()
 	var output_dir := evidence_dir if not evidence_dir.is_empty() else "res://evidence"
 	var file_name := "%s-%s-%d-%04dms.png" % [label,job.kind,job.cycle,int(round(float(job.delay)*1000))]
-	var error := root.get_texture().get_image().save_png(output_dir.path_join(file_name))
-	if error != OK: capture_errors += 1
+	# Save after the sequence: PNG compression was delaying later pose samples.
+	var shot := root.get_texture().get_image()
 	var record := {"file":file_name,"kind":job.kind,"cycle":job.cycle,
 		"requested_seconds":job.delay,"actual_seconds":float(captured_at-int(job.event_time))/1000000.0,
 		"subject_position":_point(subject.global_position),"subject_visual":_visual_state(subject),
 		"camera_position":_point(world.camera.global_position),"camera_size":world.camera.size,
-		"png_error":error,"player_locked":world.player.input_locked,"player_dead":world.player.dead,
+		"png_error":OK,"player_locked":world.player.input_locked,"player_dead":world.player.dead,
 		"npc":_npc_geometry(victim)}
 	capture_frames.append(record)
+	pending_images.append({"image":shot,"path":output_dir.path_join(file_name),"record":record})
 	print("BODY_CAPTURE ",file_name," actual_s=",record.actual_seconds)
 	capture_busy = false
 
@@ -135,6 +137,11 @@ func _mesh_minimum(node: MeshInstance3D, hand_only: bool, npc: CharacterBody3D) 
 
 func finish() -> void:
 	while capture_busy: await process_frame
+	for pending in pending_images:
+		var error: int = pending.image.save_png(pending.path)
+		pending.record.png_error = error
+		if error != OK: capture_errors += 1
+	pending_images.clear()
 	var counts := {"bailout":0,"pedestrian":0}
 	for frame in capture_frames: counts[frame.kind] += 1
 	var complete: bool = capture_errors == 0 and int(counts.bailout) >= SHOT_TIMES.size() and int(counts.pedestrian) >= SHOT_TIMES.size()

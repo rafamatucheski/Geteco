@@ -54,6 +54,12 @@ const FOOT_LIMIT: Array[int] = [0, 4, 5, 6, 7, 8, 10]
 const MAX_INCIDENTS := 24
 const RESPONSE_RADIUS := 1100.0 / PX
 const DISPATCH_COOLDOWN := 10.0
+## O IML aguarda uma situação menos intensa e sai menos vezes que o socorro.
+const MORTICIAN_MAX_STARS := 2
+const MORTICIAN_COOLDOWN := 60.0
+static func mortician_response_delay(incident_key: int) -> float:
+	return 20.0 + 3.0 * float(posmod(incident_key, 6))
+
 const MAX_CREWS := 3
 ## Bombeiros: um caminhão por vez e sem reforço. Outra ocorrência de fogo só é atendida depois
 ## que o caminhão atual sair de cena (antes vinham até MAX_CREWS e a rua enchia deles).

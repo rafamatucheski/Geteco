@@ -6,6 +6,17 @@ estrelas, a última posição conhecida e o registro de ocorrências que eles j�
 mantêm, e coloca veículos reais (`scripts/Vehicle.gd`, modelos do
 `FleetCatalog`), dirigidos pelas ruas do `NativeTrafficRoutes`, para responder.
 
+O despacho automático do IML atende somente com 0–2 estrelas, aguarda 20–35 s
+desde a ocorrência e respeita uma pausa própria de 60 s entre saídas. Ambulâncias
+e bombeiros mantêm suas regras. A subida de estrelas cancela buscas ainda não
+despachadas; unidades já enviadas seguem o atendimento. O fallback legado aplica
+a mesma política. Chamadas explícitas a `dispatch_service_to` continuam disponíveis
+para testes e serviços forçados.
+
+O legista sobrevivente interrompe a coleta e foge quando o veículo é destruído,
+perdido ou tomado pelo jogador, ou quando sofre dano direto. A ocorrência ainda
+não concluída volta à fila; a fuga não é registrada como embarque na carcaça.
+
 > **Estado de verificação (21/09/2026): funcionalmente executado.** As suítes
 > dirigidas de regras, polícia, emergência e ciclo de vida, a regressão de
 > gameplay e uma perseguição integrada em `Main.tscn` passaram. A medição

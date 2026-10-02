@@ -97,6 +97,10 @@ func label() -> String:
 func tick(delta: float) -> void:
 	if finished: return
 	if not is_instance_valid(vehicle):
+		if service == "mortician" and is_instance_valid(crew) and not crew.dead:
+			_release_incident()
+			crew.begin_escape(actor.global_position if is_instance_valid(actor) else crew.global_position)
+			return
 		finish("vehicle_lost")
 		return
 	age += delta
@@ -180,6 +184,13 @@ func surrender_vehicle(exits: Array[Dictionary]) -> void:
 		# Keep vehicle until physical disembarkation and door closure complete.
 		officer.dispatch_controller = null
 	officers.clear()
+	if service == "mortician" and is_instance_valid(crew) and not crew.dead:
+		# A unidade sai do controlador após o roubo; o gerente assume a fuga a pé.
+		crew.begin_escape(vehicle.global_position)
+		crew.manager = controller.gameplay.emergency
+		crew.vehicle = null
+		controller.gameplay.emergency.crews.append(crew)
+		crew = null
 	finished = true
 	end_reason = "stolen"
 	_sync_motorcycle_rider()
@@ -305,7 +316,10 @@ func _on_wrecked() -> void:
 		vehicle.external_input = false
 		vehicle.controlled = false
 	_set_siren(false)
-	# A viatura não some com a equipe fora: quem está a pé termina o que faz.
+	# O legista abandona a coleta quando perde o transporte; a ocorrência volta à fila.
+	if service == "mortician" and is_instance_valid(crew) and not crew.dead:
+		_release_incident()
+		crew.begin_escape(vehicle.global_position)
 	for officer in officers:
 		if is_instance_valid(officer) and officer.mode == "return": officer.mode = "combat"
 	controller.emit_dispatch_event("unit_wrecked", {"unit": self})
@@ -322,7 +336,7 @@ func _tick_wrecked(_delta: float) -> void:
 				finish("wrecked")
 		return
 	if is_instance_valid(crew) and not crew.dead:
-		# O Responder segue o serviço; ao terminar, `release` chega pela ponte.
+		# O legista foge; os outros serviços mantêm seu comportamento de emergência.
 		if state_age > RULES.MAX_INCIDENT_SECONDS: finish("wrecked")
 		return
 	finish("wrecked")
@@ -755,6 +769,8 @@ func _service_parked(delta: float) -> void:
 func _service_working(delta: float) -> void:
 	driver.hold(true)
 	driver.tick(delta)
+	# A fuga não pode ser convertida em retorno por perda da fonte da ocorrência.
+	if service == "mortician" and is_instance_valid(crew) and not crew.dead and crew.mode == "flee": return
 	# Se a entidade fonte saiu da árvore, não deixe a unidade depender do próximo
 	# scan do EmergencyManager ou de uma referência já liberada no Responder.
 	if not is_instance_valid(actor) or actor.is_queued_for_deletion():
@@ -802,6 +818,15 @@ func _retask() -> void:
 ## Chamado pela ponte quando o Responder termina (ou expira) e pede liberação.
 func on_crew_released(released: CharacterBody3D) -> void:
 	if released != crew: return
+	if released.mode == "flee":
+		_release_incident()
+		released.queue_free()
+		crew = null
+		controller.emit_dispatch_event("crew_fled", {"unit": self})
+		if not is_instance_valid(vehicle): finish("vehicle_lost")
+		elif wrecked: finish("wrecked")
+		else: _begin_departure()
+		return
 	var door: Vector3 = vehicle.to_global(Vector3(vehicle.half_width + 0.8, 0.0, 0.0))
 	var aboard: bool = released.global_position.distance_to(door) < 2.5 and absf(vehicle.speed) < 0.6
 	if not aboard and not vehicle.health <= 0.0:

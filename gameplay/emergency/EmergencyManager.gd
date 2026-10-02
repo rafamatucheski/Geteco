@@ -3,6 +3,7 @@ extends Node3D
 const RESPONDER = preload("res://gameplay/emergency/Responder.gd")
 const FIRE = preload("res://gameplay/emergency/Fire.gd")
 const VEHICLE = preload("res://scripts/Vehicle.gd")
+const RULES = preload("res://gameplay/dispatch/DispatchRules.gd")
 const MAX_INCIDENTS := 24
 const RESPONSE_RADIUS := 68.75
 var world: Node3D
@@ -11,6 +12,7 @@ var incidents: Dictionary = {}
 var crews: Array[CharacterBody3D] = []
 var fires: Array[Node3D] = []
 var dispatch_clock := 0.0
+var mortician_clock := 0.0
 var dispatch_owned := false
 var scan_clock := 0.0
 var serial := 0
@@ -40,6 +42,7 @@ func reset_region() -> void:
 	fires.clear()
 	incidents.clear()
 	dispatch_clock = 0.0
+	mortician_clock = 0.0
 	scan_clock = 0.0
 
 func report_injury(actor: Node3D, fatal: bool = false) -> void:
@@ -87,8 +90,14 @@ func extinguish(fire: Node3D, amount: float) -> void:
 	fire.intensity = maxf(0, fire.intensity - amount)
 	if fire.intensity == 0: fire.queue_free()
 
+## Política automática compartilhada pelo despacho físico e pelo fallback legado.
+func mortician_dispatch_allowed(key: int) -> bool:
+	if gameplay.stars > RULES.MORTICIAN_MAX_STARS or mortician_clock > 0.0: return false
+	return incidents.has(key) and float(incidents[key].age) >= RULES.mortician_response_delay(key)
+
 func _physics_process(delta: float) -> void:
 	dispatch_clock = maxf(0, dispatch_clock - delta)
+	mortician_clock = maxf(0, mortician_clock - delta)
 	scan_clock -= delta
 	if scan_clock > 0: return
 	scan_clock = 0.5
@@ -110,6 +119,7 @@ func _physics_process(delta: float) -> void:
 			_cleanup(key)
 			continue
 		if dispatch_owned or record.assigned or dispatch_clock > 0 or crews.size() >= 3: continue
+		if record.role == "mortician" and not mortician_dispatch_allowed(key): continue
 		if gameplay.player.global_position.distance_to(record.actor.global_position) > RESPONSE_RADIUS: continue
 		if _dispatch(key): dispatch_clock = 10.0
 
@@ -152,6 +162,7 @@ func _dispatch(key: int) -> bool:
 		crews.append(crew)
 		record.assigned = true
 		record.crew = crew
+		if record.role == "mortician": mortician_clock = RULES.MORTICIAN_COOLDOWN
 		return true
 	return false
 

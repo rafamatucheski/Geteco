@@ -29,6 +29,9 @@ static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) ->
 	
 	var joints: Array[Dictionary] = []
 	_gather_joints(actor, visual, variant, joints)
+	# O morto não segura mais nada: sem isso a mira por IK continua puxando as mãos
+	# para a arma e o cadáver deita com os braços erguidos apontando a arma.
+	_release_hands(visual)
 	
 	var tween := actor.create_tween()
 	if tween == null: return
@@ -54,6 +57,28 @@ static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) ->
 				var p_rest: Vector3 = pose.rest
 				node.rotation = p_init.lerp(p_brace, brace).lerp(p_rest, settle)
 	, 0.0, 1.0, duration).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
+	tween.finished.connect(_drop_weapon.bind(actor, visual))
+
+static func _hand_models(visual: Node3D) -> Array:
+	var result: Array = [visual]
+	var body: Variant = visual.get("body")
+	if body is Node3D: result.append(body)
+	return result
+
+static func _release_hands(visual: Node3D) -> void:
+	for model in _hand_models(visual):
+		if model.get("hand_provider") is Callable: model.hand_provider = Callable()
+		if model.get("hand_targets") is Array: model.hand_targets = [null, null]
+
+## A arma que o morto empunhava fica deitada no chão, onde o corpo terminou, em vez
+## de flutuar na pose de mira.
+static func _drop_weapon(actor: Node3D, visual: Node3D) -> void:
+	if not is_instance_valid(actor) or not is_instance_valid(visual): return
+	var gun: Variant = visual.get("weapon")
+	if not gun is Node3D or not is_instance_valid(gun) or not gun.is_inside_tree(): return
+	gun.reparent(actor, true)
+	var ground := actor.global_position.y + 0.06
+	gun.global_transform = Transform3D(Basis(Vector3.UP, gun.global_rotation.y), Vector3(gun.global_position.x, ground, gun.global_position.z))
 
 ## Convenção das articulações (espaço do modelo, frente = +Z, membro pendurado em -Y):
 ## X negativo leva o membro para a FRENTE, X positivo para TRÁS; Z com o sinal do lado abre para fora.
