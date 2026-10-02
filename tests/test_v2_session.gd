@@ -66,7 +66,7 @@ func run() -> void:
 	check(loaded.place_id == "maciota" and loaded.intro.stage == "complete", "Loaded room and mission")
 	check(not loaded.can_attack() and loaded.equipped_weapon == "fists" and loaded.owns_weapon("pistol"), "Loaded garage preserves inventory and weapon lock")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(store.path))
-	check(session.leave_place(), "Physical garage exit")
+	check(await session.leave_place(), "Physical garage exit")
 	check(state.place_id.is_empty() and not world.camera.locked, "Outdoor camera restored")
 	check(state.can_attack() and state.equip_weapon("pistol"), "Outdoor weapon policy restored")
 	var block := StaticBody3D.new()

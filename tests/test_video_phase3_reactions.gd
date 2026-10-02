@@ -131,7 +131,7 @@ func run() -> void:
 		for i in clerks.size():
 			check(not clerks[i].get_meta("workplace_threatened", false) and clerks[i].global_position.distance_to(homes[i]) < .08, "bank clerk %d physically returns to the counter" % i)
 		check(session.robberies.data.bank_alarm, "recovery does not erase the bank crime/alarm")
-		check(session.leave_place(), "leave bank after reaction")
+		check(await session.leave_place(), "leave bank after reaction")
 	else: check(false, "enter bank")
 	await frames(10)
 	await remaining(session)
@@ -154,12 +154,12 @@ func remaining(session) -> void:
 		check(session.interact() and session.modal, "recovered vendor opens real storefront")
 		world.gameplay.npc_gunfire.emit(vendor.global_position + Vector3(0, 1, 2), Vector3.FORWARD, null)
 		check(not session.modal and not session.storefronts.is_open(), "incoming threat closes already-open vendor storefront")
-		check(session.leave_place(), "leave shop after recovery")
+		check(await session.leave_place(), "leave shop after recovery")
 		await frames(8)
 		check(await session.enter_place("harbor_ammunation", false), "Vance room can be entered again")
 		var response: Node = session.static_service_actor.get_node("WorkplaceThreatReaction")
 		check(response.get_signal_connection_list("threat_started").size() == 1, "reentry retains exactly one service reaction callback")
-		check(session.leave_place(), "leave reentered shop")
+		check(await session.leave_place(), "leave reentered shop")
 	else: check(false, "enter weapon shop")
 	await frames(10)
 	if await session.enter_place("maciota", false):
@@ -171,7 +171,7 @@ func remaining(session) -> void:
 			check(PROTECTION.is_protected(npc) and not npc.has_method("receive_damage") and not npc.has_method("die"), "garage resident retains absolute protection without mortality API")
 			check(REACTION.install(npc, npc, world.gameplay) == null and npc.get_node_or_null("WorkplaceThreatReaction") == null, "protected resident cannot be enrolled in threat adapter")
 	else: check(false, "enter protected garage")
-	check(session.leave_place(), "leave protected garage")
+	check(await session.leave_place(), "leave protected garage")
 	await frames(8)
 	if await session.enter_place("harbor_hospital", false):
 		await frames(25)

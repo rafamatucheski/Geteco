@@ -95,7 +95,7 @@ func run() -> void:
 			print("GARAGE_EXIT_OBSERVATION ", JSON.stringify({"event":"surviving_callback_complete", "place":place, "msec":Time.get_ticks_msec(), "car_id":car.get_instance_id(), "expected_callback_msec":callback_deadline, "hinge_angle":hinge.rotation.y if is_instance_valid(hinge) else null}))
 		car.health = 0
 		check(not await session.restore_garage_driver(car),place+" destroyed car cannot board")
-		check(session.leave_place(),place+" physical exit")
+		check(await session.leave_place(),place+" physical exit")
 		world.driving.car = original_car
 		for vehicle in session.garage_rewards.cars.values():
 			if is_instance_valid(vehicle):

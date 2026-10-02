@@ -21,7 +21,7 @@ func run() -> void:
 		await settle()
 		check(cemetery.perform("cemetery_keeper"), "Keeper conversation remains reachable")
 		session.close_menu()
-	check(session.leave_place(), "Exit house")
+	check(await session.leave_place(), "Exit house")
 	await settle(20)
 	check(await session.enter_place("cemetery_keeper", false), "Reenter house")
 	await settle(20)

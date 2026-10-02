@@ -66,6 +66,10 @@ var _store_size_to := 0.0
 var _store_focus_elapsed := 0.0
 var _store_focus_duration := 0.55
 var _store_focus_reverse := false
+# Aproximação/afastamento de portas: o enquadramento também interpola o deslocamento.
+var _transition_offsets := false
+var _transition_offset_from := Vector3.ZERO
+var _transition_offset_to := Vector3.ZERO
 var preview_view := false
 var _preview_blend := 0.0
 var _container_blend := 0.0
@@ -146,6 +150,9 @@ func _process(delta: float) -> void:
 		size = lerpf(_store_size_from, _store_size_to, eased)
 		var start_offset: Vector3 = STORE_FOCUS_OFFSET if _store_focus_reverse else _exterior_view_offset()
 		var end_offset: Vector3 = _exterior_view_offset() if _store_focus_reverse else STORE_FOCUS_OFFSET
+		if _transition_offsets:
+			start_offset = _transition_offset_from
+			end_offset = _transition_offset_to
 		global_position = focus + start_offset.lerp(end_offset, eased).rotated(Vector3.UP, heading)
 		look_at(focus)
 		return
@@ -267,6 +274,7 @@ func _update_cutaway() -> void:
 
 func focus_on_store(point: Vector3, final_size: float, duration: float) -> void:
 	_store_focus_reverse = false
+	_transition_offsets = false
 	_store_focus_from = focus if initialized else (target.global_position if is_instance_valid(target) else point)
 	_store_focus_to = point
 	_store_size_from = size
@@ -275,7 +283,26 @@ func focus_on_store(point: Vector3, final_size: float, duration: float) -> void:
 	_store_focus_duration = maxf(0.01, duration)
 	_store_focus_active = true
 
+## Aproxima a câmera de `point` indo também para `final_offset` (porta de um lugar).
+func focus_on_transition(point: Vector3, final_size: float, final_offset: Vector3, duration: float) -> void:
+	var from_offset := (global_position - focus).rotated(Vector3.UP, -heading)
+	focus_on_store(point, final_size, duration)
+	_transition_offsets = true
+	_transition_offset_from = from_offset
+	_transition_offset_to = final_offset
+
+## Começa fechado em `point` e abre até o enquadramento externo `final_size`.
+func reveal_exterior(point: Vector3, close_size: float, final_size: float, duration: float) -> void:
+	focus = point
+	size = maxf(1.0, close_size)
+	var exterior := _exterior_view_offset()
+	global_position = focus + exterior.rotated(Vector3.UP, heading)
+	look_at(focus)
+	initialized = true
+	focus_on_transition(point, final_size, exterior, duration)
+
 func zoom_out_from_store(point: Vector3, close_size: float, duration: float) -> void:
+	_transition_offsets = false
 	_store_focus_from = point
 	_store_focus_to = target.global_position if is_instance_valid(target) else point
 	_store_size_from = maxf(1.0, close_size)

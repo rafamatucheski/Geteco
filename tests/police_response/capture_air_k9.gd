@@ -45,7 +45,7 @@ func run() -> void:
 	if not await wait_until(func(): return world.session != null and world.session.ready_for_play and world.production.ready_for_play, 2400):
 		fail("Main did not become ready")
 		return
-	if not world.session.state.place_id.is_empty(): world.session.leave_place()
+	if not world.session.state.place_id.is_empty(): await world.session.leave_place()
 	if not await wait_until(func(): return world.session.state.place_id.is_empty(), 240):
 		fail("Could not exit initial interior through normal session transition")
 		return

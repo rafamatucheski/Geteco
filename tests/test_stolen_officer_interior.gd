@@ -109,7 +109,7 @@ func run() -> void:
 		check(officer.get_instance_id() == officer_id and officer.visual.get_instance_id() == rig_id, "admissão preserva corpo e rig originais")
 		check(world.gameplay.police.count(officer) == 1 and officer.get_meta("police_place_id", "") == "harbor_ammunation", "propriedade e contexto interior únicos")
 		check(officer.collision_mask == 7 and world.session.room.is_floor_clear(world.session.room.to_local(officer.global_position), .34), "admissão preserva colisão e piso livre")
-	check(world.session.leave_place(), "saída produtiva da loja")
+	check(await world.session.leave_place(), "saída produtiva da loja")
 	await settle(2)
 	if admitted:
 		var still_owned := false
@@ -130,7 +130,7 @@ func run() -> void:
 	await settle(2)
 	check(not pursuit.knows_current_interior() and not pursuit.admit(garage_candidate), "garagem não admite policial mesmo após denúncia")
 	check(garage_candidate.get_meta("police_place_id", "") != "maciota" and not world.session.state.weapons_allowed(), "controle de garagem mantém contexto exterior e restrição de armas")
-	check(world.session.leave_place(), "saída da garagem conclui")
+	check(await world.session.leave_place(), "saída da garagem conclui")
 	world.gameplay.clear_wanted()
 	await settle(3)
 	check(not is_instance_valid(garage_candidate), "fim da procura limpa policial transferido")

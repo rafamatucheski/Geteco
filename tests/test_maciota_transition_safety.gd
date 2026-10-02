@@ -110,7 +110,7 @@ func _run() -> void:
 	var loaded: Dictionary = store.load_into(state)
 	check(loaded.get("ok", false) and state.place_id == "maciota" and state.equipped_weapon == "fists", "SaveStore restaura na garagem guardando pistola do registro")
 	check(_inventory() == inventory_before and not gameplay.attack_allowed(), "restauração preserva inventário e bloqueio")
-	var left: bool = world.session.leave_place()
+	var left: bool = await world.session.leave_place()
 	exit_diagnostic["inventory_immediate"] = _inventory()
 	await frames(5)
 	check(left and state.place_id.is_empty() and not player.input_locked, "saída produtiva devolve jogador ao exterior")

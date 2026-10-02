@@ -82,7 +82,7 @@ func run() -> void:
 	else: failures.append("bank entry")
 	if label == "after":
 		world.camera.clear_store_focus()
-		world.session.leave_place()
+		await world.session.leave_place()
 		await frames(10)
 		if await world.session.enter_place("harbor_ammunation", false):
 			world.session.state.equip_weapon("fists")

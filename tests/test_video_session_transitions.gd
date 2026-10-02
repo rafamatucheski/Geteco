@@ -52,7 +52,7 @@ func _run() -> void:
 		check(world.hud.weapon_icon.weapon_id == "fists" and not world.hud.ammo_label.visible, "garage HUD already displays holstered weapon")
 		check(session.prompt.text.is_empty() and not world.hud.interaction_row.visible, "garage admission clears stale exterior interaction")
 		check(not state.equip_weapon("pistol"), "garage refuses drawing an owned firearm")
-		check(session.leave_place(), "garage exit")
+		check(await session.leave_place(), "garage exit")
 		check(weather.precipitation.visible and weather.precipitation.emitting, "rain resumes in exterior return frame")
 		check(state.weapons_allowed() and state.equip_weapon("pistol"), "exit preserves inventory and releases firearm")
 		_check_exterior_camera("garage")

@@ -67,7 +67,7 @@ func run() -> void:
 	await frames(3)
 	check(session.services.perform("police"),"mission officer remains available for dialogue")
 	while session.dialogue_open: session._advance_dialogue()
-	check(session.leave_place(),"leave precinct")
+	check(await session.leave_place(),"leave precinct")
 	session.state.equip_weapon("pistol")
 	await frames(30)
 	check(gameplay.stars == 0,"precinct rule does not report drawing outside")

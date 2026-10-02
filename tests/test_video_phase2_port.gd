@@ -145,7 +145,7 @@ func run() -> void:
 	await frames(8)
 	check(security.authorized_visit, "entering a port building preserves the visit")
 	check(session.room != null and session.room.reward_points.size() == 1, "existing hold exposes its persistent R$2800 treasure")
-	check(session.leave_place(), "cargo hold returns to the exterior")
+	check(await session.leave_place(), "cargo hold returns to the exterior")
 	await frames(12)
 	check(security.authorized_visit, "return from port building remains authorized")
 	check(security._inside_security_zone(world.player.global_position), "ship deck belongs to the same secured visit")

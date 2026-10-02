@@ -84,12 +84,12 @@ func run() -> void:
 			check(treasure.visual.consumed,"Collected treasure starts its absorption")
 			await create_timer(.35).timeout
 			check(not treasure.visual.visible,"Collected treasure vanishes without blocking the aisle")
-		check(session.leave_place(),"Hold returns to ship deck")
+		check(await session.leave_place(),"Hold returns to ship deck")
 		check(world.player.global_position.distance_to(hatch) < 2.0,"Exit returns to original hatch")
 		check(await session.enter_place("santa_mare_hold",false),"Hold remains enterable after reward collection")
 		if session.room != null and session.state.place_id == "santa_mare_hold":
 			check(not session.room.reward_points[0].visual.visible,"Treasures do not duplicate after re-entry")
-			check(session.leave_place(),"Second exit returns to hatch")
+			check(await session.leave_place(),"Second exit returns to hatch")
 	var parking := Vector3(7050.0/16.0,.08,2290.0/16.0)
 	world.player.teleport(parking + Vector3(2,0,3))
 	world.production.region.set_focus(parking)

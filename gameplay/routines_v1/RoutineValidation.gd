@@ -273,14 +273,14 @@ func _lodge_scenario() -> void:
 		_check(director.perform("ski_clerk_matias"), "Conversa de MATIAS executada")
 		_check(session.lines.is_empty(), "MATIAS entrega uma fala por interacao")
 		session.close_menu()
-	_check(session.leave_place(), "Saida real do lodge")
+	_check(await session.leave_place(), "Saida real do lodge")
 	for _frame in 4: await physics_frame
 	_check(_active("ski_").is_empty(), "Saida do lodge nao deixa ator orfao")
 	_check(await session.enter_place("ski_lodge", false), "Reentrada real no lodge")
 	for _frame in 8: await physics_frame
 	_check(_active("ski_").size() == 3, "Reentrada recria exatamente os 3 residentes")
 	_unique_active_ids("Lodge reentrada")
-	_check(session.leave_place(), "Saida final do lodge")
+	_check(await session.leave_place(), "Saida final do lodge")
 
 func _finish() -> void:
 	if is_instance_valid(world): world.free()
