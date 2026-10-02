@@ -305,18 +305,27 @@ static func gun_body(kind: String) -> AudioStream:
 	_generated[key] = _make(data, rate)
 	return _generated[key]
 
-## `ProceduralAudio.get_grenade_throw_stream`: pino e sopro do arremesso.
+## Soltura: atrito da manga e estalo seco da alavanca, sem assobio tonal.
 static func grenade_throw() -> AudioStream:
 	if _generated.has("grenade"): return _generated["grenade"]
 	var rate := 22050
 	var count := int(rate * 0.22)
 	var data := PackedByteArray()
 	data.resize(count * 2)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1947
+	var low := 0.0
+	var previous := 0.0
 	for i in count:
 		var t := float(i) / float(rate)
-		var pin_click := sin(TAU * 3400.0 * t) * exp(-t * 220.0) * 0.85
-		var swoosh := sin(TAU * (300.0 + 400.0 * t) * t) * exp(-t * 18.0) * 0.50
-		data.encode_s16(i * 2, clampi(int((pin_click + swoosh) * 0.70 * 32767.0), -32768, 32767))
+		var noise := rng.randf_range(-1.0, 1.0)
+		low += (noise - low) * 0.16
+		var click := (noise - previous) * exp(-t * 190.0) * 0.18
+		previous = noise
+		var cloth := low * smoothstep(0.0, 0.015, t) * exp(-t * 24.0) * 0.65
+		var lever := sin(TAU * 1450.0 * t) * exp(-t * 155.0) * 0.06
+		var fade := 1.0 - smoothstep(0.16, 0.22, t)
+		data.encode_s16(i * 2, clampi(int((click + cloth + lever) * fade * 32767.0), -32768, 32767))
 	_generated["grenade"] = _make(data, rate)
 	return _generated["grenade"]
 

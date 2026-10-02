@@ -406,12 +406,13 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 		engine_turbo_pressure = 0.0
 	if engine_gear > previous_gear and heavy_turbo and (engine_load > 0.20 or engine_rpm > 0.30):
 		_play_vehicle_fx(TURBO_SHIFT_SOUNDS, clampf(-7.0 + engine_load * 6.0 + engine_rpm * 3.0, -14.0, 2.0) - (8.0 if family == "truck" else 0.0))
-	elif engine_gear > previous_gear and sport_turbo and engine_turbo_pressure > 0.16:
-		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-11.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -13.0, -1.0))
+	elif engine_gear > previous_gear and sport_turbo and engine_turbo_pressure > 0.40:
+		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
 	if heavy_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.65 and throttle < 0.15 and engine_rpm > 0.42:
 		_play_vehicle_fx(TURBO_SHIFT_SOUNDS, -2.0)
-	if sport_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.58 and throttle < 0.16 and engine_turbo_pressure > 0.18:
-		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-11.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -13.0, -1.0))
+	# Keep the coupe's pressure release quiet and sparse during repeated braking.
+	if sport_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.58 and throttle < 0.16 and engine_turbo_pressure > 0.40:
+		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
 		engine_turbo_pressure *= 0.24
 	if family in ["truck", "bus", "fire_diesel"]:
 		if absf(float(car.speed)) > 1.25: engine_was_moving_fast = true
@@ -423,14 +424,14 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 			air_brake_audio.play()
 	engine_last_throttle = throttle
 
-func _play_vehicle_fx(sounds: Array, volume: float) -> void:
+func _play_vehicle_fx(sounds: Array, volume: float, cooldown: float = 0.18) -> void:
 	if engine_fx_cooldown > 0.0: return
 	engine_fx_variant = (engine_fx_variant + 1) % sounds.size()
 	shift_audio.stream = sounds[engine_fx_variant]
 	shift_audio.volume_db = volume
 	shift_audio.pitch_scale = 0.96 + engine_rpm * 0.12
 	shift_audio.play()
-	engine_fx_cooldown = 0.18
+	engine_fx_cooldown = cooldown
 
 func _update_ambience(delta: float) -> void:
 	if world.session == null: return
