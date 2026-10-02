@@ -1,0 +1,27 @@
+[
+  {
+    "ProcessId": 44988,
+    "ParentProcessId": 1788,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 18620,
+    "ParentProcessId": 156960,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/measure/review_mountain_neighbors.gd -- --no-save --skip-arrival --population=24 --tag=before"
+  },
+  {
+    "ProcessId": 211304,
+    "ParentProcessId": 18620,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/measure/review_mountain_neighbors.gd -- --no-save --skip-arrival --population=24 --tag=before"
+  },
+  {
+    "ProcessId": 112516,
+    "ParentProcessId": 60648,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/capture/capture_footer_prompt.gd -- --no-save"
+  },
+  {
+    "ProcessId": 166924,
+    "ParentProcessId": 112516,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/capture/capture_footer_prompt.gd -- --no-save"
+  }
+]

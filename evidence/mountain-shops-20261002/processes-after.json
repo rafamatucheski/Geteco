@@ -1,0 +1,57 @@
+[
+  {
+    "ProcessId": 44988,
+    "ParentProcessId": 1788,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 77096,
+    "ParentProcessId": 97544,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path . --script res://tests/dispatch/test_dispatch_police.gd -- --no-save --skip-arrival --isolated-save-root=user://police-balance-20261002"
+  },
+  {
+    "ProcessId": 157824,
+    "ParentProcessId": 77096,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path . --script res://tests/dispatch/test_dispatch_police.gd -- --no-save --skip-arrival --isolated-save-root=user://police-balance-20261002"
+  },
+  {
+    "ProcessId": 182760,
+    "ParentProcessId": 111748,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/measure/measure_race_phone.gd -- --no-save --variant=after"
+  },
+  {
+    "ProcessId": 50544,
+    "ParentProcessId": 182760,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/measure/measure_race_phone.gd -- --no-save --variant=after"
+  },
+  {
+    "ProcessId": 202116,
+    "ParentProcessId": 156872,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/measure/review_mountain_shops.gd -- --no-save --skip-arrival --population=24 --tag=after --visual-only --exercise"
+  },
+  {
+    "ProcessId": 177968,
+    "ParentProcessId": 202116,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/measure/review_mountain_shops.gd -- --no-save --skip-arrival --population=24 --tag=after --visual-only --exercise"
+  },
+  {
+    "ProcessId": 125112,
+    "ParentProcessId": 160324,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path D:/geteco/game --script res://tests/test_world_editor_cobra.gd"
+  },
+  {
+    "ProcessId": 221084,
+    "ParentProcessId": 125112,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path D:/geteco/game --script res://tests/test_world_editor_cobra.gd"
+  },
+  {
+    "ProcessId": 189880,
+    "ParentProcessId": 168664,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path . --script res://tests/test_mountain_shop_review.gd"
+  },
+  {
+    "ProcessId": 84644,
+    "ParentProcessId": 189880,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path . --script res://tests/test_mountain_shop_review.gd"
+  }
+]

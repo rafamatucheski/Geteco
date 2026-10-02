@@ -1,0 +1,26 @@
+[
+	{
+		"bounds": "[P: (635.9205, 0.014, -486.0608), S: (133.1417, 0.00001, 206.8397)]",
+		"material": "",
+		"path": "/root/World3D/MountainRoadside/MountainFootpaths",
+		"visible": true
+	},
+	{
+		"bounds": "[P: (704.0, 0.0, -512.0), S: (64.0, 1.795239, 64.0)]",
+		"material": "",
+		"path": "/root/World3D/MountainNativeRegion/Chunk_11_-8/MountainTerrain",
+		"visible": true
+	},
+	{
+		"bounds": "[P: (706.9, 0.068, -487.9), S: (16.19995, 0.0, 10.79999)]",
+		"material": "",
+		"path": "/root/World3D/MountainNativeRegion/Chunk_11_-8/MountainGroundContact_11440_-7720",
+		"visible": true
+	},
+	{
+		"bounds": "[P: (704.0, 0.026, -479.6587), S: (29.29999, 0.00001, 13.95865)]",
+		"material": "",
+		"path": "/root/World3D/MountainNativeRegion/Chunk_11_-8/SoftMountainTrail",
+		"visible": true
+	}
+]

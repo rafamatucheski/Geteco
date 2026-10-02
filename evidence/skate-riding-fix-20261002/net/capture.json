@@ -1,0 +1,13 @@
+{
+	"ambient": 3,
+	"engine": "4.7.2-stable (official)",
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"health": 94.0,
+	"note": "Rendered visual diagnostic with other Godot processes present; no performance approval or baseline comparison.",
+	"renderer": "mobile",
+	"resolution": "(1920, 1080)",
+	"skate": {
+		"best": 100,
+		"owned": true
+	}
+}

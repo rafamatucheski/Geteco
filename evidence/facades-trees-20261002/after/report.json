@@ -1,0 +1,23 @@
+{
+  "benchmark_valid": false,
+  "capture_times_s": [],
+  "duration_ms": 30000.5860000001,
+  "fps": 288.361034014468,
+  "frames": 8651,
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "max_fps": 0,
+  "max_ms": 49.981,
+  "over33": 1,
+  "over66": 0,
+  "p50_ms": 3.263,
+  "p95_ms": 5.652,
+  "p99_ms": 6.75,
+  "renderer": "mobile",
+  "sites": {
+    "maciota": "(46.875, 0.0, 102.7375)",
+    "street": "(45.8, 0.0, 35.3)"
+  },
+  "tag": "after",
+  "vsync": 0,
+  "invalidation_reason": "Other sessions changed sources and ran rendered Godot captures during review; not an isolated final comparison."
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "ProcessId": 44988,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 32824,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/measure/capture_skate_riding_fix.gd --log-file D:/geteco/game/evidence/skate-riding-fix-20261002/net/player-capture.log -- --no-save"
+  },
+  {
+    "ProcessId": 55756,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/measure/capture_skate_riding_fix.gd --log-file D:/geteco/game/evidence/skate-riding-fix-20261002/net/player-capture.log -- --no-save"
+  },
+  {
+    "ProcessId": 40212,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/capture/capture_police_variety.gd -- --no-save --skip-arrival --population=24 --fit-review --out=res://evidence/police-variety-20261002/fit-after"
+  },
+  {
+    "ProcessId": 207016,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/capture/capture_police_variety.gd -- --no-save --skip-arrival --population=24 --fit-review --out=res://evidence/police-variety-20261002/fit-after"
+  }
+]

@@ -1,0 +1,90 @@
+[
+  {
+    "Teste": "tests/dispatch/test_dispatch_police.gd",
+    "Resultado": "TEMPO",
+    "Segundos": 150.4,
+    "Saida": "GROUP_OK pursuit_and_release\r | GROUP_OK garage_rule_holds\r | GROUP_OK foot_agent_contract\r",
+    "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_181710_213-006c847627ab4ef8be82411ee0635a91-test_dispatch_police.stdout.log",
+    "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_181710_213-006c847627ab4ef8be82411ee0635a91-test_dispatch_police.stderr.log"
+  },
+  {
+    "Teste": "tests/police_response/test_air_k9.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 29.6,
+    "Saida": "AIR_K9 PASS K9 disengages when response level falls without disappearing on camera\r | AIR_K9 PASS response cleanup removes K9 and callbacks safely\r | AIR_K9 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/police_response/test_cases.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 4.3,
+    "Saida": "PASS live witness testimony survives unload and retains the original region and position\r | PASS all case and persistence checks executed\r | POLICE_CASES checks=50 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/police_response/test_ground_response.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 4.3,
+    "Saida": "GROUND PASS both integration groups completed\r | GROUND PASS all required checks executed\r | POLICE_GROUND checks=35 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_cobra_roof_finish.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 8.7,
+    "Saida": "COBRA_ROOF checks=32 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_fort_ascent.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 40.0,
+    "Saida": "FORT_ASCENT PASS porta do cofre oferece sair\r | FORT_ASCENT PASS sai do forte de volta ao esqui\r | FORT_ASCENT PASS checks=18 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_garage_backyard.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.4,
+    "Saida": "GARAGE_BACKYARD PASS 11 checks; failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_mountain_exterior_finish.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.6,
+    "Saida": "MOUNTAIN_EXTERIOR_FINISH checks=71 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_mountain_shop_occlusion.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 8.8,
+    "Saida": "SHOP_OCCLUSION PASS mountain_village_outfitters staff side positive visible control pixels=738\r | SHOP_OCCLUSION PASS mountain_village_outfitters staff side remains visible 738/738\r | SHOP_OCCLUSION failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_running_hands.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.7,
+    "Saida": "RUNNING_HANDS PASS garage preserves grenade inventory\r | RUNNING_HANDS PASS leaving garage restores grenade availability\r | RUNNING_HANDS failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_world_editor_cobra.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 4.0,
+    "Saida": "WORLD_EDITOR_COBRA checks=16 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  }
+]

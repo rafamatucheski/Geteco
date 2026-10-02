@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "D:\\geteco\\game\\runtime\\ProductionWorld.gd",
+    "Hash": "3FC801E0527E4480928A74C3A90D7627A46EBF699EEA30896BE314DBF9FBF33A"
+  },
+  {
+    "Path": "D:\\geteco\\game\\world\\regions\\NativeRegion.gd",
+    "Hash": "247F8C8D0CB09C445376DC0F6D3B6AD440C427EB69006166D5F14150C8187A7A"
+  },
+  {
+    "Path": "D:\\geteco\\game\\assets\\CivilianModel.gd",
+    "Hash": "A714B557425B6691C13FC79B2C14EC3B42A6783DF0A5EA34776E9950722CF1BD"
+  },
+  {
+    "Path": "D:\\geteco\\game\\assets\\civilians\\CivilianMeshKit.gd",
+    "Hash": "F8B12D21071A7F4E4D454E1C60C69AF1A795BA6E2296B75B5228B3986887E138"
+  }
+]

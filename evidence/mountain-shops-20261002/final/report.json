@@ -1,0 +1,11 @@
+{
+	"checks": [],
+	"engine": "4.7.2-stable (official)",
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"max_fps": 0,
+	"renderer": "mobile",
+	"resolution": "(1280, 720)",
+	"rows": [],
+	"scope": "Real Main, static gameplay at each entrance/interior; setup teleports and direct admission; no save writes.",
+	"vsync": 0
+}

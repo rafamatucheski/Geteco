@@ -1,0 +1,20 @@
+{
+  "scope": "Pátio externo atrás do Maciota",
+  "functional": "11 verificações físicas e acesso externo PASS, sem erros de compilação nas execuções finais",
+  "depth": {
+    "result": "PASS",
+    "player": {
+      "control": 2272,
+      "front": 2471,
+      "behind": 1003
+    },
+    "npc": {
+      "control": 1856,
+      "front": 2051,
+      "behind": 800
+    }
+  },
+  "performance": "PENDENTE: comparação contaminada por outra captura; p95 4.106 -> 5.826 ms, p99 4.7 -> 8.66 ms, sem atribuição causal confiável",
+  "visual": "comparison/with-yard.png",
+  "save": "--no-save em todas as execuções"
+}

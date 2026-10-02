@@ -1,0 +1,22 @@
+{
+	"benchmark_valid": true,
+	"capture_times_s": [],
+	"duration_ms": 30001.814,
+	"fps": 352.811999967735,
+	"frames": 10585,
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"max_fps": 0,
+	"max_ms": 33.04,
+	"over33": 0,
+	"over66": 0,
+	"p50_ms": 2.584,
+	"p95_ms": 4.596,
+	"p99_ms": 6.219,
+	"renderer": "mobile",
+	"sites": {
+		"maciota": "(46.875, 0.0, 102.7375)",
+		"street": "(45.8, 0.0, 35.3)"
+	},
+	"tag": "before",
+	"vsync": 0
+}

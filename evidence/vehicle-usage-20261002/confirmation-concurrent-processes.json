@@ -1,0 +1,14 @@
+[
+  {
+    "ProcessId": 44988,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 163932,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path . --script res://tests/test_garage_driver_restore.gd -- --no-save --skip-arrival --isolated-save-root=user://police-balance-20261002"
+  },
+  {
+    "ProcessId": 41220,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path . --script res://tests/test_garage_driver_restore.gd -- --no-save --skip-arrival --isolated-save-root=user://police-balance-20261002"
+  }
+]

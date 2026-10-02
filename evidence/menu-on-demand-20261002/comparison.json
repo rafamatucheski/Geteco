@@ -1,0 +1,35 @@
+{
+  "scope": "Abertura e 30 segundos no menu com save isolado; não mede gameplay",
+  "world_started_after": false,
+  "max_fps": 60,
+  "world_started_before": true,
+  "csharp_f5": false,
+  "after": {
+    "fps": 59.3992495894802,
+    "frames": 1782,
+    "max_ms": 217.878,
+    "over_33_3_ms": 3,
+    "over_66_7_ms": 2,
+    "p50_ms": 16.666,
+    "p95_ms": 16.714,
+    "p99_ms": 16.884,
+    "seconds": 30.000379
+  },
+  "resolution": "(1280, 720)",
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "baseline": {
+    "fps": 39.0510748741719,
+    "frames": 1172,
+    "max_ms": 3371.809,
+    "over_33_3_ms": 90,
+    "over_66_7_ms": 55,
+    "p50_ms": 16.666,
+    "p95_ms": 63.32,
+    "p99_ms": 136.927,
+    "seconds": 30.011978
+  },
+  "engine": "4.7.2-stable (official)",
+  "vsync": 1,
+  "renderer": "mobile",
+  "csharp_dotnet_probe": true
+}

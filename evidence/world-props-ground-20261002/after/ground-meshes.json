@@ -1,0 +1,14 @@
+[
+	{
+		"bounds": "[P: (704.0, 0.0, -512.0), S: (64.0, 1.795239, 64.0)]",
+		"material": "",
+		"path": "/root/World3D/MountainNativeRegion/Chunk_11_-8/MountainTerrain",
+		"visible": true
+	},
+	{
+		"bounds": "[P: (706.9, 0.068, -487.9), S: (16.19995, 0.0, 10.79999)]",
+		"material": "",
+		"path": "/root/World3D/MountainNativeRegion/Chunk_11_-8/MountainGroundContact_11440_-7720",
+		"visible": true
+	}
+]

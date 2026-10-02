@@ -1,0 +1,74 @@
+[
+  {
+    "Teste": "tests/cold/test_admission.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 4.9,
+    "Saida": "COLD_ADMISSION checks=11 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/dispatch/test_road_graph_native.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 40.3,
+    "Saida": "resultado: passou\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_bridge_approach_terrain.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 25.2,
+    "Saida": "BRIDGE_APPROACH_TERRAIN PASS failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_fleet_fixups.gd",
+    "Resultado": "FALHOU",
+    "Segundos": 8.1,
+    "Saida": "ERROR: 4 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.\r | ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneDummy21GeometryInstanceDummyE\r | ERROR: 5 resources still in use at exit (run with --verbose for details).\r",
+    "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814-test_fleet_fixups.stdout.log",
+    "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814-test_fleet_fixups.stderr.log"
+  },
+  {
+    "Teste": "tests/test_fleet_merge_bounds.gd",
+    "Resultado": "FALHOU",
+    "Segundos": 3.5,
+    "Saida": "   at: push_error (core/variant/variant_utility.cpp:1023)\r | ERROR: All transformed triangle vertices survive merging\r |    at: push_error (core/variant/variant_utility.cpp:1023)\r",
+    "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814-test_fleet_merge_bounds.stdout.log",
+    "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814-test_fleet_merge_bounds.stderr.log"
+  },
+  {
+    "Teste": "tests/test_hit_presentation_lifecycle.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.6,
+    "Saida": "HIT_PRESENTATION checks=9 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_hit_reaction.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.6,
+    "Saida": "HIT_REACTION failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_native_driving.gd",
+    "Resultado": "FALHOU",
+    "Segundos": 25.3,
+    "Saida": "NATIVE_DRIVING_ENTRY FAIL\r",
+    "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814-test_native_driving.stdout.log",
+    "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814-test_native_driving.stderr.log"
+  },
+  {
+    "Teste": "tests/test_regions.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 13.3,
+    "Saida": "REGIONS PASS failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  }
+]

@@ -1,0 +1,36 @@
+{
+  "status": "visual_fit_fixed",
+  "causes": [
+    "Police cap crown below hair apex",
+    "Gap between wrist and palm, most visible on slim bodies",
+    "Fixed resting pistol grip inside heavy torso",
+    "Head scale overwritten each pose"
+  ],
+  "fixes": [
+    "Raised closed cap crown and band",
+    "Connected duty wrist and curled fingers",
+    "Rest grip follows authored waist width",
+    "Head proportions retained by animated transform"
+  ],
+  "tests": {
+    "variety": 78,
+    "officer_poses": 101,
+    "failures": 0
+  },
+  "rendered_review": {
+    "motion": "45 scripted movement steps per profile and pose; images at steps 10,25,40; AI suspended",
+    "evidence": "fit-motion",
+    "modes": [
+      "rest",
+      "aim"
+    ],
+    "profiles": [
+      0,
+      2,
+      5
+    ],
+    "scene": "Main",
+    "observed": "Connected wrist/palm and pistol grip in sampled frames; head and hair beneath closed cap crown"
+  },
+  "performance": "Not approved: no isolated comparable before/after measurement; concurrent sessions remain a limitation."
+}

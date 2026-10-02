@@ -1,0 +1,57 @@
+[
+  {
+    "ProcessId": 44988,
+    "ParentProcessId": 1788,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 272724,
+    "ParentProcessId": 148920,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/measure/review_mountain_shops.gd -- --no-save --skip-arrival --population=24 --tag=before"
+  },
+  {
+    "ProcessId": 47520,
+    "ParentProcessId": 272724,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/measure/review_mountain_shops.gd -- --no-save --skip-arrival --population=24 --tag=before"
+  },
+  {
+    "ProcessId": 180668,
+    "ParentProcessId": 66880,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path . --script res://evidence/secret-exit-20261002/ascent.gd -- --shots --no-save --skip-arrival"
+  },
+  {
+    "ProcessId": 140464,
+    "ParentProcessId": 180668,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path . --script res://evidence/secret-exit-20261002/ascent.gd -- --shots --no-save --skip-arrival"
+  },
+  {
+    "ProcessId": 27312,
+    "ParentProcessId": 17584,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path D:/geteco/game --script res://tests/measure/measure_race_phone.gd -- --no-save --variant=before"
+  },
+  {
+    "ProcessId": 89420,
+    "ParentProcessId": 27312,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --script res://tests/measure/measure_race_phone.gd -- --no-save --variant=before"
+  },
+  {
+    "ProcessId": 178540,
+    "ParentProcessId": 274868,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path . --script tests/police_response/capture_k9_animation.gd -- --no-save --skip-arrival"
+  },
+  {
+    "ProcessId": 132400,
+    "ParentProcessId": 178540,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path . --script tests/police_response/capture_k9_animation.gd -- --no-save --skip-arrival"
+  },
+  {
+    "ProcessId": 201344,
+    "ParentProcessId": 97544,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path . --script res://tests/police_response/test_ground_response.gd -- --no-save --skip-arrival --isolated-save-root=user://police-balance-20261002"
+  },
+  {
+    "ProcessId": 187080,
+    "ParentProcessId": 201344,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path . --script res://tests/police_response/test_ground_response.gd -- --no-save --skip-arrival --isolated-save-root=user://police-balance-20261002"
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "change": "VehicleFinish: clearcoat only on glass; paint retains base specular",
+  "visual": "Controlled rendered before/after at city sun angle -35/-135 shows reduced white roof glare on dark vans",
+  "baseline": "evidence/fleet-finish-20260928/reflection-before-20261002",
+  "baseline_scope": "30 seconds each day/night-rain, other Godot processes running; not isolated",
+  "runtime": "Godot 4.7.2 Mobile Vulkan, RTX 4060 Laptop, 1920x1080, vsync 0, max_fps 0",
+  "functional": {
+    "damage_look_checks": 170,
+    "fleet_finish_checks": 642,
+    "failures": 0
+  },
+  "source": "runtime/VehicleFinish.gd",
+  "performance": "Not approved: concurrent edits; after run failed loading missing res://world/urban_detail/PromenadePaving.gd referenced by HarborPublicRealm3D.gd:47",
+  "temporal": "Integrated continuous motion capture not completed due scene compilation failure"
+}

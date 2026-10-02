@@ -1,0 +1,10 @@
+{
+	"engine": "4.7.2-stable (official)",
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"max_fps": 0,
+	"renderer": "mobile",
+	"resolution": "(1280, 720)",
+	"rows": [],
+	"scope": "Real Main with diagnostic fixed camera, live world; 24 requested population; no saves.",
+	"vsync": 0
+}

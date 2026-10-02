@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-02",
+  "engine": "Godot 4.7.2 .NET",
+  "csharp_build": "passed, 0 warnings, 0 errors",
+  "functional": {
+    "hud": {
+      "result": "passed",
+      "log": "final-test_compact_hud.log",
+      "checks": 49
+    },
+    "dispatch": {
+      "shutdown_resource_warnings": true,
+      "corrected_group_failures": 0,
+      "checks": 60,
+      "groups": "7/7",
+      "failures": 1,
+      "corrected_group_checks": 5,
+      "full_rerun": false
+    },
+    "cases": {
+      "result": "passed",
+      "log": "police_response__test_cases.log",
+      "checks": 50
+    },
+    "ground": {
+      "result": "passed",
+      "log": "final-police_response__test_ground_response.log",
+      "checks": 35
+    },
+    "police_crime": {
+      "result": "passed",
+      "log": "verified-test_police_crime_contract.log",
+      "checks": 10
+    },
+    "body_scale": {
+      "result": "passed",
+      "restored": true,
+      "samples": 61,
+      "log": "body-scale.log"
+    },
+    "air_k9": {
+      "result": "passed",
+      "log": "verified-police_response__test_air_k9.log",
+      "checks": 40
+    },
+    "rendered_hud": {
+      "result": "passed",
+      "frames": 16,
+      "log": "hud.log",
+      "checks": 7
+    },
+    "escalation": {
+      "result": "passed",
+      "log": "escalation-verified.log",
+      "checks": 30
+    },
+    "garages": {
+      "checks": [
+        47,
+        34,
+        11
+      ],
+      "result": "passed"
+    },
+    "motor_pool": {
+      "result": "failed before new theft scoring",
+      "log": "final-test_police_motor_pool.log",
+      "error": "obsolete alarm.visible access on Dictionary; parking and interaction assertions also failed"
+    }
+  },
+  "performance": {
+    "baseline": "D:/geteco/artifacts/police-balance-baseline-20261002",
+    "comparison": "search, Main, 1280x720, 8s warmup + 30s measurement planned, not completed",
+    "criteria": "60 FPS / 16.67ms provisional; >5 percent p95/p99 increase requires bounded confirmation",
+    "reason": "Concurrent Godot activity interrupted first baseline and blocked second attempt",
+    "result": "not validated",
+    "full_played_escape": "not certified by directed fixtures"
+  }
+}

@@ -1,0 +1,412 @@
+[
+  {
+    "path": "audio\\vehicle_crashes\\bumper_0.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -20.15769224247026,
+    "dc": -4.807436796834118e-05,
+    "before_seconds": 0.52,
+    "bytes": 57374
+  },
+  {
+    "path": "audio\\vehicle_crashes\\solid_0.wav",
+    "rate": 44100,
+    "seconds": 0.85,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -22.32255804616177,
+    "dc": -4.9841714029361746e-05,
+    "before_seconds": 1.12,
+    "bytes": 75014
+  },
+  {
+    "path": "audio\\vehicle_crashes\\heavy_0.wav",
+    "rate": 44100,
+    "seconds": 1.12,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -25.895571191823976,
+    "dc": -2.5683403941933916e-05,
+    "before_seconds": 2.18,
+    "bytes": 98828
+  },
+  {
+    "path": "audio\\vehicle_crashes\\metal_0.wav",
+    "rate": 44100,
+    "seconds": 0.95,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -27.847664803296336,
+    "dc": -0.0001444054355568982,
+    "before_seconds": 1.18,
+    "bytes": 83834
+  },
+  {
+    "path": "audio\\vehicle_crashes\\motorcycle_0.wav",
+    "rate": 44100,
+    "seconds": 0.82,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -25.306433101378932,
+    "dc": -0.00024041896913109756,
+    "before_seconds": 0.65,
+    "bytes": 72368
+  },
+  {
+    "path": "audio\\vehicle_crashes\\bumper_1.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.625930645079023,
+    "dc": -4.959998071744724e-05,
+    "before_seconds": 0.58,
+    "bytes": 57374
+  },
+  {
+    "path": "audio\\vehicle_crashes\\solid_1.wav",
+    "rate": 44100,
+    "seconds": 0.85,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -19.43382875645576,
+    "dc": 9.497288498732826e-05,
+    "before_seconds": 1.24,
+    "bytes": 75014
+  },
+  {
+    "path": "audio\\vehicle_crashes\\heavy_1.wav",
+    "rate": 44100,
+    "seconds": 1.12,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -23.922199679518986,
+    "dc": -2.6497131881491436e-05,
+    "before_seconds": 2.3,
+    "bytes": 98828
+  },
+  {
+    "path": "audio\\vehicle_crashes\\metal_1.wav",
+    "rate": 44100,
+    "seconds": 0.95,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -25.35579783626971,
+    "dc": 4.597559281387994e-05,
+    "before_seconds": 1.3,
+    "bytes": 83834
+  },
+  {
+    "path": "audio\\vehicle_crashes\\motorcycle_1.wav",
+    "rate": 44100,
+    "seconds": 0.82,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -23.564056967810565,
+    "dc": -0.00024406889240388737,
+    "before_seconds": 0.78,
+    "bytes": 72368
+  },
+  {
+    "path": "audio\\vehicle_crashes\\bumper_2.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.808905267517403,
+    "dc": -4.4128854466466077e-05,
+    "before_seconds": 0.49,
+    "bytes": 57374
+  },
+  {
+    "path": "audio\\vehicle_crashes\\solid_2.wav",
+    "rate": 44100,
+    "seconds": 0.85,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.417633890446368,
+    "dc": 6.440971570920035e-05,
+    "before_seconds": 1.18,
+    "bytes": 75014
+  },
+  {
+    "path": "audio\\vehicle_crashes\\heavy_2.wav",
+    "rate": 44100,
+    "seconds": 1.12,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -23.309620239572993,
+    "dc": -2.5261402284593154e-05,
+    "before_seconds": 2.06,
+    "bytes": 98828
+  },
+  {
+    "path": "audio\\vehicle_crashes\\metal_2.wav",
+    "rate": 44100,
+    "seconds": 0.95,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -26.41849001478363,
+    "dc": 1.4288884413414489e-05,
+    "before_seconds": 1.22,
+    "bytes": 83834
+  },
+  {
+    "path": "audio\\vehicle_crashes\\motorcycle_2.wav",
+    "rate": 44100,
+    "seconds": 0.82,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -23.72304028896845,
+    "dc": -0.00024344102120967798,
+    "before_seconds": 0.72,
+    "bytes": 72368
+  },
+  {
+    "path": "audio\\vehicle_crashes\\bumper_3.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.690115244446297,
+    "dc": -4.1667433199241235e-05,
+    "before_seconds": 0.62,
+    "bytes": 57374
+  },
+  {
+    "path": "audio\\vehicle_crashes\\solid_3.wav",
+    "rate": 44100,
+    "seconds": 0.85,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -20.230385187293788,
+    "dc": -4.404186804930305e-05,
+    "before_seconds": 1.3,
+    "bytes": 75014
+  },
+  {
+    "path": "audio\\vehicle_crashes\\heavy_3.wav",
+    "rate": 44100,
+    "seconds": 1.12,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -23.51549457744335,
+    "dc": -2.5076042845058412e-05,
+    "before_seconds": 2.36,
+    "bytes": 98828
+  },
+  {
+    "path": "audio\\vehicle_crashes\\metal_3.wav",
+    "rate": 44100,
+    "seconds": 0.95,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -25.312639238594716,
+    "dc": -0.00012655307120106816,
+    "before_seconds": 1.38,
+    "bytes": 83834
+  },
+  {
+    "path": "audio\\vehicle_crashes\\motorcycle_3.wav",
+    "rate": 44100,
+    "seconds": 0.82,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -23.958429089230165,
+    "dc": -0.00025080331730952037,
+    "before_seconds": 0.86,
+    "bytes": 72368
+  },
+  {
+    "path": "audio\\body_impacts\\body_hit_0.wav",
+    "rate": 44100,
+    "seconds": 0.5,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.46654668929744,
+    "dc": -7.490439209537982e-05,
+    "before_seconds": 0.34,
+    "bytes": 44144
+  },
+  {
+    "path": "audio\\body_impacts\\body_land_0.wav",
+    "rate": 44100,
+    "seconds": 0.54,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.731956370515217,
+    "dc": -7.010687605964454e-05,
+    "before_seconds": 0.42,
+    "bytes": 47672
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_flesh_0.wav",
+    "rate": 44100,
+    "seconds": 0.4,
+    "peak_dbfs": -3.9996682292812924,
+    "rms_dbfs": -19.354581438783228,
+    "dc": -7.37317835662911e-05,
+    "before_seconds": 0.28,
+    "bytes": 35324
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_glass_0.wav",
+    "rate": 44100,
+    "seconds": 1.35,
+    "peak_dbfs": -4.0000883347026726,
+    "rms_dbfs": -17.839329070827414,
+    "dc": -1.544204318494373e-05,
+    "before_seconds": 0.42,
+    "bytes": 119114
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_wood_0.wav",
+    "rate": 44100,
+    "seconds": 0.8,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -23.841604558812417,
+    "dc": -0.00012706055933115433,
+    "before_seconds": 0.27,
+    "bytes": 70604
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_metal_0.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -25.651414800545133,
+    "dc": -0.0003084622896634615,
+    "before_seconds": 0.38,
+    "bytes": 57374
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_concrete_0.wav",
+    "rate": 44100,
+    "seconds": 0.55,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -19.495759612356565,
+    "dc": -0.0001970400050408421,
+    "before_seconds": 0.29,
+    "bytes": 48554
+  },
+  {
+    "path": "audio\\body_impacts\\body_hit_1.wav",
+    "rate": 44100,
+    "seconds": 0.5,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -18.454732506581045,
+    "dc": -7.55451920351474e-05,
+    "before_seconds": 0.37,
+    "bytes": 44144
+  },
+  {
+    "path": "audio\\body_impacts\\body_land_1.wav",
+    "rate": 44100,
+    "seconds": 0.54,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.388433777250885,
+    "dc": -7.016582493819287e-05,
+    "before_seconds": 0.46,
+    "bytes": 47672
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_flesh_1.wav",
+    "rate": 44100,
+    "seconds": 0.4,
+    "peak_dbfs": -3.9996682292812924,
+    "rms_dbfs": -19.317219393535996,
+    "dc": -7.71260856230513e-05,
+    "before_seconds": 0.28,
+    "bytes": 35324
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_glass_1.wav",
+    "rate": 44100,
+    "seconds": 1.35,
+    "peak_dbfs": -4.0000883347026726,
+    "rms_dbfs": -17.909941267297572,
+    "dc": -1.509655149675611e-05,
+    "before_seconds": 0.42,
+    "bytes": 119114
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_wood_1.wav",
+    "rate": 44100,
+    "seconds": 0.8,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -23.13008477061432,
+    "dc": -0.00012134543351845946,
+    "before_seconds": 0.27,
+    "bytes": 70604
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_metal_1.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -25.516224164925827,
+    "dc": -0.00031411972591520584,
+    "before_seconds": 0.38,
+    "bytes": 57374
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_concrete_1.wav",
+    "rate": 44100,
+    "seconds": 0.55,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -18.64848762155264,
+    "dc": -1.3408609774402185e-05,
+    "before_seconds": 0.29,
+    "bytes": 48554
+  },
+  {
+    "path": "audio\\body_impacts\\body_hit_2.wav",
+    "rate": 44100,
+    "seconds": 0.5,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -18.20644726108435,
+    "dc": -6.920777751204649e-05,
+    "before_seconds": 0.4,
+    "bytes": 44144
+  },
+  {
+    "path": "audio\\body_impacts\\body_land_2.wav",
+    "rate": 44100,
+    "seconds": 0.54,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -19.04709721960938,
+    "dc": -6.5971484079743e-05,
+    "before_seconds": 0.5,
+    "bytes": 47672
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_flesh_2.wav",
+    "rate": 44100,
+    "seconds": 0.4,
+    "peak_dbfs": -4.0000883347026726,
+    "rms_dbfs": -18.686757449232505,
+    "dc": -6.732724421148667e-05,
+    "before_seconds": 0.28,
+    "bytes": 35324
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_glass_2.wav",
+    "rate": 44100,
+    "seconds": 1.35,
+    "peak_dbfs": -4.0000883347026726,
+    "rms_dbfs": -18.318984457530668,
+    "dc": -1.405905123430545e-05,
+    "before_seconds": 0.42,
+    "bytes": 119114
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_wood_2.wav",
+    "rate": 44100,
+    "seconds": 0.8,
+    "peak_dbfs": -2.9999878172428636,
+    "rms_dbfs": -24.136273302293837,
+    "dc": -0.00011889918320843963,
+    "before_seconds": 0.27,
+    "bytes": 70604
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_metal_2.wav",
+    "rate": 44100,
+    "seconds": 0.65,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -25.48833276956679,
+    "dc": -0.0003109226463021106,
+    "before_seconds": 0.38,
+    "bytes": 57374
+  },
+  {
+    "path": "assets\\gameplay\\audio\\impact_concrete_2.wav",
+    "rate": 44100,
+    "seconds": 0.55,
+    "peak_dbfs": -3.0003622493859567,
+    "rms_dbfs": -21.61066661043523,
+    "dc": 0.00012924329592158834,
+    "before_seconds": 0.29,
+    "bytes": 48554
+  }
+]

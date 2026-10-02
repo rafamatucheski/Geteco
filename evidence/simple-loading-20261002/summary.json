@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-02",
+  "scope": "Menu estático e carregamento com prewarm ampliado",
+  "implemented": [
+    "Fundo sólido sem nuvens/voo/shaders decorativos",
+    "Fades de entrada e saída",
+    "Progresso real sem avanço fictício",
+    "Frota completa retida e modelos decorados aquecidos na câmera ativa",
+    "Assentamento de streaming/áudio e motorista salvo antes da revelação"
+  ],
+  "validation": {
+    "rendered_save_flow": "PASS 122 checks",
+    "diff_check": "PASS",
+    "fleet_prewarm": "PASS 120 checks",
+    "region_prewarm": "PASS 10 checks",
+    "loading_handoff": "PASS 5 checks",
+    "continue_while_loading": "PASS 24 checks",
+    "settings": "PASS"
+  },
+  "rendered_cases": [
+    "Harbor",
+    "Driving at night",
+    "Mountain",
+    "Garage",
+    "Saved garage driver",
+    "New game after preview"
+  ],
+  "baseline": {
+    "vsync": 1,
+    "resolution": "(1280, 720)",
+    "cases": [
+      {
+        "scenario": "menu",
+        "summary": {
+          "fps": 60.0024500722811,
+          "frames": 1801,
+          "max_ms": 35.179,
+          "over_33_3_ms": 1,
+          "over_66_7_ms": 0,
+          "p50_ms": 16.666,
+          "p95_ms": 16.707,
+          "p99_ms": 17.025,
+          "seconds": 30.015441
+        }
+      },
+      {
+        "scenario": "gameplay",
+        "summary": {
+          "fps": 57.7324481024625,
+          "frames": 1732,
+          "max_ms": 55.415,
+          "over_33_3_ms": 23,
+          "over_66_7_ms": 0,
+          "p50_ms": 16.716,
+          "p95_ms": 20.176,
+          "p99_ms": 33.807,
+          "seconds": 30.00046
+        }
+      }
+    ],
+    "engine": "4.7.2-stable (official)",
+    "max_fps": 60,
+    "renderer": "mobile",
+    "startup": {
+      "fps": 38.8885544827541,
+      "frames": 878,
+      "max_ms": 2987.304,
+      "over_33_3_ms": 59,
+      "over_66_7_ms": 33,
+      "p50_ms": 16.667,
+      "p95_ms": 50.85,
+      "p99_ms": 132.856,
+      "seconds": 22.577337
+    },
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU"
+  },
+  "limitations": [
+    "Não certifica ausência global de hitches nem todos os efeitos/locais",
+    "Baseline exibiu erro float(null) de EffectsPrewarm corrigido nesta tarefa",
+    "Testes headless tiveram bloqueio de load threaded; leitura sequencial nesse ambiente corrigiu",
+    "Warnings de fusão Aurora preservam peças; ObjectDB warning também observado no baseline",
+    "Outras sessões alteraram arquivos de câmera/sessão durante a tarefa; comparação requer cautela"
+  ],
+  "performance_status": "INCONCLUSIVO: medição posterior interrompida ao detectar outra sessão do jogo; sem aprovação de performance."
+}

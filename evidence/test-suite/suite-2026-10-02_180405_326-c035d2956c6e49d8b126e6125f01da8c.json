@@ -1,0 +1,218 @@
+[
+  {
+    "Teste": "tests/cold/test_fire_finish.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.7,
+    "Saida": "FIRE_FINISH checks=80 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/police_response/test_escalation.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 4.0,
+    "Saida": "PASS last star pulses faster near disappearance\r | PASS clearing the case removes the wanted display\r | POLICE_ESCALATION checks=30 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/police_response/test_k9_animation.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.7,
+    "Saida": "AIR_K9 PASS death visibly passes through intermediate pose\r | AIR_K9 PASS corpse settles and stops animation updates\r | K9_ANIMATION failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/police_response/test_k9_variants.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 9.7,
+    "Saida": "AIR_K9 PASS variant 3 admits only fitting spawns and physically stops before the wall\r | AIR_K9 PASS variant 3 falls gradually, settles proportionally and stays still\r | K9_VARIANTS failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_bench_finish.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.5,
+    "Saida": "BENCH_FINISH checks=54 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_bench_native_collision.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 6.7,
+    "Saida": "BENCH_NATIVE benches=24 checks=405 failures=0 long_cast_anomalies=4\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_body_impact_pose_scale.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.4,
+    "Saida": "BODY_IMPACT_SCALE samples=61 restored=true passed=true\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_cobra_walkway_connections.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 4.4,
+    "Saida": "COBRA_WALKWAYS checks=8 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_compact_hud.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 29.1,
+    "Saida": "COMPACT_HUD PASS garage still holsters weapons and HUD reflects it\r | COMPACT_HUD PASS interior keeps outdoor map hidden\r | COMPACT_HUD_RESULT checks=49 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_destroyed_cleanup.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 17.4,
+    "Saida": "DESTROYED_CLEANUP checks=17 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_fleet_fixups.gd",
+    "Resultado": "FALHOU",
+    "Segundos": 6.6,
+    "Saida": "ERROR: 4 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.\r | ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneDummy21GeometryInstanceDummyE\r | ERROR: 5 resources still in use at exit (run with --verbose for details).\r",
+    "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_180405_326-c035d2956c6e49d8b126e6125f01da8c-test_fleet_fixups.stdout.log",
+    "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_180405_326-c035d2956c6e49d8b126e6125f01da8c-test_fleet_fixups.stderr.log"
+  },
+  {
+    "Teste": "tests/test_fleet_merge_bounds.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.5,
+    "Saida": "FLEET_MERGE_BOUNDS checks=4 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_garage_driver_restore.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 20.0,
+    "Saida": "GARAGE_DRIVER_RESTORE 34 checks failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_garage_rewards.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 7.2,
+    "Saida": "PASS garage rewards: 47 checks\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_garage_vehicle_transfer.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 18.2,
+    "Saida": "PASS garage physical transfers: 11 checks\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_mountain_shop_review.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.6,
+    "Saida": "MOUNTAIN_SHOP_REVIEW checks=652 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_mountain_trail_blend.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.3,
+    "Saida": "TRAIL_BLEND 552 checks, 0 failures\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_mountain_tunnel_paving.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.4,
+    "Saida": "MOUNTAIN_TUNNEL_PAVING failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_native_driving.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 14.5,
+    "Saida": "NATIVE_DRIVING_ENTRY PASS\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_police_variety.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.5,
+    "Saida": "POLICE_VARIETY checks=78 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_race_phones.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 36.1,
+    "Saida": "PHONE PASS Cobra phone can be answered again\r | PHONE PASS Cobra real countdown started\r | RACE_PHONES checks=29 failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_skate_pose.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.8,
+    "Saida": "SKATE POSE 1668 checks, 0 failures\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_skate_session.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 23.7,
+    "Saida": "SKATE_SESSION PASS skate tomado do NPC pode ser usado sem atravessar o corpo\r | SKATE_SESSION PASS remoção do shape recupera Dante, colisão e câmera\r | SKATE_SESSION_RESULT checks=18 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_skate_street.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 7.7,
+    "Saida": "SKATE_STREET PASS retired pedestrian resumes movement\r | SKATE_STREET PASS retired pedestrian resumes movement\r | SKATE_STREET_RESULT checks=11 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_vehicle_bullet_resistance.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.4,
+    "Saida": "VEHICLE_BULLET_RESISTANCE checks=19 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_vehicle_usage.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 3.7,
+    "Saida": "VEHICLE_USAGE 201 checks failures=[]\r",
+    "Stdout": "",
+    "Stderr": ""
+  },
+  {
+    "Teste": "tests/test_world_editor_street_lamps.gd",
+    "Resultado": "PASSOU",
+    "Segundos": 5.7,
+    "Saida": "WORLD_EDITOR_STREET_LAMPS checks=324 failures=0\r",
+    "Stdout": "",
+    "Stderr": ""
+  }
+]

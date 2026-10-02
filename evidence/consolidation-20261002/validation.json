@@ -1,0 +1,395 @@
+{
+  "date": "2026-10-02",
+  "scope": "Consolidacao das alteracoes locais autorizada pelo usuario apos encerramento dos outros chats.",
+  "engine": "Godot 4.7.2 stable .NET (mono)",
+  "csharp_build": {
+    "result": "PASS",
+    "warnings": 0,
+    "errors": 0
+  },
+  "test_summary": {
+    "unique": 44,
+    "passed": 42,
+    "pending": 2,
+    "results": [
+      {
+        "Teste": "tests/cold/test_admission.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 4.9,
+        "Saida": "COLD_ADMISSION checks=11 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/dispatch/test_road_graph_native.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 40.3,
+        "Saida": "resultado: passou\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_bridge_approach_terrain.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 25.2,
+        "Saida": "BRIDGE_APPROACH_TERRAIN PASS failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_fleet_fixups.gd",
+        "Resultado": "FALHOU",
+        "Segundos": 6.6,
+        "Saida": "ERROR: 4 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.\r | ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneDummy21GeometryInstanceDummyE\r | ERROR: 5 resources still in use at exit (run with --verbose for details).\r",
+        "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_180405_326-c035d2956c6e49d8b126e6125f01da8c-test_fleet_fixups.stdout.log",
+        "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_180405_326-c035d2956c6e49d8b126e6125f01da8c-test_fleet_fixups.stderr.log"
+      },
+      {
+        "Teste": "tests/test_fleet_merge_bounds.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.5,
+        "Saida": "FLEET_MERGE_BOUNDS checks=4 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_hit_presentation_lifecycle.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.6,
+        "Saida": "HIT_PRESENTATION checks=9 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_hit_reaction.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.6,
+        "Saida": "HIT_REACTION failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_native_driving.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 14.5,
+        "Saida": "NATIVE_DRIVING_ENTRY PASS\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_regions.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 13.3,
+        "Saida": "REGIONS PASS failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/cold/test_fire_finish.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.7,
+        "Saida": "FIRE_FINISH checks=80 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/police_response/test_escalation.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 4.0,
+        "Saida": "PASS last star pulses faster near disappearance\r | PASS clearing the case removes the wanted display\r | POLICE_ESCALATION checks=30 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/police_response/test_k9_animation.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.7,
+        "Saida": "AIR_K9 PASS death visibly passes through intermediate pose\r | AIR_K9 PASS corpse settles and stops animation updates\r | K9_ANIMATION failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/police_response/test_k9_variants.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 9.7,
+        "Saida": "AIR_K9 PASS variant 3 admits only fitting spawns and physically stops before the wall\r | AIR_K9 PASS variant 3 falls gradually, settles proportionally and stays still\r | K9_VARIANTS failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_bench_finish.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.5,
+        "Saida": "BENCH_FINISH checks=54 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_bench_native_collision.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 6.7,
+        "Saida": "BENCH_NATIVE benches=24 checks=405 failures=0 long_cast_anomalies=4\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_body_impact_pose_scale.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.4,
+        "Saida": "BODY_IMPACT_SCALE samples=61 restored=true passed=true\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_cobra_walkway_connections.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 4.4,
+        "Saida": "COBRA_WALKWAYS checks=8 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_compact_hud.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 29.1,
+        "Saida": "COMPACT_HUD PASS garage still holsters weapons and HUD reflects it\r | COMPACT_HUD PASS interior keeps outdoor map hidden\r | COMPACT_HUD_RESULT checks=49 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_destroyed_cleanup.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 17.4,
+        "Saida": "DESTROYED_CLEANUP checks=17 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_garage_driver_restore.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 20.0,
+        "Saida": "GARAGE_DRIVER_RESTORE 34 checks failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_garage_rewards.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 7.2,
+        "Saida": "PASS garage rewards: 47 checks\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_garage_vehicle_transfer.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 18.2,
+        "Saida": "PASS garage physical transfers: 11 checks\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_mountain_shop_review.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.6,
+        "Saida": "MOUNTAIN_SHOP_REVIEW checks=652 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_mountain_trail_blend.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.3,
+        "Saida": "TRAIL_BLEND 552 checks, 0 failures\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_mountain_tunnel_paving.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.4,
+        "Saida": "MOUNTAIN_TUNNEL_PAVING failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_police_variety.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.5,
+        "Saida": "POLICE_VARIETY checks=78 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_race_phones.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 36.1,
+        "Saida": "PHONE PASS Cobra phone can be answered again\r | PHONE PASS Cobra real countdown started\r | RACE_PHONES checks=29 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_skate_pose.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.8,
+        "Saida": "SKATE POSE 1668 checks, 0 failures\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_skate_session.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 23.7,
+        "Saida": "SKATE_SESSION PASS skate tomado do NPC pode ser usado sem atravessar o corpo\r | SKATE_SESSION PASS remoção do shape recupera Dante, colisão e câmera\r | SKATE_SESSION_RESULT checks=18 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_skate_street.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 7.7,
+        "Saida": "SKATE_STREET PASS retired pedestrian resumes movement\r | SKATE_STREET PASS retired pedestrian resumes movement\r | SKATE_STREET_RESULT checks=11 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_vehicle_bullet_resistance.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.4,
+        "Saida": "VEHICLE_BULLET_RESISTANCE checks=19 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_vehicle_usage.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.7,
+        "Saida": "VEHICLE_USAGE 201 checks failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_world_editor_street_lamps.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 5.7,
+        "Saida": "WORLD_EDITOR_STREET_LAMPS checks=324 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/dispatch/test_dispatch_police.gd",
+        "Resultado": "TEMPO",
+        "Segundos": 150.4,
+        "Saida": "GROUP_OK pursuit_and_release\r | GROUP_OK garage_rule_holds\r | GROUP_OK foot_agent_contract\r",
+        "Stdout": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_181710_213-006c847627ab4ef8be82411ee0635a91-test_dispatch_police.stdout.log",
+        "Stderr": "D:\\geteco\\game\\evidence\\test-suite\\logs\\2026-10-02_181710_213-006c847627ab4ef8be82411ee0635a91-test_dispatch_police.stderr.log"
+      },
+      {
+        "Teste": "tests/police_response/test_air_k9.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 29.6,
+        "Saida": "AIR_K9 PASS K9 disengages when response level falls without disappearing on camera\r | AIR_K9 PASS response cleanup removes K9 and callbacks safely\r | AIR_K9 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/police_response/test_cases.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 4.3,
+        "Saida": "PASS live witness testimony survives unload and retains the original region and position\r | PASS all case and persistence checks executed\r | POLICE_CASES checks=50 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/police_response/test_ground_response.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 4.3,
+        "Saida": "GROUND PASS both integration groups completed\r | GROUND PASS all required checks executed\r | POLICE_GROUND checks=35 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_cobra_roof_finish.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 8.7,
+        "Saida": "COBRA_ROOF checks=32 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_fort_ascent.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 40.0,
+        "Saida": "FORT_ASCENT PASS porta do cofre oferece sair\r | FORT_ASCENT PASS sai do forte de volta ao esqui\r | FORT_ASCENT PASS checks=18 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_garage_backyard.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.4,
+        "Saida": "GARAGE_BACKYARD PASS 11 checks; failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_mountain_exterior_finish.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.6,
+        "Saida": "MOUNTAIN_EXTERIOR_FINISH checks=71 failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_mountain_shop_occlusion.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 8.8,
+        "Saida": "SHOP_OCCLUSION PASS mountain_village_outfitters staff side positive visible control pixels=738\r | SHOP_OCCLUSION PASS mountain_village_outfitters staff side remains visible 738/738\r | SHOP_OCCLUSION failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_running_hands.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 3.7,
+        "Saida": "RUNNING_HANDS PASS garage preserves grenade inventory\r | RUNNING_HANDS PASS leaving garage restores grenade availability\r | RUNNING_HANDS failures=[]\r",
+        "Stdout": "",
+        "Stderr": ""
+      },
+      {
+        "Teste": "tests/test_world_editor_cobra.gd",
+        "Resultado": "PASSOU",
+        "Segundos": 4.0,
+        "Saida": "WORLD_EDITOR_COBRA checks=16 failures=0\r",
+        "Stdout": "",
+        "Stderr": ""
+      }
+    ]
+  },
+  "suite_reports": [
+    "evidence/test-suite/suite-2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814.json",
+    "evidence/test-suite/metadata-2026-10-02_175659_838-277ee28615a046539e5f7b0ab20f1814.json",
+    "evidence/test-suite/suite-2026-10-02_180405_326-c035d2956c6e49d8b126e6125f01da8c.json",
+    "evidence/test-suite/metadata-2026-10-02_180405_326-c035d2956c6e49d8b126e6125f01da8c.json",
+    "evidence/test-suite/suite-2026-10-02_181710_213-006c847627ab4ef8be82411ee0635a91.json",
+    "evidence/test-suite/metadata-2026-10-02_181710_213-006c847627ab4ef8be82411ee0635a91.json"
+  ],
+  "evidence_limits": [
+    "As duas primeiras suites tinham arquivos novos ainda nao versionados; o runner nao atesta cobertura completa dos hashes.",
+    "Na terceira suite, o commit de audio alterou revision/status/diff do Git durante a execucao; os hashes dos testes selecionados e runners permaneceram iguais. SourceChanged=true foi preservado.",
+    "test_fleet_fixups conclui as assercoes com FLEET_FIXUPS OK, mas o motor aponta quatro MeshInstance3D orfas e recursos de bike_urban.scn ao encerrar. Nao aprovado.",
+    "test_dispatch_police completou os tres primeiros grupos e excedeu o limite reduzido de 150 s. Seus loops de fisica justificam usar o limite padrao de 600 s numa proxima validacao; resultado atual inconclusivo.",
+    "A medicao renderizada isolada de Main com populacao 24 foi interrompida pelo limite de 95 s do runner. Sem concorrencia detectada, sem erros em stderr, pre-aquecimento das regioes registrado em 9380 ms; nao gerou amostras finais de frame time.",
+    "Sem comparacao controlada antes/depois; desempenho e ausencia global de flickering nao aprovados. Relatorios das outras sessoes preservam suas proprias lacunas.",
+    "Android/exportacao nao validados nesta consolidacao.",
+    "Capturas, videos, caches e copias de benchmark continuam no disco, fora dos commits."
+  ],
+  "additional_checks": [
+    "Importacao pelo Godot .NET e preparacao por Open.ps1 -PrepareOnly concluidas.",
+    "41 WAVs conferidos contra os hashes do manifesto; PCM mono de 16 bits a 44100 Hz.",
+    "Referencias literais de recursos novos/alterados conferidas, exceto caminhos de caches gerados intencionalmente.",
+    "Nenhum descarte de alteracoes locais; arquivos agrupados e adicionados explicitamente."
+  ],
+  "performance_process_log": "evidence/consolidation-20261002-isolated-population24-processes.json",
+  "source_hashes": "evidence/consolidation-20261002/committed-source-hashes.json"
+}

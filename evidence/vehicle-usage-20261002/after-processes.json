@@ -1,0 +1,14 @@
+[
+  {
+    "ProcessId": 44988,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 229096,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path . --script res://tests/measure/measure_vehicle_usage.gd --log-file D:/geteco/game/evidence/vehicle-usage-20261002/after.log -- --no-save --variant=after"
+  },
+  {
+    "ProcessId": 264120,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path . --script res://tests/measure/measure_vehicle_usage.gd --log-file D:/geteco/game/evidence/vehicle-usage-20261002/after.log -- --no-save --variant=after"
+  }
+]

@@ -1,0 +1,103 @@
+{
+	"completed": 3,
+	"contacts": "res://evidence/audio-quality-20261002/body-updated-contacts.wav",
+	"events": [
+		{
+			"clip": "res://audio/body_impacts/body_hit_0.wav",
+			"dismount_active": true,
+			"gain_db": -3.96376514434814,
+			"point": "(49.80425, 0.890106, 110.125)",
+			"seconds": 6.08803,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_0.wav",
+			"dismount_active": true,
+			"gain_db": -9.97101593017578,
+			"point": "(50.45603, 0.380164, 110.125)",
+			"seconds": 6.190264,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_2.wav",
+			"dismount_active": true,
+			"gain_db": -8.88888931274414,
+			"point": "(48.06413, -0.009067, 107.8199)",
+			"seconds": 6.223952,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_0.wav",
+			"dismount_active": true,
+			"gain_db": -8.88888931274414,
+			"point": "(48.06413, -0.009067, 107.8199)",
+			"seconds": 12.222041,
+			"victim_flying": false
+		},
+		{
+			"clip": "res://audio/body_impacts/body_hit_2.wav",
+			"dismount_active": true,
+			"gain_db": -3.9214882850647,
+			"point": "(48.47556, 0.894664, 110.125)",
+			"seconds": 18.042118,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_1.wav",
+			"dismount_active": true,
+			"gain_db": -9.98905372619629,
+			"point": "(49.1554, 0.380096, 110.125)",
+			"seconds": 18.175104,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_2.wav",
+			"dismount_active": true,
+			"gain_db": -8.88888931274414,
+			"point": "(48.06413, -0.009064, 107.8198)",
+			"seconds": 18.224141,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_1.wav",
+			"dismount_active": true,
+			"gain_db": -8.88888931274414,
+			"point": "(48.06413, -0.009064, 107.8198)",
+			"seconds": 24.228126,
+			"victim_flying": false
+		},
+		{
+			"clip": "res://audio/body_impacts/body_hit_1.wav",
+			"dismount_active": true,
+			"gain_db": -3.9214882850647,
+			"point": "(48.47556, 0.894664, 110.125)",
+			"seconds": 30.038285,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_2.wav",
+			"dismount_active": true,
+			"gain_db": -9.98905372619629,
+			"point": "(49.1554, 0.380096, 110.125)",
+			"seconds": 30.196093,
+			"victim_flying": true
+		},
+		{
+			"clip": "res://audio/body_impacts/body_land_1.wav",
+			"dismount_active": true,
+			"gain_db": -8.88888931274414,
+			"point": "(48.06413, -0.009064, 107.8198)",
+			"seconds": 30.23388,
+			"victim_flying": true
+		}
+	],
+	"hits": 3,
+	"landings": 8,
+	"launched": 3,
+	"master": "res://evidence/audio-quality-20261002/body-updated-master.wav",
+	"master_db": 0.0,
+	"master_muted": false,
+	"notes": "Rendered Main scene with live directors and real vehicle sweeps. PCM files require level analysis/listening; emission counts alone do not prove audibility. Diagnostic recording overhead is included in any frame metrics.",
+	"sfx_db": -3.60912132263184,
+	"sfx_muted": false
+}

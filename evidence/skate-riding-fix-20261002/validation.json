@@ -1,0 +1,38 @@
+{
+  "engine": "Godot 4.7.2 .NET",
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "renderer": "Mobile",
+  "build": "Harbor.csproj: 0 errors, 0 warnings",
+  "tests": {
+    "street": 11,
+    "pose": 1668,
+    "failures": 0,
+    "physics": 37,
+    "session": 18
+  },
+  "suite_report": "evidence/test-suite/suite-2026-10-02_135813_902-ade9f77e0bf441efa3c4108603c37349.json",
+  "suite_caveat": "All four cases passed. Runner flagged concurrent source modifications; not an immutable release certification. Final street activation-range check rerun separately and passed.",
+  "rendered": {
+    "scope": "Real Main scene, ordinary population; diagnostic teleport and close camera. Does not certify every street.",
+    "player_sequence": "evidence/skate-riding-fix-20261002/net",
+    "street_sequence": "evidence/skate-riding-fix-20261002/net/street-*.png"
+  },
+  "performance": {
+    "reason": "Other sessions running Godot prevented an isolated before/after baseline. Exclusive current-performance attempt rejected because another game was active.",
+    "status": "not validated"
+  },
+  "sources": [
+    {
+      "Path": "D:\\geteco\\game\\activities\\skate\\Skate.gd",
+      "Hash": "5C7FD1C24A5AD9B3240E4C93330C9024654B9830BF94A33AB08F0E46C49C7C80"
+    },
+    {
+      "Path": "D:\\geteco\\game\\activities\\skate\\SkatePose.gd",
+      "Hash": "DA25DA230224B7A85E9BDC6C9C743E349A3CDC491F2A00FC1344C00B0BE574AC"
+    },
+    {
+      "Path": "D:\\geteco\\game\\ui\\v1\\HarborMinimap3D.gd",
+      "Hash": "13CA5C366C68AECC55D4DF9E81363C4B9B4DB9D489FD8EBA7947FF7D569AAE7A"
+    }
+  ]
+}

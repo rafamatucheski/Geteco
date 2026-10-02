@@ -1,0 +1,34 @@
+[
+  {
+    "Path": "D:\\geteco\\game\\runtime\\ProductionWorld.gd",
+    "Hash": "3FC801E0527E4480928A74C3A90D7627A46EBF699EEA30896BE314DBF9FBF33A"
+  },
+  {
+    "Path": "D:\\geteco\\game\\runtime\\FullSession.gd",
+    "Hash": "66324171467FF038A3B72A6374955449C4A490ED44C37C3DAF2A6882772CC3FF"
+  },
+  {
+    "Path": "D:\\geteco\\game\\scripts\\CameraRig.gd",
+    "Hash": "8F8083E5083A210CBF54521FF83C0A632DC47971C50E78EC4FAD68AD81F0756F"
+  },
+  {
+    "Path": "D:\\geteco\\game\\ui\\MainMenu.gd",
+    "Hash": "8948D5335B74426FFD33F840B1EFF11B60B3B4AD65F21CFB16F90FE19215ECDE"
+  },
+  {
+    "Path": "D:\\geteco\\game\\ui\\SkyMenu.gd",
+    "Hash": "45EF1B53E52C7E8F0CD7956EA9672B11B85580DEFBB223E6AEB8EE75A889910B"
+  },
+  {
+    "Path": "D:\\geteco\\game\\ui\\SunsetMenuPresentation.gd",
+    "Hash": "7DE1E9640E25A1FD8DA3410CE0FFAF6999283ABB0A5C0BB360459D7C91B8308E"
+  },
+  {
+    "Path": "D:\\geteco\\game\\runtime\\StartupCurtain.gd",
+    "Hash": "8935AB0E5D38BB6686E4AA8098A3EB51E4D558D09FA159CF68DCC309D96D0AB1"
+  },
+  {
+    "Path": "D:\\geteco\\game\\gameplay\\emergency\\EffectsPrewarm.gd",
+    "Hash": "8D997E9E7CB5B4F9B19A2A1ABDE3C262AF94F0817ECE2830EF98AEA1E4CF21B5"
+  }
+]

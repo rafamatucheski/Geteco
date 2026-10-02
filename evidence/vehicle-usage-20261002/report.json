@@ -1,0 +1,71 @@
+{
+  "status": "Visual and functional checks passed; performance NOT approved",
+  "changes": [
+    "Stable identity-based clean/light wear/aged paint on civilian models",
+    "Empty beds or crates, strapped lumber, toolbox and crate on five pickup models",
+    "Open original bed caps on Atlas and Sertao; loads seated on measured floors"
+  ],
+  "validation": {
+    "pickup_door_checks": 237,
+    "dotnet_build": "0 warnings, 0 errors",
+    "usage_checks": 201,
+    "engine": "Godot 4.7.2 .NET",
+    "spawn_color_checks": 3136,
+    "captures": "Five models, rear and side, clean and worn variants"
+  },
+  "before": {
+    "night_rain": {
+      "fps": 68.7815917533269,
+      "frames": 2064,
+      "max_ms": 51.665,
+      "over_33_3_ms": 7,
+      "over_66_7_ms": 0,
+      "p50_ms": 14.835,
+      "p95_ms": 18.312,
+      "p99_ms": 29.056,
+      "seconds": 30.0080290000001
+    },
+    "day": {
+      "fps": 116.226689040943,
+      "frames": 3487,
+      "max_ms": 32.741,
+      "over_33_3_ms": 0,
+      "over_66_7_ms": 0,
+      "p50_ms": 8.129,
+      "p95_ms": 13.05,
+      "p99_ms": 14.648,
+      "seconds": 30.001715
+    }
+  },
+  "after": {
+    "night_rain": {
+      "fps": 58.5885853248151,
+      "frames": 1759,
+      "max_ms": 144.077,
+      "over_33_3_ms": 46,
+      "over_66_7_ms": 20,
+      "p50_ms": 15.781,
+      "p95_ms": 27.816,
+      "p99_ms": 67.393,
+      "seconds": 30.022913
+    },
+    "day": {
+      "fps": 120.030520618133,
+      "frames": 3601,
+      "max_ms": 35.937,
+      "over_33_3_ms": 1,
+      "over_66_7_ms": 0,
+      "p50_ms": 7.611,
+      "p95_ms": 12.81,
+      "p99_ms": 14.904,
+      "seconds": 30.000703
+    }
+  },
+  "performance_notes": [
+    "RTX 4060 Laptop, Mobile, 1920x1080, VSync disabled, no FPS limit; 8s warmup and 30s samples per scenario.",
+    "Day within 5% tolerance; first night sample regressed from 68.78 to 58.59 FPS, p95 18.312 to 27.816 ms, p99 29.056 to 67.393 ms. Cause not isolated. Vehicle count differed: 44 versus 46.",
+    "First confirmation interrupted by a concurrent temporary missing _cobra_tree function; that source error was subsequently fixed by another session.",
+    "Second confirmation interrupted when other rendered Godot measurement/capture processes appeared. Their processes were preserved. No valid confirmation pair obtained.",
+    "Repeat matched night/rain comparison with stable source and isolated rendering before performance approval."
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "ProcessId": 44988,
+    "ParentProcessId": 1788,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path D:/geteco/game --editor"
+  },
+  {
+    "ProcessId": 20284,
+    "ParentProcessId": 193468,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path . --script res://tests/test_vehicle_doors.gd"
+  },
+  {
+    "ProcessId": 212344,
+    "ParentProcessId": 20284,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path . --script res://tests/test_vehicle_doors.gd"
+  },
+  {
+    "ProcessId": 14820,
+    "ParentProcessId": 121540,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --path D:/geteco/game --script res://tests/capture/capture_cobra_neighborhood.gd -- --no-save --skip-arrival --tag=validated --validate"
+  },
+  {
+    "ProcessId": 66124,
+    "ParentProcessId": 143464,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path \"D:\\geteco\\game\" --script res://tests/test_skate_pose.gd -- --no-save --skip-arrival \"--isolated-save-root=C:\\Users\\rafae\\AppData\\Local\\Temp\\geteco-suite-15b51e0aa6644f789feee37c175c7c5f\""
+  },
+  {
+    "ProcessId": 119684,
+    "ParentProcessId": 66124,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path \"D:\\geteco\\game\" --script res://tests/test_skate_pose.gd -- --no-save --skip-arrival \"--isolated-save-root=C:\\Users\\rafae\\AppData\\Local\\Temp\\geteco-suite-15b51e0aa6644f789feee37c175c7c5f\""
+  }
+]

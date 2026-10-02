@@ -1,0 +1,8 @@
+{
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"max_fps": 0,
+	"renderer": "mobile",
+	"resolution": "(1280, 720)",
+	"rows": [],
+	"vsync": 0
+}

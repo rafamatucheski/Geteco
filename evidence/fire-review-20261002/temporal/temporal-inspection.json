@@ -1,0 +1,44 @@
+[
+  {
+    "scene": "resort_day",
+    "frames": 1496,
+    "duration_ms": 30018.614,
+    "captured_gap_p95_ms": 33.7077000000012,
+    "captured_gap_max_ms": 141.36200000000008,
+    "flame_roi_mean": 23183.38435828877,
+    "flame_roi_min": 20376.0,
+    "flame_roi_max": 26252.0,
+    "zero_flame_frames": 0,
+    "largest_normalized_step": 0.1222318339100346,
+    "candidate_step_frame": 512,
+    "method": "Fixed flame ROI (298,150)-(344,201), warm-pixel energy. Flags candidates only; not full-scene flicker certification or performance benchmark."
+  },
+  {
+    "scene": "resort_night",
+    "frames": 1018,
+    "duration_ms": 30004.204,
+    "captured_gap_p95_ms": 37.3955999999991,
+    "captured_gap_max_ms": 143.7950000000019,
+    "flame_roi_mean": 20715.82416502947,
+    "flame_roi_min": 16823.0,
+    "flame_roi_max": 23895.0,
+    "zero_flame_frames": 0,
+    "largest_normalized_step": 0.13773575850650285,
+    "candidate_step_frame": 1008,
+    "method": "Fixed flame ROI (298,150)-(344,201), warm-pixel energy. Flags candidates only; not full-scene flicker certification or performance benchmark."
+  },
+  {
+    "scene": "summit_interior",
+    "frames": 1520,
+    "duration_ms": 30011.232,
+    "captured_gap_p95_ms": 26.15800000000108,
+    "captured_gap_max_ms": 147.59199999999873,
+    "flame_roi_mean": 61455.95197368421,
+    "flame_roi_min": 54088.0,
+    "flame_roi_max": 70054.0,
+    "zero_flame_frames": 0,
+    "largest_normalized_step": 0.06402473757018472,
+    "candidate_step_frame": 1078,
+    "method": "Fixed flame ROI (298,150)-(344,201), warm-pixel energy. Flags candidates only; not full-scene flicker certification or performance benchmark."
+  }
+]

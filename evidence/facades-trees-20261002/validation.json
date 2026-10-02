@@ -1,0 +1,24 @@
+{
+  "scope": "Fachadas externas do Maciota e prédio vizinho; árvores HarborProp3D",
+  "engine": "Godot 4.7.2 .NET",
+  "validation": {
+    "maciota_world": "PASS",
+    "csharp_build": "PASS",
+    "maciota_exterior_access": "PASS"
+  },
+  "performance": {
+    "status": "PENDENTE",
+    "reason": "Execuções concorrentes de outras sessões e alterações de código durante a comparação. Não usar os relatórios de FPS para aprovar performance.",
+    "provisional_target_ms": 16.67,
+    "confirmation_threshold_percent": 5
+  },
+  "changes": [
+    "Janelas nas três faces antes vazias de cada prédio, peitoris e molduras",
+    "Telhados de metal e brita usando materiais compartilhados da cidade",
+    "Troncos afunilados, galhos, sulcos e cinco variantes de copa com cor por vértice"
+  ],
+  "preserved": [
+    "Sólidos e acessos existentes",
+    "Alterações locais anteriores de vegetação e bancos"
+  ]
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "file": "updated-sfx.wav",
+    "seconds": 35.008,
+    "peak_dbfs": -15.096026307567236,
+    "rms_dbfs": -29.93838655818613,
+    "saturated_samples": 0,
+    "active_samples": 3177690
+  },
+  {
+    "file": "updated-contacts.wav",
+    "seconds": 35.104,
+    "peak_dbfs": -20.02867509118137,
+    "rms_dbfs": -43.50303989758126,
+    "saturated_samples": 0,
+    "active_samples": 532311
+  },
+  {
+    "file": "body-updated-master.wav",
+    "seconds": 35.008,
+    "peak_dbfs": -10.988981546618676,
+    "rms_dbfs": -36.870407632127694,
+    "saturated_samples": 0
+  },
+  {
+    "file": "body-updated-contacts.wav",
+    "seconds": 35.008,
+    "peak_dbfs": -7.553057838030628,
+    "rms_dbfs": -33.96327176485558,
+    "saturated_samples": 0
+  }
+]

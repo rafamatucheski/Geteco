@@ -1,0 +1,56 @@
+{
+  "scope": "Telefones de inscricao das corridas de rua: Porto, Foundry e Cobras",
+  "engine": "Godot 4.7.2 .NET",
+  "build": "Harbor.csproj: sucesso, zero avisos/erros",
+  "functional": {
+    "method": "Cena Main renderizada, posicionamento controlado, interacao de veiculo e botoes reais; campanha montada no checkpoint anterior a corrida.",
+    "checks": 29,
+    "failures": 0,
+    "log": "evidence/race-phone-final-validation2.log"
+  },
+  "campaign_economy": {
+    "failures": 0,
+    "checks": 162
+  },
+  "legacy_activities": {
+    "reason": "Teste espera nenhuma corrida em Harbor, mas o catalogo anterior ja tinha duas; fixture de guincho nao fornece campaign. Nao modificado nesta tarefa.",
+    "status": "falhou"
+  },
+  "performance": {
+    "result": "Sem regressao observada nesta amostra. Variacao de trafego/carga impede atribuir a melhora ao telefone.",
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "after": {
+      "fps": 130.858482965304,
+      "frames": 3927,
+      "max_ms": 27.596,
+      "over_33_3_ms": 0,
+      "over_66_7_ms": 0,
+      "p50_ms": 7.136,
+      "p95_ms": 12.82,
+      "p99_ms": 13.849,
+      "seconds": 30.009518
+    },
+    "vsync": 0,
+    "before": {
+      "fps": 88.5092411179011,
+      "frames": 2656,
+      "max_ms": 51.14,
+      "over_33_3_ms": 5,
+      "over_66_7_ms": 0,
+      "p50_ms": 12.189,
+      "p95_ms": 15.545,
+      "p99_ms": 20.619,
+      "seconds": 30.008166
+    },
+    "renderer": "mobile",
+    "resolution": "(1920, 1080)",
+    "max_fps": 0,
+    "scenario": "Porto, noite/chuva, 30 segundos apos aquecimento"
+  },
+  "visual": "Inspecionadas capturas dos tres contatos; postes fora das faixas de rodagem; colisao dos telefones livres verificada separadamente.",
+  "limits": [
+    "Nao valida performance de toda a cidade, save/load nem uma volta completa das provas.",
+    "Reproducao de audio verificada pelo player 3D; qualidade subjetiva nao avaliada por escuta.",
+    "Uma execucao intermediaria do teste teve falhas de contexto do veiculo. Fixture final usa explicitamente o carro realmente ocupado e reposiciona apos embarque; log de falha preservado em race-phone-final-validation.log."
+  ]
+}

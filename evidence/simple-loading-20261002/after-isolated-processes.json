@@ -1,0 +1,23 @@
+[
+  {
+    "others": null,
+    "elapsed": 0.2977756
+  },
+  {
+    "others": null,
+    "elapsed": 1.5709107
+  },
+  {
+    "others": [
+      {
+        "ProcessId": 261888,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64_console.exe\" --headless --path . --check-only --script res://gameplay/emergency/Responder.gd"
+      },
+      {
+        "ProcessId": 41680,
+        "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_win64.exe\\Godot_v4.7.2-stable_win64.exe\" --headless --path . --check-only --script res://gameplay/emergency/Responder.gd"
+      }
+    ],
+    "elapsed": 2.8446804
+  }
+]
