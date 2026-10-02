@@ -217,11 +217,20 @@ var _flame_crime_clock := 0.0
 var _rig_pose := RIG_POSE.new()
 var _pose_frame: Dictionary = {}
 var _pending_contact: Dictionary = {}
+## Só detonações reentrantes entram aqui; a explosão inicial continua imediata.
+## O limiar é cooperativo: uma detonação indivisível pode ultrapassar 2 ms.
+const CHAIN_EXPLOSIONS_PER_FRAME := 2
+const CHAIN_EXPLOSION_BUDGET_USEC := 2000
+var _chain_explosions: Array[Dictionary] = []
+var _explosion_depth := 0
+var _explosion_epoch := 0
+var _chain_pump_frame := -1
 var police_case: Node
 var police_air: Node3D
 var police_interiors: Node3D
 
 func configure(p_world: Node3D, p_player: CharacterBody3D, p_camera: Camera3D, p_state: RefCounted) -> void:
+	_clear_chain_explosions()
 	world = p_world
 	player = p_player
 	camera = p_camera
@@ -229,6 +238,7 @@ func configure(p_world: Node3D, p_player: CharacterBody3D, p_camera: Camera3D, p
 	_rng.randomize()
 
 func _exit_tree() -> void:
+	_clear_chain_explosions()
 	# Stop active playbacks before releasing their cached streams. AudioServer
 	# may otherwise still own the mixer playback during scene teardown.
 	for channel in _audio_pool:
@@ -376,6 +386,7 @@ func _physics_process(delta: float) -> void:
 	STALL_WORK.finish_slow("gameplay.physics", began, 10000, self)
 
 func _stall_physics_tick(delta: float) -> void:
+	_advance_chain_explosions()
 	if state == null or not enabled: return
 	if InputMap.has_action("surrender") and Input.is_action_just_pressed("surrender"):
 		if police_surrendering(): police_case.cancel_surrender()
@@ -1367,6 +1378,29 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 		if owner_ref is WeakRef: crusher = owner_ref.get_ref() as Node3D
 		if is_instance_valid(crusher):
 			damage_source = player if crusher.has_method("is_player_damage_source") and crusher.is_player_damage_source() else crusher
+	# Vehicle.destroyed pode reentrar enquanto a explosão atual ainda percorre
+	# vítimas. Capture autoria/agressor agora; não releia o motorista depois.
+	if _explosion_depth > 0:
+		var session: Variant = world.get("session") if is_instance_valid(world) else null
+		_chain_explosions.append({
+			"point": point, "radius": radius, "amount": amount, "hurt_source": hurt_source,
+			"source": weakref(source) if is_instance_valid(source) else null,
+			"damage_source": weakref(damage_source) if is_instance_valid(damage_source) else null,
+			"crusher": weakref(crusher) if is_instance_valid(crusher) else null,
+			"epoch": _explosion_epoch, "frame": Engine.get_process_frames(),
+			"state": weakref(state), "region": state.get("region_id"), "place": state.get("place_id"),
+			"session": weakref(session) if is_instance_valid(session) else null,
+			"transition": session.get("transition_generation") if is_instance_valid(session) else null,
+		})
+		return
+	_run_explosion(point, radius, amount, source, hurt_source, crusher, damage_source)
+
+func _run_explosion(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool, crusher: Node3D, damage_source: Node3D) -> void:
+	_explosion_depth += 1
+	_detonate_explosion(point, radius, amount, source, hurt_source, crusher, damage_source)
+	_explosion_depth -= 1
+
+func _detonate_explosion(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool, crusher: Node3D, damage_source: Node3D) -> void:
 	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
 	_sound("explosion", point, EXPLOSION_VOLUME_DB)
 	traced = _trace_explosion_cost("audio",traced)
@@ -1400,6 +1434,74 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 	explosion_occurred.emit(point, radius, damage_source)
 	_trace_explosion_cost("listeners",traced)
 
+func _advance_chain_explosions() -> void:
+	if _chain_explosions.is_empty(): return
+	if not is_inside_tree() or is_queued_for_deletion() or state == null or not enabled or health <= 0:
+		_clear_chain_explosions()
+		return
+	# Pausar conserva a cadeia; nenhum tempo de pausa consome ou executa eventos.
+	if get_tree().paused: return
+	if not state.weapons_allowed() or not is_instance_valid(world) or world.is_queued_for_deletion():
+		_clear_chain_explosions()
+		return
+	var session: Variant = world.get("session")
+	if is_instance_valid(session):
+		if session.get("ready_for_play") == false or (session.has_method("is_transition_blocked") and session.is_transition_blocked()):
+			_clear_chain_explosions()
+			return
+		if session.get("modal") == true: return
+	var frame := Engine.get_process_frames()
+	# Vários passos de física de recuperação não renovam o orçamento do quadro.
+	if _chain_pump_frame == frame: return
+	_chain_pump_frame = frame
+	var began := Time.get_ticks_usec()
+	var detonated := 0
+	while not _chain_explosions.is_empty() and detonated < CHAIN_EXPLOSIONS_PER_FRAME:
+		if Time.get_ticks_usec() - began >= CHAIN_EXPLOSION_BUDGET_USEC: break
+		var pending: Dictionary = _chain_explosions[0]
+		# Inclui filhos gerados pelo próprio pump: nunca detonam no mesmo quadro.
+		if int(pending.frame) >= frame: break
+		_chain_explosions.pop_front()
+		if not _chain_explosion_context_matches(pending, session): continue
+		# A fonte pode ter sido descarregada; a explosão admitida continua com
+		# autoria desconhecida, sem manter o veículo/cadáver vivo artificialmente.
+		_run_explosion(pending.point, pending.radius, pending.amount,
+			_explosion_node(pending.source), pending.hurt_source,
+			_explosion_node(pending.crusher), _explosion_node(pending.damage_source))
+		detonated += 1
+		# Uma vítima ou um listener pode iniciar morte/resgate/transição agora.
+		if not is_inside_tree() or is_queued_for_deletion() or not is_instance_valid(world) or world.is_queued_for_deletion():
+			_clear_chain_explosions()
+			break
+		if health <= 0 or not enabled or state == null or not state.weapons_allowed():
+			_clear_chain_explosions()
+			break
+		session = world.get("session")
+		if is_instance_valid(session):
+			if session.get("ready_for_play") == false or (session.has_method("is_transition_blocked") and session.is_transition_blocked()):
+				_clear_chain_explosions()
+				break
+			if session.get("modal") == true: break
+		if get_tree().paused: break
+
+func _chain_explosion_context_matches(pending: Dictionary, session: Variant) -> bool:
+	if int(pending.epoch) != _explosion_epoch or pending.state.get_ref() != state: return false
+	if pending.region != state.get("region_id") or pending.place != state.get("place_id"): return false
+	if pending.session == null: return not is_instance_valid(session)
+	return is_instance_valid(session) and pending.session.get_ref() == session \
+		and pending.transition == session.get("transition_generation")
+
+static func _explosion_node(reference: Variant) -> Node3D:
+	if not reference is WeakRef: return null
+	var node: Variant = reference.get_ref()
+	return node as Node3D if is_instance_valid(node) else null
+
+func _clear_chain_explosions() -> void:
+	_chain_explosions.clear()
+	_explosion_epoch += 1
+	# Não zera _explosion_depth: limpeza também pode ocorrer dentro do dano
+	# de uma detonação em andamento, cujos próximos filhos ainda são reentrantes.
+
 func _trace_explosion_cost(stage: String, started: int) -> int:
 	if started == 0: return 0
 	var ended := Time.get_ticks_usec()
@@ -1415,6 +1517,7 @@ func damage_environment(amount: float) -> void:
 
 func arrest_player() -> bool:
 	if not police_can_arrest() or health <= 0 or state == null or not state.weapons_allowed() or player.input_locked: return false
+	_clear_chain_explosions()
 	player.input_locked = true
 	player_arrested.emit()
 	return true
@@ -1438,6 +1541,7 @@ func _apply_player_damage(amount: float, use_armor: bool) -> void:
 		if use_armor and player.has_method("present_hit"): player.present_hit()
 	changed.emit()
 	if health == 0 and not _dead_notified:
+		_clear_chain_explosions()
 		_dead_notified = true
 		player.input_locked = true
 		if use_armor and is_instance_valid(effects): effects.stain(player.global_position, 0.8)
@@ -1451,6 +1555,7 @@ func heal(amount: float) -> bool:
 	return true
 
 func respawn() -> void:
+	_clear_chain_explosions()
 	health = 100
 	armor = 0
 	_dead_notified = false
@@ -1805,6 +1910,7 @@ func spawn_officer() -> CharacterBody3D:
 	return null
 
 func on_region_changed() -> void:
+	_clear_chain_explosions()
 	if is_instance_valid(police_air): police_air.clear_response()
 	if police_case != null:
 		police_case.preserve_departing_witnesses()
@@ -2009,6 +2115,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 
 func restore_state(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
+	_clear_chain_explosions()
 	var restored_customization: Dictionary = CUSTOM.normalize(data.get("customization", {}))
 	clear_wanted()
 	health = float(data.health)

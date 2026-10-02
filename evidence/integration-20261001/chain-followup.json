@@ -1,0 +1,7 @@
+{
+  "base": "573abc9",
+  "path": "gameplay/Gameplay.gd",
+  "sha256": "7b4d1862f241ef4180cf70412821520fb0d4732193bb24fb3b71811e6246e3e4",
+  "change": "Budget reentrant chain explosions per rendered frame; cancel stale context on death, arrest, region and save restoration. Initial detonation stays immediate.",
+  "review": "Static code and gdtoolkit grammar only; game tests remain with Rafael."
+}
