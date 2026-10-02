@@ -132,7 +132,7 @@ func _sync_channels() -> void:
 func _sync_status(delta: float) -> void:
 	var state = _session.state
 	var gameplay = world.gameplay
-	money.update_balance(int(state.economy.balance))
+	money.update_balance(int(state.economy.balance),state.economy.cheat_infinite_money)
 	var thermal: Dictionary=_session.cold.status() if _session.cold!=null else {}
 	player_status.update_status(float(gameplay.health),float(gameplay.armor),thermal,delta)
 	weapon.update_weapon(state,root_control.visible)

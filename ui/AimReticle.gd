@@ -11,18 +11,20 @@ func _ready() -> void:
 	process_priority = 100
 	hide()
 
-func _physics_process(_delta: float) -> void:
-	if not is_instance_valid(gameplay) or not gameplay.aim_feedback_active(): return
+func _process(_delta: float) -> void:
+	visible = is_instance_valid(gameplay) and not get_tree().paused and gameplay.aim_feedback_active()
+	if not visible: return
+	var camera: Camera3D = gameplay.camera
+	if not is_instance_valid(camera):
+		hide()
+		return
+	# FullSession resolves mouse input during render processing. Query after
+	# it (priority 100), so the marker uses this frame's cursor and muzzle.
 	var feedback: Dictionary = gameplay.aim_feedback()
 	world_point = feedback.point
 	if blocked != bool(feedback.blocked):
 		blocked = feedback.blocked
 		queue_redraw()
-
-func _process(_delta: float) -> void:
-	visible = is_instance_valid(gameplay) and gameplay.aim_feedback_active()
-	if not visible: return
-	var camera: Camera3D = gameplay.camera
 	visible = not camera.is_position_behind(world_point)
 	if not visible: return
 	position = camera.unproject_position(world_point)

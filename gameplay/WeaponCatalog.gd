@@ -66,26 +66,26 @@ const WEAPONS = {
 		"sound_type": "knife", "audio_volume_db": -1.0, "pitch_variance": 0.05
 	},
 	"pistol": {
-		"falloff_start": 170.0, "max_range": 420.0, "min_damage_ratio": 0.25,
+		"falloff_start": 220.0, "max_range": 420.0, "min_damage_ratio": 0.5,
 		"label": "PISTOLA 9MM", "short_label": "9MM", "price": 0,
-		"damage": 16, "fire_interval": 0.26, "projectile_speed": 920.0,
+		"damage": 34, "fire_interval": 0.26, "projectile_speed": 920.0,
 		"pellets": 1, "spread": 0.0, "magazine_size": 12, "starting_reserve": 60,
 		"automatic": false, "tracer_color": Color("ffe36b"), "stance": "pistol",
 		"sound_type": "pistol", "audio_volume_db": -2.0, "pitch_variance": 0.06
 	},
 	"magnum": {
-		"falloff_start": 230.0, "max_range": 550.0, "min_damage_ratio": 0.35,
+		"falloff_start": 280.0, "max_range": 550.0, "min_damage_ratio": 0.6,
 		"label": "REVÓLVER .44 MAGNUM", "short_label": "MAGNUM", "price": 800,
-		"damage": 38, "fire_interval": 0.58, "projectile_speed": 1080.0,
+		"damage": 70, "fire_interval": 0.58, "projectile_speed": 1080.0,
 		"pellets": 1, "spread": 0.0, "magazine_size": 6, "starting_reserve": 36,
 		"automatic": false, "tracer_color": Color("ffb940"), "stance": "pistol",
 		"sound_type": "magnum", "audio_volume_db": 2.0, "pitch_variance": 0.04
 	},
 	"smg": {
-		"falloff_start": 140.0, "max_range": 380.0, "min_damage_ratio": 0.2,
+		"falloff_start": 180.0, "max_range": 380.0, "min_damage_ratio": 0.45,
 		"discovery_pickup": "mountain_cargo_plane_smg_01", "discovery_hint": "Encontre a SMG dentro do avião no lago.",
 		"label": "SUBMETRALHADORA MP5", "short_label": "SMG", "price": 1200,
-		"damage": 10, "fire_interval": 0.11, "projectile_speed": 960.0,
+		"damage": 25, "fire_interval": 0.11, "projectile_speed": 960.0,
 		"pellets": 1, "spread": 0.035, "magazine_size": 30, "starting_reserve": 150,
 		"automatic": true, "tracer_color": Color("78dcff"), "stance": "rifle",
 		"sound_type": "smg", "audio_volume_db": -3.0, "pitch_variance": 0.08
@@ -93,7 +93,7 @@ const WEAPONS = {
 	"shotgun": {
 		"falloff_start": 85.0, "max_range": 280.0, "min_damage_ratio": 0.15,
 		"label": "ESCOPETA 12G PUMP", "short_label": "12G", "price": 1800,
-		"damage": 8, "fire_interval": 0.78, "projectile_speed": 840.0,
+		"damage": 18, "fire_interval": 0.78, "projectile_speed": 840.0,
 		"pellets": 8, "spread": 0.20, "magazine_size": 6, "starting_reserve": 36,
 		"automatic": false, "tracer_color": Color("ff9b63"), "stance": "rifle",
 		"sound_type": "shotgun", "audio_volume_db": 1.0, "pitch_variance": 0.05
@@ -101,23 +101,23 @@ const WEAPONS = {
 	"sawed_off": {
 		"falloff_start": 60.0, "max_range": 200.0, "min_damage_ratio": 0.1,
 		"label": "CANO SERRADO DUPLO", "short_label": "SERRADA", "price": 1600,
-		"damage": 8, "fire_interval": 0.44, "projectile_speed": 780.0,
+		"damage": 18, "fire_interval": 0.44, "projectile_speed": 780.0,
 		"pellets": 10, "spread": 0.34, "magazine_size": 2, "starting_reserve": 24,
 		"automatic": false, "tracer_color": Color("ff793f"), "stance": "pistol",
 		"sound_type": "sawed_off", "audio_volume_db": 1.5, "pitch_variance": 0.05
 	},
 	"ak47": {
-		"falloff_start": 300.0, "max_range": 700.0, "min_damage_ratio": 0.35,
+		"falloff_start": 360.0, "max_range": 700.0, "min_damage_ratio": 0.6,
 		"label": "FUZIL AK-47 7.62MM", "short_label": "AK-47", "price": 3200,
-		"damage": 18, "fire_interval": 0.15, "projectile_speed": 1120.0,
+		"damage": 42, "fire_interval": 0.15, "projectile_speed": 1120.0,
 		"pellets": 1, "spread": 0.040, "magazine_size": 30, "starting_reserve": 180,
 		"automatic": true, "tracer_color": Color("ff6348"), "stance": "rifle",
 		"sound_type": "ak47", "audio_volume_db": 0.5, "pitch_variance": 0.06
 	},
 	"m4a1": {
-		"falloff_start": 330.0, "max_range": 750.0, "min_damage_ratio": 0.4,
+		"falloff_start": 390.0, "max_range": 750.0, "min_damage_ratio": 0.65,
 		"label": "CARABINA M4A1 5.56MM", "short_label": "M4A1", "price": 3800,
-		"damage": 16, "fire_interval": 0.12, "projectile_speed": 1180.0,
+		"damage": 35, "fire_interval": 0.12, "projectile_speed": 1180.0,
 		"pellets": 1, "spread": 0.020, "magazine_size": 30, "starting_reserve": 180,
 		"automatic": true, "tracer_color": Color("70a1ff"), "stance": "rifle",
 		"sound_type": "m4a1", "audio_volume_db": -0.5, "pitch_variance": 0.06

@@ -12,7 +12,13 @@ func _ready() -> void:
 	row.add_child(GLYPH.new("money",STYLE.MONEY))
 	amount=STYLE.label("",20,STYLE.MONEY); row.add_child(amount)
 	change=STYLE.label("",15,STYLE.MONEY); change.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(change); change.hide()
-func update_balance(balance: int) -> void:
+func update_balance(balance: int, infinite: bool = false) -> void:
+	if infinite:
+		amount.text="$ ∞"
+		if _tween: _tween.kill()
+		change.hide()
+		_balance = -1
+		return
 	amount.text="$ "+STYLE.amount(balance)
 	if _balance>=0 and _balance!=balance:
 		change.text=("+ $ " if balance>_balance else "− $ ")+STYLE.amount(absi(balance-_balance))

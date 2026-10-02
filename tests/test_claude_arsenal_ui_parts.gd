@@ -66,7 +66,7 @@ func _initialize() -> void:
 	var knife := CUSTOM.effective_data("knife", state_with("knife", "serrated"))
 	check(int(knife.damage) == roundi(25 * 1.25), "serrilha: faca 25 → 31", str(knife.damage))
 	var slug := CUSTOM.effective_data("shotgun", state_with("shotgun", "slug"))
-	check(int(slug.pellets) == 1 and int(slug.damage) == roundi(8 * 8 * 0.72) and float(slug.spread) < 0.05, "balote vira projétil único", "%s×%s" % [slug.damage, slug.pellets])
+	check(int(slug.pellets) == 1 and int(slug.damage) == roundi(18 * 8 * 0.72) and float(slug.spread) < 0.05, "balote vira projétil único", "%s×%s" % [slug.damage, slug.pellets])
 	var drum := CUSTOM.effective_data("smg", state_with("smg", "drum"))
 	check(int(drum.magazine_size) == 75 and float(drum.reload_multiplier) > 1.5, "tambor 75 com recarga lenta")
 	var legacy := CUSTOM.effective_data("pistol", state_with("pistol", "extended"))

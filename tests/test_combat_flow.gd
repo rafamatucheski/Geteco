@@ -196,7 +196,7 @@ func _run() -> void:
 	await fire_action(npc.global_position, 2)
 	shots_taken += 1
 	var dealt: float = health_before - npc.health
-	check(is_equal_approx(dealt, 16.0), "um disparo da pistola tira exatamente 16 (dano único)", "dano=%.2f" % dealt)
+	check(is_equal_approx(dealt, 34.0), "um disparo da pistola tira exatamente 34 (dano único)", "dano=%.2f" % dealt)
 	check(int(state.get_ammo("pistol").magazine) == 11, "um disparo consome uma munição", str(state.get_ammo("pistol")))
 	check(not gameplay.police_case.pending.is_empty(), "disparo percebido inicia denúncia")
 	check(gameplay.effects._tracers.any(func(node): return node.visible), "trajetória da pistola usa cauda móvel visível")
@@ -220,6 +220,7 @@ func _run() -> void:
 		last_health = npc.health
 		guard += 1
 	check(npc.dead and npc.health == 0.0, "NPC morre pelos disparos", "tiros=%d guard=%d" % [shots_taken, guard])
+	check(shots_taken == 3, "civil com vida cheia cai em três acertos próximos de pistola", "tiros=%d" % shots_taken)
 	check(monotonic, "vida só diminui")
 	await frames(80)
 	check(npc.collision_layer == 0 and absf(npc.visual.rotation.x - PI / 2.0) < 0.05, "morte: corpo caído e sem colisão")
@@ -237,6 +238,9 @@ func _run() -> void:
 	state.equip_weapon("shotgun")
 	await frames(2)
 	var npc2 := await spawn_npc(direction, 4.0)
+	# Keep this pellet/accounting fixture alive even if every pellet connects.
+	# Lethal pacing is covered above and in test_weapon_damage_balance.gd.
+	npc2.health = 1000.0
 	var crime0: int = gameplay.crime_points
 	var h0: float = npc2.health
 	var civilians_before: Dictionary = {}
@@ -247,7 +251,7 @@ func _run() -> void:
 	for other in civilians_before:
 		if is_instance_valid(other) and other.health < civilians_before[other]: victims += 1
 	var shotgun_dealt: float = h0 - npc2.health
-	check(shotgun_dealt > 8.0 and int(shotgun_dealt) % 8 == 0, "escopeta: vários chumbos acertam (múltiplos de 8)", "dano=%.1f" % shotgun_dealt)
+	check(shotgun_dealt > 18.0 and int(shotgun_dealt) % 18 == 0, "escopeta: vários chumbos acertam (múltiplos de 18)", "dano=%.1f" % shotgun_dealt)
 	await create_timer(3.0).timeout
 	check(gameplay.crime_points - crime0 == 4 + 12 * victims, "escopeta: uma denúncia por vítima ferida e uma pelo disparo (4 + 12 por vítima)", "delta=%d vítimas=%d" % [gameplay.crime_points - crime0, victims])
 	await shot("05_escopeta")

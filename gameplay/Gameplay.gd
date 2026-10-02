@@ -59,6 +59,7 @@ const CHEAT_GAP := 3.0
 ## Cheat de invencibilidade (só desta sessão, não vai para o save): digitar "godmode" liga/desliga.
 ## Serve para segurar o jogador vivo sob seis estrelas ao medir o custo da resposta policial.
 const CHEAT_GODMODE := "godmode"
+const CHEAT_MONEY := "grana"
 ## Gemido de dor (V1 `PainReaction`): chance 65% se o dano ≥ 25, senão 42%; no máximo 6 vozes e um gemido por
 ## vítima a cada 1,8 s. Aqui a chance é sorteada uma vez por golpe.
 const PAIN_CHANCE_HEAVY := 0.65
@@ -225,6 +226,7 @@ var _chain_explosions: Array[Dictionary] = []
 var _explosion_depth := 0
 var _explosion_epoch := 0
 var _chain_pump_frame := -1
+var _active_explosion_context: Dictionary = {}
 var police_case: Node
 var police_air: Node3D
 var police_interiors: Node3D
@@ -826,9 +828,25 @@ func toggle_flashlight() -> bool:
 	return true
 
 func aim_from_screen(screen: Vector2) -> Vector3:
-	if not is_instance_valid(camera): return player.global_position + Vector3.FORWARD * 10
+	if not is_instance_valid(camera):
+		aim_point = player.global_position + Vector3.FORWARD * 10
+		return aim_point
 	var origin := camera.project_ray_origin(screen)
 	var direction := camera.project_ray_normal(screen)
+	# The cursor points at a visible body, not necessarily at the player's
+	# chest-height plane. Resolve only the first visible collider; never retain
+	# a lock, scan all NPCs, or attract the cursor to a neighbouring character.
+	if equipped() not in NON_AIM_WEAPONS and attack_allowed():
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * camera.far, 7, [player.get_rid()])
+		var visible_hit := get_world_3d().direct_space_state.intersect_ray(query)
+		var actor: Variant = visible_hit.get("collider")
+		if actor is CharacterBody3D and actor.has_method("receive_damage") and not PROTECTION.is_protected(actor):
+			var health: Variant = actor.get("health")
+			if actor.get("dead") != true and (health == null or float(health) > 0.0):
+				# Shots are horizontal. Aim through the body's centre regardless
+				# of whether the mouse points at its head, torso or feet.
+				aim_point = Vector3(actor.global_position.x, player.global_position.y + 1.0, actor.global_position.z)
+				return aim_point
 	var plane := Plane(Vector3.UP, player.global_position.y + 1.0)
 	var hit: Variant = plane.intersects_ray(origin, direction)
 	if hit is Vector3: aim_point = hit
@@ -1316,11 +1334,23 @@ func handle_arsenal_input(event: InputEvent) -> bool:
 	if _cheat_buffer.ends_with(CHEAT_GODMODE):
 		_cheat_buffer = ""
 		return toggle_god_mode()
+	if _cheat_buffer.ends_with(CHEAT_MONEY):
+		_cheat_buffer = ""
+		return toggle_infinite_money()
 	for length in range(1,CHEAT_ARSENAL.length()):
 		if _cheat_buffer.ends_with(CHEAT_ARSENAL.left(length)): return true
 	for length in range(1,CHEAT_GODMODE.length()):
 		if _cheat_buffer.ends_with(CHEAT_GODMODE.left(length)): return true
+	for length in range(1,CHEAT_MONEY.length()):
+		if _cheat_buffer.ends_with(CHEAT_MONEY.left(length)): return true
 	return false
+
+func toggle_infinite_money() -> bool:
+	if state == null or not "economy" in state: return false
+	state.economy.cheat_infinite_money = not state.economy.cheat_infinite_money
+	changed.emit()
+	message.emit("Dinheiro infinito ligado" if state.economy.cheat_infinite_money else "Dinheiro infinito desligado")
+	return true
 
 ## Liga/desliga a invencibilidade. Protege o jogador e o carro que ele dirige pela mesma marca
 ## `invulnerable` que Maciota usa, então tiro, explosão, atropelamento e batida passam sem ferir.
@@ -1381,24 +1411,35 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 	# Vehicle.destroyed pode reentrar enquanto a explosão atual ainda percorre
 	# vítimas. Capture autoria/agressor agora; não releia o motorista depois.
 	if _explosion_depth > 0:
-		var session: Variant = world.get("session") if is_instance_valid(world) else null
 		_chain_explosions.append({
 			"point": point, "radius": radius, "amount": amount, "hurt_source": hurt_source,
 			"source": weakref(source) if is_instance_valid(source) else null,
 			"damage_source": weakref(damage_source) if is_instance_valid(damage_source) else null,
 			"crusher": weakref(crusher) if is_instance_valid(crusher) else null,
-			"epoch": _explosion_epoch, "frame": Engine.get_process_frames(),
-			"state": weakref(state), "region": state.get("region_id"), "place": state.get("place_id"),
-			"session": weakref(session) if is_instance_valid(session) else null,
-			"transition": session.get("transition_generation") if is_instance_valid(session) else null,
+			"frame": Engine.get_process_frames(), "context": _active_explosion_context,
 		})
 		return
 	_run_explosion(point, radius, amount, source, hurt_source, crusher, damage_source)
 
-func _run_explosion(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool, crusher: Node3D, damage_source: Node3D) -> void:
+func _run_explosion(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool, crusher: Node3D, damage_source: Node3D, context: Dictionary = {}) -> void:
+	var previous_context := _active_explosion_context
+	# Snapshot imutável herdado pelos filhos. Um reset no meio do dano não
+	# transfere explosões da cadeia antiga para o contexto recém-restaurado.
+	_active_explosion_context = context if not context.is_empty() else _capture_explosion_context()
 	_explosion_depth += 1
 	_detonate_explosion(point, radius, amount, source, hurt_source, crusher, damage_source)
 	_explosion_depth -= 1
+	_active_explosion_context = previous_context
+
+func _capture_explosion_context() -> Dictionary:
+	var session: Variant = world.get("session") if is_instance_valid(world) else null
+	return {
+		"epoch": _explosion_epoch, "state": weakref(state) if state != null else null,
+		"region": state.get("region_id") if state != null else null,
+		"place": state.get("place_id") if state != null else null,
+		"session": weakref(session) if is_instance_valid(session) else null,
+		"transition": session.get("transition_generation") if is_instance_valid(session) else null,
+	}
 
 func _detonate_explosion(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool, crusher: Node3D, damage_source: Node3D) -> void:
 	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
@@ -1462,12 +1503,12 @@ func _advance_chain_explosions() -> void:
 		# Inclui filhos gerados pelo próprio pump: nunca detonam no mesmo quadro.
 		if int(pending.frame) >= frame: break
 		_chain_explosions.pop_front()
-		if not _chain_explosion_context_matches(pending, session): continue
+		if not _chain_explosion_context_matches(pending.context, session): continue
 		# A fonte pode ter sido descarregada; a explosão admitida continua com
 		# autoria desconhecida, sem manter o veículo/cadáver vivo artificialmente.
 		_run_explosion(pending.point, pending.radius, pending.amount,
 			_explosion_node(pending.source), pending.hurt_source,
-			_explosion_node(pending.crusher), _explosion_node(pending.damage_source))
+			_explosion_node(pending.crusher), _explosion_node(pending.damage_source), pending.context)
 		detonated += 1
 		# Uma vítima ou um listener pode iniciar morte/resgate/transição agora.
 		if not is_inside_tree() or is_queued_for_deletion() or not is_instance_valid(world) or world.is_queued_for_deletion():
@@ -1484,12 +1525,12 @@ func _advance_chain_explosions() -> void:
 			if session.get("modal") == true: break
 		if get_tree().paused: break
 
-func _chain_explosion_context_matches(pending: Dictionary, session: Variant) -> bool:
-	if int(pending.epoch) != _explosion_epoch or pending.state.get_ref() != state: return false
-	if pending.region != state.get("region_id") or pending.place != state.get("place_id"): return false
-	if pending.session == null: return not is_instance_valid(session)
-	return is_instance_valid(session) and pending.session.get_ref() == session \
-		and pending.transition == session.get("transition_generation")
+func _chain_explosion_context_matches(context: Dictionary, session: Variant) -> bool:
+	if int(context.epoch) != _explosion_epoch or context.state == null or context.state.get_ref() != state: return false
+	if context.region != state.get("region_id") or context.place != state.get("place_id"): return false
+	if context.session == null: return not is_instance_valid(session)
+	return is_instance_valid(session) and context.session.get_ref() == session \
+		and context.transition == session.get("transition_generation")
 
 static func _explosion_node(reference: Variant) -> Node3D:
 	if not reference is WeakRef: return null

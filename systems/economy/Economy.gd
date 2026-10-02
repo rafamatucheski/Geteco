@@ -17,8 +17,10 @@ const PERSONAL_SLOTS := {
 var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, "reserve": -1}},
 	"equipped_weapon": "fists", "outfits": ["dante_classic"], "outfit": "dante_classic",
 	"inventory": {}, "discoveries": [], "collectibles": [], "achievements": [], "transactions": {}}
+## Session-only wallet override; purchases still obey unlocks, capacity and receipts.
+var cheat_infinite_money := false
 var balance: int:
-	get: return int(_data.balance)
+	get: return LIMIT if cheat_infinite_money else int(_data.balance)
 var equipped_weapon: String:
 	get: return _cheat_equipped if cheat_all_weapons and not _cheat_equipped.is_empty() else _data.equipped_weapon
 var outfit: String:
@@ -69,7 +71,7 @@ func spend(amount: int, receipt_id: String) -> bool:
 	var key := "spend:" + receipt_id
 	if _data.transactions.has(key): return _data.transactions[key].amount == amount
 	if balance < amount: return false
-	_data.balance -= amount
+	if not cheat_infinite_money: _data.balance -= amount
 	_data.transactions[key] = {"kind": "spend", "item": receipt_id, "amount": amount}
 	return true
 
@@ -98,7 +100,7 @@ func buy_ammo(id: String, rounds: int, transaction_id: String) -> bool:
 	var price := maxi(40, rounds * (60 if id in ["grenade", "rpg"] else 2))
 	if balance < price: return false
 	if grid_enabled() and not _grid_add_ammo(id,rounds): return false
-	_data.balance -= price
+	if not cheat_infinite_money: _data.balance -= price
 	if not grid_enabled(): _data.weapons[id].reserve += rounds
 	_data.transactions[key] = {"kind": "ammo", "item": id, "amount": price, "rounds": rounds}
 	return true
@@ -167,7 +169,7 @@ static func _max_capacity(id: String) -> int:
 	return base
 
 func grant_reward(receipt_id: String, amount: int) -> bool:
-	if not _valid_id(receipt_id) or receipt_id.length() > 110 or amount < 0 or amount > LIMIT or balance > LIMIT - amount: return false
+	if not _valid_id(receipt_id) or receipt_id.length() > 110 or amount < 0 or amount > LIMIT or int(_data.balance) > LIMIT - amount: return false
 	var key := "reward:" + receipt_id
 	if _data.transactions.has(key): return false
 	_data.balance += amount
@@ -240,7 +242,7 @@ func purchase(category: String, id: String, transaction_id: String) -> Dictionar
 	var price := int(catalog[id].price)
 	if price < 0 or balance < price: return _result(false, "insufficient_funds")
 	var before := _data.duplicate(true)
-	_data.balance -= price
+	if not cheat_infinite_money: _data.balance -= price
 	if category == "weapon":
 		_data.weapons[id] = {"magazine": int(catalog[id].magazine_size), "reserve": int(catalog[id].starting_reserve)}
 		_assign_personal_slot(id)
@@ -409,6 +411,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	var upgraded:=INVENTORY_MIGRATION.upgrade(data)
 	if not validate_snapshot(upgraded): return false
 	_data = upgraded
+	cheat_infinite_money = false
 	cheat_all_weapons=false; _cheat_weapons.clear(); _cheat_equipped=""
 	_data.version = 1
 	_data.balance = int(_data.balance)
