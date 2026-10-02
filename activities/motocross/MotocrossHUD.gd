@@ -245,6 +245,8 @@ func _process(delta: float) -> void:
 	if _callout_left <= 0.0 and _results_left <= 0.0: set_process(false)
 
 static func clock(seconds: float) -> String:
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	return "%02d:%05.2f"%[int(seconds)/60,fmod(seconds,60)]
 
 func _panel(dimensions: Vector2) -> Panel:

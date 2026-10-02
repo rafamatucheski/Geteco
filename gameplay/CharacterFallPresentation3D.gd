@@ -5,6 +5,7 @@ extends RefCounted
 
 static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(visual): return
+	if actor.has_meta("street_pose_owned"): return
 	
 	var impact_flat := Vector3(impact.x, 0.0, impact.z)
 	var yaw: float = visual.rotation.y

@@ -48,6 +48,18 @@ static var _signals: Dictionary = {}    # Vector2i -> [{center: Vector3, stop: f
 static var _lenses: Array = []          # [{mesh: WeakRef, index, center, heading, key, gen}]
 static var _generation := 0
 static var _approaches: Dictionary = {}
+static var _phase_frame := -1
+static var _phase_time := 0.0
+static var _next_lens_update := -INF
+
+# Drivers and rendered lenses share one phase timestamp per frame, including
+# a frame that straddles a phase boundary. Never keep a separate visual clock.
+static func _signal_time() -> float:
+	var frame := Engine.get_process_frames()
+	if frame != _phase_frame:
+		_phase_frame = frame
+		_phase_time = Time.get_ticks_msec() / 1000.0
+	return _phase_time
 
 static func key_of(point: Vector3) -> Vector3i:
 	return Vector3i(roundi(point.x * 2.0), 0, roundi(point.z * 2.0))
@@ -58,6 +70,7 @@ static func configure(graph, layouts: Array = []) -> void:
 	owners.clear()
 	_approaches.clear()
 	_generation += 1
+	_next_lens_update = -INF
 	if graph == null: return
 	var neighbours: Dictionary = {}
 	for from in graph.edges:
@@ -106,6 +119,9 @@ static func along(route: Curve3D) -> Array:
 		var closed := route.get_point_position(0).distance_to(route.get_point_position(route.point_count-1)) < .1
 		var before := route.sample_baked(fposmod(offset-12.0,length) if closed else maxf(0,offset-12.0),true)
 		var approach := Vector2(before.x-center.x,before.z-center.z).normalized()
+		# Signal phases belong to the arrival arm, not to the tangent of a
+		# turning curve near its centre (outer lanes may already point across).
+		item.heading = Vector3(-approach.x,0,-approach.y)
 		var score := .7
 		for entry in _approaches.get(key,[]):
 			var alignment: float = approach.dot(entry.direction)
@@ -116,6 +132,7 @@ static func along(route: Curve3D) -> Array:
 			# Maximum legal street width/offset/depth can put the stop beyond 30 m.
 			if distance < .1 or distance > 45.0: continue
 			score = alignment
+			item.heading = Vector3(-entry.direction.x,0,-entry.direction.y)
 			item.stop_offset = stop_offset
 			item.approach_distance = maxf(APPROACH,distance+12.0)
 		result.append(item)
@@ -181,7 +198,7 @@ static func signal_state(key: Vector3i, heading: Vector3) -> String:
 	var entry := _signal_near(junctions[key])
 	if entry.is_empty(): return "stop"
 	# A fase vem do centro do semáforo (um por cruzamento real), não do vértice do grafo.
-	return _state_at(entry.center, _axis_a(key, heading), Time.get_ticks_msec() / 1000.0)
+	return _state_at(entry.center, _axis_a(key, heading), _signal_time())
 
 # --- Ocupação do miolo ---------------------------------------------------------------
 
@@ -235,9 +252,12 @@ static func try_enter(key: Vector3i, id: int) -> bool:
 ## A lente `index` de `mesh` encara quem chega ao cruzamento `center` andando em `heading`.
 static func register_lens(mesh: MultiMesh, index: int, center: Vector3, heading: Vector3) -> void:
 	_lenses.append({"mesh": weakref(mesh), "index": index, "center": center, "heading": heading})
+	_next_lens_update = -INF
 
 static func update_lenses() -> void:
-	var now := Time.get_ticks_msec() / 1000.0
+	var now := _signal_time()
+	if now < _next_lens_update: return
+	_next_lens_update = INF
 	for i in range(_lenses.size() - 1, -1, -1):
 		var lens: Dictionary = _lenses[i]
 		var mesh: MultiMesh = lens.mesh.get_ref()
@@ -255,7 +275,18 @@ static func update_lenses() -> void:
 		if axes.has(key): axis_a = _axis_a(key, lens.heading)
 		else: axis_a = absf((lens.heading as Vector3).normalized().x) >= 0.7071
 		var state := _state_at(center, axis_a, now)
-		mesh.set_instance_color(int(lens.index), LENS_GREEN if state == "green" else (LENS_AMBER if state == "amber" else LENS_RED))
+		if lens.get("state", "") != state:
+			mesh.set_instance_color(int(lens.index), LENS_GREEN if state == "green" else (LENS_AMBER if state == "amber" else LENS_RED))
+			# A signal is a discrete state. Physics interpolation must not blend
+			# red and green into an intermediate color after the phase changes.
+			mesh.reset_instance_physics_interpolation(int(lens.index))
+			lens.state = state
+		# Both axes change at the same half-cycle boundaries. Wake on the first
+		# frame of a real transition, without rewriting every instance each frame.
+		var half := CYCLE * .5
+		var phase := fposmod(now + _offset(center), half)
+		var boundary := GREEN_SECONDS if phase < GREEN_SECONDS else (GREEN_SECONDS + AMBER_SECONDS if phase < GREEN_SECONDS + AMBER_SECONDS else half)
+		_next_lens_update = minf(_next_lens_update, now + boundary - phase)
 
 static func _nearest_junction(center: Vector3) -> Vector3i:
 	var key := key_of(center)

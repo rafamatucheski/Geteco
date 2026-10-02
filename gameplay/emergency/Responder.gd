@@ -114,7 +114,7 @@ func _physics_process(delta: float) -> void:
 	if direction.length_squared() > 0.01: visual.rotation.y = atan2(-direction.x, -direction.z)
 	velocity.x = direction.x * 3.0
 	velocity.z = direction.z * 3.0
-	velocity.y = -1 if is_on_floor() else velocity.y - 20 * delta
+	velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
 	move_and_slide()
 	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
 	visual.left_upper_leg.rotation.x = sin(gait) * 0.5

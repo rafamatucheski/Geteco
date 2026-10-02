@@ -20,14 +20,22 @@ static func texture(kind: String) -> Texture2D:
 			var value := .91+grain*.10+rng.randf_range(-.035,.035)
 			var warm := 0.0
 			if kind=="concrete":
+				# Whole-number grouping/index; preserve integer truncation and precision.
+				@warning_ignore("integer_division")
 				var cell := Vector2i(x/64,y/64)
 				value+=sin(cell.x*13.7+cell.y*9.1)*.025
 				if x%64==0 or y%64==0: value-=.12
 			elif kind=="stone" or kind=="brick":
 				var height := 32 if kind=="stone" else 16
 				var width := 64 if kind=="stone" else 32
+				# Whole-number grouping/index; preserve integer truncation and precision.
+				@warning_ignore("integer_division")
 				var row := y/height
+				# Whole-number grouping/index; preserve integer truncation and precision.
+				@warning_ignore("integer_division")
 				var shifted := x+(width/2 if row%2==0 else 0)
+				# Whole-number grouping/index; preserve integer truncation and precision.
+				@warning_ignore("integer_division")
 				value+=sin(float(shifted/width)*17.3+row*4.7)*.06
 				if shifted%width<2 or y%height<2: value-=.17
 				if kind=="brick": warm=.065

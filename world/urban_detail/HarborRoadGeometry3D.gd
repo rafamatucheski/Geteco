@@ -26,6 +26,8 @@ const UNSIGNALIZED_SOURCE_POINTS := [
 	Vector2(7400,1700),Vector2(7700,1400),Vector2(7700,2000),Vector2(8000,1700),
 ]
 
+# Revisão do catálogo usado pelo índice de acabamento dos chunks.
+var context_revision := 0
 var _roads: Array[Dictionary] = []
 var _junctions: Array[Dictionary] = []
 var _layers: Array[Dictionary] = []
@@ -40,6 +42,7 @@ var _earth_verge_triangles: Array = []
 
 
 func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
+	context_revision += 1
 	_roads.clear()
 	_junctions.clear()
 	_layers.clear()
@@ -264,7 +267,7 @@ func _prepare_crosswalks() -> void:
 	_append_road_crossing("cobra_court_northwest",0.90,26.0*SOURCE_SCALE,42.0*SOURCE_SCALE)
 
 
-func _append_road_crossing(road_id: String, t: float, depth: float, sidewalk_reach: float) -> void:
+func _append_road_crossing(road_id: String, t: float, depth: float, _sidewalk_reach: float) -> void:
 	for road in _roads:
 		if String(road.id).get_file()!=road_id: continue
 		if not road.crossings: return
@@ -404,7 +407,9 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 					var from := a + direction * walked
 					var to := a + direction * (walked + step)
 					var midpoint := (from + to) * 0.5
-					if rect.grow(0.2).has_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
+					# Half-open chunk ownership: padding duplicated coplanar paint
+					# in adjacent chunks while streaming across their border.
+					if rect.has_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
 						_add_mark(mark_parent, from, to, count)
 						count += 1
 						if int(road.get("lanes_per_direction",1)) == 2:
@@ -434,11 +439,14 @@ func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int, same_dire
 	var delta := to - from
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.name = "Dash_%04d" % index
-	var box := BoxMesh.new()
-	box.size = Vector3(3.0 * SOURCE_SCALE, 0.008, delta.length())
-	mesh_instance.mesh = box
+	var paint := PlaneMesh.new()
+	paint.size = Vector2(3.0 * SOURCE_SCALE, delta.length())
+	mesh_instance.mesh = paint
+	# Road paint receives shadows, but has no raised sides to cast a crawling
+	# subpixel shadow onto itself/asphalt as the camera moves.
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mesh_instance.material_override = _material(CROSSWALK_COLOR if same_direction else LANE_COLOR)
-	mesh_instance.position = Vector3((from.x + to.x) * 0.5, 0.034, (from.y + to.y) * 0.5)
+	mesh_instance.position = Vector3((from.x + to.x) * 0.5, 0.038, (from.y + to.y) * 0.5)
 	mesh_instance.rotation.y = atan2(delta.x, delta.y)
 	parent.add_child(mesh_instance)
 

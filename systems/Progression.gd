@@ -28,11 +28,11 @@ func snapshot() -> Dictionary:
 func objective() -> String:
 	return Sequence.OBJECTIVES[_state.phase]
 
-func set_location(location_id: String) -> bool:
-	if not LOCATIONS.has(location_id):
+func set_location(p_location_id: String) -> bool:
+	if not LOCATIONS.has(p_location_id):
 		return false
-	_state.location_id = location_id
-	if location_id == "harbor_garage":
+	_state.location_id = p_location_id
+	if p_location_id == "harbor_garage":
 		_state.equipped_weapon = ""
 	return true
 

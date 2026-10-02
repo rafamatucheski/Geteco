@@ -296,7 +296,9 @@ func _hands() -> Array:
 	if is_instance_valid(_bottle):
 		_bottle.position = hand + Vector3(0, .04, 0)
 		_bottle.rotation.x = -sip * 1.25
-	return [model.to_global(Vector3(-.21, hip + .05, .30)) if seated else null, model.to_global(hand)]
+	var seated_hand: Variant = null
+	if seated: seated_hand = model.to_global(Vector3(-.21, hip + .05, .30))
+	return [seated_hand, model.to_global(hand)]
 
 func _build_bottle() -> void:
 	if _bottle_body == null:

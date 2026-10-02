@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validar terrenos e pisos"
+  short_description: "Revise bordas, encaixes, texturas e mistura do solo"
+  default_prompt: "Use $validar-terrenos-pisos para revisar terrenos e pisos do trecho solicitado, verificando encaixes, bordas, texturas e integração com o entorno, com evidências e pendências explícitas."

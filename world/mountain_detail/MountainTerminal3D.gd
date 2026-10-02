@@ -22,7 +22,7 @@ func build() -> void:
 	var roof_mat := MountainMaterials.wood_shingle()
 	var snow_mat := MountainMaterials.snow_fresh()
 	var glass_mat := MountainMaterials.glass_warm()
-	var bench_mat := MountainMaterials.wood_bench()
+	MountainMaterials.wood_bench()
 	
 	var half_w := terminal_size.x * 0.5
 	var half_d := terminal_size.y * 0.5

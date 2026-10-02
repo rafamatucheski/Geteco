@@ -3,6 +3,7 @@ extends Node3D
 const HELICOPTER = preload("res://gameplay/police_response/air_k9/PoliceHelicopter.gd")
 const DOG = preload("res://gameplay/police_response/air_k9/PoliceK9.gd")
 const RULES = preload("res://gameplay/dispatch/DispatchRules.gd")
+const TRACE = preload("res://gameplay/dispatch/DispatchTrace.gd")
 const MAX_K9 := 2
 const MAX_OFFICERS := 16
 const SQUAD_SIZE := 4
@@ -37,7 +38,8 @@ func _physics_process(delta: float) -> void:
 	if response_paused(): return
 	var region := _state_region()
 	if region != _region:
-		clear_response()
+		# A logical seam belongs to the same continuous world. Explicit
+		# travel still clears the response through Gameplay.on_region_changed.
 		_region = region
 	_retire_tick -= delta
 	if _retire_tick <= 0.0:
@@ -69,12 +71,18 @@ func _physics_process(delta: float) -> void:
 	dog_timer = maxf(0.0, dog_timer - 0.25)
 	if not is_instance_valid(helicopter) and helicopter_timer <= 0.0 and gameplay.last_known_valid:
 		if officer_count() + SQUAD_SIZE <= officer_limit():
+			var traced := TRACE.begin()
 			var zone := find_landing_zone(gameplay.last_known)
+			TRACE.end("air.landing_zone", traced)
+			traced = TRACE.begin()
 			if not zone.is_empty(): launch_helicopter(zone)
 			else: helicopter_timer = 4.0
+			TRACE.end("air.launch_helicopter", traced)
 	if dog_timer <= 0.0 and dogs.size() < (2 if gameplay.stars >= 5 else 1):
 		dog_timer = 6.0
+		var deploying := TRACE.begin()
 		_try_deploy_dog()
+		TRACE.end("air.deploy_dog", deploying)
 
 func exterior_active() -> bool:
 	if not is_instance_valid(gameplay) or gameplay.state == null: return false

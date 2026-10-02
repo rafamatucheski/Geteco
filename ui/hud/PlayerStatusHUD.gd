@@ -6,6 +6,7 @@ var armor_bar: ProgressBar
 var cold_bar: ProgressBar
 var cold_row: HBoxContainer
 var cold_icon: Control
+var cold_label: Label
 var _values := {}
 var _tweens := {}
 var _cold_hold := 0.0
@@ -21,6 +22,7 @@ func _ready() -> void:
 	armor_bar = _row(column,"shield",STYLE.ARMOR)
 	cold_bar = _row(column,"cold",STYLE.COLD)
 	cold_row = cold_bar.get_parent(); cold_icon=cold_row.get_child(0); cold_row.hide(); cold_row.modulate.a=0
+	cold_label = STYLE.label("",14,STYLE.TEXT); cold_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; column.add_child(cold_label); cold_label.hide()
 func _row(column: VBoxContainer, symbol: String, color: Color) -> ProgressBar:
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",10); column.add_child(row)
 	row.add_child(GLYPH.new(symbol,color))
@@ -37,6 +39,9 @@ func update_status(health: float, armor: float, thermal: Dictionary, delta: floa
 	var relevant := bool(thermal.get("visible",false)) or temperature < 99.5
 	_cold_hold = 3.0 if relevant else maxf(0,_cold_hold-delta)
 	var show_cold := relevant or _cold_hold>0
+	cold_label.visible=show_cold
+	if show_cold:
+		cold_label.text="%s · %d%%" % [str(thermal.get("text","")).get_slice("\n",0),roundi(temperature)]
 	if show_cold != _cold_visible:
 		_cold_visible=show_cold
 		if _cold_tween: _cold_tween.kill()

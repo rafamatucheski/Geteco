@@ -67,10 +67,10 @@ func build() -> void:
 	# Chimneys on party walls
 	# Facade proper name signage if available
 	if not proper_name.is_empty():
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(unit_w * 0.7, 3.2), 0.55), 0.06, UrbanMaterials.trim_stone())
-		if sign != null:
-			sign.position = Vector3(0, height - 0.75, front_z + 0.08)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(unit_w * 0.7, 3.2), 0.55), 0.06, UrbanMaterials.trim_stone())
+		if sign_node != null:
+			sign_node.position = Vector3(0, height - 0.75, front_z + 0.08)
+			visuals_root.add_child(sign_node)
 
 func _build_v1_terrace() -> void:
 	# HarborBuilding._draw_rowhouse_terrace publishes four distinct units. The
@@ -103,10 +103,10 @@ func _build_v1_terrace() -> void:
 		add_chimney(visuals_root,Vector3(center_x+unit_w*.30,unit_height+.05,-half_d*.45),1.35,int(profile.flues))
 		if bool(profile.dormer): _build_roof_dormer(center_x,unit_height,half_d)
 	if not proper_name.is_empty():
-		var sign := UrbanSignage.create_sign_3d(proper_name,Vector2(minf(building_size.x*.55,4.4),.52),.06,UrbanMaterials.trim_stone())
-		if sign != null:
-			sign.position=Vector3(0,5.55,half_d+.10)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name,Vector2(minf(building_size.x*.55,4.4),.52),.06,UrbanMaterials.trim_stone())
+		if sign_node != null:
+			sign_node.position=Vector3(0,5.55,half_d+.10)
+			visuals_root.add_child(sign_node)
 
 func _build_roof_dormer(center_x: float, unit_height: float, half_d: float) -> void:
 	var dormer := Node3D.new()

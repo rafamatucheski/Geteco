@@ -17,9 +17,14 @@ var samples: Array[Dictionary] = []
 var failures: Array[String] = []
 var checks := 0
 var initial: Dictionary = {}
+var startup_complete := false
+var output_dir := OUTPUT
 
 func _initialize() -> void:
-	create_timer(35).timeout.connect(func(): push_error("PREVIOUS_FLOOR timeout"); quit(3))
+	# Main atualmente consome cerca de 27 s: não debitar esse preparo dos 35 s
+	# destinados ao cenário. Ambos os estágios continuam finitos e identificados.
+	create_timer(60).timeout.connect(func():
+		if not startup_complete: push_error("PREVIOUS_FLOOR startup timeout"); quit(3))
 	run.call_deferred()
 
 func check(ok: bool, label: String) -> void:
@@ -37,6 +42,10 @@ func sample(label: String) -> void:
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--out-dir="): output_dir = argument.trim_prefix("--out-dir=")
+	if output_dir.is_empty() or DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output_dir)) != OK:
+		push_error("PREVIOUS_FLOOR output directory unavailable"); quit(2); return
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	world.set_meta("skip_dispatch", true)
@@ -46,6 +55,8 @@ func run() -> void:
 		if world.session != null and world.session.ready_for_play: break
 	check(world.session != null and world.session.ready_for_play, "Main ready with isolated save")
 	if not failures.is_empty(): await finish(); return
+	startup_complete = true
+	create_timer(35).timeout.connect(func(): push_error("PREVIOUS_FLOOR scenario timeout after Main ready"); quit(3))
 	world.gameplay.dispatch_owned = true
 	world.gameplay.emergency.dispatch_owned = true
 	world.player.controlled_automatically = true
@@ -104,7 +115,7 @@ func finish(after: Dictionary = {}) -> void:
 	var label := "before"
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--label="): label = arg.trim_prefix("--label=")
-	var file := FileAccess.open(OUTPUT + "previous-floor-" + label + ".json", FileAccess.WRITE)
+	var file := FileAccess.open(output_dir.path_join("previous-floor-" + label + ".json"), FileAccess.WRITE)
 	if file != null:
 		file.store_string(JSON.stringify({"checks":checks,"failures":failures,"initial":initial,"final":after,"samples":samples}, "\t"))
 		file.close()

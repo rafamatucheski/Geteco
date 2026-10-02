@@ -623,9 +623,12 @@ func _begin_close_exit() -> void:
 	if _inside_swing(_landing, .30):
 		# Pouso alternativo (o ponto de espera estava bloqueado) dentro do arco: a porta espera
 		# o jogador se afastar em vez de fechar em cima dele.
-		var door_vehicle := vehicle
+		# The car can leave the world before this delayed door close runs.
+		# Capturing a WeakRef also avoids a freed-object lambda argument.
+		var door_vehicle_ref: WeakRef = weakref(vehicle)
 		var door_side := side
 		vehicle.get_tree().create_timer(1.6).timeout.connect(func():
+			var door_vehicle = door_vehicle_ref.get_ref()
 			if is_instance_valid(door_vehicle): door_vehicle.animate_driver_door(door_side, false, .32))
 		return
 	vehicle.animate_driver_door(side, false, .32)

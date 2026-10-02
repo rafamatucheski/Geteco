@@ -116,8 +116,8 @@ func proposed_poses(offset: float) -> Array[Transform3D]:
 		var toward: Vector3 = hitch-sections[index].global_position
 		toward.y = 0
 		var yaw := atan2(-toward.x,-toward.z)
-		var basis := Basis(Vector3.UP,yaw)
-		result.append(Transform3D(basis,hitch+basis.z*(LENGTHS[index]*.5+JOINT_GAP*.5)))
+		var local_basis := Basis(Vector3.UP,yaw)
+		result.append(Transform3D(local_basis,hitch+local_basis.z*(LENGTHS[index]*.5+JOINT_GAP*.5)))
 	return result
 
 func admits(poses: Array[Transform3D], swept := true) -> bool:

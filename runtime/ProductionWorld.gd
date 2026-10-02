@@ -74,6 +74,7 @@ var _fleet_scenes: Array[Resource] = []
 var _fleet_extra: Array[Resource] = []
 
 func build() -> void:
+	var startup_traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	no_save = "--no-save" in OS.get_cmdline_user_args()
 	var launch = get_node_or_null("/root/V2Launch")
 	if launch != null: store.path = launch.selected_path
@@ -189,6 +190,7 @@ func build() -> void:
 	curtain.set_stage(.3, "Assentando o terreno…")
 	for i in 12: await get_tree().physics_frame
 	await _prewarm_regions(curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	curtain.set_stage(.84, "Acendendo a cidade…")
 	var road_point := nearest_road(world.player.position)
 	world.driving.car.place(road_point+Vector3.UP*.12,road_yaw(road_point))
@@ -230,6 +232,7 @@ func build() -> void:
 	world_audio = _audio()
 	world.add_child(world_audio)
 	_update_chairlift_schedule()
+	_trace_cost("startup:prepared",startup_traced)
 	if world.has_meta("menu_preview"):
 		await world.get_meta("menu_preview").hold_world(world)
 		if world.is_queued_for_deletion(): return
@@ -242,22 +245,30 @@ func build() -> void:
 ## Sob a cortina de carregamento: prepara a outra região e aquece os caches de
 ## texturas/malhas das duas (medido 2026-09-23: 2,5 s Harbor + 1,2 s Mountain),
 ## para a primeira passagem por cada lugar não travar a direção.
-func _prewarm_regions(curtain: Node = null) -> void:
+func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	var incremental: bool = world.has_meta("menu_preview")
+	var phase_traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	if curtain != null:
 		curtain.set_stage(.36, "Carregando veículos…")
 		await get_tree().process_frame
 	_hold_fleet_scenes()
+	_trace_cost("startup:fleet_hold",phase_traced)
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
 	
 	if curtain != null:
 		curtain.set_stage(.40, "Compilando shaders do tráfego…")
 		await get_tree().process_frame
+	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	await _prewarm_fleet_shaders(incremental)
+	_trace_cost("startup:fleet_shaders",phase_traced)
+	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
 	# shared cache under the loading curtain, without creating fires or wrecks.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
+	# O primeiro tiro que muda o desgaste também precisa destes recursos.
+	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._scratches(0)
+	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._dents()
 	preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd").prewarm_skid_audio()
 	# Explosion takes and immutable fire presentation were built at detonation.
 	# Keep their bounded resources ready, without spawning a live incident.
@@ -269,14 +280,19 @@ func _prewarm_regions(curtain: Node = null) -> void:
 	await combat_audio.prewarm_gameplay_banks(get_tree())
 	await preload("res://audio/VehicleCrashAudio.gd").prewarm(get_tree())
 	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
+	await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	_trace_cost("startup:combat_resources",phase_traced)
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
 	if curtain != null:
 		curtain.set_stage(.46, "Preparando texturas e prédios…")
 		await get_tree().process_frame
+	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	if is_instance_valid(region):
 		if incremental: await region.prewarm_incremental()
 		else: region.prewarm()
+	_trace_cost("startup:resident_prewarm",phase_traced)
 	for id in ["harbor","mountain"]:
 		if regions.has(id): continue
 		if curtain != null:
@@ -284,9 +300,16 @@ func _prewarm_regions(curtain: Node = null) -> void:
 			await get_tree().process_frame
 		var detached: Node3D = REGION.build_region(id)
 		if detached == null: continue
+		# Aquecer dados/conteudo sem montar uma vizinhanca do spawn que sera descartada.
+		detached.initial_prewarm_only = true
+		phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 		world.add_child(detached)
+		_trace_cost("startup:distant_prepare:"+id,phase_traced)
+		phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 		if incremental: await detached.prewarm_incremental()
 		else: detached.prewarm()
+		_trace_cost("startup:distant_prewarm:"+id,phase_traced)
+		detached.initial_prewarm_only = false
 		detached.release_chunks()
 		world.remove_child(detached)
 		_region_cache[id] = detached
@@ -297,6 +320,7 @@ func _prewarm_regions(curtain: Node = null) -> void:
 	var live := regions.duplicate()
 	var all := live.duplicate()
 	for id in _region_cache: all[id] = _region_cache[id]
+	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	for combo in [["harbor"],["mountain"],["harbor","mountain"]]:
 		regions = {}
 		for id in combo:
@@ -305,6 +329,7 @@ func _prewarm_regions(curtain: Node = null) -> void:
 		if incremental: await get_tree().process_frame
 	regions = live
 	_configure_routes()
+	_trace_cost("startup:route_graphs",phase_traced)
 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
 
 func _apply_player_settings() -> void:
@@ -510,7 +535,10 @@ func _persistent_vehicle_support() -> Dictionary:
 			# Otherwise streaming can evict it before the next physics step.
 			support.harbor.append({"position":bus.global_position-bus.global_basis.z*8,"radius":2.0})
 	for car in vehicles:
-		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible or not car.is_physics_processing(): continue
+		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible: continue
+		# A body suspended by streaming still owns its floor request. Excluding
+		# it here would evict the chunk before the ground check can resume it.
+		if not car.is_physics_processing() and not car.has_meta("awaiting_ground"): continue
 		if _is_ambient_traffic(car) and car != world.driving.car: continue
 		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false)
 		if not persistent:
@@ -526,6 +554,33 @@ func _persistent_vehicle_support() -> Dictionary:
 		var id: String = WORLD_CONNECTION.logical_region(car.global_position)
 		var radius: float = Vector2(car.half_width,car.half_length).length()+0.5
 		support[id].append({"position":car.global_position,"radius":radius})
+		if car.get_meta("port_work_vehicle",false):
+			# PortLogistics admits this same point before moving. Keep its chunk
+			# until the request moves on; the hull radius alone does not cover it.
+			support[id].append({"position":car.global_position-car.global_basis.z*(car.half_length+3),"radius":0.0})
+	return support
+
+func _active_dispatch_support() -> Dictionary:
+	var support := {"harbor":[],"mountain":[]}
+	var dispatch: Variant = world.get("dispatch") if is_instance_valid(world) else null
+	if not is_instance_valid(dispatch): return support
+	for unit in dispatch.units:
+		if unit.finished: continue
+		var car: CharacterBody3D = unit.vehicle
+		if not is_instance_valid(car) or car.is_queued_for_deletion(): continue
+		var resume_requested: bool = unit.suspended and dispatch.distance_to_player(car.global_position) <= preload("res://gameplay/dispatch/DispatchRules.gd").RESUME_DISTANCE
+		if unit.suspended and not resume_requested: continue
+		if not resume_requested and not car.is_visible_in_tree(): continue
+		if not resume_requested and not car.is_physics_processing() and not car.get_meta("awaiting_ground",false): continue
+		var radius: float = Vector2(car.half_width,car.half_length).length()+0.5
+		var ahead := car.global_position-car.global_basis.z*12.0
+		for point: Vector3 in [car.global_position,ahead]:
+			var source_owner := WORLD_CONNECTION.logical_region(point)
+			# This request retains cells only in an already resident owner. It must
+			# not mount distant regions or change the player's residency policy.
+			if not regions.has(source_owner) or not is_instance_valid(regions[source_owner]): continue
+			support[source_owner].append({"position":point,"radius":radius if point == car.global_position else 0.0})
+	# Recomputed from live units: suspension, completion and removal release it.
 	return support
 
 func _update_physical_residency(point: Vector3) -> void:
@@ -559,10 +614,11 @@ func _update_physical_residency(point: Vector3) -> void:
 		if is_instance_valid(connection):
 			connection.queue_free()
 			connection = null
+	var dispatch_support := _active_dispatch_support()
 	for id in regions:
 		var mounted: Node3D = regions[id]
 		if not is_instance_valid(mounted): continue
-		mounted.set_vehicle_support(support[id])
+		mounted.set_vehicle_support(support[id]+dispatch_support[id])
 		mounted.set_retention_radius(2 if id == physical_region else 1)
 		var region_focus := point
 		if id != physical_region and seam_distance > CONNECTION_PRELOAD_DISTANCE:
@@ -639,6 +695,24 @@ func _restore_player_vehicle() -> void:
 		car.visible = saved.region == state.region_id
 	elif vehicle_position_clear(car,point,float(saved.yaw)):
 		car.place(point,float(saved.yaw))
+	else:
+		# The initial nearest-road pose may be the same obstructed saved pose.
+		# Admit the body before its first physics step; never let recovery push
+		# a loaded car through a solid or below the road.
+		var admitted := false
+		for distance in [6.0,12.0,24.0,48.0]:
+			for direction in [Vector3.FORWARD,Vector3.BACK,Vector3.LEFT,Vector3.RIGHT]:
+				var candidate := nearest_road(point+direction*distance)+Vector3.UP*.12
+				var yaw := road_yaw(candidate)
+				if not vehicle_position_clear(car,candidate,yaw): continue
+				car.place(candidate,yaw)
+				admitted = true
+				break
+			if admitted: break
+		if not admitted:
+			car.place(point,float(saved.yaw))
+			car.set_meta("awaiting_ground",true)
+			car.set_physics_process(false)
 	car.restore_health(float(saved.health))
 	if int(saved.get("punctured_tires",0)) > 0:
 		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))

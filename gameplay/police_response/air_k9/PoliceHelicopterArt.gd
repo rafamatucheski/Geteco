@@ -19,11 +19,22 @@ const SECTION := [
 ## tests/measure/measure_event_hitches.gd); duplicate() reaproveita malhas e materiais.
 static var _template: Node3D
 
+# Retencao global ate o root sair; worlds/transicoes conservam os templates.
+static func _watch_template_shutdown() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree != null and not tree.root.tree_exiting.is_connected(_release_template):
+		tree.root.tree_exiting.connect(_release_template, CONNECT_ONE_SHOT)
+
+static func _release_template() -> void:
+	if is_instance_valid(_template) and _template.get_parent() == null: _template.free()
+	_template = null
+
 ## Monta a matriz na carga do jogo, não no quadro da primeira chegada.
 static func warm() -> void:
 	if _template == null:
 		_template = Node3D.new()
 		_build_uncached(_template)
+		_watch_template_shutdown()
 
 static func build(parent: Node3D) -> Dictionary:
 	warm()

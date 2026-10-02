@@ -298,7 +298,7 @@ func _walk(actor: CharacterBody3D, destination: Vector3, direct := false) -> boo
 						hip.z = actor.hip_rest.z
 						actor.skeleton.set_bone_pose_position(actor.hips, hip)
 			elapsed += delta
-			stalled = stalled + delta if before.distance_to(actor.global_position) < .001 else 0
+			stalled = stalled + delta if before.distance_to(actor.global_position) < .001 else 0.0
 			if stalled > 2 or elapsed > limit:
 				actor.velocity = Vector3.ZERO
 				actor.set_physics_process(was_physics)

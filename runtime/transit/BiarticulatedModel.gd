@@ -63,13 +63,13 @@ static func build(parent: Node3D, length: float, section: int) -> Dictionary:
 	if section==0:
 		box(model,Vector3(0,2.1,-length*.5-.05),Vector3(2.22,1.1,.04),"glass")
 		box(model,Vector3(0,2.78,-length*.5-.06),Vector3(2,.22,.04),"rubber")
-		var sign := Label3D.new()
-		sign.text = "510  CIRCULAR"
-		sign.font_size = 36; sign.pixel_size = .004
-		sign.position = Vector3(0,2.78,-length*.5-.09)
-		sign.rotation.y = PI
-		sign.modulate = Color("ffd275")
-		model.add_child(sign)
+		var sign_node := Label3D.new()
+		sign_node.text = "510  CIRCULAR"
+		sign_node.font_size = 36; sign_node.pixel_size = .004
+		sign_node.position = Vector3(0,2.78,-length*.5-.09)
+		sign_node.rotation.y = PI
+		sign_node.modulate = Color("ffd275")
+		model.add_child(sign_node)
 	for side in [-1,1]:
 		if section==0:
 			box(model,Vector3(side*.87,.94,-length*.5-.06),Vector3(.42,.19,.06),"light")

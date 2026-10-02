@@ -88,11 +88,11 @@ func _publish_pieces() -> void:
 		PIECES.group(self, nodes, "cobra/%s/%d" % [label.to_snake_case(), serial], readable)
 	_pieces.clear()
 
-static func tag_route(zone: Node3D, zone_id: String) -> void:
+static func tag_route(zone: Node3D, p_zone_id: String) -> void:
 	# Factory children already hold their matching mesh and collision bodies.
 	for index in zone.get_child_count():
 		var child := zone.get_child(index) as Node3D
 		if child == null: continue
 		var label := str(child.name)
 		if label.begins_with("@") and child.get_child_count() > 0: label = str(child.get_child(0).name)
-		PIECES.mark(child, "route/%s/%d" % [zone_id, index], label.capitalize())
+		PIECES.mark(child, "route/%s/%d" % [p_zone_id, index], label.capitalize())

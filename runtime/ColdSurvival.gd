@@ -98,11 +98,11 @@ func prepare_collision_at(point: Vector3) -> bool:
 	# disappeared since the last quarter-second presentation update.
 	presentation.elapsed = 1
 	presentation.update_sources(1,point,true,true,8.0)
-	var ready := true
+	var local_ready := true
 	for source in SOURCES.SOURCES:
 		if SOURCES.to_world(source.point).distance_squared_to(point)>64: continue
 		if not presentation.visuals.has(source.id) or not is_instance_valid(presentation.visuals[source.id]):
-			ready = false
+			local_ready = false
 		elif int(presentation.visuals[source.id].get_meta("thermal_created_frame",-1))>=Engine.get_physics_frames():
-			ready = false
-	return ready
+			local_ready = false
+	return local_ready

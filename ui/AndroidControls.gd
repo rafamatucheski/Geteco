@@ -118,6 +118,8 @@ func _refresh() -> void:
 		if driving: actions.append_array([["horn", "Buzina"], ["headlights", "Faróis"], ["siren_toggle", "Sirene"], ["tank_fire", "Canhão"]])
 		else: actions.append_array([["unarmed", "Guardar"], ["weapon_flashlight", "Lanterna"], ["surrender", "Render-se"]])
 		for i in actions.size():
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			_button(actions[i][0], actions[i][1], top + Vector2((i % 5 - 2) * 120, (144 if driving else 72) + (i / 5) * 66) * unit, Vector2(112, 58))
 	for index in fingers.keys():
 		if not str(fingers[index]).ends_with("_stick") and not buttons.has(fingers[index]): _release(index)

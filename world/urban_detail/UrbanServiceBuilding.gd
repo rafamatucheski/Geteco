@@ -149,10 +149,10 @@ func _build_fire_station() -> void:
 	
 	# Facade proper name signage
 	if not proper_name.is_empty():
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(main_w * 0.65, 5.2), 0.70), 0.08, trim_mat)
-		if sign != null:
-			sign.position = Vector3(main_center_x, height - 0.65, front_z + 0.12)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(main_w * 0.65, 5.2), 0.70), 0.08, trim_mat)
+		if sign_node != null:
+			sign_node.position = Vector3(main_center_x, height - 0.65, front_z + 0.12)
+			visuals_root.add_child(sign_node)
 
 func _build_police_precinct() -> void:
 	var half_w := building_size.x * 0.5
@@ -246,10 +246,10 @@ func _build_police_precinct() -> void:
 	
 	# Facade proper name signage
 	if not proper_name.is_empty():
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(building_size.x * 0.55, 4.4), 0.65), 0.08, blue_mat)
-		if sign != null:
-			sign.position = Vector3(0, height - 0.65, front_z + 0.12)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(building_size.x * 0.55, 4.4), 0.65), 0.08, blue_mat)
+		if sign_node != null:
+			sign_node.position = Vector3(0, height - 0.65, front_z + 0.12)
+			visuals_root.add_child(sign_node)
 
 func _build_motor_workshop() -> void:
 	# MotorWorkshop in Northgate is a Drive-In Service Bay!

@@ -13,10 +13,23 @@ static func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 ## id e copiada; duplicate() compartilha malhas e materiais entre as cópias.
 static var _templates: Dictionary = {}
 
+# Retencao global ate o root sair; worlds/transicoes conservam os templates.
+static func _watch_template_shutdown() -> void:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree != null and not tree.root.tree_exiting.is_connected(_release_templates):
+		tree.root.tree_exiting.connect(_release_templates, CONNECT_ONE_SHOT)
+
+static func _release_templates() -> void:
+	for entry in _templates.values():
+		var node: Node = entry.node
+		if is_instance_valid(node) and node.get_parent() == null: node.free()
+	_templates.clear()
+
 static func build_cached(root: Node3D, id: String) -> Vector3:
 	if not _templates.has(id):
 		var template := Node3D.new()
 		_templates[id] = {"node": template, "tip": build(template, id)}
+		_watch_template_shutdown()
 	var entry: Dictionary = _templates[id]
 	for child in (entry.node as Node3D).get_children():
 		root.add_child(child.duplicate())

@@ -61,18 +61,24 @@ func _build_ground_polygons() -> void:
 	earth_mat.shader = preload("res://world/regions/natural_ground.gdshader")
 	earth_mat.set_shader_parameter("base_color",Color("5c4a36"))
 	earth_mat.set_shader_parameter("uv_meters",4.0)
-	_create_flat_polygon("YardEarth", yard_poly, 0.024, earth_mat)
-	_create_flat_polygon("DrivewayEarth", driveway_poly, 0.024, earth_mat)
+	earth_mat.set_shader_parameter("edge_alpha",true)
+	_create_flat_polygon("OriginalSawmillYard", yard_poly, 0.024, earth_mat)
+	_create_flat_polygon("OriginalSawmillDriveway", driveway_poly, 0.024, earth_mat)
 
 func _create_flat_polygon(node_name: String, polygon: PackedVector2Array, height: float, mat: Material) -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var indices := Geometry2D.triangulate_polygon(polygon)
-	for idx in indices:
-		var pt: Vector2 = polygon[idx] * SCALE
-		st.set_normal(Vector3.UP)
-		st.set_uv(Vector2(pt.x * 0.25, pt.y * 0.25))
-		st.add_vertex(Vector3(pt.x, height, pt.y))
+	var center := Vector2.ZERO
+	for point in polygon: center += point / polygon.size()
+	var inset := PackedVector2Array()
+	for point in polygon: inset.append(center.lerp(point,0.78))
+	for idx in Geometry2D.triangulate_polygon(inset):
+		_ground_vertex(st,inset[idx],height,1.0)
+	for i in polygon.size():
+		var next := (i+1)%polygon.size()
+		for item in [[inset[i],1.0],[polygon[i],0.0],[polygon[next],0.0],
+				[inset[i],1.0],[polygon[next],0.0],[inset[next],1.0]]:
+			_ground_vertex(st,item[0],height,item[1])
 	
 	var mesh_inst := MeshInstance3D.new()
 	mesh_inst.name = node_name
@@ -80,6 +86,13 @@ func _create_flat_polygon(node_name: String, polygon: PackedVector2Array, height
 	mesh_inst.material_override = mat
 	mesh_inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh_inst)
+
+func _ground_vertex(st: SurfaceTool, point: Vector2, height: float, alpha: float) -> void:
+	var local := point*SCALE
+	st.set_normal(Vector3.UP)
+	st.set_color(Color(1,1,1,alpha))
+	st.set_uv(local*.25)
+	st.add_vertex(Vector3(local.x,height,local.y))
 
 func _build_office_cabin() -> void:
 	# Positioned in northeast quadrant of yard (x ~ 5.5m, z ~ -3.5m)
@@ -202,7 +215,7 @@ func _build_campfire_area() -> void:
 	
 	# Seating log benches around campfire
 	var log_mat := MountainMaterials.wood_log()
-	var end_mat := MountainMaterials.wood_cut_end()
+	MountainMaterials.wood_cut_end()
 	for angle_deg in [-50.0, 75.0, 195.0]:
 		var rad := deg_to_rad(angle_deg)
 		var seat_pos := Vector3(cos(rad) * 1.35, 0.18, sin(rad) * 1.35)

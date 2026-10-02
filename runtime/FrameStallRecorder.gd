@@ -23,6 +23,8 @@ func _process(_delta: float) -> void:
 		if ms > 50:
 			slow_frames += 1
 			if stalls.size() >= 128: stalls.pop_front()
+			# Whole clock buckets; preserve integer precision and cadence.
+			@warning_ignore("integer_division")
 			stalls.append({"at_ms":now / 1000,"frame_ms":ms,"cpu_ms":Performance.get_monitor(Performance.TIME_PROCESS)*1000,"physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000,"position":str(world.player.global_position),"region":world.session.state.region_id,"place":world.session.state.place_id,"driving":world.driving.occupied})
 	elif was_active and not active:
 		flush()

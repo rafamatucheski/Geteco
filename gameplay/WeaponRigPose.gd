@@ -554,11 +554,11 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			# cima para ejetar, UMA ida ao cinto pelo carregador rápido, cano para baixo
 			# para encaixar, fecha. A abertura do tambor é de `Gameplay._update_weapon_parts`.
 			var eject := smoothstep(0.08, 0.20, t) * (1.0 - smoothstep(0.30, 0.40, t))
-			var load := smoothstep(0.52, 0.62, t) * (1.0 - smoothstep(0.78, 0.88, t))
+			var engine_load_value := smoothstep(0.52, 0.62, t) * (1.0 - smoothstep(0.78, 0.88, t))
 			# No encaixe o revólver vem para junto do peito, quase na horizontal: cano
 			# para baixo e à frente com as duas mãos lia como arma longa.
-			hand = Vector3(0.06, 0.92, -0.17).lerp(Vector3(0.02, 0.97, -0.08), load)
-			tilt = Vector3(0.85 * eject - 0.12 * load, -0.10, -0.80 * smoothstep(0.04, 0.14, t) * (1.0 - smoothstep(0.80, 0.92, t)))
+			hand = Vector3(0.06, 0.92, -0.17).lerp(Vector3(0.02, 0.97, -0.08), engine_load_value)
+			tilt = Vector3(0.85 * eject - 0.12 * engine_load_value, -0.10, -0.80 * smoothstep(0.04, 0.14, t) * (1.0 - smoothstep(0.80, 0.92, t)))
 			# Palma no tambor aberto (lado esquerdo do receptor), em espaço da arma.
 			var cylinder := hand + Basis.from_euler(tilt) * Vector3(-0.075, 0.06, -0.03)
 			var fetch := smoothstep(0.32, 0.44, t) * (1.0 - smoothstep(0.46, 0.58, t))

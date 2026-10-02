@@ -18,6 +18,7 @@ const VEHICLE := preload("res://gameplay/dispatch/DispatchVehicle.gd")
 const ROADBLOCKS := preload("res://gameplay/police_response/ground/PoliceRoadblocks.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 # Cada candidato pode custar um plano de rota (~2,2 ms): 8 geravam picos de 22–53 ms
 # no quadro de despacho. Candidatos que falham voltam no próximo intervalo.
 const SPAWN_CANDIDATES_CHECKED := 3
@@ -173,19 +174,47 @@ func _prepare_unit_ground(unit: RefCounted) -> void:
 	STALL_WORK.finish_slow("dispatch.unit.prepare_ground_total", traced, 5000, source)
 
 func _stall_prepare_unit_ground(unit: RefCounted) -> void:
-	if unit == null or not is_instance_valid(unit.vehicle): return
+	if unit == null or unit.finished or not is_instance_valid(unit.vehicle) or not is_instance_valid(world): return
+	# Admit the floor before the existing suspension contract checks resumption.
+	if unit.suspended and distance_to_player(unit.vehicle.global_position) > RULES.RESUME_DISTANCE: return
 	var production: Variant = world.get("production")
 	if production == null: return
-	var region: Variant = production.get("region")
-	if region == null or not region.has_method("prepare_collision_at"): return
+	var residents_value: Variant = production.get("regions")
+	if not residents_value is Dictionary: return
+	var residents: Dictionary = residents_value
 	var car: CharacterBody3D = unit.vehicle
 	var ahead := car.global_position-car.global_basis.z*12.0
-	var cells := Vector4(floorf(car.global_position.x/64.0),floorf(car.global_position.z/64.0),floorf(ahead.x/64.0),floorf(ahead.z/64.0))
 	var unit_id := unit.get_instance_id()
-	if _prepared_ground_cells.get(unit_id,Vector4(INF,INF,INF,INF)) == cells: return
-	_prepared_ground_cells[unit_id] = cells
-	region.prepare_collision_at(car.global_position)
-	region.prepare_collision_at(ahead)
+	var previous: Dictionary = _prepared_ground_cells.get(unit_id,{})
+	var prepared: Dictionary = {}
+	var traced := TRACE.begin()
+	var built := 0
+	var finished_jobs := 0
+	var admitted := 0
+	# Corpo e antecipação podem estar em lados distintos da costura, na mesma célula.
+	for point: Vector3 in [car.global_position,ahead]:
+		var region: Node3D = residents.get(WORLD_CONNECTION.logical_region(point)) as Node3D
+		if not is_instance_valid(region) or not region.has_method("prepare_collision_at"): continue
+		var cell: Vector2i = region._cell(point)
+		var key := "%d:%d:%d" % [region.get_instance_id(),cell.x,cell.y]
+		var chunk: Node3D = region.chunks.get(cell) as Node3D
+		var chunk_id: int = chunk.get_instance_id() if is_instance_valid(chunk) and not chunk.is_queued_for_deletion() else 0
+		# O memo não certifica chunks podados/recriados nem outro proprietário residente.
+		if chunk_id != 0 and (previous.get(key,0) == chunk_id or prepared.get(key,0) == chunk_id):
+			prepared[key] = chunk_id
+			continue
+		var chunks_before: int = region.chunks.size() if traced != 0 else 0
+		var jobs_before: int = region.build_jobs.size() if traced != 0 else 0
+		region.prepare_collision_at(point)
+		admitted += 1
+		chunk = region.chunks.get(cell) as Node3D
+		if is_instance_valid(chunk) and not chunk.is_queued_for_deletion(): prepared[key] = chunk.get_instance_id()
+		if traced != 0:
+			built += region.chunks.size()-chunks_before
+			finished_jobs += jobs_before-region.build_jobs.size()
+	_prepared_ground_cells[unit_id] = prepared
+	if traced != 0 and admitted > 0:
+		TRACE.end("prepare_ground.build" if built > 0 or finished_jobs > 0 else "prepare_ground", traced, {"chunks_built":built,"jobs_finished":finished_jobs,"cell":str(Vector4(floorf(car.global_position.x/64.0),floorf(car.global_position.z/64.0),floorf(ahead.x/64.0),floorf(ahead.z/64.0))),"owners":prepared.keys()})
 
 ## Claim before startup restoration, even while the controller is disabled.
 ## These gates affect dispatch only; wanted decay and incident cleanup continue.

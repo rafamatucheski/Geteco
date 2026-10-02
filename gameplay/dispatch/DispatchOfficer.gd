@@ -20,6 +20,7 @@ var _disembark_target := Vector3.INF
 var _door_close_elapsed := -1.0
 
 func begin_disembark(p_vehicle: CharacterBody3D, exit_point: Vector3, side: float) -> void:
+	_cancel_navigation()
 	vehicle = p_vehicle
 	door_side = side
 	_disembark_target = exit_point
@@ -38,6 +39,7 @@ static func inside_point(car: CharacterBody3D, exit_point: Vector3, side: float)
 
 func begin_return(p_vehicle: CharacterBody3D) -> void:
 	if dead: return
+	_cancel_navigation()
 	vehicle = p_vehicle
 	mode = "return"
 	navigation = PackedVector3Array()
@@ -60,24 +62,25 @@ func _physics_process(delta: float) -> void:
 		return
 	if dead or mode != "return": return
 	if not is_instance_valid(vehicle):
+		_cancel_navigation()
 		mode = "orphan"
 		boarded.emit(self)
 		return
 	var door := door_point(vehicle, door_side)
 	if global_position.distance_to(door) < 1.6 and absf(vehicle.speed) < 0.6:
+		_cancel_navigation()
 		mode = "boarded"
 		boarded.emit(self)
 		return
 	_path_clock -= delta
 	if _path_clock <= 0.0:
-		_path_clock = 1.2
 		if not is_instance_valid(controller):
+			_cancel_navigation()
 			mode = "orphan"
 			boarded.emit(self)
 			return
-		navigation = controller.find_path(global_position, door)
-		nav_index = 0
-	var next := door
+		if _plan_navigation(door): _path_clock = _navigation_replan_interval
+	var next := door if not navigation.is_empty() else global_position
 	if nav_index < navigation.size():
 		next = navigation[nav_index]
 		if global_position.distance_to(next) < 0.65: nav_index += 1

@@ -37,3 +37,9 @@ builds/
 *.keystore
 *.jks
 .godot/export_credentials.cfg
+
+# Copias congeladas do projeto usadas em medicoes; nao sao fontes do jogo ativo.
+evidence/sol61-fluidity-ab-20261001/before/
+evidence/sol61-fluidity-ab-20261001/after/
+evidence/sol61-fluidity-ab-20261001/runs/*/project/
+evidence/auditoria-viaria/20260929-correcoes/perf-projects/

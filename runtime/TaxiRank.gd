@@ -1,6 +1,10 @@
 extends Node3D
 ## Four curbside bays east of the coach terminal; no interior or extra light rig.
-const SLOTS := [Vector3(148,.16,74),Vector3(158,.16,74),Vector3(166,.16,74),Vector3(174,.16,74)]
+# The north edge of Market Street is around z=74.2. Keep the parked
+# bodies and bay markings outside the travelling lane, including wide vans.
+# Reserve the corner's turning envelope too; a clear parked body alone is not
+# enough. Keep regular spacing between the four bays.
+const SLOTS := [Vector3(147,.16,73),Vector3(156,.16,73),Vector3(164,.16,73),Vector3(172,.16,73)]
 const CENTER := Vector3(161,0,72)
 var service
 var cars: Dictionary = {}
@@ -22,8 +26,8 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(dressing): _build()
 	for index in SLOTS.size():
 		if is_instance_valid(cars.get(index)):
-			var vehicle = cars[index]
-			if vehicle.health <= 0: _close_slot(index)
+			var branch_vehicle = cars[index]
+			if branch_vehicle.health <= 0: _close_slot(index)
 			continue
 		var id := "taxi_rank_"+str(index)
 		var existing: bool = is_instance_valid(session.world.driving.car) and session.world.driving.car.vehicle_id == id
@@ -91,7 +95,7 @@ func _build() -> void:
 		label.text = "TÁXI"; label.font_size = 48; label.pixel_size = .006
 		label.outline_size = 0; label.modulate = Color("242c33")
 		label.position = Vector3(155,2.65,71.56 if back else 71.44)
-		label.rotation.y = 0 if back else PI
+		label.rotation.y = 0.0 if back else PI
 		dressing.add_child(label)
 
 func _box(size: Vector3, point: Vector3, color: Color, solid := false) -> void:

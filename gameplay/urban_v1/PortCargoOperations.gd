@@ -289,8 +289,8 @@ func _ensure_work_vehicles() -> void:
 
 func _spawn_forklift(index: int) -> void:
 	var point: Vector2 = FORKLIFT_POINTS[index]
-	var position := Vector3(point.x*SCALE,.12,point.y*SCALE)
-	var vehicle = session.controller.spawn_vehicle("port_forklift",position,PI*.5)
+	var local_position := Vector3(point.x*SCALE,.12,point.y*SCALE)
+	var vehicle = session.controller.spawn_vehicle("port_forklift",local_position,PI*.5)
 	if not is_instance_valid(vehicle): return
 	vehicle.vehicle_id = "south_port_forklift_%02d" % index
 	vehicle.set_meta("port_work_vehicle",true)
@@ -320,7 +320,7 @@ func _spawn_work_truck(index: int) -> void:
 	vehicle.visible = active
 	vehicle.set_physics_process(active and _work_shift_open)
 	work_trucks[index].truck = vehicle
-	var state: Dictionary = work_trucks[index]
+	var _state: Dictionary = work_trucks[index]
 	_watch_work_truck(index, vehicle)
 
 func _watch_work_truck(index: int, vehicle: CharacterBody3D) -> void:
@@ -377,7 +377,10 @@ func _tick_truck(index: int, delta: float) -> void:
 				vehicle.brake_input = true
 		"waiting":
 			var crane_phase := fposmod(float(cranes[index].clock),CYCLE_SECONDS)
-			if absf(vehicle.speed) < .2 and (crane_phase < 4.0 or (crane_phase >= 16.0 and crane_phase <= 20.5)):
+			# Once the load leaves the ship its landing target must not change.
+			# Accepting a late truck during lowering slides cargo from the quay/cab
+			# to the bed. It must wait for the next lift instead.
+			if absf(vehicle.speed) < .2 and crane_phase < 4.0:
 				state.phase = "loading"
 				if crane_phase < 4.0: cranes[index].clock = floor(float(cranes[index].clock)/CYCLE_SECONDS)*CYCLE_SECONDS
 		"securing":
@@ -407,7 +410,7 @@ func _truck_mount_position(index: int) -> Vector3:
 	var state: Dictionary = work_trucks[index]
 	var vehicle = state.truck
 	if not is_instance_valid(vehicle): return cranes[index].quay
-	return vehicle.global_position + vehicle.global_basis * Vector3(0.0,0.0,TRUCK_BED_CENTER_Z) + Vector3.UP*TRUCK_BED_TOP
+	return vehicle.to_global(Vector3(0.0,TRUCK_BED_TOP,TRUCK_BED_CENTER_Z))
 
 func _finish_truck_load(index: int) -> void:
 	var state: Dictionary = work_trucks[index]
@@ -421,7 +424,10 @@ func _finish_truck_load(index: int) -> void:
 	var visual: Node3D = cranes[index].visual
 	visual.reparent(vehicle,true)
 	visual.position = Vector3(0.0,TRUCK_BED_TOP,TRUCK_BED_CENTER_Z)
-	visual.rotation.y = PI*.5
+	visual.basis = Basis(Vector3.UP,PI*.5)
+	# The parent/local coordinate system changed at attachment. Do not render
+	# an interpolated sweep from the previous crane transform through the cab.
+	visual.reset_physics_interpolation()
 	visual.show()
 	vehicle.set_meta("port_container_loaded",true)
 	(cranes[index].collision as CollisionShape3D).set_deferred("disabled",true)
@@ -437,6 +443,7 @@ func _reset_truck_load(index: int) -> void:
 	(cranes[index].trolley as MeshInstance3D).visible = active
 	(cranes[index].cable as MeshInstance3D).visible = active
 	_sync_crane(index)
+	if is_instance_valid(visual): visual.reset_physics_interpolation()
 	if is_instance_valid(state.truck): state.truck.remove_meta("port_container_loaded")
 
 func _tick_crane(index: int, delta: float) -> void:
@@ -505,6 +512,12 @@ func _sync_crane(index: int) -> void:
 	var pose := cargo_pose(index, float(crane.clock))
 	var visual := crane.visual as Node3D
 	visual.global_position = pose.ground + Vector3.UP * pose.lift
+	# Align while travelling overhead, before lowering; reset every unloaded
+	# cycle so a previous delivery's truck heading cannot leak into the crane.
+	var landing_basis := Basis.IDENTITY
+	if truck_state.phase == "loading" and is_instance_valid(truck_state.truck):
+		landing_basis = truck_state.truck.global_basis.orthonormalized()*Basis(Vector3.UP,PI*.5)
+	visual.global_basis = Basis.IDENTITY.slerp(landing_basis,float(pose.along))
 	var ground: Vector3 = pose.ground
 	var upper_y := lerpf(8.0,7.0,float(pose.along))
 	var cargo_top := float(pose.lift)+2.45

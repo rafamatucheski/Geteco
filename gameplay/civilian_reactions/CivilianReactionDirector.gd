@@ -35,6 +35,11 @@ const NPC_SHOT_INTERVAL := 0.4
 const STUCK_CHECK := 1.0
 const STUCK_DISTANCE := 0.5
 const MAX_REACTORS := 24
+## Limites provisórios do trabalho de busca, compartilhados por frame desenhado
+## (passos físicos de catch-up não ganham outro orçamento). Cada passo é um raio.
+const ESCAPE_RAYS_PER_FRAME := 24
+const ESCAPE_BUDGET_USEC := 750
+const REACTION_LOD_META := &"civilian_reaction_lod"
 const SUSPEND_DISTANCE := 110.0          ## além disso o civil é solto (a rotina/streaming cuida dele)
 const DAMAGE_POLL := 0.25
 
@@ -47,7 +52,11 @@ var horn_playing := {}    ## instance_id do veículo -> buzina tocando na varred
 var poll_clock := 0.0
 var clock := 0.0
 var npc_heard := {}   ## instance_id do atirador -> clock da última varredura
-var stats := {"alerts": 0, "released": 0, "stuck_replans": 0, "dropped": 0}
+var escape_queue: Array[int] = []
+var escape_budget_frame := -1
+var escape_rays_used := 0
+var escape_usec_used := 0
+var stats := {"alerts": 0, "released": 0, "stuck_replans": 0, "dropped": 0, "escape_rays": 0, "escape_searches": 0}
 
 func configure(p_world: Node3D, p_gameplay: Node) -> void:
 	world = p_world
@@ -67,6 +76,7 @@ func configure(p_world: Node3D, p_gameplay: Node) -> void:
 func reset_population() -> void:
 	for id in reactors.keys(): _release(id, false)
 	reactors.clear()
+	escape_queue.clear()
 	seen_health.clear()
 	horn_playing.clear()
 	if presenter: presenter.clear_all()
@@ -78,6 +88,7 @@ func reset_region() -> void: reset_population()
 func _exit_tree() -> void:
 	for id in reactors.keys(): _release(id, false)
 	reactors.clear()
+	escape_queue.clear()
 
 # ── Percepção ────────────────────────────────────────────────────────────────
 
@@ -239,7 +250,9 @@ func _alert(person: CharacterBody3D, origin: Vector3, end: Vector3, source: Vari
 		state.timer = randf_range(PANIC_TIME.x, PANIC_TIME.y)
 		# Renew danger during an active panic without bypassing a failed-search retry.
 		# Entering panic from another phase still reacts immediately.
-		if not was_panicking: state.replan = 0.0
+		if not was_panicking:
+			state.replan = 0.0
+			state.target = Vector3.ZERO
 
 func _begin(person: CharacterBody3D, phase: String) -> Dictionary:
 	if reactors.size() >= MAX_REACTORS and not reactors.has(person.get_instance_id()): return {}
@@ -248,9 +261,10 @@ func _begin(person: CharacterBody3D, phase: String) -> Dictionary:
 	var state := {"ref": weakref(person), "danger": DANGER.new(), "phase": phase, "timer": HORN_STEP_TIME if phase == "horn" else randf_range(PANIC_TIME.x, PANIC_TIME.y),
 		"replan": 0.0, "target": Vector3.ZERO, "saved_speed": person.get("speed"), "last_position": person.global_position,
 		"stuck_clock": 0.0, "blocked": [] as Array[Vector3], "source": null,
-		"action_time": 0.0, "attack_clock": 0.0, "reported": false}
+		"action_time": 0.0, "attack_clock": 0.0, "reported": false, "escape_search": {}}
 	reactors[id] = state
 	person.set("controlled_automatically", true)
+	person.set_meta(REACTION_LOD_META, phase == "panic" or phase == "recover")
 	person.set("automatic_direction", Vector3.ZERO)
 	person.set("speed", HORN_SPEED if phase == "horn" else (PANIC_SPEED if phase == "panic" else 0.0))
 	return state
@@ -284,12 +298,15 @@ func _physics_process(delta: float) -> void:
 			continue
 		state.timer -= delta
 		state.danger.tick(delta)
+		var allow_lod: bool = state.phase == "panic" or state.phase == "recover"
+		if person.get_meta(REACTION_LOD_META, false) != allow_lod: person.set_meta(REACTION_LOD_META, allow_lod)
 		match state.phase:
 			"panic":
 				if state.timer <= 0.0 or state.danger.is_empty():
 					state.phase = "recover"
 					state.timer = randf_range(RECOVER_TIME.x, RECOVER_TIME.y)
 					state.target = Vector3.ZERO
+					_cancel_escape(id, state)
 				else: _steer_panic(person, state, delta)
 			"recover":
 				if state.timer <= 0.0: _release(id, true)
@@ -299,6 +316,7 @@ func _physics_process(delta: float) -> void:
 				else: _move(person, state.target, HORN_SPEED)
 			"call": _update_call(person, state, delta)
 			"armed", "melee": _update_resistance(person, state, delta)
+	_process_escape_queue()
 
 func _source(state: Dictionary) -> Node3D:
 	var reference: Variant = state.get("source")
@@ -380,16 +398,60 @@ func _steer_panic(person: CharacterBody3D, state: Dictionary, delta: float) -> v
 			while state.blocked.size() > 3: state.blocked.pop_front()
 			state.replan = 0.0
 			state.target = Vector3.ZERO
+			_cancel_escape(person.get_instance_id(), state)
 			stats.stuck_replans += 1
 	# ZERO means the previous search found no escape, not a reached waypoint.
 	# Retry it on the same bounded cadence; actual arrivals still replan at once.
-	if state.replan <= 0.0 or (state.target != Vector3.ZERO and person.global_position.distance_to(state.target) < 0.8):
-		state.replan = REPLAN_INTERVAL
-		state.target = state.danger.choose_escape(person, state.blocked)
-	if state.target == Vector3.ZERO: person.set("automatic_direction", Vector3.ZERO) # encurralado: fica, o pânico expira
+	var arrived: bool = state.target != Vector3.ZERO and person.global_position.distance_to(state.target) < 0.8
+	if arrived: state.target = Vector3.ZERO
+	if state.escape_search.is_empty() and (state.replan <= 0.0 or arrived):
+		state.escape_search = state.danger.begin_escape(person, state.blocked)
+		escape_queue.append(person.get_instance_id())
+		stats.escape_searches += 1
+	if state.target == Vector3.ZERO:
+		# O susto e o início da fuga não esperam a fila. A física normal do Actor
+		# continua conferindo piso/colisão e fazendo o desvio local a cada passo.
+		person.set("automatic_direction", state.danger.away_from_threats(person.global_position) if not state.escape_search.is_empty() else Vector3.ZERO)
+		person.set("speed", PANIC_SPEED)
 	else: _move(person, state.target, PANIC_SPEED)
 
-func _steer_recover(person: CharacterBody3D, state: Dictionary) -> void:
+func _cancel_escape(id: int, state: Dictionary) -> void:
+	state.escape_search = {}
+	escape_queue.erase(id)
+
+## Round robin por consulta, não por busca: um civil encurralado nunca monopoliza
+## os 30 raios. A fila só guarda IDs e o plano vive no estado fraco do reator.
+func _process_escape_queue() -> void:
+	var frame := Engine.get_process_frames()
+	if escape_budget_frame != frame:
+		escape_budget_frame = frame
+		escape_rays_used = 0
+		escape_usec_used = 0
+	var began := Time.get_ticks_usec()
+	while not escape_queue.is_empty() and escape_rays_used < ESCAPE_RAYS_PER_FRAME:
+		if escape_usec_used + Time.get_ticks_usec() - began >= ESCAPE_BUDGET_USEC: break
+		var id: int = escape_queue.pop_front()
+		var state: Dictionary = reactors.get(id, {})
+		if state.is_empty(): continue
+		var person = state.ref.get_ref()
+		if not is_instance_valid(person) or not person.is_inside_tree() or state.phase != "panic" or person.get("dead") == true or person.get("controlled_automatically") != true:
+			state.escape_search = {}
+			continue
+		var search: Dictionary = state.escape_search
+		if search.is_empty(): continue
+		var rays: int = state.danger.step_escape(person, search)
+		escape_rays_used += rays
+		stats.escape_rays += rays
+		if search.done:
+			state.target = search.target
+			state.escape_search = {}
+			state.replan = REPLAN_INTERVAL
+			if state.target == Vector3.ZERO: person.set("automatic_direction", Vector3.ZERO)
+			else: _move(person, state.target, PANIC_SPEED)
+		else: escape_queue.append(id)
+	escape_usec_used += Time.get_ticks_usec() - began
+
+func _steer_recover(person: CharacterBody3D, _state: Dictionary) -> void:
 	var route: PackedVector3Array = person.get("route")
 	if route.size() > 1: _move(person, route[_nearest_waypoint(person, route)], RECOVER_SPEED)
 	else: person.set("automatic_direction", Vector3.ZERO)
@@ -422,11 +484,14 @@ func _nearest_waypoint(person: Node3D, route: PackedVector3Array) -> int:
 func _release(id: int, restore: bool) -> void:
 	var state: Dictionary = reactors.get(id, {})
 	reactors.erase(id)
+	escape_queue.erase(id)
 	if presenter: presenter.clear_actor(id)
 	if state.is_empty(): return
+	state.escape_search = {}
 	stats.released += 1
 	var person = state.ref.get_ref()
 	if not is_instance_valid(person): return
+	person.remove_meta(REACTION_LOD_META)
 	if person.get("controlled_automatically") == true:
 		person.set("controlled_automatically", false)
 		person.set("automatic_direction", Vector3.ZERO)

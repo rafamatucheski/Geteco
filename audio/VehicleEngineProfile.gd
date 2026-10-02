@@ -78,8 +78,8 @@ static func drive_load(speed: float, throttle: float, braking: bool) -> float:
 	if braking or (absf(speed) > .4 and speed * throttle < 0.0): return 0.0
 	return clampf(absf(throttle), 0.0, 1.0)
 
-static func loaded_rpm(wheel_rpm: float, idle: float, load: float, ratio: float) -> float:
+static func loaded_rpm(wheel_rpm: float, idle: float, p_load: float, ratio: float) -> float:
 	# Drivetrain remains coupled while coasting; throttle adds a small load flare.
-	var coupled := lerpf(idle, wheel_rpm, .88 + .12 * load)
-	var launch := idle + load * (1.0 - idle) * .48 * (1.0 - smoothstep(.02, .14, ratio))
-	return clampf(maxf(coupled, launch) + load * .045, idle, 1.0)
+	var coupled := lerpf(idle, wheel_rpm, .88 + .12 * p_load)
+	var launch := idle + p_load * (1.0 - idle) * .48 * (1.0 - smoothstep(.02, .14, ratio))
+	return clampf(maxf(coupled, launch) + p_load * .045, idle, 1.0)

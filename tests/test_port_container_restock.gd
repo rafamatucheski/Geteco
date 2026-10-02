@@ -2,6 +2,10 @@ extends "res://tests/test_port_containers.gd"
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--out-dir="): folder = argument.trim_prefix("--out-dir=")
+	if folder.is_empty(): quit(2); return
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	create_timer(180,true,false,true).timeout.connect(func(): push_error("RESTOCK TEST TIMEOUT"); quit(3))
 	root.size = Vector2i(1280,720)
 	seed(28092026)
@@ -99,7 +103,9 @@ func run() -> void:
 	rebuilt.queue_free()
 	await frames(2)
 	var store := preload("res://runtime/SaveStore.gd").new()
-	store.path = folder+"/restock-save.json"
+	# O runner fornece APPDATA temporário; diagnósticos continuam em folder.
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://tests/port-container-cache"))
+	store.path = "user://tests/port-container-cache/restock-save.json"
 	var save_result := store.save(world.session.state)
 	if save_result != OK:
 		var data: Dictionary = world.session.state.snapshot()

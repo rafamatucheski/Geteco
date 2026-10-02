@@ -17,9 +17,9 @@ func configure(owner_transport) -> void:
 	rank.name = "TaxiRank"; rank.configure(self)
 	add_child(rank)
 
-static func light(vehicle, available: bool) -> void:
+static func light(vehicle, p_available: bool) -> void:
 	if is_instance_valid(vehicle.visual) and vehicle.visual.has_node("TaxiLivery"):
-		vehicle.visual.get_node("TaxiLivery").set_available(available)
+		vehicle.visual.get_node("TaxiLivery").set_available(p_available)
 
 func available(vehicle) -> bool:
 	if not is_instance_valid(vehicle) or vehicle.is_queued_for_deletion(): return false

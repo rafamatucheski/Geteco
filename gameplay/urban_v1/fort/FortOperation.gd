@@ -146,6 +146,8 @@ func _spawn_reinforcements() -> void:
 	var roles := ["flanker","rifleman","flanker","rifleman"]
 	for index in 4:
 		var door: Vector3 = model.REINFORCEMENT_DOORS[index%2]
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var spec := {"id":"fort_b%d"%(index+1),"role":roles[index],"pos":Vector3(door.x+(-.6 if index<2 else .6),.04,door.z+1.0+float(index/2)*.9),
 			"facing":Vector3(0,0,1),"alerted":true}
 		var soldier = spawn_soldier(spec)
@@ -200,11 +202,11 @@ func _build_covers() -> void:
 		var half_x: float = spec.size.x*.5
 		var half_z: float = spec.size.y*.5
 		for side in [-1.0,1.0]:
-			var hide := center+Vector3(0,0,side*(half_z+.65))
+			var local_hide := center+Vector3(0,0,side*(half_z+.65))
 			var peeks: Array[Vector3] = []
 			for end in [-1.0,1.0]:
 				peeks.append(place.to_global(center+Vector3(end*(half_x+.7),0,side*(half_z+.65))))
-			covers.append({"key":"%s:%d"%[spec.id,int(side)],"id":spec.id,"hide":place.to_global(hide),"peeks":peeks,"x":center.x,"z":center.z})
+			covers.append({"key":"%s:%d"%[spec.id,int(side)],"id":spec.id,"hide":place.to_global(local_hide),"peeks":peeks,"x":center.x,"z":center.z})
 
 func pick_cover(soldier,mode: String) -> Dictionary:
 	var target := player_point()
@@ -215,16 +217,16 @@ func pick_cover(soldier,mode: String) -> Dictionary:
 	for cover in covers:
 		var owner_soldier = claims.get(cover.key)
 		if owner_soldier != null and owner_soldier != soldier and is_instance_valid(owner_soldier) and not owner_soldier.dead: continue
-		var hide: Vector3 = cover.hide
-		var to_player := hide.distance_to(target)
-		var distance: float = soldier.global_position.distance_to(hide)
+		var local_hide: Vector3 = cover.hide
+		var to_player := local_hide.distance_to(target)
+		var distance: float = soldier.global_position.distance_to(local_hide)
 		var score := 0.0
 		match mode:
 			"retreat": score = to_player*1.0-distance*.4
 			"advance": score = -distance*.6-to_player*.8
-			"flank": score = absf(hide.x-target.x)*1.0-distance*.25-absf(to_player-9.0)*.3
+			"flank": score = absf(local_hide.x-target.x)*1.0-distance*.25-absf(to_player-9.0)*.3
 			_: score = -distance*1.0-absf(to_player-10.0)*.5
-		var hidden := blocked(target+Vector3.UP*1.6,hide+Vector3.UP*1.45)
+		var hidden := blocked(target+Vector3.UP*1.6,local_hide+Vector3.UP*1.45)
 		var too_near: bool = to_player < (6.0 if mode == "retreat" else 3.5)
 		if score > fallback_score:
 			fallback_score = score
@@ -293,13 +295,13 @@ func to_world(local: Vector3) -> Vector3:
 
 func find_path(from_world: Vector3,to_world_point: Vector3) -> PackedVector3Array:
 	var from_local := place.to_local(from_world)
-	var to_local := place.to_local(to_world_point)
+	var local_to_local := place.to_local(to_world_point)
 	var start := _nearest_free(_cell(Vector2(from_local.x,from_local.z)))
-	var goal := _nearest_free(_cell(Vector2(to_local.x,to_local.z)))
+	var goal := _nearest_free(_cell(Vector2(local_to_local.x,local_to_local.z)))
 	var result := PackedVector3Array()
 	for cell in _grid.get_id_path(start,goal):
 		var point := NAV_ORIGIN+(Vector2(cell)+Vector2(.5,.5))*CELL
-		result.append(place.to_global(Vector3(point.x,to_local.y,point.y)))
+		result.append(place.to_global(Vector3(point.x,local_to_local.y,point.y)))
 	if result.is_empty(): result.append(to_world_point)
 	return result
 

@@ -97,11 +97,11 @@ func _open_cargo_aisle() -> void:
 		if batch.material_override not in [materials.get("crate_wood"), materials.get("crate_metal")]: continue
 		var multimesh: MultiMesh = batch.multimesh
 		for index in multimesh.instance_count:
-			var transform := multimesh.get_instance_transform(index)
-			transform.origin.x = -0.95
-			if transform.basis.x.length() > 0.55:
-				transform.basis.x = transform.basis.x.normalized() * 0.55
-			multimesh.set_instance_transform(index, transform)
+			var local_transform := multimesh.get_instance_transform(index)
+			local_transform.origin.x = -0.95
+			if local_transform.basis.x.length() > 0.55:
+				local_transform.basis.x = local_transform.basis.x.normalized() * 0.55
+			multimesh.set_instance_transform(index, local_transform)
 func _build_solids() -> void:
 	for side in [-1.0,1.0]:
 		add_solid(Rect2(side*1.55-0.12,-13.3,0.24,19.9),"FuselageWall")

@@ -153,7 +153,7 @@ func build() -> void:
 
 func _build_roof_truss(x: float, y: float, depth: float, mat: Material) -> void:
 	var half_d := depth * 0.5
-	var apex_y := y + 1.20
+
 	# King post in center
 	_add_box("KingPost", Vector3(x, y + 0.60, 0), Vector3(0.14, 1.20, 0.14), mat)
 	# Rafters from center apex to eaves

@@ -354,7 +354,7 @@ func _pipe_support(at: Vector3,size: Vector3) -> void:
 	_box(at,size,"4a463d")
 	_box(at+Vector3(0,-size.y*.44,0),size*Vector3(1.45,.12,1.45),"777063")
 
-func _puddle(at: Vector3,scale: Vector2,yaw: float,color: String,variant: int) -> void:
+func _puddle(at: Vector3,p_scale: Vector2,yaw: float,color: String,variant: int) -> void:
 	var surface: SurfaceTool
 	if _batches.has(color):
 		surface = _batches[color]
@@ -366,7 +366,7 @@ func _puddle(at: Vector3,scale: Vector2,yaw: float,color: String,variant: int) -
 	for index in 10:
 		var angle := TAU*float(index)/10.0
 		var irregular := .78+.07*float((index*7+variant*3)%5)
-		var local := Vector3(cos(angle)*scale.x*irregular,0,sin(angle)*scale.y*irregular).rotated(Vector3.UP,yaw)
+		var local := Vector3(cos(angle)*p_scale.x*irregular,0,sin(angle)*p_scale.y*irregular).rotated(Vector3.UP,yaw)
 		points.append(at+local)
 	for index in 10:
 		for point in [at,points[index],points[(index+1)%10]]:
@@ -654,14 +654,14 @@ func _pipe(a: Vector3,b: Vector3,radius: float,color: String) -> void:
 	mesh.height = direction.length()
 	mesh.radial_segments = 8
 	var up := Vector3.FORWARD if absf(direction.normalized().dot(Vector3.UP))>.98 else Vector3.UP
-	var basis := Basis.looking_at(direction.normalized(),up)*Basis(Vector3.RIGHT,PI*.5)
-	_batch_mesh(mesh,color,Transform3D(basis,midpoint))
+	var local_basis := Basis.looking_at(direction.normalized(),up)*Basis(Vector3.RIGHT,PI*.5)
+	_batch_mesh(mesh,color,Transform3D(local_basis,midpoint))
 	# Slight collars make pipe joins and repaired endpoints visible.
 	for point in [a,b]:
 		var collar := CylinderMesh.new()
 		collar.top_radius=radius*1.34; collar.bottom_radius=radius*1.34
 		collar.height=minf(.09,direction.length()*.25); collar.radial_segments=8
-		_batch_mesh(collar,color,Transform3D(basis,point))
+		_batch_mesh(collar,color,Transform3D(local_basis,point))
 
 func _cylinder(at: Vector3,radius: float,height: float,color: String,angles := Vector3.ZERO,segments := 8) -> void:
 	var mesh := CylinderMesh.new()
@@ -680,13 +680,13 @@ func _box(at: Vector3,size: Vector3,color: String,angles := Vector3.ZERO) -> voi
 	mesh.size = size
 	_batch_mesh(mesh,color,Transform3D(Basis.from_euler(angles),at))
 
-func _batch_mesh(mesh: PrimitiveMesh,color: String,transform: Transform3D) -> void:
+func _batch_mesh(mesh: PrimitiveMesh,color: String,p_transform: Transform3D) -> void:
 	var key := color
 	if not _batches.has(key):
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_batches[key] = surface
-	_batches[key].append_from(mesh,0,transform)
+	_batches[key].append_from(mesh,0,p_transform)
 
 func _flush() -> void:
 	for color in _batches:

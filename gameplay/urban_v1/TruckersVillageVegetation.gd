@@ -12,7 +12,7 @@ const WALKS := [[Vector2(-35,3),Vector2(-50,3),Vector2(-54,14),Vector2(-35,14)],
 	[Vector2(44,3),Vector2(49,3),Vector2(49,24),Vector2(44,24)]]
 const FOOTPATH := [Vector2(44,-53),Vector2(44,-42),Vector2(40,-26),Vector2(26,-13),Vector2(15,-2),Vector2(-5,4)]
 static var _crown: ArrayMesh
-static var _bush: ArrayMesh
+
 
 static func build(v: Node3D) -> void:
 	var rng := RandomNumberGenerator.new()
@@ -127,6 +127,8 @@ static func _foliage() -> ArrayMesh:
 			var b: Vector3 = clump[0]+vertices[indices[i+1]]*clump[1]
 			var c: Vector3 = clump[0]+vertices[indices[i+2]]*clump[1]
 			var normal := (c-a).cross(b-a).normalized()
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			var shade := .79+float((i/3)%7)*.038
 			for point in [a,b,c]:
 				tool.set_normal(normal)

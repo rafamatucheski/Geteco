@@ -1,0 +1,4 @@
+interface:
+  display_name: "Auditor viário"
+  short_description: "Revisa ruas, cruzamentos, semáforos e trânsito real"
+  default_prompt: "Use $auditoria-viaria para auditar a malha e os semáforos do Geteco com evidências no jogo e achados priorizados."

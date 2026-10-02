@@ -42,10 +42,10 @@ static func accepts(container: String,id: String) -> bool:
 	return container!="trunk" or id.begins_with("weapon:") or id.begins_with("ammo:")
 
 static func ammo_slots(entries: Array, ignored := -1) -> int:
-	var count:=0
+	var local_count:=0
 	for i in entries.size():
-		if i!=ignored and str(entries[i].id).begins_with("ammo:"): count+=1
-	return count
+		if i!=ignored and str(entries[i].id).begins_with("ammo:"): local_count+=1
+	return local_count
 
 static func extent(entry: Dictionary) -> Vector2i:
 	var definition := spec(str(entry.id))
@@ -64,9 +64,9 @@ static func fits(entries: Array, bounds: Vector2i, item: Dictionary, cell: Vecto
 static func find_cell(entries: Array, bounds: Vector2i, item: Dictionary) -> Vector2i:
 	var occupied := {}
 	for entry in entries:
-		var size:=extent(entry)
-		for dy in size.y:
-			for dx in size.x: occupied[Vector2i(int(entry.x)+dx,int(entry.y)+dy)]=true
+		var branch_size:=extent(entry)
+		for dy in branch_size.y:
+			for dx in branch_size.x: occupied[Vector2i(int(entry.x)+dx,int(entry.y)+dy)]=true
 	var size:=extent(item)
 	for y in bounds.y:
 		for x in bounds.x:

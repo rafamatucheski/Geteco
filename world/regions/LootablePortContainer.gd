@@ -23,6 +23,10 @@ var lock_sound: AudioStreamPlayer3D
 var layout_cycle := -1
 var cargo_props: Node3D
 
+# Each entry contains immutable geometry/resources, never a live container or
+# interaction state. Bodies, hinges and fade materials remain instance-owned.
+static var _static_parts: Dictionary = {}
+
 func build(point: Vector3, size: Vector2) -> void:
 	position = point
 	dimensions = size
@@ -31,30 +35,36 @@ func build(point: Vector3, size: Vector2) -> void:
 	name = cargo_id
 	set_meta("native_dynamic_roof",true)
 	add_to_group("lootable_port_containers")
+	var upper_theme := posmod(int(point.x)+1,5) if posmod(int(point.x),3) == 0 else -1
+	var cache_key := "%s/%d/%d" % [var_to_str(size),posmod(int(point.x),5),upper_theme]
 	var w := size.x
 	var d := size.y
 	var color: Color = [Color("995343"),Color("427788"),Color("487c73"),Color("b99549"),Color("bfc5bb")][posmod(int(point.x),5)]
 	var floor_group := Node3D.new()
 	add_child(floor_group)
-	_box(floor_group,"Floor",Vector3(0,.012,0),Vector3(w,.024,d),Color("695944"),false)
-	for i in 11:
-		_box(floor_group,"PlankSeam",Vector3(0,.027,-d*.5+(i+1)*d/12),Vector3(w,.005,.016),Color("292922"),false)
-	for x in [-w*.5+.3,0,w*.5-.3]:
-		_box(floor_group,"FloorRail",Vector3(x,.03,0),Vector3(.065,.008,d),Color("45483f"),false)
-	OPTIMIZER.optimize_hierarchy(floor_group)
+	if not _restore_static_part(floor_group,cache_key+"/floor"):
+		_box(floor_group,"Floor",Vector3(0,.012,0),Vector3(w,.024,d),Color("695944"),false)
+		for i in 11:
+			_box(floor_group,"PlankSeam",Vector3(0,.027,-d*.5+(i+1)*d/12),Vector3(w,.005,.016),Color("292922"),false)
+		for x in [-w*.5+.3,0,w*.5-.3]:
+			_box(floor_group,"FloorRail",Vector3(x,.03,0),Vector3(.065,.008,d),Color("45483f"),false)
+		OPTIMIZER.optimize_hierarchy(floor_group)
+		_static_parts[cache_key+"/floor"] = _capture_static_children(floor_group)
 	for z in [-1,1]:
 		var side := Node3D.new()
 		add_child(side)
 		sides.append(side)
 		side.set_meta("side",z)
-		_box(side,"Wall",Vector3(0,height*.5,z*d*.5),Vector3(w,height,.15),color,true)
-		_box(side,"InnerLiner",Vector3(0,height*.5,z*(d*.5-.083)),Vector3(w-.16,height-.14,.012),Color("8b9182"),false)
-		for y in [.14,height-.10]:
-			_box(side,"SteelRail",Vector3(0,y,z*d*.5),Vector3(w,.17,.21),color.darkened(.36),false)
-		for i in 40:
-			_box(side,"Rib",Vector3(-w*.5+.25+i*(w-.5)/39,height*.5,z*(d*.5+.08)),Vector3(.11,height-.25,.10),color.lightened(.10),false)
-			_box(side,"InnerRib",Vector3(-w*.5+.25+i*(w-.5)/39,height*.5,z*(d*.5-.10)),Vector3(.055,height-.28,.035),Color("727c70"),false)
-		OPTIMIZER.optimize_hierarchy(side)
+		if not _restore_static_part(side,cache_key+"/wall"+str(z)+""):
+			_box(side,"Wall",Vector3(0,height*.5,z*d*.5),Vector3(w,height,.15),color,true)
+			_box(side,"InnerLiner",Vector3(0,height*.5,z*(d*.5-.083)),Vector3(w-.16,height-.14,.012),Color("8b9182"),false)
+			for y in [.14,height-.10]:
+				_box(side,"SteelRail",Vector3(0,y,z*d*.5),Vector3(w,.17,.21),color.darkened(.36),false)
+			for i in 40:
+				_box(side,"Rib",Vector3(-w*.5+.25+i*(w-.5)/39,height*.5,z*(d*.5+.08)),Vector3(.11,height-.25,.10),color.lightened(.10),false)
+				_box(side,"InnerRib",Vector3(-w*.5+.25+i*(w-.5)/39,height*.5,z*(d*.5-.10)),Vector3(.055,height-.28,.035),Color("727c70"),false)
+			OPTIMIZER.optimize_hierarchy(side)
+			_static_parts[cache_key+"/wall"+str(z)+""] = _capture_static_children(side)
 	var back := Node3D.new()
 	add_child(back)
 	sides.append(back)
@@ -74,39 +84,94 @@ func build(point: Vector3, size: Vector2) -> void:
 		add_child(hinge)
 		doors.append(hinge)
 		hinge.set_meta("side",side)
-		_box(hinge,"Door",Vector3(0,height*.5,-side*d*.25),Vector3(.16,height,d*.5),color,true)
-		_box(hinge,"DoorLiner",Vector3(-.087,height*.5,-side*d*.25),Vector3(.012,height-.14,d*.5-.08),Color("7b8579"),false)
-		for y in [.16,height*.5,height-.16]:
-			_box(hinge,"DoorBrace",Vector3(.10,y,-side*d*.25),Vector3(.06,.09,d*.5-.04),color.darkened(.3),false)
-			_box(hinge,"Hinge",Vector3(.10,y,0),Vector3(.21,.24,.15),Color("626d68"),false)
-		for rib in 7:
-			_box(hinge,"DoorRib",Vector3(.1,height*.5,-side*(.15+rib*(d*.5-.3)/6)),Vector3(.045,height-.25,.055),color.lightened(.06),false)
-		for fraction in [.18,.36]:
-			_box(hinge,"LockingBar",Vector3(.12,height*.5,-side*d*fraction),Vector3(.055,height-.25,.055),Color("b3b7ad"),false)
-			_box(hinge,"LockHandle",Vector3(.20,1.1,-side*(d*fraction+.10)),Vector3(.10,.07,.30),Color("a3a79c"),false)
-		_box(hinge,"LockBox",Vector3(.20,1.05,-side*(d*.5-.12)),Vector3(.21,.22,.16),Color("a59461"),false)
-		OPTIMIZER.optimize_hierarchy(hinge)
+		if not _restore_static_part(hinge,cache_key+"/door"+str(side)+""):
+			_box(hinge,"Door",Vector3(0,height*.5,-side*d*.25),Vector3(.16,height,d*.5),color,true)
+			_box(hinge,"DoorLiner",Vector3(-.087,height*.5,-side*d*.25),Vector3(.012,height-.14,d*.5-.08),Color("7b8579"),false)
+			for y in [.16,height*.5,height-.16]:
+				_box(hinge,"DoorBrace",Vector3(.10,y,-side*d*.25),Vector3(.06,.09,d*.5-.04),color.darkened(.3),false)
+				_box(hinge,"Hinge",Vector3(.10,y,0),Vector3(.21,.24,.15),Color("626d68"),false)
+			for rib in 7:
+				_box(hinge,"DoorRib",Vector3(.1,height*.5,-side*(.15+rib*(d*.5-.3)/6)),Vector3(.045,height-.25,.055),color.lightened(.06),false)
+			for fraction in [.18,.36]:
+				_box(hinge,"LockingBar",Vector3(.12,height*.5,-side*d*fraction),Vector3(.055,height-.25,.055),Color("b3b7ad"),false)
+				_box(hinge,"LockHandle",Vector3(.20,1.1,-side*(d*fraction+.10)),Vector3(.10,.07,.30),Color("a3a79c"),false)
+			_box(hinge,"LockBox",Vector3(.20,1.05,-side*(d*.5-.12)),Vector3(.21,.22,.16),Color("a59461"),false)
+			OPTIMIZER.optimize_hierarchy(hinge)
+			_static_parts[cache_key+"/door"+str(side)+""] = _capture_static_children(hinge)
 	roof = Node3D.new()
 	add_child(roof)
-	_box(roof,"Roof",Vector3(0,height,0),Vector3(w+.15,.14,d+.16),color.lightened(.07),false)
-	for i in 40:
-		_box(roof,"RoofRib",Vector3(-w*.5+.25+i*(w-.5)/39,height+.10,0),Vector3(.11,.06,d),color.lightened(.13),false)
-	# The upper container remains scenery; it fades with the occupied ground roof
-	# because its underside would otherwise entirely occlude the same interior.
-	if posmod(int(point.x),3) == 0:
-		var upper := preload("res://assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd").new()
-		upper.color_theme = posmod(int(point.x)+1,5)
-		upper.position.y = height+.10
-		upper.rotation.y = PI*.5
-		upper.scale = Vector3(d/2.44,w/12.19,w/12.19)
-		roof.add_child(upper)
-		for part in upper.get_children():
-			if part is MeshInstance3D and part.material_override is StandardMaterial3D:
-				part.material_override = MATERIALS.material(part.material_override.albedo_color)
-	OPTIMIZER.optimize_hierarchy(roof)
+	if not _restore_static_part(roof,cache_key+"/roof"):
+		_box(roof,"Roof",Vector3(0,height,0),Vector3(w+.15,.14,d+.16),color.lightened(.07),false)
+		for i in 40:
+			# Sink the underside into the roof instead of sharing its exact top
+			# plane (height+.07). Coplanar faces also fight in the shadow pass.
+			_box(roof,"RoofRib",Vector3(-w*.5+.25+i*(w-.5)/39,height+.09,0),Vector3(.11,.08,d),color.lightened(.13),false)
+		# The upper container remains scenery; it fades with the occupied ground roof
+		# because its underside would otherwise entirely occlude the same interior.
+		if posmod(int(point.x),3) == 0:
+			var upper := preload("res://assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd").new()
+			upper.color_theme = posmod(int(point.x)+1,5)
+			upper.position.y = height+.10
+			upper.rotation.y = PI*.5
+			upper.scale = Vector3(d/2.44,w/12.19,w/12.19)
+			roof.add_child(upper)
+			for part in upper.get_children():
+				if part is MeshInstance3D and part.material_override is StandardMaterial3D:
+					part.material_override = MATERIALS.material(part.material_override.albedo_color)
+		OPTIMIZER.optimize_hierarchy(roof)
+		_static_parts[cache_key+"/roof"] = _capture_static_children(roof)
 	# A chunk can stream in after session restoration. Restore before physics runs.
 	for service in get_tree().get_nodes_in_group("port_container_service"):
 		service.bind_container(self)
+
+
+func _capture_static_children(parent: Node3D) -> Array:
+	var rows: Array = []
+	for child in parent.get_children():
+		# The optimizer queues its source meshes; only surviving batches and
+		# original collision bodies belong in a reusable part.
+		if child.is_queued_for_deletion() or not child is Node3D: continue
+		var row := {"name":child.name,"transform":child.transform,"visible":child.visible,"type":"node","metadata":{},"children":_capture_static_children(child)}
+		for key in child.get_meta_list(): row.metadata[key] = child.get_meta(key)
+		if child is MeshInstance3D:
+			row.merge({"type":"mesh","mesh":child.mesh,"material":child.material_override,"shadows":child.cast_shadow,"layers":child.layers},true)
+		elif child is StaticBody3D:
+			row.merge({"type":"body","layer":child.collision_layer,"mask":child.collision_mask},true)
+		elif child is CollisionShape3D:
+			row.merge({"type":"shape","shape":child.shape,"disabled":child.disabled},true)
+		rows.append(row)
+	return rows
+
+func _restore_static_part(parent: Node3D, key: String) -> bool:
+	if not _static_parts.has(key): return false
+	_restore_static_children(parent,_static_parts[key])
+	return true
+
+func _restore_static_children(parent: Node3D, rows: Array) -> void:
+	for row: Dictionary in rows:
+		var child: Node3D
+		match str(row.type):
+			"mesh": child = MeshInstance3D.new()
+			"body": child = StaticBody3D.new()
+			"shape": child = CollisionShape3D.new()
+			_: child = Node3D.new()
+		child.name = row.name
+		child.transform = row.transform
+		child.visible = row.visible
+		for key in row.metadata: child.set_meta(key,row.metadata[key])
+		if child is MeshInstance3D:
+			child.mesh = row.mesh
+			child.material_override = row.material
+			child.cast_shadow = row.shadows
+			child.layers = row.layers
+		elif child is StaticBody3D:
+			child.collision_layer = row.layer
+			child.collision_mask = row.mask
+		elif child is CollisionShape3D:
+			child.shape = row.shape
+			child.disabled = row.disabled
+		parent.add_child(child)
+		_restore_static_children(child,row.children)
 
 func _box(parent: Node3D, id: String, at: Vector3, size: Vector3, color: Color, solid: bool) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()

@@ -2,7 +2,7 @@ extends RefCounted
 ## Key poses for the imported skeleton: hands stay in front of the jacket.
 const GRENADE_RELEASE := 0.20
 
-static func sample(id: String, age: float, aiming: bool) -> Dictionary:
+static func sample(id: String, age: float, _aiming: bool) -> Dictionary:
 	if id == "grenade":
 		var ready := Vector3(0.24,0.72,-0.10)
 		var cocked := Vector3(0.25,1.18,-0.12)

@@ -98,6 +98,8 @@ func _pull_curve(origin: float, length: float) -> Curve3D:
 		rooms.append(info.room)
 	# O deslocamento final é o menor espaço da metade final da manobra.
 	var final_shift := RULES.MAX_SHIFT
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	for index in range(count / 3, count): final_shift = minf(final_shift, rooms[index])
 	if final_shift < RULES.MIN_SHIFT: return null
 	var curve := Curve3D.new()

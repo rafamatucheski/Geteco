@@ -24,25 +24,25 @@ func _mat(id: String, color: Color, roughness := 0.82, metallic := 0.0, emission
 	materials[id] = material
 	return material
 
-func _box(name: String, point: Vector3, size: Vector3, material: Material, rotation := Vector3.ZERO) -> MeshInstance3D:
+func _box(p_name: String, point: Vector3, size: Vector3, material: Material, p_rotation := Vector3.ZERO) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
-	node.name = name
-	if name == "MainHall": node.set_meta("interior_solid_id",&"LodgeStructure")
-	elif name == "PorchPost": node.set_meta("interior_solid_id",StringName(name+str(point)))
+	node.name = p_name
+	if p_name == "MainHall": node.set_meta("interior_solid_id",&"LodgeStructure")
+	elif p_name == "PorchPost": node.set_meta("interior_solid_id",StringName(p_name+str(point)))
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	node.mesh = mesh
 	node.material_override = material
 	node.position = point
-	node.rotation_degrees = rotation
+	node.rotation_degrees = p_rotation
 	add_child(node)
 	return node
 
-func _cylinder(name: String, point: Vector3, radius: float, height: float, material: Material, rotation := Vector3.ZERO) -> MeshInstance3D:
+func _cylinder(p_name: String, point: Vector3, radius: float, height: float, material: Material, p_rotation := Vector3.ZERO) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
-	node.name = name
-	if name == "MainHall": node.set_meta("interior_solid_id",&"LodgeStructure")
-	elif name == "PorchPost": node.set_meta("interior_solid_id",StringName(name+str(point)))
+	node.name = p_name
+	if p_name == "MainHall": node.set_meta("interior_solid_id",&"LodgeStructure")
+	elif p_name == "PorchPost": node.set_meta("interior_solid_id",StringName(p_name+str(point)))
 	var mesh := CylinderMesh.new()
 	mesh.top_radius = radius
 	mesh.bottom_radius = radius
@@ -51,7 +51,7 @@ func _cylinder(name: String, point: Vector3, radius: float, height: float, mater
 	node.mesh = mesh
 	node.material_override = material
 	node.position = point
-	node.rotation_degrees = rotation
+	node.rotation_degrees = p_rotation
 	add_child(node)
 	return node
 
@@ -94,15 +94,15 @@ func _build_lodge() -> void:
 		_box("OutsideSki", Vector3(-5.65 + i * 0.28, 1.05, -4.45), Vector3(0.10, 0.10, 1.85), color, Vector3(-8, 0, -5))
 	_box("SkiRack", Vector3(-5.1, 0.8, -4.25), Vector3(2.1, 0.12, 0.18), timber)
 
-	var sign := Label3D.new()
-	sign.name = "LodgeName"
-	sign.text = "CUME BRANCO"
-	sign.font_size = 72
-	sign.pixel_size = 0.007
-	sign.modulate = Color("f2e7cb")
-	sign.outline_size = 0
-	sign.position = Vector3(0, 3.15, 4.08)
-	add_child(sign)
+	var sign_node := Label3D.new()
+	sign_node.name = "LodgeName"
+	sign_node.text = "CUME BRANCO"
+	sign_node.font_size = 72
+	sign_node.pixel_size = 0.007
+	sign_node.modulate = Color("f2e7cb")
+	sign_node.outline_size = 0
+	sign_node.position = Vector3(0, 3.15, 4.08)
+	add_child(sign_node)
 
 	for point in [Vector3(-4.5, 3.1, 4.25), Vector3(4.5, 3.1, 4.25), Vector3(0, 2.8, -4.25)]:
 		var light := OmniLight3D.new()

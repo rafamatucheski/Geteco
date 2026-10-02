@@ -55,8 +55,8 @@ func pose(distance: float, lane := 0.0) -> Transform3D:
 	var p := sample(distance)
 	var direction := sample(distance+1)-p
 	direction.y = 0
-	var basis := Basis(Vector3.UP,atan2(-direction.x,-direction.z))
-	return Transform3D(basis,p+basis.x*lane+Vector3.UP*.15)
+	var local_basis := Basis(Vector3.UP,atan2(-direction.x,-direction.z))
+	return Transform3D(local_basis,p+local_basis.x*lane+Vector3.UP*.15)
 
 const GRID_CELL := 12.0
 var _grid: Dictionary = {}
@@ -518,12 +518,12 @@ func _build_props() -> void:
 		post.reparent(gate,false)
 	var beam := _box("StartBeam",Vector3(0,4.8,0),Vector3(12.5,.75,.45),Color("b75b28"))
 	beam.reparent(gate,false)
-	var sign := Label3D.new()
-	sign.text = "VÉRTICE"
-	sign.font_size = 64
-	sign.pixel_size = .012
-	sign.position = Vector3(0,4.8,.26)
-	gate.add_child(sign)
+	var sign_node := Label3D.new()
+	sign_node.text = "VÉRTICE"
+	sign_node.font_size = 64
+	sign_node.pixel_size = .012
+	sign_node.position = Vector3(0,4.8,.26)
+	gate.add_child(sign_node)
 	# GroundDetail builds one continuous, gently graded yard and access path.
 
 func _dress_quarry() -> void:

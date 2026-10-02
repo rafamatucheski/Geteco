@@ -36,29 +36,29 @@ func setup(p_data: Dictionary) -> void:
 	height = resolved_height(data)
 
 static func resolved_height(source: Dictionary) -> float:
-	var data := source
-	var building_id := str(data.get("id",""))
-	var building_kind := str(data.get("kind","office"))
-	var variant_seed := int(data.get("variant_seed",0))
+	var local_data := source
+	var local_building_id := str(local_data.get("id",""))
+	var local_building_kind := str(local_data.get("kind","office"))
+	var local_variant_seed := int(local_data.get("variant_seed",0))
 	var value := 4.5
 	# Existing vertical conversion remains unchanged unless V1 publishes an
 	# explicit override (Exchange/Civic). Generic heights are still an open
 	# fidelity item and are not guessed from screen-space extrusion here.
-	if data.has("height_override"):
-		value = float(data.height_override)
-	elif building_kind in ["brownstone", "rowhouse", "rowhouse_terrace", "l_shaped_block"]:
+	if local_data.has("height_override"):
+		value = float(local_data.height_override)
+	elif local_building_kind in ["brownstone", "rowhouse", "rowhouse_terrace", "l_shaped_block"]:
 		value = 6.8
-	elif building_kind in ["office", "police_precinct"]:
+	elif local_building_kind in ["office", "police_precinct"]:
 		value = 7.5
-	elif building_kind in ["hospital"]:
+	elif local_building_kind in ["hospital"]:
 		value = 8.0
-	elif building_kind in ["warehouse", "warehouse_shop"]:
+	elif local_building_kind in ["warehouse", "warehouse_shop"]:
 		value = 5.2
-	elif building_kind in ["fire_station"]:
+	elif local_building_kind in ["fire_station"]:
 		value = 6.2
-	elif building_kind in ["cobra_house"]:
+	elif local_building_kind in ["cobra_house"]:
 		value = 3.6
-	elif building_kind in ["garage"]:
+	elif local_building_kind in ["garage"]:
 		value = 4.2
 	else:
 		value = 4.6
@@ -66,18 +66,18 @@ static func resolved_height(source: Dictionary) -> float:
 	# Sem isso todo prédio do mesmo tipo tinha a mesma altura exata lado a
 	# lado, o que lê como fileira repetida em vez de skyline de cidade.
 	# Só entra quando a V1 não publicou uma altura autorada explícita.
-	if not data.has("height_override"):
-		value *= _height_variance_factor(building_id,building_kind,variant_seed)
+	if not local_data.has("height_override"):
+		value *= _height_variance_factor(local_building_id,local_building_kind,local_variant_seed)
 	return value
 
 ## Fator determinístico (mesmo prédio sempre gera o mesmo resultado) que
 ## varia a altura por tipo: torres comerciais variam bastante (baixinha a
 ## bem mais alta que a vizinha), residências baixas variam pouco para não
 ## quebrar a linha de cornija da quadra.
-static func _height_variance_factor(building_id: String, building_kind: String, variant_seed: int) -> float:
-	var h := hash(building_id + "|height|" + str(variant_seed))
+static func _height_variance_factor(p_building_id: String, p_building_kind: String, p_variant_seed: int) -> float:
+	var h := hash(p_building_id + "|height|" + str(p_variant_seed))
 	var t := (h % 1000) / 1000.0 # 0.0..1.0 determinístico
-	match building_kind:
+	match p_building_kind:
 		"office", "police_precinct", "hospital", "fire_station":
 			return lerpf(0.72, 1.85, t) # mistura prédio baixo e torre alta na mesma rua
 		"warehouse", "warehouse_shop", "garage":

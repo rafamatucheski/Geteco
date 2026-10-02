@@ -5,12 +5,12 @@ static var cache: Dictionary = {}
 static func material(color: Color, timber := false) -> StandardMaterial3D:
 	var key := color.to_html()+str(timber)
 	if cache.has(key): return cache[key]
-	var material := StandardMaterial3D.new()
-	material.resource_name = "Cargo_"+key
-	material.roughness = .94 if timber else .72
-	material.metallic = 0.0 if timber else .32
-	material.uv1_triplanar = true
-	material.uv1_scale = Vector3(.8,.8,.8)
+	var surface_material := StandardMaterial3D.new()
+	surface_material.resource_name = "Cargo_"+key
+	surface_material.roughness = .94 if timber else .72
+	surface_material.metallic = 0.0 if timber else .32
+	surface_material.uv1_triplanar = true
+	surface_material.uv1_scale = Vector3(.8,.8,.8)
 	var image := Image.create(128,128,false,Image.FORMAT_RGB8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 5917
@@ -30,6 +30,6 @@ static func material(color: Color, timber := false) -> StandardMaterial3D:
 				tint *= lerpf(.92,1.04,fine)
 			image.set_pixel(x,y,tint)
 	image.generate_mipmaps()
-	material.albedo_texture = ImageTexture.create_from_image(image)
-	cache[key] = material
-	return material
+	surface_material.albedo_texture = ImageTexture.create_from_image(image)
+	cache[key] = surface_material
+	return surface_material

@@ -16,6 +16,7 @@ uniform int kind = 0;
 uniform vec3 base_color : source_color = vec3(0.54, 0.44, 0.33);
 // Metros por unidade de UV da malha.
 uniform float uv_meters = 2.0;
+uniform bool edge_alpha = false;
 instance uniform vec2 uv_origin = vec2(0.0);
 
 varying vec2 q;
@@ -89,6 +90,7 @@ void fragment() {
 	float snow = smoothstep(0.62, 0.72, macro * 0.55 + mid * 0.3 + fine * 0.15) * mountain * (kind == 1 ? 0.55 : 0.8);
 	color = mix(color, vec3(0.86, 0.89, 0.93) * (0.92 + grain * 0.08), snow);
 	ALBEDO = color;
+	if (edge_alpha) ALPHA = COLOR.a;
 	ROUGHNESS = mix(rough, 0.6, snow);
 	SPECULAR = 0.25;
 

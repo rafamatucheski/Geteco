@@ -327,9 +327,9 @@ static func _spill_later(director: Node, body: RigidBody3D, flat: Vector3, delay
 		if not is_instance_valid(body): return
 		var at := body.global_position
 		# Lixo vai no piso sob a lata, não no ar onde ela estiver quicando.
-		var query := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 0.5, at + Vector3.DOWN * 4.0, 1)
-		var hit: Dictionary = body.get_world_3d().direct_space_state.intersect_ray(query)
-		director.spawn_litter(Vector3(at.x, hit.position.y if not hit.is_empty() else at.y - 0.3, at.z), flat)
+		var local_query := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 0.5, at + Vector3.DOWN * 4.0, 1)
+		var local_hit: Dictionary = body.get_world_3d().direct_space_state.intersect_ray(local_query)
+		director.spawn_litter(Vector3(at.x, local_hit.position.y if not local_hit.is_empty() else at.y - 0.3, at.z), flat)
 		director.play_prop_hit(at, "metal", 1.5))
 
 

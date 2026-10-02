@@ -1,3060 +1,3524 @@
 {
-	"regions": {
-		"harbor": {
-			"building/CanalHomesEast": {
-				"color": "#a6b2a0",
-				"height": 6.77144,
-				"height_resolved": true,
-				"id": "building/CanalHomesEast",
-				"locked": false,
-				"model": "brownstone",
-				"position": [
-					328.75,
-					-53.75
-				],
-				"rotation": 90.0,
-				"size": [
-					14.375,
-					11.25
-				],
-				"type": "building"
-			},
-			"building/CourtyardHouse": {
-				"color": "775e54",
-				"height": 7.5,
-				"id": "building/CourtyardHouse",
-				"locked": false,
-				"model": "cobra_house",
-				"position": [
-					523.0,
-					123.0
-				],
-				"rotation": 0.0,
-				"size": [
-					12.8125,
-					10.625
-				],
-				"type": "building"
-			},
-			"building/MarketHall": {
-				"color": "#d1a866",
-				"height": 4.78608,
-				"height_resolved": true,
-				"id": "building/MarketHall",
-				"locked": false,
-				"model": "warehouse_shop",
-				"position": [
-					109.375,
-					41.5625
-				],
-				"rotation": -179.909557950347,
-				"size": [
-					30.0,
-					13.75
-				],
-				"type": "building"
-			},
-			"building/Police": {
-				"color": "#68a8d3",
-				"height": 13.374975,
-				"height_resolved": true,
-				"id": "building/Police",
-				"locked": false,
-				"model": "police_precinct",
-				"position": [
-					68.0,
-					120.0
-				],
-				"rotation": 0.0,
-				"service_base": {
-					"color": "#68a8d3",
-					"height": 13.374975,
-					"model": "police_precinct",
-					"position": [
-						67.5,
-						121.875
-					],
-					"size": [
-						11.875,
-						15.625
-					]
-				},
-				"service_building": true,
-				"size": [
-					11.875,
-					15.625
-				],
-				"type": "building"
-			},
-			"harbor_prop/lamp/118.75000/72.81250": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/118.75000/72.81250",
-				"position": [
-					122.0,
-					71.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/19.68750/103.12500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/19.68750/103.12500",
-				"position": [
-					49.0,
-					112.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/19.68750/121.87500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/19.68750/121.87500",
-				"position": [
-					30.0,
-					112.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/19.68750/53.12500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/19.68750/53.12500",
-				"position": [
-					14.0755367279053,
-					40.9007873535156
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/30.31250/103.12500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/30.31250/103.12500",
-				"position": [
-					26.0,
-					105.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/30.31250/121.87500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/30.31250/121.87500",
-				"position": [
-					16.0,
-					128.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/31.25000/34.37500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/31.25000/34.37500",
-				"position": [
-					15.4394054412842,
-					21.1505374908447
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/315.62500/142.50000": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/315.62500/142.50000",
-				"position": [
-					323.0,
-					145.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/378.12500/-17.81250": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/378.12500/-17.81250",
-				"position": [
-					379.0,
-					-17.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/381.25000/142.50000": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/381.25000/142.50000",
-				"position": [
-					382.0,
-					135.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/50.00000/142.81250": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/50.00000/142.81250",
-				"position": [
-					23.0,
-					139.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/62.50000/142.81250": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/62.50000/142.81250",
-				"position": [
-					42.0,
-					140.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/lamp/86.56250/121.87500": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "harbor_prop/lamp/86.56250/121.87500",
-				"position": [
-					86.0,
-					124.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"harbor_prop/tree/109.37500/127.50000": {
-				"color": "446b53",
-				"id": "harbor_prop/tree/109.37500/127.50000",
-				"position": [
-					110.0,
-					127.0
-				],
-				"rotation": 0.0,
-				"scale": 1.25,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 1.0
-			},
-			"harbor_prop/tree/12.81250/102.50000": {
-				"color": "465d3f",
-				"id": "harbor_prop/tree/12.81250/102.50000",
-				"position": [
-					-1.0,
-					123.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"harbor_prop/tree/12.81250/113.75000": {
-				"color": "465d3f",
-				"id": "harbor_prop/tree/12.81250/113.75000",
-				"position": [
-					10.0,
-					126.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"harbor_prop/tree/12.81250/125.00000": {
-				"color": "465d3f",
-				"id": "harbor_prop/tree/12.81250/125.00000",
-				"position": [
-					2.0,
-					129.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"harbor_prop/tree/2.81250/102.50000": {
-				"color": "465d3f",
-				"id": "harbor_prop/tree/2.81250/102.50000",
-				"position": [
-					-5.0,
-					123.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"harbor_prop/tree/2.81250/113.75000": {
-				"color": "465d3f",
-				"id": "harbor_prop/tree/2.81250/113.75000",
-				"position": [
-					9.0,
-					130.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"harbor_prop/tree/2.81250/125.00000": {
-				"color": "465d3f",
-				"id": "harbor_prop/tree/2.81250/125.00000",
-				"position": [
-					-13.0,
-					133.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"harbor_prop/tree/40.62500/50.31250": {
-				"color": "446b53",
-				"id": "harbor_prop/tree/40.62500/50.31250",
-				"position": [
-					43.0,
-					54.0
-				],
-				"rotation": 0.0,
-				"scale": 1.25,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 1.0
-			},
-			"harbor_prop/tree/55.00000/50.31250": {
-				"color": "446b53",
-				"id": "harbor_prop/tree/55.00000/50.31250",
-				"position": [
-					53.0,
-					50.0
-				],
-				"rotation": 0.0,
-				"scale": 1.25,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 1.0
-			},
-			"harbor_prop/tree/91.56250/54.06250": {
-				"color": "446b53",
-				"id": "harbor_prop/tree/91.56250/54.06250",
-				"position": [
-					91.5625,
-					54.0625
-				],
-				"rotation": -89.1120301010523,
-				"scale": 1.25,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 1.0
-			},
-			"new/1790358009_372_1217611528": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "new/1790358009_372_1217611528",
-				"position": [
-					280.0,
-					350.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"new/1790358024_107_3864034716": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 4.0,
-				"id": "new/1790358024_107_3864034716",
-				"position": [
-					365.0,
-					358.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"new/1790393322_876_2616430431": {
-				"color": "465d3f",
-				"id": "new/1790393322_876_2616430431",
-				"position": [
-					-2.0,
-					8.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"new/1790393327_837_1613628693": {
-				"color": "465d3f",
-				"id": "new/1790393327_837_1613628693",
-				"position": [
-					26.0,
-					8.0
-				],
-				"rotation": 0.0,
-				"scale": 0.85,
-				"snow": false,
-				"tree_model": "harbor",
-				"type": "tree",
-				"variant": 2.0
-			},
-			"new/1790425919_711_3345507250": {
-				"color": "685b43",
-				"deleted": true,
-				"height": 9.0,
-				"id": "new/1790425919_711_3345507250",
-				"model": "house_duplex",
-				"position": [
-					7.0,
-					97.0
-				],
-				"rotation": 0.0,
-				"size": [
-					16.0,
-					12.0
-				],
-				"type": "building"
-			},
-			"new/1790426032_677_264954517": {
-				"color": "a9b3a1",
-				"deleted": true,
-				"height": 6.0,
-				"id": "new/1790426032_677_264954517",
-				"model": "house_gable",
-				"position": [
-					6.0,
-					94.0
-				],
-				"rotation": 0.0,
-				"size": [
-					11.0,
-					12.0
-				],
-				"type": "building"
-			},
-			"new/1790426066_503_97028106": {
-				"color": "91634e",
-				"height": 12.0,
-				"id": "new/1790426066_503_97028106",
-				"model": "urban_infill",
-				"position": [
-					7.0,
-					92.0
-				],
-				"rotation": 91.3214155249095,
-				"size": [
-					8.55372619628906,
-					12.8305902481079
-				],
-				"type": "building"
-			},
-			"new/1790426877_636_2342363314": {
-				"color": "aa8065",
-				"height": 18.0,
-				"id": "new/1790426877_636_2342363314",
-				"model": "urban_infill",
-				"position": [
-					6.0,
-					109.0
-				],
-				"rotation": 0.0,
-				"size": [
-					14.3659029006958,
-					21.5488548278809
-				],
-				"type": "building"
-			},
-			"new/1790432139_406_2568146191": {
-				"color": "b9a58c",
-				"height": 12.0,
-				"id": "new/1790432139_406_2568146191",
-				"model": "urban_slab",
-				"position": [
-					137.0,
-					-1.0
-				],
-				"rotation": 0.0,
-				"size": [
-					16.0,
-					10.0
-				],
-				"type": "building"
-			},
-			"new/1790432236_682_2325181222": {
-				"color": "c0ab88",
-				"height": 20.0,
-				"id": "new/1790432236_682_2325181222",
-				"model": "urban_deco",
-				"position": [
-					279.0,
-					-84.0
-				],
-				"rotation": 90.0,
-				"size": [
-					8.59195709228516,
-					10.3103485107422
-				],
-				"type": "building"
-			},
-			"new/1790432424_77_318130123": {
-				"color": "4b7260",
-				"id": "new/1790432424_77_318130123",
-				"model": "dumpster",
-				"position": [
-					214.0,
-					314.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"size": [
-					1.79999995231628,
-					1.0
-				],
-				"type": "prop"
-			},
-			"new/1790432659_663_692553505": {
-				"color": "9d593c",
-				"id": "new/1790432659_663_692553505",
-				"model": "barrel",
-				"position": [
-					145.0,
-					126.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"size": [
-					0.649999976158142,
-					0.649999976158142
-				],
-				"type": "prop"
-			},
-			"paving/5": {
-				"color": "a69f8c",
-				"id": "paving/5",
-				"label": "Calçada / piso existente",
-				"paving": true,
-				"position": [
-					53.0,
-					108.0
-				],
-				"rotation": 0.0,
-				"size": [
-					42.5,
-					45.625
-				],
-				"surface": "concrete",
-				"type": "ground"
-			},
-			"piece/cobra/cobra_dry_meadow/0": {
-				"id": "piece/cobra/cobra_dry_meadow/0",
-				"position": [
-					478.0,
-					105.0
-				],
-				"rotation": 0.0,
-				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
-				"type": "piece"
-			},
-			"piece/cobra/cobra_footpath/12": {
-				"id": "piece/cobra/cobra_footpath/12",
-				"position": [
-					484.0,
-					140.0
-				],
-				"rotation": 0.0,
-				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
-				"type": "piece"
-			},
-			"piece/cobra/cobra_footpath/2": {
-				"id": "piece/cobra/cobra_footpath/2",
-				"outline": [
-					[
-						-2.125,
-						4.78500366210938
-					],
-					[
-						2.08743381500244,
-						-5.97014427185059
-					],
-					[
-						5.07250595092773,
-						-4.92642688751221
-					],
-					[
-						-0.375,
-						5.21499633789063
-					]
-				],
-				"position": [
-					454.0,
-					86.0
-				],
-				"rotation": 0.836998701650043,
-				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
-				"type": "piece"
-			},
-			"piece/cobra/cobra_footpath/7": {
-				"id": "piece/cobra/cobra_footpath/7",
-				"position": [
-					453.125,
-					123.0
-				],
-				"rotation": 0.0,
-				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
-				"type": "piece"
-			},
-			"piece/cobra/cobra_footpath_edge/2": {
-				"id": "piece/cobra/cobra_footpath_edge/2",
-				"outline": [
-					[
-						-2.34500122070313,
-						4.72499847412109
-					],
-					[
-						1.625,
-						-5.625
-					],
-					[
-						4.625,
-						-4.625
-					],
-					[
-						-0.154998779296875,
-						5.27500152587891
-					]
-				],
-				"position": [
-					454.375,
-					85.625
-				],
-				"rotation": 0.0,
-				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
-				"type": "piece"
-			},
-			"piece/cobra/cobra_secret_drive/1": {
-				"id": "piece/cobra/cobra_secret_drive/1",
-				"outline": [
-					[
-						-2.25,
-						-11.6875
-					],
-					[
-						1.75,
-						-10.6875
-					],
-					[
-						2.0,
-						18.4425048828125
-					],
-					[
-						-2.0,
-						18.4425048828125
-					]
-				],
-				"position": [
-					451.25,
-					124.6875
-				],
-				"rotation": 0.0,
-				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
-				"type": "piece"
-			},
-			"piece/route/connecting_streets/0": {
-				"id": "piece/route/connecting_streets/0",
-				"position": [
-					103.0,
-					65.0
-				],
-				"rotation": 0.0,
-				"source_record": "71667481df589143fa1e2b9834f558a34eb28696c212d38a1c7b6368aacd808e",
-				"type": "piece"
-			},
-			"piece/route/connecting_streets/4": {
-				"id": "piece/route/connecting_streets/4",
-				"position": [
-					76.0,
-					94.0
-				],
-				"rotation": 0.0,
-				"source_record": "71667481df589143fa1e2b9834f558a34eb28696c212d38a1c7b6368aacd808e",
-				"type": "piece"
-			},
-			"piece/route/connecting_streets/5": {
-				"id": "piece/route/connecting_streets/5",
-				"position": [
-					76.0,
-					94.0
-				],
-				"rotation": 0.0,
-				"source_record": "71667481df589143fa1e2b9834f558a34eb28696c212d38a1c7b6368aacd808e",
-				"type": "piece"
-			},
-			"piece/route/delegacia/17": {
-				"id": "piece/route/delegacia/17",
-				"position": [
-					70.0,
-					143.0
-				],
-				"rotation": 0.0,
-				"source_record": "17ecf215a3da63c65a039d88edbe92a248801f4dcd6b58f9f32694acd88a3b29",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/0": {
-				"id": "piece/route/rodoviaria/0",
-				"position": [
-					98.0,
-					69.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/10": {
-				"id": "piece/route/rodoviaria/10",
-				"position": [
-					93.0,
-					73.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/11": {
-				"id": "piece/route/rodoviaria/11",
-				"position": [
-					102.0,
-					67.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/12": {
-				"id": "piece/route/rodoviaria/12",
-				"position": [
-					113.0,
-					69.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/16": {
-				"id": "piece/route/rodoviaria/16",
-				"position": [
-					119.0,
-					67.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/2": {
-				"id": "piece/route/rodoviaria/2",
-				"position": [
-					116.0,
-					69.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/route/rodoviaria/4": {
-				"id": "piece/route/rodoviaria/4",
-				"position": [
-					107.0,
-					69.0
-				],
-				"rotation": 0.0,
-				"source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
-				"type": "piece"
-			},
-			"piece/transit/urban_station_1": {
-				"id": "piece/transit/urban_station_1",
-				"position": [
-					38.9307708740234,
-					126.916709899902
-				],
-				"rotation": 270.25,
-				"source_record": "transit/urban_station_1",
-				"type": "piece"
-			},
-			"piece/transit/urban_station_2": {
-				"id": "piece/transit/urban_station_2",
-				"position": [
-					11.2882051467896,
-					55.625
-				],
-				"rotation": 2.0,
-				"source_record": "transit/urban_station_2",
-				"type": "piece"
-			},
-			"road/cobra_approach": {
-				"id": "road/cobra_approach",
-				"points": [
-					[
-						401.658325195313,
-						106.01806640625
-					],
-					[
-						462.5,
-						106.25
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.25
-			},
-			"road/courtyard_lane": {
-				"id": "road/courtyard_lane",
-				"points": [
-					[
-						290.0,
-						112.0
-					],
-					[
-						347.0,
-						112.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 4.5
-			},
-			"road/dock_street": {
-				"id": "road/dock_street",
-				"points": [
-					[
-						4.0,
-						139.0
-					],
-					[
-						15.0,
-						134.0
-					],
-					[
-						26.0,
-						135.0
-					],
-					[
-						81.0,
-						135.0
-					],
-					[
-						190.87158203125,
-						138.709197998047
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/east_union_avenue": {
-				"id": "road/east_union_avenue",
-				"points": [
-					[
-						346.982177734375,
-						-126.001434326172
-					],
-					[
-						347.0,
-						140.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/eastgate_drive": {
-				"id": "road/eastgate_drive",
-				"points": [
-					[
-						389.003143310547,
-						-125.168167114258
-					],
-					[
-						408.0,
-						-125.0
-					],
-					[
-						401.0,
-						130.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/exchange_lane": {
-				"id": "road/exchange_lane",
-				"points": [
-					[
-						290.0,
-						63.0
-					],
-					[
-						347.0,
-						63.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 4.5
-			},
-			"road/foundry_avenue": {
-				"id": "road/foundry_avenue",
-				"points": [
-					[
-						25.0,
-						25.0
-					],
-					[
-						403.881683349609,
-						25.0242004394531
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/island_dock_street": {
-				"id": "road/island_dock_street",
-				"points": [
-					[
-						290.0,
-						135.0
-					],
-					[
-						290.0,
-						140.0
-					],
-					[
-						401.0,
-						140.0
-					],
-					[
-						401.0,
-						130.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/island_esplanade": {
-				"id": "road/island_esplanade",
-				"points": [
-					[
-						291.0,
-						-122.0
-					],
-					[
-						290.0,
-						135.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/island_market_street": {
-				"id": "road/island_market_street",
-				"points": [
-					[
-						290.137023925781,
-						77.9979248046875
-					],
-					[
-						402.427886962891,
-						77.9842987060547
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/map2_highway_inbound": {
-				"id": "road/map2_highway_inbound",
-				"points": [
-					[
-						367.5,
-						-262.5
-					],
-					[
-						368.025115966797,
-						-124.939125061035
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.0
-			},
-			"road/map2_highway_outbound": {
-				"id": "road/map2_highway_outbound",
-				"points": [
-					[
-						382.987670898438,
-						-124.538787841797
-					],
-					[
-						382.5,
-						-262.5
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.0
-			},
-			"road/market_street": {
-				"id": "road/market_street",
-				"points": [
-					[
-						20.9903564453125,
-						77.9774551391602
-					],
-					[
-						192.467315673828,
-						77.9541473388672
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/medical_garden_lane": {
-				"id": "road/medical_garden_lane",
-				"points": [
-					[
-						81.0168304443359,
-						121.997634887695
-					],
-					[
-						137.5,
-						122.5
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.25
-			},
-			"road/memorial_north": {
-				"id": "road/memorial_north",
-				"points": [
-					[
-						-78.125,
-						77.0
-					],
-					[
-						22.9080390930176,
-						77.9963684082031
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/memorial_south": {
-				"id": "road/memorial_south",
-				"points": [
-					[
-						4.0,
-						139.0
-					],
-					[
-						-5.0,
-						143.0
-					],
-					[
-						-77.0,
-						142.0
-					],
-					[
-						-77.0,
-						139.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/memorial_west": {
-				"id": "road/memorial_west",
-				"points": [
-					[
-						-77.0,
-						139.0
-					],
-					[
-						-78.125,
-						78.125
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/northbank_civic_avenue": {
-				"id": "road/northbank_civic_avenue",
-				"points": [
-					[
-						290.490386962891,
-						-69.0036315917969
-					],
-					[
-						406.46240234375,
-						-68.9873046875
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/northbank_gateway_avenue": {
-				"id": "road/northbank_gateway_avenue",
-				"points": [
-					[
-						291.0,
-						-121.0
-					],
-					[
-						291.0,
-						-124.0
-					],
-					[
-						291.0,
-						-127.0
-					],
-					[
-						398.0,
-						-125.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/northbank_neighborhood_street": {
-				"id": "road/northbank_neighborhood_street",
-				"points": [
-					[
-						290.377410888672,
-						-22.0014953613281
-					],
-					[
-						405.144989013672,
-						-20.9960174560547
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.625
-			},
-			"road/quay_boulevard": {
-				"id": "road/quay_boulevard",
-				"points": [
-					[
-						190.0,
-						25.0
-					],
-					[
-						190.0,
-						31.0
-					],
-					[
-						193.0,
-						127.0
-					],
-					[
-						192.058807373047,
-						138.591094970703
-					]
-				],
-				"rotation": -0.413841161811073,
-				"surface": "asphalt",
-				"type": "road",
-				"width": 7.5
-			},
-			"road/salvage_access": {
-				"id": "road/salvage_access",
-				"points": [
-					[
-						-78.125,
-						78.125
-					],
-					[
-						-78.125,
-						62.5
-					],
-					[
-						-46.875,
-						62.5
-					],
-					[
-						-47.0,
-						46.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/south_port_access": {
-				"id": "road/south_port_access",
-				"points": [
-					[
-						187.962677001953,
-						138.998611450195
-					],
-					[
-						198.0,
-						138.0
-					],
-					[
-						206.875,
-						145.625
-					],
-					[
-						206.875,
-						225.0
-					],
-					[
-						234.375,
-						225.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/south_port_dispatch": {
-				"id": "road/south_port_dispatch",
-				"points": [
-					[
-						233.376037597656,
-						298.003204345703
-					],
-					[
-						365.301635742188,
-						298.0302734375
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.875
-			},
-			"road/south_port_east": {
-				"id": "road/south_port_east",
-				"points": [
-					[
-						355.0,
-						225.0
-					],
-					[
-						367.0,
-						225.0
-					],
-					[
-						364.0,
-						354.0
-					],
-					[
-						353.0,
-						354.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/south_port_north": {
-				"id": "road/south_port_north",
-				"points": [
-					[
-						234.0,
-						225.0
-					],
-					[
-						355.0,
-						225.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/south_port_south": {
-				"id": "road/south_port_south",
-				"points": [
-					[
-						353.0,
-						354.0
-					],
-					[
-						242.0,
-						354.0
-					],
-					[
-						238.0,
-						349.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/south_port_west": {
-				"id": "road/south_port_west",
-				"points": [
-					[
-						238.0,
-						349.0
-					],
-					[
-						233.0,
-						342.0
-					],
-					[
-						234.0,
-						225.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/union_avenue": {
-				"id": "road/union_avenue",
-				"points": [
-					[
-						81.25,
-						25.0
-					],
-					[
-						81.0,
-						129.0
-					],
-					[
-						81.0,
-						135.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 8.125
-			},
-			"road/warehouse_way": {
-				"id": "road/warehouse_way",
-				"points": [
-					[
-						138.0,
-						25.0
-					],
-					[
-						135.971099853516,
-						136.85578918457
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.875
-			},
-			"road/westgate_drive": {
-				"id": "road/westgate_drive",
-				"points": [
-					[
-						25.0000629425049,
-						25.0
-					],
-					[
-						18.0,
-						25.0
-					],
-					[
-						21.0,
-						103.0
-					],
-					[
-						22.0,
-						115.0
-					],
-					[
-						23.0,
-						128.0
-					],
-					[
-						23.9262294769287,
-						134.811477661133
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 6.25
-			},
-			"road/westgate_service_lane": {
-				"id": "road/westgate_service_lane",
-				"points": [
-					[
-						24.0,
-						109.0
-					],
-					[
-						35.0,
-						109.0
-					],
-					[
-						78.0,
-						109.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 4.5
-			}
-		},
-		"mountain": {
-			"mountain_road_lamp/715.00000/-338.43750": {
-				"color": "ffe0ab",
-				"energy": 1.15,
-				"height": 3.45,
-				"id": "mountain_road_lamp/715.00000/-338.43750",
-				"position": [
-					706.0,
-					-339.0
-				],
-				"range": 10.0,
-				"rotation": 0.0,
-				"type": "light"
-			},
-			"new/1790357627_331_1945030939": {
-				"id": "new/1790357627_331_1945030939",
-				"position": [
-					707.0,
-					-334.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"new/1790437794_992_3983783541": {
-				"id": "new/1790437794_992_3983783541",
-				"position": [
-					711.0732421875,
-					-456.790435791016
-				],
-				"rotation": 0.0,
-				"scale": 2.28873668636491,
-				"snow": true,
-				"type": "tree",
-				"variant": 7
-			},
-			"path/bunker_walk": {
-				"deleted": true,
-				"id": "path/bunker_walk",
-				"label": "bunker_walk",
-				"pathway": true,
-				"points": [
-					[
-						675.0,
-						-481.875
-					],
-					[
-						675.0,
-						-486.25
-					]
-				],
-				"surface": "earth",
-				"type": "road",
-				"width": 1.8
-			},
-			"path/cave_trail": {
-				"id": "path/cave_trail",
-				"label": "cave_trail",
-				"pathway": true,
-				"points": [
-					[
-						642.0,
-						-290.0
-					],
-					[
-						642.0,
-						-295.0
-					],
-					[
-						635.375,
-						-307.75
-					],
-					[
-						637.875,
-						-319.0
-					],
-					[
-						646.0,
-						-322.4375
-					],
-					[
-						652.875,
-						-321.5
-					],
-					[
-						657.25,
-						-324.0
-					]
-				],
-				"surface": "earth",
-				"type": "road",
-				"width": 1.6
-			},
-			"path/forest_cabin_walk": {
-				"id": "path/forest_cabin_walk",
-				"label": "forest_cabin_walk",
-				"pathway": true,
-				"points": [
-					[
-						643.0,
-						-265.0
-					],
-					[
-						647.0,
-						-265.0
-					],
-					[
-						653.0,
-						-266.0
-					],
-					[
-						655.18603515625,
-						-256.808532714844
-					],
-					[
-						650.0,
-						-256.0
-					],
-					[
-						649.0,
-						-257.0
-					]
-				],
-				"rotation": -1.05245018882892,
-				"surface": "earth",
-				"type": "road",
-				"width": 1.25
-			},
-			"path/forest_shop_walk": {
-				"id": "path/forest_shop_walk",
-				"label": "forest_shop_walk",
-				"pathway": true,
-				"points": [
-					[
-						655.0,
-						-281.0
-					],
-					[
-						635.0,
-						-278.0
-					],
-					[
-						635.0,
-						-265.625
-					],
-					[
-						641.0,
-						-265.0
-					],
-					[
-						643.0,
-						-265.0
-					]
-				],
-				"surface": "earth",
-				"type": "road",
-				"width": 1.25
-			},
-			"path/helipad_walk": {
-				"deleted": true,
-				"id": "path/helipad_walk",
-				"label": "helipad_walk",
-				"pathway": true,
-				"points": [
-					[
-						667.0,
-						-473.0
-					],
-					[
-						663.0,
-						-477.0
-					],
-					[
-						663.0,
-						-482.0
-					]
-				],
-				"surface": "earth",
-				"type": "road",
-				"width": 1.8
-			},
-			"path/lift_walk": {
-				"id": "path/lift_walk",
-				"label": "lift_walk",
-				"pathway": true,
-				"points": [
-					[
-						712.0,
-						-474.0
-					],
-					[
-						707.0,
-						-474.0
-					],
-					[
-						695.0,
-						-483.75
-					],
-					[
-						695.0,
-						-492.5
-					],
-					[
-						698.75,
-						-492.5
-					],
-					[
-						698.75,
-						-493.637512207031
-					]
-				],
-				"surface": "earth",
-				"type": "road",
-				"width": 2.2
-			},
-			"path/summit_shop_walk": {
-				"id": "path/summit_shop_walk",
-				"label": "summit_shop_walk",
-				"pathway": true,
-				"points": [
-					[
-						718.0,
-						-468.0
-					],
-					[
-						721.0,
-						-468.0
-					],
-					[
-						731.0,
-						-470.0
-					],
-					[
-						731.0,
-						-477.0
-					]
-				],
-				"rotation": 0.474575203910826,
-				"surface": "earth",
-				"type": "road",
-				"width": 1.8
-			},
-			"road/mountain_pass": {
-				"id": "road/mountain_pass",
-				"points": [
-					[
-						456.25,
-						-285.0
-					],
-					[
-						460.25,
-						-285.0
-					],
-					[
-						464.247253417969,
-						-285.0
-					],
-					[
-						468.247497558594,
-						-285.0
-					],
-					[
-						472.25,
-						-285.0
-					],
-					[
-						476.249053955078,
-						-285.0
-					],
-					[
-						480.249755859375,
-						-285.0
-					],
-					[
-						484.249908447266,
-						-285.0
-					],
-					[
-						488.25,
-						-285.0
-					],
-					[
-						492.250122070313,
-						-285.0
-					],
-					[
-						496.250183105469,
-						-285.0
-					],
-					[
-						500.251342773438,
-						-285.0
-					],
-					[
-						504.251251220703,
-						-285.0
-					],
-					[
-						508.249145507813,
-						-285.0
-					],
-					[
-						512.2490234375,
-						-285.0
-					],
-					[
-						516.249450683594,
-						-285.0
-					],
-					[
-						520.249755859375,
-						-285.0
-					],
-					[
-						524.25,
-						-285.0
-					],
-					[
-						528.250305175781,
-						-285.0
-					],
-					[
-						532.25048828125,
-						-285.0
-					],
-					[
-						536.250305175781,
-						-285.0
-					],
-					[
-						540.2509765625,
-						-285.0
-					],
-					[
-						544.251159667969,
-						-285.0
-					],
-					[
-						548.251831054688,
-						-285.0
-					],
-					[
-						552.25146484375,
-						-285.0
-					],
-					[
-						556.252014160156,
-						-285.0
-					],
-					[
-						560.251586914063,
-						-285.0
-					],
-					[
-						564.250366210938,
-						-285.0
-					],
-					[
-						568.25,
-						-285.0
-					],
-					[
-						572.249267578125,
-						-285.0
-					],
-					[
-						576.249389648438,
-						-285.0
-					],
-					[
-						580.249755859375,
-						-284.991821289063
-					],
-					[
-						584.246887207031,
-						-284.961639404297
-					],
-					[
-						588.247192382813,
-						-284.927215576172
-					],
-					[
-						592.248718261719,
-						-284.893035888672
-					],
-					[
-						596.249633789063,
-						-284.860992431641
-					],
-					[
-						600.249267578125,
-						-284.832427978516
-					],
-					[
-						604.249267578125,
-						-284.808532714844
-					],
-					[
-						608.249267578125,
-						-284.790618896484
-					],
-					[
-						612.249389648438,
-						-284.780487060547
-					],
-					[
-						616.250610351563,
-						-284.780578613281
-					],
-					[
-						620.249816894531,
-						-284.794677734375
-					],
-					[
-						624.251953125,
-						-284.82958984375
-					],
-					[
-						628.24951171875,
-						-284.899688720703
-					],
-					[
-						632.24365234375,
-						-285.045776367188
-					],
-					[
-						636.242065429688,
-						-285.237579345703
-					],
-					[
-						640.234985351563,
-						-285.472930908203
-					],
-					[
-						644.220458984375,
-						-285.804443359375
-					],
-					[
-						648.190307617188,
-						-286.287139892578
-					],
-					[
-						652.132385253906,
-						-286.960968017578
-					],
-					[
-						656.033508300781,
-						-287.837493896484
-					],
-					[
-						659.89208984375,
-						-288.901916503906
-					],
-					[
-						663.723388671875,
-						-290.050628662109
-					],
-					[
-						667.528991699219,
-						-291.282043457031
-					],
-					[
-						671.275390625,
-						-292.679718017578
-					],
-					[
-						674.918884277344,
-						-294.327301025391
-					],
-					[
-						678.41064453125,
-						-296.275115966797
-					],
-					[
-						681.718017578125,
-						-298.520050048828
-					],
-					[
-						684.870849609375,
-						-301.040374755859
-					],
-					[
-						687.923889160156,
-						-303.570129394531
-					],
-					[
-						690.98291015625,
-						-306.147338867188
-					],
-					[
-						693.952880859375,
-						-308.826416015625
-					],
-					[
-						696.75341796875,
-						-311.681121826172
-					],
-					[
-						699.25537109375,
-						-314.765411376953
-					],
-					[
-						701.329956054688,
-						-318.211181640625
-					],
-					[
-						702.692016601563,
-						-321.963653564453
-					],
-					[
-						703.122314453125,
-						-325.932373046875
-					],
-					[
-						702.526000976563,
-						-329.875732421875
-					],
-					[
-						700.846069335938,
-						-333.489501953125
-					],
-					[
-						698.304931640625,
-						-336.568572998047
-					],
-					[
-						695.264038085938,
-						-339.161346435547
-					],
-					[
-						691.976928710938,
-						-341.440551757813
-					],
-					[
-						688.592712402344,
-						-343.573760986328
-					],
-					[
-						685.207641601563,
-						-345.704895019531
-					],
-					[
-						681.716369628906,
-						-347.639434814453
-					],
-					[
-						677.9130859375,
-						-348.868865966797
-					],
-					[
-						674.001525878906,
-						-349.700744628906
-					],
-					[
-						670.056884765625,
-						-350.365386962891
-					],
-					[
-						666.114013671875,
-						-351.039276123047
-					],
-					[
-						662.210205078125,
-						-351.908660888672
-					],
-					[
-						658.454956054688,
-						-353.234649658203
-					],
-					[
-						655.139526367188,
-						-355.462036132813
-					],
-					[
-						653.092163085938,
-						-358.853302001953
-					],
-					[
-						652.944946289063,
-						-362.794891357422
-					],
-					[
-						655.173950195313,
-						-366.047241210938
-					],
-					[
-						658.522338867188,
-						-368.219482421875
-					],
-					[
-						662.171020507813,
-						-369.860687255859
-					],
-					[
-						665.896362304688,
-						-371.318695068359
-					],
-					[
-						669.607177734375,
-						-372.812133789063
-					],
-					[
-						673.211730957031,
-						-374.542785644531
-					],
-					[
-						676.641174316406,
-						-376.596313476563
-					],
-					[
-						680.29833984375,
-						-378.211730957031
-					],
-					[
-						684.076416015625,
-						-379.5244140625
-					],
-					[
-						687.889282226563,
-						-380.734649658203
-					],
-					[
-						691.689819335938,
-						-381.98291015625
-					],
-					[
-						695.429382324219,
-						-383.401275634766
-					],
-					[
-						699.025146484375,
-						-385.148803710938
-					],
-					[
-						702.2978515625,
-						-387.436584472656
-					],
-					[
-						704.86767578125,
-						-390.479614257813
-					],
-					[
-						706.224731445313,
-						-394.218658447266
-					],
-					[
-						706.171630859375,
-						-398.173950195313
-					],
-					[
-						704.474731445313,
-						-401.78271484375
-					],
-					[
-						701.603332519531,
-						-404.550109863281
-					],
-					[
-						698.227783203125,
-						-406.691711425781
-					],
-					[
-						693.0,
-						-408.0
-					],
-					[
-						691.05224609375,
-						-410.226257324219
-					],
-					[
-						687.475646972656,
-						-412.016876220703
-					],
-					[
-						684.038452148438,
-						-414.059997558594
-					],
-					[
-						682.0,
-						-416.0
-					],
-					[
-						678.0,
-						-420.0
-					],
-					[
-						674.352722167969,
-						-421.100891113281
-					],
-					[
-						670.858764648438,
-						-423.048614501953
-					],
-					[
-						667.367492675781,
-						-425.001312255859
-					],
-					[
-						663.998291015625,
-						-427.154113769531
-					],
-					[
-						661.006530761719,
-						-429.797973632813
-					],
-					[
-						659.087280273438,
-						-433.265869140625
-					],
-					[
-						659.1201171875,
-						-437.259063720703
-					],
-					[
-						660.812377929688,
-						-440.816955566406
-					],
-					[
-						663.563842773438,
-						-443.708435058594
-					],
-					[
-						666.765747070313,
-						-446.103271484375
-					],
-					[
-						670.179504394531,
-						-448.186767578125
-					],
-					[
-						673.706481933594,
-						-450.073760986328
-					],
-					[
-						677.296264648438,
-						-451.839294433594
-					],
-					[
-						680.917419433594,
-						-453.539794921875
-					],
-					[
-						684.544616699219,
-						-455.227081298828
-					],
-					[
-						688.149475097656,
-						-456.961791992188
-					],
-					[
-						691.681213378906,
-						-458.836730957031
-					],
-					[
-						694.980529785156,
-						-461.033050537109
-					],
-					[
-						697.298583984375,
-						-464.2431640625
-					],
-					[
-						696.118774414063,
-						-467.919158935547
-					],
-					[
-						693.115783691406,
-						-470.54443359375
-					],
-					[
-						689.663696289063,
-						-472.566955566406
-					],
-					[
-						686.03369140625,
-						-474.247375488281
-					],
-					[
-						682.296264648438,
-						-475.689392089844
-					],
-					[
-						680.625,
-						-476.25
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 8.75
-			},
-			"road/mountain_track_1": {
-				"id": "road/mountain_track_1",
-				"points": [
-					[
-						675.0,
-						-289.0
-					],
-					[
-						676.0,
-						-286.0
-					],
-					[
-						696.875,
-						-266.875
-					],
-					[
-						728.125,
-						-271.25
-					],
-					[
-						759.375,
-						-273.75
-					],
-					[
-						790.625,
-						-280.0
-					],
-					[
-						812.5,
-						-281.25
-					]
-				],
-				"surface": "earth",
-				"type": "road",
-				"width": 3.75
-			},
-			"road/mountain_track_2": {
-				"id": "road/mountain_track_2",
-				"points": [
-					[
-						707.0,
-						-330.0
-					],
-					[
-						715.625,
-						-331.875
-					],
-					[
-						734.375,
-						-330.0
-					],
-					[
-						761.0,
-						-338.0
-					],
-					[
-						764.0,
-						-323.0
-					],
-					[
-						758.0,
-						-323.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.0
-			},
-			"road/mountain_track_4": {
-				"id": "road/mountain_track_4",
-				"points": [
-					[
-						701.0,
-						-467.0
-					],
-					[
-						708.0,
-						-469.0
-					],
-					[
-						715.0,
-						-469.0625
-					],
-					[
-						715.0,
-						-477.375
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.0
-			},
-			"road/mountain_track_5": {
-				"id": "road/mountain_track_5",
-				"points": [
-					[
-						687.431274414063,
-						-412.043243408203
-					],
-					[
-						696.0,
-						-419.0
-					],
-					[
-						707.0,
-						-424.0
-					],
-					[
-						719.0,
-						-424.0
-					],
-					[
-						739.0,
-						-424.0
-					],
-					[
-						753.0,
-						-424.0
-					],
-					[
-						758.0,
-						-438.0
-					],
-					[
-						748.0,
-						-438.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.0
-			},
-			"road/mountain_village_return": {
-				"id": "road/mountain_village_return",
-				"points": [
-					[
-						670.56103515625,
-						-423.215148925781
-					],
-					[
-						680.0,
-						-431.0
-					],
-					[
-						680.0,
-						-433.0
-					],
-					[
-						684.0,
-						-436.0
-					],
-					[
-						689.0,
-						-435.0
-					],
-					[
-						694.0,
-						-434.0
-					],
-					[
-						699.0,
-						-435.0
-					],
-					[
-						707.0,
-						-438.0
-					],
-					[
-						748.0,
-						-438.0
-					]
-				],
-				"surface": "asphalt",
-				"type": "road",
-				"width": 5.0
-			},
-			"tree/554.93628/-268.91333": {
-				"id": "tree/554.93628/-268.91333",
-				"position": [
-					581.0,
-					-272.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 2.0
-			},
-			"tree/555.20795/-296.61069": {
-				"id": "tree/555.20795/-296.61069",
-				"position": [
-					626.0,
-					-299.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 7.0
-			},
-			"tree/556.23706/-303.16623": {
-				"id": "tree/556.23706/-303.16623",
-				"position": [
-					604.0,
-					-310.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/556.27002/-293.78568": {
-				"id": "tree/556.27002/-293.78568",
-				"position": [
-					600.0,
-					-296.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 2.0
-			},
-			"tree/558.76239/-275.04047": {
-				"id": "tree/558.76239/-275.04047",
-				"position": [
-					608.0,
-					-268.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/558.86688/-269.30975": {
-				"id": "tree/558.86688/-269.30975",
-				"position": [
-					587.0,
-					-269.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 4.0
-			},
-			"tree/559.07104/-262.77411": {
-				"id": "tree/559.07104/-262.77411",
-				"position": [
-					598.0,
-					-266.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 5.0
-			},
-			"tree/559.78949/-294.37558": {
-				"id": "tree/559.78949/-294.37558",
-				"position": [
-					626.0,
-					-295.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 5.0
-			},
-			"tree/559.97778/-265.46231": {
-				"id": "tree/559.97778/-265.46231",
-				"position": [
-					586.0,
-					-266.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/561.65784/-260.96246": {
-				"id": "tree/561.65784/-260.96246",
-				"position": [
-					588.0,
-					-274.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/562.15271/-300.05090": {
-				"id": "tree/562.15271/-300.05090",
-				"position": [
-					608.0,
-					-297.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 1.0
-			},
-			"tree/562.18896/-274.59567": {
-				"id": "tree/562.18896/-274.59567",
-				"position": [
-					599.0,
-					-269.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 2.0
-			},
-			"tree/562.26563/-294.98462": {
-				"id": "tree/562.26563/-294.98462",
-				"position": [
-					619.0,
-					-297.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/562.33203/-303.29633": {
-				"id": "tree/562.33203/-303.29633",
-				"position": [
-					609.0,
-					-304.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 1.0
-			},
-			"tree/563.72943/-263.73090": {
-				"id": "tree/563.72943/-263.73090",
-				"position": [
-					603.0,
-					-271.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/564.18323/-307.22977": {
-				"id": "tree/564.18323/-307.22977",
-				"position": [
-					610.0,
-					-308.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 4.0
-			},
-			"tree/564.51990/-276.46469": {
-				"id": "tree/564.51990/-276.46469",
-				"position": [
-					595.0,
-					-275.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/564.81226/-297.09412": {
-				"id": "tree/564.81226/-297.09412",
-				"position": [
-					611.0,
-					-300.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 5.0
-			},
-			"tree/565.70422/-267.06979": {
-				"id": "tree/565.70422/-267.06979",
-				"position": [
-					582.0,
-					-264.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/565.87830/-261.11890": {
-				"id": "tree/565.87830/-261.11890",
-				"position": [
-					603.0,
-					-264.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 7.0
-			},
-			"tree/566.50684/-302.83313": {
-				"id": "tree/566.50684/-302.83313",
-				"position": [
-					581.0,
-					-305.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/566.58142/-311.61285": {
-				"id": "tree/566.58142/-311.61285",
-				"position": [
-					615.0,
-					-302.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 2.0
-			},
-			"tree/567.30762/-269.44586": {
-				"id": "tree/567.30762/-269.44586",
-				"position": [
-					608.0,
-					-273.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 2.0
-			},
-			"tree/567.77173/-273.11639": {
-				"id": "tree/567.77173/-273.11639",
-				"position": [
-					589.0,
-					-263.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 7.0
-			},
-			"tree/568.28448/-305.28030": {
-				"id": "tree/568.28448/-305.28030",
-				"position": [
-					591.0,
-					-305.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/568.50342/-301.49921": {
-				"id": "tree/568.50342/-301.49921",
-				"position": [
-					582.0,
-					-309.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 2.0
-			},
-			"tree/568.76794/-298.17438": {
-				"id": "tree/568.76794/-298.17438",
-				"position": [
-					586.0,
-					-296.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/569.18286/-265.20010": {
-				"id": "tree/569.18286/-265.20010",
-				"position": [
-					582.0,
-					-258.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/569.92511/-258.89319": {
-				"id": "tree/569.92511/-258.89319",
-				"position": [
-					593.0,
-					-265.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 7.0
-			},
-			"tree/570.10956/-309.89703": {
-				"id": "tree/570.10956/-309.89703",
-				"position": [
-					586.0,
-					-302.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/570.61542/-303.17130": {
-				"id": "tree/570.61542/-303.17130",
-				"position": [
-					585.0,
-					-308.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/570.91345/-294.84152": {
-				"id": "tree/570.91345/-294.84152",
-				"position": [
-					582.0,
-					-301.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 4.0
-			},
-			"tree/571.51782/-300.78506": {
-				"id": "tree/571.51782/-300.78506",
-				"position": [
-					592.0,
-					-298.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/571.62659/-262.86121": {
-				"id": "tree/571.62659/-262.86121",
-				"position": [
-					589.0,
-					-259.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 4.0
-			},
-			"tree/571.97937/-270.42624": {
-				"id": "tree/571.97937/-270.42624",
-				"position": [
-					592.0,
-					-270.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/572.19800/-273.06528": {
-				"id": "tree/572.19800/-273.06528",
-				"position": [
-					593.0,
-					-259.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 5.0
-			},
-			"tree/573.89111/-275.35880": {
-				"id": "tree/573.89111/-275.35880",
-				"position": [
-					611.0,
-					-260.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 4.0
-			},
-			"tree/574.23743/-303.74817": {
-				"id": "tree/574.23743/-303.74817",
-				"position": [
-					601.0,
-					-306.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/574.53784/-310.47992": {
-				"id": "tree/574.53784/-310.47992",
-				"position": [
-					596.0,
-					-312.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 7.0
-			},
-			"tree/574.77368/-295.73398": {
-				"id": "tree/574.77368/-295.73398",
-				"position": [
-					592.0,
-					-302.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 5.0
-			},
-			"tree/575.38843/-301.09402": {
-				"id": "tree/575.38843/-301.09402",
-				"position": [
-					581.0,
-					-315.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 4.0
-			},
-			"tree/576.34717/-298.18732": {
-				"id": "tree/576.34717/-298.18732",
-				"position": [
-					593.0,
-					-308.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 7.0
-			},
-			"tree/577.64978/-293.43210": {
-				"id": "tree/577.64978/-293.43210",
-				"position": [
-					599.0,
-					-300.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/578.81384/-273.39120": {
-				"id": "tree/578.81384/-273.39120",
-				"position": [
-					585.0,
-					-274.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/578.88770/-298.03293": {
-				"id": "tree/578.88770/-298.03293",
-				"position": [
-					605.0,
-					-302.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 1.0
-			},
-			"tree/676.22156/-271.49982": {
-				"id": "tree/676.22156/-271.49982",
-				"position": [
-					677.518493652344,
-					-275.301025390625
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 3.0
-			},
-			"tree/679.55237/-286.04132": {
-				"id": "tree/679.55237/-286.04132",
-				"position": [
-					681.0,
-					-289.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 1.0
-			},
-			"tree/680.36682/-283.07547": {
-				"id": "tree/680.36682/-283.07547",
-				"position": [
-					690.0,
-					-285.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 0.0
-			},
-			"tree/686.84363/-330.45004": {
-				"id": "tree/686.84363/-330.45004",
-				"position": [
-					689.0,
-					-332.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": false,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/709.48120/-460.33563": {
-				"id": "tree/709.48120/-460.33563",
-				"position": [
-					715.0,
-					-455.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": true,
-				"type": "tree",
-				"variant": 1.0
-			},
-			"tree/712.69873/-461.64334": {
-				"id": "tree/712.69873/-461.64334",
-				"position": [
-					716.0,
-					-459.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": true,
-				"type": "tree",
-				"variant": 6.0
-			},
-			"tree/713.85876/-437.03027": {
-				"id": "tree/713.85876/-437.03027",
-				"position": [
-					715.0,
-					-432.0
-				],
-				"rotation": 0.0,
-				"scale": 1.0,
-				"snow": true,
-				"type": "tree",
-				"variant": 1.0
-			}
-		}
-	},
-	"version": 1.0
+  "regions": {
+    "harbor": {
+      "new/tonico_asphalt_entry": {
+        "id": "new/tonico_asphalt_entry",
+        "type": "road",
+        "surface": "asphalt",
+        "width": 9.0,
+        "sidewalk_width": 0.0,
+        "crossings": false,
+        "points": [[-290.0, 10.0], [-290.0, 26.0]]
+      },
+      "new/tonico_earth_lane": {
+        "id": "new/tonico_earth_lane",
+        "type": "road",
+        "surface": "earth",
+        "width": 9.0,
+        "sidewalk_width": 0.0,
+        "crossings": false,
+        "points": [[-290.0, 26.0], [-290.0, 32.0], [-285.0, 48.0], [-286.0, 55.0]]
+      },
+      "new/tonico_footpath": {
+        "id": "new/tonico_footpath",
+        "type": "road",
+        "surface": "earth",
+        "width": 3.0,
+        "sidewalk_width": 0.0,
+        "crossings": false,
+        "points": [[-286.0, 55.0], [-286.0, 66.0], [-290.0, 82.0], [-304.0, 95.0], [-315.0, 106.0], [-335.0, 112.0]]
+      },
+      "building/CanalHomesEast": {
+        "color": "#a6b2a0",
+        "height": 6.77144,
+        "height_resolved": true,
+        "id": "building/CanalHomesEast",
+        "locked": false,
+        "model": "brownstone",
+        "position": [
+          328.75,
+          -53.75
+        ],
+        "rotation": 90.0,
+        "size": [
+          14.375,
+          11.25
+        ],
+        "type": "building"
+      },
+      "building/CourtyardHouse": {
+        "color": "775e54",
+        "height": 7.5,
+        "id": "building/CourtyardHouse",
+        "locked": false,
+        "model": "cobra_house",
+        "position": [
+          523.0,
+          123.0
+        ],
+        "rotation": 0.0,
+        "size": [
+          12.8125,
+          10.625
+        ],
+        "type": "building"
+      },
+      "building/MarketHall": {
+        "color": "#d1a866",
+        "height": 4.78608,
+        "height_resolved": true,
+        "id": "building/MarketHall",
+        "locked": false,
+        "model": "warehouse_shop",
+        "position": [
+          109.375,
+          41.5625
+        ],
+        "rotation": -180.0,
+        "size": [
+          30.0,
+          13.75
+        ],
+        "type": "building"
+      },
+      "building/Police": {
+        "color": "#68a8d3",
+        "height": 13.374975,
+        "height_resolved": true,
+        "id": "building/Police",
+        "locked": false,
+        "model": "police_precinct",
+        "position": [
+          66.0,
+          120.0
+        ],
+        "rotation": 0.0,
+        "service_base": {
+          "color": "#68a8d3",
+          "height": 13.374975,
+          "model": "police_precinct",
+          "position": [
+            67.5,
+            121.875
+          ],
+          "size": [
+            11.875,
+            15.625
+          ]
+        },
+        "service_building": true,
+        "size": [
+          18.0,
+          10.0
+        ],
+        "type": "building"
+      },
+      "harbor_prop/lamp/118.75000/72.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/118.75000/72.81250",
+        "position": [
+          122.0,
+          71.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/132.18750/121.87500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/132.18750/121.87500",
+        "position": [
+          132.1875,
+          125.9
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/133.50000/103.12500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/133.50000/103.12500",
+        "position": [
+          131.6,
+          103.125
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/19.68750/103.12500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/19.68750/103.12500",
+        "position": [
+          49.0,
+          112.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/19.68750/121.87500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/19.68750/121.87500",
+        "position": [
+          38.0,
+          118.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/19.68750/53.12500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/19.68750/53.12500",
+        "position": [
+          14.0755367279053,
+          40.9007873535156
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/30.31250/103.12500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/30.31250/103.12500",
+        "position": [
+          34,
+          105
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/30.31250/121.87500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/30.31250/121.87500",
+        "position": [
+          16.0,
+          128.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/31.25000/34.37500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/31.25000/34.37500",
+        "position": [
+          15.4394054412842,
+          21.1505374908447
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/315.62500/142.50000": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/315.62500/142.50000",
+        "position": [
+          323.0,
+          145.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/378.12500/-17.81250": {
+        "deleted": true,
+        "id": "harbor_prop/lamp/378.12500/-17.81250",
+        "type": "light"
+      },
+      "harbor_prop/lamp/381.25000/142.50000": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/381.25000/142.50000",
+        "position": [
+          382.0,
+          135.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/50.00000/142.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/50.00000/142.81250",
+        "position": [
+          23,
+          147
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/62.50000/142.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/62.50000/142.81250",
+        "position": [
+          42,
+          147
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/86.56250/121.87500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/86.56250/121.87500",
+        "position": [
+          86.0,
+          125.9
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/tree/109.37500/127.50000": {
+        "color": "446b53",
+        "id": "harbor_prop/tree/109.37500/127.50000",
+        "position": [
+          110.0,
+          127.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.25,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 1.0
+      },
+      "harbor_prop/tree/12.81250/102.50000": {
+        "color": "465d3f",
+        "id": "harbor_prop/tree/12.81250/102.50000",
+        "position": [
+          -1.0,
+          123.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "harbor_prop/tree/12.81250/113.75000": {
+        "color": "465d3f",
+        "id": "harbor_prop/tree/12.81250/113.75000",
+        "position": [
+          10.0,
+          126.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "harbor_prop/tree/12.81250/125.00000": {
+        "color": "465d3f",
+        "id": "harbor_prop/tree/12.81250/125.00000",
+        "position": [
+          2.0,
+          129.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "harbor_prop/tree/2.81250/102.50000": {
+        "color": "465d3f",
+        "id": "harbor_prop/tree/2.81250/102.50000",
+        "position": [
+          -5.0,
+          123.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "harbor_prop/tree/2.81250/113.75000": {
+        "color": "465d3f",
+        "id": "harbor_prop/tree/2.81250/113.75000",
+        "position": [
+          9.0,
+          130.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "harbor_prop/tree/2.81250/125.00000": {
+        "color": "465d3f",
+        "id": "harbor_prop/tree/2.81250/125.00000",
+        "position": [
+          -13.0,
+          133.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "harbor_prop/tree/40.62500/50.31250": {
+        "color": "446b53",
+        "id": "harbor_prop/tree/40.62500/50.31250",
+        "position": [
+          43.0,
+          54.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.25,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 1.0
+      },
+      "harbor_prop/tree/55.00000/50.31250": {
+        "color": "446b53",
+        "id": "harbor_prop/tree/55.00000/50.31250",
+        "position": [
+          53.0,
+          50.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.25,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 1.0
+      },
+      "harbor_prop/tree/91.56250/54.06250": {
+        "color": "446b53",
+        "id": "harbor_prop/tree/91.56250/54.06250",
+        "position": [
+          91.5625,
+          54.0625
+        ],
+        "rotation": -89.1120301010523,
+        "scale": 1.25,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 1.0
+      },
+      "new/1790358009_372_1217611528": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790358009_372_1217611528",
+        "position": [
+          280.0,
+          350.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790358024_107_3864034716": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790358024_107_3864034716",
+        "position": [
+          365.0,
+          358.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790393322_876_2616430431": {
+        "color": "465d3f",
+        "id": "new/1790393322_876_2616430431",
+        "position": [
+          -2.0,
+          8.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "new/1790393327_837_1613628693": {
+        "color": "465d3f",
+        "id": "new/1790393327_837_1613628693",
+        "position": [
+          26.0,
+          8.0
+        ],
+        "rotation": 0.0,
+        "scale": 0.85,
+        "snow": false,
+        "tree_model": "harbor",
+        "type": "tree",
+        "variant": 2.0
+      },
+      "new/1790425919_711_3345507250": {
+        "color": "685b43",
+        "deleted": true,
+        "height": 9.0,
+        "id": "new/1790425919_711_3345507250",
+        "model": "house_duplex",
+        "position": [
+          7.0,
+          97.0
+        ],
+        "rotation": 0.0,
+        "size": [
+          16.0,
+          12.0
+        ],
+        "type": "building"
+      },
+      "new/1790426032_677_264954517": {
+        "color": "a9b3a1",
+        "deleted": true,
+        "height": 6.0,
+        "id": "new/1790426032_677_264954517",
+        "model": "house_gable",
+        "position": [
+          6.0,
+          94.0
+        ],
+        "rotation": 0.0,
+        "size": [
+          11.0,
+          12.0
+        ],
+        "type": "building"
+      },
+      "new/1790426066_503_97028106": {
+        "color": "91634e",
+        "height": 12.0,
+        "id": "new/1790426066_503_97028106",
+        "model": "urban_infill",
+        "position": [
+          7.0,
+          92.0
+        ],
+        "rotation": 90.0,
+        "size": [
+          8.55372619628906,
+          12.8305902481079
+        ],
+        "type": "building"
+      },
+      "new/1790426877_636_2342363314": {
+        "color": "aa8065",
+        "height": 18.0,
+        "id": "new/1790426877_636_2342363314",
+        "model": "urban_infill",
+        "position": [
+          6.0,
+          109.0
+        ],
+        "rotation": 0.0,
+        "size": [
+          14.3659029006958,
+          21.5488548278809
+        ],
+        "type": "building"
+      },
+      "new/1790432139_406_2568146191": {
+        "color": "b9a58c",
+        "height": 12.0,
+        "id": "new/1790432139_406_2568146191",
+        "model": "urban_slab",
+        "position": [
+          137.0,
+          -1.0
+        ],
+        "rotation": 0.0,
+        "size": [
+          16.0,
+          10.0
+        ],
+        "type": "building"
+      },
+      "new/1790432236_682_2325181222": {
+        "color": "c0ab88",
+        "height": 20.0,
+        "id": "new/1790432236_682_2325181222",
+        "model": "urban_deco",
+        "position": [
+          279.0,
+          -84.0
+        ],
+        "rotation": 90.0,
+        "size": [
+          8.59195709228516,
+          10.3103485107422
+        ],
+        "type": "building"
+      },
+      "new/1790432424_77_318130123": {
+        "color": "4b7260",
+        "id": "new/1790432424_77_318130123",
+        "model": "dumpster",
+        "position": [
+          214.0,
+          314.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "size": [
+          1.79999995231628,
+          1.0
+        ],
+        "type": "prop"
+      },
+      "new/1790432659_663_692553505": {
+        "color": "9d593c",
+        "id": "new/1790432659_663_692553505",
+        "model": "barrel",
+        "position": [
+          145.0,
+          126.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "size": [
+          0.649999976158142,
+          0.649999976158142
+        ],
+        "type": "prop"
+      },
+      "new/1790558766_7299576_0_3680934770": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790558766_7299576_0_3680934770",
+        "position": [
+          295.33,
+          -63.98
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790558766_7299576_1_3477046751": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790558766_7299576_1_3477046751",
+        "position": [
+          285.65,
+          59.98
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790558766_7299576_2_3008498892": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790558766_7299576_2_3008498892",
+        "position": [
+          294.35,
+          124.02
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790558766_7299576_3_1241977026": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790558766_7299576_3_1241977026",
+        "position": [
+          351.35,
+          109.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790558766_7299576_4_3872746594": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "new/1790558766_7299576_4_3872746594",
+        "position": [
+          396.65,
+          118.88
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790561382_7179923_934509863": {
+        "color": "3f6e8c",
+        "id": "new/1790561382_7179923_934509863",
+        "model": "footbridge",
+        "position": [
+          126.0,
+          78.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "size": [
+          2.6,
+          34.6
+        ],
+        "type": "prop"
+      },
+      "paving/5": {
+        "color": "a69f8c",
+        "id": "paving/5",
+        "label": "CalÃƒÆ’Ã‚Â§ada / piso existente",
+        "paving": true,
+        "position": [
+          53.0,
+          108.0
+        ],
+        "rotation": 0.0,
+        "size": [
+          42.5,
+          45.625
+        ],
+        "surface": "concrete",
+        "type": "ground"
+      },
+      "piece/cobra/cobra_dry_meadow/0": {
+        "id": "piece/cobra/cobra_dry_meadow/0",
+        "position": [
+          478.0,
+          105.0
+        ],
+        "rotation": 0.0,
+        "source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+        "type": "piece"
+      },
+      "piece/cobra/cobra_footpath/12": {
+        "id": "piece/cobra/cobra_footpath/12",
+        "position": [
+          484.0,
+          140.0
+        ],
+        "rotation": 0.0,
+        "source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+        "type": "piece"
+      },
+      "piece/cobra/cobra_footpath/2": {
+        "id": "piece/cobra/cobra_footpath/2",
+        "outline": [
+          [
+            -2.125,
+            4.78500366210938
+          ],
+          [
+            2.08743381500244,
+            -5.97014427185059
+          ],
+          [
+            5.07250595092773,
+            -4.92642688751221
+          ],
+          [
+            -0.375,
+            5.21499633789063
+          ]
+        ],
+        "position": [
+          454.0,
+          86.0
+        ],
+        "rotation": 0.0,
+        "source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+        "type": "piece"
+      },
+      "piece/cobra/cobra_footpath/7": {
+        "id": "piece/cobra/cobra_footpath/7",
+        "position": [
+          453.125,
+          123.0
+        ],
+        "rotation": 0.0,
+        "source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+        "type": "piece"
+      },
+      "piece/cobra/cobra_footpath_edge/2": {
+        "id": "piece/cobra/cobra_footpath_edge/2",
+        "outline": [
+          [
+            -2.34500122070313,
+            4.72499847412109
+          ],
+          [
+            1.625,
+            -5.625
+          ],
+          [
+            4.625,
+            -4.625
+          ],
+          [
+            -0.154998779296875,
+            5.27500152587891
+          ]
+        ],
+        "position": [
+          454.375,
+          85.625
+        ],
+        "rotation": 0.0,
+        "source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+        "type": "piece"
+      },
+      "piece/cobra/cobra_secret_drive/1": {
+        "id": "piece/cobra/cobra_secret_drive/1",
+        "outline": [
+          [
+            -2.25,
+            -11.6875
+          ],
+          [
+            1.75,
+            -10.6875
+          ],
+          [
+            2.0,
+            18.4425048828125
+          ],
+          [
+            -2.0,
+            18.4425048828125
+          ]
+        ],
+        "position": [
+          451.25,
+          124.6875
+        ],
+        "rotation": 0.0,
+        "source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+        "type": "piece"
+      },
+      "piece/route/connecting_streets/0": {
+        "id": "piece/route/connecting_streets/0",
+        "position": [
+          103.0,
+          65.0
+        ],
+        "rotation": 0.0,
+        "source_record": "71667481df589143fa1e2b9834f558a34eb28696c212d38a1c7b6368aacd808e",
+        "type": "piece"
+      },
+      "piece/route/connecting_streets/4": {
+        "id": "piece/route/connecting_streets/4",
+        "position": [
+          76.0,
+          94.0
+        ],
+        "rotation": 0.0,
+        "source_record": "71667481df589143fa1e2b9834f558a34eb28696c212d38a1c7b6368aacd808e",
+        "type": "piece"
+      },
+      "piece/route/connecting_streets/5": {
+        "id": "piece/route/connecting_streets/5",
+        "position": [
+          76.0,
+          94.0
+        ],
+        "rotation": 0.0,
+        "source_record": "71667481df589143fa1e2b9834f558a34eb28696c212d38a1c7b6368aacd808e",
+        "type": "piece"
+      },
+      "piece/route/delegacia/17": {
+        "id": "piece/route/delegacia/17",
+        "position": [
+          70.0,
+          143.0
+        ],
+        "rotation": 0.0,
+        "source_record": "17ecf215a3da63c65a039d88edbe92a248801f4dcd6b58f9f32694acd88a3b29",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/0": {
+        "id": "piece/route/rodoviaria/0",
+        "position": [
+          98.0,
+          69.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/10": {
+        "id": "piece/route/rodoviaria/10",
+        "position": [
+          93.0,
+          73.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/11": {
+        "id": "piece/route/rodoviaria/11",
+        "position": [
+          102.0,
+          67.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/12": {
+        "id": "piece/route/rodoviaria/12",
+        "position": [
+          113.0,
+          69.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/16": {
+        "id": "piece/route/rodoviaria/16",
+        "position": [
+          119.0,
+          67.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/2": {
+        "id": "piece/route/rodoviaria/2",
+        "position": [
+          116.0,
+          69.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/route/rodoviaria/4": {
+        "id": "piece/route/rodoviaria/4",
+        "position": [
+          107.0,
+          69.0
+        ],
+        "rotation": 0.0,
+        "source_record": "ab66d22949fb385412f4fe1e66c0c6034678243019613c3c3783713ef89c980f",
+        "type": "piece"
+      },
+      "piece/transit/urban_station_0": {
+        "id": "piece/transit/urban_station_0",
+        "position": [
+          105.1375,
+          146.7375
+        ],
+        "rotation": 0.0,
+        "source_record": "transit/urban_station_0",
+        "type": "piece"
+      },
+      "piece/transit/urban_station_1": {
+        "id": "piece/transit/urban_station_1",
+        "position": [
+          15.7625,
+          100.1375
+        ],
+        "rotation": 0.0,
+        "source_record": "transit/urban_station_1",
+        "type": "piece"
+      },
+      "piece/transit/urban_station_2": {
+        "id": "piece/transit/urban_station_2",
+        "position": [
+          15.7625,
+          50.1375
+        ],
+        "rotation": 0.0,
+        "source_record": "transit/urban_station_2",
+        "type": "piece"
+      },
+      "piece/transit/urban_station_3": {
+        "id": "piece/transit/urban_station_3",
+        "position": [
+          113.8625,
+          15.7625
+        ],
+        "rotation": 0.0,
+        "source_record": "transit/urban_station_3",
+        "type": "piece"
+      },
+      "piece/transit/urban_station_4": {
+        "id": "piece/transit/urban_station_4",
+        "position": [
+          197.2375,
+          54.8625
+        ],
+        "rotation": 0.0,
+        "source_record": "transit/urban_station_4",
+        "type": "piece"
+      },
+      "piece/transit/urban_station_5": {
+        "id": "piece/transit/urban_station_5",
+        "position": [
+          197.2375,
+          95.8625
+        ],
+        "rotation": 0.0,
+        "source_record": "transit/urban_station_5",
+        "type": "piece"
+      },
+      "road/cobra_approach": {
+        "id": "road/cobra_approach",
+        "points": [
+          [
+            401.658325195313,
+            106.01806640625
+          ],
+          [
+            462.5,
+            106.25
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.25
+      },
+      "road/courtyard_lane": {
+        "id": "road/courtyard_lane",
+        "points": [
+          [
+            290.0,
+            112.0
+          ],
+          [
+            347.0,
+            112.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 4.5
+      },
+      "road/dock_street": {
+        "id": "road/dock_street",
+        "lanes_per_direction": 2,
+        "points": [
+          [
+            4,
+            139
+          ],
+          [
+            15,
+            137.5
+          ],
+          [
+            25,
+            137.5
+          ],
+          [
+            81,
+            137.5
+          ],
+          [
+            188,
+            137.5
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 14.0
+      },
+      "road/east_union_avenue": {
+        "id": "road/east_union_avenue",
+        "points": [
+          [
+            346.982177734375,
+            -126.001434326172
+          ],
+          [
+            347.0,
+            140.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/eastgate_drive": {
+        "id": "road/eastgate_drive",
+        "points": [
+          [
+            382.5,
+            -125.0
+          ],
+          [
+            408.0,
+            -125.0
+          ],
+          [
+            401.0,
+            130.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/exchange_lane": {
+        "id": "road/exchange_lane",
+        "points": [
+          [
+            290.0,
+            63.0
+          ],
+          [
+            347.0,
+            63.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 4.5
+      },
+      "road/foundry_avenue": {
+        "id": "road/foundry_avenue",
+        "lanes_per_direction": 2,
+        "points": [
+          [
+            25.0,
+            25.0
+          ],
+          [
+            403.881683349609,
+            25.0242004394531
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 14.0
+      },
+      "road/island_dock_street": {
+        "id": "road/island_dock_street",
+        "points": [
+          [
+            290.0,
+            135.0
+          ],
+          [
+            290.0,
+            140.0
+          ],
+          [
+            401.0,
+            140.0
+          ],
+          [
+            401.0,
+            130.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/island_esplanade": {
+        "id": "road/island_esplanade",
+        "points": [
+          [
+            291.0,
+            -122.0
+          ],
+          [
+            290.0,
+            135.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/island_market_street": {
+        "id": "road/island_market_street",
+        "points": [
+          [
+            290.137023925781,
+            77.9979248046875
+          ],
+          [
+            402.427886962891,
+            77.9842987060547
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/map2_highway_inbound": {
+        "id": "road/map2_highway_inbound",
+        "points": [
+          [
+            367.5,
+            -262.5
+          ],
+          [
+            368.025115966797,
+            -124.939125061035
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.0
+      },
+      "road/map2_highway_outbound": {
+        "id": "road/map2_highway_outbound",
+        "points": [
+          [
+            382.5,
+            -125.0
+          ],
+          [
+            382.5,
+            -262.5
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.0
+      },
+      "road/market_street": {
+        "id": "road/market_street",
+        "points": [
+          [
+            25.0,
+            77.9774551391602
+          ],
+          [
+            188,
+            77.9541473388672
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/medical_garden_lane": {
+        "id": "road/medical_garden_lane",
+        "points": [
+          [
+            81.0168304443359,
+            121.997634887695
+          ],
+          [
+            137.5,
+            122.5
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.25
+      },
+      "road/memorial_north": {
+        "id": "road/memorial_north",
+        "points": [
+          [
+            -78.125,
+            77.0
+          ],
+          [
+            22.9080390930176,
+            77.9963684082031
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/memorial_south": {
+        "id": "road/memorial_south",
+        "points": [
+          [
+            4.0,
+            139.0
+          ],
+          [
+            -5.0,
+            143.0
+          ],
+          [
+            -77.0,
+            142.0
+          ],
+          [
+            -77.0,
+            139.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/memorial_west": {
+        "id": "road/memorial_west",
+        "points": [
+          [
+            -77.0,
+            139.0
+          ],
+          [
+            -78.125,
+            78.125
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/northbank_civic_avenue": {
+        "id": "road/northbank_civic_avenue",
+        "points": [
+          [
+            290.490386962891,
+            -69.0036315917969
+          ],
+          [
+            406.46240234375,
+            -68.9873046875
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/northbank_gateway_avenue": {
+        "id": "road/northbank_gateway_avenue",
+        "points": [
+          [
+            291.0,
+            -121.0
+          ],
+          [
+            291.0,
+            -124.0
+          ],
+          [
+            291.0,
+            -127.0
+          ],
+          [
+            398.0,
+            -125.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 7.5
+      },
+      "road/northbank_neighborhood_street": {
+        "id": "road/northbank_neighborhood_street",
+        "points": [
+          [
+            290.377410888672,
+            -22.0014953613281
+          ],
+          [
+            405.144989013672,
+            -20.9960174560547
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.625
+      },
+      "road/quay_boulevard": {
+        "id": "road/quay_boulevard",
+        "lanes_per_direction": 2,
+        "points": [
+          [
+            188,
+            25
+          ],
+          [
+            188,
+            137.5
+          ]
+        ],
+        "rotation": -0.413841161811073,
+        "surface": "asphalt",
+        "type": "road",
+        "width": 14.0
+      },
+      "road/salvage_access": {
+        "id": "road/salvage_access",
+        "points": [
+          [
+            -78.125,
+            78.125
+          ],
+          [
+            -78.125,
+            62.5
+          ],
+          [
+            -46.875,
+            62.5
+          ],
+          [
+            -47.0,
+            46.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/south_port_access": {
+        "id": "road/south_port_access",
+        "points": [
+          [
+            188,
+            137.5
+          ],
+          [
+            198.0,
+            138.0
+          ],
+          [
+            206.875,
+            145.625
+          ],
+          [
+            206.875,
+            225.0
+          ],
+          [
+            234.0,
+            225.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/south_port_dispatch": {
+        "id": "road/south_port_dispatch",
+        "points": [
+          [
+            233.376037597656,
+            298.003204345703
+          ],
+          [
+            365.301635742188,
+            298.0302734375
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.875
+      },
+      "road/south_port_east": {
+        "id": "road/south_port_east",
+        "points": [
+          [
+            355.0,
+            225.0
+          ],
+          [
+            367.0,
+            225.0
+          ],
+          [
+            364.0,
+            354.0
+          ],
+          [
+            353.0,
+            354.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/south_port_north": {
+        "id": "road/south_port_north",
+        "points": [
+          [
+            234.0,
+            225.0
+          ],
+          [
+            355.0,
+            225.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/south_port_south": {
+        "id": "road/south_port_south",
+        "points": [
+          [
+            353.0,
+            354.0
+          ],
+          [
+            242.0,
+            354.0
+          ],
+          [
+            238.0,
+            349.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/south_port_west": {
+        "id": "road/south_port_west",
+        "points": [
+          [
+            238.0,
+            349.0
+          ],
+          [
+            233.0,
+            342.0
+          ],
+          [
+            234.0,
+            225.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.25
+      },
+      "road/union_avenue": {
+        "id": "road/union_avenue",
+        "points": [
+          [
+            81.25,
+            25.0
+          ],
+          [
+            81.0,
+            129.0
+          ],
+          [
+            81.0,
+            135.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 8.125
+      },
+      "road/warehouse_way": {
+        "id": "road/warehouse_way",
+        "points": [
+          [
+            138.0,
+            25.0
+          ],
+          [
+            135.971099853516,
+            136.85578918457
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 6.875
+      },
+      "road/westgate_drive": {
+        "id": "road/westgate_drive",
+        "lanes_per_direction": 2,
+        "points": [
+          [
+            25,
+            25
+          ],
+          [
+            25,
+            137.5
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 14.0
+      },
+      "road/westgate_service_lane": {
+        "id": "road/westgate_service_lane",
+        "points": [
+          [
+            25.0,
+            120.0
+          ],
+          [
+            42.0,
+            109.0
+          ],
+          [
+            78.0,
+            109.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 4.5
+      },
+      "harbor_prop/lamp/101.25000/19.68750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/101.25000/19.68750",
+        "position": [
+          128,
+          16
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/118.75000/142.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/118.75000/142.81250",
+        "position": [
+          134.2625,
+          146.5
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/118.75000/19.68750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/118.75000/19.68750",
+        "position": [
+          128,
+          16
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/118.75000/32.18750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/118.75000/32.18750",
+        "position": [
+          118.75,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/153.12500/142.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/153.12500/142.81250",
+        "position": [
+          153.125,
+          146.5
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/153.12500/19.68750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/153.12500/19.68750",
+        "position": [
+          153.125,
+          16
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/153.12500/32.18750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/153.12500/32.18750",
+        "position": [
+          153.125,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/165.62500/19.68750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/165.62500/19.68750",
+        "position": [
+          165.625,
+          16
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/175.00000/142.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/175.00000/142.81250",
+        "position": [
+          175.0,
+          146.5
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/175.00000/32.18750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/175.00000/32.18750",
+        "position": [
+          175.0,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/180.62500/86.87500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/180.62500/86.87500",
+        "position": [
+          179,
+          86.875
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/30.31250/53.12500": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/30.31250/53.12500",
+        "position": [
+          34,
+          53.125
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/31.62500/31.75000": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/31.62500/31.75000",
+        "position": [
+          34,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/31.62500/71.00000": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/31.62500/71.00000",
+        "position": [
+          34,
+          71.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/376.25000/30.00000": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/376.25000/30.00000",
+        "position": [
+          376.25,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/40.62500/32.18750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/40.62500/32.18750",
+        "position": [
+          40.625,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/46.12500/31.75000": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/46.12500/31.75000",
+        "position": [
+          46.125,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/49.37500/19.68750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/49.37500/19.68750",
+        "position": [
+          49.375,
+          16
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/62.50000/19.68750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/62.50000/19.68750",
+        "position": [
+          62.5,
+          16
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/62.50000/32.18750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/62.50000/32.18750",
+        "position": [
+          62.5,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/96.87500/142.81250": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/96.87500/142.81250",
+        "position": [
+          96.875,
+          151
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "harbor_prop/lamp/96.87500/32.18750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 4.0,
+        "id": "harbor_prop/lamp/96.87500/32.18750",
+        "position": [
+          96.875,
+          34
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "building/NorthFrontage3": {
+        "color": "#a9b9a5",
+        "height": 6.6912,
+        "height_resolved": true,
+        "id": "building/NorthFrontage3",
+        "locked": false,
+        "model": "brownstone",
+        "position": [
+          118.125,
+          6.75
+        ],
+        "rotation": 0.0,
+        "service_base": {
+          "color": "#a9b9a5",
+          "height": 6.6912,
+          "model": "brownstone",
+          "position": [
+            118.125,
+            8.75
+          ],
+          "size": [
+            14.375,
+            11.25
+          ]
+        },
+        "service_building": true,
+        "size": [
+          14.375,
+          11.25
+        ],
+        "type": "building"
+      }
+    },
+    "mountain": {
+      "mountain_road_lamp/715.00000/-338.43750": {
+        "color": "ffe0ab",
+        "energy": 1.15,
+        "height": 3.45,
+        "id": "mountain_road_lamp/715.00000/-338.43750",
+        "position": [
+          706.0,
+          -339.0
+        ],
+        "range": 10.0,
+        "rotation": 0.0,
+        "type": "light"
+      },
+      "new/1790357627_331_1945030939": {
+        "id": "new/1790357627_331_1945030939",
+        "position": [
+          707.0,
+          -334.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "new/1790437794_992_3983783541": {
+        "id": "new/1790437794_992_3983783541",
+        "position": [
+          711.0732421875,
+          -456.790435791016
+        ],
+        "rotation": 0.0,
+        "scale": 2.28873668636491,
+        "snow": true,
+        "type": "tree",
+        "variant": 7
+      },
+      "path/bunker_walk": {
+        "deleted": true,
+        "id": "path/bunker_walk",
+        "label": "bunker_walk",
+        "pathway": true,
+        "points": [
+          [
+            675.0,
+            -481.875
+          ],
+          [
+            675.0,
+            -486.25
+          ]
+        ],
+        "surface": "earth",
+        "type": "road",
+        "width": 1.8
+      },
+      "path/cave_trail": {
+        "id": "path/cave_trail",
+        "label": "cave_trail",
+        "pathway": true,
+        "points": [
+          [
+            642.0,
+            -290.0
+          ],
+          [
+            642.0,
+            -295.0
+          ],
+          [
+            635.375,
+            -307.75
+          ],
+          [
+            637.875,
+            -319.0
+          ],
+          [
+            646.0,
+            -322.4375
+          ],
+          [
+            652.875,
+            -321.5
+          ],
+          [
+            657.25,
+            -324.0
+          ]
+        ],
+        "surface": "earth",
+        "type": "road",
+        "width": 1.6
+      },
+      "path/forest_cabin_walk": {
+        "id": "path/forest_cabin_walk",
+        "label": "forest_cabin_walk",
+        "pathway": true,
+        "points": [
+          [
+            643.0,
+            -265.0
+          ],
+          [
+            647.0,
+            -265.0
+          ],
+          [
+            653.0,
+            -266.0
+          ],
+          [
+            655.18603515625,
+            -256.808532714844
+          ],
+          [
+            650.0,
+            -256.0
+          ],
+          [
+            649.0,
+            -257.0
+          ]
+        ],
+        "rotation": -1.05245018882892,
+        "surface": "earth",
+        "type": "road",
+        "width": 1.25
+      },
+      "path/forest_shop_walk": {
+        "id": "path/forest_shop_walk",
+        "label": "forest_shop_walk",
+        "pathway": true,
+        "points": [
+          [
+            654.481,
+            -283.312
+          ],
+          [
+            635.0,
+            -278.0
+          ],
+          [
+            635.0,
+            -265.625
+          ],
+          [
+            641.0,
+            -265.0
+          ],
+          [
+            643.0,
+            -265.0
+          ]
+        ],
+        "surface": "earth",
+        "type": "road",
+        "width": 1.25
+      },
+      "path/helipad_walk": {
+        "deleted": true,
+        "id": "path/helipad_walk",
+        "label": "helipad_walk",
+        "pathway": true,
+        "points": [
+          [
+            667.0,
+            -473.0
+          ],
+          [
+            663.0,
+            -477.0
+          ],
+          [
+            663.0,
+            -482.0
+          ]
+        ],
+        "surface": "earth",
+        "type": "road",
+        "width": 1.8
+      },
+      "path/lift_walk": {
+        "id": "path/lift_walk",
+        "label": "lift_walk",
+        "pathway": true,
+        "points": [
+          [
+            712.0,
+            -474.0
+          ],
+          [
+            707.0,
+            -474.0
+          ],
+          [
+            695.0,
+            -483.75
+          ],
+          [
+            695.0,
+            -492.5
+          ],
+          [
+            698.75,
+            -492.5
+          ],
+          [
+            698.75,
+            -493.637512207031
+          ]
+        ],
+        "surface": "earth",
+        "type": "road",
+        "width": 2.2
+      },
+      "path/summit_shop_walk": {
+        "id": "path/summit_shop_walk",
+        "label": "summit_shop_walk",
+        "pathway": true,
+        "points": [
+          [
+            718.0,
+            -468.0
+          ],
+          [
+            721.0,
+            -468.0
+          ],
+          [
+            731.0,
+            -470.0
+          ],
+          [
+            731.0,
+            -477.0
+          ]
+        ],
+        "rotation": 0.474575203910826,
+        "surface": "earth",
+        "type": "road",
+        "width": 1.8
+      },
+      "road/mountain_pass": {
+        "id": "road/mountain_pass",
+        "points": [
+          [
+            456.25,
+            -285.0
+          ],
+          [
+            460.25,
+            -285.0
+          ],
+          [
+            464.247253417969,
+            -285.0
+          ],
+          [
+            468.247497558594,
+            -285.0
+          ],
+          [
+            472.25,
+            -285.0
+          ],
+          [
+            476.249053955078,
+            -285.0
+          ],
+          [
+            480.249755859375,
+            -285.0
+          ],
+          [
+            484.249908447266,
+            -285.0
+          ],
+          [
+            488.25,
+            -285.0
+          ],
+          [
+            492.250122070313,
+            -285.0
+          ],
+          [
+            496.250183105469,
+            -285.0
+          ],
+          [
+            500.251342773438,
+            -285.0
+          ],
+          [
+            504.251251220703,
+            -285.0
+          ],
+          [
+            508.249145507813,
+            -285.0
+          ],
+          [
+            512.2490234375,
+            -285.0
+          ],
+          [
+            516.249450683594,
+            -285.0
+          ],
+          [
+            520.249755859375,
+            -285.0
+          ],
+          [
+            524.25,
+            -285.0
+          ],
+          [
+            528.250305175781,
+            -285.0
+          ],
+          [
+            532.25048828125,
+            -285.0
+          ],
+          [
+            536.250305175781,
+            -285.0
+          ],
+          [
+            540.2509765625,
+            -285.0
+          ],
+          [
+            544.251159667969,
+            -285.0
+          ],
+          [
+            548.251831054688,
+            -285.0
+          ],
+          [
+            552.25146484375,
+            -285.0
+          ],
+          [
+            556.252014160156,
+            -285.0
+          ],
+          [
+            560.251586914063,
+            -285.0
+          ],
+          [
+            564.250366210938,
+            -285.0
+          ],
+          [
+            568.25,
+            -285.0
+          ],
+          [
+            572.249267578125,
+            -285.0
+          ],
+          [
+            576.249389648438,
+            -285.0
+          ],
+          [
+            580.249755859375,
+            -284.991821289063
+          ],
+          [
+            584.246887207031,
+            -284.961639404297
+          ],
+          [
+            588.247192382813,
+            -284.927215576172
+          ],
+          [
+            592.248718261719,
+            -284.893035888672
+          ],
+          [
+            596.249633789063,
+            -284.860992431641
+          ],
+          [
+            600.249267578125,
+            -284.832427978516
+          ],
+          [
+            604.249267578125,
+            -284.808532714844
+          ],
+          [
+            608.249267578125,
+            -284.790618896484
+          ],
+          [
+            612.249389648438,
+            -284.780487060547
+          ],
+          [
+            616.250610351563,
+            -284.780578613281
+          ],
+          [
+            620.249816894531,
+            -284.794677734375
+          ],
+          [
+            624.251953125,
+            -284.82958984375
+          ],
+          [
+            628.24951171875,
+            -284.899688720703
+          ],
+          [
+            632.24365234375,
+            -285.045776367188
+          ],
+          [
+            636.242065429688,
+            -285.237579345703
+          ],
+          [
+            640.234985351563,
+            -285.472930908203
+          ],
+          [
+            644.220458984375,
+            -285.804443359375
+          ],
+          [
+            648.190307617188,
+            -286.287139892578
+          ],
+          [
+            652.132385253906,
+            -286.960968017578
+          ],
+          [
+            656.033508300781,
+            -287.837493896484
+          ],
+          [
+            659.89208984375,
+            -288.901916503906
+          ],
+          [
+            663.723388671875,
+            -290.050628662109
+          ],
+          [
+            667.528991699219,
+            -291.282043457031
+          ],
+          [
+            671.275390625,
+            -292.679718017578
+          ],
+          [
+            674.918884277344,
+            -294.327301025391
+          ],
+          [
+            678.41064453125,
+            -296.275115966797
+          ],
+          [
+            681.718017578125,
+            -298.520050048828
+          ],
+          [
+            684.870849609375,
+            -301.040374755859
+          ],
+          [
+            687.923889160156,
+            -303.570129394531
+          ],
+          [
+            690.98291015625,
+            -306.147338867188
+          ],
+          [
+            693.952880859375,
+            -308.826416015625
+          ],
+          [
+            696.75341796875,
+            -311.681121826172
+          ],
+          [
+            699.25537109375,
+            -314.765411376953
+          ],
+          [
+            701.329956054688,
+            -318.211181640625
+          ],
+          [
+            702.692016601563,
+            -321.963653564453
+          ],
+          [
+            703.122314453125,
+            -325.932373046875
+          ],
+          [
+            702.526000976563,
+            -329.875732421875
+          ],
+          [
+            700.846069335938,
+            -333.489501953125
+          ],
+          [
+            698.304931640625,
+            -336.568572998047
+          ],
+          [
+            695.264038085938,
+            -339.161346435547
+          ],
+          [
+            691.976928710938,
+            -341.440551757813
+          ],
+          [
+            688.592712402344,
+            -343.573760986328
+          ],
+          [
+            685.207641601563,
+            -345.704895019531
+          ],
+          [
+            681.716369628906,
+            -347.639434814453
+          ],
+          [
+            677.9130859375,
+            -348.868865966797
+          ],
+          [
+            674.001525878906,
+            -349.700744628906
+          ],
+          [
+            670.056884765625,
+            -350.365386962891
+          ],
+          [
+            666.114013671875,
+            -351.039276123047
+          ],
+          [
+            662.210205078125,
+            -351.908660888672
+          ],
+          [
+            658.454956054688,
+            -353.234649658203
+          ],
+          [
+            655.139526367188,
+            -355.462036132813
+          ],
+          [
+            653.092163085938,
+            -358.853302001953
+          ],
+          [
+            652.944946289063,
+            -362.794891357422
+          ],
+          [
+            655.173950195313,
+            -366.047241210938
+          ],
+          [
+            658.522338867188,
+            -368.219482421875
+          ],
+          [
+            662.171020507813,
+            -369.860687255859
+          ],
+          [
+            665.896362304688,
+            -371.318695068359
+          ],
+          [
+            669.607177734375,
+            -372.812133789063
+          ],
+          [
+            673.211730957031,
+            -374.542785644531
+          ],
+          [
+            676.641174316406,
+            -376.596313476563
+          ],
+          [
+            680.29833984375,
+            -378.211730957031
+          ],
+          [
+            684.076416015625,
+            -379.5244140625
+          ],
+          [
+            687.889282226563,
+            -380.734649658203
+          ],
+          [
+            691.689819335938,
+            -381.98291015625
+          ],
+          [
+            695.429382324219,
+            -383.401275634766
+          ],
+          [
+            699.025146484375,
+            -385.148803710938
+          ],
+          [
+            702.2978515625,
+            -387.436584472656
+          ],
+          [
+            704.86767578125,
+            -390.479614257813
+          ],
+          [
+            706.224731445313,
+            -394.218658447266
+          ],
+          [
+            706.171630859375,
+            -398.173950195313
+          ],
+          [
+            704.474731445313,
+            -401.78271484375
+          ],
+          [
+            701.603332519531,
+            -404.550109863281
+          ],
+          [
+            698.227783203125,
+            -406.691711425781
+          ],
+          [
+            693.0,
+            -408.0
+          ],
+          [
+            691.05224609375,
+            -410.226257324219
+          ],
+          [
+            687.475646972656,
+            -412.016876220703
+          ],
+          [
+            684.038452148438,
+            -414.059997558594
+          ],
+          [
+            682.0,
+            -416.0
+          ],
+          [
+            678.0,
+            -420.0
+          ],
+          [
+            674.352722167969,
+            -421.100891113281
+          ],
+          [
+            670.858764648438,
+            -423.048614501953
+          ],
+          [
+            667.367492675781,
+            -425.001312255859
+          ],
+          [
+            663.998291015625,
+            -427.154113769531
+          ],
+          [
+            661.006530761719,
+            -429.797973632813
+          ],
+          [
+            659.087280273438,
+            -433.265869140625
+          ],
+          [
+            659.1201171875,
+            -437.259063720703
+          ],
+          [
+            660.812377929688,
+            -440.816955566406
+          ],
+          [
+            663.563842773438,
+            -443.708435058594
+          ],
+          [
+            666.765747070313,
+            -446.103271484375
+          ],
+          [
+            670.179504394531,
+            -448.186767578125
+          ],
+          [
+            673.706481933594,
+            -450.073760986328
+          ],
+          [
+            677.296264648438,
+            -451.839294433594
+          ],
+          [
+            680.917419433594,
+            -453.539794921875
+          ],
+          [
+            684.544616699219,
+            -455.227081298828
+          ],
+          [
+            688.149475097656,
+            -456.961791992188
+          ],
+          [
+            691.681213378906,
+            -458.836730957031
+          ],
+          [
+            694.980529785156,
+            -461.033050537109
+          ],
+          [
+            697.298583984375,
+            -464.2431640625
+          ],
+          [
+            696.118774414063,
+            -467.919158935547
+          ],
+          [
+            693.115783691406,
+            -470.54443359375
+          ],
+          [
+            689.663696289063,
+            -472.566955566406
+          ],
+          [
+            686.03369140625,
+            -474.247375488281
+          ],
+          [
+            682.296264648438,
+            -475.689392089844
+          ],
+          [
+            680.625,
+            -476.25
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 8.75
+      },
+      "road/mountain_track_1": {
+        "id": "road/mountain_track_1",
+        "points": [
+          [
+            675.0,
+            -289.0
+          ],
+          [
+            676.0,
+            -286.0
+          ],
+          [
+            696.875,
+            -266.875
+          ],
+          [
+            728.125,
+            -271.25
+          ],
+          [
+            759.375,
+            -273.75
+          ],
+          [
+            790.625,
+            -280.0
+          ],
+          [
+            812.5,
+            -281.25
+          ]
+        ],
+        "surface": "earth",
+        "type": "road",
+        "width": 3.75
+      },
+      "road/mountain_track_2": {
+        "id": "road/mountain_track_2",
+        "points": [
+          [
+            707.0,
+            -330.0
+          ],
+          [
+            715.625,
+            -331.875
+          ],
+          [
+            734.375,
+            -330.0
+          ],
+          [
+            761.0,
+            -338.0
+          ],
+          [
+            764.0,
+            -323.0
+          ],
+          [
+            758.0,
+            -323.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.0
+      },
+      "road/mountain_track_4": {
+        "id": "road/mountain_track_4",
+        "points": [
+          [
+            701.0,
+            -467.0
+          ],
+          [
+            708.0,
+            -469.0
+          ],
+          [
+            715.0,
+            -469.0625
+          ],
+          [
+            715.0,
+            -477.375
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.0
+      },
+      "road/mountain_track_5": {
+        "id": "road/mountain_track_5",
+        "points": [
+          [
+            687.431274414063,
+            -412.043243408203
+          ],
+          [
+            696.0,
+            -419.0
+          ],
+          [
+            707.0,
+            -424.0
+          ],
+          [
+            719.0,
+            -424.0
+          ],
+          [
+            739.0,
+            -424.0
+          ],
+          [
+            753.0,
+            -424.0
+          ],
+          [
+            758.0,
+            -438.0
+          ],
+          [
+            748.0,
+            -438.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.0
+      },
+      "road/mountain_village_return": {
+        "id": "road/mountain_village_return",
+        "points": [
+          [
+            670.56103515625,
+            -423.215148925781
+          ],
+          [
+            680.0,
+            -431.0
+          ],
+          [
+            680.0,
+            -433.0
+          ],
+          [
+            684.0,
+            -436.0
+          ],
+          [
+            689.0,
+            -435.0
+          ],
+          [
+            694.0,
+            -434.0
+          ],
+          [
+            699.0,
+            -435.0
+          ],
+          [
+            707.0,
+            -438.0
+          ],
+          [
+            748.0,
+            -438.0
+          ]
+        ],
+        "surface": "asphalt",
+        "type": "road",
+        "width": 5.0
+      },
+      "tree/554.93628/-268.91333": {
+        "id": "tree/554.93628/-268.91333",
+        "position": [
+          581.0,
+          -272.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 2.0
+      },
+      "tree/555.20795/-296.61069": {
+        "id": "tree/555.20795/-296.61069",
+        "position": [
+          626.0,
+          -299.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 7.0
+      },
+      "tree/556.23706/-303.16623": {
+        "id": "tree/556.23706/-303.16623",
+        "position": [
+          604.0,
+          -310.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/556.27002/-293.78568": {
+        "id": "tree/556.27002/-293.78568",
+        "position": [
+          600.0,
+          -296.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 2.0
+      },
+      "tree/558.76239/-275.04047": {
+        "id": "tree/558.76239/-275.04047",
+        "position": [
+          608.0,
+          -268.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/558.86688/-269.30975": {
+        "id": "tree/558.86688/-269.30975",
+        "position": [
+          587.0,
+          -269.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 4.0
+      },
+      "tree/559.07104/-262.77411": {
+        "id": "tree/559.07104/-262.77411",
+        "position": [
+          598.0,
+          -266.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 5.0
+      },
+      "tree/559.78949/-294.37558": {
+        "id": "tree/559.78949/-294.37558",
+        "position": [
+          626.0,
+          -295.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 5.0
+      },
+      "tree/559.97778/-265.46231": {
+        "id": "tree/559.97778/-265.46231",
+        "position": [
+          586.0,
+          -266.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/561.65784/-260.96246": {
+        "id": "tree/561.65784/-260.96246",
+        "position": [
+          588.0,
+          -274.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/562.15271/-300.05090": {
+        "id": "tree/562.15271/-300.05090",
+        "position": [
+          608.0,
+          -297.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 1.0
+      },
+      "tree/562.18896/-274.59567": {
+        "id": "tree/562.18896/-274.59567",
+        "position": [
+          599.0,
+          -269.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 2.0
+      },
+      "tree/562.26563/-294.98462": {
+        "id": "tree/562.26563/-294.98462",
+        "position": [
+          619.0,
+          -297.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/562.33203/-303.29633": {
+        "id": "tree/562.33203/-303.29633",
+        "position": [
+          609.0,
+          -304.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 1.0
+      },
+      "tree/563.72943/-263.73090": {
+        "id": "tree/563.72943/-263.73090",
+        "position": [
+          603.0,
+          -271.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/564.18323/-307.22977": {
+        "id": "tree/564.18323/-307.22977",
+        "position": [
+          610.0,
+          -308.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 4.0
+      },
+      "tree/564.51990/-276.46469": {
+        "id": "tree/564.51990/-276.46469",
+        "position": [
+          595.0,
+          -275.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/564.81226/-297.09412": {
+        "id": "tree/564.81226/-297.09412",
+        "position": [
+          611.0,
+          -300.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 5.0
+      },
+      "tree/565.70422/-267.06979": {
+        "id": "tree/565.70422/-267.06979",
+        "position": [
+          582.0,
+          -264.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/565.87830/-261.11890": {
+        "id": "tree/565.87830/-261.11890",
+        "position": [
+          603.0,
+          -264.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 7.0
+      },
+      "tree/566.50684/-302.83313": {
+        "id": "tree/566.50684/-302.83313",
+        "position": [
+          581.0,
+          -305.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/566.58142/-311.61285": {
+        "id": "tree/566.58142/-311.61285",
+        "position": [
+          615.0,
+          -302.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 2.0
+      },
+      "tree/567.30762/-269.44586": {
+        "id": "tree/567.30762/-269.44586",
+        "position": [
+          608.0,
+          -273.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 2.0
+      },
+      "tree/567.77173/-273.11639": {
+        "id": "tree/567.77173/-273.11639",
+        "position": [
+          589.0,
+          -263.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 7.0
+      },
+      "tree/568.28448/-305.28030": {
+        "id": "tree/568.28448/-305.28030",
+        "position": [
+          591.0,
+          -305.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/568.50342/-301.49921": {
+        "id": "tree/568.50342/-301.49921",
+        "position": [
+          582.0,
+          -309.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 2.0
+      },
+      "tree/568.76794/-298.17438": {
+        "id": "tree/568.76794/-298.17438",
+        "position": [
+          586.0,
+          -296.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/569.18286/-265.20010": {
+        "id": "tree/569.18286/-265.20010",
+        "position": [
+          582.0,
+          -258.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/569.92511/-258.89319": {
+        "id": "tree/569.92511/-258.89319",
+        "position": [
+          593.0,
+          -265.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 7.0
+      },
+      "tree/570.10956/-309.89703": {
+        "id": "tree/570.10956/-309.89703",
+        "position": [
+          586.0,
+          -302.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/570.61542/-303.17130": {
+        "id": "tree/570.61542/-303.17130",
+        "position": [
+          585.0,
+          -308.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/570.91345/-294.84152": {
+        "id": "tree/570.91345/-294.84152",
+        "position": [
+          582.0,
+          -301.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 4.0
+      },
+      "tree/571.51782/-300.78506": {
+        "id": "tree/571.51782/-300.78506",
+        "position": [
+          592.0,
+          -298.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/571.62659/-262.86121": {
+        "id": "tree/571.62659/-262.86121",
+        "position": [
+          589.0,
+          -259.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 4.0
+      },
+      "tree/571.97937/-270.42624": {
+        "id": "tree/571.97937/-270.42624",
+        "position": [
+          592.0,
+          -270.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/572.19800/-273.06528": {
+        "id": "tree/572.19800/-273.06528",
+        "position": [
+          593.0,
+          -259.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 5.0
+      },
+      "tree/573.89111/-275.35880": {
+        "id": "tree/573.89111/-275.35880",
+        "position": [
+          611.0,
+          -260.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 4.0
+      },
+      "tree/574.23743/-303.74817": {
+        "id": "tree/574.23743/-303.74817",
+        "position": [
+          601.0,
+          -306.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/574.53784/-310.47992": {
+        "id": "tree/574.53784/-310.47992",
+        "position": [
+          596.0,
+          -312.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 7.0
+      },
+      "tree/574.77368/-295.73398": {
+        "id": "tree/574.77368/-295.73398",
+        "position": [
+          592.0,
+          -302.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 5.0
+      },
+      "tree/575.38843/-301.09402": {
+        "id": "tree/575.38843/-301.09402",
+        "position": [
+          581.0,
+          -315.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 4.0
+      },
+      "tree/576.34717/-298.18732": {
+        "id": "tree/576.34717/-298.18732",
+        "position": [
+          593.0,
+          -308.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 7.0
+      },
+      "tree/577.64978/-293.43210": {
+        "id": "tree/577.64978/-293.43210",
+        "position": [
+          599.0,
+          -300.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/578.81384/-273.39120": {
+        "id": "tree/578.81384/-273.39120",
+        "position": [
+          585.0,
+          -274.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/578.88770/-298.03293": {
+        "id": "tree/578.88770/-298.03293",
+        "position": [
+          605.0,
+          -302.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 1.0
+      },
+      "tree/676.22156/-271.49982": {
+        "id": "tree/676.22156/-271.49982",
+        "position": [
+          677.518493652344,
+          -275.301025390625
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 3.0
+      },
+      "tree/679.55237/-286.04132": {
+        "id": "tree/679.55237/-286.04132",
+        "position": [
+          681.0,
+          -289.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 1.0
+      },
+      "tree/680.36682/-283.07547": {
+        "id": "tree/680.36682/-283.07547",
+        "position": [
+          690.0,
+          -285.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 0.0
+      },
+      "tree/686.84363/-330.45004": {
+        "id": "tree/686.84363/-330.45004",
+        "position": [
+          689.0,
+          -332.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": false,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/709.48120/-460.33563": {
+        "id": "tree/709.48120/-460.33563",
+        "position": [
+          715.0,
+          -455.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": true,
+        "type": "tree",
+        "variant": 1.0
+      },
+      "tree/712.69873/-461.64334": {
+        "id": "tree/712.69873/-461.64334",
+        "position": [
+          716.0,
+          -459.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": true,
+        "type": "tree",
+        "variant": 6.0
+      },
+      "tree/713.85876/-437.03027": {
+        "id": "tree/713.85876/-437.03027",
+        "position": [
+          715.0,
+          -432.0
+        ],
+        "rotation": 0.0,
+        "scale": 1.0,
+        "snow": true,
+        "type": "tree",
+        "variant": 1.0
+      }
+    }
+  },
+  "version": 1.0
 }

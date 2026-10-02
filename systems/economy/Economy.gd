@@ -161,6 +161,8 @@ static func _max_capacity(id: String) -> int:
 	var base := int(Weapons.WEAPONS[id].magazine_size)
 	if id == "shotgun": return base + 2
 	if id == "hunting_rifle": return base + 3
+	# Magazine capacity counts whole rounds; preserve truncation.
+	@warning_ignore("integer_division")
 	if id in ["pistol", "smg", "ak47", "m4a1"]: return base + int(base / 2)
 	return base
 

@@ -41,6 +41,8 @@ static func triangle_count() -> int:
 		for part in _sets[key]:
 			var arrays: Array = part.mesh.surface_get_arrays(0)
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			total += (indices.size() / 3) * (2 if key == "wheel" else 1)
 	return total
 

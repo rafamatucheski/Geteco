@@ -73,7 +73,9 @@ func _service(role: String) -> void:
 	var expected_role: String = role
 	check(emergency.incidents[key].role == expected_role, "papel da ocorrência (%s)" % role)
 	var unit: RefCounted = null
-	for tick in (1200 if role == "fire" else 300):
+	# Bombeiros só saem 10-15 s depois do fogo começar (RULES.fire_response_delay); médico e legista em ~5 s.
+	var wait_ticks := 1200 if role == "fire" else 300
+	for tick in wait_ticks:
 		await physics_frame
 		if not controller.units.is_empty():
 			unit = controller.units[0]
@@ -98,6 +100,10 @@ func _service(role: String) -> void:
 	var crew_position := Vector3.ZERO
 	var incident_closed := false
 	var boarded := false
+	# Contador em Dictionary: a lambda captura variáveis locais por valor.
+	var notices := {"incident_invalid": 0}
+	controller.dispatch_event.connect(func(event_name: String, data: Dictionary):
+		if event_name == "incident_invalid" and data.get("unit") == unit: notices.incident_invalid += 1)
 	for tick in 7200:
 		await physics_frame
 		if is_instance_valid(unit.vehicle):
@@ -129,6 +135,9 @@ func _service(role: String) -> void:
 	if role == "mortician": check(not is_instance_valid(actor) or actor.is_queued_for_deletion(), "corpo removido pelo legista")
 	if role == "fire": check(not is_instance_valid(actor) or actor.is_queued_for_deletion() or actor.intensity <= 0.0, "fogo extinto")
 	check(boarded, "equipe embarcou de volta na viatura")
+	# Fogo extinto e corpo removido tiram a fonte da ocorrência com a equipe ainda a pé; o
+	# aviso era repetido a cada quadro físico durante todo o retorno.
+	check(notices.incident_invalid <= 1, "fonte da ocorrência perdida é notificada uma vez, não a cada quadro (%s: %d)" % [role, notices.incident_invalid])
 	check(unit.finished and unit.end_reason == "left", "viatura partiu dirigindo (%s)" % unit.end_reason)
 	check(controller.units.is_empty(), "controlador liberou a unidade")
 	check(not is_instance_valid(unit.crew), "nenhum socorrista fica na cena")

@@ -117,9 +117,9 @@ func _ready() -> void:
 	camera.size = 1.2
 	camera.look_at_from_position(Vector3(.7, .35, .55), Vector3.ZERO)
 	viewport.add_child(camera)
-	for rotation in [Vector3(-45, -35, 0), Vector3(25, 140, 0)]:
+	for local_rotation in [Vector3(-45, -35, 0), Vector3(25, 140, 0)]:
 		var light := DirectionalLight3D.new()
-		light.rotation_degrees = rotation
+		light.rotation_degrees = local_rotation
 		light.light_energy = 1.35
 		viewport.add_child(light)
 	var environment := WorldEnvironment.new()
@@ -309,11 +309,11 @@ func apply_selection() -> void:
 	select_slot(slot)
 	status.text = ("PERSONALIZAÇÃO APLICADA — " if ok else "PERSONALIZAÇÃO INDISPONÍVEL — ") + status.text
 
-func close(emit_signal := true) -> void:
+func close(p_emit_signal := true) -> void:
 	hide()
 	if viewport: viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	set_process(false)
-	if emit_signal: closed.emit()
+	if p_emit_signal: closed.emit()
 
 func _process(delta: float) -> void:
 	if is_instance_valid(model): model.rotation.y += delta * .22

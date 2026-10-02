@@ -136,7 +136,7 @@ func _react_to_shot(origin: Vector3,radius: float) -> void:
 	_threat_time = 2.8
 	_contact_roll = .10 if (origin-global_position).dot(global_basis.x)<0 else -.10
 
-func receive_damage(amount: float,source: Node = null) -> void:
+func receive_damage(amount: float,_source: Node = null) -> void:
 	if not is_finite(amount) or amount<=0 or preload("res://gameplay/DamageProtection.gd").is_protected(self): return
 	health = maxf(15.0,health-amount*.5)
 	if race_enabled and rider.visible:

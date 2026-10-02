@@ -55,8 +55,8 @@ func configure(owner_controller, use_edits := true) -> void:
 			definition.edit = row.duplicate(true)
 			var target := Vector3(row.position[0],0,row.position[1])
 			var stretch: Array = row.get("stretch",[1,1])
-			var basis := Basis(Vector3.UP,deg_to_rad(float(row.get("rotation",0))))*Basis.from_scale(Vector3(stretch[0],1,stretch[1]))
-			definition.stop_point = target+basis*(definition.stop_point-definition.position)
+			var local_basis := Basis(Vector3.UP,deg_to_rad(float(row.get("rotation",0))))*Basis.from_scale(Vector3(stretch[0],1,stretch[1]))
+			definition.stop_point = target+local_basis*(definition.stop_point-definition.position)
 			definition.position = target
 	if is_inside_tree(): refresh()
 

@@ -283,7 +283,7 @@ func _best_peek() -> Vector3:
 
 # --- Tiro ----------------------------------------------------------------------
 
-func _shoot(delta: float) -> void:
+func _shoot(_delta: float) -> void:
 	if _fire_cd > 0: return
 	if _burst_left <= 0:
 		_burst_left = _rng.randi_range(3,5)

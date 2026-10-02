@@ -109,6 +109,8 @@ func set_population(count: int) -> void:
 	while people.size() < count:
 		var index := people.size()
 		var block := index % 4
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var slot := index / 4
 		var xsign := -1.0 if block % 2 == 0 else 1.0
 		var zsign := -1.0 if block < 2 else 1.0

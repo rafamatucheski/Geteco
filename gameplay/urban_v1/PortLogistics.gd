@@ -197,6 +197,7 @@ func _tick_truck(index: int, delta: float) -> void:
 				state.remaining = 12.0
 				state.unload_origin = cranes[index].visual.global_position
 				cranes[index].visual.reparent(self,true)
+				cranes[index].visual.reset_physics_interpolation()
 		"delivering":
 			if not depot.business_open(): return
 			if absf(truck.speed) > .25: return

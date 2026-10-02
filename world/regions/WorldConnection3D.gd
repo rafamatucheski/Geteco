@@ -237,7 +237,7 @@ func _build_inner_gap(asphalt: StandardMaterial3D) -> void:
 	var collision_polygon := inner_gap_polygon(0.0)
 	var visual := _polygon_mesh("HarborConnectorGapAsphalt",visual_polygon,.028,asphalt)
 	visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var collision_mesh := _polygon_mesh("HarborConnectorGapCollision",collision_polygon,.027,asphalt)
+	var collision_mesh := _polygon_mesh("HarborConnectorGapCollision",collision_polygon,0.0,asphalt)
 	collision_mesh.visible = false
 	collision_mesh.create_trimesh_collision()
 	for child in collision_mesh.get_children():
@@ -267,14 +267,21 @@ func _build_tunnel() -> void:
 	var steel := _material("tunnel_steel",Color("a4afa8"),.62,.18)
 	var length := TUNNEL_END_X-TUNNEL_START_X
 	for side in [-1.0,1.0]:
-		_box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.0,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.0,1.1),rock,true)
+		var wall := _box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.0,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.0,1.1),rock,true)
+		# O paredão contínuo projetava um bloco retangular sobre neve e estrada.
+		# Pilares e entorno ainda recebem sombra; a contenção física permanece.
+		wall.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# A parede voltada à câmera atravessava visualmente a neve e a estrada
+		# como um retângulo escuro. O volume de colisão continua ativo no corte.
+		if side > 0.0: wall.visible = false
 		_box("TunnelCurb",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,.22,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(length,.44,.45),lining,true)
 	# Sparse overhead ribs make the enclosure readable without an opaque slab
 	# hiding the road from the production camera.
-	var rib_count := ceili(length/5.5)
+	var rib_count := ceili(length/11.0)
 	for index in rib_count+1:
 		var x := lerpf(TUNNEL_START_X,TUNNEL_END_X,float(index)/rib_count)
-		_box("TunnelRoofRib",Vector3(x,4.25,CENTER_Z),Vector3(.34,.42,TUNNEL_CLEAR_HALF_WIDTH*2.0+1.1),steel,true)
+		var rib := _box("TunnelRoofRib",Vector3(x,4.25,CENTER_Z),Vector3(.20,.30,TUNNEL_CLEAR_HALF_WIDTH*2.0+1.1),steel,true)
+		rib.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for x in [TUNNEL_START_X,TUNNEL_END_X]:
 		for side in [-1.0,1.0]:
 			_box("TunnelPortalPier",Vector3(x,2.35,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.25)),Vector3(1.15,4.7,1.45),lining,true)

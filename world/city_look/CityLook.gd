@@ -37,7 +37,6 @@ var _strobe_on := false
 var _tv_clock := 0.0
 var _tv_rng := RandomNumberGenerator.new()
 var _neon_night := -1.0
-var _signal_clock := 0.0
 
 
 func _ready() -> void:
@@ -56,11 +55,9 @@ func _process(delta: float) -> void:
 	if phase != _blink_on:
 		_blink_on = phase
 		MATERIALS.set_signal_phase(phase)
-	# Cores dos semáforos: 4x por segundo basta para a troca de fase.
-	_signal_clock -= delta
-	if _signal_clock <= 0.0:
-		_signal_clock = .25
-		JUNCTIONS.update_lenses()
+	# O controlador só percorre as lentes quando alguma fase muda ou há registro.
+	# A verificação por quadro evita atraso visual em relação aos motoristas.
+	JUNCTIONS.update_lenses()
 	# Giroflex da delegacia: alterna 3x por segundo, mais nervoso que o semáforo.
 	var strobe := fposmod(_blink, .34) < .17
 	if strobe != _strobe_on:

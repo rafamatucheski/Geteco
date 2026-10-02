@@ -1,5 +1,6 @@
 extends Node
 ## V1 time/weather IDs, rendered by shared native 3D lights and local particles.
+const REGIONAL_ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleTextures.gd")
 # Productive V1 HarborGame and MountainPass both override the manager to 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
@@ -150,11 +151,11 @@ func _process(delta: float) -> void:
 			# Occasional heavy storms join the natural cycle; keep drizzle distinct.
 			weather_state = 0 if roll<.42 else 3 if roll<.70 else 1 if roll<.92 else 2
 			if weather_state==1: rain_intensity = _weather_rng.randf_range(.14,.30)
-	precipitation.global_position = atmosphere.focus_position(controller)+Vector3.UP*10
+	precipitation.global_position = REGIONAL_ATMOSPHERE.focus_position(controller)+Vector3.UP*10
 	hail.global_position = precipitation.global_position
 	snow.global_position = precipitation.global_position
 	clock += delta
-	var focus: Vector3 = atmosphere.focus_position(controller)
+	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
 	var covered: bool = not controller.state.place_id.is_empty() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
 	if clock >= .2 or covered!=_covered:
 		atmosphere_step = clock
@@ -181,13 +182,13 @@ func _update() -> void:
 	if controller.session != null and controller.session.cold != null:
 		mountain_weather = controller.session.cold.weather_sample()
 	var front: float = float(mountain_weather.get("front",0.0))
-	var focus: Vector3 = atmosphere.focus_position(controller)
-	var regional_weight: float = atmosphere.weights_at(focus).mountain
+	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
+	var regional_weight: float = REGIONAL_ATMOSPHERE.weights_at(focus).mountain
 	var clouds: float = lerpf(_harbor_overcast(),front,regional_weight)
 	if inside: clouds = front if mountain else _harbor_overcast()
 	# Preserve existing indoor base light; outdoor exposure follows the V1 clock.
 	if not inside:
-		daylight = atmosphere.daylight_at(time_of_day)
+		daylight = REGIONAL_ATMOSPHERE.daylight_at(time_of_day)
 	controller.sun.rotation_degrees.x = -15-daylight*55
 	# De noite a luz direcional é a lua: a força segue a fase e as nuvens a
 	# encobrem mais do que encobrem o sol (céu fechado = noite escura).
@@ -213,7 +214,7 @@ func _update() -> void:
 		env.fog_sky_affect = lerpf(env.fog_sky_affect,.92,storm_weight)
 		controller.sun.light_energy *= lerpf(1.0,.72,storm_weight)
 	if controller.world.production != null:
-		var night_lights := 1.0-smoothstep(.25,.70,atmosphere.daylight_at(time_of_day))
+		var night_lights := 1.0-smoothstep(.25,.70,REGIONAL_ATMOSPHERE.daylight_at(time_of_day))
 		if is_instance_valid(controller.world.production.connection):
 			controller.world.production.connection.set_night_lights(night_lights)
 		var mountain_region = controller.world.production.regions.get("mountain")

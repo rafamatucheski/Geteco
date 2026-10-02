@@ -1,5 +1,16 @@
 extends RefCounted
 static var _data: Dictionary = {}
+static var _last_paint_index: Dictionary = {}
+# Civilian models whose exported catalog only contains the showroom color.
+const SPAWN_PALETTES := {
+	"dune_buggy": ["ffffffff", "dba638ff", "c45638ff", "3d827fff", "405948ff"],
+	"monaliza": ["183b91ff", "722e30ff", "e6e4dfff", "171b20ff", "92979cff"],
+	"muscle_classic": ["ffffffff", "963b32ff", "284d79ff", "d09b37ff", "294d43ff", "171b20ff"],
+	"porto_rosso": ["e01824ff", "e6e4dfff", "171b20ff", "dba638ff", "284d79ff"],
+	"ranch_pickup": ["ffffffff", "8b5941ff", "526b4eff", "315b6bff", "7b3035ff"],
+	"sport_coupe": ["ffffffff", "b63b32ff", "31577aff", "d5a544ff", "171b20ff", "92979cff"],
+	"station_wagon": ["ffffffff", "456354ff", "843c35ff", "456877ff", "b69b66ff"],
+}
 static func all() -> Dictionary:
 	if _data.is_empty():
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://assets/fleet/catalog.json"))
@@ -21,6 +32,7 @@ static func create(id: String) -> Node3D:
 	var definition := spec(id)
 	if definition.is_empty(): return null
 	if id == "army_tank": return preload("res://gameplay/police_response/ground/PoliceGroundModels.gd").tank()
+	if id == "nordic_estate": return preload("res://assets/fleet/nordic_estate_detail.scn").instantiate() as Node3D
 	var packed := load(definition.scene) as PackedScene
 	if packed == null: return null
 	var model := packed.instantiate() as Node3D
@@ -34,7 +46,18 @@ static func create(id: String) -> Node3D:
 	else: preload("res://runtime/FleetSpeedPass.gd").decorate(id, model)
 	return model
 static func default_paint(id: String, fallback := Color.WHITE) -> Color:
+	var colors: Array = SPAWN_PALETTES.get(id, spec(id).get("colors", []))
 	if id in preload("res://runtime/VehicleTwoTone.gd").MODELS:
-		return Color(preload("res://runtime/VehicleTwoTone.gd").PALETTES.pick_random())
-	var colors: Array = spec(id).get("colors",[])
-	return Color.html(str(colors.pick_random())) if not colors.is_empty() else fallback
+		colors = preload("res://runtime/VehicleTwoTone.gd").PALETTES
+	if colors.is_empty(): return fallback
+	# One bounded draw per spawn; skip the last choice without retry loops.
+	var previous: int = int(_last_paint_index.get(id, -1))
+	var index := 0
+	if colors.size() > 1:
+		if previous >= 0 and previous < colors.size():
+			index = randi_range(0, colors.size() - 2)
+			if index >= previous: index += 1
+		else:
+			index = randi_range(0, colors.size() - 1)
+	_last_paint_index[id] = index
+	return Color.html(str(colors[index]))

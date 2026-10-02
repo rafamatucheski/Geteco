@@ -76,13 +76,13 @@ func _cloth(color: Color) -> StandardMaterial3D:
 	return _country_materials[color]
 
 func _box(parent: Node3D,at: Vector3,size: Vector3,color: Color) -> void:
-	var part := MeshInstance3D.new()
+	var local_part := MeshInstance3D.new()
 	var shape := BoxMesh.new()
 	shape.size = size
-	part.mesh = shape
-	part.position = at
-	part.material_override = _cloth(color)
-	parent.add_child(part)
+	local_part.mesh = shape
+	local_part.position = at
+	local_part.material_override = _cloth(color)
+	parent.add_child(local_part)
 
 func _build_weapon() -> void:
 	weapon = Node3D.new()
@@ -122,8 +122,8 @@ func _process(delta: float) -> void:
 		recoil = move_toward(recoil,0,delta*.7)
 		flash_left = maxf(0,flash_left-delta)
 		flash.visible = flash_left>0
-		var basis := Basis(Vector3.UP,PI)*Basis(Vector3.RIGHT,recoil)
-		weapon.transform = Transform3D(basis,Vector3(.15,1.23,.30)-basis*POSE.GRIPS[weapon_id])
+		var local_basis := Basis(Vector3.UP,PI)*Basis(Vector3.RIGHT,recoil)
+		weapon.transform = Transform3D(local_basis,Vector3(.15,1.23,.30)-local_basis*POSE.GRIPS[weapon_id])
 	super._process(delta)
 
 func _gun_hands() -> Array:

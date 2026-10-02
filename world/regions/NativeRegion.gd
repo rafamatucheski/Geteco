@@ -49,6 +49,8 @@ var entries: Array[Dictionary] = []
 var source_data: Dictionary
 var focus := Vector3.ZERO
 var initial_focus := Vector3.INF
+# Somente para preparar a regiao distante sob a cortina; montagem real exige foco.
+var initial_prewarm_only := false
 var pending: Array[Vector2i] = []
 var build_jobs: Array[Dictionary] = []
 # Orçamento de construção fatiada por quadro (µs); um passo sozinho pode excedê-lo.
@@ -87,7 +89,8 @@ func _ready() -> void:
 	name = region_id.capitalize()+"NativeRegion"
 	prepare_data()
 	prepared = true
-	set_focus(initial_focus if initial_focus.is_finite() else spawn_position)
+	if not initial_prewarm_only:
+		set_focus(initial_focus if initial_focus.is_finite() else spawn_position)
 ## Geografia (registros, vias, floresta, terreno): ~340 ms em Mountain. Pode ser
 ## chamada no carregamento, antes de a região entrar na árvore.
 func prepare_data() -> void:
@@ -151,7 +154,7 @@ func _hold_file_resources(root: Node) -> void:
 			_hold_resource(node.font)
 		for child in node.get_children(): stack.append(child)
 
-static func _hold_resource(resource: Variant) -> void:
+func _hold_resource(resource: Variant) -> void:
 	if resource is Resource and not (resource as Resource).resource_path.is_empty() and not (resource as Resource).resource_path.contains("::"):
 		_held_resources[(resource as Resource).resource_path] = resource
 
@@ -177,14 +180,26 @@ func _exit_tree() -> void:
 	for chunk in _retiring:
 		if is_instance_valid(chunk): chunk.free()
 	_retiring.clear()
+	_retire_stack.clear()
 	for chunk in chunks.values(): _suspend_chunk_mechanisms(chunk)
 	STALL_WORK.finish("region.exit_tree", stall_began, {"region": region_id, "retiring_chunks": retiring_chunks})
+## Unmount mantém a região para reuso; só a destruição libera o cache.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for nodes in _record_cache.values():
+			for node in nodes:
+				# Nós com pai pertencem à árvore; não disputar sua destruição.
+				if is_instance_valid(node) and node.get_parent() == null: node.free()
+		_record_cache.clear()
+		_held_resources.clear()
+
 func _cell(point: Vector3) -> Vector2i: return Vector2i(floori(point.x/CELL),floori(point.z/CELL))
 func _record(point: Vector3, item: Dictionary) -> void:
 	var key := _cell(point)
 	if not records.has(key): records[key] = []
 	records[key].append(item)
 func _prepare() -> void:
+	CITY_DRESSING.invalidate_context(self)
 	if region_id == "harbor":
 		_record(CEMETERY.world_position(),{"kind":"cemetery","position":CEMETERY.world_position()})
 		_record(CEMETERY.world_position(),{"kind":"harbor_dressing","zone_id":"cemetery","position":CEMETERY.world_position()})
@@ -502,13 +517,20 @@ func _process(_delta: float) -> void:
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
 const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm","lake","ship"]
-static var _record_cache: Dictionary = {}
+var _record_cache: Dictionary = {}
+
+func _record_cache_key(record: Dictionary) -> String:
+	var key := "%s|%s|%s"%[region_id,str(record.kind),str(record.get("position",Vector3.ZERO))]
+	var pieces: Array = [record.get("editor_piece_only", []), record.get("editor_piece_exclude", []), record.get("editor_piece_ids", [])]
+	if pieces.any(func(ids): return not ids.is_empty()):
+		key += "|pieces=" + JSON.stringify(pieces).sha256_text()
+	return key
 
 func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
 	if str(record.kind) not in CACHED_RECORDS:
 		_build_record(chunk,record)
 		return
-	var key := "%s|%s|%s"%[region_id,str(record.kind),str(record.get("position",Vector3.ZERO))]
+	var key := _record_cache_key(record)
 	if _record_cache.has(key):
 		var nodes: Array = _record_cache[key]
 		var usable := not nodes.is_empty()
@@ -517,6 +539,9 @@ func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
 		if usable:
 			for node in nodes: chunk.add_child(node)
 			return
+		# Entrada substituída: limpar só restos detached, nunca o grupo ativo.
+		for node in nodes:
+			if is_instance_valid(node) and node.get_parent() == null: node.free()
 	var before := chunk.get_child_count()
 	_build_record(chunk,record)
 	var built: Array = []
@@ -530,7 +555,10 @@ func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
 func _detach_cached_records(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk): return
 	for child in chunk.get_children():
-		if child.has_meta("record_cache_key"): chunk.remove_child(child)
+		if not child.has_meta("record_cache_key"): continue
+		var key: String = child.get_meta("record_cache_key")
+		# Grupo superseded segue a liberação normal do chunk, sem virar órfão.
+		if _record_cache.get(key, []).has(child): chunk.remove_child(child)
 
 ## Chunk que sai do raio de retenção: liberar 1000-3000 nós de uma vez custava 40-150 ms
 ## num quadro (medido dirigindo). O chunk é tirado da lista já e seus filhos são liberados
@@ -730,7 +758,10 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 				# Só acrescenta/troca material depois que a fonte V1 já montou o chunk.
 				if region_id == "harbor":
 					if not job.has("dressing"): job.dressing = {"step": 0, "region": self, "chunk": chunk, "rect": rect}
-					if not CITY_DRESSING.build_chunk_step(job.dressing): continue
+					if not CITY_DRESSING.build_chunk_step(job.dressing):
+						# O continue tambem precisa devolver o controle ao esgotar o orcamento.
+						if Time.get_ticks_usec()-began >= budget_usec: return false
+						continue
 					# Depois de todo o acabamento de chão: abre as rampas do Túnel do canal.
 					CANAL_TUNNEL.carve_chunk(chunk,rect)
 				elif region_id == "mountain":
@@ -944,8 +975,8 @@ func _mountain_owns_terrain(key: Vector2i) -> bool:
 ## Scripts de arte carregados sob demanda ficam presos aqui. O pré-aquecimento os
 ## carrega e descarta os chunks; sem referência o recurso saía do cache e a primeira
 ## visita real relia do disco (travadas de 0,9–1,8 s em Mountain, 2026-09-24).
-static var _held_resources: Dictionary = {}
-static func _held_load(path: String) -> Resource:
+var _held_resources: Dictionary = {}
+func _held_load(path: String) -> Resource:
 	if not _held_resources.has(path): _held_resources[path] = load(path)
 	return _held_resources[path]
 
@@ -1049,8 +1080,8 @@ func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 	if data.region == "harbor":
 		# Catalog-only residences/cemetery are not duplicated in harbor_buildings.
-		var art := URBAN_FACTORY.populate_chunk(chunk,data)
-		if art != null: WALKUP_DOOR.install(art, data)
+		var branch_art := URBAN_FACTORY.populate_chunk(chunk,data)
+		if branch_art != null: WALKUP_DOOR.install(branch_art, data)
 		return
 	var path := ""
 	match str(data.id):

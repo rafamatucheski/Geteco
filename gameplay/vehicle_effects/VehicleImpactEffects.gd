@@ -31,17 +31,17 @@ func physics_tick(active: bool, incoming_velocity: Vector3) -> void:
 	for index in vehicle.get_slide_collision_count():
 		var contact := vehicle.get_slide_collision(index)
 		var normal: Vector3 = contact.get_normal()
+		var relative := incoming_velocity - contact.get_collider_velocity()
+		var audio_closing := maxf(0,-relative.dot(normal))
 		var closing_speed := maxf(0,-incoming_velocity.dot(normal))
 		var collider := contact.get_collider()
-		if closing_speed < MIN_IMPACT_SPEED:
-			# Light parking contacts still make a bumper sound, without a spark burst.
-			if closing_speed >= .75:
-				CRASH_AUDIO.play(vehicle, collider, contact.get_position(), closing_speed * 16.0)
-			continue
+		# Audio has its own lighter threshold and pair budget; visual bursts stay unchanged.
+		CRASH_AUDIO.play_contact(vehicle, collider, contact.get_position(), audio_closing)
+		if closing_speed < MIN_IMPACT_SPEED: continue
 		var collider_id := collider.get_instance_id() if is_instance_valid(collider) else 0
 		present_impact(contact.get_position(),normal,closing_speed,collider_id,-1,collider)
 
-func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_id: int, now_msec := -1, collider: Object = null) -> bool:
+func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_id: int, now_msec := -1, _collider: Object = null) -> bool:
 	if intensity < MIN_IMPACT_SPEED: return false
 	var now := Time.get_ticks_msec() if now_msec < 0 else now_msec
 	if now-last_global_msec < GLOBAL_COOLDOWN_MSEC: return false
@@ -66,9 +66,6 @@ func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_
 	emitter.amount_ratio = lerpf(.30,1.0,strength)
 	emitter.restart()
 	burst_count += 1
-	if now_msec < 0 and is_instance_valid(vehicle):
-		# Cooldown keys may be position hashes for props, not Object instance IDs.
-		CRASH_AUDIO.play(vehicle, collider if is_instance_valid(collider) else null, point, intensity * 16.0)
 	return true
 
 func _ensure_emitter() -> void:

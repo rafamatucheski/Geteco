@@ -17,6 +17,9 @@ func photo(id: String) -> void:
 	check(root.get_texture().get_image().save_png(folder+"/"+id+".png") == OK,"Photo "+id)
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--out-dir="): folder = argument.trim_prefix("--out-dir=")
+	if folder.is_empty(): quit(2); return
 	create_timer(240,true,false,true).timeout.connect(func(): push_error("CONTAINER TEST TIMEOUT"); quit(3))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	seed(28092026)
@@ -151,7 +154,9 @@ func run() -> void:
 	await photo("exit")
 	# Save through the real disk serializer, isolated from user saves.
 	var store := preload("res://runtime/SaveStore.gd").new()
-	store.path = folder+"/fixture-save.json"
+	# O runner fornece APPDATA temporário; só evidência visual fica em folder.
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://tests/port-container-cache"))
+	store.path = "user://tests/port-container-cache/fixture-save.json"
 	check(store.save(world.session.state) == OK,"Cargo and inventory write through SaveStore")
 	var restored := preload("res://runtime/GameState.gd").new()
 	check(store.load_into(restored).ok,"SaveStore reload succeeds")

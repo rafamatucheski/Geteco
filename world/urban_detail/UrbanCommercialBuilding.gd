@@ -47,10 +47,10 @@ func build() -> void:
 	# Facade proper name architectural sign
 	if not proper_name.is_empty():
 		var sign_w := minf(building_size.x * 0.65, 5.5)
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.75), 0.10, UrbanMaterials.trim_dark())
-		if sign != null:
-			sign.position = Vector3(0, 3.75, front_z + 0.12)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.75), 0.10, UrbanMaterials.trim_dark())
+		if sign_node != null:
+			sign_node.position = Vector3(0, 3.75, front_z + 0.12)
+			visuals_root.add_child(sign_node)
 
 func _build_entrance_lobby(front_z: float) -> void:
 	var trim_mat := UrbanMaterials.trim_stone()

@@ -10,6 +10,8 @@ func _ready() -> void:
 	appearance_variant = identity
 	if not appearance_locked:
 		coat_color = [Color("39835a"),Color("7d6e53"),Color("485b70"),Color("77524d"),Color("b7a784"),Color("743b54"),Color("c2c4b7"),Color("263d61"),Color("ad6940"),Color("536742"),Color("483943"),Color("77918c")][posmod(identity, 12)]
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		pants_color = [Color("33465c"),Color("292a30"),Color("67594a"),Color("48554a"),Color("827c6c"),Color("394052")][posmod(identity / 3, 6)]
 	var width := lerpf(.90, 1.12, float(posmod(identity * 37, 101)) / 100.0)
 	var height := lerpf(.93, 1.09, float(posmod(identity * 61, 101)) / 100.0)

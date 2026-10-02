@@ -1,8 +1,14 @@
 extends "res://tests/test_vertice_depth.gd"
 const DEST := "res://evidence/port-lockpick-20260928/depth"
+var output_dir := DEST
+var cache_warm := false
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DEST))
+	cache_warm = "--cache-warm" in OS.get_cmdline_user_args()
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--out-dir="): output_dir = argument.trim_prefix("--out-dir=")
+	if output_dir.is_empty(): quit(2); return
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output_dir))
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(640,480)
 	viewport.own_world_3d = true
@@ -10,6 +16,14 @@ func run() -> void:
 	root.add_child(viewport)
 	var stage := Node3D.new()
 	viewport.add_child(stage)
+	if cache_warm:
+		var primer := preload("res://world/regions/LootablePortContainer.gd").new()
+		stage.add_child(primer)
+		primer.build(Vector3.ZERO,Vector2(20.625,4.0625))
+		# O primeiro corpo aquece a mesma chave. Deixa as fontes queued saírem
+		# e remove o corpo antes de capturar a segunda instância independente.
+		await process_frame
+		primer.free()
 	var cargo := preload("res://world/regions/LootablePortContainer.gd").new()
 	stage.add_child(cargo)
 	cargo.build(Vector3.ZERO,Vector2(20.625,4.0625))
@@ -51,7 +65,7 @@ func run() -> void:
 					var ratio := float(mask_count(actual))/maxf(1,count)
 					check(count > 150,who+" "+setup.id+" "+pose+" positive control")
 					check(ratio > .9 if pose != "behind" else (ratio < .1 if setup.id == "wall" else ratio > .1 and ratio < .9),who+" "+setup.id+" "+pose+" depth ratio="+str(ratio))
-					actual.save_png(DEST+"/"+who+"-"+setup.id+"-"+pose+".png")
+					actual.save_png(output_dir+"/"+who+"-"+setup.id+"-"+pose+".png")
 					cargo.show()
 			actor.free()
 	# Explicitly test Mobile renderer fade and restoration, not just state flags.
@@ -66,7 +80,7 @@ func run() -> void:
 	await create_timer(.4).timeout
 	for mesh in roof_meshes:
 		check(mesh.visible and is_equal_approx(mesh.material_override.albedo_color.a,1) and mesh.material_override.transparency == BaseMaterial3D.TRANSPARENCY_DISABLED,"Exterior restores opaque roof")
-	FileAccess.open(DEST+"/results.json",FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures}))
+	FileAccess.open(output_dir+"/results.json",FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures,"cache_warm":cache_warm}))
 	print("PORT_CONTAINER_DEPTH: ",checks," checks; failures=",failures)
 	stage.free()
 	viewport.free()

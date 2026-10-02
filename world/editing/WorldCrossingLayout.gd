@@ -16,10 +16,10 @@ static func build(geometry) -> Array[Dictionary]:
 		groups[signature].append({"source":junction,"arms":arms,"ids":ids})
 	for signature in groups:
 		var siblings: Array = groups[signature]
-		var reference: PackedVector2Array
+		var local_reference: PackedVector2Array
 		for road in geometry._roads:
-			if road.id == siblings[0].ids[0]: reference = road.points; break
-		siblings.sort_custom(func(a,b): return offset_on(reference,a.source.position)<offset_on(reference,b.source.position))
+			if road.id == siblings[0].ids[0]: local_reference = road.points; break
+		siblings.sort_custom(func(a,b): return offset_on(local_reference,a.source.position)<offset_on(local_reference,b.source.position))
 		for ordinal in siblings.size():
 			var item: Dictionary = siblings[ordinal]
 			var center: Vector2 = item.source.position

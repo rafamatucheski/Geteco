@@ -10,9 +10,9 @@ class Witness extends CharacterBody3D:
 
 class CountingDanger extends "res://gameplay/civilian_reactions/CivilianDanger.gd":
 	var attempts := 0
-	func choose_escape(body: Node3D, blocked: Array[Vector3] = []) -> Vector3:
+	func begin_escape(body: Node3D, blocked: Array[Vector3] = []) -> Dictionary:
 		attempts += 1
-		return super.choose_escape(body, blocked)
+		return super.begin_escape(body, blocked)
 
 class SilentPresenter extends Node:
 	var screams := 0
@@ -48,6 +48,18 @@ func wall(parent: Node3D, point: Vector3, size: Vector3) -> StaticBody3D:
 	body.position = point
 	return body
 
+## A busca produtiva é incremental: aguarda o orçamento dos frames reais sem
+## avançar o cooldown manual do fixture. Física/obstáculos continuam reais.
+func finish_search(director: Node, state: Dictionary) -> void:
+	for _frame in 90:
+		director._process_escape_queue()
+		# Reentrada no mesmo frame simula catch-up da física e compartilha o teto.
+		director._process_escape_queue()
+		check("escape rays respect shared frame cap", director.escape_rays_used <= DIRECTOR.ESCAPE_RAYS_PER_FRAME)
+		if state.escape_search.is_empty(): return
+		await process_frame
+	check("pending escape completes within fixture bound", false)
+
 func _run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args():
 		push_error("CIVILIAN_BLOCKED_RETRY requires --no-save")
@@ -76,7 +88,8 @@ func _run() -> void:
 	var threat := Vector3(55, 0, 50)
 	danger.remember(threat, threat + Vector3.LEFT * 30)
 	director._steer_panic(witness, state, 1.0 / 60.0)
-	check("first reaction searches immediately", danger.attempts == 1)
+	check("first reaction schedules immediately", danger.attempts == 1 and not state.escape_search.is_empty())
+	await finish_search(director, state)
 	check("real enclosure has no escape", state.target == Vector3.ZERO)
 	check("trapped witness stays still", witness.automatic_direction == Vector3.ZERO)
 	for _tick in 30:
@@ -104,12 +117,14 @@ func _run() -> void:
 		director._steer_panic(witness, state, .25)
 		if danger.attempts > 1: break
 	check("retry happens when cadence expires", danger.attempts == 2, "attempts=" + str(danger.attempts))
+	await finish_search(director, state)
 	check("opened physical exit produces escape", state.target != Vector3.ZERO and witness.automatic_direction != Vector3.ZERO)
 	var before := danger.attempts
 	state.target = witness.global_position
 	state.replan = DIRECTOR.REPLAN_INTERVAL
 	director._steer_panic(witness, state, 1.0 / 60.0)
 	check("actual arrival replans immediately", danger.attempts == before + 1)
+	await finish_search(director, state)
 	# Recovery discards the old target. A new shot must resume panic immediately,
 	# even if the previous failed-search countdown has not expired.
 	state.phase = "recover"
@@ -119,6 +134,7 @@ func _run() -> void:
 	director._alert(witness, threat, threat + Vector3.LEFT * 30, null)
 	director._steer_panic(witness, state, 1.0 / 60.0)
 	check("new threat resumes panic immediately", state.phase == "panic" and danger.attempts == before + 1)
+	await finish_search(director, state)
 	# The horn sidestep is also a distinct reaction phase, not an active panic.
 	state.phase = "horn"
 	state.target = Vector3.ZERO
@@ -127,6 +143,7 @@ func _run() -> void:
 	director._alert(witness, threat, threat + Vector3.LEFT * 30, null)
 	director._steer_panic(witness, state, 1.0 / 60.0)
 	check("shot interrupts horn immediately", state.phase == "panic" and danger.attempts == before + 1 and presentation.screams == 1)
+	await finish_search(director, state)
 	director.reset_population()
 	scene.queue_free()
 	state.clear()

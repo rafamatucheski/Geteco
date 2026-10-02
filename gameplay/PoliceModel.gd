@@ -154,7 +154,7 @@ func _ready() -> void:
 	var mat_skin := _make_mat(Color(get_meta("police_appearance").skin), 0.65)
 	var mat_gold := _make_mat(Color(0.92, 0.78, 0.20), 0.3)
 	var mat_black := _make_mat(Color(0.08, 0.08, 0.10), 0.4)
-	var mat_gun := _make_mat(Color(0.20, 0.22, 0.25), 0.2)
+
 	var mat_vest := _make_mat(Color(0.05, 0.05, 0.07), 0.3)
 	var mat_fbi_yellow := _make_mat(Color(0.95, 0.85, 0.15), 0.3)
 
@@ -371,7 +371,8 @@ func _body_weapon_targets() -> Array:
 			grip = left_shoulder - support_offset + (grip + support_offset - left_shoulder).limit_length(.594)
 	else:
 		grip = right_shoulder + (grip - right_shoulder).limit_length(.594)
-	var left_target: Variant = grip + support_offset if supports else null
+	var left_target: Variant = null
+	if supports: left_target = grip + support_offset
 	if _body_reloading:
 		var progress := _body_reload_progress
 		var weight := smoothstep(0.0, .10, progress) * (1.0 - smoothstep(.88, 1.0, progress))
@@ -386,7 +387,9 @@ func _body_weapon_targets() -> Array:
 	var world_basis := body.global_basis * desired_basis
 	var world_grip := body.to_global(grip)
 	weapon.global_transform = Transform3D(world_basis, world_grip - world_basis * POSE_DATA.GRIPS[weapon_id])
-	_weapon_hand_contacts = [world_grip, body.to_global(left_target) if left_target is Vector3 else null]
+	var left_contact: Variant = null
+	if left_target is Vector3: left_contact = body.to_global(left_target)
+	_weapon_hand_contacts = [world_grip, left_contact]
 	return _weapon_hand_contacts.duplicate()
 
 func weapon_hand_contacts() -> Array:

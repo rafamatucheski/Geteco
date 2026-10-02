@@ -30,7 +30,7 @@ var sees_player := false
 var _clock := 0.0
 var _mode_time := 0.0
 var _sensor := 0.0
-var _rope_tick := 0.0
+
 var _next_drop := 0.0
 var _reserved := 4
 var _depart_requested := false
@@ -372,9 +372,9 @@ func _update_ropes() -> void:
 			if absf(up.dot(right)) > 0.9: right = Vector3.FORWARD
 			var forward := right.cross(up).normalized()
 			right = up.cross(forward).normalized()
-			var basis := Basis(right, up * length, forward)
-			var transform := Transform3D(basis, (a + b) * 0.5)
-			var local := rope_mesh.global_transform.affine_inverse() * transform
+			var local_basis := Basis(right, up * length, forward)
+			var local_transform := Transform3D(local_basis, (a + b) * 0.5)
+			var local := rope_mesh.global_transform.affine_inverse() * local_transform
 			rope_transforms[index * ROPE_SEGMENTS + segment] = local
 			rope_mesh.multimesh.set_instance_transform(index * ROPE_SEGMENTS + segment, local)
 
@@ -391,6 +391,8 @@ static func rotor_audio() -> AudioStreamWAV:
 	var samples := PackedByteArray()
 	var rate := 22050
 	samples.resize(rate)
+	# Audio buffer/loop lengths count whole samples.
+	@warning_ignore("integer_division")
 	for index in rate / 2:
 		var time := float(index) / rate
 		var blade := pow(0.5 + 0.5 * sin(TAU * 24.0 * time), 7.0)
@@ -401,5 +403,7 @@ static func rotor_audio() -> AudioStreamWAV:
 	_rotor_audio.mix_rate = rate
 	_rotor_audio.data = samples
 	_rotor_audio.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	# Audio buffer/loop lengths count whole samples.
+	@warning_ignore("integer_division")
 	_rotor_audio.loop_end = rate / 2
 	return _rotor_audio

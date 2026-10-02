@@ -52,9 +52,9 @@ func nearby_sources(focus: Vector3) -> Array[Dictionary]:
 		var point: Vector3 = item.point+Vector3(0,5.0,0)
 		var pool: Dictionary = item.get("pool",{})
 		if is_instance_valid(pool.get("multimesh")):
-			var transform: Transform3D = pool.multimesh.get_instance_transform(pool.index)
-			if transform.basis.x.length_squared()<.001: continue
-			point = chunk.global_transform*transform.origin+Vector3(0,5.0,0)
+			var local_transform: Transform3D = pool.multimesh.get_instance_transform(pool.index)
+			if local_transform.basis.x.length_squared()<.001: continue
+			point = chunk.global_transform*local_transform.origin+Vector3(0,5.0,0)
 		var id := "street:%s:%s" % [chunk.get_instance_id(),str(item.point)]
 		result.append({"id":id,"point":point,"range":14.0,"energy":1.8,"color":Color("ffe4ba")})
 	for source in get_tree().get_nodes_in_group(SOURCE_GROUP):
@@ -83,10 +83,10 @@ func apply_sources(sources: Array[Dictionary], focus: Vector3, night: float) -> 
 	var chosen: Array[Dictionary] = []
 	for item in ranked:
 		# Twin globes and duplicate chunk-edge entries share one real light.
-		var duplicate := false
+		var local_duplicate := false
 		for other in chosen:
-			if (item.point as Vector3).distance_squared_to(other.point)<16.0: duplicate = true; break
-		if duplicate: continue
+			if (item.point as Vector3).distance_squared_to(other.point)<16.0: local_duplicate = true; break
+		if local_duplicate: continue
 		chosen.append(item)
 		if chosen.size() == CAPACITY: break
 	var ids: Array = chosen.map(func(item): return item.id)

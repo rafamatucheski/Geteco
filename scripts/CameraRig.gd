@@ -191,6 +191,7 @@ func _process(delta: float) -> void:
 ## Apaga a cidade entre a câmera e o tubo enquanto o alvo está fundo no túnel.
 func _update_cutaway() -> void:
 	var strength := clampf((_tunnel_blend - TUNNEL_CUTAWAY_START) / (1.0 - TUNNEL_CUTAWAY_START), 0.0, 1.0)
+	CANAL_TUNNEL.set_camera_reveal(smoothstep(0.0, 1.0, strength))
 	var aspect := get_viewport().get_visible_rect().size.aspect() if is_inside_tree() else 1.78
 	# Meia largura visível + folga: quem entra na janela já está apagado antes de aparecer.
 	var half_width := size * aspect * 0.5 + 16.0
@@ -348,6 +349,7 @@ func _ensure_scope_reticle() -> void:
 
 func _exit_tree() -> void:
 	_cutaway.release()
+	CANAL_TUNNEL.set_camera_reveal(0.0)
 	if is_instance_valid(scope_reticle):
 		scope_reticle.hide()
 		scope_reticle.queue_free()

@@ -73,6 +73,8 @@ static func _rebuilt(source: Mesh) -> ArrayMesh:
 	else:
 		order.resize(vertices.size())
 		for i in order.size(): order[i] = i
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	var count: int = order.size() / 3
 	var face_normal := PackedVector3Array()
 	var face_weight := PackedFloat32Array()

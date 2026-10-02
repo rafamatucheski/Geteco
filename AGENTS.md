@@ -27,6 +27,12 @@
 - Não declare performance aprovada com regressão confirmada, queda reproduzível para 12–15 FPS ou sem medição; informe precisamente a pendência. Mudanças apenas de texto/documentação dispensam benchmark.
 - Se a skill estiver indisponível, informe e aplique estes critérios diretamente, junto de `testes-com-criterio` na validação de software.
 
+## Qualidade e estabilidade da iluminação
+
+- Ao criar ou alterar luzes de carros, postes, cidade, sombras ou reflexos, ou investigar flickering e popping, carregue `validar-iluminacao`. Cópia versionada: [SKILL.md](docs/skills/validar-iluminacao/SKILL.md).
+- Exija evidência temporal na cena real renderizada e comparação de performance. Screenshot isolado e teste headless não comprovam ausência de flickering. Não aprove piscadas involuntárias nem oculte defeitos apagando luzes necessárias ou degradando a qualidade global.
+- Restrinja a conclusão aos cenários efetivamente validados e registre pendências; a skill não certifica automaticamente toda a iluminação do jogo.
+
 ## Segurança do Git e Trabalho Concorrente (CRÍTICO)
 
 - NUNCA execute `git checkout`, `git restore`, `git reset --hard`, `git clean` ou qualquer comando que descarte alterações locais em arquivos que tenham modificações não commitadas — nem para desfazer a própria edição, nem para "limpar" conflitos.
@@ -35,3 +41,14 @@
 - Caso precise desfazer alterações:
   - Para reverter apenas a sua própria alteração, desfaça a edição manualmente no arquivo ou utilize `git stash` (NUNCA utilize `stash drop` ou descarte stash sem verificar o conteúdo).
   - Se houver conflito ou arquivo alterado por outra sessão, NUNCA tente resolver descartando ou sobrescrevendo: notifique o usuário imediatamente.
+
+## Auditoria da malha viária
+
+- Para auditar ruas, conexões, cruzamentos, semáforos e coerência do trânsito, carregue `auditoria-viaria`. Cópia versionada: [SKILL.md](docs/skills/auditoria-viaria/SKILL.md). Aplique os critérios pertinentes também na validação de alterações nesses sistemas, sem exigir auditoria da cidade inteira para uma mudança local.
+- Compare geometria, grafo dirigido, sinalização visível e comportamento na cena real. Teste isolado de fases não aprova todos os cruzamentos; registre cobertura e pendências. Auditar não autoriza redesenhar o mapa fora do pedido.
+
+## Qualidade integrada e estabilidade
+
+- Em auditorias do jogo ou mudanças que atravessam sistemas ou alteram carga/ciclo de vida compartilhados, carregue [guardiao-do-jogo](docs/skills/guardiao-do-jogo/SKILL.md).
+- Dimensione a validação pelo impacto: cadeia afetada em mudanças locais; inventário de áreas, transições e sistemas em auditorias amplas. Inclua jogo normal, caos plausível e recuperação pertinentes, com evidência real e lacunas explícitas.
+- Esta skill complementa performance-do-jogo e testes-com-criterio; não exige auditoria global a cada ajuste nem benchmark para documentação.

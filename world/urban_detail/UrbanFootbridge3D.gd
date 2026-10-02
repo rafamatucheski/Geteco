@@ -108,14 +108,14 @@ func _railing(from: Vector3, to: Vector3, steel: Material, paint: Material, scre
 		var at := from.lerp(to, float(i) / float(count - 1))
 		_box(at + Vector3(0, RAIL_HEIGHT * 0.5, 0), Vector3(0.07, RAIL_HEIGHT, 0.07), steel)
 	var direction := run.normalized()
-	var basis := Basis.looking_at(direction, Vector3.UP).orthonormalized()
+	var local_basis := Basis.looking_at(direction, Vector3.UP).orthonormalized()
 	# `looking_at` aponta -Z para a direção; o comprimento vai no Z local.
 	var middle := (from + to) * 0.5
 	for level in [[RAIL_HEIGHT, 0.07, paint], [RAIL_HEIGHT * 0.5, 0.04, steel], [0.12, 0.04, steel]]:
-		_box_basis(Transform3D(basis.scaled_local(Vector3(level[1], level[1], run.length())), middle + Vector3(0, level[0], 0)), level[2])
-	_box_basis(Transform3D(basis.scaled_local(Vector3(0.02, RAIL_HEIGHT - 0.2, run.length())), middle + Vector3(0, RAIL_HEIGHT * 0.5 + 0.02, 0)), screen)
+		_box_basis(Transform3D(local_basis.scaled_local(Vector3(level[1], level[1], run.length())), middle + Vector3(0, level[0], 0)), level[2])
+	_box_basis(Transform3D(local_basis.scaled_local(Vector3(0.02, RAIL_HEIGHT - 0.2, run.length())), middle + Vector3(0, RAIL_HEIGHT * 0.5 + 0.02, 0)), screen)
 	# Parede invisível do guarda-corpo: ninguém cai nem atravessa a tela.
-	_solid_basis(Transform3D(basis, middle + Vector3(0, RAIL_HEIGHT * 0.5 + 0.05, 0)), Vector3(0.12, RAIL_HEIGHT + 0.1, run.length()))
+	_solid_basis(Transform3D(local_basis, middle + Vector3(0, RAIL_HEIGHT * 0.5 + 0.05, 0)), Vector3(0.12, RAIL_HEIGHT + 0.1, run.length()))
 
 func _mat(color: Color, roughness := 0.85) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()

@@ -26,7 +26,7 @@ const COMMERCIAL := ["corner_shop", "shop", "commercial_laundromat", "warehouse_
 const INDUSTRIAL := ["warehouse", "artisan_workshop", "garage"]
 const NEON_COLORS := [Color(1.0, 0.25, 0.55), Color(0.25, 0.9, 1.0), Color(1.0, 0.62, 0.15), Color(0.55, 1.0, 0.35), Color(0.8, 0.4, 1.0)]
 
-static var _graffiti: Array[ImageTexture] = []
+
 static var _graffiti_materials: Array[StandardMaterial3D] = []
 
 
@@ -110,9 +110,9 @@ static func _fire_escape(key: String, kind: String, facade: Dictionary, batches:
 	var columns := _columns(facade)
 	var candidates := []
 	for column in columns:
-		var stack: Array = columns[column]
+		var branch_stack: Array = columns[column]
 		# Duas janelas em andares diferentes: dá para ligar com um lance.
-		if stack.size() >= 2 and float(stack[-1].bottom) - float(stack[0].bottom) > 1.8: candidates.append(column)
+		if branch_stack.size() >= 2 and float(branch_stack[-1].bottom) - float(branch_stack[0].bottom) > 1.8: candidates.append(column)
 	if candidates.is_empty(): return
 	candidates.sort()
 	var column = candidates[int(_roll(key + "|fec") * candidates.size()) % candidates.size()]
@@ -209,7 +209,7 @@ static func _free_spans(facade: Dictionary) -> Array:
 	return spans.filter(func(span): return span.y - span.x >= 1.7)
 
 
-static func _street_level(key: String, kind: String, facade: Dictionary, batches: Dictionary, chunk: Node3D) -> void:
+static func _street_level(key: String, kind: String, facade: Dictionary, batches: Dictionary, _chunk: Node3D) -> void:
 	var spans := _free_spans(facade)
 	var graffiti_ratio := 0.85 if kind in INDUSTRIAL else 0.55 if kind in COMMERCIAL else 0.4
 	var poster_ratio := 0.5 if kind in COMMERCIAL or kind in INDUSTRIAL else 0.25
@@ -337,7 +337,7 @@ static func _free_roof_spot(key: String, center: Vector2, size: Vector2, occupie
 	return Vector2.INF
 
 
-static func _steam(point: Vector3, key: String) -> CPUParticles3D:
+static func _steam(point: Vector3, _key: String) -> CPUParticles3D:
 	var steam := CPUParticles3D.new()
 	steam.name = "RoofSteam"
 	steam.amount = 10

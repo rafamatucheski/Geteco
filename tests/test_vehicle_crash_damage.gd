@@ -113,6 +113,8 @@ func run() -> void:
 		and struck.health >= struck.max_health * 0.7 and not striking.damage_look.burning and not struck.damage_look.burning,
 		"batida forte entre carros danifica ambos sem incêndio imediato")
 	world.queue_free()
-	await process_frame
+	await world.tree_exited
+	# Deletion and audio playback shutdown finish outside this physics callback.
+	await create_timer(.1).timeout
 	print("VEHICLE_CRASH_DAMAGE checks=10 failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

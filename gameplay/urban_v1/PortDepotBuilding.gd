@@ -82,15 +82,15 @@ func _build_shell() -> void:
 			_box("Downpipe", Vector3(x, 4.4, z), Vector3(.16, 8.8, .16), "steel", false, _facade)
 	# The teal band and masonry plinth distinguish a company from a port gantry.
 	_box("FrontBrandBand", Vector3(0, 7.0, 18.29), Vector3(56.4, 1.5, .15), "teal", false, _facade)
-	var sign := Label3D.new()
-	sign.name = "CompanyName"
-	sign.text = "VÉRTICE"
-	sign.font_size = 112
-	sign.pixel_size = .021
-	sign.outline_size = 0
-	sign.modulate = Color("f2ede0")
-	sign.position = Vector3(0, 7.02, 18.41)
-	_facade.add_child(sign)
+	var sign_node := Label3D.new()
+	sign_node.name = "CompanyName"
+	sign_node.text = "VÉRTICE"
+	sign_node.font_size = 112
+	sign_node.pixel_size = .021
+	sign_node.outline_size = 0
+	sign_node.modulate = Color("f2ede0")
+	sign_node.position = Vector3(0, 7.02, 18.41)
+	_facade.add_child(sign_node)
 
 func _wall(id: String, base: Vector3, size: Vector3) -> void:
 	var low := size
@@ -281,14 +281,14 @@ func _box(id: String, at: Vector3, size: Vector3, material_key: String, solid :=
 	if group == null: group = _fixed
 	var mesh := BoxMesh.new()
 	mesh.size = size
-	var transform := Transform3D(Basis.from_euler(angles), at)
+	var local_transform := Transform3D(Basis.from_euler(angles), at)
 	var key := "%s:%s" % [group.get_instance_id(), material_key]
 	if not _batches.has(key):
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_batches[key] = {"surface": surface, "group": group, "material": _material(material_key)}
 	var builder: SurfaceTool = _batches[key].surface
-	builder.append_from(mesh, 0, transform)
+	builder.append_from(mesh, 0, local_transform)
 	if solid:
 		# Cutaway hides meshes, never architecture physics.
 		var body_parent: Node3D = self if group in [_fixed, _roof, _facade] else group

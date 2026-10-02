@@ -19,6 +19,8 @@ static func build(model: Node3D, winter := true) -> void:
 	var variant: int = posmod(model.appearance_variant, 12)
 	var female: bool = model.appearance_female
 	var skin: Color = SKINS[variant%4]
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	var hair: Color = HAIRS[(variant/3)%4]
 	var coat: Color = model.coat_color
 	var boots := Color("2c3036")

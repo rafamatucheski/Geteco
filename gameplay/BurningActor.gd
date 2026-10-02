@@ -89,10 +89,10 @@ func _exit_tree() -> void:
 		actor.remove_meta("v2_burning")
 	_stop_visuals()
 
-static func char_body(actor: Node3D) -> void:
-	if not is_instance_valid(actor): return
-	actor.set_meta("v2_charred", true)
-	var visual: Node3D = actor.get("visual")
+static func char_body(p_actor: Node3D) -> void:
+	if not is_instance_valid(p_actor): return
+	p_actor.set_meta("v2_charred", true)
+	var visual: Node3D = p_actor.get("visual")
 	if not is_instance_valid(visual): return
 	var soot := Color(0.075, 0.07, 0.068, 1.0)
 	var ember := Color(0.16, 0.105, 0.075, 1.0)

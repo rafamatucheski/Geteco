@@ -76,12 +76,12 @@ const FE_RUN := 2.6
 const FE_RISE := 2.5
 const FE_Z := 1.3
 
-static func _fe_stair(t: SurfaceTool, sign: float) -> void:
+static func _fe_stair(t: SurfaceTool, p_sign: float) -> void:
 	var steps := 10
 	for i in steps:
 		var f := (i + 0.5) / steps
-		KIT.box(t, Vector3((-FE_RUN * 0.5 + f * FE_RUN) * sign, f * FE_RISE, FE_Z), Vector3(0.24, 0.03, 0.6), IRON_LIGHT)
-	var angle := atan2(FE_RISE, FE_RUN) * sign
+		KIT.box(t, Vector3((-FE_RUN * 0.5 + f * FE_RUN) * p_sign, f * FE_RISE, FE_Z), Vector3(0.24, 0.03, 0.6), IRON_LIGHT)
+	var angle := atan2(FE_RISE, FE_RUN) * p_sign
 	var length := sqrt(FE_RISE * FE_RISE + FE_RUN * FE_RUN)
 	for z in [FE_Z - 0.32, FE_Z + 0.32]:
 		_slanted(t, Vector3(0, FE_RISE * 0.5 - 0.05, z), Vector3(length, 0.1, 0.04), angle, IRON)

@@ -171,7 +171,7 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 		KIT.box(t, Vector3(bay_x - bay_w * 0.5 + 0.3 + i * 0.6, 0.035, hz + 1.2), Vector3(0.3, 0.01, 2.2), Color("d9b43a"), 0.6)
 
 
-static func _roof(t: SurfaceTool, glow: Dictionary, hw: float, hz: float, roof_y: float, center: Vector2, size: Vector2, occupied: Array, batches: Dictionary, building: UrbanBuildingBase) -> Vector3:
+static func _roof(t: SurfaceTool, glow: Dictionary, _hw: float, _hz: float, roof_y: float, center: Vector2, size: Vector2, occupied: Array, batches: Dictionary, building: UrbanBuildingBase) -> Vector3:
 	var xf := building.global_transform
 	# Heliponto: o maior disco que cabe longe dos obstáculos.
 	# Heliponto: o maior disco (4,8 m → 2,4 m) que cabe longe dos obstáculos.
@@ -179,6 +179,8 @@ static func _roof(t: SurfaceTool, glow: Dictionary, hw: float, hz: float, roof_y
 	var pad := Vector2.INF
 	while pad == Vector2.INF and radius >= 2.4:
 		for attempt in 25:
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			var candidate := center + Vector2((attempt % 5 - 2) * 0.9, (attempt / 5 - 2) * 0.9)
 			if absf(candidate.x - center.x) + radius > size.x * 0.5 - 0.3 or absf(candidate.y - center.y) + radius > size.y * 0.5 - 0.3: continue
 			var free := true
@@ -248,7 +250,7 @@ static func _emissive(kind: String, boxes: Array, xform: Transform3D) -> MeshIns
 	return mesh
 
 
-static func _labels(chunk: Node3D, building: UrbanBuildingBase, hw: float, hz: float, ex: float) -> void:
+static func _labels(chunk: Node3D, building: UrbanBuildingBase, _hw: float, hz: float, ex: float) -> void:
 	var xf := building.global_transform
 	_label(chunk, xf * Transform3D(Basis.IDENTITY, Vector3(ex, 2.72, hz + 2.065)), "POLÍCIA", 96, 0.0085, Color("12306e"), 4.0)
 

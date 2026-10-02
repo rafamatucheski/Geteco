@@ -6,6 +6,7 @@ signal cancelled(reason: String, point: Vector3)
 const MIN_SPEED := 2.0
 const ROLL_SECONDS := 0.85
 const RECOVER_SECONDS := 0.8
+const BODY_AUDIO := preload("res://audio/VehicleCrashAudio.gd")
 var exiting := true
 var active := false
 var phase := "jump"
@@ -24,6 +25,7 @@ var _pose: Array = []
 var _yaw := 0.0
 var _door_closed := false
 var _source_excepted := false
+var _limb_pairs: Dictionary = {}
 
 static func damage_for_speed(speed: float) -> float:
 	return clampf((absf(speed)-MIN_SPEED)*0.8+3.0,3.0,18.0)
@@ -41,6 +43,10 @@ func begin(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D,
 	impact_speed = momentum.length()
 	_visual_transform = actor.visual.transform
 	_pose = actor._capture_pose()
+	if is_instance_valid(actor.skeleton):
+		for prefix in ["Left","Right"]:
+			for pair in [["Arm","ForeArm"],["ForeArm","Hand"],["UpLeg","Leg"],["Leg","Foot"]]:
+				_limb_pairs[prefix+pair[0]] = [actor.skeleton.find_bone(prefix+pair[0]),actor.skeleton.find_bone(prefix+pair[1])]
 	actor.teleport(point)
 	actor.show()
 	actor.input_locked = true
@@ -75,10 +81,12 @@ func _physics_process(delta: float) -> void:
 	planar = planar.move_toward(Vector3.ZERO,(7.0 if landed else 1.5)*delta)
 	actor.velocity.x = planar.x
 	actor.velocity.z = planar.z
+	var landing_speed := maxf(0.0,-actor.velocity.y)
 	actor.move_and_slide()
 	if actor.is_on_floor() and age > 0.1 and not landed:
 		landed = true
-		phase = "roll"
+		phase = "slide"
+		BODY_AUDIO.play_body_impact(actor,actor,actor.global_position,landing_speed,true)
 		# Armor does not protect against a fall. Apply once, at ground contact.
 		if is_instance_valid(world.get("gameplay")):
 			world.gameplay.damage_environment(damage_for_speed(impact_speed))
@@ -112,17 +120,21 @@ func _present(roll: float, recover: float) -> void:
 			_tuck_limb(prefix+"UpLeg",prefix+"Leg",Vector3(sign_side*.04,.02,.36),tuck)
 			_tuck_limb(prefix+"Leg",prefix+"Foot",Vector3(0,-.24,-.20),tuck)
 	var fall := smoothstep(0.0,0.22,age)
-	var pitch := lerpf(-PI*0.5*fall-TAU*roll,-TAU,recover)
-	var basis := Basis.from_euler(Vector3(pitch,_yaw,0))
+	# Brace, settle on one side and rise. Never force a full somersault.
+	var pitch := lerpf(-1.15,-1.38,smoothstep(0.0,0.55,roll))*fall*(1.0-recover)
+	var bank := float(side)*.22*fall*(1.0-recover)
+	var facing := lerp_angle(_yaw,_visual_transform.basis.get_euler().y,recover)
+	var basis := Basis(Vector3.UP,facing)*Basis(Vector3.RIGHT,pitch)*Basis(Vector3.FORWARD,bank)
 	actor.visual.basis = basis.scaled(_visual_transform.basis.get_scale())
 	# Rotate around the tucked torso, not the feet; keep the body above ground.
-	var height := lerpf(0.88,0.62,fall)*(1.0-recover)+0.88*recover
+	var height := lerpf(0.88,0.30,fall)*(1.0-recover)+0.88*recover
 	actor.visual.position = _visual_transform.origin+Vector3.UP*height-basis*Vector3.UP*0.88
 
-func _tuck_limb(name: String, child_name: String, offset: Vector3, weight: float) -> void:
+func _tuck_limb(p_name: String, _child_name: String, offset: Vector3, weight: float) -> void:
 	var skeleton: Skeleton3D = actor.skeleton
-	var bone := skeleton.find_bone(name)
-	var child := skeleton.find_bone(child_name)
+	var pair: Array = _limb_pairs.get(p_name,[-1,-1])
+	var bone: int = pair[0]
+	var child: int = pair[1]
 	if bone < 0 or child < 0: return
 	var origin := skeleton.get_bone_global_pose(bone).origin
 	var current := skeleton.get_bone_global_pose(child).origin

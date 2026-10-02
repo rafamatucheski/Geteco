@@ -177,15 +177,15 @@ func request_surrender() -> bool:
 	if gameplay.equipped() not in ["", "fists"]: return false
 	surrendering = true
 	surrender_time = 0.0
-	for round in gameplay._police_rounds.duplicate():
+	for round_index in gameplay._police_rounds.duplicate():
 		# Hostile civilians use the same projectile array. Their bullets keep
 		# flying; surrender is an agreement with the police, not invulnerability.
-		var source: Variant = round.source.get_ref() if round.get("source") is WeakRef else null
+		var source: Variant = round_index.source.get_ref() if round_index.get("source") is WeakRef else null
 		if not is_instance_valid(source) or not source is Node: continue
 		if source.get_meta("gameplay_role", "") != "police" and not source.get_meta("dispatch_unit",false): continue
-		if is_instance_valid(gameplay.effects) and not round.visual.is_empty():
-			gameplay.effects.move_police_tracer(round.visual, round.point, true)
-		gameplay._police_rounds.erase(round)
+		if is_instance_valid(gameplay.effects) and not round_index.visual.is_empty():
+			gameplay.effects.move_police_tracer(round_index.visual, round_index.point, true)
+		gameplay._police_rounds.erase(round_index)
 	gameplay.message.emit("Rendição: fique parado e aguarde a abordagem.")
 	gameplay.changed.emit()
 	return true

@@ -121,7 +121,7 @@ static func _measure_skin(parts: Array[MeshInstance3D], transforms: Array[Transf
 			var arrays := part.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
-			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+
 			var has_index := not indices.is_empty()
 			var count := indices.size() if has_index else vertices.size()
 			for i in range(0, count, 3):

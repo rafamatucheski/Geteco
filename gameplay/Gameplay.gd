@@ -1,5 +1,6 @@
 extends Node3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const LOCAL_GRID_SEARCH := preload("res://gameplay/navigation/LocalGridPathSearch.gd")
 
 signal changed
 signal message(text: String)
@@ -23,6 +24,7 @@ const CUSTOM = preload("res://gameplay/WeaponCustomization.gd")
 const EMERGENCY = preload("res://gameplay/emergency/EmergencyManager.gd")
 const AUDIO = preload("res://gameplay/CombatAudio.gd")
 const PROTECTION = preload("res://gameplay/DamageProtection.gd")
+const BLAST_QUERY := preload("res://gameplay/BlastQuery.gd")
 const EFFECTS = preload("res://gameplay/CombatEffects.gd")
 const RIG_POSE = preload("res://gameplay/WeaponRigPose.gd")
 const LOOT = preload("res://gameplay/LootPickup.gd")
@@ -1377,7 +1379,7 @@ func explode(point: Vector3, radius: float, amount: float, source: Node3D, hurt_
 	query.transform.origin = point
 	query.collision_mask = 6
 	var seen: Dictionary = {}
-	for result in get_world_3d().direct_space_state.intersect_shape(query, 64):
+	for result in BLAST_QUERY.intersect_bodies(get_world_3d().direct_space_state,query):
 		var actor: Node3D = result.collider
 		if is_instance_valid(crusher) and (actor == crusher or crusher.is_ancestor_of(actor)): continue
 		if not hurt_source and (actor == source or actor.get_parent() == source): continue
@@ -1586,22 +1588,22 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 
 func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
-		var round: Dictionary = _police_rounds[index]
-		var step := minf(float(round.speed) * delta, float(round.range) - float(round.distance))
-		var end: Vector3 = round.point + round.direction * step
-		var query := PhysicsRayQueryParameters3D.create(round.point, end, 7, [round.rid])
-		var hit: Dictionary = round.blocked if not round.blocked.is_empty() else get_world_3d().direct_space_state.intersect_ray(query)
+		var round_index: Dictionary = _police_rounds[index]
+		var step := minf(float(round_index.speed) * delta, float(round_index.range) - float(round_index.distance))
+		var end: Vector3 = round_index.point + round_index.direction * step
+		var query := PhysicsRayQueryParameters3D.create(round_index.point, end, 7, [round_index.rid])
+		var hit: Dictionary = round_index.blocked if not round_index.blocked.is_empty() else get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty(): end = hit.position
-		round.distance += (round.point as Vector3).distance_to(end)
-		round.point = end
-		var finished := not hit.is_empty() or float(round.distance) >= float(round.range) - 0.0001
-		if is_instance_valid(effects) and not round.visual.is_empty(): effects.move_police_tracer(round.visual, end, finished)
+		round_index.distance += (round_index.point as Vector3).distance_to(end)
+		round_index.point = end
+		var finished := not hit.is_empty() or float(round_index.distance) >= float(round_index.range) - 0.0001
+		if is_instance_valid(effects) and not round_index.visual.is_empty(): effects.move_police_tracer(round_index.visual, end, finished)
 		if not hit.is_empty():
-			var data: Dictionary = round.data
-			var damage := CATALOG.distance_damage(int(round.damage), float(round.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
-			_damage(hit.collider, damage, round.source.get_ref())
+			var data: Dictionary = round_index.data
+			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
+			_damage(hit.collider, damage, round_index.source.get_ref())
 			_impact_sound(hit.collider, end, damage)
-			_hit_effect(hit, damage, round.direction)
+			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)
 
 func police_reload(officer: Node3D, weapon_id: String) -> void:
@@ -1833,6 +1835,7 @@ func on_region_changed() -> void:
 	contact_age = 10.0
 	hidden_time = 0.0
 	_occupancy.clear()
+	set_meta("police_navigation_epoch", int(get_meta("police_navigation_epoch", 0)) + 1)
 
 func clear_wanted(keep_investigation: bool = false) -> void:
 	# Escape leaves aircraft free to finish lowering the squad and fly away.
@@ -1887,51 +1890,12 @@ func _find_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
 	return _find_grid_path(start,finish)
 
 func _find_grid_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
-	# Bounded local A* in native world metres. Static solid probes are cached;
-	# CharacterBody3D remains the final authority for dynamic collisions.
-	var from := Vector2i(roundi(start.x / 2), roundi(start.z / 2))
-	var to := Vector2i(roundi(finish.x / 2), roundi(finish.z / 2))
-	if from == to: return PackedVector3Array([finish])
-	var frontier: Array[Vector2i] = [from]
-	var previous: Dictionary = {}
-	var costs: Dictionary = {from: 0.0}
-	var dynamic_clear: Dictionary = {}
-	var best := from
-	for iteration in 256:
-		if frontier.is_empty(): break
-		var chosen := 0
-		var score := INF
-		for index in frontier.size():
-			var value: float = costs[frontier[index]] + Vector2(frontier[index] - to).length()
-			if value < score:
-				score = value
-				chosen = index
-		var current: Vector2i = frontier.pop_at(chosen)
-		if Vector2(current - to).length_squared() < Vector2(best - to).length_squared(): best = current
-		if current == to:
-			best = current
-			break
-		for offset in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
-			var next: Vector2i = current + offset
-			if Vector2(next - from).length() > 20: continue
-			var key := Vector3i(next.x, roundi(start.y), next.y)
-			if not _occupancy.has(key): _occupancy[key] = _walkable_at(Vector3(next.x * 2, start.y, next.y * 2))
-			if not _occupancy[key]: continue
-			# Cars change position, so their occupancy lasts only for this path
-			# request. This also lets crews walk around their own parked ambulance.
-			if not dynamic_clear.has(next): dynamic_clear[next] = _clear_at(Vector3(next.x * 2, start.y, next.y * 2), 4)
-			if not dynamic_clear[next]: continue
-			var cost: float = costs[current] + 1
-			if costs.has(next) and costs[next] <= cost: continue
-			costs[next] = cost
-			previous[next] = current
-			if not frontier.has(next): frontier.append(next)
-	var reverse: Array[Vector3] = []
-	while best != from and previous.has(best):
-		reverse.append(Vector3(best.x * 2, start.y, best.y * 2))
-		best = previous[best]
-	reverse.reverse()
-	return PackedVector3Array(reverse)
+	# Keep the public synchronous contract for non-police callers. The shared
+	# search preserves neighbor order, the 256-node bound and physical probes.
+	var search := LOCAL_GRID_SEARCH.new()
+	search.configure(start, finish, _occupancy, _walkable_at, _clear_at)
+	search.advance()
+	return search.path
 
 ## Material do traço na cor da arma (`tracer_color` do catálogo, como o V1); cache por cor.
 func _tracer_material(color: Color) -> StandardMaterial3D:

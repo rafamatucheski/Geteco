@@ -50,14 +50,18 @@ static func decorate(id: String, model: Node3D) -> void:
 				var material := original.duplicate() as StandardMaterial3D
 				material.resource_name = "glass" if is_glass else "paint"
 				material.clearcoat_enabled = true
-				material.clearcoat = .65 if is_glass else .5
-				material.clearcoat_roughness = .12 if is_glass else .2
+				material.clearcoat = .65 if is_glass else .15
+				material.clearcoat_roughness = .12 if is_glass else .45
 				if is_glass:
 					material.albedo_color = Color("7896a6")
 					material.albedo_texture = _glazing_texture()
 					material.metallic = .28
 					material.roughness = .12
-				else: material.roughness = minf(material.roughness,.3)
+				else:
+					# Broad, subdued paint highlights keep the body color readable on
+					# horizontal panels. Preserve authored finishes that are rougher.
+					material.roughness = maxf(material.roughness,.6)
+					material.metallic_specular = minf(material.metallic_specular,.25)
 				_materials[recipe] = material
 			if part.material_override != null: part.material_override = _materials[recipe]
 			else: part.set_surface_override_material(surface,_materials[recipe])

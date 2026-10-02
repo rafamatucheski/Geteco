@@ -24,7 +24,7 @@ var angle := 1.05
 var seat_z := 0.0
 var ready_for_boarding := false
 var _liners: Dictionary = {}
-var _open_count := {-1: 0, 1: 0}
+
 
 static var _card: StandardMaterial3D
 static var _liner_material: StandardMaterial3D

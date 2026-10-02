@@ -92,12 +92,12 @@ static func _bake_shape(source: Shape3D, basis: Basis) -> Shape3D:
 		box.size *= basis.get_scale().abs()
 		return box
 	if source is ConcavePolygonShape3D:
-		var result := ConcavePolygonShape3D.new()
+		var branch_result := ConcavePolygonShape3D.new()
 		var faces: PackedVector3Array = source.get_faces()
 		for i in faces.size(): faces[i] = basis * faces[i]
-		result.set_faces(faces)
-		result.backface_collision = source.backface_collision
-		return result
+		branch_result.set_faces(faces)
+		branch_result.backface_collision = source.backface_collision
+		return branch_result
 	var points := PackedVector3Array()
 	if source is BoxShape3D:
 		var bounds := AABB(-source.size*.5, source.size)

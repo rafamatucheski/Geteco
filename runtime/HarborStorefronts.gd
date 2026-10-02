@@ -324,10 +324,10 @@ func _reason(reason: String) -> String:
 	return {"insufficient_funds":"Dinheiro insuficiente.", "already_owned":"Você já possui este item.",
 		"discovery_required":"Item ainda não descoberto.", "reward_only":"Item não vendido nesta loja."}.get(reason, "Operação indisponível.")
 
-func _label(text: String, size: int, color: Color) -> Label:
+func _label(text: String, p_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_font_size_override("font_size", p_size)
 	label.add_theme_color_override("font_color", color)
 	return label
 

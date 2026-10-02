@@ -39,6 +39,8 @@ static func _fix_hull(id: String, model: Node3D) -> void:
 		for i in order.size(): order[i] = i
 	var flank := 0
 	var culled := 0
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	for t in order.size() / 3:
 		var a := v[order[t * 3]]
 		var b := v[order[t * 3 + 1]]
@@ -79,13 +81,15 @@ static func _rebuilt(source: Mesh, center: Vector3, radii: Vector3) -> ArrayMesh
 	else:
 		order.resize(vertices.size())
 		for i in order.size(): order[i] = i
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	var count: int = order.size() / 3
 	var face_normal := PackedVector3Array()
 	var face_weight := PackedFloat32Array()
 	face_normal.resize(count)
 	face_weight.resize(count)
 	var slots := {}
-	var flipped := 0
+
 	for t in count:
 		var a := vertices[order[t * 3]]
 		var b := vertices[order[t * 3 + 1]]
@@ -101,7 +105,7 @@ static func _rebuilt(source: Mesh, center: Vector3, radii: Vector3) -> ArrayMesh
 			var swap := order[t * 3 + 1]
 			order[t * 3 + 1] = order[t * 3 + 2]
 			order[t * 3 + 2] = swap
-			flipped += 1
+
 			face_normal[t] = geometric
 		else:
 			face_normal[t] = -geometric

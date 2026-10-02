@@ -84,7 +84,7 @@ func _physics_process(delta: float) -> void:
 	elif distance<100.0/16.0: desired=-direction.normalized()*4.5
 	velocity.x=desired.x
 	velocity.z=desired.z
-	velocity.y=0 if is_on_floor() else velocity.y-20*delta
+	velocity.y=0.0 if is_on_floor() else velocity.y-20*delta
 	move_and_slide()
 	gait+=delta*velocity.length()*2.5
 	var swing := sin(gait)*.45 if desired.length_squared()>.01 else 0.0

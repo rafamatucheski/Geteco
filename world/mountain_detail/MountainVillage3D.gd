@@ -96,12 +96,12 @@ func _build_path_strip(a_m: Vector2, b_m: Vector2, width: float, mat: Material) 
 	var a := _at_local(a_m)
 	var b := _at_local(b_m)
 	var delta := b - a
-	var len := delta.length()
-	if len < 0.1:
+	var length_value := delta.length()
+	if length_value < 0.1:
 		return
 	var center := (a + b) * 0.5
 	var angle := atan2(delta.x, delta.z)
-	var strip := _add_box("PathStrip", center + Vector3(0, 0.02, 0), Vector3(width, 0.02, len), mat)
+	var strip := _add_box("PathStrip", center + Vector3(0, 0.02, 0), Vector3(width, 0.02, length_value), mat)
 	strip.rotation.y = angle
 	strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
@@ -262,6 +262,8 @@ func _build_wood_store(pos: Vector3, idx: int) -> void:
 	# Stacked logs inside
 	for i in 6:
 		var lx: float = -0.55 + float(i % 3) * 0.55
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var ly: float = 0.25 + float(i / 3) * 0.40
 		_add_box_to(store_root, "Log", Vector3(lx, ly, 0), Vector3(0.50, 0.28, 0.80), MountainMaterials.wood_log())
 	# Snow layer on roof

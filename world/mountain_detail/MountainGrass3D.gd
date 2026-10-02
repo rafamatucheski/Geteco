@@ -124,8 +124,8 @@ func _build_tile(key: Vector2i) -> void:
 			if hit.is_empty() or not hit.collider.get_meta("mountain_terrain", false): continue
 			if absf(float(hit.position.y) - y) > 0.08 or hit.normal.y < 0.8: continue
 			var s := rng.randf_range(0.7, 1.35)
-			var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.8, 1.25), s))
-			transforms.append(Transform3D(basis, Vector3(at.x, y, at.y)))
+			var local_basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.8, 1.25), s))
+			transforms.append(Transform3D(local_basis, Vector3(at.x, y, at.y)))
 	var multimesh := MultiMesh.new()
 	multimesh.transform_format = MultiMesh.TRANSFORM_3D
 	multimesh.mesh = _mesh

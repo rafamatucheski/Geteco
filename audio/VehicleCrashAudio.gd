@@ -12,6 +12,7 @@ const MAX_DISTANCE := 85.0
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const VEHICLE_KINDS := ["bumper", "heavy", "metal", "motorcycle", "solid"]
 const MATERIAL_KINDS := ["glass", "wood", "flesh"]
+const BODY_KINDS := ["body_hit", "body_land"]
 static var _last_take: Dictionary = {}
 static var _streams: Dictionary = {}
 var voices: Array[AudioStreamPlayer3D] = []
@@ -25,9 +26,9 @@ var dropped_count := 0
 ## Hold all contact takes before playable collisions. No voices, bus or RNG
 ## are touched, and loader results are fetched only after their work ends.
 static func prewarm(tree: SceneTree) -> void:
-	for kind in VEHICLE_KINDS + MATERIAL_KINDS:
+	for kind in VEHICLE_KINDS + MATERIAL_KINDS + BODY_KINDS:
 		var pending: Array[String] = []
-		for take in (3 if kind in MATERIAL_KINDS else 4):
+		for take in (4 if kind in VEHICLE_KINDS else 3):
 			var path := _sample_path(kind, take)
 			if _streams.has(path): continue
 			if ResourceLoader.has_cached(path) or not ResourceLoader.exists(path, "AudioStream"):
@@ -46,6 +47,7 @@ static func prewarm(tree: SceneTree) -> void:
 		await tree.process_frame
 
 static func _sample_path(kind: String, take: int) -> String:
+	if kind in BODY_KINDS: return "res://audio/body_impacts/%s_%d.wav" % [kind, take]
 	return "res://assets/gameplay/audio/impact_%s_%d.wav" % [kind, take] if kind in MATERIAL_KINDS else "%s%s_%d.wav" % [DIR, kind, take]
 
 static func _stream(path: String) -> AudioStream:
@@ -125,6 +127,13 @@ static func contact_kind(target: Object, speed: float, motorcycle: bool) -> Stri
 static func play(p_owner: CharacterBody3D, target: Object, point: Vector3, speed: float) -> void:
 	play_contact(p_owner, target, point, speed / 16.0)
 
+## Use speed in m/s before any bounce restitution. Both phases share the
+## bounded contact pool; each body owns its cooldown even in a crowd.
+static func play_body_impact(context: Node3D, target: Object, point: Vector3, speed: float, landing := false) -> bool:
+	var kind := "body_land" if landing else "body_hit"
+	var key := "body_land|%d" % target.get_instance_id() if landing and is_instance_valid(target) else ""
+	return play_contact(context, target, point, speed, kind, key)
+
 static func play_contact(context: Node3D, target: Object, point: Vector3, speed: float, kind := "", key := "") -> bool:
 	if not is_finite(speed) or speed < MIN_SPEED or not point.is_finite(): return false
 	if not is_instance_valid(context) or not context.is_inside_tree(): return false
@@ -139,6 +148,9 @@ static func play_contact(context: Node3D, target: Object, point: Vector3, speed:
 			var target_id := target.get_instance_id()
 			key = "%d|%d" % [mini(source_id, target_id), maxi(source_id, target_id)]
 		else: key = "%d|%s" % [source_id, str(Vector3i((point * 2.0).round()))]
+	# StreetPhysics is shared by every falling actor. Its source cooldown must
+	# not silence another body landing during the same physics tick.
+	if kind in BODY_KINDS and is_instance_valid(target): source_id = -target.get_instance_id()
 	var director = pool(context)
 	return director.emit_contact(source_id, key, point, speed, kind) if director != null else false
 
@@ -159,6 +171,8 @@ func emit_contact(source_id: int, key: String, point: Vector3, speed: float, kin
 		for old_source in sources.keys():
 			if now - float(sources[old_source]) > CONTACT_COOLDOWN: sources.erase(old_source)
 	var volume := lerpf(-19.0, -3.0, clampf((speed - MIN_SPEED) / 17.0, 0.0, 1.0))
+	if kind == "body_hit": volume = lerpf(-8.0, -1.0, clampf((speed - MIN_SPEED) / 14.0, 0.0, 1.0))
+	elif kind == "body_land": volume = lerpf(-11.0, -3.0, clampf((speed - MIN_SPEED) / 6.0, 0.0, 1.0))
 	var chosen: AudioStreamPlayer3D
 	for voice in voices:
 		if not voice.playing:
@@ -171,7 +185,7 @@ func emit_contact(source_id: int, key: String, point: Vector3, speed: float, kin
 	if chosen == null:
 		dropped_count += 1
 		return false
-	var count := 3 if kind in ["glass", "wood", "flesh"] else 4
+	var count := 3 if kind in MATERIAL_KINDS or kind in BODY_KINDS else 4
 	var take := (int(_last_take.get(kind, -1)) + rng.randi_range(1, count - 1)) % count
 	var stream := _stream(_sample_path(kind, take))
 	if stream == null: return false

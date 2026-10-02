@@ -16,7 +16,7 @@ var _hold_id := ""
 var _hold_time := 0.0
 var _intimidation := 0.0
 var _fuel_notice := false
-var _last_place := ""
+
 var _spawn_retry := 0.0
 
 static func defaults() -> Dictionary:

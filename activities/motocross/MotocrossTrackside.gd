@@ -191,11 +191,11 @@ func _hay_bales() -> void:
 				bale_skips.slope += 1; continue
 			var up: Vector3 = frame.up
 			var x := (along-up*along.dot(up)).normalized()
-			var basis := Basis(x,up,x.cross(up))
+			var local_basis := Basis(x,up,x.cross(up))
 			var mean := Vector3.ZERO
 			for corner in frame.corners: mean += corner/4.0
 			# A 3 cm seat in the soil so no edge of the bale hangs over the slope.
-			var where := Transform3D(basis,mean+up*(BALE_SIZE.y*.5-.03))
+			var where := Transform3D(local_basis,mean+up*(BALE_SIZE.y*.5-.03))
 			bale_transforms.append(where)
 			_box(where,BALE_SIZE,hay,true)
 			for band in [-.26,.26]:
@@ -207,19 +207,19 @@ func _bleacher() -> void:
 	# below the lowest footprint point, so the stand never hangs over the slope.
 	var route: Dictionary = course.nearest(Vector3(BLEACHER_CENTER.x,0,BLEACHER_CENTER.y))
 	var toward: Vector3 = Vector3(route.point.x-BLEACHER_CENTER.x,0,route.point.z-BLEACHER_CENTER.y).normalized()
-	var basis := Basis(Vector3.UP,atan2(-toward.x,-toward.z))
+	var local_basis := Basis(Vector3.UP,atan2(-toward.x,-toward.z))
 	var width := 8.0
 	var highest := -INF
 	var lowest := INF
 	for x in [-.5,-.25,0.0,.25,.5]:
 		for z in [-1.6,0.0,1.2]:
-			var p := Vector3(BLEACHER_CENTER.x,0,BLEACHER_CENTER.y)+basis*Vector3(x*width,0,z)
+			var p := Vector3(BLEACHER_CENTER.x,0,BLEACHER_CENTER.y)+local_basis*Vector3(x*width,0,z)
 			var h: float = course.surface_height(Vector2(p.x,p.z))
 			highest = maxf(highest,h)
 			lowest = minf(lowest,h)
 	bleacher = Node3D.new()
 	bleacher.name = "StartBleacher"
-	bleacher.transform = Transform3D(basis,Vector3(BLEACHER_CENTER.x,highest+.12,BLEACHER_CENTER.y))
+	bleacher.transform = Transform3D(local_basis,Vector3(BLEACHER_CENTER.x,highest+.12,BLEACHER_CENTER.y))
 	add_child(bleacher)
 	_reserved.append(Vector3(BLEACHER_CENTER.x,5.2,BLEACHER_CENTER.y))
 	var riser := _material(Color("5f4632"))
@@ -294,17 +294,17 @@ func _banners() -> void:
 func _board() -> void:
 	# Race-control board on two posts behind the stand's top tier, facing the
 	# track like the fans: nothing stands between it and the gameplay camera.
-	var basis := bleacher.global_basis
+	var local_basis := bleacher.global_basis
 	var steel := _material(Color("3a403e"))
 	for side in [-1.9,1.9]:
 		var foot: Vector3 = bleacher.transform*Vector3(side,0,1.36)
 		foot.y = course.surface_height(Vector2(foot.x,foot.z))
 		var top: float = bleacher.position.y+4.2
-		_box(Transform3D(basis,Vector3(foot.x,(foot.y-.1+top)*.5,foot.z)),Vector3(.16,top-foot.y+.1,.16),steel,true)
-		_box(Transform3D(basis,foot+Vector3.UP*.05),Vector3(.45,.14,.45),_material(Color("8e8b80")))
+		_box(Transform3D(local_basis,Vector3(foot.x,(foot.y-.1+top)*.5,foot.z)),Vector3(.16,top-foot.y+.1,.16),steel,true)
+		_box(Transform3D(local_basis,foot+Vector3.UP*.05),Vector3(.45,.14,.45),_material(Color("8e8b80")))
 	var center: Vector3 = bleacher.transform*Vector3(0,3.3,1.3)
-	_box(Transform3D(basis,center),Vector3(4.3,1.7,.18),_material(Color("1c2224")),true)
-	_box(Transform3D(basis,center+Vector3.UP*.92),Vector3(4.5,.12,.3),_material(Color("b75b28")))
+	_box(Transform3D(local_basis,center),Vector3(4.3,1.7,.18),_material(Color("1c2224")),true)
+	_box(Transform3D(local_basis,center+Vector3.UP*.92),Vector3(4.5,.12,.3),_material(Color("b75b28")))
 	board_title = Label3D.new()
 	board_detail = Label3D.new()
 	for label in [board_title,board_detail]:
@@ -312,7 +312,7 @@ func _board() -> void:
 		label.double_sided = false
 		label.outline_size = 0
 		# Label3D reads from its +Z side; the stand faces its own -Z.
-		label.transform = Transform3D(basis*Basis(Vector3.UP,PI),center-basis.z*.1)
+		label.transform = Transform3D(local_basis*Basis(Vector3.UP,PI),center-local_basis.z*.1)
 		add_child(label)
 	board_title.font_size = 88
 	board_title.pixel_size = .0078

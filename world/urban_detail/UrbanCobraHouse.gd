@@ -8,7 +8,7 @@ class_name UrbanCobraHouse
 func build() -> void:
 	var half_w := building_size.x * 0.5
 	var half_d := building_size.y * 0.5
-	var front_z := half_d
+
 	
 	var porch_depth := 1.8
 	var house_depth := building_size.y - porch_depth
@@ -18,7 +18,7 @@ func build() -> void:
 	var wall_mat := UrbanMaterials.material_for_color(base_color, 0.86)
 	var roof_mat := UrbanMaterials.roof_tin_rusty() if building_id in ["TinRoofHouse", "PorchHouse", "CobraWorkshop"] else UrbanMaterials.roof_shingle()
 	var wood_mat := UrbanMaterials.wood_porch()
-	var trim_mat := UrbanMaterials.trim_stone()
+	UrbanMaterials.trim_stone()
 	
 	# Main enclosed house volume (solid collision)
 	add_solid_box(visuals_root, "HouseBody", Vector3(0, height * 0.5, house_center_z), Vector3(building_size.x, height, house_depth), wall_mat)
@@ -175,7 +175,7 @@ func _build_facade_elements(house_front_z: float) -> void:
 func _build_side_windows(center_z: float, depth: float) -> void:
 	var dark_mat := UrbanMaterials.window_interior_dark()
 	var glass_mat := UrbanMaterials.glass_window()
-	var trim_mat := UrbanMaterials.trim_stone()
+	UrbanMaterials.trim_stone()
 	
 	var half_w := building_size.x * 0.5
 	var win_w := 0.95
@@ -183,7 +183,6 @@ func _build_side_windows(center_z: float, depth: float) -> void:
 	var win_y := 1.7
 	
 	for side_x in [-half_w, half_w]:
-		var rot := -PI * 0.5 if side_x < 0 else PI * 0.5
 		var normal := -1.0 if side_x < 0 else 1.0
 		for wz in [center_z - depth * 0.25, center_z + depth * 0.25]:
 			add_mesh_box(visuals_root, "SideWinFrame", Vector3(side_x + normal * 0.02, win_y, wz), Vector3(0.08, win_h, win_w), dark_mat)

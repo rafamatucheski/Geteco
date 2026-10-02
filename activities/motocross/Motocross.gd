@@ -406,6 +406,8 @@ func _physics_process(delta: float) -> void:
 				var lap := elapsed-float(row.lap_start)
 				row.lap_start = elapsed
 				if float(row.best) <= 0.0 or lap < float(row.best): row.best = lap
+				# Completed laps/lap deficit count whole gate groups.
+				@warning_ignore("integer_division")
 				if i == 0 and int(row.passed) < total: _race_lap(lap,int(row.passed)/track.gates.size())
 				if i == 0: progress.record_lap(lap)
 			if int(row.passed) >= total:
@@ -416,6 +418,8 @@ func _physics_process(delta: float) -> void:
 		if _race_distance(racers[i]) > _race_distance(racers[0]): placement += 1
 	_announce_place(placement,delta)
 	_marker.position = track.gates[int(racers[0].gate)]+Vector3.UP*3
+	# Completed laps/lap deficit count whole gate groups.
+	@warning_ignore("integer_division")
 	_status.present(placement,racers.size(),mini(int(PROGRESS.LEVELS[difficulty].laps),int(racers[0].passed)/track.gates.size()+1),PROGRESS.LEVELS[difficulty].laps,elapsed,player_bike,_gap_text())
 	_update_info(delta)
 	if elapsed > 360: finish(false,"time")
@@ -554,6 +558,8 @@ func _update_info(delta: float) -> void:
 		if countdown > 0: course.set_board("LARGADA","%s · %d VOLTAS"%[str(PROGRESS.LEVELS[difficulty].name).to_upper(),int(PROGRESS.LEVELS[difficulty].laps)])
 		else:
 			var laps := int(PROGRESS.LEVELS[difficulty].laps)
+			# Completed laps/lap deficit count whole gate groups.
+			@warning_ignore("integer_division")
 			var lap := mini(laps,int(order[0].passed)/track.gates.size()+1)
 			course.set_board("VOLTA %d/%d"%[lap,laps],"1º %s · 2º %s"%[order[0].bike.rider_name,order[1].bike.rider_name] if order.size() > 1 else "")
 	elif course != null and mounted and not practice.is_empty():
@@ -653,6 +659,8 @@ func _classify(won: bool, reason: String) -> int:
 		var count := int(row.passed)
 		if index == 0: detail = HUD.clock(elapsed) if reason == "finished" else "líder"
 		elif count > 0 and leader.times.size() >= count:
+			# Completed laps/lap deficit count whole gate groups.
+			@warning_ignore("integer_division")
 			var laps_down := (int(leader.passed)-count)/track.gates.size()
 			# Gap at the last timing gate both riders crossed, as on a timing loop.
 			var gap := float(row.times[count-1])-float(leader.times[count-1])

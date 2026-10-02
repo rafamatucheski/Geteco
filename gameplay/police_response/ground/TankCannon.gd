@@ -1,7 +1,8 @@
 extends Node3D
 ## One weapon for player and police tanks. Only awake during recoil, reload or
-## flight; each shell sweeps its entire step and each blast visits at most 64 bodies.
+## flight; each shell sweeps its entire step. BlastQuery visits every overlapping body.
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
+const BLAST_QUERY := preload("res://gameplay/BlastQuery.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const AUDIO := preload("res://audio/tank/TankAudio.gd")
 const COOLDOWN := 3.0
@@ -142,7 +143,7 @@ func _detonate(gameplay: Node3D, source: Node3D, hit: Dictionary, direction: Vec
 	query.shape = sphere
 	query.transform.origin = blast_origin
 	query.collision_mask = 6
-	for result in get_world_3d().direct_space_state.intersect_shape(query,64):
+	for result in BLAST_QUERY.intersect_bodies(get_world_3d().direct_space_state,query):
 		var actor := result.collider as Node3D
 		if actor == null or seen.has(actor.get_instance_id()): continue
 		seen[actor.get_instance_id()] = true

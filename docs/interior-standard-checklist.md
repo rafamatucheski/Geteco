@@ -1,5 +1,17 @@
 # Migração de interiores — checklist
 
+## Contêineres do porto: estabilidade exterior — 29/09/2026
+
+Correção localizada nas nervuras dos tetos dos 18 contêineres acessíveis e no modelo superior. Sem criar lugares/interiores ou migrar ambientes: contagens anteriores preservadas, zero novas certificações integrais. Colisões, circulação, câmera interior, portas e recompensas mantidas.
+
+- [x] Cache e física: 18 checks, incluindo parede/porta fechada e corredor aberto.
+- [x] Oclusão renderizada de jogador/NPC e restauração dos tetos: 86 checks, zero falhas.
+- [x] Evidências exteriores antes/depois e sequências temporais de 30 s de dia/noite.
+- [x] Comparativo diurno isolado: 140,42 → 143,73 FPS; p95/p99 sem regressão.
+- [ ] Estabilidade integral: pico isolado de 67 ms; captura com intervalos perdidos; chuva e comparativo de performance noturna não cobertos. Nenhuma aprovação global de interiores.
+
+[Correções, vídeos, métricas e limites](../evidence/port-glitches-20260929/report.md).
+
 ## Casa 1 / porão / quartel subterrâneo — 28/09/2026
 
 A Casa 1 da Vila conserva o acesso existente e ganha um volume subterrâneo

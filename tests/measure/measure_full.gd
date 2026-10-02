@@ -80,11 +80,26 @@ func run() -> void:
 			if world.driving.interact(): entered=true; break
 		if not entered:
 			push_error("Native car entry failed: health=%s locked=%s car=%s speed=%s position=%s"%[world.gameplay.health,world.player.input_locked,car.vehicle_id,car.speed,car.position]); quit(1); return
-		for frame in 180:
+		# O embarque usa Tween em segundos; frames renderizados variam com FPS.
+		# Mantem o prazo funcional de 4 s, respeitando caminhos de porta mais longos.
+		var presentation = world.driving.transition
+		var planned_duration := float(presentation.duration) if is_instance_valid(presentation) else 0.0
+		var boarding_budget_usec := int(maxf(4.0,planned_duration+.5)*1000000.0)
+		var boarding_started := Time.get_ticks_usec()
+		var boarding_frames := 0
+		while Time.get_ticks_usec()-boarding_started < boarding_budget_usec:
 			if car.controlled and not world.driving.is_body_transition_active(): break
-			await process_frame
-		if not car.controlled:
-			push_error("Native car boarding did not finish before measurement"); quit(1); return
+			await physics_frame
+			boarding_frames += 1
+		var boarding_elapsed_ms := float(Time.get_ticks_usec()-boarding_started)/1000.0
+		if not car.controlled or world.driving.is_body_transition_active() or not world.player.seated:
+			var transition = world.driving.transition
+			var phase := str(transition.phase) if is_instance_valid(transition) else "none"
+			var progress := float(transition.progress) if is_instance_valid(transition) else -1.0
+			push_error("Embarque incompleto antes da medicao: elapsed_ms=%s budget_usec=%s planned_s=%s physics_frames=%s controlled=%s active=%s seated=%s phase=%s progress=%s max_fps=%s"%[boarding_elapsed_ms,boarding_budget_usec,planned_duration,boarding_frames,car.controlled,world.driving.is_body_transition_active(),world.player.seated,phase,progress,Engine.max_fps])
+			quit(1)
+			return
+		print("MEASUREMENT_BOARDING elapsed_ms=%s planned_s=%s budget_usec=%s physics_frames=%s controlled=%s seated=%s"%[boarding_elapsed_ms,planned_duration,boarding_budget_usec,boarding_frames,car.controlled,world.player.seated])
 		car.external_input = true
 	if combat_mode:
 		world.session.state.grant_weapon("ak47")

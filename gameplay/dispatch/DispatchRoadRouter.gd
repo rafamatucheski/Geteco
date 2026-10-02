@@ -6,6 +6,7 @@ extends RefCounted
 
 const STEP := 1.0
 const DEFAULT_BAKE := 0.5
+const SPAWN_INDEX_CELL := 64.0
 
 class MinHeap extends RefCounted:
 	var costs := PackedFloat64Array()
@@ -71,6 +72,8 @@ var _native: RefCounted
 var _native_tried := false
 var _native_edges: Array = []
 var _native_signature: Array = []
+var _spawn_edges: Array[Dictionary] = []
+var _spawn_cells: Dictionary = {}
 
 static func _env_interval(name: String) -> float:
 	var text := OS.get_environment(name)
@@ -84,6 +87,34 @@ func configure(p_routes: RefCounted) -> void:
 	blocked.clear()
 	_native_signature = []
 	_native_edges = []
+	_rebuild_spawn_index()
+
+## Index lane-segment bounds once per graph rebuild. Sampling remains unchanged,
+## including arbitrary spacing, height and the original edge iteration order.
+func _rebuild_spawn_index() -> void:
+	_spawn_edges.clear()
+	_spawn_cells.clear()
+	if not has_graph(): return
+	for from in routes.edges:
+		for edge in routes.edges[from]:
+			var a: Vector3 = routes.vertices[edge.from]
+			var b: Vector3 = routes.vertices[edge.to]
+			var length := a.distance_to(b)
+			if length <= 0.0: continue
+			var direction := (b - a) / length
+			var offset: Vector3 = routes._lane_offset(direction, edge)
+			var index := _spawn_edges.size()
+			_spawn_edges.append({"edge": edge, "a": a, "length": length, "direction": direction, "offset": offset})
+			var low := _spawn_cell(Vector3(minf(a.x, b.x), 0.0, minf(a.z, b.z)) + offset)
+			var high := _spawn_cell(Vector3(maxf(a.x, b.x), 0.0, maxf(a.z, b.z)) + offset)
+			for x in range(low.x, high.x + 1):
+				for z in range(low.y, high.y + 1):
+					var key := Vector2i(x, z)
+					if not _spawn_cells.has(key): _spawn_cells[key] = []
+					_spawn_cells[key].append(index)
+
+func _spawn_cell(point: Vector3) -> Vector2i:
+	return Vector2i(floori(point.x / SPAWN_INDEX_CELL), floori(point.z / SPAWN_INDEX_CELL))
 
 ## Espelho atualizado, ou null quando o C# não está disponível. O grafo só muda em
 ## `NativeTrafficRoutes.configure` (que recria tudo), então tamanho + extremos identificam a troca.
@@ -349,22 +380,33 @@ func _build(nodes: Array[int], _start: Vector3, end_point: Vector3, goal: Vector
 ## visibilidade, colisão e alcance.
 func spawn_candidates(target: Vector3, min_distance: float, max_distance: float, spacing: float = 8.0) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	if not has_graph(): return result
-	for from in routes.edges:
-		for edge in routes.edges[from]:
-			if is_blocked(edge.from, edge.to): continue
-			var a: Vector3 = routes.vertices[edge.from]
-			var b: Vector3 = routes.vertices[edge.to]
-			var length := a.distance_to(b)
-			if length < spacing: continue
-			var direction := (b - a) / length
-			var offset: Vector3 = routes._lane_offset(direction, edge)
-			var along := spacing * 0.5
-			while along < length - spacing * 0.5:
-				var point := a + direction * along + offset
-				var separation := _xz(point).distance_to(_xz(target))
-				if separation >= min_distance and separation <= max_distance:
-					result.append({"point": point, "yaw": atan2(-direction.x, -direction.z), "distance": separation, "edge": edge})
-				along += spacing
+	if not has_graph() or spacing <= 0.0 or max_distance < 0.0: return result
+	var extent := Vector3(max_distance, 0.0, max_distance)
+	var low := _spawn_cell(target - extent)
+	var high := _spawn_cell(target + extent)
+	var nearby: Dictionary = {}
+	for x in range(low.x, high.x + 1):
+		for z in range(low.y, high.y + 1):
+			for index in _spawn_cells.get(Vector2i(x, z), []): nearby[index] = true
+	# Restore the exact pre-index order before the original distance sort; even
+	# equal-distance candidates keep the same input order for that sort.
+	var indices: Array = nearby.keys()
+	indices.sort()
+	for index in indices:
+		var entry: Dictionary = _spawn_edges[index]
+		var edge: Dictionary = entry.edge
+		if is_blocked(edge.from, edge.to): continue
+		var length: float = entry.length
+		if length < spacing: continue
+		var a: Vector3 = entry.a
+		var direction: Vector3 = entry.direction
+		var offset: Vector3 = entry.offset
+		var along := spacing * 0.5
+		while along < length - spacing * 0.5:
+			var point := a + direction * along + offset
+			var separation := _xz(point).distance_to(_xz(target))
+			if separation >= min_distance and separation <= max_distance:
+				result.append({"point": point, "yaw": atan2(-direction.x, -direction.z), "distance": separation, "edge": edge})
+			along += spacing
 	result.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return x.distance < y.distance)
 	return result

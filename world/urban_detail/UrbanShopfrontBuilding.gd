@@ -67,11 +67,11 @@ func build() -> void:
 	# Facade proper name signage
 	if not proper_name.is_empty():
 		var sign_w: float = minf(building_size.x * 0.6, 4.2)
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.60), 0.08, UrbanMaterials.trim_dark())
-		if sign != null:
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.60), 0.08, UrbanMaterials.trim_dark())
+		if sign_node != null:
 			# Placed neatly on the sign fascia board above the awning
-			sign.position = Vector3(0, minf(3.45,height-.35), front_z + 0.16)
-			visuals_root.add_child(sign)
+			sign_node.position = Vector3(0, minf(3.45,height-.35), front_z + 0.16)
+			visuals_root.add_child(sign_node)
 
 func _build_storefront(front_z: float, is_corner: bool, door_center_x: float, door_w: float, door_h: float, recess_w: float, recess_depth: float) -> void:
 	var dark_trim := UrbanMaterials.trim_dark()
@@ -189,7 +189,7 @@ func _add_washer_porthole(at: Vector3, drum_mat: Material) -> void:
 		mesh.radial_segments=20
 		disc.mesh=mesh
 		disc.rotation_degrees.x=90
-		disc.position=at+Vector3(0,0,.015 if String(part[0]).ends_with("Glass") else 0)
+		disc.position=at+Vector3(0,0,.015 if String(part[0]).ends_with("Glass") else 0.0)
 		disc.material_override=part[3]
 		visuals_root.add_child(disc)
 

@@ -23,7 +23,7 @@ func build() -> void:
 	var iron := UrbanMaterials.material_for_color(Color("20282b"), 0.64)
 	var dark := UrbanMaterials.material_for_color(Color("071014"), 0.70)
 	var steel := UrbanMaterials.material_for_color(Color("6f7976"), 0.58)
-	_add_ring("ManholeCollar", 0.70, 0.82, 0.045, 0.028, iron)
+	_add_ring("ManholeCollar", 0.70, 0.82, 0.028, iron)
 	# The bottom of the shaft is well below street level, leaving an actual dark
 	# opening between the rim and the sliding lid rather than another cast-iron cap.
 	var void_material := StandardMaterial3D.new()
@@ -36,7 +36,7 @@ func build() -> void:
 	for side in [-1.0, 1.0]:
 		_add_shaft_wall("ShaftWallX", Vector3(side * 0.55, -0.9, 0.0), Vector3(0.05, 2.0, 1.125), shaft_wall)
 		_add_shaft_wall("ShaftWallZ", Vector3(0.0, -0.9, side * 0.55), Vector3(1.125, 2.0, 0.05), shaft_wall)
-	_add_ring("ShaftRim", 0.53, 0.61, 0.018, 0.045, steel)
+	_add_ring("ShaftRim", 0.53, 0.61, 0.045, steel)
 	var ladder_material := UrbanMaterials.material_for_color(Color("8b927f"), 0.62)
 	for x in [-0.27, 0.27]:
 		var rail := MeshInstance3D.new()
@@ -115,7 +115,7 @@ func _add_disc_to(parent: Node3D, label: String, radius: float, disc_height: flo
 	parent.add_child(instance)
 	return instance
 
-func _add_ring(label: String, inner_radius: float, outer_radius: float, ring_height: float, y: float, material: Material) -> MeshInstance3D:
+func _add_ring(label: String, inner_radius: float, outer_radius: float, y: float, material: Material) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()
 	instance.name = label
 	var mesh := TorusMesh.new()

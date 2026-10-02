@@ -173,10 +173,10 @@ static func _batch_static(root: Node3D) -> void:
 			if material == null: continue
 			var key := material.get_instance_id()
 			if not batches.has(key):
-				var st := SurfaceTool.new()
-				st.begin(Mesh.PRIMITIVE_TRIANGLES)
-				st.set_material(material)
-				batches[key] = st
+				var branch_st := SurfaceTool.new()
+				branch_st.begin(Mesh.PRIMITIVE_TRIANGLES)
+				branch_st.set_material(material)
+				batches[key] = branch_st
 			var st: SurfaceTool = batches[key]
 			var arrays: Array = child.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

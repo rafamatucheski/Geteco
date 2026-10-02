@@ -179,10 +179,10 @@ static func _batch_static(root: Node3D) -> void:
 			if material == null: continue
 			var key := material.get_instance_id()
 			if not batches.has(key):
-				var merged: Array = []
-				merged.resize(Mesh.ARRAY_MAX)
-				merged[Mesh.ARRAY_INDEX] = PackedInt32Array()
-				batches[key] = {"arrays": merged, "material": material}
+				var branch_merged: Array = []
+				branch_merged.resize(Mesh.ARRAY_MAX)
+				branch_merged[Mesh.ARRAY_INDEX] = PackedInt32Array()
+				batches[key] = {"arrays": branch_merged, "material": material}
 			var merged: Array = batches[key].arrays
 			var arrays: Array = child.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

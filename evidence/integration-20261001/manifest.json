@@ -1,0 +1,1640 @@
+{
+  "base": "a05474d701b7d1e6bff5120232a5784a4a1b87cf",
+  "branch": "main",
+  "files": [
+    {
+      "path": ".gitignore",
+      "sha256": "f1d01ef2ecc5f730acb6412445cada29052bae4b7dd0ab5cbf4d3ff3a58f9f88"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "6f92cbbb1100c41bb2611555df6ef1df72b6ca2e021630abba46575db8f3a2e5"
+    },
+    {
+      "path": "activities/MountainShadow.gd",
+      "sha256": "fd786b04fa05a0c530be22b5c3d76fa509c1a283207a418ea34ce0738a7e0360"
+    },
+    {
+      "path": "activities/motocross/Motocross.gd",
+      "sha256": "c0c78f757c5eab2f364a6e07f146b78d7cf0e12bb3600e804497956551f92e89"
+    },
+    {
+      "path": "activities/motocross/MotocrossBike.gd",
+      "sha256": "53e1c9c3aefb2e9f151ca305ec355f817578a00f7bb1ce7363120714beadfec0"
+    },
+    {
+      "path": "activities/motocross/MotocrossBikeArt.gd",
+      "sha256": "d0e1ff14afbfa7d9c2c1939eb2fcbd12230172264870ef5ee91a83df95123abb"
+    },
+    {
+      "path": "activities/motocross/MotocrossCourse.gd",
+      "sha256": "86811c525f5bb890d1a1caa5c9a3cbaf28f3d381185ce71bbb30345a2b8a8051"
+    },
+    {
+      "path": "activities/motocross/MotocrossHUD.gd",
+      "sha256": "c0e83c3eebef17db2d61f44eede2fb49e5313a972bce8bef0e9e90ac1ba9ccfb"
+    },
+    {
+      "path": "activities/motocross/MotocrossSpectator.gd",
+      "sha256": "6fe454b96108c72c9c73599bdc2045800cc1ae953cea60e31130e0258caf8d52"
+    },
+    {
+      "path": "activities/motocross/MotocrossSurfaceEffects.gd",
+      "sha256": "d7e3e78130473d99a23296f9949d4c05c63930d91e9ac2d2e839053461ee5543"
+    },
+    {
+      "path": "activities/motocross/MotocrossTrackside.gd",
+      "sha256": "c4ad45527e6a1cc723a0fc83734d171c40ab324b134b5acd00df04bf9a899802"
+    },
+    {
+      "path": "addons/geteco_copy_all_errors/plugin.cfg",
+      "sha256": "c2b6d707bc0a815396e399c0c14343f903d3c3c4e514fba9f08c38eb0072658e"
+    },
+    {
+      "path": "addons/geteco_copy_all_errors/plugin.gd",
+      "sha256": "7c3e8e7f3d91a315a1f32eb4806ac5f6c7773ba8f7711dca94f89c22e1f0aeff"
+    },
+    {
+      "path": "addons/geteco_copy_all_errors/plugin.gd.uid",
+      "sha256": "fdab74db8441170dbc05843306b7a0be742c25805a2c4552a99ba68b9d2ed17b"
+    },
+    {
+      "path": "assets/CivilianModel.gd",
+      "sha256": "4216d1919987523a99a8e4a9519a35a9969915fe2cea31ea91ec815b8aa498ed"
+    },
+    {
+      "path": "assets/fleet/nimbus_minivan.scn",
+      "sha256": "19585f3761518d9e6706171f145674b0afb9c38025ecf31fda124368d2977abd"
+    },
+    {
+      "path": "assets/fleet/nordic_estate_detail.scn",
+      "sha256": "3d0e7f0ef640f6725135e1172627e03ff5a3b6c7d63976d168548fd667fea3de"
+    },
+    {
+      "path": "assets/regions/source/characters/pedestrians/CitizenAppearance.gd",
+      "sha256": "2ff358f5400390b22c2ea9d6da3a18d6769c50c69ca250f8dd804045c5bcb10e"
+    },
+    {
+      "path": "assets/regions/source/characters/pedestrians/WinterWardrobe.gd",
+      "sha256": "dda6d8de63d6aa621dba46d549ca587ec5c3f2ad669a144b0c149ee541d19929"
+    },
+    {
+      "path": "assets/regions/source/prototypes/harbor_art_pack/PortMeshOptimizer.gd",
+      "sha256": "c3a185965799c731ee9f932785fd576ef36cb5c4c88b7b60d82f7894a06f6d4e"
+    },
+    {
+      "path": "assets/regions/source/prototypes/harbor_art_pack/props/PortCargoCrate3D.gd",
+      "sha256": "a0e8d0a6dcd107a7d36550711d08f632f0007211f502fc1900104922206f2c5f"
+    },
+    {
+      "path": "assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd",
+      "sha256": "c60a4c2688d4c021a4ad16b4a8c52c62648bb48d0a4463e10aab4827b55e83a1"
+    },
+    {
+      "path": "assets/regions/source/scripts/player/MeshyMeleePose.gd",
+      "sha256": "8d27865281a223301022189cbdc98ca109107bb4f683cfd27b90ad74ca278f73"
+    },
+    {
+      "path": "assets/regions/source/scripts/player/WeaponFinish3D.gd",
+      "sha256": "adcc48a39a2122619ca5bdb02e35eca18ca96518dcf6551e2dad6d1c99946103"
+    },
+    {
+      "path": "assets/regions/source/world/harbor/HarborPortModel3D.gd",
+      "sha256": "d326bfab617c76a8fc2d3efdfb86298682881fb6544627f0e5e52946e3c5fadf"
+    },
+    {
+      "path": "assets/regions/source/world/harbor/UrbanGround.gd",
+      "sha256": "b8e0e8a250b7e2e242253a7648a061b220999c82e51671f944c99bebd3f8f2f7"
+    },
+    {
+      "path": "assets/regions/source/world/harbor/cemetery/CemeteryHouseExterior3D.gd",
+      "sha256": "a50828afa01afeefb2b7ef50ec0a67ce62af3611976942e598cfe12c85944b68"
+    },
+    {
+      "path": "assets/regions/source/world/harbor/residences/ResidenceExterior3D.gd",
+      "sha256": "79bcebcab2a59689fc62f9a3e7d926051d8d31373cbaa6b0974c58e0e385d194"
+    },
+    {
+      "path": "assets/regions/source/world/mountain_pass/MountainGroundMaterials.gd",
+      "sha256": "6f09dc16b2667a05c31f1c42bb85518f48956023b0e80d406a150091a8b16e20"
+    },
+    {
+      "path": "assets/regions/source/world/mountain_pass/MountainWaterfallCave3D.gd",
+      "sha256": "634ef9c0815de51343ddaaa2c9258dfddb65b3851924210c4c6f150c1afd297d"
+    },
+    {
+      "path": "assets/regions/source/world/mountain_pass/SummitSkiLodge3D.gd",
+      "sha256": "4f4ce89f26f949459070de5776e230dc0052b2396c36e0e923214c72272ae8c8"
+    },
+    {
+      "path": "assets/regions/source/world/mountain_pass/art/review_0908/CrashedCargoPlane3D.gd",
+      "sha256": "70c52c6323c6fd2c81cdcaea5c935e3876525916ee961988d0da8786250f561f"
+    },
+    {
+      "path": "assets/urban_detail/UrbanMaterials.gd",
+      "sha256": "7c603fb1f31c3b08d1ebb6201979b25d1d1c7e4caa54504c713cbad365b949f8"
+    },
+    {
+      "path": "audio/VehicleCrashAudio.gd",
+      "sha256": "6d15ffb5f8b1d9f915ed7937dc1adabc4969075307b7012e00c4ec8c5d8e7e9a"
+    },
+    {
+      "path": "audio/VehicleEngineProfile.gd",
+      "sha256": "da3ab0496bdaac4f73b8c738713a6ea0854f0df9991998e3dd5420b7f08930dd"
+    },
+    {
+      "path": "audio/body_impacts/body_hit_0.wav",
+      "sha256": "a3b637dc8cb99251bec588774a282cced1431501c030ce1db49d7c0a158b2589"
+    },
+    {
+      "path": "audio/body_impacts/body_hit_0.wav.import",
+      "sha256": "289b2314b1133d6dc93e8fb0602af08e44162b162024d7ec7164c4f01fc577cc"
+    },
+    {
+      "path": "audio/body_impacts/body_hit_1.wav",
+      "sha256": "b99ecbfb2e2e6340c16000473a789bce13aa8ee7f0804c1c32037168a0677336"
+    },
+    {
+      "path": "audio/body_impacts/body_hit_1.wav.import",
+      "sha256": "e4a73a2ed75b696f2fb8a42fea01e76f34c9cf67770be1d319ee7e8820e2833b"
+    },
+    {
+      "path": "audio/body_impacts/body_hit_2.wav",
+      "sha256": "4852793de35adaf04383686542934ac47ef452835c5bd6d53c274ef453fb7885"
+    },
+    {
+      "path": "audio/body_impacts/body_hit_2.wav.import",
+      "sha256": "689995fb1fb6dc0ed6282340017091418df8149484f2999c695f5c838b76460f"
+    },
+    {
+      "path": "audio/body_impacts/body_land_0.wav",
+      "sha256": "298c91bdfa427b2d1c78fa4d6713f07b98168afa88c58681200b082d7b1d3ee4"
+    },
+    {
+      "path": "audio/body_impacts/body_land_0.wav.import",
+      "sha256": "a01adbc934542a41b1c6c49ce506047badfeee5ea77971d7bad7b82445f83628"
+    },
+    {
+      "path": "audio/body_impacts/body_land_1.wav",
+      "sha256": "fb9d63969d61962e1e30102e5a34741f27357f2af5892c724185961b10505dee"
+    },
+    {
+      "path": "audio/body_impacts/body_land_1.wav.import",
+      "sha256": "f66b2cc68970fa07d06e33eff86a4adeac46a86b78366055112cb71455bdfe45"
+    },
+    {
+      "path": "audio/body_impacts/body_land_2.wav",
+      "sha256": "09c1e5b5b1f70c1ccfc8d7f3ce17cda248a29be6f95379f69e53ddcf2fda158f"
+    },
+    {
+      "path": "audio/body_impacts/body_land_2.wav.import",
+      "sha256": "b3f9a997f1f45c85c72cc7f0df40a8d5a5b32cee99e13a84f9aeee4c34fb8e2b"
+    },
+    {
+      "path": "audio/body_impacts/generate_body_impacts.py",
+      "sha256": "8b86ed18ee2515b2a8f134aa450b7a629c8f6756dc8f3ae2dd5829789922ef98"
+    },
+    {
+      "path": "audio/tank/TankAudio.gd",
+      "sha256": "2d07956cae60f0939bd2d7440a8e5839ecf3b6905c78fcc6be1f3ec74ef19628"
+    },
+    {
+      "path": "docs/claude-caos-performance-20260929-prompt.md",
+      "sha256": "7c71bba4de01a5857304e203b03ec9b886acc4d43560b1723354012584ecc4e9"
+    },
+    {
+      "path": "docs/interior-standard-checklist.md",
+      "sha256": "c427c6af95ec581458f1e6eb6e82406d0b29f067b3fc4f85cb9611bd58bd0610"
+    },
+    {
+      "path": "docs/skills/auditoria-viaria/SKILL.md",
+      "sha256": "a28fa09e3179074e08d52f3415b69af87edddb1b57db161f2f6aad3759d16267"
+    },
+    {
+      "path": "docs/skills/auditoria-viaria/agents/openai.yaml",
+      "sha256": "2e4f4d04ccbd7ee38af6f116d223ee5df9a36de35a5363072d1bd41af6507ee7"
+    },
+    {
+      "path": "docs/skills/auditoria-viaria/references/geteco.md",
+      "sha256": "e1efab280ac99d188589fdc7b7f28ca5cd3ba15730f536a3eff82fbe7e15bd9e"
+    },
+    {
+      "path": "docs/skills/guardiao-do-jogo/SKILL.md",
+      "sha256": "cee10f057ebbd152e75edc19fce8ca4325283ba99ac335850ea7cc30db52dcb8"
+    },
+    {
+      "path": "docs/skills/guardiao-do-jogo/agents/openai.yaml",
+      "sha256": "97653bb83319aa9b16ea893101883153edad346a927ac893edfa358de6d5fdf0"
+    },
+    {
+      "path": "docs/skills/guardiao-do-jogo/references/cenarios-e-evidencias.md",
+      "sha256": "4760781682b527123b54866aca0026c3addbd5758e3286ba950f89eece420047"
+    },
+    {
+      "path": "docs/skills/guardiao-do-jogo/references/geteco.md",
+      "sha256": "8fe2fcea398f955174c4f3efe7dbdc4a23a49461e203e9c49a320414469a6a1b"
+    },
+    {
+      "path": "docs/skills/validar-iluminacao/SKILL.md",
+      "sha256": "5c60452d03e9d836e32bfe8258101236e8b49573c8749315d40384c936158324"
+    },
+    {
+      "path": "docs/skills/validar-terrenos-pisos/SKILL.md",
+      "sha256": "6c82b9256a809b94ad9dc3e7c1ebd0a19749943279d61c432555cbf4fb8fc9fa"
+    },
+    {
+      "path": "docs/skills/validar-terrenos-pisos/agents/openai.yaml",
+      "sha256": "910fdf8deb25d5e8975826c975b0970b99d262d426a5e3fc010fe44d7ead5736"
+    },
+    {
+      "path": "docs/test-validation-impact.md",
+      "sha256": "80567a6cf8849116ccfb7e8d75b2f77346164fc47c564d2f64f15f443e1f0614"
+    },
+    {
+      "path": "gameplay/ArsenalWeapon3D.gd",
+      "sha256": "7004d2b04ce1e9cd5a5935c1c1410f2fb5b97aeeb399c70a1df106f53ef24c2e"
+    },
+    {
+      "path": "gameplay/BlastQuery.gd",
+      "sha256": "425ee9537404d1b51a6fdfbf3b68c7ca4af33554429d0aa64606eb47261c7597"
+    },
+    {
+      "path": "gameplay/BlastQuery.gd.uid",
+      "sha256": "93e41272e8a2d632ab3c316e4848fa06899ba243be7d80a7650c64496113de5e"
+    },
+    {
+      "path": "gameplay/BurningActor.gd",
+      "sha256": "ad5817db28fc395b3b277ec4103970d1106d04b33201f257f19474cf60d4f18c"
+    },
+    {
+      "path": "gameplay/CharacterFallPresentation3D.gd",
+      "sha256": "208b19e279915b95079e638dd1753a609214a197b7e659ebe5181440cfae4b5e"
+    },
+    {
+      "path": "gameplay/Gameplay.gd",
+      "sha256": "4538f45ea5f259fa8ef385af525cdd3535331a1afcd9c507170aa6d06944893d"
+    },
+    {
+      "path": "gameplay/NativeTrafficRoutes.gd",
+      "sha256": "5877bdc8513c29e64786bc144b7edc322bd4eca34fecb023222280ef3fef9ba4"
+    },
+    {
+      "path": "gameplay/PoliceAgent.gd",
+      "sha256": "74f640e5e57eed48c133ba2d3acc17c3beddd8865149e7ba3250159b4c6225fd"
+    },
+    {
+      "path": "gameplay/PoliceModel.gd",
+      "sha256": "fb335437d532698dc6c77680840109e76ed3a73b8a9b9be334b2bad35e784710"
+    },
+    {
+      "path": "gameplay/VehicleBailout.gd",
+      "sha256": "04ebcaa0fa33c446b1bf478a0dfafd51b2eeb067f22a0731147f9f476c57aec7"
+    },
+    {
+      "path": "gameplay/VehicleBoardingPresentation.gd",
+      "sha256": "1d67c4330df91db51ada45d34bdf758f0f5eba7f1306d5ae677b73d04fb24309"
+    },
+    {
+      "path": "gameplay/VehicleCoupeDoors.gd",
+      "sha256": "96ffb038479b36bb5b75de92d18a1a92910dc205ffce21c6ac430a7714c1fde4"
+    },
+    {
+      "path": "gameplay/VehicleDoorBuilder.gd",
+      "sha256": "2bbb76ce467be4d06bfb23ffbc877bcdcb1f6d1ab36a12aa999ef606171ee875"
+    },
+    {
+      "path": "gameplay/VehicleDoorBuilder.gd.uid",
+      "sha256": "8ddcbee94a00a7e5c14514a792d89746cf033482ffd3aa521dbb048fafe8091c"
+    },
+    {
+      "path": "gameplay/VehicleDoorPresentation.gd",
+      "sha256": "88595238c7553d029aee422b981c2851df6939fd339c2258c131fab559ca6912"
+    },
+    {
+      "path": "gameplay/VehicleEquipment.gd",
+      "sha256": "e14fcc9f19d9843ab23457a9e27b99bef79dbe3f9f0ab802b168a9aba68139fe"
+    },
+    {
+      "path": "gameplay/WeaponCustomization.gd",
+      "sha256": "1f1e0db4057f08ab4efd7e889d6397ab2cb212fc04fb7e6bb60d068ab7205ea5"
+    },
+    {
+      "path": "gameplay/WeaponFinish3D.gd",
+      "sha256": "7231a355c7b590204714ef46c9610485f2afb6933f8856acfa5a866a8706384d"
+    },
+    {
+      "path": "gameplay/WeaponRigPose.gd",
+      "sha256": "8af562fb219791b8c30867707c844a3902577f71ce5963d1f19810b0900debd7"
+    },
+    {
+      "path": "gameplay/civilian_reactions/CivilianDanger.gd",
+      "sha256": "4f885eca6704852f98231c018cc382331a8c21a094e82ef0dfc7bf8b7966bf19"
+    },
+    {
+      "path": "gameplay/civilian_reactions/CivilianReactionDirector.gd",
+      "sha256": "eac319cbb03821cd7da5ec13b14e1356cee82ed613904cc7db86547f3e5bd6c9"
+    },
+    {
+      "path": "gameplay/dispatch/DispatchController.gd",
+      "sha256": "d307a6b932465a3e7b020c138bb9c36ac7088c81dfd4f3fa8c09bae0aff4cfa8"
+    },
+    {
+      "path": "gameplay/dispatch/DispatchDriver.gd",
+      "sha256": "542ebd29bbfb434077c4c1f49810c7f700d9545d48bd5f92a3d80404136ac9a1"
+    },
+    {
+      "path": "gameplay/dispatch/DispatchOfficer.gd",
+      "sha256": "e7b507f0853b13c205d5e5f38fb6008bc328e52b76286c47dabc2c7608b276d3"
+    },
+    {
+      "path": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "sha256": "90685f4ed890829f179ecf7fd62215b9177d8929fbf25c1c3ea819a1ade3c54e"
+    },
+    {
+      "path": "gameplay/dispatch/DispatchRules.gd",
+      "sha256": "966a8603d9fcd0b92fa487875b59a43ff02d2642ef56a52bf26ebc2bd98132a1"
+    },
+    {
+      "path": "gameplay/dispatch/DispatchUnit.gd",
+      "sha256": "aedbd9113fb18ff0724e1e1e0aac4575d3b25d67cc3e169777488b6db68075c9"
+    },
+    {
+      "path": "gameplay/emergency/EffectsPrewarm.gd",
+      "sha256": "ee7744a98b61de54d75100cf1defe80b3bab602c0b6851589382404aed44bcdf"
+    },
+    {
+      "path": "gameplay/emergency/MorticianModel.gd",
+      "sha256": "b07d3f14063f0358f331da0a66d2027d2a5c6a27bb84c629ab00d38ad45105f9"
+    },
+    {
+      "path": "gameplay/emergency/Responder.gd",
+      "sha256": "b3a8cc49ead395a44152f6bad891299ecf8ca98526ad919dc54c0b4e0a1be8f8"
+    },
+    {
+      "path": "gameplay/navigation/LocalGridPathSearch.gd",
+      "sha256": "c1a79a9aa74a31d642192fb276a27b552126ac981ad0e35512d0646406021b1d"
+    },
+    {
+      "path": "gameplay/navigation/PoliceNavigationQueue.gd",
+      "sha256": "0c4eb801864d05637409a1f9bfc9f8ab119d2b973a3d588b604ed73b159f6e03"
+    },
+    {
+      "path": "gameplay/navigation/PolicePathJob.gd",
+      "sha256": "3657094cc24031c982445fa3723447a3dcfce02e6262e70370d9d4aafef526b7"
+    },
+    {
+      "path": "gameplay/police_response/PoliceCaseDirector.gd",
+      "sha256": "a23b2aecfc498ab1d6be5519370db4782362164bfa64719bf061c1e010f9d19f"
+    },
+    {
+      "path": "gameplay/police_response/air_k9/AirK9Models.gd",
+      "sha256": "cafa2486dc1c8a90826f5f2587426ac227bc1b94a6e5ebad5911fc1501da1776"
+    },
+    {
+      "path": "gameplay/police_response/air_k9/PoliceAirK9Director.gd",
+      "sha256": "ac73ef53b3ff2276b701e67cda6eae38ce588424d16f3aa0a119f8c9602e5129"
+    },
+    {
+      "path": "gameplay/police_response/air_k9/PoliceHelicopter.gd",
+      "sha256": "7a658cc082d26d7d1572c7a4e25c6dd066b32125d0deb7f72131c5674f907b9a"
+    },
+    {
+      "path": "gameplay/police_response/air_k9/PoliceHelicopterArt.gd",
+      "sha256": "6de0d8132ebb7d5fcbb193a59379fc31d976a6eb4ab46e18f1dedda61d814157"
+    },
+    {
+      "path": "gameplay/police_response/ground/PoliceRoadblocks.gd",
+      "sha256": "dfe21a3088a5b8045d7996992b9420d3461a8269f4c236ed54fad4862d82588a"
+    },
+    {
+      "path": "gameplay/police_response/ground/TankCannon.gd",
+      "sha256": "616c3f2723cfef393bd738dbec56f384398cd0fc7e6af67c7219c4759f1335f6"
+    },
+    {
+      "path": "gameplay/police_response/tactics/PoliceInteriorPursuit.gd",
+      "sha256": "c6bb631fb2223de8610a0fd4011a1cedb01cb16772224e35e243ac0c66f7d5bd"
+    },
+    {
+      "path": "gameplay/street_physics/BloodTracks3D.gd",
+      "sha256": "74b7f88883605de77f2e61f85c8fa8e1f785fff41cecada3e968b113fa1a1529"
+    },
+    {
+      "path": "gameplay/street_physics/BodyFlight3D.gd",
+      "sha256": "298f408e123eeb79f6c1b908ffe109491f682c1d8802b72448b96ad6630f9515"
+    },
+    {
+      "path": "gameplay/street_physics/BodyImpactPose3D.gd",
+      "sha256": "d7a9d323940e7a936320c3107b68b158fa9f02739343669e6a9aae15a6f84d3b"
+    },
+    {
+      "path": "gameplay/street_physics/BodyImpactPose3D.gd.uid",
+      "sha256": "e04a5100292ff284a8a5e6216b2d5046675da959f245a03791526b7997b5f834"
+    },
+    {
+      "path": "gameplay/street_physics/FragileProps3D.gd",
+      "sha256": "e9c29a58cc39858230f9fb4ca4895ef878d275e900c102f06873a1f39a1acd95"
+    },
+    {
+      "path": "gameplay/street_physics/HeavyVehicleCrush.gd",
+      "sha256": "c666de843b0c3132e408d1851075559f560b36b1c0eb9bbfab772d5a701d2e74"
+    },
+    {
+      "path": "gameplay/street_physics/StreetPhysics.gd",
+      "sha256": "3c136f1cfbf37388d067e746dc610114354d446f292a1638a050edfe6131db32"
+    },
+    {
+      "path": "gameplay/traffic_junctions/TrafficJunctions.gd",
+      "sha256": "b0a30f1f2390d2d1b2a36970c35632028a92a52898342dfd63afe7b64f5ab262"
+    },
+    {
+      "path": "gameplay/traffic_yield/YieldAgent.gd",
+      "sha256": "dff161d3cec863b62aefdb709dd97fb4f66d1526c9fb16f8ae2b2802a7abac0f"
+    },
+    {
+      "path": "gameplay/urban_v1/CemeteryOperations.gd",
+      "sha256": "66dc51300a9d380c475a7982996634a963de24be0d46aee9fd2806fdb8b2bd37"
+    },
+    {
+      "path": "gameplay/urban_v1/FreightOutskirts.gd",
+      "sha256": "5455fcb62b4724940127a81a9e0bb11ed03f9ee654c6b350356c79327d8e8855"
+    },
+    {
+      "path": "gameplay/urban_v1/PortCargoOperations.gd",
+      "sha256": "9ce5246d60f896d8fa2a93262a255d6111658ad151e05303c843692c8ae88d78"
+    },
+    {
+      "path": "gameplay/urban_v1/PortDepotBuilding.gd",
+      "sha256": "c1416d90b6c00fc5ccfcbe6be616181d5905966c0daa2aa28b1bbdd458aa42e7"
+    },
+    {
+      "path": "gameplay/urban_v1/PortLogistics.gd",
+      "sha256": "0e99e72869ee2af00bcb2a83f64036b460745cb29e18a1733eef2b0834f37b7f"
+    },
+    {
+      "path": "gameplay/urban_v1/PortOperations.gd",
+      "sha256": "08716d11f0b552ca2309308268a220eed504ecd4cc4499155e3519fc706372f2"
+    },
+    {
+      "path": "gameplay/urban_v1/SecretTunnel3D.gd",
+      "sha256": "d6156601504fc45d711407911735118f50ef938c1220a135de91f2da9bc86b94"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageDressing.gd",
+      "sha256": "6d02166b757844a0bd31bbfdcbd8c0d3a03ea09b84b6abcbcb1158df82c65bef"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageHorseshoes.gd",
+      "sha256": "d743172195ad0f8db90abd561b74011725d10303ff1423613c17fa155b2ee355"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageHorseshoes.gd.uid",
+      "sha256": "c111584be75882e2ec4683df39c028b1d49807b65364edc2c11d9c6c64372e63"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageLeisure.gd",
+      "sha256": "535fb0cd2dfd19262a53a54f3cc59d01703b05ae297c50237df9bbf83ffe0380"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageLeisure.gd.uid",
+      "sha256": "1ed8fa6ef982692cb22e41373f802151466e9b53a52b380657d545d3bda4ec4c"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageLeisureArt.gd",
+      "sha256": "f020ec7bd73f1146c65b86cdf58b47c7ce81f110d1713de9d61ed3153e4d073a"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageLeisureArt.gd.uid",
+      "sha256": "573906cb23708e75a8407d20b6ab70744deb586f3b6d1e8b0be8b560c5636b8e"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageResident.gd",
+      "sha256": "20ec01128abb622e28c6ec78b85d8f3f56873c7d2f85664cb9dc17778999b3ec"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageResidentModel.gd",
+      "sha256": "027a231fd7943aea918975fb9b2680f935cd986d358743bbecb753fc4da0b557"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
+      "sha256": "ef24755cfeded3e642ba27ba1a7ec2e2f552a0e94c642386cbbfcc890a94a15a"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageVegetation.gd",
+      "sha256": "be4f95b421c606f66f73ac3c09f43c6ba9853964ce613ab6833835d734d0cdbe"
+    },
+    {
+      "path": "gameplay/urban_v1/TruckersVillageVisuals.gd",
+      "sha256": "4cf96bdd4bb8b0c66b79faa3b1b6357d3bd8ee110ca6884165b597c46960c489"
+    },
+    {
+      "path": "gameplay/urban_v1/UrbanOperations.gd",
+      "sha256": "74bffbdbcc4c111564e64c621988632e69f49dd08d80ecc5c6a988fd49c41486"
+    },
+    {
+      "path": "gameplay/urban_v1/VerticeOfficeClutter.gd",
+      "sha256": "0402a53b41aeff2856cfb2b1d17c6115b5208ab452230316ba11dda9998b8a58"
+    },
+    {
+      "path": "gameplay/urban_v1/fort/FortOperation.gd",
+      "sha256": "ddaf8742d74da56d36399805c2200028e71e16a27df215e84308e2c41a799b13"
+    },
+    {
+      "path": "gameplay/urban_v1/fort/FortSoldier.gd",
+      "sha256": "b0628ce195bc472b3fae7ebd14b148427873a0def3f236796ada32ac29f068bb"
+    },
+    {
+      "path": "gameplay/vehicle_effects/VehicleEffects.gd",
+      "sha256": "04fc5457bb5f4b3d58e0f0870d05a6ce3f003e5220436f4629d2cea993fb5a52"
+    },
+    {
+      "path": "gameplay/vehicle_effects/VehicleImpactEffects.gd",
+      "sha256": "f1991aaf9ccce642e90d8e05ce767bcdeed70d4ae3f95544242c87ea058dcbca"
+    },
+    {
+      "path": "gameplay/vehicle_effects/VehicleTireEffects.gd",
+      "sha256": "5170a34467420ec46f3d79bb2c08445404b93a114eed313ad2c3147e7a5c0571"
+    },
+    {
+      "path": "project.godot",
+      "sha256": "a952619851e79891ae64425ab9c4ed8a95f319efa0b928547c5d1a68479bd747"
+    },
+    {
+      "path": "runtime/Arrival.gd",
+      "sha256": "64517984ea704915b469e1d7b2c6eabb49f04270fb32ff9fa0a950caa56eb8b4"
+    },
+    {
+      "path": "runtime/AuroraExecutiveDetail.gd",
+      "sha256": "df034e087fd6dce30e3259a13ac7dd9658e2fa5518c27c9e94624dd2a4dbef94"
+    },
+    {
+      "path": "runtime/CashierBaseModel.gd",
+      "sha256": "4fcb1573ce0c09e4f85bb2db2c6a1501dcc3a7671ba129bd5eb65a5da9ec280f"
+    },
+    {
+      "path": "runtime/ColdSurvival.gd",
+      "sha256": "6b4ba14efc20f54e5be8b10ebaaf7d33a363b0239e25195fc9c06ff1922c8dc3"
+    },
+    {
+      "path": "runtime/FleetCatalog.gd",
+      "sha256": "51a7875b98b7f0fba0eeb82b37e2a33154843143cc5da986a7c1bc26b507e0a1"
+    },
+    {
+      "path": "runtime/FleetSpeedPass.gd",
+      "sha256": "30953538ea8898f6109f09de5b6d5f885f6fa153ecc0247af67fbbe6d3bd56f6"
+    },
+    {
+      "path": "runtime/FrameStallRecorder.gd",
+      "sha256": "18c77a0477b9e426b73fdfd3ba09809c069a44c577e13ad5457e225f69bcfb02"
+    },
+    {
+      "path": "runtime/FullSession.gd",
+      "sha256": "36a85e7fb50e30ec9200f061fa5ea565eded59cf975b094f0eb91bcf3d40d468"
+    },
+    {
+      "path": "runtime/GameInput.gd",
+      "sha256": "3de605b0690ff0ed799ecc95a868a981724b1b7b24a21d0d22ab672ad7463bb6"
+    },
+    {
+      "path": "runtime/HarborStorefronts.gd",
+      "sha256": "d9d2ece7b0e7507f6824295b15c06f5d418b00cc97ced44773b230085e7e03c4"
+    },
+    {
+      "path": "runtime/HarborWeaponWorkbench.gd",
+      "sha256": "314628fb765dc115a42bf703a1ebbe15f2814cad12c71942a756872709db183e"
+    },
+    {
+      "path": "runtime/MissionWorld.gd",
+      "sha256": "ed8c5b1abd3eeabe26ebdc22d3da0ba9d4e28404698d7957b0d18d4f1dca8b5c"
+    },
+    {
+      "path": "runtime/Nord240Detail.gd",
+      "sha256": "351ebd43cae6d5788da7d97225d8fcc42933f361f1f87038ab2499216118a5a3"
+    },
+    {
+      "path": "runtime/Nord240Detail.gd.uid",
+      "sha256": "3a98c9cc566f4d2857e39c1f5196f65d00c61855cecf8ed1affcd81afb5c5202"
+    },
+    {
+      "path": "runtime/Nord240Geometry.gd",
+      "sha256": "10c5c5f5825b8e9712425623aa8a81891c312ddb84b63051810d71544ccefbed"
+    },
+    {
+      "path": "runtime/Nord240Geometry.gd.uid",
+      "sha256": "f5120357f8f24241f0b861c1759b2664e1df0e7d4d2219bb60ec885a6fc33f0f"
+    },
+    {
+      "path": "runtime/ProductionWorld.gd",
+      "sha256": "67e3f108370acfa9947f9c7bba9997889a9079ca137463dd5ca1e97c4959c694"
+    },
+    {
+      "path": "runtime/Robberies.gd",
+      "sha256": "8d318895238951d7b5579fd31a7961822730d1159da7046bef9ce7441fd04769"
+    },
+    {
+      "path": "runtime/Settings.gd",
+      "sha256": "0c193a4612cfa7aedf8c621d16a77f8f7b3540efea14771a0be403c852af157f"
+    },
+    {
+      "path": "runtime/SpecialPlaceEntrance.gd",
+      "sha256": "6f2c795608dece92f75da3d5323dc4968752b270ff780802a254e00646912bf1"
+    },
+    {
+      "path": "runtime/TaxiLivery.gd",
+      "sha256": "841b536d801640a4d32047191f25181b07e95ad59c1bf40ac646e3cefe5d873e"
+    },
+    {
+      "path": "runtime/TaxiRank.gd",
+      "sha256": "30509505dd4f7d1b8cff2537300da93b979417bb24aaf98adaec824eee42d6f8"
+    },
+    {
+      "path": "runtime/TaxiService.gd",
+      "sha256": "412d474a9ce12f4d48193ec474afabbfdfef36d8d483c1bfececa2c82e9939da"
+    },
+    {
+      "path": "runtime/UrbanTransitPresentation.gd",
+      "sha256": "f619d33e2bca4c8c6db335261571d4bb3f390fd71533f925adda269ceb9ced84"
+    },
+    {
+      "path": "runtime/VehicleFinish.gd",
+      "sha256": "e278494a79831009919db717edd559de35d3f00bb37120e25c059bcf7cbdbb93"
+    },
+    {
+      "path": "runtime/Weather.gd",
+      "sha256": "aa40c7d88168d1eed6bbfcdfb4bcd69846936359506e4b2e82d6fce6148300a1"
+    },
+    {
+      "path": "runtime/atmosphere/WeatherSurfaceEffects.gd",
+      "sha256": "e3ffa1c3a2977b1ba456b1e45789c37da411e05181ee052309baf40c0b298da2"
+    },
+    {
+      "path": "runtime/cold/HeatPresentation.gd",
+      "sha256": "07e73e5fbe5b06bb4f77b9c96add0f8f2842a7375c1d55c13a87bb4e2e96ca59"
+    },
+    {
+      "path": "runtime/cold/ResortBrazier.gd",
+      "sha256": "307543539a3e95f8a7a00ae4ef2b3d797957b29801520256161e1eac7328e977"
+    },
+    {
+      "path": "runtime/garage_guards/Guard.gd",
+      "sha256": "70b7079dfdd112cd6f917dd2f372bfffdbcd50ca67e8e0035cb72ee366a10322"
+    },
+    {
+      "path": "runtime/terminal/TerminalCoach.gd",
+      "sha256": "b47115569451abca5843089733b12a97dbfad27d9bc99a5adb7435c0624d6e17"
+    },
+    {
+      "path": "runtime/terminal/TerminalOperations.gd",
+      "sha256": "40403f4963ad1d76c8f9aaa88fdef1da5900c91b9ab8937e1373723fcf1e4156"
+    },
+    {
+      "path": "runtime/transit/BiarticulatedBus.gd",
+      "sha256": "4f1eb817ba761088d913350f0d2d132ea2163f224c92306758c4212675e354c5"
+    },
+    {
+      "path": "runtime/transit/BiarticulatedModel.gd",
+      "sha256": "05c0ed53b05d9abbaf3905570a64c761d5f1b2ef762c6c4c6ff68182a002ea44"
+    },
+    {
+      "path": "runtime/transit/UrbanBusService.gd",
+      "sha256": "abedf6f212c0fa8efd6e2adb4955ddc892f0da8a41183e76ddfabc1c744338ca"
+    },
+    {
+      "path": "scripts/Actor.gd",
+      "sha256": "1474da74fbb9398f1fa573a04c0d43c970322f67eb3bb7216b221d6b1957b4c2"
+    },
+    {
+      "path": "scripts/CameraRig.gd",
+      "sha256": "ed38966eab756f73d231bfffd0ca1405d1dca315da0357face2b01f778c6a155"
+    },
+    {
+      "path": "scripts/Vehicle.gd",
+      "sha256": "7e9fdb47a5c9b544c5951eaae99c7b10a27eb5de6b1a35689d8a031323a2ae14"
+    },
+    {
+      "path": "scripts/World.gd",
+      "sha256": "7b346621fad297ec3dc419a64f9a77c93a1488eef19f62b923b84ff5a361611e"
+    },
+    {
+      "path": "systems/Progression.gd",
+      "sha256": "e1c9c9c005165bdb821daa9b9c19f6d47c206db7726bec5b516c16bec521a713"
+    },
+    {
+      "path": "systems/economy/Economy.gd",
+      "sha256": "de49d8bcbb9ad20fe424729efd70dd8d7b5452e6449431a2944f63b39ab528ce"
+    },
+    {
+      "path": "systems/inventory/BagVisual.gd",
+      "sha256": "84fb0ca881a7af424ba4055ed45b7adad32d32a23a3a2353c90b79932bb3f792"
+    },
+    {
+      "path": "systems/inventory/GridInventory.gd",
+      "sha256": "dc430fad352c2a529ab856d20740b57e3974876306a6aaacf4ede29291eef5ab"
+    },
+    {
+      "path": "tests/Runner.Common.ps1",
+      "sha256": "060683cd7c54a780ce23e99af0b36304f4976160ca1bccbf436d0d079fa22ec3"
+    },
+    {
+      "path": "tests/capture/capture_boarding_doors.gd.uid",
+      "sha256": "0712c8e2e95bc639e6445e7ca9533897592c89ede4025f8f975f27e93545f254"
+    },
+    {
+      "path": "tests/capture/capture_fragile_material.gd",
+      "sha256": "6a856456c9a6b9c3eecb578e7201e63a149e890434a470e4e9d911eee0a8c3e0"
+    },
+    {
+      "path": "tests/capture/capture_fragile_material.gd.uid",
+      "sha256": "02e836683b837096e4340f2454a27427d31757a92b3aa6e9dbaf62f50afe644f"
+    },
+    {
+      "path": "tests/capture/capture_lake_splash.gd.uid",
+      "sha256": "c2356ce7e7a18bb99db9638bfc65a03be9c285ce874600d738f7943dc9988d7f"
+    },
+    {
+      "path": "tests/capture/capture_paint_glare.gd",
+      "sha256": "868b1ef30ec29b9906c7c68b359893333012d004d24780766bc3650d1c5ac603"
+    },
+    {
+      "path": "tests/capture/capture_paint_glare.gd.uid",
+      "sha256": "8fb1a74b92be80251309b8c0c80b72f4e9c512909177c77d70c39e2655da2ede"
+    },
+    {
+      "path": "tests/capture/capture_port_stability.gd",
+      "sha256": "372e4052da60f9f9f130fb7fa4d5054b4c3bfa27536444781923f6b890cc069d"
+    },
+    {
+      "path": "tests/capture/capture_port_stability.gd.uid",
+      "sha256": "90113c3bcff0a39f81b589ea0cc7d9dabe780749d9a92ac1a33e2b93ebd3fb7c"
+    },
+    {
+      "path": "tests/capture/capture_road_network.gd",
+      "sha256": "04970de4c457f90d4c9bf4bd225883c015b18fd1aa4998f041bea0e897ffb225"
+    },
+    {
+      "path": "tests/capture/capture_road_network.gd.uid",
+      "sha256": "a156aaddbf2d57a62a99358a3442ada3b3808cef2c6c0b56ad3f0cfabfc2c7c1"
+    },
+    {
+      "path": "tests/capture/capture_seated_driving.gd.uid",
+      "sha256": "17d0cac2ea82eddc57001523063a50774bf2f376f4ca8634e400eb9af519899e"
+    },
+    {
+      "path": "tests/capture/capture_video_visual_fixes.gd",
+      "sha256": "ac367886ca90fa44689520ec5cc151648397c2c2b44d28163ece3e4a87e938f1"
+    },
+    {
+      "path": "tests/capture/capture_video_visual_fixes.gd.uid",
+      "sha256": "ef1ecd1c3fbb999603ccb9865c3669d12b7d8e689228a33f1053670e9c2e0b26"
+    },
+    {
+      "path": "tests/capture/capture_village_leisure.gd",
+      "sha256": "080d7c98dde9032d5ea403963dfbe8e14e1816ef06e8bcf232509f7b2f5213e0"
+    },
+    {
+      "path": "tests/capture/capture_village_leisure.gd.uid",
+      "sha256": "2e46d19e094e0d41851c86b79aa074c55874c96c539f7bdd72d17edb3704872e"
+    },
+    {
+      "path": "tests/capture/capture_village_leisure_depth.gd",
+      "sha256": "65213e1f9ce8a12c2369e118cb3c26dc6ea6fec403ebf8a2a4e2a3b58378fc73"
+    },
+    {
+      "path": "tests/capture/capture_village_leisure_depth.gd.uid",
+      "sha256": "b0959eee698390ec483dfd93cdad3bdefd4aad3d2f486814dfbf0f52864ac874"
+    },
+    {
+      "path": "tests/capture/probe_connector_shadow.gd.uid",
+      "sha256": "d85ab1a517438c40a6384f73109862a8f1000821bf47948042e161b547ef0ecd"
+    },
+    {
+      "path": "tests/diagnose_road_junction.gd",
+      "sha256": "cb19ade6f338de3894328512da16f021e63b9c1911f5ee07704437d55fbe3b20"
+    },
+    {
+      "path": "tests/diagnose_road_junction.gd.uid",
+      "sha256": "95e5e692ef51c1e9f920db46be663ae3129a02d791e12d33b8fd887e08c2097d"
+    },
+    {
+      "path": "tests/dispatch/Run.ps1",
+      "sha256": "54123bf88f1a95c5833f3c457c7b414a6432db3ed76cfb7acdcc46de7c909324"
+    },
+    {
+      "path": "tests/dispatch/measure_chaos_attribution.gd",
+      "sha256": "6962e2bebea687b2c18a47cfb699c41433aaf40035b4bcf46f5357a915e77acb"
+    },
+    {
+      "path": "tests/dispatch/measure_chaos_attribution.gd.uid",
+      "sha256": "ba55d056fad7b346affae11b1993843eda0365b2ad4e06875bc8cd860d039bb8"
+    },
+    {
+      "path": "tests/dispatch/results/attribution-validated.json",
+      "sha256": "b0f3b94b09f1564295551b768ef47c9487496dfb9390b0e2a0bc4e57260a640b"
+    },
+    {
+      "path": "tests/dispatch/test_dispatch_emergency.gd",
+      "sha256": "10fbb8e12698ad0606cac003825822184354e01eca0f5e0af44553d6c5e859f1"
+    },
+    {
+      "path": "tests/dispatch/test_ground_remaining_lifecycle.gd",
+      "sha256": "c403c0618634bee254319431f9e6bcfaef17264a9b5514454501585943268b22"
+    },
+    {
+      "path": "tests/dispatch/test_ground_remaining_lifecycle.gd.uid",
+      "sha256": "9529e9b64fc8e24cb9f0f3cd50e53319b1c78444c61de0cd4e43839c9cc3a9e5"
+    },
+    {
+      "path": "tests/measure/RunTeardownOwners.ps1",
+      "sha256": "ffc63bf39c7b10964d54ee323c1d7c760f5b84a1c45ab106c36d014bd8682e5d"
+    },
+    {
+      "path": "tests/measure/capture_body_impacts.gd",
+      "sha256": "72c4551ad8dcce92051a11da865964d9609917977749306f03e5fa8ef6760e00"
+    },
+    {
+      "path": "tests/measure/contact_audio_live.gd",
+      "sha256": "7d4838f1f2df3b78c3aa0ccdce54168051aecb0394026b74012936dc60ec1322"
+    },
+    {
+      "path": "tests/measure/contact_audio_live.gd.uid",
+      "sha256": "4477ce51487f638ff6af9dc78dd9edf36b8e5ec0764dd135999b38ec4bbba852"
+    },
+    {
+      "path": "tests/measure/measure_body_impact_sound.gd",
+      "sha256": "88846d3fdbfde784512012770cc951d46335be0834000625519ed0af66ade4ca"
+    },
+    {
+      "path": "tests/measure/measure_body_impacts.gd",
+      "sha256": "52d341e2233d160ee37b5987a1bedf5642a2446291b53e58e7dbc5bf4ccc0254"
+    },
+    {
+      "path": "tests/measure/measure_body_impacts.gd.uid",
+      "sha256": "093f7708cdd783c05355ef33088873203a38c24e47bc8b7e8ceb7eab161b194e"
+    },
+    {
+      "path": "tests/measure/measure_full.gd",
+      "sha256": "2003cc50db207a00faa6f4726ff494a6776e5a9ca0edda670b5451d537599790"
+    },
+    {
+      "path": "tests/measure/measure_onfoot_response.gd",
+      "sha256": "9b0e9761e2e7fc81441570dca4bdff7040577e3ff2539a816e9b888d80520ad4"
+    },
+    {
+      "path": "tests/measure/measure_onfoot_response.gd.uid",
+      "sha256": "ed7c398e905d73814ca690337a5f636dcfcbc891413c21c974089c7b305d3b9e"
+    },
+    {
+      "path": "tests/measure/measure_pursuit_drive_only.gd",
+      "sha256": "94ac1e8fecd47f34fe238878dc27001662212db49451232ef0691472f8125437"
+    },
+    {
+      "path": "tests/measure/measure_pursuit_drive_only.gd.uid",
+      "sha256": "ed14788fed63c061fdd14b7c1168a1ffe2cd974e78c2171299a354f3e982fb1c"
+    },
+    {
+      "path": "tests/measure/measure_pursuit_drive_roundtrip.gd",
+      "sha256": "eb4540a974fd0326d783dceee536f49aa6a8fed318c6f19d0ee442b27e39ef6f"
+    },
+    {
+      "path": "tests/measure/measure_pursuit_drive_roundtrip.gd.uid",
+      "sha256": "788cc3e639aea0202aa0dc7e7d38f4c4f4b4177654a4b85035d705669b6df74f"
+    },
+    {
+      "path": "tests/measure/measure_region_lifecycle.gd",
+      "sha256": "e0dc6324de3dc7bab6b1179ce3591f15a38b620453ca6fe327f4813fbeaf57cd"
+    },
+    {
+      "path": "tests/measure/measure_region_lifecycle.gd.uid",
+      "sha256": "3d133639986701d0e217d766ce0001e84822cc8e1fe1049efb04832844efdd12"
+    },
+    {
+      "path": "tests/measure/measure_road_connectivity.gd",
+      "sha256": "ca094444f8dfa14eec684abd397226227fb0a7cb15b253eef607516883e42ce9"
+    },
+    {
+      "path": "tests/measure/measure_road_connectivity.gd.uid",
+      "sha256": "fb9abc468ca5f8017004fe62dcd4abd88fd8593beabafb0f9aed1b852cc4b310"
+    },
+    {
+      "path": "tests/measure/measure_script_ranking.gd.uid",
+      "sha256": "08dc1818d2ebddf0688796c9052c9aec6770066bdf1467d1c4928ed52e92ecf7"
+    },
+    {
+      "path": "tests/measure/measure_seated_driver.gd.uid",
+      "sha256": "c1f5312e28d64ed3643e6528bb90b0c5032a2b55b32234a2b7a398c78c26352a"
+    },
+    {
+      "path": "tests/measure/measure_teardown_owners.gd",
+      "sha256": "f38d629c3cabe78c4cfb33d2165b913e1df008eb772512a5cacd66d6acf07908"
+    },
+    {
+      "path": "tests/measure/measure_teardown_owners.gd.uid",
+      "sha256": "a5210593a4ca682f16add5f793d40fbf3b8496edf06c019b31a92216e01ac08b"
+    },
+    {
+      "path": "tests/measure/measure_village_horseshoes.gd",
+      "sha256": "449d1365fe9a46280f1c861983c42fbb7204e6b5ab864350b7848b33766ba54d"
+    },
+    {
+      "path": "tests/measure/measure_village_horseshoes.gd.uid",
+      "sha256": "dc67ca6c6692d109d547165d0d26ff80cc7678a67b874703aaab6b5c3c3e4d8a"
+    },
+    {
+      "path": "tests/measure/measure_village_leisure.gd",
+      "sha256": "9be407f9c03132f53dfe76f701c12093d2e133f6817f5f449facf7a14d91f346"
+    },
+    {
+      "path": "tests/measure/measure_village_leisure.gd.uid",
+      "sha256": "06ed5d396ce98428be70f62c7a3af8df715b58909a97951046039e09ece5e56b"
+    },
+    {
+      "path": "tests/measure/probe_first_emergency.gd",
+      "sha256": "aadf9cc66a02f45e1e19483dd164f178fe8d296c329704e57fd0c519b4da502a"
+    },
+    {
+      "path": "tests/measure/test_connector_gap_drive.gd",
+      "sha256": "efa6cca26a2a636d7b57bd5ba7278617288eccfb4c383d9a772888a269a0066e"
+    },
+    {
+      "path": "tests/measure/test_connector_gap_drive.gd.uid",
+      "sha256": "02c051905161d19593f0364a7e230a13896cc7d4956f8141c586a6f27d5e4198"
+    },
+    {
+      "path": "tests/run_suite.ps1",
+      "sha256": "cc01f958dd87775da54063d6224fa5c1f13857a063c0114baf5f287997a6ff03"
+    },
+    {
+      "path": "tests/tank_control/crush_request_candidates.json",
+      "sha256": "4353dac4a511c449f5deb3db662dccd16467b66bbc7ab98a910a34d2b983308c"
+    },
+    {
+      "path": "tests/tank_control/test_crush_explosion_attribution.gd",
+      "sha256": "84a9c78e8c70d4573bfd5718f6d916d930344f8d00d92e920caae397671bc80c"
+    },
+    {
+      "path": "tests/tank_control/test_crush_explosion_attribution.gd.uid",
+      "sha256": "f54ad7ae82b49fc7c1bd0994fd00408c3d52679245f82891a9912685c80b161d"
+    },
+    {
+      "path": "tests/test_arrest_death_race.gd",
+      "sha256": "f36304e7d33167bb66248467dfafaed2f8957d51cf1388c576d973441bbc4991"
+    },
+    {
+      "path": "tests/test_arrest_death_race.gd.uid",
+      "sha256": "d838fce79a9cf5395813aa89ec5b1cae5b693ce7c27d0aeee8993c2ae0f7d472"
+    },
+    {
+      "path": "tests/test_biarticulated_service.gd",
+      "sha256": "89e01d1be6ec44b38da16bb04bdc132ed13b6292c5f0480f5c22446813d5372a"
+    },
+    {
+      "path": "tests/test_blast_query_coverage.gd",
+      "sha256": "b19b6a183f0fa04b4875cd3f7e09c4f0bb76868f257e3e5939c17b21b5980587"
+    },
+    {
+      "path": "tests/test_blast_query_coverage.gd.uid",
+      "sha256": "dd0bed10967f4a88a137ba39a7200e8666648d8649a88a2d77bfa9f40602a1e7"
+    },
+    {
+      "path": "tests/test_body_flight.gd",
+      "sha256": "48a755366555004f7f576854a893fb6bcbc0c97b2c8c30246bb3551111e48f48"
+    },
+    {
+      "path": "tests/test_body_impact_audio.gd",
+      "sha256": "cf1278c12b3ec6b42f0732da78a79ad81d7b7524aa5052a40fce2c6ccff9a99f"
+    },
+    {
+      "path": "tests/test_body_impact_audio.gd.uid",
+      "sha256": "5b0e360fb1c9ebca358ff3549b6fa5c2d8e8b9c0be1faa8337edeb699306a793"
+    },
+    {
+      "path": "tests/test_city_context_index.gd",
+      "sha256": "31d822367e99f681c4feea098912e8ebf5fa2e2768919a0924548fb07500133a"
+    },
+    {
+      "path": "tests/test_city_context_index.gd.uid",
+      "sha256": "0c0866b2e2b23c330cb2b598a3dc82c0a0bad7fab9dfb5fb8eb802fa1531336b"
+    },
+    {
+      "path": "tests/test_city_streaming_budget.gd",
+      "sha256": "1fa599027f8a1bd70ac16edd1887c3c4a5fee0256b3e57ae99cdb3dac8de4c87"
+    },
+    {
+      "path": "tests/test_city_streaming_budget.gd.uid",
+      "sha256": "a3f041734c14e4b20bfb55040ea6437f389c5f393b8450ff0d204975bd1c7c84"
+    },
+    {
+      "path": "tests/test_civilian_blocked_retry.gd",
+      "sha256": "5397bf1c66d8404510adabf2cb8191646071c5af048bcae94ebd476f1eefde04"
+    },
+    {
+      "path": "tests/test_civilian_blocked_retry.gd.uid",
+      "sha256": "8a1bd907b46c499a5e5fc895809694c58bea83d8f49a09458150714f2893247c"
+    },
+    {
+      "path": "tests/test_contact_audio.gd",
+      "sha256": "0759b11c85d08cc5ce4e7db3a8293dfd179cdd7ee7bc6de354503074896513c8"
+    },
+    {
+      "path": "tests/test_contact_audio.gd.uid",
+      "sha256": "1faf2560ae7929cfab2d7eb5e523184759c010776d8e391f767a9f2e984751be"
+    },
+    {
+      "path": "tests/test_dispatch_actor_loss.gd",
+      "sha256": "c39f5759b4e6e6a792f23801fa0517f2989e5e38a5e92870eb1e222d2baeae59"
+    },
+    {
+      "path": "tests/test_dispatch_actor_loss.gd.uid",
+      "sha256": "b97376de00b690b4f1a9baaae81a2892e064b00cc99ac17f99bb32ae24025387"
+    },
+    {
+      "path": "tests/test_dispatch_ground_owners.gd",
+      "sha256": "1a1bae82e276b3bb03b8c093cd31c3587671c65ae8e93ad3cf2eecd097e316a9"
+    },
+    {
+      "path": "tests/test_dispatch_ground_owners.gd.uid",
+      "sha256": "cee33f8877905ccf3dbf7530287186e235eb18f4d37259789a57a0b30878cedb"
+    },
+    {
+      "path": "tests/test_dispatch_ground_retention.gd",
+      "sha256": "7ce2ba50dc8b7f632852ae95751314167281ddf36cf74db6b2fd7219329ef155"
+    },
+    {
+      "path": "tests/test_dispatch_ground_retention.gd.uid",
+      "sha256": "34fa1042ed4ab0dea73b5880da9b559df0a5fe1b568fe40f46b018d251ec9ead"
+    },
+    {
+      "path": "tests/test_dispatch_model_prewarm.gd.uid",
+      "sha256": "cba9f5855d9d80dbb7f621ea1d809b5c9545e30f5736f020163618b00774308f"
+    },
+    {
+      "path": "tests/test_fragile_debris_physics.gd",
+      "sha256": "8b301615398841791883a6f0db4d4e4bac0136f9819f393001b4178daa224af5"
+    },
+    {
+      "path": "tests/test_garage_driver_restore.gd",
+      "sha256": "1eed075377f116fc845948ef9c17fa2dad7b78f6a29820c653ec4597df9d0037"
+    },
+    {
+      "path": "tests/test_garage_vehicle_transfer.gd",
+      "sha256": "cf1487e6953223bf41afea331d06ed8549d50e64c02c1bb2ad8fe35f07a1f9ae"
+    },
+    {
+      "path": "tests/test_handbag_carry.gd.uid",
+      "sha256": "abe3eceb2fb0520dd28ae5ce2c8c0cd3d625692895771e75c64e3bd9c6d0a33b"
+    },
+    {
+      "path": "tests/test_handbag_visual.gd.uid",
+      "sha256": "479fe9ac858af5595836f2dd183db7e715052379ac88fc83d5ccabd045879cf0"
+    },
+    {
+      "path": "tests/test_house_loot_receipt_query.gd.uid",
+      "sha256": "e59fd2c592d624278b4a6374bd8934c245c295727363cb4e1d963322fce938db"
+    },
+    {
+      "path": "tests/test_lake_splash.gd.uid",
+      "sha256": "929826f7f64d3f4c9f59446418dfc9824ffd18e716cf0a2fa54e4fa42283cb54"
+    },
+    {
+      "path": "tests/test_maciota_transition_safety.gd",
+      "sha256": "4f19a95a54abb89843601c99512520c1efc90374af27177ee4e04ea272bb1fe0"
+    },
+    {
+      "path": "tests/test_maciota_transition_safety.gd.uid",
+      "sha256": "7e67d2a69d45af0aed7da8c2591a825901e389fa1f7b6e5cc2feda4bb6dfe22f"
+    },
+    {
+      "path": "tests/test_nord240_detail.gd",
+      "sha256": "17e5be476576f3c94f0c19fcc3e700a4c94f2bb4fa1cc3546bcfe026fa67b93d"
+    },
+    {
+      "path": "tests/test_nord240_detail.gd.uid",
+      "sha256": "5f98ed644e51fa2006425b98a9aad184c40e432bb1f3c195e02d10517b645be6"
+    },
+    {
+      "path": "tests/test_northstar_record_cache.gd.uid",
+      "sha256": "1a34a37f7892b8d9db3bf060c4506c004a0aee333ee70121ffd864b2d4cb8b91"
+    },
+    {
+      "path": "tests/test_persistent_vehicle_support.gd",
+      "sha256": "adea86ba10e96d2cd4f9717ab1356ed86db892376836739cf2141296617b0ff8"
+    },
+    {
+      "path": "tests/test_persistent_vehicle_support.gd.uid",
+      "sha256": "abf1bf89ce3ecf6058ef387b83318ca523442c2e1f6c27b3b72553c8bdb768c6"
+    },
+    {
+      "path": "tests/test_population_density.gd.uid",
+      "sha256": "8173fac308609eb0294773002ffde5a9718556e82a344b223934905dc6dcdf65"
+    },
+    {
+      "path": "tests/test_port_container_depth.gd",
+      "sha256": "4b42b58c44a5969ca447215e8fdee3f08554bcfc6ab7be4e9d3c68140029e451"
+    },
+    {
+      "path": "tests/test_port_container_restock.gd",
+      "sha256": "be8a4cdf22b28386a3317e320a97c4e93fcdce47ce455cf96bc798e7906b4077"
+    },
+    {
+      "path": "tests/test_port_container_static_cache.gd",
+      "sha256": "782fb211501d425247dc67585cce4cdb95a71c3bf52bdf6bc86c6cbd3433b926"
+    },
+    {
+      "path": "tests/test_port_container_static_cache.gd.uid",
+      "sha256": "fab89af375a7a515d4bfc03f8405b289f103c8cbbb82c4520f04ec76090defa0"
+    },
+    {
+      "path": "tests/test_port_containers.gd",
+      "sha256": "3b7a018b2190a5c88d71a20fffc5201303f6907a49fbb81a8927df2ff83c82d9"
+    },
+    {
+      "path": "tests/test_port_haul_route.gd.uid",
+      "sha256": "532fccc22c6dd3fdbc2bc82f51b69d88487d58af7323adb258f3f862abbaae91"
+    },
+    {
+      "path": "tests/test_port_loading_continuity.gd",
+      "sha256": "df72d12880bab8508c3c5894b1c52a6f2548017d94bf7b5603306a19b7398630"
+    },
+    {
+      "path": "tests/test_port_loading_continuity.gd.uid",
+      "sha256": "6fe6b89ca90be598c3f5e9aa476a5bb4fff1f8ce791e939930c0bc562b334129"
+    },
+    {
+      "path": "tests/test_port_marking_ownership.gd",
+      "sha256": "3835949257b3ed24343b2b156c4b1b03c7b2a5b2c35dec3bdd9a952c71846b74"
+    },
+    {
+      "path": "tests/test_port_marking_ownership.gd.uid",
+      "sha256": "afb1af68bca5b56b56a641ac405082f2afa48e6a875269cfc670d81fb139e013"
+    },
+    {
+      "path": "tests/test_port_material_batch_identity.gd",
+      "sha256": "042c9944f82d5d387de14233e775a3db825d15041d6af8026debab2a4550dd0d"
+    },
+    {
+      "path": "tests/test_port_material_batch_identity.gd.uid",
+      "sha256": "8c49cc8d4de9b322e749c49d3bffffec12efb4cce8a28652ef04e03aa7cd82dd"
+    },
+    {
+      "path": "tests/test_port_truck_gate.gd.uid",
+      "sha256": "25ff627b7eedcd4b739d0505338dd5ca49c0e6519274ac46e0d9060c43758bb4"
+    },
+    {
+      "path": "tests/test_pursuit_region_seam.gd",
+      "sha256": "1d45ad65b1638622287bfea1341736cf76514c022ce6a7d0e8477b76aed38be2"
+    },
+    {
+      "path": "tests/test_pursuit_region_seam.gd.uid",
+      "sha256": "3dbb9f2b3136138febb57d1f733d3302135aea88c0cf5319a349f4646a793d44"
+    },
+    {
+      "path": "tests/test_region_cache_ownership.gd",
+      "sha256": "b241f72c5e9397b48f4b7915fb9908b2721623bc003e2a4ec1abdbbabba1e3b3"
+    },
+    {
+      "path": "tests/test_region_cache_ownership.gd.uid",
+      "sha256": "436aee63c6188207a969c22dee7b1a551b0c4fa2a8b6067e96c3c5e22449b04b"
+    },
+    {
+      "path": "tests/test_region_cache_piece_variants.gd",
+      "sha256": "cf7b2bbe38aa3b1978c613dcdc99d47d5b47e6817e061d7b5bb73eba8ea618b9"
+    },
+    {
+      "path": "tests/test_region_cache_piece_variants.gd.uid",
+      "sha256": "20b6be60051a63b5203e53056be01b9689dc49d764b8c9fa26ea524e69236f0c"
+    },
+    {
+      "path": "tests/test_region_vehicle_suspension.gd",
+      "sha256": "3f68e7a3e2632fc2cbcfb222afd130a432e610b78cabf19d7930f294921875d0"
+    },
+    {
+      "path": "tests/test_region_vehicle_suspension.gd.uid",
+      "sha256": "d52d083f6a476f3597b119f9f483e727317cb8722c17f59447239e97671ae157"
+    },
+    {
+      "path": "tests/test_retire_stack_restore.gd",
+      "sha256": "6c685fdc80109d02de23bcedb7074adf52ad44abb470addd30e7f96a11a0f688"
+    },
+    {
+      "path": "tests/test_retire_stack_restore.gd.uid",
+      "sha256": "ae837d6127dfdf477f77cfee57cf977357788c46dd96abda451957160053c2d6"
+    },
+    {
+      "path": "tests/test_road_access_drive.gd",
+      "sha256": "90982434067149f5bf8531124c21d73961952dd4f64f9778dbe083e518bc9c49"
+    },
+    {
+      "path": "tests/test_road_access_drive.gd.uid",
+      "sha256": "bcdf0bad8654611ed94775bad56f7285b77b96d71bb17766622cf441e7ffc644"
+    },
+    {
+      "path": "tests/test_road_network_connectivity.gd",
+      "sha256": "d9a6f239709c52e36e26f3c5c84728a5e98b327c23f2522ae2b9df2804f95615"
+    },
+    {
+      "path": "tests/test_road_network_connectivity.gd.uid",
+      "sha256": "2edd39a598d0205991035c0578f40a3aa9c5fa8f85c5c0927a424bee2ff46ee4"
+    },
+    {
+      "path": "tests/test_seated_driver_flow.gd.uid",
+      "sha256": "fc1b28b85aa4b4d46d2849d53cb89c1a385fcf978d564580b6070bf5ca98b433"
+    },
+    {
+      "path": "tests/test_startup_prewarm_contract.gd",
+      "sha256": "50b93998f272ca2f0b022959c5cbe0a71c450cd94868ee73cd9b88b21412de8f"
+    },
+    {
+      "path": "tests/test_startup_prewarm_contract.gd.uid",
+      "sha256": "94b7d53b003b53b2016bdfddeea654724c5291d10a838be1090744def4643f46"
+    },
+    {
+      "path": "tests/test_stolen_officer_budget.gd",
+      "sha256": "8ec1ecad32041b6f714e60f2ea3072189ee087c3f9aa30f0c4da08e5eb624bcd"
+    },
+    {
+      "path": "tests/test_stolen_officer_budget.gd.uid",
+      "sha256": "d9041c50279f5f471ffdad72d84ce34da069f666f9bec2df51fe66dd8609ff8c"
+    },
+    {
+      "path": "tests/test_stolen_officer_interior.gd",
+      "sha256": "c001c6a1141a69d1239027c243bfa22c4654161774ef18eb05d070192e22d0e0"
+    },
+    {
+      "path": "tests/test_stolen_officer_interior.gd.uid",
+      "sha256": "33038a8224d2b895106017f6dea3d3c02a41c4117fd1ad16793739951178b6cc"
+    },
+    {
+      "path": "tests/test_taxi_service.gd",
+      "sha256": "3431944988e7c9dc51b85dfdcb17d72d964db0d2b7635682935325f85435fa74"
+    },
+    {
+      "path": "tests/test_traffic_signal_visual_sync.gd",
+      "sha256": "fb94f690cc73ceaa492302c02882f3c8ed5b52ec74870b02fd678ec4d8f46368"
+    },
+    {
+      "path": "tests/test_traffic_signal_visual_sync.gd.uid",
+      "sha256": "fb0f5198c66f62fe71a2733a9edc14d3f317188a11d2544920a910d7f582b03b"
+    },
+    {
+      "path": "tests/test_traffic_turn_approach.gd",
+      "sha256": "91c8a9a2748650374a355a9707c6433035cf200a4c1c22042d7121ab1bc6a2fd"
+    },
+    {
+      "path": "tests/test_traffic_turn_approach.gd.uid",
+      "sha256": "dfeb8525df3f412660d30fd70e7cb53900dbeabd359e30bd45cad94d4bbecf1c"
+    },
+    {
+      "path": "tests/test_transition_death_rollback.gd",
+      "sha256": "295bd8a2e9c72ab084e8caf0a0814b06df5e80f487d95bb9b2cfb1f71967565f"
+    },
+    {
+      "path": "tests/test_transition_death_rollback.gd.uid",
+      "sha256": "7fbd6d76d590e672a431a2353770ac7f3d8206a31d0ae5cfbcd97c7d0a0dc505"
+    },
+    {
+      "path": "tests/test_transition_driver_save.gd",
+      "sha256": "9a2ff9df4b931d24671dbe8f18e57984456eaf437e604e0a50bf8617977e02e4"
+    },
+    {
+      "path": "tests/test_transition_driver_save.gd.uid",
+      "sha256": "f40e86f330cfcfe9425989cc7856b1588fd6e5c40202e88e443749f32a8b5e93"
+    },
+    {
+      "path": "tests/test_transition_modal_save.gd",
+      "sha256": "087415200ebfd38b563fc4081d518f751895b4b871ea4242d1c685e34fc3b6fb"
+    },
+    {
+      "path": "tests/test_transition_modal_save.gd.uid",
+      "sha256": "38b43afcad69c93d9a7039f71de49a647d0ea506ccfc6ee956615f81c583a153"
+    },
+    {
+      "path": "tests/test_truckers_village_horseshoes.gd",
+      "sha256": "01794a6618cacddb4d79ec381809c5dadf56d04a79cbf103486af62dc347118b"
+    },
+    {
+      "path": "tests/test_truckers_village_horseshoes.gd.uid",
+      "sha256": "23ff5361a449424806884d0f8e3179836aed9fa18a8d91de5316ac1f4d5b36bc"
+    },
+    {
+      "path": "tests/test_truckers_village_leisure.gd",
+      "sha256": "41cdda0d505465fdbb015b669c6ea85e3f8c9069a53a7509789755e06eea4303"
+    },
+    {
+      "path": "tests/test_truckers_village_leisure.gd.uid",
+      "sha256": "276bb0a4d35b4fcd80925f5c9c6dbf7a4926567b83e4cb0fb9ccdd8f1fb30fa4"
+    },
+    {
+      "path": "tests/test_truckers_village_leisure_geometry.gd",
+      "sha256": "d20bd2bc574477a37305807dfedc3b1e9cac24ed24bae63688fa91badae067ab"
+    },
+    {
+      "path": "tests/test_truckers_village_leisure_geometry.gd.uid",
+      "sha256": "7844bb704d35a32e1b44f91721c17a74889b6487b426dc5ee95f112502c9ef5a"
+    },
+    {
+      "path": "tests/test_tunnel_camera.gd.uid",
+      "sha256": "0c774fd6760bbfedbc36cc04b537f6e76b6e70049d7da96c9414a08df513afd3"
+    },
+    {
+      "path": "tests/test_vehicle_bailout.gd",
+      "sha256": "17ca888f9e8901da89de0bd8ed7aec5732916bfac2e5f77c39a639789432a305"
+    },
+    {
+      "path": "tests/test_vehicle_crash_damage.gd",
+      "sha256": "987f0a750a5eac3ac553d177cee292c36651fec513ef825d279c7b432416ec52"
+    },
+    {
+      "path": "tests/test_vehicle_doors.gd.uid",
+      "sha256": "3abce76ffd0c367b7a16f5ce21d269144a3578d7a824a7220c33b5813083e2d3"
+    },
+    {
+      "path": "tests/test_vehicle_floor_contact.gd",
+      "sha256": "0674c303bfe33856d196cb73359db3d5301b4ebe408074342fdeb1b21c47fc43"
+    },
+    {
+      "path": "tests/test_vehicle_floor_contact.gd.uid",
+      "sha256": "e85cdb0360eca783aa0e17dbbc65943b5c92e90425ffe68763e83d581e58ed73"
+    },
+    {
+      "path": "tests/test_vehicle_horns.gd.uid",
+      "sha256": "c5b0801238572837cd0140b755a34d6be349ad82d9761a9215efde8dfa35dabf"
+    },
+    {
+      "path": "tests/test_vehicle_spawn_colors.gd",
+      "sha256": "0e4047c576e5326f339ccfa21eaa082c141d85b8698fca801a480e5d3b8e3d19"
+    },
+    {
+      "path": "tests/test_vehicle_spawn_colors.gd.uid",
+      "sha256": "04fd0c815ca79c7be7abd232b66dc96d089c0a5f42b300bba9e9cc0767f34230"
+    },
+    {
+      "path": "tests/test_video_phase4_port_previous_floor.gd",
+      "sha256": "50901905b8938d661aec3cfc3adfbd14542087f5992517df238af3f6c8734144"
+    },
+    {
+      "path": "tools/fleet_fixups/bake_nord240.gd",
+      "sha256": "429583dcb78425ac72e3f38802262fdab52de0446c6be5d895ed6c876a218b71"
+    },
+    {
+      "path": "tools/fleet_fixups/rebuild_nimbus.gd",
+      "sha256": "b2293418ebc73d7130fc0071d13e4c3937bc32d64c4f1bee646dafacb29d5f99"
+    },
+    {
+      "path": "ui/AndroidControls.gd",
+      "sha256": "8966152dfa34d839730e485f9f4803653a01508cd3e966e3e547f01244399a0d"
+    },
+    {
+      "path": "ui/SecretFileCanvas.gd",
+      "sha256": "9944008ac715c79a84744f3e403d189975fdba34b0e2bd02c2240fbfe6756f2b"
+    },
+    {
+      "path": "ui/hud/ContextualHUDManager.gd",
+      "sha256": "c207838e003e41f9719370a09a647b2aa23e39af02bcbe45ccf2b4eef630913a"
+    },
+    {
+      "path": "ui/hud/PlayerStatusHUD.gd",
+      "sha256": "86dfe8f453a70882b8ac82e3fce77a37106e7d2a624aa63d5e177e3c72b1d946"
+    },
+    {
+      "path": "world/city_look/BuildingLife.gd",
+      "sha256": "ce17760950bae52a67fafa57a0572551b10077687bb3c38dfe4c9fbb93ba9f3f"
+    },
+    {
+      "path": "world/city_look/BuildingLifeKit.gd",
+      "sha256": "1a7b589eee492121e4a3e4538bafe6b95d215598b9a9d87c6d0b7a2d3c93806b"
+    },
+    {
+      "path": "world/city_look/CityChunkDressing.gd",
+      "sha256": "29265892068d48c15a25bb1b70fdc94a3571398481ac2d8a89401d77d0ff4080"
+    },
+    {
+      "path": "world/city_look/CityContextIndex.gd",
+      "sha256": "b194f8c69abb4ab6817cf3407edc6c0af1e06754db558b1022fb26263610d3d0"
+    },
+    {
+      "path": "world/city_look/CityContextIndex.gd.uid",
+      "sha256": "96c097166b0569c93be8796fa9bd3d9502abc67a29ad084386ab23f2e5fb9ced"
+    },
+    {
+      "path": "world/city_look/CityLocalLighting.gd",
+      "sha256": "8e4cc26fd8cc5fe021f0c67346b6b2d4c0bc2f8f6b614f20ed26f15dbe648639"
+    },
+    {
+      "path": "world/city_look/CityLook.gd",
+      "sha256": "cd0791de1b381233f0ba0e3815505e859ad5f929b5a1f965602b599e51ccdb09"
+    },
+    {
+      "path": "world/city_look/CityPropKit.gd",
+      "sha256": "c06e54f2bc2cf92e6962d1dd6227d237d03970e9f70f3e60b99f9c0dc43567eb"
+    },
+    {
+      "path": "world/city_look/PoliceStationDressing.gd",
+      "sha256": "722a233a78e842ad5f39194e3ce35c83d739db1d25638b44cd586060d857fea4"
+    },
+    {
+      "path": "world/city_look/RoofSurfaces.gd",
+      "sha256": "9236603b614cd14241e73edf10318b03fa7bb9884fea1581791a7de9061b363f"
+    },
+    {
+      "path": "world/editing/EditableCobraDressing.gd",
+      "sha256": "53ed4ff405efe627182454e92286ab50eeb1e7f3a461603dd9853962222b6774"
+    },
+    {
+      "path": "world/editing/WorldCrossingLayout.gd",
+      "sha256": "32308d924ae7afc36e40475368fd8ed498f951989d22b6dc11543f4653bec690"
+    },
+    {
+      "path": "world/editing/WorldEditRuntime.gd",
+      "sha256": "7d75dc0f4021a367e4965adf9f5323d21634f85c4245cdaacaf4c5b3dc042ea6"
+    },
+    {
+      "path": "world/editing/WorldGroundFactory.gd",
+      "sha256": "775356bbc671ee4201194b55fb4b74f6c3e00239f7cf504c9cbbe5fd909342fb"
+    },
+    {
+      "path": "world/editing/WorldPieceShape.gd",
+      "sha256": "e4e0b05dc9821affb567455f441c8ef149f742ccf09a18ba276831dc33308af6"
+    },
+    {
+      "path": "world/editing/world_edits.json",
+      "sha256": "c93c09d59b5b39745ed5362343dd08a68e0d175bbb6e3173c29d87f11e84605b"
+    },
+    {
+      "path": "world/editing/world_edits.json.bak",
+      "sha256": "4d080540ac66aaa3060be78d95272c66d8b2b83bb247e8fa3cf204c2f70448cc"
+    },
+    {
+      "path": "world/mountain_detail/MountainChalet3D.gd",
+      "sha256": "71f338e5e4ed8c0b78830202f19c69e8dba540c7f199c58b480b7e5f1333213f"
+    },
+    {
+      "path": "world/mountain_detail/MountainGrass3D.gd",
+      "sha256": "5c777d6ef13ceaee873511d2cb1f82dd08e5261db60b2b6ded5bf1bd4cc845a0"
+    },
+    {
+      "path": "world/mountain_detail/MountainTerminal3D.gd",
+      "sha256": "f710c6f0dedc0e075826d2fa361eb9d14063803c52b5dd17a593c679f8b7cb95"
+    },
+    {
+      "path": "world/mountain_detail/MountainVillage3D.gd",
+      "sha256": "c1ea20e494b3ec0b292f1eaf50ae39310b99e91248b66c344dd1d605d25c0f91"
+    },
+    {
+      "path": "world/mountain_detail/SawmillFence3D.gd",
+      "sha256": "b9b705c93daa3f5e0b935b91be1335c1225cdc3d7de1114498372e01bfdb8cdd"
+    },
+    {
+      "path": "world/mountain_detail/SawmillShed3D.gd",
+      "sha256": "7be4920455220f4788bb785317e6002a62be066414a3a265c4d44c205972778a"
+    },
+    {
+      "path": "world/mountain_detail/SawmillYard3D.gd",
+      "sha256": "b06e410b2d674c0142a88aadcea3b4cae1261e3a65397248596fe98b97d50067"
+    },
+    {
+      "path": "world/mountain_detail/VillageShopfront3D.gd",
+      "sha256": "badb94e38caf900c5a0bc7333a748b5ffd63b70d3b3c26cd3744d05ce3c97ffc"
+    },
+    {
+      "path": "world/neco_press/NecoPress3D.gd",
+      "sha256": "b1fe4ac42bbc3428e25f9fbf14e32a32a32d8a7d279281e50bb53161df3579f2"
+    },
+    {
+      "path": "world/places/CargoPlaneNative.gd",
+      "sha256": "1c636c02de41091883dc4d37f43db751415f5cbae5aa108a2c4cde0146f6413e"
+    },
+    {
+      "path": "world/places/SalvageYardNative.gd",
+      "sha256": "e245057cc2b096ed9c3dddda4d10d338b8ac7e88658d51fa61e5409fdbb030e1"
+    },
+    {
+      "path": "world/rain/RainPuddle.gdshader",
+      "sha256": "95aeac117e6c57971c1a6a42ee26e74b518322f4b612126c1c14a1bbf32b81de"
+    },
+    {
+      "path": "world/regions/LootablePortContainer.gd",
+      "sha256": "96464689dae6d6597e19c68380ed27b94ed44fcbfc908b4f8de74f62bd0502bc"
+    },
+    {
+      "path": "world/regions/NativeLake.gd",
+      "sha256": "5c95fa0ccce889e70edb92bd18321570bf024da5a20e2a29e5d9e3fb98e66b1b"
+    },
+    {
+      "path": "world/regions/NativePine.gd",
+      "sha256": "d1e5094d2115b270c2736de93d93cc51ee1ffa2b8a34895b5fad43ca831f3901"
+    },
+    {
+      "path": "world/regions/NativeRegion.gd",
+      "sha256": "8b6692ea5fa18b5d331e81331b429e0da513260b5994c1ba34a5392965dddd4b"
+    },
+    {
+      "path": "world/regions/OriginalSouthPort.gd",
+      "sha256": "ad22da2bb9b659d93dce2deacfb2dfe922beec07711e7f68dbd8a05c223f0590"
+    },
+    {
+      "path": "world/regions/PortContainerMaterials.gd",
+      "sha256": "a4ae8cf7cd60182fe67fcf5a7291c2f80c5f4728e43a9335a35e09e40c80828a"
+    },
+    {
+      "path": "world/regions/PortLifeArt.gd",
+      "sha256": "cabf226f7740c69e345b5a2aee2a34d667ee883cd049e3f235d1ba24fd80388f"
+    },
+    {
+      "path": "world/regions/PortShipDressing3D.gd",
+      "sha256": "387278923873bce5a9370a3451da762b0fbab8cb85e847ca99361e4bcdba6986"
+    },
+    {
+      "path": "world/regions/WorldConnection3D.gd",
+      "sha256": "a330f8ec9221a9ba8bfbc332c64d6e161b4eeb0c089b2276959f27c08adc5627"
+    },
+    {
+      "path": "world/regions/mountain_ground.gdshaderinc",
+      "sha256": "685e631b9668594036fd80cc353aa17bc3283b86fdd943f59b4ccb9ef40bfaf7"
+    },
+    {
+      "path": "world/regions/mountain_terrain.gdshader",
+      "sha256": "727176e704271f0c582aa1b5c558c84f341657b3968edaa2ab353814ee0c8089"
+    },
+    {
+      "path": "world/regions/natural_ground.gdshader",
+      "sha256": "63339931b1ba910edc3192504fde7bb8b86f47574a1e55bbb00f5e2c8eda4bc4"
+    },
+    {
+      "path": "world/urban_detail/CanalTunnel3D.gd",
+      "sha256": "9aa1ab2013a228cd5d881fffffdcadd9da9db07f935fd9f195b41d28ca51a649"
+    },
+    {
+      "path": "world/urban_detail/HarborManholeExterior3D.gd",
+      "sha256": "bc215d83a25975aed4755af83380df71b08a2127d6045709d49e4f05d8077604"
+    },
+    {
+      "path": "world/urban_detail/HarborRoadGeometry3D.gd",
+      "sha256": "8d0aa074c561f042087d4c41bb242425670ec47a1ebd691725cbec6defa58717"
+    },
+    {
+      "path": "world/urban_detail/UrbanBrownstoneBuilding.gd",
+      "sha256": "c6eb88b290b66f760d134ebc4c9e1fe4eb536d8aacfbabe48e467219e9358c4c"
+    },
+    {
+      "path": "world/urban_detail/UrbanBuildingBase.gd",
+      "sha256": "117f2e7ddd6085f5f7a07d5051ac93196437665fb5b95677cf480cb9c5ec3768"
+    },
+    {
+      "path": "world/urban_detail/UrbanCobraHouse.gd",
+      "sha256": "9c4d7d602be86a0f863c8f5d863f18ae7e5a1110c1d5a74b33b8d48866924156"
+    },
+    {
+      "path": "world/urban_detail/UrbanCommercialBuilding.gd",
+      "sha256": "e1bf146e26996be5becd52d6d5bb3039fa2537bbb007375bc17dbe74c37042b4"
+    },
+    {
+      "path": "world/urban_detail/UrbanFootbridge3D.gd",
+      "sha256": "ad344c47fa30ce5ae472b4d93687bfa57d7d937a73c03fa2324bb0eb33c66566"
+    },
+    {
+      "path": "world/urban_detail/UrbanIndustrialBuilding.gd",
+      "sha256": "a4516f92cddbeefd064bc389e10f40a79b812df6d48f5bc4e1227a88a61cea76"
+    },
+    {
+      "path": "world/urban_detail/UrbanLShapedBlock.gd",
+      "sha256": "a1f71da034023371f41f9b3ca08345e7210af2edbf447b299ccd03f78d0cf8db"
+    },
+    {
+      "path": "world/urban_detail/UrbanLandmarkFrontage3D.gd",
+      "sha256": "597c5bcceb3a7d496d789b5ba68872960324a4fc431067a84a71aa4d33814d1c"
+    },
+    {
+      "path": "world/urban_detail/UrbanServiceBuilding.gd",
+      "sha256": "bc1dda55e6bbb86ba2ed454900a5aa297bfc6b2a4bea2d901a92a58e39109616"
+    },
+    {
+      "path": "world/urban_detail/UrbanShopfrontBuilding.gd",
+      "sha256": "71f47278a8acdda8625b868e34510d5617259d2f99be18b31d5d916df8ba9b71"
+    },
+    {
+      "path": "world/urban_detail/UrbanSignage.gd",
+      "sha256": "dec45a7f9acfb90fac2add1c80f87a45dc100c24edbe41ebe8e0fe73b2b8e653"
+    },
+    {
+      "path": "evidence/integration-20261001/REVIEW.md",
+      "sha256": "888f2764ddc8879f30eefdb642f2622614e3a050547622f477dd3bad0fba4f82"
+    }
+  ],
+  "additional_scripts_parsed": [
+    "gameplay/Gameplay.gd",
+    "gameplay/PoliceAgent.gd",
+    "gameplay/VehicleBailout.gd",
+    "gameplay/civilian_reactions/CivilianReactionDirector.gd",
+    "gameplay/dispatch/DispatchOfficer.gd",
+    "gameplay/emergency/EffectsPrewarm.gd",
+    "gameplay/navigation/LocalGridPathSearch.gd",
+    "gameplay/navigation/PoliceNavigationQueue.gd",
+    "gameplay/navigation/PolicePathJob.gd",
+    "gameplay/street_physics/BodyFlight3D.gd",
+    "runtime/ProductionWorld.gd",
+    "tests/measure/capture_body_impacts.gd",
+    "tests/measure/probe_first_emergency.gd",
+    "tests/test_civilian_blocked_retry.gd"
+  ],
+  "external_parser_preexisting_rejections": [],
+  "runtime_tests": "Not run; Rafael explicitly owns execution."
+}

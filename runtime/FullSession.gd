@@ -126,6 +126,7 @@ func _sync_location_presentation() -> void:
 
 func _vehicle_transition_snapshot(car: CharacterBody3D) -> Dictionary:
 	return {
+		"generation": transition_generation,
 		"occupied": world.driving.occupied,
 		"driving_car": world.driving.car,
 		"car_locked": car.input_locked,
@@ -145,6 +146,12 @@ func _vehicle_transition_snapshot(car: CharacterBody3D) -> Dictionary:
 	}
 
 func _restore_vehicle_transition_snapshot(snapshot: Dictionary, car: CharacterBody3D) -> void:
+	if int(snapshot.generation) != transition_generation: return
+	# Death/arrest owns the actor now. Release only our provisional car lock;
+	# restoring old occupancy, collision or camera would revive a stale state.
+	if world.gameplay.health <= 0 or rescue_pending or arrest_pending:
+		if is_instance_valid(car) and not car.controlled: car.input_locked = bool(snapshot.car_locked)
+		return
 	if is_instance_valid(car):
 		car.input_locked = bool(snapshot.car_locked)
 		car.controlled = bool(snapshot.car_controlled)
@@ -163,6 +170,10 @@ func _restore_vehicle_transition_snapshot(snapshot: Dictionary, car: CharacterBo
 	world.camera.size = float(snapshot.camera_size)
 	world.camera.locked = bool(snapshot.camera_locked)
 	world.camera.initialized = false
+
+func _restore_transition_player_lock(previous: bool, token: int) -> void:
+	if token != transition_generation or world.gameplay.health <= 0 or rescue_pending or arrest_pending: return
+	world.player.input_locked = previous
 
 func _discard_place_candidate(candidate: Node3D, owned: bool) -> void:
 	if not is_instance_valid(candidate): return
@@ -423,7 +434,9 @@ func _ready() -> void:
 	objective.custom_minimum_size.x = 700
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	stats = _label(Vector2(26,64),18)
-	thermal_status = _label(Vector2(26,112),16)
+	thermal_status = _label(Vector2(26,120),18)
+	thermal_status.add_theme_color_override("font_outline_color",Color(0.02,0.04,0.06))
+	thermal_status.add_theme_constant_override("outline_size",4)
 	thermal_status.hide()
 	prompt = _label(Vector2(26,590),20)
 	notice = _label(Vector2(26,550),18)
@@ -617,6 +630,7 @@ func _restore_outdoor_driver() -> void:
 	if cold != null: cold.prepare_collision_at(destination)
 	for i in 3: await get_tree().physics_frame
 	if not controller.vehicle_position_clear(car,destination,float(saved.yaw)):
+		if _restore_saved_driver_on_foot(saved): return
 		controller.region.set_focus(checkpoint)
 		return
 	car.place(destination,float(saved.yaw))
@@ -634,8 +648,29 @@ func _restore_outdoor_driver() -> void:
 		var restored := await restore_garage_driver(car)
 		_restoring_saved_driver = false
 		if restored: return
+	if _restore_saved_driver_on_foot(saved): return
 	world.player.teleport(checkpoint)
 	controller.region.set_focus(checkpoint)
+
+func _restore_saved_driver_on_foot(saved: Dictionary) -> bool:
+	# A blocked hull/door must not send a seated save to a distant checkpoint.
+	# Probe the actual capsule and floor around the saved pose, including legacy
+	# saves without a pedestrian record. Keep normal boarding admission intact.
+	var size: Array = preload("res://runtime/FleetCatalog.gd").spec(saved.archetype).bounds_size
+	var half_width := maxf(.65,float(size[0]))*.5
+	var half_length := maxf(1.0,float(size[2]))*.5
+	var origin := Vector3(saved.position[0],saved.position[1],saved.position[2])
+	var basis := Basis(Vector3.UP,float(saved.yaw))
+	for side in [-1,1]:
+		for longitudinal in [0.0,half_length+.6,-half_length-.6]:
+			var point: Vector3 = origin+basis*Vector3(side*(half_width+.85),.08,longitudinal)
+			if not position_clear(point): continue
+			world.player.teleport(point)
+			controller.region.set_focus(point)
+			world.camera.initialized = false
+			show_message("Veículo salvo bloqueado. Retomada a pé nas proximidades.")
+			return true
+	return false
 
 func enter_place(id: String, autosave := true, requested_access_id := "") -> bool:
 	if is_transition_blocked() or world.driving.occupied or not state.place_id.is_empty() or is_instance_valid(room) or world.player.input_locked: return false
@@ -678,9 +713,9 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		if candidate_room == null:
 			if id == "harbor_sewer" and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
-				await _animate_sewer_hatch(0.0, token)
+				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
-			world.player.input_locked = was_player_locked
+			_restore_transition_player_lock(was_player_locked,token)
 			_finish_transition(token)
 			return false
 		owns_candidate = true
@@ -698,9 +733,9 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 			controller.region.set_focus(world.player.global_position)
 			if id == "harbor_sewer" and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
-				await _animate_sewer_hatch(0.0, token)
+				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
-			world.player.input_locked = was_player_locked
+			_restore_transition_player_lock(was_player_locked,token)
 			_finish_transition(token)
 			return false
 	destination = _garage_restore_spawn(id,destination,candidate_room)
@@ -709,8 +744,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		controller.region.set_focus(world.player.global_position)
 		if id == "harbor_sewer" and sewer_entry_origin.is_finite():
 			world.player.teleport(sewer_entry_origin)
-			await _animate_sewer_hatch(0.0, token)
-		world.player.input_locked = was_player_locked
+			_close_sewer_hatch_for_transition(token)
+		_restore_transition_player_lock(was_player_locked,token)
 		_finish_transition(token)
 		show_message("Entrada bloqueada.")
 		return false
@@ -734,10 +769,10 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	world.camera.initialized = false
 	world.camera._process(1)
 	if id == "harbor_sewer" and is_instance_valid(sewer_hatch):
-		await _animate_sewer_hatch(0.0, token)
+		_close_sewer_hatch_for_transition(token)
 		sewer_hatch = null
 		sewer_entry_origin = Vector3.ZERO
-	world.player.input_locked = was_player_locked
+	_restore_transition_player_lock(was_player_locked,token)
 	if id != "maciota":
 		_install_service_npc()
 		_update_reward()
@@ -812,7 +847,7 @@ func _find_sewer_hatch() -> Node3D:
 				best = node
 	return best
 
-func _animate_sewer_hatch(amount: float, token: int) -> void:
+func _close_sewer_hatch_for_transition(token: int) -> void:
 	if not is_instance_valid(sewer_hatch) or not sewer_hatch.has_method("set_open_amount"): return
 	if _owns_transition(token): sewer_hatch.set_open_amount(0.0)
 
@@ -867,10 +902,10 @@ func _install_service_npc() -> void:
 			var original: Node = actor.visual.get_child(0)
 			actor.visual.remove_child(original)
 			original.queue_free()
-			var model: Node3D = preload("res://world/places/OriginalResidents.gd").create_model(definition)
-			actor.visual.add_child(model)
+			var branch_model: Node3D = preload("res://world/places/OriginalResidents.gd").create_model(definition)
+			actor.visual.add_child(branch_model)
 			room_npcs.append(actor)
-			_install_workplace_reaction(actor, model)
+			_install_workplace_reaction(actor, branch_model)
 		room_npc = room_npcs[0] if not room_npcs.is_empty() else null
 		return
 	if str(room.definition.get("npc_model","")).is_empty(): return
@@ -956,8 +991,8 @@ func nearest() -> Dictionary:
 		if not robbery_action.is_empty(): return robbery_action
 		var original_action: Dictionary = services.nearest_action()
 		if not original_action.is_empty() and not _service_threatened(str(original_action.get("target", ""))): return original_action
-		var urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
-		if not urban_action.is_empty(): return urban_action
+		var branch_urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
+		if not branch_urban_action.is_empty(): return branch_urban_action
 		var interior_routine_action: Dictionary = _routine_director().nearest_action() if _routine_director() != null else {}
 		if not interior_routine_action.is_empty(): return interior_routine_action
 		if state.place_id == "maciota":
@@ -1059,6 +1094,7 @@ func _intro_interact(id: String) -> bool:
 
 func _input(event: InputEvent) -> void:
 	if port_container_loot != null and is_instance_valid(port_container_loot.minigame) and port_container_loot.minigame.active: return
+	if urban_operations != null and is_instance_valid(urban_operations.village_leisure) and is_instance_valid(urban_operations.village_leisure.ui) and urban_operations.village_leisure.ui.active: return
 	if controller.travel_busy or not transition_kind.is_empty() or vehicle_transition_busy:
 		get_viewport().set_input_as_handled()
 		return
@@ -1189,7 +1225,9 @@ func _process(delta: float) -> void:
 	var ammo: Dictionary = state.get_ammo(state.equipped_weapon)
 	if cold != null:
 		var thermal: Dictionary = cold.status()
-		thermal_status.visible = thermal.visible and not modal
+		# The contextual HUD owns cold status once it is active.  The legacy label
+		# otherwise reappears between its sync ticks and overlaps the new panel.
+		thermal_status.visible = thermal.visible and not modal and not is_instance_valid(world.hud)
 		thermal_status.text = "Calor corporal %d%% · %s"%[roundi(thermal.temperature),thermal.text]
 	stats.text = "R$ %d   Vida %d   Colete %d\n%s   %s   %s" % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
 	objective.text = state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa")
@@ -1561,7 +1599,8 @@ func save_game(manual := false) -> bool:
 		else: _queue_checkpoint()
 		return false
 	state.world_state.erase("pedestrian")
-	if state.place_id.is_empty() and not world.driving.occupied and not world.player.input_locked and position_clear(world.player.position):
+	# Menus hold input too; a supported, free on-foot position remains saveable.
+	if state.place_id.is_empty() and not world.driving.occupied and position_clear(world.player.position):
 		var point: Vector3 = world.player.position
 		state.world_state.pedestrian = {"region":state.region_id,"position":[point.x,point.y,point.z]}
 	if personal_car != null: personal_car.refresh()
@@ -1635,7 +1674,7 @@ func _show_v1_death_presentation() -> void:
 	var tint := ColorRect.new()
 	tint.name = "DeathTint"
 	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	tint.color = Color(0.8,0.1,0.1,0.0)
+	tint.color = Color(0.48,0.035,0.055,0.0)
 	tint.mouse_filter = Control.MOUSE_FILTER_STOP
 	death_presentation.add_child(tint)
 	var label := Label.new()
@@ -1645,7 +1684,9 @@ func _show_v1_death_presentation() -> void:
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	label.add_theme_font_size_override("font_size",42)
-	label.add_theme_color_override("font_color",Color(1.0,0.1,0.1))
+	label.add_theme_color_override("font_color",Color(1.0,0.94,0.87))
+	label.add_theme_color_override("font_outline_color",Color(0.08,0.01,0.015))
+	label.add_theme_constant_override("outline_size",5)
 	label.add_theme_color_override("font_shadow_color",Color.BLACK)
 	label.add_theme_constant_override("shadow_offset_x",3)
 	label.add_theme_constant_override("shadow_offset_y",3)
@@ -1656,12 +1697,14 @@ func _show_v1_death_presentation() -> void:
 	label.pivot_offset = get_viewport().get_visible_rect().size*.5
 	label.scale = Vector2(1.35,1.35)
 	var intro := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	intro.tween_property(tint,"color:a",.45,.35)
+	intro.tween_property(tint,"color:a",.66,.35)
 	intro.tween_property(label,"modulate:a",1.0,.35)
 	intro.tween_property(label,"scale",Vector2.ONE,.35)
+	var presentation := death_presentation
 	await get_tree().create_timer(2.2).timeout
-	if is_instance_valid(death_presentation): death_presentation.queue_free()
-	death_presentation = null
+	if is_instance_valid(presentation):
+		if death_presentation == presentation: death_presentation = null
+		presentation.queue_free()
 
 func _show_v1_arrest_presentation() -> void:
 	if is_instance_valid(death_presentation): death_presentation.queue_free()
@@ -1686,9 +1729,11 @@ func _show_v1_arrest_presentation() -> void:
 	label.add_theme_constant_override("shadow_offset_y",3)
 	death_presentation.add_child(label)
 	get_tree().root.add_child(death_presentation)
+	var presentation := death_presentation
 	await get_tree().create_timer(2.2).timeout
-	if is_instance_valid(death_presentation): death_presentation.queue_free()
-	death_presentation = null
+	if is_instance_valid(presentation):
+		if death_presentation == presentation: death_presentation = null
+		presentation.queue_free()
 
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
@@ -1707,6 +1752,8 @@ func _on_arrest() -> void:
 
 func _on_death() -> void:
 	if rescue_pending: return
+	# The old arrest coroutine must not select custody or consume this rescue.
+	arrest_pending = false
 	# Falling out of the world and an invalid restored position reach this path
 	# directly, without damage_player. Establish the same dead state before any
 	# boarding cleanup or death presentation reads it.

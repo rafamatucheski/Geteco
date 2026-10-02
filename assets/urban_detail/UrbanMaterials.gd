@@ -77,9 +77,13 @@ static func _wall_image(color: Color, style: String, seed_value: int) -> Image:
 			# 2 px, fiadas desencontradas e cada tijolo com tom próprio.
 			var mortar := color.lerp(Color("c9c1b0"), 0.7)
 			for y in size:
+				# Whole-number grouping/index; preserve integer truncation and precision.
+				@warning_ignore("integer_division")
 				var course := y / 16
 				var offset := 16 if course % 2 else 0
 				for x in size:
+					# Whole-number grouping/index; preserve integer truncation and precision.
+					@warning_ignore("integer_division")
 					var bx := (x + offset) / 32
 					var joint := y % 16 < 2 or (x + offset) % 32 < 2
 					var c: Color
@@ -105,6 +109,8 @@ static func _wall_image(color: Color, style: String, seed_value: int) -> Image:
 			for y in size:
 				for x in size:
 					var n := noise.get_noise_2d(x, y) * 0.5 + 0.5
+					# Whole-number grouping/index; preserve integer truncation and precision.
+					@warning_ignore("integer_division")
 					var panel := Vector2i(x / 128, y / 85)
 					var tone := float(hash(panel + Vector2i(seed_value % 53, 3)) % 100) / 100.0
 					var c := color.darkened(0.06).lerp(color.lightened(0.06), tone)

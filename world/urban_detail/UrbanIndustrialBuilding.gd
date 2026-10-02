@@ -6,7 +6,7 @@ class_name UrbanIndustrialBuilding
 ## roll-up loading bays, sawtooth monitor roofs with skylights, and loading dock curbs.
 
 func build() -> void:
-	var half_w := building_size.x * 0.5
+
 	var half_d := building_size.y * 0.5
 	var front_z := half_d
 	
@@ -35,10 +35,10 @@ func build() -> void:
 	# Facade proper name sign
 	if not proper_name.is_empty():
 		var sign_w := minf(building_size.x * 0.5, 4.5)
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.65), 0.08, UrbanMaterials.trim_dark())
-		if sign != null:
-			sign.position = Vector3(0, height - 0.75, front_z + 0.12)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(sign_w, 0.65), 0.08, UrbanMaterials.trim_dark())
+		if sign_node != null:
+			sign_node.position = Vector3(0, height - 0.75, front_z + 0.12)
+			visuals_root.add_child(sign_node)
 
 func _build_artisan_facade(front_z: float) -> void:
 	var half_w := building_size.x * 0.5
@@ -106,7 +106,7 @@ func _build_artisan_facade(front_z: float) -> void:
 func _build_warehouse_bays(front_z: float) -> void:
 	var dark_mat := UrbanMaterials.metal_dark()
 	var shutter_mat := UrbanMaterials.metal_corrugated()
-	var trim_mat := UrbanMaterials.trim_stone()
+	UrbanMaterials.trim_stone()
 	
 	var bay_count := maxi(2, int(building_size.x / 4.5))
 	var bay_step := building_size.x / float(bay_count)

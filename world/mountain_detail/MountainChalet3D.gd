@@ -130,6 +130,8 @@ func build() -> void:
 	# 7. Stack of Firewood logs beside porch
 	var wood_x := -half_w * 0.55
 	for f in 4:
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var fy: float = 0.14 + float(f / 2) * 0.16
 		var fz: float = half_d + 0.30 + float(f % 2) * 0.18
 		_add_box("Firewood", Vector3(wood_x, fy, fz), Vector3(0.70, 0.15, 0.15), MountainMaterials.wood_log())

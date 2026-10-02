@@ -249,6 +249,8 @@ static func _apply(data: Dictionary, id: String, part: Dictionary, base_magazine
 		data[key] = values[key]
 	match str(part.get("special", "")):
 		"extended":
+			# Magazine capacity counts whole rounds; preserve truncation.
+			@warning_ignore("integer_division")
 			data["magazine_size"] = int(data.get("magazine_size",0)) + (2 if id == "shotgun" else (3 if id == "hunting_rifle" else base_magazine/2))
 		"slug":
 			# Um projétil com ~72% do dano somado do leque, reto e de alcance longo.

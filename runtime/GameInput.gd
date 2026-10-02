@@ -17,6 +17,7 @@ var remapping := false
 ## 0 = automático, 1 = DualSense/PlayStation, 2 = Xbox.
 var controller_layout := 0
 var _sprint_pad_down := false
+var _menu_cursor: ImageTexture
 var touch_move := Vector2.ZERO
 var touch_sprint := false
 var touch_aim := Vector2.ZERO
@@ -109,8 +110,12 @@ func _ready() -> void:
 	var cursor_error := cursor_image.load_svg_from_buffer(MENU_CURSOR_SVG.to_utf8_buffer())
 	if cursor_error == OK:
 		var cursor := ImageTexture.create_from_image(cursor_image)
+		_menu_cursor = cursor
 		Input.set_custom_mouse_cursor(cursor, Input.CURSOR_ARROW, Vector2(2, 2))
 		Input.set_custom_mouse_cursor(cursor, Input.CURSOR_POINTING_HAND, Vector2(2, 2))
+		# O autoload permanece entre cenas; limpar somente ao fechar o root.
+		if not get_tree().root.tree_exiting.is_connected(_release_menu_cursor):
+			get_tree().root.tree_exiting.connect(_release_menu_cursor, CONNECT_ONE_SHOT)
 	else:
 		push_error("Ponteiro do menu não pôde ser criado (%d)." % cursor_error)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
@@ -122,6 +127,11 @@ func _ready() -> void:
 		import_bindings(config.get_value("controls","bindings",{}))
 		import_gamepad_bindings(config.get_value("controls","gamepad_bindings",{}))
 		controller_layout = clampi(int(config.get_value("controls","controller_layout",0)),0,2)
+
+func _release_menu_cursor() -> void:
+	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	Input.set_custom_mouse_cursor(null, Input.CURSOR_POINTING_HAND)
+	_menu_cursor = null
 
 func reset_bindings() -> void:
 	sprint_toggled = false
@@ -484,8 +494,8 @@ func is_playstation_controller(device := -1) -> bool:
 	if controller_layout != 0: return controller_layout == 1
 	device = _resolve_joypad(device)
 	if device < 0: return false
-	var name := Input.get_joy_name(device).to_lower()
-	return "dualsense" in name or "dualshock" in name or "playstation" in name or "wireless controller" in name
+	var entry_name := Input.get_joy_name(device).to_lower()
+	return "dualsense" in entry_name or "dualshock" in entry_name or "playstation" in entry_name or "wireless controller" in entry_name
 
 func controller_name(device := -1) -> String:
 	device = _resolve_joypad(device)

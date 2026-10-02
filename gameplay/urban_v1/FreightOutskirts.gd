@@ -99,14 +99,14 @@ static func _face(surface: SurfaceTool, a: Vector3, b: Vector3, c: Vector3, tint
 
 static func _limb(surface: SurfaceTool, start: Vector3, finish: Vector3, radius: float, taper: float, sides: int) -> void:
 	var axis := finish-start
-	var basis := Basis(Quaternion(Vector3.UP,axis.normalized()))
+	var local_basis := Basis(Quaternion(Vector3.UP,axis.normalized()))
 	for side in sides:
 		var a := TAU*float(side)/float(sides)
 		var b := TAU*float(side+1)/float(sides)
-		var bottom_a := start+basis*Vector3(cos(a)*radius,0,sin(a)*radius)
-		var bottom_b := start+basis*Vector3(cos(b)*radius,0,sin(b)*radius)
-		var top_a := finish+basis*Vector3(cos(a)*radius*taper,0,sin(a)*radius*taper)
-		var top_b := finish+basis*Vector3(cos(b)*radius*taper,0,sin(b)*radius*taper)
+		var bottom_a := start+local_basis*Vector3(cos(a)*radius,0,sin(a)*radius)
+		var bottom_b := start+local_basis*Vector3(cos(b)*radius,0,sin(b)*radius)
+		var top_a := finish+local_basis*Vector3(cos(a)*radius*taper,0,sin(a)*radius*taper)
+		var top_b := finish+local_basis*Vector3(cos(b)*radius*taper,0,sin(b)*radius*taper)
 		var shade := .68 + .11*float(side%4)
 		var tint := Color(shade,shade*.98,shade*.93)
 		_face(surface,bottom_a,top_a,top_b,tint)

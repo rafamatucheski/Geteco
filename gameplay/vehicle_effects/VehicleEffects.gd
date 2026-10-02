@@ -5,6 +5,7 @@ const TIRE := preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd")
 const IMPACT := preload("res://gameplay/vehicle_effects/VehicleImpactEffects.gd")
 const POWERTRAIN := preload("res://gameplay/vehicle_effects/VehiclePowertrainEffects.gd")
 const EFFECT_DISTANCE := 85.0
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 var vehicle: CharacterBody3D
 var tire_effects: Node
@@ -42,9 +43,15 @@ func physics_tick(delta: float, incoming_velocity: Vector3) -> void:
 	if presentation_enabled and _range_clock <= 0:
 		_range_clock = .25
 		_active = _presentation_active()
+	var stage := STALL_WORK.begin()
 	tire_effects.physics_tick(delta,_active)
+	STALL_WORK.finish_slow("vehicle.effects.tires", stage, 5000, vehicle)
+	stage = STALL_WORK.begin()
 	powertrain_effects.physics_tick(_active)
+	STALL_WORK.finish_slow("vehicle.effects.powertrain", stage, 5000, vehicle)
+	stage = STALL_WORK.begin()
 	impact_effects.physics_tick(_active,incoming_velocity)
+	STALL_WORK.finish_slow("vehicle.effects.impact", stage, 5000, vehicle)
 
 func _presentation_active() -> bool:
 	if not presentation_enabled or not vehicle.visible or not vehicle.is_visible_in_tree(): return false

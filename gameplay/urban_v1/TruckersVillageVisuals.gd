@@ -39,6 +39,7 @@ var _cutaway := false
 var _tire_cutaway := false
 var _current_home_roof: Node3D
 var homes: Node3D
+var leisure_art: Node3D
 
 func _ready() -> void:
 	name = "TruckersVillageVisuals"
@@ -58,6 +59,7 @@ func _ready() -> void:
 	_scrap_corner()
 	preload("res://gameplay/urban_v1/TruckersVillageDressing.gd").pedestrian_entry(self)
 	preload("res://gameplay/urban_v1/TruckersVillageDressing.gd").shop_counter(self)
+	leisure_art = preload("res://gameplay/urban_v1/TruckersVillageLeisureArt.gd").build(self)
 	preload("res://gameplay/urban_v1/TruckersVillageVegetation.gd").build(self)
 	_part("belt",BELT_POINT-ORIGIN)
 	_part("crank",CRANK_POINT-ORIGIN)
@@ -90,6 +92,7 @@ func set_region_active(active: bool) -> void:
 	_active = active
 	set_process(active and is_instance_valid(_player))
 	visible = active
+	if is_instance_valid(leisure_art): leisure_art.set_region_active(active)
 	for body in solids: body.collision_layer = 1 if active else 0
 	if is_instance_valid(tonico):
 		tonico.set_active(active)
@@ -339,9 +342,9 @@ func _put(kind: String,at: Vector3,size: Vector3,color: String,angles: Vector3,r
 	var cell := Vector2i(floori(authored.origin.x/32),floori(authored.origin.z/32))
 	# Authored paint is material albedo: MultiMesh instance-color readback and
 	# some renderer paths cannot reliably preserve that channel for this scene.
-	var owner: Node3D = (_current_home_roof if is_instance_valid(_current_home_roof) else _roof) if roof else _fixed
-	var key := "%s_%s_%s_%s"%[kind,cell,owner.get_instance_id(),color]
-	if not _batches.has(key): _batches[key] = {"kind":kind,"owner":owner,"paint":color,"transforms":[],"colors":[]}
+	var source_owner: Node3D = (_current_home_roof if is_instance_valid(_current_home_roof) else _roof) if roof else _fixed
+	var key := "%s_%s_%s_%s"%[kind,cell,source_owner.get_instance_id(),color]
+	if not _batches.has(key): _batches[key] = {"kind":kind,"owner":source_owner,"paint":color,"transforms":[],"colors":[]}
 	_batches[key].transforms.append(authored)
 	_batches[key].colors.append(Color(color))
 
@@ -391,9 +394,9 @@ func _flush() -> void:
 		display.multimesh = multi
 		display.set_meta("editor_transforms",batch.transforms)
 		display.set_meta("editor_colors",batch.colors)
-		var owner: Node3D = batch.owner
-		owner.add_child(display)
+		var source_owner: Node3D = batch.owner
+		source_owner.add_child(display)
 		# Authored transforms live in village coordinates, including rotated homes.
-		display.transform=owner.global_transform.affine_inverse()*global_transform
+		display.transform=source_owner.global_transform.affine_inverse()*global_transform
 		editor_batches[String(display.get_path())] = batch.duplicate(true)
 	_batches.clear()

@@ -108,15 +108,15 @@ func _build_union_clothing() -> void:
 
 	add_mesh_box(visuals_root, "UnionWelcomeMat", Vector3(0, 0.025, front_z + 0.86), Vector3(1.55, 0.05, 0.62), UrbanMaterials.material_for_color(Color("74644a"), 0.95))
 	_add_proper_name_sign(Vector3(0, 3.55, front_z + 0.34), Vector2(4.7, 0.60), dark)
-	var proper_name := Label3D.new()
-	proper_name.name = "UnionProperName"
-	proper_name.text = "Union"
-	proper_name.font_size = 96
-	proper_name.pixel_size = .006
-	proper_name.outline_size = 0
-	proper_name.modulate = Color("f5eedb")
-	proper_name.position = Vector3(0, 3.55, front_z + .40)
-	visuals_root.add_child(proper_name)
+	var local_proper_name := Label3D.new()
+	local_proper_name.name = "UnionProperName"
+	local_proper_name.text = "Union"
+	local_proper_name.font_size = 96
+	local_proper_name.pixel_size = .006
+	local_proper_name.outline_size = 0
+	local_proper_name.modulate = Color("f5eedb")
+	local_proper_name.position = Vector3(0, 3.55, front_z + .40)
+	visuals_root.add_child(local_proper_name)
 
 func _build_fuel_store() -> void:
 	height = 5.2
@@ -241,10 +241,10 @@ func _add_proper_name_sign(at: Vector3, size: Vector2, frame_mat: StandardMateri
 	var canonical := UrbanSignage.extract_proper_name(building_id, str(data.get("name", "")))
 	if canonical.is_empty():
 		return
-	var sign := UrbanSignage.create_sign_3d(canonical, size, 0.08, frame_mat)
-	if sign != null:
-		sign.position = at
-		visuals_root.add_child(sign)
+	var sign_node := UrbanSignage.create_sign_3d(canonical, size, 0.08, frame_mat)
+	if sign_node != null:
+		sign_node.position = at
+		visuals_root.add_child(sign_node)
 
 func _add_sphere(parent: Node3D, node_name: String, center: Vector3, radius: float, material: Material) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()

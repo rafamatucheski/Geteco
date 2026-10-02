@@ -13,12 +13,12 @@ func mat(color: String, metal := 0.0) -> StandardMaterial3D:
 	materials[color] = material
 	return material
 
-func box(point: Vector3, size: Vector3, color: String, solid := false, basis := Basis.IDENTITY) -> void:
+func box(point: Vector3, size: Vector3, color: String, solid := false, p_basis := Basis.IDENTITY) -> void:
 	if not batches.has(color): batches[color] = []
-	batches[color].append(Transform3D(basis.scaled_local(size),point))
-	if solid: collider(point,size,basis)
+	batches[color].append(Transform3D(p_basis.scaled_local(size),point))
+	if solid: collider(point,size,p_basis)
 
-func collider(point: Vector3, size: Vector3, basis := Basis.IDENTITY) -> void:
+func collider(point: Vector3, size: Vector3, p_basis := Basis.IDENTITY) -> void:
 	if solids == null:
 		solids = StaticBody3D.new()
 		solids.name = "PortLifeSolids"
@@ -29,7 +29,7 @@ func collider(point: Vector3, size: Vector3, basis := Basis.IDENTITY) -> void:
 	var volume := BoxShape3D.new()
 	volume.size = size
 	shape.shape = volume
-	shape.transform = Transform3D(basis,point)
+	shape.transform = Transform3D(p_basis,point)
 	solids.add_child(shape)
 
 func rail(a: Vector3, b: Vector3, solid := true) -> void:
@@ -74,15 +74,15 @@ func flush() -> void:
 func merge_static_boxes(owners: Array) -> void:
 	# Consolidate the static quay and moored boats. Keep the ferry separate because it moves.
 	var inverse := global_transform.affine_inverse()
-	for owner in owners:
-		for child in owner.get_children():
+	for source_owner in owners:
+		for child in source_owner.get_children():
 			if not child is MultiMeshInstance3D or not child.name.begins_with("PortFinish_"): continue
 			var color: String = child.name.trim_prefix("PortFinish_")
 			if not batches.has(color): batches[color]=[]
 			materials[color]=child.material_override
-			var transform: Transform3D = inverse*child.global_transform
+			var local_transform: Transform3D = inverse*child.global_transform
 			for index in child.multimesh.instance_count:
-				batches[color].append(transform*child.multimesh.get_instance_transform(index))
+				batches[color].append(local_transform*child.multimesh.get_instance_transform(index))
 			child.queue_free()
 	flush()
 

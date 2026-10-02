@@ -33,7 +33,9 @@ void vertex() {
 void fragment() {
 	vec2 p = ground_p(local_xz, origin);
 	vec3 base = COLOR.rgb;
-	float snow_amount = smoothstep(0.55, 0.8, dot(base, vec3(0.333)));
+	// A altitude por fragmento evita a borda triangular da cor interpolada
+	// entre os vértices de 4 m do terreno.
+	float snow_amount = ground_altitude_snow(local_xz.y + origin.y);
 	float macro = ground_fbm(p, 32.0);
 	float mid = ground_fbm(p + 91.0, 8.0);
 	float fine = ground_fine(local_xz);

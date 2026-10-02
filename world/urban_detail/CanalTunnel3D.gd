@@ -48,6 +48,18 @@ const CANAL_SHEET := Rect2(SHORE_W, 56.0, SHORE_E - SHORE_W, 20.0)
 
 static var _materials: Dictionary = {}
 
+## A lâmina de água e a armação ficam entre a câmera e o veículo no fundo do
+## túnel. O corte acompanha a câmera; fora dele a superfície conserva a cor.
+static func set_camera_reveal(strength: float) -> void:
+	strength = clampf(strength, 0.0, 1.0)
+	for entry in [["water", 0.4, 0.025], ["glass", 0.1, 0.015], ["canopy_steel", 1.0, 0.07]]:
+		var mat := material(entry[0]) as StandardMaterial3D
+		var color := mat.albedo_color
+		color.a = lerpf(float(entry[1]), float(entry[2]), strength)
+		mat.albedo_color = color
+		if entry[0] == "canopy_steel":
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED if strength < 0.001 else BaseMaterial3D.TRANSPARENCY_ALPHA
+
 ## Rua virtual do túnel para o grafo de rotas (trânsito, polícia, frete), no
 ## padrão de `WorldConnection3D.traffic_connectors`. Fica fora de `region.roads`
 ## para não ganhar asfalto, postes, faixas e semáforos no nível da rua. Os pontos
@@ -462,7 +474,7 @@ func _segment(xa: float, xb: float) -> void:
 		# de y=0 no trecho coberto: a parede furava 20 cm o asfalto do cais.
 		_collision_wall(xa, xb, wall_z, ya, yb, top_a, top_b)
 
-func _wall_top(x: float, section: String) -> float:
+func _wall_top(_x: float, section: String) -> float:
 	match section:
 		"covered": return COVER_CEILING
 		"canal": return CANAL_CEILING
@@ -517,14 +529,13 @@ func _repeating(x0: float, x1: float) -> void:
 		var index := int(round(x / 2.0))
 		if section in ["covered", "canal"] and index % 2 == 0:
 			var ceiling := ceiling_y(x)
-			# Luminária contínua no eixo e duas laterais: tubo claro visto de cima.
-			_box("ceiling_lamp", Vector3(x, ceiling - 0.06, CENTER_Z), Vector3(2.6, 0.08, 0.34))
+			# Uma fileira na borda do teto identifica as luminárias sem projetar
+			# três séries de traços brancos sobre as faixas da estrada.
 			_box("ceiling_lamp", Vector3(x, ceiling - 0.06, inner_north() + 0.9), Vector3(1.4, 0.06, 0.18))
-			_box("ceiling_lamp", Vector3(x, ceiling - 0.06, inner_south() - 0.9), Vector3(1.4, 0.06, 0.18))
 		if section == "canal" and index % 2 == 0:
 			# Costela de aço: arco do teto de vidro e montante do vidro sul.
-			_box("steel", Vector3(x, GLASS_TOP + 0.04, CENTER_Z), Vector3(0.22, 0.12, outer_south() - outer_north()))
-			_box("steel", Vector3(x, (floor_y(x) + GLASS_TOP) * 0.5, outer_south() - 0.05), Vector3(0.2, GLASS_TOP - floor_y(x), 0.14))
+			_box("canopy_steel", Vector3(x, GLASS_TOP + 0.04, CENTER_Z), Vector3(0.22, 0.12, outer_south() - outer_north()))
+			_box("canopy_steel", Vector3(x, (floor_y(x) + GLASS_TOP) * 0.5, outer_south() - 0.05), Vector3(0.2, GLASS_TOP - floor_y(x), 0.14))
 		if section in ["open", "covered", "canal"] and index % 2 == 0:
 			var y := floor_y(x)
 			for z in [CENTER_Z - 0.18, CENTER_Z + 0.18]:
@@ -615,9 +626,9 @@ func _quad_vertical(id: String, xa: float, xb: float, z: float, ya: float, yb: f
 
 func _quad(id: String, points: Array, normal: Vector3, uvs: Array) -> void:
 	if not _surfaces.has(id):
-		var tool := SurfaceTool.new()
-		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_surfaces[id] = tool
+		var branch_tool := SurfaceTool.new()
+		branch_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		_surfaces[id] = branch_tool
 	var tool: SurfaceTool = _surfaces[id]
 	for tri in [[0, 1, 2], [0, 2, 3]]:
 		var order: Array = tri.duplicate()
@@ -770,7 +781,7 @@ static func material(id: String) -> Material:
 				"cap": mat.albedo_color = Color("b9b4a7")
 				"parapet": mat.albedo_color = Color("a8a397")
 				"portal_paint": mat.albedo_color = Color("1f5d66"); mat.roughness = 0.55
-				"steel", "lamp_pole": mat.albedo_color = Color("5b6468"); mat.metallic = 0.5; mat.roughness = 0.45
+				"steel", "canopy_steel", "lamp_pole": mat.albedo_color = Color("5b6468"); mat.metallic = 0.5; mat.roughness = 0.45
 				"rail": mat.albedo_color = Color("7d8488"); mat.metallic = 0.4; mat.roughness = 0.5
 				"rail_paint": mat.albedo_color = Color("d7a02c")
 				"sign_board": mat.albedo_color = Color("0f2a33"); mat.roughness = 0.5
@@ -812,6 +823,8 @@ static func _hazard_texture() -> ImageTexture:
 	var image := Image.create(64, 64, false, Image.FORMAT_RGB8)
 	for y in 64:
 		for x in 64:
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			image.set_pixel(x, y, Color("e8b21e") if ((x + y) / 16) % 2 == 0 else Color("1b1b1b"))
 	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)

@@ -46,10 +46,10 @@ var _ram_assembly: Node3D
 var _ram_plate_mesh: MeshInstance3D
 var _ram_body: AnimatableBody3D
 var _ram_collision: CollisionShape3D
-var _piston_left: MeshInstance3D
-var _piston_right: MeshInstance3D
-var _piston_rod_left: MeshInstance3D
-var _piston_rod_right: MeshInstance3D
+
+
+
+
 
 const ADMISSION_BOUNDS := AABB(Vector3(-2,0,-8.2),Vector3(4,5.2,11))
 var _guard: StaticBody3D

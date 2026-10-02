@@ -36,7 +36,7 @@ func _build_model() -> void:
 
 	var half_l := LENGTH * 0.5
 	var half_w := WIDTH * 0.5
-	var half_h := HEIGHT * 0.5
+
 
 	# 1. Sapatas de apoio inferiores (Forklift skids)
 	for bz in [-half_w + 0.12, 0.0, half_w - 0.12]:

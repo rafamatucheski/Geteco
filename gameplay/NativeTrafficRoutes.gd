@@ -24,7 +24,7 @@ func configure(roads: Array, minimum_width: float = 5.0) -> void:
 		for index in range(points.size() - 1):
 			var a: Vector3 = points[index]
 			var b: Vector3 = points[index + 1]
-			if a.distance_to(b) < 0.1: continue
+			if a.distance_squared_to(b) < 0.00000001: continue
 			segments.append({"a":a,"b":b,"width":width,"id":id,"one_way":one_way,"lanes":int(road.get("lanes_per_direction",1)),"splits":[0.0,1.0]})
 	for first in segments.size():
 		var a: Dictionary = segments[first]
@@ -48,9 +48,12 @@ func configure(roads: Array, minimum_width: float = 5.0) -> void:
 		for index in range(segment.splits.size() - 1):
 			var a: Vector3 = segment.a.lerp(segment.b, segment.splits[index])
 			var b: Vector3 = segment.a.lerp(segment.b, segment.splits[index + 1])
-			if a.distance_to(b) < 0.1: continue
 			var from := _vertex(a)
 			var to := _vertex(b)
+			# A junction may split a continuous road only centimetres from a control
+			# point. Keep that link whenever quantization gives distinct vertices;
+			# dropping it would cut both the main road and its branch off the graph.
+			if from == to: continue
 			_connect(from, to, segment)
 			if not segment.one_way: _connect(to, from, segment)
 
@@ -224,30 +227,67 @@ func _source_ids(path: Array[int]) -> Array[String]:
 		if not result.has(id): result.append(id)
 	return result
 
+func _curve_geometry(path: Array[int], closed: bool) -> Dictionary:
+	var nodes: Array[int] = path.duplicate()
+	if closed: nodes.pop_back()
+	var points: Array[Vector3] = []
+	var sections: Array[Dictionary] = []
+	for node in nodes: points.append(vertices[node])
+	for index in range(path.size()-1): sections.append(_edge(path[index],path[index+1]))
+	# Graph control points are not corners. A split a few centimetres before a
+	# junction must not shrink its lane turn into a reversing hook. Coalesce only
+	# gentle, same-road control points beside a change of road; keep real forks,
+	# lane/width changes and sharp bends. Graph vertices and lane metadata stay intact.
+	var index := 1
+	while index < points.size()-1:
+		var first: Dictionary = sections[index-1]
+		var second: Dictionary = sections[index]
+		if first.id == second.id:
+			index += 1
+			continue
+		var span := maxf(float(first.width),float(second.width))
+		while index > 1 and points[index].distance_to(points[index-1]) < span:
+			var outer: Dictionary = sections[index-2]
+			if not _same_lane_section(outer,first) or edges[nodes[index-1]].size()>2: break
+			if points[index-2].direction_to(points[index-1]).dot(points[index-1].direction_to(points[index])) < .94: break
+			points.remove_at(index-1); nodes.remove_at(index-1); sections.remove_at(index-1)
+			index -= 1
+		while index+2 < points.size() and points[index].distance_to(points[index+1]) < span:
+			var outer: Dictionary = sections[index+1]
+			if not _same_lane_section(second,outer) or edges[nodes[index+1]].size()>2: break
+			if points[index].direction_to(points[index+1]).dot(points[index+1].direction_to(points[index+2])) < .94: break
+			points.remove_at(index+1); nodes.remove_at(index+1); sections.remove_at(index+1)
+		index += 1
+	return {"points":points,"sections":sections}
+
+func _same_lane_section(a: Dictionary, b: Dictionary) -> bool:
+	return a.id==b.id and a.width==b.width and a.one_way==b.one_way and a.get("lanes",1)==b.get("lanes",1)
+
 func _curve(path: Array[int], closed: bool, lane_index := 0) -> Curve3D:
 	var curve := Curve3D.new()
 	curve.bake_interval = 0.25
-	var nodes: Array[int] = path.duplicate()
-	if closed: nodes.pop_back()
-	for index in nodes.size():
-		var at: Vector3 = vertices[nodes[index]]
+	var geometry := _curve_geometry(path,closed)
+	var points: Array[Vector3] = geometry.points
+	var sections: Array[Dictionary] = geometry.sections
+	for index in points.size():
+		var at: Vector3 = points[index]
 		if not closed and index == 0:
-			var direction := (vertices[nodes[1]] - at).normalized()
-			curve.add_point(at + _lane_offset(direction, _edge(nodes[0], nodes[1]),lane_index))
+			var direction := (points[1] - at).normalized()
+			curve.add_point(at + _lane_offset(direction,sections[0],lane_index))
 			continue
-		if not closed and index == nodes.size() - 1:
-			var direction := (at - vertices[nodes[index - 1]]).normalized()
-			curve.add_point(at + _lane_offset(direction, _edge(nodes[index - 1], nodes[index]),lane_index))
+		if not closed and index == points.size() - 1:
+			var direction := (at - points[index-1]).normalized()
+			curve.add_point(at + _lane_offset(direction,sections[-1],lane_index))
 			continue
-		var previous := nodes[posmod(index - 1, nodes.size())]
-		var next := nodes[(index + 1) % nodes.size()]
-		var incoming := (at - vertices[previous]).normalized()
-		var outgoing := (vertices[next] - at).normalized()
-		var first := _edge(previous, nodes[index])
-		var second := _edge(nodes[index], next)
+		var previous := posmod(index-1,points.size())
+		var next := (index+1)%points.size()
+		var incoming := (at-points[previous]).normalized()
+		var outgoing := (points[next]-at).normalized()
+		var first: Dictionary = sections[previous]
+		var second: Dictionary = sections[index]
 		var incoming_offset := _lane_offset(incoming, first,lane_index)
 		var outgoing_offset := _lane_offset(outgoing, second,lane_index)
-		var trim := minf(minf(at.distance_to(vertices[previous]), at.distance_to(vertices[next])) * 0.35, maxf(1.5, minf(first.width, second.width) * 0.5))
+		var trim := minf(minf(at.distance_to(points[previous]),at.distance_to(points[next]))*.35,maxf(1.5,minf(first.width,second.width)*.5))
 		var entry := at - incoming * trim + incoming_offset
 		var exit := at + outgoing * trim + outgoing_offset
 		var crossing: Variant = Geometry2D.line_intersects_line(_xz(at + incoming_offset), _xz(incoming), _xz(at + outgoing_offset), _xz(outgoing))

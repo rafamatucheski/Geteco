@@ -9,11 +9,15 @@ static func prepare(actor: Node) -> void:
 	var female: bool = actor.appearance_gender == 2 or (actor.appearance_gender == 0 and variant % 2 == 1)
 	actor.set_meta("appearance_female", female)
 	var styles := [2,3,6,7,1] if female else [0,1,4,5,7]
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	var hair: int = actor.hair_style_override if actor.hair_style_override >= 0 else styles[(variant / 2) % styles.size()]
 	actor.set_meta("hair_style", posmod(hair, HAIR_NAMES.size()))
 	if female: actor.has_beard = false
 	var beard: int = actor.beard_style_override
 	if beard < 0:
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		beard = (2 + posmod(variant / 3,4)) if actor.has_beard else posmod(variant / 2,6)
 	if female: beard = 0
 	actor.set_meta("beard_style",beard)
@@ -104,7 +108,7 @@ static func build_hair(head: Node3D, style: int, color: Color, covered := false)
 	elif style in [0,1,5] and not covered:
 		for i in 4:
 			var fringe := PART.piece(hair,Vector3(.095,.075,.12),Vector3(-.105+i*.067,.15,-.075),color.lightened(.025*i),true)
-			fringe.rotation.z = -.25 if style != 0 else 0
+			fringe.rotation.z = -.25 if style != 0 else 0.0
 		if style == 5:
 			crown.scale.x *= .82
 	elif style == 2:

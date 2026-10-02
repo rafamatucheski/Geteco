@@ -32,6 +32,8 @@ static func tracks_stream() -> AudioStreamWAV:
 ## como QOA (`compress/mode=2`), cujos bytes são ~1/5 das amostras, e o laço do motor e das
 ## esteiras fechava aos 0,4 s de um som de 2 s.
 static func frame_count(stream: AudioStreamWAV) -> int:
+	# Audio buffer/loop lengths count whole samples.
+	@warning_ignore("integer_division")
 	if stream.format == AudioStreamWAV.FORMAT_16_BITS: return stream.data.size() / (4 if stream.stereo else 2)
 	return roundi(stream.get_length() * stream.mix_rate)
 

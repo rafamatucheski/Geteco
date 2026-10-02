@@ -345,17 +345,17 @@ func _update_droplets(side: int, contact: Dictionary, active: bool, splash_in: b
 		return
 	if droplets.is_empty():
 		for index in 2:
-			var emitter := RESOURCES.emitter("RearWheelDroplets%d"%index,64,.9,Vector2(.3,.3))
-			var process := RESOURCES.particle_process(false)
-			process.spread = 58
-			process.gravity = Vector3(0,-9.8,0)
-			process.scale_min = .55
-			process.scale_max = 1.2
-			process.color = Color(.86,.94,1.0,.9)
-			emitter.process_material = process
-			vehicle.add_child(emitter)
-			emitter.top_level = true
-			droplets.append(emitter)
+			var branch_emitter := RESOURCES.emitter("RearWheelDroplets%d"%index,64,.9,Vector2(.3,.3))
+			var branch_process := RESOURCES.particle_process(false)
+			branch_process.spread = 58
+			branch_process.gravity = Vector3(0,-9.8,0)
+			branch_process.scale_min = .55
+			branch_process.scale_max = 1.2
+			branch_process.color = Color(.86,.94,1.0,.9)
+			branch_emitter.process_material = branch_process
+			vehicle.add_child(branch_emitter)
+			branch_emitter.top_level = true
+			droplets.append(branch_emitter)
 	var emitter := droplets[side]
 	var process := emitter.process_material as ParticleProcessMaterial
 	var wake := -Vector3(vehicle.horizontal_velocity.x,0,vehicle.horizontal_velocity.z).normalized()

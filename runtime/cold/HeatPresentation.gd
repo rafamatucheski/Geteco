@@ -77,17 +77,17 @@ func _campfire() -> Node3D:
 	wood.albedo_color = Color("493126")
 	wood.roughness = .95
 	for i in 3:
-		var log := MeshInstance3D.new()
+		var local_log := MeshInstance3D.new()
 		var mesh := CylinderMesh.new()
 		mesh.top_radius = .125
 		mesh.bottom_radius = .125
 		mesh.height = 1.25
 		mesh.radial_segments = 8
-		log.mesh = mesh
-		log.material_override = wood
-		log.position.y = .14
-		log.rotation = Vector3(PI/2,i*1.05+.2,0)
-		node.add_child(log)
+		local_log.mesh = mesh
+		local_log.material_override = wood
+		local_log.position.y = .14
+		local_log.rotation = Vector3(PI/2,i*1.05+.2,0)
+		node.add_child(local_log)
 	var flame := preload("res://runtime/cold/HearthEffects.gd").new()
 	flame.position.y = .15
 	flame.scale = Vector3.ONE*1.5

@@ -138,6 +138,8 @@ func _build() -> void:
 	first = stage.get_child_count()
 	for i in 9:
 		first = stage.get_child_count()
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var p := Vector3(12+(i%3)*.65,.5,3+(i/3)*.7)
 		cylinder(stage,p,.28,1,"a65a35" if i%3 == 0 else "3d686b" if i%3 == 1 else "b8a265")
 		for y in [-.28,.28]: cylinder(stage,p+Vector3(0,y,0),.29,.04,"4a4c41")
@@ -146,12 +148,16 @@ func _build() -> void:
 	# bent hoods, independent wheels and mismatched metal panels.
 	for i in 8:
 		var colors := ["9a3d32","527e86","c4a44b","b9b7a0","5d7152","604d7f","33546b","bf7750"]
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var p := Vector3(-12+(i%3)*4.0,.22+(i/3)*.15,-3+(i/3)*2.8)
 		if i >= 6: p = Vector3(11,.25+(i-6)*.95,-6)
 		_wreck(p,colors[i],float(i)*.19-.6,i)
 	first = stage.get_child_count()
 	for i in 12:
 		first = stage.get_child_count()
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var p := Vector3(13+(i%2)*.8,.20+(i/4)*.3,7+(i%4)*.5)
 		var tire := TorusMesh.new()
 		tire.inner_radius=.19

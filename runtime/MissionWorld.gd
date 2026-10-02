@@ -124,21 +124,21 @@ func target_position() -> Vector3:
 	return targets.get(id,session.world.maciota_place.entry_position)
 
 func nearest_action() -> Dictionary:
-	var position: Vector3 = session.world.player.position
+	var local_position: Vector3 = session.world.player.position
 	var berth := Vector3(1930,0,1220)*UNIT if session.state.region_id == "harbor" else preload("res://world/places/PlaceCatalog.gd")._at(Vector2(7500,-1760),"mountain")
-	if position.distance_to(berth) < 3: return {"id":"mission","target":"travel","label":"Viajar para "+("a serra" if session.state.region_id == "harbor" else "o porto")}
+	if local_position.distance_to(berth) < 3: return {"id":"mission","target":"travel","label":"Viajar para "+("a serra" if session.state.region_id == "harbor" else "o porto")}
 	if session.state.region_id != "harbor": return {}
-	if is_instance_valid(truck) and not truck.has_meta("tow_pending") and truck.health <= 0 and position.distance_to(truck.position) < 5:
+	if is_instance_valid(truck) and not truck.has_meta("tow_pending") and truck.health <= 0 and local_position.distance_to(truck.position) < 5:
 		return {"id":"mission","target":"tow_recover","label":"Recuperar guincho"}
-	if not tow_job.is_empty() and is_instance_valid(cargo) and not cargo.has_meta("tow_pending") and cargo.health <= 0 and position.distance_to(cargo.position) < 5:
+	if not tow_job.is_empty() and is_instance_valid(cargo) and not cargo.has_meta("tow_pending") and cargo.health <= 0 and local_position.distance_to(cargo.position) < 5:
 		return {"id":"mission","target":"tow_recover_cargo","label":"Recuperar carro rebocado"}
 	var target: String = session.state.campaign.target_id()
 	if target == "helena" and session.robberies.bank_unavailable() and session.world.gameplay.stars == 0:
 		var bank: Dictionary = preload("res://world/places/PlaceCatalog.gd").get_definition("harbor_bank")
-		if position.distance_to(bank.entry_position) < 105.0*UNIT: return {"id":"mission","target":"helena","label":"Ligar para pedir segunda via"}
-	if targets.has(target) and position.distance_to(targets[target]) < 2.2 and not str(target).ends_with("encounter"):
+		if local_position.distance_to(bank.entry_position) < 105.0*UNIT: return {"id":"mission","target":"helena","label":"Ligar para pedir segunda via"}
+	if targets.has(target) and local_position.distance_to(targets[target]) < 2.2 and not str(target).ends_with("encounter"):
 		return {"id":"mission","target":target,"label":"Conversar" if target in ["ferrugem","ashbend_resident","neco"] else "Recolher"}
-	if is_instance_valid(truck) and position.distance_to(truck.position) < 5:
+	if is_instance_valid(truck) and local_position.distance_to(truck.position) < 5:
 		return {"id":"mission","target":"tow_toggle","label":"Descarregar" if loaded else "Carregar guincho"}
 	return {}
 func nearest_vehicle_action() -> Dictionary:

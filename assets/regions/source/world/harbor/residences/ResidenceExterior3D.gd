@@ -4,7 +4,7 @@ var variant_index := 0
 func _ready() -> void:
 	var parking := preload("res://world/places/ResidenceParking.gd").new()
 	parking.name = "ResidentialGarage"
-	parking.position = parking.placement(variant_index)
+	parking.position = preload("res://world/places/ResidenceParking.gd").placement(variant_index)
 	add_child(parking)
 	var variant: int = variant_index
 	var plaster: String = ["d3c4a5","b6c8c6","d8d9cd"][variant]

@@ -18,7 +18,7 @@ func _ready() -> void:
 	model_root = self
 	scale = Vector3.ONE * 1.28
 	var mat_suit := _make_mat(Color(0.14, 0.15, 0.18), 0.5) # Terno Chumbo/Preto IML
-	var mat_shirt := _make_mat(Color(0.92, 0.94, 0.96), 0.3) # Camisa Social Branca
+
 	var mat_tie := _make_mat(Color(0.05, 0.05, 0.06), 0.7) # Gravata Preta
 	var mat_skin := _make_mat(Color(0.88, 0.74, 0.62), 0.4) # Pele
 	var mat_gloves := _make_mat(Color(0.22, 0.48, 0.88), 0.2) # Luvas Cirúrgicas Azuis

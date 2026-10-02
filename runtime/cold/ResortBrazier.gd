@@ -19,6 +19,8 @@ func build(kind: String) -> void:
 			_box("Foot",Vector3(side*.85,.045,0),Vector3(.14,.09,.65),wood).set_meta("interior_solid_id",&"Rack")
 		_box("Beam",Vector3(0,1.05,0),Vector3(1.9,.13,.12),wood).set_meta("interior_solid_id",&"Rack")
 		for i in 6:
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			_box("Ski",Vector3(-.63+i*.25,.85,.14),Vector3(.10,1.7,.045),_mat("ski%d"%i,[Color("a74738"),Color("4d7181"),Color("b29a5a")][i/2]),Vector3(-9,0,2))
 	else:
 		_cylinder("StoneBase",Vector3(0,.12,0),.72,.24,stone).set_meta("interior_solid_id",&"Brazier")

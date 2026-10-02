@@ -24,7 +24,7 @@ func build(model: Node3D) -> void:
 			part.material_override = sign_material
 	for back in [false,true]:
 		var label := _label("TAXI",Vector3(0,1.57,.277 if back else -.077),.005,Color("181b1d"))
-		label.rotation.y = 0 if back else PI
+		label.rotation.y = 0.0 if back else PI
 		var plate := MeshInstance3D.new()
 		var box := BoxMesh.new()
 		box.size = Vector3(.48,.15,.016)
@@ -35,9 +35,9 @@ func build(model: Node3D) -> void:
 		material.roughness = .35
 		plate.material_override = material
 		add_child(plate)
-		var registration := _label("HBR-0000",plate.position+Vector3(0,-.016,.012 if back else -.012),.0015,Color("17212a"))
-		registration.rotation.y = 0 if back else PI
-		plates.append(registration)
+		var local_registration := _label("HBR-0000",plate.position+Vector3(0,-.016,.012 if back else -.012),.0015,Color("17212a"))
+		local_registration.rotation.y = 0.0 if back else PI
+		plates.append(local_registration)
 		var band := MeshInstance3D.new()
 		var strip := BoxMesh.new(); strip.size = Vector3(.48,.025,.02)
 		band.mesh = strip; band.position = plate.position+Vector3.UP*.056

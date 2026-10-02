@@ -17,7 +17,11 @@ static func texture(surface: String) -> Image:
 		for x in 64:
 			var value := base * rng.randf_range(.85,1.12)
 			if surface == "grass" and x%3 == 0: value = value.lightened(.06)
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			if surface == "gravel" and (x/3+y/3)%2 == 0: value = value.darkened(.14)
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			if surface == "pavers" and (y%16 < 2 or (x+(16 if (y/16)%2 == 0 else 0))%32 < 2): value = base.darkened(.35)
 			if surface == "concrete" and (x == 0 or y == 0): value = base.darkened(.2)
 			result.set_pixel(x,y,value)

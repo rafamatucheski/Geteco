@@ -49,7 +49,7 @@ static func _build(variant: int,snowy: bool) -> Array:
 			if variant==6 and tier==0: continue
 			var radius := (1.25-tier*.22)*(.73 if variant in [1,2,7] else 1.0)
 			var center := (1.35+tier*.72)*tall
-			var drift := Vector3(.055*tier if variant==7 else 0,0,0)
+			var drift := Vector3(.055*tier if variant==7 else 0.0,0,0)
 			_cylinder(build_batches,Vector3(0,center+.20,0)+drift,.015,radius*.75,1.4*tall,needles,9)
 			for bough in 5:
 				var angle := bough*TAU/5+tier*.61+variant*.4

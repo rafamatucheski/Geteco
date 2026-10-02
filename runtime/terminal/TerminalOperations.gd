@@ -83,7 +83,11 @@ func _physics_process(delta: float) -> void:
 			for gate in gates: gate.body.collision_layer = 1 if running else 0
 			for coach in fleet:
 				coach.collision_layer = 4 if running else 0
-				for p in coach.passengers: set_inside(p,p.inside) if running else suspend(p)
+				for p in coach.passengers:
+					if running:
+						set_inside(p,p.inside)
+					else:
+						suspend(p)
 	if not running or not resident: return
 	# Arrival's route-city coach remains independent. No terminal manoeuvre starts
 	# during the scripted M00 disembark, so both flows cannot claim its crossing.

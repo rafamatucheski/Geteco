@@ -14,6 +14,7 @@ var village
 var village_quest
 var village_residents
 var village_fleet
+var village_leisure
 var secret_network
 var secret_file
 var secret_passage
@@ -57,6 +58,9 @@ func _ready() -> void:
 	village_quest.configure(session,village)
 	add_child(village_quest)
 	village_quest.bind_residents(village_residents)
+	village_leisure = preload("res://gameplay/urban_v1/TruckersVillageLeisure.gd").new()
+	add_child(village_leisure)
+	village_leisure.configure(session,village.leisure_art)
 	village.homes.configure(session)
 	village_residents.bind_homes(village.homes,village_quest)
 	var house_loot = preload("res://gameplay/urban_v1/TruckersVillageHouseLoot.gd").new()
@@ -87,6 +91,8 @@ func refresh_context() -> void:
 func nearest_action() -> Dictionary:
 	var secret_action: Dictionary = secret_passage.nearest_action() if is_instance_valid(secret_passage) else {}
 	if not secret_action.is_empty(): return secret_action
+	var leisure_action: Dictionary = village_leisure.nearest_action() if is_instance_valid(village_leisure) else {}
+	if not leisure_action.is_empty(): return leisure_action
 	var village_action: Dictionary = village_quest.nearest_action() if is_instance_valid(village_quest) else {}
 	if not village_action.is_empty(): return village_action
 	var checkpoint: Dictionary = security.nearest_action() if is_instance_valid(security) else {}
@@ -102,6 +108,7 @@ func freight_status() -> Dictionary:
 
 func perform(target: String) -> bool:
 	if target.begins_with("truckers_village_secret_"): return is_instance_valid(secret_passage) and secret_passage.perform(target)
+	if target.begins_with("truckers_village_leisure_"): return is_instance_valid(village_leisure) and village_leisure.perform(target)
 	if target.begins_with("truckers_village_"): return is_instance_valid(village_quest) and village_quest.perform(target)
 	if target.begins_with("vertice_"): return is_instance_valid(cargo_handling) and cargo_handling.depot.perform(target)
 	if target == "south_port_checkpoint": return is_instance_valid(security) and security.perform(target)
@@ -119,6 +126,7 @@ func snapshot() -> Dictionary:
 		"harbor_life":_life_snapshot(),
 		"truckers_village":village_quest.snapshot() if is_instance_valid(village_quest) else {},
 		"truckers_village_fleet":village_fleet.snapshot() if is_instance_valid(village_fleet) else {},
+		"truckers_village_leisure":village_leisure.snapshot() if is_instance_valid(village_leisure) else {},
 		"secret_network":secret_network.snapshot() if secret_network != null else {},
 	}
 
@@ -135,6 +143,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	var delivery: Dictionary = data.get("freight", {"version":1,"jobs":[0,0,0],"active_bay":-1,"truck":{}})
 	if data.has("truckers_village") and (not is_instance_valid(village_quest) or not village_quest.restore_snapshot(data.truckers_village)): return false
 	if data.has("truckers_village_fleet") and (not is_instance_valid(village_fleet) or not village_fleet.restore_snapshot(data.truckers_village_fleet)): return false
+	if is_instance_valid(village_leisure) and not village_leisure.restore_snapshot(data.get("truckers_village_leisure",{"version":1,"best_score":0,"cache_opened":false})): return false
 	if data.has("secret_network") and (secret_network == null or not secret_network.restore_snapshot(data.secret_network)): return false
 	if is_instance_valid(secret_passage): secret_passage.refresh_state()
 	if is_instance_valid(secret_file): secret_file.refresh()
@@ -156,6 +165,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		and (not data.has("logistics") or cargo_handling.restore_snapshot(data.logistics))
 
 static func validate_snapshot(data: Dictionary) -> bool:
+	if data.has("truckers_village_leisure") and (not data.truckers_village_leisure is Dictionary or not preload("res://gameplay/urban_v1/TruckersVillageLeisure.gd").validate_snapshot(data.truckers_village_leisure)): return false
 	if data.has("secret_network") and (not data.secret_network is Dictionary or not preload("res://runtime/SecretNetworkProgression.gd").validate_snapshot(data.secret_network)): return false
 	if data.has("truckers_village_fleet") and (not data.truckers_village_fleet is Dictionary or not preload("res://gameplay/urban_v1/TruckersVillageFleet.gd").validate_snapshot(data.truckers_village_fleet)): return false
 	if data.has("truckers_village") and (not data.truckers_village is Dictionary or not preload("res://gameplay/urban_v1/TruckersVillageQuest.gd").validate_snapshot(data.truckers_village)): return false

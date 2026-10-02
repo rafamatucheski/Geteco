@@ -238,7 +238,7 @@ func _actor_died(actor: CharacterBody3D) -> void:
 	deaths[_death_key(actor)] = true
 	_actor_threatened(actor)
 
-func _actor_threatened(_actor: CharacterBody3D) -> void:
+func _actor_threatened(_threatened_actor: CharacterBody3D) -> void:
 	quiet_left = 30.0
 	if not trip_identity.is_empty() and trip_phase != "returning":
 		if cases[trip_identity].phase == "burial": cases[trip_identity].phase = "morgue"
@@ -345,6 +345,8 @@ func _start_trip(identity: String) -> void:
 		mourner.position = GATE+Vector3(signf(lane)*1.6,.04,-1.8-index*.85)
 		mourner.departure_delay = .8 + index * .65
 		# Keep the central aisle free even for the two plots nearest its edge.
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var target := Vector3(CENTER.x+plot_side*(5.8-float(index%3)*1.1),.04,point.z+1.8+float(index/3)*1.1)
 		mourner.set_route(PackedVector3Array([GATE+Vector3(signf(lane)*1.6,.04,-1.2), GATE+Vector3(lane,.04,1.2), Vector3(CENTER.x+lane,.04,target.z), target]))
 		mourners.append(mourner)
@@ -434,6 +436,8 @@ func _free_plot() -> int:
 	return -1
 
 func _plot_position(index: int) -> Vector3:
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
 	var row := index / 4
 	var col := index % 4
 	return CENTER+Vector3(-78+col*52,0,-20+row*62)*SCALE

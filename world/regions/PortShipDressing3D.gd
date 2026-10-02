@@ -5,7 +5,7 @@ const PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 
 var _batches: Dictionary = {}
 
-func _box(at: Vector3, size: Vector3, color: String, basis := Basis.IDENTITY) -> void:
+func _box(at: Vector3, size: Vector3, color: String, p_basis := Basis.IDENTITY) -> void:
 	var tool: SurfaceTool = _batches.get(color)
 	if tool == null:
 		tool = SurfaceTool.new()
@@ -13,7 +13,7 @@ func _box(at: Vector3, size: Vector3, color: String, basis := Basis.IDENTITY) ->
 		_batches[color] = tool
 	var shape := BoxMesh.new()
 	shape.size = size
-	tool.append_from(shape,0,Transform3D(basis,at))
+	tool.append_from(shape,0,Transform3D(p_basis,at))
 
 func _beam(a: Vector3, b: Vector3, width: float, color: String) -> void:
 	var up := (b-a).normalized()
@@ -108,10 +108,10 @@ func build_northstar(outline: PackedVector2Array) -> void:
 func build_santa_mare(hull: PackedVector2Array) -> void:
 	name = "SantaMareShipDetail3D"
 	_deck(hull)
-	var scale := 1.0/16.0
+	var local_scale := 1.0/16.0
 	for i in hull.size():
-		var a := hull[i]*scale
-		var b := hull[(i+1)%hull.size()]*scale
+		var a := hull[i]*local_scale
+		var b := hull[(i+1)%hull.size()]*local_scale
 		_edge(a,b,-1.35,Vector2(.24,2.7),"344c54")
 		_edge(a,b,-.16,Vector2(.27,.10),"c6c2ab")
 		_edge(a,b,-2.58,Vector2(.27,.08),"8a5147")

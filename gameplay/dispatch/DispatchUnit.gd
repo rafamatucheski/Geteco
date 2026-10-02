@@ -58,6 +58,8 @@ var incident_id := 0
 var actor: Node3D
 var crew: CharacterBody3D
 var retasked := false
+## A perda da fonte da ocorrência já foi tratada (ver `_service_working`).
+var _actor_loss_handled := false
 var _exit_wait := 0.0
 var _scene_clock := 0.0
 var _check_clock := 0.0
@@ -174,6 +176,9 @@ func surrender_vehicle(exits: Array[Dictionary]) -> void:
 		if officer.dead: continue
 		if officer.mode == "return": officer.mode = "combat"
 		if not controller.gameplay.police.has(officer): controller.gameplay.police.append(officer)
+		# Gameplay owns this same agent now; the finished unit cannot admit it.
+		# Keep vehicle until physical disembarkation and door closure complete.
+		officer.dispatch_controller = null
 	officers.clear()
 	finished = true
 	end_reason = "stolen"
@@ -753,9 +758,16 @@ func _service_working(delta: float) -> void:
 	# Se a entidade fonte saiu da árvore, não deixe a unidade depender do próximo
 	# scan do EmergencyManager ou de uma referência já liberada no Responder.
 	if not is_instance_valid(actor) or actor.is_queued_for_deletion():
-		controller.emit_dispatch_event("incident_invalid", {"unit": self, "reason": "actor_removed"})
-		_begin_departure()
-		return
+		# Uma vez só. Com a equipe ainda a pé `_begin_departure` mantém o estado "working"
+		# (ela volta andando): repetido a cada quadro físico, reemitia o evento (centenas por
+		# atendimento, esvaziando o registro de 64), zerava `crew.age` sem parar e escondia
+		# equipe morta ou presa, que nunca chegava aos testes abaixo. Depois da primeira
+		# detecção valem só o teste de equipe e o prazo total do atendimento.
+		if not _actor_loss_handled:
+			_actor_loss_handled = true
+			controller.emit_dispatch_event("incident_invalid", {"unit": self, "reason": "actor_removed"})
+			_begin_departure()
+			return
 	if not is_instance_valid(crew) or crew.dead:
 		controller.emit_dispatch_event("crew_lost", {"unit": self})
 		# Solta a ocorrência enquanto `crew` ainda identifica o dono do registro.

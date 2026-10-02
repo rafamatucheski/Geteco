@@ -56,7 +56,7 @@ func build_segment(start_pt: Vector3, end_pt: Vector3) -> void:
 	var rail_spacing := (post_height * 0.65) / float(maxi(1, rail_count))
 	for r in rail_count:
 		var ry := 0.35 + float(r) * rail_spacing
-		var rail := _add_box(seg_root, "Rail_%d" % r, Vector3(0, ry, 0), Vector3(0.08, 0.09, length), pole_mat)
+		_add_box(seg_root, "Rail_%d" % r, Vector3(0, ry, 0), Vector3(0.08, 0.09, length), pole_mat)
 		# Snow strip along upper rail
 		if r == rail_count - 1:
 			_add_box(seg_root, "RailSnow", Vector3(0, ry + 0.055, 0), Vector3(0.09, 0.025, length * 0.98), snow_mat)

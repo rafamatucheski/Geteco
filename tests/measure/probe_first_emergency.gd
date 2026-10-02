@@ -21,7 +21,12 @@ func run() -> void:
 	for i in 240: await process_frame
 	var g: Node3D = world.gameplay
 	if "--prewarm-inview" in OS.get_cmdline_user_args():
-		await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(g)
+		# O prewarm produtivo agora exige a cortina e acontece durante a carga.
+		# Esta variante confirma esse caminho; --no-prewarm mede a sessao fria.
+		if not preload("res://gameplay/emergency/EffectsPrewarm.gd")._drawn:
+			push_error("--prewarm-inview exige o prewarm renderizado durante a carga; nao combine com --no-prewarm.")
+			quit(2)
+			return
 		for i in 60: await process_frame
 	g.health = 100.0
 	if "--no-dispatch" in OS.get_cmdline_user_args(): world.dispatch.set_physics_process(false)

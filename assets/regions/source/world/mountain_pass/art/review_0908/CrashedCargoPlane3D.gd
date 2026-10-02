@@ -77,23 +77,23 @@ static func _unit_cylinder() -> CylinderMesh:
 		_shared_cylinder_mesh.resource_name = "CargoPlaneSharedUnitCylinder"
 	return _shared_cylinder_mesh
 
-func _queue_instance(batches: Dictionary, p: Node3D, mat: Material, transform: Transform3D) -> void:
+func _queue_instance(batches: Dictionary, p: Node3D, mat: Material, p_transform: Transform3D) -> void:
 	if not batches.has(p):
 		batches[p] = {}
 	var material_batches: Dictionary = batches[p]
 	if not material_batches.has(mat):
 		material_batches[mat] = []
 	var transforms: Array = material_batches[mat]
-	transforms.append(transform)
+	transforms.append(p_transform)
 
 func _add_box_to(p: Node3D, pos: Vector3, size: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> void:
-	var basis := Basis.from_euler(rot_deg * PI / 180.0) * Basis.from_scale(size)
-	_queue_instance(_box_batches, p, mat, Transform3D(basis, pos))
+	var local_basis := Basis.from_euler(rot_deg * PI / 180.0) * Basis.from_scale(size)
+	_queue_instance(_box_batches, p, mat, Transform3D(local_basis, pos))
 
 func _add_cyl_to(p: Node3D, pos: Vector3, radius: float, height: float, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> void:
 	var size := Vector3(radius * 2.0, height, radius * 2.0)
-	var basis := Basis.from_euler(rot_deg * PI / 180.0) * Basis.from_scale(size)
-	_queue_instance(_cylinder_batches, p, mat, Transform3D(basis, pos))
+	var local_basis := Basis.from_euler(rot_deg * PI / 180.0) * Basis.from_scale(size)
+	_queue_instance(_cylinder_batches, p, mat, Transform3D(local_basis, pos))
 
 func _flush_batches(batches: Dictionary, mesh: Mesh, prefix: String) -> void:
 	for parent_key in batches:
@@ -120,7 +120,7 @@ func _build_model() -> void:
 
 	# Materiais PBR aeronáuticos
 	var fuse_mat := _mat("fuselage", main_color, 0.55, 0.45)
-	var belly_mat := _mat("belly", Color("#333b35"), 0.65, 0.35)
+	_mat("belly", Color("#333b35"), 0.65, 0.35)
 	var rib_mat := _mat("interior_rib", Color("#5c675f"), 0.70, 0.30)
 	var floor_mat := _mat("cargo_floor", Color("#272c29"), 0.60, 0.60)
 	var roller_mat := _mat("rollers", Color("#7f8c8d"), 0.30, 0.90)

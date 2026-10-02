@@ -166,6 +166,8 @@ func search_destination(officer: CharacterBody3D) -> Vector3:
 		center = _room.to_global(_room.definition.get("camera_target", Vector3.ZERO))
 	center.y = officer.global_position.y
 	var slot := int(officer.get_meta("police_tactic_slot", 0))
+	# Whole clock buckets; preserve integer precision and cadence.
+	@warning_ignore("integer_division")
 	var cycle := int(Time.get_ticks_msec() / 5000) + slot
 	var offsets := [Vector3.ZERO, Vector3(2.0, 0, 0), Vector3(-2.0, 0, 0), Vector3(0, 0, -2.0), Vector3(0, 0, 2.0)]
 	for index in offsets.size():

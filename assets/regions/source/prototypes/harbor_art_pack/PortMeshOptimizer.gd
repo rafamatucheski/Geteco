@@ -22,7 +22,7 @@ static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = t
 	var material_groups: Dictionary = {}
 	for item in collected_items:
 		var mat: Material = item["material"]
-		var key: Variant = mat.resource_name if (mat and not mat.resource_name.is_empty()) else mat
+		var key: Material = mat # Distinct resources can share a name and different shader parameters.
 		if not material_groups.has(key):
 			material_groups[key] = {
 				"material": mat,

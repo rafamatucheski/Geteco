@@ -105,7 +105,7 @@ func material(color: String, metal: bool = false) -> StandardMaterial3D:
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = Color(color)
 		mat.roughness = .62 if metal else .88
-		mat.metallic = .35 if metal else 0
+		mat.metallic = .35 if metal else 0.0
 		materials[key] = mat
 	return materials[key]
 
@@ -141,7 +141,7 @@ func _container(at: Vector3,w: float,d: float,theme: int,levels: int = 1) -> voi
 		for part in cargo.get_children():
 			if not part is MeshInstance3D or not part.mesh is BoxMesh: continue
 			var dimensions: Vector3 = part.mesh.size
-			var roof_rib := is_equal_approx(dimensions.y,.03) and dimensions.z > .35
+			var roof_rib: bool = part.get_meta("container_roof_rib",false)
 			var wall_rib := is_equal_approx(dimensions.x,.04) and dimensions.y > 2.4
 			if roof_rib or wall_rib:
 				part.mesh = part.mesh.duplicate()
@@ -252,6 +252,8 @@ func _loose_cargo(w: float, d: float, variant: int) -> void:
 	height = 2.8
 	for i in 5:
 		var x := (float(i%3)-1)*w*.27
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var z := (float(i/3)-.5)*d*.48
 		var h := .65+float((variant+i)%3)*.35
 		var yaw := sin(float(variant*7+i*3))*.22

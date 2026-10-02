@@ -128,7 +128,7 @@ func _physics_process(delta: float) -> void:
 				facing = offset
 	velocity.x = move_toward(velocity.x,wanted.x,delta*2.8)
 	velocity.z = move_toward(velocity.z,wanted.z,delta*2.8)
-	velocity.y = -1 if is_on_floor() else maxf(-18,velocity.y-20*delta)
+	velocity.y = -1.0 if is_on_floor() else maxf(-18,velocity.y-20*delta)
 	var before := global_position
 	move_and_slide()
 	var travelled := Vector2(global_position.x-before.x,global_position.z-before.z).length()

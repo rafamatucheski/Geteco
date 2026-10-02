@@ -106,9 +106,11 @@ func run() -> void:
 		check(not world.driving.interact(),"repeated input cannot remount during roll")
 		var phases := {}
 		var lowest := INF
+		var lowest_up := 1.0
 		var start: Vector3 = world.player.position
 		for frame in 180:
 			await physics_frame
+			lowest_up = minf(lowest_up,world.player.visual.basis.y.normalized().y)
 			for name in ["Head","LeftFoot","RightFoot","LeftHand","RightHand"]:
 				var bone: int = world.player.skeleton.find_bone(name)
 				lowest = minf(lowest,world.player.skeleton.to_global(world.player.skeleton.get_bone_global_pose(bone).origin).y)
@@ -117,8 +119,9 @@ func run() -> void:
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png("res://evidence/vehicle-bailout-20260928/roll-%03d.png" % frame)
 			if not world.driving.is_body_transition_active(): break
-		check(phases.has("roll") and phases.has("recover"),"fall rolls then gets up")
+		check(phases.has("slide") and phases.has("recover"),"fall braces and slides then gets up")
 		check(lowest > -.05,"body extremities stay above ground: %s" % lowest)
+		check(lowest_up > 0.0,"moving exit never flips the body upside down")
 		check(not world.driving.is_body_transition_active() and not world.player.input_locked and world.player.is_physics_processing(),"recovers walking control")
 		check(world.player.position.distance_to(start)>.3,"momentum carries the body")
 		check(world.gameplay.hits==1 and world.gameplay.health>=82 and world.gameplay.health<100,"single light damage on landing")

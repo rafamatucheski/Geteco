@@ -7,12 +7,12 @@ const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STEERING := preload("res://gameplay/crowd/PedestrianSteering.gd")
 const STEP := preload("res://gameplay/crowd/PedestrianStep3D.gd")
-## Civis longe da câmera e fora de controle alheio andam em passo de LOD: física a cada LOD_STRIDE quadros com o
+## Civis longe da câmera, na rota própria ou em fuga/recuperação explicitamente
+## autorizada pelo diretor, andam em passo de LOD: física a cada LOD_STRIDE quadros com o
 ## delta acumulado. Mantém rota e posição coerentes e corta ~2/3 do custo de move_and_slide + pose de quem não se vê.
 const LOD_DISTANCE := 45.0
 const LOD_STRIDE := 3
 var _steering: RefCounted
-var _lod_frame := 0
 var _lod_delta := 0.0
 var outfit_id := "dante_classic"
 var outfit_material: ShaderMaterial
@@ -150,16 +150,18 @@ func _physics_process(delta: float) -> void:
 
 func _stall_physics_tick(delta: float) -> void:
 	var lod_scale := 1.0
-	if not is_player and not controlled_automatically:
+	if not is_player and (not controlled_automatically or get_meta(&"civilian_reaction_lod", false)):
 		var view_camera := get_viewport().get_camera_3d()
 		if view_camera != null and view_camera.global_position.distance_squared_to(global_position) > LOD_DISTANCE * LOD_DISTANCE:
-			_lod_frame += 1
 			_lod_delta += delta
-			if _lod_frame < LOD_STRIDE: return
+			# Identidades estáveis distribuem a multidão; o primeiro tiro não
+			# sincroniza todos os move_and_slide no mesmo terceiro passo físico.
+			if (Engine.get_physics_frames() + identity) % LOD_STRIDE != 0: return
 			lod_scale = _lod_delta / maxf(delta, 0.0001)
 			delta = _lod_delta
-		_lod_frame = 0
-		_lod_delta = 0.0
+	# Inclui a saída do LOD por outro dono de controle/câmera próxima; não deixa
+	# delta antigo reaparecer quando esse civil voltar a ficar distante.
+	_lod_delta = 0.0
 	var direction := Vector3.ZERO
 	var target_speed := speed
 	if controlled_automatically:
@@ -264,7 +266,7 @@ func _stall_physics_tick(delta: float) -> void:
 ## locomoção armada. A entrada/saída usa o deslocamento REAL: soltar o comando,
 ## bater num sólido ou encerrar um deslocamento automático converge para a
 ## mesma postura parada em vez de congelar o último passo.
-func _pose_locomotion(direction: Vector3, target_speed: float, displacement: Vector3, actual_speed: float, delta: float = 1.0 / 60.0) -> void:
+func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Vector3, actual_speed: float, delta: float = 1.0 / 60.0) -> void:
 	_pose_delta = delta
 	_idle_clock += delta
 	var moving := actual_speed > MOVING_SPEED_EPSILON
@@ -358,8 +360,8 @@ func _pose_cycle(clip: String, normalized_phase: float, start: float) -> void:
 func _mirror_current_pose() -> void:
 	var original := _capture_pose()
 	for bone in original.size():
-		var name := skeleton.get_bone_name(bone)
-		var other := name.replace("Left", "Right") if name.begins_with("Left") else name.replace("Right", "Left")
+		var entry_name := skeleton.get_bone_name(bone)
+		var other := entry_name.replace("Left", "Right") if entry_name.begins_with("Left") else entry_name.replace("Right", "Left")
 		var source: int = _combat_bones.get(other, bone)
 		var q: Quaternion = original[source][1]
 		var rest := _combat_rests[source].basis.get_rotation_quaternion()
@@ -861,12 +863,12 @@ func _point_combat_bone(bone: int, child: int, target: Vector3) -> void:
 ## back into the next solve. Animation rotation tracks do not reset that scale;
 ## over hundreds of frames it grows until the sleeves span the screen.
 ## Keep authored translations/scales and convert only orthonormal rotations.
-func _set_combat_bone_rotation(bone: int, global_rotation: Basis) -> void:
+func _set_combat_bone_rotation(bone: int, p_global_rotation: Basis) -> void:
 	var parent := skeleton.get_bone_parent(bone)
 	var parent_rotation := Basis.IDENTITY
 	if parent >= 0:
 		parent_rotation = skeleton.get_bone_global_pose(parent).basis.orthonormalized()
-	var local_rotation := parent_rotation.transposed() * global_rotation.orthonormalized()
+	var local_rotation := parent_rotation.transposed() * p_global_rotation.orthonormalized()
 	skeleton.set_bone_pose_rotation(bone, local_rotation.get_rotation_quaternion().normalized())
 
 func combat_palm_position(side: String) -> Vector3:
@@ -924,8 +926,8 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	# Alvo marcado (ele ou um ancestral) não sofre dano por nenhum caminho direto.
 	if PROTECTION.is_protected(self): return
 	if is_player:
-		var gameplay = get_parent().get("gameplay")
-		if gameplay: gameplay.damage_player(amount)
+		var branch_gameplay = get_parent().get("gameplay")
+		if branch_gameplay: branch_gameplay.damage_player(amount)
 		return
 	var vehicle_source: bool = is_instance_valid(source) and source.has_method("is_player_damage_source") and source.is_player_damage_source()
 	health = maxf(0,health-amount)

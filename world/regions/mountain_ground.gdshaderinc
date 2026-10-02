@@ -55,11 +55,11 @@ float ground_fine(vec2 local_xz) {
 float ground_cover(vec2 p, float fine, float snow_amount) {
 	float macro = ground_fbm(p, 32.0);
 	float mid = ground_fbm(p + 91.0, 8.0);
-	// Borda de neve nítida: transição larga parecia nuvem borrada.
-	float drift = smoothstep(0.50, 0.53, macro * 0.6 + mid * 0.4 + (fine - 0.5) * 0.05);
+	// Uma faixa de mistura evita manchas com contorno binário na câmera do jogo.
+	float drift = smoothstep(0.44, 0.60, macro * 0.6 + mid * 0.4 + (fine - 0.5) * 0.05);
 	float cover = clamp(max(snow_amount, drift * 0.85), 0.0, 1.0);
 	// Terra aparecendo pela neve em pontos.
-	cover *= 1.0 - smoothstep(0.70, 0.73, mid + (fine - 0.5) * 0.06) * 0.8;
+	cover *= 1.0 - smoothstep(0.64, 0.80, mid + (fine - 0.5) * 0.06) * 0.8;
 	return cover;
 }
 

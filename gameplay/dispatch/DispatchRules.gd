@@ -36,8 +36,11 @@ const SHOT_AIM_SECONDS := 0.9
 const SHOT_COOLDOWN := 0.8
 const SHOT_BURST_COOLDOWN := 3.0
 const SHOT_DAMAGE := 5.0
-const SPEED_PATROL := 235.0 / PX
-const SPEED_FAST := 255.0 / PX
+## 2026-10-01: a viatura rodava a 14,7 m/s (patrulha) e 15,9 m/s (interceptor) enquanto os carros do jogador chegam a
+## 25-40 m/s (`max_speed` 400-640 px/s): ela nunca alcançava quem fugia e a perseguição parecia lenta. Antes: 235/16 e 255/16.
+const SPEED_PATROL := 21.0
+const SPEED_FAST := 25.0
+const SPEED_MOTORCYCLE := 24.0
 const FORMATION_SPACING: Array[float] = [130.0 / PX, 175.0 / PX, 175.0 / PX, 260.0 / PX, 360.0 / PX]
 const FORMATION_LEAD: Array[float] = [0.22, 0.42, 0.42, 0.70, 0.95]
 const FORMATION_FLANK := 32.0 / PX
@@ -136,7 +139,7 @@ static func officer_tier_for(level: int, variant: String) -> int:
 
 static func speed_cap(variant: String) -> float:
 	if variant == "tank": return 10.0
-	if variant == "motorcycle": return 19.0
+	if variant == "motorcycle": return SPEED_MOTORCYCLE
 	return SPEED_FAST if variant == "interceptor" else SPEED_PATROL
 
 ## New special vehicles share the existing live-unit budget. The first response

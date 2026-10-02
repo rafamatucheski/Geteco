@@ -56,17 +56,17 @@ func build() -> void:
 	for index in 6:
 		var definition: Dictionary = controller.urban_transit.definitions[index]
 		if definition.get("deleted",false): continue
-		var gate := station_point(definition,Vector2(-121,27))
-		var along := (station_point(definition,Vector2(-105,27))-gate).normalized()
-		var normal := (station_point(definition,Vector2(-121,43))-gate).normalized()
-		var berth := gate+normal*2.3+along*2.7
+		var local_gate := station_point(definition,Vector2(-121,27))
+		var along := (station_point(definition,Vector2(-105,27))-local_gate).normalized()
+		var normal := (station_point(definition,Vector2(-121,43))-local_gate).normalized()
+		var berth := local_gate+normal*2.3+along*2.7
 		berth.y = 0
 		var offset := route.get_closest_offset(berth)
 		var pose: Transform3D = path_poses.front(offset)
 		if pose.origin.distance_to(berth)>.65 or (-pose.basis.z).dot(-along)<.98:
 			failure="Estação fora da faixa ou invertida: "+str(definition.name)
 			continue
-		stops.append({"id":index,"offset":offset,"definition":definition,"gate":gate,"inside":station_point(definition,Vector2(-121,12)),"berth":berth})
+		stops.append({"id":index,"offset":offset,"definition":definition,"gate":local_gate,"inside":station_point(definition,Vector2(-121,12)),"berth":berth})
 	stops.sort_custom(func(a,b): return a.offset<b.offset)
 	if stops.size()<2: failure="Menos de duas estações alinhadas"; route=null; return
 	for index in stops.size():
@@ -77,6 +77,8 @@ func build() -> void:
 		bus.name = "Biarticulado510_%d" % index
 		add_child(bus)
 		bus.path_poses = path_poses
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		bus.service_stop = index*stops.size()/2
 		bus.set_route(route,float(stops[bus.service_stop].offset))
 		bus._apply_poses(path_poses.at(bus.route_distance),false)

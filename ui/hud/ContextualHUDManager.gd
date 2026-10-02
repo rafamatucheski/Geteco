@@ -9,7 +9,7 @@ var money: VBoxContainer
 var weapon: VBoxContainer
 var interaction_row: PanelContainer
 var objective_card: PanelContainer
-var notification: PanelContainer
+var feedback_card: PanelContainer
 var minimap: Control
 var backpack: Button
 var backpack_hint: Label
@@ -66,7 +66,7 @@ func _ready() -> void:
 	interaction_key=interaction_row.key; interaction_label=interaction_row.caption
 	_notifications=VBoxContainer.new(); _notifications.add_theme_constant_override("separation",8); root_control.add_child(_notifications)
 	objective_card=preload("res://ui/hud/NotificationUI.gd").new(); objective_card.name="ObjectiveUpdate"; _notifications.add_child(objective_card); objective_label=objective_card.message
-	notification=preload("res://ui/hud/NotificationUI.gd").new(); notification.name="Feedback"; _notifications.add_child(notification); notice_label=notification.message
+	feedback_card=preload("res://ui/hud/NotificationUI.gd").new(); feedback_card.name="Feedback"; _notifications.add_child(feedback_card); notice_label=feedback_card.message
 	speed_label=STYLE.label("",20); speed_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; root_control.add_child(speed_label)
 	var help := Label.new(); help.name="Help"; help.hide(); add_child(help)
 	get_viewport().size_changed.connect(_layout); _layout()
@@ -116,7 +116,7 @@ func _sync_channels() -> void:
 	elif float(_driving.status_time)>0: feedback=str(_driving.status).strip_edges()
 	if feedback!=_last_notice:
 		_last_notice=feedback
-		if not feedback.is_empty(): notification.present(feedback)
+		if not feedback.is_empty(): feedback_card.present(feedback)
 	var action_text := str(_session.prompt.text).strip_edges()
 	var action := "interact"
 	if action_text.is_empty() and float(_driving.status_time)<=0:
@@ -157,11 +157,11 @@ func _layout() -> void:
 	if not is_instance_valid(root_control): return
 	var view := get_viewport().get_visible_rect().size
 	var margin := STYLE.SAFE_MARGIN
-	_anchor(player_status,Control.PRESET_TOP_LEFT,Rect2(margin,margin,172,0))
+	_anchor(player_status,Control.PRESET_TOP_LEFT,Rect2(margin,margin,200,0))
 	_anchor(_upper_right,Control.PRESET_TOP_RIGHT,Rect2(-224-margin,margin,224,0))
 	_anchor(_lower_right,Control.PRESET_BOTTOM_RIGHT,Rect2(-264-margin,-margin-112,264,112))
 	_anchor(minimap,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y,minimap.size.x,minimap.size.y))
-	_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(margin,122,minf(320,view.x-48),0))
+	_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(margin,150,minf(320,view.x-48),0))
 	_anchor(speed_label,Control.PRESET_BOTTOM_RIGHT,Rect2(-220-margin,-margin-148,220,30))
 	var touch := OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
 	if touch:

@@ -90,7 +90,7 @@ static func extract_proper_name(building_id: String, raw_name: String = "") -> S
 	# Format to Title Case for human elegance
 	return clean.capitalize()
 
-static func create_sign_3d(proper_name: String, size: Vector2, depth: float = 0.08, frame_mat: StandardMaterial3D = null, text_color: Color = Color("f5eedb")) -> Node3D:
+static func create_sign_3d(proper_name: String, size: Vector2, depth: float = 0.08, frame_mat: StandardMaterial3D = null) -> Node3D:
 	if proper_name.is_empty():
 		return null
 	

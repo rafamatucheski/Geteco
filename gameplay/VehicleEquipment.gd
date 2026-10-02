@@ -426,6 +426,8 @@ func _refresh() -> void:
 	if not is_instance_valid(car): return
 	var occupied: bool = car.controlled and car.health > 0
 	# V1 piscava os faróis junto com o alarme, a cada ~1/6 s.
+	# Whole clock buckets; preserve integer precision and cadence.
+	@warning_ignore("integer_division")
 	var alarm_blink: bool = alarm_remaining > 0 and car.health > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
 	var was_auto := auto_lit
 	auto_lit = night_auto_enabled and car.health > 0 and npc_driven() and is_dark()
@@ -442,7 +444,7 @@ func _refresh() -> void:
 	for item in lens_materials:
 		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
 		item.material.emission_enabled = lit and not broken
-		item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0
+		item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0.0
 	var markers_lit := 1 if lit and car.health > 0 else 0
 	if markers_lit != _markers_lit:
 		_markers_lit = markers_lit
@@ -473,6 +475,8 @@ func _refresh() -> void:
 			alarm_audio.play()
 		elif not alarming: alarm_audio.stop()
 	var flashing: bool = (sounding or alarming) and not beacons.is_empty()
+	# Whole clock buckets; preserve integer precision and cadence.
+	@warning_ignore("integer_division")
 	var phase := int(Time.get_ticks_msec() / 160) % 2 if flashing else -1
 	if phase == _phase: return
 	_phase = phase
@@ -485,7 +489,7 @@ func _refresh() -> void:
 		beacon.material.albedo_color = beacon.color.lerp(Color.WHITE, .55) if active else beacon.color
 		beacon.material.emission = beacon.color
 		beacon.material.emission_enabled = active
-		beacon.material.emission_energy_multiplier = 2.8 if active else 0
+		beacon.material.emission_energy_multiplier = 2.8 if active else 0.0
 
 func receive_impact(local_point: Vector3, severity: float) -> void:
 	if severity < 3.0: return

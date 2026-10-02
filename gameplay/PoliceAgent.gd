@@ -1,5 +1,6 @@
 extends CharacterBody3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const NAVIGATION_QUEUE := preload("res://gameplay/navigation/PoliceNavigationQueue.gd")
 
 const MODEL = preload("res://gameplay/PoliceModel.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
@@ -48,6 +49,10 @@ var _tactic_speed := 3.3
 var _tactic_hostile := false
 var _tactic_clock := 0.0
 var tactic_name := "approach"
+var _navigation_queue: Node
+var _navigation_waiting := false
+var _navigation_generation := 0
+var _navigation_replan_interval := 1.2
 
 const AIM_SECONDS := 0.65
 const ATTACK_RANGE := 360.0 / 16.0
@@ -81,6 +86,9 @@ func _ready() -> void:
 	visual.equip(weapon_id)
 	add_child(preload("res://gameplay/PoliceOcclusionSilhouette.gd").new())
 
+func _exit_tree() -> void:
+	_cancel_navigation()
+
 func _physics_process(delta: float) -> void:
 	var began := STALL_WORK.begin()
 	_stall_physics_tick(delta)
@@ -109,7 +117,9 @@ func _stall_physics_tick(delta: float) -> void:
 		if access.is_finite(): approach_exterior_access(access, delta)
 		elif wanted and str(get_meta("police_place_id", "")).is_empty() and last_known.is_finite() and global_position.distance_to(last_known) < 120.0:
 			approach_exterior_access(last_known, delta)
-		else: _move(Vector3.ZERO, delta)
+		else:
+			_cancel_navigation()
+			_move(Vector3.ZERO, delta)
 		return
 	var hostile := _force_authorized()
 	if sensor <= 0:
@@ -124,6 +134,7 @@ func _stall_physics_tick(delta: float) -> void:
 			navigation.clear()
 			nav_index = 0
 	if not wanted or not controller.last_known_valid:
+		_cancel_navigation()
 		sees_player = false
 		visible_aim_time = 0.0
 		_move(Vector3.ZERO, delta)
@@ -143,9 +154,8 @@ func _stall_physics_tick(delta: float) -> void:
 		_tactic_hold = bool(plan.hold)
 		_tactic_speed = float(plan.speed)
 		tactic_name = str(plan.doctrine)
-	if repath <= 0.0:
-		repath = 1.2
-		_plan_navigation(_tactic_goal)
+	if repath <= 0.0 and _plan_navigation(_tactic_goal):
+		repath = _navigation_replan_interval
 	var distance := Vector2(global_position.x - last_known.x, global_position.z - last_known.z).length()
 	var destination: Vector3 = navigation[-1] if not navigation.is_empty() else global_position
 	if nav_index < navigation.size():
@@ -200,22 +210,58 @@ func _interior_pursuit() -> Node3D:
 	var manager: Variant = controller.get_meta("police_interior_pursuit")
 	return manager as Node3D if is_instance_valid(manager) else null
 
-func _plan_navigation(goal: Vector3) -> void:
-	navigation.clear()
-	nav_index = 0
+func _plan_navigation(goal: Vector3) -> bool:
+	_navigation_replan_interval = 1.2
 	if _tactics.segment_clear(self, global_position, goal):
-		navigation.append(goal)
-		return
+		_cancel_navigation()
+		navigation = PackedVector3Array([goal])
+		nav_index = 0
+		return true
 	var interior := _interior_pursuit()
 	if interior != null and not str(get_meta("police_place_id", "")).is_empty():
+		_cancel_navigation()
 		navigation = interior.path_for(self, goal)
 	else:
-		navigation = controller.find_path(global_position, goal)
+		if not is_instance_valid(_navigation_queue) or _navigation_queue.get("gameplay") != controller:
+			_cancel_navigation()
+			_navigation_queue = controller.get_node_or_null("PoliceNavigationQueue")
+			if _navigation_queue == null:
+				_navigation_queue = NAVIGATION_QUEUE.new()
+				_navigation_queue.name = "PoliceNavigationQueue"
+				_navigation_queue.gameplay = controller
+				controller.add_child(_navigation_queue)
+		_navigation_waiting = true
+		var response: Dictionary = _navigation_queue.request(self, goal)
+		# Keep a previously validated route while waiting. With no route, callers
+		# hold position; a pending search never permits movement through a solid.
+		if not response.ready: return false
+		_navigation_waiting = false
+		navigation = response.path
+		if response.get("refresh", false): _navigation_replan_interval = .15
+	nav_index = 0
 	# An empty path means a physically blocked route, not permission to walk
 	# directly through the obstacle while a future replanning is pending.
 	if navigation.is_empty(): navigation.append(global_position)
+	else:
+		# The officer can keep moving on its old route while this request runs.
+		# Skip the now-passed prefix only when a physical sweep admits that step.
+		var nearest := 0
+		var distance := global_position.distance_squared_to(navigation[0])
+		for index in range(1, navigation.size()):
+			var candidate := global_position.distance_squared_to(navigation[index])
+			if candidate < distance:
+				distance = candidate
+				nearest = index
+		if nearest > 0 and _tactics.segment_clear(self, global_position, navigation[nearest]): nav_index = nearest
+	return true
+
+func _cancel_navigation() -> void:
+	_navigation_waiting = false
+	_navigation_generation += 1
+	if is_instance_valid(_navigation_queue): _navigation_queue.cancel(self)
 
 func reset_pursuit_context(place_id: String, known_point: Vector3) -> void:
+	_cancel_navigation()
 	set_meta("police_place_id", place_id)
 	last_known = known_point
 	sees_player = false
@@ -231,9 +277,8 @@ func reset_pursuit_context(place_id: String, known_point: Vector3) -> void:
 func approach_exterior_access(point: Vector3, delta: float) -> void:
 	sees_player = false
 	visible_aim_time = 0.0
-	if repath <= 0.0:
-		repath = 1.2
-		_plan_navigation(point)
+	if repath <= 0.0 and _plan_navigation(point):
+		repath = _navigation_replan_interval
 	var destination: Vector3 = navigation[-1] if not navigation.is_empty() else global_position
 	if nav_index < navigation.size():
 		destination = navigation[nav_index]
@@ -246,8 +291,8 @@ func approach_exterior_access(point: Vector3, delta: float) -> void:
 	_track_progress(destination, move, delta)
 	_move(move, delta)
 
-func _update_arrest(visible: bool, distance: float, hostile: bool, delta: float) -> void:
-	if hostile or not _can_arrest() or not visible or controller.health <= 0:
+func _update_arrest(p_visible: bool, distance: float, hostile: bool, delta: float) -> void:
+	if hostile or not _can_arrest() or not p_visible or controller.health <= 0:
 		_reset_arrest()
 		return
 	if distance > 220.0/16.0:
@@ -357,6 +402,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	health = maxf(0, health - amount)
 	if health <= 0:
 		dead = true
+		_cancel_navigation()
 		visual.flash_time = 0.0
 		visual.muzzle_flash_3d.hide()
 		velocity = Vector3.ZERO

@@ -11,7 +11,8 @@ func run():
 	var world=load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for i in 240:
+	var startup_deadline := Time.get_ticks_msec()+60000
+	while Time.get_ticks_msec() < startup_deadline:
 		await physics_frame
 		if world.session!=null and world.session.ready_for_play: break
 	var session=world.session

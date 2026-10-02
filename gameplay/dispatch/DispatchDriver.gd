@@ -247,7 +247,7 @@ func _stall_tick(delta: float) -> void:
 		vehicle.throttle_input = clampf((desired - vehicle.speed) * 0.9, 0.0, 1.0)
 	_track_stall(delta, desired, alpha)
 
-func _brake(delta: float) -> void:
+func _brake(_delta: float) -> void:
 	vehicle.throttle_input = 0.0
 	vehicle.steer_input = 0.0
 	vehicle.brake_input = true

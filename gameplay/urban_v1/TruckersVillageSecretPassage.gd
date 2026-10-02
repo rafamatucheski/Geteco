@@ -443,7 +443,7 @@ func _show_keypad() -> void:
 	grid.columns = 3
 	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.column.add_child(grid)
-	var first: Button
+	var first: Button = null
 	for value in ["1","2","3","4","5","6","7","8","9","⌫","0","OK"]:
 		var button := Button.new()
 		button.text = value
@@ -520,7 +520,7 @@ func _transfer_to_cellar() -> void:
 	if _transfer_busy: return
 	_transfer_busy = true
 	_surface_camera = get_viewport().get_camera_3d()
-	var player: Node3D = session.world.player
+
 	_lock_player(true)
 	_set_player_position(_cellar_global(CELLAR_SPAWN))
 	_set_cellar_occupied(true)

@@ -12,6 +12,7 @@ const ANGLES := [0.0, 35.0, -35.0, 70.0, -70.0, 110.0, -110.0, 150.0, -150.0, 18
 const DEDUPE_DISTANCE := 1.0
 
 var threats: Array[Dictionary] = []
+var revision := 0
 
 func remember(origin: Vector3, end: Vector3) -> void:
 	origin.y = 0.0
@@ -19,16 +20,21 @@ func remember(origin: Vector3, end: Vector3) -> void:
 	for threat in threats:
 		# Rajada automática repete a mesma origem a cada disparo: renova em vez de empilhar.
 		if threat.origin.distance_to(origin) < DEDUPE_DISTANCE:
+			# Mudar a mira da mesma rajada não reinicia uma busca pendente.
+			# A próxima busca/camada de candidatos já usa a linha de tiro renovada.
 			threat.end = end
 			threat.age = 0.0
 			return
 	threats.append({"origin": origin, "end": end, "age": 0.0})
+	revision += 1
 	while threats.size() > MAX_THREATS: threats.pop_front()
 
 func tick(delta: float) -> void:
 	for index in range(threats.size() - 1, -1, -1):
 		threats[index].age += delta
-		if threats[index].age > THREAT_LIFE: threats.remove_at(index)
+		if threats[index].age > THREAT_LIFE:
+			threats.remove_at(index)
+			revision += 1
 
 func is_empty() -> bool: return threats.is_empty()
 
@@ -51,30 +57,61 @@ func away_from_threats(position: Vector3) -> Vector3:
 	if away.length_squared() < 0.0001: return Vector3.ZERO
 	return away.normalized()
 
-## Melhor ponto livre (raio de mundo+veículos limpo) ou ZERO. `avoid` exclui a direção que já travou.
+## Compatibilidade síncrona; o diretor usa begin_escape/step_escape com orçamento
+## compartilhado. A ordem por score permite parar no primeiro raio livre sem
+## mudar a preferência pelo maior comprimento nem o desempate original.
 func choose_escape(body: Node3D, blocked: Array[Vector3] = []) -> Vector3:
-	var away := away_from_threats(body.global_position)
-	if away == Vector3.ZERO: return Vector3.ZERO
-	var space := body.get_world_3d().direct_space_state
-	var from := body.global_position + Vector3.UP * 0.9
-	var best := Vector3.ZERO
-	var best_score := INF
-	for length in LENGTHS:
-		for angle in ANGLES:
-			var direction := away.rotated(Vector3.UP, deg_to_rad(angle))
-			var to: Vector3 = from + direction * length
-			var query := PhysicsRayQueryParameters3D.create(from, to, 1 | 4)
-			query.exclude = [body.get_rid()]
-			if not space.intersect_ray(query).is_empty(): continue
-			var point: Vector3 = body.global_position + direction * length
-			var score: float = danger_at(point) - length * 0.5
-			for bad in blocked:
-				if direction.dot(bad) > 0.8: score += 40.0
-			if score < best_score:
-				best_score = score
-				best = point
-		if best != Vector3.ZERO: break # comprimento maior livre vence; só encurta se nada coube (V1)
-	return best
+	var search := begin_escape(body, blocked)
+	while not search.done: step_escape(body, search)
+	return search.target
+
+func begin_escape(body: Node3D, blocked: Array[Vector3] = []) -> Dictionary:
+	return {"origin": body.global_position, "away": away_from_threats(body.global_position),
+		"blocked": blocked.duplicate(), "revision": revision, "length_index": 0,
+		"candidates": [], "candidate_index": 0, "done": false, "target": Vector3.ZERO,
+		"query": PhysicsRayQueryParameters3D.create(Vector3.ZERO, Vector3.ZERO, 1 | 4, [body.get_rid()])}
+
+## Um passo faz NO MÁXIMO um raycast. Rejeições antigas não sobrevivem a uma
+## mudança de ameaça ou deslocamento relevante; o raio aceito sempre parte da
+## posição atual, mesmo quando a busca atravessa vários frames.
+func step_escape(body: Node3D, search: Dictionary) -> int:
+	if search.done: return 0
+	if search.revision != revision or body.global_position.distance_squared_to(search.origin) > 1.0:
+		var restarted := begin_escape(body, search.blocked)
+		search.clear()
+		search.merge(restarted)
+	if search.away == Vector3.ZERO:
+		search.done = true
+		return 0
+	if search.candidates.is_empty(): _rank_candidates(search)
+	var candidate: Dictionary = search.candidates[search.candidate_index]
+	var point: Vector3 = candidate.point
+	var query: PhysicsRayQueryParameters3D = search.query
+	query.from = body.global_position + Vector3.UP * 0.9
+	query.to = Vector3(point.x, query.from.y, point.z)
+	if body.get_world_3d().direct_space_state.intersect_ray(query).is_empty():
+		search.target = Vector3(point.x, body.global_position.y, point.z)
+		search.done = true
+		return 1
+	search.candidate_index += 1
+	if search.candidate_index >= search.candidates.size():
+		search.length_index += 1
+		search.candidate_index = 0
+		search.candidates.clear()
+		if search.length_index >= LENGTHS.size(): search.done = true
+	return 1
+
+func _rank_candidates(search: Dictionary) -> void:
+	var length: float = LENGTHS[search.length_index]
+	for index in ANGLES.size():
+		var direction: Vector3 = search.away.rotated(Vector3.UP, deg_to_rad(ANGLES[index]))
+		var point: Vector3 = search.origin + direction * length
+		var score := danger_at(point) - length * 0.5
+		for bad in search.blocked:
+			if direction.dot(bad) > 0.8: score += 40.0
+		search.candidates.append({"point": point, "score": score, "order": index})
+	search.candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return a.order < b.order if a.score == b.score else a.score < b.score)
 
 static func _lane_distance(point: Vector3, a: Vector3, b: Vector3) -> float:
 	var segment := b - a

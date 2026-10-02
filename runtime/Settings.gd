@@ -124,6 +124,8 @@ func _apply_windowed() -> void:
 	if usable.size.x > 0: target = Vector2i(mini(target.x, usable.size.x), mini(target.y, usable.size.y))
 	if DisplayServer.window_get_size() != target:
 		DisplayServer.window_set_size(target)
+		# Window coordinates are integer pixels; preserve centering truncation.
+		@warning_ignore("integer_division")
 		DisplayServer.window_set_position(usable.position + (usable.size - target) / 2)
 
 ## Brilho do mundo: chamado pelo ProductionWorld no ambiente que ele cria.

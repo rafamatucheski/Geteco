@@ -111,7 +111,7 @@ static func _fence_panel(v: Node3D,at: Vector3,size: Vector3) -> void:
 	var count := ceili(length/1.55)
 	for i in count+1:
 		var offset := -length*.5+length*float(i)/float(count)
-		var p := at+Vector3(offset if along_x else 0,.63,0 if along_x else offset)
+		var p := at+Vector3(offset if along_x else 0.0,.63,0.0 if along_x else offset)
 		v._box(p,Vector3(.12,1.26,.12),"786c50")
 	for y in [.36,.89]:
 		v._box(at+Vector3(0,y,0),Vector3(size.x,.12,size.z),"817456")

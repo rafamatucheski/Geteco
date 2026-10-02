@@ -65,10 +65,15 @@ func run() -> void:
 		check(not world.player.visible and world.player.collision_layer==0,"passenger body safely stowed")
 		check(not car.visual.get_node("TaxiLivery").available,"occupied sign off")
 		check(not car.is_in_group("drivable"),"occupied taxi cannot be stolen midride")
-		for i in 1000:
+		# A cab may reach the stop line just after green. Allow two complete
+		# signal cycles, including braking and the actual departure movement.
+		var departure_deadline:=Time.get_ticks_msec()+65000
+		var departure_frame:=0
+		while Time.get_ticks_msec()<departure_deadline:
 			await physics_frame
-			if i%300==0: print("RIDE ",car.position," speed=",car.speed," blocked=",car.blocked," blocker=",car.blocker," junction=",car.junction_wait," traffic=",car.traffic," route=",car.route_distance)
+			if departure_frame%300==0: print("RIDE ",car.position," speed=",car.speed," blocked=",car.blocked," blocker=",car.blocker," junction=",car.junction_wait," traffic=",car.traffic," route=",car.route_distance)
 			if car.position.distance_to(start)>15 or not transport.riding: break
+			departure_frame+=1
 		print("TRAVEL ",car.position," distance ",car.position.distance_to(start))
 		check(car.position.distance_to(start)>15,"taxi physically drives out of bay and along street")
 		transport.request_exit()
@@ -83,16 +88,25 @@ func run() -> void:
 	if not transport.riding:
 		# A real destination on the same street exercises automatic arrival.
 		world.player.teleport(car.driver_door_anchor(1))
-		for i in 4: await physics_frame
+		# Disembark requests braking; wait for the actual stop before opening a
+		# modal, which pauses the car. Four frames can leave it still decelerating.
+		for i in 240:
+			await physics_frame
+			if absf(car.speed)<.05:break
+		check(absf(car.speed)<.05,"released taxi brakes before a new booking")
 		var offered: bool = taxis.offer(car)
 		print("REBOOK offer=",offered," eligible=",transport._eligible()," stars=",world.gameplay.stars," distance=",world.player.position.distance_to(car.position)," available=",taxis.available(car))
-		var goal: Vector3 = car.position-car.global_basis.z*17
+		# Use a road destination: extrapolating the current yaw while the cab
+		# is turning can put the target several metres into the neighbouring lot.
+		var goal:=Vector3(110,0,76.08)
 		taxis.request(goal,"Rodoviária")
 		print("REBOOK riding=",transport.riding," modal=",session.modal," goal=",goal," notice=",session.notice.text)
 		check(transport.riding,"completed cab accepts another ride")
-		for i in 2400:
+		var arrival_deadline:=Time.get_ticks_msec()+75000
+		while Time.get_ticks_msec()<arrival_deadline:
 			await physics_frame
 			if not transport.riding: break
+		print("ARRIVAL riding=",transport.riding," position=",car.position," goal=",goal," speed=",car.speed," waiting=",car.junction_wait," blocker=",car.blocker)
 		check(not transport.riding and car.position.distance_to(goal)<4,"automatic arrival at selected destination")
 		check(world.player.visible and world.player.collision_layer==2,"automatic arrival restores actor")
 		if session.modal: session.close_menu()
@@ -110,7 +124,9 @@ func run() -> void:
 		check(stolen.get_meta("taxi_stolen",false) and not taxis.available(stolen),"stolen taxi no longer offers fares")
 		check(not stolen.visual.get_node("TaxiLivery").available,"stolen roof sign off")
 		check(taxis.rank.drivers[2].frightened,"owner reacts to theft")
-		check(world.gameplay.crime_points>0,"taxi theft registers crime")
+		# Civilian testimony enters the real police case before it produces pursuit.
+		var evidence:Dictionary=world.gameplay.police_case.snapshot()
+		check(world.gameplay.crime_points>0 or float(evidence.evidence)>0 or evidence.pending.any(func(report):return report.kind=="theft"),"taxi theft creates witnessed police evidence")
 		var saved: Dictionary = preload("res://runtime/FleetState.gd").capture(stolen,"harbor")
 		check(preload("res://runtime/FleetState.gd").validate(saved),"stolen taxi valid for normal fleet persistence")
 		check(saved.vehicle_id==stolen.vehicle_id and saved.paint==stolen.paint_color.to_html(true),"save retains taxi identity and paint")

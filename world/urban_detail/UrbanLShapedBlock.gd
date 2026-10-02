@@ -73,12 +73,12 @@ func build() -> void:
 	
 	# Facade proper name signage on the street front
 	if not proper_name.is_empty():
-		var sign := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(wing_w * 0.8, 3.8), 0.65), 0.08, trim_mat)
-		if sign != null:
-			sign.position = Vector3(wing_center_x, 3.8, half_d + 0.08)
-			visuals_root.add_child(sign)
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(wing_w * 0.8, 3.8), 0.65), 0.08, trim_mat)
+		if sign_node != null:
+			sign_node.position = Vector3(wing_center_x, 3.8, half_d + 0.08)
+			visuals_root.add_child(sign_node)
 
-func _build_courtyard_loading_dock(dock_wall_x: float, dock_center_z: float, dock_d: float) -> void:
+func _build_courtyard_loading_dock(dock_wall_x: float, dock_center_z: float, _dock_d: float) -> void:
 	var dark_mat := UrbanMaterials.metal_dark()
 	var wood_mat := UrbanMaterials.wood_door_green()
 	
@@ -94,7 +94,7 @@ func _build_courtyard_loading_dock(dock_wall_x: float, dock_center_z: float, doc
 	# Overhead loading hoist beam projecting into courtyard
 	add_mesh_box(visuals_root, "HoistBeam", Vector3(dock_wall_x - 1.1, dock_h + 0.5, dock_center_z), Vector3(2.2, 0.15, 0.15), dark_mat)
 
-func _build_loft_windows(main_center_z: float, main_d: float, wing_center_x: float, wing_center_z: float, wing_w: float, wing_d: float) -> void:
+func _build_loft_windows(_main_center_z: float, _main_d: float, wing_center_x: float, _wing_center_z: float, _wing_w: float, _wing_d: float) -> void:
 	var dark_mat := UrbanMaterials.metal_dark()
 	var glass_mat := UrbanMaterials.glass_window()
 	var trim_mat := UrbanMaterials.trim_stone()

@@ -136,8 +136,8 @@ func _process(delta: float) -> void:
 		alive = true
 		_ages[i] = minf(_ages[i]+delta,SHARD_LIFETIME)
 		var t := _ages[i]
-		var scale := 1.0-smoothstep(.14,SHARD_LIFETIME,t)
+		var local_scale := 1.0-smoothstep(.14,SHARD_LIFETIME,t)
 		var point := _origins[i]+_velocities[i]*t+Vector3.DOWN*5*t*t
-		var basis := Basis(Vector3(1,0,1).normalized(),t*12+i).scaled(Vector3.ONE*scale)
-		shards.multimesh.set_instance_transform(i,Transform3D(basis,point))
+		var local_basis := Basis(Vector3(1,0,1).normalized(),t*12+i).scaled(Vector3.ONE*local_scale)
+		shards.multimesh.set_instance_transform(i,Transform3D(local_basis,point))
 	if not alive: set_process(false)

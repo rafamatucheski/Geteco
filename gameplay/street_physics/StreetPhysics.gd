@@ -145,7 +145,7 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 			gameplay.effects.blood(point, planar.normalized(), 40.0 if lethal else 18.0)
 		if is_instance_valid(blood): blood.spawn_splatter(person.global_position, planar, clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0))
 		if is_instance_valid(tracks): tracks.soak(vehicle, TRACKS.TIRE_DISTANCE)
-		CONTACT_AUDIO.play_contact(vehicle, person, point, closing, "flesh")
+		CONTACT_AUDIO.play_body_impact(vehicle, person, point, closing)
 		if not lethal: play("panic", point, -4.0)
 		if response > 0.01: _shake_if_player(vehicle, (0.18 if lethal else 0.1) * response)
 
@@ -344,7 +344,7 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 	# Centro no tronco: a queda da V2 desloca o corpo ~0,65 m para a frente.
 	blood.spawn_pool(actor.global_position + heading.normalized() * 0.6, dead, actor if _counts_as_corpse(actor) else null, heading)
 	_watch[actor.get_instance_id()] = {"health": float(actor.get("health")), "dead": dead}
-	CONTACT_AUDIO.play_contact(self, actor, actor.global_position, impact_speed, "flesh")
+	# BodyFlight emits ground Foley at actual contact, before restitution.
 
 
 func play_body_thud(point: Vector3, strength: float) -> void:

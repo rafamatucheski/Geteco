@@ -72,24 +72,26 @@ static func texture(kind: String) -> Texture2D:
 			var point := Vector2(x,y)
 			var n := _tile_noise(noise,point)*0.5+0.5
 			var cloud := _tile_noise(broad,point)*0.5+0.5
-			var grain := rng.randf()
-			var value := clampf(0.32+n*0.46+(cloud-0.5)*0.65+(grain-0.5)*0.14,0,1)
+			var local_grain := rng.randf()
+			var value := clampf(0.32+n*0.46+(cloud-0.5)*0.65+(local_grain-0.5)*0.14,0,1)
 			if kind == "snow":
-				value = clampf(0.53+n*0.45+(cloud-0.5)*0.5+(grain-0.5)*0.07,0,1)
+				value = clampf(0.53+n*0.45+(cloud-0.5)*0.5+(local_grain-0.5)*0.07,0,1)
 			elif kind in ["gravel","asphalt"]:
-				value = clampf(n*0.48+grain*0.46,0,1)
+				value = clampf(n*0.48+local_grain*0.46,0,1)
 			elif kind == "stone":
+				# Whole-number grouping/index; preserve integer truncation and precision.
+				@warning_ignore("integer_division")
 				var offset := 16 if (y/20)%2 else 0
 				var seam := posmod(x+offset,32)<1 or y%20<1
-				value = 0.09 if seam else 0.35+n*0.4+(grain-0.5)*0.16
+				value = 0.09 if seam else 0.35+n*0.4+(local_grain-0.5)*0.16
 			elif kind == "packed":
 				# Exposed aggregate mixed with compacted, dirty snow.
 				value = clampf(value+(cloud-0.48)*0.8,0,1)
-				if grain<0.025: value*=0.64
+				if local_grain<0.025: value*=0.64
 			elif kind in ["earth", "forest"]:
 				value = clampf(value + (cloud - 0.5) * 0.9, 0, 1)
-				if grain < 0.09: value *= 0.45
-				if grain > 0.965: value = minf(value + 0.3, 1.0)
+				if local_grain < 0.09: value *= 0.45
+				if local_grain > 0.965: value = minf(value + 0.3, 1.0)
 			heights[y*SIZE+x] = value
 			img.set_pixel(x,y,palette[0].lerp(palette[1],value))
 	var normal := Image.create(SIZE,SIZE,false,Image.FORMAT_RGBA8)

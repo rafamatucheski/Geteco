@@ -2,6 +2,7 @@ extends RefCounted
 ## Bounded response: at most two physical roadblocks, one placement attempt per
 ## 18 seconds and three candidates checked. All positions come from road graph.
 const BLOCK := preload("res://gameplay/police_response/ground/PoliceRoadblock.gd")
+const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const MAX_AGE := 75.0
 var controller: Node3D
 var blocks: Array[Node3D] = []
@@ -44,7 +45,9 @@ func tick(delta: float) -> void:
 	var limit := 2 if gameplay.stars >= 5 else 1
 	if not pursuit or surrendered or blocks.size() >= limit or placement_clock > 0.0: return
 	placement_clock = 18.0
+	var traced := TRACE.begin()
 	try_place(gameplay.last_known)
+	TRACE.end("roadblock.try_place", traced)
 
 func try_place(anchor: Vector3) -> Node3D:
 	if controller.player_position_override != Vector3.INF or not controller.gameplay.state.weapons_allowed(): return null

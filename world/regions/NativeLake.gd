@@ -25,8 +25,6 @@ func _ready() -> void:
 		# sobre o capim ou buraco seco; assim as duas coincidem, e a borda da malha
 		# fica sempre sob o chão.
 		_basin_water()
-		for pair in [[Vector2(7380,-260),Vector2(7350,-235)],[Vector2(7350,-235),Vector2(7310,-207)],[Vector2(7310,-207),Vector2(7285,-157)],[Vector2(7285,-157),Vector2(7260,-115)]]:
-			_strip((pair[0]-Vector2(7000,0))*SCALE,(pair[1]-Vector2(7000,0))*SCALE,30*SCALE,.014,Color("1e5668"))
 	else:
 		_surface("GlacialShore",_points(data.shore),.007,Color("2a241e"))
 		water_polygon = _points(data.shallow)

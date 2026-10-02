@@ -24,6 +24,8 @@ static func mesh(kind: String) -> ArrayMesh:
 	if _meshes.has(kind): return _meshes[kind]
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Destroços reutilizam a malha fora do MultiMeshInstance e de seu override.
+	tool.set_material(material())
 	# Normais facetadas: sem isso o generate_normals suaviza as quinas das
 	# caixas e tudo fica com cara de sabonete.
 	tool.set_smooth_group(-1)

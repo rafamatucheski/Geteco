@@ -38,6 +38,8 @@ func _build_cliff() -> void:
 		ROCK.rock(self,point,Vector3(1.6,0.48,2.0),190+i,Color("647564"))
 	for side in [-1.0,1.0]:
 		for i in 9:
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			var p := Vector3(side*(2.5+float(i%3)*1.08),0.2+float(i/3)*1.35,0.38)
 			var moss := ROCK.rock(self,p,Vector3(0.90,0.14,0.50),210+i,Color("576a46"))
 			moss.name = "MossLedge"
@@ -53,10 +55,10 @@ func _build_water() -> void:
 		water.mesh = ribbon
 		water.rotation.x = PI*0.5
 		water.position = Vector3(-1.75+i*0.57,2.6,0.9+float(i)*0.07)
-		var mat := ShaderMaterial.new()
-		mat.shader = preload("res://assets/regions/source/world/mountain_pass/MountainCascade.gdshader")
-		mat.set_shader_parameter("phase",float(i)*0.31)
-		water.material_override = mat
+		var branch_mat := ShaderMaterial.new()
+		branch_mat.shader = preload("res://assets/regions/source/world/mountain_pass/MountainCascade.gdshader")
+		branch_mat.set_shader_parameter("phase",float(i)*0.31)
+		water.material_override = branch_mat
 		water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(water)
 	var pool := MeshInstance3D.new()

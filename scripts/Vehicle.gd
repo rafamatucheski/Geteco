@@ -129,7 +129,7 @@ func _ready() -> void:
 	hull.size = Vector3(2.08,1.4,4.6)
 	var specification: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(archetype)
 	var variant_scale := Vector3.ONE
-	var variant_lift := 0.0
+
 	if not specification.is_empty():
 		match archetype:
 			"desert_jeep_4x4": variant_scale = Vector3(1.1, 1.05, 1.05)
@@ -372,7 +372,9 @@ func _stall_physics_tick(delta: float) -> void:
 		horizontal_velocity = horizontal_velocity.lerp(forward*speed,1.0-exp(-traction*delta))
 	velocity.x = horizontal_velocity.x
 	velocity.z = horizontal_velocity.z
-	velocity.y = -1.0 if is_on_floor() else velocity.y-20.0*delta
+	# floor_snap_length mantém o apoio, inclusive na descida. Empurrar contra o
+	# piso já apoiado repetia colisões/deslizamentos do mesmo chão a cada passo.
+	velocity.y = 0.0 if is_on_floor() else velocity.y-20.0*delta
 	# Física de rua: atropelamento e mobília derrubável antes de mover (o carro
 	# atravessa o que cedeu); batida carro x carro e deslize depois.
 	stage = STALL_WORK.begin()
@@ -601,9 +603,13 @@ func _junction_gate(length: float, open: bool) -> bool:
 			return false
 		var gap := ahead-half_length-JUNCTIONS.stop_line(junction.key)
 		if junction.has("stop_offset"): gap = _route_ahead(float(junction.stop_offset),length,open)-half_length
-		# Rumo de chegada: trecho da rota logo antes do centro (a curva começa depois).
-		var before := route.sample_baked(offset-6.0 if open else fposmod(offset-6.0,length),true)
-		var at := route.sample_baked(offset-1.0 if open else fposmod(offset-1.0,length),true)
+		# Use the arrival arm resolved with its stop line. The curve tangent
+		# near the centre can already face the cross street during a turn.
+		var heading: Vector3 = junction.get("heading",Vector3.ZERO)
+		if heading.length_squared()<.0001:
+			var before := route.sample_baked(offset-12.0 if open else fposmod(offset-12.0,length),true)
+			var at := route.sample_baked(offset-8.0 if open else fposmod(offset-8.0,length),true)
+			heading = at-before
 		# Não bloquear o cruzamento: com a saída ocupada por carro parado, quem entra
 		# fica no miolo e trava o eixo cruzado; era o nó que começava os engarrafamentos.
 		if gap > -1.5 and _sense_tick: _exit_blocked = _exit_occupied(offset,length,open)
@@ -612,7 +618,7 @@ func _junction_gate(length: float, open: bool) -> bool:
 			junction_gap = gap
 			return true
 		_exit_wait = 0.0
-		if JUNCTIONS.request(junction.key,get_instance_id(),at-before,gap,absf(speed)):
+		if JUNCTIONS.request(junction.key,get_instance_id(),heading,gap,absf(speed)):
 			_release_junction()
 			_held_junction = junction.key
 			_held_offset = offset

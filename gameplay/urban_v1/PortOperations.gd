@@ -294,7 +294,7 @@ func _decode_worker(state: Dictionary) -> Dictionary:
 		if value is Array and value.size()==3: result[key] = Vector3(value[0],value[1],value[2])
 	return result
 
-func _build_launch(index: int) -> Node3D:
+func _build_launch(_index: int) -> Node3D:
 	var root := Node3D.new()
 	_box(root,Vector3(0,.34,0),Vector3(4.2,.65,10),"344e59")
 	_box(root,Vector3(0,.72,0),Vector3(3.8,.12,9.6),"a39170")
@@ -317,6 +317,8 @@ func _build_launch(index: int) -> Node3D:
 	multi.instance_count = 30
 	multi.visible_instance_count = 0
 	for n in 30:
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		multi.set_instance_transform(n,Transform3D(Basis.IDENTITY,Vector3((n%3-1)*.95,1.14+float(n/15)*.78,-3.6+float((n%15)/3)*1.02)))
 	cargo.multimesh = multi
 	cargo.material_override = _material("ab7c49")
@@ -331,6 +333,8 @@ func _build_launch(index: int) -> Node3D:
 	strap_multi.instance_count = 60
 	strap_multi.visible_instance_count = 0
 	for n in 30:
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		var center := Vector3((n%3-1)*.95,1.14+float(n/15)*.78,-3.6+float((n%15)/3)*1.02)
 		strap_multi.set_instance_transform(n*2,Transform3D(Basis.IDENTITY,center+Vector3(-.3,0,0)))
 		strap_multi.set_instance_transform(n*2+1,Transform3D(Basis.IDENTITY,center+Vector3(.3,0,0)))
@@ -354,6 +358,8 @@ func _build_stock() -> MultiMeshInstance3D:
 	multi.mesh.size = Vector3(.85,.75,.85)
 	multi.instance_count = 30
 	for n in 30:
+		# Whole-number grouping/index; preserve integer truncation and precision.
+		@warning_ignore("integer_division")
 		multi.set_instance_transform(n,Transform3D(Basis.IDENTITY,Vector3((n%5-2)*.94,.39+float(n/15)*.78,-float((n%15)/5)*.94)))
 	stock.multimesh = multi
 	stock.material_override = _material("ab7c49")

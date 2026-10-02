@@ -34,10 +34,10 @@ func update(delta: float) -> void:
 		exit_armed = false
 	if handles_place(place):
 		if not is_instance_valid(session.room) or _blocked(): return
-		var offset: Vector3 = session.room.exit_position-session.world.player.global_position
-		offset.y = 0
-		if offset.length() > 1.3: exit_armed = true
-		if exit_armed and offset.length() < .8 and session.world.player.velocity.dot(offset.normalized()) > .3:
+		var branch_offset: Vector3 = session.room.exit_position-session.world.player.global_position
+		branch_offset.y = 0
+		if branch_offset.length() > 1.3: exit_armed = true
+		if exit_armed and branch_offset.length() < .8 and session.world.player.velocity.dot(branch_offset.normalized()) > .3:
 			_leave(place)
 		return
 	if not place.is_empty(): return

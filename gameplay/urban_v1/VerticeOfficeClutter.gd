@@ -116,9 +116,9 @@ func _bin(at: Vector3) -> void:
 		_ball(at+Vector3(_rng.randf_range(-.08,.08),.4+i*.03,_rng.randf_range(-.08,.08)))
 
 func _chair(at: Vector3, yaw: float) -> void:
-	var basis := Basis(Vector3.UP,yaw)
-	_box(at+basis*Vector3(0,.47,0),Vector3(.5,.08,.48),"chair",Vector3(0,yaw,0))
-	_box(at+basis*Vector3(0,.82,.24),Vector3(.48,.6,.06),"chair",Vector3(-.12,yaw,0))
+	var local_basis := Basis(Vector3.UP,yaw)
+	_box(at+local_basis*Vector3(0,.47,0),Vector3(.5,.08,.48),"chair",Vector3(0,yaw,0))
+	_box(at+local_basis*Vector3(0,.82,.24),Vector3(.48,.6,.06),"chair",Vector3(-.12,yaw,0))
 	_cylinder(at+Vector3(0,.24,0),.03,.42,"steel")
 	for i in 5:
 		var arm := Basis(Vector3.UP,yaw+i*TAU/5)

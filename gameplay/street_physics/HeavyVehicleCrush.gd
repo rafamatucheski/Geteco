@@ -153,9 +153,9 @@ static func apply_saved(vehicle: CharacterBody3D, ratio: float) -> void:
 	if not collider is CollisionShape3D: return
 	if not vehicle.has_meta(SAVED_META):
 		if not collider.shape is BoxShape3D: return
-		var visual: Node3D = vehicle.get("visual")
+		var branch_visual: Node3D = vehicle.get("visual")
 		vehicle.set_meta(SAVED_META, {"shape": collider.shape, "position": collider.position,
-			"height": float(vehicle.get("body_height")), "visual_scale": visual.scale if is_instance_valid(visual) else Vector3.ONE,
+			"height": float(vehicle.get("body_height")), "visual_scale": branch_visual.scale if is_instance_valid(branch_visual) else Vector3.ONE,
 			"rotation_shape": vehicle.get("rotation_shape"), "engine_disabled": vehicle.get("engine_disabled") == true})
 	var original: Dictionary = vehicle.get_meta(SAVED_META)
 	var size: Vector3 = original.shape.size

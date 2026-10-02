@@ -6,6 +6,7 @@ class Director extends Node3D:
 	var glass := 0
 	func spawn_litter(_p: Vector3, _d: Vector3) -> void: litter += 1
 	func spawn_glass(_p: Vector3, _d: Vector3) -> void: glass += 1
+	func spawn_geyser(_p: Vector3) -> void: pass
 	func play_prop_hit(_p: Vector3, _f: String, _s: float) -> void: pass
 var failures: Array[String] = []
 func _initialize() -> void: call_deferred("run")
@@ -31,7 +32,7 @@ func run() -> void:
 	root.add_child(director)
 	var chunk := Node3D.new()
 	root.add_child(chunk)
-	for kind in ["trash_can", "news_box", "mailbox"]:
+	for kind in ["trash_can", "news_box", "mailbox", "hydrant"]:
 		var multimesh := MultiMesh.new()
 		multimesh.transform_format = MultiMesh.TRANSFORM_3D
 		multimesh.mesh = kit.mesh(kind)
@@ -47,6 +48,16 @@ func run() -> void:
 		verify(items[0].state == "down", kind + ": marcado como derrubado")
 		var bodies: Array = director.find_children("*", "RigidBody3D", true, false)
 		verify(bodies.size() >= (2 if kind == "trash_can" else 1), kind + ": destroço físico (" + str(bodies.size()) + ")")
+		for body in bodies:
+			for visual: MeshInstance3D in body.find_children("*", "MeshInstance3D", true, false):
+				for surface in visual.mesh.get_surface_count():
+					var material := visual.get_active_material(surface) as StandardMaterial3D
+					verify(material != null, kind + ": destroço mantém material")
+					if material == null: continue
+					if kind == "trash_can":
+						verify(material.albedo_color != Color.WHITE, kind + ": lata e tampa mantêm cor")
+					else:
+						verify(material.vertex_color_use_as_albedo and material.vertex_color_is_srgb, kind + ": preserva cores por vértice em sRGB")
 		var max_x := -INF
 		for i in 240:
 			await physics_frame

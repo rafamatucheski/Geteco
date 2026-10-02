@@ -12,6 +12,8 @@ extends RefCounted
 ## mobília quebrável é registrada em FragileProps3D. Decalques e detalhes de
 ## telhado permanecem apenas visuais.
 
+const CONTEXT_INDEX := preload("res://world/city_look/CityContextIndex.gd")
+const CONTEXT_META := &"city_context_index"
 const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const BRANDS := preload("res://world/city_look/CityBrands.gd")
@@ -92,26 +94,19 @@ static func build_chunk_step(state: Dictionary) -> bool:
 # Contexto: só as vias/prédios que tocam o chunk, para os testes de colisão
 # visual (não pôr lixeira no asfalto nem dentro de prédio) ficarem baratos.
 
-static func _context(region: Node3D, rect: Rect2) -> Dictionary:
-	var grown := rect.grow(16.0)
-	var roads: Array = []
-	var junctions: Array = []
-	var geometry = region.get("harbor_road_geometry")
-	if geometry != null:
-		for road in geometry._roads:
-			var points: PackedVector2Array = road.points
-			var bounds := Rect2(points[0], Vector2.ZERO)
-			for point in points: bounds = bounds.expand(point)
-			if bounds.grow(float(road.width)).intersects(grown): roads.append(road)
-		for junction in geometry._junctions:
-			if grown.has_point(junction.position): junctions.append(junction)
-	var buildings: Array = []
-	for building in region.get("buildings"):
-		var center := Vector2(building.position.x, building.position.z)
-		var footprint := Rect2(center - building.size * 0.5, building.size)
-		if footprint.grow(4.0).intersects(grown): buildings.append({"rect": footprint, "data": building})
-	return {"region": region, "rect": rect, "roads": roads, "junctions": junctions, "buildings": buildings, "geometry": geometry, "lamps": []}
+static func invalidate_context(region: Node) -> void:
+	if region.has_meta(CONTEXT_META): region.remove_meta(CONTEXT_META)
 
+
+static func _context(region: Node3D, rect: Rect2) -> Dictionary:
+	var geometry = region.get("harbor_road_geometry")
+	var index = region.get_meta(CONTEXT_META) if region.has_meta(CONTEXT_META) else null
+	if index == null or not index.matches_geometry(geometry):
+		index = CONTEXT_INDEX.new()
+		index.configure(geometry, region.get("buildings"))
+		region.set_meta(CONTEXT_META, index)
+	var selected: Dictionary = index.query(rect.grow(16.0))
+	return {"region": region, "rect": rect, "roads": selected.roads, "junctions": selected.junctions, "buildings": selected.buildings, "geometry": geometry, "lamps": []}
 
 static func _in_chunk(context: Dictionary, point: Vector2) -> bool:
 	return (context.rect as Rect2).has_point(point)
@@ -243,7 +238,7 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 
 ## Mobília e semáforo viram quebráveis (StreetPhysics). A lente do semáforo é
 ## outra MultiMesh; vai junto como peça irmã, com o mesmo índice de criação.
-static func _register_fragile(chunk: Node3D, batches: Dictionary, built: Dictionary) -> void:
+static func _register_fragile(chunk: Node3D, _batches: Dictionary, built: Dictionary) -> void:
 	for kind in FRAGILE_KINDS:
 		if not built.has(kind): continue
 		var multimesh: MultiMesh = built[kind]
@@ -814,7 +809,7 @@ const ROOF_TINTS := [
 const ROOF_PROPS := [["ac_unit", 0.2], ["vent", 0.14], ["roof_hatch", 0.06], ["antenna", 0.06], ["dish", 0.07], ["pipe_run", 0.06], ["roof_shed", 0.06], ["roof_garden", 0.06], ["roof_chairs", 0.04], ["water_tank", 0.06], ["skylight", 0.07], ["solar_row", 0.05], ["cooling_tower", 0.04]]
 
 
-static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -> void:
+static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Dictionary) -> void:
 	_other_roofs(chunk, batches)
 	var billboards := 0
 	for node in chunk.find_children("*", "Node3D", true, false):
@@ -832,27 +827,27 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 		for slab_index in slabs.size():
 			var roof: AABB = slabs[slab_index]
 			var unit_key := key if slab_index == 0 else "%s|u%d" % [key, slab_index]
-			var roof_y := roof.end.y + 0.012
-			var roof_center := Vector2(roof.get_center().x, roof.get_center().z)
-			var size := Vector2(roof.size.x, roof.size.z)
-			if size.x < 2.8 or size.y < 2.8: continue
+			var branch_roof_y := roof.end.y + 0.012
+			var branch_roof_center := Vector2(roof.get_center().x, roof.get_center().z)
+			var branch_size := Vector2(roof.size.x, roof.size.z)
+			if branch_size.x < 2.8 or branch_size.y < 2.8: continue
 			var xform := building.global_transform
-			var occupied := _roof_obstacles(building, roof_y)
+			var branch_occupied := _roof_obstacles(building, branch_roof_y)
 			# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
-			if key == "Police" and slab_index == 0: POLICE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches)
+			if key == "Police" and slab_index == 0: POLICE.decorate(chunk, building, branch_roof_y, branch_roof_center, branch_size, branch_occupied, batches)
 			# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
 			# por tipo de prédio, sem tocar no material compartilhado da fábrica.
 			var surface := ROOFS.pick(building.building_kind, _roll(unit_key + "tint"))
-			var inset := size - Vector2.ONE * 0.7
-			_push(batches, "roofmat:%d" % surface, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof_center.x, roof_y, roof_center.y)))
+			var inset := branch_size - Vector2.ONE * 0.7
+			_push(batches, "roofmat:%d" % surface, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(branch_roof_center.x, branch_roof_y, branch_roof_center.y)))
 			for patch in 2:
 				if _roll(unit_key + "tar%d" % patch) < 0.5: continue
-				var px := (_roll(unit_key + "tx%d" % patch) - 0.5) * (size.x - 2.5)
-				var pz := (_roll(unit_key + "tz%d" % patch) - 0.5) * (size.y - 2.5)
+				var px := (_roll(unit_key + "tx%d" % patch) - 0.5) * (branch_size.x - 2.5)
+				var pz := (_roll(unit_key + "tz%d" % patch) - 0.5) * (branch_size.y - 2.5)
 				var ps := Vector3(1.5 + _roll(unit_key + "tw%d" % patch) * 3.0, 1, 1.2 + _roll(unit_key + "th%d" % patch) * 2.5)
-				_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(roof_center.x + px, roof_y + 0.004, roof_center.y + pz)))
+				_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(branch_roof_center.x + px, branch_roof_y + 0.004, branch_roof_center.y + pz)))
 			# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
-			var wanted := clampi(int(size.x * size.y / 18.0), 2, 10)
+			var wanted := clampi(int(branch_size.x * branch_size.y / 18.0), 2, 10)
 			var placed := 0
 			for attempt in wanted * 4:
 				if placed >= wanted: break
@@ -867,17 +862,17 @@ static func _rooftops(chunk: Node3D, context: Dictionary, batches: Dictionary) -
 				if kind == "solar_row": radius = 2.1
 				if kind == "skylight": radius = 1.0
 				# Laje estreita (unidade de casa geminada): peça que não cabe fica de fora.
-				if size.x < radius * 2.0 + 0.8 or size.y < radius * 2.0 + 0.8: continue
-				var local := roof_center + Vector2((_roll(akey + "x") - 0.5) * (size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (size.y - 2.0 * radius - 0.6))
+				if branch_size.x < radius * 2.0 + 0.8 or branch_size.y < radius * 2.0 + 0.8: continue
+				var local := branch_roof_center + Vector2((_roll(akey + "x") - 0.5) * (branch_size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (branch_size.y - 2.0 * radius - 0.6))
 				var blocked := false
-				for other in occupied:
+				for other in branch_occupied:
 					if local.distance_to(other.point) < radius + other.radius: blocked = true; break
 				if blocked: continue
-				occupied.append({"point": local, "radius": radius})
+				branch_occupied.append({"point": local, "radius": radius})
 				var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
-				_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, roof_y, local.y)))
+				_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, branch_roof_y, local.y)))
 				placed += 1
-			if slab_index == 0: main_occupied = occupied
+			if slab_index == 0: main_occupied = branch_occupied
 		var roof_y := main_roof.end.y + 0.012
 		var roof_center := Vector2(main_roof.get_center().x, main_roof.get_center().z)
 		var size := Vector2(main_roof.size.x, main_roof.size.z)

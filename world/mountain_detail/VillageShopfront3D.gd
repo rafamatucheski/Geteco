@@ -104,7 +104,7 @@ func build() -> void:
 	
 	# 7. Facade Signage: ONLY PROPER NAME ("Casacos da Vila")
 	# Strictly obeying AGENTS.md: "Em fachadas, deixe somente o nome próprio do estabelecimento. Não acrescente categorias, slogans, legendas..."
-	var sign_board := _add_box("SignBoard", Vector3(0, awning_y + 0.55, half_d + 0.12), Vector3(minf(shop_size.x * 0.65, 5.2), 0.70, 0.08), MountainMaterials.sign_timber())
+	_add_box("SignBoard", Vector3(0, awning_y + 0.55, half_d + 0.12), Vector3(minf(shop_size.x * 0.65, 5.2), 0.70, 0.08), MountainMaterials.sign_timber())
 	_add_box("SignBorder", Vector3(0, awning_y + 0.55, half_d + 0.10), Vector3(minf(shop_size.x * 0.65, 5.2) + 0.08, 0.76, 0.06), trim_mat)
 	
 	var label := Label3D.new()

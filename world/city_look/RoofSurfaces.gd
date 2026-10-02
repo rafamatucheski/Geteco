@@ -34,16 +34,16 @@ static func pick(kind: String, roll: float) -> int:
 
 static func material(surface: int) -> StandardMaterial3D:
 	if _materials.has(surface): return _materials[surface]
-	var material := StandardMaterial3D.new()
-	material.albedo_texture = ImageTexture.create_from_image(_image(surface))
-	material.uv1_triplanar = true
-	material.uv1_world_triplanar = true
-	material.uv1_scale = Vector3.ONE / TEXEL_METERS
-	material.roughness = 0.35 if surface == METAL else 0.92
-	material.metallic = 0.35 if surface == METAL else 0.0
-	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	_materials[surface] = material
-	return material
+	var surface_material := StandardMaterial3D.new()
+	surface_material.albedo_texture = ImageTexture.create_from_image(_image(surface))
+	surface_material.uv1_triplanar = true
+	surface_material.uv1_world_triplanar = true
+	surface_material.uv1_scale = Vector3.ONE / TEXEL_METERS
+	surface_material.roughness = 0.35 if surface == METAL else 0.92
+	surface_material.metallic = 0.35 if surface == METAL else 0.0
+	surface_material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_materials[surface] = surface_material
+	return surface_material
 
 
 static func _image(surface: int) -> Image:
@@ -65,7 +65,7 @@ static func _image(surface: int) -> Image:
 
 
 ## Cor de um texel. `n` = mancha larga (sujeira/desbotado), `grain` = ruído fino.
-static func _texel(surface: int, x: int, y: int, n: float, grain: float, size: int) -> Color:
+static func _texel(surface: int, x: int, y: int, n: float, grain: float, _size: int) -> Color:
 	match surface:
 		TAR:
 			# Rolos de manta de ~0,9 m (58 px) com emenda sobreposta clara.
@@ -81,6 +81,8 @@ static func _texel(surface: int, x: int, y: int, n: float, grain: float, size: i
 			return stone.lerp(Color("5d584f"), (1.0 - n) * 0.35)
 		PAVERS:
 			# Placas de 1 m (64 px) com junta escura e tom próprio por placa.
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			var cell := Vector2i(x / 64, y / 64)
 			var tone := float(hash(cell) % 100) / 100.0
 			var base := Color("a3a097").lerp(Color("8a877f"), tone)
@@ -89,6 +91,8 @@ static func _texel(surface: int, x: int, y: int, n: float, grain: float, size: i
 		MEMBRANE:
 			var base := Color("4f6a55").lerp(Color("3f5646"), grain * 0.3)
 			# Remendos retangulares mais escuros.
+			# Whole-number grouping/index; preserve integer truncation and precision.
+			@warning_ignore("integer_division")
 			var patch := Vector2i(x / 40, y / 32)
 			if hash(patch) % 7 == 0: base = base.darkened(0.3)
 			if x % 40 == 0 and hash(patch) % 7 == 0: base = Color("2b3a30")

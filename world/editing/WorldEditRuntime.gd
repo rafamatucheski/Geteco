@@ -1,4 +1,5 @@
 extends RefCounted
+const CITY_DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const DATA := preload("res://world/editing/WorldEditData.gd")
 
 static func apply(region: Node) -> void:
@@ -29,6 +30,7 @@ static func apply(region: Node) -> void:
 			continue
 		accepted[id] = row
 	if accepted.is_empty(): return
+	CITY_DRESSING.invalidate_context(region)
 	if region.region_id == "harbor": preload("res://world/editing/WorldPaving.gd").apply(region.harbor_urban_surface,accepted)
 	var roads_changed := false
 	for row in accepted.values():

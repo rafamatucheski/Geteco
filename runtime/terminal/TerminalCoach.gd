@@ -107,10 +107,10 @@ func drive(delta: float, clearance := INF) -> void:
 	if state=="road":
 		# Shared traffic driver handles signals, queues, blocked lanes and safe
 		# detours. Apron reversing remains under the terminal's exclusive control.
-		var before := global_position
+		var branch_before := global_position
 		super._physics_process(delta)
 		progress = route_distance
-		var distance := before.distance_to(global_position)
+		var distance := branch_before.distance_to(global_position)
 		travelled += distance
 		for wheel in coach_wheels: wheel.rotate_object_local(Vector3.UP,distance/.29)
 		blocked_by = str(blocker.get_path()) if is_instance_valid(blocker) and blocker is Node else ""

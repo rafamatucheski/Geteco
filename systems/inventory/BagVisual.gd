@@ -59,8 +59,8 @@ func _swing(hang: Array, delta: float) -> void:
 			_sway=Vector2.ZERO; _sway_velocity=Vector2.ZERO
 	_handle_world=handle_now
 	var tilt:=Quaternion(Vector3.DOWN,Vector3(_sway.x,-1.0,_sway.y).normalized())
-	var basis:=Basis(tilt)*Basis(Vector3.UP,hang[1])
-	transform=Transform3D(basis,handle-basis*Vector3(0,DUFFEL_HANDLE_TOP,0))
+	var local_basis:=Basis(tilt)*Basis(Vector3.UP,hang[1])
+	transform=Transform3D(local_basis,handle-local_basis*Vector3(0,DUFFEL_HANDLE_TOP,0))
 
 func _hand_hang() -> Array:
 	# [posição local, yaw]: a mala desce reta da palma, com a face lisa junto à perna

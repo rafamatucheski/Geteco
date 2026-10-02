@@ -43,7 +43,7 @@ func _physics_process(delta: float) -> void:
 	if direction.length()<28.0/16.0: index=(index+1)%patrol.size()
 	direction=direction.normalized()
 	velocity.x=direction.x*speed; velocity.z=direction.z*speed
-	velocity.y=-1 if is_on_floor() else velocity.y-20*delta
+	velocity.y=-1.0 if is_on_floor() else velocity.y-20*delta
 	move_and_slide()
 	model.rotation.y=lerp_angle(model.rotation.y,atan2(-direction.x,-direction.z),minf(1,delta*8))
 	model.walking=Vector2(velocity.x,velocity.z).length_squared()>.01

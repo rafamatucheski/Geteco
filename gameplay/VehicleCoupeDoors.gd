@@ -134,15 +134,15 @@ func _compact_mesh(source: Array, selection: PackedInt32Array, inward: bool) -> 
 	var compact_tangents := PackedFloat32Array()
 	var compact_uvs := PackedVector2Array()
 	var compact_indices := PackedInt32Array()
-	var remap := {}
+	var local_remap := {}
 	for old_index in selection:
-		if not remap.has(old_index):
-			remap[old_index] = compact_vertices.size()
+		if not local_remap.has(old_index):
+			local_remap[old_index] = compact_vertices.size()
 			compact_vertices.append(vertices[old_index])
 			compact_normals.append(-normals[old_index] if inward else normals[old_index])
 			compact_uvs.append(uvs[old_index])
 			for component in 4: compact_tangents.append(tangents[old_index * 4 + component])
-		compact_indices.append(remap[old_index])
+		compact_indices.append(local_remap[old_index])
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = compact_vertices

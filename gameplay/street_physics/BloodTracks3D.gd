@@ -123,9 +123,9 @@ func _physics_process(delta: float) -> void:
 ## Cada marca cobre o trecho andado desde a anterior (com sobreposição), então
 ## o rastro sai contínuo em qualquer velocidade em vez de tracejado.
 func _tire_marks(vehicle: Node3D, strength: float, covered: float) -> void:
-	var basis := vehicle.global_basis
-	var right := Vector3(basis.x.x, 0, basis.x.z).normalized()
-	var forward := -Vector3(basis.z.x, 0, basis.z.z).normalized()
+	var local_basis := vehicle.global_basis
+	var right := Vector3(local_basis.x.x, 0, local_basis.x.z).normalized()
+	var forward := -Vector3(local_basis.z.x, 0, local_basis.z.z).normalized()
 	var half_width: float = float(vehicle.get("half_width")) if vehicle.get("half_width") != null else 1.0
 	var half_length: float = float(vehicle.get("half_length")) if vehicle.get("half_length") != null else 2.3
 	var yaw := atan2(forward.x, forward.z)
@@ -148,8 +148,8 @@ func _emit(point: Vector3, yaw: float, size: Vector2, alpha: float) -> void:
 	var index := _next
 	_next = (_next + 1) % MAX_MARKS
 	_multimesh.visible_instance_count = mini(MAX_MARKS, maxi(_multimesh.visible_instance_count, index + 1))
-	var basis := Basis(Vector3.UP, yaw).scaled(Vector3(size.x, 1, size.y))
-	_multimesh.set_instance_transform(index, Transform3D(basis, Vector3(point.x, point.y + 0.048, point.z)))
+	var local_basis := Basis(Vector3.UP, yaw).scaled(Vector3(size.x, 1, size.y))
+	_multimesh.set_instance_transform(index, Transform3D(local_basis, Vector3(point.x, point.y + 0.048, point.z)))
 	_born[index] = _clock
 	_alpha[index] = clampf(alpha, 0.15, 0.95)
 	var color := COLOR

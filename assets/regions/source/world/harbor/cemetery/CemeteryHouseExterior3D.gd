@@ -39,8 +39,8 @@ func _ready() -> void:
 	lantern(Vector3(.88, 1.5, 2.88))
 	for i in 3:
 		box("Firewood", Vector3(.8, .17, .22), Vector3(2.75, .22 + i * .16, 3.0), "5e4a34")
-	var sign := lettering("06h — 00h\nNÃO ENTRE DE MADRUGADA", Vector3(-2.2, .70, 2.96), 14)
-	sign.modulate = Color("dfc894")
+	var sign_node := lettering("06h — 00h\nNÃO ENTRE DE MADRUGADA", Vector3(-2.2, .70, 2.96), 14)
+	sign_node.modulate = Color("dfc894")
 
 func set_door_open(open: bool) -> void:
 	if door:

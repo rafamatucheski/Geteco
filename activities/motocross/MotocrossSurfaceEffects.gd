@@ -128,11 +128,11 @@ func _stamp(a: Vector3, b: Vector3, normal: Vector3, wetness: float) -> void:
 	var length := a.distance_to(b)
 	var width := lerpf(0.18, 0.25, wetness)
 	var side := normal.cross(direction).normalized()
-	var basis := Basis(side * width, normal, direction * (length + 0.025))
+	var local_basis := Basis(side * width, normal, direction * (length + 0.025))
 	var point := (a + b) * 0.5 + normal * 0.027
 	# The small lift avoids depth-fighting, with endpoint normals following
 	# cambers; no ray or allocation per historical mark is needed thereafter.
-	_marks.multimesh.set_instance_transform(_cursor, global_transform.affine_inverse() * Transform3D(basis, point))
+	_marks.multimesh.set_instance_transform(_cursor, global_transform.affine_inverse() * Transform3D(local_basis, point))
 	_marks.multimesh.set_instance_color(_cursor, Color("823f25").lerp(Color("452719"), wetness))
 	_marks.multimesh.set_instance_custom_data(_cursor, Color(length, wetness, 0.0, 1.0))
 	_cursor = (_cursor + 1) % MAX_MARKS

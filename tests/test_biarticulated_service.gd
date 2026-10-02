@@ -2,12 +2,17 @@ extends SceneTree
 var failures := 0
 var checks := 0
 var world
+var output_dir := "res://evidence/biarticulated"
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, label: String) -> void:
 	checks+=1
 	if not ok: failures+=1; push_error(label)
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--out-dir="): output_dir = argument.trim_prefix("--out-dir=")
+	if output_dir.is_empty() or DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output_dir)) != OK:
+		push_error("BIARTICULATED_SERVICE output directory unavailable"); quit(2); return
 	seed(28092026)
 	world=load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
@@ -25,6 +30,7 @@ func run() -> void:
 	world.player.teleport(ops.stops[bus.service_stop].inside+Vector3.UP*.05)
 	world.player.controlled_automatically=true; world.player.automatic_direction=Vector3.ZERO
 	world.session.weather.time_of_day=.35; world.session.weather.set_process(false)
+	print("BIARTICULATED_FIXTURE out_dir=",output_dir," weather_frozen=true time_of_day=0.35; functional accelerated service, not normal-weather or FPS approval")
 	for frame in 120: await physics_frame
 	var ride=world.session.passenger_transport
 	if "--diagnostic" in OS.get_cmdline_user_args():
@@ -57,7 +63,7 @@ func run() -> void:
 		world.camera.target_size=38
 		for frame in 60: await process_frame
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://evidence/biarticulated/boarding.png")
+		root.get_texture().get_image().save_png(output_dir.path_join("boarding.png"))
 	var visited := {}
 	Engine.time_scale=4; Engine.physics_ticks_per_second=240
 	var start:=Time.get_ticks_msec()
@@ -95,6 +101,6 @@ func run() -> void:
 	if DisplayServer.get_name()!="headless":
 		world.camera.target_size=42
 		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://evidence/biarticulated/service.png")
+		root.get_texture().get_image().save_png(output_dir.path_join("service.png"))
 	print("BIARTICULATED_SERVICE ",checks," checks ",failures," failures visited=",visited)
 	quit(1 if failures else 0)

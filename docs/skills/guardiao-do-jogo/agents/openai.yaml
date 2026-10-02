@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guardião do Jogo"
+  short_description: "Qualidade integrada, performance, caos e recuperação"
+  default_prompt: "Use $guardiao-do-jogo para avaliar estabilidade integrada, dimensionar cenários normais, de caos e recuperação e relatar evidências e lacunas."

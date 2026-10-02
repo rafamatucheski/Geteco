@@ -224,8 +224,8 @@ func _draw_audio_record(rect: Rect2, id: String) -> void:
 	var points := PackedVector2Array()
 	for index in 72:
 		var x := wave.position.x + 8 + float(index) * (wave.size.x - 16) / 71.0
-		var seed := float((index * 19 + id.length() * 7) % 23) / 22.0
-		var height := (seed - 0.5) * wave.size.y * (0.28 if index < 47 else 0.72)
+		var seed_value := float((index * 19 + id.length() * 7) % 23) / 22.0
+		var height := (seed_value - 0.5) * wave.size.y * (0.28 if index < 47 else 0.72)
 		points.append(Vector2(x, wave.get_center().y + height))
 	draw_polyline(points, AMBER, 1.6, true)
 	_text_at(rect.position + Vector2(14, rect.size.y - 34), _text("SINAL INTERROMPIDO", "SIGNAL LOST"), 13, RED)
@@ -360,9 +360,9 @@ func _heading(rect: Rect2, text: String) -> void:
 
 
 func _caption(rect: Rect2, text: String, right_aligned: bool) -> void:
-	var position := rect.end - Vector2(22, 16)
-	if not right_aligned: position.x = rect.position.x + 22
-	draw_string(ThemeDB.fallback_font, position, text, HORIZONTAL_ALIGNMENT_RIGHT if right_aligned else HORIZONTAL_ALIGNMENT_LEFT, -1, 13, MUTED)
+	var local_position := rect.end - Vector2(22, 16)
+	if not right_aligned: local_position.x = rect.position.x + 22
+	draw_string(ThemeDB.fallback_font, local_position, text, HORIZONTAL_ALIGNMENT_RIGHT if right_aligned else HORIZONTAL_ALIGNMENT_LEFT, -1, 13, MUTED)
 
 
 func _draw_footer(folder: Rect2) -> void:
@@ -379,8 +379,8 @@ func _box(rect: Rect2, color: Color, border: Color, radius: int) -> void:
 	draw_style_box(style, rect)
 
 
-func _text_at(position: Vector2, text: String, font_size: int, color: Color) -> void:
-	draw_string(ThemeDB.fallback_font, position, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+func _text_at(p_position: Vector2, text: String, font_size: int, color: Color) -> void:
+	draw_string(ThemeDB.fallback_font, p_position, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
 func _text_center(rect: Rect2, text: String, font_size: int, color: Color) -> void:

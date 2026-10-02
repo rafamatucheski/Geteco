@@ -77,12 +77,12 @@ static func helicopter(parent: Node3D) -> Dictionary:
 	return {"rotor": rotor, "tail_rotor": tail_rotor}
 
 static func dog(parent: Node3D) -> Dictionary:
-	var tan := Color("886846")
+	var local_tan := Color("886846")
 	var dark := Color("302923")
 	var black := Color("161d21")
-	ellipsoid(parent, "Body", Vector3(0, 0.62, 0.07), Vector3(0.39, 0.49, 0.92), tan)
+	ellipsoid(parent, "Body", Vector3(0, 0.62, 0.07), Vector3(0.39, 0.49, 0.92), local_tan)
 	ellipsoid(parent, "Saddle", Vector3(0, 0.77, 0.12), Vector3(0.4, 0.3, 0.76), dark)
-	ellipsoid(parent, "Chest", Vector3(0, 0.68, -0.35), Vector3(0.4, 0.55, 0.4), tan)
+	ellipsoid(parent, "Chest", Vector3(0, 0.68, -0.35), Vector3(0.4, 0.55, 0.4), local_tan)
 	box(parent, "TacticalHarness", Vector3(0, 0.8, -0.04), Vector3(0.45, 0.19, 0.62), black)
 	for side in [-1.0, 1.0]:
 		box(parent, "HarnessBand", Vector3(side * 0.225, 0.68, -0.08), Vector3(0.028, 0.33, 0.11), Color("809897"))
@@ -90,7 +90,7 @@ static func dog(parent: Node3D) -> Dictionary:
 	head.name = "Head"
 	head.position = Vector3(0, 0.94, -0.53)
 	parent.add_child(head)
-	ellipsoid(head, "Skull", Vector3.ZERO, Vector3(0.3, 0.33, 0.4), tan)
+	ellipsoid(head, "Skull", Vector3.ZERO, Vector3(0.3, 0.33, 0.4), local_tan)
 	ellipsoid(head, "Muzzle", Vector3(0, -0.07, -0.24), Vector3(0.21, 0.16, 0.31), dark)
 	ellipsoid(head, "Nose", Vector3(0, -0.02, -0.385), Vector3(0.14, 0.11, 0.07), black)
 	for side in [-1.0, 1.0]:
@@ -107,7 +107,7 @@ static func dog(parent: Node3D) -> Dictionary:
 			var leg := Node3D.new()
 			leg.position = Vector3(side * 0.15, 0.52, z)
 			parent.add_child(leg)
-			box(leg, "Leg", Vector3(0, -0.2, 0), Vector3(0.095, 0.4, 0.11), tan)
+			box(leg, "Leg", Vector3(0, -0.2, 0), Vector3(0.095, 0.4, 0.11), local_tan)
 			ellipsoid(leg, "Paw", Vector3(0, -0.46, -0.045), Vector3(0.12, 0.1, 0.19), dark)
 			legs.append(leg)
 	var tail := Node3D.new()
