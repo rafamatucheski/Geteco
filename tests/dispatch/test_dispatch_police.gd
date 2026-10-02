@@ -37,6 +37,10 @@ func check(condition: bool, label: String) -> void:
 		push_error(label)
 
 func run() -> void:
+	if "--foot-agent-only" in OS.get_cmdline_user_args():
+		await _foot_agent_contract()
+		report("DISPATCH_FOOT_AGENT", ["foot_agent_contract"], 5)
+		return
 	await _pursuit_and_release()
 	await _garage_rule_holds()
 	await _foot_agent_contract()
@@ -178,7 +182,8 @@ func _foot_agent_contract() -> void:
 	# de 0,30 m; a 5,5 m, o único tiro nesta janela podia errar por sorte.
 	officer.global_position = Vector3(6.0, 0, 0)
 	await _frames(5)
-	officer.receive_damage(1.0, bundle.player)
+	# Gameplay owns crime attribution and force authorization, the actor owns damage.
+	gameplay._damage(officer, 1.0, bundle.player)
 	await _frames(90)
 	check(officer.response_aggression > 0.0 and gameplay.contact_age < 1.0, "dano identifica o agressor real e renova contato")
 	check(gameplay.health < initial_health, "policial vivo reage ao dano com ataque")
@@ -194,7 +199,10 @@ func _entity_limits() -> void:
 	var gameplay: Node3D = bundle.gameplay
 	var controller: Node3D = bundle.controller
 	await _frames(3)
-	gameplay.register_crime(420, bundle.player.global_position)
+	# This fixture exercises maximum dispatch, independently of player escalation.
+	gameplay.crime_points = 420
+	gameplay._update_stars()
+	gameplay.register_crime(1, bundle.player.global_position)
 	check(gameplay.stars == 6, "420 pontos = 6 estrelas")
 	var peak_units := 0
 	var peak_active := 0

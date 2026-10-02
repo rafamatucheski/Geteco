@@ -8,6 +8,7 @@ static func decorate(root: Node3D) -> void:
 		_box(root,"TacticalStripe",Vector3(side*1.166,1.05,.45),Vector3(.018,.12,3.1),Color("b8c4ce"))
 		var label := Label3D.new()
 		label.name = "PoliceTransportMark"
+		label.set_meta("hide_when_wrecked", true)
 		label.text = "POLÍCIA"
 		label.font_size = 48
 		label.pixel_size = .008

@@ -261,11 +261,11 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			gun_basis = Basis(Vector3.UP, thrust * (0.45 if variant == 1 else 0.08)) * Basis(Vector3.FORWARD, thrust * (0.25 if variant == 2 else 0.05)) * gun_basis
 	elif id == "grenade":
 		var ready := Vector3(0.24, 0.72, -0.10 - arm_swing * 0.07) + body_offset
-		# Arremesso pela frente, abaixo do ombro e pelo lado direito.
-		# O alvo alto junto ao rosto elevava/torcia a manga contra a cabeça.
-		var cocked := Vector3(0.34, 0.94, -0.14) + body_offset
-		var released := Vector3(0.27, 0.99, -0.43) + body_offset
-		var follow := Vector3(0.25, 0.79, -0.35) + body_offset
+		# Prepara pelo lado direito, acelera à altura do ombro e termina
+		# à frente do corpo. A mão fica afastada do rosto durante o arco.
+		var cocked := Vector3(0.36, 1.16, 0.08) + body_offset
+		var released := Vector3(0.30, 1.19, -0.38) + body_offset
+		var follow := Vector3(0.23, 0.89, -0.43) + body_offset
 		hand = ready
 		if action_age < 0.08: hand = ready.lerp(cocked, smoothstep(0.0, 0.08, action_age))
 		elif action_age < GRENADE_RELEASE: hand = cocked.lerp(released, smoothstep(0.08, GRENADE_RELEASE, action_age))
@@ -317,7 +317,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 				hand = Vector3(0.09, 0.96 if engaged else 0.90, -0.28)
 				left_target = hand + gun_basis * support
 			elif id == "rpg" and not reloading:
-				hand = Vector3(0.06 if engaged else 0.02, 1.10 if engaged else 0.97, -0.28)
+				# O tubo passa ao lado da cabeça, sobre o ombro direito.
+				hand = right_shoulder + Vector3(0.10, -0.03, -0.23) if engaged else Vector3(0.24, 0.97, -0.28) + body_offset
 				left_target = hand + gun_basis * support
 			if reloading and left_target.z > -0.16: left_target.x = minf(left_target.x, -0.24)
 			if reloading:

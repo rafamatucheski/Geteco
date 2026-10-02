@@ -189,11 +189,15 @@ static func merge_parts(model: Node3D, id := "") -> void:
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var expected := AABB()
-		var first_box := true
+		var first_vertex := true
 		for part: MeshInstance3D in parts:
-			var box: AABB = part.transform * part.mesh.get_aabb()
-			expected = box if first_box else expected.merge(box)
-			first_box = false
+			# Rotating an AABB includes empty corners. Compare the actual vertices
+			# with the merged mesh, in the same space, to detect geometry loss.
+			var vertices: PackedVector3Array = part.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+			for vertex in vertices:
+				var point: Vector3 = part.transform * vertex
+				expected = AABB(point, Vector3.ZERO) if first_vertex else expected.expand(point)
+				first_vertex = false
 			var source: Mesh = part.mesh
 			if not source is ArrayMesh:
 				var converted := ArrayMesh.new()
@@ -203,8 +207,7 @@ static func merge_parts(model: Node3D, id := "") -> void:
 		var merged := st.commit()
 		var got := merged.get_aabb()
 		if got.position.distance_to(expected.position) > 0.01 or got.size.distance_to(expected.size) > 0.01:
-			push_warning("Aurora: fusão de '%s' mudaria a caixa (%s vs %s); peças mantidas" % [key, got, expected])
-			print("AURORA_MERGE_SKIPPED ", key, " ", got, " vs ", expected)
+			push_warning("Frota %s: fusão de '%s' mudaria a caixa (%s vs %s); peças mantidas" % [id, key, got, expected])
 			continue
 		var first: MeshInstance3D = parts[0]
 		var others: Array = []

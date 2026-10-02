@@ -352,6 +352,11 @@ func _body_weapon_targets() -> Array:
 	var right_shoulder: Vector3 = spine_model * body._shoulders[0]
 	var left_shoulder: Vector3 = spine_model * body._shoulders[1]
 	var ready_grip := Vector3(-.20, .93, .12) if pistol else Vector3(-.15, 1.16, .26)
+	# A fixed x=-.20 put the resting hand inside the larger uniform. Keep
+	# the grip outside the actual torso while retaining the anatomical reach.
+	var body_profile: Dictionary = body.wardrobe.get("body_profile", {})
+	if pistol and not body_profile.is_empty():
+		ready_grip.x = -maxf(.20, float(body_profile.waist.x) + .085)
 	var aim_grip := Vector3(-.075, 1.34, .40)
 	var pitch := lerpf(-.95 if pistol else -.43, 0.0, _body_aim_weight) + recoil
 	var yaw := PI + lerpf(.0 if pistol else -.22, 0.0, _body_aim_weight)
@@ -521,12 +526,16 @@ func _equipment_box(b: RefCounted, point: Vector3, size: Vector3, slot: int) -> 
 func _body_look() -> Dictionary:
 	var a: Dictionary = get_meta("police_appearance", {})
 	var width := float(a.get("width", 1.0))
+	var appearances = preload("res://gameplay/PoliceAppearance.gd")
+	var identity := posmod(appearance_index, appearances.PROFILES.size())
 	var look := {
 		"variant": 5000 + appearance_index, "lod": false,
 		"female": bool(a.get("woman", false)), "build": 2 if width > 1.2 else (0 if width < 0.95 else 1),
 		"height": float(a.get("height", 1.0)), "skin": Color(str(a.get("skin", "c99573"))),
 		"hair_color": Color(str(a.get("hair", "30251f"))),
-		"hair": {"bun": 5, "short": 0, "ponytail": 4}.get(str(a.get("hairstyle", "")), 1),
+		"hair": appearances.HAIR[identity], "beard": appearances.BEARD[identity],
+		"body_profile": appearances.body_profile(a),
+		"head_scale": Vector3(lerpf(1.0, width, .32), 1.0, lerpf(1.0, float(a.depth), .18)),
 		"backpack": false, "bag": 0, "glasses": false,
 		"top": 6, "bottom": 0, "shoe": 2, "hat": 4,
 		"top_color": _uniform_base_color, "bottom_color": _uniform_base_color.darkened(0.25),

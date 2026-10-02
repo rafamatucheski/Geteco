@@ -42,6 +42,8 @@ func run() -> void:
 	case.tick(2.6)
 	check(game.stars == 0 and case.investigation_left > 0, "hearing opens location investigation without identity")
 	bundle.controller._dispatch_police(1.0)
+	check(bundle.controller.investigation_unit == null, "unidentified report respects investigator arrival delay")
+	bundle.controller._dispatch_police(12.0)
 	check(bundle.controller.investigation_unit != null and bundle.controller.investigation_unit.state == "investigating", "unidentified report dispatches one real investigator")
 	var investigation_count: int = bundle.controller.units.size()
 	bundle.controller._dispatch_police(21.0)
@@ -70,7 +72,10 @@ func run() -> void:
 	caller.queue_free()
 	game.clear_wanted()
 	game.state = bundle.state
-	game.register_crime(420, observed, "reported")
+	# Response fixture, not an escalation shortcut available to player crimes.
+	game.crime_points = 420
+	game._update_stars()
+	game.register_crime(1, observed, "reported")
 	check(game.stars == 6 and not game.police_force_authorized(), "six stars alone do not authorize shots")
 	game.register_crime(1, observed, "police_assault")
 	check(game.police_force_authorized(), "confirmed violence authorizes response")

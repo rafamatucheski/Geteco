@@ -59,7 +59,7 @@ func run() -> void:
 	gameplay.add_child(officer)
 	officer.global_position = definition.return_position + Vector3(1.6, .06, 0)
 	gameplay.police.append(officer)
-	gameplay.register_crime(150, world.player.global_position)
+	gameplay.register_crime(150, world.player.global_position, "assault")
 	gameplay.report_contact(world.player.global_position)
 	# Capture before transfer with the real facade/approach, and preserve this
 	# officer's identity throughout the session's actual transition.

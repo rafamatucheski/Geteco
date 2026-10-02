@@ -21,7 +21,7 @@ func clear() -> void:
 func tick(delta: float) -> void:
 	var gameplay: Node3D = controller.gameplay
 	var exterior: bool = controller.player_position_override == Vector3.INF and gameplay.state.weapons_allowed()
-	var pursuit: bool = gameplay.stars >= 3 and gameplay.last_known_valid and exterior
+	var pursuit: bool = gameplay.stars >= 4 and gameplay.last_known_valid and exterior
 	var surrendered: bool = gameplay.has_method("police_surrendering") and gameplay.police_surrendering()
 	var target: Node3D = gameplay.pursuit_target() if pursuit and not surrendered else null
 	var car: CharacterBody3D = target as CharacterBody3D if is_instance_valid(target) and "horizontal_velocity" in target else null

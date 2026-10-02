@@ -105,7 +105,16 @@ func run() -> void:
 		world.add_child(occupied_slot)
 		occupied_slot.add_to_group("v2_police_officers")
 		busy_squad.append(occupied_slot)
-	check(director.officer_limit() == 8 and not director.launch_helicopter({"center": Vector3.ZERO, "points": []}), "three-star aerial squad shares the eight-officer ground budget")
+	check(director.launch_helicopter({"center": Vector3.ZERO, "points": []}), "three-star reconnaissance does not require four spare ground slots")
+	check(director.helicopter.recon_only and director.helicopter._reserved == 0 and gameplay.get_meta("police_air_reserved_slots") == 0, "reconnaissance carries no specialist squad or ground reservation")
+	director.helicopter.set_physics_process(false)
+	director.helicopter.mode = "recon"
+	director.helicopter._physics_process(.25)
+	check(director.helicopter.rappellers.is_empty() and director.helicopter.deployed_count == 0, "three-star aircraft observes without tactical rappel")
+	director.clear_response()
+	await frames(2)
+	gameplay.stars = 4
+	check(not director.launch_helicopter({"center": Vector3.ZERO, "points": []}), "four-star tactical squad still respects the shared ground budget")
 	for officer in busy_squad: officer.queue_free()
 	await frames(2)
 	var points: Array[Vector3] = []
@@ -259,7 +268,10 @@ func run() -> void:
 	gameplay.health = 3.0
 	dog._cooldown = 0.0
 	await frames(2)
-	dog._physics_process(1.0 / 60.0)
+	# Allow facing, preparation and jaw contact; damage is no longer instant.
+	for index in 40:
+		dog._physics_process(1.0 / 60.0)
+		await physics_frame
 	check(gameplay.health >= 1.0 and gameplay.restraint > 0.0, "K9 restrains wounded player without killing")
 	gameplay.stars = 2
 	director._physics_process(0.25)

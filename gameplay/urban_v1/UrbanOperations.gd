@@ -8,6 +8,7 @@ var cemetery
 var security
 var cargo_handling
 var secret_car
+var cobra_neighborhood
 var freight
 var passenger_terminal
 var village
@@ -43,6 +44,9 @@ func _ready() -> void:
 	secret_car = preload("res://gameplay/urban_v1/CobraSecretCar3D.gd").new()
 	secret_car.configure(session)
 	add_child(secret_car)
+	cobra_neighborhood = preload("res://gameplay/urban_v1/CobraNeighborhoodLife.gd").new()
+	cobra_neighborhood.configure(session)
+	add_child(cobra_neighborhood)
 	passenger_terminal = preload("res://gameplay/urban_v1/HarborPassengerTerminal.gd").new()
 	passenger_terminal.configure(session)
 	add_child(passenger_terminal)

@@ -37,6 +37,7 @@ var wrecked := false
 var _stage := 0
 var _paint_base: Dictionary = {}
 var _saved: Array = []
+var _saved_markings: Array = []
 var _last_source: WeakRef
 var _fire: GPUParticles3D
 var _fire_light: OmniLight3D
@@ -332,6 +333,11 @@ func _stall_wreck() -> void:
 	shattered.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	shattered.albedo_color = Color(0, 0, 0, 0)
 	var replacement := {"body": _ember, "rubber": molten, "lens": dead_lens, "glass": shattered}
+	# Inscrições separadas da malha também desaparecem com a carbonização.
+	for marking: Label3D in vehicle.visual.find_children("*", "Label3D", true, false):
+		if marking.get_meta("hide_when_wrecked", false):
+			_saved_markings.append([marking, marking.visible])
+			marking.hide()
 	STALL_WORK.finish_slow("vehicle_damage.materials_build",began,5000,self)
 	began = STALL_WORK.begin()
 	for part: MeshInstance3D in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
@@ -495,6 +501,9 @@ func restore() -> void:
 		if entry[1] < 0: part.material_override = entry[2]
 		else: part.set_surface_override_material(entry[1], entry[2])
 	_saved.clear()
+	for entry in _saved_markings:
+		if is_instance_valid(entry[0]): entry[0].visible = entry[1]
+	_saved_markings.clear()
 	wrecked = false
 	_flame_ignited = false
 	if is_instance_valid(vehicle.visual):

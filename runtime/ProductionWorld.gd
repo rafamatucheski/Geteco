@@ -605,7 +605,7 @@ func _persistent_vehicle_support() -> Dictionary:
 		# A body suspended by streaming still owns its floor request. Excluding
 		# it here would evict the chunk before the ground check can resume it.
 		if not car.is_physics_processing() and not car.has_meta("awaiting_ground"): continue
-		if _is_ambient_traffic(car) and car != world.driving.car: continue
+		if _is_ambient_traffic(car) and car != world.driving.car and not car.get_meta("gang_hostile",false): continue
 		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false)
 		if not persistent:
 			if car.traffic: continue
@@ -1183,6 +1183,8 @@ func _create_traffic_vehicle() -> void:
 			point = route.sample_baked(offset,true)
 			var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
 			var id: String = TRAFFIC_MOTORCYCLE_TYPES.pick_random() if randi_range(0,9) == 0 else TRAFFIC_CAR_TYPES.pick_random()
+			var cobra := preload("res://gameplay/urban_v1/CobraPatrol.gd").select_car(session,point)
+			if cobra: id = "cobra_v8"
 			traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 			var car = spawn_vehicle(id,point+Vector3.UP*.12,atan2(-ahead.x,-ahead.z))
 			_trace_cost("traffic_spawn_vehicle:"+id,traced)
@@ -1192,6 +1194,7 @@ func _create_traffic_vehicle() -> void:
 			car.route_distance = offset
 			car.set_meta("ambient_traffic", true)
 			car.traffic = true
+			if cobra: preload("res://gameplay/urban_v1/CobraPatrol.gd").attach(session,car)
 			return
 
 ## `destination_override` leva a um ponto exato (ex.: saída do forte no esqui) em vez

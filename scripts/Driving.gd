@@ -202,6 +202,10 @@ func _start_boarding(side: int) -> void:
 ## saía dele. O motorista desce pela porta dele assim que o ladrão abre a do lado de
 ## lá (ou é empurrado para trás, se o ladrão veio pela mesma porta) e foge em pânico.
 func _eject_civilian_driver(candidate: CharacterBody3D, thief_side: int) -> void:
+	var gang_driver: Callable = candidate.get_meta("gang_theft_handler",Callable())
+	if gang_driver.is_valid():
+		gang_driver.call(thief_side)
+		return
 	if not is_instance_valid(world.get("production")) or world.get("people") == null: return
 	# O banco do motorista é o esquerdo; no ônibus ele sai pela porta de serviço.
 	var driver_side := 1 if candidate.has_method("boarding_class") and candidate.boarding_class() == "bus" else -1

@@ -1,5 +1,26 @@
 # Resposta policial — 28/09/2026
 
+## Balanceamento e fuga — 02/10/2026
+
+Revisão solicitada para tornar a escalada gradual e a fuga legível. A implementação anterior descrita abaixo é histórica; estas regras substituem sua pontuação, fuga e chegada de especialistas.
+
+- Os limiares 12/30/60/140/260/420 e o máximo de 600 pontos continuam compatíveis com saves. `PoliceEscalation.gd` limita a contribuição de cada categoria, sem reduzir uma procura já maior.
+- Disparos identificados contam no máximo 4 pontos por episódio de 3 segundos (1 com supressor), inclusive denúncias de rajadas agrupadas. Sozinhos param em 59 pontos/duas estrelas. Continuar atirando mantém a ocorrência e a autorização de força, mesmo quando não acrescenta pontos.
+- Alarmes e ocorrências genéricas param em 139 pontos/três estrelas; roubo de viatura do pátio para em duas. Agressões, atropelamentos não fatais e explosões sem morte podem chegar a quatro, nunca cinco/seis por repetição.
+- Morte civil confirmada conta 30 pontos e é distinta de ferimento. Cadáver não gera nova morte ao receber dano. Autoria do jogador, testemunhas sobreviventes, visão e prazo de denúncia continuam obrigatórios. Mortes policiais conservam piso de três estrelas e registro único.
+- Cinco estrelas exigem ao menos 180 pontos de consequências fatais (normalmente seis mortes), 60 segundos de ocorrência e pontuação total suficiente; seis exigem 360 (normalmente doze mortes), 120 segundos e 420 pontos totais. Essas condições são mínimas, não garantem promoção. Só novo crime fatal confirmado permite cruzar esses dois patamares: esperar, reencontrar o jogador ou atirar para o alto não promove. Pontos barrados não ficam aguardando liberação automática.
+- A fuga completa encerra esse acúmulo de gravidade. Investigação local permanece por cinco minutos, sem identificação automática. Save/load preserva gravidade, tempo e intervalo dos disparos; saves antigos sem esses campos são aceitos.
+- Primeira estrela cai após 18/23/28/33/38/45 segundos de busca em níveis 1–6; depois, oito segundos por estrela. Contato real reinicia a fuga. Novos crimes confirmados também interrompem seu progresso. Sem interrupções, seis estrelas levam aproximadamente 85 segundos para desaparecer, além do primeiro segundo de tolerância de contato.
+- HUD mostra PERSEGUIÇÃO com estrelas estáveis, BUSCA com estrelas pulsando e barra de progresso para a próxima queda. Nos últimos 25%, a última estrela pulsa mais rápido. Ao escapar, comunica “Você despistou a polícia”; o estado residual diz INVESTIGAÇÃO LOCAL. Pausa não avança a animação.
+- Helicóptero começa em três estrelas como reconhecimento, usa linha de visão física e última posição conhecida, não reserva agentes nem faz rapel. Especialistas, K9, bloqueios e rapel começam em quatro. No rebaixamento, equipes já na corda terminam sua descida com segurança e a aeronave parte. Cada incursão de reconhecimento é limitada; depois da saída, respeita o intervalo existente de retorno.
+- Subida de nível preserva o tempo mínimo de despacho em vez de adiantar o reforço. Limites de entidades reduzidos pela revisão de 01/10 são preservados. Tanque continua no nível seis; novos veículos militares e expansão do Exército ficam para uma etapa futura.
+
+Validação desta revisão e lacunas: `evidence/police-balance-20261002/`. Testes de resposta máxima usam estado explícito de fixture; `register_crime(420, ...)` genérico não é mais um atalho para seis estrelas. Teste funcional e captura dirigida não certificam performance nem perseguição completa jogada.
+
+Resultados: escalada 30 verificações, casos/denúncias/persistência 50, resposta terrestre 35, aéreo/K9 40, HUD integrado 49, contrato de crimes policiais 10 e garagem 47+34+11 passaram. A captura temporal dirigida do HUD passou nas sete verificações. O teste amplo de despacho completou 7 grupos/60 verificações com uma falha de fixture (dano aplicado diretamente no ator, sem autoria/autorização do Gameplay); o grupo corrigido passou nas cinco verificações, com avisos de recursos no encerramento. O mesmo teste revelou interpolação inválida de personagens com escala não uniforme na queda: corrigida em `BodyImpactPose3D.gd` e validada em 61 amostras mais restauração. Não foi repetido o teste amplo inteiro após essas correções.
+
+Pendências: `test_police_motor_pool.gd` falhou em posicionamento/interação antes de executar a nova pontuação e abortou ao acessar `alarm.visible`, agora um dicionário; a integração completa de lockpick do pátio não está aprovada. Comparativo de frame time não concluído: outras sessões iniciaram execuções durante as duas janelas tentadas; a primeira medição foi interrompida e a segunda não iniciada. Nenhum FPS foi aprovado. Há cópia isolada anterior em `D:/geteco/artifacts/police-balance-baseline-20261002`; seus recursos compartilhados exigem conferir estabilidade de fontes antes de retomar a comparação. O balanço ainda precisa de avaliação de sensação de jogo numa fuga completa, além das fixtures e da captura dirigida.
+
 Reforma solicitada pelo usuário: helicóptero com quatro agentes em rapel e cordas móveis, motos policiais, K9, tanque, bloqueios/pregos, investigação após fuga, rendição nos níveis altos, perseguição em interiores e táticas por equipe. Reconhecimento de placa, roupa e rosto continua fora do escopo.
 
 ## Gravidade, informação e força

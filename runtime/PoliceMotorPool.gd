@@ -147,11 +147,11 @@ func _unlocked() -> void:
 	if option.get("car") == car: driving._begin_entry(car, int(option.side))
 	else: session.show_message("Viatura destrancada.")
 
-## Cada viatura roubada soma uma estrela, preservando a perseguição existente.
+## Roubo agrava a procura baixa; sozinho não convoca forças especiais.
 func _report_theft(car: CharacterBody3D) -> void:
 	var gameplay = session.world.gameplay
 	var next: int = mini(int(gameplay.stars) + 1, gameplay.STAR_THRESHOLDS.size() - 1)
-	gameplay.register_crime(maxi(1, int(gameplay.STAR_THRESHOLDS[next]) - int(gameplay.crime_points)), car.global_position)
+	gameplay.register_crime(maxi(1, int(gameplay.STAR_THRESHOLDS[next]) - int(gameplay.crime_points)), car.global_position, "police_theft")
 
 func _cancelled() -> void:
 	var car := target

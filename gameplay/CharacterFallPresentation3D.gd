@@ -8,7 +8,7 @@ static func _property_node(owner: Object, property_name: String) -> Node3D:
 	return null
 
 static func _cancel_hit(actor: Node3D) -> void:
-	var previous: Variant = actor.get_meta("v2_hit_tween", null)
+	var previous: Variant = actor.get_meta("v2_hit_tween") if actor.has_meta("v2_hit_tween") else null
 	if previous is Tween and previous.is_valid(): previous.kill()
 	var base: Dictionary = actor.get_meta("v2_hit_base", {})
 	var root: Node3D = base.get("root") as Node3D
@@ -62,6 +62,10 @@ static func apply_hit(actor: Node3D, visual: Node3D, impact: Vector3, amount: fl
 
 static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(visual): return
+	if actor.get("dead") == true and actor.get("is_player") != true:
+		preload("res://gameplay/DestroyedFade3D.gd").schedule(actor)
+		_release_hands(visual)
+		_drop_weapon(actor, visual)
 	# BodyFlight3D (arremesso por carro/explosão) é dono da pose até pousar.
 	if actor.has_meta("street_pose_owned"): return
 	_cancel_hit(actor)
@@ -91,6 +95,8 @@ static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) ->
 	var initial_rot := visual.rotation
 	var initial_pos := visual.position
 	
+	var impact_pose := preload("res://gameplay/street_physics/BodyImpactPose3D.gd").new()
+	impact_pose.capture(visual)
 	var joints: Array[Dictionary] = []
 	_gather_joints(actor, visual, variant, mode, joints)
 	# O morto não segura mais nada: sem isso a mira por IK continua puxando as mãos
@@ -114,6 +120,7 @@ static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) ->
 		var center := Basis(Vector3.UP, facing) * Vector3(-fall_direction.x * reach, lerpf(0.0, 0.22, fall) + height - 0.10 * brace * (1.0 - fall), -fall_direction.z * reach)
 		visual.position = initial_pos + center
 		
+		impact_pose.apply(progress * duration, progress >= 0.78)
 		for pose in joints:
 			var node: Node3D = pose.get("node")
 			if is_instance_valid(node):
@@ -122,7 +129,7 @@ static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) ->
 				var p_rest: Vector3 = pose.rest
 				node.rotation = p_init.lerp(p_brace, brace).lerp(p_rest, settle)
 	, 0.0, 1.0, duration).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
-	tween.finished.connect(_drop_weapon.bind(actor, visual))
+
 
 static func _hand_models(visual: Node3D) -> Array:
 	var result: Array = [visual]
@@ -143,7 +150,7 @@ static func _drop_weapon(actor: Node3D, visual: Node3D) -> void:
 	if not gun is Node3D or not is_instance_valid(gun) or not gun.is_inside_tree(): return
 	gun.reparent(actor, true)
 	var ground := actor.global_position.y + 0.06
-	gun.global_transform = Transform3D(Basis(Vector3.UP, gun.global_rotation.y), Vector3(gun.global_position.x, ground, gun.global_position.z))
+	gun.global_transform = Transform3D((Basis(Vector3.UP, gun.global_rotation.y) * Basis(Vector3.FORWARD, PI * 0.5)).scaled(gun.global_basis.get_scale()), Vector3(gun.global_position.x, ground, gun.global_position.z))
 
 ## Convenção das articulações (espaço do modelo, frente = +Z, membro pendurado em -Y):
 ## X negativo leva o membro para a FRENTE, X positivo para TRÁS; Z com o sinal do lado abre para fora.

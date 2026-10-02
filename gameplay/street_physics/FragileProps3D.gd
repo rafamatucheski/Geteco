@@ -140,6 +140,9 @@ static func _topple(item: Dictionary, flat: Vector3, director: Node) -> void:
 	tween.tween_method(rotate, PI * 0.49, PI * 0.46, 0.08)
 	tween.tween_method(rotate, PI * 0.46, PI * 0.49, 0.12)
 	if item.kind == "phone_booth": director.spawn_glass(base.origin + Vector3.UP, flat)
+	var cleanup := director.create_tween()
+	cleanup.tween_interval(10.0)
+	cleanup.tween_callback(func(): _fade_post(item))
 
 
 ## Objeto leve vira corpo rígido: sai com a velocidade que o para-choque
@@ -236,7 +239,7 @@ static func _break_trash_can(base: Transform3D, launch: Vector3, spin: Vector3, 
 
 const DEBRIS_LAYER := 8
 const MAX_DEBRIS := 18
-const DEBRIS_LIFETIME := 45.0
+const DEBRIS_LIFETIME := 10.0
 ## kg; o carro leva ~1200 kg.
 const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0}
 static var _debris: Array = []
@@ -263,15 +266,14 @@ static func _debris_body(director: Node, origin: Vector3, mass: float) -> RigidB
 	# Depois de se afastar, carro que passar por cima empurra o destroço.
 	tree.create_timer(0.35, false, true).timeout.connect(func():
 		if is_instance_valid(body): body.collision_mask = 1 | 4 | DEBRIS_LAYER)
-	tree.create_timer(DEBRIS_LIFETIME, false, true).timeout.connect(func():
-		if is_instance_valid(body): body.queue_free())
+	preload("res://gameplay/DestroyedFade3D.gd").schedule(body, DEBRIS_LIFETIME)
 	var alive := []
 	for ref in _debris:
 		if is_instance_valid(ref.get_ref()): alive.append(ref)
 	alive.append(weakref(body))
 	while alive.size() > MAX_DEBRIS:
 		var oldest = alive.pop_front().get_ref()
-		if is_instance_valid(oldest): oldest.queue_free()
+		if is_instance_valid(oldest): preload("res://gameplay/DestroyedFade3D.gd").fade(oldest)
 	_debris = alive
 	return body
 
@@ -360,3 +362,25 @@ static func _kill_light(item: Dictionary) -> void:
 	for mesh in root.find_children("*", "MeshInstance3D", true, false):
 		if mesh.material_override == preload("res://world/city_look/CityLookMaterials.gd").lamp_head():
 			mesh.material_override = preload("res://world/city_look/CityLookMaterials.gd").flat(Color("5a5f61"), 0.6)
+
+
+static func _fade_post(item: Dictionary) -> void:
+	if not item.has("multimesh"):
+		var root = item.root.get_ref()
+		if is_instance_valid(root): preload("res://gameplay/DestroyedFade3D.gd").fade(root)
+		return
+	var chunk = item.chunk.get_ref()
+	if not is_instance_valid(chunk): return
+	# Isolate just this fallen instance; fading a MultiMesh would hide intact posts.
+	var remains := Node3D.new()
+	chunk.add_child(remains)
+	var parts: Array = [{"multimesh": item.multimesh, "index": item.index}]
+	parts.append_array(item.extra)
+	for part in parts:
+		var batch: MultiMesh = part.multimesh
+		var mesh := MeshInstance3D.new()
+		mesh.mesh = batch.mesh
+		mesh.transform = batch.get_instance_transform(part.index)
+		remains.add_child(mesh)
+		batch.set_instance_transform(part.index, Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3.ZERO))
+	preload("res://gameplay/DestroyedFade3D.gd").fade(remains)

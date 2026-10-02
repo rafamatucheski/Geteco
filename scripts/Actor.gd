@@ -203,7 +203,7 @@ func _stall_physics_tick(delta: float) -> void:
 		else:
 			set_meta("police_restraint_left", restraint)
 			target_speed *= 0.35
-	if is_player and not is_nan(combat_facing) and direction.length_squared() > 0.001:
+	if is_player and not is_nan(combat_facing) and combat_stance != "" and direction.length_squared() > 0.001:
 		# A braced backwards/side step is not a forward sprint played in reverse.
 		# Match actual displacement to the native directional clips' stride.
 		var forward := Vector3(-sin(combat_facing), 0, -cos(combat_facing))
@@ -270,7 +270,9 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 	_pose_delta = delta
 	_idle_clock += delta
 	var moving := actual_speed > MOVING_SPEED_EPSILON
-	var directional := is_player and not is_nan(combat_facing)
+	# Socos mantêm a passada normal; mirar o golpe não seleciona os clipes
+	# agachados de deslocamento com arma de fogo.
+	var directional := is_player and not is_nan(combat_facing) and combat_stance != ""
 	_locomotion_weight = move_toward(_locomotion_weight, 1.0 if moving else 0.0, delta * LOCOMOTION_BLEND_RATE)
 	_run_weight = move_toward(_run_weight, smoothstep(3.8, 6.0, actual_speed) if moving and not directional else 0.0, delta * RUN_BLEND_RATE)
 	_directional_weight = move_toward(_directional_weight, 1.0 if directional else 0.0, delta * 8.0)

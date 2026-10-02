@@ -11,8 +11,8 @@ var _surface_first := false
 
 func configure(gameplay: Node3D, start: Vector3, finish: Vector3) -> void:
 	var surface: Array = []
-	_tunnel_path = TUNNEL.walking_path(start, finish, func(from: Vector3, to: Vector3) -> PackedVector3Array:
-		surface.append([from, to])
+	_tunnel_path = TUNNEL.walking_path(start, finish, func(surface_start: Vector3, surface_end: Vector3) -> PackedVector3Array:
+		surface.append([surface_start, surface_end])
 		return PackedVector3Array())
 	if not _tunnel_path.is_empty() and surface.is_empty():
 		path = _tunnel_path

@@ -49,7 +49,9 @@ static func decorate(id: String, model: Node3D) -> void:
 			if not _materials.has(recipe):
 				var material := original.duplicate() as StandardMaterial3D
 				material.resource_name = "glass" if is_glass else "paint"
-				material.clearcoat_enabled = true
+				# Paint already has a broad specular lobe. A second clearcoat lobe
+				# adds a white highlight independent of the body color on flat panels.
+				material.clearcoat_enabled = is_glass
 				material.clearcoat = .65 if is_glass else .15
 				material.clearcoat_roughness = .12 if is_glass else .45
 				if is_glass:

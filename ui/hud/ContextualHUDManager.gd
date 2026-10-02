@@ -2,6 +2,7 @@ extends CanvasLayer
 ## Presentation boundary. Gameplay, saves, inventory and controls retain ownership.
 const STYLE := preload("res://ui/GameStyle.gd")
 const GLYPH := preload("res://ui/hud/HUDGlyph.gd")
+const WANTED := preload("res://ui/hud/WantedPresentation.gd")
 var world: Node
 var root_control: Control
 var player_status: PanelContainer
@@ -13,7 +14,10 @@ var feedback_card: PanelContainer
 var minimap: Control
 var backpack: Button
 var backpack_hint: Label
-var stars_label: Label
+var stars_label: RichTextLabel
+var search_progress: ProgressBar
+var _wanted_clock := 0.0
+var _wanted_phase := "clear"
 var speed_label: Label
 # Stable public references used by transitions and existing integration tooling.
 var weapon_icon: Control
@@ -50,7 +54,16 @@ func _ready() -> void:
 	health_bar=player_status.health_bar; armor_bar=player_status.armor_bar
 	_upper_right=VBoxContainer.new(); _upper_right.add_theme_constant_override("separation",8); root_control.add_child(_upper_right)
 	money=preload("res://ui/hud/MoneyHUD.gd").new(); _upper_right.add_child(money); money_label=money.amount
-	stars_label=STYLE.label("",15,STYLE.ACCENT); stars_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; _upper_right.add_child(stars_label)
+	stars_label=RichTextLabel.new(); stars_label.bbcode_enabled=true; stars_label.fit_content=true; stars_label.scroll_active=false
+	stars_label.add_theme_font_override("normal_font",STYLE.STRONG); stars_label.add_theme_font_size_override("normal_font_size",15)
+	stars_label.add_theme_color_override("default_color",STYLE.ACCENT); stars_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	stars_label.add_theme_color_override("font_outline_color",Color("20272b")); stars_label.add_theme_constant_override("outline_size",3)
+	_upper_right.add_child(stars_label)
+	search_progress=ProgressBar.new(); search_progress.max_value=1.0; search_progress.show_percentage=false; search_progress.custom_minimum_size=Vector2(0,4)
+	search_progress.mouse_filter=Control.MOUSE_FILTER_IGNORE; _upper_right.add_child(search_progress); search_progress.hide()
+	var search_track := StyleBoxFlat.new(); search_track.bg_color=Color("20272bdd")
+	var search_fill := StyleBoxFlat.new(); search_fill.bg_color=STYLE.ACCENT
+	search_progress.add_theme_stylebox_override("background",search_track); search_progress.add_theme_stylebox_override("fill",search_fill)
 	top_right_panel=_upper_right
 	_lower_right=HBoxContainer.new(); _lower_right.alignment=BoxContainer.ALIGNMENT_END; _lower_right.add_theme_constant_override("separation",10); root_control.add_child(_lower_right)
 	weapon=preload("res://ui/hud/WeaponHUD.gd").new(); weapon.size_flags_vertical=Control.SIZE_SHRINK_END; _lower_right.add_child(weapon)
@@ -137,12 +150,15 @@ func _sync_status(delta: float) -> void:
 	player_status.update_status(float(gameplay.health),float(gameplay.armor),thermal,delta)
 	weapon.update_weapon(state,root_control.visible)
 	var stars := clampi(int(gameplay.stars),0,6)
-	stars_label.text="★".repeat(stars)
 	var phase := String(gameplay.police_case.phase()) if gameplay.get("police_case")!=null else "clear"
-	if phase=="search": stars_label.text+="  BUSCA"
-	elif phase=="surrender": stars_label.text="RENDENDO-SE"
-	elif stars==0 and phase=="investigation": stars_label.text="INVESTIGAÇÃO"
+	if phase!=_wanted_phase: _wanted_clock=0.0; _wanted_phase=phase
+	if not get_tree().paused: _wanted_clock=fposmod(_wanted_clock+delta,10.0)
+	var progress: float=gameplay.police_evasion_progress()
+	var wanted_text := WANTED.text_for(stars,phase,progress,_wanted_clock)
+	stars_label.text="[right]"+wanted_text+"[/right]" if not wanted_text.is_empty() else ""
 	stars_label.visible=not stars_label.text.is_empty()
+	search_progress.visible=stars>0 and phase=="search"
+	search_progress.value=progress
 
 func _sync_prompts() -> void:
 	backpack_hint.text=_controls.prompt("inventory")

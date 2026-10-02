@@ -26,8 +26,12 @@ var archetype := ""
 var vehicle_id := "":
 	set(value):
 		vehicle_id = value
+		if is_instance_valid(visual) and _paint != null:
+			preload("res://runtime/VehicleUsage.gd").apply(visual, archetype, value, _paint.materials)
 		if is_instance_valid(visual) and visual.has_node("TaxiLivery"):
 			visual.get_node("TaxiLivery").registration(value)
+		if value.begins_with("cobra_patrol_") and is_instance_valid(visual):
+			preload("res://gameplay/urban_v1/CobraAppearance.gd").livery(self)
 var health := 180.0
 var horizontal_velocity := Vector3.ZERO
 var damage_look: Node
@@ -163,6 +167,8 @@ func _ready() -> void:
 	traced = _trace_ready("visual",traced)
 	visual.name = "Coupe"
 	add_child(visual)
+	if vehicle_id.begins_with("cobra_patrol_"):
+		preload("res://gameplay/urban_v1/CobraAppearance.gd").livery(self)
 	_bind_motorcycle_rider()
 	_paint = preload("res://runtime/VehiclePaint.gd").new()
 	_paint.bind(visual,archetype)
@@ -171,6 +177,7 @@ func _ready() -> void:
 	else:
 		_paint.apply(paint_color)
 	traced = _trace_ready("paint",traced)
+	preload("res://runtime/VehicleUsage.gd").apply(visual, archetype, vehicle_id, _paint.materials)
 	add_to_group("drivable")
 	set_meta("gameplay_role","vehicle")
 	var pivots: Dictionary = {}
@@ -281,28 +288,27 @@ func _lod_gate(delta: float) -> float:
 	_lod_pending = 0.0
 	return steps
 
-## Carcaça (vida 0) de trânsito ambiente ou de despacho some depois de WRECK_LIFETIME s, com fade
-## de WRECK_FADE s. O carro do jogador, o de missão/garagem e a carcaça com a equipe ainda a pé
-## (`wreck_hold`, posto pelo despacho) não entram. Evita dezenas de carros explodidos acumulados.
-const WRECK_LIFETIME := 30.0
+## Carcaças desaparecem dez segundos após a destruição.
+const WRECK_LIFETIME := 10.0
 const WRECK_FADE := 2.0
 var _wreck_age := 0.0
 var _wreck_fade := -1.0
 var _wreck_meshes: Array[MeshInstance3D] = []
+var _wreck_collision_state: Array[Dictionary] = []
+var _wreck_lights: Array[Dictionary] = []
 
 func _wreck_expires() -> bool:
-	if controlled or has_meta("garage_reward") or str(get_meta("garage_place", "")) != "": return false
-	return get_meta("ambient_traffic", false) == true or not player_damage_attribution
+	return not controlled
 
 ## true quando a carcaça foi removida neste passo.
 func _tick_wreck(delta: float) -> bool:
 	if _wreck_fade < 0.0:
 		if not _wreck_expires(): return false
 		_wreck_age += delta
-		if _wreck_age < WRECK_LIFETIME or get_meta("wreck_hold", false) == true: return false
+		if _wreck_age < WRECK_LIFETIME: return false
 		var world := get_parent()
 		var driving: Variant = world.get("driving") if is_instance_valid(world) else null
-		if driving != null and driving.get("car") == self: return false
+		if driving != null and driving.get("car") == self and driving.get("occupied") == true: return false
 		_begin_wreck_fade()
 		return false
 	_wreck_fade += delta
@@ -317,16 +323,17 @@ func _tick_wreck(delta: float) -> bool:
 func _begin_wreck_fade() -> void:
 	_wreck_fade = 0.0
 	# Já não bloqueia ninguém enquanto some.
-	collision_layer = 0
-	collision_mask = 0
 	var pending: Array[Node] = [self]
 	while not pending.is_empty():
 		var node: Node = pending.pop_back()
-		if node is CollisionObject3D and node != self:
+		if node is CollisionObject3D:
+			_wreck_collision_state.append({"node": node, "layer": node.collision_layer, "mask": node.collision_mask})
 			(node as CollisionObject3D).collision_layer = 0
 			(node as CollisionObject3D).collision_mask = 0
 		if node is MeshInstance3D: _wreck_meshes.append(node)
-		if node is Light3D: (node as Light3D).visible = false
+		if node is Light3D:
+			_wreck_lights.append({"node": node, "visible": node.visible})
+			(node as Light3D).visible = false
 		for child in node.get_children(): pending.append(child)
 
 func _physics_process(delta: float) -> void:
@@ -1002,6 +1009,8 @@ func receive_impact(amount: float, local_point: Vector3, source: Node = null) ->
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
+	var response: Callable = get_meta("gang_damage_handler",Callable())
+	if response.is_valid(): response.call(_source)
 	amount *= damage_resistance
 	health = maxf(0,health-amount)
 	damaged.emit(amount)
@@ -1036,6 +1045,20 @@ func restore_health(saved_health: float) -> void:
 		else: damage_look.refresh()
 
 func repair() -> void:
+	_wreck_age = 0.0
+	if _wreck_fade >= 0.0:
+		for entry in _wreck_collision_state:
+			if is_instance_valid(entry.node):
+				entry.node.collision_layer = entry.layer
+				entry.node.collision_mask = entry.mask
+		for entry in _wreck_lights:
+			if is_instance_valid(entry.node): entry.node.visible = entry.visible
+		for mesh in _wreck_meshes:
+			if is_instance_valid(mesh): mesh.transparency = 0.0
+	_wreck_fade = -1.0
+	_wreck_meshes.clear()
+	_wreck_collision_state.clear()
+	_wreck_lights.clear()
 	STREET.vehicle_repaired(self)
 	for marker in ["heavy_crush_source","heavy_crush_exploded"]:
 		if has_meta(marker): remove_meta(marker)

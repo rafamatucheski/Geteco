@@ -151,6 +151,7 @@ func _register_corpse(body: Node3D, stain: Dictionary) -> void:
 		if entry.body.get_ref() == body:
 			entry.stains.append(stain)
 			return
+	preload("res://gameplay/DestroyedFade3D.gd").schedule(body)
 	corpses.append({"body": weakref(body), "stains": [stain]})
 	while corpses.size() > MAX_CORPSES:
 		_fade_corpse(corpses.pop_front())
@@ -170,11 +171,7 @@ func _fade_corpse(entry: Dictionary) -> void:
 	var body = entry.body.get_ref()
 	if is_instance_valid(body) and body is Node3D:
 		body.set_meta("corpse_budget_evicted", true)
-		var visual: Node3D = body.get("visual")
-		var tween: Tween = body.create_tween()
-		if is_instance_valid(visual):
-			tween.tween_property(visual, "scale", visual.scale * 0.01, CORPSE_FADE_SECONDS)
-		tween.tween_callback(body.queue_free)
+		preload("res://gameplay/DestroyedFade3D.gd").fade(body)
 	for stain in entry.stains:
 		stain.lifetime = float(stain.age) + CORPSE_FADE_SECONDS
 

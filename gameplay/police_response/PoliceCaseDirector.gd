@@ -5,7 +5,9 @@ const MAX_REPORTS := 24
 const REPORT_SECONDS := 2.5
 const INVESTIGATION_SECONDS := 300.0
 const THREAT_SECONDS := 45.0
-const VIOLENT := ["gunfire", "suppressed", "explosion", "assault", "police_assault", "police_killed", "vehicle_assault"]
+const VIOLENT := ["gunfire", "suppressed", "explosion", "assault", "police_assault", "police_killed", "civilian_killed", "vehicle_assault"]
+const ESCALATION = preload("res://gameplay/police_response/PoliceEscalation.gd")
+var escalation := ESCALATION.new()
 var gameplay: Node3D
 var pending: Array[Dictionary] = []
 var investigation_left := 0.0
@@ -120,6 +122,7 @@ func _witness_evidence(report: Dictionary) -> Dictionary:
 	return result
 
 func tick(delta: float) -> void:
+	escalation.tick(delta, gameplay.stars > 0)
 	threat_left = maxf(0.0, threat_left - delta)
 	surrender_block = maxf(0.0, surrender_block - delta)
 	if gameplay.stars == 0: investigation_left = maxf(0.0, investigation_left - delta)
@@ -214,6 +217,7 @@ func phase() -> String:
 	return "clear"
 
 func reset() -> void:
+	escalation = ESCALATION.new()
 	descending = false
 	pending.clear()
 	investigation_left = 0.0
@@ -237,7 +241,7 @@ func snapshot() -> Dictionary:
 			"heard":true,"identified":bool(evidence.identified)})
 	return {"remaining": investigation_left, "threat": threat_left, "evidence": evidence_points,
 		"point": [case_point.x, case_point.y, case_point.z], "region": case_region, "place": case_place,
-		"descending":descending,"pending":reports}
+		"descending":descending,"pending":reports,"escalation":escalation.snapshot()}
 
 static func _valid_point(value: Variant) -> bool:
 	if not value is Array or value.size() != 3: return false
@@ -246,6 +250,7 @@ static func _valid_point(value: Variant) -> bool:
 	return true
 
 static func validate(data: Dictionary) -> bool:
+	if data.has("escalation") and (not data.escalation is Dictionary or not ESCALATION.validate(data.escalation)): return false
 	for key in ["remaining", "threat", "evidence"]:
 		if not data.has(key) or typeof(data[key]) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(data[key])) or float(data[key]) < 0.0: return false
 	if data.remaining > INVESTIGATION_SECONDS or data.threat > THREAT_SECONDS or data.evidence > 600 or float(data.evidence) != floorf(float(data.evidence)): return false
@@ -275,6 +280,7 @@ func restore(data: Dictionary) -> void:
 	case_region = data.region
 	case_place = data.place
 	descending = bool(data.get("descending",false))
+	escalation.restore(data.get("escalation", {}))
 	for report in data.get("pending",[]):
 		pending.append({"points":int(report.points),"point":Vector3(report.point[0],report.point[1],report.point[2]),
 			"exterior":Vector3(report.exterior[0],report.exterior[1],report.exterior[2]),"kind":report.kind,

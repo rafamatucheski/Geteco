@@ -97,6 +97,10 @@ func label() -> String:
 func tick(delta: float) -> void:
 	if finished: return
 	if not is_instance_valid(vehicle):
+		if wrecked:
+			state_age += delta
+			_tick_wrecked(delta)
+			return
 		if service == "mortician" and is_instance_valid(crew) and not crew.dead:
 			_release_incident()
 			crew.begin_escape(actor.global_position if is_instance_valid(actor) else crew.global_position)
@@ -145,7 +149,7 @@ func finish(reason: String) -> void:
 	end_reason = reason
 	_sync_motorcycle_rider()
 	# Remoção imediata: o veículo será liberado, não há recuperação física a fazer.
-	if driver != null:
+	if is_instance_valid(driver):
 		driver.discard_overtaking("removed:" + reason)
 		_detach_driver()
 	_release_incident()
@@ -165,7 +169,7 @@ func finish(reason: String) -> void:
 ## A viatura passa a ser do jogador: não some nem volta à base.
 func surrender_vehicle(exits: Array[Dictionary]) -> void:
 	if finished: return
-	if driver != null:
+	if is_instance_valid(driver):
 		driver.discard_overtaking("stolen")
 		_detach_driver()
 	_set_siren(false)
@@ -311,7 +315,7 @@ func _resume_bodies() -> void:
 
 func _on_wrecked() -> void:
 	wrecked = true
-	if driver != null:
+	if is_instance_valid(driver):
 		driver.discard_overtaking("wrecked")
 		vehicle.external_input = false
 		vehicle.controlled = false
@@ -325,14 +329,10 @@ func _on_wrecked() -> void:
 	controller.emit_dispatch_event("unit_wrecked", {"unit": self})
 
 func _tick_wrecked(_delta: float) -> void:
-	# Enquanto a equipe ainda age a pé a carcaça fica (Vehicle faz o fade de carcaças depois de 30 s).
-	if is_instance_valid(vehicle):
-		var crew_alive: bool = (is_police() and not officers.is_empty()) or (not is_police() and is_instance_valid(crew) and not crew.dead)
-		vehicle.set_meta("wreck_hold", crew_alive)
 	if is_police():
 		officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
 		if controller.gameplay.stars == 0 and state_age > 1.0 or officers.is_empty():
-			if officers.is_empty() or controller.is_unseen(vehicle.global_position):
+			if officers.is_empty() or (not is_instance_valid(vehicle) and officers.all(func(o): return controller.is_unseen(o.global_position))) or (is_instance_valid(vehicle) and controller.is_unseen(vehicle.global_position)):
 				finish("wrecked")
 		return
 	if is_instance_valid(crew) and not crew.dead:

@@ -14,6 +14,23 @@ const PROFILES := [
 ]
 static var next_model := 0
 
+# Explicit identities survive rebuilding the rig and do not depend on RNG.
+const HAIR := [0, 5, 7, 1, 0, 0, 7, 4, 5, 2]
+const BEARD := [0, 0, 1, 0, 0, 2, 1, 0, 0, 3]
+
+static func body_profile(appearance: Dictionary) -> Dictionary:
+	var p := preload("res://assets/civilians/CivilianMeshKit.gd").build_profile(bool(appearance.get("woman", false)), 1)
+	var width := float(appearance.width)
+	var depth := float(appearance.depth)
+	p.waist *= Vector2(width, depth)
+	p.hip *= Vector2(lerpf(1.0, width, .8), lerpf(1.0, depth, .65))
+	p.chest *= Vector2(lerpf(1.0, width, .75), lerpf(1.0, depth, .65))
+	p.shoulder *= lerpf(1.0, width, .65)
+	p.limb *= float(appearance.limb)
+	p.belly = maxf(0.0, depth - 1.0) * .18
+	p.duty_fit = true
+	return p
+
 static func uniform_body(material: Material, woman := false) -> MeshInstance3D:
 	# Same ring construction as Dante's overshirt: shoulder width is retained
 	# up to the sleeve joint instead of tapering into a capsule's rounded tip.
@@ -36,4 +53,3 @@ static func uniform_body(material: Material, woman := false) -> MeshInstance3D:
 	mesh.mesh = surface.commit()
 	mesh.material_override = material
 	return mesh
-

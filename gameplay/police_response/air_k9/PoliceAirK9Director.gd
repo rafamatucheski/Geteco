@@ -22,11 +22,13 @@ var _region := ""
 var _active := false
 var _search_phase := 0
 var _retire_tick := 0.0
+var _next_dog_variant := 0
 
 func configure(p_gameplay: Node3D) -> void:
 	gameplay = p_gameplay
 	# Custos únicos de malha saem da carga, não do quadro em que a polícia chega.
 	HELICOPTER.AIRFRAME.warm()
+	preload("res://gameplay/police_response/air_k9/PoliceDogArt.gd").warm()
 	var scratch := Node3D.new()
 	for weapon in ["pistol", "smg", "m4a1"]: preload("res://gameplay/ArsenalWeapon3D.gd").build_cached(scratch, weapon)
 	scratch.free()
@@ -63,6 +65,9 @@ func _physics_process(delta: float) -> void:
 	if _tick > 0.0: return
 	_tick = 0.25
 	dogs = dogs.filter(func(dog): return is_instance_valid(dog) and not dog.is_queued_for_deletion())
+	if gameplay.stars < 4:
+		for dog in dogs: dog.begin_withdrawal()
+		if is_instance_valid(helicopter) and not helicopter.recon_only: helicopter.begin_departure()
 	# Interior coordinates belong to a different physical room; never use them outdoors.
 	if not exterior_active():
 		if is_instance_valid(helicopter): helicopter.begin_departure()
@@ -70,15 +75,15 @@ func _physics_process(delta: float) -> void:
 	helicopter_timer = maxf(0.0, helicopter_timer - 0.25)
 	dog_timer = maxf(0.0, dog_timer - 0.25)
 	if not is_instance_valid(helicopter) and helicopter_timer <= 0.0 and gameplay.last_known_valid:
-		if officer_count() + SQUAD_SIZE <= officer_limit():
+		if gameplay.stars == 3 or officer_count() + SQUAD_SIZE <= officer_limit():
 			var traced := TRACE.begin()
-			var zone := find_landing_zone(gameplay.last_known)
+			var zone := {"center":gameplay.last_known,"points":[]} if gameplay.stars == 3 else find_landing_zone(gameplay.last_known)
 			TRACE.end("air.landing_zone", traced)
 			traced = TRACE.begin()
 			if not zone.is_empty(): launch_helicopter(zone)
 			else: helicopter_timer = 4.0
 			TRACE.end("air.launch_helicopter", traced)
-	if dog_timer <= 0.0 and dogs.size() < (2 if gameplay.stars >= 5 else 1):
+	if gameplay.stars >= 4 and dog_timer <= 0.0 and dogs.size() < (2 if gameplay.stars >= 5 else 1):
 		dog_timer = 6.0
 		var deploying := TRACE.begin()
 		_try_deploy_dog()
@@ -123,7 +128,9 @@ func officer_limit() -> int:
 	return mini(MAX_OFFICERS, int(RULES.FOOT_LIMIT[clampi(int(gameplay.stars), 0, RULES.FOOT_LIMIT.size() - 1)]))
 
 func launch_helicopter(zone: Dictionary) -> bool:
-	if is_instance_valid(helicopter) or not exterior_active() or officer_count() + SQUAD_SIZE > officer_limit(): return false
+	if gameplay.stars < 3: return false
+	var slots := 0 if gameplay.stars == 3 else SQUAD_SIZE
+	if is_instance_valid(helicopter) or not exterior_active() or (slots > 0 and officer_count() + slots > officer_limit()): return false
 	var center: Vector3 = zone.center
 	var spawn := center + Vector3(0, HOVER_HEIGHT + 7.0, 90.0)
 	# New aircraft never appear in the camera. The flight itself remains physical.
@@ -133,8 +140,10 @@ func launch_helicopter(zone: Dictionary) -> bool:
 			spawn = candidate
 			break
 		if index == 7: return false
-	gameplay.set_meta("police_air_reserved_slots", SQUAD_SIZE)
+	gameplay.set_meta("police_air_reserved_slots", slots)
 	helicopter = HELICOPTER.new()
+	helicopter.recon_only = slots == 0
+	helicopter._reserved = slots
 	helicopter.director = self
 	helicopter.landing_zone = zone
 	helicopter.position = to_local(spawn)
@@ -245,12 +254,12 @@ func landing_column_clear(point: Vector3, height: float = HOVER_HEIGHT) -> bool:
 	var safe := get_world_3d().direct_space_state.cast_motion(query)
 	return safe.size() == 2 and safe[0] >= 0.999
 
-func dog_clear(point: Vector3) -> bool:
+func dog_clear(point: Vector3, body_scale: float = 1.0) -> bool:
 	var shape := BoxShape3D.new()
-	shape.size = DOG.BODY_SIZE + Vector3(0.04, 0.0, 0.04)
+	shape.size = DOG.BODY_SIZE * body_scale + Vector3(0.04, 0.0, 0.04)
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
-	query.transform.origin = point + DOG.BODY_CENTER
+	query.transform.origin = point + DOG.BODY_CENTER * body_scale
 	query.collision_mask = 7
 	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
@@ -288,14 +297,16 @@ func _try_deploy_dog() -> void:
 			var hit := ground_hit(handler.global_position + offset, 0.8)
 			if hit.is_empty(): continue
 			var point: Vector3 = hit.position + Vector3.UP * 0.05
-			if point_on_screen(point) or not dog_clear(point): continue
+			if point_on_screen(point) or not dog_clear(point, DOG.MODELS.dog_scale(_next_dog_variant)): continue
 			if not has_line_of_sight(handler, point + Vector3.UP * 0.55, null, 3.0): continue
 			var dog := DOG.new()
+			dog.appearance_variant = _next_dog_variant
 			dog.director = self
 			dog.handler = handler
 			dog.position = to_local(point)
 			add_child(dog)
 			dogs.append(dog)
+			_next_dog_variant = (_next_dog_variant + 1) % 4
 			handler.set_meta("police_k9_deployed", true)
 			return
 

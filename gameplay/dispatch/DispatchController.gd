@@ -594,7 +594,7 @@ func _dispatch_police(delta: float) -> void:
 	investigation_unit = null
 	if gameplay.has_method("police_surrendering") and gameplay.police_surrendering(): return
 	if _last_stars == 0: _police_clock = RULES.INITIAL_DELAY[stars]
-	elif stars > _last_stars: _police_clock = minf(_police_clock, RULES.INITIAL_DELAY[stars])
+	elif stars > _last_stars: _police_clock = maxf(_police_clock, RULES.INITIAL_DELAY[stars])
 	_last_stars = stars
 	_police_clock -= delta
 	if _police_clock > 0.0: return

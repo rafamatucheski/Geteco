@@ -168,8 +168,8 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	health -= amount
 	if health > 0:
 		if role == "mortician": begin_escape(_source.global_position if _source is Node3D else global_position)
-		var impact_dir: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
-		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, impact_dir, amount)
+		var hit_direction: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
+		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_direction, amount)
 		return
 	dead = true
 	collision_layer = 0

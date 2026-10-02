@@ -4,8 +4,8 @@ const STEERING = preload("res://gameplay/crowd/PedestrianSteering.gd")
 const BARKS := [preload("res://audio/living_city/dog_detail_0.wav"), preload("res://audio/living_city/dog_detail_1.wav"), preload("res://audio/living_city/dog_detail_2.wav")]
 const BITE_RANGE := 1.35
 const HANDLER_RANGE := 24.0
-const BODY_SIZE := Vector3(0.56, 1.18, 1.66)
-const BODY_CENTER := Vector3(0, 0.6, -0.13)
+const BODY_SIZE := Vector3(0.56, 1.36, 1.66)
+const BODY_CENTER := Vector3(0, 0.69, -0.13)
 var director: Node3D
 var handler: CharacterBody3D
 var health := 45.0
@@ -16,6 +16,8 @@ var bark: AudioStreamPlayer3D
 var last_known := Vector3.ZERO
 var mode := "heel"
 var withdrawing := false
+@export_range(0, 3) var appearance_variant := 0
+var body_scale := 1.0
 var _rig: Dictionary
 var _steering := STEERING.new()
 var _sensor := 0.0
@@ -27,6 +29,11 @@ var _gait := 0.0
 var _path := PackedVector3Array()
 var _path_index := 0
 var _safe_step := true
+var _attack_time := -1.0
+var _attack_hit := false
+var _death_time := 0.0
+const BITE_CONTACT := 0.38
+const ATTACK_DURATION := 0.85
 
 func _ready() -> void:
 	name = "PoliceK9"
@@ -36,15 +43,17 @@ func _ready() -> void:
 	set_meta("gameplay_role", "police")
 	set_meta("police_k9", true)
 	add_to_group("v2_damageable")
+	body_scale = MODELS.dog_scale(appearance_variant)
 	var capsule := BoxShape3D.new()
-	capsule.size = BODY_SIZE
+	capsule.size = BODY_SIZE * body_scale
 	var collider := CollisionShape3D.new()
 	collider.shape = capsule
-	collider.position = BODY_CENTER
+	collider.position = BODY_CENTER * body_scale
 	add_child(collider)
 	visual = Node3D.new()
+	visual.scale = Vector3.ONE * body_scale
 	add_child(visual)
-	_rig = MODELS.dog(visual)
+	_rig = MODELS.dog(visual, appearance_variant)
 	bark = AudioStreamPlayer3D.new()
 	bark.max_distance = 30.0
 	bark.unit_size = 5.0
@@ -53,7 +62,10 @@ func _ready() -> void:
 	if is_instance_valid(handler): last_known = handler.global_position
 
 func _physics_process(delta: float) -> void:
-	if dead or not is_instance_valid(director): return
+	if dead:
+		_animate_death(delta)
+		return
+	if not is_instance_valid(director): return
 	if director.response_paused(): return
 	var gameplay: Node3D = director.gameplay
 	_cooldown = maxf(0.0, _cooldown - delta)
@@ -63,6 +75,7 @@ func _physics_process(delta: float) -> void:
 	var handler_alive: bool = is_instance_valid(handler) and handler.get("dead") != true and not handler.is_queued_for_deletion()
 	var usable: bool = not withdrawing and handler_alive and director.exterior_active() and str(handler.get_meta("police_place_id", "")).is_empty()
 	if not usable:
+		_cancel_attack()
 		sees_player = false
 		mode = "retire"
 		_retire_time += delta
@@ -82,6 +95,13 @@ func _physics_process(delta: float) -> void:
 	var force: bool = gameplay.police_force_authorized()
 	var handler_near := global_position.distance_to(handler.global_position) <= HANDLER_RANGE
 	var chase: bool = force and not restrained and handler_near and (sees_player or gameplay.last_known_valid)
+	if _attack_time >= 0.0:
+		if not can_bite(target):
+			_cancel_attack()
+		else:
+			_tick_attack(delta, target)
+			_move(Vector3.ZERO, delta)
+			return
 	mode = "pursue" if chase and sees_player else ("search" if chase else "heel")
 	var destination: Vector3 = last_known if chase else handler.global_position + handler.global_basis.x * 1.1
 	if _repath <= 0.0:
@@ -111,10 +131,14 @@ func _physics_process(delta: float) -> void:
 		bark.stream = BARKS[posmod(get_instance_id(), BARKS.size())]
 		bark.play()
 	if can_bite(target) and _cooldown <= 0.0:
-		_cooldown = 1.4
-		# K9 restrains; the bite cannot kill a critically wounded player.
-		gameplay.damage_player(minf(8.0, maxf(0.0, float(gameplay.health) - 1.0)))
-		if gameplay.has_method("police_k9_restraint"): gameplay.police_k9_restraint(1.2)
+		var toward := target.global_position - global_position
+		if toward.length_squared() > 0.001:
+			rotation.y = lerp_angle(rotation.y, atan2(-toward.x, -toward.z), minf(1.0, delta * 14.0))
+		if (-global_basis.z).dot(toward.normalized()) > 0.8:
+			_attack_time = 0.0
+			_attack_hit = false
+			_cooldown = 1.4
+			movement = Vector3.ZERO
 	_move(movement, delta)
 
 func can_bite(target: Node3D) -> bool:
@@ -128,9 +152,51 @@ func can_bite(target: Node3D) -> bool:
 	return director.has_line_of_sight(self, target.global_position + Vector3.UP * 0.55, target, BITE_RANGE + 0.6)
 
 func begin_withdrawal() -> void:
+	if dead: return
+	_cancel_attack()
 	withdrawing = true
 	sees_player = false
 	mode = "retire"
+
+func _cancel_attack() -> void:
+	_attack_time = -1.0
+	if not is_instance_valid(visual): return
+	visual.position = Vector3.ZERO
+	visual.rotation.x = 0.0
+	_rig.head.rotation.x = 0.0
+	_rig.jaw.rotation.x = 0.0
+
+func _tick_attack(delta: float, target: Node3D) -> void:
+	_attack_time += delta
+	mode = "bite"
+	var windup := clampf(_attack_time / 0.28, 0.0, 1.0)
+	var snap := clampf((_attack_time - 0.28) / 0.10, 0.0, 1.0)
+	var recover := clampf((_attack_time - BITE_CONTACT) / (ATTACK_DURATION - BITE_CONTACT), 0.0, 1.0)
+	visual.rotation.x = (-0.13 * windup + 0.24 * snap) * (1.0 - recover)
+	visual.position.y = sin(snap * PI) * 0.07 * body_scale
+	_rig.head.rotation.x = (-0.22 * windup + 0.48 * snap) * (1.0 - recover)
+	_rig.jaw.rotation.x = -0.65 * windup * (1.0 - snap)
+	if not _attack_hit and _attack_time >= BITE_CONTACT:
+		_attack_hit = true
+		# Recheck at jaw contact: escaping, surrendering or cover cancels damage.
+		if can_bite(target):
+			var gameplay: Node3D = director.gameplay
+			gameplay.damage_player(minf(8.0, maxf(0.0, float(gameplay.health) - 1.0)))
+			if gameplay.has_method("police_k9_restraint"): gameplay.police_k9_restraint(1.2)
+	if _attack_time >= ATTACK_DURATION: _cancel_attack()
+
+func _animate_death(delta: float) -> void:
+	_death_time = minf(0.85, _death_time + delta)
+	var progress := smoothstep(0.0, 0.85, _death_time)
+	# Roll about the torso, then settle its side onto the ground.
+	visual.rotation.z = PI * 0.5 * progress
+	visual.position = Vector3(0.56 * sin(visual.rotation.z), -0.34 * progress + 0.56 * (1.0 - cos(visual.rotation.z)), 0) * body_scale
+	_rig.head.rotation.x = 0.3 * progress
+	_rig.jaw.rotation.x = -0.14 * progress
+	for index in 4:
+		_rig.legs[index].rotation.x = lerpf(_rig.legs[index].rotation.x, 0.6 if index < 2 else -0.65, progress)
+	_rig.tail.rotation.x = -0.25 * progress
+	if _death_time >= 0.85: set_physics_process(false)
 
 func _move(movement: Vector3, delta: float) -> void:
 	if movement.length_squared() > 0.01: movement = _steering.steer(self, movement.normalized(), delta) * movement.length()
@@ -149,15 +215,15 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	if dead or not is_finite(amount) or amount <= 0.0: return
 	health = maxf(0.0, health - amount)
 	if health <= 0.0:
+		_cancel_attack()
 		dead = true
+		mode = "dead"
 		sees_player = false
 		velocity = Vector3.ZERO
 		collision_layer = 0
 		collision_mask = 0
-		visual.rotation.z = PI * 0.5
-		visual.position.y = 0.1
 		bark.stop()
-		set_physics_process(false)
+		set_physics_process(true)
 		get_tree().create_timer(12.0).timeout.connect(queue_free)
 	if is_instance_valid(source) and source.has_method("is_player_damage_source") and source.is_player_damage_source():
 		director.gameplay.report_vehicle_assault(self, source)

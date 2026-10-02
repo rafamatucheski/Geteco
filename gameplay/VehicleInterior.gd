@@ -64,6 +64,8 @@ const KIND_OF := {
 ## teto: o piloto é visto de cima inteiro), e lugares onde o vidro não dá pista (buggy,
 ## empilhadeira). Valores em coordenadas do veículo (−Z é a frente, o motorista fica em −X).
 const OVERRIDES := {
+	# O teto curvo do cupê desce nas bordas; o forro plano atravessaria a pintura.
+	"sport_coupe": {"roof_liner": false},
 	"beach_cabriolet": {"open_top": true},
 	"porto_rosso": {"open_top": true},
 	"american_dump_truck": {"floor": .95, "roof": 2.55},
@@ -946,7 +948,8 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	# Forro do teto sob o teto, com luz de cortesia; quebra-sóis e retrovisor interno.
 	var roof_z0 := wz1 - .02
 	var roof_z1 := minf(rear - .1, floor_back)
-	_box(_alpha_tool, Vector3(0, roof - .04, (roof_z0 + roof_z1) * .5), Vector3(w * 2 - .06, .03, roof_z1 - roof_z0), Color(C_ROOF, .30))
+	if bool(s.get("roof_liner", true)):
+		_box(_alpha_tool, Vector3(0, roof - .04, (roof_z0 + roof_z1) * .5), Vector3(w * 2 - .06, .03, roof_z1 - roof_z0), Color(C_ROOF, .30))
 	_box(t, Vector3(0, roof - .058, sz + .1), Vector3(.14, .012, .09), Color("f0ecdc"))
 	for vx in [sx, -sx]:
 		_box(t, Vector3(vx, roof - .075, wz1 + .16), Vector3(.36, .018, .17), Color("a29b8b"))

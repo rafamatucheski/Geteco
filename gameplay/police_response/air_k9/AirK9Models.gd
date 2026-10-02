@@ -76,42 +76,8 @@ static func helicopter(parent: Node3D) -> Dictionary:
 		blade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return {"rotor": rotor, "tail_rotor": tail_rotor}
 
-static func dog(parent: Node3D) -> Dictionary:
-	var local_tan := Color("886846")
-	var dark := Color("302923")
-	var black := Color("161d21")
-	ellipsoid(parent, "Body", Vector3(0, 0.62, 0.07), Vector3(0.39, 0.49, 0.92), local_tan)
-	ellipsoid(parent, "Saddle", Vector3(0, 0.77, 0.12), Vector3(0.4, 0.3, 0.76), dark)
-	ellipsoid(parent, "Chest", Vector3(0, 0.68, -0.35), Vector3(0.4, 0.55, 0.4), local_tan)
-	box(parent, "TacticalHarness", Vector3(0, 0.8, -0.04), Vector3(0.45, 0.19, 0.62), black)
-	for side in [-1.0, 1.0]:
-		box(parent, "HarnessBand", Vector3(side * 0.225, 0.68, -0.08), Vector3(0.028, 0.33, 0.11), Color("809897"))
-	var head := Node3D.new()
-	head.name = "Head"
-	head.position = Vector3(0, 0.94, -0.53)
-	parent.add_child(head)
-	ellipsoid(head, "Skull", Vector3.ZERO, Vector3(0.3, 0.33, 0.4), local_tan)
-	ellipsoid(head, "Muzzle", Vector3(0, -0.07, -0.24), Vector3(0.21, 0.16, 0.31), dark)
-	ellipsoid(head, "Nose", Vector3(0, -0.02, -0.385), Vector3(0.14, 0.11, 0.07), black)
-	for side in [-1.0, 1.0]:
-		var ear_mesh := CylinderMesh.new()
-		ear_mesh.top_radius = 0.01
-		ear_mesh.bottom_radius = 0.085
-		ear_mesh.height = 0.27
-		ear_mesh.radial_segments = 4
-		part(head, "Ear", ear_mesh, Vector3(side * 0.105, 0.23, 0.04), dark).rotation.z = side * -0.12
-		ellipsoid(head, "Eye", Vector3(side * 0.127, 0.03, -0.1), Vector3(0.026, 0.036, 0.034), Color("bc9652"))
-	var legs: Array[Node3D] = []
-	for z in [-0.28, 0.38]:
-		for side in [-1.0, 1.0]:
-			var leg := Node3D.new()
-			leg.position = Vector3(side * 0.15, 0.52, z)
-			parent.add_child(leg)
-			box(leg, "Leg", Vector3(0, -0.2, 0), Vector3(0.095, 0.4, 0.11), local_tan)
-			ellipsoid(leg, "Paw", Vector3(0, -0.46, -0.045), Vector3(0.12, 0.1, 0.19), dark)
-			legs.append(leg)
-	var tail := Node3D.new()
-	tail.position = Vector3(0, 0.69, 0.51)
-	parent.add_child(tail)
-	ellipsoid(tail, "Tail", Vector3(0, -0.08, 0.22), Vector3(0.105, 0.13, 0.62), dark).rotation.x = 0.45
-	return {"legs": legs, "tail": tail, "head": head}
+static func dog_scale(variant: int) -> float:
+	return preload("res://gameplay/police_response/air_k9/PoliceDogArt.gd").variant_scale(variant)
+
+static func dog(parent: Node3D, variant: int = 0) -> Dictionary:
+	return preload("res://gameplay/police_response/air_k9/PoliceDogArt.gd").build(parent, variant)

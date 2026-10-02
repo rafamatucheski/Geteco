@@ -27,7 +27,7 @@ func run() -> void:
 	floor_shape.shape = WorldBoundaryShape3D.new()
 	floor_body.add_child(floor_shape)
 	world.add_child(floor_body)
-	for archetype: String in ["", "sport_coupe"]:
+	for archetype: String in ["", "sport_coupe", "police_transport"]:
 		var car := VEHICLE.new()
 		car.archetype = archetype
 		car.paint_color = Color("d5a544")
@@ -36,6 +36,10 @@ func run() -> void:
 		await physics_frame
 		car.set_physics_process(false)
 		var label := archetype if not archetype.is_empty() else "coupe"
+		var markings := car.visual.find_children("*", "Label3D", true, false)
+		if archetype == "police_transport":
+			check(markings.size() == 2, "viatura tem inscrição nos dois lados")
+			for marking in markings: check(marking.visible, "inscrição visível antes da queima")
 		var paint: StandardMaterial3D = car._paint.materials[0]
 		var gloss := paint.roughness
 		var exploded := [0]
@@ -56,6 +60,7 @@ func run() -> void:
 		check(car.health <= 0 and exploded[0] == 1, label + ": o fogo leva à explosão (%.1fs)" % seconds)
 		check(seconds < 4.5, label + ": explosão sai em poucos segundos")
 		check(car.damage_look.wrecked, label + ": carcaça ativa")
+		for marking in markings: check(not marking.visible, "inscrição some na carcaça carbonizada")
 		for i in 40: await process_frame
 		var warm := 0
 		var parts := 0
@@ -76,6 +81,14 @@ func run() -> void:
 		check(car.visual.position == Vector3.ZERO, label + ": reparo endireita a lataria")
 		var restored := car.visual.find_children("*", "MeshInstance3D", true, false).any(func(part): return part.get_active_material(0) == paint or part.material_override == paint)
 		check(restored, label + ": pintura original volta às peças")
+		for marking in markings: check(marking.visible, "reparo restaura inscrição")
+		if archetype == "police_transport":
+			markings[0].hide()
+			car.damage_look.wreck()
+			car.damage_look.wreck()
+			for marking in markings: check(not marking.visible, "carcaça direta também oculta inscrição")
+			car.repair()
+			check(not markings[0].visible and markings[1].visible, "reparo preserva visibilidade anterior mesmo após wreck repetido")
 		car.damage_look.ignite(null)
 		check(car.damage_look.burning and car.damage_look._fire.emitting, label + ": impacto de lança-chamas acende o motor na hora")
 		car.repair()

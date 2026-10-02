@@ -55,12 +55,14 @@ func _ready() -> void:
 	visual = MODELS[tier].instantiate()
 	visual.scale *= 1.28
 	add_child(visual)
+	preload("res://gameplay/urban_v1/CobraAppearance.gd").dress(visual)
 	left_leg = visual.find_child("left_upper_leg", true, false)
 	right_leg = visual.find_child("right_upper_leg", true, false)
 	var right_arm := visual.find_child("right_upper_arm", true, false) as Node3D
 	var left_arm := visual.find_child("left_upper_arm", true, false) as Node3D
 	if right_arm: right_arm.rotation.x = -1.4
 	if left_arm: left_arm.rotation.x = -1.15
+	preload("res://gameplay/urban_v1/CobraAppearance.gd").arms(visual,true)
 	last_known = global_position
 
 func _physics_process(delta: float) -> void:

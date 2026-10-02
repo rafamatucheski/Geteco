@@ -118,6 +118,7 @@ const GRENADE_AIR_TIME := 1.08
 ## Fração do alcance pedido em que a granada toca o chão; o quique e o rolamento levam o resto.
 const GRENADE_LANDING_SHARE := 0.8
 const STAR_THRESHOLDS := [0, 12, 30, 60, 140, 260, 420]
+const EVASION_SECONDS := [0.0, 18.0, 23.0, 28.0, 33.0, 38.0, 45.0]
 const MAX_CRIME_POINTS := 600
 const MAX_ACTIVE := [0, 2, 3, 4, 5, 5, 5]
 const DEPLOYMENT := [0, 4, 6, 10, 14, 18, 22]
@@ -841,8 +842,8 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 		var visible_hit := get_world_3d().direct_space_state.intersect_ray(query)
 		var actor: Variant = visible_hit.get("collider")
 		if actor is CharacterBody3D and actor.has_method("receive_damage") and not PROTECTION.is_protected(actor):
-			var health: Variant = actor.get("health")
-			if actor.get("dead") != true and (health == null or float(health) > 0.0):
+			var target_health: Variant = actor.get("health")
+			if actor.get("dead") != true and (target_health == null or float(target_health) > 0.0):
 				# Shots are horizontal. Aim through the body's centre regardless
 				# of whether the mouse points at its head, torso or feet.
 				aim_point = Vector3(actor.global_position.x, player.global_position.y + 1.0, actor.global_position.z)
@@ -986,7 +987,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							var damage_look: Node = hit.collider.get("damage_look")
 							if damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
-					_damage(hit.collider, amount, player)
+					_damage_bullet(hit.collider, amount, player)
 					_impact_sound(hit.collider, end, float(amount))
 					if _impact_material(hit.collider) == "flesh":
 						var key: int = hit.collider.get_instance_id()
@@ -1168,7 +1169,19 @@ func report_vehicle_assault(victim: Node3D, vehicle: Node) -> void:
 		if new_contact: _report_police_assault(victim)
 		if victim.get("dead") == true: _report_police_killed(victim)
 		return
-	if new_contact: report_observed_crime(25, victim.global_position, "vehicle_assault", victim)
+	if victim.get("dead") == true:
+		_report_civilian_killed(victim, victim.global_position)
+	elif new_contact: report_observed_crime(25, victim.global_position, "vehicle_assault", victim)
+
+func _report_civilian_killed(victim: Node3D, crime_point: Vector3 = Vector3.INF) -> void:
+	# Same bounded per-victim death ledger as officers; a corpse is not a new crime.
+	var id := victim.get_instance_id()
+	if _police_kill_reported.has(id): return
+	_police_kill_reported[id] = true
+	# Seeing a distant body is not seeing its shooter. Vehicle impacts report the
+	# collision site; weapon damage must identify the player's firing position.
+	var observed := player.global_position if crime_point == Vector3.INF else crime_point
+	report_observed_crime(30, observed, "civilian_killed", victim)
 
 ## Registros por vítima são inteiros (ids de instância), não referências: mesmo assim expiram por tempo,
 ## saem quando o ator deixa de existir e são zerados na troca de região.
@@ -1198,6 +1211,13 @@ func _clear_combat_registers() -> void:
 	_pain_next.clear()
 	_flame_crime_clock = 0.0
 
+func _damage_bullet(actor: Object, amount: float, source: Node) -> void:
+	# Lataria absorve 85% dos tiros, inclusive cada chumbo de escopeta.
+	# Mantém durabilidade, blindagem, colisões, fogo e explosões independentes.
+	if is_instance_valid(actor) and actor is Node and actor.get_meta("gameplay_role", "") == "vehicle":
+		amount *= 0.15
+	_damage(actor, amount, source)
+
 ## `continuous`: dano de jato ou de fogo em tique periódico (ver `_crime_due`).
 func _damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
 	var began := STALL_WORK.begin()
@@ -1218,10 +1238,12 @@ func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool 
 			if is_instance_valid(reactions): reactions.report_assault(actor, source)
 		if actor is Node3D and role in ["civilian", "emergency"]:
 			emergency.report_injury(actor, actor.get("dead") == true)
-		if source == player and role != "cobra" and not actor.get_meta("local_security",false):
+		if source == player and not was_dead and role != "cobra" and not actor.get_meta("local_security",false):
 			if role == "police":
 				if _crime_due(actor, continuous): _report_police_assault(actor as Node3D)
 				if killed: _report_police_killed(actor as Node3D)
+			elif killed and role in ["civilian", "emergency"]:
+				_report_civilian_killed(actor as Node3D)
 			elif _crime_due(actor, continuous):
 				report_observed_crime(12, player.global_position, "assault", actor as Node3D)
 
@@ -1231,8 +1253,7 @@ func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool 
 func _report_police_assault(victim: Node3D) -> void:
 	if not is_instance_valid(victim): return
 	var missing := maxi(0, STAR_THRESHOLDS[2] - crime_points)
-	if missing > 0: register_crime(missing, victim.global_position, "police_assault")
-	elif police_case != null: police_case.confirmed(0, victim.global_position, "police_assault")
+	register_crime(missing, victim.global_position, "police_assault")
 
 ## V1 `report_officer_killed`: depois da agressão soma pelo menos 30 pontos e
 ## chega ao piso de 60. O id impede duplicação entre origens de dano.
@@ -1608,8 +1629,10 @@ func respawn() -> void:
 func register_crime(points: int, point: Vector3, kind: String = "reported", testimony: Dictionary = {}) -> void:
 	# A completed testimony describes an earlier crime. Entering a safe garage
 	# cannot retroactively erase it; safe areas still reject new local offenses.
-	if points <= 0 or (not state.weapons_allowed() and testimony.is_empty()): return
-	if police_case != null: police_case.confirmed(points, point, kind, testimony)
+	if points < 0 or (points == 0 and kind != "police_assault") or (not state.weapons_allowed() and testimony.is_empty()): return
+	if police_case != null:
+		police_case.confirmed(points, point, kind, testimony)
+		points = police_case.escalation.accept(points, crime_points, kind)
 	var old_stars := stars
 	crime_points = mini(MAX_CRIME_POINTS, crime_points + points)
 	_update_stars()
@@ -1747,7 +1770,7 @@ func _advance_police_rounds(delta: float) -> void:
 		if not hit.is_empty():
 			var data: Dictionary = round_index.data
 			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
-			_damage(hit.collider, damage, round_index.source.get_ref())
+			_damage_bullet(hit.collider, damage, round_index.source.get_ref())
 			_impact_sound(hit.collider, end, damage)
 			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)
@@ -1897,6 +1920,14 @@ func _impact_sound(collider: Object, point: Vector3, amount: float) -> void:
 	_recent_impacts.append({"time": _combat_clock, "material": material})
 	_play_stream(AUDIO.take("impact_" + material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
 
+func police_evasion_seconds() -> float:
+	if police_case != null and police_case.descending: return 8.0
+	return EVASION_SECONDS[clampi(stars, 0, 6)]
+
+func police_evasion_progress() -> float:
+	if stars <= 0 or contact_age <= 1.0 or police_surrendering(): return 0.0
+	return clampf(hidden_time / police_evasion_seconds(), 0.0, 1.0)
+
 func _update_police(delta: float) -> void:
 	if police_case != null: police_case.tick(delta)
 	police = police.filter(func(unit): return is_instance_valid(unit) and not unit.dead)
@@ -1907,9 +1938,11 @@ func _update_police(delta: float) -> void:
 		crime_points = 0
 		changed.emit()
 	if stars == 0: return
-	var evasion_seconds := 8.0 if police_case != null and police_case.descending else (120.0 if stars == 6 else 18.0 + stars * 5.0)
+	var evasion_seconds := police_evasion_seconds()
 	if hidden_time > evasion_seconds:
-		if stars <= 1: clear_wanted(true)
+		if stars <= 1:
+			clear_wanted(true)
+			message.emit("Você despistou a polícia.")
 		else:
 			crime_points = STAR_THRESHOLDS[stars - 1]
 			_update_stars()
@@ -1989,6 +2022,7 @@ func clear_wanted(keep_investigation: bool = false) -> void:
 	# Custody, respawn and save restoration explicitly end the old response.
 	if not keep_investigation and is_instance_valid(police_air): police_air.clear_response()
 	if police_case != null and not keep_investigation: police_case.reset()
+	elif police_case != null: police_case.escalation = police_case.ESCALATION.new()
 	stars = 0
 	crime_points = 0
 	hidden_time = 0

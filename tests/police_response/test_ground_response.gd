@@ -55,7 +55,10 @@ func dispatch_contract() -> void:
 	check(not bike.vehicle._motorcycle_rider_parts.is_empty() and bike.vehicle._motorcycle_rider_parts.all(func(p): return p.visible),"motorcycle officer is visible while seated")
 	check(bike.vehicle.equipment.beacons.size() == 2,"motorcycle has working paired police beacons")
 	check(RULES.response_variant(3,controller._active_police()) != "motorcycle","one motorcycle cap survives escalation")
-	game.register_crime(420,game.last_known)
+	# Seed maximum response explicitly; ordinary reports no longer create it.
+	game.crime_points = 420
+	game._update_stars()
+	game.register_crime(1,game.last_known)
 	var tactical: RefCounted = controller.dispatch_police_to(game.last_known)
 	check(tactical != null and tactical.variant == "tactical","army crew precedes armored support")
 	if tactical == null: KIT.teardown(b); return
@@ -112,7 +115,8 @@ func roadblock_and_tires() -> void:
 	await physics_frame
 	var ray := PhysicsRayQueryParameters3D.create(roadblock.to_global(Vector3(2.6,.5,-2)),roadblock.to_global(Vector3(2.6,.5,2)),1)
 	var hit := controller.get_world_3d().direct_space_state.intersect_ray(ray)
-	check(not hit.is_empty() and hit.collider is StaticBody3D and hit.collider.get_parent() == roadblock,"roadblock has real collision against cars and pedestrians")
+	# The 01/10 design removed concrete barriers; the tire strip must leave a bypass.
+	check(hit.is_empty(),"tire strip leaves the side passage physically clear")
 	check(BLOCK.wheel_crosses_strip(Vector3(0,.1,-5),Vector3(0,.1,5),3.6),"swept tire contact catches a fast crossing")
 	check(not BLOCK.wheel_crosses_strip(Vector3(3,.1,-5),Vector3(3,.1,5),3.6),"passing around strip does not puncture tires")
 	check(not BLOCK.wheel_crosses_strip(Vector3(0,2,-5),Vector3(0,2,5),3.6),"vehicle above the road does not touch spikes")

@@ -15,7 +15,11 @@ func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	for id in FLEET.all():
 		var model: Node3D = FLEET.create(id)
-		check(int(model.get_meta("fleet_fixups", 0)) >= 1, id + ": .scn sem as correções da frota (rodar apply_fleet_fixups)")
+		# The army tank is built by PoliceGroundModels, not an exported .scn.
+		if id == "army_tank":
+			check(model.has_node("TankTurret/TankBarrel"), "army_tank: modelo procedural completo")
+		else:
+			check(int(model.get_meta("fleet_fixups", 0)) >= 1, id + ": .scn sem as correções da frota (rodar apply_fleet_fixups)")
 		model.free()
 	for id in ["bike_urban", "bike_sport", "bike_cruiser"]:
 		var model: Node3D = FLEET.create(id)
@@ -42,6 +46,7 @@ func run() -> void:
 	for pivot in bike.wheels: rolled = rolled or absf(pivot.rotation.x) > .01
 	check(rolled, "rodas da moto pararam de rolar")
 	bike.queue_free()
+	await process_frame
 	if failures.is_empty(): print("FLEET_FIXUPS OK")
 	for failure in failures: print("FAIL ", failure)
 	quit(0 if failures.is_empty() else 1)

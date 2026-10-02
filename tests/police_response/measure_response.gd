@@ -46,7 +46,10 @@ func run() -> void:
 	world.session.weather.time_of_day = .45
 	if scenario == "interior":
 		if not await world.session.enter_place("harbor_ammunation", false): quit(4); return
-	world.gameplay.register_crime(420,world.player.global_position)
+	# Fixed load fixture: reports no longer bypass the crime escalation policy.
+	world.gameplay.crime_points = 60 if scenario in ["recon", "search"] else 420
+	world.gameplay._update_stars()
+	world.gameplay.register_crime(1,world.player.global_position)
 	# Same baseline escalation; new policy receives explicit violent testimony.
 	if world.gameplay.get("police_case") != null: world.gameplay.police_case.confirmed(0,world.player.global_position,"gunfire")
 	var frames: Array[float] = []
@@ -62,7 +65,10 @@ func run() -> void:
 		var ms := float(now-previous)/1000.0
 		previous = now
 		world.gameplay.health = 100.0
-		world.gameplay.report_contact(world.player.global_position)
+		if scenario == "search":
+			world.gameplay.contact_age = 2.0
+			world.gameplay.hidden_time = 22.0
+		else: world.gameplay.report_contact(world.player.global_position)
 		if now-start < 8000000: warm.append(ms)
 		else:
 			frames.append(ms)

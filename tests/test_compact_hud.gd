@@ -92,10 +92,10 @@ func run() -> void:
 	gameplay.report_contact(world.player.global_position)
 	hud.refresh_from_state()
 	await frames(20)
-	check(gameplay.stars > 0 and hud.stars_label.text == "★".repeat(gameplay.stars), "only active wanted stars are shown")
+	check(gameplay.stars > 0 and hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  PERSEGUIÇÃO", "active wanted stars explicitly show police contact")
 	gameplay.contact_age = 2.0
 	hud.refresh_from_state()
-	check(hud.stars_label.text == "★".repeat(gameplay.stars)+"  BUSCA", "lost police contact retains existing search indication")
+	check(hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  BUSCA" and hud.search_progress.visible, "lost police contact shows search and escape progress")
 	check(hud.stars_label.get_global_rect().position.y < 140, "active wanted state stays in upper right")
 	await shot("03-wanted")
 	hud.refresh_from_state()

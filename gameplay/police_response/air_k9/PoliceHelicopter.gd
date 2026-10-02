@@ -27,6 +27,7 @@ var sound: AudioStreamPlayer3D
 var rappellers: Array[Dictionary] = []
 var deployed_count := 0
 var sees_player := false
+var recon_only := false
 var _clock := 0.0
 var _mode_time := 0.0
 var _sensor := 0.0
@@ -101,11 +102,18 @@ func _physics_process(delta: float) -> void:
 	match mode:
 		"approach":
 			var destination: Vector3 = landing_zone.center + Vector3.UP * HOVER_HEIGHT
+			if recon_only: destination = director.gameplay.last_known + Vector3.UP * HOVER_HEIGHT
 			_fly_to(destination, 15.0, delta)
 			if global_position.distance_to(destination) < 0.22 and velocity.length() < 0.8:
-				mode = "hover"
+				mode = "recon" if recon_only else "hover"
 				_mode_time = 0.0
 			elif _mode_time > 35.0: begin_departure()
+		"recon":
+			# Follow only shared, witnessed information. Roofs still block _sense.
+			var anchor: Vector3 = director.gameplay.last_known
+			var orbit := Vector3(cos(_mode_time * 0.18), 0, sin(_mode_time * 0.18)) * 9.0
+			_fly_to(anchor + orbit + Vector3.UP * HOVER_HEIGHT, 18.0, delta)
+			if _mode_time > 60.0: begin_departure()
 		"hover":
 			_fly_to(landing_zone.center + Vector3.UP * HOVER_HEIGHT, 3.0, delta)
 			if _mode_time >= 1.8 and absf(wrapf(rotation.y, -PI, PI)) < 0.04:
@@ -172,6 +180,9 @@ func _sense() -> void:
 		spotlight.look_at(ground, Vector3.FORWARD)
 
 func _spawn_rappeller(index: int) -> void:
+	if director.gameplay.stars < 4:
+		_depart_requested = true
+		return
 	if director.officer_count() + _reserved > director.officer_limit():
 		# Legacy callers may add officers without consulting DispatchController.
 		# Do not compound their allocation with another person on a rope.

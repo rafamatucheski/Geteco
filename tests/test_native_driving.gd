@@ -4,9 +4,17 @@ func run() -> void:
 	var world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for i in 240:
+	# Driving starts after admission, never against the temporary startup car.
+	var startup_deadline := Time.get_ticks_msec() + 90000
+	while Time.get_ticks_msec() < startup_deadline:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play: break
+	if world.session == null or not world.session.ready_for_play:
+		push_error("Native world did not finish loading before driving validation")
+		world.free()
+		await process_frame
+		quit(1)
+		return
 	var car: CharacterBody3D = world.driving.car
 	var route: Curve3D = world.production.traffic_routes.route_near(car.position)
 	var distance := route.get_closest_offset(car.position)

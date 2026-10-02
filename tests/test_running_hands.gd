@@ -42,25 +42,40 @@ func run() -> void:
 	var output := ProjectSettings.globalize_path("res://evidence/running-hands-20260928")
 	if label != "": DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
 	var stationary := "--standing" in OS.get_cmdline_user_args()
-	for id in ["fists", "grenade"]:
+	for id in ["fists", "grenade", "rpg"]:
 		if stationary and id == "fists": continue
+		for child in mount.get_children():
+			mount.remove_child(child)
+			child.queue_free()
+		actor.set_combat_weapon_mount(mount, DATA.GRIPS[id])
+		preload("res://gameplay/ArsenalWeapon3D.gd").build(mount, id)
 		var pose = POSE.new()
 		var worst_foot_shift := 0.0
 		var previous: Array = []
 		var worst_angle := 0.0
 		var minimum_elbow_back := INF
+		var head_clearance := INF
 		for tick in 210:
-			actor.combat_facing = NAN
+			actor.combat_facing = 0.0
+			actor.combat_stance = "gun" if id == "rpg" else ("grenade" if id == "grenade" else "")
 			var speed := 0.0 if stationary else 6.5
 			actor._pose_locomotion(Vector3.FORWARD, speed, Vector3.FORWARD * speed / 60.0, speed)
 			var feet: Array[Vector3] = []
 			for side in ["Left", "Right"]:
 				feet.append(actor.skeleton.get_bone_global_pose(actor.skeleton.find_bone(side + "Foot")).origin)
 			if tick == 60 or tick == 90: pose.attack(id)
-			var packet: Dictionary = pose.update(id, 1.0/60.0, false, false, 0, not stationary, not stationary, actor.phase, actor.combat_rig_info())
+			var packet: Dictionary = pose.update(id, 1.0/60.0, id == "rpg", false, 0, not stationary, not stationary, actor.phase, actor.combat_rig_info())
 			actor.set_combat_weapon_pose(id, packet)
 			actor._apply_combat_weapon_pose()
-			mount.visible = id == "grenade" and packet.visible
+			mount.visible = id != "fists" and packet.visible
+			if id == "fists" and tick == 55 and not stationary:
+				check(actor._run_weight > 0.95 and actor._directional_weight < 0.01, "moving punch keeps running gait even with combat facing")
+			if id == "rpg" and tick > 30:
+				var head: Vector3 = actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor.skeleton.find_bone("Head")).origin)
+				var a := mount.to_global(Vector3(0, 0.08, -0.32))
+				var b := mount.to_global(Vector3(0, 0.08, 0.50))
+				var closest := a + (b-a) * clampf((head-a).dot(b-a) / (b-a).length_squared(), 0, 1)
+				head_clearance = minf(head_clearance, head.distance_to(closest))
 			if id == "grenade" and tick > 30:
 				var points: Array[Vector3] = []
 				for part in ["RightArm", "RightForeArm", "RightHand"]:
@@ -82,6 +97,7 @@ func run() -> void:
 				root.get_texture().get_image().save_png(output.path_join("%s-%s-%d.png" % [label, id, tick]))
 		check(worst_foot_shift < 0.005, "%s preserves running feet: %.4fm" % [id, worst_foot_shift])
 		check(worst_angle < 35.0, "%s continuous joints: %.2f degrees/frame" % [id, worst_angle])
+		if id == "rpg": check(head_clearance > 0.18, "RPG tube clears head throughout gait: %.4fm" % head_clearance)
 		if id == "grenade":
 			check(minimum_elbow_back > 0.0, "grenade elbow bends backward throughout carry/throw/recovery: %.4fm" % minimum_elbow_back)
 			var packet: Dictionary = pose.update(id, 1.0/60.0, false, false, 0, false, false, 0, {"loaded": true})
