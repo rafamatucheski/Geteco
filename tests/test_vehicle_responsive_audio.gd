@@ -43,6 +43,17 @@ func check(ok: bool, message: String) -> void:
 		failures += 1
 		push_error(message)
 
+func playback_refs(node: Node) -> Array[WeakRef]:
+	var result: Array[WeakRef] = []
+	var pending: Array[Node] = [node]
+	while not pending.is_empty():
+		var current: Node = pending.pop_back()
+		if current.has_method("has_stream_playback") and current.has_stream_playback():
+			var playback: RefCounted = current.get_stream_playback()
+			result.append(weakref(playback))
+		pending.append_array(current.get_children())
+	return result
+
 func run() -> void:
 	check(PROFILE.drive_load(8, -1, false) == 0, "reverse button brakes forward motion without engine surge")
 	check(PROFILE.drive_load(-8, 1, false) == 0, "forward button brakes reverse motion")
@@ -140,15 +151,26 @@ func run() -> void:
 	for material in ["metal", "wood", "glass"]:
 		ground.set_meta("impact_material", material)
 		check(CRASH.contact_kind(ground, 200, false) == material, "impact material: " + material)
-		car.set_meta("crash_audio_ms", -999999)
-		ground.set_meta("crash_audio_ms", -999999)
+		var pool = CRASH.pool(car)
+		pool.contacts.clear()
+		pool.sources.clear()
+		for voice in pool.voices: voice.stop()
+		var before: int = pool.played_count
 		CRASH.play(car, ground, Vector3.ZERO, 200)
-		var count := world.get_child_count()
 		CRASH.play(car, ground, Vector3.ZERO, 200)
-		check(world.get_child_count() == count, "sustained contact does not spam impacts")
-		var voice := world.get_child(count - 1) as AudioStreamPlayer3D
-		check(voice != null and voice.playing and voice.unit_size == 32, "driver impact audible and uses a real stream")
+		check(pool.played_count == before + 1, "sustained contact does not spam impacts")
+		check(pool.voices.any(func(voice): return voice.playing and voice.unit_size == 32), "driver impact audible and uses a real stream")
+	var remaining := playback_refs(world)
 	world.free()
-	await process_frame
+	# stop() marks playbacks for deletion in the real mixer; the server's
+	# following update releases them. Check completion rather than assuming
+	# a SceneTreeTimer covers enough wall time after a slow fixture frame.
+	var drain_began := Time.get_ticks_usec()
+	while remaining.any(func(ref: WeakRef): return ref.get_ref() != null) and Time.get_ticks_usec() - drain_began < 2000000:
+		await process_frame
+		OS.delay_usec(1000)
+	check(remaining.all(func(ref: WeakRef): return ref.get_ref() == null), "real mixer releases stopped playbacks before fixture exit")
+	for i in 2: await process_frame
+	print("AUDIO_FIXTURE_DRAIN wall_ms=", float(Time.get_ticks_usec() - drain_began) / 1000.0, " observed_playbacks=", remaining.size())
 	print("RESPONSIVE_VEHICLE_AUDIO: %d checks, %d failures" % [checks, failures])
 	quit(1 if failures else 0)

@@ -33,6 +33,25 @@ func run() -> void:
 	var identity:Dictionary=AUDIO._wav.duplicate()
 	await api.call("prewarm_reload_banks",self)
 	check(identity==AUDIO._wav,"repeat prewarm retains identical resources")
+	var history := AUDIO._last_gunfire_take.duplicate()
+	seed(10202);expected=randi();seed(10202)
+	await AUDIO.prewarm_gameplay_banks(self)
+	check(randi()==expected and AUDIO._last_gunfire_take==history,"full bank warmup preserves RNG and no-repeat history")
+	# Inventory of the actual authored assets, independent of the warmup manifest.
+	var audio_files := DirAccess.get_files_at(AUDIO.AUDIO_DIR)
+	var authored := 0
+	for name in audio_files:
+		if not name.ends_with(".wav"): continue
+		authored += 1
+		var stream: Variant = AUDIO._wav.get(name)
+		check(stream is AudioStream and stream.get_length()>0,"gameplay resource retained: "+name)
+	check(authored==110,"complete authored gameplay bank inventory")
+	var full_identity := AUDIO._wav.duplicate()
+	var generated_identity := AUDIO._generated.duplicate()
+	await AUDIO.prewarm_gameplay_banks(self)
+	check(full_identity==AUDIO._wav and generated_identity==AUDIO._generated,"full warmup is idempotent")
+	for id in ["grenade", "grenade_bounce", "flame", "punch", "bat", "knife-1", "knife0", "knife1", "knife2"]:
+		check(AUDIO._generated.has(id),"procedural sample prepared: "+id)
 	print("AUDIO_PREWARM wall_ms=",warm_ms," retained_stream_data_bytes=",retained_bytes)
 	print("AUDIO_PREWARM checks=",checks," failures=",failures)
 	quit(0 if failures==0 else 1)

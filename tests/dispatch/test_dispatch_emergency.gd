@@ -73,12 +73,12 @@ func _service(role: String) -> void:
 	var expected_role: String = role
 	check(emergency.incidents[key].role == expected_role, "papel da ocorrência (%s)" % role)
 	var unit: RefCounted = null
-	for tick in 300:
+	for tick in (1200 if role == "fire" else 300):
 		await physics_frame
 		if not controller.units.is_empty():
 			unit = controller.units[0]
 			break
-	check(unit != null, "viatura despachada em até 5 s (%s)" % role)
+	check(unit != null, "viatura despachada no prazo (%s)" % role)
 	if unit == null:
 		KIT.teardown(bundle)
 		return

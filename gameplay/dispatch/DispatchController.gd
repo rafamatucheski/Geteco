@@ -16,6 +16,8 @@ const BRIDGE := preload("res://gameplay/dispatch/DispatchIncidentBridge.gd")
 const RESPONDER := preload("res://gameplay/emergency/Responder.gd")
 const VEHICLE := preload("res://gameplay/dispatch/DispatchVehicle.gd")
 const ROADBLOCKS := preload("res://gameplay/police_response/ground/PoliceRoadblocks.gd")
+const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 # Cada candidato pode custar um plano de rota (~2,2 ms): 8 geravam picos de 22–53 ms
 # no quadro de despacho. Candidatos que falham voltam no próximo intervalo.
 const SPAWN_CANDIDATES_CHECKED := 3
@@ -62,6 +64,9 @@ var _prepared_ground_cells: Dictionary = {}
 var roadblocks: RefCounted
 var investigation_unit: RefCounted
 var _investigation_clock := 0.0
+var _investigation_seen := false
+## Instante (_clock) antes do qual nenhum caminhão novo é despachado: o anterior foi destruído.
+var _fire_lockout_until := 0.0
 
 func configure(p_world: Node3D, p_gameplay: Node3D, p_routes: RefCounted) -> void:
 	world = p_world
@@ -127,23 +132,47 @@ func witness_call(point: Vector3) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not enabled or gameplay == null or world == null or not _ensure_bridge(): return
+	TRACE.refresh(world)
+	var traced := TRACE.begin()
 	_clock += delta
 	router.advance(delta)
 	for unit in units.duplicate():
+		var unit_began := TRACE.begin()
+		var unit_label := "unit.tick:%s:%s" % [unit.service, unit.state] if unit_began != 0 else ""
 		_prepare_unit_ground(unit)
 		unit.tick(delta)
+		if unit_began != 0: TRACE.end(unit_label, unit_began)
 		if unit.finished:
+			if unit.service == "fire" and unit.wrecked: _fire_lockout_until = _clock + RULES.FIRE_REPLACEMENT_MIN + randf() * RULES.FIRE_REPLACEMENT_SPREAD
 			_prepared_ground_cells.erase(unit.get_instance_id())
 			units.erase(unit)
+	var step := TRACE.begin()
 	_dispatch_police(delta)
-	if roadblocks != null: roadblocks.tick(delta)
+	TRACE.end("police.dispatch_step", step)
+	if roadblocks != null:
+		step = TRACE.begin()
+		roadblocks.tick(delta)
+		TRACE.end("roadblocks.tick", step)
+	step = TRACE.begin()
 	_dispatch_emergency(delta)
+	TRACE.end("emergency.dispatch_step", step)
 	_wreck_clock -= delta
 	if _wreck_clock <= 0.0:
 		_wreck_clock = 2.0
+		step = TRACE.begin()
 		_tidy_wrecks()
+		TRACE.end("wrecks.tidy", step)
+	TRACE.end("controller.tick", traced)
+	TRACE.flush(self)
 
 func _prepare_unit_ground(unit: RefCounted) -> void:
+	var traced := STALL_WORK.begin()
+	_stall_prepare_unit_ground(unit)
+	if traced == 0: return
+	var source: Node = unit.vehicle as Node if unit != null and is_instance_valid(unit.vehicle) else null
+	STALL_WORK.finish_slow("dispatch.unit.prepare_ground_total", traced, 5000, source)
+
+func _stall_prepare_unit_ground(unit: RefCounted) -> void:
 	if unit == null or not is_instance_valid(unit.vehicle): return
 	var production: Variant = world.get("production")
 	if production == null: return
@@ -275,7 +304,10 @@ func _released_slots() -> Array:
 ## mais antigas: sem isso as encalhadas encheriam MAX_UNITS sem que nada as limitasse.
 func _active_police() -> Array:
 	var released := _released_slots()
-	return units.filter(func(u): return u.is_police() and not u.finished and (u.state != "departing" or (u.stranded and not released.has(u))))
+	# "recall" é a viatura parada esperando a equipe a pé voltar (o jogador fugiu de carro): ela não
+	# persegue ninguém, então não ocupa vaga de MAX_ACTIVE. Contando, com o teto de 5 (antes 8) as
+	# recalls enchiam as vagas e nenhuma viatura nova aparecia diante de quem fugia (log de 2026-10-01).
+	return units.filter(func(u): return u.is_police() and not u.finished and u.state != "recall" and (u.state != "departing" or (u.stranded and not released.has(u))))
 
 ## Serviços contam em MAX_CREWS até sair de cena, exceto as encalhadas com vaga liberada.
 func _active_services() -> Array:
@@ -384,7 +416,11 @@ func _create_vehicle(service: String, point: Vector3, yaw: float, archetype := "
 	if car.archetype == "army_tank": car.paint_color = Color("64704e")
 	car.vehicle_id = "dispatch_%s_%d" % [service, _serial]
 	car.set_meta("dispatch_unit", true)
+	var traced := TRACE.begin()
 	world.add_child(car)
+	if traced != 0:
+		TRACE.end("vehicle.add_child:" + car.archetype, traced)
+		traced = TRACE.begin()
 	car.place(point + Vector3.UP * 0.12, yaw)
 	# Ambulância, bombeiro e rabecão não são carros que o jogador possa pegar. A viatura
 	# policial parada pode ser roubada: `vehicle_stolen` expulsa quem estava a bordo.
@@ -395,6 +431,7 @@ func _create_vehicle(service: String, point: Vector3, yaw: float, archetype := "
 			if is_instance_valid(gameplay.emergency):
 				gameplay.emergency.ignite(car.global_position, car))
 	if service != "mortician": car.ensure_equipment(world)
+	if traced != 0: TRACE.end("vehicle.place_equipment:" + car.archetype, traced)
 	return car
 
 ## Chamado por Driving.gd quando o jogador começa a entrar numa viatura em serviço.
@@ -435,6 +472,7 @@ func _make_unit(service: String, car: CharacterBody3D, speed_cap: float, stall: 
 	return unit
 
 func spawn_officer(unit: RefCounted, point: Vector3, side: float) -> CharacterBody3D:
+	var traced := TRACE.begin()
 	var officer := OFFICER.new()
 	officer.controller = gameplay
 	officer.dispatch_controller = self
@@ -448,9 +486,11 @@ func spawn_officer(unit: RefCounted, point: Vector3, side: float) -> CharacterBo
 	officer.global_position = OFFICER.inside_point(unit.vehicle, point, side)
 	officer.begin_disembark(unit.vehicle, point, side)
 	unit.driver.ignore.append(officer.get_rid())
+	if traced != 0: TRACE.end("officer.spawn:tier%d" % officer.tier, traced)
 	return officer
 
 func spawn_responder(unit: RefCounted, point: Vector3) -> CharacterBody3D:
+	var traced := TRACE.begin()
 	var responder := RESPONDER.new()
 	responder.manager = bridge
 	responder.role = unit.service
@@ -461,6 +501,7 @@ func spawn_responder(unit: RefCounted, point: Vector3) -> CharacterBody3D:
 	add_child(responder)
 	responder.global_position = point
 	unit.driver.ignore.append(responder.get_rid())
+	if traced != 0: TRACE.end("responder.spawn:" + unit.service, traced)
 	return responder
 
 ## A ocorrência passa a apontar para o Responder real (antes apontava para a viatura).
@@ -503,7 +544,11 @@ func _dispatch_police(delta: float) -> void:
 		deployed_this_pursuit = 0
 		_last_stars = 0
 		_investigation_clock = maxf(0.0, _investigation_clock - delta)
-		if gameplay.has_method("police_investigation_active") and gameplay.police_investigation_active() and _investigation_clock <= 0.0:
+		var investigating: bool = gameplay.has_method("police_investigation_active") and gameplay.police_investigation_active()
+		# A viatura de averiguação não pode aparecer no instante do tiro/explosão.
+		if investigating and not _investigation_seen: _investigation_clock = RULES.INVESTIGATION_DELAY
+		_investigation_seen = investigating
+		if investigating and _investigation_clock <= 0.0:
 			_investigation_clock = 20.0
 			if (investigation_unit == null or investigation_unit.finished) and _active_police().is_empty():
 				var responder := dispatch_police_to(gameplay.police_investigation_point(), true)
@@ -537,25 +582,33 @@ func _dispatch_police(delta: float) -> void:
 func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCounted:
 	var level: int = 1 if investigation else gameplay.stars
 	if level <= 0 or units.size() >= RULES.MAX_UNITS or _active_police().size() >= RULES.MAX_ACTIVE[clampi(level,0,6)]: return null
+	var dispatch_began := TRACE.begin()
 	var variant := "patrol" if investigation else RULES.response_variant(level, units.filter(func(u): return u.is_police() and not u.finished))
 	var archetype := RULES.response_archetype(level,variant)
 	var size := _archetype_size(archetype)
 	var checked := 0
 	var planned := 0
 	var occupied := 0
+	var step := TRACE.begin()
 	var candidates := _depot_candidates("police", anchor)
 	candidates.append_array(router.spawn_candidates(anchor, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
+	TRACE.end("police.candidates", step, {"count": candidates.size()})
 	for candidate in candidates:
 		if checked >= POLICE_CLEARANCE_CANDIDATES or planned >= SPAWN_CANDIDATES_CHECKED: break
 		var point: Vector3 = candidate.point
 		if is_visible_to_player(point): continue
 		checked += 1
-		if not _space_clear(size, point, candidate.yaw, no_exclusions):
+		step = TRACE.begin()
+		var clear := _space_clear(size, point, candidate.yaw, no_exclusions)
+		TRACE.end("police.clearance", step)
+		if not clear:
 			occupied += 1
 			continue
 		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
 		planned += 1
+		step = TRACE.begin()
 		var plan: Dictionary = router.plan(point, anchor, heading)
+		TRACE.end("police.plan", step)
 		if not plan.ok: continue
 		_serial += 1
 		deployed_this_pursuit += 1
@@ -571,8 +624,10 @@ func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCoun
 		unit.set_route_goal(anchor)
 		unit.set_siren_on()
 		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "variant": variant})
+		TRACE.end("police.dispatch_to", dispatch_began, {"outcome": "dispatched", "archetype": archetype})
 		return unit
 	emit_dispatch_event("spawn_failed", {"service": "police", "checked": checked, "occupied": occupied, "planned": planned, "archetype": archetype})
+	TRACE.end("police.dispatch_to", dispatch_began, {"outcome": "spawn_failed", "archetype": archetype})
 	return null
 
 func retain_investigator(unit: RefCounted) -> bool:
@@ -599,6 +654,7 @@ func _dispatch_emergency(delta: float) -> void:
 	var emergency: Node3D = gameplay.emergency
 	var best_key := -1
 	var best_age := -1.0
+	var fire_trucks: int = units.filter(func(u): return u.service == "fire" and not u.finished).size()
 	for key in emergency.incidents.keys():
 		var record: Dictionary = emergency.incidents[key]
 		var actor: Variant = record.get("actor")
@@ -608,6 +664,10 @@ func _dispatch_emergency(delta: float) -> void:
 			emit_dispatch_event("incident_invalid", {"incident": key, "reason": "actor_removed"})
 			continue
 		if record.assigned or record.role not in ["medic", "mortician", "fire"]: continue
+		# Um caminhão de bombeiros por vez, só depois de 10-15 s de fogo, e 30-45 s de pausa se o anterior foi destruído.
+		if record.role == "fire":
+			if fire_trucks >= RULES.MAX_FIRE_TRUCKS or _clock < _fire_lockout_until: continue
+			if float(record.age) < RULES.fire_response_delay(int(key)): continue
 		if distance_to_player(actor.global_position) > RULES.RESPONSE_RADIUS: continue
 		# Uma busca já em andamento tem prioridade, para não trocar de ocorrência no meio.
 		var priority: float = record.age + (100000.0 if record.has("search") else 0.0)
@@ -654,8 +714,10 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 	var size := _archetype_size(RULES.archetype_for(service))
 	var state: Dictionary = record.get("search", {})
 	if state.is_empty():
+		var sweep := TRACE.begin()
 		var found := _depot_candidates(service, point)
 		found.append_array(router.spawn_candidates(point, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
+		TRACE.end("service.candidates", sweep, {"count": found.size()})
 		state = {"candidates": found, "index": 0, "checked": 0, "best": {}, "best_length": INF}
 		if budget >= 0:
 			# A coleta de candidatos já é o trabalho deste quadro.
@@ -678,9 +740,14 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 		if is_visible_to_player(start): continue
 		state.checked += 1
 		work += 1
-		if not _space_clear(size, start, candidate.yaw, no_exclusions): continue
+		var probe := TRACE.begin()
+		var start_clear := _space_clear(size, start, candidate.yaw, no_exclusions)
+		TRACE.end("service.clearance", probe)
+		if not start_clear: continue
 		var heading := Vector3(-sin(candidate.yaw), 0.0, -cos(candidate.yaw))
+		probe = TRACE.begin()
 		var candidate_plan: Dictionary = router.plan(start, point, heading)
+		TRACE.end("service.plan", probe)
 		if not candidate_plan.ok or candidate_plan.end_gap > RULES.FOOT_RANGE: continue
 		var length: float = candidate_plan.curve.get_baked_length()
 		if length < state.best_length:

@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 const DANTE := preload("res://assets/dante.glb")
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
@@ -143,6 +144,11 @@ func _ready() -> void:
 	last_position = global_position
 
 func _physics_process(delta: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_physics_tick(delta)
+	STALL_WORK.finish_slow("actor.physics", began, 10000, self)
+
+func _stall_physics_tick(delta: float) -> void:
 	var lod_scale := 1.0
 	if not is_player and not controlled_automatically:
 		var view_camera := get_viewport().get_camera_3d()
@@ -206,7 +212,9 @@ func _physics_process(delta: float) -> void:
 	velocity.z = direction.z * target_speed * lod_scale
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta
 	STEP.try_step(self, Vector3(velocity.x, 0, velocity.z) * (delta / lod_scale))
+	var move_began := STALL_WORK.begin()
 	move_and_slide()
+	STALL_WORK.finish_slow("actor.move_and_slide", move_began, 10000, self)
 	if lod_scale != 1.0:
 		velocity.x /= lod_scale
 		velocity.z /= lod_scale

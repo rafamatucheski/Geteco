@@ -6,6 +6,8 @@ extends RefCounted
 
 const OVERTAKE := preload("res://gameplay/dispatch/overtaking/OvertakeController.gd")
 const OVERTAKE_RULES := preload("res://gameplay/dispatch/overtaking/OvertakeRules.gd")
+const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 signal replan_requested(reason: String)
 signal gave_up(reason: String)
@@ -143,6 +145,11 @@ func at_route_end() -> bool:
 	return route != null and remaining <= 1.2 and settled()
 
 func tick(delta: float) -> void:
+	var traced := STALL_WORK.begin()
+	_stall_tick(delta)
+	STALL_WORK.finish_slow("dispatch.driver.tick", traced, 5000, vehicle)
+
+func _stall_tick(delta: float) -> void:
 	if not is_instance_valid(vehicle) or vehicle.health <= 0:
 		if overtake != null: overtake.reset("vehicle_unavailable")
 		return
@@ -166,12 +173,16 @@ func tick(delta: float) -> void:
 		return
 	_discover_overtaking()
 	var length := route.get_baked_length() if route != null else 0.0
+	var traced := TRACE.begin()
 	offset = route.get_closest_offset(vehicle.global_position) if route != null else 0.0
+	TRACE.end("driver.closest_offset", traced)
 	remaining = length - offset if route != null else INF
 	_sensor_clock -= delta
 	if _sensor_clock <= 0.0:
 		_sensor_clock = SENSOR_INTERVAL
+		var sensing := TRACE.begin()
 		blocked_ahead = _obstacle_ahead()
+		TRACE.end("driver.obstacle_sensor", sensing)
 	if reversing:
 		_reverse(delta)
 		return
@@ -181,7 +192,9 @@ func tick(delta: float) -> void:
 	var path_length := length
 	var speed_limit := INF
 	if overtake != null:
+		var overtaking := TRACE.begin()
 		overtake.tick(delta)
+		TRACE.end("overtake.tick", overtaking)
 		speed_limit = overtake.speed_limit
 		if overtake.bypass != null:
 			path = overtake.bypass

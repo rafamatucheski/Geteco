@@ -187,7 +187,20 @@ func run() -> void:
 	beat_thread.wait_to_finish()
 	print("SLOW_RECORDS ", str(Engine.get_meta("slow_stream_records", [])))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://evidence/region-hitches"))
-	var file := FileAccess.open("res://evidence/region-hitches/%s.json" % label, FileAccess.WRITE)
+	var output_path := "res://evidence/region-hitches/%s.json" % label
+	for arg in args:
+		if arg.begins_with("--out="): output_path = arg.trim_prefix("--out=")
+	# Uma nova investigação precisa preservar as rodadas anteriores.
+	if FileAccess.file_exists(output_path):
+		push_error("Já existe evidência em " + output_path)
+		quit(2)
+		return
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output_path.get_base_dir()))
+	var file := FileAccess.open(output_path, FileAccess.WRITE)
+	if file == null:
+		push_error("Não foi possível gravar " + output_path)
+		quit(2)
+		return
 	file.store_string(JSON.stringify({"summary": summary, "spikes": spikes}, "\t"))
 	file.close()
 	quit(0)

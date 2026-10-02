@@ -1,4 +1,5 @@
 extends Node3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 signal changed
 signal message(text: String)
@@ -53,6 +54,9 @@ const LOOT_ARMOR_POINTS := 50
 const CHEAT_ARSENAL := "dukenuke"
 const CHEAT_BUFFER := 13
 const CHEAT_GAP := 3.0
+## Cheat de invencibilidade (só desta sessão, não vai para o save): digitar "godmode" liga/desliga.
+## Serve para segurar o jogador vivo sob seis estrelas ao medir o custo da resposta policial.
+const CHEAT_GODMODE := "godmode"
 ## Gemido de dor (V1 `PainReaction`): chance 65% se o dano ≥ 25, senão 42%; no máximo 6 vozes e um gemido por
 ## vítima a cada 1,8 s. Aqui a chance é sorteada uma vez por golpe.
 const PAIN_CHANCE_HEAVY := 0.65
@@ -182,6 +186,9 @@ var _swing_side := 1.0
 var _swing_stance := ""
 var _swing_yaw := 0.0
 var _cheat_buffer := ""
+var god_mode := false
+## Nós que ESTE cheat marcou como `invulnerable` (jogador e carro dirigido); só estes são desmarcados.
+var _god_marked: Array[Node] = []
 ## Estado de mira (leitura externa): `aiming` = V1 `is_aiming`; `aim_active` = V1 `weapon_aim_active`.
 var aiming := false
 var aim_active := false
@@ -319,6 +326,8 @@ func _ready() -> void:
 	effects = EFFECTS.new()
 	effects.name = "CombatEffects"
 	add_child(effects)
+	effects.carry_source = player
+	call_deferred("_prewarm_effects")
 	for index in PAIN_VOICES:
 		var voice := _combat_voice(sfx_bus)
 		add_child(voice)
@@ -360,11 +369,17 @@ func attack_allowed() -> bool:
 	return enabled and state != null and state.can_attack() and health > 0 and not get_tree().paused and not police_surrendering()
 
 func _physics_process(delta: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_physics_tick(delta)
+	STALL_WORK.finish_slow("gameplay.physics", began, 10000, self)
+
+func _stall_physics_tick(delta: float) -> void:
 	if state == null or not enabled: return
 	if InputMap.has_action("surrender") and Input.is_action_just_pressed("surrender"):
 		if police_surrendering(): police_case.cancel_surrender()
 		else: police_case.request_surrender()
 	_combat_clock += delta
+	if god_mode or not _god_marked.is_empty(): _sync_god_mode()
 	_advance_police_rounds(delta)
 	cooldown = maxf(0, cooldown - delta)
 	if reload_timer > 0:
@@ -564,10 +579,10 @@ func _flash_muzzle(id: String) -> void:
 	if not is_instance_valid(_muzzle_flash) or not is_instance_valid(_muzzle_light): return
 	var heavy := id in HEAVY_FLASH
 	var suppressed := CUSTOM.selected(customization, id, "muzzle") == "suppressor"
-	var scale_value := Vector3.ONE * (1.35 if heavy else 0.8)
+	var scale_value := Vector3.ONE * (1.0 if heavy else 0.62)
 	if suppressed: scale_value *= 0.22
 	if id == "flamethrower": scale_value = Vector3(0.30, 0.30, 1.65)
-	elif id == "rpg": scale_value = Vector3(0.70, 0.70, 2.2)
+	elif id == "rpg": scale_value = Vector3(0.55, 0.55, 1.7)
 	_muzzle_flash.scale = scale_value
 	_muzzle_flash.visible = true
 	_muzzle_light.visible = not suppressed
@@ -825,6 +840,12 @@ func aim_feedback() -> Dictionary:
 	return {"point": hit.get("position", query.to), "blocked": blocked}
 
 func fire_at(target: Vector3) -> bool:
+	var began := STALL_WORK.begin()
+	var fired := _stall_fire_at(target)
+	STALL_WORK.finish_slow("gameplay.fire_at",began,10000,self)
+	return fired
+
+func _stall_fire_at(target: Vector3) -> bool:
 	if not attack_allowed() or cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty(): return false
 	var id := equipped()
 	if id.is_empty(): id = "fists"
@@ -871,6 +892,8 @@ func fire_at(target: Vector3) -> bool:
 			var turn := barrel.normalized().signed_angle_to(direction, Vector3.UP)
 			var offset := origin - player.global_position
 			origin = player.global_position + offset.rotated(Vector3.UP, turn)
+		# A pose do bico é do quadro anterior: andando, o jogador já avançou desde então e o jato nascia atrás da arma.
+		origin += Vector3(player.velocity.x, 0.0, player.velocity.z) * get_physics_process_delta_time()
 	var defense_ray := PhysicsRayQueryParameters3D.create(origin, origin + direction * float(data.get("max_range", 420.0)) / 16.0, 7, [player.get_rid()])
 	var defense_hit := get_world_3d().direct_space_state.intersect_ray(defense_ray)
 	var self_defense: bool = not defense_hit.is_empty() and defense_hit.collider.get_meta("gameplay_role", "") == "cobra"
@@ -925,7 +948,7 @@ func fire_at(target: Vector3) -> bool:
 				var amount := CATALOG.distance_damage(int(data.damage), origin.distance_to(end) * 16.0, float(data.get("falloff_start", 0)), float(data.get("max_range", 420)), float(data.get("min_damage_ratio", 1)))
 				if data.get("is_flame", false):
 					if _flame_hit_due(hit.collider):
-						if hit.collider is Node and String(hit.collider.get_meta("gameplay_role", "")) == "civilian":
+						if _can_ignite(hit.collider):
 							_ignite_actor(hit.collider as Node3D, player)
 						_damage(hit.collider, amount, player, true)
 						if hit.collider is Node and String(hit.collider.get_meta("gameplay_role", "")) == "vehicle":
@@ -1006,6 +1029,22 @@ func _update_contact() -> void:
 	weapon_fired.emit(id, origin)
 	if not contact.self_defense: report_observed_crime(4, player.global_position, "explosion")
 	changed.emit()
+
+## Pessoas que pegam fogo: qualquer corpo vivo que receba dano, exceto o jogador e veículos. Antes só o papel
+## "civilian" acendia, e a maioria dos moradores é "urban_routine"/"ambient_worker", além de policiais e seguranças.
+func _can_ignite(target: Object) -> bool:
+	if not target is CharacterBody3D or target == player or PROTECTION.is_protected(target): return false
+	var role := String((target as Node).get_meta("gameplay_role", ""))
+	return role != "vehicle" and role != "player" and (target as Node).has_method("receive_damage")
+
+## Pré-aquece os efeitos de combate sob a tela de carregamento (só se a partida ainda não liberou o jogo).
+func _prewarm_effects() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if not is_instance_valid(effects) or not is_instance_valid(player) or not is_instance_valid(world): return
+	var session: Variant = world.get("session")
+	if session == null or bool(session.get("ready_for_play")): return
+	effects.prewarm(player.global_position + Vector3.UP * 1.0)
 
 func _ignite_actor(actor: Node3D, source: Node) -> void:
 	if not is_instance_valid(actor) or actor.get("dead") == true: return
@@ -1130,6 +1169,11 @@ func _clear_combat_registers() -> void:
 
 ## `continuous`: dano de jato ou de fogo em tique periódico (ver `_crime_due`).
 func _damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
+	var began := STALL_WORK.begin()
+	_stall_damage(actor,amount,source,continuous)
+	STALL_WORK.finish_slow("gameplay.damage",began,10000,self)
+
+func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool = false) -> void:
 	if _is_invulnerable(actor): return
 	if actor == player:
 		damage_player(amount)
@@ -1256,9 +1300,42 @@ func handle_arsenal_input(event: InputEvent) -> bool:
 	if _cheat_buffer.ends_with(CHEAT_ARSENAL):
 		_cheat_buffer = ""
 		return activate_arsenal_cheat()
+	if _cheat_buffer.ends_with(CHEAT_GODMODE):
+		_cheat_buffer = ""
+		return toggle_god_mode()
 	for length in range(1,CHEAT_ARSENAL.length()):
 		if _cheat_buffer.ends_with(CHEAT_ARSENAL.left(length)): return true
+	for length in range(1,CHEAT_GODMODE.length()):
+		if _cheat_buffer.ends_with(CHEAT_GODMODE.left(length)): return true
 	return false
+
+## Liga/desliga a invencibilidade. Protege o jogador e o carro que ele dirige pela mesma marca
+## `invulnerable` que Maciota usa, então tiro, explosão, atropelamento e batida passam sem ferir.
+func toggle_god_mode() -> bool:
+	if state == null: return false
+	god_mode = not god_mode
+	_sync_god_mode()
+	changed.emit()
+	message.emit("Invencibilidade ligada" if god_mode else "Invencibilidade desligada")
+	return true
+
+## Mantém a marca no jogador e no veículo atual (que muda ao entrar/sair de um carro).
+func _sync_god_mode() -> void:
+	var wanted: Array[Node] = []
+	if god_mode:
+		if is_instance_valid(player): wanted.append(player)
+		var target := pursuit_target()
+		if is_instance_valid(target) and target != player: wanted.append(target)
+	for node in _god_marked.duplicate():
+		if not is_instance_valid(node):
+			_god_marked.erase(node)
+		elif not wanted.has(node):
+			node.remove_meta(PROTECTION.META)
+			_god_marked.erase(node)
+	for node in wanted:
+		if _god_marked.has(node) or node.get_meta(PROTECTION.META, false) == true: continue
+		node.set_meta(PROTECTION.META, true)
+		_god_marked.append(node)
 
 ## Ativa o arsenal temporário do Economy, sem gravar armas/munição no save.
 ## Bloqueado onde atacar é bloqueado (garagem).
@@ -1347,6 +1424,7 @@ func police_arrest_warning() -> void:
 	police_warning_issued.emit()
 
 func _apply_player_damage(amount: float, use_armor: bool) -> void:
+	if god_mode: return
 	if not is_finite(amount) or amount <= 0 or health <= 0 or state == null or not state.weapons_allowed(): return
 	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
 	armor -= absorbed
@@ -1537,6 +1615,11 @@ func police_reload(officer: Node3D, weapon_id: String) -> void:
 ## random_volume_offset_db=0.65). Sem essa variação todo tiro soava idêntico — uma das
 ## diferenças perceptíveis de "efeito diferente" entre V1 e V2.
 func _sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB) -> void:
+	var began := STALL_WORK.begin()
+	_stall_sound(kind,point,base_volume_db)
+	STALL_WORK.finish_slow("gameplay.sound:"+kind,began,10000,self)
+
+func _stall_sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNFIRE_DB) -> void:
 	var stream := AUDIO.gunfire_take(kind, _rng)
 	if stream == null: return
 	var reach := HEARING_EXPLOSION if kind == "explosion" else HEARING_GUNFIRE
@@ -1781,7 +1864,11 @@ func _walkable_at(point: Vector3) -> bool:
 	return not get_world_3d().direct_space_state.intersect_ray(floor_ray).is_empty()
 
 func find_path(start: Vector3, finish: Vector3) -> PackedVector3Array:
-	if not _benchmark_costs: return _find_path(start,finish)
+	if not _benchmark_costs:
+		var began := STALL_WORK.begin()
+		var path := _find_path(start,finish)
+		STALL_WORK.finish_slow("gameplay.find_path",began,10000,self)
+		return path
 	var started := Time.get_ticks_usec()
 	var result := _find_path(start,finish)
 	var duration := Time.get_ticks_usec()-started

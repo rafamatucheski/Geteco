@@ -1,4 +1,5 @@
 extends Node3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Native production geography. Geometry/physics load only near the player.
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
 const MOUNTAIN_SHADOW := preload("res://world/mountain_detail/MountainShadowFinish.gd")
@@ -156,6 +157,8 @@ static func _hold_resource(resource: Variant) -> void:
 
 ## Descarrega tudo mantendo os dados preparados (região reaproveitada).
 func release_chunks() -> void:
+	var stall_began := STALL_WORK.begin()
+	var released_chunks := chunks.size()
 	build_jobs.clear()
 	pending.clear()
 	for key in chunks.keys():
@@ -166,12 +169,16 @@ func release_chunks() -> void:
 	vehicle_support_cells.clear()
 	current_cell = Vector2i(100000,100000)
 	chairlifts.clear()
+	STALL_WORK.finish("region.release_chunks", stall_began, {"region": region_id, "chunks": released_chunks, "retiring": _retiring.size()})
 
 func _exit_tree() -> void:
+	var stall_began := STALL_WORK.begin()
+	var retiring_chunks := _retiring.size()
 	for chunk in _retiring:
 		if is_instance_valid(chunk): chunk.free()
 	_retiring.clear()
 	for chunk in chunks.values(): _suspend_chunk_mechanisms(chunk)
+	STALL_WORK.finish("region.exit_tree", stall_began, {"region": region_id, "retiring_chunks": retiring_chunks})
 func _cell(point: Vector3) -> Vector2i: return Vector2i(floori(point.x/CELL),floori(point.z/CELL))
 func _record(point: Vector3, item: Dictionary) -> void:
 	var key := _cell(point)
@@ -534,12 +541,22 @@ var _retire_stack: Array[Node] = []
 
 func _retire_chunk(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return
+	var stall_began := STALL_WORK.begin()
 	_detach_cached_records(chunk)
+	STALL_WORK.finish("retire.detach_cached_records", stall_began, {"region": region_id})
+	stall_began = STALL_WORK.begin()
 	chunk.hide()
 	_retiring.append(chunk)
+	STALL_WORK.finish("retire.hide_and_enqueue", stall_began, {"region": region_id})
 
 func _drain_retired() -> void:
 	if _retiring.is_empty(): return
+	var stall_began := STALL_WORK.begin()
+	var queued_before := _retiring.size()
+	_drain_retired_slice()
+	STALL_WORK.finish("retire.drain", stall_began, {"region": region_id, "budget_ms": RETIRE_BUDGET_USEC / 1000.0, "queued_before": queued_before, "queued_after": _retiring.size()})
+
+func _drain_retired_slice() -> void:
 	var began := Time.get_ticks_usec()
 	while not _retiring.is_empty():
 		var chunk: Node3D = _retiring[0]
@@ -548,8 +565,8 @@ func _drain_retired() -> void:
 			_retire_stack.clear()
 			continue
 		if _retire_stack.is_empty(): _retire_stack.append(chunk)
-		# Desce até subárvores pequenas antes de liberar: um filho do chunk (prédio, pátio)
-		# pode ter centenas de nós, e liberá-lo inteiro custava 100+ ms num quadro só.
+		# Só libera folhas: poucos filhos diretos não limitam o tamanho da
+		# subárvore (um wrapper pode conter um prédio inteiro).
 		while not _retire_stack.is_empty():
 			var top: Node = _retire_stack.back()
 			if not is_instance_valid(top):
@@ -563,7 +580,7 @@ func _drain_retired() -> void:
 					top.free()
 			else:
 				var last := top.get_child(count-1)
-				if last.get_child_count() > 4: _retire_stack.append(last)
+				if last.get_child_count() > 0: _retire_stack.append(last)
 				else:
 					top.remove_child(last)
 					last.free()

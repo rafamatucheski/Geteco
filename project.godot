@@ -15,7 +15,7 @@ config/version="0.3.1"
 run/main_scene="res://ui/MainMenu.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="GetecoV2"
-config/features=PackedStringArray("4.7", "Mobile")
+config/features=PackedStringArray("4.7", "C#", "Mobile")
 run/max_fps=60
 
 [autoload]
@@ -24,6 +24,7 @@ GameInput="*res://runtime/GameInput.gd"
 V2Settings="*res://runtime/Settings.gd"
 V2Launch="*res://runtime/SessionLaunch.gd"
 BuildWatermark="*res://ui/BuildWatermark.gd"
+StallLog="*res://runtime/StallLog.gd"
 
 [display]
 
@@ -32,6 +33,10 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect.android="expand"
 window/handheld/orientation.android=4
+
+[dotnet]
+
+project/assembly_name="Harbor"
 
 [editor_plugins]
 

@@ -6,6 +6,24 @@ const SURFACE := preload("res://gameplay/vehicle_effects/VehicleSurfaceProbe.gd"
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const ROAD_AUDIO := preload("res://audio/VehicleRoadAudio.gd")
 const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Imported resources are held while scripts load, before playable physics.
+const SKID_SOURCES := {
+	"street": preload("res://audio/acoustic/skid_street.wav"),
+	"sport": preload("res://audio/acoustic/skid_sport.wav"),
+	"heavy": preload("res://audio/acoustic/skid_heavy.wav"),
+	"muscle": preload("res://audio/acoustic/skid_muscle.wav"),
+	"monaliza": preload("res://audio/acoustic/skid_monaliza.wav"),
+}
+static var _skid_streams: Dictionary = {}
+
+static func prewarm_skid_audio() -> void:
+	for kind in SKID_SOURCES:
+		if _skid_streams.has(kind): continue
+		var stream := SKID_SOURCES[kind].duplicate() as AudioStreamWAV
+		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
+		_skid_streams[kind] = stream
 const MAX_MARK_SEGMENTS := 320
 const MARK_LIFETIME_MSEC := 10000
 # Sulco em chão macio fica mais tempo que a borracha do asfalto: é o rastro que o
@@ -110,6 +128,12 @@ func physics_tick(delta: float, active: bool) -> void:
 	if _redraw_clock <= 0: _redraw_marks()
 
 func _rear_contacts() -> Array[Dictionary]:
+	var began := STALL_WORK.begin()
+	var result := _stall_rear_contacts()
+	STALL_WORK.finish_slow("vehicle_tires.contacts",began,5000,vehicle)
+	return result
+
+func _stall_rear_contacts() -> Array[Dictionary]:
 	var points: Array[Vector3] = []
 	for pivot in vehicle.wheels:
 		if not bool(pivot.get_meta("front",false)): points.append(pivot.global_position)
@@ -130,6 +154,11 @@ func _ensure_emitters() -> void:
 		emitters.append(emitter)
 
 func _emit_surface(side: int, contact: Dictionary, mode: String, road_speed: float, lateral_speed: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_emit_surface(side,contact,mode,road_speed,lateral_speed)
+	STALL_WORK.finish_slow("vehicle_tires.surface_emit",began,5000,vehicle)
+
+func _stall_emit_surface(side: int, contact: Dictionary, mode: String, road_speed: float, lateral_speed: float) -> void:
 	_ensure_emitters()
 	var emitter := emitters[side]
 	var process := emitter.process_material as ParticleProcessMaterial
@@ -193,17 +222,21 @@ func _stop_emitters() -> void:
 	if is_instance_valid(road_mixer): road_mixer.stop()
 
 func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_update_skid_audio(audible,road_speed,lateral_speed)
+	STALL_WORK.finish_slow("vehicle_tires.skid_audio",began,5000,vehicle)
+
+func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) -> void:
 	if not audible:
 		if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
 		return
 	if not is_instance_valid(skid_audio):
+		var began := STALL_WORK.begin()
 		var family: String = ENGINE_PROFILE.family(str(vehicle.archetype))
 		var kind := "monaliza" if str(vehicle.archetype) == "monaliza" else ("heavy" if family in ["truck", "bus", "fire_diesel", "diesel"] else ("muscle" if family == "muscle" else ("sport" if family in ["sport", "vq35", "m8_v8", "rosso_v12", "bike_sport"] else "street")))
-		var source := load("res://audio/acoustic/skid_%s.wav" % kind) as AudioStreamWAV
-		if source == null: return
-		var stream := source.duplicate() as AudioStreamWAV
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
+		# Also covers isolated vehicles and --no-prewarm; sources are already held.
+		prewarm_skid_audio()
+		var stream: AudioStreamWAV = _skid_streams[kind]
 		skid_audio = AudioStreamPlayer3D.new()
 		skid_audio.name = "VehicleSkid"
 		skid_audio.stream = stream
@@ -211,6 +244,7 @@ func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) 
 		skid_audio.unit_size = 14.0
 		skid_audio.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
 		vehicle.add_child(skid_audio)
+		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
 	skid_audio.volume_db = lerpf(-24.0, -11.0, clampf(road_speed / 16.25, 0.0, 1.0))
 	skid_audio.pitch_scale = lerpf(0.88, 1.12, clampf(lateral_speed / 11.25, 0.0, 1.0))
 	if not skid_audio.playing: skid_audio.play()
@@ -255,6 +289,11 @@ func _expire_marks() -> void:
 	marks = marks.filter(func(mark: Dictionary): return now-int(mark.born)<int(mark.life))
 
 func _redraw_marks() -> void:
+	var began := STALL_WORK.begin()
+	_stall_redraw_marks()
+	STALL_WORK.finish_slow("vehicle_tires.redraw_marks",began,5000,vehicle)
+
+func _stall_redraw_marks() -> void:
 	_redraw_clock = REDRAW_INTERVAL
 	if marks.is_empty():
 		if is_instance_valid(mark_mesh): mark_mesh.visible = false
@@ -283,7 +322,9 @@ func _redraw_marks() -> void:
 			geometry.surface_set_color(tint)
 			geometry.surface_set_normal(entry[1])
 			geometry.surface_add_vertex(entry[0])
+	var upload_began := STALL_WORK.begin()
 	geometry.surface_end()
+	STALL_WORK.finish_slow("vehicle_tires.surface_end",upload_began,5000,vehicle)
 
 func clear_all() -> void:
 	_stop_emitters()

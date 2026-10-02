@@ -1,4 +1,5 @@
 extends Node
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
@@ -257,13 +258,16 @@ func _prewarm_regions(curtain: Node = null) -> void:
 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
 	# shared cache under the loading curtain, without creating fires or wrecks.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
+	preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd").prewarm_skid_audio()
 	# Explosion takes and immutable fire presentation were built at detonation.
 	# Keep their bounded resources ready, without spawning a live incident.
 	var combat_audio = preload("res://gameplay/CombatAudio.gd")
+	if curtain != null:
+		curtain.set_stage(.44,"Carregando áudio…")
+		await get_tree().process_frame
 	await combat_audio.prewarm_reload_banks(get_tree())
-	for take in combat_audio.GUNFIRE_TAKES:
-		combat_audio.wav("explosion_%d.wav" % take)
-		if incremental: await get_tree().process_frame
+	await combat_audio.prewarm_gameplay_banks(get_tree())
+	await preload("res://audio/VehicleCrashAudio.gd").prewarm(get_tree())
 	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
@@ -425,13 +429,17 @@ func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
 
 func _unmount_region(id: String) -> void:
 	if id == state.region_id or not regions.has(id): return
+	var stall_began := STALL_WORK.begin()
 	var mounted: Node3D = regions[id]
 	regions.erase(id)
 	if is_instance_valid(mounted):
 		mounted.release_chunks()
+		var detach_began := STALL_WORK.begin()
 		world.remove_child(mounted)
+		STALL_WORK.finish("unmount.remove_child", detach_began, {"region": id})
 		_region_cache[id] = mounted
 	_refresh_route_consumers()
+	STALL_WORK.finish("world.unmount_region", stall_began, {"region": id})
 
 func _resident_roads() -> Array:
 	var result: Array = []

@@ -14,7 +14,9 @@ const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const BLOOD := preload("res://gameplay/street_physics/GroundBlood3D.gd")
 const TRACKS := preload("res://gameplay/street_physics/BloodTracks3D.gd")
 const CRUSH := preload("res://gameplay/street_physics/HeavyVehicleCrush.gd")
+const CONTACT_AUDIO := preload("res://audio/VehicleCrashAudio.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 # V1 VehiclePersonImpact: MIN_SPEED 60 px/s, letal a partir de 200 px/s.
 const PERSON_MIN_SPEED := 60.0 / 16.0
@@ -60,7 +62,7 @@ func _ready() -> void:
 	tracks = TRACKS.new()
 	tracks.director = self
 	add_child(tracks)
-	var bus := String(preload("res://gameplay/CombatAudio.gd").SFX_BUS_NAME)
+	var bus := StringName(preload("res://gameplay/CombatAudio.gd").SFX_BUS_NAME)
 	for index in 8:
 		var player := AudioStreamPlayer3D.new()
 		player.bus = bus if AudioServer.get_bus_index(bus) >= 0 else &"Master"
@@ -68,7 +70,7 @@ func _ready() -> void:
 		player.unit_size = 6.0
 		add_child(player)
 		_audio.append(player)
-	for family in ["impact_metal", "impact_flesh", "impact_glass", "panic", "hurt"]:
+	for family in ["panic", "hurt"]:
 		var list := []
 		for index in 3:
 			var path := "res://assets/gameplay/audio/%s_%d.wav" % [family, index]
@@ -104,8 +106,7 @@ func _pre_move(vehicle: CharacterBody3D, delta: float) -> void:
 	_hit_props(vehicle, planar, motion)
 	var crushed := CRUSH.prepare(vehicle, planar, delta)
 	if is_instance_valid(crushed):
-		play("impact_metal", crushed.global_position, 1.0, 0.72)
-		play("impact_glass", crushed.global_position, -4.0)
+		CONTACT_AUDIO.play_contact(vehicle, crushed, crushed.global_position, speed, "heavy")
 
 
 ## Varre a forma real do carro (V1 prepare_motion): pessoa atingida acima do
@@ -144,8 +145,7 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 			gameplay.effects.blood(point, planar.normalized(), 40.0 if lethal else 18.0)
 		if is_instance_valid(blood): blood.spawn_splatter(person.global_position, planar, clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0))
 		if is_instance_valid(tracks): tracks.soak(vehicle, TRACKS.TIRE_DISTANCE)
-		play("impact_flesh", point, lerpf(-6.0, 0.0, clampf(planar.length() / LETHAL_SPEED, 0, 1)))
-		play("impact_metal", point, -10.0, 0.8)
+		CONTACT_AUDIO.play_contact(vehicle, person, point, closing, "flesh")
 		if not lethal: play("panic", point, -4.0)
 		if response > 0.01: _shake_if_player(vehicle, (0.18 if lethal else 0.1) * response)
 
@@ -195,6 +195,7 @@ static func _is_person(body: Object) -> bool:
 # Depois do move_and_slide: batida carro x carro e deslize de quem foi atingido.
 
 func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> void:
+	var stage := STALL_WORK.begin()
 	for index in vehicle.get_slide_collision_count():
 		var collision := vehicle.get_slide_collision(index)
 		var other := collision.get_collider() as CharacterBody3D
@@ -206,14 +207,20 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 		normal = normal.normalized()
 		var other_velocity: Vector3 = other.get("horizontal_velocity")
 		var closing := incoming.dot(-normal) - other_velocity.dot(-normal)
+		CONTACT_AUDIO.play_contact(vehicle, other, collision.get_position(), closing)
 		if closing < CRASH_MIN_CLOSING: continue
 		var key := "%d|%d" % [mini(vehicle.get_instance_id(), other.get_instance_id()), maxi(vehicle.get_instance_id(), other.get_instance_id())]
 		var now := Time.get_ticks_msec()
 		if now - int(_crash_pairs.get(key, -100000)) < 500: continue
 		_crash_pairs[key] = now
 		_crash(vehicle, other, normal, closing, collision.get_position(), incoming)
+	STALL_WORK.finish_slow("street.post.contacts",stage,5000,vehicle)
+	stage = STALL_WORK.begin()
 	_update_slide(vehicle, delta)
+	STALL_WORK.finish_slow("street.post.slide",stage,5000,vehicle)
+	stage = STALL_WORK.begin()
 	CRUSH.finish_move(vehicle, incoming, delta)
+	STALL_WORK.finish_slow("street.post.crush",stage,5000,vehicle)
 
 
 ## Impacto quase inelástico: a carroceria absorve energia. Os dois carros recebem
@@ -222,11 +229,21 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 const CRASH_RESTITUTION := 0.03
 
 func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
+	var began := STALL_WORK.begin()
+	_stall_crash(vehicle,other,normal,closing,point,incoming)
+	STALL_WORK.finish_slow("street.crash",began,5000,vehicle)
+
+func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
 	# Alvos protegidos continuam sendo sólidos, sem dano nem impulso disfarçado.
 	if PROTECTION.is_protected(other): return
 	# Apply damage here, behind the pair cooldown, instead of every contact frame.
+	var stage := STALL_WORK.begin()
 	vehicle.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), other)
+	STALL_WORK.finish_slow("street.crash.damage_self",stage,5000,vehicle)
+	stage = STALL_WORK.begin()
 	other.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), vehicle)
+	STALL_WORK.finish_slow("street.crash.damage_other",stage,5000,other)
+	stage = STALL_WORK.begin()
 	var into := -normal
 	var mine := _vehicle_mass(vehicle)
 	var theirs := _vehicle_mass(other)
@@ -245,9 +262,8 @@ func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, c
 	var self_lever: Vector3 = point - vehicle.global_position
 	self_lever.y = 0
 	_add_slide(vehicle, Vector3.ZERO, clampf(self_lever.cross(into * impulse / mine).y * 0.04, -1.2, 1.2))
-	play("impact_metal", point, lerpf(-6.0, 3.0, clampf(closing / 14.0, 0, 1)), randf_range(0.8, 0.95))
+	STALL_WORK.finish_slow("street.crash.impulse",stage,5000,vehicle)
 	if closing > 7.0:
-		play("impact_glass", point, -4.0)
 		spawn_glass(point, into)
 	_shake_if_player(vehicle, clampf(closing / 30.0, 0.08, 0.35))
 	_shake_if_player(other, clampf(closing / 30.0, 0.08, 0.35))
@@ -280,9 +296,14 @@ func _update_slide(vehicle: CharacterBody3D, delta: float) -> void:
 	var slide: Vector3 = vehicle.get_meta("crash_slide", Vector3.ZERO)
 	var spin: float = vehicle.get_meta("crash_spin", 0.0)
 	if slide.length_squared() > 0.0001:
+		var stage := STALL_WORK.begin()
 		var hit := vehicle.move_and_collide(slide * delta)
+		STALL_WORK.finish_slow("street.slide.move_and_collide",stage,5000,vehicle)
 		if hit != null: slide = slide.slide(hit.get_normal()) * 0.5
-	if absf(spin) > 0.001: vehicle.rotate_y(spin * delta)
+	if absf(spin) > 0.001:
+		var stage := STALL_WORK.begin()
+		vehicle.rotate_y(spin * delta)
+		STALL_WORK.finish_slow("street.slide.rotate",stage,5000,vehicle)
 	slide = slide.move_toward(Vector3.ZERO, SLIDE_FRICTION * delta)
 	spin = move_toward(spin, 0.0, 2.8 * delta)
 	var stun: float = float(vehicle.get_meta("crash_stun")) - delta
@@ -323,15 +344,15 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 	# Centro no tronco: a queda da V2 desloca o corpo ~0,65 m para a frente.
 	blood.spawn_pool(actor.global_position + heading.normalized() * 0.6, dead, actor if _counts_as_corpse(actor) else null, heading)
 	_watch[actor.get_instance_id()] = {"health": float(actor.get("health")), "dead": dead}
-	play("impact_flesh", actor.global_position, -8.0, 0.8)
+	CONTACT_AUDIO.play_contact(self, actor, actor.global_position, impact_speed, "flesh")
 
 
 func play_body_thud(point: Vector3, strength: float) -> void:
-	play("impact_flesh", point, lerpf(-16.0, -6.0, strength), randf_range(0.7, 0.85))
+	CONTACT_AUDIO.play_contact(self, null, point, lerpf(1.0, 6.0, clampf(strength, 0, 1)), "flesh")
 
 
 func play_prop_hit(point: Vector3, family: String, speed: float) -> void:
-	play("impact_glass" if family == "glass" else "impact_metal", point, lerpf(-12.0, 0.0, clampf(speed / 12.0, 0, 1)), randf_range(0.85, 1.1))
+	CONTACT_AUDIO.play_contact(self, null, point, speed, family, "prop|" + str(Vector3i((point * 2.0).round())))
 
 
 func play(family: String, point: Vector3, volume_db := 0.0, pitch := 1.0) -> void:
@@ -488,6 +509,12 @@ func _update_wounds(delta: float) -> void:
 # Detritos: vidro, lixo espalhado, gêiser de hidrante.
 
 func spawn_glass(point: Vector3, direction: Vector3) -> void:
+	var began := STALL_WORK.begin()
+	_stall_spawn_glass(point,direction)
+	STALL_WORK.finish_slow("street.glass",began,5000,self)
+
+func _stall_spawn_glass(point: Vector3, direction: Vector3) -> void:
+	var stage := STALL_WORK.begin()
 	var burst := CPUParticles3D.new()
 	burst.one_shot = true
 	burst.amount = 26
@@ -509,10 +536,13 @@ func spawn_glass(point: Vector3, direction: Vector3) -> void:
 	burst.gravity = Vector3(0, -12, 0)
 	burst.angular_velocity_min = -720
 	burst.angular_velocity_max = 720
+	STALL_WORK.finish_slow("street.glass.resources",stage,5000,self)
+	stage = STALL_WORK.begin()
 	add_child(burst)
 	burst.global_position = point + Vector3.UP * 0.8
 	burst.emitting = true
 	burst.finished.connect(burst.queue_free)
+	STALL_WORK.finish_slow("street.glass.attach",stage,5000,self)
 	_scatter(point, direction, 22, Vector2(0.04, 0.09), Color(0.8, 0.92, 0.98, 0.9), 0.05, 60.0)
 
 
@@ -522,6 +552,12 @@ func spawn_litter(point: Vector3, direction: Vector3) -> void:
 
 ## Pedacinhos no chão (vidro, papel): uma malha só, some depois de `lifetime`.
 func _scatter(point: Vector3, direction: Vector3, count: int, size: Vector2, color: Color, roughness: float, lifetime: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_scatter(point,direction,count,size,color,roughness,lifetime)
+	STALL_WORK.finish_slow("street.scatter",began,5000,self)
+
+func _stall_scatter(point: Vector3, direction: Vector3, count: int, size: Vector2, color: Color, roughness: float, lifetime: float) -> void:
+	var stage := STALL_WORK.begin()
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	tool.set_normal(Vector3.UP)
@@ -533,7 +569,11 @@ func _scatter(point: Vector3, direction: Vector3, count: int, size: Vector2, col
 		var corners := [Vector3(cos(a), 0, sin(a)), Vector3(cos(a + 2.2), 0, sin(a + 2.2)), Vector3(cos(a + 4.1), 0, sin(a + 4.1))]
 		for corner in corners: tool.add_vertex(center + corner * s)
 	var mesh := MeshInstance3D.new()
+	STALL_WORK.finish_slow("street.scatter.geometry",stage,5000,self)
+	stage = STALL_WORK.begin()
 	mesh.mesh = tool.commit()
+	STALL_WORK.finish_slow("street.scatter.commit",stage,5000,self)
+	stage = STALL_WORK.begin()
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = roughness
@@ -542,12 +582,15 @@ func _scatter(point: Vector3, direction: Vector3, count: int, size: Vector2, col
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mesh.material_override = material
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	STALL_WORK.finish_slow("street.scatter.material",stage,5000,self)
+	stage = STALL_WORK.begin()
 	add_child(mesh)
 	mesh.global_position = Vector3(point.x, point.y + 0.045, point.z)
 	_litter.append(mesh)
 	while _litter.size() > 24:
 		var oldest = _litter.pop_front()
 		if is_instance_valid(oldest): oldest.queue_free()
+	STALL_WORK.finish_slow("street.scatter.attach",stage,5000,self)
 	var tween := mesh.create_tween()
 	tween.tween_interval(lifetime)
 	tween.tween_property(material, "albedo_color:a", 0.0, 4.0)
@@ -582,7 +625,7 @@ func spawn_geyser(point: Vector3) -> void:
 	puddle.global_position = Vector3(point.x, point.y + 0.04, point.z)
 	puddle.scale = Vector3(0.2, 1, 0.2)
 	_geysers.append({"jet": jet, "puddle": puddle, "material": wet, "age": 0.0})
-	play("impact_metal", point, -2.0, 0.6)
+	CONTACT_AUDIO.play_contact(self, null, point, 8.0, "metal", "prop|" + str(Vector3i((point * 2.0).round())))
 
 
 ## Jorra ~14 s, perde força nos últimos 4 s; a poça cresce e depois seca.

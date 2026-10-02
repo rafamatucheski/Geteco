@@ -355,10 +355,10 @@ func _build_video(page: VBoxContainer) -> void:
 		s.render_scale = value
 		s.apply_settings())
 	_row(page, "Escala de renderização", "Abaixo de 100% o 3D é desenhado menor e ampliado (FSR). A interface continua nítida.", _widgets.render_scale)
-	_widgets.msaa = _options(["Desligado", "2×", "4×", "8×"], func(index):
+	_widgets.msaa = _options(["Desligado", "2×", "4×"], func(index):
 		s.msaa = index
 		s.apply_settings())
-	_row(page, "Antisserrilhado (MSAA)", "Suaviza bordas; 4× e 8× custam bastante GPU.", _widgets.msaa)
+	_row(page, "Antisserrilhado (MSAA)", "Suaviza bordas; 4× custa bastante GPU (8× foi removido).", _widgets.msaa)
 	_widgets.shadow_quality = _options(["Baixa", "Média", "Alta"], func(index):
 		s.shadow_quality = index
 		s.apply_settings())

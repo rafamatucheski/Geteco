@@ -49,6 +49,9 @@ func _ready() -> void:
 		var col := CollisionShape3D.new()
 		var hull := BoxShape3D.new()
 		hull.size = Vector3(2.56,2.86,LENGTHS[index])
+		if index > 0:
+			body.half_length = hull.size.z * .5
+			body.half_width = hull.size.x * .5
 		col.shape = hull; col.position.y = 1.65
 		body.add_child(col)
 		if index==0: shape = col

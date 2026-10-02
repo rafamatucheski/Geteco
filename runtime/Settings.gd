@@ -20,6 +20,8 @@ var window_mode := 0
 var resolution := 0
 var vsync := true
 var msaa := 1
+## 8x custava 12-23 ms de GPU com chama/explosão na tela (log de 2026-10-01, 1080p): teto de 4x.
+const MAX_MSAA := 2
 ## Escala da renderização 3D (a interface fica sempre nítida). Abaixo de 100% usa FSR.
 var render_scale := 1.0
 ## Índice em FPS_LIMITS. O padrão é 60, o limite que o projeto sempre usou.
@@ -69,7 +71,7 @@ func _ready() -> void:
 		window_mode = clampi(int(config.get_value("display","window_mode",legacy_mode)),0,2)
 		resolution = clampi(int(config.get_value("display","resolution",0)),0,RESOLUTIONS.size()-1)
 		vsync = bool(config.get_value("display","vsync",true))
-		msaa = clampi(int(config.get_value("display","msaa",1)),0,3)
+		msaa = clampi(int(config.get_value("display","msaa",1)),0,MAX_MSAA)
 		render_scale = clampf(float(config.get_value("display","render_scale",1.0)),.5,1.0)
 		fps_limit = clampi(int(config.get_value("display","fps_limit",1)),0,FPS_LIMITS.size()-1)
 		shadow_quality = clampi(int(config.get_value("display","shadow_quality",1)),0,2)
@@ -94,7 +96,7 @@ func apply_settings() -> void:
 	_apply_bus_volume("SFX", sfx_volume)
 	_apply_bus_volume("Ambient", ambient_volume)
 	var view := root_view()
-	view.msaa_3d = msaa
+	view.msaa_3d = mini(msaa, MAX_MSAA) as Viewport.MSAA
 	view.scaling_3d_scale = render_scale
 	# FSR 1 reconstrói bordas melhor que o bilinear quando a escala cai.
 	view.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if render_scale < .999 else Viewport.SCALING_3D_MODE_BILINEAR

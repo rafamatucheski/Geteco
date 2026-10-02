@@ -5,6 +5,7 @@ const SURFACES := preload("res://audio/v1_ambience/SurfaceResolver3D.gd")
 const PROFILES := preload("res://audio/v1_ambience/AmbienceProfile.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
+const ENGINE_BANKS := preload("res://audio/EngineBankCache.gd")
 const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
 const ROAD_SOUND := preload("res://audio/vehicle_fx/road.wav")
 const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
@@ -374,22 +375,15 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 		road_audio.stream = road_stream
 	if next_family == family: return
 	family = next_family
+	# Nearby audio already warms and retains these immutable seven-band loops.
+	# Its duplicates have no resource path: loading the originals here again
+	# misses ResourceLoader's weak cache after warm-up releases them.
+	var bank := ENGINE_BANKS.bank(family)
 	for index in 7:
 		layers[index].stop()
-		if family == "tank":
-			var bank := TANK_AUDIO.engine_bank()
-			layers[index].stream = bank[index] if bank.size() == 7 else null
-			continue
-		var source := load("res://audio/acoustic/engine_%s_%d.wav"%[family,index])
-		if not source is AudioStreamWAV:
-			layers[index].stream = null
-			continue
-		var stream := source.duplicate() as AudioStreamWAV
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_end = maxi(1, roundi(stream.get_length()*stream.mix_rate) - 8)
-		layers[index].stream = stream
+		layers[index].stream = bank[index] if bank.size() == 7 else null
 
-func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, ratio: float, throttle: float, previous_gear: int) -> void:
+func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float, throttle: float, previous_gear: int) -> void:
 	if family == "tank":
 		var gain := TANK_AUDIO.tracks_gain(float(car.speed))
 		if gain <= 0.001:

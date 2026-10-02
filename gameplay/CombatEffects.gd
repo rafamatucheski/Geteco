@@ -17,6 +17,8 @@ const MAX_SHELLS := 16
 const MAX_STAINS := 12
 const MAX_TRACERS := 32
 const MAX_FLAME_PACKETS := 8
+const BLAST_LIGHT_ENERGY := 5.0
+const BLAST_LIGHT_TIME := 0.22
 const FLAME_PACKET_LIFE := 0.38
 ## Emissores por efeito disparados em rodízio. Com um emissor só, cada chumbo da
 ## escopeta reiniciava o anterior e só o último respingo/faísca aparecia.
@@ -68,12 +70,17 @@ var _tracers: Array[MeshInstance3D] = []
 var _tracer_state: Array[Dictionary] = []
 var _next_tracer := 0
 var _flame_packets: Array[CPUParticles3D] = []
+var _flame_packet_age: Array[float] = []
+## Quem carrega o jato de chama (o jogador): os pacotes acompanham o deslocamento dele a cada passo.
+var carry_source: Node3D
+var _carry_last := Vector3.ZERO
+var _carry_has := false
 var _next_flame := 0
 var _flame_tongues: Array[MeshInstance3D] = []
 var _flame_tongue_state: Array[Dictionary] = []
 var _spark_mesh: BoxMesh
 var _smoke_mesh: QuadMesh
-var _flat_material: StandardMaterial3D
+
 
 func _ready() -> void:
 	var streak := StandardMaterial3D.new()
@@ -144,14 +151,16 @@ func _ready() -> void:
 		_blood.append(drops)
 		# Névoa curta e escura: a nuvem rosa de ~0,6 m lia como fumaça colorida.
 		_blood_mist.append(_emitter(4, 0.24, _smoke_mesh, Color(0.26, 0.01, 0.008, 0.5), 0.3, 1.0, 35.0, -1.2, 0.16, 0.36, 1.5))
-	_muzzle_smoke = _emitter(4, 0.6, _smoke_mesh, Color(0.65, 0.63, 0.60, 0.28), 0.6, 1.6, 24.0, 0.6, 0.4, 0.9, 2.4)
-	_blast_sparks = _emitter(28, 0.6, _spark_mesh, Color(1.0, 0.62, 0.15), 5.0, 11.0, 180.0, -8.0, 1.0, 2.2)
+	# 2026-10-01: explosões e fumaça de cano menores (GPU de 12-23 ms com chama/bazuca na tela, jogador achou
+	# a explosão da bazuca grande demais). Menos partículas translúcidas sobrepostas, menor escala.
+	_muzzle_smoke = _emitter(3, 0.45, _smoke_mesh, Color(0.65, 0.63, 0.60, 0.22), 0.5, 1.3, 24.0, 0.6, 0.3, 0.65, 2.0)
+	_blast_sparks = _emitter(20, 0.5, _spark_mesh, Color(1.0, 0.62, 0.15), 4.0, 9.0, 180.0, -8.0, 0.8, 1.8)
 	_blast_sparks.particle_flag_align_y = true
-	_blast_fire = _emitter(28, 0.7, fireball_quad, Color(1.0, 0.85, 0.6), 1.2, 4.5, 180.0, 2.5, 0.8, 1.7, 2.4)
+	_blast_fire = _emitter(18, 0.6, fireball_quad, Color(1.0, 0.85, 0.6), 1.0, 3.6, 180.0, 2.5, 0.6, 1.3, 2.2)
 	_blast_fire.color_ramp = _fire_ramp()
-	_blast_debris = _emitter(12, 1.1, _spark_mesh, Color(0.16, 0.14, 0.12), 4.0, 8.5, 70.0, -14.0, 1.4, 2.4)
+	_blast_debris = _emitter(8, 1.0, _spark_mesh, Color(0.16, 0.14, 0.12), 3.5, 7.0, 70.0, -14.0, 1.2, 2.0)
 	_blast_debris.particle_flag_align_y = true
-	_blast_smoke = _emitter(14, 2.4, _smoke_mesh, Color(0.2, 0.19, 0.18, 0.6), 0.8, 2.6, 70.0, 0.9, 2.5, 4.5, 2.2)
+	_blast_smoke = _emitter(9, 1.8, _smoke_mesh, Color(0.2, 0.19, 0.18, 0.55), 0.7, 2.2, 70.0, 0.9, 1.8, 3.2, 2.0)
 	_backblast = _emitter(6, 0.6, _smoke_mesh, Color(0.52, 0.48, 0.40, 0.3), 1.0, 2.6, 25.0, 0.0, 0.8, 1.6, 2.0)
 	_flame_light = OmniLight3D.new()
 	_flame_light.light_color = Color(1.0, 0.55, 0.18)
@@ -228,26 +237,30 @@ func _ready() -> void:
 	# acerto hitscan, mas a apresentação percorre a trajetória; não desenha uma
 	# barra instantânea do jogador ao alvo.
 	for index in MAX_TRACERS:
-		var tracer := MeshInstance3D.new()
+		var local_tracer := MeshInstance3D.new()
 		var tracer_mesh := BoxMesh.new()
 		tracer_mesh.size = Vector3(0.018, 0.018, 0.42)
 		var tracer_material := StandardMaterial3D.new()
 		tracer_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		tracer_material.emission_enabled = true
 		tracer_mesh.material = tracer_material
-		tracer.mesh = tracer_mesh
-		tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		tracer.top_level = true
-		tracer.visible = false
-		add_child(tracer)
-		_tracers.append(tracer)
+		local_tracer.mesh = tracer_mesh
+		local_tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		local_tracer.top_level = true
+		local_tracer.visible = false
+		add_child(local_tracer)
+		_tracers.append(local_tracer)
 		_tracer_state.append({"life": 0.0})
 	for index in MAX_FLAME_PACKETS:
 		# Chama pequena no bico que se abre até a ponta; crescer de 1,1 para 3,4× fazia
 		# folhas de quase 2 m que, sobre concreto claro, liam como névoa bege.
 		var packet := _emitter(22, FLAME_PACKET_LIFE, flame_quad, Color.WHITE, 8.0, 12.0, 5.0, 1.6, 0.35, 0.6, 2.6)
 		packet.color_ramp = _fire_ramp()
+		# Coordenadas LOCAIS: ao andar, o jogo desloca o emissor junto com o jogador (`carry_source`) e o jato
+		# continua saindo do bico, em vez de ficar parado no mundo e parecer vir de outro lugar.
+		packet.local_coords = true
 		_flame_packets.append(packet)
+		_flame_packet_age.append(999.0)
 	var tongue_mesh := _build_flame_tongue_mesh()
 	for index in MAX_FLAME_PACKETS:
 		var tongue := MeshInstance3D.new()
@@ -524,6 +537,7 @@ func flame(origin: Vector3, direction: Vector3, distance: float) -> void:
 	var packet := _flame_packets[index]
 	var tongue := _flame_tongues[index]
 	_next_flame = (_next_flame + 1) % MAX_FLAME_PACKETS
+	_flame_packet_age[index] = 0.0
 	# Velocidades de 25% a 100%: o pacote nasce já esticado do bico até o fim do
 	# jato. Com 70–100% todas as partículas saíam juntas a ~27 m/s e o bico ficava
 	# vazio — só o risco do clarão aparecia (vídeo do jogador em 2026-09-24).
@@ -560,7 +574,7 @@ func backblast(muzzle: Vector3, aim: Vector3) -> void:
 ## Antes só havia fagulhas e fumaça: `Gameplay.explode` não criava a esfera que o comentário prometia.
 func explosion(point: Vector3, radius: float) -> void:
 	# Bola de fogo do tamanho do raio: a de 6 m (granada) saía menor que um carro.
-	var size := clampf(radius / 5.0, 0.8, 2.2)
+	var size := clampf(radius / 7.0, 0.7, 1.6)
 	_blast_fire.scale_amount_min = 1.2 * size
 	_blast_fire.scale_amount_max = 2.2 * size
 	_blast_fire.initial_velocity_max = 4.5 * size
@@ -571,11 +585,11 @@ func explosion(point: Vector3, radius: float) -> void:
 	_burst(_blast_debris, point + Vector3.UP * 0.2)
 	_burst(_blast_smoke, point + Vector3.UP * 0.5)
 	_blast_light.global_position = point + Vector3.UP * 1.0
-	_blast_light.omni_range = maxf(6.0, radius * 2.0)
-	_blast_light.light_energy = 8.0
+	_blast_light.omni_range = maxf(4.5, radius * 1.3)
+	_blast_light.light_energy = BLAST_LIGHT_ENERGY
 	_blast_light.visible = true
-	_blast_light_time = 0.3
-	_scorch(point, clampf(radius * 0.45, 1.2, 3.5))
+	_blast_light_time = BLAST_LIGHT_TIME
+	_scorch(point, clampf(radius * 0.36, 1.0, 2.6))
 	set_physics_process(true)
 
 ## Cópia nova do emissor por explosão, posicionada antes de entrar na cena. O
@@ -630,6 +644,21 @@ func attach_rocket_trail(projectile: Node3D) -> void:
 
 ## Zera tudo (troca de região, descarga): esconde cápsulas e manchas, PARA e LIMPA as partículas vivas
 ## (`restart` descarta as partículas em voo; em seguida `emitting = false`), apaga a luz e desliga o passo.
+## Dispara cada efeito uma vez diante do jogador, ainda sob a tela de carregamento, e apaga logo depois. A primeira
+## chama/explosão/luz do jogo travava ~1,1-1,3 s (log de 2026-10-01); hipótese: primeira compilação de pipelines/luzes
+## no renderizador Mobile. Se o log mostrar que a parada continua, a hipótese estava errada.
+func prewarm(point: Vector3) -> void:
+	if not is_inside_tree(): return
+	flame(point, Vector3.FORWARD, 3.0)
+	explosion(point + Vector3.FORWARD * 2.0, 3.0)
+	muzzle_smoke(point, Vector3.FORWARD)
+	backblast(point, Vector3.FORWARD)
+	impact(point, Vector3.UP, "world", 10.0)
+	blood(point, Vector3.UP, 10.0)
+	_flame_light.visible = true
+	_flame_light_time = 0.1
+	get_tree().create_timer(0.35).timeout.connect(clear)
+
 func clear() -> void:
 	for index in MAX_SHELLS:
 		_shells[index].visible = false
@@ -683,6 +712,23 @@ func _exit_tree() -> void:
 
 func _physics_process(delta: float) -> void:
 	var active := false
+	var moved := Vector3.ZERO
+	if is_instance_valid(carry_source):
+		var here := carry_source.global_position
+		if _carry_has: moved = here - _carry_last
+		_carry_last = here
+		_carry_has = true
+		# Teleporte (garagem, interior, respawn) não arrasta o jato.
+		if moved.length() > 3.0: moved = Vector3.ZERO
+	for index in MAX_FLAME_PACKETS:
+		_flame_packet_age[index] += delta
+		if _flame_packet_age[index] < FLAME_PACKET_LIFE + 0.05:
+			active = true
+			if moved != Vector3.ZERO:
+				_flame_packets[index].global_position += moved
+				var carried: Dictionary = _flame_tongue_state[index]
+				if carried.has("origin"): carried.origin = (carried.origin as Vector3) + moved
+	if moved != Vector3.ZERO and _flame_light_time > 0.0: _flame_light.global_position += moved
 	for index in MAX_FLAME_PACKETS:
 		var flame_state: Dictionary = _flame_tongue_state[index]
 		if float(flame_state.get("life", 0.0)) <= 0.0: continue
@@ -771,6 +817,8 @@ func _physics_process(delta: float) -> void:
 	if _blast_light_time > 0.0:
 		active = true
 		_blast_light_time -= delta
-		_blast_light.light_energy = 8.0 * pow(maxf(0.0, _blast_light_time / 0.3), 1.6)
+		_blast_light.light_energy = BLAST_LIGHT_ENERGY * pow(maxf(0.0, _blast_light_time / BLAST_LIGHT_TIME), 1.6)
 		if _blast_light_time <= 0.0: _blast_light.visible = false
-	if not active: set_physics_process(false)
+	if not active:
+		_carry_has = false
+		set_physics_process(false)

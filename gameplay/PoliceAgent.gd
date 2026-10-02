@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 const MODEL = preload("res://gameplay/PoliceModel.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
@@ -81,6 +82,11 @@ func _ready() -> void:
 	add_child(preload("res://gameplay/PoliceOcclusionSilhouette.gd").new())
 
 func _physics_process(delta: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_physics_tick(delta)
+	STALL_WORK.finish_slow("police.physics", began, 10000, self)
+
+func _stall_physics_tick(delta: float) -> void:
 	if dead or not is_instance_valid(controller): return
 	cooldown = maxf(0, cooldown - delta)
 	burst_pause = maxf(0.0, burst_pause - delta)
@@ -299,7 +305,9 @@ func _move(move: Vector3, delta: float) -> void:
 	velocity.x = move.x
 	velocity.z = move.z
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
+	var move_began := STALL_WORK.begin()
 	move_and_slide()
+	STALL_WORK.finish_slow("police.move_and_slide", move_began, 10000, self)
 	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
 	visual.left_upper_leg.rotation.x = sin(gait) * 0.55
 	visual.right_upper_leg.rotation.x = -sin(gait) * 0.55

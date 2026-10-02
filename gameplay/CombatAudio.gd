@@ -1,4 +1,5 @@
 extends RefCounted
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Áudio de combate do V2: amostras copiadas do V1 (recarga, impactos, RPG, tiros
 ## silenciados) e os geradores procedurais que o V1 usava para golpes, faca, taco,
 ## lança-chamas e arremesso de granada. Nada aqui é efeito novo: são
@@ -27,37 +28,79 @@ const MIN_RELOAD := 0.5
 static var _wav: Dictionary = {}
 static var _generated: Dictionary = {}
 static var _reload_seconds: Dictionary = {}
+const GUNFIRE_FAMILIES := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "explosion"]
+const SUPPRESSED_FAMILIES := ["pistol", "smg", "shotgun", "ak47", "m4a1", "hunting_rifle"]
+const SHORT_FAMILIES := ["hurt", "panic", "impact_concrete", "impact_flesh", "impact_glass", "impact_metal", "impact_wood", "reward_pickup", "reward_cash"]
+const SINGLE_SAMPLES := ["reward_weapon.wav", "reward_collectible.wav", "reward_achievement.wav"]
+
+## Load every authored take under the loading curtain, without choosing a take,
+## advancing gameplay RNG, starting a voice or changing the no-repeat history.
+## Batches are bounded to one family; filesystem work runs on loader threads.
+static func prewarm_gameplay_banks(tree: SceneTree) -> void:
+	for family in GUNFIRE_FAMILIES:
+		await _prewarm_family(family,GUNFIRE_TAKES,tree)
+	for family in SUPPRESSED_FAMILIES:
+		await _prewarm_family("suppressed_"+family,GUNFIRE_TAKES,tree)
+	for family in SHORT_FAMILIES:
+		await _prewarm_family(family,RELOAD_TAKES,tree)
+	var singles: Array[String] = []
+	for key in SINGLE_SAMPLES: singles.append(key)
+	await _prewarm_samples(singles,tree)
+	# Procedural waveforms also belong to first use, not an active shot/bounce.
+	for family in GUN_BODY:
+		gun_body(family)
+		await tree.process_frame
+	punch_swing()
+	bat_swing()
+	for kind in [-1,0,1,2]: knife_sample(kind)
+	flamethrower()
+	grenade_throw()
+	grenade_bounce()
+	await tree.process_frame
+
+static func _prewarm_family(prefix: String, count: int, tree: SceneTree) -> void:
+	var keys: Array[String] = []
+	for index in count: keys.append("%s_%d.wav" % [prefix,index])
+	await _prewarm_samples(keys,tree)
+
+static func _prewarm_samples(keys: Array[String], tree: SceneTree) -> void:
+	var pending: Array[String] = []
+	for key in keys:
+		if _wav.has(key): continue
+		var path := AUDIO_DIR + key
+		if not ResourceLoader.exists(path,"AudioStream") or ResourceLoader.has_cached(path):
+			wav(key)
+		elif ResourceLoader.load_threaded_request(path,"AudioStream") == OK:
+			pending.append(key)
+		else:
+			wav(key)
+	for key in pending:
+		var path := AUDIO_DIR + key
+		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			await tree.process_frame
+		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+			_wav[key] = ResourceLoader.load_threaded_get(path) as AudioStream
+		else:
+			wav(key)
 
 ## Retain imported reload banks while the loading curtain is still active.
 ## Request one weapon's three takes together and fetch only after loading ends.
 static func prewarm_reload_banks(tree: SceneTree) -> void:
 	for weapon_id in RELOAD_WEAPONS:
-		var pending: Array[String] = []
+		var keys: Array[String] = []
 		for index in RELOAD_TAKES:
 			var key := "reload/%s_%d.wav" % [weapon_id, index]
-			if _wav.has(key): continue
-			var path := AUDIO_DIR + key
-			if not ResourceLoader.exists(path, "AudioStream") or ResourceLoader.has_cached(path):
-				wav(key)
-			elif ResourceLoader.load_threaded_request(path, "AudioStream") == OK:
-				pending.append(key)
-			else:
-				wav(key)
-		for key in pending:
-			var path := AUDIO_DIR + key
-			while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-				await tree.process_frame
-			if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
-				_wav[key] = ResourceLoader.load_threaded_get(path) as AudioStream
-			else:
-				wav(key)
+			keys.append(key)
+		await _prewarm_samples(keys,tree)
 		reload_seconds(weapon_id)
 
 ## WAV do disco, com cache. Nulo se o arquivo não existir.
 static func wav(relative_path: String) -> AudioStream:
 	if _wav.has(relative_path): return _wav[relative_path]
 	var path := AUDIO_DIR + relative_path
+	var began := STALL_WORK.begin()
 	var stream := ResourceLoader.load(path, "AudioStream", ResourceLoader.CACHE_MODE_REUSE) as AudioStream if ResourceLoader.exists(path, "AudioStream") else null
+	STALL_WORK.finish_slow("combat_audio.load:"+relative_path,began,5000)
 	_wav[relative_path] = stream
 	return stream
 

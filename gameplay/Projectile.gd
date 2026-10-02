@@ -1,4 +1,5 @@
 extends Node3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 var controller: Node3D
 var shooter: Node3D
@@ -66,21 +67,32 @@ func _build_rocket(root: Node3D) -> void:
 	root.add_child(motor)
 
 func _physics_process(delta: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_physics_tick(delta)
+	STALL_WORK.finish_slow("projectile.physics",began,10000,self)
+
+func _stall_physics_tick(delta: float) -> void:
 	if detonated: return
+	var began := STALL_WORK.begin()
 	age += delta
 	if resting:
 		# Parada no chão: nada de raio por quadro nem micro-quique flutuando 8 cm acima do piso.
 		if age >= fuse: detonate()
+		STALL_WORK.finish_slow("projectile.resting_fuse",began,5000,self)
 		return
 	if grenade: velocity.y -= 12.0 * delta
 	if grenade and is_instance_valid(visual): visual.rotation += spin * delta
 	elif not grenade and velocity.length_squared() > 0.001: look_at(global_position + velocity.normalized())
 	var next := global_position + velocity * delta
-	var query := PhysicsRayQueryParameters3D.create(global_position, next, 7)
-	if shooter is CollisionObject3D: query.exclude = [shooter.get_rid()]
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	STALL_WORK.finish("projectile.movement", began)
+	began = STALL_WORK.begin()
+	var hit := _query_hit(global_position, next)
+	STALL_WORK.finish("projectile.query_total", began)
+	began = STALL_WORK.begin()
 	if not hit.is_empty():
 		global_position = hit.position + hit.normal * 0.05
+		STALL_WORK.finish("projectile.position_hit", began)
+		began = STALL_WORK.begin()
 		if grenade:
 			var normal: Vector3 = hit.normal
 			var impact_speed := -velocity.dot(normal)
@@ -96,12 +108,26 @@ func _physics_process(delta: float) -> void:
 					velocity = Vector3.ZERO
 		else:
 			detonate()
+		STALL_WORK.finish("projectile.impact", began)
 	else:
 		global_position = next
+		STALL_WORK.finish("projectile.position_free", began)
+	began = STALL_WORK.begin()
 	if age >= fuse: detonate()
+	STALL_WORK.finish("projectile.fuse", began)
 
 func detonate() -> void:
 	if detonated: return
 	detonated = true
 	controller.explode(global_position, radius, damage, shooter, hurt_shooter)
 	queue_free()
+
+func _query_hit(from: Vector3, to: Vector3) -> Dictionary:
+	var began := STALL_WORK.begin()
+	var query := PhysicsRayQueryParameters3D.create(from, to, 7)
+	if shooter is CollisionObject3D: query.exclude = [shooter.get_rid()]
+	STALL_WORK.finish("projectile.query_prepare", began)
+	began = STALL_WORK.begin()
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	STALL_WORK.finish("projectile.intersect_ray", began)
+	return hit

@@ -123,7 +123,7 @@ const WEAPONS = {
 		"sound_type": "m4a1", "audio_volume_db": -0.5, "pitch_variance": 0.06
 	},
 	"rpg": {
-		"blast_radius": 140.0,
+		"blast_radius": 112.0,
 		"falloff_start": 650.0, "max_range": 650.0, "min_damage_ratio": 1,
 		"label": "LANÇA-FOGUETES RPG-7", "short_label": "RPG", "price": 8500,
 		"damage": 95, "fire_interval": 1.65, "projectile_speed": 520.0,

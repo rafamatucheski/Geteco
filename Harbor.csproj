@@ -1,0 +1,12 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>Harbor</RootNamespace>
+    <AssemblyName>Harbor</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Cópias de projetos antigas em evidence/ e builds/ não são código do jogo. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);evidence/**;builds/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

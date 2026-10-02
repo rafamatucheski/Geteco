@@ -1,3 +1,4 @@
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Open.ps1"
-if errorlevel 1 pause
+rem O jogo principal usa o Godot .NET e compila o roteador C# antes de abrir.
+call "%~dp0JogarCSharp.cmd"
+exit /b %errorlevel%

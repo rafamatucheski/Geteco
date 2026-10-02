@@ -10,9 +10,20 @@ extends RefCounted
 const PX := 16.0
 
 # --- Polícia (WantedManager) -------------------------------------------------
-const MAX_ACTIVE: Array[int] = [0, 2, 3, 4, 5, 6, 8]
-const DEPLOYMENT: Array[int] = [0, 4, 6, 10, 18, 26, 40]
-const INITIAL_DELAY: Array[float] = [0.0, 6.0, 3.0, 1.0, 1.0, 1.0, 1.0]
+## 2026-10-01: a resposta inicial (2 viaturas; 4 no orçamento) ficou como estava e os reforços
+## acima dela caíram pela metade (arredondando para cima): novo = inicial + ceil((antigo - inicial) / 2).
+## Antes: MAX_ACTIVE [0,2,3,4,5,6,8], DEPLOYMENT [0,4,6,10,18,26,40], FOOT_LIMIT [0,4,6,8,10,12,16];
+## a 6 estrelas chegavam 20-30 policiais ao mesmo tempo, sem chance de sobreviver sem godmode.
+const MAX_ACTIVE: Array[int] = [0, 2, 3, 3, 4, 4, 5]
+const DEPLOYMENT: Array[int] = [0, 4, 5, 7, 11, 15, 22]
+## 2026-10-01: a polícia chegava "sem dar tempo de respirar" (1 s a 3-6 estrelas). Antes: [0,6,3,1,1,1,1].
+const INITIAL_DELAY: Array[float] = [0.0, 10.0, 8.0, 6.0, 5.0, 5.0, 5.0]
+## Com 0 estrelas, a primeira viatura de averiguação só sai depois disto (antes: no mesmo instante).
+const INVESTIGATION_DELAY := 12.0
+## Chegando ao local, a equipe desce, olha em volta e a viatura vai embora depois disto.
+const INVESTIGATION_LINGER := 15.0
+## No máximo tantos policiais por vez descem da viatura (a van descia 6 num quadro: 25-42 ms).
+const OFFICERS_DEPLOY_BURST := 2
 const INTERVAL: Array[float] = [0.0, 10.0, 8.0, 6.0, 4.0, 3.0, 2.0]
 const SPAWN_MIN := 520.0 / PX
 const SPAWN_MAX := 1800.0 / PX
@@ -34,13 +45,25 @@ const OFFICERS_PER_CAR := 2
 const OFFICERS_PER_VAN := 6
 const MAX_MOTORCYCLES := 1
 const MAX_TANKS := 1
-const FOOT_LIMIT: Array[int] = [0, 4, 6, 8, 10, 12, 16]
+const FOOT_LIMIT: Array[int] = [0, 4, 5, 6, 7, 8, 10]
 
 # --- Emergência ---------------------------------------------------------------
 const MAX_INCIDENTS := 24
 const RESPONSE_RADIUS := 1100.0 / PX
 const DISPATCH_COOLDOWN := 10.0
 const MAX_CREWS := 3
+## Bombeiros: um caminhão por vez e sem reforço. Outra ocorrência de fogo só é atendida depois
+## que o caminhão atual sair de cena (antes vinham até MAX_CREWS e a rua enchia deles).
+const MAX_FIRE_TRUCKS := 1
+## O caminhão só é despachado depois do fogo existir por 10-15 s (varia por ocorrência); se ele for
+## destruído, o próximo só vem 30-45 s depois.
+const FIRE_RESPONSE_MIN := 10.0
+const FIRE_RESPONSE_SPREAD := 5.0
+const FIRE_REPLACEMENT_MIN := 30.0
+const FIRE_REPLACEMENT_SPREAD := 15.0
+
+static func fire_response_delay(incident_key: int) -> float:
+	return FIRE_RESPONSE_MIN + FIRE_RESPONSE_SPREAD * float(posmod(incident_key, 6)) / 5.0
 const UNANSWERED_SECONDS := 120.0
 const MAX_INCIDENT_SECONDS := 300.0
 const MERGE_RADIUS := 550.0 / PX

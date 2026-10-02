@@ -1,5 +1,9 @@
 extends CharacterBody3D
 var bus: CharacterBody3D
+## Emergency drivers query each collision body, including the articulated tail.
+## Filled from this section's hull when the bus constructs it.
+var half_length := 0.0
+var half_width := 0.0
 var traffic: bool:
 	get: return is_instance_valid(bus) and bus.traffic
 var speed: float:

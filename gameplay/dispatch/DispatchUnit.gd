@@ -11,6 +11,8 @@ extends RefCounted
 
 const RULES := preload("res://gameplay/dispatch/DispatchRules.gd")
 const TANK_WEAPON := preload("res://gameplay/police_response/ground/PoliceTankWeapon.gd")
+const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 var controller: Node3D
 var service := ""
@@ -57,6 +59,7 @@ var actor: Node3D
 var crew: CharacterBody3D
 var retasked := false
 var _exit_wait := 0.0
+var _scene_clock := 0.0
 var _check_clock := 0.0
 
 var _saved_layer := 0
@@ -96,16 +99,25 @@ func tick(delta: float) -> void:
 		return
 	age += delta
 	state_age += delta
-	if _tick_suspension(delta): return
+	var traced := STALL_WORK.begin()
+	var paused := _tick_suspension(delta)
+	STALL_WORK.finish_slow("dispatch.unit.suspension", traced, 5000, vehicle)
+	if paused: return
 	if vehicle.health <= 0.0 and not wrecked: _on_wrecked()
 	if wrecked:
 		_sync_motorcycle_rider()
 		_tick_wrecked(delta)
 		return
+	traced = STALL_WORK.begin()
 	_track_recovery(delta)
+	STALL_WORK.finish_slow("dispatch.unit.recovery", traced, 5000, vehicle)
+	traced = STALL_WORK.begin()
 	if is_police(): _tick_police(delta)
 	else: _tick_service(delta)
+	STALL_WORK.finish_slow("dispatch.unit.state", traced, 5000, vehicle)
+	traced = STALL_WORK.begin()
 	_sync_motorcycle_rider()
+	STALL_WORK.finish_slow("dispatch.unit.rider", traced, 5000, vehicle)
 
 func _sync_motorcycle_rider() -> void:
 	if variant != "motorcycle" or not is_instance_valid(vehicle): return
@@ -221,7 +233,9 @@ func _tick_suspension(delta: float) -> bool:
 		controller.emit_dispatch_event("unit_suspended", {"unit": self})
 		return true
 	suspended_for += delta
+	var traced := TRACE.begin()
 	var resume_clear: bool = distance <= RULES.RESUME_DISTANCE and controller.footprint_clear(vehicle, vehicle.global_position, vehicle.rotation.y) and _bodies_clear()
+	TRACE.end("unit.resume_check", traced)
 	if resume_clear:
 		# Corpos estáticos recém-carregados entram no servidor de física no fim do
 		# quadro. Exigir espaço livre por uma janela curta impede retomar sobre um
@@ -292,6 +306,10 @@ func _on_wrecked() -> void:
 	controller.emit_dispatch_event("unit_wrecked", {"unit": self})
 
 func _tick_wrecked(_delta: float) -> void:
+	# Enquanto a equipe ainda age a pé a carcaça fica (Vehicle faz o fade de carcaças depois de 30 s).
+	if is_instance_valid(vehicle):
+		var crew_alive: bool = (is_police() and not officers.is_empty()) or (not is_police() and is_instance_valid(crew) and not crew.dead)
+		vehicle.set_meta("wreck_hold", crew_alive)
 	if is_police():
 		officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
 		if controller.gameplay.stars == 0 and state_age > 1.0 or officers.is_empty():
@@ -336,6 +354,9 @@ func _police_investigating(delta: float) -> void:
 	if not officers.is_empty():
 		driver.hold(true)
 		driver.tick(delta)
+		# A equipe olhou em volta o bastante: volta para a viatura e vai embora.
+		_scene_clock += delta
+		if _scene_clock >= RULES.INVESTIGATION_LINGER: _begin_recall(false)
 		return
 	var point: Vector3 = gameplay.police_investigation_point()
 	if not point.is_finite():
@@ -346,6 +367,11 @@ func _police_investigating(delta: float) -> void:
 	var arrived := vehicle.global_position.distance_to(point) < 10.0
 	driver.hold(arrived)
 	if not arrived: _replan_towards(point,delta,4.0)
+	elif crew_remaining > 0 and driver.settled(): _deploy_police_crew()
+	elif crew_remaining <= 0:
+		# Sem ninguém para descer (equipe esgotada): fica um tempo no local e parte.
+		_scene_clock += delta
+		if _scene_clock >= RULES.INVESTIGATION_LINGER: _begin_recall(false)
 	driver.tick(delta)
 
 func _target() -> Node3D:
@@ -363,6 +389,11 @@ func _target_velocity(target: Node3D) -> Vector3:
 	return Vector3.ZERO
 
 func _police_enroute(delta: float) -> void:
+	var traced := STALL_WORK.begin()
+	_stall_police_enroute(delta)
+	STALL_WORK.finish_slow("dispatch.unit.police_enroute", traced, 5000, vehicle)
+
+func _stall_police_enroute(delta: float) -> void:
 	# Recuperação de ultrapassagem sem progresso: sem isto a viatura ficaria segurando a
 	# vaga de perseguição para sempre (polícia não tem prazo de resposta como os serviços).
 	var stall_cause := _recovery_stall_cause()
@@ -415,8 +446,10 @@ func _sees_target(target: Node3D) -> bool:
 	var gameplay: Node3D = controller.gameplay
 	if target == null or gameplay.health <= 0 or not gameplay.state.weapons_allowed() or not target.visible: return false
 	if vehicle.global_position.distance_to(target.global_position) > RULES.SIGHT_RANGE: return false
+	var traced := TRACE.begin()
 	var ray := PhysicsRayQueryParameters3D.create(vehicle.global_position + Vector3.UP * 1.4, target.global_position + Vector3.UP, 7, [vehicle.get_rid()])
 	var hit: Dictionary = vehicle.get_world_3d().direct_space_state.intersect_ray(ray)
+	TRACE.end("unit.sees_target", traced)
 	return hit.is_empty() or hit.collider == target
 
 ## Tiro a partir da viatura (police/PoliceVehicleCombat.gd): dois ou mais
@@ -542,10 +575,12 @@ func _police_parked(delta: float) -> void:
 		_set_state("enroute")
 
 func _deploy_police_crew() -> bool:
-	var limit: int = RULES.FOOT_LIMIT[clampi(controller.gameplay.stars, 0, 6)]
-	var free_slots: int = mini(crew_remaining, limit - controller.foot_officer_count())
+	# Com 0 estrelas a averiguação usa o limite de 1 estrela (FOOT_LIMIT[0] é 0: a equipe nunca descia).
+	var limit: int = RULES.FOOT_LIMIT[clampi(maxi(controller.gameplay.stars, 1), 0, 6)]
+	var free_slots: int = mini(mini(crew_remaining, limit - controller.foot_officer_count()), RULES.OFFICERS_DEPLOY_BURST)
 	var deployed := false
 	var taken: Array[Vector3] = []
+	var traced := TRACE.begin()
 	for index in maxi(0, free_slots):
 		var exit: Dictionary = controller.exit_point(vehicle, taken, false)
 		if exit.is_empty(): break
@@ -554,6 +589,7 @@ func _deploy_police_crew() -> bool:
 		officers.append(officer)
 		crew_remaining -= 1
 		deployed = true
+	TRACE.end("crew.deploy_police", traced, {"free_slots": free_slots})
 	return deployed
 
 func _police_working(delta: float) -> void:
@@ -798,7 +834,9 @@ func _begin_departure() -> void:
 func _plan_departure() -> void:
 	var player_position: Vector3 = controller.player_position()
 	var heading: Vector3 = -vehicle.global_basis.z
+	var traced := TRACE.begin()
 	var result: Dictionary = controller.router.plan_departure(vehicle.global_position, player_position, RULES.RECYCLE_DISTANCE + 25.0, heading)
+	TRACE.end("router.plan_departure", traced)
 	if result.ok:
 		driver.set_route(result.curve)
 		_stranded = 0.0
@@ -858,7 +896,9 @@ func _replan_towards(goal: Vector3, delta: float, interval: float) -> void:
 	# Objetivo praticamente parado e rota longa ainda válida: não gasta busca.
 	if driver.route != null and driver.remaining > 12.0 and goal.distance_to(_last_planned_goal) < 3.0: return
 	_last_planned_goal = goal
+	var traced := TRACE.begin()
 	var result: Dictionary = controller.router.plan(vehicle.global_position, goal, -vehicle.global_basis.z)
+	TRACE.end("router.plan:pursuit", traced)
 	if result.ok:
 		_failed_plans = 0
 		driver.set_route(result.curve)
@@ -877,7 +917,9 @@ func on_replan_requested(_reason: String) -> void:
 		_plan_departure()
 		return
 	var goal := _goal if _goal_valid else (actor.global_position if is_instance_valid(actor) else vehicle.global_position)
+	var traced := TRACE.begin()
 	var result: Dictionary = controller.router.plan(vehicle.global_position, goal, -vehicle.global_basis.z)
+	TRACE.end("router.plan:stuck", traced)
 	controller.emit_dispatch_event("replanned", {"unit": self, "ok": result.ok})
 	if result.ok: driver.set_route(result.curve)
 

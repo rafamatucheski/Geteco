@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 const VISUAL := preload("res://scripts/VehicleVisual.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
@@ -280,19 +281,83 @@ func _lod_gate(delta: float) -> float:
 	_lod_pending = 0.0
 	return steps
 
+## Carcaça (vida 0) de trânsito ambiente ou de despacho some depois de WRECK_LIFETIME s, com fade
+## de WRECK_FADE s. O carro do jogador, o de missão/garagem e a carcaça com a equipe ainda a pé
+## (`wreck_hold`, posto pelo despacho) não entram. Evita dezenas de carros explodidos acumulados.
+const WRECK_LIFETIME := 30.0
+const WRECK_FADE := 2.0
+var _wreck_age := 0.0
+var _wreck_fade := -1.0
+var _wreck_meshes: Array[MeshInstance3D] = []
+
+func _wreck_expires() -> bool:
+	if controlled or has_meta("garage_reward") or str(get_meta("garage_place", "")) != "": return false
+	return get_meta("ambient_traffic", false) == true or not player_damage_attribution
+
+## true quando a carcaça foi removida neste passo.
+func _tick_wreck(delta: float) -> bool:
+	if _wreck_fade < 0.0:
+		if not _wreck_expires(): return false
+		_wreck_age += delta
+		if _wreck_age < WRECK_LIFETIME or get_meta("wreck_hold", false) == true: return false
+		var world := get_parent()
+		var driving: Variant = world.get("driving") if is_instance_valid(world) else null
+		if driving != null and driving.get("car") == self: return false
+		_begin_wreck_fade()
+		return false
+	_wreck_fade += delta
+	var amount := clampf(_wreck_fade / WRECK_FADE, 0.0, 1.0)
+	for mesh in _wreck_meshes:
+		if is_instance_valid(mesh): mesh.transparency = amount
+	if amount >= 1.0:
+		queue_free()
+		return true
+	return false
+
+func _begin_wreck_fade() -> void:
+	_wreck_fade = 0.0
+	# Já não bloqueia ninguém enquanto some.
+	collision_layer = 0
+	collision_mask = 0
+	var pending: Array[Node] = [self]
+	while not pending.is_empty():
+		var node: Node = pending.pop_back()
+		if node is CollisionObject3D and node != self:
+			(node as CollisionObject3D).collision_layer = 0
+			(node as CollisionObject3D).collision_mask = 0
+		if node is MeshInstance3D: _wreck_meshes.append(node)
+		if node is Light3D: (node as Light3D).visible = false
+		for child in node.get_children(): pending.append(child)
+
 func _physics_process(delta: float) -> void:
-	if _is_resting(): return
+	var began := STALL_WORK.begin()
+	_stall_physics_tick(delta)
+	STALL_WORK.finish_slow("vehicle.physics", began, 10000, self)
+
+func _stall_physics_tick(delta: float) -> void:
+	var stage := STALL_WORK.begin()
+	var removed := health <= 0.0 and _tick_wreck(delta)
+	STALL_WORK.finish_slow("vehicle.wreck_lifetime", stage, 5000, self)
+	if removed: return
+	stage = STALL_WORK.begin()
+	var resting := _is_resting()
+	STALL_WORK.finish_slow("vehicle.resting", stage, 5000, self)
+	if resting: return
+	stage = STALL_WORK.begin()
 	var lod := _lod_gate(delta)
+	STALL_WORK.finish_slow("vehicle.lod", stage, 5000, self)
 	if lod == 0.0: return
 	delta *= lod
 	if health <= 0:
 		controlled = false
 		traffic = false
 		speed = move_toward(speed,0,20*delta)
+	stage = STALL_WORK.begin()
 	if traffic:
 		_drive_traffic(delta)
 	else:
 		_drive_player(delta)
+	STALL_WORK.finish_slow("vehicle.drive", stage, 5000, self)
 	# Trânsito parado em fila "dorme": sem move_and_slide nem consulta de giro. Em
 	# engarrafamento, carros encostados custavam 60–98 ms por quadro somados (2026-09-23).
 	if traffic and health > 0 and absf(speed) < 0.05 and horizontal_velocity.length_squared() < 0.0025 and is_on_floor():
@@ -310,15 +375,20 @@ func _physics_process(delta: float) -> void:
 	velocity.y = -1.0 if is_on_floor() else velocity.y-20.0*delta
 	# Física de rua: atropelamento e mobília derrubável antes de mover (o carro
 	# atravessa o que cedeu); batida carro x carro e deslize depois.
+	stage = STALL_WORK.begin()
 	STREET.vehicle_pre_move(self,delta)
+	STALL_WORK.finish_slow("vehicle.street_pre", stage, 5000, self)
 	var incoming_velocity := Vector3(velocity.x,0,velocity.z)
 	if lod != 1.0:
 		velocity.x *= lod
 		velocity.z *= lod
+	var move_began := STALL_WORK.begin()
 	move_and_slide()
+	STALL_WORK.finish_slow("vehicle.move_and_slide", move_began, 10000, self)
 	if lod != 1.0:
 		velocity.x /= lod
 		velocity.z /= lod
+	stage = STALL_WORK.begin()
 	var motion := global_position-previous
 	motion.y = 0
 	distance_travelled += motion.length()
@@ -347,7 +417,11 @@ func _physics_process(delta: float) -> void:
 					local_pt = to_local(coll.get_position())
 					break
 			receive_impact(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO), local_pt)
+	STALL_WORK.finish_slow("vehicle.contacts", stage, 5000, self)
+	stage = STALL_WORK.begin()
 	STREET.vehicle_post_move(self,incoming_velocity,delta)
+	STALL_WORK.finish_slow("vehicle.street_post", stage, 5000, self)
+	stage = STALL_WORK.begin()
 	wheel_spin += motion.dot(forward)/0.355
 	for pivot in wheels:
 		pivot.rotation = Vector3(wheel_spin,steering if pivot.get_meta("front") else 0.0,0)
@@ -355,7 +429,10 @@ func _physics_process(delta: float) -> void:
 		pivot.rotation.y = steering if pivot.get_meta("front") else 0.0
 	if tail_material and not is_instance_valid(equipment):
 		tail_material.emission_energy_multiplier = 2.5 if brake_input or blocked else 0.65
+	STALL_WORK.finish_slow("vehicle.wheels", stage, 5000, self)
+	stage = STALL_WORK.begin()
 	if is_instance_valid(effects): effects.physics_tick(delta,incoming_velocity)
+	STALL_WORK.finish_slow("vehicle.effects", stage, 5000, self)
 
 func stop_boarding_motion() -> void:
 	# The body animation uses fixed door/seat anchors. Speed alone left the

@@ -29,7 +29,7 @@ func run() -> void:
 	check(game.stars == 4,"old six-star total now reaches four; high tiers take longer")
 	game.register_crime(180,bundle.player.position)
 	check(game.stars == 6 and game.snapshot().crime_points == 420,"six stars reached and new crime total persists")
-	check(RULES.MAX_ACTIVE[6] == 8 and RULES.FOOT_LIMIT[6] == 16,"six-star response admits eight vehicles and sixteen officers")
+	check(RULES.MAX_ACTIVE[6] == 5 and RULES.FOOT_LIMIT[6] == 10,"six-star response admits five vehicles and ten officers (reinforcements halved)")
 	var unit = dispatch.dispatch_police_to(bundle.player.position)
 	check(unit != null,"dispatch creates a real unit through the road router")
 	if unit != null:

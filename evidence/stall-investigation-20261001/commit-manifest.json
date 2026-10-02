@@ -1,0 +1,582 @@
+[
+  {
+    "path": "Harbor.csproj",
+    "blob": "1f3642aecb6c5bd89db1f0e274a0e182d8d84961",
+    "partial": false
+  },
+  {
+    "path": "Harbor.sln",
+    "blob": "af5043447a91ed6464263d1bc3559ef464c78866",
+    "partial": false
+  },
+  {
+    "path": "Jogar.cmd",
+    "blob": "6286eb8fe4ce2e3651333502f9b49759e60a1f72",
+    "partial": false
+  },
+  {
+    "path": "JogarCSharp.cmd",
+    "blob": "257e1d26150afa0df0ea7f98abaf8d9af8962c94",
+    "partial": false
+  },
+  {
+    "path": "TestarRoteadorCSharp.cmd",
+    "blob": "e4309020182f3d3216b6ffaad2698d55d536538e",
+    "partial": false
+  },
+  {
+    "path": "VerificarMudancas.cmd",
+    "blob": "3275ea0ab5bb7a6963cf8abb7290964296546270",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/RoadGraphSearch.cs",
+    "blob": "b60077b6a816e01e257894f3d0b8113ea56d1149",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchRoadRouter.gd",
+    "blob": "857e0a86f01b11cfcb4ee6caa439260c192b1f41",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchTrace.gd",
+    "blob": "b8f46a0f4eaca30120d25b279a95a098533ee525",
+    "partial": false
+  },
+  {
+    "path": "runtime/StallLog.gd",
+    "blob": "60b8588d868079bbd57ae02e3e61757539446b40",
+    "partial": false
+  },
+  {
+    "path": "runtime/StallLogWriter.gd",
+    "blob": "2329e2967a454d641d74d8380a6ef74106c39377",
+    "partial": false
+  },
+  {
+    "path": "runtime/StallWorkTrace.gd",
+    "blob": "85c186c93e5e75e610e35b460f887c425c290955",
+    "partial": false
+  },
+  {
+    "path": "audio/VehicleCrashAudio.gd",
+    "blob": "b5cacb0b1ef89d967985e6a68ec2568be7ef92ba",
+    "partial": false
+  },
+  {
+    "path": "audio/WorldAudio.gd",
+    "blob": "55cb6aa467df3dbc206d8d344e58fcc1f8329101",
+    "partial": false
+  },
+  {
+    "path": "gameplay/CombatAudio.gd",
+    "blob": "ec3e222f660fc457aaebf319fd1d6cfa92d65823",
+    "partial": false
+  },
+  {
+    "path": "gameplay/CombatEffects.gd",
+    "blob": "cf089f81fd5ccc50b76f9277fff9f335d9ef565c",
+    "partial": false
+  },
+  {
+    "path": "gameplay/Projectile.gd",
+    "blob": "2200a398c6f48ce9189374c4a90513cc24678b52",
+    "partial": false
+  },
+  {
+    "path": "gameplay/WeaponCatalog.gd",
+    "blob": "371859f1c006dabc2108c37b3907dfd2e3c700d2",
+    "partial": false
+  },
+  {
+    "path": "gameplay/police_response/ground/PoliceRoadblock.gd",
+    "blob": "ad4dad5153ac4a60a0b7ede26b415b74b9b0380a",
+    "partial": false
+  },
+  {
+    "path": "gameplay/street_physics/StreetPhysics.gd",
+    "blob": "c37a2b4a7eefe1ef9af2197f4c330ba9ea222159",
+    "partial": false
+  },
+  {
+    "path": "gameplay/vehicle_effects/VehicleDamage.gd",
+    "blob": "1e90f02a7e46619834841b8b475de31e74ee2cbb",
+    "partial": false
+  },
+  {
+    "path": "runtime/transit/TransitSection.gd",
+    "blob": "6648dbbacf8095a00f632365805c65739510961f",
+    "partial": false
+  },
+  {
+    "path": "ui/SettingsMenu.gd",
+    "blob": "6e26be093ce627b05f2ef3fa5ae2717f6a2e6a17",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_road_graph_native.gd",
+    "blob": "cfc394b5881efa1265d1824ac52ee16e3e77206c",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_dispatch_rules.gd",
+    "blob": "fe02e3d041d1187668331fcb4346c934b19546d2",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_dispatch_emergency.gd",
+    "blob": "55ab590e6d359a1f2f0f85bf37a7ada7e4f28d71",
+    "partial": true
+  },
+  {
+    "path": "tests/dispatch/test_transit_section_overtaking.gd",
+    "blob": "0cac323c39b5aab128068724ecabf90704d91b44",
+    "partial": false
+  },
+  {
+    "path": "tests/test_feedback_police_access.gd",
+    "blob": "253daf30c80e522babfade8188174e6a2998d163",
+    "partial": false
+  },
+  {
+    "path": "tests/test_stall_log_intervals.gd",
+    "blob": "b2fe7eade9e9febc8caa1c26843b493acb6f17a8",
+    "partial": false
+  },
+  {
+    "path": "tests/test_stall_log_writer.gd",
+    "blob": "4d9851b05ce758d668426544742d7d7d659058d0",
+    "partial": false
+  },
+  {
+    "path": "tests/test_dispatch_trace.gd",
+    "blob": "94431a5dd41081b8b481d44618bd51c7a74bd2c0",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_skid_audio.gd",
+    "blob": "dc6a31b88e0d62ba9b954686b9e2d1e47a573157",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_contact_audio_prewarm.gd",
+    "blob": "5df82708decc3cb81b6e201567f0b99a8a7d20e4",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_contact_collision.gd",
+    "blob": "43fc70683f6f82717bb22a4ed85128b83ed8a2a2",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_responsive_audio.gd",
+    "blob": "fc81e709ef99f59028ff4c1075e57d68cdad9726",
+    "partial": false
+  },
+  {
+    "path": "tests/test_combat_audio_prewarm.gd",
+    "blob": "b0a95d760faa7b50596a678cc40c50fbeb64878b",
+    "partial": false
+  },
+  {
+    "path": "tests/test_foreground_engine_cache.gd",
+    "blob": "c22a7a2305b61b94a1a177c79e69db3ba0df83be",
+    "partial": false
+  },
+  {
+    "path": "tests/test_retire_leaf_budget.gd",
+    "blob": "13be64122ee763e543b8c834f0650672f925f55b",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/measure_stall_streaming.gd",
+    "blob": "75bb824163dca119e0baaa20bea5aeac07ca8c2c",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/measure_stall_combat.gd",
+    "blob": "524da85f9ce227d29987aebe009bb39d6b728851",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/measure_foreground_engine_cache.gd",
+    "blob": "641bd38a09d26259b36db211008d1b788cc7e217",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/probe_driving_hitches.gd",
+    "blob": "e65d864e7c2e89f85b6da5ce1533fd9596866c51",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/godot_profile_receiver.py",
+    "blob": "a27767120df90c7b997fc7b99464da85bbc87b6f",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/windows_wait_stacks.py",
+    "blob": "3f756d50ed3fad4e7561920b291454722eaa35aa",
+    "partial": false
+  },
+  {
+    "path": "docs/handoff-claude-20261001.md",
+    "blob": "1bf94976edf6a6abfc43e7e0b3519ee74813e071",
+    "partial": false
+  },
+  {
+    "path": "docs/prompt-lu-mundo-20261001.md",
+    "blob": "5a84d1e308d17d628ddf7e8584eb0cbc1c3e81f2",
+    "partial": false
+  },
+  {
+    "path": "evidence/stall-investigation-20261001/RESULTADO.md",
+    "blob": "d56424982025cd5d1db1bd229aa4505170996319",
+    "partial": false
+  },
+  {
+    "path": "evidence/stall-investigation-20261001/capture-combat.ps1",
+    "blob": "ee7f9b8f3f7d0ddc9ca374ea5c1be25f9ccdc3a7",
+    "partial": false
+  },
+  {
+    "path": "evidence/stall-investigation-20261001/analyze_capture.py",
+    "blob": "a45419fbd72f4c052700178861a372aa46fa04fe",
+    "partial": false
+  },
+  {
+    "path": "evidence/stall-investigation-20261001/native_read_fixture.py",
+    "blob": "138d99a315fac4206edf42ee33852358aa56cd24",
+    "partial": false
+  },
+  {
+    "path": "evidence/stall-investigation-20261001/wait_stack_fixture.py",
+    "blob": "2b9c8becfb00743b4017e1c3c058280b57f81b3f",
+    "partial": false
+  },
+  {
+    "path": "gameplay/Gameplay.gd",
+    "blob": "8597652324565edafa1c7a65c6e6db2d9c9f550b",
+    "partial": true
+  },
+  {
+    "path": "gameplay/PoliceAgent.gd",
+    "blob": "36065005962a7a5ef2ed08b8d54dd12e698826ef",
+    "partial": true
+  },
+  {
+    "path": "gameplay/VehicleEquipment.gd",
+    "blob": "218a146d27b387027718e0542a56aaaee6c418fe",
+    "partial": true
+  },
+  {
+    "path": "gameplay/dispatch/DispatchDriver.gd",
+    "blob": "c10528520ed186a55f4626921a11e774d8a06671",
+    "partial": true
+  },
+  {
+    "path": "gameplay/dispatch/DispatchRules.gd",
+    "blob": "0518117a459844155f07561364f0979cff9e8ef9",
+    "partial": true
+  },
+  {
+    "path": "gameplay/dispatch/DispatchUnit.gd",
+    "blob": "b2a5d32f5e81e63621bb709de0db7368372ee876",
+    "partial": true
+  },
+  {
+    "path": "gameplay/vehicle_effects/VehicleTireEffects.gd",
+    "blob": "639efafd543cc056a6e94dca9a8428cb793d9deb",
+    "partial": true
+  },
+  {
+    "path": "runtime/Settings.gd",
+    "blob": "849de37ba69ac13f2aacd3808d438f9df433727d",
+    "partial": true
+  },
+  {
+    "path": "runtime/transit/BiarticulatedBus.gd",
+    "blob": "c918d18710e9feb1647b20f5f34b58433abd9529",
+    "partial": true
+  },
+  {
+    "path": "scripts/Actor.gd",
+    "blob": "8bfffbe348bc71580f132546eb9aaca31ba59b5d",
+    "partial": true
+  },
+  {
+    "path": "scripts/Vehicle.gd",
+    "blob": "3e3db5e54244e1fab5b70802db99c5ce7e6774b1",
+    "partial": true
+  },
+  {
+    "path": "gameplay/dispatch/DispatchController.gd",
+    "blob": "814723f68993605643e3b49cfb18cd495a0dfd1d",
+    "partial": true
+  },
+  {
+    "path": "runtime/ProductionWorld.gd",
+    "blob": "9bd50754e4a772ca183b1debce7add9f182e1dd7",
+    "partial": true
+  },
+  {
+    "path": "world/regions/NativeRegion.gd",
+    "blob": "058459728d5292975ccb7455e2c4215600b52dcb",
+    "partial": true
+  },
+  {
+    "path": "project.godot",
+    "blob": "a882b040e88b0ac9ddacb36e96ca7705317a6fac",
+    "partial": true
+  },
+  {
+    "path": "gameplay/dispatch/RoadGraphSearch.cs.uid",
+    "blob": "3784101b8d6ca0f1762b8522a90ec84a81d51eea",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchRoadRouter.gd.uid",
+    "blob": "def73f6496962e588e1de25f2fd8bd28d7a75ca6",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchTrace.gd.uid",
+    "blob": "36c349511e71d6a9f98518d3e71f87047465933f",
+    "partial": false
+  },
+  {
+    "path": "runtime/StallLog.gd.uid",
+    "blob": "8d4365685a72ad627fea3576ead922ba06d20485",
+    "partial": false
+  },
+  {
+    "path": "runtime/StallLogWriter.gd.uid",
+    "blob": "e1fb51ddfc6a8d384f02fed7d4714e32eab8cd79",
+    "partial": false
+  },
+  {
+    "path": "runtime/StallWorkTrace.gd.uid",
+    "blob": "ac61b4c14a4384cdb3e176947aac249fa6cfd61c",
+    "partial": false
+  },
+  {
+    "path": "audio/VehicleCrashAudio.gd.uid",
+    "blob": "eb5e468f8d709bf7e2f5f002cb2b4766be636ef0",
+    "partial": false
+  },
+  {
+    "path": "audio/WorldAudio.gd.uid",
+    "blob": "6a36e0c02f649d10c530edacd47b4dc4f2f91f3b",
+    "partial": false
+  },
+  {
+    "path": "gameplay/CombatAudio.gd.uid",
+    "blob": "3a274c83790fc970bbe8dfc28d6cffc172daca6f",
+    "partial": false
+  },
+  {
+    "path": "gameplay/CombatEffects.gd.uid",
+    "blob": "5302775193ef6dc75dc5e3265d01059887ec95d9",
+    "partial": false
+  },
+  {
+    "path": "gameplay/Projectile.gd.uid",
+    "blob": "dcde9fc83106606c042fe42c7290266b07bfbadc",
+    "partial": false
+  },
+  {
+    "path": "gameplay/WeaponCatalog.gd.uid",
+    "blob": "f91e85369901f7de0f528b6869926f863ed02ca3",
+    "partial": false
+  },
+  {
+    "path": "gameplay/police_response/ground/PoliceRoadblock.gd.uid",
+    "blob": "241f9feea0ab758c775c707ed3925e0b7cfc3148",
+    "partial": false
+  },
+  {
+    "path": "gameplay/street_physics/StreetPhysics.gd.uid",
+    "blob": "a2bf691430213477ecdf6d80ff4b187ff9be6d03",
+    "partial": false
+  },
+  {
+    "path": "gameplay/vehicle_effects/VehicleDamage.gd.uid",
+    "blob": "469211d4d8a6fa0296bfa3de5f3dc24646cc12ce",
+    "partial": false
+  },
+  {
+    "path": "runtime/transit/TransitSection.gd.uid",
+    "blob": "d739dab5d95eb6888579d2768a777516e597c051",
+    "partial": false
+  },
+  {
+    "path": "ui/SettingsMenu.gd.uid",
+    "blob": "a8006ce3e1009d2a63164967c92e52245f6bc376",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_road_graph_native.gd.uid",
+    "blob": "6e18a82209d0c2cbb7844207007c5ebb8825043a",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_dispatch_rules.gd.uid",
+    "blob": "174c015d306cc81a491c073feb5d462e94c42f45",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_dispatch_emergency.gd.uid",
+    "blob": "1080a460b9fe83f1466b6c3410d3fa9804ea3a4d",
+    "partial": false
+  },
+  {
+    "path": "tests/dispatch/test_transit_section_overtaking.gd.uid",
+    "blob": "58971f82d791db2cb0ab47c371898a3dd34c8a48",
+    "partial": false
+  },
+  {
+    "path": "tests/test_feedback_police_access.gd.uid",
+    "blob": "fee2e8a451e00c79f081fc296377409fbd03e6e9",
+    "partial": false
+  },
+  {
+    "path": "tests/test_stall_log_intervals.gd.uid",
+    "blob": "afa90fdfe6d829169429c0771a14da6a50b750af",
+    "partial": false
+  },
+  {
+    "path": "tests/test_stall_log_writer.gd.uid",
+    "blob": "270863c25553198b81f6a16bd0f729993255ca86",
+    "partial": false
+  },
+  {
+    "path": "tests/test_dispatch_trace.gd.uid",
+    "blob": "046b7ae10bdf5fb21eae15ce50a816b3f276bfed",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_skid_audio.gd.uid",
+    "blob": "ac06786ac886e5524e6290dc7ca5fdad87599ee4",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_contact_audio_prewarm.gd.uid",
+    "blob": "146f2eb91b5f933fa45e194aff3172c81ec1a8df",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_contact_collision.gd.uid",
+    "blob": "3755f9a11e5869b85d2eae697a7bc41493d9eae8",
+    "partial": false
+  },
+  {
+    "path": "tests/test_vehicle_responsive_audio.gd.uid",
+    "blob": "d8e450bdf30ffb576c5a6b4fe0e43ef5ac1a4d7a",
+    "partial": false
+  },
+  {
+    "path": "tests/test_combat_audio_prewarm.gd.uid",
+    "blob": "44f136a61923374186701e1432c5c8f14a1e9871",
+    "partial": false
+  },
+  {
+    "path": "tests/test_foreground_engine_cache.gd.uid",
+    "blob": "c9fa68eaab752f173efea0aef8392dd566297efe",
+    "partial": false
+  },
+  {
+    "path": "tests/test_retire_leaf_budget.gd.uid",
+    "blob": "486b8504f1dcf991801b7b8e7ec6b710949d78f1",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/measure_stall_streaming.gd.uid",
+    "blob": "4a5ab9724122edc166996a626bdce66111fbd365",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/measure_stall_combat.gd.uid",
+    "blob": "369856d67bc5605a97691e637fbadd9a85145df2",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/measure_foreground_engine_cache.gd.uid",
+    "blob": "8b58ddc1391e9f6049b18d0801a564fabf929b7f",
+    "partial": false
+  },
+  {
+    "path": "tests/measure/probe_driving_hitches.gd.uid",
+    "blob": "2564b3650bf8bc4e6156a85007730f8efe5c9b68",
+    "partial": false
+  },
+  {
+    "path": "gameplay/Gameplay.gd.uid",
+    "blob": "c425d9b1aba99825a34c3b842dac49e89e608479",
+    "partial": false
+  },
+  {
+    "path": "gameplay/PoliceAgent.gd.uid",
+    "blob": "710b1f4175dfb14b0eab9e8ee7458b55d12929a8",
+    "partial": false
+  },
+  {
+    "path": "gameplay/VehicleEquipment.gd.uid",
+    "blob": "64f52993ced19c7bbcb6c40a680401292ee9d71d",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchDriver.gd.uid",
+    "blob": "9f4e61a52e31aca27560d70006e63d9449cab2ff",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchRules.gd.uid",
+    "blob": "46333cc4d00f8edf745c6c6df60e3fa0d08b2ee3",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchUnit.gd.uid",
+    "blob": "d21fcdeb9feb04df05bdca4e061ae09cfad64174",
+    "partial": false
+  },
+  {
+    "path": "gameplay/vehicle_effects/VehicleTireEffects.gd.uid",
+    "blob": "66c16a9021fba1b51210337c5784cbb489947d09",
+    "partial": false
+  },
+  {
+    "path": "runtime/Settings.gd.uid",
+    "blob": "51c41156276bac2e6c72f29bdb55c38c790d0baa",
+    "partial": false
+  },
+  {
+    "path": "runtime/transit/BiarticulatedBus.gd.uid",
+    "blob": "c5683467e4b9471009c5ec6b95f298eb2cc83ebf",
+    "partial": false
+  },
+  {
+    "path": "scripts/Actor.gd.uid",
+    "blob": "74821ac4407999390d2117a844c1ec907ddf343f",
+    "partial": false
+  },
+  {
+    "path": "scripts/Vehicle.gd.uid",
+    "blob": "0eec87804d8688c6185a45a9f1c7eb86c33c039b",
+    "partial": false
+  },
+  {
+    "path": "gameplay/dispatch/DispatchController.gd.uid",
+    "blob": "50e06b7c1274e9b762a4b32dc6936c1e9b22795d",
+    "partial": false
+  },
+  {
+    "path": "runtime/ProductionWorld.gd.uid",
+    "blob": "a216976baf118937507dbde7a2ba52b7d69536a5",
+    "partial": false
+  },
+  {
+    "path": "world/regions/NativeRegion.gd.uid",
+    "blob": "3d9f2aba2f044253ca25149b820b699bae7deeb5",
+    "partial": false
+  }
+]

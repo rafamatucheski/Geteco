@@ -1,4 +1,5 @@
 extends Node
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Aparência do dano no veículo: desgaste progressivo, incêndio no motor e carcaça carbonizada.
 ##
 ## Antes a destruição trocava TODAS as peças (vidro, farol, pneu, lataria) por um único
@@ -85,6 +86,11 @@ func _physics_process(delta: float) -> void:
 # --- Desgaste -----------------------------------------------------------------------------
 
 func _apply_wear(wear: float) -> void:
+	var began := STALL_WORK.begin()
+	_stall_apply_wear(wear)
+	STALL_WORK.finish_slow("vehicle_damage.wear",began,5000,self)
+
+func _stall_apply_wear(wear: float) -> void:
 	var stage: int = clampi(int(ceil(wear * WEAR_STAGES - .35)), 0, WEAR_STAGES)
 	for material: StandardMaterial3D in vehicle._paint.materials if vehicle._paint != null else []:
 		if not _paint_base.has(material):
@@ -197,6 +203,11 @@ static func _char(embers: bool) -> Texture2D:
 # --- Incêndio no motor --------------------------------------------------------------------
 
 func _update_fire() -> void:
+	var began := STALL_WORK.begin()
+	_stall_update_fire()
+	STALL_WORK.finish_slow("vehicle_damage.fire",began,5000,self)
+
+func _stall_update_fire() -> void:
 	if not is_instance_valid(_fire):
 		# Chama: núcleo pequeno e aditivo (sprite macio, sem "wisp"), que sobe rápido
 		# e encolhe; a versão anterior usava quads grandes em alpha-mix que viravam
@@ -287,12 +298,18 @@ func ignite(source: Node = null) -> void:
 ## Explodiu: lataria carbonizada com brasa que esfria, vidro estourado, pneu derretido,
 ## lanternas apagadas, e o corpo pula com a explosão e assenta sobre os aros.
 func wreck() -> void:
+	var began := STALL_WORK.begin()
+	_stall_wreck()
+	STALL_WORK.finish_slow("vehicle_damage.wreck",began,5000,self)
+
+func _stall_wreck() -> void:
 	if wrecked: return
 	wrecked = true
 	burning = false
 	_flame_ignited = false
 	set_physics_process(false)
 	_stop_fire()
+	var began := STALL_WORK.begin()
 	_ember = StandardMaterial3D.new()
 	_ember.albedo_texture = _char(false)
 	_ember.metallic = .3
@@ -315,6 +332,8 @@ func wreck() -> void:
 	shattered.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	shattered.albedo_color = Color(0, 0, 0, 0)
 	var replacement := {"body": _ember, "rubber": molten, "lens": dead_lens, "glass": shattered}
+	STALL_WORK.finish_slow("vehicle_damage.materials_build",began,5000,self)
+	began = STALL_WORK.begin()
 	for part: MeshInstance3D in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
 		if part.mesh == null: continue
 		var key := _key(part)
@@ -327,6 +346,7 @@ func wreck() -> void:
 			var surface_key: String = str(surface_keys[index]) if index < surface_keys.size() else key
 			_saved.append([part, index, part.get_surface_override_material(index)])
 			part.set_surface_override_material(index, replacement[_role(part.get_active_material(index) as StandardMaterial3D, surface_key)])
+	STALL_WORK.finish_slow("vehicle_damage.materials_apply",began,5000,self)
 	if vehicle.has_meta("heavy_crush_ratio"):
 		# A tank is supported by this hull. Replacing it with a jumping rigid
 		# body would push the tank up and undo the smooth drive-over collision.
@@ -352,6 +372,11 @@ func wreck() -> void:
 ## O impulso levanta a frente, mas é a colisão da carcaça que limita a queda e o
 ## giro. Animar só o visual deixava a traseira atravessar o chão antes de quicar.
 func _blast_hop() -> void:
+	var began := STALL_WORK.begin()
+	_stall_blast_hop()
+	STALL_WORK.finish_slow("vehicle_damage.hop",began,5000,self)
+
+func _stall_blast_hop() -> void:
 	if is_instance_valid(_tween): _tween.kill()
 	var mass := 1.0
 	var handling = vehicle.get("handling")
@@ -408,6 +433,12 @@ func _blast_hop() -> void:
 	_tween.tween_property(_ember, "emission_energy_multiplier", 0.0, 7.0).set_trans(Tween.TRANS_SINE)
 
 func _wreck_bounds() -> AABB:
+	var began := STALL_WORK.begin()
+	var bounds := _stall_wreck_bounds()
+	STALL_WORK.finish_slow("vehicle_damage.bounds",began,5000,self)
+	return bounds
+
+func _stall_wreck_bounds() -> AABB:
 	var bounds := AABB()
 	var first := true
 	var inverse := vehicle.global_transform.affine_inverse()

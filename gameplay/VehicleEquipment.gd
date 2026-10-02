@@ -553,7 +553,9 @@ func _rig_pumper() -> void:
 			pivot.position = car.to_local(part.global_position) if pivot.position == Vector3.ZERO else pivot.position
 			var center := box.get_center()
 			pivot.set_meta("base_local", Vector3(center.x, box.end.y, center.z))
-	if parts.is_empty() or tip == null: return
+	if parts.is_empty() or tip == null:
+		pivot.free()
+		return
 	car.add_child(pivot)
 	pivot.position = pivot.get_meta("base_local", pivot.position)
 	for part in parts:
