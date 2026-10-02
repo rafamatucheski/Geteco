@@ -26,7 +26,7 @@ func run() -> void:
 		await process_frame
 		if not is_instance_valid(curtain): break
 		if current_scene != null and curtain.get_parent() != root: adopted = adopted or curtain.get_parent() == current_scene
-		stages[curtain._stage.text] = true
+		stages[curtain.stage_message] = true
 		peak = maxf(peak, curtain._target)
 	check(adopted, "mundo adotou a cortina do menu")
 	check(stages.size() >= 5, "etapas mostradas: %s" % ", ".join(stages.keys()))

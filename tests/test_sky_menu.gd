@@ -1,6 +1,6 @@
 extends SceneTree
-## Real menu -> restored Main -> flight -> gameplay, using isolated fixture slots.
-const FOLDER := "res://evidence/sky-menu-fixes-20260925/functional"
+## Real static menu -> covered warmup -> fade -> gameplay, using isolated slots.
+const FOLDER := "res://evidence/simple-loading-20261002/functional"
 class InputBlocker extends Node:
 	func _input(_event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
@@ -99,7 +99,7 @@ func run() -> void:
 		check(world.session.weather.time_of_day == clock_before, scenario + " world clock frozen")
 		check(FileAccess.get_sha256(store.path) == hash_before, scenario + " preview preserves save bytes")
 		check(world.production.region.is_streaming_idle(), scenario + " visible neighbourhood fully built")
-		check(not menu.sky._vehicle_restore_pending(), scenario + " vehicle admission finished before sky reveal")
+		check(not menu.sky._vehicle_restore_pending(), scenario + " vehicle admission finished before fade")
 		if scenario == "garage-driver":
 			check(world.driving.occupied and world.driving.car.vehicle_id == "garage_guest_1", "Saved garage driver already seated in the menu")
 		menu._open_settings()
@@ -107,16 +107,13 @@ func run() -> void:
 		menu.settings.close()
 		check(paused, scenario + " closing settings keeps preview frozen")
 		await capture(scenario + "-sky")
-		var air_basis: Basis = menu.sky.camera.basis
+		check(menu.presentation.background is ColorRect and menu.presentation.background.material == null, scenario + " opaque static menu without animated shaders")
+		check(not world.visible, scenario + " warmed world stops drawing behind menu")
 		menu._start("slot_01", false)
-		await create_timer(0.6, true).timeout
-		if not scenario.begins_with("garage"):
-			check(menu.sky.camera.basis.is_equal_approx(air_basis), scenario + " no camera turn while clouds remain")
-		await create_timer(0.9, true).timeout
-		if not scenario.begins_with("garage"):
-			check(is_equal_approx(menu.sky.material.get_shader_parameter("descent"), 1.0), scenario + " clouds gone before turn")
-		await capture(scenario + "-descent")
-		check(paused and not world.hud.visible, scenario + " flight still locks gameplay and HUD")
+		await create_timer(0.15, true).timeout
+		check(world.camera.global_transform.is_equal_approx(camera_transform), scenario + " camera stays fixed during fade")
+		check(paused and not world.hud.visible, scenario + " fade-in locks gameplay and HUD")
+		await capture(scenario + "-fade")
 		var deadline := Time.get_ticks_msec() + 10000
 		while is_instance_valid(menu) and Time.get_ticks_msec() < deadline: await process_frame
 		check(not is_instance_valid(menu), scenario + " menu released")

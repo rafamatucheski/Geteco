@@ -52,6 +52,7 @@ var no_save := false
 var save_invalid := false
 var loaded_save := false
 var ready_for_play := false
+var startup_streaming_settled := false
 var travel_busy := false
 var population_clock := 0.0
 var _population_jobs: Array[String] = []
@@ -227,11 +228,33 @@ func build() -> void:
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
-	if not world.has_meta("menu_preview"): curtain.lift()
 	set_population(requested_population)
 	world_audio = _audio()
 	world.add_child(world_audio)
 	_update_chairlift_schedule()
+	curtain.set_stage(.97, "Finalizando…")
+	# GarageRewards admits a saved driver asynchronously from restore_location.
+	# Its body animation owns input until completion; gating the session early
+	# would make Driving cancel that restoration on the next physics frame.
+	while _startup_driver_pending():
+		await get_tree().physics_frame
+	var restored_session_ready: bool = session.ready_for_play
+	var restored_player_automatic: bool = world.player.controlled_automatically
+	var restored_player_direction: Vector3 = world.player.automatic_direction
+	var restored_car: CharacterBody3D = world.driving.car
+	var restored_car_lock: bool = restored_car.input_locked
+	session.ready_for_play = false
+	world.player.controlled_automatically = true
+	world.player.automatic_direction = Vector3.ZERO
+	restored_car.input_locked = true
+	startup_streaming_settled = await _settle_startup()
+	if not startup_streaming_settled:
+		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
+	if not world.has_meta("menu_preview"): await curtain.lift()
+	session.ready_for_play = restored_session_ready
+	world.player.controlled_automatically = restored_player_automatic
+	world.player.automatic_direction = restored_player_direction
+	if is_instance_valid(restored_car): restored_car.input_locked = restored_car_lock
 	_trace_cost("startup:prepared",startup_traced)
 	if world.has_meta("menu_preview"):
 		await world.get_meta("menu_preview").hold_world(world)
@@ -251,7 +274,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if curtain != null:
 		curtain.set_stage(.36, "Carregando veículos…")
 		await get_tree().process_frame
-	_hold_fleet_scenes()
+	await _hold_fleet_scenes_incremental()
 	_trace_cost("startup:fleet_hold",phase_traced)
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
@@ -260,7 +283,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		curtain.set_stage(.40, "Compilando shaders do tráfego…")
 		await get_tree().process_frame
 	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-	await _prewarm_fleet_shaders(incremental)
+	await _prewarm_fleet_shaders(incremental, curtain)
 	_trace_cost("startup:fleet_shaders",phase_traced)
 	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
@@ -358,21 +381,31 @@ func _prewarm_dispatch_models() -> void:
 		await get_tree().process_frame
 	_trace_cost("startup:dispatch_models",traced)
 
-func _prewarm_fleet_shaders(incremental: bool) -> void:
+func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> void:
 	await _prewarm_dispatch_models()
-	if _fleet_scenes.is_empty(): return
-	var rig := Node3D.new()
-	var cam := Camera3D.new()
-	rig.add_child(cam)
-	world.add_child(rig)
-	for scene in _fleet_scenes:
-		var instance = scene.instantiate()
-		instance.position = Vector3(0, 0, -5)
-		rig.add_child(instance)
-		if incremental: await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().process_frame
-	rig.queue_free()
+	var fleet := preload("res://runtime/FleetCatalog.gd")
+	var effects := preload("res://gameplay/emergency/EffectsPrewarm.gd")
+	# Warm the decorated production models as well as their retained source scenes.
+	# A spare, non-current camera at the origin never exercised their GPU passes.
+	for id in fleet.all():
+		var model: Node3D = fleet.create(str(id))
+		if model == null: continue
+		var camera := world.camera as Camera3D
+		if DisplayServer.get_name() != "headless" and effects._covered_loading(world, curtain) and effects._current_camera(world, camera):
+			model.process_mode = Node.PROCESS_MODE_DISABLED
+			world.add_child(model)
+			model.global_position = camera.global_position - camera.global_basis.z * 9.0
+			# Two actual draws, with a finite wait when the window is minimized.
+			var draws: Array[int] = [0]
+			var count_draw := func() -> void: draws[0] += 1
+			RenderingServer.frame_post_draw.connect(count_draw)
+			for frame in 12:
+				await get_tree().process_frame
+				if not effects._covered_loading(world, curtain): break
+				if draws[0] >= 2: break
+			RenderingServer.frame_post_draw.disconnect(count_draw)
+		model.free()
+		await get_tree().process_frame
 
 func _hold_fleet_scenes_incremental() -> void:
 	if not _fleet_scenes.is_empty(): return
@@ -385,14 +418,47 @@ func _hold_fleet_scenes_incremental() -> void:
 		var definition: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(id)
 		var path := str(definition.get("scene", ""))
 		if path.is_empty() or path in paths: continue
-		if ResourceLoader.load_threaded_request(path) == OK: paths.append(path)
+		paths.append(path)
+	await _retain_fleet_paths(paths, _fleet_scenes)
+	await _request_remaining_fleet_scenes(paths)
+
+func _retain_fleet_paths(paths: Array[String], retained: Array[Resource]) -> void:
+	# The headless dummy renderer cannot concurrently allocate these mesh RIDs.
+	# It still loads/retains the real resources, sequentially, for contract tests.
+	if DisplayServer.get_name() == "headless":
+		for path in paths:
+			var resource := load(path)
+			if resource != null: retained.append(resource)
+			await get_tree().process_frame
+		return
+	var requested: Array[String] = []
 	for path in paths:
+		if ResourceLoader.load_threaded_request(path) == OK: requested.append(path)
+	for path in requested:
 		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 			await get_tree().process_frame
 		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
-			_fleet_scenes.append(ResourceLoader.load_threaded_get(path))
+			retained.append(ResourceLoader.load_threaded_get(path))
 		await get_tree().process_frame
-	_request_remaining_fleet_scenes(paths)
+
+func _startup_driver_pending() -> bool:
+	if world.driving.is_body_transition_active(): return true
+	for car in vehicles:
+		if is_instance_valid(car) and car.get_meta("garage_driver_pending", false): return true
+	return false
+
+func _settle_startup() -> bool:
+	# Finish destination streaming and first audio/physics updates before fading.
+	# Admission can legitimately leave distant work pending; keep the wait bounded.
+	var stable_frames := 0
+	for frame in 240:
+		await get_tree().process_frame
+		var idle := true
+		for resident in regions.values():
+			if is_instance_valid(resident) and not resident.is_streaming_idle(): idle = false
+		stable_frames = stable_frames + 1 if idle else 0
+		if stable_frames >= 8: return true
+	return false
 
 func _exit_tree() -> void:
 	for cached in _region_cache.values():
@@ -1206,9 +1272,5 @@ func _request_remaining_fleet_scenes(already: Array[String]) -> void:
 	for id in preload("res://runtime/FleetCatalog.gd").all():
 		var path := str(preload("res://runtime/FleetCatalog.gd").spec(id).get("scene", ""))
 		if path.is_empty() or path in already or path in extra: continue
-		if ResourceLoader.load_threaded_request(path) == OK: extra.append(path)
-	for path in extra:
-		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-			await get_tree().process_frame
-		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
-			_fleet_extra.append(ResourceLoader.load_threaded_get(path))
+		extra.append(path)
+	await _retain_fleet_paths(extra, _fleet_extra)

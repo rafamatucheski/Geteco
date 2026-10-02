@@ -84,10 +84,10 @@ func run() -> void:
 	root.add_child(curtain)
 	await process_frame
 	check(curtain.get_node_or_null("/root/LoadingCurtain") == curtain, "cortina fica acessível na raiz para o mundo adotar")
-	check(curtain._art.texture != null, "arte da serra carregada")
+	check(curtain._root.get_node("Background") is ColorRect and curtain._root.get_node("Background").material == null, "loading usa fundo sólido sem shader animado")
 	curtain.set_stage(.5, "Teste")
 	for i in 60: await process_frame
-	check(curtain._shown > .3 and curtain._shown <= .56, "barra avança até perto da etapa (%.2f)" % curtain._shown)
+	check(curtain._shown > .3 and curtain._shown <= .5, "barra não inventa progresso além da etapa (%.2f)" % curtain._shown)
 	check(curtain._percent.text.ends_with("%"), "percentual visível")
 	curtain.set_stage(.2, "Volta?")
 	check(curtain._target >= .5, "progresso nunca volta")

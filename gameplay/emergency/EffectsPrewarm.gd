@@ -63,11 +63,8 @@ static func _covered_loading(host: Variant, curtain: Variant) -> bool:
 	if not bool(curtain.get("stage_only")):
 		var cover := curtain.get("_root") as Control
 		return is_instance_valid(cover) and cover.is_visible_in_tree() and cover.modulate.a >= 1.0
-	# No menu a StartupCurtain só registra etapas; a cobertura real são as nuvens.
+	# In the menu the stage-only curtain delegates coverage to its static backdrop.
 	var preview: Variant = host.get_meta("menu_preview", null)
 	if not is_instance_valid(preview) or preview.get("loading") != true or preview.get("is_ready") == true: return false
-	var clouds := preview.get("clouds") as CanvasLayer
-	var material := preview.get("material") as ShaderMaterial
-	return is_instance_valid(clouds) and clouds.visible and is_instance_valid(material) \
-		and float(material.get_shader_parameter("coverage")) >= 1.0 \
-		and float(material.get_shader_parameter("descent")) <= 0.0
+	var cover := preview.get("loading_cover") as Control
+	return is_instance_valid(cover) and cover.is_visible_in_tree() and cover.modulate.a >= 0.99

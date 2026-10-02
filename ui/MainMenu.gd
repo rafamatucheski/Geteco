@@ -1,5 +1,5 @@
 extends Control
-## V1 menu/presentation, with V2-only save routing and no legacy world autoloads.
+## Static main menu with V2 save routing and covered startup.
 const STYLE = preload("res://ui/GameStyle.gd")
 const AUDIO = preload("res://ui/MenuAudio.gd")
 const V1_IMPORT = preload("res://migration/v1/V1SaveImport.gd")
@@ -229,6 +229,9 @@ func _show_loading(id: String, new_game: bool) -> void:
 	var curtain = CURTAIN.new()
 	curtain.variant = CURTAIN.variant_for(region)
 	get_tree().root.add_child(curtain)
+	curtain.layer = 127
+	curtain._root.modulate.a = 0.0
+	create_tween().tween_property(curtain._root, "modulate:a", 1.0, .35).set_trans(Tween.TRANS_SINE)
 	curtain.set_stage(.04, "Abrindo o save…" if not new_game else "Começando uma nova história…")
 	var music := get_node_or_null("MenuMusic")
 	if music != null: create_tween().tween_property(music, "volume_db", -40.0, .35)
@@ -248,8 +251,8 @@ func _start(id: String, new_game: bool) -> void:
 	_main_enabled(false)
 	%LoadPanel.hide()
 	if sky != null:
+		sky.begin_continue()
 		if not new_game:
-			sky.begin_continue()
 			# Present the response to the click before save checks or replacement.
 			await get_tree().process_frame
 			await get_tree().process_frame
@@ -260,13 +263,23 @@ func _start(id: String, new_game: bool) -> void:
 			shade.hide()
 			AUDIO.play_start(self)
 			if await sky.continue_game(): return
-		# New game retains the authored opening. A failed sky load uses the
-		# existing loading/error flow, with no stranded preview world.
+		# New game retains its opening; failed preloads use the normal loading flow.
 		await sky.discard_preview()
 	shade.show()
 	AUDIO.play_start(self)
 	await _show_loading(id, new_game)
-	error = get_tree().change_scene_to_file("res://Main.tscn")
+	if sky != null: sky.cancel_continue()
+	if DisplayServer.get_name() == "headless":
+		error = get_tree().change_scene_to_file("res://Main.tscn")
+	else:
+		error = ResourceLoader.load_threaded_request("res://Main.tscn")
+		if error == OK:
+			while ResourceLoader.load_threaded_get_status("res://Main.tscn") == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+				await get_tree().process_frame
+			if ResourceLoader.load_threaded_get_status("res://Main.tscn") == ResourceLoader.THREAD_LOAD_LOADED:
+				error = get_tree().change_scene_to_packed(ResourceLoader.load_threaded_get("res://Main.tscn"))
+			else:
+				error = ERR_CANT_OPEN
 	if error != OK:
 		var stale = CURTAIN.existing(get_tree())
 		if stale != null: stale.queue_free()

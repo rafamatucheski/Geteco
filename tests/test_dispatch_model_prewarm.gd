@@ -52,6 +52,20 @@ func _run() -> void:
 		check(reused, "normal creation reuses warmed merged mesh resources/%s" % id)
 		model.free()
 	check(cold.get_child_count() == child_count, "fixture leaves no live dispatch vehicle")
+	await cold._hold_fleet_scenes_incremental()
+	var retained_paths: Array[String] = []
+	for scene in cold._fleet_scenes + cold._fleet_extra:
+		retained_paths.append(scene.resource_path)
+	for id in FLEET.all():
+		var path := str(FLEET.spec(id).get("scene", ""))
+		if path.is_empty(): continue
+		check(path in retained_paths, "loading retains authored fleet resource/%s" % id)
+		check(ResourceLoader.has_cached(path), "fleet resource is ready before loading returns/%s" % id)
+	var primary_count: int = cold._fleet_scenes.size()
+	var extra_count: int = cold._fleet_extra.size()
+	await cold._hold_fleet_scenes_incremental()
+	check(cold._fleet_scenes.size() == primary_count and cold._fleet_extra.size() == extra_count,
+		"repeat loading preserves retained resources without duplicates")
 	cold.free()
 	print("DISPATCH_MODEL_PREWARM checks=",checks," failures=",failures)
 	quit(0 if failures == 0 else 1)

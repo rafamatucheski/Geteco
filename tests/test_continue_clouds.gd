@@ -1,6 +1,6 @@
 extends "res://tests/test_sky_menu.gd"
 ## Click while the real save is still loading, including a pending different slot.
-const OUTPUT := "res://evidence/continue-clouds-20260928"
+const OUTPUT := "res://evidence/simple-loading-20261002/continue"
 
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args():
@@ -36,27 +36,29 @@ func run() -> void:
 		var slot := "slot_02" if replace_pending else "slot_01"
 		var hash_before := FileAccess.get_sha256(launch.slot_path(slot))
 		menu._start(slot, false)
-		check(menu.starting and not menu.sky.ui_layer.visible, label + " menu disappears at click")
-		check(menu.sky.clouds.visible, label + " clouds cover immediately")
-		check(is_equal_approx(menu.sky.material.get_shader_parameter("coverage"), 1.0), label + " pending world fully covered")
-		var clock_before: float = menu.sky.elapsed
+		check(menu.starting and menu.sky.curtain.visible, label + " click immediately starts loading fade")
+		check(menu.sky.loading_cover.is_visible_in_tree() and menu.sky.loading_cover.modulate.a == 1.0, label + " pending world fully covered")
+		var started := Time.get_ticks_msec()
 		var finish := Time.get_ticks_msec() + 180000
 		var sampled := false
 		var lost_cover := false
 		var returned_ui := false
+		var menu_hidden := false
 		while is_instance_valid(menu) and Time.get_ticks_msec() < finish:
 			await process_frame
 			if not is_instance_valid(menu): break
-			lost_cover = lost_cover or not menu.sky.clouds.visible
-			returned_ui = returned_ui or menu.sky.ui_layer.visible
-			if not sampled and menu.sky.elapsed > clock_before + 0.3:
+			if menu.sky.loading:
+				lost_cover = lost_cover or not menu.sky.loading_cover.is_visible_in_tree()
+			returned_ui = returned_ui or (menu_hidden and menu.sky.ui_layer.visible)
+			menu_hidden = menu_hidden or not menu.sky.ui_layer.visible
+			if not sampled and Time.get_ticks_msec() > started + 400:
 				sampled = true
-				check(menu.sky.elapsed > clock_before, label + " cloud clock advances while waiting")
+				check(menu.sky.curtain._root.material == null, label + " loading cover has no animated shader")
 				if DisplayServer.get_name() != "headless":
 					await RenderingServer.frame_post_draw
 					root.get_texture().get_image().save_png(OUTPUT.path_join(label + "-loading.png"))
 		check(not lost_cover and not returned_ui, label + " no menu flash or missing cover during replacement")
-		check(sampled, label + " observed moving cloud phase")
+		check(sampled, label + " observed static loading phase")
 		check(not is_instance_valid(menu), label + " reaches gameplay within deadline")
 		if is_instance_valid(menu):
 			quit(1)
@@ -77,8 +79,8 @@ func run() -> void:
 	check(not await menu.sky.continue_game(), "failed preview reports failure")
 	await menu.sky.discard_preview()
 	menu.sky.cancel_continue()
-	check(menu.sky.ui_layer.visible and not menu.sky.clouds.visible and menu.presentation.background.visible, "failed transition restores menu")
+	check(menu.sky.ui_layer.visible and menu.sky.curtain == null and menu.presentation.background.visible, "failed transition restores menu")
 	menu.queue_free()
 	await process_frame
-	print("CONTINUE_CLOUDS ", checks, " checks failures=", failures)
+	print("CONTINUE_STATIC_LOADING ", checks, " checks failures=", failures)
 	quit(0 if failures.is_empty() else 1)
