@@ -186,20 +186,22 @@ func drive(delta: float) -> void:
 	if route_distance < step: lap += 1
 	traffic = true
 
+func junction_collision_bodies() -> Array[CharacterBody3D]:
+	return sections
+
 func signal_gap() -> float:
 	var gap := INF
 	var length := route.get_baked_length()
 	for item in _junctions:
 		var ahead := fposmod(float(item.offset)-route_distance+length*.5,length)-length*.5
+		if junction_tokens.has(item.key) and not JUNCTIONS.has_reservation(item.key, get_instance_id()):
+			junction_tokens.erase(item.key)
 		if junction_tokens.has(item.key):
 			# Keep the crossing occupied until the LAST section clears it.
-			if ahead < -(TOTAL_LENGTH-half_length+JUNCTIONS.EXIT):
+			if ahead < -(TOTAL_LENGTH-half_length+JUNCTIONS.EXIT) and not JUNCTIONS.occupies(item.key, get_instance_id()):
 				JUNCTIONS.release(item.key,get_instance_id()); junction_tokens.erase(item.key)
-			else:
-				var owners: Dictionary = JUNCTIONS.owners.get(item.key,{})
-				if owners.has(get_instance_id()): owners[get_instance_id()][1] = Time.get_ticks_msec()
 			continue
-		if ahead < -2 or ahead > 35: continue
+		if ahead < -(TOTAL_LENGTH-half_length+JUNCTIONS.EXIT) or ahead > 35: continue
 		var stop_gap := ahead-half_length-JUNCTIONS.stop_line(item.key)
 		var heading := -_front_pose(float(item.offset)-7).basis.z
 		if JUNCTIONS.request(item.key,get_instance_id(),heading,stop_gap,speed): junction_tokens[item.key]=true

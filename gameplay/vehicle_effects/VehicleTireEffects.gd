@@ -39,7 +39,7 @@ var marks: Array[Dictionary] = []
 var last_contacts: Array[Dictionary] = [{},{}]
 var last_modes: Array[String] = ["",""]
 var mark_mesh: MeshInstance3D
-var geometry := ImmediateMesh.new()
+var geometry := ArrayMesh.new()
 var skid_audio: AudioStreamPlayer3D
 var road_mixer: Node
 var _probe_clock := 0.0
@@ -301,7 +301,15 @@ func _stall_redraw_marks() -> void:
 	_ensure_mark_mesh()
 	mark_mesh.visible = true
 	geometry.clear_surfaces()
-	geometry.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Submit packed surface data once instead of issuing three mesh calls per vertex.
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
+	var vertex_count := marks.size()*6
+	vertices.resize(vertex_count)
+	normals.resize(vertex_count)
+	colors.resize(vertex_count)
+	var cursor := 0
 	var now := Time.get_ticks_msec()
 	for mark in marks:
 		var a: Vector3 = mark.a
@@ -318,12 +326,27 @@ func _stall_redraw_marks() -> void:
 		if mark.kind == "snow": tint = Color(.38,.43,.44,(1.0-age)*.38)
 		elif mark.kind == "dirt": tint = Color(.15,.10,.07,minf(1.0,(1.0-age)*.36*depth))
 		elif mark.kind == "grass": tint = Color(.13,.15,.06,minf(1.0,(1.0-age)*.42*depth))
-		for entry in [[a-sa+na*.012,na],[b-sa+nb*.012,nb],[b+sb+nb*.012,nb],[a-sa+na*.012,na],[b+sb+nb*.012,nb],[a+sa+na*.012,na]]:
-			geometry.surface_set_color(tint)
-			geometry.surface_set_normal(entry[1])
-			geometry.surface_add_vertex(entry[0])
+		vertices[cursor] = a-sa+na*.012
+		vertices[cursor+1] = b-sa+nb*.012
+		vertices[cursor+2] = b+sb+nb*.012
+		vertices[cursor+3] = vertices[cursor]
+		vertices[cursor+4] = vertices[cursor+2]
+		vertices[cursor+5] = a+sa+na*.012
+		normals[cursor] = na
+		normals[cursor+1] = nb
+		normals[cursor+2] = nb
+		normals[cursor+3] = na
+		normals[cursor+4] = nb
+		normals[cursor+5] = na
+		for offset in 6: colors[cursor+offset] = tint
+		cursor += 6
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
 	var upload_began := STALL_WORK.begin()
-	geometry.surface_end()
+	geometry.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	STALL_WORK.finish_slow("vehicle_tires.surface_end",upload_began,5000,vehicle)
 
 func clear_all() -> void:

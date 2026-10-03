@@ -112,7 +112,7 @@ static func _tires(model: Node3D) -> void:
 		tread.set_meta("wheel_center", center)
 		tread.set_meta("wheel_radius", radius)
 		tread.set_meta("wheel_spins", true)
-		model.add_child(tread)
+		model.add_child(tread, true)
 
 static func _tread_mesh(radius: float, width: float) -> ArrayMesh:
 	var key := "tread_%.2f_%.2f" % [radius, width]
@@ -166,7 +166,7 @@ static func _fenders(model: Node3D) -> void:
 			arch.mesh = _fender_mesh(radius, box.size.x)
 			arch.material_override = paint
 			arch.position = Vector3(center.x, axle.y, axle.z)
-			model.add_child(arch)
+			model.add_child(arch, true)
 			break
 
 static func _fender_mesh(radius: float, width: float) -> ArrayMesh:

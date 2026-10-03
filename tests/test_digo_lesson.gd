@@ -1,0 +1,50 @@
+extends SceneTree
+const LESSON := preload("res://activities/motocross/DigoLesson.gd")
+const DIGO := preload("res://gameplay/digo/DigoActor.gd")
+var checks := 0
+var failures: Array[String] = []
+
+func _initialize() -> void: run.call_deferred()
+
+func check(ok: bool, title: String) -> void:
+	checks += 1
+	print("DIGO_LESSON ","PASS " if ok else "FAIL ",title)
+	if not ok: failures.append(title)
+
+func run() -> void:
+	var lesson := LESSON.new()
+	lesson.begin(0)
+	lesson.observe(2,8,0,0,0,false,true,true,0)
+	check(lesson.stage == LESSON.Stage.ACCELERATE,"coasting cannot pass acceleration instruction")
+	lesson.observe(2,8,0,1,0,false,false,true,0)
+	check(lesson.stage == LESSON.Stage.ACCELERATE,"fallen rider cannot pass lesson")
+	lesson.observe(.6,8,0,1,0,false,true,true,0)
+	lesson.observe(.6,8,0,1,0,false,true,true,0)
+	check(lesson.stage == LESSON.Stage.BRAKE,"sustained throttle and real speed unlock braking")
+	lesson.observe(.1,.2,0,0,0,false,true,true,0)
+	check(lesson.stage == LESSON.Stage.BRAKE,"coasting to rest does not demonstrate brake input")
+	lesson.observe(.1,.2,0,0,0,true,true,true,0)
+	check(lesson.stage == LESSON.Stage.CORNER,"braking to rest unlocks steering")
+	lesson.observe(.1,5,2,1,1,false,true,true,0)
+	check(lesson.stage == LESSON.Stage.CORNER,"teleport-sized heading jump does not pass corner")
+	for i in 9: lesson.observe(.05,5,2+float(i+1)*.08,.5,1,false,true,true,0)
+	check(lesson.stage == LESSON.Stage.LAP,"controlled gradual corner unlocks full lap")
+	lesson.observe(.1,5,2.72,1,0,false,true,true,0)
+	check(lesson.stage == LESSON.Stage.LAP,"incomplete circuit does not pass final stage")
+	lesson.observe(.1,5,2.72,1,0,false,true,true,1)
+	check(lesson.stage == LESSON.Stage.COMPLETE,"new completed lap finishes lesson")
+	lesson.begin(0)
+	check(lesson.stage == LESSON.Stage.ACCELERATE,"repeating lesson resets exercises")
+	var instructor := DIGO.new()
+	root.add_child(instructor)
+	check(instructor.is_in_group("digo_character") and instructor.collision_layer == 3,"instructor has physical body and discoverable identity")
+	check(instructor.model.skeleton.get_bone_count() == 74,"Digo uses the supplied Meshy rig")
+	instructor.model.set_day(3)
+	check(instructor.model.outfit == 1 and instructor.model.shirt_print.text == "Eu amo\nvolkswagen","next game day selects Volkswagen shirt")
+	instructor.model.set_day(4)
+	check(instructor.model.outfit == 2 and instructor.model.shirt_print.text == "saudades\namarok","third game day selects Amarok shirt")
+	instructor.model.set_day(5)
+	check(instructor.model.outfit == 0 and not instructor.model.shirt_print.visible,"rotation returns to original printed shirt")
+	instructor.free()
+	print("DIGO_LESSON_RESULT checks=",checks," failures=",failures)
+	quit(0 if failures.is_empty() else 1)

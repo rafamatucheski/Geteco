@@ -134,6 +134,7 @@ func _unlocked() -> void:
 		return
 	car.remove_meta("police_locked")
 	car.remove_meta("lockpick_handler")
+	preload("res://runtime/PoliceTrunk.gd").mark_unlocked(car)
 	if is_instance_valid(car.equipment): car.equipment.stop_alarm()
 	var index := cars.find(car)
 	if index >= 0:

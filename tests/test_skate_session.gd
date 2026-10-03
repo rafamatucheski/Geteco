@@ -81,6 +81,9 @@ func run() -> void:
 		check(skate.nearest_action().get("id") == "skate", "skate do NPC derrubado oferece coleta")
 		print("SKATE_NPC_PICK_DIAGNOSTIC nearest=", session.nearest(), " player=", world.player.position, " clear=", skate._clear_for_player(world.player.position, npc_board), " board=", npc_board.position)
 		check(session.interact() and skate.mounted, "skate tomado do NPC pode ser usado sem atravessar o corpo")
+		var owner_position: Vector3 = actor.position
+		await frames(240)
+		check(actor.route.size() >= 2 and actor.position.distance_to(owner_position) > 2 and not actor.input_locked, "dono roubado se recupera e sai correndo pela rota a pé")
 	if skate.mounted:
 		skate.player_board.queue_free()
 		await frames(3)

@@ -37,16 +37,16 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		set_physics_process(false)
 		set_process(false)
 		if is_instance_valid(carried_crate): carried_crate.hide()
-		model.hand_provider = Callable()
 		if has_meta("v2_burning"): preload("res://gameplay/BurningActor.gd").char_body(self)
 		var impact: Vector3 = global_position-source.global_position if source is Node3D else Vector3.ZERO
+		# The shared fall releases hands on both direct and wrapped civilian bodies.
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self,model,impact)
 		died.emit(self)
 	else:
 		var reaction := get_node_or_null("WorkplaceThreatReaction")
 		if reaction != null: reaction._notice(global_position,1.0)
 	if is_instance_valid(gameplay):
-		if is_instance_valid(source) and source.has_method("is_player_damage_source") and source.is_player_damage_source(): gameplay.report_vehicle_assault(self,source)
+		if is_instance_valid(source)  and source.has_method("is_player_damage_source") and source.is_player_damage_source(): gameplay.report_vehicle_assault(self,source)
 		if is_instance_valid(gameplay.emergency): gameplay.emergency.report_injury(self,dead)
 
 func recover_from_injury() -> void:

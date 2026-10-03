@@ -1,5 +1,38 @@
 # Migração de interiores — checklist
 
+## Boa Praça — supermercado novo — 03/10/2026
+
+**1 lugar físico / 1 interior distinto novo; 0 certificados integralmente / 1 em validação / 0 não iniciados neste lote.** Acrescenta 1 acesso/1 interior à referência registrada de 32/30: **33 acessos / 31 interiores**; não recertifica outros lugares.
+
+- [x] Fachada própria, entrada/saída a pé, câmera alinhada, gôndolas, padaria, hortifruti, refrigeradores e dois caixas.
+- [x] Dois funcionários e quatro clientes: escolhas, compras, caixa, saída/retorno e limpeza ao descarregar.
+- [x] Comida útil no inventário, cura real, colete equipado, capacidade/dinheiro/recibos e save/load isolado.
+- [x] 93 checks físicos/econômicos; 24 de profundidade com jogador/NPC e controles positivos; 20 de Main, incluindo controle e reentrada.
+- [x] UI lateral revisada, feedback imediato, navegação por grade e painel/Voltar visíveis em três resoluções.
+- [x] Fotos reais de interior, fachada e UI; sequência contínua de 30 segundos com clientes ativos.
+- [ ] Baseline de performance e comparação controlada de frame time. Medições concorrentes e alterações compartilhadas impedem aprovação.
+- [ ] Origem dos avisos de recursos no encerramento de Main ainda não isolada.
+- [ ] Foto do exterior anterior e cobertura ampliada de combate/resgate/save durante conflito não disponíveis.
+
+[Implementação, evidências e limites](reviews/supermarket-20261003.md).
+
+## Banco North Pier: assalto, cofre e consequências — 02/10/2026
+
+**1 lugar físico / 1 interior distinto**, existente; **0 certificados integralmente / 1 em validação / 0 não iniciados neste lote**. Nenhum lugar criado e contagens globais preservadas. Câmera e escala mantidas; circulação central, leitura do cofre e saída revisadas.
+
+- [x] Guardas resistem ao primeiro tiro, entrada pacífica não inicia disparos e resposta armada tem antecipação.
+- [x] Cartão e dinheiro giram/flutuam, coleta por aproximação e absorção; saque persistente visível de até R$ 15.000.
+- [x] Saque é depositado ao sair vivo; morte perde o saque em mãos e até R$ 5.000 da carteira, sem cobrar duas vezes.
+- [x] Porta do cofre mantém colisão na folha aberta; paredes ficam transparentes no Mobile, restauram opacidade e continuam sólidas.
+- [x] Corpos de guardas/atendentes apoiados no piso durante/depois da queda e na restauração; sangue vinculado à sala.
+- [x] Morte no assalto → 1 dia contínuo longe e fora da tela → 3 dias interditado; faixas externas, entrada bloqueada e nova equipe na reabertura.
+- [x] 54 verificações Main de entrada a pé, roubo, saída, reentrada, morte/resgate e calendário; 42 físicas/de profundidade com jogador/NPC e controles positivos; 41 de corpos/sangue; 34 de ciclo e 20 de economia.
+- [x] Fotos reais do gameplay, cofre, corpos, sangue, interdição e nova equipe. A comparação visual usa a primeira revisão desta tarefa, anterior à correção de transparência/corpos.
+- [ ] Comparação de desempenho antes/depois: base isolada indisponível devido às outras sessões; medição atual registrada separadamente, sem aprovar regressão.
+- [ ] Certificação ampliada de todos os móveis, combate prolongado com todas as armas e save/load completo em disco durante assalto não realizada.
+
+[Evidências, resultados e limites](reviews/bank-gameplay-20261002.md).
+
 ## Prédios vizinhos das lojas da montanha — 02/10/2026
 
 Complemento exterior em **3 famílias de fachada**: Summit, chalés e lojas. Modelos compartilhados atualizam instâncias existentes; nenhum lugar/interior criado. Contagens globais preservadas; zero novas certificações integrais.
@@ -858,3 +891,18 @@ Revisão transversal dos objetos existentes, sem novo acesso/interior: permanece
 - [x] Evidência temporal real: resort dia/noite e lareira Summit, 30 s por cenário. Cobertura limitada a esses cenários; não certifica todas as lareiras.
 - [ ] Certificação integral de colisão/oclusão de todos os interiores: esta revisão de objetos não equivale a uma migração completa de cada sala.
 - [ ] Aprovação de performance: comparação antes/depois renderizada, com interferência de outras sessões registrada; resultado não isolado.
+
+## Casas: interações presenciais — 02/10/2026
+
+Revisão de **3 casas existentes / 3 interiores**, sem migração de acessos:
+permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações
+integrais**. [Escopo e evidências](residence-living.md).
+
+- [x] Guarda-roupa com personagem real/espelho, bancada com os modelos do arsenal e personalização persistente, descanso animado, geladeira articulada e mochila física integrada ao inventário.
+- [x] Main renderizada .NET: **226 verificações, zero falhas**. Ações por E e clique, cancelamento, dano, restauração de controle/câmera/qualidade, foco, cobrança e save isolado verificados nas três casas.
+- [x] Colisão avaliada separadamente: varreduras de jogador e NPC contra móveis a partir de posições livres, além do espaço corporal nos pontos de interação.
+- [x] Fotos reais das cinco apresentações nas três casas; sequências de 30 s de troca de roupas e acabamentos em Westgate. Evidências em `evidence/residence-immersive/`; gravação limitada a 30 FPS não é benchmark.
+- [ ] Certificação completa de percursos e oclusão jogador/NPC por todos os móveis. A fixture posiciona as aproximações; as capturas cobrem os enquadramentos de interação.
+- [ ] Aprovação de frame time antes/depois. Baseline interrompido e sessões concorrentes; não há comparação equivalente. Espelho, luz local e MSAA precisam dessa medição para aprovação de performance.
+- [x] Diagnóstico final renderizado de Westgate: 30 s por vista aquecida (geral, guarda-roupa, bancada), p95 de 1,924/3,407/1,228 ms e nenhum frame acima de 33,3 ms. Dados em `evidence/residence-immersive/profile.json`; isso não fecha a pendência comparativa acima.
+- [x] Correção posterior das armas no painel: berços encaixados, folga traseira de 4 mm, painel livre das cortinas e luminária livre das armas. 60 verificações sem falha nas três casas, fotos `rack-after-*-normal/front/bench.png` e sequência real `rack.mp4`. Comparativo local de 30 s: p95 1,571 → 1,292 ms; sem regressão observada nesse ajuste. Não altera contagens nem certifica a reforma completa.

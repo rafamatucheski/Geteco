@@ -89,11 +89,11 @@ func _physics_process(delta: float) -> void:
 		for vehicle in get_tree().get_nodes_in_group("drivable"):
 			if not vehicle is Node3D or not vehicle.is_inside_tree(): continue
 			var half: float = float(vehicle.get("half_length")) if vehicle.get("half_length") != null else 2.0
-			if not blood.stains_near(vehicle.global_position, half).is_empty():
+			if blood.has_stain_near(vehicle.global_position, half):
 				_track(vehicle, "tire").residue = TIRE_DISTANCE
 		for person in director.people():
 			if person.has_meta("street_down") or person.get("dead") == true: continue
-			if not blood.stains_near(person.global_position, 0.25).is_empty():
+			if blood.has_stain_near(person.global_position, 0.25):
 				_track(person, "foot").residue = FOOT_DISTANCE
 	for id in _tracks.keys():
 		var track: Dictionary = _tracks[id]
@@ -160,11 +160,14 @@ func _emit(point: Vector3, yaw: float, size: Vector2, alpha: float) -> void:
 func _fade() -> void:
 	var count := _multimesh.visible_instance_count
 	for index in count:
+		# An expired slot remains transparent until _emit reuses it.
+		if _alpha[index] == 0.0: continue
 		var age := _clock - _born[index]
 		if age < MARK_LIFETIME - MARK_FADE: continue
 		var color := COLOR.lerp(Color("2e1012"), 0.6)
 		color.a = _alpha[index] * clampf((MARK_LIFETIME - age) / MARK_FADE, 0.0, 1.0)
 		_multimesh.set_instance_color(index, color)
+		if age >= MARK_LIFETIME: _alpha[index] = 0.0
 
 
 ## Marca com borda gasta (não retângulo chapado).

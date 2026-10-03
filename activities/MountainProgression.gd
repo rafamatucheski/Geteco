@@ -206,12 +206,14 @@ func motion(delta: float, _walking_direction: Vector3) -> Vector3:
 	if race.countdown>0 and race.mode!="": return Vector3.ZERO
 	fall_time=maxf(0,fall_time-delta)
 	if fall_time>0: return Vector3.ZERO
-	var axis: Vector2 = get_node("/root/GameInput").movement()
-	var brake := maxf(0,axis.y)
+	var controls := get_node("/root/GameInput")
+	var axis: Vector2 = controls.movement()
+	var brake := maxf(maxf(0,axis.y),Input.get_action_strength("brake"))
 	if InputMap.has_action("handbrake") and Input.is_action_pressed("handbrake"): brake=1
 	var speed := glide.length()
-	var acceleration := 118.0/16.0*maxf(.12,heading.dot(Vector3.FORWARD))+maxf(0,-axis.y)*42.0/16.0
-	if get_node("/root/GameInput").sprinting() and speed<115.0/16.0: acceleration+=95.0/16.0
+	var push := maxf(maxf(0,-axis.y),Input.get_action_strength("accelerate"))
+	var acceleration := 118.0/16.0*maxf(.12,heading.dot(Vector3.FORWARD))+push*42.0/16.0
+	if controls.sprinting() and speed<115.0/16.0: acceleration+=95.0/16.0
 	speed=clampf(speed+(acceleration-(18.0+brake*235.0)/16.0)*delta,0,455.0/16.0)
 	heading=heading.rotated(Vector3.UP,-axis.x*lerpf(2.05,.88,speed/(455.0/16.0))*delta).normalized()
 	glide=glide.lerp(heading*speed,1.0-exp(-4.8*delta))
@@ -250,7 +252,8 @@ func _physics_process(delta: float) -> void:
 			if best > 0: status.text += "\nRecorde: %.2f s" % best
 		else:
 			status.text = "Ski · "+speed_text
-		status.text += "\n%s frear · %s impulso" % [get_node("/root/GameInput").hint("handbrake"),get_node("/root/GameInput").hint("sprint")]
+		var controls := get_node("/root/GameInput")
+		status.text += "\n%s frear · %s impulso" % [controls.hint("brake" if controls.using_gamepad else "handbrake"),controls.hint("accelerate" if controls.using_gamepad else "sprint")]
 	_shadow_clock+=delta
 	if _shadow_clock>=.5:
 		_shadow_clock=0
@@ -269,8 +272,8 @@ func _finish() -> void:
 	var spec: Dictionary = COURSES[race.id]
 	gate.hide(); status.text=""
 	var previous_best: Variant = data.best.get(race.id,null)
-	var transactions: Dictionary = session.state.economy.snapshot().transactions
-	var settlement: Dictionary = RewardPolicy.ski_settlement(race.id,spec,race.elapsed,previous_best,transactions)
+	var wallet: Dictionary = session.state.economy.snapshot()
+	var settlement: Dictionary = RewardPolicy.ski_settlement(race.id,spec,race.elapsed,previous_best,wallet.transactions,wallet.get("receipt_ledger",{}))
 	if not settlement.get("ok",false):
 		session.show_message("Resultado inválido; prêmio e recorde preservados.")
 		return

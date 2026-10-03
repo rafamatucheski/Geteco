@@ -85,6 +85,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	var time_value: Variant = data.world.get("time",.32)
 	if typeof(time_value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(time_value)) or time_value < 0 or time_value > 1: return false
 	if not data.world.get("rewards",[]) is Array or not data.world.get("vehicles",[]) is Array: return false
+	if data.world.has("mountain_zoo") and not preload("res://world/mountain_detail/zoo/ZooTicketState.gd").valid(data.world.mountain_zoo,data.economy): return false
 	if data.world.has("ashbend_secret_car_claimed") and not data.world.ashbend_secret_car_claimed is bool: return false
 	if data.world.has("ashbend_secret_car") and (not data.world.ashbend_secret_car is Dictionary or not preload("res://gameplay/urban_v1/CobraSecretCar3D.gd").validate_record(data.world.ashbend_secret_car)): return false
 	if data.world.get("vehicles",[]).size() > 64: return false
@@ -92,6 +93,13 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if not vehicle is Dictionary or not preload("res://runtime/FleetState.gd").validate(vehicle): return false
 	if data.world.has("motocross") and (not data.world.motocross is Dictionary or not preload("res://activities/motocross/MotocrossProgress.gd").validate_snapshot(data.world.motocross)): return false
 	if data.world.has("motocross") and not preload("res://activities/motocross/MotocrossProgress.gd").validate_wallet(data.world.motocross,data.economy): return false
+	if data.world.has("digo") and (not data.world.digo is Dictionary or not preload("res://systems/campaign/DigoProgress.gd").validate_snapshot(data.world.digo)): return false
+	for key in ["digo_vehicle","digo_amarok_vehicle"]:
+		if not data.world.has(key): continue
+		var digo_vehicle: Variant = data.world[key]
+		var expected_id := "digo_gol_1993" if key == "digo_vehicle" else "digo_amarok_2014"
+		if not digo_vehicle is Dictionary or digo_vehicle.get("archetype") != expected_id or digo_vehicle.get("vehicle_id") != expected_id: return false
+		if not preload("res://runtime/FleetState.gd").validate(digo_vehicle): return false
 	if data.world.has("skate") and (not data.world.skate is Dictionary or not preload("res://activities/skate/Skate.gd").validate_snapshot(data.world.skate)): return false
 	if data.world.has("activities"):
 		if not data.world.activities is Dictionary: return false

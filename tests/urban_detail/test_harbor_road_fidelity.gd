@@ -2,6 +2,8 @@ extends SceneTree
 ## Directed Harbor road/streaming validator. Requires --no-save and never
 ## resolves a save path. Collision is checked independently from rendering.
 
+const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const SOURCE_PATH := "res://world/regions/OriginalWorldData.json"
 var failures := 0
 
 
@@ -35,7 +37,7 @@ func _run() -> void:
 		await process_frame
 		if region.is_streaming_idle(): break
 	check(region.is_streaming_idle(),"initial Harbor 3x3 streaming finishes before geometry checks")
-	check(region.roads.size()==39,"all 39 productive V1 road definitions are configured")
+	check_source_roads(region.roads)
 	check(region.harbor_road_geometry.source_coverage_errors().is_empty(),"source road segments and junctions have complete geometry")
 	var detached_crossings:=0
 	for records_value in region.records.values():
@@ -116,6 +118,8 @@ func _run() -> void:
 		for segment_index in range(points.size() - 1):
 			expected_segments += 1
 			var midpoint := points[segment_index].lerp(points[segment_index + 1], 0.5)
+			var tunnel_sample := _open_tunnel_ramp(midpoint)
+			var floor_point := Vector3(midpoint.x, TUNNEL.floor_y(midpoint.x), midpoint.z) if tunnel_sample else midpoint
 			region.set_focus(midpoint)
 			for frame in 600:
 				await process_frame
@@ -127,13 +131,13 @@ func _run() -> void:
 			var road_hit := false
 			var first_hit := ""
 			for attempt in 32:
-				var query := PhysicsRayQueryParameters3D.create(midpoint + Vector3.UP * 8.0, midpoint - Vector3.UP * 2.0, 1)
+				var query := PhysicsRayQueryParameters3D.create(floor_point + Vector3.UP * (1.0 if tunnel_sample else 8.0), floor_point - Vector3.UP * (1.0 if tunnel_sample else 2.0), 1)
 				query.exclude = exclusions
 				var hit := root.world_3d.direct_space_state.intersect_ray(query)
 				if hit.is_empty(): break
 				var collider := hit.collider as CollisionObject3D
 				if attempt == 0: first_hit = collider.name
-				if collider.name.begins_with("HarborRoad_202932"):
+				if (_correct_tunnel_floor(hit, midpoint) if tunnel_sample else collider.name.begins_with("HarborRoad_202932")):
 					road_hit = true
 					break
 				exclusions.append(collider.get_rid())
@@ -152,8 +156,11 @@ func _run() -> void:
 			await process_frame
 			if region.is_streaming_idle(): break
 		await physics_frame
-		var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 8.0, point - Vector3.UP * 2.0, 1)
-		if not root.world_3d.direct_space_state.intersect_ray(query).is_empty():
+		var tunnel_sample := _open_tunnel_ramp(point)
+		var floor_point := Vector3(point.x, TUNNEL.floor_y(point.x), point.z) if tunnel_sample else point
+		var query := PhysicsRayQueryParameters3D.create(floor_point + Vector3.UP * (1.0 if tunnel_sample else 8.0), floor_point - Vector3.UP * (1.0 if tunnel_sample else 2.0), 1)
+		var hit := root.world_3d.direct_space_state.intersect_ray(query)
+		if (_correct_tunnel_floor(hit, point) if tunnel_sample else not hit.is_empty()):
 			physical_accesses += 1
 		else:
 			push_error("Missing physical floor at V1 access %d" % access_index)
@@ -162,6 +169,75 @@ func _run() -> void:
 	await process_frame
 	print("HARBOR_ROAD_FIDELITY failures=",failures)
 	quit(1 if failures else 0)
+
+
+func check_source_roads(roads: Array[Dictionary]) -> void:
+	# Independent source input: compare every ID, point and width, instead of
+	# freezing a count that became stale when the authored road list changed.
+	var decoded: Variant = JSON.parse_string(FileAccess.get_file_as_string(SOURCE_PATH))
+	check(decoded is Dictionary, "productive road source is a readable dictionary")
+	if not decoded is Dictionary: return
+	var rows: Array = (decoded as Dictionary).get("harbor_roads", [])
+	var actual: Dictionary = {}
+	for road: Dictionary in roads: actual[String(road.id)] = road
+	check(not rows.is_empty() and roads.size() == rows.size() and actual.size() == rows.size(), "all source road definitions are configured once")
+	var source_ids: Dictionary = {}
+	for row: Dictionary in rows:
+		var id := String(row.id)
+		check(not source_ids.has(id), "source road ID is unique: " + id)
+		source_ids[id] = true
+		var match_source := actual.has(id)
+		if match_source:
+			var road: Dictionary = actual[id]
+			var points: PackedVector3Array = road.points
+			var original: Array = row.points
+			match_source = points.size() == original.size() and absf(float(road.width) - float(row.width) / 16.0) < .000001
+			if match_source:
+				for index in original.size():
+					var point: Array = original[index]
+					var expected := Vector3(float(point[0]) / 16.0, 0.0, float(point[1]) / 16.0)
+					if points[index].distance_to(expected) > .000001:
+						match_source = false
+						break
+		check(match_source, "road matches independent source ID/coordinates/width: " + id)
+
+
+func _open_tunnel_ramp(point: Vector3) -> bool:
+	if not TUNNEL.in_roadway(point): return false
+	for cut: Rect2 in TUNNEL.open_cuts():
+		if cut.has_point(Vector2(point.x, point.z)): return true
+	return false
+
+
+func _tunnel_normal(x: float) -> Vector3:
+	# Analytic derivative of the authored parabolic/linear floor profile.
+	var west := x - TUNNEL.W_TOP
+	var east := TUNNEL.E_TOP - x
+	var u := minf(west, east)
+	var gradient := 0.0
+	var length := TUNNEL.ramp_length()
+	if u > 0.0 and u < length:
+		if u < TUNNEL.CURVE: gradient = TUNNEL.GRADE * u / TUNNEL.CURVE
+		elif u < length - TUNNEL.CURVE: gradient = TUNNEL.GRADE
+		else: gradient = TUNNEL.GRADE * (length - u) / TUNNEL.CURVE
+	var slope := -gradient if west <= east else gradient
+	return Vector3(-slope, 1.0, 0.0).normalized()
+
+
+func _correct_tunnel_floor(hit: Dictionary, point: Vector3) -> bool:
+	if hit.is_empty(): return false
+	var owner: Node = hit.collider as Node
+	while owner != null and not owner.is_in_group("canal_tunnel"): owner = owner.get_parent()
+	var height_error := absf(float(hit.position.y) - TUNNEL.floor_y(point.x))
+	var normal_error := (hit.normal as Vector3).distance_to(_tunnel_normal(point.x))
+	# Curved sections are physically tessellated in <=1 m spans: their analytic
+	# tangent can differ by <=0.01042; linear ramps (both formerly failing points)
+	# are exact. A solid at the old street height or a wall cannot satisfy this.
+	var ok := owner != null and height_error < .01 and normal_error < .012
+	print("TUNNEL_FLOOR point=%s hit=%s normal=%s expected_y=%.7f expected_normal=%s owner=%s valid=%s" % [
+		point, hit.position, hit.normal, TUNNEL.floor_y(point.x), _tunnel_normal(point.x),
+		str(owner.get_path()) if owner != null else "none", ok])
+	return ok
 
 
 func _road(roads: Array[Dictionary],road_id: String)->Dictionary:

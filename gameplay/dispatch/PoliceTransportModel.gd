@@ -35,4 +35,4 @@ static func _box(root: Node3D, id: String, point: Vector3, size: Vector3, color:
 		mat.emission = color
 	part.material_override = mat
 	part.position = point
-	root.add_child(part)
+	root.add_child(part, true)

@@ -50,6 +50,43 @@ var _driving_layer := 0
 var _driving_mask := 0
 var _driving_physics := false
 var _wreck_fire_time := 0.0
+# Dispatch suspends the current physics owner, which may change while the burn
+# child keeps running. Driving state must survive both wreck and repair.
+var _dispatch_suspended := false
+var _suspended_layer := 0
+var _suspended_mask := 0
+var _suspended_physics := false
+var _suspended_wreck_freeze := false
+
+func suspend_for_dispatch() -> void:
+	if _dispatch_suspended: return
+	_dispatch_suspended = true
+	_suspended_layer = vehicle.collision_layer
+	_suspended_mask = vehicle.collision_mask
+	_suspended_physics = vehicle.is_physics_processing()
+	if is_instance_valid(_wreck_body):
+		_suspended_layer = _wreck_body.collision_layer
+		_suspended_mask = _wreck_body.collision_mask
+		_suspended_wreck_freeze = _wreck_body.freeze
+		_wreck_body.collision_layer = 0
+		_wreck_body.collision_mask = 0
+		_wreck_body.freeze = true
+	vehicle.collision_layer = 0
+	vehicle.collision_mask = 0
+	vehicle.set_physics_process(false)
+
+func resume_from_dispatch() -> void:
+	if not _dispatch_suspended: return
+	_dispatch_suspended = false
+	if is_instance_valid(_wreck_body):
+		_wreck_body.collision_layer = _suspended_layer
+		_wreck_body.collision_mask = _suspended_mask
+		_wreck_body.freeze = _suspended_wreck_freeze
+	else:
+		vehicle.collision_layer = _suspended_layer
+		vehicle.collision_mask = _suspended_mask
+		vehicle.set_physics_process(_suspended_physics)
+	_suspended_wreck_freeze = false
 
 func configure(car: CharacterBody3D) -> void:
 	vehicle = car
@@ -390,9 +427,9 @@ func _stall_blast_hop() -> void:
 	var lift := 1.0 / sqrt(mass)
 	var launch := _rng.randf_range(4.4, 5.4) * lift
 	var spin := Vector3(_rng.randf_range(1.5, 2.3), 0, _rng.randf_range(-1.3, 1.3)) * lift
-	_driving_layer = vehicle.collision_layer
-	_driving_mask = vehicle.collision_mask
-	_driving_physics = vehicle.is_physics_processing()
+	_driving_layer = _suspended_layer if _dispatch_suspended else vehicle.collision_layer
+	_driving_mask = _suspended_mask if _dispatch_suspended else vehicle.collision_mask
+	_driving_physics = _suspended_physics if _dispatch_suspended else vehicle.is_physics_processing()
 	vehicle.collision_layer = 0
 	vehicle.collision_mask = 0
 	vehicle.set_physics_process(false)
@@ -402,8 +439,9 @@ func _stall_blast_hop() -> void:
 	_wreck_body.name = "WreckBody"
 	_wreck_body.vehicle = vehicle
 	_wreck_body.top_level = true
-	_wreck_body.collision_layer = _driving_layer
-	_wreck_body.collision_mask = _driving_mask
+	_wreck_body.collision_layer = 0 if _dispatch_suspended else _driving_layer
+	_wreck_body.collision_mask = 0 if _dispatch_suspended else _driving_mask
+	_wreck_body.freeze = _dispatch_suspended
 	_wreck_body.mass = mass * 1000.0
 	_wreck_body.gravity_scale = HOP_GRAVITY / float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 	_wreck_body.continuous_cd = true
@@ -485,9 +523,14 @@ func restore() -> void:
 		vehicle.velocity = Vector3.ZERO
 		vehicle.horizontal_velocity = Vector3.ZERO
 		vehicle.speed = 0.0
-		vehicle.collision_layer = _driving_layer
-		vehicle.collision_mask = _driving_mask
-		vehicle.set_physics_process(_driving_physics)
+		if _dispatch_suspended:
+			_suspended_layer = _driving_layer
+			_suspended_mask = _driving_mask
+			_suspended_physics = _driving_physics
+		else:
+			vehicle.collision_layer = _driving_layer
+			vehicle.collision_mask = _driving_mask
+			vehicle.set_physics_process(_driving_physics)
 	_wreck_fire_time = 0.0
 	if is_instance_valid(_fire): _fire.amount_ratio = 1.0
 	if is_instance_valid(_smoke): _smoke.amount_ratio = 1.0

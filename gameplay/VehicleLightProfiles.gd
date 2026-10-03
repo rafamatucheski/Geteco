@@ -31,6 +31,7 @@ const ARCHETYPES := {
 }
 
 static func family(archetype: String) -> String:
+	if archetype == "digo_amarok_2014": return "xenon"
 	for key in ARCHETYPES:
 		if archetype in ARCHETYPES[key]: return key
 	return "halogen"

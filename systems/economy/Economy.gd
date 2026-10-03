@@ -7,9 +7,13 @@ const Achievements := preload("res://data/catalogs/AchievementCatalog.gd")
 const Services := preload("res://data/catalogs/ServiceCatalog.gd")
 const GRID := preload("res://systems/inventory/GridInventory.gd")
 const INVENTORY_MIGRATION := preload("res://systems/inventory/InventoryMigration.gd")
+const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 const LIMIT := 100000000
 const MAX_AMMO := 99999
-const SUPPLIES := {"lockpick":{"price":75}}
+const MAX_OPAQUE_RECEIPTS := 10000
+const SUPPLIES := {"lockpick":{"price":75}, "apple":{"price":8}, "water":{"price":6},
+	"sandwich":{"price":25}, "first_aid":{"price":90}, "juice":{"price":14},
+	"yogurt":{"price":12}, "bread":{"price":16}, "cereal_bar":{"price":10}}
 const PERSONAL_SLOTS := {
 	"curta":["pistol","magnum","smg"],
 	"longa":["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
@@ -39,7 +43,7 @@ func snapshot() -> Dictionary:
 
 ## Read receipt membership without exposing or copying the wallet/inventory.
 func has_reward_receipt(receipt_id: String) -> bool:
-	return _data.transactions.has("reward:" + receipt_id)
+	return not RECEIPTS.lookup(_data,"reward",receipt_id).is_empty()
 
 func storefront(category: String) -> Array:
 	var result := []
@@ -69,10 +73,16 @@ func grant_weapon(id: String) -> bool:
 func spend(amount: int, receipt_id: String) -> bool:
 	if amount < 0 or amount > LIMIT or not _valid_id(receipt_id) or receipt_id.length() > 110: return false
 	var key := "spend:" + receipt_id
-	if _data.transactions.has(key): return _data.transactions[key].amount == amount
+	var existing: Dictionary = RECEIPTS.lookup(_data,"spend",receipt_id)
+	if not existing.is_empty(): return existing.amount == amount
 	if balance < amount: return false
+	# All payment preconditions are settled. The codec either records atomically
+	# or returns false without mutation; opaque refusal precedes the debit.
+	var compact := RECEIPTS.record(_data,"spend",receipt_id,amount)
+	if not compact and _data.transactions.size()>=MAX_OPAQUE_RECEIPTS: return false
 	if not cheat_infinite_money: _data.balance -= amount
-	_data.transactions[key] = {"kind": "spend", "item": receipt_id, "amount": amount}
+	if not compact:
+		_data.transactions[key] = {"kind": "spend", "item": receipt_id, "amount": amount}
 	return true
 
 func purchase_body_armor(current_armor: Variant, maximum_armor: Variant, transaction_id: String) -> Dictionary:
@@ -99,6 +109,7 @@ func buy_ammo(id: String, rounds: int, transaction_id: String) -> bool:
 	# HarborAmmunationInterior._ammo_price; rounds vary with selected package.
 	var price := maxi(40, rounds * (60 if id in ["grenade", "rpg"] else 2))
 	if balance < price: return false
+	if _data.transactions.size()>=MAX_OPAQUE_RECEIPTS: return false
 	if grid_enabled() and not _grid_add_ammo(id,rounds): return false
 	if not cheat_infinite_money: _data.balance -= price
 	if not grid_enabled(): _data.weapons[id].reserve += rounds
@@ -171,9 +182,12 @@ static func _max_capacity(id: String) -> int:
 func grant_reward(receipt_id: String, amount: int) -> bool:
 	if not _valid_id(receipt_id) or receipt_id.length() > 110 or amount < 0 or amount > LIMIT or int(_data.balance) > LIMIT - amount: return false
 	var key := "reward:" + receipt_id
-	if _data.transactions.has(key): return false
+	if not RECEIPTS.lookup(_data,"reward",receipt_id).is_empty(): return false
+	var compact := RECEIPTS.record(_data,"reward",receipt_id,amount)
+	if not compact and _data.transactions.size()>=MAX_OPAQUE_RECEIPTS: return false
 	_data.balance += amount
-	_data.transactions[key] = {"kind": "reward", "item": receipt_id, "amount": amount}
+	if not compact:
+		_data.transactions[key] = {"kind": "reward", "item": receipt_id, "amount": amount}
 	return true
 
 func grant_world_reward(definition: Dictionary) -> Dictionary:
@@ -190,10 +204,9 @@ func grant_world_reward(definition: Dictionary) -> Dictionary:
 		return _result(false,"invalid_reward")
 	var amount := int(amount_value)
 	var receipt_amount := amount if kind == "cash" else 0
-	var receipt_key := "reward:"+str(id)
-	if _data.transactions.has(receipt_key):
-		var previous: Variant = _data.transactions[receipt_key]
-		if previous is Dictionary and previous.get("kind","") == "reward" and previous.get("item","") == id and int(previous.get("amount",-1)) == receipt_amount:
+	var previous: Dictionary = RECEIPTS.lookup(_data,"reward",str(id))
+	if not previous.is_empty():
+		if previous.get("kind","") == "reward" and previous.get("item","") == id and int(previous.get("amount",-1)) == receipt_amount:
 			if kind == "weapon" and not owns_weapon(str(definition.get("item",""))): return _result(false,"transaction_conflict")
 			return {"ok":true,"reason":"already_applied","changed":false}
 		return _result(false,"transaction_conflict")
@@ -241,6 +254,7 @@ func purchase(category: String, id: String, transaction_id: String) -> Dictionar
 	if category == "weapon" and not is_weapon_unlocked(id): return _result(false, "discovery_required")
 	var price := int(catalog[id].price)
 	if price < 0 or balance < price: return _result(false, "insufficient_funds")
+	if _data.transactions.size()>=MAX_OPAQUE_RECEIPTS: return _result(false,"receipt_limit")
 	var before := _data.duplicate(true)
 	if not cheat_infinite_money: _data.balance -= price
 	if category == "weapon":
@@ -413,7 +427,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	_data = upgraded
 	cheat_infinite_money = false
 	cheat_all_weapons=false; _cheat_weapons.clear(); _cheat_equipped=""
-	_data.version = 1
+	_data.version = int(_data.version)
 	_data.balance = int(_data.balance)
 	if grid_enabled():
 		_data.grid_inventory.version=int(_data.grid_inventory.version)
@@ -435,9 +449,11 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	if data.has("grid_inventory") and not GRID.validate(data.grid_inventory): return false
 	for key in ["version", "balance", "weapons", "equipped_weapon", "outfits", "outfit", "inventory", "discoveries", "collectibles", "achievements", "transactions"]:
 		if not data.has(key): return false
-	if not _integer(data.version, 1, 1) or not _integer(data.balance, 0, LIMIT): return false
+	if not _integer(data.version, 1, 3) or not _integer(data.balance, 0, LIMIT): return false
 	for key in ["weapons", "inventory", "transactions"]:
-		if not data[key] is Dictionary or data[key].size() > 10000: return false
+		var maximum := MAX_OPAQUE_RECEIPTS if key=="transactions" else 10000
+		if not data[key] is Dictionary or data[key].size() > maximum: return false
+	if not RECEIPTS.validate(data): return false
 	for key in ["outfits", "discoveries", "collectibles", "achievements"]:
 		if not data[key] is Array or data[key].size() > 1000: return false
 		var seen := {}

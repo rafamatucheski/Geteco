@@ -2,7 +2,6 @@ extends Node
 ## Patrulha limitada ao orçamento do trânsito existente; nenhum spawn por agressão.
 const DRIVER := preload("res://gameplay/dispatch/DispatchDriver.gd")
 const GUARD := preload("res://gameplay/urban_v1/CobraLocalGuard.gd")
-const LOOK := preload("res://gameplay/urban_v1/CobraAppearance.gd")
 var session
 var car: CharacterBody3D
 var pilot: RefCounted
@@ -38,17 +37,15 @@ func _ready() -> void:
 	car.paint_color = Color("202d26")
 	car.set_meta("gang_damage_handler",Callable(self,"provoke"))
 	car.set_meta("gang_theft_handler",Callable(self,"vehicle_stolen"))
+	var cabin: Dictionary = preload("res://gameplay/VehicleInterior.gd").spec(car)
 	for index in 2:
-		var model := preload("res://assets/gameplay/cobra_0.scn").instantiate() as Node3D
-		LOOK.dress(model)
-		LOOK.arms(model,true)
-		model.scale = Vector3.ONE*.95
-		model.position = car.to_local(car.driver_seat_anchor())-Vector3.UP*.62
+		var model := preload("res://gameplay/CobraModel.gd").new()
+		model.tier = index
+		model.seated = true
+		model.position = Vector3(cabin.sx, cabin.floor, cabin.sz)
 		if index==1: model.position.x = -model.position.x
-		for side in ["left","right"]:
-			var leg := model.find_child(side+"_upper_leg",true,false) as Node3D
-			if leg: leg.rotation.x = PI*.5
 		car.add_child(model)
+		model.fit_seat(car, cabin, index == 0)
 		passengers.append(model)
 
 func provoke(source: Node) -> void:
@@ -90,6 +87,8 @@ func vehicle_stolen(side: int) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not session.ready_for_play: return
+	for model in passengers:
+		model.process_mode = Node.PROCESS_MODE_INHERIT if model.is_visible_in_tree() else Node.PROCESS_MODE_DISABLED
 	var gameplay = session.world.gameplay
 	if not hostile and car.global_position.distance_to(session.world.player.global_position)>120 and not session.world.production._on_screen(car.global_position,3):
 		if stolen: queue_free()
@@ -142,7 +141,10 @@ func _physics_process(delta: float) -> void:
 		plan_clock = 1.5
 		if not destination.is_finite() or destination.distance_to(target.global_position)>5 or pilot.route==null:
 			destination = target.global_position
-			pilot.set_route(session.world.production.traffic_routes.route_between(car.global_position,destination))
+			# O roteador por faixa atende também dois pontos no mesmo trecho.
+			# O antigo route_between retornava null ao escolher o mesmo cruzamento.
+			var route: Dictionary = session.world.dispatch.router.plan(car.global_position,destination,-car.global_basis.z)
+			if route.ok: pilot.set_route(route.curve)
 	pilot.hold(separation<10 and not session.world.driving.occupied)
 	pilot.tick(delta)
 	if separation<14 and absf(car.speed)<.5 and not session.world.driving.occupied:

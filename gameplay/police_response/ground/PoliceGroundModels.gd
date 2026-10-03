@@ -89,7 +89,7 @@ static func _armor(root: Node3D, title: String, point: Vector3, base: Vector2, t
 	part.position = point
 	part.material_override = _material(color)
 	if not key.is_empty(): part.set_meta("vehicle_material_key",key)
-	root.add_child(part)
+	root.add_child(part, true)
 	return part
 
 static func _triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
@@ -229,5 +229,5 @@ static func _box(root: Node3D, title: String, point: Vector3, size: Vector3, col
 	part.material_override = _material(color, key.begins_with("bar_") or key == "headlight")
 	if not key.is_empty(): part.set_meta("vehicle_material_key",key)
 	part.position = point
-	root.add_child(part)
+	root.add_child(part, true)
 	return part

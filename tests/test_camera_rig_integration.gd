@@ -14,14 +14,18 @@ func frames(count: int) -> void:
 	for frame in count: await physics_frame
 
 func run() -> void:
+	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	# The measured V1 reference belongs to the original exterior framing.
+	# Player preferences must not silently select the diagonal camera instead.
+	root.get_node("V2Settings").camera_view = 0
 	var world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	world.set_meta("skip_dispatch",true)
 	root.add_child(world)
 	for frame in 1200:
 		await physics_frame
-		if world.production != null and world.production.ready_for_play: break
-	check(world.production != null and world.production.ready_for_play,"Productive world starts")
+		if world.session != null and world.session.ready_for_play: break
+	check(world.session != null and world.session.ready_for_play,"Productive session finishes location restoration and startup admission")
 	check(world.production.no_save,"Camera integration fixture cannot touch the player's save")
 	if not failures.is_empty(): quit(1); return
 	await frames(3)
@@ -32,10 +36,18 @@ func run() -> void:
 	check(absf(world.camera.target_size-world.camera.WALK_SIZE_CLOSE)<.02,"Productive walking mode uses automatic V1 framing")
 
 	var car = world.driving.car
-	world.player.teleport(car.to_global(Vector3(-(car.half_width+.61),.04,.15)))
-	await frames(2)
-	check(world.driving.interact(),"Board the productive vehicle")
-	await frames(60)
+	var boarded := false
+	for side in car.boarding_sides():
+		var approach: Vector3 = car.driver_door_anchor(side) + car.global_basis.x * float(side) * .35
+		if not world.session.position_clear(approach): continue
+		world.player.teleport(approach)
+		await frames(2)
+		if world.driving._entry_option().get("car") == car and world.driving.interact(): boarded = true; break
+	check(boarded,"Board the productive vehicle through its physical door")
+	for frame in 180:
+		await physics_frame
+		if not world.driving.is_body_transition_active(): break
+	check(boarded and world.driving.occupied and not world.driving.is_body_transition_active(),"Vehicle entry body transition completes before exit")
 	check(world.camera.target==car and world.camera.target_size>=world.camera.WALK_SIZE_CLOSE-.01,"Driving switches target without tightening the adapted walking frame")
 	car.speed=0
 	car.velocity=Vector3.ZERO

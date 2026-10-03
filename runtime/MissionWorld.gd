@@ -17,15 +17,16 @@ var tow_pending_clock := 0.0
 var props: Dictionary = {}
 var aftermath_open := false
 var failure_retry_clock := 0.0
+var street_race: Node3D
+const STREET_COURSE := preload("res://gameplay/urban_v1/CobraRaceCourse.gd")
 
 func _ready() -> void:
 	targets.neco = Vector3(-750,0,550)*UNIT+Vector3(-6,0,8.7)
 	targets.neco_bay = Vector3(-750,0,550)*UNIT+preload("res://world/places/SalvageYardNative.gd").PICKUP
 	targets.ashbend_start = CENTER+Vector3.LEFT*RADIUS
-	targets.ashbend_finish = targets.ashbend_start
+	targets.ashbend_finish = STREET_COURSE.gate(3)
 	for index in 4:
-		var angle := PI+(index+1)*TAU/4
-		targets["ashbend_gate_%d"%index] = CENTER+Vector3(cos(angle),0,sin(angle))*RADIUS
+		targets["ashbend_gate_%d"%index] = STREET_COURSE.gate(index)
 	targets.resident_encounter = targets.ashbend_resident
 	targets.supply_encounter = targets.cobra_supply
 	targets.boss_encounter = targets.ferrugem
@@ -69,6 +70,7 @@ func _clear_encounter() -> void:
 	encounter_id = ""
 
 func cancel_attempt(reason := "cancelled") -> bool:
+	if is_instance_valid(street_race): street_race.stop()
 	_clear_encounter()
 	aftermath_open = false
 	if session.state.campaign.active_id.is_empty(): return false
@@ -159,11 +161,18 @@ func perform(id: String) -> bool:
 		session._button("Entrar na corrida",func():
 			session.close_menu()
 			if not _can_start_race():
-				session.show_message("Pare com o carro junto ao telefone, apontando para o norte.")
+				session.show_message("Pare com um carro ou caminhonete junto ao telefone.")
 				return
 			var car=session.world.driving.car
-			if _event("race_started","ashbend_start",{"race_vehicle_id":car.vehicle_id,"race_position":Vector2(car.position.x,car.position.z)}):
-				session.show_message("Fique parado até JÁ! · 3"))
+			if not is_instance_valid(street_race):
+				street_race=preload("res://gameplay/urban_v1/CobraStreetRace.gd").new()
+				add_child(street_race)
+			if not street_race.prepare(session):
+				session.show_message("A largada está ocupada. Libere a pista e tente novamente.")
+				return
+			if _event("race_started","ashbend_start",{"race_vehicle_id":car.vehicle_id,"race_position":Vector2(car.position.x,car.position.z),"race_course":2}):
+				session.show_message("Seis carros · Vença até as docas! · 3")
+			else: street_race.rollback())
 		session._button("Desligar",session.close_menu)
 		return true
 	if id == "travel":
@@ -244,19 +253,27 @@ func _process(delta: float) -> void:
 		if encounter_id == step.target and _encounter_cleared(): _event(step.event,step.target)
 
 func _tick_race(delta: float) -> void:
-	if get_tree().paused or session.modal or session.vehicle_transition_busy or session.state.campaign.is_suspended() or session.state.campaign.active_id!="cobra_race" or session.state.campaign.step==0: return
+	if session.state.campaign.active_id!="cobra_race" or session.state.campaign.step==0:
+		if is_instance_valid(street_race): street_race.stop()
+		return
+	if get_tree().paused or session.vehicle_transition_busy or session.state.campaign.is_suspended(): return
 	var driving=session.world.driving
 	var valid_car: bool=driving.occupied and is_instance_valid(driving.car)
-	var point: Vector3=driving.car.position if valid_car else session.world.player.position
 	var same_world: bool=session.state.region_id=="harbor" and session.state.place_id.is_empty()
 	if session.state.campaign.step==5 and valid_car and same_world and driving.car.health>0 and driving.car.vehicle_id==session.state.campaign.race_status().get("vehicle_id",""):
 		_finish_race()
 		return
-	var result: Dictionary=session.state.campaign.tick_race(delta,Vector2(point.x,point.z),str(driving.car.vehicle_id) if valid_car and same_world else "",not valid_car or driving.car.health>0)
+	if not is_instance_valid(street_race) or not street_race.running:
+		# Uma corrida salva não pode retomar sem os cinco adversários físicos.
+		session.state.campaign.cancel("race_restart_required")
+		session.state.campaign.begin("cobra_race")
+		return
+	var result: Dictionary=street_race.tick(delta)
 	if result.is_empty(): return
 	var failure: String=result.failure
 	if not failure.is_empty():
-		var messages := {"race_timeout":"O tempo da prova acabou.","race_offtrack":"Você abandonou o trajeto.","race_shortcut":"Você cortou o trajeto. Volte à pista pelo mesmo lugar.","race_false_start":"Queimou a largada. Espere JÁ! na próxima tentativa.","race_vehicle_broken":"Seu carro não pode continuar.","race_vehicle_left":"Você saiu do carro da prova.","race_interrupted":"Percurso interrompido."}
+		street_race.stop()
+		var messages := {"race_timeout":"O tempo da prova acabou.","race_offtrack":"Você abandonou o trajeto.","race_lost":"Outro piloto chegou primeiro.","race_false_start":"Queimou a largada. Espere JÁ! na próxima tentativa.","race_vehicle_broken":"Seu carro não pode continuar.","race_vehicle_left":"Você saiu do carro da prova.","race_interrupted":"Percurso interrompido."}
 		session.show_message(str(messages.get(failure,"Prova interrompida."))+" Tente novamente pelo quadro do Maciota.")
 		session.save_game()
 		return
@@ -271,6 +288,7 @@ func _tick_race(delta: float) -> void:
 
 func _finish_race() -> void:
 	if _event("race_finished","ashbend_finish"):
+		if is_instance_valid(street_race): street_race.stop()
 		session.show_dialogue([{"speaker":"Ferrugem","message":"Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo."}])
 
 func race_phone_position() -> Vector3:
@@ -281,10 +299,11 @@ func race_phone_available() -> bool:
 
 func _can_start_race() -> bool:
 	if not race_phone_available(): return false
+	if not session.activities.motorsport.mode.is_empty(): return false
 	var driving=session.world.driving
 	if not driving.occupied or not is_instance_valid(driving.car) or driving.car.health<=0: return false
 	var car=driving.car
-	return car.position.distance_to(race_phone_position()) <= preload("res://activities/RacePhone.gd").RANGE and car.position.distance_to(targets.ashbend_start)<85.0*UNIT and car.horizontal_velocity.length()<=20.0*UNIT and (-car.global_basis.z).dot(Vector3.FORWARD)>=.65
+	return car.position.distance_to(race_phone_position()) <= preload("res://activities/RacePhone.gd").RANGE and car.horizontal_velocity.length()<=20.0*UNIT and not car.archetype.begins_with("bike_") and car.half_width<1.35 and car.half_length<3.1
 
 func _spawn_near_actors() -> void:
 	for id in ["ferrugem","ashbend_resident","neco"]:

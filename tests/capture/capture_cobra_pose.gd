@@ -29,17 +29,39 @@ func run() -> void:
 			stage.add_child(actor)
 			actor.set_physics_process(false)
 			preload("res://gameplay/urban_v1/CobraAppearance.gd").arms(actor.visual,aiming)
-			var head:=actor.visual.find_child("head_node",true,false) as Node3D
-			var forward: Vector3=-head.global_basis.z.normalized()
-			for side in ["left","right"]:
-				var upper:=actor.visual.find_child(side+"_upper_arm",true,false) as Node3D
-				var lower:=actor.visual.find_child(side+"_lower_arm",true,false) as Node3D
-				var palm:=lower.get_node("Palm") as Node3D
-				check(palm.rotation.is_zero_approx(),"Forearm mesh follows elbow: %d %s %s"%[tier,side,aiming])
-				var hand:=lower.to_global(Vector3(0,-.2,0))
-				check((hand-upper.global_position).dot(forward)>0,"Hands in front of face direction: %d %s %s"%[tier,side,aiming])
-			var weapon:=actor.visual.find_child("WeaponMount",true,false) as Node3D
-			if aiming: check((-weapon.global_basis.z.normalized()).dot(forward)>.97,"Weapon points with face: %d"%tier)
+			var body = actor.visual.body
+			body._pose(0.0)
+			check(body.get_script()==preload("res://assets/CivilianModel.gd"), "Shared pedestrian anatomy: %d"%tier)
+			check(actor.visual.find_children("CobraInsignia*","MeshInstance3D",true,false).size()==2,"Front and back insignia: %d"%tier)
+			var contacts: Array = actor.visual.weapon_hand_contacts()
+			for side in 2:
+				var hand: Vector3 = body.forearms[side].to_global(Vector3(0,-body.KIT.FOREARM-.06,0))
+				if contacts[side] is Vector3:
+					check(hand.distance_to(contacts[side])<.025,"Hand reaches weapon: %d %d %s"%[tier,side,aiming])
+				if not aiming:
+					check(hand.y<body.upper_arms[side].global_position.y-.14,"Resting hand below shoulder: %d %d"%[tier,side])
+			if tier==0 and not aiming: check(contacts[1]==null,"Pistol leaves free arm relaxed")
+			if aiming: check((-actor.visual.weapon.global_basis.z.normalized()).dot(-actor.visual.global_basis.z)>.97,"Weapon points forward: %d"%tier)
+	var car := preload("res://scripts/Vehicle.gd").new()
+	car.archetype = "cobra_v8"
+	car.position = Vector3(10,0,0)
+	stage.add_child(car)
+	car.set_physics_process(false)
+	var cabin: Dictionary = preload("res://gameplay/VehicleInterior.gd").spec(car)
+	for index in 2:
+		var crew := preload("res://gameplay/CobraModel.gd").new()
+		crew.tier = index
+		crew.seated = true
+		crew.position = Vector3(cabin.sx if index==0 else -cabin.sx,cabin.floor,cabin.sz)
+		car.add_child(crew)
+		crew.fit_seat(car,cabin,index==0)
+		var body = crew.body
+		var bounds: AABB = car.global_transform.affine_inverse()*body.head_node.global_transform*body.head_node.mesh.get_aabb()
+		check(bounds.end.y<float(cabin.roof)-.02,"Seated head fits below painted roof: %d"%index)
+		check(car.to_local(body.pelvis.global_position).y>float(cabin.cush),"Seated hip stays above seat cushion: %d"%index)
+		for side in 2:
+			var hand: Vector3 = body.forearms[side].to_global(Vector3(0,-body.KIT.FOREARM-.06,0))
+			check(hand.distance_to(body.hand_targets[side])<.025,"Seated hand reaches wheel or lap: %d %d"%[index,side])
 	var camera:=Camera3D.new()
 	camera.projection=Camera3D.PROJECTION_ORTHOGONAL
 	camera.size=6
@@ -48,6 +70,6 @@ func run() -> void:
 	camera.look_at(Vector3(1.4,.7,-.5))
 	await create_timer(.5).timeout
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png("D:/geteco/artifacts/cobra-neighborhood-1002/pose-corrected.png")
+	root.get_texture().get_image().save_png("D:/geteco/artifacts/cobra-neighborhood-1002/native-pose.png")
 	print("COBRA_POSE failures=",failures.size())
 	quit(0 if failures.is_empty() else 1)

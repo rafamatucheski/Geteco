@@ -7,9 +7,12 @@ class Player extends CharacterBody3D:
 	var input_locked := false
 class Gameplay extends Node3D:
 	signal weapon_fired(id: String, origin: Vector3)
+	signal npc_gunfire(origin: Vector3, direction: Vector3, shooter: Node3D)
+	signal explosion_occurred(origin: Vector3, radius: float, source: Node)
 	var health := 100.0
 	var aim_point := Vector3.ZERO
 	var crimes: Array = []
+	func weapon_data(id: String) -> Dictionary: return preload("res://gameplay/WeaponCatalog.gd").WEAPONS.get(id,{})
 	func register_crime(points: int, position: Vector3): crimes.append({"points":points,"position":position})
 class Room extends Node3D:
 	var vault_amount := 0.0
@@ -30,6 +33,13 @@ func _initialize(): _run.call_deferred()
 func check(value: bool, message: String):
 	checks+=1
 	if not value: failures.append(message)
+func stop_reward_audio() -> void:
+	var pool := root.get_node_or_null("RewardAudioVoices")
+	if pool==null: return
+	for voice in pool.get_children():
+		voice.stop()
+		voice.stream=null
+	pool.free()
 func _run():
 	var default := Heist.defaults()
 	check(Heist.validate_snapshot(default),"Initial heist state valid")
@@ -65,13 +75,13 @@ func _run():
 	check(gameplay.crimes.size()==1,"Repeated shots cannot duplicate bank dispatch")
 	var guard = heist._actors[0]
 	guard.receive_damage(50)
+	check(not guard.dead and guard.health==110,"Guard withstands the old one-hit health budget")
+	guard.receive_damage(110)
 	check(heist.data.keycard_available and heist.data.guards[0]==0,"Defeated actual guard drops keycard")
 	player.position=Vector3(-5,0,.5)
-	check(heist.perform("bank_card"),"Keycard action requires local player")
-	heist._tick_hold(.6,true)
-	check(not heist.data.keycard_taken,"Short press cannot take keycard")
-	heist._tick_hold(.6,true)
-	check(heist.data.keycard_taken,"Holding physically nearby takes keycard")
+	heist._collect_nearby()
+	check(heist.data.keycard_taken,"Walking onto the dropped keycard collects it")
+	check(heist._card.consumed,"Card plays absorption after collection")
 	player.position=Heist.VAULT
 	check(heist.perform("bank_vault"),"Card grants physical lockpick action")
 	heist._tick_hold(.6,true)
@@ -91,18 +101,23 @@ func _run():
 	heist._physics_process(1.5)
 	check(heist.data.vault_open and room.vault_amount==1,"Door unlocks after complete animation")
 	player.position=Heist.LOOT[0]
-	heist.perform("bank_cash0")
-	heist._tick_hold(1.2,true)
-	check(session.state.economy.balance==4000 and heist.data.bank_cash0,"Physical cash hold pays original amount")
-	check(not heist.perform("bank_cash0") and session.state.economy.balance==4000,"Taken pile cannot pay again")
+	heist._collect_nearby()
+	check(session.state.economy.balance==0 and heist.data.bank_pending==5000 and heist.data.bank_cash0,"Physical cash proximity adds R$ 5000 to carried haul")
+	heist._collect_nearby()
+	check(session.state.economy.balance==0 and heist.data.bank_pending==5000 and heist._piles[0].consumed,"Taken pile absorbs and cannot pay again")
 	var roundtrip: Dictionary=JSON.parse_string(JSON.stringify(heist.snapshot()))
 	check(Heist.validate_snapshot(roundtrip) and heist.restore_snapshot(roundtrip),"Heist health loot and timers survive JSON roundtrip")
+	heist.bank_departed()
+	check(session.state.economy.balance==5000 and heist.data.bank_pending==0,"Escaping alive secures carried money")
 	session.state.place_id=""
 	heist._physics_process(.01)
-	check(not heist.can_enter_bank() and heist.data.aftermath=="closed","Leaving robbery closes bank while exit remains usable")
-	heist._physics_process(2399.98)
-	check(not heist.can_enter_bank(),"Bank stays closed before four original days")
-	heist._physics_process(.02)
+	check(heist.can_enter_bank() and heist.data.aftermath=="","Escaping alive preserves access and robbery progress")
+	session.state.place_id="harbor_bank"
+	heist.player_died()
+	session.state.place_id=""
+	heist.aftermath_controller.advance(1.0,true)
+	check(not heist.can_enter_bank(),"Only death followed by one day away closes bank")
+	heist.aftermath_controller.advance(3.0,true)
 	check(heist.can_enter_bank() and heist.data.bank_cycle==1 and not heist.data.bank_cash0,"Bank reopens and resets loot after investigation")
 	session.state.place_id="harbor_fuel"
 	heist._physics_process(.01)
@@ -134,9 +149,9 @@ func _run():
 	heist._tick_cashier(2,true)
 	check(not heist.data.fuel_register,"Cashier requires three continuous seconds of aim")
 	heist._tick_cashier(1,true)
-	check(heist.data.fuel_register and session.state.economy.balance==4180,"Live visible cashier pays original180")
+	check(heist.data.fuel_register and session.state.economy.balance==180,"Live visible cashier pays original180 after bank death penalty")
 	heist._tick_cashier(4,true)
-	check(session.state.economy.balance==4180,"Fuel register reward idempotent")
+	check(session.state.economy.balance==180,"Fuel register reward idempotent")
 	check(gameplay.crimes.size()==1,"Fuel alarm delay does not dispatch immediately")
 	heist._physics_process(30)
 	check(gameplay.crimes.size()==2 and gameplay.crimes[1].points==15,"Fuel dispatch occurs after original30 seconds")
@@ -146,6 +161,11 @@ func _run():
 	room.free()
 	player.free()
 	gameplay.free()
+	stop_reward_audio()
+	# Room detach queues actors and their deferred rig/fall setup; drain that
+	# lifecycle before SceneTree teardown so the fixture does not leak resources.
+	await process_frame
+	await process_frame
 	for message in failures: push_error(message)
 	print("%s robberies: %d checks"%["PASS" if failures.is_empty() else "FAIL",checks])
 	quit(0 if failures.is_empty() else 1)

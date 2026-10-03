@@ -9,12 +9,13 @@ static func feet(board) -> Array[Vector3]:
 	var back := Vector3(.065, MODEL.DECK_HEIGHT, .16)
 	if board.pushing:
 		var phase: float = board.push_phase
+		var direction := -1.0 if board._throttle < 0 else 1.0
 		# Approach, sole contact, backward push, then lift back onto the tail.
-		if phase < .18: back = back.lerp(Vector3(.28, 0, -.20), smoothstep(0, .18, phase))
-		elif phase < .65: back = Vector3(.28, 0, lerpf(-.20, .36, (phase - .18) / .47))
+		if phase < .18: back = back.lerp(Vector3(.28, 0, -.20 * direction), smoothstep(0, .18, phase))
+		elif phase < .65: back = Vector3(.28, 0, lerpf(-.20, .36, (phase - .18) / .47) * direction)
 		else:
 			var t := (phase - .65) / .35
-			back = Vector3(.28, 0, .36).lerp(back, smoothstep(0, 1, t)) + Vector3.UP * sin(t * PI) * .14
+			back = Vector3(.28, 0, .36 * direction).lerp(back, smoothstep(0, 1, t)) + Vector3.UP * sin(t * PI) * .14
 	if board.airborne:
 		var lift := .24 * sin(minf(board.air_time / .6, 1) * PI)
 		front.y += lift

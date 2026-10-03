@@ -15,6 +15,8 @@ extends RefCounted
 ## meio da carroceria em vez da cabine.
 
 const DOORS := {
+	"digo_amarok_2014": {"class":"tall","zf":-1.03,"zr":.17,"sill":.49,"belt":1.23,"top":1.86,"x":.965},
+	"digo_gol_1993": {"zf": -.60, "zr": .62, "sill": .30, "belt": .91, "top": 1.43, "x": .82, "seat_z": .04},
 	# Sedãs da família "clássica": porta dianteira entre o capô e o pilar B.
 	"sedan_classic": {"zf": -.70, "zr": .12, "sill": .42, "belt": .78, "top": 1.36, "x": 0.89},
 	"union_sedan": {"alias": "sedan_classic"},

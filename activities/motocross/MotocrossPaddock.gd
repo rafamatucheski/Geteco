@@ -5,6 +5,7 @@ const BIKE := preload("res://activities/motocross/MotocrossBike.gd")
 var player: Node3D
 var parked_bikes: Array[CharacterBody3D] = []
 var drinkers: Array[Node3D] = []
+var digo: StaticBody3D
 var _materials: Dictionary = {}
 var _batches: Dictionary = {}
 
@@ -18,7 +19,7 @@ var _steps: Array[Callable] = []
 func _ready() -> void:
 	name = "MotocrossPaddock"
 	add_to_group("motocross_paddock")
-	_steps = [_build_hut,_build_seating,_build_tent,func(): _flush(self),_build_parked_bikes]
+	_steps = [_build_hut,_build_seating,_build_tent,func(): _flush(self),_build_parked_bikes,_build_digo]
 	set_process(true)
 
 func _process(_delta: float) -> void:
@@ -29,6 +30,12 @@ func _process(_delta: float) -> void:
 
 func finish_build() -> void:
 	while not _steps.is_empty(): (_steps.pop_front() as Callable).call()
+
+func _build_digo() -> void:
+	digo = preload("res://gameplay/digo/DigoActor.gd").new()
+	digo.position = digo.HOME
+	digo.rotation.y = PI / 3.0
+	add_child(digo)
 
 func _build_hut() -> void:
 	var timber := _finish_material(Color("826044"))

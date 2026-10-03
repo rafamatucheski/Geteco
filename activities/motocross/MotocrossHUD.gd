@@ -17,6 +17,7 @@ var exit_label: Label
 var speed_label: Label
 var state_label: Label
 var message: Label
+var lesson_label: Label
 var integrity: ProgressBar
 var race_card: Panel
 var speed_card: Panel
@@ -40,6 +41,7 @@ var text: String = "":
 		if not is_instance_valid(message): return
 		message.text = value
 		message.visible = not value.is_empty()
+		if is_instance_valid(lesson_label): lesson_label.hide()
 		race_card.hide()
 		speed_card.hide()
 		start_card.hide()
@@ -104,6 +106,15 @@ func _ready() -> void:
 	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	message.add_theme_color_override("font_shadow_color",Color.BLACK)
 	message.add_theme_constant_override("shadow_offset_y",2)
+	lesson_label = _label(self,"",Vector2.ZERO,21)
+	lesson_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	lesson_label.offset_left = -335; lesson_label.offset_right = 335
+	lesson_label.offset_top = -112; lesson_label.offset_bottom = -40
+	lesson_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lesson_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lesson_label.add_theme_color_override("font_shadow_color",Color.BLACK)
+	lesson_label.add_theme_constant_override("shadow_offset_y",2)
+	lesson_label.hide()
 	_build_results_card()
 	race_card.hide(); speed_card.hide(); start_card.hide(); message.hide(); results_card.hide()
 	set_process(false)

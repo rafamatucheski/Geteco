@@ -35,9 +35,11 @@ func build(kind: String, width: float, depth: float, variant: int) -> void:
 		"ship_cargo": _ship_cargo(width,depth)
 		"crane": _crane(width,depth)
 	solid_floor_bounds = preload("res://assets/regions/source/systems/interiors/InteriorSolidProjection.gd").mesh_bounds(self)
-	mesh_stats = preload("res://assets/regions/source/prototypes/harbor_art_pack/PortMeshOptimizer.gd").optimize_hierarchy(self)
+	# These authored box families finalize their normals before the first upload.
+	var cpu_normals := kind in ["office", "loose_cargo", "floodlight"]
+	mesh_stats = preload("res://assets/regions/source/prototypes/harbor_art_pack/PortMeshOptimizer.gd").optimize_hierarchy(self, true, cpu_normals)
 	# Recompute face normals after the container's nonuniform scale and rotation.
-	for batch in get_node("BatchedStaticGeometry").get_children():
+	for batch in ([] if cpu_normals else get_node("BatchedStaticGeometry").get_children()):
 		var surface := SurfaceTool.new()
 		surface.create_from(batch.mesh,0)
 		surface.generate_normals()

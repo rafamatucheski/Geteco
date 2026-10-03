@@ -1,6 +1,7 @@
 extends RefCounted
 ## Local cash register and consumables. Wallet receipts prevent replaying
 ## rewards or purchases when older village state is restored alongside a wallet.
+const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 const DRINK_PRICE := 20
 const DRINK_HEAL := 25
 const REGISTER_CASH := 180
@@ -69,16 +70,13 @@ func restore_snapshot(saved: Dictionary) -> bool:
 
 func reconcile() -> void:
 	if quest == null or quest.session == null: return
-	var transactions: Dictionary = quest.session.state.economy.snapshot().transactions
-	for receipt in transactions:
-		if str(receipt).begins_with("spend:tonico_drink_"):
-			data.drink_serial = maxi(int(data.drink_serial),str(receipt).trim_prefix("spend:tonico_drink_").to_int())
-		elif str(receipt).begins_with("reward:tonico_register_"):
-			var serial := str(receipt).trim_prefix("reward:tonico_register_").to_int()
-			if serial > data.robbery_serial:
-				data.robbery_serial = serial
-				data.register_cooldown = REGISTER_COOLDOWN
-				data.hostility = HOSTILITY_SECONDS
+	var wallet: Dictionary = quest.session.state.economy.snapshot()
+	data.drink_serial=maxi(int(data.drink_serial),RECEIPTS.highest_serial(wallet,"tonico_drink"))
+	var serial := RECEIPTS.highest_serial(wallet,"tonico_register")
+	if serial>int(data.robbery_serial):
+		data.robbery_serial=serial
+		data.register_cooldown=REGISTER_COOLDOWN
+		data.hostility=HOSTILITY_SECONDS
 
 static func validate_snapshot(saved: Dictionary) -> bool:
 	if saved.get("version") != 1: return false

@@ -180,8 +180,8 @@ func _outfit_details() -> void:
 		var glyph := GLYPH.new("cold",STYLE.COLD if i<level else STYLE.DISABLED); protection.add_child(glyph)
 	var equipped: bool=adapter.economy().outfit==selected_outfit
 	_button(details,"Equipada" if equipped else "Equipar",func():
-		if adapter.economy().equip_outfit(selected_outfit):
-			adapter.session.apply_outfit(); adapter.session.save_game(); refresh(),equipped)
+		if preload("res://runtime/OutfitDisguise.gd").equip(adapter.session, selected_outfit):
+			adapter.session.save_game(); refresh(),equipped)
 	_layout.call_deferred(); STYLE.trap_focus.call_deferred(card,false)
 	screen_scroll.ensure_control_visible.call_deferred(details)
 func say(text: String) -> void:

@@ -290,6 +290,7 @@ static func _open_glass(vehicle: Node3D) -> void:
 ## Última montagem por etapa (ms), só para medição.
 static var profile: Dictionary = {}
 static var _warmed: Dictionary = {}
+static var _warming: Dictionary = {} # Family -> owner instance_id; no persistent Node references.
 
 ## Abre apenas os vidros para mostrar o motorista. O teto conserva a malha e a pintura
 ## opacas do modelo, inclusive após entrar, repintar ou mudar a câmera. Idempotente.
@@ -324,21 +325,31 @@ static func attach(vehicle: Node3D) -> void:
 		if str(vehicle.get("archetype")) == "port_forklift": _hide_forklift_console(visual)
 	open_view(vehicle)
 
-## Prepara, quadro a quadro, o que custa caro na primeira vez de cada arquétipo (medida da
-## cabine, malha do interior e variantes de material do vidro): chame quando o jogador chega
-## perto do veículo, para o custo cair
-## enquanto ele anda e não na abertura da porta. Só enche caches; não muda a cena.
+## Prepara quadro a quadro a medida, malha e variantes de vidro de cada arquétipo.
+## Instâncias temporárias fora da vista preparam recursos de superfície; não garantem
+## o pipeline de desenho da primeira exibição. Família só fica concluída após terminar.
 static func prewarm(vehicle: Node3D) -> void:
+	if not is_instance_valid(vehicle) or not vehicle.is_inside_tree() or not shows_driver(vehicle): return
 	var id := str(vehicle.get("archetype"))
-	if _warmed.has(id) or not shows_driver(vehicle) or not vehicle.is_inside_tree(): return
-	_warmed[id] = true
+	if _warmed.has(id): return
+	var pending_id := int(_warming.get(id, 0))
+	if pending_id != 0 and is_instance_id_valid(pending_id):
+		var pending := instance_from_id(pending_id) as Node3D
+		if pending != null and pending.is_inside_tree(): return
+	# Sem fila de waiters: duplicatas retornam cedo; se o dono sumiu, um pedido
+	# novo retoma os caches parciais. O token impede a tarefa antiga de apagá-lo.
+	var request_id := vehicle.get_instance_id()
+	_warming[id] = request_id
 	var tree := vehicle.get_tree()
 	var s := spec(vehicle)
 	if s.is_empty():
-		_warmed.erase(id)
+		_finish_warming(id, request_id, false)
 		return
 	await tree.process_frame
-	if not is_instance_valid(vehicle) or not vehicle.is_inside_tree(): return
+	if int(_warming.get(id, 0)) != request_id: return
+	if not is_instance_valid(vehicle) or not vehicle.is_inside_tree():
+		_finish_warming(id, request_id, false)
+		return
 	mesh_for(id, s)
 	var warm: Array = []
 	for part in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
@@ -350,13 +361,18 @@ static func prewarm(vehicle: Node3D) -> void:
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
 			if material is StandardMaterial3D and _is_glass(part, surface, material): warm.append([mesh, see_through(material)])
-	await _warm_materials(vehicle, warm)
+	var completed := await _warm_materials(vehicle, warm)
+	_finish_warming(id, request_id, completed)
 
-## O Godot só monta o sombreador e o pipeline de um material na primeira vez que uma instância
-## o veste numa malha (medido: 21–26 ms no primeiro vidro/teto translúcido de cada tipo). Uma
-## instância descartável por variante, com a malha real, longe da vista e por dois quadros, paga
-## isso enquanto o jogador anda.
-static func _warm_materials(vehicle: Node3D, entries: Array) -> void:
+static func _finish_warming(id: String, request_id: int, completed: bool) -> void:
+	if int(_warming.get(id, 0)) != request_id: return
+	if completed: _warmed[id] = true
+	_warming.erase(id)
+
+## Associa variantes às malhas reais por dois quadros para preparar recursos.
+## As instâncias ficam fora da vista; a primeira exibição ainda pode compilar Draw.
+## Cancelamento remove os temporários e permite que outro veículo tente novamente.
+static func _warm_materials(vehicle: Node3D, entries: Array) -> bool:
 	var tree := vehicle.get_tree()
 	var nodes: Array[MeshInstance3D] = []
 	for entry in entries:
@@ -364,15 +380,19 @@ static func _warm_materials(vehicle: Node3D, entries: Array) -> void:
 		node.name = "WarmUp"
 		node.mesh = entry[0]
 		node.material_override = entry[1]
-		# Longe da vista (o custo é montar sombreador e pipeline, não desenhar).
 		node.position = Vector3(0, -300, 0)
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		vehicle.visual.add_child(node)
+		vehicle.visual.add_child(node, true)
 		nodes.append(node)
-	await tree.process_frame
-	await tree.process_frame
+	var completed := true
+	for frame in 2:
+		await tree.process_frame
+		if not is_instance_valid(vehicle) or not vehicle.is_inside_tree():
+			completed = false
+			break
 	for node in nodes:
 		if is_instance_valid(node): node.queue_free()
+	return completed
 
 ## Devolve o teto ao casco (explosão do veículo). O vidro fica: o dano já o estoura.
 static func close_view(vehicle: Node3D) -> void:
@@ -526,7 +546,7 @@ static func _open_roof(vehicle: Node3D, s: Dictionary) -> void:
 				var tinted := _roof_variant(vehicle, material)
 				roof.material_override = tinted
 				roof.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				part.get_parent().add_child(roof)
+				part.get_parent().add_child(roof, true)
 				view.parts.append([part, mesh])
 				view.roofs.append(roof)
 				part.mesh = cut.body
@@ -621,6 +641,20 @@ static func _interior_material() -> StandardMaterial3D:
 static var _alpha_tool: SurfaceTool
 static var _alpha_material: StandardMaterial3D
 
+static func _interior_alpha_material() -> StandardMaterial3D:
+	if _alpha_material == null:
+		_alpha_material = _interior_material().duplicate() as StandardMaterial3D
+		_alpha_material.resource_name = "interior_alpha"
+		_alpha_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	return _alpha_material
+
+## Submit the same shared shaders used by mesh_for before gameplay starts.
+## Does not mark any vehicle family warmed or create its geometry.
+static func prepare_shared_materials() -> void:
+	if not enabled: return
+	_interior_material().get_rid()
+	_interior_alpha_material().get_rid()
+
 static func mesh_for(id: String, s: Dictionary) -> ArrayMesh:
 	if _meshes.has(id): return _meshes[id]
 	var t := SurfaceTool.new()
@@ -642,11 +676,7 @@ static func mesh_for(id: String, s: Dictionary) -> ArrayMesh:
 		_alpha_tool.generate_normals()
 		_alpha_tool.commit(mesh)
 		if mesh.get_surface_count() > 1:
-			if _alpha_material == null:
-				_alpha_material = _interior_material().duplicate() as StandardMaterial3D
-				_alpha_material.resource_name = "interior_alpha"
-				_alpha_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			mesh.surface_set_material(1, _alpha_material)
+			mesh.surface_set_material(1, _interior_alpha_material())
 	_alpha_tool = null
 	_meshes[id] = mesh
 	return mesh

@@ -55,11 +55,20 @@ func run():
 	skate._update_population()
 	check(skate.ambient.size() == 3 and row.board.riding, "population refresh outside park preserves active riders")
 	row.board.bail(0)
+	check(row.board.former_rider.get_ref() == row.actor, "fallen board remembers its living owner")
+	skate._escape(row.actor)
 	for i in 150:
 		await physics_frame
 		skate._update_fallen(1.0 / 60)
 	check(is_instance_valid(row.actor) and not row.actor.dead and row.actor.is_physics_processing() and not row.actor.input_locked, "living fallen rider recovers walking control")
 	check(not row.actor.has_meta("destroyed_cleanup"), "nonfatal fall never schedules corpse disposal")
+	var escape_start: Vector3 = row.actor.position
+	for i in 90:
+		await physics_frame
+		skate._update_escaping(1.0 / 60)
+	check(row.actor.position.distance_to(escape_start) > 3 and row.actor.speed > 4, "robbed owner runs away after recovering")
+	skate._update_escaping(6)
+	check(is_equal_approx(row.actor.speed, 1.6) and skate._escaping.is_empty(), "escape releases normal walking speed")
 	street.player.position += Vector3(200, 0, 200)
 	skate._update_population()
 	check(skate.ambient.is_empty(), "distant riders release their boards")

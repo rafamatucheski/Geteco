@@ -126,7 +126,7 @@ func run() -> void:
 			var clerk = clerks[i]
 			var response: Node = clerk.get_node_or_null("WorkplaceThreatReaction")
 			check(response != null and response.active and response.body.hand_provider.is_valid(), "bank clerk %d visibly protects head" % i)
-			check(clerk.health == 80 and clerk.global_position.distance_to(homes[i]) <= REACTION.RETREAT_DISTANCE + .1, "bank clerk %d keeps health and remains within bounded retreat" % i)
+			check(clerk.health == 100 and clerk.global_position.distance_to(homes[i]) <= REACTION.RETREAT_DISTANCE + .1, "bank clerk %d keeps health and remains within bounded retreat" % i)
 		await frames(300)
 		for i in clerks.size():
 			check(not clerks[i].get_meta("workplace_threatened", false) and clerks[i].global_position.distance_to(homes[i]) < .08, "bank clerk %d physically returns to the counter" % i)

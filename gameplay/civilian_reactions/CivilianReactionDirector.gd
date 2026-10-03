@@ -205,6 +205,10 @@ func _reactive(person: Variant, allow_ours := false) -> bool:
 	if person.get("dead") == true or person.get("is_player") == true: return false
 	if person.get_meta("gameplay_role", "") != "civilian" or person.is_in_group("v1_routine_actor"): return false
 	if person.get_meta("interior_actor", false) or person.get_meta("reaction_exempt", false): return false
+	# Moradores da vila e outros atores de rotina têm dono de movimento próprio.
+	# O diretor só pode assumir atores que implementam todos os ganchos de Actor.
+	if not person.get("controlled_automatically") is bool or not person.get("automatic_direction") is Vector3: return false
+	if typeof(person.get("speed")) not in [TYPE_INT, TYPE_FLOAT]: return false
 	if person.get("controlled_automatically") == true and not (allow_ours and reactors.has(person.get_instance_id())): return false
 	return true
 
@@ -216,8 +220,12 @@ func _response(person: CharacterBody3D, source: Variant) -> String:
 	if not is_instance_valid(source) or gameplay == null or source != gameplay.get("player"):
 		return "panic"
 	if gameplay.get("health") <= 0 or not gameplay.attack_allowed(): return "panic"
+	# Atores especiais podem compartilhar a lista de civis sem possuir identity.
+	# Só uma identidade inteira autorada define confronto; os demais fogem.
+	var identity: Variant = person.get("identity")
+	if not identity is int: return "panic"
 	var distance := person.global_position.distance_to(source.global_position)
-	var temperament := posmod(int(person.get("identity")), 20)
+	var temperament := posmod(int(identity), 20)
 	if temperament >= 18 and distance <= RESPONSE_LIMIT and person.get("health") > 35.0: return "armed"
 	if temperament >= 15 and distance <= 8.0 and person.get("health") > 45.0: return "melee"
 	if temperament >= 11 and distance <= HEARING_RADIUS: return "call"

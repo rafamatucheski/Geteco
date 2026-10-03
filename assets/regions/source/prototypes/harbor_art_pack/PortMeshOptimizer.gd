@@ -5,7 +5,7 @@ extends RefCounted
 ## o mesmo StandardMaterial3D e combina suas geometrias em um único ArrayMesh por material
 ## via SurfaceTool, preservando transformações relativas e AABBs.
 
-static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = true) -> Dictionary:
+static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = true, rebuild_hard_edge_normals: bool = false) -> Dictionary:
 	var collected_items: Array[Dictionary] = []
 	_collect_meshes_recursive(root_node, root_node, Transform3D.IDENTITY, collected_items)
 
@@ -55,7 +55,7 @@ static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = t
 			var xform: Transform3D = entry["transform"]
 			st.append_from(mesh, 0, xform)
 
-		var committed_mesh: ArrayMesh = st.commit()
+		var committed_mesh: ArrayMesh = _commit_hard_edges(st) if rebuild_hard_edge_normals else st.commit()
 		if committed_mesh and committed_mesh.get_surface_count() > 0:
 			var batch_mi := MeshInstance3D.new()
 			batch_mi.name = "Batch_" + str(key)
@@ -72,6 +72,31 @@ static func optimize_hierarchy(root_node: Node3D, remove_source_meshes: bool = t
 		"unique_materials": material_groups.size(),
 		"reduction_percent": reduction
 	}
+
+
+## Finalize normals while the batch is still in CPU arrays. This is the same
+## indexed-neighbour pass used by HarborPortModel3D after its intermediate meshes.
+## Opt-in: ordinary batching consumers preserve their existing normals.
+static func _commit_hard_edges(surface: SurfaceTool) -> ArrayMesh:
+	surface.generate_normals()
+	var arrays := surface.commit_to_arrays()
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var reference: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var normals := PackedVector3Array()
+	normals.resize(vertices.size())
+	for i in range(0, indices.size(), 3):
+		var a := indices[i]
+		var b := indices[i + 1]
+		var c := indices[i + 2]
+		var normal := (vertices[b] - vertices[a]).cross(vertices[c] - vertices[a]).normalized()
+		if normal.dot(reference[a] + reference[b] + reference[c]) < 0: normal = -normal
+		for index in [a, b, c]: normals[index] += normal
+	for i in normals.size(): normals[i] = normals[i].normalized()
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 static func _collect_meshes_recursive(current: Node, root: Node3D, current_xform: Transform3D, out_list: Array[Dictionary]) -> void:
 	var next_xform := current_xform

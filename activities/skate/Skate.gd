@@ -14,6 +14,7 @@ var parked: CharacterBody3D
 var boards: Array[CharacterBody3D] = []
 var ambient: Array[Dictionary] = []
 var _fallen: Array[Dictionary] = []
+var _escaping: Array[Dictionary] = []
 var _park_people: Array[WeakRef] = []
 var hud: Label
 var _clock := 0.0
@@ -104,6 +105,10 @@ func mount(board: CharacterBody3D) -> bool:
 	board.collision_layer = 4
 	board.collision_mask = 7
 	board._grace = .6
+	if board.former_rider != null:
+		var previous = board.former_rider.get_ref()
+		if is_instance_valid(previous) and not previous.dead: _escape(previous)
+		board.former_rider = null
 	board.bailed.connect(_player_bailed)
 	board.trick_landed.connect(_landed)
 	session.world.camera.target = board
@@ -144,7 +149,7 @@ func _release_board() -> void:
 
 func dismount() -> bool:
 	if not mounted or not is_instance_valid(player_board): return false
-	if player_board.airborne or player_board.speed > 1.2:
+	if player_board.airborne or absf(player_board.speed) > 1.2:
 		session.show_message("Freie para descer do skate.")
 		return false
 	for side in [-1, 1]:
@@ -222,21 +227,24 @@ func _physics_process(delta: float) -> void:
 			player_board.drive(0, 0, true)
 		else:
 			var controls = get_node("/root/GameInput")
-			var throttle := maxf(Input.get_action_strength("move_up"), Input.get_action_strength("accelerate"))
+			var ahead := maxf(Input.get_action_strength("move_up"), Input.get_action_strength("accelerate"))
+			var behind := maxf(Input.get_action_strength("move_down"), Input.get_action_strength("brake"))
+			var throttle := ahead - behind
 			var steer := Input.get_axis("move_right", "move_left")
 			if not controls.touch_move.is_zero_approx():
-				throttle = maxf(0, -controls.touch_move.y)
+				throttle = -controls.touch_move.y
 				steer = -controls.touch_move.x
-			player_board.drive(throttle, steer, Input.is_action_pressed("move_down") or Input.is_action_pressed("brake") or controls.touch_move.y > .2)
+			player_board.drive(throttle, steer, ahead > .1 and behind > .1)
 		session.world.player.position = player_board.position
 		POSE.apply(session.world.player, player_board)
-		hud.text = "%d km/h · %d pts · recorde %d\nW remar · S frear · Espaço ollie · Q flip · R shove-it · E descer" % [roundi(player_board.speed * 3.6), score, best]
+		hud.text = "%d km/h · %d pts · recorde %d\nW remar · S frear/ré · Espaço ollie · Q flip · R shove-it · E descer" % [roundi(absf(player_board.speed) * 3.6), score, best]
 	_clock += delta
 	if _clock >= 1:
 		_clock = 0
 		_update_population()
 	_update_ambient(delta)
 	_update_fallen(delta)
+	_update_escaping(delta)
 
 func _update_population() -> void:
 	boards = boards.filter(func(b): return is_instance_valid(b) and not b.is_queued_for_deletion())
@@ -274,7 +282,7 @@ func _update_population() -> void:
 	street_count += _fallen.size()
 	if street_count < 3:
 		for actor in session.world.people:
-			if not is_instance_valid(actor) or actor.dead or actor.health < 100 or actor.route.size() < 2 or actor.input_locked or not actor.is_physics_processing(): continue
+			if not is_instance_valid(actor) or actor.dead or actor.health < 100 or actor.route.size() < 2 or actor.input_locked or actor.controlled_automatically or not actor.is_physics_processing(): continue
 			if actor.identity % 5 != 0 or actor.position.distance_to(p) > 85 or not actor.is_on_floor(): continue
 			if actor.has_meta("skate_used"): continue
 			actor.set_meta("skate_used", true)
@@ -298,7 +306,12 @@ func _attach_ambient(actor, board, park: bool) -> void:
 	board.collision_mask = 7
 	board.bailed.connect(func(damage): _ambient_bail(actor, board, damage))
 	var route: PackedVector3Array = actor.route
-	if park: route = _park_route()
+	if park:
+		route = _park_route()
+		# The board owns the bowl circuit. The pedestrian needs an independent
+		# walking exit if they lose the board, instead of an empty route.
+		actor.route = PackedVector3Array([LAYOUT.ENTRY, LAYOUT.ENTRY + Vector3(0, 0, 2)])
+		actor.waypoint = 0
 	var waypoint: int = int(actor.waypoint) % route.size()
 	if park: waypoint = 1
 	if park and actor.identity % 2 == 1: waypoint = 13
@@ -342,6 +355,7 @@ func _ambient_bail(actor, board, damage: float) -> void:
 		if row.board != board: continue
 		ambient.erase(row)
 		board.rider = null
+		if is_instance_valid(actor): board.former_rider = weakref(actor)
 		if is_instance_valid(actor):
 			if not actor.dead:
 				POSE.restore(actor)
@@ -373,6 +387,33 @@ func _update_fallen(delta: float) -> void:
 			actor.set_physics_process(true)
 			_fallen.erase(row)
 
+func _escape(actor) -> void:
+	if actor.controlled_automatically: return # Existing panic owns this actor.
+	for row in _escaping:
+		if row.ref.get_ref() == actor: return
+	var farthest := -INF
+	for i in actor.route.size():
+		var distance: float = actor.route[i].distance_squared_to(session.world.player.position)
+		if distance > farthest:
+			farthest = distance
+			actor.waypoint = i
+	_escaping.append({"ref": weakref(actor), "speed": actor.speed, "left": 6.0})
+	actor.speed = 4.6
+
+func _update_escaping(delta: float) -> void:
+	if session.modal: return
+	for row in _escaping.duplicate():
+		var actor = row.ref.get_ref()
+		if not is_instance_valid(actor) or actor.dead:
+			_escaping.erase(row)
+			continue
+		# Recovery owns the capsule first; running begins when the rider stands.
+		if actor.input_locked: continue
+		row.left -= delta
+		if row.left <= 0 or actor.controlled_automatically:
+			if is_equal_approx(actor.speed, 4.6): actor.speed = row.speed
+			_escaping.erase(row)
+
 func _retire_ambient(row: Dictionary) -> void:
 	if is_instance_valid(row.actor):
 		if row.park: row.actor.queue_free()
@@ -386,6 +427,10 @@ func _retire_ambient(row: Dictionary) -> void:
 	ambient.erase(row)
 
 func _clear_ambient() -> void:
+	for row in _escaping:
+		var actor = row.ref.get_ref()
+		if is_instance_valid(actor) and is_equal_approx(actor.speed, 4.6): actor.speed = row.speed
+	_escaping.clear()
 	for row in ambient.duplicate():
 		_retire_ambient(row)
 	for row in _fallen:

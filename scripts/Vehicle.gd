@@ -28,10 +28,13 @@ var vehicle_id := "":
 		vehicle_id = value
 		if is_instance_valid(visual) and _paint != null:
 			preload("res://runtime/VehicleUsage.gd").apply(visual, archetype, value, _paint.materials)
+			preload("res://gameplay/icecream/IceCreamVan.gd").attach(self)
 		if is_instance_valid(visual) and visual.has_node("TaxiLivery"):
 			visual.get_node("TaxiLivery").registration(value)
 		if value.begins_with("cobra_patrol_") and is_instance_valid(visual):
 			preload("res://gameplay/urban_v1/CobraAppearance.gd").livery(self)
+		elif value.begins_with("cobra_racer_") and is_instance_valid(visual):
+			preload("res://gameplay/urban_v1/CobraAppearance.gd").race_livery(self)
 var health := 180.0
 var horizontal_velocity := Vector3.ZERO
 var damage_look: Node
@@ -92,6 +95,8 @@ var junction_gap := INF
 var _junction_route: Curve3D
 var _junction_list: Array = []
 var _held_junction: Variant = null
+# Previous crossings whose physical footprint is still occupied by this vehicle.
+var _clearing_junctions: Array[Vector3i] = []
 var _held_offset := 0.0
 var sensor_clock := 0.0
 ## Tempo travado por obstáculo que não é sinal/PARE. A fila herda o do carro da frente,
@@ -169,6 +174,8 @@ func _ready() -> void:
 	add_child(visual)
 	if vehicle_id.begins_with("cobra_patrol_"):
 		preload("res://gameplay/urban_v1/CobraAppearance.gd").livery(self)
+	elif vehicle_id.begins_with("cobra_racer_"):
+		preload("res://gameplay/urban_v1/CobraAppearance.gd").race_livery(self)
 	_bind_motorcycle_rider()
 	_paint = preload("res://runtime/VehiclePaint.gd").new()
 	_paint.bind(visual,archetype)
@@ -226,6 +233,8 @@ func _ready() -> void:
 		var cannon_controls := preload("res://gameplay/police_response/ground/TankDriverControls.gd").new()
 		cannon_controls.configure(self)
 		add_child(cannon_controls)
+
+	preload("res://gameplay/icecream/IceCreamVan.gd").attach(self)
 
 func set_external_driver(active: bool) -> void:
 	external_input = active
@@ -342,6 +351,8 @@ func _physics_process(delta: float) -> void:
 	STALL_WORK.finish_slow("vehicle.physics", began, 10000, self)
 
 func _stall_physics_tick(delta: float) -> void:
+	# Also clean during backoff, player control and resting; no geometry work when empty.
+	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
 	var stage := STALL_WORK.begin()
 	var removed := health <= 0.0 and _tick_wreck(delta)
 	STALL_WORK.finish_slow("vehicle.wreck_lifetime", stage, 5000, self)
@@ -588,23 +599,54 @@ func _route_ahead(offset: float, length: float, open: bool) -> float:
 	if open: return offset-route_distance
 	return fposmod(offset-route_distance+length*.5,length)-length*.5
 
-func _release_junction() -> void:
+## Physical bodies that can keep an expired junction lease occupied.
+func junction_collision_bodies() -> Array[CharacterBody3D]:
+	return [self]
+
+func _release_current_junction() -> void:
 	if _held_junction != null: JUNCTIONS.release(_held_junction,get_instance_id())
 	_held_junction = null
+
+# Explicit resets and scene exit release every token, including the trailing hull.
+func _release_junction() -> void:
+	_release_current_junction()
+	for key in _clearing_junctions: JUNCTIONS.release(key, get_instance_id())
+	_clearing_junctions.clear()
+
+func _retain_current_junction() -> void:
+	if _held_junction == null: return
+	if JUNCTIONS.has_reservation(_held_junction, get_instance_id()) and JUNCTIONS.occupies(_held_junction, get_instance_id()):
+		if not _clearing_junctions.has(_held_junction): _clearing_junctions.append(_held_junction)
+	else:
+		JUNCTIONS.release(_held_junction, get_instance_id())
+	_held_junction = null
+
+func _clear_departed_junctions() -> void:
+	for index in range(_clearing_junctions.size() - 1, -1, -1):
+		var key := _clearing_junctions[index]
+		if JUNCTIONS.has_reservation(key, get_instance_id()) and JUNCTIONS.occupies(key, get_instance_id()): continue
+		JUNCTIONS.release(key, get_instance_id())
+		_clearing_junctions.remove_at(index)
 
 ## Cruzamento à frente (TrafficJunctions): true = parar na faixa. `junction_gap` fica
 ## com a distância da frente do carro até a faixa, para frear de forma progressiva.
 func _junction_gate(length: float, open: bool) -> bool:
 	junction_gap = INF
 	if route != _junction_route:
-		_release_junction()
+		_retain_current_junction()
 		_junction_route = route
 		_junction_list = JUNCTIONS.along(route)
-	if _held_junction != null and _route_ahead(_held_offset,length,open) < -JUNCTIONS.EXIT: _release_junction()
+	if _held_junction != null:
+		if not JUNCTIONS.has_reservation(_held_junction, get_instance_id()):
+			_held_junction = null
+		elif _route_ahead(_held_offset,length,open) < -JUNCTIONS.EXIT and not JUNCTIONS.occupies(_held_junction, get_instance_id()):
+			_release_current_junction()
 	for junction in _junction_list:
 		var offset := float(junction.offset)
 		var ahead := _route_ahead(offset,length,open)
-		if ahead <= -JUNCTIONS.EXIT or ahead > float(junction.get("approach_distance",JUNCTIONS.APPROACH)): continue
+		if ahead <= -(JUNCTIONS.EXIT + half_length) or ahead > float(junction.get("approach_distance",JUNCTIONS.APPROACH)): continue
+		# A previous occupied crossing must not replace the newer approach token.
+		if _clearing_junctions.has(junction.key): continue
 		if _held_junction == junction.key:
 			if ahead <= 0.0: continue
 			return false
@@ -626,7 +668,7 @@ func _junction_gate(length: float, open: bool) -> bool:
 			return true
 		_exit_wait = 0.0
 		if JUNCTIONS.request(junction.key,get_instance_id(),heading,gap,absf(speed)):
-			_release_junction()
+			_retain_current_junction()
 			_held_junction = junction.key
 			_held_offset = offset
 			return false

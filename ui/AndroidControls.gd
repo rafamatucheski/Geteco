@@ -17,6 +17,8 @@ var extra := false
 var _context := ""
 var _layout_extra := false
 var _safe := Rect2()
+var compact := false
+const STICK_DEADZONE := 0.12
 
 func _ready() -> void:
 	name = "AndroidControls"
@@ -72,11 +74,16 @@ func _refresh() -> void:
 	motocross = on_bike
 	skating = on_skate
 	_safe = safe
-	unit = minf(safe.size.x / 1280.0, safe.size.y / 720.0)
+	# Fold cover/portrait and near-square inner displays need larger thumb targets.
+	compact = safe.size.x < safe.size.y * 1.4
+	unit = minf(safe.size.x / 720.0, safe.size.y / 900.0) if compact else minf(safe.size.x / 1280.0, safe.size.y / 720.0)
 	radius = 76.0 * unit
 	buttons.clear()
 	move_center = safe.position + Vector2(145 * unit, safe.size.y - 140 * unit)
 	aim_center = safe.end - Vector2(145, 140) * unit
+	if compact:
+		move_center = safe.position + Vector2(110 * unit, safe.size.y - 125 * unit)
+		aim_center = safe.end - Vector2(110, 125) * unit
 	var top := safe.position + Vector2(safe.size.x * 0.5, 34 * unit)
 	if not active:
 		if session.modal or paused or lockpick or bank_lock:
@@ -121,7 +128,7 @@ func _refresh() -> void:
 			_button("radio_next", "Rádio ›", top + Vector2(120, 72) * unit, Vector2(112, 58))
 	else:
 		if can_fight:
-			_button("fire", "Atacar", aim_center - Vector2(160, 0) * unit, Vector2(116, 82))
+			_button("fire", "Atacar", aim_center - (Vector2(0, 210) if compact else Vector2(160, 0)) * unit, Vector2(116, 82))
 			_button("reload", "Recarregar", aim_center - Vector2(152, 112) * unit, Vector2(130, 60))
 			_button("weapon_next", "Arma", aim_center - Vector2(0, 132) * unit, Vector2(110, 60))
 	if extra:
@@ -130,8 +137,10 @@ func _refresh() -> void:
 		else: actions.append_array([["unarmed", "Guardar"], ["weapon_flashlight", "Lanterna"], ["surrender", "Render-se"]])
 		for i in actions.size():
 			# Whole-number grouping/index; preserve integer truncation and precision.
+			var columns := 3 if compact else 5
 			@warning_ignore("integer_division")
-			_button(actions[i][0], actions[i][1], top + Vector2((i % 5 - 2) * 120, (144 if driving else 72) + (i / 5) * 66) * unit, Vector2(112, 58))
+			var row: int = i / columns
+			_button(actions[i][0], actions[i][1], top + Vector2((i % columns - (columns - 1) * .5) * 120, (144 if driving else 72) + row * 66) * unit, Vector2(112, 58))
 	for index in fingers.keys():
 		if not str(fingers[index]).ends_with("_stick") and not buttons.has(fingers[index]): _release(index)
 	queue_redraw()
@@ -175,16 +184,20 @@ func _input(event: InputEvent) -> void:
 func _drag(index: int, point: Vector2) -> void:
 	var action: String = fingers[index]
 	if action == "move_stick":
-		var vector := ((point - move_center) / radius).limit_length()
+		var vector := _stick_vector(point, move_center)
 		controls.touch_move = Vector2(vector.x, 0) if driving and not motocross else vector
 		# Inner travel walks; outer travel runs with the same thumb. Hysteresis
 		# prevents walk/run flicker near the boundary while aiming with the other hand.
 		controls.touch_sprint = not driving and vector.length() >= (.72 if controls.touch_sprint else .85)
 	elif action == "aim_stick":
-		controls.touch_aim = ((point - aim_center) / radius).limit_length()
+		controls.touch_aim = _stick_vector(point, aim_center)
 		if not controls.touch_aim.is_zero_approx(): controls.aim_direction = controls.touch_aim.normalized()
 		if not Input.is_action_pressed("aim"): _send("aim", true)
 	queue_redraw()
+
+func _stick_vector(point: Vector2, center: Vector2) -> Vector2:
+	var vector := ((point - center) / radius).limit_length()
+	return Vector2.ZERO if vector.length() < STICK_DEADZONE else vector
 
 func _release(index: int) -> void:
 	var action: String = fingers[index]

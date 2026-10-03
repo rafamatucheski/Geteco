@@ -24,6 +24,9 @@ static func _cancel_hit(actor: Node3D) -> void:
 
 static func apply_hit(actor: Node3D, visual: Node3D, impact: Vector3, amount: float) -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(visual): return
+	# BodyFlight owns flight, prone and recovery poses. The shorter pose-owned
+	# marker is released at landing so the independent death fall stays available.
+	if actor.has_meta("street_pose_owned") or actor.has_meta("street_down"): return
 	_cancel_hit(actor)
 	var strength_hit := clampf(amount / 30.0, 0.4, 1.0)
 	# O civil tem mola amortecida própria no tronco (CivilianModel.take_hit): reaproveita.

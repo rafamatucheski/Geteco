@@ -55,12 +55,20 @@ func _run() -> void:
 	for frame in 900:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
+	if world.session == null or not world.session.ready_for_play:
+		check("sessão produtiva pronta",false,"startup não concluiu; verificar erros de carregamento")
+		quit(1)
+		return
 	await frames(60)
 	player = world.player
 	# Congela a reposição ambiente enquanto a fixture controla world.people; sem isso,
 	# ProductionWorld adiciona testemunhas novas durante a rajada e altera a contagem.
 	var population_target: int = world.production.requested_population
 	world.production.requested_population = 0
+	# O teto zero também retira testemunhas distantes criadas pela fixture.
+	# Suspendemos o gestor ambiente; o diretor de reações e a física seguem ativos.
+	var production_processing: bool = world.production.is_processing()
+	world.production.set_process(false)
 	# Quem já existia na sessão não interfere: fica fora de `people` durante o teste.
 	var original: Array = world.people.duplicate()
 	for person in original: person.set_physics_process(false)
@@ -314,6 +322,7 @@ func _run() -> void:
 	for person in original:
 		if is_instance_valid(person): world.people.append(person)
 	world.production.requested_population = population_target
+	world.production.set_process(production_processing)
 	print("STATS ", director.stats)
 	print("RESULT failures=", failures)
 	quit(1 if failures > 0 else 0)

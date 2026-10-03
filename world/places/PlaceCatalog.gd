@@ -134,6 +134,7 @@ static func definitions() -> Array[Dictionary]:
 			]
 	result.append(preload("res://gameplay/urban_v1/VerticeUndercroftPlace.gd").definition_data())
 	result.append(preload("res://gameplay/urban_v1/MountainFortPlace.gd").definition_data())
+	result.append(preload("res://world/places/supermarket/SupermarketPlace.gd").definition_data())
 	return result
 static func get_definition(id: String) -> Dictionary:
 	for definition in definitions():
@@ -142,6 +143,10 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty(): return null
+	if id == "harbor_supermarket":
+		var market = preload("res://world/places/supermarket/SupermarketPlace.gd").new()
+		market.definition = definition
+		return market
 	if id == "vertice_undercroft":
 		var hidden = preload("res://gameplay/urban_v1/VerticeUndercroftPlace.gd").new()
 		hidden.definition = definition

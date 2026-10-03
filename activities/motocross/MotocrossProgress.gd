@@ -8,6 +8,8 @@ const LEVELS := [
 ## A 402 m lap at the fastest model's 18 m/s is ~22 s; anything under this is
 ## a timing fault or an edited save, never a real record.
 const MIN_LAP := 15.0
+const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
+const RACES := preload("res://systems/economy/RaceReceipts.gd")
 var data := {"version":1,"serial":0,"active":-1,"unlocked":0,"wins":[0,0,0,0],"owned":false,"rental_serial":0,"bike_model":0,"best_lap":0.0}
 
 ## Race and practice laps share one track record. Returns true for a new best.
@@ -75,11 +77,11 @@ static func validate_snapshot(value: Dictionary) -> bool:
 	return true
 
 static func validate_wallet(value: Dictionary, wallet: Dictionary) -> bool:
-	if not validate_snapshot(value): return false
+	if not validate_snapshot(value) or not RECEIPTS.validate(wallet): return false
+	if RECEIPTS.compact_highest(wallet,"motocross_rental")>int(value.get("rental_serial",0)): return false
 	var transactions: Dictionary = wallet.get("transactions",{})
-	var wins := [0,0,0,0]
-	var entries := 0
-	var rentals := 0
+	var totals := {"entries":0,"wins":[0,0,0,0]}
+	var rentals := RECEIPTS.compact_count(wallet,"motocross_rental")
 	for key in transactions:
 		if str(key).begins_with("spend:motocross_rental:"):
 			var rental_id := str(key).trim_prefix("spend:motocross_rental:").to_int()
@@ -88,22 +90,70 @@ static func validate_wallet(value: Dictionary, wallet: Dictionary) -> bool:
 		if not str(key).begins_with("spend:motocross_entry:"): continue
 		var serial := str(key).trim_prefix("spend:motocross_entry:").to_int()
 		if serial < 1 or serial > int(value.serial): return false
-		var amount := int(transactions[key].get("amount",-1))
+		if not _tally_entry(value,wallet,serial,int(transactions[key].get("amount",-1)),totals): return false
+	if not _tally_compact_entries(value,wallet,totals): return false
+	if int(totals.entries) != int(value.serial) or rentals != int(value.get("rental_serial",0)): return false
+	# JSON numbers restore as floats; compare validated counts numerically.
+	for level in totals.wins.size():
+		if int(totals.wins[level]) != int(value.wins[level]): return false
+	if int(value.active) >= 0:
+		var last := RECEIPTS.lookup(wallet,"spend","motocross_entry:%d"%int(value.serial))
+		if int(last.get("amount",-1)) != int(LEVELS[int(value.active)].fee): return false
+	return true
+
+static func _tally_entry(value: Dictionary, wallet: Dictionary, serial: int, amount: int, totals: Dictionary) -> bool:
+	if serial<1 or serial>int(value.serial): return false
+	var level := -1
+	for i in LEVELS.size():
+		if amount==int(LEVELS[i].fee): level=i
+	if level<0: return false
+	totals.entries+=1
+	var reward: Variant = wallet.get("transactions",{}).get("reward:motocross_prize:%d"%serial)
+	if reward==null:
+		var compact := RACES.lookup(wallet,"reward","motocross_prize:%d"%serial)
+		if not compact.is_empty(): reward=compact
+	if reward!=null:
+		if not reward is Dictionary or int(reward.get("amount",-1))!=amount+int(LEVELS[level].bonus): return false
+		if serial==int(value.serial) and int(value.active)>=0: return false
+		totals.wins[level]+=1
+	return true
+
+static func _tally_compact_entries(value: Dictionary, wallet: Dictionary, totals: Dictionary) -> bool:
+	var summary := RACES.motocross_summary(wallet)
+	if int(summary.highest_entry)>int(value.serial): return false
+	for code in range(1,25):
+		var count := int(summary.counts[code])
+		if count==0: continue
+		var amount := int(RACES.MOTO_FEES[code%5-1])
 		var level := -1
 		for i in LEVELS.size():
-			if amount == int(LEVELS[i].fee): level = i
-		if level < 0: return false
-		entries += 1
-		var reward: Variant = transactions.get("reward:motocross_prize:%d"%serial)
-		if reward != null:
-			if not reward is Dictionary or int(reward.get("amount",-1)) != amount+int(LEVELS[level].bonus): return false
-			if serial == int(value.serial) and int(value.active) >= 0: return false
-			wins[level] += 1
-	if entries != int(value.serial) or rentals != int(value.get("rental_serial",0)): return false
-	# JSON numbers restore as floats; compare validated counts numerically.
-	for level in wins.size():
-		if wins[level] != int(value.wins[level]): return false
-	if int(value.active) >= 0:
-		var last: Dictionary = transactions.get("spend:motocross_entry:%d"%int(value.serial),{})
-		if int(last.get("amount",-1)) != int(LEVELS[int(value.active)].fee): return false
+			if amount==int(LEVELS[i].fee): level=i
+		if level<0: return false
+		var prize: int = code/5
+		if prize>0:
+			if int(RACES.MOTO_PRIZES[prize-1])!=amount+int(LEVELS[level].bonus): return false
+			totals.wins[level]+=count
+		totals.entries+=count
+	# Mixed saves may hold the entry in a page and its prize in the opaque map.
+	# Noncanonical prize IDs remain ignored exactly as the original lookup did.
+	var transactions: Dictionary = wallet.get("transactions",{})
+	for key in transactions:
+		var prefix := "reward:motocross_prize:"
+		if not str(key).begins_with(prefix): continue
+		var suffix := str(key).trim_prefix(prefix)
+		if not suffix.is_valid_int() or suffix!=str(suffix.to_int()): continue
+		var serial := suffix.to_int()
+		var entry := RACES.lookup(wallet,"spend","motocross_entry:%d"%serial)
+		if entry.is_empty(): continue
+		var level := -1
+		for i in LEVELS.size():
+			if int(entry.amount)==int(LEVELS[i].fee): level=i
+		if level<0: return false
+		var reward: Variant = transactions[key]
+		if reward==null: continue
+		if not reward is Dictionary or int(reward.get("amount",-1))!=int(entry.amount)+int(LEVELS[level].bonus): return false
+		if serial==int(value.serial) and int(value.active)>=0: return false
+		totals.wins[level]+=1
+	if int(value.active)>=0 and not RACES.lookup(wallet,"spend","motocross_entry:%d"%int(value.serial)).is_empty():
+		if not RACES.lookup(wallet,"reward","motocross_prize:%d"%int(value.serial)).is_empty(): return false
 	return true

@@ -44,19 +44,24 @@ func scream(actor: Node3D) -> bool:
 		return true
 	return false
 
+## Shared authored presentation for gameplay and covered first-use preparation.
+static func create_bubble_label() -> Label3D:
+	var label := Label3D.new()
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.font_size = 40
+	label.pixel_size = 0.006
+	label.outline_size = 10
+	label.modulate = Color(0.95, 0.65, 0.2)
+	label.position = Vector3(0.0, 2.3, 0.0)
+	return label
+
 func bubble(actor: Node3D, text: String) -> void:
 	if not is_instance_valid(actor): return
 	var id := actor.get_instance_id()
 	var entry: Dictionary = bubbles.get(id, {})
 	if entry.is_empty():
-		var label := Label3D.new()
-		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		label.no_depth_test = true
-		label.font_size = 40
-		label.pixel_size = 0.006
-		label.outline_size = 10
-		label.modulate = Color(0.95, 0.65, 0.2)
-		label.position = Vector3(0.0, 2.3, 0.0)
+		var label := create_bubble_label()
 		actor.add_child(label)
 		entry = {"label": label, "life": 0.0}
 		bubbles[id] = entry

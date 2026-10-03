@@ -2,6 +2,7 @@ extends Node3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Native production geography. Geometry/physics load only near the player.
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
+const MOUNTAIN_ZOO := preload("res://world/mountain_detail/zoo/MountainZoo.gd")
 const MOUNTAIN_SHADOW := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 const URBAN_FACTORY := preload("res://world/urban_detail/UrbanBuildingFactory.gd")
 const NATURAL_GROUND := preload("res://world/regions/natural_ground.gdshader")
@@ -298,6 +299,7 @@ func _prepare() -> void:
 		_record(CATALOG._at(Vector2(5450,-1150),region_id),{"kind":"cargo_plane","position":CATALOG._at(Vector2(5450,-1150),region_id)})
 		_record(CATALOG._at(Vector2(6350,560),region_id),{"kind":"sawmill_yard"})
 		_record(CATALOG._at(Vector2(7560,-1650),region_id),{"kind":"mountain_village"})
+		_record(MOUNTAIN_ZOO.CENTER,{"kind":"mountain_zoo","position":MOUNTAIN_ZOO.CENTER})
 		for record in MOUNTAIN_FACTORY.get_environmental_records():
 			_record(record.position,record)
 		_prepare_forest()
@@ -327,7 +329,7 @@ func _prepare() -> void:
 			for point in avenue.points:
 				avenue_points.append(CATALOG._at(Vector2(point[0],point[1]),"harbor"))
 			terrain_roads.append({"id":avenue.id,"points":avenue_points,"width":float(avenue.width)*SCALE})
-		terrain.configure(terrain_roads,reservations,[])
+		terrain.configure(terrain_roads,reservations,[MOUNTAIN_ZOO.FOOTPRINT])
 func map_routes() -> Array[Dictionary]:
 	return roads + walkways
 
@@ -342,6 +344,7 @@ func _revise_mountain_routes() -> void:
 	for road in ROUTE_LAYOUT.branches(main):
 		_add_road(road.id,road.points,road.width,road.surface)
 	walkways = ROUTE_LAYOUT.paths()
+	walkways.append(MOUNTAIN_ZOO.approach())
 	for path in walkways:
 		if path.id in ["cave_trail","forest_shop_walk"]: path.points = ROUTE_LAYOUT.snap_start(path.points,main)
 		_record_path(path)
@@ -516,7 +519,7 @@ func _process(_delta: float) -> void:
 ## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
-const CACHED_RECORDS := ["mountain_village","sawmill_yard","harbor_public_realm","lake","ship"]
+const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbor_public_realm","lake","ship"]
 var _record_cache: Dictionary = {}
 
 func _record_cache_key(record: Dictionary) -> String:
@@ -995,6 +998,10 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		"sawmill_yard":
 			MOUNTAIN_FACTORY.populate_sawmill_chunk(chunk,record)
 		"mountain_village": MOUNTAIN_FACTORY.populate_village_chunk(chunk,record)
+		"mountain_zoo":
+			var zoo := MOUNTAIN_ZOO.new()
+			zoo.position = record.position
+			chunk.add_child(zoo)
 		"environmental_parity":
 			var mechanism := MOUNTAIN_FACTORY.populate_environmental_chunk(chunk,record)
 			if mechanism != null:
@@ -1096,6 +1103,11 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array) -> void:
 	for body in mesh.get_children():
 		if body is StaticBody3D: body.collision_layer = 1; body.collision_mask = 0
 func _building(chunk: Node3D, data: Dictionary) -> void:
+	if data.id == "NorthFrontage1":
+		var market := preload("res://world/places/supermarket/SupermarketFacade.gd").new()
+		market.position = CATALOG.get_definition("harbor_supermarket").exterior_position
+		chunk.add_child(market)
+		return
 	# Exactly one exterior per authored building record; Maciota belongs to ProductionWorld.
 	if data.id == "Garage": return
 	var facade: Dictionary = data.duplicate(true)
@@ -1230,6 +1242,7 @@ func _prepare_forest() -> void:
 		records[key] = records[key].filter(func(record):
 			if record.kind != "tree": return true
 			var original := Vector2(record.position.x,record.position.z)/SCALE-CATALOG.MOUNTAIN_OFFSET
+			if MOUNTAIN_ZOO.FOOTPRINT.grow(2.0).has_point(Vector2(record.position.x,record.position.z)): return false
 			return not _helipad_reserved(original) and not _fort_exit_reserved(Vector2(record.position.x,record.position.z)) and not preload("res://world/mountain_detail/OriginalVillageLayout.gd").is_reserved(original))
 
 func _build_ship(chunk: Node3D) -> void:

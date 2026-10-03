@@ -7,6 +7,8 @@ const LANE_RADIUS := 321.0*UNIT
 static func start(vehicle_id: String, point: Vector2) -> Dictionary:
 	return {"vehicle_id":vehicle_id,"countdown":3.0,"progress":0.0,"previous_angle":PI,"exit_angle":PI,"was_on_track":true,"initialized":false,"previous":[point.x,point.y],"start":[point.x,point.y],"checkpoint":0}
 static func tick(run: Dictionary, delta: float, point: Vector2, vehicle_id: String, alive: bool, elapsed: float, outside: float) -> Dictionary:
+	if run.get("course_version",0)==2:
+		return preload("res://systems/campaign/CobraStreetProgress.gd").tick(run,delta,point,vehicle_id,alive,elapsed,outside)
 	var result := {"failure":"","elapsed":elapsed,"outside":outside,"crossed":-1,"countdown_changed":false}
 	if not alive: result.failure="race_vehicle_broken"; return result
 	if vehicle_id!=run.vehicle_id: result.failure="race_vehicle_left"; return result
@@ -57,6 +59,7 @@ static func tick(run: Dictionary, delta: float, point: Vector2, vehicle_id: Stri
 static func validate(run: Variant) -> bool:
 	if not run is Dictionary: return false
 	if run.is_empty(): return true
+	if run.has("course_version"): return preload("res://systems/campaign/CobraStreetProgress.gd").validate(run)
 	if not run.get("vehicle_id") is String or run.vehicle_id.is_empty() or run.vehicle_id.length()>128: return false
 	for key in ["countdown","progress","previous_angle","exit_angle","checkpoint"]:
 		if typeof(run.get(key)) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(run[key])): return false

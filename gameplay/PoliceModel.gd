@@ -429,20 +429,25 @@ func _merge_equipment(joint: MeshInstance3D, part: String) -> void:
 	if not _equipment_meshes.has(key):
 		var b = BODY_KIT._builder()
 		_build_equipment(b, part)
-		var extra: ArrayMesh = b.commit()
 		var original: Array = joint.mesh.surface_get_arrays(0)
-		var addition: Array = extra.surface_get_arrays(0)
 		var offset: int = original[Mesh.ARRAY_VERTEX].size()
 		# Godot returns generated tangents on readback even though this rigid
 		# cloth shader uses vertex normals only. The old tangent stream cannot
 		# keep its old vertex count after equipment vertices are appended.
 		original[Mesh.ARRAY_TANGENT] = null
-		for channel in [Mesh.ARRAY_VERTEX, Mesh.ARRAY_NORMAL, Mesh.ARRAY_COLOR]:
-			var stream: Variant = original[channel]
-			stream.append_array(addition[channel])
-			original[channel] = stream
+		# The builder already owns CPU arrays. Uploading a temporary equipment
+		# mesh just to read it back forces an avoidable RenderingServer round trip.
+		var vertices: PackedVector3Array = original[Mesh.ARRAY_VERTEX]
+		var normals: PackedVector3Array = original[Mesh.ARRAY_NORMAL]
+		var colors: PackedColorArray = original[Mesh.ARRAY_COLOR]
+		vertices.append_array(b.vertices)
+		normals.append_array(b.normals)
+		colors.append_array(b.colors)
+		original[Mesh.ARRAY_VERTEX] = vertices
+		original[Mesh.ARRAY_NORMAL] = normals
+		original[Mesh.ARRAY_COLOR] = colors
 		var indices: PackedInt32Array = original[Mesh.ARRAY_INDEX]
-		for index in addition[Mesh.ARRAY_INDEX]: indices.append(int(index) + offset)
+		for index in b.indices: indices.append(int(index) + offset)
 		original[Mesh.ARRAY_INDEX] = indices
 		var merged := ArrayMesh.new()
 		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, original)

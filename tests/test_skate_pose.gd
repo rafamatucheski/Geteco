@@ -26,9 +26,10 @@ func run():
 		var model = actor.visual.get_child(0)
 		model.set_process(false)
 		await process_frame
-		for sample in 42:
+		for sample in 84:
+			board._throttle = 1.0 if sample < 42 else -1.0
 			board.rotation.y = .7
-			board.visual.rotation = Vector3(.35 if sample >= 21 else 0.0, 0, -.12)
+			board.visual.rotation = Vector3(.35 if sample % 42 >= 21 else 0.0, 0, -.12)
 			board.pushing = sample % 21 < 20
 			board.push_phase = float(sample % 21) / 20
 			board.airborne = false

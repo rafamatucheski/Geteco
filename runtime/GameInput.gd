@@ -21,6 +21,9 @@ var _menu_cursor: ImageTexture
 var touch_move := Vector2.ZERO
 var touch_sprint := false
 var touch_aim := Vector2.ZERO
+const GAMEPAD_BINDINGS_VERSION := 2
+var _camera_motion := Vector2.ZERO
+var _aim_stick := Vector2.ZERO
 const AIM_STICK_DEADZONE := 0.20
 const AIM_TURN_SPEED_MIN := 3.0
 const AIM_TURN_SPEED_MAX := 20.0
@@ -90,7 +93,8 @@ const PAD := {
 	"headlights": JOY_BUTTON_DPAD_UP,
 	"radio_next": JOY_BUTTON_RIGHT_SHOULDER, "radio_previous": JOY_BUTTON_LEFT_SHOULDER,
 	"unarmed": JOY_BUTTON_DPAD_DOWN, "reload": JOY_BUTTON_X,
-	"weapon_flashlight": JOY_BUTTON_MISC1, "world_map": JOY_BUTTON_TOUCHPAD,
+	"weapon_flashlight": JOY_BUTTON_DPAD_UP, "world_map": JOY_BUTTON_TOUCHPAD,
+	"surrender": JOY_BUTTON_B, "radio_toggle": JOY_BUTTON_DPAD_RIGHT,
 }
 const UI_PAD := {
 	"ui_accept": JOY_BUTTON_A, "ui_cancel": JOY_BUTTON_B,
@@ -107,6 +111,18 @@ const CONTEXTUAL_BINDING_PAIRS := [
 	["weapon_previous", "radio_previous"],
 	["fire", "accelerate"],
 	["aim", "brake"],
+	["surrender", "tank_fire"],
+	["weapon_flashlight", "headlights"],
+	["skate_ollie", "handbrake"],
+	["skate_flip", "weapon_next"],
+	["skate_flip", "weapon_previous"],
+	["skate_flip", "radio_next"],
+	["skate_flip", "radio_previous"],
+	["skate_shove", "weapon_next"],
+	["skate_shove", "weapon_previous"],
+	["skate_shove", "radio_next"],
+	["skate_shove", "radio_previous"],
+	["skate_shove", "reload"],
 ]
 
 func _ready() -> void:
@@ -124,13 +140,14 @@ func _ready() -> void:
 	else:
 		push_error("Ponteiro do menu não pôde ser criado (%d)." % cursor_error)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+	bindings_changed.connect(_clear_camera_motion)
 	var connected := Input.get_connected_joypads()
 	if not connected.is_empty(): active_joypad = connected[0]
 	reset_bindings()
 	var config := ConfigFile.new()
 	if config.load("user://settings.cfg") == OK:
 		import_bindings(config.get_value("controls","bindings",{}))
-		import_gamepad_bindings(config.get_value("controls","gamepad_bindings",{}))
+		import_gamepad_bindings(config.get_value("controls","gamepad_bindings",{}),int(config.get_value("controls","gamepad_bindings_version",0)))
 		controller_layout = clampi(int(config.get_value("controls","controller_layout",0)),0,2)
 
 func _release_menu_cursor() -> void:
@@ -157,7 +174,8 @@ func reset_bindings() -> void:
 		e.device = -1
 		e.button_index = PAD[action]
 		InputMap.action_add_event(action,e)
-	for entry in [["move_left",JOY_AXIS_LEFT_X,-1.0],["move_right",JOY_AXIS_LEFT_X,1.0],["move_up",JOY_AXIS_LEFT_Y,-1.0],["move_down",JOY_AXIS_LEFT_Y,1.0],["fire",JOY_AXIS_TRIGGER_RIGHT,1.0],["aim",JOY_AXIS_TRIGGER_LEFT,1.0],["accelerate",JOY_AXIS_TRIGGER_RIGHT,1.0],["brake",JOY_AXIS_TRIGGER_LEFT,1.0]]:
+	_add_unique_pad_button("weapon_flashlight", JOY_BUTTON_MISC1)
+	for entry in [["camera_left",JOY_AXIS_RIGHT_X,-1.0],["camera_right",JOY_AXIS_RIGHT_X,1.0],["move_left",JOY_AXIS_LEFT_X,-1.0],["move_right",JOY_AXIS_LEFT_X,1.0],["move_up",JOY_AXIS_LEFT_Y,-1.0],["move_down",JOY_AXIS_LEFT_Y,1.0],["fire",JOY_AXIS_TRIGGER_RIGHT,1.0],["aim",JOY_AXIS_TRIGGER_LEFT,1.0],["accelerate",JOY_AXIS_TRIGGER_RIGHT,1.0],["brake",JOY_AXIS_TRIGGER_LEFT,1.0]]:
 		var e := InputEventJoypadMotion.new()
 		e.device = -1
 		e.axis = entry[1]
@@ -250,7 +268,17 @@ func export_gamepad_bindings() -> Dictionary:
 			else: saved[action].append({"axis": int(event.axis), "direction": signf(event.axis_value)})
 	return saved
 
-func import_gamepad_bindings(saved: Dictionary) -> void:
+func import_gamepad_bindings(saved: Dictionary, version := GAMEPAD_BINDINGS_VERSION) -> void:
+	var migrated := saved.duplicate(true)
+	if version < GAMEPAD_BINDINGS_VERSION:
+		# Old exports recorded empty arrays for commands which had no pad default.
+		# Only migrate those old defaults; a current explicit clear stays empty.
+		for action in ["camera_left", "camera_right", "surrender", "radio_toggle"]:
+			if not migrated.has(action) or migrated[action] == []:
+				migrated[action] = _legacy_default(action, saved)
+		if migrated.get("weapon_flashlight",[]) == [{"button":JOY_BUTTON_MISC1}]:
+			migrated.weapon_flashlight = _legacy_default("weapon_flashlight", saved)
+	saved = migrated
 	for action in saved:
 		if not KEYS.has(action) or action == "pause_game" or not saved[action] is Array: continue
 		var events: Array[InputEvent] = []
@@ -264,7 +292,7 @@ func import_gamepad_bindings(saved: Dictionary) -> void:
 				event.button_index = index
 			elif data.has("axis"):
 				var axis := int(data.axis)
-				if axis not in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT]: continue
+				if not _allowed_pad_axis(action, axis): continue
 				event = InputEventJoypadMotion.new()
 				event.axis = axis
 				event.axis_value = -1.0 if float(data.get("direction",1)) < 0 else 1.0
@@ -277,6 +305,20 @@ func import_gamepad_bindings(saved: Dictionary) -> void:
 	_sprint_pad_down = false
 	bindings_changed.emit()
 
+func _legacy_default(action: String, saved: Dictionary) -> Array:
+	var defaults: Array = export_gamepad_bindings().get(action,[])
+	var result: Array = []
+	for binding in defaults:
+		var conflict := false
+		for other in saved:
+			if other == action or _binding_context_is_exclusive(action,other) or not saved[other] is Array: continue
+			if binding in saved[other]: conflict = true; break
+		if not conflict: result.append(binding)
+	return result
+
+func _allowed_pad_axis(action: String, axis: int) -> bool:
+	return axis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT] or (axis == JOY_AXIS_RIGHT_X and action in ["camera_left", "camera_right"])
+
 func rebind_gamepad(action: String, event: InputEvent) -> Dictionary:
 	if not KEYS.has(action) or action == "pause_game":
 		return {"ok": false, "message": "Options/Menu permanece disponível para pausar."}
@@ -287,8 +329,8 @@ func rebind_gamepad(action: String, event: InputEvent) -> Dictionary:
 		stored = InputEventJoypadButton.new()
 		stored.button_index = event.button_index
 	elif event is InputEventJoypadMotion:
-		if event.axis not in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_TRIGGER_LEFT, JOY_AXIS_TRIGGER_RIGHT]:
-			return {"ok": false, "message": "O analógico direito fica reservado para apontar a mira."}
+		if not _allowed_pad_axis(action, event.axis):
+			return {"ok": false, "message": "O analógico direito fica reservado para câmera e mira."}
 		stored = InputEventJoypadMotion.new()
 		stored.axis = event.axis
 		stored.axis_value = signf(event.axis_value)
@@ -435,6 +477,18 @@ func sprinting() -> bool:
 
 func reset_sprint_toggle() -> void:
 	sprint_toggled = false
+	_sprint_pad_down = false
+
+func _clear_camera_motion() -> void:
+	_camera_motion = Vector2.ZERO
+
+## Axis events are tracked separately from buttons/keys, which rotate in steps.
+func camera_rotation() -> float:
+	return _camera_motion.y - _camera_motion.x if using_gamepad and not remapping else 0.0
+
+func _read_aim_stick() -> Vector2:
+	var device := _resolve_joypad()
+	return Vector2(Input.get_joy_axis(device,JOY_AXIS_RIGHT_X),Input.get_joy_axis(device,JOY_AXIS_RIGHT_Y)) if device >= 0 else _aim_stick
 
 func aim_target(actor: Node2D) -> Vector2:
 	if not touch_aim.is_zero_approx(): return actor.global_position+touch_aim.normalized()*400
@@ -453,12 +507,11 @@ func aim_target(actor: Node2D) -> Vector2:
 func aim_target_3d(actor: Node3D, camera: Camera3D, delta: float, follow_movement := true) -> Vector3:
 	var direction := touch_aim
 	if direction.is_zero_approx():
-		var device := _resolve_joypad()
-		if device >= 0:
-			var stick := Vector2(Input.get_joy_axis(device,JOY_AXIS_RIGHT_X),Input.get_joy_axis(device,JOY_AXIS_RIGHT_Y))
-			if not _update_gamepad_aim(stick,delta) and follow_movement and not Input.is_action_pressed("aim"):
-				var move := movement()
-				if move.length() > AIM_STICK_DEADZONE: aim_direction = move.normalized()
+		var aiming := not follow_movement or Input.is_action_pressed("aim") or Input.is_action_pressed("fire")
+		var stick := _read_aim_stick() if aiming else Vector2.ZERO
+		if not _update_gamepad_aim(stick,delta) and follow_movement and not aiming:
+			var move := movement()
+			if move.length() > AIM_STICK_DEADZONE: aim_direction = move.normalized()
 		direction = aim_direction
 	var right := camera.global_basis.x
 	var down := camera.global_basis.z
@@ -479,6 +532,11 @@ func _update_gamepad_aim(stick: Vector2,delta: float) -> bool:
 	return true
 
 func _input(event: InputEvent) -> void:
+	observe_event(event)
+
+## Input sinks call this before consuming an event: Godot dispatches descendants
+## before the autoload, including mounted activities and modal UI.
+func observe_event(event: InputEvent) -> void:
 	var old := using_gamepad
 	var old_joypad := active_joypad
 	if (event is InputEventJoypadButton and event.pressed) or (event is InputEventJoypadMotion and absf(event.axis_value)>0.3):
@@ -486,14 +544,32 @@ func _input(event: InputEvent) -> void:
 		active_joypad = event.device
 	elif (event is InputEventKey and event.pressed) or (event is InputEventMouseButton and event.pressed) or (event is InputEventMouseMotion and event.relative.length()>2):
 		using_gamepad = false
+	if old_joypad != active_joypad:
+		_camera_motion = Vector2.ZERO
+		_aim_stick = Vector2.ZERO
+		reset_sprint_toggle()
+	if event is InputEventJoypadMotion and event.device == active_joypad:
+		if event.axis == JOY_AXIS_RIGHT_X: _aim_stick.x = event.axis_value
+		if event.axis == JOY_AXIS_RIGHT_Y: _aim_stick.y = event.axis_value
+		for index in 2:
+			var action := "camera_left" if index == 0 else "camera_right"
+			for binding in gamepad_events(action):
+				if binding is InputEventJoypadMotion and binding.axis == event.axis:
+					_camera_motion[index] = event.get_action_strength(action)
 	if old != using_gamepad or old_joypad != active_joypad: device_changed.emit()
 	if remapping: return
 	if (event is InputEventJoypadButton or event is InputEventJoypadMotion) and event.is_action("sprint"):
 		var down := event.is_action_pressed("sprint")
-		if down and not _sprint_pad_down and not get_tree().paused:
+		if down and not _sprint_pad_down and not _sprint_input_blocked():
 			var player := get_tree().get_first_node_in_group("player")
 			if player == null or player.visible: sprint_toggled = not sprint_toggled
 		_sprint_pad_down = down
+
+func _sprint_input_blocked() -> bool:
+	if get_tree().paused: return true
+	var scene := get_tree().current_scene
+	var session: Variant = scene.get("session") if is_instance_valid(scene) else null
+	return session != null and (session.modal or not session.ready_for_play or session.is_transition_blocked())
 
 func is_playstation_controller(device := -1) -> bool:
 	if controller_layout != 0: return controller_layout == 1
@@ -526,6 +602,11 @@ func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	var old_joypad := active_joypad
 	if connected and active_joypad < 0: active_joypad = device
 	elif not connected and active_joypad == device: active_joypad = _resolve_joypad()
+	if not connected and old_joypad == device:
+		reset_sprint_toggle()
+		_camera_motion = Vector2.ZERO
+		_aim_stick = Vector2.ZERO
+		if active_joypad < 0: using_gamepad = false
 	controller_connection_changed.emit(device,connected,Input.get_joy_name(device) if connected else "")
 	if old_joypad != active_joypad: device_changed.emit()
 

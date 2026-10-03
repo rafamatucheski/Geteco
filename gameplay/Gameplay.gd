@@ -391,9 +391,6 @@ func _physics_process(delta: float) -> void:
 func _stall_physics_tick(delta: float) -> void:
 	_advance_chain_explosions()
 	if state == null or not enabled: return
-	if InputMap.has_action("surrender") and Input.is_action_just_pressed("surrender"):
-		if police_surrendering(): police_case.cancel_surrender()
-		else: police_case.request_surrender()
 	_combat_clock += delta
 	if god_mode or not _god_marked.is_empty(): _sync_god_mode()
 	_advance_police_rounds(delta)
@@ -1318,6 +1315,14 @@ func _free_play_ok() -> bool:
 ## `weapon_previous` e `weapon_slot_1..10` estão mapeados em GameInput mas o FullSession só trata
 ## `weapon_next`/`unarmed`. Trata-se aqui, depois do `_input` do FullSession e só em jogo livre.
 func _unhandled_input(event: InputEvent) -> void:
+	# Circle also closes menus. Only unconsumed gameplay events may surrender;
+	# polling Input after closing a modal used the same press a second time.
+	if event.is_action_pressed("surrender") and not event.is_echo():
+		if not enabled or get_tree().paused or not _free_play_ok() or state == null or not state.can_attack(): return
+		if police_surrendering(): police_case.cancel_surrender()
+		elif is_instance_valid(police_case): police_case.request_surrender()
+		get_viewport().set_input_as_handled()
+		return
 	if not event.is_pressed() or event.is_echo() or not attack_allowed(): return
 	# Como na V1 (`Player._input`), a roda do mouse troca de arma nos dois sentidos; a câmera não tem
 	# zoom manual. Dirigindo, a roda sintoniza a rádio (`WorldAudio`) e `attack_allowed` barra isto.

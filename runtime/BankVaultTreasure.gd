@@ -1,12 +1,20 @@
 extends RefCounted
 ## Cada conjunto é uma coleta única: notas com cintas e barras guardadas em bandejas.
 const PART = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
+const PICKUP = preload("res://systems/inventory/PickupPresentation.gd")
 
 static func build(parent: Node3D, point: Vector3, variant: int) -> Node3D:
+	var pickup := PICKUP.new()
+	pickup.name="VaultCash%d"%variant
+	pickup.position=point
+	pickup.lift=.55
+	pickup.bob_height=.12
+	pickup.spin_speed=1.1
+	pickup.halo_scale=2.0
+	parent.add_child(pickup)
 	var pile := Node3D.new()
 	pile.name="VaultCash%d"%variant
-	parent.add_child(pile)
-	pile.position=point
+	pickup.configure(pile,"bank_cash%d"%variant)
 	PART.piece(pile,Vector3(1.35,.08,.85),Vector3(0,.06,0),Color("3a4844"))
 	for row in 2:
 		for column in 3:
@@ -29,7 +37,7 @@ static func build(parent: Node3D, point: Vector3, variant: int) -> Node3D:
 		bar.material_override.roughness=.25
 		PART.piece(pile,Vector3(.19,.012,.085),Vector3(-.40+i*.38,.225,.50),Color("f1d67d"))
 	_batch(pile)
-	return pile
+	return pickup
 
 static func _batch(pile: Node3D) -> void:
 	# Preserve every original bundle and gold bar, sharing repeated draw geometry.

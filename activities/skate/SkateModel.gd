@@ -8,11 +8,71 @@ const AXLE_Z := .205
 var color := Color("d36c3e")
 var wheels: Array[Node3D] = []
 static var _grip_material: StandardMaterial3D
+const MAX_CACHED_COLORS := 8
+const PREWARM_COLORS := [Color("d36c3e"), Color("487d9b"), Color("c3a842"), Color("79559b"), Color("44866a")]
+# Resources are immutable after construction. Nodes and wheel pivots are per model.
+static var _geometry_cache: Dictionary = {}
+static var _cache_order: Array[Color] = []
 var _wood: SurfaceTool
 var _steel: SurfaceTool
 var _grip: SurfaceTool
 
 func _ready() -> void:
+	if _geometry_cache.has(color):
+		for entry: Dictionary in _geometry_cache[color]:
+			_restore_part(entry, self)
+		return
+	_build_uncached()
+	var entries: Array[Dictionary] = []
+	for child: Node3D in get_children():
+		entries.append(_capture_part(child))
+	if _cache_order.size() >= MAX_CACHED_COLORS:
+		_geometry_cache.erase(_cache_order.pop_front())
+	_cache_order.append(color)
+	_geometry_cache[color] = entries
+
+func _capture_part(part: Node3D) -> Dictionary:
+	var entry := {"name":part.name, "transform":part.transform, "wheel":wheels.has(part), "children":[]}
+	if part is MeshInstance3D:
+		entry["mesh"] = part.mesh
+		entry["material"] = part.material_override
+	for child: Node3D in part.get_children():
+		entry.children.append(_capture_part(child))
+	return entry
+
+func _restore_part(entry: Dictionary, target_parent: Node3D) -> void:
+	var part: Node3D
+	if entry.has("mesh"):
+		var art := MeshInstance3D.new()
+		art.mesh = entry.mesh
+		art.material_override = entry.material
+		part = art
+	else:
+		part = Node3D.new()
+	part.name = entry.name
+	part.transform = entry.transform
+	target_parent.add_child(part)
+	if entry.wheel: wheels.append(part)
+	for child: Dictionary in entry.children:
+		_restore_part(child, part)
+
+## Run under the existing startup curtain. Only visual models are created;
+## no boards, colliders, riders, inventory changes or physics callbacks.
+static func prewarm_colors(parent: Node) -> void:
+	if not is_instance_valid(parent) or not parent.is_inside_tree(): return
+	var tree := parent.get_tree()
+	var model_script: Script = load("res://activities/skate/SkateModel.gd")
+	for tint: Color in PREWARM_COLORS:
+		if not is_instance_valid(parent) or parent.is_queued_for_deletion() or not parent.is_inside_tree(): return
+		if _geometry_cache.has(tint): continue
+		var model: Node3D = model_script.new()
+		model.color = tint
+		model.visible = false
+		parent.add_child(model)
+		model.free()
+		await tree.process_frame
+
+func _build_uncached() -> void:
 	_wood = _surface()
 	_steel = _surface()
 	_grip = _surface()
@@ -27,6 +87,10 @@ func _ready() -> void:
 	tape.mesh = _grip.commit()
 	tape.material_override = _grip_mat()
 	add_child(tape)
+	# Construction helpers are not part of the live model or the resource cache.
+	_wood = null
+	_steel = null
+	_grip = null
 
 static func _surface() -> SurfaceTool:
 	var result := SurfaceTool.new()

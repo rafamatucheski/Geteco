@@ -26,6 +26,7 @@ var _previous_up := 0.0
 var _previous_normal := Vector3.UP
 var _takeoff_direction := Vector3.FORWARD
 var color := Color("d36c3e")
+var former_rider: WeakRef
 
 func _ready() -> void:
 	collision_layer = 0
@@ -51,7 +52,7 @@ func _ready() -> void:
 	set_meta("gameplay_role", "skate")
 
 func drive(throttle: float, steer: float, braking: bool) -> void:
-	_throttle = clampf(throttle, 0, 1) if is_finite(throttle) else 0.0
+	_throttle = clampf(throttle, -1, 1) if is_finite(throttle) else 0.0
 	_steer = clampf(steer, -1, 1) if is_finite(steer) else 0.0
 	_brake = braking
 
@@ -95,30 +96,35 @@ func _physics_process(delta: float) -> void:
 		velocity.y = -.5 if is_on_floor() else velocity.y - 20 * delta
 		move_and_slide()
 		return
-	var grounded := is_on_floor() and velocity.y <= 0
+	# Positive vertical velocity is normal while climbing. Only an actual
+	# takeoff (ollie/airborne) suspends contact and pushing.
+	var grounded := is_on_floor() and not airborne
 	var forward := -global_basis.z
-	pushing = grounded and _throttle > .1 and not _brake
+	var opposing := _throttle * speed < -.1
+	pushing = grounded and absf(_throttle) > .1 and not _brake and not opposing
 	if pushing:
-		_push_clock += delta * lerpf(.6, 1, _throttle)
+		_push_clock += delta * lerpf(.6, 1, absf(_throttle))
 		push_phase = fposmod(_push_clock / .72, 1.0)
-		if _push_clock >= .72:
-			_push_clock -= .72
-			speed = minf(8.5, speed + 1.6 * _throttle)
+		if _push_clock >= .72: _push_clock -= .72
+		# Apply the push over sole contact, not a single tiny impulse per cycle.
+		if push_phase >= .18 and push_phase <= .65:
+			var target_speed := 8.5 * _throttle if _throttle > 0 else 3.0 * _throttle
+			speed = move_toward(speed, target_speed, 20 * absf(_throttle) * delta)
 	else: push_phase = move_toward(push_phase, 0, delta * 4)
 	if grounded:
 		var normal := get_floor_normal()
-		var slope := -(forward.x * normal.x + forward.z * normal.z) / maxf(.3, normal.y)
-		speed = clampf(speed - slope * 13 * delta, 0, 13)
+		var tangent := forward.slide(normal).normalized()
+		speed = clampf(speed - tangent.y * 9 * delta, -8.5, 13)
 		_previous_normal = normal
-	speed = move_toward(speed, 0, delta * (7.5 if _brake else .3))
-	rotation.y += _steer * delta * (1.7 if grounded else 2.4) * clampf(speed / 2, .3, 1)
-	lean = lerpf(lean, _steer * clampf(speed / 12, 0, .35), minf(1, delta * 8))
+	speed = move_toward(speed, 0, delta * (9.0 if _brake or opposing else .3))
+	rotation.y += _steer * delta * (1.7 if grounded else 2.4) * clampf(absf(speed) / 2, .3, 1) * (-1 if speed < -.1 else 1)
+	lean = lerpf(lean, _steer * clampf(speed / 12, -.35, .35), minf(1, delta * 8))
 	forward = -global_basis.z
 	velocity.x = forward.x * speed
 	velocity.z = forward.z * speed
-	if grounded: velocity.y = -.5
+	if grounded: velocity = forward.slide(get_floor_normal()).normalized() * speed - get_floor_normal() * .5
 	else: velocity.y -= 20 * delta
-	var impact_speed := speed
+	var impact_speed := absf(speed)
 	move_and_slide()
 	if is_on_wall() and impact_speed > 3.5 and _grace <= 0:
 		bail(clampf(impact_speed * 2, 6, 24))

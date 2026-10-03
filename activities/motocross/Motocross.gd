@@ -5,6 +5,12 @@ const BIKE := preload("res://activities/motocross/MotocrossBike.gd")
 const MODELS := preload("res://activities/motocross/MotocrossModels.gd")
 const GATE := preload("res://activities/motocross/MotocrossStartGate.gd")
 const HUD := preload("res://activities/motocross/MotocrossHUD.gd")
+const DIGO := preload("res://systems/campaign/DigoProgress.gd")
+const LESSON := preload("res://activities/motocross/DigoLesson.gd")
+const DIGO_CAR := preload("res://gameplay/digo/DigoCar.gd")
+const FLEET_STATE := preload("res://runtime/FleetState.gd")
+const DIGO_PARKING := Vector3(-237,.13,-43.5)
+const DIGO_AMAROK_PARKING := Vector3(-237,.13,-47.0)
 ## Rival start-gate odds by difficulty: [holeshot, bog, wheelie].
 const RIVAL_LAUNCH := [[.18,.28,.06],[.26,.2,.06],[.34,.14,.05],[.42,.08,.04]]
 var selected_model := 0
@@ -49,6 +55,10 @@ var _course_ref: WeakRef
 ## Practice laps on a rented or owned bike, timed from the start/finish line.
 var practice := {}
 var _tags := {}
+var lesson: RefCounted
+var digo_car: CharacterBody3D
+var digo_amarok: CharacterBody3D
+var _digo_clock := 0.0
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -83,7 +93,74 @@ func configure(owner_session) -> void:
 	ambient = load("res://activities/motocross/MotocrossAmbient.gd").new()
 	ambient.configure(self)
 
-func snapshot() -> Dictionary: return progress.snapshot()
+func snapshot() -> Dictionary:
+	_capture_digo_car()
+	return progress.snapshot()
+
+func _capture_digo_car() -> void:
+	if is_instance_valid(digo_car): _capture_digo_vehicle(digo_car,"digo_vehicle")
+	if is_instance_valid(digo_amarok): _capture_digo_vehicle(digo_amarok,"digo_amarok_vehicle")
+
+func _capture_digo_vehicle(car: CharacterBody3D, key: String) -> void:
+	if is_instance_valid(session) and is_instance_valid(session.world) and not session.world.is_queued_for_deletion() and is_instance_valid(car) and car.is_inside_tree():
+		session.state.world_state[key] = FLEET_STATE.capture(car,str(car.get_meta("region_id","harbor")))
+
+func _bind_digo_vehicle(car: CharacterBody3D, key: String, vehicle_script) -> void:
+	car.set_meta("owner_id","digo")
+	car.set_meta("personal_vehicle",true)
+	var capture := _capture_digo_vehicle.bind(car,key)
+	if not car.tree_exiting.is_connected(capture): car.tree_exiting.connect(capture)
+	if key == "digo_vehicle": vehicle_script.install_stereo(car)
+	else: vehicle_script.install_audio(car)
+
+func _update_digo_car() -> void:
+	digo_car = _update_digo_vehicle(digo_car if is_instance_valid(digo_car) else null,"digo_gol_1993","digo_vehicle",DIGO_PARKING,DIGO_CAR)
+	var amarok_script = load("res://gameplay/digo/DigoAmarok.gd")
+	digo_amarok = _update_digo_vehicle(digo_amarok if is_instance_valid(digo_amarok) else null,"digo_amarok_2014","digo_amarok_vehicle",DIGO_AMAROK_PARKING,amarok_script)
+	var actor := get_tree().get_first_node_in_group("digo_character")
+	if actor != null and is_instance_valid(actor.model) and actor.model.has_method("set_day") and is_instance_valid(session.weather):
+		actor.model.set_day(session.weather.moon_day())
+
+func _update_digo_vehicle(current: CharacterBody3D, id: String, key: String, parking: Vector3, vehicle_script) -> CharacterBody3D:
+	# A queued body still owns its tree_exiting snapshot: wait until next tick.
+	if is_instance_valid(current): return current
+	# Player restore may have created an ordinary Vehicle. Adopt by exact identity.
+	for car in session.world.production.vehicles:
+		if is_instance_valid(car) and not car.is_queued_for_deletion() and car.vehicle_id == id:
+			_bind_digo_vehicle(car,key,vehicle_script)
+			return car
+	var saved: Dictionary = session.state.world_state.get(key,{})
+	var selected: Dictionary = session.controller.starting_vehicle()
+	if selected.get("vehicle_id","") == id: saved = selected
+	var region_id := str(saved.get("region","harbor"))
+	if session.state.region_id != region_id or not session.state.place_id.is_empty(): return null
+	var point := parking
+	if saved.has("position"): point = Vector3(saved.position[0],saved.position[1],saved.position[2])
+	if session.world.player.position.distance_to(point) > 100: return null
+	# The paddock build also proves the home terrain has streamed in.
+	if saved.is_empty() and get_tree().get_first_node_in_group("digo_character") == null: return null
+	var car: CharacterBody3D = vehicle_script.new()
+	car.position = point
+	car.rotation.y = float(saved.get("yaw",-PI/2.0))
+	car.set_meta("region_id",region_id)
+	if saved.has("paint"): car.paint_color = Color.html(saved.paint)
+	car.equipment_state = saved.get("equipment",{}).duplicate(true)
+	session.world.add_child(car)
+	if not session.controller.vehicle_position_clear(car,point,car.rotation.y):
+		car.queue_free()
+		return null
+	if saved.has("health"): car.restore_health(float(saved.health))
+	if int(saved.get("punctured_tires",0)) > 0:
+		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
+	if float(saved.get("heavy_crush_ratio",1.0)) < 1.0:
+		preload("res://gameplay/street_physics/HeavyVehicleCrush.gd").apply_saved(car,float(saved.heavy_crush_ratio))
+	car.destroyed.connect(func():
+		if is_instance_valid(session.world.gameplay):
+			session.world.gameplay.explode(car.global_position+Vector3.UP*.4,5.0,35.0,car,false)
+			if is_instance_valid(session.world.gameplay.emergency): session.world.gameplay.emergency.ignite(car.global_position,car))
+	session.world.production.vehicles.append(car)
+	_bind_digo_vehicle(car,key,vehicle_script)
+	return car
 
 func nearest_action() -> Dictionary:
 	if session == null or not session.ready_for_play or session.modal: return {}
@@ -94,7 +171,7 @@ func nearest_action() -> Dictionary:
 	if is_instance_valid(owned_bike) and p.distance_to(owned_bike.position) < 2.8:
 		return {"id":"motocross","target":"ride","label":"Pilotar sua motocross"}
 	if p.distance_to(COURSE.ENTRY) < 5.5:
-		return {"id":"motocross","target":"enter","label":"Inscrever-se · Motocross"}
+		return {"id":"motocross","target":"enter","label":"Conversar com Digo"}
 	return {}
 
 func perform(target: String) -> bool:
@@ -111,18 +188,55 @@ func perform(target: String) -> bool:
 	return true
 
 func _menu() -> void:
+	if DIGO.mark_met(session.state.world_state): session.save_game()
+	session._menu("Digo")
+	var met: Dictionary = DIGO.data(session.state.world_state)
+	var speech := Label.new()
+	speech.text = "Aqui eu te ensino a pilotar e organizo as corridas. Vamos pra pista?"
+	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	session.column.add_child(speech)
+	session._button("Rever aula de pilotagem · grátis" if met.lesson_completed else "Aprender a pilotar · grátis",func(): session.close_menu(); start_lesson())
+	session._button("Escolher corrida",_race_menu)
+	session._button("Treinar livremente · aluguel R$ 35",func(): _bike_menu(-1))
+	session._button("Conversar sobre o Gol e o deserto",_digo_story)
+	if progress.data.owned:
+		session._button("Retirar minha moto",func(): session.close_menu(); _park_owned(true))
+	session._button("Voltar",session.close_menu)
+
+func _digo_story() -> void:
+	session._menu("Digo")
+	var speech := Label.new()
+	speech.text = "Aquele é meu Gol quadrado 93: prata, turbo, rodas 15 e placa preta. O som você escuta de longe.\n\nAinda vamos nos encontrar numa corrida no deserto. Quero ver se você acompanha!"
+	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	session.column.add_child(speech)
+	session._button("Voltar",_menu)
+
+func _race_menu() -> void:
 	var best := float(progress.data.get("best_lap",0.0))
-	session._menu("Vértice · Motocross"+(" · recorde %s"%HUD.clock(best) if best > 0.0 else ""))
-	session._button("Alugar moto para treinar · R$ 35",func(): _bike_menu(-1))
+	session._menu("Digo · Corridas"+(" · recorde %s"%HUD.clock(best) if best > 0.0 else ""))
 	for i in PROGRESS.LEVELS.size():
 		var spec: Dictionary = PROGRESS.LEVELS[i]
 		session._button("%s · entrada R$ %d · vitória R$ %d"%[spec.name,spec.fee,int(spec.fee)+int(spec.bonus)],func():
 			_bike_menu(i))
 		var button := session.column.get_child(session.column.get_child_count()-1) as Button
 		if button != null: button.disabled = i > int(progress.data.unlocked) or session.state.economy.balance < int(spec.fee)
-	if progress.data.owned:
-		session._button("Retirar minha moto",func(): session.close_menu(); _park_owned(true))
-	session._button("Voltar",session.close_menu)
+	session._button("Voltar",_menu)
+
+func start_lesson() -> bool:
+	if mounted or active or session.modal or session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.player.position.distance_to(COURSE.ENTRY) > 8: return false
+	if not session.save_block_reason().is_empty():
+		session.show_message(session.save_block_reason()); return false
+	DIGO.mark_met(session.state.world_state)
+	ambient.clear()
+	rental_bike = BIKE.new()
+	rental_bike.is_player = true
+	MODELS.apply(rental_bike,0)
+	session.world.add_child(rental_bike)
+	rental_bike.reset_to(track.pose(0))
+	_mount(rental_bike)
+	lesson = LESSON.new()
+	lesson.begin(player_bike.rotation.y)
+	return true
 
 func _bike_menu(level: int) -> void:
 	session._menu("Escolha a moto · %s"%("Treino" if level < 0 else PROGRESS.LEVELS[level].name))
@@ -280,6 +394,7 @@ func _mount(bike: CharacterBody3D) -> void:
 
 func _unmount_at(point: Vector3) -> void:
 	var world = session.world
+	lesson = null
 	mounted = false
 	world.player.teleport(point)
 	world.player.collision_layer = _player_layer
@@ -321,6 +436,10 @@ func dismount() -> bool:
 
 func _physics_process(delta: float) -> void:
 	if session == null or not session.ready_for_play: return
+	_digo_clock += delta
+	if _digo_clock >= 1.0:
+		_digo_clock = 0.0
+		_update_digo_car()
 	if ambient != null: ambient.update(delta)
 	_update_surface(delta)
 	if not mounted:
@@ -381,6 +500,7 @@ func _physics_process(delta: float) -> void:
 			practice.previous = player_bike.position
 		_practice_lap(delta)
 		_status.present_practice(player_bike,int(practice.laps),float(practice.clock),float(practice.lap_start) >= 0.0,float(progress.data.get("best_lap",0.0)),float(practice.best),"DEVOLVER A MOTO" if is_instance_valid(rental_bike) else "DESCER DA MOTO")
+		if lesson != null: _update_lesson(delta)
 		_update_info(delta)
 		return
 	elapsed += delta
@@ -423,6 +543,15 @@ func _physics_process(delta: float) -> void:
 	_status.present(placement,racers.size(),mini(int(PROGRESS.LEVELS[difficulty].laps),int(racers[0].passed)/track.gates.size()+1),PROGRESS.LEVELS[difficulty].laps,elapsed,player_bike,_gap_text())
 	_update_info(delta)
 	if elapsed > 360: finish(false,"time")
+
+func _update_lesson(delta: float) -> void:
+	if lesson.observe(delta,player_bike.speed,player_bike.rotation.y,player_bike._throttle,player_bike._steering,player_bike._brake,player_bike.crash_state == "riding",player_bike.is_on_floor(),int(practice.laps)):
+		_status.callout("DIGO",lesson.instruction(),Color("8ee29f"),4)
+		if lesson.stage == LESSON.Stage.COMPLETE:
+			DIGO.complete_lesson(session.state.world_state)
+			# Mounted state blocks saves; normal dismount commits this completion.
+	_status.lesson_label.text = lesson.instruction()
+	_status.lesson_label.show()
 
 ## Sequential gates plus plausible displacement prevent shortcuts/teleports.
 func _cross_gate(row: Dictionary, bike: CharacterBody3D, delta: float, outside: bool) -> bool:

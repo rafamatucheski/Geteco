@@ -1,0 +1,33 @@
+{
+	"failures": [],
+	"reports": [
+		{
+			"far_peak": 0.0,
+			"mixed_frames": 120320,
+			"near_peak": 0.729446649551392,
+			"seconds": 9.01950073242188,
+			"source": "lionCall"
+		},
+		{
+			"far_peak": 0.0,
+			"mixed_frames": 119808,
+			"near_peak": 0.436624199151993,
+			"seconds": 37.3003616333008,
+			"source": "monkeyCall"
+		},
+		{
+			"far_peak": 0.0,
+			"mixed_frames": 120320,
+			"near_peak": 0.0726528093218803,
+			"seconds": 10.2613382339478,
+			"source": "giraffeCall"
+		},
+		{
+			"far_peak": 0.0,
+			"mixed_frames": 119808,
+			"near_peak": 0.075303703546524,
+			"seconds": 3.37972784042358,
+			"source": "zebraCall"
+		}
+	]
+}

@@ -1,13 +1,14 @@
 # Harbor no Android
 
-Alvo inicial: Galaxy Z Fold7. APK ARM64, pacote `com.geteco.harbor`, versão 0.3.1.
+Alvo inicial: Galaxy Z Fold7. APK ARM64 .NET, pacote `com.geteco.harbor`, versão 0.3.2.
 
 ## Instalar
 
-1. Copie `builds/android/harbor-0.3.1-debug.apk` para o celular e instale sobre a versão anterior.
+1. Copie `builds/android/harbor-0.3.2-debug.apk` para o celular e instale sobre a versão anterior.
 2. Abra o arquivo no aplicativo Meus Arquivos e permita a instalação por esse
    aplicativo quando o Android solicitar.
-3. Abra Harbor. Jogue em paisagem; a interface se adapta ao tamanho disponível.
+3. Ative a rotação automática do Android e abra Harbor. Retrato, paisagem e suas
+   posições invertidas acompanham o aparelho. A interface se adapta à tela disponível.
 
 É um APK de teste assinado com a chave de depuração local. Uma atualização com
 outra chave exige um procedimento de migração; preserve os saves antes de
@@ -16,6 +17,8 @@ desinstalar. Não é uma publicação na Play Store.
 ## Controles
 
 - Analógico esquerdo: andar no curso interno, correr ao puxar até a borda; dirigindo, vira o veículo.
+- O centro dos analógicos tem zona morta para evitar movimento involuntário.
+- Tela estreita ou quase quadrada usa controles maiores e opções em três colunas.
 - Analógico direito: mirar. Atacar dispara ou executa o ataque equipado.
 - Ação: interagir; Entrar/Sair: veículo. Recarregar e Arma fazem as ações indicadas.
 - Dirigindo: Acelerar, Frear/Ré e Freio mão, com direção simultânea.
@@ -49,8 +52,10 @@ adb shell run-as com.geteco.harbor cat files/frame-stalls.json
 
 ## Build reproduzível
 
-Use Godot 4.7.2 e seus templates oficiais, Java 17 e Android SDK configurado no
-editor. As texturas também são importadas em ETC2/ASTC para Android.
+Use Godot 4.7.2 **.NET (mono)** e seus templates oficiais **mono**, Java 17 e
+Android SDK configurado no editor. O desktop usa .NET 10; o alvo Android usa
+.NET 9, correspondente ao runtime dos templates. As texturas também são
+importadas em ETC2/ASTC para Android. O script compila C# antes de exportar.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/build_android.ps1 -CheckOnly

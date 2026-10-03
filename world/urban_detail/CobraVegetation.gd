@@ -22,6 +22,9 @@ static func scatter(parent: Node3D) -> MultiMeshInstance3D:
 		var central := p.length()<12.0
 		if not central and rng.randf()>.24: continue
 		if p.distance_to(Vector2(0,-1.875))<3.15: continue
+		# Aurora occupies this formerly empty roadside lot; keep its paving clear.
+		var world_point := Vector2(parent.global_position.x+p.x,parent.global_position.z+p.y)
+		if Rect2(409,109,22,30).has_point(world_point): continue
 		if preload("res://world/urban_detail/HarborGrassTufts.gd")._on_road(Vector2(parent.global_position.x+p.x,parent.global_position.z+p.y),roads): continue
 		var blocked := false
 		for entry in reserved:

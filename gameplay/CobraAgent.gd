@@ -1,7 +1,7 @@
 extends CharacterBody3D
 
 signal died
-const MODELS := [preload("res://assets/gameplay/cobra_0.scn"), preload("res://assets/gameplay/cobra_1.scn"), preload("res://assets/gameplay/cobra_2.scn")]
+const MODEL := preload("res://gameplay/CobraModel.gd")
 const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
 var gameplay: Node3D
 var tier := 0
@@ -18,8 +18,6 @@ var path := PackedVector3Array()
 var waypoint := 0
 var repath := 0.0
 var gait := 0.0
-var left_leg: Node3D
-var right_leg: Node3D
 var engaged := true
 var burst := 0
 var retreated := false
@@ -52,17 +50,9 @@ func _ready() -> void:
 	shape.shape = capsule
 	shape.position.y = 0.86
 	add_child(shape)
-	visual = MODELS[tier].instantiate()
-	visual.scale *= 1.28
+	visual = MODEL.new()
+	visual.tier = tier
 	add_child(visual)
-	preload("res://gameplay/urban_v1/CobraAppearance.gd").dress(visual)
-	left_leg = visual.find_child("left_upper_leg", true, false)
-	right_leg = visual.find_child("right_upper_leg", true, false)
-	var right_arm := visual.find_child("right_upper_arm", true, false) as Node3D
-	var left_arm := visual.find_child("left_upper_arm", true, false) as Node3D
-	if right_arm: right_arm.rotation.x = -1.4
-	if left_arm: left_arm.rotation.x = -1.15
-	preload("res://gameplay/urban_v1/CobraAppearance.gd").arms(visual,true)
 	last_known = global_position
 
 func _physics_process(delta: float) -> void:
@@ -116,10 +106,10 @@ func _physics_process(delta: float) -> void:
 	velocity.y = -1 if is_on_floor() else velocity.y - 20 * delta
 	move_and_slide()
 	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
-	if left_leg: left_leg.rotation.x = sin(gait) * 0.55
-	if right_leg: right_leg.rotation.x = -sin(gait) * 0.55
+	visual.update_pose(delta, sees_target, false, 0.0, gait)
 
 func _shoot(target: Node3D) -> void:
+	visual.attack()
 	var data: Dictionary = CATALOG.get_weapon(weapon_id)
 	var origin := global_position + Vector3.UP * 1.1
 	var direction := (target.global_position + Vector3.UP - origin).normalized()

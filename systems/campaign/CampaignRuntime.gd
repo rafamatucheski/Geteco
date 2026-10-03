@@ -19,7 +19,14 @@ func race_status() -> Dictionary:
 	var result: Dictionary=_data.get("race_run",{}).duplicate(true)
 	if not result.is_empty():
 		result.merge({"elapsed":float(_data.race_elapsed),"outside":float(_data.race_outside),"time_left":maxf(0,100.0-float(_data.race_elapsed)),"return_seconds":maxf(0,4.0-float(_data.race_outside))})
+		if result.get("course_version",0)==2:
+			result.time_left=maxf(0,180.0-float(_data.race_elapsed))
+			result.return_seconds=maxf(0,20.0-float(_data.race_outside))
 	return result
+
+func set_street_race_place(value: int) -> void:
+	if active_id=="cobra_race" and _data.race_run.get("course_version",0)==2:
+		_data.race_run.place=clampi(value,1,6)
 
 func tick_race(delta: float, point: Vector2, vehicle_id: String, alive: bool) -> Dictionary:
 	if active_id!="cobra_race" or step==0 or not is_finite(delta) or delta<=0 or not point.is_finite(): return {}
@@ -69,6 +76,9 @@ func objective() -> String:
 	if is_suspended(): return "Missão interrompida. Libere espaço atrás do guincho para encerrar a tentativa."
 	if active_id=="cobra_race" and not _data.get("race_run",{}).is_empty():
 		if _data.race_run.countdown>0: return "Fique parado · %d"%ceili(float(_data.race_run.countdown))
+		if _data.race_run.get("course_version",0)==2:
+			if _data.race_outside>0: return "Volte à rota · %d s"%ceili(20.0-float(_data.race_outside))
+			return "Checkpoint azul %d/4 · Chegue em primeiro às docas."%mini(int(_data.race_run.checkpoint)+1,4)
 		if _data.race_outside>0: return "Volte à pista pelo mesmo lugar · %d s"%ceili(4.0-float(_data.race_outside))
 		return "Portão %d/4 · Restam %d s · Siga a faixa externa."%[mini(int(_data.race_run.checkpoint)+1,4),ceili(100.0-float(_data.race_elapsed))]
 	return str(current_step().get("objective", "Consulte o quadro da garagem."))
@@ -149,15 +159,16 @@ func apply_event(event_id: String, payload: Dictionary = {}) -> Dictionary:
 			if run.is_empty() or run.countdown>0: return _reply(false,false,"race_not_started")
 			if event_id=="race_checkpoint" and int(run.checkpoint)<=int(expected.checkpoint): return _reply(false,false,"race_crossing_required")
 			if event_id=="race_finished" and (int(run.checkpoint)!=4 or float(run.progress)<TAU): return _reply(false,false,"race_lap_required")
+			if event_id=="race_finished" and run.get("course_version",0)==2 and int(run.place)!=1: return _reply(false,false,"race_win_required")
 		var elapsed: Variant = payload.get("elapsed", -1)
 		if typeof(elapsed) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(elapsed)) or float(elapsed) < float(_data.race_elapsed):
 			return _reply(false, false, "invalid_elapsed")
-		if float(elapsed) >= 100.0:
+		if float(elapsed) >= (180.0 if _data.race_run.get("course_version",0)==2 else 100.0):
 			cancel("race_timeout")
 			return _reply(false, true, "race_timeout")
 		_data.race_elapsed = float(elapsed)
 		if event_id=="race_started":
-			_data.race_run=Race.start(str(payload.race_vehicle_id),payload.race_position)
+			_data.race_run=preload("res://systems/campaign/CobraStreetProgress.gd").start(str(payload.race_vehicle_id),payload.race_position) if payload.get("race_course",0)==2 else Race.start(str(payload.race_vehicle_id),payload.race_position)
 			_data.failure=""
 	_data.step += 1
 	if step < Missions.MISSIONS[active_id].steps.size(): return _reply(true, true, "advanced")
@@ -200,6 +211,14 @@ func restore_snapshot(data: Dictionary) -> bool:
 	_data.race_elapsed = float(_data.race_elapsed)
 	_data.race_outside = float(_data.get("race_outside",0.0))
 	_data.race_run = _data.get("race_run",{}).duplicate(true)
+	if _data.race_run.get("course_version",0)==2:
+		# Rivais são corpos transitórios. Reabrir um save reinicia a largada,
+		# nunca restaura o jogador adiante enquanto os adversários voltam ao início.
+		_data.step=0
+		_data.race_run={}
+		_data.race_elapsed=0.0
+		_data.race_outside=0.0
+		_data.failure="race_restart_required"
 	if _data.active_id=="cobra_race" and _data.step>0 and _data.race_run.is_empty():
 		# Pre-angular saves lack a trustworthy car/start/trajectory. Keep mission/unlocks,
 		# but require a new physical start instead of inventing a completed lap.
@@ -247,10 +266,11 @@ static func validate_snapshot(data: Dictionary) -> bool:
 		if required != "" and not data.completed.has(required): return false
 		if int(data.step) >= Missions.MISSIONS[data.active_id].steps.size(): return false
 	elif int(data.step) != 0: return false
-	if typeof(data.race_elapsed) not in [TYPE_FLOAT, TYPE_INT] or not is_finite(float(data.race_elapsed)) or float(data.race_elapsed) < 0.0 or float(data.race_elapsed) > 100.0: return false
+	var street: bool=data.get("race_run",{}) is Dictionary and data.get("race_run",{}).get("course_version",0)==2
+	if typeof(data.race_elapsed) not in [TYPE_FLOAT, TYPE_INT] or not is_finite(float(data.race_elapsed)) or float(data.race_elapsed) < 0.0 or float(data.race_elapsed) > (180.0 if street else 100.0): return false
 	if data.active_id != "cobra_race" and float(data.race_elapsed) != 0.0: return false
 	var outside: Variant=data.get("race_outside",0.0)
-	if typeof(outside) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(outside)) or outside<0 or outside>=4: return false
+	if typeof(outside) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(outside)) or outside<0 or outside>=(20.0 if street else 4.0): return false
 	if (data.active_id!="cobra_race" or data.step==0) and outside!=0: return false
 	var run: Variant=data.get("race_run",{})
 	if not Race.validate(run): return false

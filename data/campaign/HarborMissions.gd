@@ -19,12 +19,12 @@ const MISSIONS := {
 		"sets_flags": ["cobra_contact_complete"], "source": "world/harbor/campaign/HarborStoryTow.gd"},
 	"cobra_race": {"title": "Prova de rua", "reward": 200, "requires": "cobra_contact", "hour": 21,
 		"steps": [
-			{"event": "race_started", "target": "ashbend_start", "objective": "Pare na largada de Ashbend, aponte o carro para o norte e use a interação.", "in_vehicle": true},
+			{"event": "race_started", "target": "ashbend_start", "objective": "Atenda o telefone dos Cobras com seu carro para disputar a corrida até as docas.", "in_vehicle": true},
 			{"event": "race_checkpoint", "target": "ashbend_gate_0", "objective": "Passe pelo primeiro portão.", "checkpoint": 0, "in_vehicle": true},
 			{"event": "race_checkpoint", "target": "ashbend_gate_1", "objective": "Passe pelo segundo portão.", "checkpoint": 1, "in_vehicle": true},
 			{"event": "race_checkpoint", "target": "ashbend_gate_2", "objective": "Passe pelo terceiro portão.", "checkpoint": 2, "in_vehicle": true},
 			{"event": "race_checkpoint", "target": "ashbend_gate_3", "objective": "Passe pelo quarto portão.", "checkpoint": 3, "in_vehicle": true},
-			{"event": "race_finished", "target": "ashbend_finish", "objective": "Conclua a prova em até 100 segundos.", "in_vehicle": true}],
+			{"event": "race_finished", "target": "ashbend_finish", "objective": "Chegue em primeiro às docas, passando pelos quatro checkpoints azuis.", "in_vehicle": true}],
 		"sets_flags": ["cobra_race_complete"], "source": "world/harbor/campaign/CobraCampaignController.gd"},
 	"cobra_collection": {"title": "A conta chega", "reward": 250, "requires": "cobra_race", "hour": -1,
 		"steps": [

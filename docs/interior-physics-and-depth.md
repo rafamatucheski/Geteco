@@ -1,24 +1,26 @@
 # Contrato obrigatório de interiores acessíveis
 
-Este contrato vale para novos ambientes, prédios, veículos acessíveis, móveis e interações de entrada, e para os ambientes alterados. O chalé é a implementação de referência. Um ambiente legado não está aprovado apenas porque existe no projeto.
+Este contrato vale para novos ambientes, prédios, veículos acessíveis, móveis e interações de entrada, e para os ambientes alterados. Chalé e garagem do Maciota são referências de apresentação; a implementação atual é a V2, com cenário, atores e física 3D nativos. Um ambiente não está aprovado apenas porque existe no projeto.
 
 ## Comportamento obrigatório
 
 - Jogador e NPCs caminham no piso livre. Mesas, camas, sofás, balcões, caixas, banquetas, portas fechadas e suportes ocupam espaço físico.
 - Pernas finas de um móvel não autorizam atravessar seu tampo. Reserve a área do objeto inteiro. Divida móveis em L em partes para preservar os corredores livres.
 - Piso e tapete raso são transitáveis. Vigas, lustres e superfícies elevadas encobrem atores pela profundidade, sem criar paredes invisíveis no chão.
-- Não altere `z_index`, transparência ou posição do sprite para fingir uma colisão. Não eleve o ator até o tampo nem o teletransporte por obstáculos para resolver um caminho.
+- Não altere ordem de desenho, transparência ou posição visual do ator para fingir uma colisão. Não eleve o ator até o tampo nem o teletransporte por obstáculos para resolver um caminho.
 - Sentar, deitar ou subir só é permitido em uma interação explicitamente implementada, com acesso livre, pose, apoio e saída validados. O movimento comum continua bloqueado.
 - Spawn, retorno, restauração de save, NPC residente, pickup e aproximação de interação devem ficar em espaço livre, considerando a dimensão real do ator. Navegação e deslocamento usam as mesmas colisões; NPC não recebe permissão especial para atravessar cenário.
 
-## Implementação de referência
+## Implementação de referência na V2
 
-1. Construa objetos físicos com uma identidade `interior_solid_id` nas malhas que determinam seu volume. Em `MountainCabin3D.gd`, cada grupo identifica um móvel. Não agrupe toda a sala em um único sólido. Um novo objeto precisa de classificação explícita e de cobertura de teste; um objeto sem identidade não recebe bloqueio automaticamente.
-2. Use `world/shared/interiors/InteriorSolidProjection.gd` para obter a área de cada grupo a partir das próprias malhas e transformações e projetá-la no piso. A mesma câmera fixa e o mesmo sprite devem projetar cenário, colisão, spawn e interação. Câmeras criadas por streaming precisam do transform final e de interpolação desativada antes da projeção. Mudança de malha ou layout exige reconstruir os bloqueios antes de admitir atores.
-3. Use `world/shared/interiors/InteriorActorPresentation.gd` para jogadores e NPCs em uma sala 3D projetada. O rig animado original é renderizado no mesmo SubViewport da sala, com profundidade real. O sprite externo fica oculto, o viewport individual fica suspenso e o ponto de apoio é a interseção do raio com o chão. Não copie rigs nem adicione passes por ator.
-4. Chame `configure(actor, camera, display)` na entrada e `restore()` na saída, respawn e descarregamento. Não desative o processamento do adaptador enquanto o ator está na sala. A limpeza é idempotente; o adaptador também acompanha remoção do ator e da câmera. Máscaras de colisão devem continuar incluindo o cenário. A admissão verifica o corpo inteiro contra os sólidos, inclusive antes do primeiro tick físico, e recupera uma posição antiga inválida no `SpawnPoint`. Esse ponto precisa estar livre; a validação de NPCs deve comprovar que posições autoradas não dependem desse fallback.
-5. `MountainInteriorManager.gd` integra o adaptador nos interiores projetados da montanha. `HarborInteriorBase.gd` integra NPCs residentes em salas que expõem `camera_3d` e `sprite_3d`. Outros gerenciadores precisam conectar explicitamente seu fluxo de jogador ao adaptador. O antigo `MountainInteriorActorScale.gd` só calibra sprites de ambientes legados; não satisfaz o contrato de profundidade.
-6. Projete disparos/efeitos a partir da câmera da sala (`project_node`), e calibre a passada na projeção do piso (`pixels_per_rig_unit`). Restaure os contratos externos ao sair. Adaptações para outro tipo de NPC precisam preservar seu rig, animação, colisão, escala e ciclo de vida.
+1. O catálogo [PlaceCatalog.gd](../world/places/PlaceCatalog.gd) define modelos, coordenadas em metros, acessos, spawns e interações. [NativePlace.gd](../world/places/NativePlace.gd) instancia as salas comuns; [MaciotaPlace.gd](../world/maciota/MaciotaPlace.gd) e os lugares especiais possuem integração própria. Preserve a identidade do acesso usado para o retorno.
+2. Classifique cada objeto sólido por `interior_solid_id` nas malhas ou pelos volumes autorados consumidos pelo adaptador. `NativePlace` transforma os limites para o espaço local da sala e cria `StaticBody3D`/`CollisionShape3D` na camada do cenário. Não agrupe toda a sala em um sólido; divida volumes em L para conservar corredores. Um objeto sem classificação não ganha bloqueio automaticamente. Verifique volume físico e malha visível separadamente: recortes de paredes para a câmera não removem sua colisão.
+3. Jogador, NPCs e mobiliário compartilham o mundo 3D e o desenho da cena. Preserve os rigs e os corpos reais de [Actor.gd](../scripts/Actor.gd) e dos NPCs envolvidos. Não reintroduza projeção para física 2D, sprite por personagem ou SubViewport por ator. A câmera ortográfica determina o enquadramento; não determina a posição física dos sólidos.
+4. Entrada, saída, restauração, resgate e transferência de veículo passam pelos fluxos de [FullSession.gd](../runtime/FullSession.gd) e seus controladores de acesso. Preserve os tokens de transição, bloqueio temporário de comandos, origem, máscara de colisão e restauração de câmera/ambiente. A admissão deve verificar o corpo inteiro e o apoio no piso; `FullSession.position_clear` combina cápsula e raio de suporte. `NativePlace.is_floor_clear` é uma consulta auxiliar em XZ, não prova isolada de suporte, altura livre ou passagem varrida.
+5. Construa os bloqueios antes de admitir atores e valide sua disponibilidade no servidor de física. Reentrada e descarregamento devem desativar ou liberar sala, NPCs, efeitos e reservas pertencentes àquele fluxo. Um fallback de spawn não dispensa provar que posições autoradas de moradores, recompensas e interações estão livres.
+6. Disparos, efeitos e mãos usam os transforms reais dos rigs/armas em 3D. Preserve animação, escala, colisão e ciclo de vida ao integrar outro NPC. Valide oclusão pela câmera final e pelo renderer configurado, incluindo controles em que o ator precisa permanecer visível.
+
+Os antigos `InteriorSolidProjection`, `InteriorActorPresentation` e adaptadores de sprite pertencem à arquitetura projetada da V1. Não são dependências a recriar na V2. Os requisitos visuais e físicos deste contrato permanecem obrigatórios.
 
 ## Gate de entrega
 
@@ -28,18 +30,16 @@ Para cada ambiente novo ou alterado, acrescente casos verificáveis ao teste cor
 - Movimento varrido com o jogador e com NPC real contra as bordas e cantos, inclusive deslocamento grande que poderia atravessar uma parede. Verificar também caminhos válidos: os bloqueios não podem fechar corredores.
 - Testar entrada, spawn, pickups, interação, saída, reentrada e recuperação/respawn usando os fluxos reais. Query de ponto isolada não prova que o corpo cabe.
 - Renderizar ator antes, atrás e ao lado de móveis, portas, vigas e paredes. Teste de oclusão deve ter controle positivo: esconder o ator sempre não passa. Verificar movimento e origem de armas/efeitos, não só uma pose parada.
-- Verificar NPC residente e visitante, duas pessoas na mesma sala, remoção do ator e descarregamento. Sala vazia e viewports individuais não devem continuar renderizando sem necessidade.
+- Verificar NPC residente e visitante, duas pessoas na mesma sala, remoção do ator e descarregamento. Sala inativa não deve conservar efeitos, processamento ou renderização desnecessários; não adicionar passes individuais de atores.
 - Comparar performance na cena real, seguindo `performance-do-jogo`, e registrar lacunas. Headless não comprova profundidade nem FPS.
 
-Comandos de referência (executável Godot do ambiente):
+Referências de validação existentes na V2, para selecionar conforme a mudança:
 
-```text
-godot --headless --path game --script res://tests/test_projected_interior_contract.gd
-godot --path game --script res://tests/test_projected_interior_contract.gd
-godot --headless --path game --script res://tests/test_mountain_cabin_scale.gd
-godot --path game --script res://tests/measure_cabin_depth.gd -- cabin-after
-```
+- [test_video_interior.gd](../tests/test_video_interior.gd): apoio físico e aproximação dos balcões nas duas lojas de armas e no banco; contém também casos dirigidos dos guardas, sem certificar o fluxo completo da sessão.
+- [test_bank_depth.gd](../tests/test_bank_depth.gd): colisão varrida e oclusão renderizada de jogador/NPC no banco, com controles positivos de visibilidade. O viewport da fixture é um instrumento de teste, não a arquitetura produtiva.
+- [test_video_session_transitions.gd](../tests/test_video_session_transitions.gd): transições de garagem, loja e banco, chuva, restrição de armas e resgate. Avalie a barreira de carregamento e o escopo da fixture antes de usá-la como evidência atual.
+- [test_garage_rewards.gd](../tests/test_garage_rewards.gd), [test_garage_driver_restore.gd](../tests/test_garage_driver_restore.gd) e [test_garage_vehicle_transfer.gd](../tests/test_garage_vehicle_transfer.gd): contratos de recompensa e transferência/restauração da garagem.
 
-`test_projected_interior_contract.gd` cobre os sólidos do chalé, movimento de jogador/NPC, restauração e oclusão renderizada com controle positivo. `test_mountain_cabin_scale.gd` cobre entrada, circulação, coleta, saída e respawn na cena MountainPass. Novos ambientes precisam dos próprios casos equivalentes. Aprovação de um caso não substitui a cobertura de outro.
+Compile `Harbor.csproj` e use o Godot 4.7.2 .NET indicado em `AGENTS.md`, com dados isolados e `--no-save` quando aplicável. Os testes de profundidade exigem renderização; headless serve somente às propriedades físicas/lógicas que a fixture realmente verifica. As referências acima não significam execução ou aprovação nesta revisão documental. Novos ambientes precisam de casos próprios; aprovação de um caso não substitui a cobertura de outro.
 
 Se qualquer caso de colisão, profundidade, spawn ou circulação falhar, corrija a causa antes da entrega. Não ignore assertions, não aumente tolerâncias para aprovar clipping e não declare garantia universal de ausência de bugs.

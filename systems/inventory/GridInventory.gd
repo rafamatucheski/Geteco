@@ -5,6 +5,10 @@ const LONG := ["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamet
 const TRUNK_SIZE := Vector2i(4,6)
 const TRUNK_AMMO_SLOTS := 6
 const ITEMS := {
+	"juice":{"label":"Suco de laranja","description":"Recupera 12 de vida.","heal":12,"stack":5,"icon":"juice"},
+	"yogurt":{"label":"Iogurte","description":"Recupera 10 de vida.","heal":10,"stack":5,"icon":"yogurt"},
+	"bread":{"label":"Pão integral","description":"Recupera 15 de vida.","heal":15,"stack":5,"icon":"bread"},
+	"cereal_bar":{"label":"Barra de cereal","description":"Recupera 8 de vida.","heal":8,"stack":5,"icon":"cereal_bar"},
 	"apple":{"label":"Maçã","description":"Uma maçã fresca. Recupera 8 de vida.","heal":8,"stack":5,"icon":"apple"},
 	"water":{"label":"Água","description":"Uma garrafa de água. Recupera 5 de vida.","heal":5,"stack":5,"icon":"water"},
 	"sandwich":{"label":"Sanduíche","description":"Um lanche embalado. Recupera 20 de vida.","heal":20,"stack":5,"icon":"sandwich"},

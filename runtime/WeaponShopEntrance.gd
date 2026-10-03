@@ -2,7 +2,7 @@ extends Node
 
 ## Physical walk-up access; NPC interactions remain owned by FullSession.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
-const IDS := ["harbor_ammunation", "mountain_gunshop", "harbor_police", "harbor_bank", "maciota", "port_boss_garage", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station",
+const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "harbor_police", "harbor_bank", "maciota", "port_boss_garage", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station",
 	"mountain_cabin", "mountain_cabin_encosta", "mountain_cabin_forest", "mountain_cabin_village_1", "mountain_cabin_village_2", "mountain_cabin_village_3", "mountain_cabin_village_4",
 	"lumberjack_shelter", "lumberjack_shelter_2", "lumberjack_shelter_3", "mountain_outfitters", "mountain_boutique", "mountain_village_outfitters",
 	"westgate_garden", "quayside_house", "canal_north", "cemetery_keeper", "mountain_bunker", "ski_lodge"]
@@ -127,6 +127,7 @@ func _update_facade(id: String, near: bool, delta: float) -> void:
 	if not is_instance_valid(_facade): return
 	# Ownership gates the physical hinge as well as admission into the room.
 	var owned: bool = session.activities == null or session.activities.can_enter_home(id)
+	if id == "harbor_bank" and not session.robberies.can_enter_bank(): owned = false
 	var next := move_toward(_door_amount, 1.0 if owned and (near or _entering) else 0.0, delta / .28)
 	if not is_equal_approx(next, _door_amount):
 		_door_amount = next
@@ -161,7 +162,10 @@ func _update_exit() -> void:
 	if _leaving or _entering or _blocked() or not is_instance_valid(session.room): return
 	var player: CharacterBody3D = session.world.player
 	var local: Vector3 = player.global_position - session.room.exit_position
-	if absf(local.x) > .75 or local.z < -.55 or local.z > .45 or player.velocity.z < .7: return
+	var bank: bool = session.state.place_id=="harbor_bank"
+	var half_width := 1.08 if bank else .75
+	var approach := -.8 if bank else -.55
+	if absf(local.x) > half_width or local.z < approach or local.z > .45 or player.velocity.z < .7: return
 	_leave()
 
 func _leave() -> void:
@@ -224,6 +228,7 @@ func _door_position(id: String, definition: Dictionary) -> Vector3:
 	return _original_door_position(id,definition)
 
 func _original_door_position(id: String, definition: Dictionary) -> Vector3:
+	if id == "harbor_supermarket": return definition.exterior_position + Vector3(0,0,5.5)
 	var family := PLACES.walkup_family(id)
 	if not family.is_empty(): return definition.exterior_position + Vector3(0, 0, PLACES.walkup_door_z(family))
 	if id == "maciota": return session.world.maciota_place.entry_position - Vector3(0, 0, .4875)

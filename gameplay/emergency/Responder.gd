@@ -6,7 +6,11 @@ var incident_id := 0
 var destination := Vector3.ZERO
 var vehicle: CharacterBody3D
 var visual: Node3D
-var mode := "approach"
+var mode := "approach":
+	set(value):
+		# Dispatch can end service before this responder observes the missing fire.
+		if mode == "service" and value != "service" and role == "fire": _stop_water()
+		mode = value
 var action_time := 0.0
 var age := 0.0
 var gait := 0.0
@@ -122,7 +126,6 @@ func _physics_process(delta: float) -> void:
 			if is_instance_valid(fire) and not fire.is_queued_for_deletion():
 				manager.extinguish(fire, delta * 0.3)
 			if not is_instance_valid(fire) or fire.is_queued_for_deletion():
-				_stop_water()
 				mode = "return"
 			else:
 				_spray(fire, delta)

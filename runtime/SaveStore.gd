@@ -25,6 +25,10 @@ func load_into(state) -> Dictionary:
 func save(state) -> Error:
 	var data: Dictionary = state.snapshot()
 	if not STATE.new().restore_snapshot(data): return ERR_INVALID_DATA
+	# Check the exact UTF-8 payload before changing recovery files or creating a
+	# temporary that read_valid() could never accept. Reuse these same bytes.
+	var encoded := JSON.stringify(data,"\t").to_utf8_buffer()
+	if encoded.size() > MAX_BYTES: return ERR_INVALID_DATA
 	var result := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
 	if result != OK: return result
 	var temp := path+".tmp"
@@ -39,7 +43,7 @@ func save(state) -> Error:
 		if result != OK: return result
 	var file := FileAccess.open(temp,FileAccess.WRITE)
 	if not file: return FileAccess.get_open_error()
-	file.store_string(JSON.stringify(data,"\t"))
+	file.store_buffer(encoded)
 	file.flush()
 	result = file.get_error()
 	file.close()

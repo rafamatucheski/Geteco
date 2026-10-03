@@ -2,8 +2,10 @@ extends "res://gameplay/PoliceModel.gd"
 # Original BankGuard uniform applied to the same articulated native rig.
 const PART = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
 var uses_shotgun := false
+var generation := 0
 var eyes: Array[MeshInstance3D] = []
 func _ready() -> void:
+	appearance_index = generation
 	super._ready()
 	_rebuild_uniform()
 	scale = Vector3(.88,.94,.90)*1.28
@@ -11,7 +13,7 @@ func _ready() -> void:
 func _body_look() -> Dictionary:
 	var look := super._body_look()
 	look.merge({"top": 6, "hat": 4, "shoe": 1, "top_color": Color("635544"), "bottom_color": Color("3a332b"),
-		"accent": Color("2b2620"), "skin": Color("b98062") if uses_shotgun else Color("d6a582")}, true)
+		"accent": Color("2b2620"), "skin": _skin_color()}, true)
 	return look
 
 func _clear_parts(parent: Node3D) -> void:
@@ -20,7 +22,7 @@ func _clear_parts(parent: Node3D) -> void:
 			child.hide()
 func _rebuild_uniform() -> void:
 	var cloth=Color("635544")
-	var skin=Color("b98062") if uses_shotgun else Color("d6a582")
+	var skin := _skin_color()
 	_clear_parts(torso_node)
 	_clear_parts(head_node)
 	PART.piece(torso_node,Vector3(.37,.40,.25),Vector3.ZERO,cloth)
@@ -68,3 +70,7 @@ func _rebuild_uniform() -> void:
 					part.mesh.bottom_radius=.045
 					part.position.y=-.10
 	model_root.rotation.y = PI
+
+func _skin_color() -> Color:
+	var tones := [Color("b98062"), Color("d6a582"), Color("83553d"), Color("c29270"), Color("e1b995"), Color("a07153")]
+	return tones[posmod(generation, tones.size())]

@@ -225,6 +225,11 @@ func build() -> void:
 	var grass = preload("res://world/mountain_detail/MountainGrass3D.gd").new()
 	grass.controller = self
 	world.add_child(grass)
+	# Warm after CityLook enables the final Mobile framebuffer (including glow).
+	await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
@@ -305,6 +310,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
 	await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:combat_resources",phase_traced)
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
@@ -360,6 +369,7 @@ func _apply_player_settings() -> void:
 
 func _hold_fleet_scenes() -> void:
 	if not _fleet_scenes.is_empty(): return
+	preload("res://gameplay/icecream/IceCreamVan.gd").prewarm()
 	# Trânsito e as viaturas do despacho (DispatchRules.ARCHETYPES): nascem e somem igual.
 	for id in TRAFFIC_CAR_TYPES+TRAFFIC_MOTORCYCLE_TYPES+["police_cruiser","medic_box","rescue_pumper","station_wagon"]:
 		var definition: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(id)
@@ -606,7 +616,7 @@ func _persistent_vehicle_support() -> Dictionary:
 		# it here would evict the chunk before the ground check can resume it.
 		if not car.is_physics_processing() and not car.has_meta("awaiting_ground"): continue
 		if _is_ambient_traffic(car) and car != world.driving.car and not car.get_meta("gang_hostile",false): continue
-		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false)
+		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false)
 		if not persistent:
 			if car.traffic: continue
 			if car.global_position.distance_to(world.player.global_position) > 145:
@@ -620,7 +630,7 @@ func _persistent_vehicle_support() -> Dictionary:
 		var id: String = WORLD_CONNECTION.logical_region(car.global_position)
 		var radius: float = Vector2(car.half_width,car.half_length).length()+0.5
 		support[id].append({"position":car.global_position,"radius":radius})
-		if car.get_meta("port_work_vehicle",false):
+		if car.get_meta("port_work_vehicle",false) or car.get_meta("race_owned",false):
 			# PortLogistics admits this same point before moving. Keep its chunk
 			# until the request moves on; the hull radius alone does not cover it.
 			support[id].append({"position":car.global_position-car.global_basis.z*(car.half_length+3),"radius":0.0})
@@ -885,7 +895,7 @@ func _process(delta: float) -> void:
 			if vehicle_position_clear(car,car.position,car.rotation.y):
 				car.remove_meta("awaiting_ground")
 				car.set_physics_process(true)
-		elif not car.traffic and car != world.driving.car and car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false) and car.position.distance_to(world.player.position) > 145:
+		elif not car.traffic and car != world.driving.car and car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false) and not car.get_meta("race_owned",false) and car.position.distance_to(world.player.position) > 145:
 			vehicles.remove_at(index)
 			# Owners of a parked snapshot can distinguish streaming cleanup from
 			# an explicit removal without keeping a distant physical body alive.
@@ -1190,6 +1200,9 @@ func _create_traffic_vehicle() -> void:
 			_trace_cost("traffic_spawn_vehicle:"+id,traced)
 			if car == null: continue
 			car.vehicle_id = "street_"+str(Time.get_ticks_usec())
+			if id == "courier_van" and preload("res://gameplay/icecream/IceCreamVan.gd").choose(vehicles):
+				car.paint_color = Color("fff0dd")
+				car.vehicle_id = preload("res://gameplay/icecream/IceCreamVan.gd").PREFIX+str(Time.get_ticks_usec())
 			car.route = route
 			car.route_distance = offset
 			car.set_meta("ambient_traffic", true)

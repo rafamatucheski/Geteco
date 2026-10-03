@@ -7,6 +7,9 @@ var solid_bodies: Array[StaticBody3D] = []
 var solid_bounds: Array[AABB] = []
 var vault_pivot: Node3D
 var vault_bodies: Array[StaticBody3D] = []
+var bank_cutaway: Array[MeshInstance3D] = []
+var bank_cutaway_materials: Array[StandardMaterial3D] = []
+var bank_cutaway_amount := 0.0
 var reward_visual: Node3D
 ## Verdadeiro em lugares que animam a própria arma (ex.: esconderijo da Vértice);
 ## o resto das recompensas do lugar continua com a apresentação de coleta.
@@ -190,9 +193,36 @@ func set_active(value: bool) -> void:
 func _classify_bank() -> void:
 	for mesh in model.find_children("*","MeshInstance3D",true,false):
 		var label := str(mesh.name)
+		if label.begins_with("VaultPartition") or label.begins_with("PartitionPanel") or label.begins_with("VaultFrame") or label == "VaultLintel":
+			bank_cutaway.append(mesh)
+			var surface: StandardMaterial3D = mesh.get_active_material(0).duplicate()
+			surface.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA
+			mesh.material_override=surface
+			bank_cutaway_materials.append(surface)
 		if label == "Floor" or label.begins_with("Tile_") or label.begins_with("Cornice") or label.begins_with("Lamp") or label == "VaultLintel": continue
 		mesh.set_meta("interior_solid_id",label)
 	_rect_solid("BankFrontBoundary",Rect2(-7,5,14,.12))
+	# A visible, broad exit aligns with the actual walk-out threshold.
+	var part = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
+	for side in [-1,1]:
+		part.piece(model,Vector3(.15,.4,.18),Vector3(side*1.3,.2,4.92),Color("5e696d"))
+		_box_solid("BankExitJamb",AABB(Vector3(side*1.3-.075,0,4.83),Vector3(.15,.4,.18)))
+	part.piece(model,Vector3(2.4,.025,.8),Vector3(0,.02,4.5),Color("33433e"))
+	var sign := Label3D.new()
+	sign.text="SAÍDA"
+	sign.font_size=48
+	sign.pixel_size=.006
+	sign.position=Vector3(0,.04,4.5)
+	sign.rotation.x=-PI*.5
+	model.add_child(sign)
+
+func update_bank_visibility(point: Vector3,delta: float) -> void:
+	if definition.id!="harbor_bank": return
+	# Open a view through the partition as Dante approaches/crosses the vault;
+	# physical walls remain solid, and opacity returns on the way to the lobby.
+	var target := .88 if point.z < -2.6 else 0.0
+	bank_cutaway_amount=move_toward(bank_cutaway_amount,target,delta*3.5)
+	for surface in bank_cutaway_materials: surface.albedo_color.a=1.0-bank_cutaway_amount
 
 func _special_solids() -> void:
 	if definition.id in ["harbor_ammunation","mountain_gunshop"]:
@@ -230,8 +260,9 @@ func set_vault_open(amount: float) -> void:
 		for mesh in model.find_children("*","MeshInstance3D",true,false):
 			if _is_vault_door_part(str(mesh.name)): mesh.reparent(vault_pivot,true)
 		for body in solid_bodies:
-			if _is_vault_door_part(str(body.get_meta("interior_solid_id",""))): vault_bodies.append(body)
+			if _is_vault_door_part(str(body.get_meta("interior_solid_id",""))):
+				vault_bodies.append(body)
+				body.reparent(vault_pivot,true)
 	vault_pivot.rotation.y = -PI*.65*clampf(amount,0,1)
-	for body in vault_bodies: body.collision_layer = 0 if amount >= .95 else 1
 func _is_vault_door_part(label: String) -> bool:
 	return label.begins_with("VaultDoor") or label.begins_with("DoorBolt") or label.begins_with("Wheel") or label.begins_with("Spoke")

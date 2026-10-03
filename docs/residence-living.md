@@ -1,5 +1,93 @@
 # Casas compráveis — 28/09/2026
 
+## Interações presenciais — 02/10/2026
+
+Atualização das três casas existentes: Westgate Garden, Quayside e Canal North.
+Esta seção substitui, para esses fluxos, a descrição histórica abaixo.
+
+Correção do suporte de parede: armas de perfil paralelo ao painel, com folga
+traseira de 4 mm e berços ajustados à coronha e ao guarda-mão. Os pinos grandes
+foram substituídos por furos rasos. Painel afastado das cortinas; armas e
+luminária separadas, sem aumentar a área sólida da bancada. As imagens
+`rack-after-*-normal.png`, `rack-after-*-front.png` e `rack-after-*-bench.png`
+em `evidence/residence-immersive/` substituem as fotos anteriores desse suporte.
+
+Revisão dirigida renderizada: **60 verificações, zero falhas**, nas três casas,
+em `evidence/residence-rack-review.log`. Inclui orientação horizontal, folga
+traseira e separação de painel/cortinas/luminária. Colisão da bancada preservada;
+peças novas permanecem dentro do volume sólido existente. Gravação `rack.mp4`:
+30 s em Westgate, 903 frames, sem variação no recorte da cena estática.
+Comparativo local dos suportes, mesma vista e configuração de diagnóstico:
+`rack-mount-before.json` → `rack-after.json`, 30 s por amostra;
+p50 0,989 → 0,883 ms, p95 1,571 → 1,292 ms, p99 2,037 → 1,649 ms,
+máximo 17,910 → 8,496 ms; nenhum frame acima de 33,3/66,7 ms.
+Sem regressão observada nesse ajuste. O editor permaneceu aberto; isso não
+fecha a pendência de performance da reforma completa descrita abaixo.
+
+- Guarda-roupa: câmera próxima, personagem original com roupa aplicada na hora
+  e espelho ativo apenas durante a interação. A lista mostra roupas possuídas.
+- Bancada: vista superior, ferramentas e luminária, modelos existentes do arsenal
+  na parede e sobre a mesa. Seleção de arma, prévia de acabamentos/acessórios,
+  compra, instalação e remoção usam o catálogo, os preços, os efeitos de combate
+  e a persistência de `WeaponCustomization`; pré-visualizar não cobra.
+- Cama: movimento de deitar/levantar, relógio animado e escolha de duração ou
+  amanhecer/anoitecer. O tempo é aplicado uma vez ao concluir; cancelar não o
+  avança. Trabalho ativo e perseguição impedem descansar.
+- Geladeira: portas articuladas e seleção de refeição/suco; cura preservada.
+- Mochila: objeto no canto sobre suporte físico, equipado pelo inventário real,
+  com concessão única persistente. O baú agora registra o provedor real da sessão
+  e transfere os suprimentos da mochila; não depende mais do provedor de teste.
+- Interação por proximidade e E, ou clique próximo no móvel. Câmera, controle,
+  pose e qualidade são restaurados no fechamento, dano e saída. As vistas
+  próximas usam resolução nativa e MSAA 4×, sem salvar alterações nas preferências.
+  O apoio das botas foi conferido contra a malha animada renderizada; uma sombra
+  suave de contato complementa a sombra direcional nas poses paradas. O espelho
+  usa um ponto de vista afastado do vidro para evitar brilho especular incorreto.
+  As configurações de luz solar da cidade permanecem intactas.
+
+Validação na Main renderizada com Godot **4.7.2 .NET**, após compilar
+`Harbor.csproj`: `tests/test_residence_immersive.gd -- --no-save`.
+**226 verificações, zero falhas**, em `evidence/residence-immersive-verified.log`.
+Inclui ações pelo dispatcher real e clique de mouse nas três casas, varreduras físicas jogador/NPC contra móveis,
+cancelamento, dano, foco das opções, mochila/baú, compra sem cobrança duplicada
+e save completo em arquivo isolado; não altera a partida do usuário.
+
+Fotos reais: `evidence/residence-immersive/after-*.png`. Sequências temporais de
+30 segundos: `frames-wardrobe/` e `frames-workbench/`, com `timestamps.json`.
+Os vídeos `wardrobe.mp4` e `workbench.mp4` preservam esses tempos de captura.
+São produzidos pelo mesmo runner com a opção adicional `--temporal`.
+Espelho e luminária não apresentaram piscadas nos enquadramentos gravados;
+`temporal-review.json` registra continuidade do recorte da cena entre as trocas.
+Essa cobertura não certifica outras horas, climas ou todos os ângulos da casa.
+Alternam roupas e acabamentos a cada cinco segundos. A captura limita a 30 FPS
+somente para gravar: **não é medição de performance**. A entrada nas casas e a
+aproximação dos móveis são posicionadas pela fixture; isso não certifica todos
+os percursos de caminhada nem todos os ângulos de oclusão dos interiores.
+
+**Performance continua pendente.** O baseline renderizado foi interrompido após
+uma amostra; processos Godot de outras sessões permaneceram ativos. Não há
+comparativo antes/depois equivalente que aprove o custo do espelho, da luz e
+da qualidade das vistas próximas. Runner: `tests/measure/residence_immersive.gd`.
+Diagnóstico final: `-- --no-save --benchmark --label=profile
+--home=westgate_garden`, Main com diretores normais, 40 pedestres solicitados,
+RTX 4060 Laptop, Mobile, 1280×720, escala 1, sem VSync/limite de FPS. Trinta
+segundos por amostra após aquecimento; o editor permaneceu aberto. Nenhum frame
+acima de 33,3 ms nessas amostras. Capturas, amostras brutas e configuração por
+cenário ficam em `profile.json`/`profile-*.png`, log em
+`evidence/residence-immersive-profile.log` (sem erros).
+
+| Westgate, versão final | p95 ms | p99 ms | máximo ms |
+|---|---:|---:|---:|
+| Visão geral | 1,924 | 2,404 | 12,205 |
+| Guarda-roupa com espelho | 3,407 | 5,126 | 19,560 |
+| Bancada com personalização | 1,228 | 1,460 | 3,505 |
+
+Esses números cobrem vistas já aquecidas de Westgate; não aprovam regressão,
+primeira abertura, trocas rápidas, outras casas ou o jogo inteiro.
+
+Permanecem 32 acessos/30 interiores distintos; três casas revistas, nenhum
+interior novo e nenhuma certificação integral acrescentada.
+
 Escopo: Westgate Garden, Quayside e Canal North; três fachadas e três interiores
 existentes. A compra continua usando a regra de residência ativa e troca com
 crédito de 70%. Nenhuma alteração nas casas dos caminhoneiros.

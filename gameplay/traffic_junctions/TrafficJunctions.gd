@@ -25,8 +25,11 @@ const APPROACH := 26.0
 const EXIT := 7.0
 ## Faixa de parada padrão (do centro) quando o cruzamento não registrou a própria.
 const DEFAULT_STOP_LINE := 7.0
-## Dono que some ou fica parado além disso sai do miolo (evita trava por carro preso).
+## Reserva abandonada expira; um casco ainda no miolo continua bloqueando o eixo cruzado.
 const HOLD_LIMIT_MSEC := 9000
+## Vehicle limits traffic hull height to 3.6 m; include its 0.4 m floor snap.
+## This separates road occupancy from bodies on another vertical road level.
+const OCCUPANCY_HEIGHT := 4.0
 const GREEN_SECONDS := 11.0
 const AMBER_SECONDS := 3.0
 const ALL_RED_SECONDS := 1.6
@@ -65,6 +68,9 @@ static func key_of(point: Vector3) -> Vector3i:
 	return Vector3i(roundi(point.x * 2.0), 0, roundi(point.z * 2.0))
 
 static func configure(graph, layouts: Array = []) -> void:
+	var previous_centers := junctions.duplicate()
+	var previous_axes := axes.duplicate()
+	var previous_owners := owners.duplicate()
 	junctions.clear()
 	axes.clear()
 	owners.clear()
@@ -103,6 +109,18 @@ static func configure(graph, layouts: Array = []) -> void:
 			if distance < nearest:
 				nearest = distance
 				_approaches[key] = layout.entries
+	# Rebuilding the graph must not erase physical occupants of surviving crossings.
+	# Keep only IDs; changed/removed road levels cannot inherit the old reservation.
+	for key in previous_owners:
+		if not junctions.has(key) or not previous_centers.has(key): continue
+		if (junctions[key] as Vector3).distance_to(previous_centers[key]) > .5: continue
+		var old_axis: Vector2 = previous_axes.get(key, Vector2.RIGHT)
+		var retained: Dictionary = previous_owners[key]
+		for id in retained:
+			var direction := old_axis if bool(retained[id][0]) else old_axis.orthogonal()
+			retained[id][0] = _axis_a(key, Vector3(direction.x, 0, direction.y))
+		owners[key] = retained
+		_prune(key)
 
 ## Cruzamentos ao longo de uma rota: [{key, offset}] ordenados pelo deslocamento.
 static func along(route: Curve3D) -> Array:
@@ -202,17 +220,94 @@ static func signal_state(key: Vector3i, heading: Vector3) -> String:
 
 # --- Ocupação do miolo ---------------------------------------------------------------
 
+## A token is valid only while the registry still owns it. Checking one token
+## avoids scanning unrelated owners on every Vehicle physics tick.
+static func has_reservation(key: Vector3i, id: int) -> bool:
+	var inside: Dictionary = owners.get(key, {})
+	if not inside.has(id): return false
+	if _reservation_alive(key, id, inside[id], Time.get_ticks_msec()): return true
+	inside.erase(id)
+	return false
+
+static func _reservation_alive(key: Vector3i, id: int, entry: Array, now: int) -> bool:
+	if not is_instance_id_valid(id): return false
+	if now - int(entry[1]) <= HOLD_LIMIT_MSEC: return true
+	if not occupies(key, id): return false
+	# Renew only after observing physical occupancy, never just because an AI
+	# heartbeat is alive. This bounds geometry work in a stationary traffic jam.
+	entry[1] = now
+	return true
+
 static func _prune(key: Vector3i) -> Dictionary:
 	var inside: Dictionary = owners.get(key, {})
 	var now := Time.get_ticks_msec()
 	for id in inside.keys():
-		if not is_instance_id_valid(id) or now - int(inside[id][1]) > HOLD_LIMIT_MSEC: inside.erase(id)
+		if not _reservation_alive(key, id, inside[id], now): inside.erase(id)
 	return inside
+
+## Only lease expiry and departure need geometry. No physics-world query, renderer
+## readback, persistent Node references, visibility or driver-health heuristic.
+static func occupies(key: Vector3i, id: int) -> bool:
+	if not junctions.has(key) or not is_instance_id_valid(id): return false
+	var owner := instance_from_id(id) as Node3D
+	if owner == null or not owner.is_inside_tree(): return false
+	if not owner.has_method("junction_collision_bodies"): return false
+	var center: Vector3 = junctions[key]
+	var axis: Vector2 = axes.get(key, Vector2.RIGHT)
+	var radius := EXIT
+	for entry in _approaches.get(key, []): radius = maxf(radius, float(entry.width) * .5)
+	for body: CollisionObject3D in owner.call("junction_collision_bodies"):
+		if not is_instance_valid(body) or not body.is_inside_tree(): continue
+		# Other vehicles scan layer 4. The owner's own mask can be zero and it
+		# remains an obstacle to them. Paused callbacks do not remove collision.
+		if (body.collision_layer & 4) == 0 or _removed_from_physics(body): continue
+		for shape_owner in body.get_shape_owners():
+			if body.is_shape_owner_disabled(shape_owner): continue
+			var pose := body.global_transform * body.shape_owner_get_transform(shape_owner)
+			for index in body.shape_owner_get_shape_count(shape_owner):
+				var hull := body.shape_owner_get_shape(shape_owner, index) as BoxShape3D
+				if hull != null and _box_in_crossing(hull.size * .5, pose, center, axis, radius): return true
+	return false
+
+static func _removed_from_physics(body: CollisionObject3D) -> bool:
+	if body.disable_mode != CollisionObject3D.DISABLE_MODE_REMOVE: return false
+	# Resolve inherited process mode, not can_process() (which also sees pause).
+	var node: Node = body
+	while node != null and node.process_mode == Node.PROCESS_MODE_INHERIT: node = node.get_parent()
+	return node != null and node.process_mode == Node.PROCESS_MODE_DISABLED
+
+static func _box_in_crossing(half: Vector3, pose: Transform3D, center: Vector3, axis: Vector2, radius: float) -> bool:
+	var x := pose.basis.x * half.x
+	var y := pose.basis.y * half.y
+	var z := pose.basis.z * half.z
+	var vertical := absf(x.y) + absf(y.y) + absf(z.y)
+	if pose.origin.y - vertical > center.y + OCCUPANCY_HEIGHT or pose.origin.y + vertical < center.y - .4: return false
+	var offset := Vector2(pose.origin.x - center.x, pose.origin.z - center.z)
+	var px := Vector2(x.x, x.z)
+	var py := Vector2(y.x, y.z)
+	var pz := Vector2(z.x, z.z)
+	var across := axis.orthogonal()
+	# SAT of the box's projected footprint and the protected crossing square.
+	# Includes the vertical basis projection when the vehicle is tilted.
+	for normal: Vector2 in [axis, across, px.orthogonal(), py.orthogonal(), pz.orthogonal()]:
+		if normal.length_squared() < .000001: continue
+		var hull_radius := absf(px.dot(normal)) + absf(py.dot(normal)) + absf(pz.dot(normal))
+		var road_radius := radius * (absf(axis.dot(normal)) + absf(across.dot(normal)))
+		if absf(offset.dot(normal)) > hull_radius + road_radius: return false
+	return true
 
 static func _cross_traffic_inside(key: Vector3i, id: int, axis_a: bool) -> bool:
 	var inside := _prune(key)
+	var requester := instance_from_id(id) as Node3D
+	var world: World3D = requester.get_world_3d() if requester != null and requester.is_inside_tree() else null
 	for other in inside:
-		if other != id and bool(inside[other][0]) != axis_a: return true
+		if other == id or bool(inside[other][0]) == axis_a: continue
+		# A graph rebuild can overlap two scene lifetimes. Bodies in independent
+		# physics worlds cannot obstruct this requester, even at identical XYZ.
+		if world != null:
+			var body := instance_from_id(other) as Node3D
+			if body != null and body.is_inside_tree() and body.get_world_3d() != world: continue
+		return true
 	return false
 
 ## Pede entrada. `gap` = distância da frente do carro até a faixa de parada (negativa

@@ -44,6 +44,9 @@ func run() -> void:
 	controls = root.get_node("GameInput")
 	touch._refresh()
 	print("TOUCH_CONTEXT ", touch.playable, " size=", touch.size, " input=", touch.is_processing_input(), " locked=", world.player.input_locked)
+	await finger(40, touch.move_center + Vector2(touch.radius * .05, 0), true)
+	check(controls.touch_move.is_zero_approx(), "centro do analógico não causa movimento involuntário")
+	await finger(40, Vector2.ZERO, false)
 	await finger(1, touch.move_center + Vector2(touch.radius * .8, 0), true)
 	check(controls.movement().x > .5, "dedo 1 movimenta")
 	check(not controls.sprinting(), "curso interno do analógico anda")
@@ -60,8 +63,9 @@ func run() -> void:
 	check(Input.is_action_pressed("fire") and controls.movement().x > .5, "dedo 3 ataca mantendo movimento")
 	check(controls.sprinting(), "corrida funciona junto de mira e ataque")
 	await button("fire", 3, false)
-	await finger(2, Vector2.ZERO, false)
 	await finger(1, Vector2.ZERO, false)
+	# Release movement first: walking without aiming deliberately faces movement.
+	await finger(2, Vector2.ZERO, false)
 	check(controls.touch_move.is_zero_approx() and controls.touch_aim.is_zero_approx() and not Input.is_action_pressed("fire") and not Input.is_action_pressed("aim"), "soltar dedos libera todos os estados")
 	check(controls.aim_direction.y < -.9, "última direção da mira é preservada")
 	check(not controls.touch_sprint, "soltar analógico encerra corrida")
@@ -127,12 +131,21 @@ func run() -> void:
 	var joystick_bounds := Rect2(touch.move_center - Vector2.ONE * touch.radius, Vector2.ONE * touch.radius * 2)
 	check(not world.hud.minimap.get_global_rect().intersects(joystick_bounds), "minimapa não cobre o analógico")
 	# Layout responde aos dois formatos sem depender de resolução fixa.
-	for extent in [Vector2(1280, 540), Vector2(1280, 1180)]:
+	for extent in [Vector2(1280, 540), Vector2(1280, 1180), Vector2(1280, 2770), Vector2(1485, 720)]:
 		touch.size = extent
 		touch._refresh()
+		await process_frame
 		var inside := true
 		for item in touch.buttons.values(): inside = inside and Rect2(Vector2.ZERO, extent).encloses(item.rect)
 		check(inside, "botões dentro da tela " + str(extent))
+		check(not touch.buttons.fire.rect.intersects(Rect2(touch.aim_center - Vector2.ONE * touch.radius, Vector2.ONE * touch.radius * 2)), "ataque não cobre mira " + str(extent))
+		await finger(41, touch.move_center + Vector2(touch.radius, 0), true)
+		touch.size = extent + Vector2(0, 10)
+		touch._refresh()
+		await process_frame
+		check(touch.fingers.is_empty() and controls.touch_move.is_zero_approx(), "rotação libera dedos " + str(extent))
+	touch.size = root.get_visible_rect().size
+	touch._refresh()
 	if DisplayServer.get_name() != "headless":
 		touch.size = root.get_visible_rect().size
 		touch._refresh()

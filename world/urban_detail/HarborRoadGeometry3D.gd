@@ -12,6 +12,8 @@ const SIDEWALK_MARGIN := 42.0 * SOURCE_SCALE
 const DASH_LENGTH := 28.0 * SOURCE_SCALE
 const DASH_GAP := 26.0 * SOURCE_SCALE
 const MIN_SEGMENT := 2.0 * SOURCE_SCALE
+# Conservative broad phase only: exact polygon clipping is unchanged.
+const CLIP_BOUNDS_PADDING := 0.001
 
 const ROAD_COLOR := Color("202932")
 const ROAD_EDGE_COLOR := Color("151c23")
@@ -39,6 +41,11 @@ var _crossing_masks: Array[PackedVector2Array] = []
 var crossing_layout: Array[Dictionary] = []
 var _earth_polygons: Array[PackedVector2Array] = []
 var _earth_verge_triangles: Array = []
+var _earth_bounds: Array[Rect2] = []
+var _earth_verge_bounds: Array[Rect2] = []
+var _crosswalk_white_bounds: Array[Rect2] = []
+var _crosswalk_tactile_bounds: Array[Rect2] = []
+var _crosswalk_stop_bounds: Array[Rect2] = []
 
 
 func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
@@ -76,6 +83,7 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 	_discover_junctions()
 	if not surfaces:
 		_prepare_crosswalks()
+		_prepare_clipping_bounds()
 		return
 	_layers = [
 		_layer(SIDEWALK_COLOR, SIDEWALK_MARGIN * 2.0, 0.008),
@@ -98,20 +106,51 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 			_earth_polygons.append_array(pieces)
 	_earth_verge_triangles = preload("res://world/urban_detail/RuralRoadVerge.gd").prepare(_earth_polygons)
 	_prepare_crosswalks()
+	_prepare_clipping_bounds()
+
+
+func _prepare_clipping_bounds() -> void:
+	# Rebuilt after every configure, including surfaces=false and empty data.
+	_earth_bounds = _polygon_bounds_list(_earth_polygons)
+	_crosswalk_white_bounds = _polygon_bounds_list(_crosswalk_white)
+	_crosswalk_tactile_bounds = _polygon_bounds_list(_crosswalk_tactile)
+	_crosswalk_stop_bounds = _polygon_bounds_list(_crosswalk_stop)
+	_earth_verge_bounds.clear()
+	for triangle in _earth_verge_triangles:
+		_earth_verge_bounds.append(_polygon_bounds(triangle.points))
+
+
+func _polygon_bounds(points: PackedVector2Array) -> Rect2:
+	if points.is_empty(): return Rect2()
+	var bounds := Rect2(points[0], Vector2.ZERO)
+	for point in points: bounds = bounds.expand(point)
+	return bounds
+
+
+func _polygon_bounds_list(polygons: Array[PackedVector2Array]) -> Array[Rect2]:
+	var bounds: Array[Rect2] = []
+	for polygon in polygons: bounds.append(_polygon_bounds(polygon))
+	return bounds
 
 
 func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	if _layers.is_empty():
 		return
 	var clip := _rect_polygon(rect)
-	preload("res://world/urban_detail/RuralRoadVerge.gd").build(parent,_earth_verge_triangles,clip)
-	_add_clipped_surface(parent,"HarborEarthRoad",_earth_polygons,clip,0.023,preload("res://world/urban_detail/RuralGroundMaterial.gd").material())
+	var clip_bounds := rect.abs().grow(CLIP_BOUNDS_PADDING)
+	var verge: Array = []
+	for index in _earth_verge_triangles.size():
+		if clip_bounds.intersects(_earth_verge_bounds[index], true):
+			verge.append(_earth_verge_triangles[index])
+	preload("res://world/urban_detail/RuralRoadVerge.gd").build(parent,verge,clip)
+	_add_clipped_surface(parent,"HarborEarthRoad",_earth_polygons,clip,0.023,preload("res://world/urban_detail/RuralGroundMaterial.gd").material(),_earth_bounds)
 	var sewer_opening := Rect2(CATALOG.HARBOR_SEWER_OPENING.position * SOURCE_SCALE, CATALOG.HARBOR_SEWER_OPENING.size * SOURCE_SCALE)
 	var opening_clip := _rect_polygon(sewer_opening) if rect.intersects(sewer_opening) else PackedVector2Array()
 	for layer in _layers:
 		var clipped: Array[PackedVector2Array] = []
-		for polygon_value in layer.polygons:
-			var polygon := polygon_value as PackedVector2Array
+		for polygon_index in range(layer.polygons.size()):
+			if not clip_bounds.intersects(layer.bounds[polygon_index], true): continue
+			var polygon: PackedVector2Array = layer.polygons[polygon_index]
 			for piece_value in Geometry2D.intersect_polygons(polygon, clip):
 				var piece := piece_value as PackedVector2Array
 				if piece.size() >= 3:
@@ -121,9 +160,9 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 						for outside in Geometry2D.clip_polygons(piece, opening_clip):
 							if outside.size() >= 3: clipped.append(outside)
 		_add_surface(parent, "HarborRoad_%s" % layer.name, clipped, float(layer.y), layer.material)
-	_add_clipped_surface(parent,"HarborCrosswalk",_crosswalk_white,clip,0.038,_material(CROSSWALK_COLOR))
-	_add_clipped_surface(parent,"HarborTactile",_crosswalk_tactile,clip,0.039,_material(TACTILE_COLOR))
-	_add_clipped_surface(parent,"HarborStopLine",_crosswalk_stop,clip,0.040,_material(STOP_LINE_COLOR))
+	_add_clipped_surface(parent,"HarborCrosswalk",_crosswalk_white,clip,0.038,_material(CROSSWALK_COLOR),_crosswalk_white_bounds)
+	_add_clipped_surface(parent,"HarborTactile",_crosswalk_tactile,clip,0.039,_material(TACTILE_COLOR),_crosswalk_tactile_bounds)
+	_add_clipped_surface(parent,"HarborStopLine",_crosswalk_stop,clip,0.040,_material(STOP_LINE_COLOR),_crosswalk_stop_bounds)
 	_build_markings(parent, rect)
 
 
@@ -161,6 +200,7 @@ func _layer(color: Color, extra_width: float, y: float) -> Dictionary:
 	return {
 		"name": color.to_html(false),
 		"polygons": polygons,
+		"bounds": _polygon_bounds_list(polygons),
 		"material": _material(color),
 		"y": y,
 	}
@@ -364,9 +404,13 @@ func _quad(center: Vector2,forward: Vector2,forward_size: float,side_size: float
 	return _counter_clockwise(PackedVector2Array([center-f-s,center+f-s,center+f+s,center-f+s]))
 
 
-func _add_clipped_surface(parent: Node3D,label: String,source: Array[PackedVector2Array],clip: PackedVector2Array,y: float,material: Material)->void:
+func _add_clipped_surface(parent: Node3D,label: String,source: Array[PackedVector2Array],clip: PackedVector2Array,y: float,material: Material,bounds: Array[Rect2] = [])->void:
 	var clipped: Array[PackedVector2Array]=[]
-	for polygon in source:
+	var clip_bounds := _polygon_bounds(clip).grow(CLIP_BOUNDS_PADDING)
+	var use_bounds := bounds.size() == source.size()
+	for polygon_index in source.size():
+		if use_bounds and not clip_bounds.intersects(bounds[polygon_index], true): continue
+		var polygon: PackedVector2Array = source[polygon_index]
 		for piece_value in Geometry2D.intersect_polygons(polygon,clip):
 			var piece:=piece_value as PackedVector2Array
 			if piece.size()>=3: clipped.append(piece)
@@ -536,3 +580,4 @@ func _counter_clockwise(points: PackedVector2Array) -> PackedVector2Array:
 	if result.size() > 1 and result[0].distance_to(result[-1]) <= 0.0001: result.resize(result.size()-1)
 	if Geometry2D.is_polygon_clockwise(result): result.reverse()
 	return result
+

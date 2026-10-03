@@ -2,7 +2,7 @@ extends Node
 const Actor := preload("res://runtime/RobberyActor.gd")
 const Lockpick := preload("res://runtime/BankLockpick.gd")
 const Treasure := preload("res://runtime/BankVaultTreasure.gd")
-const CASH := [4000,3000,3000]
+const CASH := [5000,5000,5000]
 const LOOT := [Vector3(-3,0,-4.2),Vector3(0,0,-4.2),Vector3(3,0,-4.2)]
 const VAULT := Vector3(0,0,-2.5)
 var session
@@ -18,10 +18,13 @@ var _intimidation := 0.0
 var _fuel_notice := false
 
 var _spawn_retry := 0.0
+var aftermath_controller
+var _death_latched := false
+var haul_label: Label
 
 static func defaults() -> Dictionary:
-	return {"version":1,"bank_alarm":false,"bank_shots":false,"bank_dispatched":false,"bank_cycle":0,"bank_cash0":false,"bank_cash1":false,"bank_cash2":false,
-		"guards":[50.0,50.0],"clerks":[80.0,80.0],"keycard_available":false,"keycard_taken":false,"keycard_position":[-5.0,0.0,.5],"vault_open":false,"opening_remaining":0.0,
+	return {"version":3,"bank_pending":0,"bank_deaths":0,"bank_alarm":false,"bank_shots":false,"bank_dispatched":false,"bank_cycle":0,"bank_cash0":false,"bank_cash1":false,"bank_cash2":false,
+		"guards":[160.0,160.0],"clerks":[100.0,100.0],"bank_failed":false,"keycard_available":false,"keycard_taken":false,"keycard_position":[-5.0,0.0,.5],"vault_open":false,"opening_remaining":0.0,
 		"aftermath":"","elapsed_days":0.0,"fuel_alarm":false,"fuel_dispatched":false,"fuel_alarm_remaining":30.0,"fuel_register":false,"fuel_health":80.0,"fuel_resists":false,"fuel_initialized":false}
 
 func configure(owner_session) -> void:
@@ -31,6 +34,19 @@ func configure(owner_session) -> void:
 	add_child(lockpick)
 	lockpick.unlocked.connect(_unlocked)
 	lockpick.cancelled.connect(_unlock_cancelled)
+	var hud := CanvasLayer.new()
+	hud.layer=12
+	add_child(hud)
+	haul_label=Label.new()
+	haul_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	haul_label.offset_top=24
+	haul_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	haul_label.add_theme_font_size_override("font_size",20)
+	haul_label.add_theme_color_override("font_outline_color",Color.BLACK)
+	haul_label.add_theme_constant_override("outline_size",5)
+	haul_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	hud.add_child(haul_label)
+	haul_label.hide()
 	if session.world.gameplay.has_signal("weapon_fired"):
 		session.world.gameplay.weapon_fired.connect(_weapon_fired)
 
@@ -38,7 +54,45 @@ func inside(place: String) -> bool:
 	return session!=null and session.state.place_id==place and is_instance_valid(session.room) and session.world.gameplay.health>0 and not session.world.driving.occupied
 
 func can_enter_bank() -> bool:
-	return data.aftermath!="closed" or float(data.elapsed_days)>=4
+	return data.aftermath!="closed"
+
+func player_died() -> int:
+	if session == null or session.state.place_id != "harbor_bank" or not data.bank_alarm or _death_latched: return 0
+	_death_latched=true
+	data.bank_pending=0
+	data.bank_deaths+=1
+	var loss: int = mini(5000,session.state.economy.balance)
+	session.state.economy.spend(loss,"bank_death:%d"%int(data.bank_deaths))
+	data.bank_failed = true
+	data.aftermath = "pending"
+	data.elapsed_days = 0.0
+	_session_save()
+	return loss
+
+func bank_departed() -> void:
+	if session.state.place_id!="harbor_bank" or session.world.gameplay.health<=0 or data.bank_pending<=0: return
+	var mask := int(data.bank_cash0)+int(data.bank_cash1)*2+int(data.bank_cash2)*4
+	var amount: int = data.bank_pending
+	if session.state.economy.grant_reward("bank_haul:%d:%d"%[int(data.bank_cycle),mask],amount):
+		data.bank_pending=0
+		# Settle wallet achievements with the haul, rather than delaying their
+		# bonus until the next damage/death event changes the gameplay HUD.
+		if "activities" in session and session.activities!=null: session.activities.refresh_achievements()
+		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
+		session.show_message("Saque guardado: + R$ %d.000"%(amount/1000))
+		_session_save()
+	else: session.show_message("Carteira cheia. Saque preservado: R$ %d"%amount)
+
+func _refresh_haul() -> void:
+	if not is_instance_valid(haul_label): return
+	haul_label.visible=inside("harbor_bank") and data.bank_alarm and not lockpick.active
+	if not haul_label.visible: return
+	var objective := "Encontre o cartão de um segurança"
+	if data.keycard_taken: objective="Abra o cofre"
+	if data.opening_remaining>0: objective="Abrindo cofre…"
+	if data.vault_open: objective="Recolha o dinheiro e saia vivo"
+	if data.bank_cash0 and data.bank_cash1 and data.bank_cash2: objective="Saia do banco"
+	haul_label.text="SAQUE  R$ %s / 15.000\n%s"%["%d.000"%(int(data.bank_pending)/1000) if data.bank_pending>0 else "0",objective]
 
 func bank_unavailable() -> bool:
 	return data.bank_alarm or not can_enter_bank() or float(data.clerks[0])<=0
@@ -50,12 +104,13 @@ func helena_position() -> Vector3:
 func _physics_process(delta: float) -> void:
 	if session==null or not session.ready_for_play or not is_finite(delta) or delta<=0: return
 	var place: String = session.state.place_id
-	if data.aftermath=="pending" and place!="harbor_bank":
-		data.aftermath="closed"
-		session.save_game()
-	if data.aftermath=="closed":
-		data.elapsed_days+=delta/600.0
-		if float(data.elapsed_days)>=4: _reopen_bank()
+	if session.world.gameplay.health>0: _death_latched=false
+	_refresh_haul()
+	if aftermath_controller == null:
+		aftermath_controller = preload("res://runtime/BankAftermath.gd").new()
+		aftermath_controller.heist = self
+		add_child(aftermath_controller)
+	aftermath_controller.update(delta)
 	if data.fuel_alarm and not data.fuel_dispatched:
 		data.fuel_alarm_remaining=maxf(0,float(data.fuel_alarm_remaining)-delta)
 		if data.fuel_alarm_remaining<=0: _dispatch(false)
@@ -75,12 +130,15 @@ func _physics_process(delta: float) -> void:
 		if lockpick.active: lockpick.finish(false)
 		return
 	if place=="harbor_bank":
+		if _room.has_method("update_bank_visibility"):
+			_room.update_bank_visibility(_room.to_local(session.world.player.global_position),delta)
 		if data.opening_remaining>0:
 			data.opening_remaining=maxf(0,float(data.opening_remaining)-delta)
 			if _room.has_method("set_vault_open"): _room.set_vault_open(1.0-float(data.opening_remaining)/3.0)
 			if data.opening_remaining<=0:
 				data.vault_open=true
 				session.save_game()
+		if not lockpick.active and not session.modal: _collect_nearby()
 		if not _hold_id.is_empty(): _tick_hold(delta,Input.is_action_pressed("interact"))
 	else: _tick_cashier(delta,Input.is_action_pressed("aim"))
 
@@ -118,6 +176,7 @@ func _spawn_actor(point: Vector3, health: float, guard: bool, index: int) -> voi
 	actor.shotgun=index==0
 	actor.female=index==0
 	actor.fuel=session.state.place_id=="harbor_fuel"
+	actor.generation=int(data.bank_cycle)*2+index
 	actor.health=health
 	actor.heist=self
 	actor.position=point
@@ -154,7 +213,6 @@ func _start_alarm(bank: bool) -> void:
 	if data[key]: return
 	data[key]=true
 	if bank:
-		data.aftermath="pending"
 		_dispatch(true)
 	_session_save()
 
@@ -173,17 +231,39 @@ func nearest_action() -> Dictionary:
 	var id := ""
 	var target := Vector3.ZERO
 	var label := ""
-	if not data.keycard_taken and data.keycard_available:
-		target=Vector3(data.keycard_position[0],0,data.keycard_position[2])
-		if local.distance_to(target)<48.0/16.0: id="bank_card"; label="Segurar para pegar cartão"
-	elif data.keycard_taken and not data.vault_open and local.distance_to(VAULT)<42.0/16.0:
+	if data.keycard_taken and not data.vault_open and local.distance_to(VAULT)<1.7 and local.z > -3.2:
 		id="bank_vault"; target=VAULT; label="Segurar para abrir cofre"
-	if data.vault_open and local.z < -3.45:
-		for i in 3:
-			if not data["bank_cash%d"%i] and local.distance_to(LOOT[i])<40.0/16.0:
-				id="bank_cash%d"%i; target=LOOT[i]; label="Segurar para recolher"
+		if _hold_id==id: label="Abrindo cofre · %d%%"%int(clampf(_hold_time/.6,0,1)*100)
 	if id.is_empty(): return {}
 	return {"id":"robbery","target":id,"label":label,"position":_room.to_global(target)}
+
+func _collect_nearby() -> void:
+	if not inside("harbor_bank"): return
+	var local: Vector3 = _room.to_local(session.world.player.global_position)
+	if data.keycard_available and not data.keycard_taken:
+		var point := Vector3(data.keycard_position[0],0,data.keycard_position[2])
+		if local.distance_to(point)<.9 and _pickup_reachable(point):
+			data.keycard_taken=true
+			if is_instance_valid(_card): _card.collect(true)
+			preload("res://gameplay/RewardAudio.gd").play(self,"pickup")
+			session.show_message("Cartão do cofre coletado")
+			_session_save()
+	if not data.vault_open or local.z>=-3.45: return
+	for i in 3:
+		var id := "bank_cash%d"%i
+		if data[id] or local.distance_to(LOOT[i])>=.95 or not _pickup_reachable(LOOT[i]): continue
+		data[id]=true
+		data.bank_pending+=CASH[i]
+		if i<_piles.size(): _piles[i].collect(true)
+		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
+		session.show_message("+ R$ 5.000 no saque · Saia vivo para guardar")
+		_refresh_haul()
+		_session_save()
+
+func _pickup_reachable(point: Vector3) -> bool:
+	var from: Vector3 = session.world.player.global_position+Vector3.UP*.5
+	var to := _room.to_global(point)+Vector3.UP*.5
+	return _room.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(from,to,1)).is_empty()
 
 func perform(id: String) -> bool:
 	if nearest_action().get("target","")!=id or id.is_empty(): return false
@@ -194,25 +274,11 @@ func perform(id: String) -> bool:
 func _tick_hold(delta: float, holding: bool) -> void:
 	if not holding or nearest_action().get("target","")!=_hold_id: _reset_hold(); return
 	_hold_time+=delta
-	var required := .6 if _hold_id=="bank_vault" else 1.2
-	if _hold_time<required: return
-	var action := _hold_id
+	if _hold_time<.6: return
 	_reset_hold()
-	if action=="bank_card":
-		data.keycard_taken=true
-		_refresh_card()
-		_session_save()
-	elif action=="bank_vault":
-		session.modal=true
-		session.world.player.input_locked=true
-		lockpick.begin()
-	else:
-		var index := int(action.trim_prefix("bank_cash"))
-		if index not in range(3): return
-		if session.state.economy.grant_reward(action+":%d"%int(data.bank_cycle),CASH[index]):
-			data[action]=true
-			if index<_piles.size(): _piles[index].hide()
-			_session_save()
+	session.modal=true
+	session.world.player.input_locked=true
+	lockpick.begin()
 
 func _unlocked() -> void:
 	session.close_menu()
@@ -252,12 +318,17 @@ func _refresh_card() -> void:
 	if not is_instance_valid(_room): return
 	if is_instance_valid(_card): _card.queue_free(); _card=null
 	if not data.keycard_available or data.keycard_taken: return
-	_card=Node3D.new()
-	_card.position=Vector3(data.keycard_position[0],.05,data.keycard_position[2])
+	_card=preload("res://systems/inventory/PickupPresentation.gd").new()
+	_card.position=Vector3(data.keycard_position[0],0,data.keycard_position[2])
+	_card.lift=.65
+	_card.bob_height=.12
 	_room.add_child(_card)
+	var art := Node3D.new()
+	_card.configure(art,"bank_keycard")
 	var part = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
-	part.piece(_card,Vector3(.24,.018,.15),Vector3.ZERO,Color("ddd9c7"))
-	part.piece(_card,Vector3(.23,.004,.035),Vector3(0,.011,-.04),Color("273b48"))
+	part.piece(art,Vector3(.44,.045,.30),Vector3.ZERO,Color("ddd9c7"))
+	part.piece(art,Vector3(.42,.008,.065),Vector3(0,.026,-.08),Color("273b48"))
+	part.piece(art,Vector3(.09,.008,.09),Vector3(-.12,.027,.04),Color("bc9649"))
 
 func _detach_room() -> void:
 	if lockpick!=null and lockpick.active: lockpick.finish(false)
@@ -276,7 +347,7 @@ func _detach_room() -> void:
 
 func _reopen_bank() -> void:
 	var source := defaults()
-	for key in ["bank_alarm","bank_shots","bank_dispatched","guards","clerks","keycard_available","keycard_taken","keycard_position","vault_open","opening_remaining","aftermath","elapsed_days","bank_cash0","bank_cash1","bank_cash2"]: data[key]=source[key]
+	for key in ["bank_alarm","bank_shots","bank_dispatched","guards","clerks","bank_failed","bank_pending","keycard_available","keycard_taken","keycard_position","vault_open","opening_remaining","aftermath","elapsed_days","bank_cash0","bank_cash1","bank_cash2"]: data[key]=source[key]
 	data.bank_cycle+=1
 	_session_save()
 
@@ -286,26 +357,53 @@ func snapshot() -> Dictionary: return data.duplicate(true)
 func restore_snapshot(saved: Dictionary) -> bool:
 	if not validate_snapshot(saved): return false
 	data=saved.duplicate(true)
+	if int(data.version)<3:
+		data.bank_pending=0 # Previous versions already paid collected piles.
+		data.bank_deaths=0
+	if int(data.version) == 1:
+		# Legacy closure happened on every exit, without proof of player death.
+		# Keep earned loot and deaths, but do not preserve that premature lockout.
+		data.bank_failed = false
+		data.aftermath = ""
+		data.elapsed_days = 0.0
+		for i in 2:
+			data.guards[i] = float(data.guards[i]) * 160.0 / 50.0
+			data.clerks[i] = float(data.clerks[i]) * 100.0 / 80.0
+	data.version=3
 	data.bank_cycle=int(data.bank_cycle)
+	if aftermath_controller != null: aftermath_controller.reset_clock()
 	_reset_hold()
 	_intimidation=0
 	return true
 static func validate_snapshot(saved: Dictionary) -> bool:
+	var version = saved.get("version")
+	if typeof(version) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(version)): return false
+	if version!=1 and version!=2 and version!=3: return false
 	var source := defaults()
 	for key in source:
+		if key in ["bank_pending","bank_deaths"] and saved.get("version",0)<3: continue
+		if key == "bank_failed" and saved.get("version", 0) == 1: continue
 		if not saved.has(key): return false
 		if source[key] is bool and not saved[key] is bool: return false
-	if saved.version!=1 or saved.aftermath not in ["","pending","closed"]: return false
+	if (saved.version != 1 and saved.version != 2 and saved.version != 3) or saved.aftermath not in ["","pending","closed"]: return false
+	if saved.version==3:
+		for key in ["bank_pending","bank_deaths"]:
+			if typeof(saved[key]) not in [TYPE_FLOAT,TYPE_INT] or not is_finite(float(saved[key])) or saved[key]<0 or saved[key]!=floorf(saved[key]): return false
+		if saved.bank_deaths>10000000 or saved.bank_pending>15000 or int(saved.bank_pending)%5000!=0: return false
+		if saved.bank_pending>(int(saved.bank_cash0)+int(saved.bank_cash1)+int(saved.bank_cash2))*5000: return false
 	for key in ["bank_cycle","opening_remaining","elapsed_days","fuel_alarm_remaining","fuel_health"]:
 		if typeof(saved[key]) not in [TYPE_FLOAT,TYPE_INT] or not is_finite(float(saved[key])) or float(saved[key])<0: return false
 	if saved.bank_cycle!=floorf(float(saved.bank_cycle)) or saved.bank_cycle>10000000 or saved.opening_remaining>3 or saved.elapsed_days>4 or saved.fuel_alarm_remaining>30 or saved.fuel_health>80: return false
+	if saved.version >= 2:
+		if saved.elapsed_days > 3 or (saved.aftermath != "" and not saved.bank_failed): return false
+		if saved.bank_failed and (not saved.bank_alarm or saved.aftermath == ""): return false
 	for key in ["guards","clerks","keycard_position"]:
 		if not saved[key] is Array or saved[key].size()!=(3 if key=="keycard_position" else 2): return false
 		for value in saved[key]:
 			if typeof(value) not in [TYPE_FLOAT,TYPE_INT] or not is_finite(float(value)): return false
 			if key=="keycard_position":
 				if absf(float(value))>20: return false
-			elif float(value)<0 or float(value)>(50 if key=="guards" else 80): return false
+			elif float(value)<0 or float(value)>((50 if key=="guards" else 80) if saved.version == 1 else (160 if key=="guards" else 100)): return false
 	if saved.keycard_taken and not saved.keycard_available: return false
 	if saved.keycard_available and float(saved.guards[0])>0 and float(saved.guards[1])>0: return false
 	if (saved.bank_cash0 or saved.bank_cash1 or saved.bank_cash2) and not saved.vault_open: return false

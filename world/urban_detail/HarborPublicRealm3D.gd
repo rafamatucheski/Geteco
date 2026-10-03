@@ -89,6 +89,9 @@ func _build_union_plaza() -> void:
 	_disc("UnionFountainPedestal", Vector3(0, 0.93, 0), 0.81, 0.62, "c4c4ad", true)
 	# Água, taça e jato: antes eram dois discos pintados (água e anel claro da V1 2D).
 	add_child(preload("res://world/urban_detail/fountain/UnionFountain3D.gd").new())
+	var piano := preload("res://activities/UnionPiano.gd").new()
+	piano.position = Vector3(10.0, 0, -.8)
+	add_child(piano)
 
 func _build_foundry_courtyard() -> void:
 	# Anchor is the shared courtyard centre; preserve the V1 stone/garden split.

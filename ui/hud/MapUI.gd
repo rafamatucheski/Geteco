@@ -25,6 +25,7 @@ var _selected := -1
 var _clock := 0.0
 var _hints: Label
 var _objective_button: Button
+var _zoom_pad_held := {"weapon_previous": false, "weapon_next": false}
 func _ready() -> void:
 	name="MapUI"; mouse_filter=MOUSE_FILTER_STOP; theme=STYLE.create_theme()
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
@@ -46,7 +47,8 @@ func _ready() -> void:
 	_cache(); _objective_button.disabled=_markers.is_empty() or not _markers[0].objective
 	recenter(); center=target_center
 	get_viewport().size_changed.connect(_layout); resized.connect(_layout)
-	get_node("/root/GameInput").device_changed.connect(_update_hints); _update_hints(); _layout()
+	get_node("/root/GameInput").device_changed.connect(_update_hints)
+	get_node("/root/GameInput").bindings_changed.connect(_update_hints); _update_hints(); _layout()
 func _button(parent: Node, text: String, callback: Callable) -> Button:
 	var button := Button.new(); button.text=text; button.custom_minimum_size=Vector2(36,34); button.pressed.connect(callback); parent.add_child(button); return button
 func _cache() -> void:
@@ -98,14 +100,20 @@ func map_input(event: InputEvent) -> void:
 	canvas.accept_event()
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or not controller.session.modal: return
+	get_node("/root/GameInput").observe_event(event)
 	if event.is_action_pressed("world_map"):
 		controller.session.close_menu(); get_viewport().set_input_as_handled()
-	elif event is InputEventJoypadButton and event.pressed:
-		if event.button_index==JOY_BUTTON_LEFT_SHOULDER: change_zoom(.8)
-		elif event.button_index==JOY_BUTTON_RIGHT_SHOULDER: change_zoom(1.25)
-		elif event.button_index==JOY_BUTTON_A and not _markers.is_empty(): select_marker((_selected+1)%_markers.size())
-		else: return
-		get_viewport().set_input_as_handled()
+	elif event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		for action in _zoom_pad_held:
+			if not event.is_action(action): continue
+			var down := event.is_action_pressed(action)
+			if down and not _zoom_pad_held[action]: change_zoom(.8 if action == "weapon_previous" else 1.25)
+			_zoom_pad_held[action] = down
+			get_viewport().set_input_as_handled()
+			return
+		if event.is_action_pressed("ui_accept") and not _markers.is_empty():
+			select_marker((_selected+1)%_markers.size())
+			get_viewport().set_input_as_handled()
 func _pick(point: Vector2) -> void:
 	var nearest := -1; var distance := 18.0
 	for i in _markers.size():

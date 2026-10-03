@@ -204,6 +204,7 @@ func _layout_modal() -> void:
 	var preferred: Vector2=panel.get_meta("modal_preferred_size",Vector2(640,480))
 	var extent := Vector2(minf(preferred.x,view.x-48),minf(preferred.y,view.y-48))
 	panel.custom_minimum_size=extent.round(); panel.size=extent.round(); panel.position=((view-extent)*.5).round()
+	if panel.get_meta("modal_dock_right",false): panel.position=Vector2(view.x-extent.x-24,(view.y-extent.y)*.5).round()
 
 func _suppress_invented_scope_overlay() -> void:
 	var reticle := get_node_or_null("ScopeReticle")

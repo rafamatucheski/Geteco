@@ -43,6 +43,7 @@ func run() -> void:
 		if candidate.car.is_visible_in_tree() and candidate.car.health>0: patrol=candidate; break
 	if patrol==null: check(false,"Visible patrol exists"); quit(1); return
 	var car=patrol.car
+	check_roof(car,"before boarding")
 	if "--pursuit-only" in OS.get_cmdline_user_args():
 		await pursuit_case(patrol)
 		print("COBRA_PURSUIT failures=",failures.size())
@@ -73,12 +74,16 @@ func run() -> void:
 	check(patrol.stolen and patrol.hostile,"Theft provokes the gang through real boarding")
 	check(patrol.crew.size()==2,"Both gang occupants leave; no generic civilian replacement")
 	check(not car.traffic and not car.external_input,"Stolen vehicle belongs to player")
+	check(world.driving.occupied and world.driving.car==car,"Player finishes boarding Cobra car")
+	check_roof(car,"occupied")
+	await photo("occupied-roof")
 	world.gameplay.npc_gunfire.connect(shot)
 	if world.driving.occupied: world.driving.leave()
 	for i in 360:
 		await physics_frame
 		if not world.driving.is_body_transition_active() and not world.driving.occupied: break
 	print("EXIT occupied=",world.driving.occupied," locked=",world.player.input_locked," transition=",world.driving.is_body_transition_active())
+	check_roof(car,"after exit")
 	world.gameplay.health=5000
 	if not patrol.crew.is_empty():
 		var guard=patrol.crew[0]
@@ -117,6 +122,31 @@ func run() -> void:
 	check(not is_instance_valid(pursuer) or not pursuer.hostile,"Escape ends vehicle pursuit")
 	print("COBRA_PATROL failures=",failures.size())
 	quit(0 if failures.is_empty() else 1)
+
+func check_roof(car, label: String) -> void:
+	# Intersect actual rendered triangles above the cabin, not a roof node name.
+	var highest := -INF
+	var roof_material: Material
+	for part in car.visual.find_children("*","MeshInstance3D",true,false):
+		if not part.is_visible_in_tree() or part.mesh==null: continue
+		var ray_from: Vector3 = part.to_local(car.to_global(Vector3(0,3,.2)))
+		var ray_to: Vector3 = part.to_local(car.to_global(Vector3(0,-1,.2)))
+		for surface in part.mesh.get_surface_count():
+			var arrays: Array = part.mesh.surface_get_arrays(surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX]!=null else PackedInt32Array()
+			var count: int = indices.size() if not indices.is_empty() else vertices.size()
+			for triangle in range(0,count,3):
+				var a: int = indices[triangle] if not indices.is_empty() else triangle
+				var b: int = indices[triangle+1] if not indices.is_empty() else triangle+1
+				var c: int = indices[triangle+2] if not indices.is_empty() else triangle+2
+				var hit = Geometry3D.segment_intersects_triangle(ray_from,ray_to,vertices[a],vertices[b],vertices[c])
+				if hit is Vector3:
+					var height: float = car.to_local(part.to_global(hit)).y
+					if height>highest:
+						highest=height
+						roof_material=part.get_active_material(surface)
+	check(highest>1.1 and roof_material is BaseMaterial3D and roof_material.transparency==BaseMaterial3D.TRANSPARENCY_DISABLED and roof_material.albedo_color.a>.99,"Painted opaque cabin roof "+label)
 
 func collision_case(patrol) -> void:
 	var target=patrol.car

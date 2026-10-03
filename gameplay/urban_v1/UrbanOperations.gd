@@ -9,6 +9,7 @@ var security
 var cargo_handling
 var secret_car
 var cobra_neighborhood
+var classic_meet
 var freight
 var passenger_terminal
 var village
@@ -47,6 +48,11 @@ func _ready() -> void:
 	cobra_neighborhood = preload("res://gameplay/urban_v1/CobraNeighborhoodLife.gd").new()
 	cobra_neighborhood.configure(session)
 	add_child(cobra_neighborhood)
+	var classic_site := preload("res://world/places/classic_meet/ClassicMeetSite.gd").new()
+	add_child(classic_site)
+	classic_meet = preload("res://gameplay/classic_meet/ClassicMeetController.gd").new()
+	classic_meet.configure(session,classic_site)
+	classic_site.add_child(classic_meet)
 	passenger_terminal = preload("res://gameplay/urban_v1/HarborPassengerTerminal.gd").new()
 	passenger_terminal.configure(session)
 	add_child(passenger_terminal)

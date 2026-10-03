@@ -2,6 +2,7 @@ extends Camera3D
 
 const SCOPE_SIZE_MULTIPLIER := 0.5
 const FOLLOW_RATE := 4.2
+const GAMEPAD_ORBIT_SPEED := deg_to_rad(110.0)
 const HEIGHT_FOLLOW_RATE := 10.0
 const V1_VIEWPORT_HEIGHT := 720.0
 const V1_PIXELS_PER_METRE := 16.0
@@ -159,6 +160,7 @@ func _process(delta: float) -> void:
 		return
 	if not is_instance_valid(target): return
 	delta = maxf(delta,0.0) if is_finite(delta) else 0.0
+	_update_gamepad_rotation(delta)
 	var target_changed := _track_target()
 	var actual := target.global_position
 	var interpolated := target.get_global_transform_interpolated().origin
@@ -444,11 +446,42 @@ func _exit_tree() -> void:
 		scope_reticle.hide()
 		scope_reticle.queue_free()
 
+func _camera_input_blocked() -> bool:
+	if locked or _store_focus_active or get_tree().paused: return true
+	var controls := get_node_or_null("/root/GameInput")
+	if controls != null and controls.get("remapping") == true: return true
+	var world := get_parent()
+	var session: Variant = world.get("session") if world != null and &"session" in world else null
+	if session != null:
+		if session.get("modal") == true or session.get("ready_for_play") == false: return true
+		if session.has_method("is_transition_blocked") and session.is_transition_blocked(): return true
+	var focused := get_viewport().gui_get_focus_owner()
+	return focused is LineEdit or focused is TextEdit
+
+func _update_gamepad_rotation(delta: float) -> void:
+	var controls := get_node_or_null("/root/GameInput")
+	if controls == null or not controls.has_method("camera_rotation"): return
+	# Read only analog bindings. Buttons, keyboard and touch actions retain the
+	# authored 45-degree step in _unhandled_input, without a second frame update.
+	var turn: float = controls.camera_rotation()
+	if is_zero_approx(turn) or _camera_input_blocked(): return
+	if _is_vehicle_target() and &"archetype" in target and target.get("archetype") == "army_tank": return
+	var combat := _gameplay()
+	# Ski/skate and ordinary driving disable attacks; their triggers remain
+	# available while looking around. Aiming/firing on foot owns the right stick.
+	if combat != null and combat.has_method("attack_allowed") and combat.attack_allowed():
+		if Input.is_action_pressed("aim") or Input.is_action_pressed("fire"): return
+	heading -= turn * GAMEPAD_ORBIT_SPEED * delta
+
 func _unhandled_input(event: InputEvent) -> void:
-	if locked or get_tree().paused: return
+	if event is InputEventJoypadMotion or not event.is_pressed() or event.is_echo(): return
+	if _camera_input_blocked(): return
 	# A V1 (DynamicCamera) não tinha zoom manual: o enquadramento vem só da
 	# velocidade, nitro e luneta. A roda do mouse é da troca de arma a pé e da
 	# sintonia de rádio no carro, então a câmera não a consome.
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.is_action_pressed("camera_left"): heading += PI / 4
-		if event.is_action_pressed("camera_right"): heading -= PI / 4
+	if event.is_action_pressed("camera_left"):
+		heading += PI / 4
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("camera_right"):
+		heading -= PI / 4
+		get_viewport().set_input_as_handled()

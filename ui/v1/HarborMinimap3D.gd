@@ -13,11 +13,13 @@ const PANEL_SIZE := MAP_SIZE + Vector2(8, 8)
 const SCALE := 1.54 # Preserve the previous ground coverage inside a smaller panel.
 const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
 const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+const WEEKDAYS := ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 var world: Node
 var canvas: MapCanvas
 var caption: Label
 var compass_label: Label
+var weekday_label: Label
 var center := Vector2.ZERO
 var heading := 0.0
 var objective_target := Vector2.ZERO
@@ -90,6 +92,18 @@ func _ready() -> void:
 	compass_label.add_theme_stylebox_override("normal",STYLE.compact(false,6,Vector2(3,0)))
 	compass_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(compass_label)
+	weekday_label = Label.new()
+	weekday_label.name = "Weekday"
+	weekday_label.position = Vector2(7, PANEL_SIZE.y + 2)
+	weekday_label.size = Vector2(PANEL_SIZE.x - 14, 16)
+	weekday_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	weekday_label.add_theme_font_override("font", FONT)
+	weekday_label.add_theme_font_size_override("font_size", 12)
+	weekday_label.add_theme_color_override("font_color", Color("c3c8cbd9"))
+	weekday_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, .65))
+	weekday_label.add_theme_constant_override("shadow_offset_y", 1)
+	weekday_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(weekday_label)
 
 func _process(delta: float) -> void:
 	_tick += delta
@@ -113,6 +127,9 @@ func refresh() -> void:
 	var blocked := bool(world.session.get("modal")) or get_tree().paused or bool(world.session.get("rescue_pending")) or bool(world.session.get("arrest_pending")) or (bool(world.player.get("input_locked")) and not boarding and not skating) or not str(world.session.state.place_id).is_empty()
 	visible = not blocked
 	if not visible: return
+	# The existing persisted calendar starts on day 2; its first day is Monday.
+	var weekday: String = WEEKDAYS[posmod(int(world.session.state.world_state.get("moon_day", 2)) - 2, 7)]
+	if weekday_label.text != weekday: weekday_label.text = weekday
 	var actor: Node3D = world.driving.car if is_instance_valid(world.driving) and bool(world.driving.get("occupied")) else world.player
 	if skating and skate.mounted and is_instance_valid(skate.player_board): actor = skate.player_board
 	if not is_instance_valid(actor): actor = world.player

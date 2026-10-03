@@ -289,8 +289,7 @@ func _wear_outfit() -> void:
 				_set_status("Faltam R$ %d." % maxi(0, int(OUTFITS.OUTFITS[selected_outfit].price) - economy.balance))
 			else: _set_status(_reason(result.reason))
 			return
-	if not economy.equip_outfit(selected_outfit): _set_status("Roupa indisponível."); return
-	session.apply_outfit()
+	if not preload("res://runtime/OutfitDisguise.gd").equip(session, selected_outfit, true): _set_status("Roupa indisponível."); return
 	session.save_game()
 	_set_status("Roupa equipada.")
 	_rebuild_current()

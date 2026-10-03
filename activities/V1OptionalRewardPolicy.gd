@@ -7,8 +7,9 @@ extends RefCounted
 ## be integrated without adding another field to the persisted activity state.
 
 const MAX_RECEIPT_SERIAL := 10000000
+const RACES := preload("res://systems/economy/RaceReceipts.gd")
 
-static func ski_settlement(course_id: String, spec: Dictionary, elapsed: float, previous_best: Variant, transactions: Dictionary) -> Dictionary:
+static func ski_settlement(course_id: String, spec: Dictionary, elapsed: float, previous_best: Variant, transactions: Dictionary, receipt_ledger: Dictionary = {}) -> Dictionary:
 	if course_id.is_empty() or not is_finite(elapsed) or elapsed <= 0.0 or elapsed > 600.0:
 		return {"ok":false,"reason":"invalid_result"}
 	if not spec.has("reward") or not spec.has("bonus"):
@@ -22,7 +23,7 @@ static func ski_settlement(course_id: String, spec: Dictionary, elapsed: float, 
 		if typeof(previous_best) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(previous_best)) or float(previous_best) <= 0.0:
 			return {"ok":false,"reason":"invalid_previous_best"}
 		record = elapsed < float(previous_best)
-	var serial := _next_run_serial(transactions,course_id)
+	var serial := _next_run_serial(transactions,course_id,receipt_ledger)
 	if serial < 1:
 		return {"ok":false,"reason":"receipt_limit"}
 	return {
@@ -48,8 +49,8 @@ static func apply_ski_settlement(economy: RefCounted, settlement: Dictionary) ->
 		return false
 	return true
 
-static func _next_run_serial(transactions: Dictionary, course_id: String) -> int:
-	var highest := 0
+static func _next_run_serial(transactions: Dictionary, course_id: String, receipt_ledger: Dictionary = {}) -> int:
+	var highest := RACES.ski_highest({"receipt_ledger":receipt_ledger},course_id)
 	for receipt in ["ski_finish:"+course_id+":","ski_record:"+course_id+":"]:
 		var stored_prefix: String = "reward:"+str(receipt)
 		for key_value in transactions.keys():

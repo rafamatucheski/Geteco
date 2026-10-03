@@ -323,7 +323,9 @@ func _build_staff() -> void:
 		model.rotation.y = PI
 		model.set_process(false)
 		npc.set_meta("vertice_staff",true)
-		staff.append({"actor":npc,"model":model,"route":specs[i].route,"waypoint":0,"guard":specs[i].guard,"office":office,"pause":2.0+i*.7})
+		var entry := {"actor":npc,"model":model,"route":specs[i].route,"waypoint":0,"guard":specs[i].guard,"office":office,"pause":2.0+i*.7}
+		staff.append(entry)
+		npc.tree_exiting.connect(_unregister_staff.bind(entry), CONNECT_ONE_SHOT)
 	# Desk staff sit still and type; plain models, no walking body to push around.
 	for z in [14.0,21.0]:
 		var seated := preload("res://assets/CivilianModel.gd").new()
@@ -342,6 +344,11 @@ func _build_staff() -> void:
 		seated.hand_provider = func() -> Array: return [to_global(keys+Vector3(-.16,0,0)),to_global(keys+Vector3(.16,0,0))]
 		seated.set_process(false)
 		desk_staff.append(seated)
+
+func _unregister_staff(entry: Dictionary) -> void:
+	# Corpse cleanup and emergency pickup own the actor's removal. Stop updating
+	# its model, collision and interactions before those child nodes are freed.
+	staff.erase(entry)
 
 func _build_secrets() -> void:
 	# Collections are ordinary physical objects; the hidden office envelope and

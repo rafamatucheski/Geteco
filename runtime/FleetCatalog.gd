@@ -27,6 +27,8 @@ static func all() -> Dictionary:
 			_data["army_tank"] = tank
 	return _data
 static func spec(id: String) -> Dictionary:
+	if id == "digo_amarok_2014": return preload("res://gameplay/digo/DigoAmarokSpec.gd").spec()
+	if id == "digo_gol_1993": return preload("res://gameplay/digo/DigoCarSpec.gd").spec()
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
 static func create(id: String) -> Node3D:
 	var definition := spec(id)
@@ -36,6 +38,8 @@ static func create(id: String) -> Node3D:
 	var packed := load(definition.scene) as PackedScene
 	if packed == null: return null
 	var model := packed.instantiate() as Node3D
+	# Authored batches already include glass, trim, door seams and wheel wells.
+	if id in ["digo_gol_1993","digo_amarok_2014"]: return model
 	if id == "police_transport": preload("res://gameplay/dispatch/PoliceTransportModel.gd").decorate(model)
 	if id == "bike_police": preload("res://gameplay/police_response/ground/PoliceGroundModels.gd").motorcycle(model)
 	preload("res://runtime/HeavyVehicleDetail.gd").decorate(id, model)

@@ -6,6 +6,7 @@ const FEES := 50
 const BACKPACK_CLAIM := "monaliza_backpack"
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const TRUNK_VIEW := preload("res://runtime/TrunkView.gd")
+const POLICE_TRUNK := preload("res://runtime/PoliceTrunk.gd")
 var session
 var _menu_health := 0.0
 var _trunk_view: Node3D
@@ -44,6 +45,8 @@ func _near_service() -> bool:
 	return session.state.place_id=="maciota" and session.world.player.position.distance_to(session.world.maciota_place.interaction_points.workbench)<2.0
 
 func nearest_action() -> Dictionary:
+	if POLICE_TRUNK.nearest(session) != null:
+		return {"id":"personal_car","target":"trunk","label":"Abrir porta-malas da viatura"}
 	if not _available() or session.modal or session.world.driving.occupied or session.world.gameplay.health<=0: return {}
 	# In the compact V1 garage the parked rear can overlap the workbench radius.
 	# The authored service point owns that interaction while Dante is inside;
@@ -54,6 +57,11 @@ func nearest_action() -> Dictionary:
 
 func perform(target: String) -> bool:
 	if nearest_action().get("target","")!=target: return false
+	if target == "trunk":
+		var police_car = POLICE_TRUNK.nearest(session)
+		if police_car != null:
+			POLICE_TRUNK.open(session,police_car)
+			return true
 	_menu_health = session.world.gameplay.health
 	if target=="trunk":
 		var found_backpack := discover_backpack()

@@ -71,6 +71,7 @@ var transition_kind := ""
 var rescue_camera_heading := 0.0
 var rescue_camera_size := 28.0
 var death_presentation: CanvasLayer
+var bank_death_loss := 0
 var sewer_hatch: Node3D
 var sewer_entry_origin := Vector3.ZERO
 var weapon_shop_entrance: Node
@@ -488,6 +489,7 @@ func _ready() -> void:
 	world.add_child(skate)
 	skate.configure(self)
 	residence_services = preload("res://runtime/ResidenceServices.gd").new()
+	world.add_child(residence_services)
 	residence_services.configure(self)
 	mountain_progression = preload("res://activities/MountainProgression.gd").new()
 	world.add_child(mountain_progression)
@@ -855,6 +857,7 @@ func leave_place() -> bool:
 			if not leaving_return.is_finite(): show_message("Passagem ocupada. Aguarde.")
 			return false
 	controller.region.set_focus(leaving_return)
+	if state.place_id=="harbor_bank": robberies.bank_departed()
 	if leaving_room == world.maciota_place: leaving_room.set_interior_active(false)
 	else: leaving_room.queue_free()
 	_clear_service_npcs()
@@ -1011,6 +1014,10 @@ func _clear_service_npcs() -> void:
 
 func nearest() -> Dictionary:
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	for zoo in get_tree().get_nodes_in_group("mountain_zoo"):
+		if zoo.admission != null:
+			var zoo_action: Dictionary = zoo.admission.nearest_action()
+			if not zoo_action.is_empty(): return zoo_action
 	if skate != null:
 		var skate_action: Dictionary = skate.nearest_action()
 		if not skate_action.is_empty(): return skate_action
@@ -1060,12 +1067,12 @@ func nearest() -> Dictionary:
 			# Police, hospital and fire station publish their terminal/NPC/healing
 			# actions through Services.nearest_action(). A second generic counter
 			# produced a visible "Atender" prompt with no consumer or result.
-			var primary_available := service in ["weapons","clothing"]
+			var primary_available := service in ["weapons","clothing","supermarket"]
 			if state.place_id == "harbor_bank": primary_available = state.campaign.target_id() == "helena"
 			# A conveniência não tinha balcão de compras no V1: sua operação é o
 			# caixa do assalto. Não exponha um "Atender" que não produz resultado.
 			if primary_available and not _service_threatened() and point.distance_to(service_point) < 1.5:
-				return {"id":"service","label":"Falar com Vance" if state.place_id in ["harbor_ammunation", "mountain_gunshop"] else "Atender"}
+				return {"id":"service","label":"Comprar" if service == "supermarket" else "Falar com Vance" if state.place_id in ["harbor_ammunation", "mountain_gunshop"] else "Atender"}
 		return {}
 	var activity_action: Dictionary = activities.nearest_action()
 	if not activity_action.is_empty(): return activity_action
@@ -1086,6 +1093,7 @@ func nearest() -> Dictionary:
 func interact() -> bool:
 	if modal or not ready_for_play: return false
 	var action := nearest()
+	if action.get("id", "") == "zoo_ticket": return action.provider.purchase()
 	if action.get("id", "") == "skate": return skate.perform(str(action.target))
 	if action.get("id","") == "motocross": return motocross.perform(str(action.target))
 	if str(action.get("id","")).begins_with("ski_"): return mountain_progression.perform(action.target)
@@ -1149,8 +1157,15 @@ func _intro_interact(id: String) -> bool:
 	return true
 
 func _input(event: InputEvent) -> void:
+	get_node("/root/GameInput").observe_event(event)
 	if port_container_loot != null and is_instance_valid(port_container_loot.minigame) and port_container_loot.minigame.active: return
 	if urban_operations != null and is_instance_valid(urban_operations.village_leisure) and is_instance_valid(urban_operations.village_leisure.ui) and urban_operations.village_leisure.ui.active: return
+	if transition_kind == "ski_lift" and mountain_progression != null and mountain_progression.lift.riding:
+		if not get_tree().paused and event.is_action_pressed("interact"):
+			mountain_progression.lift.skip()
+		if not event.is_action_pressed("pause_game") and not (get_tree().paused and event.is_action_pressed("ui_cancel")):
+			get_viewport().set_input_as_handled()
+		return
 	if controller.travel_busy or not transition_kind.is_empty() or vehicle_transition_busy:
 		get_viewport().set_input_as_handled()
 		return
@@ -1179,7 +1194,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if modal:
-		if field_inventory != null and field_inventory.ui.visible and event.is_action_pressed("inventory"):
+		if field_inventory != null and field_inventory.ui.visible and event.is_action_pressed("inventory") and not event.is_action("ui_left") and not event.is_action("ui_right") and not event.is_action("ui_up") and not event.is_action("ui_down"):
 			close_menu()
 			get_viewport().set_input_as_handled()
 			return
@@ -1198,6 +1213,10 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 	if get_tree().paused: return
+	# Mounted activities consume gameplay events, but their camera stays usable.
+	if not event is InputEventJoypadMotion and (event.is_action_pressed("camera_left") or event.is_action_pressed("camera_right")):
+		world.camera._unhandled_input(event)
+		if get_viewport().is_input_handled(): return
 	if skate != null and skate.controls_locked():
 		if not skate.recovering: skate.handle_input(event)
 		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()
@@ -1329,6 +1348,7 @@ func _update_world_indicator() -> void:
 
 func _menu(title: String) -> void:
 	if panel.has_meta("modal_preferred_size"): panel.remove_meta("modal_preferred_size")
+	if panel.has_meta("modal_dock_right"): panel.remove_meta("modal_dock_right")
 	var previous_map: Node = world.hud.get_node_or_null("MapUI")
 	if is_instance_valid(previous_map):
 		previous_map.queue_free()
@@ -1461,6 +1481,9 @@ func show_services(service: String) -> void:
 	_service_menu_open = modal
 
 func _show_services_available(service: String) -> void:
+	if service == "supermarket":
+		preload("res://runtime/SupermarketShop.gd").open(self)
+		return
 	if service == "ski_rental":
 		mountain_progression.show_services()
 		return
@@ -1491,7 +1514,7 @@ func _show_shop(category: String) -> void:
 				var result: Dictionary = state.economy.purchase(category,item.id,_transaction())
 				if not result.ok: show_message("Compra indisponível: "+str(result.reason)); close_menu(); return
 			if category == "weapon": state.equip_weapon(item.id)
-			else: state.economy.equip_outfit(item.id); apply_outfit()
+			else: preload("res://runtime/OutfitDisguise.gd").equip(self, item.id, true)
 			close_menu(); save_game())
 	if category == "weapon":
 		_button("Personalizar arma equipada",_show_customization)
@@ -1540,13 +1563,24 @@ func apply_outfit() -> void:
 	if world.player.has_method("set_outfit"): world.player.set_outfit(outfit)
 
 func advance_residence_time(target: float) -> bool:
-	if target not in [.36,.84] or controller.save_invalid or weather == null: return false
+	if target not in [.36,.84] or not can_rest_at_residence(): return false
+	return advance_residence_minutes(maxi(1,roundi(fposmod(target-float(weather.time_of_day),1.0)*1440.0)))
+
+func can_rest_at_residence() -> bool:
+	if controller.save_invalid or weather == null: return false
 	if state.region_id != "harbor" or not activities.residence.can_enter(state.place_id) or state.place_id.is_empty(): return false
 	if not is_instance_valid(room) or world.driving.occupied or world.gameplay.health <= 0 or world.gameplay.stars > 0: return false
-	if world.player.position.distance_to(room.interaction_points.service) >= 1.5: return false
+	if not room.interaction_points.has("time") or world.player.position.distance_to(room.interaction_points.time) >= .95: return false
 	if not state.campaign.active_id.is_empty() or not activities.can_rest() or arrival.active: return false
-	var elapsed := fposmod(target-float(weather.time_of_day),1.0)*600.0
+	return not is_transition_blocked()
+
+func advance_residence_minutes(minutes: int) -> bool:
+	if minutes < 1 or minutes > 1440 or not can_rest_at_residence(): return false
+	var elapsed := float(minutes)/1440.0*600.0
 	activities.advance_time(elapsed)
+	var target := fposmod(float(weather.time_of_day)+float(minutes)/1440.0,1.0)
+	var days_advanced := floori(float(weather.time_of_day)+float(minutes)/1440.0)
+	if days_advanced>0: state.world_state.moon_day = weather.moon_day() + days_advanced
 	weather.time_of_day = target
 	state.world_state.time = target
 	weather._update()
@@ -1741,6 +1775,7 @@ func _show_v1_death_presentation() -> void:
 	var label := Label.new()
 	label.name = "WastedLabel"
 	label.text = "SE FODEU"
+	if bank_death_loss>0: label.text+="\n− R$ %d · Saque perdido"%bank_death_loss
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1813,6 +1848,7 @@ func _on_arrest() -> void:
 
 func _on_death() -> void:
 	if rescue_pending: return
+	bank_death_loss = robberies.player_died() if robberies != null else 0
 	# The old arrest coroutine must not select custody or consume this rescue.
 	arrest_pending = false
 	# Falling out of the world and an invalid restored position reach this path
@@ -1907,4 +1943,7 @@ func _respawn() -> void:
 	respawn_busy = false
 	_finish_transition(token)
 	close_menu()
+	if bank_death_loss>0:
+		show_message("Assalto fracassado: − R$ %d"%bank_death_loss)
+		bank_death_loss=0
 	save_game()

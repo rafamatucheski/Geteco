@@ -43,7 +43,31 @@ func shore_distance(point: Vector2) -> float:
 			nearest = minf(nearest,point.distance_to(closest))
 	return nearest
 
+## Broad phase computed once per chunk. Every retained edge keeps its original
+## order; exact closest-point distances still determine each vertex's shore color.
+## The margin includes boundary/rounding cases, and also accepts zero-width AABBs.
+func _nearby_shore_edges(rect: Rect2) -> PackedVector2Array:
+	var area := rect.abs().grow(DEPTH_RANGE + 0.001)
+	var edges := PackedVector2Array()
+	for polygon in shores:
+		for i in polygon.size():
+			var a := polygon[i]
+			var b := polygon[(i + 1) % polygon.size()]
+			var bounds := Rect2(a, Vector2.ZERO).expand(b)
+			if area.intersects(bounds, true):
+				edges.append(a)
+				edges.append(b)
+	return edges
+
+func _shore_distance_from_edges(point: Vector2, edges: PackedVector2Array) -> float:
+	var nearest := DEPTH_RANGE
+	for i in range(0, edges.size(), 2):
+		var closest := Geometry2D.get_closest_point_to_segment(point, edges[i], edges[i + 1])
+		nearest = minf(nearest, point.distance_to(closest))
+	return nearest
+
 func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
+	var edges := _nearby_shore_edges(rect)
 	var count := maxi(1,ceili(rect.size.x/STEP))
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
@@ -55,7 +79,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	for z in range(count+1):
 		for x in range(count+1):
 			var point := rect.position+rect.size*Vector2(float(x)/count,float(z)/count)
-			var shore := shore_distance(point)
+			var shore := _shore_distance_from_edges(point, edges)
 			vertices.append(Vector3(point.x,surface_y(point,shore),point.y))
 			normals.append(Vector3.UP)
 			colors.append(Color(shore/DEPTH_RANGE,0,0,1))

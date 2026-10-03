@@ -205,5 +205,6 @@ func save_settings() -> Error:
 	config.set_value("display","camera_view",camera_view)
 	config.set_value("controls","bindings",get_node("/root/GameInput").export_bindings())
 	config.set_value("controls","gamepad_bindings",get_node("/root/GameInput").export_gamepad_bindings())
+	config.set_value("controls","gamepad_bindings_version",get_node("/root/GameInput").GAMEPAD_BINDINGS_VERSION)
 	config.set_value("controls","controller_layout",get_node("/root/GameInput").controller_layout)
 	return config.save("user://settings.cfg")

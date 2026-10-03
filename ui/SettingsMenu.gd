@@ -15,11 +15,14 @@ const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondens
 const ACCENT := STYLE.ACCENT
 const TEXT := STYLE.TEXT
 const MUTED := STYLE.MUTED
+const CONTROLLER_LAYOUT := preload("res://ui/ControllerLayout.gd")
 
 ## Ações remapeáveis por grupo; `inventory` e `pause_game` aparecem fixas em Geral.
 const CONTROL_GROUPS := [
-	["A PÉ", ["move_up", "move_down", "move_left", "move_right", "sprint", "interact", "camera_left", "camera_right"]],
-	["VEÍCULO", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "trunk", "tank_fire"]],
+	["A PÉ", ["move_up", "move_down", "move_left", "move_right", "sprint", "interact"]],
+	["CÂMERA 3D", ["camera_left", "camera_right"]],
+	["VEÍCULO / ESPORTES", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "radio_toggle", "trunk", "tank_fire"]],
+	["SKATE", ["skate_ollie", "skate_flip", "skate_shove"]],
 	["COMBATE", ["fire", "aim", "reload", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight", "surrender"]],
 	["ARMAS RÁPIDAS", ["weapon_slot_1", "weapon_slot_2", "weapon_slot_3", "weapon_slot_4", "weapon_slot_5", "weapon_slot_6", "weapon_slot_7", "weapon_slot_8", "weapon_slot_9", "weapon_slot_10"]],
 	["GERAL", ["journal", "world_map", "inventory", "pause_game"]],
@@ -35,6 +38,7 @@ var remap_gamepad := false
 var _pad_diagram: Control
 var _controller_status: Label
 var _layout_choice: OptionButton
+var _context_choice: OptionButton
 var _tab := 0
 var _tabs: Array[Button] = []
 var _pages: Array[Control] = []
@@ -392,13 +396,15 @@ func _build_controls(page: VBoxContainer) -> void:
 	_row(page,"Símbolos do controle","Escolha DualSense se o controle aparecer com símbolos Xbox.",_layout_choice)
 	_controller_status = _label("",15,MUTED,BODY_FONT)
 	page.add_child(_controller_status)
-	var context := _options(["Mapa do controle · A pé", "Mapa do controle · Veículo"],func(index):
-		_pad_diagram.set("vehicle",index == 1)
+	var contexts := []
+	for title in CONTROLLER_LAYOUT.CONTEXT_NAMES: contexts.append("Mapa do controle · " + title)
+	_context_choice = _options(contexts,func(index):
+		_pad_diagram.set("context",index)
 		_pad_diagram.queue_redraw())
 	var map_toolbar := HBoxContainer.new()
 	map_toolbar.add_theme_constant_override("separation",12)
-	context.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	map_toolbar.add_child(context)
+	_context_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_toolbar.add_child(_context_choice)
 	var customize := _footer_button("PERSONALIZAR")
 	customize.pressed.connect(func():
 		for button in _controls_list.find_children("*","Button",true,false):
@@ -407,9 +413,9 @@ func _build_controls(page: VBoxContainer) -> void:
 				return)
 	map_toolbar.add_child(customize)
 	page.add_child(map_toolbar)
-	_pad_diagram = preload("res://ui/ControllerLayout.gd").new()
+	_pad_diagram = CONTROLLER_LAYOUT.new()
 	page.add_child(_pad_diagram)
-	var navigation := _label("Menus: ✕ / A confirma · ○ / B volta · direcional navega · Options/Menu pausa. Analógico direito aponta a mira.",14,MUTED,BODY_FONT)
+	var navigation := _label("Menus: ✕ / A confirma · ○ / B volta · direcional navega · L1 / R1 (LB / RB) muda a aba · Options/Menu pausa. Analógico direito gira a câmera; a pé, segure mirar ou atacar para apontar a mira. No tanque, aponta o canhão.",14,MUTED,BODY_FONT)
 	navigation.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	page.add_child(navigation)
 	var hint := _label("Selecione uma tecla ou botão para trocar. Delete limpa; Esc cancela. No controle, Options cancela a captura. Comando repetido sai da outra ação, exceto usos compartilhados por contexto. Salve para manter.", 15, MUTED, BODY_FONT)
@@ -493,11 +499,17 @@ func _refresh_controls() -> void:
 			_controls_list.add_child(row)
 	AUDIO.hook_buttons(_controls_list, self)
 	if not focus_key.is_empty():
-		for button in _controls_list.find_children("*", "Button", true, false):
-			if str(button.get_meta("binding_key", "")) == focus_key:
-				button.grab_focus.call_deferred()
-				break
+		_restore_binding_focus.call_deferred(focus_key)
 	_trap_focus.call_deferred()
+
+func _restore_binding_focus(focus_key: String) -> void:
+	if not is_visible_in_tree() or is_queued_for_deletion(): return
+	# Another binding change may have rebuilt the list again before this callback.
+	for button in _controls_list.find_children("*", "Button", true, false):
+		if str(button.get_meta("binding_key", "")) != focus_key: continue
+		if button.is_visible_in_tree() and not button.is_queued_for_deletion() and not button.disabled:
+			button.grab_focus()
+		return
 
 func _refresh_controller_diagram() -> void:
 	if not is_instance_valid(_pad_diagram): return
@@ -572,7 +584,9 @@ func _cancel_remap() -> void:
 	_refresh_controls()
 
 func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or remap_action.is_empty(): return
+	if not is_visible_in_tree(): return
+	get_node("/root/GameInput").observe_event(event)
+	if remap_action.is_empty(): return
 	# Consume navigation while capturing, including stick motion and releases.
 	get_viewport().set_input_as_handled()
 	if event.is_echo(): return
@@ -613,6 +627,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		close()
+	elif event is InputEventJoypadButton and event.pressed and event.button_index in [JOY_BUTTON_LEFT_SHOULDER, JOY_BUTTON_RIGHT_SHOULDER] and remap_action.is_empty():
+		get_viewport().set_input_as_handled()
+		_select_tab(posmod(_tab + (1 if event.button_index == JOY_BUTTON_RIGHT_SHOULDER else -1), _tabs.size()))
 	elif event is InputEventKey and event.pressed and event.physical_keycode in [KEY_Q, KEY_E] and remap_action.is_empty():
 		# Q/E trocam de aba, como nos menus de console.
 		get_viewport().set_input_as_handled()

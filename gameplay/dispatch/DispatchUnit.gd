@@ -66,7 +66,8 @@ var _check_clock := 0.0
 
 var _saved_layer := 0
 var _saved_mask := 0
-## instance_id -> [corpo, layer, mask] das equipes a pé durante a suspensão
+var _saved_physics := false
+## instance_id -> estado compartilhado do corpo e seu dono de movimento durante a suspensão
 var _suspended_bodies: Dictionary = {}
 var _departure_clock := 0.0
 var _stranded := 0.0
@@ -243,8 +244,11 @@ func _tick_suspension(delta: float) -> bool:
 		_resume_clear_time = 0.0
 		_saved_layer = vehicle.collision_layer
 		_saved_mask = vehicle.collision_mask
-		vehicle.collision_layer = 0
-		vehicle.collision_mask = 0
+		_saved_physics = vehicle.is_physics_processing()
+		if is_instance_valid(vehicle.damage_look): vehicle.damage_look.suspend_for_dispatch()
+		else:
+			vehicle.collision_layer = 0
+			vehicle.collision_mask = 0
 		vehicle.velocity = Vector3.ZERO
 		vehicle.speed = 0.0
 		vehicle.set_physics_process(false)
@@ -265,9 +269,11 @@ func _tick_suspension(delta: float) -> bool:
 		_resume_clear_time = 0.0
 	if _resume_clear_time >= 0.12:
 		suspended = false
-		vehicle.collision_layer = _saved_layer
-		vehicle.collision_mask = _saved_mask
-		vehicle.set_physics_process(true)
+		if is_instance_valid(vehicle.damage_look): vehicle.damage_look.resume_from_dispatch()
+		else:
+			vehicle.collision_layer = _saved_layer
+			vehicle.collision_mask = _saved_mask
+			vehicle.set_physics_process(_saved_physics)
 		vehicle.show()
 		_resume_bodies()
 		controller.emit_dispatch_event("unit_resumed", {"unit": self})
@@ -284,7 +290,12 @@ func _suspend_bodies() -> void:
 	if crew != null: bodies.append(crew)
 	for body in bodies:
 		if not is_instance_valid(body): continue
-		_suspended_bodies[body.get_instance_id()] = [body, body.collision_layer, body.collision_mask]
+		var state := {"body":body,"layer":body.collision_layer,"mask":body.collision_mask,
+			"physics":body.is_physics_processing(),"owner":null}
+		_suspended_bodies[body.get_instance_id()] = state
+		var motion: Node = body.get_node_or_null("BodyFlight3D")
+		if is_instance_valid(motion) and motion.has_method("suspend_for_dispatch"):
+			motion.suspend_for_dispatch(state)
 		body.collision_layer = 0
 		body.collision_mask = 0
 		body.velocity = Vector3.ZERO
@@ -294,20 +305,32 @@ func _suspend_bodies() -> void:
 ## Cada pessoa viva precisa de cápsula livre no ponto onde ficou; senão a
 ## unidade inteira continua suspensa em vez de sobrepor um sólido novo.
 func _bodies_clear() -> bool:
-	for entry in _suspended_bodies.values():
-		var body: CharacterBody3D = entry[0]
-		if not is_instance_valid(body) or int(entry[1]) == 0: continue
+	for state in _suspended_bodies.values():
+		# References may have been freed by a child effect while the unit slept.
+		var body: Variant = state.body
+		if not is_instance_valid(body) or body.is_queued_for_deletion() or body.dead: continue
 		var exclude: Array[RID] = [vehicle.get_rid(), body.get_rid()]
-		if not controller.capsule_clear(body.global_position, exclude): return false
+		var motion: Node = state.owner.get_ref() if state.owner != null else null
+		if is_instance_valid(motion):
+			if not motion.suspension_clear(exclude): return false
+		elif int(state.layer) != 0 and not controller.capsule_clear(body.global_position, exclude): return false
 	return true
 
 func _resume_bodies() -> void:
-	for entry in _suspended_bodies.values():
-		var body: CharacterBody3D = entry[0]
-		if not is_instance_valid(body): continue
-		body.collision_layer = int(entry[1])
-		body.collision_mask = int(entry[2])
-		body.set_physics_process(true)
+	for state in _suspended_bodies.values():
+		var body: Variant = state.body
+		if not is_instance_valid(body) or body.is_queued_for_deletion(): continue
+		var motion: Node = state.owner.get_ref() if state.owner != null else null
+		# A dead actor must release a paused child owner too; it cannot tick itself.
+		if is_instance_valid(motion): motion.resume_from_dispatch()
+		if body.dead:
+			# Preserve death's collision state; keep the corpse for the mortician.
+			body.set_physics_process(false)
+			body.show()
+			continue
+		body.collision_layer = int(state.layer)
+		body.collision_mask = int(state.mask)
+		body.set_physics_process(bool(state.physics))
 		body.show()
 	_suspended_bodies.clear()
 

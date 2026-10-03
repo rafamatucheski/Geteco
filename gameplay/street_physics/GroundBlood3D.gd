@@ -80,6 +80,15 @@ func stains_near(point: Vector3, radius: float) -> Array[Dictionary]:
 	return result
 
 
+## Contact consumers only need existence; preserve the same planar/scale test.
+func has_stain_near(point: Vector3, radius: float) -> bool:
+	for stain in stains:
+		if not is_instance_valid(stain.node): continue
+		var d := Vector2(point.x - stain.point.x, point.z - stain.point.z).length()
+		if d < radius + float(stain.radius) * float(stain.node.scale.x): return true
+	return false
+
+
 func _allocate(point: Vector3, radius: float, grow_time: float, stretch_dir := Vector3.ZERO) -> Dictionary:
 	while stains.size() >= MAX_STAINS:
 		var oldest: Dictionary = stains.pop_front()
