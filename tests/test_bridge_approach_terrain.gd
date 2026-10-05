@@ -200,7 +200,9 @@ func run() -> void:
 	await _check_border_cells()
 	await _check_bridge_seam()
 	await _check_mountain_hill(Vector2i(8, -7), "mountain north of bridge")
-	await _check_mountain_hill(Vector2i(11, -6), "mountain east of tunnel")
+	# O chunk (11,-6) virou o zoológico (MountainZoo.FOOTPRINT, 03/10): plano de propósito e
+	# com piso próprio. (12,-6) é a serra real mais próxima a leste do túnel.
+	await _check_mountain_hill(Vector2i(12, -6), "mountain east of tunnel")
 	for failure in failures: push_error(failure)
 	print("BRIDGE_APPROACH_TERRAIN ", "PASS" if failures.is_empty() else "FAIL", " failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

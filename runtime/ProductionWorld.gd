@@ -255,6 +255,8 @@ func build() -> void:
 	startup_streaming_settled = await _settle_startup()
 	if not startup_streaming_settled:
 		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
+	# Antes do terminal: assim o JIT fica neste span em qualquer local de início.
+	_prewarm_route_jit()
 	# First C# route resolution must finish while the startup curtain owns input.
 	# Reuse the real terminal curve later; keep its cost in the loading trace.
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.terminal_operations):
@@ -1121,6 +1123,30 @@ func _spawn_citizen() -> void:
 	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 	_create_citizen()
 	_trace_cost("population_spawn",began)
+
+## O primeiro uso do espelho C# (RoadGraphSearch.cs) paga ~22 ms de JIT de Build/NearestEdge/
+## Plan/BuildPath (medido em 05/10, docs/reviews/dispatch-plan-stall-20261005.md). Perto do
+## terminal, prepare_startup_route já paga isso sob a cortina; longe dele o custo caía no
+## primeiro despacho/ônibus/PortHaul em pleno jogo. Um roteador descartável compila os mesmos
+## métodos sem tocar no estado dos roteadores reais (bloqueios, relógio, espelho) nem no RNG.
+## HARBOR_ROUTER_JIT_PREWARM=0 desliga, para A/B.
+func _prewarm_route_jit() -> void:
+	if OS.get_environment("HARBOR_ROUTER_JIT_PREWARM") == "0": return
+	if traffic_routes == null or traffic_routes.vertices.size() < 2: return
+	var began := Time.get_ticks_usec()
+	var router: RefCounted = preload("res://gameplay/dispatch/DispatchRoadRouter.gd").new()
+	router.configure(traffic_routes)
+	var count: int = traffic_routes.vertices.size()
+	var planned := false
+	# Alguns pares podem não ter caminho (mão única); só um plano completo exercita BuildPath.
+	for step in [2, 3, 5, 7]:
+		var result: Dictionary = router.plan(traffic_routes.vertices[0], traffic_routes.vertices[count / step])
+		if result.get("ok", false):
+			planned = true
+			break
+	var elapsed := Time.get_ticks_usec() - began
+	print("startup: route_jit_prewarm native=%s planned=%s ms=%.3f" % [router._native != null, planned, elapsed / 1000.0])
+	if world.get_meta("benchmark_trace", false): _trace_cost("startup:route_jit_prewarm", began)
 
 func _trace_cost(label: String, began: int) -> void:
 	if began == 0: return
