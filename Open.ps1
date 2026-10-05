@@ -10,6 +10,13 @@ if ($import.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $importLog)) { throw
 $importErrors = Select-String -LiteralPath $importLog -Pattern '^SCRIPT ERROR:|^ERROR: Failed to load script|Parse Error:|Compile Error:'
 if ($importErrors) { throw "Há erros nos scripts do Geteco V2. Consulte $importLog" }
 if ($PrepareOnly) { return }
+# O SDL re-enumera dispositivos DirectInput na thread principal a cada aviso de mudança HID
+# (qualquer HID, não só controles) — engasgos de 80–94 ms antes da física na captura rec2.
+# Desligar o DirectInput mantém XInput/HIDAPI (Xbox, DualSense, DualShock, Switch), mas perde
+# gamepads genéricos só-DirectInput, volantes, manches e force feedback por DirectInput.
+# Para voltar: defina SDL_JOYSTICK_DIRECTINPUT=1 antes de rodar. Ver docs/reviews/sdl-input-stalls-20261005.md.
+# O editor também herda a variável, então F5 roda nas mesmas condições.
+if (-not $env:SDL_JOYSTICK_DIRECTINPUT) { $env:SDL_JOYSTICK_DIRECTINPUT = '0' }
 $arguments = @('--path',('"'+$PSScriptRoot+'"'))
 if ($Editor) { $arguments += '--editor' }
 $launchPath = $GodotPath -replace '_console\.exe$', '.exe'
