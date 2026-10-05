@@ -64,6 +64,7 @@ static func _parts(visual: Node3D) -> Array[MeshInstance3D]:
 	for node in visual.find_children("*", "MeshInstance3D", true, false):
 		var part := node as MeshInstance3D
 		if part.mesh == null or part.mesh.get_surface_count() == 0: continue
+		if part.get_meta("door_cut_exempt", false): continue
 		if part.has_meta("wheel_center") or part.has_meta("heavy_detail") or not part.visible: continue
 		# Interior e teto recortado são do módulo do piloto (VehicleInterior); a folha nunca os leva.
 		if part.name in ["TaxiLivery", "Interior", "RoofCut"] or part.get_parent() is Skeleton3D: continue

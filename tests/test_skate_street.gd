@@ -57,10 +57,10 @@ func run():
 	row.board.bail(0)
 	check(row.board.former_rider.get_ref() == row.actor, "fallen board remembers its living owner")
 	skate._escape(row.actor)
-	for i in 150:
+	for i in 75:
 		await physics_frame
 		skate._update_fallen(1.0 / 60)
-	check(is_instance_valid(row.actor) and not row.actor.dead and row.actor.is_physics_processing() and not row.actor.input_locked, "living fallen rider recovers walking control")
+	check(is_instance_valid(row.actor) and not row.actor.dead and row.actor.is_physics_processing() and not row.actor.input_locked, "living fallen rider recovers walking control within 1.25 seconds")
 	check(not row.actor.has_meta("destroyed_cleanup"), "nonfatal fall never schedules corpse disposal")
 	var escape_start: Vector3 = row.actor.position
 	for i in 90:

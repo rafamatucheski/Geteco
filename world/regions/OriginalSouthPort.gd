@@ -61,12 +61,26 @@ static func mount(parent: Node3D, record: Dictionary) -> Node3D:
 		rigging.build_south_crane(footprint.size.x/20.0,footprint.size.y/20.0/.8)
 	return art
 
-static func extra_surfaces() -> Array[PackedVector2Array]:
+static func extra_surfaces(land_rects: Array = []) -> Array[PackedVector2Array]:
 	# LAND is already owned by OriginalWorldData. Access shoulders and piers were missing.
 	var result: Array[PackedVector2Array] = [L.rect_polygon(L.WALKWAY),L.ship_hull(),L.rect_polygon(L.SHIP_GANGWAY)]
 	for pier in L.PIERS: result.append(L.rect_polygon(pier))
 	result.append_array(Geometry2D.offset_polyline(PackedVector2Array(L.ACCESS),L.ACCESS_LAND_HALF_WIDTH,Geometry2D.JOIN_ROUND,Geometry2D.END_SQUARE))
-	return result
+	# The access joins the city and the quay at y=0. Keep only the extension:
+	# drawing both owners at those joins creates coplanar faces and colliders.
+	var owners: Array[PackedVector2Array] = []
+	for rect in land_rects:
+		owners.append(L.rect_polygon(Rect2(rect[0],rect[1],rect[2],rect[3])))
+	var exposed: Array[PackedVector2Array] = []
+	for polygon in result:
+		var pieces: Array[PackedVector2Array] = [polygon]
+		for owner in owners:
+			var next: Array[PackedVector2Array] = []
+			for piece in pieces: next.append_array(Geometry2D.clip_polygons(piece,owner))
+			pieces = next
+		exposed.append_array(pieces)
+		owners.append(polygon)
+	return exposed
 
 static func rails() -> Array[PackedVector2Array]:
 	var result: Array[PackedVector2Array] = []

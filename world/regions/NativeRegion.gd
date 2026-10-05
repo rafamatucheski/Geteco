@@ -204,7 +204,7 @@ func _prepare() -> void:
 	if region_id == "harbor":
 		_record(CEMETERY.world_position(),{"kind":"cemetery","position":CEMETERY.world_position()})
 		_record(CEMETERY.world_position(),{"kind":"harbor_dressing","zone_id":"cemetery","position":CEMETERY.world_position()})
-		for polygon in SOUTH_PORT.extra_surfaces():
+		for polygon in SOUTH_PORT.extra_surfaces(source_data.harbor_land):
 			var metric := PackedVector2Array()
 			for point in polygon: metric.append(point*SCALE)
 			extra_land.append(metric)

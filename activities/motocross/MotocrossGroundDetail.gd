@@ -2,6 +2,8 @@ extends Node3D
 ## Bounded, spatially culled grass. Same blade geometry/material as Harbor.
 const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
 const AREA := Rect2(-247,-147,160,125)
+# RentalDeck footprint: its opaque top already owns the surface at y=.13.
+const RENTAL_DECK := Rect2(-237.15,-38,9.1,6)
 # Paddock furniture, the mechanic's tent and the bleacher's worn footprint.
 const CLEAR := [Rect2(-238,-39,13,9),Rect2(-237,-31,7,6),Rect2(-217,-38,6,13),Rect2(-229,-40,9,18),Rect2(-222.5,-33,6,5.5),Rect2(-211,-68.5,10,6.5)]
 var course: Node3D
@@ -35,10 +37,19 @@ func yard_height(p: Vector2) -> float:
 
 func _yard() -> void:
 	var surface := SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var columns: Array[float] = []
+	for x in range(-242,-205): columns.append(float(x))
+	columns.append(RENTAL_DECK.position.x)
+	columns.append(RENTAL_DECK.end.x)
+	columns.sort()
 	for z in range(-43,24):
-		for x in range(-242,-206):
+		for column in columns.size()-1:
+			var x := columns[column]
+			var width := columns[column+1]-x
+			# Cut at the actual deck edges instead of lifting either coplanar layer.
+			if RENTAL_DECK.has_point(Vector2(x+width*.5,z+.5)): continue
 			for offset in [Vector2.ZERO,Vector2.RIGHT,Vector2.DOWN,Vector2.RIGHT,Vector2.ONE,Vector2.DOWN]:
-				var p: Vector2 = Vector2(x,z)+offset
+				var p: Vector2 = Vector2(x,z)+Vector2(offset.x*width,offset.y)
 				surface.add_vertex(Vector3(p.x,yard_height(p),p.y))
 	surface.generate_normals()
 	var mesh := surface.commit()

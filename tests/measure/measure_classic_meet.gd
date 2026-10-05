@@ -29,7 +29,7 @@ func run() -> void:
 		quit(2)
 		return
 	if "--without-meet" in OS.get_cmdline_user_args():
-		var site=world.find_child("AuroraClassicMeetSite",true,false)
+		var site=world.find_child("TorqueClassicMeetSite",true,false)
 		if site!=null: site.queue_free()
 	world.player.teleport(Vector3(420,.1,120))
 	world.player.controlled_automatically=true
@@ -53,6 +53,12 @@ func run() -> void:
 		root.get_texture().get_image().save_png(folder.path_join(phase+".png"))
 		if "--capture-only" not in OS.get_cmdline_user_args(): await measure(phase)
 		if validate: await validate_phase(phase)
+		if "--capture-only" in OS.get_cmdline_user_args():
+			world.camera.heading=3.6
+			await create_timer(2).timeout
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png(folder.path_join(phase+"-front.png"))
+			world.camera.heading=0
 	if motion: await capture_motion()
 	elif "--hero" in OS.get_cmdline_user_args(): await capture_hero()
 	if "--light-diagnose" in OS.get_cmdline_user_args(): await diagnose_lights()
@@ -95,8 +101,9 @@ func capture_motion() -> void:
 	while Time.get_ticks_usec()-begin<30000000:
 		await RenderingServer.frame_post_draw
 		var elapsed:=float(Time.get_ticks_usec()-begin)/1000000.0
-		# Cross the authored lot in the gameplay camera; no extra viewport.
+		# Static camera, then rotation and a short physical walk along the clear aisle.
 		world.camera.heading=PI+(sin((elapsed-8)*.32)*.6 if elapsed>8 else 0.0)
+		world.player.automatic_direction=Vector3(0,0,1) if elapsed>=18 and elapsed<20 else (Vector3(0,0,-1) if elapsed>=22 and elapsed<24 else Vector3.ZERO)
 		root.get_texture().get_image().save_jpg(folder.path_join("motion-%05d.jpg"%frame),.78)
 		var probes: Array=[]
 		for point in [Vector3(417,.055,121.4),Vector3(425,.055,125),Vector3(411,.055,125),Vector3(425,.055,112.5)]:
@@ -104,6 +111,7 @@ func capture_motion() -> void:
 			probes.append([pixel.x,pixel.y])
 		stamps.append({"frame":frame,"drawn_frame":Engine.get_frames_drawn(),"us":Time.get_ticks_usec()-begin,"floor_probes":probes,"sun_energy":world.production.sun.light_energy,"sun_color":str(world.production.sun.light_color),"sun_transform":str(world.production.sun.global_transform),"ambient":world.production.environment.environment.ambient_light_energy})
 		frame+=1
+	world.player.automatic_direction=Vector3.ZERO
 	FileAccess.open(folder.path_join("motion-frames.json"),FileAccess.WRITE).store_string(JSON.stringify(stamps))
 
 func check(ok: bool, label: String) -> void:
@@ -121,7 +129,10 @@ func validate_phase(phase: String) -> void:
 			await create_timer(2).timeout
 			check(first.distance_to(meet.guests[0].global_position)>.5,"Daytime shopper actually walks")
 	else:
-		check(meet.mode=="meet" and meet.cars.size()==6 and meet.guests.size()==6,"Night has six classic cars and six people")
+		check(meet.mode=="meet" and meet.cars.size()==6 and meet.guests.size()==6,"Night has six exhibition cars and six people")
+		var models: Dictionary = {}
+		for car in meet.cars: models[car.model_id]=true
+		check(models.size()==6,"Exhibition has six distinct car silhouettes")
 		check(meet.cars.filter(func(c):return c.hood_open).size()==3,"Three open hoods")
 		check(meet.cars.filter(func(c):return c.neon.a>0).size()==2,"Two neon cars")
 		for guest in meet.guests:
@@ -178,7 +189,7 @@ func validate_lifecycle() -> void:
 	# Swept movement, separately from the depth-render test.
 	for body in [world.player,meet.guests[1]]:
 		check(body.test_move(Transform3D(Basis.IDENTITY,Vector3(413.6,.08,120)),Vector3(0,0,-5)),"Full actor capsule cannot sweep through parked car")
-		check(body.test_move(Transform3D(Basis.IDENTITY,Vector3(420,.08,129)),Vector3(0,0,3)),"Full actor capsule cannot sweep through supermarket")
+		check(body.test_move(Transform3D(Basis.IDENTITY,Vector3(420,.08,129)),Vector3(0,0,3)),"Full actor capsule cannot sweep through auto-parts store")
 	if meet.guests.size()>0:
 		world.gameplay.weapon_fired.emit("pistol",Vector3(420,1,120))
 		await create_timer(.6).timeout

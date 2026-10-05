@@ -5,8 +5,12 @@ const DOOR_Z := 5.05 # Ahead of the front axle.
 var livery := Color("197f88")
 var operator_name := "COSTA SUL"
 var fleet_number := "2407"
+# Only TerminalCoach opts into reusing its immutable static body.
+var omit_static_boxes := false
+var body_materials: Array[Material] = []
 
 func _ready() -> void:
+	body_materials.clear()
 	var ivory := _mat(Color("edf0ec"), 0.38)
 	var paint := _mat(livery, 0.35)
 	var dark := _mat(Color("16242c"), 0.18)
@@ -62,9 +66,11 @@ func _mat(color: Color, roughness := 0.75, glow := false, metallic := 0.0) -> St
 	material.emission_enabled = glow
 	material.emission = color
 	material.emission_energy_multiplier = 0.30
+	body_materials.append(material)
 	return material
 
 func _box(pos: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
+	if omit_static_boxes: return null
 	var mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = size

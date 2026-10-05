@@ -316,6 +316,7 @@ func leave() -> bool:
 	car.throttle_input = 0
 	car.brake_input = true
 	car.stop_boarding_motion()
+	if car.archetype.begins_with("bike_"): world.player.visual.rotation = Vector3(0,car.global_rotation.y,0)
 	world.player.input_locked = true
 	world.player.set_physics_process(false)
 	world.player.collision_layer = 0
@@ -335,6 +336,7 @@ func leave() -> bool:
 func _begin_bailout(point: Vector3, momentum: Vector3) -> bool:
 	# O salto captura a linha de base do visual: o corpo sai do banco antes, sem deslocamento.
 	world.player.release_seated(false)
+	if car.archetype.begins_with("bike_"): world.player.visual.rotation = Vector3(0,car.global_rotation.y,0)
 	var side := -1 if car.to_local(point).x < 0 else 1
 	car.controlled = false
 	car.external_input = false
@@ -410,6 +412,8 @@ func _force_detach(_reason: String) -> void:
 
 func _restore_player_on_foot(point: Vector3) -> void:
 	if not is_instance_valid(world) or not is_instance_valid(world.player): return
+	world.player.visual.rotation.x = 0
+	world.player.visual.rotation.z = 0
 	world.player.teleport(point)
 	world.player.collision_layer = _player_layer if _player_layer != 0 else 2
 	world.player.collision_mask = _player_mask if _player_mask != 0 else 7
@@ -493,6 +497,6 @@ func _update_mounted_player() -> void:
 		if world.player.seated: INTERIOR.follow(world.player, car, get_physics_process_delta_time())
 		return
 	world.player.global_position = car.driver_seat_anchor()
-	world.player.visual.rotation.y = car.global_rotation.y
+	world.player.visual.global_basis = car.visual.global_basis.orthonormalized()
 	world.player.pose_vehicle(1.0, 0.0, -1, 1.0, car.motorcycle_handholds())
 	world.player.show()

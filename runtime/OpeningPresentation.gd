@@ -1,9 +1,12 @@
 extends CanvasLayer
-## Hosts the approved prologue through departure; the native ferry replaces bus travel.
+## Hosts the native 3D ferry film, then hands back to the playable disembarkation.
+const FILM := preload("res://cutscenes/opening/ferry/FerryFilm.gd")
 signal completed(skipped: bool)
 var film: Control
 var _previous_pause := false
 var _owns_pause := false
+var _viewport: Viewport
+var _previous_3d_disabled := false
 var _translations: Array[Translation] = []
 
 func _ready() -> void:
@@ -18,23 +21,29 @@ func _ready() -> void:
 		TranslationServer.add_translation(translation)
 		_translations.append(translation)
 	_previous_pause = get_tree().paused
+	_viewport = get_viewport()
+	_previous_3d_disabled = _viewport.disable_3d
 	_owns_pause = true
 	get_tree().paused = true
-	film = preload("res://cutscenes/opening/OpeningCutscene.tscn").instantiate()
-	film.show_studio_intro = false
-	film.show_preview_hud = false
-	film.finish_before_travel = true
+	# The opaque prerecorded film needs no hidden live city render underneath it.
+	_viewport.disable_3d = true
+	film = FILM.new()
 	film.finished.connect(func(destination: StringName): _complete(destination, false))
 	film.skipped.connect(func(destination: StringName): _complete(destination, true))
 	add_child(film)
 
 func _complete(destination: StringName, was_skipped: bool) -> void:
-	if destination != &"bus_terminal_arrival" or not _owns_pause: return
-	get_tree().paused = _previous_pause
-	_owns_pause = false
+	if destination != FILM.DESTINATION or not _owns_pause: return
+	_release_world()
 	completed.emit(was_skipped)
 	queue_free()
 
 func _exit_tree() -> void:
-	if _owns_pause: get_tree().paused = _previous_pause
+	_release_world()
 	for translation in _translations: TranslationServer.remove_translation(translation)
+
+func _release_world() -> void:
+	if not _owns_pause: return
+	if is_instance_valid(_viewport): _viewport.disable_3d = _previous_3d_disabled
+	get_tree().paused = _previous_pause
+	_owns_pause = false

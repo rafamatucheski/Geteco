@@ -1,4 +1,5 @@
 extends Node3D
+const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 ## Six native 3D walk-in homes. Player, residents, architecture and furniture
 ## share one depth buffer and physical world; no sprite/projection workaround.
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
@@ -388,8 +389,8 @@ func _append(parent: Node3D,mesh: Mesh,at: Vector3,color: String,angles: Vector3
 	if not _batches.has(key):
 		var surface:=SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_batches[key]={"surface":surface,"parent":parent,"color":color}
-	_batches[key].surface.append_from(mesh,0,Transform3D(Basis.from_euler(angles),at))
+		_batches[key]={"surface":surface,"parent":parent,"color":color,"vertex_offset":0}
+	_batches[key].vertex_offset = BOX_BATCH.append_from(_batches[key].surface,mesh,0,Transform3D(Basis.from_euler(angles),at),int(_batches[key].vertex_offset))
 
 func _solid(room: Dictionary,id: String,at: Vector3,size: Vector3,parent: Node3D = null) -> StaticBody3D:
 	if parent==null: parent=room.root

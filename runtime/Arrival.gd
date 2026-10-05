@@ -88,7 +88,19 @@ func start_or_resume(loaded: bool = false) -> void:
 		_set_phase("police_exit" if session.state.place_id == "harbor_police" else "arrival_wait", "Saia da delegacia." if session.state.place_id == "harbor_police" else "Preciso entender o que aconteceu...", Vector3.ZERO)
 	elif flags.get("harbor_arrival_seen", false): _police_visit()
 	elif opening_completed: _begin_disembark()
-	else: _begin_opening()
+	else:
+		if not loaded:
+			# The playable quay continues the same rainy night as the ferry film.
+			# Resuming an existing journey keeps its saved weather and clock.
+			session.weather.time_of_day = .94
+			session.weather.weather_state = 1
+			session.weather.rain_intensity = .25
+			session.weather.weather_timer = 180.0
+			session.state.world_state.time = .94
+			session.state.world_state.weather = 1
+			session.state.world_state.rain_intensity = .25
+			session.weather._update()
+		_begin_opening()
 	if canonical_repaired: changed.emit()
 
 func _complete_canonical_prologue() -> bool:

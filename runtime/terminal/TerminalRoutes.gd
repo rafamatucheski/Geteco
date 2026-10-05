@@ -1,4 +1,5 @@
 extends RefCounted
+const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## V1 apron geometry, converted once from authored floor pixels to native metres.
 static func point(x: float, z: float) -> Vector3:
 	return Vector3((1700+x)/16.0,.12,(1060+z)/16.0)
@@ -30,19 +31,31 @@ static func apron(kind: String, bay: int) -> Curve3D:
 	return c
 
 static func street(graph: RefCounted) -> Curve3D:
+	var stall_began := TRANSIT_WORK.begin()
+	var result := _stall_street(graph)
+	if stall_began != 0: TRANSIT_WORK.finish("terminal.street",stall_began,{"valid":result!=null})
+	return result
+
+static func _stall_street(graph: RefCounted) -> Curve3D:
+	var configure_began := TRANSIT_WORK.begin()
 	var router := preload("res://gameplay/dispatch/DispatchRoadRouter.gd").new()
 	router.configure(graph)
+	if configure_began != 0: TRANSIT_WORK.finish("terminal.street.router_configure",configure_began,{"vertices":graph.vertices.size(),"edges":graph.edges.size()})
 	var c := Curve3D.new()
 	c.bake_interval = .25
 	var stops := [point(293,220),point(478,-583),point(-378,-583),point(-323,220)]
 	var heading := Vector3.RIGHT
 	for i in stops.size()-1:
+		var plan_began := TRANSIT_WORK.begin()
 		var plan: Dictionary = router.plan(stops[i],stops[i+1],heading)
+		if plan_began != 0: TRANSIT_WORK.finish("terminal.street.router_plan",plan_began,{"segment":i,"ok":plan.get("ok",false),"native_active":router._native!=null,"native_tried":router._native_tried})
 		if not plan.get("ok",false) or float(plan.get("end_gap",INF)) > 10: return null
+		var bake_began := TRANSIT_WORK.begin()
 		var segment: Curve3D = plan.curve
 		for p in segment.get_baked_points():
 			p.y = .12
 			if c.point_count == 0 or c.get_point_position(c.point_count-1).distance_to(p) > .05: c.add_point(p)
 		if segment.point_count > 1: heading = segment.get_point_position(segment.point_count-1)-segment.get_point_position(segment.point_count-2)
+		if bake_began != 0: TRANSIT_WORK.finish("terminal.street.curve_assembly",bake_began,{"segment":i,"points":segment.point_count})
 	c.set_meta("traffic_open",true)
 	return c

@@ -155,6 +155,11 @@ func _ready() -> void:
 # --- Aparência ----------------------------------------------------------------
 
 func _choose_wardrobe(identity: int) -> void:
+	wardrobe = _appearance_wardrobe(identity,coat_color,pants_color,motorcycle_helmet_color,wardrobe_overrides)
+
+## Same local seeded wardrobe selection for ready and immutable prewarming.
+## It never consumes the gameplay global RNG or creates a scene node.
+static func _appearance_wardrobe(identity: int, coat: Color, pants: Color, helmet: Color, overrides: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 7919 + 104729
 	var female := rng.randf() < 0.5
@@ -178,20 +183,37 @@ func _choose_wardrobe(identity: int) -> void:
 	w.inner = INNERS[rng.randi() % INNERS.size()]
 	var shoe_roll := rng.randi()
 	w.accent = ACCENTS[rng.randi() % ACCENTS.size()]
-	w.top_color = coat_color
-	w.bottom_color = pants_color
-	if w.bottom == 1: w.bottom_color = pants_color.lightened(0.12)
-	if motorcycle_helmet_color != Color.TRANSPARENT:
+	w.top_color = coat
+	w.bottom_color = pants
+	if w.bottom == 1: w.bottom_color = pants.lightened(0.12)
+	if helmet != Color.TRANSPARENT:
 		# O piloto montado usa capacete integral; a mesma leitura visual continua
 		# após a queda, em vez de trocar por um motorista genérico sem capacete.
 		w.hat = 3
-		w.accent = motorcycle_helmet_color
+		w.accent = helmet
 		w.backpack = false
-	w.merge(wardrobe_overrides, true)
+	w.merge(overrides, true)
 	# Cor do calçado depois dos overrides: bota de estivador sorteia na paleta de bota.
 	var shoes: Array = [SNEAKERS, BOOTS, DRESS_SHOES][w.shoe]
-	if not wardrobe_overrides.has("shoe_color"): w.shoe_color = shoes[shoe_roll % shoes.size()]
-	wardrobe = w
+	if not overrides.has("shoe_color"): w.shoe_color = shoes[shoe_roll % shoes.size()]
+	return w
+
+static func prewarm_actor_identity(identity: int) -> void:
+	var coat: Color = [Color("426c70"),Color("a35d42"),Color("d3c3a1"),Color("42556f"),Color("8e5362"),Color("70835d")][identity % 6]
+	var pants: Color = [Color("293849"),Color("484644"),Color("615342")][identity % 3]
+	var w := _appearance_wardrobe(identity,coat,pants,Color.TRANSPARENT,{})
+	var profile := KIT.build_profile(w.female,w.build)
+	profile.merge(w.get("body_profile",{}),true)
+	# Same functions/arguments as _build_rig; only their immutable cache is filled.
+	KIT.pelvis_mesh(profile,w.top,w.bottom,w.bag)
+	KIT.chest_mesh(profile,w.top,w.backpack,-w.bag)
+	KIT.head_mesh(w.female,w.hair,w.beard,w.hat,w.glasses)
+	KIT.thigh_mesh(profile,w.bottom,w.top)
+	KIT.shin_mesh(profile,w.bottom,w.top,w.shoe)
+	KIT.foot_mesh(w.shoe)
+	KIT.upper_arm_mesh(profile,w.top)
+	KIT.forearm_mesh(profile,w.top,-1.0)
+	KIT.forearm_mesh(profile,w.top,1.0)
 
 static func _pick(rng: RandomNumberGenerator, values: Array, weights: Array) -> Variant:
 	var roll := rng.randf()

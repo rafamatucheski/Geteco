@@ -14,6 +14,9 @@ signal landed(quality: String, air_time: float)
 const LANDING_MIN_AIR := .38
 const LANDING_PERFECT := .14
 const LANDING_ROUGH := .50
+const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
+var manual_wheelie = WHEELIE.new()
+var _wheelie_requested := false
 
 var paint_color := Color("e87823")
 var rider_color := Color("e4e9ef")
@@ -102,10 +105,11 @@ func _ready() -> void:
 	add_to_group("v2_damageable")
 	set_meta("impact_material","metal")
 
-func drive(throttle: float, steering: float, brake: bool = false) -> void:
+func drive(throttle: float, steering: float, brake: bool = false, lift_front: bool = false) -> void:
 	_throttle = clampf(throttle, -1.0, 1.0) if is_finite(throttle) else 0.0
 	_steering = clampf(steering, -1.0, 1.0) if is_finite(steering) else 0.0
 	_brake = brake
+	_wheelie_requested = lift_front
 
 func bind_combat(gameplay: Node) -> void:
 	if _combat==gameplay: return
@@ -170,6 +174,8 @@ func reset_to(where: Transform3D) -> void:
 	wheelie = 0.0
 	landing_boost = 0.0
 	_wheelie_pitch = 0.0
+	manual_wheelie.reset()
+	_wheelie_requested = false
 	crash_state = "riding"
 	_state_time = 0.0
 	if is_instance_valid(visual):
@@ -185,6 +191,8 @@ func crash(severity: float = 0.5) -> void:
 	health -= maxf(0.0, damage)
 	crash_count += 1
 	crash_state = "fallen"
+	manual_wheelie.reset()
+	_wheelie_requested = false
 	_state_time = 0.0
 	launch_boost = 0.0
 	wheelie = 0.0
@@ -221,6 +229,7 @@ func _physics_process(delta: float) -> void:
 	var incoming_y := velocity.y
 	var before := global_position
 	var riding := crash_state == "riding" and race_enabled
+	manual_wheelie.step(delta,_wheelie_requested,is_player and riding,grounded,speed,_throttle,_brake)
 	if riding:
 		var mud_speed := lerpf(1.0, 0.82, wetness)
 		var target := _throttle * (max_speed * mud_speed if _throttle >= 0.0 else 3.2)
@@ -240,7 +249,7 @@ func _physics_process(delta: float) -> void:
 		speed = move_toward(speed, target, rate * delta)
 		if absf(speed) > 0.15:
 			var turning := _steering * minf(absf(speed) / 3.0, 1.0) * lerpf(1.65, 0.9, clampf(absf(speed) / maxf(0.1, max_speed), 0.0, 1.0))
-			rotation.y += turning * turn_response * signf(speed) * delta * (lerpf(1.0, 0.88, wetness) if grounded else 0.3)
+			rotation.y += turning * turn_response * signf(speed) * delta * (lerpf(1.0, 0.88, wetness) if grounded else 0.3) * manual_wheelie.steering_scale()
 	else:
 		speed = move_toward(speed, 0.0, 14.0 * delta)
 	var forward := -global_basis.z
@@ -369,12 +378,14 @@ func _pose_riding(delta: float) -> void:
 	# Rider lean acts directly on the attitude. Inside the double lerp above it
 	# was damped to ~0.24 rad/s and could not square a 0.4 s flight to a face.
 	if not is_on_floor(): _pitch = clampf(_pitch + clampf(air_lean, -1.0, 1.0) * delta * 2.4, -1.1, 1.1)
+	if not is_on_floor(): manual_wheelie.reset()
 	var wheelie_goal := .40 if wheelie > 0.0 and is_on_floor() else 0.0
 	_wheelie_pitch = lerpf(_wheelie_pitch, wheelie_goal, minf(1.0, delta * (8.0 if wheelie_goal > 0.0 else 4.0)))
-	visual.rotation.x = _pitch + _wheelie_pitch
+	var lift_pitch: float = maxf(_wheelie_pitch,manual_wheelie.pitch)
+	visual.rotation.x = _pitch + lift_pitch
 	# The wheelie pivots on the rear tire patch instead of sinking it into the ground.
 	var pivot := Vector3(0, 0, .83)
-	visual.position = pivot - Basis(Vector3.RIGHT, _wheelie_pitch) * pivot
+	visual.position = WHEELIE.rear_pivot_offset(lift_pitch,pivot)
 	var slip := clampf(_planar_velocity.dot(global_basis.x)*.035,-.10,.10)
 	visual.rotation.z = lerpf(visual.rotation.z, _steering * clampf(absf(speed) / maxf(0.1, max_speed), 0.0, 1.0) * 0.32+slip+_contact_roll, minf(1.0, delta * 9.0))
 	var lift := .035*smoothstep(.05,.22,_air_time)

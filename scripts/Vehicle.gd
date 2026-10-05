@@ -6,6 +6,7 @@ const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
+const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
 const MAX_SPEED := 15.0
 const REVERSE_SPEED := 4.5
 const WHEELBASE := 2.5
@@ -60,6 +61,9 @@ var traffic := false:
 var _motorcycle_rider_parts: Array[MeshInstance3D] = []
 var _motorcycle_seat := Vector3(0, -.05, .30)
 var _motorcycle_grips: Dictionary = {}
+var manual_wheelie: RefCounted
+var _motorcycle_visual_rest := Transform3D.IDENTITY
+var _motorcycle_rear_contact := Vector3.ZERO
 var speed := 0.0
 var steering := 0.0
 var throttle_input := 0.0
@@ -216,6 +220,12 @@ func _ready() -> void:
 			part.reparent(pivots[center],false)
 			part.position -= center
 	traced = _trace_ready("pivots",traced)
+	if archetype.begins_with("bike_"):
+		manual_wheelie = WHEELIE.new()
+		_motorcycle_visual_rest = visual.transform
+		for pivot in wheels:
+			if not pivot.get_meta("front"):
+				_motorcycle_rear_contact = Vector3(pivot.position.x,0,pivot.position.z)
 	effects = preload("res://gameplay/vehicle_effects/VehicleEffects.gd").new()
 	effects.configure(self)
 	add_child(effects)
@@ -253,7 +263,7 @@ func is_player_damage_source() -> bool:
 ## sinal: velocidade, aceleração pedida, batida (`crash_*`), suspensão do streaming, dano,
 ## condutor. `is_on_floor()` exige que já tenha pousado.
 func _is_resting() -> bool:
-	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground")
+	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground") and (manual_wheelie == null or manual_wheelie.pitch == 0)
 
 ## Trânsito ambiente longe da câmera roda menos passos: a 60-110 m um a cada 2, além disso um a cada 4,
 ## escalonados por carro. O passo executado usa o tempo acumulado e o move_and_slide anda a mesma
@@ -441,6 +451,7 @@ func _stall_physics_tick(delta: float) -> void:
 	stage = STALL_WORK.begin()
 	STREET.vehicle_post_move(self,incoming_velocity,delta)
 	STALL_WORK.finish_slow("vehicle.street_post", stage, 5000, self)
+	if manual_wheelie != null: _tick_motorcycle_wheelie(delta)
 	stage = STALL_WORK.begin()
 	wheel_spin += motion.dot(forward)/0.355
 	for pivot in wheels:
@@ -455,6 +466,7 @@ func _stall_physics_tick(delta: float) -> void:
 	STALL_WORK.finish_slow("vehicle.effects", stage, 5000, self)
 
 func stop_boarding_motion() -> void:
+	reset_motorcycle_wheelie()
 	# The body animation uses fixed door/seat anchors. Speed alone left the
 	# smoothed horizontal velocity dragging the vehicle out from under them.
 	speed = 0.0
@@ -466,6 +478,21 @@ func stop_boarding_motion() -> void:
 	for key in ["crash_slide", "crash_spin", "crash_stun"]:
 		if has_meta(key): remove_meta(key)
 	if handling != null: handling.reset()
+
+func reset_motorcycle_wheelie() -> void:
+	if manual_wheelie == null: return
+	manual_wheelie.reset()
+	if is_instance_valid(visual): visual.transform = _motorcycle_visual_rest
+
+func _tick_motorcycle_wheelie(delta: float) -> void:
+	var eligible := controlled and not traffic and not external_input and not input_locked and not engine_disabled and health > 0 and not has_meta("crash_stun")
+	var previous_pitch: float = manual_wheelie.pitch
+	if not eligible and previous_pitch == 0: return
+	var controls := get_node_or_null("/root/GameInput")
+	eligible = eligible and (controls == null or not controls.remapping)
+	manual_wheelie.step(delta,eligible and Input.is_action_pressed("motorcycle_wheelie"),eligible,is_on_floor(),speed,throttle_input,brake_input or is_on_wall())
+	if manual_wheelie.pitch == previous_pitch: return
+	visual.transform = Transform3D(Basis(Vector3.RIGHT,manual_wheelie.pitch),WHEELIE.rear_pivot_offset(manual_wheelie.pitch,_motorcycle_rear_contact))*_motorcycle_visual_rest
 
 func _bind_motorcycle_rider() -> void:
 	if not archetype.begins_with("bike_"): return
@@ -518,6 +545,7 @@ func _drive_player(delta: float) -> void:
 	_handling_frame = false
 	if handling != null and controlled and not external_input and not input_locked and not engine_disabled and health > 0:
 		var axis: Vector2 = get_node("/root/GameInput").vehicle_input()
+		if manual_wheelie != null: axis.x *= manual_wheelie.steering_scale()
 		var handbrake := Input.is_action_pressed("handbrake")
 		handling.step(self, delta, axis.y, axis.x, handbrake, _wetness())
 		throttle_input = axis.y
@@ -544,7 +572,7 @@ func _drive_player(delta: float) -> void:
 		speed = clampf(speed+throttle_input*acceleration*delta,-REVERSE_SPEED,max_forward_speed)
 	else:
 		speed = move_toward(speed,0,2.0*delta)
-	steering = move_toward(steering,steer_input*0.48,delta*2.0)
+	steering = move_toward(steering,steer_input*0.48*(manual_wheelie.steering_scale() if manual_wheelie != null else 1.0),delta*2.0)
 	var turn := speed/WHEELBASE*tan(steering)*delta
 	if absf(turn) > 0.0001 and can_rotate(rotation.y+turn): rotation.y += turn
 
@@ -921,6 +949,7 @@ func obstacle_ahead() -> bool:
 	return blocker != null
 
 func place(point: Vector3, yaw: float) -> void:
+	reset_motorcycle_wheelie()
 	global_position = point
 	rotation.y = yaw
 	speed = 0
@@ -986,7 +1015,7 @@ func seated_drop() -> float:
 	return preload("res://gameplay/VehicleInterior.gd").seated_drop(self)
 
 func driver_seat_anchor() -> Vector3:
-	if archetype.begins_with("bike_"): return to_global(_motorcycle_seat)
+	if archetype.begins_with("bike_"): return visual.to_global(_motorcycle_seat)
 	# Buggy e empilhadeira não têm porta nem linha no VehicleDoorSpecs: o banco vem do interior.
 	var open_seat: Vector3 = preload("res://gameplay/VehicleInterior.gd").open_seat_local(self)
 	if open_seat.is_finite(): return to_global(open_seat)

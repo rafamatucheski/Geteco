@@ -12,6 +12,8 @@ extends Node3D
 ## gerada por semente (perfis compacto, alongado, respingado e irregular, como na
 ## V1) e cada mancha registra raio para o rastro de pneu/sapato (BloodTracks3D).
 
+const WORK := preload("res://runtime/StallWorkTrace.gd")
+
 const LIFETIME := 18.0
 const FADE_DURATION := 6.0
 const CORPSE_LIFETIME := 240.0
@@ -26,6 +28,9 @@ var stains: Array[Dictionary] = []
 var corpses: Array[Dictionary] = []
 var _meshes: Array[ArrayMesh] = []
 var _rng := RandomNumberGenerator.new()
+# Keep the exact material configuration alive across empty stain intervals.
+# Every stain still owns its independently animated material.
+var _shader_template: StandardMaterial3D
 
 
 func _ready() -> void:
@@ -34,6 +39,7 @@ func _ready() -> void:
 	# Oito formas pré-geradas bastam: rotação, escala e esticamento por mancha
 	# variam o resto. Gerar malha por mancha custaria alocação em tiroteio.
 	for variant in 8: _meshes.append(_build_shape(variant))
+	_prepare_material_template()
 
 
 ## Poça. `lethal` = morte (grande, dura enquanto houver corpo); senão ferimento.
@@ -90,6 +96,8 @@ func has_stain_near(point: Vector3, radius: float) -> bool:
 
 
 func _allocate(point: Vector3, radius: float, grow_time: float, stretch_dir := Vector3.ZERO) -> Dictionary:
+	var allocation_began := WORK.begin()
+	var stains_before := stains.size()
 	while stains.size() >= MAX_STAINS:
 		var oldest: Dictionary = stains.pop_front()
 		if is_instance_valid(oldest.node): oldest.node.queue_free()
@@ -108,6 +116,8 @@ func _allocate(point: Vector3, radius: float, grow_time: float, stretch_dir := V
 	mesh.scale = Vector3(0.3, 1, 0.3) * mesh.scale
 	var stain := {"node": mesh, "material": material, "point": mesh.global_position, "radius": radius, "age": 0.0, "grow": grow_time, "lifetime": LIFETIME, "lethal": false, "target_scale": Vector3(radius * squash, 1, radius)}
 	stains.append(stain)
+	if allocation_began != 0:
+		WORK.finish("ground_blood.allocate",allocation_began,{"stains_before":stains_before,"stains_after":stains.size(),"template_alive":_shader_template != null,"template_id":_shader_template.get_instance_id() if _shader_template != null else 0})
 	return stain
 
 
@@ -130,6 +140,16 @@ func _material() -> StandardMaterial3D:
 	material.render_priority = -1
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return material
+
+
+func _prepare_material_template() -> void:
+	if _shader_template != null: return
+	var prepared_at := WORK.begin()
+	_shader_template = _material()
+	var rid_at := WORK.begin()
+	_shader_template.get_rid()
+	if rid_at != 0: WORK.finish("ground_blood.material.get_rid",rid_at)
+	if prepared_at != 0: WORK.finish("ground_blood.material.prepare",prepared_at)
 
 
 func _process(delta: float) -> void:

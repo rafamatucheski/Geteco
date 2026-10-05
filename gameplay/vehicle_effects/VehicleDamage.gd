@@ -18,8 +18,8 @@ const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResource
 const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const WRECK_BODY := preload("res://gameplay/vehicle_effects/VehicleWreckBody.gd")
 const BURN_RATIO := .2
-## Segundos entre o limiar de fogo e a explosão, com o carro parado de levar tiro.
-const BURN_SECONDS := 3.5
+## Tempo mínimo para reagir, desembarcar e fugir quando só o incêndio causa dano.
+const BURN_SECONDS := 10.0
 const WEAR_STAGES := 3
 ## A carcaça continua queimando depois da explosão, com o fogo minguando até apagar.
 const WRECK_FIRE_SECONDS := 11.0
@@ -32,6 +32,7 @@ static var _char_embers: Texture2D
 
 var vehicle: CharacterBody3D
 var burning := false
+var _burn_damage_per_second := 0.0
 var _flame_ignited := false
 var wrecked := false
 var _stage := 0
@@ -103,10 +104,19 @@ func refresh() -> void:
 	var ratio: float = clampf(vehicle.health / maxf(1.0, vehicle.max_health), 0.0, 1.0)
 	_apply_wear(1.0 - ratio)
 	var should_burn: bool = vehicle.health > 0 and (_flame_ignited or ratio <= BURN_RATIO)
-	if should_burn != burning:
-		burning = should_burn
-		set_physics_process(burning)
-		if not burning: _stop_fire()
+	if should_burn and not burning:
+		_begin_burn()
+	elif burning and not should_burn:
+		burning = false
+		set_physics_process(false)
+		_stop_fire()
+
+func _begin_burn() -> void:
+	burning = true
+	# Capture uma única vez: a vida pode já estar muito abaixo do limiar após
+	# uma batida. Recalcular a cada dano impediria o fogo de terminar a queima.
+	_burn_damage_per_second = minf(vehicle.health, vehicle.max_health * BURN_RATIO) / BURN_SECONDS
+	set_physics_process(true)
 
 func _physics_process(delta: float) -> void:
 	if wrecked:
@@ -119,7 +129,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_fire()
 	var source: Node = _last_source.get_ref() if _last_source != null else null
-	vehicle.receive_damage(vehicle.max_health * BURN_RATIO / BURN_SECONDS * delta, source)
+	vehicle.receive_damage(_burn_damage_per_second * delta, source)
 
 # --- Desgaste -----------------------------------------------------------------------------
 
@@ -327,8 +337,7 @@ func ignite(source: Node = null) -> void:
 	_flame_ignited = true
 	if source != null: note_source(source)
 	if not burning:
-		burning = true
-		set_physics_process(true)
+		_begin_burn()
 	_update_fire()
 
 # --- Carcaça ------------------------------------------------------------------------------

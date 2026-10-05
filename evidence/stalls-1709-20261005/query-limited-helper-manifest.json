@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "scope": "Private observer-only change. No Game fix, no WPR/Game/UAC execution by preparation script.",
+  "source": "D:\\geteco\\game\\evidence\\intermittent-stalls-20261004\\continuation-native\\capture_stall_native_cpu_window_1024_visible.ps1",
+  "source_sha256": "4a9e900b912ae75ea7a5a463efda58a470f74c726e8fa1626d78e21c33e2e9df",
+  "candidate": "D:\\geteco\\game\\evidence\\intermittent-stalls-20261004\\continuation-native\\capture_stall_native_cpu_window_1024_query_limited.ps1",
+  "candidate_sha256": "dd62f1f3e37c83fc8c84bae907a2e4d71e8b355d8e73b21d44cf395322138254",
+  "expected_mutations": [
+    "fresh limited-query C# identity method and declarations",
+    "Get-Identity read-only query implementation"
+  ],
+  "unchanged": [
+    "profile",
+    "timeouts",
+    "start/stop controls",
+    "parent/child checks",
+    "Identity-Matches",
+    "birth/path validation",
+    "snapshot enumeration for parent relation",
+    "priority/affinity/policies"
+  ],
+  "backup": "D:\\geteco\\game\\evidence\\stalls-1709-20261005\\query-limited-helper-before.ps1",
+  "diff": "D:\\geteco\\game\\evidence\\stalls-1709-20261005\\query-limited-helper.diff",
+  "native_api_access": "PROCESS_QUERY_LIMITED_INFORMATION|SYNCHRONIZE 0x00101000",
+  "native_api_calls": [
+    "OpenProcess",
+    "WaitForSingleObject(0) before/after",
+    "GetProcessId",
+    "GetProcessTimes creation",
+    "QueryFullProcessImageNameW flags0",
+    "CloseHandle in finally"
+  ],
+  "cache_identity": false,
+  "preflight": {
+    "receipt": "D:\\geteco\\game\\evidence\\stalls-1709-20261005\\query-limited-identity-preflight.json",
+    "sha256": "a4b960e690fad00697d45cd8f452927fe3d0668c76d18eb4ea23ee247625a308",
+    "success": true,
+    "powershell_version": "5.1.26100.9444",
+    "pairs": 50,
+    "exited_owned_pid_refused": true,
+    "wall_total_old_ms": 553.8314,
+    "wall_total_new_ms": 22.108600000000003,
+    "cpu_total_old_ms": 593.75,
+    "cpu_total_new_ms": 31.25,
+    "scope": "One finite own-process contract/cost run. First query retained; no WPR/Game/UAC. CPU quantized and includes dispatch; not measured Game helper reduction."
+  },
+  "preflight_stdout_projection_note": "First run printed null fields because Select-Object projected OrderedDictionary properties; preserved JSON receipt contains PASS data. Only final console projection repaired afterwards; no query/preflight execution repeated and candidate untouched.",
+  "preflight_fixture_after_sha256": "a56c97c046336d7865828bc5d62090144db880eca8af7f97ebe6b524454cb89c"
+}

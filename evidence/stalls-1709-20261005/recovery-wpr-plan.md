@@ -1,0 +1,61 @@
+# WPR contínuo dirigido à recuperação da pausa de 1,7 s
+
+Plano prospectivo, definido antes de qualquer motor desta etapa. No máximo duas rodadas renderizadas, cada uma com 120 s de gameplay e 3 s de cauda. A preparação do label `stall1709-wpr-rec1` terminou sem jogo ou recording; `stall1709-wpr-rec2` é agora a primeira captura prevista. Um eventual segundo motor precisará de label novo e emenda prospectiva, sem ultrapassar o limite de dois. Não é uma correção do jogo nem comparação A/B de FPS.
+
+## Emenda técnica antes do primeiro motor
+
+Rec1 confirmou boot elevado válido do PowerShell administrativo. O guard adicional do coordenador exigiu campos CIM de imagem/CommandLine que vieram null para esse processo protegido, além de comparar nascimento com precisão de microssegundos versus FILETIME de 100 ns. Esse bloqueio de aquisição atrasou o runner até o helper expirar em 2026-10-05 11:24:01,862 UTC. Não houve Game, WPR recording, dado de performance ou reprodução negativa; o label e os receipts da falha ficam preservados.
+
+O usuário mostrou a janela PowerShell administrativa aberta. O coordenador forneceu um comando para colar diretamente nessa mesma janela, com o helper SHA `4a9e900b…` e label novo `stall1709-wpr-rec2`. Reutilizar o privilégio existente e reparar o guard de identidade resolve a falha técnica de preparação; não é repetição de um benchmark nem nova solicitação UAC automática. Assim que o boot correspondente confirmar a prontidão, iniciar o runner sem scans pesados adicionais.
+
+Identidade de preparação: exigir boot próprio self-elevated, label, hashes helper/perfil e nome do processo; se for necessária consulta externa de nascimento, considerar a precisão explicitamente registrada pela fonte, em vez de exigir igualdade de representações com resoluções diferentes. Não exigir campos protegidos indisponíveis. Essa regra de metadados não altera tolerâncias do jogo, de clocks, dos eventos ETL ou da assinatura. O timeout do helper continua 300 s, sem extensão; todos os demais limites e critérios permanecem.
+
+A mudança discriminante é substituir o sampler que suspende a main por ETW contínuo de CPU/agendamento durante a recuperação. OpenUsage fica ativo em seu estado normal, sem carga ccusage própria programada, fechamento do utilitário, mudança de configuração, prioridade ou afinidade. Sua atividade observada é contexto, não uma intervenção causal.
+
+## Questão e assinatura anterior
+
+O [frame histórico 16083](D:/geteco/game/evidence/stalls-1709-20261005/a1-pause-audit.md) mede 1.709,627 ms e concentra 1.694,572 ms entre o último callback físico e o próximo `process_frame`, READY +102,102540 a +103,812167 s pelo relógio bruto. CPU principal não avança no contador quantizado desse trecho; isso não distingue Waiting de Ready. Desenho e callback físico anteriores são curtos, e o catch-up vem depois. O frame 15918 de 1.512,399 ms, em `vehicle.street_pre`, é outra localização e será classificado separadamente.
+
+D1/D2, WIDE e as duas exposições controladas não reproduziram o gap histórico. O novo dado necessário é a cadeia contínua de CSwitch/ReadyThread dentro de um positivo, com stack de espera, execução e thread sinalizadora quando disponível. A ausência de reprodução nesta etapa continuará inconclusiva para a causa original.
+
+## Condições fixadas e estado das fontes
+
+Usar o projeto privado independente `D:/geteco/game/evidence/intermittent-stalls-20261004/stall1709-project` e o runner privado `RunIntermittentStallsShaderCache.ps1`, sem preparar outro snapshot nem copiar fontes live sobre ele. O [recibo atual](D:/geteco/game/evidence/stalls-1709-20261005/recovery-wpr-source-proof.json) confirmou os 1.650 arquivos esperados: zero mudanças, ausências ou extras versus D1. Os cinco arquivos de projeto/C#/router selecionados também coincidem live=frozen=capture. O único hunk observacional do clone desde o baseline inicial é a retenção do prefixo a partir do START de intervalos lentos, documentada no [manifesto preservado](D:/geteco/game/evidence/stalls-1709-20261005/project-manifest.json).
+
+Condições iguais ao controle histórico: cena Main real, Foundry 107→180→107 por Input; primeira passagem, retorno, eventos e recuperação com 30 s cada; seed 21092026; população solicitada 40 e diretores normais ativos; horário 0,4 e clima fixo; Mobile/Vulkan, 1920×1080, escala 1, MSAA enum 1 (2×), VSync 0 e max_fps 0; física 60 Hz, interpolação preservada e cap 3. Godmode/arsenal são a mesma fixture isolada de sobrevivência, sem teleporte durante o percurso. Não reduzir entidades, efeitos, colisões ou qualidade.
+
+Cada execução compila `Harbor.csproj` antes do Godot 4.7.2 .NET, instalação obrigatória do AGENTS. Exigir build sem erros e stdout com `ed1daf0bf`. `router_native=false` em READY só descreve a instância global lazy; confirmar plans privados do terminal `native_active=true`, router global exercitado no fim e ClockAnchor/ThreadCpuProbe C# válidos. Não aceitar fallback silencioso. APPDATA/LOCALAPPDATA e `--no-save` isolados; copiar somente settings pelo runner, cache ShaderRD novo/vazio por rodada como no controle histórico, sem `ShaderCacheSeed`. O cache de imports do projeto continua o mesmo: não chamar o motor inteiro ou o driver de frio.
+
+Runner: `-Observer on -ExternalTelemetry -ForegroundMetadata`, cap padrão 3. Sem `NativePoints`, `ThreadStateSamples`, EventPipe, script profiler, `PinGroundBlood` ou workload própria. Retenção de áudio diagnóstica já existente no clone permanece, sem outro `StallWorkTrace.take`. Os hashes de runner/collector/dependências devem continuar iguais antes e depois; qualquer alteração concorrente invalidará o comparativo afetado sem ser desfeita.
+
+## Janela nativa, privilégios e propriedade
+
+O coordenador abre o prompt PowerShell solicitado e inicia somente o helper WPR elevado. Build e jogo ficam sem elevação. Helper revisado: `capture_stall_native_cpu_window_1024_visible.ps1`, SHA `4a9e900b912ae75ea7a5a463efda58a470f74c726e8fa1626d78e21c33e2e9df`, cópia privada do helper 1 GiB com correção de metadado `ownership.buffers_mib` para 1024, sem mudar o controle de captura. O agente nativo confirmou ValidateOnly PASS no Windows PowerShell 5.1 antes do motor; a cópia original SHA `933e1c43…` permanece intacta.
+
+Parâmetros fixados: `StartMode=Ready`, `StartDelaySeconds=85`, `CaptureSeconds=40`, mesmo Label do runner. A janela nominal é READY +85..125 s, encerrada antecipadamente após o marcador FINISHED ou saída do jogo (~123 s). O delay existente parte da observação do READY e o comando start tem latência; portanto cobertura exata a partir de +85 não é prometida. Auditar início/fim reais pelo ClockAnchor e eventos ETL. Os positivos históricos de +97/+102 s devem caber, mas só eventos retidos podem comprovar isso. Loading e primeiros draws continuam no log do jogo, sem cobertura nativa nesta etapa.
+
+Perfil `game-cpu-1024.wprp`, SHA `31441e4b3ed56d25274cd74f59e44f97612ee6eef25159b6aa9a0aef0da7be89`: Memory, 1024 buffers de 1024 KiB, CpuConfig/ProcessThread/Loader/CSwitch/ReadyThread/SampledProfile/Power e stacks dos três eventos de CPU/agendamento. É circular, sem garantia de duração por ser 1 GiB. Não acrescentar FileIO, DiskIO, NetworkIO, CLR ou outro provider durante esta etapa. O perfil atual também não mede DPC/Interrupt nem hard faults: Ready/Waiting não pode virar uma afirmação sobre IRQ, disco ou paging sem dados específicos.
+
+Nenhum Game começa sem boot elevado e identidade de helper confirmados. Falha ou cancelamento do prompt/boot é lacuna preservada, sem Game extra daquele label nem tentativa equivalente automática. WPR usa apenas a instância GUID própria, com recibo de ownership anterior ao start, timeouts existentes e stop/cancel/status dessa instância. Nunca cancelar uma sessão genérica, terminar processos alheios ou alterar políticas para obter captura. O editor preexistente é preservado.
+
+Salvar ETL preferencialmente depois de FINISHED. Se o deadline real disparar enquanto o jogo ainda estiver ativo, registrar a sobreposição stop/save e excluir qualquer alegação de FPS independente desse custo; preservar o pico e o perfil para diagnóstico qualificado. Os limites de salvamento/cleanup são adicionais ao limite de coleta. Confirmar sessão própria encerrada e status igual ao baseline; cleanup incompleto impede novo braço até ser entendido.
+
+## Retenção, alinhamento e custo dos observadores
+
+Reutilizar StallLog, StallWorkTrace, measure_physics_boundaries, ThreadCpuProbe, ring START−3 s até END+3 s e detalhe de intervalos ≥25 ms. Registrar todos os timings, inclusive loading, picos abaixo de 40 ms e novos picos de cauda. Guardar posição, passos físicos, população, filas, nós adicionados/liberados, IDs/eventos e WORK por timestamps reais, não pela linha em que o evento foi anexado. Não somar pai/filho inclusivos; draw é wall do caminho de desenho, não GPU exclusiva.
+
+Auditar cada positivo: prefixo efetivamente presente, pós-contexto real e drops/overflow. O prefixo corrigido passou D1/D2; o último frame que cruza o cutoff POST ainda pode faltar nos detalhes (até 7,125 ms nos diagnósticos anteriores), enquanto o timing bruto existe. Não declarar ±3 s estritamente completo sem conferir essa fronteira. Loading f0 não tem 3 s anteriores ao início da coleta; cauda pode truncar novos picos.
+
+Alinhar Godot monotônico↔QPC↔ETL por ClockAnchor C# bracketed em READY/end, frequência e birth/PID/TID/parent/imagem. Não substituir esse alinhamento por UnixTime nominal ou por índices de listas. Auditar drift e incerteza antes de cruzar intervalos curtos. Stacks/símbolos precisam de identidade de módulo/PDB compatível; Harbor.pdb não simboliza Godot. Sem PDB nativo válido, relatar módulo+RVA e separar inferência de fonte/PE da identificação de função.
+
+Antes de totalizar Running/Ready/Waiting: verificar cobertura comum retida de todos os CPUs relevantes, `LastDroppedTimes`, EventsLost/BuffersLost, pares de transição/decodificação e continuidade no envelope do pico. EventsLost=0 não basta contra sobrescrita circular. Fronteiras ausentes, eventos perdidos ou estados impossíveis viram Unknown, sem interpolar a espera antiga. Scheduled-running inclui interrupções não medidas pelo perfil; samples não são duração exclusiva do callback.
+
+Custos: preservar hooks/self/writer/sort do logger, captura/input/context e CPU/wall/query do coletor externo v4; helper WPR registra seu CPU, comandos próprios, queries de identidade e start/stop/save. São limites inferiores inclusivos, não todo o overhead ETW/kernel. Não subtrair overhead dos frames e não afirmar ausência de interferência por não haver Suspend. Uma comparação ON/OFF de WPR seria outra hipótese futura, não um terceiro braço implícito.
+
+## Critério finito de parada e próxima decisão
+
+Rec1 não consumiu um motor: a falha de preparação acima é técnica e está preservada. Rec2 é a primeira observação prevista. Se reter um positivo com classificação nativa útil, parar para análise e escolher um experimento de uma variável pela operação/espera demonstrada. Se for válida e coberta, mas sem positivo discriminante, uma segunda observação pode confirmar a variabilidade com as mesmas condições, somente depois de fixar um label inédito em emenda prospectiva. Uma falha técnica exige causa concreta reparada e preservada, sem substituir evidência anterior. Máximo total: dois motores nesta etapa, nunca uma terceira execução equivalente.
+
+Os [critérios de assinatura](D:/geteco/game/evidence/stalls-1709-20261005/recovery-wpr-signature-criteria.md) separam o gap alvo, street_pre e outras operações. O corte ≥250 ms é triagem de positivos; não prova que todos têm a mesma causa de 1,7 s. Após duas observações sem reprodução útil, encerrar a abordagem e registrar a dependência específica faltante. Não realizar mudança de gameplay, prewarm, física, prioridades ou caches com base apenas em ausência.
+
+Entregar linha do tempo por positivo com callbacks/process/draw/gaps, Running/Ready/Waiting/Unknown apenas onde válidos, stack/caller/thread sinalizadora quando identificável, antecedente de 3 s e catch-up posterior. Reportar p50/p95/p99/máximo e quantidade/frequência >33,3/>66,7 ms para gameplay/fases, loading e cauda separados. Estes são diagnósticos com ETW, sem aprovação global de performance ou causa corrigida.

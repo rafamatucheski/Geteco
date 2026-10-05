@@ -54,11 +54,11 @@ func run() -> void:
 		car.receive_damage(car.max_health * .3)
 		check(car.damage_look.burning and car.health > 0, label + ": abaixo de 20% o motor pega fogo")
 		var seconds := 0.0
-		while car.health > 0 and seconds < 6.0:
+		while car.health > 0 and seconds < 12.0:
 			await physics_frame
 			seconds += 1.0 / Engine.physics_ticks_per_second
 		check(car.health <= 0 and exploded[0] == 1, label + ": o fogo leva à explosão (%.1fs)" % seconds)
-		check(seconds < 4.5, label + ": explosão sai em poucos segundos")
+		check(seconds >= 9.9 and seconds <= 10.1, label + ": incêndio dá dez segundos para desembarcar e fugir")
 		check(car.damage_look.wrecked, label + ": carcaça ativa")
 		for marking in markings: check(not marking.visible, "inscrição some na carcaça carbonizada")
 		for i in 40: await process_frame

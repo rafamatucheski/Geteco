@@ -5,6 +5,18 @@ using Godot;
 // Test-only main-thread counters. CPU accounting may be coarse; cycles are not time.
 public partial class ThreadCpuProbe : RefCounted
 {
+    // Sparse anchors only, outside the frame observer. QPC brackets show clock
+    // alignment uncertainty; these counters do not identify scheduler states.
+    public long[] ClockAnchor()
+    {
+        long before = System.Diagnostics.Stopwatch.GetTimestamp();
+        long usec = (long)Godot.Time.GetTicksUsec();
+        long utc = DateTime.UtcNow.ToFileTimeUtc();
+        long after = System.Diagnostics.Stopwatch.GetTimestamp();
+        return new long[] { before, usec, utc, after,
+            System.Diagnostics.Stopwatch.Frequency,
+            OperatingSystem.IsWindows() ? GetCurrentThreadId() : 0 };
+    }
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetCurrentThread();
     [DllImport("kernel32.dll")]

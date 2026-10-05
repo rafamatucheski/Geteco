@@ -27,6 +27,22 @@ func occupancy(course: Node3D, point: Vector3) -> Array[Dictionary]:
 	return course.get_world_3d().direct_space_state.intersect_shape(query)
 
 func connected_yard_checks(course: Node3D, paddock: Node3D) -> void:
+	var deck: StaticBody3D = paddock.get_node("RentalDeck")
+	var size: Vector3 = deck.get_child(0).shape.size
+	var footprint := Rect2(Vector2(deck.position.x-size.x*.5,deck.position.z-size.z*.5),Vector2(size.x,size.z))
+	var yard: MeshInstance3D = course.find_child("ConnectedEarthYard",true,false)
+	var clear := true
+	var vertices: PackedVector3Array = yard.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	for i in range(0,vertices.size(),3):
+		var midpoint := (vertices[i]+vertices[i+1]+vertices[i+2])/3.0
+		if footprint.grow(-.0001).has_point(Vector2(midpoint.x,midpoint.z)): clear = false
+	check(clear,"earth surface never overlaps the opaque rental deck")
+	var seam_supported := true
+	for z in [-37.8,-35.0,-32.2]:
+		for offset in [-.02,.02]:
+			var hit := ray(course,Vector3(footprint.end.x+offset,.13,z),.06,.3)
+			seam_supported = seam_supported and not hit.is_empty() and absf(hit.position.y-.13)<.005
+	check(seam_supported,"earth and deck meet with physical support on both sides of the seam")
 	var bike_support := true
 	for bike in paddock.parked_bikes:
 		# Both tire patches, not just the midpoint of the parked motorcycle.

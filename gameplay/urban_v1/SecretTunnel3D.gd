@@ -1,4 +1,5 @@
 extends Node3D
+const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 ## Continuous secret-tunnel stage. It stays in the production World3D, but is
 ## authored below and away from streamed streets so the walk down is visible
 ## without creating an isolated interior scene.
@@ -37,6 +38,10 @@ var _flicker_clock := 0.0
 var _rng := RandomNumberGenerator.new()
 var _materials := {}
 var _batches := {}
+# Manual, unindexed puddles share these palettes with some decoration boxes.
+# Preserve their native append format/last-attribute state and original faces.
+const MANUAL_BATCH_COLORS := ["243b3a","314744","3a1f1d"]
+var _batch_vertices := {}
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -686,7 +691,10 @@ func _batch_mesh(mesh: PrimitiveMesh,color: String,p_transform: Transform3D) -> 
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_batches[key] = surface
-	_batches[key].append_from(mesh,0,p_transform)
+	if key in MANUAL_BATCH_COLORS:
+		_batches[key].append_from(mesh,0,p_transform)
+	else:
+		_batch_vertices[key] = BOX_BATCH.append_from(_batches[key],mesh,0,p_transform,int(_batch_vertices.get(key,0)))
 
 func _flush() -> void:
 	for color in _batches:
@@ -696,6 +704,7 @@ func _flush() -> void:
 		display.material_override = _material(color)
 		add_child(display)
 	_batches.clear()
+	_batch_vertices.clear()
 
 func _material(color: String) -> StandardMaterial3D:
 	if not _materials.has(color):

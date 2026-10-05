@@ -11,13 +11,15 @@ func _init() -> void:
 		for key: String in _batches:
 			var tool: SurfaceTool = _batches[key]
 			var mesh := tool.commit()
-			_cached.append({"name": key, "mesh": mesh, "material": _materials[key.get_slice("@", 0)], "key": key.get_slice("@", 0)})
+			var material_key := key.get_slice("@",0).get_slice("#",0)
+			_cached.append({"name": key, "mesh": mesh, "material": _materials[material_key], "key": material_key})
 	for entry in _cached:
 		var part := MeshInstance3D.new()
 		part.name = entry.name
 		part.mesh = entry.mesh
 		part.material_override = entry.material
 		part.set_meta("coupe_damage_material_key", entry.key)
+		if "#fixed" in str(entry.name): part.set_meta("door_cut_exempt",true)
 		if "@" in str(entry.name):
 			var bits := str(entry.name).split("@")
 			part.set_meta("wheel_center", Vector3(float(bits[1]), .305, float(bits[2])))
@@ -39,12 +41,16 @@ func _build() -> void:
 		_materials[row[0]] = material
 	# Underbody sits inside the wheel wells, leaving genuine cutouts around the tires.
 	_box("rubber", Vector3(0, .28, 0), Vector3(1.37, .12, 3.5))
-	_box("paint", Vector3(0, .80, 0), Vector3(1.61, .16, 3.57))
+	# Hollow passenger compartment: the former full-width belt-height slab
+	# crossed the seats and became visible as soon as the windows opened.
+	_box("paint#fixed",Vector3(0,.80,-1.22),Vector3(1.61,.16,1.13))
+	_box("paint#fixed",Vector3(0,.80,1.685),Vector3(1.61,.16,.20))
+	_box("rubber#fixed",Vector3(0,.18,.46),Vector3(1.50,.05,2.16))
 	_quad("paint", Vector3(-.81,.86,-1.82),Vector3(.81,.86,-1.82),Vector3(.79,.94,-.64),Vector3(-.79,.94,-.64))
-	_quad("paint", Vector3(-.64,1.43,-.13),Vector3(.64,1.43,-.13),Vector3(.65,1.42,.87),Vector3(-.65,1.42,.87))
+	_quad("paint#fixed", Vector3(-.64,1.43,-.13),Vector3(.64,1.43,-.13),Vector3(.65,1.42,.87),Vector3(-.65,1.42,.87))
 	# Close the roof edge above the glass; an open 3 cm seam exposed the far gutter.
-	_quad("paint",Vector3(-.64,1.43,-.13),Vector3(.64,1.43,-.13),Vector3(.611,1.399,-.136),Vector3(-.611,1.399,-.136))
-	_quad("paint",Vector3(-.65,1.42,.87),Vector3(.65,1.42,.87),Vector3(.612,1.391,.91),Vector3(-.612,1.391,.91))
+	_quad("paint#fixed",Vector3(-.64,1.43,-.13),Vector3(.64,1.43,-.13),Vector3(.611,1.399,-.136),Vector3(-.611,1.399,-.136))
+	_quad("paint#fixed",Vector3(-.65,1.42,.87),Vector3(.65,1.42,.87),Vector3(.612,1.391,.91),Vector3(-.612,1.391,.91))
 	_quad("glass", Vector3(-.744,.96,-.617),Vector3(.744,.96,-.617),Vector3(.611,1.399,-.136),Vector3(-.611,1.399,-.136))
 	_quad("glass", Vector3(-.612,1.391,.91),Vector3(.612,1.391,.91),Vector3(.743,.967,1.587),Vector3(-.743,.967,1.587))
 	# A/C pillars, gutters and window seals deliberately follow the photograph.
@@ -75,11 +81,11 @@ func _build() -> void:
 		var h := Vector3(side*.802,.955,.705)
 		_quad("glass",e,f,g,h)
 		for line in [[a,b],[b,c],[c,d],[d,a],[e,f],[f,g],[g,h],[h,e]]: _beam("rubber",line[0],line[1],.024)
-		_beam("paint",Vector3(side*.79,.92,-.65),Vector3(side*.646,1.402,-.135),.054)
-		_beam("paint",Vector3(side*.65,1.422,.89),Vector3(side*.80,.92,1.66),.070)
-		_beam("paint",Vector3(side*.651,1.421,-.13),Vector3(side*.655,1.417,.89),.027)
-		_quad("paint",Vector3(side*.64,1.43,-.13),Vector3(side*.65,1.42,.87),Vector3(side*.661,1.383,.865),Vector3(side*.646,1.408,-.115))
-		_beam("paint",Vector3(side*.65,1.409,.631),Vector3(side*.812,.906,.658),.060)
+		_beam("paint#fixed",Vector3(side*.79,.92,-.65),Vector3(side*.646,1.402,-.135),.054)
+		_beam("paint#fixed",Vector3(side*.65,1.422,.89),Vector3(side*.80,.92,1.66),.070)
+		_beam("paint#fixed",Vector3(side*.651,1.421,-.13),Vector3(side*.655,1.417,.89),.027)
+		_quad("paint#fixed",Vector3(side*.64,1.43,-.13),Vector3(side*.65,1.42,.87),Vector3(side*.661,1.383,.865),Vector3(side*.646,1.408,-.115))
+		_beam("paint#fixed",Vector3(side*.65,1.409,.631),Vector3(side*.812,.906,.658),.060)
 		# One long front door per side, original handles and black mirrors.
 		_beam("trim",Vector3(x+.002*side,.32,-.60),Vector3(x+.002*side,.90,-.60),.009)
 		_beam("trim",Vector3(x+.002*side,.32,.63),Vector3(x+.002*side,.90,.63),.009)

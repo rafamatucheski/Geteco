@@ -217,7 +217,7 @@ func _physics_process(delta: float) -> void:
 		player.velocity.z = move_toward(player.velocity.z, 0, delta * 5)
 		player.move_and_slide()
 		POSE.fall(player, _recovery_time, _last_heading)
-		if _recovery_time >= 2.1 and player.is_on_floor(): _finish_recovery()
+		if _recovery_time >= POSE.RECOVERY_DURATION and player.is_on_floor(): _finish_recovery()
 	elif mounted:
 		if not is_instance_valid(player_board):
 			_release_board()
@@ -381,7 +381,7 @@ func _update_fallen(delta: float) -> void:
 		actor.velocity.z = move_toward(actor.velocity.z, 0, 5 * delta)
 		actor.move_and_slide()
 		POSE.fall(actor, row.age, row.heading)
-		if row.age >= 2.1 and actor.is_on_floor():
+		if row.age >= POSE.RECOVERY_DURATION and actor.is_on_floor():
 			POSE.restore(actor)
 			actor.input_locked = false
 			actor.set_physics_process(true)

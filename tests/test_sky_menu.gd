@@ -61,6 +61,8 @@ func run() -> void:
 		state.grant_weapon("pistol")
 		state.equip_weapon("pistol")
 		state.set_location("mountain" if scenario == "mountain" else "harbor", "maciota" if scenario.begins_with("garage") else "")
+		if scenario == "harbor":
+			state.world_state.pedestrian = {"region":"harbor", "position":[132.0, .15, 72.0]}
 		if scenario == "garage-driver":
 			state.world_state.garage_rewards = {"version": 1, "port_status": "parked", "alarm_remaining": -1.0, "police_called": false, "vehicles": {"garage_guest_1": {"archetype": "sport_coupe", "region_id": "harbor", "place_id": "maciota", "position": [0.0, 0.08, 1.2], "yaw": 0.0, "health": 80.0, "paint": "ffffffff", "was_driven": true}}}
 		if scenario == "driving-night":
@@ -123,7 +125,14 @@ func run() -> void:
 		check(world.player.position.distance_to(position) < 0.1, scenario + " save position preserved")
 		check(world.hud.visible and world.production.no_save, scenario + " HUD returns, test cannot save")
 		check(FileAccess.get_sha256(store.path) == hash_before, scenario + " Continue preserves isolated save")
+		if "--touch-controls" in OS.get_cmdline_user_args():
+			var touch = world.find_child("AndroidControls", true, false)
+			check(touch != null, scenario + " loaded game has touch controls")
+			if touch != null:
+				touch._refresh()
+				check(touch.is_visible_in_tree() and touch.playable and touch.buttons.has("pause_game"), scenario + " touch controls visible and playable after menu")
 		if scenario == "harbor":
+			check(world.player.position.distance_to(Vector3(132, .15, 72)) < .35, "Continue restores saved pedestrian position away from checkpoint")
 			saved_car = load("res://runtime/FleetState.gd").capture(world.driving.car, "harbor")
 			saved_car.was_driven = true
 		if scenario == "driving-night":

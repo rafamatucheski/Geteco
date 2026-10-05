@@ -230,6 +230,9 @@ func _add_group(parent: Node3D, group: Dictionary) -> void:
 	var instance := MeshInstance3D.new()
 	instance.name="HarborSurface_%s"%String(group.kind)
 	instance.mesh=mesh
+	# This is a ground finish, not a raised slab. Receive object shadows without
+	# casting subpixel shadows onto the road and the underlying land.
+	instance.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
 
 

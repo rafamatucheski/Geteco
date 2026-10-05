@@ -1,0 +1,127 @@
+{
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+  "language": "pt-BR",
+  "lines": [
+    {
+      "id": "first_time",
+      "speaker": "passenger",
+      "start": 12.0,
+      "text": "É a sua primeira vez por aqui?",
+      "en": "Is this your first time here?",
+      "direction": "Conversa espontânea em português brasileiro, pergunta amigável, pronúncia clara e ritmo natural.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 58, warm friendly slightly breathy baritone, easygoing local passenger making small talk, smiling gently, unhurried and natural.",
+      "file": "first_time-v2.wav",
+      "seconds": 1.837625
+    },
+    {
+      "id": "brother",
+      "speaker": "dante",
+      "start": 16.0,
+      "text": "É. Vim encontrar meu irmão.",
+      "en": "Yeah. I'm here to see my brother.",
+      "direction": "Relaxed, a small smile, optimistic, a short pause after É.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 32, warm medium-low voice, slightly textured, conversational and understated. Never an announcer. Same young adult man throughout.",
+      "file": "brother.wav",
+      "seconds": 2.5064583333333332
+    },
+    {
+      "id": "long_time",
+      "speaker": "passenger",
+      "start": 21.0,
+      "text": "Faz tempo que vocês não se veem?",
+      "en": "Been a while since you saw each other?",
+      "direction": "Warm ordinary conversation, gentle curiosity.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 58, warm friendly slightly breathy baritone, easygoing local passenger making small talk, smiling gently, unhurried and natural.",
+      "file": "long_time.wav",
+      "seconds": 1.6689583333333333
+    },
+    {
+      "id": "too_long",
+      "speaker": "dante",
+      "start": 25.0,
+      "text": "Tempo demais.",
+      "en": "Too long.",
+      "direction": "Quieter, affection and a little longing under the words, not despair.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 32, warm medium-low voice, slightly textured, conversational and understated. Never an announcer. Same young adult man throughout.",
+      "file": "too_long.wav",
+      "seconds": 1.04
+    },
+    {
+      "id": "release",
+      "speaker": "caller",
+      "start": 31.0,
+      "text": "Dante? Escuta. O Vicente saiu da prisão.",
+      "en": "Dante? Listen. Vicente got out of prison.",
+      "direction": "Delicate news, quiet and serious, pause before the name Vicente.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 65, discreet low slightly raspy voice, speaking quietly on a private phone call, concerned but clear, restrained urgency, no theatrical villain voice.",
+      "file": "release.wav",
+      "seconds": 5.348208333333333
+    },
+    {
+      "id": "surprise",
+      "speaker": "dante",
+      "start": 37.0,
+      "text": "Meu irmão? Como assim, saiu?",
+      "en": "My brother? What do you mean, got out?",
+      "direction": "Surpresa genuína e dúvida. Português brasileiro coloquial. Duas perguntas claras, sem gritar.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 32, warm medium-low voice, slightly textured, conversational and understated. Never an announcer. Same young adult man throughout.",
+      "file": "surprise-v2.wav",
+      "seconds": 2.8579166666666667
+    },
+    {
+      "id": "clue",
+      "speaker": "caller",
+      "start": 42.0,
+      "text": "Viram ele em Harbor. Mas ele não atende mais o telefone.",
+      "en": "He was seen in Harbor. But he's stopped answering his phone.",
+      "direction": "Careful, concerned, one restrained breath between the sentences.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 65, discreet low slightly raspy voice, speaking quietly on a private phone call, concerned but clear, restrained urgency, no theatrical villain voice.",
+      "file": "clue.wav",
+      "seconds": 5.547041666666667
+    },
+    {
+      "id": "identity",
+      "speaker": "dante",
+      "start": 49.0,
+      "text": "Peraí... Quem tá falando?",
+      "en": "Wait... Who is this?",
+      "direction": "Urgent curiosity, controlled, starts softly then asks firmly.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 32, warm medium-low voice, slightly textured, conversational and understated. Never an announcer. Same young adult man throughout.",
+      "file": "identity.wav",
+      "seconds": 2.2274583333333333
+    },
+    {
+      "id": "docking",
+      "speaker": "passenger",
+      "start": 57.0,
+      "text": "Olha lá. Já tão preparando o desembarque.",
+      "en": "Look. They're getting ready for us to get off.",
+      "direction": "Back to present, casual and welcoming, drawing attention to the pier.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 58, warm friendly slightly breathy baritone, easygoing local passenger making small talk, smiling gently, unhurried and natural.",
+      "file": "docking.wav",
+      "seconds": 3.008625
+    },
+    {
+      "id": "thanks",
+      "speaker": "dante",
+      "start": 62.0,
+      "text": "Valeu pela conversa.",
+      "en": "Thanks for the company.",
+      "direction": "Sincere, friendly, composed again with quiet determination.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 32, warm medium-low voice, slightly textured, conversational and understated. Never an announcer. Same young adult man throughout.",
+      "file": "thanks.wav",
+      "seconds": 1.44
+    },
+    {
+      "id": "luck",
+      "speaker": "passenger",
+      "start": 65.0,
+      "text": "Boa sorte com seu irmão.",
+      "en": "Good luck with your brother.",
+      "direction": "Warm sincere farewell, no ominous undertone.",
+      "voice_direction": "Native Brazilian Portuguese, natural everyday Brazilian accent, clear consonants, intimate film dialogue, dry clean studio recording. Man aged 58, warm friendly slightly breathy baritone, easygoing local passenger making small talk, smiling gently, unhurried and natural.",
+      "file": "luck.wav",
+      "seconds": 1.76
+    }
+  ]
+}

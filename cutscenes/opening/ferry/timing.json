@@ -1,0 +1,121 @@
+{
+  "duration": 73.0,
+  "fps": 30,
+  "language": "pt-BR",
+  "shots": [
+    0.0,
+    7.0,
+    12.0,
+    16.0,
+    21.0,
+    25.0,
+    29.0,
+    36.5,
+    42.0,
+    49.0,
+    54.0,
+    61.0,
+    67.5
+  ],
+  "lines": [
+    {
+      "id": "first_time",
+      "speaker": "passenger",
+      "text": "É a sua primeira vez por aqui?",
+      "en": "Is this your first time here?",
+      "start": 12.0,
+      "end": 13.838,
+      "memory": false
+    },
+    {
+      "id": "brother",
+      "speaker": "dante",
+      "text": "É. Vim encontrar meu irmão.",
+      "en": "Yeah. I'm here to see my brother.",
+      "start": 16.0,
+      "end": 18.506,
+      "memory": false
+    },
+    {
+      "id": "long_time",
+      "speaker": "passenger",
+      "text": "Faz tempo que vocês não se veem?",
+      "en": "Been a while since you saw each other?",
+      "start": 21.0,
+      "end": 22.669,
+      "memory": false
+    },
+    {
+      "id": "too_long",
+      "speaker": "dante",
+      "text": "Tempo demais.",
+      "en": "Too long.",
+      "start": 25.0,
+      "end": 26.04,
+      "memory": false
+    },
+    {
+      "id": "release",
+      "speaker": "caller",
+      "text": "Dante? Escuta. O Vicente saiu da prisão.",
+      "en": "Dante? Listen. Vicente got out of prison.",
+      "start": 31.0,
+      "end": 36.348,
+      "memory": true
+    },
+    {
+      "id": "surprise",
+      "speaker": "dante",
+      "text": "Meu irmão? Como assim, saiu?",
+      "en": "My brother? What do you mean, got out?",
+      "start": 37.0,
+      "end": 39.858,
+      "memory": true
+    },
+    {
+      "id": "clue",
+      "speaker": "caller",
+      "text": "Viram ele em Harbor. Mas ele não atende mais o telefone.",
+      "en": "He was seen in Harbor. But he's stopped answering his phone.",
+      "start": 42.0,
+      "end": 47.547,
+      "memory": true
+    },
+    {
+      "id": "identity",
+      "speaker": "dante",
+      "text": "Peraí... Quem tá falando?",
+      "en": "Wait... Who is this?",
+      "start": 49.0,
+      "end": 51.227,
+      "memory": true
+    },
+    {
+      "id": "docking",
+      "speaker": "passenger",
+      "text": "Olha lá. Já tão preparando o desembarque.",
+      "en": "Look. They're getting ready for us to get off.",
+      "start": 57.0,
+      "end": 60.009,
+      "memory": false
+    },
+    {
+      "id": "thanks",
+      "speaker": "dante",
+      "text": "Valeu pela conversa.",
+      "en": "Thanks for the company.",
+      "start": 62.0,
+      "end": 63.44,
+      "memory": false
+    },
+    {
+      "id": "luck",
+      "speaker": "passenger",
+      "text": "Boa sorte com seu irmão.",
+      "en": "Good luck with your brother.",
+      "start": 65.0,
+      "end": 66.76,
+      "memory": false
+    }
+  ]
+}

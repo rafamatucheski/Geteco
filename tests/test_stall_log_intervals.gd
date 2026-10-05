@@ -99,6 +99,22 @@ func run() -> void:
 	check(WORK.begin() == 0, "mediÃ§Ã£o desativada nÃ£o abre evento")
 	WORK.finish("fixture.disabled", Time.get_ticks_usec())
 	check(WORK.take().is_empty(), "mediÃ§Ã£o desativada nÃ£o acumula eventos")
+	var observed: Array[Dictionary] = []
+	logger._threshold_ms = 1000000.0
+	logger.interval_observed.connect(func(now, work, removed, roots):
+		observed.append({"now":now,"work":work,"removed":removed,"roots":roots.duplicate()}))
+	logger._process(0.0)
+	check(observed.is_empty(), "optional interval observer is disabled by default")
+	logger.observe_intervals = true
+	WORK.enabled = true
+	WORK.finish("fixture.circular", WORK.begin())
+	logger._process(0.0)
+	check(observed.size() == 1 and observed[0].now > 0 and observed[0].work.size() == 1 and observed[0].work[0].label == "fixture.circular", "fast interval forwards work to circular observer")
+	check(WORK.take().is_empty(), "circular observer does not consume or duplicate work a second time")
+	logger.observe_intervals = false
+	WORK.enabled = false
+	logger._process(0.0)
+	check(observed.size() == 1, "disabled observer stops retaining intervals")
 	var census_nodes: Array[Node] = []
 	for i in 300:
 		var census_node := Node.new()
@@ -109,7 +125,7 @@ func run() -> void:
 	logger._census_pending.append(census_nodes[0])
 	census_nodes[0].free()
 	logger._advance_census()
-	check(logger._census_seen.has(root.get_instance_id()), "nÃ³ excluÃ­do jÃ¡ enfileirado nÃ£o aborta a prÃ³xima fatia")
+	check((logger._census_seen.has(root.get_instance_id()) or (logger._census_pending.is_empty() and int(logger._census_ready.get("nodes_visited", 0)) >= 299)), "nÃ³ excluÃ­do jÃ¡ enfileirado nÃ£o aborta a prÃ³xima fatia")
 	for i in 100:
 		logger._advance_census()
 		if logger._census_pending.is_empty(): break

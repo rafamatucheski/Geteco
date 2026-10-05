@@ -58,8 +58,8 @@ func run() -> void:
 	check(skate.recovering and world.gameplay.health < before, "queda tira vida e separa corpo do shape")
 	world.hud.minimap.refresh()
 	check(world.hud.minimap.visible, "queda preserva navegação")
-	await frames(150)
-	check(not skate.controls_locked() and world.player.is_physics_processing() and world.player.collision_layer == 2, "recuperação devolve controles e colisão")
+	await frames(75)
+	check(not skate.controls_locked() and world.player.is_physics_processing() and world.player.collision_layer == 2, "recuperação devolve controles e colisão em até 1,25 segundo")
 	world.player.teleport(board.position + Vector3(.8, .1, 0))
 	await frames(10)
 	print("SKATE_REPICK_DIAGNOSTIC player=", world.player.position, " board=", board.position, " speed=", board.speed, " nearest=", session.nearest(), " clear=", skate._clear_for_player(board.position, board), " ambient=", skate.ambient.size())
@@ -77,9 +77,13 @@ func run() -> void:
 		check(not npc_board.riding and actor.health < 100, "derrubar skatista deixa o skate disponível")
 		await frames(100)
 		world.player.teleport(npc_board.position + Vector3(.8, .1, 0))
-		await frames(3)
+		# Mounting requires real floor contact; the teleport starts above the bowl.
+		for i in 30:
+			await physics_frame
+			if world.player.is_on_floor(): break
+		check(world.player.is_on_floor(), "aproximação do skate do NPC termina com apoio no piso")
 		check(skate.nearest_action().get("id") == "skate", "skate do NPC derrubado oferece coleta")
-		print("SKATE_NPC_PICK_DIAGNOSTIC nearest=", session.nearest(), " player=", world.player.position, " clear=", skate._clear_for_player(world.player.position, npc_board), " board=", npc_board.position)
+		print("SKATE_NPC_PICK_DIAGNOSTIC nearest=", session.nearest(), " player=", world.player.position, " on_floor=", world.player.is_on_floor(), " velocity=", world.player.velocity, " clear=", skate._clear_for_player(world.player.position, npc_board), " board=", npc_board.position)
 		check(session.interact() and skate.mounted, "skate tomado do NPC pode ser usado sem atravessar o corpo")
 		var owner_position: Vector3 = actor.position
 		await frames(240)

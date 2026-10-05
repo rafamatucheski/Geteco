@@ -8,6 +8,7 @@ const HUD := preload("res://activities/motocross/MotocrossHUD.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
 const LESSON := preload("res://activities/motocross/DigoLesson.gd")
 const DIGO_CAR := preload("res://gameplay/digo/DigoCar.gd")
+const DIGO_AMAROK := preload("res://gameplay/digo/DigoAmarok.gd")
 const FLEET_STATE := preload("res://runtime/FleetState.gd")
 const DIGO_PARKING := Vector3(-237,.13,-43.5)
 const DIGO_AMAROK_PARKING := Vector3(-237,.13,-47.0)
@@ -115,7 +116,7 @@ func _bind_digo_vehicle(car: CharacterBody3D, key: String, vehicle_script) -> vo
 
 func _update_digo_car() -> void:
 	digo_car = _update_digo_vehicle(digo_car if is_instance_valid(digo_car) else null,"digo_gol_1993","digo_vehicle",DIGO_PARKING,DIGO_CAR)
-	var amarok_script = load("res://gameplay/digo/DigoAmarok.gd")
+	var amarok_script = DIGO_AMAROK
 	digo_amarok = _update_digo_vehicle(digo_amarok if is_instance_valid(digo_amarok) else null,"digo_amarok_2014","digo_amarok_vehicle",DIGO_AMAROK_PARKING,amarok_script)
 	var actor := get_tree().get_first_node_in_group("digo_character")
 	if actor != null and is_instance_valid(actor.model) and actor.model.has_method("set_day") and is_instance_valid(session.weather):
@@ -488,7 +489,8 @@ func _physics_process(delta: float) -> void:
 		if not touch.is_zero_approx():
 			steering = -touch.x
 			lean = touch.y
-		player_bike.drive(throttle,steering,Input.is_action_pressed("handbrake"))
+		var controls := get_node("/root/GameInput")
+		player_bike.drive(throttle,steering,Input.is_action_pressed("handbrake"),not controls.remapping and Input.is_action_pressed("motorcycle_wheelie"))
 		# Strong enough to square a 0.4 s flight to the landing face, and to
 		# over-rotate when W stays held from lip to landing.
 		player_bike.air_lean = lean*.8

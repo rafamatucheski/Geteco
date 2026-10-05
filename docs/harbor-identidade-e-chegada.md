@@ -185,3 +185,23 @@ chegada inicial. Saves existentes não devem reiniciar a campanha.
 
 Estado dos testes, imagens e desempenho no [registro da implementação](harbor-life-20260928.md).
 A performance foi medida e permanece sem aprovação de ausência de regressão.
+
+## Abertura refeita em 03/10/2026
+
+A montagem de fotografias anterior foi substituída por um filme de 73 segundos,
+renderizado no cenário nativo a 1080p/30 fps. Dante chega tranquilo de barco,
+conversa com um passageiro e recorda a ligação sobre Vicente. A atracação leva
+ao desembarque jogável existente. Há dublagem sintética em PT-BR, legendas PT/EN,
+som de porto e trilha separados nos controles de volume. A pausa para confirmar
+o pulo e o checkpoint de abertura concluída continuam disponíveis. A revisão
+visual acontece de noite, com chuva; novos jogos conservam esse clima no cais.
+O passageiro tem o acabamento do modelo de produção, e a pose própria do
+celular mantém o aparelho apoiado na mão durante o movimento. Água contínua
+e figurantes dirigidos eliminam os recortes de streaming e os circuitos do fundo
+na gravação. Jornadas carregadas preservam o clima salvo.
+
+O roteiro, as tomadas e a reprodução da produção estão em
+[`cutscenes/opening/ferry/production/README.md`](../cutscenes/opening/ferry/production/README.md).
+A validação desta troca não substitui as pendências históricas do porto acima.
+Os testes, limites e a comparação medida estão no
+[registro desta abertura](reviews/opening-ferry-20261003.md).

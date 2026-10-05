@@ -1,4 +1,8 @@
 extends "res://scripts/Vehicle.gd"
+const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
+const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
+# Geometry only; material overrides, wheels, labels, doors and collision stay local.
+static var _body_batches: Array[Dictionary] = []
 ## Conserved coach body: swept native collision for both forward and reverse travel.
 const ROUTES := preload("res://runtime/terminal/TerminalRoutes.gd")
 var platform := 0
@@ -21,6 +25,12 @@ var alighted := 0
 var gate_passed := false
 var gate_stop := INF
 func _ready() -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_ready()
+	if stall_began != 0: TRANSIT_WORK.finish("terminal.coach.ready", stall_began, {"platform":platform,"id":get_instance_id()})
+
+func _stall_ready() -> void:
+	var collision_began := TRANSIT_WORK.begin()
 	health = 300
 	max_health = 300
 	half_width = .9
@@ -42,16 +52,23 @@ func _ready() -> void:
 	clearance_query.exclude = [get_rid()]
 	rotation_shape.size = hull.size-Vector3(0,.15,0)
 	sensor_shape.size = Vector3(1.87,1.2,1)
+	if collision_began != 0: TRANSIT_WORK.finish("terminal.coach.collision",collision_began,{"platform":platform})
+	var construct_began := TRANSIT_WORK.begin()
 	model = preload("res://runtime/terminal/CoachModel.gd").new()
+	model.omit_static_boxes = not _body_batches.is_empty()
 	model.livery = [Color("247d88"),Color("a44937"),Color("426493"),Color("ae813e")][platform]
 	model.operator_name = ["COSTA SUL","VIAÇÃO SERRA","EXPRESSO AZUL","LITORAL"][platform]
 	model.fleet_number = str(2407+platform*131)
 	model.scale = Vector3(.5625,.5,.43212447)
 	# Legacy model nose is +Z; native traffic faces -Z.
 	model.rotation.y = PI
+	if construct_began != 0: TRANSIT_WORK.finish("terminal.coach.model_construct",construct_began,{"platform":platform})
+	var model_began := TRANSIT_WORK.begin()
 	add_child(model)
+	if model_began != 0: TRANSIT_WORK.finish("terminal.coach.model_ready",model_began,{"platform":platform,"children":model.get_child_count()})
 	visual = model
 	_batch_body()
+	var doors_began := TRANSIT_WORK.begin()
 	for side in [-1.0,1.0]:
 		var leaf := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
@@ -65,6 +82,7 @@ func _ready() -> void:
 		door_leaves.append(leaf)
 	add_to_group("harbor_terminal_coach")
 	set_meta("terminal_service","intercity")
+	if doors_began != 0: TRANSIT_WORK.finish("terminal.coach.doors",doors_began,{"platform":platform})
 
 func _physics_process(_delta: float) -> void:
 	# The terminal controller schedules this body; do not run a second driver.
@@ -153,9 +171,33 @@ func drive(delta: float, clearance := INF) -> void:
 	else: speed = 0; blocked = true
 
 func _batch_body() -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_batch_body()
+	if stall_began != 0: TRANSIT_WORK.finish("terminal.coach.batch_body", stall_began, {"platform":platform})
+
+func _stall_batch_body() -> void:
+	if not _body_batches.is_empty():
+		var reuse_began := TRANSIT_WORK.begin()
+		for child in model.get_children():
+			if child is MeshInstance3D and child.mesh is CylinderMesh: coach_wheels.append(child)
+		for batch in _body_batches:
+			var instance := MeshInstance3D.new()
+			instance.mesh = batch.mesh
+			instance.material_override = model.body_materials[int(batch.material_slot)]
+			model.add_child(instance)
+		if reuse_began != 0: TRANSIT_WORK.finish("terminal.coach.batch.reuse",reuse_began,{"platform":platform,"batches":_body_batches.size()})
+		return
 	# Preserve the original authored model while merging its static material
 	# batches. Wheels and labels keep their independent transforms.
+	var batch_began := TRANSIT_WORK.begin()
+	var append_usec := 0
+	var append_max_usec := 0
+	var append_count := 0
+	var free_usec := 0
+	var free_max_usec := 0
+	var free_count := 0
 	var batches := {}
+	var batch_vertex_counts := {}
 	for child in model.get_children():
 		if not child is MeshInstance3D or child.mesh == null: continue
 		if child.mesh is CylinderMesh: coach_wheels.append(child); continue
@@ -164,10 +206,30 @@ func _batch_body() -> void:
 			var surface := SurfaceTool.new()
 			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 			batches[material] = surface
-		for index in child.mesh.get_surface_count(): batches[material].append_from(child.mesh,index,child.transform)
+			batch_vertex_counts[material] = 0
+		for index in child.mesh.get_surface_count():
+			var append_began := Time.get_ticks_usec() if batch_began != 0 else 0
+			batch_vertex_counts[material] = BOX_BATCH.append_from(batches[material],child.mesh,index,child.transform,batch_vertex_counts[material])
+			if append_began != 0:
+				var duration := Time.get_ticks_usec()-append_began
+				append_usec += duration; append_max_usec = maxi(append_max_usec,duration); append_count += 1
+		var free_began := Time.get_ticks_usec() if batch_began != 0 else 0
 		child.free()
+		if free_began != 0:
+			var duration := Time.get_ticks_usec()-free_began
+			free_usec += duration; free_max_usec = maxi(free_max_usec,duration); free_count += 1
+	if batch_began != 0: TRANSIT_WORK.finish("terminal.coach.batch.append_free_loop",batch_began,{"append_usec":append_usec,"append_max_usec":append_max_usec,"append_count":append_count,"free_usec":free_usec,"free_max_usec":free_max_usec,"free_count":free_count,"batches":batches.size()})
+	var commit_began := TRANSIT_WORK.begin()
+	var published: Array[Dictionary] = []
+	var cacheable := true
 	for material in batches:
 		var mesh := MeshInstance3D.new()
 		mesh.mesh = batches[material].commit()
 		mesh.material_override = material
 		model.add_child(mesh)
+		var material_slot: int = model.body_materials.find(material)
+		if material_slot < 0: cacheable = false
+		published.append({"mesh":mesh.mesh,"material_slot":material_slot})
+	# Publish only a complete canonical body; never cache a material or a Node.
+	if cacheable and published.size() == 7: _body_batches = published
+	if commit_began != 0: TRANSIT_WORK.finish("terminal.coach.batch.commit_upload",commit_began,{"batches":batches.size()})

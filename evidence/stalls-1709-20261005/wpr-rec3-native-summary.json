@@ -1,0 +1,849 @@
+{
+  "schema_version": 1,
+  "target_pid": 101116,
+  "main_tid": 97080,
+  "ready_anchor": [
+    746325024782,
+    24352243,
+    134356771330509898,
+    746325024873,
+    10000000,
+    97080
+  ],
+  "etl_header": {
+    "qpc_frequency": 10000000,
+    "session_start_utc": "2026-10-05T12:33:38.5044875Z",
+    "session_end_utc": "2026-10-05T12:34:18.1098808Z",
+    "scope": "Read-only existing ETL header on own reader object; no Process(), capture, provider, target/process handle or commandline/environment/header payload export."
+  },
+  "etl_path": "D:\\geteco\\game\\evidence\\intermittent-stalls-20261004\\stall1709-wpr-rec3\\native-cpu\\cpu.etl",
+  "etl_bytes": 607125504,
+  "events_lost": 0,
+  "decode_error": null,
+  "payload_errors": [],
+  "decoder_wall_ms": 67892.3662,
+  "export_scope": "NativeCoverageDecoder exports all main transition/sample records; no main export cap/drop branch. Did not generate full-game/worker stacks or 1M-capped global detailed JSON. Full original ETL retained.",
+  "last_dropped_times": [
+    {
+      "version": 2,
+      "processor_count": 20,
+      "timestamps_qpc": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "nonzero": 0
+    },
+    {
+      "version": 2,
+      "processor_count": 20,
+      "timestamps_qpc": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "nonzero": 0
+    }
+  ],
+  "per_cpu_ranges": {
+    "0": {
+      "sample": {
+        "count": 11969,
+        "first_ready_seconds": 85.49120375,
+        "last_ready_seconds": 124.82077575
+      },
+      "cswitch": {
+        "count": 135615,
+        "first_ready_seconds": 85.49142605,
+        "last_ready_seconds": 124.19236395
+      },
+      "ready": {
+        "count": 119813,
+        "first_ready_seconds": 85.49143275,
+        "last_ready_seconds": 124.19228055
+      }
+    },
+    "1": {
+      "sample": {
+        "count": 78,
+        "first_ready_seconds": 85.49127585,
+        "last_ready_seconds": 123.54068105
+      },
+      "cswitch": {
+        "count": 350,
+        "first_ready_seconds": 97.88125745,
+        "last_ready_seconds": 123.56062355
+      },
+      "ready": {
+        "count": 212,
+        "first_ready_seconds": 97.88134055,
+        "last_ready_seconds": 123.56061505
+      }
+    },
+    "2": {
+      "sample": {
+        "count": 3163,
+        "first_ready_seconds": 85.49212475,
+        "last_ready_seconds": 123.84151815
+      },
+      "ready": {
+        "count": 28864,
+        "first_ready_seconds": 85.49286355,
+        "last_ready_seconds": 109.64072385
+      },
+      "cswitch": {
+        "count": 53914,
+        "first_ready_seconds": 85.49287525,
+        "last_ready_seconds": 109.64703765
+      }
+    },
+    "3": {
+      "sample": {
+        "count": 7290,
+        "first_ready_seconds": 85.75802335,
+        "last_ready_seconds": 124.81896235
+      },
+      "cswitch": {
+        "count": 117233,
+        "first_ready_seconds": 97.52138105,
+        "last_ready_seconds": 124.19116595
+      },
+      "ready": {
+        "count": 60211,
+        "first_ready_seconds": 97.52140815,
+        "last_ready_seconds": 124.19212935
+      }
+    },
+    "4": {
+      "sample": {
+        "count": 25066,
+        "first_ready_seconds": 85.49118555,
+        "last_ready_seconds": 124.82547945
+      },
+      "ready": {
+        "count": 143103,
+        "first_ready_seconds": 85.49140535,
+        "last_ready_seconds": 124.18915705
+      },
+      "cswitch": {
+        "count": 283457,
+        "first_ready_seconds": 85.49143195,
+        "last_ready_seconds": 124.18923115
+      }
+    },
+    "5": {
+      "sample": {
+        "count": 261,
+        "first_ready_seconds": 85.52940175,
+        "last_ready_seconds": 121.15373065
+      },
+      "cswitch": {
+        "count": 823,
+        "first_ready_seconds": 86.25890965,
+        "last_ready_seconds": 122.89204005
+      },
+      "ready": {
+        "count": 469,
+        "first_ready_seconds": 87.85405065,
+        "last_ready_seconds": 123.85107155
+      }
+    },
+    "6": {
+      "sample": {
+        "count": 8470,
+        "first_ready_seconds": 85.49121475,
+        "last_ready_seconds": 124.74338545
+      },
+      "ready": {
+        "count": 211781,
+        "first_ready_seconds": 85.49140475,
+        "last_ready_seconds": 124.19176875
+      },
+      "cswitch": {
+        "count": 94088,
+        "first_ready_seconds": 85.49141535,
+        "last_ready_seconds": 122.94940695
+      }
+    },
+    "7": {
+      "sample": {
+        "count": 17732,
+        "first_ready_seconds": 85.63791205,
+        "last_ready_seconds": 124.82652935
+      },
+      "cswitch": {
+        "count": 181790,
+        "first_ready_seconds": 86.25891175,
+        "last_ready_seconds": 124.17711715
+      },
+      "ready": {
+        "count": 104837,
+        "first_ready_seconds": 87.92480395,
+        "last_ready_seconds": 124.17712975
+      }
+    },
+    "8": {
+      "sample": {
+        "count": 7938,
+        "first_ready_seconds": 85.49145985,
+        "last_ready_seconds": 124.82430395
+      },
+      "cswitch": {
+        "count": 219928,
+        "first_ready_seconds": 85.49295155,
+        "last_ready_seconds": 124.19225955
+      },
+      "ready": {
+        "count": 73311,
+        "first_ready_seconds": 85.49310015,
+        "last_ready_seconds": 124.18636045
+      }
+    },
+    "9": {
+      "sample": {
+        "count": 72,
+        "first_ready_seconds": 85.75802085,
+        "last_ready_seconds": 119.67484195
+      },
+      "cswitch": {
+        "count": 78,
+        "first_ready_seconds": 89.30728895,
+        "last_ready_seconds": 109.64680965
+      },
+      "ready": {
+        "count": 27,
+        "first_ready_seconds": 99.31769905,
+        "last_ready_seconds": 111.53664515
+      }
+    },
+    "10": {
+      "sample": {
+        "count": 9336,
+        "first_ready_seconds": 85.49120515,
+        "last_ready_seconds": 124.82636445
+      },
+      "cswitch": {
+        "count": 233785,
+        "first_ready_seconds": 85.49202505,
+        "last_ready_seconds": 124.19183025
+      },
+      "ready": {
+        "count": 116136,
+        "first_ready_seconds": 85.49268405,
+        "last_ready_seconds": 124.19108005
+      }
+    },
+    "11": {
+      "sample": {
+        "count": 120,
+        "first_ready_seconds": 85.49123735,
+        "last_ready_seconds": 122.56952895
+      },
+      "ready": {
+        "count": 350,
+        "first_ready_seconds": 88.49881765,
+        "last_ready_seconds": 123.08532375
+      },
+      "cswitch": {
+        "count": 723,
+        "first_ready_seconds": 97.88117975,
+        "last_ready_seconds": 119.70478715
+      }
+    },
+    "12": {
+      "sample": {
+        "count": 5544,
+        "first_ready_seconds": 85.49145305,
+        "last_ready_seconds": 124.82564865
+      },
+      "cswitch": {
+        "count": 51848,
+        "first_ready_seconds": 86.25453995,
+        "last_ready_seconds": 124.18907865
+      },
+      "ready": {
+        "count": 17010,
+        "first_ready_seconds": 86.26015175,
+        "last_ready_seconds": 124.19110625
+      }
+    },
+    "13": {
+      "sample": {
+        "count": 1304,
+        "first_ready_seconds": 85.49146125,
+        "last_ready_seconds": 124.77724955
+      },
+      "cswitch": {
+        "count": 8856,
+        "first_ready_seconds": 86.50239015,
+        "last_ready_seconds": 124.10071935
+      },
+      "ready": {
+        "count": 3438,
+        "first_ready_seconds": 87.19013775,
+        "last_ready_seconds": 124.10058635
+      }
+    },
+    "14": {
+      "sample": {
+        "count": 5543,
+        "first_ready_seconds": 85.49130715,
+        "last_ready_seconds": 124.76542205
+      },
+      "cswitch": {
+        "count": 51123,
+        "first_ready_seconds": 85.49306865,
+        "last_ready_seconds": 123.78807625
+      },
+      "ready": {
+        "count": 18656,
+        "first_ready_seconds": 85.49422375,
+        "last_ready_seconds": 123.78798285
+      }
+    },
+    "15": {
+      "sample": {
+        "count": 13286,
+        "first_ready_seconds": 85.49137845,
+        "last_ready_seconds": 124.82144935
+      },
+      "cswitch": {
+        "count": 105137,
+        "first_ready_seconds": 85.50943195,
+        "last_ready_seconds": 124.18907585
+      },
+      "ready": {
+        "count": 36008,
+        "first_ready_seconds": 85.50978815,
+        "last_ready_seconds": 124.17877705
+      }
+    },
+    "16": {
+      "sample": {
+        "count": 12884,
+        "first_ready_seconds": 85.49141575,
+        "last_ready_seconds": 124.82525955
+      },
+      "ready": {
+        "count": 31309,
+        "first_ready_seconds": 85.49148215,
+        "last_ready_seconds": 124.18608465
+      },
+      "cswitch": {
+        "count": 87672,
+        "first_ready_seconds": 85.50734505,
+        "last_ready_seconds": 124.18907775
+      }
+    },
+    "17": {
+      "sample": {
+        "count": 6136,
+        "first_ready_seconds": 85.49139315,
+        "last_ready_seconds": 124.81825695
+      },
+      "cswitch": {
+        "count": 37466,
+        "first_ready_seconds": 85.50947735,
+        "last_ready_seconds": 124.18907915
+      },
+      "ready": {
+        "count": 14516,
+        "first_ready_seconds": 85.50973895,
+        "last_ready_seconds": 124.18797665
+      }
+    },
+    "18": {
+      "sample": {
+        "count": 3987,
+        "first_ready_seconds": 85.50879615,
+        "last_ready_seconds": 124.82562725
+      },
+      "cswitch": {
+        "count": 23112,
+        "first_ready_seconds": 85.50947865,
+        "last_ready_seconds": 124.13136415
+      },
+      "ready": {
+        "count": 9257,
+        "first_ready_seconds": 85.50982935,
+        "last_ready_seconds": 124.13127225
+      }
+    },
+    "19": {
+      "sample": {
+        "count": 4042,
+        "first_ready_seconds": 85.49134195,
+        "last_ready_seconds": 124.79792315
+      },
+      "cswitch": {
+        "count": 14620,
+        "first_ready_seconds": 85.50536905,
+        "last_ready_seconds": 124.18989885
+      },
+      "ready": {
+        "count": 5641,
+        "first_ready_seconds": 85.50647365,
+        "last_ready_seconds": 124.13119175
+      }
+    }
+  },
+  "main_transition_range": [
+    85.49180695,
+    124.18923115
+  ],
+  "main_transition_counts": {
+    "ready_thread": 7856,
+    "switch_in": 13346,
+    "switch_out": 13345
+  },
+  "main_samples": 38255,
+  "main_cswitch_pair_anomalies": [],
+  "early_ready_markers_inside_closed_running_pairs": 325,
+  "game_cpu_probe_range_crosscheck": {
+    "checked": 10092,
+    "outside": []
+  },
+  "clock_pairs": [
+    {
+      "kind": "loading_start",
+      "godot_delta_seconds": -19.367264,
+      "qpc_bounds_seconds": [
+        -19.3672708,
+        -19.3670424
+      ],
+      "inside_bounds": true
+    },
+    {
+      "kind": "start",
+      "godot_delta_seconds": 0.0,
+      "qpc_bounds_seconds": [
+        -9.1e-06,
+        9.1e-06
+      ],
+      "inside_bounds": true
+    },
+    {
+      "kind": "end",
+      "godot_delta_seconds": 123.010231,
+      "qpc_bounds_seconds": [
+        123.0102251,
+        123.0102367
+      ],
+      "inside_bounds": true
+    }
+  ],
+  "frame_partitions": [
+    {
+      "frame": 13694,
+      "phase": "recovery",
+      "wall_ms": 35.262,
+      "focused": true,
+      "start_ready_seconds": 92.19382,
+      "end_ready_seconds": 92.229082,
+      "begin_qpc": 747246963027.5,
+      "end_qpc": 747247315647.5,
+      "scheduler": {
+        "duration_ms": 35.262,
+        "totals_ms": {
+          "scheduled_running": 31.5794,
+          "ready": 0.4669999999999999,
+          "waiting": 3.2156
+        },
+        "uncovered_boundary_ms": 0
+      },
+      "post_draw_to_first_physics": {
+        "begin_qpc": 747247173397.5,
+        "end_qpc": 747247174877.5,
+        "ready_seconds": [
+          92.214857,
+          92.215005
+        ],
+        "scheduler": {
+          "duration_ms": 0.148,
+          "totals_ms": {
+            "scheduled_running": 0.148
+          },
+          "uncovered_boundary_ms": 0
+        }
+      },
+      "process_frame_to_process_callbacks_end": {
+        "ready_seconds": [
+          92.19382,
+          92.21076
+        ],
+        "scheduler": {
+          "duration_ms": 16.94,
+          "totals_ms": {
+            "scheduled_running": 13.4886,
+            "ready": 0.3828,
+            "waiting": 3.0685999999999996
+          },
+          "uncovered_boundary_ms": 3.552713678800501e-15
+        }
+      }
+    },
+    {
+      "frame": 13695,
+      "phase": "recovery",
+      "wall_ms": 33.417,
+      "focused": true,
+      "start_ready_seconds": 92.229082,
+      "end_ready_seconds": 92.262499,
+      "begin_qpc": 747247315647.5,
+      "end_qpc": 747247649817.5,
+      "scheduler": {
+        "duration_ms": 33.417,
+        "totals_ms": {
+          "scheduled_running": 28.060899999999993,
+          "ready": 0.7060000000000001,
+          "waiting": 4.650100000000002
+        },
+        "uncovered_boundary_ms": 7.105427357601002e-15
+      },
+      "post_draw_to_first_physics": {
+        "begin_qpc": 747247509527.5,
+        "end_qpc": 747247510937.5,
+        "ready_seconds": [
+          92.24847,
+          92.248611
+        ],
+        "scheduler": {
+          "duration_ms": 0.141,
+          "totals_ms": {
+            "scheduled_running": 0.141
+          },
+          "uncovered_boundary_ms": 0
+        }
+      },
+      "process_frame_to_process_callbacks_end": {
+        "ready_seconds": [
+          92.229082,
+          92.243193
+        ],
+        "scheduler": {
+          "duration_ms": 14.111,
+          "totals_ms": {
+            "scheduled_running": 9.683899999999994,
+            "ready": 0.5889000000000001,
+            "waiting": 3.8382000000000023
+          },
+          "uncovered_boundary_ms": 3.552713678800501e-15
+        }
+      }
+    },
+    {
+      "frame": 14340,
+      "phase": "recovery",
+      "wall_ms": 26.305,
+      "focused": true,
+      "start_ready_seconds": 99.332035,
+      "end_ready_seconds": 99.35834,
+      "begin_qpc": 747318345177.5,
+      "end_qpc": 747318608227.5,
+      "scheduler": {
+        "duration_ms": 26.305,
+        "totals_ms": {
+          "scheduled_running": 25.857599999999998,
+          "waiting": 0.34229999999999994,
+          "ready": 0.1051
+        },
+        "uncovered_boundary_ms": 0
+      },
+      "post_draw_to_first_physics": {
+        "begin_qpc": 747318444297.5,
+        "end_qpc": 747318447537.5,
+        "ready_seconds": [
+          99.341947,
+          99.342271
+        ],
+        "scheduler": {
+          "duration_ms": 0.324,
+          "totals_ms": {
+            "scheduled_running": 0.324
+          },
+          "uncovered_boundary_ms": 0
+        }
+      },
+      "process_frame_to_process_callbacks_end": {
+        "ready_seconds": [
+          99.332035,
+          99.33576
+        ],
+        "scheduler": {
+          "duration_ms": 3.725,
+          "totals_ms": {
+            "scheduled_running": 3.6350000000000002,
+            "waiting": 0.0213,
+            "ready": 0.0687
+          },
+          "uncovered_boundary_ms": 0
+        }
+      }
+    },
+    {
+      "frame": 14341,
+      "phase": "recovery",
+      "wall_ms": 29.823,
+      "focused": true,
+      "start_ready_seconds": 99.35834,
+      "end_ready_seconds": 99.388163,
+      "begin_qpc": 747318608227.5,
+      "end_qpc": 747318906457.5,
+      "scheduler": {
+        "duration_ms": 29.823,
+        "totals_ms": {
+          "scheduled_running": 29.3426,
+          "waiting": 0.3906,
+          "ready": 0.08979999999999999
+        },
+        "uncovered_boundary_ms": 0
+      },
+      "post_draw_to_first_physics": {
+        "begin_qpc": 747318709987.5,
+        "end_qpc": 747318712577.5,
+        "ready_seconds": [
+          99.368516,
+          99.368775
+        ],
+        "scheduler": {
+          "duration_ms": 0.259,
+          "totals_ms": {
+            "scheduled_running": 0.259
+          },
+          "uncovered_boundary_ms": 0
+        }
+      },
+      "process_frame_to_process_callbacks_end": {
+        "ready_seconds": [
+          99.35834,
+          99.362251
+        ],
+        "scheduler": {
+          "duration_ms": 3.911,
+          "totals_ms": {
+            "scheduled_running": 3.911
+          },
+          "uncovered_boundary_ms": 0
+        }
+      }
+    },
+    {
+      "frame": 14342,
+      "phase": "recovery",
+      "wall_ms": 26.799,
+      "focused": true,
+      "start_ready_seconds": 99.388163,
+      "end_ready_seconds": 99.414962,
+      "begin_qpc": 747318906457.5,
+      "end_qpc": 747319174447.5,
+      "scheduler": {
+        "duration_ms": 26.799,
+        "totals_ms": {
+          "scheduled_running": 26.529899999999998,
+          "waiting": 0.23009999999999997,
+          "ready": 0.039
+        },
+        "uncovered_boundary_ms": 0
+      },
+      "post_draw_to_first_physics": {
+        "begin_qpc": 747318996757.5,
+        "end_qpc": 747318998577.5,
+        "ready_seconds": [
+          99.397193,
+          99.397375
+        ],
+        "scheduler": {
+          "duration_ms": 0.182,
+          "totals_ms": {
+            "scheduled_running": 0.182
+          },
+          "uncovered_boundary_ms": 0
+        }
+      },
+      "process_frame_to_process_callbacks_end": {
+        "ready_seconds": [
+          99.388163,
+          99.392806
+        ],
+        "scheduler": {
+          "duration_ms": 4.643,
+          "totals_ms": {
+            "scheduled_running": 4.643
+          },
+          "uncovered_boundary_ms": 0
+        }
+      }
+    },
+    {
+      "frame": 15611,
+      "phase": "recovery",
+      "wall_ms": 40.514,
+      "focused": true,
+      "start_ready_seconds": 113.792844,
+      "end_ready_seconds": 113.833358,
+      "begin_qpc": 747462953267.5,
+      "end_qpc": 747463358407.5,
+      "scheduler": {
+        "duration_ms": 40.514,
+        "totals_ms": {
+          "scheduled_running": 34.4308,
+          "ready": 0.7326999999999995,
+          "waiting": 5.350499999999999
+        },
+        "uncovered_boundary_ms": 7.105427357601002e-15
+      },
+      "post_draw_to_first_physics": {
+        "begin_qpc": 747463199807.5,
+        "end_qpc": 747463201097.5,
+        "ready_seconds": [
+          113.817498,
+          113.817627
+        ],
+        "scheduler": {
+          "duration_ms": 0.129,
+          "totals_ms": {
+            "scheduled_running": 0.129
+          },
+          "uncovered_boundary_ms": 0
+        }
+      },
+      "process_frame_to_process_callbacks_end": {
+        "ready_seconds": [
+          113.792844,
+          113.81324
+        ],
+        "scheduler": {
+          "duration_ms": 20.396,
+          "totals_ms": {
+            "scheduled_running": 14.597000000000001,
+            "ready": 0.7005999999999994,
+            "waiting": 5.0984
+          },
+          "uncovered_boundary_ms": 0
+        }
+      }
+    }
+  ],
+  "capture_ownership": {
+    "instance": "GetecoAudit-55188cf7f48e4fd7a3c80dae6e217890",
+    "helper_pid": 88476,
+    "start_mode": "Ready",
+    "start_delay_seconds": 85,
+    "capture_deadline_seconds": 40,
+    "stop_reason": "measurement_finished",
+    "stop_succeeded": true,
+    "cleanup_status_matches_idle_baseline": true,
+    "phase": "saved_needs_coverage_review",
+    "failure": null,
+    "capture_started_anchor": {
+      "qpc_before": 747180416480,
+      "qpc_after": 747180416490,
+      "frequency": 10000000,
+      "utc_filetime": 134356772185896959,
+      "utc": "2026-10-05T12:33:38.5896959Z"
+    },
+    "stop_requested_anchor": {
+      "qpc_before": 747565785517,
+      "qpc_after": 747565785579,
+      "frequency": 10000000,
+      "utc_filetime": 134356772571266771,
+      "utc": "2026-10-05T12:34:17.1266771Z"
+    }
+  },
+  "observer": {
+    "recording_helper_cpu_ms": 609.375,
+    "recording_helper_wall_ms": 38535.787,
+    "recording_helper_percent_one_core": 1.5813223173565913,
+    "identity_query_calls": 2201,
+    "identity_query_total_wall_ms": 301.30879999999996,
+    "identity_query_max_wall_ms": 17.9266,
+    "helper_cpu_since_entry_ms": 7000,
+    "helper_wall_since_entry_ms": 235499.9529,
+    "owned_wpr_commands": [
+      {
+        "operation": "status-before",
+        "pid": 104988,
+        "begin_utc": "2026-10-05T12:33:38.3025839Z",
+        "end_utc": "2026-10-05T12:33:38.3825764Z",
+        "cpu_total_ms": 31.25,
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "operation": "start",
+        "pid": 105360,
+        "begin_utc": "2026-10-05T12:33:38.4233099Z",
+        "end_utc": "2026-10-05T12:33:38.5821817Z",
+        "cpu_total_ms": 109.375,
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "operation": "stop",
+        "pid": 105172,
+        "begin_utc": "2026-10-05T12:34:17.1313107Z",
+        "end_utc": "2026-10-05T12:34:43.2903342Z",
+        "cpu_total_ms": 18656.25,
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "operation": "cancel-owned",
+        "pid": 102868,
+        "begin_utc": "2026-10-05T12:34:43.2988855Z",
+        "end_utc": "2026-10-05T12:34:43.3759268Z",
+        "cpu_total_ms": 31.25,
+        "exit_code": -984076288,
+        "timed_out": false
+      },
+      {
+        "operation": "status-after",
+        "pid": 101952,
+        "begin_utc": "2026-10-05T12:34:43.3865873Z",
+        "end_utc": "2026-10-05T12:34:43.4464701Z",
+        "cpu_total_ms": 46.875,
+        "exit_code": 0,
+        "timed_out": false
+      }
+    ],
+    "previous_rec2_recording_percent_one_core": 9.422987506173941,
+    "scope": "Embedded own helper CPU/identity query costs, not engine cost or total kernel ETW overhead. No FPS subtraction. Actor/custody states differ, so absence of rec2 tail signature is not causal proof of elimination."
+  },
+  "target_gameplay_frames_ge250ms": [],
+  "tail_frames_gt33_3ms": [],
+  "scope": "Second/final game of prospective max2 lot. No game fix or new SDL/Bluetooth/device setting. Original1.7s not reproduced despite3stars4units near97/102. Residency includesISR/DPC. No new stack/symbol attribution or device/cause hypothesis from absence."
+}

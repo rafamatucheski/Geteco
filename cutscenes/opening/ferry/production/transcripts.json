@@ -1,0 +1,68 @@
+[
+  {
+    "id": "brother",
+    "expected": "É. Vim encontrar meu irmão.",
+    "recognized": "É, vim encontrar meu irmão.",
+    "similarity": 0.963
+  },
+  {
+    "id": "long_time",
+    "expected": "Faz tempo que vocês não se veem?",
+    "recognized": "Faz tempo que vocês não se veem!",
+    "similarity": 0.969
+  },
+  {
+    "id": "too_long",
+    "expected": "Tempo demais.",
+    "recognized": "Tempo demais.",
+    "similarity": 1.0
+  },
+  {
+    "id": "release",
+    "expected": "Dante? Escuta. O Vicente saiu da prisão.",
+    "recognized": "Dante? Escuta. O Vicente saiu da prisão.",
+    "similarity": 1.0
+  },
+  {
+    "id": "clue",
+    "expected": "Viram ele em Harbor. Mas ele não atende mais o telefone.",
+    "recognized": "Viram ele em Arbor, mas ele não atende mais o telefone.",
+    "similarity": 0.973
+  },
+  {
+    "id": "identity",
+    "expected": "Peraí... Quem tá falando?",
+    "recognized": "Peraí, quem está falando?",
+    "similarity": 0.88
+  },
+  {
+    "id": "docking",
+    "expected": "Olha lá. Já tão preparando o desembarque.",
+    "recognized": "Olha lá, já tão preparando o desembarque.",
+    "similarity": 0.976
+  },
+  {
+    "id": "thanks",
+    "expected": "Valeu pela conversa.",
+    "recognized": "Valeu pela conversa!",
+    "similarity": 0.95
+  },
+  {
+    "id": "luck",
+    "expected": "Boa sorte com seu irmão.",
+    "recognized": "Boa sorte com seu irmão.",
+    "similarity": 1.0
+  },
+  {
+    "id": "first_time",
+    "expected": "É a sua primeira vez por aqui?",
+    "recognized": "É a sua primeira vez por aqui?",
+    "similarity": 1.0
+  },
+  {
+    "id": "surprise",
+    "expected": "Meu irmão? Como assim, saiu?",
+    "recognized": "Meu irmão, como assim saiu?",
+    "similarity": 0.945
+  }
+]

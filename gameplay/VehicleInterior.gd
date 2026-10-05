@@ -45,6 +45,7 @@ const KINDS := {
 }
 
 const KIND_OF := {
+	"digo_gol_1993": "car", "digo_amarok_2014": "pickup",
 	"union_sedan": "car", "sedan_classic": "car", "taxi_yellow": "car", "police_cruiser": "car", "aurora_executive": "car",
 	"metro_hatch": "car", "orbita_micro": "car", "nordic_estate": "car", "station_wagon": "car", "sport_estate": "car",
 	"sport_coupe": "sport", "cobra_v8": "sport", "muscle_classic": "sport", "monaliza": "sport", "vertice_midengine": "sport",
@@ -64,8 +65,17 @@ const KIND_OF := {
 ## teto: o piloto é visto de cima inteiro), e lugares onde o vidro não dá pista (buggy,
 ## empilhadeira). Valores em coordenadas do veículo (−Z é a frente, o motorista fica em −X).
 const OVERRIDES := {
-	# O teto curvo do cupê desce nas bordas; o forro plano atravessaria a pintura.
-	"sport_coupe": {"roof_liner": false},
+	# Authored cabins: mirror glass belongs outside the passenger compartment.
+	"digo_gol_1993": {"floor": .20, "belt": .94, "roof": 1.43, "hw": .75, "wz0": -.62, "wz1": -.136, "rear": 1.55, "rear_top": .89, "roof_rear": .86, "sx": -.34, "sz": .04, "roof_liner": false},
+	"digo_amarok_2014": {"floor": .49, "belt": 1.23, "roof": 1.86, "hw": .89, "wz0": -1.025, "wz1": -.51, "rear": 1.025, "rear_top": .96, "sx": -.40, "sz": -.36, "roof_liner": false},
+	# O teto curvo estreita e termina antes do vidro traseiro. Forro e barras na
+	# largura/altura da cintura atravessariam a pintura, parecendo um rack externo.
+	"sport_coupe": {
+		"roof_liner": false, "roof_rear": .60, "roof_trim_x": .55, "roof_trim_y": 1.215,
+		# O para-brisa inclinado exige painel recuado e capelo baixo/raso.
+		"dash_front_inset": .02, "dash_min_depth": .10,
+		"cluster_z": -.75, "cluster_rise": .02, "cluster_depth": .12,
+	},
 	"beach_cabriolet": {"open_top": true},
 	"porto_rosso": {"open_top": true},
 	"american_dump_truck": {"floor": .95, "roof": 2.55},
@@ -915,8 +925,8 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	# Painel: bloco do para-brisa até a coluna de direção, com topo na linha da cintura.
 	var dash_top := belt - .03
 	var dash_back := float(s.hub_z) - float(s.r) * .55 - .04
-	var dash_front := wz0 - .04
-	var dash_depth := maxf(dash_back - dash_front, .2)
+	var dash_front := wz0 + float(s.get("dash_front_inset", -.04))
+	var dash_depth := maxf(dash_back - dash_front, float(s.get("dash_min_depth", .2)))
 	_box(t, Vector3(0, (dash_top + floor_y) * .5, dash_front + dash_depth * .5), Vector3(w * 2 - .02, dash_top - floor_y, dash_depth), C_DASH)
 	_box(t, Vector3(0, dash_top + .005, dash_front + dash_depth * .5), Vector3(w * 2 - .04, .02, dash_depth - .04), C_DASH_TOP)
 	# Saídas de ar e alto-falante no topo do painel.
@@ -925,11 +935,14 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	_box(t, Vector3(0, dash_top + .022, dash_front + .13), Vector3(.18, .012, .07), C_TRIM)
 	# Capelo do painel de instrumentos, com mostradores voltados para o motorista.
 	var hub_z := float(s.hub_z)
-	var cluster_z := dash_back - .05
-	_box(t, Vector3(sx, dash_top + .06, cluster_z), Vector3(.46, .11, .22), C_TRIM, Basis(Vector3.RIGHT, .18))
+	var cluster_z := float(s.get("cluster_z", dash_back - .05))
+	var cluster_rise := float(s.get("cluster_rise", .06))
+	var cluster_depth := float(s.get("cluster_depth", .22))
+	var dial_z := cluster_z + cluster_depth * .5 + .004
+	_box(t, Vector3(sx, dash_top + cluster_rise, cluster_z), Vector3(.46, .11, cluster_depth), C_TRIM, Basis(Vector3.RIGHT, .18))
 	for dx in [-.11, .11]:
-		_box(t, Vector3(sx + dx, dash_top + .07, cluster_z + .114), Vector3(.13, .075, .012), C_DIAL, Basis(Vector3.RIGHT, .18))
-	_box(t, Vector3(sx, dash_top + .07, cluster_z + .114), Vector3(.05, .05, .012), C_AMBER, Basis(Vector3.RIGHT, .18))
+		_box(t, Vector3(sx + dx, dash_top + cluster_rise + .01, dial_z), Vector3(.13, .075, .012), C_DIAL, Basis(Vector3.RIGHT, .18))
+	_box(t, Vector3(sx, dash_top + cluster_rise + .01, dial_z), Vector3(.05, .05, .012), C_AMBER, Basis(Vector3.RIGHT, .18))
 	# Console de rádio e climatização, e luvas do passageiro.
 	_box(t, Vector3(0, dash_top - .14, dash_back - .02), Vector3(.30, .26, .12), Color("2e3136"))
 	_box(t, Vector3(0, dash_top - .08, dash_back + .045), Vector3(.24, .09, .01), Color("8b959c"))
@@ -978,6 +991,7 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	# Forro do teto sob o teto, com luz de cortesia; quebra-sóis e retrovisor interno.
 	var roof_z0 := wz1 - .02
 	var roof_z1 := minf(rear - .1, floor_back)
+	roof_z1 = minf(roof_z1, float(s.get("roof_rear", roof_z1)))
 	if bool(s.get("roof_liner", true)):
 		_box(_alpha_tool, Vector3(0, roof - .04, (roof_z0 + roof_z1) * .5), Vector3(w * 2 - .06, .03, roof_z1 - roof_z0), Color(C_ROOF, .30))
 	_box(t, Vector3(0, roof - .058, sz + .1), Vector3(.14, .012, .09), Color("f0ecdc"))
@@ -988,8 +1002,10 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	_box(t, mirror_top + Vector3(0, -.09, .075), Vector3(.22, .06, .03), C_TRIM)
 	_box(t, mirror_top + Vector3(0, -.09, .092), Vector3(.19, .045, .005), Color("8fa2ad"))
 	# Colunas A e traseira (acabamento interno) — linhas escuras ao longo das janelas.
+	var trim_x := float(s.get("roof_trim_x", w - .03))
+	var trim_y := float(s.get("roof_trim_y", roof - .05))
 	for side in [-1.0, 1.0]:
-		_box(t, Vector3(side * (w - .03), roof - .05, (roof_z0 + roof_z1) * .5), Vector3(.05, .04, roof_z1 - roof_z0), C_TRIM)
+		_box(t, Vector3(side * trim_x, trim_y, (roof_z0 + roof_z1) * .5), Vector3(.05, .04, roof_z1 - roof_z0), C_TRIM)
 
 ## Ônibus: cabine do motorista alta, volante quase deitado, corredor com bancos duplos,
 ## barras de apoio e luminárias. Uma malha só para o veículo inteiro.

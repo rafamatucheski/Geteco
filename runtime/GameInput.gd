@@ -36,6 +36,7 @@ const KEYS := {
 	"move_up": [KEY_W,KEY_UP], "move_down": [KEY_S,KEY_DOWN],
 	"move_left": [KEY_A,KEY_LEFT], "move_right": [KEY_D,KEY_RIGHT],
 	"sprint": [KEY_SHIFT], "interact": [KEY_E], "vehicle_interact": [KEY_F], "exit_vehicle": [KEY_F,KEY_ENTER],
+	"motorcycle_wheelie": [KEY_SHIFT],
 	"handbrake": [KEY_SPACE], "horn": [KEY_H], "headlights": [KEY_L],
 	"radio_next": [KEY_R], "radio_previous": [], "radio_toggle": [], "reload": [KEY_R], "journal": [KEY_J], "trunk": [KEY_T],
 	"weapon_next": [KEY_Q], "weapon_previous": [], "unarmed": [KEY_X],
@@ -69,6 +70,7 @@ const LABELS := {
 	"sprint": ["Correr","Sprint"], "interact": ["Ação","Action"],
 	"vehicle_interact": ["Entrar / Roubar veículo","Enter / Steal vehicle"],
 	"exit_vehicle": ["Sair do veículo","Exit vehicle"], "handbrake": ["Freio de mão","Handbrake"],
+	"motorcycle_wheelie": ["Empinar moto (segurar)","Motorcycle wheelie (hold)"],
 	"horn": ["Buzina","Horn"], "headlights": ["Faróis","Headlights"],
 	"reload": ["Recarregar","Reload"], "radio_next": ["Próxima rádio","Next radio"],
 	"radio_previous": ["Rádio anterior","Previous radio"], "radio_toggle": ["Ligar/desligar rádio","Toggle radio"], "journal": ["Diário","Journal"],
@@ -89,6 +91,7 @@ const PAD := {
 	"weapon_next": JOY_BUTTON_RIGHT_SHOULDER, "weapon_previous": JOY_BUTTON_LEFT_SHOULDER,
 	"journal": JOY_BUTTON_BACK, "pause_game": JOY_BUTTON_START,
 	"sprint": JOY_BUTTON_LEFT_STICK, "horn": JOY_BUTTON_RIGHT_STICK,
+	"motorcycle_wheelie": JOY_BUTTON_LEFT_STICK,
 	"siren_toggle": JOY_BUTTON_RIGHT_STICK,
 	"headlights": JOY_BUTTON_DPAD_UP,
 	"radio_next": JOY_BUTTON_RIGHT_SHOULDER, "radio_previous": JOY_BUTTON_LEFT_SHOULDER,
@@ -104,6 +107,7 @@ const UI_PAD := {
 ## Only pairs whose consumers are mutually exclusive may intentionally share a binding.
 ## Keep this list narrow: `interact` and `vehicle_interact` can both be live on foot.
 const CONTEXTUAL_BINDING_PAIRS := [
+	["sprint", "motorcycle_wheelie"],
 	["fire", "tank_fire"],
 	["vehicle_interact", "exit_vehicle"],
 	["reload", "radio_next"],
@@ -568,6 +572,8 @@ func observe_event(event: InputEvent) -> void:
 func _sprint_input_blocked() -> bool:
 	if get_tree().paused: return true
 	var scene := get_tree().current_scene
+	var driving: Variant = scene.get("driving") if is_instance_valid(scene) else null
+	if driving != null and driving.occupied: return true
 	var session: Variant = scene.get("session") if is_instance_valid(scene) else null
 	return session != null and (session.modal or not session.ready_for_play or session.is_transition_blocked())
 

@@ -78,12 +78,7 @@ func finish() -> void:
 	var report := {"label":label,"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"population":world.people.size(),"requested_population":world.production.requested_population,"cars":world.production.vehicles.size(),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"msaa":root.msaa_3d,"summary":stats(samples),"warmup":stats(cold),"cpu_process":stats(cpu),"physics":stats(physics),"frame_intervals_ms":samples,"warmup_intervals_ms":cold,"cpu_ms":cpu,"physics_ms":physics,"startup_ms":startup_ms,"phases_measured":observed_phases,"draw_calls_last_frame":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),"notes":"Actual integrated Main. 5s warmup separated from30s real frame intervals. Screenshots outside measurement. Same production settings as native24 baseline; arrival route/film differs from old native driving scenario, so not a controlled regression comparison."}
 	await capture("measured")
 	if cgi:
-		arrival.presentation.film.seek(62.0 + preload("res://cutscenes/opening/v3/opening_timeline.gd").E)
-		for i in 3: await process_frame
-		await capture("bus-gallery")
-		arrival.presentation.film.seek(74.0 + preload("res://cutscenes/opening/v3/opening_timeline.gd").E)
-		for i in 3: await process_frame
-		await capture("terminal")
+		# The ferry is a real movie stream, with no legacy bus slideshow to seek.
 		arrival.presentation.film.skip()
 		for i in 600:
 			await physics_frame

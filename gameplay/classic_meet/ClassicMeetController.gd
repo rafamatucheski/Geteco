@@ -6,7 +6,7 @@ const EVENINGS := [1,3,5] # Monday is zero: Tuesday, Thursday, Saturday.
 const ACTIVATE_DISTANCE := 75.0
 const RELEASE_DISTANCE := 95.0
 const PAINTS := [Color("bb3834"),Color("479790"),Color("d0a347"),Color("537da6"),Color("ded8c4"),Color("773e68")]
-const MODELS := ["gol","parati","passat","parati","gol","passat"]
+const MODELS := ["gol","parati","passat","coupe","pickup","roadster"]
 var session
 var gameplay:
 	get: return session.world.gameplay if session != null else null

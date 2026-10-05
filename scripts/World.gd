@@ -161,7 +161,9 @@ func _build_hud() -> void:
 	handler.world = self
 	handler.process_mode = Node.PROCESS_MODE_ALWAYS
 	hud.add_child(handler)
-	if not has_meta("menu_preview") and (OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()):
+	# The loaded world is promoted in place by SkyMenu. Its touch layer must
+	# exist before the handoff; SkyMenu hides and suspends it with the HUD.
+	if OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args():
 		var touch_layer := CanvasLayer.new()
 		touch_layer.layer = 90
 		add_child(touch_layer)

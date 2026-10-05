@@ -1,4 +1,6 @@
 extends RefCounted
+const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
+const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Metric three-section low-floor bus; shared materials and separate sliding doors.
 static var materials: Dictionary = {}
 static func material(key: String) -> StandardMaterial3D:
@@ -21,6 +23,13 @@ static func box(parent: Node3D, at: Vector3, size: Vector3, key: String) -> Mesh
 	return part
 
 static func build(parent: Node3D, length: float, section: int) -> Dictionary:
+	var stall_began := TRANSIT_WORK.begin()
+	var result := _stall_build(parent,length,section)
+	if stall_began != 0: TRANSIT_WORK.finish("urban.model.build",stall_began,{"parent":str(parent.name),"section":section,"length":length})
+	return result
+
+static func _stall_build(parent: Node3D, length: float, section: int) -> Dictionary:
+	var primitives_began := TRANSIT_WORK.begin()
 	var model := Node3D.new()
 	model.name = "BiarticulatedSection%d" % section
 	parent.add_child(model)
@@ -83,8 +92,17 @@ static func build(parent: Node3D, length: float, section: int) -> Dictionary:
 		box(leaf,Vector3(0,1.54,0),Vector3(.08,2.4,.62),"rubber")
 		box(leaf,Vector3(.05,1.92,0),Vector3(.025,1.57,.49),"glass")
 		doors.append(leaf)
+	if primitives_began != 0: TRANSIT_WORK.finish("urban.model.primitives",primitives_began,{"section":section,"children":model.get_child_count()})
 	# Bake static parts by material once. Door leaves and wheel transforms remain movable.
+	var batch_began := TRANSIT_WORK.begin()
+	var append_usec := 0
+	var append_max_usec := 0
+	var append_count := 0
+	var free_usec := 0
+	var free_max_usec := 0
+	var free_count := 0
 	var batches := {}
+	var batch_vertex_counts := {}
 	for child in model.get_children():
 		if not child is MeshInstance3D or child in wheels: continue
 		var mat: Material = child.material_override
@@ -92,10 +110,23 @@ static func build(parent: Node3D, length: float, section: int) -> Dictionary:
 			var surface := SurfaceTool.new()
 			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 			batches[mat]=surface
-		for index in child.mesh.get_surface_count(): batches[mat].append_from(child.mesh,index,child.transform)
+			batch_vertex_counts[mat] = 0
+		for index in child.mesh.get_surface_count():
+			var append_began := Time.get_ticks_usec() if batch_began != 0 else 0
+			batch_vertex_counts[mat] = BOX_BATCH.append_from(batches[mat],child.mesh,index,child.transform,batch_vertex_counts[mat])
+			if append_began != 0:
+				var duration := Time.get_ticks_usec()-append_began
+				append_usec += duration; append_max_usec = maxi(append_max_usec,duration); append_count += 1
+		var free_began := Time.get_ticks_usec() if batch_began != 0 else 0
 		child.free()
+		if free_began != 0:
+			var duration := Time.get_ticks_usec()-free_began
+			free_usec += duration; free_max_usec = maxi(free_max_usec,duration); free_count += 1
+	if batch_began != 0: TRANSIT_WORK.finish("urban.model.batch.append_free_loop",batch_began,{"append_usec":append_usec,"append_max_usec":append_max_usec,"append_count":append_count,"free_usec":free_usec,"free_max_usec":free_max_usec,"free_count":free_count,"batches":batches.size()})
+	var commit_began := TRANSIT_WORK.begin()
 	for mat in batches:
 		var part := MeshInstance3D.new()
 		part.mesh=batches[mat].commit(); part.material_override=mat
 		model.add_child(part)
+	if commit_began != 0: TRANSIT_WORK.finish("urban.model.batch.commit_upload",commit_began,{"batches":batches.size()})
 	return {"model":model,"doors":doors,"door_z":door_z,"wheels":wheels}

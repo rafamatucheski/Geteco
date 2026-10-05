@@ -5,17 +5,28 @@ func _initialize() -> void: run.call_deferred()
 func check(value: bool, label: String) -> void:
 	if not value: failures.append(label); push_error(label)
 func run() -> void:
+	root.get_node("V2Launch").selected_path = "user://arrival-flow-isolated.json"
 	world = load("res://Main.tscn").instantiate()
 	root.add_child(world)
-	for i in 240:
-		await physics_frame
+	# Region prewarming alone can exceed the old four-second frame budget.
+	var ready_deadline := Time.get_ticks_msec()+30000
+	while Time.get_ticks_msec() < ready_deadline:
+		await process_frame
 		if world.session != null and world.session.ready_for_play: break
+	if world.session == null or not world.session.ready_for_play:
+		push_error("Arrival flow: world did not finish startup")
+		world.free()
+		quit(1)
+		return
 	var session = world.session
 	var arrival = session.arrival
 	arrival.phase = "new"
 	arrival.flags.clear()
-	arrival.opening_completed = true
+	arrival.opening_completed = false
 	arrival.start_or_resume(false)
+	check(session.weather.time_of_day > .9 and session.weather.weather_state == 1, "new arrival starts on the film's rainy night")
+	check(session.state.world_state.time > .9 and session.state.world_state.weather == 1, "opening weather is present in persistent world state")
+	arrival.presentation.film.skip()
 	for i in 900:
 		await physics_frame
 		if arrival.phase == "police_visit" or (arrival.phase == "disembark" and not arrival.controls_locked): break
@@ -23,6 +34,16 @@ func run() -> void:
 	check(arrival.phase == "police_visit", "player physically exits ferry onto public quay")
 	check(arrival.flags.get("harbor_arrival_seen", false), "arrival flag after completed physical exit")
 	check(world.player.visible and not world.player.input_locked, "visible controllable player after arrival")
+	check(session.weather.time_of_day > .9 and session.weather.weather_state == 1, "physical disembark preserves the film's night and rain")
+	# A resumed checkpoint must not reset the saved clock/weather to the prologue.
+	var arrival_time: float = session.weather.time_of_day
+	session.weather.time_of_day = .42
+	session.weather.weather_state = 3
+	arrival.start_or_resume(true)
+	check(is_equal_approx(session.weather.time_of_day,.42) and session.weather.weather_state == 3, "resumed arrival preserves existing weather")
+	session.weather.time_of_day = arrival_time
+	session.weather.weather_state = 1
+	session.weather._update()
 	check(await session.enter_place("harbor_police", false), "enter original police station")
 	world.player.teleport(session.room.interaction_points.service + Vector3.UP * .06)
 	for i in 3: await physics_frame

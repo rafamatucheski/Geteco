@@ -16,6 +16,7 @@ func _init() -> void:
 		part.mesh = entry.mesh
 		part.material_override = entry.material
 		part.set_meta("coupe_damage_material_key",entry.key)
+		if "#fixed" in str(entry.name): part.set_meta("door_cut_exempt",true)
 		if "@" in str(entry.name):
 			var bits := str(entry.name).split("@")
 			part.set_meta("wheel_center",Vector3(float(bits[1]),.405,float(bits[2])))
@@ -34,10 +35,11 @@ func _build() -> void:
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		_materials[row[0]] = material
 	_box("rubber",Vector3(0,.43,0),Vector3(1.72,.17,4.92))
-	_box("paint",Vector3(0,1.055,-.83),Vector3(1.70,.20,3.10))
+	_box("paint#fixed",Vector3(0,1.055,-1.74),Vector3(1.70,.20,1.28))
+	_box("rubber#fixed",Vector3(0,.46,.015),Vector3(1.78,.06,1.98))
 	_bonnet()
-	_quad("paint",Vector3(-.775,1.86,-.52),Vector3(.775,1.86,-.52),Vector3(.80,1.85,.96),Vector3(-.80,1.85,.96))
-	_quad("paint",Vector3(-.775,1.86,-.52),Vector3(.775,1.86,-.52),Vector3(.731,1.808,-.507),Vector3(-.731,1.808,-.507))
+	_quad("paint#fixed",Vector3(-.775,1.86,-.52),Vector3(.775,1.86,-.52),Vector3(.80,1.85,.96),Vector3(-.80,1.85,.96))
+	_quad("paint#fixed",Vector3(-.775,1.86,-.52),Vector3(.775,1.86,-.52),Vector3(.731,1.808,-.507),Vector3(-.731,1.808,-.507))
 	_quad("glass",Vector3(-.845,1.27,-1.015),Vector3(.845,1.27,-1.015),Vector3(.731,1.808,-.507),Vector3(-.731,1.808,-.507))
 	_box("paint",Vector3(0,1.505,1.01),Vector3(1.70,.68,.07))
 	_box("glass",Vector3(0,1.61,1.052),Vector3(1.40,.34,.012))
@@ -71,10 +73,10 @@ func _build() -> void:
 		_quad("glass",e,f,g,h)
 		_quad("paint",Vector3(x,1.20,-1.025),Vector3(x,1.20,.905),g,a)
 		for line in [[a,b],[b,c],[c,d],[d,a],[e,f],[f,g],[g,h],[h,e]]: _beam("rubber",line[0],line[1],.022)
-		_beam("paint",Vector3(side*.925,1.22,-1.07),Vector3(side*.772,1.833,-.54),.072)
-		_beam("paint",Vector3(side*.80,1.824,.95),Vector3(side*.96,1.20,1.03),.09)
-		_quad("paint",Vector3(side*.775,1.86,-.52),Vector3(side*.80,1.85,.96),Vector3(side*.808,1.805,.885),Vector3(side*.777,1.82,-.508))
-		_quad("trim",c,e,h,d)
+		_beam("paint#fixed",Vector3(side*.925,1.22,-1.07),Vector3(side*.772,1.833,-.54),.072)
+		_beam("paint#fixed",Vector3(side*.80,1.824,.95),Vector3(side*.96,1.20,1.03),.09)
+		_quad("paint#fixed",Vector3(side*.775,1.86,-.52),Vector3(side*.80,1.85,.96),Vector3(side*.808,1.805,.885),Vector3(side*.777,1.82,-.508))
+		_quad("trim#fixed",c,e,h,d)
 		_box("trim",Vector3(side*.971,.39,-.03),Vector3(.17,.09,2.32))
 		_box("chrome",Vector3(side*.974,.415,-.03),Vector3(.11,.018,2.29))
 		for z in [-1.03,.17,.99]: _beam("trim",Vector3(x+.006*side,.52,z),Vector3(x+.006*side,1.22,z),.008)

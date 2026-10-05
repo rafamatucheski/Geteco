@@ -1228,6 +1228,9 @@ func _input(event: InputEvent) -> void:
 		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()
 		return
 	if motocross != null and motocross.mounted:
+		# The touch overlay turns raw fingers into game actions. Consuming the
+		# fingers here prevented its pedals and wheelie button from receiving them.
+		if event is InputEventScreenTouch or event is InputEventScreenDrag: return
 		if event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle"):
 			motocross.perform("quit" if motocross.active else "dismount")
 		if not event.is_action_pressed("pause_game"): get_viewport().set_input_as_handled()

@@ -1,4 +1,5 @@
 extends "res://scripts/Vehicle.gd"
+const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Three physical bodies joined by drawbars. All bodies must admit a step before
 ## any moves; rear sections cannot tunnel through street furniture during turns.
 const MODEL := preload("res://runtime/transit/BiarticulatedModel.gd")
@@ -29,6 +30,11 @@ var path_poses: RefCounted
 var headlights: Array[SpotLight3D] = []
 
 func _ready() -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_ready()
+	if stall_began != 0: TRANSIT_WORK.finish("urban.bus.ready", stall_began, {"name":str(name),"sections":sections.size()})
+
+func _stall_ready() -> void:
 	archetype = "route_city" # Shared bus engine sound family; geometry belongs to this class.
 	vehicle_id = "biarticulated_510"
 	set_meta("gameplay_role","vehicle")
@@ -57,7 +63,9 @@ func _ready() -> void:
 		if index==0: shape = col
 		hulls.append(hull)
 		exclude_bodies.append(body.get_rid())
+		var model_began := TRANSIT_WORK.begin()
 		presentations.append(MODEL.build(body,LENGTHS[index],index))
+		if model_began != 0: TRANSIT_WORK.finish("urban.bus.section_model",model_began,{"name":str(name),"section":index})
 	for body in sections:
 		for other in sections:
 			if body != other: body.add_collision_exception_with(other)

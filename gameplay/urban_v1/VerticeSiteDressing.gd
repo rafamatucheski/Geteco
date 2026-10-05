@@ -1,4 +1,5 @@
 extends Node3D
+const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 ## Static working detail for Vértice, authored in company-local metres.
 ## Central cargo islands leave the truck loop, patrol and dock lanes unobstructed.
 var solids: Array[StaticBody3D] = []
@@ -323,9 +324,9 @@ func _append(mesh: Mesh, at: Vector3, material_key: String, angles: Vector3, gro
 	if not _batches.has(key):
 		var builder := SurfaceTool.new()
 		builder.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_batches[key] = {"surface":builder,"group":group,"material":_material(material_key)}
+		_batches[key] = {"surface":builder,"group":group,"material":_material(material_key),"vertex_offset":0}
 	var surface: SurfaceTool = _batches[key].surface
-	surface.append_from(mesh,0,Transform3D(Basis.from_euler(angles),at))
+	_batches[key].vertex_offset = BOX_BATCH.append_from(surface,mesh,0,Transform3D(Basis.from_euler(angles),at),int(_batches[key].vertex_offset))
 
 func _solid(id: String, at: Vector3, size: Vector3) -> void:
 	var body := StaticBody3D.new()

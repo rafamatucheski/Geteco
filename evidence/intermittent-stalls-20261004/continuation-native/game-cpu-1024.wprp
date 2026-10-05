@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WindowsPerformanceRecorder Version="1.0" Author="Geteco performance audit">
+  <Profiles>
+    <SystemCollector Id="GameSystem" Name="Geteco CPU diagnostics">
+      <BufferSize Value="1024" />
+      <!-- 1024 x 1024 KiB circular buffers, not an ETL size or duration guarantee. -->
+      <Buffers Value="1024" />
+    </SystemCollector>
+    <SystemProvider Id="GameCpuProvider">
+      <Keywords>
+        <Keyword Value="CpuConfig" />
+        <Keyword Value="ProcessThread" />
+        <Keyword Value="Loader" />
+        <Keyword Value="CSwitch" />
+        <Keyword Value="ReadyThread" />
+        <Keyword Value="SampledProfile" />
+        <Keyword Value="Power" />
+      </Keywords>
+      <Stacks>
+        <Stack Value="CSwitch" />
+        <Stack Value="ReadyThread" />
+        <Stack Value="SampledProfile" />
+      </Stacks>
+    </SystemProvider>
+    <Profile Id="GameCpu.Verbose.Memory" Name="GameCpu" Description="CPU scheduling diagnostic with 1024 MiB circular buffers; verify retained coverage" LoggingMode="Memory" DetailLevel="Verbose">
+      <Collectors>
+        <SystemCollectorId Value="GameSystem">
+          <SystemProviderId Value="GameCpuProvider" />
+        </SystemCollectorId>
+      </Collectors>
+    </Profile>
+  </Profiles>
+</WindowsPerformanceRecorder>

@@ -1,4 +1,8 @@
 extends Node
+## Optional in-memory consumer. The logger remains the sole owner of take().
+## No signal emission or extra record construction without a connected probe.
+signal interval_observed(now_usec: int, work: Array, removed_count: int, removed_roots: Array)
+var observe_intervals := false
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const LOG_WRITER := preload("res://runtime/StallLogWriter.gd")
 ## Registro de quadros lentos para quem joga e depois manda o arquivo. SÃ³ liga com a variÃ¡vel de
@@ -108,6 +112,8 @@ func _process(delta: float) -> void:
 		_summarize_work(work)
 		if ms >= _threshold_ms and _slow_records < MAX_SLOW_RECORDS: _record_slow(ms, now, physics_frames - _previous_physics_frames, work)
 	_previous_usec = now
+	if observe_intervals:
+		interval_observed.emit(now, work, _removed_total, _removed_roots)
 	if now - _last_prune_usec > 2000000:
 		_last_prune_usec = now
 		_prune_spans()

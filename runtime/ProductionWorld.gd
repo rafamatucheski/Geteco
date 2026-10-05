@@ -255,6 +255,12 @@ func build() -> void:
 	startup_streaming_settled = await _settle_startup()
 	if not startup_streaming_settled:
 		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
+	# First C# route resolution must finish while the startup curtain owns input.
+	# Reuse the real terminal curve later; keep its cost in the loading trace.
+	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.terminal_operations):
+		urban_transit.terminal_operations.prepare_startup_route()
+		await urban_transit.terminal_operations.prepare_startup_passenger_meshes()
+		await get_tree().process_frame
 	if not world.has_meta("menu_preview"): await curtain.lift()
 	session.ready_for_play = restored_session_ready
 	world.player.controlled_automatically = restored_player_automatic

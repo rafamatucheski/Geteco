@@ -1,5 +1,16 @@
 # Migração de interiores — checklist
 
+## Carros do Digo — cabines existentes — 03/10/2026
+
+**2 cabines de veículos existentes; nenhum edifício ou acesso acrescentado.** Contagens globais de estabelecimentos preservadas.
+
+- [x] Dimensões internas ajustadas e teto/colunas preservados durante abertura das portas.
+- [x] 30 verificações de geometria, portas dos dois lados e reentrada.
+- [x] Entrada e saída públicas no mapa real, duas vezes por veículo; fotos antes/depois.
+- [ ] Certificação ampla de física/oclusão e performance isolada não abrangida por esta correção local.
+
+[Correção, evidências e limites](reviews/digo-cabins-20261003.md).
+
 ## Boa Praça — supermercado novo — 03/10/2026
 
 **1 lugar físico / 1 interior distinto novo; 0 certificados integralmente / 1 em validação / 0 não iniciados neste lote.** Acrescenta 1 acesso/1 interior à referência registrada de 32/30: **33 acessos / 31 interiores**; não recertifica outros lugares.
@@ -906,3 +917,16 @@ integrais**. [Escopo e evidências](residence-living.md).
 - [ ] Aprovação de frame time antes/depois. Baseline interrompido e sessões concorrentes; não há comparação equivalente. Espelho, luz local e MSAA precisam dessa medição para aprovação de performance.
 - [x] Diagnóstico final renderizado de Westgate: 30 s por vista aquecida (geral, guarda-roupa, bancada), p95 de 1,924/3,407/1,228 ms e nenhum frame acima de 33,3 ms. Dados em `evidence/residence-immersive/profile.json`; isso não fecha a pendência comparativa acima.
 - [x] Correção posterior das armas no painel: berços encaixados, folga traseira de 4 mm, painel livre das cortinas e luminária livre das armas. 60 verificações sem falha nas três casas, fotos `rack-after-*-normal/front/bench.png` e sequência real `rack.mp4`. Comparativo local de 30 s: p95 1,571 → 1,292 ms; sem regressão observada nesse ajuste. Não altera contagens nem certifica a reforma completa.
+
+## Porsche: acabamento da cabine — 04/10/2026
+
+Ajuste local de **1 arquétipo de veículo existente**, sem novos lugares/acessos ou interiores de estabelecimentos. Permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. As duas barras do acabamento agora cabem sob o teto curvo, sem parecer um rack após o roubo. [Escopo, fotos reais e medições](reviews/coupe-roof-20261004.md).
+
+- [x] Visual/profundidade: vistas de cima, laterais e câmera do jogo antes/depois; barras contidas sob a cobertura, motorista visível e sem geometria externa nova.
+- [x] Física e pose no acesso: **130/130** verificações das portas do cupê, incluindo arco da folha, percurso pelo vão, contato e folga da cabeça.
+- [x] Roubo, direção, saída e reentrada reais em Main: **17/17** verificações, controle restaurado e uma única cabine após reentrar.
+- [x] Regressão geométrica: **10/10** verificações após o ajuste do painel; as três falhas das barras e o painel atravessando o para-brisa foram reproduzidos antes e corrigidos. Instrumentos preservados abaixo do plano do vidro. Cabines do Digo: **30/30**, preservando alterações de outra sessão.
+- [x] Revisão adicional do painel: cobertura recuada, baixa e rasa; fotos reais dianteira/lateral/de cima. Portas na versão atual: **128 verificações, zero falhas**.
+- [x] Fluxo renderizado após o ajuste do painel: **17 verificações, zero falhas**, incluindo movimento, saída e reentrada com o piloto visível.
+- [ ] Performance isolada: duas janelas renderizadas de 30 s executadas, mas há processos e alterações concorrentes. p95/p99 observados: **25,495/36,350 → 17,197/26,529 ms**; não comprovam ganho atribuível ao ajuste nem estabilidade dentro de 16,67 ms.
+- [ ] Performance isolada do painel: novas janelas de 30 s com p95/p99 **15,224/18,645 → 13,500/15,392 ms**. População/tráfego e sessões concorrentes variaram; não há aprovação de ganho ou ausência de regressão atribuível ao ajuste.

@@ -2,6 +2,7 @@ extends RefCounted
 ## Use the actual Dante rig and existing articulated civilian legs; never a proxy rider.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 const MODEL := preload("res://activities/skate/SkateModel.gd")
+const RECOVERY_DURATION := 1.1
 
 static func feet(board) -> Array[Vector3]:
 	# Staggered stance, with both feet and the torso facing the nose.
@@ -69,7 +70,7 @@ static func fall(actor, age: float, heading: float) -> void:
 	# Brace, absorb the impact, then get up through a crouch. Physics remains
 	# owned by the swept player capsule; no free-running animation tween.
 	var impact := smoothstep(0, .45, age)
-	var rise := smoothstep(.95, 2.1, age)
+	var rise := smoothstep(.5, RECOVERY_DURATION, age)
 	var weight := impact * (1 - rise)
 	actor.visual.rotation = Vector3(-1.25 * weight, heading, .18 * weight)
 	actor.visual.position = Vector3(0, .30 * weight, 0)

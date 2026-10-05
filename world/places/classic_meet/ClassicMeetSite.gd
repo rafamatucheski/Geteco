@@ -16,10 +16,10 @@ var _night_enabled := false
 var _celebration_enabled := false
 
 func _ready() -> void:
-	name = "AuroraClassicMeetSite"
+	name = "TorqueClassicMeetSite"
 	position = ANCHOR
 	_body = StaticBody3D.new()
-	_body.name = "AuroraSolids"
+	_body.name = "TorqueSolids"
 	_body.collision_layer = 1
 	_body.collision_mask = 0
 	add_child(_body)
@@ -67,21 +67,23 @@ func set_night_lighting(night: bool, event_active: bool) -> void:
 		var lamp := _lamps[index] as SpotLight3D
 		lamp.visible = night
 		var event_gain := 3.0 if index<2 else 2.0
-		lamp.light_energy = float(lamp.get_meta("aurora_base_energy"))*(event_gain if celebration else 1.0)
+		lamp.light_energy = float(lamp.get_meta("meet_base_energy"))*(event_gain if celebration else 1.0)
 	for lamp in _event_lamps:
 		lamp.visible = celebration
-		lamp.light_energy = float(lamp.get_meta("aurora_base_energy"))*(3.0 if celebration else 1.0)
+		lamp.light_energy = float(lamp.get_meta("meet_base_energy"))*(3.0 if celebration else 1.0)
 
 func _build_materials() -> void:
 	_material("asphalt",Color("454a49"),"gravel")
 	_material("concrete",Color("b4b1a0"),"concrete")
-	_material("wall",Color("c8c1a8"),"concrete")
-	_material("brick",Color("8b6854"),"brick")
-	for entry in [["green","365746"],["roof","696e68"],["metal","444e4c"],["chrome","a4aca2"],["glass","41636a"],["white","ddd8b7"],["wood","937557"],["soil","555345"],["fruit","bd8745"]]:
+	_material("wall",Color("dedbd2"),"concrete")
+	_material("brick",Color("555253"),"brick")
+	for entry in [["red","c92c27"],["orange","ef7928"],["roof","35383c"],["metal","30363c"],["chrome","b5bdc5"],["glass","22353e"],["white","efeae0"],["rubber","1e2227"],["soil","555345"]]:
 		_material(entry[0],Color(entry[1]))
+	_materials.chrome.metallic = .65
+	_materials.chrome.roughness = .38
 	_night_material = _material("lamp",Color("e9ddad"))
 	_night_material.emission_enabled = true
-	_night_material.emission = Color("ffde9c")
+	_night_material.emission = Color("ffe1b6")
 	_party_material = _material("party",Color("e5c88f"))
 	_party_material.emission_enabled = true
 	_party_material.emission = Color("ffe2a4")
@@ -124,33 +126,52 @@ func _build_paving() -> void:
 		for i in 7: _box("chrome",Vector3(-9.8,.071,z-.52+i*.17),Vector3(.31,.008,.025))
 
 func _build_store() -> void:
-	_box("wall",Vector3(-.5,2.05,10),Vector3(19,4.1,8),true)
+	# Vitrines rasas na fachada fechada, com o mesmo bloqueio integral do prédio.
+	_solid(Vector3(-.5,2.05,10),Vector3(19,4.1,8))
+	_box("wall",Vector3(-.5,2.05,10.3),Vector3(19,4.1,7.4))
 	_box("brick",Vector3(-.5,.48,5.95),Vector3(19,.9,.12))
 	_box("roof",Vector3(-.5,4.14,10),Vector3(19.6,.22,8.5))
-	_box("green",Vector3(-.5,3.45,5.8),Vector3(19.4,.85,.35))
-	_box("concrete",Vector3(-.5,2.86,5.15),Vector3(19.7,.16,1.9))
-	_box("green",Vector3(-.5,2.81,4.24),Vector3(19.7,.3,.12))
+	_box("white",Vector3(-.5,4.03,5.78),Vector3(19.4,.16,.39))
+	_box("red",Vector3(-.5,3.47,5.8),Vector3(19.4,.96,.35))
+	_box("orange",Vector3(-.5,2.99,5.59),Vector3(19.4,.065,.07))
+	_box("roof",Vector3(-.5,2.86,5.15),Vector3(19.7,.16,1.9))
+	_box("red",Vector3(-.5,2.81,4.24),Vector3(19.7,.3,.12))
+	_box("lamp",Vector3(-.5,2.645,4.22),Vector3(19.2,.025,.035))
+	for x in [-9.62,8.62]:
+		_box("red",Vector3(x,1.85,5.92),Vector3(.55,1.9,.2))
+	for x in [-5.48,1.78]:
+		_box("wall",Vector3(x,1.77,6.19),Vector3(.48,1.8,.78))
 	for x in [-7.15,-3.8,3.45,6.8]:
-		_box("glass",Vector3(x,1.8,5.925),Vector3(2.8,1.62,.08))
+		_box("glass",Vector3(x,1.8,6.46),Vector3(2.8,1.62,.08))
+		_box("roof",Vector3(x,.965,6.12),Vector3(2.8,.06,.66))
 		for dx in [-1.43,1.43]: _box("chrome",Vector3(x+dx,1.8,5.855),Vector3(.055,1.72,.07))
 		for y in [.94,2.65]: _box("chrome",Vector3(x,y,5.855),Vector3(2.9,.06,.07))
-		_box("chrome",Vector3(x,1.8,5.855),Vector3(.045,1.7,.07))
+		_box("lamp",Vector3(x,2.56,6.11),Vector3(2.55,.035,.06))
+	_build_window_displays()
 	# Porta fechada com bloqueio do edifício; este cenário não cria interior.
 	for x in [-.6,.6]:
 		_box("glass",Vector3(x,1.38,5.91),Vector3(1.12,2.56,.11))
 		_box("chrome",Vector3(x+(-.48 if x>0 else .48),1.25,5.77),Vector3(.045,.55,.045))
 	for x in [-1.21,0,1.21]: _box("chrome",Vector3(x,1.38,5.81),Vector3(.065,2.65,.08))
 	var sign := Label3D.new()
-	sign.name = "AuroraName"
-	sign.text = "Aurora"
+	sign.name = "TorqueName"
+	sign.text = "TORQUE"
+	sign.font = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 	sign.font_size = 100
-	sign.pixel_size = .012
+	sign.pixel_size = .013
 	sign.outline_size = 0
-	sign.modulate = Color("eee6c9")
-	sign.position = Vector3(-.5,3.49,5.59)
+	sign.modulate = Color("fff5e6")
+	sign.position = Vector3(.35,3.49,5.59)
 	sign.rotation.y = PI
 	sign.no_depth_test = false
 	add_child(sign)
+	# Emblema de velocidade sem slogans ou legendas na fachada.
+	for i in 4:
+		_angled_box("orange",Vector3(-4.1+i*.37,3.48,5.56),Vector3(.22,.7,.06),-.38)
+	for x in [-8.9,7.9]:
+		_box("roof",Vector3(x,3.47,5.58),Vector3(1.12,.67,.07))
+		for i in 3:
+			_angled_box("white",Vector3(x-.32+i*.32,3.47,5.53),Vector3(.13,.43,.025),-.38)
 	_box("metal",Vector3(-.5,1.35,14.035),Vector3(2.3,2.6,.09))
 	for i in 12: _box("chrome",Vector3(-.5,.2+i*.21,14.09),Vector3(2.2,.035,.045))
 	for x in [-5.0,5.0]:
@@ -158,20 +179,63 @@ func _build_store() -> void:
 		for i in 5: _box("chrome",Vector3(x-.55+i*.275,4.86,11.3),Vector3(.09,.03,1.0))
 
 func _build_furniture() -> void:
+	# Expositor de pneus e rodas ocupa a antiga área das caixas, fora do corredor.
 	for x in [-7.9,-6.6]:
-		_box("wood",Vector3(x,.53,4.85),Vector3(1.12,.92,.68),true)
-		_box("soil",Vector3(x,1.0,4.85),Vector3(.95,.05,.53))
-		for i in 6: _box("fruit",Vector3(x-.36+float(i%3)*.35,1.055,4.69+floorf(float(i)/3.0)*.28),Vector3(.22,.12,.2))
-	for i in 3:
-		var x := 7.1+i*.34
-		_box("chrome",Vector3(x,.67,4.8),Vector3(.55,.08,.83))
-		for dx in [-.27,.27]: _box("chrome",Vector3(x+dx,.84,4.8),Vector3(.035,.35,.86))
-		_box("green",Vector3(x,.99,5.22),Vector3(.6,.065,.06))
-		for dz in [-.31,.31]: _box("metal",Vector3(x,.22,4.8+dz),Vector3(.56,.17,.12))
-	_solid(Vector3(7.45,.56,4.85),Vector3(1.4,1.05,1.05))
+		_solid(Vector3(x,.78,4.85),Vector3(1.12,1.5,.68))
+		_box("metal",Vector3(x,.18,4.85),Vector3(1.1,.25,.66))
+		for y in [.55,1.22]:
+			_display_wheel(Vector3(x,y,4.85),.30)
+		for dx in [-.5,.5]: _box("orange",Vector3(x+dx,.72,4.94),Vector3(.035,1.4,.035))
+	# Carrinho de ferramentas vermelho: gavetas, puxadores e rodízios reais.
+	_solid(Vector3(7.48,.59,4.85),Vector3(1.38,1.05,.8))
+	_box("red",Vector3(7.45,.63,4.85),Vector3(1.2,.85,.7))
+	_box("roof",Vector3(7.45,1.08,4.85),Vector3(1.3,.07,.8))
+	for y in [.35,.52,.69,.86]:
+		_box("metal",Vector3(7.45,y,4.485),Vector3(1.08,.025,.025))
+		_box("chrome",Vector3(7.45,y+.065,4.46),Vector3(.66,.03,.04))
+	for x in [6.94,7.96]:
+		for z in [4.59,5.11]: _cylinder("rubber",Vector3(x,.16,z),.105,.065,Vector3(0,0,PI*.5))
+	_box("chrome",Vector3(8.11,.96,4.85),Vector3(.035,.06,.55))
+	# Proteções junto à porta, sem obstruir os corredores dos clientes.
+	for x in [-1.6,1.6]:
+		_cylinder("orange",Vector3(x,.45,5.35),.095,.8)
+		_solid(Vector3(x,.45,5.35),Vector3(.2,.8,.2))
+		_cylinder("chrome",Vector3(x,.75,5.35),.10,.08)
 	for x in [-10.25,10.25]:
-		_box("green",Vector3(x,.44,3.9),Vector3(.65,.85,.65),true)
+		_box("roof",Vector3(x,.44,3.9),Vector3(.65,.85,.65),true)
 		_box("metal",Vector3(x,.89,3.9),Vector3(.7,.08,.7))
+
+func _build_window_displays() -> void:
+	# Produtos em escala real: as janelas comunicam a atividade do estabelecimento.
+	for x in [-7.93,-7.15,-6.37]: _display_wheel(Vector3(x,1.59,6.18),.35)
+	_box("red",Vector3(-3.8,1.06,6.18),Vector3(2.6,.14,.42))
+	for x in [-4.57,-3.8,-3.03]:
+		_box("metal",Vector3(x,1.38,6.18),Vector3(.49,.46,.32))
+		_box("red",Vector3(x,1.62,6.18),Vector3(.52,.06,.35))
+		for dx in [-.15,.15]: _box("chrome",Vector3(x+dx,1.68,6.18),Vector3(.06,.07,.07))
+		_box("orange",Vector3(x,1.37,6.003),Vector3(.25,.19,.023))
+	for x in [-4.45,-3.8,-3.15]:
+		_box("orange",Vector3(x,2.04,6.21),Vector3(.38,.42,.25))
+		_box("roof",Vector3(x,2.30,6.21),Vector3(.17,.10,.17))
+	_box("chrome",Vector3(-3.8,1.80,6.2),Vector3(2.6,.04,.4))
+	_box("red",Vector3(3.45,1.06,6.18),Vector3(2.6,.14,.42))
+	for x in [2.7,3.45,4.2]:
+		_cylinder("chrome",Vector3(x,1.54,6.18),.28,.12,Vector3(PI*.5,0,0))
+		_cylinder("metal",Vector3(x,1.54,6.10),.095,.08,Vector3(PI*.5,0,0))
+		_box("red",Vector3(x+.21,1.52,6.06),Vector3(.13,.30,.17))
+	for x in [6.0,6.8,7.6]:
+		_cylinder("orange",Vector3(x,1.72,6.18),.095,.91)
+		_cylinder("chrome",Vector3(x,2.25,6.18),.035,.21)
+		for i in 8: _cylinder("metal",Vector3(x,1.4+i*.078,6.18),.14,.025)
+	_box("red",Vector3(6.8,1.06,6.18),Vector3(2.6,.14,.42))
+
+func _display_wheel(point: Vector3, radius: float) -> void:
+	_cylinder("rubber",point,radius,.20,Vector3(PI*.5,0,0))
+	_cylinder("chrome",point+Vector3(0,0,-.11),radius*.71,.026,Vector3(PI*.5,0,0))
+	_cylinder("metal",point+Vector3(0,0,-.127),radius*.55,.02,Vector3(PI*.5,0,0))
+	for i in 5:
+		_angled_box("chrome",point+Vector3(0,0,-.142),Vector3(.035,radius*1.1,.018),i*PI/5.0)
+	_cylinder("chrome",point+Vector3(0,0,-.155),radius*.17,.025,Vector3(PI*.5,0,0))
 
 func _build_lighting() -> void:
 	for point in [Vector3(-10,0,-11.8),Vector3(9.9,0,.7)]:
@@ -194,7 +258,7 @@ func _light_source(point: Vector3, reach: float, energy: float, color: Color) ->
 	# O pool urbano prioriza os postes na rua. Fontes próprias garantem continuidade
 	# no pátio; não há registro no pool nem seleção que possa piscar ao mover a câmera.
 	var source := SpotLight3D.new()
-	source.name = "AuroraLightFitting"
+	source.name = "TorqueLightFitting"
 	source.position = point
 	# Fachada, postes e cordão têm luminárias voltadas ao chão. Além de conter
 	# vazamento lateral, os spots não disputam o teto Omni com postes e neons.
@@ -204,7 +268,7 @@ func _light_source(point: Vector3, reach: float, energy: float, color: Color) ->
 	source.spot_attenuation = 1.0
 	source.spot_angle_attenuation = .7
 	source.light_energy = energy
-	source.set_meta("aurora_base_energy",energy)
+	source.set_meta("meet_base_energy",energy)
 	source.light_color = color
 	source.light_specular = .25
 	source.shadow_enabled = false
@@ -214,18 +278,34 @@ func _light_source(point: Vector3, reach: float, energy: float, color: Color) ->
 	return source
 
 func _box(material: String, point: Vector3, size: Vector3, solid := false) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	_append_mesh(material,mesh,Transform3D(Basis.IDENTITY,point))
+	if solid: _solid(point,size)
+
+func _angled_box(material: String, point: Vector3, size: Vector3, angle: float) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	_append_mesh(material,mesh,Transform3D(Basis(Vector3.FORWARD,angle),point))
+
+func _cylinder(material: String, point: Vector3, radius: float, height: float, angles := Vector3.ZERO) -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = height
+	mesh.radial_segments = 16
+	_append_mesh(material,mesh,Transform3D(Basis.from_euler(angles),point))
+
+func _append_mesh(material: String, mesh: Mesh, transform: Transform3D) -> void:
 	if not _surfaces.has(material):
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_surfaces[material] = surface
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	_surfaces[material].append_from(mesh,0,Transform3D(Basis.IDENTITY,point))
-	if solid: _solid(point,size)
+	_surfaces[material].append_from(mesh,0,transform)
 
 func _paving_panel(point: Vector3, size: Vector3) -> void:
 	var node := MeshInstance3D.new()
-	node.name = "AuroraAsphaltPanel"
+	node.name = "TorqueAsphaltPanel"
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	node.mesh = mesh
@@ -244,7 +324,7 @@ func _solid(point: Vector3, size: Vector3) -> void:
 func _flush_meshes() -> void:
 	for key in _surfaces:
 		var node := MeshInstance3D.new()
-		node.name = "Aurora_"+str(key)
+		node.name = "Torque_"+str(key)
 		node.mesh = _surfaces[key].commit()
 		node.material_override = _materials[key]
 		add_child(node)

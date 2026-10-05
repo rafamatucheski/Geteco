@@ -7,31 +7,43 @@ var neon := Color.TRANSPARENT
 var neon_light: OmniLight3D
 var neon_visual: Node3D
 static var materials: Dictionary = {}
+const LENGTHS := {"gol":3.88,"parati":4.42,"passat":4.48,"coupe":4.3,"pickup":4.6,"roadster":4.15}
 
 func _ready() -> void:
 	name = model_id.capitalize()
 	collision_layer = 1
 	collision_mask = 0
 	set_meta("classic_meet_car",model_id)
-	var length := 4.42 if model_id == "parati" else (4.48 if model_id == "passat" else 3.88)
+	var length: float = LENGTHS.get(model_id,3.88)
 	var half := length*.5
+	var sport := model_id in ["coupe","roadster"]
+	var roof_height := 1.28 if sport else (1.61 if model_id == "pickup" else 1.49)
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
-	shape.size = Vector3(1.74,1.47,length)
+	shape.size = Vector3(1.74,roof_height,length)
 	collision.shape = shape
-	collision.position.y = .77
+	collision.position.y = .035+roof_height*.5
 	add_child(collision)
 	_box("Chassis",Vector3(0,.42,0),Vector3(1.58,.22,length-.2),Color("242b30"))
 	_box("LowerBody",Vector3(0,.68,0),Vector3(1.68,.36,length-.08),paint)
 	_box("Beltline",Vector3(0,.91,.4),Vector3(1.69,.14,length-1.08),paint)
-	var cabin_back := half-.20 if model_id == "parati" else 1.35
-	var roof_back := cabin_back-.12 if model_id == "parati" else cabin_back-.62
-	_prism(1.53,1.29,.93,1.48,-.80,-.38,cabin_back,roof_back,Color("233942"))
-	_box("Roof",Vector3(0,1.49,(roof_back-.38)*.5),Vector3(1.31,.075,roof_back+.43),paint)
+	var cabin_back := half-.20 if model_id == "parati" else (.38 if model_id == "pickup" else 1.35)
+	var roof_back := cabin_back-.12 if model_id in ["parati","pickup"] else cabin_back-.62
+	if model_id == "roadster":
+		# Open cockpit, two seats and a short windshield distinguish the convertible.
+		_prism(1.53,1.29,.93,roof_height,-.80,-.48,-.75,-.43,Color("233942"))
+		_box("OpenCockpit",Vector3(0,.96,.24),Vector3(1.48,.045,1.45),Color("171f25"))
+		for x in [-.35,.35]:
+			_box("LeatherSeat",Vector3(x,1.06,.47),Vector3(.46,.31,.20),Color("bba78a"))
+			_round("RollHoop",Vector3(x,1.19,.74),.13,.035,Color("b2b9ba"),Vector3(PI*.5,0,0))
+	else:
+		_prism(1.53,1.29,.93,roof_height-.01,-.80,-.38,cabin_back,roof_back,Color("233942"))
+		_box("Roof",Vector3(0,roof_height,(roof_back-.38)*.5),Vector3(1.31,.075,roof_back+.43),paint)
 	for side in [-1.0,1.0]:
-		_beam("WindshieldPillar",Vector3(side*.77,.95,-.8),Vector3(side*.66,1.5,-.39),.065,paint)
-		_beam("RearPillar",Vector3(side*.77,.95,cabin_back),Vector3(side*.66,1.49,roof_back),.09,paint)
-		_box("CenterPillar",Vector3(side*.735,1.19,.36),Vector3(.065,.50,.07),paint)
+		_beam("WindshieldPillar",Vector3(side*.77,.95,-.8),Vector3(side*.66,roof_height,-.39),.065,paint)
+		if model_id != "roadster":
+			_beam("RearPillar",Vector3(side*.77,.95,cabin_back),Vector3(side*.66,roof_height,roof_back),.09,paint)
+			if not sport: _box("CenterPillar",Vector3(side*.735,(.95+roof_height)*.5,.18),Vector3(.065,roof_height-.95,.07),paint)
 		_box("SideMolding",Vector3(side*.852,.72,.02),Vector3(.027,.058,length-.42),Color("22262a"))
 		_box("DoorHandle",Vector3(side*.865,.91,.38),Vector3(.025,.055,.16),Color("b2b4b1"))
 		_box("MirrorStem",Vector3(side*.89,1.00,-.67),Vector3(.12,.035,.045),Color("20272d"))
@@ -52,10 +64,30 @@ func _ready() -> void:
 		else: _box("Headlamp",Vector3(side*.60,.83,-half-.035),Vector3(.36,.19,.034),Color("e0dec2"))
 		_box("FrontIndicator",Vector3(side*.78,.78,-half-.04),Vector3(.11,.12,.035),Color("cc8b34"))
 		_box("TailLamp",Vector3(side*.60,.85,half+.018),Vector3(.39,.17,.03),Color("8c2924"))
-	_box("RearDeck",Vector3(0,.965,(cabin_back+half)*.5),Vector3(1.6,.11,maxf(.08,half-cabin_back)),paint)
+	if model_id == "pickup":
+		_build_pickup_bed(half)
+	else:
+		_box("RearDeck",Vector3(0,.965,(cabin_back+half)*.5),Vector3(1.6,.11,maxf(.08,half-cabin_back)),paint)
+	if sport:
+		for x in [-.44,.44]:
+			_box("RearSpoilerSupport",Vector3(x,1.03,half-.26),Vector3(.065,.20,.065),Color("242b30"))
+		_box("RearSpoiler",Vector3(0,1.15,half-.26),Vector3(1.58,.07,.25),paint)
+		_round("Exhaust",Vector3(.61,.38,half+.06),.065,.17,Color("b2b9ba"),Vector3(PI*.5,0,0))
 	_build_hood(half)
 	if neon.a > 0: _build_neon(length)
 	_batch_static_meshes()
+
+func _build_pickup_bed(half: float) -> void:
+	var center := (.46+half)*.5
+	var length := half-.46
+	_box("BedLiner",Vector3(0,.905,center),Vector3(1.43,.07,length-.12),Color("20272d"))
+	for side in [-1.0,1.0]:
+		_box("BedSide",Vector3(side*.77,1.08,center),Vector3(.12,.34,length),paint)
+		_box("BedRail",Vector3(side*.77,1.27,center),Vector3(.15,.055,length),Color("b2b9ba"))
+	_box("Tailgate",Vector3(0,1.09,half-.06),Vector3(1.48,.32,.1),paint)
+	_box("TailgateHandle",Vector3(0,1.12,half+.005),Vector3(.24,.055,.025),Color("b2b9ba"))
+	for x in [-.52,-.26,0.0,.26,.52]:
+		_box("BedRib",Vector3(x,.95,center),Vector3(.028,.014,length-.18),Color("444d52"))
 
 func _batch_static_meshes() -> void:
 	var surfaces: Dictionary = {}
@@ -81,6 +113,8 @@ func _build_hood(half: float) -> void:
 	var hood_length := half-.79
 	if not hood_open:
 		_box("ClosedHood",Vector3(0,.96,-.79-hood_length*.5),Vector3(1.59,.09,hood_length),paint)
+		if model_id == "coupe":
+			for x in [-.29,.29]: _box("HoodStripe",Vector3(x,1.012,-.79-hood_length*.5),Vector3(.15,.012,hood_length-.05),Color("e8e5d8"))
 		return
 	_box("EngineBay",Vector3(0,.80,-.79-hood_length*.5),Vector3(1.40,.08,hood_length-.06),Color("161d22"))
 	_box("EngineBlock",Vector3(-.12,.99,-1.33),Vector3(.58,.27,.49),Color("727a7e"))

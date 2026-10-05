@@ -65,7 +65,7 @@ func _profile() -> Dictionary:
 			profile.right = ["fire", "weapon_next", "reload", "interact", "sprint", "pause_game"]
 			profile.look = "Segure mirar ou atacar + analógico direito · apontar a mira"
 		2:
-			profile.left = ["brake", "radio_previous", "radio_toggle", "headlights", "siren_toggle", "tank_fire"]
+			profile.left = ["brake", "radio_previous", "radio_toggle", "headlights", "siren_toggle", "tank_fire", "motorcycle_wheelie"]
 			profile.right = ["accelerate", "radio_next", "handbrake", "horn", "exit_vehicle", "world_map"]
 			profile.move = "Analógico esquerdo ↔ · dirigir"
 			profile.look = "Analógico direito ↔ · câmera; no tanque · mirar canhão"
@@ -81,7 +81,7 @@ func _profile() -> Dictionary:
 			profile.look = "Analógico direito ↔ · girar câmera"
 		5:
 			profile.left = ["accelerate", "brake", ["handbrake", "Freio traseiro"], "camera_left", "camera_right"]
-			profile.right = [["interact", "Montar / descer; prova"], ["exit_vehicle", "Descer / cancelar prova"], "pause_game"]
+			profile.right = ["motorcycle_wheelie", ["interact", "Montar / descer; prova"], ["exit_vehicle", "Descer / cancelar prova"], "pause_game"]
 			profile.move = "Analógico esquerdo · guiar; ↑ / ↓ inclinar e acelerar / ré"
 			profile.look = "Analógico direito ↔ · girar câmera"
 		6:

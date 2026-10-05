@@ -519,6 +519,9 @@ func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Ar
 	var instance := MeshInstance3D.new()
 	instance.name = label
 	instance.mesh = mesh
+	# Flat paving receives shadows but must not cast onto the neighbouring
+	# coplanar paving layers: their centimetre offsets produce moving shadow tiles.
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
 	if label.ends_with(ROAD_COLOR.to_html(false)):
 		var body := StaticBody3D.new()
@@ -580,4 +583,3 @@ func _counter_clockwise(points: PackedVector2Array) -> PackedVector2Array:
 	if result.size() > 1 and result[0].distance_to(result[-1]) <= 0.0001: result.resize(result.size()-1)
 	if Geometry2D.is_polygon_clockwise(result): result.reverse()
 	return result
-

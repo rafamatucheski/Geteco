@@ -1,4 +1,5 @@
 extends Node3D
+const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Line 510 operates independently of the player. Identities and trips survive
 ## distance culling; only nearby actors and vehicles participate in physics.
 const BUS := preload("res://runtime/transit/BiarticulatedBus.gd")
@@ -40,6 +41,11 @@ static func station_point(definition: Dictionary, pixels: Vector2, height := .2)
 	return definition.position+Basis(Vector3.UP,deg_to_rad(float(row.get("rotation",0))))*Vector3(local.x*stretch[0],local.y,local.z*stretch[1])
 
 func build() -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_build()
+	if stall_began != 0: TRANSIT_WORK.finish("urban.build", stall_began, {"fleet":fleet.size(),"people":people.size(),"stops":stops.size(),"failure":failure})
+
+func _stall_build() -> void:
 	prepared = true
 	var roads: Array = []
 	for road in controller.regions.harbor.roads:
@@ -47,12 +53,18 @@ func build() -> void:
 	if roads.size()!=4: failure="Corredor incompleto"; return
 	for road in roads:
 		if int(road.get("lanes_per_direction",1)) != 2: failure="Corredor requer duas faixas por sentido"; return
+	var graph_began := TRANSIT_WORK.begin()
 	var graph := GRAPH.new()
 	graph.configure(roads)
+	if graph_began != 0: TRANSIT_WORK.finish("urban.graph.configure",graph_began,{"roads":roads.size()})
+	var route_began := TRANSIT_WORK.begin()
 	route = graph.route_near(Vector3(110,0,143),1)
+	if route_began != 0: TRANSIT_WORK.finish("urban.route_near",route_began,{"valid":route!=null})
 	if route==null or route.get_meta("traffic_open",true): failure="Corredor sem circuito conectado"; route=null; return
+	var path_began := TRANSIT_WORK.begin()
 	path_poses = PATH.new()
 	path_poses.configure(route)
+	if path_began != 0: TRANSIT_WORK.finish("urban.path.configure",path_began)
 	for index in 6:
 		var definition: Dictionary = controller.urban_transit.definitions[index]
 		if definition.get("deleted",false): continue
@@ -73,9 +85,13 @@ func build() -> void:
 		for seat in 3:
 			people.append({"id":600+index*3+seat,"actor":null,"stop":index,"destination":(index+2+seat)%stops.size(),"phase":"waiting","bus":null,"slot":seat,"age":0.0})
 	for index in 2:
+		var bus_began := TRANSIT_WORK.begin()
 		var bus := BUS.new()
 		bus.name = "Biarticulado510_%d" % index
+		var ready_began := TRANSIT_WORK.begin()
 		add_child(bus)
+		if ready_began != 0: TRANSIT_WORK.finish("urban.bus.add_child_ready",ready_began,{"index":index,"name":str(bus.name)})
+		var pose_began := TRANSIT_WORK.begin()
 		bus.path_poses = path_poses
 		# Whole-number grouping/index; preserve integer truncation and precision.
 		@warning_ignore("integer_division")
@@ -86,6 +102,8 @@ func build() -> void:
 		bus.service_state = "exchange"
 		bus.dwell = 9+index*3
 		fleet.append(bus)
+		if pose_began != 0: TRANSIT_WORK.finish("urban.bus.route_pose",pose_began,{"index":index})
+		if bus_began != 0: TRANSIT_WORK.finish("urban.bus.construct_ready_pose",bus_began,{"index":index})
 	refresh_presence()
 
 func service_open() -> bool:
@@ -93,6 +111,11 @@ func service_open() -> bool:
 	return hour<2 or hour>=5
 
 func _physics_process(delta: float) -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_physics_process(delta)
+	TRANSIT_WORK.finish_slow("urban.physics", stall_began, 1000, self)
+
+func _stall_physics_process(delta: float) -> void:
 	if controller==null or controller.session==null or not controller.session.ready_for_play: return
 	if not prepared:
 		if controller.regions.has("harbor"): build()
@@ -128,6 +151,11 @@ func waiting_point(person: Dictionary) -> Vector3:
 	return station_point(stops[person.stop].definition,Vector2(-96+person.slot*18,8))
 
 func create_actor(person: Dictionary, point: Vector3) -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_create_actor(person,point)
+	if stall_began != 0: TRANSIT_WORK.finish("urban.actor.create_ready", stall_began, {"identity":person.id})
+
+func _stall_create_actor(person: Dictionary, point: Vector3) -> void:
 	var actor := ACTOR.new()
 	actor.identity = person.id
 	actor.controlled_automatically=true; actor.speed=1.35
@@ -142,6 +170,11 @@ func free_slot(index: int, except: Dictionary) -> int:
 	return 13
 
 func refresh_presence() -> void:
+	var stall_began := TRANSIT_WORK.begin()
+	_stall_refresh_presence()
+	TRANSIT_WORK.finish_slow("urban.refresh_presence", stall_began, 1000, self)
+
+func _stall_refresh_presence() -> void:
 	var enabled: bool = controller.state.region_id=="harbor" and controller.state.place_id.is_empty()
 	var focus: Vector3 = controller.world.player.global_position
 	for bus in fleet:

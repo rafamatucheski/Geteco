@@ -12,6 +12,7 @@ var playable := false
 var driving := false
 var passenger := false
 var motocross := false
+var motorcycle := false
 var skating := false
 var extra := false
 var _context := ""
@@ -48,6 +49,7 @@ func _refresh() -> void:
 	var on_skate: bool = session.skate != null and session.skate.mounted
 	var active: bool = session.ready_for_play and not session.modal and not paused and (not world.player.input_locked or riding or on_bike or on_skate)
 	var in_car: bool = world.driving.occupied or on_bike
+	var on_motorcycle: bool = on_bike or (world.driving.occupied and is_instance_valid(world.driving.car) and world.driving.car.archetype.begins_with("bike_"))
 	var lockpick: bool = session.port_container_loot != null and is_instance_valid(session.port_container_loot.minigame) and session.port_container_loot.minigame.active
 	var bank_lock: bool = session.robberies != null and is_instance_valid(session.robberies.lockpick) and session.robberies.lockpick.active
 	bank_lock = bank_lock or (session.police_motor_pool != null and is_instance_valid(session.police_motor_pool.lockpick) and session.police_motor_pool.lockpick.active)
@@ -59,7 +61,7 @@ func _refresh() -> void:
 		if physical.size.x > 0 and physical.size.y > 0:
 			var inverse := get_viewport().get_screen_transform().affine_inverse()
 			safe = safe.intersection(Rect2(inverse * Vector2(physical.position), inverse.basis_xform(Vector2(physical.size))))
-	var context := str([active, in_car, riding, on_bike, on_skate, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
+	var context := str([active, in_car, riding, on_bike, on_motorcycle, on_skate, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
 	if context == _context and extra == _layout_extra: return
 	# Expanding options must not release a finger still steering or accelerating.
 	if context != _context: release_all()
@@ -72,6 +74,7 @@ func _refresh() -> void:
 	driving = in_car
 	passenger = riding
 	motocross = on_bike
+	motorcycle = on_motorcycle
 	skating = on_skate
 	_safe = safe
 	# Fold cover/portrait and near-square inner displays need larger thumb targets.
@@ -122,6 +125,7 @@ func _refresh() -> void:
 		_button("accelerate", "Acelerar", aim_center + Vector2(0, -48) * unit, Vector2(140, 82))
 		_button("brake", "Frear / Ré", aim_center + Vector2(0, 50) * unit, Vector2(140, 82))
 		_button("handbrake", "Freio mão", aim_center - Vector2(166, 0) * unit, Vector2(122, 70))
+		if motorcycle: _button("motorcycle_wheelie", "Empinar", aim_center - Vector2(166, 88) * unit, Vector2(122, 70))
 		if not motocross:
 			_button("radio_previous", "Rádio ‹", top + Vector2(-120, 72) * unit, Vector2(112, 58))
 			_button("radio_toggle", "Liga/desliga", top + Vector2(0, 72) * unit, Vector2(112, 58))

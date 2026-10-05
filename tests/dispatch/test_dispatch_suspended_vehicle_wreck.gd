@@ -45,7 +45,8 @@ func _vehicle_case(repair_while_suspended: bool) -> void:
 		label+": normal distance callback suspends the living vehicle")
 	check(car.health > 0.0 and car.damage_look.is_physics_processing(),
 		label+": burn child continues under a suspended living parent")
-	for index in 240:
+	# O incêndio agora reserva dez segundos de fuga; a suspensão não o congela.
+	for index in ceili(12.0 * Engine.physics_ticks_per_second):
 		await physics_frame
 		if car.health <= 0.0 and car.damage_look.wrecked: break
 	check(car.health <= 0.0 and car.damage_look.wrecked and unit.suspended,
