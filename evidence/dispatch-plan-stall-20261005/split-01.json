@@ -1,0 +1,182 @@
+{
+	"after": {
+		"router_native": true,
+		"worst_frame_next120_ms": 7.125
+	},
+	"args": [
+		"--no-save",
+		"--skip-arrival",
+		"--mode=split",
+		"--out=res://evidence/dispatch-plan-stall-20261005/split-01.json"
+	],
+	"before": {
+		"edge_lists": 237,
+		"native_tried": false,
+		"router_native": false,
+		"script_cached": true,
+		"vertices": 237,
+		"worst_wait_frame_ms": 39.778
+	},
+	"env_no_csharp": false,
+	"mode": "split",
+	"plans": [
+		{
+			"length": 74.2121505737305,
+			"nodes": 4,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 94.3866424560547,
+			"nodes": 4,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 168.818511962891,
+			"nodes": 7,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 176.80500793457,
+			"nodes": 7,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 85.9228744506836,
+			"nodes": 6,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 124.626922607422,
+			"nodes": 4,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 159.848754882813,
+			"nodes": 5,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 160.818328857422,
+			"nodes": 7,
+			"ok": true,
+			"reason": ""
+		}
+	],
+	"ready": {
+		"native_tried": false,
+		"prepared_meta": null,
+		"router_native": false,
+		"script_cached": true
+	},
+	"reference_cycles_per_usec": 2666.8814854781,
+	"steps": [
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 70916,
+			"label": "load_script",
+			"ms": 0.014,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1867919,
+			"label": "native_graph_build",
+			"ms": 0.65,
+			"processor": [
+				5,
+				5
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1178101,
+			"label": "plan_0",
+			"ms": 0.41,
+			"processor": [
+				2,
+				2
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1128768,
+			"label": "plan_1",
+			"ms": 0.393,
+			"processor": [
+				5,
+				5
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1383280,
+			"label": "plan_2",
+			"ms": 0.485,
+			"processor": [
+				2,
+				2
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1476341,
+			"label": "plan_3",
+			"ms": 0.523,
+			"processor": [
+				5,
+				5
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 893316,
+			"label": "plan_4",
+			"ms": 0.325,
+			"processor": [
+				5,
+				5
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1035148,
+			"label": "plan_5",
+			"ms": 0.363,
+			"processor": [
+				5,
+				5
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1532400,
+			"label": "plan_6",
+			"ms": 0.537,
+			"processor": [
+				5,
+				5
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1423083,
+			"label": "plan_7",
+			"ms": 0.505,
+			"processor": [
+				5,
+				5
+			]
+		}
+	],
+	"wait_frames": 600
+}

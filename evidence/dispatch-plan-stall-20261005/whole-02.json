@@ -1,0 +1,162 @@
+{
+	"after": {
+		"router_native": true,
+		"worst_frame_next120_ms": 10.13
+	},
+	"args": [
+		"--no-save",
+		"--skip-arrival",
+		"--mode=whole",
+		"--out=res://evidence/dispatch-plan-stall-20261005/whole-02.json"
+	],
+	"before": {
+		"edge_lists": 237,
+		"native_tried": false,
+		"router_native": false,
+		"script_cached": true,
+		"vertices": 237,
+		"worst_wait_frame_ms": 39.399
+	},
+	"env_no_csharp": false,
+	"mode": "whole",
+	"plans": [
+		{
+			"length": 74.2121505737305,
+			"nodes": 4,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 94.3866424560547,
+			"nodes": 4,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 168.818511962891,
+			"nodes": 7,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 176.80500793457,
+			"nodes": 7,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 85.9228744506836,
+			"nodes": 6,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 124.626922607422,
+			"nodes": 4,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 159.848754882813,
+			"nodes": 5,
+			"ok": true,
+			"reason": ""
+		},
+		{
+			"length": 160.818328857422,
+			"nodes": 7,
+			"ok": true,
+			"reason": ""
+		}
+	],
+	"ready": {
+		"native_tried": false,
+		"prepared_meta": null,
+		"router_native": false,
+		"script_cached": true
+	},
+	"reference_cycles_per_usec": 2663.22271979379,
+	"steps": [
+		{
+			"cpu_filetime_ms": 15.625,
+			"cycles": 3333048,
+			"label": "plan_0",
+			"ms": 1.222,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1381599,
+			"label": "plan_1",
+			"ms": 0.478,
+			"processor": [
+				8,
+				8
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1572763,
+			"label": "plan_2",
+			"ms": 0.551,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1322455,
+			"label": "plan_3",
+			"ms": 0.464,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 914339,
+			"label": "plan_4",
+			"ms": 0.317,
+			"processor": [
+				4,
+				4
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1302554,
+			"label": "plan_5",
+			"ms": 0.454,
+			"processor": [
+				8,
+				8
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1490916,
+			"label": "plan_6",
+			"ms": 0.531,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 1422242,
+			"label": "plan_7",
+			"ms": 0.5,
+			"processor": [
+				6,
+				6
+			]
+		}
+	],
+	"wait_frames": 600
+}

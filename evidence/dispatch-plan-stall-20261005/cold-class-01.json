@@ -1,0 +1,174 @@
+{
+	"args": [
+		"--no-save",
+		"--skip-arrival",
+		"--mode=cold_class",
+		"--out=res://evidence/dispatch-plan-stall-20261005/cold-class-01.json"
+	],
+	"cold_class_second": true,
+	"env_no_csharp": false,
+	"mode": "cold_class",
+	"steps": [
+		{
+			"cpu_filetime_ms": 15.625,
+			"cycles": 20474235,
+			"label": "cold_load_script",
+			"ms": 3.301,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 2489905,
+			"label": "cold_new",
+			"ms": 0.869,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 15.625,
+			"cycles": 17448118,
+			"label": "cold_Build",
+			"ms": 6.538,
+			"processor": [
+				0,
+				2
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 11776524,
+			"label": "cold_NearestEdge",
+			"ms": 4.21,
+			"processor": [
+				4,
+				4
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 12544546,
+			"label": "cold_Plan",
+			"ms": 4.472,
+			"processor": [
+				2,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 10219176,
+			"label": "cold_BuildPath",
+			"ms": 3.652,
+			"processor": [
+				4,
+				4
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 127816,
+			"label": "cold_NearestEdge_2",
+			"ms": 0.032,
+			"processor": [
+				4,
+				4
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 161734,
+			"label": "cold_Plan_2",
+			"ms": 0.048,
+			"processor": [
+				4,
+				4
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 68113,
+			"label": "warm_load_script",
+			"ms": 0.016,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 229285,
+			"label": "warm_new",
+			"ms": 0.072,
+			"processor": [
+				4,
+				4
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 549388,
+			"label": "warm_Build",
+			"ms": 0.187,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 100628,
+			"label": "warm_NearestEdge",
+			"ms": 0.028,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 362708,
+			"label": "warm_Plan",
+			"ms": 0.102,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 784280,
+			"label": "warm_BuildPath",
+			"ms": 0.253,
+			"processor": [
+				6,
+				6
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 353739,
+			"label": "warm_NearestEdge_2",
+			"ms": 0.118,
+			"processor": [
+				2,
+				2
+			]
+		},
+		{
+			"cpu_filetime_ms": 0.0,
+			"cycles": 118286,
+			"label": "warm_Plan_2",
+			"ms": 0.033,
+			"processor": [
+				6,
+				6
+			]
+		}
+	],
+	"wait_frames": 600
+}
