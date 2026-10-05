@@ -39,6 +39,7 @@ var capture_startup_usec := 0
 var capture_pin_blood := false
 var capture_cause_samples: Array[Dictionary] = []
 var capture_cause_dropped := 0
+var capture_shader_probe: Node
 const CAUSE_SAMPLE_LIMIT := 512
 const CAPTURE_WORK := preload("res://runtime/StallWorkTrace.gd")
 
@@ -263,6 +264,12 @@ func run() -> void:
 		FileAccess.open(output.path_join("focus-preflight.json"),FileAccess.WRITE).store_string(JSON.stringify({"validity":"focus_preflight_failed","frames":capture_frames,"events":capture_events,"world_admitted":false}))
 		push_error("STALL_CAPTURE_FOCUS_PREFLIGHT_FAILED")
 		quit(7); return
+	# Diagnóstico opcional (HARBOR_SHADER_PROBE=1): atribui chaves novas do cache
+	# ShaderRD a materiais vistos pela primeira vez. Armado antes do Main.
+	if OS.get_environment("HARBOR_SHADER_PROBE") == "1":
+		capture_shader_probe = preload("res://tests/measure/ShaderFirstUseProbe.gd").new()
+		capture_shader_probe.name = "ShaderFirstUseProbe"
+		root.add_child(capture_shader_probe)
 	var scene_began := CAPTURE_WORK.begin()
 	var main_scene := load("res://Main.tscn") as PackedScene
 	if scene_began != 0: CAPTURE_WORK.finish("capture.main_resource_load",scene_began)
@@ -362,6 +369,7 @@ func run() -> void:
 		"route":{"max_x":capture_route_max_x,"return_min_x":capture_route_min_return_x,"setup_teleport":true,
 			"teleports_during_capture":0,"phases_seconds":PHASE_SECONDS},
 		"scope":"Rendered Main; real input movement/fire, live normal directors. Godmode/arsenal isolated survival fixture. Loading and initial route retained separately; no warmup discard. Fixed 3s tail after 120s route supplies post-context for route peaks. New tail peaks may be truncated. 3s circular before/after >=25ms; all frame metrics retained. Inclusive durations, residual NOT exclusive solver/GPU/wait. Focus validity covers route; loading/tail focus recorded separately."}
+	if is_instance_valid(capture_shader_probe): report["shader_probe"] = capture_shader_probe.export_report()
 	DirAccess.make_dir_recursive_absolute(output)
 	FileAccess.open(output.path_join(label+".json"),FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	await RenderingServer.frame_post_draw

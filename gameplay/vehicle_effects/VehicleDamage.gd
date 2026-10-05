@@ -170,6 +170,32 @@ func _stall_apply_wear(wear: float) -> void:
 			material.uv1_scale = Vector3.ONE
 	_stage = stage
 
+## Materiais novos da carcaça, um conjunto por destroço (a brasa esfria por carro).
+## VehicleMaterialVariantPrewarm usa a mesma receita para compilar o shader sob a cortina.
+static func wreck_materials() -> Dictionary:
+	var ember := StandardMaterial3D.new()
+	ember.albedo_texture = _char(false)
+	ember.metallic = .3
+	ember.roughness = .92
+	ember.uv1_triplanar = true
+	ember.uv1_scale = Vector3(.3, .3, .3)
+	# A brasa fica só nas rachaduras da máscara; emissão chapada deixava a carcaça laranja.
+	ember.emission_enabled = true
+	ember.emission = Color(.9, .22, .04)
+	ember.emission_texture = _char(true)
+	ember.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
+	ember.emission_energy_multiplier = 1.1
+	var molten := StandardMaterial3D.new()
+	molten.albedo_color = Color(.02, .02, .022)
+	molten.roughness = 1.0
+	var dead_lens := StandardMaterial3D.new()
+	dead_lens.albedo_color = Color(.06, .06, .065)
+	dead_lens.roughness = .35
+	var shattered := StandardMaterial3D.new()
+	shattered.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	shattered.albedo_color = Color(0, 0, 0, 0)
+	return {"body": ember, "rubber": molten, "lens": dead_lens, "glass": shattered}
+
 ## Riscos de metal nu (cinza-prata neutro) e marcas de fuligem cinza: nada de tom quente.
 static func _scratches(level: int) -> Texture2D:
 	if _scratch_textures.is_empty():
@@ -357,28 +383,8 @@ func _stall_wreck() -> void:
 	set_physics_process(false)
 	_stop_fire()
 	var began := STALL_WORK.begin()
-	_ember = StandardMaterial3D.new()
-	_ember.albedo_texture = _char(false)
-	_ember.metallic = .3
-	_ember.roughness = .92
-	_ember.uv1_triplanar = true
-	_ember.uv1_scale = Vector3(.3, .3, .3)
-	# A brasa fica só nas rachaduras da máscara; emissão chapada deixava a carcaça laranja.
-	_ember.emission_enabled = true
-	_ember.emission = Color(.9, .22, .04)
-	_ember.emission_texture = _char(true)
-	_ember.emission_operator = BaseMaterial3D.EMISSION_OP_MULTIPLY
-	_ember.emission_energy_multiplier = 1.1
-	var molten := StandardMaterial3D.new()
-	molten.albedo_color = Color(.02, .02, .022)
-	molten.roughness = 1.0
-	var dead_lens := StandardMaterial3D.new()
-	dead_lens.albedo_color = Color(.06, .06, .065)
-	dead_lens.roughness = .35
-	var shattered := StandardMaterial3D.new()
-	shattered.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	shattered.albedo_color = Color(0, 0, 0, 0)
-	var replacement := {"body": _ember, "rubber": molten, "lens": dead_lens, "glass": shattered}
+	var replacement := wreck_materials()
+	_ember = replacement.body
 	# Inscrições separadas da malha também desaparecem com a carbonização.
 	for marking: Label3D in vehicle.visual.find_children("*", "Label3D", true, false):
 		if marking.get_meta("hide_when_wrecked", false):

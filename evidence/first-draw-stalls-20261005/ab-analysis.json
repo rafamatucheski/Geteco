@@ -1,0 +1,532 @@
+[
+ {
+  "label": "first-draw-a1",
+  "validity": "lost_focus",
+  "unfocused_route_frames": 12075,
+  "route_frames": 14035,
+  "loading_until_ready_s": 22.854,
+  "phases": {
+   "loading": {
+    "frames": 735,
+    "seconds": 22.845,
+    "p50_ms": 6.907,
+    "p95_ms": 66.598,
+    "p99_ms": 138.276,
+    "max_ms": 7440.329,
+    "over_33_3": 52,
+    "over_66_7": 36
+   },
+   "first_pass": {
+    "frames": 4216,
+    "seconds": 30.014,
+    "p50_ms": 6.825,
+    "p95_ms": 11.527,
+    "p99_ms": 13.983,
+    "max_ms": 115.289,
+    "over_33_3": 11,
+    "over_66_7": 5
+   },
+   "return": {
+    "frames": 4241,
+    "seconds": 30.0,
+    "p50_ms": 5.639,
+    "p95_ms": 12.434,
+    "p99_ms": 13.342,
+    "max_ms": 25.985,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "event": {
+    "frames": 2180,
+    "seconds": 29.999,
+    "p50_ms": 14.141,
+    "p95_ms": 19.565,
+    "p99_ms": 51.913,
+    "max_ms": 112.419,
+    "over_33_3": 41,
+    "over_66_7": 5
+   },
+   "recovery": {
+    "frames": 3398,
+    "seconds": 30.005,
+    "p50_ms": 9.646,
+    "p95_ms": 13.873,
+    "p99_ms": 15.087,
+    "max_ms": 73.646,
+    "over_33_3": 4,
+    "over_66_7": 1
+   },
+   "tail": {
+    "frames": 369,
+    "seconds": 3.002,
+    "p50_ms": 6.475,
+    "p95_ms": 12.608,
+    "p99_ms": 13.321,
+    "max_ms": 14.505,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 14035,
+    "seconds": 120.018,
+    "p50_ms": 7.794,
+    "p95_ms": 15.225,
+    "p99_ms": 19.624,
+    "max_ms": 115.289,
+    "over_33_3": 56,
+    "over_66_7": 11
+   }
+  },
+  "draws_ge25_after_ready": [
+   {
+    "frame": 762,
+    "phase": "first_pass",
+    "ready_s": 0.707,
+    "frame_ms": 84.874,
+    "draw_ms": 55.94
+   },
+   {
+    "frame": 3783,
+    "phase": "first_pass",
+    "ready_s": 21.854,
+    "frame_ms": 75.983,
+    "draw_ms": 54.248
+   },
+   {
+    "frame": 9428,
+    "phase": "event",
+    "ready_s": 62.002,
+    "frame_ms": 73.938,
+    "draw_ms": 51.551
+   },
+   {
+    "frame": 9911,
+    "phase": "event",
+    "ready_s": 69.654,
+    "frame_ms": 112.419,
+    "draw_ms": 68.45
+   },
+   {
+    "frame": 11266,
+    "phase": "event",
+    "ready_s": 88.775,
+    "frame_ms": 98.197,
+    "draw_ms": 68.411
+   },
+   {
+    "frame": 14135,
+    "phase": "recovery",
+    "ready_s": 113.743,
+    "frame_ms": 73.646,
+    "draw_ms": 46.951
+   }
+  ],
+  "scene_keys_after_ready": [
+   {
+    "key": "502cb30b",
+    "ready_s": 0.784
+   },
+   {
+    "key": "0af590d5",
+    "ready_s": 21.914
+   },
+   {
+    "key": "f24a1c0a",
+    "ready_s": 69.733
+   },
+   {
+    "key": "10b0b8ea",
+    "ready_s": 88.835
+   },
+   {
+    "key": "3d4ae273",
+    "ready_s": 113.774
+   },
+   {
+    "key": "7d972925",
+    "ready_s": 124.078
+   },
+   {
+    "key": "ff4ed6e0",
+    "ready_s": 124.079
+   },
+   {
+    "key": "43fd3f43",
+    "ready_s": 124.111
+   }
+  ],
+  "scene_keys_total": 36,
+  "prewarm_summary": [],
+  "population_end": 24,
+  "vehicles_end": 34
+ },
+ {
+  "label": "first-draw-b1",
+  "validity": "lost_focus",
+  "unfocused_route_frames": 1192,
+  "route_frames": 15628,
+  "loading_until_ready_s": 19.786,
+  "phases": {
+   "loading": {
+    "frames": 617,
+    "seconds": 19.777,
+    "p50_ms": 2.17,
+    "p95_ms": 69.85,
+    "p99_ms": 135.176,
+    "max_ms": 6389.948,
+    "over_33_3": 52,
+    "over_66_7": 34
+   },
+   "first_pass": {
+    "frames": 4693,
+    "seconds": 30.016,
+    "p50_ms": 4.807,
+    "p95_ms": 12.269,
+    "p99_ms": 21.671,
+    "max_ms": 529.873,
+    "over_33_3": 19,
+    "over_66_7": 2
+   },
+   "return": {
+    "frames": 4240,
+    "seconds": 29.992,
+    "p50_ms": 5.3,
+    "p95_ms": 11.605,
+    "p99_ms": 13.115,
+    "max_ms": 35.662,
+    "over_33_3": 1,
+    "over_66_7": 0
+   },
+   "event": {
+    "frames": 3348,
+    "seconds": 30.0,
+    "p50_ms": 10.605,
+    "p95_ms": 13.137,
+    "p99_ms": 14.381,
+    "max_ms": 29.968,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "recovery": {
+    "frames": 3347,
+    "seconds": 30.009,
+    "p50_ms": 10.2,
+    "p95_ms": 13.278,
+    "p99_ms": 14.562,
+    "max_ms": 35.055,
+    "over_33_3": 1,
+    "over_66_7": 0
+   },
+   "tail": {
+    "frames": 342,
+    "seconds": 3.005,
+    "p50_ms": 10.027,
+    "p95_ms": 12.781,
+    "p99_ms": 14.891,
+    "max_ms": 17.6,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 15628,
+    "seconds": 120.018,
+    "p50_ms": 5.957,
+    "p95_ms": 12.904,
+    "p99_ms": 14.975,
+    "max_ms": 529.873,
+    "over_33_3": 21,
+    "over_66_7": 2
+   }
+  },
+  "draws_ge25_after_ready": [],
+  "scene_keys_after_ready": [
+   {
+    "key": "bdce03ad",
+    "ready_s": 94.554
+   },
+   {
+    "key": "7d972925",
+    "ready_s": 124.12
+   },
+   {
+    "key": "ff4ed6e0",
+    "ready_s": 124.121
+   },
+   {
+    "key": "43fd3f43",
+    "ready_s": 124.16
+   }
+  ],
+  "scene_keys_total": 40,
+  "prewarm_summary": [
+   "Variantes de pintura preparadas: {\"bases\":3,\"completed\":true,\"draws\":3,\"usec\":1413882,\"variants\":10}"
+  ],
+  "population_end": 32,
+  "vehicles_end": 42
+ },
+ {
+  "label": "first-draw-a2",
+  "validity": "lost_focus",
+  "unfocused_route_frames": 11031,
+  "route_frames": 14882,
+  "loading_until_ready_s": 18.875,
+  "phases": {
+   "loading": {
+    "frames": 569,
+    "seconds": 18.866,
+    "p50_ms": 2.211,
+    "p95_ms": 67.904,
+    "p99_ms": 120.449,
+    "max_ms": 6807.635,
+    "over_33_3": 54,
+    "over_66_7": 32
+   },
+   "first_pass": {
+    "frames": 5251,
+    "seconds": 30.019,
+    "p50_ms": 4.27,
+    "p95_ms": 11.6,
+    "p99_ms": 12.835,
+    "max_ms": 89.84,
+    "over_33_3": 5,
+    "over_66_7": 4
+   },
+   "return": {
+    "frames": 3334,
+    "seconds": 29.999,
+    "p50_ms": 8.743,
+    "p95_ms": 16.738,
+    "p99_ms": 30.086,
+    "max_ms": 80.168,
+    "over_33_3": 29,
+    "over_66_7": 3
+   },
+   "event": {
+    "frames": 2895,
+    "seconds": 29.991,
+    "p50_ms": 11.981,
+    "p95_ms": 15.347,
+    "p99_ms": 17.918,
+    "max_ms": 72.783,
+    "over_33_3": 2,
+    "over_66_7": 1
+   },
+   "recovery": {
+    "frames": 3402,
+    "seconds": 30.007,
+    "p50_ms": 10.047,
+    "p95_ms": 14.212,
+    "p99_ms": 15.899,
+    "max_ms": 43.077,
+    "over_33_3": 3,
+    "over_66_7": 0
+   },
+   "tail": {
+    "frames": 242,
+    "seconds": 3.005,
+    "p50_ms": 13.792,
+    "p95_ms": 17.051,
+    "p99_ms": 24.316,
+    "max_ms": 37.015,
+    "over_33_3": 1,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 14882,
+    "seconds": 120.016,
+    "p50_ms": 6.438,
+    "p95_ms": 14.668,
+    "p99_ms": 18.266,
+    "max_ms": 89.84,
+    "over_33_3": 39,
+    "over_66_7": 8
+   }
+  },
+  "draws_ge25_after_ready": [
+   {
+    "frame": 640,
+    "phase": "first_pass",
+    "ready_s": 0.613,
+    "frame_ms": 89.84,
+    "draw_ms": 55.111
+   },
+   {
+    "frame": 799,
+    "phase": "first_pass",
+    "ready_s": 1.359,
+    "frame_ms": 66.863,
+    "draw_ms": 53.35
+   },
+   {
+    "frame": 10341,
+    "phase": "event",
+    "ready_s": 71.686,
+    "frame_ms": 72.783,
+    "draw_ms": 47.905
+   }
+  ],
+  "scene_keys_after_ready": [
+   {
+    "key": "0af590d5",
+    "ready_s": 0.692
+   },
+   {
+    "key": "502cb30b",
+    "ready_s": 1.417
+   },
+   {
+    "key": "bdce03ad",
+    "ready_s": 118.253
+   },
+   {
+    "key": "7d972925",
+    "ready_s": 124.082
+   },
+   {
+    "key": "ff4ed6e0",
+    "ready_s": 124.083
+   },
+   {
+    "key": "43fd3f43",
+    "ready_s": 124.113
+   }
+  ],
+  "scene_keys_total": 34,
+  "prewarm_summary": [],
+  "population_end": 29,
+  "vehicles_end": 39
+ },
+ {
+  "label": "first-draw-b2",
+  "validity": "",
+  "unfocused_route_frames": 0,
+  "route_frames": 14422,
+  "loading_until_ready_s": 19.541,
+  "phases": {
+   "loading": {
+    "frames": 543,
+    "seconds": 19.533,
+    "p50_ms": 2.801,
+    "p95_ms": 77.097,
+    "p99_ms": 159.821,
+    "max_ms": 6750.831,
+    "over_33_3": 53,
+    "over_66_7": 40
+   },
+   "first_pass": {
+    "frames": 4429,
+    "seconds": 30.016,
+    "p50_ms": 4.944,
+    "p95_ms": 12.157,
+    "p99_ms": 30.616,
+    "max_ms": 1579.363,
+    "over_33_3": 32,
+    "over_66_7": 2
+   },
+   "return": {
+    "frames": 4058,
+    "seconds": 29.999,
+    "p50_ms": 5.631,
+    "p95_ms": 11.718,
+    "p99_ms": 13.407,
+    "max_ms": 76.542,
+    "over_33_3": 3,
+    "over_66_7": 1
+   },
+   "event": {
+    "frames": 3015,
+    "seconds": 30.003,
+    "p50_ms": 11.209,
+    "p95_ms": 14.925,
+    "p99_ms": 17.484,
+    "max_ms": 126.946,
+    "over_33_3": 2,
+    "over_66_7": 2
+   },
+   "recovery": {
+    "frames": 2920,
+    "seconds": 29.998,
+    "p50_ms": 11.797,
+    "p95_ms": 14.767,
+    "p99_ms": 16.079,
+    "max_ms": 90.953,
+    "over_33_3": 1,
+    "over_66_7": 1
+   },
+   "tail": {
+    "frames": 245,
+    "seconds": 3.005,
+    "p50_ms": 14.017,
+    "p95_ms": 15.651,
+    "p99_ms": 16.045,
+    "max_ms": 17.079,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 14422,
+    "seconds": 120.015,
+    "p50_ms": 6.547,
+    "p95_ms": 14.149,
+    "p99_ms": 16.919,
+    "max_ms": 1579.363,
+    "over_33_3": 38,
+    "over_66_7": 6
+   }
+  },
+  "draws_ge25_after_ready": [
+   {
+    "frame": 5757,
+    "phase": "return",
+    "ready_s": 35.721,
+    "frame_ms": 76.542,
+    "draw_ms": 52.169
+   },
+   {
+    "frame": 9831,
+    "phase": "event",
+    "ready_s": 67.913,
+    "frame_ms": 126.946,
+    "draw_ms": 97.495
+   },
+   {
+    "frame": 9832,
+    "phase": "event",
+    "ready_s": 68.04,
+    "frame_ms": 118.013,
+    "draw_ms": 90.07
+   },
+   {
+    "frame": 13044,
+    "phase": "recovery",
+    "ready_s": 99.88,
+    "frame_ms": 90.953,
+    "draw_ms": 65.387
+   }
+  ],
+  "scene_keys_after_ready": [
+   {
+    "key": "3d4ae273",
+    "ready_s": 99.928
+   },
+   {
+    "key": "7d972925",
+    "ready_s": 124.093
+   },
+   {
+    "key": "ff4ed6e0",
+    "ready_s": 124.094
+   },
+   {
+    "key": "43fd3f43",
+    "ready_s": 124.122
+   }
+  ],
+  "scene_keys_total": 40,
+  "prewarm_summary": [
+   "Variantes de pintura preparadas: {\"bases\":3,\"completed\":true,\"draws\":3,\"usec\":399048,\"variants\":10}"
+  ],
+  "population_end": 21,
+  "vehicles_end": 31
+ }
+]

@@ -1,0 +1,411 @@
+{
+ "A_sem_preparo": {
+  "labels": [
+   "first-draw-a1",
+   "first-draw-a2",
+   "first-draw-a3",
+   "first-draw-a4"
+  ],
+  "phases": {
+   "loading": {
+    "frames": 2577,
+    "seconds": 85.212,
+    "p50_ms": 6.08,
+    "p95_ms": 70.312,
+    "p99_ms": 145.042,
+    "max_ms": 8047.293,
+    "over_33_3": 217,
+    "over_66_7": 144
+   },
+   "first_pass": {
+    "frames": 18301,
+    "seconds": 120.07,
+    "p50_ms": 5.094,
+    "p95_ms": 11.735,
+    "p99_ms": 16.924,
+    "max_ms": 115.289,
+    "over_33_3": 52,
+    "over_66_7": 14
+   },
+   "return": {
+    "frames": 14853,
+    "seconds": 119.995,
+    "p50_ms": 6.482,
+    "p95_ms": 15.123,
+    "p99_ms": 21.364,
+    "max_ms": 83.13,
+    "over_33_3": 51,
+    "over_66_7": 5
+   },
+   "event": {
+    "frames": 10680,
+    "seconds": 119.987,
+    "p50_ms": 12.437,
+    "p95_ms": 16.834,
+    "p99_ms": 30.376,
+    "max_ms": 113.807,
+    "over_33_3": 91,
+    "over_66_7": 20
+   },
+   "recovery": {
+    "frames": 13383,
+    "seconds": 120.013,
+    "p50_ms": 10.127,
+    "p95_ms": 14.197,
+    "p99_ms": 15.744,
+    "max_ms": 73.646,
+    "over_33_3": 12,
+    "over_66_7": 1
+   },
+   "tail": {
+    "frames": 1256,
+    "seconds": 12.019,
+    "p50_ms": 11.092,
+    "p95_ms": 14.589,
+    "p99_ms": 17.051,
+    "max_ms": 37.015,
+    "over_33_3": 1,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 57217,
+    "seconds": 480.065,
+    "p50_ms": 6.96,
+    "p95_ms": 15.029,
+    "p99_ms": 19.794,
+    "max_ms": 115.289,
+    "over_33_3": 206,
+    "over_66_7": 40
+   }
+  },
+  "draws_ge25": 18,
+  "draws_ge40": 15,
+  "scene_keys_after_ready": {
+   "first-draw-a1": [
+    [
+     "502cb30b",
+     0.784
+    ],
+    [
+     "0af590d5",
+     21.914
+    ],
+    [
+     "f24a1c0a",
+     69.733
+    ],
+    [
+     "10b0b8ea",
+     88.835
+    ],
+    [
+     "3d4ae273",
+     113.774
+    ]
+   ],
+   "first-draw-a2": [
+    [
+     "0af590d5",
+     0.692
+    ],
+    [
+     "502cb30b",
+     1.417
+    ],
+    [
+     "bdce03ad",
+     118.253
+    ]
+   ],
+   "first-draw-a3": [
+    [
+     "502cb30b",
+     0.703
+    ],
+    [
+     "0af590d5",
+     8.507
+    ],
+    [
+     "f24a1c0a",
+     70.556
+    ],
+    [
+     "bdce03ad",
+     115.284
+    ]
+   ],
+   "first-draw-a4": [
+    [
+     "502cb30b",
+     0.696
+    ],
+    [
+     "0af590d5",
+     20.491
+    ],
+    [
+     "bdce03ad",
+     92.392
+    ]
+   ]
+  },
+  "unfocused_route_frames": {
+   "first-draw-a1": [
+    12075,
+    14035
+   ],
+   "first-draw-a2": [
+    11031,
+    14882
+   ],
+   "first-draw-a3": [
+    10502,
+    15301
+   ],
+   "first-draw-a4": [
+    12608,
+    12999
+   ]
+  },
+  "loading_until_ready_s": {
+   "first-draw-a1": 22.854,
+   "first-draw-a2": 18.875,
+   "first-draw-a3": 20.837,
+   "first-draw-a4": 22.681
+  },
+  "prewarm": {
+   "first-draw-a1": [],
+   "first-draw-a2": [],
+   "first-draw-a3": [],
+   "first-draw-a4": []
+  }
+ },
+ "B_pintura_apenas": {
+  "labels": [
+   "first-draw-b1",
+   "first-draw-b2"
+  ],
+  "phases": {
+   "loading": {
+    "frames": 1160,
+    "seconds": 39.31,
+    "p50_ms": 2.502,
+    "p95_ms": 73.029,
+    "p99_ms": 159.821,
+    "max_ms": 6750.831,
+    "over_33_3": 105,
+    "over_66_7": 74
+   },
+   "first_pass": {
+    "frames": 9122,
+    "seconds": 60.032,
+    "p50_ms": 4.876,
+    "p95_ms": 12.216,
+    "p99_ms": 24.655,
+    "max_ms": 1579.363,
+    "over_33_3": 51,
+    "over_66_7": 4
+   },
+   "return": {
+    "frames": 8298,
+    "seconds": 59.991,
+    "p50_ms": 5.467,
+    "p95_ms": 11.66,
+    "p99_ms": 13.282,
+    "max_ms": 76.542,
+    "over_33_3": 4,
+    "over_66_7": 1
+   },
+   "event": {
+    "frames": 6363,
+    "seconds": 60.003,
+    "p50_ms": 10.885,
+    "p95_ms": 14.156,
+    "p99_ms": 16.593,
+    "max_ms": 126.946,
+    "over_33_3": 2,
+    "over_66_7": 2
+   },
+   "recovery": {
+    "frames": 6267,
+    "seconds": 60.007,
+    "p50_ms": 10.858,
+    "p95_ms": 14.255,
+    "p99_ms": 15.694,
+    "max_ms": 90.953,
+    "over_33_3": 2,
+    "over_66_7": 1
+   },
+   "tail": {
+    "frames": 587,
+    "seconds": 6.01,
+    "p50_ms": 11.291,
+    "p95_ms": 15.265,
+    "p99_ms": 16.045,
+    "max_ms": 17.6,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 30050,
+    "seconds": 240.033,
+    "p50_ms": 6.209,
+    "p95_ms": 13.561,
+    "p99_ms": 16.217,
+    "max_ms": 1579.363,
+    "over_33_3": 59,
+    "over_66_7": 8
+   }
+  },
+  "draws_ge25": 4,
+  "draws_ge40": 4,
+  "scene_keys_after_ready": {
+   "first-draw-b1": [
+    [
+     "bdce03ad",
+     94.554
+    ]
+   ],
+   "first-draw-b2": [
+    [
+     "3d4ae273",
+     99.928
+    ]
+   ]
+  },
+  "unfocused_route_frames": {
+   "first-draw-b1": [
+    1192,
+    15628
+   ],
+   "first-draw-b2": [
+    0,
+    14422
+   ]
+  },
+  "loading_until_ready_s": {
+   "first-draw-b1": 19.786,
+   "first-draw-b2": 19.541
+  },
+  "prewarm": {
+   "first-draw-b1": [
+    "Variantes de pintura preparadas: {\"bases\":3,\"completed\":true,\"draws\":3,\"usec\":1413882,\"variants\":10}"
+   ],
+   "first-draw-b2": [
+    "Variantes de pintura preparadas: {\"bases\":3,\"completed\":true,\"draws\":3,\"usec\":399048,\"variants\":10}"
+   ]
+  }
+ },
+ "B_completo": {
+  "labels": [
+   "first-draw-b3",
+   "first-draw-b4"
+  ],
+  "phases": {
+   "loading": {
+    "frames": 1273,
+    "seconds": 40.15,
+    "p50_ms": 2.686,
+    "p95_ms": 72.191,
+    "p99_ms": 152.804,
+    "max_ms": 7147.897,
+    "over_33_3": 108,
+    "over_66_7": 75
+   },
+   "first_pass": {
+    "frames": 11293,
+    "seconds": 60.031,
+    "p50_ms": 4.204,
+    "p95_ms": 8.928,
+    "p99_ms": 10.698,
+    "max_ms": 72.34,
+    "over_33_3": 12,
+    "over_66_7": 3
+   },
+   "return": {
+    "frames": 8270,
+    "seconds": 60.006,
+    "p50_ms": 5.448,
+    "p95_ms": 11.711,
+    "p99_ms": 13.251,
+    "max_ms": 36.974,
+    "over_33_3": 1,
+    "over_66_7": 0
+   },
+   "event": {
+    "frames": 6341,
+    "seconds": 60.002,
+    "p50_ms": 11.024,
+    "p95_ms": 13.852,
+    "p99_ms": 15.72,
+    "max_ms": 29.637,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "recovery": {
+    "frames": 4729,
+    "seconds": 60.003,
+    "p50_ms": 13.001,
+    "p95_ms": 19.084,
+    "p99_ms": 46.705,
+    "max_ms": 73.266,
+    "over_33_3": 84,
+    "over_66_7": 5
+   },
+   "tail": {
+    "frames": 513,
+    "seconds": 6.013,
+    "p50_ms": 13.333,
+    "p95_ms": 15.96,
+    "p99_ms": 17.477,
+    "max_ms": 18.394,
+    "over_33_3": 0,
+    "over_66_7": 0
+   },
+   "gameplay": {
+    "frames": 30633,
+    "seconds": 240.041,
+    "p50_ms": 6.135,
+    "p95_ms": 14.391,
+    "p99_ms": 18.596,
+    "max_ms": 73.266,
+    "over_33_3": 97,
+    "over_66_7": 8
+   }
+  },
+  "draws_ge25": 0,
+  "draws_ge40": 0,
+  "scene_keys_after_ready": {
+   "first-draw-b3": [],
+   "first-draw-b4": [
+    [
+     "bdce03ad",
+     118.242
+    ]
+   ]
+  },
+  "unfocused_route_frames": {
+   "first-draw-b3": [
+    0,
+    14667
+   ],
+   "first-draw-b4": [
+    0,
+    15966
+   ]
+  },
+  "loading_until_ready_s": {
+   "first-draw-b3": 21.15,
+   "first-draw-b4": 19.019
+  },
+  "prewarm": {
+   "first-draw-b3": [
+    "Variantes de material de veículo preparadas: {\"bases\":3,\"completed\":true,\"draws\":3,\"glass\":4,\"usec\":474985,\"variants\":15}"
+   ],
+   "first-draw-b4": [
+    "Variantes de material de veículo preparadas: {\"bases\":3,\"completed\":true,\"draws\":3,\"glass\":4,\"usec\":462572,\"variants\":15}"
+   ]
+  }
+ }
+}

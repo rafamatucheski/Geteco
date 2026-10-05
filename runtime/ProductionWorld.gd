@@ -318,6 +318,8 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	await preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:combat_resources",phase_traced)
@@ -420,6 +422,8 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 				if not effects._covered_loading(world, curtain): break
 				if draws[0] >= 2: break
 			RenderingServer.frame_post_draw.disconnect(count_draw)
+		# Bases de pintura para as variantes de uso/desgaste (desenhadas depois).
+		preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(id))
 		model.free()
 		await get_tree().process_frame
 
