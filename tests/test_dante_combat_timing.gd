@@ -69,6 +69,29 @@ func run() -> void:
 		check(age >= float(POSE.MELEE_CONTACT[id]) - 0.018 and age <= float(POSE.MELEE_CONTACT[id]) + 0.05, "%s contato no tempo da pose: %.3f" % [id, age])
 		await frames(25)
 		check(is_equal_approx(before - victim.health, float(gameplay.weapon_data(id).damage)), id + " recuperação não repete dano")
+	# Som: o "vupt" toca quando a arma passa (pico no contato), não no aperto do botão,
+	# e o acerto no corpo é o som da própria arma (CombatAudio.melee_hit).
+	var audio = gameplay.AUDIO
+	for id in ["fists", "knuckles", "bat", "axe"]:
+		await prepare(id)
+		var whoosh: AudioStream = audio.melee_whoosh(String(gameplay.MELEE_SOUND_KIND[id]))
+		var hits: Array = []
+		for variant in 3: hits.append(audio.melee_hit(String(gameplay.MELEE_HIT_KIND[id]), variant))
+		var whoosh_age := -1.0
+		var hit_heard := false
+		var at_press := false
+		gameplay.fire_at(victim.global_position)
+		for tick in 40:
+			for channel in gameplay._audio_pool:
+				if not channel.playing: continue
+				if channel.stream == whoosh and whoosh_age < 0.0: whoosh_age = gameplay._rig_pose.action_age
+				if channel.stream in hits: hit_heard = true
+			if tick == 0 and whoosh_age >= 0.0: at_press = true
+			await physics_frame
+		var expected: float = float(POSE.MELEE_CONTACT[id]) - float(audio.WHOOSH_PEAK[String(gameplay.MELEE_SOUND_KIND[id])])
+		check(not at_press and absf(whoosh_age - expected) <= 0.035, "%s: vupt na passada da arma (%.3f s, esperado %.3f)" % [id, whoosh_age, expected])
+		check(hit_heard, id + ": acerto com o som da arma")
+		await frames(25)
 	await prepare("axe")
 	var hp: float = victim.health
 	gameplay.fire_at(victim.global_position)

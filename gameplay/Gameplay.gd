@@ -97,6 +97,14 @@ const CAMERA_KICK := {"magnum": 0.07, "shotgun": 0.08, "sawed_off": 0.10, "hunti
 const MELEE_KICK := {"fists": 0.025, "knuckles": 0.035, "knife": 0.02, "bat": 0.06, "axe": 0.07}
 const MELEE_SHOVE := {"fists": 0.10, "knuckles": 0.16, "knife": 0.06, "bat": 0.32, "axe": 0.26}
 const HEAVY_IMPACT := 1.6
+## Som do ar e do acerto por arma corpo a corpo (`CombatAudio.melee_whoosh/melee_hit`).
+const MELEE_SOUND_KIND := {"fists": "punch", "knuckles": "punch", "bat": "bat", "axe": "axe"}
+const MELEE_HIT_KIND := {"fists": "punch", "knuckles": "knuckles", "bat": "bat", "axe": "axe"}
+## Volume do acerto (dB) antes da distância; taco e machado batem mais forte que o soco.
+const MELEE_HIT_DB := {"fists": -7.0, "knuckles": -6.0, "bat": -4.0, "axe": -3.5}
+## Tom de cada golpe da sequência (jab, direto, gancho... / forehand, backhand) e do pesado.
+const COMBO_PITCH := [1.0, 1.06, 0.97]
+const COMBO_HEAVY_PITCH := 0.86
 const SHOVE_SECONDS := 0.14
 ## Agrupa impactos do mesmo material no mesmo instante (chumbo de escopeta), como o V1 (40 ms).
 const IMPACT_GROUP_SECONDS := 0.04
@@ -228,6 +236,8 @@ var _flame_crime_clock := 0.0
 var _rig_pose := RIG_POSE.new()
 var _pose_frame: Dictionary = {}
 var _pending_contact: Dictionary = {}
+## "Vupt" agendado do golpe em curso (`_melee_swing_sound`).
+var _pending_swing: Dictionary = {}
 ## Só detonações reentrantes entram aqui; a explosão inicial continua imediata.
 ## O limiar é cooperativo: uma detonação indivisível pode ultrapassar 2 ms.
 const CHAIN_EXPLOSIONS_PER_FRAME := 2
@@ -422,6 +432,7 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_visual()
 	_update_swing_trail(delta)
 	_update_contact()
+	_update_swing_sound()
 	_update_shoves(delta)
 	_update_combat_clip(delta)
 	_update_swing(delta)
@@ -1171,10 +1182,7 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = 
 		var obstruction := get_world_3d().direct_space_state.intersect_ray(ray)
 		if not obstruction.is_empty() and obstruction.collider != actor: continue
 		_damage(actor, float(data.damage), player)
-		if String(data.get("stance", "")) == "knife" and _impact_material(actor) == "flesh":
-			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), actor.global_position, -13.0)
-		else:
-			_impact_sound(actor, target, float(data.damage))
+		_melee_hit_sound(id if id != "" else String(data.get("stance", "")), actor, target, float(data.damage))
 		_hit_effect({"collider": actor, "position": target, "normal": -direction}, float(data.damage), direction)
 		_melee_impact(actor, direction, id)
 		break
@@ -1923,16 +1931,52 @@ func _shot_sound(id: String, data: Dictionary) -> void:
 	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
 	_kick_camera(float(CAMERA_KICK.get(id, 0.0)))
 
-## Golpe no ar do V1: faca = `KnifeAudio.swing`, machado = `BatAudio.swing`, o resto = golpe de punho.
-func _melee_swing_sound(_id: String, data: Dictionary) -> void:
-	var stance := String(data.get("stance", ""))
-	var stream: AudioStream = AUDIO.punch_swing()
-	if stance == "knife": stream = AUDIO.knife_sample(-1)
-	elif stance == "axe": stream = AUDIO.bat_swing()
-	# V1 `Player._melee_attack`: o volume do catálogo, sem o -10 dB extra da V2.
-	# O golpe pesado da sequência soa mais grave e um pouco mais forte.
+## "Vupt" do golpe. Toca quando a arma passa (pico do som no instante do contato),
+## não no aperto do botão: o taco e o machado têm 0,25 s de preparação e o ar soava
+## antes de o braço começar a descer. Cada arma tem o seu ar (o taco usava o do soco,
+## que trazia um baque embutido e "acertava" mesmo errando).
+func _melee_swing_sound(id: String, data: Dictionary) -> void:
+	var kind := String(MELEE_SOUND_KIND.get(id, "punch"))
+	var contact := float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))
+	var peak := 0.05 if id == "knife" else float(AUDIO.WHOOSH_PEAK.get(kind, 0.05))
+	_pending_swing = {"id": id, "time": maxf(0.0, contact - peak), "data": data, "serial": _attack_serial}
+
+func _update_swing_sound() -> void:
+	if _pending_swing.is_empty(): return
+	var id: String = _pending_swing.id
+	# Mesmas regras do contato: troca de arma, morte, garagem e transição cancelam.
+	if not attack_allowed() or (equipped() != id and not (id == "fists" and equipped().is_empty())):
+		_pending_swing.clear()
+		return
+	if _rig_pose.action_age + 0.00001 < float(_pending_swing.time): return
+	var data: Dictionary = _pending_swing.data
+	_pending_swing = {}
+	var stream: AudioStream = AUDIO.knife_sample(-1) if id == "knife" else AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
+	# V1 `Player._melee_attack`: o volume do catálogo. Tom por golpe do combo (pesado
+	# mais grave e mais forte) e um pouco de acaso, para a sequência não soar repetida.
 	var heavy := _rig_pose.heavy_attack()
-	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)) + (1.5 if heavy else 0.0), 0.88 if heavy else 1.0)
+	var pitch := _combo_pitch() * _rng.randf_range(0.97, 1.03)
+	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)) + (2.0 if heavy else 0.0), pitch)
+
+## Tom do golpe atual da sequência: o pesado que fecha o combo é o mais grave.
+func _combo_pitch() -> float:
+	if _rig_pose.heavy_attack(): return COMBO_HEAVY_PITCH
+	return float(COMBO_PITCH[_rig_pose.combo_step % COMBO_PITCH.size()])
+
+## Acerto corpo a corpo no corpo: som próprio de cada arma (soco, soqueira, taco,
+## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
+func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) -> void:
+	if id == "knife" or _impact_material(actor) != "flesh" or not MELEE_HIT_KIND.has(id):
+		if id == "knife" and _impact_material(actor) == "flesh":
+			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), actor.global_position, -13.0)
+		else:
+			_impact_sound(actor, point, amount)
+		return
+	var heavy := _rig_pose.heavy_attack()
+	var volume := float(MELEE_HIT_DB.get(id, -6.0)) + (3.0 if heavy else 0.0)
+	_play_stream(AUDIO.melee_hit(String(MELEE_HIT_KIND[id]), _rng.randi_range(0, 2)), point, volume, _combo_pitch() * _rng.randf_range(0.96, 1.04))
+	# Camada de carne gravada da V1 por baixo, mais baixa: dá corpo ao sintetizado.
+	_play_stream(AUDIO.take("impact_flesh", _rng), point, volume - 9.0)
 
 ## Lança-chamas: rajada de 0,38 s reiniciada enquanto o gatilho segue (V1 `_flamethrower_audio`).
 func _flame_sound() -> void:
@@ -2050,6 +2094,7 @@ func on_region_changed() -> void:
 		police_case.preserve_departing_witnesses()
 		police_case.cancel_surrender()
 	_pending_contact.clear()
+	_pending_swing.clear()
 	_police_rounds.clear()
 	_clear_combat_registers()
 	_shoves.clear()
