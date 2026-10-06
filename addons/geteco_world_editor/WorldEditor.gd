@@ -105,11 +105,11 @@ func _ready() -> void:
 	actions_bar.add_theme_constant_override("v_separation",4)
 	add_child(actions_bar)
 	var regions := OptionButton.new()
-	for label in ["Mundo inteiro","Harbor","Montanha"]: regions.add_item(label)
+	for label in ["Mundo inteiro","Harbor","Montanha","Deserto"]: regions.add_item(label)
 	regions.select(1)
 	regions.item_selected.connect(func(index):
 		if index == 0: _fit_world()
-		else: _switch_region("harbor" if index == 1 else "mountain"))
+		else: _switch_region(["harbor","mountain","desert"][index-1]))
 	actions_bar.add_child(regions)
 	_button(actions_bar,"Selecionar",func():
 		junction_editor.set_enabled(false)
@@ -270,7 +270,7 @@ func _switch_region(value: String) -> void:
 func _refresh() -> void:
 	canvas.cancel_drag()
 	canvas.objects = {}
-	for area in ["harbor","mountain"]:
+	for area in ["harbor","mountain","desert"]:
 		var base: Dictionary = catalog.get(area,{}).get("objects",{})
 		var rows := DATA.effective(base,document.regions.get(area,{}))
 		for id in catalog.get(area,{}).get("context",{}):
@@ -583,6 +583,7 @@ func _commit(row: Dictionary) -> void:
 		_refresh()
 		return
 	var error := DATA.validate_entity(row)
+	if region == "desert" and row.type in ["road","light"]: error = "Vias e iluminação do deserto ainda têm traçado e configuração protegidos."
 	if error.is_empty(): error = _placement_error(row)
 	var original: Dictionary = catalog.get(region,{}).get("objects",{}).get(row.id,catalog.get(region,{}).get("context",{}).get(row.id,{}))
 	if original.get("locked",false): error = "Este local tem acesso protegido."
@@ -606,6 +607,7 @@ func _commit(row: Dictionary) -> void:
 		return
 	if document.regions.get(region,{}).get(row.id,{}) == row: return
 	_checkpoint()
+	if not document.regions.has(region): document.regions[region] = {}
 	document.regions[region][row.id] = row.duplicate(true)
 	canvas.selected_id = row.id
 	_refresh()
@@ -795,10 +797,12 @@ func _placement_error(row: Dictionary) -> String:
 	return ""
 func _set_background() -> void:
 	canvas.land = catalog.get("harbor",{}).get("land",[])
-	canvas.terrain = catalog.get("mountain",{}).get("terrain",[])
+	canvas.terrain = catalog.get("mountain",{}).get("terrain",[]).duplicate()
+	canvas.terrain.append_array(catalog.get("desert",{}).get("terrain",[]))
 	canvas.land_polygons = catalog.get("harbor",{}).get("land_polygons",[])
 	canvas.entries = catalog.get("harbor",{}).get("entries",[]).duplicate()
 	canvas.entries.append_array(catalog.get("mountain",{}).get("entries",[]))
+	canvas.entries.append_array(catalog.get("desert",{}).get("entries",[]))
 
 func _fit_world() -> void:
 	var bounds := canvas.world_bounds()
@@ -812,7 +816,7 @@ func _update_locations() -> void:
 	locations.add_item("Ir para local…")
 	var rows: Array = []
 	for row in canvas.objects.values():
-		if row.type == "context" or (row.type == "building" and (row.get("locked",false) or row.get("service_building",false))):
+		if row.type == "context" or (row.type == "piece" and row.get("editor_region","") == "desert") or (row.type == "building" and (row.get("locked",false) or row.get("service_building",false))):
 			rows.append(row)
 	rows.sort_custom(func(a,b): return str(a.get("label",a.id)).naturalnocasecmp_to(str(b.get("label",b.id))) < 0)
 	for row in rows:
@@ -884,10 +888,11 @@ func _preview() -> void:
 		return
 	file.store_string(JSON.stringify(document))
 	file.close()
-	var area := "mountain" if focus.x >= 456.25 and focus.y < -125 else "harbor"
+	var area := _region_at(focus)
 	var pid := OS.create_process(OS.get_executable_path(),PackedStringArray(["--path",ProjectSettings.globalize_path("res://"),"--script","res://addons/geteco_world_editor/preview_world.gd","--","--no-save","--edits="+preview_path,"--region="+area,"--x="+str(focus.x),"--z="+str(focus.y),"--size="+str(width)]))
 	status.text = "Prévia 3D aberta. Setas movem a câmera; Esc fecha. O progresso do jogo não é salvo." if pid > 0 else "Não foi possível abrir a prévia 3D."
 func _region_at(at: Vector2) -> String:
+	if preload("res://world/desert/DesertLayout.gd").BOUNDS.has_point(at): return "desert"
 	return "mountain" if at.x >= 456.25 and at.y < -125 else "harbor"
 
 func _place(type: String,at: Vector2) -> void:

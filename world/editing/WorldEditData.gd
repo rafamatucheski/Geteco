@@ -9,7 +9,7 @@ const BUILDING_LABELS := ["Comercial","Residencial","Galpão","Loja","Casa dos C
 const LOCKED_BUILDINGS := ["Garage", "NorthFrontage0", "NorthFrontage2", "NorthFrontage3", "NorthFrontage4", "Police", "Clinic", "NorthFireStation", "CanalHomesWest", "NorthgateAuto"]
 
 static func empty_document() -> Dictionary:
-	return {"version": 1, "regions": {"harbor": {}, "mountain": {}}}
+	return {"version": 1, "regions": {"harbor": {}, "mountain": {}, "desert": {}}}
 
 static func read_document(path: String = PATH) -> Dictionary:
 	if not FileAccess.file_exists(path): return {"document": empty_document(), "error": ""}
@@ -17,6 +17,7 @@ static func read_document(path: String = PATH) -> Dictionary:
 	if parser.parse(FileAccess.get_file_as_string(path)) != OK:
 		return {"document": {}, "error": "JSON inválido: " + parser.get_error_message()}
 	var error := validate_document(parser.data)
+	if error.is_empty() and not parser.data.regions.has("desert"): parser.data.regions.desert = {}
 	return {"document": parser.data if error.is_empty() else {}, "error": error}
 
 static func number(value: Variant) -> bool:
@@ -136,7 +137,7 @@ static func validate_document(doc: Variant) -> String:
 	if not doc is Dictionary or doc.get("version") != 1 or not doc.get("regions") is Dictionary: return "Formato de mundo incompatível."
 	if not doc.regions.has("harbor") or not doc.regions.has("mountain"): return "Faltam regiões no documento."
 	for region in doc.regions:
-		if region not in ["harbor", "mountain"] or not doc.regions[region] is Dictionary: return "Região inválida."
+		if region not in ["harbor", "mountain", "desert"] or not doc.regions[region] is Dictionary: return "Região inválida."
 		for id in doc.regions[region]:
 			var row: Variant = doc.regions[region][id]
 			var error := validate_entity(row)

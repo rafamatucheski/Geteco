@@ -39,11 +39,12 @@ func build(request: Dictionary) -> void:
 	var at: Array = request.get("focus",[45,110])
 	var focus := Vector3(float(at[0]),0,float(at[1]))
 	var area := str(request.get("area","harbor"))
-	if area not in ["harbor","mountain"]: respond({"revision":last_revision,"error":"Região inválida"}); return
+	if area not in ["harbor","mountain","desert"]: respond({"revision":last_revision,"error":"Região inválida"}); return
 	Engine.set_meta("geteco_world_edit_document",request.document)
 	var region: Node3D = REGION.build_region(area,focus)
 	root.add_child(region)
 	if region.terrain != null: focus.y = region.terrain.surface_height_at(Vector2(focus.x,focus.z))
+	elif area == "desert": focus.y = region._ground_height(Vector2(focus.x,focus.z))
 	for i in 1800:
 		await process_frame
 		if region.is_streaming_idle(): break
