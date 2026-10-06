@@ -50,6 +50,20 @@ const HEAVY_HIT_STOP := 0.035
 const STRIKE_ARM_RATE := 30.0
 ## Fração do curso do ferrolho/telha gasta puxando; o resto é o retorno da mola.
 const RACK_PULL := 0.72
+## Cabeça do Dante no espaço V1 do Actor, medida nos ossos realizados (Head + 40%
+## até head_end) com a guarda parada; inclinar 0,1 rad para trás leva a cabeça
+## ~6 cm para trás (coeficiente medido, não o braço de alavanca geométrico). A malha
+## da cabeça com cabelo/barba cabe em 0,14 m = 0,111 V1. Folga mínima garantida =
+## HEAD_CLEARANCE + CLEAR_SOFT/2 (0,166 V1, 5,5 cm de margem além do raio) porque,
+## perto do limite de alcance, a mão real fica 3–4 cm atrás do alvo.
+const HEAD_CENTER := Vector3(0.0, 1.243, -0.065)
+const HEAD_ABOVE_SPINE := 0.6
+const HEAD_CLEARANCE := 0.146
+## Carregando parado: só a cabeça com cabelo (+2 cm de margem com a faixa suave).
+## Com a margem do golpe a arma saía do ombro e atravessava o peito.
+const HEAD_CLEARANCE_CARRY := 0.111
+const CLEAR_SOFT := 0.04
+const WEAPON_RADIUS := {"bat": 0.036, "axe": 0.048}
 
 var weapon_id := ""
 var action_age := 10.0
@@ -67,6 +81,7 @@ var _move: Dictionary = {}
 var _melee_from: Dictionary = {}
 var _melee_now: Dictionary = {}
 var _melee_now_id := ""
+var _clear_blend := 0.0
 var _right := Vector3(0.24, 0.68, -0.02)
 var _left := Vector3(-0.24, 0.68, -0.02)
 var _carry_pitch := 0.0
@@ -138,6 +153,7 @@ func reset() -> void:
 	_melee_from = {}
 	_melee_now = {}
 	_melee_now_id = ""
+	_clear_blend = 0.0
 	_guard_weight = 0.0
 	_right_solve_weight = 0.0
 	_left_solve_weight = 0.0
@@ -191,6 +207,12 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			_remember(id, swing)
 		else:
 			_remember(id, rest)
+		# Margem do golpe só em movimento (atraso do IK); carregando, a pose de ombro
+		# da V1 fica quase intacta. Transição suave entre as duas.
+		_clear_blend = move_toward(_clear_blend, 1.0 if in_move else 0.0, delta * 3.0)
+		var cleared := _clear_head(id, melee_pose.hand, melee_pose.basis, swing, body_offset, lerpf(HEAD_CLEARANCE_CARRY, HEAD_CLEARANCE, _clear_blend))
+		melee_pose.hand = cleared.hand
+		melee_pose.basis = cleared.basis
 	melee_support_weight = float(melee_pose.support_weight) if not melee_pose.is_empty() else 0.0
 	if id in ["axe", "bat"]: melee_support_weight = 1.0
 	var melee_support_active := melee_support_weight > 0.995
@@ -290,6 +312,9 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var right_free := 0.0
 	var left_free := 0.0
 	var visible := id != "fists"
+	# Rotação do punho com pulso reto (Actor); nula = mão segue a base pedida.
+	var wrist_right: Variant = null
+	var wrist_left: Variant = null
 	if id == "fists":
 		# Guarda estável e golpes da sequência de `MeleeMoveset`; o polo do
 		# cotovelo só muda onde a chave pede (gancho, uppercut).
@@ -302,6 +327,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			left_target = pose.l + body_offset
 			gun_basis = _basis(pose.rb)
 			offhand_basis = _basis(pose.lb)
+			wrist_right = float(pose.rr)
+			wrist_left = float(pose.lr)
 			right_fist = true
 			left_fist = true
 	elif id == "knuckles":
@@ -311,6 +338,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			left_target = pose.l
 			gun_basis = _basis(pose.rb)
 			offhand_basis = _basis(pose.lb)
+			wrist_right = float(pose.rr)
+			wrist_left = float(pose.lr)
 		else:
 			var pose := _knuckle_pose(knuckle_variant, 10.0, false, arm_swing, run)
 			hand = pose.right
@@ -413,6 +442,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		left_fist = false
 		left_free = 0.0
 		left_target = _bag_carry_hand(arm_swing, run, body_offset)
+		wrist_left = null
 		offhand_basis = carry_left_basis
 	# Durante o golpe a curva autorada já é a velocidade da arma: o limite de
 	# 18 rad/s da prontidão freava o taco antes do contato.
@@ -500,6 +530,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"melee_action": in_move,
 		"swing_trail": in_move and id in ["axe", "bat"] and action_age > float(MOVES.SWING_SCALE.get(id, 1.0)) * 0.26 and action_age < float(MOVES.SWING_SCALE.get(id, 1.0)) * 0.47,
 		"combo_step": combo_step,
+		"right_wrist_roll": wrist_right, "left_wrist_roll": wrist_left,
+		"grip_as_fist": id in ["axe", "bat"],
 		"pump": pump_stroke,
 		"slide": clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
 	}
@@ -516,9 +548,45 @@ func _follow_basis(current: Basis, target: Basis, delta: float, rate: float = 18
 	var angle := a.angle_to(b)
 	return Basis(a.slerp(b, minf(1.0, delta * rate / maxf(angle, 0.0001))))
 
+## Restrição de colisão do taco/machado com a cabeça, por cima da pose autorada
+## (carregar, golpes e transições). Se o eixo da arma (cabo à ponta) chega a menos
+## de HEAD_CLEARANCE do centro da cabeça, a arma gira em torno da mão o mínimo
+## para passar por fora; se o ponto mais próximo é a própria mão, a mão é afastada.
+## A cabeça segue inclinação, passo e agachamento do golpe e o balanço do passo.
+## Medido em 2026-10-06: a pose de ombro da V1 já encostava (taco 0,6 cm de folga,
+## machado 0,7 cm dentro) e as preparações passavam até 11 cm por dentro.
+func _clear_head(id: String, hand: Vector3, basis: Basis, body: Dictionary, body_offset: Vector3, head_clearance: float) -> Dictionary:
+	var lean := float(body.get("lean", 0.0))
+	var head := HEAD_CENTER + body_offset + Vector3(0, -float(body.get("dip", 0.0)) - HEAD_ABOVE_SPINE * (1.0 - cos(lean)), -float(body.get("step", 0.0)) - HEAD_ABOVE_SPINE * sin(lean))
+	var clearance: float = head_clearance + float(WEAPON_RADIUS.get(id, 0.04))
+	var grip: Vector3 = DATA.GRIPS.get(id, Vector3.ZERO)
+	for iteration in 3:
+		var near := hand + basis * (Vector3(0, 0, 0.17) - grip)
+		var far := hand + basis * (Vector3(0, 0, -0.50) - grip)
+		var closest := Geometry3D.get_closest_point_to_segment(head, near, far)
+		var away := closest - head
+		# Correção suave (contínua na posição e na velocidade): começa CLEAR_SOFT
+		# antes do limite e garante folga ≥ clearance + CLEAR_SOFT/2. Um degrau
+		# liga/desliga girava a arma 50°/quadro na entrada da zona.
+		var depth := (clearance + CLEAR_SOFT - away.length()) / CLEAR_SOFT
+		if depth <= 0.0: break
+		var deficit := CLEAR_SOFT * (depth * depth * 0.5 if depth < 1.0 else depth - 0.5)
+		var push := away.normalized() if away.length_squared() > 0.000001 else Vector3.RIGHT
+		var lever := closest - hand
+		# Ponto perto da mão: afasta a mão; longe: gira a arma em torno dela. Mistura
+		# contínua — escolher um ou outro por limiar alternava entre quadros e o
+		# antebraço de apoio saltava 38°.
+		var move_hand := 1.0 - smoothstep(0.04, 0.10, lever.length())
+		hand += push * deficit * move_hand
+		var axis := lever.cross(push)
+		if axis.length_squared() > 0.000001 and move_hand < 1.0:
+			basis = Basis(axis.normalized(), atan2(deficit * (1.0 - move_hand), lever.length())) * basis
+	return {"hand": hand, "basis": basis.orthonormalized()}
+
 ## Guarda de punhos (soco e soqueira) nos canais de `MeleeMoveset`.
 func _punch_rest() -> Dictionary:
 	return {"r": MOVES.GUARD_RIGHT, "l": MOVES.GUARD_LEFT, "rb": Vector3.ZERO, "lb": Vector3.ZERO,
+		"rr": MOVES.GUARD_ROLL, "lr": MOVES.GUARD_ROLL,
 		"rp": MOVES.POLE_RIGHT, "lp": MOVES.POLE_LEFT,
 		"torso": -0.12, "hip": -0.04, "lean": 0.0, "dip": 0.0, "step": 0.0}
 

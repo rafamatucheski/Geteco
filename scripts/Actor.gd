@@ -127,6 +127,8 @@ func _ready() -> void:
 				_combat_bones[skeleton.get_bone_name(bone_index)] = bone_index
 				_combat_rests.append(skeleton.get_bone_rest(bone_index))
 			_combat_skin = model.find_child("Mesh0", true, false) as MeshInstance3D
+			# Punho do modelo deixa o polegar esticado; ver `DanteHandShapes`.
+			if is_instance_valid(_combat_skin): _combat_skin.mesh = preload("res://scripts/DanteHandShapes.gd").fixed(_combat_skin.mesh)
 		if animation:
 			animation.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 			_build_idle_pose()
@@ -694,7 +696,21 @@ func _apply_combat_weapon_pose() -> void:
 		_solve_combat_arm("Left", left_target, left_basis, left_grip, -1.0, left_free)
 		for entry in left_clip:
 			_blend_arm_bone(entry[0], entry[1], left_weight)
-	_set_combat_grips(right_grip, left_grip, bool(pose.get("right_fist", false)), bool(pose.get("left_fist", false)), not right_solve, not left_solve or left_weight < 0.5)
+	# Punho fechado no soco: pulso reto na linha do antebraço, só girando em torno
+	# dele (vertical na guarda, palma para baixo no impacto). Com a palma presa a uma
+	# base fixa o pulso dobrava e o punho apontava para baixo, lendo como garra.
+	for side in ["Right", "Left"]:
+		var roll: Variant = pose.get(side.to_lower() + "_wrist_roll", null)
+		if roll is float and (right_solve if side == "Right" else left_solve):
+			var hand_bone: int = _combat_bones[side + "Hand"]
+			var axis := (_combat_rests[hand_bone].origin as Vector3).normalized()
+			var straight := Quaternion(axis, float(roll) * (1.0 if side == "Right" else -1.0)) * _combat_rests[hand_bone].basis.get_rotation_quaternion()
+			var weight := right_weight if side == "Right" else left_weight
+			skeleton.set_bone_pose_rotation(hand_bone, skeleton.get_bone_pose_rotation(hand_bone).slerp(straight, weight).normalized())
+	# Taco/machado: a forma "agarrar" do modelo só dobra os dedos pela metade e a mão
+	# lia espalmada no cabo; o punho fechado (polegar corrigido) envolve o cabo.
+	var wrap := bool(pose.get("grip_as_fist", false))
+	_set_combat_grips(right_grip, left_grip, bool(pose.get("right_fist", false)) or (wrap and right_grip), bool(pose.get("left_fist", false)) or (wrap and left_grip), not right_solve, not left_solve or left_weight < 0.5)
 	_stabilize_combat_pose()
 	if lock_support and bool(pose.get("support_locked", false)):
 		# Resolve support against the realized (angularly constrained) weapon,
@@ -791,6 +807,10 @@ func _set_combat_grips(right: bool, left: bool, right_fist := false, left_fist :
 			if _combat_bones.has(side + "Hand"):
 				skeleton.set_bone_pose_scale(_combat_bones[side + "Hand"], Vector3.ONE * 0.95)
 
+## Rolagem fixa entre a palma pedida e o osso da mão (V1), usada pelo IK e pela
+## inversa em `combat_realized_palm_basis`.
+const PALM_ROLL := {"Right": 0.358, "Left": -0.392}
+
 ## Two-bone IK adapted from the V1 Meshy rig. `target_local` and
 ## `palm_basis_local` use the Actor's facing space, with the muzzle along -Z.
 ## Mão aberta e fechada usam a mesma cadeia e o mesmo polo contínuo.
@@ -802,7 +822,7 @@ func _solve_combat_arm(side: String, target_local: Vector3, palm_basis_local: Ba
 	var target := skeleton.to_local(visual.to_global(target_local))
 	var palm_world_basis := visual.global_basis.orthonormalized() * palm_basis_local.orthonormalized()
 	var model_basis := skeleton.global_basis.orthonormalized().inverse() * palm_world_basis
-	var roll := 0.358 if side == "Right" else -0.392
+	var roll: float = PALM_ROLL[side]
 	# Opening the fingers must not change the wrist solver or bone length.
 	# Fists, reloads and grips all honor the authored palm orientation.
 	var wrist_alignment := Basis(Vector3.RIGHT, -PI * 0.5)
@@ -908,12 +928,25 @@ func combat_palm_position(side: String) -> Vector3:
 	var pose := skeleton.get_bone_global_pose(_combat_bones[side + "Hand"])
 	return skeleton.to_global(pose * Vector3(0, 0.065, 0))
 
+## Orientação da palma realmente apresentada, no espaço do Actor: inverte o
+## alinhamento que `_solve_combat_arm` aplica entre palma pedida e osso da mão.
+func combat_realized_palm_basis(side: String) -> Basis:
+	var hand: int = _combat_bones[side + "Hand"]
+	var roll: float = PALM_ROLL[side]
+	var bone := skeleton.get_bone_global_pose(hand).basis.orthonormalized()
+	var palm := bone * (Basis(Vector3.RIGHT, -PI * 0.5) * Basis(Vector3.UP, -roll)).inverse()
+	return (visual.global_basis.orthonormalized().inverse() * skeleton.global_basis.orthonormalized() * palm).orthonormalized()
+
 ## Transformação final do prop baseada na palma efetivamente resolvida pelo IK.
 ## `grip` é o centro da empunhadura no espaço local do modelo da arma.
 func combat_weapon_transform(grip: Vector3) -> Transform3D:
 	if combat_weapon_pose.is_empty() or not is_instance_valid(visual):
 		return Transform3D(global_basis, global_position)
 	var local_basis: Basis = combat_weapon_pose.basis
+	if combat_weapon_pose.get("right_wrist_roll") is float:
+		# Pulso reto (soqueira no soco): o prop segue a mão real, não a base pedida.
+		var requested: Basis = combat_weapon_pose.get("right_basis", local_basis)
+		local_basis = combat_realized_palm_basis("Right") * requested.orthonormalized().inverse() * local_basis.orthonormalized()
 	var weapon_basis := (visual.global_basis * local_basis).orthonormalized()
 	# Na V1 a arma não escalava junto com o Dante; `weapon_scale` repõe essa proporção.
 	var weapon_scale := float(combat_weapon_pose.get("weapon_scale", 1.0))
@@ -922,6 +955,7 @@ func combat_weapon_transform(grip: Vector3) -> Transform3D:
 ## Palma esquerda resolvida, com a orientação pedida pela pose (segunda soqueira).
 func combat_left_palm_transform() -> Transform3D:
 	var local_basis: Basis = combat_weapon_pose.get("left_basis", Basis.IDENTITY)
+	if combat_weapon_pose.get("left_wrist_roll") is float: local_basis = combat_realized_palm_basis("Left")
 	var weapon_scale := float(combat_weapon_pose.get("weapon_scale", 1.0))
 	var palm_basis := (visual.global_basis * local_basis).orthonormalized()
 	return Transform3D(palm_basis.scaled_local(Vector3.ONE * weapon_scale), combat_palm_position("Left"))

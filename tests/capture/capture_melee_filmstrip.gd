@@ -57,11 +57,19 @@ func _run() -> void:
 	# Perfil pela direita, um pouco à frente e acima: golpes para a frente se leem
 	# como deslocamento lateral na imagem (de frente, vinham na direção da câmera).
 	var angle := "side"
+	# zoom=hands: câmera fechada nas palmas, seguindo as mãos quadro a quadro
+	# (para julgar punho, pegada no cabo e o cabo passando pela cabeça).
+	var hands := false
+	var duration_override := 0.0
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("view="): angle = arg.trim_prefix("view=")
-	camera.position = Vector3(3.0, 1.9, -1.4) if angle == "side" else Vector3(1.6, 2.4, -3.0)
+		if arg == "zoom=hands": hands = true
+		if arg.begins_with("duration="): duration_override = float(arg.trim_prefix("duration="))
+	var view_offset := Vector3(3.0, 0.85, -1.05) if angle == "side" else Vector3(1.6, 1.35, -2.65)
+	camera.position = Vector3(0, 1.05, -0.35) + view_offset
 	view.add_child(camera)
 	camera.look_at(Vector3(0, 1.05, -0.35))
+	if hands: camera.size = 0.6
 	var rows: Array = MELEE_ROWS if mode == "melee" else RELOAD_ROWS
 	var sheet := Image.create(CELL.x * columns, CELL.y * rows.size(), false, Image.FORMAT_RGBA8)
 	for row in rows.size():
@@ -87,12 +95,17 @@ func _run() -> void:
 			print("FILMSTRIP row=%d %s combo_step=%d" % [row, id, pose.combo_step])
 		else:
 			duration = 1.6
+		if duration_override > 0.0: duration = duration_override
 		var total := int(round(duration * 60.0))
 		var captured := 0
 		for frame in total + 1:
 			var progress := float(frame) / float(total)
 			_step(actor, pose, gun, id, mode == "reload", progress)
 			if captured < columns and frame >= int(round(float(captured) * float(total) / float(columns - 1))):
+				if hands:
+					var focus: Vector3 = (actor.combat_palm_position("Right") + actor.combat_palm_position("Left")) * 0.5
+					camera.position = focus + view_offset.normalized() * 3.0
+					camera.look_at(focus)
 				await RenderingServer.frame_post_draw
 				var image: Image = view.get_texture().get_image()
 				image.convert(Image.FORMAT_RGBA8)

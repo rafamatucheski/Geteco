@@ -9,6 +9,7 @@ const MOVES = preload("res://gameplay/MeleeMoveset.gd")
 const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
 const DATA = preload("res://gameplay/WeaponPoseData.gd")
 const DT := 1.0 / 60.0
+const HEAD_RADIUS := 0.14
 var failures: Array[String] = []
 var checks := 0
 var actor
@@ -29,6 +30,21 @@ func step(pose, id: String, reloading := false, progress := 0.0) -> Dictionary:
 
 func foot(side: String) -> Vector3:
 	return actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones[side + "Foot"]).origin)
+
+## Folga entre a arma (eixo do cabo à ponta, com o raio do barril/lâmina) e a
+## cabeça do Dante (esfera sobre o osso Head que cobre cabelo e barba: a malha da
+## cabeça mede ±0,12 m em X e 0,25 m em altura). Negativo = atravessa.
+func head_clearance(id: String) -> float:
+	var sk: Skeleton3D = actor.skeleton
+	var base: Vector3 = sk.to_global(sk.get_bone_global_pose(sk.find_bone("Head")).origin)
+	var top: Vector3 = sk.to_global(sk.get_bone_global_pose(sk.find_bone("head_end")).origin)
+	var center := base.lerp(top, 0.4)
+	var weapon: Transform3D = actor.combat_weapon_transform(DATA.GRIPS[id])
+	var a: Vector3 = weapon * Vector3(0, 0, 0.17)
+	var b: Vector3 = weapon * Vector3(0, 0, -0.50)
+	var nearest := Geometry3D.get_closest_point_to_segment(center, a, b)
+	var radius := 0.045 if id == "bat" else 0.06 # barril do taco; cabeça do machado
+	return center.distance_to(nearest) - HEAD_RADIUS - radius
 
 func run() -> void:
 	actor = ACTOR.new()
@@ -54,6 +70,10 @@ func run() -> void:
 		var max_weapon := 0.0
 		var last_basis: Basis = actor.combat_weapon_transform(DATA.GRIPS.get(id, Vector3.ZERO)).basis.orthonormalized()
 		var foot_drift := 0.0
+		var head_gap := INF
+		var grip_gap := 0.0
+		var grip_note := ""
+		var head_note := ""
 		var reach_ok := true
 		var reach_note := ""
 		for press in count + 1:
@@ -72,6 +92,17 @@ func run() -> void:
 					max_weapon = maxf(max_weapon, rad_to_deg(basis.get_rotation_quaternion().angle_to(last_basis.get_rotation_quaternion())))
 					last_basis = basis
 				for side in feet: foot_drift = maxf(foot_drift, (foot(side) - (feet[side] as Vector3)).length())
+				if id in ["bat", "axe"]:
+					var gap := head_clearance(id)
+					# Mão de apoio dentro do cabo: distância da palma real ao eixo do cabo.
+					var weapon: Transform3D = actor.combat_weapon_transform(DATA.GRIPS[id])
+					var off_axis := Geometry3D.get_closest_point_to_segment(actor.combat_palm_position("Left"), weapon * Vector3(0, 0, 0.17), weapon * Vector3(0, 0, -0.30)).distance_to(actor.combat_palm_position("Left"))
+					if off_axis > grip_gap:
+						grip_gap = off_axis
+						grip_note = "golpe %d t=%.2f s" % [pose.combo_step, pose.action_age]
+					if gap < head_gap:
+						head_gap = gap
+						head_note = "golpe %d t=%.2f s" % [pose.combo_step, pose.action_age]
 				hips_travel = maxf(hips_travel, actor.skeleton.get_bone_global_pose(actor.hips).origin.distance_to(hips_rest))
 				torso_turn = maxf(torso_turn, absf(float(packet.get("torso_yaw", 0.0))))
 				if absf(pose.action_age - contact) < DT * 0.5:
@@ -95,6 +126,8 @@ func run() -> void:
 		check(max_joint < 35.0, "%s: articulação ≤ 35°/quadro (%.1f°)" % [id, max_joint])
 		if id in ["bat", "axe"]: check(max_weapon < 50.0, "%s: arma sem giro brusco (%.1f°/quadro)" % [id, max_weapon])
 		check(foot_drift < 0.03, "%s: pés plantados durante a sequência (%.3f m)" % [id, foot_drift])
+		if id in ["bat", "axe"]: check(grip_gap < 0.035, "%s: mão de apoio no cabo (afastamento máximo %.3f m em %s)" % [id, grip_gap, grip_note])
+		if id in ["bat", "axe"]: check(head_gap > 0.0, "%s: arma não atravessa a cabeça (folga mínima %.3f m em %s)" % [id, head_gap, head_note])
 		# O corpo entra no golpe: peso/joelhos movem o quadril e o tronco gira.
 		check(hips_travel > 0.03 and torso_turn > 0.4, "%s: quadril desloca %.3f m e tronco gira %.2f rad" % [id, hips_travel, torso_turn])
 		# Parado além da janela, a sequência recomeça.

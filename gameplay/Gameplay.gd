@@ -506,7 +506,7 @@ func _update_left_knuckles(id: String) -> void:
 		ARSENAL.build(_left_knuckles, "knuckles")
 	_left_knuckles.visible = true
 	# A fileira de anéis segue o eixo Y da palma, igual à soqueira da direita.
-	_left_knuckles.global_transform = player.combat_left_palm_transform() * Transform3D(Basis(Vector3.BACK, PI * 0.5), Vector3.ZERO)
+	_left_knuckles.global_transform = player.combat_left_palm_transform() * Transform3D(Basis(Vector3.BACK, PI * 0.5), Vector3.ZERO) * Transform3D(Basis.IDENTITY, -POSE.GRIPS.knuckles)
 
 func _update_weapon_pose(delta: float) -> void:
 	if not is_instance_valid(player): return
