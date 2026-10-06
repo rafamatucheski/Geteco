@@ -91,6 +91,13 @@ const SLOT_ORDER := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", 
 const HEAVY_FLASH := ["magnum", "shotgun", "sawed_off", "rpg"]
 ## Tranco de câmera por disparo (metros de deslocamento ortográfico). Armas leves ficam sem.
 const CAMERA_KICK := {"magnum": 0.07, "shotgun": 0.08, "sawed_off": 0.10, "hunting_rifle": 0.07, "rpg": 0.12, "ak47": 0.025}
+## Golpe corpo a corpo que ACERTA: tranco de câmera e empurrão da vítima (metros,
+## em ~0,14 s, com colisão). Golpe no ar não treme a tela. O golpe pesado que fecha
+## a sequência (`WeaponRigPose.heavy_attack`) multiplica os dois.
+const MELEE_KICK := {"fists": 0.025, "knuckles": 0.035, "knife": 0.02, "bat": 0.06, "axe": 0.07}
+const MELEE_SHOVE := {"fists": 0.10, "knuckles": 0.16, "knife": 0.06, "bat": 0.32, "axe": 0.26}
+const HEAVY_IMPACT := 1.6
+const SHOVE_SECONDS := 0.14
 ## Agrupa impactos do mesmo material no mesmo instante (chumbo de escopeta), como o V1 (40 ms).
 const IMPACT_GROUP_SECONDS := 0.04
 ## Crime por fonte CONTÍNUA (jato do lança-chamas, fogo aceso pelo jogador): uma denúncia por vítima
@@ -169,6 +176,9 @@ var _muzzle_light: OmniLight3D
 var _muzzle_material: StandardMaterial3D
 var _muzzle_timer := 0.0
 var _kick_tween: Tween
+## Empurrões em curso: {"id": instance_id, "velocity": m/s inicial, "age": s}.
+var _shoves: Array[Dictionary] = []
+var _swing_trail: Node
 var _flame_audio: AudioStreamPlayer3D
 var _flame_clock := 0.0
 var _reload_audio: AudioStreamPlayer3D
@@ -410,7 +420,9 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_aim(delta)
 	_update_weapon_pose(delta)
 	_update_visual()
+	_update_swing_trail(delta)
 	_update_contact()
+	_update_shoves(delta)
 	_update_combat_clip(delta)
 	_update_swing(delta)
 	_update_recoil(delta)
@@ -533,10 +545,35 @@ func _update_weapon_parts(id: String) -> void:
 		var opening := smoothstep(0.05, 0.18, progress) * (1.0 - smoothstep(0.79, 0.92, progress)) if reload_timer > 0.0 else 0.0
 		cylinder.position.x = -0.065 * opening
 		cylinder.rotation.z = -0.45 * opening
+	var magazine := gun.get_node_or_null("CurvedMagazine") as Node3D
+	if magazine != null: _update_magazine(magazine)
 	var rocket := gun.get_node_or_null("LoadedRocket") as Node3D
 	if rocket != null:
 		var ammo: Dictionary = state.get_ammo(id)
 		rocket.visible = int(ammo.get("magazine", 0)) > 0 or (reload_timer > 0.0 and (1.0 - reload_timer / maxf(_reload_total, 0.001)) > 0.65)
+
+## Carregador destacável (AK-47) na mesma linha do tempo de `WeaponRigPose.reload_targets`:
+## o vazio desce e cai ao soltar (0,09–0,20), a mão busca o novo no cinto e o traz
+## preso à palma até o encaixe (0,30–0,45). Fora da recarga fica no lugar original.
+func _update_magazine(magazine: Node3D) -> void:
+	if not magazine.has_meta("combat_rest_transform"): magazine.set_meta("combat_rest_transform", magazine.transform)
+	var rest: Transform3D = magazine.get_meta("combat_rest_transform")
+	var progress := clampf(1.0 - reload_timer / maxf(_reload_total, 0.001), 0.0, 1.0) if reload_timer > 0.0 else 1.0
+	magazine.visible = true
+	magazine.transform = rest
+	if reload_timer <= 0.0: return
+	if progress < 0.20 and progress >= 0.09:
+		var fall := smoothstep(0.09, 0.20, progress)
+		magazine.transform = rest.translated_local(Vector3(0, -0.16 * fall * fall, 0.02 * fall))
+		magazine.visible = progress < 0.19
+	elif progress < 0.30 and progress >= 0.20:
+		magazine.visible = false
+	elif progress < 0.45 and progress >= 0.30 and player.has_method("combat_left_palm_transform"):
+		# Centro do carregador (espaço da arma) na palma esquerda, alinhado à arma.
+		var center := gun.global_transform * Vector3(0, -0.10, -0.07)
+		var palm: Vector3 = player.combat_left_palm_transform().origin
+		var seat := smoothstep(0.40, 0.45, progress)
+		magazine.global_position += (palm - center) * (1.0 - seat)
 
 ## Clarão de boca do V1 (`Player._update_equipped_weapon_3d_mesh`): só armas de fogo,
 ## lança-foguetes e lança-chamas. Corpo a corpo e granada não têm boca.
@@ -1036,7 +1073,7 @@ func _update_contact() -> void:
 	direction.y = 0.0
 	direction = direction.normalized() if direction.length_squared() > 0.001 else Vector3.FORWARD
 	if id != "grenade":
-		_melee(origin, direction, contact.data)
+		_melee(origin, direction, contact.data, id)
 		return
 	if not state.consume_ammo(id, 1): return
 	if player.has_method("combat_palm_position"): origin = player.combat_palm_position("Right")
@@ -1098,7 +1135,7 @@ func _ignite_actor(actor: Node3D, source: Node) -> void:
 	else:
 		effect.ignite(source)
 
-func _melee(origin: Vector3, direction: Vector3, data: Dictionary) -> void:
+func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> void:
 	var reach := float(data.get("melee_range", 46.0)) / 16.0
 	# Caixa à frente do jogador, do corpo até o alcance (V1: qualquer alvo a menos de `melee_range` no cone da frente).
 	# A esfera antiga ficava centrada em `reach - 0,5` e deixava uma zona morta: alvo colado (< ~1,8 m com punhos) não era
@@ -1125,7 +1162,47 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary) -> void:
 		else:
 			_impact_sound(actor, target, float(data.damage))
 		_hit_effect({"collider": actor, "position": target, "normal": -direction}, float(data.damage), direction)
+		_melee_impact(actor, direction, id)
 		break
+
+## Peso do contato: o golpe trava no alvo (hit-stop), a câmera dá um tranco e a
+## vítima viva é empurrada no sentido do golpe. Só apresentação: o dano já entrou.
+func _melee_impact(actor: Node3D, direction: Vector3, id: String) -> void:
+	var heavy := _rig_pose.heavy_attack()
+	var factor := HEAVY_IMPACT if heavy else 1.0
+	_rig_pose.impact(id)
+	_kick_camera(float(MELEE_KICK.get(id, 0.0)) * factor)
+	if not actor is CharacterBody3D or actor == player or actor.get("dead") == true or _is_invulnerable(actor): return
+	var distance := float(MELEE_SHOVE.get(id, 0.0)) * factor
+	if distance <= 0.0: return
+	var flat := Vector3(direction.x, 0.0, direction.z).normalized()
+	# Velocidade decrescendo linearmente até zero: percorre `distance` em SHOVE_SECONDS.
+	_shoves.append({"id": actor.get_instance_id(), "velocity": flat * (2.0 * distance / SHOVE_SECONDS), "age": 0.0})
+
+func _update_shoves(delta: float) -> void:
+	if _shoves.is_empty(): return
+	var remaining: Array[Dictionary] = []
+	for shove in _shoves:
+		var body := instance_from_id(int(shove.id)) as CharacterBody3D
+		if body == null or not is_instance_valid(body) or body.get("dead") == true: continue
+		var age := float(shove.age)
+		var speed := maxf(0.0, 1.0 - age / SHOVE_SECONDS)
+		# Com colisão: parede ou carro seguram a vítima em vez de atravessá-la.
+		body.move_and_collide((shove.velocity as Vector3) * speed * delta)
+		shove.age = age + delta
+		if float(shove.age) < SHOVE_SECONDS: remaining.append(shove)
+	_shoves = remaining
+
+## Rastro de movimento do taco/machado só no trecho rápido do golpe.
+func _update_swing_trail(delta: float) -> void:
+	var id := equipped()
+	if id not in ["axe", "bat"] or not is_instance_valid(gun):
+		_swing_trail = null
+		return
+	if not is_instance_valid(_swing_trail) or not gun.is_ancestor_of(_swing_trail):
+		_swing_trail = gun.find_child("AxeSwingTrail", true, false)
+		if _swing_trail == null: return
+	_swing_trail.update_trail(delta, bool(_pose_frame.get("swing_trail", false)))
 
 ## Maciota e o mecânico (e qualquer nó marcado): nada os fere, nem contam como lesão ou crime.
 func _is_invulnerable(actor: Object) -> bool:
@@ -1839,7 +1916,9 @@ func _melee_swing_sound(_id: String, data: Dictionary) -> void:
 	if stance == "knife": stream = AUDIO.knife_sample(-1)
 	elif stance == "axe": stream = AUDIO.bat_swing()
 	# V1 `Player._melee_attack`: o volume do catálogo, sem o -10 dB extra da V2.
-	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)))
+	# O golpe pesado da sequência soa mais grave e um pouco mais forte.
+	var heavy := _rig_pose.heavy_attack()
+	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)) + (1.5 if heavy else 0.0), 0.88 if heavy else 1.0)
 
 ## Lança-chamas: rajada de 0,38 s reiniciada enquanto o gatilho segue (V1 `_flamethrower_audio`).
 func _flame_sound() -> void:
@@ -1959,6 +2038,7 @@ func on_region_changed() -> void:
 	_pending_contact.clear()
 	_police_rounds.clear()
 	_clear_combat_registers()
+	_shoves.clear()
 	_swing_age = -1.0
 	_aim_hold = 0.0
 	_recoil = 0.0

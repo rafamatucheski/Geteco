@@ -54,6 +54,12 @@ static func build(root: Node3D, id: String) -> void:
 			var x_off := -0.033 + i * 0.022
 			_box(root, "KnucklePyramid_%d" % i, Vector3(x_off, 0.008, -0.045), Vector3(0.012, 0.012, 0.010), steel)
 	elif id in ["bat", "taco", "baseball"]:
+		var bat_trail := preload("res://gameplay/AxeSwingTrail.gd").new()
+		bat_trail.name = "AxeSwingTrail"
+		bat_trail.inner = Vector3(0, 0, -0.24)
+		bat_trail.outer = Vector3(0, 0, -0.49)
+		bat_trail.opacity = 0.12
+		root.add_child(bat_trail)
 		_cylinder(root, "BatBarrel", Vector3(0, 0, -0.28), 0.032, 0.42, wood, Vector3(90, 0, 0))
 		_cylinder(root, "BatTaper", Vector3(0, 0, -0.04), 0.022, 0.16, wood, Vector3(90, 0, 0))
 		_cylinder(root, "BatGrip", Vector3(0, 0, 0.08), 0.018, 0.16, rubber, Vector3(90, 0, 0))

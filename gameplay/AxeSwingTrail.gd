@@ -1,7 +1,13 @@
 extends Node3D
 ## Six reusable transparent ribbon segments; no surface rebuilds during a swing.
+## Rastro de movimento do taco e do machado: a faixa liga, quadro a quadro, o
+## segmento `inner`→`outer` (espaço do modelo da arma). No machado é a largura do
+## fio; no taco, o comprimento do barril — lê como borrão de velocidade.
 const MAX_SAMPLES := 7
 const LIFETIME := 0.09
+@export var inner := Vector3(0.07, 0, -0.44)
+@export var outer := Vector3(0.19, 0, -0.44)
+@export var opacity := 0.18
 var samples: Array[Dictionary] = []
 var ribbon: MultiMeshInstance3D
 var mesh := MultiMesh.new()
@@ -27,12 +33,14 @@ func _ready() -> void:
 	ribbon.global_transform = Transform3D.IDENTITY
 	ribbon.visible = false
 
-func update_blade(delta: float, age: float) -> void:
+## `active`: trecho rápido do golpe (`WeaponRigPose` → `swing_trail`). Fora dele
+## as amostras só envelhecem e a faixa some sozinha.
+func update_trail(delta: float, active: bool) -> void:
 	if not is_instance_valid(ribbon): return
 	for sample in samples: sample.life -= delta
 	while not samples.is_empty() and samples[0].life <= 0.0: samples.pop_front()
-	if age >= 0.18 and age <= 0.34:
-		samples.append({"inner": get_parent().to_global(Vector3(0.07,0,-0.44)), "outer": get_parent().to_global(Vector3(0.19,0,-0.44)), "life": LIFETIME})
+	if active:
+		samples.append({"inner": get_parent().to_global(inner), "outer": get_parent().to_global(outer), "life": LIFETIME})
 		if samples.size() > MAX_SAMPLES: samples.pop_front()
 	var count := 0
 	for i in range(1, samples.size()):
@@ -44,7 +52,7 @@ func update_blade(delta: float, age: float) -> void:
 		if normal.length_squared() < 0.00000001: continue
 		var center: Vector3 = (a.inner + a.outer + b.inner + b.outer) * 0.25
 		mesh.set_instance_transform(count, Transform3D(Basis(width, along, normal.normalized()), center))
-		mesh.set_instance_color(count, Color(0.78,0.85,0.9,float(a.life) / LIFETIME * 0.18))
+		mesh.set_instance_color(count, Color(0.78,0.85,0.9,float(a.life) / LIFETIME * opacity))
 		count += 1
 	mesh.visible_instance_count = count
 	ribbon.visible = count > 0
