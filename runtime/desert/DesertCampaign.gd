@@ -86,8 +86,9 @@ func nearest_action() -> Dictionary:
 		if is_instance_valid(actors[id]) and point.distance_to(actors[id].global_position)<1.7:
 			return {"id":"desert_story","target":id,"label":"Conversar com "+str(CONTACT.LOOKS[id].name)}
 	return {}
-func perform(target: String) -> bool:
+func perform(target: String, offer_jobs := true) -> bool:
 	if nearest_action().get("target","") != target: return false
+	if offer_jobs and session.desert.contracts.open_contact(target): return true
 	var data := STATE.data(session.state.world_state)
 	match target:
 		"vicente":

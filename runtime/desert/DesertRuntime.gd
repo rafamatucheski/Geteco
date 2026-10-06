@@ -15,6 +15,7 @@ var drag: Node3D
 var story: Node3D
 var frontier: Node3D
 var discoveries: Node3D
+var contracts: Node3D
 var village_life: Node
 var tuning_panel: CanvasLayer
 var tuning_car: CharacterBody3D
@@ -38,6 +39,9 @@ func configure(owner_session) -> void:
 	discoveries=preload("res://runtime/desert/expansion/DesertDiscoveries.gd").new()
 	add_child(discoveries)
 	discoveries.configure(session)
+	contracts=preload("res://runtime/desert/DesertContracts.gd").new()
+	add_child(contracts)
+	contracts.configure(session)
 	var locals := preload("res://runtime/desert/DesertLocals.gd").new()
 	add_child(locals)
 	locals.configure(session)
@@ -138,6 +142,8 @@ func _reconcile_resident() -> void:
 func nearest_action() -> Dictionary:
 	if session.state.region_id!="desert": return {}
 	if busy(): return drag.nearest_action()
+	var contract_action: Dictionary=contracts.nearest_action()
+	if not contract_action.is_empty(): return contract_action
 	var secret_action: Dictionary=frontier.nearest_action()
 	if not secret_action.is_empty(): return secret_action
 	var discovery_action: Dictionary=discoveries.nearest_action()
@@ -151,6 +157,7 @@ func nearest_action() -> Dictionary:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
+	if str(action.get("target","")).begins_with("contract:"): return contracts.perform(action)
 	if str(action.get("target","")).begins_with("secret:"): return frontier.perform(action)
 	if str(action.get("target","")).begins_with("discovery:"): return discoveries.perform(action)
 	if action.get("id","")=="desert_drag": return drag.perform(str(action.get("target","")))
@@ -266,8 +273,13 @@ func _buy_car(id: String) -> void:
 	session.close_menu()
 	session.show_message("Carro entregue no pátio do Digo.")
 	session.save_game()
-func objective() -> String: return drag.objective() if busy() else story.objective()
-func target_position() -> Vector3: return drag.target_position() if busy() else story.target_position()
+func objective() -> String:
+	if busy(): return drag.objective()
+	var job: String=contracts.objective()
+	return job if not job.is_empty() else story.objective()
+func target_position() -> Vector3:
+	if busy(): return drag.target_position()
+	return contracts.target_position() if not contracts.objective().is_empty() else story.target_position()
 static func validate_world(value: Dictionary, economy: Dictionary) -> bool:
 	if value.has("desert_secrets") and not preload("res://runtime/desert/DesertSecretState.gd").valid(value.desert_secrets): return false
 	if value.has("desert_bandits") and not preload("res://runtime/desert/DesertBanditEncounter.gd").valid_state(value.desert_bandits): return false

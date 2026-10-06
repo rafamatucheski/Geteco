@@ -5,6 +5,7 @@ const RACE := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const SECRETS := preload("res://runtime/desert/DesertSecretState.gd")
 const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
 static func valid(world: Dictionary, economy: Dictionary) -> bool:
+	if not preload("res://runtime/desert/DesertContractState.gd").validate_wallet(world,economy): return false
 	if world.has(SECRETS.KEY) and not SECRETS.valid(world[SECRETS.KEY]): return false
 	if world.has(BANDITS.STATE_KEY) and not BANDITS.valid_state(world[BANDITS.STATE_KEY]): return false
 	if world.has("desert_discoveries") and not preload("res://runtime/desert/expansion/DesertDiscoveryState.gd").valid(world.desert_discoveries): return false

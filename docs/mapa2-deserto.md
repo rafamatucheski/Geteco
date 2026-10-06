@@ -2,6 +2,16 @@
 
 Estado em 06/10/2026: módulos, integração central e revisão de detalhes aplicados. A validação usa Godot 4.7.2 .NET e fila compartilhada com os chats de estacionamento e ambiente sonoro. Ponte, progressão/economia/carros, colisão/oclusão dos interiores, corrida física e oficina com recarga passaram. A revisão visual cobriu dez pontos no Main e a sequência temporal da primeira corrida. Medições renderizadas concluídas; desempenho permanece **pendente**, com piora e picos registrados abaixo.
 
+## Missões secundárias — Bia e Raul
+
+- **Peças na estrada:** fale com Bia no pátio do Digo, aceite a entrega, leve as peças a Raul no Miragem e devolva o recibo à Bia. Pagamento único de R$ 1.200.
+- **O último ramal:** fale com Raul no Miragem, confira o livro de despachos na antiga estação, compare o lacre da carga no vagão descarrilado e retorne a Raul. Pagamento único de R$ 2.200. A descoberta é independente das provas da campanha de Vicente.
+- Os contatos preservam a opção **Conversar**. É possível aceitar as duas tarefas, alternar o acompanhamento ou voltar ao objetivo da história principal pelo menu dos contatos. O HUD aponta a etapa acompanhada; arrancadas em andamento mantêm prioridade.
+- Etapas e recibos persistem em `desert_contracts`, com validação cruzada da carteira. Save antigo sem essa chave continua válido. Uma carteira cheia mantém a entrega pendente. Repetir a interação não duplica pagamento.
+- As novas falas têm legenda, ainda sem gravações de voz. Não foram adicionados prédios, luzes, NPCs ou loops por frame; os objetivos usam contatos e vestígios físicos existentes.
+
+Validação e limites: [missões secundárias do deserto](reviews/desert-contracts-20261006.md).
+
 ## Direção e percurso
 
 A continuação norte da ponte, depois da missão final de Harbor, chega a uma rampa de 71,5 m e às rodovias do deserto. O acesso leste à montanha e a condição da obra permanecem independentes. A cidade é pequena, com construções baixas de reboco/adobe, marquises, coberturas planas e tons de areia. Fachadas exibem somente nomes próprios.
