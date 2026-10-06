@@ -6,7 +6,10 @@ const PATH := "res://addons/geteco_world_editor/session_context.json"
 const CONTEXT := preload("res://addons/geteco_world_editor/WorldContextCatalog.gd")
 const DATA := preload("res://world/editing/WorldEditData.gd")
 const PREFIX := "context/harbor/session/"
-const VERSION := 5
+const MOUNTAIN_PREFIX := "context/mountain/session/"
+# 6: túnel do canal, pista de skate, Torque e saída do forte (05/10), montados fora dos
+# registros de região; sem eles o mapa 2D mostrava chão vazio nesses lugares.
+const VERSION := 6
 
 class ForestSnapshot extends "res://gameplay/urban_v1/FreightOutskirts.gd":
 	var editor_batches := {}
@@ -45,6 +48,14 @@ static func upgrade(catalog: Dictionary, supplement: Dictionary, prefer_suppleme
 	for id in supplement.context:
 		if replace or not harbor.context.has(id): harbor.context[id] = supplement.context[id].duplicate(true)
 	harbor.session_context_version = maxi(int(harbor.get("session_context_version",0)),int(supplement.get("version",0)))
+	if catalog.has("mountain") and supplement.get("mountain_context") is Dictionary:
+		var mountain: Dictionary = catalog.mountain
+		if not mountain.has("context"): mountain.context = {}
+		if replace:
+			for id in mountain.context.keys():
+				if str(id).begins_with(MOUNTAIN_PREFIX): mountain.context.erase(id)
+		for id in supplement.mountain_context:
+			if replace or not mountain.context.has(id): mountain.context[id] = supplement.mountain_context[id].duplicate(true)
 
 static func build(parent: Node) -> Dictionary:
 	var rows := {}
@@ -96,7 +107,38 @@ static func build(parent: Node) -> Dictionary:
 	rows[village_id] = {"id":village_id,"type":"context","kind":"truckers_village","label":"Posto do Tonico","locked":true,
 		"position":[village_bounds.get_center().x,village_bounds.get_center().y],"size":[village_bounds.size.x,village_bounds.size.y],"parts":village_parts}
 	village.free()
-	return {"version":VERSION,"context":rows}
+	# Túnel do canal: montado por chunk em NativeRegion, fora dos registros. Uma faixa
+	# única que contém o eixo (z=63) gera o túnel inteiro de uma vez.
+	var tunnel_holder := Node3D.new()
+	parent.add_child(tunnel_holder)
+	var tunnel_script := preload("res://world/urban_detail/CanalTunnel3D.gd")
+	tunnel_script.build_chunk(tunnel_holder,Rect2(tunnel_script.W_STUB-1.0,0.0,tunnel_script.E_STUB-tunnel_script.W_STUB+2.0,64.0))
+	var tunnel_id := PREFIX+"canal_tunnel"
+	rows[tunnel_id] = CONTEXT.from_node(tunnel_holder,tunnel_id,"Túnel do canal","canal_tunnel",Vector3(240.0,0.0,tunnel_script.CENTER_Z))
+	tunnel_holder.free()
+	var skate_layout := preload("res://activities/skate/SkateParkLayout.gd")
+	var skate = preload("res://activities/skate/SkatePark.gd").new()
+	parent.add_child(skate)
+	var skate_id := PREFIX+"skate_park"
+	rows[skate_id] = CONTEXT.from_node(skate,skate_id,"Pista de skate","skate_park",skate_layout.CENTER)
+	skate.free()
+	# Só o cenário do Torque: carros e convidados do encontro são do controlador da sessão.
+	var torque = preload("res://world/places/classic_meet/ClassicMeetSite.gd").new()
+	parent.add_child(torque)
+	var torque_id := PREFIX+"torque"
+	rows[torque_id] = CONTEXT.from_node(torque,torque_id,"Torque","classic_meet",torque.ANCHOR)
+	torque.free()
+	var mountain_rows := {}
+	var fort_script := preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd")
+	var fort = fort_script.new()
+	fort.process_mode = Node.PROCESS_MODE_DISABLED
+	parent.add_child(fort)
+	fort.global_position = fort_script.WORLD_POSITION
+	fort._build()
+	var fort_id := MOUNTAIN_PREFIX+"fort_exit"
+	mountain_rows[fort_id] = CONTEXT.from_node(fort,fort_id,"Saída secreta do forte","fort_exit",fort_script.WORLD_POSITION)
+	fort.free()
+	return {"version":VERSION,"context":rows,"mountain_context":mountain_rows}
 
 static func _collect_village(node: Node,parts: Array) -> void:
 	if node is MeshInstance3D and node.mesh != null:

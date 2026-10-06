@@ -14,6 +14,7 @@ func run() -> void:
 		quit()
 		return
 	var result := {"version":2,"regions":{}}
+	var session_mountain: Dictionary = {}
 	for id in ["harbor","mountain"]:
 		var region = load("res://world/editing/EditableRegion.gd").build_region(id)
 		root.add_child(region)
@@ -51,7 +52,11 @@ func run() -> void:
 			result.regions[id].context.merge(supplement.context,true)
 			result.regions[id]["session_context_version"] = SESSION_CONTEXT.VERSION
 			result.regions[id].coverage["session_objects"] = supplement.context.size()
+			session_mountain = supplement.get("mountain_context",{})
 		else:
+			# A montanha é exportada depois do porto: recebe o contexto de sessão já montado.
+			result.regions[id].context.merge(session_mountain,true)
+			result.regions[id].coverage["session_objects"] = session_mountain.size()
 			var min_cell := Vector2i(100000,100000)
 			var max_cell := Vector2i(-100000,-100000)
 			for key in region.records:

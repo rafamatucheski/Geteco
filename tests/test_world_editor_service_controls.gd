@@ -17,12 +17,19 @@ func run() -> void:
 	await process_frame
 	var doc := DATA.empty_document()
 	var originals := {}
+	# Definições sem as edições salvas do usuário: Police e NorthFrontage3 já foram editados
+	# em world_edits.json (02/10) e a transformação do teste seria aplicada por cima delas.
+	var had_meta := Engine.has_meta("geteco_world_edit_document")
+	var previous_meta: Variant = Engine.get_meta("geteco_world_edit_document") if had_meta else null
+	Engine.set_meta("geteco_world_edit_document",DATA.empty_document())
+	for id in SERVICES.PLACES: originals[id] = PLACES.get_definition(SERVICES.PLACES[id])
+	if had_meta: Engine.set_meta("geteco_world_edit_document",previous_meta)
+	else: Engine.remove_meta("geteco_world_edit_document")
 	for id in SERVICES.PLACES:
 		var key := "building/"+str(id)
 		ui._select(key)
 		var row: Dictionary = ui.canvas.objects[key].duplicate(true)
 		check(not row.locked and row.service_building,"Service is selectable: "+id)
-		originals[id] = PLACES.get_definition(SERVICES.PLACES[id])
 		row.position[0] += 3.0
 		row.rotation = 25.0
 		row.size = [row.size[0]*1.1,row.size[1]*1.15]

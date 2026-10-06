@@ -74,6 +74,9 @@ func run() -> void:
 			var result := hit(Vector3(2560+dx,0,2560+dz))
 			check(not result.is_empty() and result.collider.get_meta("editor_id","") == crossing.id,"Collision across chunk boundary")
 	region.release_chunks()
+	# Desde 29/09 os chunks liberados são apagados em fatias pelo _process da região,
+	# desligado neste teste: esvazia a fila aqui.
+	while not region._retiring.is_empty(): region._drain_retired_slice()
 	await process_frame
 	check(grounds(region).is_empty(),"Ground unloads with chunks")
 	check(hit(Vector3(2560,0,2560)).is_empty(),"No ghost collision after unloading")

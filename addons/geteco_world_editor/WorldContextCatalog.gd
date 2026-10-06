@@ -21,6 +21,9 @@ static func build(region: Node3D) -> Dictionary:
 			region.add_child(holder)
 			region._build_record(holder,record)
 			await region.get_tree().process_frame
+			# Construtores fatiados por quadro (pista de motocross) ainda estariam vazios aqui.
+			for built in holder.get_children():
+				if built.has_method("finish_build"): built.finish_build()
 			var id: String = "context/"+region.region_id+"/"+str(record.kind)+"/"+str(index)
 			index += 1
 			var label: String = LABELS.get(record.kind,str(record.kind).capitalize())
@@ -63,12 +66,33 @@ static func from_node(node: Node3D,id: String,label: String,kind: String,fallbac
 			var footprint := AABB(points[0],Vector3.ZERO)
 			for point in points: footprint = footprint.expand(point)
 			parts.append([footprint.position.x,footprint.position.z,maxf(.08,footprint.size.x),maxf(.08,footprint.size.z),footprint.end.y,"9db7c4"])
+	if parts.size() > COARSE_LIMIT: parts = _coarse(parts)
 	parts.sort_custom(func(a,b): return float(a[4]) < float(b[4]))
 	var bounds := Rect2(Vector2(fallback.x,fallback.z)-Vector2.ONE,Vector2.ONE*2)
 	if not parts.is_empty():
 		bounds = Rect2(parts[0][0],parts[0][1],parts[0][2],parts[0][3])
 		for part in parts: bounds = bounds.merge(Rect2(part[0],part[1],part[2],part[3]))
 	return {"id":id,"type":"context","kind":kind,"label":label,"locked":true,"position":[bounds.get_center().x,bounds.get_center().y],"size":[bounds.size.x,bounds.size.y],"parts":parts}
+
+## Acima disto o conjunto vira grade: a pista de motocross sozinha somava 38,7 mil triângulos
+## (4 MB, quase o catálogo antigo inteiro) e o mapa 2D já não chegava a 60 FPS.
+const COARSE_LIMIT := 12000
+const COARSE_CELL := 2.0
+
+## Uma célula de 2 m por posição, com a cor e a altura da superfície mais alta que a toca.
+static func _coarse(parts: Array) -> Array:
+	var cells := {}
+	for part in parts:
+		var x0 := floori(float(part[0])/COARSE_CELL)
+		var z0 := floori(float(part[1])/COARSE_CELL)
+		var x1 := floori((float(part[0])+float(part[2]))/COARSE_CELL)
+		var z1 := floori((float(part[1])+float(part[3]))/COARSE_CELL)
+		for x in range(x0,x1+1):
+			for z in range(z0,z1+1):
+				var key := Vector2i(x,z)
+				if not cells.has(key) or float(cells[key][4]) < float(part[4]):
+					cells[key] = [x*COARSE_CELL,z*COARSE_CELL,COARSE_CELL,COARSE_CELL,part[4],part[5]]
+	return cells.values()
 
 static func collect(node: Node,parts: Array,skip_pieces := false) -> void:
 	if skip_pieces and node.has_meta("world_edit_piece_id"): return

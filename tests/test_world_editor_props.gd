@@ -67,24 +67,27 @@ func run() -> void:
 	var path := "res://evidence/world-editor-20260925/props_persistence_"+str(OS.get_process_id())+".json"
 	check(DATA.save_document(doc,"",path).is_empty(), "All props save to dedicated test document")
 	var loaded := DATA.read_document(path)
-	check(loaded.error.is_empty() and loaded.document.regions.harbor.size() == 8, "All eight models survive disk reload")
+	check(loaded.error.is_empty() and loaded.document.regions.harbor.size() == DATA.PROP_TYPES.size(), "All prop models survive disk reload")
 	Engine.set_meta("geteco_world_edit_document",loaded.document)
 	var region := REGION.build_region("harbor",Vector3(2500,0,2500))
 	root.add_child(region)
 	region.set_process(false)
 	ensure_props(region,loaded.document.regions.harbor)
-	check(find_props(region).size() == 8, "Production region instantiates eight saved props exactly once")
+	check(find_props(region).size() == DATA.PROP_TYPES.size(), "Production region instantiates every saved prop exactly once")
 	await physics_frame
 	await process_frame
 	for row in loaded.document.regions.harbor.values():
 		var prop := find_id(region,row.id)
 		check(prop != null and prop.global_position.is_equal_approx(DATA.xyz(row.position)), "Saved prop exists at authored position: "+row.model)
 		if prop == null: continue
-		check(prop.find_children("*","MeshInstance3D",true,false).size() > 0, "Prop has real mesh geometry: "+row.model)
+		# A passarela (27/09) desenha em MultiMesh; as caixas comuns em MeshInstance3D.
+		check(prop.find_children("*","MeshInstance3D",true,false).size()+prop.find_children("*","MultiMeshInstance3D",true,false).size() > 0, "Prop has real mesh geometry: "+row.model)
 		var bodies := prop.find_children("*","StaticBody3D",true,false)
 		check(bodies.size() > 0, "Prop has physical solid: "+row.model)
 		check(passive(prop), "Prop has no frame processing or lights: "+row.model)
-		check(prop.scale.is_equal_approx(Vector3.ONE*float(row.scale)) and is_equal_approx(prop.rotation.y,deg_to_rad(float(row.rotation))), "Saved scale and rotation reach physical root: "+row.model)
+		# A passarela se dimensiona por largura/comprimento (row.size), não por escala.
+		var expected_scale := Vector3.ONE if row.model == "footbridge" else Vector3.ONE*float(row.scale)
+		check(prop.scale.is_equal_approx(expected_scale) and is_equal_approx(prop.rotation.y,deg_to_rad(float(row.rotation))), "Saved scale and rotation reach physical root: "+row.model)
 		if not bodies.is_empty():
 			var collider := bodies[0].get_child(0) as CollisionShape3D
 			check(hit_body(collider.global_position,bodies[0]), "Physical query hits prop at transformed solid center: "+row.model)
@@ -94,10 +97,13 @@ func run() -> void:
 	check(hit_body(along_rotated_axis,barrier_body), "Rotated and doubled barrier collides along its scaled long axis")
 	check(not hit_body(barrier.global_position+Vector3(1.7,.92,0),barrier_body), "Barrier collision follows rotation rather than old world axis")
 	region.release_chunks()
+	# Desde 29/09 os chunks liberados são apagados em fatias pelo _process da região,
+	# desligado neste teste: esvazia a fila aqui.
+	while not region._retiring.is_empty(): region._drain_retired_slice()
 	await process_frame
 	check(find_props(region).is_empty(), "Props leave scene when their chunks unload")
 	ensure_props(region,loaded.document.regions.harbor)
-	check(find_props(region).size() == 8, "Props reconstruct once each after streaming reload")
+	check(find_props(region).size() == DATA.PROP_TYPES.size(), "Props reconstruct once each after streaming reload")
 	region.free()
 	var moved: Dictionary = loaded.document.regions.harbor["new/props_test_barrier"]
 	var old_position := DATA.xyz(moved.position)
@@ -110,7 +116,7 @@ func run() -> void:
 	root.add_child(reloaded)
 	reloaded.set_process(false)
 	ensure_props(reloaded,loaded.document.regions.harbor)
-	check(find_props(reloaded).size() == 7 and find_id(reloaded,"new/props_test_crate") == null, "Saved deletion does not instantiate a hidden stale prop")
+	check(find_props(reloaded).size() == DATA.PROP_TYPES.size()-1 and find_id(reloaded,"new/props_test_crate") == null, "Saved deletion does not instantiate a hidden stale prop")
 	barrier = find_id(reloaded,"new/props_test_barrier")
 	check(barrier != null and barrier.global_position.is_equal_approx(DATA.xyz(moved.position)), "Moved prop reloads in destination chunk")
 	barrier_body = barrier.find_children("*","StaticBody3D",true,false)[0]

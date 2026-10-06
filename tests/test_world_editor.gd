@@ -162,7 +162,8 @@ func run() -> void:
 	existing.position = [0,0]
 	editor._commit(existing)
 	check(not editor.document.regions.harbor.has("building/Garage"),"UI cannot modify garage")
-	var blocked := DATA.new_entity("tree",Vector2(49,93))
+	# Centro real da garagem no catálogo: o Maciota mudou de lote e o teste não deve fixar coordenadas.
+	var blocked := DATA.new_entity("tree",DATA.point(editor.canvas.objects["building/Garage"].position))
 	editor._commit(blocked)
 	check(not editor.document.regions.harbor.has(blocked.id),"Placement inside garage footprint blocked")
 	editor._select(tree_row.id)

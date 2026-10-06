@@ -225,3 +225,30 @@ já não cumpria 60 FPS e o p99 final aumentou de48,64 para84,9ms, com28 amostra
 acima66ms concentradas nos últimos2,4s. Não foi demonstrada a causa desse pico
 nem declarada aprovação de FPS. Métricas completas no JSON das respectivas
 pastas. A limitação foi mantida explícita para a sessão de performance.
+
+## Catálogo atualizado e áreas novas no mapa 2D — 05/10/2026
+
+O catálogo-base era de 26/09 e o mapa 2D não mostrava nada feito depois disso.
+Foi regerado (com janela minimizada, como "Atualizar base": em `--headless` as
+instâncias de MultiMesh caem na origem e os túmulos do cemitério colapsam) e
+agora cobre 791/791 registros do porto e 860/860 da montanha, incluindo
+zoológico da montanha, pista de motocross e trilha do zoológico.
+
+Lugares montados fora dos registros de região entram pelo suplemento de sessão
+(`WorldSessionContext.gd`, versão 6): túnel do canal, pista de skate, Torque e,
+na montanha (`context/mountain/session/`), a saída secreta do forte. Todos
+aparecem no mapa, em "Ir para local" e ficam protegidos, como Vértice e o
+Posto do Tonico. A prévia 3D já carregava o jogo real e não mudou.
+
+- Construtores fatiados por quadro (motocross) são concluídos com
+  `finish_build()` antes da coleta; antes a pista saía vazia.
+- Conjuntos com mais de 12 000 triângulos viram grade de 2 m com a cor da
+  superfície mais alta: a pista de motocross caiu de 4 MB para 0,22 MB. O
+  catálogo tem 9,4 MB (antes 5,5 MB + 2,2 MB de suplemento).
+- **Pendentes:** portão norte, casa do líder dos Cobra, trilha do jipe e
+  descida da montanha ainda não estavam commitados quando o catálogo foi gerado.
+  Os que são montados pela sessão (portão norte dentro da conexão, jipe,
+  descida) precisam de entrada no suplemento depois do commit dos donos; a casa
+  dos Cobra entra sozinha se virar registro de região. Rode "Atualizar base".
+- O catálogo reflete a árvore de trabalho no momento da geração, incluindo a
+  garagem do Maciota no novo lote (alteração em andamento de outra sessão).
