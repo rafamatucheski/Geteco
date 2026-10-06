@@ -74,12 +74,18 @@ const PUNCHES := [
 
 ## Taco/machado: forehand, backhand e golpe por cima (o pesado). Contato em 0,36 s.
 const SWINGS := [
-	{"end": 0.80, "keys": [
+	{"end": 0.88, "keys": [
 		{"t": 0.24, "ease": "inout", "r": Vector3(0.23, 1.17, -0.05), "d": Vector3(0.42, 0.55, 0.72), "k": Vector3(0, -1, 0), "torso": -0.62, "hip": -0.26, "dip": 0.025, "step": -0.025},
 		{"t": 0.29, "ease": "in", "r": Vector3(0.21, 1.12, -0.15), "d": Vector3(1, 0.15, -0.1), "k": Vector3(0, -1, 0), "torso": -0.18, "hip": 0.18, "dip": 0.04, "step": 0.03},
 		{"t": 0.36, "ease": "in", "r": Vector3(0.05, 1.06, -0.35), "d": Vector3(0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": 0.32, "hip": 0.36, "lean": 0.10, "step": 0.07, "dip": 0.04},
 		{"t": 0.47, "ease": "out", "r": Vector3(-0.15, 1.08, -0.27), "d": Vector3(-1, 0.1, 0.15), "k": Vector3(0, -1, 0), "torso": 0.70, "hip": 0.40, "lean": 0.06},
-		{"t": 0.57, "ease": "out", "r": Vector3(-0.17, 1.15, -0.16), "d": Vector3(-0.45, 0.55, 0.7), "k": Vector3(0, -1, 0), "torso": 0.55, "hip": 0.30, "lean": 0.02, "step": 0.03},
+		# Enrola ao lado do ombro esquerdo, afastado da cabeça: rente a ela, a volta
+		# pela frente obrigava a correção de colisão a girar o machado 55°/quadro.
+		{"t": 0.57, "ease": "out", "r": Vector3(-0.21, 1.10, -0.22), "d": Vector3(-0.70, 0.45, 0.45), "k": Vector3(0, -1, 0), "torso": 0.55, "hip": 0.30, "lean": 0.02, "step": 0.03},
+		# Volta pela frente do peito com a arma em pé: direto do ombro esquerdo ao
+		# direito a mão de apoio passava rente ao ombro, sem pegada possível, e o cabo
+		# do machado entrava no antebraço.
+		{"t": 0.73, "ease": "inout", "r": Vector3(0.02, 1.04, -0.30), "d": Vector3(0.10, 0.95, -0.25), "k": Vector3(0.7, -0.7, 0), "torso": 0.20, "hip": 0.12, "lean": 0.02, "step": 0.02},
 	]},
 	{"end": 0.80, "keys": [
 		{"t": 0.24, "ease": "inout", "r": Vector3(-0.10, 1.18, -0.12), "d": Vector3(-0.45, 0.55, 0.7), "k": Vector3(0, -1, 0), "torso": 0.50, "hip": 0.20, "dip": 0.025, "step": -0.02},
@@ -108,9 +114,10 @@ const AXE_DIAGONAL := {"end": 0.88, "keys": [
 	{"t": 0.22, "ease": "inout", "r": Vector3(0.20, 1.22, -0.08), "d": Vector3(0.42, 0.74, 0.52), "k": Vector3(0.85, -0.5, 0), "torso": -0.58, "hip": -0.24, "lean": -0.04, "dip": 0.02, "step": -0.025},
 	{"t": 0.29, "ease": "in", "r": Vector3(0.19, 1.22, -0.16), "d": Vector3(0.55, 0.80, -0.25), "k": Vector3(0.85, -0.5, 0), "torso": -0.20, "hip": 0.16, "lean": 0.06, "dip": 0.04, "step": 0.03},
 	{"t": 0.36, "ease": "in", "r": Vector3(0.04, 1.02, -0.37), "d": Vector3(-0.2, -0.3, -1), "k": Vector3(0.85, -0.5, 0), "torso": 0.30, "hip": 0.34, "lean": 0.18, "step": 0.07, "dip": 0.06},
-	# O follow-through segue no plano do corte, passando pela perna esquerda;
+	# O follow-through segue no plano do corte, descendo pela frente da perna esquerda
+	# (por trás dela o cabo encostava no antebraço esquerdo);
 	# a volta é pela frente (pela esquerda a lâmina cruzaria o eixo do plano).
-	{"t": 0.50, "ease": "out", "r": Vector3(-0.12, 0.88, -0.27), "d": Vector3(-0.45, -0.75, 0.35), "k": Vector3(0.85, -0.5, 0), "torso": 0.62, "hip": 0.38, "lean": 0.16, "dip": 0.06},
+	{"t": 0.50, "ease": "out", "r": Vector3(-0.12, 0.88, -0.29), "d": Vector3(-0.50, -0.80, -0.10), "k": Vector3(0.85, -0.5, 0), "torso": 0.62, "hip": 0.38, "lean": 0.16, "dip": 0.06},
 	{"t": 0.59, "ease": "inout", "r": Vector3(-0.02, 0.98, -0.34), "d": Vector3(-0.2, -0.1, -1), "k": Vector3(0.92, -0.4, 0), "torso": 0.40, "hip": 0.25, "lean": 0.10, "dip": 0.05, "step": 0.04},
 	{"t": 0.67, "ease": "inout", "r": Vector3(0.03, 1.09, -0.29), "d": Vector3(0.10, 0.95, -0.30), "k": Vector3(1, 0, 0), "torso": 0.15, "hip": 0.10, "lean": 0.05, "dip": 0.03, "step": 0.03},
 	# Em pé à direita da cabeça antes de deitar no ombro: num trecho só a mão de
@@ -182,9 +189,20 @@ static func sample(id: String, move: Dictionary, age: float, from: Dictionary, r
 ## plano normal ao golpe (`plane`). No machado o fio (+X do modelo) fica em
 ## head × plane. Antes a rolagem saía do sentido do movimento, que inverte no
 ## fim do follow-through e girava a arma 180° num quadro.
-static func swing_basis(id: String, head: Vector3, plane: Vector3) -> Basis:
+static func swing_basis(id: String, head: Vector3, plane: Vector3, previous_x: Vector3 = Vector3.ZERO, max_roll: float = INF) -> Basis:
 	var z := -head.normalized()
 	var x := plane - z * plane.dot(z)
+	var held := previous_x - z * previous_x.dot(z)
+	if held.length_squared() > 0.0001:
+		held = held.normalized()
+		# Direção da arma quase paralela à normal do plano: a rolagem autorada fica
+		# indefinida; vale a do quadro anterior. Fora disso a rolagem segue a autorada,
+		# mas gira no máximo `max_roll` por quadro em torno do cabo: o caminho autorado
+		# do machado pede meia-volta da lâmina na recuperação, que saía num quadro só.
+		var trust := smoothstep(0.2, 0.5, x.length())
+		var wanted := x.normalized() if x.length_squared() > 0.000001 else held
+		var turn := held.signed_angle_to(wanted, z) * trust
+		x = held.rotated(z, clampf(turn, -max_roll, max_roll))
 	if x.length_squared() < 0.0001: x = Vector3.UP.cross(z) if absf(z.y) < 0.95 else Vector3.RIGHT
 	x = x.normalized()
 	var basis := Basis(x, z.cross(x), z)

@@ -50,6 +50,11 @@ const HEAVY_HIT_STOP := 0.035
 const STRIKE_ARM_RATE := 30.0
 ## Fração do curso do ferrolho/telha gasta puxando; o resto é o retorno da mola.
 const RACK_PULL := 0.72
+## Parte da torção da pegada de taco/machado que o antebraço assume (o resto fica
+## no pulso); ver `Actor._solve_combat_arm`.
+const FOREARM_SHARE := 0.8
+## Rolagem máxima da arma em torno do próprio cabo (rad/s; ver `MeleeMoveset.swing_basis`).
+const BLADE_ROLL_RATE := 20.0
 ## Cabeça do Dante no espaço V1 do Actor, medida nos ossos realizados (Head + 40%
 ## até head_end) com a guarda parada; inclinar 0,1 rad para trás leva a cabeça
 ## ~6 cm para trás (coeficiente medido, não o braço de alavanca geométrico). A malha
@@ -57,6 +62,10 @@ const RACK_PULL := 0.72
 ## HEAD_CLEARANCE + CLEAR_SOFT/2 (0,166 V1, 5,5 cm de margem além do raio) porque,
 ## perto do limite de alcance, a mão real fica 3–4 cm atrás do alvo.
 const HEAD_CENTER := Vector3(0.0, 1.243, -0.065)
+## Carregar no ombro (V1): punho à frente do peito, à direita; a cabeça da arma vai
+## para trás por cima do ombro direito, por fora da cabeça do Dante.
+const CARRY_HAND := Vector3(0.19, 1.00, -0.19)
+const CARRY_HEAD := Vector3(0.10, 0.45, 0.89)
 const HEAD_ABOVE_SPINE := 0.6
 const HEAD_CLEARANCE := 0.146
 ## Carregando parado: só a cabeça com cabelo (+2 cm de margem com a faixa suave).
@@ -82,6 +91,9 @@ var _melee_from: Dictionary = {}
 var _melee_now: Dictionary = {}
 var _melee_now_id := ""
 var _clear_blend := 0.0
+var _carry_support := 0.0
+## Eixo de rolagem da arma no quadro anterior (ver `MeleeMoveset.swing_basis`).
+var _swing_x := Vector3.ZERO
 var _right := Vector3(0.24, 0.68, -0.02)
 var _left := Vector3(-0.24, 0.68, -0.02)
 var _carry_pitch := 0.0
@@ -154,6 +166,8 @@ func reset() -> void:
 	_melee_now = {}
 	_melee_now_id = ""
 	_clear_blend = 0.0
+	_carry_support = 0.0
+	_swing_x = Vector3.ZERO
 	_guard_weight = 0.0
 	_right_solve_weight = 0.0
 	_left_solve_weight = 0.0
@@ -198,15 +212,18 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var melee_pose: Dictionary = {}
 	var swing: Dictionary = {}
 	if id in ["axe", "bat"]:
-		# Fora do golpe: o carregamento no ombro da V1, com o balanço do passo.
-		melee_pose = _shoulder_swing(id, 10.0, walk_clock, _move_weight, run, body_offset)
+		# Fora do golpe: apoiado no ombro direito, só a mão direita, com o balanço do passo.
+		melee_pose = _shoulder_carry(id, walk_clock, _move_weight, run, body_offset)
 		var rest := _swing_rest(id, melee_pose)
 		if in_move:
 			swing = MOVES.sample(id, _move, action_age, _melee_from if not _melee_from.is_empty() else rest, rest)
-			melee_pose = {"hand": swing.r, "basis": MOVES.swing_basis(id, swing.d, swing.k), "support_weight": 1.0, "torso": swing.torso}
+			var swing_basis := MOVES.swing_basis(id, swing.d, swing.k, _swing_x, BLADE_ROLL_RATE * delta)
+			_swing_x = (swing_basis * (Basis(Vector3.BACK, PI * 0.5) if id == "axe" else Basis.IDENTITY)).x
+			melee_pose = {"hand": swing.r, "basis": swing_basis, "support_weight": 1.0, "torso": swing.torso}
 			_remember(id, swing)
 		else:
 			_remember(id, rest)
+			_swing_x = (melee_pose.basis as Basis * (Basis(Vector3.BACK, PI * 0.5) if id == "axe" else Basis.IDENTITY)).x
 		# Margem do golpe só em movimento (atraso do IK); carregando, a pose de ombro
 		# da V1 fica quase intacta. Transição suave entre as duas.
 		_clear_blend = move_toward(_clear_blend, 1.0 if in_move else 0.0, delta * 3.0)
@@ -214,7 +231,11 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		melee_pose.hand = cleared.hand
 		melee_pose.basis = cleared.basis
 	melee_support_weight = float(melee_pose.support_weight) if not melee_pose.is_empty() else 0.0
-	if id in ["axe", "bat"]: melee_support_weight = 1.0
+	if id in ["axe", "bat"]:
+		# A mão esquerda vem ao cabo quando o golpe sai (a preparação dura 0,24 s) e
+		# volta a balançar com o passo no carregar.
+		_carry_support = move_toward(_carry_support, 1.0 if in_move else 0.0, delta * (9.0 if in_move else 4.0))
+		melee_support_weight = _carry_support
 	var melee_support_active := melee_support_weight > 0.995
 	# Postura de ombro: fuzil apoiado gira o tronco para a coronha encostar no
 	# ombro de tiro e o braço de apoio alcançar o guarda-mão.
@@ -532,6 +553,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"combo_step": combo_step,
 		"right_wrist_roll": wrist_right, "left_wrist_roll": wrist_left,
 		"grip_as_fist": id in ["axe", "bat"],
+		"forearm_twist_share": FOREARM_SHARE if id in ["axe", "bat"] else 0.0,
+		"grip_solver": id in ["axe", "bat"],
 		"pump": pump_stroke,
 		"slide": clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
 	}
@@ -611,6 +634,20 @@ func _shoulder(side: String, yaw: float) -> Vector3:
 	var arm: Vector3 = clavicle + Basis(Vector3.UP, 0.20 if side == "Right" else -0.20) * (SK_ARM[side] - clavicle)
 	arm = SK_SPINE + Basis(Vector3.UP, yaw) * (arm - SK_SPINE)
 	return Vector3(-arm.x, arm.y, -arm.z) * SKELETON_SCALE / V1_TO_V2
+
+## Carregar de taco/machado: mão direita à frente do peito, à direita, e a arma
+## deitada sobre o ombro direito com a cabeça para trás, como o GTA carrega o taco.
+## A pose de ombro da V1 segurava com as duas mãos cruzando os braços na frente do
+## peito, e o cabo entrava 5–6 cm no tronco (medido em 2026-10-06).
+func _shoulder_carry(id: String, gait_phase: float, movement: float, running: float, body_offset: Vector3) -> Dictionary:
+	var hand := CARRY_HAND
+	var basis := MOVES.swing_basis(id, CARRY_HEAD, Vector3.RIGHT)
+	if movement > 0.0:
+		# Balança em torno do ombro com o passo, como a arma pesada da V1.
+		var sway := _basis(Vector3(sin(gait_phase * 2.0 - 0.35) * lerpf(0.035, 0.065, running), cos(gait_phase) * lerpf(0.018, 0.035, running), sin(gait_phase) * lerpf(0.015, 0.030, running)) * movement)
+		hand = MELEE_SHOULDER + sway * (hand - MELEE_SHOULDER)
+		basis = sway * basis
+	return {"hand": hand + body_offset, "basis": basis, "support_weight": 0.0, "torso": 0.0}
 
 ## V1 `MeshyMeleePose.shoulder_swing`: carrega atrás do ombro, junta a mão
 ## livre e varre o contato; o contato fica dentro de uma interpolação contínua,

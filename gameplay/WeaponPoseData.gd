@@ -30,7 +30,9 @@ const GRIPS := {
 	"m4a1": Vector3(0, -0.06, 0.04), "hunting_rifle": Vector3(0, -0.035, 0.035),
 	"rpg": Vector3(0, 0, -0.10), "flamethrower": Vector3(0, -0.05, 0.03),
 	"grenade": Vector3(0, 0, -0.10), "knife": Vector3(0, 0, 0.025),
-	"axe": Vector3(0, 0, 0.105),
+	# Mão de trás no final do cabo, junto ao calcanhar (que vai até 0,16): com 6,5 cm
+	# sobrando, o pé do cabo entrava no peito quando as mãos passavam junto ao tronco.
+	"axe": Vector3(0, 0, 0.135),
 	# Soqueira sobre os nós dos dedos do punho fechado, 4 cm adiante do ponto da palma
 	# (no centro da palma ela abraçava o dorso da mão junto ao pulso).
 	"knuckles": Vector3(0, 0, 0.04),
