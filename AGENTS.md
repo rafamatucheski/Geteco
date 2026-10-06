@@ -6,7 +6,27 @@
 - Para testes diretos, compile `Harbor.csproj` antes de iniciar o motor; use a variante `_console.exe` dessa instalação para capturar logs. Os runners principais fazem essa compilação automaticamente.
 - Preserve a coexistência GDScript/C#; não converta sistemas sem necessidade do pedido. Não valide silenciosamente pelo fallback GDScript quando o teste exigir o caminho C#.
 
+## Progressão da cidade 1 para o mapa 2
+
+- A ponte da cidade 1 para o mapa 2 deve estar visivelmente em construção e bloquear a travessia enquanto a última missão da cidade 1 não estiver concluída.
+- A obra só termina e a passagem para o mapa 2 só é liberada ao concluir a última missão da cidade 1. Preserve essa condição ao alterar a ponte, as missões, a progressão ou a restauração de saves.
+- Preserve a disposição da V1: a continuação para o mapa 2 segue para cima/norte no mapa; a montanha tem uma saída lateral à direita/leste, com alça de acesso reconhecível e independente. O acesso à montanha fica disponível antes da barreira da obra. Não bloquear a ponte da montanha ao fechar a continuação norte nem criar ligação entre pistas que apenas se cruzam em alturas diferentes.
+- Enquanto a ponte estiver em construção, mantenha barreiras físicas, operários trabalhando e o canteiro fora das rotas dos carros. A apresentação da obra e sua remoção devem acompanhar a mesma conclusão final da campanha.
+
+## Montanha de gelo na campanha
+
+- A montanha de gelo deve ter pelo menos duas missões ou side quests autoradas, com objetivos cumpridos no próprio mapa e ligação com a história de Dante. As provas de esqui e os colecionáveis existentes complementam esse conteúdo.
+- O avião acidentado pertence aos Cobras e deve participar de uma investigação de carga. Na caverna próxima, Dante encontra uma pista de Vicente, seu irmão, indicando que passou por ali e que Dante chegou perto de encontrá-lo. Preserve a revelação maior do passado para o ato 2.
+- Incluir uma corrida noturna de descida de carro em alta velocidade contra seis NPCs competitivos: seis adversários mais Dante, sete carros no total.
+- Criar uma trilha própria para corrida de jipe por checkpoints e adaptar o cenário aos acessos, percurso, largada e chegada dessas atividades.
+- O roteiro e o estado da implementação estão em [plano-montanha-cobras-20261005.md](docs/plano-montanha-cobras-20261005.md). Essas atividades ainda precisam ser implementadas e validadas; não conte este registro como conteúdo jogável.
+
 # Preferências visuais do projeto
+
+## Direção visual da cidade 4
+
+- A cidade 4 é a última cidade do jogo. Sua atmosfera deve ter como referência a cidade de GTA IV: mais escura, com neblina e uma paleta mais acinzentada e menos saturada.
+- Siga essa direção nas futuras implementações e revisões visuais da cidade 4.
 
 ## Padrão obrigatório de interiores
 

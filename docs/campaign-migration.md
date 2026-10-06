@@ -1,5 +1,7 @@
 # Campanha, economia e persistência V2
 
+**Atualização de 05/10/2026:** este documento registra a migração histórica. O roteiro ativo foi revisto em [História de Harbor e ato 1](story-harbor-act1-20261005.md): ligação em casa, irmão vivo, chegada com Maciota, serviço com Jessica e corrida/lista na casa de Takeshi. O catálogo de nove beats e seus quatro contratos permanece como arquivo e compatibilidade de save, com uma premissa diferente; não representa o conteúdo novo jogável.
+
 Este documento distingue dados preservados, lógica funcional isolada e integração no mundo. **Ter um catálogo ou ledger não torna a cena original jogável.** A pequena tarefa `harbor_arrival_v2` continua sendo adaptação de validação e não substitui a chegada original, Primeiro Giro, guincho ou campanha Cobras.
 
 ## Inventário e estado deste lote

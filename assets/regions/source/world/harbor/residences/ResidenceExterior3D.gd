@@ -52,7 +52,8 @@ func _ready() -> void:
 
 func _window(x: float,y: float,z: float,timber: String) -> void:
 	box("WindowFrame",Vector3(1.55,1.35,.16),Vector3(x,y,z),"e0dbcb")
-	box("WindowGlass",Vector3(1.3,1.1,.06),Vector3(x,y,z+.12),"7299a5")
+	var pane := box("WindowGlass",Vector3(1.3,1.1,.06),Vector3(x,y,z+.12),"7299a5")
+	pane.set_meta("city_window", true)
 	box("Mullion",Vector3(.07,1.15,.07),Vector3(x,y,z+.18),timber)
 	box("Transom",Vector3(1.38,.07,.07),Vector3(x,y,z+.18),timber)
 	box("Sill",Vector3(1.8,.12,.35),Vector3(x,y-.71,z+.08),"d5d0bd")

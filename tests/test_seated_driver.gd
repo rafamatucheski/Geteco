@@ -47,6 +47,8 @@ func run() -> void:
 	var driving := DRIVING.new()
 	driving.world = fixture
 	var ids: Array = FLEET.all().keys()
+	var desert_only := "--desert-only" in OS.get_cmdline_user_args()
+	if desert_only: ids = preload("res://gameplay/desert_cars/DesertCarCatalog.gd").ids()
 	ids.sort()
 	var seated_count := 0
 	var shared_mesh := {}
@@ -126,12 +128,18 @@ func run() -> void:
 	await process_frame
 	check(not traffic.visual.has_node("Interior"), "trânsito sem interior")
 	check(_translucent_glass_count(traffic) == 0, "trânsito com vidro opaco")
-	check(seated_count >= 40, "cobre a frota inteira conduzível (%d)" % seated_count)
+	check(seated_count == ids.size() if desert_only else seated_count >= 40, "cobre a frota selecionada conduzível (%d)" % seated_count)
 	print("SEATED_DRIVER checks=", checks, " vehicles=", seated_count, " triangulos_interior=", triangle_min, "..", triangle_max, " failures=", failures.size())
 	if failures.is_empty():
 		print("PASS test_seated_driver")
 	else:
 		print("FAIL test_seated_driver: ", failures.size())
+	# Driving owns physics-query resources even in this isolated fixture.
+	driving.car = null
+	driving.world = null
+	driving.free()
+	fixture.free()
+	await process_frame
 	quit(0 if failures.is_empty() else 1)
 
 func _head_top(player) -> Vector3:

@@ -49,7 +49,9 @@ static func definitions() -> Array[Dictionary]:
 		["harbor_ammunation","Ammu-Nation","harbor",Vector2(1550,140),"@AmmunationModel",Vector2(14,10),2.65,4.0,"weapons"],
 		["mountain_gunshop","Ammu-Nation","mountain",Vector2(7750,-220),"@AmmunationModel",Vector2(14,10),2.65,4.0,"weapons"],
 		["westgate_garden","Westgate Garden","harbor",Vector2(250,150),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
-		["quayside_house","Quayside","harbor",Vector2(2815,1670),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
+		# Keep the house and its west parking canopy in the cleared depot parcel,
+		# south of Maciota; the former anchor intersected both workshop buildings.
+		["quayside_house","Quayside","harbor",Vector2(2624,1984),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
 		["canal_north","Canal North","harbor",Vector2(4915,-860),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
 		["cemetery_keeper","Casa do Zelador","harbor",Vector2(-885,1495),"world/harbor/cemetery/CemeteryHouseInterior3D.gd",Vector2(9.3,7.4),2.2,2.95,"cemetery"],
 		["port_boss_garage","Garagem do Chefe","harbor",Vector2(5515,5870),"world/harbor/PortBossGarageArt.gd",Vector2(22,20),6.0,7.4,"restricted_garage"],
@@ -135,6 +137,10 @@ static func definitions() -> Array[Dictionary]:
 	result.append(preload("res://gameplay/urban_v1/VerticeUndercroftPlace.gd").definition_data())
 	result.append(preload("res://gameplay/urban_v1/MountainFortPlace.gd").definition_data())
 	result.append(preload("res://world/places/supermarket/SupermarketPlace.gd").definition_data())
+	result.append(preload("res://world/places/cobra_house/CobraLeaderHouse.gd").definition_data())
+	result.append_array(preload("res://world/desert/DesertLayout.gd").place_definitions())
+	result.append(preload("res://world/mining/coal/CoalMinePlace.gd").definition_data())
+	result.append_array(preload("res://world/desert/village/DesertVillageHomes.gd").definitions())
 	return result
 static func get_definition(id: String) -> Dictionary:
 	for definition in definitions():
@@ -143,6 +149,10 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty(): return null
+	if id == "remote_coal_mine":
+		var mine = preload("res://world/mining/coal/CoalMinePlace.gd").new()
+		mine.definition = definition
+		return mine
 	if id == "harbor_supermarket":
 		var market = preload("res://world/places/supermarket/SupermarketPlace.gd").new()
 		market.definition = definition

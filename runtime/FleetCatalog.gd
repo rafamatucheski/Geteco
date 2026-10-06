@@ -27,10 +27,15 @@ static func all() -> Dictionary:
 			_data["army_tank"] = tank
 	return _data
 static func spec(id: String) -> Dictionary:
+	if id in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").spec(id)
+	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").spec(id)
+	if id == "jessica_jetta_gli": return preload("res://gameplay/jessica/JessicaCarSpec.gd").spec()
 	if id == "digo_amarok_2014": return preload("res://gameplay/digo/DigoAmarokSpec.gd").spec()
 	if id == "digo_gol_1993": return preload("res://gameplay/digo/DigoCarSpec.gd").spec()
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
 static func create(id: String) -> Node3D:
+	if id in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").create_model(id)
+	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").create_model(id)
 	var definition := spec(id)
 	if definition.is_empty(): return null
 	if id == "army_tank": return preload("res://gameplay/police_response/ground/PoliceGroundModels.gd").tank()
@@ -39,7 +44,7 @@ static func create(id: String) -> Node3D:
 	if packed == null: return null
 	var model := packed.instantiate() as Node3D
 	# Authored batches already include glass, trim, door seams and wheel wells.
-	if id in ["digo_gol_1993","digo_amarok_2014"]: return model
+	if id in ["digo_gol_1993","digo_amarok_2014","jessica_jetta_gli"]: return model
 	if id == "police_transport": preload("res://gameplay/dispatch/PoliceTransportModel.gd").decorate(model)
 	if id == "bike_police": preload("res://gameplay/police_response/ground/PoliceGroundModels.gd").motorcycle(model)
 	preload("res://runtime/HeavyVehicleDetail.gd").decorate(id, model)

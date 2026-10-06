@@ -153,7 +153,11 @@ func _install_reward() -> void:
 		# `PickupPresentation.lift` (.09) já eleva `art`, então a peça desce esse tanto.
 		var art: Node3D = Node3D.new() if pickup_presentation else visual
 		var lift := .09 if pickup_presentation else 0.0
-		if item.kind == "weapon":
+		var authored_art: Node3D = model.call("create_reward_art",item) if model.has_method("create_reward_art") else null
+		if is_instance_valid(authored_art):
+			authored_art.position.y -= lift
+			art.add_child(authored_art)
+		elif item.kind == "weapon":
 			var weapon := Node3D.new()
 			weapon.rotation.z = PI*.5
 			weapon.position.y = .25-lift

@@ -59,6 +59,7 @@ var _population_jobs: Array[String] = []
 var requested_population := MAX_POPULATION
 var session
 var urban_transit: Node3D
+var roadside_parking: Node
 var world_audio: Node
 var civilian_reactions: Node
 var traffic_routes = preload("res://gameplay/NativeTrafficRoutes.gd").new()
@@ -96,7 +97,7 @@ func build() -> void:
 		curtain.stage_only = world.has_meta("menu_preview")
 		curtain.variant = CURTAIN.variant_for(state.region_id)
 		world.add_child(curtain)
-	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o porto") + "…")
+	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
 	if world.has_meta("menu_preview"):
 		await _hold_fleet_scenes_incremental()
 	environment = WorldEnvironment.new()
@@ -121,7 +122,7 @@ func build() -> void:
 	sun.directional_shadow_max_distance = 110
 	world.add_child(sun)
 	world.maciota_place = preload("res://world/maciota/MaciotaPlace.gd").new()
-	world.maciota_place.exterior_origin = Vector3(790.0/16,0,1495.0/16)
+	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN
 	world.maciota_place.interior_origin = Vector3(0,0,-2000)
 	world.add_child(world.maciota_place)
 	if world.has_meta("menu_preview"): await get_tree().process_frame
@@ -175,6 +176,10 @@ func build() -> void:
 	world.session.controller = self
 	world.add_child(world.session)
 	session = world.session
+	if "--parking-baseline" not in OS.get_cmdline_user_args():
+		roadside_parking = preload("res://runtime/RoadsideParking.gd").new()
+		roadside_parking.configure(world,self)
+		world.add_child(roadside_parking)
 	var v1_routines = preload("res://gameplay/routines_v1/RoutineDirector.gd").new()
 	v1_routines.configure(world,session,self)
 	world.add_child(v1_routines)
@@ -194,8 +199,26 @@ func build() -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	curtain.set_stage(.84, "Acendendo a cidade…")
 	var road_point := nearest_road(world.player.position)
-	world.driving.car.place(road_point+Vector3.UP*.12,road_yaw(road_point))
+	# The prototype coupe previously used the nearest travelling lane. After
+	# the workshop relocation that put a fresh default car across both guided
+	# arrivals. Saved vehicles keep their own restoration below; only the
+	# unsaved default gets a supported off-road parking pose in the freight yard.
+	var default_car_parked := false
+	if saved_vehicle.is_empty() and state.region_id == "harbor":
+		for offset in [Vector3(-18.5,.12,6.3),Vector3(-20,.12,7.0),Vector3(-18.5,.12,4.9)]:
+			var parking: Vector3 = world.maciota_place.exterior_origin+offset
+			if not vehicle_position_clear(world.driving.car,parking,0.0): continue
+			world.driving.car.place(parking,0.0)
+			default_car_parked = true
+			break
+	if not default_car_parked: world.driving.car.place(road_point+Vector3.UP*.12,road_yaw(road_point))
 	_restore_player_vehicle()
+	# A remote on-foot checkpoint may select a road outside the initial chunks
+	# (e.g. the highway above the quarry). The unsaved starter car must request
+	# its floor before physics starts, just like restored distant vehicles do.
+	if saved_vehicle.is_empty() and not vehicle_position_clear(world.driving.car,world.driving.car.position,world.driving.car.rotation.y):
+		world.driving.car.set_meta("awaiting_ground",true)
+		world.driving.car.set_physics_process(false)
 	# Weather must exist before the world is marked ready_for_play: the
 	# environment/sun start out at the raw defaults set in build() above
 	# (a flat pale sky colour), and Weather._ready() is what grades them into
@@ -263,6 +286,9 @@ func build() -> void:
 		urban_transit.terminal_operations.prepare_startup_route()
 		await urban_transit.terminal_operations.prepare_startup_passenger_meshes()
 		await get_tree().process_frame
+	if is_instance_valid(roadside_parking) and not world.has_meta("menu_preview"):
+		roadside_parking.initialize_nearby()
+		await get_tree().physics_frame
 	if not world.has_meta("menu_preview"): await curtain.lift()
 	session.ready_for_play = restored_session_ready
 	world.player.controlled_automatically = restored_player_automatic
@@ -335,12 +361,12 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		if incremental: await region.prewarm_incremental()
 		else: region.prewarm()
 	_trace_cost("startup:resident_prewarm",phase_traced)
-	for id in ["harbor","mountain"]:
+	for id in ["harbor","mountain","desert"]:
 		if regions.has(id): continue
 		if curtain != null:
-			curtain.set_stage(.6 if id == "mountain" else .66, "Preparando " + ("a serra" if id == "mountain" else "o porto") + "…")
+			curtain.set_stage(.6 if id == "mountain" else .66, "Preparando " + ("a serra" if id == "mountain" else "o deserto" if id == "desert" else "o porto") + "…")
 			await get_tree().process_frame
-		var detached: Node3D = REGION.build_region(id)
+		var detached: Node3D = _build_region(id)
 		if detached == null: continue
 		# Aquecer dados/conteudo sem montar uma vizinhanca do spawn que sera descartada.
 		detached.initial_prewarm_only = true
@@ -363,7 +389,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	var all := live.duplicate()
 	for id in _region_cache: all[id] = _region_cache[id]
 	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-	for combo in [["harbor"],["mountain"],["harbor","mountain"]]:
+	for combo in [["harbor"],["mountain"],["desert"],["harbor","mountain"],["harbor","desert"],["harbor","mountain","desert"]]:
 		regions = {}
 		for id in combo:
 			if all.has(id): regions[id] = all[id]
@@ -510,6 +536,8 @@ func _audio() -> Node:
 	return audio
 
 func _physical_focus() -> Vector3:
+	if session != null and is_instance_valid(session.jessica) and session.jessica.riding and is_instance_valid(session.jessica.car): return session.jessica.car.global_position
+	if session != null and is_instance_valid(session.arrival) and session.arrival.riding and is_instance_valid(session.arrival.car): return session.arrival.car.global_position
 	if is_instance_valid(world.driving) and world.driving.occupied and is_instance_valid(world.driving.car):
 		return world.driving.car.global_position
 	if session != null and is_instance_valid(session.passenger_transport) and session.passenger_transport.riding and is_instance_valid(session.passenger_transport.car):
@@ -523,6 +551,10 @@ func _mount_region(id: String, requested_focus: Vector3 = Vector3.INF) -> Node3D
 	_trace_cost("mount_region:"+id,traced)
 	return mounted_region
 
+func _build_region(id: String, first_focus := Vector3.INF) -> Node3D:
+	if id == "desert": return preload("res://world/desert/DesertRegion.gd").build_region(id,first_focus)
+	return REGION.build_region(id,first_focus)
+
 func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
 	var first_focus := requested_focus if requested_focus.is_finite() else (_physical_focus() if is_instance_valid(world.player) else Vector3.INF)
 	var mounted: Node3D = null
@@ -531,7 +563,7 @@ func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
 		_region_cache.erase(id)
 		mounted.initial_focus = first_focus
 	else:
-		mounted = REGION.build_region(id,first_focus)
+		mounted = _build_region(id,first_focus)
 	if mounted == null: return null
 	regions[id] = mounted
 	world.add_child(mounted)
@@ -556,9 +588,10 @@ func _unmount_region(id: String) -> void:
 
 func _resident_roads() -> Array:
 	var result: Array = []
-	for id in ["harbor","mountain"]:
+	for id in ["harbor","mountain","desert"]:
 		if not regions.has(id) or not is_instance_valid(regions[id]): continue
-		result.append_array(regions[id].roads)
+		for road in regions[id].roads:
+			if road.get("traffic",true): result.append(road)
 	if regions.has("harbor") and regions.has("mountain"):
 		result.append_array(WORLD_CONNECTION.traffic_connectors())
 	# Túnel do canal: rua virtual só no grafo, com a altura do piso (ver CanalTunnel3D).
@@ -573,7 +606,7 @@ var _route_cache: Dictionary = {}
 
 func _route_key() -> String:
 	var ids: Array = []
-	for id in ["harbor","mountain"]:
+	for id in ["harbor","mountain","desert"]:
 		if regions.has(id) and is_instance_valid(regions[id]): ids.append(id)
 	return ",".join(ids)
 
@@ -613,7 +646,7 @@ func _refresh_route_consumers() -> void:
 	if is_instance_valid(world) and is_instance_valid(world.traffic_yield): world.traffic_yield.refresh_roads(traffic_routes)
 
 func _persistent_vehicle_support() -> Dictionary:
-	var support := {"harbor":[],"mountain":[]}
+	var support := {"harbor":[],"mountain":[],"desert":[]}
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
 		for bus in urban_transit.urban_service.fleet:
 			if not bus.active: continue
@@ -626,9 +659,9 @@ func _persistent_vehicle_support() -> Dictionary:
 		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible: continue
 		# A body suspended by streaming still owns its floor request. Excluding
 		# it here would evict the chunk before the ground check can resume it.
-		if not car.is_physics_processing() and not car.has_meta("awaiting_ground"): continue
+		if not car.is_physics_processing() and not car.has_meta("awaiting_ground") and not car.has_meta("desert_drag_physics"): continue
 		if _is_ambient_traffic(car) and car != world.driving.car and not car.get_meta("gang_hostile",false): continue
-		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false)
+		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false) or car.has_meta("desert_drag_physics")
 		if not persistent:
 			if car.traffic: continue
 			if car.global_position.distance_to(world.player.global_position) > 145:
@@ -649,7 +682,7 @@ func _persistent_vehicle_support() -> Dictionary:
 	return support
 
 func _active_dispatch_support() -> Dictionary:
-	var support := {"harbor":[],"mountain":[]}
+	var support := {"harbor":[],"mountain":[],"desert":[]}
 	var dispatch: Variant = world.get("dispatch") if is_instance_valid(world) else null
 	if not is_instance_valid(dispatch): return support
 	for unit in dispatch.units:
@@ -676,10 +709,17 @@ func _update_physical_residency(point: Vector3) -> void:
 	var support := _persistent_vehicle_support()
 	_mount_region(physical_region,point)
 	var seam_distance := Vector2(point.x-WORLD_CONNECTION.SEAM.x,point.z-WORLD_CONNECTION.SEAM.z).length()
+	var north_anchor := Vector3(342.5,2.4,-373.5)
+	var north_distance := Vector2(point.x-north_anchor.x,point.z-north_anchor.z).length()
+	var north_preload := north_distance<150.0
+	var north_keep := north_distance<230.0
+	if north_preload:
+		_mount_region("harbor",point)
+		_mount_region("desert",point)
 	var seam_anchor := point
 	var seam_preload := seam_distance <= CONNECTION_PRELOAD_DISTANCE
 	var seam_keep := seam_distance <= CONNECTION_RELEASE_DISTANCE
-	for id in ["harbor","mountain"]:
+	for id in ["harbor","mountain","desert"]:
 		for vehicle in support[id]:
 			var position: Vector3 = vehicle.position
 			var distance := Vector2(position.x-WORLD_CONNECTION.SEAM.x,position.z-WORLD_CONNECTION.SEAM.z).length()
@@ -691,13 +731,14 @@ func _update_physical_residency(point: Vector3) -> void:
 	if seam_preload:
 		_mount_region("harbor",seam_anchor)
 		_mount_region("mountain",seam_anchor)
+	if seam_preload or north_preload:
 		if not is_instance_valid(connection):
 			var traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
 			connection = WORLD_CONNECTION.new()
 			world.add_child(connection)
 			_trace_cost("world_connection",traced)
-	elif not seam_keep:
-		for id in ["harbor","mountain"]:
+	elif not seam_keep and not north_keep:
+		for id in ["harbor","mountain","desert"]:
 			if id != physical_region and support[id].is_empty(): _unmount_region(id)
 		if is_instance_valid(connection):
 			connection.queue_free()
@@ -811,6 +852,7 @@ func capture_player_vehicle() -> void:
 	if not is_instance_valid(world.driving.car): return
 	var car: CharacterBody3D = world.driving.car
 	if car.vehicle_id in ["story_tow_vehicle","neco_tow_truck"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false): return
+	if car.vehicle_id == "jessica_jetta_gli": return
 	state.world_state.vehicles = [preload("res://runtime/FleetState.gd").capture(car,state.region_id)]
 	state.world_state.vehicles[0].was_driven = world.driving.occupied
 
@@ -852,7 +894,7 @@ func _process(delta: float) -> void:
 	if travel_busy: return
 	# Admission routines own focus while awaiting collision synchronization.
 	# Following the old player position here would unload their destination.
-	if session == null or not session.ready_for_play or session.is_transition_blocked(): return
+	if session == null or not session.ready_for_play or session.has_position_transition(): return
 	if state.place_id.is_empty():
 		var focus := _physical_focus()
 		_update_physical_residency(focus)
@@ -1229,6 +1271,7 @@ func _create_traffic_vehicle() -> void:
 			point = route.sample_baked(offset,true)
 			var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
 			var id: String = TRAFFIC_MOTORCYCLE_TYPES.pick_random() if randi_range(0,9) == 0 else TRAFFIC_CAR_TYPES.pick_random()
+			if state.region_id == "desert": id = ["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","courier_van"].pick_random()
 			var cobra := preload("res://gameplay/urban_v1/CobraPatrol.gd").select_car(session,point)
 			if cobra: id = "cobra_v8"
 			traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
@@ -1249,8 +1292,10 @@ func _create_traffic_vehicle() -> void:
 ## `destination_override` leva a um ponto exato (ex.: saída do forte no esqui) em vez
 ## do ponto de partida padrão da região.
 func travel(region_id: String,destination_override := Vector3.INF) -> bool:
+	if session != null and session.desert != null and session.desert.busy(): return false
+	if region_id == "desert" and not preload("res://world/north_gateway/NorthGatewayPolicy.gd").campaign_completed(state.campaign.snapshot()): return false
 	if travel_busy or not session.ready_for_play or session.is_transition_blocked(): return false
-	if region_id not in ["harbor","mountain"] or region_id == state.region_id or world.driving.occupied or not state.place_id.is_empty(): return false
+	if region_id not in ["harbor","mountain","desert"] or region_id == state.region_id or world.driving.occupied or not state.place_id.is_empty(): return false
 	if session.passenger_transport.riding or world.gameplay.health <= 0: return false
 	travel_busy = true
 	_travel_checked(region_id,destination_override)
@@ -1280,6 +1325,9 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	session.activities.cancel_attempt()
 	session.mountain_progression.cancel_attempt()
 	session.garage_rewards.cancel_press_delivery()
+	if session.jessica != null:
+		if state.campaign.active_id == "jessica_bank": session.mission_world.cancel_attempt("world_transition")
+		session.jessica.cancel_for_transition()
 	if is_instance_valid(world.traffic_yield): world.traffic_yield.release_all("travel")
 	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("travel")
 	world.gameplay.on_region_changed()
@@ -1287,6 +1335,7 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	# Fast travel unloads the population. Logical city/mountain seam crossings do
 	# not call this, so an active reaction survives an ordinary region_id change.
 	if is_instance_valid(civilian_reactions): civilian_reactions.reset_population()
+	if is_instance_valid(roadside_parking): roadside_parking.reset()
 	for citizen in world.people:
 		if is_instance_valid(citizen): citizen.queue_free()
 	world.people.clear()

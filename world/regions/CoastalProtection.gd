@@ -3,6 +3,8 @@ extends RefCounted
 ## All geometry/collision is static and owned by the streamed chunk.
 const CELL := 64.0
 const HEIGHT := 1.15
+const NORTH_GATEWAY_LAYOUT := preload("res://world/north_gateway/NorthGatewayLayout.gd")
+const NORTH_GATEWAY_POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 var polygons: Array[PackedVector2Array] = []
 var boundaries: Array[Dictionary] = []
 var cells: Dictionary = {}
@@ -75,6 +77,8 @@ func _extract() -> void:
 		var b: Vector2 = edge.b
 		var delta := b-a
 		var cuts: Array[float] = [0.0,1.0]
+		if not NORTH_GATEWAY_POLICY.baseline_disabled():
+			cuts.append_array(NORTH_GATEWAY_LAYOUT.shore_opening_cuts(a,b))
 		for other in edges:
 			if not edge.bounds.intersects(other.bounds): continue
 			var hit = Geometry2D.segment_intersects_segment(a,b,other.a,other.b)
@@ -104,6 +108,9 @@ func _extract() -> void:
 			_index(record)
 
 func _existing_guard(point: Vector2) -> bool:
+	# Split at both ends of the access before testing its midpoint; only the
+	# local portal is opened and the new bridge owns its continuous guards.
+	if not NORTH_GATEWAY_POLICY.baseline_disabled() and NORTH_GATEWAY_LAYOUT.reserves_shore_opening(point): return true
 	if Rect2(217.9,191.4,20.2,11.2).has_point(point): return true
 	if point.x>=200 and point.x<=273.75 and point.y>=18.1 and point.y<=31.9: return true
 	if point.x>=405 and point.y < -270: return true

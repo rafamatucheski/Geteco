@@ -1,7 +1,8 @@
 extends RefCounted
 ## Original Harbor IDs/order/rewards. Events are V2 adapters to original actions.
 ## Source: HarborFirstFavors, HarborStoryTow, CobraCampaignController/State.
-const ORDER := ["primeiro_giro", "cobra_contact", "cobra_race", "cobra_collection", "cobra_supply", "cobra_finale"]
+const LEGACY_ORDER := ["primeiro_giro", "cobra_contact", "cobra_race", "cobra_collection", "cobra_supply", "cobra_finale"]
+const ORDER := ["primeiro_giro", "cobra_contact", "cobra_race", "cobra_collection", "jessica_bank", "cobra_supply", "cobra_finale"]
 const MISSIONS := {
 	"primeiro_giro": {"title": "Primeiro Giro", "reward": 150, "requires": "", "hour": 10,
 		"steps": [
@@ -32,16 +33,28 @@ const MISSIONS := {
 			{"event": "ambush_cleared", "target": "resident_encounter", "objective": "Proteja a moradora da cobrança dos Cobras.", "encounter": true},
 			{"event": "resident_saved", "target": "ashbend_resident", "objective": "Converse novamente com a moradora.", "on_foot": true}],
 		"sets_flags": ["cobra_collection_complete"], "source": "world/harbor/campaign/CobraCampaignController.gd"},
-	"cobra_supply": {"title": "Cortar o abastecimento", "reward": 350, "requires": "cobra_collection", "hour": -1,
+	"jessica_bank": {"title":"Serviço com Jessica", "reward":500, "requires":"cobra_collection", "hour":-1,
+		"steps":[
+			{"event":"jessica_bank_agreed","target":"jessica","objective":"Encontre Jessica junto ao North Pier e combine o serviço.","on_foot":true,"no_wanted":true},
+			{"event":"jessica_bank_haul_escaped","target":"harbor_bank","objective":"Retire o saque do banco e saia vivo. Jessica espera no Jetta."},
+			{"event":"jessica_getaway_boarded","target":"jessica_jetta","objective":"Entre como passageiro no Jetta branco de Jessica."},
+			{"event":"jessica_safe_return","target":"maciota","objective":"Fuja com Jessica e converse com ela no ponto seguro.","on_foot":true,"no_wanted":true}],
+		"sets_flags":["jessica_bank_complete"]},
+	"cobra_supply": {"title": "Cortar o abastecimento", "reward": 350, "requires": "jessica_bank", "hour": -1,
 		"steps": [
 			{"event": "supply_reached", "target": "cobra_supply", "objective": "Vá aos fundos da quadra dos Cobras.", "on_foot": true},
 			{"event": "supply_encounter_cleared", "target": "supply_encounter", "objective": "Enfrente os cobradores e recupere os registros.", "encounter": true},
 			{"event": "supply_records_collected", "target": "cobra_supply", "objective": "Recolha os registros de carga.", "on_foot": true}],
 		"sets_flags": ["cobra_supply_complete"], "source": "world/harbor/campaign/CobraCampaignController.gd"},
-	"cobra_finale": {"title": "A última cobrança", "reward": 600, "requires": "cobra_supply", "hour": -1,
+	"cobra_finale": {"title": "A última volta", "reward": 600, "requires": "cobra_supply", "hour": -1,
 		"steps": [
-			{"event": "workshop_reached", "target": "ferrugem", "objective": "Vá à oficina da liderança dos Cobras.", "on_foot": true},
-			{"event": "boss_encounter_cleared", "target": "boss_encounter", "objective": "Enfrente a liderança dos Cobras.", "encounter": true},
-			{"event": "transfer_document_collected", "target": "transfer_document", "objective": "Procure o documento que liga Vicente à transferência.", "on_foot": true}],
+			{"event":"race_started","target":"ashbend_start","objective":"Atenda o telefone da largada e desafie Takeshi pelo acesso aos registros.","in_vehicle":true},
+			{"event":"race_checkpoint","target":"ashbend_gate_0","objective":"Passe pelo primeiro portão.","checkpoint":0,"in_vehicle":true},
+			{"event":"race_checkpoint","target":"ashbend_gate_1","objective":"Passe pelo segundo portão.","checkpoint":1,"in_vehicle":true},
+			{"event":"race_checkpoint","target":"ashbend_gate_2","objective":"Passe pelo terceiro portão.","checkpoint":2,"in_vehicle":true},
+			{"event":"race_checkpoint","target":"ashbend_gate_3","objective":"Passe pelo quarto portão.","checkpoint":3,"in_vehicle":true},
+			{"event":"race_finished","target":"ashbend_finish","objective":"Vença a corrida de Takeshi até as docas.","in_vehicle":true},
+			{"event":"leader_house_entered","target":"cobra_leader_house","objective":"Entre na casa de Takeshi para examinar os registros.","on_foot":true},
+			{"event":"transfer_document_collected","target":"transfer_document","objective":"Examine a lista de responsáveis pelas corridas na mesa.","on_foot":true}],
 		"sets_flags": ["cobra_defeated"], "source": "world/harbor/campaign/CobraCampaignController.gd"}
 }

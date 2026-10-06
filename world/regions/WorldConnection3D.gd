@@ -6,6 +6,8 @@ extends Node3D
 const UNIT := 1.0 / 16.0
 const HARBOR_OCEAN := preload("res://world/regions/HarborOcean.gd")
 const PIER_FOAM := preload("res://world/regions/bridge_pier_foam.gdshader")
+const NORTH_GATEWAY := preload("res://world/north_gateway/NorthGateway.gd")
+const NORTH_GATEWAY_POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const PIER_FOAM_REACH := 1.3
 const SEAM := Vector3(7300.0, 0.0, -4560.0) * UNIT
 const HARBOR_ABUTMENT_X := 6300.0 * UNIT
@@ -33,6 +35,7 @@ var _materials: Dictionary = {}
 var bridge_lamps: Array[OmniLight3D] = []
 
 static func logical_region(point: Vector3) -> String:
+	if preload("res://world/desert/DesertLayout.gd").contains(point): return "desert"
 	return "mountain" if point.x >= SEAM.x and point.z < LOGICAL_NORTH_LIMIT_Z else "harbor"
 
 static func mountain_weight(point: Vector3) -> float:
@@ -61,6 +64,13 @@ func _ready() -> void:
 	name = "HarborMountainConnection"
 	_build_bridge()
 	_build_tunnel()
+	# The northern worksite shares this connection's streaming owner. It never
+	# contributes an edge to the eastern mountain traffic connectors above.
+	var owner_world := get_parent() as Node3D
+	if is_instance_valid(owner_world) and is_instance_valid(owner_world.get("production")) and not NORTH_GATEWAY_POLICY.baseline_disabled():
+		var gateway := NORTH_GATEWAY.new()
+		gateway.configure(owner_world)
+		add_child(gateway)
 
 func set_night_lights(level: float) -> void:
 	for lamp in bridge_lamps:

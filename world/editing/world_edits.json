@@ -1,6 +1,11 @@
 {
 	"regions": {
 		"harbor": {
+			"building/FreightDepot": {
+				"deleted": true,
+				"id": "building/FreightDepot",
+				"type": "building"
+			},
 			"building/CanalHomesEast": {
 				"color": "#a6b2a0",
 				"height": 6.77144,

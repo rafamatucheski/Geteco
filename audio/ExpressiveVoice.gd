@@ -3,6 +3,7 @@ extends RefCounted
 const RATE := 22050
 static var cache: Dictionary = {}
 static var recordings: Dictionary = {}
+static var maciota_recordings: Dictionary = {}
 static var _recordings_loaded := false
 
 static func recording_key(text: String, persona: String) -> String:
@@ -15,7 +16,14 @@ static func _recording(text: String, persona: String) -> AudioStream:
 		if FileAccess.file_exists(manifest):
 			var data = JSON.parse_string(FileAccess.get_file_as_string(manifest))
 			if data is Dictionary: recordings = data
-	var path := String(recordings.get(recording_key(text, persona), ""))
+		var maciota_manifest := "res://audio/mission_voices/maciota_baritone/recordings.json"
+		if FileAccess.file_exists(maciota_manifest):
+			var data = JSON.parse_string(FileAccess.get_file_as_string(maciota_manifest))
+			if data is Dictionary: maciota_recordings = data
+	# The caller is Maciota too. Keep both on the same authored voice bank and
+	# never fall back to the older, independently designed VoiceDesign takes.
+	var bank := maciota_recordings if persona.to_lower() in ["maciota", "caller"] else recordings
+	var path := String(bank.get(recording_key(text, persona), ""))
 	if path.is_empty() or not ResourceLoader.exists(path): return null
 	var stream := load(path) as AudioStream
 	if stream != null: stream.set_meta("mission_voice", true)
@@ -73,6 +81,11 @@ static func line(text: String, persona := "dante", duration := 0.0) -> AudioStre
 		cache.erase(cache.keys()[0])
 	cache[key] = stream
 	return stream
+
+static func recorded_line(text: String, persona := "dante") -> AudioStream:
+	# Authored dialogue is silent until the exact recording exists. Non-verbal
+	# fallback is still available to its original ambient speech consumers.
+	return _recording(text,persona)
 
 static func mouth(audio: AudioStreamPlayer) -> float:
 	if not is_instance_valid(audio) or not audio.playing or audio.stream_paused:

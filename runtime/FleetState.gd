@@ -11,7 +11,7 @@ static func validate(data: Dictionary) -> bool:
 		var tires: Variant = data.punctured_tires
 		if typeof(tires) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(tires)) or float(tires) != floorf(float(tires)) or tires < 0 or tires > 4: return false
 	if not data.get("archetype") is String or FLEET.spec(data.archetype).is_empty(): return false
-	if data.get("region") not in ["harbor","mountain"]: return false
+	if data.get("region") not in ["harbor","mountain","desert"]: return false
 	if data.has("paint") and (not data.paint is String or not Color.html_is_valid(data.paint)): return false
 	if data.has("vehicle_id") and (not data.vehicle_id is String or data.vehicle_id.length()>128): return false
 	if data.has("was_driven") and not data.was_driven is bool: return false

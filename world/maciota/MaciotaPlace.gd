@@ -5,12 +5,18 @@ const DETAILS := preload("res://assets/maciota/WorkshopDetails.gd")
 const FACADE := preload("res://assets/maciota/GarageFacade.gd")
 const MACIOTA := preload("res://assets/maciota/MaciotaModel.gd")
 const MECHANIC := preload("res://assets/maciota/MechanicModel.gd")
-var exterior_origin := Vector3(-21, 0, -21)
+const INDUSTRIAL_ORIGIN := Vector3(2696.0 / 16.0, 0, 1624.0 / 16.0)
+var exterior_origin := INDUSTRIAL_ORIGIN
 var interior_origin := Vector3(0, 0, -130)
+var tour_parking: Vector3:
+	get: return to_global(exterior_origin + Vector3(-11.0,0,2.9))
 var entry_position: Vector3:
 	get: return to_global(exterior_origin + Vector3(-2.5, 0, 8.3))
 var exterior_return: Vector3:
 	get: return entry_position + Vector3(0, 0, 1)
+var exterior_vehicle_return: Vector3:
+	get: return to_global(exterior_origin+Vector3(-2.5,0,9.3))
+var exterior_vehicle_yaw := PI*.5
 var interior_spawn: Vector3:
 	get: return to_global(interior_origin + Vector3(0, 0, 3.2))
 var exit_position: Vector3:
@@ -21,6 +27,7 @@ var camera_size := 13.0
 var camera_offset := Vector3(0,18,15)
 var room_bounds := AABB(Vector3(-4.4, 0, -4.3), Vector3(11.2,3.8,9.2))
 var exterior_bounds := AABB(Vector3(-6.4,0,1.56), Vector3(14.8,7.1,6.5))
+var courtyard_bounds := AABB(Vector3(-15.75,-.1,-4.4),Vector3(26.75,6.8,15.5))
 var solid_bodies: Array[StaticBody3D] = []
 var interaction_points: Dictionary = {}
 var maciota: Node3D

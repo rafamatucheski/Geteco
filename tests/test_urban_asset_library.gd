@@ -96,7 +96,12 @@ func run() -> void:
 		if row.model == "urban_setback":
 			check(not hit(building.to_global(Vector3(building.building_size.x*.46,building.height*.92,0))),"Setback sky is not filled by collision")
 	region.release_chunks()
-	await process_frame
+	# This fixture disables region processing. Production retirement is sliced
+	# across frames; explicitly run that same drain before checking disposal.
+	for frame in 120:
+		region._drain_retired()
+		await process_frame
+		if region._retiring.is_empty(): break
 	check(region.find_children("*","MultiMeshInstance3D",true,false).is_empty(),"Facade batches unload with chunks")
 	for row in rows: region._ensure_chunk(Vector2i(floori(row.position[0]/64.0),floori(row.position[1]/64.0)))
 	check(region.find_children("*","Node3D",true,false).filter(func(node): return str(node.get_meta("editor_id","")).begins_with("new/urban_asset_test_")).size() == rows.size(),"Assets reconstruct once on streaming reload")

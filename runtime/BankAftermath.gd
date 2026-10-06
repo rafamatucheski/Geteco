@@ -1,5 +1,5 @@
 extends Node
-## The investigation begins only after death and a continuous day away.
+## Death or a requested story restock begins investigation after a day away.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ABSENCE_DAYS := 1.0
 const CLOSED_DAYS := 3.0

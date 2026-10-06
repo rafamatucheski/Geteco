@@ -19,8 +19,13 @@ const HARBOR_SHORE_SEGMENTS := [
 static func targets(region: String, place: String, point: Vector3, dark: bool, crowd: float) -> Dictionary:
 	var result := {"city":0.0,"water":0.0,"port":0.0,"birds":0.0,"crickets":0.0,"workshop":0.0}
 	if not place.is_empty():
-		if place in ["maciota","port_boss_garage"]: result.workshop = 1.0
+		if place in ["maciota","port_boss_garage","desert_digo"]: result.workshop = 1.0
 		elif place == "harbor_sewer": result.water = .62
+		return result
+	if region == "desert":
+		var town := 1.0-smoothstep(90.0,200.0,Vector2(point.x+220,point.z+930).length())
+		result.city = town*.22*crowd
+		result.crickets = .12 if dark else 0.0
 		return result
 	var original := Vector2(point.x,point.z)/SCALE
 	if region == "mountain":
@@ -40,8 +45,9 @@ static func targets(region: String, place: String, point: Vector3, dark: bool, c
 	return result
 
 static func activity_context(region: String, place: String, point: Vector3) -> String:
-	if place in ["maciota","port_boss_garage"]: return "workshop"
+	if place in ["maciota","port_boss_garage","desert_digo"]: return "workshop"
 	if not place.is_empty(): return ""
+	if region == "desert": return "workshop" if point.distance_to(Vector3(-140,0,-955))<35 else ""
 	var source := Vector2(point.x,point.z)/SCALE
 	if region == "mountain":
 		source -= Vector2(4300,-4960)

@@ -42,7 +42,7 @@ static func get_zone_records() -> Array[Dictionary]:
 		{"kind": "harbor_route_zone", "zone_id": HarborRouteDetail3D.ZONE_RODOVIARIA, "position": Vector3(106.25, 0.0, 70.625)},
 		{"kind": "harbor_route_zone", "zone_id": HarborRouteDetail3D.ZONE_CONNECTING_STREETS, "position": Vector3(86.8, 0.0, 94.0)},
 		{"kind": "harbor_route_zone", "zone_id": HarborRouteDetail3D.ZONE_DELEGACIA, "position": Vector3(67.5, 0.0, 132.5)},
-		{"kind": "harbor_route_zone", "zone_id": HarborRouteDetail3D.ZONE_MACIOTA, "position": Vector3(46.875, 0.0, 101.7375)},
+		{"kind": "harbor_route_zone", "zone_id": HarborRouteDetail3D.ZONE_MACIOTA, "position": Vector3(166.0, 0.0, 109.8)},
 	]
 
 ## Populates a single zone into a streaming chunk when the chunk enters proximity focus.

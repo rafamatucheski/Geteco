@@ -8,8 +8,9 @@ func run() -> void:
 	root.get_node("V2Launch").selected_path = "user://arrival-flow-isolated.json"
 	world = load("res://Main.tscn").instantiate()
 	root.add_child(world)
-	# Region prewarming alone can exceed the old four-second frame budget.
-	var ready_deadline := Time.get_ticks_msec()+30000
+	# A cold .NET/Main launch took 48 s in the integrated story validation;
+	# use the same finite wall-clock startup window as other current fixtures.
+	var ready_deadline := Time.get_ticks_msec()+80000
 	while Time.get_ticks_msec() < ready_deadline:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
@@ -29,9 +30,9 @@ func run() -> void:
 	arrival.presentation.film.skip()
 	for i in 900:
 		await physics_frame
-		if arrival.phase == "police_visit" or (arrival.phase == "disembark" and not arrival.controls_locked): break
+		if arrival.phase == "terminal_meeting" or (arrival.phase == "disembark" and not arrival.controls_locked): break
 	print("DISEMBARK phase=", arrival.phase, " player=", world.player.global_position)
-	check(arrival.phase == "police_visit", "player physically exits ferry onto public quay")
+	check(arrival.phase == "terminal_meeting", "player physically exits ferry and goes directly to Maciota's street encounter")
 	check(arrival.flags.get("harbor_arrival_seen", false), "arrival flag after completed physical exit")
 	check(world.player.visible and not world.player.input_locked, "visible controllable player after arrival")
 	check(session.weather.time_of_day > .9 and session.weather.weather_state == 1, "physical disembark preserves the film's night and rain")
@@ -44,26 +45,22 @@ func run() -> void:
 	session.weather.time_of_day = arrival_time
 	session.weather.weather_state = 1
 	session.weather._update()
-	check(await session.enter_place("harbor_police", false), "enter original police station")
-	world.player.teleport(session.room.interaction_points.service + Vector3.UP * .06)
-	for i in 3: await physics_frame
-	check(session.interact(), "physical police conversation")
+	check(not arrival.flags.has("harbor_police_briefed"), "new arrival never requires the police briefing")
+	check(is_instance_valid(arrival.car) and is_instance_valid(arrival.maciota), "Maciota and the black M8 already wait at the street exit")
+	session.controller.region.set_focus(arrival.PARK)
+	for i in 600:
+		await physics_frame
+		if session.controller.region.is_streaming_idle(): break
+	world.player.teleport(arrival.maciota.global_position + Vector3(0,.1,2))
+	for i in 5: await physics_frame
+	if not session.dialogue_open: arrival.perform("arrival_meeting")
 	var spoken := 0
 	while session.dialogue_open and spoken < 10:
 		spoken += 1
 		session._advance_dialogue()
-	check(spoken == 5 and arrival.phase == "police_exit", "all five original police lines advance checkpoint")
-	check(await session.leave_place(), "leave police physically")
-	arrival._physics_process(4.1)
-	check(arrival.phase == "phone", "call follows exit and original four second wait")
-	check(session.interact(), "answer actual arrival phone")
-	spoken = 0
-	while session.dialogue_open and spoken < 10:
-		spoken += 1
-		session._advance_dialogue()
-	check(spoken == 4 and arrival.phase == "yard_meeting", "all four original phone lines and yard checkpoint")
+	check(spoken == 5 and arrival.phase == "tour_board", "recognition, police photograph and invitation advance to passenger boarding")
+	check(arrival.flags.get("harbor_arrival_contact_met",false), "terminal meeting persists independently of the old police/phone chain")
 	check(preload("res://runtime/Arrival.gd").validate_snapshot(arrival.snapshot()), "physical flow produces valid save")
-	check(is_instance_valid(arrival.car) and not arrival.car.is_physics_processing(), "remote encounter waits for streamed ground")
 	world.free()
 	await process_frame
 	print("ARRIVAL_FLOW failures=", failures)

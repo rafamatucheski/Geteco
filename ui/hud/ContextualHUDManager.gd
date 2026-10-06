@@ -118,7 +118,9 @@ func _sync_channels() -> void:
 	for source in _legacy_sources:
 		if is_instance_valid(source): source.hide()
 	var active := not bool(_session.modal) and not get_tree().paused and not bool(_session.rescue_pending) and not bool(_session.arrest_pending)
-	root_control.visible=active
+	# The drag presents its own instruments and controls while it owns driving.
+	var drag_active: bool = _session.desert != null and _session.desert.busy()
+	root_control.visible=active and not drag_active
 	var text := str(_session.objective.text).strip_edges()
 	if text in ["J  Missões · M  Mapa","J Missions · M Map"]: text=""
 	if text!=_last_objective:
@@ -195,7 +197,9 @@ func _style_modal_if_needed() -> void:
 	var signature := ",".join(ids)
 	if signature==_last_modal_signature: return
 	_last_modal_signature=signature
-	STYLE.apply(_session.panel); STYLE.trap_focus.call_deferred(_session.panel); _layout_modal()
+	# FullSession assigns initial focus when opening the menu. A later styling
+	# poll must preserve the button the player has already selected.
+	STYLE.apply(_session.panel); STYLE.trap_focus.call_deferred(_session.panel, false); _layout_modal()
 
 func _layout_modal() -> void:
 	if not _bound or not is_instance_valid(_session.get("panel")): return

@@ -22,7 +22,7 @@ func prepare(owner_session) -> bool:
 	var sports: Array[String]=["sport_coupe","monaliza","porto_rosso","vertice_midengine"]
 	var guest: String=["muscle_classic","cobra_v8"].pick_random()
 	var models: Array[String]=["cobra_v8","muscle_classic","ranch_pickup",player_car.archetype,sports.pick_random(),guest]
-	var names := ["Ren · Cobras","Haruka · Cobras","Daichi · Cobras","Você","Maya","Ícaro"]
+	var names := ["Takeshi · Cobras" if session.state.campaign.active_id == "cobra_finale" else "Ren · Cobras","Haruka · Cobras","Daichi · Cobras","Você","Maya","Ícaro"]
 	var paints := [Color("202d26"),Color("17211d"),Color("29372b"),player_car.paint_color,Color("c64c31"),Color("b8a245")]
 	# A largada é transacional: não remove trânsito para forçar espaço.
 	if not session.world.production.vehicle_position_clear(player_car,COURSE.grid(3),PI*.5): return false

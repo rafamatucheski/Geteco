@@ -33,6 +33,7 @@ func _ready() -> void:
 	for x in [-2.2, 2.2]:
 		box("WindowFrame", Vector3(1.42, 1.23, .14), Vector3(x, 1.62, 2.79), "414d3d")
 		window_light = box("WindowGlass", Vector3(1.13, .93, .05), Vector3(x, 1.62, 2.88), "c8a56a")
+		window_light.set_meta("city_window", true)
 		box("WindowMullion", Vector3(.065, 1.02, .08), Vector3(x, 1.62, 2.94), "656a51")
 		box("WindowSill", Vector3(1.55, .10, .26), Vector3(x, 1.0, 2.89), "696b54")
 		for side in [-1, 1]: box("GreenShutter", Vector3(.45, 1.2, .10), Vector3(x + side * .91, 1.62, 2.79), "4d5d46")

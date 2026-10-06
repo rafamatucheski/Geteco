@@ -53,6 +53,10 @@ var arrival
 var garage_rewards
 var police_motor_pool
 var personal_car
+var jessica
+var desert
+var mining
+var dialogue_voice: AudioStreamPlayer
 var residence_services
 var mountain_progression
 var cold
@@ -87,10 +91,16 @@ func _arrival_sequence_blocked() -> bool:
 	return arrival != null and (arrival.controls_locked or arrival.phase == "opening")
 
 func is_transition_blocked() -> bool:
-	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or _arrival_sequence_blocked()
+	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (jessica != null and jessica.riding) or (controller != null and controller.travel_busy) or _arrival_sequence_blocked()
+
+func has_position_transition() -> bool:
+	# A guided passenger ride locks input but still needs real floor, traffic
+	# and streaming. Only admission/recovery owns an independent focus point.
+	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or (arrival != null and arrival.controls_locked and not arrival.riding) or (arrival != null and arrival.phase == "opening")
 
 func blocks_driving_change() -> bool:
-	return is_transition_blocked() or not ready_for_play or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
+	if desert != null and desert.busy(): return true
+	return is_transition_blocked() or not ready_for_play or (jessica != null and jessica.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
 
 func allows_saved_driver_animation() -> bool:
 	return _restoring_saved_driver and not ready_for_play and not modal and not is_transition_blocked()
@@ -228,8 +238,8 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 			world.add_child(next_room)
 			destination = next_room.to_global(definition.vehicle_spawn)+Vector3.UP*.08
 	else:
-		destination = world.maciota_place.exterior_return+Vector3(0,.1,2) if place_id == "maciota" else definition.vehicle_return+Vector3.UP*.08
-		yaw = 0.0 if place_id == "maciota" else float(definition.get("vehicle_return_yaw",0))
+		destination = world.maciota_place.exterior_vehicle_return+Vector3.UP*.1 if place_id == "maciota" else definition.vehicle_return+Vector3.UP*.08
+		yaw = world.maciota_place.exterior_vehicle_yaw if place_id == "maciota" else float(definition.get("vehicle_return_yaw",0))
 		controller.region.set_focus(destination)
 	for i in 3:
 		await get_tree().physics_frame
@@ -521,6 +531,18 @@ func _ready() -> void:
 	personal_car = preload("res://runtime/PersonalCar.gd").new()
 	world.add_child(personal_car)
 	personal_car.configure(self)
+	jessica = preload("res://runtime/JessicaRuntime.gd").new()
+	world.add_child(jessica)
+	jessica.configure(self)
+	desert = preload("res://runtime/desert/DesertRuntime.gd").new()
+	world.add_child(desert)
+	desert.configure(self)
+	mining = preload("res://runtime/MiningRuntime.gd").new()
+	world.add_child(mining)
+	mining.configure(self)
+	dialogue_voice = AudioStreamPlayer.new()
+	dialogue_voice.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	add_child(dialogue_voice)
 	passenger_transport = preload("res://runtime/PassengerTransport.gd").new()
 	passenger_transport.configure(self)
 	world.add_child(passenger_transport)
@@ -696,6 +718,9 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	if id == "harbor_bank" and not robberies.can_enter_bank():
 		show_message("O banco está fechado para investigação.")
 		return false
+	if id == "cobra_leader_house" and not state.campaign.has_progress("cobra_finale") and not (state.campaign.active_id == "cobra_finale" and state.campaign.step>=6):
+		show_message("Takeshi ainda não liberou o acesso à casa.")
+		return false
 	if activities != null and not activities.can_enter_home(id):
 		show_message("Esta casa ainda não é sua.")
 		return false
@@ -786,6 +811,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	return_point = candidate_return
 	access_id = local_access_id
 	state.set_location(state.region_id,id)
+	if id == "cobra_leader_house" and state.campaign.active_id == "cobra_finale" and state.campaign.step == 6:
+		mission_world._event("leader_house_entered","cobra_leader_house")
 	state.checkpoint_id = local_access_id if not local_access_id.is_empty() else id
 	world.player.teleport(destination+Vector3.UP*.04)
 	_sync_location_presentation()
@@ -858,6 +885,7 @@ func leave_place() -> bool:
 			return false
 	controller.region.set_focus(leaving_return)
 	if state.place_id=="harbor_bank": robberies.bank_departed()
+	if state.place_id=="remote_coal_mine" and mining != null and is_instance_valid(mining.raid): mining.raid.departed()
 	if leaving_room == world.maciota_place: leaving_room.set_interior_active(false)
 	else: leaving_room.queue_free()
 	_clear_service_npcs()
@@ -916,10 +944,11 @@ func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 	# along the same exterior approach before refusing the transition.
 	if position_clear(desired + Vector3.UP * .08): return desired
 	var outward := Vector3.FORWARD
+	var definition: Dictionary = {}
 	if place_id == "maciota":
 		outward = desired - world.maciota_place.entry_position
 	else:
-		var definition: Dictionary = PLACES.get_definition(place_id)
+		definition = PLACES.get_definition(place_id)
 		if weapon_shop_entrance != null and weapon_shop_entrance.handles_place(access_id):
 			definition = weapon_shop_entrance._definition_for(access_id)
 		if not definition.is_empty(): outward = desired - definition.exterior_position
@@ -928,6 +957,9 @@ func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 	outward = outward.normalized()
 	var side := Vector3(-outward.z, 0, outward.x)
 	for offset in [outward * .75, outward * 1.5, side * .8 + outward * .75, -side * .8 + outward * .75]:
+		var candidate: Vector3 = desired + offset
+		if position_clear(candidate + Vector3.UP * .08): return candidate
+	for offset: Vector3 in definition.get("return_clearance_offsets",[]):
 		var candidate: Vector3 = desired + offset
 		if position_clear(candidate + Vector3.UP * .08): return candidate
 	return Vector3.INF
@@ -1014,6 +1046,12 @@ func _clear_service_npcs() -> void:
 
 func nearest() -> Dictionary:
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	if mining != null:
+		var mining_action: Dictionary = mining.nearest_action()
+		if not mining_action.is_empty(): return mining_action
+	if desert != null:
+		var desert_action: Dictionary = desert.nearest_action()
+		if not desert_action.is_empty(): return desert_action
 	for zoo in get_tree().get_nodes_in_group("mountain_zoo"):
 		if zoo.admission != null:
 			var zoo_action: Dictionary = zoo.admission.nearest_action()
@@ -1031,6 +1069,9 @@ func nearest() -> Dictionary:
 		var cargo_action: Dictionary = port_container_loot.nearest_action()
 		if not cargo_action.is_empty(): return cargo_action
 	if passenger_transport != null and passenger_transport.riding: return passenger_transport.nearest_action()
+	if jessica != null:
+		var jessica_action: Dictionary = jessica.nearest_action()
+		if not jessica_action.is_empty(): return jessica_action
 	var arrival_action: Dictionary = arrival.nearest_action()
 	if not arrival_action.is_empty(): return arrival_action
 	if not world.driving.occupied and not state.place_id.is_empty() and is_instance_valid(room):
@@ -1082,7 +1123,7 @@ func nearest() -> Dictionary:
 	if not outdoor_routine_action.is_empty(): return outdoor_routine_action
 	if state.region_id == "harbor" and not _uses_walkup_access("maciota") and point.distance_to(world.maciota_place.entry_position) < 1.5: return {"id":"enter","place":"maciota","access":"maciota","label":"Entrar"}
 	for entry in controller.region.entries:
-		if entry.place_id == "harbor_sewer" and point.distance_to(entry.position) < 1.5:
+		if entry.place_id in ["harbor_sewer","remote_coal_mine"] and point.distance_to(entry.position) < 1.5:
 			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"","silent":true}
 		if _uses_walkup_access(entry.place_id): continue
 		if point.distance_to(entry.position) < 1.5: return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar"}
@@ -1093,6 +1134,8 @@ func nearest() -> Dictionary:
 func interact() -> bool:
 	if modal or not ready_for_play: return false
 	var action := nearest()
+	if mining != null and action.get("id","") == "mining": return mining.perform(action)
+	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
 	if action.get("id", "") == "zoo_ticket": return action.provider.purchase()
 	if action.get("id", "") == "skate": return skate.perform(str(action.target))
 	if action.get("id","") == "motocross": return motocross.perform(str(action.target))
@@ -1104,6 +1147,7 @@ func interact() -> bool:
 		"passenger_transport": return passenger_transport.perform(action.target)
 		"residence_services": return residence_services.perform("residence_services")
 		"personal_car": return personal_car.perform(action.target)
+		"jessica": return jessica.perform(str(action.target))
 		"garage_reward": return garage_rewards.perform(action.target)
 		"robbery": return robberies.perform(action.target)
 		"original_service":
@@ -1148,10 +1192,14 @@ func _perform_urban_action(target: String) -> bool:
 func _intro_interact(id: String) -> bool:
 	if id == "maciota" and state.intro.stage == "meet_maciota" and not save_game(true): return false
 	state.intro.set_location("harbor_garage")
-	var reply: Dictionary = state.intro.interact(id)
+	var reply: Dictionary = state.intro.complete_meeting() if id == "maciota" and state.intro.stage == "meet_maciota" else state.intro.interact(id)
 	if not reply.ok: return false
 	if id == "maciota": arrival.notify_maciota_met()
-	show_dialogue([{ "speaker":reply.speaker,"message":reply.message }])
+	if reply.has("lines"):
+		show_dialogue(preload("res://runtime/ArrivalDialogue.gd").lines(reply.lines),func():
+			if state.campaign.active_id.is_empty() and not state.campaign.has_progress("primeiro_giro"): mission_world.begin("primeiro_giro"))
+		preload("res://systems/campaign/HarborStory.gd").mark_maciota(state.world_state)
+	else: show_dialogue([{ "speaker":reply.speaker,"message":reply.message }])
 	world.maciota_place.set_part_available(state.intro.part_available)
 	if reply.changed: save_game()
 	return true
@@ -1294,7 +1342,8 @@ func _process(delta: float) -> void:
 			world.gameplay.aim_point = aim
 		var data: Dictionary = WEAPONS.WEAPONS.get(state.equipped_weapon,{})
 		if Input.is_action_pressed("fire") and (data.get("automatic",false) or Input.is_action_just_pressed("fire")): world.gameplay.fire_at(aim)
-	if world.player.position.y < -12 and not modal: _on_death()
+	var fall_limit: float = mining.fall_limit(world.player.position) if mining != null else -12.0
+	if world.player.position.y < fall_limit and not modal: _on_death()
 	tick += delta
 	if tick < .1: return
 	tick = 0
@@ -1320,18 +1369,26 @@ func _process(delta: float) -> void:
 	if urban_operations != null and is_instance_valid(urban_operations.village_quest) and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active and not freight_active:
 		var village_objective: String = urban_operations.village_quest.objective()
 		if not village_objective.is_empty(): objective.text = village_objective
+	if jessica != null and state.campaign.active_id == "jessica_bank": objective.text = jessica.objective()
+	if desert != null and state.region_id == "desert": objective.text = desert.objective()
 	var action := nearest()
-	var silent_exit: bool = action.get("id","") == "exit" and state.place_id == "vertice_undercroft"
+	var silent_exit: bool = action.get("id","") == "exit" and state.place_id in ["vertice_undercroft","remote_coal_mine"]
 	prompt.text = "" if modal or action.is_empty() or action.get("silent",false) or silent_exit else "E  "+str(action.label)
 	if not modal and action.get("id","") == "port_container":
 		prompt.text = get_node("/root/GameInput").hint("interact")+"  "+str(action.label)
 
 func _update_world_indicator() -> void:
 	if not ready_for_play or not is_instance_valid(marker) or not is_instance_valid(arrow): return
-	var target: Vector3 = mission_world.target_position()
+	if desert != null and desert.busy():
+		marker.hide()
+		arrow.hide()
+		return
+	var target: Vector3 = desert.target_position() if desert != null and state.region_id == "desert" else mission_world.target_position()
 	if state.intro.stage != "complete": target = world.maciota_place.entry_position
 	if arrival.active: target = arrival.target
 	if freight_active: target = freight_target
+	if mining != null and state.region_id == "desert" and state.place_id.is_empty() and world.player.global_position.distance_to(preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY)<14.0:
+		target = preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY
 	if not state.place_id.is_empty() and is_instance_valid(room):
 		target = room.exit_position
 		if state.place_id == "maciota":
@@ -1398,6 +1455,7 @@ func _focus_menu_button(reference: WeakRef) -> void:
 	if modal and button.is_inside_tree() and button.get_parent() == column and button.is_visible_in_tree():
 		button.grab_focus()
 func close_menu() -> void:
+	if dialogue_voice != null: dialogue_voice.stop()
 	_service_menu_open = false
 	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
 	if menu_closed.is_valid(): menu_closed.call()
@@ -1406,18 +1464,25 @@ func close_menu() -> void:
 	dialogue_open = false
 	panel.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
-	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
-	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked()
+	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (desert != null and desert.busy()) or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
+	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked() or (desert != null and desert.busy())
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	lines = dialogue_lines.duplicate(true)
 	dialogue_done = on_done
 	_advance_dialogue()
 func _advance_dialogue() -> void:
+	if dialogue_voice != null: dialogue_voice.stop()
 	if lines.is_empty():
 		close_menu()
 		if dialogue_done.is_valid(): dialogue_done.call()
 		return
 	var line: Dictionary = lines.pop_front()
+	if dialogue_voice != null and not (arrival != null and arrival.active):
+		var speaker := str(line.get("speaker","")).to_lower().split(" · ")[0]
+		# Match Maciota's phone/arrival level when the conversation enters the workshop.
+		dialogue_voice.volume_db = -8.0 if speaker in ["maciota", "caller"] else 0.0
+		dialogue_voice.stream = preload("res://audio/ExpressiveVoice.gd").recorded_line(str(line.get("message","")),speaker)
+		if dialogue_voice.stream != null: dialogue_voice.play()
 	var continuing_service := _service_menu_open
 	_menu(str(line.get("speaker","")))
 	_service_menu_open = continuing_service
@@ -1646,6 +1711,13 @@ func _refresh_reward_feedback() -> void:
 			notice.text = ""
 			notice.hide()
 func save_block_reason() -> String:
+	if mining != null:
+		var mining_reason: String = mining.save_block_reason()
+		if not mining_reason.is_empty(): return mining_reason
+	if desert != null:
+		var desert_reason: String = desert.save_block_reason()
+		if not desert_reason.is_empty(): return desert_reason
+	if jessica != null and jessica.riding: return "Aguarde Jessica estacionar para salvar."
 	if skate != null and skate.controls_locked(): return "Desça do skate e se recupere para salvar."
 	if controller.save_invalid: return "Save inválido preservado; salvamento bloqueado."
 	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."
@@ -1702,6 +1774,8 @@ func save_game(manual := false) -> bool:
 		state.world_state.pedestrian = {"region":state.region_id,"position":[point.x,point.y,point.z]}
 	if personal_car != null: personal_car.refresh()
 	if activities != null: activities.refresh_achievements()
+	if desert != null: desert.write_snapshot()
+	if mining != null: mining.write_snapshot()
 	controller.capture_player_vehicle()
 	if cold != null: state.world_state.cold = cold.snapshot()
 	if garage_rewards != null: state.world_state.garage_rewards = garage_rewards.snapshot()
@@ -1713,6 +1787,7 @@ func save_game(manual := false) -> bool:
 	if skate != null: state.world_state.skate = skate.snapshot()
 	if mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()
 	if mission_world != null: state.world_state.mission_world = mission_world.snapshot()
+	if jessica != null: state.world_state.jessica_vehicle = jessica.vehicle_snapshot()
 	if urban_operations != null:
 		var urban_snapshot: Dictionary = urban_operations.snapshot()
 		if not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(urban_snapshot):
@@ -1733,6 +1808,9 @@ func save_game(manual := false) -> bool:
 	_save_indicator().acknowledge()
 	return true
 func load_game() -> void:
+	if desert != null and desert.busy(): show_message("Encerre a arrancada para carregar."); return
+	if jessica != null and jessica.riding:
+		show_message("Aguarde Jessica estacionar para carregar."); return
 	if is_transition_blocked():
 		show_message("Aguarde a conclusão da transição para carregar."); return
 	if passenger_transport != null and passenger_transport.riding:
@@ -1744,6 +1822,8 @@ func load_game() -> void:
 	var result := get_tree().reload_current_scene()
 	if result != OK: show_message("Não foi possível carregar o jogo (%d)." % result)
 func return_to_main_menu() -> void:
+	if desert != null: desert.cancel_attempt()
+	if mining != null: mining.cancel_attempt()
 	if is_transition_blocked() or (passenger_transport != null and passenger_transport.riding):
 		show_message("Aguarde a conclusão da chegada, do resgate ou da transição.")
 		return
@@ -1837,10 +1917,13 @@ func _show_v1_arrest_presentation() -> void:
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
 	arrest_pending = true
+	if desert != null: desert.cancel_attempt()
+	if mining != null: mining.cancel_attempt()
 	prompt.text = ""
 	if services != null and services.has_method("cancel_auto_service"): services.cancel_auto_service("player_arrest")
 	if is_instance_valid(world.driving) and world.driving.has_method("cancel_transition"): world.driving.cancel_transition("player_arrest")
 	if passenger_transport != null and passenger_transport.riding: passenger_transport._brake()
+	if jessica != null: jessica.cancel_for_transition()
 	garage_rewards.cancel_press_delivery()
 	activities.cancel_attempt()
 	mountain_progression.cancel_attempt()
@@ -1858,6 +1941,9 @@ func _on_death() -> void:
 	# directly, without damage_player. Establish the same dead state before any
 	# boarding cleanup or death presentation reads it.
 	world.gameplay.health = 0
+	if desert != null: desert.cancel_attempt()
+	if mining != null: mining.cancel_attempt()
+	if jessica != null: jessica.cancel_for_transition()
 	if services != null and services.has_method("cancel_auto_service"): services.cancel_auto_service("player_death")
 	if is_instance_valid(world.driving) and world.driving.has_method("cancel_transition"): world.driving.cancel_transition("player_death")
 	world.player.input_locked = true

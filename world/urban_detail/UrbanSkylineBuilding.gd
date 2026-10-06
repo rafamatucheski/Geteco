@@ -47,7 +47,7 @@ func _facade(key: String, at: Vector3, width: float, pitch: float, sideways: boo
 		_detail(pos,frame_size,UrbanMaterials.trim_dark())
 		# Pane is centered on the facade with visible faces beyond the frame.
 		var pane_size := Vector3(.135,window_height,window_width) if sideways else Vector3(window_width,window_height,.135)
-		_detail(pos,pane_size,window_glass_material(key+str(column),.22))
+		_detail(pos,pane_size,window_glass_material(key+str(column),.60))
 		if style != "glass":
 			var sill := Vector3(.22,.10,window_width+.26) if sideways else Vector3(window_width+.26,.10,.22)
 			_detail(pos-Vector3(0,window_height*.5+.06,0),sill,UrbanMaterials.trim_stone())

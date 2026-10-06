@@ -6,7 +6,6 @@ const CAPTURE_SCRIPT := "res://tests/capture/capture_mountain_tunnel_transition.
 const CAPTURE_FPS := 30
 var capture_hash := ""
 var night := false
-var fog_materials: Array[Dictionary] = []
 
 func run() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -48,7 +47,6 @@ func sample(seconds: float) -> Dictionary:
 	if DirAccess.make_dir_recursive_absolute(frames_folder) != OK:
 		fail("Could not create temporal frame directory")
 		return {"summary": {"capture_only": true, "frames": 0}}
-	_cache_fog_materials()
 	var original_cap := Engine.max_fps
 	Engine.max_fps = CAPTURE_FPS
 	world.player.speed = 3.5
@@ -131,41 +129,12 @@ func _apply_phase(phase: String) -> void:
 func _xyz(value: Vector3) -> Array:
 	return [value.x, value.y, value.z]
 
-func _cache_fog_materials() -> void:
-	fog_materials.clear()
-	for mesh in world.find_children("*", "MeshInstance3D", true, false):
-		if not (world.camera.is_ancestor_of(mesh) or "fog" in str(mesh.name).to_lower()): continue
-		var material: Material = mesh.material_override
-		if not material is ShaderMaterial or material.shader == null: continue
-		var uniforms: Array[String] = []
-		for uniform in material.shader.get_shader_uniform_list():
-			# Texture handles are not temporal fog state and do not serialize usefully.
-			if int(uniform.get("type", TYPE_NIL)) == TYPE_OBJECT: continue
-			uniforms.append(str(uniform.name))
-		fog_materials.append({"node": mesh, "material": material, "uniforms": uniforms})
-
 func _fog_state() -> Dictionary:
-	var env: Environment = world.camera.environment
-	var source := "camera_environment"
-	if env == null:
-		env = world.production.environment.environment
-		source = "world_environment"
-	var result := {"source": source, "time_of_day": world.session.weather.time_of_day}
-	if env != null:
-		result["environment_id"] = env.get_instance_id()
-		for key in ["fog_enabled", "fog_mode", "fog_density", "fog_height", "fog_height_density", "fog_light_color", "fog_light_energy", "fog_sky_affect", "fog_depth_begin", "fog_depth_end", "fog_depth_curve", "background_color"]:
-			var value: Variant = env.get(key)
-			if value != null: result[key] = str(value) if value is Color else value
-	var materials := []
-	for record in fog_materials:
-		if not is_instance_valid(record.node): continue
-		var parameters := {}
-		for key in record.uniforms:
-			var value: Variant = record.material.get_shader_parameter(key)
-			parameters[key] = str(value) if value is Color or value is Vector2 or value is Vector3 or value is Vector4 else value
-		materials.append({"path": str(record.node.get_path()), "visible": record.node.is_visible_in_tree(), "parameters": parameters})
-	result["local_materials"] = materials
-	return result
+	return {"time_of_day": world.session.weather.time_of_day, "mountain_weight": CONNECTION.tunnel_camera_weight(world.player.global_position), "chase_blend": world.camera._tunnel_chase_blend, "camera_environment": _environment_fields(world.camera.environment), "source_environment": _environment_fields(world.camera.get_world_3d().environment)}
+
+func _environment_fields(env: Environment) -> Dictionary:
+	if env == null: return {"present": false}
+	return {"present": true, "environment_id": env.get_instance_id(), "fog_enabled": env.fog_enabled, "fog_density": env.fog_density, "fog_depth_begin": env.fog_depth_begin, "fog_depth_end": env.fog_depth_end, "fog_light_color": [env.fog_light_color.r, env.fog_light_color.g, env.fog_light_color.b], "background_color": [env.background_color.r, env.background_color.g, env.background_color.b]}
 
 func finish() -> void:
 	report["capture_script_sha256_end"] = FileAccess.get_sha256(CAPTURE_SCRIPT)

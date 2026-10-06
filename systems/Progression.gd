@@ -81,6 +81,17 @@ func interact(target_id: String) -> Dictionary:
 			return _reply(true, "Peça coletada.", "", true)
 	return _reply(false, "", "", false)
 
+func complete_meeting() -> Dictionary:
+	# New arrival replaces only the obsolete bench tutorial. Legacy interactions
+	# remain readable until an old save reaches this authored garage conversation.
+	if _state.location_id != "harbor_garage" or _state.phase == "complete": return _reply(false,"","",false)
+	_state.inventory.erase(PART)
+	_state.phase = "complete"
+	_state.completed_missions = [Sequence.ID]
+	var reply := _reply(true,"","Maciota",true)
+	reply.lines = Sequence.INTRO_LINES.duplicate(true)
+	return reply
+
 func _reply(ok: bool, message: String, speaker: String, changed: bool) -> Dictionary:
 	return {"ok": ok, "message": message, "speaker": speaker, "changed": changed}
 

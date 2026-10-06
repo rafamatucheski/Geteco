@@ -51,14 +51,16 @@ var detail_context := ""
 var rng := RandomNumberGenerator.new()
 const WATER_SOUND = preload("res://runtime/world/OriginalWaterStep.gd")
 const FOOTSTEP_VOLUME_DB := -17.0
-# Mesma ordem e nomes de `LivingCityAudio.stations()` da V1; o desligado vem depois da última.
-const STATIONS := ["porto_fm","porto_noite","porto_groove","porto_brisa","porto_neon","porto_arcade","porto_pesada","porto_reggae","porto_club","porto_estrada","porto_cruise"]
-const STATION_NAMES := ["PORTO FM · Empty Stretch","PORTO NOITE · Fusion Jazz","PORTO GROOVE · Wednesday Night","PORTO BRISA · Apple Cider","PORTO NEON · Synth Rock","PORTO ARCADE · Chiptune","PORTO PESADA · Metal Fusion","PORTO REGGAE · Sweet Coast","PORTO CLUB · Electronic Outlaw","PORTO ESTRADA · Freeway Fumes","PORTO CRUISE · Midnight Cruiser"]
+# Índices V1 preservados; a estação do deserto é acrescentada antes do desligado.
+const STATIONS := ["porto_fm","porto_noite","porto_groove","porto_brisa","porto_neon","porto_arcade","porto_pesada","porto_reggae","porto_club","porto_estrada","porto_cruise","fronteira_country"]
+const STATION_NAMES := ["PORTO FM · Empty Stretch","PORTO NOITE · Fusion Jazz","PORTO GROOVE · Wednesday Night","PORTO BRISA · Apple Cider","PORTO NEON · Synth Rock","PORTO ARCADE · Chiptune","PORTO PESADA · Metal Fusion","PORTO REGGAE · Sweet Coast","PORTO CLUB · Electronic Outlaw","PORTO ESTRADA · Freeway Fumes","PORTO CRUISE · Midnight Cruiser","FRONTEIRA COUNTRY"]
+const COUNTRY_STATION := 11
 const RADIO_VOLUME_DB := -12.0
 var radio_car: CharacterBody3D
 var radio_focus := 1.0
 var radio_notice: Label
 var radio_notice_time := 0.0
+var radio_region := ""
 func _exit_tree() -> void:
 	if is_instance_valid(vehicle_ambience) and vehicle_ambience.has_method("shutdown"):
 		vehicle_ambience.shutdown()
@@ -70,6 +72,10 @@ func _exit_tree() -> void:
 	layers.clear()
 func _ready() -> void:
 	rng.randomize()
+	var desert_ambience := preload("res://audio/desert_ambience/DesertAmbience.gd").new()
+	desert_ambience.name = "DesertAmbience"
+	desert_ambience.world = world
+	add_child(desert_ambience)
 	radio = AudioStreamPlayer.new()
 	radio.name = "VehicleRadio"
 	radio.bus = _bus(&"Music")
@@ -184,7 +190,7 @@ func _cycle_radio(direction: int) -> void:
 	_set_station(slot if slot < STATIONS.size() else -1)
 
 func _set_station(index: int) -> void:
-	radio_index = index
+	radio_index = index if index >= -1 and index < STATIONS.size() else -1
 	# Cada carro guarda a própria estação, como `radio_index` em PlayerCar/TrafficVehicle na V1.
 	if is_instance_valid(radio_car):
 		radio_car.set_meta(&"radio_index",radio_index)
@@ -195,16 +201,19 @@ func _set_station(index: int) -> void:
 func _play_station(from: float) -> void:
 	radio.stop()
 	radio.stream = null
-	if radio_index < 0: return
+	if radio_index < 0 or radio_index >= STATIONS.size(): return
 	var stream := load("res://audio/living_city/"+STATIONS[radio_index]+".ogg") as AudioStream
 	if stream is AudioStreamOggVorbis: stream.loop = true
 	radio.stream = stream
 	if stream != null: radio.play(clampf(from,0.0,maxf(0.0,stream.get_length()-.5)))
 
-## Entrar no carro liga a estação dele (a primeira, se nunca foi sintonizado) e retoma do ponto
-## onde parou; sair para a rádio e guarda a posição. Trocar de carro não leva a música junto.
+## A primeira estação é regional; qualquer escolha manual, inclusive desligado, tem prioridade.
+## Retoma do ponto onde parou e guarda a posição ao sair. Cada carro conserva sua sintonização.
 func _update_radio(delta: float) -> void:
 	var car: CharacterBody3D = world.driving.car if world.driving.occupied and is_instance_valid(world.driving.car) else null
+	var region := str(world.session.state.region_id) if world.session != null else ""
+	var region_changed := region != radio_region
+	radio_region = region
 	if car != radio_car:
 		if is_instance_valid(radio_car) and radio.playing:
 			radio_car.set_meta(&"radio_position",radio.get_playback_position())
@@ -213,9 +222,18 @@ func _update_radio(delta: float) -> void:
 			radio.stop()
 			radio_notice_time = 0.0
 		else:
-			radio_index = int(car.get_meta(&"radio_index",0))
+			var desert_default := region == "desert" and not car.has_meta(&"radio_index")
+			radio_index = int(car.get_meta(&"radio_index",COUNTRY_STATION if desert_default else 0))
+			if radio_index < -1 or radio_index >= STATIONS.size(): radio_index = -1
+			if desert_default:
+				car.set_meta(&"radio_index",radio_index)
+				_show_station()
 			_play_station(float(car.get_meta(&"radio_position",0.0)))
 	if car != null:
+		# A travessia também sintoniza country sem exigir sair e entrar novamente no carro.
+		# Meta só existe após escolha explícita ou adoção da estação regional do deserto.
+		if region_changed and region == "desert" and not car.has_meta(&"radio_index"):
+			_set_station(COUNTRY_STATION)
 		var dialogue: bool = world.session != null and world.session.get("dialogue_open") == true
 		radio_focus = move_toward(radio_focus,.2 if dialogue else 1.0,delta*3.0)
 		radio.volume_db = RADIO_VOLUME_DB+linear_to_db(maxf(radio_focus,.001))
@@ -279,7 +297,7 @@ func _process(delta: float) -> void:
 			# exatamente igual) em vez do mesmo dB fixo toda vez.
 			footsteps.volume_db = FOOTSTEP_VOLUME_DB + rng.randf_range(-1.5,1.5)
 			footsteps.play()
-	if not moving or not is_instance_valid(world.driving.car) or world.driving.car.health <= 0 or world.driving.car.engine_disabled:
+	if not moving or not is_instance_valid(world.driving.car) or world.driving.car.health <= 0 or world.driving.car.engine_disabled or world.driving.car.has_meta("desert_powertrain"):
 		engine_car = null
 		engine_archetype = ""
 		for layer in layers: if layer.playing: layer.stop()

@@ -25,6 +25,7 @@ func material(color: Color, glass := false) -> StandardMaterial3D:
 	if color.a < 0.99: mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.roughness = 0.24 if glass else 0.78
 	mat.metallic = 0.22 if glass else 0.0
+	if glass: mat.set_meta("city_window", true)
 	materials[key] = mat
 	return mat
 

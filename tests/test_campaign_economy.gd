@@ -138,12 +138,14 @@ func _campaign() -> void:
 			var payload := {"target_id": step.target, "on_foot": true, "unarmed": true, "in_vehicle": true, "wanted_level": 0,
 				"encounter_cleared": true, "story_vehicle_alive": true, "correct_vehicle": true, "elapsed": elapsed,
 				"tow_delivery_ready": true, "race_vehicle_id": RACE_CAR}
+			payload.merge({"bank_receipt_paid":true,"bank_cycle":0,"bank_haul_mask":1,"bank_haul_receipt":"bank_haul:0:1","passenger":true,"door_clear":true,"route_finished":true,"safe_exit":true,"travelled":50.0,"place_id":"cobra_leader_house"})
 			if step.has("checkpoint"): payload.checkpoint = step.checkpoint
 			if step.event == "race_started": payload.race_position = RACE_START
 			var result: Dictionary = campaign.apply_event(step.event, payload)
 			if result.ok and step.event == "race_started":
 				_check(_drive_lap(campaign), "Physical lap completes the original race")
-				break
+				if campaign.active_id.is_empty(): break
+				continue
 			_check(result.ok, "Original required action advances: %s %s" % [step.event, result])
 			# Sem progresso a etapa nunca termina: falha registrada em vez de laço infinito.
 			if not result.ok: break
@@ -151,7 +153,7 @@ func _campaign() -> void:
 		if campaign.active_id != "": break
 		_check(campaign.claim_reward(economy, id), "Reward claimed once: " + id)
 		_check(not campaign.claim_reward(economy, id), "Reward cannot duplicate: " + id)
-	_check(economy.balance == 1670, "Six original Harbor rewards total 1670")
+	_check(economy.balance == 2170, "Original 1670 plus Jessica's 500 paid once")
 	_check(campaign.available_missions().is_empty(), "Completed missions not reoffered")
 	var restored := Campaign.new()
 	_check(restored.restore_snapshot(_roundtrip(campaign.snapshot())), "Campaign JSON roundtrip")

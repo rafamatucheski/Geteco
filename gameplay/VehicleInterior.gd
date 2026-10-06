@@ -146,7 +146,11 @@ static func _is_glass(part: MeshInstance3D, surface: int, material: Material) ->
 
 static func _derive(vehicle: Node3D) -> Dictionary:
 	var id := str(vehicle.get("archetype"))
-	var kind: String = KIND_OF.get(id, "car")
+	# Authored models can describe their passenger compartment independently of
+	# glazing geometry (door cuts and exterior mirrors are not cabin dimensions).
+	var authored: Dictionary = vehicle.visual.get_meta("vehicle_interior_spec", {})
+	var kind: String = str(authored.get("kind", KIND_OF.get(id, "car")))
+	if not KINDS.has(kind): kind = "car"
 	var k: Dictionary = KINDS[kind]
 	var belt := INF
 	var roof := -INF
@@ -208,6 +212,7 @@ static func _derive(vehicle: Node3D) -> Dictionary:
 	var s := {"kind": kind, "belt": belt, "roof": roof, "wz0": wz0, "wz1": wz1, "rear": rear, "rear_top": rear_top, "hw": hw, "open_top": false}
 	for key in k: s[key] = k[key]
 	for key in OVERRIDES.get(id, {}): s[key] = OVERRIDES[id][key]
+	for key in authored: s[key] = authored[key]
 	var theta := float(s.rec)
 	var floor_y := float(s.floor)
 	var scale := 1.0
@@ -866,10 +871,15 @@ static func _steering_wheel(t: SurfaceTool, hub: Vector3, radius: float, tilt: f
 	_tube(t, hub - b.z * .04, column_to, .034, C_TRIM, 6)
 
 ## Banco com encosto inclinado, apoio de cabeça e laterais.
-static func _seat(t: SurfaceTool, x: float, z: float, cush: float, recline: float, width: float, color: Color, headrest := true, tall := 0.0) -> void:
-	_box(t, Vector3(x, cush - .07, z), Vector3(width, .14, .50), color)
+static func _seat(t: SurfaceTool, x: float, z: float, cush: float, recline: float, width: float, color: Color, headrest := true, tall := 0.0, seat_floor := -INF) -> void:
+	# Low sports cabins need a shallow seat cushion and rails above their floor.
+	# Legacy models retain their original pedestal when no floor is authored.
+	var padding := minf(.14, maxf(.035, cush - seat_floor - .035))
+	_box(t, Vector3(x, cush - padding*.5, z), Vector3(width, padding, .50), color)
 	# Base do banco / trilho.
-	_box(t, Vector3(x, cush - .17, z), Vector3(width * .7, .06, .40), C_TRIM)
+	var rail_bottom := maxf(cush - .20, seat_floor + .005)
+	var rail_top := maxf(rail_bottom + .015, cush - padding - .008) if is_finite(seat_floor) else cush - .14
+	_box(t, Vector3(x, (rail_bottom + rail_top)*.5, z), Vector3(width * .7, rail_top - rail_bottom, .40), C_TRIM)
 	var tilt := Basis(Vector3.RIGHT, recline + .05)
 	var base := Vector3(x, cush, z + .23)
 	var back_h := .58 + tall
@@ -958,8 +968,8 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	for entry in [[sx - .13, .07, .05], [sx + .02, .05, .045], [sx + .15, .08, .04]]:
 		_box(t, Vector3(entry[0], floor_y + .12, pedal_z), Vector3(entry[1], .015 + entry[2], .12), C_RUBBER, Basis(Vector3.RIGHT, .7))
 	# Bancos dianteiros e cinto.
-	_seat(t, sx, sz, cush, rec, seat_w, seat_color, true, .05 if big else 0.0)
-	_seat(t, -sx, sz, cush, rec, seat_w, seat_color, true, .05 if big else 0.0)
+	_seat(t, sx, sz, cush, rec, seat_w, seat_color, true, .05 if big else 0.0, float(s.get("seat_floor", -INF)))
+	_seat(t, -sx, sz, cush, rec, seat_w, seat_color, true, .05 if big else 0.0, float(s.get("seat_floor", -INF)))
 	_belt(t, s)
 	# Console central: túnel, câmbio, freio de mão e porta-copos.
 	_box(t, Vector3(0, floor_y + .11, sz - .05), Vector3(.22, .22, .78), Color("23262a"))

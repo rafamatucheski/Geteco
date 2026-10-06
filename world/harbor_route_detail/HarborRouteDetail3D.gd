@@ -118,7 +118,7 @@ static func get_zone_bounds(zone_id: String) -> AABB:
 		ZONE_DELEGACIA:
 			return AABB(Vector3(58.0, 0.0, 129.0), Vector3(20.0, 5.0, 9.0))
 		ZONE_MACIOTA:
-			return AABB(Vector3(38.5, 0.0, 101.25), Vector3(18.5, 5.4, 4.15))
+			return AABB(Vector3(152.6, 0.0, 97.1), Vector3(25.6, 5.4, 15.1))
 	return AABB()
 
 ## Returns designated physical transition anchors for gameplay navigation.
@@ -135,9 +135,9 @@ static func get_transition_point(point_id: String) -> Vector3:
 		"delegacia_approach":
 			return Vector3(67.5, 0.10, 132.5)
 		"maciota_driveway_ramp":
-			return Vector3(45.15, 0.04, 105.0)
+			return Vector3(164.275, 0.04, 109.625)
 		"maciota_bay_entry":
-			return Vector3(46.875, 0.08, 101.7375)
+			return Vector3(166.0, 0.08, 109.8)
 	return Vector3.ZERO
 
 # ==============================================================================
@@ -412,6 +412,8 @@ static func _build_delegacia_zone() -> Node3D:
 
 static func _build_maciota_zone() -> Node3D:
 	var zone := Node3D.new()
+	# Existing apron props follow the workshop's new industrial anchor.
+	zone.position = Vector3(2696.0/16-790.0/16,0,1624.0/16-1495.0/16)
 	
 	# Sidewalk frontage running in front of the workshop (X: 39.5 to 57.0, Z: 101.25 to 104.6).
 	# No separate slab mesh here: any raised or differently-colored box reads as a second
@@ -420,33 +422,32 @@ static func _build_maciota_zone() -> Node3D:
 	# exposed here, see HarborUrbanSurface3D._RAISED_APRON_HOLES) is the sidewalk; this zone
 	# only adds curb/ramp/props on top of it.
 
-	# Driveway curb cut / beveled ramp spanning the entire 11.3m vehicle bay opening + piers + tour car arrival stop (X: 39.5 to 50.8)
-	# Center X = 45.15, Z = 105.0.
-	# Slopes from road level Y = 0.0 at Z = 105.4 up to apron Y = 0.03 at Z = 104.6.
-	var ramp := HarborRouteProps.create_curb_ramp(11.3, 0.80, 0.03)
-	ramp.position = Vector3(45.15, 0.0, 105.0)
-	zone.add_child(ramp)
+	# The freight-yard frontage has continuous native paving at road level.
+	# The old 3 cm wedge joined a raised apron at the previous garage; here it
+	# connected no height change and its vertical side obstructed westbound
+	# vehicles. The native floor remains the supported, full-width access.
 
 	# Granite curb on the east pedestrian sidewalk flank (X: 50.8 to 57.0)
-	var curb_e := HarborRouteProps.create_curb_segment(6.2, 0.30, 0.03)
+	var curb_e := HarborRouteProps.create_curb_segment(2.0, 0.30, 0.03)
 	curb_e.rotation_degrees = Vector3(0, 90, 0)
-	curb_e.position = Vector3(53.9, 0.0, 105.0)
+	curb_e.position = Vector3(55.375, 0.0, 91.9375)
 	zone.add_child(curb_e)
 
 	# High-visibility yellow safety bollard placed on the east curb corner (X = 51.2, clear of vehicle bay)
 	# Note: West bollard at X = 42.5 was removed to clear Arrival.gd's tour car arrival stop at (42.5, 0, 104.55).
 	var bollard_e := HarborRouteProps.create_bollard("hazard")
-	bollard_e.position = Vector3(51.2, 0.03, 104.6)
+	bollard_e.position = Vector3(54.575, 0.03, 91.7375)
 	zone.add_child(bollard_e)
 
-	# Industrial gooseneck street light on the far west corner (X = 38.5, Z = 102.5), clear of car hull (X: 40.0-45.0)
+	# The utility corner lights the court from the east. Its pole stays outside
+	# the full turning hull and the car's forward obstacle sensor.
 	var ind_light := HarborRouteProps.create_streetlight(5.2, 1.1, "industrial", deg_to_rad(45.0))
-	ind_light.position = Vector3(38.5, 0.03, 102.5)
+	ind_light.position = Vector3(55.675, 0.03, 90.9375)
 	zone.add_child(ind_light)
 
 	# Fire hydrant on the far east sidewalk corner (X = 56.2)
 	var hydrant := HarborRouteProps.create_fire_hydrant()
-	hydrant.position = Vector3(56.2, 0.03, 103.5)
+	hydrant.position = Vector3(55.675, 0.03, 93.0375)
 	zone.add_child(hydrant)
 
 	# Heavy scrap metal / oil drum hopper on the east apron
@@ -458,7 +459,7 @@ static func _build_maciota_zone() -> Node3D:
 	d_cyl.height = 0.85
 	drum.mesh = d_cyl
 	drum.material_override = HarborRouteMaterials.cast_iron_dark()
-	drum.position = Vector3(55.0, 0.03 + 0.425, 102.5)
+	drum.position = Vector3(54.875, 0.03 + 0.425, 92.7375)
 	zone.add_child(drum)
 	
 	var drum_body := StaticBody3D.new()
@@ -476,7 +477,7 @@ static func _build_maciota_zone() -> Node3D:
 	
 	# Storm drain grate in street gutter outside the driveway
 	var drain := HarborRouteProps.create_drain_grate()
-	drain.position = Vector3(51.8, 0.0, 105.35)
+	drain.position = Vector3(55.375, 0.0, 102.6875)
 	zone.add_child(drain)
 	
 	return zone

@@ -7,6 +7,72 @@ var evidence_dir := ""
 var ablate_traffic := false
 var ablate_population := false
 var sample_population := -1
+var interior_mode := false
+var setup_started_msec := 0
+var preparation_snapshots: Array[Dictionary] = []
+var guarded_player: Node3D
+var guarded_gameplay: Node3D
+var original_player_protection: Variant = null
+var original_god_mode := false
+var preparation_finished := false
+
+func guard_interior_preparation() -> void:
+	if not interior_mode or preparation_finished or not is_instance_valid(world): return
+	if is_instance_valid(world.player):
+		if not is_instance_valid(guarded_player):
+			guarded_player = world.player
+			original_player_protection = guarded_player.get_meta("invulnerable") if guarded_player.has_meta("invulnerable") else null
+			guarded_player.set_meta("invulnerable",true)
+		# A user key press or a roadside injury during population admission must
+		# not turn this steady interior benchmark into rescue/custody gameplay.
+		world.player.controlled_automatically = true
+		world.player.automatic_direction = Vector3.ZERO
+	if is_instance_valid(world.gameplay) and not is_instance_valid(guarded_gameplay):
+		guarded_gameplay = world.gameplay
+		original_god_mode = bool(world.gameplay.god_mode)
+		world.gameplay.god_mode = true
+	if world.session != null: world.session.set_process_input(false)
+
+func release_preparation_guard() -> void:
+	preparation_finished = true
+	if is_instance_valid(guarded_player):
+		if original_player_protection == null: guarded_player.remove_meta("invulnerable")
+		else: guarded_player.set_meta("invulnerable",original_player_protection)
+	if is_instance_valid(guarded_gameplay): guarded_gameplay.set("god_mode",original_god_mode)
+	guarded_player = null
+	guarded_gameplay = null
+
+func setup_snapshot(reason: String) -> Dictionary:
+	var live := 0
+	var dead := 0
+	for person in world.people:
+		if not is_instance_valid(person): continue
+		if person.dead: dead += 1
+		else: live += 1
+	var snapshot := {"reason":reason,"elapsed_s":float(Time.get_ticks_msec()-setup_started_msec)/1000.0,"population":world.people.size(),"live":live,"dead":dead,"requested":world.production.requested_population,"effective_cap":world.production._population_cap(),"density":world.production.density_scale,"pending_jobs":world.production._population_jobs.duplicate(),"production_ready":world.production.ready_for_play,"loaded_save":world.production.loaded_save,"save_invalid":world.production.save_invalid,"place":world.production.state.place_id,"cars":world.production.vehicles.size()}
+	if is_instance_valid(world.player):
+		snapshot.player = {"position":world.player.global_position,"dead":world.player.dead,"visible":world.player.visible,"physics":world.player.is_physics_processing(),"protected_during_setup":guarded_player!=null}
+	if is_instance_valid(world.gameplay): snapshot.gameplay = {"health":world.gameplay.health,"stars":world.gameplay.stars}
+	if is_instance_valid(world.dispatch): snapshot.dispatch_units = world.dispatch.units.size()
+	if world.session != null:
+		snapshot.session = {"ready":world.session.ready_for_play,"modal":world.session.modal,"position_transition":world.session.has_position_transition(),"transition_kind":world.session.transition_kind,"rescue":world.session.rescue_pending,"arrest":world.session.arrest_pending,"respawn_busy":world.session.respawn_busy}
+	return snapshot
+
+func note_setup(reason: String) -> void:
+	var snapshot := setup_snapshot(reason)
+	preparation_snapshots.append(snapshot)
+	print("BENCHMARK_PREPARATION ",JSON.stringify(snapshot))
+
+func fail_setup(reason: String) -> void:
+	note_setup(reason)
+	var output_dir := evidence_dir if not evidence_dir.is_empty() else "res://evidence"
+	var file := FileAccess.open(output_dir.path_join(label+"-startup.json"),FileAccess.WRITE)
+	if file != null: file.store_string(JSON.stringify({"failure":reason,"samples_started":false,"snapshots":preparation_snapshots},"\t"))
+	release_preparation_guard()
+	push_error(reason)
+	world.free()
+	quit(1)
+
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
 	for arg in OS.get_cmdline_user_args():
@@ -17,19 +83,25 @@ func run() -> void:
 		if arg.begins_with("--sample-population="): sample_population = arg.split("=")[1].to_int()
 		if arg == "--drive": driving_mode = true
 		if arg == "--combat": combat_mode = true
+		if arg == "--interior": interior_mode = true
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("benchmark_trace","--trace-runtime" in OS.get_cmdline_user_args())
 	root.add_child(world)
+	setup_started_msec = Time.get_ticks_msec()
 	var startup_frames := 4800 # 100 streamed residents may need 25+ seconds plus collision retries.
 	for i in startup_frames:
 		await physics_frame
+		guard_interior_preparation()
+		if i%300 == 0: note_setup("waiting_for_population")
 		var startup_population: int = world.production.requested_population if sample_population < 0 else sample_population
+		if world.session != null and world.session.ready_for_play and (world.gameplay.health<=0 or world.session.rescue_pending or world.session.arrest_pending):
+			fail_setup("Benchmark preparation entered death/rescue/custody instead of the requested scene"); return
 		if world.session != null and world.session.ready_for_play and world.people.size() >= startup_population: break
 	if world.session == null or not world.session.ready_for_play:
-		push_error("Native world failed to start"); quit(1); return
+		fail_setup("Native world failed to start"); return
 	var required_population: int = world.production.requested_population if sample_population < 0 else sample_population
 	if world.people.size() < required_population:
-		push_error("Requested benchmark population was not reached before sampling"); quit(1); return
+		fail_setup("Requested benchmark population was not reached before sampling"); return
 	if ablate_population: world.set_population(24)
 	if ablate_traffic:
 		for index in range(world.production.vehicles.size()-1,-1,-1):
@@ -106,10 +178,13 @@ func run() -> void:
 		world.session.state.add_ammo("ak47",600)
 		world.session.state.equip_weapon("ak47")
 		world.gameplay.register_crime(150,world.player.position)
+	note_setup("requested_workload_prepared")
+	release_preparation_guard()
 	started = Time.get_ticks_usec()
 	previous = started
 
 func _process(delta: float) -> bool:
+	if started == 0: guard_interior_preparation()
 	if started != 0 and combat_mode:
 		# Explicit stress fixture: replenish health to keep the real combat workload active.
 		# Death/respawn is validated separately, not hidden behind an FPS result.
@@ -132,6 +207,9 @@ func finish() -> void:
 	report.ablate_population = ablate_population
 	report.measured_start_usec = measured_started
 	report.runtime_costs = world.get_meta("perf_costs",[])
+	report.preparation_snapshots = preparation_snapshots
+	report.setup_player_protected = interior_mode
+	report.setup_protection_removed_before_warmup = guarded_player==null and guarded_gameplay==null
 	if combat_mode:
 		report.combat_health_replenished = true
 		report.combat_alive_seconds = combat_alive_seconds

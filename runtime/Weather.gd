@@ -1,6 +1,7 @@
 extends Node
 ## V1 time/weather IDs, rendered by shared native 3D lights and local particles.
 const REGIONAL_ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
+const DESERT_MOON := preload("res://runtime/atmosphere/DesertMoonlight.gd")
 const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleTextures.gd")
 # Productive V1 HarborGame and MountainPass both override the manager to 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
@@ -203,6 +204,8 @@ func _update() -> void:
 	# Isolated interiors are cutaway rooms, not floating platforms in the sky.
 	controller.environment.environment.background_color = Color("10151a") if inside else clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
 	atmosphere.apply(controller,time_of_day,_harbor_overcast(),front,inside,atmosphere_step)
+	if not inside:
+		DESERT_MOON.apply(controller.sun,controller.environment.environment,daylight,clouds,moon,REGIONAL_ATMOSPHERE.desert_weight(focus))
 	# A storm closes the distant sky without hiding nearby streets or actors.
 	# Reuse the existing depth fog and lighting, fading out toward Mountain.
 	if not inside and weather_state == 2:
@@ -219,6 +222,8 @@ func _update() -> void:
 			controller.world.production.connection.set_night_lights(night_lights)
 		var mountain_region = controller.world.production.regions.get("mountain")
 		if is_instance_valid(mountain_region): mountain_region.set_night_lights(night_lights)
+		var desert_region = controller.world.production.regions.get("desert")
+		if is_instance_valid(desert_region): desert_region.set_night_lights(night_lights)
 	var covered: bool = inside or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
 	_covered = covered
 	# Stopping emission leaves living particles visible for up to 2.2 seconds.

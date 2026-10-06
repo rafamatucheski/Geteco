@@ -2,7 +2,8 @@ extends RefCounted
 ## Event state machine; adapters must derive events from actual world actions.
 const Missions := preload("res://data/campaign/HarborMissions.gd")
 const Race := preload("res://systems/campaign/CobraRaceProgress.gd")
-var _data := {"version": 1, "active_id": "", "step": 0, "completed": [], "flags": {},
+const RACE_IDS := ["cobra_race","cobra_finale"]
+var _data := {"version": 2, "active_id": "", "step": 0, "completed": [], "flags": {}, "legacy_skipped":[],
 	"pending_rewards": {}, "claimed_rewards": [], "race_elapsed": 0.0, "race_outside":0.0, "race_run":{}, "failure": ""}
 var active_id: String:
 	get: return _data.active_id
@@ -25,11 +26,11 @@ func race_status() -> Dictionary:
 	return result
 
 func set_street_race_place(value: int) -> void:
-	if active_id=="cobra_race" and _data.race_run.get("course_version",0)==2:
+	if active_id in RACE_IDS and _data.race_run.get("course_version",0)==2:
 		_data.race_run.place=clampi(value,1,6)
 
 func tick_race(delta: float, point: Vector2, vehicle_id: String, alive: bool) -> Dictionary:
-	if active_id!="cobra_race" or step==0 or not is_finite(delta) or delta<=0 or not point.is_finite(): return {}
+	if not race_stage_active() or step==0 or not is_finite(delta) or delta<=0 or not point.is_finite(): return {}
 	if _data.get("race_run",{}).is_empty(): return {}
 	var result: Dictionary=Race.tick(_data.race_run,delta,point,vehicle_id,alive,float(_data.race_elapsed),float(_data.race_outside))
 	if not str(result.failure).is_empty():
@@ -40,7 +41,7 @@ func tick_race(delta: float, point: Vector2, vehicle_id: String, alive: bool) ->
 	return result
 
 func advance_race(delta: float, on_track: bool, inner_cut := false) -> String:
-	if active_id!="cobra_race" or step==0 or not is_finite(delta) or delta<=0: return ""
+	if not race_stage_active() or step==0 or not is_finite(delta) or delta<=0: return ""
 	_data.race_elapsed=float(_data.race_elapsed)+delta
 	_data.race_outside=0.0 if on_track else float(_data.get("race_outside",0.0))+delta
 	var failure := ""
@@ -49,12 +50,18 @@ func advance_race(delta: float, on_track: bool, inner_cut := false) -> String:
 	if not failure.is_empty(): cancel(failure)
 	return failure
 
+func race_stage_active() -> bool:
+	return active_id in RACE_IDS and step < 6
+
+func has_progress(id: String) -> bool:
+	return _data.completed.has(id) or _data.get("legacy_skipped",[]).has(id)
+
 func available_missions() -> Array:
 	var result := []
 	if active_id != "": return result
 	for id in Missions.ORDER:
 		var required: String = Missions.MISSIONS[id].requires
-		if not _data.completed.has(id) and (required == "" or _data.completed.has(required)):
+		if not has_progress(id) and (required == "" or has_progress(required)):
 			result.append(id)
 	return result
 
@@ -74,7 +81,7 @@ func current_step() -> Dictionary:
 
 func objective() -> String:
 	if is_suspended(): return "Missão interrompida. Libere espaço atrás do guincho para encerrar a tentativa."
-	if active_id=="cobra_race" and not _data.get("race_run",{}).is_empty():
+	if race_stage_active() and not _data.get("race_run",{}).is_empty():
 		if _data.race_run.countdown>0: return "Fique parado · %d"%ceili(float(_data.race_run.countdown))
 		if _data.race_run.get("course_version",0)==2:
 			if _data.race_outside>0: return "Volte à rota · %d s"%ceili(20.0-float(_data.race_outside))
@@ -149,7 +156,19 @@ func apply_event(event_id: String, payload: Dictionary = {}) -> Dictionary:
 		return _reply(false, false, "story_vehicle_required")
 	if expected.has("checkpoint") and payload.get("checkpoint", -1) != expected.checkpoint:
 		return _reply(false, false, "wrong_checkpoint")
-	if active_id == "cobra_race":
+	if active_id == "jessica_bank":
+		if event_id == "jessica_bank_haul_escaped":
+			if payload.get("bank_receipt_paid") != true or not _integer(payload.get("bank_cycle"),0,10000000) or not _integer(payload.get("bank_haul_mask"),1,7): return _reply(false,false,"real_bank_haul_required")
+			if payload.get("bank_haul_receipt") != "bank_haul:%d:%d" % [int(payload.bank_cycle),int(payload.bank_haul_mask)]: return _reply(false,false,"bank_receipt_required")
+		elif event_id == "jessica_getaway_boarded":
+			if payload.get("passenger") != true or payload.get("correct_vehicle") != true or payload.get("door_clear") != true: return _reply(false,false,"jessica_passenger_required")
+		elif event_id == "jessica_safe_return":
+			if payload.get("route_finished") != true or payload.get("safe_exit") != true or payload.get("correct_vehicle") != true: return _reply(false,false,"physical_getaway_required")
+			var travelled: Variant = payload.get("travelled",0)
+			if typeof(travelled) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(travelled)) or float(travelled)<25: return _reply(false,false,"physical_getaway_required")
+	if event_id == "leader_house_entered" and payload.get("place_id") != "cobra_leader_house": return _reply(false,false,"leader_house_required")
+	if active_id == "cobra_finale" and event_id == "transfer_document_collected" and payload.get("place_id") != "cobra_leader_house": return _reply(false,false,"leader_house_required")
+	if active_id in RACE_IDS and event_id in ["race_started","race_checkpoint","race_finished"]:
 		if event_id=="race_started":
 			var vehicle_id: String=str(payload.get("race_vehicle_id",""))
 			var point: Variant=payload.get("race_position")
@@ -170,6 +189,10 @@ func apply_event(event_id: String, payload: Dictionary = {}) -> Dictionary:
 		if event_id=="race_started":
 			_data.race_run=preload("res://systems/campaign/CobraStreetProgress.gd").start(str(payload.race_vehicle_id),payload.race_position) if payload.get("race_course",0)==2 else Race.start(str(payload.race_vehicle_id),payload.race_position)
 			_data.failure=""
+		if event_id == "race_finished" and active_id == "cobra_finale":
+			_data.race_run = {}
+			_data.race_elapsed = 0.0
+			_data.race_outside = 0.0
 	_data.step += 1
 	if step < Missions.MISSIONS[active_id].steps.size(): return _reply(true, true, "advanced")
 	var completed_id := active_id
@@ -206,7 +229,17 @@ func claim_reward(economy: RefCounted, id: String = "") -> bool:
 func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
 	_data = data.duplicate(true)
-	_data.version = 1
+	_data.version = 2
+	_data.legacy_skipped = _data.get("legacy_skipped",[]).duplicate()
+	if int(data.version) == 1:
+		if data.completed.has("cobra_supply") or data.completed.has("cobra_finale") or data.active_id in ["cobra_supply","cobra_finale"]:
+			_data.legacy_skipped = ["jessica_bank"]
+		if data.active_id == "cobra_finale":
+			_data.step = 0
+			_data.race_run = {}
+			_data.race_elapsed = 0.0
+			_data.race_outside = 0.0
+			_data.failure = "leader_race_restart_required"
 	_data.step = int(_data.step)
 	_data.race_elapsed = float(_data.race_elapsed)
 	_data.race_outside = float(_data.get("race_outside",0.0))
@@ -219,7 +252,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		_data.race_elapsed=0.0
 		_data.race_outside=0.0
 		_data.failure="race_restart_required"
-	if _data.active_id=="cobra_race" and _data.step>0 and _data.race_run.is_empty():
+	if race_stage_active() and _data.step>0 and _data.race_run.is_empty():
 		# Pre-angular saves lack a trustworthy car/start/trajectory. Keep mission/unlocks,
 		# but require a new physical start instead of inventing a completed lap.
 		_data.step=0
@@ -235,7 +268,11 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	if aftermath.get("call_complete",false) and (not data.get("completed") is Array or not data.completed.has("cobra_finale")): return false
 	for key in ["version", "active_id", "step", "completed", "flags", "pending_rewards", "claimed_rewards", "race_elapsed", "failure"]:
 		if not data.has(key): return false
-	if not _integer(data.version, 1, 1) or not _integer(data.step, 0, 99): return false
+	if not _integer(data.version, 1, 2) or not _integer(data.step, 0, 99): return false
+	var legacy: bool = int(data.version) == 1
+	var skipped: Variant = data.get("legacy_skipped",[])
+	if not skipped is Array or (not skipped.is_empty() and skipped != ["jessica_bank"]): return false
+	if not skipped.is_empty() and not (data.get("completed",[]).has("cobra_supply") or data.get("completed",[]).has("cobra_finale") or data.get("active_id","") in ["cobra_supply","cobra_finale"]): return false
 	if not data.active_id is String or not data.failure is String or data.failure.length() > 256: return false
 	for key in ["completed", "claimed_rewards"]:
 		if not data[key] is Array: return false
@@ -245,8 +282,10 @@ static func validate_snapshot(data: Dictionary) -> bool:
 			seen[id] = true
 	for key in ["flags", "pending_rewards"]:
 		if not data[key] is Dictionary: return false
+	var order: Array = Missions.LEGACY_ORDER if legacy else Missions.ORDER.filter(func(id): return not skipped.has(id))
+	if data.completed.size() > order.size(): return false
 	for i in data.completed.size():
-		if data.completed[i] != Missions.ORDER[i]: return false
+		if data.completed[i] != order[i]: return false
 	for id in data.pending_rewards:
 		if not data.completed.has(id) or data.claimed_rewards.has(id) or not _integer(data.pending_rewards[id], int(Missions.MISSIONS[id].reward), int(Missions.MISSIONS[id].reward)): return false
 	for id in data.claimed_rewards:
@@ -263,19 +302,22 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	if data.active_id != "":
 		if not Missions.ORDER.has(data.active_id) or data.completed.has(data.active_id): return false
 		var required: String = Missions.MISSIONS[data.active_id].requires
-		if required != "" and not data.completed.has(required): return false
-		if int(data.step) >= Missions.MISSIONS[data.active_id].steps.size(): return false
+		if legacy and data.active_id == "cobra_supply": required = "cobra_collection"
+		if required != "" and not data.completed.has(required) and not skipped.has(required): return false
+		var steps: int = 3 if legacy and data.active_id == "cobra_finale" else Missions.MISSIONS[data.active_id].steps.size()
+		if int(data.step) >= steps: return false
 	elif int(data.step) != 0: return false
 	var street: bool=data.get("race_run",{}) is Dictionary and data.get("race_run",{}).get("course_version",0)==2
 	if typeof(data.race_elapsed) not in [TYPE_FLOAT, TYPE_INT] or not is_finite(float(data.race_elapsed)) or float(data.race_elapsed) < 0.0 or float(data.race_elapsed) > (180.0 if street else 100.0): return false
-	if data.active_id != "cobra_race" and float(data.race_elapsed) != 0.0: return false
+	var race_active: bool = data.active_id in RACE_IDS and int(data.step) < 6 and not (legacy and data.active_id == "cobra_finale")
+	if not race_active and float(data.race_elapsed) != 0.0: return false
 	var outside: Variant=data.get("race_outside",0.0)
 	if typeof(outside) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(outside)) or outside<0 or outside>=(20.0 if street else 4.0): return false
-	if (data.active_id!="cobra_race" or data.step==0) and outside!=0: return false
+	if (not race_active or data.step==0) and outside!=0: return false
 	var run: Variant=data.get("race_run",{})
 	if not Race.validate(run): return false
 	if not run.is_empty():
-		if data.active_id!="cobra_race" or data.step==0: return false
+		if not race_active or data.step==0: return false
 		if int(run.checkpoint)!=int(data.step)-1: return false
 		if run.checkpoint>0 and (run.countdown!=0 or not run.initialized): return false
 		if run.checkpoint==4 and run.progress<TAU: return false

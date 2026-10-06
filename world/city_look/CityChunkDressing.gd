@@ -20,6 +20,7 @@ const BRANDS := preload("res://world/city_look/CityBrands.gd")
 const LIFE := preload("res://world/city_look/BuildingLife.gd")
 const STAIRS := preload("res://world/city_look/WalkableStairs.gd")
 const ROOFS := preload("res://world/city_look/RoofSurfaces.gd")
+const GROUND_LITTER := preload("res://world/city_look/CityGroundLitter.gd")
 const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
@@ -29,7 +30,7 @@ const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
-const WINDOW_LIT_RATIO := 0.38
+const WINDOW_LIT_RATIO := 0.60
 const SHOP_LIT_RATIO := 0.85
 # Largura da calçada gerada por HarborRoadGeometry3D (42 px de cada lado).
 const SIDEWALK := 42.0 / 16.0
@@ -47,11 +48,17 @@ const LAMP_ARM := 1.3
 const LAMP_CLEARANCE := 9.0
 static var _lamp_meshes: Dictionary = {}
 const DECAL_Y := 0.034
+const WORKSHOP_VEHICLE_ACCESS := [Rect2(153.0,100.8,10.0,10.7),Rect2(167.0,97.2,11.1,5.5),Rect2(156.8,109.7,33.0,2.4)]
 const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry",
 	# Mobília de calçada: sem sombra, lixeira/hidrante/jornaleiro pareciam soltos,
 	# flutuando sobre a calçada (relato do jogador em 2026-09-24).
 	"trash_can", "news_box", "mailbox", "hydrant", "stop_sign", "bench_seat", "planter", "bollard", "trash_bags"]
 
+
+static func _workshop_driving(point: Vector2) -> bool:
+	for area in WORKSHOP_VEHICLE_ACCESS:
+		if area.has_point(point): return true
+	return false
 
 static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	var context := _context(region, rect)
@@ -67,6 +74,7 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	_road_wear(context, batches)
 	_rooftops(chunk, context, batches)
 	_flush(chunk, batches)
+	GROUND_LITTER.build_chunk(chunk, context, batches, WORKSHOP_VEHICLE_ACCESS)
 
 
 static func build_chunk_step(state: Dictionary) -> bool:
@@ -86,8 +94,11 @@ static func build_chunk_step(state: Dictionary) -> bool:
 		9: _road_wear(state.context, state.batches)
 		10: _rooftops(state.chunk, state.context, state.batches)
 		11: _flush(state.chunk, state.batches)
+		12:
+			if not state.has("ground_litter"): state.ground_litter = GROUND_LITTER.begin(state.chunk, state.context, state.batches, WORKSHOP_VEHICLE_ACCESS)
+			if not GROUND_LITTER.step(state.ground_litter): return false
 	state.step += 1
-	return state.step > 11
+	return state.step > 12
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +136,7 @@ static func _road_clearance(context: Dictionary, point: Vector2) -> float:
 
 
 static func _inside_building(context: Dictionary, point: Vector2, margin := 0.3) -> bool:
+	if preload("res://world/roadside_parking/RoadsideParkingLayout.gd").is_reserved(point, context.region.get_meta(&"roadside_parking_sites", []), margin): return true
 	# Rampas e pórticos do Túnel do canal: nada de poste/banco na boca ou sobre a vala.
 	if CANAL_TUNNEL.reserves(point, margin): return true
 	for building in context.buildings:
@@ -315,6 +327,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 				if _near_junction(context, point, 2.0) or _near_lamp(context, point, LAMP_CLEARANCE): continue
 				if _road_clearance(context, point) < 0.2 or _inside_building(context, point, 0.5): continue
 				if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
+				if _workshop_driving(point): continue
 				if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
 				context.lamps.append(point)
 				var yaw := atan2(-outward.x, -outward.y)
@@ -432,6 +445,10 @@ static func _treat_window(mesh: MeshInstance3D) -> void:
 		kind = "window"
 	elif material == UrbanMaterials.glass_display() or material == UrbanMaterials.glass_warm_interior():
 		kind = "shop"
+	elif material is StandardMaterial3D and (bool(mesh.get_meta("city_window", false)) or bool(material.get_meta("city_window", false)) or String(mesh.name).begins_with("WindowGlass")):
+		# Casas autoradas e hospital usam vidro opaco, com material próprio.
+		# Reconhecer o vidro explicitamente preserva caixilhos, portas e paredes.
+		kind = "window"
 	elif material is StandardMaterial3D and String(mesh.name).contains("Glass") and material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED:
 		kind = "window"
 	if kind.is_empty(): return
@@ -614,6 +631,11 @@ static func _sidewalk_furniture(context: Dictionary, batches: Dictionary) -> voi
 					# Both divided lanes share a structural bridge deck. Their inner
 					# "sidewalks" are the driving median, not a place for furniture.
 					if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
+					# The workshop's authored vehicle access owns this apron. Keep
+					# the same furniture on the opposite public Quay sidewalk.
+					if _workshop_driving(point):
+						point = Vector2(197.25,102.8+_roll(key+"workshop_edge")*6.0)
+						if not _in_chunk(context,point) or _inside_building(context,point,.5): continue
 					if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
 					_add(batches, kind, Vector3(point.x, 0.012, point.y), -outward)
 				s += FURNITURE_SPACING

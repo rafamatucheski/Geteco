@@ -45,7 +45,13 @@ static func sample_at(point: Vector3, hour: float, clouds: float, snow: float) -
 	var w := weights_at(point)
 	var result := PALETTE.sample(0,hour,clouds,w.mountain,w.summit,snow)
 	result = PALETTE.resort_sample(result,w.resort)
-	return PALETTE.cemetery_sample(result,w.cemetery)
+	result = PALETTE.cemetery_sample(result,w.cemetery)
+	var desert := desert_weight(point)
+	return PALETTE.blend(result,PALETTE.sample(2,hour,clouds,0,0,0),desert)
+
+static func desert_weight(point: Vector3) -> float:
+	if point.x>440.0 or point.x < -1550.0: return 0.0
+	return smoothstep(360.0,470.0,-point.z)
 
 func apply(controller, hour: float, clouds: float, snow: float, inside: bool, delta: float) -> void:
 	var point := focus_position(controller)
@@ -88,8 +94,9 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 	env.fog_light_energy = 1.0
 	env.fog_sun_scatter = 0.0
 	env.fog_density = current.haze
-	env.fog_depth_begin = 18.0
-	env.fog_depth_end = 75.0
+	var desert := desert_weight(point)
+	env.fog_depth_begin = lerpf(18.0,90.0,desert)
+	env.fog_depth_end = lerpf(75.0,1400.0,desert)
 	env.fog_depth_curve = 1.25
 	env.fog_sky_affect = current.distant_haze
 	# Higher moon removes the huge grazing-angle shadow wedges at night.

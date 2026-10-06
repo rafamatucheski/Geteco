@@ -56,9 +56,9 @@
   "transfer_document_collected": [
     {
       "speaker": "Dante",
-      "pt": "Uma transferência para fora de Harbor… e as iniciais dele. Isso não prova nada. Ainda.",
-      "en": "A transfer out of Harbor… and his initials. That proves nothing. Not yet.",
-      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "pt": "Vicente Ferraz. Organização das corridas do deserto. É o nome dele... Maciota precisa ver essa lista.",
+      "en": "Vicente Ferraz. Desert race organization. That is his name... Maciota needs to see this list.",
+      "source": "Harbor story revision 2026-10-05",
       "line": 163
     }
   ],
@@ -92,27 +92,27 @@
   "cobra_collection_clue": [
     {
       "speaker": "Maciota",
-      "pt": "A moradora reconheceu teu irmão. Ele também perguntou pelos registros de carga. Ela indicou onde os Cobras guardam os papéis; vamos seguir essa pista.",
-      "en": "The resident recognized your brother. He also asked about cargo records. She told us where the Cobras keep their papers; let us follow that lead.",
-      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "pt": "A moradora reconheceu teu irmão e apontou os registros dos Cobras. Antes de entrar lá, conversa com a Jessica junto ao North Pier. Ela quer combinar um serviço e você vai precisar de dinheiro para viajar.",
+      "en": "The resident recognized your brother and pointed us to the Cobras records. Before going there, talk to Jessica by North Pier. She has a job in mind, and you will need money to travel.",
+      "source": "Harbor story revision 2026-10-05",
       "line": 535
     }
   ],
   "cobra_supply_clue": [
     {
       "speaker": "Maciota",
-      "pt": "As datas desses registros batem com a passagem dele pelo cais. A autorização saiu da oficina da liderança. É lá que podemos descobrir qual carga ele acompanhou.",
-      "en": "The dates in those records match his visit to the docks. The authorization came from the leaders workshop. That is where we can learn which shipment he followed.",
-      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "pt": "Takeshi guarda a lista completa na casa dele. Ele não vai abrir a porta por conversa. Consegui uma disputa: vence a corrida e ele libera os registros.",
+      "en": "Takeshi keeps the full list in his house. Talking will not open that door. I arranged a challenge: win the race and he will let you see the records.",
+      "source": "Harbor story revision 2026-10-05",
       "line": 536
     }
   ],
   "cobra_finale_clue": [
     {
       "speaker": "Maciota",
-      "pt": "Uma transferência para fora de Harbor e as iniciais dele. Temos uma rota para investigar, mas ainda precisamos confirmar se ele embarcou. Guarda esse documento, Dante.",
-      "en": "A transfer out of Harbor and his initials. We have a route to investigate, but still need to confirm he boarded. Keep that document, Dante.",
-      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "pt": "Vicente está organizando corridas fora de Harbor. Vou te passar um contato e um lugar para ficar no deserto. Você não vai chegar sozinho.",
+      "en": "Vicente is organizing races outside Harbor. I will give you a contact and a place to stay in the desert. You will not arrive alone.",
+      "source": "Harbor story revision 2026-10-05",
       "line": 537
     }
   ],
@@ -128,9 +128,9 @@
   "cobra_race_begin": [
     {
       "speaker": "Maciota",
-      "pt": "Às 21h, Ferrugem fecha a praça para uma prova. O motorista que viu teu irmão quer saber se você dirige bem. Espere o trânsito sair e leve um carro à largada de Ashbend. Complete os quatro portões em 100 segundos. Pode cancelar ou tentar novamente sem pagar.",
-      "en": "At 9 pm, Ferrugem closes the square for a trial. The driver who saw your brother wants to know if you can drive. Let traffic leave, then bring a car to the Ashbend start. Complete four gates within 100 seconds. Cancelling or retrying costs nothing.",
-      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "pt": "Às 21h tem prova até as docas. Vence seguindo os quatro checkpoints e eu consigo falar com o motorista que viu o Vicente. Leva a Monaliza inteira.",
+      "en": "The docks race starts at 9 pm. Win through the four checkpoints and I can speak to the driver who saw Vicente. Bring the Monaliza in one piece.",
+      "source": "Harbor story revision 2026-10-05",
       "line": 543
     }
   ],
@@ -155,10 +155,28 @@
   "cobra_finale_begin": [
     {
       "speaker": "Maciota",
-      "pt": "A autorização da carga veio da liderança. Enfrenta os Cobras na oficina e procura o documento que liga teu irmão à transferência.",
-      "en": "The cargo authorization came from the leaders. Face the Cobras at their workshop and find the document linking your brother to the transfer.",
-      "source": "world/harbor/campaign/CobraCampaignController.gd",
+      "pt": "Takeshi aposta que você não ganha dele até as docas. O acesso aos registros é o prêmio. Vence e entra na casa dele; procura a lista de responsáveis pelas corridas.",
+      "en": "Takeshi bets you cannot beat him to the docks. Access to his records is the prize. Win and enter his house; look for the list of race organizers.",
+      "source": "Harbor story revision 2026-10-05",
       "line": 546
+    }
+  ],
+  "jessica_bank_begin": [
+    {
+      "speaker": "Maciota",
+      "pt": "A Jessica espera na rua do North Pier. Decide com ela como vai ser o serviço. Depois a gente volta aos registros dos Cobras.",
+      "en": "Jessica is waiting outside North Pier. Work out the job with her. Then we get back to the Cobras records.",
+      "source": "Harbor story revision 2026-10-05",
+      "line": 0
+    }
+  ],
+  "jessica_bank_clue": [
+    {
+      "speaker": "Maciota",
+      "pt": "Jessica falou que vocês chegaram bem. Agora vamos aos registros. Os papéis que a moradora indicou ficam nos fundos da quadra dos Cobras.",
+      "en": "Jessica said you made it back safely. Now for the records. The papers the resident mentioned are behind the Cobras block.",
+      "source": "Harbor story revision 2026-10-05",
+      "line": 0
     }
   ]
 }

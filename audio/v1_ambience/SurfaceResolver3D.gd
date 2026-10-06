@@ -45,6 +45,7 @@ static func resolve(world: Node, raining: bool) -> String:
 	return surface
 
 static func _interior_surface(place: String) -> String:
+	if place == "desert_bank": return "tile"
 	if place in TILE_PLACES: return "tile"
 	if place in WOOD_PLACES: return "wood"
 	if place in ["maciota","port_boss_garage"]: return "concrete"
@@ -91,6 +92,7 @@ static func _road_surface(region: Node, point: Vector3) -> String:
 	return result
 
 static func _geographic_surface(region: String, point: Vector3) -> String:
+	if region == "desert": return "dirt"
 	var original := Vector2(point.x,point.z)/SCALE
 	if region == "mountain":
 		original -= MOUNTAIN_OFFSET

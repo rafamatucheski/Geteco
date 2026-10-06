@@ -65,7 +65,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not data.combat.is_empty() and not preload("res://gameplay/Gameplay.gd").validate_snapshot(data.combat): return false
 	for key in ["region_id","place_id","checkpoint_id"]:
 		if not data.get(key) is String or str(data[key]).length() > 128: return false
-	if data.region_id not in ["harbor","mountain"]: return false
+	if data.region_id not in ["harbor","mountain","desert"]: return false
 	# Reject the entire snapshot before touching live state. Maciota is a native
 	# Harbor interior and deliberately does not live in PlaceCatalog.
 	if not _location_is_compatible(data.region_id,data.place_id): return false
@@ -87,6 +87,10 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not data.world.get("rewards",[]) is Array or not data.world.get("vehicles",[]) is Array: return false
 	if data.world.has("mountain_zoo") and not preload("res://world/mountain_detail/zoo/ZooTicketState.gd").valid(data.world.mountain_zoo,data.economy): return false
 	if data.world.has("ashbend_secret_car_claimed") and not data.world.ashbend_secret_car_claimed is bool: return false
+	if data.world.has("remote_coal_secret_revealed") and not data.world.remote_coal_secret_revealed is bool: return false
+	if data.world.has("mining_raid"):
+		if not preload("res://gameplay/mining/MiningRaidState.gd").valid_wallet(data.world.mining_raid,data.economy): return false
+	if data.world.has("mining_equipment") and not preload("res://gameplay/mining/MiningOperation.gd").validate_snapshot(data.world.mining_equipment): return false
 	if data.world.has("ashbend_secret_car") and (not data.world.ashbend_secret_car is Dictionary or not preload("res://gameplay/urban_v1/CobraSecretCar3D.gd").validate_record(data.world.ashbend_secret_car)): return false
 	if data.world.get("vehicles",[]).size() > 64: return false
 	for vehicle in data.world.get("vehicles",[]):
@@ -94,6 +98,24 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("motocross") and (not data.world.motocross is Dictionary or not preload("res://activities/motocross/MotocrossProgress.gd").validate_snapshot(data.world.motocross)): return false
 	if data.world.has("motocross") and not preload("res://activities/motocross/MotocrossProgress.gd").validate_wallet(data.world.motocross,data.economy): return false
 	if data.world.has("digo") and (not data.world.digo is Dictionary or not preload("res://systems/campaign/DigoProgress.gd").validate_snapshot(data.world.digo)): return false
+	if data.world.has("harbor_story") and (not data.world.harbor_story is Dictionary or not preload("res://systems/campaign/HarborStory.gd").validate_snapshot(data.world.harbor_story)): return false
+	if data.world.has("jessica") and (not data.world.jessica is Dictionary or not preload("res://systems/campaign/JessicaProgress.gd").validate_snapshot(data.world.jessica)): return false
+	var jessica_state: Dictionary = data.world.get("jessica",preload("res://systems/campaign/JessicaProgress.gd").data({}))
+	if jessica_state.bank_phase in ["riding","returned"]: return false
+	if next_campaign.snapshot().completed.has("jessica_bank") != jessica_state.bank_complete: return false
+	if jessica_state.bank_phase in ["accepted","escaped"] and next_campaign.active_id != "jessica_bank": return false
+	if jessica_state.bank_phase == "accepted" and next_campaign.step != 1: return false
+	if jessica_state.bank_phase == "escaped" and next_campaign.step != 2: return false
+	if jessica_state.bank_phase in ["escaped","complete"]:
+		if not next_economy.has_reward_receipt(jessica_state.haul_receipt): return false
+	if data.world.has("jessica_vehicle") and not data.world.jessica_vehicle is Dictionary: return false
+	if data.world.has("jessica_vehicle") and not data.world.jessica_vehicle.is_empty():
+		var vehicle: Variant = data.world.jessica_vehicle
+		if not vehicle is Dictionary or vehicle.get("archetype") != "jessica_jetta_gli" or vehicle.get("vehicle_id") != "jessica_jetta_gli": return false
+		if not preload("res://runtime/FleetState.gd").validate(vehicle): return false
+		if not preload("res://runtime/JessicaRuntime.gd").validate_vehicle(vehicle): return false
+	for owned_vehicle in data.world.get("vehicles",[]):
+		if owned_vehicle.get("vehicle_id","") == "jessica_jetta_gli": return false
 	for key in ["digo_vehicle","digo_amarok_vehicle"]:
 		if not data.world.has(key): continue
 		var digo_vehicle: Variant = data.world[key]
@@ -127,6 +149,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("urban_operations"):
 		if not data.world.urban_operations is Dictionary or not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(data.world.urban_operations): return false
 	if not _validate_cross_contracts(next_economy,next_campaign,next_canonical_campaign,data.world): return false
+	if not preload("res://runtime/desert/DesertSaveContract.gd").valid(data.world,data.economy): return false
+	if data.region_id == "desert" and not preload("res://world/north_gateway/NorthGatewayPolicy.gd").campaign_completed(next_campaign.snapshot()): return false
 	var next_world: Dictionary = _normalize_reward_aliases(data.world)
 	economy = next_economy
 	campaign = next_campaign
@@ -247,7 +271,10 @@ static func _validate_cross_contracts(next_economy, next_campaign, next_canonica
 			"weapon":
 				if not wallet.weapons.has(contract.get("item","")): return false
 			_:
-				if int(wallet.inventory.get(contract.get("item",""),0)) < int(contract.get("amount",1)): return false
+				# Consumables can leave inventory after a legitimate collection. The
+				# permanent zero-value receipt proves that grant; older saves without
+				# receipts still need the original item. Invalid receipts were rejected above.
+				if not _reward_receipt(transactions,canonical_id,0) and int(wallet.inventory.get(contract.get("item",""),0)) < int(contract.get("amount",1)): return false
 	return true
 
 static func _normalize_reward_aliases(saved_world: Dictionary) -> Dictionary:

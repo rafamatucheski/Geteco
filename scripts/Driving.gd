@@ -3,6 +3,9 @@ const VEHICLE := preload("res://scripts/Vehicle.gd")
 const BOARDING_PRESENTATION := preload("res://gameplay/VehicleBoardingPresentation.gd")
 const BAILOUT := preload("res://gameplay/VehicleBailout.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
+const BREAK_IN := preload("res://gameplay/VehicleBreakIn.gd")
+const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
+var _locked_entry := false
 var world
 var car: CharacterBody3D
 var occupied := false
@@ -94,6 +97,8 @@ var _jacking := false
 var _jack_generation := 0
 
 func _speed_allows_entry(candidate: CharacterBody3D) -> bool:
+	# Ambient parking keeps ownership while it is maneuvering or its occupants board.
+	if candidate.get_meta("roadside_parking", false) and candidate.external_input: return false
 	if absf(candidate.speed) <= .5: return true
 	return candidate.traffic and not candidate.get_meta("dispatch_unit",false) and absf(candidate.speed) <= JACK_MAX_SPEED
 
@@ -117,6 +122,10 @@ func interact(allow_transition := false) -> bool:
 	return _begin_entry(option.car,int(option.side))
 
 func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
+	_locked_entry = BREAK_IN.required(candidate)
+	var parked := bool(candidate.get_meta("ambient_parked", false))
+	var parking_handler: Callable = candidate.get_meta("parking_theft_handler", Callable())
+	if parking_handler.is_valid(): parking_handler.call(candidate)
 	var dispatch_car := bool(candidate.get_meta("dispatch_unit",false))
 	if dispatch_car:
 		if not is_instance_valid(world.get("dispatch")) or not world.dispatch.vehicle_stolen(candidate,side): return false
@@ -130,6 +139,11 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	_watch_car(car)
 	_last_vehicle_position = car.global_position
 	occupied = true
+	if parked:
+		car.remove_meta("ambient_traffic")
+		if not car.get_meta("parked_theft_reported", false):
+			car.set_meta("parked_theft_reported", true)
+			if world.get("gameplay") != null: world.gameplay.report_observed_crime(15,car.global_position,"theft",car)
 	# A crash temporarily suspends traffic. Its pending recovery still belongs
 	# to the NPC until theft transfers ownership, otherwise it resumes mid-entry.
 	if (car.traffic or car.get_meta("crash_was_traffic", false)) and not dispatch_car:
@@ -147,7 +161,7 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	# recorte precisa das malhas originais, e o vidro trocado depois vale também para a folha
 	# (VehicleInterior percorre as peças recursivamente).
 	if car.has_method("finish_doors"): car.finish_doors()
-	if car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.open_view(car)
+	if not _locked_entry and car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.open_view(car)
 	car.brake_input = true
 	car.throttle_input = 0
 	_player_layer = world.player.collision_layer
@@ -193,10 +207,10 @@ func _start_boarding(side: int) -> void:
 	transition.entered.connect(_complete_entry)
 	transition.exited.connect(_complete_exit)
 	transition.cancelled.connect(_transition_cancelled)
-	transition.begin_entry(world,car,world.player,side)
+	transition.begin_entry(world,car,world.player,side,_locked_entry)
 	# Interior já na abertura da porta (a porta acabou de ser criada, então o recorte da lataria já
 	# aconteceu e não pega os triângulos do interior): dá para ver o banco antes de sentar.
-	if car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.attach(car)
+	if transition.break_in == null and car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.attach(car)
 
 ## Carro de trânsito tem motorista. Antes o roubo só tirava o carro da faixa e ninguém
 ## saía dele. O motorista desce pela porta dele assim que o ladrão abre a do lado de
@@ -240,6 +254,8 @@ func _complete_entry() -> void:
 		_force_detach("invalid_entry")
 		return
 	car.controlled = true
+	car.remove_meta("ambient_parked")
+	car.remove_meta("vehicle_locked")
 	car.external_input = false
 	car.input_locked = false
 	car.brake_input = false
@@ -258,6 +274,7 @@ func _complete_entry() -> void:
 
 func exit_position(moving := false) -> Vector3:
 	if not is_instance_valid(car): return Vector3.INF
+	var terrain_height := DESERT_GROUND.terrain_height_provider(car)
 	for side in (car.boarding_sides() if car.has_method("boarding_sides") else [-1,1]):
 		# Alternativas perto da porta da cabine; antes eram fixas no meio do chassi e o
 		# motorista do caminhão descia pela lateral da carga.
@@ -273,6 +290,9 @@ func exit_position(moving := false) -> Vector3:
 			var offset: float = candidate.z
 			var point := car.to_global(candidate)
 			point.y = car.position.y+.04
+			# An upright vehicle rests on its highest supporting corner. Its origin
+			# is not the ground height beside the door on a canyon slope.
+			if terrain_height.is_valid(): point.y = float(terrain_height.call(Vector2(point.x,point.z)))+.04
 			var query := PhysicsShapeQueryParameters3D.new()
 			query.shape = exit_capsule
 			if moving:
@@ -286,6 +306,7 @@ func exit_position(moving := false) -> Vector3:
 			if not world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(): continue
 			var start := car.to_global(Vector3(side*(car.half_width+.04),0,offset))
 			start.y = point.y
+			if terrain_height.is_valid(): start.y = float(terrain_height.call(Vector2(start.x,start.z)))+.04
 			query.exclude = [world.player.get_rid(),car.get_rid()]
 			query.transform.origin = start+Vector3.UP*0.87
 			query.motion = point-start

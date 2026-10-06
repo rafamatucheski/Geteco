@@ -434,7 +434,10 @@ func _refresh() -> void:
 	if auto_lit: _npc_beams[get_instance_id()] = true
 	# Quem toma um carro aceso à noite continua com o farol ligado.
 	if was_auto and not auto_lit and occupied and not car.external_input: headlights_on = true
-	var driver_lit: bool = (headlights_on and occupied and not npc_driven()) or alarm_blink
+	# Drag owns two physical cars without assigning the rival to player controls.
+	# Its scoped marker is removed by race cleanup; normal traffic keeps its budget.
+	var race_lit: bool = car.has_meta("desert_drag_physics") and car.health>0
+	var driver_lit: bool = (headlights_on and (occupied or race_lit) and (not npc_driven() or race_lit)) or alarm_blink
 	var lit: bool = driver_lit or auto_lit
 	for item in lamps:
 		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)

@@ -23,7 +23,7 @@ var _death_latched := false
 var haul_label: Label
 
 static func defaults() -> Dictionary:
-	return {"version":3,"bank_pending":0,"bank_deaths":0,"bank_alarm":false,"bank_shots":false,"bank_dispatched":false,"bank_cycle":0,"bank_cash0":false,"bank_cash1":false,"bank_cash2":false,
+	return {"version":4,"bank_restock_requested":false,"bank_pending":0,"bank_deaths":0,"bank_alarm":false,"bank_shots":false,"bank_dispatched":false,"bank_cycle":0,"bank_cash0":false,"bank_cash1":false,"bank_cash2":false,
 		"guards":[160.0,160.0],"clerks":[100.0,100.0],"bank_failed":false,"keycard_available":false,"keycard_taken":false,"keycard_position":[-5.0,0.0,.5],"vault_open":false,"opening_remaining":0.0,
 		"aftermath":"","elapsed_days":0.0,"fuel_alarm":false,"fuel_dispatched":false,"fuel_alarm_remaining":30.0,"fuel_register":false,"fuel_health":80.0,"fuel_resists":false,"fuel_initialized":false}
 
@@ -56,6 +56,15 @@ func inside(place: String) -> bool:
 func can_enter_bank() -> bool:
 	return data.aftermath!="closed"
 
+func request_story_restock() -> bool:
+	if session == null or session.state.place_id == "harbor_bank" or session.world.gameplay.stars>0 or data.bank_pending>0: return false
+	if not data.bank_alarm or not data.aftermath.is_empty(): return false
+	data.bank_restock_requested = true
+	data.aftermath = "pending"
+	data.elapsed_days = 0.0
+	_session_save()
+	return true
+
 func player_died() -> int:
 	if session == null or session.state.place_id != "harbor_bank" or not data.bank_alarm or _death_latched: return 0
 	_death_latched=true
@@ -75,6 +84,12 @@ func bank_departed() -> void:
 	var amount: int = data.bank_pending
 	if session.state.economy.grant_reward("bank_haul:%d:%d"%[int(data.bank_cycle),mask],amount):
 		data.bank_pending=0
+		# A successful robbery also needs an authored investigation/reopening
+		# cycle. Preserve the haul receipt; a later visit cannot pay it again.
+		if "campaign" in session.state and session.state.campaign.active_id == "jessica_bank":
+			data.bank_restock_requested = true
+			data.aftermath = "pending"
+			data.elapsed_days = 0.0
 		# Settle wallet achievements with the haul, rather than delaying their
 		# bonus until the next damage/death event changes the gameplay HUD.
 		if "activities" in session and session.activities!=null: session.activities.refresh_achievements()
@@ -347,6 +362,7 @@ func _detach_room() -> void:
 
 func _reopen_bank() -> void:
 	var source := defaults()
+	data.bank_restock_requested = false
 	for key in ["bank_alarm","bank_shots","bank_dispatched","guards","clerks","bank_failed","bank_pending","keycard_available","keycard_taken","keycard_position","vault_open","opening_remaining","aftermath","elapsed_days","bank_cash0","bank_cash1","bank_cash2"]: data[key]=source[key]
 	data.bank_cycle+=1
 	_session_save()
@@ -369,7 +385,8 @@ func restore_snapshot(saved: Dictionary) -> bool:
 		for i in 2:
 			data.guards[i] = float(data.guards[i]) * 160.0 / 50.0
 			data.clerks[i] = float(data.clerks[i]) * 100.0 / 80.0
-	data.version=3
+	data.bank_restock_requested = data.get("bank_restock_requested",false)
+	data.version=4
 	data.bank_cycle=int(data.bank_cycle)
 	if aftermath_controller != null: aftermath_controller.reset_clock()
 	_reset_hold()
@@ -378,15 +395,16 @@ func restore_snapshot(saved: Dictionary) -> bool:
 static func validate_snapshot(saved: Dictionary) -> bool:
 	var version = saved.get("version")
 	if typeof(version) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(version)): return false
-	if version!=1 and version!=2 and version!=3: return false
+	if version!=1 and version!=2 and version!=3 and version!=4: return false
 	var source := defaults()
 	for key in source:
+		if key == "bank_restock_requested" and saved.version<4: continue
 		if key in ["bank_pending","bank_deaths"] and saved.get("version",0)<3: continue
 		if key == "bank_failed" and saved.get("version", 0) == 1: continue
 		if not saved.has(key): return false
 		if source[key] is bool and not saved[key] is bool: return false
-	if (saved.version != 1 and saved.version != 2 and saved.version != 3) or saved.aftermath not in ["","pending","closed"]: return false
-	if saved.version==3:
+	if saved.aftermath not in ["","pending","closed"]: return false
+	if saved.version>=3:
 		for key in ["bank_pending","bank_deaths"]:
 			if typeof(saved[key]) not in [TYPE_FLOAT,TYPE_INT] or not is_finite(float(saved[key])) or saved[key]<0 or saved[key]!=floorf(saved[key]): return false
 		if saved.bank_deaths>10000000 or saved.bank_pending>15000 or int(saved.bank_pending)%5000!=0: return false
@@ -395,7 +413,7 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 		if typeof(saved[key]) not in [TYPE_FLOAT,TYPE_INT] or not is_finite(float(saved[key])) or float(saved[key])<0: return false
 	if saved.bank_cycle!=floorf(float(saved.bank_cycle)) or saved.bank_cycle>10000000 or saved.opening_remaining>3 or saved.elapsed_days>4 or saved.fuel_alarm_remaining>30 or saved.fuel_health>80: return false
 	if saved.version >= 2:
-		if saved.elapsed_days > 3 or (saved.aftermath != "" and not saved.bank_failed): return false
+		if saved.elapsed_days > 3 or (saved.aftermath != "" and not saved.bank_failed and not saved.get("bank_restock_requested",false)): return false
 		if saved.bank_failed and (not saved.bank_alarm or saved.aftermath == ""): return false
 	for key in ["guards","clerks","keycard_position"]:
 		if not saved[key] is Array or saved[key].size()!=(3 if key=="keycard_position" else 2): return false

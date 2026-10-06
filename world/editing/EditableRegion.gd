@@ -12,6 +12,12 @@ static func build_region(id: String, first_focus: Vector3 = Vector3.INF) -> Node
 	region.initial_focus = first_focus
 	return region
 
+func prepare_data() -> void:
+	super.prepare_data()
+	# Reserve only validated pull-offs before streamed sidewalk props are built.
+	if "--parking-baseline" not in OS.get_cmdline_user_args():
+		preload("res://world/roadside_parking/RoadsideParkingLayout.gd").prepare(self)
+
 func _prepare() -> void:
 	super._prepare()
 	if region_id == "harbor":
@@ -43,6 +49,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	var first_child := chunk.get_child_count()
 	if record.kind == "motocross_course":
 		chunk.add_child(preload("res://activities/motocross/MotocrossCourse.gd").new())
+	elif record.kind == "roadside_parking":
+		preload("res://world/roadside_parking/RoadsideParkingBay.gd").build(chunk,record.site)
 	elif record.kind == "harbor_dressing" and record.get("zone_id", "") == "cobra":
 		var dressing := preload("res://world/editing/EditableCobraDressing.gd").new()
 		dressing.configure(record.zone_id)

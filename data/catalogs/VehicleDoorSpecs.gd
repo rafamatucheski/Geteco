@@ -15,6 +15,7 @@ extends RefCounted
 ## meio da carroceria em vez da cabine.
 
 const DOORS := {
+	"jessica_jetta_gli": {"zf":-.85,"zr":.22,"sill":.32,"belt":.99,"top":1.46,"x":.91,"seat_z":-.16},
 	"digo_amarok_2014": {"class":"tall","zf":-1.03,"zr":.17,"sill":.49,"belt":1.23,"top":1.86,"x":.965},
 	"digo_gol_1993": {"zf": -.60, "zr": .62, "sill": .30, "belt": .91, "top": 1.43, "x": .82, "seat_z": .04},
 	# Sedãs da família "clássica": porta dianteira entre o capô e o pilar B.
@@ -73,6 +74,8 @@ const DOORS := {
 const OPEN_ANGLE := {"car": 1.05, "tall": 1.10, "truck": 1.20}
 
 static func row(archetype: String) -> Dictionary:
+	if archetype in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").door_spec(archetype)
+	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").door_spec(archetype)
 	var entry: Dictionary = DOORS.get(archetype, {})
 	if entry.has("alias"):
 		var merged: Dictionary = DOORS.get(str(entry.alias), {}).duplicate()

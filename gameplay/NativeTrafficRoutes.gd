@@ -305,8 +305,9 @@ func _curve(path: Array[int], closed: bool, lane_index := 0) -> Curve3D:
 		var edge := _edge(path[index],path[index+1])
 		lane_sections.append({"a":vertices[path[index]],"b":vertices[path[index+1]],"lanes":edge.get("lanes",1),"width":edge.width})
 	curve.set_meta("lane_sections",lane_sections)
-	# Túnel do canal: curva acompanha a altura do piso da rampa (CanalTunnel3D).
-	CANAL_TUNNEL.follow_floor(curve)
+	# Only a route that actually uses the tunnel follows its ramp profile.
+	# Quay occupies the same XZ over the covered canal and stays at street level.
+	if _source_ids(path).has(CANAL_TUNNEL.TRAFFIC_ID): CANAL_TUNNEL.follow_floor(curve)
 	curve.set_meta("lane_index",lane_index)
 	curve.set_meta("junction_reach",7.0 if lane_index>0 else 4.0)
 	return curve

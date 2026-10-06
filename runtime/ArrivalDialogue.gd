@@ -14,7 +14,15 @@ static func phone_ring() -> AudioStreamWAV:
 	ring.mix_rate = 22050
 	ring.data = data
 	return ring
-## Full original HarborStoryArrival and Localization lines, in original order.
+## Legacy police/yard exchanges remain data for migrations; current arrival uses
+## the home call, terminal meeting and workshop drive only.
+const HOME_CALL := [
+	["DANTE", "Alô?", "Hello?"],
+	["VOZ AO TELEFONE", "Seu irmão está em Harbor.", "Your brother is in Harbor."],
+	["DANTE", "Vicente? Quem está falando?", "Vicente? Who is this?"],
+	["VOZ AO TELEFONE", "Se você ainda quer falar com ele, vem. Eu te encontro na chegada.", "If you still want to talk to him, come. I'll meet you when you arrive."],
+	["DANTE", "Espera...", "Wait..."],
+]
 const POLICE := [
 	["DANTE", "Vim procurar meu irmão. Vicente Ferraz. Ele estava preso aqui.", "I'm looking for my brother. Vicente Ferraz. He was in custody here."],
 	["ATENDENTE", "Sim. Ele foi solto há alguns meses.", "Yes. He was released a few months ago."],
@@ -27,14 +35,18 @@ const PHONE := [
 	["DANTE", "Quem está falando?", "Who's calling?"],
 	["CONTATO", "Você vai me reconhecer. Estou perto de um sedã preto preparado, estilo M8 Competition.", "You'll recognize me. I'm next to a black performance sedan, M8 Competition style."]]
 const MEETING := [
-	["MACIOTA", "Maciota. E você?", "Maciota. And you?"],
-	["DANTE", "Dante. Foi você que me ligou?", "Dante. Were you the one who called?"],
-	["MACIOTA", "Fui eu, sim. Vamos dar uma volta.", "That was me. Let's go for a ride."]]
+	["MACIOTA", "Dante, temos muito que conversar.", "Dante, we have a lot to talk about."],
+	["DANTE", "Foi você que me ligou?", "Were you the one who called?"],
+	["MACIOTA", "Fui eu. Maciota. Vamos até a minha oficina.", "That was me. Maciota. Let's go to my workshop."],
+	["DANTE", "Como você me reconheceu?", "How did you recognize me?"],
+	["MACIOTA", "Um contato conseguiu uma foto do teu histórico da polícia. Entra, no carro a gente conversa.", "A contact got me a photograph from your police record. Get in. We'll talk in the car."],
+]
 const TOUR := [
-	["MACIOTA", "Aqui é o ferro-velho do Neko. Sempre tem gente atrás de peça por aqui.", "This is Neko's scrapyard. People are always looking for parts here."],
-	["MACIOTA", "O porto vive de carga e de oficina. Muita gente se conhece por causa de carro.", "The port runs on cargo and workshops. Cars bring a lot of people together."],
-	["MACIOTA", "Mas tem quem misture trabalho com contrabando e corrida. É melhor saber com quem você está falando.", "Some mix work with smuggling and racing. You should know who you're talking to."],
-	["MACIOTA", "Minha garagem fica mais à frente. Lá a gente conversa com calma.", "My garage is up ahead. We can talk properly there."]]
+	["MACIOTA", "Esse porto vive de carga e oficina. Teu irmão passou por aqui.", "This port runs on cargo and workshops. Your brother came through here."],
+	["MACIOTA", "Vi o Vicente. Depois começaram a aparecer clientes com carro sumido e conta pra pagar.", "I saw Vicente. Then customers started coming in with missing cars and debts to pay."],
+	["MACIOTA", "Tem gente que conhece o caminho dele. Preciso confirmar umas coisas antes de te colocar no meio.", "Some people know where he went. I need to confirm a few things before bringing you into this."],
+	["MACIOTA", "Minha oficina fica entre esses galpões. Lá a gente conversa com calma.", "My workshop is between those warehouses. We can talk properly there."],
+]
 static func lines(source: Array) -> Array:
 	var result := []
 	for line in source: result.append({"speaker":line[0],"message":line[2] if TranslationServer.get_locale().begins_with("en") else line[1]})

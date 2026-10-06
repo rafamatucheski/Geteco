@@ -31,7 +31,7 @@ static func build(parent: Node3D) -> void:
 	# Match the textured roof finishes already used by neighbouring city buildings.
 	var roofs := preload("res://world/city_look/RoofSurfaces.gd")
 	for spec in [[Vector3(-2,4.548,4.6875),Vector3(7.7,.016,6.1),roofs.METAL],
-		[Vector3(6.1,6.478,4.6875),Vector3(5.3,.016,5.8),roofs.GRAVEL]]:
+		[Vector3(6.1,4.168,4.6875),Vector3(5.3,.016,5.8),roofs.METAL]]:
 		var roof := MeshInstance3D.new()
 		var shape := BoxMesh.new()
 		shape.size=spec[1]
@@ -46,13 +46,13 @@ static func _part(t: SurfaceTool, origin: Vector3, yaw: float, p: Vector3, size:
 
 static func _wall(t: SurfaceTool, origin: Vector3, yaw: float, width: float, workshop: bool) -> void:
 	var trim := "aab6ae" if workshop else "d0b69a"
-	var height := 4.4 if workshop else 6.0
-	for y in ([.48,3.98] if workshop else [.48,2.0,4.0,5.85]):
+	var height := 4.4 if workshop else 3.8
+	for y in ([.48,3.98] if workshop else [.48,3.62]):
 		_part(t,origin,yaw,Vector3(0,y,.065),Vector3(width,.12,.15),trim)
 	for side in [-1,1]:
 		_part(t,origin,yaw,Vector3(side*(width*.5-.16),height*.5,.055),Vector3(.22,height,.13),trim)
 	var count := 3 if width < 7 else 4
-	for y in ([2.8] if workshop else [2.8,4.8]):
+	for y in [2.8]:
 		for i in count:
 			var x := (float(i)-float(count-1)*.5)*(width-.8)/float(count)
 			var h := .95 if workshop else 1.28

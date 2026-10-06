@@ -18,6 +18,7 @@ var props: Dictionary = {}
 var aftermath_open := false
 var failure_retry_clock := 0.0
 var street_race: Node3D
+var pending_clue := ""
 const STREET_COURSE := preload("res://gameplay/urban_v1/CobraRaceCourse.gd")
 
 func _ready() -> void:
@@ -30,6 +31,7 @@ func _ready() -> void:
 	targets.resident_encounter = targets.ashbend_resident
 	targets.supply_encounter = targets.cobra_supply
 	targets.boss_encounter = targets.ferrugem
+	targets.cobra_leader_house = preload("res://world/places/PlaceCatalog.gd").get_definition("cobra_leader_house").entry_position
 
 func begin(id: String) -> bool:
 	if not session.state.campaign.available_missions().has(id): return false
@@ -46,6 +48,10 @@ func begin(id: String) -> bool:
 			session.show_message("Guincho indisponível. Recupere o caminhão ou libere a área de retirada.")
 			return false
 	# No await between preparation and acceptance: neither can publish a partial save.
+	if id == "jessica_bank" and (session.jessica == null or not session.jessica.bank_job_available()):
+		session.robberies.request_story_restock()
+		session.show_message("Converse com Jessica e aguarde o banco reabrir para combinar o serviço.")
+		return false
 	if not session.state.campaign.begin(id): return false
 	_clear_encounter()
 	# Retry replaces only the dead mission contact, never unrelated residents.
@@ -53,9 +59,9 @@ func begin(id: String) -> bool:
 	if actors.has(contact) and is_instance_valid(actors[contact]) and actors[contact].dead:
 		actors[contact].queue_free()
 		actors.erase(contact)
-	if id == "primeiro_giro":
-		var dialogue = preload("res://systems/campaign/OriginalDialogue.gd").new()
-		session.show_dialogue(dialogue.lines("primeiro_giro_begin"))
+	var dialogue = preload("res://systems/campaign/OriginalDialogue.gd").new()
+	var begin_lines: Array = dialogue.lines(id+"_begin",TranslationServer.get_locale())
+	if not begin_lines.is_empty(): session.show_dialogue(begin_lines)
 	return true
 
 func _clear_encounter() -> void:
@@ -70,6 +76,10 @@ func _clear_encounter() -> void:
 	encounter_id = ""
 
 func cancel_attempt(reason := "cancelled") -> bool:
+	if session.jessica != null and session.state.campaign.active_id == "jessica_bank":
+		if not session.jessica.cancel_attempt(reason):
+			session.state.campaign.suspend_attempt(reason)
+			return false
 	if is_instance_valid(street_race): street_race.stop()
 	_clear_encounter()
 	aftermath_open = false
@@ -109,17 +119,18 @@ func _update_aftermath() -> void:
 	# Reuse the session's dialogue ownership/close path. No camera, teleport,
 	# extra reward or access unlock is manufactured by this local epilogue.
 	session.show_dialogue([
-		{"speaker":"Maciota · telefone","message":"Uma transferência para fora de Harbor e as iniciais dele. Temos uma rota para investigar, mas ainda precisamos confirmar se ele embarcou. Guarda esse documento, Dante."},
-		{"speaker":"Dante","message":"Está feito. Os Cobras não mandam mais aqui."},
-		{"speaker":"Maciota","message":"Os Cobras recuaram. O Ironback está na garagem. É seu."},
-		{"speaker":"Dante","message":"E os registros? Ainda falta uma peça nessa história."},
-		{"speaker":"Maciota","message":"Guarda isso. O acesso à ilha ainda está fechado."}
+		{"speaker":"Dante","message":_text("A lista da casa de Takeshi tem o Vicente como responsável pelas corridas do deserto.","The list in Takeshi's house names Vicente as the desert races' organizer.")},
+		{"speaker":"Maciota · telefone","message":_text("Então é pra lá que vamos. Vou te passar um contato e um lugar pra ficar. Não chega apostando o que é teu.","Then that's where we're headed. I'll give you a contact and a place to stay. Don't arrive betting what belongs to you.")},
+		{"speaker":"Dante","message":_text("Depois de todo esse tempo, eu preciso falar com ele.","After all this time, I need to talk to him.")},
+		{"speaker":"Maciota","message":_text("Eu sei. O Ironback está na oficina. Você conquistou minha confiança, Dante.","I know. The Ironback is at the workshop. You've earned my trust, Dante.")}
 	],func():
 		aftermath_open = false
 		if session.state.campaign.complete_aftermath_call(): session.save_game())
 
 func target_position() -> Vector3:
 	var id: String = session.state.campaign.target_id()
+	if session.state.campaign.active_id == "jessica_bank" and session.jessica != null: return session.jessica.target_position()
+	if id == "transfer_document" and session.state.place_id == "cobra_leader_house": return session.room.to_global(Vector3(2.4,.08,-.25))
 	if id == "maciota": return session.world.maciota_place.entry_position
 	if id == "helena": return preload("res://world/places/PlaceCatalog.gd").get_definition("harbor_bank").entry_position
 	if id == "story_tow_vehicle" and is_instance_valid(cargo): return cargo.global_position
@@ -127,6 +138,11 @@ func target_position() -> Vector3:
 
 func nearest_action() -> Dictionary:
 	var local_position: Vector3 = session.world.player.position
+	if session.state.campaign.active_id == "cobra_finale":
+		if session.state.campaign.step == 6 and session.state.place_id.is_empty() and local_position.distance_to(targets.cobra_leader_house)<2.2:
+			return {"id":"enter","place":"cobra_leader_house","access":"cobra_leader_house","target":"leader_house","label":"Entrar"}
+		if session.state.campaign.step == 7 and session.state.place_id == "cobra_leader_house" and local_position.distance_to(target_position())<1.6:
+			return {"id":"mission","target":"transfer_document","label":"Examinar lista"}
 	if race_phone_available() and local_position.distance_to(race_phone_position()) <= preload("res://activities/RacePhone.gd").RANGE:
 		return {"id":"mission","target":"race_start","label":"Atender telefone"}
 	var berth := Vector3(1930,0,1220)*UNIT if session.state.region_id == "harbor" else preload("res://world/places/PlaceCatalog.gd")._at(Vector2(7500,-1760),"mountain")
@@ -152,6 +168,10 @@ func nearest_vehicle_action() -> Dictionary:
 	return {}
 
 func perform(id: String) -> bool:
+	if id == "leader_house":
+		if nearest_action().get("target","") != id: return false
+		_enter_leader_house()
+		return true
 	if id == "tow_recover": return _recover_tow_truck()
 	if id == "tow_recover_cargo": return _recover_tow_cargo()
 	if id=="race_start":
@@ -189,21 +209,30 @@ func perform(id: String) -> bool:
 		bank_copy = session.state.place_id.is_empty() and session.robberies.bank_unavailable() and session.world.gameplay.stars == 0 and session.world.player.position.distance_to(bank.entry_position)<105.0*UNIT
 		if not bank_copy: return false
 	if id == "maciota" and session.state.place_id != "maciota": return false
-	if targets.has(id) and session.world.player.position.distance_to(targets[id]) > 2.3: return false
+	if id == "transfer_document":
+		if session.state.place_id != "cobra_leader_house" or session.world.player.position.distance_to(target_position()) > 1.6: return false
+	elif targets.has(id) and session.world.player.position.distance_to(targets[id]) > 2.3: return false
 	var dialogue = preload("res://systems/campaign/OriginalDialogue.gd").new()
 	var dialogue_key := "bank_receipt" if id == "helena" else ("primeiro_giro_finish" if id == "maciota" else str(step.event))
 	if bank_copy: dialogue_key = "bank_unavailable"
-	var lines: Array = dialogue.lines(dialogue_key)
+	var lines: Array = dialogue.lines(dialogue_key,TranslationServer.get_locale())
 	if lines.is_empty():
 		lines = [{"speaker":id.capitalize(),"message":str(step.objective)}]
 	session.show_dialogue(lines,func(): _event(step.event,id))
 	return true
+
+func _enter_leader_house() -> void:
+	await session.enter_place("cobra_leader_house",true)
+
+func _text(pt: String, en: String) -> String:
+	return en if TranslationServer.get_locale().begins_with("en") else pt
 
 func _event(event: String, target: String, extras := {}) -> bool:
 	if session.world.gameplay.health <= 0: return false
 	if target in ["ferrugem","ashbend_resident"] and (not actors.has(target) or not is_instance_valid(actors[target]) or actors[target].dead): return false
 	var payload := {"target_id":target,"on_foot":not session.world.driving.occupied,"in_vehicle":session.world.driving.occupied,"unarmed":session.state.equipped_weapon in ["","fists"],"wanted_level":session.world.gameplay.stars,"encounter_cleared":not enemies.is_empty() and _encounter_cleared(),"story_vehicle_alive":is_instance_valid(cargo) and cargo.health>0,"correct_vehicle":is_instance_valid(cargo) and cargo.vehicle_id == "story_tow_vehicle","elapsed":session.state.campaign.race_elapsed()}
 	payload.merge(extras,true)
+	payload.place_id = session.state.place_id
 	if event == "neco_repair_received":
 		payload.tow_delivery_ready = tow_job.get("story") == true and can_finish_tow_job()
 	var result: Dictionary = session.state.campaign.apply_event(event,payload)
@@ -213,7 +242,13 @@ func _event(event: String, target: String, extras := {}) -> bool:
 	# apply_event checks the same physical precondition; no await or signal occurs
 	# between acceptance and release, so progress and ownership are saved together.
 	if event == "neco_repair_received": finish_tow_job()
-	if str(result.get("completed","")) == "cobra_finale": _clear_encounter()
+	var completed_id: String = str(result.get("completed",""))
+	if completed_id == "cobra_finale":
+		_clear_encounter()
+		preload("res://systems/campaign/HarborStory.gd").record_brother_route(session.state.world_state,true)
+	elif not completed_id.is_empty():
+		pending_clue = completed_id
+		session.state.world_state.harbor_pending_clue = pending_clue
 	for id in session.state.campaign.snapshot().pending_rewards.keys(): session.state.campaign.claim_reward(session.state.economy,id)
 	if session.state.campaign.active_id.is_empty(): session.save_game()
 	return true
@@ -234,6 +269,19 @@ func _process(delta: float) -> void:
 	clock = 0
 	if _update_failure(): return
 	_update_aftermath()
+	if pending_clue.is_empty(): pending_clue = str(session.state.world_state.get("harbor_pending_clue",""))
+	if not pending_clue.is_empty() and not session.modal and session.world.gameplay.health>0 and session.world.gameplay.stars==0:
+		var clue: Array = preload("res://systems/campaign/OriginalDialogue.gd").new().lines(pending_clue+"_clue",TranslationServer.get_locale())
+		if not clue.is_empty():
+			var presented := pending_clue
+			session.show_dialogue(clue,func():
+				if pending_clue == presented:
+					pending_clue = ""
+					session.state.world_state.erase("harbor_pending_clue")
+					session.save_game())
+		else:
+			pending_clue = ""
+			session.state.world_state.erase("harbor_pending_clue")
 	var actors_active: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
 	for actor in actors.values()+enemies:
 		if not is_instance_valid(actor): continue
@@ -246,14 +294,14 @@ func _process(delta: float) -> void:
 	if step.is_empty(): return
 	var subject: Node3D = session.world.driving.car if session.world.driving.occupied else session.world.player
 	var destination := target_position()
-	if session.state.campaign.active_id!="cobra_race" and step.get("in_vehicle",false) and session.world.driving.occupied and subject.position.distance_to(destination)<3:
+	if not session.state.campaign.race_stage_active() and step.get("in_vehicle",false) and session.world.driving.occupied and subject.position.distance_to(destination)<3:
 		_event(step.event,step.target,{"checkpoint":step.get("checkpoint",-1)})
 	elif step.get("encounter",false):
 		if encounter_id != step.target and subject.position.distance_to(destination)<20: _start_encounter(step.target,destination)
 		if encounter_id == step.target and _encounter_cleared(): _event(step.event,step.target)
 
 func _tick_race(delta: float) -> void:
-	if session.state.campaign.active_id!="cobra_race" or session.state.campaign.step==0:
+	if not session.state.campaign.race_stage_active() or session.state.campaign.step==0:
 		if is_instance_valid(street_race): street_race.stop()
 		return
 	if get_tree().paused or session.vehicle_transition_busy or session.state.campaign.is_suspended(): return
@@ -265,8 +313,9 @@ func _tick_race(delta: float) -> void:
 		return
 	if not is_instance_valid(street_race) or not street_race.running:
 		# Uma corrida salva não pode retomar sem os cinco adversários físicos.
+		var restart_id: String = session.state.campaign.active_id
 		session.state.campaign.cancel("race_restart_required")
-		session.state.campaign.begin("cobra_race")
+		session.state.campaign.begin(restart_id)
 		return
 	var result: Dictionary=street_race.tick(delta)
 	if result.is_empty(): return
@@ -287,15 +336,16 @@ func _tick_race(delta: float) -> void:
 			_finish_race()
 
 func _finish_race() -> void:
+	var leader_race: bool = session.state.campaign.active_id == "cobra_finale"
 	if _event("race_finished","ashbend_finish"):
 		if is_instance_valid(street_race): street_race.stop()
-		session.show_dialogue([{"speaker":"Ferrugem","message":"Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo."}])
+		session.show_dialogue([{"speaker":"Takeshi" if leader_race else "Ferrugem","message":_text("Ganhou. Pode entrar na minha casa e olhar os registros. Depois disso, a escolha é tua." if leader_race else "Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo.","You won. You can enter my house and look at the records. After that, the choice is yours." if leader_race else "All right. You can drive. The driver will take Maciota's call. Your brother wanted out of Harbor, but he didn't look like he was running away.")}])
 
 func race_phone_position() -> Vector3:
 	return targets.ashbend_start+Vector3(-4.2,0,4.0)
 
 func race_phone_available() -> bool:
-	return session.world.gameplay.health > 0 and not session.state.campaign.is_suspended() and session.state.campaign.active_id == "cobra_race" and session.state.campaign.step == 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty()
+	return session.world.gameplay.health > 0 and not session.state.campaign.is_suspended() and session.state.campaign.race_stage_active() and session.state.campaign.step == 0 and session.state.region_id == "harbor" and session.state.place_id.is_empty()
 
 func _can_start_race() -> bool:
 	if not race_phone_available(): return false
@@ -325,7 +375,7 @@ func _spawn_near_actors() -> void:
 		elif not near and actors.has(id):
 			if is_instance_valid(actors[id]): actors[id].queue_free()
 			actors.erase(id)
-	for id in ["harbor_parcel","cobra_supply","transfer_document"]:
+	for id in ["harbor_parcel","cobra_supply"]:
 		if props.has(id) or session.world.player.position.distance_to(targets[id])>60: continue
 		var box := MeshInstance3D.new()
 		var mesh := BoxMesh.new()

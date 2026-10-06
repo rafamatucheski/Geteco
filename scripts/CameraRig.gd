@@ -101,6 +101,7 @@ const TUNNEL_BLEND_RATE := 1.6
 # O corte da cidade só começa depois que a câmera já está bem inclinada.
 const TUNNEL_CUTAWAY_START := 0.3
 var _cutaway := TUNNEL_CUTAWAY.new()
+var _desert_terrain_camera := preload("res://world/desert/DesertTerrainCamera.gd").new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -201,7 +202,9 @@ func _process(delta: float) -> void:
 		size = desired_size
 	else:
 		size = lerpf(size,desired_size,1.0-exp(-FOLLOW_RATE*delta))
-	global_position = focus + _exterior_view_offset().rotated(Vector3.UP, heading)
+	var exterior_offset := _exterior_view_offset().rotated(Vector3.UP, heading)
+	exterior_offset = _desert_terrain_camera.offset_for(focus,exterior_offset,delta,snap,not locked and _tunnel_blend<.001,Vector2(size*get_viewport().get_visible_rect().size.aspect(),size),near,actual,3.4 if _is_vehicle_target() else .8,_flat_velocity())
+	global_position = focus + exterior_offset
 	look_at(focus)
 	_update_tunnel_chase(actual, delta, snap)
 	_update_cutaway()

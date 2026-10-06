@@ -7,6 +7,15 @@ signal exited(point: Vector3)
 signal cancelled(reason: String, point: Vector3)
 
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
+const BREAK_IN := preload("res://gameplay/VehicleBreakIn.gd")
+var break_in: RefCounted
+var _breaking := false
+var _break_progress := 0.0
+var _break_seconds := 0.0
+var _break_layout: Dictionary = {}
+var _break_retreat := false
+var _planning_closed := false
+var _retreat_seconds := 0.0
 
 var world: Node
 var vehicle: CharacterBody3D
@@ -64,7 +73,7 @@ const CLOSE_SECONDS := .28
 ## Do osso da cabeça ao topo do cabelo (medido no Dante: o osso fica na base do crânio).
 const HEAD_TOP := .26
 
-func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D, entry_side: int) -> void:
+func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D, entry_side: int, locked := false) -> void:
 	world = owner_world
 	vehicle = car
 	actor = pedestrian
@@ -77,15 +86,32 @@ func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterB
 	_landing = _start
 	_corner = _outside_corner(_start)
 	_prepare_door_path(_start, true)
+	if locked and not _layout.is_empty():
+		break_in = BREAK_IN.new()
+		break_in.choose(randf(), randf())
+		_prepare_locked_path()
 	_visual_yaw = actor.visual.rotation.y
 	_visual_position = actor.visual.position
 	_visual_scale = actor.visual.scale
 	_fit_body()
+	var body_seconds := duration - CLOSE_SECONDS
+	if break_in != null:
+		_break_seconds = break_in.seconds()
+		duration += _break_seconds + _retreat_seconds
 	active = true
 	phase = "approach"
 	if _layout.is_empty() or not _inside_swing(_start): _open_door()
 	_motion = create_tween().set_trans(Tween.TRANS_LINEAR if not _layout.is_empty() else Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_motion.tween_property(self, "progress", 1.0, duration-CLOSE_SECONDS if not _layout.is_empty() else duration-.28)
+	if break_in != null:
+		_motion.tween_property(self, "progress", _approach, _approach_seconds)
+		_motion.tween_callback(_begin_break_in)
+		_motion.tween_property(self, "_break_progress", 1.0, _break_seconds)
+		_motion.tween_callback(_finish_break_in)
+		_motion.tween_property(self, "progress", _approach, _retreat_seconds).from(0.0)
+		_motion.tween_callback(_finish_break_retreat)
+		_motion.tween_property(self, "progress", 1.0, body_seconds - _approach_seconds)
+	else:
+		_motion.tween_property(self, "progress", 1.0, duration-CLOSE_SECONDS if not _layout.is_empty() else duration-.28)
 	_motion.tween_callback(_begin_close_entry)
 	_motion.tween_interval(.28)
 	_motion.tween_callback(_finish_entry)
@@ -125,9 +151,12 @@ func begin_exit(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBo
 
 func reverse_entry_to_exit() -> bool:
 	if not active or exiting: return false
+	if break_in != null and (_breaking or _break_retreat or not break_in.committed):
+		abort("break_in_cancelled")
+		return true
 	exiting = true
 	if is_instance_valid(_motion): _motion.kill()
-	var seconds := maxf(.45, (duration-.28) * progress)
+	var seconds := maxf(.45, (duration - _break_seconds - .28) * progress)
 	vehicle.animate_driver_door(side, true, .20)
 	_motion = create_tween().set_trans(Tween.TRANS_LINEAR if not _layout.is_empty() else Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_motion.tween_property(self, "progress", 0.0, seconds)
@@ -141,6 +170,7 @@ func abort(reason: String) -> void:
 	_finishing = true
 	if is_instance_valid(_motion): _motion.kill()
 	active = false
+	if break_in != null: break_in.dispose()
 	if is_instance_valid(vehicle): vehicle.animate_driver_door(side, false, .18)
 	_restore_actor(_landing if _landing.is_finite() else _start)
 	cancelled.emit(reason, actor.global_position if is_instance_valid(actor) else _start)
@@ -168,8 +198,68 @@ func _configure_kind() -> void:
 		_: duration = 1.75 + (.30 if side > 0 else 0.0)
 
 func _apply() -> void:
+	if _breaking:
+		_apply_break_in()
+		return
 	_apply_body()
 	_apply_seat_blend()
+
+func _begin_break_in() -> void:
+	if not active: return
+	_breaking = true
+	phase = "break_in"
+	actor.global_position = vehicle.to_global(_break_layout.stand)
+	actor.visual.position = _visual_position
+	actor.visual.scale = _visual_scale
+	actor.show()
+	_apply_break_in()
+
+func _apply_break_in() -> void:
+	if not is_instance_valid(actor) or not is_instance_valid(vehicle): return
+	break_in.pose(actor, vehicle, side, _break_layout, _break_progress)
+	var impact := .43 if break_in.method == "window" else .76
+	if _break_progress >= impact:
+		break_in.commit(vehicle, side, vehicle.to_global(_break_layout.grip))
+
+func _finish_break_in() -> void:
+	if not active: return
+	break_in.commit(vehicle, side, vehicle.to_global(_break_layout.grip))
+	break_in.dispose()
+	_breaking = false
+	_break_retreat = true
+	_path = [vehicle.to_global(_break_layout.stand), _stand_world]
+	_path_length = _path[0].distance_to(_path[1])
+	_walk_seconds = _retreat_seconds
+	_approach_seconds = _retreat_seconds
+	progress = 0.0
+
+func _finish_break_retreat() -> void:
+	_break_retreat = false
+	if _seated_driver:
+		INTERIOR.attach(vehicle)
+		# Opening the interior changes glazing materials; keep the pane already
+		# broken by this entry missing after that material preparation.
+		if break_in.method == "window": BREAK_IN._break_window(vehicle, side)
+	_open_door()
+
+func _prepare_locked_path() -> void:
+	_break_layout = BREAK_IN.closed_layout(vehicle, side)
+	var from: Vector3 = vehicle.to_local(_start)
+	var destination: Vector3 = _break_layout.stand
+	_planning_closed = true
+	var route := _plan(Vector2(from.x, from.z), Vector2(destination.x, destination.z))
+	_planning_closed = false
+	_path = [_start]
+	for index in range(1, route.size()):
+		_path.append(vehicle.to_global(Vector3(route[index].x, .04, route[index].y)))
+	_path_length = 0.0
+	for index in range(1, _path.size()): _path_length += _path[index - 1].distance_to(_path[index])
+	_walk_seconds = clampf(_path_length / 2.3, .3, 3.2)
+	_approach_seconds = _walk_seconds
+	var body: float = BODY_SECONDS.get(_kind, 1.5)
+	duration = _approach_seconds + body + CLOSE_SECONDS
+	_approach = _approach_seconds / (_approach_seconds + body)
+	_retreat_seconds = maxf(vehicle.to_global(destination).distance_to(_stand_world) / 2.0, .25)
 
 ## Saída de veículo com motorista sentado: guarda a pose, o quadril e a escala do banco e tira o
 ## corpo da base do carro (ele voltará a ser o Actor comum, animado por esta apresentação).
@@ -402,6 +492,7 @@ func _fit_body() -> void:
 	if needed > _crouch: _body_scale = clampf(1.0 - (needed - _crouch) / standing, .8, 1.0)
 
 func _open_door() -> void:
+	if break_in != null and (not break_in.committed or _breaking or _break_retreat): return
 	if _door_started: return
 	_door_started = true
 	_door_start_progress = progress
@@ -478,7 +569,7 @@ func _clear(a: Vector2, b: Vector2) -> bool:
 		if travelled < .25 or length - travelled < .25: continue
 		var point := a.lerp(b, float(i) / float(steps))
 		if absf(point.x) < hull_x and absf(point.y) < hull_z: return false
-		if _distance_to_segment(point, hinge2, tip2) < .44: return false
+		if not _planning_closed and _distance_to_segment(point, hinge2, tip2) < .44: return false
 	return true
 
 static func _distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float:
@@ -691,6 +782,7 @@ func _restore_actor(point: Vector3) -> void:
 	actor.show()
 
 func _exit_tree() -> void:
+	if break_in != null: break_in.dispose()
 	if active and not _finishing:
 		if is_instance_valid(_motion): _motion.kill()
 		if is_instance_valid(vehicle): vehicle.animate_driver_door(side, false, 0.0)

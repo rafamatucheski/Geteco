@@ -1,5 +1,90 @@
 # Migração de interiores — checklist
 
+## Deserto — quatro casas de Santa Lua — 06/10/2026
+
+**4 lugares físicos / 4 interiores distintos novos; 0 certificados integralmente / 4 em validação / 0 não iniciados neste lote.** Cada fachada possui planta, acesso e retorno próprios. A loja e a torre da praça não entram nesta contagem. Não extrapolar as contagens históricas de outros lotes concorrentes.
+
+- [x] Quatro fachadas diferentes, câmera alinhada, escala humana e entradas/saídas compactas compartilhadas.
+- [x] Colisão e circulação: **82 checks exteriores / 376 interiores**, com jogador e NPC, apoio, sólidos e âncoras de entrada, loot e moradores.
+- [x] Profundidade renderizada final: **224 checks interiores / 36 exteriores**, com controles positivos separados; telhados finais incluídos.
+- [x] Rotina: vazias das 6h às 18h, moradores cozinhando/lendo/dormindo à noite; **106 checks** de ocupação, suporte, morte e limpeza.
+- [x] Água e sanduíche consumíveis, dinheiro e recibos permanentes; **46 checks** de save após consumo/descarte e rejeição de recibos inconsistentes.
+- [x] Main .NET: **127 checks** de entrada/saída/controle nas quatro casas, consumo, save e carga fria sem duplicação; fotos reais de dia/noite para cada sala.
+- [x] Sequência da cozinha: **1.527 quadros / 29,949 s**, sem omissões. Nove quadros consecutivos em três janelas revistos, sem piscada observada nessas amostras; fotos finais das quatro salas revisadas.
+- [ ] Cobertura temporal das outras três salas e condições adicionais de iluminação.
+- [ ] Comparação controlada de frame time antes/depois. Concorrência e mudanças de fontes impedem usar as primeiras medições como baseline.
+
+Evidências e limites em [Santa Lua](reviews/santa-lua-20261006.md). As fotografias anteriores registram a primeira revisão exterior; as quatro salas são novas. Não contar como certificadas enquanto houver checks obrigatórios pendentes.
+
+## Serra Bruta — Galeria Santa Brasa — 06/10/2026
+
+**1 lugar físico / 1 interior contínuo novo; 0 certificados integralmente / 1 em validação.** A galeria de carvão, o segredo e o ramal clandestino pertencem ao mesmo ambiente conectado. A mina acrescenta 1/1 à referência de 38/36; com as quatro moradias de Santa Lua integradas em paralelo, o catálogo registra **43 acessos / 41 interiores distintos**. A guarita é fechada e não conta como interior. As moradias pertencem a outro lote, sem certificação por estes testes.
+
+- [x] Acesso exterior compacto no fundo da cava, entrada e retorno pelas transições nativas; câmera que enquadra os dois ramais.
+- [x] Contrato físico: **65 verificações**, incluindo jogador/NPC, circulação, sólidos e área clandestina. A ponta legítima da parede é contornada pelo percurso.
+- [x] Main: caminhada até a alavanca, revelação, recompensa única, save e reentrada; retorno a -28 m preserva vida e controle.
+- [x] Quatro bandidos com combate real; dano recebido, morte/resgate, perda da bolsa e limpeza de guardas/corpos/itens conferidos. Fuga/pagamento/recarga final: **64/64**, com recibo exato e bônus de conquistas separados.
+- [x] Profundidade renderizada final: **36/36**, jogador/NPC e controles positivos separados no vagão, coberturas e mesa do ramal clandestino (`evidence/mining-20261006/coal-depth`).
+- [x] Sequências de 30 s: dia 889 quadros, noite final 898 e segredo final 900, sem quadros renderizados omitidos. Revisão amostral com trechos consecutivos; emenda de material e aparição antecipada do segredo corrigidas e revistas. Limites em `mina-serra-bruta.md`.
+- [x] Areia exterior suspensa no interior e retomada no retorno, com emissão e simulação GPU paradas durante a visita.
+- [ ] Ausência de regressão de frame time: comparação renderizada executada, com custo adicional confirmado frente ao local vazio. Meta absoluta de 60 FPS com folga no hardware medido; picos de preparação e limites documentados. Não marcar certificação integral por esse resultado.
+
+Fotografias reais e limites da validação são registrados em [mina-serra-bruta.md](mina-serra-bruta.md). Manter **0 certificados** enquanto houver checks obrigatórios pendentes; este lote não certifica outros interiores.
+
+## Cânion do deserto — casa abandonada e cabana — 06/10/2026
+
+**2 lugares físicos / 2 ambientes contínuos novos; 0 certificados integralmente / 2 em validação.** São ruínas abertas no próprio exterior, sem portal, carregamento de sala ou câmera interior. O catálogo de transições continua com **38 acessos / 36 interiores distintos**; os dois lugares deste lote são contados separadamente e não fingem novos acessos de catálogo.
+
+- [x] Casa de adobe parcialmente desabada e cabana de madeira, com mobiliário em escala humana, caminhos reservados e sólidos próprios.
+- [x] Main .NET: jogador e NPC atravessam os acessos; mesa da casa e cama da cabana bloqueiam caminhada e varreduras, sem subir nos móveis.
+- [x] Pista opcional dos Cobras/Vicente e dois esconderijos de R$ 5.000 com recibos separados; recarga fria preserva flags e recibos. Bônus existentes de conquistas são transações independentes.
+- [x] **90/90 checks no Main .NET**: saldo, recibos, repetição, recarga fria, caminhada e oclusão de jogador/NPC nas duas ruínas. Saldo inclui conquistas de R$ 50/R$ 200; varanda e viga têm casos próprios além dos controles livres.
+- [x] Revisão limitada das fotografias naturais e da sequência diurna: **591 quadros gravados em 19,8558 s**, nenhum quadro renderizado omitido; inspecionados os trechos `00028–00031` e `00538–00541`, além dos quadros `00120` e `00300`. Nos trechos consecutivos revistos, não houve desligamento/popping evidente de sombras ou sólidos durante a passagem pelas portas. Os 591 quadros não foram inspecionados individualmente.
+- [ ] Iluminação noturna e cobertura temporal mais ampla. A revisão diurna amostral não certifica ausência global de flickering.
+- [ ] Medição renderizada de frame time e comparação controlada. Capturas/máscaras de profundidade não são medições de FPS.
+
+Evidência final de integração: `evidence/desert-secrets-session-107108-5011442`, com 90 checks, fotografias naturais, controles positivos de jogador/NPC, sequência diurna e saves isolados; stderr vazio. A primeira rodada (`evidence/desert-secrets-session-32576-5003184`) preserva as dez falhas de expectativa que revelaram os bônus de conquistas e os oclusores da varanda/viga. Nenhuma geometria foi removida para fazer o teste passar. Bandidos foram explicitamente pré-derrotados nessa fixture; o combate possui teste separado. A rodada não certifica iluminação noturna, combate, performance ou todos os interiores do jogo.
+
+As portas mantiveram 91,7–93,7% de visibilidade do ator na casa e 96,5–98,7% na cabana nos controles diagnósticos. A varanda opaca pode ocultar completamente ambos os rigs na pose sob sua cobertura; a viga da cabana causa oclusão parcial. Os controles livres ao lado dos móveis mantiveram 99,9–100%. Isso prova casos de profundidade distintos, não visibilidade universal em qualquer posição. A sequência usa câmera normal do exterior; fotografias de profundidade usam enquadramento diagnóstico frontal. Houve um intervalo inicial de captura de 266,771 ms, associado à primeira escrita de imagem de 241,679 ms. O limite de 30 Hz, captura e varredura de pixels invalidam qualquer conclusão de FPS. **Mantidos 0 certificados / 2 em validação.** [Resultados, evidências e limites](deserto-fronteira-validacao-20261006.md).
+
+## Mapa 2 — Cobre e Digo — 06/10/2026
+
+**2 lugares físicos / 2 interiores novos integrados**, Cobre e oficina Digo, com modelos e plantas próprios em `world/desert`. O catálogo integrado registra **38 acessos / 36 interiores distintos**. Neste lote: **0 certificados integralmente / 2 em validação / 0 não iniciados**. Não somar o motel como interior: seu descanso é exterior. Estado detalhado em [mapa2-deserto.md](mapa2-deserto.md).
+
+- [x] Modelos próprios de banco e oficina, entradas compactas e nomes próprios únicos nas fachadas.
+- [x] Classificação dos sólidos, pontos de serviço e percursos preparados para o adaptador de interiores existente.
+- [x] Ganchos centrais aplicados e parser Godot .NET executado; catálogo inclui os dois acessos.
+- [x] Física e profundidade na fixture renderizada: **52 verificações aprovadas**, com Actor jogador/NPC reais, varredura contra balcão/mesa, cantos, deslocamento grande contra parede, corredor válido e residente atrás do móvel. Oclusão possui controles positivos separados; viga da oficina mantém seu caso próprio de profundidade.
+- [x] Capturas reais dos dois interiores com câmera alinhada e materiais finais de reboco, pedra, concreto, madeira e tecido; volumes físicos preservados no acabamento dos assentos.
+- [ ] Acessos exteriores e transições completos no Main, com inspeção de câmera e iluminação.
+- [ ] Sequência temporal noturna e comparação renderizada de frame time.
+- [x] Digo: 49 checks no Main; entrada/saída, botões reais, compra de peças e carro, carga fria do save e restauração de melhorias, pintura/dano e frota após streaming.
+- [x] Cobre: caminhada física do asfalto pela rampa ao acesso original, entrada e saída no Main (`evidence/desert-curve-drive-54884-7050518`); revisão diurna exterior mostra nome e ligação ao passeio legíveis.
+- [x] Cobre: retorno com carro estacionado bloqueando os cinco pontos centrais. Dois pontos laterais autorados, sujeitos à colisão e piso, permitem sair sem deslocar o veículo; reprodução antes/depois em `evidence/desert-bank-return-87180-6853752` e `evidence/desert-bank-return-69448-7341101`.
+
+Evidências executadas em Godot **4.7.2 .NET**, renderer **Forward Mobile**, **NVIDIA GeForce RTX 4060 Laptop GPU**: [52 verificações e medições de visibilidade](/D:/geteco/artifacts/desert-20261006/depth/results.json), [log da segunda execução](/D:/geteco/artifacts/runtime-queue/desert-depth-2.stdout), [Cobre — captura real](/D:/geteco/artifacts/desert-20261006/depth/desert_bank-player-natural.png), [Digo — captura real](/D:/geteco/artifacts/desert-20261006/depth/desert_digo-player-natural.png). A primeira execução identificou oclusão legítima pela viga no ponto lateral da oficina; o caso foi separado da prova de visibilidade ao lado da mesa, sem afrouxar tolerâncias nem ocultar a viga.
+
+**0 novos interiores certificados**. O resultado acima cobre a fixture nativa e seus casos físicos/visuais; não substitui benchmark comparativo no Main e evidência temporal dos interiores. Transições e compras/save de Digo passaram no fluxo real (`evidence/desert-workshop-session-54988-7507128`); caminhada e transições do Cobre também passaram no Main. Motor serializado pela fila compartilhada; uma medição posterior foi invalidada por dois headless de outro chat antes de ele aderir à fila. Nenhum processo alheio encerrado.
+
+## História Harbor e oficina Maciota — 05/10/2026
+
+**Oficina: 1 lugar / 1 interior existente reformado e relocalizado. Casa de Takeshi: 1 acesso / 1 interior novo.** O catálogo consultado registra **36 acessos / 34 interiores distintos**, incluindo os dois acessos compartilhados do Abrigo. Os 18 contêineres portuários são contados separadamente. Esses números não substituem o inventário histórico de salas e passagens especiais nem recertificam outros ambientes. Ambos em validação, 0 certificados integralmente neste lote.
+
+- [x] Oficina afastada da delegacia, pátio próprio e circulação/baia preservados.
+- [x] Câmera alinhada, escala humana e nome próprio único na fachada.
+- [x] Garagem continua bloqueando armas e mantém Maciota/mecânico sem rotinas de dano.
+- [x] Testes de recompensas, transferência e restauração de condutor passaram nas verificações centrais deste lote.
+- [x] Apoio e passagem física terminal → rua → acesso da M8 conferidos pelo teste de percurso.
+- [x] Passeio completo da M8 na rota direta, com desembarque livre e recuperação de impacto/cancelamento.
+- [x] Jetta com M8 presente: desembarque sem deslocar o carro, 60 frames de estabilidade, caminhada até Jessica e conclusão/save no fluxo Main renderizado (65 verificações).
+- [x] Casa: entrada, documentos, colisão e oclusão de jogador/NPC com controles positivos, recompensa única e save; 68 verificações renderizadas.
+- [x] Fotos reais da oficina, acesso e sala de Takeshi.
+- [x] Casa: orçamento atual renderizado de 30 s, câmera jogável, caminhada, lista e save/load isolado; p95 1,245 ms / p99 1,481 ms, população natural registrada.
+- [ ] Comparação controlada da oficina: medições de 30 s concluídas, mas tempos maiores e quantidades diferentes de veículos impedem aprovação de regressão.
+- [ ] Evidência temporal da apresentação e do acesso novos.
+
+Progresso e limites em `docs/story-harbor-act1-20261005.md`; manter os itens pendentes até concluir as verificações.
+
 ## Carros do Digo — cabines existentes — 03/10/2026
 
 **2 cabines de veículos existentes; nenhum edifício ou acesso acrescentado.** Contagens globais de estabelecimentos preservadas.
@@ -930,3 +1015,15 @@ Ajuste local de **1 arquétipo de veículo existente**, sem novos lugares/acesso
 - [x] Fluxo renderizado após o ajuste do painel: **17 verificações, zero falhas**, incluindo movimento, saída e reentrada com o piloto visível.
 - [ ] Performance isolada: duas janelas renderizadas de 30 s executadas, mas há processos e alterações concorrentes. p95/p99 observados: **25,495/36,350 → 17,197/26,529 ms**; não comprovam ganho atribuível ao ajuste nem estabilidade dentro de 16,67 ms.
 - [ ] Performance isolada do painel: novas janelas de 30 s com p95/p99 **15,224/18,645 → 13,500/15,392 ms**. População/tráfego e sessões concorrentes variaram; não há aprovação de ganho ou ausência de regressão atribuível ao ajuste.
+
+## Frente do Maciota e casa Quayside — 06/10/2026
+
+Correção de **2 acessos exteriores existentes**, sem novos lugares ou reforma dos interiores. Permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. O depósito com outdoor de farmácia foi removido pelo overlay do mapa, junto de colisão e objetos do telhado. A casa Quayside e suas vagas passaram para o terreno liberado, ao sul, na posição (164,124); a oficina e o anexo mantêm sua posição. O catálogo visual do editor acompanha a casa.
+
+- [x] Visual e profundidade exteriores: [antes](../evidence/maciota-frontage-20261006/before-diagonal.png) e [depois](../evidence/maciota-frontage-20261006/after-final-diagonal.png), em Main real, com chuva e câmera diagonal. Oficina e anexo separados da casa, personagem e entrada visíveis. [Novo acesso da casa](../evidence/maciota-frontage-20261006/after-final-quayside-exterior.png).
+- [x] Geometria e física: `test_maciota_frontage_layout.gd`, **23 checks aprovados**: volumes reais sem interseção, depósito ausente, cápsula/apoio dos acessos, vagas e corredor para o casco completo. `test_maciota_world.gd` aprovado após estabilização das edições concorrentes de combate.
+- [x] Fluxo renderizado: **20 checks aprovados**, cobrindo caminhada no espaço entre casa e oficina, entrada/saída/reentrada na garagem, restrição de armas, compra e entrada física na casa, spawn, vagas, serialização e retorno ao novo exterior. [Resultados](../evidence/maciota-frontage-20261006/access-final.json).
+- [x] Segurança da garagem: `test_maciota_transition_safety.gd`, **37 checks aprovados**, incluindo bloqueio de armas/ataques, preservação do inventário e proteção de Maciota/mecânico contra dano direto e explosão externa. [Escopo e resultados](../evidence/maciota-frontage-20261006/maciota-transition-safety.json).
+- [x] Comparação local de performance: Godot **4.7.2 .NET**, RTX 4060 Laptop, Mobile, 1280×720, MSAA 2×, noite/chuvoso, mesma câmera. Cada amostra: 5 s de aquecimento e 30 s sem limitador/VSync; depois fluxo funcional com 60 FPS/VSync. **Antes → final:** FPS 122,79 → 122,33; p50 7,043 → 7,013 ms; p95 **13,699 → 12,390 ms**; p99 **16,184 → 14,015 ms**; máximo 28,705 → 18,471 ms; zero frames acima de 33,3 ms em ambas as janelas estáveis. [Antes](../evidence/maciota-frontage-20261006/before.json) / [final](../evidence/maciota-frontage-20261006/after-final.json).
+- Limites: população observada 23 em ambas; tráfego vivo 39 → 42 veículos. Sem outra partida, geração de voz ou benchmark concorrente nas janelas medidas; editor aberto. Resultado sem regressão observada nesse cenário, sem atribuir ganho causal ou certificar outras rotas. Aquecimento final teve um frame de **74,673 ms**, separado da janela estável. A posição inicial do primeiro teste de caminhada foi atualizada porque a casa passou a ocupar parte do antigo lote; a repetição final começa no corredor livre e passou.
+- Dublagem: **40 tomadas** de Maciota/telefonema com um único locutor grave e volume consistente; teste do controlador real **169 checks**, abertura **24 checks**, auditoria de formato/clipping/transcrição **40/40 sem sinalizações**. Transcrição automática não certifica interpretação artística. [Amostra](../evidence/maciota-voice/maciota-preview.wav).

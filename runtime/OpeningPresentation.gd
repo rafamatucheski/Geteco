@@ -1,6 +1,6 @@
 extends CanvasLayer
-## Hosts the native 3D ferry film, then hands back to the playable disembarkation.
-const FILM := preload("res://cutscenes/opening/ferry/FerryFilm.gd")
+## The new story begins with the call at Dante's home, then playable disembarkation.
+const FILM := preload("res://cutscenes/opening/home/HomeCall.gd")
 signal completed(skipped: bool)
 var film: Control
 var _previous_pause := false
@@ -25,7 +25,7 @@ func _ready() -> void:
 	_previous_3d_disabled = _viewport.disable_3d
 	_owns_pause = true
 	get_tree().paused = true
-	# The opaque prerecorded film needs no hidden live city render underneath it.
+	# The opaque home sequence needs no hidden live city render underneath it.
 	_viewport.disable_3d = true
 	film = FILM.new()
 	film.finished.connect(func(destination: StringName): _complete(destination, false))

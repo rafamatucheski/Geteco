@@ -227,22 +227,10 @@ static func glass_warm_interior() -> StandardMaterial3D:
 static func window_interior_dark() -> StandardMaterial3D:
 	return get_mat("window_dark", Color("1a2429"), 0.85)
 
-# Janela "acesa" à noite: emission barato em vez de Light3D real (custo de
-# draw call zero a mais, nenhuma luz dinâmica nova na cena). Duas variantes de
-# calor para não ficar tudo com o mesmo tom de lâmpada.
+# Mesmo material noturno das fachadas individuais: as janelas em MultiMesh
+# também acompanham o relógio, inclusive quando o chunk é carregado de dia.
 static func glass_window_lit(warm: bool = true) -> StandardMaterial3D:
-	var key := "glass_lit_warm" if warm else "glass_lit_cool"
-	if _cache.has(key):
-		return _cache[key]
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.92, 0.80, 0.55, 0.92) if warm else Color(0.80, 0.86, 0.95, 0.92)
-	mat.roughness = 0.25
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.emission_enabled = true
-	mat.emission = Color(1.0, 0.78, 0.42) if warm else Color(0.75, 0.85, 1.0)
-	mat.emission_energy_multiplier = 1.6
-	_cache[key] = mat
-	return mat
+	return preload("res://world/city_look/CityLookMaterials.gd").window_lit(0 if warm else 2)
 
 # --- Doors & Wood ---
 static func wood_door_green() -> StandardMaterial3D:

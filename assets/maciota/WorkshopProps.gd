@@ -91,14 +91,14 @@ func _build_workshop() -> void:
 	_obstacle_bounds.clear()
 
 	# Materiais PBR padronizados e otimizados
-	var mat_concrete := _mat("shop_concrete", Color("#272c30"), 0.10, 0.65)
-	var mat_office_floor := _mat("office_wood_floor", Color("#382215"), 0.05, 0.50)
+	var mat_concrete := _mat("shop_concrete", Color("#485256"), 0.10, 0.78)
+	var mat_office_floor := _mat("office_wood_floor", Color("#513d2e"), 0.05, 0.62)
 	var mat_carpet := _mat("persian_carpet", Color("#581845"), 0.0, 0.90)
 	var mat_carpet_gold := _mat("carpet_gold_fringe", Color("#d4ac0d"), 0.70, 0.35)
 	var mat_yellow_line := _mat("safety_yellow", Color("#f39c12"), 0.15, 0.40)
 	var mat_black_stripe := _mat("hazard_black", Color("#191d20"), 0.05, 0.85)
 	var mat_steel_dark := _mat("industrial_steel", Color("#212529"), 0.80, 0.35)
-	var mat_lift_blue := _mat("lift_paint_blue", Color("#1b3b6f"), 0.45, 0.35)
+	var mat_lift_blue := _mat("lift_paint_blue", Color("#972e28"), 0.45, 0.35)
 	var mat_hydraulic_chrome := _mat("hydraulic_chrome", Color("#e0e0e0"), 0.95, 0.10)
 	var mat_wood_mahogany := _mat("executive_mahogany", Color("#33180c"), 0.05, 0.40)
 	var mat_wood_bench := _mat("bench_wood", Color("#4a3222"), 0.05, 0.70)
@@ -442,13 +442,17 @@ func _build_workshop() -> void:
 	_add_cyl(safe_pos + Vector3(0.12, 0.05, 0.39), 0.09, 0.03, mat_aluminum, Vector3(90, 0, 0))
 	_add_cyl(safe_pos + Vector3(0.12, 0.22, 0.38), 0.04, 0.02, mat_brass, Vector3(90, 0, 0))
 
-	# G. Decoração de Parede: Disco de Vinil Dourado "King of the Night" (Parede de trás)
-	var record_pos := Vector3(4.50, 2.20, -4.08)
-	_add_box(record_pos, Vector3(0.85, 0.85, 0.03), mat_steel_dark)
-	_add_box(record_pos + Vector3(0, 0, 0.015), Vector3(0.75, 0.75, 0.01), mat_carpet)
-	_add_cyl(record_pos + Vector3(0, 0, 0.025), 0.30, 0.01, mat_brass, Vector3(90, 0, 0))
-	_add_cyl(record_pos + Vector3(0, 0, 0.032), 0.10, 0.01, mat_tool_red, Vector3(90, 0, 0))
-	_add_box(record_pos + Vector3(0, -0.28, 0.025), Vector3(0.35, 0.07, 0.01), mat_brass)
+	# A framed picture of the recovered customer car makes Maciota's debt visible
+	# without a decorative explanation. It occupies only the high rear wall.
+	var record_pos := Vector3(4.50, 2.20, -3.98)
+	_add_box(record_pos, Vector3(1.25,.78,.03), mat_wood_mahogany)
+	_add_box(record_pos+Vector3(0,0,.025),Vector3(1.12,.65,.012),mat_banner_bg)
+	_add_box(record_pos+Vector3(0,-.06,.04),Vector3(.83,.17,.015),mat_racing_blue)
+	_add_box(record_pos+Vector3(0,.07,.045),Vector3(.43,.15,.015),mat_aluminum)
+	_add_box(record_pos+Vector3(0,.08,.055),Vector3(.35,.09,.01),mat_banner_bg)
+	for wheel_x in [-.27,.27]:
+		_add_cyl(record_pos+Vector3(wheel_x,-.17,.06),.085,.018,mat_rubber,Vector3(90,0,0))
+		_add_cyl(record_pos+Vector3(wheel_x,-.17,.073),.045,.012,mat_aluminum,Vector3(90,0,0))
 
 	# H. Cabideiro de Pé (Mancebo) com Chapéu Fedora no escritório
 	var coat_pos := Vector3(6.00, 0.90, 1.50)

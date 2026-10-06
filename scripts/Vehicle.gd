@@ -7,6 +7,7 @@ const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
+const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
 const MAX_SPEED := 15.0
 const REVERSE_SPEED := 4.5
 const WHEELBASE := 2.5
@@ -245,6 +246,9 @@ func _ready() -> void:
 		add_child(cannon_controls)
 
 	preload("res://gameplay/icecream/IceCreamVan.gd").attach(self)
+	preload("res://gameplay/mining/MiningFleet.gd").attach(self)
+	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS:
+		preload("res://gameplay/desert_cars/DesertCarAdapter.gd").attach(self)
 
 func set_external_driver(active: bool) -> void:
 	external_input = active
@@ -263,7 +267,7 @@ func is_player_damage_source() -> bool:
 ## sinal: velocidade, aceleração pedida, batida (`crash_*`), suspensão do streaming, dano,
 ## condutor. `is_on_floor()` exige que já tenha pousado.
 func _is_resting() -> bool:
-	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground") and (manual_wheelie == null or manual_wheelie.pitch == 0)
+	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground") and not has_meta("mining_released_load") and (manual_wheelie == null or manual_wheelie.pitch == 0)
 
 ## Trânsito ambiente longe da câmera roda menos passos: a 60-110 m um a cada 2, além disso um a cada 4,
 ## escalonados por carro. O passo executado usa o tempo acumulado e o move_and_slide anda a mesma
@@ -402,7 +406,9 @@ func _stall_physics_tick(delta: float) -> void:
 	velocity.z = horizontal_velocity.z
 	# floor_snap_length mantém o apoio, inclusive na descida. Empurrar contra o
 	# piso já apoiado repetia colisões/deslizamentos do mesmo chão a cada passo.
-	velocity.y = 0.0 if is_on_floor() else velocity.y-20.0*delta
+	# A released mining load can lose the bucket that supported it. Its temporary
+	# monitor confirms static ground; cached is_on_floor cannot suppress gravity.
+	velocity.y = 0.0 if is_on_floor() and not has_meta("mining_released_load") else velocity.y-20.0*delta
 	# Física de rua: atropelamento e mobília derrubável antes de mover (o carro
 	# atravessa o que cedeu); batida carro x carro e deslize depois.
 	stage = STALL_WORK.begin()
@@ -412,8 +418,16 @@ func _stall_physics_tick(delta: float) -> void:
 	if lod != 1.0:
 		velocity.x *= lod
 		velocity.z *= lod
+	var terrain_supported := false
+	# Exact upright-box support on the authored canyon and quarry. The helper verifies
+	# the physical floor, including frames whose support was established by snap.
+	var support_y := DESERT_GROUND.vertical_velocity(self,velocity,get_physics_process_delta_time())
+	if is_finite(support_y):
+		velocity.y=support_y
+		terrain_supported=true
 	var move_began := STALL_WORK.begin()
 	move_and_slide()
+	if terrain_supported and not is_on_floor() and not is_on_wall(): apply_floor_snap()
 	STALL_WORK.finish_slow("vehicle.move_and_slide", move_began, 10000, self)
 	if lod != 1.0:
 		velocity.x /= lod

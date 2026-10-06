@@ -62,6 +62,7 @@ func _cache() -> void:
 	var target: Vector3=controller.session.mission_world.target_position()
 	var has_mission := str(controller.state.intro.stage)!="complete" or not str(controller.state.campaign.active_id).is_empty()
 	if controller.session.freight_active: target=controller.session.freight_target; has_mission=true
+	if controller.state.region_id=="desert" and controller.session.desert!=null: target=controller.session.desert.target_position(); has_mission=true
 	if has_mission and target.is_finite() and not target.is_zero_approx():
 		_markers.append({"point":Vector2(target.x,target.z),"title":"Objetivo","detail":str(controller.session.objective.text),"objective":true})
 	var places := {}
