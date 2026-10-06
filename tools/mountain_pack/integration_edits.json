@@ -1,0 +1,130 @@
+{
+  "purpose": "Preview-only integration; leave shared files with the campaign agent until its tests finish.",
+  "files": [
+    {
+      "path": "runtime/FullSession.gd",
+      "edits": [
+        {
+          "id": "mountain-owner",
+          "before": "var mountain_progression\nvar cold",
+          "after": "var mountain_progression\nvar mountain_activities\nvar cold"
+        },
+        {
+          "id": "mountain-configure",
+          "before": "\tworld.player.ski_controller = mountain_progression\n\tservices =",
+          "after": "\tworld.player.ski_controller = mountain_progression\n\tmountain_activities = preload(\"res://runtime/MountainActivities.gd\").new()\n\tworld.add_child(mountain_activities)\n\tmountain_activities.configure(self)\n\tservices ="
+        },
+        {
+          "id": "cancel-transition",
+          "before": "\tif not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1\n\ttransition_generation += 1",
+          "after": "\tif not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1\n\tif mountain_activities != null: mountain_activities.cancel_attempt()\n\ttransition_generation += 1"
+        },
+        {
+          "id": "active-action",
+          "before": "func nearest() -> Dictionary:\n\tif rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}\n",
+          "after": "func nearest() -> Dictionary:\n\tif rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}\n\tif mountain_activities != null and mountain_activities.busy():\n\t\tvar pack_active_action: Dictionary = mountain_activities.nearest_action()\n\t\tif not pack_active_action.is_empty(): return pack_active_action\n"
+        },
+        {
+          "id": "nearby-action",
+          "before": "\tvar mountain_action: Dictionary = mountain_progression.nearest_action()",
+          "after": "\tif mountain_activities != null:\n\t\tvar pack_action: Dictionary = mountain_activities.nearest_action()\n\t\tif not pack_action.is_empty(): return pack_action\n\tvar mountain_action: Dictionary = mountain_progression.nearest_action()"
+        },
+        {
+          "id": "perform-action",
+          "before": "\tvar action := nearest()\n\tif action.get(\"id\", \"\") == \"zoo_ticket\":",
+          "after": "\tvar action := nearest()\n\tif mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)\n\tif action.get(\"id\", \"\") == \"zoo_ticket\":"
+        },
+        {
+          "id": "objective",
+          "before": "\tif jessica != null and state.campaign.active_id == \"jessica_bank\": objective.text = jessica.objective()\n\tvar action := nearest()",
+          "after": "\tif jessica != null and state.campaign.active_id == \"jessica_bank\": objective.text = jessica.objective()\n\tif mountain_activities != null:\n\t\tvar pack_objective: String = mountain_activities.objective()\n\t\tif not pack_objective.is_empty(): objective.text = pack_objective\n\tvar action := nearest()"
+        },
+        {
+          "id": "target-indicator",
+          "before": "\tvar maciota_exterior_marker: bool = state.place_id.is_empty() and target.is_equal_approx(world.maciota_place.entry_position)",
+          "after": "\tif mountain_activities != null and not mountain_activities.objective().is_empty():\n\t\tvar pack_target: Vector3 = mountain_activities.target_position()\n\t\tif pack_target.is_finite(): target = pack_target\n\tvar maciota_exterior_marker: bool = state.place_id.is_empty() and target.is_equal_approx(world.maciota_place.entry_position)"
+        },
+        {
+          "id": "journal",
+          "before": "func show_journal() -> void:\n\t_menu(\"Missões\")",
+          "after": "func show_journal() -> void:\n\tif mountain_activities != null and mountain_activities.busy():\n\t\tmountain_activities.show_journal()\n\t\treturn\n\t_menu(\"Missões\")\n\tif mountain_activities != null: _button(\"Atividades da montanha\", mountain_activities.show_journal)"
+        },
+        {
+          "id": "save-block",
+          "before": "func save_block_reason() -> String:\n\tif jessica",
+          "after": "func save_block_reason() -> String:\n\tif mountain_activities != null:\n\t\tvar pack_reason: String = mountain_activities.save_block_reason()\n\t\tif not pack_reason.is_empty(): return pack_reason\n\tif jessica"
+        },
+        {
+          "id": "save-snapshot",
+          "before": "\tif mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()\n\tif mission_world",
+          "after": "\tif mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()\n\tif mountain_activities != null: mountain_activities.write_snapshot()\n\tif mission_world"
+        },
+        {
+          "id": "cancel-arrest",
+          "before": "\tmountain_progression.cancel_attempt()\n\tmission_world.cancel_attempt(\"player_arrest\")",
+          "after": "\tmountain_progression.cancel_attempt()\n\tif mountain_activities != null: mountain_activities.cancel_attempt()\n\tmission_world.cancel_attempt(\"player_arrest\")"
+        },
+        {
+          "id": "cancel-death",
+          "before": "\tmountain_progression.cancel_attempt()\n\tmission_world.cancel_attempt(\"player_death\")",
+          "after": "\tmountain_progression.cancel_attempt()\n\tif mountain_activities != null: mountain_activities.cancel_attempt()\n\tmission_world.cancel_attempt(\"player_death\")"
+        }
+      ]
+    },
+    {
+      "path": "runtime/GameState.gd",
+      "edits": [
+        {
+          "id": "validate-mountain-state",
+          "before": "\tif data.world.has(\"mountain_progression\"):\n",
+          "after": "\tif not preload(\"res://systems/campaign/MountainPackState.gd\").validate_world(data.world, data.economy): return false\n\tif data.world.has(\"mountain_progression\"):\n"
+        }
+      ]
+    },
+    {
+      "path": "runtime/ProductionWorld.gd",
+      "edits": [
+        {
+          "id": "cancel-fast-travel",
+          "before": "\tsession.mountain_progression.cancel_attempt()\n\tsession.garage_rewards.cancel_press_delivery()",
+          "after": "\tsession.mountain_progression.cancel_attempt()\n\tif session.mountain_activities != null: session.mountain_activities.cancel_attempt()\n\tsession.garage_rewards.cancel_press_delivery()"
+        }
+      ]
+    },
+    {
+      "path": "world/regions/NativeRegion.gd",
+      "edits": [
+        {
+          "id": "jeep-resources",
+          "before": "const ROUTE_LAYOUT := preload(\"res://world/mountain_detail/MountainRouteLayout.gd\")\n",
+          "after": "const ROUTE_LAYOUT := preload(\"res://world/mountain_detail/MountainRouteLayout.gd\")\nconst MOUNTAIN_JEEP_COURSE := preload(\"res://world/mountain_jeep/MountainJeepCourse.gd\")\nconst MOUNTAIN_JEEP_SCENERY := preload(\"res://world/mountain_jeep/MountainJeepScenery.gd\")\n"
+        },
+        {
+          "id": "jeep-paths",
+          "before": "\twalkways = ROUTE_LAYOUT.paths()\n",
+          "after": "\twalkways = ROUTE_LAYOUT.paths()\n\twalkways.append_array(MOUNTAIN_JEEP_COURSE.paths(main))\n"
+        },
+        {
+          "id": "jeep-streamed-records",
+          "before": "\troute_geometry.configure(roads + walkways)\n",
+          "after": "\troute_geometry.configure(roads + walkways)\n\tfor record in MOUNTAIN_JEEP_COURSE.records():\n\t\t_record(record.position, record)\n"
+        },
+        {
+          "id": "jeep-tree-clearance",
+          "before": "\t\t\treturn record.kind != \"tree\" or not route_geometry.contains(record.position,3.0))",
+          "after": "\t\t\treturn record.kind != \"tree\" or (not route_geometry.contains(record.position,3.0) and not MOUNTAIN_JEEP_COURSE.is_reserved(Vector2(record.position.x,record.position.z),3.0)))"
+        },
+        {
+          "id": "jeep-build",
+          "before": "\t\t\"cave_approach\":\n",
+          "after": "\t\t\"mountain_jeep_scenery\": MOUNTAIN_JEEP_SCENERY.build(chunk,record)\n\t\t\"cave_approach\":\n"
+        },
+        {
+          "id": "jeep-dressing-clearance",
+          "before": "func _dressing_reserved(point: Vector2, radius: float) -> bool:\n\tif terrain == null or terrain.is_reserved(point,radius): return true\n",
+          "after": "func _dressing_reserved(point: Vector2, radius: float) -> bool:\n\tif terrain == null or terrain.is_reserved(point,radius): return true\n\tif region_id == \"mountain\" and MOUNTAIN_JEEP_COURSE.is_reserved(point,radius): return true\n"
+        }
+      ]
+    }
+  ]
+}

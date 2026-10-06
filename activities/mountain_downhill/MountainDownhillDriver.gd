@@ -1,0 +1,131 @@
+extends RefCounted
+## Bounded sensors, real throttle/steering/braking; recovery never moves bodies.
+var car
+var course
+var cap := 31.0
+var lane := 0.0
+var desired_lane := 0.0
+var sensor_clock := 0.0
+var pass_cooldown := 0.0
+var gap := INF
+var leader_speed := 0.0
+var reverse_left := 0.0
+var stalled := 0.0
+var anchor := Vector3.ZERO
+var recoveries := 0
+var reaction := 0.0
+var lane_query := PhysicsShapeQueryParameters3D.new()
+
+func setup(vehicle, authored_course, index: int) -> void:
+	car = vehicle
+	course = authored_course
+	cap = minf(float(car.max_forward_speed),[33.0,32.4,31.8,33.5,32.0,31.6][index])
+	lane = -1.8 if index%2 == 0 else 1.8
+	desired_lane = lane
+	sensor_clock = float(index)*.025
+	reaction = [.12,.2,.16,.25,.22,.18][index]
+	anchor = car.global_position
+	var clearance := BoxShape3D.new()
+	clearance.size = Vector3(car.half_width*2.0+.3,.65,car.half_length*2.0+.7)
+	lane_query.shape = clearance
+	lane_query.collision_mask = 7
+	lane_query.exclude = [car.get_rid()]
+	car.set_external_driver(true)
+	car.player_damage_attribution = false
+
+func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
+	if not is_instance_valid(car) or car.health <= 0: return
+	car.set_external_driver(true)
+	car.throttle_input = 0.0
+	car.steer_input = 0.0
+	car.brake_input = hold
+	if hold: return
+	if reaction > 0:
+		reaction -= delta
+		car.brake_input = true
+		return
+	var offset: float = course.nearest_offset(car.global_position)
+	var look := clampf(4.0+absf(float(car.speed))*.27,4.0,12.0)
+	var target_at := minf(offset+look,float(course.length)-.5)
+	# A missed checkpoint must be approached from its upstream side. Driving
+	# toward later hairpins never repairs a skipped gate or its classification.
+	if next_checkpoint < course.gate_offsets.size():
+		var required: float = course.gate_offsets[next_checkpoint]
+		if offset > required+3.0: target_at = maxf(0.0,required-6.0)
+	var direction: Vector3 = course.direction(target_at)
+	var right := direction.cross(Vector3.UP).normalized()
+	sensor_clock -= delta
+	pass_cooldown = maxf(0.0,pass_cooldown-delta)
+	if sensor_clock <= 0:
+		sensor_clock = .15
+		_sense(offset,look)
+	lane = move_toward(lane,desired_lane,delta*1.8)
+	var target: Vector3 = course.point(target_at)+right*lane
+	var toward: Vector3 = target-car.global_position
+	toward.y = 0
+	var forward: Vector3 = -car.global_basis.z
+	var alpha := forward.signed_angle_to(toward.normalized(),Vector3.UP)
+	if reverse_left > 0:
+		reverse_left -= delta
+		car.throttle_input = -.7
+		car.steer_input = -signf(alpha) if absf(alpha) > .2 else (-1.0 if recoveries%2 == 0 else 1.0)
+		return
+	if absf(alpha)>1.9 and absf(float(car.speed))<3.5 and _rear_clear():
+		reverse_left = 1.3
+		recoveries += 1
+		car.brake_input = true
+		return
+	var desired: float = course.speed_at(offset,cap)
+	var bend := absf(toward.normalized().signed_angle_to(direction,Vector3.UP))
+	desired = minf(desired,lerpf(cap,4.5,clampf(bend/.85,0.0,1.0)))
+	if is_finite(gap): desired = minf(desired,leader_speed+maxf(0.0,(gap-2.4)*.9))
+	car.steer_input = clampf(atan2(5.0*sin(alpha),look)/.48,-1.0,1.0)
+	if absf(alpha)>1.4:
+		car.steer_input = signf(alpha)
+		desired = minf(desired,3.0)
+	# Vehicle.brake_input is the handbrake: use counter-throttle for corners.
+	car.brake_input = desired<.2 and absf(float(car.speed))<1.0
+	car.throttle_input = clampf((desired-float(car.speed))*.65,-1.0,1.0) if not car.brake_input else 0.0
+	if car.global_position.distance_to(anchor)>2.0:
+		anchor = car.global_position
+		stalled = 0.0
+	else: stalled += delta
+	if stalled > 3.0 and offset < float(course.length)-8.0:
+		if _rear_clear():
+			reverse_left = 1.1
+			recoveries += 1
+		stalled = 0.0
+
+func _sense(offset: float, look: float) -> void:
+	gap = INF
+	leader_speed = 0.0
+	var reach := minf(55.0,5.0+float(car.speed)*float(car.speed)/10.0)
+	var origin: Vector3 = car.global_position+Vector3.UP*.65-car.global_basis.z*(car.half_length+.2)
+	for side in [-.8,0.0,.8]:
+		var from: Vector3 = origin+car.global_basis.x*float(car.half_width)*side
+		var ray := PhysicsRayQueryParameters3D.create(from,from-car.global_basis.z*reach,7,[car.get_rid()])
+		var hit: Dictionary = car.get_world_3d().direct_space_state.intersect_ray(ray)
+		if not hit.is_empty() and from.distance_to(hit.position)<gap:
+			gap = from.distance_to(hit.position)
+			leader_speed = maxf(0.0,hit.collider.velocity.dot(-car.global_basis.z)) if hit.collider is CharacterBody3D else 0.0
+	if is_finite(gap) and pass_cooldown<=0.0:
+		var alternative := -1.8 if desired_lane>=0 else 1.8
+		if _lane_clear(offset,look,alternative):
+			desired_lane = alternative
+			pass_cooldown = 2.0
+
+func _lane_clear(offset: float, look: float, alternative: float) -> bool:
+	# Sweep the actual transition corridor as well as the destination lane.
+	for fraction in [0.0,.5,1.0]:
+		var at := minf(offset+maxf(8.0,look)*fraction,float(course.length)-.5)
+		var forward: Vector3 = course.direction(at)
+		var lateral := lerpf(lane,alternative,fraction)
+		var center: Vector3 = course.point(at)+forward.cross(Vector3.UP).normalized()*lateral+Vector3.UP*.65
+		lane_query.transform = Transform3D(Basis(Vector3.UP,atan2(-forward.x,-forward.z)),center)
+		if not car.get_world_3d().direct_space_state.intersect_shape(lane_query,1).is_empty(): return false
+	return true
+
+func _rear_clear() -> bool:
+	var origin: Vector3 = car.global_position+Vector3.UP*.65
+	var ray := PhysicsRayQueryParameters3D.create(origin,origin+car.global_basis.z*(car.half_length+3.0),7,[car.get_rid()])
+	return car.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()

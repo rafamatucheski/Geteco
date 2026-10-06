@@ -1,0 +1,20 @@
+{
+  "cargo_identified": [
+    {"speaker":"Dante","pt":"Essa cobra nas caixas... É a mesma marca dos carregamentos do porto. O avião era dos Cobras.","en":"That snake on the crates... Same mark as the shipments at the port. This plane belonged to the Cobras."},
+    {"speaker":"Dante","pt":"Deixaram a carga para trás. Vou entrar e procurar o manifesto.","en":"They left the cargo behind. I'll go inside and look for the manifest."}
+  ],
+  "cargo_manifest": [
+    {"speaker":"Manifesto","pt":"Rota da serra. Carga dos Cobras. Retirada suspensa após a queda. Ponto de apoio: caverna junto à cascata.","en":"Mountain route. Cobras cargo. Recovery suspended after the crash. Shelter: cave beside the waterfall."},
+    {"speaker":"Dante","pt":"Aqui está a ligação com o porto. Alguém saiu vivo e procurou abrigo na caverna. Vou seguir esse rastro.","en":"There's the link to the port. Someone survived and took shelter in the cave. I'll follow that trail."}
+  ],
+  "cave_shelter": [
+    {"speaker":"Dante","pt":"O caminho do lago está riscado neste mapa. E esse nó no pedaço de cordão... Vicente fazia igual para não perder as chaves.","en":"The path from the lake is marked on this map. And that knot in the cord... Vicente tied his keys the same way."},
+    {"speaker":"Dante","pt":"Tem uma folha dobrada mais ao fundo. Preciso conferir.","en":"There's a folded page farther inside. I need to check it."}
+  ],
+  "vicente_note": [
+    {"speaker":"Anotação","pt":"A neve deu uma trégua. Saio antes de amanhecer. Vou seguir para o deserto. Se o Dante vier atrás de mim, diga que eu passei por aqui. — Vicente","en":"The snow has eased. I'm leaving before dawn. I'll head for the desert. If Dante comes looking for me, tell him I was here. — Vicente"},
+    {"speaker":"Dante","pt":"É a letra dele. E esta arruela no cordão... eu dei para ele quando a gente era moleque.","en":"That's his handwriting. And this washer on the cord... I gave it to him when we were kids."},
+    {"speaker":"Dante","pt":"A neve ainda não cobriu as marcas da saída. Você esteve aqui há pouco, Vicente. Eu cheguei tão perto.","en":"The snow hasn't covered the tracks outside yet. You were here so recently, Vicente. I was so close."},
+    {"speaker":"Dante","pt":"Agora eu tenho um rumo. O deserto.","en":"Now I have a direction. The desert."}
+  ]
+}
