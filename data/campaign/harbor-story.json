@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "title": "Harbor",
+  "prison_years": 8,
+  "protagonist": "Dante Ferraz",
+  "brother": "Vicente Ferraz",
+  "premise": "Dante recebe em casa uma ligação sobre Vicente e viaja a Harbor. Maciota o reconhece na saída do terminal e o leva à oficina. Os favores revelam uma rota de corridas organizada pelo irmão.",
+  "backstory": "Em uma cidade fora do jogo, Dante era policial e prendeu Vicente durante uma operação contra contrabando e corridas. Durante os oito anos seguintes tentou ajudá-lo e deixou a corporação ao encontrar indícios de armação. Vicente interpreta esses anos como abandono.",
+  "reveal_act": 2,
+  "maciota_past": "Dante recuperou um veículo de cliente roubado durante um transporte de Maciota e demonstrou que ele havia sido enganado. Isso salvou a reputação e a oficina de Maciota.",
+  "jessica": {"name":"Jessica","car":"jessica_jetta_gli","relationship":"encontros e confiança, sem namoro ou pontuação oculta","next_encounter":"corrida na cidade do deserto"},
+  "act_two": {"destination":"desert","opening":"Vicente recebe Dante com rancor. Os trabalhos e corridas revelam a operação armada. Jessica reaparece e vence Dante numa prova.","ending":"Dante mostra a prova ao irmão, que pergunta o que fazer com os oito anos perdidos."}
+}

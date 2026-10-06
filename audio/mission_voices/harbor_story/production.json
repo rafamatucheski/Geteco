@@ -1,0 +1,710 @@
+{
+  "model": "Qwen3-TTS VoiceDesign",
+  "language": "pt-BR",
+  "voice_cloning": false,
+  "complete": false,
+  "lines": [
+    {
+      "key": "5867edd5fce8669aa10a47373679c649ddcf4fc6f8e8ef92b4bb534d196587bf",
+      "persona": "dante",
+      "text": "Alô?",
+      "en": "Hello?",
+      "section": "arrival:HOME_CALL",
+      "seconds": 0.7405,
+      "path": "res://audio/mission_voices/harbor_story/5867edd5fce8669aa10a47373679c649ddcf4fc6f8e8ef92b4bb534d196587bf.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "6652e9f19e401c6eb89a2b2b0fa642a5553eeebb16a46415e7c427c3cb55c188",
+      "persona": "caller",
+      "text": "Seu irmão está em Harbor.",
+      "en": "Your brother is in Harbor.",
+      "section": "arrival:HOME_CALL",
+      "seconds": 2.024208333333333,
+      "path": "res://audio/mission_voices/harbor_story/6652e9f19e401c6eb89a2b2b0fa642a5553eeebb16a46415e7c427c3cb55c188.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "7c21151f4e5e7adf36ca3bafc1655039bfeec0cf3691c813ff0417106ce1643d",
+      "persona": "dante",
+      "text": "Vicente? Quem está falando?",
+      "en": "Vicente? Who is this?",
+      "section": "arrival:HOME_CALL",
+      "seconds": 2.4,
+      "path": "res://audio/mission_voices/harbor_story/7c21151f4e5e7adf36ca3bafc1655039bfeec0cf3691c813ff0417106ce1643d.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "5fdeb50744430f630af2a9e6222f316bc7a3a4b595da28e02a8c8f3fd47a3995",
+      "persona": "caller",
+      "text": "Se você ainda quer falar com ele, vem. Eu te encontro na chegada.",
+      "en": "If you still want to talk to him, come. I'll meet you when you arrive.",
+      "section": "arrival:HOME_CALL",
+      "seconds": 4.445083333333334,
+      "path": "res://audio/mission_voices/harbor_story/5fdeb50744430f630af2a9e6222f316bc7a3a4b595da28e02a8c8f3fd47a3995.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "6fa6532413ae146716460900aeb5dd4fa9937e5c1643718c91cb7e6eea8c7556",
+      "persona": "dante",
+      "text": "Espera...",
+      "en": "Wait...",
+      "section": "arrival:HOME_CALL",
+      "seconds": 0.7137916666666667,
+      "path": "res://audio/mission_voices/harbor_story/6fa6532413ae146716460900aeb5dd4fa9937e5c1643718c91cb7e6eea8c7556.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "097f95303230fe217925e7a1276cb42fb653a6555a5d4d1885ff649bd31adc21",
+      "persona": "maciota",
+      "text": "Dante, temos muito que conversar.",
+      "en": "Dante, we have a lot to talk about.",
+      "section": "arrival:MEETING",
+      "seconds": 2.4749583333333334,
+      "path": "res://audio/mission_voices/harbor_story/097f95303230fe217925e7a1276cb42fb653a6555a5d4d1885ff649bd31adc21.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "37225c6d7089b71a2433cf521cea7652c90d24ce52d6d3ff091a416c9577777b",
+      "persona": "dante",
+      "text": "Foi você que me ligou?",
+      "en": "Were you the one who called?",
+      "section": "arrival:MEETING",
+      "seconds": 1.4249166666666666,
+      "path": "res://audio/mission_voices/harbor_story/37225c6d7089b71a2433cf521cea7652c90d24ce52d6d3ff091a416c9577777b.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "4fec2126ee49adb9f1bc218958bf19aeff2871e844435fae2ae9078cc9b180f5",
+      "persona": "maciota",
+      "text": "Fui eu. Maciota. Vamos até a minha oficina.",
+      "en": "That was me. Maciota. Let's go to my workshop.",
+      "section": "arrival:MEETING",
+      "seconds": 4.08,
+      "path": "res://audio/mission_voices/harbor_story/4fec2126ee49adb9f1bc218958bf19aeff2871e844435fae2ae9078cc9b180f5.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "9e660a90d7dbbf51c0007c70aee5a8854a0f915bb75bf8d4bc2463055a05166d",
+      "persona": "dante",
+      "text": "Como você me reconheceu?",
+      "en": "How did you recognize me?",
+      "section": "arrival:MEETING",
+      "seconds": 1.5484583333333333,
+      "path": "res://audio/mission_voices/harbor_story/9e660a90d7dbbf51c0007c70aee5a8854a0f915bb75bf8d4bc2463055a05166d.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "47b530567059cd9e526d7679ac984b1ec64d35d1cb0e88f10f48b273cbcb0ad3",
+      "persona": "maciota",
+      "text": "Um contato conseguiu uma foto do teu histórico da polícia. Entra, no carro a gente conversa.",
+      "en": "A contact got me a photograph from your police record. Get in. We'll talk in the car.",
+      "section": "arrival:MEETING",
+      "seconds": 6.2915,
+      "path": "res://audio/mission_voices/harbor_story/47b530567059cd9e526d7679ac984b1ec64d35d1cb0e88f10f48b273cbcb0ad3.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "faad4cfae55b5f5d800a8b6732b327f870a60b5c10912248c2c81b47a7072289",
+      "persona": "maciota",
+      "text": "Esse porto vive de carga e oficina. Teu irmão passou por aqui.",
+      "en": "This port runs on cargo and workshops. Your brother came through here.",
+      "section": "arrival:TOUR",
+      "seconds": 4.32,
+      "path": "res://audio/mission_voices/harbor_story/faad4cfae55b5f5d800a8b6732b327f870a60b5c10912248c2c81b47a7072289.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "c7849d8e90a3458544696a9613242b3193ad6c027256cc93ae8b8347017a1cc5",
+      "persona": "maciota",
+      "text": "Vi o Vicente. Depois começaram a aparecer clientes com carro sumido e conta pra pagar.",
+      "en": "I saw Vicente. Then customers started coming in with missing cars and debts to pay.",
+      "section": "arrival:TOUR",
+      "seconds": 6.32,
+      "path": "res://audio/mission_voices/harbor_story/c7849d8e90a3458544696a9613242b3193ad6c027256cc93ae8b8347017a1cc5.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "dac021e5dabf73ca413d1e84735f7e933efdf59cc68bd1dad799a9b7802a1c24",
+      "persona": "maciota",
+      "text": "Tem gente que conhece o caminho dele. Preciso confirmar umas coisas antes de te colocar no meio.",
+      "en": "Some people know where he went. I need to confirm a few things before bringing you into this.",
+      "section": "arrival:TOUR",
+      "seconds": 5.876916666666666,
+      "path": "res://audio/mission_voices/harbor_story/dac021e5dabf73ca413d1e84735f7e933efdf59cc68bd1dad799a9b7802a1c24.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "28281b308076e73c2bb5090f559394e02abad0ee9d9369b922ff5571886fbdf9",
+      "persona": "maciota",
+      "text": "Minha oficina fica entre esses galpões. Lá a gente conversa com calma.",
+      "en": "My workshop is between those warehouses. We can talk properly there.",
+      "section": "arrival:TOUR",
+      "seconds": 4.754166666666666,
+      "path": "res://audio/mission_voices/harbor_story/28281b308076e73c2bb5090f559394e02abad0ee9d9369b922ff5571886fbdf9.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "a255dfce2c3d8e9496ba0fb5db2bffef9a61a8e394a2778f7337b0d31851e5d6",
+      "persona": "maciota",
+      "text": "Entra, Dante. Vi o Vicente por aqui. Ele deixou muita gente com problema nesta região.",
+      "en": "Come in, Dante. I saw Vicente around here. He left a lot of people in trouble in this district.",
+      "section": "garage",
+      "seconds": 5.92,
+      "path": "res://audio/mission_voices/harbor_story/a255dfce2c3d8e9496ba0fb5db2bffef9a61a8e394a2778f7337b0d31851e5d6.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "5ce5bfb95b8a763156fb53531076ede07392f83ac8631436ba3683419fe39a07",
+      "persona": "dante",
+      "text": "Você sabe onde ele está?",
+      "en": "Do you know where he is?",
+      "section": "garage",
+      "seconds": 1.902,
+      "path": "res://audio/mission_voices/harbor_story/5ce5bfb95b8a763156fb53531076ede07392f83ac8631436ba3683419fe39a07.wav",
+      "status": "review_required"
+    },
+    {
+      "key": "ef56baa56d8ef2b0b71e052f6c99dfdadf5b24e7eef598365385ee86ad1604f7",
+      "persona": "maciota",
+      "text": "Ainda não tenho um endereço. Tenho clientes que fizeram serviço pra ele. Vou conversar com essa gente.",
+      "en": "I don't have an address yet. Some of my customers worked for him. I'll talk to them.",
+      "section": "garage",
+      "seconds": 6.821666666666666,
+      "path": "res://audio/mission_voices/harbor_story/ef56baa56d8ef2b0b71e052f6c99dfdadf5b24e7eef598365385ee86ad1604f7.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "d0a50245033772076aafd9f517e4f6a048c4b15b44d8292d668eb62a5cd3f966",
+      "persona": "dante",
+      "text": "E como você conhece nós dois?",
+      "en": "And how do you know both of us?",
+      "section": "garage",
+      "seconds": 2.9029166666666666,
+      "path": "res://audio/mission_voices/harbor_story/d0a50245033772076aafd9f517e4f6a048c4b15b44d8292d668eb62a5cd3f966.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "f5f4e183194a8b5a004b7de2fc0e986d7f6649766ded3a47c2180eb02d8c660c",
+      "persona": "maciota",
+      "text": "Você recuperou um carro pra mim, anos atrás. Roubaram durante um transporte e disseram que eu tinha feito parte do negócio. Eu quase perdi a oficina.",
+      "en": "You recovered a car for me, years ago. It was stolen during a transport job and they said I was involved. I nearly lost the workshop.",
+      "section": "garage",
+      "seconds": 10.589833333333333,
+      "path": "res://audio/mission_voices/harbor_story/f5f4e183194a8b5a004b7de2fc0e986d7f6649766ded3a47c2180eb02d8c660c.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "b8f577aa10a18aac9012cf55af992d13eb611889a4871531a2a268bcdd9dffe7",
+      "persona": "dante",
+      "text": "Não lembro de você.",
+      "en": "I don't remember you.",
+      "section": "garage",
+      "seconds": 1.5546666666666666,
+      "path": "res://audio/mission_voices/harbor_story/b8f577aa10a18aac9012cf55af992d13eb611889a4871531a2a268bcdd9dffe7.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "c6bdce9bf33b86c252c63082dcf41bee31b587cee5570f17da24f3c5994c827e",
+      "persona": "maciota",
+      "text": "Imagino. Pra você era trabalho. Pra mim era tudo. Você achou o carro e mostrou que tinham me enganado.",
+      "en": "I figured. For you it was work. For me it was everything. You found the car and proved I'd been deceived.",
+      "section": "garage",
+      "seconds": 7.755583333333333,
+      "path": "res://audio/mission_voices/harbor_story/c6bdce9bf33b86c252c63082dcf41bee31b587cee5570f17da24f3c5994c827e.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "5aa5904c791ae1b5595919dc8d86465e73fe3119fc668f7b1247d0c39cef495b",
+      "persona": "dante",
+      "text": "E o Vicente?",
+      "en": "And Vicente?",
+      "section": "garage",
+      "seconds": 1.0262083333333334,
+      "path": "res://audio/mission_voices/harbor_story/5aa5904c791ae1b5595919dc8d86465e73fe3119fc668f7b1247d0c39cef495b.wav",
+      "status": "review_required"
+    },
+    {
+      "key": "01b950fab7b4067355f1e3f915beaf6c83e9c3f989e48b7b6bc34856d2ad1fa4",
+      "persona": "maciota",
+      "text": "Passou pela oficina. Fazia serviço com os Cobras. Depois começou a aparecer em cobrança, carro sumido, corrida que ninguém queria comentar.",
+      "en": "He came through the workshop. He worked with the Cobras. Then his name started coming up in collections, missing cars and races nobody wanted to talk about.",
+      "section": "garage",
+      "seconds": 10.692541666666667,
+      "path": "res://audio/mission_voices/harbor_story/01b950fab7b4067355f1e3f915beaf6c83e9c3f989e48b7b6bc34856d2ad1fa4.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "e0d5208ea71710f33f73705cffafba74e22cb601f8e016009d83a85271fd512d",
+      "persona": "maciota",
+      "text": "Eu quero te ajudar. Mas preciso que você me faça um favor. Uma mão lava a outra nesta cidade.",
+      "en": "I want to help you. But I need you to do me a favor. We look out for each other in this city.",
+      "section": "garage",
+      "seconds": 7.996125,
+      "path": "res://audio/mission_voices/harbor_story/e0d5208ea71710f33f73705cffafba74e22cb601f8e016009d83a85271fd512d.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "672a6755c67f50ee1f7f05ea3f18df6ae8db5b48ebd0d172c7ac24ce51bfc7d4",
+      "persona": "dante",
+      "text": "O que você precisa?",
+      "en": "What do you need?",
+      "section": "garage",
+      "seconds": 1.11625,
+      "path": "res://audio/mission_voices/harbor_story/672a6755c67f50ee1f7f05ea3f18df6ae8db5b48ebd0d172c7ac24ce51bfc7d4.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "2e8ba0d63817a2c53972015679c79319982e39042968f25bcf7d30d0bf3611d8",
+      "persona": "maciota",
+      "text": "Uma peça minha ficou no porto. Primeiro resolve o comprovante com a Helena. Traz a encomenda e eu vou atrás de quem trabalhou com teu irmão.",
+      "en": "One of my parts is still at the port. First sort out the receipt with Helena. Bring back the shipment and I'll find the people who worked with your brother.",
+      "section": "garage",
+      "seconds": 10.936916666666667,
+      "path": "res://audio/mission_voices/harbor_story/2e8ba0d63817a2c53972015679c79319982e39042968f25bcf7d30d0bf3611d8.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "dcb65ee4cfdc2be4d58a19a4872e94fab919bd3396a2cbd9b96f1194c7a290ad",
+      "persona": "maciota",
+      "text": "A Helena, do North Pier, liberou o pagamento de uma peça. Busca o comprovante no banco e leva ao porto. A encomenda está no ponto marcado.",
+      "en": "Helena at North Pier cleared payment for a part. Collect the receipt at the bank and take it to the port. The parcel is at the marked point.",
+      "section": "first-favors-dialogue.json:begin",
+      "seconds": 11.17275,
+      "path": "res://audio/mission_voices/harbor_story/dcb65ee4cfdc2be4d58a19a4872e94fab919bd3396a2cbd9b96f1194c7a290ad.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "d03cb95347ea2a7bc30df661f183b9d23cff4e6091f21ea3cc58f7a4b9a76f8e",
+      "persona": "dante",
+      "text": "E isso me aproxima do Vicente?",
+      "en": "And this gets me closer to Vicente?",
+      "section": "first-favors-dialogue.json:begin",
+      "seconds": 1.84,
+      "path": "res://audio/mission_voices/harbor_story/d03cb95347ea2a7bc30df661f183b9d23cff4e6091f21ea3cc58f7a4b9a76f8e.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "80858fef18d49fcf450e9383486028d4fa8125f8f46a0d27ca6196d56d6f18eb",
+      "persona": "maciota",
+      "text": "A peça é para Ferrugem. Teu irmão fazia serviço com ele. Faz essa entrega direito que eu te apresento. E trata bem a Helena: ela segurou as contas da oficina quando ninguém ajudou.",
+      "en": "The part is for Ferrugem. Your brother worked with him. Do this properly and I'll introduce you. Be kind to Helena: she kept the workshop afloat when nobody else helped.",
+      "section": "first-favors-dialogue.json:begin",
+      "seconds": 12.419583333333334,
+      "path": "res://audio/mission_voices/harbor_story/80858fef18d49fcf450e9383486028d4fa8125f8f46a0d27ca6196d56d6f18eb.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "0df7bd0a072820113f6b507b24bcf71f1a7256ee1ab78d8e5d352b5d0bed4e97",
+      "persona": "maciota",
+      "text": "Já está tudo pago. Você não precisa gastar nem roubar nada. Banco, encomenda, depois volta falar comigo. Os 150 são pelo teu trabalho.",
+      "en": "It's already paid. You don't need to spend or steal anything. Bank, parcel, then come back to me. The 150 is for your work.",
+      "section": "first-favors-dialogue.json:begin",
+      "seconds": 11.093333333333334,
+      "path": "res://audio/mission_voices/harbor_story/0df7bd0a072820113f6b507b24bcf71f1a7256ee1ab78d8e5d352b5d0bed4e97.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "ec4c7a71f07118adf6171daae3dfc4cb142622c59f83f00d8deb00e759bf5660",
+      "persona": "dante",
+      "text": "Maciota, o banco ficou sem atendimento depois da confusão. Não consigo pegar o comprovante.",
+      "en": "Maciota, the bank stopped serving customers after the incident. I can't collect the receipt.",
+      "section": "first-favors-dialogue.json:interact",
+      "seconds": 7.04,
+      "path": "res://audio/mission_voices/harbor_story/ec4c7a71f07118adf6171daae3dfc4cb142622c59f83f00d8deb00e759bf5660.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "e35f1d2e8bd22d02d85be3a5a396c620b913c3b81381d0751bd5b39a7f99791c",
+      "persona": "maciota",
+      "text": "Sai daí. A transferência já foi feita; vou mandar a segunda via ao pessoal do porto. Retira a peça no ponto marcado e volta. Isso ainda não acabou bem para quem trabalha aí.",
+      "en": "Get out of there. The transfer went through; I'll send a duplicate to the port staff. Collect the part at the marked point and come back. The people working there are still dealing with the aftermath.",
+      "section": "first-favors-dialogue.json:interact",
+      "seconds": 11.807583333333334,
+      "path": "res://audio/mission_voices/harbor_story/e35f1d2e8bd22d02d85be3a5a396c620b913c3b81381d0751bd5b39a7f99791c.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "4c4f19c827541653aa15d25a6c55c63faa993cdd1fb985bf7ab8d608fafd5da4",
+      "persona": "helena",
+      "text": "Você é o Dante? Maciota avisou. Aqui está o comprovante da peça. O porto só libera com ele.",
+      "en": "Are you Dante? Maciota called ahead. Here's the receipt for the part. The port needs it to release the parcel.",
+      "section": "first-favors-dialogue.json:interact",
+      "seconds": 8.503583333333333,
+      "path": "res://audio/mission_voices/harbor_story/4c4f19c827541653aa15d25a6c55c63faa993cdd1fb985bf7ab8d608fafd5da4.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "f638e7789690228b2ae03e875b71440cdb5afbc824162bce38b24ec5aa186bc0",
+      "persona": "dante",
+      "text": "Você conhece meu irmão, Vicente?",
+      "en": "Do you know my brother, Vicente?",
+      "section": "first-favors-dialogue.json:interact",
+      "seconds": 2.21275,
+      "path": "res://audio/mission_voices/harbor_story/f638e7789690228b2ae03e875b71440cdb5afbc824162bce38b24ec5aa186bc0.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "54ff71feed83fe5aed3ef170deab23ef6ff617f828e12f3d3d398178fd074ca0",
+      "persona": "helena",
+      "text": "Conheço o nome nas transferências da oficina. Ferrugem sabe mais. Só toma cuidado: tem gente cobrando duas vezes de quem já pagou uma.",
+      "en": "I know the name from the workshop's transfers. Ferrugem knows more. Just be careful: some people collect twice from those who already paid once.",
+      "section": "first-favors-dialogue.json:interact",
+      "seconds": 10.093958333333333,
+      "path": "res://audio/mission_voices/harbor_story/54ff71feed83fe5aed3ef170deab23ef6ff617f828e12f3d3d398178fd074ca0.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "774a392c6f2083642b91c79d994ad702de08c6654ff1b0737df94ec075371d9d",
+      "persona": "dante",
+      "text": "Vou entregar a peça. Obrigado, Helena.",
+      "en": "I'll deliver the part. Thank you, Helena.",
+      "section": "first-favors-dialogue.json:interact",
+      "seconds": 3.9740416666666665,
+      "path": "res://audio/mission_voices/harbor_story/774a392c6f2083642b91c79d994ad702de08c6654ff1b0737df94ec075371d9d.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "2631ef779596823490432399258671b28379c752966be732b6fd0b30725eb71d",
+      "persona": "maciota",
+      "text": "Peça e comprovante. Tudo certo. Aqui estão os 150. Você cumpriu o combinado.",
+      "en": "Part and receipt. All good. Here's your 150. You kept your word.",
+      "section": "first-favors-dialogue.json:finish_dialogue",
+      "seconds": 8.811708333333334,
+      "path": "res://audio/mission_voices/harbor_story/2631ef779596823490432399258671b28379c752966be732b6fd0b30725eb71d.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "0391ffaecc0ea63697020ca22baa9f8ee56158346008f46ee9de1a58d6419954",
+      "persona": "dante",
+      "text": "A Helena falou de cobrança em dobro. É o pessoal do Ferrugem?",
+      "en": "Helena mentioned people collecting twice. Is that Ferrugem's crew?",
+      "section": "first-favors-dialogue.json:finish_dialogue",
+      "seconds": 4.48,
+      "path": "res://audio/mission_voices/harbor_story/0391ffaecc0ea63697020ca22baa9f8ee56158346008f46ee9de1a58d6419954.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "d56b47629e5cbe1b0a22e22267feadead982568d6b508dc006d3d5f4f341a83c",
+      "persona": "maciota",
+      "text": "É o bairro dos Cobras. Ferrugem cuida dos carros; outros cuidam de cobrar. Vou avisar que você vai. No quadro está o endereço. Leva a peça e pergunta pelo Vicente.",
+      "en": "It's Cobra territory. Ferrugem handles cars; others handle collections. I'll tell him you're coming. His address is on the board. Take the part and ask about Vicente.",
+      "section": "first-favors-dialogue.json:finish_dialogue",
+      "seconds": 12.569958333333334,
+      "path": "res://audio/mission_voices/harbor_story/d56b47629e5cbe1b0a22e22267feadead982568d6b508dc006d3d5f4f341a83c.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "22e12dbd1c72c87f67988d4857e5a52346e18e11b43c8ea1e10a9b6cecdf2588",
+      "persona": "ferrugem",
+      "text": "Maciota mandou a peça? É do carro de uma cliente, parado no ponto que marquei. O motor está ruim: leva no guincho amarelo do Neco até a baia dele. Não vende nem manda para a prensa. Quando descarregar, fala com Neco e volta aqui. A ordem de serviço foi aberta pelo teu irmão.",
+      "en": "Maciota sent the part? It's for a customer's car, stopped at the marked point. The engine's bad: use Neco's yellow flatbed to take it to his bay. Don't sell or crush it. After unloading, speak to Neco and come back. Your brother opened the work order.",
+      "section": "cobra-dialogue.json:ferrugem_met",
+      "seconds": 23.68,
+      "path": "res://audio/mission_voices/harbor_story/22e12dbd1c72c87f67988d4857e5a52346e18e11b43c8ea1e10a9b6cecdf2588.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "10dc9889a893df2594f034bcac7db658d69a4fd6c32d91be7b3fd47630eefa1b",
+      "persona": "neco",
+      "text": "Está recebido. Esse vai para reparo, não para a prensa. A cliente busca depois; pode deixar na baia que eu cuido disso. A ordem 017 tem a assinatura V. Ferraz e um pedido de motoristas para a rota da serra. Leva essa via ao Ferrugem; quero saber por que ele anda tão calado.",
+      "en": "Received. This one's for repair, not the press. The customer will collect it later; leave it in the bay and I'll handle it. Work order 017 has V. Ferraz's signature and a request for drivers on the mountain route. Take this copy to Ferrugem; I want to know why he's been so quiet.",
+      "section": "cobra-dialogue.json:neco_repair_received",
+      "seconds": 27.483541666666667,
+      "path": "res://audio/mission_voices/harbor_story/10dc9889a893df2594f034bcac7db658d69a4fd6c32d91be7b3fd47630eefa1b.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "b06fa9952d3312e559a041bff55f4cedb568b35dae8e9a3bfaadf373c9df8239",
+      "persona": "ferrugem",
+      "text": "É a assinatura dele. Vicente procurava gente para dirigir fora de Harbor. O último motorista não fala com desconhecido. Hoje à noite tem a prova de rua: vence seguindo os portões marcados, e eu te dou acesso à turma. Obrigado por trazer o carro inteiro.",
+      "en": "That's his signature. Vicente was looking for drivers outside Harbor. His last driver won't talk to strangers. Tonight is the street trial: win by following the marked gates, and I'll introduce you to the crew. Thanks for bringing the car back in one piece.",
+      "section": "cobra-dialogue.json:ferrugem_work_order_received",
+      "seconds": 21.815458333333332,
+      "path": "res://audio/mission_voices/harbor_story/b06fa9952d3312e559a041bff55f4cedb568b35dae8e9a3bfaadf373c9df8239.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "90bb3b6a8226aedec8e81e63c87c556c1fe7fe4841a7fabbd58ea2bf372f9681",
+      "persona": "moradora",
+      "text": "Eles voltaram para cobrar. Não deixa que levem meu filho.",
+      "en": "They're collecting again. Don't let them take my son.",
+      "section": "cobra-dialogue.json:resident_met",
+      "seconds": 3.84,
+      "path": "res://audio/mission_voices/harbor_story/90bb3b6a8226aedec8e81e63c87c556c1fe7fe4841a7fabbd58ea2bf372f9681.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "f64c4b597112332426e7b075b4677b93c97a35508c2ac509e2c1878566ee4a81",
+      "persona": "moradora",
+      "text": "Você ficou. Ninguém fica. Eles guardam os registros no fundo da quadra.",
+      "en": "You stayed. Nobody stays. They keep the records behind the block.",
+      "section": "cobra-dialogue.json:resident_saved",
+      "seconds": 6.24,
+      "path": "res://audio/mission_voices/harbor_story/f64c4b597112332426e7b075b4677b93c97a35508c2ac509e2c1878566ee4a81.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "64d8b6bfe73c3338ae1e581d7958ed12d73fd0923a1085cee15d3ad5cd2cfc18",
+      "persona": "dante",
+      "text": "Rotas, pagamentos e uma reunião na oficina. É a ligação que faltava.",
+      "en": "Routes, payments and a meeting at the workshop. That's the missing link.",
+      "section": "cobra-dialogue.json:supply_records_collected",
+      "seconds": 5.776125,
+      "path": "res://audio/mission_voices/harbor_story/64d8b6bfe73c3338ae1e581d7958ed12d73fd0923a1085cee15d3ad5cd2cfc18.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "dc7d5981da6b256fdc93c0b73d4500680fa403669b8d7e183687beb83e4795a9",
+      "persona": "dante",
+      "text": "Vicente Ferraz. Organização das corridas do deserto. É o nome dele... Maciota precisa ver essa lista.",
+      "en": "Vicente Ferraz. Desert race organization. That is his name... Maciota needs to see this list.",
+      "section": "cobra-dialogue.json:transfer_document_collected",
+      "seconds": 8.701875,
+      "path": "res://audio/mission_voices/harbor_story/dc7d5981da6b256fdc93c0b73d4500680fa403669b8d7e183687beb83e4795a9.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "9f52db5340cb0b2fc0eed7d200a7c37b5662dc3f9bb52a62e786b997410054bb",
+      "persona": "maciota",
+      "text": "A peça está certa. O contato é Ferrugem, na oficina dos Cobras. Ele recebeu teu irmão procurando trabalho. Leva a peça até ele; o serviço já está no quadro.",
+      "en": "The part checks out. Your contact is Ferrugem at the Cobras workshop. He met your brother when he was looking for work. Take him the part; the job is on the board.",
+      "section": "cobra-dialogue.json:primeiro_giro_clue",
+      "seconds": 12.391708333333334,
+      "path": "res://audio/mission_voices/harbor_story/9f52db5340cb0b2fc0eed7d200a7c37b5662dc3f9bb52a62e786b997410054bb.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "fedf2236713596f9d20ce1660bc2e9452f8b0f40d90d197bbd78ce55b2b74a85",
+      "persona": "maciota",
+      "text": "Ferrugem confirmou: teu irmão perguntou por um motorista da turma das corridas. A prova é tua chance de se aproximar deles. Já pode aceitar no quadro.",
+      "en": "Ferrugem confirmed your brother asked for a driver from the racing crew. The trial is your chance to get close to them. It is ready on the board.",
+      "section": "cobra-dialogue.json:cobra_contact_clue",
+      "seconds": 12.560541666666667,
+      "path": "res://audio/mission_voices/harbor_story/fedf2236713596f9d20ce1660bc2e9452f8b0f40d90d197bbd78ce55b2b74a85.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "2ae7840325900e089f34d64f8a3964018c063cfa9b846931dc7bdc033bbc9f8b",
+      "persona": "maciota",
+      "text": "O motorista falou comigo: deixou teu irmão perto da casa de uma moradora em Ashbend. Os Cobras estão cobrando dela. Ajuda a mulher e pergunta o que viu.",
+      "en": "The driver called me: he dropped your brother near the home of a resident in Ashbend. The Cobras are extorting her. Help her and ask what she saw.",
+      "section": "cobra-dialogue.json:cobra_race_clue",
+      "seconds": 12.2495,
+      "path": "res://audio/mission_voices/harbor_story/2ae7840325900e089f34d64f8a3964018c063cfa9b846931dc7bdc033bbc9f8b.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "3545900f88c7035938fbbe05d41b9417ac084ee7a4721a8ff54df9258360fcdf",
+      "persona": "maciota",
+      "text": "A moradora reconheceu teu irmão e apontou os registros dos Cobras. Antes de entrar lá, conversa com a Jessica junto ao North Pier. Ela quer combinar um serviço e você vai precisar de dinheiro para viajar.",
+      "en": "The resident recognized your brother and pointed us to the Cobras records. Before going there, talk to Jessica by North Pier. She has a job in mind, and you will need money to travel.",
+      "section": "cobra-dialogue.json:cobra_collection_clue",
+      "seconds": 13.754,
+      "path": "res://audio/mission_voices/harbor_story/3545900f88c7035938fbbe05d41b9417ac084ee7a4721a8ff54df9258360fcdf.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "c261934eddc26710926c43bbde215edf9df812281038c2a6728b77a978116fe2",
+      "persona": "maciota",
+      "text": "Takeshi guarda a lista completa na casa dele. Ele não vai abrir a porta por conversa. Consegui uma disputa: vence a corrida e ele libera os registros.",
+      "en": "Takeshi keeps the full list in his house. Talking will not open that door. I arranged a challenge: win the race and he will let you see the records.",
+      "section": "cobra-dialogue.json:cobra_supply_clue",
+      "seconds": 13.245416666666667,
+      "path": "res://audio/mission_voices/harbor_story/c261934eddc26710926c43bbde215edf9df812281038c2a6728b77a978116fe2.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "3a2811f6961d84c6b001ff47eaab0bc525b9392827146ec629cbac7df0a3f7a2",
+      "persona": "maciota",
+      "text": "Vicente está organizando corridas fora de Harbor. Vou te passar um contato e um lugar para ficar no deserto. Você não vai chegar sozinho.",
+      "en": "Vicente is organizing races outside Harbor. I will give you a contact and a place to stay in the desert. You will not arrive alone.",
+      "section": "cobra-dialogue.json:cobra_finale_clue",
+      "seconds": 10.64,
+      "path": "res://audio/mission_voices/harbor_story/3a2811f6961d84c6b001ff47eaab0bc525b9392827146ec629cbac7df0a3f7a2.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "f49b9728d1f7553d2c546de36fe7f7a2e59631da9455207341458c7a9685f19b",
+      "persona": "maciota",
+      "text": "Leva a peça que você buscou para Ferrugem, na oficina dos Cobras. Ele falou com teu irmão. Usa a entrega para puxar conversa.",
+      "en": "Take the part you collected to Ferrugem at the Cobras workshop. He spoke to your brother. Use the delivery to start a conversation.",
+      "section": "cobra-dialogue.json:cobra_contact_begin",
+      "seconds": 9.12,
+      "path": "res://audio/mission_voices/harbor_story/f49b9728d1f7553d2c546de36fe7f7a2e59631da9455207341458c7a9685f19b.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "c5287890c793ca62a2e1d2ae7fdd7152348b4c4d7f0e9b82427b6fc294c41c30",
+      "persona": "maciota",
+      "text": "Às 21h tem prova até as docas. Vence seguindo os quatro checkpoints e eu consigo falar com o motorista que viu o Vicente. Leva a Monaliza inteira.",
+      "en": "The docks race starts at 9 pm. Win through the four checkpoints and I can speak to the driver who saw Vicente. Bring the Monaliza in one piece.",
+      "section": "cobra-dialogue.json:cobra_race_begin",
+      "seconds": 10.88275,
+      "path": "res://audio/mission_voices/harbor_story/c5287890c793ca62a2e1d2ae7fdd7152348b4c4d7f0e9b82427b6fc294c41c30.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "5571d79274c73c6e3f701ca066fdecb35e07e9362fb56b4c45c729bf8b7d4495",
+      "persona": "maciota",
+      "text": "O motorista deixou teu irmão perto dessa moradora. Protege ela da cobrança dos Cobras; talvez aceite contar o que viu.",
+      "en": "The driver dropped your brother near the home of this resident. Protect her from the Cobras extortion; she may tell you what she saw.",
+      "section": "cobra-dialogue.json:cobra_collection_begin",
+      "seconds": 8.744,
+      "path": "res://audio/mission_voices/harbor_story/5571d79274c73c6e3f701ca066fdecb35e07e9362fb56b4c45c729bf8b7d4495.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "216f8f31958b076d79d58608e387549c9a54d847efd818974fbbc57d091484fa",
+      "persona": "maciota",
+      "text": "Teu irmão procurava os mesmos registros. A moradora apontou os fundos da quadra. Recupera os papéis e corta o abastecimento dos cobradores.",
+      "en": "Your brother sought those same records. The resident pointed us behind the block. Recover the papers and cut the collectors supply.",
+      "section": "cobra-dialogue.json:cobra_supply_begin",
+      "seconds": 9.406333333333333,
+      "path": "res://audio/mission_voices/harbor_story/216f8f31958b076d79d58608e387549c9a54d847efd818974fbbc57d091484fa.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "708b1b9fba133c50f59e28b7241f584fd96e4f03e04a089dbf0577818ec9bdd8",
+      "persona": "maciota",
+      "text": "Takeshi aposta que você não ganha dele até as docas. O acesso aos registros é o prêmio. Vence e entra na casa dele; procura a lista de responsáveis pelas corridas.",
+      "en": "Takeshi bets you cannot beat him to the docks. Access to his records is the prize. Win and enter his house; look for the list of race organizers.",
+      "section": "cobra-dialogue.json:cobra_finale_begin",
+      "seconds": 11.080541666666667,
+      "path": "res://audio/mission_voices/harbor_story/708b1b9fba133c50f59e28b7241f584fd96e4f03e04a089dbf0577818ec9bdd8.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "ea22477b718982e694572e564eff635749ee69c4753681b7bad0324092e5aada",
+      "persona": "maciota",
+      "text": "A Jessica espera na rua do North Pier. Decide com ela como vai ser o serviço. Depois a gente volta aos registros dos Cobras.",
+      "en": "Jessica is waiting outside North Pier. Work out the job with her. Then we get back to the Cobras records.",
+      "section": "cobra-dialogue.json:jessica_bank_begin",
+      "seconds": 9.036291666666667,
+      "path": "res://audio/mission_voices/harbor_story/ea22477b718982e694572e564eff635749ee69c4753681b7bad0324092e5aada.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "39a38041b9007a48e1b3fa7f42027fd52c9c0d48a7ea3fcc798623ca0bbc80f0",
+      "persona": "maciota",
+      "text": "Jessica falou que vocês chegaram bem. Agora vamos aos registros. Os papéis que a moradora indicou ficam nos fundos da quadra dos Cobras.",
+      "en": "Jessica said you made it back safely. Now for the records. The papers the resident mentioned are behind the Cobras block.",
+      "section": "cobra-dialogue.json:jessica_bank_clue",
+      "seconds": 9.19425,
+      "path": "res://audio/mission_voices/harbor_story/39a38041b9007a48e1b3fa7f42027fd52c9c0d48a7ea3fcc798623ca0bbc80f0.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "0af3ca8b3e2db960caed8a431db0a823614faaf17fe1a221846637f7f7cce585",
+      "persona": "jessica",
+      "text": "Você é o Dante, né? Vi sua chegada nas docas. Correu bem.",
+      "en": "You're Dante, right? I saw you finish at the docks. Nice driving.",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 4.875541666666667,
+      "path": "res://audio/mission_voices/harbor_story/0af3ca8b3e2db960caed8a431db0a823614faaf17fe1a221846637f7f7cce585.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "7283345ac3ee9f43d4c6214a71ac6a53afd2722ff7d18d2b5454fe74703bda69",
+      "persona": "dante",
+      "text": "Você estava na prova?",
+      "en": "You were at the race?",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 1.325,
+      "path": "res://audio/mission_voices/harbor_story/7283345ac3ee9f43d4c6214a71ac6a53afd2722ff7d18d2b5454fe74703bda69.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "1b9590f7a4590e7f476aec65f457d3c4970c84fe5519b01e0b0417f4df5e6378",
+      "persona": "jessica",
+      "text": "Estava. Eu sou a Jessica. Na próxima, talvez você me veja pelo retrovisor. Só no começo.",
+      "en": "I was. I'm Jessica. Next time, you might see me in your mirror. Just at the start.",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 10.261583333333334,
+      "path": "res://audio/mission_voices/harbor_story/1b9590f7a4590e7f476aec65f457d3c4970c84fe5519b01e0b0417f4df5e6378.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "0168ba7bb6d5f7e7eb1e0e1f761888173c2a0d55149d207742124a609fc56fea",
+      "persona": "dante",
+      "text": "Esse Jetta é seu?",
+      "en": "Is that Jetta yours?",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 1.3297083333333333,
+      "path": "res://audio/mission_voices/harbor_story/0168ba7bb6d5f7e7eb1e0e1f761888173c2a0d55149d207742124a609fc56fea.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "7618a510dddaba0f29d4e950710a222dee7dd570a04fd37c6b431c3bd5c8b5a9",
+      "persona": "jessica",
+      "text": "É. Ainda estou acertando a pressão do turbo. Maciota disse que você sabe trabalhar.",
+      "en": "It is. I'm still dialing in the boost. Maciota said you know how to get things done.",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 6.810208333333334,
+      "path": "res://audio/mission_voices/harbor_story/7618a510dddaba0f29d4e950710a222dee7dd570a04fd37c6b431c3bd5c8b5a9.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "259cb79c5c02243b06fb9d99aec46e65b9bec9eb2dc4ebe0a57a704854b6b3b8",
+      "persona": "dante",
+      "text": "Depende do trabalho.",
+      "en": "Depends on the job.",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 1.5061666666666667,
+      "path": "res://audio/mission_voices/harbor_story/259cb79c5c02243b06fb9d99aec46e65b9bec9eb2dc4ebe0a57a704854b6b3b8.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "f54d2bcc27cb7f598ae546a008db7b6ab3cbc23f3732515befaa84c530ec0190",
+      "persona": "jessica",
+      "text": "Quando estiver livre, passa aqui. Quero conversar com calma.",
+      "en": "When you're free, come by. I'd like to talk properly.",
+      "section": "jessica-dialogue.json:first_meeting",
+      "seconds": 4.343208333333333,
+      "path": "res://audio/mission_voices/harbor_story/f54d2bcc27cb7f598ae546a008db7b6ab3cbc23f3732515befaa84c530ec0190.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "e5f4bba7a8e5b28c11ec524e0de910af0411a3add5204e07b12cc572c84a951a",
+      "persona": "jessica",
+      "text": "Preciso de alguém dentro do North Pier. Eu cuido do carro e da saída. Você abre o cofre e traz o dinheiro.",
+      "en": "I need someone inside North Pier. I'll handle the car and the way out. You open the vault and bring the money.",
+      "section": "jessica-dialogue.json:bank_offer",
+      "seconds": 8.50275,
+      "path": "res://audio/mission_voices/harbor_story/e5f4bba7a8e5b28c11ec524e0de910af0411a3add5204e07b12cc572c84a951a.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "23a1a0d7b66365a5f252e63a07dc07b52d55a29d606d2ff4e0c06700eb3afab8",
+      "persona": "dante",
+      "text": "Você sabe o que está me pedindo?",
+      "en": "Do you know what you're asking me to do?",
+      "section": "jessica-dialogue.json:bank_offer",
+      "seconds": 1.9089166666666666,
+      "path": "res://audio/mission_voices/harbor_story/23a1a0d7b66365a5f252e63a07dc07b52d55a29d606d2ff4e0c06700eb3afab8.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "06895e649e84fd62023a44c52fedddc243a8617d0e0ea21073840deb5134901f",
+      "persona": "jessica",
+      "text": "Sei. E você pode dizer não. Maciota só me passou seu nome. Essa escolha é sua.",
+      "en": "I do. And you can say no. Maciota only gave me your name. This choice is yours.",
+      "section": "jessica-dialogue.json:bank_offer",
+      "seconds": 6.32,
+      "path": "res://audio/mission_voices/harbor_story/06895e649e84fd62023a44c52fedddc243a8617d0e0ea21073840deb5134901f.wav",
+      "status": "asr_checked"
+    },
+    {
+      "key": "5da65e1cbf6b6f6c5e77b628a66e1a0fb1ac5fa5538658a3867c7a9d3b136616",
+      "persona": "dante",
+      "text": "Eu preciso sair de Harbor. Vou precisar desse dinheiro.",
+      "en": "I need to leave Harbor. I'm going to need that money.",
+      "section": "jessica-dialogue.json:bank_offer",
+      "seconds": 5.457416666666667,
+      "path": "res://audio/mission_voices/harbor_story/5da65e1cbf6b6f6c5e77b628a66e1a0fb1ac5fa5538658a3867c7a9d3b136616.wav",
+      "status": "asr_checked"
+    }
+  ],
+  "usable_lines": 68,
+  "missing_lines": 19
+}
