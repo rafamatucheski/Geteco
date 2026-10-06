@@ -7,6 +7,10 @@ extends "res://tests/test_firearm_rig.gd"
 ## arma contra a malha real do Dante.
 const ALL := ["fists", "knuckles", "knife", "bat", "axe", "pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade"]
 const MELEE := ["fists", "knuckles", "knife", "bat", "axe"]
+## Quadros por estado e intervalo da medição de pele (a pele deformada em CPU é o
+## custo do teste: com 110/4 ele levava ~30 min; 80/8 cobre o mesmo em ~1/3).
+const FRAMES := 80
+const SKIN_EVERY := 8
 const WALK := 3.5
 const RUN := 6.5
 ## Mesma tolerância de parado (jaqueta e braço que segura a arma).
@@ -69,10 +73,10 @@ func run() -> void:
 			var joint_name := ""
 			var previous: Array = []
 			var cadence := int(round(float(CATALOG.WEAPONS[id].fire_interval) / DT))
-			for frame in 110:
+			for frame in FRAMES:
 				if state[5] and frame >= 20 and (frame - 20) % cadence == 0: pose.attack(id)
 				# A recarga acaba ao chegar a 1 (no jogo `reload_timer` zera e a pose volta).
-				var progress := clampf(float(frame - 20) / 80.0, 0.0, 1.0)
+				var progress := clampf(float(frame - 20) / float(FRAMES - 30), 0.0, 1.0)
 				var packet := _move_step(pose, id, state[1], state[2], state[3], state[4] and progress < 1.0, progress)
 				var now: Array = actor._capture_pose()
 				# Os primeiros 30 quadros são a troca de estado (medida em test_firearm_rig).
@@ -83,7 +87,7 @@ func run() -> void:
 							max_joint = angle
 							joint_name = actor.skeleton.get_bone_name(bone)
 					for defect in anatomy_defects(): defects[defect] = int(defects.get(defect, 0)) + 1
-					if id != "fists" and frame % 4 == 0 and bool(packet.get("visible", true)):
+					if id != "fists" and frame % SKIN_EVERY == 0 and bool(packet.get("visible", true)):
 						var depth := _skin_penetration(id, bool(packet.get("left_grip", false)) and float(packet.get("support_weight", 0.0)) > 0.5)
 						if depth > deepest:
 							deepest = depth
