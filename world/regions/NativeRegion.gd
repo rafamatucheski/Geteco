@@ -925,7 +925,8 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		# the water below. Building generic mountain terrain here would create a
 		# solid wall through the original bridge route when both regions reside.
 		if _mountain_owns_terrain(key):
-			terrain.build_chunk(chunk,rect)
+			var shore_edges := preload("res://world/regions/MountainBridgeShore.gd").frontiers(key,MOUNTAIN_BRIDGE_VOID_CELLS,_mountain_owns_terrain)
+			terrain.build_chunk(chunk,rect,shore_edges)
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	match record.kind:

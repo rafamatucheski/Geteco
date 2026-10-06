@@ -52,6 +52,22 @@ func run() -> void:
 	check(safety.clear_origin_found and overlap_pose.z < 2.65,"overlap at origin retreats before sweep instead of ignoring wall")
 	var near_roof_pose := safety.resolve_position(space,Vector3(0,2.75,0),Vector3(0,8,-4))
 	check(safety.clear_origin_found and near_roof_pose.y < 2.65,"initial roof overlap resolves on accessible side")
+	# The mountain's lateral clamp used to leave the lens exactly tangent to
+	# a .20m rib support: cast_motion accepted it while overlap queries did not.
+	var support := box(Vector3(20,2.42,7.15),Vector3(.20,3.96,.30))
+	await physics_frame
+	await physics_frame
+	var lens := SphereShape3D.new()
+	lens.radius = .25
+	var overlap := PhysicsShapeQueryParameters3D.new()
+	overlap.shape = lens
+	overlap.collision_mask = 1
+	for x_offset in [-.15,-.10,-.075,0.0,.075,.10,.15]:
+		var at := Vector3(20.0+x_offset,1.37,6.3)
+		var endpoint := safety.resolve_position(space,at,Vector3(at.x,2.27,6.75))
+		overlap.transform = Transform3D(Basis.IDENTITY,endpoint)
+		check(space.intersect_shape(overlap,1).is_empty(),"grazing support keeps full lens clear offset %.3f" % x_offset)
+	support.queue_free()
 	camera.position = Vector3(0,2.4,-6)
 	safety.update_environment(camera,1.0,.1,Vector3.ZERO)
 	check(camera.environment != null and camera.environment != environment,"haze uses camera-local environment")

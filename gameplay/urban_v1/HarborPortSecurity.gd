@@ -3,6 +3,7 @@ extends Node3D
 ## quando alguém cruza o perímetro fora do corredor liberado.
 const WORKER_MODEL := preload("res://gameplay/routines_v1/DockWorkerModel.gd")
 const PORT_LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
+const SPOKEN_LINE := preload("res://audio/VisibleDialogueVoice.gd")
 const SCALE := 1.0 / 16.0
 const GATE_POINT := Vector2(3310.0, 3380.0)
 const GUARD_POINTS := [Vector2(3390,3340), Vector2(3430,3530), Vector2(3510,3540)]
@@ -29,6 +30,7 @@ var _gate_visuals: Node3D
 var _ship_hull: PackedVector2Array = PORT_LAYOUT.ship_hull()
 var _talking_staff: Node3D
 var _conversation_content: Label
+var _conversation_voice: AudioStreamPlayer
 var _staff_respawn: Array[float] = [0.0,0.0,0.0]
 
 func configure(owner_session) -> void:
@@ -162,6 +164,7 @@ func perform(target: String) -> bool:
 	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	speech.custom_minimum_size.x = 560
 	session.column.add_child(speech)
+	_conversation_voice = SPOKEN_LINE.attach(speech, speech.text.trim_prefix("GUARDA: "), "guarda")
 	session._button("Pagar propina · R$ 100", _pay_bribe)
 	session._button("Dar meia-volta", Callable(session, "close_menu"))
 	return true
@@ -170,6 +173,7 @@ func _pay_bribe() -> void:
 	if not _available() or authorized_entry or authorized_visit: return
 	if not session.modal or not is_instance_valid(_conversation_content) or not _conversation_content.is_inside_tree(): return
 	if not is_instance_valid(_talking_staff) or _talking_staff.get_meta("workplace_threatened", false): return
+	if is_instance_valid(_conversation_voice): _conversation_voice.stop()
 	if not session.state.spend(100, "south_port_bribe:" + session._transaction()):
 		session.show_message("GUARDA: São R$ 100. Saldo insuficiente.")
 		return

@@ -76,6 +76,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if not position is Array or position.size() != 3: return false
 		for coordinate in position:
 			if typeof(coordinate) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(coordinate)) or absf(float(coordinate)) > 100000: return false
+	if data.world.has("harbor_building_floors") and not preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").valid_floors(data.world.harbor_building_floors): return false
 	var next_economy = ECONOMY.new()
 	var next_campaign = CAMPAIGN.new()
 	var next_canonical_campaign = CANONICAL_CAMPAIGN.new()

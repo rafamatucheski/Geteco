@@ -110,7 +110,7 @@ func surface_height_at(point: Vector2) -> float:
 	if f.x+f.y <= 1.0: return a+(b-a)*f.x+(c-a)*f.y
 	return d+(c-d)*(1.0-f.x)+(b-d)*(1.0-f.y)
 
-func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
+func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = []) -> MeshInstance3D:
 	# Only aligned 64m NativeRegion chunks: no partial edge cells or mismatched seams.
 	if rect.size != Vector2.ONE*CELL or rect.position != Vector2(_cell(rect.position))*CELL:
 		push_error("MountainTerrain3D requires aligned 64m chunks")
@@ -163,4 +163,6 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	shape.shape = mesh.create_trimesh_shape()
 	body.add_child(shape)
 	result.add_child(body)
+	# Only the explicit bridge water spans have permanent exposed banks.
+	preload("res://world/regions/MountainBridgeShore.gd").build_chunk(parent,rect,self,shore_edges)
 	return result

@@ -1,15 +1,35 @@
 extends RefCounted
-## Non-verbal speech. One finite buffer per line, bounded cache, no per-frame synthesis.
+## Recorded dialogue follows the audio preference, independently of subtitle locale.
+## Legacy ambient speech keeps one finite buffer per line and a bounded cache.
 const RATE := 22050
 static var cache: Dictionary = {}
 static var recordings: Dictionary = {}
 static var maciota_recordings: Dictionary = {}
+static var english_recordings: Dictionary = {}
+static var _canonical_keys: Dictionary = {}
 static var _recordings_loaded := false
+static var _missing_recordings: Dictionary = {}
+
+static func selected_language() -> String:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree != null:
+		var settings := tree.root.get_node_or_null("V2Settings")
+		if settings != null: return str(settings.voice_language)
+	return "pt_BR"
+
+static func _language(value: String) -> String:
+	if value.is_empty(): return selected_language()
+	return "en" if value.to_lower().replace("-", "_").get_slice("_", 0) == "en" else "pt_BR"
 
 static func recording_key(text: String, persona: String) -> String:
 	return (persona.to_lower() + "|" + text).sha256_text()
 
-static func _recording(text: String, persona: String) -> AudioStream:
+static func playback_volume(stream: AudioStream, portuguese_volume := 0.0) -> float:
+	# English takes are normalized as one cast. Keep the same dialogue level in
+	# cutscenes, conversations and ambient captions; retain the existing PT mix.
+	return -8.0 if stream != null and stream.get_meta("voice_language", "") == "en" else portuguese_volume
+
+static func _recording(text: String, persona: String, language: String) -> AudioStream:
 	if not _recordings_loaded:
 		_recordings_loaded = true
 		var manifest := "res://audio/mission_voices/recordings.json"
@@ -20,24 +40,50 @@ static func _recording(text: String, persona: String) -> AudioStream:
 		if FileAccess.file_exists(maciota_manifest):
 			var data = JSON.parse_string(FileAccess.get_file_as_string(maciota_manifest))
 			if data is Dictionary: maciota_recordings = data
+		var english_manifest := "res://audio/mission_voices/en/recordings.json"
+		if FileAccess.file_exists(english_manifest):
+			var data = JSON.parse_string(FileAccess.get_file_as_string(english_manifest))
+			if data is Dictionary: english_recordings = data
+		var catalog := "res://audio/mission_voices/en/catalog.json"
+		if FileAccess.file_exists(catalog):
+			var data = JSON.parse_string(FileAccess.get_file_as_string(catalog))
+			if data is Dictionary:
+				for entry in data.get("lines", []):
+					var canonical_key := recording_key(str(entry.get("text", "")), str(entry.get("persona", "")))
+					var aliases: Array = entry.get("aliases", []).duplicate()
+					aliases.append(str(entry.get("en", "")))
+					for alias in aliases:
+						if str(alias).is_empty(): continue
+						_canonical_keys[recording_key(str(alias), str(entry.get("persona", "")))] = canonical_key
 	# The caller is Maciota too. Keep both on the same authored voice bank and
 	# never fall back to the older, independently designed VoiceDesign takes.
 	var bank := maciota_recordings if persona.to_lower() in ["maciota", "caller"] else recordings
-	var path := String(bank.get(recording_key(text, persona), ""))
+	if language == "en": bank = english_recordings
+	# Resolve subtitle aliases before choosing the take, so English subtitles can
+	# still use Portuguese voices (including Maciota's fixed baritone recording).
+	var raw_key := recording_key(text, persona)
+	var key: String = _canonical_keys.get(raw_key, raw_key)
+	var path := String(bank.get(key, ""))
 	if path.is_empty() or not ResourceLoader.exists(path): return null
 	var stream := load(path) as AudioStream
-	if stream != null: stream.set_meta("mission_voice", true)
+	if stream != null:
+		stream.set_meta("mission_voice", true)
+		stream.set_meta("voice_language", language)
 	return stream
 
-static func line(text: String, persona := "dante", duration := 0.0) -> AudioStream:
-	var key := "%s|%s|%s" % [persona, duration, text]
+static func line(text: String, persona := "dante", duration := 0.0, language := "") -> AudioStream:
+	var resolved_language := _language(language)
+	var key := "%s|%s|%s|%s" % [resolved_language, persona.to_lower(), duration, text]
 	if cache.has(key):
 		return cache[key]
-	var recorded := _recording(text, persona)
+	var recorded := _recording(text, persona, resolved_language)
 	if recorded != null:
 		if cache.size() >= 32: cache.erase(cache.keys()[0])
 		cache[key] = recorded
 		return recorded
+	if resolved_language == "en":
+		_report_missing(text, persona, resolved_language)
+		return null
 	var units: Array[float] = []
 	var voiced: Array[bool] = []
 	for character in text.left(400):
@@ -82,10 +128,19 @@ static func line(text: String, persona := "dante", duration := 0.0) -> AudioStre
 	cache[key] = stream
 	return stream
 
-static func recorded_line(text: String, persona := "dante") -> AudioStream:
+static func recorded_line(text: String, persona := "dante", language := "") -> AudioStream:
 	# Authored dialogue is silent until the exact recording exists. Non-verbal
 	# fallback is still available to its original ambient speech consumers.
-	return _recording(text,persona)
+	var resolved_language := _language(language)
+	var stream := _recording(text, persona, resolved_language)
+	if stream == null: _report_missing(text, persona, resolved_language)
+	return stream
+
+static func _report_missing(text: String, persona: String, language: String) -> void:
+	var key := language + "|" + recording_key(text, persona)
+	if _missing_recordings.has(key): return
+	_missing_recordings[key] = true
+	push_warning("Missing %s dialogue recording for %s: %s" % [language, persona, text.left(100)])
 
 static func mouth(audio: AudioStreamPlayer) -> float:
 	if not is_instance_valid(audio) or not audio.playing or audio.stream_paused:

@@ -81,6 +81,8 @@ var _tunnel_blend := 0.0
 var _tunnel_chase_blend := 0.0
 var _tunnel_chase_heading := 0.0
 var _tunnel_chase_distance := 6.0
+var _mountain_chase_active := false
+var _tunnel_safety := preload("res://scripts/camera/TunnelChaseSafety.gd").new()
 const TUNNEL_CHASE_FOV := 70.0
 const TUNNEL_CHASE_HEIGHT := 2.4
 const TUNNEL_CHASE_DISTANCE := 6.0
@@ -146,6 +148,7 @@ func _process(delta: float) -> void:
 		# Production sights follow the shot; do not overlay a second cross at screen centre.
 		scope_reticle.visible = scoped and not (combat != null and combat.has_method("aim_feedback_active"))
 	if _store_focus_active:
+		_tunnel_safety.restore_environment()
 		_store_focus_elapsed = minf(_store_focus_duration, _store_focus_elapsed + maxf(delta, 0.0))
 		var t := _store_focus_elapsed / _store_focus_duration
 		var eased := t * t * (3.0 - 2.0 * t)
@@ -159,7 +162,9 @@ func _process(delta: float) -> void:
 		global_position = focus + start_offset.lerp(end_offset, eased).rotated(Vector3.UP, heading)
 		look_at(focus)
 		return
-	if not is_instance_valid(target): return
+	if not is_instance_valid(target):
+		_tunnel_safety.restore_environment()
+		return
 	delta = maxf(delta,0.0) if is_finite(delta) else 0.0
 	_update_gamepad_rotation(delta)
 	var target_changed := _track_target()
@@ -223,6 +228,10 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	if mountain_weight >= 1.0 and desired > 0.0: _tunnel_chase_blend = 1.0
 	if locked:
 		_tunnel_chase_blend = 0.0
+	# Keep the local atmosphere through the exit blend, but never carry it
+	# into another tunnel or an authored interior after a target handoff.
+	var mountain_exit := actual.x >= MOUNTAIN_CONNECTION.TUNNEL_START_X-48.0 and actual.x <= MOUNTAIN_CONNECTION.TUNNEL_END_X+48.0 and absf(actual.z-MOUNTAIN_CONNECTION.CENTER_Z) < 30.0
+	_mountain_chase_active = mountain_weight > 0.0 or (_mountain_chase_active and mountain_exit and desired <= .001 and _tunnel_chase_blend > .001)
 	var blend := smoothstep(0.0, 1.0, _tunnel_chase_blend)
 	# Ao desembarcar, conservar o carro fechado enquanto a câmera continua baixa.
 	if is_instance_valid(_chase_roof_vehicle) and (locked or _container_blend > 0.001 or _tunnel_chase_blend < 0.65 or (vehicle and _chase_roof_vehicle != target)):
@@ -239,6 +248,7 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	_tunnel_chase_distance = distance if snap or blend <= 0.001 else lerpf(_tunnel_chase_distance, distance, 1.0 - exp(-4.2 * delta))
 	if blend <= 0.001:
 		projection = Camera3D.PROJECTION_ORTHOGONAL
+		_tunnel_safety.restore_environment()
 		return
 	var rear := Vector3.BACK.rotated(Vector3.UP, _tunnel_chase_heading)
 	var base := target.get_global_transform_interpolated().origin
@@ -249,16 +259,23 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	var ceiling := CANAL_TUNNEL.ceiling_y(chase.x)
 	if is_finite(ceiling): chase.y = minf(chase.y, ceiling - 0.4)
 	var eye := base + Vector3.UP * 1.3
-	if target is CollisionObject3D:
-		var query := PhysicsRayQueryParameters3D.create(eye, chase, 1, [target.get_rid()])
-		var hit := get_world_3d().direct_space_state.intersect_ray(query)
-		if not hit.is_empty(): chase = hit.position + hit.normal * 0.35
 	var street_position := global_position
 	var street_fov := rad_to_deg(2.0 * atan(size * 0.5 / maxf(0.1, street_position.distance_to(focus))))
 	projection = Camera3D.PROJECTION_PERSPECTIVE
 	fov = lerpf(street_fov, TUNNEL_CHASE_FOV, blend)
-	global_position = street_position.lerp(chase, blend)
-	look_at(focus.lerp(eye - rear * (3.0 if vehicle else 1.4), blend))
+	var candidate := street_position.lerp(chase, blend)
+	if _mountain_chase_active:
+		# A boom can pass above the low rail yet put it in front of Dante and
+		# his motorcycle. Keep the low view on the pedestrian side of it.
+		var limit := MOUNTAIN_CONNECTION.TUNNEL_CLEAR_HALF_WIDTH - .4
+		var corridor_z := clampf(candidate.z, MOUNTAIN_CONNECTION.CENTER_Z-limit, MOUNTAIN_CONNECTION.CENTER_Z+limit)
+		candidate.z = lerpf(candidate.z, corridor_z, smoothstep(.2, .65, blend))
+	# Protect the FINAL interpolated pose, including the lens volume: checking
+	# only the chase endpoint allowed the street-to-tunnel blend through solids.
+	global_position = _tunnel_safety.solve(self, target, eye, candidate)
+	var boom_fraction := clampf((global_position-base).dot(rear)/maxf(_tunnel_chase_distance,.1),0.0,1.0)
+	look_at(focus.lerp(eye - rear * (3.0 if vehicle else 1.4) * boom_fraction, blend))
+	_tunnel_safety.update_environment(self, _tunnel_chase_blend if _mountain_chase_active else 0.0, delta, actual)
 
 ## Apaga a cidade entre a câmera e o tubo enquanto o alvo está fundo no túnel.
 func _update_cutaway() -> void:
@@ -442,6 +459,7 @@ func _ensure_scope_reticle() -> void:
 	scope_reticle.hide()
 
 func _exit_tree() -> void:
+	_tunnel_safety.restore_environment()
 	if is_instance_valid(_chase_roof_vehicle): VEHICLE_INTERIOR.set_low_camera_roof(_chase_roof_vehicle, false)
 	_cutaway.release()
 	CANAL_TUNNEL.set_camera_reveal(0.0)

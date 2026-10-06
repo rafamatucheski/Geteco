@@ -23,9 +23,12 @@ func run() -> void:
 	report["artifact_type"] = "temporal_render_capture_not_performance"
 	report["capture_script_sha256"] = capture_hash
 	report["capture_time_of_day"] = .94 if night else .45
+	report["full_approach"] = "--full-approach" in args
 	await super.run()
 
 func stage(point: Vector3, riding: bool) -> bool:
+	if "--full-approach" in OS.get_cmdline_user_args():
+		point.x = CONNECTION.TUNNEL_START_X-26.0
 	if not await super.stage(point, riding): return false
 	if night:
 		world.session.weather.time_of_day = .94

@@ -374,6 +374,11 @@ func _build_video(page: VBoxContainer) -> void:
 
 func _build_audio(page: VBoxContainer) -> void:
 	var s := _settings()
+	_section(page, "VOZ")
+	_widgets.voice_language = _options(["Português (Brasil)", "English"], func(index):
+		s.voice_language = s.VOICE_LANGUAGES[index]
+		_status.text = "Dublagem alterada. A próxima fala usa o idioma escolhido.")
+	_row(page, "Dublagem", "O idioma dos textos continua o mesmo.", _widgets.voice_language)
 	_section(page, "VOLUME")
 	for entry in [["master_volume", "Master", "Volume geral", ""], ["music_volume", "Music", "Música", "Menu, rádio dos carros e trilha."], ["sfx_volume", "SFX", "Efeitos", "Tiros, motores, batidas e interface."], ["ambient_volume", "Ambient", "Ambiente", "Cidade, mar, chuva, vento e bichos."]]:
 		var key: String = entry[0]
@@ -547,6 +552,7 @@ func _load_widgets() -> void:
 	_set_slider(_widgets.brightness, s.brightness, _percent)
 	for key in ["master_volume", "music_volume", "sfx_volume", "ambient_volume"]:
 		_set_slider(_widgets[key], float(s.get(key)), _percent)
+	_widgets.voice_language.select(s.VOICE_LANGUAGES.find(s.voice_language))
 	_widgets.mute_unfocused.set_pressed_no_signal(s.mute_unfocused)
 	_widgets.mute_unfocused.text = "Ligado" if s.mute_unfocused else "Desligado"
 	_refresh_controls()
@@ -655,6 +661,7 @@ func _restore_tab_defaults() -> void:
 			s.sfx_volume = 1.0
 			s.ambient_volume = 1.0
 			s.mute_unfocused = false
+			s.voice_language = "pt_BR"
 		2:
 			get_node("/root/GameInput").reset_bindings()
 			get_node("/root/GameInput").set_controller_layout(0)
@@ -677,7 +684,7 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view"]
+const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()

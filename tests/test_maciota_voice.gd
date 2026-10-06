@@ -21,10 +21,15 @@ class DialogueSession extends "res://runtime/FullSession.gd":
 			child.queue_free()
 	func close_menu() -> void:
 		dialogue_voice.stop()
+	func _present_dialogue_line(_line: Dictionary) -> void:
+		pass
 
 func _initialize() -> void: run.call_deferred()
 
 func run() -> void:
+	var settings := root.get_node("V2Settings")
+	var original_language: String = settings.voice_language
+	settings.voice_language = "pt_BR"
 	var production: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(BANK + "production.json"))
 	check(production.get("complete", false), "Complete Maciota bank is published")
 	check(production.get("profile", {}).get("id", "") == "maciota_baritone_v1", "One fixed baritone profile")
@@ -71,6 +76,7 @@ func run() -> void:
 	session._advance_dialogue()
 	check(not session.dialogue_voice.playing, "Closing dialogue stops the recording")
 	session.free()
+	settings.voice_language = original_language
 	await process_frame
 	print("MACIOTA_VOICE checks=%d failures=%d" % [checks, failures])
 	quit(0 if failures == 0 else 1)

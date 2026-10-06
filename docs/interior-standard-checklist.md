@@ -1,5 +1,22 @@
 # Migração de interiores — checklist
 
+## Harbor — primeira leva de prédios acessíveis — 06/10/2026
+
+**2 lugares físicos / 2 interiores independentes / 8 pavimentos autorados; 0 certificados integralmente / 2 em validação.** Customs House (`NorthFrontage5`) e Union Lofts (`Apartments`), com térreo + três andares cada. Não confundir plantas por andar com novos prédios. O inventário efetivo de `harbor_buildings` tem 60 fachadas: 11 acessos anteriores, estes 2 novos e 47 ainda pendentes; construções de outras fábricas de cenário precisam de censo complementar. [Inventário e próximas levas](harbor-interiores-por-levas.md).
+
+- [x] Oito plantas distintas: atendimento/arquivo, escritórios/reunião, contabilidade e copa/descanso no comercial; cozinha/jantar/sala, quartos/banheiro/estudo, estúdio e biblioteca/quarto de hóspedes no residencial.
+- [x] Câmera alinhada, escala humana e marcador compartilhado de acesso/saída. Escada com interação funcional e troca coberta entre salas; não é circulação vertical contínua.
+- [x] **715 checks físicos e de profundidade** nos oito pavimentos, com cápsulas reais de Dante/NPC, varredura contra móveis, corredores, patamares, controles positivos e oclusão separada: `evidence/harbor-building-contract-173028-4880618`. Revisão final da mesa do último pavimento: **96 checks**, `evidence/harbor-building-contract-92016-4797772`.
+- [x] **46 checks no Main .NET renderizado** no primeiro par de pavimentos de cada prédio: caminhada à fachada, ação real de entrada, circulação até a escada, subida/descida, controle, save isolado, recarga fria no andar superior, saída e descarregamento: `evidence/harbor-building-session-86264-5246742`.
+- [x] Versão com oito pavimentos: **58 checks no Main .NET**, incluindo botões reais de subir/descer nos andares intermediários, chegada ao terceiro andar, recarga fria no último patamar e retorno completo: `evidence/harbor-building-session-180248-4978171`.
+- [x] Fotografias reais dos dois exteriores e oito pavimentos em `evidence/harbor-building-session-180248-4978171`. Antes: exterior do Customs House em `evidence/harbor-access-before-playable-139340-4912037/scene.png`; os interiores eram inexistentes. Não há fotografia anterior independente do residencial.
+- [x] Regressão de persistência: `tests/test_full_save.gd`, **PASS**, sem falhas. Corrigida comparação numérica que rejeitava o andar após serialização JSON.
+- [x] Comparação renderizada do exterior: p95 **7,277 → 7,377 ms (+1,37%)**, p99 **8,686 → 8,785 ms (+1,14%)**, dentro da tolerância de 5% nesse cenário. Oito pavimentos medidos por 30 s cada, p95 até **2,097 ms**, sem frames acima de 33,3 ms. Admissão bloqueada preserva sala e controle nos dois prédios. [Evidências e limites](reviews/harbor-building-batch1-20261006.md).
+- [ ] Instrumentação separada dos picos de primeira visita/troca de andar; as janelas estáveis não os certificam.
+- [ ] Cobertura temporal noturna e de iluminação, não certificada pelas fotografias diurnas.
+
+Sem alterações nas regras da ponte, campanha, garagem, combate ou nos interiores dos demais mapas. Os NPCs das verificações são fixtures: esta leva ainda não acrescenta moradores ou funcionários permanentes.
+
 ## Deserto — quatro casas de Santa Lua — 06/10/2026
 
 **4 lugares físicos / 4 interiores distintos novos; 0 certificados integralmente / 4 em validação / 0 não iniciados neste lote.** Cada fachada possui planta, acesso e retorno próprios. A loja e a torre da praça não entram nesta contagem. Não extrapolar as contagens históricas de outros lotes concorrentes.

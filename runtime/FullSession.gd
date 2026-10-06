@@ -6,6 +6,9 @@ const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
 const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
+const DIALOGUE_CARD := preload("res://ui/dialogue/DialogueCard.gd")
+const DIALOGUE_CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
+const VOICE := preload("res://audio/ExpressiveVoice.gd")
 var world
 var controller
 var weather
@@ -57,6 +60,10 @@ var jessica
 var desert
 var mining
 var dialogue_voice: AudioStreamPlayer
+var speech_voice: AudioStreamPlayer
+var dialogue_card: DIALOGUE_CARD
+var speech_caption: DIALOGUE_CAPTION
+var speech_active := false
 var residence_services
 var mountain_progression
 var cold
@@ -541,8 +548,13 @@ func _ready() -> void:
 	world.add_child(mining)
 	mining.configure(self)
 	dialogue_voice = AudioStreamPlayer.new()
+	dialogue_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
 	dialogue_voice.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
 	add_child(dialogue_voice)
+	speech_voice = AudioStreamPlayer.new()
+	speech_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
+	speech_voice.bus = dialogue_voice.bus
+	add_child(speech_voice)
 	passenger_transport = preload("res://runtime/PassengerTransport.gd").new()
 	passenger_transport.configure(self)
 	world.add_child(passenger_transport)
@@ -573,9 +585,39 @@ func _label(point: Vector2,size_value: int) -> Label:
 
 func show_message(text: String) -> void:
 	if not is_instance_valid(notice): return
+	var spoken := preload("res://audio/AuthoredSpeech.gd").notice(text)
+	if not spoken.is_empty():
+		show_speech(spoken.speaker, spoken.message, 5.0, true, spoken.persona, spoken.voice_text)
+		return
+	clear_speech()
 	_reward_notice_id = ""
 	notice.text = text
 	notice_time = 5.0
+
+func show_speech(speaker: String, message: String, duration := 5.0, play_voice := true, persona := "", voice_text := "") -> void:
+	if not is_instance_valid(notice): return
+	clear_speech()
+	if not is_instance_valid(speech_caption):
+		speech_caption = DIALOGUE_CAPTION.new()
+		world.hud.add_child(speech_caption)
+	_reward_notice_id = ""
+	notice.text = speaker + ": " + message
+	notice_time = duration
+	speech_active = true
+	speech_caption.set_line(speaker, message)
+	if play_voice and is_instance_valid(speech_voice):
+		var actor := persona if not persona.is_empty() else speaker.to_lower().split(" · ")[0]
+		speech_voice.stream = VOICE.recorded_line(voice_text if not voice_text.is_empty() else message, actor)
+		speech_voice.volume_db = VOICE.playback_volume(speech_voice.stream, -8.0 if actor in ["maciota", "caller"] else 0.0)
+		if speech_voice.stream != null:
+			notice_time = maxf(notice_time, speech_voice.stream.get_length()+.6)
+			speech_voice.play()
+
+func clear_speech() -> void:
+	if is_instance_valid(speech_voice): speech_voice.stop()
+	if is_instance_valid(speech_caption): speech_caption.hide()
+	if speech_active: notice_time = 0.0
+	speech_active = false
 
 func position_clear(point: Vector3) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -754,6 +796,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 			_finish_transition(token)
 			return false
 		owns_candidate = true
+		if candidate_room.has_method("prepare_session"): candidate_room.prepare_session(self,autosave)
 		candidate_room.position = Vector3(0,0,-2400)
 		world.add_child(candidate_room)
 		candidate_return = candidate_room.definition.return_position
@@ -1073,9 +1116,12 @@ func nearest() -> Dictionary:
 		var jessica_action: Dictionary = jessica.nearest_action()
 		if not jessica_action.is_empty(): return jessica_action
 	var arrival_action: Dictionary = arrival.nearest_action()
+	if is_instance_valid(room) and room.has_method("nearest_action"):
+		var room_action: Dictionary = room.nearest_action()
+		if not room_action.is_empty(): return room_action
 	if not arrival_action.is_empty(): return arrival_action
 	if not world.driving.occupied and not state.place_id.is_empty() and is_instance_valid(room):
-		if not _uses_walkup_access(state.place_id) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair"}
+		if not _uses_walkup_access(state.place_id) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 	var personal_action: Dictionary = personal_car.nearest_action()
 	if not personal_action.is_empty(): return personal_action
 	var residence_action: Dictionary = residence_services.nearest_action()
@@ -1089,7 +1135,7 @@ func nearest() -> Dictionary:
 		return vehicle_action if not vehicle_action.is_empty() else activities.nearest_action()
 	var point: Vector3 = world.player.position
 	if not state.place_id.is_empty():
-		if not _uses_walkup_access(state.place_id) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair"}
+		if not _uses_walkup_access(state.place_id) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 		var robbery_action: Dictionary = robberies.nearest_action()
 		if not robbery_action.is_empty(): return robbery_action
 		var original_action: Dictionary = services.nearest_action()
@@ -1126,7 +1172,8 @@ func nearest() -> Dictionary:
 		if entry.place_id in ["harbor_sewer","remote_coal_mine"] and point.distance_to(entry.position) < 1.5:
 			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"","silent":true}
 		if _uses_walkup_access(entry.place_id): continue
-		if point.distance_to(entry.position) < 1.5: return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar"}
+		if point.distance_to(entry.position) < 1.5:
+			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar","silent":preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(entry.place_id)}
 	var mission_action: Dictionary = mission_world.nearest_action()
 	if not mission_action.is_empty(): return mission_action
 	return passenger_transport.nearest_action()
@@ -1134,6 +1181,7 @@ func nearest() -> Dictionary:
 func interact() -> bool:
 	if modal or not ready_for_play: return false
 	var action := nearest()
+	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
 	if action.get("id", "") == "zoo_ticket": return action.provider.purchase()
@@ -1241,6 +1289,7 @@ func _input(event: InputEvent) -> void:
 			show_controls()
 			get_viewport().set_input_as_handled()
 		return
+	if get_tree().paused: return
 	if modal:
 		if field_inventory != null and field_inventory.ui.visible and event.is_action_pressed("inventory") and not event.is_action("ui_left") and not event.is_action("ui_right") and not event.is_action("ui_up") and not event.is_action("ui_down"):
 			close_menu()
@@ -1255,6 +1304,11 @@ func _input(event: InputEvent) -> void:
 			_advance_dialogue()
 			get_viewport().set_input_as_handled()
 		elif (event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel")) and not rescue_pending:
+			# This guided conversation owns the arrival callback. Dismissing only
+			# its surface would strand the encounter and leave Arrival.voice playing.
+			if dialogue_open and arrival != null and arrival.active and arrival.dialogue_in_progress():
+				get_viewport().set_input_as_handled()
+				return
 			close_menu()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("interact"):
@@ -1325,7 +1379,10 @@ func _toggle_weapon_flashlight() -> void:
 		show_message("Instale uma lanterna nesta arma na Ammu-Nation.")
 
 func _process(delta: float) -> void:
-	notice_time = maxf(0.0,notice_time-delta)
+	if not get_tree().paused: notice_time = maxf(0.0,notice_time-delta)
+	if speech_active:
+		if notice_time <= 0.0: clear_speech()
+		elif is_instance_valid(speech_caption): speech_caption.visible = not get_tree().paused
 	if not ready_for_play or get_tree().paused: return
 	weapon_shop_entrance.update(delta)
 	special_place_entrance.update(delta)
@@ -1387,6 +1444,14 @@ func _update_world_indicator() -> void:
 	if state.intro.stage != "complete": target = world.maciota_place.entry_position
 	if arrival.active: target = arrival.target
 	if freight_active: target = freight_target
+	if state.place_id.is_empty() and state.region_id=="harbor" and not world.driving.occupied:
+		var access_distance:=10.0
+		for entry in controller.region.entries:
+			if not preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(entry.place_id): continue
+			var distance: float=world.player.global_position.distance_to(entry.position)
+			if distance<access_distance:
+				access_distance=distance
+				target=entry.position
 	if mining != null and state.region_id == "desert" and state.place_id.is_empty() and world.player.global_position.distance_to(preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY)<14.0:
 		target = preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY
 	if not state.place_id.is_empty() and is_instance_valid(room):
@@ -1407,6 +1472,9 @@ func _update_world_indicator() -> void:
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
 func _menu(title: String) -> void:
+	clear_speech()
+	if is_instance_valid(dialogue_card): dialogue_card.hide()
+	if is_instance_valid(dialogue_voice): dialogue_voice.stop()
 	if panel.has_meta("modal_preferred_size"): panel.remove_meta("modal_preferred_size")
 	if panel.has_meta("modal_dock_right"): panel.remove_meta("modal_dock_right")
 	var previous_map: Node = world.hud.get_node_or_null("MapUI")
@@ -1456,6 +1524,8 @@ func _focus_menu_button(reference: WeakRef) -> void:
 		button.grab_focus()
 func close_menu() -> void:
 	if dialogue_voice != null: dialogue_voice.stop()
+	if is_instance_valid(dialogue_card): dialogue_card.hide()
+	clear_speech()
 	_service_menu_open = false
 	if storefronts != null and storefronts.is_open(): storefronts.dismiss()
 	if menu_closed.is_valid(): menu_closed.call()
@@ -1470,6 +1540,16 @@ func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	lines = dialogue_lines.duplicate(true)
 	dialogue_done = on_done
 	_advance_dialogue()
+
+func interrupt_dialogue() -> void:
+	# Recovery discards unfinished words without completing their mission callback.
+	lines.clear()
+	dialogue_done = Callable()
+	dialogue_open = false
+	if is_instance_valid(dialogue_voice): dialogue_voice.stop()
+	if is_instance_valid(dialogue_card): dialogue_card.hide()
+	clear_speech()
+	if arrival != null: arrival.cancel_dialogue()
 func _advance_dialogue() -> void:
 	if dialogue_voice != null: dialogue_voice.stop()
 	if lines.is_empty():
@@ -1477,23 +1557,26 @@ func _advance_dialogue() -> void:
 		if dialogue_done.is_valid(): dialogue_done.call()
 		return
 	var line: Dictionary = lines.pop_front()
-	if dialogue_voice != null and not (arrival != null and arrival.active):
-		var speaker := str(line.get("speaker","")).to_lower().split(" · ")[0]
-		# Match Maciota's phone/arrival level when the conversation enters the workshop.
-		dialogue_voice.volume_db = -8.0 if speaker in ["maciota", "caller"] else 0.0
-		dialogue_voice.stream = preload("res://audio/ExpressiveVoice.gd").recorded_line(str(line.get("message","")),speaker)
-		if dialogue_voice.stream != null: dialogue_voice.play()
 	var continuing_service := _service_menu_open
 	_menu(str(line.get("speaker","")))
 	_service_menu_open = continuing_service
 	dialogue_open = true
-	var text := Label.new()
-	text.text = str(line.get("message",""))
-	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size.x = 560
-	text.add_theme_font_size_override("font_size",21)
-	column.add_child(text)
-	_button("Continuar",_advance_dialogue)
+	if dialogue_voice != null and not (arrival != null and arrival.active):
+		var speaker := str(line.get("speaker","")).to_lower().split(" · ")[0]
+		# Match Maciota's phone/arrival level when the conversation enters the workshop.
+		dialogue_voice.stream = VOICE.recorded_line(str(line.get("voice_text",line.get("message",""))),speaker)
+		dialogue_voice.volume_db = VOICE.playback_volume(dialogue_voice.stream, -8.0 if speaker in ["maciota", "caller"] else 0.0)
+		if dialogue_voice.stream != null: dialogue_voice.play()
+	_present_dialogue_line(line)
+
+func _present_dialogue_line(line: Dictionary) -> void:
+	panel.hide()
+	if not is_instance_valid(dialogue_card):
+		dialogue_card = DIALOGUE_CARD.new()
+		world.hud.add_child(dialogue_card)
+		dialogue_card.advance_requested.connect(_advance_dialogue)
+	dialogue_card.configure(str(line.get("speaker","")), str(line.get("message","")), get_node_or_null("/root/GameInput"))
+	dialogue_card.focus_advance.call_deferred()
 
 func cancel_mission() -> bool:
 	if state.campaign.active_id.is_empty(): return false
@@ -1916,6 +1999,7 @@ func _show_v1_arrest_presentation() -> void:
 
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
+	interrupt_dialogue()
 	arrest_pending = true
 	if desert != null: desert.cancel_attempt()
 	if mining != null: mining.cancel_attempt()
@@ -1961,8 +2045,7 @@ func _on_death() -> void:
 	prompt.text = ""
 	world.hud.refresh_from_state()
 	if passenger_transport != null and passenger_transport.riding: passenger_transport._brake()
-	lines.clear()
-	dialogue_done = Callable()
+	interrupt_dialogue()
 	garage_rewards.cancel_press_delivery()
 	activities.cancel_attempt()
 	mountain_progression.cancel_attempt()

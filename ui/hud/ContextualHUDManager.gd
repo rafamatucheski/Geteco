@@ -127,7 +127,7 @@ func _sync_channels() -> void:
 		_last_objective=text
 		if not text.is_empty(): objective_card.present(text,"NOVO OBJETIVO")
 	var feedback := ""
-	if float(_session.notice_time)>0: feedback=str(_session.notice.text).strip_edges()
+	if float(_session.notice_time)>0 and not bool(_session.get("speech_active")): feedback=str(_session.notice.text).strip_edges()
 	elif float(_driving.status_time)>0: feedback=str(_driving.status).strip_edges()
 	if feedback!=_last_notice:
 		_last_notice=feedback

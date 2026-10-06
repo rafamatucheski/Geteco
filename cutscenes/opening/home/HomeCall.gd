@@ -6,6 +6,7 @@ signal skipped(destination_beat: StringName)
 const DESTINATION := &"passenger_terminal_arrival"
 const DIALOGUE := preload("res://runtime/ArrivalDialogue.gd")
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
+const CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
 const DURATION := 34.0
 const LINE_TIMES := [[8.0,10.0],[10.0,13.2],[13.2,17.0],[17.0,24.0],[24.0,26.0]]
 const SHOTS := [
@@ -20,7 +21,7 @@ const SHOTS := [
 var elapsed := 0.0
 var line_times: Array = LINE_TIMES.duplicate(true)
 var duration := DURATION
-var subtitle: Label
+var subtitle: CAPTION
 var skip_dialog: ConfirmationDialog
 var voice: AudioStreamPlayer
 var ring: AudioStreamPlayer
@@ -60,19 +61,7 @@ func _ready() -> void:
 	music = _audio("HomeCallMusic", "Music", -23)
 	music.stream = preload("res://cutscenes/opening/ferry/music.ogg")
 	music.play()
-	subtitle = Label.new()
-	subtitle.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	subtitle.offset_left = 50
-	subtitle.offset_right = -50
-	subtitle.offset_top = -112
-	subtitle.offset_bottom = -28
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitle.add_theme_font_size_override("font_size",24)
-	subtitle.add_theme_constant_override("outline_size",5)
-	subtitle.add_theme_color_override("font_outline_color",Color.BLACK)
-	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	subtitle = CAPTION.new()
 	add_child(subtitle)
 	skip_button = Button.new()
 	skip_button.text = tr("CGI_SKIP_BUTTON")
@@ -121,17 +110,18 @@ func _process(delta: float) -> void:
 	if elapsed >= duration: _finish(false)
 
 func _configure_recorded_timing() -> void:
+	_recorded_lines.clear()
 	var shift := 0.0
 	for index in DIALOGUE.HOME_CALL.size():
 		var line: Array = DIALOGUE.HOME_CALL[index]
-		var spoken: String = line[2] if language == "en" else line[1]
+		var spoken: String = line[1]
 		var stream := VOICE.recorded_line(spoken,"dante" if line[0] == "DANTE" else "caller")
 		_recorded_lines.append(stream)
 		var start: float = float(LINE_TIMES[index][0])+shift
 		var span: float = float(LINE_TIMES[index][1])-float(LINE_TIMES[index][0])
-		# English and missing takes keep the authored default. Available PT takes
-		# may only extend it; a voice is never sped up or truncated to fit a shot.
-		var voiced_span := maxf(span,stream.get_length()+.35) if language == "pt" and stream != null else span
+		# Audio preference is independent of captions; either take may extend a
+		# shot so its ending is never truncated or artificially sped up.
+		var voiced_span := maxf(span,stream.get_length()+.35) if stream != null else span
 		line_times[index] = [start,start+voiced_span]
 		shift += voiced_span-span
 	duration = DURATION+shift
@@ -149,14 +139,14 @@ func _apply_shot(time: float) -> void:
 	image.texture = _textures[chosen]
 
 func _show_caption(time: float) -> void:
-	subtitle.text = ""
 	for index in line_times.size():
 		if time >= float(line_times[index][0]) and time < float(line_times[index][1]):
 			var line: Array = DIALOGUE.HOME_CALL[index]
 			var speaker := str(line[0])
 			if speaker == "VOZ AO TELEFONE" and language == "en": speaker = "VOICE ON THE PHONE"
-			subtitle.text = speaker+"\n"+str(line[2] if language == "en" else line[1])
+			subtitle.set_line(speaker, str(line[2] if language == "en" else line[1]))
 			return
+	subtitle.set_line("", "")
 
 func pause_playback() -> void:
 	if _finishing: return

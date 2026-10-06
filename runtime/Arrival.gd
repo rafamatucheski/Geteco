@@ -65,6 +65,17 @@ func _dialogue(source: Array, done: Callable) -> void:
 	_dialogue_done = done
 	_next_line()
 
+func dialogue_in_progress() -> bool:
+	return _dialogue_done.is_valid()
+
+func cancel_dialogue() -> void:
+	if not dialogue_in_progress(): return
+	voice.stop()
+	_dialogue_lines.clear()
+	_dialogue_index = 0
+	_dialogue_done = Callable()
+	_meeting_started = false
+
 func _next_line() -> void:
 	voice.stop()
 	if _dialogue_index >= _dialogue_lines.size():
@@ -422,12 +433,10 @@ func _physics_process(delta: float) -> void:
 	if _caption < 3 and _caption_wait <= 0 and not voice.playing and car.route_distance >= caption_distance:
 		_caption += 1
 		_caption_wait = 10
-		session.show_message("MACIOTA: " + str(DIALOGUE.lines(DIALOGUE.TOUR)[_caption].message))
-		session.notice_time = 10
 		voice.stream = preload("res://audio/ExpressiveVoice.gd").recorded_line(str(DIALOGUE.lines(DIALOGUE.TOUR)[_caption].message), "maciota")
 		if voice.stream != null: voice.play()
 		_caption_wait = maxf(7, voice.stream.get_length() if voice.stream != null else 0.0) + 3
-		session.notice_time = _caption_wait
+		session.show_speech("MACIOTA", str(DIALOGUE.lines(DIALOGUE.TOUR)[_caption].message), _caption_wait, false)
 	if voice.playing and voice.stream != null:
 		# Audio owns its playback clock. Keep the matching caption visible even
 		# when frame/physics timing temporarily advances faster than the mixer.

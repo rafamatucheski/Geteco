@@ -112,6 +112,65 @@ func _beam_between(label: String, a: Vector3, b: Vector3, width: float, height: 
 	result.rotation.y = atan2(delta.x,delta.z)
 	return result
 
+## A square vehicle hull catches even a 7 cm vertical paving lip. Keep the
+## original footprint and level, but bevel its road edge and both ends. One
+## convex body and the visible faces share the exact same vertices.
+func _pavement(label: String, x0: float, x1: float, inner_z: float, outer_z: float, material: StandardMaterial3D, bottom := -0.10) -> void:
+	var side := signf(outer_z-inner_z)
+	var lower := -0.03 # bridge deck and mountain abutment
+	var upper := 0.07
+	var edge_run := 0.40
+	var end_run := 0.60
+	var low := PackedVector3Array([
+		Vector3(x0,lower,inner_z),Vector3(x1,lower,inner_z),
+		Vector3(x1,lower,outer_z),Vector3(x0,lower,outer_z)])
+	var top := PackedVector3Array([
+		Vector3(x0+end_run,upper,inner_z+side*edge_run),Vector3(x1-end_run,upper,inner_z+side*edge_run),
+		Vector3(x1-end_run,upper,outer_z),Vector3(x0+end_run,upper,outer_z)])
+	var base := PackedVector3Array()
+	for point in low: base.append(Vector3(point.x,bottom,point.z))
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_pavement_face(surface,top,Vector3.UP)
+	_pavement_face(surface,PackedVector3Array([low[0],low[1],top[1],top[0]]),Vector3(0,edge_run,-side*(upper-lower)).normalized())
+	_pavement_face(surface,PackedVector3Array([low[0],top[0],top[3],low[3]]),Vector3(lower-upper,end_run,0).normalized())
+	_pavement_face(surface,PackedVector3Array([low[1],low[2],top[2],top[1]]),Vector3(upper-lower,end_run,0).normalized())
+	_pavement_face(surface,PackedVector3Array([base[3],base[2],low[2],top[2],top[3],low[3]]),Vector3(0,0,side))
+	_pavement_face(surface,PackedVector3Array([base[0],base[1],low[1],low[0]]),Vector3(0,0,-side))
+	_pavement_face(surface,PackedVector3Array([base[0],low[0],low[3],base[3]]),Vector3.LEFT)
+	_pavement_face(surface,PackedVector3Array([base[1],base[2],low[2],low[1]]),Vector3.RIGHT)
+	_pavement_face(surface,base,Vector3.DOWN)
+	var result := MeshInstance3D.new()
+	result.name = label
+	result.mesh = surface.commit()
+	result.material_override = material
+	add_child(result)
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	var shape := ConvexPolygonShape3D.new()
+	var points := base.duplicate()
+	points.append_array(low)
+	points.append_array(top)
+	shape.points = points
+	collision.shape = shape
+	body.add_child(collision)
+	result.add_child(body)
+
+func _pavement_face(surface: SurfaceTool, points: PackedVector3Array, normal: Vector3) -> void:
+	for index in range(1,points.size()-1):
+		var triangle := PackedVector3Array([points[0],points[index],points[index+1]])
+		var cross := (triangle[1]-triangle[0]).cross(triangle[2]-triangle[0])
+		if cross.length_squared()<0.000000000001: continue
+		# Godot's visible front is clockwise when viewed from the outward normal.
+		if cross.dot(normal)>0.0:
+			triangle.reverse()
+		for point in triangle:
+			surface.set_normal(normal)
+			surface.set_uv(Vector2(point.x,point.z)*.5)
+			surface.add_vertex(point)
+
 func _build_bridge() -> void:
 	var concrete := _material("bridge_concrete",Color("707b7a"))
 	var edge := _material("bridge_edge",Color("a7aaa0"))
@@ -144,7 +203,8 @@ func _build_bridge() -> void:
 			Vector2(SEAM.x,CENTER_Z+side*4.5), Vector2(TRAFFIC_MERGE_X,CENTER_Z+side*5.0),
 			Vector2(TRAFFIC_MERGE_X,CENTER_Z+side*BRIDGE_HALF_WIDTH), Vector2(SEAM.x,CENTER_Z+side*6.5)])
 		_polygon_mesh("BridgeMarginJoin",shoulder,.07,edge)
-		_box("BridgeMargin",Vector3((TRAFFIC_MERGE_X+BRIDGE_END_X)*.5,.02,CENTER_Z+side*6.1),Vector3(BRIDGE_END_X-TRAFFIC_MERGE_X,.10,2.2),edge,true)
+		# The underside meets the deck without duplicating its exterior face.
+		_pavement("BridgeMargin",TRAFFIC_MERGE_X,BRIDGE_END_X,CENTER_Z+side*5.0,CENTER_Z+side*BRIDGE_HALF_WIDTH,edge,-.03)
 		_beam_between("BridgeRailJoin",Vector3(SEAM.x,.68,CENTER_Z+side*6.5),Vector3(TRAFFIC_MERGE_X,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),.20,1.18,steel,true)
 		_box("BridgeGuardRail",Vector3((TRAFFIC_MERGE_X+TUNNEL_START_X)*.5,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(TUNNEL_START_X-TRAFFIC_MERGE_X,1.18,.18),steel,true)
 		for x in range(int(SEAM.x*4.0),int(TUNNEL_START_X*4.0)+1,8):
@@ -288,11 +348,10 @@ func _build_tunnel() -> void:
 	paving.uv1_scale = Vector3.ONE * .5
 	var length := TUNNEL_END_X-TUNNEL_START_X
 	var road_half_width := 140.0 * UNIT * .5
-	var pavement_width := TUNNEL_CLEAR_HALF_WIDTH-road_half_width
 	for side in [-1.0,1.0]:
 		# The rural shoulder continues underneath this structure. Cover it up to
 		# the lining with a supported, walkable pavement, flush with bridge margins.
-		_box("TunnelSidewalk",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,-.015,CENTER_Z+side*(road_half_width+pavement_width*.5)),Vector3(length+1.15,.17,pavement_width),paving,true)
+		_pavement("TunnelSidewalk",TUNNEL_START_X-.575,TUNNEL_END_X+.575,CENTER_Z+side*road_half_width,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH,paving)
 		_box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.2,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.4,1.1),rock,true)
 		_box("TunnelCurb",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,.22,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(length,.44,.45),lining,true)
 	_box("TunnelRoof",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,4.65,CENTER_Z),Vector3(length,.5,TUNNEL_CLEAR_HALF_WIDTH*2.0+2.2),lining,true)

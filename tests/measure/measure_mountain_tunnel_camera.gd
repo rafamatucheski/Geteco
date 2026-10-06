@@ -3,7 +3,7 @@ extends SceneTree
 ## --scenario=all|foot_portal|foot_inside|bike_portal|bike_inside|walk_transition
 ## Cada pose mede 8 s de aquecimento + 30 s; capturas ficam fora da amostra.
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
-const SOURCES := ["tests/measure/measure_mountain_tunnel_camera.gd", "scripts/CameraRig.gd", "world/regions/WorldConnection3D.gd", "scripts/Actor.gd", "scripts/Vehicle.gd", "scripts/Driving.gd", "gameplay/VehicleInterior.gd", "world/regions/NativeRegion.gd", "runtime/ProductionWorld.gd", "gameplay/dispatch/RoadGraphSearch.cs", "project.godot"]
+const SOURCES := ["tests/measure/measure_mountain_tunnel_camera.gd", "scripts/CameraRig.gd", "scripts/camera/TunnelChaseSafety.gd", "world/regions/WorldConnection3D.gd", "world/regions/MountainBridgeShore.gd", "world/regions/MountainTerrain3D.gd", "scripts/Actor.gd", "scripts/Vehicle.gd", "scripts/Driving.gd", "gameplay/VehicleInterior.gd", "world/regions/NativeRegion.gd", "runtime/ProductionWorld.gd", "gameplay/dispatch/RoadGraphSearch.cs", "project.godot"]
 var world
 var bike: CharacterBody3D
 var output := ""
@@ -84,6 +84,7 @@ func run() -> void:
 	for label in ["foot_portal", "foot_inside", "bike_portal", "bike_inside"]:
 		if scenario != "all" and scenario != label: continue
 		var point := Vector3(CONNECTION.TUNNEL_START_X - 3.0, .2, CONNECTION.CENTER_Z + 5.7)
+		if "--return-view" in args: point.x = CONNECTION.TUNNEL_START_X - 10.0
 		if label.ends_with("inside"): point.x = (CONNECTION.TUNNEL_START_X + CONNECTION.TUNNEL_END_X) * .5
 		if not await stage(point, label.begins_with("bike")): break
 		print("TUNNEL_MEASURE_BEGIN ", label)
@@ -143,7 +144,7 @@ func stage(point: Vector3, riding: bool) -> bool:
 		bike.steer_input = 0.0
 		bike.brake_input = true
 	else:
-		world.player.visual.rotation.y = 0.0
+		world.player.visual.rotation.y = PI*.5 if "--return-view" in OS.get_cmdline_user_args() else 0.0
 		world.player.set_physics_process(true)
 	world.camera.initialized = false
 	world.session.weather._update()

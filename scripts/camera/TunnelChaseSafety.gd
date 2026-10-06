@@ -15,13 +15,16 @@ var _source_environment: Environment
 var _local_environment: Environment
 var _sync_elapsed := ENVIRONMENT_SYNC_INTERVAL
 var clear_origin_found := true
+var last_endpoint_repaired := false
 
 func _init() -> void:
-	_lens.radius = LENS_RADIUS
+	# Use geometric padding: a query margin alone does not reliably keep a
+	# grazing cast off the narrow tunnel-rib corners at its final endpoint.
+	_lens.radius = LENS_RADIUS + CLEARANCE
 	_query.shape = _lens
 	_query.collision_mask = 1
 	_query.collide_with_areas = false
-	_query.margin = CLEARANCE
+	_query.margin = 0.0
 
 func solve(camera: Camera3D, target: Node3D, eye: Vector3, candidate: Vector3) -> Vector3:
 	if not is_instance_valid(camera) or not camera.is_inside_tree(): return candidate
@@ -31,6 +34,7 @@ func solve(camera: Camera3D, target: Node3D, eye: Vector3, candidate: Vector3) -
 
 func resolve_position(space: PhysicsDirectSpaceState3D, eye: Vector3, candidate: Vector3, excluded: Array[RID] = []) -> Vector3:
 	if space == null: return candidate
+	last_endpoint_repaired = false
 	_query.exclude = excluded
 	var origin := eye
 	clear_origin_found = _clear_at(space, origin)
@@ -58,7 +62,21 @@ func resolve_position(space: PhysicsDirectSpaceState3D, eye: Vector3, candidate:
 	var fractions := space.cast_motion(_query)
 	var fraction := fractions[0] if fractions.size() >= 2 else 0.0
 	if fraction < 1.0: fraction = maxf(0.0, fraction-CLEARANCE/motion.length())
-	return origin+motion*fraction
+	var result := origin+motion*fraction
+	if _clear_at(space,result): return result
+	# Keep the proven-clear origin as the lower bound. A grazing sweep can
+	# report a safe fraction whose endpoint still overlaps a thin support.
+	# Refine only those contacts, never return an unverified lens position.
+	last_endpoint_repaired = true
+	var clear_fraction := 0.0
+	var blocked_fraction := fraction
+	for iteration in 10:
+		var middle := (clear_fraction+blocked_fraction)*.5
+		if _clear_at(space,origin+motion*middle):
+			clear_fraction = middle
+		else:
+			blocked_fraction = middle
+	return origin+motion*clear_fraction
 
 func _clear_at(space: PhysicsDirectSpaceState3D, point: Vector3) -> bool:
 	_query.transform = Transform3D(Basis.IDENTITY, point)

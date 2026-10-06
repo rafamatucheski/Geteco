@@ -10,6 +10,7 @@ const LESSON := preload("res://activities/motocross/DigoLesson.gd")
 const DIGO_CAR := preload("res://gameplay/digo/DigoCar.gd")
 const DIGO_AMAROK := preload("res://gameplay/digo/DigoAmarok.gd")
 const FLEET_STATE := preload("res://runtime/FleetState.gd")
+const SPOKEN_LINE := preload("res://audio/VisibleDialogueVoice.gd")
 const DIGO_PARKING := Vector3(-237,.13,-43.5)
 const DIGO_AMAROK_PARKING := Vector3(-237,.13,-47.0)
 ## Rival start-gate odds by difficulty: [holeshot, bog, wheelie].
@@ -196,6 +197,7 @@ func _menu() -> void:
 	speech.text = "Aqui eu te ensino a pilotar e organizo as corridas. Vamos pra pista?"
 	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.column.add_child(speech)
+	SPOKEN_LINE.attach(speech, speech.text, "digo")
 	session._button("Rever aula de pilotagem · grátis" if met.lesson_completed else "Aprender a pilotar · grátis",func(): session.close_menu(); start_lesson())
 	session._button("Escolher corrida",_race_menu)
 	session._button("Treinar livremente · aluguel R$ 35",func(): _bike_menu(-1))
@@ -210,6 +212,7 @@ func _digo_story() -> void:
 	speech.text = "Aquele é meu Gol quadrado 93: prata, turbo, rodas 15 e placa preta. O som você escuta de longe.\n\nAinda vamos nos encontrar numa corrida no deserto. Quero ver se você acompanha!"
 	speech.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.column.add_child(speech)
+	SPOKEN_LINE.attach(speech, speech.text, "digo")
 	session._button("Voltar",_menu)
 
 func _race_menu() -> void:

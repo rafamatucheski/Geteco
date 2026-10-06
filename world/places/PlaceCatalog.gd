@@ -141,6 +141,7 @@ static func definitions() -> Array[Dictionary]:
 	result.append_array(preload("res://world/desert/DesertLayout.gd").place_definitions())
 	result.append(preload("res://world/mining/coal/CoalMinePlace.gd").definition_data())
 	result.append_array(preload("res://world/desert/village/DesertVillageHomes.gd").definitions())
+	result.append_array(preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions())
 	return result
 static func get_definition(id: String) -> Dictionary:
 	for definition in definitions():
@@ -149,6 +150,10 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty(): return null
+	if preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(id):
+		var building = preload("res://world/places/harbor_buildings/HarborBuildingPlace.gd").new()
+		building.definition = definition
+		return building
 	if id == "remote_coal_mine":
 		var mine = preload("res://world/mining/coal/CoalMinePlace.gd").new()
 		mine.definition = definition

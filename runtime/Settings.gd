@@ -3,6 +3,16 @@ extends Node
 ## Aplica o que é global (barramentos, janela, viewport, sombras, FPS) e avisa por
 ## `applied` quem depende do mundo (brilho vai no WorldEnvironment do ProductionWorld).
 signal applied
+signal voice_language_changed(language: String)
+
+const VOICE_LANGUAGES := ["pt_BR", "en"]
+## Dublagem é independente do idioma dos textos e preserva o português de saves antigos.
+var voice_language := "pt_BR":
+	set(value):
+		var language := "en" if value.to_lower().replace("-", "_").get_slice("_", 0) == "en" else "pt_BR"
+		if voice_language == language: return
+		voice_language = language
+		voice_language_changed.emit(language)
 
 var master_volume := .8
 ## Barramentos "Música"/"SFX"/"Ambiente" trazidos de volta de `systems/SettingsManager.gd`
@@ -59,13 +69,19 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_audio_buses()
+	load_settings()
+	apply_settings()
+
+func load_settings(path := "user://settings.cfg") -> Error:
 	var config := ConfigFile.new()
-	if config.load("user://settings.cfg") == OK:
+	var result := config.load(path)
+	if result == OK:
 		master_volume = clampf(float(config.get_value("audio","master_volume",.8)),0,1)
 		music_volume = clampf(float(config.get_value("audio","music_volume",.8)),0,1)
 		sfx_volume = clampf(float(config.get_value("audio","sfx_volume",1.0)),0,1)
 		ambient_volume = clampf(float(config.get_value("audio","ambient_volume",1.0)),0,1)
 		mute_unfocused = bool(config.get_value("audio","mute_unfocused",false))
+		voice_language = str(config.get_value("audio","voice_language","pt_BR"))
 		# Arquivo antigo só tinha "fullscreen".
 		var legacy_mode := 1 if bool(config.get_value("display","fullscreen",false)) else 0
 		window_mode = clampi(int(config.get_value("display","window_mode",legacy_mode)),0,2)
@@ -78,7 +94,7 @@ func _ready() -> void:
 		brightness = clampf(float(config.get_value("display","brightness",1.0)),.6,1.6)
 		show_fps = bool(config.get_value("display","show_fps",false))
 		camera_view = clampi(int(config.get_value("display","camera_view",0)), 0, 1)
-	apply_settings()
+	return result
 
 ## Cria "Music", "SFX" e "Ambient" se ainda não existirem (idempotente: chamado tanto no
 ## `_enter_tree` do autoload, antes de qualquer outro nó tocar som, quanto no `_ready`).
@@ -185,13 +201,14 @@ func _process(_delta: float) -> void:
 
 func root_view() -> Window: return get_tree().root
 
-func save_settings() -> Error:
+func save_settings(path := "user://settings.cfg") -> Error:
 	var config := ConfigFile.new()
 	config.set_value("audio","master_volume",master_volume)
 	config.set_value("audio","music_volume",music_volume)
 	config.set_value("audio","sfx_volume",sfx_volume)
 	config.set_value("audio","ambient_volume",ambient_volume)
 	config.set_value("audio","mute_unfocused",mute_unfocused)
+	config.set_value("audio","voice_language",voice_language)
 	config.set_value("display","window_mode",window_mode)
 	config.set_value("display","fullscreen",fullscreen)
 	config.set_value("display","resolution",resolution)
@@ -207,4 +224,4 @@ func save_settings() -> Error:
 	config.set_value("controls","gamepad_bindings",get_node("/root/GameInput").export_gamepad_bindings())
 	config.set_value("controls","gamepad_bindings_version",get_node("/root/GameInput").GAMEPAD_BINDINGS_VERSION)
 	config.set_value("controls","controller_layout",get_node("/root/GameInput").controller_layout)
-	return config.save("user://settings.cfg")
+	return config.save(path)

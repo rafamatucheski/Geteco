@@ -2,9 +2,10 @@ extends SceneTree
 ## Câmera no Túnel do canal, no Main.tscn real (renderizado, nunca headless): ao descer, a
 ## visão passa a perspectiva atrás do veículo, com teto sólido; ao
 ## voltar à rua tudo se desfaz (sem nó apagado sobrando, inclinação original).
-## Uso: "$GODOT" --path . --script res://tests/test_tunnel_camera.gd -- --no-save
+## Uso: "$GODOT" --path . --script res://tests/test_tunnel_camera.gd -- --no-save --output=<pasta nova>
 const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 var failures: Array[String] = []
+var output := ""
 
 func _initialize() -> void: run.call_deferred()
 
@@ -16,12 +17,45 @@ func check(ok: bool, label: String) -> void:
 func pitch_degrees(camera: Camera3D) -> float:
 	return rad_to_deg(asin(clampf(-(-camera.global_basis.z).y, -1.0, 1.0)))
 
-func settle(world: Node, frames: int) -> void:
-	for i in frames:
+func settle(world: Node, seconds: float) -> void:
+	# Camera blends advance by delta. A fixed number of draw frames at 400 FPS
+	# used to assert before boarding and the camera's physical transition ended.
+	var deadline := Time.get_ticks_usec() + int(seconds * 1000000.0)
+	while Time.get_ticks_usec() < deadline and is_instance_valid(world):
+		await physics_frame
 		await process_frame
 
+func wait_body_state(world: Node, occupied: bool) -> bool:
+	var deadline := Time.get_ticks_msec() + 10000
+	while Time.get_ticks_msec() < deadline:
+		await physics_frame
+		if not world.driving.is_body_transition_active() and world.driving.occupied == occupied:
+			return true
+	check(false, "Transição física de embarque/desembarque conclui em 10 s (occupied=%s)" % occupied)
+	return false
+
+func wait_ground(world: Node, point: Vector3) -> bool:
+	world.production._update_physical_residency(point)
+	world.production._update_logical_region(point)
+	world.production.region.set_focus(point)
+	var deadline := Time.get_ticks_msec() + 15000
+	while Time.get_ticks_msec() < deadline:
+		await physics_frame
+		if world.production.region.pending.is_empty() and world.production.region.build_jobs.is_empty(): return true
+	check(false, "Streaming da fixture termina antes do teste de câmera")
+	return false
+
 func run() -> void:
-	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
+	var args := OS.get_cmdline_user_args()
+	if DisplayServer.get_name() == "headless" or "--no-save" not in args:
+		quit(2)
+		return
+	for arg in args:
+		if arg.begins_with("--output="): output = arg.trim_prefix("--output=")
+	if output.is_empty(): output = OS.get_temp_dir().path_join("geteco-tunnel-camera-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()])
+	output = ProjectSettings.globalize_path(output)
+	if FileAccess.file_exists(output.path_join("after-east.png")) or DirAccess.make_dir_recursive_absolute(output) != OK:
+		push_error("TUNNEL_CAMERA needs a writable, unused capture directory: " + output)
 		quit(2)
 		return
 	seed(28092026)
@@ -29,25 +63,66 @@ func run() -> void:
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
 	current_scene = world
-	for frame in 1800:
+	var startup_deadline := Time.get_ticks_msec() + 120000
+	var ready := false
+	while Time.get_ticks_msec() < startup_deadline:
 		await process_frame
-		if world.production != null and world.production.ready_for_play and world.session != null and world.session.weather != null:
+		if world.production != null and world.production.ready_for_play and world.production.startup_streaming_settled and world.session != null and world.session.ready_for_play and world.session.weather != null:
+			ready = true
 			break
+	check(ready, "Main e sessão ficam prontos, com streaming de startup completo")
+	if not ready:
+		await finish(world)
+		return
+	check(world.production.no_save, "Fixture não grava save pessoal")
+	var intro: Dictionary = world.session.state.intro.snapshot()
+	intro.phase = "complete"
+	intro.location_id = "harbor_street"
+	intro.inventory = {}
+	intro.completed_missions = [preload("res://data/GarageSequence.gd").ID]
+	var intro_ready: bool = world.session.state.intro.restore_snapshot(intro)
+	check(intro_ready, "Runtime aceita fixture de introdução concluída")
+	if not intro_ready or not world.production.no_save:
+		await finish(world)
+		return
+	for action in InputMap.get_actions(): InputMap.action_erase_events(action)
+	world.player.controlled_automatically = true
+	world.player.automatic_direction = Vector3.ZERO
 	var camera: Camera3D = world.camera
 	camera.set_process_unhandled_input(false)
 	var car: CharacterBody3D = world.driving.car
-	var street := Vector3(160.0, 0.12, 63.0)
-	world.production._update_physical_residency(street)
-	world.production._update_logical_region(street)
-	car.place(street, -PI * 0.5)
-	for i in 3: await physics_frame
+	# Board the production-admitted starter parking pose. x=160 is already on
+	# the canal ramp (below y=0), so the former fixture began above its floor.
+	if not await wait_ground(world, car.global_position):
+		await finish(world)
+		return
+	var entered := false
 	for side in [-1, 1]:
-		world.player.teleport(car.to_global(Vector3(side * (car.half_width + .65), .04, .15)))
-		await physics_frame
-		if world.driving.interact(): break
+		var door: Vector3 = car.driver_door_anchor(side)
+		if not world.session.position_clear(door): continue
+		world.player.teleport(door)
+		await settle(world, .15)
+		if world.driving.interact():
+			entered = true
+			break
+	check(entered, "Embarque real aceito no carro em piso admitido")
+	if not entered or not await wait_body_state(world, true):
+		await finish(world)
+		return
+	check(camera.target == car and car.controlled, "Embarque completo transfere controle e câmera ao carro")
+	if camera.target != car or not car.controlled:
+		await finish(world)
+		return
 	car.set_external_driver(true)
-	car.place(Vector3(141.0, 0.12, 63.0), -PI * 0.5)
-	await settle(world, 90)
+	car.throttle_input = 0.0
+	car.steer_input = 0.0
+	car.brake_input = true
+	var street := Vector3(141.0, 0.12, 63.0)
+	car.place(street, -PI * 0.5)
+	if not await wait_ground(world, street):
+		await finish(world)
+		return
+	await settle(world, 3.0)
 	check(camera._tunnel_blend == 0.0, "Fora do túnel a mistura é zero")
 	# A inclinação de rua depende da opção de câmera (45° padrão, 37,5° na visão alternativa).
 	var street_pitch := pitch_degrees(camera)
@@ -59,7 +134,7 @@ func run() -> void:
 	var deep := Vector3(190.0, TUNNEL.floor_y(190.0) + 0.12, 63.0)
 	world.production._update_physical_residency(deep)
 	car.place(deep, -PI * 0.5)
-	await settle(world, 240)
+	await settle(world, 4.0)
 	check(camera._tunnel_blend > 0.99, "No fundo a mistura chega a 1 (%.2f)" % camera._tunnel_blend)
 	check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "Dentro do túnel o carro usa perspectiva")
 	check(pitch_degrees(camera) < 25.0, "Visão baixa atrás do carro (%.1f°)" % pitch_degrees(camera))
@@ -70,7 +145,7 @@ func run() -> void:
 	check(car.get_meta("interior_view", {}).get("low_camera_roof", false), "Carro fechado na visão traseira")
 	await capture("after-east")
 	car.place(deep, PI * 0.5)
-	await settle(world, 180)
+	await settle(world, 3.0)
 	check((camera.global_position - car.global_position).dot(car.global_basis.z) > 3.0, "Lente atrás do carro indo para oeste")
 	await capture("after-west")
 	# O carro do jogador não está nos chunks: nunca vira alfa.
@@ -83,7 +158,7 @@ func run() -> void:
 
 	# Volta à rua.
 	car.place(Vector3(141.0, 0.12, 63.0), -PI * 0.5)
-	await settle(world, 240)
+	await settle(world, 4.0)
 	check(camera._tunnel_blend == 0.0, "De volta à rua a mistura zera (%.2f)" % camera._tunnel_blend)
 	check(camera.projection == Camera3D.PROJECTION_ORTHOGONAL, "Saída restaura projeção de rua")
 	check(camera._cutaway.faded_count() == 0, "De volta à rua nada fica apagado (%d)" % camera._cutaway.faded_count())
@@ -94,20 +169,21 @@ func run() -> void:
 
 	# Desembarque real no túnel: perspectiva acompanha o ator, cujo corpo não gira.
 	car.place(deep, -PI * 0.5)
-	await settle(world, 180)
-	for i in 600:
-		await physics_frame
-		if world.driving.transition == null and world.driving.occupied: break
-	check(world.driving.interact(true), "Desembarque aceito dentro do túnel")
-	for i in 600:
-		await physics_frame
-		if world.driving.transition == null and not world.driving.occupied: break
+	await settle(world, 3.0)
+	if not await wait_body_state(world, true):
+		await finish(world)
+		return
+	var left: bool = world.driving.interact(true)
+	check(left, "Desembarque aceito dentro do túnel")
+	if not left or not await wait_body_state(world, false):
+		await finish(world)
+		return
 	check(not world.driving.occupied and camera.target == world.player, "Desembarque transfere câmera para o personagem")
 	check(car.get_meta("interior_view", {}).get("low_camera_roof", false), "Carro estacionado conserva cobertura fechada na vista baixa")
 	world.player.input_locked = true
 	for facing in [-PI * .5, PI * .5]:
 		world.player.visual.rotation.y = facing
-		await settle(world, 180)
+		await settle(world, 3.0)
 		check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "A pé no túnel continua em perspectiva")
 		var rear: Vector3 = world.player.visual.global_basis.z
 		var behind: Vector3 = camera.global_position - world.player.global_position
@@ -116,12 +192,16 @@ func run() -> void:
 		check(camera.global_position.y < TUNNEL.ceiling_y(camera.global_position.x), "A pé lente permanece abaixo do teto")
 		await capture("on-foot-east" if facing < 0.0 else "on-foot-west")
 	world.player.teleport(Vector3(141.0, .12, 63.0))
-	await settle(world, 180)
+	await settle(world, 3.0)
 	check(camera.projection == Camera3D.PROJECTION_ORTHOGONAL, "Saída a pé restaura câmera de rua")
 	check(camera._cutaway.faded_count() == 0, "Saída a pé restaura materiais")
 	check(not car.get_meta("interior_view", {}).get("low_camera_roof", false), "Saída a pé restaura apresentação do carro estacionado")
 	world.player.input_locked = false
 
+	await finish(world)
+
+func finish(world: Node) -> void:
+	print("TUNNEL_CAMERA_CAPTURES ", output)
 	world.queue_free()
 	await process_frame
 	if failures.is_empty():
@@ -133,4 +213,4 @@ func run() -> void:
 
 func capture(label: String) -> void:
 	await RenderingServer.frame_post_draw
-	check(root.get_texture().get_image().save_png("res://evidence/tunnel-chase-20261001/%s.png" % label) == OK, "Captura " + label)
+	check(root.get_texture().get_image().save_png(output.path_join(label + ".png")) == OK, "Captura " + label)

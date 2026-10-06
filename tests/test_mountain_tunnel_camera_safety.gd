@@ -22,6 +22,14 @@ func check(ok: bool, label: String) -> void:
 		failures.append(label)
 		push_error(label)
 
+func collision_description(hits: Array[Dictionary]) -> String:
+	var descriptions: Array[String] = []
+	for hit in hits:
+		var body: Node3D = hit.collider as Node3D
+		if is_instance_valid(body):
+			descriptions.append("%s at %s" % [body.get_path(),body.global_position])
+	return "; ".join(descriptions)
+
 func run() -> void:
 	var fixture := FixtureWorld.new()
 	root.add_child(fixture)
@@ -69,7 +77,7 @@ func run() -> void:
 					if camera._tunnel_chase_blend > .001:
 						query.transform = camera.global_transform
 						var collisions := space.intersect_shape(query,1)
-						check(collisions.is_empty(),"blended lens clear x=%.2f side=%.1f facing=%.2f blend=%.3f" % [actor.position.x,side_offset,facing,camera._tunnel_chase_blend])
+						check(collisions.is_empty(),"blended lens clear x=%.2f side=%.1f facing=%.2f blend=%.3f camera=%s collider=%s origin_clear=%s endpoint_repaired=%s" % [actor.position.x,side_offset,facing,camera._tunnel_chase_blend,camera.global_position,collision_description(collisions),camera._tunnel_safety.clear_origin_found,camera._tunnel_safety.last_endpoint_repaired])
 						if camera._tunnel_chase_blend >= .99:
 							check(absf(camera.global_position.z-CONNECTION.CENTER_Z) <= CONNECTION.TUNNEL_CLEAR_HALF_WIDTH-.25-.15+.001,"low lens stays on corridor side of guard rail")
 						checked += 1
@@ -87,6 +95,17 @@ func run() -> void:
 	camera.initialized = false
 	camera._process(1.0/60.0)
 	check(camera.environment != null,"inside tunnel activates local view")
+	# Some callers reset actor interpolation directly, without resetting the
+	# camera. A departing tunnel must never clamp a distant destination to its Z.
+	actor.position = Vector3.ZERO
+	actor.reset_physics_interpolation()
+	camera._process(1.0/60.0)
+	check(camera.global_position.distance_to(actor.position) < 50.0,"distant target cannot retain mountain corridor clamp")
+	check(camera.environment == null,"distant target releases mountain atmosphere")
+	actor.position = Vector3((CONNECTION.TUNNEL_START_X+CONNECTION.TUNNEL_END_X)*.5,.07,CONNECTION.CENTER_Z)
+	actor.reset_physics_interpolation()
+	camera.initialized = false
+	camera._process(1.0/60.0)
 	camera.locked = true
 	camera._process(1.0/60.0)
 	check(camera.environment == null,"locked view immediately restores original environment")

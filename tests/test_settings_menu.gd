@@ -56,7 +56,7 @@ func run() -> void:
 	menu.open()
 	await process_frame
 	check(menu._tabs.size() == 3, "três abas: vídeo, áudio, controles")
-	for key_name in ["window_mode", "resolution", "vsync", "fps_limit", "show_fps", "render_scale", "msaa", "shadow_quality", "brightness", "master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused"]:
+	for key_name in ["window_mode", "resolution", "vsync", "fps_limit", "show_fps", "render_scale", "msaa", "shadow_quality", "brightness", "master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language"]:
 		check(menu._widgets.has(key_name), "opção presente: " + key_name)
 	var original_scale: float = settings.render_scale
 	var scale_slider: HSlider = menu._widgets.render_scale.get_meta("slider")

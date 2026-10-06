@@ -4,6 +4,7 @@ extends Node3D
 ## grave markers. Runtime actors are attachments; the case ledger is the owner.
 
 const ACTOR := preload("res://gameplay/urban_v1/UrbanRoutineActor.gd")
+const SPOKEN_LINE := preload("res://audio/VisibleDialogueVoice.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const SCALE := 1.0 / 16.0
 const CENTER := Vector3(-650,0,1740) * SCALE
@@ -32,6 +33,8 @@ var storyteller: CharacterBody3D
 var storyteller_stop := 0
 var storyteller_wait := 0.0
 var storyteller_told := false
+var storyteller_voice: AudioStreamPlayer
+var _story_hold := 18.0
 var mortician: CharacterBody3D
 var hearse: CharacterBody3D
 var mourners: Array[CharacterBody3D] = []
@@ -257,6 +260,7 @@ func _actor_threatened(_threatened_actor: CharacterBody3D) -> void:
 
 func _story_route() -> void:
 	if not _alive(storyteller) or storyteller.frightened: return
+	if is_instance_valid(storyteller_voice): storyteller_voice.stop()
 	var target: Vector3 = CENTER+STORY_STOPS[storyteller_stop]*SCALE+Vector3.UP*.04
 	# V1 keeps Elias on the central aisle before he turns toward a grave.
 	storyteller.set_route(PackedVector3Array([
@@ -266,6 +270,7 @@ func _story_route() -> void:
 	]))
 	storyteller_wait = 0
 	storyteller_told = false
+	_story_hold = 18.0
 
 func _tick_storyteller(delta: float) -> void:
 	if not _alive(storyteller) or storyteller.frightened or not storyteller.finished(): return
@@ -273,11 +278,15 @@ func _tick_storyteller(delta: float) -> void:
 	var nearby: bool = session.state.place_id.is_empty() and session.world.player.global_position.distance_to(storyteller.global_position)<8.45
 	if nearby and not storyteller_told:
 		storyteller.say("ELIAS: "+STORIES[storyteller_stop],12)
+		storyteller_voice = SPOKEN_LINE.attach(storyteller.speech, STORIES[storyteller_stop], "elias")
+		if storyteller_voice.stream != null:
+			storyteller.speech_left = maxf(12.0, storyteller_voice.stream.get_length()+.35)
+			_story_hold = maxf(18.0, storyteller.speech_left+.5)
 		storyteller_told = true
 		storyteller_wait = 0
 	elif not nearby and storyteller_told and is_instance_valid(storyteller.speech):
 		storyteller.speech.hide()
-	if storyteller_wait > 18:
+	if storyteller_wait > _story_hold:
 		storyteller_stop = (storyteller_stop+1)%STORY_STOPS.size()
 		_story_route()
 

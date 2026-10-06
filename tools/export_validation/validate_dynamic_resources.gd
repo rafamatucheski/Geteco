@@ -15,7 +15,16 @@ const JSON_PATHS := [
 	"res://data/campaign/first-favors-dialogue.json",
 	"res://data/campaign/cobra-dialogue.json",
 	"res://audio/mission_voices/recordings.json",
+	"res://audio/mission_voices/maciota_baritone/recordings.json",
+	"res://audio/mission_voices/en/recordings.json",
+	"res://audio/mission_voices/en/catalog.json",
 ]
+const VOICE_MANIFESTS := [
+	"res://audio/mission_voices/recordings.json",
+	"res://audio/mission_voices/maciota_baritone/recordings.json",
+	"res://audio/mission_voices/en/recordings.json",
+]
+const ENGLISH_VOICE_CATALOG := "res://audio/mission_voices/en/catalog.json"
 const AUDIO_ROOTS := [
 	"res://assets/gameplay/audio",
 	"res://audio/acoustic",
@@ -83,6 +92,7 @@ var checks := 0
 var mode := "source"
 var manifest_path := ""
 var report_path := ""
+var voice_only := false
 var categories: Dictionary = {}
 var raw_wav_paths: Array[String] = []
 
@@ -101,8 +111,11 @@ func _run() -> void:
 		_fail("[arguments] modo inválido: %s (use source ou package)" % mode)
 	if not categories.is_empty():
 		_validate_manifest_paths()
-		_validate_catalog_contracts()
-		_validate_raw_wav_loader()
+		if voice_only:
+			_validate_voice_catalogs()
+		else:
+			_validate_catalog_contracts()
+			_validate_raw_wav_loader()
 		if mode == "package":
 			_validate_exclusions()
 	_write_report()
@@ -125,8 +138,16 @@ func _parse_arguments() -> void:
 			manifest_path = argument.trim_prefix("--manifest=")
 		elif argument.begins_with("--report="):
 			report_path = argument.trim_prefix("--report=")
+		elif argument == "--voice-only":
+			voice_only = true
 
 func _build_source_manifest() -> void:
+	if voice_only:
+		for path in VOICE_MANIFESTS: _add_path("runtime_json", path)
+		_add_path("runtime_json", ENGLISH_VOICE_CATALOG)
+		_add_voice_paths()
+		_sort_manifest()
+		return
 	for path in JSON_PATHS:
 		_add_path("runtime_json", path)
 	for path in DYNAMIC_MODEL_PATHS:
@@ -155,13 +176,17 @@ func _build_source_manifest() -> void:
 		for resident in residents:
 			if resident is Dictionary and resident.get("model") is String:
 				_add_path("resident_models", resident.model)
-	var recordings: Variant = _read_json("res://audio/mission_voices/recordings.json", "voice manifest")
-	if recordings is Dictionary:
-		for key in recordings:
-			if recordings[key] is String:
-				_add_path("mission_voice_recordings", recordings[key])
+	_add_voice_paths()
 	_sort_manifest()
 	raw_wav_paths.sort()
+
+func _add_voice_paths() -> void:
+	for manifest in VOICE_MANIFESTS:
+		var recordings: Variant = _read_json(manifest, "voice manifest")
+		if recordings is Dictionary:
+			for key in recordings:
+				if recordings[key] is String:
+					_add_path("mission_voice_recordings", recordings[key])
 
 func _collect_files(root_path: String, extensions: Array) -> Array[String]:
 	var result: Array[String] = []
@@ -272,12 +297,31 @@ func _validate_catalog_contracts() -> void:
 	_check(lakes is Dictionary and not lakes.is_empty(), "[lakes] OriginalLakeData.json vazio ou inválido")
 	for path in ["res://data/campaign/campaign_v1.json", "res://data/campaign/first-favors-dialogue.json", "res://data/campaign/cobra-dialogue.json"]:
 		_check(_read_json(path, path) is Dictionary, "[dialogue] JSON inválido: %s" % path)
-	var recordings: Variant = _read_json("res://audio/mission_voices/recordings.json", "voice manifest")
-	_check(recordings is Dictionary, "[voice] manifesto de vozes inválido")
-	if recordings is Dictionary:
-		for key in recordings:
-			var path := str(recordings[key])
-			_check(path in _category_paths("mission_voice_recordings"), "[voice] gravação fora do manifesto: %s" % path)
+	_validate_voice_catalogs()
+
+func _validate_voice_catalogs() -> void:
+	for manifest in VOICE_MANIFESTS:
+		var recordings: Variant = _read_json(manifest, "voice manifest")
+		_check(recordings is Dictionary and not recordings.is_empty(), "[voice] manifesto vazio ou inválido: %s" % manifest)
+		if recordings is Dictionary:
+			for key in recordings:
+				var path := str(recordings[key])
+				_check(path in _category_paths("mission_voice_recordings"), "[voice] gravação fora do manifesto: %s" % path)
+	var catalog: Variant = _read_json(ENGLISH_VOICE_CATALOG, "English voice catalog")
+	var english: Variant = _read_json(VOICE_MANIFESTS[2], "English voice manifest")
+	_check(catalog is Dictionary and catalog.get("lines") is Array, "[voice en] catálogo sem lista de falas")
+	if not catalog is Dictionary or not catalog.get("lines") is Array or not english is Dictionary: return
+	_check(not catalog.lines.is_empty(), "[voice en] catálogo de falas vazio")
+	for entry in catalog.lines:
+		var key := (str(entry.get("persona", "")).to_lower() + "|" + str(entry.get("text", ""))).sha256_text()
+		_check(english.has(key), "[voice en] fala sem gravação: %s" % key)
+		_check(not str(entry.get("en", "")).is_empty(), "[voice en] fala sem tradução: %s" % key)
+		var aliases: Array = entry.get("aliases", []).duplicate()
+		aliases.append(str(entry.get("en", "")))
+		for alias in aliases:
+			if str(alias).is_empty(): continue
+			var alias_key := (str(entry.get("persona", "")).to_lower() + "|" + str(alias)).sha256_text()
+			_check(english.get(alias_key, "") == english.get(key, "missing"), "[voice en] alias sem a gravação canônica: %s" % alias_key)
 
 ## Contrato de áudio: o WAV é consumido como recurso importado (`ResourceLoader`), nunca como arquivo bruto. Vale igual na
 ## árvore e no PCK. O arquivo bruto visível é só informativo: no editor existe, no PCK não, e nenhuma das duas situações reprova.
