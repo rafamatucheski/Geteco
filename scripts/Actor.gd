@@ -681,6 +681,10 @@ func _apply_combat_weapon_pose() -> void:
 			# Os olhos ficam no alvo: a cabeça devolve boa parte do giro do tronco no
 			# golpe. Some com a passada, sem salto ao começar a andar no meio do golpe.
 			_set_combat_bone_rotation(head, skeleton.get_bone_global_pose(head).basis.slerp(gaze, 0.6 * (1.0 - _locomotion_weight)))
+		elif head >= 0 and float(pose.get("head_counter", 0.0)) > 0.0:
+			# Fuzil no ombro: o tronco fica de lado, mas a cabeça olha pela linha do cano
+			# (sem isso o rosto apontava 40° para fora da mira).
+			_set_combat_bone_rotation(head, skeleton.get_bone_global_pose(head).basis.slerp(gaze, float(pose.head_counter)))
 	var right_weight := clampf(float(pose.get("right_weight", 1.0)), 0.0, 1.0)
 	var right_clip: Array = []
 	if right_solve and right_weight < 1.0:

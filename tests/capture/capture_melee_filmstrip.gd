@@ -7,6 +7,7 @@ extends SceneTree
 ## Uso (precisa de renderização real; em headless a imagem sai vazia):
 ##   Godot --path . --script res://tests/capture/capture_melee_filmstrip.gd -- mode=melee
 ##   Godot --path . --script res://tests/capture/capture_melee_filmstrip.gd -- mode=reload
+##   Godot --path . --script res://tests/capture/capture_melee_filmstrip.gd -- mode=aim
 ## Saída: evidence/combat/filmstrip/<mode>.png (fica fora do Git).
 
 const CELL_DEFAULT := Vector2i(220, 300)
@@ -21,7 +22,10 @@ const MELEE_ROWS := [
 	["bat", 0], ["bat", 1], ["bat", 2],
 	["axe", 0], ["axe", 1], ["axe", 2],
 ]
-const RELOAD_ROWS := ["pistol", "magnum", "smg", "ak47", "shotgun", "hunting_rifle", "rpg"]
+const RELOAD_ROWS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower"]
+## mode=aim: arma baixa (0–0,4 s), sobe à mira e dispara três vezes (0,8/1,0/1,2 s).
+const AIM_ROWS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade", "knife"]
+const AIM_SHOTS := [0.8, 1.0, 1.2]
 
 func _initialize() -> void: _run.call_deferred()
 
@@ -76,11 +80,17 @@ func _run() -> void:
 	# left: perfil pelo lado esquerdo (braço de apoio); back: por trás, acima do ombro.
 	if angle == "left": view_offset = Vector3(-3.0, 0.85, -1.05)
 	if angle == "back": view_offset = Vector3(-1.2, 1.6, 2.6)
-	camera.position = Vector3(0, 1.05, -0.35) + view_offset
+	# top: de cima, um pouco atrás (coronha × peito, arma atravessada no tronco).
+	if angle == "top": view_offset = Vector3(0.15, 3.2, 0.9)
+	var look := Vector3(0, 1.05, -0.35) if angle != "top" else Vector3(0, 1.3, -0.2)
+	camera.position = look + view_offset
 	view.add_child(camera)
-	camera.look_at(Vector3(0, 1.05, -0.35))
+	camera.look_at(look)
 	if hands: camera.size = 0.6
-	var rows: Array = MELEE_ROWS if mode == "melee" else RELOAD_ROWS
+	# size=: altura da vista ortográfica em metros (padrão 1,75: o corpo inteiro).
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("size="): camera.size = float(arg.trim_prefix("size="))
+	var rows: Array = MELEE_ROWS if mode == "melee" else (AIM_ROWS if mode == "aim" else RELOAD_ROWS)
 	if only != "": rows = rows.filter(func(entry): return (entry[0] if entry is Array else entry) == only)
 	var sheet := Image.create(CELL.x * columns, CELL.y * rows.size(), false, Image.FORMAT_RGBA8)
 	for row in rows.size():
@@ -95,7 +105,7 @@ func _run() -> void:
 		if id != "fists": ARSENAL.build(gun, id)
 		var pose = POSE.new()
 		# Prontidão estável antes da ação.
-		for frame in 40: _step(actor, pose, gun, id, false, 0.0)
+		for frame in 40: _step(actor, pose, gun, id, false, 0.0, mode != "aim")
 		var duration := 0.90
 		if mode == "melee":
 			# Golpes anteriores da sequência, cada um disparado no tempo de encadeamento.
@@ -111,7 +121,13 @@ func _run() -> void:
 		var captured := 0
 		for frame in total + 1:
 			var progress := float(frame) / float(total)
-			_step(actor, pose, gun, id, mode == "reload", progress)
+			var aiming := true
+			if mode == "aim":
+				var time := float(frame) / 60.0
+				aiming = time >= 0.4
+				for shot in AIM_SHOTS:
+					if absf(time - float(shot)) < 0.5 / 60.0: pose.attack(id)
+			_step(actor, pose, gun, id, mode == "reload", progress, aiming)
 			if captured < columns and frame >= int(round(float(captured) * float(total) / float(columns - 1))):
 				if hands:
 					var focus: Vector3 = (actor.combat_palm_position("Right") + actor.combat_palm_position("Left")) * 0.5
@@ -130,14 +146,23 @@ func _run() -> void:
 	print("FILMSTRIP mode=%s path=%s error=%d" % [mode, ProjectSettings.globalize_path(path), error])
 	quit(0 if error == OK else 1)
 
-func _step(actor, pose, gun: Node3D, id: String, reloading: bool, progress: float) -> void:
+func _step(actor, pose, gun: Node3D, id: String, reloading: bool, progress: float, aiming := true) -> void:
 	actor._pose_locomotion(Vector3.ZERO, 3.5, Vector3.ZERO, 1.0 / 60.0)
-	var result: Dictionary = pose.update(id, 1.0 / 60.0, true, reloading, progress, false, false, actor.phase)
+	var result: Dictionary = pose.update(id, 1.0 / 60.0, aiming, reloading, progress, false, false, actor.phase)
 	actor.combat_facing = 0.0
 	actor.set_combat_weapon_pose(id, result)
 	actor._apply_combat_weapon_pose()
 	gun.visible = bool(result.visible)
 	if id != "fists": gun.global_transform = actor.combat_weapon_transform(DATA.GRIPS.get(id, Vector3.ZERO))
+	var rocket := gun.get_node_or_null("LoadedRocket") as Node3D
+	if rocket != null:
+		# Mesma linha do tempo de `Gameplay._update_rocket` (a tira não usa Gameplay).
+		if not rocket.has_meta("rest"): rocket.set_meta("rest", rocket.transform)
+		rocket.transform = rocket.get_meta("rest")
+		rocket.visible = not reloading or progress >= POSE.RPG_ROCKET_GRAB
+		if reloading and rocket.visible:
+			var seat := smoothstep(POSE.RPG_ROCKET_SEAT.x, POSE.RPG_ROCKET_SEAT.y, progress)
+			rocket.global_position += (actor.combat_left_palm_transform().origin - rocket.global_position) * (1.0 - seat)
 
 ## Próximo golpe da sequência no primeiro instante que o jogo aceita: a cadência
 ## da arma (`fire_interval`), como quem segura o botão.

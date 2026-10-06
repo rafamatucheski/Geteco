@@ -548,9 +548,7 @@ func _update_weapon_parts(id: String) -> void:
 	var magazine := gun.get_node_or_null("CurvedMagazine") as Node3D
 	if magazine != null: _update_magazine(magazine)
 	var rocket := gun.get_node_or_null("LoadedRocket") as Node3D
-	if rocket != null:
-		var ammo: Dictionary = state.get_ammo(id)
-		rocket.visible = int(ammo.get("magazine", 0)) > 0 or (reload_timer > 0.0 and (1.0 - reload_timer / maxf(_reload_total, 0.001)) > 0.65)
+	if rocket != null: _update_rocket(rocket, id)
 
 ## Carregador destacável (AK-47) na mesma linha do tempo de `WeaponRigPose.reload_targets`:
 ## o vazio desce e cai ao soltar (0,09–0,20), a mão busca o novo no cinto e o traz
@@ -574,6 +572,22 @@ func _update_magazine(magazine: Node3D) -> void:
 		var palm: Vector3 = player.combat_left_palm_transform().origin
 		var seat := smoothstep(0.40, 0.45, progress)
 		magazine.global_position += (palm - center) * (1.0 - seat)
+
+## Foguete do lança-foguetes na linha do tempo de `WeaponRigPose.reload_targets`: na
+## palma esquerda desde a pega no cinto, encaixado na boca até o fim. Antes aparecia
+## direto na arma a 65% e a mão subia vazia, como quem acena.
+func _update_rocket(rocket: Node3D, id: String) -> void:
+	if not rocket.has_meta("combat_rest_transform"): rocket.set_meta("combat_rest_transform", rocket.transform)
+	rocket.transform = rocket.get_meta("combat_rest_transform")
+	if reload_timer <= 0.0:
+		rocket.visible = int(state.get_ammo(id).get("magazine", 0)) > 0
+		return
+	var progress := clampf(1.0 - reload_timer / maxf(_reload_total, 0.001), 0.0, 1.0)
+	rocket.visible = progress >= RIG_POSE.RPG_ROCKET_GRAB
+	if rocket.visible and player.has_method("combat_left_palm_transform"):
+		var palm: Vector3 = player.combat_left_palm_transform().origin
+		var seat := smoothstep(RIG_POSE.RPG_ROCKET_SEAT.x, RIG_POSE.RPG_ROCKET_SEAT.y, progress)
+		rocket.global_position += (palm - rocket.global_position) * (1.0 - seat)
 
 ## Clarão de boca do V1 (`Player._update_equipped_weapon_3d_mesh`): só armas de fogo,
 ## lança-foguetes e lança-chamas. Corpo a corpo e granada não têm boca.
