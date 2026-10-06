@@ -72,13 +72,25 @@ const CARRY_POLE := Vector3(0.9, -1.5, 0.3)
 ## a partir do ombro (0,41 m no V2, medido: pedindo 0,44 o IK ficava 2–3 cm curto). O
 ## apoio não recua além de z = −0,03 da empunhadura (frente do encaixe do carregador).
 const STOCK_STANCE := -0.75
+## Fração do saque a partir da qual a arma longa aparece na mão.
+const EQUIP_SHOW := 0.6
+const EQUIP_SHOW_HANDGUN := 0.15
 const STOCK_POCKET := Vector3(-0.02, -0.025, 0.06)
 const LEFT_PALM_REACH := 0.41 / (1.03 / 0.82)
 const SUPPORT_MIN_REACH_Z := -0.03
+## Rifle de caça: o receptor tem ferrolho e luneta logo à frente da empunhadura; a mão
+## deslizando até ali enfiava os dedos neles (4,5 cm). Para no início do guarda-mão.
+const SUPPORT_MIN_REACH_Z_BY_ID := {"hunting_rifle": -0.14}
 ## Avanço do bolso por seno da inclinação da arma (altura do bico da coronha, V1).
 const STOCK_TOE := 0.08
+## Rifle de caça: coronha curta (15,5 cm da empunhadura ao fim) e sem empunhadura de
+## pistola; a base da coronha encostava 4–5 cm no antebraço direito logo atrás do pulso.
+## Medido em 2026-10-06: bolso 3 cm mais baixo na mira e na recarga, 3 cm mais alto
+## com a arma baixa (a ponta da coronha sai de cima do antebraço).
+const STOCK_POCKET_SHIFT := {"hunting_rifle": Vector3(0, -0.03, 0)}
+const STOCK_POCKET_SHIFT_READY := {"hunting_rifle": Vector3(0, 0.03, 0)}
 const STOCK_ELBOW := Vector3(1.4, -1.2, 0.3)
-const RELOAD_LEFT_POLE := Vector3(-0.8, -1.5, 0.2)
+const RELOAD_LEFT_POLE := Vector3(-0.2, -1.5, 1.0)
 ## Mão direita no lança-foguetes apoiado (V1): tubo com o fundo no topo do ombro
 ## (y 1,44 no V2) e a lateral por fora da cabeça (x ≤ 0,12 no V2).
 const RPG_SHOULDER := Vector3(0.145, 1.115, -0.26)
@@ -92,6 +104,10 @@ const RPG_ROCKET_GRAB := 0.27
 const RPG_ROCKET_SEAT := Vector2(0.50, 0.62)
 const RPG_ROCKET_CENTER := 0.09
 const RPG_POLE := Vector3(0.4, -1.5, -0.2)
+## Submetralhadora na recarga rolada como AK/M4: coronha curta, o receptor fica rente
+## ao peito, e a −0,38 o topo dele entrava 5 cm na jaqueta andando (medido: −0,60 → 3 cm).
+const SMG_RELOAD_ROLL := -0.60
+const KNUCKLE_RUN_POLE := Vector3(0.45, -1.5, 0.9)
 const HEAD_ABOVE_SPINE := 0.6
 const HEAD_CLEARANCE := 0.146
 ## Carregando parado: só a cabeça com cabelo (+2 cm de margem com a faixa suave).
@@ -118,6 +134,8 @@ var _melee_now: Dictionary = {}
 var _melee_now_id := ""
 var _clear_blend := 0.0
 var _carry_support := 0.0
+## 1 = fuzil na prontidão baixa, 0 = mirando/recarregando (bolso da coronha, suavizado).
+var _low_ready := 0.0
 ## Eixo de rolagem da arma no quadro anterior (ver `MeleeMoveset.swing_basis`).
 var _swing_x := Vector3.ZERO
 var _right := Vector3(0.24, 0.68, -0.02)
@@ -193,6 +211,7 @@ func reset() -> void:
 	_melee_now_id = ""
 	_clear_blend = 0.0
 	_carry_support = 0.0
+	_low_ready = 0.0
 	_swing_x = Vector3.ZERO
 	_guard_weight = 0.0
 	_right_solve_weight = 0.0
@@ -271,7 +290,10 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	# apoio não alcançava o guarda-mão com a coronha no ombro (pedia 0,46–0,50 m para
 	# um braço de ~0,47 m) e o solver puxava a arma para dentro do peito.
 	if id in LONG_GUNS and engaged: stance = STOCK_STANCE
-	if id in LONG_GUNS and not engaged: stance = -0.30
+	# Prontidão baixa com o mesmo giro da mira: a −0,30 o guarda-mão (cano para baixo e
+	# para dentro) ficava fora do alcance do braço esquerdo e a mão deslizava até o
+	# carregador, encostada na direita. Mesmo giro também evita girar o tronco ao mirar.
+	if id in LONG_GUNS and not engaged: stance = STOCK_STANCE
 	# Lança-foguetes sempre no ombro: de frente o braço esquerdo não alcança o tubo.
 	if id == "rpg": stance = -0.60
 	if not melee_pose.is_empty(): stance = float(melee_pose.torso)
@@ -322,8 +344,10 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			if id in LONG_GUNS:
 				# Prontidão baixa: coronha no ombro e cano para baixo e para dentro
 				# (o giro é em torno da coronha; ver `_stock_pocket`).
-				carry_yaw = 0.40
-				pitch = -0.70 if sprinting else -0.55
+				# Correndo: cano mais baixo e menos atravessado (medido: a 0,55/−0,70 o corpo
+				# da arma encostava 4–5 cm no peito e o carregador no quadril).
+				carry_yaw = lerpf(0.55, 0.20, run)
+				pitch = -0.85 if sprinting else -0.55
 		else:
 			hand = Vector3(0.23, 1.02, 0.015)
 			if DATA.STOCK_ENDS.has(id):
@@ -393,8 +417,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	elif id == "knuckles":
 		if in_move or engaged:
 			var pose: Dictionary = punch if in_move else _punch_rest()
-			hand = pose.r
-			left_target = pose.l
+			hand = pose.r + body_offset
+			left_target = pose.l + body_offset
 			gun_basis = _basis(pose.rb)
 			offhand_basis = _basis(pose.lb)
 			wrist_right = float(pose.rr)
@@ -444,6 +468,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		left_solve = melee_support_weight > 0.0
 		if not melee_support_active: support = Vector3.ZERO
 
+	_low_ready = move_toward(_low_ready, 1.0 if not engaged and not reloading else 0.0, delta * 6.0)
 	var reload_pump := 0.0
 	var reload_kick := Vector3.ZERO
 	# Fuzil apoiado: coronha (espaço do modelo, relativa à empunhadura) presa ao bolso
@@ -454,11 +479,12 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		var pose := reload_targets(id, reload_progress)
 		reload_kick = pose.kick
 		var weight: float = pose.weight
-		hand = hand.lerp(pose.hand, weight)
+		# Poses de recarga em altura de pé: seguem a altura do corpo (andando agachado).
+		hand = hand.lerp(pose.hand + body_offset, weight)
 		# Entre o ombro e a pose de recarga o tubo do lança-foguetes varria o braço
 		# direito (5 cm dentro): a transição passa à frente, em arco.
 		if id == "rpg": hand += Vector3(0.0, 0.10, -0.22) * sin(PI * weight)
-		left_target = left_target.lerp(pose.left, weight)
+		left_target = left_target.lerp(pose.left + body_offset, weight)
 		gun_basis = gun_basis.slerp(pose.basis, weight)
 		reload_pump = pose.pump
 		# A mão de apoio larga o guarda-mão para buscar munição.
@@ -468,7 +494,9 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		# O ombro importado é mais estreito e a manga mais grossa que o boneco
 		# procedural: estender à frente em vez de erguer o cotovelo.
 		if id in HANDGUNS and not reloading:
-			if engaged: hand = Vector3(0.035, 1.08, -0.375)
+			# Mira acompanha a altura do corpo: andando de lado o clipe agacha 22 cm e a
+			# pistola numa altura fixa subia até a frente do rosto.
+			if engaged: hand = Vector3(0.035, 1.08, -0.375) + body_offset
 			else:
 				var relaxed_carry := Vector3(0.23, 0.80, -0.15) + body_offset
 				var sprint_carry := Vector3(0.19, 0.70, -0.11 - arm_swing * 0.07) + body_offset
@@ -483,20 +511,20 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 			hand.z -= 0.080
 			left_target.z -= 0.080
 			if id == "sawed_off" and not reloading:
-				hand = Vector3(0.055, 1.04 if engaged else 0.95, -0.36)
+				hand = Vector3(0.055, 1.04 if engaged else 0.95, -0.36) + body_offset
 				left_target = hand + gun_basis * support
 			elif id == "flamethrower" and not reloading:
-				hand = Vector3(0.09, 0.96 if engaged else 0.90, -0.28)
+				hand = Vector3(0.09, 0.96 if engaged else 0.90, -0.28) + body_offset
 				left_target = hand + gun_basis * support
 			elif id == "rpg" and not reloading:
 				# Tubo em cima do ombro direito, por fora da cabeça: o eixo do tubo fica
 				# 8 cm (modelo) acima das empunhaduras e o raio é ~4 cm; com a mão em
 				# x = 0,06 o tubo passava pelo queixo e pelo lado do pescoço.
-				hand = RPG_SHOULDER
+				hand = RPG_SHOULDER + body_offset
 				left_target = hand + gun_basis * support
 			if reloading and left_target.z > -0.16: left_target.x = minf(left_target.x, -0.24)
 			if reloading and id != "rpg":
-				var reload_hand := Vector3(0.06, 0.96, -0.34) if id in HANDGUNS else Vector3(0.0, 0.98, -0.36)
+				var reload_hand := (Vector3(0.06, 0.96, -0.34) if id in HANDGUNS else Vector3(0.0, 0.98, -0.36)) + body_offset
 				if left_target.z < -0.16: left_target += reload_hand - hand
 				hand = reload_hand
 				# Tranco do encaixe/ferrolho: a arma pula na mão e a mão de apoio vai junto.
@@ -508,7 +536,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 					# lado direito do tronco.
 					stock_pin = DATA.STOCK_ENDS[id] - DATA.GRIPS[id]
 					stock_extra = reload_kick
-					var shouldered_hand: Vector3 = _stock_pocket(_stance_yaw, gun_basis) + body_offset - gun_basis * stock_pin + stock_extra
+					var shouldered_hand: Vector3 = _stock_pocket(_stance_yaw, gun_basis, id, _low_ready) + body_offset - gun_basis * stock_pin + stock_extra
 					if left_target.z < -0.16: left_target += shouldered_hand - hand
 					hand = shouldered_hand
 
@@ -518,8 +546,10 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		# cima do ombro e ela saía nas costas; na mira a mão de apoio não alcançava o
 		# guarda-mão e o solver bilateral puxava a arma 13–28 cm para dentro do peito.
 		stock_pin = DATA.STOCK_ENDS[id] - DATA.GRIPS[id] - Vector3(0, 0, recoil * 0.05)
-		stock_extra = Vector3(0, -(1.0 - equip_blend) * 0.16, 0)
-		hand = _stock_pocket(_stance_yaw, gun_basis) + body_offset - gun_basis * stock_pin + stock_extra
+		# No saque a arma inclina em torno da coronha (pitch em `equip_blend`); descer a
+		# arma inteira 16 cm enfiava a coronha no peito, abaixo do ombro.
+		stock_extra = Vector3.ZERO
+		hand = _stock_pocket(_stance_yaw, gun_basis, id, _low_ready) + body_offset - gun_basis * stock_pin + stock_extra
 		support = _reachable_support(id, hand, gun_basis, left_shoulder)
 		left_target = hand + gun_basis * (support + Vector3(0, 0, pump))
 	var carry_left_basis := bag_palm_basis
@@ -543,7 +573,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	if stock_pin != Vector3.INF:
 		# A mão sai da base JÁ suavizada: suavizando posição e rotação separadas, a
 		# coronha entrava 3–5 cm no ombro ao subir da prontidão baixa para a mira.
-		var pinned := _stock_pocket(_stance_yaw, gun_basis) + body_offset - gun_basis * stock_pin + stock_extra
+		var pinned := _stock_pocket(_stance_yaw, gun_basis, id, _low_ready) + body_offset - gun_basis * stock_pin + stock_extra
 		if not reloading or left_target.z < -0.16: left_target += pinned - hand
 		hand = pinned
 		blend = 1.0
@@ -567,7 +597,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		# Vindo de uma recarga de fuzil, a pistola não pode atravessar o peito
 		# no primeiro quadro após equipar.
 		_right.x = clampf(_right.x, -0.03, 0.08)
-		_right.y = maxf(_right.y, 0.94)
+		_right.y = maxf(_right.y, 0.94 + minf(body_offset.y, 0.0))
 		_right.z = minf(_right.z, -0.33)
 	var pump_stroke := reload_pump if reloading else pump
 	_support_weight = move_toward(_support_weight, 1.0 if support != Vector3.ZERO else 0.0, delta * 6.0)
@@ -601,12 +631,21 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	# Lança-foguetes: cotovelo direito para baixo, sob o tubo. Aberto para fora (polo de
 	# arma longa) o tubo passava pelo cotovelo ao voltar da recarga para o ombro.
 	if id == "rpg": body = {"rp": RPG_POLE}
+	# Soqueira sem golpe nem guarda: cotovelos junto ao corpo, para baixo e para trás.
+	if id == "knuckles" and not in_move and not engaged: body = {"rp": KNUCKLE_RUN_POLE, "lp": Vector3(-KNUCKLE_RUN_POLE.x, KNUCKLE_RUN_POLE.y, KNUCKLE_RUN_POLE.z)}
 	if stock_pin != Vector3.INF: body = {"rp": STOCK_ELBOW}
 	if reloading and id in LONG_GUNS:
 		# Mão esquerda buscando cartucho/ferrolho junto ao receptor: com o polo de arma
 		# longa o cotovelo esquerdo subia acima da mão ("braço de baixo para cima").
 		body = body.duplicate()
 		body["lp"] = RELOAD_LEFT_POLE
+	# Arma longa aparece na mão quando o braço chega (~0,1 s de saque, como tirá-la das
+	# costas): antes, presa à mão que ainda vinha da arma anterior, ela atravessava o
+	# tronco 5–9 cm nos primeiros quadros (medido em 2026-10-06).
+	if id in LONG_GUNS or id in ["rpg", "flamethrower"]: visible = visible and equip_blend >= EQUIP_SHOW
+	# Pistola/magnum/cano serrado: 2 quadros de saque; no primeiro a mão ainda era o
+	# punho fechado da arma anterior e a pistola aparecia dentro dela.
+	if id in HANDGUNS or id == "sawed_off": visible = visible and equip_blend >= EQUIP_SHOW_HANDGUN
 	var right_v2 := _right * scale
 	return {
 		"right": right_v2, "left": _left * scale,
@@ -625,7 +664,10 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		# mãos: 12 cm do cabo, não o ponto de `SUPPORT_GRIPS`).
 		"support_point": grip + support + Vector3(0, 0, pump_stroke) if support_locked else DATA.SUPPORT_GRIPS.get(id, grip),
 		"long_weapon": long_gun or id in ["axe", "bat"],
-		"armed": id != "fists",
+		# Punhos em guarda contam como armados: a coluna volta à postura e só recebe o
+		# giro. Sem isso o clipe de andar de lado mirando dobrava o tronco para a frente e a
+		# cabeça descia abaixo dos punhos.
+		"armed": id != "fists" or (engaged and _guard_weight > 0.0),
 		"bag_carry": bag_carry,
 		"visible": visible, "engaged": engaged, "torso_yaw": _stance_yaw,
 		# Corpo no golpe (Actor): quadril lidera o tronco, peso à frente, joelhos.
@@ -729,18 +771,20 @@ func _shoulder(side: String, yaw: float) -> Vector3:
 ## da articulação na direção do peito girado, um pouco para dentro e para baixo.
 ## Com a arma inclinada (cano baixo, arma girada na recarga) o bico da coronha gira
 ## para trás, para dentro do peito: o bolso avança na proporção da inclinação.
-func _stock_pocket(yaw: float, gun_basis: Basis = Basis.IDENTITY) -> Vector3:
+func _stock_pocket(yaw: float, gun_basis: Basis = Basis.IDENTITY, id := "", low_ready := 0.0) -> Vector3:
 	var forward := Basis(Vector3.UP, yaw) * Vector3.FORWARD
 	var right := Basis(Vector3.UP, yaw) * Vector3.RIGHT
 	var tilt := sqrt(maxf(0.0, 1.0 - pow(clampf((gun_basis * Vector3.UP).normalized().y, -1.0, 1.0), 2.0)))
-	return _shoulder("Right", yaw) + forward * (STOCK_POCKET.z + STOCK_TOE * tilt) + right * STOCK_POCKET.x + Vector3(0, STOCK_POCKET.y, 0)
+	var shift: Vector3 = (STOCK_POCKET_SHIFT.get(id, Vector3.ZERO) as Vector3).lerp(STOCK_POCKET_SHIFT_READY.get(id, Vector3.ZERO), low_ready)
+	var pocket: Vector3 = STOCK_POCKET + shift
+	return _shoulder("Right", yaw) + forward * (pocket.z + STOCK_TOE * tilt) + right * pocket.x + Vector3(0, pocket.y, 0)
 
 ## Ponto de apoio da mão esquerda (espaço do modelo, relativo à empunhadura) que o
 ## braço esquerdo alcança: desliza do guarda-mão em direção ao receptor até caber.
 func _reachable_support(id: String, hand: Vector3, basis: Basis, left_shoulder: Vector3) -> Vector3:
 	var support: Vector3 = DATA.SUPPORT_GRIPS[id] - DATA.GRIPS[id]
 	var back := support
-	back.z = maxf(support.z, SUPPORT_MIN_REACH_Z)
+	back.z = maxf(support.z, float(SUPPORT_MIN_REACH_Z_BY_ID.get(id, SUPPORT_MIN_REACH_Z)))
 	if left_shoulder.distance_to(hand + basis * support) <= LEFT_PALM_REACH: return support
 	var low := 0.0
 	var high := 1.0
@@ -831,10 +875,14 @@ func _knuckle_pose(variant: int, age: float, engaged: bool, swing: float, sprint
 		# para frente e para trás, com o punho inclinando no mesmo sentido. Antes as
 		# duas mãos ficavam paradas à frente do quadril (±12 cm) e o Dante corria de
 		# braços duros (feedback de 25/09/2026).
-		var height := lerpf(0.78, 0.93, sprint)
+		# A mão sobe à frente e desce até o quadril atrás, como numa corrida real; antes
+		# ela ia para trás na altura do peito e o cotovelo subia aberto ("asa").
+		var height := lerpf(0.74, 0.80, sprint)
 		var pump := lerpf(0.26, 0.36, sprint)
-		right = Vector3(0.19, height + maxf(0.0, -swing) * 0.05, -0.05 - swing * pump)
-		left = Vector3(-0.19, height + maxf(0.0, swing) * 0.05, -0.05 + swing * pump)
+		var right_swing := -swing
+		var left_swing := swing
+		right = Vector3(0.18, height + maxf(0.0, right_swing) * 0.22, -0.06 - right_swing * pump * (1.0 if right_swing > 0.0 else 0.45))
+		left = Vector3(-0.18, height + maxf(0.0, left_swing) * 0.22, -0.06 - left_swing * pump * (1.0 if left_swing > 0.0 else 0.45))
 		right_basis = Basis(Vector3.RIGHT, swing * 0.55)
 		left_basis = Basis(Vector3.RIGHT, -swing * 0.55)
 	elif age < KNUCKLE_DURATION:
@@ -891,6 +939,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			if id in ["ak47", "m4a1"]:
 				hand.x = 0.09
 				tilt.z = -0.52
+			if id == "smg": tilt.z = SMG_RELOAD_ROLL
 		"magnum":
 			# Revólver, não escopeta: antes caía no caso da 12 e ia duas vezes ao cinto
 			# como quem enfia cartucho no tubo. Aqui: tambor para a esquerda, cano para

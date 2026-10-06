@@ -27,7 +27,9 @@ const GRIPS := {
 	"pistol": Vector3(0, -0.03, 0.02), "magnum": Vector3(0, -0.05, 0.03),
 	"smg": Vector3(0, -0.05, 0.03), "shotgun": Vector3(0, -0.04, 0.07),
 	"sawed_off": Vector3(0, -0.05, 0.05), "ak47": Vector3(0, -0.06, 0.04),
-	"m4a1": Vector3(0, -0.06, 0.04), "hunting_rifle": Vector3(0, -0.035, 0.035),
+	# Rifle de caça: mão embaixo da empunhadura (o "pistol grip" da coronha desce até
+	# y −0,085). No centro dela o pulso direito ficava 4–5 cm dentro da base da coronha.
+	"m4a1": Vector3(0, -0.06, 0.04), "hunting_rifle": Vector3(0, -0.075, 0.06),
 	"rpg": Vector3(0, 0, -0.10), "flamethrower": Vector3(0, -0.05, 0.03),
 	"grenade": Vector3(0, 0, -0.10), "knife": Vector3(0, 0, 0.025),
 	# Taco e machado com a pegada de quem bate pelo lado direito: mão ESQUERDA no pé

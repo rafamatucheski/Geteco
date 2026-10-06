@@ -313,6 +313,14 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 		_pose_cycle("Running", phase, 0.0)
 		if _run_weight < 1.0: _apply_blend(walk_pose, _capture_pose(), _run_weight)
 	if _directional_weight > 0.0:
+		# Os clipes "with_Gun" seguram um fuzil imaginário com os dois braços erguidos.
+		# O braço que a arma não resolve (granada, taco, machado, faca, a esquerda da
+		# pistola baixa) herdava isso e ficava erguido junto do rosto andando de lado ou
+		# para trás: os braços ficam com a passada comum.
+		var free_arms := {}
+		for bone_name in FREE_ARM_BONES:
+			var bone: int = _combat_bones.get(bone_name, -1)
+			if bone >= 0: free_arms[bone] = skeleton.get_bone_pose_rotation(bone)
 		# Só guardar a pose anterior quando ela realmente entra na mistura.
 		# Recuo/lateral puros evitam quatro cópias do esqueleto por quadro.
 		var ordinary: Array = _capture_pose() if _directional_weight < 1.0 else []
@@ -326,6 +334,7 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 			if _gait_direction.x < 0.0: _mirror_current_pose()
 			if lateral < 1.0: _apply_blend(longitudinal, _capture_pose(), clampf(lateral, 0, 1))
 		if _directional_weight < 1.0: _apply_blend(ordinary, _capture_pose(), _directional_weight)
+		for bone in free_arms: skeleton.set_bone_pose_rotation(bone, free_arms[bone])
 	if _locomotion_weight < 1.0 and not _idle_pose.is_empty():
 		var moving_pose := _capture_pose()
 		_apply_blend(_idle_pose, moving_pose, _locomotion_weight)
@@ -781,7 +790,14 @@ func _apply_combat_weapon_pose() -> void:
 			# antebraço; com a torção presa a 19°/quadro o resto caía no pulso, que
 			# satura, e a palma saía até 4 cm do cabo. A torção leva sua parte.
 			if bool(pose.get("grip_solver", false)): twist_rate = float(pose.get("arm_rate", 18.0))
-			skeleton.set_bone_pose_rotation(fore, (support_fore_before * swing * Quaternion(axis, clampf(turn, -twist_rate * _pose_delta, twist_rate * _pose_delta))).normalized())
+			var fore_rotation := (support_fore_before * swing * Quaternion(axis, clampf(turn, -twist_rate * _pose_delta, twist_rate * _pose_delta))).normalized()
+			if bool(pose.get("grip_solver", false)):
+				# A dobra (swing) não tinha limite: com a torção já no teto, o antebraço de
+				# apoio do machado chegava a 36–38°/quadro golpeando em movimento.
+				var fore_limit := float(pose.get("arm_rate", 18.0)) * 1.1 * _pose_delta
+				var fore_angle := support_fore_before.angle_to(fore_rotation)
+				if fore_angle > fore_limit: fore_rotation = support_fore_before.slerp(fore_rotation, fore_limit / fore_angle).normalized()
+			skeleton.set_bone_pose_rotation(fore, fore_rotation)
 			_set_combat_bone_rotation(hand, hand_basis)
 			var desired := skeleton.get_bone_pose_rotation(hand)
 			var angle := support_hand_before.angle_to(desired)
@@ -859,6 +875,7 @@ func _set_combat_grips(right: bool, left: bool, right_fist := false, left_fist :
 ## Rolagem fixa entre a palma pedida e o osso da mão (V1), usada pelo IK e pela
 ## inversa em `combat_realized_palm_basis`.
 const PALM_ROLL := {"Right": 0.358, "Left": -0.392}
+const FREE_ARM_BONES := ["LeftShoulder", "LeftArm", "LeftForeArm", "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand"]
 
 ## Two-bone IK adapted from the V1 Meshy rig. `target_local` and
 ## `palm_basis_local` use the Actor's facing space, with the muzzle along -Z.

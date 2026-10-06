@@ -84,9 +84,10 @@ func bone_local(name: String) -> Vector3:
 ## apontou nas tiras de quadros: braço "de baixo para cima", braços cruzados e braço
 ## tampando o rosto. Os limites são geométricos, não estéticos:
 ## - cotovelo para cima: o cotovelo sai da linha ombro–pulso mais de 2 cm, numa
-##   direção com componente vertical > 0,5 (dobra invertida);
+##   direção com componente vertical > 0,5 (dobra invertida), sem estar atrás do ombro;
 ## - antebraços cruzados: os dois antebraços a menos de 7 cm um do outro fora dos
 ##   8 cm junto aos pulsos (onde as mãos se encontram no cabo);
+## - mão acima da cabeça: o pulso acima do topo da cabeça (menos 3 cm);
 ## - braço na frente do rosto: algum ponto do braço até 30 cm à frente da cabeça,
 ##   a menos de 10 cm do centro dela de lado e entre o queixo e a testa. Soco
 ##   esticado na altura do queixo (mais de 30 cm à frente) não conta.
@@ -97,7 +98,9 @@ func anatomy_defects() -> Array[String]:
 		var elbow := bone_local(side + "ForeArm")
 		var wrist := bone_local(side + "Hand")
 		var bend := elbow - Geometry3D.get_closest_point_to_segment_uncapped(elbow, shoulder, wrist)
-		if bend.length() > 0.02 and bend.normalized().y > 0.5: found.append("cotovelo para cima " + side)
+		# Atrás do ombro (braço indo para trás na passada de corrida) o cotovelo sobe
+		# naturalmente com a mão no quadril; só reprova à frente ou ao lado do corpo.
+		if bend.length() > 0.02 and bend.normalized().y > 0.5 and elbow.z < shoulder.z + 0.05: found.append("cotovelo para cima " + side)
 	var re := bone_local("RightForeArm")
 	var rw := bone_local("RightHand")
 	var le := bone_local("LeftForeArm")
@@ -106,6 +109,10 @@ func anatomy_defects() -> Array[String]:
 	if closest[0].distance_to(closest[1]) < 0.07 and closest[0].distance_to(rw) > 0.08 and closest[1].distance_to(lw) > 0.08:
 		found.append("antebraços cruzados")
 	var head := bone_local("Head").lerp(bone_local("head_end"), 0.4)
+	# Mão acima do topo da cabeça: nenhuma pose do jogo pede isso (a machadada pesada
+	# para na orelha); aparecia com o tronco tombado entre os punhos.
+	for side in ["Right", "Left"]:
+		if bone_local(side + "Hand").y > bone_local("head_end").y - 0.03: found.append("mão acima da cabeça " + side)
 	for side in ["Right", "Left"]:
 		for segment in [[side + "Arm", side + "ForeArm"], [side + "ForeArm", side + "Hand"]]:
 			var a := bone_local(segment[0])

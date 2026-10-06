@@ -62,7 +62,7 @@ const PUNCHES := [
 		{"t": 0.05, "ease": "out", "l": Vector3(-0.24, 1.12, -0.22), "lr": 0.6, "lp": Vector3(-1.3, -0.4, 0.2), "torso": 0.30, "hip": 0.14, "dip": 0.035},
 		{"t": 0.10, "ease": "in", "l": Vector3(-0.20, 1.15, -0.40), "lr": 0.3, "lp": Vector3(-1.5, 0.0, 0.3), "torso": -0.10, "hip": -0.12},
 		{"t": 0.14, "ease": "in", "l": Vector3(-0.01, 1.15, -0.40), "lr": 0.0, "torso": -0.66, "hip": -0.32, "lean": 0.08, "step": 0.04},
-		{"t": 0.20, "ease": "out", "l": Vector3(0.02, 1.12, -0.35), "torso": -0.72, "hip": -0.34},
+		{"t": 0.20, "ease": "out", "l": Vector3(0.0, 1.08, -0.36), "torso": -0.72, "hip": -0.34},
 	]},
 	{"side": "right", "end": 0.50, "heavy": true, "keys": [
 		# Afunda os joelhos, o punho cai à altura do peito e sobe com o corpo; a esquerda
@@ -81,8 +81,9 @@ const SWINGS := [
 		{"t": 0.36, "ease": "swing", "r": Vector3(0.05, 1.06, -0.35), "d": Vector3(0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": 0.32, "hip": 0.36, "lean": 0.10, "step": 0.07, "dip": 0.04},
 		{"t": 0.47, "ease": "out", "r": Vector3(-0.15, 1.08, -0.27), "d": Vector3(-0.6, 0.6, 0.5), "k": Vector3(0, -1, 0), "torso": 0.70, "hip": 0.40, "lean": 0.06},
 		# Enrola ao lado do ombro esquerdo, afastado da cabeça: rente a ela, a volta
-		# pela frente obrigava a correção de colisão a girar o machado 55°/quadro.
-		{"t": 0.57, "ease": "out", "r": Vector3(-0.21, 1.10, -0.22), "d": Vector3(-0.70, 0.45, 0.45), "k": Vector3(0, -1, 0), "torso": 0.55, "hip": 0.30, "lean": 0.02, "step": 0.03},
+		# pela frente obrigava a correção de colisão a girar o machado 55°/quadro; mais
+		# perto do peito os antebraços se cruzavam golpeando andando.
+		{"t": 0.57, "ease": "out", "r": Vector3(-0.25, 1.11, -0.19), "d": Vector3(-0.70, 0.45, 0.45), "k": Vector3(0, -1, 0), "torso": 0.55, "hip": 0.30, "lean": 0.02, "step": 0.03},
 		# Volta por baixo, como pêndulo: do ombro esquerdo a arma desce pela esquerda,
 		# passa apontando para a frente na altura do peito e sobe pela direita até o
 		# ombro. Em pé na frente do peito (versão anterior) ela tampava o rosto; direto

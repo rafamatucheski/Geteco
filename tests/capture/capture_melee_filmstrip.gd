@@ -24,8 +24,15 @@ const MELEE_ROWS := [
 ]
 const RELOAD_ROWS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower"]
 ## mode=aim: arma baixa (0–0,4 s), sobe à mira e dispara três vezes (0,8/1,0/1,2 s).
-const AIM_ROWS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade", "knife"]
+const AIM_ROWS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade", "knife", "fists", "knuckles", "bat", "axe"]
 const AIM_SHOTS := [0.8, 1.0, 1.2]
+
+## [direção, velocidade]: move=walk (3,5 m/s), run (6,5), strafe (2,3 para a direita
+## mirando), back (2,4 para trás mirando), aimwalk (3,2 para a frente mirando).
+var _move := [Vector3.ZERO, 0.0]
+## noaim: nunca mira (correr/andar com a arma baixa).
+var _no_aim := false
+const MOVES_BY_NAME := {"walk": [Vector3.FORWARD, 3.5], "run": [Vector3.FORWARD, 6.5], "strafe": [Vector3.RIGHT, 2.3], "back": [Vector3.BACK, 2.4], "aimwalk": [Vector3.FORWARD, 3.2]}
 
 func _initialize() -> void: _run.call_deferred()
 
@@ -73,6 +80,8 @@ func _run() -> void:
 	var hands := false
 	var duration_override := 0.0
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("move="): _move = MOVES_BY_NAME[arg.trim_prefix("move=")]
+		if arg == "noaim": _no_aim = true
 		if arg.begins_with("view="): angle = arg.trim_prefix("view=")
 		if arg == "zoom=hands": hands = true
 		if arg.begins_with("duration="): duration_override = float(arg.trim_prefix("duration="))
@@ -141,15 +150,26 @@ func _run() -> void:
 		actor.queue_free()
 		gun.queue_free()
 		await process_frame
-	var path := out_dir.path_join(mode + ("_" + only if only != "" else "") + ("_" + angle if angle != "side" else "") + ".png")
+	var move_name := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("move="): move_name = "_" + arg.trim_prefix("move=")
+	var path := out_dir.path_join(mode + ("_" + only if only != "" else "") + move_name + ("_" + angle if angle != "side" else "") + ".png")
 	var error := sheet.save_png(path)
 	print("FILMSTRIP mode=%s path=%s error=%d" % [mode, ProjectSettings.globalize_path(path), error])
 	quit(0 if error == OK else 1)
 
 func _step(actor, pose, gun: Node3D, id: String, reloading: bool, progress: float, aiming := true) -> void:
-	actor._pose_locomotion(Vector3.ZERO, 3.5, Vector3.ZERO, 1.0 / 60.0)
-	var result: Dictionary = pose.update(id, 1.0 / 60.0, aiming, reloading, progress, false, false, actor.phase)
-	actor.combat_facing = 0.0
+	# move=: andar/correr no lugar (a fase da passada segue o deslocamento pedido; o
+	# ator não sai da câmera). Mirando, o corpo fica de frente e anda na direção pedida.
+	if _no_aim: aiming = false
+	var speed := float(_move[1])
+	var direction: Vector3 = _move[0]
+	actor.combat_facing = 0.0 if aiming or speed <= 0.0 else NAN
+	if not aiming and speed > 0.0: actor.visual.rotation.y = atan2(-direction.x, -direction.z)
+	else: actor.visual.rotation.y = 0.0
+	actor._pose_locomotion(direction, speed if speed > 0.0 else 3.5, direction * speed / 60.0, speed, 1.0 / 60.0)
+	# Mesma subida do quadril que `Gameplay` passa (`combat_rig_info`).
+	var result: Dictionary = pose.update(id, 1.0 / 60.0, aiming, reloading, progress, speed > 0.12, speed > 4.2, actor.phase, actor.combat_rig_info())
 	actor.set_combat_weapon_pose(id, result)
 	actor._apply_combat_weapon_pose()
 	gun.visible = bool(result.visible)
