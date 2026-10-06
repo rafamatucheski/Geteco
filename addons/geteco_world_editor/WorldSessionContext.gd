@@ -9,7 +9,8 @@ const PREFIX := "context/harbor/session/"
 const MOUNTAIN_PREFIX := "context/mountain/session/"
 # 6: túnel do canal, pista de skate, Torque e saída do forte (05/10), montados fora dos
 # registros de região; sem eles o mapa 2D mostrava chão vazio nesses lugares.
-const VERSION := 6
+# 7: portão norte (ponte da continuação norte), montado pela conexão só no jogo.
+const VERSION := 7
 
 class ForestSnapshot extends "res://gameplay/urban_v1/FreightOutskirts.gd":
 	var editor_batches := {}
@@ -128,6 +129,13 @@ static func build(parent: Node) -> Dictionary:
 	var torque_id := PREFIX+"torque"
 	rows[torque_id] = CONTEXT.from_node(torque,torque_id,"Torque","classic_meet",torque.ANCHOR)
 	torque.free()
+	# Estado concluído: o mapa mostra o traçado definitivo da ponte, não o canteiro.
+	var gateway = preload("res://world/north_gateway/NorthGatewayScenery.gd").new()
+	parent.add_child(gateway)
+	gateway.build(true)
+	var gateway_id := PREFIX+"north_gateway"
+	rows[gateway_id] = CONTEXT.from_node(gateway,gateway_id,"Portão norte","north_gateway",preload("res://world/north_gateway/NorthGatewayLayout.gd").WORK_POSITION)
+	gateway.free()
 	var mountain_rows := {}
 	var fort_script := preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd")
 	var fort = fort_script.new()
