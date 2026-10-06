@@ -1,0 +1,44 @@
+{
+  "station": "FRONTEIRA COUNTRY",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "processing": "Full tracks, normalized to -18 LUFS / -2 dBTP; 40 ms edge fades and 300 ms between tracks; Ogg Vorbis q5",
+  "sample_rate": 44100,
+  "channels": 2,
+  "duration_seconds": 339.2195,
+  "peak_dbfs": -1.586,
+  "rms_dbfs": -19.312,
+  "sha256": "b15fec40f003eeab0490824efc3052161bca6d01055351883ead7b559b8455a1",
+  "tracks": [
+    {
+      "title": "Country",
+      "artist": "Alex McCulloch (Pro Sensory)",
+      "page": "https://opengameart.org/content/country",
+      "url": "https://opengameart.org/sites/default/files/Country1_1.mp3",
+      "license": "CC0-1.0",
+      "source_sha256": "9b614d77de82624c77704cdf9f98517a012326b74a7148d8a8fd707e8ed82a8c",
+      "start_seconds": 0.0,
+      "duration_seconds": 158.7275
+    },
+    {
+      "title": "Gone Fishin'",
+      "artist": "Memoraphile @ You're Perfect Studio",
+      "page": "https://opengameart.org/content/gone-fishin",
+      "url": "https://opengameart.org/sites/default/files/gone_fishin_by_memoraphile_CC0_0.mp3",
+      "license": "CC0-1.0",
+      "source_sha256": "421347e2b46a5a58ff1de666a477eb99ee3cd34a649d23eebfa0cc47cd86106d",
+      "start_seconds": 159.0275,
+      "duration_seconds": 107.712
+    },
+    {
+      "title": "Beary Fishy",
+      "artist": "Memoraphile @ You're Perfect Studio",
+      "page": "https://opengameart.org/content/gone-fishin",
+      "url": "https://opengameart.org/sites/default/files/beary_fishy_menu_screen_by_memoraphile_CC0.mp3",
+      "license": "CC0-1.0",
+      "source_sha256": "74b6e33b0f80f9291bf5aa33651475f433c0fd2b5836f009e1706b74acc05658",
+      "start_seconds": 267.0395,
+      "duration_seconds": 71.88
+    }
+  ]
+}

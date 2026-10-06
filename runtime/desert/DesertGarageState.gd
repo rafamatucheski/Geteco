@@ -1,0 +1,52 @@
+extends RefCounted
+const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
+const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
+static func defaults() -> Dictionary:
+	return {"version":1,"vehicles":{},"purchased":{}}
+static func data(world: Dictionary) -> Dictionary:
+	return world.get("desert_garage",defaults()).duplicate(true)
+static func vehicle(world: Dictionary, id: String, archetype: String) -> Dictionary:
+	return data(world).vehicles.get(id,{"archetype":archetype,"parts":{},"owned":[],"presets":{}}).duplicate(true)
+static func valid(value: Variant, economy: Dictionary = {}) -> bool:
+	if not value is Dictionary or value.get("version") != 1: return false
+	if not value.get("vehicles") is Dictionary or value.vehicles.size()>128: return false
+	if not value.get("purchased") is Dictionary or value.purchased.size()>CARS.IDS.size(): return false
+	for id in value.vehicles:
+		if not id is String or id.is_empty() or id.length()>128: return false
+		var record: Variant = value.vehicles[id]
+		if not record is Dictionary or not record.get("archetype") is String: return false
+		if not record.get("parts") is Dictionary or TUNING.clean_parts(record.parts) != record.parts: return false
+		if not record.get("owned") is Array or record.owned.size()>TUNING.PARTS.size(): return false
+		var seen: Array = []
+		for part in record.owned:
+			if not part is String or not TUNING.PARTS.has(part) or part in seen: return false
+			seen.append(part)
+			if not economy.is_empty():
+				var receipt: Dictionary = economy.get("transactions",{}).get("spend:desert_part:"+id+":"+part,{})
+				if receipt.get("amount",-1) != TUNING.PARTS[part].cost: return false
+		for part in record.parts.values():
+			if part not in seen: return false
+		if not record.get("presets") is Dictionary or record.presets.size()>3: return false
+		for preset in record.presets:
+			if preset not in ["rua","drag","terra"] or not record.presets[preset] is Dictionary: return false
+			if TUNING.clean_parts(record.presets[preset]) != record.presets[preset]: return false
+			for part in record.presets[preset].values():
+				if part not in seen: return false
+	for id in value.purchased:
+		if id not in CARS.IDS or value.purchased[id] != "desert_owned_"+id: return false
+		if not economy.is_empty():
+			var receipt: Dictionary = economy.get("transactions",{}).get("spend:desert_car:"+id,{})
+			if receipt.get("amount",-1) != CARS.spec(id).price: return false
+	return true
+static func buy(world: Dictionary, economy, vehicle_id: String, archetype: String, part: String, wins: int) -> Dictionary:
+	var saved := data(world)
+	var record := vehicle(world,vehicle_id,archetype)
+	if record.archetype != archetype: return {"ok":false,"reason":"Identidade do carro inválida"}
+	var checked := TUNING.purchase_check(record.parts,record.owned,part,wins,economy.balance)
+	if not checked.ok: return checked
+	if checked.cost>0 and not economy.spend(checked.cost,"desert_part:"+vehicle_id+":"+part): return {"ok":false,"reason":"Compra não concluída"}
+	record.parts = checked.parts
+	record.owned = checked.owned
+	saved.vehicles[vehicle_id] = record
+	world.desert_garage = saved
+	return checked
