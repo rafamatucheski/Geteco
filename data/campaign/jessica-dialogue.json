@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "voice_status": "partial_pt_recordings",
+  "first_meeting": [
+    {"speaker": "Jessica", "pt": "Você é o Dante, né? Vi sua chegada nas docas. Correu bem.", "en": "You're Dante, right? I saw you finish at the docks. Nice driving."},
+    {"speaker": "Dante", "pt": "Você estava na prova?", "en": "You were at the race?"},
+    {"speaker": "Jessica", "pt": "Estava. Eu sou a Jessica. Na próxima, talvez você me veja pelo retrovisor. Só no começo.", "en": "I was. I'm Jessica. Next time, you might see me in your mirror. Just at the start."},
+    {"speaker": "Dante", "pt": "Esse Jetta é seu?", "en": "Is that Jetta yours?"},
+    {"speaker": "Jessica", "pt": "É. Ainda estou acertando a pressão do turbo. Maciota disse que você sabe trabalhar.", "en": "It is. I'm still dialing in the boost. Maciota said you know how to get things done."},
+    {"speaker": "Dante", "pt": "Depende do trabalho.", "en": "Depends on the job."},
+    {"speaker": "Jessica", "pt": "Quando estiver livre, passa aqui. Quero conversar com calma.", "en": "When you're free, come by. I'd like to talk properly."}
+  ],
+  "bank_offer": [
+    {"speaker": "Jessica", "pt": "Preciso de alguém dentro do North Pier. Eu cuido do carro e da saída. Você abre o cofre e traz o dinheiro.", "en": "I need someone inside North Pier. I'll handle the car and the way out. You open the vault and bring the money."},
+    {"speaker": "Dante", "pt": "Você sabe o que está me pedindo?", "en": "Do you know what you're asking me to do?"},
+    {"speaker": "Jessica", "pt": "Sei. E você pode dizer não. Maciota só me passou seu nome. Essa escolha é sua.", "en": "I do. And you can say no. Maciota only gave me your name. This choice is yours."},
+    {"speaker": "Dante", "pt": "Eu preciso sair de Harbor. Vou precisar desse dinheiro.", "en": "I need to leave Harbor. I'm going to need that money."},
+    {"speaker": "Jessica", "pt": "Então sai vivo. O Jetta vai estar na rua. Entra pela porta do passageiro e deixa o resto comigo.", "en": "Then get out alive. The Jetta will be on the street. Get in the passenger side and leave the rest to me."}
+  ],
+  "getaway": [
+    {"speaker": "Jessica", "pt": "Coloca o cinto. E respira. Agora sou eu que dirijo.", "en": "Buckle up. And breathe. I'm driving now."},
+    {"speaker": "Dante", "pt": "Você está muito calma.", "en": "You're awfully calm."},
+    {"speaker": "Jessica", "pt": "Você prefere que eu fique nervosa?", "en": "Would you rather I got nervous?"}
+  ],
+  "bank_debrief": [
+    {"speaker": "Jessica", "pt": "Pronto. Chegamos. Você pode soltar essa alça agora.", "en": "There. We made it. You can let go of that handle now."},
+    {"speaker": "Dante", "pt": "Você dirige assim nas corridas também?", "en": "Do you drive like that in races too?"},
+    {"speaker": "Jessica", "pt": "Nas corridas eu ando mais. Vou disputar umas provas fora daqui.", "en": "I go faster in races. I'm entering a few events out of town."},
+    {"speaker": "Dante", "pt": "Talvez a gente se encontre por lá.", "en": "Maybe we'll meet there."},
+    {"speaker": "Jessica", "pt": "Eu gostaria. Mas passa aqui antes de ir, tá?", "en": "I'd like that. But come see me before you leave, okay?"},
+    {"speaker": "Dante", "pt": "Eu passo.", "en": "I will."}
+  ],
+  "after_job": [
+    {"speaker": "Jessica", "pt": "Você voltou. Já estava achando que ia embora sem falar comigo.", "en": "You came back. I was starting to think you'd leave without seeing me."},
+    {"speaker": "Dante", "pt": "Eu disse que passava.", "en": "I said I would."},
+    {"speaker": "Jessica", "pt": "Disse. Gostei de você lembrar.", "en": "You did. I'm glad you remembered."}
+  ]
+}
