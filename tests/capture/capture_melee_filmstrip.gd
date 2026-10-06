@@ -9,7 +9,7 @@ extends SceneTree
 ##   Godot --path . --script res://tests/capture/capture_melee_filmstrip.gd -- mode=reload
 ## Saída: evidence/combat/filmstrip/<mode>.png (fica fora do Git).
 
-const CELL := Vector2i(220, 300)
+const CELL_DEFAULT := Vector2i(220, 300)
 const ACTOR = preload("res://scripts/Actor.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const POSE = preload("res://gameplay/WeaponRigPose.gd")
@@ -29,7 +29,14 @@ func _run() -> void:
 	var mode := "melee"
 	var out_dir := "res://evidence/combat/filmstrip/"
 	var columns := 14
+	# cell=LxA: células maiores para conferir o rig inteiro; only=arma: só as linhas dela.
+	var CELL := CELL_DEFAULT
+	var only := ""
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("cell="):
+			var size := arg.trim_prefix("cell=").split("x")
+			CELL = Vector2i(int(size[0]), int(size[1]))
+		if arg.begins_with("only="): only = arg.trim_prefix("only=")
 		if arg.begins_with("mode="): mode = arg.trim_prefix("mode=")
 		if arg.begins_with("out_dir="): out_dir = arg.trim_prefix("out_dir=").path_join("")
 		if arg.begins_with("columns="): columns = int(arg.trim_prefix("columns="))
@@ -66,11 +73,15 @@ func _run() -> void:
 		if arg == "zoom=hands": hands = true
 		if arg.begins_with("duration="): duration_override = float(arg.trim_prefix("duration="))
 	var view_offset := Vector3(3.0, 0.85, -1.05) if angle == "side" else Vector3(1.6, 1.35, -2.65)
+	# left: perfil pelo lado esquerdo (braço de apoio); back: por trás, acima do ombro.
+	if angle == "left": view_offset = Vector3(-3.0, 0.85, -1.05)
+	if angle == "back": view_offset = Vector3(-1.2, 1.6, 2.6)
 	camera.position = Vector3(0, 1.05, -0.35) + view_offset
 	view.add_child(camera)
 	camera.look_at(Vector3(0, 1.05, -0.35))
 	if hands: camera.size = 0.6
 	var rows: Array = MELEE_ROWS if mode == "melee" else RELOAD_ROWS
+	if only != "": rows = rows.filter(func(entry): return (entry[0] if entry is Array else entry) == only)
 	var sheet := Image.create(CELL.x * columns, CELL.y * rows.size(), false, Image.FORMAT_RGBA8)
 	for row in rows.size():
 		var id: String = rows[row][0] if mode == "melee" else rows[row]
@@ -114,7 +125,7 @@ func _run() -> void:
 		actor.queue_free()
 		gun.queue_free()
 		await process_frame
-	var path := out_dir.path_join(mode + ".png")
+	var path := out_dir.path_join(mode + ("_" + only if only != "" else "") + ("_" + angle if angle != "side" else "") + ".png")
 	var error := sheet.save_png(path)
 	print("FILMSTRIP mode=%s path=%s error=%d" % [mode, ProjectSettings.globalize_path(path), error])
 	quit(0 if error == OK else 1)

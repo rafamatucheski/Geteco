@@ -30,24 +30,27 @@ const GRIPS := {
 	"m4a1": Vector3(0, -0.06, 0.04), "hunting_rifle": Vector3(0, -0.035, 0.035),
 	"rpg": Vector3(0, 0, -0.10), "flamethrower": Vector3(0, -0.05, 0.03),
 	"grenade": Vector3(0, 0, -0.10), "knife": Vector3(0, 0, 0.025),
-	# Mão de trás no final do cabo, junto ao calcanhar (que vai até 0,16): com 6,5 cm
-	# sobrando, o pé do cabo entrava no peito quando as mãos passavam junto ao tronco.
-	"axe": Vector3(0, 0, 0.135),
+	# Taco e machado com a pegada de quem bate pelo lado direito: mão ESQUERDA no pé
+	# do cabo (`SUPPORT_GRIPS`) e a direita logo acima. Com a direita embaixo o braço
+	# esquerdo cruzava por cima do direito em quase todo golpe.
+	"axe": Vector3(0, 0, 0.015),
 	# Soqueira sobre os nós dos dedos do punho fechado, 4 cm adiante do ponto da palma
 	# (no centro da palma ela abraçava o dorso da mão junto ao pulso).
 	"knuckles": Vector3(0, 0, 0.04),
-	"bat": Vector3(0, 0, 0.10),
+	"bat": Vector3(0, 0, 0.035),
 	"fists": Vector3.ZERO,
 }
 const SUPPORT_GRIPS := {
 	"pistol": Vector3(-0.038, -0.033, 0.02),
 	"sawed_off": Vector3(-0.012, -0.018, -0.055),
-	"axe": Vector3(0, 0, -0.095),
+	# Mão esquerda no fim do cabo, junto ao calcanhar (vai até 0,16): mais acima, o pé
+	# do cabo entrava no peito quando as mãos passavam junto ao tronco.
+	"axe": Vector3(0, 0, 0.135),
 	"magnum": Vector3(-0.035, -0.05, 0.03), "smg": Vector3(-0.02, -0.02, -0.15),
 	"shotgun": Vector3(-0.02, -0.025, -0.16), "ak47": Vector3(-0.02, -0.015, -0.15),
 	"m4a1": Vector3(-0.02, -0.012, -0.15), "hunting_rifle": Vector3(-0.025, -0.025, -0.14),
 	"rpg": Vector3(-0.012, 0.0, -0.22), "flamethrower": Vector3(-0.012, -0.055, -0.14),
-	"bat": Vector3(0, 0, 0.035),
+	"bat": Vector3(0, 0, 0.10),
 }
 # Rear faces of the stocks, including the compact SMG wire stock.
 const STOCK_ENDS := {"smg": Vector3(0, 0.03, 0.19), "shotgun": Vector3(0, -0.04, 0.27), "ak47": Vector3(0, -0.02, 0.29), "m4a1": Vector3(0, 0, 0.25), "hunting_rifle": Vector3(0, -0.02, 0.19)}

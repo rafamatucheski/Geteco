@@ -1,7 +1,9 @@
 extends SceneTree
 ## Golpes corpo a corpo por quadros-chave (`MeleeMoveset`) no rig real do Dante:
 ## sequência de combo, contato à frente no instante do dano, continuidade das
-## articulações, arma sem giro brusco, pés plantados, hit-stop e acentos de recarga.
+## articulações, arma sem giro brusco, pés plantados, hit-stop, acentos de recarga e
+## defeitos de anatomia do rig inteiro (cotovelo virado para cima, antebraços
+## cruzados, braço na frente do rosto).
 ## Não mede se o golpe "fica bonito" — para isso há `capture/capture_melee_filmstrip.gd`.
 const ACTOR = preload("res://scripts/Actor.gd")
 const POSE = preload("res://gameplay/WeaponRigPose.gd")
@@ -73,6 +75,48 @@ func body_clearance(id: String) -> Array:
 				where = part[0]
 	return [gap, where]
 
+## Ossos no espaço do Actor (−Z é a frente).
+func bone_local(name: String) -> Vector3:
+	var sk: Skeleton3D = actor.skeleton
+	return actor.visual.to_local(sk.to_global(sk.get_bone_global_pose(sk.find_bone(name)).origin))
+
+## Defeitos de anatomia do quadro atual (lista vazia = nenhum). São os que o usuário
+## apontou nas tiras de quadros: braço "de baixo para cima", braços cruzados e braço
+## tampando o rosto. Os limites são geométricos, não estéticos:
+## - cotovelo para cima: o cotovelo sai da linha ombro–pulso mais de 2 cm, numa
+##   direção com componente vertical > 0,5 (dobra invertida);
+## - antebraços cruzados: os dois antebraços a menos de 7 cm um do outro fora dos
+##   8 cm junto aos pulsos (onde as mãos se encontram no cabo);
+## - braço na frente do rosto: algum ponto do braço até 30 cm à frente da cabeça,
+##   a menos de 10 cm do centro dela de lado e entre o queixo e a testa. Soco
+##   esticado na altura do queixo (mais de 30 cm à frente) não conta.
+func anatomy_defects() -> Array[String]:
+	var found: Array[String] = []
+	for side in ["Right", "Left"]:
+		var shoulder := bone_local(side + "Arm")
+		var elbow := bone_local(side + "ForeArm")
+		var wrist := bone_local(side + "Hand")
+		var bend := elbow - Geometry3D.get_closest_point_to_segment_uncapped(elbow, shoulder, wrist)
+		if bend.length() > 0.02 and bend.normalized().y > 0.5: found.append("cotovelo para cima " + side)
+	var re := bone_local("RightForeArm")
+	var rw := bone_local("RightHand")
+	var le := bone_local("LeftForeArm")
+	var lw := bone_local("LeftHand")
+	var closest := Geometry3D.get_closest_points_between_segments(re, rw, le, lw)
+	if closest[0].distance_to(closest[1]) < 0.07 and closest[0].distance_to(rw) > 0.08 and closest[1].distance_to(lw) > 0.08:
+		found.append("antebraços cruzados")
+	var head := bone_local("Head").lerp(bone_local("head_end"), 0.4)
+	for side in ["Right", "Left"]:
+		for segment in [[side + "Arm", side + "ForeArm"], [side + "ForeArm", side + "Hand"]]:
+			var a := bone_local(segment[0])
+			var b := bone_local(segment[1])
+			for i in 11:
+				var p := a.lerp(b, float(i) / 10.0)
+				if p.z < head.z - 0.06 and p.z > head.z - 0.30 and absf(p.x - head.x) < 0.10 and p.y > head.y - 0.13 and p.y < head.y + 0.15:
+					found.append("braço na frente do rosto " + side)
+					break
+	return found
+
 func run() -> void:
 	actor = ACTOR.new()
 	actor.is_player = true
@@ -108,6 +152,8 @@ func run() -> void:
 		var head_note := ""
 		var reach_ok := true
 		var reach_note := ""
+		var anatomy := {}
+		for defect in anatomy_defects(): anatomy["prontidão: " + defect] = int(anatomy.get("prontidão: " + defect, 0)) + 1
 		for press in count + 1:
 			pose.attack(id)
 			steps.append(pose.combo_step)
@@ -119,6 +165,9 @@ func run() -> void:
 				for bone in now.size():
 					max_joint = maxf(max_joint, rad_to_deg((previous[bone][1] as Quaternion).angle_to(now[bone][1])))
 				previous = now
+				for defect in anatomy_defects():
+					var key := "golpe %d: %s" % [pose.combo_step, defect]
+					anatomy[key] = int(anatomy.get(key, 0)) + 1
 				if id in ["bat", "axe"]:
 					var basis: Basis = actor.combat_weapon_transform(DATA.GRIPS[id]).basis.orthonormalized()
 					max_weapon = maxf(max_weapon, rad_to_deg(basis.get_rotation_quaternion().angle_to(last_basis.get_rotation_quaternion())))
@@ -173,12 +222,16 @@ func run() -> void:
 		check(max_joint < 35.0, "%s: articulação ≤ 35°/quadro (%.1f°)" % [id, max_joint])
 		if id in ["bat", "axe"]: check(max_weapon < 50.0, "%s: arma sem giro brusco (%.1f°/quadro)" % [id, max_weapon])
 		if id == "axe": check(edge_ok and edge_notes.size() >= count, "axe: fio da lâmina na frente do golpe no contato (%s)" % ", ".join(edge_notes))
+		var anatomy_notes: Array[String] = []
+		for key in anatomy: anatomy_notes.append("%s ×%d" % [key, anatomy[key]])
+		check(anatomy.is_empty(), "%s: rig sem cotovelo invertido, antebraços cruzados ou braço no rosto (%s)" % [id, ", ".join(anatomy_notes) if not anatomy.is_empty() else "nenhum quadro"])
 		check(foot_drift < 0.03, "%s: pés plantados durante a sequência (%.3f m)" % [id, foot_drift])
 		if id in ["bat", "axe"]:
 			# Carregando parado (antes do primeiro golpe e depois da sequência).
 			var still := POSE.new()
 			for i in 60: step(still, id)
 			var still_gap := body_clearance(id)
+			check(anatomy_defects().is_empty(), "%s: carregando, rig sem defeito de anatomia %s" % [id, anatomy_defects()])
 			check(float(still_gap[0]) > 0.0, "%s: carregando, a arma não entra no corpo (folga %.3f m, %s)" % [id, still_gap[0], still_gap[1]])
 			check(arm_gap > 0.0, "%s: no golpe, a arma não entra no corpo (folga mínima %.3f m: %s)" % [id, arm_gap, arm_note])
 		if id in ["bat", "axe"]: check(grip_gap < 0.035, "%s: mão de apoio no cabo (afastamento máximo %.3f m em %s)" % [id, grip_gap, grip_note])

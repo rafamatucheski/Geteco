@@ -64,8 +64,9 @@ const BLADE_ROLL_RATE := 20.0
 const HEAD_CENTER := Vector3(0.0, 1.243, -0.065)
 ## Carregar no ombro (V1): punho à frente do peito, à direita; a cabeça da arma vai
 ## para trás por cima do ombro direito, por fora da cabeça do Dante.
-const CARRY_HAND := Vector3(0.19, 1.00, -0.19)
-const CARRY_HEAD := Vector3(0.10, 0.45, 0.89)
+const CARRY_HAND := Vector3(0.20, 0.90, -0.15)
+const CARRY_HEAD := Vector3(0.25, 0.82, 0.5)
+const CARRY_POLE := Vector3(0.9, -1.5, 0.3)
 const HEAD_ABOVE_SPINE := 0.6
 const HEAD_CLEARANCE := 0.146
 ## Carregando parado: só a cabeça com cabelo (+2 cm de margem com a faixa suave).
@@ -264,7 +265,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 
 	var hand: Vector3 = p[0]
 	var support: Vector3 = DATA.SUPPORT_GRIPS.get(id, Vector3.ZERO) - DATA.GRIPS.get(id, Vector3.ZERO) if DATA.SUPPORT_GRIPS.has(id) else Vector3.ZERO
-	if id == "axe": support = Vector3(0, 0, -0.12)
+	if id == "axe": support = DATA.SUPPORT_GRIPS.axe - DATA.GRIPS.axe
 	# Pistola/magnum no coldre pendem de uma mão; a outra só sobe para firmar
 	# a empunhadura quando o jogador mira ou atira.
 	if id in HANDGUNS and not engaged: support = Vector3.ZERO
@@ -520,6 +521,10 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var scale := V1_TO_V2
 	var grip: Vector3 = DATA.GRIPS.get(id, Vector3.ZERO)
 	var body: Dictionary = punch if not punch.is_empty() else swing
+	# Carregando no ombro: cotovelo direito pendendo ao lado do corpo. O polo de arma
+	# longa (para fora e para a frente, pensado para fuzil apontado) abria o cotovelo
+	# na altura do ombro e o cabo passava por baixo do braço.
+	if body.is_empty() and id in ["axe", "bat"]: body = {"rp": CARRY_POLE}
 	var right_v2 := _right * scale
 	return {
 		"right": right_v2, "left": _left * scale,

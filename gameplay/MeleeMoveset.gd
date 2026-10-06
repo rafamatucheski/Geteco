@@ -61,14 +61,15 @@ const PUNCHES := [
 		# O gancho abre o cotovelo para fora e para cima e varre à altura do queixo.
 		{"t": 0.05, "ease": "out", "l": Vector3(-0.24, 1.12, -0.22), "lr": 0.6, "lp": Vector3(-1.3, -0.4, 0.2), "torso": 0.30, "hip": 0.14, "dip": 0.035},
 		{"t": 0.10, "ease": "in", "l": Vector3(-0.20, 1.15, -0.40), "lr": 0.3, "lp": Vector3(-1.5, 0.0, 0.3), "torso": -0.10, "hip": -0.12},
-		{"t": 0.14, "ease": "in", "l": Vector3(0.03, 1.15, -0.40), "lr": 0.0, "torso": -0.66, "hip": -0.32, "lean": 0.08, "step": 0.04},
-		{"t": 0.20, "ease": "out", "l": Vector3(0.08, 1.13, -0.34), "torso": -0.72, "hip": -0.34},
+		{"t": 0.14, "ease": "in", "l": Vector3(-0.01, 1.15, -0.40), "lr": 0.0, "torso": -0.66, "hip": -0.32, "lean": 0.08, "step": 0.04},
+		{"t": 0.20, "ease": "out", "l": Vector3(0.02, 1.12, -0.35), "torso": -0.72, "hip": -0.34},
 	]},
 	{"side": "right", "end": 0.50, "heavy": true, "keys": [
-		# Afunda os joelhos, o punho cai à altura do peito e sobe com o corpo.
-		{"t": 0.06, "ease": "out", "r": Vector3(0.14, 0.96, -0.22), "rr": 1.3, "rp": Vector3(0.35, -1.5, -0.9), "torso": -0.32, "hip": -0.16, "dip": 0.075, "lean": 0.14},
-		{"t": 0.14, "ease": "in", "r": Vector3(0.05, 1.21, -0.43), "rr": 1.45, "torso": 0.36, "hip": 0.26, "dip": -0.005, "lean": -0.05, "step": 0.05},
-		{"t": 0.21, "ease": "out", "r": Vector3(0.04, 1.24, -0.39), "lean": -0.08, "torso": 0.40},
+		# Afunda os joelhos, o punho cai à altura do peito e sobe com o corpo; a esquerda
+		# volta logo à guarda (vinda do gancho, passava pela frente do queixo).
+		{"t": 0.06, "ease": "out", "r": Vector3(0.14, 0.96, -0.22), "rr": 1.3, "l": GUARD_LEFT, "rp": Vector3(0.35, -1.5, -0.9), "torso": -0.32, "hip": -0.16, "dip": 0.075, "lean": 0.14},
+		{"t": 0.14, "ease": "in", "r": Vector3(0.09, 1.13, -0.43), "rr": 1.45, "torso": 0.36, "hip": 0.26, "dip": -0.005, "lean": -0.05, "step": 0.05},
+		{"t": 0.21, "ease": "out", "r": Vector3(0.09, 1.15, -0.40), "lean": -0.08, "torso": 0.40},
 	]},
 ]
 
@@ -76,59 +77,70 @@ const PUNCHES := [
 const SWINGS := [
 	{"end": 0.88, "keys": [
 		{"t": 0.24, "ease": "inout", "r": Vector3(0.23, 1.17, -0.05), "d": Vector3(0.42, 0.55, 0.72), "k": Vector3(0, -1, 0), "torso": -0.62, "hip": -0.26, "dip": 0.025, "step": -0.025},
-		{"t": 0.29, "ease": "in", "r": Vector3(0.21, 1.12, -0.15), "d": Vector3(1, 0.15, -0.1), "k": Vector3(0, -1, 0), "torso": -0.18, "hip": 0.18, "dip": 0.04, "step": 0.03},
-		{"t": 0.36, "ease": "in", "r": Vector3(0.05, 1.06, -0.35), "d": Vector3(0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": 0.32, "hip": 0.36, "lean": 0.10, "step": 0.07, "dip": 0.04},
-		{"t": 0.47, "ease": "out", "r": Vector3(-0.15, 1.08, -0.27), "d": Vector3(-1, 0.1, 0.15), "k": Vector3(0, -1, 0), "torso": 0.70, "hip": 0.40, "lean": 0.06},
+		{"t": 0.26, "ease": "in", "r": Vector3(0.21, 1.12, -0.15), "d": Vector3(0.55, 0.5, 0.55), "k": Vector3(0, -1, 0), "torso": -0.18, "hip": 0.18, "dip": 0.04, "step": 0.03},
+		{"t": 0.36, "ease": "swing", "r": Vector3(0.05, 1.06, -0.35), "d": Vector3(0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": 0.32, "hip": 0.36, "lean": 0.10, "step": 0.07, "dip": 0.04},
+		{"t": 0.47, "ease": "out", "r": Vector3(-0.15, 1.08, -0.27), "d": Vector3(-0.6, 0.6, 0.5), "k": Vector3(0, -1, 0), "torso": 0.70, "hip": 0.40, "lean": 0.06},
 		# Enrola ao lado do ombro esquerdo, afastado da cabeça: rente a ela, a volta
 		# pela frente obrigava a correção de colisão a girar o machado 55°/quadro.
 		{"t": 0.57, "ease": "out", "r": Vector3(-0.21, 1.10, -0.22), "d": Vector3(-0.70, 0.45, 0.45), "k": Vector3(0, -1, 0), "torso": 0.55, "hip": 0.30, "lean": 0.02, "step": 0.03},
-		# Volta pela frente do peito com a arma em pé: direto do ombro esquerdo ao
-		# direito a mão de apoio passava rente ao ombro, sem pegada possível, e o cabo
-		# do machado entrava no antebraço.
-		{"t": 0.73, "ease": "inout", "r": Vector3(0.02, 1.04, -0.30), "d": Vector3(0.10, 0.95, -0.25), "k": Vector3(0.7, -0.7, 0), "torso": 0.20, "hip": 0.12, "lean": 0.02, "step": 0.02},
+		# Volta por baixo, como pêndulo: do ombro esquerdo a arma desce pela esquerda,
+		# passa apontando para a frente na altura do peito e sobe pela direita até o
+		# ombro. Em pé na frente do peito (versão anterior) ela tampava o rosto; direto
+		# do ombro esquerdo ao direito a mão de apoio passava rente ao ombro e o cabo do
+		# machado entrava no antebraço.
+		{"t": 0.65, "ease": "inout", "r": Vector3(-0.04, 0.92, -0.32), "d": Vector3(-0.3, -0.6, -0.75), "k": Vector3(0.1, -0.6, 0.8), "torso": 0.35, "hip": 0.20, "lean": 0.04, "step": 0.03},
+		{"t": 0.73, "ease": "inout", "r": Vector3(0.12, 1.00, -0.30), "d": Vector3(0.5, 0.1, -0.85), "k": Vector3(0.7, -0.47, 0.36), "torso": 0.15, "hip": 0.10, "lean": 0.02, "step": 0.02},
 	]},
 	{"end": 0.80, "keys": [
-		{"t": 0.24, "ease": "inout", "r": Vector3(-0.10, 1.18, -0.12), "d": Vector3(-0.45, 0.55, 0.7), "k": Vector3(0, -1, 0), "torso": 0.50, "hip": 0.20, "dip": 0.025, "step": -0.02},
-		{"t": 0.29, "ease": "in", "r": Vector3(-0.12, 1.11, -0.23), "d": Vector3(-1, 0.15, -0.1), "k": Vector3(0, -1, 0), "torso": 0.14, "hip": -0.10, "dip": 0.04, "step": 0.03},
-		{"t": 0.36, "ease": "in", "r": Vector3(0.04, 1.06, -0.36), "d": Vector3(-0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": -0.28, "hip": -0.30, "lean": 0.10, "step": 0.06, "dip": 0.04},
-		{"t": 0.47, "ease": "out", "r": Vector3(0.22, 1.07, -0.22), "d": Vector3(1, 0.1, 0.2), "k": Vector3(0, -1, 0), "torso": -0.55, "hip": -0.34, "lean": 0.05},
+		# Vindo do forehand (arma à frente, à direita), passa pela frente e à esquerda
+		# antes de subir ao ombro esquerdo: em linha reta o cabo cruzava o antebraço
+		# direito, e por cima passaria na frente do rosto.
+		{"t": 0.12, "ease": "inout", "r": Vector3(-0.05, 1.02, -0.30), "d": Vector3(-0.55, 0.05, -0.83), "k": Vector3(0, -1, 0), "torso": 0.25, "hip": 0.10},
+		{"t": 0.24, "ease": "inout", "r": Vector3(-0.15, 1.13, -0.08), "d": Vector3(-0.45, 0.55, 0.7), "k": Vector3(0, -1, 0), "torso": 0.50, "hip": 0.20, "dip": 0.025, "step": -0.02},
+		{"t": 0.26, "ease": "in", "r": Vector3(-0.15, 1.10, -0.22), "d": Vector3(-0.55, 0.5, 0.55), "k": Vector3(0, -1, 0), "torso": 0.14, "hip": -0.10, "dip": 0.04, "step": 0.03},
+		{"t": 0.36, "ease": "swing", "r": Vector3(0.04, 1.06, -0.36), "d": Vector3(-0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": -0.28, "hip": -0.30, "lean": 0.10, "step": 0.06, "dip": 0.04},
+		{"t": 0.47, "ease": "out", "r": Vector3(0.22, 1.07, -0.22), "d": Vector3(0.75, 0.35, 0.55), "k": Vector3(0, -1, 0), "torso": -0.55, "hip": -0.34, "lean": 0.05},
 		{"t": 0.57, "ease": "out", "r": Vector3(0.21, 1.14, -0.10), "d": Vector3(0.4, 0.6, 0.7), "k": Vector3(0, -1, 0), "torso": -0.40, "hip": -0.22, "lean": 0.02},
 	]},
 	{"end": 0.88, "heavy": true, "keys": [
-		# Arqueia para trás com a arma caída atrás da cabeça e despeja o peso no golpe.
-		# Mãos acima e à frente da testa, puxadas para o lado direito, e a arma quase
-		# vertical atrás do ombro: deitada sobre a cabeça ela atravessava o crânio, e
-		# com as mãos atrás da cabeça o braço esquerdo não alcançava o cabo.
-		{"t": 0.24, "ease": "inout", "r": Vector3(0.12, 1.20, -0.23), "d": Vector3(0.20, 0.90, 0.38), "k": Vector3(1, 0, 0), "torso": -0.16, "hip": -0.06, "lean": -0.10, "step": -0.03, "rp": Vector3(1.2, 0.1, -0.6), "lp": Vector3(-1.2, 0.1, -0.6)},
-		{"t": 0.30, "ease": "in", "r": Vector3(0.07, 1.22, -0.27), "d": Vector3(0.05, 1, -0.15), "k": Vector3(1, 0, 0), "lean": 0.06, "dip": 0.02},
+		# Machadada pesada: mãos sobem até o ombro direito, ao lado da orelha (não à
+		# frente da testa: ali os dois antebraços tampavam o rosto), a lâmina para trás
+		# e para cima, e desce quase na vertical com o peso do corpo.
+		{"t": 0.24, "ease": "inout", "r": Vector3(0.22, 1.16, -0.04), "d": Vector3(0.25, 0.85, 0.45), "k": Vector3(0.97, -0.25, 0), "torso": -0.30, "hip": -0.12, "lean": -0.08, "step": -0.03, "rp": Vector3(0.9, -1.2, -0.3), "lp": Vector3(-0.9, -1.2, -0.3)},
+		{"t": 0.30, "ease": "in", "r": Vector3(0.18, 1.18, -0.16), "d": Vector3(0.3, 0.95, -0.1), "k": Vector3(0.97, -0.25, 0), "lean": 0.06, "dip": 0.02},
 		{"t": 0.36, "ease": "in", "r": Vector3(0.03, 1.00, -0.42), "d": Vector3(0, -0.35, -1), "k": Vector3(1, 0, 0), "torso": 0.10, "hip": 0.10, "lean": 0.28, "dip": 0.07, "step": 0.08, "rp": Vector3(1.1, -1.5, -1.35), "lp": Vector3(-1.1, -1.5, -1.35)},
 		{"t": 0.47, "ease": "out", "r": Vector3(0.02, 0.88, -0.37), "d": Vector3(0, -0.8, -0.6), "k": Vector3(1, 0, 0), "lean": 0.30, "dip": 0.08},
 		# Ergue a arma à frente antes de devolvê-la ao ombro: de "apontando para o
 		# chão" direto a "sobre o ombro" são direções quase opostas, e a
 		# interpolação girava a arma pelo lado errado.
-		{"t": 0.66, "ease": "inout", "r": Vector3(0.08, 1.10, -0.28), "d": Vector3(0.15, 0.95, -0.25), "k": Vector3(1, 0, 0), "torso": 0.0, "hip": 0.0, "lean": 0.06, "dip": 0.03, "step": 0.03},
+		{"t": 0.66, "ease": "inout", "r": Vector3(0.13, 1.06, -0.27), "d": Vector3(0.30, 0.92, -0.25), "k": Vector3(1, 0, 0), "torso": 0.0, "hip": 0.0, "lean": 0.06, "dip": 0.03, "step": 0.03},
 	]},
 ]
 ## Machado: a primeira vira um corte diagonal de cima para baixo.
 const AXE_DIAGONAL := {"end": 0.88, "keys": [
-	{"t": 0.22, "ease": "inout", "r": Vector3(0.20, 1.22, -0.08), "d": Vector3(0.42, 0.74, 0.52), "k": Vector3(0.85, -0.5, 0), "torso": -0.58, "hip": -0.24, "lean": -0.04, "dip": 0.02, "step": -0.025},
-	{"t": 0.29, "ease": "in", "r": Vector3(0.19, 1.22, -0.16), "d": Vector3(0.55, 0.80, -0.25), "k": Vector3(0.85, -0.5, 0), "torso": -0.20, "hip": 0.16, "lean": 0.06, "dip": 0.04, "step": 0.03},
+	{"t": 0.22, "ease": "inout", "r": Vector3(0.23, 1.15, -0.05), "d": Vector3(0.42, 0.74, 0.52), "k": Vector3(0.85, -0.5, 0), "torso": -0.58, "hip": -0.24, "lean": -0.04, "dip": 0.02, "step": -0.025},
+	{"t": 0.29, "ease": "in", "r": Vector3(0.21, 1.16, -0.18), "d": Vector3(0.55, 0.80, -0.25), "k": Vector3(0.85, -0.5, 0), "torso": -0.20, "hip": 0.16, "lean": 0.06, "dip": 0.04, "step": 0.03},
 	{"t": 0.36, "ease": "in", "r": Vector3(0.04, 1.02, -0.37), "d": Vector3(-0.2, -0.3, -1), "k": Vector3(0.85, -0.5, 0), "torso": 0.30, "hip": 0.34, "lean": 0.18, "step": 0.07, "dip": 0.06},
 	# O follow-through segue no plano do corte, descendo pela frente da perna esquerda
 	# (por trás dela o cabo encostava no antebraço esquerdo);
 	# a volta é pela frente (pela esquerda a lâmina cruzaria o eixo do plano).
 	{"t": 0.50, "ease": "out", "r": Vector3(-0.12, 0.88, -0.29), "d": Vector3(-0.50, -0.80, -0.10), "k": Vector3(0.85, -0.5, 0), "torso": 0.62, "hip": 0.38, "lean": 0.16, "dip": 0.06},
 	{"t": 0.59, "ease": "inout", "r": Vector3(-0.02, 0.98, -0.34), "d": Vector3(-0.2, -0.1, -1), "k": Vector3(0.92, -0.4, 0), "torso": 0.40, "hip": 0.25, "lean": 0.10, "dip": 0.05, "step": 0.04},
-	{"t": 0.67, "ease": "inout", "r": Vector3(0.03, 1.09, -0.29), "d": Vector3(0.10, 0.95, -0.30), "k": Vector3(1, 0, 0), "torso": 0.15, "hip": 0.10, "lean": 0.05, "dip": 0.03, "step": 0.03},
-	# Em pé à direita da cabeça antes de deitar no ombro: num trecho só a mão de
+	{"t": 0.67, "ease": "inout", "r": Vector3(0.13, 1.06, -0.27), "d": Vector3(0.30, 0.92, -0.25), "k": Vector3(1, 0, 0), "torso": 0.15, "hip": 0.10, "lean": 0.05, "dip": 0.03, "step": 0.03},
+	# Volta pelo lado direito do peito (bem à frente do rosto, a arma em pé tampava a
+	# cara). Em pé à direita da cabeça antes de deitar no ombro: num trecho só a mão de
 	# apoio (12 cm adiante no cabo) varria o arco inteiro e o antebraço saltava.
-	{"t": 0.76, "ease": "inout", "r": Vector3(0.08, 1.07, -0.26), "d": Vector3(0.30, 0.95, 0.05), "k": Vector3(1, 0, 0), "torso": 0.06, "hip": 0.04, "lean": 0.02, "dip": 0.01, "step": 0.01},
+	{"t": 0.76, "ease": "inout", "r": Vector3(0.16, 1.04, -0.23), "d": Vector3(0.35, 0.93, 0.05), "k": Vector3(1, 0, 0), "torso": 0.06, "hip": 0.04, "lean": 0.02, "dip": 0.01, "step": 0.01},
 ]}
+
+## Taco: o golpe pesado é o corte diagonal do ombro direito. Na pancada por cima as
+## mãos subiam à frente da testa e o antebraço esquerdo passava na frente do queixo.
+const BAT_HEAVY := {"end": 0.88, "heavy": true, "keys": AXE_DIAGONAL["keys"]}
 
 static func moves(id: String) -> Array:
 	if id in ["fists", "knuckles"]: return PUNCHES
 	if id == "axe": return [AXE_DIAGONAL, SWINGS[0], SWINGS[2]]
-	if id == "bat": return SWINGS
+	if id == "bat": return [SWINGS[0], SWINGS[1], BAT_HEAVY]
 	return []
 
 static func scale(id: String) -> float:
@@ -214,6 +226,9 @@ static func _ease(u: float, kind: String) -> float:
 		"in": return u * u * u * 0.35 + u * u * 0.65 # acelera até o fim do segmento
 		"out": return 1.0 - pow(1.0 - u, 2.4)
 		"lin": return u
+		# Aceleração suave (velocidade 0,5→1,5× a média): golpe de taco, cuja palma de
+		# apoio não acompanha o pico de 2,35× do "in" no contato (saía 4 cm do cabo).
+		"swing": return u * u * 0.5 + u * 0.5
 	return u * u * (3.0 - 2.0 * u)
 
 static func _catmull(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: float) -> Vector3:
