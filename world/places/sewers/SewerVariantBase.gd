@@ -8,12 +8,20 @@ var _palette: Dictionary = {}
 var _solid_counter := 0
 ## Luzes da sala, para as capturas e testes de revisão.
 var lights: Array[OmniLight3D] = []
+const DARKNESS := preload("res://world/places/sewers/SewerDarkness.gd")
+## Humor da sala (escuridão por cima do 3D, `SewerDarkness`): tint, base/edge = opacidade no centro e nas bordas.
+var mood := {"tint": Color(0.012, 0.02, 0.02), "base": 0.6, "edge": 0.88, "halo": 3.2, "halo_strength": 0.5}
+var _rng := RandomNumberGenerator.new()
 
 func room_size() -> Vector2:
 	return half * 2.0
 
 func _ready() -> void:
+	_rng.seed = hash(str(get_script().resource_path))
 	_build()
+	var darkness := DARKNESS.new()
+	add_child(darkness)
+	darkness.configure(self, mood)
 
 func _build() -> void:
 	pass
@@ -77,7 +85,7 @@ func pipe(a: Vector3, b: Vector3, radius: float, color: String) -> MeshInstance3
 	return instance
 
 ## Piso de pedra com ladrilhos de tons variados (um MultiMesh) e a laje escura por baixo.
-func floor_slab(rect: Rect2, base := "#252f30") -> void:
+func floor_slab(rect: Rect2, base := "#151b1b", tone_set := ["#3b403a", "#40443a", "#34403b", "#443f2f"]) -> void:
 	box(Vector3(rect.get_center().x, -0.16, rect.get_center().y), Vector3(rect.size.x, 0.3, rect.size.y), base)
 	var tile := Vector2(1.9, 1.4)
 	var columns := int(rect.size.x / tile.x)
@@ -91,7 +99,8 @@ func floor_slab(rect: Rect2, base := "#252f30") -> void:
 	multi.instance_count = columns * rows
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(rect.size.x * 31.0 + rect.size.y * 17.0)
-	var tones := [Color("566159"), Color("60665a"), Color("515d59"), Color("626958")]
+	var tones: Array = []
+	for tone in tone_set: tones.append(Color(tone))
 	var index := 0
 	var origin_x := rect.get_center().x - columns * tile.x * 0.5
 	var origin_z := rect.get_center().y - rows * tile.y * 0.5
@@ -110,7 +119,7 @@ func floor_slab(rect: Rect2, base := "#252f30") -> void:
 	add_child(instance)
 
 ## Paredes: fundo alto e frente baixa mantêm a leitura da câmera fixa.
-func walls(back_height := 2.8, side_height := 1.0, front_height := 0.35, color := "#626b59") -> void:
+func walls(back_height := 2.8, side_height := 1.0, front_height := 0.35, color := "#3b4237") -> void:
 	var t := 0.5
 	box(Vector3(0, back_height * 0.5, -half.y - t * 0.5), Vector3(half.x * 2.0 + t * 2.0, back_height, t), color, false, "BackWall")
 	box(Vector3(0, front_height * 0.5, half.y + t * 0.5), Vector3(half.x * 2.0 + t * 2.0, front_height, t), color, false, "FrontWall")
@@ -118,7 +127,7 @@ func walls(back_height := 2.8, side_height := 1.0, front_height := 0.35, color :
 		box(Vector3(side * (half.x + t * 0.5), side_height * 0.5, 0), Vector3(t, side_height, half.y * 2.0), color, false, "SideWall")
 	# Faixas de tijolo mais claro no fundo, para o muro não ser um bloco liso.
 	for course in 3:
-		box(Vector3(0, 0.45 + course * 0.8, -half.y + 0.02), Vector3(half.x * 2.0, 0.06, 0.05), "#747d68")
+		box(Vector3(0, 0.45 + course * 0.8, -half.y + 0.02), Vector3(half.x * 2.0, 0.06, 0.05), "#4a5143")
 
 func ladder(at: Vector3) -> void:
 	box(at + Vector3(0, 0.03, 0), Vector3(1.0, 0.04, 0.9), "#182728")
@@ -239,3 +248,95 @@ func create_reward_art(item: Dictionary) -> Node3D:
 	cash.position.y = 0.32
 	bag.add_child(cash)
 	return bag
+
+# --- Sujeira: tudo aqui é visual (sem colisão) salvo `rubble` e `heap(..., solid)`. ---
+
+func stain(at: Vector3, radius := 0.6, color := "#1d2a24") -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = radius
+	mesh.bottom_radius = radius
+	mesh.height = 0.004
+	mesh.radial_segments = 10
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	instance.material_override = _mat(color)
+	instance.position = Vector3(at.x, 0.028, at.z)
+	instance.scale.z = _rng.randf_range(0.4, 0.9)
+	instance.rotation.y = _rng.randf() * TAU
+	add_child(instance)
+
+func moss(at: Vector3, radius := 0.5) -> void:
+	stain(at, radius, ["#2c3a22", "#33401f", "#27351f"][_rng.randi() % 3])
+
+## Monte de lixo: caixas, latas e trapos amassados. `solid` faz dele um obstáculo (monte grande).
+func heap(at: Vector3, radius := 0.7, count := 9, solid := false) -> void:
+	var colors := ["#4a4033", "#3a3d36", "#55483a", "#2f3a3a", "#5a4a30", "#2b2b28", "#4d3a38"]
+	for index in count:
+		var offset := Vector3(_rng.randf_range(-radius, radius), 0.0, _rng.randf_range(-radius, radius)) * 0.8
+		var size := Vector3(_rng.randf_range(0.14, 0.42), _rng.randf_range(0.08, 0.3), _rng.randf_range(0.12, 0.38))
+		var piece := box(at + offset + Vector3(0, size.y * 0.5 + _rng.randf() * 0.12, 0), size, colors[_rng.randi() % colors.size()])
+		piece.rotation = Vector3(_rng.randf_range(-0.3, 0.3), _rng.randf() * TAU, _rng.randf_range(-0.3, 0.3))
+	if solid: _add_solid(at + Vector3(0, 0.3, 0), Vector3(radius * 1.5, 0.6, radius * 1.5), "Heap")
+	stain(at, radius * 1.2, "#1a1f1b")
+
+func rust_streak(x: float, wall_z: float, length := 1.4, y_top := 2.4) -> void:
+	box(Vector3(x, y_top - length * 0.5, wall_z), Vector3(_rng.randf_range(0.05, 0.12), length, 0.03), ["#5a3a22", "#4d3321", "#6a4526"][_rng.randi() % 3])
+
+func skeleton(at: Vector3, yaw := 0.0) -> void:
+	var root := Node3D.new()
+	root.position = Vector3(at.x, 0.05, at.z)
+	root.rotation.y = yaw
+	add_child(root)
+	var bone := _mat("#bdb8a4")
+	var skull := MeshInstance3D.new()
+	var skull_mesh := SphereMesh.new()
+	skull_mesh.radius = 0.1
+	skull_mesh.height = 0.2
+	skull.mesh = skull_mesh
+	skull.material_override = bone
+	skull.position = Vector3(0.55, 0.1, 0)
+	root.add_child(skull)
+	for index in 5:
+		var rib := MeshInstance3D.new()
+		var rib_mesh := BoxMesh.new()
+		rib_mesh.size = Vector3(0.03, 0.04, 0.34)
+		rib.mesh = rib_mesh
+		rib.material_override = bone
+		rib.position = Vector3(0.28 - index * 0.08, 0.05, 0)
+		rib.rotation.y = 0.0
+		root.add_child(rib)
+	for side in [-1.0, 1.0]:
+		var limb := MeshInstance3D.new()
+		var limb_mesh := BoxMesh.new()
+		limb_mesh.size = Vector3(0.55, 0.05, 0.05)
+		limb.mesh = limb_mesh
+		limb.material_override = bone
+		limb.position = Vector3(-0.35, 0.03, side * 0.16)
+		limb.rotation.y = side * 0.25
+		root.add_child(limb)
+
+## Massa de entulho/tijolo que fecha um canto e dá à sala um contorno torto. Colide pelo retângulo.
+func rubble(rect: Rect2, height := 1.8, color := "#2b312b") -> void:
+	var cell := 0.9
+	var columns := maxi(1, int(rect.size.x / cell))
+	var rows := maxi(1, int(rect.size.y / cell))
+	for row in rows:
+		for column in columns:
+			var h := height * _rng.randf_range(0.55, 1.0)
+			var piece := box(Vector3(rect.position.x + (column + 0.5) * rect.size.x / columns, h * 0.5, rect.position.y + (row + 0.5) * rect.size.y / rows), Vector3(rect.size.x / columns * 1.1, h, rect.size.y / rows * 1.1), color)
+			piece.rotation.y = _rng.randf_range(-0.3, 0.3)
+	solid_rects["Rubble_%d" % solid_rects.size()] = rect
+
+## Espalha sujeira (manchas, musgo, lixo) numa área, fora dos retângulos de `avoid`.
+func scatter_grime(area: Rect2, stains := 14, mosses := 6, heaps := 3, avoid: Array[Rect2] = []) -> void:
+	for index in stains + mosses + heaps:
+		var at := Vector3(area.position.x + _rng.randf() * area.size.x, 0, area.position.y + _rng.randf() * area.size.y)
+		var blocked := false
+		for rect in avoid:
+			if rect.grow(0.4).has_point(Vector2(at.x, at.z)): blocked = true
+		for rect in solid_rects.values():
+			if (rect as Rect2).grow(0.4).has_point(Vector2(at.x, at.z)): blocked = true
+		if blocked: continue
+		if index < stains: stain(at, _rng.randf_range(0.3, 1.0))
+		elif index < stains + mosses: moss(at, _rng.randf_range(0.3, 0.7))
+		else: heap(at, _rng.randf_range(0.4, 0.7), 7)

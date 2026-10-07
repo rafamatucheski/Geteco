@@ -1,51 +1,58 @@
 extends "res://world/places/sewers/SewerVariantBase.gd"
-## Beco do Mercado: um dreno de ponta cega onde Seu Abel montou o canto dele. Pequeno e quase sem segredo:
-## as economias dele debaixo do colchão e uma faca esquecida no caixote.
+## Beco do Mercado: um tubo apertado e imundo, entupido de entulho nos dois cantos, onde Seu Abel montou o canto
+## dele junto a um barril de fogo. Quase sem luz: só o fogo e uma lâmpada morrendo. Pequeno e quase sem segredo:
+## as economias dele debaixo do colchão e uma faca esquecida entre os barris.
 const REWARDS := [
-	{"id": "sewer_market_savings", "kind": "cash", "amount": 180, "local_position": Vector3(5.6, 0, -3.5)},
-	{"id": "sewer_market_knife", "kind": "weapon", "item": "knife", "amount": 1, "local_position": Vector3(-3.3, 0, 2.3)},
+	{"id": "sewer_market_savings", "kind": "cash", "amount": 180, "local_position": Vector3(6.4, 0, -3.2)},
+	{"id": "sewer_market_knife", "kind": "weapon", "item": "knife", "amount": 1, "local_position": Vector3(-3.0, 0, 2.2)},
 ]
 const RESIDENTS := [
-	{"id": "sewer_market_abel", "name": "Seu Abel", "local_position": Vector3(3.0, 0, -0.5),
-		"appearance": {"coat_color": Color("5b4f3d"), "pants_color": Color("3a3a35"), "appearance_variant": 41}},
+	{"id": "sewer_market_abel", "name": "Seu Abel", "local_position": Vector3(3.6, 0, -0.4),
+		"appearance": {"coat_color": Color("4a4033"), "pants_color": Color("2f302c"), "appearance_variant": 41}},
 ]
 
 func _build() -> void:
 	half = Vector2(8, 5)
-	floor_slab(Rect2(-half.x, -half.y, half.x * 2.0, half.y * 2.0))
-	walls()
+	mood = {"tint": Color(0.03, 0.02, 0.01), "base": 0.7, "edge": 0.94, "halo": 2.6, "halo_strength": 0.5}
+	floor_slab(Rect2(-half.x, -half.y, half.x * 2.0, half.y * 2.0), "#14110d", ["#2f2b22", "#332e22", "#2a2a22", "#38301f"])
+	walls(2.8, 1.0, 0.35, "#2b2f28")
 	ladder(Vector3(-6.2, 0, -3.4))
-	# Canal raso na frente: a água escorre para fora da sala.
-	water(Rect2(-half.x, 3.0, half.x * 2.0, 1.3))
-	for x in [-6.0, -2.0, 2.0, 6.0]: box(Vector3(x, 0.02, 3.0), Vector3(0.12, 0.05, 1.3), "#5d6c68", true)
-	pipe(Vector3(-7.5, 2.3, -4.9), Vector3(7.5, 2.3, -4.9), 0.2, "#61746b")
-	pipe(Vector3(7.5, 2.3, -4.9), Vector3(7.5, 0.2, -4.9), 0.14, "#61746b")
-	drips(Vector3(-1.0, 2.1, -4.7))
-	drips(Vector3(4.6, 2.1, -4.7))
-	puddle(Vector3(-1.0, 0, -4.2), 0.5)
-	puddle(Vector3(1.5, 0, 1.0), 0.6)
-	service_lamp(Vector3(-4.0, 2.6, -4.8), "#ffbd66", 1.8, 5.5, true)
-	# Canto do Abel: colchão, cobertor, barril de fogo, carrinho de mercado e roupa no varal.
-	box(Vector3(5.6, 0.14, -3.5), Vector3(2.0, 0.28, 1.0), "#6e6a57")
-	box(Vector3(5.8, 0.3, -3.5), Vector3(1.4, 0.06, 0.95), "#7a3b3b")
-	box(Vector3(4.7, 0.3, -3.5), Vector3(0.38, 0.1, 0.55), "#a59f8a")
-	fire_barrel(Vector3(4.4, 0, -1.1))
-	_shopping_cart(Vector3(6.6, 0, 0.6))
-	for index in 3:
-		box(Vector3(5.0 + index * 0.5, 0.9 + (index % 2) * 0.1, -4.6), Vector3(0.38, 0.7, 0.03), ["#7a8b9c", "#a8883e", "#6b4e63"][index])
-	pipe(Vector3(4.6, 1.35, -4.6), Vector3(6.6, 1.3, -4.6), 0.012, "#cfcfcf")
-	for index in 3: box(Vector3(2.6 + index * 0.9, 0.18, -2.7 + (index % 2) * 0.5), Vector3(0.8, 0.36, 0.6), ["#8a7a5c", "#7c6c52", "#9a8863"][index], false, "Cardboard")
-	crate(Vector3(-2.2, 0, 2.5), Vector3(0.9, 0.62, 0.9), "#756347", 0.3)
-	barrel(Vector3(-5.2, 0, 1.4))
-	barrel(Vector3(-4.6, 0, 1.9), "#6b5a3d")
-	# Garrafas e latas no chão, o chão fala do morador.
-	for index in 6: cyl(Vector3(0.6 + index * 0.37, 0.09, -1.0 + (index % 3) * 0.3), 0.04, 0.18, ["#4d7a52", "#8a6a2c", "#5a7587"][index % 3])
-	graffiti(Vector3(-3.0, 1.5, -4.92), Vector2(1.7, 0.9), "#d65a3a")
-	graffiti(Vector3(1.2, 1.7, -4.92), Vector2(1.1, 0.5), "#5a9ad6")
+	# Entulho fecha o canto sudeste e uma bolsa no fundo: o beco vira um L estreito.
+	rubble(Rect2(3.0, 1.9, 5.0, 3.1), 1.4)
+	rubble(Rect2(-1.2, -5.0, 3.0, 1.6), 1.6)
+	# Esgoto escorrendo pela frente, mais lama que água.
+	water(Rect2(-half.x, 3.0, 11.0, 1.3), -0.07, "#1c2a1a")
+	pipe(Vector3(-7.5, 2.3, -4.9), Vector3(-1.4, 2.3, -4.9), 0.2, "#3a453d")
+	pipe(Vector3(-1.4, 2.3, -4.9), Vector3(-1.4, 0.2, -4.9), 0.14, "#3a453d")
+	for x in [-5.0, -3.0, 2.4]: drips(Vector3(x, 2.1, -4.7))
+	for x in [-6.8, -3.5, 0.0, 2.8]: rust_streak(x, -4.95, _rng.randf_range(1.0, 2.0))
+	# Só duas luzes: a lâmpada morrendo (vermelha, falha muito) e o fogo do Abel.
+	service_lamp(Vector3(-4.2, 2.6, -4.8), "#ff6a3a", 1.1, 4.5, true)
+	# Canto do Abel: colchão podre, cobertor, papelão, carrinho de mercado e roupa de varal.
+	box(Vector3(6.4, 0.14, -3.2), Vector3(2.0, 0.28, 1.0), "#403d30")
+	box(Vector3(6.6, 0.3, -3.2), Vector3(1.4, 0.06, 0.95), "#4d2626")
+	box(Vector3(5.5, 0.3, -3.2), Vector3(0.38, 0.1, 0.55), "#6d6858")
+	fire_barrel(Vector3(4.8, 0, -1.4))
+	_shopping_cart(Vector3(7.0, 0, -0.6))
+	for index in 3: box(Vector3(5.2 + index * 0.55, 0.9 + (index % 2) * 0.1, -4.55), Vector3(0.38, 0.7, 0.03), ["#4a5a66", "#6a5a2a", "#4a3445"][index])
+	pipe(Vector3(4.8, 1.35, -4.55), Vector3(7.0, 1.3, -4.55), 0.012, "#8a8a8a")
+	for index in 3: box(Vector3(2.6 + index * 0.9, 0.18, -2.4 + (index % 2) * 0.6), Vector3(0.8, 0.36, 0.6), ["#5a4e38", "#4d4330", "#675a42"][index], false, "Cardboard")
+	box(Vector3(-3.0, 0.3, 2.2), Vector3(0.9, 0.6, 0.9), "#3a3023", false, "")
+	barrel(Vector3(-5.2, 0, 1.4), "#33403a")
+	barrel(Vector3(-4.6, 0, 1.9), "#4a3b28")
+	for index in 7: cyl(Vector3(0.0 + index * 0.37, 0.09, -1.0 + (index % 3) * 0.3), 0.04, 0.18, ["#3a5a3e", "#6a5020", "#41596a"][index % 3])
+	# Sujeira por toda parte: manchas, musgo e montes de lixo.
+	heap(Vector3(-0.8, 0, 0.8), 0.8, 11, true)
+	heap(Vector3(-6.8, 0, 2.2), 0.6, 8)
+	heap(Vector3(1.9, 0, -1.8), 0.5, 7)
+	scatter_grime(Rect2(-7.5, -4.5, 10.0, 8.2), 16, 8, 0)
+	skeleton(Vector3(-2.4, 0, -0.3), 0.4)
+	graffiti(Vector3(-3.4, 1.5, -4.92), Vector2(1.5, 0.8), "#6d2a1e")
+	graffiti(Vector3(0.9, 1.7, -4.92), Vector2(0.9, 0.4), "#223a55")
 
 func _shopping_cart(at: Vector3) -> void:
-	box(at + Vector3(0, 0.55, 0), Vector3(0.9, 0.04, 0.55), "#9aa0a0", true, "Cart")
+	box(at + Vector3(0, 0.55, 0), Vector3(0.9, 0.04, 0.55), "#6d7373", true, "Cart")
 	for corner in [Vector2(-0.43, -0.25), Vector2(0.43, -0.25), Vector2(-0.43, 0.25), Vector2(0.43, 0.25)]:
-		cyl(at + Vector3(corner.x, 0.28, corner.y), 0.04, 0.56, "#9aa0a0", true)
-	box(at + Vector3(0, 0.9, -0.27), Vector3(0.9, 0.5, 0.03), "#b5bbbb", true)
-	box(at + Vector3(0, 0.75, 0.0), Vector3(0.6, 0.34, 0.4), "#6c5e46")
+		cyl(at + Vector3(corner.x, 0.28, corner.y), 0.04, 0.56, "#6d7373", true)
+	box(at + Vector3(0, 0.9, -0.27), Vector3(0.9, 0.5, 0.03), "#838a8a", true)
+	box(at + Vector3(0, 0.75, 0.0), Vector3(0.6, 0.34, 0.4), "#493f2e")

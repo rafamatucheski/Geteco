@@ -2,7 +2,7 @@ extends Node
 ## Walk into the ship hold or cave; the sewer uses explicit interaction.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
-const IDS := ["harbor_sewer", "sewer_market", "sewer_quay", "sewer_warehouse", "sewer_port", "santa_mare_hold", "mountain_mystery_cave"]
+const IDS := ["harbor_sewer", "sewer_market", "sewer_quay", "sewer_warehouse", "sewer_pipe", "sewer_cistern", "sewer_port", "santa_mare_hold", "mountain_mystery_cave"]
 const ZOOM_SECONDS := .55
 var session: Node
 var definitions: Dictionary = {}

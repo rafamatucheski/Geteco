@@ -15,6 +15,10 @@ const SITES := [
 		"model": "SewerQuayDrain", "spawn": Vector3(-7.2, 0, -3.3)},
 	{"id": "sewer_warehouse", "name": "Galeria do Armazém", "point": Vector2(2500, 2290), "size": Vector2(24, 14),
 		"model": "SewerWarehouseGallery", "spawn": Vector3(-9.6, 0, -4.6)},
+	{"id": "sewer_pipe", "name": "Cano Entupido", "point": Vector2(1500, 2032), "size": Vector2(10, 7),
+		"model": "SewerPipeClog", "spawn": Vector3(-3.2, 0, -1.5)},
+	{"id": "sewer_cistern", "name": "Cisterna Velha", "point": Vector2(5300, 1160), "size": Vector2(44, 26),
+		"model": "SewerCisternHall", "spawn": Vector3(-19.5, 0, -10.7)},
 	{"id": "sewer_port", "name": "Dreno do Porto", "point": Vector2(3230, 3000), "size": Vector2(32, 20),
 		"model": "SewerPortCache", "spawn": Vector3(-12.6, 0, -7.0)},
 ]

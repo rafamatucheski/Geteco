@@ -18,8 +18,8 @@ func check(ok: bool, label: String, detail := "") -> void:
 
 func _run() -> void:
 	var world: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json"))
-	check(SEWERS.extra_ids().size() == 4, "quatro bueiros novos no catálogo", str(SEWERS.extra_ids()))
-	check(PLACES.sewer_openings().size() == 5, "cinco recortes de calçada (o original e quatro novos)")
+	check(SEWERS.extra_ids().size() == 6, "seis bueiros novos no catálogo", str(SEWERS.extra_ids()))
+	check(PLACES.sewer_openings().size() == 7, "sete recortes de calçada (o original e seis novos)")
 	var seen: Array[Vector2] = [PLACES.HARBOR_SEWER_OPENING.get_center()]
 	for id in SEWERS.extra_ids():
 		var definition := PLACES.get_definition(id)
