@@ -81,8 +81,8 @@ static func _scale(value: float, worst: float, best: float) -> float:
 static func _ratings(run: Dictionary) -> Dictionary:
 	var quarter := float(run.quarter) if float(run.quarter) != INF else 40.0
 	var r := {
-		"rate_accel": _scale(quarter,30.0,15.0),
-		"rate_speed": _scale(float(run.top_kmh),90.0,170.0),
+		"rate_accel": _scale(quarter,22.0,10.0),
+		"rate_speed": _scale(float(run.top_kmh),90.0,200.0),
 		"rate_handling": _scale(float(run.turn_speed),1.8,3.7),
 		"rate_braking": _scale(float(run.braking),700.0,1800.0)}
 	r["score"] = .34*r.rate_accel+.30*r.rate_speed+.20*r.rate_handling+.16*r.rate_braking
