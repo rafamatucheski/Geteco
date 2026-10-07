@@ -659,15 +659,16 @@ func _apply_combat_weapon_pose() -> void:
 	# V1 `MeshyDanteRig.prepare_pose`/`sync_shoulders`: armado, a coluna baixa volta
 	# ao repouso e a de cima recebe só o giro de postura. Senão o clipe de
 	# caminhada torce a camisa contra braços já resolvidos no espaço da mira.
-	var torso_yaw := float(pose.get("torso_yaw", 0.0))
+	var clip_punch := bool(pose.get("clip_punch", false))
+	var torso_yaw := 0.0 if clip_punch else float(pose.get("torso_yaw", 0.0))
 	# A passada já posiciona quadril e pés. O giro de ataque fica no tronco
 	# enquanto anda; aplicar o mesmo giro na raiz arrastava as duas pernas.
 	# Golpe parado: o quadril gira antes do tronco (cadeia cinética), o peso vai à
 	# frente ("step") e os joelhos cedem ("dip") com os pés plantados pelo IK de
 	# perna. Andando, a passada é dona do quadril e só o tronco participa.
-	var hip_yaw := float(pose.get("hip_yaw", torso_yaw * 0.35))
-	var dip := float(pose.get("dip", 0.0))
-	var step := float(pose.get("step", 0.0))
+	var hip_yaw := 0.0 if clip_punch else float(pose.get("hip_yaw", torso_yaw * 0.35))
+	var dip := 0.0 if clip_punch else float(pose.get("dip", 0.0))
+	var step := 0.0 if clip_punch else float(pose.get("step", 0.0))
 	var weight_shift := absf(dip) > 0.0005 or absf(step) > 0.0005
 	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat"] and (absf(hip_yaw) > 0.001 or weight_shift) and _locomotion_weight <= 0.0 and hips >= 0:
 		var chest_before: Basis = skeleton.get_bone_global_pose(_combat_bones.Spine02).basis

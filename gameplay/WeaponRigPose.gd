@@ -122,6 +122,10 @@ var _attacked_id := ""
 var recoil := 0.0
 var equip_blend := 1.0
 var punch_left := false
+## Chaves de A/B para medição (nunca gravadas): desligam, em tempo de execução, o soco por clipe da UAL e o
+## braço da soqueira seguindo o clipe de corrida, para comparar com o comportamento anterior sem trocar arquivos.
+static var ab_punch_clip := true
+static var ab_follow_clip := true
 var knife_variant := -1
 var knuckle_variant := -1
 var melee_support_weight := 0.0
@@ -247,6 +251,8 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	var body_offset := Vector3(0, float(rig.get("body_bob", 0.0)) / V1_TO_V2, 0)
 	var move_end := float(_move.get("end", 0.0)) * MOVES.scale(id) if _attacked_id == id else 0.0
 	var in_move := not MOVES.moves(id).is_empty() and action_age < move_end
+	var clip_punch := bool(rig.get("clip_punch", false)) and id in ["fists", "knuckles"]
+	var follow_enabled := ab_follow_clip
 	var engaged := aiming or action_age < (0.90 if id == "fists" else 0.45) or in_move
 	# Armas de duas mãos já são negadas com a mala; o resto usa uma mão só.
 	bag_carry = bool(rig.get("bag_carry", false)) and id not in LONG_GUNS and id not in ["axe", "bat", "rpg", "flamethrower", "sawed_off"]
@@ -660,7 +666,9 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"right_fist": right_fist, "left_fist": left_fist,
 		# Soqueira correndo: os punhos seguem a mão que o clipe de corrida já traz (balanço natural)
 		# em vez do bombeio curto de `_knuckle_pose`, que lia como braço duro e "amebado".
-		"follow_clip": _move_weight if id == "knuckles" and not in_move and not engaged else 0.0,
+		"follow_clip": 1.0 if clip_punch else (_move_weight if follow_enabled and id == "knuckles" and not in_move and not engaged else 0.0),
+		# Soco por clipe da UAL: braços e corpo vêm do clipe; o giro procedural de quadril/tronco fica de fora.
+		"clip_punch": clip_punch,
 		"right_free": right_free, "left_free": left_free,
 		"support_locked": support_locked,
 		"support_weight": _support_weight if support != Vector3.ZERO else 0.0,

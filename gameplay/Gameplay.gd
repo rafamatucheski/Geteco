@@ -89,6 +89,12 @@ const GUN_CLIPS := {
 	"magnum": {"shoot": ["ual/Pistol_Shoot", 0.0, 0.35], "reload": "ual/Pistol_Reload"},
 }
 const GUN_CLIP_MAX_SPEED := 0.4
+## Socos da UAL para punhos e soqueira, escolhidos pelo lado do golpe do combo: [clipe, instante do pico da mão
+## em s]. Pico medido na mão em movimento (`tools/measure_ual_punch.gd`): Jab = mão esquerda 9,0 m/s em 0,17 s;
+## Cross = mão direita 6,3 m/s em 0,20 s. O trecho começa `MELEE_CONTACT` antes do pico, para o impacto visível
+## coincidir com o dano, que é aplicado no contato.
+const PUNCH_CLIPS := {"left": ["ual/Punch_Jab", 0.17], "right": ["ual/Punch_Cross", 0.20]}
+const PUNCH_CLIP_SECONDS := 0.55
 const MELEE_CLIPS := {
 	"unarmed": ["Punch_Forward_with_Both_Fists", 0.75, 1.3],
 	"knuckles": ["Punch_Forward_with_Both_Fists", 0.75, 1.3],
@@ -539,6 +545,7 @@ func _update_weapon_pose(delta: float) -> void:
 	if reload_timer > 0.0 and _reload_total > 0.0: progress = clampf(1.0 - reload_timer / _reload_total, 0.0, 1.0)
 	var rig: Dictionary = player.combat_rig_info() if player.has_method("combat_rig_info") else {}
 	rig["bag_carry"] = state.get("economy") != null and state.economy.grid_handbag()
+	rig["clip_punch"] = _clip_name.begins_with("ual/Punch")
 	if id == "grenade":
 		# A próxima granada vem da reserva quando a mão termina a recuperação,
 		# inclusive ao equipar um save com a mão vazia. Sem recarga de pistola.
@@ -810,6 +817,21 @@ func _start_combat_clip(id: String, data: Dictionary) -> bool:
 	_clip_weapon = id
 	return true
 
+## Soco da UAL (punhos e soqueira). Como o clipe de arma de fogo, só com o jogador parado.
+func _play_punch_clip(id: String) -> void:
+	if not RIG_POSE.ab_punch_clip or id not in ["fists", "knuckles"] or not is_instance_valid(player) or not "animation" in player: return
+	if player is CharacterBody3D and (player as CharacterBody3D).velocity.length() > GUN_CLIP_MAX_SPEED: return
+	var spec: Array = PUNCH_CLIPS["left" if _rig_pose.punch_left else "right"]
+	var animation: AnimationPlayer = player.animation
+	if animation == null or not animation.has_animation(spec[0]): return
+	var start := maxf(0.0, float(spec[1]) - float(RIG_POSE.MELEE_CONTACT.get(id, 0.14)))
+	_clip_name = spec[0]
+	_clip_start = start
+	_clip_end = start + PUNCH_CLIP_SECONDS
+	_clip_age = 0.0
+	_clip_rate = 1.0
+	_clip_weapon = equipped()
+
 ## Clipe de arma de fogo da UAL. `rate` estica o clipe para caber no tempo real (recarga).
 func _play_gun_clip(id: String, kind: String, rate: float = 1.0) -> void:
 	var spec: Dictionary = GUN_CLIPS.get(id, {})
@@ -1057,6 +1079,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 		# `Attack`/`Punch_Forward_with_Both_Fists` do GLB moviam o corpo inteiro e
 		# ignoravam a arma na mão; ficam fora do golpe.
 		_start_swing(data, direction)
+		_play_punch_clip(id)
 		_pending_contact = {"id": id, "target": target, "data": data, "time": float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))}
 	else:
 		_in_pellet_volley = true

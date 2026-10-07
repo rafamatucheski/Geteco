@@ -275,8 +275,10 @@ func _run() -> void:
 		Input.action_release("fire")
 		await frames(2)
 		check(victim.health == before, "corpo a corpo %s: antecipação antes do dano" % id)
-		# Golpe procedural da V1 (WeaponRigPose), sem clipe do GLB por cima.
-		check(gameplay._swing_age >= 0.0 and gameplay._rig_pose.action_age < 0.2 and player.combat_clip == "", "corpo a corpo %s: golpe procedural ativo" % id, "swing=%.2f clip=%s" % [gameplay._swing_age, player.combat_clip])
+		# Golpe procedural da V1 (WeaponRigPose). Punhos e soqueira parados usam o soco da UAL por cima
+		# (`ual/Punch_*`); faca, taco e machado seguem sem clipe do GLB.
+		var punch_clip: bool = id in ["fists", "knuckles"]
+		check(gameplay._swing_age >= 0.0 and gameplay._rig_pose.action_age < 0.2 and (player.combat_clip.begins_with("ual/Punch") if punch_clip else player.combat_clip == ""), "corpo a corpo %s: golpe procedural ativo" % id, "swing=%.2f clip=%s" % [gameplay._swing_age, player.combat_clip])
 		await frames(24)
 		check(is_equal_approx(before - victim.health, expected), "corpo a corpo %s: dano único no contato" % id, "dano=%.1f esperado=%.1f" % [before - victim.health, expected])
 		await frames(6)
