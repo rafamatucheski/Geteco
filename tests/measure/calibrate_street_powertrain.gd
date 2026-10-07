@@ -8,7 +8,7 @@ const STEP := 1.0/60.0
 
 func _initialize() -> void: run.call_deferred()
 
-func _sim(id: String, torque: float, target_speed: float) -> Dictionary:
+func _sim(id: String, torque: float, target_speed: float, full := true) -> Dictionary:
 	var d = DRIVE.new()
 	d.configure(id,{})
 	d.spec.torque_nm = torque
@@ -26,6 +26,7 @@ func _sim(id: String, torque: float, target_speed: float) -> Dictionary:
 		t += STEP
 		if reach == INF and d.speed_mps >= target_speed: reach = t
 		if quarter == INF and d.distance_m >= 400.0: quarter = t
+		if not full and reach != INF: break
 	return {"reach":reach,"quarter":quarter,"top":d.speed_mps}
 
 func run() -> void:
@@ -39,12 +40,14 @@ func run() -> void:
 		var hi := 4000.0
 		for i in 30:
 			var mid := (lo+hi)*.5
-			if float(_sim(id,mid,v_ref).reach) > target: lo = mid
+			if float(_sim(id,mid,v_ref,false).reach) > target: lo = mid
 			else: hi = mid
 		var best := (lo+hi)*.5
 		var cal := _sim(id,best,v_ref)
 		var stored := _sim(id,float(spec.torque_nm),v_ref)
 		var quarter_legacy := sqrt(2.0*400.0/a) if cap*cap/(2.0*a) >= 400.0 else cap/a+(400.0-cap*cap/(2.0*a))/cap
+		print("CAL %s %.0f" % [id,best])
+		if best <= 21.0 or best >= 3990.0: print("AVISO ",id," torque no limite da busca; ficha inviável")
 		print("%-15s v_ref=%.1f m/s alvo=%.2fs | torque calibrado=%.0f Nm (gravado %.0f -> %.2fs) | 400m: motor %.2fs vs antigo %.2fs | final %.0f vs %.0f km/h" % [
 			id,v_ref,target,best,float(spec.torque_nm),float(stored.reach),float(cal.quarter),quarter_legacy,float(cal.top)*3.6,cap*3.6])
 	quit(0)

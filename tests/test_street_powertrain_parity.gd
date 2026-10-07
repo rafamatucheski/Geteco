@@ -39,18 +39,18 @@ func _run() -> void:
 			gears[drive.gear] = true
 			if reach == INF and float(car.speed) >= v_ref: reach = t
 		var target := v_ref/a
-		_check(reach != INF and absf(reach-target) <= target*.12,"Arrancada fora de 12%% em %s: %.2fs vs %.2fs" % [id,reach,target])
+		_check(reach != INF and absf(reach-target) <= target*.08,"Arrancada fora de 8%% em %s: %.2fs vs %.2fs" % [id,reach,target])
 		_check(top <= cap+.001 and top >= cap*.97,"Final de rua fora do esperado em %s: %.1f vs %.1f m/s" % [id,top,cap])
 		_check(gears.size() >= 3,"Troca automática insuficiente em "+id)
 		print("PARITY ",id," arrancada=%.2fs (antigo %.2fs) final=%.0f km/h (antigo %.0f) marchas=%d" % [reach,target,top*3.6,cap*3.6,gears.size()])
 		car.free()
-	for other in ["sport_coupe","sedan_classic","vertice_midengine"]:
+	for other in ["police_cruiser","route_city","bike_urban","medic_box"]:
 		var car := VEHICLE.new()
 		car.archetype = other
 		car.vehicle_id = "other_"+other
 		root.add_child(car)
 		car.set_physics_process(false)
-		_check(car.handling.get("drive") == null,"Carro fora do piloto foi migrado sem querer: "+other)
+		_check(car.handling.get("drive") == null,"Veículo de serviço foi migrado sem querer: "+other)
 		car.free()
 	await process_frame
 	print("STREET_POWERTRAIN_PARITY ","PASS" if failures.is_empty() else "FAIL"," failures=",failures.size())
