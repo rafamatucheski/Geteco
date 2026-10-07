@@ -2,6 +2,7 @@ extends RefCounted
 const G := preload("res://world/desert/DesertGeometry.gd")
 const DETAILS := preload("res://world/desert/DesertTownDetails.gd")
 const TRUCK_DETAILS := preload("res://world/desert/DesertTruckDetails.gd")
+const BITREM := preload("res://world/desert/DesertBitremModel.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 
 static func _box(parent: Node3D,id: String,at: Vector3,size: Vector3,color: Color,solid := false) -> MeshInstance3D:
@@ -63,39 +64,7 @@ static func building(data: Dictionary) -> Node3D:
 	return root
 
 static func bitrem(color: Color) -> Node3D:
-	var root := Node3D.new()
-	root.name="ParkedBitrem"
-	root.set_meta("vehicle_kind","bitrem")
-	root.set_meta("trailer_count",2)
-	# 26m road train: tractor, articulated fifth-wheel gap, two full semitrailers.
-	_box(root,"TractorChassis",Vector3(0,.8,-8.9),Vector3(2.45,.35,6.5),Color("333932"),true)
-	_box(root,"Cab",Vector3(0,2,-11),Vector3(2.5,2.7,2.6),color,true)
-	_box(root,"Sleeper",Vector3(0,2.15,-9),Vector3(2.4,3,1.35),color,true)
-	_box(root,"Windscreen",Vector3(0,2.55,-12.32),Vector3(2.15,.8,.06),Color("38494d"))
-	_box(root,"Grille",Vector3(0,1.18,-12.35),Vector3(1.7,.68,.12),Color("676963"))
-	_box(root,"Bumper",Vector3(0,.65,-12.5),Vector3(2.7,.26,.26),Color("a1a7a0"))
-	for side in [-1.0,1.0]:
-		_box(root,"Mirror",Vector3(side*1.45,2.4,-11.7),Vector3(.25,.48,.18),Color("7c827c"))
-		G.cylinder(root,"Exhaust",Vector3(side*1.17,2.3,-8.2),.09,3.2,Color("8e948e"))
-		_box(root,"Headlamp",Vector3(side*.92,1.2,-12.4),Vector3(.4,.27,.07),Color("e4dcc1"))
-	for trailer in 2:
-		var z := -2.3+float(trailer)*10.5
-		_box(root,"Trailer%d"%trailer,Vector3(0,2.15,z),Vector3(2.6,2.65,9.5),Color("c9bca0") if trailer==0 else Color("b9ab91"),true)
-		_box(root,"TrailerFrame",Vector3(0,.77,z),Vector3(2.5,.32,9.8),Color("514b40"))
-		for rib in 13:
-			for side in [-1.0,1.0]: _box(root,"CargoRib",Vector3(side*1.33,2.13,z-4.3+float(rib)*.72),Vector3(.055,2.6,.07),Color("a2967e"))
-		for side in [-1.0,1.0]:
-			_box(root,"ReflectorRail",Vector3(side*1.34,1.12,z),Vector3(.06,.1,9.4),Color("cbbc8b"))
-		_box(root,"Hitch",Vector3(0,.83,z+5.1),Vector3(.55,.22,1.2),Color("47483f"))
-	for z in [-11.0,-7.5,-6.35,.5,1.65,2.8,11.1,12.25]:
-		for side in [-1.0,1.0]:
-			var tire := G.cylinder(root,"Wheel",Vector3(side*1.27,.6,float(z)),.6,.36,Color("282925"))
-			tire.rotation.z=PI*.5
-			var hub := G.cylinder(root,"WheelHub",Vector3(side*1.48,.6,float(z)),.28,.035,Color("96978d"))
-			hub.rotation.z=PI*.5
-	G.batch_repeated_meshes(root)
-	root.add_child(TRUCK_DETAILS.bitrem())
-	return root
+	return BITREM.build(color)
 
 static func truck_stop(include_trucks := true) -> Node3D:
 	var root := Node3D.new()

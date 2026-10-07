@@ -66,14 +66,15 @@ func run() -> void:
 	world.dispatch.router.nearest_edge(world.player.global_position)
 	check(world.dispatch.router._native!=null,"compiled C# backend")
 	var before: int=world.session.state.economy.balance
+	var raul_at: Vector3=preload("res://runtime/desert/DesertCampaign.gd").LOCATIONS.raul+Vector3(0,0,1.2)
 	for row in [
 		["parts",0,Vector3(-151,0,-941.8),"Aceitar entrega"],
-		["parts",1,Vector3(270,0,-756.8),"Entregar peças"],
-		["rail",0,Vector3(270,0,-756.8),"Aceitar investigação"],
+		["parts",1,raul_at,"Entregar peças"],
+		["rail",0,raul_at,"Aceitar investigação"],
 		["parts",2,Vector3(-151,0,-941.8),"Entregar recibo"],
 		["rail",1,Vector3(-1097,0,-583),""],
 		["rail",2,Vector3(-872,0,-546.4),""],
-		["rail",3,Vector3(270,0,-756.8),"Entregar investigação"],
+		["rail",3,raul_at,"Entregar investigação"],
 	]:
 		await stage_at(row[2])
 		if row[0]=="rail" and row[1]==1:

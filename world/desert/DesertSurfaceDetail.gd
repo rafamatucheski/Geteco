@@ -149,6 +149,13 @@ static func _batch(parent: Node3D, label: String, mesh: Mesh, material: Material
 	var node := MultiMeshInstance3D.new()
 	node.name=label
 	node.multimesh=batch
+	if Engine.get_meta("geteco_live_preview_build",false):
+		node.set_meta("preview_instance_transforms",transforms)
+		var colors: Array = []
+		for i in transforms.size():
+			var shade := .82+float(posmod(i*17,19))*.016
+			colors.append(Color(shade,shade,shade,1))
+		node.set_meta("preview_instance_colors",colors)
 	node.material_override=material
 	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.visibility_range_end=100.0

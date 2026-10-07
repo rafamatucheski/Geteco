@@ -137,7 +137,7 @@ static func _fascia(root: Node3D,s: Dictionary,paint: Material,metal: Material,d
 	var shoulder := float(s.shoulder)
 	var radius := float(s.wheel_radius)
 	var body := str(s.body)
-	var lamp := _material(Color("ebe3c8"),.22,.10,"headlamp")
+	var lamp := _material(Color("ebe3c8"),.22,.10,"headlight")
 	var red := _material(Color("a72224"),.24,.14,"tail")
 	var amber := _material(Color("d98637"),.30,.05,"indicator")
 	var plate := _material(Color("d8d3bd"),.70,0.0,"plate")
@@ -398,6 +398,11 @@ static func _batch(root: Node3D) -> void:
 		var material := part.material_override
 		var wheel: Variant = part.get_meta("wheel_center") if part.has_meta("wheel_center") else null
 		var key := str(material.get_instance_id())+":"+str(wheel)
+		# Equipment derives the projector mount and damage side from each mesh's
+		# bounds. Merging both lenses moves that mount to the car's centre.
+		if material.resource_name == "headlight":
+			var center := part.transform * part.mesh.get_aabb().get_center()
+			key += ":headlight:" + str(signf(center.x))
 		if not groups.has(key):
 			var st := SurfaceTool.new()
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)

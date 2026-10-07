@@ -17,11 +17,11 @@ func step_definition(id: String, step: int) -> Dictionary:
 	if id=="parts":
 		match step:
 			0: return {"contact":"bia","label":"Aceitar entrega de peças · R$ 1.200","objective":"Retire as peças com Bia, na oficina do Digo."}
-			1: return {"contact":"raul","label":"Entregar peças a Raul","objective":"Leve as peças a Raul no Miragem."}
+			1: return {"contact":"raul","label":"Entregar peças a Raul","objective":"Leve as peças a Raul no encontro da arrancada."}
 			2: return {"contact":"bia","label":"Entregar recibo e receber R$ 1.200","objective":"Volte à Bia com o recibo de Raul."}
 	if id=="rail":
 		match step:
-			0: return {"contact":"raul","label":"Aceitar investigação da ferrovia · R$ 2.200","objective":"Converse com Raul no Miragem."}
+			0: return {"contact":"raul","label":"Aceitar investigação da ferrovia · R$ 2.200","objective":"Converse com Raul no encontro da arrancada."}
 			1: return {"site":0,"label":"Conferir livro de despachos","objective":"Procure o livro de despachos na antiga estação."}
 			2: return {"site":2,"label":"Comparar lacre da carga","objective":"Compare o registro com a carga do vagão descarrilado."}
 			3: return {"contact":"raul","label":"Entregar investigação e receber R$ 2.200","objective":"Leve a identificação da carga de volta a Raul."}
@@ -64,12 +64,14 @@ func open_contact(contact: String) -> bool:
 		elif step>0 and step<int(STATE.LAST[id]) and state.active!=id:
 			session._button("Acompanhar: "+str(TITLES[id]),_track.bind(id))
 	if not str(state.active).is_empty(): session._button("Acompanhar história principal",_track.bind(""))
+	if is_instance_valid(session.desert.extras): session.desert.extras.append_tracking_buttons()
 	session._button("Voltar",session.close_menu)
 	return true
 
 func _track(id: String) -> void:
 	session.close_menu()
 	if not _available(): return
+	if is_instance_valid(session.desert.extras): session.desert.extras.stop_tracking()
 	STATE.track(session.state.world_state,id)
 	session.save_game()
 
@@ -83,11 +85,12 @@ func _advance(id: String, expected: int) -> bool:
 	if not result.get("ok",false):
 		session.show_message("Não foi possível concluir agora. Libere espaço na carteira e tente novamente.")
 		return false
+	if is_instance_valid(session.desert.extras): session.desert.extras.stop_tracking()
 	session.save_game()
 	var lines: Array=[]
 	if id=="parts":
 		match expected:
-			0: lines=[{"speaker":"Bia","message":"Raul está no Miragem esperando estas juntas e correias. Leva para ele? Traga o recibo e te pago mil e duzentos."}]
+			0: lines=[{"speaker":"Bia","message":"Raul está no encontro da arrancada esperando estas juntas e correias. Leva para ele? Traga o recibo e te pago mil e duzentos."}]
 			1: lines=[{"speaker":"Raul","message":"Era o que faltava para tirar o caminhão do pátio. Aqui está o recibo. Diz à Bia que chegou tudo certo."}]
 			2: lines=[{"speaker":"Bia","message":"Recibo conferido. Seus mil e duzentos, como combinado. Valeu, Dante."}]
 	else:

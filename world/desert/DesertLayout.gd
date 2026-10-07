@@ -6,14 +6,31 @@ const BRIDGE_END := Vector3(342.5, 2.4, -373.5)
 const TOWN := Vector3(-180, 0, -900)
 const DRAG_LENGTH := 800.0
 const DRAG_LANE_SPACING := 4.0
+const DRAG_START := Vector3(-900, 0, -1320)
+const DRAG_STAGING := Vector3(-915, 0, -1304)
+const DRAG_MEET_CENTER := Vector3(-965, 0, -1262)
+const DRAG_VICENTE := Vector3(-945, 0, -1253)
+const DRAG_WORKSHOP := Vector3(-1006, 0, -1242)
+const DRAG_OPPONENTS := {
+	"livia":Vector3(-968,0,-1291),"raul":Vector3(-1003,0,-1288),
+	"jessica":Vector3(-915,0,-1260),"nadir":Vector3(-967,0,-1244),
+}
+const DRAG_MEET_BOUNDS := Rect2(-1040, -1312, 150, 100)
+const DRAG_STRIP_BOUNDS := Rect2(-940, -1337, 1048, 34)
 const BANK := Vector3(-210, 0, -920)
 const WORKSHOP := Vector3(-140, 0, -955)
 const TRUCK_STOP := Vector3(285, 0, -750)
 static var _clearance_roads: Array[Dictionary] = []
 
-static func drag_start_point() -> Vector3: return Vector3(-1140, 0, -1280)
+static func drag_start_point() -> Vector3: return DRAG_START
 static func drag_direction() -> Vector3: return Vector3.RIGHT
-static func drag_staging_point() -> Vector3: return Vector3(-1150, 0, -1264)
+static func drag_staging_point() -> Vector3: return DRAG_STAGING
+static func drag_meet_center() -> Vector3: return DRAG_MEET_CENTER
+static func drag_vicente_point() -> Vector3: return DRAG_VICENTE
+static func drag_workshop_point() -> Vector3: return DRAG_WORKSHOP
+static func drag_opponent_point(id: String) -> Vector3: return DRAG_OPPONENTS.get(id,DRAG_STAGING)
+static func drag_reservation_clear(point: Vector2, radius := 0.0) -> bool:
+	return not DRAG_MEET_BOUNDS.grow(radius+5.0).has_point(point) and not DRAG_STRIP_BOUNDS.grow(radius).has_point(point)
 static func contains(point: Vector3) -> bool: return BOUNDS.has_point(Vector2(point.x, point.z))
 static func surface_height(point: Vector2) -> float:
 	return 2.4 * (1.0 - smoothstep(373.5, 445.0, -point.y))
@@ -29,8 +46,8 @@ static func roads() -> Array[Dictionary]:
 		_road("desert_digo_street", _rounded([Vector2(-110,-880),Vector2(-110,-980),Vector2(-370,-980),Vector2(-370,-880)],16), 7.0),
 		_road("desert_bank_approach", [Vector2(-210,-880),Vector2(-210,-907)], 6.5),
 		_road("desert_truck_stop_entry", _rounded([Vector2(342.5,-750),Vector2(320,-750),Vector2(306,-758),Vector2(290,-758)],6), 12.0),
-		_road("desert_drag_access", _rounded([Vector2(-1200,-1264),Vector2(-1150,-1264),Vector2(-1140,-1264),Vector2(-1140,-1280)],6), 8.0, false),
-		_road("desert_drag_strip", [Vector2(-1170,-1280),Vector2(-1140,-1280),Vector2(-340,-1280),Vector2(-150,-1280)], 10.0, false),
+		_road("desert_drag_access", _rounded([Vector2(-1200,-1264),Vector2(-1120,-1264),Vector2(-1090,-1280),Vector2(-960,-1280),Vector2(-928,-1280),Vector2(-928,-1320)],12), 8.0, false),
+		_road("desert_drag_strip", [Vector2(-936,-1320),Vector2(-928,-1320),Vector2(-900,-1320),Vector2(-100,-1320),Vector2(90,-1320)], 10.0, false),
 	]
 
 static func _rounded(positions: Array, radius: float) -> Array:

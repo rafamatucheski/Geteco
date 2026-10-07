@@ -17,6 +17,10 @@ static func records() -> Array[Dictionary]:
 		PackedVector2Array([Vector2(-377,-867),Vector2(-377,-992),Vector2(-97,-992),Vector2(-97,-867)]),
 		PackedVector2Array([Vector2(354.5,-738),Vector2(316,-738),Vector2(316,-777)]),
 	]
+	if preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").enabled():
+		# Keep both poles and the continuous conductors outside the new north
+		# carriageway. The old rounded-corner pole now stood inside its lane.
+		lines[0][4]=Vector2(354.5,-1552)
 	for line in lines:
 		var previous := ""
 		for i in range(1,line.size()):

@@ -667,6 +667,7 @@ func restore_location() -> void:
 			var size: Array = preload("res://runtime/FleetCatalog.gd").spec(seated.archetype).bounds_size
 			var parked := Vector3(seated.position[0],seated.position[1],seated.position[2])
 			point = parked+Basis(Vector3.UP,float(seated.yaw))*Vector3(maxf(.65,float(size[0]))*.5+.65,0,.15)
+		if state.region_id=="desert": point=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
 		controller.region.set_focus(point)
 		if cold != null: cold.prepare_collision_at(point)
 		for i in 3: await get_tree().physics_frame
@@ -1456,7 +1457,7 @@ func _process(delta: float) -> void:
 
 func _update_world_indicator() -> void:
 	if not ready_for_play or not is_instance_valid(marker) or not is_instance_valid(arrow): return
-	if desert != null and desert.busy():
+	if desert != null and is_instance_valid(desert.drag) and desert.drag.active:
 		marker.hide()
 		arrow.hide()
 		return
@@ -1558,7 +1559,7 @@ func close_menu() -> void:
 	panel.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (desert != null and desert.busy()) or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
-	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked() or (desert != null and desert.busy())
+	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked() or (desert != null and desert.controls_locked())
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	lines = dialogue_lines.duplicate(true)
 	dialogue_done = on_done
@@ -1922,7 +1923,7 @@ func save_game(manual := false) -> bool:
 	_save_indicator().acknowledge()
 	return true
 func load_game() -> void:
-	if desert != null and desert.busy(): show_message("Encerre a arrancada para carregar."); return
+	if desert != null and desert.busy(): show_message("Encerre a prova para carregar."); return
 	if jessica != null and jessica.riding:
 		show_message("Aguarde Jessica estacionar para carregar."); return
 	if is_transition_blocked():

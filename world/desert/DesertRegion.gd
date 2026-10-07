@@ -19,6 +19,7 @@ const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const MINING_ART := preload("res://world/mining/MiningExterior.gd")
 const MOON_VILLAGE := preload("res://world/desert/DesertMoonVillage.gd")
 const VILLAGE_HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
+const DRAG_MEET := preload("res://world/desert/drag_meet/DesertDragMeet.gd")
 const CELL := 96.0
 const BUILD_BUDGET_USEC := 1000
 var region_id := "desert"
@@ -26,6 +27,7 @@ var initial_focus := Vector3.INF
 var initial_prewarm_only := false
 var prepared := false
 var data_prepared := false
+var north_pass_completed := false
 var focus := Vector3.ZERO
 var current_cell := Vector2i(100000,100000)
 var retention_radius := 2
@@ -87,6 +89,7 @@ func _ready() -> void:
 func prepare_data() -> void:
 	if data_prepared: return
 	roads=LAYOUT.roads()
+	roads.append_array(preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").roads())
 	road_geometry.configure(roads)
 	# Private gravel geometry is authored by MiningExterior; route consumers and
 	# map still receive its same centre-line, excluded from ambient traffic.
@@ -120,11 +123,17 @@ func prepare_data() -> void:
 		var point := LAYOUT.TRUCK_STOP+Vector3(-26-float(i)*6.4,0,3)
 		_record(point,{"kind":"bitrem","position":point,"index":i})
 	for x in range(-350,-100,36): _record(Vector3(x,0,-888),{"kind":"lamp","position":Vector3(x,0,-888)})
-	for x in range(-1140,-139,64): _record(Vector3(x,0,-1288),{"kind":"lamp","position":Vector3(x,0,-1288)})
+	for x in range(-900,91,64): _record(Vector3(x,0,-1330),{"kind":"lamp","position":Vector3(x,0,-1330)})
+	# The workshop pole stands outside both working bays; the eastern pole sits
+	# between Jessica and her neighbouring visitors, clear of the access curve.
+	for point in [Vector3(-1034,0,-1297),Vector3(-978,0,-1288),Vector3(-911,0,-1271),Vector3(-1013,0,-1252),Vector3(-951,0,-1240),Vector3(-917,0,-1220)]:
+		_record(point,{"kind":"lamp","position":point})
+	for record in DRAG_MEET.records(): _record(record.position,record)
 	_record(Vector3(-390,0,-926),{"kind":"water_tower","position":Vector3(-390,0,-926)})
 	_record(Vector3(-315,0,-914.2),{"kind":"rest_bench","position":Vector3(-315,0,-914.2)})
-	_record(Vector3(-1140,0,-1280),{"kind":"drag_line","position":Vector3(-1140,0,-1280),"finish":false})
-	_record(Vector3(-340,0,-1280),{"kind":"drag_line","position":Vector3(-340,0,-1280),"finish":true})
+	_record(LAYOUT.drag_start_point(),{"kind":"drag_line","position":LAYOUT.drag_start_point(),"finish":false})
+	var finish := LAYOUT.drag_start_point()+LAYOUT.drag_direction()*LAYOUT.DRAG_LENGTH
+	_record(finish,{"kind":"drag_line","position":finish,"finish":true})
 	data_prepared=true
 
 func _record(point: Vector3, data: Dictionary) -> void:
@@ -295,7 +304,17 @@ func _build_surfaces(chunk: Node3D, rect: Rect2) -> void:
 	MINING_ART.build_surfaces(chunk,rect)
 	MOON_VILLAGE.build_ground(chunk,rect)
 	MOON_VILLAGE.build_collision(chunk,rect)
+	preload("res://world/desert/north_pass/DesertNorthPassScenery.gd").build_chunk(chunk,rect,north_pass_completed)
+	if preload("res://runtime/desert/DesertActivitiesPolicy.gd").enabled(): preload("res://world/desert/community/DesertCommunitySite.gd").build_chunk(chunk,rect)
+	DRAG_MEET.build_ground(chunk,rect)
+	preload("res://activities/desert_drag/DesertDragBoardProp.gd").build_chunk(chunk,rect)
 	_boundary_ridge(chunk,rect)
+
+func set_north_pass_completed(completed: bool) -> void:
+	north_pass_completed=completed
+	if not is_inside_tree(): return
+	for gate in get_tree().get_nodes_in_group(preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").GROUP):
+		if is_ancestor_of(gate): preload("res://world/desert/north_pass/DesertNorthPassScenery.gd").set_completed(gate,completed)
 
 func _boundary_ridge(chunk: Node3D, rect: Rect2) -> void:
 	var bounds := LAYOUT.BOUNDS
@@ -310,11 +329,25 @@ func _boundary_ridge(chunk: Node3D, rect: Rect2) -> void:
 			sites.append(p)
 	for point in sites:
 		if not rect.has_point(point): continue
+		var ridge_point: Vector2=point
+		if not preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").reservation_clear(point):
+			# Keep the boundary sealed outside the cut. Only the central outcrop
+			# conflicts with the road; move the eastern one beyond the cliff.
+			if not is_equal_approx(point.y,bounds.position.y+12): continue
+			var offset: float=point.x-preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").X
+			if absf(offset)<20: continue
+			if offset>0 and offset<40: ridge_point.x=402.0
 		var height := 16+sin(point.x*.015+point.y*.027)*4
-		ROCK_FORMS.create_outcrop(chunk,Vector3(point.x,_ground_height(point),point.y),55.0,height+5.0,absi(int(point.x*71+point.y*133)),true)
+		ROCK_FORMS.create_outcrop(chunk,Vector3(ridge_point.x,_ground_height(ridge_point),ridge_point.y),55.0,height+5.0,absi(int(point.x*71+point.y*133)),true)
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	match record.kind:
+		"drag_meet": DRAG_MEET.build_record(chunk,record)
+		"drag_workshop":
+			var workshop := load("res://world/desert/drag_meet/DesertDigoWorkshop.gd").new() as Node3D
+			workshop.name="DigoWorkshop"
+			workshop.position=record.position
+			chunk.add_child(workshop)
 		"moon_village":
 			for lamp in MOON_VILLAGE.build_record(chunk,record.data):
 				lamp.light_energy=1.8*_night_level
@@ -396,6 +429,7 @@ func _ground_height(point: Vector2) -> float:
 	return _ramp_height(point)+TERRAIN_MESH.surface_height(point)
 
 func _decoration_clear(point: Vector2, radius: float) -> bool:
+	if not preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").reservation_clear(point,radius): return false
 	if not MOON_VILLAGE.reservation_clear(point,radius): return false
 	if not MINING_LAYOUT.reservation_clear(point,radius): return false
 	if not ABANDONED.reservation_clear(point,radius) or BANDIT_CAMP.reserved(point,radius): return false
@@ -405,7 +439,7 @@ func _decoration_clear(point: Vector2, radius: float) -> bool:
 	if RELIEF.BOUNDS.has_point(point) and RELIEF.normal_at(point).y<.93: return false
 	if not LAYOUT.road_clear(point,radius): return false
 	if Rect2(210,-797,125,92).grow(radius).has_point(point): return false
-	if Rect2(-1185,-1295,1050,48).grow(radius).has_point(point): return false
+	if not LAYOUT.drag_reservation_clear(point,radius): return false
 	for building in buildings:
 		var p: Vector3=building.position
 		var size: Vector2=building.size

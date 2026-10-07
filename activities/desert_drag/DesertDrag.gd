@@ -8,6 +8,7 @@ const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const AUDIO := preload("res://audio/desert_cars/DesertCarAudio.gd")
 const DRIVER := preload("res://activities/desert_drag/DesertDragDriver.gd")
 const SIGNALS := preload("res://activities/desert_drag/DesertDragSignals.gd")
+const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 # One authored half-mile strip for every round. Mechanical timing tests place
 # stock cars at ~20–25 s and the fastest full build above 15 s at 800 m.
 # Difficulty comes from the rival/preparation, never a synthetic speed cap.
@@ -20,9 +21,9 @@ const RIVALS := {
 }
 signal race_completed(result: Dictionary)
 var session
-var start_point := Vector3(-1140, .08, -1280)
-var direction := Vector3.RIGHT
-var staging_point := Vector3(-1150, 0, -1264)
+var start_point := LAYOUT.drag_start_point()+Vector3.UP*.08
+var direction := LAYOUT.drag_direction()
+var staging_point := LAYOUT.drag_staging_point()
 var active := false
 var phase := ""
 var countdown := 0.0
@@ -51,14 +52,19 @@ var _feedback_time := 0.0
 var _old_camera_lock := false
 var _throttle_override := -1.0
 var _nitro_override := false
+var board_controller: Node
 
-func configure(owner_session, strip_start: Vector3 = Vector3(-1140,0,-1280), forward: Vector3 = Vector3.RIGHT) -> void:
+func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vector3 = Vector3.RIGHT) -> void:
 	session = owner_session
-	start_point = strip_start+Vector3.UP*.08
+	start_point = (LAYOUT.drag_start_point() if strip_start == Vector3.INF else strip_start)+Vector3.UP*.08
+	staging_point = LAYOUT.drag_staging_point()
 	direction = Vector3(forward.x,0,forward.z).normalized()
 	process_physics_priority = -5
 	set_physics_process(false)
 	set_process_input(false)
+	board_controller = preload("res://activities/desert_drag/DesertDragBoardController.gd").new()
+	add_child(board_controller)
+	board_controller.configure(self)
 	if not PROGRESS.validate_snapshot(snapshot()):
 		session.controller.save_invalid = true
 		session.show_message("Progresso do drag inválido; save preservado.")
@@ -75,7 +81,7 @@ func save_block_reason() -> String:
 
 func objective() -> String:
 	if active and is_instance_valid(player_car): return "Drag · %s · %d m"%[RIVALS[rival_id].name,ceili(maxf(0,distance-_offset(player_car.global_position)))]
-	return "Arrancadas do deserto · 20h–5h"
+	return "Arrancadas do deserto · Vá à concentração"
 
 func target_position() -> Vector3:
 	return start_point+direction*distance if active else staging_point
@@ -87,8 +93,7 @@ func nearest_action() -> Dictionary:
 	var point: Vector3 = session.world.player.global_position
 	if session.world.driving.occupied and is_instance_valid(session.world.driving.car): point = session.world.driving.car.global_position
 	if point.distance_to(staging_point)>15 and point.distance_to(start_point)>12: return {}
-	var current := PROGRESS.current_rival(session.state.world_state)
-	return {"id":"desert_drag","target":"start","label":"Drag contra %s · %d m"%[RIVALS[current].name,RIVALS[current].distance] if is_night() else "Drag · aguarde 20h–5h"}
+	return {"id":"desert_drag","target":"board","label":"Ver quadro das arrancadas"}
 
 func start_block_reason() -> String:
 	if active: return "A arrancada já começou."
@@ -96,7 +101,6 @@ func start_block_reason() -> String:
 	if not session.ready_for_play or session.modal or session.get_tree().paused or session.is_transition_blocked(): return "Aguarde o fim da atividade atual."
 	if session.state.intro.stage != "complete": return "Conclua a chegada antes de correr."
 	if session.state.region_id != "desert" or not session.state.place_id.is_empty() or nearest_action().is_empty(): return "Vá à largada do deserto."
-	if not is_night(): return "As arrancadas acontecem entre 20h e 5h."
 	if session.world.gameplay.health <= 0 or session.rescue_pending or session.arrest_pending: return "Aguarde a recuperação."
 	if session.world.gameplay.stars > 0: return "Despiste a polícia antes da largada."
 	if not session.state.campaign.active_id.is_empty(): return "Conclua a missão atual antes da arrancada."
@@ -109,6 +113,9 @@ func start_block_reason() -> String:
 	return ""
 
 func perform(target: String) -> bool:
+	if target == "board":
+		if nearest_action().get("target","") != "board": return false
+		return board_controller.open_board()
 	if target == "cancel" and active:
 		cancel_attempt()
 		return true

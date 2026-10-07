@@ -3,36 +3,54 @@ const STATE := preload("res://runtime/desert/DesertStoryState.gd")
 const CONTACT := preload("res://runtime/desert/DesertCharacter.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
+const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+const ROSTER := preload("res://runtime/desert/drag_meet/DragMeetRoster.gd")
 const LOCATIONS := {
-	"vicente":Vector3(-327,.05,-913),
-	"livia":Vector3(-1152,.05,-1261),
-	"raul":Vector3(270,.05,-758),
-	"nadir":Vector3(-1162,.05,-1261),
+	"vicente":LAYOUT.DRAG_VICENTE+Vector3(0,.05,0),
+	"livia":ROSTER.LEADERS.livia+Vector3(0,.05,0),
+	"raul":ROSTER.LEADERS.raul+Vector3(0,.05,0),
+	"jessica":ROSTER.LEADERS.jessica+Vector3(0,.05,0),
+	"nadir":ROSTER.LEADERS.nadir+Vector3(0,.05,0),
 	"bia":Vector3(-151,.05,-943),
 }
 const MANIFEST := Vector3(266,.05,-758)
 var session
 var actors: Dictionary = {}
 var _clock := 0.0
+var _elapsed := 0.0
+var _talking_to := ""
 var _manifest_visual: Node3D
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertCampaign"
 func _process(delta: float) -> void:
+	_elapsed += delta
 	_clock += delta
 	if _clock < .35 or session == null or not session.ready_for_play: return
 	_clock = 0.0
 	var active: bool = session.state.region_id == "desert" and session.state.place_id.is_empty()
 	if active and not STATE.data(session.state.world_state).arrived:
 		STATE.mark(session.state.world_state,"arrived")
-		session.show_message("Maciota: deixei um quarto no Horizonte. Vicente está por lá.")
+		session.show_message("Maciota: deixei um quarto no Horizonte. Vicente está com a turma dele no encontro da arrancada.")
 		session.save_game()
 	for id in LOCATIONS:
 		var nearby: bool = active and session.world.player.global_position.distance_to(LOCATIONS[id]) < 85.0
+		if is_instance_valid(session.desert.drag) and session.desert.drag.active and session.desert.drag.rival_id==id: nearby=false
 		if actors.has(id) and is_instance_valid(actors[id]):
 			if not nearby:
 				actors[id].queue_free()
 				actors.erase(id)
+			else:
+				var actor: Node3D = actors[id]
+				var talking: bool = session.modal and _talking_to==id
+				actor.set_talking(talking or (not session.modal and fposmod(_elapsed+float(LOCATIONS.keys().find(id))*2.2,12.0)<3.5))
+				if talking:
+					var offset: Vector3 = session.world.player.global_position-actor.global_position
+					actor.visual.rotation.y = atan2(offset.x,offset.z)
+				elif id=="vicente": actor.visual.rotation.y=0.0
+				elif ROSTER.TEAM_POINTS.has(id):
+					var offset: Vector3 = ROSTER.TEAM_POINTS[id][0]-actor.global_position
+					actor.visual.rotation.y = atan2(offset.x,offset.z)
 		elif nearby and session.position_clear(LOCATIONS[id]+Vector3.UP*.08):
 			var actor := CONTACT.new()
 			actor.identity_id = id
@@ -88,12 +106,13 @@ func nearest_action() -> Dictionary:
 	return {}
 func perform(target: String, offer_jobs := true) -> bool:
 	if nearest_action().get("target","") != target: return false
+	_talking_to = target
 	if offer_jobs and session.desert.contracts.open_contact(target): return true
 	var data := STATE.data(session.state.world_state)
 	match target:
 		"vicente":
 			if not data.met_vicente:
-				_say([["Vicente","Oito anos, Dante. Agora você aparece?"],["Dante","Eu tentei reabrir o caso. Saí da polícia quando encontrei os primeiros indícios."],["Vicente","Indícios não devolvem nada. Quer ficar? Conheça as pistas. E pare de prometer."]],"met_vicente")
+				_say([["Vicente","Oito anos, Dante. Agora você aparece?"],["Dante","Eu tentei reabrir o caso. Saí da polícia quando encontrei os primeiros indícios."],["Vicente","Indícios não devolvem nada. Essa turma está comigo. Aqui, ninguém resolve nada na bala."],["Vicente","Quer ficar? Conheça as pistas. E pare de prometer."]],"met_vicente")
 			elif data.bank_proof and data.jessica_met and not data.delivered:
 				_say([["Dante","O manifesto e o registro do Cobre têm a mesma autorização. A carga foi trocada antes da operação."],["Vicente","Você me algemou, Dante. Eu lembro de cada minuto."],["Dante","Eu sei. Aqui está a prova. A operação foi armada."],["Vicente","E o que eu faço com os oito anos que perdi?"]],"delivered")
 			else: _say([["Vicente","Os caminhões param no Miragem. Se ainda quer respostas, comece pela carga."]])
@@ -103,8 +122,11 @@ func perform(target: String, offer_jobs := true) -> bool:
 			if data.cargo_found and not data.bank_proof:
 				_say([["Irene","Esse manifesto tem o número da transferência. Posso conferir o comprovante que você trouxe."],["Irene","A ordem foi alterada antes da operação. O nome do motorista foi incluído depois."],["Dante","Vicente. Foi assim que o colocaram naquela carga."]],"bank_proof")
 			else: _say([["Irene","Guarde os comprovantes das corridas. Aqui, uma assinatura errada custa caro."]])
-		"livia": _say([["Lívia","Depois das oito, a reta é nossa. Chegue com o carro inteiro e respeite a largada."],["Dante","E o Vicente?"],["Lívia","Cuida das apostas e dos contatos. Primeiro, mostre que sabe trocar uma marcha."]])
-		"raul": _say([["Raul","Meu carro tem mais idade que metade dos pilotos. Não precisa de peça cara para largar direito."],["Raul","Esse papel no caixote veio junto de uma carga estranha. Confere os números."]])
+		"livia": _say([["Lívia","Tem largada de manhã, de tarde e de noite. Chegue com o carro inteiro e respeite a pista."],["Dante","E o Vicente?"],["Lívia","Ali com a turma dele. Cuida das apostas e dos contatos. Primeiro, mostre que sabe trocar uma marcha."]])
+		"raul": _say([["Raul","Meu carro tem mais idade que metade dos pilotos. Não precisa de peça cara para largar direito."],["Raul","Deixei um manifesto no caixote do posto Miragem. Veio junto de uma carga estranha. Confere os números."]])
+		"jessica":
+			if data.jessica_met: _say([["Jessica","Agora você conhece essa reta. E aquela conversa com seu irmão ainda está te esperando."]])
+			else: _say([["Jessica","Olha quem saiu de Harbor. Meu carro está pronto, Dante."],["Dante","Você também corre por aqui?"],["Jessica","Com essa turma desde antes de você chegar. Sobe na tabela e a gente se encontra na largada."]])
 		"nadir": _say([["Nadir","Na minha prova, uma troca ruim custa a corrida inteira. Prepare o carro com o Digo."]])
 		"bia": _say([["Bia","Relação curta sai forte e acaba cedo. Turbo grande pede giro. Escolha a preparação para a pista."],["Bia","Digo atende lá dentro. Depois de correr com ele, a oficina fica à sua disposição."]])
 		_: return false
@@ -125,19 +147,19 @@ func race_finished(result: Dictionary) -> void:
 func objective() -> String:
 	if session.state.region_id != "desert": return ""
 	var data := STATE.data(session.state.world_state)
-	if not data.met_vicente: return "Encontre Vicente no Horizonte."
-	if not DIGO.workshop_unlocked(session.state.world_state): return "Corra contra Digo na reta depois das 20h."
+	if not data.met_vicente: return "Encontre Vicente no encontro da arrancada."
+	if not DIGO.workshop_unlocked(session.state.world_state): return "Corra contra Digo na reta."
 	if not data.cargo_found: return "Confira a carga dos Cobras no posto Miragem."
 	if not data.bank_proof: return "Leve o manifesto a Irene no Cobre."
-	if not data.jessica_met: return "Avance nas provas noturnas e reencontre Jessica."
+	if not data.jessica_met: return "Avance nas provas de arrancada e enfrente Jessica."
 	if not data.delivered: return "Mostre a prova da armação a Vicente."
 	return "Explore o deserto e complete o campeonato de arrancada."
 func target_position() -> Vector3:
 	var data := STATE.data(session.state.world_state)
 	if not data.met_vicente or (data.bank_proof and data.jessica_met and not data.delivered): return LOCATIONS.vicente
-	if not DIGO.workshop_unlocked(session.state.world_state): return Vector3(-1150,0,-1264)
+	if not DIGO.workshop_unlocked(session.state.world_state): return LAYOUT.drag_staging_point()
 	if not data.cargo_found: return MANIFEST
 	if not data.bank_proof:
 		if session.state.place_id == "desert_bank" and is_instance_valid(session.room): return session.room.to_global(Vector3(-1.5,0,-1.35))
 		return PLACES.get_definition("desert_bank").entry_position
-	return Vector3(-1150,0,-1264)
+	return LAYOUT.drag_staging_point()

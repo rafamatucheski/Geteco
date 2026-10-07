@@ -137,6 +137,10 @@ static func batch_repeated_meshes(parent: Node3D) -> void:
 		var node := MultiMeshInstance3D.new()
 		node.name="Batched"+str(first.name)
 		node.multimesh=batch
+		if Engine.get_meta("geteco_live_preview_build",false):
+			var transforms: Array = []
+			for item in items: transforms.append(item.transform)
+			node.set_meta("preview_instance_transforms",transforms)
 		node.material_override=first.material_override
 		parent.add_child(node)
 		for item in items: item.free()

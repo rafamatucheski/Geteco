@@ -156,7 +156,7 @@ static func placement_clear(point: Vector2, radius: float = 0.0) -> bool:
 	if point.y-radius < -1558.0 or not LAYOUT.BOUNDS.grow(-radius).has_point(point): return false
 	if not LAYOUT.road_clear(point, radius+1.0): return false
 	if Rect2(210, -797, 125, 92).grow(radius).has_point(point): return false
-	if Rect2(-1185, -1295, 1050, 48).grow(radius+3.0).has_point(point): return false
+	if not LAYOUT.drag_reservation_clear(point,radius+3.0): return false
 	for bounds in _building_guards:
 		if bounds.grow(radius).has_point(point): return false
 	return true

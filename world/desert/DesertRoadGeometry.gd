@@ -11,6 +11,7 @@ var corridors: Array[Dictionary] = []
 var shoulders: Array[Dictionary] = []
 var paint: Array[Dictionary] = []
 var junctions: Array[Dictionary] = []
+const EDGE_BLEND := .35
 
 func configure(roads: Array[Dictionary]) -> void:
 	_roads=roads
@@ -178,6 +179,7 @@ func _paint_strip(a: Vector2, b: Vector2, width: float, color: String, masks: Ar
 func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect: Rect2, offset: float, material: Material, solid: bool, shoulder_segments: Array = []) -> void:
 	if polygons.is_empty(): return
 	var vertices := PackedVector3Array()
+	var edge_faces := PackedVector3Array()
 	var colors := PackedColorArray()
 	var weights: Dictionary = {}
 	# Same eight-metre support profile as DesertRegion; no ramp paint floats above it.
@@ -200,6 +202,21 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 			var clip := PackedVector2Array([tile.position,Vector2(tile.end.x,tile.position.y),tile.end,Vector2(tile.position.x,tile.end.y)])
 			for part in Geometry2D.intersect_polygons(polygon,clip):
 				if Geometry2D.is_polygon_clockwise(part): part.reverse()
+				if solid:
+					# The raised asphalt used to present a vertical collision edge to
+					# cars on sand. Bevel its perimeter into the existing shoulder.
+					# Clipped tile seams also taper below the adjacent asphalt surface.
+					for i in part.size():
+						var a: Vector2 = part[i]
+						var b: Vector2 = part[(i+1)%part.size()]
+						var outward := Vector2((b-a).y,-(b-a).x).normalized()*EDGE_BLEND
+						var c := b+outward
+						var d := a+outward
+						var top_a := Vector3(a.x,_height(a)+offset,a.y)
+						var top_b := Vector3(b.x,_height(b)+offset,b.y)
+						var low_c := Vector3(c.x,_height(c),c.y)
+						var low_d := Vector3(d.x,_height(d),d.y)
+						edge_faces.append_array(PackedVector3Array([top_b,top_a,low_d,top_b,low_d,low_c]))
 				var indices := Geometry2D.triangulate_polygon(part)
 				for index in indices:
 					var p := part[index]
@@ -223,7 +240,9 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 		var body := StaticBody3D.new(); body.collision_layer=1; body.collision_mask=0
 		body.set_meta("vehicle_surface","hard")
 		var collider := CollisionShape3D.new(); var shape := ConcavePolygonShape3D.new()
-		shape.set_faces(vertices); collider.shape=shape; body.add_child(collider); node.add_child(body)
+		var physical_faces := vertices.duplicate()
+		physical_faces.append_array(edge_faces)
+		shape.set_faces(physical_faces); collider.shape=shape; body.add_child(collider); node.add_child(body)
 
 func _height(point: Vector2) -> float:
 	if point.y<=-448: return 0.0

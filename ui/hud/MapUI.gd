@@ -71,6 +71,10 @@ func _cache() -> void:
 		var p: Vector3=entry.position
 		_markers.append({"point":Vector2(p.x,p.z),"title":str(places.get(entry.get("place_id",""),entry.get("label","Destino"))),"detail":"","objective":false})
 	if controller.state.region_id=="harbor": _markers.append({"point":Vector2(-224,-37),"title":"Motocross","detail":"","objective":false})
+	if controller.state.region_id=="desert" and controller.session.desert!=null and is_instance_valid(controller.session.desert.extras):
+		for activity in controller.session.desert.extras.map_markers():
+			var point: Vector3=activity.point
+			_markers.append({"point":Vector2(point.x,point.z),"title":activity.title,"detail":"","objective":false})
 func _layout() -> void:
 	if not is_instance_valid(canvas): return
 	var view := get_viewport_rect().size

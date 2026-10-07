@@ -11,17 +11,23 @@ const DIGO := preload("res://systems/campaign/DigoProgress.gd")
 const RACE_WINS := preload("res://systems/campaign/RaceWins.gd")
 const RESIDENT := preload("res://runtime/desert/DesertCharacter.gd")
 const FRONTIER := preload("res://runtime/desert/DesertFrontierRuntime.gd")
+const MEET := preload("res://runtime/desert/drag_meet/DragMeetLife.gd")
+const DIGO_ROUTINE := preload("res://runtime/desert/DesertDigoRoutine.gd")
 var session
+var extras: Node
 var drag: Node3D
 var story: Node3D
 var frontier: Node3D
 var discoveries: Node3D
 var contracts: Node3D
 var village_life: Node
+var meet_life: Node3D
+var digo_routine: Node3D
 var tuning_panel: CanvasLayer
 var tuning_car: CharacterBody3D
 var _room: Node3D
 var _resident: Node3D
+var _workshop_site := "town"
 var owned_cars: Dictionary = {}
 var _tick := 0.0
 func configure(owner_session) -> void:
@@ -34,6 +40,12 @@ func configure(owner_session) -> void:
 	story = STORY.new()
 	add_child(story)
 	story.configure(session)
+	meet_life = MEET.new()
+	add_child(meet_life)
+	meet_life.configure(session)
+	digo_routine = DIGO_ROUTINE.new()
+	add_child(digo_routine)
+	digo_routine.configure(session)
 	frontier=FRONTIER.new()
 	add_child(frontier)
 	frontier.configure(session)
@@ -55,12 +67,21 @@ func configure(owner_session) -> void:
 	tuning_panel.remove_requested.connect(_remove_part)
 	tuning_panel.closed.connect(_close_tuning)
 	PROGRESS.claim_rewards(session.state.world_state,session.state.economy)
-func busy() -> bool: return is_instance_valid(drag) and drag.active
+	if preload("res://runtime/desert/DesertActivitiesPolicy.gd").enabled():
+		extras=preload("res://runtime/desert/DesertActivities.gd").new()
+		add_child(extras)
+		extras.configure(session)
+func busy() -> bool: return (is_instance_valid(drag) and drag.active) or (is_instance_valid(extras) and extras.busy())
+func controls_locked() -> bool: return (is_instance_valid(drag) and drag.active) or (is_instance_valid(extras) and extras.controls_locked())
 func save_block_reason() -> String:
+	if is_instance_valid(extras):
+		var extra_reason: String=extras.save_block_reason()
+		if not extra_reason.is_empty(): return extra_reason
 	var reason: String = drag.save_block_reason() if is_instance_valid(drag) else ""
 	if not reason.is_empty(): return reason
 	return frontier.save_block_reason() if is_instance_valid(frontier) else ""
 func cancel_attempt() -> void:
+	if is_instance_valid(extras): extras.cancel_attempt()
 	if is_instance_valid(drag): drag.cancel_attempt()
 	if is_instance_valid(frontier): frontier.cancel_attempt()
 	if is_instance_valid(tuning_panel): tuning_panel.close_panel()
@@ -86,7 +107,7 @@ func _process(delta: float) -> void:
 				ADAPTER.attach(car,saved.parts)
 				car.restore_health(minf(saved_health,car.max_health))
 	_reconcile_resident()
-	if is_instance_valid(tuning_car) and (session.world.gameplay.health<=0 or session.state.place_id!="desert_digo"):
+	if is_instance_valid(tuning_car) and (session.world.gameplay.health<=0 or not _at_workshop()):
 		tuning_panel.close_panel()
 func _reconcile_owned_cars() -> void:
 	var records: Dictionary = session.state.world_state.get("desert_fleet",{})
@@ -141,8 +162,13 @@ func _reconcile_resident() -> void:
 	_resident.position = local
 	room.add_child(_resident)
 func nearest_action() -> Dictionary:
+	if is_instance_valid(drag) and drag.active: return drag.nearest_action()
+	if is_instance_valid(extras):
+		var extra_action: Dictionary=extras.nearest_action()
+		if not extra_action.is_empty(): return extra_action
 	if session.state.region_id!="desert": return {}
-	if busy(): return drag.nearest_action()
+	var digo_action: Dictionary = digo_routine.nearest_action()
+	if not digo_action.is_empty(): return digo_action
 	var contract_action: Dictionary=contracts.nearest_action()
 	if not contract_action.is_empty(): return contract_action
 	var secret_action: Dictionary=frontier.nearest_action()
@@ -158,13 +184,23 @@ func nearest_action() -> Dictionary:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
+	if is_instance_valid(extras) and extras.handles(action): return extras.perform(action)
 	if str(action.get("target","")).begins_with("contract:"): return contracts.perform(action)
 	if str(action.get("target","")).begins_with("secret:"): return frontier.perform(action)
 	if str(action.get("target","")).begins_with("discovery:"): return discoveries.perform(action)
 	if action.get("id","")=="desert_drag": return drag.perform(str(action.get("target","")))
 	if action.get("id","")=="desert_story": return story.perform(str(action.get("target","")))
 	if action.get("id","")!="desert" or nearest_action().get("target","")!=action.get("target",""): return false
-	if action.target=="workshop": return _workshop()
+	if action.target=="workshop":
+		_workshop_site = "town"
+		return _workshop()
+	if action.target=="digo_workshop":
+		if not digo_routine.begin_conversation(): return false
+		_workshop_site = "meet"
+		if not DIGO.workshop_unlocked(session.state.world_state): return _workshop()
+		session.show_dialogue([{"speaker":"Digo","message":"Fala, Dante. Tô acertando esse motor. Trouxe algum carro pra gente preparar?"}],func():
+			if _at_workshop() and session.world.gameplay.health>0: _workshop())
+		return true
 	if action.target=="rest":
 		if session.world.gameplay.stars>0 or not session.save_block_reason().is_empty(): session.show_message("Encerre a atividade e despiste a polícia antes de descansar."); return false
 		var hours := fposmod(20.0/24.0-session.weather.time_of_day,1.0)
@@ -181,10 +217,17 @@ func _race_completed(result: Dictionary) -> void:
 	story.race_finished(result)
 	session.save_game()
 func _nearby_car() -> CharacterBody3D:
+	if not _at_workshop(): return null
 	var car: CharacterBody3D = session.world.driving.car
 	if not is_instance_valid(car) or car.health<=0 or car.engine_disabled: return null
-	if car.global_position.distance_to(Vector3(-140,0,-943))>55 or car.half_width>1.45 or car.half_length>3.1: return null
+	var yard := DIGO_ROUTINE.workshop_point() if _workshop_site=="meet" else Vector3(-140,0,-943)
+	if car.global_position.distance_to(yard)>55 or car.half_width>1.45 or car.half_length>3.1: return null
 	return car
+func _at_workshop() -> bool:
+	if session.state.region_id!="desert": return false
+	if _workshop_site=="meet":
+		return session.state.place_id.is_empty() and session.world.player.global_position.distance_to(DIGO_ROUTINE.workshop_point())<24
+	return session.state.place_id=="desert_digo"
 func _workshop() -> bool:
 	if not DIGO.workshop_unlocked(session.state.world_state):
 		session.show_dialogue([{"speaker":"Digo","message":"Vamos correr primeiro. Complete a prova comigo, ganhando ou perdendo, e a gente prepara seu carro."}])
@@ -259,7 +302,8 @@ func _buy_car(id: String) -> void:
 	if saved.purchased.has(id): session.show_message("Você já comprou este carro."); return
 	var spec: Dictionary = CARS.spec(id)
 	if session.state.economy.balance<int(spec.price): session.show_message("Saldo insuficiente."); return
-	var point := Vector3(-123,.1,-940)
+	if not _at_workshop(): session.close_menu(); return
+	var point := DIGO_ROUTINE.parking_point() if _workshop_site=="meet" else Vector3(-123,.1,-940)
 	session.controller.region.prepare_collision_at(point)
 	var car: CharacterBody3D = session.controller.spawn_vehicle(id,point,PI)
 	if not is_instance_valid(car): session.show_message("Libere a vaga de entrega no pátio."); return
@@ -277,11 +321,13 @@ func _buy_car(id: String) -> void:
 	session.show_message("Carro entregue no pátio do Digo.")
 	session.save_game()
 func objective() -> String:
-	if busy(): return drag.objective()
+	if is_instance_valid(drag) and drag.active: return drag.objective()
+	if is_instance_valid(extras) and not extras.objective().is_empty(): return extras.objective()
 	var job: String=contracts.objective()
 	return job if not job.is_empty() else story.objective()
 func target_position() -> Vector3:
-	if busy(): return drag.target_position()
+	if is_instance_valid(drag) and drag.active: return drag.target_position()
+	if is_instance_valid(extras) and not extras.objective().is_empty(): return extras.target_position()
 	return contracts.target_position() if not contracts.objective().is_empty() else story.target_position()
 static func validate_world(value: Dictionary, economy: Dictionary) -> bool:
 	if value.has("desert_secrets") and not preload("res://runtime/desert/DesertSecretState.gd").valid(value.desert_secrets): return false

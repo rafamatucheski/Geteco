@@ -19,6 +19,7 @@ var _blowoff_cooldown := 0.0
 var _family := ""
 var _external_observing := false
 var _last_observed_speed := 0.0
+var _foreground := false
 
 func bind(car: Node3D, state: RefCounted) -> void:
 	vehicle = car
@@ -53,6 +54,17 @@ func _apply_profile() -> void:
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(vehicle) or drivetrain == null: queue_free(); return
+	# Match WorldAudio's foreground engine for Dante. A raised or cinematic
+	# camera must not attenuate/mute his own motor; NPCs keep spatial falloff.
+	var foreground := bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input"))
+	if foreground != _foreground:
+		_foreground = foreground
+		for player in _layers + [_shift, _tire, _nitro]:
+			player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+			player.max_distance = 0.0 if foreground else 85.0
+			player.panning_strength = 0.0 if foreground else 1.0
+			player.attenuation_filter_db = 0.0 if foreground else -24.0
+		_range_clock = 0.0
 	_range_clock -= delta
 	_blowoff_cooldown = maxf(0.0,_blowoff_cooldown-delta)
 	if _range_clock <= 0.0:
@@ -65,7 +77,7 @@ func _process(delta: float) -> void:
 	var running := bool(vehicle.get("controlled")) or bool(vehicle.get("traffic")) or bool(vehicle.get("external_input")) or absf(float(vehicle.get("speed"))) > .15
 	# Race controller owns physics while staging; revving there is still audible.
 	running = running or (not vehicle.is_physics_processing() and float(drivetrain.rpm) > 1000.0)
-	var active := _in_range and running and vehicle.is_visible_in_tree() and float(vehicle.get("health")) > 0.0 and not bool(vehicle.get("engine_disabled"))
+	var active := (_foreground or _in_range) and running and vehicle.is_visible_in_tree() and float(vehicle.get("health")) > 0.0 and not bool(vehicle.get("engine_disabled"))
 	if not active:
 		for player in _layers: player.stop()
 		_tire.stop()

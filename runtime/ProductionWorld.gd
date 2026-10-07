@@ -4,6 +4,9 @@ const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
+const DESERT_POPULATION := preload("res://runtime/desert/DesertPopulation.gd")
+const DESERT_SOCIAL_ACTOR := preload("res://runtime/desert/DesertSocialActor.gd")
+var _desert_social_slots: Array[Dictionary] = DESERT_POPULATION.slots()
 const FOOTBRIDGE_CROSSERS := preload("res://gameplay/crowd/FootbridgeCrossers.gd")
 var footbridge_crossers := FOOTBRIDGE_CROSSERS.new()
 const VEHICLE := preload("res://scripts/Vehicle.gd")
@@ -527,7 +530,11 @@ func _startup_position() -> Vector3:
 	var pedestrian: Dictionary = state.world_state.get("pedestrian",{})
 	var coordinates: Array = pedestrian.get("position",[])
 	if pedestrian.get("region","") == state.region_id and coordinates.size() == 3:
-		return Vector3(float(coordinates[0]),float(coordinates[1]),float(coordinates[2]))
+		var point:=Vector3(float(coordinates[0]),float(coordinates[1]),float(coordinates[2]))
+		if state.region_id=="desert":
+			var restored:=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
+			if restored!=point: return restored+Vector3.UP*.08
+		return point
 	return fallback
 
 func _audio() -> Node:
@@ -552,7 +559,7 @@ func _mount_region(id: String, requested_focus: Vector3 = Vector3.INF) -> Node3D
 	return mounted_region
 
 func _build_region(id: String, first_focus := Vector3.INF) -> Node3D:
-	if id == "desert": return preload("res://world/desert/DesertRegion.gd").build_region(id,first_focus)
+	if id == "desert": return preload("res://world/editing/EditableDesertRegion.gd").build_region(id,first_focus)
 	return REGION.build_region(id,first_focus)
 
 func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
@@ -565,6 +572,7 @@ func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
 	else:
 		mounted = _build_region(id,first_focus)
 	if mounted == null: return null
+	if id=="desert": mounted.set_north_pass_completed(preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").completed(state.world_state))
 	regions[id] = mounted
 	world.add_child(mounted)
 	if chairlift_schedule_initialized and mounted.has_method("set_chairlift_operating"): mounted.set_chairlift_operating(chairlift_operating)
@@ -800,7 +808,16 @@ func _update_chairlift_schedule() -> void:
 
 func starting_vehicle() -> Dictionary:
 	var saved: Array = state.world_state.get("vehicles",[])
-	return saved[0] if not saved.is_empty() else {}
+	if saved.is_empty(): return {}
+	var record: Dictionary=saved[0]
+	if record.get("region","")=="desert":
+		var point:=Vector3(record.position[0],record.position[1],record.position[2])
+		var restored:=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
+		if restored!=point:
+			record=record.duplicate(true)
+			record.position=[restored.x,.12,restored.z]
+			record.yaw=0.0
+	return record
 
 func _restore_player_vehicle() -> void:
 	var saved := starting_vehicle()
@@ -1199,6 +1216,9 @@ func _trace_cost(label: String, began: int) -> void:
 	world.set_meta("perf_costs",costs)
 
 func _create_citizen() -> void:
+	if state.region_id == "desert":
+		_create_desert_citizen()
+		return
 	var segment := _near_segment()
 	if segment.is_empty(): return
 	var along: Vector3 = (segment.b-segment.a).normalized()
@@ -1223,6 +1243,56 @@ func _create_citizen() -> void:
 	actor.set_meta("region_id",state.region_id)
 	world.add_child(actor)
 	world.people.append(actor)
+
+func _create_desert_citizen() -> void:
+	var occupied := {}
+	for actor in world.people:
+		if is_instance_valid(actor) and actor.has_meta("desert_social_slot"):
+			occupied[int(actor.get_meta("desert_social_slot"))] = true
+	var start := randi_range(0,_desert_social_slots.size()-1)
+	for index in _desert_social_slots.size():
+		var slot_id := (start+index)%_desert_social_slots.size()
+		if occupied.has(slot_id): continue
+		var slot: Dictionary = _desert_social_slots[slot_id]
+		var point: Vector3 = slot.point
+		var distance := point.distance_to(world.player.global_position)
+		# Small social spaces fit inside the city's 45 m exclusion ring. Admit
+		# their residents closer, still outside the camera and never on top of us.
+		if distance < 12.0 or distance > POPULATION_SPAWN_MAX or _on_screen(point,1.0): continue
+		if not desert_social_route_clear(slot.route): continue
+		var actor = DESERT_SOCIAL_ACTOR.new()
+		actor.identity = 6100+slot_id
+		actor.position = point+Vector3.UP*.08
+		actor.speed = 1.2
+		actor.route = slot.route
+		actor.social_activity = slot.activity
+		actor.social_facing = slot.facing
+		actor.set_meta("region_id","desert")
+		actor.set_meta("desert_social_slot",slot_id)
+		world.add_child(actor)
+		world.people.append(actor)
+		return
+
+func desert_social_route_clear(route: PackedVector3Array) -> bool:
+	# Authoring may move buildings: reject the whole route, never just the spawn.
+	var a := route[0]
+	var b := route[-1]
+	var steps := maxi(1,ceili(a.distance_to(b)/2.0))
+	for i in range(steps+1):
+		var point := a.lerp(b,float(i)/steps)
+		if _on_carriageway(point) or not session.position_clear(point+Vector3.UP*.08): return false
+	var query := PhysicsShapeQueryParameters3D.new()
+	var capsule := CapsuleShape3D.new()
+	# Include Actor's small walking-lane offset in the swept clearance.
+	capsule.radius = .72 if a.distance_squared_to(b) > .01 else .32
+	capsule.height = 1.7
+	query.shape = capsule
+	query.collision_mask = 1
+	query.transform = Transform3D(Basis.IDENTITY,a+Vector3.UP*.98)
+	query.motion = b-a
+	if not world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(): return false
+	var result: PackedFloat32Array = world.get_world_3d().direct_space_state.cast_motion(query)
+	return result[0] >= 1.0
 
 func _spawn_vehicle() -> void:
 	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
@@ -1252,7 +1322,8 @@ func _create_traffic_vehicle() -> void:
 			var direction := (b-a).normalized()
 			var lane_index := randi_range(0,int(road.get("lanes_per_direction",1))-1)
 			var lane := ambient_traffic_routes._lane_offset(direction,{"width":road.get("width",7.5),"one_way":str(road.id).contains("inbound") or str(road.id).contains("outbound"),"lanes":road.get("lanes_per_direction",1)},lane_index)
-			var point := a.lerp(b,randf_range(.25,.75))+lane
+			var parameter := DESERT_POPULATION.nearby_parameter(a,b,world.player.global_position,POPULATION_SPAWN_MAX) if state.region_id == "desert" else randf_range(.25,.75)
+			var point := a.lerp(b,parameter)+lane
 			if not _spawn_point_allowed(point,3.0): continue
 			var occupied := false
 			for existing in vehicles:

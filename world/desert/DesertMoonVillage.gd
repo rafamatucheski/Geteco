@@ -86,6 +86,7 @@ static func build_record(parent: Node3D, data: Dictionary) -> Array[OmniLight3D]
 		var instance := MultiMeshInstance3D.new()
 		instance.name="Village_"+str(group.finish)+"_"+str(group.shape)
 		instance.multimesh=mesh
+		if Engine.get_meta("geteco_live_preview_build",false): instance.set_meta("preview_instance_transforms",group.transforms)
 		instance.material_override=MATERIALS.material(group.finish)
 		village.add_child(instance)
 	if data.kind=="store": G.sign_name(village,"Santa Lua",Vector3(0,3.57,4.27),44)

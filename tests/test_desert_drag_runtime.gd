@@ -68,8 +68,7 @@ func run() -> void:
 		if not world.production.travel_busy and session.ready_for_play: break
 	check(session.state.region_id=="desert","desert has supported ground")
 	await frames(120)
-	# Lívia stands at (-1152,-1261): the previous +Z fixture put the coupe's
-	# front hull through her capsule. Park on the clear southern approach.
+	# Approach parking is clear of the authored meet residents and staging grid.
 	var style_car := "desert_mirage_gt" if "--style-car" in OS.get_cmdline_user_args() else "desert_mirage"
 	var car = world.production.spawn_vehicle(style_car,race.staging_point+Vector3(0,.1,-6),-PI*.5)
 	check(is_instance_valid(car),"production desert car spawned")
@@ -82,9 +81,14 @@ func run() -> void:
 		if world.driving.occupied and world.driving.car==car and car.controlled and not car.input_locked and not world.driving.is_body_transition_active(): break
 	check(world.driving.occupied and world.driving.car==car and car.controlled and not car.input_locked and not world.driving.is_body_transition_active(),"ordinary boarding finishes and releases selected car controls")
 	if not failures.is_empty(): finish(); return
-	session.weather.time_of_day = .5
-	check(not race.perform("start") and not race.active,"daylight race rejected")
-	check(is_equal_approx(session.weather.time_of_day,.5),"race does not silently change clock")
+	for hour in [8.0,15.0,23.0]:
+		session.weather.time_of_day = hour/24.0
+		check(race.nearest_action().get("target","")=="board","race board available at %dh"%int(hour))
+		check(race.perform("start") and race.active,"ordinary race starts at %dh"%int(hour))
+		check(is_equal_approx(session.weather.time_of_day,hour/24.0),"starting preserves world clock at %dh"%int(hour))
+		race.cancel_attempt()
+		await frames(3)
+		check(not race.active and not car.input_locked and car.is_physics_processing(),"cancelling restores driving at %dh"%int(hour))
 	session.weather.time_of_day = .9
 	var previous_camera := root.get_camera_3d()
 	var previous_listener := root.get_audio_listener_3d()
@@ -269,6 +273,13 @@ func drive_race(race,car) -> void:
 	if race.last_result.get("finished",false):
 		check(race.last_result.seconds>=15 and race.last_result.seconds<=30,"entry-class physical race lasts 15–30 seconds")
 		check(race.snapshot().finishes==1 and "digo" in race.snapshot().completed_rivals,"actual finish persisted exactly once")
+	# A first victory now has an authored results board. Its modal legitimately
+	# owns input until dismissed, then the original driving contract resumes.
+	await frames(3)
+	if race.last_result.get("first_win",false):
+		check(race.session.modal and is_instance_valid(race.board_controller.layer) and race.board_controller.layer.visible,"first victory opens its results board")
+		race.session.close_menu()
+		await frames(3)
 	check(car.is_physics_processing() and not car.input_locked and powertrain(car)==previous_power,"finish restores car ownership and normal drivetrain")
 	check(root.get_audio_listener_3d()==previous_listener,"finish restores previous audio listener")
 	check(not car.has_meta("desert_drag_physics") and not Input.is_physical_key_pressed(KEY_SPACE) and not Input.is_physical_key_pressed(KEY_Q),"finish clears race ownership and injected physical keys are released")

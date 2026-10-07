@@ -119,7 +119,7 @@ func _sync_channels() -> void:
 		if is_instance_valid(source): source.hide()
 	var active := not bool(_session.modal) and not get_tree().paused and not bool(_session.rescue_pending) and not bool(_session.arrest_pending)
 	# The drag presents its own instruments and controls while it owns driving.
-	var drag_active: bool = _session.desert != null and _session.desert.busy()
+	var drag_active: bool = _session.desert != null and is_instance_valid(_session.desert.drag) and _session.desert.drag.active
 	root_control.visible=active and not drag_active
 	var text := str(_session.objective.text).strip_edges()
 	if text in ["J  Missões · M  Mapa","J Missions · M Map"]: text=""

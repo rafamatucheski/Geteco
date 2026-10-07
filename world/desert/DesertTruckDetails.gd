@@ -63,43 +63,6 @@ static func _shelter(root: Node3D,at: Vector3) -> void:
 	T._bin(root,at+Vector3(3.2,0,2.2))
 	for x in [-3.0,3.0]: T._planter(root,at+Vector3(x,0,-2.1))
 
-static func bitrem() -> Node3D:
-	var root := Node3D.new()
-	root.name="RoadTrainDetails"
-	# Cab doors and steps establish a believable driver-sized tractor.
-	for side in [-1.0,1.0]:
-		T._piece(root,"CabSideWindow",Vector3(side*1.267,2.62,-11.18),Vector3(.035,.79,1.32),"glass")
-		T._piece(root,"WindowDivider",Vector3(side*1.292,2.63,-11.12),Vector3(.032,.86,.043),"steel")
-		T._piece(root,"DoorLowerPanel",Vector3(side*1.272,1.76,-11.05),Vector3(.04,.77,1.32),"steel")
-		T._piece(root,"TruckDoorHandle",Vector3(side*1.313,2.12,-10.54),Vector3(.05,.07,.3),"chalk")
-		for step in 2: T._piece(root,"CabAccessStep",Vector3(side*1.39,.63+float(step)*.29,-10.93),Vector3(.3,.12,.85),"steel")
-		T._piece(root,"SleeperVent",Vector3(side*1.22,2.47,-8.95),Vector3(.035,.51,.62),"rubber")
-		for i in 4: T._piece(root,"SleeperGrille",Vector3(side*1.25,2.28+float(i)*.12,-8.95),Vector3(.035,.028,.6),"steel")
-		# Fuel tanks, chassis equipment and mudguards fill the silhouette below the trailer.
-		var tank := G.cylinder(root,"DieselTank",Vector3(side*1.02,1.02,-5.5),.38,1.5,Color("92958d"))
-		tank.rotation.x=PI*.5
-		for z in [-5.95,-5.05]: T._piece(root,"TankStrap",Vector3(side*1.36,1.04,z),Vector3(.05,.64,.08),"steel")
-		for z in [-11.0,-7.0,1.6,11.7]: T._piece(root,"WheelMudguard",Vector3(side*1.30,1.26,z),Vector3(.55,.1,1.85 if z==-11.0 else 2.9),"rubber")
-		for z in [-5.7,3.4,13.0]: T._piece(root,"MudFlap",Vector3(side*1.27,.61,z),Vector3(.48,.83,.055),"rubber")
-	for z in [-11.0,-7.5,-6.35,.5,1.65,2.8,11.1,12.25]:
-		_pipe(root,"TruckAxle",Vector3(-1.30,.60,z),Vector3(1.30,.60,z),.085,"steel")
-	var deflector := T._piece(root,"CabWindDeflector",Vector3(0,3.64,-9.25),Vector3(2.35,.16,1.5),"steel")
-	deflector.rotation.x=-.2
-	for trailer in 2:
-		var z := -2.3+float(trailer)*10.5
-		for side in [-1.0,1.0]:
-			T._piece(root,"LandingLeg",Vector3(side*.81,.72,z-3.2),Vector3(.15,1.13,.15),"steel")
-			T._piece(root,"LandingFoot",Vector3(side*.81,.15,z-3.2),Vector3(.38,.1,.4),"steel")
-			for i in 5: T._piece(root,"TrailerReflector",Vector3(side*1.373,1.12,z-3.6+float(i)*1.8),Vector3(.018,.09,.37),"chalk")
-		var rear := z+4.77
-		T._piece(root,"TrailerRearDoorSeam",Vector3(0,2.15,rear),Vector3(.045,2.5,.035),"steel")
-		for x in [-.86,.86]:
-			T._piece(root,"DoorLockRod",Vector3(x,2.12,rear+.055),Vector3(.037,2.32,.04),"steel")
-			T._piece(root,"DoorLockLatch",Vector3(x,1.46,rear+.09),Vector3(.26,.05,.04),"steel")
-		T._piece(root,"TrailerRearRail",Vector3(0,.6,rear+.12),Vector3(2.5,.13,.13),"steel")
-	M.batch_visuals(root)
-	return root
-
 static func _pipe(root: Node3D,id: String,a: Vector3,b: Vector3,radius: float,kind: String) -> void:
 	var node := G.cylinder(root,id,(a+b)*.5,radius,a.distance_to(b),Color.WHITE)
 	node.basis=Basis(Quaternion(Vector3.UP,(b-a).normalized()))

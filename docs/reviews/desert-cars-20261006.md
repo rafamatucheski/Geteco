@@ -41,3 +41,20 @@ A comparação de performance com o início do trabalho é inconclusiva: outras 
 A tentativa final, após ajustar as cabines, também ficou **inválida**: `DesertVehicleGround.gd` mudou durante a execução. Não houve sobreposição de instâncias do motor. Foram observados p95 de 5,86/5,99 ms e máximos de 85,18/114,14 ms em noite/dia, mas esses números não aprovam performance: [relatório com hashes e motivo de invalidação](../../evidence/desert-car-style-measure-16120-7171070/report.json). Nova comparação exige fontes estáveis antes/depois; repetir a mesma medição enquanto outras sessões alteram runtime não resolve a pendência.
 
 A mesma integração concorrente deixou temporariamente incompatíveis a assinatura do helper de terreno e a chamada em `Vehicle.gd`. A primeira tentativa final dos adesivos foi interrompida por esse erro de compilação. Depois que a sessão responsável completou a chamada de três argumentos, o teste foi repetido e passou sem erros (`desert-car-roof-livery-final-2`). Não foi necessário editar ou descartar os arquivos dela.
+
+## Correção de som e faróis
+
+O relato de carros sem som/luz expôs duas falhas na montagem: a identificação `headlamp` não era reconhecida pelo equipamento compartilhado, e o agrupamento por material juntava as lentes dos dois lados. No Mirage, isso deixava o suporte centralizado e apenas um projetor. Agora os oito modelos preservam as lentes esquerda/direita e usam a identificação `headlight`, inclusive para dano independente.
+
+O mixer próprio do deserto também atenuava o motor de Dante pela câmera elevada e podia silenciá-lo quando ela se afastava. Agora o motorista tem áudio em primeiro plano, como a frota anterior; NPCs continuam com atenuação espacial e alcance limitado. O motor continua desligando na saída, quando desabilitado ou sem saúde.
+
+Validação em Godot 4.7.2 .NET, C# compilado sem erros/avisos:
+
+- `test_desert_car_audio_lights.gd`: 160 verificações nos oito modelos. Antes: 46 falhas; depois: nenhuma. Inclui montagem das lentes, dois projetores, quebra de um lado, freio, câmera afastada, NPC próximo/distante e desligamento.
+- `desert_cars_fleet.gd`: aprovado, incluindo banco de sete gravações, transmissão compartilhada e reinstalação sem mixers duplicados.
+- `test_traffic_headlights.gd`: 45 verificações aprovadas da frota anterior.
+- `capture/desert_car_audio_lights_session.gd -- --no-save`: 22 verificações aprovadas em Main com backend C# real. Faísca e Mirage GT, câmera normal, embarque, aceleração, frenagem, farol ligado/desligado e saída. A primeira tentativa foi interrompida por uma falha de posicionamento da fixture: jogador e carro no mesmo ponto; o spawn corretamente recusou a sobreposição. A fixture foi corrigida antes da execução aprovada.
+
+[Vídeo com o áudio dos motores](../../evidence/desert-audio-lights-119072-8062048/review.mp4), [sequência e telemetria](../../evidence/desert-audio-lights-119072-8062048/report.json) e [resumo](../../evidence/desert-audio-lights-119072-8062048/summary.json). Foram 1.816 quadros em 61,40 s, sem quadros renderizados pulados. Os dois projetores permaneceram ativos em todos os quadros das fases de farol ligado. A gravação isolada dos motores tem pico de -21,16 dBFS e nenhum sample clipado; há sinal real de saída, não apenas players marcados como ativos.
+
+Inspeção visual amostral confirmou lentes acesas e facho na pista. Não houve escuta subjetiva nem inspeção manual integral do vídeo; isso não certifica timbre ou ausência universal de flickering, chuva, curvas ou todos os mapas. Performance ficou explicitamente com o usuário: esta captura limitada a 30 FPS, com escrita de imagens e outras sessões ativas, não é benchmark nem aprovação de desempenho.
