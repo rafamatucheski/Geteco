@@ -652,11 +652,15 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"basis": model_basis, "right_basis": right_basis, "left_basis": left_basis,
 		"gun_origin": right_v2 - model_basis * grip * scale,
 		"weapon_scale": scale,
+		"break_open": SAWED.reload_open(reload_progress) if id == "sawed_off" and reloading else 0.0,
 		"right_grip": right_grip, "left_grip": left_grip,
 		"right_solve": _right_solve_weight > 0.0, "left_solve": _left_solve_weight > 0.0,
 		"right_weight": minf(_right_solve_weight, _guard_weight) if id == "fists" else _right_solve_weight,
 		"left_weight": minf(_left_solve_weight, melee_support_weight) if id in ["axe", "bat"] else (minf(_left_solve_weight, _guard_weight) if id == "fists" else _left_solve_weight),
 		"right_fist": right_fist, "left_fist": left_fist,
+		# Soqueira correndo: os punhos seguem a mão que o clipe de corrida já traz (balanço natural)
+		# em vez do bombeio curto de `_knuckle_pose`, que lia como braço duro e "amebado".
+		"follow_clip": _move_weight if id == "knuckles" and not in_move and not engaged else 0.0,
 		"right_free": right_free, "left_free": left_free,
 		"support_locked": support_locked,
 		"support_weight": _support_weight if support != Vector3.ZERO else 0.0,

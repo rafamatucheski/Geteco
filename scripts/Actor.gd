@@ -60,6 +60,8 @@ const FALL_TIME := 0.22
 const FLINCH_ANGLE := 0.22
 ## Mistura curta entre locomoção e clipe de golpe (0 = só locomoção, 1 = só o clipe), tempo em `COMBAT_BLEND`.
 var _combat_weight := 0.0
+## Palmas da pose de locomoção/clipe, medidas antes de a camada de arma resolver os braços.
+var _clip_palms := {}
 var _last_clip := ""
 var _last_clip_time := 0.0
 ## Pesos perceptivos equivalentes aos do Dante V1: a fase só avança com
@@ -271,6 +273,7 @@ func _stall_physics_tick(delta: float) -> void:
 			_apply_blend(locomotion_pose, _capture_pose(), _combat_weight)
 		else:
 			_pose_locomotion(direction, target_speed, displacement, actual_speed, delta)
+		if is_player: _clip_palms = {"Left": _clip_palm("Left"), "Right": _clip_palm("Right")}
 		if hips >= 0:
 			var hip_position := skeleton.get_bone_pose_position(hips)
 			hip_position.x = hip_rest.x
@@ -714,6 +717,10 @@ func _apply_combat_weapon_pose() -> void:
 	var right_free := float(pose.get("right_free", 0.0))
 	var left_free := float(pose.get("left_free", 0.0))
 	var right_target: Vector3 = pose.right
+	# Soqueira correndo: alvo = palma do clipe de corrida (antes de qualquer solução de braço neste quadro).
+	var follow_clip := clampf(float(pose.get("follow_clip", 0.0)), 0.0, 1.0)
+	var clip_left_target := visual.to_local(_clip_palms.get("Left", combat_palm_position("Left")))
+	if follow_clip > 0.0: right_target = right_target.lerp(visual.to_local(_clip_palms.get("Right", combat_palm_position("Right"))), follow_clip)
 	var support_weight := float(pose.get("support_weight", 1.0 if pose.get("support_locked", false) else 0.0))
 	var lock_support := right_solve and left_solve and left_grip and support_weight > 0.0
 	if lock_support:
@@ -734,6 +741,7 @@ func _apply_combat_weapon_pose() -> void:
 			_blend_arm_bone(entry[0], entry[1], right_weight)
 	if left_solve:
 		var left_target: Vector3 = pose.left
+		if follow_clip > 0.0: left_target = left_target.lerp(clip_left_target, follow_clip)
 		if lock_support:
 			var realised_delta: Vector3 = visual.global_basis * (pose.left - pose.right)
 			left_target = visual.to_local(combat_palm_position("Right") + realised_delta)
@@ -1108,6 +1116,18 @@ func _set_combat_bone_rotation(bone: int, p_global_rotation: Basis) -> void:
 		parent_rotation = skeleton.get_bone_global_pose(parent).basis.orthonormalized()
 	var local_rotation := parent_rotation.transposed() * p_global_rotation.orthonormalized()
 	skeleton.set_bone_pose_rotation(bone, local_rotation.get_rotation_quaternion().normalized())
+
+## Palma da pose do clipe neste quadro, pela cadeia de ossos pais: `get_bone_global_pose` pode devolver
+## o cache do quadro anterior logo depois de `set_bone_pose_*`.
+func _clip_palm(side: String) -> Vector3:
+	if skeleton == null or not _combat_bones.has(side + "Hand"): return global_position
+	var bone: int = _combat_bones[side + "Hand"]
+	var chain := skeleton.get_bone_pose(bone)
+	var parent := skeleton.get_bone_parent(bone)
+	while parent >= 0:
+		chain = skeleton.get_bone_pose(parent) * chain
+		parent = skeleton.get_bone_parent(parent)
+	return skeleton.to_global(chain * Vector3(0, 0.065, 0))
 
 func combat_palm_position(side: String) -> Vector3:
 	if skeleton == null or not _combat_bones.has(side + "Hand"): return global_position
