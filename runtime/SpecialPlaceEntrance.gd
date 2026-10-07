@@ -14,7 +14,7 @@ var hatch: Node3D
 var hatch_id := ""
 
 func handles_place(id: String) -> bool:
-	return id in IDS
+	return id in IDS or preload("res://world/desert/underground/DesertUnderground.gd").is_underground(id)
 
 func _ready() -> void:
 	for id in IDS: definitions[id] = PLACES.get_definition(id)

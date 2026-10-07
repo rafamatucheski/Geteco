@@ -149,6 +149,7 @@ static func definitions() -> Array[Dictionary]:
 	result.append_array(preload("res://world/desert/village/DesertVillageHomes.gd").definitions())
 	result.append_array(preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions())
 	return result
+	result.append_array(preload("res://world/desert/underground/DesertUnderground.gd").definitions())
 static func get_definition(id: String) -> Dictionary:
 	for definition in definitions():
 		if definition.id == id: return definition

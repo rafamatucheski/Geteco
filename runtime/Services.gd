@@ -116,7 +116,7 @@ func _npc_points() -> Dictionary:
 
 func _is_room_resident(id: String) -> bool:
 	var definition: Variant = session.room.get("definition")
-	if not definition is Dictionary or not String(definition.get("id","")).begins_with("sewer_"): return false
+	if not definition is Dictionary or not bool(definition.get("resident_talk",String(definition.get("id","")).begins_with("sewer_"))): return false
 	for npc in definition.get("npcs",[]):
 		if npc.get("id","") == id: return true
 	return false

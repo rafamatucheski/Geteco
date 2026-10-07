@@ -1,6 +1,7 @@
 extends Node3D
 ## Independent streamed region. Coordinates never pass through Harbor's legacy pixel adapter.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+const UNDERGROUND := preload("res://world/desert/underground/DesertUnderground.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const ART := preload("res://world/desert/DesertArchitecture.gd")
 const UTILITY := preload("res://world/desert/DesertUtilityLines.gd")
@@ -115,6 +116,9 @@ func prepare_data() -> void:
 		_record(building.position,{"kind":"building","data":building})
 	for definition in LAYOUT.place_definitions():
 		entries.append({"id":definition.id,"place_id":definition.id,"position":definition.entry_position,"return_position":definition.return_position,"label":definition.original_name})
+	for definition in UNDERGROUND.definitions():
+		entries.append({"id":definition.id,"place_id":definition.id,"position":definition.entry_position,"return_position":definition.return_position,"label":definition.original_name})
+	for record in UNDERGROUND.records(): _record(record.position,record)
 	for definition in VILLAGE_HOMES.definitions():
 		entries.append({"id":definition.id,"place_id":definition.id,"position":definition.entry_position,"return_position":definition.return_position,"label":definition.original_name})
 	_record(LAYOUT.TRUCK_STOP,{"kind":"truck_stop","position":LAYOUT.TRUCK_STOP})
@@ -358,6 +362,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		"utility_pole", "utility_span", "utility_service": UTILITY.build_record(chunk,record)
 		"building": chunk.add_child(ART.building(record.data))
 		"truck_stop":
+		"desert_underground": UNDERGROUND.build_record(chunk,record)
 			var stop := ART.truck_stop(false)
 			stop.position=record.position
 			chunk.add_child(stop)

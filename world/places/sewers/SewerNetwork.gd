@@ -34,7 +34,7 @@ static func ids() -> Array[String]:
 	return all
 
 static func is_manhole(id: String) -> bool:
-	return id == ORIGINAL_ID or is_extra(id)
+	return id == ORIGINAL_ID or is_extra(id) or preload("res://world/desert/underground/DesertUnderground.gd").is_underground(id)
 
 static func is_extra(id: String) -> bool:
 	for site in SITES:

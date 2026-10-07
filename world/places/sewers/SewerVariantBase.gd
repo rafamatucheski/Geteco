@@ -129,10 +129,36 @@ func walls(back_height := 2.8, side_height := 1.0, front_height := 0.35, color :
 	for course in 3:
 		box(Vector3(0, 0.45 + course * 0.8, -half.y + 0.02), Vector3(half.x * 2.0, 0.06, 0.05), "#4a5143")
 
-func ladder(at: Vector3) -> void:
-	box(at + Vector3(0, 0.03, 0), Vector3(1.0, 0.04, 0.9), "#182728")
-	for x in [-0.27, 0.27]: cyl(at + Vector3(x, 1.0, 0), 0.035, 2.0, "#b0a276", true)
-	for rung in 7: box(at + Vector3(0, 0.17 + rung * 0.29, 0), Vector3(0.56, 0.05, 0.05), "#c6b37f", true)
+func ladder(at: Vector3, rail_color := "#b0a276", rung_color := "#c6b37f", base_color := "#182728") -> void:
+	box(at + Vector3(0, 0.03, 0), Vector3(1.0, 0.04, 0.9), base_color)
+	for x in [-0.27, 0.27]: cyl(at + Vector3(x, 1.0, 0), 0.035, 2.0, rail_color, true)
+	for rung in 7: box(at + Vector3(0, 0.17 + rung * 0.29, 0), Vector3(0.56, 0.05, 0.05), rung_color, true)
+
+## Fogueira de acampamento: anel de pedras, lenha e chama com luz que pisca.
+func campfire(at: Vector3, energy := 2.0) -> void:
+	for index in 8:
+		var angle := TAU * float(index) / 8.0
+		box(at + Vector3(cos(angle) * 0.32, 0.07, sin(angle) * 0.32), Vector3(0.18, 0.14, 0.14), "#4a4237", false, "").rotation.y = angle
+	box(at + Vector3(0, 0.08, 0), Vector3(0.5, 0.1, 0.08), "#2a1c10").rotation.y = 0.5
+	box(at + Vector3(0, 0.08, 0), Vector3(0.5, 0.1, 0.08), "#2a1c10").rotation.y = -0.5
+	_solid_counter += 1
+	solid_rects["Campfire_%d" % _solid_counter] = Rect2(at.x - 0.4, at.z - 0.4, 0.8, 0.8)
+	var flames := CPUParticles3D.new()
+	flames.position = at + Vector3(0, 0.2, 0)
+	flames.amount = 12
+	flames.lifetime = 0.6
+	flames.direction = Vector3.UP
+	flames.spread = 12.0
+	flames.initial_velocity_min = 0.4
+	flames.initial_velocity_max = 0.8
+	flames.gravity = Vector3(0, 0.6, 0)
+	var spark := SphereMesh.new()
+	spark.radius = 0.05
+	spark.height = 0.1
+	flames.mesh = spark
+	flames.material_override = _mat("#ffa24a", false, 3.5)
+	add_child(flames)
+	lamp(at + Vector3(0, 0.9, 0.2), "#ffa24a", energy, 6.0, true)
 
 func lamp(at: Vector3, color := "#ffbd66", energy := 2.0, reach := 5.0, flicker := false) -> OmniLight3D:
 	var light := OmniLight3D.new()
