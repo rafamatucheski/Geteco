@@ -7,6 +7,7 @@ documento cita `geteco_v2/`, leia como a raiz atual do repositório.
 ## Direção do jogo
 
 - [Harbor — nome escolhido e conceito da chegada de barco](harbor-identidade-e-chegada.md)
+- [Ideia futura: carro-forte entre bancos de cidades diferentes](ideia-carro-forte-entre-cidades-20261006.md)
 
 ## Padrões obrigatórios
 

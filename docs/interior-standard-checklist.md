@@ -1,5 +1,16 @@
 # Migração de interiores — checklist
 
+## Deserto — oficina aberta do encontro de arrancada — 06/10/2026
+
+**1 novo pátio de oficina ao ar livre / 0 novas salas ou transições / 0 certificações integrais.** A oficina de Digo na cidade permanece; esta baia permite encontrá-lo trabalhando no encontro. Não altera as contagens de interiores fechados dos demais lotes.
+
+- [x] Apresentação ampliada após revisão do usuário: pátio de 30 × 24 m, concreto texturizado com desgaste/óleo, Gol com capô aberto, segundo carro desmontado sobre cavaletes, macaco, bancadas com motores, racks de peças/rodas, carrinho, cabos e ferramentas. Parede traseira baixa e cobertura restrita ao armário mantêm a oficina aberta; somente o nome próprio Digo.
+- [x] Roupa de oficina própria no deserto, com calça de trabalho, avental/cinto; rotina autorada entre carro e bancada, interrupção para conversar, retomada do trabalho, suspensão em modal e descarregamento por proximidade/região. Efeitos de ferramentas gravados acompanham as estações de trabalho e param ao conversar.
+- [x] Física e rotina: `tests/test_desert_digo_routine.gd`, **42 verificações / zero falhas**, com cápsulas reais de jogador/NPC, varreduras dos móveis e segundo carro, corredores, percurso completo, conversa, áudio, pausa, retorno e descarregamento. [Log final](../evidence/drag-meet-final-20261006-2120/routine.stdout.log).
+- [x] Profundidade separada: **120 verificações / zero falhas**, com frente/atrás/lado do carro e bancada, controles positivos do jogador e do rig real de Digo, câmera exterior e câmera diagonal do usuário. [Resultados e fotos](../evidence/desert-digo-depth-final-20261006-2120-fixed/results.json). A primeira passagem reproduziu ocultação total na bancada; foram corrigidas a parede/cobertura. A passagem seguinte identificou obstrução excessiva pelo capô na diagonal; abertura reduzida para 0,72 rad com haste física, sem relaxar os critérios.
+- [x] Main real renderizada .NET: **43 verificações / zero falhas**, incluindo conversa, preparação do carro, rotina, população/áudio e saída/retorno sem duplicação. [Log](../evidence/drag-meet-final-20261006-2120/meet-fixed.stdout.log) e [foto final da oficina com Dante no corredor livre](../evidence/desert-meet-session-75740-5664048/digo-gameplay.png). A fixture fotográfica anterior foi corrigida por posicionar Dante dentro do capô; o posicionamento final verifica apoio e corpo fora dos sólidos.
+- [ ] Comparativo de frame time renderizado. Usuário realizará a avaliação de performance; nenhum FPS aprovado por esta implementação.
+
 ## Harbor — primeira leva de prédios acessíveis — 06/10/2026
 
 **2 lugares físicos / 2 interiores independentes / 8 pavimentos autorados; 0 certificados integralmente / 2 em validação.** Customs House (`NorthFrontage5`) e Union Lofts (`Apartments`), com térreo + três andares cada. Não confundir plantas por andar com novos prédios. O inventário efetivo de `harbor_buildings` tem 60 fachadas: 11 acessos anteriores, estes 2 novos e 47 ainda pendentes; construções de outras fábricas de cenário precisam de censo complementar. [Inventário e próximas levas](harbor-interiores-por-levas.md).
