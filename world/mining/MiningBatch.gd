@@ -75,6 +75,7 @@ func finish() -> Node3D:
 		var visual := MultiMeshInstance3D.new()
 		visual.name="MiningBatch_"+key.replace(":","_")
 		visual.multimesh=batch
+		if Engine.get_meta("geteco_live_preview_build",false): visual.set_meta("preview_instance_transforms",group.transforms)
 		visual.material_override=material(group.finish)
 		root.add_child(visual)
 	if body.get_child_count()==0: body.free()
