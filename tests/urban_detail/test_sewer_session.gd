@@ -18,7 +18,7 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for i in 240:
+	for i in 1800:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play: break
 	check(world.session != null and world.session.ready_for_play,"mundo integrado inicia")

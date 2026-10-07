@@ -1,6 +1,7 @@
 extends Node
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
+const SEWER_DESCENT := preload("res://gameplay/SewerHatchDescent.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
 const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
@@ -887,6 +888,26 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	_restore_transition_player_lock(was_player_locked,token)
 	if id != "maciota":
 		_install_service_npc()
+	# Bueiro: Dante anda até a borda, a tampa desliza e ele desce a escada antes do véu cobrir a troca.
+	if id == "harbor_sewer" and is_instance_valid(sewer_hatch):
+		var descent: Node = SEWER_DESCENT.new()
+		descent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
+		if descent.can_run():
+			add_child(descent)
+			var descended: bool = await descent.descend()
+			descent.queue_free()
+			if not descended:
+				_discard_place_candidate(candidate_room,owns_candidate)
+				controller.region.set_focus(world.player.global_position)
+				if sewer_entry_origin.is_finite():
+					world.player.teleport(sewer_entry_origin)
+					_close_sewer_hatch_for_transition(token)
+					sewer_entry_origin = Vector3.ZERO
+				_restore_transition_player_lock(was_player_locked,token)
+				_finish_transition(token)
+				return false
+		else:
+			descent.free()
 		_update_reward()
 	if room.has_method("on_session_entered"): room.on_session_entered(self)
 	_finish_transition(token)
@@ -907,7 +928,6 @@ func leave_place() -> bool:
 		sewer_hatch = _find_sewer_hatch()
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
-			sewer_hatch.set_open_amount(0.0)
 	var leaving_return := _clear_return_point(state.place_id, return_point)
 	world.player.input_locked = true
 	if not leaving_return.is_finite():
@@ -946,7 +966,18 @@ func leave_place() -> bool:
 	state.set_location(state.region_id)
 	world.player.teleport(leaving_return+Vector3.UP*.08)
 	_sync_location_presentation()
-	if state.place_id.is_empty() and is_instance_valid(sewer_hatch):
+	# Saída do bueiro: Dante reaparece no fundo do poço com a tampa aberta e sobe a escada depois do véu abrir.
+	var ascent: Node
+	if was_sewer_exit and is_instance_valid(sewer_hatch):
+		ascent = SEWER_DESCENT.new()
+		ascent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
+		if ascent.can_run():
+			add_child(ascent)
+			ascent.prepare_exit()
+		else:
+			ascent.free()
+			ascent = null
+	if state.place_id.is_empty() and is_instance_valid(sewer_hatch) and ascent == null:
 		_close_sewer_hatch_after_exit(sewer_hatch)
 		sewer_hatch = null
 	world.camera.target = world.player
@@ -955,6 +986,7 @@ func leave_place() -> bool:
 	world.camera.target_size = saved_size
 	world.camera.locked = false
 	world.camera.initialized = false
+	var was_sewer_exit: bool = state.place_id == "harbor_sewer"
 	world.camera._process(1)
 	if animated:
 		world.camera.reveal_exterior(world.player.global_position, maxf(8.0, saved_size * 0.78), saved_size, 0.42)
@@ -1015,6 +1047,13 @@ func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 	for offset: Vector3 in definition.get("return_clearance_offsets",[]):
 		var candidate: Vector3 = desired + offset
 		if position_clear(candidate + Vector3.UP * .08): return candidate
+	if ascent != null:
+		await ascent.ascend(leaving_return)
+		ascent.queue_free()
+		if is_instance_valid(sewer_hatch):
+			_close_sewer_hatch_after_exit(sewer_hatch)
+			sewer_hatch = null
+		world.player.teleport(leaving_return+Vector3.UP*.08)
 	return Vector3.INF
 
 func sync_dispatch_location() -> void:

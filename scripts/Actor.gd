@@ -5,6 +5,9 @@ const DANTE := preload("res://assets/dante.glb")
 ## Clipes da Universal Animation Library (CC0) retargetados para o esqueleto do Dante
 ## (`tools/retarget_ual_to_dante.gd`); entram como biblioteca "ual", sem tocar nos clipes originais.
 const UAL_LIBRARY := "res://assets/animation_library/dante_ual.res"
+## `ladder/Ladder_Descend`: o `Fast_Ladder_Climb` ao contrário (`tools/make_ladder_descend.gd`).
+const LADDER_LIBRARY := "res://assets/animation_library/dante_ladder.res"
+const LADDER_CLIPS := ["Fast_Ladder_Climb", "ladder/Ladder_Descend"]
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
@@ -141,6 +144,8 @@ func _ready() -> void:
 		animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		if animation and not animation.has_animation_library("ual") and ResourceLoader.exists(UAL_LIBRARY):
 			animation.add_animation_library("ual", load(UAL_LIBRARY))
+		if animation and not animation.has_animation_library("ladder") and ResourceLoader.exists(LADDER_LIBRARY):
+			animation.add_animation_library("ladder", load(LADDER_LIBRARY))
 		skeleton = model.find_child("Skeleton3D", true, false) as Skeleton3D
 		if skeleton:
 			hips = skeleton.find_bone("Hips")
@@ -470,13 +475,13 @@ func _apply_pose(pose: Array) -> void:
 func _pose_clip(clip: String, time: float) -> void:
 	if not animation.has_animation(clip): return
 	animation.play(clip)
-	if clip == "Fast_Ladder_Climb" and not _traversal_roots.has(clip):
+	if clip in LADDER_CLIPS and not _traversal_roots.has(clip):
 		animation.seek(0.0, true)
 		var first := skeleton.get_bone_pose_position(hips)
 		animation.seek(animation.get_animation(clip).length, true)
 		_traversal_roots[clip] = [first, skeleton.get_bone_pose_position(hips)]
 	animation.seek(clampf(time, 0.0, animation.get_animation(clip).length), true)
-	if clip == "Fast_Ladder_Climb":
+	if clip in LADDER_CLIPS:
 		var endpoints: Array = _traversal_roots[clip]
 		var progress := clampf(time / animation.get_animation(clip).length, 0, 1)
 		var hip := skeleton.get_bone_pose_position(hips)

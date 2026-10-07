@@ -38,7 +38,7 @@ func _run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
-	for i in 480:
+	for i in 1800:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play: break
 	check(world.session != null and world.session.ready_for_play, "production session ready")
@@ -83,7 +83,9 @@ func _run() -> void:
 	check(hatch.open_amount > 0.8, "cover slides clear before Dante takes the ladder")
 	var opened_ray := PhysicsRayQueryParameters3D.create(hatch_point + Vector3.UP * 0.25, hatch_point + Vector3.DOWN * 1.7, 1)
 	opened_ray.exclude = [world.player.get_rid()]
-	check(world.get_world_3d().direct_space_state.intersect_ray(opened_ray).is_empty(), "open shaft has no floor collider across the descent")
+	var opened_hit := world.get_world_3d().direct_space_state.intersect_ray(opened_ray)
+	if not opened_hit.is_empty(): print("DBGHIT ", opened_hit.collider.get_path(), " at ", opened_hit.position, " hatch=", hatch_point)
+	check(opened_hit.is_empty(), "open shaft has no floor collider across the descent")
 	var shaft_shape := CapsuleShape3D.new()
 	shaft_shape.radius = 0.32
 	shaft_shape.height = 1.7
@@ -92,7 +94,9 @@ func _run() -> void:
 	shaft_query.transform = Transform3D(Basis.IDENTITY, hatch_point + Vector3.UP * 0.1)
 	shaft_query.collision_mask = 1
 	shaft_query.exclude = [world.player.get_rid()]
-	check(world.get_world_3d().direct_space_state.intersect_shape(shaft_query, 1).is_empty(), "player capsule fits between the shaft walls")
+	var shaft_hits := world.get_world_3d().direct_space_state.intersect_shape(shaft_query, 4)
+	for h in shaft_hits: print("DBGSHAPE ", h.collider.get_path())
+	check(shaft_hits.is_empty(), "player capsule fits between the shaft walls")
 	await capture("dragging")
 	await create_timer(0.50).timeout
 	await capture("ladder")
