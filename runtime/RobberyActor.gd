@@ -57,6 +57,8 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	injured.emit(self,amount)
 func _fall(restored := false, impact := Vector3.ZERO) -> void:
 	dead=true
+	if not restored and not guard and heist != null:
+		heist.session.world.gameplay.drop_cash(self)
 	collision_layer=0
 	collision_mask=0
 	velocity=Vector3.ZERO

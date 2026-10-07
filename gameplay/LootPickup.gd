@@ -1,5 +1,5 @@
 extends Node3D
-## Item largado no chão (arma com munição ou colete), coletado só de passar por
+## Item largado no chão (dinheiro, arma com munição ou colete), coletado só de passar por
 ## cima. Port de `legacy/city_demo/scenes/pickups/WeaponPickup.gd` e
 ## `BodyArmorPickup.gd` da V1: halo colorido por arma, ícone flutuando e girando,
 ## coleta imediata sem aviso na tela e sumiço suave depois de 35 s.
@@ -8,6 +8,7 @@ extends Node3D
 ## com um brilho aditivo que pisca.
 
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
+const CASH_NOTE = preload("res://assets/gameplay/cash_note.svg")
 ## Tempo no chão antes de começar a sumir, e duração do sumiço (V1: 28 s + 7 s).
 const LIFETIME := 28.0
 const FADE_TIME := 7.0
@@ -22,6 +23,8 @@ var kind := "weapon"
 var weapon_id := "pistol"
 var ammo_amount := 12
 var armor_amount := 50
+var cash_amount := 0
+var cash_credited := false
 var consumed := false
 var _age := 0.0
 var _icon_scale := 2.4
@@ -35,7 +38,8 @@ var _disc_material: StandardMaterial3D
 func setup(p_kind: String, p_weapon: String = "", p_amount: int = 0) -> void:
 	kind = p_kind
 	if p_weapon != "": weapon_id = p_weapon
-	if kind == "armor": armor_amount = p_amount if p_amount > 0 else armor_amount
+	if kind == "cash": cash_amount = p_amount
+	elif kind == "armor": armor_amount = p_amount if p_amount > 0 else armor_amount
 	else: ammo_amount = p_amount if p_amount > 0 else ammo_amount
 
 func _ready() -> void:
@@ -56,8 +60,8 @@ func _ready() -> void:
 	_halo = MeshInstance3D.new()
 	_halo.name = "Halo"
 	var ring := TorusMesh.new()
-	ring.inner_radius = 0.42
-	ring.outer_radius = 0.58
+	ring.inner_radius = 0.28 if kind == "cash" else 0.42
+	ring.outer_radius = 0.39 if kind == "cash" else 0.58
 	ring.rings = 24
 	ring.ring_segments = 6
 	_halo.mesh = ring
@@ -68,8 +72,8 @@ func _ready() -> void:
 	add_child(_halo)
 	var disc := MeshInstance3D.new()
 	var disc_mesh := CylinderMesh.new()
-	disc_mesh.top_radius = 0.30
-	disc_mesh.bottom_radius = 0.30
+	disc_mesh.top_radius = 0.21 if kind == "cash" else 0.30
+	disc_mesh.bottom_radius = disc_mesh.top_radius
 	disc_mesh.height = 0.01
 	disc_mesh.radial_segments = 24
 	disc.mesh = disc_mesh
@@ -83,14 +87,16 @@ func _ready() -> void:
 	add_child(_icon)
 	var model := Node3D.new()
 	_icon.add_child(model)
-	if kind == "armor": _build_vest(model)
+	if kind == "cash": _build_cash(model)
+	elif kind == "armor": _build_vest(model)
 	else:
 		ARSENAL.build_cached(model, weapon_id)
 		# Deitada de lado e centrada no giro, como a silhueta da V1.
 		model.rotation = Vector3(0, 0, PI * 0.5)
 		model.position = -_model_center(model).rotated(Vector3.BACK, PI * 0.5)
 	var extent := _model_size(model)
-	_icon_scale = clampf(ICON_LENGTH / maxf(maxf(extent.x, extent.y), maxf(extent.z, 0.05)), 1.4, 4.0)
+	var icon_length := 0.65 if kind == "cash" else ICON_LENGTH
+	_icon_scale = clampf(icon_length / maxf(maxf(extent.x, extent.y), maxf(extent.z, 0.05)), 0.8 if kind == "cash" else 1.4, 4.0)
 	_icon.scale = Vector3.ONE * _icon_scale
 	_glow_material = StandardMaterial3D.new()
 	_glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -114,7 +120,7 @@ func advance(delta: float) -> bool:
 	var rate := lerpf(5.0, 14.0, fading)
 	var pulse := 0.5 + 0.5 * sin(_age * rate + _phase)
 	var alive := 1.0 - fading
-	_glow_material.albedo_color.a = (0.10 + 0.45 * pulse) * alive
+	_glow_material.albedo_color.a = (0.03 + 0.10 * pulse if kind == "cash" else 0.10 + 0.45 * pulse) * alive
 	_halo_material.albedo_color.a = halo_color().a * (0.65 + 0.9 * pulse) * alive
 	_disc_material.albedo_color.a = halo_color().a * 0.45 * alive
 	_halo.scale = Vector3(1.0 + sin(_age * 2.5) * 0.12, 0.08, 1.0 + sin(_age * 2.5) * 0.12)
@@ -142,6 +148,7 @@ func collect() -> void:
 
 ## Cor do halo por família, a mesma da V1.
 func halo_color() -> Color:
+	if kind == "cash": return Color(0.25, 0.95, 0.4, 0.30)
 	if kind == "armor": return Color(0.2, 0.85, 1.0, 0.30)
 	match weapon_id:
 		"magnum", "pistol": return Color(1.0, 0.8, 0.2, 0.28)
@@ -180,6 +187,26 @@ func _relative_transform(ancestor: Node3D, node: Node3D) -> Transform3D:
 		if current is Node3D: result = (current as Node3D).transform * result
 		current = current.get_parent()
 	return result
+
+## Maço de notas com faixa, reconhecível sem rótulo ou texto decorativo.
+func _build_cash(root: Node3D) -> void:
+	var paper := _vest_material(Color("c4cbbb"), .95)
+	var edges := _vest_material(Color("7f9587"), .95)
+	var band := _vest_material(Color("d1b383"), .95)
+	_box(root, Vector3(.48, .065, .24), Vector3.ZERO, paper)
+	for y in [-.019, -.002, .015]:
+		_box(root, Vector3(.482, .002, .242), Vector3(0, y, 0), edges)
+	var printed := _vest_material(Color.WHITE, .95)
+	printed.albedo_texture = CASH_NOTE
+	var face := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(.48, .24)
+	face.mesh = plane
+	face.position.y = .034
+	face.material_override = printed
+	root.add_child(face)
+	_box(root, Vector3(.055, .070, .245), Vector3(-.025, 0, 0), band)
+	root.rotation.x = -.25
 
 ## Colete balístico: silhueta da V1 (alças, gola aberta, cintura afunilada e
 ## placas) em volume, em metros reais.

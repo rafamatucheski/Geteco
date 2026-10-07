@@ -28,6 +28,9 @@ const BLAST_QUERY := preload("res://gameplay/BlastQuery.gd")
 const EFFECTS = preload("res://gameplay/CombatEffects.gd")
 const RIG_POSE = preload("res://gameplay/WeaponRigPose.gd")
 const LOOT = preload("res://gameplay/LootPickup.gd")
+const CASH_DROP_RULES = preload("res://gameplay/CashDropRules.gd")
+const MAX_CASH_DROPS := 64
+var _cash_rng := RandomNumberGenerator.new()
 ## Mixagem de combate (ver `_hearing_gain_db`). Volumes da V1: recarga -5 dB
 ## (`Player._reload_audio`), explosão +3 dB (`Bullet._trigger_explosion`). O
 ## lança-chamas era -15 dB na V1; sobe um pouco porque aqui soa contínuo sob o
@@ -2128,6 +2131,22 @@ func drop_ammo(point: Vector3, id: String) -> void:
 	if _rng.randf() <= (LOOT_ARMOR_CHANCE_HEAVY if heavy else LOOT_ARMOR_CHANCE):
 		spawn_loot("armor", "", LOOT_ARMOR_POINTS, point + Vector3(_rng.randf_range(-1.0, 1.0), 0, _rng.randf_range(-1.0, 1.0)))
 
+## Civilian deaths roll independently of killer, crime and emergency response.
+func drop_cash(actor: Node3D) -> void:
+	if not is_instance_valid(actor) or actor == player or actor.get("dead") != true or PROTECTION.is_protected(actor): return
+	if actor.get_meta("cash_drop_rolled", false): return
+	# Mark even an empty roll: damage to a corpse must never reroll its pockets.
+	actor.set_meta("cash_drop_rolled", true)
+	var amount := CASH_DROP_RULES.roll(_cash_rng)
+	if amount == 0: return
+	var cash: Array[Node3D] = []
+	for pickup in _loot:
+		if is_instance_valid(pickup) and not pickup.consumed and pickup.kind == "cash": cash.append(pickup)
+	if cash.size() >= MAX_CASH_DROPS:
+		_loot.erase(cash[0])
+		cash[0].queue_free()
+	spawn_loot("cash", "", amount, actor.global_position + Vector3(.65, .02, 0))
+
 func spawn_loot(kind: String, id: String, amount: int, point: Vector3) -> Node3D:
 	var pickup := LOOT.new()
 	pickup.setup(kind, id, amount)
@@ -2156,6 +2175,12 @@ func _update_loot(delta: float) -> void:
 		changed.emit()
 
 func _grant_loot(pickup: Node3D) -> bool:
+	if pickup.kind == "cash":
+		if pickup.consumed or pickup.cash_credited or state == null or state.get("economy") == null: return false
+		if not state.economy.collect_loose_cash(int(pickup.cash_amount)): return false
+		pickup.cash_credited = true
+		_play_ui(AUDIO.reward("pickup", _rng), -3.0)
+		return true
 	if pickup.kind == "armor":
 		if armor >= 100.0: return false
 		armor = minf(100.0, armor + float(pickup.armor_amount))

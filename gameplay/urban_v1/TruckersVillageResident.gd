@@ -192,6 +192,7 @@ func receive_damage(amount: float,source: Node = null) -> void:
 		model.take_hit(impact,clampf(amount/40,.1,1))
 		return
 	dead = true
+	if is_instance_valid(gameplay) and gameplay.has_method("drop_cash"): gameplay.drop_cash(self)
 	hostile = false
 	velocity = Vector3.ZERO
 	collision_layer = 0

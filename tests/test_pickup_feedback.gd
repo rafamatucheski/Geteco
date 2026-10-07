@@ -7,7 +7,7 @@ func check(ok: bool, label: String) -> void:
 	print("PICKUP ","PASS " if ok else "FAIL ",label)
 	if not ok: failures += 1
 func run() -> void:
-	for kind in ["weapon","armor"]:
+	for kind in ["weapon","armor","cash"]:
 		var item := LOOT.new()
 		item.setup(kind,"pistol",12)
 		root.add_child(item)

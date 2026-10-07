@@ -179,6 +179,13 @@ static func _max_capacity(id: String) -> int:
 	if id in ["pistol", "smg", "ak47", "m4a1"]: return base + int(base / 2)
 	return base
 
+## Ephemeral pickups own their single-use flag; only the wallet survives a save.
+## Avoid one permanent transaction per respawning civilian.
+func collect_loose_cash(amount: int) -> bool:
+	if amount < 5 or amount > 300 or int(_data.balance) > LIMIT - amount: return false
+	_data.balance += amount
+	return true
+
 func grant_reward(receipt_id: String, amount: int) -> bool:
 	if not _valid_id(receipt_id) or receipt_id.length() > 110 or amount < 0 or amount > LIMIT or int(_data.balance) > LIMIT - amount: return false
 	var key := "reward:" + receipt_id

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="256" viewBox="0 0 512 256">
+  <defs>
+    <linearGradient id="paper" x2="1" y2=".3"><stop stop-color="#c8dad0"/><stop offset=".48" stop-color="#e2e5c7"/><stop offset="1" stop-color="#80b2ae"/></linearGradient>
+    <pattern id="engraving" width="18" height="12" patternUnits="userSpaceOnUse"><path d="M-9 6Q0-5 9 6T27 6M-9 12Q0 1 9 12T27 12" fill="none" stroke="#538e87" stroke-width=".65" opacity=".65"/></pattern>
+    <pattern id="security" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0 0L6 6M6 0L0 6" stroke="#2c6a66" stroke-width=".35"/></pattern>
+    <g id="hundred" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"><path d="M0 7L8 0V35M25 0H34Q38 0 38 5V30Q38 35 34 35H25Q21 35 21 30V5Q21 0 25 0ZM53 0H62Q66 0 66 5V30Q66 35 62 35H53Q49 35 49 30V5Q49 0 53 0Z"/></g>
+  </defs>
+  <rect x="1" y="1" width="510" height="254" rx="3" fill="url(#paper)"/>
+  <rect x="9" y="9" width="494" height="238" rx="2" fill="none" stroke="#356e68" stroke-width="3"/>
+  <rect x="15" y="15" width="482" height="226" fill="none" stroke="#528c7f"/>
+  <rect x="22" y="22" width="468" height="212" fill="url(#engraving)"/>
+  <path d="M26 73Q138 21 235 89T488 58M25 189Q112 245 234 178T488 198" fill="none" stroke="#90b4a0" stroke-width="12"/>
+  <path d="M26 73Q138 21 235 89T488 58M25 189Q112 245 234 178T488 198" fill="none" stroke="#376e69" stroke-width="1"/>
+  <rect x="175" y="17" width="7" height="222" fill="#538581" opacity=".65"/>
+  <path d="M178 20V235" stroke="#d9e4ce" stroke-width="2" stroke-dasharray="9 5"/>
+  <ellipse cx="365" cy="129" rx="91" ry="103" fill="#83b1a2" stroke="#30635d" stroke-width="2"/>
+  <ellipse cx="365" cy="129" rx="85" ry="97" fill="url(#security)" stroke="#d1ddbb" stroke-width="4"/>
+  <ellipse cx="365" cy="129" rx="78" ry="90" fill="#afd0b9" stroke="#477e70"/>
+  <!-- Engraved allegorical profile and draped bust; all outlines survive SVG import. -->
+  <path d="M302 210L314 180L337 165L340 143L329 126L326 101L333 78L351 62L376 61L394 73L400 93L407 109L400 114L400 134L387 145L373 144L374 165L406 182L425 211Z" fill="#376e63"/>
+  <path d="M343 91L352 79L377 79L390 93L389 104L399 111L391 116L392 131L380 137L366 134L364 158L352 151L354 135L344 122Z" fill="#c7d8b1"/>
+  <path d="M329 97Q336 65 360 66Q389 62 396 86M328 107Q336 77 358 74M329 119Q337 91 346 85M331 133Q344 111 345 95M335 144L349 130M348 166L332 187L310 204M360 166L343 193L328 211M373 172L366 198L350 215M388 180L389 208M375 97L389 99M378 102L386 103M390 122L381 122" fill="none" stroke="#749c84" stroke-width="3"/>
+  <path d="M367 111L373 126L379 130M362 139L372 143" fill="none" stroke="#719782" stroke-width="2"/>
+  <ellipse cx="106" cy="143" rx="60" ry="58" fill="#d6dfc3" opacity=".78"/>
+  <ellipse cx="106" cy="143" rx="53" ry="51" fill="none" stroke="#629584" stroke-width="2"/>
+  <path d="M79 169L91 151L92 136L84 127L85 114L99 102L116 105L124 121L131 128L124 134L122 146L110 150L111 156L130 172Z" fill="#91b39b" opacity=".65"/>
+  <use href="#hundred" x="32" y="29" color="#285f59"/>
+  <use href="#hundred" transform="translate(420 185) scale(.9)" color="#214e4b"/>
+  <path d="M35 220H144M35 224H132M202 30H283M202 34H270M202 38H279M208 216H305M211 220H289" stroke="#376e68" stroke-width="2"/>
+  <path d="M26 13H486M26 243H486" stroke="#e8e8ce" stroke-width="2"/>
+</svg>

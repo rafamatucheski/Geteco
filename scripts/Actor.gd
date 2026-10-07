@@ -946,6 +946,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		var push: Vector3 = (global_position - (source as Node3D).global_position) if source is Node3D else Vector3.ZERO
 		_flinch(push, amount)
 	var gameplay = get_parent().get("gameplay")
+	if dead and gameplay and gameplay.has_method("drop_cash"): gameplay.drop_cash(self)
 	# A autoria continua no veículo real. A denúncia só é encaminhada depois de
 	# `dead` refletir o resultado deste impacto, inclusive no golpe fatal.
 	if vehicle_source:
