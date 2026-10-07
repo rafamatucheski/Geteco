@@ -133,6 +133,9 @@ func drive_race(race,car) -> void:
 		if Time.get_ticks_msec()>=next_report:
 			next_report = Time.get_ticks_msec()+10000
 			print("DOWNHILL_RACERS ",rivals.map(func(e): return {"name":e.name,"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"point":str(e.car.global_position) if is_instance_valid(e.car) else "freed"}))
+	var dante: Dictionary = {}
+	for e in rivals: if e.player: dante = {"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"elapsed":e.run.elapsed,"speed":e.car.speed if is_instance_valid(e.car) else -1,"health":e.car.health if is_instance_valid(e.car) else -1}
+	print("DOWNHILL_DANTE_END ",dante," last=",race.last_result," active=",race.active)
 	car.set_external_driver(false)
 	car.controlled = world.driving.occupied and world.driving.car==car
 	check(not race.active and race.last_result.get("finished",false),"player completes full route using physics and ordered checkpoints")

@@ -127,6 +127,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("activities"):
 		if not data.world.activities is Dictionary: return false
 		if not preload("res://activities/Activities.gd").validate_snapshot(data.world.activities): return false
+	if not preload("res://systems/campaign/MountainPackState.gd").validate_world(data.world, data.economy): return false
 	if data.world.has("mountain_progression"):
 		if not data.world.mountain_progression is Dictionary or not preload("res://activities/MountainProgression.gd").validate_snapshot(data.world.mountain_progression): return false
 	if data.world.has("mission_world"):

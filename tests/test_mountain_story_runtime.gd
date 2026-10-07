@@ -76,6 +76,13 @@ func run() -> void:
 		if candidate.get_script() == STORY: story = candidate; break
 	check(is_instance_valid(story),"production aggregate installed the actual mountain story controller")
 	if not failures.is_empty(): await finish(); return
+	# Fixture: só a introdução concluída; o coordenador da montanha exige isso para iniciar.
+	var intro: Dictionary = session.state.intro.snapshot()
+	intro.phase = "complete"
+	intro.location_id = "harbor_street"
+	intro.inventory = {}
+	intro.completed_missions = [preload("res://data/GarageSequence.gd").ID]
+	check(session.state.intro.restore_snapshot(intro),"fixture completes only the introduction")
 	check(story.restore_snapshot(PROGRESS.fresh_snapshot()),"isolated fixture starts with fresh mountain discoveries")
 	check(world.production.travel("mountain"),"real mountain region transition requested")
 	for index in 900:

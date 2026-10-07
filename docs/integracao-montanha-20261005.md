@@ -1,8 +1,22 @@
-# Pacote da montanha: código preparado, integração pendente
+# Pacote da montanha: integrado ao jogo (06/10/2026), validação parcial
 
 Três subagentes escreveram as duas investigações, a descida noturna contra seis NPCs e a trilha de jipe em arquivos exclusivos. O agente principal preparou o agregador, a validação conjunta do save e um patch de integração. Nenhum arquivo de gameplay compartilhado foi alterado por esta entrega.
 
 O outro chat estava corrigindo Jessica, chegada e streaming e alternando os testes com geração de voz. Para preservar seu trabalho e o uso do PC, esta entrega não iniciou Godot, compilação .NET, renderização ou geração de áudio. O código novo ainda não está habilitado na sessão do jogo.
+
+## Estado em 06/10/2026
+
+Os ganchos foram aplicados em `FullSession.gd`, `GameState.gd`, `ProductionWorld.gd` e `NativeRegion.gd` (três trechos do `FullSession` foram refeitos sobre o código atual; `integration_edits.json` reflete isso). As duas investigações, a descida noturna e a trilha de jipe estão ligadas à sessão.
+
+Os oito testes do pacote rodaram e passam (progresso da história 116, da descida 60, do jipe 39, percurso do jipe 10, estado conjunto 30, história na sessão 58, descida na sessão 32, jipe na sessão 27 checagens). Rodá-los pela primeira vez achou defeitos reais, todos corrigidos: erro de tipo em `MountainJeepProgress`, `version` voltando decimal depois de restaurar a história (agora normalizado para inteiro) e três fixtures de teste sem introdução concluída, com comparação de JSON por tipo e checagem antes do cancelamento no mesmo quadro.
+
+Regressão nos arquivos compartilhados passou: ponte, admissão a frio, direção nativa, save completo, progressão, acesso ao túnel da serra, save do deserto, arrancada e oficina da Maciota.
+
+**Não validado e com falha conhecida**
+
+- Descida completa com Dante dirigindo pela física (`--drive`): ele terminou em 3 de 4 execuções (55 a 83 s, em 2º ou 6º), mas a checagem de que os seis rivais ficam competitivos falhou em 3 de 4, e em uma um rival foi desclassificado (`race_offtrack`) depois de contato. A física entre carros varia de execução para execução; a disputa entre os seis NPCs e Dante precisa de calibração e de jogo real.
+- Volta de jipe completa, cristas e limites de chunk nos dois sentidos, e a correspondência visual do solo com a colisão: só o percurso e a sessão foram testados, não uma volta física inteira.
+- Aparência, iluminação, desempenho (p50/p95/p99) e interrupções reais (morte, prisão, troca de região) não foram medidos.
 
 ## Conteúdo e responsabilidade
 

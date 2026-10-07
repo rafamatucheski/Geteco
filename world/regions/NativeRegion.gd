@@ -25,6 +25,8 @@ const CITY_DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const TERRAIN := preload("res://world/regions/MountainTerrain3D.gd")
 const ROUTE_GEOMETRY := preload("res://world/mountain_detail/MountainRouteGeometry.gd")
 const ROUTE_LAYOUT := preload("res://world/mountain_detail/MountainRouteLayout.gd")
+const MOUNTAIN_JEEP_COURSE := preload("res://world/mountain_jeep/MountainJeepCourse.gd")
+const MOUNTAIN_JEEP_SCENERY := preload("res://world/mountain_jeep/MountainJeepScenery.gd")
 const DRESSING := preload("res://world/regions/TerrainDressing3D.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const WALKUP_DOOR := preload("res://world/places/WalkupFacadeDoor.gd")
@@ -344,14 +346,17 @@ func _revise_mountain_routes() -> void:
 	for road in ROUTE_LAYOUT.branches(main):
 		_add_road(road.id,road.points,road.width,road.surface)
 	walkways = ROUTE_LAYOUT.paths()
+	walkways.append_array(MOUNTAIN_JEEP_COURSE.paths(main))
 	walkways.append(MOUNTAIN_ZOO.approach())
 	for path in walkways:
 		if path.id in ["cave_trail","forest_shop_walk"]: path.points = ROUTE_LAYOUT.snap_start(path.points,main)
 		_record_path(path)
 	route_geometry.configure(roads + walkways)
+	for record in MOUNTAIN_JEEP_COURSE.records():
+		_record(record.position, record)
 	for key in records:
 		records[key] = records[key].filter(func(record):
-			return record.kind != "tree" or not route_geometry.contains(record.position,3.0))
+			return record.kind != "tree" or (not route_geometry.contains(record.position,3.0) and not MOUNTAIN_JEEP_COURSE.is_reserved(Vector2(record.position.x,record.position.z),3.0)))
 	var cover := CATALOG._at(Vector2(6190,-95),region_id)
 	_record(cover,{"kind":"cave_approach","position":cover})
 
@@ -987,6 +992,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			if terrain != null: tree.position.y = terrain.surface_height_at(Vector2(tree.position.x,tree.position.z))
 			chunk.add_child(tree)
 			_box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true).visible=false
+		"mountain_jeep_scenery": MOUNTAIN_JEEP_SCENERY.build(chunk,record)
 		"cave_approach":
 			var cover := preload("res://world/mountain_detail/MountainCaveApproach.gd").new()
 			cover.position = record.position
@@ -1069,6 +1075,7 @@ func _held_load(path: String) -> Resource:
 
 func _dressing_reserved(point: Vector2, radius: float) -> bool:
 	if terrain == null or terrain.is_reserved(point,radius): return true
+	if region_id == "mountain" and MOUNTAIN_JEEP_COURSE.is_reserved(point,radius): return true
 	var key := _cell(Vector3(point.x,0,point.y))
 	for x in range(-1,2):
 		for z in range(-1,2):

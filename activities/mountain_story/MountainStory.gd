@@ -36,7 +36,11 @@ func snapshot() -> Dictionary:
 func restore_snapshot(saved: Dictionary) -> bool:
 	if session == null or not PROGRESS.validate_snapshot(saved): return false
 	cancel_attempt()
-	session.state.world_state.mountain_story = saved.duplicate(true)
+	# Depois de um ciclo JSON o número volta como decimal (1.0); guarda sempre inteiro para
+	# o estado salvo ser idêntico ao que existia antes de salvar.
+	var stored: Dictionary = saved.duplicate(true)
+	stored["version"] = int(stored.version)
+	session.state.world_state.mountain_story = stored
 	_valid = true
 	return true
 

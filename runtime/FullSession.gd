@@ -67,6 +67,7 @@ var speech_caption: DIALOGUE_CAPTION
 var speech_active := false
 var residence_services
 var mountain_progression
+var mountain_activities
 var cold
 var passenger_transport
 var urban_operations
@@ -115,6 +116,7 @@ func allows_saved_driver_animation() -> bool:
 
 func _begin_transition(kind: String, _vehicle := false) -> int:
 	if not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1
+	if mountain_activities != null: mountain_activities.cancel_attempt()
 	transition_generation += 1
 	transition_kind = kind
 	# Legacy consumers already treat this public flag as the session transition
@@ -513,6 +515,9 @@ func _ready() -> void:
 	world.add_child(mountain_progression)
 	mountain_progression.configure(self)
 	world.player.ski_controller = mountain_progression
+	mountain_activities = preload("res://runtime/MountainActivities.gd").new()
+	world.add_child(mountain_activities)
+	mountain_activities.configure(self)
 	services = preload("res://runtime/Services.gd").new()
 	world.add_child(services)
 	services.configure(self)
@@ -1093,6 +1098,9 @@ func _clear_service_npcs() -> void:
 
 func nearest() -> Dictionary:
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	if mountain_activities != null and mountain_activities.busy():
+		var pack_active_action: Dictionary = mountain_activities.nearest_action()
+		if not pack_active_action.is_empty(): return pack_active_action
 	if mining != null:
 		var mining_action: Dictionary = mining.nearest_action()
 		if not mining_action.is_empty(): return mining_action
@@ -1130,6 +1138,9 @@ func nearest() -> Dictionary:
 	if not personal_action.is_empty(): return personal_action
 	var residence_action: Dictionary = residence_services.nearest_action()
 	if not residence_action.is_empty(): return residence_action
+	if mountain_activities != null:
+		var pack_action: Dictionary = mountain_activities.nearest_action()
+		if not pack_action.is_empty(): return pack_action
 	var mountain_action: Dictionary = mountain_progression.nearest_action()
 	if not mountain_action.is_empty(): return mountain_action
 	var garage_action: Dictionary = garage_rewards.nearest_action()
@@ -1188,6 +1199,7 @@ func interact() -> bool:
 	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
+	if mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)
 	if action.get("id", "") == "zoo_ticket": return action.provider.purchase()
 	if action.get("id", "") == "skate": return skate.perform(str(action.target))
 	if action.get("id","") == "motocross": return motocross.perform(str(action.target))
@@ -1433,6 +1445,9 @@ func _process(delta: float) -> void:
 		if not village_objective.is_empty(): objective.text = village_objective
 	if jessica != null and state.campaign.active_id == "jessica_bank": objective.text = jessica.objective()
 	if desert != null and state.region_id == "desert": objective.text = desert.objective()
+	if mountain_activities != null:
+		var pack_objective: String = mountain_activities.objective()
+		if not pack_objective.is_empty(): objective.text = pack_objective
 	var action := nearest()
 	var silent_exit: bool = action.get("id","") == "exit" and state.place_id in ["vertice_undercroft","remote_coal_mine"]
 	prompt.text = "" if modal or action.is_empty() or action.get("silent",false) or silent_exit else "E  "+str(action.label)
@@ -1467,6 +1482,9 @@ func _update_world_indicator() -> void:
 			elif phase == "talk_mechanic": target = room.interaction_points.mechanic
 			elif phase == "collect_part": target = room.interaction_points.part
 		elif state.place_id == "harbor_bank" and state.campaign.target_id()=="helena": target = robberies.helena_position()
+	if mountain_activities != null and not mountain_activities.objective().is_empty():
+		var pack_target: Vector3 = mountain_activities.target_position()
+		if pack_target.is_finite(): target = pack_target
 	var maciota_exterior_marker: bool = state.place_id.is_empty() and target.is_equal_approx(world.maciota_place.entry_position)
 	var automatic_shop_exit: bool = _uses_walkup_access(state.place_id) and is_instance_valid(room) and target.is_equal_approx(room.exit_position)
 	marker.visible = target.is_finite() and not maciota_exterior_marker and not automatic_shop_exit and not world.camera.is_position_behind(target)
@@ -1594,7 +1612,11 @@ func cancel_mission() -> bool:
 	return true
 
 func show_journal() -> void:
+	if mountain_activities != null and mountain_activities.busy():
+		mountain_activities.show_journal()
+		return
 	_menu("Missões")
+	if mountain_activities != null: _button("Atividades da montanha", mountain_activities.show_journal)
 	if state.campaign.active_id != "":
 		_button(state.campaign.objective(),close_menu)
 		_button("Cancelar missão",cancel_mission)
@@ -1799,6 +1821,9 @@ func _refresh_reward_feedback() -> void:
 			notice.text = ""
 			notice.hide()
 func save_block_reason() -> String:
+	if mountain_activities != null:
+		var pack_reason: String = mountain_activities.save_block_reason()
+		if not pack_reason.is_empty(): return pack_reason
 	if mining != null:
 		var mining_reason: String = mining.save_block_reason()
 		if not mining_reason.is_empty(): return mining_reason
@@ -1874,6 +1899,7 @@ func save_game(manual := false) -> bool:
 	if motocross != null: state.world_state.motocross = motocross.snapshot()
 	if skate != null: state.world_state.skate = skate.snapshot()
 	if mountain_progression != null: state.world_state.mountain_progression = mountain_progression.snapshot()
+	if mountain_activities != null: mountain_activities.write_snapshot()
 	if mission_world != null: state.world_state.mission_world = mission_world.snapshot()
 	if jessica != null: state.world_state.jessica_vehicle = jessica.vehicle_snapshot()
 	if urban_operations != null:
@@ -2016,6 +2042,7 @@ func _on_arrest() -> void:
 	garage_rewards.cancel_press_delivery()
 	activities.cancel_attempt()
 	mountain_progression.cancel_attempt()
+	if mountain_activities != null: mountain_activities.cancel_attempt()
 	mission_world.cancel_attempt("player_arrest")
 	await _show_v1_arrest_presentation()
 	if not arrest_pending or not is_inside_tree(): return
@@ -2054,6 +2081,7 @@ func _on_death() -> void:
 	garage_rewards.cancel_press_delivery()
 	activities.cancel_attempt()
 	mountain_progression.cancel_attempt()
+	if mountain_activities != null: mountain_activities.cancel_attempt()
 	mission_world.cancel_attempt("player_death")
 	await _show_v1_death_presentation()
 	if not rescue_pending or not is_inside_tree(): return

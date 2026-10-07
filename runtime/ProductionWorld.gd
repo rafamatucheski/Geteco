@@ -1324,6 +1324,7 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	session.passenger_transport.cancel_for_transition()
 	session.activities.cancel_attempt()
 	session.mountain_progression.cancel_attempt()
+	if session.mountain_activities != null: session.mountain_activities.cancel_attempt()
 	session.garage_rewards.cancel_press_delivery()
 	if session.jessica != null:
 		if state.campaign.active_id == "jessica_bank": session.mission_world.cancel_attempt("world_transition")

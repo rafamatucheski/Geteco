@@ -69,6 +69,8 @@ func run() -> void:
 	for i in 240:
 		await physics_frame
 		if not world.driving.occupied and not world.driving.is_body_transition_active(): break
+	# O controlador cancela no próximo _physics_process depois da descida; dá alguns quadros.
+	await frames(4)
 	check(not activity.active and is_instance_valid(car),"leaving cancels without deleting the supplied jeep")
 	check(activity.progress.data.finishes==0 and world.session.state.economy.balance==0,"cancel does not pay or count a finish")
 	world.player.teleport(car.driver_door_anchor(-1)+Vector3.UP*.08)

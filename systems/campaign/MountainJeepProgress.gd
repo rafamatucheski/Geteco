@@ -33,7 +33,7 @@ func settle(run: RefCounted, economy: RefCounted) -> Dictionary:
 		if not economy.grant_reward(RECEIPT,PRIZE): return {}
 		data.rewarded=true
 		paid=PRIZE
-	var record := float(data.best)==0.0 or run.elapsed<float(data.best)
+	var record: bool = float(data.best)==0.0 or run.elapsed<float(data.best)
 	if record: data.best=run.elapsed
 	data.finishes=mini(10000000,int(data.finishes)+1)
 	run.settled=true

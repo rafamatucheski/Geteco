@@ -72,7 +72,8 @@ func _initialize() -> void:
 		file.close()
 		var restored: Variant = JSON.parse_string(FileAccess.get_file_as_string(folder.path_join("story.json")))
 		check(restored is Dictionary and PROGRESS.validate_snapshot(restored.get("mountain_story")),"isolated disk load validates the completed ledger")
-		check(restored == world,"disk save preserves story, old loot and unrelated data")
+		# O JSON devolve inteiros como decimais; compara os dois lados depois do mesmo ciclo.
+		check(JSON.stringify(restored) == JSON.stringify(JSON.parse_string(JSON.stringify(world))),"disk save preserves story, old loot and unrelated data")
 		check(not PROGRESS.record(restored,"vicente_note",proof("vicente_note")),"reloading cannot duplicate the final discovery")
 	var dialogue: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/campaign/mountain-story-dialogue.json"))
 	for event in PROGRESS.EVENTS:

@@ -31,13 +31,13 @@
         },
         {
           "id": "perform-action",
-          "before": "\tvar action := nearest()\n\tif action.get(\"id\", \"\") == \"zoo_ticket\":",
-          "after": "\tvar action := nearest()\n\tif mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)\n\tif action.get(\"id\", \"\") == \"zoo_ticket\":"
+          "before": "\tif action.get(\"id\", \"\") == \"zoo_ticket\": return action.provider.purchase()\n",
+          "after": "\tif mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)\n\tif action.get(\"id\", \"\") == \"zoo_ticket\": return action.provider.purchase()\n"
         },
         {
           "id": "objective",
-          "before": "\tif jessica != null and state.campaign.active_id == \"jessica_bank\": objective.text = jessica.objective()\n\tvar action := nearest()",
-          "after": "\tif jessica != null and state.campaign.active_id == \"jessica_bank\": objective.text = jessica.objective()\n\tif mountain_activities != null:\n\t\tvar pack_objective: String = mountain_activities.objective()\n\t\tif not pack_objective.is_empty(): objective.text = pack_objective\n\tvar action := nearest()"
+          "before": "\tif desert != null and state.region_id == \"desert\": objective.text = desert.objective()\n\tvar action := nearest()\n",
+          "after": "\tif desert != null and state.region_id == \"desert\": objective.text = desert.objective()\n\tif mountain_activities != null:\n\t\tvar pack_objective: String = mountain_activities.objective()\n\t\tif not pack_objective.is_empty(): objective.text = pack_objective\n\tvar action := nearest()\n"
         },
         {
           "id": "target-indicator",
@@ -51,8 +51,8 @@
         },
         {
           "id": "save-block",
-          "before": "func save_block_reason() -> String:\n\tif jessica",
-          "after": "func save_block_reason() -> String:\n\tif mountain_activities != null:\n\t\tvar pack_reason: String = mountain_activities.save_block_reason()\n\t\tif not pack_reason.is_empty(): return pack_reason\n\tif jessica"
+          "before": "func save_block_reason() -> String:\n\tif mining != null:\n",
+          "after": "func save_block_reason() -> String:\n\tif mountain_activities != null:\n\t\tvar pack_reason: String = mountain_activities.save_block_reason()\n\t\tif not pack_reason.is_empty(): return pack_reason\n\tif mining != null:\n"
         },
         {
           "id": "save-snapshot",
