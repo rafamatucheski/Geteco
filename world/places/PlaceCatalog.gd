@@ -6,7 +6,7 @@ const HARBOR_SEWER_OPENING := Rect2(1173.0, 2105.0, 18.0, 18.0)
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
 ## Todos os recortes de bueiro (o original e os de `SewerNetwork`), em pixels de origem.
 static func sewer_openings() -> Array[Rect2]:
-	return SEWERS.openings(HARBOR_SEWER_OPENING)
+	return preload("res://world/editing/WorldManholes.gd").harbor_openings()
 const MOUNTAIN_OFFSET := Vector2(4300,-4960)
 const SOURCE := "res://assets/regions/source/"
 const WALKUP_DOOR_Z := {"cabin":1.88, "shop":1.82, "residence":3.26, "keeper":2.8, "bunker":2.8625, "lodge":3.98}
@@ -107,6 +107,7 @@ static func definitions() -> Array[Dictionary]:
 
 	for definition in result:
 		preload("res://world/editing/WorldServiceBuildings.gd").update_definition(definition)
+		preload("res://world/editing/WorldManholes.gd").update_definition(definition)
 		definition["npcs"] = preload("res://world/places/OriginalResidents.gd").for_place(definition.id)
 		definition["rewards"] = [] if definition.reward.is_empty() else [definition.reward.duplicate(true)]
 		if definition.id == "mountain_cabin":

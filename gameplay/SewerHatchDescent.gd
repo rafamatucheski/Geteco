@@ -30,6 +30,14 @@ func setup(player: CharacterBody3D, sewer_hatch: Node3D, still_valid: Callable) 
 
 func _center() -> Vector3: return hatch.global_position
 
+## A estrutura pode ter sido girada no editor do mundo: tudo (borda, escada, sentido de entrada) segue a base dela.
+func _yaw() -> float: return hatch.global_rotation.y
+
+func _at(center: Vector3, y: float, offset: Vector3) -> Vector3:
+	var point := center + Basis(Vector3.UP, _yaw()) * offset
+	point.y = y
+	return point
+
 func _hold(point: Vector3, yaw: float) -> void:
 	actor.global_position = point
 	actor.visual.rotation.y = yaw
@@ -68,7 +76,7 @@ func _ladder_descend() -> bool:
 	if not _prepare(): return false
 	var c := _center()
 	var p0: Vector3 = actor.global_position
-	var edge := Vector3(c.x, p0.y, c.z + EDGE_STAND)
+	var edge := _at(c, p0.y, Vector3(0, 0, EDGE_STAND))
 	var yaw_walk := atan2(-(edge.x - p0.x), -(edge.z - p0.z)) if Vector2(edge.x - p0.x, edge.z - p0.z).length() > 0.05 else 0.0
 	var clock := 0.0
 	while clock < WALK_SECONDS:
@@ -76,7 +84,7 @@ func _ladder_descend() -> bool:
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
 		var k := smoothstep(0.0, 1.0, clampf(clock / WALK_SECONDS, 0.0, 1.0))
-		_hold(p0.lerp(edge, k), lerp_angle(yaw_walk, 0.0, smoothstep(0.6, 1.0, k)))
+		_hold(p0.lerp(edge, k), lerp_angle(yaw_walk, _yaw(), smoothstep(0.6, 1.0, k)))
 		actor._pose_cycle("Walking", fposmod(k * 0.9, 1.0), actor.WALK_START)
 	clock = 0.0
 	while clock < OPEN_SECONDS:
@@ -84,16 +92,16 @@ func _ladder_descend() -> bool:
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
 		hatch.set_open_amount(clampf(clock / OPEN_SECONDS, 0.0, 1.0))
-		_hold(edge, 0.0)
+		_hold(edge, _yaw())
 		_idle()
-	var stand := Vector3(c.x, p0.y, c.z + LADDER_STAND)
+	var stand := _at(c, p0.y, Vector3(0, 0, LADDER_STAND))
 	clock = 0.0
 	while clock < STEP_SECONDS:
 		await get_tree().process_frame
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
 		var k := smoothstep(0.0, 1.0, clampf(clock / STEP_SECONDS, 0.0, 1.0))
-		_hold(edge.lerp(stand, k) + Vector3.DOWN * 0.12 * k, 0.0)
+		_hold(edge.lerp(stand, k) + Vector3.DOWN * 0.12 * k, _yaw())
 		_ladder_pose(DESCEND_CLIP, 0.0)
 	var seconds := DEPTH / LADDER_SPEED
 	clock = 0.0
@@ -102,7 +110,7 @@ func _ladder_descend() -> bool:
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
 		var depth := DEPTH * clampf(clock / seconds, 0.0, 1.0)
-		_hold(stand + Vector3.DOWN * (0.12 + depth), 0.0)
+		_hold(stand + Vector3.DOWN * (0.12 + depth), _yaw())
 		_ladder_pose(DESCEND_CLIP, clock)
 	_finish()
 	return true
@@ -115,24 +123,24 @@ func prepare_exit() -> void:
 	if not _prepare(): return
 	var c := _center()
 	hatch.set_open_amount(1.0)
-	_hold(Vector3(c.x, c.y - DEPTH, c.z + LADDER_STAND), 0.0)
+	_hold(_at(c, c.y - DEPTH, Vector3(0, 0, LADDER_STAND)), _yaw())
 	_ladder_pose(CLIMB_CLIP, 0.0)
 
 ## Sobe a escada, sai do poço até `landing` e devolve o controle.
 func ascend(landing: Vector3) -> bool:
 	if _walks(): return await _walk_ascend(landing)
 	var c := _center()
-	var bottom := Vector3(c.x, c.y - DEPTH, c.z + LADDER_STAND)
+	var bottom := _at(c, c.y - DEPTH, Vector3(0, 0, LADDER_STAND))
 	var seconds := DEPTH / LADDER_SPEED
 	var clock := 0.0
 	while clock < seconds:
 		await get_tree().process_frame
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
-		_hold(bottom + Vector3.UP * (DEPTH * clampf(clock / seconds, 0.0, 1.0)), 0.0)
+		_hold(bottom + Vector3.UP * (DEPTH * clampf(clock / seconds, 0.0, 1.0)), _yaw())
 		_ladder_pose(CLIMB_CLIP, clock)
-	var top := Vector3(c.x, c.y, c.z + LADDER_STAND)
-	var out := Vector3(landing.x, c.y, landing.z) if Vector2(landing.x - c.x, landing.z - c.z).length() < 4.0 else Vector3(c.x, c.y, c.z + EDGE_STAND)
+	var top := _at(c, c.y, Vector3(0, 0, LADDER_STAND))
+	var out := Vector3(landing.x, c.y, landing.z) if Vector2(landing.x - c.x, landing.z - c.z).length() < 4.0 else _at(c, c.y, Vector3(0, 0, EDGE_STAND))
 	var yaw := atan2(-(out.x - top.x), -(out.z - top.z))
 	clock = 0.0
 	while clock < WALK_SECONDS:
@@ -171,22 +179,22 @@ const WALK_SPEED := 1.7
 
 func _walk_inner(c: Vector3, y: float) -> Vector3:
 	var info := _info()
-	return Vector3(c.x, y - float(info.get("drop", 0.0)), c.z - float(info.get("length", 3.0)))
+	return _at(c, y - float(info.get("drop", 0.0)), Vector3(0, 0, -float(info.get("length", 3.0))))
 
 func _walk_descend() -> bool:
 	if not _prepare(): return false
 	var c := _center()
 	var info := _info()
 	var p0: Vector3 = actor.global_position
-	var approach := Vector3(c.x, p0.y, c.z + float(info.get("approach", 1.8)))
-	var yaw_walk := atan2(-(approach.x - p0.x), -(approach.z - p0.z)) if Vector2(approach.x - p0.x, approach.z - p0.z).length() > 0.05 else 0.0
+	var approach := _at(c, p0.y, Vector3(0, 0, float(info.get("approach", 1.8))))
+	var yaw_walk := atan2(-(approach.x - p0.x), -(approach.z - p0.z)) if Vector2(approach.x - p0.x, approach.z - p0.z).length() > 0.05 else _yaw()
 	var clock := 0.0
 	while clock < WALK_SECONDS:
 		await get_tree().process_frame
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
 		var k := smoothstep(0.0, 1.0, clampf(clock / WALK_SECONDS, 0.0, 1.0))
-		_hold(p0.lerp(approach, k), lerp_angle(yaw_walk, 0.0, smoothstep(0.6, 1.0, k)))
+		_hold(p0.lerp(approach, k), lerp_angle(yaw_walk, _yaw(), smoothstep(0.6, 1.0, k)))
 		actor._pose_cycle("Walking", fposmod(k * 0.9, 1.0), actor.WALK_START)
 	if hatch.has_method("set_open_amount") and bool(info.get("doors", true)):
 		clock = 0.0
@@ -195,7 +203,7 @@ func _walk_descend() -> bool:
 			if not _alive(): return _abort()
 			clock += get_process_delta_time()
 			hatch.set_open_amount(clampf(clock / OPEN_SECONDS, 0.0, 1.0))
-			_hold(approach, 0.0)
+			_hold(approach, _yaw())
 			_idle()
 	var inner := _walk_inner(c, p0.y)
 	var seconds := approach.distance_to(inner) / WALK_SPEED
@@ -205,7 +213,7 @@ func _walk_descend() -> bool:
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
 		var k := clampf(clock / seconds, 0.0, 1.0)
-		_hold(approach.lerp(inner, k), 0.0)
+		_hold(approach.lerp(inner, k), _yaw())
 		actor._pose_cycle("Walking", fposmod(clock * 1.1, 1.0), actor.WALK_START)
 	_finish()
 	return true
@@ -214,21 +222,21 @@ func _prepare_walk_exit() -> void:
 	if not _prepare(): return
 	var c := _center()
 	if hatch.has_method("set_open_amount"): hatch.set_open_amount(1.0)
-	_hold(_walk_inner(c, c.y), PI)
+	_hold(_walk_inner(c, c.y), _yaw() + PI)
 	_idle()
 
 func _walk_ascend(landing: Vector3) -> bool:
 	var c := _center()
 	var info := _info()
 	var inner := _walk_inner(c, c.y)
-	var out := Vector3(c.x, c.y, c.z + float(info.get("approach", 1.8)))
+	var out := _at(c, c.y, Vector3(0, 0, float(info.get("approach", 1.8))))
 	var seconds := inner.distance_to(out) / WALK_SPEED
 	var clock := 0.0
 	while clock < seconds:
 		await get_tree().process_frame
 		if not _alive(): return _abort()
 		clock += get_process_delta_time()
-		_hold(inner.lerp(out, clampf(clock / seconds, 0.0, 1.0)), PI)
+		_hold(inner.lerp(out, clampf(clock / seconds, 0.0, 1.0)), _yaw() + PI)
 		actor._pose_cycle("Walking", fposmod(clock * 1.1, 1.0), actor.WALK_START)
 	var target := Vector3(landing.x, c.y, landing.z) if Vector2(landing.x - c.x, landing.z - c.z).length() < 4.0 else out
 	var yaw := atan2(-(target.x - out.x), -(target.z - out.z)) if Vector2(target.x - out.x, target.z - out.z).length() > 0.05 else PI

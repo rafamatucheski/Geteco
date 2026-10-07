@@ -87,6 +87,7 @@ static func build_building(data: Dictionary) -> Node3D:
 		manhole.name = building_id
 		manhole.setup(norm_data)
 		manhole.position = point
+		manhole.rotation.y = float(norm_data.get("editor_rotation", 0.0))
 		manhole.set_meta("_urban_data", norm_data)
 		manhole.ready.connect(func(): finalize_building(manhole, norm_data))
 		return manhole

@@ -149,9 +149,9 @@ func _ready() -> void:
 	actions_bar.add_child(view_mode)
 	var filter := OptionButton.new()
 	filter.tooltip_text = "Filtrar objetos no mapa"
-	for label in ["Todos","Árvores","Prédios","Ruas","Luzes","Objetos","Peças","Locais","Pisos e calçadas"]: filter.add_item(label)
+	for label in ["Todos","Árvores","Prédios","Ruas","Luzes","Objetos","Peças","Locais","Pisos e calçadas","Bueiros"]: filter.add_item(label)
 	filter.item_selected.connect(func(index):
-		canvas.filter_type = ["all","tree","building","road","light","prop","piece","context","ground"][index]
+		canvas.filter_type = ["all","tree","building","road","light","prop","piece","context","ground","manhole"][index]
 		canvas.queue_redraw())
 	actions_bar.add_child(filter)
 	locations = OptionButton.new()
@@ -255,6 +255,9 @@ func _load_catalog() -> void:
 	preload("res://runtime/UrbanTransitPresentation.gd").upgrade_editor_catalog(catalog)
 	if catalog.has("harbor"):
 		catalog.harbor.objects.merge(preload("res://world/editing/WorldPaving.gd").catalog(),true)
+	# Bueiros e entradas subterrâneas moram no código, não no catálogo gravado: entram a cada carga.
+	for area in ["harbor","desert"]:
+		if catalog.has(area): catalog[area].objects.merge(preload("res://world/editing/WorldManholes.gd").catalog(area),true)
 	asset_items = LIBRARY.build(catalog)
 	for area in catalog:
 		for row in catalog[area].get("context",{}).values():
@@ -495,10 +498,10 @@ func _select(id: String) -> void:
 	var actions := HBoxContainer.new()
 	properties.add_child(actions)
 	if row.type != "piece":
-		if not row.get("paving",false) and not row.get("service_building",false):
+		if not row.get("paving",false) and not row.get("service_building",false) and row.type != "manhole":
 			_button(actions,"Copiar",_copy)
 			_button(actions,"Duplicar",_duplicate)
-	if not row.get("service_building",false): _button(actions,"Excluir",_delete)
+	if not row.get("service_building",false) and row.type != "manhole": _button(actions,"Excluir",_delete)
 	var restore := _button(properties,"Restaurar original",_restore_original)
 	restore.disabled = not document.regions.get(region,{}).has(id)
 
@@ -640,7 +643,7 @@ func redo() -> void:
 func _delete() -> void:
 	if not canvas.objects.has(canvas.selected_id): return
 	var row: Dictionary = canvas.objects[canvas.selected_id].duplicate(true)
-	if row.get("locked",false) or row.get("service_building",false):
+	if row.get("locked",false) or row.get("service_building",false) or row.type == "manhole":
 		status.text = "Este objeto está ligado a um serviço ou acesso protegido."
 		return
 	row.deleted = true
@@ -826,12 +829,12 @@ func _update_locations() -> void:
 	var rows: Array = []
 	for row in canvas.objects.values():
 		if row.get("kind","") == "terrain": continue
-		if row.type == "context" or (row.type == "piece" and row.get("editor_region","") == "desert") or (row.type == "building" and (row.get("locked",false) or row.get("service_building",false))):
+		if row.type == "context" or row.type == "manhole" or (row.type == "piece" and row.get("editor_region","") == "desert") or (row.type == "building" and (row.get("locked",false) or row.get("service_building",false))):
 			rows.append(row)
 	rows.sort_custom(func(a,b): return str(a.get("label",a.id)).naturalnocasecmp_to(str(b.get("label",b.id))) < 0)
 	for row in rows:
 		location_ids.append(row.id)
-		locations.add_item(str(row.get("label",row.id)).trim_prefix("building/")+" · "+str(row.editor_region))
+		locations.add_item(str(row.get("label",row.id)).trim_prefix("building/")+" · "+str(row.get("editor_region","harbor")))
 
 func _go_location(index: int) -> void:
 	if index <= 0: return
@@ -1009,7 +1012,7 @@ func _arm_asset(index: int) -> void:
 func _copy() -> bool:
 	if not canvas.objects.has(canvas.selected_id): return false
 	var row: Dictionary = canvas.objects[canvas.selected_id]
-	if row.get("locked",false) or row.get("paving",false) or row.get("service_building",false) or row.type in ["piece","context"]:
+	if row.get("locked",false) or row.get("paving",false) or row.get("service_building",false) or row.type in ["piece","context","manhole"]:
 		status.text = "Esta peça mantém sua identidade no mundo. Arraste para mover."
 		return false
 	if row.type == "building" and row.model not in DATA.BUILDING_TYPES:

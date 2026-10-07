@@ -2,7 +2,7 @@
 extends RefCounted
 ## JSON shared by editor and production; no editor nodes or frame loop in the game.
 const PATH := "res://world/editing/world_edits.json"
-const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground"]
+const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground", "manhole"]
 const PROP_TYPES := ["pallet", "pallet_stack", "crate", "barrel", "dumpster", "trash_bags", "bin", "barrier", "footbridge", "desert_cactus", "desert_rock"]
 const BUILDING_TYPES := ["office", "brownstone", "warehouse", "corner_shop", "cobra_house", "l_shaped_block"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").TYPES + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").TYPES
 const BUILDING_LABELS := ["Comercial","Residencial","Galpão","Loja","Casa dos Cobra","Prédio em L"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").LABELS + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").LABELS
@@ -37,6 +37,10 @@ static func validate_entity(row: Variant) -> String:
 	if row.type == "piece":
 		if not str(row.id).begins_with("piece/") or not row.get("source_record", "") is String or str(row.get("source_record", "")).is_empty(): return "Peça sem origem."
 	if row.get("deleted",false) and row.get("service_building",false): return "Prédios com serviço podem ser editados, mas não excluídos."
+	if row.type == "manhole":
+		if row.get("deleted",false): return "Bueiros podem ser movidos e girados, mas não excluídos."
+		if not row.get("place_id","") is String or not preload("res://world/editing/WorldManholes.gd").is_editable(str(row.place_id)): return "Bueiro desconhecido."
+		if str(row.id) != "manhole/"+str(row.place_id): return "Identidade do bueiro alterada."
 	if row.get("deleted", false): return ""
 	if row.get("service_building",false):
 		var base: Variant = row.get("service_base")
@@ -201,6 +205,7 @@ static func normalize_catalog_heights(regions: Dictionary) -> void:
 static func catalog(region: Node) -> Dictionary:
 	var result := {}
 	if region.region_id == "harbor": result.merge(preload("res://world/editing/WorldPaving.gd").catalog())
+	result.merge(preload("res://world/editing/WorldManholes.gd").catalog(str(region.region_id)))
 	for road in region.roads:
 		var points: Array = []
 		for p in road.points: points.append(xy(p))

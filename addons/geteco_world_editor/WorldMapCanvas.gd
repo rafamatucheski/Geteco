@@ -187,6 +187,15 @@ func _draw_foreground() -> void:
 				var radius := maxf(2,1.25*float(row.get("scale",1))*zoom)
 				draw_circle(p,radius,Color("c4d8cc") if row.get("snow",false) else Color("56886c"))
 				if active: draw_arc(p,radius+3,0,TAU,24,Color("e7c678"),2,true)
+			"manhole":
+				var radius := clampf(1.05*zoom,6,16)
+				var turn := deg_to_rad(float(row.get("rotation",0)))
+				draw_circle(p,radius+1.5,Color("0d1214"))
+				draw_circle(p,radius,Color("3a4a46"))
+				draw_arc(p,radius,0,TAU,24,Color("e7c678") if active else Color("9fc9a8"),2.0 if active else 1.5,true)
+				for bar in [-.5,0.0,.5]: draw_line(p+Vector2(-radius*.75,bar*radius),p+Vector2(radius*.75,bar*radius),Color("9fc9a8"),1.0,true)
+				draw_line(p,p+Vector2(sin(turn),cos(turn))*(radius+6),Color("e59889"),2.0,true)
+				if active or zoom >= 5.0: draw_string(ThemeDB.fallback_font,p+Vector2(radius+4,4),str(row.get("label","Bueiro")),HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color("d9e6e5"))
 			"light":
 				var angle := deg_to_rad(float(row.get("rotation",0)))
 				var arm_tip := p + Vector2(sin(angle),cos(angle)) * maxf(7,1.3*zoom)

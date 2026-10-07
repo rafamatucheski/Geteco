@@ -58,16 +58,21 @@ static func definitions() -> Array[Dictionary]:
 			"camera_size": maxf(size.x * 0.82, size.y * 1.25), "size": size, "variant": 0, "service": "desert_underground",
 			"reward": rewards[0].duplicate(true) if not rewards.is_empty() else {}, "rewards": rewards, "npcs": residents, "resident_talk": true,
 			"npc_model": "", "npc_point": Vector3.ZERO, "integration_status": "native_geometry_pending_validation"})
+		load("res://world/editing/WorldManholes.gd").update_definition(result[-1])
 	return result
 
 ## Registros para o `DesertRegion` (uma entrada por chunk que contém a estrutura externa).
 static func records() -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
-	for entry in SITES: list.append({"kind": "desert_underground", "position": entry.exterior, "data": entry})
+	var editing = load("res://world/editing/WorldManholes.gd")
+	for entry in SITES:
+		var at: Vector2 = editing.position_of(entry.id)
+		list.append({"kind": "desert_underground", "position": Vector3(at.x, entry.exterior.y, at.y), "rotation": float(editing.rotation_of(entry.id)), "data": entry})
 	return list
 
 static func build_record(chunk: Node3D, record: Dictionary) -> void:
 	var exterior := preload("res://world/desert/underground/DesertUndergroundExterior.gd").new()
 	exterior.setup(record.data)
 	exterior.position = record.position
+	exterior.rotation.y = float(record.get("rotation", 0.0))
 	chunk.add_child(exterior)
