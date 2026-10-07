@@ -52,6 +52,9 @@ static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 		await tree.process_frame
 	punch_swing()
 	bat_swing()
+	for kind in WHOOSH_SPEC: melee_whoosh(kind)
+	for kind in ["punch", "knuckles", "bat", "axe"]:
+		for variant in 3: melee_hit(kind, variant)
 	for kind in [-1,0,1,2]: knife_sample(kind)
 	flamethrower()
 	grenade_throw()
@@ -222,6 +225,119 @@ static func bat_swing() -> AudioStream:
 		data.encode_s16(i * 2, int(low * envelope * 29000.0))
 	_generated["bat"] = _make(data, rate)
 	return _generated["bat"]
+
+# --- Golpes corpo a corpo (V2) ---------------------------------------------------
+# O "vupt" do ar e o som do acerto são separados: o ar toca quando a arma passa
+# (pico no instante do contato, não no aperto do botão) e o acerto só quando atinge.
+# Antes o taco usava o som do soco, que já trazia um baque embutido — "acertava"
+# mesmo errando — e soco, taco e machado acertavam com o mesmo som de carne.
+
+## Instante do pico do "vupt" dentro da amostra (s): o Gameplay começa a tocar em
+## `contato − pico`, para o ar soar mais forte quando a arma passa pelo alvo.
+const WHOOSH_PEAK := {"punch": 0.055, "bat": 0.10, "axe": 0.11}
+## [duração (s), Hz inicial do filtro, Hz no pico, Hz final, ressonância, ganho].
+const WHOOSH_SPEC := {
+	"punch": [0.16, 700.0, 1900.0, 900.0, 0.55, 0.85],
+	"bat": [0.26, 380.0, 1250.0, 420.0, 0.62, 1.0],
+	"axe": [0.28, 300.0, 1050.0, 360.0, 0.70, 1.0],
+}
+
+## Ar cortado por punho, taco ou machado: ruído num filtro passa-banda ressonante cujo
+## centro sobe até o pico e cai depois (efeito Doppler da arma passando perto da
+## orelha), com envelope assimétrico. O machado tem um zumbido grave da lâmina.
+static func melee_whoosh(kind: String) -> AudioStream:
+	if not WHOOSH_SPEC.has(kind): kind = "punch"
+	var key := "whoosh_" + kind
+	if _generated.has(key): return _generated[key]
+	var spec: Array = WHOOSH_SPEC[kind]
+	var peak: float = WHOOSH_PEAK[kind]
+	var rate := 22050
+	var duration: float = spec[0]
+	var count := int(rate * duration)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(key)
+	var low := 0.0
+	var band := 0.0
+	for i in count:
+		var t := float(i) / float(rate)
+		var rise := clampf(t / peak, 0.0, 1.0)
+		var fall := clampf((t - peak) / maxf(duration - peak, 0.001), 0.0, 1.0)
+		var center: float = lerpf(float(spec[1]), float(spec[2]), rise * rise) if t < peak else lerpf(float(spec[2]), float(spec[3]), fall)
+		# Filtro de estado variável (Chamberlin): passa-banda com ressonância `q`.
+		var f := 2.0 * sin(PI * center / float(rate))
+		var q: float = 1.0 - float(spec[4])
+		var noise := rng.randf_range(-1.0, 1.0)
+		low += f * band
+		var high := noise - low - q * band
+		band += f * high
+		var envelope := pow(rise, 2.2) if t < peak else pow(1.0 - fall, 1.6)
+		var sample := band * envelope * 1.4
+		if kind == "axe":
+			# Zumbido da cabeça do machado girando: grave, só perto do pico.
+			sample += sin(TAU * (95.0 + 60.0 * rise) * t) * envelope * envelope * 0.35
+		data.encode_s16(i * 2, clampi(int(tanh(sample * float(spec[5])) * 0.85 * 32767.0), -32768, 32767))
+	_generated[key] = _make(data, rate)
+	return _generated[key]
+
+## Acerto no corpo, três variações por arma:
+## - punch: baque grave que cai de tom + estalo curto de pele (soco e soqueira; a
+##   soqueira tem um tinido metálico leve por cima);
+## - bat: "toc" oco de madeira (ressonâncias de ~420 e ~1,1 kHz) + baque do corpo;
+## - axe: estalo seco da lâmina entrando, corte úmido (ruído médio) e baque pesado,
+##   com um tinido metálico curto.
+static func melee_hit(kind: String, variant: int) -> AudioStream:
+	var key := "hit_%s_%d" % [kind, variant]
+	if _generated.has(key): return _generated[key]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(key)
+	var rate := 22050
+	var duration := {"punch": 0.20, "knuckles": 0.22, "bat": 0.32, "axe": 0.38}.get(kind, 0.22) as float
+	var count := int(rate * duration)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var detune := 1.0 + (variant - 1) * 0.06
+	var lp := 0.0
+	var lp2 := 0.0
+	var band := 0.0
+	var low := 0.0
+	for i in count:
+		var t := float(i) / float(rate)
+		var noise := rng.randf_range(-1.0, 1.0)
+		lp += (noise - lp) * 0.25
+		lp2 += (lp - lp2) * 0.18
+		var sample := 0.0
+		match kind:
+			"punch", "knuckles":
+				var freq := 88.0 * detune * (1.0 + 0.9 * exp(-t * 55.0))
+				var thump := sin(TAU * freq * t) * exp(-t * 26.0)
+				var slap := (noise - lp2) * exp(-t * 170.0) * 0.9
+				var body := lp2 * 2.2 * exp(-t * 34.0)
+				sample = thump * 0.95 + slap + body * 0.5
+				if kind == "knuckles":
+					sample += sin(TAU * 2350.0 * detune * t) * exp(-t * 60.0) * 0.18 + sin(TAU * 3720.0 * t) * exp(-t * 90.0) * 0.10
+			"bat":
+				var wood := sin(TAU * 420.0 * detune * t) * exp(-t * 34.0) * 0.55 + sin(TAU * 1130.0 * detune * t) * exp(-t * 60.0) * 0.32
+				var knock := (noise - lp) * exp(-t * 260.0) * 0.8
+				var freq := 74.0 * detune * (1.0 + 0.7 * exp(-t * 45.0))
+				var thud := sin(TAU * freq * t) * exp(-t * 18.0)
+				sample = wood + knock + thud * 0.85 + lp2 * 1.6 * exp(-t * 22.0) * 0.4
+			"axe":
+				var crack := (noise - lp) * exp(-t * 420.0) * 1.1
+				# Corte úmido: passa-banda em ~700 Hz por 60 ms.
+				var f := 2.0 * sin(PI * 700.0 * detune / float(rate))
+				low += f * band
+				band += f * (noise - low - 0.45 * band)
+				var chop := band * exp(-t * 32.0) * 1.3
+				var freq := 62.0 * detune * (1.0 + 0.8 * exp(-t * 40.0))
+				var thud := sin(TAU * freq * t) * exp(-t * 14.0)
+				var ring := sin(TAU * 2140.0 * detune * t) * exp(-t * 38.0) * 0.16 + sin(TAU * 3390.0 * t) * exp(-t * 55.0) * 0.08
+				sample = crack + chop + thud + ring
+		var attack := minf(t / 0.0015, 1.0)
+		data.encode_s16(i * 2, clampi(int(tanh(sample * attack * 1.1) * 0.9 * 32767.0), -32768, 32767))
+	_generated[key] = _make(data, rate)
+	return _generated[key]
 
 ## Rugido contínuo do lança-chamas em laço sem emenda. A rajada de 0,38 s da V1
 ## tinha envelope senoidal (zero nas pontas) e era reiniciada só quando acabava:

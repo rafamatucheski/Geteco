@@ -94,6 +94,21 @@ const SLOT_ORDER := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", 
 const HEAVY_FLASH := ["magnum", "shotgun", "sawed_off", "rpg"]
 ## Tranco de câmera por disparo (metros de deslocamento ortográfico). Armas leves ficam sem.
 const CAMERA_KICK := {"magnum": 0.07, "shotgun": 0.08, "sawed_off": 0.10, "hunting_rifle": 0.07, "rpg": 0.12, "ak47": 0.025}
+## Golpe corpo a corpo que ACERTA: tranco de câmera e empurrão da vítima (metros,
+## em ~0,14 s, com colisão). Golpe no ar não treme a tela. O golpe pesado que fecha
+## a sequência (`WeaponRigPose.heavy_attack`) multiplica os dois.
+const MELEE_KICK := {"fists": 0.025, "knuckles": 0.035, "knife": 0.02, "bat": 0.06, "axe": 0.07}
+const MELEE_SHOVE := {"fists": 0.10, "knuckles": 0.16, "knife": 0.06, "bat": 0.32, "axe": 0.26}
+const HEAVY_IMPACT := 1.6
+## Som do ar e do acerto por arma corpo a corpo (`CombatAudio.melee_whoosh/melee_hit`).
+const MELEE_SOUND_KIND := {"fists": "punch", "knuckles": "punch", "bat": "bat", "axe": "axe"}
+const MELEE_HIT_KIND := {"fists": "punch", "knuckles": "knuckles", "bat": "bat", "axe": "axe"}
+## Volume do acerto (dB) antes da distância; taco e machado batem mais forte que o soco.
+const MELEE_HIT_DB := {"fists": -7.0, "knuckles": -6.0, "bat": -4.0, "axe": -3.5}
+## Tom de cada golpe da sequência (jab, direto, gancho... / forehand, backhand) e do pesado.
+const COMBO_PITCH := [1.0, 1.06, 0.97]
+const COMBO_HEAVY_PITCH := 0.86
+const SHOVE_SECONDS := 0.14
 ## Agrupa impactos do mesmo material no mesmo instante (chumbo de escopeta), como o V1 (40 ms).
 const IMPACT_GROUP_SECONDS := 0.04
 ## Crime por fonte CONTÍNUA (jato do lança-chamas, fogo aceso pelo jogador): uma denúncia por vítima
@@ -173,6 +188,9 @@ var _muzzle_light: OmniLight3D
 var _muzzle_material: StandardMaterial3D
 var _muzzle_timer := 0.0
 var _kick_tween: Tween
+## Empurrões em curso: {"id": instance_id, "velocity": m/s inicial, "age": s}.
+var _shoves: Array[Dictionary] = []
+var _swing_trail: Node
 var _flame_audio: AudioStreamPlayer3D
 var _flame_clock := 0.0
 var _reload_audio: AudioStreamPlayer3D
@@ -222,6 +240,8 @@ var _flame_crime_clock := 0.0
 var _rig_pose := RIG_POSE.new()
 var _pose_frame: Dictionary = {}
 var _pending_contact: Dictionary = {}
+## "Vupt" agendado do golpe em curso (`_melee_swing_sound`).
+var _pending_swing: Dictionary = {}
 ## Só detonações reentrantes entram aqui; a explosão inicial continua imediata.
 ## O limiar é cooperativo: uma detonação indivisível pode ultrapassar 2 ms.
 const CHAIN_EXPLOSIONS_PER_FRAME := 2
@@ -411,7 +431,10 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_aim(delta)
 	_update_weapon_pose(delta)
 	_update_visual()
+	_update_swing_trail(delta)
 	_update_contact()
+	_update_swing_sound()
+	_update_shoves(delta)
 	_update_combat_clip(delta)
 	_update_swing(delta)
 	_update_recoil(delta)
@@ -495,7 +518,7 @@ func _update_left_knuckles(id: String) -> void:
 		ARSENAL.build(_left_knuckles, "knuckles")
 	_left_knuckles.visible = true
 	# A fileira de anéis segue o eixo Y da palma, igual à soqueira da direita.
-	_left_knuckles.global_transform = player.combat_left_palm_transform() * Transform3D(Basis(Vector3.BACK, PI * 0.5), Vector3.ZERO)
+	_left_knuckles.global_transform = player.combat_left_palm_transform() * Transform3D(Basis(Vector3.BACK, PI * 0.5), Vector3.ZERO) * Transform3D(Basis.IDENTITY, -POSE.GRIPS.knuckles)
 
 func _update_weapon_pose(delta: float) -> void:
 	if not is_instance_valid(player): return
@@ -534,10 +557,49 @@ func _update_weapon_parts(id: String) -> void:
 		var opening := smoothstep(0.05, 0.18, progress) * (1.0 - smoothstep(0.79, 0.92, progress)) if reload_timer > 0.0 else 0.0
 		cylinder.position.x = -0.065 * opening
 		cylinder.rotation.z = -0.45 * opening
+	var magazine := gun.get_node_or_null("CurvedMagazine") as Node3D
+	if magazine != null: _update_magazine(magazine)
 	var rocket := gun.get_node_or_null("LoadedRocket") as Node3D
-	if rocket != null:
-		var ammo: Dictionary = state.get_ammo(id)
-		rocket.visible = int(ammo.get("magazine", 0)) > 0 or (reload_timer > 0.0 and (1.0 - reload_timer / maxf(_reload_total, 0.001)) > 0.65)
+	if rocket != null: _update_rocket(rocket, id)
+
+## Carregador destacável (AK-47) na mesma linha do tempo de `WeaponRigPose.reload_targets`:
+## o vazio desce e cai ao soltar (0,09–0,20), a mão busca o novo no cinto e o traz
+## preso à palma até o encaixe (0,30–0,45). Fora da recarga fica no lugar original.
+func _update_magazine(magazine: Node3D) -> void:
+	if not magazine.has_meta("combat_rest_transform"): magazine.set_meta("combat_rest_transform", magazine.transform)
+	var rest: Transform3D = magazine.get_meta("combat_rest_transform")
+	var progress := clampf(1.0 - reload_timer / maxf(_reload_total, 0.001), 0.0, 1.0) if reload_timer > 0.0 else 1.0
+	magazine.visible = true
+	magazine.transform = rest
+	if reload_timer <= 0.0: return
+	if progress < 0.20 and progress >= 0.09:
+		var fall := smoothstep(0.09, 0.20, progress)
+		magazine.transform = rest.translated_local(Vector3(0, -0.16 * fall * fall, 0.02 * fall))
+		magazine.visible = progress < 0.19
+	elif progress < 0.30 and progress >= 0.20:
+		magazine.visible = false
+	elif progress < 0.45 and progress >= 0.30 and player.has_method("combat_left_palm_transform"):
+		# Centro do carregador (espaço da arma) na palma esquerda, alinhado à arma.
+		var center := gun.global_transform * Vector3(0, -0.10, -0.07)
+		var palm: Vector3 = player.combat_left_palm_transform().origin
+		var seat := smoothstep(0.40, 0.45, progress)
+		magazine.global_position += (palm - center) * (1.0 - seat)
+
+## Foguete do lança-foguetes na linha do tempo de `WeaponRigPose.reload_targets`: na
+## palma esquerda desde a pega no cinto, encaixado na boca até o fim. Antes aparecia
+## direto na arma a 65% e a mão subia vazia, como quem acena.
+func _update_rocket(rocket: Node3D, id: String) -> void:
+	if not rocket.has_meta("combat_rest_transform"): rocket.set_meta("combat_rest_transform", rocket.transform)
+	rocket.transform = rocket.get_meta("combat_rest_transform")
+	if reload_timer <= 0.0:
+		rocket.visible = int(state.get_ammo(id).get("magazine", 0)) > 0
+		return
+	var progress := clampf(1.0 - reload_timer / maxf(_reload_total, 0.001), 0.0, 1.0)
+	rocket.visible = progress >= RIG_POSE.RPG_ROCKET_GRAB
+	if rocket.visible and player.has_method("combat_left_palm_transform"):
+		var palm: Vector3 = player.combat_left_palm_transform().origin
+		var seat := smoothstep(RIG_POSE.RPG_ROCKET_SEAT.x, RIG_POSE.RPG_ROCKET_SEAT.y, progress)
+		rocket.global_position += (palm - rocket.global_position) * (1.0 - seat)
 
 ## Clarão de boca do V1 (`Player._update_equipped_weapon_3d_mesh`): só armas de fogo,
 ## lança-foguetes e lança-chamas. Corpo a corpo e granada não têm boca.
@@ -1037,7 +1099,7 @@ func _update_contact() -> void:
 	direction.y = 0.0
 	direction = direction.normalized() if direction.length_squared() > 0.001 else Vector3.FORWARD
 	if id != "grenade":
-		_melee(origin, direction, contact.data)
+		_melee(origin, direction, contact.data, id)
 		return
 	if not state.consume_ammo(id, 1): return
 	if player.has_method("combat_palm_position"): origin = player.combat_palm_position("Right")
@@ -1099,7 +1161,7 @@ func _ignite_actor(actor: Node3D, source: Node) -> void:
 	else:
 		effect.ignite(source)
 
-func _melee(origin: Vector3, direction: Vector3, data: Dictionary) -> void:
+func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> void:
 	var reach := float(data.get("melee_range", 46.0)) / 16.0
 	# Caixa à frente do jogador, do corpo até o alcance (V1: qualquer alvo a menos de `melee_range` no cone da frente).
 	# A esfera antiga ficava centrada em `reach - 0,5` e deixava uma zona morta: alvo colado (< ~1,8 m com punhos) não era
@@ -1121,12 +1183,49 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary) -> void:
 		var obstruction := get_world_3d().direct_space_state.intersect_ray(ray)
 		if not obstruction.is_empty() and obstruction.collider != actor: continue
 		_damage(actor, float(data.damage), player)
-		if String(data.get("stance", "")) == "knife" and _impact_material(actor) == "flesh":
-			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), actor.global_position, -13.0)
-		else:
-			_impact_sound(actor, target, float(data.damage))
+		_melee_hit_sound(id if id != "" else String(data.get("stance", "")), actor, target, float(data.damage))
 		_hit_effect({"collider": actor, "position": target, "normal": -direction}, float(data.damage), direction)
+		_melee_impact(actor, direction, id)
 		break
+
+## Peso do contato: o golpe trava no alvo (hit-stop), a câmera dá um tranco e a
+## vítima viva é empurrada no sentido do golpe. Só apresentação: o dano já entrou.
+func _melee_impact(actor: Node3D, direction: Vector3, id: String) -> void:
+	var heavy := _rig_pose.heavy_attack()
+	var factor := HEAVY_IMPACT if heavy else 1.0
+	_rig_pose.impact(id)
+	_kick_camera(float(MELEE_KICK.get(id, 0.0)) * factor)
+	if not actor is CharacterBody3D or actor == player or actor.get("dead") == true or _is_invulnerable(actor): return
+	var distance := float(MELEE_SHOVE.get(id, 0.0)) * factor
+	if distance <= 0.0: return
+	var flat := Vector3(direction.x, 0.0, direction.z).normalized()
+	# Velocidade decrescendo linearmente até zero: percorre `distance` em SHOVE_SECONDS.
+	_shoves.append({"id": actor.get_instance_id(), "velocity": flat * (2.0 * distance / SHOVE_SECONDS), "age": 0.0})
+
+func _update_shoves(delta: float) -> void:
+	if _shoves.is_empty(): return
+	var remaining: Array[Dictionary] = []
+	for shove in _shoves:
+		var body := instance_from_id(int(shove.id)) as CharacterBody3D
+		if body == null or not is_instance_valid(body) or body.get("dead") == true: continue
+		var age := float(shove.age)
+		var speed := maxf(0.0, 1.0 - age / SHOVE_SECONDS)
+		# Com colisão: parede ou carro seguram a vítima em vez de atravessá-la.
+		body.move_and_collide((shove.velocity as Vector3) * speed * delta)
+		shove.age = age + delta
+		if float(shove.age) < SHOVE_SECONDS: remaining.append(shove)
+	_shoves = remaining
+
+## Rastro de movimento do taco/machado só no trecho rápido do golpe.
+func _update_swing_trail(delta: float) -> void:
+	var id := equipped()
+	if id not in ["axe", "bat"] or not is_instance_valid(gun):
+		_swing_trail = null
+		return
+	if not is_instance_valid(_swing_trail) or not gun.is_ancestor_of(_swing_trail):
+		_swing_trail = gun.find_child("AxeSwingTrail", true, false)
+		if _swing_trail == null: return
+	_swing_trail.update_trail(delta, bool(_pose_frame.get("swing_trail", false)))
 
 ## Maciota e o mecânico (e qualquer nó marcado): nada os fere, nem contam como lesão ou crime.
 func _is_invulnerable(actor: Object) -> bool:
@@ -1863,14 +1962,52 @@ func _shot_sound(id: String, data: Dictionary) -> void:
 	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
 	_kick_camera(float(CAMERA_KICK.get(id, 0.0)))
 
-## Golpe no ar do V1: faca = `KnifeAudio.swing`, machado = `BatAudio.swing`, o resto = golpe de punho.
-func _melee_swing_sound(_id: String, data: Dictionary) -> void:
-	var stance := String(data.get("stance", ""))
-	var stream: AudioStream = AUDIO.punch_swing()
-	if stance == "knife": stream = AUDIO.knife_sample(-1)
-	elif stance == "axe": stream = AUDIO.bat_swing()
-	# V1 `Player._melee_attack`: o volume do catálogo, sem o -10 dB extra da V2.
-	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)))
+## "Vupt" do golpe. Toca quando a arma passa (pico do som no instante do contato),
+## não no aperto do botão: o taco e o machado têm 0,25 s de preparação e o ar soava
+## antes de o braço começar a descer. Cada arma tem o seu ar (o taco usava o do soco,
+## que trazia um baque embutido e "acertava" mesmo errando).
+func _melee_swing_sound(id: String, data: Dictionary) -> void:
+	var kind := String(MELEE_SOUND_KIND.get(id, "punch"))
+	var contact := float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))
+	var peak := 0.05 if id == "knife" else float(AUDIO.WHOOSH_PEAK.get(kind, 0.05))
+	_pending_swing = {"id": id, "time": maxf(0.0, contact - peak), "data": data, "serial": _attack_serial}
+
+func _update_swing_sound() -> void:
+	if _pending_swing.is_empty(): return
+	var id: String = _pending_swing.id
+	# Mesmas regras do contato: troca de arma, morte, garagem e transição cancelam.
+	if not attack_allowed() or (equipped() != id and not (id == "fists" and equipped().is_empty())):
+		_pending_swing.clear()
+		return
+	if _rig_pose.action_age + 0.00001 < float(_pending_swing.time): return
+	var data: Dictionary = _pending_swing.data
+	_pending_swing = {}
+	var stream: AudioStream = AUDIO.knife_sample(-1) if id == "knife" else AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
+	# V1 `Player._melee_attack`: o volume do catálogo. Tom por golpe do combo (pesado
+	# mais grave e mais forte) e um pouco de acaso, para a sequência não soar repetida.
+	var heavy := _rig_pose.heavy_attack()
+	var pitch := _combo_pitch() * _rng.randf_range(0.97, 1.03)
+	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)) + (2.0 if heavy else 0.0), pitch)
+
+## Tom do golpe atual da sequência: o pesado que fecha o combo é o mais grave.
+func _combo_pitch() -> float:
+	if _rig_pose.heavy_attack(): return COMBO_HEAVY_PITCH
+	return float(COMBO_PITCH[_rig_pose.combo_step % COMBO_PITCH.size()])
+
+## Acerto corpo a corpo no corpo: som próprio de cada arma (soco, soqueira, taco,
+## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
+func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) -> void:
+	if id == "knife" or _impact_material(actor) != "flesh" or not MELEE_HIT_KIND.has(id):
+		if id == "knife" and _impact_material(actor) == "flesh":
+			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), actor.global_position, -13.0)
+		else:
+			_impact_sound(actor, point, amount)
+		return
+	var heavy := _rig_pose.heavy_attack()
+	var volume := float(MELEE_HIT_DB.get(id, -6.0)) + (3.0 if heavy else 0.0)
+	_play_stream(AUDIO.melee_hit(String(MELEE_HIT_KIND[id]), _rng.randi_range(0, 2)), point, volume, _combo_pitch() * _rng.randf_range(0.96, 1.04))
+	# Camada de carne gravada da V1 por baixo, mais baixa: dá corpo ao sintetizado.
+	_play_stream(AUDIO.take("impact_flesh", _rng), point, volume - 9.0)
 
 ## Lança-chamas: rajada de 0,38 s reiniciada enquanto o gatilho segue (V1 `_flamethrower_audio`).
 func _flame_sound() -> void:
@@ -1998,8 +2135,10 @@ func on_region_changed() -> void:
 		police_case.preserve_departing_witnesses()
 		police_case.cancel_surrender()
 	_pending_contact.clear()
+	_pending_swing.clear()
 	_police_rounds.clear()
 	_clear_combat_registers()
+	_shoves.clear()
 	_swing_age = -1.0
 	_aim_hold = 0.0
 	_recoil = 0.0
