@@ -8,6 +8,7 @@ const ADAPTER := preload("res://gameplay/desert_cars/DesertCarAdapter.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const PANEL := preload("res://gameplay/desert_cars/DesertTuningPanel.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
+const RACE_WINS := preload("res://systems/campaign/RaceWins.gd")
 const RESIDENT := preload("res://runtime/desert/DesertCharacter.gd")
 const FRONTIER := preload("res://runtime/desert/DesertFrontierRuntime.gd")
 var session
@@ -213,7 +214,9 @@ func _open_tuning() -> void:
 	session.panel.hide()
 	session.menu_closed = _dismiss_tuning
 	var record := GARAGE.vehicle(session.state.world_state,tuning_car.vehicle_id,tuning_car.archetype)
-	tuning_panel.show_vehicle(CARS.profile_for_vehicle(tuning_car),record.parts,record.owned,PROGRESS.data(session.state.world_state).wins.size(),session.state.economy.balance)
+	tuning_panel.show_vehicle(ADAPTER.profile_of(tuning_car),record.parts,record.owned,_race_wins(),session.state.economy.balance,{"archetype":tuning_car.archetype,"paint":tuning_car.paint_color})
+func _race_wins() -> int:
+	return RACE_WINS.count(session.state.world_state,session.state.campaign.snapshot())
 func _close_tuning() -> void:
 	if session==null: return
 	_dismiss_tuning()
@@ -224,7 +227,7 @@ func _dismiss_tuning() -> void:
 	tuning_car = null
 func _buy_part(part: String) -> void:
 	if not is_instance_valid(tuning_car) or tuning_car!=_nearby_car() or not DIGO.workshop_unlocked(session.state.world_state): return
-	var result := GARAGE.buy(session.state.world_state,session.state.economy,tuning_car.vehicle_id,tuning_car.archetype,part,PROGRESS.data(session.state.world_state).wins.size())
+	var result := GARAGE.buy(session.state.world_state,session.state.economy,tuning_car.vehicle_id,tuning_car.archetype,part,_race_wins())
 	if not result.ok: tuning_panel.set_message(str(result.reason)); return
 	ADAPTER.attach(tuning_car,result.parts)
 	session.save_game()

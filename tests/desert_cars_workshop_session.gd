@@ -203,10 +203,15 @@ func _press_menu(prefix: String) -> bool:
 
 func _press_part(id: String) -> bool:
 	var panel: Node = world.session.desert.tuning_panel
-	for row in panel._rows.get_children():
-		var label: Label = row.get_child(0).get_child(0)
-		if label.text==str(TUNING.PARTS[id].label): return await _press_button(row.get_child(1))
-	return _check(false,"part button exists: "+id)
+	var button: Button = panel.button_for_part(id)
+	if button == null: return _check(false,"part button exists: "+id)
+	if not await _press_button(button): return false
+	# Compra pede um segundo clique (confirmação); instalar peça já comprada não.
+	if panel._pending == id:
+		button = panel.button_for_part(id)
+		if button == null: return _check(false,"confirmation button exists: "+id)
+		return await _press_button(button)
+	return true
 
 func _press_button(button: Button) -> bool:
 	if not _check(button.is_visible_in_tree() and not button.disabled,"GUI button usable: "+button.text): return false
