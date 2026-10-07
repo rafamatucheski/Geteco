@@ -289,7 +289,7 @@ func _prepare() -> void:
 			_record(lamp_position,{"kind":"mountain_road_lamp","position":lamp_position})
 	if region_id == "harbor":
 		for definition in CATALOG.definitions():
-			if definition.region == region_id and definition.id in ["westgate_garden","quayside_house","cemetery_keeper","port_boss_garage","harbor_sewer"]: _record(definition.exterior_position,{"kind":"original_facade","data":definition})
+			if definition.region == region_id and definition.id in ["westgate_garden","quayside_house","cemetery_keeper","port_boss_garage"] + CATALOG.SEWERS.ids(): _record(definition.exterior_position,{"kind":"original_facade","data":definition})
 		for zone_record in HARBOR_ROUTE_FACTORY.get_zone_records():
 			_record(zone_record.position, zone_record)
 		for public_record in HARBOR_PUBLIC_REALM.records():
@@ -771,6 +771,15 @@ func _build_soft_road_surface(chunk: Node3D, rect: Rect2, material: ShaderMateri
 
 ## The cemetery provides its own floor and collision at y=0. Harbor land has
 ## the same top face there; drawing both causes depth fighting and light flicker.
+## `_rect_outside` contra vários recortes (os bueiros), peça a peça.
+func _rects_outside_all(rect: Rect2, holes: Array[Rect2]) -> Array[Rect2]:
+	var pieces: Array[Rect2] = [rect]
+	for hole in holes:
+		var next: Array[Rect2] = []
+		for piece in pieces: next.append_array(_rect_outside(piece, hole))
+		pieces = next
+	return pieces
+
 func _rect_outside(surface: Rect2, hole: Rect2) -> Array[Rect2]:
 	if not surface.has_area(): return []
 	var overlap := surface.intersection(hole)
@@ -897,12 +906,13 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 			harbor_road_geometry.build_chunk(chunk,rect)
 		var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
 		var cemetery_floor := Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
-		var sewer_opening := Rect2(CATALOG.HARBOR_SEWER_OPENING.position * SCALE, CATALOG.HARBOR_SEWER_OPENING.size * SCALE)
+		var sewer_openings: Array[Rect2] = []
+		for opening in CATALOG.sewer_openings(): sewer_openings.append(Rect2(opening.position * SCALE, opening.size * SCALE))
 		var secret_cellar_opening := Rect2(-413.25,85.35,6.10,3.30)
 		for land in source_data.harbor_land:
 			var surface := rect.intersection(Rect2(land[0]*SCALE,land[1]*SCALE,land[2]*SCALE,land[3]*SCALE))
 			for piece in _rect_outside(surface, cemetery_floor):
-				for sewer_piece in _rect_outside(piece, sewer_opening):
+				for sewer_piece in _rects_outside_all(piece, sewer_openings):
 					for cellar_piece in _rect_outside(sewer_piece, secret_cellar_opening):
 						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
 						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):

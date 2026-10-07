@@ -2,6 +2,7 @@ extends Node
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const SEWER_DESCENT := preload("res://gameplay/SewerHatchDescent.gd")
+const SEWER_NETWORK := preload("res://world/places/sewers/SewerNetwork.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
 const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
@@ -788,8 +789,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	var candidate_room: Node3D
 	var owns_candidate := false
 	var candidate_return := Vector3.ZERO
-	if id == "harbor_sewer":
-		sewer_hatch = _find_sewer_hatch()
+	if SEWER_NETWORK.is_manhole(id):
+		sewer_hatch = _find_sewer_hatch(id)
 		sewer_entry_origin = world.player.global_position
 	if id == "maciota":
 		candidate_room = world.maciota_place
@@ -799,7 +800,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	else:
 		candidate_room = PLACES.create_place(id)
 		if candidate_room == null:
-			if id == "harbor_sewer" and sewer_entry_origin.is_finite():
+			if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
 				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
@@ -820,7 +821,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room):
 			_discard_place_candidate(candidate_room,owns_candidate)
 			controller.region.set_focus(world.player.global_position)
-			if id == "harbor_sewer" and sewer_entry_origin.is_finite():
+			if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
 				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
@@ -831,7 +832,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	if not destination.is_finite() or not position_clear(destination+Vector3.UP*.04):
 		_discard_place_candidate(candidate_room,owns_candidate)
 		controller.region.set_focus(world.player.global_position)
-		if id == "harbor_sewer" and sewer_entry_origin.is_finite():
+		if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 			world.player.teleport(sewer_entry_origin)
 			_close_sewer_hatch_for_transition(token)
 		_restore_transition_player_lock(was_player_locked,token)
@@ -851,7 +852,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 			controller.region.set_focus(world.player.global_position)
 			world.camera.clear_store_focus()
 			world.camera._process(0.0)
-			if id == "harbor_sewer" and sewer_entry_origin.is_finite():
+			if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
 				_close_sewer_hatch_for_transition(token)
 				sewer_entry_origin = Vector3.ZERO
@@ -880,7 +881,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	world.camera.locked = true
 	world.camera.initialized = false
 	world.camera._process(1)
-	if id == "harbor_sewer" and is_instance_valid(sewer_hatch):
+	if SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
 		_close_sewer_hatch_for_transition(token)
 		sewer_hatch = null
 		sewer_entry_origin = Vector3.ZERO
@@ -889,7 +890,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	if id != "maciota":
 		_install_service_npc()
 	# Bueiro: Dante anda até a borda, a tampa desliza e ele desce a escada antes do véu cobrir a troca.
-	if id == "harbor_sewer" and is_instance_valid(sewer_hatch):
+	if SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
 		var descent: Node = SEWER_DESCENT.new()
 		descent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
 		if descent.can_run():
@@ -924,8 +925,8 @@ func leave_place() -> bool:
 	if token < 0: return false
 	var leaving_room: Node3D = room
 	var was_player_locked: bool = world.player.input_locked
-	if state.place_id == "harbor_sewer":
-		sewer_hatch = _find_sewer_hatch()
+	if SEWER_NETWORK.is_manhole(state.place_id):
+		sewer_hatch = _find_sewer_hatch(state.place_id)
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
 	var leaving_return := _clear_return_point(state.place_id, return_point)
@@ -986,7 +987,7 @@ func leave_place() -> bool:
 	world.camera.target_size = saved_size
 	world.camera.locked = false
 	world.camera.initialized = false
-	var was_sewer_exit: bool = state.place_id == "harbor_sewer"
+	var was_sewer_exit: bool = SEWER_NETWORK.is_manhole(state.place_id)
 	world.camera._process(1)
 	if animated:
 		world.camera.reveal_exterior(world.player.global_position, maxf(8.0, saved_size * 0.78), saved_size, 0.42)
@@ -1002,13 +1003,16 @@ func leave_place() -> bool:
 	save_game()
 	return true
 
-func _find_sewer_hatch() -> Node3D:
+func _find_sewer_hatch(place_id := "harbor_sewer") -> Node3D:
 	if controller == null or controller.region == null: return null
 	var target := Vector2(1182.0, 2114.0) / 16.0
+	if place_id != "harbor_sewer":
+		var exterior: Vector3 = PLACES.get_definition(place_id).get("exterior_position", Vector3.ZERO)
+		target = Vector2(exterior.x, exterior.z)
 	var best: Node3D
 	var best_distance := 2.0
 	for chunk in controller.region.get_children():
-		for node in chunk.find_children("harbor_sewer", "Node3D", true, false):
+		for node in chunk.find_children(place_id, "Node3D", true, false):
 			var distance := Vector2(node.global_position.x, node.global_position.z).distance_to(target)
 			if distance < best_distance:
 				best_distance = distance
@@ -1224,7 +1228,7 @@ func nearest() -> Dictionary:
 	if not outdoor_routine_action.is_empty(): return outdoor_routine_action
 	if state.region_id == "harbor" and not _uses_walkup_access("maciota") and point.distance_to(world.maciota_place.entry_position) < 1.5: return {"id":"enter","place":"maciota","access":"maciota","label":"Entrar"}
 	for entry in controller.region.entries:
-		if entry.place_id in ["harbor_sewer","remote_coal_mine"] and point.distance_to(entry.position) < 1.5:
+		if (SEWER_NETWORK.is_manhole(entry.place_id) or entry.place_id == "remote_coal_mine") and point.distance_to(entry.position) < 1.5:
 			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"","silent":true}
 		if _uses_walkup_access(entry.place_id): continue
 		if point.distance_to(entry.position) < 1.5:

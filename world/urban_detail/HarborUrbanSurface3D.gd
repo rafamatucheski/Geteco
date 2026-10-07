@@ -179,7 +179,7 @@ func _add(source_rect: Rect2, kind: String, color: Color) -> void:
 func _carved(source_rect: Rect2) -> Array[Rect2]:
 	var pieces: Array[Rect2] = [source_rect]
 	var openings: Array[Rect2] = _RAISED_APRON_HOLES.duplicate()
-	openings.append(CATALOG.HARBOR_SEWER_OPENING)
+	openings.append_array(CATALOG.sewer_openings())
 	var skate_rect := preload("res://activities/skate/SkateParkLayout.gd").FOOTPRINT
 	if preload("res://activities/skate/SkateParkLayout.gd").enabled(): openings.append(Rect2(skate_rect.position / SCALE, skate_rect.size / SCALE))
 	for hole in openings:

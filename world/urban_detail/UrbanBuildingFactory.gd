@@ -12,6 +12,7 @@ const CEMETERY_HOUSE_MODEL_PATH := "res://assets/regions/source/world/harbor/cem
 const LANDMARK_FRONTAGE := preload("res://world/urban_detail/UrbanLandmarkFrontage3D.gd")
 const PORT_BOSS_EXTERIOR := preload("res://world/urban_detail/PortBossGarageExterior3D.gd")
 const HARBOR_MANHOLE_EXTERIOR := preload("res://world/urban_detail/HarborManholeExterior3D.gd")
+const SEWER_NETWORK := preload("res://world/places/sewers/SewerNetwork.gd")
 const V1_PROFILE := preload("res://world/urban_detail/HarborV1BuildingProfile.gd")
 const SKYLINE_BUILDING := preload("res://world/urban_detail/UrbanSkylineBuilding.gd")
 const LOWRISE_BUILDING := preload("res://world/urban_detail/UrbanLowriseBuilding.gd")
@@ -81,7 +82,7 @@ static func build_building(data: Dictionary) -> Node3D:
 		port_boss.ready.connect(func(): finalize_building(port_boss, norm_data))
 		return port_boss
 
-	if building_id == "harbor_sewer":
+	if SEWER_NETWORK.is_manhole(building_id):
 		var manhole := HARBOR_MANHOLE_EXTERIOR.new()
 		manhole.name = building_id
 		manhole.setup(norm_data)

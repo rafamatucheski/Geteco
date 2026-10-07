@@ -144,8 +144,10 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 			verge.append(_earth_verge_triangles[index])
 	preload("res://world/urban_detail/RuralRoadVerge.gd").build(parent,verge,clip)
 	_add_clipped_surface(parent,"HarborEarthRoad",_earth_polygons,clip,0.023,preload("res://world/urban_detail/RuralGroundMaterial.gd").material(),_earth_bounds)
-	var sewer_opening := Rect2(CATALOG.HARBOR_SEWER_OPENING.position * SOURCE_SCALE, CATALOG.HARBOR_SEWER_OPENING.size * SOURCE_SCALE)
-	var opening_clip := _rect_polygon(sewer_opening) if rect.intersects(sewer_opening) else PackedVector2Array()
+	var opening_clips: Array[PackedVector2Array] = []
+	for opening in CATALOG.sewer_openings():
+		var sewer_opening := Rect2(opening.position * SOURCE_SCALE, opening.size * SOURCE_SCALE)
+		if rect.intersects(sewer_opening): opening_clips.append(_rect_polygon(sewer_opening))
 	for layer in _layers:
 		var clipped: Array[PackedVector2Array] = []
 		for polygon_index in range(layer.polygons.size()):
@@ -154,10 +156,15 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 			for piece_value in Geometry2D.intersect_polygons(polygon, clip):
 				var piece := piece_value as PackedVector2Array
 				if piece.size() >= 3:
-					if opening_clip.is_empty():
+					if opening_clips.is_empty():
 						clipped.append(piece)
 					else:
-						for outside in Geometry2D.clip_polygons(piece, opening_clip):
+						var remaining: Array[PackedVector2Array] = [piece]
+						for opening_clip in opening_clips:
+							var next: Array[PackedVector2Array] = []
+							for part in remaining: next.append_array(Geometry2D.clip_polygons(part, opening_clip))
+							remaining = next
+						for outside in remaining:
 							if outside.size() >= 3: clipped.append(outside)
 		_add_surface(parent, "HarborRoad_%s" % layer.name, clipped, float(layer.y), layer.material)
 	_add_clipped_surface(parent,"HarborCrosswalk",_crosswalk_white,clip,0.038,_material(CROSSWALK_COLOR),_crosswalk_white_bounds)

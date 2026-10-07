@@ -1,7 +1,8 @@
 extends Node
 ## Walk into the ship hold or cave; the sewer uses explicit interaction.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
-const IDS := ["harbor_sewer", "santa_mare_hold", "mountain_mystery_cave"]
+const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
+const IDS := ["harbor_sewer", "sewer_market", "sewer_quay", "sewer_warehouse", "sewer_port", "santa_mare_hold", "mountain_mystery_cave"]
 const ZOOM_SECONDS := .55
 var session: Node
 var definitions: Dictionary = {}
@@ -45,7 +46,7 @@ func update(delta: float) -> void:
 	var id := ""
 	var distance := INF
 	for candidate in IDS:
-		if candidate == "harbor_sewer": continue
+		if SEWERS.is_manhole(candidate): continue
 		if definitions[candidate].region != session.state.region_id: continue
 		var d := point.distance_squared_to(_door(candidate))
 		if d < distance: distance = d; id = candidate

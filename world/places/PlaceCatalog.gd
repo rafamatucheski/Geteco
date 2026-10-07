@@ -3,6 +3,10 @@ extends RefCounted
 const SCALE := 1.0 / 16.0
 const FIRE_STATION_DOOR_OFFSET := Vector3(310.0 / 16.0 * .12, 0, 220.0 / 32.0 + .06)
 const HARBOR_SEWER_OPENING := Rect2(1173.0, 2105.0, 18.0, 18.0)
+const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
+## Todos os recortes de bueiro (o original e os de `SewerNetwork`), em pixels de origem.
+static func sewer_openings() -> Array[Rect2]:
+	return SEWERS.openings(HARBOR_SEWER_OPENING)
 const MOUNTAIN_OFFSET := Vector2(4300,-4960)
 const SOURCE := "res://assets/regions/source/"
 const WALKUP_DOOR_Z := {"cabin":1.88, "shop":1.82, "residence":3.26, "keeper":2.8, "bunker":2.8625, "lodge":3.98}
@@ -58,6 +62,7 @@ static func definitions() -> Array[Dictionary]:
 		["harbor_sewer","Esgoto","harbor",Vector2(1182,2114),"@SewerModel",Vector2(23,13.5),0.0,0.0,"sewer"],
 		["santa_mare_hold","Santa Mare","harbor",Vector2(4250,2980),"@SantaMareCargoHold3D",Vector2(18,12),4.65,4.75,"cargo_hold"],
 	])
+	rows.append_array(SEWERS.rows())
 	for i in 4:
 		rows.append(["mountain_cabin_village_%d"%(i+1),"ChalÃ© %02d"%(i+1),"mountain",[Vector2(7405,-1480),Vector2(7545,-1480),Vector2(7725,-1440),Vector2(7870,-1440)][i],"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"])
 	var result: Array[Dictionary] = []
@@ -81,7 +86,7 @@ static func definitions() -> Array[Dictionary]:
 		elif id == "harbor_hospital": approach = _at(Vector2(1800,1705),region)
 		elif id == "harbor_fire_station": approach = exterior + FIRE_STATION_DOOR_OFFSET + Vector3(0,0,1.5)
 		elif id == "port_boss_garage": approach = exterior + Vector3(-4,0,0)
-		elif id == "harbor_sewer": approach = exterior
+		elif SEWERS.is_manhole(id): approach = exterior
 		elif id == "santa_mare_hold": approach = exterior
 		elif id.begins_with("harbor_"): approach = exterior + Vector3(0,0,130*SCALE)
 		var walkup := walkup_family(id)
@@ -131,6 +136,7 @@ static func definitions() -> Array[Dictionary]:
 			definition.camera_size = 14.5
 			definition.camera_target = Vector3(0,.45,0)
 			definition.npcs = [
+		if SEWERS.is_extra(definition.id): SEWERS.decorate(definition)
 				{"id":"santa_mare_hold_crew_01","name":"Lucas","model":"res://world/places/SantaMareCrewModel3D.gd","appearance":{},"local_position":Vector3(-1.4,0,1.1)},
 				{"id":"santa_mare_hold_crew_02","name":"Mara","model":"res://world/places/SantaMareCrewModel3D.gd","appearance":{},"local_position":Vector3(1.6,0,-2.5)},
 			]

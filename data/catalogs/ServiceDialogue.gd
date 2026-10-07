@@ -2,6 +2,12 @@ extends RefCounted
 # Verbatim production dialogue: HarborHospitalInterior3D, HarborPoliceInterior,
 # HarborFireStationInterior; terminal text from the corresponding interior.
 const PEOPLE := {
+	# Moradores de rua dos esgotos de Harbor (`world/places/sewers`).
+	"sewer_market_abel":{"speaker":"Seu Abel","messages":["Ei, filho. Aqui embaixo o barril esquenta e ninguém pede documento.","Moro neste canto desde que fecharam a oficina do cais. O que eu tinha de valor ficou debaixo do colchão.","Se for pegar, pega só um pouco. É tudo o que me sobrou."]},
+	"sewer_quay_marlene":{"speaker":"Dona Marlene","messages":["Sshh, não assusta o peixe. A maré sobe e eles entram pela comporta.","Passa pela passarela com cuidado, as tábuas estão podres de novo.","Do outro lado deixaram uma mochila atrás dos barris. Eu não mexo. Quem mexe aqui embaixo não volta o mesmo."]},
+	"sewer_warehouse_zeca":{"speaker":"Zeca","messages":["Trabalhei vinte anos nesses galpões. Hoje durmo debaixo deles. A vida é engraçada.","O escritório de manutenção ainda tem armário trancado, mas a chave sumiu e a porta não.","Já viu o canto sudeste? Os caras do armazém penduravam canos ali pra esconder uma passagem. Eu nunca disse nada."]},
+	"sewer_port_tonho":{"speaker":"Tonho","messages":["Tá vendo a lona no canto nordeste? Aquilo não é só lona.","Os contrabandistas deixam o cofre aberto e a guarda pra quem tiver coragem de passar pelos canos.","Eu fico por aqui, quente, longe da polícia. Eles me deixam em paz se eu não olhar muito."]},
+	"sewer_port_nena":{"speaker":"Dona Nena","messages":["Aqui é a minha cozinha. Pega um café, vai.","As caixas do sul são deles. Armas, tudo envolvido em pano. Eu só varro a calçada do canal.","Se pegar o dinheiro do cofre grande, leva as granadas também. Já vi homem morrer por esquecer uma."]},
 	"hospital_miguel":{"speaker":"Dr. Miguel","messages":["Pode pegar a vida junto aos leitos. Vou cuidar de você.","Procure atendimento sempre que precisar."]},
 	"hospital":{"speaker":"Enfermeira Clara","messages":["Pode pegar a vida junto aos leitos. Vou cuidar de você.","Procure atendimento sempre que precisar."]},
 	"police":{"speaker":"Sargento Morales","messages":["Harbor Patrol, 1º Distrito. Mantenha as mãos onde eu possa vê-las, cidadão.","O cais de Breakwater tá tenso ultimamente. Carga sumindo dos contêineres e os Cobras de Ferro rondando.","Se você vir algo suspeito nos becos da Foundry Avenue, venha direto ao balcão.","Não toleramos rachas nem tiroteios no perímetro do porto. Considere isso um aviso amigável."]},

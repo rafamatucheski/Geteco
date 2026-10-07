@@ -114,6 +114,13 @@ func _npc_points() -> Dictionary:
 		if point is Vector3: result[npc.id]=point
 	return result
 
+func _is_room_resident(id: String) -> bool:
+	var definition: Variant = session.room.get("definition")
+	if not definition is Dictionary or not String(definition.get("id","")).begins_with("sewer_"): return false
+	for npc in definition.get("npcs",[]):
+		if npc.get("id","") == id: return true
+	return false
+
 func perform(service: String) -> bool:
 	# The production-compatible Monaliza service lives at the physical workbench;
 	# FullSession deliberately has no generic remote-repair fallback.
@@ -122,6 +129,12 @@ func perform(service: String) -> bool:
 		session.show_message("Use a bancada para cuidar da Monaliza.")
 		return true
 	if not Dialogue.PEOPLE.has(service) or session == null or session.world.driving.occupied: return false
+	# Moradores de salas comuns (os esgotos de rua): falam com quem está perto, em qualquer lugar da sala deles.
+	if is_instance_valid(session.room) and _is_room_resident(service):
+		var resident_points := _npc_points()
+		if not resident_points.has(service) or not _near(resident_points[service],1.7): return false
+		session.show_dialogue(Dialogue.lines(service))
+		return true
 	var place: String = session.state.place_id
 	var expected := "harbor_hospital" if service.begins_with("hospital") else ("harbor_fire_station" if service.begins_with("fire") else "harbor_police")
 	if place != expected: return false

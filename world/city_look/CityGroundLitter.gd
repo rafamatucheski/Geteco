@@ -171,8 +171,8 @@ static func _allowed(job: Dictionary, point: Vector2, radius: float) -> bool:
 	if not (context.rect as Rect2).has_point(point): return false
 	if CANAL.reserves(point,radius+.15) or CONNECTION.reserves_approach_for_driving(point): return false
 	if SKATE.enabled() and SKATE.FOOTPRINT.grow(radius).has_point(point): return false
-	var sewer := Rect2(CATALOG.HARBOR_SEWER_OPENING.position/16.0,CATALOG.HARBOR_SEWER_OPENING.size/16.0)
-	if sewer.grow(radius+.5).has_point(point): return false
+	for opening in CATALOG.sewer_openings():
+		if Rect2(opening.position/16.0,opening.size/16.0).grow(radius+.5).has_point(point): return false
 	for area: Rect2 in job.exclusions:
 		if area.grow(radius).has_point(point): return false
 	for building in context.buildings:
